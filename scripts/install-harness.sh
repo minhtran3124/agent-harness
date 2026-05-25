@@ -4,14 +4,14 @@
 # Fetches the harness source (git clone, or a local checkout via --source), copies the
 # source-of-truth layout into the target, then builds the loadable .claude/ via deploy-harness.sh.
 # Designed to run piped:
-#   curl -fsSL https://raw.githubusercontent.com/minhtran3124/claude-skills/v4-harness-experimental/scripts/install-harness.sh | bash -s -- --yes
+#   curl -fsSL https://raw.githubusercontent.com/minhtran3124/harness-skills/main/scripts/install-harness.sh | bash -s -- --yes
 #
 # Usage:  bash scripts/install-harness.sh [options]
 set -euo pipefail
 
 # ---------- config (overridable by env or flags) ----------
-REPO_URL="${CS_REPO_URL:-https://github.com/minhtran3124/claude-skills}"
-BRANCH="${CS_BRANCH:-v4-harness-experimental}"
+REPO_URL="${CS_REPO_URL:-https://github.com/minhtran3124/harness-skills}"
+BRANCH="${CS_BRANCH:-main}"
 TARGET_DIR="$PWD"
 SOURCE_DIR=""
 ASSUME_YES=0
@@ -48,7 +48,7 @@ Options:
   -h, --help              Show this help
 
 Examples:
-  curl -fsSL https://raw.githubusercontent.com/minhtran3124/claude-skills/${BRANCH}/scripts/install-harness.sh | bash -s -- --yes
+  curl -fsSL https://raw.githubusercontent.com/minhtran3124/harness-skills/${BRANCH}/scripts/install-harness.sh | bash -s -- --yes
   bash scripts/install-harness.sh --directory /path/to/project --yes
   bash scripts/install-harness.sh --source . --dry-run -d /tmp/demo
 EOF
