@@ -1,8 +1,9 @@
 # Adversarial Correctness Reviewer Prompt Template
 
-Use this template for the **final** review pass — once, over the entire implementation
-diff, after every task's spec + quality review has passed and before
-`finishing-a-development-branch`.
+Use this template for a single adversarial review pass — once, over the entire diff under
+review. Invoked two ways: standalone via `/correctness-review` (ad-hoc on any diff), or as the
+final pass inside `subagent-driven-development` (after every task's spec + quality review has
+passed and before `finishing-a-development-branch`).
 
 **Purpose:** Find runtime bugs that ship to production — independent of the plan. This stage
 exists because the per-task spec and quality reviewers are anchored to the plan as the oracle:

@@ -41,7 +41,7 @@ This file is the single source of truth. Per-skill `README.md` files have been r
   OR /executing-plans               ← parallel session
   → implements plan task-by-task
   → two-stage review per task (spec compliance → code quality)
-  → final adversarial correctness review over the whole diff before shipping
+  → final adversarial correctness review (/correctness-review) over the whole diff before shipping
       ↓
 /compound  (if non-obvious pattern found)
   → output: docs/solutions/<category>/<slug>.md
@@ -107,13 +107,14 @@ fix (implement directly or via /subagent-driven-development)
 | Skill | Trigger | Output |
 |---|---|---|
 | `/using-git-worktrees` | Before starting feature work needing isolation | Isolated worktree + branch |
-| `/subagent-driven-development` | Executing a plan in the current session (fresh subagent per task) | Implemented tasks, two-stage reviewed per task + final adversarial correctness review |
+| `/subagent-driven-development` | Executing a plan in the current session (fresh subagent per task) | Implemented tasks, two-stage reviewed per task + final adversarial correctness review (delegates to `/correctness-review`) |
 | `/executing-plans` | Executing a plan in a separate parallel session (checkpoint-based) | Same as above |
 
 ### Review & Shipping
 
 | Skill | Trigger | Output |
 |---|---|---|
+| `/correctness-review` | After implementation — adversarial runtime-bug hunt over a diff. **Standalone** (any diff, no workflow gate) or called by `/subagent-driven-development` as its final pass | Findings scored (0–100, threshold 80) + classified (Severity + Rule class) → fixes or escalations |
 | `/review-diff` | After implementation — visualize what changed | Markdown review with C4 diagrams |
 | `/compound` | After session with non-obvious bug fix, pattern, or architectural decision | `docs/solutions/<category>/<slug>.md` |
 | `/create-pr` | When only a PR description is needed | `PR_TEMPLATE.md` |
@@ -164,7 +165,8 @@ If one of these isn't available in your environment, the workflows degrade grace
                                 → /subagent-driven-development
                                 OR /executing-plans (parallel session)
 /visual-planner             ──► PLAN.html (terminal — visual artifact; back to writing-plans handoff)
-/subagent-driven-development ──► /compound → /finishing-a-development-branch
+/subagent-driven-development ──► /correctness-review (final pass) → /compound → /finishing-a-development-branch
+/correctness-review         ──► (standalone — runs the same pipeline ad-hoc on any diff; no gate)
 /systematic-debugging       ──► fix → /compound
 /compound                   ──► nothing (terminal — crystallization is end state)
 /finishing-a-development-branch ──► nothing (terminal — shipped)

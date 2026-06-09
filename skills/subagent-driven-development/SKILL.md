@@ -67,7 +67,7 @@ digraph process {
 
     "Read plan, extract all tasks with full text, note context, create TodoWrite" [shape=box];
     "More tasks remain?" [shape=diamond];
-    "Dispatch adversarial correctness reviewer over entire diff (./correctness-reviewer-prompt.md)" [shape=box];
+    "Run /correctness-review over entire diff" [shape=box];
     "Correctness reviewer finds bugs?" [shape=diamond];
     "Implementer subagent fixes correctness bugs" [shape=box];
     "Use superpowers:finishing-a-development-branch" [shape=box style=filled fillcolor=lightgreen];
@@ -88,10 +88,10 @@ digraph process {
     "Code quality reviewer subagent approves?" -> "Mark task complete in TodoWrite" [label="yes"];
     "Mark task complete in TodoWrite" -> "More tasks remain?";
     "More tasks remain?" -> "Dispatch implementer subagent (./implementer-prompt.md)" [label="yes"];
-    "More tasks remain?" -> "Dispatch adversarial correctness reviewer over entire diff (./correctness-reviewer-prompt.md)" [label="no"];
-    "Dispatch adversarial correctness reviewer over entire diff (./correctness-reviewer-prompt.md)" -> "Correctness reviewer finds bugs?";
+    "More tasks remain?" -> "Run /correctness-review over entire diff" [label="no"];
+    "Run /correctness-review over entire diff" -> "Correctness reviewer finds bugs?";
     "Correctness reviewer finds bugs?" -> "Implementer subagent fixes correctness bugs" [label="yes"];
-    "Implementer subagent fixes correctness bugs" -> "Dispatch adversarial correctness reviewer over entire diff (./correctness-reviewer-prompt.md)" [label="re-review"];
+    "Implementer subagent fixes correctness bugs" -> "Run /correctness-review over entire diff" [label="re-review"];
     "Correctness reviewer finds bugs?" -> "Use superpowers:finishing-a-development-branch" [label="no"];
 }
 ```
@@ -150,72 +150,28 @@ Implementer subagents report one of four statuses. Handle each appropriately:
 
 ## Final Adversarial Correctness Review
 
-After every task's spec + quality review passes, run **one** adversarial correctness review
-over the entire implementation diff (`./correctness-reviewer-prompt.md`) before handing off to
-`finishing-a-development-branch`.
+After every task's spec + quality review passes, run **one** adversarial correctness review over
+the entire implementation diff before handing off to `finishing-a-development-branch`. This pass
+**is the `/correctness-review` skill — delegate to it; do not re-implement the pipeline here.**
+
+**Range to pass:** `BASE` = commit before task 1, `HEAD` = current commit after all tasks, plus
+the list of touched files. `/correctness-review` then runs FIND → SCORE → THRESHOLD(80) →
+classify → fix-loop: it reads `docs/solutions/` for compound read-back, dispatches the
+high-recall finder with a different (most capable) model, scores each candidate 0–100 with a
+cheap model, drops `< 80` to advisory, classifies survivors by Severity + `auto-correct-scope.md`
+Rule class, routes Rule 1–3 to an auto-fix loop and Rule 4 to a STOP/escalation, and enforces the
+residual-work gate (every finding fixed with a sha or durably recorded before handoff). See
+`skills/correctness-review/SKILL.md` for the full pipeline and `correctness-{reviewer,scorer}-prompt.md`.
 
 **Why this stage exists.** The per-task spec and quality reviewers are anchored to the plan as
-the oracle — spec review asks *"does it match the spec?"*, quality review asks *"is it
-clean?"*. Neither asks *"cho dù spec đúng, code này có chạy sai ở runtime không?"*. A bug that
-faithfully implements a flawed spec passes both. This is the gap that lets real bugs survive to
-production and get caught by external reviewers post-push.
+the oracle — spec review asks *"does it match the spec?"*, quality review asks *"is it clean?"*.
+Neither asks *"cho dù spec đúng, code này có chạy sai ở runtime không?"*. A bug that faithfully
+implements a flawed spec passes both — the gap that lets real bugs survive to production and get
+caught by external reviewers post-push. The correctness pass closes it.
 
-**Step 0 — compound read-back.** Before scanning the diff, the reviewer reads
-`docs/solutions/critical-patterns.md` and all `failure`-track entries in `docs/solutions/`
-when present. Each past bug becomes a named check — this closes the compound loop at review
-time, so a pattern the team already paid to learn cannot slip through again. Degrade
-gracefully: if `docs/solutions/` is absent or empty, skip this step and proceed.
-
-**What makes it different:**
-
-- **Ignores the plan.** Validates against actual runtime behavior, not stated intent.
-- **Adversarial.** Assumes ≥1 bug exists and hunts specific bug classes (None/async/DB/auth/
-  concurrency/contract breaks) rather than confirming compliance.
-- **Whole-diff.** Runs once over the full implementation, so it catches integration bugs that
-  span tasks — invisible to any single per-task review.
-- **Different model.** Dispatch with a different (ideally most capable) model than the
-  implementer for ensemble diversity.
-
-**Pipeline order.** The correctness stage runs in five steps — FIND → SCORE → THRESHOLD → D → E:
-
-1. **FIND** (`./correctness-reviewer-prompt.md`) — high-recall; flags every plausible candidate.
-   The finder is deliberately biased toward false positives; it does not self-filter.
-2. **SCORE** (`./correctness-scorer-prompt.md`) — a cheap-model agent scores each candidate
-   0–100 in independent context (no access to the finder's reasoning). One scorer agent per
-   finding; dispatch in parallel. Rubric: 0 = false positive / pre-existing / not on changed
-   line · 25 = maybe real, unverified · 50 = real but minor or rare · 75 = highly confident ·
-   100 = certain, confirmed by code. Score 0 automatically when `ruff-on-edit`,
-   `commit-quality-gate`, or `risk-corroboration` would already catch it.
-3. **THRESHOLD** — drop findings with `score < 80`. Record them as `advisory` in
-   `specs/<slug>/SUMMARY.md` under `### Advisory Findings` (not silently dropped, not
-   escalated). The threshold is adjustable (lower for high-risk lanes, higher when
-   false-positive noise is a known problem); default is **80**.
-4. **D — two-axis classification.** Findings that survive the threshold carry two labels:
-
-- **Severity** — `P0` (data loss / security / crash) · `P1` (wrong output / broken path) ·
-  `P2` (degraded behavior, non-fatal) · `P3` (minor correctness issue)
-- **Rule class** — per `.claude/rules/auto-correct-scope.md`: `Rule 1` (auto-fix obvious bug) ·
-  `Rule 2` (auto-add missing standards) · `Rule 3` (auto-fix blocker) · `Rule 4` (STOP — needs
-  architectural judgment)
-
-5. **E — residual gate + fix-loop.** See fix routing and residual work gate below.
-
-**Fix routing by Rule class:**
-
-- **Rule 1–3** → implementer auto-fixes (fresh dispatch) → re-review → repeat until ✅. Log
-  each fix as a deviation in `SUMMARY.md`.
-- **Rule 4** → STOP immediately. Do not attempt a fix. Write the finding to
-  `specs/<slug>/ESCALATIONS.md` and surface to the user before proceeding. The plan was wrong
-  or underspecified; a human must narrow scope.
-
-**Residual work gate.** Before handing off to `finishing-a-development-branch`, every finding
-must be in one of two states: fixed (✅, with a commit sha) or durably recorded
-(`SUMMARY.md` for Rule 1–3 carry-overs, `ESCALATIONS.md` for Rule 4 blocks). A finding with
-neither is a hard block — do not hand off.
-
-**Relationship to `/code-review`:** this is the always-on in-flow gate. For high-risk lanes you
-may *additionally* run `/code-review high|ultra` before merge — they compound, they don't
-replace each other.
+**Relationship to `/code-review`:** `/correctness-review` is the always-on in-flow gate. For
+high-risk lanes you may *additionally* run `/code-review high|ultra` before merge — they
+compound, they don't replace each other.
 
 ## Reporting — Rule 1–3 Deviation Logging
 
@@ -255,8 +211,7 @@ per `auto-correct-scope.md` → Reporting.
 - `./implementer-prompt.md` - Dispatch implementer subagent
 - `./spec-reviewer-prompt.md` - Dispatch spec compliance reviewer subagent (per task)
 - `./code-quality-reviewer-prompt.md` - Dispatch code quality reviewer subagent (per task)
-- `./correctness-reviewer-prompt.md` - Dispatch final adversarial correctness reviewer (once, whole diff)
-- `./correctness-scorer-prompt.md` - Dispatch cheap-model scorer per candidate finding (SCORE stage, 0–100, threshold 80)
+- Final adversarial correctness pass - delegated to `/correctness-review` (see `skills/correctness-review/`); its `correctness-{reviewer,scorer}-prompt.md` live there, not here.
 
 ## Example Workflow
 
@@ -328,7 +283,7 @@ Code reviewer: ✅ Approved
 ...
 
 [After all tasks — final adversarial correctness review over the whole diff]
-[Dispatch correctness reviewer (different model) with ./correctness-reviewer-prompt.md]
+[Run /correctness-review over the whole diff (BASE = before task 1, HEAD = now)]
 Correctness reviewer: 🐛 P1 / Rule 1 — app/services/trade_log_service.py:42
   Trigger: get_recent() called for a user with zero logs
   Wrong outcome: returns None, router does len(None) → 500
