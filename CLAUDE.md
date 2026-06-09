@@ -25,7 +25,7 @@ Skipping a step the lane requires is a hard gate violation:
 ```
 feature-intake (classify → lane + confidence → route)
   → [brainstorming → xia2 →] writing-plans → using-git-worktrees
-  → subagent-driven-development (or executing-plans or incremental-implementation)
+  → subagent-driven-development (or executing-plans)
   → compound → finishing-a-development-branch
 ```
 

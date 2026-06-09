@@ -84,7 +84,6 @@ Each step hands off to the next; `/feature-intake` runs first and decides how ma
 /using-git-worktrees             isolated branch + worktree
         |
 /subagent-driven-development     build it  (or /executing-plans)
-   or /incremental-implementation   step-by-step with user checkpoints
         |
 /compound                        capture non-obvious learnings
         |
