@@ -41,6 +41,7 @@ This file is the single source of truth. Per-skill `README.md` files have been r
   OR /executing-plans               ← parallel session
   → implements plan task-by-task
   → two-stage review per task (spec compliance → code quality)
+  → final adversarial correctness review over the whole diff before shipping
       ↓
 /compound  (if non-obvious pattern found)
   → output: docs/solutions/<category>/<slug>.md
@@ -106,7 +107,7 @@ fix (implement directly or via /subagent-driven-development)
 | Skill | Trigger | Output |
 |---|---|---|
 | `/using-git-worktrees` | Before starting feature work needing isolation | Isolated worktree + branch |
-| `/subagent-driven-development` | Executing a plan in the current session (fresh subagent per task) | Implemented tasks, two-stage reviewed |
+| `/subagent-driven-development` | Executing a plan in the current session (fresh subagent per task) | Implemented tasks, two-stage reviewed per task + final adversarial correctness review |
 | `/executing-plans` | Executing a plan in a separate parallel session (checkpoint-based) | Same as above |
 
 ### Review & Shipping
