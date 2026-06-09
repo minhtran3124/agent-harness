@@ -5,7 +5,7 @@ description: Use when executing implementation plans with independent tasks in t
 
 # Subagent-Driven Development
 
-Execute plan by dispatching fresh subagent per task, with two-stage review after each: spec compliance review first, then code quality review.
+Execute plan by dispatching fresh subagent per task, with two-stage review after each: spec compliance review first, then code quality review. After **all** tasks are done, run one final adversarial correctness review over the entire diff before shipping.
 
 **Why subagents:** You delegate tasks to specialized agents with isolated context. By precisely crafting their instructions and context, you ensure they stay focused and succeed at their task. They should never inherit your session's context or history — you construct exactly what they need. This also preserves your own context for coordination work.
 
@@ -67,7 +67,9 @@ digraph process {
 
     "Read plan, extract all tasks with full text, note context, create TodoWrite" [shape=box];
     "More tasks remain?" [shape=diamond];
-    "Dispatch final code reviewer subagent for entire implementation" [shape=box];
+    "Dispatch adversarial correctness reviewer over entire diff (./correctness-reviewer-prompt.md)" [shape=box];
+    "Correctness reviewer finds bugs?" [shape=diamond];
+    "Implementer subagent fixes correctness bugs" [shape=box];
     "Use superpowers:finishing-a-development-branch" [shape=box style=filled fillcolor=lightgreen];
 
     "Read plan, extract all tasks with full text, note context, create TodoWrite" -> "Dispatch implementer subagent (./implementer-prompt.md)";
@@ -86,8 +88,11 @@ digraph process {
     "Code quality reviewer subagent approves?" -> "Mark task complete in TodoWrite" [label="yes"];
     "Mark task complete in TodoWrite" -> "More tasks remain?";
     "More tasks remain?" -> "Dispatch implementer subagent (./implementer-prompt.md)" [label="yes"];
-    "More tasks remain?" -> "Dispatch final code reviewer subagent for entire implementation" [label="no"];
-    "Dispatch final code reviewer subagent for entire implementation" -> "Use superpowers:finishing-a-development-branch";
+    "More tasks remain?" -> "Dispatch adversarial correctness reviewer over entire diff (./correctness-reviewer-prompt.md)" [label="no"];
+    "Dispatch adversarial correctness reviewer over entire diff (./correctness-reviewer-prompt.md)" -> "Correctness reviewer finds bugs?";
+    "Correctness reviewer finds bugs?" -> "Implementer subagent fixes correctness bugs" [label="yes"];
+    "Implementer subagent fixes correctness bugs" -> "Dispatch adversarial correctness reviewer over entire diff (./correctness-reviewer-prompt.md)" [label="re-review"];
+    "Correctness reviewer finds bugs?" -> "Use superpowers:finishing-a-development-branch" [label="no"];
 }
 ```
 
@@ -143,6 +148,59 @@ Implementer subagents report one of four statuses. Handle each appropriately:
 
 **Never** ignore an escalation or force the same model to retry without changes. If the implementer said it's stuck, something needs to change.
 
+## Final Adversarial Correctness Review
+
+After every task's spec + quality review passes, run **one** adversarial correctness review
+over the entire implementation diff (`./correctness-reviewer-prompt.md`) before handing off to
+`finishing-a-development-branch`.
+
+**Why this stage exists.** The per-task spec and quality reviewers are anchored to the plan as
+the oracle — spec review asks *"does it match the spec?"*, quality review asks *"is it
+clean?"*. Neither asks *"cho dù spec đúng, code này có chạy sai ở runtime không?"*. A bug that
+faithfully implements a flawed spec passes both. This is the gap that lets real bugs survive to
+production and get caught by external reviewers post-push.
+
+**Step 0 — compound read-back.** Before scanning the diff, the reviewer reads
+`docs/solutions/critical-patterns.md` and all `failure`-track entries in `docs/solutions/`
+when present. Each past bug becomes a named check — this closes the compound loop at review
+time, so a pattern the team already paid to learn cannot slip through again. Degrade
+gracefully: if `docs/solutions/` is absent or empty, skip this step and proceed.
+
+**What makes it different:**
+
+- **Ignores the plan.** Validates against actual runtime behavior, not stated intent.
+- **Adversarial.** Assumes ≥1 bug exists and hunts specific bug classes (None/async/DB/auth/
+  concurrency/contract breaks) rather than confirming compliance.
+- **Whole-diff.** Runs once over the full implementation, so it catches integration bugs that
+  span tasks — invisible to any single per-task review.
+- **Different model.** Dispatch with a different (ideally most capable) model than the
+  implementer for ensemble diversity.
+
+**Two-axis finding classification.** Every finding the reviewer emits carries two labels:
+
+- **Severity** — `P0` (data loss / security / crash) · `P1` (wrong output / broken path) ·
+  `P2` (degraded behavior, non-fatal) · `P3` (minor correctness issue)
+- **Rule class** — per `.claude/rules/auto-correct-scope.md`: `Rule 1` (auto-fix obvious bug) ·
+  `Rule 2` (auto-add missing standards) · `Rule 3` (auto-fix blocker) · `Rule 4` (STOP — needs
+  architectural judgment)
+
+**Fix routing by Rule class:**
+
+- **Rule 1–3** → implementer auto-fixes (fresh dispatch) → re-review → repeat until ✅. Log
+  each fix as a deviation in `SUMMARY.md`.
+- **Rule 4** → STOP immediately. Do not attempt a fix. Write the finding to
+  `specs/<slug>/ESCALATIONS.md` and surface to the user before proceeding. The plan was wrong
+  or underspecified; a human must narrow scope.
+
+**Residual work gate.** Before handing off to `finishing-a-development-branch`, every finding
+must be in one of two states: fixed (✅, with a commit sha) or durably recorded
+(`SUMMARY.md` for Rule 1–3 carry-overs, `ESCALATIONS.md` for Rule 4 blocks). A finding with
+neither is a hard block — do not hand off.
+
+**Relationship to `/code-review`:** this is the always-on in-flow gate. For high-risk lanes you
+may *additionally* run `/code-review high|ultra` before merge — they compound, they don't
+replace each other.
+
 ## Reporting — Rule 1–3 Deviation Logging
 
 Every implementer subagent MUST classify and log each auto-fix it applied during task
@@ -179,8 +237,9 @@ per `auto-correct-scope.md` → Reporting.
 ## Prompt Templates
 
 - `./implementer-prompt.md` - Dispatch implementer subagent
-- `./spec-reviewer-prompt.md` - Dispatch spec compliance reviewer subagent
-- `./code-quality-reviewer-prompt.md` - Dispatch code quality reviewer subagent
+- `./spec-reviewer-prompt.md` - Dispatch spec compliance reviewer subagent (per task)
+- `./code-quality-reviewer-prompt.md` - Dispatch code quality reviewer subagent (per task)
+- `./correctness-reviewer-prompt.md` - Dispatch final adversarial correctness reviewer (once, whole diff)
 
 ## Example Workflow
 
@@ -251,9 +310,19 @@ Code reviewer: ✅ Approved
 
 ...
 
-[After all tasks]
-[Dispatch final code-reviewer]
-Final reviewer: All requirements met, ready to merge
+[After all tasks — final adversarial correctness review over the whole diff]
+[Dispatch correctness reviewer (different model) with ./correctness-reviewer-prompt.md]
+Correctness reviewer: 🐛 P1 / Rule 1 — app/services/trade_log_service.py:42
+  Trigger: get_recent() called for a user with zero logs
+  Wrong outcome: returns None, router does len(None) → 500
+  Fix: return [] when query yields nothing
+
+[Implementer fixes: return empty list]
+[Re-dispatch correctness reviewer]
+Correctness reviewer: ✅ No correctness defects found. Paths traced:
+  create_entry happy + invalid trade_type, get_recent empty + populated, soft-deleted filter
+
+[Hand off to finishing-a-development-branch]
 
 Done!
 ```
@@ -283,6 +352,7 @@ Done!
 - Review loops ensure fixes actually work
 - Spec compliance prevents over/under-building
 - Code quality ensures implementation is well-built
+- Final adversarial correctness review catches runtime bugs the plan-anchored reviewers miss (different model, whole diff)
 
 **Cost:**
 - More subagent invocations (implementer + 2 reviewers per task)
@@ -305,6 +375,8 @@ Done!
 - Let implementer self-review replace actual review (both are needed)
 - **Start code quality review before spec compliance is ✅** (wrong order)
 - Move to next task while either review has open issues
+- **Skip the final adversarial correctness review, or hand off to `finishing-a-development-branch` with open correctness bugs** (this is the gate that catches runtime bugs the spec/quality reviewers miss)
+- Run the final correctness review with the same model as the implementer (defeats ensemble diversity)
 
 **If subagent asks questions:**
 - Answer clearly and completely
