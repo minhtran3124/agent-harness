@@ -42,15 +42,15 @@ First run installs; any later run updates (idempotent). Re-run after editing any
 
 ### MCP servers
 
-This repo wires the [code-review-graph](https://pypi.org/project/code-review-graph/) MCP server in [mcp.json](mcp.json). It launches through [uv](https://docs.astral.sh/uv/)'s `uvx` runner, so there's **no manual `pip install`** — `uvx` fetches and runs it on demand.
+This repo wires the [code-review-graph](https://pypi.org/project/code-review-graph/) MCP server in [.mcp.json](.mcp.json). It launches through [uv](https://docs.astral.sh/uv/)'s `uvx` runner, so there's **no manual `pip install`** — `uvx` fetches and runs it on demand.
 You just need `uv` (which provides `uvx`):
 
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh   # installs uv + uvx
-uvx code-review-graph serve                        # exactly what mcp.json invokes
+uvx code-review-graph serve                        # exactly what .mcp.json invokes
 ```
 
-The graph data is written to `.code-review-graph/` (gitignored). The `context7` MCP server is configured at the Claude Code **user** level (HTTP, needs `CONTEXT7_API_KEY`) — it is *not* in this repo's `mcp.json`, so each user wires it in their own global config.
+The graph data is written to `.code-review-graph/` (gitignored). The `context7` MCP server is configured at the Claude Code **user** level (HTTP, needs `CONTEXT7_API_KEY`) — it is *not* in this repo's `.mcp.json`, so each user wires it in their own global config.
 
 ## Repository layout
 
@@ -64,7 +64,7 @@ The graph data is written to `.code-review-graph/` (gitignored). The `context7` 
 | `specs/` | Per-feature work artifacts — one `<slug>/` dir per change (SUMMARY, design, PLAN, …). |
 | `templates/` | Canonical shapes copied into `specs/<slug>/` — `SUMMARY`, `TEST_MATRIX`, `ESCALATIONS`. |
 | `docs/` · `scripts/` | Reference docs and standalone helpers. |
-| `CLAUDE.md` · `settings.json` · `mcp.json` | Project instructions; hooks + env + plugins; MCP server config (`mcpServers` only). |
+| `CLAUDE.md` · `settings.json` · `.mcp.json` | Project instructions; hooks + env + plugins; MCP server config (`mcpServers` only). |
 
 ## The skill workflow
 

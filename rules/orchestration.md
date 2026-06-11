@@ -39,8 +39,9 @@ writes the result to `specs/<slug>/SUMMARY.md` (shape: `templates/SUMMARY.templa
 
 These two fields are load-bearing: `hooks/risk-corroboration.sh` reads `Lane:` to
 corroborate it against the staged diff, and the trust-metrics ledger reads both. The
-orchestrator MUST write a `Lane:` line; a missing lane is treated as `tiny` by the hook
-(fail-closed), which then trips on any hard-gate signal in the diff.
+orchestrator MUST write a `Lane:` line: a declared lane below `high-risk` is **blocked** when
+the diff trips a hard-gate signal, but a *missing* lane only **warns** (fail-open) unless
+`RISK_CORROBORATION_STRICT=1` is set.
 
 ## Subagent contract
 

@@ -26,8 +26,9 @@ to `specs/<slug>/SUMMARY.md` (shape: `templates/SUMMARY.template.md`).
 
 A hard gate (see below) forces `high-risk` and cannot be self-downgraded — only a human
 narrowing scope may lower it. The orchestrator MUST write a `Lane:` line: `.claude/hooks/risk-corroboration.sh`
-treats a missing lane as `tiny` (fail-closed) and will block a commit whose diff trips a
-hard gate without a corroborating `high-risk` lane.
+blocks a commit whose diff trips a hard gate while the declared lane is below `high-risk`.
+(A *missing* lane only warns — fail-open — unless `RISK_CORROBORATION_STRICT=1` is set, so
+write the lane rather than rely on the hook.)
 </HARD-GATE>
 
 ---

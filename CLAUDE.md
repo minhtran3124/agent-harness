@@ -60,7 +60,7 @@ Hooks live in `hooks/` (top-level). Register them in `settings.json` under the a
 
 - `specs/` is fully gitignored — `PLAN.md`, `PLAN.html`, `design.md`, `research-brief.md`, and sidecars all stay local. Skills update them in-place; nothing is committed (including the `shipped` status transition)
 - `settings.local.json` overrides `settings.json` — user-specific permissions and allowlists live there, not in the shared config
-- `mcp.json` is at repo root (not in `.claude/`) — holds **only** `mcpServers` (the project's `code-review-graph` server, launched via `uvx`; requires `uv` installed). `context7` is a **user-level** MCP server (HTTP, `CONTEXT7_API_KEY`), not in this file. `env`, `permissions`, `hooks`, `statusLine`, `enabledPlugins` belong in `settings.json`, not here
+- `.mcp.json` is at repo root (not in `.claude/`) — holds **only** `mcpServers` (the project's `code-review-graph` server, launched via `uvx`; requires `uv` installed). `context7` is a **user-level** MCP server (HTTP, `CONTEXT7_API_KEY`), not in this file. `env`, `permissions`, `hooks`, `statusLine`, `enabledPlugins` belong in `settings.json`, not here
 - `docs/solutions/` entries have a `confirmed_at` field; treat entries older than 30 days as potentially stale
 - When ≥5 `app/` files are staged, the commit hook hints to run `/compound` — don't skip it
 

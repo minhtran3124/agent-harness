@@ -32,8 +32,6 @@ docs/memory/
 # Specifications — fully local-only (PLAN.md, PLAN.html, design.md, research-brief.md, sidecars)
 specs/
 
-# MCP server configuration
-.mcp.json
 .vercel
 
 # Local-only harness-engineering review docs
