@@ -1,8 +1,7 @@
 #!/bin/bash
 # Contract tests for hooks/commit-quality-gate.sh — secrets / debug artifacts / evidence /
-# targeted tests. The pytest-block case is a KNOWN BUG (xfail): `|| true` swallows the
-# pytest exit status (same defect class fixed in auto-test-on-change, commit 78b28a0),
-# so a failing test suite cannot block a commit. The xfail flips to pass when fixed.
+# targeted tests. The "failing test BLOCKS" case is the regression guard for the `|| true`
+# status-swallow bug (same defect class as auto-test-on-change, commit 78b28a0).
 source "$(dirname "$0")/../lib.sh"
 
 H=commit-quality-gate.sh
@@ -77,16 +76,12 @@ if ensure_pyenv; then
   run_hook "$repo" $H "$COMMIT_JSON" PATH="$PYSHIM:$PATH"
   assert_rc_contains 0 "Large session detected"
 
-  t "failing matching test → should BLOCK (exit 2)"
+  t "failing matching test BLOCKS the commit (exit 2)"
   repo=$(new_repo $H)
   stage "$repo" "app/services/calc.py" 'def add(a, b): return a + b'
   stage "$repo" "tests/services/test_calc.py" 'def test_add(): assert False'
   run_hook "$repo" $H "$COMMIT_JSON" PATH="$PYSHIM:$PATH"
-  if [ "$RC" -eq 2 ]; then
-    pass  # bug fixed — gate blocks as documented
-  else
-    xfail "|| true at commit-quality-gate.sh:136 swallows pytest's exit status (rc=$RC)"
-  fi
+  assert_rc_contains 2 "Tests... FAILED"
 else
   t "pytest-dependent cases"; skip "python3 venv with pytest unavailable"
 fi

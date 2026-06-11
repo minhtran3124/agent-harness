@@ -62,11 +62,25 @@ stage "$repo" "specs/x/SUMMARY.md" "Lane: tiny"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc 0
 
-t "high-blast path (hooks/) + Lane: normal → BLOCKED"
+t "high-blast path (root hooks/) + Lane: normal → BLOCKED"
 repo=$(new_repo $H)
 stage "$repo" "hooks/new-hook.sh" 'echo hi'
 stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_contains 2 "high-blast"
+
+t ".claude/hooks/ path also trips high-blast"
+repo=$(new_repo $H)
+stage "$repo" ".claude/hooks/new-hook.sh" 'echo hi'
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "high-blast"
+
+t "tests/hooks/ does NOT trip high-blast (regex precision — no false positive)"
+repo=$(new_repo $H)
+stage "$repo" "tests/hooks/branch-guard.test.sh" 'echo hi'
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc 0
 
 finish
