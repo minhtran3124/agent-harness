@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # Install the claude-skills harness into a target project.
 #
-# Fetches the harness source (git clone, or a local checkout via --source), copies the
-# source-of-truth layout into the target, then builds the loadable .claude/ via deploy-harness.sh.
+# Fetches the harness source (git clone into a temp dir, or a local checkout via --source),
+# then builds the loadable .claude/ in the target via deploy-harness.sh --target. The target
+# root is NEVER used as a staging area, so the installer never deletes target files — at most
+# it merge-syncs .claude/ and merges one server entry into .mcp.json.
 # Designed to run piped:
 #   curl -fsSL https://raw.githubusercontent.com/minhtran3124/harness-skills/main/scripts/install-harness.sh | bash -s -- --yes
 #
@@ -19,8 +21,13 @@ FORCE=0
 DRY_RUN=0
 KEEP_SOURCES=0
 
-# What gets installed into the target (source-of-truth layout; deploy-harness.sh derives .claude/).
+# Harness source-of-truth items. Deployed into .claude/ straight from the fetched source;
+# copied into the target only with --keep-sources (under .harness-source/), never to the
+# target root — a previous installer staged these at the root and pruned them afterward,
+# which destroyed real project files when those names already existed (or when run inside
+# the harness-skills repo itself).
 PAYLOAD=(skills agents hooks rules templates settings.json scripts/deploy-harness.sh)
+STAGE_NAME=".harness-source"
 
 # ---------- styling ----------
 if [ -t 1 ]; then
@@ -31,6 +38,7 @@ fi
 log()  { printf '  %s\n' "$*"; }
 ok()   { printf '  %s✓%s %s\n' "$G" "$R" "$*"; }
 info() { printf '  %s•%s %s\n' "$C" "$R" "$*"; }
+warn() { printf '  %s⚠ %s%s\n' "$Y" "$*" "$R"; }
 fail() { printf '\n  %s✗ %s%s\n\n' "$RED" "$*" "$R" >&2; exit 1; }
 
 usage() {
@@ -43,10 +51,10 @@ Options:
   -d, --directory <path>  Target project dir (default: current dir)
   -b, --branch <name>     Branch to install from (default: ${BRANCH})
       --source <path>     Use a local claude-skills checkout instead of cloning
-  -y, --yes               Non-interactive: back up + overwrite existing harness files
-      --force             Overwrite without prompting (after backup)
-      --keep-sources      Keep the source-of-truth dirs at the project root
-                          (default: remove them after .claude/ is built)
+  -y, --yes               Non-interactive: re-sync an existing .claude/ without asking
+      --force             Same as --yes (kept for compatibility)
+      --keep-sources      Also copy the harness sources into <target>/${STAGE_NAME}/
+                          for inspection or offline re-sync (default: no copy)
       --dry-run           Show what would happen; write nothing
   -h, --help              Show this help
 
@@ -86,7 +94,7 @@ fi
 UVX_MISSING=0
 if ! command -v uvx >/dev/null 2>&1; then
   UVX_MISSING=1
-  printf '  %s⚠ uvx not found — the code-review-graph MCP server launches through it.%s\n' "$Y" "$R"
+  warn "uvx not found — the code-review-graph MCP server launches through it."
   printf '  %s  Install uv:  curl -LsSf https://astral.sh/uv/install.sh | sh%s\n' "$D" "$R"
 fi
 
@@ -104,64 +112,48 @@ else
   SRC="$TMP/src"
 fi
 [ -d "$SRC/skills" ] || fail "Source does not look like claude-skills (no skills/ dir): $SRC"
+[ -f "$SRC/scripts/deploy-harness.sh" ] || fail "Source is missing scripts/deploy-harness.sh: $SRC"
 ok "Source ready"
 
-# ---------- conflict check ----------
-EXISTING=()
-for item in "${PAYLOAD[@]}"; do
-  [ -e "$TARGET_DIR/$item" ] && EXISTING+=("$item")
-done
-if [ "${#EXISTING[@]}" -gt 0 ] && [ "$DRY_RUN" -eq 0 ]; then
-  printf '  %s⚠ Existing harness files in target:%s %s\n' "$Y" "$R" "${EXISTING[*]}"
+# ---------- existing-harness check ----------
+if [ -e "$TARGET_DIR/.claude/settings.json" ] && [ "$DRY_RUN" -eq 0 ]; then
+  warn "Existing harness found in target (.claude/) — it will be re-synced (merge; non-harness entries kept)."
   if [ "$FORCE" -eq 0 ] && [ "$ASSUME_YES" -eq 0 ]; then
     if [ -r /dev/tty ]; then
-      printf '  Back up and overwrite them? [y/N] ' > /dev/tty
+      printf '  Re-sync it? [y/N] ' > /dev/tty
       IFS= read -r reply < /dev/tty
       case "$reply" in y|Y|yes|YES) ;; *) fail "Aborted (no changes made)." ;; esac
     else
-      fail "Existing files present. Re-run with --yes (back up + overwrite) or --force."
+      fail "Existing .claude/ present. Re-run with --yes to re-sync it."
     fi
   fi
 fi
 
-# ---------- copy payload (with backup) ----------
-BACKUP_DIR="$TARGET_DIR/.harness-backup-$(date +%Y%m%d-%H%M%S)"
-copied=0 backed=0
-for item in "${PAYLOAD[@]}"; do
-  src="$SRC/$item"; dst="$TARGET_DIR/$item"
-  [ -e "$src" ] || { info "skip (not in source): $item"; continue; }
-  if [ "$DRY_RUN" -eq 1 ]; then
-    [ -e "$dst" ] && log "would back up + replace  $item" || log "would create  $item"
-    copied=$((copied+1)); continue
+# Root-level harness sources are a leftover of the old installer layout (it staged the
+# payload at the target root). They are left untouched — but only flag them in a consuming
+# project: in the harness-skills repo itself they ARE the source of truth.
+if [ ! -f "$TARGET_DIR/scripts/install-harness.sh" ]; then
+  LEGACY=()
+  for item in "${PAYLOAD[@]}"; do
+    [ -e "$TARGET_DIR/$item" ] && LEGACY+=("$item")
+  done
+  if [ "${#LEGACY[@]}" -gt 0 ]; then
+    warn "Found root-level harness files from an older install layout: ${LEGACY[*]}"
+    info "They are no longer used (the harness lives in .claude/) and were left untouched — remove them manually if they are not your project's own files."
   fi
-  if [ -e "$dst" ]; then
-    mkdir -p "$(dirname "$BACKUP_DIR/$item")"
-    cp -R "$dst" "$BACKUP_DIR/$item"
-    rm -rf "$dst"
-    backed=$((backed+1))
-  fi
-  mkdir -p "$(dirname "$dst")"
-  cp -R "$src" "$dst"
-  copied=$((copied+1))
-done
-if [ "$DRY_RUN" -eq 1 ]; then
-  ok "Dry run — $copied item(s) would be installed; nothing written."
-else
-  ok "Installed $copied item(s)${backed:+, backed up $backed existing}"
-  [ "$backed" -gt 0 ] && info "Backup: ${D}${BACKUP_DIR#$TARGET_DIR/}${R} ${Y}(merge any custom settings.json yourself)${R}"
 fi
 
 # ---------- wire MCP config (.mcp.json at target root; merge, never overwrite) ----------
 # Runs BEFORE the deploy step so its .mcp.json canary passes. Claude Code reads .mcp.json at
-# the project ROOT (not inside .claude/), so it lives outside PAYLOAD: it must survive the
-# root-source prune, and an existing file may carry the project's own servers — the
-# code-review-graph entry is merged in, never replacing the file wholesale.
+# the project ROOT (not inside .claude/). An existing file may carry the project's own
+# servers — the code-review-graph entry is merged in, never replacing the file wholesale.
 MCP_SRV='{"command":"uvx","args":["code-review-graph","serve"]}'
 if [ -f "$SRC/.mcp.json" ]; then
   s="$(jq -c '.mcpServers["code-review-graph"] // empty' "$SRC/.mcp.json" 2>/dev/null || true)"
   [ -n "$s" ] && MCP_SRV="$s"
 fi
 MCP_DST="$TARGET_DIR/.mcp.json"
+BACKUP_DIR="$TARGET_DIR/.harness-backup-$(date +%Y%m%d-%H%M%S)"
 if [ "$DRY_RUN" -eq 1 ]; then
   if [ ! -f "$MCP_DST" ]; then
     log "would create  .mcp.json (code-review-graph via uvx)"
@@ -176,7 +168,7 @@ elif [ ! -f "$MCP_DST" ]; then
   printf '{"mcpServers":{"code-review-graph":%s}}' "$MCP_SRV" | jq . > "$MCP_DST"
   ok "Wired ${B}.mcp.json${R} (code-review-graph via uvx)"
 elif ! jq -e . "$MCP_DST" >/dev/null 2>&1; then
-  printf '  %s⚠ Existing .mcp.json is not valid JSON — left untouched.%s\n' "$Y" "$R"
+  warn "Existing .mcp.json is not valid JSON — left untouched."
   info "Add manually: ${D}\"code-review-graph\": $MCP_SRV  under  mcpServers${R}"
 elif jq -e '.mcpServers["code-review-graph"]' "$MCP_DST" >/dev/null 2>&1; then
   ok ".mcp.json already wires code-review-graph — left unchanged"
@@ -189,34 +181,34 @@ else
   ok "Merged code-review-graph into existing ${B}.mcp.json${R} ${D}(backup: ${BACKUP_DIR#$TARGET_DIR/}/.mcp.json)${R}"
 fi
 
-# ---------- build .claude/ via deploy-harness ----------
+# ---------- build .claude/ via deploy-harness (straight from the fetched source) ----------
 if [ "$DRY_RUN" -eq 1 ]; then
-  info "Would run: bash scripts/deploy-harness.sh (builds .claude/)"
+  info "Would run: bash deploy-harness.sh --target $TARGET_DIR (builds .claude/)"
 else
   printf '\n'
-  ( cd "$TARGET_DIR" && bash scripts/deploy-harness.sh )
+  bash "$SRC/scripts/deploy-harness.sh" --target "$TARGET_DIR"
 fi
 
-# ---------- prune root sources (everything now lives in .claude/) ----------
-# deploy-harness.sh built a self-contained .claude/; the source-of-truth copies at the
-# project root are just clutter for a consuming project. Remove them unless --keep-sources.
+# ---------- optional: keep a copy of the sources in the target ----------
+STAGE_DIR="$TARGET_DIR/$STAGE_NAME"
 if [ "$KEEP_SOURCES" -eq 1 ]; then
-  info "Keeping source-of-truth dirs at root (${D}--keep-sources${R})"
-elif [ "$DRY_RUN" -eq 1 ]; then
-  info "Would prune root sources after build: ${PAYLOAD[*]} (keep only .claude/)"
-else
-  pruned=0
-  for item in "${PAYLOAD[@]}"; do
-    [ -e "$TARGET_DIR/$item" ] && { rm -rf "$TARGET_DIR/$item"; pruned=$((pruned+1)); }
-  done
-  # drop scripts/ if our removed deploy-harness.sh left it empty
-  rmdir "$TARGET_DIR/scripts" 2>/dev/null || true
-  ok "Pruned $pruned root source item(s) — harness lives in ${B}.claude/${R}"
+  if [ "$DRY_RUN" -eq 1 ]; then
+    info "Would copy harness sources to $STAGE_NAME/"
+  else
+    rm -rf "$STAGE_DIR"
+    mkdir -p "$STAGE_DIR"
+    for item in "${PAYLOAD[@]}"; do
+      [ -e "$SRC/$item" ] || continue
+      mkdir -p "$(dirname "$STAGE_DIR/$item")"
+      cp -R "$SRC/$item" "$STAGE_DIR/$item"
+    done
+    ok "Sources copied to ${B}$STAGE_NAME/${R} ${D}(re-sync: bash $STAGE_NAME/scripts/deploy-harness.sh --target .)${R}"
+  fi
 fi
 
 printf '\n  %s%s✓ Harness installed%s  %s→ %s%s\n' "$G" "$B" "$R" "$D" "$TARGET_DIR" "$R"
 printf '  %s↻ Restart Claude Code in that project so it loads the harness.%s\n' "$Y" "$R"
 if [ "$UVX_MISSING" -eq 1 ]; then
-  printf '  %s⚠ Install uv before that restart, or the code-review-graph MCP server cannot launch.%s\n' "$Y" "$R"
+  warn "Install uv before that restart, or the code-review-graph MCP server cannot launch."
 fi
 printf '\n'

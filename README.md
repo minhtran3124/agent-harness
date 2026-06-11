@@ -23,7 +23,7 @@ One-liner that clones the harness, builds `.claude/`, and leaves your project ro
 curl -fsSL "https://raw.githubusercontent.com/minhtran3124/harness-skills/main/scripts/install-harness.sh?$(date +%s)" | bash -s -- --yes
 ```
 
-Everything the harness needs lives entirely in a gitignored `.claude/` (skills, agents, hooks, rules, templates, settings) — the only root file is `.mcp.json`, which wires the code-review-graph MCP server (merged into your existing `.mcp.json` if you have one; Claude Code only reads this file at the project root). **To update, just re-run the one-liner** (idempotent; existing files are backed up first).
+Everything the harness needs lives entirely in a gitignored `.claude/` (skills, agents, hooks, rules, templates, settings) — the only root file is `.mcp.json`, which wires the code-review-graph MCP server (merged into your existing `.mcp.json` if you have one; Claude Code only reads this file at the project root). The installer never stages files at your project root, so it never overwrites or deletes anything there. **To update, just re-run the one-liner** (idempotent; `.claude/` is merge-synced, non-harness entries kept).
 
 Needs `git` + [jq](https://jqlang.github.io/jq/); [uv](https://docs.astral.sh/uv/) is strongly recommended — the code-review-graph MCP server launches through `uvx`, and the installer warns when it's missing.
 Flags: `--directory <path>` · `--branch <name>` · `--source <local checkout>` · `--keep-sources` · `--dry-run`.
@@ -38,7 +38,7 @@ Working *on the harness itself* keeps the editable source at the repo root and C
 bash scripts/deploy-harness.sh
 ```
 
-First run installs; any later run updates (idempotent). Re-run after editing anything under `skills/` `agents/` `hooks/` `rules/` `templates/` `settings.json`. (Installing into another project with `--keep-sources` reproduces this same root-source + `.claude/` layout there.)
+First run installs; any later run updates (idempotent). Re-run after editing anything under `skills/` `agents/` `hooks/` `rules/` `templates/` `settings.json`. (Installing into another project with `--keep-sources` keeps a copy of these sources in `<target>/.harness-source/`, for inspection or offline re-sync via `bash .harness-source/scripts/deploy-harness.sh --target .`.)
 
 ### MCP servers
 
