@@ -46,14 +46,17 @@ stage() {
   git -C "$1" add -f "$2"
 }
 
-# run_hook <repo> <hook.sh> <json-stdin> [VAR=val ...] — sets OUT (stdout+stderr) and RC
+# run_hook <repo> <hook.sh> <json-stdin> [VAR=val ...] — sets OUT (stdout+stderr) and RC.
+# Runs with CWD = repo (as the real harness does): SCRIPT_DIR-based hooks resolve the same
+# root either way, and CWD-based hooks (check-untracked-py) need it.
 run_hook() {
   local repo="$1" hook="$2" json="$3"; shift 3
-  OUT=$(printf '%s' "$json" | env "$@" bash "$repo/hooks/$hook" 2>&1); RC=$?
+  OUT=$(cd "$repo" && printf '%s' "$json" | env "$@" bash "hooks/$hook" 2>&1); RC=$?
 }
 
-json_cmd()  { printf '{"tool_input":{"command":"%s"}}' "$1"; }
-json_file() { printf '{"tool_input":{"file_path":"%s"}}' "$1"; }
+json_cmd()    { printf '{"tool_input":{"command":"%s"}}' "$1"; }
+json_file()   { printf '{"tool_input":{"file_path":"%s"}}' "$1"; }
+json_prompt() { printf '{"prompt":"%s"}' "$1"; }
 
 assert_rc() {
   if [ "$RC" -eq "$1" ]; then pass; else fail "rc=$RC, want $1 — out: $(echo "$OUT" | head -3 | tr '\n' ' ')"; fi

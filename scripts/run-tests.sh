@@ -24,6 +24,20 @@ for suite in tests/hooks/*.test.sh tests/scripts/*.test.sh; do
 done
 
 echo ""
+echo "== L2: python unit tests =="
+# Prefer the shared venv lib.sh builds; else system python3; skip if pytest is unavailable.
+PYBIN="${TMPDIR:-/tmp}/harness-tests-venv/bin/python"
+[ -x "$PYBIN" ] || PYBIN="$(command -v python3 || true)"
+if [ -n "$PYBIN" ] && "$PYBIN" -c 'import pytest' >/dev/null 2>&1; then
+  # Engine unit tests that ship with the repo but nothing else runs.
+  PYTESTS="scripts/test_check_plan_format.py skills/visual-planner/test_render_plan.py"
+  # shellcheck disable=SC2086
+  "$PYBIN" -m pytest $PYTESTS -q --no-header --no-cov -p no:cacheprovider || FAILED=1
+else
+  echo "  skip — no python3 with pytest available"
+fi
+
+echo ""
 if [ "$FAILED" -eq 0 ]; then
   echo "ALL GREEN"
 else
