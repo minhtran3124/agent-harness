@@ -1,0 +1,111 @@
+# xia2 — Project Configuration
+
+This file provides project-specific signal mappings consumed by `xia2/SKILL.md`. It is a reusable template — regenerate it per project.
+
+> **Maintenance:** auto-scan via `/bootstrap-xia2` (init or update mode), then human-review. Re-validate after major architectural changes.
+
+---
+
+## Project identity
+
+- **Name:** claude-skills (harness-skills) <!-- auto: repo dir name + CLAUDE.md title -->
+- **Stack:** Markdown skill documents + Bash hooks + Python 3 utility scripts; GitHub Actions CI (`harness-ci`); no app framework, no DB <!-- auto: file-type scan; no manifest found -->
+- **Repo root (relative to this file):** `../../` <!-- auto: this file lives at skills/xia2/ -->
+
+---
+
+## High-Blast-Radius Files
+
+List the files that, when touched, force **Deep** review regardless of how small the change appears.
+
+- `settings.json` — hook registration map; every wired hook fires from here <!-- auto: 14 inbound doc/script refs + listed in rules/auto-correct-scope.md Rule 4 — high -->
+- `hooks/*.sh` (any wired hook) — auto-runs on every matching trigger in every session <!-- auto: Rule 4 high-blast list + 10 contract tests pinned in tests/hooks/ — high -->
+- `tests/lib.sh` — shared test harness; all 12 `*.test.sh` files source it <!-- auto: 14 inbound refs across tests/docs — high -->
+- `skills/visual-planner/render_plan.py` — core deterministic skill engine (PLAN.md → HTML) <!-- auto: Rule 4 high-blast list + 9 inbound refs + pinned by test_render_plan.py — high -->
+- `scripts/run-tests.sh` + `scripts/lint-doc-truth.sh` — CI entry point and doc-truth gate; a change alters what every PR is checked against <!-- auto: CI workflow harness-ci.yml runs these on ubuntu+macos — medium -->
+- `templates/SUMMARY.template.md` — defines the `Lane:` line parsed by `hooks/risk-corroboration.sh` <!-- auto: field consumed programmatically by a wired hook — medium -->
+
+> Add new entries when a single file becomes a bottleneck for many features. An empty list means the Deep override loses a key signal.
+
+---
+
+## Dependency Manifests
+
+- **None found** — no `requirements*.txt`, `pyproject.toml`, or `package.json` at repo root <!-- auto: glob scan, 0 matches — high -->
+- `.mcp.json` — declares the `code-review-graph` MCP server (launched via `uvx`); **adding/changing servers triggers Deep** (runtime tool surface for every session) <!-- auto: only dependency-like file detected — medium -->
+
+---
+
+## Shared Runtime Contracts
+
+Configuration objects, modules, or protocol shapes whose contract change affects many call sites.
+
+- `settings.json` hook-registration shape — trigger keys (`PreToolUse`, `PostToolUse`, `UserPromptSubmit`, `SessionEnd`) map hooks to events; the CLAUDE.md hook table must stay in sync (doc-truth lint enforces it) <!-- auto: grep of settings.json + lint-doc-truth.sh — high -->
+- Hook exit-code/stdout contract — exit 0 = pass, non-zero = block, stderr/stdout = user-visible warning; changing block↔warn semantics affects every commit <!-- auto: inferred from hooks + tests/hooks/*.test.sh assertions — medium -->
+- `templates/*.template.md` (SUMMARY, ESCALATIONS, TEST_MATRIX) — artifact shapes consumed by orchestration rules and hooks (`Lane:`, `### Verify`, `### Rollback`) <!-- auto: parsed by risk-corroboration.sh + referenced by rules/orchestration.md — medium -->
+
+---
+
+## Session/Transaction Primitives
+
+- **None** — this repo has no DB or session layer <!-- auto: grep for get_db/session_factory/transaction, 0 definition matches — high -->
+- Closest analog: hook **fail-open vs fail-closed** behavior (e.g. `RISK_CORROBORATION_STRICT=1`). Switching a hook between warn (fail-open) and block (fail-closed) is a Deep change.
+
+---
+
+## Auth Surfaces
+
+- **None** — no authentication flow in this repo <!-- auto: filename + content scan, 0 matches — high -->
+- Closest analog: `hooks/commit-quality-gate.sh` secrets scan — weakening it is security-relevant and should be treated as Deep <!-- auto: keyword match "secrets" — medium -->
+
+---
+
+## Knowledge Bases
+
+Files to read at Step 2b in addition to AGENTS.md/CLAUDE.md/README.md.
+
+- `.claude/rules/*.md` — architecture, guidelines, orchestration, plan-format, wave-parallelism, auto-correct-scope, behavior <!-- auto: glob, 7 files — high -->
+- `rules/*.md` (top level) — behavior + governance; `rules/behavior.md` is the declared single source of truth <!-- auto: CLAUDE.md pointer — high -->
+- `skills/README.md` — full skill inventory, workflow chains, handoff map <!-- auto: referenced by CLAUDE.md — high -->
+- `HARNESS.md` — harness overview <!-- auto: root doc — medium -->
+- `docs/solutions/` — solved problems with YAML front-matter
+  - **Index:** read `docs/solutions/INDEX.md` first (single read, O(1)); fallback grep keys: `module:`, `tags:`, `affects:`
+  - **Critical patterns:** `docs/solutions/critical-patterns.md` — always read regardless of domain
+  - **Stale marker:** `confirmed_at` older than 30 days → treat as potentially stale (per CLAUDE.md) <!-- auto: schema in docs/solutions/README.md — high -->
+
+---
+
+## Recent Decisions Folder
+
+- **Path:** `specs/` <!-- auto: 10 slug dirs present — high -->
+- **Schema:** flat kebab-case `specs/<slug>/` containing `SUMMARY.md`, `design.md`, `research-brief.md`, `PLAN.md`; **gitignored/local-only** — do not expect cross-machine history
+- **Lookback:** 60 days
+
+---
+
+## Public API Contract Types
+
+For the Quick condition: changes to these break the contract → fail Quick.
+
+- Skill invocation surface — `skills/*/SKILL.md` frontmatter (name/description/trigger); renaming a skill breaks every doc and workflow that chains it <!-- auto: handoff map in skills/README.md — high -->
+- Hook registration shape in `settings.json` — consumed by the Claude Code harness itself <!-- auto — high -->
+- Template field names (`Lane:`, `Confidence:`, `### Verify`, `### Rollback`) — parsed by hooks and read by the trust-metrics ledger <!-- auto: risk-corroboration.sh greps Lane: — medium -->
+
+---
+
+## Entry Point Patterns
+
+For the Quick condition: any change inside these is **NOT** Quick.
+
+- `hooks/` — every wired hook auto-runs on its trigger in every session <!-- auto — high -->
+- `settings.json` — registration; a one-line change wires/unwires automation <!-- auto — high -->
+- `skills/*/SKILL.md` — user-invocable entry points (`/skill-name`) <!-- auto — high -->
+- `scripts/install-harness.sh`, `scripts/deploy-harness.sh` — deployment entry points that mutate target repos <!-- auto: git churn top-20 + install tests — medium -->
+
+---
+
+## Notes for maintainers
+
+- **High-blast list is the highest-leverage signal** — `settings.json` + `hooks/` dominate: they execute automatically in every session of every consuming repo.
+- **Doc-truth coupling** — CI fails when docs reference missing paths or the CLAUDE.md hook table contradicts `settings.json`; treat doc/table edits near `hooks/` as coupled changes.
+- **`specs/` is local-only** — decisions there don't travel; durable decisions belong in `docs/solutions/` (decision track).
