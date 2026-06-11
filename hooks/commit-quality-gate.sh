@@ -133,7 +133,7 @@ echo "[COMMIT GATE] Running tests for $FILE_COUNT changed file(s)..." >&2
 
 # Run pytest — no coverage, no integration tests, stop at first failure
 # shellcheck disable=SC2086
-OUTPUT=$(python -m pytest $TEST_FILES -x -q --tb=short --no-cov -m "not integration" -p no:cacheprovider 2>&1) || true
+OUTPUT=$(python -m pytest $TEST_FILES -x -q --tb=short --no-cov -m "not integration" -p no:cacheprovider 2>&1)
 RESULT=$?
 
 echo "$OUTPUT" | tail -20 >&2

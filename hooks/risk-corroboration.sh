@@ -68,7 +68,7 @@ TRIPPED=""
 add_cat() { TRIPPED="$TRIPPED $1"; }
 
 # ── Path-based categories (reliable) ─────────────────────────────────────
-echo "$STAGED_PATHS" | grep -qE '(^|/)settings\.json$|(^|/)hooks/|render_plan\.py$' && add_cat "high-blast"
+echo "$STAGED_PATHS" | grep -qE '(^|/)settings\.json$|^hooks/|(^|/)\.claude/hooks/|render_plan\.py$' && add_cat "high-blast"
 echo "$STAGED_PATHS" | grep -qE '(^|/)(migrations?|alembic)/' && add_cat "data-loss/migration"
 echo "$STAGED_PATHS" | grep -qE '(^|/)(requirements[^/]*\.txt|package\.json|pyproject\.toml|go\.mod|Gemfile)$' && add_cat "external-provider"
 

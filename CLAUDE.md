@@ -63,6 +63,7 @@ Hooks live in `hooks/` (top-level). Register them in `settings.json` under the a
 - `.mcp.json` is at repo root (not in `.claude/`) — holds **only** `mcpServers` (the project's `code-review-graph` server, launched via `uvx`; requires `uv` installed). `context7` is a **user-level** MCP server (HTTP, `CONTEXT7_API_KEY`), not in this file. `env`, `permissions`, `hooks`, `statusLine`, `enabledPlugins` belong in `settings.json`, not here
 - `docs/solutions/` entries have a `confirmed_at` field; treat entries older than 30 days as potentially stale
 - When ≥5 `app/` files are staged, the commit hook hints to run `/compound` — don't skip it
+- Before changing `hooks/` or `scripts/`, run `bash scripts/run-tests.sh` — CI (`harness-ci`) runs the same suite on ubuntu + macos, including a doc-truth lint that fails when docs reference missing paths or the hook table contradicts `settings.json`
 
 <!-- code-review-graph MCP tools -->
 ## MCP Tools: code-review-graph

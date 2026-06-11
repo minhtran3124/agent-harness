@@ -40,6 +40,10 @@ bash scripts/deploy-harness.sh
 
 First run installs; any later run updates (idempotent). Re-run after editing anything under `skills/` `agents/` `hooks/` `rules/` `templates/` `settings.json`. (Installing into another project with `--keep-sources` keeps a copy of these sources in `<target>/.harness-source/`, for inspection or offline re-sync via `bash .harness-source/scripts/deploy-harness.sh --target .`.)
 
+### Testing
+
+`bash scripts/run-tests.sh` runs what CI runs: syntax checks + a doc-truth lint (every path referenced in the core docs exists; the CLAUDE.md hook table matches `settings.json`), hermetic contract tests for the hooks (each runs in a throwaway git repo against its stdin-JSON contract), and installer integration tests. The `harness-ci` workflow runs the same suite on ubuntu + macos.
+
 ### MCP servers
 
 This repo wires the [code-review-graph](https://pypi.org/project/code-review-graph/) MCP server in [.mcp.json](.mcp.json) — and `install-harness.sh` wires the same server into a consuming project's root `.mcp.json` automatically (creating it, or merging the entry into an existing one). It launches through [uv](https://docs.astral.sh/uv/)'s `uvx` runner, so there's **no manual `pip install`** — `uvx` fetches and runs it on demand.

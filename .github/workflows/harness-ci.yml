@@ -1,0 +1,21 @@
+name: harness-ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      # The hooks are bash developed on macOS and run on contributors' Linux machines —
+      # the BSD/GNU split is exactly what this matrix exists to catch.
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run harness test suite
+        run: bash scripts/run-tests.sh
