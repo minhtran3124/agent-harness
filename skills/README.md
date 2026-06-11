@@ -120,17 +120,6 @@ fix (implement directly or via /subagent-driven-development)
 | `/create-pr` | When only a PR description is needed | `PR_TEMPLATE.md` |
 | `/finishing-a-development-branch` | Implementation complete, tests pass | PR description + merge checklist |
 
-### Standalone (Graph-Powered, No Workflow Gate)
-
-These live as `.md` files directly in `skills/` — no gate, no handoff, invoke ad-hoc:
-
-| File | Description |
-|---|---|
-| `debug-issue.md` | Systematically trace and debug issues using the knowledge graph |
-| `explore-codebase.md` | Navigate and understand codebase structure using the knowledge graph |
-| `refactor-safely.md` | Plan and execute safe refactoring using dependency analysis |
-| `review-changes.md` | Structured code review using change detection and impact analysis |
-
 ### Archived
 
 - `_archive/xia/` — predecessor of `/xia2`. Kept as reference-only; not invocable as an active skill.

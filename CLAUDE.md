@@ -51,10 +51,10 @@ Hooks live in `hooks/` (top-level). Register them in `settings.json` under the a
 | `branch-guard.sh` | PreToolUse (Bash `git commit`) | Warn when committing on `main` | ✅ |
 | `ruff-on-edit.sh` | PostToolUse (Edit/Write) | `ruff --fix` + `ruff format` on edited `.py` files | ✅ |
 | `blast-radius-check.sh` | PostToolUse (Edit/Write) | Warn when an edit touches a file outside the active plan `<files>` set | ✅ |
+| `render-plan-on-write.sh` | PostToolUse (Edit/Write on `specs/*/PLAN.md`) | Auto-re-render `PLAN.html` via `render_plan.py` (deterministic, non-blocking) | ✅ |
 | `scope-gate.sh` | UserPromptSubmit | Warn on implementation intent with no plan referenced (lane-aware) | ✅ |
 | `state-breadcrumb.sh` | SessionEnd | Append a dated session breadcrumb to `specs/STATE.md` (`## Session End Log`) for cross-session resumption; never blocks | ✅ |
 | `auto-test-on-change.sh` | PostToolUse (Edit/Write) | `pytest` on changed files | ⬜ dormant |
-| `validate-buzz-commands.sh` | PreToolUse (Bash) | Restrict to post_buzz and read-only git/gh commands | ⬜ dormant |
 
 ## Gotchas
 
