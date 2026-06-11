@@ -32,6 +32,7 @@ full chain của lane high-risk.
 ### Deviations
 
 - Rule 1 — Escaped pipes in `docs/harness-experimental/trust-metrics.md` ledger row (`` `\|\| true` ``) so the new `Affects` column keeps a consistent 9-column machine-read shape. Task 1.4.
+- Design refinement (human-approved) — Task 4.1's gate semantics changed from the plan's literal "run `--check` for **all** changed slugs (block on any failure)" to "require **≥1** changed high-risk SUMMARY to verify clean; other failures are non-blocking **warnings**." Reason: this PR is the first-ever `specs/` commit, so `git diff main...HEAD` marks all history as changed and the gate re-ran 5 legacy SUMMARYs whose pre-`verify_summary` Verify tables hold illustrative prose (not runnable). The ≥1-passing rule keeps the "PR carries real proof" guarantee, is unaffected in steady state (a PR changes 1 slug), and does not punish an honest change for legacy baggage. Dogfood vs `main`: `OK (2 verified)` + 5 legacy warnings.
 
 ### Verify
 
@@ -43,12 +44,14 @@ Commands are pipe-free and idempotent so `scripts/verify_summary.py --check` can
 | verify_summary unit tests | `python3 -m pytest scripts/test_verify_summary.py -q` | 0 | 19 passed |
 | session-knowledge hook test | `bash tests/hooks/session-knowledge.test.sh` | 0 | 7 passed |
 | commit-quality-gate hook test | `bash tests/hooks/commit-quality-gate.test.sh` | 0 | 16 passed (incl. REQUIRE_VERIFY re-run + python3-degrade) |
+| ci-strict-gate test | `bash tests/scripts/ci-strict-gate.test.sh` | 0 | 8 passed (incl. false-positive guard + ≥1-passing semantics) |
 | settings.json valid JSON | `jq -e . settings.json` | 0 | SessionStart hook registered |
 
 ### Rollback
 
 - Task 3.1 (SessionStart wiring + CLAUDE.md hook row): `git revert <sha-3.1>` — reverts `settings.json` registration and the CLAUDE.md table row together (single commit, doc-truth stays consistent).
 - Task 3.2 (`commit-quality-gate.sh` REQUIRE_VERIFY path): `git revert <sha-3.2>`.
+- Task 4.1 (CI strict-gate job + script): `git revert <sha-4.1>` (additive — removes the PR-only job, script, and test).
 - Earlier waves are reversible via `git revert <wave-sha>`.
 
 ### Escalation — deploy sync required (human)
