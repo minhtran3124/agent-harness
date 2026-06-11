@@ -64,6 +64,17 @@
         ]
       }
     ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "hooks/session-knowledge.sh",
+            "statusMessage": "Loading knowledge base (INDEX + critical-patterns)…"
+          }
+        ]
+      }
+    ],
     "SessionEnd": [
       {
         "hooks": [

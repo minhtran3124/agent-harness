@@ -4,6 +4,7 @@ Lane: high-risk
 Confidence: medium
 Reason: Hard gate — scope touches `.claude/settings.json` (SessionStart hook), `hooks/*` (commit-quality-gate, risk-corroboration), và core skill engines (feature-intake SKILL.md, SUMMARY template); breadth của scope (top-5 vs toàn bộ 9 mục) cần người chốt.
 Flags: existing behavior, weak proof (new scripts chưa có test), multi-domain (hooks + templates + skills + docs + CI)
+Affects: settings.json (hook registration), hooks/commit-quality-gate.sh (REQUIRE_VERIFY path), templates/SUMMARY.template.md (5-field schema), docs/harness-experimental/trust-metrics.md (ledger columns), doc-truth lint (hook table ↔ settings.json)
 Input-type: harness improvement
 
 > `Lane` drives **ceremony** (how much proof). `Confidence` drives **interruption**
@@ -30,18 +31,29 @@ full chain của lane high-risk.
 
 ### Deviations
 
-- none
+- Rule 1 — Escaped pipes in `docs/harness-experimental/trust-metrics.md` ledger row (`` `\|\| true` ``) so the new `Affects` column keeps a consistent 9-column machine-read shape. Task 1.4.
 
 ### Verify
 
+Commands are pipe-free and idempotent so `scripts/verify_summary.py --check` can re-run them.
+
 | Check | Command | Exit | Notes |
 | --- | --- | --- | --- |
-| (chưa chạy — sẽ điền trong quá trình thực thi plan) | — | — | — |
+| doc-truth lint (hook table ↔ settings.json) | `bash scripts/lint-doc-truth.sh` | 0 | green after 3.1 wiring |
+| verify_summary unit tests | `python3 -m pytest scripts/test_verify_summary.py -q` | 0 | 19 passed |
+| session-knowledge hook test | `bash tests/hooks/session-knowledge.test.sh` | 0 | 7 passed |
+| settings.json valid JSON | `jq -e . settings.json` | 0 | SessionStart hook registered |
 
 ### Rollback
 
-- `git revert <sha>` (per-wave; chi tiết per-task ghi trong PLAN.md khi thực thi)
+- Task 3.1 (SessionStart wiring + CLAUDE.md hook row): `git revert <sha-3.1>` — reverts `settings.json` registration and the CLAUDE.md table row together (single commit, doc-truth stays consistent).
+- Task 3.2 (`commit-quality-gate.sh` REQUIRE_VERIFY path): `git revert <sha-3.2>`.
+- Earlier waves are reversible via `git revert <wave-sha>`.
+
+### Escalation — deploy sync required (human)
+
+After task 3.1, the root `settings.json` declares the SessionStart hook but the deployed `.claude/` copy does not yet. `tests/scripts/settings-wiring.test.sh` (deploy-derivation check) is therefore **deterministically red locally** until a human runs `scripts/deploy-harness.sh` to sync `.claude/`, then re-runs `bash scripts/run-tests.sh`. I do not run `deploy-harness.sh` (memory rule). **CI is the official gate** and is unaffected — `.claude/` is untracked, so the wiring test's `.claude/` assertions skip there.
 
 ### Harness-Delta
 
-- none
+- backlog — The doc-truth lint couples "hook file exists" to "CLAUDE.md table row exists", but the plan split the hook file (task 2.2) from its table row (task 3.1) across waves. Result: the aggregate suite is unavoidably red between wave 2 and wave 3. A future plan touching a new hook should land the file + its table row in the same wave (or have the lint treat a registered-but-unrowed hook as a soft warning during transitions).
