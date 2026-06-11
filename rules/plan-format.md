@@ -122,4 +122,4 @@ created: YYYY-MM-DD
 ## 6. Status Log
 ```
 
-The FastAPI examples above show the full task shape; `specs/` is local-only (gitignored), so plans are not browsable across machines.
+The FastAPI examples above show the full task shape; `specs/` is tracked in git, so plans are browsable across machines. (`PLAN.html` and `.plan-review.json` are gitignored as derived artifacts.)

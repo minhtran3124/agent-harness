@@ -10,8 +10,8 @@ allowed-tools: Bash, Read, Glob, Write, mcp__code-review-graph__list_graph_stats
 
 Render a single `specs/<slug>/PLAN.md` into a modern, self-contained `specs/<slug>/PLAN.html`
 so a reviewer can visually scan waves, tasks, and per-task scope without parsing raw XML or
-markdown. Output is **local-only** — `specs/` is never committed, so `PLAN.html` stays untracked
-next to its source.
+markdown. Output is **local-only** — `PLAN.html` stays untracked (gitignored as a derived artifact)
+next to its source in `specs/` (which is tracked).
 
 ## How it works (deterministic script, not LLM transcription)
 

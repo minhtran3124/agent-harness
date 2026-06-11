@@ -150,7 +150,7 @@ write `specs/<slug>/.plan-review.json` → render with `--review`), and returns 
 written `PLAN.html` path + the script's self-check status. On a non-zero exit, surface the
 `SELF-CHECK FAILED:` lines verbatim — do **not** claim success.
 
-`PLAN.html` is untracked (it lives beside `PLAN.md` in `specs/`, which is never committed). Plain
+`PLAN.html` is untracked (it lives beside `PLAN.md` in `specs/`, but is gitignored as a derived artifact — `specs/` itself is tracked). Plain
 render needs no MCP and finishes in seconds; reserve `--review` for when graph-derived risk is wanted.
 
 ## Auto-View

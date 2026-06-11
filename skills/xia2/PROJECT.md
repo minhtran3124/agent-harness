@@ -10,19 +10,21 @@ This file provides project-specific signal mappings consumed by `xia2/SKILL.md`.
 
 Describe what this project is and how to locate it.
 
-- **Name:** <your project name>
-- **Stack:** <language + framework + key infra, e.g. Python 3.12 + FastAPI + PostgreSQL + Redis>
-- **Repo root (relative to this file):** <relative path that resolves to the app root, e.g. `../../../`>
+- **Name:** harness-skills
+- **Stack:** Bash hooks + Python 3 scripts + Markdown skills, GitHub Actions CI
+- **Repo root (relative to this file):** `../../`
 
 ---
 
 ## High-Blast-Radius Files
 
-List the files that, when touched, force **Deep** review regardless of how small the change appears — e.g. your DB session manager, core service modules, or any single file many features depend on.
+List the files that, when touched, force **Deep** review regardless of how small the change appears.
 
-- `app/services/<core_service>.py` — central service many features route through
-- `app/repositories/<critical_repo>/` — high-volume data-access subtree
-- `app/database/<session_manager>.py` — connection pool / session scoping; affects every DB call
+- `settings.json` — hook registration; any change here changes what runs every session
+- `hooks/*.sh` — auto-run on every session/edit/commit trigger; bugs affect every workflow
+- `skills/visual-planner/render_plan.py` — core skill engine; output consumed by plan-render pipeline
+- `templates/SUMMARY.template.md` — schema machine-read by `hooks/risk-corroboration.sh` and the trust-metrics ledger; header field order and names are load-bearing
+- `scripts/run-tests.sh` — CI contract; any change here changes what `harness-ci` validates on ubuntu + macos
 
 > Add new entries when a single file becomes a bottleneck for many features. An empty list means the Deep override loses a key signal.
 
@@ -32,8 +34,9 @@ List the files that, when touched, force **Deep** review regardless of how small
 
 Name the files that declare dependencies, and which ones should trigger Deep when changed.
 
-- `<runtime manifest>` (e.g. `requirements.txt`, `pyproject.toml`) — runtime deps; **adding entries triggers Deep**
-- `<test-only manifest>` (e.g. `requirements-test.txt`) — test deps; does **not** trigger Deep on its own
+- `scripts/run-tests.sh` — the test entry point; changing what suites run is a contract change that **triggers Deep**
+- `hooks/*.sh` — hook scripts are both implementation and "dependency" of the harness runtime; any addition/removal **triggers Deep**
+- `.github/workflows/` — CI matrix definitions; changes affect reproducibility across ubuntu + macos
 
 ---
 
@@ -41,27 +44,29 @@ Name the files that declare dependencies, and which ones should trigger Deep whe
 
 Configuration objects, modules, or protocol shapes whose contract change affects many call sites.
 
-- `<AppConfig object>` (in `app/config/<config>.py`) — central settings consumed across the app (model/feature flags, limits, timeouts); document where defaults come from
-- **<streaming or event protocol>** (event shapes in `app/utils/<protocol>.py`) — message/event shapes consumed by clients; list the event types
+- **SUMMARY header 4-field block** (`Lane` / `Confidence` / `Reason` / `Flags` in `templates/SUMMARY.template.md`) — `hooks/risk-corroboration.sh` greps the `Lane:` line to corroborate against staged diffs; the trust-metrics ledger reads all four fields; renaming or reordering any field breaks machine readers
+- **Hook exit-code contract** — exit `0` = pass (allow), exit `2` = block (deny); any hook deviating from this breaks the `PreToolUse` gate silently
+- **Hook table truthfulness** — `CLAUDE.md` hook table must match `settings.json` registrations; `scripts/lint-doc-truth.sh` enforces this at CI time (doc-truth lint)
+- **Trust-metrics ledger columns** (`docs/harness-experimental/trust-metrics.md`) — `Date | Slug | Lane | Confidence | Flags | Escalated | Outcome | Notes` must remain stable for cross-task trend analysis
 
 ---
 
 ## Session/Transaction Primitives
 
-Functions/methods that scope DB sessions or transactions. **Changing scoping rules triggers Deep.**
+This is a tooling/meta repo — there is no DB session layer. The analogous "scope" primitives are:
 
-- `<request_session_dep>()` (in `app/database/<session_manager>.py`) — request-scoped session via dependency injection; for HTTP request handlers
-- `<isolated_session>()` (in `app/database/<session_manager>.py`) — isolated session for background/long-running tasks
-- **Project rule:** state the rule for which primitive each context must use, and note that switching primitives between contexts is a Deep change.
+- **Git worktrees** (via `/using-git-worktrees`) — isolate feature work in a separate checkout; switching from main-tree to worktree is a scoping decision that affects all subsequent file edits
+- **Hook registration in `settings.json`** — hooks fire globally per trigger; adding/removing a hook is the harness equivalent of changing transaction scope; treat as Deep
+- **Project rule:** background/long-running skill steps must never write to `specs/` in the main-tree checkout while a worktree is active — risk of clobber; switching scope between worktree and main-tree mid-task is a Deep change
 
 ---
 
 ## Auth Surfaces
 
-Files implementing the authentication flow. **Changes here trigger Deep.**
+This repo has no HTTP auth layer. The analogous trust surface is:
 
-- `app/middleware/` (token validation / auth provider integration)
-- `<current_user_dependency>` (used to guard protected routes at the router level)
+- `hooks/risk-corroboration.sh` — the gate that blocks commits when Lane is under-declared relative to the staged diff; any weakening of its regex or exit-code logic is a security-equivalent change
+- `hooks/commit-quality-gate.sh` — secrets scan + debug artifact check + targeted pytest; weakening is a hard gate
 
 ---
 
@@ -69,12 +74,12 @@ Files implementing the authentication flow. **Changes here trigger Deep.**
 
 Files to read at Step 2b in addition to AGENTS.md/CLAUDE.md/README.md.
 
-- `<architecture doc>` (e.g. `.claude/rules/architecture.md`) — authoritative architecture reference (layers, models, services)
-- `<engineering guidelines>` (e.g. `.claude/rules/guidelines.md`) — code style, error handling, async, testing
-- `<solved-problems folder>` (e.g. `docs/solutions/`) — solved problems with metadata
-  - **Index:** read the index file first (single read, O(1)); fallback grep keys like `module: <domain>`, `affects.*<file>`
-  - **Critical patterns:** a patterns file always read regardless of domain
-  - **Stale marker:** define what marks an entry unverified (e.g. `confidence: low` or missing `confirmed_at`)
+- `.claude/rules/architecture.md` — authoritative architecture reference (layers, models, services) for target FastAPI projects that use this harness
+- `.claude/rules/guidelines.md` — code style, error handling, async, testing conventions for target projects
+- `docs/solutions/` — solved problems with metadata
+  - **Index:** read `docs/solutions/INDEX.md` first (single read, O(1)); fallback grep keys like `` module: `harness-bootstrap` ``, `` affects.*hooks/ ``
+  - **Critical patterns:** `docs/solutions/critical-patterns.md` — always read regardless of domain
+  - **Stale marker:** entries with `confidence: low` or missing `confirmed_at`, or `confirmed_at` older than 30 days, are potentially stale
 
 ---
 
@@ -82,9 +87,9 @@ Files to read at Step 2b in addition to AGENTS.md/CLAUDE.md/README.md.
 
 Where recent design/decision records live, and how far back to look.
 
-- **Path:** <e.g. `specs/`>
-- **Schema:** <how subfolders are organized, e.g. date-based `YYYY-MM-DD/`>
-- **Lookback:** <window in days, e.g. 60 days>
+- **Path:** `specs/*/` (gitignored; local-only)
+- **Schema:** one subfolder per slug (e.g. `specs/my-feature/`), containing `SUMMARY.md`, optionally `PLAN.md`, `design.md`, `research-brief.md`
+- **Lookback:** 60 days
 
 ---
 
@@ -92,9 +97,10 @@ Where recent design/decision records live, and how far back to look.
 
 For the Quick condition: changes to these break the contract → fail Quick.
 
-- Router/endpoint signatures (in `app/routers/`)
-- Response schema models (in `app/schemas/`)
-- Published event/protocol shapes (in `app/utils/<protocol>.py`)
+- Hook script interfaces: input env vars and exit codes consumed by `settings.json` trigger registration
+- SUMMARY header field names and order (machine-read by `risk-corroboration.sh` and the ledger)
+- Skill `SKILL.md` invocation contracts (the slash-command name and expected input/output shape)
+- `render_plan.py` CLI flags (consumed by `hooks/render-plan-on-write.sh` and `view_plan.py`)
 
 ---
 
@@ -102,15 +108,16 @@ For the Quick condition: changes to these break the contract → fail Quick.
 
 For the Quick condition: any change inside these is **NOT** Quick.
 
-- `app/routers/` — HTTP route handlers
-- Middleware registration in `app/main.py`
-- Background/worker services: `<list your background service dirs>`
-- Lifespan/startup hooks (e.g. `app/services/lifespan.py`)
+- `hooks/` — all hook scripts; auto-run on every edit, commit, or session trigger
+- `settings.json` — hook registration and permissions; governs all automated behavior
+- `scripts/run-tests.sh` — CI entry point; defines what the test suite is
+- `skills/*/SKILL.md` — skill prompt programs; define the entire workflow behavior
+- `skills/visual-planner/render_plan.py` — deterministic plan renderer; core skill engine
 
 ---
 
 ## Notes for maintainers
 
 - **High-blast list is the highest-leverage signal** — keep it current as new bottlenecks emerge.
-- **Shared config contract evolves** — when adding new fields to a central config object, treat it as a Deep change since downstream defaults rely on it.
-- **Client-consumed protocols** — adding new event types to a protocol consumed by clients is Deep (clients must handle them).
+- **Shared config contract evolves** — when adding new fields to the SUMMARY header or changing hook exit codes, treat it as a Deep change since downstream scripts rely on fixed shapes.
+- **Client-consumed protocols** — adding new event types to a hook or changing SUMMARY field names is Deep (machine readers must be updated).

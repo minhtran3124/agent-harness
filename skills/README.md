@@ -270,7 +270,7 @@ graph LR
 | `view_plan.py` | **Shows** it — serves on localhost + opens Chrome, auto-rendering first if `PLAN.html` is missing/stale. |
 
 - **Deterministic script, not LLM transcription.** The skill only runs the script and relays its report — never emits HTML token-by-token. Transcribing a ~340-line template every run is expensive and the least reproducible part of the pipeline; a script makes the fill free and stable.
-- **Local-only output.** `PLAN.html` is untracked — it lives beside `PLAN.md` in `specs/`, which is never committed.
+- **Local-only output.** `PLAN.html` is untracked — it lives beside `PLAN.md` in `specs/` (which is tracked), but `PLAN.html` itself is gitignored as a derived artifact.
 - **Auto-invoked by `/writing-plans`.** After a plan is approved and before the execution handoff, `writing-plans` dispatches a `visual-planner` sub-agent to render `PLAN.html`, then opens it. Also runs standalone as `/visual-planner <slug>`.
 - **Why serve instead of `file://`?** Localhost is a browser *secure context*, so per-task "copy `<verify>`" buttons use `navigator.clipboard`; `--file` (`file://`) is faster but falls back to `execCommand`. Auto-view is environment-dependent (no display on headless/remote), so it stays an explicit step.
 - **Self-check before claiming success.** The script asserts non-empty output, no surviving `{{PLACEHOLDER}}`, the `slug` present, and one `<section data-wave>` per distinct wave. On non-zero exit, surface the `SELF-CHECK FAILED:` lines verbatim — do not claim success.

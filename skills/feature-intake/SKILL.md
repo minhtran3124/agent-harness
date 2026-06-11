@@ -49,7 +49,9 @@ add ceremony — most types collapse onto an existing workflow path.
 
 ## Step 2 — Run the risk checklist (10 flags)
 
-Mark each flag that the work touches.
+Mark each flag that the work touches. Cross-check the expected diff against High-Blast Files +
+Shared Contracts in PROJECT.md to name the affected contract (used to populate the `Affects:`
+field in SUMMARY.md).
 
 | # | Risk flag | Fires when the work touches |
 |---|---|---|
@@ -121,6 +123,7 @@ Lane: <tiny | normal | high-risk>
 Confidence: <high | medium | low>
 Reason: <one sentence — which flags / hard gates fired, or none>
 Flags: <comma-separated flags, or none>
+Affects: <affected contract/module from PROJECT.md High-Blast/Shared-Contracts, or 'none'>
 Input-type: <one of the six>
 Route: <see Step 7>
 Escalate: <yes (reason) | no>
