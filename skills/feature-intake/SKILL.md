@@ -129,6 +129,12 @@ Route: <see Step 7>
 Escalate: <yes (reason) | no>
 ```
 
+Also write the `### Intent` section of `SUMMARY.md` with the user's request **verbatim** (do not
+paraphrase; if it spanned several turns, quote the scope-deciding sentences in order). This is the
+oracle for `/intent-review`, the final stage of `subagent-driven-development` — a reviewer blind to
+PLAN.md checks the finished diff against this text, so it must be captured here at intake, not
+reconstructed from the plan later.
+
 ## Step 7 — Route to the workflow path
 
 **Artifacts scale by signal, not by lane alone.** `SUMMARY.md` is written for **every** lane —
