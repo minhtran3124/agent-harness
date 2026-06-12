@@ -2,8 +2,8 @@
 
 Lane: high-risk
 Confidence: medium
-Reason: Hard gate — scope touches `.claude/settings.json` (SessionStart hook), `hooks/*` (commit-quality-gate, risk-corroboration), và core skill engines (feature-intake SKILL.md, SUMMARY template); breadth của scope (top-5 vs toàn bộ 9 mục) cần người chốt.
-Flags: existing behavior, weak proof (new scripts chưa có test), multi-domain (hooks + templates + skills + docs + CI)
+Reason: Hard gate — scope touches `.claude/settings.json` (SessionStart hook), `hooks/*` (commit-quality-gate, risk-corroboration), and core skill engines (feature-intake SKILL.md, SUMMARY template); the breadth of the scope (top-5 vs all 9 items) needs a human to decide.
+Flags: existing behavior, weak proof (new scripts have no tests yet), multi-domain (hooks + templates + skills + docs + CI)
 Affects: settings.json (hook registration), hooks/commit-quality-gate.sh (REQUIRE_VERIFY path), templates/SUMMARY.template.md (5-field schema), docs/harness-experimental/trust-metrics.md (ledger columns), doc-truth lint (hook table ↔ settings.json)
 Input-type: harness improvement
 
@@ -13,21 +13,21 @@ Input-type: harness improvement
 
 ## What changed
 
-(Chưa thực hiện — đây là intake cho việc lập PLAN.md cải thiện harness theo
-`docs/research-harness-req-assessment.md`: hoàn tất chuyển đổi specs/, trả lời Q3 (Affects field
-+ PROJECT.md), machine-verified proof (verify-summary), khép vòng tri thức, strict-in-CI,
+(Not yet implemented — this is the intake for drafting the PLAN.md that improves the harness per
+`docs/research-harness-req-assessment.md`: complete the migration of specs/, answer Q3 (Affects field
++ PROJECT.md), machine-verified proof (verify-summary), close the knowledge loop, strict-in-CI,
 story-sizing gate, harness-audit.)
 
 ### Rationale
 
-Nghiên cứu 2026-06-11 chấm repo trả lời 4/6 câu hỏi REQ.md; các mục cải thiện đã được ưu tiên
-sẵn trong doc. Plan này chuyển danh sách ưu tiên đó thành các wave thực thi được, theo đúng
-full chain của lane high-risk.
+The 2026-06-11 research scored the repo as answering 4/6 of the questions in REQ.md; the improvement items
+were already prioritized in the doc. This plan turns that priority list into executable waves, following
+the full chain of the high-risk lane.
 
 ### Alternatives considered
 
-- Làm trực tiếp từng mục không qua PLAN.md — bị loại: scope >3 steps, >2 files, đa wave,
-  nhiều mục là Rule-4 (settings.json, hooks/*) bắt buộc gated-execute.
+- Implement each item directly without a PLAN.md — rejected: scope >3 steps, >2 files, multi-wave,
+  and several items are Rule-4 (settings.json, hooks/*) which mandates gated-execute.
 
 ### Deviations
 
