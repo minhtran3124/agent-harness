@@ -2,9 +2,9 @@
 
 Lane: high-risk
 Confidence: high
-Reason: Hard gate — diff sẽ chạm `templates/SUMMARY.template.md` (high-blast theo PROJECT.md, bị `ci-strict-gate.sh` bắt qua pattern `^templates/`) và thay đổi chính workflow chain (orchestration: "redefine the workflow itself" → escalate); hướng đi không mơ hồ — người dùng chỉ định đích danh giải pháp.
-Flags: existing behavior, weak proof (skill prompt không có test tự động)
-Affects: templates/SUMMARY.template.md (5-field schema + section mới), workflow chain (subagent-driven-development → finishing), skills/README.md handoff map, skills/feature-intake/SKILL.md (Step 6)
+Reason: Hard gate — the diff will touch `templates/SUMMARY.template.md` (high-blast per PROJECT.md, caught by `ci-strict-gate.sh` via the `^templates/` pattern) and changes the workflow chain itself (orchestration: "redefine the workflow itself" → escalate); the direction is unambiguous — the user named the solution explicitly.
+Flags: existing behavior, weak proof (skill prompt has no automated test)
+Affects: templates/SUMMARY.template.md (5-field schema + new section), workflow chain (subagent-driven-development → finishing), skills/README.md handoff map, skills/feature-intake/SKILL.md (Step 6)
 Input-type: harness improvement
 
 > `Lane` drives **ceremony** (how much proof). `Confidence` drives **interruption**
@@ -13,41 +13,41 @@ Input-type: harness improvement
 
 ### Intent
 
-Nguyên văn yêu cầu (2026-06-11): "sau khi hoàn thành xong thì có cách nào để thật sự kiểm tra
-là cái kết quả đó đảm bảo đúng với intent ban đầu chứ ko chỉ là pass theo plan hoặc test" →
-chốt phương án: "viết intake + plan cho intent-review stage này như một harness improvement
-tiếp theo". Intent-review = oracle thứ ba (intent), độc lập với hai oracle hiện có (plan của
-spec-review, runtime của correctness-review); reviewer cố tình MÙ PLAN.md, đối chiếu diff với
-yêu cầu gốc nguyên văn + Success Criteria của design.md.
+Verbatim request (2026-06-11): "once it's finished, is there any way to actually verify
+that the result truly matches the original intent rather than just passing per the plan or the tests" →
+agreed approach: "write the intake + plan for this intent-review stage as the next harness
+improvement". Intent-review = the third oracle (intent), independent of the two existing oracles (the plan
+oracle of spec-review, the runtime oracle of correctness-review); the reviewer is deliberately BLIND to PLAN.md, checking the diff against the
+verbatim original request + the Success Criteria of design.md.
 
 ## What changed
 
-Thêm oracle thứ ba `/intent-review` vào chuỗi review. Skill mới
-(`skills/intent-review/SKILL.md` + `intent-reviewer-prompt.md`) đối chiếu diff cuối với request
-gốc nguyên văn, cố tình mù PLAN.md; finding phân loại `gap`/`excess`/`drift` với routing
-(fix-loop · escalate · report-only) + residual gate. Capture intent nguyên văn tại intake
-(`templates/SUMMARY.template.md` có `### Intent`, `feature-intake` Step 6 ghi nó). Wire thành
-stage bắt buộc trong `subagent-driven-development` sau correctness-review (overview + digraph +
-section + red flags + example + prompt list). Cập nhật inventory/handoff/chain ở
+Added a third oracle `/intent-review` to the review chain. The new skill
+(`skills/intent-review/SKILL.md` + `intent-reviewer-prompt.md`) checks the final diff against the
+verbatim original request, deliberately blind to PLAN.md; findings are classified as `gap`/`excess`/`drift` with routing
+(fix-loop · escalate · report-only) + a residual gate. Capture the verbatim intent at intake
+(`templates/SUMMARY.template.md` gains a `### Intent` section, and `feature-intake` Step 6 records it). Wired in as a
+mandatory stage in `subagent-driven-development` after correctness-review (overview + digraph +
+section + red flags + example + prompt list). Updated the inventory/handoff/chain in
 `skills/README.md` + `CLAUDE.md`.
 
 ### Rationale
 
-Gap đã được chẩn trong phiên 2026-06-11 (đối thoại sau `docs/research-harness-req-assessment.md`):
-chuỗi oracle hiện tại validate code↔plan và code↔runtime nhưng không có gate nào validate
-kết-quả↔intent sau hoàn thành; nếu intake hiểu sai intent, toàn chuỗi pass nhất quán mà vẫn sai.
-Hard gate (templates/ + workflow) đã được người dùng authorize trực tiếp bằng yêu cầu đích danh
-— thỏa điều kiện "human narrowing scope" nên không cần escalate thêm.
+The gap was diagnosed in the 2026-06-11 session (the conversation following `docs/research-harness-req-assessment.md`):
+the current oracle chain validates code↔plan and code↔runtime but has no gate that validates
+result↔intent after completion; if intake misunderstands the intent, the entire chain passes consistently yet is still wrong.
+The hard gate (templates/ + workflow) was authorized directly by the user via the explicit named request
+— this satisfies the "human narrowing scope" condition, so no further escalation is needed.
 
 ### Alternatives considered
 
-- Phase-level UAT / TEST_MATRIX-from-design / PR-body intent map (mục 2–4 của phân tích) —
-  defer: bổ trợ chứ không thay thế oracle thứ ba; làm sau khi stage này chạy thật.
-- Nhét intent-check vào correctness-review thay vì skill riêng — bị loại: trộn hai oracle
-  (runtime vs intent) vào một reviewer làm mất tính mù-lẫn-nhau, và correctness-review được
-  thiết kế "bug-only".
-- Bỏ qua design.md, chỉ dùng request nguyên văn — bị loại một nửa: request nguyên văn là oracle
-  chính (luôn có sau thay đổi này), design.md Success Criteria là oracle phụ khi tồn tại.
+- Phase-level UAT / TEST_MATRIX-from-design / PR-body intent map (items 2–4 of the analysis) —
+  deferred: complementary rather than a replacement for the third oracle; to be done after this stage runs for real.
+- Folding the intent check into correctness-review instead of a separate skill — rejected: mixing the two oracles
+  (runtime vs intent) into one reviewer breaks their mutual blindness, and correctness-review is
+  designed to be "bug-only".
+- Skipping design.md and using only the verbatim request — half-rejected: the verbatim request is the
+  primary oracle (always present after this change), while design.md's Success Criteria is the secondary oracle when it exists.
 
 ### Deviations
 
@@ -63,10 +63,10 @@ Hard gate (templates/ + workflow) đã được người dùng authorize trực 
      First real smoke test of the stage — it reviewed its own diff. -->
 
 - **#2 `gap` — FIXED.** `specs/intent-review-stage/` was untracked; the plan is the explicit
-  co-deliverable of "viết intake + plan". Committed in Wave 3. (Real catch — exactly the class the
+  co-deliverable of "write the intake + plan". Committed in Wave 3. (Real catch — exactly the class the
   third oracle exists for.)
 - **#1 `drift` / #3 `excess` — advisory, resolved by authorization on record.** The reviewer read
-  the intent as "viết intake + plan" and flagged shipping the full implementation as drift/excess.
+  the intent as "write the intake + plan" and flagged shipping the full implementation as drift/excess.
   The full implementation **was authorized**: the user invoked `/executing-plans
   specs/intent-review-stage/PLAN.md` to execute this very plan — the reviewer is blind to that
   invocation (it only saw the plan-time `### Intent`). No code change needed; recorded here as the
@@ -91,7 +91,7 @@ Hard gate (templates/ + workflow) đã được người dùng authorize trực 
 
 ### Rollback
 
-- `git revert <sha>` per-wave; không đụng settings.json/hooks nên revert sạch bằng git.
+- `git revert <sha>` per-wave; it does not touch settings.json/hooks, so it reverts cleanly with git.
 
 ### Harness-Delta
 
