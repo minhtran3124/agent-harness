@@ -1,6 +1,6 @@
 ---
 slug: harness-adoptions-execution
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-06-12
 ---
@@ -173,3 +173,4 @@ catches — and the regression baseline for every future edit to those skills.
   - Wave 2 — `5b5d5b6` (1.2 reviewer wired into 3 dispatches, 7.2 five fixtures)
   - Wave 3 — `4d3a401` (2.2 rule enforced in 2 reviewer prompts), `6333b70` (7.3 baseline — catch rate 5/5, 0 hard false positives)
   - Open follow-ups (from 7.3 baseline caveats): register the `reviewer` agent type then re-measure with `subagent_type: reviewer`; make the two intent fixtures runtime-clean.
+- 2026-06-12 — shipped via `feat/enhance-skills` (PR #17, whole-branch PR against main).
