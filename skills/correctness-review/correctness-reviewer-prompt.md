@@ -126,6 +126,15 @@ Task tool (reviewer):
     not here. Dropping a real P0 at this stage because you were unsure is the failure mode
     this pipeline is designed to prevent.
 
+    ## `not_observed != absent` — cite your search surface
+
+    Any finding (or all-clear claim) that asserts absence — "no caller", "no test covers this",
+    "nothing handles X", "no guard anywhere" — MUST name the locations you searched (paths,
+    globs, or the exact commands you ran, e.g. `grep -rn "get_by_id" app/`). A claim that cannot
+    cite its search surface is reported as `unknown`, never as absent — you may simply not have
+    looked where the code lives. This applies to the ✅ all-clear too: the paths you traced ARE
+    your search surface.
+
     ## Report format
 
     Severity drives urgency; Rule class drives who acts and how. Both axes are required

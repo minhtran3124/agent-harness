@@ -98,6 +98,14 @@ Task tool (reviewer):
 
     Report ONLY intent-fidelity findings: gap / drift / excess against the original request.
 
+    ## `not_observed != absent` — cite your search surface
+
+    A `gap` finding is an absence claim by definition — "the intent asked for X but nothing in
+    the diff does it". Any such finding (and the ✅ all-clear) MUST name the locations you
+    searched (paths, globs, or the `git diff` / grep commands you ran) before asserting the
+    behavior is missing. A gap or all-clear that cannot cite its search surface is reported as
+    `unknown`, never as absent — you may simply not have looked where the behavior lives.
+
     ## Report format
 
     For each finding, a row:
