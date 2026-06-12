@@ -5,7 +5,7 @@ description: Use when executing implementation plans with independent tasks in t
 
 # Subagent-Driven Development
 
-Execute plan by dispatching fresh subagent per task, with two-stage review after each: spec compliance review first, then code quality review. After **all** tasks are done, run one final adversarial correctness review over the entire diff before shipping.
+Execute plan by dispatching fresh subagent per task, with two-stage review after each: spec compliance review first, then code quality review. After **all** tasks are done, run one final adversarial correctness review over the entire diff, then one intent review against the original request, before shipping.
 
 **Why subagents:** You delegate tasks to specialized agents with isolated context. By precisely crafting their instructions and context, you ensure they stay focused and succeed at their task. They should never inherit your session's context or history — you construct exactly what they need. This also preserves your own context for coordination work.
 
@@ -70,6 +70,9 @@ digraph process {
     "Run /correctness-review over entire diff" [shape=box];
     "Correctness reviewer finds bugs?" [shape=diamond];
     "Implementer subagent fixes correctness bugs" [shape=box];
+    "Run /intent-review (oracle: SUMMARY ### Intent + design.md; blind to PLAN)" [shape=box];
+    "Intent findings?" [shape=diamond];
+    "Implementer fixes gaps / escalate per routing" [shape=box];
     "Use finishing-a-development-branch" [shape=box style=filled fillcolor=lightgreen];
 
     "Read plan, extract all tasks with full text, note context, create TodoWrite" -> "Dispatch implementer subagent (./implementer-prompt.md)";
@@ -92,7 +95,11 @@ digraph process {
     "Run /correctness-review over entire diff" -> "Correctness reviewer finds bugs?";
     "Correctness reviewer finds bugs?" -> "Implementer subagent fixes correctness bugs" [label="yes"];
     "Implementer subagent fixes correctness bugs" -> "Run /correctness-review over entire diff" [label="re-review"];
-    "Correctness reviewer finds bugs?" -> "Use finishing-a-development-branch" [label="no"];
+    "Correctness reviewer finds bugs?" -> "Run /intent-review (oracle: SUMMARY ### Intent + design.md; blind to PLAN)" [label="no"];
+    "Run /intent-review (oracle: SUMMARY ### Intent + design.md; blind to PLAN)" -> "Intent findings?";
+    "Intent findings?" -> "Implementer fixes gaps / escalate per routing" [label="yes"];
+    "Implementer fixes gaps / escalate per routing" -> "Run /intent-review (oracle: SUMMARY ### Intent + design.md; blind to PLAN)" [label="re-review"];
+    "Intent findings?" -> "Use finishing-a-development-branch" [label="no"];
 }
 ```
 
@@ -173,6 +180,26 @@ caught by external reviewers post-push. The correctness pass closes it.
 high-risk lanes you may *additionally* run `/code-review high|ultra` before merge — they
 compound, they don't replace each other.
 
+## Final Intent Review
+
+After `/correctness-review` passes, run **one** intent review over the entire diff before handing
+off to `finishing-a-development-branch`. This pass **is the `/intent-review` skill — delegate to
+it; do not re-implement the pipeline here.**
+
+**Range to pass:** same as the correctness pass — `BASE` = commit before task 1, `HEAD` = current
+commit, plus the touched-file list. The reviewer's oracle is the `### Intent` block of
+`specs/<slug>/SUMMARY.md` (the original request, verbatim) plus design.md Success Criteria when it
+exists; it is dispatched as a **fresh subagent, blind to PLAN.md** (different model than the
+implementer). It classifies findings `gap` / `excess` / `drift` and routes each (fix-loop ·
+escalate · report-only), then enforces a residual gate — every finding fixed with a sha or durably
+recorded before handoff. See `skills/intent-review/SKILL.md`.
+
+**Why this stage exists.** Spec review (oracle: PLAN) and correctness review (oracle: runtime,
+blind to plan) can both pass while the result is still not what the user asked for — if intake or
+design misread the intent, every gate passes consistently. The three oracles are mutually blind:
+spec-review against the plan, correctness-review against runtime (blind to plan), intent-review
+against the original request (blind to plan). This pass is the last check before the human merge gate.
+
 ## Reporting — Rule 1–3 Deviation Logging
 
 Every implementer subagent MUST classify and log each auto-fix it applied during task
@@ -212,6 +239,7 @@ per `auto-correct-scope.md` → Reporting.
 - `./spec-reviewer-prompt.md` - Dispatch spec compliance reviewer subagent (per task)
 - `./code-quality-reviewer-prompt.md` - Dispatch code quality reviewer subagent (per task)
 - Final adversarial correctness pass - delegated to `/correctness-review` (see `skills/correctness-review/`); its `correctness-{reviewer,scorer}-prompt.md` live there, not here.
+- Final intent review - delegated to `/intent-review` (see `skills/intent-review/`); its `intent-reviewer-prompt.md` lives there, not here.
 
 ## Example Workflow
 
@@ -294,6 +322,14 @@ Correctness reviewer: 🐛 P1 / Rule 1 — app/services/trade_log_service.py:42
 Correctness reviewer: ✅ No correctness defects found. Paths traced:
   create_entry happy + invalid trade_type, get_recent empty + populated, soft-deleted filter
 
+[After correctness — final intent review against the original request]
+[Run /intent-review over the whole diff (oracle: SUMMARY ### Intent; blind to PLAN; fresh subagent)]
+Intent reviewer: ⚠️ Intent findings: 1
+  gap — request said "and email the user a receipt"; no email path in the diff. Route: fix-loop.
+
+[Implementer adds the receipt email; re-dispatch intent reviewer]
+Intent reviewer: ✅ No intent divergence. Intent clauses checked: log the trade, return recent, email receipt.
+
 [Hand off to finishing-a-development-branch]
 
 Done!
@@ -349,6 +385,8 @@ Done!
 - Move to next task while either review has open issues
 - **Skip the final adversarial correctness review, or hand off to `finishing-a-development-branch` with open correctness bugs** (this is the gate that catches runtime bugs the spec/quality reviewers miss)
 - Run the final correctness review with the same model as the implementer (defeats ensemble diversity)
+- **Skip the intent review, or hand off with unrouted intent findings** (this is the gate that catches "passed the plan and tests but not what the user asked for")
+- Run the intent review with the implementer's context (it must be a fresh subagent, blind to PLAN.md — otherwise it re-confirms the plan's possible misreading of intent)
 
 **If subagent asks questions:**
 - Answer clearly and completely

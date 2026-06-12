@@ -22,6 +22,17 @@ Input-type: new spec | spec slice | change request | new initiative | maintenanc
 > (whether a human is asked). A hard gate forces `high-risk`. Low confidence or an
 > ambiguous direction escalates regardless of lane — see `rules/orchestration.md`.
 
+### Intent
+
+<!-- The user's request VERBATIM at intake — do NOT paraphrase or summarize. This is the
+     oracle for /intent-review (the final stage of subagent-driven-development): the third
+     reviewer is blind to PLAN.md and checks the finished diff against this text. If the
+     request came over several conversational turns, quote the scope-deciding sentences in
+     chronological order. Capturing intent here, not in the plan, is what keeps the intent
+     oracle independent of the plan oracle. -->
+
+<paste the original request, verbatim>
+
 ## What changed
 
 <one short paragraph: the product delta — what the work actually did>
