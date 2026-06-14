@@ -97,9 +97,10 @@ Research từng nêu, nay đã giải quyết về cơ chế:
 
 ### Phase 3 — Larger bets / có điều kiện (mỗi cái xứng 1 spec riêng)
 
-**P3-I · Micro-benchmark chuỗi review — bằng chứng SỐ** *(comparison #1/#7 — đòn bẩy dài hạn cao nhất)*
-- **Action:** seed N task nhỏ với bug/intent-drift cấy sẵn; chạy with/without `/correctness-review` + `/intent-review`; ghi catch-rate + token cost vào `benchmarks/`. Ngay cả 10 task × 5 run cho con số đầu tiên + báo động hồi quy khi sửa skill.
-- **Lý do để Phase 3:** công sức cao, nhưng là "thứ đáng cướp nhất" — chuyển pitch từ niềm tin sang đo lường.
+**P3-I · 🟡 Infra đã có; RE-RUN xong (2026-06-14) — Micro-benchmark chuỗi review** *(comparison #1/#7)*
+- **Ground truth:** `benchmarks/review-chain/` đã có sẵn (5 fixtures intent/diff/truth + protocol manual v1 + baseline 06-12 = 5/5, 0 FP). Không phải build mới.
+- **Đã làm (re-run full matrix 10 dispatch với agent `reviewer` thật):** kết quả `results/2026-06-14-reviewer-agent.md` — **5/5 catch đúng oracle, 0 hard false-positive**, ~354k tokens. **Đóng caveat #2 của baseline:** lần đầu đo bằng `subagent_type: reviewer` read-only theo cấu trúc (baseline cũ chỉ đo prompt). Không hồi quy sau P1-B/P2-H.
+- **Follow-up còn mở (caveat #1):** 2 intent fixtures (excess-scope, intent-gap) có latent correctness bug thật → nên sửa cho runtime-clean để off-oracle pass là true false-positive probe.
 
 **P3-J · `scripts/check_lane_evidence.py` — lane→evidence một nguồn sự thật** *(IDEA-10)*
 - **Gap:** mapping lane→ceremony nhân bản ở `feature-intake` Step 7, Step 3, `auto-correct-scope.md` Rule 4, `risk-corroboration.sh` — không gì giữ đồng bộ.
