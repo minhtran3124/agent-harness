@@ -40,7 +40,7 @@ maximum traceability is wanted.
 
 Obvious bugs discovered during implementation:
 
-- Wrong SQLAlchemy query (missing join, incorrect filter, soft-delete not respected)
+- Wrong ORM/data-access query (missing join, incorrect filter, soft-delete not respected)
 - Off-by-one, null-check miss, wrong comparison operator
 - Logic contradicting the `<action>` spec
 - Test failures caused by the implementation mistake (not test design)
@@ -51,11 +51,11 @@ Obvious bugs discovered during implementation:
 
 Missing functionality clearly required by project standards but not explicitly listed in `<action>`:
 
-- Input validation at API boundary (Pydantic schema, guard clauses)
+- Input validation at API boundary (your validation layer / schema, guard clauses)
 - Error handling for documented failure modes (DB errors, broker HTTP 4xx/5xx)
-- Missing imports, type hints, Pydantic fields
-- `AppException.BadRequest / .NotFound / .ServerError` where bare `HTTPException` was used
-- Token logging via `AIUsageService.log_and_increment()` for AI paths (including `success=False` on failure)
+- Missing imports, type hints, schema fields
+- Your error factory (e.g. `BadRequest / NotFound / ServerError`) where a bare framework exception was used
+- Token logging for AI paths (including failure cases)
 - `logger.error(f"[COMPONENT] ...: {e}")` where exceptions swallowed silently
 
 ## Rule 3 — Auto-fix blocking
@@ -65,7 +65,7 @@ Issues preventing the task from completing:
 - Missing dependency (add to `requirements.txt` / `requirements-test.txt`, note rationale in SUMMARY)
 - Syntax error in Claude's own output
 - Wrong import path
-- Alembic revision ID collision (regenerate)
+- Migration revision ID collision (regenerate)
 - Linting failures (`ruff`, `mypy`) on newly-written code
 
 ## Rule 4 — STOP + ask user
@@ -77,13 +77,15 @@ Changes requiring architectural judgment — NEVER auto-apply:
 - Removing existing functionality, even if seemingly unused
 - Introducing a new external service dependency (new broker, AI provider, webhook target)
 - Security-sensitive auth/authz changes (permission checks, JWT handling, CORS)
-- Session scope changes (`get_db` ↔ `sessionmanager.session()`)
+- Session/transaction scope changes (request-scoped ↔ isolated/background session)
 - Changes to high-blast-radius files: `settings.json` (hook registration), any `hooks/*` script (auto-runs every session), or a core skill engine (e.g. `skills/visual-planner/render_plan.py`)
-- Replacing a service/pattern (e.g. swapping cache impl, replacing `BaseRepository` usage)
+- Replacing a service/pattern (e.g. swapping cache impl, or replacing the shared data-access base)
 
 ## Reporting
 
 Every Rule 1–3 auto-fix MUST appear in `specs/<slug>/SUMMARY.md` under `### Deviations`:
+
+> example — substitute your stack
 
 ```markdown
 ### Deviations
@@ -100,6 +102,8 @@ Any high-risk-lane work or Rule-4 action that proceeds (after the human narrows 
 a loosened category) MUST record the exact undo command(s) in `specs/<slug>/SUMMARY.md` under
 `### Rollback` before the work is considered done. Reversibility is a precondition for
 autonomy — an action you cannot cleanly undo is not eligible for the autonomous path.
+
+> example — substitute your stack
 
 ```markdown
 ### Rollback

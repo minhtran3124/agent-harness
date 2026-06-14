@@ -14,6 +14,8 @@ Related: `plan-format.md`, `orchestration.md`.
 
 ## FastAPI example (from `eng-315-api-key-generation/PLAN.md` §5)
 
+> example — substitute your stack
+
 | Wave | Tasks | Parallelism |
 |------|-------|-------------|
 | 1 | 1.1 model+migration, 1.2 schemas | 2 parallel |

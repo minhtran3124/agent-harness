@@ -1,6 +1,6 @@
 ---
 slug: rules-stack-agnostic
-status: proposed
+status: active
 owner: Minh Tran
 created: 2026-06-14
 ---

@@ -68,10 +68,12 @@ Conventions:
 ## Guardrails
 
 1. **Zero file overlap** across same-wave tasks — prevents merge conflicts when executed in parallel.
-2. **Verify must be automated** — `pytest`, `curl`, `ruff check`, `mypy`, `alembic upgrade head`, `make migrate`. Reject "open browser and check" at task level (that belongs in phase-level user-acceptance testing).
+2. **Verify must be automated** — your test runner, HTTP probe, linter, type-checker, migration command. Reject "open browser and check" at task level (that belongs in phase-level user-acceptance testing).
 3. **Verify <60s** — if longer, split into sub-tasks.
 
 ## FastAPI examples
+
+> example — substitute your stack
 
 ### Migration + model (single wave)
 
@@ -122,4 +124,4 @@ created: YYYY-MM-DD
 ## 6. Status Log
 ```
 
-The FastAPI examples above show the full task shape; `specs/` is tracked in git, so plans are browsable across machines. (`PLAN.html` and `.plan-review.json` are gitignored as derived artifacts.)
+The examples above show the full task shape; `specs/` is tracked in git, so plans are browsable across machines. (`PLAN.html` and `.plan-review.json` are gitignored as derived artifacts.)
