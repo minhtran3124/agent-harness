@@ -20,12 +20,18 @@ Exit code 0 = all files pass; 1 = at least one violation; 2 = bad invocation.
 
 from __future__ import annotations
 
+import os
 import re
 import sys
 from pathlib import Path
 
 ALLOWED_STATUS = {"proposed", "active", "paused", "shipped"}
 REQUIRED_TAGS = ("files", "action", "verify", "done")
+
+# Story-size signal (advisory only — does not fail the lint). A single task touching
+# more than this many files is a "consider splitting" smell: plan-format.md's own
+# examples keep tasks at 1–3 files. Override with PLAN_MAX_FILES_PER_TASK.
+MAX_FILES_PER_TASK = int(os.environ.get("PLAN_MAX_FILES_PER_TASK", "4"))
 
 _TASK_RE = re.compile(r"<task\b([^>]*)>(.*?)</task>", re.DOTALL)
 _ID_RE = re.compile(r'id="([^"]*)"')
@@ -145,6 +151,20 @@ def check_plan(text: str) -> list[str]:
     return errors
 
 
+def story_size_warnings(text: str, max_files: int = MAX_FILES_PER_TASK) -> list[str]:
+    """Advisory (non-failing) story-size signals: a task touching more than
+    `max_files` files likely should be split. Returns human-readable warnings."""
+    warnings: list[str] = []
+    for t in extract_tasks(text):
+        files = t["files"]
+        if files and len(files) > max_files:
+            warnings.append(
+                f"task {t['id']}: touches {len(files)} files (> {max_files}) "
+                "— consider splitting into smaller tasks"
+            )
+    return warnings
+
+
 def check_file(path: Path) -> list[str]:
     if not path.is_file():
         return [f"{path}: not a file"]
@@ -167,6 +187,10 @@ def main(argv: list[str]) -> int:
                 print(f"    - {e}")
         else:
             print(f"✓ {path}")
+        # Advisory story-size signals — printed but never change the exit code.
+        if path.is_file():
+            for w in story_size_warnings(path.read_text(encoding="utf-8")):
+                print(f"    ⚠ {w}")
     return 1 if failed else 0
 
 

@@ -102,12 +102,11 @@ Research từng nêu, nay đã giải quyết về cơ chế:
 - **Đã làm (re-run full matrix 10 dispatch với agent `reviewer` thật):** kết quả `results/2026-06-14-reviewer-agent.md` — **5/5 catch đúng oracle, 0 hard false-positive**, ~354k tokens. **Đóng caveat #2 của baseline:** lần đầu đo bằng `subagent_type: reviewer` read-only theo cấu trúc (baseline cũ chỉ đo prompt). Không hồi quy sau P1-B/P2-H.
 - **✅ Caveat #1 đã đóng (2026-06-14):** sửa 2 intent fixtures (excess-scope, intent-gap) thành **runtime-clean v2** — thêm None-guard + ownership-scoping, **giữ nguyên defect intent** đã cấy. Verify bằng 2 off-oracle correctness pass (agent `reviewer`) → cả hai báo **CLEAN**. Fixture versioning ghi trong `benchmarks/review-chain/README.md`; expected-oracle baseline 5/5 vẫn giữ.
 
-**P3-J · `scripts/check_lane_evidence.py` — lane→evidence một nguồn sự thật** *(IDEA-10)*
-- **Gap:** mapping lane→ceremony nhân bản ở `feature-intake` Step 7, Step 3, `auto-correct-scope.md` Rule 4, `risk-corroboration.sh` — không gì giữ đồng bộ.
-- **Action:** script + test (khuôn `check_plan_format.py`); 3 nơi prose trỏ về script làm nguồn duy nhất; hook warn-first.
+**P3-J · ✅ XONG (2026-06-14) — `scripts/check_lane_evidence.py` — lane→evidence một nguồn sự thật** *(IDEA-10)*
+- **Đã làm:** script đọc `specs/<slug>/SUMMARY.md`, encode mapping tiny→header / normal→+Verify thật / high-risk→+Rollback; tolerant với bold `**Lane:**`; placeholder-detection chính xác (không nhầm prose chứa `|` trong backtick). 13 test (`test_check_lane_evidence.py`, đã thêm vào `run-tests.sh`). Pointer "single source of truth" trong `rules/auto-correct-scope.md`. Scan toàn bộ specs thật → 0 false-positive. **Hook warn-first wiring** để follow-up (Rule-4, settings.json).
 
-**P3-K · Gate kích thước story** *(req #5/#7)*
-- **Action:** mở rộng `check_plan_format.py` đếm `<files>`/steps mỗi task, warn khi vượt ngưỡng `plan-format.md` (>3 steps / >2 files).
+**P3-K · ✅ XONG (2026-06-14) — Gate kích thước story** *(req #5/#7)*
+- **Đã làm:** thêm `story_size_warnings()` vào `check_plan_format.py` — warn (advisory, KHÔNG đổi exit code) khi 1 task chạm >`MAX_FILES_PER_TASK` (mặc định 4, override qua `PLAN_MAX_FILES_PER_TASK`). 4 test. Steps không đếm được cơ học (action là prose) → chỉ gate file-count (cấu trúc).
 
 **P3-L · Break-glass protected-path hook** *(comparison #5)* — **Rule-4 (hook mới)**
 - **Action:** PreToolUse hook hard-block write vào high-blast list (`settings.json`, `hooks/*`, `render_plan.py`), escape "ask with pre-registered reason" → biến override thành audit record.
