@@ -8,3 +8,4 @@ principle): a `failure` track whose `Guardrail` is tagged `proposed:` lands here
 
 | Date | From failure (slug) | Proposed guardrail | Target path | Status |
 |---|---|---|---|---|
+| 2026-06-14 | pretooluse-hook-denies-combined-git-add-commit | Refine the untracked-`.py` check to also pass when the call's own `git add` targets (or the staged set) would cover the untracked files; or document a "stage and commit in separate Bash calls" rule | `hooks/check-untracked-py.sh` | open |
