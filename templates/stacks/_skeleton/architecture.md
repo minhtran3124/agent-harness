@@ -5,30 +5,6 @@ Agents should read it before implementing, debugging, or reviewing.
 
 ---
 
-## For This Meta-Repo (harness-skills)
-
-This is the Claude Code harness repo — it ships skills, hooks, rules, and templates,
-not an application backend or frontend. Harness-working agents should use:
-
-- `skills/README.md` — skill inventory, workflow, and handoff map (architecture/SoT)
-- `rules/behavior.md` — behavioral guidelines (SoT for all agents)
-
-Stack-specific application architecture does not apply here.
-
----
-
-## Stack Profiles
-
-Stack-specific content lives in `templates/stacks/<stack>/architecture.md`.
-The `/bootstrap-xia2` skill generates or refreshes that file from a repo scan
-and copies the relevant profile here when setting up a new project.
-
-Available bundled profiles (see `templates/stacks/` for the full list):
-
-- `templates/stacks/<stack>/architecture.md` — one file per stack; browse `templates/stacks/` for the bundled profile(s)
-
----
-
 ## Generic Architecture Outline (fill in for your project)
 
 When adopting this harness for an application project, replace this file's content

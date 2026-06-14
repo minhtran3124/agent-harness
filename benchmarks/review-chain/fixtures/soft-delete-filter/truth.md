@@ -3,8 +3,9 @@
 - **Defect class:** DB query — soft-delete not respected (`deleted_at IS NULL` missing).
 - **Location:** `app/repositories/watchlist_repository.py`, the `list_for_user` query. The
   `Watchlist` model supports soft deletes via `deleted_at` (per
-  `.claude/rules/architecture.md` → Soft Deletes, and the guidelines checklist "Respect soft
-  delete: filter `deleted_at IS NULL`"). The query has no `.where(Watchlist.deleted_at.is_(None))`,
+  `templates/stacks/fastapi/architecture.md` → Soft Deletes, and the
+  `templates/stacks/fastapi/guidelines.md` checklist "Respect soft delete: filter
+  `deleted_at IS NULL`"). The query has no `.where(Watchlist.deleted_at.is_(None))`,
   so it returns soft-deleted watchlists the user already removed.
 - **Expected oracle:** `/correctness-review` (DB-query class; soft-delete is named explicitly
   in its hunt list).

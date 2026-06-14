@@ -35,8 +35,13 @@ execution-agents' convention index — see [agents/PROJECT.md](#convention-sourc
 4. Render `PROJECT.md` from template, filling each section with auto-detected values. Mark every auto-filled entry with an HTML comment: `<!-- auto: <reasoning> -->`.
 5. Write to `xia2/PROJECT.md`.
 6. **Render `agents/PROJECT.md`** (the execution-agents' convention index) from `agents/PROJECT.template.md` — only when `agents/` exists and `agents/PROJECT.md` does not. Fill *Convention sources* with detected doc paths and *Test execution* with the detected command/mapping; leave *Inline fallback* empty when a convention doc was found. Mark auto-filled entries with `<!-- auto: ... -->`. It is an **index** — point at docs, never copy their content in.
-7. **Scaffold missing structural files** — create-if-missing only (see [Scaffolding structural files](#scaffolding-structural-files) below).
-8. Output a **review checklist** to the user listing every auto-filled entry that needs verification, plus a scaffolding report.
+7. **Render the stack architecture profile** — create-if-missing `rules/architecture.md` and `rules/guidelines.md`:
+   - Use the stack detected in step 3 (from manifest/framework heuristics).
+   - If `templates/stacks/<stack>/architecture.md` (and `guidelines.md`) exists for the detected stack, copy those files to `rules/architecture.md` and `rules/guidelines.md` as a **human-reviewed draft**. Mark each file's top with `<!-- auto: rendered from templates/stacks/<stack>/ — review before use -->`.
+   - If no bundled `templates/stacks/<stack>/` matches the detected stack (or no stack was detected), copy `templates/stacks/_skeleton/architecture.md` and `templates/stacks/_skeleton/guidelines.md` as the **generic skeleton** — the stack-neutral placeholder — plus a note at the top of each: `<!-- auto: no stack profile found for <stack>; fill this or add templates/stacks/<stack>/{architecture,guidelines}.md -->`. NEVER emit a wrong-stack profile (e.g. do not render the FastAPI profile into a Node project because it was the only bundled option).
+   - Create-if-missing only. If `rules/architecture.md` or `rules/guidelines.md` already exist, **skip** them and report `exists`.
+8. **Scaffold missing structural files** — create-if-missing only (see [Scaffolding structural files](#scaffolding-structural-files) below).
+9. Output a **review checklist** to the user listing every auto-filled entry that needs verification, plus a scaffolding report.
 
 ### Mode B — Update (`PROJECT.md` exists)
 
@@ -48,8 +53,13 @@ execution-agents' convention index — see [agents/PROJECT.md](#convention-sourc
    - **Consistent entries** — no change
 4. **Do NOT overwrite `PROJECT.md`.** Write proposals to `xia2/PROJECT.md.proposed`.
 5. **Refresh `agents/PROJECT.md`** if present: re-detect convention-doc paths + test command; when they drift from the current file, write proposals to `agents/PROJECT.md.proposed` (never overwrite). If `agents/PROJECT.md` is missing but `agents/` exists, render it per Init step 6.
-6. **Scaffold any missing structural files** — create-if-missing only (see [Scaffolding structural files](#scaffolding-structural-files) below). Useful if a structural file was deleted since first setup; never touches existing ones.
-7. Output a diff summary for human review. User merges manually.
+6. **Refresh the stack architecture profile** — re-detect the stack and compare against the current `rules/architecture.md` and `rules/guidelines.md`:
+   - If the detected stack has a bundled profile under `templates/stacks/<stack>/` and the current `rules/architecture.md` or `rules/guidelines.md` is the generic skeleton (or missing), write the proposed profile to `rules/architecture.md.proposed` / `rules/guidelines.md.proposed` for human review. Never overwrite a customized file silently.
+   - If either rules file is missing, apply the create-if-missing logic from Init step 7 (correct profile or generic skeleton, with auto-detection comment).
+   - If neither file has changed (still matches the bundled profile or the human has customized it), skip and report `exists / customized`.
+   - NEVER silently emit a wrong-stack profile. If the detected stack does not match any bundled `templates/stacks/<stack>/`, leave the current file untouched and note the mismatch in the diff summary.
+7. **Scaffold any missing structural files** — create-if-missing only (see [Scaffolding structural files](#scaffolding-structural-files) below). Useful if a structural file was deleted since first setup; never touches existing ones.
+8. Output a diff summary for human review. User merges manually.
 
 ---
 
@@ -70,6 +80,10 @@ destination (this creates parent dirs). If it already exists, **skip** it and re
 | `docs-solutions-README.md` | `docs/solutions/README.md` | Knowledge-base schema |
 | `docs-solutions-INDEX.md` | `docs/solutions/INDEX.md` | KB index (rebuilt by `/compound`) |
 | `docs-solutions-critical-patterns.md` | `docs/solutions/critical-patterns.md` | Always-read critical patterns |
+| `templates/stacks/<stack>/architecture.md` (or generic skeleton) | `rules/architecture.md` | Stack architecture profile — rendered from the detected stack's bundled profile; falls back to the generic skeleton when no `templates/stacks/<stack>/` match exists (see Init step 7) |
+| `templates/stacks/<stack>/guidelines.md` (or generic skeleton) | `rules/guidelines.md` | Stack engineering guidelines — same detection + fallback logic as `rules/architecture.md` |
+
+> **Note:** the two stack-profile rows above are sourced from the repo-root `templates/stacks/` directory (e.g. `templates/stacks/fastapi/` or `templates/stacks/_skeleton/`), **not** from the skill-local `skills/bootstrap-xia2/templates/` directory that the rest of this table uses.
 
 **Guards:**
 
@@ -281,6 +295,7 @@ PROJECT.md drafted at <path>. Auto-detection summary:
 ✓ Public API Contract Types: detected (FastAPI)
 ✓ Entry Point Patterns: 3 dirs found
 ✓ agents/PROJECT.md: rendered — linked architecture.md + guidelines.md; test cmd `python -m pytest`
+✓ Stack profile: detected `fastapi` → rendered from `templates/stacks/fastapi/` → `rules/architecture.md`, `rules/guidelines.md` (created)
 
 Scaffolded (create-if-missing):
   + specs/README.md, specs/STATE.md, agent-memory/README.md (created)
@@ -291,6 +306,7 @@ REVIEW CHECKLIST (verify before invoking /xia2):
 2. Shared Runtime Contracts — only 1 candidate found; you may have more not matching name patterns. Walk through `app/config/` manually.
 3. Session/Transaction Primitives — empty. Find your project's DB session functions and add them.
 4. Auth Surfaces — verify the medium-confidence one is truly an auth surface.
+5. Stack profile — confirm the auto-detected stack (`fastapi`) is correct and the rendered `rules/architecture.md` + `rules/guidelines.md` match your project's conventions. If the stack is wrong or no profile was bundled, either correct the profile manually or add `templates/stacks/<stack>/{architecture,guidelines}.md`.
 
 Once reviewed, edit `PROJECT.md` to remove `<!-- auto -->` markers from confirmed entries.
 ```
@@ -312,7 +328,12 @@ STALE ENTRIES:
 
 UNCHANGED: 7 entries consistent with detection.
 
+STACK PROFILE:
+  ~ rules/architecture.md — exists and appears customized; no proposal written
+  ! rules/guidelines.md — missing; rendered from `templates/stacks/fastapi/` → `rules/guidelines.md` (created)
+
 Diff written to `PROJECT.md.proposed`. Review and merge selectively into `PROJECT.md`.
+Stack profile proposals (if any) written to `rules/architecture.md.proposed` / `rules/guidelines.md.proposed` — merge manually.
 ```
 
 ---

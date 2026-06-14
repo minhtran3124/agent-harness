@@ -74,8 +74,8 @@ This repo has no HTTP auth layer. The analogous trust surface is:
 
 Files to read at Step 2b in addition to AGENTS.md/CLAUDE.md/README.md.
 
-- `.claude/rules/architecture.md` — authoritative architecture reference (layers, models, services) for target FastAPI projects that use this harness
-- `.claude/rules/guidelines.md` — code style, error handling, async, testing conventions for target projects
+- `.claude/rules/architecture.md` — active stack profile: authoritative architecture reference (layers, models, services); generated/refreshed by `/bootstrap-xia2` from `templates/stacks/`
+- `.claude/rules/guidelines.md` — active stack profile: code style, error handling, async, testing conventions; generated/refreshed by `/bootstrap-xia2` from `templates/stacks/`
 - `docs/solutions/` — solved problems with metadata
   - **Index:** read `docs/solutions/INDEX.md` first (single read, O(1)); fallback grep keys like `` module: `harness-bootstrap` ``, `` affects.*hooks/ ``
   - **Critical patterns:** `docs/solutions/critical-patterns.md` — always read regardless of domain
