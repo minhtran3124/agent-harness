@@ -52,3 +52,9 @@ else
         done
     fi
 fi
+
+# ── Drift Audit (advisory) ──────────────────────────────────────────────────────
+echo ""
+if [[ -x "$REPO_ROOT/scripts/harness-audit.sh" ]]; then
+    bash "$REPO_ROOT/scripts/harness-audit.sh" || true
+fi

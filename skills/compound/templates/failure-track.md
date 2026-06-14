@@ -26,7 +26,10 @@ confirmed_at: [today's date YYYY-MM-DD]
 [Correct_Approach content from FAILURE_TRACK]
 
 ## Guardrail
-[Guardrail content from FAILURE_TRACK — the check/hook/rule that now prevents recurrence]
+[Guardrail content from FAILURE_TRACK — a buildable artifact tagged `existing:` or `proposed:`.
+`existing:` names a file/hook/rule already enforcing this; `proposed:` names an artifact to build
+plus its target path. A `proposed:` guardrail is also appended to
+`docs/harness-experimental/improvement-backlog.md` so the ratchet closes from learning → enforced rule.]
 
 ## Related
 [Paths from RELATED_DOCS.existing_files — omit section if empty]
