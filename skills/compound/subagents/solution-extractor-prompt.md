@@ -66,8 +66,15 @@ FAILURE_TRACK:
     [What approach was ultimately used instead? Reference the final implementation if
     helpful.]
   Guardrail: |
-    [The concrete check, hook, rule, or test that now prevents this wrong approach from
-    being repeated. Name the specific file, hook, or rule if one exists.]
+    [The concrete mechanical guardrail that prevents this wrong approach from recurring.
+    Always name a SPECIFIC, BUILDABLE artifact — never prose like "be careful" or "remember to".
+    Use one of two forms:
+      existing: <file/hook/rule that ALREADY enforces this> — e.g. "hooks/risk-corroboration.sh"
+      proposed: <artifact to BUILD + its target path> — e.g. "a check in scripts/harness-audit.sh
+                that flags SUMMARY.md missing a ### Verify table"
+    The ratchet principle (OpenAI harness engineering): every repeated mistake must become a
+    permanent mechanical rule, not a remembered lesson. If no guardrail exists yet, you MUST
+    still emit a `proposed:` one — a failure with no proposed guardrail is incomplete.]
   Applicable_When: |
     [One sentence completing "Watch for this when..." — must be specific to a trigger
     condition. Vague answers like "when needed" are not acceptable.]
@@ -85,3 +92,4 @@ FAILURE_TRACK:
 - Mine `Harness-Delta: backlog` items from subagent summaries in the session transcript into FAILURE_TRACK entries — these friction signals mark approaches the harness found wanting
 - FAILURE_TRACK `Applicable_When` must complete the sentence "Watch for this when..." — it must name a specific trigger condition, not just "when needed"
 - `Regression_Test` in BUG_TRACK is required and must never be left blank — if no test exists, write `[none] — <reason>` explaining why
+- `Guardrail` in FAILURE_TRACK is required and must name a buildable artifact tagged `existing:` or `proposed:` — never leave it as prose or `[none]`. A failure whose mistake cannot recur mechanically is not yet a ratchet

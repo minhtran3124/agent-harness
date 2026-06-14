@@ -288,11 +288,29 @@ confirmed_at: [today's date YYYY-MM-DD]
 [Correct_Approach content from FAILURE_TRACK]
 
 ## Guardrail
-[Guardrail content from FAILURE_TRACK — the check/hook/rule that now prevents recurrence]
+[Guardrail content from FAILURE_TRACK — a buildable artifact tagged `existing:` or `proposed:`]
 
 ## Related
 [Paths from RELATED_DOCS.existing_files — omit section if empty]
 ```
+
+**Ratchet backlog (failure track only).** After writing a failure doc whose `Guardrail` is tagged
+`proposed:`, append one row to `docs/harness-experimental/improvement-backlog.md` (create from the
+header below if missing) so the proposed guardrail is triageable — this closes the loop from
+"documented learning" to "mechanically enforced rule" (OpenAI's ratchet principle). Skip for
+`existing:` guardrails (already enforced). Header if creating the file:
+
+```markdown
+# Improvement Backlog
+
+Proposed mechanical guardrails mined from `/compound` failure tracks. Each row is a ratchet
+candidate: a hook/test/lint/rule to build so a known mistake cannot recur. Triage and check off.
+
+| Date | From failure (slug) | Proposed guardrail | Target path | Status |
+|---|---|---|---|---|
+```
+
+Row shape: `| YYYY-MM-DD | <slug> | <proposed: text> | <target path> | open |`.
 
 **Collision handling for consolidated files:**
 Apply the same Step 4 rules to `[slug]-decisions.md`:
