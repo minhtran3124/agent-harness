@@ -45,6 +45,26 @@ Results land in `results/<date>-<label>.md`, built from `results/template.md`. C
 `fixture | defect class | expected oracle | caught-by | verdict | tokens`. The headline numbers
 are the **catch rate (n/5)**, the **false-positive count**, and approximate token cost per pass.
 
+## Fixture revisions
+
+Fixtures are versioned by the honesty rule that each carries **exactly one planted defect** for
+the *expected* oracle. When a fixture is found to carry an unintended defect for the *other*
+oracle, it is revised — the planted defect is preserved, the unintended one removed — and the
+revision is recorded here. Past result files state which fixture version they measured.
+
+- **v2 (2026-06-14)** — `excess-scope` and `intent-gap` made **correctness-clean**. v1 of both
+  carried real latent correctness bugs (a `model_validate(None)` None-deref in each, plus a P0
+  ownership/BOLA gap in `intent-gap`) that the off-oracle `/correctness-review` pass correctly
+  caught — so the off-oracle pass was not a clean false-positive probe. v2 adds `None` guards
+  (and owner-scoping on the watchlist update) while **keeping the planted intent defect intact**
+  (the excess `get_profile` refactor; the missing empty-name validation on `update_watchlist`).
+  The expected-oracle defects are unchanged, so the **5/5 expected-oracle catch-rate baseline
+  still holds**; only the off-oracle correctness pass changes (now expected **CLEAN** on these
+  two). v1 results: `results/2026-06-baseline.md`, `results/2026-06-14-reviewer-agent.md`.
+  **Verified (2026-06-14):** the off-oracle `/correctness-review` pass (via `subagent_type:
+  reviewer`) reports **CLEAN** on both v2 fixtures — no asserted runtime bug, unknowns labeled —
+  confirming they are now true false-positive probes.
+
 ## Honesty rules
 
 - Report misses plainly. A miss is a finding about the skill, not a failure of the benchmark.
