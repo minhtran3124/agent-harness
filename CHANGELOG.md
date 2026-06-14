@@ -7,7 +7,21 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 ## [Unreleased]
 
-## [0.1.0] — 2026-06-14
+## [0.2.0] — 2026-06-14
+
+### Changed
+- **Stack-agnostic `rules/` (MIN-25).** The `rules/` governance layer is no longer FastAPI-only.
+  Universal rules ship identical everywhere; stack-specific guidance is a swappable profile:
+  - FastAPI content moved verbatim to `templates/stacks/fastapi/{architecture,guidelines}.md`;
+    `rules/architecture.md` + `rules/guidelines.md` are now stack-neutral skeletons (deploy still
+    ships valid files).
+  - `rules/plan-format.md`, `auto-correct-scope.md`, `wave-parallelism.md` keep FastAPI snippets
+    only inside blocks tagged `example — substitute your stack`; in-prose stack tokens genericized.
+  - **`bootstrap-xia2` now renders the stack profile per repo** — detect stack → bundled
+    `templates/stacks/<stack>/` profile as a human-reviewed draft, else the generic
+    `templates/stacks/_skeleton/` fallback; never a wrong-stack profile. (skill-contract change → minor)
+
+
 
 First versioned snapshot of the harness — the skill framework, governance rules, hooks, CI, and
 the research-driven gap-closure work.

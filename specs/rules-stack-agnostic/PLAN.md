@@ -136,3 +136,4 @@ created: 2026-06-14
 
 - 2026-06-14 — Plan drafted (status: proposed). Waves: 1 (tasks 1.1, 1.2, 1.3, 1.4, 1.4b — all file-disjoint, parallel) → 2 (1.5 Phase-1 gate) → 3 (2.1 bootstrap generator, 2.2 final verify).
 - 2026-06-14 — Plan-review loop iter 1: fixed coupling-grep token set (added repository/pytest/async def), benchmark Soft-Deletes target (architecture.md), Task 1.4 vacuous verify (→ real grep), added .template.md siblings + 1.4b (benchmark + CLAUDE/README drift) + deploy-valid-files check in 1.5.
+- 2026-06-14 — Executed (status: active). Wave 1 (1.1–1.4b) → `5329ef1` (after spec+quality review, 2 findings fixed). Wave 2 gate (1.5) PASS. Wave 3 (2.1+2.2) → `7964c22` (after spec+quality review, 2 findings fixed: _skeleton fallback source + table caveat). Final correctness review ✅ clean. Final intent review ⚠️→ fixed `1b68006` (residual Python tokens in Rule 3). Full suite + lint green throughout.

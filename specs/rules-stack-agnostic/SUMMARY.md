@@ -39,14 +39,26 @@ High-risk because the refactor spans the rules/ governance layer (a shared contr
 
 <!-- Filled at execution time. Acceptance (from MIN-25): coupling grep = 0 on the universal rule set; FastAPI guidance preserved (relocated, nothing lost); CI/lint green. -->
 
+<!-- Commands are pipe-free + idempotent so ci-strict-gate's verify_summary.py --check re-runs them clean. -->
+
 | Check | Command | Exit | Notes |
 | --- | --- | --- | --- |
-| <coupling grep on universal rules> | `<command>` | 0 | <to fill at execution> |
+| full suite + doc-truth lint | `bash scripts/run-tests.sh` | 0 | ALL GREEN (102 passed, 1 skipped); lint green |
+| lane evidence (dogfood) | `python3 scripts/check_lane_evidence.py rules-stack-agnostic` | 0 | high-risk SUMMARY has Verify + Rollback |
+| plan format valid | `python3 scripts/check_plan_format.py specs/rules-stack-agnostic/PLAN.md` | 0 | XML schema valid; no story-size warning |
+
+Also verified manually (pipe/grep, not table-re-runnable): both `rules/` skeletons carry 0 coupling tokens; `git show 09b74e8:rules/{architecture,guidelines}.md` diffs empty against `templates/stacks/fastapi/` (nothing lost); throwaway `deploy-harness.sh --target` ships a valid `.claude/rules/` + fastapi profile; final `/correctness-review` clean + `/intent-review` resolved.
+
+### Deviations
+
+- Review-driven (spec): genericized untagged stack tokens in `rules/auto-correct-scope.md` Rule 4 (session-scope, data-access base) — commit `5329ef1`.
+- Review-driven (intent): genericized `requirements.txt`/`ruff`/`mypy` in `rules/auto-correct-scope.md` Rule 3 — commit `1b68006`.
+- Review-driven (quality): created `templates/stacks/_skeleton/` as the concrete skeleton-fallback source + fixed the scaffolding-table base caveat — commit `7964c22`.
 
 ### Rollback
 
-- Revert the branch: `git revert <sha>` (rules/ content is reversible markdown; no data/schema change).
+- Revert the branch commits: `git revert 1b68006 7964c22 5329ef1` (rules/ content is reversible markdown; no data/schema change). Or drop the branch entirely — `feat/rules-stack-agnostic` is not merged.
 
 ### Harness-Delta
 
-- none (intake only)
+- none — the workflow ran clean end-to-end (intake → brainstorm → xia2 → plan → execute → correctness + intent review).
