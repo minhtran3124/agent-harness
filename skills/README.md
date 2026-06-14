@@ -48,7 +48,7 @@ This file is the single source of truth for overview, workflow, and cross-skill 
   → output: docs/solutions/<category>/<slug>.md
       ↓
 /finishing-a-development-branch
-  → PR description, review checklist, merge
+  → runs tests, pushes, opens a PR (never merges — a human reviews & merges)
 ```
 
 ### Minimum Viable Path (intent clear, in-place edit, <1 day)
