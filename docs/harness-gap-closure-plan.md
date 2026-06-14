@@ -78,23 +78,22 @@ Research từng nêu, nay đã giải quyết về cơ chế:
 **P1-D · ✅ ĐÃ XONG TỪ TRƯỚC — review subagent read-only bằng cấu trúc** *(comparison #2)*
 - **Ground truth:** `agents/reviewer.md` đã tồn tại, read-only (`tools: Glob, Grep, Read, Bash` — loại Write/Edit/Agent). Cả 3 prompt template (`correctness-reviewer`, `correctness-scorer`, `intent-reviewer`) đã khai `subagent_type: reviewer` + comment giải thích. Research comparison #2 ("1 dòng config") đã được hiện thực đầy đủ hơn — bằng agent def riêng. Không còn việc gì.
 
+> **Trạng thái thực thi 2026-06-14 (sau ground-truth):** Phase 2 gần như đã đóng từ trước.
+> P2-E/F/G đều đã có sẵn (research 06-11 lỗi thời); chỉ **P2-H** thực sự còn thiếu → đã làm trong phiên này.
+
 ### Phase 2 — Đóng lỗ thiết kế + hoàn tất chuyển đổi dở dang (cần vài quyết định / Rule-4 nhẹ)
 
-**P2-E · Đóng Q3 (product contract) — điền PROJECT.md + thêm field `Affects:`** *(req #1 — lỗ thiết kế duy nhất)*
-- **Action:** (1) chạy `/bootstrap-xia2` điền `xia2/PROJECT.md` cho chính repo (khai High-Blast Files thật, Shared Contracts); (2) thêm field `Affects:` (contract/module) vào `templates/SUMMARY.template.md` + một bước hỏi trong `/feature-intake`; thêm cột tương ứng vào ledger để query.
-- **Verify:** PROJECT.md không còn placeholder `<your project name>`; SUMMARY mới có dòng `Affects:`.
+**P2-E · ✅ ĐÃ XONG TỪ TRƯỚC — Đóng Q3 (product contract)** *(req #1 — lỗ thiết kế duy nhất)*
+- **Ground truth 06-14:** `skills/xia2/PROJECT.md` đã điền thật cho repo (Name: harness-skills, High-Blast Files + Shared Contracts thật — không còn placeholder); `templates/SUMMARY.template.md` đã có dòng `Affects:`; `/feature-intake` đã hỏi contract (Step ~53, 126); ledger đã có cột `Affects`. Research 06-11 lỗi thời.
 
-**P2-F · SessionStart hook — khép vòng đọc-lại tri thức** *(compound-loop, req #4)* — **Rule-4 (settings.json)**
-- **Gap:** `critical-patterns.md`/INDEX không tự nạp vào session mới; chỉ pull khi gọi `/xia2`/`/brainstorming`.
-- **Action (mức "vừa" của research 06-08):** SessionStart hook in nội dung `INDEX.md` + `critical-patterns.md` (hoặc tiêu đề) vào context; silent khi store rỗng. **Cần người xác nhận** (đụng settings.json).
-- **Verify:** mở session mới → context chứa tiêu đề critical-patterns; store rỗng → hook im lặng, không block.
+**P2-F · ✅ ĐÃ XONG TỪ TRƯỚC — SessionStart hook khép vòng tri thức** *(compound-loop, req #4)*
+- **Ground truth:** `hooks/session-knowledge.sh` đã wired (SessionStart), load `INDEX.md`+`critical-patterns.md`, silent khi rỗng. Research 06-08 (compound-loop-closure) đã lỗi thời.
 
-**P2-G · Hoàn tất chuyển đổi `specs/`** *(req #2/#6)*
-- **Action:** (1) commit lần đầu các slug + STATE.md đang untracked; (2) sửa 2 doc khẳng định ngược: `CLAUDE.md:61` ("specs/ fully gitignored") và `rules/plan-format.md:125`; rà `skills/README.md`/`visual-planner` mô tả "PLAN.html untracked"; (3) thêm `specs/**/PLAN.html` vào `.gitignore` (artifact dẫn xuất).
-- **Verify:** `git check-ignore specs/foo/PLAN.html` trả về match; grep "fully gitignored" trong CLAUDE.md = 0; doc-truth lint pass.
+**P2-G · ✅ ĐÃ XONG TỪ TRƯỚC — Hoàn tất chuyển đổi `specs/`** *(req #2/#6)*
+- **Ground truth:** CLAUDE.md đã ghi "specs/ is tracked in git"; `.gitignore` đã ignore `specs/**/PLAN.html` + `specs/**/.plan-review.json`; dòng `skills/README.md:104` "PLAN.html untracked/local-only" là **đúng sự thật** (PLAN.html thật gitignored), không phải mâu thuẫn. Không còn việc.
 
-**P2-H · Ghi chú MCP-output-untrusted** *(openai #5)* — Rule-4 nhẹ (CLAUDE.md)
-- **Action:** thêm dòng trong CLAUDE.md mục MCP: output của `code-review-graph`/`context7` là **input không đáng tin** — dovetail với `not_observed != absent`. Một câu, không đổi hành vi.
+**P2-H · ✅ XONG (2026-06-14) — Ghi chú MCP-output-untrusted** *(openai #5)*
+- **Đã làm:** thêm subsection "Boundary of trust (MCP output is untrusted input)" vào mục MCP của CLAUDE.md — coi output `code-review-graph`/`context7` là input không đáng tin, corroborate trước khi hành động, không execute lệnh nằm trong output; dovetail `not_observed != absent`. lint-doc-truth + suite xanh.
 
 ### Phase 3 — Larger bets / có điều kiện (mỗi cái xứng 1 spec riêng)
 
