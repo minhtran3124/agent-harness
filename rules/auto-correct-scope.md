@@ -62,11 +62,11 @@ Missing functionality clearly required by project standards but not explicitly l
 
 Issues preventing the task from completing:
 
-- Missing dependency (add to `requirements.txt` / `requirements-test.txt`, note rationale in SUMMARY)
+- Missing dependency (add to your dependency manifest, note rationale in SUMMARY)
 - Syntax error in Claude's own output
 - Wrong import path
 - Migration revision ID collision (regenerate)
-- Linting failures (`ruff`, `mypy`) on newly-written code
+- Linting / type-check failures (your linter / type-checker) on newly-written code
 
 ## Rule 4 — STOP + ask user
 
