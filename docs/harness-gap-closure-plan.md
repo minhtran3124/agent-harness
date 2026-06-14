@@ -100,7 +100,7 @@ Research từng nêu, nay đã giải quyết về cơ chế:
 **P3-I · 🟡 Infra đã có; RE-RUN xong (2026-06-14) — Micro-benchmark chuỗi review** *(comparison #1/#7)*
 - **Ground truth:** `benchmarks/review-chain/` đã có sẵn (5 fixtures intent/diff/truth + protocol manual v1 + baseline 06-12 = 5/5, 0 FP). Không phải build mới.
 - **Đã làm (re-run full matrix 10 dispatch với agent `reviewer` thật):** kết quả `results/2026-06-14-reviewer-agent.md` — **5/5 catch đúng oracle, 0 hard false-positive**, ~354k tokens. **Đóng caveat #2 của baseline:** lần đầu đo bằng `subagent_type: reviewer` read-only theo cấu trúc (baseline cũ chỉ đo prompt). Không hồi quy sau P1-B/P2-H.
-- **Follow-up còn mở (caveat #1):** 2 intent fixtures (excess-scope, intent-gap) có latent correctness bug thật → nên sửa cho runtime-clean để off-oracle pass là true false-positive probe.
+- **✅ Caveat #1 đã đóng (2026-06-14):** sửa 2 intent fixtures (excess-scope, intent-gap) thành **runtime-clean v2** — thêm None-guard + ownership-scoping, **giữ nguyên defect intent** đã cấy. Verify bằng 2 off-oracle correctness pass (agent `reviewer`) → cả hai báo **CLEAN**. Fixture versioning ghi trong `benchmarks/review-chain/README.md`; expected-oracle baseline 5/5 vẫn giữ.
 
 **P3-J · `scripts/check_lane_evidence.py` — lane→evidence một nguồn sự thật** *(IDEA-10)*
 - **Gap:** mapping lane→ceremony nhân bản ở `feature-intake` Step 7, Step 3, `auto-correct-scope.md` Rule 4, `risk-corroboration.sh` — không gì giữ đồng bộ.

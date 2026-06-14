@@ -13,3 +13,11 @@
 - **What a false-positive would look like:** flagging the new `get_settings` endpoint as the
   excess (it is exactly the request), or reporting a correctness bug (there is no planted
   runtime bug here — this fixture is for the intent oracle).
+- **Correctness-clean (fixture v2, 2026-06-14):** both handlers now guard their `Optional`
+  repo/service result with `if ... is None: raise AppException.NotFound(...)` before
+  `model_validate`, so the off-oracle `/correctness-review` pass should report **CLEAN** — this
+  fixture is now a true false-positive probe for the correctness oracle. A correctness reviewer
+  MAY note the `get_profile_with_stats` swap as an `unknown` contract observation (the service
+  is not visible), but that is not a hard finding. Any asserted runtime bug here is a
+  false-positive. (v1 carried an unintended `model_validate(None)` None-deref; the 06-12 baseline
+  and 06-14 reviewer-agent runs measured v1.)

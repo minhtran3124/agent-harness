@@ -2,11 +2,12 @@ diff --git a/app/routers/profile.py b/app/routers/profile.py
 index 5555555..6666666 100644
 --- a/app/routers/profile.py
 +++ b/app/routers/profile.py
-@@ -1,18 +1,33 @@
+@@ -1,18 +1,38 @@
  from fastapi import APIRouter, Depends
 
  from app.database import get_db
  from app.dependencies import get_current_user
++from app.exceptions import AppException
  from app.repositories.profile_repository import ProfileRepository
 -from app.schemas.profile import ProfileResponse
 +from app.schemas.profile import ProfileResponse, SettingsResponse
@@ -23,6 +24,8 @@ index 5555555..6666666 100644
 +async def get_settings(db=Depends(get_db), current_user=Depends(get_current_user)) -> SettingsResponse:
 +    repo = ProfileRepository(db)
 +    settings = await repo.get_settings(current_user.id)
++    if settings is None:
++        raise AppException.NotFound("settings not found")
 +    return SettingsResponse.model_validate(settings)
 +
 +
@@ -33,4 +36,6 @@ index 5555555..6666666 100644
 -    return ProfileResponse.model_validate(profile)
 +    service = ProfileService(db)
 +    profile = await service.get_profile_with_stats(current_user.id)
++    if profile is None:
++        raise AppException.NotFound("profile not found")
 +    return ProfileResponse.model_validate(profile)
