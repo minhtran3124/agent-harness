@@ -108,13 +108,14 @@ Research từng nêu, nay đã giải quyết về cơ chế:
 **P3-K · ✅ XONG (2026-06-14) — Gate kích thước story** *(req #5/#7)*
 - **Đã làm:** thêm `story_size_warnings()` vào `check_plan_format.py` — warn (advisory, KHÔNG đổi exit code) khi 1 task chạm >`MAX_FILES_PER_TASK` (mặc định 4, override qua `PLAN_MAX_FILES_PER_TASK`). 4 test. Steps không đếm được cơ học (action là prose) → chỉ gate file-count (cấu trúc).
 
-**P3-L · Break-glass protected-path hook** *(comparison #5)* — **Rule-4 (hook mới)**
-- **Action:** PreToolUse hook hard-block write vào high-blast list (`settings.json`, `hooks/*`, `render_plan.py`), escape "ask with pre-registered reason" → biến override thành audit record.
+**P3-L · ✅ XONG dormant (2026-06-14) · Break-glass protected-path hook** *(comparison #5)*
+- **Đã làm:** `hooks/protected-path-guard.sh` (PreToolUse Edit/Write) hard-block write vào high-blast list (settings.json, `hooks/*`, `render_plan.py`, `run-tests.sh`, SUMMARY template); break-glass qua `PROTECTED_PATH_REASON` → ghi `break-glass-log.md`. `^hooks/` loại trừ `tests/hooks/`. 8 test. **DORMANT** — chưa đăng ký `settings.json` (wiring là Rule-4, cần xác nhận); đã thêm dòng ⬜ vào bảng hook CLAUDE.md.
 
-**P3-M · Nâng fail-open → fail-closed theo giai đoạn** *(req #4/#5)* — **Rule-4**
-- **Action:** bật `REQUIRE_VERIFY=1` + `RISK_CORROBORATION_STRICT=1` **trong CI trước** (không chặn local), đo tỷ lệ vỡ qua ledger vài tuần rồi mới cân nhắc local. Tôn trọng quyết định keep-warn hiện hữu.
+**P3-M · ✅ ĐÃ XONG TỪ TRƯỚC · Nâng fail-open → fail-closed theo giai đoạn** *(req #4/#5)*
+- **Ground truth:** `scripts/ci-strict-gate.sh` đã tồn tại + **đã wire** vào `harness-ci.yml` — strict semantics nằm trong script (chạy trên PR khi diff đụng hard-gate path), local hook giữ warn-by-default. Đúng y "strict-in-CI-first". Không còn việc.
 
-**P3-N · VERSION + CHANGELOG** *(IDEA-15, req #6)* — chỉ khi có consumer thứ 2.
+**P3-N · ✅ XONG (2026-06-14) · VERSION + CHANGELOG** *(IDEA-15, req #6)*
+- **Đã làm:** `VERSION` (0.1.0) + `CHANGELOG.md` (Keep-a-Changelog) ở root; thêm vào PAYLOAD installer + echo `(vX.Y.Z)` lúc cài; bước "update CHANGELOG/VERSION" trong `finishing-a-development-branch` (bump theo patch/minor/major). (Plan cũ ghi "chỉ khi consumer thứ 2" — user yêu cầu làm luôn để đóng backlog.)
 
 **P3-O · Hợp nhất bash gates thành 1 dispatcher + state ledger** *(comparison #8/#9)* — đại tu, **Rule-4**, ưu tiên thấp nhất; chỉ khi số hook/độ giòn thực sự đau.
 

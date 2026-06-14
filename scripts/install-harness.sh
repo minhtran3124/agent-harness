@@ -26,7 +26,7 @@ KEEP_SOURCES=0
 # target root — a previous installer staged these at the root and pruned them afterward,
 # which destroyed real project files when those names already existed (or when run inside
 # the harness-skills repo itself).
-PAYLOAD=(skills agents hooks rules templates settings.json scripts/deploy-harness.sh)
+PAYLOAD=(skills agents hooks rules templates settings.json scripts/deploy-harness.sh VERSION CHANGELOG.md)
 STAGE_NAME=".harness-source"
 
 # ---------- styling ----------
@@ -206,7 +206,8 @@ if [ "$KEEP_SOURCES" -eq 1 ]; then
   fi
 fi
 
-printf '\n  %s%s✓ Harness installed%s  %s→ %s%s\n' "$G" "$B" "$R" "$D" "$TARGET_DIR" "$R"
+HARNESS_VERSION=$( [ -f "$SRC/VERSION" ] && tr -d '[:space:]' < "$SRC/VERSION" || echo "unknown" )
+printf '\n  %s%s✓ Harness installed%s %s(v%s)%s  %s→ %s%s\n' "$G" "$B" "$R" "$D" "$HARNESS_VERSION" "$R" "$D" "$TARGET_DIR" "$R"
 printf '  %s↻ Restart Claude Code in that project so it loads the harness.%s\n' "$Y" "$R"
 if [ "$UVX_MISSING" -eq 1 ]; then
   warn "Install uv before that restart, or the code-review-graph MCP server cannot launch."
