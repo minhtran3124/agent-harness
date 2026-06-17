@@ -30,7 +30,20 @@ Run these four guardrail checks against the plan:
 
 **If any guardrail fails:** STOP. Report the specific violations (quote the failing task id(s) and sub-element(s)) back to the user. Reference `.claude/rules/plan-format.md` / `.claude/rules/wave-parallelism.md`. Do NOT proceed to Step 1.
 
-**If all guardrails pass:** proceed to Step 1.
+**If all guardrails pass:** proceed to Step 0b.
+
+### Step 0b: Ensure branch isolation (before any code change)
+
+Implementation must never begin on `main`/`master` or another shared branch. Before the first task:
+
+1. Check the current branch: `git symbolic-ref --short HEAD`.
+2. If on `main`/`master` (or any shared/protected branch), **invoke `using-git-worktrees`** to
+   create an isolated worktree + feature branch, then continue execution there. Do not proceed on
+   the shared branch.
+3. If already on a dedicated feature branch (or inside a worktree created for this slug), proceed.
+
+This is the single structural point that creates the branch — no downstream skill or hook does it
+for you (`branch-guard.sh` only warns at commit time, after the work is already on the branch).
 
 ### Step 1: Load and Review Plan
 

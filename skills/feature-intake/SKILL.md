@@ -148,9 +148,13 @@ of lane (audit-heavy work / calibrating trust). See `rules/orchestration.md` →
 
 | Lane | Route | Human checkpoint |
 |---|---|---|
-| **tiny** | Direct `Edit` (no plan). Proof = quick-check hooks (`ruff-on-edit`, `auto-test-on-change`, `commit-quality-gate`). | none (unless confidence low / ambiguous) |
-| **normal** | `/subagent-driven-development` (+ `wave-parallelism` for independent tasks). Two-stage agent review per task. | only if confidence low / ambiguous |
-| **high-risk** | Full chain: `/brainstorming` → `/xia2` → `/writing-plans` → `/subagent-driven-development`; record a decision via `/compound` when architecture/behavior changes. | only on ambiguity or a hard gate |
+| **tiny** | Direct `Edit` (no plan, no branch — lands on the current branch by design). Proof = quick-check hooks (`ruff-on-edit`, `auto-test-on-change`, `commit-quality-gate`). | none (unless confidence low / ambiguous) |
+| **normal** | `/using-git-worktrees` (creates the feature branch) → `/subagent-driven-development` (+ `wave-parallelism` for independent tasks). Two-stage agent review per task. | only if confidence low / ambiguous |
+| **high-risk** | Full chain: `/brainstorming` → `/xia2` → `/writing-plans` → `/using-git-worktrees` → `/subagent-driven-development`; record a decision via `/compound` when architecture/behavior changes. | only on ambiguity or a hard gate |
+
+> **Branch creation is `using-git-worktrees`'s job** and it is the only step that creates one. The
+> non-tiny execution skills now also self-check at Step 0 and invoke it if started on a shared
+> branch — so the branch is created even when this route is entered mid-chain.
 
 After routing, hand off. The downstream skills already enforce their own gates and proof.
 

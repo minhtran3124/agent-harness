@@ -39,7 +39,19 @@ digraph when_to_use {
 
 ## The Process
 
-**First action — mark the plan active.** Before dispatching wave 1, set the frontmatter
+**Step 0 — Ensure branch isolation (before any code change).** Implementation must never begin on
+`main`/`master` or another shared branch. Before dispatching wave 1:
+
+1. Check the current branch: `git symbolic-ref --short HEAD`.
+2. If on `main`/`master` (or any shared/protected branch), **invoke `using-git-worktrees`** to
+   create an isolated worktree + feature branch, then continue execution there. Do not proceed on
+   the shared branch.
+3. If already on a dedicated feature branch (or inside a worktree created for this slug), proceed.
+
+This is the single structural point that creates the branch — no downstream skill or hook does it
+for you (`branch-guard.sh` only warns at commit time, after the work is already on the branch).
+
+**Next — mark the plan active.** Before dispatching wave 1, set the frontmatter
 `status: proposed → active` in `specs/<slug>/PLAN.md` (canonical values only:
 `proposed | active | paused | shipped`). `hooks/blast-radius-check.sh` keys on `status: active` to
 identify the active plan, and the edit auto-re-renders `PLAN.html` via `render-plan-on-write.sh`.
