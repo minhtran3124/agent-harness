@@ -106,7 +106,16 @@ derive_settings() {
         )
     ' > "$tmp"
     mv "$tmp" "$OUT/settings.json"
+  elif [ -f "$OUT/settings.json" ]; then
+    # Exists but is NOT valid JSON — it cannot be merged. Never silently overwrite it:
+    # back it up first, warn, then write a fresh valid settings.json the harness can load.
+    local bak="$OUT/settings.json.invalid-bak-$(date +%Y%m%d-%H%M%S)"
+    cp "$OUT/settings.json" "$bak"
+    printf '  %s⚠ existing .claude/settings.json is not valid JSON — cannot merge.%s\n' "$Y" "$R" >&2
+    printf '  %s  backed up to %s; wrote a fresh harness settings.json.%s\n' "$D" "${bak#"$OUT_BASE"/}" "$R" >&2
+    printf '%s' "$derived" | jq . > "$OUT/settings.json"
   else
+    # First install — no existing file to preserve.
     printf '%s' "$derived" | jq . > "$OUT/settings.json"
   fi
 }
