@@ -48,4 +48,23 @@ t "harness hook commands are derived to \$CLAUDE_PROJECT_DIR/.claude/ on re-sync
 if jq -e '[.hooks[][].hooks[].command] | any(startswith("$CLAUDE_PROJECT_DIR/.claude/hooks/"))' "$S" >/dev/null; then pass
 else fail "no derived harness command path found"; fi
 
+# Invalid existing settings.json: cannot merge — must back up (not silently overwrite),
+# then write a fresh valid file.
+T2=$(mktemp -d); _CLEANUP_DIRS+=("$T2")
+mkdir -p "$T2/.claude"
+printf '{ this is NOT valid json,,, ' > "$T2/.claude/settings.json"
+bash "$DEPLOY" --target "$T2" >/dev/null 2>&1
+
+t "invalid existing settings.json is backed up, not silently overwritten"
+n=$(ls "$T2/.claude/"settings.json.invalid-bak-* 2>/dev/null | wc -l | tr -d ' ')
+if [ "$n" -ge 1 ]; then pass; else fail "no settings.json.invalid-bak-* backup created"; fi
+
+t "backup preserves the original invalid content"
+bak=$(ls "$T2/.claude/"settings.json.invalid-bak-* 2>/dev/null | head -1)
+if grep -q 'NOT valid json' "$bak" 2>/dev/null; then pass; else fail "backup missing original content"; fi
+
+t "a fresh valid harness settings.json is written after invalid backup"
+if jq -e '[.hooks[][].hooks[].command] | any(startswith("$CLAUDE_PROJECT_DIR/.claude/hooks/"))' "$T2/.claude/settings.json" >/dev/null 2>&1; then pass
+else fail "replacement settings.json is not valid / missing harness hooks"; fi
+
 finish
