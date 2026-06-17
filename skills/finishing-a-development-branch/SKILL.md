@@ -93,7 +93,7 @@ Runs as the first action of Step 3, before the push.
 
 ```bash
 branch=$(git branch --show-current)
-slug=${branch#*/}                       # strip feat/ | fix/ | chore/ prefix
+slug=${branch#*/}                       # strip the <type>/ prefix (feat|fix|docs|chore|refactor|test|perf|ci) — see using-git-worktrees Branch Naming
 ls specs/"$slug"/PLAN.md 2>/dev/null || ls specs/*/PLAN.md
 ```
 
