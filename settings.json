@@ -29,6 +29,16 @@
             "statusMessage": "Branch guard (warn on main)…"
           }
         ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "hooks/branch-isolation-guard.sh",
+            "statusMessage": "Branch-isolation guard (block code edits on shared branch w/ active plan)…"
+          }
+        ]
       }
     ],
     "PostToolUse": [

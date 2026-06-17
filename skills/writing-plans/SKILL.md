@@ -185,13 +185,20 @@ approach to use — present a clear A/B choice (use the `AskUserQuestion` tool w
 
 **Which approach?"**
 
+**Either approach — isolate the branch first.** Before any code change, ensure work runs on a
+dedicated feature branch, not a shared one. If on `main`/`master` (or any branch in
+`HARNESS_SHARED_BRANCHES`), **invoke `using-git-worktrees` first** to create an isolated worktree +
+branch. This is the only step that creates the branch; `hooks/branch-isolation-guard.sh` hard-blocks
+code edits on a shared branch once the plan is `status: active`, so skipping it stalls execution.
+(Tiny-lane in-place edits with no plan are exempt by design.)
+
 **If Subagent-Driven chosen:**
 
-- **REQUIRED SUB-SKILL:** Use subagent-driven-development
+- **REQUIRED SUB-SKILL:** Use `using-git-worktrees` (if not already isolated), then subagent-driven-development
 - Stay in this session
 - Fresh subagent per task + code review
 
 **If Parallel Session chosen:**
 
-- Guide them to open new session in worktree
+- Guide them to open a new session in the worktree (created via `using-git-worktrees`)
 - **REQUIRED SUB-SKILL:** New session uses executing-plans
