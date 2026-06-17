@@ -74,9 +74,41 @@ strip_archive()   { rm -rf "$OUT/skills/_archive"; }   # archived skills must no
 derive_settings() {
   # Point relative hook commands at the deployed .claude/ copies via $CLAUDE_PROJECT_DIR so they
   # resolve from any launch directory. Absolute / $-prefixed commands are left untouched.
-  jq '.hooks |= with_entries(.value |= map(.hooks |= map(.command |= (
+  local derived
+  derived="$(jq '.hooks |= with_entries(.value |= map(.hooks |= map(.command |= (
         if (startswith("$") or startswith("/")) then . else "$CLAUDE_PROJECT_DIR/.claude/" + . end
-      ))))' settings.json > "$OUT/settings.json"
+      ))))' settings.json)"
+
+  # Merge, never replace. A consuming project's .claude/settings.json may carry its own
+  # top-level keys (permissions, env, statusLine, enabledPlugins) AND its own hooks. Preserve
+  # all of them: foreign top-level keys pass through untouched; per event, foreign hook
+  # commands are kept while any prior-sync copy of a harness command is stripped and re-added
+  # fresh (dedup by command — re-sync stays idempotent, no double-registration).
+  if [ -f "$OUT/settings.json" ] && jq -e . "$OUT/settings.json" >/dev/null 2>&1; then
+    local cur tmp
+    cur="$(cat "$OUT/settings.json")"
+    tmp="$(mktemp)"
+    jq -n --argjson cur "$cur" --argjson new "$derived" '
+      # all harness-owned command strings (the dedup key set)
+      ([$new.hooks | .. | objects | select(has("command")) | .command] | unique) as $hcmds
+      | ($cur.hooks // {}) as $curh
+      | ($new.hooks // {}) as $newh
+      | $cur
+      | .hooks = (
+          (($curh | keys) + ($newh | keys) | unique)
+          | reduce .[] as $ev ({};
+              # foreign blocks for this event: drop harness commands, then drop now-empty blocks
+              ( ($curh[$ev] // [])
+                | map(.hooks |= map(select(.command as $c | $hcmds | index($c) | not)))
+                | map(select((.hooks | length) > 0)) ) as $foreign
+              | .[$ev] = ($foreign + ($newh[$ev] // []))
+            )
+        )
+    ' > "$tmp"
+    mv "$tmp" "$OUT/settings.json"
+  else
+    printf '%s' "$derived" | jq . > "$OUT/settings.json"
+  fi
 }
 
 # ---------- mode detection: first install vs re-sync ----------
