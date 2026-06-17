@@ -50,6 +50,7 @@ Hooks live in `hooks/` (top-level). Register them in `settings.json` under the a
 | `commit-quality-gate.sh` | PreToolUse (Bash `git commit`) | Secrets scan + debug artifact check + targeted pytest | ✅ |
 | `risk-corroboration.sh` | PreToolUse (Bash `git commit`) | Block if staged diff trips a hard gate but declared `Lane:` is below `high-risk` | ✅ |
 | `branch-guard.sh` | PreToolUse (Bash `git commit`) | Warn when committing on `main` | ✅ |
+| `branch-isolation-guard.sh` | PreToolUse (Edit/Write) | Hard-block a code edit on a shared branch (`HARNESS_SHARED_BRANCHES`, default `main`/`master`) while a plan is `status: active` — unless break-glass `BRANCH_ISOLATION_REASON` is set. Makes "isolate before implementing" structural at write time (`branch-guard.sh` only warns, at commit time). `specs/*` bookkeeping is exempt | ✅ |
 | `ruff-on-edit.sh` | PostToolUse (Edit/Write) | `ruff --fix` + `ruff format` on edited `.py` files | ✅ |
 | `blast-radius-check.sh` | PostToolUse (Edit/Write) | Warn when an edit touches a file outside the active plan `<files>` set | ✅ |
 | `render-plan-on-write.sh` | PostToolUse (Edit/Write on `specs/*/PLAN.md`) | Auto-re-render `PLAN.html` via `render_plan.py` (deterministic, non-blocking) | ✅ |
