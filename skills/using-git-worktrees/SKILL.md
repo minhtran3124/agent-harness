@@ -118,6 +118,21 @@ Per Jesse's rule "Fix broken things immediately":
 
 No .gitignore verification needed - outside project entirely.
 
+## Branch Naming
+
+`$BRANCH_NAME` is not free-form. Use **`<type>/<kebab-slug>`** (Conventional Branch — mirrors
+Conventional Commits):
+
+- **`<type>`** is one of: `feat` · `fix` · `docs` · `chore` · `refactor` · `test` · `perf` · `ci`.
+  Pick the type that matches the change's primary intent (same vocabulary the commit will use).
+- **`<slug>`** is kebab-case and SHOULD equal the `specs/<slug>` slug for this work, so the branch
+  is traceable to its plan. `finishing-a-development-branch` derives the plan by stripping the
+  prefix (`slug=${branch#*/}`), so a matching slug makes that resolution exact.
+
+Examples: `feat/api-key-generation` · `fix/deploy-merge-invalid-json` · `docs/worktree-naming`.
+
+Do not use a bare name (`auth`), a non-standard prefix (`feature/…`, `bugfix/…`), or spaces.
+
 ## Creation Steps
 
 ### 1. Detect Project Name
@@ -242,7 +257,7 @@ You: I'm using the using-git-worktrees skill to set up an isolated workspace.
 
 [Check .worktrees/ - exists]
 [Verify ignored - git check-ignore confirms .worktrees/ is ignored]
-[Create worktree: git worktree add .worktrees/auth -b feature/auth]
+[Create worktree: git worktree add .worktrees/feat/auth -b feat/auth]
 [Run npm install]
 [Run npm test - 47 passing]
 
@@ -254,6 +269,7 @@ Ready to implement auth feature
 ## Red Flags
 
 **Never:**
+- Name a branch off-standard — use `<type>/<kebab-slug>` with a valid type (see Branch Naming); no bare names, no `feature/`/`bugfix/`, no spaces
 - Create a worktree when Step 0 detects existing isolation (don't nest worktrees)
 - Use `git worktree add` when a native worktree tool exists (Step 1a) — this is the #1 mistake
 - Skip Step 1a and jump straight to the git fallback
