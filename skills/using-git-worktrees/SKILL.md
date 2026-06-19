@@ -161,7 +161,20 @@ cd "$path"
 
 ### 3. Run Project Setup
 
-Auto-detect and run appropriate setup:
+**Harness first — always check for `scripts/deploy-harness.sh`:**
+
+```bash
+# Deploy .claude/ into the worktree (harness skills, hooks, rules, settings)
+# .claude/ is gitignored (derived artifact) — worktrees won't have it without this step.
+if [ -f scripts/deploy-harness.sh ]; then
+  bash scripts/deploy-harness.sh --target "$path"
+fi
+```
+
+This must run before anything else. Without it the worktree has no hooks, no skills, and
+no `settings.json`, so the harness is effectively broken in that workspace.
+
+Auto-detect and run appropriate package manager setup:
 
 ```bash
 # Node.js
@@ -278,12 +291,14 @@ Ready to implement auth feature
 - Proceed with failing tests without asking
 - Assume directory location when ambiguous
 - Skip CLAUDE.md check
+- Skip `deploy-harness.sh --target` when `scripts/deploy-harness.sh` exists — the worktree will have no `.claude/` without it
 
 **Always:**
 - Run Step 0 detection first (+ submodule guard)
 - Prefer the native worktree tool over the git fallback
 - Follow directory priority: existing > CLAUDE.md > ask
 - Verify directory is ignored for project-local
+- Run `bash scripts/deploy-harness.sh --target "$path"` before package manager setup (if the script exists)
 - Auto-detect and run project setup
 - Verify clean test baseline
 
