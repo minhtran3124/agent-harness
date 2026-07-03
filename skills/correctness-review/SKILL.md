@@ -19,7 +19,7 @@ by `./correctness-reviewer-prompt.md` (high-recall finder) and `./correctness-sc
 
 **Why this stage exists.** Per-task spec and quality reviewers are anchored to the plan as the
 oracle — spec review asks *"does it match the spec?"*, quality review asks *"is it clean?"*.
-Neither asks *"cho dù spec đúng, code này có chạy sai ở runtime không?"*. A bug that faithfully
+Neither asks *"even if the spec is right, does this code fail at runtime?"*. A bug that faithfully
 implements a flawed spec passes both. This is the gap that lets real bugs survive to production
 and get caught by external reviewers post-push.
 

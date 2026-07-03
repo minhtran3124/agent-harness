@@ -68,13 +68,24 @@ For each task:
 3. Run verifications as specified
 4. Mark as completed
 
-### Step 3: Complete Development
+### Step 3: Final review passes (same gates as subagent-driven-development)
 
-After all tasks complete and verified:
+After all tasks complete and verified, run the final review chain over the whole diff — this
+path ships the same review gates as `subagent-driven-development`, not fewer:
+
+1. **`/correctness-review`** — adversarial runtime-bug hunt over the full branch diff.
+2. **`/intent-review`** — diff vs the original request (the `### Intent` in `specs/<slug>/SUMMARY.md`), blind to PLAN.
+
+Fix or escalate any confirmed findings before proceeding. Do NOT skip these because execution
+happened in a separate session — they are the difference between "passed the plan" and "correct".
+
+### Step 4: Complete Development
+
+After the review passes are clean:
 
 - Announce: "I'm using the finishing-a-development-branch skill to complete this work."
 - **REQUIRED SUB-SKILL:** Use finishing-a-development-branch
-- Follow that skill to verify tests, present options, execute choice
+- That skill runs the tests, marks the plan `shipped`, pushes, and opens a PR (it never merges).
 
 ## When to Stop and Ask for Help
 
