@@ -13,9 +13,13 @@ set +o pipefail
 exec 2>/dev/null
 
 # Resolve the knowledge-base root.
-# Default: docs/solutions relative to the repo root (same dir as the hook's parent).
+# Use the git worktree root (like every sibling hook) so it resolves correctly from BOTH
+# hooks/ (source) and .claude/hooks/ (deployed — the copy Claude Code actually runs).
+# The old `$HOOK_DIR/..` gave `.claude` when deployed → looked for the non-existent
+# `.claude/docs/solutions` and silently found nothing (DR-2). Fallback kept for non-git contexts.
 HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$HOOK_DIR/.." && pwd)"
+REPO_ROOT="$(git -C "$HOOK_DIR" rev-parse --show-toplevel 2>/dev/null)"
+[ -z "$REPO_ROOT" ] && REPO_ROOT="$(cd "$HOOK_DIR/.." && pwd)"
 KB_DIR="${SESSION_KNOWLEDGE_DIR:-$REPO_ROOT/docs/solutions}"
 
 INDEX="$KB_DIR/INDEX.md"

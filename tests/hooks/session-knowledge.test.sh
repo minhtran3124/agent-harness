@@ -150,4 +150,17 @@ else
     pass
 fi
 
+# DR-2 regression: the DEPLOYED copy runs from .claude/hooks/, so the repo-root resolver
+# (not the SESSION_KNOWLEDGE_DIR override used above) must find docs/solutions at the project
+# root. This is the exact path the old `$HOOK_DIR/..` got wrong and no test exercised.
+t "DR-2: deployed .claude/hooks/ location loads KB without SESSION_KNOWLEDGE_DIR override"
+drepo=$(mktemp -d); _CLEANUP_DIRS+=("$drepo")
+git -C "$drepo" init -q 2>/dev/null
+mkdir -p "$drepo/.claude/hooks" "$drepo/docs/solutions"
+cp "$ROOT/hooks/$H" "$drepo/.claude/hooks/"
+printf '%s\n' "$_REAL_INDEX" > "$drepo/docs/solutions/INDEX.md"
+OUT=$(cd "$drepo" && printf '' | bash ".claude/hooks/$H" 2>&1); RC=$?
+if [ "$RC" -eq 0 ] && printf '%s' "$OUT" | grep -q "my-entry"; then pass
+else fail "deployed hook did not load KB from project root — rc=$RC out: $(echo "$OUT" | head -3)"; fi
+
 finish
