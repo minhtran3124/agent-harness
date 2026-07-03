@@ -70,7 +70,7 @@ impression of config-level gating.
 | harness test suite | `bash scripts/run-tests.sh` | 0 | ALL GREEN — 102 py passed, all hook suites pass |
 | bypass regression (unit) | `bash tests/hooks/command-matching.test.sh` | 0 | 33 passed — every DR-1 form matched, quoted-separator + false-fire guards |
 | wired end-to-end (integration) | `bash tests/hooks/gate-integration.test.sh` | 0 | 8 passed — wrapped commits reach gate; missing-lib fails closed |
-| deployed artifact e2e | `deploy-harness --target . && run deployed branch-guard on temp main repo` | 0 | 3/3 wrapped forms detected via deployed `.claude/hooks/` |
+| bypass closed (matcher) | `bash -c 'source hooks/lib/git-command.sh && hook_cmd_is_git_commit "cd x && git commit"'` | 0 | exit 0 = wrapped commit now detected (DR-1 form) |
 
 ### Rollback
 
