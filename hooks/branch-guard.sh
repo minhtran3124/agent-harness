@@ -10,8 +10,11 @@
 INPUT=$(cat /dev/stdin)
 COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null)
 
-# Only act on git commit
-echo "$COMMAND" | grep -qE '^git commit' || exit 0
+# Only act on git commit (tokenizing matcher — resists cd/&&/-C/-c bypass)
+source "$(cd "$(dirname "$0")" && pwd)/lib/git-command.sh" 2>/dev/null
+# Warn-only hook: if the matcher lib is missing, stay silent and never block.
+command -v hook_cmd_is_git_commit >/dev/null 2>&1 || exit 0
+hook_cmd_is_git_commit "$COMMAND" || exit 0
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null)"
