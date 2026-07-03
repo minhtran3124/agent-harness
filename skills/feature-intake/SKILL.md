@@ -166,9 +166,14 @@ After routing, hand off. The downstream skills already enforce their own gates a
 - **Never self-downgrade a hard gate.** Only a human narrowing scope may lower it.
 - **Decouple the axes.** Lane is about risk; the human gate is about ambiguity. Do not pause
   a human merely because work is risky if the direction is clear — apply more proof instead.
-- **Write a `Lane:` line.** The corroboration hook and the trust-metrics ledger depend on it.
-- **Append to the ledger.** At the DONE disclosure, record the task in
-  `docs/harness-experimental/trust-metrics.md`.
+- **Write a `Lane:` line.** The corroboration hook and the trust-metrics ledger depend on it —
+  and the ledger row is now generated FROM the SUMMARY, so `Lane`/`Confidence`/`Flags`/`Affects`
+  must be correct at intake.
+- **Do NOT hand-append the ledger.** CI records it on merge: `post-merge-maintenance.yml` opens a
+  bookkeeping PR that appends the `trust-metrics.md` row, inserts a CHANGELOG entry, and bumps
+  VERSION — parsed from the merged SUMMARY. Your job is a correct SUMMARY, then verify the
+  bookkeeping PR after merge. (Manual appends decayed within three weeks — that is why this is
+  event-sourced now.)
 
 ## Arguments
 
