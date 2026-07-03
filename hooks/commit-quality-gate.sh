@@ -7,10 +7,14 @@
 INPUT=$(cat /dev/stdin)
 COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null)
 
-# Only gate git commit commands
-if ! echo "$COMMAND" | grep -qE '^git commit'; then
-  exit 0
-fi
+# Only gate git commit commands (tokenizing matcher — resists cd/&&/-C/-c bypass)
+source "$(cd "$(dirname "$0")" && pwd)/lib/git-command.sh" 2>/dev/null
+# Fail closed: if the matcher lib is missing, block rather than let commits through unscanned.
+command -v hook_cmd_is_git_commit >/dev/null 2>&1 || {
+  echo "[COMMIT GATE] git-command matcher lib missing — redeploy harness (blocking to fail safe)." >&2
+  exit 2
+}
+hook_cmd_is_git_commit "$COMMAND" || exit 0
 
 # Resolve the repo root (layout-independent; this repo is flat, hooks/ at top level)
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
