@@ -14,7 +14,7 @@ might be wrong and hunts for code that behaves incorrectly at runtime.
 
 - Spec reviewer asks *"does it match the spec?"* — this one ignores the spec.
 - Quality reviewer asks *"is it clean/maintainable?"* — this one ignores style.
-- This one asks only: *"cho dù spec đúng, đoạn code này có chạy sai không?"*
+- This one asks only: *"even if the spec is right, does this code run wrong?"*
 
 **Use a different model than the implementer** (ensemble diversity — a different model catches
 different bugs). Prefer the most capable model available for this pass.
