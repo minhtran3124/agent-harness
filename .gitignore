@@ -18,6 +18,9 @@ node_modules/
 # Claude Code (user-specific, not shared config)
 settings.local.json
 
+# Git worktrees (project-local, isolated feature workspaces)
+.worktrees/
+
 # Claude Code local clone (derived from root via scripts/deploy-harness.sh)
 .claude/
 
