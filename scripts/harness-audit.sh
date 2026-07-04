@@ -137,7 +137,7 @@ if compgen -G "specs/*/SUMMARY.md" >/dev/null 2>&1; then
       for tok in $cmd; do
         [[ "$tok" == */* ]] || continue
         has_path=1
-        for f in "${_vnr_files[@]}"; do
+        for f in "${_vnr_files[@]+"${_vnr_files[@]}"}"; do
           [ -f "$f" ] || continue
           grep -qF -- "$tok" "$f" 2>/dev/null && { matched=1; break; }
         done

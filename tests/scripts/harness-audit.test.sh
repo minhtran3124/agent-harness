@@ -70,6 +70,14 @@ out=$(bash "$SCRIPT" --root "$d" --json)
 if [ "$(jf "$out" "['checks']['verify_never_rerun']")" = "0" ]; then pass
 else fail "want verify_never_rerun == 0: $out"; fi
 
+t "no scripts/run-tests.sh and no .github/workflows at all -> check 4's file array is empty, must not crash under set -u"
+d=$(make_fixture)
+mkdir -p "$d/specs/x"
+printf 'Lane: normal\n\n### Verify\n\n| Check | Command | Exit | Notes |\n|---|---|---|---|\n| Runs | `bash scripts/nowhere.sh` | 0 | - |\n' > "$d/specs/x/SUMMARY.md"
+out=$(bash "$SCRIPT" --root "$d" --json 2>&1); rc=$?
+if [ "$rc" -eq 0 ] && [ "$(jf "$out" "['checks']['verify_never_rerun']")" -ge 1 ]; then pass
+else fail "want exit 0 and verify_never_rerun >= 1, got rc=$rc: $out"; fi
+
 # ── 5. backlog_stale ────────────────────────────────────────────────────────────
 t "improvement-backlog.md open row dated >14 days ago -> backlog_stale >= 1"
 d=$(make_fixture)
