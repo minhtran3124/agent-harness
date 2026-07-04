@@ -7,6 +7,26 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 ## [Unreleased]
 
+## [0.7.0] — 2026-07-04
+
+- feat(governance): harness-manifest single source for hard gates — v0.3 Phase 2 (PR #35)
+
+## [0.6.0] — 2026-07-03
+
+- feat(ci): event-sourced post-merge bookkeeping — v0.3 Phase 1 (PR #34)
+
+## [0.5.0] — 2026-07-03
+
+- docs(skills): fix doc-truth drift across skill files — v0.3 Wave 0c (PR #33)
+
+## [0.4.0] — 2026-07-03
+
+- fix(hooks): session-knowledge resolves repo root via git (DR-2) — v0.3 Wave 0b (PR #32)
+
+## [0.3.0] — 2026-07-03
+
+- fix(hooks): close commit-gate command-matching bypass (DR-1) — v0.3 Wave 0a (PR #31)
+
 ## [0.2.0] — 2026-06-14
 
 ### Changed
