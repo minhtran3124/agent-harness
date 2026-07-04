@@ -236,3 +236,7 @@ falls out of following the existing `TRUST_METRICS` if/else pattern exactly.
 ## 6. Status Log
 
 - 2026-07-04 — plan drafted (Wave 4 of v0.3, `docs/harness-v03-plan-overview.md`); pending worktree.
+- 2026-07-04 — worktree `.worktrees/feat/entropy-trend` created off `v2`; baseline green (147 tests, 1 skipped).
+- 2026-07-04 — Wave 1 / Task 1.1 done. Commits `d4c03d7` (implementation) + `1eddcbd` (review fix:
+  `set -u` unbound-array crash in check 4 when no `run-tests.sh`/workflows exist in root, found by
+  code-quality review, fixed + regression-tested). Spec review ✅, code-quality review ✅ after fix.

@@ -14,3 +14,7 @@ Escalate: no
 start Wave 4 following docs/harness-v03-plan-overview.md
 
 Wave 4 row (docs/harness-v03-plan-overview.md §2): `feat/entropy-trend`, lane `normal`, deps Wave 1 + Wave 3 (both merged). Scope (§3 Wave 4): "Nâng `harness-audit.sh` → 6 check promise-vs-evidence (plan active >30d im lặng · SUMMARY thiếu Verify · verify never-re-run · backlog open >14d · manifest Degraded · solutions stale) + emit `audit-log.jsonl` mỗi CI run → trend line thật. Wire vào harness-status." Non-goals: không blocking, không cap-100 màu mè (§3).
+
+### Deviations
+
+- Rule 1 — Task 1.1's code-quality review found a real correctness bug: `scripts/harness-audit.sh` crashed with `unbound variable` under `set -u` on bash 3.2 (macOS) when check 4's file-array was empty (no `run-tests.sh`/workflows present). Fixed with the standard `${arr[@]+"${arr[@]}"}` guard + a regression test. Commit `1eddcbd`.
