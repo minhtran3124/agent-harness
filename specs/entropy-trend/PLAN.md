@@ -240,3 +240,9 @@ falls out of following the existing `TRUST_METRICS` if/else pattern exactly.
 - 2026-07-04 — Wave 1 / Task 1.1 done. Commits `d4c03d7` (implementation) + `1eddcbd` (review fix:
   `set -u` unbound-array crash in check 4 when no `run-tests.sh`/workflows exist in root, found by
   code-quality review, fixed + regression-tested). Spec review ✅, code-quality review ✅ after fix.
+- 2026-07-04 — Wave 2 / Tasks 2.1, 2.2, 2.3 done (dispatched in parallel, zero file overlap
+  confirmed). Commits `842bc4d` (2.2), `abbf25f` (2.3), `e3d2146` (2.1), `5b506ec` (review fix:
+  2.3's Audit Trend section crashed the whole script under `set -e` on a malformed JSONL line —
+  `harness-status.sh` is meant to degrade gracefully; fixed with a `try/except` skip). Spec review
+  ✅ (all 3), code-quality review ✅ after the 2.3 fix. Full suite green (147 passed, 1 skipped)
+  after every commit.

@@ -18,3 +18,5 @@ Wave 4 row (docs/harness-v03-plan-overview.md §2): `feat/entropy-trend`, lane `
 ### Deviations
 
 - Rule 1 — Task 1.1's code-quality review found a real correctness bug: `scripts/harness-audit.sh` crashed with `unbound variable` under `set -u` on bash 3.2 (macOS) when check 4's file-array was empty (no `run-tests.sh`/workflows present). Fixed with the standard `${arr[@]+"${arr[@]}"}` guard + a regression test. Commit `1eddcbd`.
+- Rule 1 — Task 2.1's implementer deviated from the plan's literal wording (plain relative call to `harness-audit.sh`) after finding it breaks under `--root` in tests (fixture dirs don't contain their own copy of the script); used `"$(dirname "$0")/harness-audit.sh"` instead, verified correct in both production and test invocation paths. Commit `e3d2146`.
+- Rule 1 — Task 2.3's code-quality review found a real correctness bug: the new "Audit Trend" section crashed the entire `harness-status.sh` script (under `set -e`) on a single malformed `audit-log.jsonl` line, contradicting the file's own graceful-degradation design. Fixed with a `try/except` skip-bad-line guard. Commit `5b506ec`.
