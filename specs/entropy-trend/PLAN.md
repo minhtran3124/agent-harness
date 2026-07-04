@@ -1,6 +1,6 @@
 ---
 slug: entropy-trend
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-07-04
 ---
@@ -251,3 +251,9 @@ falls out of following the existing `TRUST_METRICS` if/else pattern exactly.
   `5590288`) and a `dirname "$0"`/`--root` edge case in `bookkeeping.sh` (scored 50, below the
   80 threshold, recorded as advisory in SUMMARY.md, not fixed). Round 2 (post-fix) found nothing
   new — ✅ clean. Residual work gate satisfied.
+- 2026-07-04 — Final intent review (blind to PLAN.md, oracle = SUMMARY ### Intent + source
+  `docs/harness-v03-plan-overview.md`). Found 1 drift (JSONL emission cadence: "every CI run"
+  shipped as "every merge") — confirmed correct by the user directly; documented in
+  SUMMARY.md ### Intent Findings. `/compound` ran: 2 new `docs/solutions/scripts/` entries +
+  critical-patterns promotion + INDEX rebuild (7 entries). Full suite green (147 passed, 1
+  skipped, incl. new 16-case harness-audit.test.sh). Shipped via `feat/entropy-trend`.
