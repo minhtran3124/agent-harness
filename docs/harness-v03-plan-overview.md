@@ -68,10 +68,13 @@ Nguyên tắc thực thi (từ cả 3 research + decision 0007 của repository-
 ### Wave 4 — Entropy có trend
 - **Scope:** 6 check + JSONL + hiển thị trend. Trọng số để trong data (không hardcode), báo cả raw lẫn banded.
 - **Non-goals:** không blocking, không cap-100 màu mè.
+- **Bug phát hiện sau merge (2026-07-04):** `pull_request_target` luôn load workflow definition từ default branch thật của repo (`main`), bất kể `base` của PR — `main` đứng yên từ PR #36 (kém 107 commit so với `v2`), nên dòng `git add` mới (Task 2.2) chưa từng có hiệu lực: `bookkeeping.sh` tính + ghi dòng JSONL, nhưng step `git add` trong YAML cũ trên `main` không stage nó → PR bookkeeping #43 rỗng `audit-log.jsonl`. Fix: PR #44 (`ci/sync-post-merge-git-add`, merge thẳng vào `main`, cùng pattern PR #36) — sync 1 dòng, không đổi gì khác.
+- **Finding phụ khi merge PR #44 (2026-07-04):** merge PR #44 vào `main` tự kích hoạt `post-merge-maintenance` cho chính PR #44 (workflow trigger có `branches: [v2, main]`) — chạy FAIL ngay ở bước đầu: `scripts/bookkeeping.sh: No such file or directory`, vì `main` chưa từng nhận `scripts/` của Wave 1+ (chỉ có file cũ tiền-v0.3 như `check_plan_format.py`). Đây là lỗi tiềm ẩn có sẵn, không phải do PR #44 gây ra — PR #44 là PR ĐẦU TIÊN merge vào `main` kể từ khi PR #36 đăng ký workflow này lên `main`, nên đường này chưa từng được exercise trước đó. Không có ghi dữ liệu sai/hỏng (crash ngay ở lệnh đầu, trước mọi thao tác git). Chưa fix — cần quyết định kiến trúc (có nên bỏ `main` khỏi trigger, hay đồng bộ toàn bộ `scripts/` lên `main`) trước khi động vào.
 
 ### Wave 5 — Vòng cải tiến khép kín
 - **Gate vào wave:** chỉ start khi (a) ledger event-driven có ≥2 tuần row thật, (b) backlog hiện tại đã được triage (đang có 1 entry mồ côi 19 ngày — nếu không ai triage thì skip wave này, đúng cảnh báo "nghĩa địa" của research 06-09).
 - **Quyết định (2026-07-03):** owner cam kết triage backlog — Wave 5 giữ trong lộ trình; điều kiện (a)/(b) vẫn phải thỏa trước khi start.
+- **Trạng thái gate (2026-07-04):** cả (a) và (b) đều CHƯA thỏa. (a) ledger event-sourced mới chạy thật từ 2026-07-03 → cần đợi đến ~2026-07-17. (b) entry `pretooluse-hook-denies-combined-git-add-commit` (mở 2026-06-14) vẫn `open`, chưa triage — 20 ngày, bị chính check `backlog-stale` mới của Wave 4 gắn cờ.
 
 ---
 
@@ -81,7 +84,7 @@ Nguyên tắc thực thi (từ cả 3 research + decision 0007 của repository-
 2. Merge PR bất kỳ → trust-metrics + CHANGELOG có entry tự động trong ≤1 phút.
 3. `ci-strict-gate` **không thể** pass bằng `| x | true | 0 | |` — có test pin chứng minh.
 4. Hard-gate list tồn tại đúng **một** nơi máy đọc; 3 consumer trỏ về nó — có test pin.
-5. `harness-audit` cho một con số + trend ≥3 tuần data JSONL.
+5. `harness-audit` cho một con số + trend ≥3 tuần data JSONL. **CHƯA xong (2026-07-04):** cơ chế đã ship (Wave 4, PR #42) nhưng `audit-log.jsonl` mới nhận được dòng thật đầu tiên sau khi PR #44 (main/v2 sync fix) merge — cần ≥3 tuần dữ liệu tích lũy từ đó mới tính là "trend thật".
 6. Các bypass form trong DR-1 đều bị chặn — có test pin từng form (`cd x && git commit`, `git -C`, …).
 7. Mọi PR của v0.3 tự đi qua chính workflow nó xây (dogfood: lane khai đúng, SUMMARY có Verify thật, high-risk có Rollback).
 
@@ -103,6 +106,6 @@ Nguyên tắc thực thi (từ cả 3 research + decision 0007 của repository-
 | 1 | ✅ merged (PR #34) + **registration fix PR #36** (GitHub chỉ đăng ký pull_request_target từ default branch `main`) + backfill #31–#35 (PR #37) + repo setting "Actions may create PRs" bật. **Vòng full-auto verified 2026-07-04**: merge #40 → workflow tự mở #41 → merge → loop-guard skip ✓. VERSION tự bump tới 0.7.2 |
 | 2 (verify-substance) | ✅ merged (PR #38 + auto-bookkeeping #39) — trivial denylist (DR-6, pinned at gate), negative proof (19a), honest stamp (19b), row-order rewrite (19c + review MEDIUM fix), placeholder sets cross-pinned (DR-18), lane/rollback exactness, test_verify_summary vào CI (DR-7) |
 | 3 (manifest) | ✅ merged (PR #35) — harness-manifest.json canonical (8+3 gates + inventory); check_manifest.py enforce hook↔manifest + presence-scan trong CI; DR-4 fixed |
-| 4 (entropy trend) | ✅ merged (PR #42) — `harness-audit.sh` 3→6 check (verify-never-rerun, backlog-stale, manifest-degraded) + `--root`/`--json` + 16-case test suite (đầu tiên cho script này); `bookkeeping.sh` ghi 1 dòng JSONL/PR merge vào `audit-log.jsonl` (tái dùng post-merge flow, không workflow mới); wired vào `harness-status.sh`. Correctness-review 2 vòng bắt + fix 2 bug thật (`set -u` unbound-array; `KeyError` chưa bắt trong except); 1 advisory (dirname/`--root` edge case) để lại có ghi chú. Intent-review bắt 1 drift ("mỗi CI run" → "mỗi merge") — đã hỏi và được xác nhận đúng. `/compound` ghi 2 doc mới + promote critical-patterns |
+| 4 (entropy trend) | ✅ merged (PR #42) — `harness-audit.sh` 3→6 check (verify-never-rerun, backlog-stale, manifest-degraded) + `--root`/`--json` + 16-case test suite (đầu tiên cho script này); `bookkeeping.sh` ghi 1 dòng JSONL/PR merge vào `audit-log.jsonl` (tái dùng post-merge flow, không workflow mới); wired vào `harness-status.sh`. Correctness-review 2 vòng bắt + fix 2 bug thật (`set -u` unbound-array; `KeyError` chưa bắt trong except); 1 advisory (dirname/`--root` edge case) để lại có ghi chú. Intent-review bắt 1 drift ("mỗi CI run" → "mỗi merge") — đã hỏi và được xác nhận đúng. `/compound` ghi 2 doc mới + promote critical-patterns. **Follow-up ✅ merged (PR #44, thẳng vào `main`)** — sync dòng `git add` bị "mất tích" do `main` đứng yên 107 commit (xem §3 Wave 4); phát hiện thêm 1 lỗi tiềm ẩn (chưa fix, xem §3 Wave 4) khi merge PR #44 tự kích hoạt bookkeeping cho chính nó và crash vì `main` thiếu `scripts/bookkeeping.sh`. `audit-log.jsonl` vẫn CHƯA có dòng thật nào — chờ lần merge kế tiếp vào `v2` |
 | 5 | ⬜ (gated: ≥2 tuần data + backlog được triage) |
 | 6 | ✅ merged (PR #40 + auto #41) — 6 plan flip shipped (hết nhiễu blast-radius), research corpus committed, local junk (settings copy.json, .claude copy/, backups) đã xóa. REQ.md / PR_TEMPLATE.md đã commit (`1b95fc8`, ngoài luồng PR — chore trực tiếp trên `v2`) |
