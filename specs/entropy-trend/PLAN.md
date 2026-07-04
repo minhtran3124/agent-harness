@@ -256,4 +256,4 @@ falls out of following the existing `TRUST_METRICS` if/else pattern exactly.
   shipped as "every merge") — confirmed correct by the user directly; documented in
   SUMMARY.md ### Intent Findings. `/compound` ran: 2 new `docs/solutions/scripts/` entries +
   critical-patterns promotion + INDEX rebuild (7 entries). Full suite green (147 passed, 1
-  skipped, incl. new 16-case harness-audit.test.sh). Shipped via `feat/entropy-trend`.
+  skipped, incl. new 16-case harness-audit.test.sh). Shipped via `feat/entropy-trend` (PR #42).
