@@ -63,7 +63,7 @@ assert_rc_contains 0 "Evidence (### Verify present)... PASSED"
 
 # ── Task 3.2: REQUIRE_VERIFY=1 re-runs the ### Verify table (machine-verified proof) ──
 VERIFY_PY="$ROOT/scripts/verify_summary.py"
-VERIFY_TABLE_OK=$'### Verify\n\n| Check | Command | Exit | Notes |\n| --- | --- | --- | --- |\n| ok | true | 0 | matches |\n'
+VERIFY_TABLE_OK=$'### Verify\n\n| Check | Command | Exit | Notes |\n| --- | --- | --- | --- |\n| ok | test 1 = 1 | 0 | matches |\n'
 VERIFY_TABLE_BAD=$'### Verify\n\n| Check | Command | Exit | Notes |\n| --- | --- | --- | --- |\n| bad | false | 0 | claimed 0 but exits 1 |\n'
 
 t "REQUIRE_VERIFY=1: ### Verify table whose command matches its claimed exit → re-run PASSES"

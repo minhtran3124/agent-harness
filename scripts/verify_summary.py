@@ -29,8 +29,19 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 # Matches a markdown table row: | cell | cell | ... |
 _ROW_RE = re.compile(r"^\|(.+)\|$")
 
-# Placeholder values in the Command column that mean "skip this row"
-_PLACEHOLDER_COMMANDS = {"—", "—", "<command>", ""}
+# Placeholder values in the Command column that mean "skip this row".
+# Kept identical to scripts/check_lane_evidence.py's set (em-dash, en-dash, ASCII
+# hyphen — the old duplicate em-dash here was a typo'd hyphen and the sets diverged).
+_PLACEHOLDER_COMMANDS = {"—", "–", "-", "<command>", ""}
+
+# A whole command that proves nothing: exit-0 of a no-op is not evidence.
+# `true`, `:`, `exit 0`, or a bare `echo …` (echo piped/chained into a real tool is
+# NOT trivial — `echo x | grep x` still asserts something).
+# BEST-EFFORT, not a security boundary: only the bare word forms are caught —
+# wrapped no-ops (`true;`, `(true)`, `/usr/bin/true`, `command true`) still execute
+# and pass. The gate's real defense is human PR review of the Verify table; this
+# denylist removes the laziest forgery class (DR-6).
+_TRIVIAL_RE = re.compile(r"^\s*(?:true|:|exit\s+0|echo\b[^|&;`$()]*)\s*$")
 
 
 def parse_verify_table(text: str) -> list[dict]:
@@ -107,6 +118,12 @@ def run_checks(
     """Run each command and return results with actual_exit and timed_out."""
     results = []
     for row in rows:
+        # Trivial commands are rejected without execution — running them proves nothing.
+        if _TRIVIAL_RE.match(row["command"]):
+            results.append(
+                {**row, "actual_exit": None, "timed_out": False, "trivial": True}
+            )
+            continue
         timed_out = False
         try:
             proc = subprocess.run(
@@ -131,9 +148,13 @@ def run_checks(
     return results
 
 
-def _rewrite_table(text: str, results: list[dict]) -> str:
-    """Overwrite the Exit column cells with actual exit codes and add/refresh
-    the Verified timestamp line immediately below the ### Verify table."""
+def _rewrite_table(text: str, results: list[dict], stamp_verified: bool = True) -> str:
+    """Overwrite the Exit column cells with actual exit codes. When stamp_verified,
+    add/refresh the `Verified:` timestamp line below the table; otherwise DROP any
+    existing stamp — a failing table must never read as machine-verified.
+
+    Results are consumed in ROW ORDER (the same order parse_verify_table emitted
+    them), not keyed by check name — duplicate check names cannot collide."""
     verify_match = re.search(r"^###\s+Verify\s*$", text, re.MULTILINE)
     if not verify_match:
         return text
@@ -141,8 +162,8 @@ def _rewrite_table(text: str, results: list[dict]) -> str:
     section_start = verify_match.end()
     section_text = text[section_start:]
 
-    # Build a mapping from check name -> actual exit
-    exit_map = {r["check"]: r["actual_exit"] for r in results}
+    # Consume results in the order parse_verify_table produced them.
+    queue = list(results)
 
     new_lines: list[str] = []
     in_table = False
@@ -158,7 +179,7 @@ def _rewrite_table(text: str, results: list[dict]) -> str:
         # Stop processing table once we hit the next heading
         if stripped.startswith("#") and in_table:
             table_ended = True
-            if not verified_line_written:
+            if stamp_verified and not verified_line_written:
                 new_lines.append(
                     f"Verified: {datetime.now().isoformat(timespec='seconds')}\n"
                 )
@@ -184,9 +205,17 @@ def _rewrite_table(text: str, results: list[dict]) -> str:
                 continue
 
             if in_table and len(cells) >= 3:
-                check_name = cells[0]
-                if check_name in exit_map:
-                    cells[2] = str(exit_map[check_name])
+                # EXACTLY the same skip criteria as parse_verify_table (incl. the
+                # startswith("<") arm), or the queue shifts and exits land on the
+                # wrong rows.
+                command = cells[1].strip("`").strip()
+                is_skipped = command in _PLACEHOLDER_COMMANDS or command.startswith("<")
+                if not is_skipped and queue:
+                    result = queue.pop(0)
+                    # Trivial rows were never executed (actual_exit None) — leave the
+                    # cell as claimed; the missing Verified stamp marks the failure.
+                    if result["actual_exit"] is not None:
+                        cells[2] = str(result["actual_exit"])
                     # Reconstruct row preserving leading/trailing pipe
                     new_row = "| " + " | ".join(cells) + " |"
                     # Preserve line ending
@@ -197,16 +226,17 @@ def _rewrite_table(text: str, results: list[dict]) -> str:
         else:
             # Non-table line after table started — table has ended
             if in_table and not table_ended:
-                # Check if this is the existing Verified line
+                # Existing Verified line: refresh it when stamping, DROP it when not
+                # (a stale stamp on a now-failing table is a false claim).
                 if stripped.startswith("Verified:"):
-                    # Replace it
-                    new_lines.append(
-                        f"Verified: {datetime.now().isoformat(timespec='seconds')}\n"
-                    )
+                    if stamp_verified:
+                        new_lines.append(
+                            f"Verified: {datetime.now().isoformat(timespec='seconds')}\n"
+                        )
                     verified_line_written = True
                     i += 1
                     continue
-                elif stripped == "" and not verified_line_written:
+                elif stripped == "" and stamp_verified and not verified_line_written:
                     # First blank line after table: insert Verified here
                     new_lines.append(
                         f"Verified: {datetime.now().isoformat(timespec='seconds')}\n"
@@ -220,7 +250,7 @@ def _rewrite_table(text: str, results: list[dict]) -> str:
         i += 1
 
     # If we never wrote the Verified line (table was at end of file)
-    if in_table and not verified_line_written:
+    if stamp_verified and in_table and not verified_line_written:
         new_lines.append(
             f"\nVerified: {datetime.now().isoformat(timespec='seconds')}\n"
         )
@@ -273,6 +303,14 @@ def main(argv: list[str], specs_root: Path | None = None) -> int:
 
     failed = False
     for r in results:
+        if r.get("trivial"):
+            print(
+                f"TRIVIAL  [{r['check']}]  command is not evidence "
+                f"(no-op always exits 0): {r['command']}"
+            )
+            failed = True
+            continue
+
         if r["timed_out"]:
             print(
                 f"TIMEOUT  [{r['check']}]  command: {r['command']}  "
@@ -287,25 +325,29 @@ def main(argv: list[str], specs_root: Path | None = None) -> int:
             claimed = None
 
         actual = r["actual_exit"]
-        is_mismatch = claimed is not None and claimed != actual
 
-        if actual != 0 or is_mismatch:
-            if is_mismatch:
-                print(
-                    f"MISMATCH [{r['check']}]  claimed={claimed}  actual={actual}  "
-                    f"command: {r['command']}"
-                )
-            else:
-                print(
-                    f"FAIL     [{r['check']}]  claimed={claimed}  actual={actual}  "
-                    f"command: {r['command']}"
-                )
+        # A row PASSES when the claim matches reality — even a non-zero claim
+        # (negative proof: "this command must fail" is a legitimate, pinnable check).
+        # It FAILS on claim-vs-reality mismatch, or on an unclaimed non-zero exit.
+        if claimed is not None and claimed != actual:
+            print(
+                f"MISMATCH [{r['check']}]  claimed={claimed}  actual={actual}  "
+                f"command: {r['command']}"
+            )
+            failed = True
+        elif claimed is None and actual != 0:
+            print(
+                f"FAIL     [{r['check']}]  claimed={claimed}  actual={actual}  "
+                f"command: {r['command']}"
+            )
             failed = True
         else:
             print(f"PASS     [{r['check']}]  exit={actual}")
 
     if not args.check:
-        new_text = _rewrite_table(text, results)
+        # Always record the ACTUAL exits, but only stamp `Verified:` when everything
+        # passed — a failing table must never read as machine-verified (DR-19b).
+        new_text = _rewrite_table(text, results, stamp_verified=not failed)
         summary_path.write_text(new_text, encoding="utf-8")
 
     return 1 if failed else 0

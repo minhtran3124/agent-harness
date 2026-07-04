@@ -119,7 +119,42 @@ def test_lane_normalizes_from_decorated_value():
     text = _summary(
         lane="high-risk (hard gate: hooks/*)",
         verify=REAL_VERIFY,
+        rollback="- Revert the PR: `git revert abc1234`; redeploy with deploy-harness.sh",
+    )
+    assert cle.check_summary(text) == []
+
+
+def test_lane_substring_does_not_resolve():
+    # `not-normal` must NOT resolve to `normal` (old search-anywhere bug)
+    text = _summary().replace("Lane: tiny", "Lane: not-normal")
+    errs = cle.check_summary(text)
+    assert errs and "cannot resolve" in errs[0]
+
+
+def test_lane_template_option_line_does_not_resolve():
+    # the raw unfilled template `tiny | normal | high-risk` is not a lane
+    text = _summary().replace("Lane: tiny", "Lane: tiny | normal | high-risk")
+    errs = cle.check_summary(text)
+    assert errs and "cannot resolve" in errs[0]
+
+
+def test_template_only_rollback_rejected_for_high_risk():
+    # an UNEDITED template rollback must not satisfy the high-risk lane
+    text = _summary(
+        lane="high-risk",
+        verify=REAL_VERIFY,
         rollback="- `git revert <sha>`",
+    )
+    errs = cle.check_summary(text)
+    assert errs and "Rollback" in errs[0] and "template" in errs[0]
+
+
+def test_real_rollback_with_template_line_alongside_passes():
+    # a real rollback plan that ALSO contains the template-ish line still passes
+    text = _summary(
+        lane="high-risk",
+        verify=REAL_VERIFY,
+        rollback="- `git revert <sha>`\n- Redeploy: `bash scripts/deploy-harness.sh`",
     )
     assert cle.check_summary(text) == []
 
@@ -139,3 +174,17 @@ def test_reason_prose_with_piped_regex_is_not_placeholder():
     # real prose may contain a `|` inside backticks — not a template option list
     reason = "Risk raised because `(^|/)hooks/` matches the new test paths"
     assert cle.check_summary(_summary(lane="tiny", reason=reason)) == []
+
+
+def test_placeholder_sets_identical_across_checkers():
+    # DR-18: the two evidence checkers must agree on what a placeholder command is —
+    # a row one checker counts as "real" must never be one the other skips.
+    import importlib.util
+    from pathlib import Path
+
+    spec = importlib.util.spec_from_file_location(
+        "verify_summary", Path(__file__).resolve().parent / "verify_summary.py"
+    )
+    vs_mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(vs_mod)
+    assert vs_mod._PLACEHOLDER_COMMANDS == cle._PLACEHOLDER_COMMANDS

@@ -55,13 +55,18 @@ assert_rc 1
 
 t "diff touches hooks/ + SUMMARY but Lane is not high-risk → BLOCK (exit 1)"
 r=$(mkrepo); mkdir -p "$r/hooks"; echo '#!/bin/bash' > "$r/hooks/foo.sh"
-write_summary "$r" "normal" "true"; commit_run "$r"
+write_summary "$r" "normal" "test 1 = 1"; commit_run "$r"
 assert_rc 1
 
 t "diff touches hooks/ + high-risk SUMMARY with a real ### Verify row → PASS (exit 0)"
 r=$(mkrepo); mkdir -p "$r/hooks"; echo '#!/bin/bash' > "$r/hooks/foo.sh"
-write_summary "$r" "high-risk" "true"; commit_run "$r"
+write_summary "$r" "high-risk" "test 1 = 1"; commit_run "$r"
 assert_rc 0
+
+t "high-risk SUMMARY whose only Verify row is trivial (true) → BLOCK (DR-6 forgery)"
+r=$(mkrepo); mkdir -p "$r/hooks"; echo '#!/bin/bash' > "$r/hooks/foo.sh"
+write_summary "$r" "high-risk" "true"; commit_run "$r"
+assert_rc 1
 
 t "sole high-risk SUMMARY whose ### Verify MISMATCHES (claims 0, exits 1) → BLOCK (exit 1)"
 r=$(mkrepo); mkdir -p "$r/hooks"; echo '#!/bin/bash' > "$r/hooks/foo.sh"
@@ -70,7 +75,7 @@ assert_rc 1
 
 t "≥1 high-risk SUMMARY passes while another fails → PASS (exit 0); the failure is a non-blocking warning"
 r=$(mkrepo); mkdir -p "$r/hooks"; echo '#!/bin/bash' > "$r/hooks/foo.sh"
-write_summary "$r" "high-risk" "true"  "good"
+write_summary "$r" "high-risk" "test 1 = 1"  "good"
 write_summary "$r" "high-risk" "false" "bad"
 commit_run "$r"
 assert_rc 0
