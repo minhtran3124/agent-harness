@@ -65,7 +65,10 @@ import json, sys
 with open(sys.argv[1]) as f:
     lines = [l.strip() for l in f if l.strip()]
 for line in lines[-5:]:
-    d = json.loads(line)
+    try:
+        d = json.loads(line)
+    except json.JSONDecodeError:
+        continue
     print(f"  {d['date']}    findings={d['findings']}   band={d['band']}")
 PY
 fi
