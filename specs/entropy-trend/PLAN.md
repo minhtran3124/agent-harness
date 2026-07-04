@@ -246,3 +246,8 @@ falls out of following the existing `TRUST_METRICS` if/else pattern exactly.
   `harness-status.sh` is meant to degrade gracefully; fixed with a `try/except` skip). Spec review
   ✅ (all 3), code-quality review ✅ after the 2.3 fix. Full suite green (147 passed, 1 skipped)
   after every commit.
+- 2026-07-04 — Final adversarial correctness review (whole diff, opus model, 2 rounds). Round 1
+  found 2 candidates: a `KeyError` gap in `harness-status.sh`'s trend guard (scored 100, fixed in
+  `5590288`) and a `dirname "$0"`/`--root` edge case in `bookkeeping.sh` (scored 50, below the
+  80 threshold, recorded as advisory in SUMMARY.md, not fixed). Round 2 (post-fix) found nothing
+  new — ✅ clean. Residual work gate satisfied.
