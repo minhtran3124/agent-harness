@@ -7,6 +7,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 ## [Unreleased]
 
+## [0.7.3] — 2026-07-04
+
+- feat: entropy has a trend — 6-check harness-audit + per-merge JSONL log (v0.3 Wave 4) (PR #42)
+
 ## [0.7.2] — 2026-07-04
 
 - chore(hygiene): v0.3 Wave 6 — plan statuses shipped + research docs committed (PR #40)
