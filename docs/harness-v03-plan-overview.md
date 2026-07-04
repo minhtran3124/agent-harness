@@ -97,13 +97,12 @@ Nguyên tắc thực thi (từ cả 3 research + decision 0007 của repository-
 
 | Wave | Trạng thái |
 |---|---|
-| 0a | ✅ **merged** vào v2 (PR #31) — lib matcher + 4 hook rewired + bỏ `if`; 41 test; correctness+intent review (F1/F2 fixed) |
-| 0b | ✅ PR #32 mở (CI xanh) — session-knowledge resolve root bằng git rev-parse (DR-2); regression test tại vị trí .claude/hooks/; correctness review SOUND |
-| 0c | ✅ PR #33 mở (CI xanh) — 8 file doc-truth (specs/ tracked, test cmd, review chain, reviewer fallback, base branch, Việt→Anh, brainstorming↔worktree); intent review pass (phantom /code-review self-fixed) |
-| 1 | ✅ PR #34 mở (CI xanh) — post-merge-maintenance.yml (open-PR) + bookkeeping.sh (11 tests) tự ghi ledger/CHANGELOG/VERSION; feature-intake bỏ mandate append tay; correctness (5 fix) + intent review pass. Live-test là merge KẾ TIẾP sau khi #34 vào v2 |
-| 2 (verify-substance) | ✅ PR #38 mở (CI xanh) — trivial denylist (DR-6, pinned at gate), negative proof (DR-19a), honest stamp (19b), row-order rewrite (19c + review MEDIUM fix), placeholder sets aligned + cross-pinned (DR-18), lane/rollback exactness, test_verify_summary vào CI (DR-7). Merge #38 = live-test thật của Phase 1 bookkeeping |
-| 2 | ✅ PR #35 mở (CI xanh) — harness-manifest.json nguồn canonical (8 detectable + 3 judgment gates + inventory); check_manifest.py (7 tests) enforce hook↔manifest + presence-scan trong CI; DR-4 fixed (feature-intake +public-contract); correctness SOUND (2 fix) + intent pass. Merge #35 = live-test đầu của Phase 1 bookkeeping |
-| 3 | ⬜ |
-| 4 | ⬜ |
-| 5 | ⬜ (gated) |
-| 6 | ⬜ |
+| 0a | ✅ merged (PR #31) — lib matcher + 4 hook rewired + bỏ `if`; 41 test; reviews F1/F2 fixed |
+| 0b | ✅ merged (PR #32) — session-knowledge resolve root bằng git rev-parse (DR-2); deployed-location regression test |
+| 0c | ✅ merged (PR #33) — 8 file doc-truth; intent review pass (phantom /code-review self-fixed) |
+| 1 | ✅ merged (PR #34) + **registration fix PR #36** (GitHub chỉ đăng ký pull_request_target từ default branch `main`) + backfill #31–#35 (PR #37) + repo setting "Actions may create PRs" bật. **Vòng full-auto verified 2026-07-04**: merge #40 → workflow tự mở #41 → merge → loop-guard skip ✓. VERSION tự bump tới 0.7.2 |
+| 2 (verify-substance) | ✅ merged (PR #38 + auto-bookkeeping #39) — trivial denylist (DR-6, pinned at gate), negative proof (19a), honest stamp (19b), row-order rewrite (19c + review MEDIUM fix), placeholder sets cross-pinned (DR-18), lane/rollback exactness, test_verify_summary vào CI (DR-7) |
+| 3 (manifest) | ✅ merged (PR #35) — harness-manifest.json canonical (8+3 gates + inventory); check_manifest.py enforce hook↔manifest + presence-scan trong CI; DR-4 fixed |
+| 4 (entropy trend) | ⬜ kế tiếp — ledger event-sourced đã chạy thật, JSONL trend có nền để build |
+| 5 | ⬜ (gated: ≥2 tuần data + backlog được triage) |
+| 6 | ✅ merged (PR #40 + auto #41) — 6 plan flip shipped (hết nhiễu blast-radius), research corpus committed, local junk (settings copy.json, .claude copy/, backups) đã xóa. Còn lại của chủ: REQ.md / PR_TEMPLATE.md |
