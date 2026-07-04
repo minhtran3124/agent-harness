@@ -67,9 +67,9 @@ with open(sys.argv[1]) as f:
 for line in lines[-5:]:
     try:
         d = json.loads(line)
-    except json.JSONDecodeError:
+        print(f"  {d['date']}    findings={d['findings']}   band={d['band']}")
+    except (json.JSONDecodeError, KeyError, TypeError):
         continue
-    print(f"  {d['date']}    findings={d['findings']}   band={d['band']}")
 PY
 fi
 
