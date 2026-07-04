@@ -11,7 +11,15 @@ name: post-merge-maintenance
 on:
   pull_request_target:
     types: [closed]
-    branches: [v2, main]
+    # main is NOT a real merge target for this workflow — it carries the file only so
+    # GitHub registers pull_request_target for the repo (PR #36's fix; GitHub requires
+    # the workflow file to exist on the default branch to fire pull_request_target at
+    # all). main intentionally lacks scripts/bookkeeping.sh and the rest of the v0.3
+    # toolchain, so a PR merged into main would check out a base branch missing the
+    # script this job runs. Discovered when PR #44 (merged straight to main) crashed
+    # this workflow on its own merge: "scripts/bookkeeping.sh: No such file or
+    # directory". Keep this list to the branch(es) PRs are actually merged into.
+    branches: [v2]
 
 permissions:
   contents: write
