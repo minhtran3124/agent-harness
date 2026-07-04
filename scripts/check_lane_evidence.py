@@ -31,7 +31,8 @@ from pathlib import Path
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 
 _LANES = ("tiny", "normal", "high-risk")
-_PLACEHOLDER_COMMANDS = {"<command>", "—", "-", ""}
+# Kept identical to scripts/verify_summary.py's set (em-dash, en-dash, ASCII hyphen).
+_PLACEHOLDER_COMMANDS = {"<command>", "—", "–", "-", ""}
 
 
 def _is_placeholder(value: str) -> bool:
@@ -70,8 +71,15 @@ def _resolve_lane(text: str) -> str | None:
     raw = _header_value(text, "Lane")
     if raw is None:
         return None
-    m = re.search(r"tiny|normal|high-risk", raw.lower())
-    return m.group(0) if m else None
+    raw = raw.strip().lower()
+    # The unfilled template option list (`tiny | normal | high-risk`) is not a lane.
+    if "|" in raw:
+        return None
+    # The lane must LEAD the value (decoration after it is fine — e.g.
+    # `high-risk (hard gate: hooks/*)`), but `not-normal` / `normal-ish` must NOT
+    # resolve (the old search-anywhere substring bug, DR-Low).
+    m = re.match(r"(tiny|normal|high-risk)(?![\w-])", raw)
+    return m.group(1) if m else None
 
 
 def _section(text: str, heading: str) -> str | None:
@@ -107,8 +115,15 @@ def _has_real_verify_row(section: str) -> bool:
     return False
 
 
+# The untouched SUMMARY-template rollback line — an unedited template is NOT a real
+# rollback plan (DR: the high-risk lane's only extra requirement was satisfiable by
+# never editing the template).
+_TEMPLATE_ROLLBACK_RE = re.compile(r"^`?git revert <sha>`?$")
+
+
 def _has_real_rollback(section: str) -> bool:
-    """True if the Rollback section has a non-empty, non-comment content line."""
+    """True if the Rollback section has a non-empty, non-comment content line that
+    is not just the unedited template placeholder."""
     in_comment = False
     for line in section.splitlines():
         s = line.strip()
@@ -120,9 +135,9 @@ def _has_real_rollback(section: str) -> bool:
         if in_comment:
             in_comment = "-->" not in s
             continue
-        # a real bullet / line of content
+        # a real bullet / line of content — unless it's the literal template line
         stripped = s.lstrip("-* ").strip()
-        if stripped:
+        if stripped and not _TEMPLATE_ROLLBACK_RE.match(stripped):
             return True
     return False
 
@@ -160,7 +175,10 @@ def check_summary(text: str) -> list[str]:
         if rollback is None:
             errors.append("lane `high-risk`: missing `### Rollback` section")
         elif not _has_real_rollback(rollback):
-            errors.append("lane `high-risk`: `### Rollback` is empty")
+            errors.append(
+                "lane `high-risk`: `### Rollback` is empty or only the unedited "
+                "template (`git revert <sha>`) — write the real undo steps"
+            )
 
     return errors
 

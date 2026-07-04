@@ -37,7 +37,7 @@ PYBIN="${TMPDIR:-/tmp}/harness-tests-venv/bin/python"
 [ -x "$PYBIN" ] || PYBIN="$(command -v python3 || true)"
 if [ -n "$PYBIN" ] && "$PYBIN" -c 'import pytest' >/dev/null 2>&1; then
   # Engine unit tests that ship with the repo but nothing else runs.
-  PYTESTS="scripts/test_check_plan_format.py scripts/test_check_lane_evidence.py scripts/test_check_manifest.py skills/visual-planner/test_render_plan.py"
+  PYTESTS="scripts/test_check_plan_format.py scripts/test_check_lane_evidence.py scripts/test_check_manifest.py scripts/test_verify_summary.py skills/visual-planner/test_render_plan.py"
   # shellcheck disable=SC2086
   "$PYBIN" -m pytest $PYTESTS -q --no-header --no-cov -p no:cacheprovider || FAILED=1
 else
