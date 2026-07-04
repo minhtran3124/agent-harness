@@ -7,6 +7,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 ## [Unreleased]
 
+## [0.7.2] — 2026-07-04
+
+- chore(hygiene): v0.3 Wave 6 — plan statuses shipped + research docs committed (PR #40)
+
 ## [0.7.1] — 2026-07-04
 
 - fix(evidence): verify gates reject trivial proof — v0.3 Phase 3 (PR #38)
