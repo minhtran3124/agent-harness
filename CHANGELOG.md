@@ -7,6 +7,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 ## [Unreleased]
 
+## [0.7.1] — 2026-07-04
+
+- fix(evidence): verify gates reject trivial proof — v0.3 Phase 3 (PR #38)
+
 ## [0.7.0] — 2026-07-04
 
 - feat(governance): harness-manifest single source for hard gates — v0.3 Phase 2 (PR #35)
