@@ -68,6 +68,7 @@ Hooks live in `hooks/` (top-level). Register them in `settings.json` under the a
 - `docs/solutions/` entries have a `confirmed_at` field; treat entries older than 30 days as potentially stale
 - When ≥5 `app/` files are staged, the commit hook hints to run `/compound` — don't skip it
 - Before changing `hooks/` or `scripts/`, run `bash scripts/run-tests.sh` — CI (`harness-ci`) runs the same suite on ubuntu + macos, including a doc-truth lint that fails when docs reference missing paths or the hook table contradicts `settings.json`
+- Stage and commit in **separate** Bash calls when untracked `.py` files exist — `hooks/check-untracked-py.sh` (PreToolUse) evaluates the whole command string before any of it runs, so `git add x.py && git commit ...` in one call still sees `x.py` as untracked and denies the commit; run `git add` first, then `git commit` in a second call (see `docs/solutions/harness/pretooluse-hook-denies-combined-git-add-commit.md`)
 
 <!-- code-review-graph MCP tools -->
 ## MCP Tools: code-review-graph
