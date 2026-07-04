@@ -1,0 +1,51 @@
+{
+  "__doc__": "Single source of truth for the harness's hard-gate vocabulary and component inventory. Machine-read by scripts/check_manifest.py (CI). Edit HERE — the copies in skills/feature-intake, rules/auto-correct-scope.md, and hooks/risk-corroboration.sh must not diverge (the checker enforces the hook match). JSON (not YAML) so the checker needs only the Python stdlib.",
+
+  "hard_gates": {
+    "__doc__": "detectable = diff-scannable by risk-corroboration.sh (must match its add_cat + category_mode exactly). judgment = Rule-4 STOP items that cannot be regex-detected (human/agent judgment only).",
+    "detectable": [
+      { "slug": "auth",                 "mode": "block", "desc": "login, logout, sessions, JWT, password, refresh/oauth token, cookies" },
+      { "slug": "authorization",        "mode": "block", "desc": "roles, permissions, tenant/company scope, access control" },
+      { "slug": "data-loss/migration",  "mode": "block", "desc": "schema change, migration, drop/delete/truncate/alter" },
+      { "slug": "audit/security",       "mode": "block", "desc": "audit logs, privacy, sensitive/secret handling" },
+      { "slug": "external-provider",    "mode": "block", "desc": "provider SDKs, webhooks, and dependency manifests (see notes.external_provider_vs_rule3)" },
+      { "slug": "public-contract",      "mode": "block", "desc": "API route/method, response envelope, client-visible behavior" },
+      { "slug": "weakening-validation", "mode": "block", "desc": "removing assert / validator / required / raise" },
+      { "slug": "high-blast",           "mode": "block", "desc": "settings.json, hooks/*, .claude/hooks/*, a core skill engine (render_plan.py)" }
+    ],
+    "judgment": [
+      { "slug": "remove-functionality", "desc": "removing existing behavior, even if seemingly unused (not regex-detectable)" },
+      { "slug": "session-scope",        "desc": "request-scoped <-> isolated/background session or transaction scope change" },
+      { "slug": "replace-service",      "desc": "swapping a service/pattern (cache impl, shared data-access base)" }
+    ]
+  },
+
+  "notes": {
+    "external_provider_vs_rule3": "A dependency-manifest edit (requirements*.txt / package.json / pyproject.toml / go.mod / Gemfile) trips external-provider, but auto-correct-scope Rule 3 authorizes auto-adding a dependency. Resolution: a pure dependency bump runs in the high-risk lane OR is recorded as a Rule-3 deviation in SUMMARY. The gate stays broad by design — over-flagging a dependency change is safer than missing a new SDK integration."
+  },
+
+  "hooks": [
+    { "name": "check-untracked-py.sh",     "wired": true },
+    { "name": "commit-quality-gate.sh",    "wired": true },
+    { "name": "risk-corroboration.sh",     "wired": true },
+    { "name": "branch-guard.sh",           "wired": true },
+    { "name": "branch-isolation-guard.sh", "wired": true },
+    { "name": "ruff-on-edit.sh",           "wired": true },
+    { "name": "blast-radius-check.sh",     "wired": true },
+    { "name": "render-plan-on-write.sh",   "wired": true },
+    { "name": "scope-gate.sh",             "wired": true },
+    { "name": "state-breadcrumb.sh",       "wired": true },
+    { "name": "session-knowledge.sh",      "wired": true },
+    { "name": "auto-test-on-change.sh",    "wired": false },
+    { "name": "protected-path-guard.sh",   "wired": false }
+  ],
+
+  "skills": [
+    "bootstrap-xia2", "brainstorming", "compound", "correctness-review", "create-pr",
+    "executing-plans", "feature-intake", "finishing-a-development-branch", "intent-review",
+    "review-diff", "subagent-driven-development", "using-git-worktrees", "visual-planner",
+    "writing-plans", "xia2"
+  ],
+
+  "agents": ["coding", "reviewer", "test-runner"]
+}

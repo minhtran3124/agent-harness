@@ -82,11 +82,14 @@ any hard gate    -> high-risk (only a human narrowing scope may lower it)
 - Data loss or migration.
 - Audit/security.
 - External provider behavior.
+- Public contract (API route/method, response envelope, client-visible behavior).
 - Removing or weakening validation requirements.
 - Touching a high-blast-radius file: `.claude/settings.json`, any `.claude/hooks/*`, or a core skill engine.
 
-These mirror `.claude/rules/auto-correct-scope.md` Rule 4 and are corroborated mechanically by
-`.claude/hooks/risk-corroboration.sh` against the staged diff.
+**Canonical source:** the detectable gate list lives in `harness-manifest.json` (`hard_gates`) —
+do not diverge from it. These mirror `.claude/rules/auto-correct-scope.md` Rule 4 and are
+corroborated mechanically by `.claude/hooks/risk-corroboration.sh` against the staged diff;
+`scripts/check_manifest.py` fails CI if the hook and the manifest disagree.
 
 ## Step 4 — Score confidence (the interruption axis)
 

@@ -7,6 +7,10 @@
 # declared Lane in specs/<slug>/SUMMARY.md is below `high-risk`, the commit is
 # BLOCKED (exit 2) — the agent under-classified its own work.
 #
+# CANONICAL GATE LIST: harness-manifest.json (hard_gates.detectable). The add_cat +
+# category_mode categories below MUST match it exactly — scripts/check_manifest.py fails
+# CI on any drift. Edit the manifest, then mirror it here.
+#
 # Safety for a docs/framework repo:
 #   - Keyword categories scan only ADDED CODE lines, excluding prose
 #     (*.md, docs/, specs/, skills/) and the hooks/ dir itself (scanners
