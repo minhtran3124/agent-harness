@@ -60,8 +60,20 @@ bash "$SCRIPT" --pr 99 --title T --sha s --files "skills/x/SKILL.md" --date 2026
 v1=$(cat "$d/VERSION"); n1=$(grep -c 'PR #99' "$d/docs/harness-experimental/trust-metrics.md")
 bash "$SCRIPT" --pr 99 --title T --sha s --files "skills/x/SKILL.md" --date 2026-07-03 --root "$d" >/dev/null
 v2=$(cat "$d/VERSION"); n2=$(grep -c 'PR #99' "$d/docs/harness-experimental/trust-metrics.md")
-if [ "$v1" = "$v2" ] && [ "$n1" -eq 1 ] && [ "$n2" -eq 1 ]; then pass
-else fail "not idempotent: version $v1->$v2, rows $n1->$n2"; fi
+trend_lines=$(wc -l < "$d/docs/harness-experimental/audit-log.jsonl" | tr -d ' ')
+if [ "$v1" = "$v2" ] && [ "$n1" -eq 1 ] && [ "$n2" -eq 1 ] && [ "$trend_lines" -eq 1 ]; then pass
+else fail "not idempotent: version $v1->$v2, rows $n1->$n2, trend lines $trend_lines (want 1)"; fi
+
+# ── appends a well-formed JSONL trend row tagged with the PR number ───────────
+t "appends a valid JSONL trend row to audit-log.jsonl with the right pr field"
+d=$(make_fixture 0.2.0 my-feature)
+bash "$SCRIPT" --pr 42 --title "add a thing" --sha abc123 \
+  --files "$(printf 'specs/my-feature/SUMMARY.md\nskills/foo/SKILL.md')" --date 2026-07-03 --root "$d" >/dev/null
+trend_row=$(tail -1 "$d/docs/harness-experimental/audit-log.jsonl")
+pr_field=$(printf '%s' "$trend_row" | python3 -c 'import json,sys; print(json.loads(sys.stdin.read())["pr"])')
+if printf '%s' "$trend_row" | python3 -c 'import json,sys; json.loads(sys.stdin.read())' >/dev/null 2>&1 \
+   && [ "$pr_field" = "42" ]; then pass
+else fail "trend row invalid or wrong pr: $trend_row"; fi
 
 # ── no SUMMARY in the PR: slug falls back to pr-N, fields to '-' ──────────────
 t "falls back to slug pr-N and '-' fields when the PR added no SUMMARY"
