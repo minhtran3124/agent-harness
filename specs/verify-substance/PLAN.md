@@ -1,6 +1,6 @@
 ---
 slug: verify-substance
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-07-04
 ---

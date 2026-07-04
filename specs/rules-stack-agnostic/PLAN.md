@@ -1,6 +1,6 @@
 ---
 slug: rules-stack-agnostic
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-06-14
 ---
