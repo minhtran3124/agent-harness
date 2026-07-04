@@ -186,3 +186,73 @@ Source of truth for the currently-active spec. Updated by skills and by the `sta
 - last_commit: 87046f9 docs(plan): MIN-25 stack-agnostic rules/ — intake + design + research + plan
 - user_turns: 0
 
+
+### 2026-06-15T02:19:12Z
+- session_id: 7da8ac49-355d-499a-946f-0193d9788f1c
+- exit: 
+- last_commit: a87f829 Merge pull request #26 from minhtran3124/feat/stack-profiles
+- user_turns: 0
+
+
+### 2026-06-15T14:46:09Z
+- session_id: ce1ff788-e5a5-4a8e-a3cb-c916eb3c5539
+- exit: 
+- last_commit: a87f829 Merge pull request #26 from minhtran3124/feat/stack-profiles
+- user_turns: 0
+
+
+### 2026-06-17T04:36:05Z
+- session_id: 4b6c53c2-9092-43f0-902e-21cf9a77ac12
+- exit: 
+- last_commit: c85a88a fix(workflow): auto-create feature branch before implementation
+- user_turns: 0
+
+
+### 2026-06-17T04:46:18Z
+- session_id: 17e51233-52d8-40e7-ac49-8ee2307c74d7
+- exit: 
+- last_commit: f349937 feat(deploy-harness): enhance settings.json merging logic
+- user_turns: 0
+
+
+### 2026-06-17T08:37:18Z
+- session_id: 7d6eed75-a9a3-46a1-a027-d1583feffe95
+- exit: 
+- last_commit: 0f2b9cc fix(deploy-harness): back up invalid .claude/settings.json instead of overwriting
+- user_turns: 0
+
+
+### 2026-06-17T09:50:45Z
+- session_id: 12036cfb-95cc-4914-8de9-7b42eb357930
+- exit: 
+- last_commit: 9f668a0 Merge pull request #28 from minhtran3124/fix/deploy-merge-invalid-json
+- user_turns: 0
+
+
+### 2026-06-17T09:54:03Z
+- session_id: 99af7943-bd61-4955-b28d-0a18264d44ca
+- exit: 
+- last_commit: a837b65 Merge pull request #29 from minhtran3124/docs/worktree-branch-naming
+- user_turns: 0
+
+
+### 2026-06-17T10:03:45Z
+- session_id: fc400835-b754-4b7a-a766-62b012e9f1d8
+- exit: 
+- last_commit: a837b65 Merge pull request #29 from minhtran3124/docs/worktree-branch-naming
+- user_turns: 0
+
+
+### 2026-06-17T10:21:53Z
+- session_id: c0b41201-0489-4207-982d-75d1f97a5dc0
+- exit: 
+- last_commit: a837b65 Merge pull request #29 from minhtran3124/docs/worktree-branch-naming
+- user_turns: 0
+
+
+### 2026-06-19T10:47:38Z
+- session_id: bc868a64-644a-425e-8ecc-27e69c5f2667
+- exit: 
+- last_commit: b5a4e8f fix(worktree): deploy harness into new worktrees via deploy-harness.sh --target
+- user_turns: 0
+
