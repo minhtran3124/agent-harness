@@ -6,6 +6,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SETTINGS="$REPO_ROOT/.claude/settings.json"
 SKILLS_DIR="$REPO_ROOT/skills"
 TRUST_METRICS="$REPO_ROOT/docs/harness-experimental/trust-metrics.md"
+AUDIT_TREND_LOG="$REPO_ROOT/docs/harness-experimental/audit-log.jsonl"
 
 # ── Wired Hooks ────────────────────────────────────────────────────────────────
 echo "=== Wired Hooks ==="
@@ -51,6 +52,25 @@ else
                 "$date_col" "$slug_col" "$lane_col" "$conf_col" "$hook_col"
         done
     fi
+fi
+
+# ── Audit Trend (last 5 runs) ───────────────────────────────────────────────────
+echo ""
+echo "=== Audit Trend (last 5 runs) ==="
+if [[ ! -f "$AUDIT_TREND_LOG" ]]; then
+    echo "  [not found: $AUDIT_TREND_LOG]"
+else
+    python3 - "$AUDIT_TREND_LOG" <<'PY'
+import json, sys
+with open(sys.argv[1]) as f:
+    lines = [l.strip() for l in f if l.strip()]
+for line in lines[-5:]:
+    try:
+        d = json.loads(line)
+        print(f"  {d['date']}    findings={d['findings']}   band={d['band']}")
+    except (json.JSONDecodeError, KeyError, TypeError):
+        continue
+PY
 fi
 
 # ── Drift Audit (advisory) ──────────────────────────────────────────────────────

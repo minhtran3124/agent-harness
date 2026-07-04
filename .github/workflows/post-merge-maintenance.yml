@@ -67,7 +67,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$branch"
-          git add VERSION CHANGELOG.md docs/harness-experimental/trust-metrics.md
+          git add VERSION CHANGELOG.md docs/harness-experimental/trust-metrics.md docs/harness-experimental/audit-log.jsonl
           git commit -m "chore(bookkeeping): record PR #${PR_NUMBER}"
           git push origin "$branch"
           gh pr create \

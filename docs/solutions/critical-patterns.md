@@ -30,6 +30,28 @@ Two decisions: (1) `agents/PROJECT.md` convention sources point at `skills/READM
 **Full doc:** docs/solutions/harness-bootstrap/meta-repo-signal-remapping-decisions.md
 ---
 
+## [2026-07-04] bash-empty-array-and-jsonl-parsing-gotchas
+**Type:** bug
+**Module:** scripts/harness-audit
+**Tags:** bash-set-u, empty-array-expansion, jsonl-parsing, defensive-parsing, harness-scripts, ci-macos-ubuntu
+**Applicable when:** Before iterating a bash array that can legitimately be empty under `set -u` (especially on macOS's bundled bash 3.2, which this repo's CI matrix specifically targets), or before writing a python except clause that parses an evolving/external file format (JSONL, config, API response) and only anticipates one failure mode you happened to test.
+
+Two crashes in advisory/non-blocking scripts, same root cause (narrow defensive coding that catches the tested case, not the format's full failure space): (1) `scripts/harness-audit.sh` crashed with `unbound variable` iterating a possibly-empty array under `set -u` — bash 3.2 (macOS) treats `"${arr[@]}"` on an empty array as an unset-variable reference, unlike bash 4.4+; fixed with `"${arr[@]+"${arr[@]}"}"`. (2) `scripts/harness-status.sh` caught `JSONDecodeError` on a malformed JSONL line but left the dict-key access (`d['date']`) outside the guarded block, so a valid-but-incomplete line still crashed with `KeyError` — fixed by moving the access inside `try` and broadening to `except (json.JSONDecodeError, KeyError, TypeError)`.
+
+**Full doc:** docs/solutions/scripts/bash-empty-array-and-jsonl-parsing-gotchas.md
+---
+
+## [2026-07-04] bash-empty-array-and-jsonl-parsing-gotchas-decisions
+**Type:** decision
+**Module:** scripts/harness-audit
+**Tags:** bash-set-u, empty-array-expansion, jsonl-parsing, defensive-parsing, harness-scripts, ci-macos-ubuntu
+**Applicable when:** A future spec or plan says a metric/log/artifact should be recorded "every CI run" and the repo has both a per-push/PR workflow and a separate post-merge/event-sourced workflow — check which one the literal wording actually requires before wiring the write into either, especially when the per-push workflow would need a new write permission it doesn't currently have.
+
+A spec literally asked for a trend JSONL line "every CI run." Chose to emit it from `scripts/bookkeeping.sh` (once per merged PR, via the existing permission-holding `post-merge-maintenance.yml`) instead of adding a new write-back step to the per-push `harness-ci.yml` (which would need a new `contents: write` grant and commit to arbitrary PR branches). Narrows the literal wording to "every merge" — flagged by intent-review as an undocumented divergence, then confirmed correct by the user directly.
+
+**Full doc:** docs/solutions/scripts/bash-empty-array-and-jsonl-parsing-gotchas-decisions.md
+---
+
 <!--
 Example entry shape:
 

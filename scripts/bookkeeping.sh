@@ -104,4 +104,16 @@ printf '| %s | %s | %s | %s | %s | %s | %s | %s | %s |\n' \
   "$DATE" "$slug" "$lane" "$affects" "$conf" "$flags" "-" "shipped (PR #${PR}, \`${SHA}\`)" "$TITLE_LEDGER" \
   >> "$LEDGER"
 
-echo "bookkeeping: recorded PR #${PR} — VERSION ${cur} -> ${new} (${bump}); ledger + CHANGELOG updated"
+# 6. Append one JSONL trend row (drift-audit snapshot + this PR number) so the advisory
+# finding count becomes a trend instead of a single sample. No extra idempotency logic
+# needed here — a re-run for an already-recorded PR exits at step 1, before this line.
+TREND_LOG="docs/harness-experimental/audit-log.jsonl"
+bash "$(dirname "$0")/harness-audit.sh" --root "$ROOT" --json | python3 -c '
+import json, sys
+
+d = json.loads(sys.stdin.read())
+d["pr"] = int(sys.argv[1])
+print(json.dumps(d))
+' "$PR" >> "$TREND_LOG"
+
+echo "bookkeeping: recorded PR #${PR} — VERSION ${cur} -> ${new} (${bump}); ledger + CHANGELOG updated; trend line appended"
