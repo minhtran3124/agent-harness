@@ -108,3 +108,4 @@ Q3 ("which product contract does this change affect?") is the weakest pillar in 
 ## 6. Status Log
 
 - 2026-07-08 — Plan drafted (status: proposed). Normal lane (intake narrowed from high-risk by choosing `harness-audit.sh` over a hook). Awaiting execution handoff.
+- 2026-07-08 — Executed (status: active). Task 1.1 `f6adbc8` · 1.2 `acf0d10` · 2.1 `e5f3a88` · 2.2 `0a1d89e`. Full suite ALL GREEN (149 passed). Deviations: 1 (Rule 2). Pending: correctness-review + intent-review, then finishing-a-development-branch.

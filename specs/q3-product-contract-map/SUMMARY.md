@@ -28,8 +28,7 @@ Success criteria: sửa `settings.json` hoặc `templates/SUMMARY.template.md` �
 
 ## What changed
 
-<!-- filled at implementation -->
-Not started — intake only.
+Added a declarative `contracts` block to `harness-manifest.json` (5 contracts, each `{surface[], consumers[]}`) mapping every internal product-contract surface to the files that depend on it. `scripts/check-contract-impact.sh` maps changed files → impacted contracts → consumers to re-verify (advisory, exit 0; `--changed` reads the working-tree diff). `scripts/check_manifest.py` gained a validation pass that fails if any contract path is missing on disk. `scripts/harness-audit.sh` gained an advisory "section 7" that surfaces contract-impact reminders for dirty surfaces — counted separately from drift `findings`/`band`. No `hooks/*` or `settings.json` edited (intake scope decision).
 
 ### Rationale
 
@@ -42,13 +41,16 @@ Level A (static manifest in `harness-manifest.json` + a lookup script) was chose
 
 ### Deviations
 
-- none
+- Rule 2 — Added a `CLAUDE.md` stub to `build()` in `scripts/test_check_manifest.py` so the OK-fixture stays green with the new `contracts` block referencing it. Commit `acf0d10`.
 
 ### Verify
 
 | Check | Command | Exit | Notes |
 | --- | --- | --- | --- |
-| <to be filled at implementation> | `scripts/run-tests.sh` |  |  |
+| Full harness suite | `bash scripts/run-tests.sh` | 0 | ALL GREEN — 149 passed, 1 skipped; incl. doc-truth lint + manifest consistency |
+| Manifest checker (contracts pass) | `python3 scripts/check_manifest.py` | 0 | "consistent"; fails if any contract path missing |
+| Contract impact mapper | `bash scripts/check-contract-impact.sh templates/SUMMARY.template.md` | 0 | prints `artifact-schema-summary` + its 3 consumers |
+| Audit reminders (json) | `bash scripts/harness-audit.sh --json` | 0 | `checks.contract_impact` present; excluded from `findings`/`band` |
 
 ### Rollback
 
@@ -56,4 +58,4 @@ Level A (static manifest in `harness-manifest.json` + a lookup script) was chose
 
 ### Harness-Delta
 
-- none
+- backlog — `hooks/blast-radius-check.sh` warned on every edit that files were outside `specs/entropy-trend/PLAN.md`'s `<files>` set: a stale `status: active` plan (`entropy-trend`) on `v2` is picked as "the active plan" even though our `q3-product-contract-map` plan is also active. The hook has no notion of *which* active plan owns the current worktree → false blast-radius warnings when >1 plan is active. Worth a `/compound` note.
