@@ -48,7 +48,7 @@ Level A (static manifest in `harness-manifest.json` + a lookup script) was chose
 
 | Check | Command | Exit | Notes |
 | --- | --- | --- | --- |
-| Full harness suite | `bash scripts/run-tests.sh` | 0 | ALL GREEN — 149 passed, 1 skipped; incl. doc-truth lint + manifest consistency |
+| Full harness suite | `bash scripts/run-tests.sh` | 0 | ALL GREEN — 151 passed, 1 skipped; incl. doc-truth lint + manifest consistency |
 | Manifest checker (contracts pass) | `python3 scripts/check_manifest.py` | 0 | "consistent"; fails if any contract path missing |
 | Contract impact mapper | `bash scripts/check-contract-impact.sh templates/SUMMARY.template.md` | 0 | prints `artifact-schema-summary` + its 3 consumers |
 | Audit reminders (json) | `bash scripts/harness-audit.sh --json` | 0 | `checks.contract_impact` present; excluded from `findings`/`band` |
