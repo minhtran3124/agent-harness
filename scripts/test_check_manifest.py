@@ -143,6 +143,26 @@ def test_contract_consumer_missing(tmp_path):
     assert "contracts" in r.stderr and "no/such/consumer.txt" in r.stderr
 
 
+def test_contract_value_not_dict(tmp_path):
+    m = json.loads(json.dumps(MANIFEST_OK))
+    m["contracts"]["c1"] = "settings.json"
+    build(tmp_path, m)
+    r = run(tmp_path)
+    assert r.returncode == 1
+    assert "contracts" in r.stderr
+    assert "Traceback" not in r.stderr
+
+
+def test_contract_surface_not_list(tmp_path):
+    m = json.loads(json.dumps(MANIFEST_OK))
+    m["contracts"]["c1"]["surface"] = "settings.json"
+    build(tmp_path, m)
+    r = run(tmp_path)
+    assert r.returncode == 1
+    assert "contracts" in r.stderr
+    assert "Traceback" not in r.stderr
+
+
 def test_skill_missing_from_disk(tmp_path):
     m = json.loads(json.dumps(MANIFEST_OK))
     m["skills"].append("ghost")

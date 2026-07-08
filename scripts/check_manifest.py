@@ -107,11 +107,25 @@ def check(root: Path) -> int:
     for slug, spec in m.get("contracts", {}).items():
         if slug == "__doc__":
             continue
-        if not spec.get("surface"):
+        if not isinstance(spec, dict):
+            problem("contracts", f"{slug} value must be an object")
+            continue
+        surface = spec.get("surface")
+        consumers = spec.get("consumers")
+        if surface is not None and not isinstance(surface, list):
+            problem("contracts", f"{slug} surface must be a list")
+            surface = None
+        elif not surface:
             problem("contracts", f"{slug} has empty/missing surface")
-        if not spec.get("consumers"):
+        if consumers is not None and not isinstance(consumers, list):
+            problem("contracts", f"{slug} consumers must be a list")
+            consumers = None
+        elif not consumers:
             problem("contracts", f"{slug} has empty/missing consumers")
-        for path in spec.get("surface", []) + spec.get("consumers", []):
+        for path in (surface or []) + (consumers or []):
+            if not isinstance(path, str):
+                problem("contracts", f"{slug} path element must be a string: {path!r}")
+                continue
             if not (root / path).exists():
                 problem("contracts", f"{slug} path '{path}' not found on disk")
 
