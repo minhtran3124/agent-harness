@@ -4,19 +4,60 @@
   "hard_gates": {
     "__doc__": "detectable = diff-scannable by risk-corroboration.sh (must match its add_cat + category_mode exactly). judgment = Rule-4 STOP items that cannot be regex-detected (human/agent judgment only).",
     "detectable": [
-      { "slug": "auth",                 "mode": "block", "desc": "login, logout, sessions, JWT, password, refresh/oauth token, cookies" },
-      { "slug": "authorization",        "mode": "block", "desc": "roles, permissions, tenant/company scope, access control" },
-      { "slug": "data-loss/migration",  "mode": "block", "desc": "schema change, migration, drop/delete/truncate/alter" },
-      { "slug": "audit/security",       "mode": "block", "desc": "audit logs, privacy, sensitive/secret handling" },
-      { "slug": "external-provider",    "mode": "block", "desc": "provider SDKs, webhooks, and dependency manifests (see notes.external_provider_vs_rule3)" },
-      { "slug": "public-contract",      "mode": "block", "desc": "API route/method, response envelope, client-visible behavior" },
-      { "slug": "weakening-validation", "mode": "block", "desc": "removing assert / validator / required / raise" },
-      { "slug": "high-blast",           "mode": "block", "desc": "settings.json, hooks/*, .claude/hooks/*, a core skill engine (render_plan.py)" }
+      {
+        "slug": "auth",
+        "mode": "block",
+        "desc": "login, logout, sessions, JWT, password, refresh/oauth token, cookies"
+      },
+      {
+        "slug": "authorization",
+        "mode": "block",
+        "desc": "roles, permissions, tenant/company scope, access control"
+      },
+      {
+        "slug": "data-loss/migration",
+        "mode": "block",
+        "desc": "schema change, migration, drop/delete/truncate/alter"
+      },
+      {
+        "slug": "audit/security",
+        "mode": "block",
+        "desc": "audit logs, privacy, sensitive/secret handling"
+      },
+      {
+        "slug": "external-provider",
+        "mode": "block",
+        "desc": "provider SDKs, webhooks, and dependency manifests (see notes.external_provider_vs_rule3)"
+      },
+      {
+        "slug": "public-contract",
+        "mode": "block",
+        "desc": "API route/method, response envelope, client-visible behavior"
+      },
+      {
+        "slug": "weakening-validation",
+        "mode": "block",
+        "desc": "removing assert / validator / required / raise"
+      },
+      {
+        "slug": "high-blast",
+        "mode": "block",
+        "desc": "settings.json, hooks/*, .claude/hooks/*, a core skill engine (render_plan.py)"
+      }
     ],
     "judgment": [
-      { "slug": "remove-functionality", "desc": "removing existing behavior, even if seemingly unused (not regex-detectable)" },
-      { "slug": "session-scope",        "desc": "request-scoped <-> isolated/background session or transaction scope change" },
-      { "slug": "replace-service",      "desc": "swapping a service/pattern (cache impl, shared data-access base)" }
+      {
+        "slug": "remove-functionality",
+        "desc": "removing existing behavior, even if seemingly unused (not regex-detectable)"
+      },
+      {
+        "slug": "session-scope",
+        "desc": "request-scoped <-> isolated/background session or transaction scope change"
+      },
+      {
+        "slug": "replace-service",
+        "desc": "swapping a service/pattern (cache impl, shared data-access base)"
+      }
     ]
   },
 
@@ -41,9 +82,19 @@
   ],
 
   "skills": [
-    "bootstrap-xia2", "brainstorming", "compound", "correctness-review", "create-pr",
-    "executing-plans", "feature-intake", "finishing-a-development-branch", "intent-review",
-    "review-diff", "subagent-driven-development", "using-git-worktrees", "visual-planner",
+    "bootstrap-xia2",
+    "brainstorming",
+    "compound",
+    "correctness-review",
+    "create-pr",
+    "executing-plans",
+    "feature-intake",
+    "finishing-a-development-branch",
+    "intent-review",
+    "review-diff",
+    "subagent-driven-development",
+    "using-git-worktrees",
+    "visual-planner",
     "writing-plans", "xia2"
   ],
 
