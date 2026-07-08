@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 - feat(q3): product-contract map (Level A) — `contracts` block in `harness-manifest.json`, `scripts/check-contract-impact.sh` advisory mapper, `check_manifest.py` path validation, and a contract-impact reminder section in `harness-audit.sh` (MIN-64)
 
+## [0.8.1] — 2026-07-08
+
+- feat(q3): product-contract map (Level A) — contract-level blast radius [MIN-64] (PR #46)
+
 ## [0.7.3] — 2026-07-04
 
 - feat: entropy has a trend — 6-check harness-audit + per-merge JSONL log (v0.3 Wave 4) (PR #42)
