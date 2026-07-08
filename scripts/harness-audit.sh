@@ -14,6 +14,8 @@
 #      outside intake (not present in scripts/run-tests.sh or any workflow file)
 #   5. docs/harness-experimental/improvement-backlog.md `open` rows gone stale
 #   6. harness-manifest.json degraded (scripts/check_manifest.py reports drift)
+#   7. contract surfaces dirty in the working tree → reminder to verify consumers
+#      (advisory only, via scripts/check-contract-impact.sh; never counted as drift)
 #
 # Advisory by default (exit 0, never blocks). `--strict` exits 1 when any drift is
 # found — for opt-in CI use. `--root DIR` points the audit at another tree (tests).
@@ -47,6 +49,7 @@ VERIFY_NEVER_RERUN=0
 BACKLOG_STALE=0
 MANIFEST_DEGRADED=0
 SOLUTIONS_STALE=0
+CONTRACT_IMPACT=0
 
 note() {
   [ "$JSON" -eq 1 ] || printf '  ⚠ %s\n' "$1"
@@ -183,6 +186,15 @@ if [ -f harness-manifest.json ] && [ -f scripts/check_manifest.py ] && command -
   fi
 fi
 
+# ── 7. contract surfaces dirty in working tree → remind consumers ───────────────
+if [ -f scripts/check-contract-impact.sh ]; then
+  while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    [ "$JSON" -eq 1 ] || printf '  ↳ %s\n' "$line"
+    CONTRACT_IMPACT=$((CONTRACT_IMPACT + 1))
+  done < <(bash scripts/check-contract-impact.sh --changed --root "$ROOT")
+fi
+
 # ── Banded health summary ───────────────────────────────────────────────────────
 if [ "$FINDINGS" -eq 0 ]; then
   band="healthy"
@@ -196,7 +208,7 @@ if [ "$JSON" -eq 1 ]; then
   python3 -c '
 import json, sys
 
-date, findings, band, vm, ps, vnr, bs, md, ss = sys.argv[1:10]
+date, findings, band, vm, ps, vnr, bs, md, ss, ci = sys.argv[1:11]
 print(json.dumps({
     "date": date,
     "findings": int(findings),
@@ -208,12 +220,14 @@ print(json.dumps({
         "backlog_stale": int(bs),
         "manifest_degraded": int(md),
         "solutions_stale": int(ss),
+        "contract_impact": int(ci),
     },
 }))
-' "$(date +%F)" "$FINDINGS" "$band" "$VERIFY_MISSING" "$PLAN_STALE" "$VERIFY_NEVER_RERUN" "$BACKLOG_STALE" "$MANIFEST_DEGRADED" "$SOLUTIONS_STALE"
+' "$(date +%F)" "$FINDINGS" "$band" "$VERIFY_MISSING" "$PLAN_STALE" "$VERIFY_NEVER_RERUN" "$BACKLOG_STALE" "$MANIFEST_DEGRADED" "$SOLUTIONS_STALE" "$CONTRACT_IMPACT"
 else
   echo ""
   echo "  Drift findings: $FINDINGS  ($band)"
+  [ "$CONTRACT_IMPACT" -eq 0 ] || echo "  Contract-impact reminders: $CONTRACT_IMPACT"
 fi
 
 if [ "$STRICT" -eq 1 ] && [ "$FINDINGS" -gt 0 ]; then
