@@ -42,6 +42,7 @@ Level A (static manifest in `harness-manifest.json` + a lookup script) was chose
 ### Deviations
 
 - Rule 2 — Added a `CLAUDE.md` stub to `build()` in `scripts/test_check_manifest.py` so the OK-fixture stays green with the new `contracts` block referencing it. Commit `acf0d10`.
+- Rule 1 — (correctness-review fix) Added defensive `isinstance` guards to `check_manifest.py` section C so malformed contract shapes (non-dict value, string `surface`/`consumers`, non-string path element) emit a clean drift diagnostic instead of crashing with a traceback. Matches the `bash-empty-array-and-jsonl-parsing-gotchas` compound lesson. Commit `56735d0`.
 
 ### Verify
 
