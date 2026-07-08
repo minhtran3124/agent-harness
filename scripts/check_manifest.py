@@ -103,6 +103,18 @@ def check(root: Path) -> int:
             f"detectable '{slug}' has no category_mode branch in risk-corroboration.sh",
         )
 
+    # ── C. contracts <-> disk ──────────────────────────────────────────────────
+    for slug, spec in m.get("contracts", {}).items():
+        if slug == "__doc__":
+            continue
+        if not spec.get("surface"):
+            problem("contracts", f"{slug} has empty/missing surface")
+        if not spec.get("consumers"):
+            problem("contracts", f"{slug} has empty/missing consumers")
+        for path in spec.get("surface", []) + spec.get("consumers", []):
+            if not (root / path).exists():
+                problem("contracts", f"{slug} path '{path}' not found on disk")
+
     if problems:
         for p in problems:
             print(p, file=sys.stderr)
