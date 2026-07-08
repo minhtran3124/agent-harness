@@ -61,6 +61,15 @@
     ]
   },
 
+  "contracts": {
+    "__doc__": "contract surface->consumers map for Q3 blast-radius; read by scripts/check-contract-impact.sh, validated by scripts/check_manifest.py.",
+    "hook-registration":       { "surface": ["settings.json"],                 "consumers": ["CLAUDE.md", "scripts/lint-doc-truth.sh"],                                                      "desc": "hook wiring source of truth" },
+    "artifact-schema-summary": { "surface": ["templates/SUMMARY.template.md"],  "consumers": ["scripts/verify_summary.py", "scripts/check_lane_evidence.py", "hooks/commit-quality-gate.sh"], "desc": "SUMMARY.md shape contract" },
+    "artifact-schema-plan":    { "surface": ["rules/plan-format.md"],           "consumers": ["scripts/check_plan_format.py", "skills/visual-planner/render_plan.py"],                        "desc": "PLAN.md task XML schema contract" },
+    "lane-evidence-mapping":   { "surface": ["scripts/check_lane_evidence.py"], "consumers": ["skills/feature-intake/SKILL.md", "rules/auto-correct-scope.md"],                               "desc": "lane -> required evidence mapping" },
+    "hard-gate-vocabulary":    { "surface": ["harness-manifest.json"],          "consumers": ["hooks/risk-corroboration.sh", "rules/auto-correct-scope.md", "skills/feature-intake/SKILL.md"], "desc": "hard-gate slug/mode/desc vocabulary" }
+  },
+
   "notes": {
     "external_provider_vs_rule3": "A dependency-manifest edit (requirements*.txt / package.json / pyproject.toml / go.mod / Gemfile) trips external-provider, but auto-correct-scope Rule 3 authorizes auto-adding a dependency. Resolution: a pure dependency bump runs in the high-risk lane OR is recorded as a Rule-3 deviation in SUMMARY. The gate stays broad by design — over-flagging a dependency change is safer than missing a new SDK integration."
   },

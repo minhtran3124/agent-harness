@@ -129,6 +129,28 @@ out=$(bash "$SCRIPT" --root "$d" --json)
 if [ "$(jf "$out" "['checks']['manifest_degraded']")" = "0" ]; then pass
 else fail "want manifest_degraded == 0 (skipped): $out"; fi
 
+# ── contract_impact (advisory reminder — must never move findings/band) ──────────
+t "dirty contract surface -> contract_impact >= 1, findings/band unaffected"
+d=$(mktemp -d); _CLEANUP_DIRS+=("$d")
+git -C "$d" init -q -b main 2>/dev/null || git -C "$d" init -q
+git -C "$d" config user.email test@test
+git -C "$d" config user.name test
+mkdir -p "$d/scripts" "$d/api"
+cp "$ROOT/scripts/check-contract-impact.sh" "$d/scripts/"
+printf '{"contracts": {"demo": {"surface": ["api/schema.json"], "consumers": ["consumer-a"]}}}\n' > "$d/harness-manifest.json"
+printf '{}\n' > "$d/api/schema.json"
+out=$(bash "$SCRIPT" --root "$d" --json)
+if [ "$(jf "$out" "['checks']['contract_impact']")" -ge 1 ] \
+  && [ "$(jf "$out" "['findings']")" = "0" ] \
+  && [ "$(jf "$out" "['band']")" = "healthy" ]; then pass
+else fail "want contract_impact >= 1, findings 0, band healthy: $out"; fi
+
+t "no scripts/check-contract-impact.sh -> contract_impact == 0 (skipped, not flagged)"
+d=$(make_fixture)
+out=$(bash "$SCRIPT" --root "$d" --json)
+if [ "$(jf "$out" "['checks']['contract_impact']")" = "0" ]; then pass
+else fail "want contract_impact == 0 (skipped): $out"; fi
+
 # ── 7. --json is exactly one line and round-trips through json.loads ─────────────
 t "--json output is exactly one line and parses as JSON"
 d=$(make_fixture)

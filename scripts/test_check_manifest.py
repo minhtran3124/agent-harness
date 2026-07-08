@@ -34,6 +34,9 @@ MANIFEST_OK = {
     ],
     "skills": ["alpha"],
     "agents": ["reviewer"],
+    "contracts": {
+        "c1": {"surface": ["settings.json"], "consumers": ["CLAUDE.md"]},
+    },
 }
 
 
@@ -47,6 +50,7 @@ def build(root: Path, manifest: dict) -> None:
     (root / "agents").mkdir(parents=True, exist_ok=True)
     (root / "agents" / "reviewer.md").write_text("# reviewer\n")
     (root / "agents" / "README.md").write_text("# readme (excluded)\n")
+    (root / "CLAUDE.md").write_text("# claude\n")
     # settings.json wires only risk-corroboration.sh (dormant.sh is unwired).
     (root / "settings.json").write_text(
         json.dumps(
@@ -119,6 +123,44 @@ def test_hook_add_cat_absent_from_manifest(tmp_path):
     r = run(tmp_path)
     assert r.returncode == 1
     assert "public-contract" in r.stderr
+
+
+def test_contract_surface_missing(tmp_path):
+    m = json.loads(json.dumps(MANIFEST_OK))
+    m["contracts"]["c1"]["surface"] = ["no/such/file.txt"]
+    build(tmp_path, m)
+    r = run(tmp_path)
+    assert r.returncode == 1
+    assert "contracts" in r.stderr and "no/such/file.txt" in r.stderr
+
+
+def test_contract_consumer_missing(tmp_path):
+    m = json.loads(json.dumps(MANIFEST_OK))
+    m["contracts"]["c1"]["consumers"] = ["no/such/consumer.txt"]
+    build(tmp_path, m)
+    r = run(tmp_path)
+    assert r.returncode == 1
+    assert "contracts" in r.stderr and "no/such/consumer.txt" in r.stderr
+
+
+def test_contract_value_not_dict(tmp_path):
+    m = json.loads(json.dumps(MANIFEST_OK))
+    m["contracts"]["c1"] = "settings.json"
+    build(tmp_path, m)
+    r = run(tmp_path)
+    assert r.returncode == 1
+    assert "contracts" in r.stderr
+    assert "Traceback" not in r.stderr
+
+
+def test_contract_surface_not_list(tmp_path):
+    m = json.loads(json.dumps(MANIFEST_OK))
+    m["contracts"]["c1"]["surface"] = "settings.json"
+    build(tmp_path, m)
+    r = run(tmp_path)
+    assert r.returncode == 1
+    assert "contracts" in r.stderr
+    assert "Traceback" not in r.stderr
 
 
 def test_skill_missing_from_disk(tmp_path):
