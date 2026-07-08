@@ -1,6 +1,6 @@
 ---
 slug: q3-product-contract-map
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-07-08
 ---
@@ -110,3 +110,4 @@ Q3 ("which product contract does this change affect?") is the weakest pillar in 
 - 2026-07-08 — Plan drafted (status: proposed). Normal lane (intake narrowed from high-risk by choosing `harness-audit.sh` over a hook). Awaiting execution handoff.
 - 2026-07-08 — Executed (status: active). Task 1.1 `f6adbc8` · 1.2 `acf0d10` · 2.1 `e5f3a88` · 2.2 `0a1d89e`. Full suite ALL GREEN.
 - 2026-07-08 — correctness-review: 1 finding (P2/Rule 1, defensive guards in check_manifest section C) → fixed `56735d0` (+2 regression tests). intent-review: ✅ no divergence (all 4 scope items verified live). Suite 151 passed. Ready for finishing-a-development-branch.
+- 2026-07-08 — shipped via `feat/q3-product-contract-map` (PR pending).
