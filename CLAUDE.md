@@ -31,8 +31,7 @@ feature-intake (classify → lane + confidence → route)
   → compound → finishing-a-development-branch
 ```
 
-Lane → ceremony; confidence/ambiguity → whether a human is asked. See `rules/orchestration.md`
-and `skills/feature-intake/SKILL.md`. See @skills/README.md for full inventory and handoff map.
+Lane → ceremony; confidence/ambiguity → whether a human is asked. See `rules/orchestration.md`, `skills/feature-intake/SKILL.md`, and @skills/README.md for the full inventory and handoff map.
 
 ## Knowledge Base
 
@@ -50,7 +49,7 @@ Hooks live in `hooks/` (top-level). Register them in `settings.json` under the a
 | `commit-quality-gate.sh` | PreToolUse (Bash `git commit`) | Secrets scan + debug artifact check + targeted pytest | ✅ |
 | `risk-corroboration.sh` | PreToolUse (Bash `git commit`) | Block if staged diff trips a hard gate but declared `Lane:` is below `high-risk` | ✅ |
 | `branch-guard.sh` | PreToolUse (Bash `git commit`) | Warn when committing on `main` | ✅ |
-| `branch-isolation-guard.sh` | PreToolUse (Edit/Write) | Hard-block a code edit on a shared branch (`HARNESS_SHARED_BRANCHES`, default `main`/`master`) while a plan is `status: active` — unless break-glass `BRANCH_ISOLATION_REASON` is set. Makes "isolate before implementing" structural at write time (`branch-guard.sh` only warns, at commit time). `specs/*` bookkeeping is exempt | ✅ |
+| `branch-isolation-guard.sh` | PreToolUse (Edit/Write) | Hard-block code edits on a shared branch (`HARNESS_SHARED_BRANCHES`, default `main`/`master`) while a plan is `status: active`, unless break-glass `BRANCH_ISOLATION_REASON` is set. `specs/*` bookkeeping is exempt. (Write-time enforcement; `branch-guard.sh` only warns at commit time.) | ✅ |
 | `ruff-on-edit.sh` | PostToolUse (Edit/Write) | `ruff --fix` + `ruff format` on edited `.py` files | ✅ |
 | `blast-radius-check.sh` | PostToolUse (Edit/Write) | Warn when an edit touches a file outside the active plan `<files>` set | ✅ |
 | `render-plan-on-write.sh` | PostToolUse (Edit/Write on `specs/*/PLAN.md`) | Auto-re-render `PLAN.html` via `render_plan.py` (deterministic, non-blocking) | ✅ |
@@ -58,17 +57,17 @@ Hooks live in `hooks/` (top-level). Register them in `settings.json` under the a
 | `state-breadcrumb.sh` | SessionEnd | Append a dated session breadcrumb to `specs/STATE.md` (`## Session End Log`) for cross-session resumption; never blocks | ✅ |
 | `session-knowledge.sh` | SessionStart | Load `docs/solutions/INDEX.md` + `critical-patterns.md` into context when the store has data; silent when empty; never blocks | ✅ |
 | `auto-test-on-change.sh` | PostToolUse (Edit/Write) | Run the matching test runner on a changed test file — pytest / vitest / jest / `npm test` / `go test`, detected per file; `AUTO_TEST_CMD` (+ `AUTO_TEST_PATTERN`) overrides for other ecosystems | ⬜ dormant |
-| `protected-path-guard.sh` | PreToolUse (Edit/Write) | Hard-block a write to a high-blast file (settings.json, `hooks/*`, `render_plan.py`, `run-tests.sh`, SUMMARY template) unless `PROTECTED_PATH_REASON` is set (break-glass → recorded to `docs/harness-experimental/break-glass-log.md`). Makes Rule 4 structural at write time | ⬜ dormant |
+| `protected-path-guard.sh` | PreToolUse (Edit/Write) | Hard-block writes to high-blast files (settings.json, `hooks/*`, `render_plan.py`, `run-tests.sh`, SUMMARY template) unless `PROTECTED_PATH_REASON` is set (break-glass → logged to `docs/harness-experimental/break-glass-log.md`) | ⬜ dormant |
 
 ## Gotchas
 
-- `specs/` is tracked in git — `PLAN.md`, `design.md`, `research-brief.md`, and sidecars are committed. `PLAN.html` and `.plan-review.json` (derived artifacts, rebuildable) remain gitignored. Skills update plans in-place; the `shipped` status transition is committed with the rest
+- `specs/` is tracked — `PLAN.md`, `design.md`, `research-brief.md`, and sidecars are committed; `PLAN.html` and `.plan-review.json` (rebuildable derived artifacts) stay gitignored. Skills update plans in-place; the `shipped` transition is committed with the rest
 - `settings.local.json` overrides `settings.json` — user-specific permissions and allowlists live there, not in the shared config
 - `.mcp.json` is at repo root (not in `.claude/`) — holds **only** `mcpServers` (the project's `code-review-graph` server, launched via `uvx`; requires `uv` installed). `context7` is a **user-level** MCP server (HTTP, `CONTEXT7_API_KEY`), not in this file. `env`, `permissions`, `hooks`, `statusLine`, `enabledPlugins` belong in `settings.json`, not here
 - `docs/solutions/` entries have a `confirmed_at` field; treat entries older than 30 days as potentially stale
 - When ≥5 `app/` files are staged, the commit hook hints to run `/compound` — don't skip it
-- Before changing `hooks/` or `scripts/`, run `bash scripts/run-tests.sh` — CI (`harness-ci`) runs the same suite on ubuntu + macos, including a doc-truth lint that fails when docs reference missing paths or the hook table contradicts `settings.json`
-- Stage and commit in **separate** Bash calls when untracked `.py` files exist — `hooks/check-untracked-py.sh` (PreToolUse) evaluates the whole command string before any of it runs, so `git add x.py && git commit ...` in one call still sees `x.py` as untracked and denies the commit; run `git add` first, then `git commit` in a second call (see `docs/solutions/harness/pretooluse-hook-denies-combined-git-add-commit.md`)
+- Before changing `hooks/` or `scripts/`, run `bash scripts/run-tests.sh` — CI (`harness-ci`) runs the same suite on ubuntu + macos, including the doc-truth lint (fails on missing paths or a hook table that contradicts `settings.json`)
+- Stage and commit in **separate** Bash calls when untracked `.py` files exist — `hooks/check-untracked-py.sh` (PreToolUse) scans the whole command string before it runs, so `git add x.py && git commit ...` in one call still sees `x.py` as untracked and denies the commit. Run `git add`, then `git commit` in a second call (see `docs/solutions/harness/pretooluse-hook-denies-combined-git-add-commit.md`)
 
 <!-- code-review-graph MCP tools -->
 ## MCP Tools: code-review-graph
