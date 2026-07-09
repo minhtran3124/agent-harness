@@ -105,6 +105,12 @@ CONFLICTS=()
 POLICY=""
 BACKUP_TS=""
 
+# True only when this process can actually open its controlling terminal. `[ -r /dev/tty ]`
+# is NOT equivalent: access(2) sees the mode bits of the /dev/tty alias node and reports it
+# readable even after setsid(), so a tty-less CI run would fall into the prompt branch.
+# Opening it in a subshell is the only honest test.
+have_tty() { (exec < /dev/tty) 2>/dev/null; }
+
 # Scan BOOTSTRAP_OWNED_FILES for local-vs-incoming conflicts and resolve ONE batch policy
 # for all of them. Runs ONCE, before prep_dir and before the `for d in ...` copy loop —
 # never inside copy_dir, which runs once per top-level dir and would prompt (and could
@@ -137,7 +143,7 @@ preflight_protected() {
 
   if [ "$OVERWRITE_CONFLICTS" -eq 1 ]; then
     POLICY="overwrite"
-  elif [ "$YES" -eq 1 ] || [ ! -r /dev/tty ]; then
+  elif [ "$YES" -eq 1 ] || ! have_tty; then
     POLICY="keep"
     printf "  %s⚠ %d protected file(s) differ from the harness source — keeping your local copy;%s\n" "$Y" "${#CONFLICTS[@]}" "$R"
     printf "  %s  incoming saved as <file>.harness-incoming for review.%s\n" "$Y" "$R"
