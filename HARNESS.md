@@ -2,7 +2,7 @@
 
 This repo is a **skills framework with a risk/trust harness on top**. This file explains, in plain terms, what "the harness" is and how it shapes the way work flows.
 
-For the full skill inventory and handoff map see [`skills/README.md`](skills/README.md). For the research behind this design see [`hoangnb24/harness-experimental`](https://github.com/hoangnb24/harness-experimental).
+For the full skill inventory and handoff map see [`skills/README.md`](skills/README.md).
 
 ---
 
@@ -16,11 +16,7 @@ For the full skill inventory and handoff map see [`skills/README.md`](skills/REA
 The engine answers *"how do I build this?"* The harness answers *"how careful should I be, and
 who needs to approve?"*
 
-## 2. Where the harness came from
-
-Borrowed from [`hoangnb24/harness-experimental`](https://github.com/hoangnb24/harness-experimental): we adopted its **risk/trust *spec*** (not its files or layout) and grafted the idea onto this repo's existing enforcement engine — executable skills + blocking hooks.
-
-## 3. The one principle everything turns on
+## 2. The one principle everything turns on
 
 > **Ceremony scales with risk. Human interruption scales with ambiguity.**
 
@@ -30,7 +26,7 @@ These are two independent dials:
 
 A high-risk-but-clear change runs autonomously through heavy proof. A tiny-but-unclear change stops to ask. Risk ≠ interruption.
 
-## 4. How a change flows
+## 3. How a change flows
 
 ```
 request → /feature-intake → Lane + Confidence → route → build → hooks corroborate → ship
@@ -49,7 +45,7 @@ request → /feature-intake → Lane + Confidence → route → build → hooks 
 3. **Confidence decides escalation.** Low confidence (any lane), or a hard gate, → stop and ask (recorded in `specs/<slug>/ESCALATIONS.md`, deny-on-no-response).
 4. **Hooks corroborate the claim.** At commit time the diff is checked against the declared lane — the agent can't classify a risky change as "tiny" and slip it through.
 
-## 5. How the harness impacts the workflow
+## 4. How the harness impacts the workflow
 
 - **Less ceremony on small work.** Typo/copy/narrow edits skip planning entirely (tiny lane).
 - **More proof on risky work.** Auth, migrations, schema, public contracts, and high-blast files force `high-risk` — full plan + reviews + a recorded rollback.
@@ -57,7 +53,7 @@ request → /feature-intake → Lane + Confidence → route → build → hooks 
 - **Claims must be backed by evidence.** "Done" needs a re-runnable `### Verify` artifact in `SUMMARY.md`; behaviors aren't `implemented` in `TEST_MATRIX.md` without proof.
 - **Rules are enforced by code, not hope.** What can be mechanized is a hook (see `CLAUDE.md` Hooks table); convention is the residue, not the rule.
 
-## 6. The "hard gates"
+## 5. The "hard gates"
 
 These categories always force `high-risk` and can only be lowered by a human narrowing scope:
 
@@ -67,7 +63,7 @@ skill engine).
 
 A hard gate discovered *mid-task* escalates regardless of the original lane.
 
-## 7. Pointers
+## 6. Pointers
 
 | Want to… | Read |
 |---|---|
@@ -75,4 +71,3 @@ A hard gate discovered *mid-task* escalates regardless of the original lane.
 | Understand routing / lanes in detail | `skills/feature-intake/SKILL.md`, `rules/orchestration.md` |
 | Know what a hook enforces | `CLAUDE.md` → Hooks table |
 | See the autonomy vs. ask-the-human rules | `rules/auto-correct-scope.md` |
-| Read the research behind this design | [hoangnb24/harness-experimental](https://github.com/hoangnb24/harness-experimental) |
