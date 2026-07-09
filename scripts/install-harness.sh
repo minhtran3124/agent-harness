@@ -225,6 +225,13 @@ if [ "$KEEP_SOURCES" -eq 1 ]; then
 fi
 
 HARNESS_VERSION=$( [ -f "$SRC/VERSION" ] && tr -d '[:space:]' < "$SRC/VERSION" || echo "unknown" )
+if [ "$DRY_RUN" -eq 1 ]; then
+  # Deploy already reported what it would do and wrote nothing. Claiming "installed"
+  # here would contradict it on the very next line.
+  printf '\n  %s%s✓ Dry run complete%s %s(v%s)%s  %s→ nothing was written to %s%s\n' "$G" "$B" "$R" "$D" "$HARNESS_VERSION" "$R" "$D" "$TARGET_DIR" "$R"
+  printf '\n'
+  exit 0
+fi
 printf '\n  %s%s✓ Harness installed%s %s(v%s)%s  %s→ %s%s\n' "$G" "$B" "$R" "$D" "$HARNESS_VERSION" "$R" "$D" "$TARGET_DIR" "$R"
 printf '  %s↻ Restart Claude Code in that project so it loads the harness.%s\n' "$Y" "$R"
 if [ "$UVX_MISSING" -eq 1 ]; then
