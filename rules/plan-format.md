@@ -15,9 +15,7 @@ Use XML task format when ANY of:
 
 Skip for single-file fixes, typo corrections, config tweaks.
 
-> These thresholds are the **signal** that triggers a `PLAN.md` under the artifact policy
-> (`rules/orchestration.md` → Artifact policy). A `SUMMARY.md` is still written for every lane
-> regardless — plan-ahead scaffolding scales by signal; the record is always-on.
+> These thresholds are the **signal** that triggers a `PLAN.md` under the artifact policy (`rules/orchestration.md` → Artifact policy). A `SUMMARY.md` is still written for every lane regardless — plan-ahead scaffolding scales by signal; the record is always-on.
 
 ## XML Schema
 
@@ -34,11 +32,7 @@ Every task in `PLAN.md` MUST use:
 
 ## Rendering requirement (Markdown-safe)
 
-Raw XML-like tags (for example `<task>`, `<files>`, `<action>`) are treated as HTML by many Markdown renderers and become hard to read in preview mode.
-
-To keep plans readable, every task MUST be wrapped in a fenced `xml` code block in the plan document.
-
-Use this presentation pattern:
+Raw XML-like tags (for example `<task>`, `<files>`, `<action>`) are treated as HTML by many Markdown renderers and become hard to read in preview mode. To keep plans readable, every task MUST be wrapped in a fenced `xml` code block in the plan document. Use this presentation pattern:
 
 ````markdown
 ### Task 1.1 — Short human title
