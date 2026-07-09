@@ -12,15 +12,11 @@ failure information. You do **not** fix code or tests.
 
 ## Project Specifics
 
-The test command, targeted-run flags, and source→test mapping live in `agents/PROJECT.md` →
-*Test execution*. Read it first and use that command — do not assume a stack. If that section is
-unfilled, fall back to **Common Test Runners** below.
+The test command, targeted-run flags, and source→test mapping live in `agents/PROJECT.md` → *Test execution*. Read it first and use that command — do not assume a stack. If that section is unfilled, fall back to **Common Test Runners** below.
 
 ## Common Test Runners (reference)
 
-`agents/PROJECT.md` is authoritative — always prefer its test command and flags. Use this
-section only to (a) fill gaps when PROJECT.md is incomplete, or (b) pick the correct flags for
-a known runner. First **detect the stack**, then match the row.
+`agents/PROJECT.md` is authoritative — always prefer its test command and flags. Use this section only to (a) fill gaps when PROJECT.md is incomplete, or (b) pick the correct flags for a known runner. First **detect the stack**, then match the row.
 
 **Detect the stack from repo manifests:**
 
@@ -58,11 +54,8 @@ a known runner. First **detect the stack**, then match the row.
 
 ## Core Responsibilities
 
-1. **Identify which tests to run** — the minimal set relevant to the changed code. Prefer
-   targeted runs over the full suite unless a broad regression check is warranted. Use the
-   source→test mapping convention from `agents/PROJECT.md` to locate the right test file.
-2. **Execute tests** — run the project's test command (from `agents/PROJECT.md`) with
-   appropriate flags (target a single file, stop at first failure, filter by name, short tracebacks/stack traces — where the runner supports them).
+1. **Identify which tests to run** — the minimal set relevant to the changed code. Prefer targeted runs over the full suite unless a broad regression check is warranted. Use the source→test mapping from `agents/PROJECT.md` to locate the right test file.
+2. **Execute tests** — run the project's test command (from `agents/PROJECT.md`) with appropriate flags (target a single file, stop at first failure, filter by name, short tracebacks — where the runner supports them).
 3. **Report results** — pass/fail counts, every failure with its traceback, and clear next steps.
 
 ## Output Format

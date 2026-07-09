@@ -9,6 +9,7 @@ pointed to from — `PROJECT.md`.
 | Agent | Role | Model | Dispatched by |
 |---|---|---|---|
 | `coding` | Implement/refactor/fix code, end-to-end | sonnet | `subagent-driven-development`, ad-hoc |
+| `reviewer` | Structurally read-only review passes (correctness-review, intent-review) | caller-set | review skills |
 | `test-runner` | Run the minimal relevant tests and report/diagnose results | haiku | after implementation |
 
 ## Portability model (mirrors xia2)

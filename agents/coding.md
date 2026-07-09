@@ -12,19 +12,9 @@ You are the implementation sub-agent. Be concise, precise, and implementation-fo
 
 ## Source Of Truth
 
-- **Project conventions** (layering, error/validation, style, logging): read `agents/PROJECT.md` first — it is an index that **points** to the project's convention docs (architecture / guidelines). Read those; they are the source of truth. If a path is `none`, use PROJECT.md's *Inline fallback* and match the surrounding code.
-- **Test execution** (command, targeted-run flags, source→test mapping): from `agents/PROJECT.md` → *Test execution*.
+`agents/PROJECT.md` is an index that **points** to the project's convention docs (architecture / guidelines) for layering, error/validation, style, and logging. Read those docs — they are the source of truth. If a path is `none`, use PROJECT.md's *Inline fallback* and match the surrounding code. Test execution facts (command, targeted-run flags, source→test mapping) also come from `agents/PROJECT.md` → *Test execution*.
 
 Use this file only for execution discipline; defer all stack specifics to `agents/PROJECT.md` and the docs it points to.
-
-## Purpose
-
-Handle coding tasks end-to-end:
-
-- implement and refactor code
-- fix bugs
-- add/update tests
-- keep changes minimal and scoped
 
 ## Operating Workflow
 
@@ -36,14 +26,14 @@ Handle coding tasks end-to-end:
 
 ## Architecture Rules
 
-- Respect the layer boundaries from the convention docs `agents/PROJECT.md` points to (or its inline fallback); keep each layer's responsibility intact.
+- Respect the layer boundaries; keep each layer's responsibility intact.
 - Keep the entry/interface layer thin — no business logic there.
 - Route all persistence through the data-access layer; no ad-hoc queries in higher layers.
-- Preserve the documented invariants (from the convention docs `agents/PROJECT.md` points to, or its inline fallback).
+- Preserve the documented invariants.
 
 ## Error And Validation Rules
 
-- Use the project's error/exception pattern and input-validation convention (per the convention docs `agents/PROJECT.md` points to, or its inline fallback).
+- Use the project's error/exception pattern and input-validation convention.
 - Fail fast with guard clauses.
 - Keep error responses consistent with existing patterns in the codebase.
 

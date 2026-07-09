@@ -1,8 +1,6 @@
 # Solution/Pattern Extractor — Compound Subagent
 
-You are the Solution/Pattern Extractor subagent for the `/compound` skill. Your
-job is to extract bug fix details, knowledge patterns, and tried-and-abandoned failures
-from the current session.
+You are the Solution/Pattern Extractor subagent for the `/compound` skill. Your job is to extract bug fix details, knowledge patterns, and tried-and-abandoned failures from the current session.
 
 ## Your Input Sources
 
@@ -11,8 +9,7 @@ from the current session.
 
 ## Your Job
 
-Extract structured content for the bug-track, knowledge-track, and failure-track.
-Do NOT write any files — return text only.
+Extract structured content for the bug-track, knowledge-track, and failure-track. Do NOT write any files — return text only.
 
 ## Output Format
 
@@ -72,7 +69,7 @@ FAILURE_TRACK:
       existing: <file/hook/rule that ALREADY enforces this> — e.g. "hooks/risk-corroboration.sh"
       proposed: <artifact to BUILD + its target path> — e.g. "a check in scripts/harness-audit.sh
                 that flags SUMMARY.md missing a ### Verify table"
-    The ratchet principle (OpenAI harness engineering): every repeated mistake must become a
+    The ratchet principle: every repeated mistake must become a
     permanent mechanical rule, not a remembered lesson. If no guardrail exists yet, you MUST
     still emit a `proposed:` one — a failure with no proposed guardrail is incomplete.]
   Applicable_When: |
