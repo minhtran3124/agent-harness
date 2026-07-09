@@ -35,12 +35,15 @@ tree_snapshot() { # tree_snapshot <dir> — file list + content hashes, paths re
 T1=$(new_target)
 run_deploy "$T1"
 
+# Baseline sanity check, not load-bearing: a first install has no incoming to conflict
+# with, so this can't fail even if the protected-file feature were deleted entirely.
 t "case 1: first install copies protected files byte-identical to source"
 if [ "$RC" -eq 0 ] \
    && cmp -s "$T1/.claude/$OWNED_TOP_FILE" "$ROOT/$OWNED_TOP_FILE" \
    && cmp -s "$T1/.claude/$OWNED_NESTED_FILE" "$ROOT/$OWNED_NESTED_FILE"; then pass
 else fail "rc=$RC — files not copied / not identical"; fi
 
+# Baseline sanity check, not load-bearing — same reason as above.
 t "case 1: first install writes no .harness-incoming sidecar"
 n=$(find "$T1/.claude" -name '*.harness-incoming' | wc -l | tr -d ' ')
 if [ "$n" = "0" ]; then pass; else fail "found $n sidecar(s) on a fresh install"; fi
@@ -62,38 +65,50 @@ t "case 2: --yes re-sync writes the incoming content to <file>.harness-incoming"
 if cmp -s "$T2/.claude/$OWNED_TOP_FILE.harness-incoming" "$ROOT/$OWNED_TOP_FILE"; then pass
 else fail "sidecar missing or does not match source incoming"; fi
 
+t "case 2: --yes re-sync prints the keep-local warning"
+if printf '%s' "$OUT_TXT" | grep -qF "keeping your local copy"; then pass
+else fail "warning text not found in output: $(printf '%s' "$OUT_TXT" | head -5 | tr '\n' ' ')"; fi
+
 # ---------------------------------------------------------------------------
 # Case 3 — same customization + --overwrite-conflicts: overwritten with incoming.
+#
+# The end state alone (source content, no sidecar) is indistinguishable from what a
+# completely UNPROTECTED copy_dir clobber would produce — so two extra probes make the
+# protected-overwrite branch itself observable: (1) pre-seed a stale
+# `<file>.harness-incoming` that only sync_protected_file's `overwrite` case knows to
+# remove (a plain copy_dir rm+cp of the source dir never touches a sidecar file that
+# doesn't exist in the source), and (2) assert the keep-branch warning text is ABSENT —
+# an unprotected clobber and a keep-policy path would both leave no trace of "overwrite"
+# specifically, but only "keep" prints that text, so its absence plus (1) triangulates
+# the overwrite branch actually ran.
 # ---------------------------------------------------------------------------
 T3=$(new_target)
 run_deploy "$T3"
 printf 'LOCAL CUSTOMIZATION — expect this to be clobbered\n' > "$T3/.claude/$OWNED_TOP_FILE"
+printf 'STALE INCOMING FROM A PAST CONFLICT\n' > "$T3/.claude/$OWNED_TOP_FILE.harness-incoming"
 run_deploy "$T3" --overwrite-conflicts
 
 t "case 3: --overwrite-conflicts replaces local content with incoming"
 if [ "$RC" -eq 0 ] && cmp -s "$T3/.claude/$OWNED_TOP_FILE" "$ROOT/$OWNED_TOP_FILE"; then pass
 else fail "rc=$RC — file not overwritten with incoming source"; fi
 
-t "case 3: --overwrite-conflicts leaves no stale .harness-incoming sidecar"
+t "case 3: --overwrite-conflicts removes a pre-existing stale sidecar (proves the overwrite branch ran, not just an unprotected clobber)"
 if [ ! -e "$T3/.claude/$OWNED_TOP_FILE.harness-incoming" ]; then pass
-else fail "sidecar unexpectedly present after overwrite"; fi
+else fail "stale sidecar survived overwrite — overwrite branch may not have run"; fi
+
+t "case 3: --overwrite-conflicts does not print the keep-local warning"
+if printf '%s' "$OUT_TXT" | grep -qF "keeping your local copy"; then fail "keep-branch warning present during an overwrite run"
+else pass; fi
 
 # ---------------------------------------------------------------------------
-# Case 4 — no-/dev/tty fallback (no --yes): must keep + rc 0, and must NOT consume stdin.
+# Case 4 — no-ctty fallback (no --yes): must keep + warn + rc 0, and must NOT consume stdin.
 #
-# Pinned invariant: `[ -r /dev/tty ]` (access(2)) checks the *static file mode bits* of
-# the /dev/tty alias device node, not whether this process currently has a controlling
-# terminal — it is true on a normal box even with no ctty at all (verified empirically:
-# `test -r /dev/tty` reports true right after os.setsid() severs the controlling terminal). So
-# deploy-harness.sh's `elif ... [ ! -r /dev/tty ]` branch is not reliably reachable; the
-# real safety net in a genuinely no-ctty environment (the curl|bash case this guards
-# against) is that the interactive branch's `read -r ans < /dev/tty` itself fails (ENXIO)
-# and is swallowed by `|| true`, falling through to the same POLICY=keep default. We pin
-# the OBSERVABLE, environment-independent contract: given a real absence of a controlling
-# terminal (forced via os.setsid so this holds under any test runner, tty-backed or not),
-# deploy must still (a) exit 0, (b) keep the local file, (c) write the sidecar, and
-# (d) never touch our own stdin — proven by piping a sentinel through a here-string shared
-# with a trailing `cat`: if deploy had consumed it, the `cat` would come up empty/short.
+# deploy-harness.sh now detects "no controlling terminal" via have_tty() —
+# `(exec < /dev/tty) 2>/dev/null` — which actually attempts to open the terminal, unlike
+# the older `[ -r /dev/tty ]` (access(2) on the alias device node's static mode bits, true
+# even with no ctty at all — that was this suite's own finding, fixed upstream). We force a
+# REAL no-ctty environment via os.setsid() so the assertions hold under any test runner
+# (interactive dev shell or headless CI) rather than depending on incidental tty state.
 # ---------------------------------------------------------------------------
 T4=$(new_target)
 run_deploy "$T4"
@@ -125,12 +140,27 @@ PYEOF
   if cmp -s "$T4/.claude/$OWNED_TOP_FILE.harness-incoming" "$ROOT/$OWNED_TOP_FILE"; then pass
   else fail "sidecar missing or wrong content"; fi
 
+  t "case 4: no-ctty fallback prints the keep-local warning"
+  if printf '%s\n' "$helper_out" | grep -qF "keeping your local copy"; then pass
+  else fail "warning text not found in output: $(printf '%s\n' "$helper_out" | head -8 | tr '\n' ' ')"; fi
+
+  # What this pins: a FUTURE regression where the interactive branch's
+  # `read -r ans < /dev/tty` is changed to a bare `read -r ans` (reading real fd0 instead of
+  # the terminal) — if that ever happens, this here-string+cat construction would catch it,
+  # because a bare read would consume the sentinel before `cat` gets to it.
+  # What this does NOT prove: that today's run actually exercised that `read` line at all.
+  # With have_tty() correctly detecting the severed controlling terminal, control never
+  # reaches the interactive branch in this scenario — have_tty() is false, so the earlier
+  # `elif` takes POLICY=keep directly. Stdin is untouched here by construction (no code path
+  # in this run ever opens fd0), not because a `read` was attempted and safely redirected
+  # away. Kept anyway as a cheap regression tripwire for that specific future mistake.
   t "case 4: deploy never consumed the sentinel — it is still fully readable after"
   if printf '%s\n' "$helper_out" | grep -qF "$SENTINEL"; then pass
   else fail "sentinel not found in trailing cat output — stdin may have been consumed"; fi
 else
-  skip "case 4: no-ctty fallback (x3)" "python3 not available to force ctty detachment"
+  skip "case 4: no-ctty fallback (x4)" "python3 not available to force ctty detachment"
   skip "case 4: sidecar" "python3 not available"
+  skip "case 4: warning" "python3 not available"
   skip "case 4: sentinel" "python3 not available"
 fi
 
@@ -201,11 +231,14 @@ T9=$(new_target)
 run_deploy "$T9"
 run_deploy "$T9"   # re-sync with zero local customization
 
+# Baseline sanity check, not load-bearing: with zero local customization there is nothing
+# for the protected-file feature to react to, so this can't fail even if it were deleted.
 t "case 9: identical protected file re-syncs with no sidecar anywhere"
 n=$(find "$T9/.claude" -name '*.harness-incoming' | wc -l | tr -d ' ')
 if [ "$RC" -eq 0 ] && [ "$n" = "0" ]; then pass
 else fail "rc=$RC — found $n sidecar(s) with no local customization"; fi
 
+# Baseline sanity check, not load-bearing — same reason as above.
 t "case 9: protected files remain byte-identical to source"
 if cmp -s "$T9/.claude/$OWNED_TOP_FILE" "$ROOT/$OWNED_TOP_FILE" \
    && cmp -s "$T9/.claude/$OWNED_NESTED_FILE" "$ROOT/$OWNED_NESTED_FILE"; then pass
