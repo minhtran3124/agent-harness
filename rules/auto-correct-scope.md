@@ -8,9 +8,7 @@ Related: `plan-format.md`, `guidelines.md`, `orchestration.md`, `skills/feature-
 
 ## Lane-aware autonomy
 
-The intake lane (`specs/<slug>/SUMMARY.md`, set by `/feature-intake`) decides how much
-autonomy applies. Rules 1–4 below are constant; the lane decides whether a plan and a human
-confirmation are required first:
+The intake lane (`specs/<slug>/SUMMARY.md`, set by `/feature-intake`) decides how much autonomy applies. Rules 1–4 below are constant; the lane decides whether a plan and a human confirmation are required first:
 
 | Lane | Autonomy | Plan | Human confirm |
 |---|---|---|---|
@@ -18,23 +16,11 @@ confirmation are required first:
 | **normal** | Auto with proof gates (subagent two-stage review) | yes | only if confidence low / ambiguous |
 | **high-risk** | Auto-plan, gated-execute | yes (full chain) | only on ambiguity or a hard gate (Rule 4) |
 
-> **Evidence the lane requires (single source of truth):** `scripts/check_lane_evidence.py`
-> mechanizes the lane → evidence mapping so this table, `skills/feature-intake/SKILL.md` (Step 7),
-> and the `SUMMARY.md` checks do not drift. It reads `specs/<slug>/SUMMARY.md` and asserts:
-> **tiny** → filled `Lane`/`Confidence`/`Reason`; **normal** → + a non-placeholder `### Verify`
-> row; **high-risk** → + a non-empty `### Rollback`. Run `python scripts/check_lane_evidence.py
-> <slug>` (exit 1 = missing evidence). Edit the mapping there, not only in prose.
+> **Evidence the lane requires (single source of truth):** `scripts/check_lane_evidence.py` mechanizes the lane → evidence mapping so this table, `skills/feature-intake/SKILL.md` (Step 7), and the `SUMMARY.md` checks do not drift. It reads `specs/<slug>/SUMMARY.md` and asserts: **tiny** → filled `Lane`/`Confidence`/`Reason`; **normal** → + a non-placeholder `### Verify` row; **high-risk** → + a non-empty `### Rollback`. Run `python scripts/check_lane_evidence.py <slug>` (exit 1 = missing evidence). Edit the mapping there, not only in prose.
 
-Rule 4 (STOP) still fires inside **every** lane — a hard gate discovered mid-task escalates
-regardless of how the work was classified. Ceremony scales with risk; the human gate scales
-with ambiguity, not risk.
+Rule 4 (STOP) still fires inside **every** lane — a hard gate discovered mid-task escalates regardless of how the work was classified. Ceremony scales with risk; the human gate scales with ambiguity, not risk.
 
-**Record always-on; verify substitutes for the human gate.** Every lane writes `SUMMARY.md`
-(the audit record, incl. `Rationale` / `Alternatives`). For autonomous work, a re-runnable
-`### Verify` row + independent review — not extra planning docs — are what earn the skipped
-human confirmation. Plan-ahead docs (`design` / `research-brief` / `PLAN`) scale by signal
-(`rules/orchestration.md` → Artifact policy); `FULL_ARTIFACTS=1` forces the full set when
-maximum traceability is wanted.
+**Record always-on; verify substitutes for the human gate.** Every lane writes `SUMMARY.md` (the audit record, incl. `Rationale` / `Alternatives`). For autonomous work, a re-runnable `### Verify` row + independent review — not extra planning docs — are what earn the skipped human confirmation. Plan-ahead docs (`design` / `research-brief` / `PLAN`) scale by signal (`rules/orchestration.md` → Artifact policy); `FULL_ARTIFACTS=1` forces the full set when maximum traceability is wanted.
 
 ## Rule 1 — Auto-fix (no ask)
 
@@ -70,11 +56,7 @@ Issues preventing the task from completing:
 
 ## Rule 4 — STOP + ask user
 
-> **Canonical gate list:** the hard-gate vocabulary lives in `harness-manifest.json` — the
-> diff-detectable gates under `hard_gates.detectable` (enforced by `risk-corroboration.sh`) and the
-> judgment-only STOP items below under `hard_gates.judgment` (removing functionality, session/scope,
-> replacing a service). Keep this list in sync with the manifest; `scripts/check_manifest.py` guards
-> the detectable half.
+> **Canonical gate list:** the hard-gate vocabulary lives in `harness-manifest.json` — the diff-detectable gates under `hard_gates.detectable` (enforced by `risk-corroboration.sh`) and the judgment-only STOP items below under `hard_gates.judgment` (removing functionality, session/scope, replacing a service). Keep this list in sync with the manifest; `scripts/check_manifest.py` guards the detectable half.
 
 Changes requiring architectural judgment — NEVER auto-apply:
 
@@ -104,10 +86,7 @@ If a deviation keeps re-appearing across tasks, surface it as a PLAN.md gap — 
 
 ## Rollback (high-risk / Rule-4 actions)
 
-Any high-risk-lane work or Rule-4 action that proceeds (after the human narrows scope, or in
-a loosened category) MUST record the exact undo command(s) in `specs/<slug>/SUMMARY.md` under
-`### Rollback` before the work is considered done. Reversibility is a precondition for
-autonomy — an action you cannot cleanly undo is not eligible for the autonomous path.
+Any high-risk-lane work or Rule-4 action that proceeds (after the human narrows scope, or in a loosened category) MUST record the exact undo command(s) in `specs/<slug>/SUMMARY.md` under `### Rollback` before the work is considered done. Reversibility is a precondition for autonomy — an action you cannot cleanly undo is not eligible for the autonomous path.
 
 > example — substitute your stack
 
