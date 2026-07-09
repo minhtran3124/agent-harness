@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 - feat(q3): product-contract map (Level A) — `contracts` block in `harness-manifest.json`, `scripts/check-contract-impact.sh` advisory mapper, `check_manifest.py` path validation, and a contract-impact reminder section in `harness-audit.sh` (MIN-64)
 
+## [0.9.0] — 2026-07-09
+
+- docs: clarify harness prompts (root docs + sub-agents + rules) (PR #48)
+
 ## [0.8.1] — 2026-07-08
 
 - feat(q3): product-contract map (Level A) — contract-level blast radius [MIN-64] (PR #46)
