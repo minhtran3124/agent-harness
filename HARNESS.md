@@ -1,10 +1,8 @@
 # HARNESS.md — How this repo's workflow works
 
-This repo is a **skills framework with a risk/trust harness on top**. This file explains, in
-plain terms, what "the harness" is, where it came from, and how it changes the way work flows.
+This repo is a **skills framework with a risk/trust harness on top**. This file explains, in plain terms, what "the harness" is and how it shapes the way work flows.
 
-For the full skill inventory and handoff map see [`skills/README.md`](skills/README.md). For the
-research that produced this design see [`hoangnb24/harness-experimental`](https://github.com/hoangnb24/harness-experimental).
+For the full skill inventory and handoff map see [`skills/README.md`](skills/README.md). For the research behind this design see [`hoangnb24/harness-experimental`](https://github.com/hoangnb24/harness-experimental).
 
 ---
 
@@ -20,10 +18,7 @@ who needs to approve?"*
 
 ## 2. Where the harness came from
 
-The model is borrowed from [`hoangnb24/harness-experimental`](https://github.com/hoangnb24/harness-experimental).
-We adopted its **risk/trust *spec*** — not its files or folder layout. That repo is "all docs,
-no enforcement"; this repo already had executable skills + blocking hooks, so we grafted the
-*idea* onto our *enforcement engine*.
+Borrowed from [`hoangnb24/harness-experimental`](https://github.com/hoangnb24/harness-experimental): we adopted its **risk/trust *spec*** (not its files or layout) and grafted the idea onto this repo's existing enforcement engine — executable skills + blocking hooks.
 
 ## 3. The one principle everything turns on
 
@@ -31,11 +26,9 @@ no enforcement"; this repo already had executable skills + blocking hooks, so we
 
 These are two independent dials:
 - **Risk** decides how much *proof and process* (planning, reviews, evidence) a change carries.
-- **Ambiguity / confidence** decides whether a *human* is asked — never to classify risk, only
-  to confirm intent or authorize a dangerous boundary.
+- **Ambiguity / confidence** decides whether a *human* is asked — never to classify risk, only to confirm intent or authorize a dangerous boundary.
 
-A high-risk-but-clear change runs autonomously through heavy proof. A tiny-but-unclear change
-stops to ask. Risk ≠ interruption.
+A high-risk-but-clear change runs autonomously through heavy proof. A tiny-but-unclear change stops to ask. Risk ≠ interruption.
 
 ## 4. How a change flows
 
@@ -53,22 +46,16 @@ request → /feature-intake → Lane + Confidence → route → build → hooks 
    | **normal** | `/subagent-driven-development`, two-stage review per task | yes | only if low confidence / ambiguous |
    | **high-risk** | full chain: `/brainstorming → /xia2 → /writing-plans → build` | yes | only on ambiguity or a hard gate |
 
-3. **Confidence decides escalation.** Low confidence (any lane), or a hard gate, → stop and ask
-   (recorded in `specs/<slug>/ESCALATIONS.md`, deny-on-no-response).
-4. **Hooks corroborate the claim.** At commit time the diff is checked against the declared lane —
-   the agent can't classify a risky change as "tiny" and slip it through.
+3. **Confidence decides escalation.** Low confidence (any lane), or a hard gate, → stop and ask (recorded in `specs/<slug>/ESCALATIONS.md`, deny-on-no-response).
+4. **Hooks corroborate the claim.** At commit time the diff is checked against the declared lane — the agent can't classify a risky change as "tiny" and slip it through.
 
 ## 5. How the harness impacts the workflow
 
 - **Less ceremony on small work.** Typo/copy/narrow edits skip planning entirely (tiny lane).
-- **More proof on risky work.** Auth, migrations, schema, public contracts, high-blast files
-  force `high-risk` — full plan + reviews + a recorded rollback.
-- **The human is asked less, but at the right moments.** Approval is gated on *ambiguity*, not on
-  every step. Clear work proceeds with a notice; unclear work blocks.
-- **Claims must be backed by evidence.** "Done" needs a re-runnable `### Verify` artifact in
-  `SUMMARY.md`; behaviors aren't `implemented` in `TEST_MATRIX.md` without proof.
-- **Rules are enforced by code, not hope.** What can be mechanized is a hook (see `CLAUDE.md`
-  Hooks table); convention is the residue, not the rule.
+- **More proof on risky work.** Auth, migrations, schema, public contracts, and high-blast files force `high-risk` — full plan + reviews + a recorded rollback.
+- **The human is asked less, but at the right moments.** Approval is gated on *ambiguity*, not on every step. Clear work proceeds with a notice; unclear work blocks.
+- **Claims must be backed by evidence.** "Done" needs a re-runnable `### Verify` artifact in `SUMMARY.md`; behaviors aren't `implemented` in `TEST_MATRIX.md` without proof.
+- **Rules are enforced by code, not hope.** What can be mechanized is a hook (see `CLAUDE.md` Hooks table); convention is the residue, not the rule.
 
 ## 6. The "hard gates"
 
