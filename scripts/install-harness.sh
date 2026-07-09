@@ -18,6 +18,7 @@ TARGET_DIR="$PWD"
 SOURCE_DIR=""
 ASSUME_YES=0
 FORCE=0
+OVERWRITE_CONFLICTS=0
 DRY_RUN=0
 KEEP_SOURCES=0
 
@@ -51,11 +52,19 @@ Options:
   -d, --directory <path>  Target project dir (default: current dir)
   -b, --branch <name>     Branch to install from (default: ${BRANCH})
       --source <path>     Use a local claude-skills checkout instead of cloning
-  -y, --yes               Non-interactive: re-sync an existing .claude/ without asking
-      --force             Same as --yes (kept for compatibility)
+  -y, --yes               Non-interactive: re-sync an existing .claude/ without asking.
+                          Protected files (bootstrap-generated, e.g. rules/architecture.md)
+                          keep your local copy; the incoming version is saved alongside as
+                          <file>.harness-incoming for review.
+      --force             Same as --yes (kept for compatibility) — NOT "overwrite": protected
+                          files are still kept, not clobbered. Use --overwrite-conflicts for that.
+      --overwrite-conflicts  Non-interactive: replace protected files with the incoming
+                          harness version instead of keeping your local copy (no prompt,
+                          no .harness-incoming sidecar).
       --keep-sources      Also copy the harness sources into <target>/${STAGE_NAME}/
                           for inspection or offline re-sync (default: no copy)
-      --dry-run           Show what would happen; write nothing
+      --dry-run           Show what would happen, including any protected-file conflicts;
+                          write nothing
   -h, --help              Show this help
 
 Examples:
@@ -73,6 +82,7 @@ while [ $# -gt 0 ]; do
     --source)       SOURCE_DIR="${2:?--source needs a path}"; shift 2 ;;
     -y|--yes)       ASSUME_YES=1; shift ;;
     --force)        FORCE=1; ASSUME_YES=1; shift ;;
+    --overwrite-conflicts) OVERWRITE_CONFLICTS=1; shift ;;
     --keep-sources) KEEP_SOURCES=1; shift ;;
     --dry-run)      DRY_RUN=1; shift ;;
     -h|--help)      usage; exit 0 ;;
@@ -118,6 +128,7 @@ ok "Source ready"
 # ---------- existing-harness check ----------
 if [ -e "$TARGET_DIR/.claude/settings.json" ] && [ "$DRY_RUN" -eq 0 ]; then
   warn "Existing harness found in target (.claude/) — it will be re-synced (merge; non-harness entries kept)."
+  info "Protected files (e.g. rules/architecture.md) keep your local copy by default; incoming saved as <file>.harness-incoming. Pass --overwrite-conflicts to replace them instead."
   if [ "$FORCE" -eq 0 ] && [ "$ASSUME_YES" -eq 0 ]; then
     if [ -r /dev/tty ]; then
       printf '  Re-sync it? [y/N] ' > /dev/tty
@@ -182,12 +193,19 @@ else
 fi
 
 # ---------- build .claude/ via deploy-harness (straight from the fetched source) ----------
+# --yes/--overwrite-conflicts are forwarded so a non-interactive re-sync resolves protected-file
+# conflicts (keep-mine or overwrite) instead of hanging on deploy's own prompt; --dry-run is
+# forwarded so the dry-run path actually reaches deploy's conflict report (see deploy-harness.sh
+# preflight_protected, which exits 0 before any write).
+DEPLOY_ARGS=(--target "$TARGET_DIR")
+[ "$ASSUME_YES" -eq 1 ] && DEPLOY_ARGS+=(--yes)
+[ "$OVERWRITE_CONFLICTS" -eq 1 ] && DEPLOY_ARGS+=(--overwrite-conflicts)
 if [ "$DRY_RUN" -eq 1 ]; then
-  info "Would run: bash deploy-harness.sh --target $TARGET_DIR (builds .claude/)"
+  DEPLOY_ARGS+=(--dry-run)
 else
   printf '\n'
-  bash "$SRC/scripts/deploy-harness.sh" --target "$TARGET_DIR"
 fi
+bash "$SRC/scripts/deploy-harness.sh" "${DEPLOY_ARGS[@]}"
 
 # ---------- optional: keep a copy of the sources in the target ----------
 STAGE_DIR="$TARGET_DIR/$STAGE_NAME"
