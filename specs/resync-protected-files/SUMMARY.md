@@ -95,6 +95,26 @@ reachable today, and fixing them would widen this PR beyond its intent.
 - **Double prompt** — a fully interactive install asks twice: the installer's own "Re-sync it?"
   gate, then deploy's conflict menu. Two different questions; judged intended.
 
+### Intent Findings
+
+From `/intent-review` (blind to PLAN.md; oracle = the verbatim request in `### Intent`). The
+reviewer independently enumerated `bootstrap-xia2`'s outputs from its `SKILL.md` and confirmed the
+four guarded paths match exactly. **No `gap` found** — every clause of the request is delivered.
+Two advisory findings:
+
+- **`drift` — the conflict menu is batch, not per-file.** The request says "let they make
+  decision"; `preflight_protected` resolves one `POLICY` for all conflicting files at once, so a
+  user cannot keep one file and take the incoming version of another in a single run. This was a
+  deliberate simplification, explicitly approved by the human at design time (the escape hatch is
+  `[b] backup+overwrite`, then merge from `.harness-backup-<ts>/`). Report-only; recorded so the
+  granularity is not assumed to be per-file.
+- **`excess`/fragility — `.proposed` safety is convention, not mechanism.** `bootstrap-xia2` also
+  emits `rules/architecture.md.proposed`, `rules/guidelines.md.proposed`, `agents/PROJECT.md.proposed`,
+  and `skills/xia2/PROJECT.md.proposed`. None are in `BOOTSTRAP_OWNED_FILES`; they survive only
+  because the harness now ships no `*.proposed` at all. That invariant is enforced by `.gitignore`
+  plus the load-bearing case-1 assertion (which is repo-wide, not scoped to `xia2/`), so a future
+  commit re-adding one fails CI. Bounded, but worth knowing it is an invariant rather than a guard.
+
 ### Verify
 
 | Check | Command | Exit | Notes |
