@@ -135,4 +135,11 @@ outputs on every re-sync; the rest of the harness already follows merge-never-re
   premise in `design.md` §4.2 that made the `.proposed` restore freeze a consumer's copy forever
   (`cfff07c`). `/intent-review` found no gap against the original request.
 - 2026-07-10 — shipped via `feat/resync-protected-files`.
+- 2026-07-10 — follow-up on PR #50, from manually exercising the installer end-to-end: the
+  `have_tty()` fix (`ac7f472`) was never ported to `install-harness.sh`, whose own
+  `[ -r /dev/tty ]` killed a tty-less re-sync with a raw shell error, and
+  `--overwrite-conflicts` did not consent to the re-sync it names. Fixed in `78be4bc` with
+  `tests/scripts/install-tty-gate.test.sh` (4/7 assertions fail pre-fix). Separately,
+  `rules/behavior.md` — a hand-tuned skeleton, not a `bootstrap-xia2` output — was outside
+  `BOOTSTRAP_OWNED_FILES` and got clobbered silently; added in `3c1b753` with case 11.
 
