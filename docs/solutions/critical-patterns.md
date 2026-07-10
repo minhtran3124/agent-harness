@@ -61,3 +61,25 @@ Example entry shape:
 **Rule:** Use `contextvars.copy_context()` when spawning; otherwise request-scoped state (user, tenant, trace_id) is lost.
 **Reference:** docs/solutions/async/context-propagation.md
 -->
+
+## [2026-07-10] test-r-dev-tty-does-not-detect-missing-controlling-terminal
+**Type:** bug
+**Module:** scripts/deploy-harness
+**Tags:** bash, dev-tty, controlling-terminal, curl-pipe-bash, harness-scripts, ci-macos-ubuntu, narrow-guard
+**Applicable when:** Watch for this when a shell script decides whether it may prompt the user — `[ -r /dev/tty ]`, `[ -t 0 ]`, and `[ -t 1 ]` are all wrong, and the failure is silent.
+
+`[ -r /dev/tty ]` is an `access(2)` mode-bit check on the `/dev/tty` alias node; those bits stay world-readable after `setsid()`, so it returns true in a process with no controlling terminal. The non-interactive fallback was dead code — a tty-less CI run entered the prompt branch, printed a menu nobody could answer, and reached the safe default only because `read … || true` swallowed `ENXIO`. Correct outcome, wrong mechanism, and the intended warning never printed. The only honest test is to open it: `have_tty() { (exec < /dev/tty) 2>/dev/null; }`.
+
+**Full doc:** docs/solutions/scripts/test-r-dev-tty-does-not-detect-missing-controlling-terminal.md
+---
+
+## [2026-07-10] unverified-premise-propagates-through-plan-anchored-reviews
+**Type:** failure
+**Module:** harness
+**Tags:** not-observed-not-absent, false-premise, plan-blind-review, correctness-review, ground-truth, review-oracle, resync-conflict
+**Applicable when:** Watch for this when a spec, design, or plan asserts that something "is never shipped" / "does not exist" / "can never conflict", and downstream code, tests, and reviews all treat that absence claim as true without one independent `ls` or `git ls-files` against ground truth.
+
+A design doc asserted the harness ships no `*.proposed`; it shipped two, tracked since `f7d2d58`. Nobody ran `ls skills/xia2/`. Per-task spec review, code-quality review, and the test author all passed the false premise — the test even encoded it as a comment. Only the plan-blind `/correctness-review` caught it. Three reviewers agreeing means nothing when all three read the same wrong sentence: this is `rules/behavior.md` §1 `not_observed != absent`, and it is why the correctness and intent oracles are dispatched blind to the plan.
+
+**Full doc:** docs/solutions/harness/unverified-premise-propagates-through-plan-anchored-reviews.md
+---
