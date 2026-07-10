@@ -42,6 +42,12 @@ info() { printf '  %s•%s %s\n' "$C" "$R" "$*"; }
 warn() { printf '  %s⚠ %s%s\n' "$Y" "$*" "$R"; }
 fail() { printf '\n  %s✗ %s%s\n\n' "$RED" "$*" "$R" >&2; exit 1; }
 
+# True only when this process can actually open its controlling terminal. `[ -r /dev/tty ]`
+# is NOT equivalent: access(2) sees the mode bits of the /dev/tty alias node and reports it
+# readable even after setsid(), so a tty-less run would fall into the prompt branch and die
+# on `printf > /dev/tty`. Mirrors have_tty() in deploy-harness.sh.
+have_tty() { (exec < /dev/tty) 2>/dev/null; }
+
 usage() {
   cat <<EOF
 Install the claude-skills harness into a target project.
@@ -60,7 +66,8 @@ Options:
                           files are still kept, not clobbered. Use --overwrite-conflicts for that.
       --overwrite-conflicts  Non-interactive: replace protected files with the incoming
                           harness version instead of keeping your local copy (no prompt,
-                          no .harness-incoming sidecar).
+                          no .harness-incoming sidecar). Implies --yes: it consents to the
+                          re-sync of an existing .claude/ as well.
       --keep-sources      Also copy the harness sources into <target>/${STAGE_NAME}/
                           for inspection or offline re-sync (default: no copy)
       --dry-run           Show what would happen, including any protected-file conflicts;
@@ -129,8 +136,10 @@ ok "Source ready"
 if [ -e "$TARGET_DIR/.claude/settings.json" ] && [ "$DRY_RUN" -eq 0 ]; then
   warn "Existing harness found in target (.claude/) — it will be re-synced (merge; non-harness entries kept)."
   info "Protected files (e.g. rules/architecture.md) keep your local copy by default; incoming saved as <file>.harness-incoming. Pass --overwrite-conflicts to replace them instead."
-  if [ "$FORCE" -eq 0 ] && [ "$ASSUME_YES" -eq 0 ]; then
-    if [ -r /dev/tty ]; then
+  # --overwrite-conflicts is itself a non-interactive consent to re-sync: it names the
+  # destructive outcome explicitly, so re-asking "Re-sync it? [y/N]" adds nothing.
+  if [ "$FORCE" -eq 0 ] && [ "$ASSUME_YES" -eq 0 ] && [ "$OVERWRITE_CONFLICTS" -eq 0 ]; then
+    if have_tty; then
       printf '  Re-sync it? [y/N] ' > /dev/tty
       IFS= read -r reply < /dev/tty
       case "$reply" in y|Y|yes|YES) ;; *) fail "Aborted (no changes made)." ;; esac
