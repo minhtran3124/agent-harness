@@ -48,6 +48,15 @@ t "case 1: first install writes no .harness-incoming sidecar"
 n=$(find "$T1/.claude" -name '*.harness-incoming' | wc -l | tr -d ' ')
 if [ "$n" = "0" ]; then pass; else fail "found $n sidecar(s) on a fresh install"; fi
 
+# LOAD-BEARING. sync_protected_dir restores a local *.proposed unconditionally, which is only
+# correct while the harness ships none of its own — otherwise the local copy would freeze and
+# source updates would be silently discarded, even under --overwrite-conflicts. The harness did
+# ship two (committed by a bootstrap-xia2 run on this repo); they were removed and *.proposed is
+# now gitignored. This assertion is what keeps that true.
+t "case 1: the harness ships no *.proposed (premise of the unconditional restore)"
+n=$(find "$T1/.claude" -name '*.proposed' | wc -l | tr -d ' ')
+if [ "$n" = "0" ]; then pass; else fail "harness shipped $n .proposed file(s) — unconditional restore in sync_protected_dir is now unsound"; fi
+
 # ---------------------------------------------------------------------------
 # Case 2 — customize a protected file, then --yes re-sync: keep + sidecar + rc0.
 # ---------------------------------------------------------------------------
@@ -182,7 +191,9 @@ if cmp -s "$T5/.claude/$OWNED_NESTED_FILE.harness-incoming" "$ROOT/$OWNED_NESTED
 else fail "nested sidecar missing or does not match source incoming"; fi
 
 # ---------------------------------------------------------------------------
-# Case 6 — nested sidecar (.proposed, never shipped by the harness) survives a re-sync.
+# Case 6 — a consumer's own .proposed (a bootstrap-xia2 proposal awaiting human review)
+# survives sync_protected_dir's wholesale rm+cp. Pairs with case 1's guard that the harness
+# ships none of its own — together they make the unconditional restore sound.
 # ---------------------------------------------------------------------------
 T6=$(new_target)
 run_deploy "$T6"

@@ -41,3 +41,6 @@ specs/**/.plan-review.json
 # Local-only harness-engineering review docs
 docs/harness-engineering-review.md
 docs/harness-engineering-review.en.md
+
+# bootstrap-xia2 review artifacts — per-repo, never shipped by the harness
+*.proposed

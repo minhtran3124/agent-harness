@@ -63,17 +63,51 @@ resolve a conflict without ever losing data by default.
 - Rule 1 — Two in-file comments in the test suite were reworded (comment-only, no behavior
   change) because `hooks/risk-corroboration.sh` false-positive-blocked the commit on the bare
   words "session"/"permission" in prose. `tests/scripts/resync-conflict.test.sh`. Commit `0048a16`.
+- Rule 4 (human-approved) — The harness shipped `skills/xia2/PROJECT.md.proposed` and
+  `agents/PROJECT.md.proposed` (committed in `f7d2d58` as artifacts of a `bootstrap-xia2` run on
+  this repo). `sync_protected_dir`'s unconditional `.proposed` restore therefore froze a
+  consumer's copy forever and discarded source updates, even under `--overwrite-conflicts` —
+  reproduced. Both files deleted, `*.proposed` gitignored, and a load-bearing assertion added so
+  the premise cannot rot again. Deleting files from the harness source is a Rule-4 action; the
+  human chose this over making `.proposed` conflict-managed. `skills/xia2/`, `agents/`,
+  `.gitignore`, `tests/scripts/resync-conflict.test.sh`, `specs/.../design.md`.
+
+### Advisory Findings
+
+Surfaced by `/correctness-review`, scored below the 80 threshold. Recorded, not fixed — none is
+reachable today, and fixing them would widen this PR beyond its intent.
+
+- **F3 — latent data loss on the nested `conflict==0` path.** `sync_protected_dir` snapshots the
+  nested file, `rm -rf`s the dir, re-copies, then on `conflict==0` only cleans the sidecar and
+  `continue`s — it never restores the snapshot. Sound only while the source still ships
+  `skills/xia2/PROJECT.md`. If that file is ever dropped from the source while it remains in
+  `BOOTSTRAP_OWNED_FILES`, `preflight_protected` skips it (`[ -e "$f" ] || continue`) and a
+  consumer's bootstrap-generated copy is destroyed. Unreachable today.
+- **F4 — `set -u` would break `"${CONFLICTS[@]}"` on macOS bash 3.2.** Safe now because
+  `deploy-harness.sh` deliberately has no `set -u`. Anyone adding it must first apply the
+  `"${arr[@]+"${arr[@]}"}"` idiom — see `docs/solutions/scripts/bash-empty-array-and-jsonl-parsing-gotchas.md`.
+- **F5 — `mktemp -d` leak on the error path** in `sync_protected_dir`: no cleanup trap, so a
+  failing `cp` mid-reconcile exits via the `ERR` trap and orphans the temp dir (and can leave
+  `.claude/skills/xia2/` half-copied). Matches the pre-existing leak in `derive_settings`; left
+  alone per `rules/behavior.md` §3.
+- **F6 — `.harness-backup-<ts>/` collision** when two runs land in the same second. Reachable only
+  via the interactive `[b]` policy, which no flag can select.
+- **Double prompt** — a fully interactive install asks twice: the installer's own "Re-sync it?"
+  gate, then deploy's conflict menu. Two different questions; judged intended.
 
 ### Verify
 
 | Check | Command | Exit | Notes |
 | --- | --- | --- | --- |
 | Full suite | `bash scripts/run-tests.sh` | 0 | 151 passed, 1 skipped, ALL GREEN |
-| Conflict suite | `bash tests/scripts/resync-conflict.test.sh` | 0 | 21 assertions, 10 cases |
+| Conflict suite | `bash tests/scripts/resync-conflict.test.sh` | 0 | 22 assertions, 10 cases |
 | Install suite | `bash tests/scripts/install-harness.test.sh` | 0 | 6 passed |
 | Mutation: `is_protected()` forced false | `bash tests/scripts/resync-conflict.test.sh` | 1 | 6 assertions fail — suite is load-bearing, not vacuous |
 | Mutation: sidecar cleanup removed | `bash tests/scripts/resync-conflict.test.sh` | 1 | 2 assertions fail |
 | Mutation: `have_tty()` reverted to `[ -r /dev/tty ]` | `bash tests/scripts/resync-conflict.test.sh` | 1 | 1 assertion fails (case 4 warning text) |
+| Mutation: re-add a shipped `*.proposed` | `bash tests/scripts/resync-conflict.test.sh` | 1 | 1 assertion fails (case 1 premise guard) |
+| F1 repro (pre-fix) | seed stale `.proposed`, run `deploy --overwrite-conflicts` | 0 | stale local copy won; source update silently discarded |
+| F1 fixed | same, post-fix | 0 | harness ships no `.proposed`; consumer's own proposal still survives a `--yes` re-sync |
 | tty probe | `python3` fork + `setsid()` then `test -r /dev/tty` | 0 | reports READABLE with no controlling terminal; `read < /dev/tty` fails ENXIO — confirms the Rule-1 fix above |
 
 ### Rollback

@@ -146,11 +146,23 @@ the blind `rm -rf` + `cp` and apply the policy directly.
 **Also snapshot `skills/xia2/PROJECT.md.proposed`**, unconditionally and outside
 the conflict machinery. `bootstrap-xia2` Update mode writes that sidecar instead
 of overwriting `PROJECT.md` (`SKILL.md` step 4), so it holds a proposal awaiting
-human review — and the wholesale `rm -rf` deletes it today. The harness source
-does not ship it, so there is never a conflict: snapshot before the dir copy,
-restore after, always. The top-level equivalents (`rules/*.md.proposed`,
-`agents/PROJECT.md.proposed`) already survive, because `copy_dir` only removes
-entries the source actually ships.
+human review — and the wholesale `rm -rf` deletes it today.
+
+The unconditional restore is sound **only because the harness ships no `.proposed`
+of its own**. That was not true when this design was first written: `f7d2d58` had
+committed `skills/xia2/PROJECT.md.proposed` and `agents/PROJECT.md.proposed` as
+artifacts of a `bootstrap-xia2` run against this repo. With those present, an
+unconditional restore freezes the consumer's copy forever and silently discards
+source updates — even under `--overwrite-conflicts`. The correctness review caught
+this and reproduced it.
+
+Fix: both files were deleted and `*.proposed` is gitignored, because a `.proposed`
+is by definition a per-repo review artifact and the harness has no business
+shipping one. `tests/scripts/resync-conflict.test.sh` case 1 now asserts a fresh
+install contains no `*.proposed`, so the premise cannot silently rot again.
+
+The top-level equivalents (`rules/*.md.proposed`) survive for a different reason:
+`copy_dir` only removes entries the source actually ships, and the source ships none.
 
 ### 4.3 Policy resolution order
 
