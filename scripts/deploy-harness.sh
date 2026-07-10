@@ -21,14 +21,17 @@ set -e
 # which has no harness sources.
 ROOT="$(cd "$(dirname "$0")/.." && pwd -P)"
 
-# bootstrap-xia2 writes these files per-consuming-repo (generated stack profile / convention
-# index); a re-sync must never silently clobber them with the meta-repo's generic skeleton.
-# Source of truth for this list: skills/bootstrap-xia2/SKILL.md (Init steps 6-7 + Scaffolding
-# table). Deliberately NOT named PROTECTED_* — that prefix already denotes the unrelated
+# Files a consuming repo owns: a re-sync must never silently clobber them with the meta-repo's
+# generic copy. Two origins, one contract —
+#   - bootstrap-xia2 generates them per-repo (stack profile / convention index). Source of truth
+#     for that subset: skills/bootstrap-xia2/SKILL.md (Init steps 6-7 + Scaffolding table).
+#   - rules/behavior.md ships as a skeleton the project is expected to tune by hand.
+# Deliberately NOT named PROTECTED_* — that prefix already denotes the unrelated
 # hooks/protected-path-guard.sh / PROTECTED_PATH_REASON set.
 BOOTSTRAP_OWNED_FILES=(
   "rules/architecture.md"
   "rules/guidelines.md"
+  "rules/behavior.md"
   "agents/PROJECT.md"
   "skills/xia2/PROJECT.md"
 )

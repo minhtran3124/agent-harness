@@ -268,4 +268,22 @@ t "case 10: stale .harness-incoming sidecar is cleaned up on re-sync"
 if [ "$RC" -eq 0 ] && [ ! -e "$T10/.claude/$OWNED_TOP_FILE.harness-incoming" ]; then pass
 else fail "rc=$RC — stale sidecar still present: $([ -e "$T10/.claude/$OWNED_TOP_FILE.harness-incoming" ] && echo yes || echo no)"; fi
 
+# ---------------------------------------------------------------------------
+# Case 11 — rules/behavior.md is protected. It is NOT bootstrap-xia2 output: it ships as a
+# skeleton projects tune by hand, so a re-sync used to overwrite a customized copy silently.
+# Both assertions fail if it is dropped from BOOTSTRAP_OWNED_FILES.
+# ---------------------------------------------------------------------------
+T11=$(new_target)
+run_deploy "$T11"
+printf 'PROJECT-SPECIFIC BEHAVIOR RULE — case 11\n' > "$T11/.claude/rules/behavior.md"
+run_deploy "$T11"
+
+t "case 11: a customized rules/behavior.md survives a re-sync"
+if [ "$RC" -eq 0 ] && [ "$(cat "$T11/.claude/rules/behavior.md")" = "PROJECT-SPECIFIC BEHAVIOR RULE — case 11" ]; then pass
+else fail "rc=$RC — local rules/behavior.md was clobbered by the re-sync"; fi
+
+t "case 11: the incoming rules/behavior.md is saved as a sidecar for review"
+if cmp -s "$T11/.claude/rules/behavior.md.harness-incoming" "$ROOT/rules/behavior.md"; then pass
+else fail "sidecar missing or not byte-identical to the harness source"; fi
+
 finish
