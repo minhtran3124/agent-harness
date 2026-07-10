@@ -1,6 +1,6 @@
 ---
 slug: resync-protected-files
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-07-09
 ---
@@ -123,4 +123,16 @@ outputs on every re-sync; the rest of the harness already follows merge-never-re
   <done>ESCALATIONS.md records the decision request; bookkeeping.sh, VERSION, and CHANGELOG.md are absent from this PR's diff.</done>
 </task>
 ```
+
+## 5. Status Log
+
+- 2026-07-09 — plan approved after review; `proposed` → `active`. Four issues and two gaps folded
+  into `design.md` before Task 1.1 (hoisted pre-pass, `/dev/tty` prompting, `--dry-run` semantics,
+  wave split, `.proposed` snapshot, sidecar hygiene).
+- 2026-07-10 — Tasks 1.1–1.5 complete, each two-stage reviewed. Three real defects were found by
+  the review chain, not by the plan: the `--dry-run` install claiming success (`64b02cd`), the dead
+  `[ -r /dev/tty ]` interactivity test (`ac7f472`), and — via `/correctness-review` — a false
+  premise in `design.md` §4.2 that made the `.proposed` restore freeze a consumer's copy forever
+  (`cfff07c`). `/intent-review` found no gap against the original request.
+- 2026-07-10 — shipped via `feat/resync-protected-files`.
 
