@@ -4,7 +4,7 @@ Skill framework and governance system for Claude Code — reusable prompt-based 
 
 ## Behavioral Guidelines
 
-See @rules/behavior.md — that file is the single source of truth.
+See `rules/behavior.md` — that file is the single source of truth (deployed to `.claude/rules/`, which auto-loads).
 
 ---
 
@@ -33,7 +33,7 @@ feature-intake (classify → lane + confidence → route)
   → compound → finishing-a-development-branch
 ```
 
-Lane → ceremony; confidence/ambiguity → whether a human is asked. See `rules/orchestration.md`, `skills/feature-intake/SKILL.md`, and @skills/README.md for the full inventory and handoff map.
+Lane → ceremony; confidence/ambiguity → whether a human is asked. See `rules/orchestration.md`, `skills/feature-intake/SKILL.md`, and `skills/README.md` for the full inventory and handoff map.
 
 ## Knowledge Base
 
