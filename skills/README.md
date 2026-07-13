@@ -117,7 +117,7 @@ fix (implement directly or via /subagent-driven-development)
 
 | Skill | Trigger | Output |
 |---|---|---|
-| `/correctness-review` | After implementation — adversarial runtime-bug hunt over a diff (incl. an **altitude** pass: is the fix deep enough, or a bandaid?). **Standalone** (any diff, no workflow gate) or called by `/subagent-driven-development` as its final pass | Findings from the harness finder — plus, on **high-risk** lanes, a second engine (built-in `/code-review`) pooled in — scored (0–100, threshold 80) + classified (Severity + Rule class) → fixes or escalations |
+| `/correctness-review` | After implementation — adversarial runtime-bug search over a diff, run as **6 parallel angles** (diff+enclosing-function · removed-behavior · cross-file · stack defect classes · altitude · compound read-back). **Standalone** (any diff, no workflow gate) or called by `/subagent-driven-development` as its final pass | Candidates deduped by location → scored (0–100, threshold 80) → classified (Severity + Rule class) → fixes, escalations, or advisory |
 | `/intent-review` | After correctness-review — checks the diff against the original request verbatim, blind to PLAN (the third oracle). **Standalone** on any diff that has an intent statement, or called by `/subagent-driven-development` as its last pass | Findings classified `gap` / `excess` / `drift` → fix-loop · escalate · report-only |
 | `/review-diff` | After implementation — visualize what changed | Markdown review with C4 diagrams |
 | `/compound` | After session with non-obvious bug fix, pattern, or architectural decision | `docs/solutions/<category>/<slug>.md` |
@@ -161,7 +161,6 @@ handoff edges — carries an honest evidence tier. The tiers:
 | `code-review-graph` | MCP server (`.mcp.json`) | documented-only | mandated by CLAUDE.md; no recorded review run pinned in-repo |
 | `context7` | MCP server (user-level) | documented-only | user-level docs lookup; no recorded run pinned in-repo |
 | `/subagent-driven-development` → `/correctness-review` → `/intent-review` | handoff edge | manually-verified (2026-06-12) | intent-review dogfood on its own diff — commit `a2a4349` |
-| `/correctness-review` → `/code-review` (FIND-B) | handoff edge | documented-only | dispatch template + output adapter specified (`skills/correctness-review/find-b-prompt.md`); the *pooled* pipeline has still never been RUN — `benchmarks/review-chain/results/2026-07-13-code-review-swap.md` measured the engine standalone. Promote to manually-verified only after a high-risk diff goes through FIND-A + FIND-B + SCORE end to end |
 
 **Graduation rule** (from the research report): an edge only moves **up** a tier when a
 recorded run exists *in this repo* — support claims are never inherited from upstream or from

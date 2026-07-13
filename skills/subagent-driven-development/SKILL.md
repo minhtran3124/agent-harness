@@ -176,21 +176,16 @@ After every task's spec + quality review passes, run **one** adversarial correct
 the entire implementation diff before handing off to `finishing-a-development-branch`. This pass
 **is the `/correctness-review` skill — delegate to it; do not re-implement the pipeline here.**
 
-**Range to pass:** `BASE` = commit before task 1, `HEAD` = current commit after all tasks, plus
-the list of touched files. `/correctness-review` then runs FIND (A [+B]) → SCORE → THRESHOLD(80)
-→ classify → fix-loop: it reads `docs/solutions/` for compound read-back; dispatches the
-high-recall finder (FIND-A) with a different (most capable) model, including its **altitude**
-pass; on a **high-risk** lane additionally runs the built-in `/code-review` as a second,
-independent engine (FIND-B) and pools its findings; scores every pooled candidate 0–100 with a
-cheap model, capping at 50 anything resting on a file the reviewer could not read; drops `< 80`
-to advisory; classifies survivors by Severity + `auto-correct-scope.md` Rule class; routes Rule
-1–3 to an auto-fix loop and Rule 4 to a STOP/escalation; and enforces the residual-work gate
-(every finding fixed with a sha or durably recorded before handoff). See
-`skills/correctness-review/SKILL.md` for the full pipeline and `correctness-{reviewer,scorer}-prompt.md`.
+**Range to pass:** `BASE` = commit before task 1, `HEAD` = current commit after all tasks, plus the
+list of touched files. `/correctness-review` then runs its own pipeline —
+**FIND (6 parallel angles) → dedup → SCORE → THRESHOLD(80) → classify → fix-loop** — and enforces
+the residual-work gate: every finding is fixed with a sha, escalated, or recorded as advisory
+before handoff.
 
-**Pass the lane.** FIND-B is gated on it — `/code-review` costs ~10–15× the tokens of FIND-A for
-the same measured recall, so it runs only where the risk justifies it
-(`benchmarks/review-chain/results/2026-07-13-code-review-swap.md`).
+**Do not restate that pipeline here.** `skills/correctness-review/SKILL.md` is its single source of
+truth, and `correctness-{reviewer,scorer}-prompt.md` are the dispatch templates. An earlier version
+of this section paraphrased the stage detail and went stale within one change; naming the stages
+and pointing at the spec is what keeps the two files from disagreeing.
 
 **Why this stage exists.** The per-task spec and quality reviewers are anchored to the plan as
 the oracle — spec review asks *"does it match the spec?"*, quality review asks *"is it clean?"*.
@@ -198,11 +193,11 @@ Neither asks *"even if the spec is right, does this code fail at runtime?"*. A b
 implements a flawed spec passes both — the gap that lets real bugs survive to production and get
 caught by external reviewers post-push. The correctness pass closes it.
 
-**Relationship to `/code-review`:** `/correctness-review` is the always-on in-flow gate, and as of
-2026-07-13 `/code-review` is a *component* of it, not a sibling — it runs as FIND-B on high-risk
-lanes, pooled into the same SCORE → THRESHOLD path (see `skills/correctness-review/SKILL.md`). Do
-not also invoke it standalone here: that pays for the engine twice and routes its findings around
-the SCORE gate, which is exactly what the benchmark says that gate is there to prevent.
+**Relationship to `/code-review`:** they are siblings. `/correctness-review` is the always-on
+in-flow gate and hunts runtime bugs only; the built-in `/code-review` also covers cleanup (reuse,
+simplification, efficiency, conventions). On a high-risk lane you may run `/code-review` in
+addition, before merge — they compound, and neither replaces the other. `/correctness-review` does
+not invoke it.
 
 ## Final Intent Review
 
