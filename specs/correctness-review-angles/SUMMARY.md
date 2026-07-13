@@ -29,11 +29,17 @@ no metaphorical or implicit meaning.)
 
 ## What changed
 
-Not yet implemented — plan only. Proposed: replace `/correctness-review`'s single checklist-driven
-finder with six parallel angles (diff scan + enclosing function; removed-behavior auditor;
-cross-file tracer; stack-pitfall list; altitude/boundary; compound read-back), each capped at 6
-candidates and each requiring a concrete trigger. Delete FIND-B entirely. Dedup candidates by
-(file, line) before SCORE. Measure the result on all 5 benchmark fixtures before merge.
+Replaced `/correctness-review`'s single checklist-driven finder with six parallel angles (A diff
+scan + enclosing function; B removed-behavior auditor; C cross-file tracer; D stack defect classes;
+E altitude/boundary; F compound read-back), each capped at 6 candidates and each requiring a
+concrete trigger. Deleted FIND-B entirely (`find-b-prompt.md` gone; no reference remains outside
+historical benchmark records). The scorer now dedups by `(file, line)` before scoring, is never
+told which angles agreed, states the advisory consequence of a 0 explicitly, and carries a
+threshold floor of 60. The finder prompt is literal throughout — no metaphor.
+
+Benchmarked on all 5 fixtures before merge (`benchmarks/review-chain/results/2026-07-13-angles.md`):
+**recall 3/3, no regression**; **hard false positives 3 → 0**, closing the altitude run's
+regression; cost ~3× the baseline single finder.
 
 ### Rationale
 
@@ -71,14 +77,39 @@ of this skill's lane).
 
 ### Deviations
 
-- none (not yet executed)
+- **Task 2.2 `<done>` not met literally, on purpose.** It required `grep -ri "find-b"` to resolve to
+  benchmark result files only. One live-file hit remains: `skills/correctness-review/SKILL.md:140`,
+  the sentence recording that FIND-B *was built, measured against its cost, and deleted*. That is a
+  design record of a rejected approach — the same class of history the plan explicitly preserves in
+  the benchmark results — not a dangling reference to a stage that still runs. The doc-truth lint
+  passes; no path is broken. Kept deliberately: deleting it would erase the only in-skill statement
+  of why the extra-engine design was rejected, which is the whole point of that section.
+- No Rule 1–3 auto-fix was needed. Every file changed is named in the plan's `<files>` sets.
 
 ### Verify
 
 | Check | Command | Exit | Notes |
 | --- | --- | --- | --- |
-| _pending_ | `bash scripts/run-tests.sh` | — | doc-truth lint catches dangling FIND-B path refs |
-| _pending_ | benchmark, 5 fixtures, manual protocol | — | recall must not regress vs `results/2026-06-baseline.md`; a regression is a hard stop, not a re-run |
+| Full suite (incl. doc-truth lint) | `bash scripts/run-tests.sh` | 0 | 151 passed, 1 skipped, `ALL GREEN`. The doc-truth lint is what proves no dangling FIND-B path reference survives. |
+| No FIND-B reference outside history | `grep -ril "find-b" --exclude-dir=.git .` | — | resolves only to `benchmarks/review-chain/results/*` (historical records, kept by design) and this spec |
+| Lane evidence | `python3 scripts/check_lane_evidence.py correctness-review-angles` | 0 | high-risk lane: Lane/Confidence/Reason + Verify row + Rollback all present |
+| Benchmark, 5 fixtures, one scored run | manual protocol, `benchmarks/review-chain/README.md` | — | **recall 3/3 — no regression** vs `results/2026-06-baseline.md`. **Hard FPs 3 → 0**, closing the altitude regression. Full record: `results/2026-07-13-angles.md` |
+
+### Advisory Findings
+
+Surfaced by the benchmark, not blocking, recorded so they are not silently lost:
+
+- **Angles C and F are unmeasured.** The fixture repos are single-file trees with no
+  `docs/solutions/`, so the cross-file tracer has no callers to trace and the compound read-back
+  never runs. The 3/3 and the 0 FPs were produced by angles A, B, D, and E alone. "The six-angle
+  finder is validated" would be a false claim; four of six are.
+- **Predicted advisory-routing of a true positive.** On `soft-delete-filter`, angle D located the
+  planted defect at the right lines with the right fix, then self-labeled it a hypothesis because
+  the soft-delete helper is unreadable in that tree. The scorer's cap-at-50 rule would route it to
+  advisory rather than the fix-loop. **SCORE was not run** — this is a design prediction, not a
+  measurement. Whether it is correct routing (the bug rests on unreadable code) or an artifact of a
+  context-starved fixture (in a real repo the helper is readable and D would confirm) is open and
+  unverified. Flagged for a human decision; deliberately not tuned away.
 
 ### Rollback
 
