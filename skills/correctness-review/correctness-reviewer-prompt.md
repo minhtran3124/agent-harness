@@ -33,6 +33,23 @@ overlapping. This structure is adopted from Claude Code's built-in `/code-review
 
 ---
 
+## The six angles
+
+Each angle is named for the method it runs. The name is the agent's identity: it appears in the
+dispatch, in every finding the angle reports, and in the provenance recorded at dedup time.
+
+| Angle | The question it asks |
+|---|---|
+| `enclosing-function` | Is anything wrong in the **function around** each change, not only in the changed lines? |
+| `removed-behavior` | What did each **deleted** line enforce, and does anything still enforce it? |
+| `call-site-impact` | Does this change break **callers or callees** outside the diff? |
+| `stack-defects` | Does the diff hit a known **defect class of this stack**? |
+| `guard-completeness` | Does each **guard** cover every way the guarded thing can fail? |
+| `prior-art` | Has this repository **already paid for this bug** once? |
+
+> Earlier revisions labelled these `A`–`F`, in this order. The benchmark results under
+> `benchmarks/review-chain/results/` predate the rename and still use the letters.
+
 ## Dispatch
 
 Send all six Task calls **in one message** so the angles run in parallel. Use a different model
@@ -41,14 +58,14 @@ available.
 
 ```
 Task tool (reviewer):          # one call per angle, all six in a single message
-  description: "Correctness angle <X> for <slug>"
+  description: "Correctness angle <angle-name> for <slug>"
   subagent_type: reviewer
   # reviewer is read-only by construction: its tool whitelist excludes Write, Edit, and Agent.
   # Review independence is enforced by the harness, not by instruction.
   model: <different from the implementer; most capable available>
   prompt: |
     <SHARED BLOCK — verbatim, identical in all six>
-    <ANGLE BLOCK — angle X only>
+    <ANGLE BLOCK — the one angle this agent runs>
 ```
 
 Each angle returns **at most 6 candidate findings**. If an angle finds more than 6, it reports
@@ -147,7 +164,8 @@ So: report it, mark it, and do not argue for it to be fixed.
 
 For each finding:
 
-- **Angle**: the letter of the angle you are running (A–F).
+- **Angle**: the name of the angle you are running — one of `enclosing-function`,
+  `removed-behavior`, `call-site-impact`, `stack-defects`, `guard-completeness`, `prior-art`.
 - **Severity**: `P0` (data loss, auth bypass, or a crash on a common path) | `P1` (wrong result,
   or a crash on an edge path) | `P2` (degraded behavior, not fatal) | `P3` (minor correctness
   issue).
@@ -175,10 +193,10 @@ End with exactly one of:
 
 ## ANGLE BLOCKS — append exactly one to the shared block
 
-### Angle A — changed lines, then the whole enclosing function
+### `enclosing-function` — changed lines, then the whole function around them
 
 ````
-## Your method: Angle A — changed lines, then the enclosing function
+## Your method: `enclosing-function` — changed lines, then the function around them
 
 Read every hunk in the diff, line by line. For each hunk, then read the **entire function that
 contains it**, including the lines the diff did not touch.
@@ -197,10 +215,10 @@ copy-paste that references the wrong variable; an error caught and discarded whe
 propagate; a regular expression that lost an anchor or does not escape a metacharacter.
 ````
 
-### Angle B — removed-behavior auditor
+### `removed-behavior` — what did the deleted lines enforce?
 
 ````
-## Your method: Angle B — what did the deleted lines enforce?
+## Your method: `removed-behavior` — what did the deleted lines enforce?
 
 Look only at what the diff **removes or replaces**. For every deleted or rewritten line:
 
@@ -222,10 +240,10 @@ If a deletion was deliberate and its behavior is correctly re-established elsewh
 report it. Say where you found it re-established, so the controller knows you checked.
 ````
 
-### Angle C — cross-file tracer
+### `call-site-impact` — does this change break code outside the diff?
 
 ````
-## Your method: Angle C — does this change break code outside the diff?
+## Your method: `call-site-impact` — does this change break code outside the diff?
 
 For each function, method, or signature the diff changes, find the code that calls it and the
 code it calls.
@@ -248,10 +266,10 @@ you searched (`grep -rn "<symbol>" <paths>`) — per the shared block, an uncite
 reported as unknown, not as absent.
 ````
 
-### Angle D — stack-specific defect classes
+### `stack-defects` — the defect classes of this stack
 
 ````
-## Your method: Angle D — the defect classes of this stack
+## Your method: `stack-defects` — the defect classes of this stack
 
 Work through the defect classes below and check the diff against each one. For every class you
 flag, trace a concrete triggering input.
@@ -297,10 +315,10 @@ The classes:
   emitted as a stream error event.
 ````
 
-### Angle E — altitude: does the fix cover every way the thing can fail?
+### `guard-completeness` — does the guard cover every way the thing can fail?
 
 ````
-## Your method: Angle E — is the guard complete?
+## Your method: `guard-completeness` — is the guard complete?
 
 Look at every place this diff guards against a failure — a try/except, a validation, a check
 before an operation, an error handler, a cleanup path.
@@ -343,10 +361,10 @@ loop, outside every `try`, so an unreadable file still terminated the script
 classes reaches that bug. Only this question does.
 ````
 
-### Angle F — compound read-back: has this bug happened here before?
+### `prior-art` — has this bug happened in this repository before?
 
 ````
-## Your method: Angle F — check the diff against this repository's recorded past failures
+## Your method: `prior-art` — check the diff against this repository's recorded past failures
 
 This repository records the bugs it has already paid for. Your job is to make sure the diff does
 not reintroduce one of them.

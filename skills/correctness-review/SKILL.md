@@ -58,18 +58,24 @@ The finder needs a `BASE_SHA..HEAD_SHA` range (and the list of touched files):
    Each returns at most 6 candidates, and every candidate must name a concrete trigger (the input
    or state that reaches the bug) and the wrong outcome it produces.
 
+   Each angle is named for its method — the name is what the agent reports under, and what the
+   dedup step records as provenance.
+
    | Angle | Method |
    |---|---|
-   | **A** | Read each changed hunk, then the **whole enclosing function**. Bugs on unmodified lines inside a changed function are in scope, marked `unmodified-line`. |
-   | **B** | **Removed-behavior auditor.** For every deleted or replaced line, state what it enforced, then find where the new code re-establishes it. If it does not, that is a finding. |
-   | **C** | **Cross-file tracer.** Grep the callers and callees of every changed signature; check for a broken precondition, changed return shape, new exception, or new ordering requirement. |
-   | **D** | **Stack defect classes.** The None/async/DB/auth/concurrency/contract checklist — adapted to whatever language the diff is actually in. |
-   | **E** | **Altitude.** Where the code guards against failure, does the guard cover *every* way it can fail, or only the ones the author had in mind? |
-   | **F** | **Compound read-back.** Read `docs/solutions/` and check the diff against the failures this repo has already paid for, by name. |
+   | **`enclosing-function`** | Read each changed hunk, then the **whole function containing it**. Bugs on unmodified lines inside a changed function are in scope, marked `unmodified-line`. |
+   | **`removed-behavior`** | For every deleted or replaced line, state what it enforced, then find where the new code re-establishes it. If it does not, that is a finding. |
+   | **`call-site-impact`** | Grep the callers and callees of every changed signature; check for a broken precondition, changed return shape, new exception, or new ordering requirement. |
+   | **`stack-defects`** | The None/async/DB/auth/concurrency/contract checklist — adapted to whatever language the diff is actually in. |
+   | **`guard-completeness`** | Where the code guards against failure, does the guard cover *every* way it can fail, or only the ones the author had in mind? |
+   | **`prior-art`** | Read `docs/solutions/` and check the diff against the failures this repo has already paid for, by name. |
 
-   Angles A and B are the two the old single-finder checklist could not reach, because they are not
-   defect classes — they are procedures. That gap was not theoretical: the PR #51 review's most
-   valuable finding sat entirely on lines the diff never modified.
+   `enclosing-function` and `removed-behavior` are the two the old single-finder checklist could not
+   reach, because they are not defect classes — they are procedures. That gap was not theoretical:
+   the PR #51 review's most valuable finding sat entirely on lines the diff never modified.
+
+   > The benchmark results under `benchmarks/review-chain/results/` predate this naming and refer to
+   > the angles as `A`–`F`, in the table's order.
 
 2. **Dedup by `(file, line)`.** Several angles will land on the same location. Merge them into one
    candidate and record which angles reported it. **Agreement between angles is provenance, not
@@ -142,9 +148,9 @@ standalone use). A finding with neither is a hard block — do not report succes
   for roughly a tenth of the tokens.
 
   What we *did* take is its **structure**: reviewing by several independent angles rather than one
-  checklist. Angles A (enclosing function), B (removed-behavior), C (cross-file), and E (altitude)
-  all come from reading its source. Its recall-biased verdict ladder we deliberately did not take —
-  see the SCORE callout above.
+  checklist. The `enclosing-function`, `removed-behavior`, `call-site-impact`, and
+  `guard-completeness` angles all come from reading its source. Its recall-biased verdict ladder we
+  deliberately did not take — see the SCORE callout above.
 - **`/review-diff`:** visualizes what changed (C4 diagrams + walkthrough). Not a correctness pass.
 - **`subagent-driven-development`:** calls this skill as its final adversarial gate. Invoking
   `/correctness-review` standalone runs the exact same pipeline without the rest of the workflow.

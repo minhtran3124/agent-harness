@@ -69,9 +69,9 @@ Task tool (reviewer):
     - An existing CI check or project hook already catches it:
       `ruff-on-edit` (fires on every Edit/Write), `commit-quality-gate` (runs ruff +
       pytest on commit), or `risk-corroboration` (checks lane vs staged diff).
-    - **The flagged line was NOT modified by the diff.** This includes a finding marked
-      `unmodified-line` by Angle A or Angle B — code inside a function the diff changed, but on
-      a line it did not change. Score it 0 even when the bug is unmistakably real.
+    - **The flagged line was NOT modified by the diff.** This includes any finding marked
+      `unmodified-line` — code inside a function the diff changed, but on a line it did not
+      change. Score it 0 even when the bug is unmistakably real.
 
     ## What a score of 0 means — read this before scoring an `unmodified-line` finding
 
