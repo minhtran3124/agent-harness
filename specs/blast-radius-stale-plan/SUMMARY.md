@@ -66,7 +66,7 @@ a real wave would land in a channel everyone has learned to skip.
 | Check | Command | Exit | Notes |
 | --- | --- | --- | --- |
 | hook contract, incl. the closed hole | `bash tests/hooks/blast-radius-check.test.sh` | 0 | 8 passed |
-| the new tests actually catch the bug | same suite, hook restored from `v2` | 1 | **2 FAILED** (both new cases) — they fail against the pre-change hook, so they are a real regression lock, not decoration |
+| the new tests actually catch the bug | `bash -c 'd=$(mktemp -d); mkdir -p "$d/hooks" "$d/tests/hooks"; cp tests/lib.sh "$d/tests/"; cp tests/hooks/blast-radius-check.test.sh "$d/tests/hooks/"; git show d424183:hooks/blast-radius-check.sh > "$d/hooks/blast-radius-check.sh"; bash "$d/tests/hooks/blast-radius-check.test.sh"; rc=$?; rm -rf "$d"; exit $rc'` | 1 | **2 FAILED** (both new cases) — the new suite run against the pre-change hook (from `d424183`, the base this PR merges onto), so they are a real regression lock, not decoration |
 | no plan is silently armed anymore | `grep -rn '^status: active' specs --include='*.md'` | 1 | NONE — and the hook is now correctly silent, where before it fell back to `verify-substance` |
 | full suite | `bash scripts/run-tests.sh` | 0 | see below |
 
