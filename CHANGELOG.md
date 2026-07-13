@@ -9,6 +9,14 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 - feat(q3): product-contract map (Level A) — `contracts` block in `harness-manifest.json`, `scripts/check-contract-impact.sh` advisory mapper, `check_manifest.py` path validation, and a contract-impact reminder section in `harness-audit.sh` (MIN-64)
 
+## [0.11.0] — 2026-07-13
+
+- feat(branch-isolation): every lane cuts a branch before implementing — close the tiny-lane hole (PR #52)
+
+## [0.10.0] — 2026-07-13
+
+- fix(blast-radius): only an ACTIVE plan arms the hook — drop the stale-plan fallback (PR #53)
+
 ## [0.9.0] — 2026-07-09
 
 - docs: clarify harness prompts (root docs + sub-agents + rules) (PR #48)

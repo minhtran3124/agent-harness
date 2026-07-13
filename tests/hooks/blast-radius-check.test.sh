@@ -22,6 +22,18 @@ repo=$(new_repo $H)
 run_hook "$repo" $H "$(json_file "$repo/app/foo.py")"
 assert_silent_ok
 
+t "PLAN.md exists but is SHIPPED (none active) → silent, even out-of-scope (no stale-plan fallback)"
+repo=$(new_repo $H)
+make_plan "$repo" shipped "app/foo.py"
+run_hook "$repo" $H "$(json_file "$repo/app/rogue.py")"
+assert_silent_ok
+
+t "PLAN.md exists but is PROPOSED (not yet active) → silent, even out-of-scope"
+repo=$(new_repo $H)
+make_plan "$repo" proposed "app/foo.py"
+run_hook "$repo" $H "$(json_file "$repo/app/rogue.py")"
+assert_silent_ok
+
 t "edited file is in the active plan's <files> → silent"
 repo=$(new_repo $H)
 make_plan "$repo" active "app/foo.py, app/bar.py"

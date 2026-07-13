@@ -4,7 +4,7 @@ Skill framework and governance system for Claude Code — reusable prompt-based 
 
 ## Behavioral Guidelines
 
-See @rules/behavior.md — that file is the single source of truth.
+See `rules/behavior.md` — that file is the single source of truth (deployed to `.claude/rules/`, which auto-loads).
 
 ---
 
@@ -19,7 +19,9 @@ See @rules/behavior.md — that file is the single source of truth.
 ## Skill Workflow
 
 `feature-intake` runs first and **routes by lane** — it decides how much of the chain below
-actually runs (tiny lane skips straight to a direct edit; high-risk runs the full chain).
+actually runs (tiny lane branches, then edits directly; high-risk runs the full chain).
+**Every lane cuts a branch before the first edit** — `hooks/branch-isolation-guard.sh` denies
+implementation edits on a shared branch regardless of lane.
 Skipping a step the lane requires is a hard gate violation:
 
 ```
@@ -31,7 +33,7 @@ feature-intake (classify → lane + confidence → route)
   → compound → finishing-a-development-branch
 ```
 
-Lane → ceremony; confidence/ambiguity → whether a human is asked. See `rules/orchestration.md`, `skills/feature-intake/SKILL.md`, and @skills/README.md for the full inventory and handoff map.
+Lane → ceremony; confidence/ambiguity → whether a human is asked. See `rules/orchestration.md`, `skills/feature-intake/SKILL.md`, and `skills/README.md` for the full inventory and handoff map.
 
 ## Knowledge Base
 
