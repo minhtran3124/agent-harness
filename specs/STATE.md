@@ -382,3 +382,17 @@ Source of truth for the currently-active spec. Updated by skills and by the `sta
 - last_commit: 46e3260 fix(blast-radius): only an ACTIVE plan arms the hook — drop the stale-plan fallback
 - user_turns: 0
 
+
+### 2026-07-13T08:54:53Z
+- session_id: 48c09fe2-e229-4273-b4d8-93b3173f245f
+- exit: 
+- last_commit: a2139c7 docs(claude-md): use plain path refs instead of @-imports; record session breadcrumbs
+- user_turns: 0
+
+
+### 2026-07-13T09:21:29Z
+- session_id: d9e5b3e2-e3cf-4f1e-950c-f378f273c061
+- exit: 
+- last_commit: 7a30639 fix(summary): make the regression-lock Verify row machine-re-runnable
+- user_turns: 0
+
