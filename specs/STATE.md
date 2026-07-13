@@ -312,3 +312,73 @@ Source of truth for the currently-active spec. Updated by skills and by the `sta
 - last_commit: 5033c4e chore(state): update session logs with new entries and last commits
 - user_turns: 0
 
+
+### 2026-07-13T04:20:10Z
+- session_id: a42ff726-922e-42dd-b9bb-e93eba0b48ac
+- exit: 
+- last_commit: d424183 Merge pull request #49 from minhtran3124/chore/bookkeeping-48
+- user_turns: 0
+
+
+### 2026-07-13T08:52:37Z
+- session_id: 4d94a817-911a-4863-ba31-a8e36de0276c
+- exit: 
+- last_commit: 46e3260 fix(blast-radius): only an ACTIVE plan arms the hook — drop the stale-plan fallback
+- user_turns: 0
+
+
+### 2026-07-13T08:52:37Z
+- session_id: 1649c77a-2a2b-4a8a-b5f5-ea27ccd9f065
+- exit: 
+- last_commit: 46e3260 fix(blast-radius): only an ACTIVE plan arms the hook — drop the stale-plan fallback
+- user_turns: 0
+
+
+### 2026-07-13T08:52:37Z
+- session_id: 47f77ba5-50ee-40d3-a240-4d8f7bfe99ec
+- exit: 
+- last_commit: 46e3260 fix(blast-radius): only an ACTIVE plan arms the hook — drop the stale-plan fallback
+- user_turns: 0
+
+
+### 2026-07-13T08:52:37Z
+- session_id: fec3e153-9e9e-408a-a598-8720f3937791
+- exit: 
+
+### 2026-07-13T08:52:37Z
+- session_id: 8a0761b6-cd01-42ff-89ae-9fcacbce8c86
+- exit: 
+- last_commit: 46e3260 fix(blast-radius): only an ACTIVE plan arms the hook — drop the stale-plan fallback
+- user_turns: 0
+
+- last_commit: 46e3260 fix(blast-radius): only an ACTIVE plan arms the hook — drop the stale-plan fallback
+- user_turns: 0
+
+
+### 2026-07-13T08:52:37Z
+- session_id: 31192efe-db37-4eeb-8ccf-524c6a98d9ea
+- exit: 
+- last_commit: 46e3260 fix(blast-radius): only an ACTIVE plan arms the hook — drop the stale-plan fallback
+- user_turns: 0
+
+
+### 2026-07-13T08:52:37Z
+- session_id: b1ed0146-0751-4498-9adf-b94bfd9e8a80
+- exit: 
+- last_commit: 46e3260 fix(blast-radius): only an ACTIVE plan arms the hook — drop the stale-plan fallback
+- user_turns: 0
+
+
+### 2026-07-13T08:52:37Z
+- session_id: 948b5e3c-9464-4a09-88b1-586e26a81592
+- exit: 
+- last_commit: 46e3260 fix(blast-radius): only an ACTIVE plan arms the hook — drop the stale-plan fallback
+- user_turns: 0
+
+
+### 2026-07-13T08:53:00Z
+- session_id: a5f50f28-c2ce-469a-a7f5-b1541565a332
+- exit: 
+- last_commit: 46e3260 fix(blast-radius): only an ACTIVE plan arms the hook — drop the stale-plan fallback
+- user_turns: 0
+
