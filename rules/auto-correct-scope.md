@@ -12,9 +12,17 @@ The intake lane (`specs/<slug>/SUMMARY.md`, set by `/feature-intake`) decides ho
 
 | Lane | Autonomy | Plan | Human confirm |
 |---|---|---|---|
-| **tiny** | Full auto — direct patch | none | none (machine gates are the safety net: `ruff-on-edit`, `auto-test-on-change`, `commit-quality-gate`, `risk-corroboration`) |
+| **tiny** | Full auto — direct patch on a fresh branch | none | none (machine gates are the safety net: `ruff-on-edit`, `auto-test-on-change`, `commit-quality-gate`, `risk-corroboration`) |
 | **normal** | Auto with proof gates (subagent two-stage review) | yes | only if confidence low / ambiguous |
 | **high-risk** | Auto-plan, gated-execute | yes (full chain) | only on ambiguity or a hard gate (Rule 4) |
+
+> **Every lane branches first — the branch is not part of the ceremony that scales.** Plans,
+> reviews and artifacts scale with risk; *where you are allowed to write* does not. tiny →
+> `git checkout -b <type>/<slug>`; normal / high-risk → `/using-git-worktrees` (isolated
+> worktree + branch). Enforced at write time by `hooks/branch-isolation-guard.sh`, which denies
+> an implementation edit on a shared branch for **every** lane (`specs/` stays writable so intake
+> can record `SUMMARY.md` before the branch exists). See `skills/feature-intake/SKILL.md` → The
+> branch rule.
 
 > **Evidence the lane requires (single source of truth):** `scripts/check_lane_evidence.py` mechanizes the lane → evidence mapping so this table, `skills/feature-intake/SKILL.md` (Step 7), and the `SUMMARY.md` checks do not drift. It reads `specs/<slug>/SUMMARY.md` and asserts: **tiny** → filled `Lane`/`Confidence`/`Reason`; **normal** → + a non-placeholder `### Verify` row; **high-risk** → + a non-empty `### Rollback`. Run `python scripts/check_lane_evidence.py <slug>` (exit 1 = missing evidence). Edit the mapping there, not only in prose.
 

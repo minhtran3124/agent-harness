@@ -19,7 +19,9 @@ See `rules/behavior.md` — that file is the single source of truth (deployed to
 ## Skill Workflow
 
 `feature-intake` runs first and **routes by lane** — it decides how much of the chain below
-actually runs (tiny lane skips straight to a direct edit; high-risk runs the full chain).
+actually runs (tiny lane branches, then edits directly; high-risk runs the full chain).
+**Every lane cuts a branch before the first edit** — `hooks/branch-isolation-guard.sh` denies
+implementation edits on a shared branch regardless of lane.
 Skipping a step the lane requires is a hard gate violation:
 
 ```
