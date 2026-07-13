@@ -198,9 +198,11 @@ Neither asks *"even if the spec is right, does this code fail at runtime?"*. A b
 implements a flawed spec passes both — the gap that lets real bugs survive to production and get
 caught by external reviewers post-push. The correctness pass closes it.
 
-**Relationship to `/code-review`:** `/correctness-review` is the always-on in-flow gate. For
-high-risk lanes you may *additionally* run `/code-review high|ultra` before merge — they
-compound, they don't replace each other.
+**Relationship to `/code-review`:** `/correctness-review` is the always-on in-flow gate, and as of
+2026-07-13 `/code-review` is a *component* of it, not a sibling — it runs as FIND-B on high-risk
+lanes, pooled into the same SCORE → THRESHOLD path (see `skills/correctness-review/SKILL.md`). Do
+not also invoke it standalone here: that pays for the engine twice and routes its findings around
+the SCORE gate, which is exactly what the benchmark says that gate is there to prevent.
 
 ## Final Intent Review
 

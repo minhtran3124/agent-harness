@@ -161,6 +161,7 @@ handoff edges — carries an honest evidence tier. The tiers:
 | `code-review-graph` | MCP server (`.mcp.json`) | documented-only | mandated by CLAUDE.md; no recorded review run pinned in-repo |
 | `context7` | MCP server (user-level) | documented-only | user-level docs lookup; no recorded run pinned in-repo |
 | `/subagent-driven-development` → `/correctness-review` → `/intent-review` | handoff edge | manually-verified (2026-06-12) | intent-review dogfood on its own diff — commit `a2a4349` |
+| `/correctness-review` → `/code-review` (FIND-B) | handoff edge | documented-only | wired as the high-risk second engine; the *pooled* pipeline has never been run — `benchmarks/review-chain/results/2026-07-13-code-review-swap.md` measured the engine standalone, and FIND-B ships without a dispatch template |
 
 **Graduation rule** (from the research report): an edge only moves **up** a tier when a
 recorded run exists *in this repo* — support claims are never inherited from upstream or from
