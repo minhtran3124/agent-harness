@@ -29,13 +29,15 @@ case "$REL" in
   specs/*|docs/*|*.md) exit 0 ;;
 esac
 
-# Find the active PLAN.md (prefer `status: active`, else most recent)
+# Find the active PLAN.md. `status: active` is the ONLY thing that arms this hook — there is
+# deliberately no "else most recent" fallback. A shipped plan's <files> set is a record of what
+# that work touched, not a scope constraint on everything that comes after it; falling back to it
+# made every long-finished plan police every future edit, forever.
 PLAN=""
 for p in $(ls -t "$REPO_DIR"/specs/*/PLAN.md 2>/dev/null); do
   if grep -qiE '^status:[[:space:]]*active' "$p"; then PLAN="$p"; break; fi
 done
-[ -z "$PLAN" ] && PLAN=$(ls -t "$REPO_DIR"/specs/*/PLAN.md 2>/dev/null | head -1)
-[ -z "$PLAN" ] && exit 0
+[ -z "$PLAN" ] && exit 0   # no plan in flight → no scope to creep out of
 
 # Declared files from <files>...</files> (comma-separated)
 DECLARED=$(grep -oE '<files>[^<]*</files>' "$PLAN" 2>/dev/null \
