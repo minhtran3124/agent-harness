@@ -103,34 +103,43 @@ Task tool (reviewer):
     - **AI/streaming paths (if applicable)** — token usage not logged on failure
       (`success=False`); mid-stream error not emitted as an SSE error event.
 
-    ## Altitude — is the fix deep enough, or a bandaid?
+    ## Altitude — does a shallow fix leave a crash path open?
 
-    Run this as a **separate pass** after the bug classes above, over the whole diff. It is
-    not a bug class; it is a different question, and a per-line bug hunt will never ask it.
+    One extra pass over the whole diff, asking a question a per-line hunt never asks: **when
+    this code guards against failure, does the guard actually cover every way it can fail?**
 
-    For each changed unit, ask: **is this implemented at the right depth?**
+    ### The gate — an altitude finding must buy its way in with a runtime failure
 
-    - **Special cases layered on shared infrastructure.** A new branch/flag threaded through
-      common code to handle one caller is a sign the underlying mechanism should generalize
-      instead. Name the deeper fix.
-    - **Enumerated failure lists where a boundary belongs.** An `except (A, B, C)` /
-      allowlist / regex of known-bad inputs is a claim that the list is exhaustive. If the
-      code's contract is "this must never fail" (an advisory section, a non-blocking hook, a
-      cleanup path), an exception list **cannot** deliver it — one unenumerated failure mode
-      voids it. Look for the mechanism that bounds the whole block (`|| true` on the command,
-      a top-level catch, a supervisor) and flag its absence.
-    - **A guard that does not span the whole risky operation.** Check what runs *before* and
-      *after* the guarded region — `open()` outside the `try`, setup outside the lock,
-      teardown outside the `finally`.
-    - **Convention already present nearby.** Before accepting a hand-rolled fix, read the
-      neighbouring code: if a sibling block solves the same problem a different way, the diff
-      diverging from it is the finding.
+    An altitude finding is a **bug finding**, subject to the same bar as every other: you MUST
+    name a concrete input or state, and the wrong outcome or crash it produces, **that the
+    code as written still allows**. If you cannot write that trigger, you do not have a
+    finding — you have a design opinion, and design opinions are the quality reviewer's job,
+    not yours. Do not report them here. Specifically, these are **NOT** altitude findings:
+
+    - "this bypasses the service layer" / "the architecture is inconsistent"
+    - "this duplicates a dependency" (when you also note it is harmless)
+    - "the underlying mechanism should generalize instead"
+    - any finding whose Wrong-outcome line is about maintainability rather than behavior
+
+    ### Where the crash paths hide
+
+    - **An exception allowlist standing in for a boundary.** `except (A, B, C)` is a claim the
+      list is exhaustive. When the contract is "this must never fail" (an advisory section, a
+      non-blocking hook, a cleanup path), one unenumerated failure voids it. Ask what bounds
+      the *whole block* — `|| true` on the command, a top-level catch, a supervisor — and
+      **name the specific unenumerated exception** that escapes. No named escape, no finding.
+    - **A guard that does not span the whole risky operation.** Look at what runs *before* and
+      *after* the guarded region: `open()` above the `try`, setup outside the lock, teardown
+      outside the `finally`. Name the input that reaches the unguarded part.
 
     This pass exists because the repo shipped the same bug twice through two adversarial
     per-line reviews (`docs/solutions/scripts/bash-empty-array-and-jsonl-parsing-gotchas.md`):
-    both rounds enumerated exception types, neither asked whether the boundary was in the
-    right place. Report an altitude finding as a normal finding (Severity + Rule class); it
-    goes through SCORE like any other.
+    both rounds broadened the `except` clause; neither noticed `open()` sat outside it, so an
+    unreadable log still killed the script. That is the shape to hunt — a **live crash path**
+    the shallow fix left open, not an aesthetic judgment about depth.
+
+    Report an altitude finding as a normal finding (Severity + Rule class); it goes through
+    SCORE like any other.
 
     ## Method
 
