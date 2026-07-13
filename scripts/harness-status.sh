@@ -60,10 +60,15 @@ echo "=== Audit Trend (last 5 runs) ==="
 if [[ ! -f "$AUDIT_TREND_LOG" ]]; then
     echo "  [not found: $AUDIT_TREND_LOG]"
 else
-    python3 - "$AUDIT_TREND_LOG" <<'PY'
+    # Advisory: must never abort the report. The `|| echo` closes the failure class at the
+    # mechanism level — open() runs before any in-heredoc try, so no per-exception guard can
+    # catch an unreadable or non-UTF-8 log.
+    python3 - "$AUDIT_TREND_LOG" <<'PY' || echo "  [unreadable: $AUDIT_TREND_LOG]"
 import json, sys
 with open(sys.argv[1]) as f:
     lines = [l.strip() for l in f if l.strip()]
+if not lines:
+    print("  [no data rows found]")
 for line in lines[-5:]:
     try:
         d = json.loads(line)
