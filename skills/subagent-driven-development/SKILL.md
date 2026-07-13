@@ -177,13 +177,20 @@ the entire implementation diff before handing off to `finishing-a-development-br
 **is the `/correctness-review` skill — delegate to it; do not re-implement the pipeline here.**
 
 **Range to pass:** `BASE` = commit before task 1, `HEAD` = current commit after all tasks, plus
-the list of touched files. `/correctness-review` then runs FIND → SCORE → THRESHOLD(80) →
-classify → fix-loop: it reads `docs/solutions/` for compound read-back, dispatches the
-high-recall finder with a different (most capable) model, scores each candidate 0–100 with a
-cheap model, drops `< 80` to advisory, classifies survivors by Severity + `auto-correct-scope.md`
-Rule class, routes Rule 1–3 to an auto-fix loop and Rule 4 to a STOP/escalation, and enforces the
-residual-work gate (every finding fixed with a sha or durably recorded before handoff). See
+the list of touched files. `/correctness-review` then runs FIND (A [+B]) → SCORE → THRESHOLD(80)
+→ classify → fix-loop: it reads `docs/solutions/` for compound read-back; dispatches the
+high-recall finder (FIND-A) with a different (most capable) model, including its **altitude**
+pass; on a **high-risk** lane additionally runs the built-in `/code-review` as a second,
+independent engine (FIND-B) and pools its findings; scores every pooled candidate 0–100 with a
+cheap model, capping at 50 anything resting on a file the reviewer could not read; drops `< 80`
+to advisory; classifies survivors by Severity + `auto-correct-scope.md` Rule class; routes Rule
+1–3 to an auto-fix loop and Rule 4 to a STOP/escalation; and enforces the residual-work gate
+(every finding fixed with a sha or durably recorded before handoff). See
 `skills/correctness-review/SKILL.md` for the full pipeline and `correctness-{reviewer,scorer}-prompt.md`.
+
+**Pass the lane.** FIND-B is gated on it — `/code-review` costs ~10–15× the tokens of FIND-A for
+the same measured recall, so it runs only where the risk justifies it
+(`benchmarks/review-chain/results/2026-07-13-code-review-swap.md`).
 
 **Why this stage exists.** The per-task spec and quality reviewers are anchored to the plan as
 the oracle — spec review asks *"does it match the spec?"*, quality review asks *"is it clean?"*.

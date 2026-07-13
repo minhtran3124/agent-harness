@@ -61,6 +61,25 @@ Task tool (reviewer):
     - The flagged line was NOT modified by the diff (pre-existing code the finder
       incidentally read).
 
+    ## Cap the score at 50 when the claim rests on code you cannot read
+
+    `not_observed != absent` (`rules/behavior.md` §1) applied to scoring. If the finding's
+    trigger depends on a file, symbol, or convention that is **not readable** from this tree
+    — the model, the base class, the auth dependency, the caller — then the bug is
+    **unknown, not confirmed**, and it scores **50 at most**, no matter how plausible the
+    mechanism sounds.
+
+    Score it `<= 50` when the finding's own text contains an admission like "cannot verify",
+    "not present in this tree", "UNKNOWN", "assuming X", "cannot rule out", or "a reviewer
+    with <file> should confirm" — a finding that argues from the *shape* of the code rather
+    than from a line you can quote is a hypothesis, and hypotheses do not enter the fix-loop.
+
+    This rule is load-bearing: on `benchmarks/review-chain` (2026-07-13) an unfiltered
+    high-recall engine asserted three defects — an IDOR on correct auth wiring, an unstable
+    `ORDER BY`, an unbounded read — each resting on a file absent from the tree, and each was
+    a false positive the fixture had named in advance. The mechanism was real in every case;
+    the *trigger* was unverifiable. That is exactly a 50, not an 80.
+
     ## Scoring is independent of severity
 
     Score only how confident you are the bug is real and introduced by this diff.

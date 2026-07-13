@@ -68,7 +68,14 @@ Task tool (reviewer):
     **If `docs/solutions/` is missing or empty**: state
     "no prior-art KB present — skipped" and proceed to bug-class hunting below.
 
-    ## Bug classes to hunt (FastAPI / async / SQLAlchemy backend)
+    ## Bug classes to hunt
+
+    The list below is written for a **FastAPI / async / SQLAlchemy backend**. It is a
+    checklist, not a boundary: when the diff is in another language or layer, substitute the
+    equivalent classes for *that* stack and hunt those instead (for shell: `set -u` on a
+    possibly-empty array, an unbounded heredoc under `set -e`, an exit code that escapes;
+    for a hook: a non-zero exit that blocks the session). A defect class absent from this
+    list is still a defect.
 
     For each, trace a concrete triggering input or condition:
 
@@ -95,6 +102,35 @@ Task tool (reviewer):
       dict crossing an API boundary.
     - **AI/streaming paths (if applicable)** — token usage not logged on failure
       (`success=False`); mid-stream error not emitted as an SSE error event.
+
+    ## Altitude — is the fix deep enough, or a bandaid?
+
+    Run this as a **separate pass** after the bug classes above, over the whole diff. It is
+    not a bug class; it is a different question, and a per-line bug hunt will never ask it.
+
+    For each changed unit, ask: **is this implemented at the right depth?**
+
+    - **Special cases layered on shared infrastructure.** A new branch/flag threaded through
+      common code to handle one caller is a sign the underlying mechanism should generalize
+      instead. Name the deeper fix.
+    - **Enumerated failure lists where a boundary belongs.** An `except (A, B, C)` /
+      allowlist / regex of known-bad inputs is a claim that the list is exhaustive. If the
+      code's contract is "this must never fail" (an advisory section, a non-blocking hook, a
+      cleanup path), an exception list **cannot** deliver it — one unenumerated failure mode
+      voids it. Look for the mechanism that bounds the whole block (`|| true` on the command,
+      a top-level catch, a supervisor) and flag its absence.
+    - **A guard that does not span the whole risky operation.** Check what runs *before* and
+      *after* the guarded region — `open()` outside the `try`, setup outside the lock,
+      teardown outside the `finally`.
+    - **Convention already present nearby.** Before accepting a hand-rolled fix, read the
+      neighbouring code: if a sibling block solves the same problem a different way, the diff
+      diverging from it is the finding.
+
+    This pass exists because the repo shipped the same bug twice through two adversarial
+    per-line reviews (`docs/solutions/scripts/bash-empty-array-and-jsonl-parsing-gotchas.md`):
+    both rounds enumerated exception types, neither asked whether the boundary was in the
+    right place. Report an altitude finding as a normal finding (Severity + Rule class); it
+    goes through SCORE like any other.
 
     ## Method
 

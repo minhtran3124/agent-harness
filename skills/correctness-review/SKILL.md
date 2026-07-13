@@ -42,7 +42,7 @@ The finder needs a `BASE_SHA..HEAD_SHA` range (and the list of touched files):
 - **Standalone, explicit range:** the user names `BASE`/`HEAD` or a PR.
 - **In-flow:** `BASE` = commit before task 1, `HEAD` = current commit after all tasks.
 
-## Pipeline — FIND → SCORE → THRESHOLD → D → E
+## Pipeline — FIND (A [+B]) → SCORE → THRESHOLD → classify → fix-loop
 
 **Step 0 — compound read-back.** Before scanning the diff, read
 `docs/solutions/critical-patterns.md` and all `failure`-track entries in `docs/solutions/` when
@@ -60,20 +60,38 @@ pattern the team already paid to learn cannot slip through again. Degrade gracef
 - **Different model.** Dispatch with a different (ideally most capable) model than whoever wrote
   the code, for ensemble diversity.
 
-1. **FIND** (`./correctness-reviewer-prompt.md`) — high-recall; flags every plausible candidate.
-   The finder is deliberately biased toward false positives; it does not self-filter.
-2. **SCORE** (`./correctness-scorer-prompt.md`) — a cheap-model agent scores each candidate
-   0–100 in independent context (no access to the finder's reasoning). One scorer agent per
-   finding; dispatch in parallel. Rubric: 0 = false positive / pre-existing / not on changed
-   line · 25 = maybe real, unverified · 50 = real but minor or rare · 75 = highly confident ·
-   100 = certain, confirmed by code. Score 0 automatically when `ruff-on-edit`,
-   `commit-quality-gate`, or `risk-corroboration` would already catch it.
-3. **THRESHOLD** — drop findings with `score < 80`. Record them as `advisory` in
+1. **FIND-A — always** (`./correctness-reviewer-prompt.md`) — high-recall; flags every plausible
+   candidate. Deliberately biased toward false positives; it does not self-filter. Includes the
+   **Altitude** pass (is the fix deep enough, or a bandaid?).
+2. **FIND-B — high-risk lane only, or on request: a second, independent engine.** Also run the
+   built-in `/code-review` (`high`; `xhigh` when the diff is large) over the same range and
+   **pool** its findings with FIND-A's before scoring. It is not a replacement for FIND-A — it
+   is ensemble diversity: a different engine, different angles (removed-behavior auditor,
+   cross-file tracer, conventions-from-CLAUDE.md), different blind spots. Skip it on `tiny` and
+   default `normal` lanes: it costs roughly **10–15× the tokens** of FIND-A for the same measured
+   recall (`benchmarks/review-chain/results/2026-07-13-code-review-swap.md`), so it buys coverage,
+   not correctness, and only a high-risk diff is worth that.
+3. **SCORE** (`./correctness-scorer-prompt.md`) — a cheap-model agent scores each **pooled**
+   candidate 0–100 in independent context (no access to either finder's reasoning). One scorer
+   agent per finding; dispatch in parallel. Rubric: 0 = false positive / pre-existing / not on
+   changed line · 25 = maybe real, unverified · 50 = real but minor or rare · 75 = highly
+   confident · 100 = certain, confirmed by code. Score 0 automatically when `ruff-on-edit`,
+   `commit-quality-gate`, or `risk-corroboration` would already catch it. **Cap at 50 any finding
+   that rests on a file the reviewer could not read** — `not_observed != absent`.
+
+   > **Why SCORE survives even though `/code-review` has its own verifier.** They filter opposite
+   > directions and are not substitutes. `/code-review`'s verifier is *recall*-biased by design
+   > ("PLAUSIBLE by default — do not refute for being speculative"), so in a tree where a
+   > dependency cannot be read, nothing gets refuted and every speculation survives. SCORE is the
+   > *precision* gate. Measured: with SCORE removed, `/code-review` asserted three defects that
+   > the benchmark fixtures had each named in advance as false positives (same results file).
+   > Deleting SCORE imports those straight into the fix-loop.
+4. **THRESHOLD** — drop findings with `score < 80`. Record them as `advisory` in
    `specs/<slug>/SUMMARY.md` under `### Advisory Findings` when a slug is in play (not silently
    dropped, not escalated); in pure standalone use with no slug, report them inline as advisory.
    The threshold is adjustable (lower for high-risk lanes, higher when false-positive noise is a
    known problem); default is **80**.
-4. **D — two-axis classification.** Findings that survive the threshold carry two labels:
+5. **Two-axis classification.** Findings that survive the threshold carry two labels:
 
 - **Severity** — `P0` (data loss / security / crash) · `P1` (wrong output / broken path) ·
   `P2` (degraded behavior, non-fatal) · `P3` (minor correctness issue)
@@ -81,7 +99,7 @@ pattern the team already paid to learn cannot slip through again. Degrade gracef
   `Rule 2` (auto-add missing standards) · `Rule 3` (auto-fix blocker) · `Rule 4` (STOP — needs
   architectural judgment)
 
-5. **E — residual gate + fix-loop.** See below.
+6. **Residual gate + fix-loop.** See below.
 
 ## Fix routing by Rule class
 
@@ -100,10 +118,18 @@ standalone use). A finding with neither is a hard block — do not report succes
 
 ## Relationship to other review skills
 
-- **`/code-review` (global):** generic correctness + reuse/simplification/efficiency cleanup with
-  effort levels and a cloud `ultra` mode. `/correctness-review` is the repo-tuned bug-only pass
-  (reads `docs/solutions/`, classifies by `auto-correct-scope.md` Rule class, threshold-80). They
-  compound — run either or both before merge; neither replaces the other.
+- **`/code-review` (built-in):** generic correctness + reuse/simplification/efficiency/altitude
+  cleanup, with effort levels and a cloud `ultra` mode. As of 2026-07-13 it is **not a sibling but
+  a component**: `/correctness-review` invokes it as FIND-B, the second engine on high-risk lanes,
+  and pools its findings into the same SCORE → THRESHOLD → classify path. It remains usable
+  standalone for an ad-hoc cleanup-and-correctness sweep with no gates.
+
+  Measured on `benchmarks/review-chain` (2026-07-13): as a *replacement* for FIND-A it matched
+  recall (3/3) but produced **3 hard false positives against 0**, and cost 10–15× the tokens —
+  so it augments FIND-A, it does not replace it. What it uniquely contributes is the **altitude**
+  lens, which caught a real boundary defect in this repo that two rounds of human fixes and the
+  harness's own per-line reviewer all missed. That lens has since been ported into FIND-A
+  (`./correctness-reviewer-prompt.md` → Altitude), so the cheap path gets it too.
 - **`/review-diff`:** visualizes what changed (C4 diagrams + walkthrough). Not a correctness pass.
 - **`subagent-driven-development`:** calls this skill as its final adversarial gate. Invoking
   `/correctness-review` standalone runs the exact same pipeline without the rest of the workflow.
