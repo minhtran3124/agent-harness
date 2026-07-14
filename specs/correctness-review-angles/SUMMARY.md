@@ -93,23 +93,36 @@ of this skill's lane).
 | Full suite (incl. doc-truth lint) | `bash scripts/run-tests.sh` | 0 | 151 passed, 1 skipped, `ALL GREEN`. The doc-truth lint is what proves no dangling FIND-B path reference survives. |
 | No FIND-B reference outside history | `grep -ril "find-b" --exclude-dir=.git .` | — | resolves only to `benchmarks/review-chain/results/*` (historical records, kept by design) and this spec |
 | Lane evidence | `python3 scripts/check_lane_evidence.py correctness-review-angles` | 0 | high-risk lane: Lane/Confidence/Reason + Verify row + Rollback all present |
-| Benchmark, 5 fixtures, one scored run | manual protocol, `benchmarks/review-chain/README.md` | — | **recall 3/3 — no regression** vs `results/2026-06-baseline.md`. **Hard FPs 3 → 0**, closing the altitude regression. Full record: `results/2026-07-13-angles.md` |
+| Benchmark, 5 fixtures, one scored run (FIND) | manual protocol, `benchmarks/review-chain/README.md` | — | **recall 3/3 — no regression** vs `results/2026-06-baseline.md`. **Hard FPs 3 → 0**, closing the altitude regression. Full record: `results/2026-07-13-angles.md` |
+| Benchmark, end-to-end (FIND → dedup → SCORE → THRESHOLD) | manual protocol; 5 scorers, cheap model, independent context | — | **0 hard FPs into the fix-loop.** Scores split bimodally: 100 where provable from a readable line, exactly 50 where the claim rests on an absent file. Full record: `results/2026-07-14-end-to-end.md` |
 
 ### Advisory Findings
 
 Surfaced by the benchmark, not blocking, recorded so they are not silently lost:
 
-- **Angles C and F are unmeasured.** The fixture repos are single-file trees with no
-  `docs/solutions/`, so the cross-file tracer has no callers to trace and the compound read-back
-  never runs. The 3/3 and the 0 FPs were produced by angles A, B, D, and E alone. "The six-angle
-  finder is validated" would be a false claim; four of six are.
-- **Predicted advisory-routing of a true positive.** On `soft-delete-filter`, angle D located the
-  planted defect at the right lines with the right fix, then self-labeled it a hypothesis because
-  the soft-delete helper is unreadable in that tree. The scorer's cap-at-50 rule would route it to
-  advisory rather than the fix-loop. **SCORE was not run** — this is a design prediction, not a
-  measurement. Whether it is correct routing (the bug rests on unreadable code) or an artifact of a
-  context-starved fixture (in a real repo the helper is readable and D would confirm) is open and
-  unverified. Flagged for a human decision; deliberately not tuned away.
+- **Angles `call-site-impact` and `prior-art` are unmeasured.** The fixture repos are single-file
+  trees with no `docs/solutions/`, so the cross-file tracer has no callers to trace and the
+  compound read-back never runs. The recall and FP numbers were produced by the other four angles
+  alone. "The six-angle finder is validated" would be a false claim; four of six are.
+
+- **~~Predicted~~ advisory-routing of a true positive — now measured, and resolved.** The
+  end-to-end run (`benchmarks/review-chain/results/2026-07-14-end-to-end.md`) closed this. SCORE was
+  run for real over the deduplicated FIND output. Result: `soft-delete-filter:13` scores **50** and
+  routes to advisory, exactly as predicted.
+
+  The open question was *why*: a correct rule, or a rule too blunt? **A controlled diagnostic
+  answered it.** The fixture was rebuilt with `app/models/watchlist.py` present in both commits —
+  the diff under review byte-identical (same blob hashes), one variable changed: the model is
+  readable. Same claim, same scorer prompt.
+
+  | Tree | Score |
+  |---|---|
+  | fixture as shipped (model absent) | **50** — *"the bug is unknown, not confirmed"* |
+  | same diff, model readable | **100** — *"omits the soft-delete check mandated by the model's comment"* |
+
+  **The cap fired because the fixture is context-starved, not because the rule is wrong.** In any
+  repo where the model file exists, this finding scores 100 and enters the fix-loop. No tuning was
+  applied; the rule stands as written.
 
 ### Rollback
 
