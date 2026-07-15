@@ -360,7 +360,15 @@ class TestSummaryBlock:
         ]
 
     def test_deterministic(self):
-        assert rp.render_summary_block(self._tasks(), {"1.1"}) == rp.render_summary_block(self._tasks(), {"1.1"})
+        # multiple done ids + multiple files so set-iteration order could differ between runs
+        assert rp.render_summary_block(self._tasks(), {"1.1", "2.1"}) == rp.render_summary_block(
+            self._tasks(), {"1.1", "2.1"}
+        )
+
+    def test_count_ignores_unknown_done_ids(self):
+        # a stale Status-Log id not among the tasks must not inflate the done count
+        b = rp.render_summary_block(self._tasks(), {"1.1", "9.9"})
+        assert "**3 tasks · 2 waves · 4 files · 1/3 done**" in b
 
     def test_has_both_sentinels(self):
         b = rp.render_summary_block(self._tasks(), set())

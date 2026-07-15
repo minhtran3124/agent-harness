@@ -596,9 +596,12 @@ def render_summary_block(tasks, done_ids):
         d = " ".join(t["done"].split())
         return (d[:_DONE_TRUNC] + "…") if len(d) > _DONE_TRUNC else d
 
+    # count only done ids that are real task ids, so the count stays consistent
+    # with the per-task checkboxes below (a stale Status-Log id can't inflate it).
+    n_done = len(done_ids & {t["id"] for t in tasks})
     count_line = (
         f"**{len(tasks)} tasks · {len(waves)} waves · "
-        f"{len(files)} files · {len(done_ids)}/{len(tasks)} done**"
+        f"{len(files)} files · {n_done}/{len(tasks)} done**"
     )
     rows = ["| Wave | Task | Title | Files | Done (acceptance) |", "|---|---|---|---|---|"]
     for t in ordered:
