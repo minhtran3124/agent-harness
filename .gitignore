@@ -17,6 +17,7 @@ node_modules/
 
 # Claude Code (user-specific, not shared config)
 settings.local.json
+CLAUDE.local.md
 
 # Git worktrees (project-local, isolated feature workspaces)
 .worktrees/
