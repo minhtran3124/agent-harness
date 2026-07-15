@@ -438,6 +438,17 @@ class TestInjectSummaryBlock:
         out = rp.inject_summary_block(text, self.BLOCK)
         assert "> keep me" in out and "keep body" in out
 
+    def test_half_present_sentinel_does_not_swallow_content(self):
+        # only BEGIN survives (END was hand-deleted from the "do not edit" region)
+        text = "# T\n\n" + rp.SUMMARY_BEGIN + "\nORPHAN\n\n## 1. M\nkeep body\n"
+        out = rp.inject_summary_block(text, self.BLOCK)
+        assert out.count(rp.SUMMARY_BEGIN) == 1  # orphan stripped, one fresh BEGIN
+        assert out.count(rp.SUMMARY_END) == 1
+        assert "keep body" in out and "BODY" in out
+        # a second inject is now a clean region-replace, content still preserved
+        out2 = rp.inject_summary_block(out, self.BLOCK)
+        assert "keep body" in out2 and out2.count(rp.SUMMARY_BEGIN) == 1
+
 
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))

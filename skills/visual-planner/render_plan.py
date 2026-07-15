@@ -565,10 +565,6 @@ _DONE_TRUNC = 80
 _FENCE = chr(96) * 3  # ``` without embedding a literal triple-backtick run in this source
 
 
-def _wave_sort_key(w):
-    return (0, int(w)) if w.isdigit() else (1, w)
-
-
 def _mermaid_node_id(task_id):
     return "T" + re.sub(r"[^0-9A-Za-z]", "_", task_id)
 
@@ -583,8 +579,8 @@ def render_summary_block(tasks, done_ids):
             f = f.strip()
             if f:
                 files.add(f)
-    waves = sorted({t["wave"] for t in tasks}, key=_wave_sort_key)
-    ordered = sorted(tasks, key=lambda t: (_wave_sort_key(t["wave"]), natural_key(t["id"])))
+    waves = sorted({t["wave"] for t in tasks}, key=wave_sort_key)
+    ordered = sorted(tasks, key=lambda t: (wave_sort_key(t["wave"]), natural_key(t["id"])))
 
     def title(t):
         return t.get("title") or t["id"]
@@ -635,8 +631,15 @@ def inject_summary_block(plan_text, block):
     Both sentinels present -> replace the region between them (inclusive).
     Else insert `block` immediately before the first '## ' heading (keeping the
     H1 and any directive blockquote above it); no '## ' -> append; empty -> block."""
-    if SUMMARY_BEGIN in plan_text and SUMMARY_END in plan_text:
+    has_begin = SUMMARY_BEGIN in plan_text
+    has_end = SUMMARY_END in plan_text
+    if has_begin and has_end:
         return _SUMMARY_RE.sub(lambda _m: block, plan_text, count=1)  # lambda: avoid backref parsing
+    if has_begin != has_end:
+        # Orphan sentinel (a half-deleted generated region): strip it before a
+        # fresh insert, else a later inject's non-greedy _SUMMARY_RE would span
+        # from the orphan BEGIN into the new block's END and swallow real content.
+        plan_text = plan_text.replace(SUMMARY_BEGIN, "").replace(SUMMARY_END, "")
     m = re.search(r"(?m)^##\s", plan_text)
     if m:
         return plan_text[: m.start()] + block + "\n\n" + plan_text[m.start() :]
