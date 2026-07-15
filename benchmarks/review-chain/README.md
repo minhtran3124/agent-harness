@@ -52,6 +52,25 @@ the *expected* oracle. When a fixture is found to carry an unintended defect for
 oracle, it is revised — the planted defect is preserved, the unintended one removed — and the
 revision is recorded here. Past result files state which fixture version they measured.
 
+- **v3 (2026-07-15)** — two answer-key corrections surfaced by the 2026-07-13/07-14 runs and
+  adjudicated by the fixture owner (issues #58, #59). Prior runs' numbers on `intent-gap` and
+  `none-deref` are **not comparable across this revision** — re-baseline before trending against
+  older result files.
+  - **`intent-gap`** (#59) — `create_watchlist` carried an unintended validate-stripped /
+    store-unstripped defect (`if not payload.name.strip()` then `repo.create(..., name=payload.name)`),
+    a real bug the off-oracle `/correctness-review` correctly caught (SCORE 100 → fix-loop). Fixed
+    by normalizing once and storing the stripped value, so the fixture's **only** defect is again
+    the planted intent gap (missing empty-name validation on `update_watchlist`). The
+    expected-oracle (`/intent-review`) defect is unchanged; the off-oracle pass is now genuinely
+    **CLEAN**.
+  - **`none-deref`** (#58) — `truth.md` declared an IDOR claim on the id-addressed route a false
+    positive but never said *why*, while the fixture set's own v2 revision fixed exactly that shape
+    in `intent-gap` — an internal contradiction two independent engines (our finder and
+    `/code-review`) flagged. Resolved by making the authz posture **explicit**: the route is now
+    gated by `Depends(require_admin)`, so the cross-user read is legitimate-by-design (admin
+    directory lookup), and `truth.md` states the contrast with `intent-gap`'s owner-owned mutation.
+    The planted None-deref is unchanged and is now the sole live defect. The historical "IDOR" FP is
+    re-interpreted as a fixture answer-key gap, **not** a reviewer error.
 - **v2 (2026-06-14)** — `excess-scope` and `intent-gap` made **correctness-clean**. v1 of both
   carried real latent correctness bugs (a `model_validate(None)` None-deref in each, plus a P0
   ownership/BOLA gap in `intent-gap`) that the off-oracle `/correctness-review` pass correctly

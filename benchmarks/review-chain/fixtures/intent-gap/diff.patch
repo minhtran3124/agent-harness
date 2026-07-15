@@ -2,7 +2,7 @@ diff --git a/app/routers/watchlists.py b/app/routers/watchlists.py
 index 7777777..8888888 100644
 --- a/app/routers/watchlists.py
 +++ b/app/routers/watchlists.py
-@@ -12,15 +12,23 @@ router = APIRouter(prefix="/watchlists", tags=["watchlists"])
+@@ -12,15 +12,24 @@ router = APIRouter(prefix="/watchlists", tags=["watchlists"])
 
  @router.post("", response_model=WatchlistResponse)
  async def create_watchlist(
@@ -10,10 +10,12 @@ index 7777777..8888888 100644
      db=Depends(get_db),
      current_user=Depends(get_current_user),
  ) -> WatchlistResponse:
-+    if not payload.name.strip():
++    name = payload.name.strip()
++    if not name:
 +        raise AppException.BadRequest("name must not be empty")
      repo = WatchlistRepository(db)
-     created = await repo.create(user_id=current_user.id, name=payload.name)
+-    created = await repo.create(user_id=current_user.id, name=payload.name)
++    created = await repo.create(user_id=current_user.id, name=name)
      return WatchlistResponse.model_validate(created)
 
 

@@ -176,14 +176,16 @@ After every task's spec + quality review passes, run **one** adversarial correct
 the entire implementation diff before handing off to `finishing-a-development-branch`. This pass
 **is the `/correctness-review` skill — delegate to it; do not re-implement the pipeline here.**
 
-**Range to pass:** `BASE` = commit before task 1, `HEAD` = current commit after all tasks, plus
-the list of touched files. `/correctness-review` then runs FIND → SCORE → THRESHOLD(80) →
-classify → fix-loop: it reads `docs/solutions/` for compound read-back, dispatches the
-high-recall finder with a different (most capable) model, scores each candidate 0–100 with a
-cheap model, drops `< 80` to advisory, classifies survivors by Severity + `auto-correct-scope.md`
-Rule class, routes Rule 1–3 to an auto-fix loop and Rule 4 to a STOP/escalation, and enforces the
-residual-work gate (every finding fixed with a sha or durably recorded before handoff). See
-`skills/correctness-review/SKILL.md` for the full pipeline and `correctness-{reviewer,scorer}-prompt.md`.
+**Range to pass:** `BASE` = commit before task 1, `HEAD` = current commit after all tasks, plus the
+list of touched files. `/correctness-review` then runs its own pipeline —
+**FIND (6 parallel angles) → dedup → SCORE → THRESHOLD(80) → classify → fix-loop** — and enforces
+the residual-work gate: every finding is fixed with a sha, escalated, or recorded as advisory
+before handoff.
+
+**Do not restate that pipeline here.** `skills/correctness-review/SKILL.md` is its single source of
+truth, and `correctness-{reviewer,scorer}-prompt.md` are the dispatch templates. An earlier version
+of this section paraphrased the stage detail and went stale within one change; naming the stages
+and pointing at the spec is what keeps the two files from disagreeing.
 
 **Why this stage exists.** The per-task spec and quality reviewers are anchored to the plan as
 the oracle — spec review asks *"does it match the spec?"*, quality review asks *"is it clean?"*.
@@ -191,9 +193,11 @@ Neither asks *"even if the spec is right, does this code fail at runtime?"*. A b
 implements a flawed spec passes both — the gap that lets real bugs survive to production and get
 caught by external reviewers post-push. The correctness pass closes it.
 
-**Relationship to `/code-review`:** `/correctness-review` is the always-on in-flow gate. For
-high-risk lanes you may *additionally* run `/code-review high|ultra` before merge — they
-compound, they don't replace each other.
+**Relationship to `/code-review`:** they are siblings. `/correctness-review` is the always-on
+in-flow gate and hunts runtime bugs only; the built-in `/code-review` also covers cleanup (reuse,
+simplification, efficiency, conventions). On a high-risk lane you may run `/code-review` in
+addition, before merge — they compound, and neither replaces the other. `/correctness-review` does
+not invoke it.
 
 ## Final Intent Review
 
