@@ -1,6 +1,9 @@
 #!/bin/bash
 # PostToolUse(Write|Edit): auto-render specs/<slug>/PLAN.md -> PLAN.html (deterministic, no LLM).
-# Non-blocking: every edge case exits 0. Won't loop (it writes PLAN.html, not PLAN.md).
+# Also injects/refreshes the tracked "At a glance" block in PLAN.md itself (--summarize).
+# Non-blocking: every edge case exits 0. Won't loop: render_plan.py writes via subprocess
+# (not the Write/Edit tool), so PostToolUse does not re-fire; and --summarize is a no-op
+# when the block is already current.
 
 command -v jq >/dev/null 2>&1 || exit 0
 command -v python3 >/dev/null 2>&1 || exit 0
@@ -23,7 +26,7 @@ REPO_DIR="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null)"
 RENDER="$REPO_DIR/skills/visual-planner/render_plan.py"
 [ -f "$RENDER" ] || exit 0
 
-OUT=$(python3 "$RENDER" "$FILE" 2>&1)
+OUT=$(python3 "$RENDER" "$FILE" --summarize 2>&1)
 if [ $? -eq 0 ]; then
   HTML=$(printf '%s' "$OUT" | grep -oE '/[^ ]*PLAN\.html' | head -1)
   jq -cn --arg h "$HTML" '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:("🖼️ PLAN.html auto-rendered: " + $h)}}'

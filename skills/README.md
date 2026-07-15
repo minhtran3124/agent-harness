@@ -18,7 +18,8 @@ This file is the single source of truth for overview, workflow, and cross-skill 
 /feature-intake  (routing entry point — run first on every change request)
   → classifies input type + 10-flag risk checklist + hard gates
   → output: lane (tiny|normal|high-risk) + confidence → specs/<slug>/SUMMARY.md
-  → routes: tiny → direct edit · normal → subagent-driven · high-risk → full chain below
+  → routes: tiny → branch + direct edit · normal → subagent-driven · high-risk → full chain below
+  → EVERY lane cuts a branch first (enforced by hooks/branch-isolation-guard.sh)
       ↓
 /brainstorming
   → reads: CLAUDE.md, docs/solutions/ (decision track only), recent commits
@@ -56,9 +57,10 @@ This file is the single source of truth for overview, workflow, and cross-skill 
 ```
 /feature-intake → /xia2 → /writing-plans → implement → /compound (if pattern found)
 
-/feature-intake confirms the lane; a tiny lane drops straight to a direct edit.
+/feature-intake confirms the lane; a tiny lane branches (`git checkout -b`) then edits directly.
 Skip /brainstorming when intent is clear.
-Skip /using-git-worktrees for in-place edits.
+Skip /using-git-worktrees for in-place edits — but NOT the branch: a plain
+`git checkout -b <type>/<slug>` is still required. No lane implements on a shared branch.
 /writing-plans still auto-renders PLAN.html via /visual-planner.
 ```
 
@@ -115,7 +117,7 @@ fix (implement directly or via /subagent-driven-development)
 
 | Skill | Trigger | Output |
 |---|---|---|
-| `/correctness-review` | After implementation — adversarial runtime-bug hunt over a diff. **Standalone** (any diff, no workflow gate) or called by `/subagent-driven-development` as its final pass | Findings scored (0–100, threshold 80) + classified (Severity + Rule class) → fixes or escalations |
+| `/correctness-review` | After implementation — adversarial runtime-bug search over a diff, run as **6 parallel angles**, each named for its method (`enclosing-function` · `removed-behavior` · `call-site-impact` · `stack-defects` · `guard-completeness` · `prior-art`). **Standalone** (any diff, no workflow gate) or called by `/subagent-driven-development` as its final pass | Candidates deduped by location → scored (0–100, threshold 80) → classified (Severity + Rule class) → fixes, escalations, or advisory |
 | `/intent-review` | After correctness-review — checks the diff against the original request verbatim, blind to PLAN (the third oracle). **Standalone** on any diff that has an intent statement, or called by `/subagent-driven-development` as its last pass | Findings classified `gap` / `excess` / `drift` → fix-loop · escalate · report-only |
 | `/review-diff` | After implementation — visualize what changed | Markdown review with C4 diagrams |
 | `/compound` | After session with non-obvious bug fix, pattern, or architectural decision | `docs/solutions/<category>/<slug>.md` |
@@ -172,7 +174,7 @@ that proves the run.
 
 ```
 /bootstrap-xia2             ──► (repo setup — terminal; user now invokes workflow)
-/feature-intake             ──► tiny: direct edit · normal: /subagent-driven-development
+/feature-intake             ──► tiny: git checkout -b → direct edit · normal: /subagent-driven-development
                                 high-risk: /brainstorming (full chain) · low confidence: escalate
 /brainstorming              ──► /xia2 → /writing-plans (the only valid next skills)
 /xia2                       ──► research brief → user/skill decides next step

@@ -143,6 +143,11 @@ transcribe HTML yourself.
 
 **Announce:** "Plan approved — PLAN.html auto-rendered by the render-plan hook."
 
+The same hook also injects an additive, sentinel-delimited "At a glance" block (count line, wave×task
+table, Mermaid flowchart, progress checklist) directly into the tracked `PLAN.md` — deterministic and
+script-owned, derived from the `<task>` blocks and `## Status Log` — so a human can read scope, order,
+and progress on GitHub with no tooling. See `rules/plan-format.md` → Auto-generated "At a glance" block.
+
 Dispatch ONE `general-purpose` sub-agent **only when the user explicitly asks for risk /
 blast-radius overlay** (the hook does plain render only). That sub-agent runs the 3-step `--review`
 dance documented in `visual-planner/SKILL.md` (`--emit-files` → gather `code-review-graph` data →

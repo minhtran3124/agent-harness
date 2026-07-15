@@ -10,7 +10,13 @@ AUDIT_TREND_LOG="$REPO_ROOT/docs/harness-experimental/audit-log.jsonl"
 
 # ── Wired Hooks ────────────────────────────────────────────────────────────────
 echo "=== Wired Hooks ==="
-python3 - "$SETTINGS" <<'PY'
+if [[ ! -f "$SETTINGS" ]]; then
+    echo "  [not found: $SETTINGS]"
+else
+    # Advisory: must never abort the report. Same boundary as Audit Trend below —
+    # open() runs before any in-heredoc try, so no per-exception guard can catch an
+    # absent, unreadable, or non-UTF-8 settings file.
+    python3 - "$SETTINGS" <<'PY' 2>/dev/null || echo "  [unreadable: $SETTINGS]"
 import json, sys
 with open(sys.argv[1]) as f:
     d = json.load(f)
@@ -18,17 +24,25 @@ for trigger, entries in d.get("hooks", {}).items():
     for entry in entries:
         matcher = entry.get("matcher", "*")
         for hook in entry.get("hooks", []):
-            cmd = hook["command"].replace("$CLAUDE_PROJECT_DIR/.claude/hooks/", "")
+            cmd = hook.get("command", "").replace("$CLAUDE_PROJECT_DIR/.claude/hooks/", "")
             print(f"  {trigger:<20} [{matcher:<16}]  {cmd}")
 PY
+fi
 
 # ── Skill Count ────────────────────────────────────────────────────────────────
 echo ""
 echo "=== Skills ==="
-skill_dirs=$(find "$SKILLS_DIR" -maxdepth 1 -mindepth 1 -type d ! -name '_archive' | sort)
-skill_count=$(echo "$skill_dirs" | grep -c .)
-echo "  Installed: $skill_count"
-echo "$skill_dirs" | while read -r d; do printf "    - %s\n" "$(basename "$d")"; done
+if [[ ! -d "$SKILLS_DIR" ]]; then
+    echo "  [not found: $SKILLS_DIR]"
+else
+    # `grep -c` exits 1 on zero matches — bound it, or an empty skills/ aborts the report.
+    skill_dirs=$(find "$SKILLS_DIR" -maxdepth 1 -mindepth 1 -type d ! -name '_archive' | sort)
+    skill_count=$(echo "$skill_dirs" | grep -c . || true)
+    echo "  Installed: $skill_count"
+    if [[ -n "$skill_dirs" ]]; then
+        echo "$skill_dirs" | while read -r d; do printf "    - %s\n" "$(basename "$d")"; done
+    fi
+fi
 
 # ── Last 5 Trust-Metrics Rows ──────────────────────────────────────────────────
 echo ""
@@ -37,7 +51,9 @@ if [[ ! -f "$TRUST_METRICS" ]]; then
     echo "  [not found: $TRUST_METRICS]"
 else
     # Extract data rows: lines whose first column looks like a date (YYYY-MM-DD)
-    rows=$(grep "^| [0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}" "$TRUST_METRICS")
+    # `|| true` is load-bearing: grep exits 1 on zero matches, which under `set -e` would
+    # abort the report before the `-z` branch below could ever run.
+    rows=$(grep "^| [0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}" "$TRUST_METRICS" || true)
     if [[ -z "$rows" ]]; then
         echo "  [no data rows found]"
     else
@@ -60,16 +76,23 @@ echo "=== Audit Trend (last 5 runs) ==="
 if [[ ! -f "$AUDIT_TREND_LOG" ]]; then
     echo "  [not found: $AUDIT_TREND_LOG]"
 else
-    python3 - "$AUDIT_TREND_LOG" <<'PY'
+    # Advisory: must never abort the report. The `|| echo` closes the failure class at the
+    # mechanism level — open() runs before any in-heredoc try, so no per-exception guard can
+    # catch an unreadable or non-UTF-8 log.
+    python3 - "$AUDIT_TREND_LOG" <<'PY' 2>/dev/null || echo "  [unreadable: $AUDIT_TREND_LOG]"
 import json, sys
 with open(sys.argv[1]) as f:
     lines = [l.strip() for l in f if l.strip()]
+rendered = 0
 for line in lines[-5:]:
     try:
         d = json.loads(line)
         print(f"  {d['date']}    findings={d['findings']}   band={d['band']}")
+        rendered += 1
     except (json.JSONDecodeError, KeyError, TypeError):
         continue
+if not rendered:
+    print("  [no data rows found]")
 PY
 fi
 

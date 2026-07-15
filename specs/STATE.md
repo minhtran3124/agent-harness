@@ -4,11 +4,11 @@ Source of truth for the currently-active spec. Updated by skills and by the `sta
 
 ## Active Spec
 
-- **Slug:** _(none)_
-- **Phase:** _(idle)_  <!-- design | research | plan | implement | review | shipped -->
-- **Last skill:** _(none)_
-- **Last action:** _(none)_
-- **Updated:** _(never)_
+- **Slug:** review-chain-benchmark
+- **Phase:** shipped  <!-- design | research | plan | implement | review | shipped -->
+- **Last skill:** _(none — manual fixture adjudication)_
+- **Last action:** review-chain fixtures v3 — fixed intent-gap store bug (#59) + resolved none-deref answer-key contradiction (#58); committed `5fb15c1`, both issues closed.
+- **Updated:** 2026-07-15
 
 ## Recent Specs
 
@@ -310,5 +310,145 @@ Source of truth for the currently-active spec. Updated by skills and by the `sta
 - session_id: 0215681c-2b04-4293-8040-a6fd812cafc0
 - exit: 
 - last_commit: 5033c4e chore(state): update session logs with new entries and last commits
+- user_turns: 0
+
+
+### 2026-07-13T04:20:10Z
+- session_id: a42ff726-922e-42dd-b9bb-e93eba0b48ac
+- exit: 
+- last_commit: d424183 Merge pull request #49 from minhtran3124/chore/bookkeeping-48
+- user_turns: 0
+
+
+### 2026-07-13T08:52:37Z
+- session_id: 4d94a817-911a-4863-ba31-a8e36de0276c
+- exit: 
+- last_commit: 46e3260 fix(blast-radius): only an ACTIVE plan arms the hook — drop the stale-plan fallback
+- user_turns: 0
+
+
+### 2026-07-13T08:52:37Z
+- session_id: 1649c77a-2a2b-4a8a-b5f5-ea27ccd9f065
+- exit: 
+- last_commit: 46e3260 fix(blast-radius): only an ACTIVE plan arms the hook — drop the stale-plan fallback
+- user_turns: 0
+
+
+### 2026-07-13T08:52:37Z
+- session_id: 47f77ba5-50ee-40d3-a240-4d8f7bfe99ec
+- exit: 
+- last_commit: 46e3260 fix(blast-radius): only an ACTIVE plan arms the hook — drop the stale-plan fallback
+- user_turns: 0
+
+
+### 2026-07-13T08:52:37Z
+- session_id: fec3e153-9e9e-408a-a598-8720f3937791
+- exit: 
+
+### 2026-07-13T08:52:37Z
+- session_id: 8a0761b6-cd01-42ff-89ae-9fcacbce8c86
+- exit: 
+- last_commit: 46e3260 fix(blast-radius): only an ACTIVE plan arms the hook — drop the stale-plan fallback
+- user_turns: 0
+
+- last_commit: 46e3260 fix(blast-radius): only an ACTIVE plan arms the hook — drop the stale-plan fallback
+- user_turns: 0
+
+
+### 2026-07-13T08:52:37Z
+- session_id: 31192efe-db37-4eeb-8ccf-524c6a98d9ea
+- exit: 
+- last_commit: 46e3260 fix(blast-radius): only an ACTIVE plan arms the hook — drop the stale-plan fallback
+- user_turns: 0
+
+
+### 2026-07-13T08:52:37Z
+- session_id: b1ed0146-0751-4498-9adf-b94bfd9e8a80
+- exit: 
+- last_commit: 46e3260 fix(blast-radius): only an ACTIVE plan arms the hook — drop the stale-plan fallback
+- user_turns: 0
+
+
+### 2026-07-13T08:52:37Z
+- session_id: 948b5e3c-9464-4a09-88b1-586e26a81592
+- exit: 
+- last_commit: 46e3260 fix(blast-radius): only an ACTIVE plan arms the hook — drop the stale-plan fallback
+- user_turns: 0
+
+
+### 2026-07-13T08:53:00Z
+- session_id: a5f50f28-c2ce-469a-a7f5-b1541565a332
+- exit: 
+- last_commit: 46e3260 fix(blast-radius): only an ACTIVE plan arms the hook — drop the stale-plan fallback
+- user_turns: 0
+
+
+### 2026-07-13T08:54:53Z
+- session_id: 48c09fe2-e229-4273-b4d8-93b3173f245f
+- exit: 
+- last_commit: a2139c7 docs(claude-md): use plain path refs instead of @-imports; record session breadcrumbs
+- user_turns: 0
+
+
+### 2026-07-13T09:21:29Z
+- session_id: d9e5b3e2-e3cf-4f1e-950c-f378f273c061
+- exit: 
+- last_commit: 7a30639 fix(summary): make the regression-lock Verify row machine-re-runnable
+- user_turns: 0
+
+
+### 2026-07-13T11:31:22Z
+- session_id: 7f2e13b9-7860-4e18-bd85-92226c259c79
+- exit: 
+- last_commit: 57cde1e Merge remote-tracking branch 'github/v2' into feat/correctness-review-altitude
+- user_turns: 0
+
+
+### 2026-07-14T02:17:47Z
+- session_id: bf3cf3e6-9a2a-4f5b-9be5-7aea138e4364
+- exit: 
+- last_commit: 839f040 bench(review-chain): run SCORE end-to-end — 0 false positives reach the fix-loop
+- user_turns: 0
+
+
+### 2026-07-15T05:04:46Z
+- session_id: ed6d21ff-b011-429d-bbd3-fcab786fc5f9
+- exit: 
+- last_commit: 8dfccc8 Merge remote-tracking branch 'github/v2' into feat/correctness-review-altitude
+- user_turns: 0
+
+
+### 2026-07-15T05:08:44Z
+- session_id: 64896fd6-1096-4248-82f8-de0b70a69af4
+- exit: 
+- last_commit: cebdcaf Merge pull request #62 from minhtran3124/chore/bookkeeping-51
+- user_turns: 0
+
+
+### 2026-07-15T05:11:55Z
+- session_id: dd49f675-5c8b-4005-a16e-618ff6982009
+- exit: 
+- last_commit: 2b3f73e chore: gitignore CLAUDE.local.md; session breadcrumb
+- user_turns: 0
+
+
+### 2026-07-15T06:20:25Z
+- session_id: 28b12f6b-3a36-4556-8b0a-fb922d905763
+- exit: 
+- last_commit: 2b3f73e chore: gitignore CLAUDE.local.md; session breadcrumb
+- user_turns: 0
+
+
+### 2026-07-15T06:36:35Z
+- session_id: 82bb1ab3-644b-4767-ab61-f826ffb51296
+- exit: 
+- last_commit: 3267c72 docs(specs): intake + design + plan for plan-at-a-glance (#54)
+- user_turns: 0
+
+
+### 2026-07-15T07:33:30Z
+- session_id: 7bb69cb3-0a86-437d-81b5-7a048ddfdf83
+- exit: 
+- last_commit: 3267c72 docs(specs): intake + design + plan for plan-at-a-glance (#54)
 - user_turns: 0
 

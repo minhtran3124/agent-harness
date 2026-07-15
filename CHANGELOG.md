@@ -11,6 +11,26 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 - fix(install-harness): a tty-less re-sync without `--yes` now prints the actionable "Re-run with `--yes`" message instead of dying on a raw `/dev/tty: Device not configured`; `--overwrite-conflicts` now implies `--yes` (it already named the destructive outcome), so `curl … | bash -s -- --overwrite-conflicts` works non-interactively. Covered by `tests/scripts/install-tty-gate.test.sh`
 - fix(deploy-harness): `rules/behavior.md` is now conflict-guarded like the other project-owned files — a customized copy is kept and the incoming version saved as `rules/behavior.md.harness-incoming`, instead of being overwritten silently
 
+## [0.13.0] — 2026-07-15
+
+- feat(visual-planner): self-summarizing PLAN.md — At-a-glance block (#54) (PR #63)
+
+## [0.12.0] — 2026-07-15
+
+- correctness-review: find by six parallel angles; fix four aborts in harness-status.sh (PR #51)
+
+## [0.11.0] — 2026-07-13
+
+- feat(branch-isolation): every lane cuts a branch before implementing — close the tiny-lane hole (PR #52)
+
+## [0.10.0] — 2026-07-13
+
+- fix(blast-radius): only an ACTIVE plan arms the hook — drop the stale-plan fallback (PR #53)
+
+## [0.9.0] — 2026-07-09
+
+- docs: clarify harness prompts (root docs + sub-agents + rules) (PR #48)
+
 ## [0.8.1] — 2026-07-08
 
 - feat(q3): product-contract map (Level A) — contract-level blast radius [MIN-64] (PR #46)
