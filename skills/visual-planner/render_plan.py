@@ -651,7 +651,7 @@ def inject_summary_block(plan_text, block):
 def summarize_plan_file(plan_path):
     """Read -> build block -> inject -> write only if changed. Returns True if written."""
     text = plan_path.read_text(encoding="utf-8").replace("\r\n", "\n")
-    fm, body = parse_frontmatter(text)
+    _, body = parse_frontmatter(text)
     tasks, _ = extract_tasks(body)
     attach_titles(tasks, body)
     done_ids = set()

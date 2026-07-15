@@ -478,6 +478,15 @@ class TestSummarizePlanFile:
         assert rp.summarize_plan_file(p) is False
         assert p.read_text(encoding="utf-8") == before
 
+    def test_no_status_log_all_unchecked(self, tmp_path):
+        # a plan without a '## Status Log' section -> empty done set, 0/N done
+        p = tmp_path / "PLAN.md"
+        p.write_text(_PLAN.replace("## Status Log\n\n- 2026-07-15 — 1.1 complete ✓\n", ""), encoding="utf-8")
+        assert rp.summarize_plan_file(p) is True
+        out = p.read_text(encoding="utf-8")
+        assert "1 tasks · 1 waves · 1 files · 0/1 done" in out
+        assert "- [ ] 1.1 — first" in out
+
 
 class TestHtmlStripsSummaryRegion:
     def test_render_ignores_generated_block(self, tmp_path):
