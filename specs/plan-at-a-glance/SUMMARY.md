@@ -106,14 +106,20 @@ High-risk lane is forced by a hard gate: the suggested first step edits `render_
 
 ### Verify
 
+The first two rows are **machine-verified** by the CI strict-gate (`verify_summary.py --check` re-runs the
+`Command` and matches its exit). They use only `python3` (stdlib) + `jq`, so they reproduce in a bare
+checkout — no local venv. The `—` rows are human-facing evidence (skipped by the checker) proven green by
+the CI `tests (ubuntu/macos)` jobs on this PR.
+
 | Check | Command | Exit | Notes |
 | --- | --- | --- | --- |
-| Unit (render + summary + inject + strip) | `"$TMPDIR/harness-tests-venv/bin/python" -m pytest skills/visual-planner/test_render_plan.py -q` | 0 | 79 passed (57 baseline + 22 new) |
-| Hook contract | `bash tests/hooks/render-plan-on-write.test.sh` | 0 | 5 passed (block injected on save + idempotent) |
-| CLI end-to-end | `python3.13 skills/visual-planner/render_plan.py <tmp>/PLAN.md --summarize` | 0 | block injected, PLAN.html strips it, 2nd run byte-identical |
-| Corruption fix (real plan copy) | `--summarize` on a copy of this `PLAN.md` | 0 | +162 bytes, 0 content deleted, sentinel-mention source preserved, correct anchor |
-| Correctness review | adversarial whole-diff pass | — | CRITICAL corruption found → fixed (`471f705`); LOW whitespace → closed (`5d6e725`); re-review CONFIRMED-FIXED |
-| Intent review | blind-to-plan vs issue #54 | — | ✅ no divergence; A+B fully delivered, no excess |
+| Hook + `--summarize` integration (end-to-end) | `bash tests/hooks/render-plan-on-write.test.sh` | 0 | 5 cases; runs `render_plan.py --summarize` via the real hook → block injected on save, idempotent on rerun |
+| Manifest + hook-table consistency | `python3 scripts/check_manifest.py` | 0 | hard-gate list + doc-truth contract intact after the hook edit |
+| Unit suite | — | — | `bash scripts/run-tests.sh` → 173 passed, 1 skipped; `test_render_plan.py` → 79 (57 baseline + 22 new). Green on the CI `tests` jobs. |
+| CLI end-to-end (manual) | — | — | `render_plan.py <tmp>/PLAN.md --summarize` → block injected, PLAN.html strips it, 2nd run byte-identical |
+| Corruption fix (real plan copy) | — | — | `--summarize` on a copy of this PLAN.md: +162 bytes, 0 content deleted, sentinel-mention source preserved, correct anchor |
+| Correctness review | — | — | adversarial whole-diff; CRITICAL corruption found → fixed (`471f705`); LOW whitespace closed (`5d6e725`); re-review CONFIRMED-FIXED |
+| Intent review | — | — | blind-to-plan vs issue #54 → no divergence, no scope creep |
 
 ### Rollback
 
