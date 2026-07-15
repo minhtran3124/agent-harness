@@ -4,11 +4,11 @@ Source of truth for the currently-active spec. Updated by skills and by the `sta
 
 ## Active Spec
 
-- **Slug:** _(none)_
-- **Phase:** _(idle)_  <!-- design | research | plan | implement | review | shipped -->
-- **Last skill:** _(none)_
-- **Last action:** _(none)_
-- **Updated:** _(never)_
+- **Slug:** review-chain-benchmark
+- **Phase:** shipped  <!-- design | research | plan | implement | review | shipped -->
+- **Last skill:** _(none — manual fixture adjudication)_
+- **Last action:** review-chain fixtures v3 — fixed intent-gap store bug (#59) + resolved none-deref answer-key contradiction (#58); committed `5fb15c1`, both issues closed.
+- **Updated:** 2026-07-15
 
 ## Recent Specs
 
@@ -401,5 +401,12 @@ Source of truth for the currently-active spec. Updated by skills and by the `sta
 - session_id: 7f2e13b9-7860-4e18-bd85-92226c259c79
 - exit: 
 - last_commit: 57cde1e Merge remote-tracking branch 'github/v2' into feat/correctness-review-altitude
+- user_turns: 0
+
+
+### 2026-07-14T02:17:47Z
+- session_id: bf3cf3e6-9a2a-4f5b-9be5-7aea138e4364
+- exit: 
+- last_commit: 839f040 bench(review-chain): run SCORE end-to-end — 0 false positives reach the fix-loop
 - user_turns: 0
 
