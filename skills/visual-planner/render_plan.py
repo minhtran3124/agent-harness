@@ -558,6 +558,75 @@ def build_stats(tasks, waves, status_entries):
     return f'<div class="stats-card">{"".join(blocks)}{progress}</div>'
 
 
+SUMMARY_BEGIN = "<!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->"
+SUMMARY_END = "<!-- AT-A-GLANCE:END -->"
+_SUMMARY_RE = re.compile(re.escape(SUMMARY_BEGIN) + r".*?" + re.escape(SUMMARY_END), re.DOTALL)
+_DONE_TRUNC = 80
+_FENCE = chr(96) * 3  # ``` without embedding a literal triple-backtick run in this source
+
+
+def _wave_sort_key(w):
+    return (0, int(w)) if w.isdigit() else (1, w)
+
+
+def _mermaid_node_id(task_id):
+    return "T" + re.sub(r"[^0-9A-Za-z]", "_", task_id)
+
+
+def render_summary_block(tasks, done_ids):
+    """Additive 'At a glance' block (both sentinels included). Pure + deterministic."""
+    if not tasks:
+        return f"{SUMMARY_BEGIN}\n## At a glance\n\n_No tasks defined yet._\n{SUMMARY_END}"
+    files = set()
+    for t in tasks:
+        for f in t["files"].split(","):
+            f = f.strip()
+            if f:
+                files.add(f)
+    waves = sorted({t["wave"] for t in tasks}, key=_wave_sort_key)
+    ordered = sorted(tasks, key=lambda t: (_wave_sort_key(t["wave"]), natural_key(t["id"])))
+
+    def title(t):
+        return t.get("title") or t["id"]
+
+    def cell(s):
+        return str(s).replace("|", "\\|")
+
+    def done_cell(t):
+        d = " ".join(t["done"].split())
+        return (d[:_DONE_TRUNC] + "…") if len(d) > _DONE_TRUNC else d
+
+    count_line = (
+        f"**{len(tasks)} tasks · {len(waves)} waves · "
+        f"{len(files)} files · {len(done_ids)}/{len(tasks)} done**"
+    )
+    rows = ["| Wave | Task | Title | Files | Done (acceptance) |", "|---|---|---|---|---|"]
+    for t in ordered:
+        rows.append(
+            f"| {cell(t['wave'])} | {cell(t['id'])} | {cell(title(t))} | "
+            f"{cell(t['files'])} | {cell(done_cell(t))} |"
+        )
+    table = "\n".join(rows)
+
+    mer = [f"{_FENCE}mermaid", "flowchart LR"]
+    for idx, w in enumerate(waves):
+        mer.append(f"  subgraph W{idx}[Wave {w}]")
+        for t in [x for x in ordered if x["wave"] == w]:
+            label = f"{t['id']} {title(t)}".replace('"', "'")
+            mer.append(f'    {_mermaid_node_id(t["id"])}["{label}"]')
+        mer.append("  end")
+    for idx in range(len(waves) - 1):
+        mer.append(f"  W{idx} --> W{idx + 1}")
+    mer.append(_FENCE)
+    mermaid = "\n".join(mer)
+
+    checks = [f"- [{'x' if t['id'] in done_ids else ' '}] {t['id']} — {title(t)}" for t in ordered]
+    progress = "### Progress\n" + "\n".join(checks)
+
+    inner = "\n\n".join(["## At a glance", count_line, table, mermaid, progress])
+    return f"{SUMMARY_BEGIN}\n{inner}\n{SUMMARY_END}"
+
+
 def build_wave_diagram(waves):
     if not waves:
         return ""

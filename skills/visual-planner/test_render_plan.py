@@ -341,5 +341,66 @@ class TestOutputPathByMode:
         assert not (tmp_path / "PLAN.html").exists()
 
 
+# --------------------------------------------------------------------------- #
+# render_summary_block — pure, deterministic "At a glance" block builder.
+# --------------------------------------------------------------------------- #
+def _task(id, wave, files, done, title=None):
+    t = {"id": id, "wave": wave, "files": files, "verify": "", "action": "", "done": done}
+    if title is not None:
+        t["title"] = title
+    return t
+
+
+class TestSummaryBlock:
+    def _tasks(self):
+        return [
+            _task("1.1", "1", "app/models/x.py, alembic/y.py", "Migration applies clean", "model+migration"),
+            _task("1.2", "1", "app/schemas/x.py", "Schemas validate", "schemas"),
+            _task("2.1", "2", "app/repos/x.py", "Repo tests pass", "repository"),
+        ]
+
+    def test_deterministic(self):
+        assert rp.render_summary_block(self._tasks(), {"1.1"}) == rp.render_summary_block(self._tasks(), {"1.1"})
+
+    def test_has_both_sentinels(self):
+        b = rp.render_summary_block(self._tasks(), set())
+        assert rp.SUMMARY_BEGIN in b and rp.SUMMARY_END in b
+        assert b.startswith(rp.SUMMARY_BEGIN) and b.rstrip().endswith(rp.SUMMARY_END)
+
+    def test_count_line(self):
+        b = rp.render_summary_block(self._tasks(), {"1.1"})
+        assert "**3 tasks · 2 waves · 4 files · 1/3 done**" in b
+
+    def test_checkboxes_from_done(self):
+        b = rp.render_summary_block(self._tasks(), {"1.1"})
+        assert "- [x] 1.1 — model+migration" in b
+        assert "- [ ] 2.1 — repository" in b
+
+    def test_mermaid_wave_subgraphs(self):
+        b = rp.render_summary_block(self._tasks(), set())
+        assert "flowchart LR" in b
+        assert "subgraph W0[Wave 1]" in b
+        assert "subgraph W1[Wave 2]" in b
+        assert "W0 --> W1" in b
+
+    def test_missing_title_falls_back_to_id(self):
+        b = rp.render_summary_block([_task("3.1", "1", "a.py", "done text")], set())
+        assert "- [ ] 3.1 — 3.1" in b
+
+    def test_all_dash_waves_count_one_wave(self):
+        t = [_task("1", "—", "a.py", "d"), _task("2", "—", "b.py", "d")]
+        assert "2 tasks · 1 waves · 2 files · 0/2 done" in rp.render_summary_block(t, set())
+
+    def test_done_truncated_to_80(self):
+        b = rp.render_summary_block([_task("1.1", "1", "a.py", "x" * 200)], set())
+        assert ("x" * 80 + "…") in b
+        assert ("x" * 81) not in b
+
+    def test_empty_tasks_minimal_block(self):
+        b = rp.render_summary_block([], set())
+        assert "No tasks defined yet" in b
+        assert rp.SUMMARY_BEGIN in b and rp.SUMMARY_END in b
+
+
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))
