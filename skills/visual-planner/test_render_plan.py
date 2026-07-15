@@ -449,6 +449,19 @@ class TestInjectSummaryBlock:
         out2 = rp.inject_summary_block(out, self.BLOCK)
         assert "keep body" in out2 and out2.count(rp.SUMMARY_BEGIN) == 1
 
+    def test_inline_sentinel_mention_is_not_a_block(self):
+        # a plan that DOCUMENTS the feature: the sentinel strings appear indented
+        # inside code/prose, never as standalone lines. inject must NOT treat the
+        # span between them as a generated block (that would delete real content);
+        # it must insert a fresh block before the first '## '.
+        begin_line = '    SUMMARY_BEGIN = "' + rp.SUMMARY_BEGIN + '"'
+        end_line = '    SUMMARY_END = "' + rp.SUMMARY_END + '"'
+        text = "# T\n\n" + begin_line + "\n" + end_line + "\n\n## 1. M\nreal body\n"
+        out = rp.inject_summary_block(text, self.BLOCK)
+        assert begin_line in out and end_line in out  # documented source survives verbatim
+        assert "real body" in out
+        assert out.index("BODY") < out.index("## 1. M")  # fresh block landed before the section
+
 
 _PLAN = (
     "---\nslug: demo\nstatus: active\nowner: X\ncreated: 2026-07-15\n---\n\n"
@@ -486,6 +499,31 @@ class TestSummarizePlanFile:
         out = p.read_text(encoding="utf-8")
         assert "1 tasks · 1 waves · 1 files · 0/1 done" in out
         assert "- [ ] 1.1 — first" in out
+
+    def test_does_not_corrupt_plan_documenting_sentinels(self, tmp_path):
+        # regression: a plan whose task action embeds the sentinel STRINGS (indented,
+        # not standalone lines) must not have that content swallowed; the real block
+        # is inserted before the first '## ' and the run is idempotent.
+        begin_line = '    SUMMARY_BEGIN = "' + rp.SUMMARY_BEGIN + '"'
+        end_line = '    SUMMARY_END = "' + rp.SUMMARY_END + '"'
+        plan = (
+            "---\nslug: meta\nstatus: active\n---\n\n"
+            "# Meta plan\n\n## 1. Motivation\nintro\n\n"
+            "## 4. Tasks\n\n### Task 1.1 — x\n\n```xml\n"
+            '<task id="1.1" wave="1">\n<files>a.py</files>\n<action>\n'
+            + begin_line + "\n" + end_line + "\n"
+            "</action>\n<verify>true</verify>\n<done>d</done>\n</task>\n```\n"
+        )
+        p = tmp_path / "PLAN.md"
+        p.write_text(plan, encoding="utf-8")
+        rp.summarize_plan_file(p)
+        out = p.read_text(encoding="utf-8")
+        assert begin_line in out and end_line in out  # documented source preserved
+        assert "<verify>true</verify>" in out and "<done>d</done>" in out
+        assert out.index(rp.SUMMARY_BEGIN + "\n") < out.index("## 1. Motivation")  # real block before section
+        before = out
+        assert rp.summarize_plan_file(p) is False  # idempotent, no content churn
+        assert p.read_text(encoding="utf-8") == before
 
 
 class TestHtmlStripsSummaryRegion:

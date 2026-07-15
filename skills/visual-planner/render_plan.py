@@ -560,7 +560,18 @@ def build_stats(tasks, waves, status_entries):
 
 SUMMARY_BEGIN = "<!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->"
 SUMMARY_END = "<!-- AT-A-GLANCE:END -->"
-_SUMMARY_RE = re.compile(re.escape(SUMMARY_BEGIN) + r".*?" + re.escape(SUMMARY_END), re.DOTALL)
+# Match ONLY a real generated block: each sentinel is a standalone line (BOL..EOL).
+# Anchoring to whole lines means a PLAN.md that MENTIONS the sentinel strings inside
+# prose or a fenced code block (e.g. a plan documenting this very feature) is never
+# mistaken for a generated block and never corrupted. MULTILINE + DOTALL.
+_SUMMARY_RE = re.compile(
+    r"^" + re.escape(SUMMARY_BEGIN) + r"$.*?^" + re.escape(SUMMARY_END) + r"$",
+    re.DOTALL | re.MULTILINE,
+)
+# Standalone (BOL..EOL) single sentinel lines — used to sweep an orphaned half of a
+# manually-mutated block before a fresh insert. Never matches an inline mention.
+_SUMMARY_BEGIN_LINE = re.compile(r"^" + re.escape(SUMMARY_BEGIN) + r"$\n?", re.MULTILINE)
+_SUMMARY_END_LINE = re.compile(r"^" + re.escape(SUMMARY_END) + r"$\n?", re.MULTILINE)
 _DONE_TRUNC = 80
 _FENCE = chr(96) * 3  # ``` without embedding a literal triple-backtick run in this source
 
@@ -628,18 +639,18 @@ def render_summary_block(tasks, done_ids):
 
 def inject_summary_block(plan_text, block):
     """Insert/replace the 'At a glance' block. Idempotent by sentinel.
-    Both sentinels present -> replace the region between them (inclusive).
+    A real generated block (each sentinel on its own line) -> replace it in place.
     Else insert `block` immediately before the first '## ' heading (keeping the
-    H1 and any directive blockquote above it); no '## ' -> append; empty -> block."""
-    has_begin = SUMMARY_BEGIN in plan_text
-    has_end = SUMMARY_END in plan_text
-    if has_begin and has_end:
+    H1 and any directive blockquote above it); no '## ' -> append; empty -> block.
+    Detection is line-anchored, so a PLAN.md that only MENTIONS the sentinel
+    strings in prose or fenced code is left untouched (never corrupted)."""
+    if _SUMMARY_RE.search(plan_text):
         return _SUMMARY_RE.sub(lambda _m: block, plan_text, count=1)  # lambda: avoid backref parsing
-    if has_begin != has_end:
-        # Orphan sentinel (a half-deleted generated region): strip it before a
-        # fresh insert, else a later inject's non-greedy _SUMMARY_RE would span
-        # from the orphan BEGIN into the new block's END and swallow real content.
-        plan_text = plan_text.replace(SUMMARY_BEGIN, "").replace(SUMMARY_END, "")
+    # No complete generated block. Sweep any ORPHAN standalone sentinel line (a
+    # half-deleted block) so a later inject can't span across it; inline mentions
+    # (indented / mid-line) are not standalone lines and are preserved.
+    plan_text = _SUMMARY_BEGIN_LINE.sub("", plan_text)
+    plan_text = _SUMMARY_END_LINE.sub("", plan_text)
     m = re.search(r"(?m)^##\s", plan_text)
     if m:
         return plan_text[: m.start()] + block + "\n\n" + plan_text[m.start() :]
