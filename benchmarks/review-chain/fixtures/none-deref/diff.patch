@@ -7,7 +7,7 @@ index 0000000..a1b2c3d
 +from fastapi import APIRouter, Depends
 +
 +from app.database import get_db
-+from app.dependencies import get_current_user
++from app.dependencies import get_current_user, require_admin
 +from app.repositories.user_repository import UserRepository
 +from app.schemas.user import UserEmailResponse
 +
@@ -17,7 +17,7 @@ index 0000000..a1b2c3d
 +@router.get(
 +    "/{user_id}/email",
 +    response_model=UserEmailResponse,
-+    dependencies=[Depends(get_current_user)],
++    dependencies=[Depends(get_current_user), Depends(require_admin)],
 +)
 +async def get_user_email(user_id: str, db=Depends(get_db)) -> UserEmailResponse:
 +    repo = UserRepository(db)
