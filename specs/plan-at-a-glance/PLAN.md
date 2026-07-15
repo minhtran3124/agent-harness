@@ -1,6 +1,6 @@
 ---
 slug: plan-at-a-glance
-status: proposed
+status: shipped
 owner: Minh Tran
 created: 2026-07-15
 ---
@@ -479,3 +479,12 @@ same-wave file-disjointness possible). Wave 4's two tasks touch disjoint files a
 ## 7. Status Log
 
 - 2026-07-15 — Plan drafted from design.md + research-brief.md (scope A+B, high-risk lane). status: proposed.
+- 2026-07-15 — Execution started on worktree `feat/plan-at-a-glance`; status: active.
+  - Wave 1 (render_summary_block) complete: `60df278`, `2144659` (quality: intersect done count).
+  - Wave 2 (inject_summary_block) complete: `72a22ea`, `ce276cf` (quality: DRY wave-sort, orphan-sentinel guard). ✓
+  - Wave 3 (summarize_plan_file + --summarize + HTML strip) complete: `0b959f6`, `e14aa30`. ✓
+  - Wave 4 (hook wiring ‖ docs) complete: `5449410`, `9ad3be8`. ✓
+  - Wave 5 gate: full render suite 76 passed; hook contract 5 passed. ✓
+  - Known limitation: this meta-plan parses to 0 tasks (its task actions embed literal `<task>` fixture
+    strings), so `--summarize` on THIS PLAN.md would emit a degenerate "No tasks defined yet" block.
+    Normal plans summarize correctly (verified by the hook contract test's clean fixture). Left un-self-injected.

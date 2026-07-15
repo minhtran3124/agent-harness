@@ -66,9 +66,29 @@ Start with **(A) + (B)** only, behind `render_plan.py`'s existing parser (it alr
 
 ## What changed
 
-<!-- pending — no implementation yet; intake only -->
+Escalation E001 resolved (human chose **A+B**; see `ESCALATIONS.md`). Implemented on branch
+`feat/plan-at-a-glance`. `skills/visual-planner/render_plan.py` gained an opt-in `--summarize` flag that
+injects a deterministic, additive "At a glance" block into the tracked `specs/<slug>/PLAN.md` — a count
+line, a wave×task Markdown table, a `flowchart LR` Mermaid diagram (one subgraph per wave, `Wn→Wn+1`
+edges), and a `### Progress` checklist whose done-state derives from the `## Status Log`. The block is
+delimited by line-anchored `AT-A-GLANCE:BEGIN/END` sentinels, inserted before the first `## ` heading
+(preserving the H1 + any `> For Claude` directive), regenerated idempotently (write-only-if-changed), and
+stripped from the HTML render to avoid duplication. The existing `render-plan-on-write.sh` PostToolUse
+hook now passes `--summarize`, so the block refreshes on every PLAN.md save. `rules/plan-format.md` and
+`skills/writing-plans/SKILL.md` document the block as additive/derived — the `<task>` blocks stay the
+source of truth. Directions C (Artifact publishing) and D (roadmap entry point) were deferred.
 
-Nothing yet. This SUMMARY records the intake classification only. Work is **blocked pending escalation** (see `specs/plan-at-a-glance/ESCALATIONS.md`).
+**Review-driven fixes (each its own commit):** count intersection so a stale done-id can't inflate the
+count (`2144659`); DRY consolidation of `_wave_sort_key` into the existing `wave_sort_key` + orphan-
+sentinel guard (`ce276cf`); a CRITICAL correctness fix — line-anchoring sentinel detection so a PLAN.md
+that merely *mentions* the sentinel strings in prose/code is never corrupted (`471f705`); and trailing-
+whitespace tolerance on sentinel lines (`5d6e725`).
+
+**Known limitations (report-only):** (1) this feature's own `PLAN.md` parses to 0 tasks (its task
+actions embed literal `<task>` fixture strings), so `--summarize` on it emits a degenerate "No tasks
+defined yet" block — left un-self-injected; normal plans summarize correctly. (2) `--summarize` normalizes
+CRLF→LF on write (LF-only repo — acceptable). (3) "est. steps" from the issue's count list is
+intentionally omitted (design §4.1 — no distinct step datum exists).
 
 ### Rationale
 
@@ -81,22 +101,32 @@ High-risk lane is forced by a hard gate: the suggested first step edits `render_
 
 ### Deviations
 
-- none
+- none — implementers reported no Rule 1–3 auto-fixes; all changes were either planned tasks or
+  review-driven fixes carrying their own commits (listed under "What changed").
 
 ### Verify
 
-<!-- No implementation run yet. Verify rows will be filled during execution. -->
+The first two rows are **machine-verified** by the CI strict-gate (`verify_summary.py --check` re-runs the
+`Command` and matches its exit). They use only `python3` (stdlib) + `jq`, so they reproduce in a bare
+checkout — no local venv. The `—` rows are human-facing evidence (skipped by the checker) proven green by
+the CI `tests (ubuntu/macos)` jobs on this PR.
 
 | Check | Command | Exit | Notes |
 | --- | --- | --- | --- |
-| (pending — intake only) | — | — | No code changed yet |
+| Hook + `--summarize` integration (end-to-end) | `bash tests/hooks/render-plan-on-write.test.sh` | 0 | 5 cases; runs `render_plan.py --summarize` via the real hook → block injected on save, idempotent on rerun |
+| Manifest + hook-table consistency | `python3 scripts/check_manifest.py` | 0 | hard-gate list + doc-truth contract intact after the hook edit |
+| Unit suite | — | — | `bash scripts/run-tests.sh` → 173 passed, 1 skipped; `test_render_plan.py` → 79 (57 baseline + 22 new). Green on the CI `tests` jobs. |
+| CLI end-to-end (manual) | — | — | `render_plan.py <tmp>/PLAN.md --summarize` → block injected, PLAN.html strips it, 2nd run byte-identical |
+| Corruption fix (real plan copy) | — | — | `--summarize` on a copy of this PLAN.md: +162 bytes, 0 content deleted, sentinel-mention source preserved, correct anchor |
+| Correctness review | — | — | adversarial whole-diff; CRITICAL corruption found → fixed (`471f705`); LOW whitespace closed (`5d6e725`); re-review CONFIRMED-FIXED |
+| Intent review | — | — | blind-to-plan vs issue #54 → no divergence, no scope creep |
 
 ### Rollback
 
-<!-- Required before any high-risk work is considered done. To be filled at implementation time. -->
-
-- Intake only — no change to roll back. `git revert <sha>` once implementation commits land.
+- Pure-additive feature. `git revert 60df278..5d6e725` (or revert the range) restores prior behavior;
+  the `--summarize` flag + hook arg removal reverts to HTML-only rendering. Generated blocks already in
+  any PLAN.md are inert Markdown and can be deleted by removing the `AT-A-GLANCE:BEGIN…END` region.
 
 ### Harness-Delta
 
-- none
+- none — the feature dogfoods the existing render-plan hook path; no workflow friction surfaced.
