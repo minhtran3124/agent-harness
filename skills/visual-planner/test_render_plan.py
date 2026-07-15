@@ -410,5 +410,34 @@ class TestSummaryBlock:
         assert rp.SUMMARY_BEGIN in b and rp.SUMMARY_END in b
 
 
+class TestInjectSummaryBlock:
+    BLOCK = rp.SUMMARY_BEGIN + "\nBODY\n" + rp.SUMMARY_END
+
+    def test_inserts_before_first_h2_preserving_directive(self):
+        text = "# Title\n\n> **For Claude:** directive\n\n## 1. Motivation\nfoo\n"
+        out = rp.inject_summary_block(text, self.BLOCK)
+        assert out.index("# Title") < out.index("> **For Claude:**") < out.index(rp.SUMMARY_BEGIN)
+        assert out.index(rp.SUMMARY_END) < out.index("## 1. Motivation")
+
+    def test_replaces_between_sentinels_idempotent(self):
+        text = "# T\n\n" + rp.SUMMARY_BEGIN + "\nOLD\n" + rp.SUMMARY_END + "\n\n## 1. M\nx\n"
+        out = rp.inject_summary_block(text, self.BLOCK)
+        assert "OLD" not in out
+        assert out.count(rp.SUMMARY_BEGIN) == 1
+        assert "BODY" in out and "x" in out and "## 1. M" in out
+        assert rp.inject_summary_block(out, self.BLOCK) == out  # re-inject is a no-op
+
+    def test_no_h2_appends(self):
+        text = "# Title\n\nsome prose only\n"
+        out = rp.inject_summary_block(text, self.BLOCK)
+        assert out.rstrip().endswith(rp.SUMMARY_END)
+        assert "some prose only" in out
+
+    def test_only_sentinel_region_touched(self):
+        text = "# T\n\n> keep me\n\n## 1. M\nkeep body\n"
+        out = rp.inject_summary_block(text, self.BLOCK)
+        assert "> keep me" in out and "keep body" in out
+
+
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))

@@ -630,6 +630,21 @@ def render_summary_block(tasks, done_ids):
     return f"{SUMMARY_BEGIN}\n{inner}\n{SUMMARY_END}"
 
 
+def inject_summary_block(plan_text, block):
+    """Insert/replace the 'At a glance' block. Idempotent by sentinel.
+    Both sentinels present -> replace the region between them (inclusive).
+    Else insert `block` immediately before the first '## ' heading (keeping the
+    H1 and any directive blockquote above it); no '## ' -> append; empty -> block."""
+    if SUMMARY_BEGIN in plan_text and SUMMARY_END in plan_text:
+        return _SUMMARY_RE.sub(lambda _m: block, plan_text, count=1)  # lambda: avoid backref parsing
+    m = re.search(r"(?m)^##\s", plan_text)
+    if m:
+        return plan_text[: m.start()] + block + "\n\n" + plan_text[m.start() :]
+    if plan_text.strip():
+        return plan_text.rstrip("\n") + "\n\n" + block + "\n"
+    return block + "\n"
+
+
 def build_wave_diagram(waves):
     if not waves:
         return ""
