@@ -119,3 +119,15 @@ created: YYYY-MM-DD
 ```
 
 The examples above show the full task shape; `specs/` is tracked in git, so plans are browsable across machines. (`PLAN.html` and `.plan-review.json` are gitignored as derived artifacts.)
+
+## Auto-generated "At a glance" block
+
+`render_plan.py --summarize` (invoked by the `render-plan-on-write.sh` hook on every `PLAN.md` save)
+injects an additive, script-owned "At a glance" block — a count line, a wave×task table, a
+`flowchart LR` Mermaid diagram, and a `### Progress` checklist — immediately before the first `## `
+heading, between `<!-- AT-A-GLANCE:BEGIN -->` / `<!-- AT-A-GLANCE:END -->` sentinels.
+
+It is derived entirely from the `<task>` blocks and the `## Status Log` (which stays the source of
+truth); the block regenerates idempotently on every save and must NOT be hand-edited. Authors and
+agents still read and write only the `<task id/wave/files/action/verify/done>` schema above — the
+At-a-glance block is a rendering convenience, not a planning input.
