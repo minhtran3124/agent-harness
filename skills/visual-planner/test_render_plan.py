@@ -450,5 +450,44 @@ class TestInjectSummaryBlock:
         assert "keep body" in out2 and out2.count(rp.SUMMARY_BEGIN) == 1
 
 
+_PLAN = (
+    "---\nslug: demo\nstatus: active\nowner: X\ncreated: 2026-07-15\n---\n\n"
+    "# Demo plan\n\n> **For Claude:** directive\n\n## 1. Motivation\nwhy\n\n"
+    "## 4. Tasks\n\n### Task 1.1 — first\n\n```xml\n"
+    "<task id=\"1.1\" wave=\"1\">\n<files>a.py</files>\n<action>do</action>\n"
+    "<verify>true</verify>\n<done>done</done>\n</task>\n```\n\n"
+    "## Status Log\n\n- 2026-07-15 — 1.1 complete ✓\n"
+)
+
+
+class TestSummarizePlanFile:
+    def test_injects_and_reports_written(self, tmp_path):
+        p = tmp_path / "PLAN.md"
+        p.write_text(_PLAN, encoding="utf-8")
+        assert rp.summarize_plan_file(p) is True
+        out = p.read_text(encoding="utf-8")
+        assert rp.SUMMARY_BEGIN in out
+        assert "- [x] 1.1 — first" in out
+        assert out.index("> **For Claude:**") < out.index(rp.SUMMARY_BEGIN) < out.index("## 1. Motivation")
+
+    def test_second_run_is_noop(self, tmp_path):
+        p = tmp_path / "PLAN.md"
+        p.write_text(_PLAN, encoding="utf-8")
+        rp.summarize_plan_file(p)
+        before = p.read_text(encoding="utf-8")
+        assert rp.summarize_plan_file(p) is False
+        assert p.read_text(encoding="utf-8") == before
+
+
+class TestHtmlStripsSummaryRegion:
+    def test_render_ignores_generated_block(self, tmp_path):
+        p = tmp_path / "PLAN.md"
+        p.write_text(_PLAN, encoding="utf-8")
+        rp.summarize_plan_file(p)
+        html, warnings, meta = rp.render(p, None)
+        assert "AT-A-GLANCE" not in html
+        assert meta["n_tasks"] == 1
+
+
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))

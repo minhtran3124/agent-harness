@@ -648,6 +648,26 @@ def inject_summary_block(plan_text, block):
     return block + "\n"
 
 
+def summarize_plan_file(plan_path):
+    """Read -> build block -> inject -> write only if changed. Returns True if written."""
+    text = plan_path.read_text(encoding="utf-8").replace("\r\n", "\n")
+    fm, body = parse_frontmatter(text)
+    tasks, _ = extract_tasks(body)
+    attach_titles(tasks, body)
+    done_ids = set()
+    for disp, _tok, content in split_sections(body)[1]:
+        if disp.lower() == "status log":
+            entries = parse_status_entries(content)
+            done_ids = _done_task_ids(entries, [t["id"] for t in tasks])
+            break
+    block = render_summary_block(tasks, done_ids)
+    new_text = inject_summary_block(text, block)
+    if new_text != text:
+        plan_path.write_text(new_text, encoding="utf-8")
+        return True
+    return False
+
+
 def build_wave_diagram(waves):
     if not waves:
         return ""
@@ -1301,6 +1321,7 @@ def attach_titles(tasks, body):
 def render(plan_path: Path, review: dict | None = None) -> tuple[str, list[str], dict]:
     text = plan_path.read_text(encoding="utf-8").replace("\r\n", "\n")
     fm, body = parse_frontmatter(text)
+    body = _SUMMARY_RE.sub("", body)  # drop the generated 'At a glance' block; HTML has its own view
     warnings: list[str] = []
 
     tasks, spans = extract_tasks(body)
@@ -1382,7 +1403,7 @@ def self_check(html_text: str, meta: dict):
 
 USAGE = (
     "Usage: render_plan.py <PLAN.md|slug> [output.html] "
-    "[--emit-files] [--review sidecar.json]"
+    "[--emit-files] [--review sidecar.json] [--summarize]"
 )
 
 
@@ -1390,6 +1411,7 @@ def main(argv):
     args = argv[1:]
     emit_files = False
     review_path = None
+    summarize = False
     positionals = []
     i = 0
     while i < len(args):
@@ -1401,6 +1423,8 @@ def main(argv):
             if i >= len(args):
                 raise SystemExit("--review requires a path to the sidecar JSON")
             review_path = args[i]
+        elif a == "--summarize":
+            summarize = True
         elif a.startswith("--"):
             raise SystemExit(f"Unknown flag: {a}\n{USAGE}")
         else:
@@ -1411,6 +1435,9 @@ def main(argv):
         raise SystemExit(USAGE)
 
     plan_path = resolve_input(positionals[0])
+
+    if summarize:
+        summarize_plan_file(plan_path)
 
     if emit_files:
         print(emit_files_json(plan_path))
