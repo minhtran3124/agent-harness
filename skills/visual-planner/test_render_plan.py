@@ -449,6 +449,18 @@ class TestInjectSummaryBlock:
         out2 = rp.inject_summary_block(out, self.BLOCK)
         assert "keep body" in out2 and out2.count(rp.SUMMARY_BEGIN) == 1
 
+    def test_trailing_whitespace_on_sentinel_still_detected(self):
+        # an editor/merge left trailing spaces on the generated sentinel lines;
+        # detection must still REPLACE the block (refresh), not append a duplicate.
+        text = (
+            "# T\n\n"
+            + rp.SUMMARY_BEGIN + "   \nOLD\n" + rp.SUMMARY_END + "\t\n"
+            + "\n## 1. M\nx\n"
+        )
+        out = rp.inject_summary_block(text, self.BLOCK)
+        assert "OLD" not in out  # region replaced, not duplicated
+        assert out.count(rp.SUMMARY_BEGIN) == 1 and "x" in out
+
     def test_inline_sentinel_mention_is_not_a_block(self):
         # a plan that DOCUMENTS the feature: the sentinel strings appear indented
         # inside code/prose, never as standalone lines. inject must NOT treat the

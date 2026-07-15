@@ -564,14 +564,16 @@ SUMMARY_END = "<!-- AT-A-GLANCE:END -->"
 # Anchoring to whole lines means a PLAN.md that MENTIONS the sentinel strings inside
 # prose or a fenced code block (e.g. a plan documenting this very feature) is never
 # mistaken for a generated block and never corrupted. MULTILINE + DOTALL.
+# `[ \t]*$` tolerates trailing whitespace an editor/merge may leave on the line, so
+# an externally-mutated block is still detected & refreshed rather than duplicated.
 _SUMMARY_RE = re.compile(
-    r"^" + re.escape(SUMMARY_BEGIN) + r"$.*?^" + re.escape(SUMMARY_END) + r"$",
+    r"^" + re.escape(SUMMARY_BEGIN) + r"[ \t]*$.*?^" + re.escape(SUMMARY_END) + r"[ \t]*$",
     re.DOTALL | re.MULTILINE,
 )
 # Standalone (BOL..EOL) single sentinel lines — used to sweep an orphaned half of a
 # manually-mutated block before a fresh insert. Never matches an inline mention.
-_SUMMARY_BEGIN_LINE = re.compile(r"^" + re.escape(SUMMARY_BEGIN) + r"$\n?", re.MULTILINE)
-_SUMMARY_END_LINE = re.compile(r"^" + re.escape(SUMMARY_END) + r"$\n?", re.MULTILINE)
+_SUMMARY_BEGIN_LINE = re.compile(r"^" + re.escape(SUMMARY_BEGIN) + r"[ \t]*$\n?", re.MULTILINE)
+_SUMMARY_END_LINE = re.compile(r"^" + re.escape(SUMMARY_END) + r"[ \t]*$\n?", re.MULTILINE)
 _DONE_TRUNC = 80
 _FENCE = chr(96) * 3  # ``` without embedding a literal triple-backtick run in this source
 
