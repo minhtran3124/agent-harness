@@ -8,6 +8,8 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 ## [Unreleased]
 
 - feat(q3): product-contract map (Level A) — `contracts` block in `harness-manifest.json`, `scripts/check-contract-impact.sh` advisory mapper, `check_manifest.py` path validation, and a contract-impact reminder section in `harness-audit.sh` (MIN-64)
+- fix(install-harness): a tty-less re-sync without `--yes` now prints the actionable "Re-run with `--yes`" message instead of dying on a raw `/dev/tty: Device not configured`; `--overwrite-conflicts` now implies `--yes` (it already named the destructive outcome), so `curl … | bash -s -- --overwrite-conflicts` works non-interactively. Covered by `tests/scripts/install-tty-gate.test.sh`
+- fix(deploy-harness): `rules/behavior.md` is now conflict-guarded like the other project-owned files — a customized copy is kept and the incoming version saved as `rules/behavior.md.harness-incoming`, instead of being overwritten silently
 
 ## [0.13.0] — 2026-07-15
 
