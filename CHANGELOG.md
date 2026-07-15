@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 - feat(q3): product-contract map (Level A) — `contracts` block in `harness-manifest.json`, `scripts/check-contract-impact.sh` advisory mapper, `check_manifest.py` path validation, and a contract-impact reminder section in `harness-audit.sh` (MIN-64)
 
+## [0.12.0] — 2026-07-15
+
+- correctness-review: find by six parallel angles; fix four aborts in harness-status.sh (PR #51)
+
 ## [0.11.0] — 2026-07-13
 
 - feat(branch-isolation): every lane cuts a branch before implementing — close the tiny-lane hole (PR #52)
