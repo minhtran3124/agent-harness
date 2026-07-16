@@ -1,6 +1,6 @@
 ---
 slug: writing-plans-format-fix
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-07-16
 ---
