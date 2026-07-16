@@ -111,52 +111,6 @@ uvx code-review-graph serve                        # exactly what .mcp.json invo
 
 The graph data is written to `.code-review-graph/` (gitignored). The `context7` MCP server is configured at the Claude Code **user** level (HTTP, needs `CONTEXT7_API_KEY`) — it is *not* in this repo's `.mcp.json`, so each user wires it in their own global config.
 
-## Repository layout
-
-| Path | What it holds |
-|---|---|
-| `skills/` | The skill library — one subdir per skill, each with a `SKILL.md`. |
-| `agents/` | Sub-agent role definitions dispatched by skills. |
-| `rules/` | Architecture & process governance read by skills/agents. |
-| `hooks/` | Bash automation wired into Claude Code lifecycle events. |
-| `agent-memory/` | Per-agent persistent memory with confidence decay. |
-| `specs/` | Per-feature work artifacts — one `<slug>/` dir per change (SUMMARY, design, PLAN, …). |
-| `templates/` | Canonical shapes copied into `specs/<slug>/` — `SUMMARY`, `TEST_MATRIX`, `ESCALATIONS`. |
-| `docs/` · `scripts/` | Reference docs and standalone helpers. |
-| `CLAUDE.md` · `settings.json` · `.mcp.json` | Project instructions; hooks + env + plugins; MCP server config (`mcpServers` only). |
-
-## The skill workflow
-
-Each step hands off to the next; `/feature-intake` runs first and decides how many steps apply.
-
-```
-/feature-intake                  classify risk lane + confidence, route (run first)
-        |
-/brainstorming                   explore intent & design  (high-risk lane)
-        |
-/xia2                            research what already exists
-        |
-/writing-plans                   turn design into tasks
-        |
-/visual-planner   (auto)         render plan to HTML for review
-        |
-/using-git-worktrees             isolated branch + worktree
-        |
-/subagent-driven-development     build it  (or /executing-plans)
-        |
-/correctness-review              adversarial runtime-bug hunt over the diff
-        |
-/intent-review                   diff vs the original request, blind to PLAN
-        |
-/compound                        capture non-obvious learnings
-        |
-/finishing-a-development-branch  push + open a PR (a human reviews & merges)
-```
-
-`/correctness-review` and `/intent-review` also run standalone on any diff. See
-[skills/README.md](skills/README.md) for the alternate paths (minimum-viable, bug-fix) and the
-full handoff map.
-
 ## Further reading
 
 > **[skills/README.md](skills/README.md)** is the single source of truth — full skill
