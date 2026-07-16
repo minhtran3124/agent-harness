@@ -1,11 +1,49 @@
 ---
 slug: correctness-review-angles
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-07-13
 ---
 
 # Rewrite the correctness finder as parallel angles; delete FIND-B
+
+<!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
+## At a glance
+
+**5 tasks · 3 waves · 7 files · 1/5 done**
+
+| Wave | Task | Title | Files | Done (acceptance) |
+|---|---|---|---|---|
+| 1 | 1.1 | Rewrite the finder as six parallel angles | skills/correctness-review/correctness-reviewer-prompt.md | Six angles specified with explicit dispatch, per-angle candidate cap, and a mand… |
+| 1 | 1.2 | Scorer: dedup by location, and route unmodified-line findings to advisory | skills/correctness-review/correctness-scorer-prompt.md | Scorer dedups by location, states the 0-rule, and states the advisory consequenc… |
+| 2 | 2.1 | SKILL.md: new pipeline, FIND-B deleted | skills/correctness-review/SKILL.md, skills/correctness-review/find-b-prompt.md | find-b-prompt.md gone; no FIND-B reference remains in SKILL.md; doc-truth lint r… |
+| 2 | 2.2 | Downstream docs: drop FIND-B | skills/subagent-driven-development/SKILL.md, skills/README.md | No FIND-B reference anywhere in the repo (grep -ri "find-b" returns only benchma… |
+| 3 | 3.1 | Benchmark the new chain (the proof gate) | benchmarks/review-chain/results/2026-07-13-angles.md | Results file records all 5 fixtures with verdicts, catch rate, FP count, token c… |
+
+```mermaid
+flowchart LR
+  subgraph W0[Wave 1]
+    T1_1["1.1 Rewrite the finder as six parallel angles"]
+    T1_2["1.2 Scorer: dedup by location, and route unmodified-line findings to advisory"]
+  end
+  subgraph W1[Wave 2]
+    T2_1["2.1 SKILL.md: new pipeline, FIND-B deleted"]
+    T2_2["2.2 Downstream docs: drop FIND-B"]
+  end
+  subgraph W2[Wave 3]
+    T3_1["3.1 Benchmark the new chain (the proof gate)"]
+  end
+  W0 --> W1
+  W1 --> W2
+```
+
+### Progress
+- [ ] 1.1 — Rewrite the finder as six parallel angles
+- [ ] 1.2 — Scorer: dedup by location, and route unmodified-line findings to advisory
+- [ ] 2.1 — SKILL.md: new pipeline, FIND-B deleted
+- [ ] 2.2 — Downstream docs: drop FIND-B
+- [x] 3.1 — Benchmark the new chain (the proof gate)
+<!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
 
