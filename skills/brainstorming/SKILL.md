@@ -1,21 +1,21 @@
 ---
 name: brainstorming
-description: "You MUST use this before any creative work - creating features, building components, adding functionality, or modifying behavior. Explores user intent, requirements and design before implementation."
+description: "Use when feature-intake routes here (high-risk lane, a real design fork, or ambiguous direction) - explores user intent, requirements and design before implementation. Lane routing decides WHETHER to brainstorm; this skill governs HOW."
 ---
 
 # Brainstorming Ideas Into Designs
 
 Help turn ideas into fully formed designs and specs through natural collaborative dialogue.
 
+**When this skill applies:** `/feature-intake` is the routing authority — it sends work here on the high-risk lane, on a real design fork (≥2 viable approaches), or when direction is ambiguous. Tiny- and normal-lane work with clear intent skips brainstorming by design (see `skills/README.md` and `rules/orchestration.md` → Artifact policy); do not pull it back in because the change "feels creative". If you land here without an intake lane, run `/feature-intake` first.
+
 Start by understanding the current project context, then ask questions one at a time to refine the idea. Once you understand what you're building, present the design and get user approval.
 
 <HARD-GATE>
-Do NOT invoke any implementation skill, write any code, scaffold any project, or take any implementation action until you have presented a design and the user has approved it. This applies to EVERY project regardless of perceived simplicity.
+Once routed here: do NOT invoke any implementation skill, write any code, scaffold any project, or take any implementation action until you have presented a design and the user has approved it. Simplicity discovered mid-brainstorm does not lift the gate — if the work turns out smaller than intake judged, say so and let the user re-route; never silently skip to implementation.
 </HARD-GATE>
 
-## Anti-Pattern: "This Is Too Simple To Need A Design"
-
-Every project goes through this process. A todo list, a single-function utility, a config change — all of them. "Simple" projects are where unexamined assumptions cause the most wasted work. The design can be short (a few sentences for truly simple projects), but you MUST present it and get approval.
+The design can be short — a few sentences for genuinely small scopes — but once this skill is active it MUST be presented and approved before implementation.
 
 ## Checklist
 
