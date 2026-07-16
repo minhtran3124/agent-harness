@@ -6,6 +6,8 @@
 
 *Prompt-powered workflows that carry a change from brainstorm to ship.*
 
+📖 **[Read the Guide →](https://skill-harness-guide.vercel.app)**
+
 </div>
 
 ---
@@ -119,6 +121,9 @@ The graph data is written to `.code-review-graph/` (gitignored). The `context7` 
 > **[HARNESS.md](HARNESS.md)** — how the risk/trust harness shapes the workflow: lanes,
 > when a human is asked, and how hooks enforce it. Read this to understand *why* the flow behaves
 > the way it does.
+>
+> **[Guide site](https://skill-harness-guide.vercel.app)** — the companion walkthrough at
+> `skill-harness-guide.vercel.app`.
 
 ## Author
 
