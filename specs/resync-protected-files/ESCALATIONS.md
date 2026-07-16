@@ -21,8 +21,8 @@ Default: **deny-on-no-response**. No recorded decision → work stays blocked.
   - A) Accept the patch bump (0.8.1 → 0.8.2) for this PR as-is; file a follow-up issue/PR to widen `scripts/bookkeeping.sh`'s minor-match regex (own lane, own tests/scripts/bookkeeping.test.sh update, own CHANGELOG/VERSION semantics review) so future deploy/install-engine contract changes are correctly classified as minor.
   - B) Widen the regex now (e.g. add `scripts/deploy-harness.sh` or `scripts/install-harness.sh`, or a broader `scripts/` prefix) so this merge bumps to 0.9.0 (minor) instead. Requires: editing `scripts/bookkeeping.sh` line 76, updating `tests/scripts/bookkeeping.test.sh` to cover the new prefix, and its own risk lane/review — this is a versioning-contract change, not a docs or resync-guard change, so it does not belong inside this PR's diff without a separate decision.
 - default_if_no_response: BLOCK (take option A by default — do not widen the regex, do not touch `bookkeeping.sh`/`VERSION`/`CHANGELOG.md` in this PR)
-- decision: pending
-- decided_by: <name once decided>
-- decided_at: <YYYY-MM-DD>
+- decision: A — accept the patch bump for that PR (long since shipped as such); widening `scripts/bookkeeping.sh`'s minor-match regex to cover the deploy/install engine is a separate follow-up with its own tests and lane, tracked under issue #67 follow-ups.
+- decided_by: Minh Tran (recorded by agent per explicit instruction, 2026-07-16 session)
+- decided_at: 2026-07-16
 
 <!-- copy the E0xx block for each new escalation -->
