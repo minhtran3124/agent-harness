@@ -67,12 +67,17 @@ category_mode() {
 STAGED_PATHS=$(git diff --cached --name-only 2>/dev/null || true)
 [ -z "$STAGED_PATHS" ] && exit 0
 
-# Added CODE lines only — exclude prose and the hooks dir (scanners self-trip)
+# Added CODE lines only — exclude prose and the hooks dir (scanners self-trip).
+# Full-line comments (`# …`) are stripped before scanning: natural-language words
+# like "session" or "permission" in a comment are not auth surface (documented FP:
+# docs/solutions/harness/risk-corroboration-scans-test-comments-for-auth-words.md).
+# Deliberately NOT excluding tests/ wholesale — a test that adds real auth code
+# must stay visible to the gate; only prose comments are blind-spotted.
 CODE_ADDED=$(git diff --cached -U0 -- . ':!*.md' ':!docs/' ':!specs/' ':!skills/' ':!hooks/' ':!.claude/' 2>/dev/null \
-  | grep -E '^\+[^+]' || true)
-# Removed lines (for weakening-validation), same exclusions
+  | grep -E '^\+[^+]' | grep -vE '^\+[[:space:]]*#' || true)
+# Removed lines (for weakening-validation), same exclusions + comment strip
 CODE_REMOVED=$(git diff --cached -U0 -- . ':!*.md' ':!docs/' ':!specs/' ':!skills/' ':!hooks/' ':!.claude/' 2>/dev/null \
-  | grep -E '^-[^-]' || true)
+  | grep -E '^-[^-]' | grep -vE '^-[[:space:]]*#' || true)
 
 TRIPPED=""
 add_cat() { TRIPPED="$TRIPPED $1"; }
