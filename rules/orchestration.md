@@ -96,7 +96,7 @@ human may interrupt but is not a gate. Per-task agent reviews stay always-on reg
 Re-check continuously while executing each wave; any of these escalates mid-flight:
 
 - **Repeated `<verify>` failure** — the same check fails ≥2 times after a fix attempt.
-- **Blast radius beyond plan** — a subagent touched files outside its `<task><files>` set
+- **Blast radius beyond plan** — a subagent touched files outside its task's declared Files set
   (corroborated by `hooks/blast-radius-check.sh`).
 - **Hard gate discovered mid-implementation** — not seen at intake; re-run the corroboration
   check on the wave diff.
