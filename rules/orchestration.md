@@ -89,7 +89,7 @@ Otherwise **PROCEED autonomously** in the lane. For high-confidence **normal**-l
 the `PLAN.md` and a short notice (**notify-and-proceed**) instead of blocking on approval — the
 human may interrupt but is not a gate. Per-task agent reviews stay always-on regardless of lane.
 
-`ESCALATIONS.md` is **deny-on-no-response**: with no recorded decision the work stays blocked.
+`ESCALATIONS.md` is **deny-on-no-response**: with no recorded decision the work stays blocked. Mechanized by `hooks/commit-quality-gate.sh` (Check 1.5): a commit touching `specs/<slug>/` is denied while that slug's `ESCALATIONS.md` has `decision: pending`; recording the decision in the same commit unblocks.
 
 ## In-flight escalation checks (during waves)
 
