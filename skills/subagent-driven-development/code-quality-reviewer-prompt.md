@@ -6,6 +6,8 @@ Use this template when dispatching a code quality reviewer subagent.
 
 **Only dispatch after spec compliance review passes.**
 
+Preferred (if the external `superpowers` plugin is installed):
+
 ```
 Task tool (superpowers:code-reviewer):
   Use template at requesting-code-review/code-reviewer.md
@@ -16,6 +18,11 @@ Task tool (superpowers:code-reviewer):
   HEAD_SHA: [current commit]
   DESCRIPTION: [task summary]
 ```
+
+**Fallback (this repo — `superpowers:code-reviewer` is not present):** dispatch the in-repo
+`reviewer` agent type (`agents/reviewer.md`, structurally read-only) over the task diff
+(`git diff BASE_SHA...HEAD_SHA`) with the same inputs and the quality checks below. Do NOT skip
+the quality pass because the external template is unavailable — use the local `reviewer` agent.
 
 **In addition to standard code quality concerns, the reviewer should check:**
 - Does each file have one clear responsibility with a well-defined interface?

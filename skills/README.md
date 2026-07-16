@@ -18,7 +18,8 @@ This file is the single source of truth for overview, workflow, and cross-skill 
 /feature-intake  (routing entry point — run first on every change request)
   → classifies input type + 10-flag risk checklist + hard gates
   → output: lane (tiny|normal|high-risk) + confidence → specs/<slug>/SUMMARY.md
-  → routes: tiny → direct edit · normal → subagent-driven · high-risk → full chain below
+  → routes: tiny → branch + direct edit · normal → subagent-driven · high-risk → full chain below
+  → EVERY lane cuts a branch first (enforced by hooks/branch-isolation-guard.sh)
       ↓
 /brainstorming
   → reads: CLAUDE.md, docs/solutions/ (decision track only), recent commits
@@ -42,12 +43,13 @@ This file is the single source of truth for overview, workflow, and cross-skill 
   → implements plan task-by-task
   → two-stage review per task (spec compliance → code quality)
   → final adversarial correctness review (/correctness-review) over the whole diff before shipping
+  → final intent review (/intent-review) — diff vs the original request, blind to PLAN
       ↓
 /compound  (if non-obvious pattern found)
   → output: docs/solutions/<category>/<slug>.md
       ↓
 /finishing-a-development-branch
-  → PR description, review checklist, merge
+  → runs tests, pushes, opens a PR (never merges — a human reviews & merges)
 ```
 
 ### Minimum Viable Path (intent clear, in-place edit, <1 day)
@@ -55,9 +57,10 @@ This file is the single source of truth for overview, workflow, and cross-skill 
 ```
 /feature-intake → /xia2 → /writing-plans → implement → /compound (if pattern found)
 
-/feature-intake confirms the lane; a tiny lane drops straight to a direct edit.
+/feature-intake confirms the lane; a tiny lane branches (`git checkout -b`) then edits directly.
 Skip /brainstorming when intent is clear.
-Skip /using-git-worktrees for in-place edits.
+Skip /using-git-worktrees for in-place edits — but NOT the branch: a plain
+`git checkout -b <type>/<slug>` is still required. No lane implements on a shared branch.
 /writing-plans still auto-renders PLAN.html via /visual-planner.
 ```
 
@@ -114,7 +117,8 @@ fix (implement directly or via /subagent-driven-development)
 
 | Skill | Trigger | Output |
 |---|---|---|
-| `/correctness-review` | After implementation — adversarial runtime-bug hunt over a diff. **Standalone** (any diff, no workflow gate) or called by `/subagent-driven-development` as its final pass | Findings scored (0–100, threshold 80) + classified (Severity + Rule class) → fixes or escalations |
+| `/correctness-review` | After implementation — adversarial runtime-bug search over a diff, run as **6 parallel angles**, each named for its method (`enclosing-function` · `removed-behavior` · `call-site-impact` · `stack-defects` · `guard-completeness` · `prior-art`). **Standalone** (any diff, no workflow gate) or called by `/subagent-driven-development` as its final pass | Candidates deduped by location → scored (0–100, threshold 80) → classified (Severity + Rule class) → fixes, escalations, or advisory |
+| `/intent-review` | After correctness-review — checks the diff against the original request verbatim, blind to PLAN (the third oracle). **Standalone** on any diff that has an intent statement, or called by `/subagent-driven-development` as its last pass | Findings classified `gap` / `excess` / `drift` → fix-loop · escalate · report-only |
 | `/review-diff` | After implementation — visualize what changed | Markdown review with C4 diagrams |
 | `/compound` | After session with non-obvious bug fix, pattern, or architectural decision | `docs/solutions/<category>/<slug>.md` |
 | `/create-pr` | When only a PR description is needed | `PR_TEMPLATE.md` |
@@ -138,11 +142,39 @@ If one of these isn't available in your environment, the workflows degrade grace
 
 ---
 
+## Integration Evidence Tiers
+
+Every integration this repo *claims* to use — external skills, MCP servers, and the cross-skill
+handoff edges — carries an honest evidence tier. The tiers:
+
+- **ci-proven** — a CI job in this repo actually runs the integration.
+- **manually-verified (date)** — a recorded run exists in this repo (commit / results file).
+- **documented-only** — referenced in docs/workflows but never observed running here.
+
+| Integration | Kind | Tier | Evidence |
+|---|---|---|---|
+| `/systematic-debugging` | external skill | documented-only | referenced in Bug Fix Path; no recorded run in this repo |
+| `/test-driven-development` | external skill | documented-only | named as implementer protocol; no recorded run here |
+| `/requesting-code-review` | external skill | documented-only | referenced template; no recorded run here |
+| `/session-tracker` | external skill | documented-only | referenced for resumption; no recorded run here |
+| `/skill-creator` | external skill | documented-only | referenced for authoring; no recorded run here |
+| `code-review-graph` | MCP server (`.mcp.json`) | documented-only | mandated by CLAUDE.md; no recorded review run pinned in-repo |
+| `context7` | MCP server (user-level) | documented-only | user-level docs lookup; no recorded run pinned in-repo |
+| `/subagent-driven-development` → `/correctness-review` → `/intent-review` | handoff edge | manually-verified (2026-06-12) | intent-review dogfood on its own diff — commit `a2a4349` |
+
+**Graduation rule** (from the research report): an edge only moves **up** a tier when a
+recorded run exists *in this repo* — support claims are never inherited from upstream or from
+another project (`not_observed != absent`). Most external-skill rows start at documented-only
+and that is the honest state; promote a row only when you can cite the commit or results file
+that proves the run.
+
+---
+
 ## Skill Handoff Map
 
 ```
 /bootstrap-xia2             ──► (repo setup — terminal; user now invokes workflow)
-/feature-intake             ──► tiny: direct edit · normal: /subagent-driven-development
+/feature-intake             ──► tiny: git checkout -b → direct edit · normal: /subagent-driven-development
                                 high-risk: /brainstorming (full chain) · low confidence: escalate
 /brainstorming              ──► /xia2 → /writing-plans (the only valid next skills)
 /xia2                       ──► research brief → user/skill decides next step
@@ -150,8 +182,9 @@ If one of these isn't available in your environment, the workflows degrade grace
                                 → /subagent-driven-development
                                 OR /executing-plans (parallel session)
 /visual-planner             ──► PLAN.html (terminal — visual artifact; back to writing-plans handoff)
-/subagent-driven-development ──► /correctness-review (final pass) → /compound → /finishing-a-development-branch
+/subagent-driven-development ──► /correctness-review → /intent-review (final passes) → /compound → /finishing-a-development-branch
 /correctness-review         ──► (standalone — runs the same pipeline ad-hoc on any diff; no gate)
+/intent-review              ──► (standalone — same pipeline; needs ### Intent in SUMMARY or intent provided by the user)
 /systematic-debugging       ──► fix → /compound
 /compound                   ──► nothing (terminal — crystallization is end state)
 /finishing-a-development-branch ──► nothing (terminal — shipped)
@@ -270,7 +303,7 @@ graph LR
 | `view_plan.py` | **Shows** it — serves on localhost + opens Chrome, auto-rendering first if `PLAN.html` is missing/stale. |
 
 - **Deterministic script, not LLM transcription.** The skill only runs the script and relays its report — never emits HTML token-by-token. Transcribing a ~340-line template every run is expensive and the least reproducible part of the pipeline; a script makes the fill free and stable.
-- **Local-only output.** `PLAN.html` is untracked — it lives beside `PLAN.md` in `specs/`, which is never committed.
+- **Local-only output.** `PLAN.html` is untracked — it lives beside `PLAN.md` in `specs/` (which is tracked), but `PLAN.html` itself is gitignored as a derived artifact.
 - **Auto-invoked by `/writing-plans`.** After a plan is approved and before the execution handoff, `writing-plans` dispatches a `visual-planner` sub-agent to render `PLAN.html`, then opens it. Also runs standalone as `/visual-planner <slug>`.
 - **Why serve instead of `file://`?** Localhost is a browser *secure context*, so per-task "copy `<verify>`" buttons use `navigator.clipboard`; `--file` (`file://`) is faster but falls back to `execCommand`. Auto-view is environment-dependent (no display on headless/remote), so it stays an explicit step.
 - **Self-check before claiming success.** The script asserts non-empty output, no surviving `{{PLACEHOLDER}}`, the `slug` present, and one `<section data-wave>` per distinct wave. On non-zero exit, surface the `SELF-CHECK FAILED:` lines verbatim — do not claim success.

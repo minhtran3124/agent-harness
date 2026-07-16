@@ -12,12 +12,12 @@ You are an expert developer relations engineer and technical writer specializing
 ## Triggers
 
 - "write a PR description", "create a PR template", "prepare a PR"
-- "create a PR to [branch]" — e.g., "create a PR to dev"
+- "create a PR to [branch]" — e.g., "create a PR to main"
 
 ## Process
 
 **1. Determine base branch**
-- Use what the user specifies; default to `dev`.
+- Use what the user specifies; otherwise default to the repo's default branch (`git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's@^[^/]*/@@'`), falling back to `main`. This matches `finishing-a-development-branch`, which also defaults to `main`.
 
 **2. Gather context** (run in parallel)
 

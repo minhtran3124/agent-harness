@@ -1,0 +1,106 @@
+# Changelog
+
+All notable changes to this harness are recorded here. Format follows
+[Keep a Changelog](https://keepachangelog.com/); versions are tracked in the root `VERSION`
+file. Bump on merge: **patch** for fixes/docs, **minor** for a new skill/hook or a changed
+skill/hook contract, **major** for a breaking change to the workflow or a machine-read schema.
+
+## [Unreleased]
+
+- feat(q3): product-contract map (Level A) — `contracts` block in `harness-manifest.json`, `scripts/check-contract-impact.sh` advisory mapper, `check_manifest.py` path validation, and a contract-impact reminder section in `harness-audit.sh` (MIN-64)
+- fix(install-harness): a tty-less re-sync without `--yes` now prints the actionable "Re-run with `--yes`" message instead of dying on a raw `/dev/tty: Device not configured`; `--overwrite-conflicts` now implies `--yes` (it already named the destructive outcome), so `curl … | bash -s -- --overwrite-conflicts` works non-interactively. Covered by `tests/scripts/install-tty-gate.test.sh`
+- fix(deploy-harness): `rules/behavior.md` is now conflict-guarded like the other project-owned files — a customized copy is kept and the incoming version saved as `rules/behavior.md.harness-incoming`, instead of being overwritten silently
+
+## [0.14.0] — 2026-07-15
+
+- fix: conflict-guarded re-sync — stop clobbering bootstrap-xia2 outputs (PR #50)
+
+## [0.13.0] — 2026-07-15
+
+- feat(visual-planner): self-summarizing PLAN.md — At-a-glance block (#54) (PR #63)
+
+## [0.12.0] — 2026-07-15
+
+- correctness-review: find by six parallel angles; fix four aborts in harness-status.sh (PR #51)
+
+## [0.11.0] — 2026-07-13
+
+- feat(branch-isolation): every lane cuts a branch before implementing — close the tiny-lane hole (PR #52)
+
+## [0.10.0] — 2026-07-13
+
+- fix(blast-radius): only an ACTIVE plan arms the hook — drop the stale-plan fallback (PR #53)
+
+## [0.9.0] — 2026-07-09
+
+- docs: clarify harness prompts (root docs + sub-agents + rules) (PR #48)
+
+## [0.8.1] — 2026-07-08
+
+- feat(q3): product-contract map (Level A) — contract-level blast radius [MIN-64] (PR #46)
+
+## [0.7.3] — 2026-07-04
+
+- feat: entropy has a trend — 6-check harness-audit + per-merge JSONL log (v0.3 Wave 4) (PR #42)
+
+## [0.7.2] — 2026-07-04
+
+- chore(hygiene): v0.3 Wave 6 — plan statuses shipped + research docs committed (PR #40)
+
+## [0.7.1] — 2026-07-04
+
+- fix(evidence): verify gates reject trivial proof — v0.3 Phase 3 (PR #38)
+
+## [0.7.0] — 2026-07-04
+
+- feat(governance): harness-manifest single source for hard gates — v0.3 Phase 2 (PR #35)
+
+## [0.6.0] — 2026-07-03
+
+- feat(ci): event-sourced post-merge bookkeeping — v0.3 Phase 1 (PR #34)
+
+## [0.5.0] — 2026-07-03
+
+- docs(skills): fix doc-truth drift across skill files — v0.3 Wave 0c (PR #33)
+
+## [0.4.0] — 2026-07-03
+
+- fix(hooks): session-knowledge resolves repo root via git (DR-2) — v0.3 Wave 0b (PR #32)
+
+## [0.3.0] — 2026-07-03
+
+- fix(hooks): close commit-gate command-matching bypass (DR-1) — v0.3 Wave 0a (PR #31)
+
+## [0.2.0] — 2026-06-14
+
+### Changed
+- **Stack-agnostic `rules/` (MIN-25).** The `rules/` governance layer is no longer FastAPI-only.
+  Universal rules ship identical everywhere; stack-specific guidance is a swappable profile:
+  - FastAPI content moved verbatim to `templates/stacks/fastapi/{architecture,guidelines}.md`;
+    `rules/architecture.md` + `rules/guidelines.md` are now stack-neutral skeletons (deploy still
+    ships valid files).
+  - `rules/plan-format.md`, `auto-correct-scope.md`, `wave-parallelism.md` keep FastAPI snippets
+    only inside blocks tagged `example — substitute your stack`; in-prose stack tokens genericized.
+  - **`bootstrap-xia2` now renders the stack profile per repo** — detect stack → bundled
+    `templates/stacks/<stack>/` profile as a human-reviewed draft, else the generic
+    `templates/stacks/_skeleton/` fallback; never a wrong-stack profile. (skill-contract change → minor)
+
+
+
+First versioned snapshot of the harness — the skill framework, governance rules, hooks, CI, and
+the research-driven gap-closure work.
+
+### Added
+- **Skill chain** — intake → brainstorm → research (xia2) → plan → execute → review
+  (correctness + intent oracles) → compound → finish, plus `visual-planner` and `bootstrap-xia2`.
+- **Machine gates** — `risk-corroboration`, `commit-quality-gate`, `blast-radius-check`,
+  `branch-guard`, `check-untracked-py`, `ruff-on-edit`, `render-plan-on-write`, `scope-gate`,
+  `state-breadcrumb`, `session-knowledge` (wired); `auto-test-on-change`,
+  `protected-path-guard` (dormant).
+- **CI** — `harness-ci.yml` runs `scripts/run-tests.sh` (bash contract tests + python units) and
+  `scripts/ci-strict-gate.sh` (strict-in-CI proof gate for hard-gate paths) on ubuntu + macos.
+- **Gap-closure (from 6 research docs)** — ratchet backlog in `/compound` (P1-B);
+  `scripts/harness-audit.sh` advisory drift detector (P1-C); MCP boundary-of-trust note (P2-H);
+  review-chain micro-benchmark re-run via the read-only `reviewer` agent, 5/5 catch (P3-I);
+  `scripts/check_lane_evidence.py` lane→evidence single source (P3-J); story-size warning in
+  `check_plan_format.py` (P3-K); `protected-path-guard` break-glass hook (P3-L).

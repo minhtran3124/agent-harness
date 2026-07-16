@@ -30,7 +30,23 @@ Run these four guardrail checks against the plan:
 
 **If any guardrail fails:** STOP. Report the specific violations (quote the failing task id(s) and sub-element(s)) back to the user. Reference `.claude/rules/plan-format.md` / `.claude/rules/wave-parallelism.md`. Do NOT proceed to Step 1.
 
-**If all guardrails pass:** proceed to Step 1.
+**If all guardrails pass:** proceed to Step 0b.
+
+### Step 0b: Ensure branch isolation (before any code change)
+
+Implementation must never begin on `main`/`master` or another shared branch. Before the first task:
+
+1. Check the current branch: `git symbolic-ref --short HEAD`.
+2. If on a shared/protected branch — `main`, `master`, or any branch in
+   `HARNESS_SHARED_BRANCHES` (the same list `hooks/branch-isolation-guard.sh` enforces) —
+   **invoke `using-git-worktrees`** to create an isolated worktree + feature branch, then
+   continue execution there. Do not proceed on the shared branch.
+3. If already on a dedicated feature branch (or inside a worktree created for this slug), proceed.
+
+This is the structural point that creates the branch. It is now backstopped at write time by
+`hooks/branch-isolation-guard.sh`, which **hard-blocks** any code edit made on a shared branch
+once a plan is `status: active` (break-glass: `BRANCH_ISOLATION_REASON`). `branch-guard.sh` only
+warns, and only at commit time — so do not rely on it; create the branch here.
 
 ### Step 1: Load and Review Plan
 
@@ -52,13 +68,24 @@ For each task:
 3. Run verifications as specified
 4. Mark as completed
 
-### Step 3: Complete Development
+### Step 3: Final review passes (same gates as subagent-driven-development)
 
-After all tasks complete and verified:
+After all tasks complete and verified, run the final review chain over the whole diff — this
+path ships the same review gates as `subagent-driven-development`, not fewer:
+
+1. **`/correctness-review`** — adversarial runtime-bug hunt over the full branch diff.
+2. **`/intent-review`** — diff vs the original request (the `### Intent` in `specs/<slug>/SUMMARY.md`), blind to PLAN.
+
+Fix or escalate any confirmed findings before proceeding. Do NOT skip these because execution
+happened in a separate session — they are the difference between "passed the plan" and "correct".
+
+### Step 4: Complete Development
+
+After the review passes are clean:
 
 - Announce: "I'm using the finishing-a-development-branch skill to complete this work."
 - **REQUIRED SUB-SKILL:** Use finishing-a-development-branch
-- Follow that skill to verify tests, present options, execute choice
+- That skill runs the tests, marks the plan `shipped`, pushes, and opens a PR (it never merges).
 
 ## When to Stop and Ask for Help
 

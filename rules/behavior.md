@@ -10,6 +10,7 @@ Reduce common LLM coding mistakes. Apply to all work in this project.
 - If multiple interpretations exist, present them — don't pick silently.
 - If a simpler approach exists, say so. Push back when warranted.
 - If something is unclear, name what's confusing and stop. Don't guess.
+- `not_observed != absent` — a missing search result, an unread file, or unavailable memory means *unknown*, not *absent*. Before claiming something does not exist, state where you looked.
 
 ## 2. Simplicity First
 

@@ -34,6 +34,8 @@ new_repo() {
   git -C "$d" config user.email test@test
   git -C "$d" config user.name test
   mkdir -p "$d/hooks"
+  # Shared hook lib (sourced by the git-command gates) must travel with the hook.
+  [ -d "$ROOT/hooks/lib" ] && cp -R "$ROOT/hooks/lib" "$d/hooks/"
   local h
   for h in "$@"; do cp "$ROOT/hooks/$h" "$d/hooks/"; done
   echo "$d"

@@ -143,6 +143,11 @@ transcribe HTML yourself.
 
 **Announce:** "Plan approved — PLAN.html auto-rendered by the render-plan hook."
 
+The same hook also injects an additive, sentinel-delimited "At a glance" block (count line, wave×task
+table, Mermaid flowchart, progress checklist) directly into the tracked `PLAN.md` — deterministic and
+script-owned, derived from the `<task>` blocks and `## Status Log` — so a human can read scope, order,
+and progress on GitHub with no tooling. See `rules/plan-format.md` → Auto-generated "At a glance" block.
+
 Dispatch ONE `general-purpose` sub-agent **only when the user explicitly asks for risk /
 blast-radius overlay** (the hook does plain render only). That sub-agent runs the 3-step `--review`
 dance documented in `visual-planner/SKILL.md` (`--emit-files` → gather `code-review-graph` data →
@@ -150,7 +155,7 @@ write `specs/<slug>/.plan-review.json` → render with `--review`), and returns 
 written `PLAN.html` path + the script's self-check status. On a non-zero exit, surface the
 `SELF-CHECK FAILED:` lines verbatim — do **not** claim success.
 
-`PLAN.html` is untracked (it lives beside `PLAN.md` in `specs/`, which is never committed). Plain
+`PLAN.html` is untracked (it lives beside `PLAN.md` in `specs/`, but is gitignored as a derived artifact — `specs/` itself is tracked). Plain
 render needs no MCP and finishes in seconds; reserve `--review` for when graph-derived risk is wanted.
 
 ## Auto-View
@@ -185,13 +190,20 @@ approach to use — present a clear A/B choice (use the `AskUserQuestion` tool w
 
 **Which approach?"**
 
+**Either approach — isolate the branch first.** Before any code change, ensure work runs on a
+dedicated feature branch, not a shared one. If on `main`/`master` (or any branch in
+`HARNESS_SHARED_BRANCHES`), **invoke `using-git-worktrees` first** to create an isolated worktree +
+branch. This is the only step that creates the branch; `hooks/branch-isolation-guard.sh` hard-blocks
+code edits on a shared branch once the plan is `status: active`, so skipping it stalls execution.
+(Tiny-lane in-place edits with no plan are exempt by design.)
+
 **If Subagent-Driven chosen:**
 
-- **REQUIRED SUB-SKILL:** Use subagent-driven-development
+- **REQUIRED SUB-SKILL:** Use `using-git-worktrees` (if not already isolated), then subagent-driven-development
 - Stay in this session
 - Fresh subagent per task + code review
 
 **If Parallel Session chosen:**
 
-- Guide them to open new session in worktree
+- Guide them to open a new session in the worktree (created via `using-git-worktrees`)
 - **REQUIRED SUB-SKILL:** New session uses executing-plans

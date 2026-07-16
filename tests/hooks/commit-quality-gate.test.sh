@@ -61,6 +61,54 @@ stage "$repo" "specs/x/SUMMARY.md" '### Verify'
 run_hook "$repo" $H "$COMMIT_JSON" REQUIRE_VERIFY=1
 assert_rc_contains 0 "Evidence (### Verify present)... PASSED"
 
+# ── Task 3.2: REQUIRE_VERIFY=1 re-runs the ### Verify table (machine-verified proof) ──
+VERIFY_PY="$ROOT/scripts/verify_summary.py"
+VERIFY_TABLE_OK=$'### Verify\n\n| Check | Command | Exit | Notes |\n| --- | --- | --- | --- |\n| ok | test 1 = 1 | 0 | matches |\n'
+VERIFY_TABLE_BAD=$'### Verify\n\n| Check | Command | Exit | Notes |\n| --- | --- | --- | --- |\n| bad | false | 0 | claimed 0 but exits 1 |\n'
+
+t "REQUIRE_VERIFY=1: ### Verify table whose command matches its claimed exit → re-run PASSES"
+repo=$(new_repo $H)
+mkdir -p "$repo/scripts"; cp "$VERIFY_PY" "$repo/scripts/"
+stage "$repo" "app/services/calc.py" 'x = 1'
+stage "$repo" "specs/x/SUMMARY.md" "$VERIFY_TABLE_OK"
+run_hook "$repo" $H "$COMMIT_JSON" REQUIRE_VERIFY=1
+assert_rc_contains 0 "Evidence (### Verify re-run)... PASSED"
+
+t "REQUIRE_VERIFY=1: claimed Exit != actual exit → re-run BLOCKS (exit 2)"
+repo=$(new_repo $H)
+mkdir -p "$repo/scripts"; cp "$VERIFY_PY" "$repo/scripts/"
+stage "$repo" "app/services/calc.py" 'x = 1'
+stage "$repo" "specs/x/SUMMARY.md" "$VERIFY_TABLE_BAD"
+run_hook "$repo" $H "$COMMIT_JSON" REQUIRE_VERIFY=1
+assert_rc_contains 2 "Evidence (### Verify re-run)... FAILED"
+
+t "REQUIRE_VERIFY=1: python3 absent → degrade (warn, do not block) even with a mismatch"
+repo=$(new_repo $H)
+mkdir -p "$repo/scripts"; cp "$VERIFY_PY" "$repo/scripts/"
+stage "$repo" "app/services/calc.py" 'x = 1'
+stage "$repo" "specs/x/SUMMARY.md" "$VERIFY_TABLE_BAD"
+# Build a PATH mirror with every binary EXCEPT python/python3 so `command -v python3` fails
+nopy=$(mktemp -d); _CLEANUP_DIRS+=("$nopy")
+IFS=: read -ra _pd <<< "$PATH"
+for d in "${_pd[@]}"; do
+  [ -d "$d" ] || continue
+  for f in "$d"/*; do
+    b=$(basename "$f")
+    case "$b" in python|python3|python3.*) continue ;; esac
+    [ -e "$nopy/$b" ] || ln -s "$f" "$nopy/$b" 2>/dev/null
+  done
+done
+run_hook "$repo" $H "$COMMIT_JSON" REQUIRE_VERIFY=1 PATH="$nopy"
+assert_rc_contains 0 "Evidence re-run skipped"
+
+t "REQUIRE_VERIFY=0 (default): a mismatching ### Verify table is NOT re-run (regression)"
+repo=$(new_repo $H)
+mkdir -p "$repo/scripts"; cp "$VERIFY_PY" "$repo/scripts/"
+stage "$repo" "app/services/calc.py" 'x = 1'
+stage "$repo" "specs/x/SUMMARY.md" "$VERIFY_TABLE_BAD"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc 0
+
 if ensure_pyenv; then
   t "matching passing test runs and commit is allowed"
   repo=$(new_repo $H)

@@ -7,10 +7,14 @@
 INPUT=$(cat /dev/stdin)
 COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null)
 
-# Only gate git commit commands
-if ! echo "$COMMAND" | grep -qE '^git commit'; then
-  exit 0
-fi
+# Only gate git commit commands (tokenizing matcher — resists cd/&&/-C/-c bypass)
+source "$(cd "$(dirname "$0")" && pwd)/lib/git-command.sh" 2>/dev/null
+# Fail closed: if the matcher lib is missing, block rather than let commits through unscanned.
+command -v hook_cmd_is_git_commit >/dev/null 2>&1 || {
+  echo "[COMMIT GATE] git-command matcher lib missing — redeploy harness (blocking to fail safe)." >&2
+  exit 2
+}
+hook_cmd_is_git_commit "$COMMAND" || exit 0
 
 # Resolve the repo root (layout-independent; this repo is flat, hooks/ at top level)
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -82,6 +86,23 @@ if [[ "${REQUIRE_VERIFY:-0}" == "1" ]]; then
       exit 2
     fi
     echo "[COMMIT GATE] Evidence (### Verify present)... PASSED" >&2
+
+    # Re-run the ### Verify table so proof is machine-verified, not self-reported.
+    # Degrade (warn, do not block) when python3 or the script is unavailable —
+    # a missing interpreter must not gate commits (fail-open, like the `|| true`
+    # convention elsewhere in this hook).
+    SLUG=$(basename "$(dirname "$SUMMARY")")
+    if command -v python3 >/dev/null 2>&1 && [[ -f scripts/verify_summary.py ]]; then
+      if ! python3 scripts/verify_summary.py --check "$SLUG" >&2; then
+        echo "[COMMIT GATE] Evidence (### Verify re-run)... FAILED" >&2
+        echo "  BLOCKED: claimed Exit codes in $SUMMARY do not match a fresh run (see mismatch above)." >&2
+        echo "  Fix the commands/exit codes in the ### Verify table, or unset REQUIRE_VERIFY." >&2
+        exit 2
+      fi
+      echo "[COMMIT GATE] Evidence (### Verify re-run)... PASSED" >&2
+    else
+      echo "[COMMIT GATE] Evidence re-run skipped: python3 or scripts/verify_summary.py unavailable — presence check only." >&2
+    fi
   fi
 fi
 

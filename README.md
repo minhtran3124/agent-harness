@@ -13,6 +13,61 @@
 Skills are Markdown prompt programs you summon with `/skill-name`. They chain through defined gates so work flows *discovery → design → planning → execution → review → shipping* — no skipping
 steps allowed.
 
+## Why this exists
+
+### The problem
+
+Most repositories are built for humans who already know the codebase. A coding agent arrives with
+only a chat prompt and a shallow file snapshot — and that gap produces predictable failure modes:
+
+- It **edits code before understanding intent** — solving the wrong problem fluently.
+- **Constraints live only in chat history** or someone's head, so they're lost between sessions.
+- **Validation expectations are vague**, discovered too late, or asserted without proof.
+- **Architecture tradeoffs get re-litigated** every time instead of inherited.
+- The **same process is applied to every change** — over-ceremonying a typo, under-scrutinizing an
+  auth rewrite — and the human is asked about everything or nothing.
+
+### The harness approach
+
+A repo grows a *harness* so an agent can answer the practical engineering questions **before it
+writes code**, without relying on conversation history:
+
+- *What should I read first?*
+- *What type of work is this, and how risky?*
+- *Which product contract does it touch?*
+- *What proof will show the work is done?*
+- *What decision or lesson should future agents inherit?*
+
+And it sizes the answer with **one principle, two independent dials:**
+
+> **Ceremony scales with risk. Human interruption scales with ambiguity.**
+
+**Risk** decides how much *proof and process* a change carries (planning, reviews, recorded
+evidence and rollback). **Ambiguity / confidence** decides whether a *human* is asked — never to
+classify risk, only to confirm intent or authorize a dangerous boundary. So a high-risk-but-clear
+change runs autonomously through heavy proof, while a tiny-but-unclear change stops to ask. Risk ≠
+interruption.
+
+### How this repo resolves it
+
+The repo is two layers: an **engine** of invocable `/skills` that do the work, and a thin
+**harness** that decides — *before* the engine runs — how much process and when to involve a
+human. Each engineering question maps to an enforced mechanism, not a convention:
+
+| The question | Resolved by |
+|---|---|
+| What should I read first? | `session-knowledge` hook loads `docs/solutions/` index + critical patterns at session start; `/xia2` researches what already exists. |
+| What type of work, how risky? | `/feature-intake` runs first — a 10-flag checklist + hard gates assign a **lane** (`tiny\|normal\|high-risk`) and a **confidence** to `specs/<slug>/SUMMARY.md`. |
+| Which contract does it touch? | Hard gates (auth · migration · public contract · high-blast file) force `high-risk`; `blast-radius` hook flags edits outside the plan. |
+| What proof shows it's done? | A re-runnable `### Verify` artifact backs every "done"; `TEST_MATRIX.md` marks a behavior `implemented` only with evidence. |
+| What should future agents inherit? | `/compound` crystallizes non-obvious learnings into `docs/solutions/`; `agent-memory/` carries facts forward with confidence decay. |
+
+And the claim is corroborated by code: at commit time, hooks check the staged diff against the
+declared lane — the agent can't label a risky change "tiny" and slip it through.
+
+See **[HARNESS.md](HARNESS.md)** for the full model — lanes, hard gates, and how each hook
+enforces it.
+
 ## Installation
 
 ### Add to an existing project
@@ -23,10 +78,10 @@ One-liner that clones the harness, builds `.claude/`, and leaves your project ro
 curl -fsSL "https://raw.githubusercontent.com/minhtran3124/harness-skills/main/scripts/install-harness.sh?$(date +%s)" | bash -s -- --yes
 ```
 
-Everything the harness needs lives entirely in a gitignored `.claude/` (skills, agents, hooks, rules, templates, settings) — the only root file is `.mcp.json`, which wires the code-review-graph MCP server (merged into your existing `.mcp.json` if you have one; Claude Code only reads this file at the project root). The installer never stages files at your project root, so it never overwrites or deletes anything there. **To update, just re-run the one-liner** (idempotent; `.claude/` is merge-synced, non-harness entries kept).
+Everything the harness needs lives entirely in a gitignored `.claude/` (skills, agents, hooks, rules, templates, settings) — the only root file is `.mcp.json`, which wires the code-review-graph MCP server (merged into your existing `.mcp.json` if you have one; Claude Code only reads this file at the project root). The installer never stages files at your project root, so it never overwrites or deletes anything there. **To update, just re-run the one-liner** (idempotent; `.claude/` is merge-synced, non-harness entries and `bootstrap-xia2`-generated files kept; a protected file that differs from incoming is reported via a `<file>.harness-incoming` sidecar rather than overwritten).
 
 Needs `git` + [jq](https://jqlang.github.io/jq/); [uv](https://docs.astral.sh/uv/) is strongly recommended — the code-review-graph MCP server launches through `uvx`, and the installer warns when it's missing.
-Flags: `--directory <path>` · `--branch <name>` · `--source <local checkout>` · `--keep-sources` · `--dry-run`.
+Flags: `--directory <path>` · `--branch <name>` · `--source <local checkout>` · `--keep-sources` · `--dry-run` · `--overwrite-conflicts` (replace protected files with the incoming copy; `--force`/`--yes` keep local files instead of overwriting them).
 
 Then **restart Claude Code** so it loads the skills, agents, and hooks.
 
@@ -89,10 +144,18 @@ Each step hands off to the next; `/feature-intake` runs first and decides how ma
         |
 /subagent-driven-development     build it  (or /executing-plans)
         |
+/correctness-review              adversarial runtime-bug hunt over the diff
+        |
+/intent-review                   diff vs the original request, blind to PLAN
+        |
 /compound                        capture non-obvious learnings
         |
-/finishing-a-development-branch  PR, review, merge
+/finishing-a-development-branch  push + open a PR (a human reviews & merges)
 ```
+
+`/correctness-review` and `/intent-review` also run standalone on any diff. See
+[skills/README.md](skills/README.md) for the alternate paths (minimum-viable, bug-fix) and the
+full handoff map.
 
 ## Further reading
 
@@ -102,17 +165,6 @@ Each step hands off to the next; `/feature-intake` runs first and decides how ma
 > **[HARNESS.md](HARNESS.md)** — how the risk/trust harness shapes the workflow: lanes,
 > when a human is asked, and how hooks enforce it. Read this to understand *why* the flow behaves
 > the way it does.
-
-## Credits & inspiration
-
-This harness remixes ideas from people who generously shared their agentic-coding playbooks — standing on the shoulders of:
-
-| Source | By | Idea borrowed |
-|---|---|---|
-| [superpowers](https://github.com/obra/superpowers) | Jesse Vincent ([@obra](https://github.com/obra)) | The skill engine — composable `/skills`, brainstorm-before-code, TDD, a fresh subagent per task, plus hooks & continuous learning. |
-| [Get Shit Done (GSD)](https://github.com/gsd-build/get-shit-done) | TÂCHES ([@gsd-build](https://github.com/gsd-build)) | Spec-driven development + treating the context window as a managed resource — atomic plans run in fresh subagent contexts, stitched with git commits. |
-| [Compound engineering](https://every.to/guides/compound-engineering) | Kieran Klaassen & [Every](https://every.to) | The *plan → work → review → compound* learning loop — every bug, decision, and insight captured for future agents (our `/compound` + `docs/solutions/`). |
-| [harness-experimental](https://github.com/hoangnb24/harness-experimental) | Bang Hoang ([@hoangnb24](https://github.com/hoangnb24)) | The risk/trust harness — lanes, hard gates, and *"ceremony scales with risk; interruption scales with ambiguity."* |
 
 ## Author
 

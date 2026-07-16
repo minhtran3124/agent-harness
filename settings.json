@@ -6,27 +6,33 @@
         "hooks": [
           {
             "type": "command",
-            "if": "Bash(git *)",
             "command": "hooks/check-untracked-py.sh",
             "statusMessage": "Checking untracked .py before git…"
           },
           {
             "type": "command",
-            "if": "Bash(git commit *)",
             "command": "hooks/commit-quality-gate.sh",
             "statusMessage": "Commit quality gate (secrets, debug, tests)…"
           },
           {
             "type": "command",
-            "if": "Bash(git commit *)",
             "command": "hooks/risk-corroboration.sh",
             "statusMessage": "Risk corroboration (diff vs declared lane)…"
           },
           {
             "type": "command",
-            "if": "Bash(git commit *)",
             "command": "hooks/branch-guard.sh",
             "statusMessage": "Branch guard (warn on main)…"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "hooks/branch-isolation-guard.sh",
+            "statusMessage": "Branch-isolation guard (block code edits on shared branch w/ active plan)…"
           }
         ]
       }
@@ -60,6 +66,17 @@
             "type": "command",
             "command": "hooks/scope-gate.sh",
             "statusMessage": "Scope-gate check…"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "hooks/session-knowledge.sh",
+            "statusMessage": "Loading knowledge base (INDEX + critical-patterns)…"
           }
         ]
       }

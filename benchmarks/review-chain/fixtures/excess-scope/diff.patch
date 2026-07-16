@@ -1,0 +1,41 @@
+diff --git a/app/routers/profile.py b/app/routers/profile.py
+index 5555555..6666666 100644
+--- a/app/routers/profile.py
++++ b/app/routers/profile.py
+@@ -1,18 +1,38 @@
+ from fastapi import APIRouter, Depends
+
+ from app.database import get_db
+ from app.dependencies import get_current_user
++from app.exceptions import AppException
+ from app.repositories.profile_repository import ProfileRepository
+-from app.schemas.profile import ProfileResponse
++from app.schemas.profile import ProfileResponse, SettingsResponse
++from app.services.profile_service import ProfileService
+
+ router = APIRouter(prefix="/profile", tags=["profile"])
+
+
++@router.get(
++    "/settings",
++    response_model=SettingsResponse,
++    dependencies=[Depends(get_current_user)],
++)
++async def get_settings(db=Depends(get_db), current_user=Depends(get_current_user)) -> SettingsResponse:
++    repo = ProfileRepository(db)
++    settings = await repo.get_settings(current_user.id)
++    if settings is None:
++        raise AppException.NotFound("settings not found")
++    return SettingsResponse.model_validate(settings)
++
++
+ @router.get("/", response_model=ProfileResponse)
+ async def get_profile(db=Depends(get_db), current_user=Depends(get_current_user)) -> ProfileResponse:
+-    repo = ProfileRepository(db)
+-    profile = await repo.get_by_user(current_user.id)
+-    return ProfileResponse.model_validate(profile)
++    service = ProfileService(db)
++    profile = await service.get_profile_with_stats(current_user.id)
++    if profile is None:
++        raise AppException.NotFound("profile not found")
++    return ProfileResponse.model_validate(profile)

@@ -14,6 +14,8 @@ Related: `plan-format.md`, `orchestration.md`.
 
 ## FastAPI example (from `eng-315-api-key-generation/PLAN.md` §5)
 
+> example — substitute your stack
+
 | Wave | Tasks | Parallelism |
 |------|-------|-------------|
 | 1 | 1.1 model+migration, 1.2 schemas | 2 parallel |
@@ -51,6 +53,4 @@ Keeps git log readable as "wave boundaries" alongside task-level atomic commits.
 
 ## When to skip this overhead
 
-Single-task waves don't need wave machinery — execute in main thread or as one subagent. The rule matters when ≥2 tasks share a wave.
-
-Plans with no parallelism (all tasks sequential) may omit the `wave` attribute in `<task>` entirely per `plan-format.md`.
+Single-task waves don't need wave machinery — execute in main thread or as one subagent. The rule matters when ≥2 tasks share a wave. Plans with no parallelism (all tasks sequential) may omit the `wave` attribute in `<task>` entirely per `plan-format.md`.

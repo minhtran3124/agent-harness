@@ -31,17 +31,16 @@ Use these paths to determine which test files to run (e.g. changes to `app/repos
 
 #### 1b. Run tests
 
-Launch the **test-runner** sub-agent with the targeted test files:
+Launch the **test-runner** sub-agent with the project's test runner. Use whatever this repo
+actually uses — detect it, don't assume a stack. For **this** repo (harness-skills) that is:
 
 ```bash
-cd apps/api && python -m pytest <test_files> -x --tb=short -q
+bash scripts/run-tests.sh
 ```
 
-If no matching test files are found, fall back to the full suite:
-
-```bash
-cd apps/api && python -m pytest -x --tb=short -q
-```
+For an application repo, run the targeted test files with the project's runner (e.g.
+`pytest <test_files> -x`, `npm test`, `go test ./...`); fall back to the full suite when no
+targeted subset applies.
 
 #### 1c. Report results
 
@@ -74,7 +73,8 @@ If the base branch is not mentioned in chat, default to `main`. Only ask ("This 
 
 ### Step 3: Push and Open PR
 
-1. **Mark the plan shipped** — run Step 4. This updates `specs/<slug>/PLAN.md` locally only (`specs/` is gitignored — nothing to stage or commit). If no plan matches, skip silently.
+1. **Mark the plan shipped** — run Step 4. This updates `specs/<slug>/PLAN.md`, which is **tracked** in git, so stage and commit the status change with the work (it lands in the branch/PR). If no plan matches, skip silently.
+1b. **Update `CHANGELOG.md` + `VERSION`** when the change is user-visible (a new/changed skill or hook, a schema change, a fix worth announcing). Add a bullet under `## [Unreleased]` and bump root `VERSION` per the CHANGELOG's own rule (patch = fix/docs · minor = new/changed skill or hook contract · major = breaking workflow/schema change). Skip for purely internal docs/research. Commit these with the work so the PR carries them.
 2. Push to remote: `git push -u github <current_branch>`.
 3. Invoke the **create-pr** skill to generate `PR_TEMPLATE.md`.
 4. Create the PR with `gh pr create` against `<base_branch>`, using the generated template content for the body.
@@ -86,13 +86,13 @@ If a PR already exists for this branch, push the new commits and report the exis
 
 Runs as the first action of Step 3, before the push.
 
-> Why this step exists: `status:` in `specs/<slug>/PLAN.md` records the plan lifecycle (`proposed` → `active` at execution start → `shipped` here). This is the **`shipped`** transition — a **local-only** signal (since `specs/` is gitignored) that you/anyone resuming the worktree can read to know the feature reached a PR. The edit auto-re-renders `PLAN.html` via `render-plan-on-write.sh`. Leaving it stale is the root cause of status drift across `specs/`.
+> Why this step exists: `status:` in `specs/<slug>/PLAN.md` records the plan lifecycle (`proposed` → `active` at execution start → `shipped` here). This is the **`shipped`** transition — a **committed** signal (`specs/` is tracked, so the transition is committed with the rest) that anyone reading the branch/PR can see the feature reached a PR. The edit auto-re-renders `PLAN.html` via `render-plan-on-write.sh` (`PLAN.html` itself is gitignored). Leaving it stale is the root cause of status drift across `specs/`.
 
 #### 4a. Resolve the plan for this branch
 
 ```bash
 branch=$(git branch --show-current)
-slug=${branch#*/}                       # strip feat/ | fix/ | chore/ prefix
+slug=${branch#*/}                       # strip the <type>/ prefix (feat|fix|docs|chore|refactor|test|perf|ci) — see using-git-worktrees Branch Naming
 ls specs/"$slug"/PLAN.md 2>/dev/null || ls specs/*/PLAN.md
 ```
 
@@ -111,7 +111,7 @@ In the resolved `PLAN.md`:
    - YYYY-MM-DD — shipped via `<branch>` (PR #NNN)
    ```
 
-This edit stays local — `specs/` is gitignored, so the status update is not pushed and does not land in the PR. It only persists in whatever worktree/clone holds the plan.
+Stage and commit this edit — `specs/` is tracked, so the status update lands in the branch/PR and persists for anyone who reads it (only the derived `PLAN.html` is gitignored).
 
 ## Quick Reference
 
@@ -137,7 +137,7 @@ This edit stays local — `specs/` is gitignored, so the status update is not pu
 - Stage files by name, not by wildcard
 - Show the PR URL after creation
 - Default to `main` as base branch when not specified
-- Set the matching plan's `status: shipped` locally, using only canonical status values (`specs/` is gitignored; this is a local record, not a commit)
+- Set the matching plan's `status: shipped` using only canonical status values, and commit it (`specs/` is tracked, so the transition is committed with the work)
 
 ## Integration
 

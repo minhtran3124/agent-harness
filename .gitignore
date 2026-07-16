@@ -17,6 +17,10 @@ node_modules/
 
 # Claude Code (user-specific, not shared config)
 settings.local.json
+CLAUDE.local.md
+
+# Git worktrees (project-local, isolated feature workspaces)
+.worktrees/
 
 # Claude Code local clone (derived from root via scripts/deploy-harness.sh)
 .claude/
@@ -29,11 +33,15 @@ docs/memory/
 # Added by code-review-graph
 .code-review-graph/
 
-# Specifications — fully local-only (PLAN.md, PLAN.html, design.md, research-brief.md, sidecars)
-specs/
+# Specifications — tracked, EXCEPT derived artifacts rebuildable from PLAN.md via render_plan.py
+specs/**/PLAN.html
+specs/**/.plan-review.json
 
 .vercel
 
 # Local-only harness-engineering review docs
 docs/harness-engineering-review.md
 docs/harness-engineering-review.en.md
+
+# bootstrap-xia2 review artifacts — per-repo, never shipped by the harness
+*.proposed

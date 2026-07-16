@@ -7,6 +7,10 @@
 # declared Lane in specs/<slug>/SUMMARY.md is below `high-risk`, the commit is
 # BLOCKED (exit 2) — the agent under-classified its own work.
 #
+# CANONICAL GATE LIST: harness-manifest.json (hard_gates.detectable). The add_cat +
+# category_mode categories below MUST match it exactly — scripts/check_manifest.py fails
+# CI on any drift. Edit the manifest, then mirror it here.
+#
 # Safety for a docs/framework repo:
 #   - Keyword categories scan only ADDED CODE lines, excluding prose
 #     (*.md, docs/, specs/, skills/) and the hooks/ dir itself (scanners
@@ -22,8 +26,14 @@
 INPUT=$(cat /dev/stdin)
 COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null)
 
-# Only gate git commit
-echo "$COMMAND" | grep -qE '^git commit' || exit 0
+# Only gate git commit (tokenizing matcher — resists cd/&&/-C/-c bypass)
+source "$(cd "$(dirname "$0")" && pwd)/lib/git-command.sh" 2>/dev/null
+# Fail closed: if the matcher lib is missing, block rather than skip corroboration.
+command -v hook_cmd_is_git_commit >/dev/null 2>&1 || {
+  echo "[RISK] git-command matcher lib missing — redeploy harness (blocking to fail safe)." >&2
+  exit 2
+}
+hook_cmd_is_git_commit "$COMMAND" || exit 0
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null)"

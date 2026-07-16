@@ -15,9 +15,7 @@ Use XML task format when ANY of:
 
 Skip for single-file fixes, typo corrections, config tweaks.
 
-> These thresholds are the **signal** that triggers a `PLAN.md` under the artifact policy
-> (`rules/orchestration.md` → Artifact policy). A `SUMMARY.md` is still written for every lane
-> regardless — plan-ahead scaffolding scales by signal; the record is always-on.
+> These thresholds are the **signal** that triggers a `PLAN.md` under the artifact policy (`rules/orchestration.md` → Artifact policy). A `SUMMARY.md` is still written for every lane regardless — plan-ahead scaffolding scales by signal; the record is always-on.
 
 ## XML Schema
 
@@ -34,11 +32,7 @@ Every task in `PLAN.md` MUST use:
 
 ## Rendering requirement (Markdown-safe)
 
-Raw XML-like tags (for example `<task>`, `<files>`, `<action>`) are treated as HTML by many Markdown renderers and become hard to read in preview mode.
-
-To keep plans readable, every task MUST be wrapped in a fenced `xml` code block in the plan document.
-
-Use this presentation pattern:
+Raw XML-like tags (for example `<task>`, `<files>`, `<action>`) are treated as HTML by many Markdown renderers and become hard to read in preview mode. To keep plans readable, every task MUST be wrapped in a fenced `xml` code block in the plan document. Use this presentation pattern:
 
 ````markdown
 ### Task 1.1 — Short human title
@@ -68,10 +62,12 @@ Conventions:
 ## Guardrails
 
 1. **Zero file overlap** across same-wave tasks — prevents merge conflicts when executed in parallel.
-2. **Verify must be automated** — `pytest`, `curl`, `ruff check`, `mypy`, `alembic upgrade head`, `make migrate`. Reject "open browser and check" at task level (that belongs in phase-level user-acceptance testing).
+2. **Verify must be automated** — your test runner, HTTP probe, linter, type-checker, migration command. Reject "open browser and check" at task level (that belongs in phase-level user-acceptance testing).
 3. **Verify <60s** — if longer, split into sub-tasks.
 
 ## FastAPI examples
+
+> example — substitute your stack
 
 ### Migration + model (single wave)
 
@@ -122,4 +118,16 @@ created: YYYY-MM-DD
 ## 6. Status Log
 ```
 
-The FastAPI examples above show the full task shape; `specs/` is local-only (gitignored), so plans are not browsable across machines.
+The examples above show the full task shape; `specs/` is tracked in git, so plans are browsable across machines. (`PLAN.html` and `.plan-review.json` are gitignored as derived artifacts.)
+
+## Auto-generated "At a glance" block
+
+`render_plan.py --summarize` (invoked by the `render-plan-on-write.sh` hook on every `PLAN.md` save)
+injects an additive, script-owned "At a glance" block — a count line, a wave×task table, a
+`flowchart LR` Mermaid diagram, and a `### Progress` checklist — immediately before the first `## `
+heading, between `<!-- AT-A-GLANCE:BEGIN -->` / `<!-- AT-A-GLANCE:END -->` sentinels.
+
+It is derived entirely from the `<task>` blocks and the `## Status Log` (which stays the source of
+truth); the block regenerates idempotently on every save and must NOT be hand-edited. Authors and
+agents still read and write only the `<task id/wave/files/action/verify/done>` schema above — the
+At-a-glance block is a rendering convenience, not a planning input.

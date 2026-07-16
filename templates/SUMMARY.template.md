@@ -6,7 +6,7 @@
       against the staged diff (a hard-gate signal in the diff + a Lane below
       high-risk = blocked).
     - the trust-metrics ledger reads Lane / Confidence / Flags per task.
-  Keep the four header fields present and on their own lines. Do not delete them.
+  Keep the five header fields present and on their own lines. Do not delete them.
 -->
 
 # <slug> — Summary
@@ -15,11 +15,23 @@ Lane: tiny | normal | high-risk
 Confidence: high | medium | low
 Reason: <one sentence — why this lane (which flags / hard gates fired, or none)>
 Flags: <comma-separated risk flags that fired, or `none`>
+Affects: <affected contract/module, from PROJECT.md High-Blast/Shared-Contracts list or module name; 'none' if not applicable>
 Input-type: new spec | spec slice | change request | new initiative | maintenance | harness improvement
 
 > `Lane` drives **ceremony** (how much proof). `Confidence` drives **interruption**
 > (whether a human is asked). A hard gate forces `high-risk`. Low confidence or an
 > ambiguous direction escalates regardless of lane — see `rules/orchestration.md`.
+
+### Intent
+
+<!-- The user's request VERBATIM at intake — do NOT paraphrase or summarize. This is the
+     oracle for /intent-review (the final stage of subagent-driven-development): the third
+     reviewer is blind to PLAN.md and checks the finished diff against this text. If the
+     request came over several conversational turns, quote the scope-deciding sentences in
+     chronological order. Capturing intent here, not in the plan, is what keeps the intent
+     oracle independent of the plan oracle. -->
+
+<paste the original request, verbatim>
 
 ## What changed
 

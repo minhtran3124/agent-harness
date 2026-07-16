@@ -558,6 +558,129 @@ def build_stats(tasks, waves, status_entries):
     return f'<div class="stats-card">{"".join(blocks)}{progress}</div>'
 
 
+SUMMARY_BEGIN = "<!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->"
+SUMMARY_END = "<!-- AT-A-GLANCE:END -->"
+# Match ONLY a real generated block: each sentinel is a standalone line (BOL..EOL).
+# Anchoring to whole lines means a PLAN.md that MENTIONS the sentinel strings inside
+# prose or a fenced code block (e.g. a plan documenting this very feature) is never
+# mistaken for a generated block and never corrupted. MULTILINE + DOTALL.
+# `[ \t]*$` tolerates trailing whitespace an editor/merge may leave on the line, so
+# an externally-mutated block is still detected & refreshed rather than duplicated.
+_SUMMARY_RE = re.compile(
+    r"^" + re.escape(SUMMARY_BEGIN) + r"[ \t]*$.*?^" + re.escape(SUMMARY_END) + r"[ \t]*$",
+    re.DOTALL | re.MULTILINE,
+)
+# Standalone (BOL..EOL) single sentinel lines — used to sweep an orphaned half of a
+# manually-mutated block before a fresh insert. Never matches an inline mention.
+_SUMMARY_BEGIN_LINE = re.compile(r"^" + re.escape(SUMMARY_BEGIN) + r"[ \t]*$\n?", re.MULTILINE)
+_SUMMARY_END_LINE = re.compile(r"^" + re.escape(SUMMARY_END) + r"[ \t]*$\n?", re.MULTILINE)
+_DONE_TRUNC = 80
+_FENCE = chr(96) * 3  # ``` without embedding a literal triple-backtick run in this source
+
+
+def _mermaid_node_id(task_id):
+    return "T" + re.sub(r"[^0-9A-Za-z]", "_", task_id)
+
+
+def render_summary_block(tasks, done_ids):
+    """Additive 'At a glance' block (both sentinels included). Pure + deterministic."""
+    if not tasks:
+        return f"{SUMMARY_BEGIN}\n## At a glance\n\n_No tasks defined yet._\n{SUMMARY_END}"
+    files = set()
+    for t in tasks:
+        for f in t["files"].split(","):
+            f = f.strip()
+            if f:
+                files.add(f)
+    waves = sorted({t["wave"] for t in tasks}, key=wave_sort_key)
+    ordered = sorted(tasks, key=lambda t: (wave_sort_key(t["wave"]), natural_key(t["id"])))
+
+    def title(t):
+        return t.get("title") or t["id"]
+
+    def cell(s):
+        return str(s).replace("|", "\\|")
+
+    def done_cell(t):
+        d = " ".join(t["done"].split())
+        return (d[:_DONE_TRUNC] + "…") if len(d) > _DONE_TRUNC else d
+
+    # count only done ids that are real task ids, so the count stays consistent
+    # with the per-task checkboxes below (a stale Status-Log id can't inflate it).
+    n_done = len(done_ids & {t["id"] for t in tasks})
+    count_line = (
+        f"**{len(tasks)} tasks · {len(waves)} waves · "
+        f"{len(files)} files · {n_done}/{len(tasks)} done**"
+    )
+    rows = ["| Wave | Task | Title | Files | Done (acceptance) |", "|---|---|---|---|---|"]
+    for t in ordered:
+        rows.append(
+            f"| {cell(t['wave'])} | {cell(t['id'])} | {cell(title(t))} | "
+            f"{cell(t['files'])} | {cell(done_cell(t))} |"
+        )
+    table = "\n".join(rows)
+
+    mer = [f"{_FENCE}mermaid", "flowchart LR"]
+    for idx, w in enumerate(waves):
+        mer.append(f"  subgraph W{idx}[Wave {w}]")
+        for t in [x for x in ordered if x["wave"] == w]:
+            label = f"{t['id']} {title(t)}".replace('"', "'")
+            mer.append(f'    {_mermaid_node_id(t["id"])}["{label}"]')
+        mer.append("  end")
+    for idx in range(len(waves) - 1):
+        mer.append(f"  W{idx} --> W{idx + 1}")
+    mer.append(_FENCE)
+    mermaid = "\n".join(mer)
+
+    checks = [f"- [{'x' if t['id'] in done_ids else ' '}] {t['id']} — {title(t)}" for t in ordered]
+    progress = "### Progress\n" + "\n".join(checks)
+
+    inner = "\n\n".join(["## At a glance", count_line, table, mermaid, progress])
+    return f"{SUMMARY_BEGIN}\n{inner}\n{SUMMARY_END}"
+
+
+def inject_summary_block(plan_text, block):
+    """Insert/replace the 'At a glance' block. Idempotent by sentinel.
+    A real generated block (each sentinel on its own line) -> replace it in place.
+    Else insert `block` immediately before the first '## ' heading (keeping the
+    H1 and any directive blockquote above it); no '## ' -> append; empty -> block.
+    Detection is line-anchored, so a PLAN.md that only MENTIONS the sentinel
+    strings in prose or fenced code is left untouched (never corrupted)."""
+    if _SUMMARY_RE.search(plan_text):
+        return _SUMMARY_RE.sub(lambda _m: block, plan_text, count=1)  # lambda: avoid backref parsing
+    # No complete generated block. Sweep any ORPHAN standalone sentinel line (a
+    # half-deleted block) so a later inject can't span across it; inline mentions
+    # (indented / mid-line) are not standalone lines and are preserved.
+    plan_text = _SUMMARY_BEGIN_LINE.sub("", plan_text)
+    plan_text = _SUMMARY_END_LINE.sub("", plan_text)
+    m = re.search(r"(?m)^##\s", plan_text)
+    if m:
+        return plan_text[: m.start()] + block + "\n\n" + plan_text[m.start() :]
+    if plan_text.strip():
+        return plan_text.rstrip("\n") + "\n\n" + block + "\n"
+    return block + "\n"
+
+
+def summarize_plan_file(plan_path):
+    """Read -> build block -> inject -> write only if changed. Returns True if written."""
+    text = plan_path.read_text(encoding="utf-8").replace("\r\n", "\n")
+    _, body = parse_frontmatter(text)
+    tasks, _ = extract_tasks(body)
+    attach_titles(tasks, body)
+    done_ids = set()
+    for disp, _tok, content in split_sections(body)[1]:
+        if disp.lower() == "status log":
+            entries = parse_status_entries(content)
+            done_ids = _done_task_ids(entries, [t["id"] for t in tasks])
+            break
+    block = render_summary_block(tasks, done_ids)
+    new_text = inject_summary_block(text, block)
+    if new_text != text:
+        plan_path.write_text(new_text, encoding="utf-8")
+        return True
+    return False
+
+
 def build_wave_diagram(waves):
     if not waves:
         return ""
@@ -1211,6 +1334,7 @@ def attach_titles(tasks, body):
 def render(plan_path: Path, review: dict | None = None) -> tuple[str, list[str], dict]:
     text = plan_path.read_text(encoding="utf-8").replace("\r\n", "\n")
     fm, body = parse_frontmatter(text)
+    body = _SUMMARY_RE.sub("", body)  # drop the generated 'At a glance' block; HTML has its own view
     warnings: list[str] = []
 
     tasks, spans = extract_tasks(body)
@@ -1292,7 +1416,7 @@ def self_check(html_text: str, meta: dict):
 
 USAGE = (
     "Usage: render_plan.py <PLAN.md|slug> [output.html] "
-    "[--emit-files] [--review sidecar.json]"
+    "[--emit-files] [--review sidecar.json] [--summarize]"
 )
 
 
@@ -1300,6 +1424,7 @@ def main(argv):
     args = argv[1:]
     emit_files = False
     review_path = None
+    summarize = False
     positionals = []
     i = 0
     while i < len(args):
@@ -1311,6 +1436,8 @@ def main(argv):
             if i >= len(args):
                 raise SystemExit("--review requires a path to the sidecar JSON")
             review_path = args[i]
+        elif a == "--summarize":
+            summarize = True
         elif a.startswith("--"):
             raise SystemExit(f"Unknown flag: {a}\n{USAGE}")
         else:
@@ -1321,6 +1448,9 @@ def main(argv):
         raise SystemExit(USAGE)
 
     plan_path = resolve_input(positionals[0])
+
+    if summarize:
+        summarize_plan_file(plan_path)
 
     if emit_files:
         print(emit_files_json(plan_path))

@@ -1,0 +1,22 @@
+diff --git a/app/repositories/watchlist_repository.py b/app/repositories/watchlist_repository.py
+index 3333333..4444444 100644
+--- a/app/repositories/watchlist_repository.py
++++ b/app/repositories/watchlist_repository.py
+@@ -1,8 +1,17 @@
+ from sqlalchemy import select
+
+ from app.models.watchlist import Watchlist
+ from app.repositories.base import BaseRepository
+
+
+ class WatchlistRepository(BaseRepository):
+     model = Watchlist
++
++    async def list_for_user(self, user_id: str) -> list[Watchlist]:
++        stmt = (
++            select(Watchlist)
++            .where(Watchlist.user_id == user_id)
++            .order_by(Watchlist.created_at.desc())
++        )
++        result = await self.session.execute(stmt)
++        return list(result.scalars().all())

@@ -31,17 +31,12 @@ At `<40%` mid-feature: commit/push current wave first (if executing), update STA
 
 ## Intake fields (orchestrator writes these)
 
-At intake — before dispatching any task — the orchestrator runs `/feature-intake` and
-writes the result to `specs/<slug>/SUMMARY.md` (shape: `templates/SUMMARY.template.md`):
+At intake — before dispatching any task — the orchestrator runs `/feature-intake` and writes the result to `specs/<slug>/SUMMARY.md` (shape: `templates/SUMMARY.template.md`):
 
 - **Lane** — `tiny | normal | high-risk` (drives ceremony / how much proof).
 - **Confidence** — `high | medium | low` (drives interruption / whether a human is asked).
 
-These two fields are load-bearing: `hooks/risk-corroboration.sh` reads `Lane:` to
-corroborate it against the staged diff, and the trust-metrics ledger reads both. The
-orchestrator MUST write a `Lane:` line: a declared lane below `high-risk` is **blocked** when
-the diff trips a hard-gate signal, but a *missing* lane only **warns** (fail-open) unless
-`RISK_CORROBORATION_STRICT=1` is set.
+These two fields are load-bearing: `hooks/risk-corroboration.sh` reads `Lane:` to corroborate it against the staged diff, and the trust-metrics ledger reads both. The orchestrator MUST write a `Lane:` line: a declared lane below `high-risk` is **blocked** when the diff trips a hard-gate signal, but a *missing* lane only **warns** (fail-open) unless `RISK_CORROBORATION_STRICT=1` is set.
 
 ## Subagent contract
 
@@ -59,42 +54,27 @@ Target length: 150–300 words. No raw file dumps. Main thread must be able to a
 
 ## Evidence in SUMMARY.md (evidence over assertion)
 
-A claim of "done" is only valid with a re-runnable artifact. The subagent records, in
-`specs/<slug>/SUMMARY.md` (shape: `templates/SUMMARY.template.md`):
+A claim of "done" is only valid with a re-runnable artifact. The subagent records, in `specs/<slug>/SUMMARY.md` (shape: `templates/SUMMARY.template.md`):
 
-- **`### Verify`** — a table row per check actually RUN: `Check | Command | Exit | Notes`.
-  Never list a command that was not run. `commit-quality-gate.sh` can require this block for
-  `app/` changes when `REQUIRE_VERIFY=1`.
-- **`### Rollback`** — the exact undo command(s); required for any high-risk / Rule-4 action
-  (`rules/auto-correct-scope.md`). For reversible work, `git revert <sha>` suffices.
+- **`### Verify`** — a table row per check actually RUN: `Check | Command | Exit | Notes`. Never list a command that was not run. `commit-quality-gate.sh` can require this block for `app/` changes when `REQUIRE_VERIFY=1`.
+- **`### Rollback`** — the exact undo command(s); required for any high-risk / Rule-4 action (`rules/auto-correct-scope.md`). For reversible work, `git revert <sha>` suffices.
 
-Behavior-to-proof status lives in `specs/<slug>/TEST_MATRIX.md` (shape:
-`templates/TEST_MATRIX.template.md`): a row is `implemented` only when an evidence artifact exists.
+Behavior-to-proof status lives in `specs/<slug>/TEST_MATRIX.md` (shape: `templates/TEST_MATRIX.template.md`): a row is `implemented` only when an evidence artifact exists.
 
 ## Artifact policy (record always-on; plan-ahead by signal)
 
 Two kinds of artifact, sized differently:
 
-- **The record** — `SUMMARY.md` is written for **every** lane, tiny included. It is the
-  always-on audit trail; its `Rationale` + `Alternatives` make an autonomous decision
-  reconstructable without re-reading the diff. "No human" never means "no record."
-- **Plan-ahead scaffolding** — `design.md` / `research-brief.md` / `PLAN.md` exist to reduce
-  *uncertainty*, so they are triggered by **signal**, not by lane alone: `PLAN.md` at >3 steps
-  or >2 files (`rules/plan-format.md`); `research-brief.md` for unfamiliar code or high-risk;
-  `design.md` only on a real design fork (≥2 viable approaches) or high-risk.
+- **The record** — `SUMMARY.md` is written for **every** lane, tiny included. It is the always-on audit trail; its `Rationale` + `Alternatives` make an autonomous decision reconstructable without re-reading the diff. "No human" never means "no record."
+- **Plan-ahead scaffolding** — `design.md` / `research-brief.md` / `PLAN.md` exist to reduce *uncertainty*, so they are triggered by **signal**, not by lane alone: `PLAN.md` at >3 steps or >2 files (`rules/plan-format.md`); `research-brief.md` for unfamiliar code or high-risk; `design.md` only on a real design fork (≥2 viable approaches) or high-risk.
 
-For autonomous work the substitute for the human gate is **verification, not more documents**:
-a re-runnable `### Verify` row + independent two-stage review. Over-documenting reversible work
-manufactures unread artifacts that are harder to audit than the diff and erode the record's value.
+For autonomous work the substitute for the human gate is **verification, not more documents**: a re-runnable `### Verify` row + independent two-stage review. Over-documenting reversible work manufactures unread artifacts that are harder to audit than the diff and erode the record's value.
 
-`FULL_ARTIFACTS=1` (opt-in) forces the complete artifact set regardless of lane — for
-audit-heavy changes or while calibrating trust. Default is signal-scaled.
+`FULL_ARTIFACTS=1` (opt-in) forces the complete artifact set regardless of lane — for audit-heavy changes or while calibrating trust. Default is signal-scaled.
 
 ## Escalation decision (when to involve a human)
 
-Run at intake and continuously during execution. **Ceremony scales with risk; the human gate
-scales with ambiguity** — never ask a human to classify risk, only to confirm intent or
-authorize a dangerous boundary.
+Run at intake and continuously during execution. **Ceremony scales with risk; the human gate scales with ambiguity** — never ask a human to classify risk, only to confirm intent or authorize a dangerous boundary.
 
 ESCALATE — write a block to `specs/<slug>/ESCALATIONS.md` (shape: `templates/ESCALATIONS.template.md`)
 and stop — when any of these hold:

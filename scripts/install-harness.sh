@@ -18,6 +18,7 @@ TARGET_DIR="$PWD"
 SOURCE_DIR=""
 ASSUME_YES=0
 FORCE=0
+OVERWRITE_CONFLICTS=0
 DRY_RUN=0
 KEEP_SOURCES=0
 
@@ -26,7 +27,7 @@ KEEP_SOURCES=0
 # target root — a previous installer staged these at the root and pruned them afterward,
 # which destroyed real project files when those names already existed (or when run inside
 # the harness-skills repo itself).
-PAYLOAD=(skills agents hooks rules templates settings.json scripts/deploy-harness.sh)
+PAYLOAD=(skills agents hooks rules templates settings.json scripts/deploy-harness.sh VERSION CHANGELOG.md)
 STAGE_NAME=".harness-source"
 
 # ---------- styling ----------
@@ -41,6 +42,12 @@ info() { printf '  %s•%s %s\n' "$C" "$R" "$*"; }
 warn() { printf '  %s⚠ %s%s\n' "$Y" "$*" "$R"; }
 fail() { printf '\n  %s✗ %s%s\n\n' "$RED" "$*" "$R" >&2; exit 1; }
 
+# True only when this process can actually open its controlling terminal. `[ -r /dev/tty ]`
+# is NOT equivalent: access(2) sees the mode bits of the /dev/tty alias node and reports it
+# readable even after setsid(), so a tty-less run would fall into the prompt branch and die
+# on `printf > /dev/tty`. Mirrors have_tty() in deploy-harness.sh.
+have_tty() { (exec < /dev/tty) 2>/dev/null; }
+
 usage() {
   cat <<EOF
 Install the claude-skills harness into a target project.
@@ -51,11 +58,20 @@ Options:
   -d, --directory <path>  Target project dir (default: current dir)
   -b, --branch <name>     Branch to install from (default: ${BRANCH})
       --source <path>     Use a local claude-skills checkout instead of cloning
-  -y, --yes               Non-interactive: re-sync an existing .claude/ without asking
-      --force             Same as --yes (kept for compatibility)
+  -y, --yes               Non-interactive: re-sync an existing .claude/ without asking.
+                          Protected files (bootstrap-generated, e.g. rules/architecture.md)
+                          keep your local copy; the incoming version is saved alongside as
+                          <file>.harness-incoming for review.
+      --force             Same as --yes (kept for compatibility) — NOT "overwrite": protected
+                          files are still kept, not clobbered. Use --overwrite-conflicts for that.
+      --overwrite-conflicts  Non-interactive: replace protected files with the incoming
+                          harness version instead of keeping your local copy (no prompt,
+                          no .harness-incoming sidecar). Implies --yes: it consents to the
+                          re-sync of an existing .claude/ as well.
       --keep-sources      Also copy the harness sources into <target>/${STAGE_NAME}/
                           for inspection or offline re-sync (default: no copy)
-      --dry-run           Show what would happen; write nothing
+      --dry-run           Show what would happen, including any protected-file conflicts;
+                          write nothing
   -h, --help              Show this help
 
 Examples:
@@ -73,6 +89,7 @@ while [ $# -gt 0 ]; do
     --source)       SOURCE_DIR="${2:?--source needs a path}"; shift 2 ;;
     -y|--yes)       ASSUME_YES=1; shift ;;
     --force)        FORCE=1; ASSUME_YES=1; shift ;;
+    --overwrite-conflicts) OVERWRITE_CONFLICTS=1; shift ;;
     --keep-sources) KEEP_SOURCES=1; shift ;;
     --dry-run)      DRY_RUN=1; shift ;;
     -h|--help)      usage; exit 0 ;;
@@ -118,8 +135,11 @@ ok "Source ready"
 # ---------- existing-harness check ----------
 if [ -e "$TARGET_DIR/.claude/settings.json" ] && [ "$DRY_RUN" -eq 0 ]; then
   warn "Existing harness found in target (.claude/) — it will be re-synced (merge; non-harness entries kept)."
-  if [ "$FORCE" -eq 0 ] && [ "$ASSUME_YES" -eq 0 ]; then
-    if [ -r /dev/tty ]; then
+  info "Protected files (e.g. rules/architecture.md) keep your local copy by default; incoming saved as <file>.harness-incoming. Pass --overwrite-conflicts to replace them instead."
+  # --overwrite-conflicts is itself a non-interactive consent to re-sync: it names the
+  # destructive outcome explicitly, so re-asking "Re-sync it? [y/N]" adds nothing.
+  if [ "$FORCE" -eq 0 ] && [ "$ASSUME_YES" -eq 0 ] && [ "$OVERWRITE_CONFLICTS" -eq 0 ]; then
+    if have_tty; then
       printf '  Re-sync it? [y/N] ' > /dev/tty
       IFS= read -r reply < /dev/tty
       case "$reply" in y|Y|yes|YES) ;; *) fail "Aborted (no changes made)." ;; esac
@@ -182,12 +202,19 @@ else
 fi
 
 # ---------- build .claude/ via deploy-harness (straight from the fetched source) ----------
+# --yes/--overwrite-conflicts are forwarded so a non-interactive re-sync resolves protected-file
+# conflicts (keep-mine or overwrite) instead of hanging on deploy's own prompt; --dry-run is
+# forwarded so the dry-run path actually reaches deploy's conflict report (see deploy-harness.sh
+# preflight_protected, which exits 0 before any write).
+DEPLOY_ARGS=(--target "$TARGET_DIR")
+[ "$ASSUME_YES" -eq 1 ] && DEPLOY_ARGS+=(--yes)
+[ "$OVERWRITE_CONFLICTS" -eq 1 ] && DEPLOY_ARGS+=(--overwrite-conflicts)
 if [ "$DRY_RUN" -eq 1 ]; then
-  info "Would run: bash deploy-harness.sh --target $TARGET_DIR (builds .claude/)"
+  DEPLOY_ARGS+=(--dry-run)
 else
   printf '\n'
-  bash "$SRC/scripts/deploy-harness.sh" --target "$TARGET_DIR"
 fi
+bash "$SRC/scripts/deploy-harness.sh" "${DEPLOY_ARGS[@]}"
 
 # ---------- optional: keep a copy of the sources in the target ----------
 STAGE_DIR="$TARGET_DIR/$STAGE_NAME"
@@ -206,7 +233,15 @@ if [ "$KEEP_SOURCES" -eq 1 ]; then
   fi
 fi
 
-printf '\n  %s%s✓ Harness installed%s  %s→ %s%s\n' "$G" "$B" "$R" "$D" "$TARGET_DIR" "$R"
+HARNESS_VERSION=$( [ -f "$SRC/VERSION" ] && tr -d '[:space:]' < "$SRC/VERSION" || echo "unknown" )
+if [ "$DRY_RUN" -eq 1 ]; then
+  # Deploy already reported what it would do and wrote nothing. Claiming "installed"
+  # here would contradict it on the very next line.
+  printf '\n  %s%s✓ Dry run complete%s %s(v%s)%s  %s→ nothing was written to %s%s\n' "$G" "$B" "$R" "$D" "$HARNESS_VERSION" "$R" "$D" "$TARGET_DIR" "$R"
+  printf '\n'
+  exit 0
+fi
+printf '\n  %s%s✓ Harness installed%s %s(v%s)%s  %s→ %s%s\n' "$G" "$B" "$R" "$D" "$HARNESS_VERSION" "$R" "$D" "$TARGET_DIR" "$R"
 printf '  %s↻ Restart Claude Code in that project so it loads the harness.%s\n' "$Y" "$R"
 if [ "$UVX_MISSING" -eq 1 ]; then
   warn "Install uv before that restart, or the code-review-graph MCP server cannot launch."

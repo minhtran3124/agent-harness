@@ -341,5 +341,212 @@ class TestOutputPathByMode:
         assert not (tmp_path / "PLAN.html").exists()
 
 
+# --------------------------------------------------------------------------- #
+# render_summary_block — pure, deterministic "At a glance" block builder.
+# --------------------------------------------------------------------------- #
+def _task(id, wave, files, done, title=None):
+    t = {"id": id, "wave": wave, "files": files, "verify": "", "action": "", "done": done}
+    if title is not None:
+        t["title"] = title
+    return t
+
+
+class TestSummaryBlock:
+    def _tasks(self):
+        return [
+            _task("1.1", "1", "app/models/x.py, alembic/y.py", "Migration applies clean", "model+migration"),
+            _task("1.2", "1", "app/schemas/x.py", "Schemas validate", "schemas"),
+            _task("2.1", "2", "app/repos/x.py", "Repo tests pass", "repository"),
+        ]
+
+    def test_deterministic(self):
+        # multiple done ids + multiple files so set-iteration order could differ between runs
+        assert rp.render_summary_block(self._tasks(), {"1.1", "2.1"}) == rp.render_summary_block(
+            self._tasks(), {"1.1", "2.1"}
+        )
+
+    def test_count_ignores_unknown_done_ids(self):
+        # a stale Status-Log id not among the tasks must not inflate the done count
+        b = rp.render_summary_block(self._tasks(), {"1.1", "9.9"})
+        assert "**3 tasks · 2 waves · 4 files · 1/3 done**" in b
+
+    def test_has_both_sentinels(self):
+        b = rp.render_summary_block(self._tasks(), set())
+        assert rp.SUMMARY_BEGIN in b and rp.SUMMARY_END in b
+        assert b.startswith(rp.SUMMARY_BEGIN) and b.rstrip().endswith(rp.SUMMARY_END)
+
+    def test_count_line(self):
+        b = rp.render_summary_block(self._tasks(), {"1.1"})
+        assert "**3 tasks · 2 waves · 4 files · 1/3 done**" in b
+
+    def test_checkboxes_from_done(self):
+        b = rp.render_summary_block(self._tasks(), {"1.1"})
+        assert "- [x] 1.1 — model+migration" in b
+        assert "- [ ] 2.1 — repository" in b
+
+    def test_mermaid_wave_subgraphs(self):
+        b = rp.render_summary_block(self._tasks(), set())
+        assert "flowchart LR" in b
+        assert "subgraph W0[Wave 1]" in b
+        assert "subgraph W1[Wave 2]" in b
+        assert "W0 --> W1" in b
+
+    def test_missing_title_falls_back_to_id(self):
+        b = rp.render_summary_block([_task("3.1", "1", "a.py", "done text")], set())
+        assert "- [ ] 3.1 — 3.1" in b
+
+    def test_all_dash_waves_count_one_wave(self):
+        t = [_task("1", "—", "a.py", "d"), _task("2", "—", "b.py", "d")]
+        assert "2 tasks · 1 waves · 2 files · 0/2 done" in rp.render_summary_block(t, set())
+
+    def test_done_truncated_to_80(self):
+        b = rp.render_summary_block([_task("1.1", "1", "a.py", "x" * 200)], set())
+        assert ("x" * 80 + "…") in b
+        assert ("x" * 81) not in b
+
+    def test_empty_tasks_minimal_block(self):
+        b = rp.render_summary_block([], set())
+        assert "No tasks defined yet" in b
+        assert rp.SUMMARY_BEGIN in b and rp.SUMMARY_END in b
+
+
+class TestInjectSummaryBlock:
+    BLOCK = rp.SUMMARY_BEGIN + "\nBODY\n" + rp.SUMMARY_END
+
+    def test_inserts_before_first_h2_preserving_directive(self):
+        text = "# Title\n\n> **For Claude:** directive\n\n## 1. Motivation\nfoo\n"
+        out = rp.inject_summary_block(text, self.BLOCK)
+        assert out.index("# Title") < out.index("> **For Claude:**") < out.index(rp.SUMMARY_BEGIN)
+        assert out.index(rp.SUMMARY_END) < out.index("## 1. Motivation")
+
+    def test_replaces_between_sentinels_idempotent(self):
+        text = "# T\n\n" + rp.SUMMARY_BEGIN + "\nOLD\n" + rp.SUMMARY_END + "\n\n## 1. M\nx\n"
+        out = rp.inject_summary_block(text, self.BLOCK)
+        assert "OLD" not in out
+        assert out.count(rp.SUMMARY_BEGIN) == 1
+        assert "BODY" in out and "x" in out and "## 1. M" in out
+        assert rp.inject_summary_block(out, self.BLOCK) == out  # re-inject is a no-op
+
+    def test_no_h2_appends(self):
+        text = "# Title\n\nsome prose only\n"
+        out = rp.inject_summary_block(text, self.BLOCK)
+        assert out.rstrip().endswith(rp.SUMMARY_END)
+        assert "some prose only" in out
+
+    def test_only_sentinel_region_touched(self):
+        text = "# T\n\n> keep me\n\n## 1. M\nkeep body\n"
+        out = rp.inject_summary_block(text, self.BLOCK)
+        assert "> keep me" in out and "keep body" in out
+
+    def test_half_present_sentinel_does_not_swallow_content(self):
+        # only BEGIN survives (END was hand-deleted from the "do not edit" region)
+        text = "# T\n\n" + rp.SUMMARY_BEGIN + "\nORPHAN\n\n## 1. M\nkeep body\n"
+        out = rp.inject_summary_block(text, self.BLOCK)
+        assert out.count(rp.SUMMARY_BEGIN) == 1  # orphan stripped, one fresh BEGIN
+        assert out.count(rp.SUMMARY_END) == 1
+        assert "keep body" in out and "BODY" in out
+        # a second inject is now a clean region-replace, content still preserved
+        out2 = rp.inject_summary_block(out, self.BLOCK)
+        assert "keep body" in out2 and out2.count(rp.SUMMARY_BEGIN) == 1
+
+    def test_trailing_whitespace_on_sentinel_still_detected(self):
+        # an editor/merge left trailing spaces on the generated sentinel lines;
+        # detection must still REPLACE the block (refresh), not append a duplicate.
+        text = (
+            "# T\n\n"
+            + rp.SUMMARY_BEGIN + "   \nOLD\n" + rp.SUMMARY_END + "\t\n"
+            + "\n## 1. M\nx\n"
+        )
+        out = rp.inject_summary_block(text, self.BLOCK)
+        assert "OLD" not in out  # region replaced, not duplicated
+        assert out.count(rp.SUMMARY_BEGIN) == 1 and "x" in out
+
+    def test_inline_sentinel_mention_is_not_a_block(self):
+        # a plan that DOCUMENTS the feature: the sentinel strings appear indented
+        # inside code/prose, never as standalone lines. inject must NOT treat the
+        # span between them as a generated block (that would delete real content);
+        # it must insert a fresh block before the first '## '.
+        begin_line = '    SUMMARY_BEGIN = "' + rp.SUMMARY_BEGIN + '"'
+        end_line = '    SUMMARY_END = "' + rp.SUMMARY_END + '"'
+        text = "# T\n\n" + begin_line + "\n" + end_line + "\n\n## 1. M\nreal body\n"
+        out = rp.inject_summary_block(text, self.BLOCK)
+        assert begin_line in out and end_line in out  # documented source survives verbatim
+        assert "real body" in out
+        assert out.index("BODY") < out.index("## 1. M")  # fresh block landed before the section
+
+
+_PLAN = (
+    "---\nslug: demo\nstatus: active\nowner: X\ncreated: 2026-07-15\n---\n\n"
+    "# Demo plan\n\n> **For Claude:** directive\n\n## 1. Motivation\nwhy\n\n"
+    "## 4. Tasks\n\n### Task 1.1 — first\n\n```xml\n"
+    "<task id=\"1.1\" wave=\"1\">\n<files>a.py</files>\n<action>do</action>\n"
+    "<verify>true</verify>\n<done>done</done>\n</task>\n```\n\n"
+    "## Status Log\n\n- 2026-07-15 — 1.1 complete ✓\n"
+)
+
+
+class TestSummarizePlanFile:
+    def test_injects_and_reports_written(self, tmp_path):
+        p = tmp_path / "PLAN.md"
+        p.write_text(_PLAN, encoding="utf-8")
+        assert rp.summarize_plan_file(p) is True
+        out = p.read_text(encoding="utf-8")
+        assert rp.SUMMARY_BEGIN in out
+        assert "- [x] 1.1 — first" in out
+        assert out.index("> **For Claude:**") < out.index(rp.SUMMARY_BEGIN) < out.index("## 1. Motivation")
+
+    def test_second_run_is_noop(self, tmp_path):
+        p = tmp_path / "PLAN.md"
+        p.write_text(_PLAN, encoding="utf-8")
+        rp.summarize_plan_file(p)
+        before = p.read_text(encoding="utf-8")
+        assert rp.summarize_plan_file(p) is False
+        assert p.read_text(encoding="utf-8") == before
+
+    def test_no_status_log_all_unchecked(self, tmp_path):
+        # a plan without a '## Status Log' section -> empty done set, 0/N done
+        p = tmp_path / "PLAN.md"
+        p.write_text(_PLAN.replace("## Status Log\n\n- 2026-07-15 — 1.1 complete ✓\n", ""), encoding="utf-8")
+        assert rp.summarize_plan_file(p) is True
+        out = p.read_text(encoding="utf-8")
+        assert "1 tasks · 1 waves · 1 files · 0/1 done" in out
+        assert "- [ ] 1.1 — first" in out
+
+    def test_does_not_corrupt_plan_documenting_sentinels(self, tmp_path):
+        # regression: a plan whose task action embeds the sentinel STRINGS (indented,
+        # not standalone lines) must not have that content swallowed; the real block
+        # is inserted before the first '## ' and the run is idempotent.
+        begin_line = '    SUMMARY_BEGIN = "' + rp.SUMMARY_BEGIN + '"'
+        end_line = '    SUMMARY_END = "' + rp.SUMMARY_END + '"'
+        plan = (
+            "---\nslug: meta\nstatus: active\n---\n\n"
+            "# Meta plan\n\n## 1. Motivation\nintro\n\n"
+            "## 4. Tasks\n\n### Task 1.1 — x\n\n```xml\n"
+            '<task id="1.1" wave="1">\n<files>a.py</files>\n<action>\n'
+            + begin_line + "\n" + end_line + "\n"
+            "</action>\n<verify>true</verify>\n<done>d</done>\n</task>\n```\n"
+        )
+        p = tmp_path / "PLAN.md"
+        p.write_text(plan, encoding="utf-8")
+        rp.summarize_plan_file(p)
+        out = p.read_text(encoding="utf-8")
+        assert begin_line in out and end_line in out  # documented source preserved
+        assert "<verify>true</verify>" in out and "<done>d</done>" in out
+        assert out.index(rp.SUMMARY_BEGIN + "\n") < out.index("## 1. Motivation")  # real block before section
+        before = out
+        assert rp.summarize_plan_file(p) is False  # idempotent, no content churn
+        assert p.read_text(encoding="utf-8") == before
+
+
+class TestHtmlStripsSummaryRegion:
+    def test_render_ignores_generated_block(self, tmp_path):
+        p = tmp_path / "PLAN.md"
+        p.write_text(_PLAN, encoding="utf-8")
+        rp.summarize_plan_file(p)
+        html, warnings, meta = rp.render(p, None)
+        assert "AT-A-GLANCE" not in html
+        assert meta["n_tasks"] == 1
+
+
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))

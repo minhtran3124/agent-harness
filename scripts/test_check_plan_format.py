@@ -216,3 +216,27 @@ class TestMain:
 
     def test_missing_file_returns_1(self, tmp_path):
         assert cpf.main([str(tmp_path / "nope.md")]) == 1
+
+
+# --------------------------------------------------------------------------- #
+# story_size_warnings — advisory, never fails the lint
+# --------------------------------------------------------------------------- #
+class TestStorySizeWarnings:
+    def test_small_task_no_warning(self):
+        text = plan(task(files="app/a.py, app/b.py, app/c.py"))
+        assert cpf.story_size_warnings(text) == []
+
+    def test_oversized_task_warns(self):
+        files = ", ".join(f"app/f{i}.py" for i in range(5))  # 5 > default 4
+        warns = cpf.story_size_warnings(plan(task(files=files)))
+        assert len(warns) == 1 and "consider splitting" in warns[0]
+
+    def test_threshold_is_configurable(self):
+        text = plan(task(files="app/a.py, app/b.py, app/c.py"))
+        assert len(cpf.story_size_warnings(text, max_files=2)) == 1
+
+    def test_warning_does_not_fail_exit_code(self, tmp_path):
+        files = ", ".join(f"app/f{i}.py" for i in range(6))
+        p = tmp_path / "PLAN.md"
+        p.write_text(plan(task(files=files)), encoding="utf-8")
+        assert cpf.main([str(p)]) == 0  # advisory only — still passes

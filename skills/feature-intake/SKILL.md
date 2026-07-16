@@ -49,7 +49,9 @@ add ceremony — most types collapse onto an existing workflow path.
 
 ## Step 2 — Run the risk checklist (10 flags)
 
-Mark each flag that the work touches.
+Mark each flag that the work touches. Cross-check the expected diff against High-Blast Files +
+Shared Contracts in PROJECT.md to name the affected contract (used to populate the `Affects:`
+field in SUMMARY.md).
 
 | # | Risk flag | Fires when the work touches |
 |---|---|---|
@@ -80,11 +82,14 @@ any hard gate    -> high-risk (only a human narrowing scope may lower it)
 - Data loss or migration.
 - Audit/security.
 - External provider behavior.
+- Public contract (API route/method, response envelope, client-visible behavior).
 - Removing or weakening validation requirements.
 - Touching a high-blast-radius file: `.claude/settings.json`, any `.claude/hooks/*`, or a core skill engine.
 
-These mirror `.claude/rules/auto-correct-scope.md` Rule 4 and are corroborated mechanically by
-`.claude/hooks/risk-corroboration.sh` against the staged diff.
+**Canonical source:** the detectable gate list lives in `harness-manifest.json` (`hard_gates`) —
+do not diverge from it. These mirror `.claude/rules/auto-correct-scope.md` Rule 4 and are
+corroborated mechanically by `.claude/hooks/risk-corroboration.sh` against the staged diff;
+`scripts/check_manifest.py` fails CI if the hook and the manifest disagree.
 
 ## Step 4 — Score confidence (the interruption axis)
 
@@ -121,10 +126,17 @@ Lane: <tiny | normal | high-risk>
 Confidence: <high | medium | low>
 Reason: <one sentence — which flags / hard gates fired, or none>
 Flags: <comma-separated flags, or none>
+Affects: <affected contract/module from PROJECT.md High-Blast/Shared-Contracts, or 'none'>
 Input-type: <one of the six>
 Route: <see Step 7>
 Escalate: <yes (reason) | no>
 ```
+
+Also write the `### Intent` section of `SUMMARY.md` with the user's request **verbatim** (do not
+paraphrase; if it spanned several turns, quote the scope-deciding sentences in order). This is the
+oracle for `/intent-review`, the final stage of `subagent-driven-development` — a reviewer blind to
+PLAN.md checks the finished diff against this text, so it must be captured here at intake, not
+reconstructed from the plan later.
 
 ## Step 7 — Route to the workflow path
 
@@ -137,11 +149,33 @@ For autonomous (no-human) work the `### Verify` evidence + independent review **
 the human gate — not extra documents.** Set `FULL_ARTIFACTS=1` to force the full set regardless
 of lane (audit-heavy work / calibrating trust). See `rules/orchestration.md` → Artifact policy.
 
+**Every lane cuts a branch before implementing.** No exceptions, no lane opt-out — see the
+branch rule below the table.
+
 | Lane | Route | Human checkpoint |
 |---|---|---|
-| **tiny** | Direct `Edit` (no plan). Proof = quick-check hooks (`ruff-on-edit`, `auto-test-on-change`, `commit-quality-gate`). | none (unless confidence low / ambiguous) |
-| **normal** | `/subagent-driven-development` (+ `wave-parallelism` for independent tasks). Two-stage agent review per task. | only if confidence low / ambiguous |
-| **high-risk** | Full chain: `/brainstorming` → `/xia2` → `/writing-plans` → `/subagent-driven-development`; record a decision via `/compound` when architecture/behavior changes. | only on ambiguity or a hard gate |
+| **tiny** | `git checkout -b <type>/<slug>` → direct `Edit` (no plan). Proof = quick-check hooks (`ruff-on-edit`, `auto-test-on-change`, `commit-quality-gate`). | none (unless confidence low / ambiguous) |
+| **normal** | `/using-git-worktrees` (isolated worktree + branch) → `/subagent-driven-development` (+ `wave-parallelism` for independent tasks). Two-stage agent review per task. | only if confidence low / ambiguous |
+| **high-risk** | Full chain: `/brainstorming` → `/xia2` → `/writing-plans` → `/using-git-worktrees` → `/subagent-driven-development`; record a decision via `/compound` when architecture/behavior changes. | only on ambiguity or a hard gate |
+
+### The branch rule (applies to every lane)
+
+**Never implement on a shared branch.** The branch comes first, before the first `Edit`:
+
+- **tiny** — a plain in-place branch is enough: `git checkout -b fix/<slug>`. A worktree is
+  overkill for a one-file patch.
+- **normal / high-risk** — `/using-git-worktrees`, which creates an isolated worktree **and** the
+  branch, so the work cannot collide with whatever else is checked out.
+
+Ceremony still scales with risk (plans, reviews, artifacts) — **the branch does not.** A one-line
+typo fix committed straight to `main` is still a commit on `main`; "how small is the change" and
+"where may I write it" are different questions, and only the first one is a lane question.
+
+This is enforced structurally, not by prompt: `hooks/branch-isolation-guard.sh` (PreToolUse on
+Write|Edit) **denies** any implementation edit made while `HEAD` is on a shared branch
+(`HARNESS_SHARED_BRANCHES`, default `main master`) — for every lane, plan or no plan. `specs/`
+stays writable so intake can write `SUMMARY.md` *before* the branch exists. Break-glass:
+`BRANCH_ISOLATION_REASON=<why>` (logged to `docs/harness-experimental/break-glass-log.md`).
 
 After routing, hand off. The downstream skills already enforce their own gates and proof.
 
@@ -153,9 +187,14 @@ After routing, hand off. The downstream skills already enforce their own gates a
 - **Never self-downgrade a hard gate.** Only a human narrowing scope may lower it.
 - **Decouple the axes.** Lane is about risk; the human gate is about ambiguity. Do not pause
   a human merely because work is risky if the direction is clear — apply more proof instead.
-- **Write a `Lane:` line.** The corroboration hook and the trust-metrics ledger depend on it.
-- **Append to the ledger.** At the DONE disclosure, record the task in
-  `docs/harness-experimental/trust-metrics.md`.
+- **Write a `Lane:` line.** The corroboration hook and the trust-metrics ledger depend on it —
+  and the ledger row is now generated FROM the SUMMARY, so `Lane`/`Confidence`/`Flags`/`Affects`
+  must be correct at intake.
+- **Do NOT hand-append the ledger.** CI records it on merge: `post-merge-maintenance.yml` opens a
+  bookkeeping PR that appends the `trust-metrics.md` row, inserts a CHANGELOG entry, and bumps
+  VERSION — parsed from the merged SUMMARY. Your job is a correct SUMMARY, then verify the
+  bookkeeping PR after merge. (Manual appends decayed within three weeks — that is why this is
+  event-sourced now.)
 
 ## Arguments
 

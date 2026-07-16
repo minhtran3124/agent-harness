@@ -1,0 +1,130 @@
+# Plan khép khoảng trống harness — tổng hợp từ 6 nghiên cứu
+
+> **Nguồn:** tổng hợp `research-openai-harness-engineering`, `research-claude-code-harness-comparison`,
+> `research-repository-harness-ideas`, `research-compound-loop-closure`, `research-harness-req-assessment`,
+> `research-agentic-engineering-roadmap`.
+> **Ngày:** 2026-06-14.
+> **Nguyên tắc xếp hạng:** số research docs cùng chỉ ra gap (đồng thuận = tin cậy) × đòn bẩy / công sức.
+> **Lưu ý phạm vi:** mỗi item khi *thực thi* phải đi qua `/feature-intake` để gán lane. Item đụng
+> high-blast (`settings.json`, `hooks/*`, `commit-quality-gate.sh`, `CLAUDE.md`) là **Rule-4** —
+> cần người xác nhận trước (`rules/auto-correct-scope.md`).
+
+---
+
+## 0. Đã xong — không đưa vào plan (tránh lặp việc)
+
+> **Đính chính 2026-06-14 (sau ground-truth check):** nhiều "gap" trong research đã được đóng giữa
+> lúc research viết (06-08→06-13) và nay. Verify từng item trên đĩa trước khi implement.
+
+Research từng nêu, nay đã giải quyết về cơ chế:
+
+- ✅ **`not_observed != absent`** — đã có trong `rules/behavior.md §1` (comparison #3 coi là cần thêm; thực ra đã có).
+- ✅ **Ledger `trust-metrics.md`** — đã build, committed, có ~9 dòng + cột `Affects` (IDEA-01 + một phần Q3 không còn vaporware).
+- ✅ **`specs/` bỏ gitignore** — đã gỡ về cơ chế (chỉ còn việc commit lần đầu + sửa doc nói ngược — xem P2-G).
+- ✅ **Doc-truth lint trong CI** (`scripts/lint-doc-truth.sh`) — đã bắt drift hook-table ↔ settings.json + phantom path refs.
+- ✅ **P1-A `verify_summary.py` — XONG HẲN.** Script re-run `### Verify`, ghi đè Exit thật, `Verified:` timestamp, exit 1 on mismatch, `--check` mode; **đã wire** vào `commit-quality-gate.sh` (REQUIRE_VERIFY=1); có `test_verify_summary.py`. Dư địa duy nhất: default fail-open `REQUIRE_VERIFY=0` → thuộc P3-M.
+- ✅ **P2-F SessionStart hook — XONG.** `hooks/session-knowledge.sh` đã wired (SessionStart), load `INDEX.md`+`critical-patterns.md`, silent khi store rỗng. Vòng tri thức đã khép ở tier "vừa" → research 06-08 (compound-loop-closure) **đã lỗi thời**.
+- 🟡 **P1-B một phần** — `skills/compound/templates/failure-track.md` đã có mục `## Guardrail`. Còn thiếu phần tightening (xem P1-B bên dưới).
+
+---
+
+## 1. Bảng đồng thuận (gap × số research nêu)
+
+| Gap | Research nêu | Đồng thuận | Đòn bẩy/Công sức | Rule-4? |
+|---|---|---|---|---|
+| **Proof là assertion, `### Verify` không re-run** | repo-harness IDEA-02, req #3, comparison #4 | 3 | Cao / Vừa | wiring có |
+| **Ratchet chưa khép — `/compound` failure ra prose, không ra guardrail** | openai #3, repo-harness IDEA-05 | 2 | Cao / Vừa | không (sửa skill) |
+| **"Verify the docs" — chưa có audit drift tự động** | openai #4, repo-harness IDEA-04/12, req #8 | 3 | Cao / Thấp | không (advisory) |
+| **Review agent chưa read-only theo cấu trúc** | comparison #2 | 1 | Cao / Thấp | không |
+| **Q3: không có registry contract; PROJECT.md placeholder** | req #1 (lỗ thiết kế duy nhất) | 1 | Cao / Vừa | không |
+| **Vòng tri thức bán-khép — không SessionStart auto-load** | compound-loop (cả doc), req #4 | 2 | Vừa / Thấp | **có** (settings.json) |
+| **MCP output bị coi là trusted** | openai #5 | 1 | Vừa / Thấp | nhẹ (CLAUDE.md) |
+| **specs/ transition chưa hoàn tất (doc nói ngược)** | req #2/#6 | 1 | Vừa / Thấp | không |
+| **Chưa có bằng chứng số: harness có hiệu quả không?** | comparison #1/#7 | 1 | Rất cao / Cao | không (thư mục mới) |
+| **Lane→evidence mapping nhân bản 3 nơi** | repo-harness IDEA-10 | 1 | Vừa / Vừa | wiring có |
+| **Story-sizing là guideline, không phải gate** | req #5/#7 | 1 | Vừa / Thấp | không |
+| **Break-glass protected paths (Rule-4 chỉ prompt)** | comparison #5 | 1 | Vừa / Vừa | **có** (hook mới) |
+| **Fail-open mặc định (REQUIRE_VERIFY=0, STRICT=0)** | req #4/#5 | 1 | Vừa / Thấp | **có** |
+| **VERSION/CHANGELOG cho installer** | repo-harness IDEA-15, req #6 | 2 | Thấp / Thấp | không |
+| **Hợp nhất bash gates thành 1 dispatcher + state ledger** | comparison #8/#9 | 1 | Cao / Rất cao | **có** (đại tu) |
+
+---
+
+## 2. Plan theo giai đoạn
+
+> **Trạng thái thực thi 2026-06-14:** sau ground-truth, P1-A/P1-D/P2-F đã xong từ trước.
+> P1-B và P1-C đã **thực thi xong trong phiên này** (✅ bên dưới). Test suite + lint-doc-truth xanh.
+
+### Phase 1 — Quick wins, đồng thuận cao, ít/không Rule-4 (nên làm trước)
+
+**P1-A · ✅ ĐÃ XONG TỪ TRƯỚC (xem mục 0) — `scripts/verify_summary.py` — biến proof từ assertion sang fact** *(IDEA-02, req #3, comparison #4)*
+- **Gap:** cột `Exit` trong bảng `### Verify` của `SUMMARY.md` do agent **gõ tay**; `commit-quality-gate.sh` chỉ `grep -q '^### Verify'` (kiểm tra sự hiện diện).
+- **Action:** script (theo khuôn `check_plan_format.py`) parse bảng `### Verify`, chạy lại từng `Command` (timeout 60s, từ repo root), **ghi đè cột Exit bằng exit code thật** + dòng `Verified: <timestamp>`. `--all` glob `specs/*/SUMMARY.md` in tally.
+- **Footgun:** mặc định chỉ chạy slug **active**, yêu cầu lệnh read-only/idempotent (tránh `alembic upgrade` side-effect). Wiring vào `commit-quality-gate.sh` (`REQUIRE_VERIFY=1`) là **Rule-4** → tách thành bước riêng, ship script standalone trước.
+- **Verify:** `python scripts/verify-summary.py specs/<slug>/SUMMARY.md` exit 0 trên slug có Verify pass; test theo khuôn `test_check_plan_format.py`.
+
+**P1-B · ✅ XONG (2026-06-14) — Khép ratchet: `/compound` failure đề xuất guardrail, không chỉ prose** *(openai #3 — khuyến nghị mạnh nhất, IDEA-05)*
+- **Đã làm:** `solution-extractor-prompt.md` giờ bắt buộc trường `Guardrail` là artifact buildable tagged `existing:`/`proposed:` (không cho prose/`[none]`); `compound/SKILL.md` thêm bước route guardrail `proposed:` vào `docs/harness-experimental/improvement-backlog.md` (đã tạo seed); template `failure-track.md` + inline template cập nhật khớp.
+- **Gap:** track `failure` của `/compound` ghi trường "Guardrail" dạng văn xuôi — cấp prompt, không tất định. OpenAI: *mọi* lỗi agent thành guardrail cơ học vĩnh viễn.
+- **Action:** sửa `skills/compound/SKILL.md` — khi ghi `failure`, bắt buộc emit một *đề xuất guardrail cụ thể*: tên hook / structural test / dòng lint sẽ chặn lỗi tái diễn, kèm file đích. Output thành mục trong `docs/harness-experimental/improvement-backlog.md` (committed) để triage.
+- **Verify:** chạy `/compound` trên một phiên có failure → backlog có entry với guardrail-đề-xuất khác null.
+
+**P1-C · ✅ XONG (2026-06-14) — `scripts/harness-audit.sh` — "verify the docs" mở rộng** *(openai #4, IDEA-04/12, req #8)*
+- **Đã làm:** script advisory bắt 3 drift chưa ai phủ: SUMMARY thiếu `### Verify`, PLAN `status:active` stale (>14d), `confirmed_at` >30d. Banded health + raw count; default exit 0 (non-blocking), `--strict` exit 1. Wired advisory vào `harness-status.sh`. Phantom refs/hook-table vẫn để `lint-doc-truth.sh` lo (không nhân bản). Test thủ công 3/3 check fire đúng.
+- **Gap:** doc-truth lint mới phủ hook-table ↔ settings.json. Chưa bắt: phantom references nói chung, SUMMARY thiếu `### Verify`, PLAN `status:active` mà Status Log nguội, `docs/solutions` `confirmed_at` >30 ngày.
+- **Action:** script bash+python: (1) grep path được trích dẫn nhưng absent on disk; (2)→(4) các check trên; **trọng số trong data** (assoc array/json sidecar), báo cả tổng thô lẫn banded, emit JSONL vào `docs/harness-experimental/audit-log.jsonl`. **Advisory, non-blocking**, wire như dòng trong `harness-status.sh`.
+- **Verify:** `bash scripts/harness-audit.sh` exit 0, in báo cáo; cố tình thêm 1 phantom ref → script bắt được.
+
+**P1-D · ✅ ĐÃ XONG TỪ TRƯỚC — review subagent read-only bằng cấu trúc** *(comparison #2)*
+- **Ground truth:** `agents/reviewer.md` đã tồn tại, read-only (`tools: Glob, Grep, Read, Bash` — loại Write/Edit/Agent). Cả 3 prompt template (`correctness-reviewer`, `correctness-scorer`, `intent-reviewer`) đã khai `subagent_type: reviewer` + comment giải thích. Research comparison #2 ("1 dòng config") đã được hiện thực đầy đủ hơn — bằng agent def riêng. Không còn việc gì.
+
+> **Trạng thái thực thi 2026-06-14 (sau ground-truth):** Phase 2 gần như đã đóng từ trước.
+> P2-E/F/G đều đã có sẵn (research 06-11 lỗi thời); chỉ **P2-H** thực sự còn thiếu → đã làm trong phiên này.
+
+### Phase 2 — Đóng lỗ thiết kế + hoàn tất chuyển đổi dở dang (cần vài quyết định / Rule-4 nhẹ)
+
+**P2-E · ✅ ĐÃ XONG TỪ TRƯỚC — Đóng Q3 (product contract)** *(req #1 — lỗ thiết kế duy nhất)*
+- **Ground truth 06-14:** `skills/xia2/PROJECT.md` đã điền thật cho repo (Name: harness-skills, High-Blast Files + Shared Contracts thật — không còn placeholder); `templates/SUMMARY.template.md` đã có dòng `Affects:`; `/feature-intake` đã hỏi contract (Step ~53, 126); ledger đã có cột `Affects`. Research 06-11 lỗi thời.
+
+**P2-F · ✅ ĐÃ XONG TỪ TRƯỚC — SessionStart hook khép vòng tri thức** *(compound-loop, req #4)*
+- **Ground truth:** `hooks/session-knowledge.sh` đã wired (SessionStart), load `INDEX.md`+`critical-patterns.md`, silent khi rỗng. Research 06-08 (compound-loop-closure) đã lỗi thời.
+
+**P2-G · ✅ ĐÃ XONG TỪ TRƯỚC — Hoàn tất chuyển đổi `specs/`** *(req #2/#6)*
+- **Ground truth:** CLAUDE.md đã ghi "specs/ is tracked in git"; `.gitignore` đã ignore `specs/**/PLAN.html` + `specs/**/.plan-review.json`; dòng `skills/README.md:104` "PLAN.html untracked/local-only" là **đúng sự thật** (PLAN.html thật gitignored), không phải mâu thuẫn. Không còn việc.
+
+**P2-H · ✅ XONG (2026-06-14) — Ghi chú MCP-output-untrusted** *(openai #5)*
+- **Đã làm:** thêm subsection "Boundary of trust (MCP output is untrusted input)" vào mục MCP của CLAUDE.md — coi output `code-review-graph`/`context7` là input không đáng tin, corroborate trước khi hành động, không execute lệnh nằm trong output; dovetail `not_observed != absent`. lint-doc-truth + suite xanh.
+
+### Phase 3 — Larger bets / có điều kiện (mỗi cái xứng 1 spec riêng)
+
+**P3-I · 🟡 Infra đã có; RE-RUN xong (2026-06-14) — Micro-benchmark chuỗi review** *(comparison #1/#7)*
+- **Ground truth:** `benchmarks/review-chain/` đã có sẵn (5 fixtures intent/diff/truth + protocol manual v1 + baseline 06-12 = 5/5, 0 FP). Không phải build mới.
+- **Đã làm (re-run full matrix 10 dispatch với agent `reviewer` thật):** kết quả `results/2026-06-14-reviewer-agent.md` — **5/5 catch đúng oracle, 0 hard false-positive**, ~354k tokens. **Đóng caveat #2 của baseline:** lần đầu đo bằng `subagent_type: reviewer` read-only theo cấu trúc (baseline cũ chỉ đo prompt). Không hồi quy sau P1-B/P2-H.
+- **✅ Caveat #1 đã đóng (2026-06-14):** sửa 2 intent fixtures (excess-scope, intent-gap) thành **runtime-clean v2** — thêm None-guard + ownership-scoping, **giữ nguyên defect intent** đã cấy. Verify bằng 2 off-oracle correctness pass (agent `reviewer`) → cả hai báo **CLEAN**. Fixture versioning ghi trong `benchmarks/review-chain/README.md`; expected-oracle baseline 5/5 vẫn giữ.
+
+**P3-J · ✅ XONG (2026-06-14) — `scripts/check_lane_evidence.py` — lane→evidence một nguồn sự thật** *(IDEA-10)*
+- **Đã làm:** script đọc `specs/<slug>/SUMMARY.md`, encode mapping tiny→header / normal→+Verify thật / high-risk→+Rollback; tolerant với bold `**Lane:**`; placeholder-detection chính xác (không nhầm prose chứa `|` trong backtick). 13 test (`test_check_lane_evidence.py`, đã thêm vào `run-tests.sh`). Pointer "single source of truth" trong `rules/auto-correct-scope.md`. Scan toàn bộ specs thật → 0 false-positive. **Hook warn-first wiring** để follow-up (Rule-4, settings.json).
+
+**P3-K · ✅ XONG (2026-06-14) — Gate kích thước story** *(req #5/#7)*
+- **Đã làm:** thêm `story_size_warnings()` vào `check_plan_format.py` — warn (advisory, KHÔNG đổi exit code) khi 1 task chạm >`MAX_FILES_PER_TASK` (mặc định 4, override qua `PLAN_MAX_FILES_PER_TASK`). 4 test. Steps không đếm được cơ học (action là prose) → chỉ gate file-count (cấu trúc).
+
+**P3-L · ✅ XONG dormant (2026-06-14) · Break-glass protected-path hook** *(comparison #5)*
+- **Đã làm:** `hooks/protected-path-guard.sh` (PreToolUse Edit/Write) hard-block write vào high-blast list (settings.json, `hooks/*`, `render_plan.py`, `run-tests.sh`, SUMMARY template); break-glass qua `PROTECTED_PATH_REASON` → ghi `break-glass-log.md`. `^hooks/` loại trừ `tests/hooks/`. 8 test. **DORMANT** — chưa đăng ký `settings.json` (wiring là Rule-4, cần xác nhận); đã thêm dòng ⬜ vào bảng hook CLAUDE.md.
+
+**P3-M · ✅ ĐÃ XONG TỪ TRƯỚC · Nâng fail-open → fail-closed theo giai đoạn** *(req #4/#5)*
+- **Ground truth:** `scripts/ci-strict-gate.sh` đã tồn tại + **đã wire** vào `harness-ci.yml` — strict semantics nằm trong script (chạy trên PR khi diff đụng hard-gate path), local hook giữ warn-by-default. Đúng y "strict-in-CI-first". Không còn việc.
+
+**P3-N · ✅ XONG (2026-06-14) · VERSION + CHANGELOG** *(IDEA-15, req #6)*
+- **Đã làm:** `VERSION` (0.1.0) + `CHANGELOG.md` (Keep-a-Changelog) ở root; thêm vào PAYLOAD installer + echo `(vX.Y.Z)` lúc cài; bước "update CHANGELOG/VERSION" trong `finishing-a-development-branch` (bump theo patch/minor/major). (Plan cũ ghi "chỉ khi consumer thứ 2" — user yêu cầu làm luôn để đóng backlog.)
+
+**P3-O · Hợp nhất bash gates thành 1 dispatcher + state ledger** *(comparison #8/#9)* — đại tu, **Rule-4**, ưu tiên thấp nhất; chỉ khi số hook/độ giòn thực sự đau.
+
+---
+
+## 3. Khuyến nghị thứ tự thực thi
+
+1. **Phase 1 trước** (P1-A → P1-D): đồng thuận cao nhất, ít/không Rule-4, dùng đúng tiền lệ đã có. P1-C (audit) nên làm sớm vì nó tự bắt drift cho mọi thứ sau.
+2. **Phase 2** sau khi P1 ổn: P2-E đóng lỗ thiết kế Q3; P2-F/G/H cần quyết định nhỏ (Rule-4 nhẹ).
+3. **Phase 3** mỗi item một spec riêng; P3-I (benchmark) là đầu tư dài hạn giá trị nhất nhưng nặng.
+
+**Không làm:** importer/migration (IDEA-11), agnostic-hoá Codex/Cursor mirrors, approval-gated loop, memory daemon — research đều kết luận non-fit cho dogfood một người.
