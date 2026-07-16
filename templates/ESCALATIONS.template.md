@@ -7,6 +7,7 @@
 # <slug> — Escalations
 
 Default: **deny-on-no-response**. No recorded decision → work stays blocked.
+(Enforced: `hooks/commit-quality-gate.sh` denies commits touching this slug while any `decision:` is `pending`.)
 
 ---
 

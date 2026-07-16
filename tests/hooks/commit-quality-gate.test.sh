@@ -109,6 +109,43 @@ stage "$repo" "specs/x/SUMMARY.md" "$VERIFY_TABLE_BAD"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc 0
 
+# Check 1.5: pending escalations (deny-on-no-response, review C5)
+t "staged spec file + pending escalation in that slug → BLOCKED (exit 2)"
+repo=$(new_repo $H)
+stage "$repo" "specs/demo/SUMMARY.md" "Lane: normal"
+stage "$repo" "specs/demo/ESCALATIONS.md" '## E001
+- question: widen the regex?
+- decision: pending'
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "deny-on-no-response"
+
+t "same commit recording the decision self-unblocks (staged copy wins)"
+repo=$(new_repo $H)
+stage "$repo" "specs/demo/SUMMARY.md" "Lane: normal"
+stage "$repo" "specs/demo/ESCALATIONS.md" '## E001
+- question: widen the regex?
+- decision: A (accepted)
+- decided_by: human
+- decided_at: 2026-07-16'
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 0 "Escalations... PASSED"
+
+t "pending escalation on disk does NOT block commits that leave the slug untouched"
+repo=$(new_repo $H)
+mkdir -p "$repo/specs/other"
+printf -- '- decision: pending\n' > "$repo/specs/other/ESCALATIONS.md"
+stage "$repo" "README.md" "docs change"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc 0
+
+t "unstaged pending ESCALATIONS.md on disk still blocks a commit touching its slug"
+repo=$(new_repo $H)
+mkdir -p "$repo/specs/demo"
+printf -- '- decision: pending\n' > "$repo/specs/demo/ESCALATIONS.md"
+stage "$repo" "specs/demo/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "deny-on-no-response"
+
 if ensure_pyenv; then
   t "matching passing test runs and commit is allowed"
   repo=$(new_repo $H)

@@ -47,6 +47,31 @@ fi
 echo "[COMMIT GATE] Secrets scan... PASSED" >&2
 
 # ─────────────────────────────────────────────
+# Check 1.5: Pending escalations (deny-on-no-response, mechanized)
+# ─────────────────────────────────────────────
+# templates/ESCALATIONS.template.md declares deny-on-no-response; this makes it
+# real (review 2026-07-16 finding C5: a spec shipped with decision: pending).
+# Scope: block only commits that touch specs/<slug>/ for a slug whose
+# ESCALATIONS.md still has a pending decision — recording the decision in the
+# same commit unblocks (the staged copy is what gets checked).
+ESC_SLUGS=$(git diff --cached --name-only 2>/dev/null \
+  | grep -oE '^specs/[^/]+/' | sort -u || true)
+for slug_dir in $ESC_SLUGS; do
+  esc="${slug_dir}ESCALATIONS.md"
+  # Prefer the staged copy (a commit recording the decision must self-unblock)
+  esc_content=$(git show ":$esc" 2>/dev/null || cat "$esc" 2>/dev/null || true)
+  [ -z "$esc_content" ] && continue
+  if echo "$esc_content" | grep -qiE '^[-*]?[[:space:]]*decision:[[:space:]]*pending'; then
+    echo "[COMMIT GATE] Escalations... FAILED" >&2
+    echo "  BLOCKED: $esc has 'decision: pending' (deny-on-no-response)." >&2
+    echo "  A human records the decision in that file (decision/decided_by/decided_at)," >&2
+    echo "  then this commit unblocks. See rules/orchestration.md → Escalation decision." >&2
+    exit 2
+  fi
+done
+echo "[COMMIT GATE] Escalations... PASSED" >&2
+
+# ─────────────────────────────────────────────
 # Check 2: Debug artifacts in app/ code
 # ─────────────────────────────────────────────
 echo "[COMMIT GATE] Debug artifacts..." >&2
