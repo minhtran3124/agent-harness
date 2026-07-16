@@ -51,4 +51,4 @@ Adopted three information-density practices from Matt Peters' DDR (Design Decisi
 
 ### Harness-Delta
 
-- none
+- backlog — `skills/finishing-a-development-branch/SKILL.md` Step 1b ("Update `CHANGELOG.md` + `VERSION` … commit these with the work") contradicts the event-sourced bookkeeping flow: `post-merge-maintenance.yml` inserts the CHANGELOG entry and bumps VERSION from the merged SUMMARY, so following Step 1b manually would duplicate both. Step 1b should be rewritten to defer to the post-merge bot.
