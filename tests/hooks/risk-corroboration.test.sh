@@ -83,4 +83,33 @@ stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc 0
 
+# Documented FP (docs/solutions/harness/risk-corroboration-scans-test-comments-for-auth-words.md):
+# ordinary English in a shell comment under tests/ must not read as auth surface,
+# while a live code line with the same word must still trip the gate.
+t "auth word in a tests/ shell COMMENT does not trip the gate (comment-strip fix)"
+repo=$(new_repo $H)
+stage "$repo" "tests/scripts/demo.test.sh" '# restore the session state and check permission handling
+echo ok'
+stage "$repo" "specs/x/SUMMARY.md" "Lane: tiny"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc 0
+
+t "auth word in a LIVE code line under tests/ still trips the gate"
+repo=$(new_repo $H)
+stage "$repo" "tests/scripts/demo.test.sh" 'session_token=$(login "$password")'
+stage "$repo" "specs/x/SUMMARY.md" "Lane: tiny"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "BLOCKED"
+
+t "removed comment line does not trip weakening-validation"
+repo=$(new_repo $H)
+mkdir -p "$repo/tests"
+printf '# assert the raise path is covered\necho ok\n' > "$repo/tests/old.test.sh"
+git -C "$repo" add tests/old.test.sh >/dev/null 2>&1 && git -C "$repo" commit -qm seed >/dev/null 2>&1
+printf 'echo ok\n' > "$repo/tests/old.test.sh"
+git -C "$repo" add tests/old.test.sh >/dev/null 2>&1
+stage "$repo" "specs/x/SUMMARY.md" "Lane: tiny"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc 0
+
 finish

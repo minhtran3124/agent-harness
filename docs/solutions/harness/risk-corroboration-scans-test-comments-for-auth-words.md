@@ -55,7 +55,7 @@ This was **not fixed in-session**: `hooks/*` is a high-blast path, so touching i
 
 ## Guardrail
 
-`proposed:` strip `^\s*#` comment lines from `CODE_ADDED`/`CODE_REMOVED` before the category greps (preferred), or add `':!tests/'` to the pathspecs at lines 71 and 74 → `hooks/risk-corroboration.sh`. Must land with a `tests/hooks/` case asserting that an auth word in a shell comment does not trip the gate, while an auth word in a live code line still does.
+`applied (2026-07-16):` the preferred comment-stripping variant landed — `^\+\s*#` / `^-\s*#` lines are filtered from `CODE_ADDED`/`CODE_REMOVED` before the category greps (`hooks/risk-corroboration.sh`), keeping real auth code under `tests/` visible to the gate. Landed with the required `tests/hooks/risk-corroboration.test.sh` cases: auth word in a shell comment does not trip; the same word in a live code line still does; a removed comment does not trip weakening-validation. (Review 2026-07-16 finding C4.)
 
 ## Related
 
