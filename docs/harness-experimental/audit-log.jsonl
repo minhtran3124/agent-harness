@@ -5,3 +5,4 @@
 {"date": "2026-07-15", "findings": 28, "band": "needs attention", "checks": {"verify_missing": 1, "plan_stale": 0, "verify_never_rerun": 23, "backlog_stale": 0, "manifest_degraded": 0, "solutions_stale": 4, "contract_impact": 0}, "pr": 51}
 {"date": "2026-07-15", "findings": 29, "band": "needs attention", "checks": {"verify_missing": 1, "plan_stale": 0, "verify_never_rerun": 24, "backlog_stale": 0, "manifest_degraded": 0, "solutions_stale": 4, "contract_impact": 0}, "pr": 63}
 {"date": "2026-07-15", "findings": 30, "band": "needs attention", "checks": {"verify_missing": 1, "plan_stale": 0, "verify_never_rerun": 25, "backlog_stale": 0, "manifest_degraded": 0, "solutions_stale": 4, "contract_impact": 0}, "pr": 50}
+{"date": "2026-07-16", "findings": 33, "band": "needs attention", "checks": {"verify_missing": 1, "plan_stale": 0, "verify_never_rerun": 28, "backlog_stale": 0, "manifest_degraded": 0, "solutions_stale": 4, "contract_impact": 0}, "pr": 71}
