@@ -6,7 +6,7 @@ Related: `auto-correct-scope.md`. See also `CLAUDE.local.md` → Development Wor
 
 ## When to use this format
 
-Use XML task format when ANY of:
+Use the task format when ANY of:
 
 - Task spans >3 discrete implementation steps
 - Task touches >2 files
@@ -17,9 +17,28 @@ Skip for single-file fixes, typo corrections, config tweaks.
 
 > These thresholds are the **signal** that triggers a `PLAN.md` under the artifact policy (`rules/orchestration.md` → Artifact policy). A `SUMMARY.md` is still written for every lane regardless — plan-ahead scaffolding scales by signal; the record is always-on.
 
-## XML Schema
+## Task Schema — two syntaxes
 
-Every task in `PLAN.md` MUST use:
+Every task carries the same five semantics: `id`, optional `wave`, and populated
+`files / action / verify / done`. Two surface syntaxes are accepted — pick one per plan
+(in mixed files the XML tasks win at parse time, so don't mix):
+
+**Markdown syntax** (default — no fencing, plain markdown):
+
+```markdown
+### Task 1.1 — Short human title (wave 1)
+
+- **Files:** path1, path2
+- **Action:** Imperative instruction. Include rationale when non-obvious.
+  Continuation lines are indented under the bullet.
+- **Verify:** `single shell command — exit 0 means pass, finishes <60s`
+- **Done:** Measurable acceptance state
+```
+
+A `### Task <id>` heading with **no** field bullets is prose, not a task (the renderer
+and gates ignore it).
+
+**XML syntax** (equally valid; all pre-existing plans use it):
 
 ```xml
 <task id="N.M" wave="K">
@@ -30,9 +49,9 @@ Every task in `PLAN.md` MUST use:
 </task>
 ```
 
-## Rendering requirement (Markdown-safe)
+## Rendering requirement (XML tasks only)
 
-Raw XML-like tags (for example `<task>`, `<files>`, `<action>`) are treated as HTML by many Markdown renderers and become hard to read in preview mode. To keep plans readable, every task MUST be wrapped in a fenced `xml` code block in the plan document. Use this presentation pattern:
+Raw XML-like tags (for example `<task>`, `<files>`, `<action>`) are treated as HTML by many Markdown renderers and become hard to read in preview mode. To keep plans readable, every **XML** task MUST be wrapped in a fenced `xml` code block in the plan document. Markdown-syntax tasks are ordinary markdown — never fence them. Presentation pattern for XML tasks:
 
 ````markdown
 ### Task 1.1 — Short human title
@@ -53,11 +72,11 @@ Rules:
 - Keep one task per fenced `xml` block.
 - Keep the optional human title concise and outcome-focused.
 
-Conventions:
+Conventions (both syntaxes):
 
 - `id`: `<phase>.<task>` — e.g. `2.1`, `2.2`. Sub-tasks: `N.M.x` (e.g. `2.1.1`).
-- `wave`: same-wave tasks MAY run in parallel; waves execute sequentially. Omit for single-wave plans.
-- `<files>`: comma-separated paths. Used by wave-parallelism rule to check overlap.
+- `wave`: same-wave tasks MAY run in parallel; waves execute sequentially. Omit for single-wave plans. XML: `wave="K"` attribute; markdown: `(wave K)` suffix on the task heading.
+- Files: comma-separated paths. Used by wave-parallelism rule to check overlap and by `hooks/blast-radius-check.sh` as the in-scope set.
 
 ## Guardrails
 
@@ -113,7 +132,7 @@ created: YYYY-MM-DD
 ## 1. Motivation
 ## 2. Non-goals
 ## 3. Success Criteria
-## 4. Tasks (one fenced `xml` block per task; optional human-readable task titles)
+## 4. Tasks (markdown task sections, or one fenced `xml` block per task)
 ## 5. Risks
 ## 6. Status Log
 ```
@@ -127,7 +146,7 @@ injects an additive, script-owned "At a glance" block — a count line, a wave×
 `flowchart LR` Mermaid diagram, and a `### Progress` checklist — immediately before the first `## `
 heading, between `<!-- AT-A-GLANCE:BEGIN -->` / `<!-- AT-A-GLANCE:END -->` sentinels.
 
-It is derived entirely from the `<task>` blocks and the `## Status Log` (which stays the source of
-truth); the block regenerates idempotently on every save and must NOT be hand-edited. Authors and
-agents still read and write only the `<task id/wave/files/action/verify/done>` schema above — the
-At-a-glance block is a rendering convenience, not a planning input.
+It is derived entirely from the task blocks (either syntax) and the `## Status Log` (which stays
+the source of truth); the block regenerates idempotently on every save and must NOT be hand-edited.
+Authors and agents still read and write only the task schema above — the At-a-glance block is a
+rendering convenience, not a planning input.

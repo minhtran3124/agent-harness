@@ -19,13 +19,17 @@ Load plan, review critically, execute tasks in batches, report for review betwee
 
 **Gate — run BEFORE any implementation step. If ANY check fails, STOP, surface the specific violation(s) to the user, and do NOT execute.**
 
-References: `.claude/rules/plan-format.md` (XML schema + guardrails) and `.claude/rules/wave-parallelism.md` (zero file overlap invariant).
+References: `.claude/rules/plan-format.md` (task schema — two accepted syntaxes — + guardrails) and `.claude/rules/wave-parallelism.md` (zero file overlap invariant).
+
+A task is EITHER a fenced `<task>` XML block OR a `### Task <id>` markdown heading with
+`- **Files/Action/Verify/Done:**` field bullets — both carry the same four semantic fields.
+Do not reject a plan for its syntax; reject it for missing semantics.
 
 Run these four guardrail checks against the plan:
 
-1. **Required sub-elements populated.** Every `<task>` MUST have all 4 required sub-elements populated (non-empty): `<files>`, `<action>`, `<verify>`, `<done>`. Missing or empty → violation; name the offending task id.
-2. **Zero file overlap across same-wave tasks.** Tasks sharing the same `wave` attribute MUST have ZERO overlap in `<files>` paths. Any shared path between same-wave tasks → violation; name the task ids and the overlapping path(s). See `.claude/rules/wave-parallelism.md` Invariant 1.
-3. **`<verify>` is a single automated shell command.** Each `<verify>` MUST be exit-code-checkable (e.g. `pytest`, `curl`, `ruff check`, `mypy`, `alembic upgrade head`, `make migrate`). Reject "manually test in browser", "open and check", "visually inspect", or any step that cannot be validated by exit code. Per `.claude/rules/plan-format.md` Guardrail 2.
+1. **Required fields populated.** Every task MUST have all 4 fields populated (non-empty) in either syntax: Files, Action, Verify, Done. Missing or empty → violation; name the offending task id. (A `### Task` heading with zero field bullets is prose, not a task — but a plan whose Tasks section contains no parseable tasks at all is also a violation.)
+2. **Zero file overlap across same-wave tasks.** Tasks sharing the same wave (`wave="K"` attribute or `(wave K)` heading suffix) MUST have ZERO overlap in their Files paths. Any shared path between same-wave tasks → violation; name the task ids and the overlapping path(s). See `.claude/rules/wave-parallelism.md` Invariant 1.
+3. **Verify is a single automated shell command.** Each task's Verify MUST be exit-code-checkable (e.g. `pytest`, `curl`, `ruff check`, `mypy`, `alembic upgrade head`, `make migrate`). Reject "manually test in browser", "open and check", "visually inspect", or any step that cannot be validated by exit code. Per `.claude/rules/plan-format.md` Guardrail 2.
 4. **Plan scope matches trigger threshold.** The full workflow is for tasks that span >3 discrete steps OR touch >2 files OR have ETA >30 min. If the plan is smaller than all three thresholds → STOP and suggest a direct edit instead of executing the full plan workflow. Per `.claude/rules/plan-format.md` "When to use this format".
 
 **If any guardrail fails:** STOP. Report the specific violations (quote the failing task id(s) and sub-element(s)) back to the user. Reference `.claude/rules/plan-format.md` / `.claude/rules/wave-parallelism.md`. Do NOT proceed to Step 1.
@@ -64,7 +68,7 @@ warns, and only at commit time — so do not rely on it; create the branch here.
 For each task:
 
 1. Mark as in_progress
-2. Follow each step exactly (plan has bite-sized steps)
+2. Execute the task's Action exactly and run its Verify command
 3. Run verifications as specified
 4. Mark as completed
 

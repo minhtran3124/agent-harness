@@ -191,6 +191,11 @@ Omit `--review` for a plain plan render.
   both conventions. The script masks fenced code first and extracts raw tasks; example/illustration
   `<task>` snippets inside an `<action>` (or any fence) are ignored. If a plan fences its *real*
   tasks and has no raw ones, the script falls back to scanning fenced tasks.
+- **Markdown task syntax is a fallback when no XML tasks parse** (`rules/plan-format.md` → Task
+  Schema — two syntaxes): `### Task <id> [— title] [(wave K)]` headings with
+  `- **Files/Action/Verify/Done:**` field bullets, same dict contract downstream. XML wins in mixed
+  files; a `### Task` heading with zero field bullets is prose, never a task (so XML plans that use
+  such headings above their fenced blocks don't double-parse).
 - **Entity-preserving escaping**: source like `&lt;slug&gt;` or `jq . &gt; /dev/null` round-trips to
   the intended glyph instead of double-escaping.
 - **Pipe tables**: `\|` is honored; a malformed table falls back to `<pre>` rather than misrendering.
