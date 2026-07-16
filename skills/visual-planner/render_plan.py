@@ -139,6 +139,37 @@ def mask_fences(body: str) -> str:
     return "\n".join(out)
 
 
+def mask_inline_code(text: str) -> str:
+    """Blank inline `code` spans (offsets preserved), line by line.
+
+    Prose like `` `<task id/wave/...>` `` is an unclosed opening tag to the
+    depth-balanced scan and silently zeroes out a whole plan's tasks. Real
+    tags are never written inside backticks, so hiding inline code from the
+    SCAN copies is always safe — blocks still slice from the original body."""
+    return "\n".join(
+        re.sub(r"`[^`\n]*`", lambda m: " " * len(m.group(0)), line)
+        for line in text.split("\n")
+    )
+
+
+def _fenced_blocks(body: str):
+    """(start, end) char spans of fenced code-block CONTENTS, in order."""
+    spans = []
+    off = 0
+    in_fence = False
+    start = None
+    for line in body.split("\n"):
+        nxt = off + len(line) + 1
+        if line.lstrip().startswith("```"):
+            if in_fence:
+                spans.append((start, off))
+            else:
+                start = nxt
+            in_fence = not in_fence
+        off = nxt
+    return spans
+
+
 def _balanced_spans(scan: str):
     """Top-level <task>…</task> char spans in `scan` (depth-balanced)."""
     spans = []
@@ -160,25 +191,109 @@ def _balanced_spans(scan: str):
 
 
 def extract_tasks(body: str):
-    """Return (tasks, spans). Spans are TOP-LEVEL <task> blocks in source order.
+    """Return (tasks, spans). Spans are TOP-LEVEL task blocks in source order.
 
     Primary path scans a fence-masked copy so example/illustration tasks inside
     ``` fences are ignored; blocks are then sliced from the ORIGINAL body so an
     <action> that legitimately contains fenced code keeps it. Empty-id matches
     are dropped. If no raw tasks exist, fall back to scanning the unmasked body
-    (covers spec-compliant plans that fence their real tasks)."""
-    spans = _balanced_spans(mask_fences(body))
+    (covers spec-compliant plans that fence their real tasks). If the XML scan
+    yields nothing, fall back to the markdown task schema (rules/plan-format.md
+    "Task Schema" — the authoring standard; XML is legacy read-only). XML wins
+    in mixed files."""
+    spans = _balanced_spans(mask_inline_code(mask_fences(body)))
     tasks = [parse_task_block(body[s:e]) for s, e in spans]
     keep = [(t, sp) for t, sp in zip(tasks, spans) if t["id"]]
     if not keep:
-        spans = _balanced_spans(body)
-        keep = [
-            (parse_task_block(body[s:e]), (s, e))
-            for s, e in spans
-            if parse_task_block(body[s:e])["id"]
-        ]
+        # Fallback: scan each fenced block in isolation, so stray task-tag
+        # mentions in prose (backticked, quoted, or bare) can never poison
+        # the scan, and one corrupt block can't swallow its neighbours. A
+        # fence whose internal balance is broken by a tag mention inside its
+        # own <action> is rescued with a whole-block parse (one task per
+        # fence is the documented convention).
+        keep = []
+        for s, e in _fenced_blocks(body):
+            blk = body[s:e]
+            if "<task" not in blk:
+                continue
+            inner = _balanced_spans(mask_inline_code(blk))
+            if inner:
+                for bs, be in inner:
+                    t = parse_task_block(blk[bs:be])
+                    if t["id"]:
+                        keep.append((t, (s + bs, s + be)))
+            else:
+                t = parse_task_block(blk)
+                if t["id"]:
+                    keep.append((t, (s, e)))
     tasks = [t for t, _ in keep]
     spans = [sp for _, sp in keep]
+    if not tasks:
+        return _extract_md_tasks(body)
+    return tasks, spans
+
+
+# Markdown task syntax: `### Task <id> [— title] [(wave K)]` heading followed by
+# `- **Files/Action/Verify/Done:** …` field bullets (continuation lines indented
+# under the bullet). A heading with zero field bullets is prose, not a task —
+# this also keeps XML plans whose per-task prose headings precede fenced <task>
+# blocks from double-parsing.
+_MD_TASK_HEAD = re.compile(r"(?m)^###\s+Task\s+([0-9][\w.]*)[^\n]*$")
+_MD_WAVE = re.compile(r"\(\s*wave\s*(\d+)\s*\)", re.I)
+_MD_FIELD = re.compile(
+    r"^[-*]\s+\*\*(Files|Action|Verify|Done)(?::\*\*|\*\*:)\s*(.*)$", re.I
+)
+_MD_NEXT_HEAD = re.compile(r"(?m)^#{2,3}\s")
+
+
+def _parse_md_task(block: str, task_id: str) -> dict:
+    head, _, rest = block.partition("\n")
+    wm = _MD_WAVE.search(head)
+    fields = {"files": [], "action": [], "verify": [], "done": []}
+    cur = None
+    for line in rest.split("\n"):
+        s = line.strip()
+        fm = _MD_FIELD.match(s)
+        if fm:
+            cur = fm.group(1).lower()
+            if fm.group(2).strip():
+                fields[cur].append(fm.group(2).strip())
+        elif cur and s:
+            fields[cur].append(s)
+
+    def join(key: str) -> str:
+        return "\n".join(fields[key]).strip()
+
+    verify = join("verify")
+    if len(verify) > 1 and verify.startswith("`") and verify.endswith("`"):
+        verify = verify[1:-1].strip()
+    return {
+        "id": task_id.strip().rstrip("."),
+        "wave": (wm.group(1) if wm else "—"),
+        "files": join("files"),
+        "action": join("action"),
+        "verify": verify,
+        "done": join("done"),
+    }
+
+
+def _extract_md_tasks(body: str):
+    """Markdown-syntax fallback for extract_tasks (same return contract).
+
+    Headings are detected on the fence- and inline-code-masked copy (fenced or
+    backticked examples ignored; offsets preserved), field bullets are parsed
+    from the ORIGINAL slice so an Action keeps its content. Field-bullet
+    lookalikes inside a task's own fenced code are a known, accepted edge
+    (mirrors the XML path's slicing)."""
+    scan = mask_inline_code(mask_fences(body))
+    tasks, spans = [], []
+    for h in _MD_TASK_HEAD.finditer(scan):
+        nm = _MD_NEXT_HEAD.search(scan, h.end())
+        start, end = h.start(), (nm.start() if nm else len(body))
+        t = _parse_md_task(body[start:end], h.group(1))
+        if t["files"] or t["action"] or t["verify"] or t["done"]:
+            tasks.append(t)
+            spans.append((start, end))
     return tasks, spans
 
 
@@ -567,15 +682,25 @@ SUMMARY_END = "<!-- AT-A-GLANCE:END -->"
 # `[ \t]*$` tolerates trailing whitespace an editor/merge may leave on the line, so
 # an externally-mutated block is still detected & refreshed rather than duplicated.
 _SUMMARY_RE = re.compile(
-    r"^" + re.escape(SUMMARY_BEGIN) + r"[ \t]*$.*?^" + re.escape(SUMMARY_END) + r"[ \t]*$",
+    r"^"
+    + re.escape(SUMMARY_BEGIN)
+    + r"[ \t]*$.*?^"
+    + re.escape(SUMMARY_END)
+    + r"[ \t]*$",
     re.DOTALL | re.MULTILINE,
 )
 # Standalone (BOL..EOL) single sentinel lines — used to sweep an orphaned half of a
 # manually-mutated block before a fresh insert. Never matches an inline mention.
-_SUMMARY_BEGIN_LINE = re.compile(r"^" + re.escape(SUMMARY_BEGIN) + r"[ \t]*$\n?", re.MULTILINE)
-_SUMMARY_END_LINE = re.compile(r"^" + re.escape(SUMMARY_END) + r"[ \t]*$\n?", re.MULTILINE)
+_SUMMARY_BEGIN_LINE = re.compile(
+    r"^" + re.escape(SUMMARY_BEGIN) + r"[ \t]*$\n?", re.MULTILINE
+)
+_SUMMARY_END_LINE = re.compile(
+    r"^" + re.escape(SUMMARY_END) + r"[ \t]*$\n?", re.MULTILINE
+)
 _DONE_TRUNC = 80
-_FENCE = chr(96) * 3  # ``` without embedding a literal triple-backtick run in this source
+_FENCE = (
+    chr(96) * 3
+)  # ``` without embedding a literal triple-backtick run in this source
 
 
 def _mermaid_node_id(task_id):
@@ -585,7 +710,9 @@ def _mermaid_node_id(task_id):
 def render_summary_block(tasks, done_ids):
     """Additive 'At a glance' block (both sentinels included). Pure + deterministic."""
     if not tasks:
-        return f"{SUMMARY_BEGIN}\n## At a glance\n\n_No tasks defined yet._\n{SUMMARY_END}"
+        return (
+            f"{SUMMARY_BEGIN}\n## At a glance\n\n_No tasks defined yet._\n{SUMMARY_END}"
+        )
     files = set()
     for t in tasks:
         for f in t["files"].split(","):
@@ -593,7 +720,9 @@ def render_summary_block(tasks, done_ids):
             if f:
                 files.add(f)
     waves = sorted({t["wave"] for t in tasks}, key=wave_sort_key)
-    ordered = sorted(tasks, key=lambda t: (wave_sort_key(t["wave"]), natural_key(t["id"])))
+    ordered = sorted(
+        tasks, key=lambda t: (wave_sort_key(t["wave"]), natural_key(t["id"]))
+    )
 
     def title(t):
         return t.get("title") or t["id"]
@@ -612,7 +741,10 @@ def render_summary_block(tasks, done_ids):
         f"**{len(tasks)} tasks · {len(waves)} waves · "
         f"{len(files)} files · {n_done}/{len(tasks)} done**"
     )
-    rows = ["| Wave | Task | Title | Files | Done (acceptance) |", "|---|---|---|---|---|"]
+    rows = [
+        "| Wave | Task | Title | Files | Done (acceptance) |",
+        "|---|---|---|---|---|",
+    ]
     for t in ordered:
         rows.append(
             f"| {cell(t['wave'])} | {cell(t['id'])} | {cell(title(t))} | "
@@ -632,7 +764,10 @@ def render_summary_block(tasks, done_ids):
     mer.append(_FENCE)
     mermaid = "\n".join(mer)
 
-    checks = [f"- [{'x' if t['id'] in done_ids else ' '}] {t['id']} — {title(t)}" for t in ordered]
+    checks = [
+        f"- [{'x' if t['id'] in done_ids else ' '}] {t['id']} — {title(t)}"
+        for t in ordered
+    ]
     progress = "### Progress\n" + "\n".join(checks)
 
     inner = "\n\n".join(["## At a glance", count_line, table, mermaid, progress])
@@ -647,7 +782,9 @@ def inject_summary_block(plan_text, block):
     Detection is line-anchored, so a PLAN.md that only MENTIONS the sentinel
     strings in prose or fenced code is left untouched (never corrupted)."""
     if _SUMMARY_RE.search(plan_text):
-        return _SUMMARY_RE.sub(lambda _m: block, plan_text, count=1)  # lambda: avoid backref parsing
+        return _SUMMARY_RE.sub(
+            lambda _m: block, plan_text, count=1
+        )  # lambda: avoid backref parsing
     # No complete generated block. Sweep any ORPHAN standalone sentinel line (a
     # half-deleted block) so a later inject can't span across it; inline mentions
     # (indented / mid-line) are not standalone lines and are preserved.
@@ -1334,7 +1471,9 @@ def attach_titles(tasks, body):
 def render(plan_path: Path, review: dict | None = None) -> tuple[str, list[str], dict]:
     text = plan_path.read_text(encoding="utf-8").replace("\r\n", "\n")
     fm, body = parse_frontmatter(text)
-    body = _SUMMARY_RE.sub("", body)  # drop the generated 'At a glance' block; HTML has its own view
+    body = _SUMMARY_RE.sub(
+        "", body
+    )  # drop the generated 'At a glance' block; HTML has its own view
     warnings: list[str] = []
 
     tasks, spans = extract_tasks(body)

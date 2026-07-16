@@ -64,4 +64,55 @@ make_plan "$repo" active "app/services/foo.py"
 run_hook "$repo" $H "$(json_file "$repo/app/other/foo.py")"
 assert_silent_ok
 
+# make_md_plan <repo> <status> <files-csv> — markdown task syntax (plan-format.md two-syntaxes)
+make_md_plan() {
+  mkdir -p "$1/specs/mddemo"
+  cat > "$1/specs/mddemo/PLAN.md" <<EOF
+---
+status: $2
+---
+### Task 1.1 — demo (wave 1)
+
+- **Files:** $3
+- **Action:** x
+- **Verify:** \`true\`
+- **Done:** ok
+EOF
+}
+
+t "markdown plan: edited file in the - **Files:** set → silent"
+repo=$(new_repo $H)
+make_md_plan "$repo" active "app/foo.py, app/bar.py"
+run_hook "$repo" $H "$(json_file "$repo/app/foo.py")"
+assert_silent_ok
+
+t "markdown plan: edited file outside the - **Files:** set → warn"
+repo=$(new_repo $H)
+make_md_plan "$repo" active "app/foo.py"
+run_hook "$repo" $H "$(json_file "$repo/app/rogue.py")"
+assert_rc_contains 0 "blast-radius"
+
+t "mixed plan: XML <files> and markdown - **Files:** sets are unioned"
+repo=$(new_repo $H)
+mkdir -p "$repo/specs/mixed"
+cat > "$repo/specs/mixed/PLAN.md" <<'EOF'
+---
+status: active
+---
+```xml
+<task id="1.1"><files>app/xml_task.py</files><action>x</action></task>
+```
+
+### Task 2.1 — md task (wave 2)
+
+- **Files:** app/md_task.py
+- **Action:** y
+- **Verify:** `true`
+- **Done:** ok
+EOF
+run_hook "$repo" $H "$(json_file "$repo/app/xml_task.py")"
+assert_silent_ok
+run_hook "$repo" $H "$(json_file "$repo/app/md_task.py")"
+assert_silent_ok
+
 finish

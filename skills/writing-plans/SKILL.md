@@ -13,7 +13,7 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 **Announce at start:** "I'm using the writing-plans skill to create the implementation plan."
 
-**Context:** This should be run in a dedicated worktree (created by brainstorming skill).
+**Context:** Plan-writing may run anywhere (`specs/` stays writable on shared branches); the feature branch/worktree is created at Execution Handoff via `using-git-worktrees`, before the first code edit.
 
 **Save plans to:** `specs/<slug>/PLAN.md`
 
@@ -43,77 +43,35 @@ Before defining tasks, map out which files will be created or modified and what 
 
 This structure informs the task decomposition. Each task should produce self-contained changes that make sense independently.
 
-## Bite-Sized Task Granularity
+## Plan Format (canonical: `.claude/rules/plan-format.md`)
 
-**Each step is one action (2-5 minutes):**
+The plan format has exactly one home: `.claude/rules/plan-format.md`. Do not restate the
+schema here or in the plan. Non-negotiables it defines:
 
-- "Write the failing test" - step
-- "Run it to make sure it fails" - step
-- "Implement the minimal code to make the test pass" - step
-- "Run the tests and make sure they pass" - step
+- YAML frontmatter (`slug/status/owner/created`) — hooks key on `status:`
+- the document section list (Motivation … Status Log)
+- one `### Task` markdown section per task (the only authoring syntax — never XML,
+  never fenced):
 
-## Plan Document Header
+  ```markdown
+  ### Task 1.1 — Short human title (wave 1)
 
-**Every plan MUST start with this header:**
+  - **Files:** exact/path/one.py, tests/exact/path/test_one.py
+  - **Action:** Imperative instruction. Complete code, not "add validation".
+    Order the work test-first: failing test → run it → implement → re-run.
+  - **Verify:** `pytest tests/exact/path/test_one.py -x`
+  - **Done:** Measurable acceptance state.
+  ```
 
-```markdown
-# [Feature Name] Implementation Plan
+- guardrails: zero same-wave file overlap; Verify = one automated command, <60s
 
-> **For Claude:** REQUIRED SUB-SKILL: Use executing-plans to implement this plan task-by-task.
+When writing Action and Verify bodies:
 
-**Goal:** [One sentence describing what this builds]
-
-**Architecture:** [2-3 sentences about approach]
-
-**Tech Stack:** [Key technologies/libraries]
-
----
-```
-
-## Task Structure
-
-````markdown
-### Task N: [Component Name]
-
-**Files:**
-- Create: `exact/path/to/file.py`
-- Modify: `exact/path/to/existing.py:123-145`
-- Test: `tests/exact/path/to/test.py`
-
-- [ ] **Step 1: Write the failing test**
-
-```python
-def test_specific_behavior():
-    result = function(input)
-    assert result == expected
-```
-
-- [ ] **Step 2: Run test to verify it fails**
-
-Run: `pytest tests/path/test.py::test_name -v`
-Expected: FAIL with "function not defined"
-
-- [ ] **Step 3: Write minimal implementation**
-
-```python
-def function(input):
-    return expected
-```
-
-- [ ] **Step 4: Run test to verify it passes**
-
-Run: `pytest tests/path/test.py::test_name -v`
-Expected: PASS
-
-````
-
-## Remember
-
-- Exact file paths always
-- Complete code in plan (not "add validation")
-- Exact commands with expected output
-- Reference relevant skills with @ syntax
-- DRY, YAGNI, TDD
+- Exact file paths always; complete code in the plan (not "add validation").
+- Exact commands with expected output; the command goes in Verify, the expected
+  outcome in Done.
+- Reference relevant skills with @ syntax.
+- DRY, YAGNI, TDD.
 
 ## Plan Review Loop
 
@@ -145,7 +103,7 @@ transcribe HTML yourself.
 
 The same hook also injects an additive, sentinel-delimited "At a glance" block (count line, wave×task
 table, Mermaid flowchart, progress checklist) directly into the tracked `PLAN.md` — deterministic and
-script-owned, derived from the `<task>` blocks and `## Status Log` — so a human can read scope, order,
+script-owned, derived from the task sections and `## Status Log` — so a human can read scope, order,
 and progress on GitHub with no tooling. See `rules/plan-format.md` → Auto-generated "At a glance" block.
 
 Dispatch ONE `general-purpose` sub-agent **only when the user explicitly asks for risk /

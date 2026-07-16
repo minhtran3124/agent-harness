@@ -39,9 +39,16 @@ for p in $(ls -t "$REPO_DIR"/specs/*/PLAN.md 2>/dev/null); do
 done
 [ -z "$PLAN" ] && exit 0   # no plan in flight → no scope to creep out of
 
-# Declared files from <files>...</files> (comma-separated)
-DECLARED=$(grep -oE '<files>[^<]*</files>' "$PLAN" 2>/dev/null \
-  | sed -E 's#</?files>##g' | tr ',' '\n' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//' | grep -v '^$')
+# Declared files: <files>...</files> tags (XML syntax) plus `- **Files:** ...`
+# field bullets (markdown syntax, rules/plan-format.md "Task Schema — two
+# syntaxes"). Both comma-separated; union of the two sets. Fenced examples may
+# leak into the set — harmless for an advisory allowlist (extra entries only).
+DECLARED_XML=$(grep -oE '<files>[^<]*</files>' "$PLAN" 2>/dev/null \
+  | sed -E 's#</?files>##g')
+DECLARED_MD=$(grep -iE '^[-*][[:space:]]+\*\*Files(:\*\*|\*\*:)' "$PLAN" 2>/dev/null \
+  | sed -E 's/^[-*][[:space:]]+\*\*[Ff]iles(:\*\*|\*\*:)[[:space:]]*//')
+DECLARED=$(printf '%s\n%s\n' "$DECLARED_XML" "$DECLARED_MD" \
+  | tr ',' '\n' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//' | grep -v '^$')
 [ -z "$DECLARED" ] && exit 0
 
 # In-scope? exact path, suffix path, or matching basename (lenient — advisory)
