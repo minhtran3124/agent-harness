@@ -7,6 +7,19 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 ## [Unreleased]
 
+## [2.0.0] — 2026-07-16
+
+Milestone: the **v2 line** (0.3.0 → 0.14.0) is promoted to `main` and tagged
+[`v2.0.0`](https://github.com/minhtran3124/agent-harness/releases/tag/v2.0.0) — the
+rebuilt risk-and-trust harness. Highlights across the line: lane-based routing enforced
+at write time (`branch-isolation-guard.sh`), `harness-manifest.json` as the single source
+for hard gates, evidence-over-assertion verify/rollback gates, the `/intent-review` third
+oracle, self-summarizing plans (visual-planner At-a-glance block), event-sourced post-merge
+bookkeeping, conflict-guarded re-sync, the product-contract map, stack-agnostic `rules/`, and
+tracked `specs/`. See the per-version sections below for the full merge history.
+
+Folded in from Unreleased at tag time:
+
 - feat(q3): product-contract map (Level A) — `contracts` block in `harness-manifest.json`, `scripts/check-contract-impact.sh` advisory mapper, `check_manifest.py` path validation, and a contract-impact reminder section in `harness-audit.sh` (MIN-64)
 - fix(install-harness): a tty-less re-sync without `--yes` now prints the actionable "Re-run with `--yes`" message instead of dying on a raw `/dev/tty: Device not configured`; `--overwrite-conflicts` now implies `--yes` (it already named the destructive outcome), so `curl … | bash -s -- --overwrite-conflicts` works non-interactively. Covered by `tests/scripts/install-tty-gate.test.sh`
 - fix(deploy-harness): `rules/behavior.md` is now conflict-guarded like the other project-owned files — a customized copy is kept and the incoming version saved as `rules/behavior.md.harness-incoming`, instead of being overwritten silently
