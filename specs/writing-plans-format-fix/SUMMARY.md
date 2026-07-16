@@ -54,6 +54,11 @@ The user's directive removes the XML mandate but the semantic contract (fields, 
 | executing-plans syntax-neutral | task 1.3 `<verify>` greps | 0 | PASS |
 | plan-format.md dual-syntax canonical | task 1.4 `<verify>` greps | 0 | PASS |
 | full suite (L1 syntax + doc-truth + manifest + hook tests + L2 python) | `bash scripts/run-tests.sh` | 0 | ALL GREEN (173 passed, 1 skipped + all hook suites) |
+| wave 3: backtick/quoted tag prose can't zero a plan | `bash tests/hooks/render-plan-on-write.test.sh` | 0 | 8 passed (new backtick-prose case) |
+| wave 3: plan-at-a-glance recovers | `python3 skills/visual-planner/render_plan.py specs/plan-at-a-glance/PLAN.md <out>` | 0 | tasks=6 waves=5 (was 0) |
+| wave 3: no other plan's count changed | old (e4285f8) vs new parser sweep over `specs/*/PLAN.md` | 0 | only plan-at-a-glance changed (0→6) |
+| wave 3: deployed rules copy synced | `diff rules/plan-format.md .claude/rules/plan-format.md` | 0 | byte-identical (user-authorized) |
+| wave 3: full suite re-run | `bash scripts/run-tests.sh` | 0 | ALL GREEN |
 
 ### Rollback
 

@@ -488,3 +488,5 @@ same-wave file-disjointness possible). Wave 4's two tasks touch disjoint files a
   - Known limitation: this meta-plan parses to 0 tasks (its task actions embed literal `<task>` fixture
     strings), so `--summarize` on THIS PLAN.md would emit a degenerate "No tasks defined yet" block.
     Normal plans summarize correctly (verified by the hook contract test's clean fixture). Left un-self-injected.
+  - 2026-07-16 correction: fixed by `writing-plans-format-fix` task 3.1 — the scanners now mask inline-code
+    spans and fall back to per-fence parsing, so this plan parses to its real 6 tasks / 5 waves.

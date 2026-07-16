@@ -10,7 +10,7 @@ created: 2026-07-16
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**6 tasks · 2 waves · 10 files · 3/6 done**
+**8 tasks · 3 waves · 11 files · 5/8 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -20,6 +20,8 @@ created: 2026-07-16
 | 1 | 1.4 | canonical rule + visual-planner contract note | rules/plan-format.md, skills/visual-planner/SKILL.md | plan-format.md is the single canonical definition of BOTH syntaxes; visual-plann… |
 | 1 | 1.5 | blast-radius-check reads markdown Files bullets | hooks/blast-radius-check.sh, tests/hooks/blast-radius-check.test.sh | Markdown plans get identical scope-creep coverage to XML plans; all existing cas… |
 | 2 | 2.1 | Full-suite regression gate | (none — verification only) | Full suite exit 0; existing XML plan renders unchanged. |
+| 3 | 3.1 | Mask inline-code spans so backticked tag prose can't break the scanners | skills/visual-planner/render_plan.py, tests/hooks/render-plan-on-write.test.sh | specs/plan-at-a-glance/PLAN.md renders its real task count (was 0); new backtick… |
+| 3 | 3.2 | Sync the deployed rules copy (user-authorized) | .claude/rules/plan-format.md | Deployed copy byte-identical to the canonical rule. |
 
 ```mermaid
 flowchart LR
@@ -33,7 +35,12 @@ flowchart LR
   subgraph W1[Wave 2]
     T2_1["2.1 Full-suite regression gate"]
   end
+  subgraph W2[Wave 3]
+    T3_1["3.1 Mask inline-code spans so backticked tag prose can't break the scanners"]
+    T3_2["3.2 Sync the deployed rules copy (user-authorized)"]
+  end
   W0 --> W1
+  W1 --> W2
 ```
 
 ### Progress
@@ -43,6 +50,8 @@ flowchart LR
 - [ ] 1.4 — canonical rule + visual-planner contract note
 - [x] 1.5 — blast-radius-check reads markdown Files bullets
 - [x] 2.1 — Full-suite regression gate
+- [x] 3.1 — Mask inline-code spans so backticked tag prose can't break the scanners
+- [x] 3.2 — Sync the deployed rules copy (user-authorized)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -117,6 +126,28 @@ No deprecation of XML (19 existing plans, zero migration). No changes to `check_
 </task>
 ```
 
+### Task 3.1 — Mask inline-code spans so backticked tag prose can't break the scanners
+
+```xml
+<task id="3.1" wave="3">
+  <files>skills/visual-planner/render_plan.py, tests/hooks/render-plan-on-write.test.sh</files>
+  <action>Pre-existing bug surfaced during 1.1 (user confirmed fixing it here 2026-07-16): a prose mention like `&lt;task id/wave/...&gt;` inside inline backticks (specs/plan-at-a-glance/PLAN.md:42) is seen by the depth-balanced XML scan as an unclosed opening tag, so the whole plan parses to 0 tasks — and the markdown fallback correctly stays out (headings have no field bullets). Add mask_inline_code(text) (same-length blanking of `...` spans per line, mirroring mask_fences); apply it to BOTH XML scan passes — primary: mask_fences+mask_inline_code; fallback: mask_inline_code only, so fenced real tasks stay visible while backticked prose is hidden — and to the markdown heading scan for consistency. Fields/blocks still slice from the ORIGINAL body. Add a render test: plan with a backticked task-tag prose line + fenced real XML task renders that task (not 0).</action>
+  <verify>bash tests/hooks/render-plan-on-write.test.sh && python3 skills/visual-planner/render_plan.py specs/plan-at-a-glance/PLAN.md /tmp/paag-check.html 2>&1 | grep -q "tasks=0" && exit 1 || bash tests/hooks/render-plan-on-write.test.sh</verify>
+  <done>specs/plan-at-a-glance/PLAN.md renders its real task count (was 0); new backtick-prose test green; XML + markdown suites green.</done>
+</task>
+```
+
+### Task 3.2 — Sync the deployed rules copy (user-authorized)
+
+```xml
+<task id="3.2" wave="3">
+  <files>.claude/rules/plan-format.md</files>
+  <action>Copy rules/plan-format.md over .claude/rules/plan-format.md so the auto-loaded deployed copy matches the canonical dual-syntax rule. Explicitly authorized by the user 2026-07-16 ("update đồng thời luôn rules/plan-format.md") — the never-mutate-.claude/ default is lifted for exactly this file.</action>
+  <verify>diff rules/plan-format.md .claude/rules/plan-format.md</verify>
+  <done>Deployed copy byte-identical to the canonical rule.</done>
+</task>
+```
+
 ### Task 2.1 — Full-suite regression gate
 
 ```xml
@@ -139,3 +170,4 @@ No deprecation of XML (19 existing plans, zero migration). No changes to `check_
 - 2026-07-16 — plan v1 (dedup-to-XML) proposed.
 - 2026-07-16 — user directive: XML no longer mandatory; design + plan rewritten to v2 (dual syntax); status remains proposed pending execution.
 - 2026-07-16 — executed tasks 1.1–1.5 + 2.1 on `feat/plan-format-markdown`: markdown fallback parser in render_plan.py (all 3 call sites verified: render, --summarize, --emit-files), writing-plans + reviewer prompt teach/accept both syntaxes, executing-plans Step-0 syntax-neutral, plan-format.md canonical dual-syntax, blast-radius reads `- **Files:**` bullets. Full suite ALL GREEN; existing XML plan render byte-identical to pre-change baseline.
+- 2026-07-16 — wave 3 executed (user confirmed both items): 3.1 scanners mask inline-code spans + per-fence fallback with whole-block rescue — plan-at-a-glance 0 → 6 tasks/5 waves, old-vs-new sweep over all 20 specs plans shows that as the ONLY count change; its stale "Known limitation" note amended. 3.2 `.claude/rules/plan-format.md` synced byte-identical (user-authorized). Full suite ALL GREEN.

@@ -139,6 +139,37 @@ def mask_fences(body: str) -> str:
     return "\n".join(out)
 
 
+def mask_inline_code(text: str) -> str:
+    """Blank inline `code` spans (offsets preserved), line by line.
+
+    Prose like `` `<task id/wave/...>` `` is an unclosed opening tag to the
+    depth-balanced scan and silently zeroes out a whole plan's tasks. Real
+    tags are never written inside backticks, so hiding inline code from the
+    SCAN copies is always safe — blocks still slice from the original body."""
+    return "\n".join(
+        re.sub(r"`[^`\n]*`", lambda m: " " * len(m.group(0)), line)
+        for line in text.split("\n")
+    )
+
+
+def _fenced_blocks(body: str):
+    """(start, end) char spans of fenced code-block CONTENTS, in order."""
+    spans = []
+    off = 0
+    in_fence = False
+    start = None
+    for line in body.split("\n"):
+        nxt = off + len(line) + 1
+        if line.lstrip().startswith("```"):
+            if in_fence:
+                spans.append((start, off))
+            else:
+                start = nxt
+            in_fence = not in_fence
+        off = nxt
+    return spans
+
+
 def _balanced_spans(scan: str):
     """Top-level <task>…</task> char spans in `scan` (depth-balanced)."""
     spans = []
@@ -169,16 +200,31 @@ def extract_tasks(body: str):
     (covers spec-compliant plans that fence their real tasks). If the XML scan
     yields nothing, fall back to the markdown task syntax (rules/plan-format.md
     "Task Schema — two syntaxes"). XML wins in mixed files."""
-    spans = _balanced_spans(mask_fences(body))
+    spans = _balanced_spans(mask_inline_code(mask_fences(body)))
     tasks = [parse_task_block(body[s:e]) for s, e in spans]
     keep = [(t, sp) for t, sp in zip(tasks, spans) if t["id"]]
     if not keep:
-        spans = _balanced_spans(body)
-        keep = [
-            (parse_task_block(body[s:e]), (s, e))
-            for s, e in spans
-            if parse_task_block(body[s:e])["id"]
-        ]
+        # Fallback: scan each fenced block in isolation, so stray task-tag
+        # mentions in prose (backticked, quoted, or bare) can never poison
+        # the scan, and one corrupt block can't swallow its neighbours. A
+        # fence whose internal balance is broken by a tag mention inside its
+        # own <action> is rescued with a whole-block parse (one task per
+        # fence is the documented convention).
+        keep = []
+        for s, e in _fenced_blocks(body):
+            blk = body[s:e]
+            if "<task" not in blk:
+                continue
+            inner = _balanced_spans(mask_inline_code(blk))
+            if inner:
+                for bs, be in inner:
+                    t = parse_task_block(blk[bs:be])
+                    if t["id"]:
+                        keep.append((t, (s + bs, s + be)))
+            else:
+                t = parse_task_block(blk)
+                if t["id"]:
+                    keep.append((t, (s, e)))
     tasks = [t for t, _ in keep]
     spans = [sp for _, sp in keep]
     if not tasks:
@@ -233,11 +279,12 @@ def _parse_md_task(block: str, task_id: str) -> dict:
 def _extract_md_tasks(body: str):
     """Markdown-syntax fallback for extract_tasks (same return contract).
 
-    Headings are detected on the fence-masked copy (fenced examples ignored;
-    offsets preserved), field bullets are parsed from the ORIGINAL slice so an
-    Action keeps its content. Field-bullet lookalikes inside a task's own
-    fenced code are a known, accepted edge (mirrors the XML path's slicing)."""
-    scan = mask_fences(body)
+    Headings are detected on the fence- and inline-code-masked copy (fenced or
+    backticked examples ignored; offsets preserved), field bullets are parsed
+    from the ORIGINAL slice so an Action keeps its content. Field-bullet
+    lookalikes inside a task's own fenced code are a known, accepted edge
+    (mirrors the XML path's slicing)."""
+    scan = mask_inline_code(mask_fences(body))
     tasks, spans = [], []
     for h in _MD_TASK_HEAD.finditer(scan):
         nm = _MD_NEXT_HEAD.search(scan, h.end())

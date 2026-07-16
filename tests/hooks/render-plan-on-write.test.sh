@@ -127,6 +127,35 @@ EOF
   run_hook "$repo" $H "$(json_file "$repo/specs/prose/PLAN.md")"
   if [ "$RC" -eq 0 ] && grep -q "No tasks defined yet" "$repo/specs/prose/PLAN.md"; then pass
   else fail "rc=$RC prose heading was parsed as a task"; fi
+
+  t "backticked <task ...> prose does not zero out a plan's fenced real tasks"
+  repo=$(new_repo $H)
+  mkdir -p "$repo/skills/visual-planner"
+  cp "$ROOT/skills/visual-planner/render_plan.py" "$repo/skills/visual-planner/"
+  [ -f "$ROOT/skills/visual-planner/template.html" ] && cp "$ROOT/skills/visual-planner/template.html" "$repo/skills/visual-planner/"
+  mkdir -p "$repo/specs/tick"
+  cat > "$repo/specs/tick/PLAN.md" <<'EOF'
+---
+slug: tick
+status: active
+---
+# Tick
+
+## 1. Motivation
+
+Agents still parse `<task id/wave/files/action/verify/done>` blocks.
+
+## 4. Tasks
+
+```xml
+<task id="1.1" wave="1"><files>a.py</files><action>do</action><verify>true</verify><done>ok</done></task>
+```
+
+## Status Log
+EOF
+  run_hook "$repo" $H "$(json_file "$repo/specs/tick/PLAN.md")"
+  if [ "$RC" -eq 0 ] && grep -q "1 task" "$repo/specs/tick/PLAN.md"; then pass
+  else fail "rc=$RC backticked tag prose zeroed the task scan — glance:$(sed -n '/AT-A-GLANCE:BEGIN/,+2p' "$repo/specs/tick/PLAN.md" | tail -1)"; fi
 else
   t "real render case"; skip "python3 or render_plan.py unavailable"
   t "At-a-glance injection + idempotency"; skip "python3 or render_plan.py unavailable"
