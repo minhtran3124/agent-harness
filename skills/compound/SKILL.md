@@ -35,6 +35,11 @@ Dispatch all four concurrently using the Agent tool. Provide each with the
 session context. They read the session transcript and git diff. They return
 **text only** — no file writes.
 
+If a spec was active this session, pass its slug to the Decision Extractor —
+it also harvests the `### Alternatives considered` section of
+`specs/<slug>/SUMMARY.md` (rejected alternatives with reusable reasons are
+decisions worth compounding).
+
 Subagent prompt files are in `.claude/skills/compound/subagents/`.
 
 The Related Docs Finder needs `module` and `tags` from the Context Analyzer to
@@ -97,6 +102,8 @@ For each track to emit:
 ### Step 5: Write output files
 
 For each emitted track, create the directory if needed and write the file.
+Write tersely — apply the **density budget** from Key Constraints when assembling
+each body from the subagent content.
 
 **Bug track:**
 ```markdown
@@ -467,3 +474,7 @@ If no tracks were emitted (all required sections were empty):
 - **Never run automatically** — only on explicit `/compound` trigger
 - Track emission is **conservative** — skip tracks with any empty required section
 - One doc per track per session (except multiple DECISION_TRACKs from Decision Extractor)
+- **Density budget** — entries are loaded into agent context, so every word must earn
+  its place: target ≤500 words per track body (excluding frontmatter and code examples).
+  Keep the *why*; cut the narrative. Never record migration steps or temporal
+  transition notes — they go stale after completion and only waste context.
