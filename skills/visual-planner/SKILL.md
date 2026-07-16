@@ -187,15 +187,15 @@ Omit `--review` for a plain plan render.
 
 ## Parsing notes (authoritative details live in `render_plan.py`)
 
-- **Tasks may be raw `<task>` blocks OR fenced in ` ```xml `.** Real PLAN.md files in this repo use
-  both conventions. The script masks fenced code first and extracts raw tasks; example/illustration
-  `<task>` snippets inside an `<action>` (or any fence) are ignored. If a plan fences its *real*
-  tasks and has no raw ones, the script falls back to scanning fenced tasks.
-- **Markdown task syntax is a fallback when no XML tasks parse** (`rules/plan-format.md` → Task
-  Schema — two syntaxes): `### Task <id> [— title] [(wave K)]` headings with
-  `- **Files/Action/Verify/Done:**` field bullets, same dict contract downstream. XML wins in mixed
-  files; a `### Task` heading with zero field bullets is prose, never a task (so XML plans that use
-  such headings above their fenced blocks don't double-parse).
+- **Both plan syntaxes parse to the same dict contract.** Legacy XML plans (raw `<task>` blocks OR
+  fenced in ` ```xml `) are tried first: the script masks fenced code and inline code, extracts raw
+  tasks, and — when a plan fences its *real* tasks — falls back to per-fence scanning with a
+  whole-block rescue, so example/illustration `<task>` snippets and backticked/quoted tag prose are
+  ignored. When no XML tasks parse, the **markdown task schema** (the authoring standard,
+  `rules/plan-format.md`) is parsed: `### Task <id> [— title] [(wave K)]` headings with
+  `- **Files/Action/Verify/Done:**` field bullets. XML wins in mixed files; a `### Task` heading
+  with zero field bullets is prose, never a task (so legacy XML plans that use such headings above
+  their fenced blocks don't double-parse).
 - **Entity-preserving escaping**: source like `&lt;slug&gt;` or `jq . &gt; /dev/null` round-trips to
   the intended glyph instead of double-escaping.
 - **Pipe tables**: `\|` is honored; a malformed table falls back to `<pre>` rather than misrendering.

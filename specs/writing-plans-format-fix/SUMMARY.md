@@ -59,6 +59,9 @@ The user's directive removes the XML mandate but the semantic contract (fields, 
 | wave 3: no other plan's count changed | old (e4285f8) vs new parser sweep over `specs/*/PLAN.md` | 0 | only plan-at-a-glance changed (0→6) |
 | wave 3: deployed rules copy synced | `diff rules/plan-format.md .claude/rules/plan-format.md` | 0 | byte-identical (user-authorized) |
 | wave 3: full suite re-run | `bash scripts/run-tests.sh` | 0 | ALL GREEN |
+| wave 4: no authoring doc offers XML | `grep -rn "equally valid\|either accepted syntax\|two syntaxes" skills/ rules/` | 1 (no match) | authoring path is markdown-only |
+| wave 4: legacy parsing intact | render mdplan + plan-at-a-glance | 0 | 3 tasks / 6 tasks unchanged |
+| wave 4: lint + render tests + full suite | `bash scripts/lint-doc-truth.sh && bash tests/hooks/render-plan-on-write.test.sh && bash scripts/run-tests.sh` | 0 | ALL GREEN, 8 passed |
 
 ### Rollback
 

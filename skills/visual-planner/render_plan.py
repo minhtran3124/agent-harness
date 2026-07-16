@@ -198,8 +198,9 @@ def extract_tasks(body: str):
     <action> that legitimately contains fenced code keeps it. Empty-id matches
     are dropped. If no raw tasks exist, fall back to scanning the unmasked body
     (covers spec-compliant plans that fence their real tasks). If the XML scan
-    yields nothing, fall back to the markdown task syntax (rules/plan-format.md
-    "Task Schema — two syntaxes"). XML wins in mixed files."""
+    yields nothing, fall back to the markdown task schema (rules/plan-format.md
+    "Task Schema" — the authoring standard; XML is legacy read-only). XML wins
+    in mixed files."""
     spans = _balanced_spans(mask_inline_code(mask_fences(body)))
     tasks = [parse_task_block(body[s:e]) for s, e in spans]
     keep = [(t, sp) for t, sp in zip(tasks, spans) if t["id"]]

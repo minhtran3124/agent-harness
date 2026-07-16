@@ -21,9 +21,10 @@ Load plan, review critically, execute tasks in batches, report for review betwee
 
 References: `.claude/rules/plan-format.md` (task schema — two accepted syntaxes — + guardrails) and `.claude/rules/wave-parallelism.md` (zero file overlap invariant).
 
-A task is EITHER a fenced `<task>` XML block OR a `### Task <id>` markdown heading with
-`- **Files/Action/Verify/Done:**` field bullets — both carry the same four semantic fields.
-Do not reject a plan for its syntax; reject it for missing semantics.
+A task is a `### Task <id>` markdown heading with `- **Files/Action/Verify/Done:**` field
+bullets (the authoring standard); legacy plans instead use fenced `<task>` XML blocks, which
+remain fully executable — both carry the same four semantic fields. Do not reject a plan for
+its syntax; reject it for missing semantics.
 
 Run these four guardrail checks against the plan:
 

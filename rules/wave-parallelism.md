@@ -53,4 +53,4 @@ Keeps git log readable as "wave boundaries" alongside task-level atomic commits.
 
 ## When to skip this overhead
 
-Single-task waves don't need wave machinery — execute in main thread or as one subagent. The rule matters when ≥2 tasks share a wave. Plans with no parallelism (all tasks sequential) may omit the wave marker entirely (`wave="K"` attribute in XML tasks, `(wave K)` heading suffix in markdown tasks) per `plan-format.md`.
+Single-task waves don't need wave machinery — execute in main thread or as one subagent. The rule matters when ≥2 tasks share a wave. Plans with no parallelism (all tasks sequential) may omit the `(wave K)` heading suffix entirely (legacy XML plans: the `wave="K"` attribute) per `plan-format.md`.

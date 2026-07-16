@@ -17,13 +17,10 @@ Skip for single-file fixes, typo corrections, config tweaks.
 
 > These thresholds are the **signal** that triggers a `PLAN.md` under the artifact policy (`rules/orchestration.md` → Artifact policy). A `SUMMARY.md` is still written for every lane regardless — plan-ahead scaffolding scales by signal; the record is always-on.
 
-## Task Schema — two syntaxes
+## Task Schema
 
-Every task carries the same five semantics: `id`, optional `wave`, and populated
-`files / action / verify / done`. Two surface syntaxes are accepted — pick one per plan
-(in mixed files the XML tasks win at parse time, so don't mix):
-
-**Markdown syntax** (default — no fencing, plain markdown):
+Every task is a `### Task` markdown section carrying five semantics: `id`, optional `wave`,
+and populated `Files / Action / Verify / Done`:
 
 ```markdown
 ### Task 1.1 — Short human title (wave 1)
@@ -35,48 +32,19 @@ Every task carries the same five semantics: `id`, optional `wave`, and populated
 - **Done:** Measurable acceptance state
 ```
 
-A `### Task <id>` heading with **no** field bullets is prose, not a task (the renderer
-and gates ignore it).
-
-**XML syntax** (equally valid; all pre-existing plans use it):
-
-```xml
-<task id="N.M" wave="K">
-  <files>path1, path2</files>
-  <action>Imperative instruction. Include rationale when non-obvious.</action>
-  <verify>single shell command — exit 0 means pass, finishes <60s</verify>
-  <done>Measurable acceptance state</done>
-</task>
-```
-
-## Rendering requirement (XML tasks only)
-
-Raw XML-like tags (for example `<task>`, `<files>`, `<action>`) are treated as HTML by many Markdown renderers and become hard to read in preview mode. To keep plans readable, every **XML** task MUST be wrapped in a fenced `xml` code block in the plan document. Markdown-syntax tasks are ordinary markdown — never fence them. Presentation pattern for XML tasks:
-
-````markdown
-### Task 1.1 — Short human title
-
-```xml
-<task id="1.1" wave="1">
-  <files>path1, path2</files>
-  <action>...</action>
-  <verify>...</verify>
-  <done>...</done>
-</task>
-```
-````
-
 Rules:
 
-- Do not place raw `<task ...>` blocks directly in Markdown body text.
-- Keep one task per fenced `xml` block.
+- Real tasks are plain markdown — never wrap them in code fences (fenced task sections are
+  treated as illustrations and ignored, like the example above).
+- A `### Task <id>` heading with **no** field bullets is prose, not a task (the renderer
+  and gates ignore it).
 - Keep the optional human title concise and outcome-focused.
 
-Conventions (both syntaxes):
+Conventions:
 
 - `id`: `<phase>.<task>` — e.g. `2.1`, `2.2`. Sub-tasks: `N.M.x` (e.g. `2.1.1`).
-- `wave`: same-wave tasks MAY run in parallel; waves execute sequentially. Omit for single-wave plans. XML: `wave="K"` attribute; markdown: `(wave K)` suffix on the task heading.
-- Files: comma-separated paths. Used by wave-parallelism rule to check overlap and by `hooks/blast-radius-check.sh` as the in-scope set.
+- `wave`: the `(wave K)` suffix on the task heading. Same-wave tasks MAY run in parallel; waves execute sequentially. Omit for single-wave plans.
+- Files: comma-separated paths. Used by the wave-parallelism rule to check overlap and by `hooks/blast-radius-check.sh` as the in-scope set.
 
 ## Guardrails
 
@@ -90,31 +58,34 @@ Conventions (both syntaxes):
 
 ### Migration + model (single wave)
 
-```xml
-<task id="1.1" wave="1">
-  <files>app/models/trade_log.py, alembic/versions/xxx_add_trade_log.py</files>
-  <action>Add TradeLog SQLAlchemy model: UUID PK, user_id FK, trade_type enum, executed_at timestamp. Alembic migration with index on (user_id, executed_at).</action>
-  <verify>cd apps/api && alembic upgrade head && pytest tests/models/test_trade_log.py -x</verify>
-  <done>Migration applies clean, model tests pass</done>
-</task>
+```markdown
+### Task 1.1 — TradeLog model + migration (wave 1)
+
+- **Files:** app/models/trade_log.py, alembic/versions/xxx_add_trade_log.py
+- **Action:** Add TradeLog SQLAlchemy model: UUID PK, user_id FK, trade_type enum,
+  executed_at timestamp. Alembic migration with index on (user_id, executed_at).
+- **Verify:** `cd apps/api && alembic upgrade head && pytest tests/models/test_trade_log.py -x`
+- **Done:** Migration applies clean, model tests pass
 ```
 
 ### Service + router in separate waves
 
-```xml
-<task id="2.1" wave="1">
-  <files>app/services/trade_log_service.py, tests/services/test_trade_log_service.py</files>
-  <action>Create TradeLogService.create_entry() and get_recent(). AsyncMock session in tests. Guard clause on invalid trade_type.</action>
-  <verify>cd apps/api && pytest tests/services/test_trade_log_service.py -x</verify>
-  <done>Unit tests pass; coverage ≥80% on new file</done>
-</task>
+```markdown
+### Task 2.1 — TradeLogService (wave 1)
 
-<task id="3.1" wave="2">
-  <files>app/routers/trade_logs.py, app/schemas/trade_log.py, tests/routers/test_trade_logs.py</files>
-  <action>POST /trade-logs + GET /trade-logs/recent. Depends(get_current_user). Pydantic schemas for request/response.</action>
-  <verify>cd apps/api && pytest tests/routers/test_trade_logs.py -x</verify>
-  <done>Router tests pass; 401 on unauth, 200 + body on auth</done>
-</task>
+- **Files:** app/services/trade_log_service.py, tests/services/test_trade_log_service.py
+- **Action:** Create TradeLogService.create_entry() and get_recent(). AsyncMock session
+  in tests. Guard clause on invalid trade_type.
+- **Verify:** `cd apps/api && pytest tests/services/test_trade_log_service.py -x`
+- **Done:** Unit tests pass; coverage ≥80% on new file
+
+### Task 3.1 — Trade-logs router + schemas (wave 2)
+
+- **Files:** app/routers/trade_logs.py, app/schemas/trade_log.py, tests/routers/test_trade_logs.py
+- **Action:** POST /trade-logs + GET /trade-logs/recent. Depends(get_current_user).
+  Pydantic schemas for request/response.
+- **Verify:** `cd apps/api && pytest tests/routers/test_trade_logs.py -x`
+- **Done:** Router tests pass; 401 on unauth, 200 + body on auth
 ```
 
 ## PLAN.md structure
@@ -132,12 +103,16 @@ created: YYYY-MM-DD
 ## 1. Motivation
 ## 2. Non-goals
 ## 3. Success Criteria
-## 4. Tasks (markdown task sections, or one fenced `xml` block per task)
+## 4. Tasks (one `### Task` section per task)
 ## 5. Risks
 ## 6. Status Log
 ```
 
 The examples above show the full task shape; `specs/` is tracked in git, so plans are browsable across machines. (`PLAN.html` and `.plan-review.json` are gitignored as derived artifacts.)
+
+## Legacy XML plans (read-only support)
+
+Plans written before 2026-07-16 use fenced `<task id="N.M" wave="K"><files><action><verify><done>` XML blocks. The renderer, the executing-plans Step-0 gate, and `hooks/blast-radius-check.sh` still parse that syntax, so existing plans keep rendering and executing unchanged — but it is **not** an authoring format: never write new plans in XML. One exception: when adding a task to an existing XML plan, keep that plan's XML syntax — in a mixed file the parser reads only the XML tasks, so a markdown task added to an XML plan would be invisible.
 
 ## Auto-generated "At a glance" block
 
@@ -146,7 +121,7 @@ injects an additive, script-owned "At a glance" block — a count line, a wave×
 `flowchart LR` Mermaid diagram, and a `### Progress` checklist — immediately before the first `## `
 heading, between `<!-- AT-A-GLANCE:BEGIN -->` / `<!-- AT-A-GLANCE:END -->` sentinels.
 
-It is derived entirely from the task blocks (either syntax) and the `## Status Log` (which stays
-the source of truth); the block regenerates idempotently on every save and must NOT be hand-edited.
-Authors and agents still read and write only the task schema above — the At-a-glance block is a
-rendering convenience, not a planning input.
+It is derived entirely from the task sections (markdown, or legacy XML) and the `## Status Log`
+(which stays the source of truth); the block regenerates idempotently on every save and must NOT be
+hand-edited. Authors and agents still read and write only the task schema above — the At-a-glance
+block is a rendering convenience, not a planning input.

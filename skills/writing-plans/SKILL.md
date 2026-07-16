@@ -50,8 +50,8 @@ schema here or in the plan. Non-negotiables it defines:
 
 - YAML frontmatter (`slug/status/owner/created`) — hooks key on `status:`
 - the document section list (Motivation … Status Log)
-- one task section per task, in either accepted syntax — the **markdown syntax** is the
-  default; fenced `xml` `<task>` blocks are equally valid:
+- one `### Task` markdown section per task (the only authoring syntax — never XML,
+  never fenced):
 
   ```markdown
   ### Task 1.1 — Short human title (wave 1)
@@ -103,7 +103,7 @@ transcribe HTML yourself.
 
 The same hook also injects an additive, sentinel-delimited "At a glance" block (count line, wave×task
 table, Mermaid flowchart, progress checklist) directly into the tracked `PLAN.md` — deterministic and
-script-owned, derived from the `<task>` blocks and `## Status Log` — so a human can read scope, order,
+script-owned, derived from the task sections and `## Status Log` — so a human can read scope, order,
 and progress on GitHub with no tooling. See `rules/plan-format.md` → Auto-generated "At a glance" block.
 
 Dispatch ONE `general-purpose` sub-agent **only when the user explicitly asks for risk /

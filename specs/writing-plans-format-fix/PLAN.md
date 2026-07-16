@@ -10,7 +10,7 @@ created: 2026-07-16
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**8 tasks · 3 waves · 11 files · 5/8 done**
+**9 tasks · 4 waves · 12 files · 5/9 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -22,6 +22,7 @@ created: 2026-07-16
 | 2 | 2.1 | Full-suite regression gate | (none — verification only) | Full suite exit 0; existing XML plan renders unchanged. |
 | 3 | 3.1 | Mask inline-code spans so backticked tag prose can't break the scanners | skills/visual-planner/render_plan.py, tests/hooks/render-plan-on-write.test.sh | specs/plan-at-a-glance/PLAN.md renders its real task count (was 0); new backtick… |
 | 3 | 3.2 | Sync the deployed rules copy (user-authorized) | .claude/rules/plan-format.md | Deployed copy byte-identical to the canonical rule. |
+| 4 | 4.1 | Purge XML from the plan-authoring path (user directive) | rules/plan-format.md, rules/wave-parallelism.md, skills/writing-plans/SKILL.md, skills/writing-plans/plan-document-reviewer-prompt.md, skills/executing-plans/SKILL.md, skills/visual-planner/SKILL.md, skills/visual-planner/render_plan.py | No authoring doc offers XML as a choice; legacy parsing intact (plan-at-a-glance… |
 
 ```mermaid
 flowchart LR
@@ -39,8 +40,12 @@ flowchart LR
     T3_1["3.1 Mask inline-code spans so backticked tag prose can't break the scanners"]
     T3_2["3.2 Sync the deployed rules copy (user-authorized)"]
   end
+  subgraph W3[Wave 4]
+    T4_1["4.1 Purge XML from the plan-authoring path (user directive)"]
+  end
   W0 --> W1
   W1 --> W2
+  W2 --> W3
 ```
 
 ### Progress
@@ -52,6 +57,7 @@ flowchart LR
 - [x] 2.1 — Full-suite regression gate
 - [x] 3.1 — Mask inline-code spans so backticked tag prose can't break the scanners
 - [x] 3.2 — Sync the deployed rules copy (user-authorized)
+- [ ] 4.1 — Purge XML from the plan-authoring path (user directive)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -148,6 +154,17 @@ No deprecation of XML (19 existing plans, zero migration). No changes to `check_
 </task>
 ```
 
+### Task 4.1 — Purge XML from the plan-authoring path (user directive)
+
+```xml
+<task id="4.1" wave="4">
+  <files>rules/plan-format.md, rules/wave-parallelism.md, skills/writing-plans/SKILL.md, skills/writing-plans/plan-document-reviewer-prompt.md, skills/executing-plans/SKILL.md, skills/visual-planner/SKILL.md, skills/visual-planner/render_plan.py</files>
+  <action>User directive 2026-07-16 ("xóa sạch chỗ nào liên quan đến XML khi generate plan"): markdown becomes the ONLY authoring syntax. rules/plan-format.md: drop the dual-syntax framing and the XML schema/fencing sections; single markdown Task Schema; FastAPI examples converted to markdown; add a "Legacy XML plans (read-only support)" section (renderer/gate/hook still parse XML; extending an XML plan keeps XML since mixed files parse XML only). writing-plans + reviewer prompt: markdown-only for new plans, XML flagged as legacy. executing-plans: markdown = standard, legacy XML still executable. visual-planner SKILL + render_plan.py docstring: reworded, parser behavior UNCHANGED (XML tried first, markdown fallback).</action>
+  <verify>bash -c '! grep -rn "equally valid\|either accepted syntax\|two syntaxes" skills/ rules/ && bash scripts/lint-doc-truth.sh && bash tests/hooks/render-plan-on-write.test.sh'</verify>
+  <done>No authoring doc offers XML as a choice; legacy parsing intact (plan-at-a-glance still 6 tasks, mdplan still 3); full suite green.</done>
+</task>
+```
+
 ### Task 2.1 — Full-suite regression gate
 
 ```xml
@@ -170,4 +187,5 @@ No deprecation of XML (19 existing plans, zero migration). No changes to `check_
 - 2026-07-16 — plan v1 (dedup-to-XML) proposed.
 - 2026-07-16 — user directive: XML no longer mandatory; design + plan rewritten to v2 (dual syntax); status remains proposed pending execution.
 - 2026-07-16 — executed tasks 1.1–1.5 + 2.1 on `feat/plan-format-markdown`: markdown fallback parser in render_plan.py (all 3 call sites verified: render, --summarize, --emit-files), writing-plans + reviewer prompt teach/accept both syntaxes, executing-plans Step-0 syntax-neutral, plan-format.md canonical dual-syntax, blast-radius reads `- **Files:**` bullets. Full suite ALL GREEN; existing XML plan render byte-identical to pre-change baseline.
+- 2026-07-16 — wave 4 (user directive): XML removed from the authoring path entirely — plan-format.md now defines a single markdown Task Schema with a "Legacy XML (read-only)" note; writing-plans/reviewer/executing-plans/visual-planner reworded; parser behavior unchanged (verified: mdplan 3 tasks, plan-at-a-glance 6 tasks, full suite ALL GREEN). Legacy rule: extending an XML plan keeps XML (mixed files parse XML only) — which is why THIS plan's tasks stay XML.
 - 2026-07-16 — wave 3 executed (user confirmed both items): 3.1 scanners mask inline-code spans + per-fence fallback with whole-block rescue — plan-at-a-glance 0 → 6 tasks/5 waves, old-vs-new sweep over all 20 specs plans shows that as the ONLY count change; its stale "Known limitation" note amended. 3.2 `.claude/rules/plan-format.md` synced byte-identical (user-authorized). Full suite ALL GREEN.

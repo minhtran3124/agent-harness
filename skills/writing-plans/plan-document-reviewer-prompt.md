@@ -22,10 +22,10 @@ Task tool (general-purpose):
     | Completeness | TODOs, placeholders, incomplete tasks, missing steps |
     | Spec Alignment | Chunk covers relevant spec requirements, no scope creep |
     | Task Decomposition | Tasks atomic, clear boundaries, steps actionable |
-| Readability | Each task has a concise heading; XML tasks live in one fenced `xml` block each (no raw `<task>` tags in body text); markdown tasks are plain markdown, never fenced |
+| Readability | Each task has a concise heading; tasks are plain markdown, never fenced; no `<task>` XML blocks in newly written plans (XML is legacy read-only per `.claude/rules/plan-format.md`) |
     | File Structure | Files have clear single responsibilities, split by responsibility not layer |
     | File Size | Would any new or modified file likely grow large enough to be hard to reason about as a whole? |
-| Task Syntax | Either accepted syntax per `.claude/rules/plan-format.md` — a `### Task <id>` heading with `- **Files/Action/Verify/Done:**` field bullets, OR a fenced `<task id ... wave ...>` XML block — with all four fields populated in every task (one syntax per plan) |
+| Task Syntax | Every task is a `### Task <id> [— title] [(wave K)]` heading with `- **Files/Action/Verify/Done:**` field bullets, all four fields populated, per `.claude/rules/plan-format.md` |
     | Chunk Size | Each chunk under 1000 lines |
 
     ## CRITICAL
