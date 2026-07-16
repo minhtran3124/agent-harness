@@ -11,6 +11,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 - fix(install-harness): a tty-less re-sync without `--yes` now prints the actionable "Re-run with `--yes`" message instead of dying on a raw `/dev/tty: Device not configured`; `--overwrite-conflicts` now implies `--yes` (it already named the destructive outcome), so `curl … | bash -s -- --overwrite-conflicts` works non-interactively. Covered by `tests/scripts/install-tty-gate.test.sh`
 - fix(deploy-harness): `rules/behavior.md` is now conflict-guarded like the other project-owned files — a customized copy is kept and the incoming version saved as `rules/behavior.md.harness-incoming`, instead of being overwritten silently
 
+## [0.14.0] — 2026-07-15
+
+- fix: conflict-guarded re-sync — stop clobbering bootstrap-xia2 outputs (PR #50)
+
 ## [0.13.0] — 2026-07-15
 
 - feat(visual-planner): self-summarizing PLAN.md — At-a-glance block (#54) (PR #63)
