@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.1.0] — 2026-07-16
+
+- fix(hooks): strip comments before risk-corroboration keyword scan (review C4) (PR #73)
+
 ## [2.0.1] — 2026-07-16
 
 - fix(ci): rewire post-merge bookkeeping to main (review C3) (PR #71)
