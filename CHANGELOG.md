@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.0.1] — 2026-07-16
+
+- fix(ci): rewire post-merge bookkeeping to main (review C3) (PR #71)
+
 ## [2.0.0] — 2026-07-16
 
 Milestone: the **v2 line** (0.3.0 → 0.14.0) is promoted to `main` and tagged
