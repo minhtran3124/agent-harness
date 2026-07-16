@@ -22,7 +22,7 @@ Turn 2 (scope-deciding directive): "hiện tại ko bắt buộc viết plan b�
 
 ## What changed
 
-Research + design v1 (dedup-to-XML) completed for C1; user then redirected: XML optional. Design v2 adopted: **one semantic schema (id/wave/files/action/verify/done + unchanged guardrails), two accepted syntaxes** — a new markdown `### Task` + field-bullet syntax as the taught default, XML fully retained (19 existing plans, zero migration). Implementation updates render_plan.py (markdown fallback parser, same return contract), executing-plans Step-0 (semantic, syntax-neutral checks), writing-plans + its reviewer prompt (teach markdown, drop the superpowers checkbox format — the original C1 fix), rules/plan-format.md (canonical dual-syntax definition), blast-radius-check.sh (reads `- **Files:**` bullets), plus hook tests.
+Research + design v1 (dedup-to-XML) completed for C1; user then redirected twice: first "XML optional" (design v2, dual syntax), then "purge XML from plan generation" (wave 4). Final state: **one semantic schema (id/wave/files/action/verify/done + unchanged guardrails); markdown `### Task` + field-bullet syntax is the ONLY authoring format; XML demoted to legacy read-only** (19 existing plans keep rendering/executing, zero migration; extending an XML plan keeps XML since mixed files parse XML only). Implementation: render_plan.py (markdown parser + wave-3 scanner hardening — inline-code masking + per-fence fallback fixed the pre-existing "plan parses to 0 tasks" bug), executing-plans Step-0 (semantic checks), writing-plans + reviewer prompt (markdown-only, checkbox format deleted — the original C1 fix), rules/plan-format.md (single markdown Task Schema + Legacy XML section), blast-radius-check.sh (reads `- **Files:**` bullets), plus hook tests.
 
 ### Rationale
 
@@ -36,32 +36,32 @@ The user's directive removes the XML mandate but the semantic contract (fields, 
 
 ### Deviations
 
-- none (pending execution)
+- none
 
 ### Verify
 
 | Check | Command | Exit | Notes |
 | --- | --- | --- | --- |
-| Ground truth: 19/19 task-bearing plans XML, 0 checkbox | `for f in specs/*/PLAN.md; do grep -q '<task ' "$f" && echo XML; done \| wc -l` | 0 | research phase |
-| Old-format echoes outside writing-plans | `grep -rn "Bite-Sized\|Plan Document Header\|Write the failing test" skills/ rules/ \| grep -v writing-plans/SKILL.md` | 0 | single echo: executing-plans:67 |
-| PLAN.md v2 renders (format self-check) | auto: `render-plan-on-write.sh` on save | 0 | PLAN.html + At-a-glance regenerated |
+| render hook tests (markdown tasks, prose-heading filter, backtick-prose) | `bash tests/hooks/render-plan-on-write.test.sh` | 0 | 8 passed |
+| blast-radius tests (markdown + mixed Files sets) | `bash tests/hooks/blast-radius-check.test.sh` | 0 | 12 passed |
+| doc-truth lint (paths + hook table) | `bash scripts/lint-doc-truth.sh` | 0 | clean |
+| legacy XML plan still parses (was 0 tasks pre-fix) | `python3 skills/visual-planner/render_plan.py specs/plan-at-a-glance/PLAN.md /tmp/vs-paag.html > /tmp/vs-paag.out 2>&1 && grep -q "tasks=6 waves=5" /tmp/vs-paag.out` | 0 | wave-3 scanner fix |
+| old checkbox format purged from skills | `grep -rq -e "Bite-Sized" -e "Plan Document Header" -e "Step 1: Write the failing test" skills` | 1 | no match = purged (C1) |
+| no authoring doc offers XML as a choice | `grep -rq -e "equally valid" -e "either accepted syntax" -e "two syntaxes" skills rules` | 1 | no match = markdown-only |
+| canonical rule defines the markdown Task Schema | `grep -q -e "### Task 1.1 — Short human title (wave 1)" rules/plan-format.md` | 0 | wave-4 |
+| legacy XML support stays documented | `grep -q "Legacy XML plans (read-only support)" rules/plan-format.md` | 0 | 19 plans, zero migration |
+| executing-plans gate is semantic, not syntax-bound | `grep -q "reject it for missing semantics" skills/executing-plans/SKILL.md` | 0 | Step-0 rewrite |
+| stale worktree claim gone from writing-plans | `grep -q "created by brainstorming skill" skills/writing-plans/SKILL.md` | 1 | no match = fixed |
+| full suite (L1 syntax + doc-truth + manifest + hook suites + L2 python) | `bash scripts/run-tests.sh` | 0 | ALL GREEN |
+Verified: 2026-07-16T19:17:56
 
-| render hook tests incl. 2 new markdown cases | `bash tests/hooks/render-plan-on-write.test.sh` | 0 | 7 passed |
-| blast-radius tests incl. 3 new markdown/mixed cases | `bash tests/hooks/blast-radius-check.test.sh` | 0 | 12 passed |
-| markdown plan end-to-end (render + At-a-glance + emit-files) | `python3 skills/visual-planner/render_plan.py <scratch>/mdplan/PLAN.md [--summarize\|--emit-files]` | 0 | tasks=3 waves=2; files JSON correct |
-| XML path untouched (regression) | `diff <baseline> <after>` on specs/intent-review-stage render | 0 | byte-identical |
-| writing-plans markers gone + canonical pointer | task 1.2 `<verify>` greps | 0 | PASS |
-| executing-plans syntax-neutral | task 1.3 `<verify>` greps | 0 | PASS |
-| plan-format.md dual-syntax canonical | task 1.4 `<verify>` greps | 0 | PASS |
-| full suite (L1 syntax + doc-truth + manifest + hook tests + L2 python) | `bash scripts/run-tests.sh` | 0 | ALL GREEN (173 passed, 1 skipped + all hook suites) |
-| wave 3: backtick/quoted tag prose can't zero a plan | `bash tests/hooks/render-plan-on-write.test.sh` | 0 | 8 passed (new backtick-prose case) |
-| wave 3: plan-at-a-glance recovers | `python3 skills/visual-planner/render_plan.py specs/plan-at-a-glance/PLAN.md <out>` | 0 | tasks=6 waves=5 (was 0) |
-| wave 3: no other plan's count changed | old (e4285f8) vs new parser sweep over `specs/*/PLAN.md` | 0 | only plan-at-a-glance changed (0→6) |
-| wave 3: deployed rules copy synced | `diff rules/plan-format.md .claude/rules/plan-format.md` | 0 | byte-identical (user-authorized) |
-| wave 3: full suite re-run | `bash scripts/run-tests.sh` | 0 | ALL GREEN |
-| wave 4: no authoring doc offers XML | `grep -rn "equally valid\|either accepted syntax\|two syntaxes" skills/ rules/` | 1 (no match) | authoring path is markdown-only |
-| wave 4: legacy parsing intact | render mdplan + plan-at-a-glance | 0 | 3 tasks / 6 tasks unchanged |
-| wave 4: lint + render tests + full suite | `bash scripts/lint-doc-truth.sh && bash tests/hooks/render-plan-on-write.test.sh && bash scripts/run-tests.sh` | 0 | ALL GREEN, 8 passed |
+Session-only evidence (not re-runnable in CI, recorded for the audit trail): XML render
+regression — `specs/intent-review-stage` PLAN.html byte-identical between the pre-change
+baseline and the new parser; old-vs-new (`e4285f8`) task-count sweep over all 20
+`specs/*/PLAN.md` shows plan-at-a-glance (0→6) as the only change; markdown demo plan
+end-to-end (render + `--summarize` + `--emit-files`) gave tasks=3 waves=2 with correct
+files JSON; local `.claude/rules/plan-format.md` synced byte-identical (gitignored,
+absent on CI).
 
 ### Rollback
 
