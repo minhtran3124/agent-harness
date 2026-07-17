@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.6.7] — 2026-07-17
+
+- feat(benchmarks): intake-classifier eval + blind baseline (PR #112)
+
 ## [2.6.6] — 2026-07-17
 
 - docs(specs): backfill ### Verify block for entropy-trend SUMMARY (PR #110)
