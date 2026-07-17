@@ -96,3 +96,14 @@ The `### Verify` table is machine-parsed data, not prose. `verify_summary` split
 
 **Full doc:** docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md
 ---
+
+## [2026-07-17] automation-readiness
+**Type:** knowledge
+**Module:** skills/feature-intake / rules/auto-correct-scope
+**Tags:** automation-readiness, standing-automation, hooks, ci-workflow, scheduled-loop, fail-silent, design-gate, enforce-by-consultation
+**Applicable when:** A change adds a standing automation — a new hook (`hooks/*`), a CI / scheduled workflow, or a scheduled `/loop`. Consult before writing it.
+
+The risk-lane gate forces `high-risk` for `hooks/*`/`settings.json` (how carefully to build), but never asks two *design* questions that have already cost this repo. (1) **Fail-safe & stop condition** — finite retry, a fail-open boundary on advisory work (`… || true` on the command, not a try/except allowlist), no silent pass; the "advisory/never-blocks" bug shipped twice and a prompt-decision failed silently for want of this. (2) **Warranted & objectively verifiable** — does the task recur enough to justify a standing per-session/per-commit cost, and is its output checkable pass/fail with low false-alarm (an auth scanner matching an English word in a test comment is a tax paid every commit). If either fails, prefer a one-off script over a standing automation. Advisory (enforce-by-consultation); does not replace the high-blast hard gate.
+
+**Full doc:** docs/solutions/harness/automation-readiness.md
+---
