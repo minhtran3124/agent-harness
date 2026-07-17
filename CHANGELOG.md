@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.5.0] — 2026-07-17
+
+- Promote v3 → main: remove bootstrap-xia2 (xia2 zero-config) (PR #92)
+
 ## [2.4.0] — 2026-07-17
 
 - docs: correct branch-isolation-guard trigger in 5 stale sites (PR #88)
