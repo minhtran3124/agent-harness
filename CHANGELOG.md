@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.6.4] — 2026-07-17
+
+- docs(solutions): automation-readiness design gate (option A) (PR #106)
+
 ## [2.6.3] — 2026-07-17
 
 - docs(techstacks): clarify AI-consumed / project-authored (keep at root) (PR #104)
