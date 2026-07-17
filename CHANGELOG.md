@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.6.3] — 2026-07-17
+
+- docs(techstacks): clarify AI-consumed / project-authored (keep at root) (PR #104)
+
 ## [2.6.2] — 2026-07-17
 
 - feat(scripts): verify-row lint (pipe-free + <60s Verify commands) (PR #102)
