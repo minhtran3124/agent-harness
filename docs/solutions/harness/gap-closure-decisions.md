@@ -6,7 +6,7 @@ severity: standard
 applicable_when: When implementing a backlog item named in a research/planning doc, or when adding a new hook and deciding whether to activate it in the same change.
 supersedes: null
 confidence: high
-confirmed_at: 2026-06-14
+confirmed_at: 2026-07-17
 affects:
   - docs/research-openai-harness-engineering.md
   - hooks/protected-path-guard.sh
