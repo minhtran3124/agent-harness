@@ -3,7 +3,7 @@
 This file is the **active engineering-guidelines profile** for this project.
 
 Stack-specific guidelines live in `templates/stacks/<stack>/guidelines.md` and are generated
-by `/bootstrap-xia2`. Copy the appropriate profile here when setting up a project.
+in `templates/stacks/<stack>/`. Copy the appropriate profile here when setting up a project.
 
 ---
 
