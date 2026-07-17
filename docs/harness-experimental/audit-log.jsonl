@@ -19,3 +19,4 @@
 {"date": "2026-07-17", "findings": 5, "band": "needs attention", "checks": {"verify_missing": 1, "plan_stale": 0, "backlog_stale": 0, "manifest_degraded": 0, "solutions_stale": 4, "contract_impact": 0}, "pr": 100}
 {"date": "2026-07-17", "findings": 5, "band": "needs attention", "checks": {"verify_missing": 1, "plan_stale": 0, "backlog_stale": 0, "manifest_degraded": 0, "solutions_stale": 4, "contract_impact": 0}, "pr": 102}
 {"date": "2026-07-17", "findings": 5, "band": "needs attention", "checks": {"verify_missing": 1, "plan_stale": 0, "backlog_stale": 0, "manifest_degraded": 0, "solutions_stale": 4, "contract_impact": 0}, "pr": 104}
+{"date": "2026-07-17", "findings": 5, "band": "needs attention", "checks": {"verify_missing": 1, "plan_stale": 0, "backlog_stale": 0, "manifest_degraded": 0, "solutions_stale": 4, "contract_impact": 0}, "pr": 106}
