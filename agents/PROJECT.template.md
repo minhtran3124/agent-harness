@@ -16,8 +16,8 @@ few execution facts no other doc reliably contains. Fill it in per project.
 
 The agents read these for layering, error/validation, style, and logging. Give the path, or `none`.
 
-- **Architecture / layering:** <path, e.g. `.claude/rules/architecture.md`> — or `none` *(active stack profile; start from `templates/stacks/_skeleton/` or edit directly)*
-- **Code style / error handling / validation / logging:** <path, e.g. `.claude/rules/guidelines.md`> — or `none` *(active stack profile; start from `templates/stacks/_skeleton/` or edit directly)*
+- **Architecture / layering:** `techstacks/` (project-owned stack profile) — or `none` *(a repo with no application stack)*
+- **Code style / error handling / validation / logging:** `techstacks/` (project-owned stack profile) — or `none`
 - **Project identity (name / stack / repo root):** fill the *Inline fallback* below.
 
 > If both paths are `none` **and** there is no `xia2/PROJECT.md`, fill the **Inline fallback**
