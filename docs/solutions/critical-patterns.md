@@ -107,3 +107,14 @@ The risk-lane gate forces `high-risk` for `hooks/*`/`settings.json` (how careful
 
 **Full doc:** docs/solutions/harness/automation-readiness.md
 ---
+
+## [2026-07-17] skill-eval-blind-run-scoring
+**Type:** knowledge
+**Module:** evals / scripts/score_intake_eval.py
+**Tags:** skill-eval, workflow-eval, blind-run, deterministic-scorer, claim-discipline, non-determinism, hard-gate-respect, answer-key
+**Applicable when:** Building or extending a behavioral eval for a prompt-driven skill or workflow stage — where "prove it works" means measuring LLM judgment, not a green unit-test.
+
+Eval a prompt skill with **auto-score / manual-run**: labeled fixtures (`request.md` + parseable `truth.md`, `any` for unasserted dims) → **blind** subagent runs (given only the request + skill, never `truth.md` — the orchestrator authored the key, so a non-blind run is meaningless) → a deterministic, unit-tested scorer (pure Python, no key/LLM). **Separate the safety-critical dimension** (hard-gate respect → `--strict` hard-fail) from wobbly judgment dims (lane/confidence). **Multi-run**: one run hides borderline non-determinism (a fixture flipped tiny↔normal 3/4 while hard-gate respect stayed 3/3 across all 4). Scorer must **normalize LLM free-text** (`Data model` vs `data-model` → compare alphanumerics-only) or a correct call scores as a false miss. When N blind runs consistently disagree with a fixture, **suspect the answer key, not the skill** — revise `truth.md`, mark prior runs non-comparable.
+
+**Full doc:** docs/solutions/harness/skill-eval-blind-run-scoring.md
+---
