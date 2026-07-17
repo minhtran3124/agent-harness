@@ -1,6 +1,6 @@
 ---
 slug: remove-bootstrap-xia2
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-07-17
 ---
