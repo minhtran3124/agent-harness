@@ -50,7 +50,7 @@ request → /feature-intake → Lane + Confidence → route → build → hooks 
 - **Less ceremony on small work.** Typo/copy/narrow edits skip planning entirely (tiny lane).
 - **More proof on risky work.** Auth, migrations, schema, public contracts, and high-blast files force `high-risk` — full plan + reviews + a recorded rollback.
 - **The human is asked less, but at the right moments.** Approval is gated on *ambiguity*, not on every step. Clear work proceeds with a notice; unclear work blocks.
-- **Claims must be backed by evidence.** "Done" needs a re-runnable `### Verify` artifact in `SUMMARY.md`; behaviors aren't `implemented` in `TEST_MATRIX.md` without proof.
+- **Claims must be backed by evidence.** "Done" needs a re-runnable `### Verify` artifact in `SUMMARY.md` — a row per check actually run, never a command that wasn't.
 - **Rules are enforced by code, not hope.** What can be mechanized is a hook (see `CLAUDE.md` Hooks table); convention is the residue, not the rule.
 
 ## 5. The "hard gates"
