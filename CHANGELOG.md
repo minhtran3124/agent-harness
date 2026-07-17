@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.5.1] — 2026-07-17
+
+- feat(install): fold init-structure into install-harness (one command) (PR #94)
+
 ## [2.5.0] — 2026-07-17
 
 - Promote v3 → main: remove bootstrap-xia2 (xia2 zero-config) (PR #92)
