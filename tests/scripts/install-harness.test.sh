@@ -32,6 +32,28 @@ else
   fail "rc=$RC — mcp/.claude/prune state wrong: $(ls -a "$tgt" | tr '\n' ' ')"
 fi
 
+t "fresh install scaffolds structural dirs at the target root (create-if-missing)"
+tgt=$(target)
+run_install "$tgt"
+if [ "$RC" -eq 0 ] \
+   && [ -f "$tgt/docs/solutions/INDEX.md" ] && [ -f "$tgt/docs/solutions/critical-patterns.md" ] \
+   && [ -f "$tgt/specs/STATE.md" ] && [ -f "$tgt/agent-memory/README.md" ]; then
+  pass
+else
+  fail "rc=$RC — structural scaffolding missing: $(ls -a "$tgt" | tr '\n' ' ')"
+fi
+
+t "install never clobbers a pre-existing structural file"
+tgt=$(target)
+mkdir -p "$tgt/docs/solutions"
+printf 'MY REAL INDEX\n' > "$tgt/docs/solutions/INDEX.md"
+run_install "$tgt"
+if [ "$RC" -eq 0 ] && [ "$(cat "$tgt/docs/solutions/INDEX.md")" = "MY REAL INDEX" ]; then
+  pass
+else
+  fail "rc=$RC — pre-existing INDEX.md was clobbered: [$(cat "$tgt/docs/solutions/INDEX.md" 2>&1)]"
+fi
+
 t "existing .mcp.json with other servers is merged, not replaced (backup taken)"
 tgt=$(target)
 echo '{"mcpServers":{"context7":{"type":"http","url":"https://example.com"}}}' > "$tgt/.mcp.json"

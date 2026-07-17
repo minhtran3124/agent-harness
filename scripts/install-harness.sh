@@ -2,9 +2,12 @@
 # Install the claude-skills harness into a target project.
 #
 # Fetches the harness source (git clone into a temp dir, or a local checkout via --source),
-# then builds the loadable .claude/ in the target via deploy-harness.sh --target. The target
-# root is NEVER used as a staging area, so the installer never deletes target files — at most
-# it merge-syncs .claude/ and merges one server entry into .mcp.json.
+# then builds the loadable .claude/ in the target via deploy-harness.sh --target, and scaffolds
+# the workflow's structural dirs (specs/, docs/solutions/, agent-memory/) via
+# init-structure.sh — CREATE-IF-MISSING only. The installer never DELETES or OVERWRITES a
+# target file: it merge-syncs .claude/, merges one server entry into .mcp.json, and only ADDS
+# structural files that are absent. (The historical data-loss incident was a prior installer
+# staging payload at the root then *pruning* it — deletion, which create-if-missing never does.)
 # Designed to run piped:
 #   curl -fsSL https://raw.githubusercontent.com/minhtran3124/harness-skills/main/scripts/install-harness.sh | bash -s -- --yes
 #
@@ -27,7 +30,7 @@ KEEP_SOURCES=0
 # target root — a previous installer staged these at the root and pruned them afterward,
 # which destroyed real project files when those names already existed (or when run inside
 # the harness-skills repo itself).
-PAYLOAD=(skills agents hooks rules templates settings.json scripts/deploy-harness.sh VERSION CHANGELOG.md)
+PAYLOAD=(skills agents hooks rules templates settings.json scripts/deploy-harness.sh scripts/init-structure.sh VERSION CHANGELOG.md)
 STAGE_NAME=".harness-source"
 
 # ---------- styling ----------
@@ -215,6 +218,16 @@ else
   printf '\n'
 fi
 bash "$SRC/scripts/deploy-harness.sh" "${DEPLOY_ARGS[@]}"
+
+# ---------- scaffold structural dirs (create-if-missing; never deletes/overwrites) ----------
+# Folds the standalone scripts/init-structure.sh into install so users run one command.
+# Safe by construction: it only writes a structural file when its destination is absent.
+if [ "$DRY_RUN" -eq 1 ]; then
+  info "Would scaffold specs/, docs/solutions/, agent-memory/ (create-if-missing)"
+else
+  printf '\n'
+  bash "$SRC/scripts/init-structure.sh" --root "$TARGET_DIR"
+fi
 
 # ---------- optional: keep a copy of the sources in the target ----------
 STAGE_DIR="$TARGET_DIR/$STAGE_NAME"
