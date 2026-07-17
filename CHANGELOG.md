@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.6.1] — 2026-07-17
+
+- docs(compound): crystallize 3 session lessons (PR #100)
+
 ## [2.6.0] — 2026-07-17
 
 - feat(harness): decouple tech-stack into a project-owned techstacks/ folder (PR #98)
