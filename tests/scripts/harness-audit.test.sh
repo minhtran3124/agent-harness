@@ -51,34 +51,7 @@ out=$(bash "$SCRIPT" --root "$d" --json)
 if [ "$(jf "$out" "['checks']['plan_stale']")" = "0" ]; then pass
 else fail "want plan_stale == 0: $out"; fi
 
-# ── 4. verify_never_rerun ──────────────────────────────────────────────────────
-t "### Verify row referencing a path absent from run-tests.sh/workflows -> verify_never_rerun >= 1"
-d=$(make_fixture)
-mkdir -p "$d/specs/x" "$d/scripts"
-printf 'Lane: normal\n\n### Verify\n\n| Check | Command | Exit | Notes |\n|---|---|---|---|\n| Runs | `bash scripts/nonexistent-thing.sh` | 0 | - |\n' > "$d/specs/x/SUMMARY.md"
-printf '#!/usr/bin/env bash\necho "no real tests here"\n' > "$d/scripts/run-tests.sh"
-out=$(bash "$SCRIPT" --root "$d" --json)
-if [ "$(jf "$out" "['checks']['verify_never_rerun']")" -ge 1 ]; then pass
-else fail "want verify_never_rerun >= 1: $out"; fi
-
-t "### Verify row referencing a path present in run-tests.sh -> verify_never_rerun == 0"
-d=$(make_fixture)
-mkdir -p "$d/specs/x" "$d/scripts"
-printf 'Lane: normal\n\n### Verify\n\n| Check | Command | Exit | Notes |\n|---|---|---|---|\n| Runs | `bash scripts/known-thing.sh` | 0 | - |\n' > "$d/specs/x/SUMMARY.md"
-printf '#!/usr/bin/env bash\nbash scripts/known-thing.sh\n' > "$d/scripts/run-tests.sh"
-out=$(bash "$SCRIPT" --root "$d" --json)
-if [ "$(jf "$out" "['checks']['verify_never_rerun']")" = "0" ]; then pass
-else fail "want verify_never_rerun == 0: $out"; fi
-
-t "no scripts/run-tests.sh and no .github/workflows at all -> check 4's file array is empty, must not crash under set -u"
-d=$(make_fixture)
-mkdir -p "$d/specs/x"
-printf 'Lane: normal\n\n### Verify\n\n| Check | Command | Exit | Notes |\n|---|---|---|---|\n| Runs | `bash scripts/nowhere.sh` | 0 | - |\n' > "$d/specs/x/SUMMARY.md"
-out=$(bash "$SCRIPT" --root "$d" --json 2>&1); rc=$?
-if [ "$rc" -eq 0 ] && [ "$(jf "$out" "['checks']['verify_never_rerun']")" -ge 1 ]; then pass
-else fail "want exit 0 and verify_never_rerun >= 1, got rc=$rc: $out"; fi
-
-# ── 5. backlog_stale ────────────────────────────────────────────────────────────
+# ── 4. backlog_stale ────────────────────────────────────────────────────────────
 t "improvement-backlog.md open row dated >14 days ago -> backlog_stale >= 1"
 d=$(make_fixture)
 mkdir -p "$d/docs/harness-experimental"

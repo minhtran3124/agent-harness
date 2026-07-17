@@ -9,6 +9,14 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.2.1] — 2026-07-17
+
+- docs(reviews): Phase 2 deep review — verify each deletion target (supersedes audit line items) (PR #77)
+
+## [2.2.0] — 2026-07-16
+
+- feat(hooks): mechanize the ESCALATIONS deny-on-no-response gate (review C5) (PR #75)
+
 ## [2.1.0] — 2026-07-16
 
 - fix(hooks): strip comments before risk-corroboration keyword scan (review C4) (PR #73)
