@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.6.0] — 2026-07-17
+
+- feat(harness): decouple tech-stack into a project-owned techstacks/ folder (PR #98)
+
 ## [2.5.2] — 2026-07-17
 
 - fix(deploy): prune deleted-skill orphans from .claude (safe-by-construction manifest) (PR #96)
