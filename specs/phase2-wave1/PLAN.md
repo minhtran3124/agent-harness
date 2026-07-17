@@ -1,6 +1,6 @@
 ---
 slug: phase2-wave1
-status: proposed
+status: active
 owner: Minh Tran
 created: 2026-07-17
 ---
@@ -10,7 +10,7 @@ created: 2026-07-17
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**5 tasks · 2 waves · 9 files · 0/5 done**
+**5 tasks · 2 waves · 9 files · 3/5 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -35,11 +35,11 @@ flowchart LR
 ```
 
 ### Progress
-- [ ] 1.1 — Delete context-monitor.py (wave 1)
+- [x] 1.1 — Delete context-monitor.py (wave 1)
 - [ ] 1.2 — Delete REQ.md, preserve its questions in the assessment doc (wave 1)
 - [ ] 1.3 — Delete TEST_MATRIX template and its three prose mandates (wave 1)
-- [ ] 1.4 — Remove the deploy-harness spinner animation, keep step() contract (wave 1)
-- [ ] 2.1 — Full-suite regression + machine-verified evidence (wave 2)
+- [x] 1.4 — Remove the deploy-harness spinner animation, keep step() contract (wave 1)
+- [x] 2.1 — Full-suite regression + machine-verified evidence (wave 2)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -102,3 +102,4 @@ Wave 2 (check_plan_format.py, harness-audit check #4, PR_TEMPLATE.md), Wave 3 ow
 ## 6. Status Log
 
 - 2026-07-17 — research-brief (fresh re-verification of all four claims + the `^templates/` strict-gate discovery), design, and plan written; status proposed, awaiting execution approval. First production plan authored in the markdown task syntax.
+- 2026-07-17 — user approved; executed tasks 1.1–1.4 + 2.1 on `feat/phase2-wave1`. All per-task verifies pass; installer suites green; full suite ALL GREEN; `verify_summary --check` exit 0 (one Verify row rewritten pipe-free after tripping the documented cell-split pitfall). ~382 lines deleted.

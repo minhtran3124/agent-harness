@@ -61,7 +61,7 @@ human. Each engineering question maps to an enforced mechanism, not a convention
 | What should I read first? | `session-knowledge` hook loads `docs/solutions/` index + critical patterns at session start; `/xia2` researches what already exists. |
 | What type of work, how risky? | `/feature-intake` runs first — a 10-flag checklist + hard gates assign a **lane** (`tiny\|normal\|high-risk`) and a **confidence** to `specs/<slug>/SUMMARY.md`. |
 | Which contract does it touch? | Hard gates (auth · migration · public contract · high-blast file) force `high-risk`; `blast-radius` hook flags edits outside the plan. |
-| What proof shows it's done? | A re-runnable `### Verify` artifact backs every "done"; `TEST_MATRIX.md` marks a behavior `implemented` only with evidence. |
+| What proof shows it's done? | A re-runnable `### Verify` artifact in `SUMMARY.md` backs every "done" — machine-recheckable via `verify_summary.py`. |
 | What should future agents inherit? | `/compound` crystallizes non-obvious learnings into `docs/solutions/`; `agent-memory/` carries facts forward with confidence decay. |
 
 And the claim is corroborated by code: at commit time, hooks check the staged diff against the

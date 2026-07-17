@@ -17,7 +17,7 @@ on:
     # pull_request_target). After the v2 → main promotion (VERSION 2.0.0) PRs merge to
     # main, which now carries the full toolchain — the stale [v2] list silently skipped
     # PRs #66/#68/#69/#70 (found by the 2026-07-16 over-engineering review, C3).
-    branches: [main]
+    branches: [main, v3]  # v3 = integration/staging branch (2026-07-17); PRs merge here first
 
 permissions:
   contents: write
