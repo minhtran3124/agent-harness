@@ -38,7 +38,8 @@ The stack now lives in exactly one place (`techstacks/`), pointed at from the fe
 | techstacks/README exists + init-structure scaffolds it | `bash -c 'test -f techstacks/README.md; a=$?; D=$(mktemp -d); bash scripts/init-structure.sh --root "$D" >/dev/null; test -f "$D/techstacks/README.md"; b=$?; rm -rf "$D"; test "$a" = 0 -a "$b" = 0'` | 0 | create-if-missing |
 | init-structure test (now 7 files) | `bash tests/scripts/init-structure.test.sh` | 0 | 3 passed |
 | doc-truth lint + manifest | `bash -c 'bash scripts/lint-doc-truth.sh && python3 scripts/check_manifest.py'` | 0 | |
-| full suite | `bash scripts/run-tests.sh` | 0 | ALL GREEN |
+
+> Full suite (`bash scripts/run-tests.sh`) is covered by the CI `tests` job (ubuntu + macos, both green) — deliberately NOT a Verify row here: the strict gate re-runs each row under a 60s per-command cap, which the whole suite exceeds on a cold CI runner.
 
 ### Rollback
 
