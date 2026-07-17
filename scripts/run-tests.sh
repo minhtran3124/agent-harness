@@ -24,6 +24,21 @@ else
   echo "  skip — no python3"
 fi
 
+echo "== L1: verify-row lint (changed SUMMARYs only) =="
+# Lint only SUMMARY.md files changed vs origin/main — new/edited rows must be
+# pipe-free + <60s; shipped specs are grandfathered (scope matches ci-strict-gate's
+# changed-SUMMARY model). No origin/main (or nothing changed) → no-op.
+if command -v python3 >/dev/null 2>&1 && git rev-parse --verify -q origin/main >/dev/null 2>&1; then
+  changed="$(git diff --name-only origin/main -- 'specs/*/SUMMARY.md' 2>/dev/null)"
+  if [ -n "$changed" ]; then
+    printf '%s\n' "$changed" | python3 scripts/check_verify_rows.py || FAILED=1
+  else
+    echo "  skip — no changed SUMMARY.md vs origin/main"
+  fi
+else
+  echo "  skip — no python3 or no origin/main ref"
+fi
+
 for suite in tests/hooks/*.test.sh tests/scripts/*.test.sh; do
   echo ""
   echo "== $suite =="
@@ -37,7 +52,7 @@ PYBIN="${TMPDIR:-/tmp}/harness-tests-venv/bin/python"
 [ -x "$PYBIN" ] || PYBIN="$(command -v python3 || true)"
 if [ -n "$PYBIN" ] && "$PYBIN" -c 'import pytest' >/dev/null 2>&1; then
   # Engine unit tests that ship with the repo but nothing else runs.
-  PYTESTS="scripts/test_check_lane_evidence.py scripts/test_check_manifest.py scripts/test_verify_summary.py skills/visual-planner/test_render_plan.py"
+  PYTESTS="scripts/test_check_lane_evidence.py scripts/test_check_manifest.py scripts/test_verify_summary.py scripts/test_check_verify_rows.py skills/visual-planner/test_render_plan.py"
   # shellcheck disable=SC2086
   "$PYBIN" -m pytest $PYTESTS -q --no-header --no-cov -p no:cacheprovider || FAILED=1
 else
