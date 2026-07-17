@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.6.2] — 2026-07-17
+
+- feat(scripts): verify-row lint (pipe-free + <60s Verify commands) (PR #102)
+
 ## [2.6.1] — 2026-07-17
 
 - docs(compound): crystallize 3 session lessons (PR #100)
