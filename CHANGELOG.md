@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.7.1] — 2026-07-17
+
+- compound: skill-eval playbook + harness test/doc-lint gate scope (PR #116)
+
 ## [2.7.0] — 2026-07-17
 
 - refactor(evals): rename benchmarks/ -> evals/, split skills vs workflow (PR #114)
