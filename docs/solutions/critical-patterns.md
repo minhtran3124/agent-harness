@@ -85,3 +85,14 @@ A design doc asserted the harness ships no `*.proposed`; it shipped two, tracked
 
 **Full doc:** docs/solutions/harness/unverified-premise-propagates-through-plan-anchored-reviews.md
 ---
+
+## [2026-07-17] verify-row-must-be-pipe-free-and-under-60s
+**Type:** failure
+**Module:** verify_summary / ci-strict-gate
+**Tags:** verify-table, summary-md, pipe-cell-split, strict-gate, timeout, plan-format-guardrail
+**Applicable when:** Writing a `### Verify` row in a spec SUMMARY.md — before pasting any command with a pipe or a whole-suite/build invocation.
+
+The `### Verify` table is machine-parsed data, not prose. `verify_summary` splits each row on `|`, so any pipe in a command (`||`, `&&|`, alternation `a|b`, `cmd | wc`) collides with the delimiter and the row never matches (hit 6× in one session). Separately, `ci-strict-gate` re-runs each Verify command under a 60s cap (= plan-format Guardrail 3), so a full-suite row (`bash scripts/run-tests.sh`) TIMES OUT on cold CI and blocks the PR (hit 1×). Rule: Verify commands must be pipe-free (`grep -e a -e b`, `X; a=$?; test -a`) AND <60s re-runnable — the full suite is a CI `tests` job, cited in prose, never a Verify row.
+
+**Full doc:** docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md
+---
