@@ -32,7 +32,7 @@
           {
             "type": "command",
             "command": "hooks/branch-isolation-guard.sh",
-            "statusMessage": "Branch-isolation guard (block code edits on shared branch w/ active plan)…"
+            "statusMessage": "Branch-isolation guard (block code edits on a shared branch)…"
           }
         ]
       }

@@ -152,8 +152,8 @@ approach to use — present a clear A/B choice (use the `AskUserQuestion` tool w
 dedicated feature branch, not a shared one. If on `main`/`master` (or any branch in
 `HARNESS_SHARED_BRANCHES`), **invoke `using-git-worktrees` first** to create an isolated worktree +
 branch. This is the only step that creates the branch; `hooks/branch-isolation-guard.sh` hard-blocks
-code edits on a shared branch once the plan is `status: active`, so skipping it stalls execution.
-(Tiny-lane in-place edits with no plan are exempt by design.)
+code edits on a shared branch regardless of plan state, so skipping it stalls execution.
+(Only `specs/*` bookkeeping is exempt, so intake can record `SUMMARY.md` before the branch exists.)
 
 **If Subagent-Driven chosen:**
 
