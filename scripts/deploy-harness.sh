@@ -98,6 +98,16 @@ CONFLICTS=()
 POLICY=""
 BACKUP_TS=""
 
+# Deploy manifest: the set of top-level `<dir>/<entry>` paths the harness deploys this run,
+# under the 5 synced dirs. Written to $OUT/.harness-deployed at the end; read at the start of
+# the NEXT deploy to prune entries the harness previously shipped but source has since deleted.
+# Safe by construction: only paths in the PREVIOUS harness manifest are ever eligible to prune,
+# so a consumer's own additions (never in the manifest) are never touched. See
+# specs/deploy-prune-orphans/.
+SYNCED_DIRS_RE='^(skills|agents|hooks|rules|templates)/[^/]+$'
+DEPLOYED_LIST="$(mktemp)"        # accumulates `<dir>/<entry>` written this run
+record_deployed() { printf '%s\n' "$1" >> "$DEPLOYED_LIST"; }
+
 # True only when this process can actually open its controlling terminal. `[ -r /dev/tty ]`
 # is NOT equivalent: access(2) sees the mode bits of the /dev/tty alias node and reports it
 # readable even after setsid(), so a tty-less CI run would fall into the prompt branch.
@@ -128,6 +138,17 @@ preflight_protected() {
         printf "    - %s\n" "$f"
       done
       printf "\n"
+    fi
+    # Read-only would-be-prune report (writes nothing): a prev-manifest entry whose source is gone.
+    if [ -f "$OUT/.harness-deployed" ]; then
+      local p
+      while IFS= read -r p; do
+        [ -n "$p" ] || continue
+        printf '%s' "$p" | grep -qE "$SYNCED_DIRS_RE" || continue
+        [ -e "$p" ] && continue                 # source still has it → not an orphan
+        [ -e "$OUT/$p" ] || continue
+        printf "  %s✗ would prune stale %s%s%s (removed from source)\n" "$Y" "$D" "$p" "$R"
+      done < "$OUT/.harness-deployed"
     fi
     exit 0
   fi
@@ -278,6 +299,9 @@ copy_dir()        {
     base="$(basename "$entry")"
     rel="$1/$base"
 
+    # _archive is stripped post-copy (strip_archive) — never a harness-owned live path.
+    [ "$base" = "_archive" ] || record_deployed "$rel"
+
     if [ -d "$entry" ] && protected_under "$rel"; then
       sync_protected_dir "$rel" "$entry" "$1"
       continue
@@ -363,6 +387,26 @@ for d in skills agents hooks rules templates; do
 done
 step "Stripping archived skills"             strip_archive
 step "Deriving ${B}settings.json${R} ${D}(hook paths)${R}" derive_settings
+
+# ---------- prune orphans (entries the harness shipped last time, gone from source now) ----------
+# Eligible = in the PREVIOUS manifest AND not deployed this run. Shape-guarded to the 5 synced
+# dirs. Consumer additions never entered the manifest → never eligible. First deploy (no prior
+# manifest) prunes nothing. See specs/deploy-prune-orphans/.
+prune_orphans() {
+  local prev="$OUT/.harness-deployed" path
+  [ -f "$prev" ] || return 0
+  while IFS= read -r path; do
+    [ -n "$path" ] || continue
+    printf '%s' "$path" | grep -qE "$SYNCED_DIRS_RE" || continue      # defense-in-depth
+    grep -qxF "$path" "$DEPLOYED_LIST" && continue                    # still shipped → keep
+    [ -e "$OUT/$path" ] || continue                                   # already gone
+    rm -rf "$OUT/$path"
+    printf "  ${Y}✗${R}  pruned stale ${D}%s${R} (removed from harness source)\n" "$path"
+  done < "$prev"
+}
+step "Pruning stale entries"                 prune_orphans
+sort -u "$DEPLOYED_LIST" > "$OUT/.harness-deployed"
+rm -f "$DEPLOYED_LIST"
 
 # ---------- summary ----------
 SK=$(ls -d "$OUT"/skills/*/ 2>/dev/null | wc -l | tr -d ' ')
