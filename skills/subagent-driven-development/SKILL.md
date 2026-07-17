@@ -51,7 +51,7 @@ digraph when_to_use {
 
 This is the structural point that creates the branch. It is now backstopped at write time by
 `hooks/branch-isolation-guard.sh`, which **hard-blocks** any code edit made on a shared branch
-once a plan is `status: active` (break-glass: `BRANCH_ISOLATION_REASON`). `branch-guard.sh` only
+regardless of plan state (break-glass: `BRANCH_ISOLATION_REASON`). `branch-guard.sh` only
 warns, and only at commit time — so do not rely on it; create the branch here.
 
 **Next — mark the plan active.** Before dispatching wave 1, set the frontmatter
