@@ -9,7 +9,7 @@ affects:
   - templates/SUMMARY.template.md
 supersedes: null
 confidence: high
-confirmed_at: 2026-06-14
+confirmed_at: 2026-07-17
 ---
 ## Applicable When
 Use this when a change adds or edits any file under `hooks/` — including a dormant hook not yet registered in `settings.json` — because the corroboration gate keys on path, not on whether the hook is wired.

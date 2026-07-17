@@ -10,7 +10,7 @@ Add an entry only when the pattern:
 
 ## [2026-06-11] meta-repo-signal-remapping
 **Type:** knowledge
-**Module:** skills/bootstrap-xia2
+**Module:** skills/xia2 / agents/PROJECT.md (bootstrap-xia2 retired 2026-07-17)
 **Tags:** meta-repo, signal-remapping, project-md, dual-audience-docs, bootstrap-update-mode, hook-friction
 **Applicable when:** Bootstrapping or updating xia2 PROJECT.md (or any risk-classification config) for a repo whose "application" is the tooling itself — skills, hooks, scripts.
 
@@ -21,7 +21,7 @@ A meta/harness repo does have high-blast files, security surfaces, and public co
 
 ## [2026-06-11] meta-repo-signal-remapping-decisions
 **Type:** decision
-**Module:** skills/bootstrap-xia2
+**Module:** skills/xia2 / agents/PROJECT.md (bootstrap-xia2 retired 2026-07-17)
 **Tags:** meta-repo, signal-remapping, project-md, dual-audience-docs, bootstrap-update-mode, hook-friction
 **Applicable when:** Bootstrapping, classifying risk, or sourcing conventions in a meta/harness repo whose `.claude/rules` docs describe the *target* projects it deploys into.
 

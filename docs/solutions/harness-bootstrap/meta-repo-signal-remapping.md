@@ -1,18 +1,23 @@
 ---
 problem_type: knowledge
-module: skills/bootstrap-xia2
+module: skills/xia2 / agents/PROJECT.md
 tags: meta-repo, signal-remapping, project-md, dual-audience-docs, bootstrap-update-mode, hook-friction
 severity: critical
-applicable_when: Use this pattern when bootstrapping or updating xia2 PROJECT.md (or any risk-classification config) for a repo whose "application" is the tooling itself — skills, hooks, scripts — rather than an app codebase the default heuristics expect.
+applicable_when: Use this pattern when authoring any risk-classification config for a repo whose "application" is the tooling itself — skills, hooks, scripts — rather than an app codebase the default heuristics expect.
 affects:
-  - skills/xia2/PROJECT.md
   - agents/PROJECT.md
 supersedes: null
 confidence: high
-confirmed_at: 2026-06-11
+confirmed_at: 2026-07-17
 ---
+> **Status (2026-07-17):** `skills/bootstrap-xia2` was retired and `xia2` is now zero-config —
+> `skills/xia2/PROJECT.md` no longer exists, so the specific "PROJECT.md update mode" framing
+> below is historical. The durable insight is stack-independent: **in a meta/harness repo, risk
+> signals live in hooks/settings/templates, not in app layers** — re-map them rather than leaving
+> them empty. The mapping table under "How to Use" still holds for any risk-classification config.
+
 ## Applicable When
-Use this pattern when bootstrapping or updating xia2 PROJECT.md (or any risk-classification config) for a repo whose "application" is the tooling itself — skills, hooks, scripts — rather than an app codebase the default heuristics expect.
+Use this pattern when authoring any risk-classification config for a repo whose "application" is the tooling itself — skills, hooks, scripts — rather than an app codebase the default heuristics expect.
 
 ## Pattern
 Harness-native analogs for application-centric risk signals — when bootstrapping `skills/xia2/PROJECT.md` for a meta/harness repo (no app framework, no DB, no auth, no dependency manifests), every xia2 signal category must be re-mapped from its application meaning to its harness equivalent rather than left empty or filled with FastAPI placeholders. The insight: a harness repo *does* have high-blast files, security surfaces, public contracts, and transaction-like semantics — they just live in hooks, settings, and template field names instead of code layers.

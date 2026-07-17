@@ -1,19 +1,26 @@
 ---
 problem_type: decision
-module: skills/bootstrap-xia2
+module: skills/xia2 / agents/PROJECT.md
 tags: meta-repo, signal-remapping, project-md, dual-audience-docs, bootstrap-update-mode, hook-friction
 severity: critical
-applicable_when: When bootstrapping, classifying risk, or sourcing conventions in a meta/harness repo whose .claude/rules docs describe the *target* projects it deploys into — remap app-centric signals to harness-native analogs and never point harness-working agents at target-project architecture docs.
+applicable_when: When classifying risk or sourcing conventions in a meta/harness repo whose rules docs describe the *target* projects it deploys into — remap app-centric signals to harness-native analogs and never point harness-working agents at target-project architecture docs.
 affects:
   - agents/PROJECT.md
-  - skills/xia2/PROJECT.md
 supersedes: null
 confidence: high
-confirmed_at: 2026-06-11
+confirmed_at: 2026-07-17
 ---
 
+> **Status (2026-07-17):** the `/bootstrap-xia2` update-mode and `skills/xia2/PROJECT.md` these
+> decisions were made during no longer exist (bootstrap-xia2 retired; xia2 zero-config). Decision 1's
+> concrete premise is also resolved — `rules/architecture.md` + `rules/guidelines.md` are now thin
+> pointers to project-owned `techstacks/`, not FastAPI-describing docs — but the durable rule holds:
+> **don't point harness-working agents at target-project docs**, and record harness-native Deep
+> triggers rather than empty risk categories. Both decisions are preserved as the reasoning behind
+> today's `agents/PROJECT.md` convention pointers.
+
 ## Applicable When
-When bootstrapping, classifying risk, or sourcing conventions in a meta/harness repo whose `.claude/rules` docs describe the *target* projects it deploys into — remap app-centric signals to harness-native analogs and never point harness-working agents at target-project architecture docs.
+When classifying risk or sourcing conventions in a meta/harness repo whose rules docs describe the *target* projects it deploys into — remap app-centric signals to harness-native analogs and never point harness-working agents at target-project architecture docs.
 
 ## Decision 1
 ### Context
