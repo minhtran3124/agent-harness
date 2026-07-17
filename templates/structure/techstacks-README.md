@@ -1,5 +1,11 @@
 # techstacks/ — your project's tech-stack profile (project-owned)
 
+> **What this folder is:** harness configuration the **AI coding agents read** before they
+> implement, debug, or review — but that **you author and commit**. It stays at the repo root
+> (not in the gitignored `.claude/`) precisely because it is *your* versioned, team-shared
+> content: the harness never overwrites or re-syncs it. Think of it like `specs/` and
+> `docs/solutions/` — project-authored, AI-consumed, committed to git.
+
 This folder is **yours**. The harness core (rules, skills, templates) is deliberately
 **stack-agnostic** — it ships no framework, no language, no architecture assumptions. Everything
 specific to *your* stack lives here, and nothing in the harness depends on what you put in it.
