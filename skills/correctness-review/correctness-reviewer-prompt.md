@@ -29,7 +29,7 @@ most productive review methods are not bug classes at all — they are ways of l
 Neither is reachable from a list of defect types, so each is its own angle below. Angles have
 different blind spots; running them in separate contexts is what keeps those blind spots from
 overlapping. This structure is adopted from Claude Code's built-in `/code-review`, measured on
-`benchmarks/review-chain` (see `results/2026-07-13-code-review-swap.md`).
+`evals/skills/review-chain` (see `results/2026-07-13-code-review-swap.md`).
 
 ---
 
@@ -48,7 +48,7 @@ dispatch, in every finding the angle reports, and in the provenance recorded at 
 | `prior-art` | Has this repository **already paid for this bug** once? |
 
 > Earlier revisions labelled these `A`–`F`, in this order. The benchmark results under
-> `benchmarks/review-chain/results/` predate the rename and still use the letters.
+> `evals/skills/review-chain/results/` predate the rename and still use the letters.
 
 ## Dispatch
 

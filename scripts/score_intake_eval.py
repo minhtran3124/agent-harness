@@ -2,7 +2,7 @@
 """Score feature-intake classifier eval runs against labeled fixtures.
 
 Auto-score / manual-run: the classification itself is produced by a subagent running
-`/feature-intake` blind to `truth.md` (integrity — see benchmarks/intake-classifier/README.md).
+`/feature-intake` blind to `truth.md` (integrity — see evals/workflow/intake-classifier/README.md).
 This script is the deterministic scorer over those produced classifications.
 
 Usage:
@@ -20,7 +20,7 @@ import os
 import re
 import sys
 
-DEFAULT_FIXTURES = "benchmarks/intake-classifier/fixtures"
+DEFAULT_FIXTURES = "evals/workflow/intake-classifier/fixtures"
 LANES = {"tiny", "normal", "high-risk"}
 
 

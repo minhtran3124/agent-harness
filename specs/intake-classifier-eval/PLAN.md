@@ -14,9 +14,9 @@ created: 2026-07-17
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
-| 1 | 1.1 | Eval scaffolding + scorer (wave 1) | benchmarks/intake-classifier/README.md, scripts/score_intake_eval.py, scripts/test_score_intake_eval.py, benchmarks/intake-classifier/results/template.md | Scorer unit tests pass. |
-| 1 | 1.2 | Labeled fixtures (wave 1) | benchmarks/intake-classifier/fixtures/ | All 7 fixtures parse cleanly (scorer can read every truth.md header). |
-| 2 | 2.1 | Blind baseline run + scorecard (wave 2) | benchmarks/intake-classifier/results/ | Scorecard produced; headline lane accuracy + hard-gate-respect rate recorded. |
+| 1 | 1.1 | Eval scaffolding + scorer (wave 1) | evals/workflow/intake-classifier/README.md, scripts/score_intake_eval.py, scripts/test_score_intake_eval.py, evals/workflow/intake-classifier/results/template.md | Scorer unit tests pass. |
+| 1 | 1.2 | Labeled fixtures (wave 1) | evals/workflow/intake-classifier/fixtures/ | All 7 fixtures parse cleanly (scorer can read every truth.md header). |
+| 2 | 2.1 | Blind baseline run + scorecard (wave 2) | evals/workflow/intake-classifier/results/ | Scorecard produced; headline lane accuracy + hard-gate-respect rate recorded. |
 
 ```mermaid
 flowchart LR
@@ -40,7 +40,7 @@ flowchart LR
 
 Prove `/feature-intake` classifies correctly. It is the router the whole workflow hinges on,
 and its 10-flag + hard-gate → lane logic is the most mechanically-checkable skill, so it yields
-a real accuracy number. Extends the `benchmarks/review-chain` fixture + claim-discipline pattern.
+a real accuracy number. Extends the `evals/skills/review-chain` fixture + claim-discipline pattern.
 
 ## 2. Non-goals
 
@@ -58,7 +58,7 @@ a real accuracy number. Extends the `benchmarks/review-chain` fixture + claim-di
 
 ### Task 1.1 — Eval scaffolding + scorer (wave 1)
 
-- **Files:** benchmarks/intake-classifier/README.md, scripts/score_intake_eval.py, scripts/test_score_intake_eval.py, benchmarks/intake-classifier/results/template.md
+- **Files:** evals/workflow/intake-classifier/README.md, scripts/score_intake_eval.py, scripts/test_score_intake_eval.py, evals/workflow/intake-classifier/results/template.md
 - **Action:** Write the protocol README (mirror review-chain claim discipline). Build the scorer:
   parse a produced classification file (`Lane:`/`Confidence:`/`Flags:`/`Escalate:` lines) per fixture,
   compare to the fixture's `truth.md` parseable header, emit a scorecard (per-fixture verdict +
@@ -69,23 +69,23 @@ a real accuracy number. Extends the `benchmarks/review-chain` fixture + claim-di
 
 ### Task 1.2 — Labeled fixtures (wave 1)
 
-- **Files:** benchmarks/intake-classifier/fixtures/
+- **Files:** evals/workflow/intake-classifier/fixtures/
 - **Action:** Author 7 fixtures `{request.md, truth.md}`: typo-fix (tiny), add-validation (normal),
   multi-domain (high-risk by count), auth-change (hard gate: auth), edit-hook (hard gate: high-blast,
   meta-repo grounded), db-migration (hard gate: data loss), ambiguous (confidence: low / escalate).
   Each `truth.md` carries a parseable header: `expected_lane`, `expected_confidence`,
   `expected_hard_gate`, `expected_flags_any`, `must_not_downgrade`, `expected_escalate` + prose.
-- **Verify:** `python3 scripts/score_intake_eval.py --list benchmarks/intake-classifier/fixtures`
+- **Verify:** `python3 scripts/score_intake_eval.py --list evals/workflow/intake-classifier/fixtures`
 - **Done:** All 7 fixtures parse cleanly (scorer can read every truth.md header).
 
 ### Task 2.1 — Blind baseline run + scorecard (wave 2)
 
-- **Files:** benchmarks/intake-classifier/results/
+- **Files:** evals/workflow/intake-classifier/results/
 - **Action:** Dispatch one subagent per fixture, blind to `truth.md`, given only `request.md` + the
   feature-intake skill; each emits its `Lane:`/`Confidence:`/`Flags:`/`Escalate:` header to
   `results/baseline/<fixture>.md`. Run the scorer over the run dir; record the scorecard in
   `results/<date>-baseline.md` with claim discipline.
-- **Verify:** `python3 scripts/score_intake_eval.py --run benchmarks/intake-classifier/results/baseline`
+- **Verify:** `python3 scripts/score_intake_eval.py --run evals/workflow/intake-classifier/results/baseline`
 - **Done:** Scorecard produced; headline lane accuracy + hard-gate-respect rate recorded.
 
 ## 5. Risks

@@ -74,7 +74,7 @@ The finder needs a `BASE_SHA..HEAD_SHA` range (and the list of touched files):
    reach, because they are not defect classes — they are procedures. That gap was not theoretical:
    the PR #51 review's most valuable finding sat entirely on lines the diff never modified.
 
-   > The benchmark results under `benchmarks/review-chain/results/` predate this naming and refer to
+   > The benchmark results under `evals/skills/review-chain/results/` predate this naming and refer to
    > the angles as `A`–`F`, in the table's order.
 
 2. **Dedup by `(file, line)`.** Several angles will land on the same location. Merge them into one
@@ -95,7 +95,7 @@ The finder needs a `BASE_SHA..HEAD_SHA` range (and the list of touched files):
    > is *recall*-biased by its own instruction ("PLAUSIBLE by default — do not refute for being
    > speculative"). In a tree where a dependency cannot be read, nothing is constructible, so
    > nothing gets refuted and every speculation survives. That is correct for a high-recall finder
-   > and wrong for a gate. Measured on `benchmarks/review-chain` (2026-07-13): run without a
+   > and wrong for a gate. Measured on `evals/skills/review-chain` (2026-07-13): run without a
    > precision gate, it asserted three defects that the fixtures had each named **in advance** as
    > false positives. SCORE filters the opposite direction. It stays.
 
@@ -139,7 +139,7 @@ standalone use). A finding with neither is a hard block — do not report succes
   `ultra` mode. Run it standalone for an ad-hoc sweep with no gates. It does not replace this
   skill and this skill does not invoke it.
 
-  **What we measured, and what we took.** On `benchmarks/review-chain` (2026-07-13) we tested
+  **What we measured, and what we took.** On `evals/skills/review-chain` (2026-07-13) we tested
   replacing this skill's finder with `/code-review`. It matched recall (3/3) but produced **3 hard
   false positives against a baseline of 0** — each one a false positive the fixture had named in
   advance — and cost 10–15× the tokens (`results/2026-07-13-code-review-swap.md`). **The swap was
