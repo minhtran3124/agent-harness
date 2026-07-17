@@ -54,3 +54,12 @@ A **run** is:
   the revision here; prior runs are not comparable across the revision.
 - The baseline (`results/<date>-baseline.md`) is the regression reference for any future edit to
   `skills/feature-intake/SKILL.md` — note the measured skill commit sha in it.
+
+## Fixture revisions
+
+- **multi-domain (2026-07-17)** — reclassified `high-risk`/`high` → **`normal`/`medium`**. The
+  original key claimed "4+ flags → high-risk"; three independent blind runs all returned
+  `normal`/`medium`, and re-reading the request confirms only 2–3 flags fire (existing-behavior,
+  multi-domain, weak-proof) with one open design choice. The answer key was too aggressive, not the
+  skill. `results/2026-07-17-baseline.md`, `-run2`, `-run3` predate this and are **not comparable**
+  on this fixture.
