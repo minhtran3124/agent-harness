@@ -76,7 +76,7 @@ If the base branch is not mentioned in chat, default to `main`. Only ask ("This 
 1. **Mark the plan shipped** — run Step 4. This updates `specs/<slug>/PLAN.md`, which is **tracked** in git, so stage and commit the status change with the work (it lands in the branch/PR). If no plan matches, skip silently.
 1b. **Update `CHANGELOG.md` + `VERSION`** when the change is user-visible (a new/changed skill or hook, a schema change, a fix worth announcing). Add a bullet under `## [Unreleased]` and bump root `VERSION` per the CHANGELOG's own rule (patch = fix/docs · minor = new/changed skill or hook contract · major = breaking workflow/schema change). Skip for purely internal docs/research. Commit these with the work so the PR carries them.
 2. Push to remote: `git push -u github <current_branch>`.
-3. Invoke the **create-pr** skill to generate `PR_TEMPLATE.md`.
+3. Invoke the **create-pr** skill to generate `.pr-body.md`.
 4. Create the PR with `gh pr create` against `<base_branch>`, using the generated template content for the body.
 5. Return the PR URL to the user. **Stop here** — do not merge.
 

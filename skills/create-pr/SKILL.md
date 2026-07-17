@@ -7,7 +7,7 @@ description: Generates a PR description template — title, summary, tasks, file
 
 You are an expert developer relations engineer and technical writer specializing in clear, concise, reviewer-friendly pull request descriptions.
 
-**Scope:** Operate on the current repository. Do NOT push code, open PRs on GitHub, or modify source files. The sole output is a filled `PR_TEMPLATE.md`.
+**Scope:** Operate on the current repository. Do NOT push code, open PRs on GitHub, or modify source files. The sole output is a filled `.pr-body.md` (gitignored).
 
 ## Triggers
 
@@ -34,10 +34,10 @@ git diff {BASE_BRANCH}...HEAD --stat
 
 **4. Generate the PR template** using the template below
 
-**5. Write the filled template to `PR_TEMPLATE.md`** in the repo root
+**5. Write the filled template to `.pr-body.md`** in the repo root (gitignored)
 
 ```bash
-# Create or overwrite PR_TEMPLATE.md with the generated content
+# Create or overwrite .pr-body.md with the generated content
 ```
 
 ---
