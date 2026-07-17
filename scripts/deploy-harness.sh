@@ -61,20 +61,12 @@ if [ -t 1 ]; then
 else
   B=; D=; R=; G=; C=; Y=; M=
 fi
-SPIN=(⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏)
-
-# step "label" command...  → animate a spinner, run the work, replace with a ✓
+# step "label" command...  → run the work, print a ✓ (or plain label when not a TTY)
 step() {
   local label="$1"; shift
   if [ -t 1 ]; then
-    local i frame
-    for i in 1 2 3 4 5 6 7 8; do
-      frame="${SPIN[$(((i-1)%${#SPIN[@]}))]}"
-      printf "\r  ${C}%s${R}  %s" "$frame" "$label"
-      sleep 0.045
-    done
     "$@"
-    printf "\r  ${G}✓${R}  %s%*s\n" "$label" 6 ""
+    printf "  ${G}✓${R}  %s\n" "$label"
   else
     "$@"
     printf "  - %s\n" "$label"

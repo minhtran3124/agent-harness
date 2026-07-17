@@ -59,7 +59,7 @@ A claim of "done" is only valid with a re-runnable artifact. The subagent record
 - **`### Verify`** — a table row per check actually RUN: `Check | Command | Exit | Notes`. Never list a command that was not run. `commit-quality-gate.sh` can require this block for `app/` changes when `REQUIRE_VERIFY=1`.
 - **`### Rollback`** — the exact undo command(s); required for any high-risk / Rule-4 action (`rules/auto-correct-scope.md`). For reversible work, `git revert <sha>` suffices.
 
-Behavior-to-proof status lives in `specs/<slug>/TEST_MATRIX.md` (shape: `templates/TEST_MATRIX.template.md`): a row is `implemented` only when an evidence artifact exists.
+Behavior-to-proof status lives in the SUMMARY `### Verify` table: one row per check actually run, re-runnable command + exit code.
 
 ## Artifact policy (record always-on; plan-ahead by signal)
 

@@ -19,6 +19,20 @@
 
 ---
 
+## Source questions (from REQ.md, deleted 2026-07-17)
+
+> REQ.md was removed as a stale stub (issue #67 Phase 2, wave 1). Its six harness
+> questions — the subject this assessment scores against — are preserved verbatim:
+>
+> - What should I read first?
+> - What type of work is this?
+> - Which product contract does it affect?
+> - How risky is the change?
+> - What proof will show the work is done?
+> - What decision or lesson should future agents inherit?
+
+---
+
 ## 1. TL;DR
 
 - **Điểm theo 6 câu hỏi REQ.md: trả lời tốt 4/6.** Mạnh nhất là *"How risky?"* (Q4) và
