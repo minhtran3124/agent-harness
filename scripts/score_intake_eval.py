@@ -2,7 +2,7 @@
 """Score feature-intake classifier eval runs against labeled fixtures.
 
 Auto-score / manual-run: the classification itself is produced by a subagent running
-`/feature-intake` blind to `truth.md` (integrity — see benchmarks/intake-classifier/README.md).
+`/feature-intake` blind to `truth.md` (integrity — see evals/workflow/intake-classifier/README.md).
 This script is the deterministic scorer over those produced classifications.
 
 Usage:
@@ -20,7 +20,7 @@ import os
 import re
 import sys
 
-DEFAULT_FIXTURES = "benchmarks/intake-classifier/fixtures"
+DEFAULT_FIXTURES = "evals/workflow/intake-classifier/fixtures"
 LANES = {"tiny", "normal", "high-risk"}
 
 
@@ -30,6 +30,12 @@ def _tokens(val):
     if val in ("", "none", "-"):
         return set()
     return {t.strip() for t in val.split(",") if t.strip()}
+
+
+def _norm_flag(s):
+    """Collapse a flag token to alphanumerics only, so 'Data model', 'data-model',
+    'data_model', and 'data-model (#3)' all compare equal."""
+    return re.sub(r"[^a-z0-9]", "", s.lower())
 
 
 def parse_kv_header(text):
@@ -111,11 +117,14 @@ def score_one(truth, produced):
         esc_match = None
 
     # flags: every expected flag keyword must appear in some produced flag token.
-    # Substring match — the skill emits flags with parenthetical numbers ("auth (1)",
-    # "data-model (#3)"), so exact token equality would spuriously fail.
+    # Normalized substring match — the skill emits flags with parenthetical numbers
+    # ("auth (1)") and varied separators ("Data model" vs "data-model"), so exact
+    # token equality would spuriously fail. Compare on alphanumerics only.
     if exp_flags:
-        prod = produced.get("flags", set())
-        missing = {ef for ef in exp_flags if not any(ef in pf for pf in prod)}
+        prod = [_norm_flag(pf) for pf in produced.get("flags", set())]
+        missing = {
+            ef for ef in exp_flags if not any(_norm_flag(ef) in pf for pf in prod)
+        }
         flags_ok = not missing
         if missing:
             reasons.append(f"flags missing {sorted(missing)}")

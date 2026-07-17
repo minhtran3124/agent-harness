@@ -110,7 +110,7 @@ Task tool (reviewer):
     with <file> should confirm" — a finding that argues from the *shape* of the code rather
     than from a line you can quote is a hypothesis, and hypotheses do not enter the fix-loop.
 
-    This rule is load-bearing: on `benchmarks/review-chain` (2026-07-13) an unfiltered
+    This rule is load-bearing: on `evals/skills/review-chain` (2026-07-13) an unfiltered
     high-recall engine asserted three defects — an IDOR on correct auth wiring, an unstable
     `ORDER BY`, an unbounded read — each resting on a file absent from the tree, and each was
     a false positive the fixture had named in advance. The mechanism was real in every case;

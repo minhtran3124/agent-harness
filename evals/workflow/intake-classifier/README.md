@@ -1,7 +1,7 @@
 # Intake-Classifier Eval (auto-score / manual-run v1)
 
 Measures whether **`/feature-intake`** assigns the correct **lane · confidence · hard-gate** for
-a request. Sibling of `../review-chain` — same honesty model, different oracle: this scores the
+a request. Sibling of `../../skills/review-chain` — same honesty model, different oracle: this scores the
 *router* the whole workflow hinges on. The scorer is automatic (`scripts/score_intake_eval.py`,
 unit-tested); the classification runs are triggered manually via **blind** subagents.
 
@@ -42,7 +42,7 @@ A **run** is:
    **never** `truth.md` (integrity: the orchestrator authored the answer key).
 2. The subagent applies `/feature-intake` and writes the emitted header
    (`Lane:` / `Confidence:` / `Flags:` / `Escalate:` …) to `results/<run>/<fixture>.md`.
-3. Score the run: `python3 scripts/score_intake_eval.py --run benchmarks/intake-classifier/results/<run>`.
+3. Score the run: `python3 scripts/score_intake_eval.py --run evals/workflow/intake-classifier/results/<run>`.
 4. Record the scorecard in `results/<date>-<label>.md` (from `results/template.md`).
 
 ## Honesty rules
@@ -54,3 +54,12 @@ A **run** is:
   the revision here; prior runs are not comparable across the revision.
 - The baseline (`results/<date>-baseline.md`) is the regression reference for any future edit to
   `skills/feature-intake/SKILL.md` — note the measured skill commit sha in it.
+
+## Fixture revisions
+
+- **multi-domain (2026-07-17)** — reclassified `high-risk`/`high` → **`normal`/`medium`**. The
+  original key claimed "4+ flags → high-risk"; three independent blind runs all returned
+  `normal`/`medium`, and re-reading the request confirms only 2–3 flags fire (existing-behavior,
+  multi-domain, weak-proof) with one open design choice. The answer key was too aggressive, not the
+  skill. `results/2026-07-17-baseline.md`, `-run2`, `-run3` predate this and are **not comparable**
+  on this fixture.

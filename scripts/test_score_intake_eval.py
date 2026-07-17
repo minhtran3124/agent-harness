@@ -161,3 +161,13 @@ def test_flags_match_is_substring_tolerant():
     )
     r = s.score_one(truth, produced)
     assert r["flags_ok"] is True  # 'auth' is a substring of 'auth (1)'
+
+
+def test_flags_match_normalizes_separators():
+    # skill emits the flag-table spelling 'Data model' (space); truth uses 'data-model' (hyphen)
+    truth = {"expected_lane": "high-risk", "expected_flags_include": "data-model"}
+    produced = s.parse_classification(
+        "Lane: high-risk\nFlags: Data model (3), Weak proof (9)\n"
+    )
+    r = s.score_one(truth, produced)
+    assert r["flags_ok"] is True  # 'data-model' == 'data model' after normalization

@@ -2,7 +2,7 @@
 
 Lane: normal
 Confidence: high
-Reason: New additive eval subsystem under benchmarks/ + a deterministic scorer script with its own unit tests; no auth/authz/data-loss/public-contract/high-blast file touched (scripts/ scorer is not a high-blast path).
+Reason: New additive eval subsystem under evals/ + a deterministic scorer script with its own unit tests; no auth/authz/data-loss/public-contract/high-blast file touched (scripts/ scorer is not a high-blast path).
 Flags: multi-domain
 Affects: none
 Input-type: harness improvement
@@ -19,7 +19,7 @@ Escalate: no
 
 ## What changed
 
-Added `benchmarks/intake-classifier/` — a labeled-fixture eval that measures whether
+Added `evals/workflow/intake-classifier/` — a labeled-fixture eval that measures whether
 `/feature-intake` assigns the correct **lane / confidence / hard-gate** for a request.
 Each fixture is `{request.md, truth.md}`; a deterministic scorer (`scripts/score_intake_eval.py`,
 unit-tested) parses the classification a blind subagent emitted and scores lane accuracy,
@@ -47,7 +47,7 @@ on every CI run.
 | Check | Command | Exit | Notes |
 | --- | --- | --- | --- |
 | scorer unit tests | `python3 -m pytest scripts/test_score_intake_eval.py -q --no-header --no-cov` | 0 | deterministic scorer logic |
-| scorer runs on baseline | `python3 scripts/score_intake_eval.py --run benchmarks/intake-classifier/results/baseline` | 0 | emits scorecard, exit 0 |
+| scorer runs on baseline | `python3 scripts/score_intake_eval.py --run evals/workflow/intake-classifier/results/baseline` | 0 | emits scorecard, exit 0 |
 
 ### Rollback
 
