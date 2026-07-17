@@ -22,18 +22,16 @@ set -e
 ROOT="$(cd "$(dirname "$0")/.." && pwd -P)"
 
 # Files a consuming repo owns: a re-sync must never silently clobber them with the meta-repo's
-# generic copy. Two origins, one contract —
-#   - bootstrap-xia2 generates them per-repo (stack profile / convention index). Source of truth
-#     for that subset: skills/bootstrap-xia2/SKILL.md (Init steps 6-7 + Scaffolding table).
-#   - rules/behavior.md ships as a skeleton the project is expected to tune by hand.
-# Deliberately NOT named PROTECTED_* — that prefix already denotes the unrelated
+# generic copy. These are per-repo files the project maintains by hand — the stack architecture
+# profile, engineering guidelines, the agents convention index, and the behavior skeleton the
+# project tunes. (`init-structure.sh` may create some on first setup; thereafter they are
+# hand-maintained.) Deliberately NOT named PROTECTED_* — that prefix already denotes the unrelated
 # hooks/protected-path-guard.sh / PROTECTED_PATH_REASON set.
 BOOTSTRAP_OWNED_FILES=(
   "rules/architecture.md"
   "rules/guidelines.md"
   "rules/behavior.md"
   "agents/PROJECT.md"
-  "skills/xia2/PROJECT.md"
 )
 
 OUT_BASE="$ROOT"
@@ -74,7 +72,7 @@ step() {
 }
 trap 'printf "\r  '"$([ -t 1 ] && printf '\033[31m')"'✗'"$([ -t 1 ] && printf '\033[0m')"'  step failed\n" >&2' ERR
 
-# ---------- protected-file helpers (bootstrap-xia2 owned files) ----------
+# ---------- protected-file helpers (per-repo owned files) ----------
 is_protected() {
   local rel="$1" f
   for f in "${BOOTSTRAP_OWNED_FILES[@]}"; do
@@ -83,8 +81,8 @@ is_protected() {
   return 1
 }
 
-# True if any BOOTSTRAP_OWNED_FILES entry lives under dir entry $1 (e.g. "skills/xia2"
-# holds "skills/xia2/PROJECT.md"). Needed because copy_dir wholesale rm+cp's whole
+# True if any BOOTSTRAP_OWNED_FILES entry lives under dir entry $1 (e.g. "agents"
+# holds "agents/PROJECT.md"). Needed because copy_dir wholesale rm+cp's whole
 # directories, not individual files.
 protected_under() {
   local rel="$1" f
@@ -199,7 +197,7 @@ sync_protected_file() {
   esac
 }
 
-# Wholesale-copy a DIR entry that HOLDS a protected file (skills/xia2/) — copy_dir's
+# Wholesale-copy a DIR entry that HOLDS a protected file (e.g. agents/) — copy_dir's
 # per-entry rm -rf + cp -R semantics apply to the whole dir (preserves stale-removal for
 # everything else inside it), but nested protected file(s) are snapshotted first —
 # including the never-shipped `.proposed` sidecar, unconditionally, since it can never

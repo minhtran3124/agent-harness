@@ -1,12 +1,12 @@
 ---
 name: xia2
-description: Portable research-first feature discovery — investigates what exists locally, upstream on GitHub, and in version-matched official docs before any implementation. Reads project-specific signal mappings from PROJECT.md (sibling file). Use before adding new features, capabilities, or integrations to answer what already exists and what is the lightest credible path forward.
+description: Portable research-first feature discovery — investigates what exists locally, upstream on GitHub, and in version-matched official docs before any implementation. Classifies risk from built-in common signals (no per-project config). Use before adding new features, capabilities, or integrations to answer what already exists and what is the lightest credible path forward.
 allowed-tools: Glob, Grep, Read, Write, WebSearch, WebFetch, Bash(git log *), Bash(git show *), Bash(cat *), Bash(ls *)
 ---
 
 # Xia2 — Research-First Feature Discovery (Portable)
 
-Portable version of `xia`. Universal logic lives here in `SKILL.md`; project-specific signal mappings live in `PROJECT.md` (sibling file). Same skill works across projects by swapping `PROJECT.md`.
+Portable version of `xia`. All logic — including the risk-classification signals — lives here in `SKILL.md` as **common, built-in vocabulary**. The same skill works across projects with no per-project config file: signals are detected live per change against the common patterns below.
 
 Answer five foundational questions before any implementation begins:
 
@@ -22,11 +22,25 @@ Do NOT write code, edit files, or scaffold anything until the research brief is 
 **Even when waived,** run the Decision Procedure mentally and surface any Deep signal that fired as a one-line risk warning at the top of your response (e.g., *"Note: this is a schema/migration change (Deep) — destructive operations like DROP COLUMN cannot be undone."*). The waiver covers the research workflow, not the duty to flag known risks.
 </HARD-GATE>
 
-<PROJECT-CONFIG-GATE>
-Before classifying any prompt, read `PROJECT.md` (sibling of this file) for project-specific signal mappings: high-blast files, dependency manifests, shared contracts, session primitives, auth surfaces, knowledge bases, and entry-point patterns.
+---
 
-If `PROJECT.md` is **missing**, **incomplete** (required sections empty), or **stale** (references non-existent files): **halt and instruct the user** to bootstrap one via `/bootstrap-xia2` (auto-scan helper) or by copying `PROJECT.template.md`. Do **not** proceed with classification using guessed mappings — the Decision Procedure depends on these.
-</PROJECT-CONFIG-GATE>
+## Common signals (built-in)
+
+The Decision Procedure classifies against these generic, cross-project patterns — detected **live** per change, no config file. Match a change's files/description against them.
+
+| Signal | Common definition (detect live) |
+|---|---|
+| **Dependency manifests** | `package.json`, `requirements*.txt`, `pyproject.toml`, `go.mod`, `Gemfile`, `Cargo.toml`, `pom.xml`, `build.gradle*`, `*.csproj` |
+| **Data-loss / migration** | `migrations/`, `alembic/`, or `*.sql` containing DDL (`CREATE`/`ALTER`/`DROP TABLE`) |
+| **Entry points** | `main.*`, `app.*`, `index.*`, and dirs `cmd/`, `routes/`, `controllers/`, `handlers/`, `pages/`, `api/` |
+| **Auth surfaces** | path or identifier matching `auth`, `login`, `logout`, `session`, `jwt`, `oauth`, `password`, `token`, `rbac`, `permission` |
+| **Public API contract** | OpenAPI / `*.proto` / GraphQL schema files; route decorators (`@app.`, `@router.`, `@Get`, `@Post`) |
+| **High-blast (generic)** | CI config (`.github/workflows/`), settings/config files, hook scripts, DI containers, shared base classes — by common name, corroborated by "imported by many" via `code-review-graph` when available |
+| **Shared runtime contract** | config/constant files a change alters that many modules read (e.g. a default-model constant, a feature-flag registry, a connection-pool config) |
+| **Knowledge base** | `docs/solutions/INDEX.md` (harness convention — hardcoded) |
+| **Recent decisions** | `specs/` (harness convention — hardcoded) |
+
+A project with an *unusual* high-blast file that matches none of these won't be auto-flagged — the commit-time risk hooks and reviews are the backstop. Precision here is deliberately traded for zero-config portability.
 
 ---
 
@@ -42,14 +56,14 @@ Choose depth from **concrete signals**, not gut feel. Do not estimate "implement
 
 | Mode | Conditions | Coverage | Worked example |
 |---|---|---|---|
-| **Deep** *(any one triggers)* | • Schema or migration change<br>• Touches a high-blast-radius file *(see `PROJECT.md > High-Blast-Radius Files`)*<br>• New external integration (third-party SDK, payment, auth, AI provider, broker, message queue, etc.)<br>• New runtime dependency added to a manifest *(see `PROJECT.md > Dependency Manifests`)*<br>• Changes a shared runtime configuration contract *(see `PROJECT.md > Shared Runtime Contracts`)*<br>• Changes auth flow or transaction/session-scoping rules *(see `PROJECT.md > Auth Surfaces` and `Session/Transaction Primitives`)* | Wide local coverage + multiple upstream repos + official changelogs + explicit risk analysis | *"Add a new column to a model and write the migration"* — schema change triggers Deep regardless of column type. |
-| **Quick** *(all must hold)* | • No Deep signal triggered<br>• Touches ≤1 file **AND** adds no new public callable in a shared module (data access layer, service, helper, calculation that callers will use)<br>• No new dependency<br>• No public API contract change *(see `PROJECT.md > Public API Contract Types`)*<br>• Not inside any entry point *(see `PROJECT.md > Entry Point Patterns`)* | Local artifact scan + brief local search | *Add a debug `__repr__`/`Display`/`toString` to an internal model; tweak a log prefix string; reword a static template.* |
+| **Deep** *(any one triggers)* | • Schema or migration change (see Common signals › Data-loss / migration)<br>• Touches a high-blast file (see Common signals › High-blast)<br>• New external integration (third-party SDK, payment, auth, AI provider, broker, message queue, etc.)<br>• New runtime dependency added to a manifest (see Common signals › Dependency manifests)<br>• Changes a shared runtime configuration contract (see Common signals › Shared runtime contract)<br>• Changes auth flow or transaction/session-scoping rules (see Common signals › Auth surfaces) | Wide local coverage + multiple upstream repos + official changelogs + explicit risk analysis | *"Add a new column to a model and write the migration"* — schema change triggers Deep regardless of column type. |
+| **Quick** *(all must hold)* | • No Deep signal triggered<br>• Touches ≤1 file **AND** adds no new public callable in a shared module (data access layer, service, helper, calculation that callers will use)<br>• No new dependency<br>• No public API contract change (see Common signals › Public API contract)<br>• Not inside any entry point (see Common signals › Entry points) | Local artifact scan + brief local search | *Add a debug `__repr__`/`Display`/`toString` to an internal model; tweak a log prefix string; reword a static template.* |
 | **Standard** *(default)* | Anything not qualifying as Deep or Quick | Full local mapping + upstream patterns + version-matched docs | *"Add rate limiting to the API endpoints"* — new middleware, possibly new dep, no schema change, no high-blast-radius file. |
 
 **Signals can be explicit or implicit.** A Deep signal triggers whether the prompt names it directly or implies it through a description:
 
-- *Explicit* — prompt names the file path, dep name, or system (e.g., *"edit `<path listed in PROJECT.md>`"* or *"add `library-x` to the manifest"*).
-- *Implicit* — description maps to a known high-blast-radius file (e.g., *"tweak the connection-pool retry"* → file under `PROJECT.md > High-Blast-Radius Files`); a chosen library forces a new dep (e.g., *"add Library X as the Y backend"* → not stdlib, requires a manifest entry); a single-line config change alters a shared contract (e.g., *"change the default model"* → contract listed in `PROJECT.md > Shared Runtime Contracts`).
+- *Explicit* — prompt names the file path, dep name, or system (e.g., *"edit the connection-pool config"* or *"add `library-x` to the manifest"*).
+- *Implicit* — description maps to a common high-blast signal (e.g., *"tweak the connection-pool retry"* → a shared runtime contract); a chosen library forces a new dep (e.g., *"add Library X as the Y backend"* → not stdlib, requires a manifest entry); a single-line config change alters a shared contract (e.g., *"change the default model"* → shared runtime contract).
 
 Treat implicit signals the same as explicit ones — what matters is the underlying change, not whether the prompt names it. **If an implicit signal is uncertain, treat it as an uncertain signal and apply Tiebreaker #1 (→ Standard).**
 
@@ -71,34 +85,20 @@ If the user explicitly waived research, note it and stop the workflow. (HARD-GAT
 
 ### Step 2 — Read the Repo Contract
 
-**Sub-step 2a — Load `PROJECT.md` (REQUIRED)**
-
-Read `PROJECT.md` (sibling of this `SKILL.md`). Verify required sections are present and non-empty:
-- `High-Blast-Radius Files`
-- `Dependency Manifests`
-- `Shared Runtime Contracts`
-- `Session/Transaction Primitives`
-- `Public API Contract Types`
-- `Entry Point Patterns`
-
-Optional but recommended sections: `Auth Surfaces`, `Knowledge Bases`, `Recent Decisions Folder`.
-
-If any required section is missing or empty, **halt** and instruct the user to run `/bootstrap-xia2` (auto-scan helper) or copy `PROJECT.template.md` and fill in the gaps. Do not proceed with guessed mappings.
-
-**Sub-step 2b — Read project contract docs**
+**Sub-step 2a — Read contract docs**
 
 Read the universal contract docs (if present at the repo root):
 - `AGENTS.md`, `CLAUDE.md`, `README.md`
 
-Then read the project-specific docs listed in `PROJECT.md > Knowledge Bases`.
+**Sub-step 2b — Search the knowledge base (harness convention)**
 
-If the project tracks solved problems or decisions in a knowledge base folder, search for prior solutions in this domain using INDEX-first lookup:
-1. If the knowledge base declares an **Index file** in `PROJECT.md > Knowledge Bases`: read that file first (single read, O(1)) — it summarises all entries with module, tags, and applicable context. Scan for domain matches in-memory.
-2. If the knowledge base declares a **Critical patterns file**: read it regardless of domain — these are high-value learnings that apply broadly.
+The knowledge base is `docs/solutions/` (built-in convention). Search for prior solutions in this domain using INDEX-first lookup:
+1. Read `docs/solutions/INDEX.md` first (single read, O(1)) — it summarises all entries with module, tags, and applicable context. Scan for domain matches in-memory.
+2. Read `docs/solutions/critical-patterns.md` regardless of domain — these are high-value learnings that apply broadly.
 3. From Index matches, read at most **3 solution files**, prioritised by recency (most recent first per Index order). If more than 3 match, note remaining paths as `[Skipped — see Index]` in the brief without reading them.
-4. **Fallback only** (if no Index file is declared in `PROJECT.md`): use grep with the search keys from `PROJECT.md > Knowledge Bases`, then read at most 3 results.
+4. **Fallback only** (if no `docs/solutions/INDEX.md` exists): grep `docs/solutions/` for the domain keywords, then read at most 3 results.
 
-Treat any entries flagged as low-confidence (or equivalent project-specific stale marker) as unverified — cross-check against current code before acting.
+Treat any entries flagged as low-confidence (or an equivalent stale marker) as unverified — cross-check against current code before acting.
 
 This tells you constraints, conventions, and what the team has already decided.
 
@@ -106,30 +106,29 @@ This tells you constraints, conventions, and what the team has already decided.
 
 - **Upgrade to Deep** if docs surface any Deep signal not visible from the prompt alone:
   - Knowledge base documents a prior migration or schema change in the same module
-  - Docs name a high-blast-radius file (per `PROJECT.md`) as in-scope
+  - Docs name a high-blast file (per Common signals) as in-scope
   - Docs mention a new external integration or new dependency would be required
-  - Docs reveal a shared contract or session primitive (per `PROJECT.md`) is involved
+  - Docs reveal a shared runtime contract or session/transaction primitive is involved
 - **Upgrade to Standard** if docs break any Quick condition:
   - Docs reveal the change must touch >1 file
-  - Docs reveal a public API contract type (per `PROJECT.md`) is on the path
-  - Docs reveal an entry-point pattern (per `PROJECT.md`) is in scope
+  - Docs reveal a public API contract (per Common signals) is on the path
+  - Docs reveal an entry-point pattern (per Common signals) is in scope
 - **Treat low-confidence docs as unverified** — they may be stale. A low-confidence doc cannot, by itself, justify upgrading depth; cross-check against current code first.
 
 Announce the upgrade: *"Upgrading depth to [mode] based on [specific signal] from [doc path]."*
 
-### Step 2.5 — Scan Recent Decisions (conditional)
+### Step 2.5 — Scan Recent Decisions
 
-If `PROJECT.md > Recent Decisions Folder` is set (not `none`), scan that folder for in-progress decisions on the same domain. This prevents re-researching something already decided.
+Scan `specs/` (the harness decisions convention) for in-progress decisions on the same domain. This prevents re-researching something already decided.
 
 ```bash
-# Substitute <decisions-path> and <lookback> from PROJECT.md
-ls -1t <decisions-path>/ 2>/dev/null | head -<lookback>
+ls -1t specs/ 2>/dev/null | head -20
 ```
 
 For each recent directory, check for relevant files:
 
 ```bash
-grep -rl "<domain>" <decisions-path>/ --include="*.md" 2>/dev/null | sort -r | head -10
+grep -rl "<domain>" specs/ --include="*.md" 2>/dev/null | sort -r | head -10
 ```
 
 If relevant docs found:
@@ -139,7 +138,7 @@ If relevant docs found:
 
 **Stop condition:** If a decision doc fully answers the research question, note this in the brief and skip Steps 5-6 unless the user requests a second opinion.
 
-If `PROJECT.md > Recent Decisions Folder` is `none`, skip this step.
+If `specs/` does not exist, skip this step.
 
 ### Step 3 — Map the Repo from Real Artifacts
 Detect the actual stack from manifests and configs — never infer from directory names.
@@ -198,7 +197,7 @@ Do NOT write code or edit any file other than `research-brief.md`.
 | Find manifests/configs | `Glob` | `pyproject.toml`, `requirements*.txt`, `package.json`, `Cargo.toml`, `go.mod` |
 | Search local code | `Grep` | Pattern-match across source files |
 | Read source files | `Read` | Direct file read |
-| Scan recent decisions | `Bash(ls *)` + `Grep` | Substitute path from `PROJECT.md > Recent Decisions Folder` |
+| Scan recent decisions | `Bash(ls *)` + `Grep` | `ls -1t specs/` then grep the domain |
 | Upstream GitHub patterns | `WebSearch` | `site:github.com <stack> <feature> example` |
 | Official documentation | `WebSearch` | `<library> <version> <feature> site:<official-domain>` |
 | Specific doc pages | `WebFetch` | Direct URL from known official source |
@@ -214,7 +213,7 @@ Do NOT write code or edit any file other than `research-brief.md`.
 
 ## Guardrails
 
-- **Never proceed without `PROJECT.md`** — the Decision Procedure depends on project-specific mappings. Halt and request bootstrap if missing or incomplete.
+- **Classify from the built-in Common signals** — no per-project config; detect the signals live per change.
 - **Never guess the stack** from folder names, repo name, or branding — always verify from manifests.
 - **Never stop local search early** — absent evidence is not proof of absence. Search multiple patterns before concluding something doesn't exist locally.
 - **Always explain why alternatives lost** — if you recommend building over reuse, state why reuse was ruled out with evidence.
@@ -233,8 +232,7 @@ Do NOT write code or edit any file other than `research-brief.md`.
 
 ## See also
 
-- `PROJECT.md` — per-project signal mappings (required).
-- `PROJECT.template.md` — blank template for new projects.
-- `/bootstrap-xia2` — auto-scan helper that bootstraps `PROJECT.md` from a repo scan.
-- `tests/structural/` — Decision Procedure regression tests against current `PROJECT.md`.
+- `## Common signals (built-in)` above — the cross-project vocabulary the Decision Procedure classifies against (no config file).
+- `docs/solutions/INDEX.md` — the knowledge base (harness convention); `scripts/init-structure.sh` scaffolds it in a bare repo.
+- `tests/structural/` — Decision Procedure regression tests against the common signals.
 - `tests/behavioural/` — pressure scenarios validating HARD-GATE adherence.

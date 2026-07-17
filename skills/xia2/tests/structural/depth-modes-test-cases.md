@@ -1,8 +1,10 @@
 # Depth Modes — Test Cases (xia2)
 
-**Goal:** validate the **Depth Modes** decision procedure in `SKILL.md` resolved through `PROJECT.md` against realistic prompts.
+**Goal:** validate the **Depth Modes** decision procedure in `SKILL.md` against realistic prompts.
 
-**Procedure under test:** `xia2/SKILL.md` Decision procedure → Depth Modes table → Tiebreakers + Re-evaluation gate. Signal mappings from `xia2/PROJECT.md`.
+**Procedure under test:** `xia2/SKILL.md` Decision procedure → Depth Modes table → Tiebreakers + Re-evaluation gate. Signals come from the built-in **Common signals** section of `SKILL.md`.
+
+> **Historical note (2026-07-17):** Runs 1–4 below were recorded against the old per-project `PROJECT.md` model (a FastAPI project's curated signal lists), removed when xia2 went config-free. The `PROJECT.md > …` references in the Notes column are that era's provenance; the classifications still hold under the equivalent Common signals (e.g. a manifest edit is Deep whether the manifest was listed in `PROJECT.md > Dependency Manifests` or matched the common `requirements.txt` pattern).
 
 | Run | Date | Skill state |
 |---|---|---|

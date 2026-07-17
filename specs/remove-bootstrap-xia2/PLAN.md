@@ -1,6 +1,6 @@
 ---
 slug: remove-bootstrap-xia2
-status: proposed
+status: active
 owner: Minh Tran
 created: 2026-07-17
 ---
@@ -94,3 +94,4 @@ No optional `.xia2-signals` override (cut clean). No changes to templates/stacks
 ## 6. Status Log
 
 - 2026-07-17 — research + design approved (cut clean, no override); plan written; status proposed. Targets v3 (staging). templates/ in diff → high-risk lane + strict gate.
+- 2026-07-17 — executed tasks 1.1–1.3 + 2.1 on `feat/remove-bootstrap-xia2`. xia2 is zero-config (0 PROJECT.md refs); bootstrap-xia2 + PROJECT.md/template deleted; 6 templates → templates/structure/ + scripts/init-structure.sh (+ test). Rule-1 deviations (SUMMARY): plan missed scripts/deploy-harness.sh BOOTSTRAP_OWNED_FILES + tests/scripts/resync-conflict.test.sh fixture + skills/xia2/README.md — all fixed, surfaced by the full suite. ALL GREEN; verify_summary --check exit 0.

@@ -15,7 +15,7 @@ DEPLOY="$ROOT/scripts/deploy-harness.sh"
 # Mirrors BOOTSTRAP_OWNED_FILES in scripts/deploy-harness.sh. Kept as a literal list (like
 # settings-merge.test.sh hardcodes hook names) — if that array changes, update here too.
 OWNED_TOP_FILE="rules/architecture.md"        # a plain protected FILE entry
-OWNED_NESTED_FILE="skills/xia2/PROJECT.md"    # a protected file living inside a synced DIR
+OWNED_NESTED_FILE="agents/PROJECT.md"         # a protected file living inside a synced DIR (has a .proposed variant)
 
 new_target() { local d; d=$(mktemp -d); _CLEANUP_DIRS+=("$d"); echo "$d"; }
 
@@ -51,7 +51,7 @@ if [ "$n" = "0" ]; then pass; else fail "found $n sidecar(s) on a fresh install"
 # LOAD-BEARING. sync_protected_dir restores a local *.proposed unconditionally, which is only
 # correct while the harness ships none of its own — otherwise the local copy would freeze and
 # source updates would be silently discarded, even under --overwrite-conflicts. The harness did
-# ship two (committed by a bootstrap-xia2 run on this repo); they were removed and *.proposed is
+# ship two (committed per-repo drafts); they were removed and *.proposed is
 # now gitignored. This assertion is what keeps that true.
 t "case 1: the harness ships no *.proposed (premise of the unconditional restore)"
 n=$(find "$T1/.claude" -name '*.proposed' | wc -l | tr -d ' ')
@@ -191,7 +191,7 @@ if cmp -s "$T5/.claude/$OWNED_NESTED_FILE.harness-incoming" "$ROOT/$OWNED_NESTED
 else fail "nested sidecar missing or does not match source incoming"; fi
 
 # ---------------------------------------------------------------------------
-# Case 6 — a consumer's own .proposed (a bootstrap-xia2 proposal awaiting human review)
+# Case 6 — a consumer's own .proposed (a per-repo proposal awaiting human review)
 # survives sync_protected_dir's wholesale rm+cp. Pairs with case 1's guard that the harness
 # ships none of its own — together they make the unconditional restore sound.
 # ---------------------------------------------------------------------------
@@ -269,7 +269,7 @@ if [ "$RC" -eq 0 ] && [ ! -e "$T10/.claude/$OWNED_TOP_FILE.harness-incoming" ]; 
 else fail "rc=$RC — stale sidecar still present: $([ -e "$T10/.claude/$OWNED_TOP_FILE.harness-incoming" ] && echo yes || echo no)"; fi
 
 # ---------------------------------------------------------------------------
-# Case 11 — rules/behavior.md is protected. It is NOT bootstrap-xia2 output: it ships as a
+# Case 11 — rules/behavior.md is protected. It is NOT a generated per-repo file: it ships as a
 # skeleton projects tune by hand, so a re-sync used to overwrite a customized copy silently.
 # Both assertions fail if it is dropped from BOOTSTRAP_OWNED_FILES.
 # ---------------------------------------------------------------------------
