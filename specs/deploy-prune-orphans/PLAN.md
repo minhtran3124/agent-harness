@@ -1,6 +1,6 @@
 ---
 slug: deploy-prune-orphans
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-07-17
 ---
