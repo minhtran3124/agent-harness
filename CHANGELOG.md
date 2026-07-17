@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.7.0] — 2026-07-17
+
+- refactor(evals): rename benchmarks/ -> evals/, split skills vs workflow (PR #114)
+
 ## [2.6.7] — 2026-07-17
 
 - feat(benchmarks): intake-classifier eval + blind baseline (PR #112)
