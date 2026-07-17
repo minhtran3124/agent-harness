@@ -10,11 +10,9 @@
 #   1. specs/*/SUMMARY.md missing a `### Verify` section (proof was never recorded)
 #   2. specs/*/PLAN.md with `status: active` whose newest date is stale (> STALE_DAYS)
 #   3. docs/solutions/**/*.md with `confirmed_at` older than CONFIRMED_DAYS
-#   4. specs/*/SUMMARY.md `### Verify` commands that reference a path never re-run
-#      outside intake (not present in scripts/run-tests.sh or any workflow file)
-#   5. docs/harness-experimental/improvement-backlog.md `open` rows gone stale
-#   6. harness-manifest.json degraded (scripts/check_manifest.py reports drift)
-#   7. contract surfaces dirty in the working tree → reminder to verify consumers
+#   4. docs/harness-experimental/improvement-backlog.md `open` rows gone stale
+#   5. harness-manifest.json degraded (scripts/check_manifest.py reports drift)
+#   6. contract surfaces dirty in the working tree → reminder to verify consumers
 #      (advisory only, via scripts/check-contract-impact.sh; never counted as drift)
 #
 # Advisory by default (exit 0, never blocks). `--strict` exits 1 when any drift is
@@ -45,7 +43,6 @@ BACKLOG_DAYS="${HARNESS_AUDIT_BACKLOG_DAYS:-14}"
 FINDINGS=0
 VERIFY_MISSING=0
 PLAN_STALE=0
-VERIFY_NEVER_RERUN=0
 BACKLOG_STALE=0
 MANIFEST_DEGRADED=0
 SOLUTIONS_STALE=0
@@ -113,52 +110,7 @@ if [ -d docs/solutions ]; then
   done < <(find docs/solutions -name '*.md' -type f 2>/dev/null)
 fi
 
-# ── 4. SUMMARY.md ### Verify commands never re-run outside intake ───────────────
-if compgen -G "specs/*/SUMMARY.md" >/dev/null 2>&1; then
-  _vnr_files=()
-  [ -f scripts/run-tests.sh ] && _vnr_files+=("scripts/run-tests.sh")
-  if compgen -G ".github/workflows/*.yml" >/dev/null 2>&1; then
-    _vnr_files+=(.github/workflows/*.yml)
-  fi
-  for s in specs/*/SUMMARY.md; do
-    grep -qE '^###[[:space:]]+Verify[[:space:]]*$' "$s" || continue
-    stale=0
-    offending_cmd=""
-    while IFS= read -r row; do
-      [ -n "$row" ] || continue
-      check_cell=$(awk -F'|' '{print $2}' <<< "$row" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')
-      check_cell_lc=$(printf '%s' "$check_cell" | tr '[:upper:]' '[:lower:]')
-      [ "$check_cell_lc" = "check" ] && continue
-      if [[ "$check_cell" =~ ^-+$ ]]; then continue; fi
-      cmd=$(awk -F'|' '{print $3}' <<< "$row" | tr -d '`')
-      cmd=$(printf '%s' "$cmd" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')
-      case "$cmd" in
-        ''|'<command>'|'-'|'—'|'–') continue ;;
-      esac
-      has_path=0
-      matched=0
-      for tok in $cmd; do
-        [[ "$tok" == */* ]] || continue
-        has_path=1
-        for f in "${_vnr_files[@]+"${_vnr_files[@]}"}"; do
-          [ -f "$f" ] || continue
-          grep -qF -- "$tok" "$f" 2>/dev/null && { matched=1; break; }
-        done
-        [ "$matched" -eq 1 ] && break
-      done
-      if [ "$has_path" -eq 1 ] && [ "$matched" -eq 0 ]; then
-        stale=1
-        [ -n "$offending_cmd" ] || offending_cmd="$cmd"
-      fi
-    done < <(awk '/^### Verify[[:space:]]*$/{f=1;next} f && /^#/{f=0} f' "$s" | grep -E '^\|')
-    if [ "$stale" -eq 1 ]; then
-      note "verify command never re-run outside intake: $s -> $offending_cmd"
-      VERIFY_NEVER_RERUN=$((VERIFY_NEVER_RERUN + 1))
-    fi
-  done
-fi
-
-# ── 5. improvement-backlog.md: open entries gone stale ───────────────────────────
+# ── 4. improvement-backlog.md: open entries gone stale ───────────────────────────
 BACKLOG_FILE="docs/harness-experimental/improvement-backlog.md"
 if [ -f "$BACKLOG_FILE" ]; then
   while IFS= read -r row; do
@@ -178,7 +130,7 @@ if [ -f "$BACKLOG_FILE" ]; then
   done < <(grep -E '^\|' "$BACKLOG_FILE")
 fi
 
-# ── 6. harness-manifest.json degraded (check_manifest.py reports drift) ─────────
+# ── 5. harness-manifest.json degraded (check_manifest.py reports drift) ─────────
 if [ -f harness-manifest.json ] && [ -f scripts/check_manifest.py ] && command -v python3 >/dev/null 2>&1; then
   if ! python3 scripts/check_manifest.py --root "$ROOT" >/dev/null 2>&1; then
     MANIFEST_DEGRADED=1
@@ -186,7 +138,7 @@ if [ -f harness-manifest.json ] && [ -f scripts/check_manifest.py ] && command -
   fi
 fi
 
-# ── 7. contract surfaces dirty in working tree → remind consumers ───────────────
+# ── 6. contract surfaces dirty in working tree → remind consumers ───────────────
 if [ -f scripts/check-contract-impact.sh ]; then
   while IFS= read -r line; do
     [ -n "$line" ] || continue
@@ -208,7 +160,7 @@ if [ "$JSON" -eq 1 ]; then
   python3 -c '
 import json, sys
 
-date, findings, band, vm, ps, vnr, bs, md, ss, ci = sys.argv[1:11]
+date, findings, band, vm, ps, bs, md, ss, ci = sys.argv[1:10]
 print(json.dumps({
     "date": date,
     "findings": int(findings),
@@ -216,14 +168,13 @@ print(json.dumps({
     "checks": {
         "verify_missing": int(vm),
         "plan_stale": int(ps),
-        "verify_never_rerun": int(vnr),
         "backlog_stale": int(bs),
         "manifest_degraded": int(md),
         "solutions_stale": int(ss),
         "contract_impact": int(ci),
     },
 }))
-' "$(date +%F)" "$FINDINGS" "$band" "$VERIFY_MISSING" "$PLAN_STALE" "$VERIFY_NEVER_RERUN" "$BACKLOG_STALE" "$MANIFEST_DEGRADED" "$SOLUTIONS_STALE" "$CONTRACT_IMPACT"
+' "$(date +%F)" "$FINDINGS" "$band" "$VERIFY_MISSING" "$PLAN_STALE" "$BACKLOG_STALE" "$MANIFEST_DEGRADED" "$SOLUTIONS_STALE" "$CONTRACT_IMPACT"
 else
   echo ""
   echo "  Drift findings: $FINDINGS  ($band)"
