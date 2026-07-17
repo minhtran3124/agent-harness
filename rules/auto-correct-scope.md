@@ -86,8 +86,8 @@ Every Rule 1–3 auto-fix MUST appear in `specs/<slug>/SUMMARY.md` under `### De
 ```markdown
 ### Deviations
 
-- Rule 2 — Added `AppException.BadRequest` for invalid trade_type. `app/services/trade_log_service.py`. Commit `abc1234`.
-- Rule 3 — Added `httpx>=0.27` to requirements.txt. Needed by new broker client. Commit `def5678`.
+- Rule 2 — Added a `BadRequest` guard for invalid input. `src/services/<entity>_service.<ext>`. Commit `abc1234`.
+- Rule 3 — Added `<library>>=<version>` to the dependency manifest. Needed by the new client. Commit `def5678`.
 ```
 
 If a deviation keeps re-appearing across tasks, surface it as a PLAN.md gap — original spec was incomplete.
@@ -101,6 +101,6 @@ Any high-risk-lane work or Rule-4 action that proceeds (after the human narrows 
 ```markdown
 ### Rollback
 
-- Revert migration: `alembic downgrade -1`
+- Revert migration: `<migration downgrade command>`
 - Revert code: `git revert <sha>`
 ```

@@ -43,4 +43,4 @@ _(empty — convention sources above are filled)_
 
 - The index **points**, it does not duplicate. If you catch yourself copying a doc's content here, link the doc instead.
 - Update the convention-source paths when docs move; re-review the two agents after a layer or test-runner change.
-- `.claude/rules/architecture.md` + `guidelines.md` describe the **target FastAPI projects** this harness deploys into — agents working *on the harness itself* should follow `rules/behavior.md` + `skills/README.md` instead.
+- `.claude/rules/architecture.md` + `guidelines.md` are thin pointers to a consuming project's `techstacks/` folder — agents working *on the harness itself* should follow `rules/behavior.md` + `skills/README.md` instead (this meta-repo has no application stack).

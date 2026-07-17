@@ -52,40 +52,41 @@ Conventions:
 2. **Verify must be automated** — your test runner, HTTP probe, linter, type-checker, migration command. Reject "open browser and check" at task level (that belongs in phase-level user-acceptance testing).
 3. **Verify <60s** — if longer, split into sub-tasks.
 
-## FastAPI examples
+## Examples
 
-> example — substitute your stack
+> Illustrative only — the paths/commands below are placeholders. Substitute your stack
+> (see `techstacks/`): `src/<module>` → your source layout, `<test runner>` → yours, etc.
 
-### Migration + model (single wave)
+### Data model + migration (single wave)
 
 ```markdown
-### Task 1.1 — TradeLog model + migration (wave 1)
+### Task 1.1 — Add the <Entity> model + migration (wave 1)
 
-- **Files:** app/models/trade_log.py, alembic/versions/xxx_add_trade_log.py
-- **Action:** Add TradeLog SQLAlchemy model: UUID PK, user_id FK, trade_type enum,
-  executed_at timestamp. Alembic migration with index on (user_id, executed_at).
-- **Verify:** `cd apps/api && alembic upgrade head && pytest tests/models/test_trade_log.py -x`
+- **Files:** src/models/<entity>.<ext>, migrations/<id>_add_<entity>.<ext>
+- **Action:** Add the <Entity> data model (PK, foreign keys, the required fields) and a
+  migration that creates its table with the needed index.
+- **Verify:** `<migration command> && <test runner> tests/models/test_<entity>`
 - **Done:** Migration applies clean, model tests pass
 ```
 
-### Service + router in separate waves
+### Service + entry point in separate waves
 
 ```markdown
-### Task 2.1 — TradeLogService (wave 1)
+### Task 2.1 — <Entity>Service (wave 1)
 
-- **Files:** app/services/trade_log_service.py, tests/services/test_trade_log_service.py
-- **Action:** Create TradeLogService.create_entry() and get_recent(). AsyncMock session
-  in tests. Guard clause on invalid trade_type.
-- **Verify:** `cd apps/api && pytest tests/services/test_trade_log_service.py -x`
-- **Done:** Unit tests pass; coverage ≥80% on new file
+- **Files:** src/services/<entity>_service.<ext>, tests/services/test_<entity>_service.<ext>
+- **Action:** Create the service methods (create/get). Mock the data-access layer in tests.
+  Guard clause on invalid input.
+- **Verify:** `<test runner> tests/services/test_<entity>_service`
+- **Done:** Unit tests pass; coverage target met on the new file
 
-### Task 3.1 — Trade-logs router + schemas (wave 2)
+### Task 3.1 — <Entity> endpoint + schema (wave 2)
 
-- **Files:** app/routers/trade_logs.py, app/schemas/trade_log.py, tests/routers/test_trade_logs.py
-- **Action:** POST /trade-logs + GET /trade-logs/recent. Depends(get_current_user).
-  Pydantic schemas for request/response.
-- **Verify:** `cd apps/api && pytest tests/routers/test_trade_logs.py -x`
-- **Done:** Router tests pass; 401 on unauth, 200 + body on auth
+- **Files:** src/routes/<entity>.<ext>, src/schemas/<entity>.<ext>, tests/routes/test_<entity>.<ext>
+- **Action:** Add the create/list endpoints behind the auth dependency, with request/response
+  schemas.
+- **Verify:** `<test runner> tests/routes/test_<entity>`
+- **Done:** Endpoint tests pass; unauthorized rejected, authorized returns a body
 ```
 
 ## PLAN.md structure

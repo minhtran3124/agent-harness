@@ -1,40 +1,10 @@
-# Architecture Profile — Active Stack
+# Architecture Profile — pointer
 
-This file is the **active stack architecture profile** for this project. Agents should read it before implementing, debugging, or reviewing.
+This project's **stack architecture profile lives in `techstacks/`** (a project-owned folder).
+Agents: read `techstacks/*.md` before implementing, debugging, or reviewing.
 
----
+The harness core ships **no** architecture assumptions — `techstacks/` is yours to fill (see
+`techstacks/README.md`). A repo with no application stack (docs-only, tooling) can leave it empty.
 
-## For This Meta-Repo (harness-skills)
-
-This is the Claude Code harness repo — it ships skills, hooks, rules, and templates, not an application backend or frontend. Harness-working agents should use:
-
-- `skills/README.md` — skill inventory, workflow, and handoff map (architecture/SoT)
-- `rules/behavior.md` — behavioral guidelines (SoT for all agents)
-
-Stack-specific application architecture does not apply here.
-
----
-
-## Stack Profiles
-
-Stack-specific content lives in `templates/stacks/<stack>/architecture.md`. When setting up a new project, copy the relevant profile here (or start from `templates/stacks/_skeleton/architecture.md`). Browse `templates/stacks/` for the bundled profile(s).
-
----
-
-## Generic Architecture Outline (fill in for your project)
-
-When adopting this harness for an application project, replace this file's content with your stack profile (copy from `templates/stacks/<stack>/` or the `_skeleton`). Prompts to answer:
-
-**Layers / Responsibilities**
-- What are the named layers (e.g. entry point, business logic, data access)?
-- What is each layer allowed to do, and what is explicitly off-limits?
-
-**Request / Data Flow**
-- How does a request enter the system and travel through the layers to a response?
-- Where does auth, validation, and error handling live?
-
-**Key Patterns**
-- What cross-cutting patterns does the codebase enforce (e.g. DI, factory, soft-delete)?
-
-**Infrastructure**
-- What persistence, cache, messaging, and hosting components are in use?
+> For this meta-repo specifically: harness-working agents use `skills/README.md` (skill inventory
+> + workflow) and `rules/behavior.md` (behavioral SoT); there is no application stack here.

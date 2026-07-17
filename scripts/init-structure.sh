@@ -21,6 +21,7 @@ agent-memory-README.md|agent-memory/README.md
 docs-solutions-README.md|docs/solutions/README.md
 docs-solutions-INDEX.md|docs/solutions/INDEX.md
 docs-solutions-critical-patterns.md|docs/solutions/critical-patterns.md
+techstacks-README.md|techstacks/README.md
 '
 
 while IFS='|' read -r tmpl dest; do

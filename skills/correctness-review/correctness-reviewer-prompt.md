@@ -274,9 +274,9 @@ reported as unknown, not as absent.
 Work through the defect classes below and check the diff against each one. For every class you
 flag, trace a concrete triggering input.
 
-The list is written for a **FastAPI / async / SQLAlchemy backend**, because that is the stack
-this harness was built for. **When the diff is in a different language or layer, use the
-equivalent defect classes for that stack instead.** Examples of what "equivalent" means:
+The list below is one concrete starting set (a typical async backend). The harness is
+stack-agnostic — **derive the equivalent defect classes for this project's stack** (see
+`techstacks/`) and check the diff against those. Examples of what "equivalent" means:
 
 - Shell: an unset variable under `set -u`; iterating a possibly-empty array; a command whose
   failure escapes under `set -e`; a `grep` returning 1 on no-match inside a command substitution;

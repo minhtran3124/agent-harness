@@ -12,21 +12,21 @@ Related: `plan-format.md`, `orchestration.md`.
 4. **Single parallel spawn** — orchestrator sends all wave-N subagent calls in ONE assistant message (parallel tool calls). Sequential spawning defeats the purpose.
 5. **Collection before advance** — orchestrator aggregates summaries, updates PLAN task status, commits metadata, THEN starts wave N+1.
 
-## FastAPI example (from `eng-315-api-key-generation/PLAN.md` §5)
+## Example (stack-neutral)
 
-> example — substitute your stack
+> Illustrative only — substitute your stack (see `techstacks/`).
 
 | Wave | Tasks | Parallelism |
 |------|-------|-------------|
-| 1 | 1.1 model+migration, 1.2 schemas | 2 parallel |
-| 2 | 2.1 repository | single |
-| 3 | 3.1 service, 3.2 auth dep | 2 parallel |
-| 4 | 4.1 router + wiring | single |
+| 1 | 1.1 data model + migration, 1.2 schemas | 2 parallel |
+| 2 | 2.1 data-access layer | single |
+| 3 | 3.1 service, 3.2 auth dependency | 2 parallel |
+| 4 | 4.1 endpoint + wiring | single |
 | 5 | 5.1 integration e2e | single |
 
 Same-wave files are disjoint:
-- Wave 1: 1.1 touches `models/`, `alembic/`, `models/__init__.py`; 1.2 touches `schemas/` — no overlap.
-- Wave 3: 3.1 touches `services/` + tests; 3.2 touches `utils/deps.py` + tests — no overlap.
+- Wave 1: 1.1 touches `models/` + migrations; 1.2 touches `schemas/` — no overlap.
+- Wave 3: 3.1 touches `services/` + tests; 3.2 touches the auth-dependency file + tests — no overlap.
 
 ## Collection protocol
 
