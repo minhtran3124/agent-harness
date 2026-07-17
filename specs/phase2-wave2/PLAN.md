@@ -1,6 +1,6 @@
 ---
 slug: phase2-wave2
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-07-17
 ---

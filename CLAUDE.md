@@ -51,7 +51,7 @@ Hooks live in `hooks/` (top-level). Register them in `settings.json` under the a
 | `commit-quality-gate.sh` | PreToolUse (Bash `git commit`) | Secrets scan + debug artifact check + targeted pytest | ✅ |
 | `risk-corroboration.sh` | PreToolUse (Bash `git commit`) | Block if staged diff trips a hard gate but declared `Lane:` is below `high-risk` | ✅ |
 | `branch-guard.sh` | PreToolUse (Bash `git commit`) | Warn when committing on `main` | ✅ |
-| `branch-isolation-guard.sh` | PreToolUse (Edit/Write) | Hard-block code edits on a shared branch (`HARNESS_SHARED_BRANCHES`, default `main`/`master`) while a plan is `status: active`, unless break-glass `BRANCH_ISOLATION_REASON` is set. `specs/*` bookkeeping is exempt. (Write-time enforcement; `branch-guard.sh` only warns at commit time.) | ✅ |
+| `branch-isolation-guard.sh` | PreToolUse (Edit/Write) | Hard-block code edits on a shared branch (`HARNESS_SHARED_BRANCHES`, default `main`/`master`) regardless of plan state, unless break-glass `BRANCH_ISOLATION_REASON` is set. `specs/*` bookkeeping is exempt (intake writes `SUMMARY.md` before the branch exists). (Write-time enforcement; `branch-guard.sh` only warns at commit time.) | ✅ |
 | `ruff-on-edit.sh` | PostToolUse (Edit/Write) | `ruff --fix` + `ruff format` on edited `.py` files | ✅ |
 | `blast-radius-check.sh` | PostToolUse (Edit/Write) | Warn when an edit touches a file outside the active plan `<files>` set | ✅ |
 | `render-plan-on-write.sh` | PostToolUse (Edit/Write on `specs/*/PLAN.md`) | Auto-re-render `PLAN.html` via `render_plan.py` (deterministic, non-blocking) | ✅ |
@@ -70,7 +70,7 @@ Hooks live in `hooks/` (top-level). Register them in `settings.json` under the a
 - When ≥5 `app/` files are staged, the commit hook hints to run `/compound` — don't skip it
 - Before changing `hooks/` or `scripts/`, run `bash scripts/run-tests.sh` — CI (`harness-ci`) runs the same suite on ubuntu + macos, including the doc-truth lint (fails on missing paths or a hook table that contradicts `settings.json`)
 - Stage and commit in **separate** Bash calls when untracked `.py` files exist — `hooks/check-untracked-py.sh` (PreToolUse) scans the whole command string before it runs, so `git add x.py && git commit ...` in one call still sees `x.py` as untracked and denies the commit. Run `git add`, then `git commit` in a second call (see `docs/solutions/harness/pretooluse-hook-denies-combined-git-add-commit.md`)
-- Re-sync (`scripts/install-harness.sh` / `scripts/deploy-harness.sh`) is conflict-guarded for protected files (e.g. `<path under rules/ or agents/>`, including anything `bootstrap-xia2` generated): a differing local copy is kept by default and the incoming version is written beside it as `<file>.harness-incoming` for review, instead of being silently overwritten. Pass `--overwrite-conflicts` to replace protected files with the incoming copy instead of keeping local
+- Re-sync (`scripts/install-harness.sh` / `scripts/deploy-harness.sh`) is conflict-guarded for protected files (e.g. `<path under rules/ or agents/>`, including any locally-generated per-repo files): a differing local copy is kept by default and the incoming version is written beside it as `<file>.harness-incoming` for review, instead of being silently overwritten. Pass `--overwrite-conflicts` to replace protected files with the incoming copy instead of keeping local
 
 <!-- code-review-graph MCP tools -->
 ## MCP Tools: code-review-graph

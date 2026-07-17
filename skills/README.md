@@ -11,9 +11,8 @@ This file is the single source of truth for overview, workflow, and cross-skill 
 ### Full Cycle (3+ layers, migration, or spans multiple services)
 
 ```
-/bootstrap-xia2  (first-time repo setup only)
-  → scaffolds specs/, docs/solutions/, agent-memory/
-  → generates xia2/PROJECT.md from repo scan
+scripts/init-structure.sh  (first-time repo setup only)
+  → scaffolds specs/, docs/solutions/, agent-memory/ (create-if-missing)
       ↓
 /feature-intake  (routing entry point — run first on every change request)
   → classifies input type + 10-flag risk checklist + hard gates
@@ -89,7 +88,6 @@ fix (implement directly or via /subagent-driven-development)
 
 | Skill | Trigger | Output |
 |---|---|---|
-| `/bootstrap-xia2` | First-time repo setup or major architectural change | Scaffolded dirs + `xia2/PROJECT.md` draft |
 
 ### Discovery & Design
 
@@ -173,7 +171,6 @@ that proves the run.
 ## Skill Handoff Map
 
 ```
-/bootstrap-xia2             ──► (repo setup — terminal; user now invokes workflow)
 /feature-intake             ──► tiny: git checkout -b → direct edit · normal: /subagent-driven-development
                                 high-risk: /brainstorming (full chain) · low confidence: escalate
 /brainstorming              ──► /xia2 → /writing-plans (the only valid next skills)
@@ -207,7 +204,7 @@ reads  ◄── /brainstorming  (decision track only — avoid re-proposing rej
        ◄── /xia2           (all tracks — module, affects, confidence filtering)
 ```
 
-Schema reference: `docs/solutions/README.md` (scaffolded by `/bootstrap-xia2`).
+Schema reference: `docs/solutions/README.md` (scaffolded by `scripts/init-structure.sh`).
 
 ---
 
@@ -329,12 +326,12 @@ graph LR
     PROJ -.->|"swap per repo"| NEW["Reusable in any project"]
 ```
 
-- **Portable by design.** Universal logic in `SKILL.md`; project-specific signal mappings in `PROJECT.md`. Same skill works across projects by swapping `PROJECT.md`.
-- **PROJECT-CONFIG-GATE halts** when `PROJECT.md` is missing/incomplete. Run `/bootstrap-xia2` first.
+- **Portable by design.** All logic — including the risk-classification signals — is built into `SKILL.md` as common cross-project vocabulary. No per-project config file.
+- **Zero-config.** xia2 classifies from its built-in Common signals; nothing to bootstrap.
 - **Fork to another project:**
-  1. Copy `skills/xia2/` (and `skills/bootstrap-xia2/` for auto-scan).
-  2. Run `/bootstrap-xia2` in the new repo to draft `PROJECT.md` → human-review.
-  3. Discard `tests/structural/depth-modes-test-cases.md` (tests this project's `PROJECT.md`) — author your own.
+  1. Copy `skills/xia2/`.
+  2. Run `bash scripts/init-structure.sh` in the new repo to scaffold `specs/`, `docs/solutions/`, `agent-memory/`.
+  3. `tests/structural/depth-modes-test-cases.md` is a portable regression set against the common signals — keep or extend it.
   4. Keep `tests/behavioural/pressure-scenarios.md` — most scenarios are universal.
 - **Maintenance discipline:**
   - Editing HARD-GATE, PROJECT-CONFIG-GATE, Decision Procedure, Depth Modes, Tiebreakers, Re-evaluation gate, or Step 1 waiver → **must** re-run `tests/structural/` suite.
