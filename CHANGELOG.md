@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.3.0] — 2026-07-17
+
+- chore(phase2): wave 2 — coordinated deletes (review-verified) (PR #82)
+
 ## [2.2.1] — 2026-07-17
 
 - docs(reviews): Phase 2 deep review — verify each deletion target (supersedes audit line items) (PR #77)
