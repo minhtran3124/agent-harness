@@ -22,6 +22,18 @@ Wave 4 row (docs/harness-v03-plan-overview.md §2): `feat/entropy-trend`, lane `
 - Rule 1 — Task 2.3's code-quality review found a real correctness bug: the new "Audit Trend" section crashed the entire `harness-status.sh` script (under `set -e`) on a single malformed `audit-log.jsonl` line, contradicting the file's own graceful-degradation design. Fixed with a `try/except` skip-bad-line guard. Commit `5b506ec`.
 - Rule 1 — Final correctness-review (whole-diff, adversarial) found the `5b506ec` guard only caught `JSONDecodeError`, not `KeyError` — a syntactically-valid JSON line missing `date`/`findings`/`band` still crashed the script (the `d[...]` dereferences sat in a `print()` outside the `try` block). Fixed by moving `print()` inside `try` and broadening to `except (json.JSONDecodeError, KeyError, TypeError)`. Scored 100/100 by independent scorer. Commit `5590288`.
 
+### Verify
+
+<!-- Backfilled 2026-07-17: this normal-lane spec shipped before the `### Verify` block
+     was required, so the harness audit flagged it as verify_missing. The three targeted
+     suites below cover the scripts this work shipped; re-run on 2026-07-17, all green. -->
+
+| Check | Command | Exit | Notes |
+| --- | --- | --- | --- |
+| harness-audit checks + empty-array guard | `bash tests/scripts/harness-audit.test.sh` | 0 | 15 passed |
+| harness-status audit-trend section | `bash tests/scripts/harness-status.test.sh` | 0 | 16 passed |
+| bookkeeping audit-log emit | `bash tests/scripts/bookkeeping.test.sh` | 0 | 12 passed |
+
 ### Advisory Findings
 
 <!-- Correctness-review findings scored <80 — real but not blocking, recorded per skills/correctness-review/SKILL.md threshold gate. -->
