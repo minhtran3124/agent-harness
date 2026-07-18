@@ -23,7 +23,10 @@ Added `specs/loop-trust-ledger/design.md` — a proposal to turn the existing (d
 backward-looking, cross-task rolling score (review-catch health, verify-pass rate,
 escaped-defect rate, escalation calibration) that modulates fan-out width / autonomy — a third
 axis orthogonal to the per-task risk lane and confidence. Includes a measure→surface→govern
-phased rollout, anti-Goodhart guardrails, and open questions for review. No code, no wiring.
+phased rollout, anti-Goodhart guardrails, and open questions for review. §11 cites external
+prior art (Licaomeng's production on-call harness) that already runs a mechanized
+confidence-as-behavioral-gate — a worked confidence-ceiling formula + threshold transitions
+to seed §4/§5 and answer the weights open-question. No code, no wiring.
 
 ### Rationale
 

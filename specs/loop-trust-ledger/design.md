@@ -179,7 +179,7 @@ Each phase is its own spec + PLAN + PR. This document greenlights only the **dir
 2. **Escaped-defect linkage** — adopt a `Fixes-slug:` commit trailer, match on `Affects`, or
    defer this signal to a later phase and start with the three we can already measure?
 3. **Weights** — start with escaped-defect as a hard cap + others advisory, or a flat weighted
-   sum? (§4)
+   sum? (§4) — the external prior art in §11 gives a concrete worked formula to start from.
 4. **Window size** `N` — 20 merges? Time-based (last 30 days) instead, to match the
    `docs/solutions/` 30-day staleness convention?
 5. **Scope of governance** — should Phase 2 also feed the auto-mode aggressiveness / permission
@@ -194,3 +194,40 @@ Each phase is its own spec + PLAN + PR. This document greenlights only the **dir
 - Sits downstream of the review oracles (`correctness-review`, `intent-review`, `code-review`)
   and the verify gates (`check_verify_rows.py`, `verify_summary.py`) — it **aggregates their
   per-task outcomes into a cross-task signal**, which none of them do individually.
+
+## 11. Prior art — confidence as a behavioral gate (external)
+
+The idea that a *trust/confidence number should govern real behaviour* — not just annotate it —
+is not hypothetical. Licaomeng's *"Building a Production Agent Harness"* (Medium, 2026)
+describes an always-on on-call/dev harness on Claude Code that already runs a mechanized
+confidence gate in production. Its mechanics are worth importing as a **starting point for §4
+(the score) and §5 (how it governs)** — adapted from *per-investigation-iteration* (theirs) to
+*cross-task rolling* (ours):
+
+- **Confidence is a 0–100 number that gates behaviour, not a label.** Thresholds fire real
+  transitions: `< 70` cannot exit the loop; `≥ 70` + done + no open questions opens the
+  adversarial-review phase; `≥ 95` may auto-execute non-destructive actions; a drop `> 10%`
+  across two consecutive rounds exits with reason `degrading`. This is the concrete shape our
+  soft `high | medium | low` confidence label is missing.
+- **A hard ceiling *formula*, not a vibe.** Their assertion ceiling is
+  `1.0 − (open_questions × 0.08) − (unchecked_sources × 0.05)` — confidence is *capped* by how
+  much is still unknown. This directly answers §9-Q3 (weights): start with a subtractive
+  ceiling driven by unresolved signals, rather than a flat weighted sum, and let escaped-defects
+  (§4.3) pull the cap down further.
+- **Structural gates emit non-blocking "guard notes", not hard stops.** Their 19 quality-gate
+  functions check *structure* (e.g. "every fix action must pair with a `verify_action`";
+  "confidence may not rise when open-questions grew") and, on violation, prepend the note to the
+  next iteration's prompt instead of blocking. That is a third enforcement mode our harness
+  lacks (we have only `warn` and hard-`deny`) — relevant to how a low loop-trust score should
+  *nudge* rather than *halt*.
+- **Ground truth on the wire.** Success is a real operation validated by exit code
+  (`git push` exit 0), never the agent's self-report — the same principle as our
+  evidence-over-assertion `### Verify` rows, and the reason escaped-defect (§4.3) must be
+  measured from *actual* follow-up reverts/fixes, not from an agent claiming a clean loop.
+
+**What does not transfer:** their gate is per-iteration *inside one investigation*; ours is
+per-task *across shipped work*. Their confidence resets each case; our loop-trust must persist
+and roll (§4). And their numbers (0.08, 0.05, the 70/95 thresholds) are tuned to their domain —
+we adopt the *shape* (subtractive ceiling, threshold-gated transitions, guard-note nudges), not
+the constants, which Phase 1 (§7, measure read-only) would calibrate against our own history.
+
