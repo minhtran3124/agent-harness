@@ -9,9 +9,13 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
-## [2.8.0] — 2026-07-20
+## [2.9.0] — 2026-07-20
 
 - feat(hooks): wire check_lane_evidence into the commit gate (Check 1.6) (PR #120)
+
+## [2.8.0] — 2026-07-20
+
+- docs(skills): sync workflow docs with current code (PR #119)
 
 ## [2.7.1] — 2026-07-17
 

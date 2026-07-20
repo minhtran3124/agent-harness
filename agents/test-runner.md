@@ -27,7 +27,7 @@ The test command, targeted-run flags, and source→test mapping live in `agents/
 
 | Runner | Run all | Targeted run (file / single test) | Stop at first failure |
 |---|---|---|---|
-| **pytest** (Python) | `python -m pytest` | `pytest tests/test_x.py::test_y` · filter `-k "name"` | `-x` |
+| **pytest** (Python) | `python -m pytest` | `pytest tests/test_<module>.py::test_<name>` · filter `-k "name"` | `-x` |
 | **unittest** (Python) | `python -m unittest` | `python -m unittest mod.TestClass.test_y` | `--failfast` |
 | **vitest** (JS/TS) | `npx vitest run` | `npx vitest run path -t "name"` | `--bail=1` |
 | **jest** (JS/TS) | `npx jest` | `npx jest path -t "name"` | `--bail` |
@@ -43,7 +43,7 @@ The test command, targeted-run flags, and source→test mapping live in `agents/
 
 **Common source → test conventions** (use PROJECT.md's mapping when given):
 
-- Python: `app/x.py` → `tests/test_x.py` (or mirrored under `tests/`)
+- Python: `<pkg>/<module>.py` → `tests/test_<module>.py` (or mirrored under `tests/`)
 - JS/TS: `src/x.ts` → `src/x.test.ts` / `x.spec.ts`, or `__tests__/x.test.ts`
 - Go: `pkg/x.go` → `pkg/x_test.go` (same package dir)
 - Rust: unit tests in-file under `#[cfg(test)]`; integration tests in `tests/`

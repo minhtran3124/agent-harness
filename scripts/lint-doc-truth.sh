@@ -21,7 +21,16 @@
 set -u
 cd "$(dirname "$0")/.." || exit 1
 
-DOCS=(CLAUDE.md README.md HARNESS.md skills/README.md)
+# Scope: the docs an agent actually loads. rules/*.md auto-load every session via
+# .claude/rules/, and agents/*.md is read by every execution subagent — so a dangling
+# path there misleads exactly as much as one in CLAUDE.md. Both were unlinted until
+# PR #119 found stale skills/xia2/PROJECT.md pointers surviving in agents/ precisely
+# because this list did not reach them.
+# nullglob so an empty rules/ or agents/ yields no entries instead of a literal glob
+# that would then be reported as a missing doc.
+shopt -s nullglob
+DOCS=(CLAUDE.md README.md HARNESS.md skills/README.md agents/*.md rules/*.md)
+shopt -u nullglob
 KNOWN_ROOTS="skills rules hooks docs templates agents scripts tests agent-memory xia2 .github .claude"
 FAILED=0
 err() { printf '  ✗ %s\n' "$1"; FAILED=1; }
