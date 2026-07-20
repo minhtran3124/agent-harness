@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.8.0] — 2026-07-20
+
+- docs(skills): sync workflow docs with current code (PR #119)
+
 ## [2.7.1] — 2026-07-17
 
 - compound: skill-eval playbook + harness test/doc-lint gate scope (PR #116)
