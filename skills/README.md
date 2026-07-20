@@ -235,6 +235,11 @@ Each entry carries:
 1. Secrets scan (+ staged `.env` check)
 1.5. Pending-escalation gate — denies a commit touching `specs/<slug>/` while that slug's
    `ESCALATIONS.md` has `decision: pending` (deny-on-no-response)
+1.6. Lane-evidence gate — for each staged `specs/<slug>/SUMMARY.md`, runs
+   `scripts/check_lane_evidence.py` and blocks when the evidence the declared `Lane:` requires
+   is missing (tiny → filled header; normal → + a real `### Verify` row; high-risk → + a
+   non-empty `### Rollback`). The **staged** copy is checked, so a commit that adds the evidence
+   self-unblocks. Fail-open when `python3` is unavailable
 2. Debug artifact check (`breakpoint()`, bare `print()`)
 2.5. Evidence gate (opt-in via `REQUIRE_VERIFY=1`) — for `app/` changes, requires a
    `### Verify` **heading** in the SUMMARY, then re-runs each *real* row and blocks when a
@@ -245,12 +250,13 @@ Each entry carries:
 
 When ≥5 `app/` files are staged, the hook hints: `★ Consider running /compound`.
 
-> **The commit hook is not the row-presence gate.** Requiring ≥1 non-placeholder `### Verify`
-> row (normal lane) and a real `### Rollback` (high-risk) is `scripts/check_lane_evidence.py`,
-> which is **advisory**: no hook, `settings.json` entry, or CI workflow invokes it against a real
-> SUMMARY (`run-tests.sh` registers only its unit tests). It runs when you run it:
-> `python scripts/check_lane_evidence.py <slug>`. Treat a green commit as "claimed exits match",
-> not as "evidence exists."
+> **Two different evidence gates — do not conflate them.** Check **1.6** is the row-presence
+> gate: `scripts/check_lane_evidence.py`, always on, asserts the SUMMARY carries what its `Lane:`
+> requires. Check **2.5** is the row-*accuracy* gate: opt-in via `REQUIRE_VERIFY=1`, it re-runs
+> real rows and blocks on a claimed-vs-actual exit mismatch — but a table of only placeholders
+> passes it with a `no checks ran` warning. Evidence *exists* because of 1.6; evidence is
+> *honest* because of 2.5. You can still run the former by hand:
+> `python scripts/check_lane_evidence.py <slug>`.
 
 This is one of several wired hooks — see the full table in the root `CLAUDE.md`.
 

@@ -24,7 +24,7 @@ The intake lane (`specs/<slug>/SUMMARY.md`, set by `/feature-intake`) decides ho
 > can record `SUMMARY.md` before the branch exists). See `skills/feature-intake/SKILL.md` → The
 > branch rule.
 
-> **Evidence the lane requires (single source of truth):** `scripts/check_lane_evidence.py` mechanizes the lane → evidence mapping so this table, `skills/feature-intake/SKILL.md` (Step 7), and the `SUMMARY.md` checks do not drift. It reads `specs/<slug>/SUMMARY.md` and asserts: **tiny** → filled `Lane`/`Confidence`/`Reason`; **normal** → + a non-placeholder `### Verify` row; **high-risk** → + a non-empty `### Rollback`. Run `python scripts/check_lane_evidence.py <slug>` (exit 1 = missing evidence). Edit the mapping there, not only in prose.
+> **Evidence the lane requires (single source of truth):** `scripts/check_lane_evidence.py` mechanizes the lane → evidence mapping so this table, `skills/feature-intake/SKILL.md` (Step 7), and the `SUMMARY.md` checks do not drift. It reads `specs/<slug>/SUMMARY.md` and asserts: **tiny** → filled `Lane`/`Confidence`/`Reason`; **normal** → + a non-placeholder `### Verify` row; **high-risk** → + a non-empty `### Rollback`. Run `python scripts/check_lane_evidence.py <slug>` (exit 1 = missing evidence). Edit the mapping there, not only in prose. **Enforced** at commit time by `hooks/commit-quality-gate.sh` Check 1.6 on every staged `specs/<slug>/SUMMARY.md` — the staged copy is what is checked, so a commit that adds the missing evidence self-unblocks.
 
 Rule 4 (STOP) still fires inside **every** lane — a hard gate discovered mid-task escalates regardless of how the work was classified. Ceremony scales with risk; the human gate scales with ambiguity, not risk.
 
