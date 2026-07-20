@@ -25,14 +25,15 @@ scripts/init-structure.sh  (first-time repo setup only)
   → output: specs/<slug>/design.md
       ↓
 /xia2
-  → reads: PROJECT.md, CLAUDE.md, .claude/rules/, docs/, docs/solutions/, specs/
+  → reads: CLAUDE.md, .claude/rules/, techstacks/, docs/, docs/solutions/, specs/
+  → classifies depth from built-in Common signals (zero-config — no PROJECT.md)
   → depth re-evaluated after reading docs
   → output: specs/<slug>/research-brief.md (no code)
       ↓
 /writing-plans
   → input: design.md + research-brief.md
   → output: specs/<slug>/PLAN.md
-  → auto-handoff: /visual-planner renders PLAN.html (deterministic script), then opens it
+  → PLAN.html auto-rendered by hooks/render-plan-on-write.sh on every save; writing-plans opens it
       ↓
 /using-git-worktrees
   → creates isolated worktree + branch
@@ -60,7 +61,7 @@ scripts/init-structure.sh  (first-time repo setup only)
 Skip /brainstorming when intent is clear.
 Skip /using-git-worktrees for in-place edits — but NOT the branch: a plain
 `git checkout -b <type>/<slug>` is still required. No lane implements on a shared branch.
-/writing-plans still auto-renders PLAN.html via /visual-planner.
+PLAN.html still auto-renders on every PLAN.md save (`hooks/render-plan-on-write.sh`).
 ```
 
 ### Bug Fix Path
@@ -86,22 +87,22 @@ fix (implement directly or via /subagent-driven-development)
 
 ### Setup
 
-| Skill | Trigger | Output |
-|---|---|---|
+No skill covers first-time setup — it is a script: `bash scripts/init-structure.sh` scaffolds
+`specs/`, `docs/solutions/`, and `agent-memory/` (create-if-missing). Run it once per repo.
 
 ### Discovery & Design
 
 | Skill | Trigger | Output |
 |---|---|---|
 | `/brainstorming` | Before any new feature, component, or behavior change | `specs/<slug>/design.md` |
-| `/xia2` | Before implementing anything — research what already exists (portable; reads `PROJECT.md`) | `specs/<slug>/research-brief.md` |
+| `/xia2` | Before implementing anything — research what already exists (portable; zero-config, classifies from built-in Common signals) | `specs/<slug>/research-brief.md` |
 
 ### Planning
 
 | Skill | Trigger | Output |
 |---|---|---|
-| `/writing-plans` | After design is approved and xia2 brief is ready | `specs/<slug>/PLAN.md` (+ auto-renders `PLAN.html`) |
-| `/visual-planner` | Render a `PLAN.md` for visual review (auto-invoked by `/writing-plans`; also standalone) | `specs/<slug>/PLAN.html` (untracked, local-only) |
+| `/writing-plans` | After design is approved and xia2 brief is ready | `specs/<slug>/PLAN.md` (`PLAN.html` auto-rendered by the render-plan hook) |
+| `/visual-planner` | Standalone render of a `PLAN.md` — mainly for `--review` mode (blast-radius/risk overlay). Plain renders happen automatically via `hooks/render-plan-on-write.sh` | `specs/<slug>/PLAN.html` (untracked, local-only) |
 
 ### Execution
 
@@ -175,13 +176,16 @@ that proves the run.
                                 high-risk: /brainstorming (full chain) · low confidence: escalate
 /brainstorming              ──► /xia2 → /writing-plans (the only valid next skills)
 /xia2                       ──► research brief → user/skill decides next step
-/writing-plans              ──► /visual-planner (auto: render PLAN.html) → /using-git-worktrees
+/writing-plans              ──► (PLAN.html auto-rendered by hook) → /using-git-worktrees
                                 → /subagent-driven-development
                                 OR /executing-plans (parallel session)
 /visual-planner             ──► PLAN.html (terminal — visual artifact; back to writing-plans handoff)
 /subagent-driven-development ──► /correctness-review → /intent-review (final passes) → /compound → /finishing-a-development-branch
+/executing-plans            ──► same terminal chain as /subagent-driven-development
 /correctness-review         ──► (standalone — runs the same pipeline ad-hoc on any diff; no gate)
 /intent-review              ──► (standalone — same pipeline; needs ### Intent in SUMMARY or intent provided by the user)
+/review-diff                ──► .review/review.md (terminal — visualization only, not a gate)
+/create-pr                  ──► .pr-body.md (terminal — description only; never pushes or opens a PR)
 /systematic-debugging       ──► fix → /compound
 /compound                   ──► nothing (terminal — crystallization is end state)
 /finishing-a-development-branch ──► nothing (terminal — shipped)
@@ -228,11 +232,27 @@ Each entry carries:
 ## Commit Hook
 
 `hooks/commit-quality-gate.sh` gates every commit:
-1. Secrets scan
+1. Secrets scan (+ staged `.env` check)
+1.5. Pending-escalation gate — denies a commit touching `specs/<slug>/` while that slug's
+   `ESCALATIONS.md` has `decision: pending` (deny-on-no-response)
 2. Debug artifact check (`breakpoint()`, bare `print()`)
+2.5. Evidence gate (opt-in via `REQUIRE_VERIFY=1`) — for `app/` changes, requires a
+   `### Verify` **heading** in the SUMMARY, then re-runs each *real* row and blocks when a
+   claimed Exit does not match the fresh run. It does **not** require a real row: a table of
+   only template placeholders (`<command>`) passes with a `no checks ran` warning, and the
+   re-run degrades to presence-only if `python3` is unavailable
 3. Targeted pytest for changed `app/` files
 
 When ≥5 `app/` files are staged, the hook hints: `★ Consider running /compound`.
+
+> **The commit hook is not the row-presence gate.** Requiring ≥1 non-placeholder `### Verify`
+> row (normal lane) and a real `### Rollback` (high-risk) is `scripts/check_lane_evidence.py`,
+> which is **advisory**: no hook, `settings.json` entry, or CI workflow invokes it against a real
+> SUMMARY (`run-tests.sh` registers only its unit tests). It runs when you run it:
+> `python scripts/check_lane_evidence.py <slug>`. Treat a green commit as "claimed exits match",
+> not as "evidence exists."
+
+This is one of several wired hooks — see the full table in the root `CLAUDE.md`.
 
 ---
 
@@ -301,7 +321,7 @@ graph LR
 
 - **Deterministic script, not LLM transcription.** The skill only runs the script and relays its report — never emits HTML token-by-token. Transcribing a ~340-line template every run is expensive and the least reproducible part of the pipeline; a script makes the fill free and stable.
 - **Local-only output.** `PLAN.html` is untracked — it lives beside `PLAN.md` in `specs/` (which is tracked), but `PLAN.html` itself is gitignored as a derived artifact.
-- **Auto-invoked by `/writing-plans`.** After a plan is approved and before the execution handoff, `writing-plans` dispatches a `visual-planner` sub-agent to render `PLAN.html`, then opens it. Also runs standalone as `/visual-planner <slug>`.
+- **Auto-rendered by a hook, not a sub-agent.** `hooks/render-plan-on-write.sh` (PostToolUse on `specs/*/PLAN.md`) runs `render_plan.py --summarize` on **every** save, so `PLAN.html` and the in-file "At a glance" block stay current without any skill dispatch. `/writing-plans` only *opens* the rendered file at the execution handoff. Run `/visual-planner <slug>` standalone when you want `--review` mode.
 - **Why serve instead of `file://`?** Localhost is a browser *secure context*, so per-task "copy `<verify>`" buttons use `navigator.clipboard`; `--file` (`file://`) is faster but falls back to `execCommand`. Auto-view is environment-dependent (no display on headless/remote), so it stays an explicit step.
 - **Self-check before claiming success.** The script asserts non-empty output, no surviving `{{PLACEHOLDER}}`, the `slug` present, and one `<section data-wave>` per distinct wave. On non-zero exit, surface the `SELF-CHECK FAILED:` lines verbatim — do not claim success.
 
@@ -316,15 +336,15 @@ graph LR
 
 ### `/xia2`
 
-> **One-liner:** one portable skill; project-specific knowledge lives in a swappable `PROJECT.md` sibling.
+> **One-liner:** one portable, zero-config skill — the risk signals are built into `SKILL.md` as common cross-project vocabulary, so there is nothing to configure per repo.
 
 ```mermaid
 graph LR
-    SKILL["SKILL.md<br/>universal classifier logic"]
-    PROJ["PROJECT.md<br/>project-specific signals"]
-    SKILL --- PROJ
-    PROJ -.->|"swap per repo"| NEW["Reusable in any project"]
+    SKILL["SKILL.md<br/>universal classifier logic<br/>+ built-in Common signals"]
+    SKILL -.->|"copy the folder — no config"| NEW["Reusable in any project"]
 ```
+
+> **Historical note (2026-07-17):** xia2 previously carried a per-project `PROJECT.md` sibling holding the signal lists. That file was removed when xia2 went config-free; the `PROJECT.md >` references still visible in `tests/structural/depth-modes-test-cases.md` are that era's provenance and the classifications hold unchanged under the equivalent Common signals.
 
 - **Portable by design.** All logic — including the risk-classification signals — is built into `SKILL.md` as common cross-project vocabulary. No per-project config file.
 - **Zero-config.** xia2 classifies from its built-in Common signals; nothing to bootstrap.
@@ -334,8 +354,7 @@ graph LR
   3. `tests/structural/depth-modes-test-cases.md` is a portable regression set against the common signals — keep or extend it.
   4. Keep `tests/behavioural/pressure-scenarios.md` — most scenarios are universal.
 - **Maintenance discipline:**
-  - Editing HARD-GATE, PROJECT-CONFIG-GATE, Decision Procedure, Depth Modes, Tiebreakers, Re-evaluation gate, or Step 1 waiver → **must** re-run `tests/structural/` suite.
-  - Editing `PROJECT.md` → re-run structural tests (adding a high-blast file flips any prompt touching it to Deep).
+  - Editing HARD-GATE, the Common signals, Decision Procedure, Depth Modes, Tiebreakers, Re-evaluation gate, or Step 1 waiver → **must** re-run `tests/structural/` suite.
   - Wording polish in non-classifier sections does not require a re-run.
 
 **Critical regression canaries** (see `tests/structural/depth-modes-test-cases.md`):

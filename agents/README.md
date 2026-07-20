@@ -31,9 +31,9 @@ pristine template; `PROJECT.md` is the per-repo copy (a maintained file — edit
    execution* section. The agent role files do **not** change.
 3. Adjust the inventory table above if you add/remove agents.
 
-`PROJECT.md` here is a *separate*, agents-scoped file — it plays the same swap-per-repo role as
-the xia2 `PROJECT.md`, but is not the same file or schema (that one drives risk classification;
-this one drives implementation + test execution).
+`PROJECT.md` here is an *agents-scoped* file: it drives implementation + test execution. It has
+no counterpart in `skills/xia2/` — xia2 is zero-config and carries its risk-classification
+signals inside its own `SKILL.md`.
 
 ## Skill vs. agent — when to use which
 
