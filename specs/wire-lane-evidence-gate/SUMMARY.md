@@ -61,15 +61,19 @@ Merging them would have coupled an always-on structural check to an opt-in behav
 |---|---|---|---|
 | Hook syntax | `bash -n hooks/commit-quality-gate.sh` | 0 | |
 | Hook contract suite (8 new Check-1.6 cases) | `bash tests/hooks/commit-quality-gate.test.sh` | 0 | 28 passed, was 20 |
-| Full harness suite | `bash scripts/run-tests.sh` | 0 | ALL GREEN |
 | Doc-truth lint (hook table vs settings.json) | `bash scripts/lint-doc-truth.sh` | 0 | |
-| No retroactive breakage across every existing spec | `bash -c 'for d in specs/*/; do s=$(basename "$d"); test -f "$d/SUMMARY.md" || continue; python scripts/check_lane_evidence.py "$s" >/dev/null 2>&1 || exit 1; done'` | 0 | all 52 specs pass the new gate |
-| Gate is load-bearing (mutation) | see Mutation note below | 2 | neutering `exit 2` kills 2 tests |
+| No retroactive breakage across every existing spec | `python scripts/check_lane_evidence.py specs/*/SUMMARY.md` | 0 | all 52 specs pass the new gate |
+
+**Full suite:** `bash scripts/run-tests.sh` is ALL GREEN but takes ~57s locally, so it is **not**
+listed as a row — it times out against the strict gate's 60s limit on a slower CI runner
+(`docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md`). CI runs it as its own
+`tests (ubuntu-latest)` / `tests (macos-latest)` job, which is stronger evidence than a
+self-reported row anyway.
 
 **Mutation note:** replacing the gate's `exit 2` with `exit 0` makes
 `bash tests/hooks/commit-quality-gate.test.sh` report `26 passed, 2 FAILED`. The suite is not
-vacuous (`docs/solutions/harness/mutation-testing-proves-a-suite-is-load-bearing.md`). Not listed
-as a re-runnable row because it requires an intentional source edit.
+vacuous (`docs/solutions/harness/mutation-testing-proves-a-suite-is-load-bearing.md`). Not a row:
+it requires an intentional source edit, so there is no command to re-run.
 
 ### Rollback
 
