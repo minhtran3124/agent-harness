@@ -14,7 +14,7 @@ Related: `plan-format.md`, `wave-parallelism.md`, `auto-correct-scope.md`, `guid
 | Multi-step implementation (wave with ≥2 independent tasks) | `Agent(general-purpose)` per task in the wave | Parallel tool calls in ONE message |
 | Codebase impact / callers / tests / flows | `code-review-graph` MCP tools | FIRST choice per root CLAUDE.md |
 | Architecture planning / PLAN.md drafting | `Agent(Plan)` | Returns plan; main thread reviews before executing |
-| PLAN.md finalized → visual review HTML | `Agent(general-purpose)` running `visual-planner` | Auto plain render after plan ✅; `--review` overlay only on request |
+| PLAN.md finalized → visual review HTML | none — `hooks/render-plan-on-write.sh` renders on every save | Plain render is automatic; spawn `Agent(general-purpose)` running `visual-planner` only for the `--review` overlay |
 | Known file, single read | `Read` directly | No agent overhead |
 | Specific symbol / string lookup | `Grep` directly | No agent overhead |
 | Small edit (<3 steps, one file) | Direct `Edit` | No agent overhead |

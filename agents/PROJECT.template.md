@@ -8,7 +8,8 @@ few execution facts no other doc reliably contains. Fill it in per project.
 > somewhere. Re-describing that here creates a second source of truth that drifts. Point to the
 > real doc; only inline a convention when the repo has no doc for it.
 >
-> Sibling: `skills/xia2/PROJECT.md` (risk-classification signals). Identity lives there — link, don't copy.
+> Risk-classification signals are **not** here — `skills/xia2/` is zero-config and carries them
+> inside its own `SKILL.md`. This file covers implementation + test execution only.
 
 ---
 
@@ -20,8 +21,8 @@ The agents read these for layering, error/validation, style, and logging. Give t
 - **Code style / error handling / validation / logging:** `techstacks/` (project-owned stack profile) — or `none`
 - **Project identity (name / stack / repo root):** fill the *Inline fallback* below.
 
-> If both paths are `none` **and** there is no `xia2/PROJECT.md`, fill the **Inline fallback**
-> section so the agents have something to work from.
+> If both paths are `none`, fill the **Inline fallback** section so the agents have something to
+> work from.
 
 ---
 
@@ -63,4 +64,4 @@ with no architecture/style docs. Describe the minimum the implementer needs.
 
 - The index **points**, it does not duplicate. If you catch yourself copying a doc's content here, link the doc instead.
 - Update the convention-source paths when docs move; re-review the two agents after a layer or test-runner change.
-- Kept separate from `skills/xia2/PROJECT.md` (risk signals). The agents must also work in a repo that does not use `xia2`.
+- Kept separate from xia2's risk signals (which live in `skills/xia2/SKILL.md`). The agents must also work in a repo that does not use `xia2`.

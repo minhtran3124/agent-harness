@@ -4,7 +4,8 @@ Thin **index** consumed by the execution sub-agents (`coding.md`, `test-runner.m
 **not** restate conventions — it points to the docs that already hold them, and carries only the
 few execution facts no other doc reliably contains.
 
-> Sibling: `skills/xia2/PROJECT.md` (risk-classification signals). Identity lives there — link, don't copy.
+> Risk-classification signals are **not** here — they are built into `skills/xia2/SKILL.md` as
+> common cross-project vocabulary (xia2 is zero-config; it has no `PROJECT.md` sibling).
 
 ---
 
@@ -12,7 +13,7 @@ few execution facts no other doc reliably contains.
 
 - **Architecture / layering:** `skills/README.md` (skill inventory + workflow/handoff map) and `CLAUDE.md` (stack, hooks table, gotchas)
 - **Code style / error handling / validation / logging:** `rules/behavior.md` (single source of truth per CLAUDE.md)
-- **Project identity (name / stack / repo root):** see `skills/xia2/PROJECT.md`.
+- **Project identity (name / stack / repo root):** `CLAUDE.md` (the meta-repo has no application stack; `techstacks/` is empty by design).
 
 ---
 
