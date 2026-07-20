@@ -473,3 +473,45 @@ Source of truth for the currently-active spec. Updated by skills and by the `sta
 - last_commit: 5912e24 docs(readme): add guide site link (skill-harness-guide.vercel.app)
 - user_turns: 0
 
+
+### 2026-07-17T23:59:05Z
+- session_id: 48bbbdfb-9ce9-4006-b8ca-1aed4b9fce49
+- exit: 
+- last_commit: 2b1000e Merge pull request #117 from minhtran3124/chore/bookkeeping-116
+- user_turns: 0
+
+
+### 2026-07-18T05:16:12Z
+- session_id: 422edcf4-5392-48ee-afb7-af56c85b901a
+- exit: 
+- last_commit: ed319f8 docs(specs): add §11 prior art — confidence-as-behavioral-gate
+- user_turns: 0
+
+
+### 2026-07-20T10:49:52Z
+- session_id: e1922dcd-8099-4211-a7ce-5aa850016a58
+- exit: 
+- last_commit: 2b1000e Merge pull request #117 from minhtran3124/chore/bookkeeping-116
+- user_turns: 0
+
+
+### 2026-07-20T10:49:55Z
+- session_id: ccb9b35e-b732-4dd7-a78f-5a3bcebe8b31
+- exit: 
+- last_commit: 2b1000e Merge pull request #117 from minhtran3124/chore/bookkeeping-116
+- user_turns: 0
+
+
+### 2026-07-20T10:49:57Z
+- session_id: 426f5f41-dc91-448f-93d7-5bf972be32e7
+- exit: 
+- last_commit: 2b1000e Merge pull request #117 from minhtran3124/chore/bookkeeping-116
+- user_turns: 0
+
+
+### 2026-07-20T13:05:40Z
+- session_id: 370c44f9-2693-4354-a022-c81d4d35a4f5
+- exit: 
+- last_commit: bcf3573 Merge branch 'feat/wire-lane-evidence-gate' into chore/lint-doc-truth-widen-scope
+- user_turns: 0
+
