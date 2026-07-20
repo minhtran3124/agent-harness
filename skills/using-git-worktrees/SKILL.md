@@ -127,7 +127,8 @@ Conventional Commits):
   Pick the type that matches the change's primary intent (same vocabulary the commit will use).
 - **`<slug>`** is kebab-case and SHOULD equal the `specs/<slug>` slug for this work, so the branch
   is traceable to its plan. `finishing-a-development-branch` derives the plan by stripping the
-  prefix (`slug=${branch#*/}`), so a matching slug makes that resolution exact.
+  prefix (`slug=${branch#*/}`), so a matching slug makes that resolution exact. A ticket-prefixed
+  slug carries its prefix into the branch name unchanged (e.g. `feat/gh-121-spec-folder-prefix`).
 
 Examples: `feat/api-key-generation` · `fix/deploy-merge-invalid-json` · `docs/worktree-naming`.
 
