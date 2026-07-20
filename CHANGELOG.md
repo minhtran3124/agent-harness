@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.7.2] — 2026-07-20
+
+- chore(lint): widen doc-truth scope to agents/ and rules/ (4 → 17 docs) (PR #122)
+
 ## [2.7.1] — 2026-07-17
 
 - compound: skill-eval playbook + harness test/doc-lint gate scope (PR #116)
