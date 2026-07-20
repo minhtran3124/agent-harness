@@ -236,11 +236,21 @@ Each entry carries:
 1.5. Pending-escalation gate — denies a commit touching `specs/<slug>/` while that slug's
    `ESCALATIONS.md` has `decision: pending` (deny-on-no-response)
 2. Debug artifact check (`breakpoint()`, bare `print()`)
-2.5. Evidence gate — a non-placeholder `### Verify` row required for `app/` changes
-   (opt-in via `REQUIRE_VERIFY=1`)
+2.5. Evidence gate (opt-in via `REQUIRE_VERIFY=1`) — for `app/` changes, requires a
+   `### Verify` **heading** in the SUMMARY, then re-runs each *real* row and blocks when a
+   claimed Exit does not match the fresh run. It does **not** require a real row: a table of
+   only template placeholders (`<command>`) passes with a `no checks ran` warning, and the
+   re-run degrades to presence-only if `python3` is unavailable
 3. Targeted pytest for changed `app/` files
 
 When ≥5 `app/` files are staged, the hook hints: `★ Consider running /compound`.
+
+> **The commit hook is not the row-presence gate.** Requiring ≥1 non-placeholder `### Verify`
+> row (normal lane) and a real `### Rollback` (high-risk) is `scripts/check_lane_evidence.py`,
+> which is **advisory**: no hook, `settings.json` entry, or CI workflow invokes it against a real
+> SUMMARY (`run-tests.sh` registers only its unit tests). It runs when you run it:
+> `python scripts/check_lane_evidence.py <slug>`. Treat a green commit as "claimed exits match",
+> not as "evidence exists."
 
 This is one of several wired hooks — see the full table in the root `CLAUDE.md`.
 

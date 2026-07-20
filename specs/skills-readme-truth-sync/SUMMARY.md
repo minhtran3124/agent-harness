@@ -30,6 +30,7 @@ Skill **inventory** was already correct — all 14 `skills/*/SKILL.md` on disk a
 4. **Handoff map was missing 3 skills** — added `/executing-plans`, `/review-diff`, `/create-pr`.
 5. **Commit-hook section listed 3 checks; the hook has 5** — added Check 1.5 (pending-escalation
    deny) and Check 2.5 (evidence gate, `REQUIRE_VERIFY=1`), verified against the script.
+   *(Corrected post-review — see Deviations.)*
 6. **Dangling `skills/xia2/PROJECT.md` pointers in `agents/`** — `agents/` is not covered by the
    doc-truth lint (which reads only CLAUDE.md, README.md, HARNESS.md, skills/README.md), so this
    drift survived. Fixed in `PROJECT.md`, `PROJECT.template.md`, `README.md`.
@@ -52,7 +53,25 @@ fix is not proof the fix is still in place.
 
 ## Deviations
 
-- None. All edits trace to the stated request.
+- Rule 1 (self-inflicted, caught in review) — my first description of Check 2.5 said the evidence
+  gate requires "a non-placeholder `### Verify` row". False, and ironic in a truth-sync PR: I
+  imported that guarantee from `rules/auto-correct-scope.md`, which describes
+  `scripts/check_lane_evidence.py` — a **different** and, as it turns out, **unwired** script.
+  The commit hook only greps for the `^### Verify` heading, then calls
+  `verify_summary.py --check`, which skips placeholder commands and returns 0 with a
+  `no checks ran` warning when nothing real remains. Verified empirically (placeholder-only
+  table → exit 0) before rewriting. Flagged by the Codex reviewer on PR #119 as P2.
+
+  The real gap this exposes: `check_lane_evidence.py` is referenced by `auto-correct-scope.md`
+  as "mechanizes the lane → evidence mapping", but no hook, `settings.json` entry, or GitHub
+  workflow ever invokes it against a real SUMMARY — `run-tests.sh` registers only its *unit
+  tests*, which prove the script works while nothing ever runs it. Nothing enforces the
+  lane→evidence contract at commit or CI time. Documented in `skills/README.md` as advisory;
+  wiring it is a behavior change and out of scope here.
+
+  (Second-order note: my first attempt at the verify row for this used a naive `grep` that hit
+  the unit-test registration and returned 1. Caught by running it instead of trusting it — the
+  same discipline that produced this PR's findings.)
 
 ### Verify
 
@@ -62,6 +81,13 @@ fix is not proof the fix is still in place.
 | Full harness suite (L1 syntax + L2 hooks/python + L3 scripts) | `bash scripts/run-tests.sh` | 0 | ALL GREEN; 150 python passed |
 | No live dangling xia2 PROJECT.md ref outside history | `bash -c 'test -z "$(grep -rl "xia2/PROJECT.md" agents rules skills CLAUDE.md README.md 2>/dev/null)"'` | 0 | specs/ + docs/solutions/ excluded as historical |
 | xia2 has no PROJECT.md on disk | `test ! -f skills/xia2/PROJECT.md` | 0 | confirms the zero-config claim |
+| `check_lane_evidence.py` gates nothing (backs the "advisory" wording) | `bash -c '! grep -rq check_lane_evidence settings.json hooks .github 2>/dev/null'` | 0 | `run-tests.sh` registers only its *unit tests*, never a gate invocation |
+
+The corrected Check 2.5 wording was additionally confirmed by an ad-hoc probe (temp slug with a
+placeholder-only `### Verify` table → `verify_summary.py --check` exits 0 with `no checks ran`).
+Not listed as a row: reproducing it needs a pipe-bearing markdown table, which cannot survive a
+Verify cell (`docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md`). Pinning it
+as `tests/scripts/*.test.sh` would auto-enroll it in CI — a scope expansion left as follow-up.
 
 ### Rollback
 
@@ -71,8 +97,16 @@ fix is not proof the fix is still in place.
 
 - `scripts/lint-doc-truth.sh` checks only 4 top-level docs; `agents/*.md` and `rules/*.md` can
   carry dangling paths indefinitely. Widening `DOCS=` would have caught drift #6 at commit time.
+- `scripts/check_lane_evidence.py` has **no call site** — not in `settings.json`, `hooks/`,
+  `run-tests.sh`, or `.github/`. `rules/auto-correct-scope.md` presents it as the mechanized
+  single source of truth for lane→evidence, but nothing runs it. Either wire it into
+  `commit-quality-gate.sh` / CI, or soften the rule's wording to "advisory".
 
 ## Harness-Delta
 
-`backlog` — the doc-truth lint's `DOCS=` allowlist is narrower than the set of docs agents
-actually read at session start (`rules/` is auto-loaded via `.claude/rules/`).
+`backlog` — two instances of the same failure mode: **a documented guarantee with no enforcing
+call site.** (1) the doc-truth lint's `DOCS=` allowlist is narrower than the docs agents actually
+load at session start (`rules/` auto-loads via `.claude/rules/`); (2) `check_lane_evidence.py` is
+described as mechanizing the evidence contract but is wired nowhere. In both cases the docs
+describe a stronger system than the code implements — which is exactly the drift class this PR
+set out to fix, found one level up.
