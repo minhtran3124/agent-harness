@@ -48,7 +48,7 @@ Hooks live in `hooks/` (top-level). Register them in `settings.json` under the a
 | Hook | Trigger | Action | Wired |
 |---|---|---|---|
 | `check-untracked-py.sh` | PreToolUse (Bash `git *`) | Block commit/push if untracked `.py` files exist | ✅ |
-| `commit-quality-gate.sh` | PreToolUse (Bash `git commit`) | Secrets scan + debug artifact check + targeted pytest | ✅ |
+| `commit-quality-gate.sh` | PreToolUse (Bash `git commit`) | Secrets scan + pending-escalation gate + lane-evidence gate (`check_lane_evidence.py` on each staged `SUMMARY.md`) + debug artifact check + targeted pytest | ✅ |
 | `risk-corroboration.sh` | PreToolUse (Bash `git commit`) | Block if staged diff trips a hard gate but declared `Lane:` is below `high-risk` | ✅ |
 | `branch-guard.sh` | PreToolUse (Bash `git commit`) | Warn when committing on `main` | ✅ |
 | `branch-isolation-guard.sh` | PreToolUse (Edit/Write) | Hard-block code edits on a shared branch (`HARNESS_SHARED_BRANCHES`, default `main`/`master`) regardless of plan state, unless break-glass `BRANCH_ISOLATION_REASON` is set. `specs/*` bookkeeping is exempt (intake writes `SUMMARY.md` before the branch exists). (Write-time enforcement; `branch-guard.sh` only warns at commit time.) | ✅ |

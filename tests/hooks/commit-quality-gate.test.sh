@@ -146,6 +146,86 @@ stage "$repo" "specs/demo/SUMMARY.md" "Lane: normal"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_contains 2 "deny-on-no-response"
 
+# ── Check 1.6: lane evidence (mechanizes rules/auto-correct-scope.md) ──
+# Wired in response to the PR #119 review: check_lane_evidence.py was proven by
+# unit tests but never invoked against a real SUMMARY.
+LANE_PY="$ROOT/scripts/check_lane_evidence.py"
+LANE_TINY=$'Lane: tiny\nConfidence: high\nReason: a real filled reason\n'
+LANE_NORMAL_BAD=$'Lane: normal\nConfidence: high\nReason: a real filled reason\n\n### Verify\n\n| Check | Command | Exit | Notes |\n| --- | --- | --- | --- |\n| p | `<command>` | 0 | placeholder only |\n'
+LANE_NORMAL_OK=$'Lane: normal\nConfidence: high\nReason: a real filled reason\n\n### Verify\n\n| Check | Command | Exit | Notes |\n| --- | --- | --- | --- |\n| p | `true` | 0 | a real command |\n'
+
+t "Check 1.6: normal lane whose ### Verify holds only placeholders → BLOCKED"
+repo=$(new_repo $H)
+mkdir -p "$repo/scripts"; cp "$LANE_PY" "$repo/scripts/"
+stage "$repo" "specs/demo/SUMMARY.md" "$LANE_NORMAL_BAD"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "Lane evidence... FAILED"
+
+t "Check 1.6: the block names the real SUMMARY path, not the temp file"
+repo=$(new_repo $H)
+mkdir -p "$repo/scripts"; cp "$LANE_PY" "$repo/scripts/"
+stage "$repo" "specs/demo/SUMMARY.md" "$LANE_NORMAL_BAD"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "specs/demo/SUMMARY.md"
+
+t "Check 1.6: normal lane with a real ### Verify row → PASSES"
+repo=$(new_repo $H)
+mkdir -p "$repo/scripts"; cp "$LANE_PY" "$repo/scripts/"
+stage "$repo" "specs/demo/SUMMARY.md" "$LANE_NORMAL_OK"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 0 "Lane evidence... PASSED"
+
+t "Check 1.6: tiny lane needs only a filled header (evidence scales with lane)"
+repo=$(new_repo $H)
+mkdir -p "$repo/scripts"; cp "$LANE_PY" "$repo/scripts/"
+stage "$repo" "specs/demo/SUMMARY.md" "$LANE_TINY"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 0 "Lane evidence... PASSED"
+
+t "Check 1.6: same commit fixing the evidence self-unblocks (staged copy wins)"
+repo=$(new_repo $H)
+mkdir -p "$repo/scripts"; cp "$LANE_PY" "$repo/scripts/"
+mkdir -p "$repo/specs/demo"
+printf '%s\n' "$LANE_NORMAL_BAD" > "$repo/specs/demo/SUMMARY.md"   # failing copy on disk
+git -C "$repo" add -f specs/demo/SUMMARY.md
+printf '%s\n' "$LANE_NORMAL_OK" > "$repo/specs/demo/SUMMARY.md"    # fixed, then staged
+git -C "$repo" add -f specs/demo/SUMMARY.md
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 0 "Lane evidence... PASSED"
+
+t "Check 1.6: a commit touching no specs/ path is unaffected"
+repo=$(new_repo $H)
+mkdir -p "$repo/scripts"; cp "$LANE_PY" "$repo/scripts/"
+mkdir -p "$repo/specs/other"
+printf '%s\n' "$LANE_NORMAL_BAD" > "$repo/specs/other/SUMMARY.md"
+stage "$repo" "README.md" "docs only"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc 0
+
+t "Check 1.6: a slug dir with no SUMMARY.md (PLAN only) does not block"
+repo=$(new_repo $H)
+mkdir -p "$repo/scripts"; cp "$LANE_PY" "$repo/scripts/"
+stage "$repo" "specs/demo/PLAN.md" "# plan"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc 0
+
+t "Check 1.6: python3 absent → skip with a notice, never block (fail-open)"
+repo=$(new_repo $H)
+mkdir -p "$repo/scripts"; cp "$LANE_PY" "$repo/scripts/"
+stage "$repo" "specs/demo/SUMMARY.md" "$LANE_NORMAL_BAD"
+nopy2=$(mktemp -d); _CLEANUP_DIRS+=("$nopy2")
+IFS=: read -ra _pd2 <<< "$PATH"
+for d in "${_pd2[@]}"; do
+  [ -d "$d" ] || continue
+  for f in "$d"/*; do
+    b=$(basename "$f")
+    case "$b" in python|python3|python3.*) continue ;; esac
+    [ -e "$nopy2/$b" ] || ln -s "$f" "$nopy2/$b" 2>/dev/null
+  done
+done
+run_hook "$repo" $H "$COMMIT_JSON" PATH="$nopy2"
+assert_rc_contains 0 "Lane evidence skipped"
+
 if ensure_pyenv; then
   t "matching passing test runs and commit is allowed"
   repo=$(new_repo $H)
