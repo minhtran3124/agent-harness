@@ -4,9 +4,23 @@ Design docs, research briefs, and implementation plans. Each feature/change gets
 
 ## Slug Convention
 
-`specs/<slug>/` where `<slug>` is short kebab-case. Some projects prefix with date: `specs/YYYY-MM-DD/<slug>/`.
+`specs/<name>/` where `<name>` is the spec folder name, derived at intake from the ticket source:
 
-Pick one convention per repo and stick with it. This project uses: **`<slug>/`** (flat) — update this line if you change it.
+| Ticket source | Folder name | Example |
+|---|---|---|
+| GitHub issue | `gh-<issue#>-<slug>` | `specs/gh-121-spec-folder-prefix/` |
+| Linear ticket | `lin-<TICKET-ID>-<slug>` | `specs/lin-ENG-315-user-quota/` |
+| No ticket | `<slug>` (plain) | `specs/fix-hook-matching/` |
+
+`<slug>` is short kebab-case in all three forms. The prefix and slug are lowercase; only the
+Linear ticket ID keeps its native (upper) case — do not normalize it. Folders created before
+this convention are grandfathered — never rename them; every gate treats the full folder name
+as an opaque slug (`specs/<anything>/`). Branch names inherit the prefix for free via
+`<type>/<slug>` (e.g. `feat/gh-121-spec-folder-prefix`).
+
+Some projects prefix with date instead: `specs/YYYY-MM-DD/<slug>/`. Pick one convention per
+repo and stick with it. This project uses: **ticket-source prefix** (table above) — update
+this line if you change it.
 
 ## Files Per Spec
 
