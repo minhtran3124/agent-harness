@@ -33,7 +33,7 @@ examples across languages, see `test-runner.md → Common Test Runners`.
 
 - **Test command:** <exact command, e.g. `cd apps/api && python -m pytest`>
 - **Targeted-run flags:** <e.g. `-x` stop at first failure, `-k <name>` filter, `--tb=short`>
-- **Source → test mapping:** <e.g. `app/services/x.py` → `tests/services/test_x.py`>
+- **Source → test mapping:** <e.g. `src/services/<entity>.<ext>` → `tests/services/test_<entity>.<ext>`>
 - **Markers / coverage:** <e.g. markers `unit/integration/edge_case/slow`; gate `--cov-fail-under=80`> — or `see guidelines doc`
 
 ---
