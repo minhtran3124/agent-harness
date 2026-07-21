@@ -1,6 +1,6 @@
 ---
 name: create-pr
-description: Generates a PR description template — title, summary, tasks, file changes, and notes. Use when the user asks to write a PR description, create a PR template, or prepare a pull request write-up. Does NOT push code or create a real PR on GitHub.
+description: Generates a PR description template — title, summary, tasks, and notes (with an optional diagram for flow-shaped changes). Use when the user asks to write a PR description, create a PR template, or prepare a pull request write-up. Does NOT push code or create a real PR on GitHub.
 ---
 
 # Create PR Template
@@ -29,8 +29,8 @@ git diff {BASE_BRANCH}...HEAD --stat
 
 **3. Analyze changes**
 - Identify the overall purpose: `feat`, `fix`, `refactor`, `chore`, `docs`, `test`, `perf`
-- Group changed files by module/area
-- Focus on what changed and why — not how
+- Identify the behavioral delta — what a reviewer needs to know to understand the change without reading the diff
+- Decide if a diagram helps: does the change alter a multi-step process, state machine, or request/data flow — or is the linked ticket/spec itself about a flow/process (naturally visual), or does it already include a diagram? If yes, sketch a small Mermaid diagram for the `## Diagram` section; if no, omit that section entirely
 
 **4. Generate the PR template** using the template below
 
@@ -44,32 +44,33 @@ git diff {BASE_BRANCH}...HEAD --stat
 
 ## PR Template
 
-```markdown
+````markdown
 ## Title
 
 type: short description  <!-- feat | fix | refactor | chore | docs | test | perf — max 72 chars -->
 
 ## Summary
 
-[1–3 sentences. What problem does this solve or what does it add? Focus on the "why".]
+[2–4 sentences a reviewer can read in ~10 seconds and understand the change without opening the diff. Lead with what changed and why it matters — the behavior/outcome, not the implementation. State it as before → after in plain terms.]
 
 ## Tasks
 
 - [What was done — one clear line per task]
 - [Keep it short; no implementation details]
 
-## File Changes
+## Diagram
 
-| File | Type | What changed |
-|------|------|--------------|
-| `path/to/file.py` | Modified | One-line description |
-| `path/to/new_file.py` | Added | What this file does |
-| `path/to/removed.py` | Deleted | Why it was removed |
+<!-- Include ONLY when the change is flow/process-shaped: a multi-step process, state machine, or request/data flow — or the linked ticket/spec is itself about a flow/process, or already includes a diagram. Omit this whole section otherwise; do not force a diagram onto a change that doesn't need one. -->
+
+```mermaid
+flowchart LR
+    A[Before] --> B[After]
+```
 
 ## Notes
 
-[Optional. Caveats, follow-ups, known limitations, or anything reviewers should know. Remove if nothing notable.]
-```
+[Only the main points and important changes a reviewer needs flagged — breaking changes, migration steps, follow-ups, known limitations. Omit routine detail already visible in the diff. Remove this whole section if nothing rises to that bar.]
+````
 
 ---
 
@@ -78,11 +79,9 @@ type: short description  <!-- feat | fix | refactor | chore | docs | test | perf
 | Section | Rule |
 |---------|------|
 | **Title** | `type: description`, max 72 chars |
-| **Summary** | Why, not how. 1–3 sentences max. |
+| **Summary** | 2–4 sentences, reviewer-first: what changed + why it matters, readable in ~10 seconds without opening the diff. No diff narration. |
 | **Tasks** | One bullet per task. Clear and direct. No over-explaining. |
-| **File Changes** | One row per file. One sentence. Group by dir if 10+ files. |
-| **Notes** | Only include if genuinely useful to reviewers. |
+| **Diagram** | Include only when the change is flow/process-shaped (multi-step process, state machine, request/data flow), or the linked ticket/spec is itself about a flow/process, or already has a diagram. Omit otherwise. |
+| **Notes** | Only main points and important changes (breaking changes, follow-ups, known limitations). Omit the whole section if nothing rises to that bar. |
 
-**Change type labels:** `Added` · `Modified` · `Deleted` · `Renamed` · `Refactored`
-
-**Do not** include line-by-line code explanations anywhere in the description.
+**Do not** include line-by-line code explanations, or restate the file list — the diff view already shows every changed file.
