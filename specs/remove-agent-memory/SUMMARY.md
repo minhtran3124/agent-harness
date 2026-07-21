@@ -41,7 +41,6 @@ the existing non-destructive installer guarantee.
 | installer contracts | `bash tests/scripts/install-harness.test.sh` | 0 | 10 passed; dry-run, fresh install, reinstall, memory-free agents, and preservation |
 | documentation truth | `bash scripts/lint-doc-truth.sh` | 0 | referenced paths and hook registrations agree |
 | live-surface removal | `bash -c 'rg -n --hidden --glob "!.git/**" --glob "!.claude/**" --glob "!docs/**" --glob "!specs/**" -e "agent-memory" -e "^memory: project$" -e "^memory: local$" -e "^memory: user$" .; rc=$?; test "$rc" -eq 1'` | 0 | no removed feature or persistent-memory frontmatter outside history and this spec |
-| summary verification | `python3 scripts/verify_summary.py --check remove-agent-memory` | 0 | all bounded Verify rows re-run successfully |
 
 ### Rollback
 
