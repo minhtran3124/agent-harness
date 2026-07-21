@@ -4,7 +4,7 @@ Skill framework and governance system for Claude Code — reusable prompt-based 
 
 ## Behavioral Guidelines
 
-See `rules/behavior.md` — that file is the single source of truth (deployed to `.claude/rules/`, which auto-loads).
+See `rules/behavior.md` — that file is the single source of truth (deployed to `.claude/rules/`, which auto-loads). Rule loading is two-tier: `behavior.md`, `architecture.md`, `guidelines.md` and `orchestration.md` auto-load every session; the contextual rules (`plan-format.md`, `wave-parallelism.md`, `auto-correct-scope.md`) are path-scoped via `paths:` frontmatter and load on demand — injected when a matching `specs/**` file is read, plus explicit Read steps in the consuming skills (write-flows don't trigger `paths:`).
 
 ---
 

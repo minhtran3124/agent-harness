@@ -54,6 +54,11 @@ This is the structural point that creates the branch. It is now backstopped at w
 regardless of plan state (break-glass: `BRANCH_ISOLATION_REASON`). `branch-guard.sh` only
 warns, and only at commit time — so do not rely on it; create the branch here.
 
+**Next — load the path-scoped rules.** `.claude/rules/auto-correct-scope.md` and
+`.claude/rules/wave-parallelism.md` are path-scoped (not auto-loaded). Read both now, and keep
+the `auto-correct-scope.md` path in every implementer dispatch prompt so each subagent Reads it
+in its own context (subagents cannot rely on the orchestrator's copy).
+
 **Next — mark the plan active.** Before dispatching wave 1, set the frontmatter
 `status: proposed → active` in `specs/<slug>/PLAN.md` (canonical values only:
 `proposed | active | paused | shipped`). `hooks/blast-radius-check.sh` keys on `status: active` to

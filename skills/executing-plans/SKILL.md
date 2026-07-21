@@ -21,6 +21,9 @@ Load plan, review critically, execute tasks in batches, report for review betwee
 
 References: `.claude/rules/plan-format.md` (task schema — two accepted syntaxes — + guardrails) and `.claude/rules/wave-parallelism.md` (zero file overlap invariant).
 
+Both rules are path-scoped (not auto-loaded). Read both files now, before running the checks —
+reading the plan alone triggers their `paths:` injection, but do not rely on it.
+
 A task is a `### Task <id>` markdown heading with `- **Files/Action/Verify/Done:**` field
 bullets (the authoring standard); legacy plans instead use fenced `<task>` XML blocks, which
 remain fully executable — both carry the same four semantic fields. Do not reject a plan for
