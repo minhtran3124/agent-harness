@@ -74,7 +74,11 @@ If the base branch is not mentioned in chat, default to `main`. Only ask ("This 
 ### Step 3: Push and Open PR
 
 1. **Mark the plan shipped** — run Step 4. This updates `specs/<slug>/PLAN.md`, which is **tracked** in git, so stage and commit the status change with the work (it lands in the branch/PR). If no plan matches, skip silently.
-1b. **Update `CHANGELOG.md` + `VERSION`** when the change is user-visible (a new/changed skill or hook, a schema change, a fix worth announcing). Add a bullet under `## [Unreleased]` and bump root `VERSION` per the CHANGELOG's own rule (patch = fix/docs · minor = new/changed skill or hook contract · major = breaking workflow/schema change). Skip for purely internal docs/research. Commit these with the work so the PR carries them.
+1b. **`CHANGELOG.md` + `VERSION` — who bumps depends on whether this repo has the post-merge automation.** Check for `.github/workflows/post-merge-maintenance.yml` (paired with `scripts/bookkeeping.sh`):
+   - **Automation present (the harness-skills meta-repo):** do **NOT** bump by hand. The workflow owns it end-to-end — on merge it runs `bookkeeping.sh`, which bumps `VERSION`, inserts the dated CHANGELOG section, and appends the trust-metrics + audit-log rows, all parsed from the merged `SUMMARY.md`. A manual pre-bump double-counts: `bookkeeping.sh` bumps again from the value you set (skipping a version) and orphans your `## [Unreleased]` bullet. This matches `feature-intake` → "Do NOT hand-append the ledger. CI records it on merge." Your job is a correct `SUMMARY.md`, then review the bookkeeping PR after merge.
+   - **Automation absent (a consuming project — the harness deploys this skill but not `bookkeeping.sh`/the workflow):** bump manually, as there is nothing else to do it. When the change is user-visible (a new/changed skill or hook, a schema change, a fix worth announcing), add a bullet under `## [Unreleased]` and bump root `VERSION` per the CHANGELOG's own rule (patch = fix/docs · minor = new/changed skill or hook contract · major = breaking workflow/schema change). Skip for purely internal docs/research. Commit these with the work so the PR carries them.
+
+   See `docs/solutions/harness/manual-version-bump-collides-with-event-sourced-bookkeeping.md` (the double-bump this scoping prevents).
 2. Push to remote: `git push -u github <current_branch>`.
 3. Invoke the **create-pr** skill to generate `.pr-body.md`.
 4. Create the PR with `gh pr create` against `<base_branch>`, using the generated template content for the body.
