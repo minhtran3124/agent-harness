@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.12.0] — 2026-07-21
+
+- refactor(create-pr): drop File Changes table, reviewer-first Summary, conditional Diagram (PR #139)
+
 ## [2.11.0] — 2026-07-21
 
 - refactor: remove dormant protected-path guard (PR #133)
