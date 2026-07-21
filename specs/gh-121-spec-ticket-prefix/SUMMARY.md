@@ -213,6 +213,21 @@ Settled in brainstorming/design (E001, E002 in `ESCALATIONS.md`; declined option
   message, not a traceback — not a live bug, just a theoretical test-design gap worth knowing
   if the script's error handling changes later.
 
+### Intent Findings
+
+- **drift (behaviorally equivalent), report-only** — `/intent-review` (blind reviewer, fresh
+  `general-purpose` context, no access to PLAN.md/research-brief.md; BASE=c6da388 HEAD=f36b1dd):
+  the intent's acceptance criterion "Every doc/prompt/rule listed above states the same
+  convention (doc-truth lint green)" is satisfied differently than its literal wording implies —
+  only 5 files got content edits (the two canonical-statement files, the intake derivation rule,
+  and two one-line glosses); the ~25 other checklist files were independently confirmed to
+  already reference `specs/<slug>` opaquely and needed no edit (Task 2.1's sweep). The reviewer
+  judged this behaviorally equivalent to "states the same convention" (nothing contradicts it,
+  doc-truth lint is green, and the intent's own §2 header says files "need review/updating," not
+  "edit each") and routed it report-only rather than a gap. No other gap/drift/excess found;
+  both open design questions (prefix vocabulary/fallback, migrate-vs-grandfather) confirmed
+  settled coherently in design.md + ESCALATIONS.md.
+
 ### Harness-Delta
 
 - backlog — the six `reviewer`-type correctness-angle subagents (and, earlier, all five
