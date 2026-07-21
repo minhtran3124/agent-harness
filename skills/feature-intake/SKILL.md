@@ -199,7 +199,18 @@ After routing, hand off. The downstream skills already enforce their own gates a
 ## Arguments
 
 - `$ARGUMENTS` — the change request to classify. If omitted, ask the user what they want to do.
-- `<slug>` — the spec directory (e.g. `specs/<slug>/`). If absent, derive a kebab-case slug.
+- `<slug>` — the spec directory (e.g. `specs/<slug>/`). If absent, derive the folder name
+  with a **ticket-source prefix** — first match wins, in this order:
+  1. Request references a **GitHub issue** (URL, or `#N` resolvable in the working repo) →
+     `gh-<N>-<slug>` (e.g. `specs/gh-121-spec-folder-prefix/`).
+  2. Request references a **Linear ticket** (URL or `TEAM-###` identifier) →
+     `lin-<TICKET-ID>-<slug>` — the ticket ID keeps its native case (e.g.
+     `specs/lin-ENG-315-user-quota/`).
+  3. No ticket → plain kebab-case `<slug>` (unchanged behavior).
+
+  Canonical statement: `templates/structure/specs-README.md` → Slug Convention. Existing
+  folders are grandfathered — never rename. Branch names (`<type>/<slug>`) inherit the
+  prefix automatically because the slug carries it.
 
 ## See also
 

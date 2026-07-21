@@ -93,7 +93,7 @@ Conventions:
 
 ```markdown
 ---
-slug: <kebab-case>
+slug: <kebab-case — may carry a ticket-source prefix (gh-<n>-…/lin-<ID>-…), see templates/structure/specs-README.md>
 status: proposed | active | paused | shipped
 owner: <name>
 created: YYYY-MM-DD
