@@ -1,6 +1,6 @@
 ---
 slug: dynamic-rule-loading
-status: active
+status: shipped
 owner: minhtran3124
 created: 2026-07-21
 ---
@@ -115,3 +115,4 @@ so explicit skill Step-0 Read lines are load-bearing for the plan-authoring flow
 - 2026-07-21 — status: active; executing waves 1–2 in-place on `feat/dynamic-rule-loading`.
 - 2026-07-21 — waves 1–2 complete, commit `60286de`. Suite ALL GREEN ×2; reviewer two-pass
   PASS/PASS (finding 3: deploy of `.claude/rules/` pending human confirmation; finding 4 fixed).
+- 2026-07-21 — shipped via `feat/dynamic-rule-loading` (PR pending)
