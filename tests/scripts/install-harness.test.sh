@@ -5,6 +5,7 @@
 source "$(dirname "$0")/../lib.sh"
 
 INSTALL="$ROOT/scripts/install-harness.sh"
+MEMORY_DIR="agent""-memory"
 
 target() { local d; d=$(mktemp -d); _CLEANUP_DIRS+=("$d"); echo "$d"; }
 run_install() { # run_install <target> [extra args/env...]
@@ -12,10 +13,10 @@ run_install() { # run_install <target> [extra args/env...]
   OUT=$(bash "$INSTALL" --source "$ROOT" --yes -d "$tgt" "$@" 2>&1); RC=$?
 }
 
-t "dry-run on a fresh target reports the MCP step and writes nothing"
+t "dry-run on a fresh target writes nothing"
 tgt=$(target)
 OUT=$(bash "$INSTALL" --source "$ROOT" --dry-run -d "$tgt" 2>&1); RC=$?
-if [ "$RC" -eq 0 ] && echo "$OUT" | grep -qF "would create  .mcp.json" && [ ! -e "$tgt/.claude" ] && [ ! -e "$tgt/.mcp.json" ]; then
+if [ "$RC" -eq 0 ] && echo "$OUT" | grep -qF "would create  .mcp.json" && ! echo "$OUT" | grep -qiF "$MEMORY_DIR" && [ ! -e "$tgt/.claude" ] && [ ! -e "$tgt/.mcp.json" ] && [ -z "$(find "$tgt" -mindepth 1 -print -quit)" ]; then
   pass
 else
   fail "rc=$RC, .claude exists: $([ -e "$tgt/.claude" ] && echo yes || echo no)"
@@ -32,16 +33,39 @@ else
   fail "rc=$RC — mcp/.claude/prune state wrong: $(ls -a "$tgt" | tr '\n' ' ')"
 fi
 
-t "fresh install scaffolds structural dirs at the target root (create-if-missing)"
+t "fresh install scaffolds six structural files and memory-free agents"
 tgt=$(target)
 run_install "$tgt"
 if [ "$RC" -eq 0 ] \
-   && [ -f "$tgt/docs/solutions/INDEX.md" ] && [ -f "$tgt/docs/solutions/critical-patterns.md" ] \
-   && [ -f "$tgt/specs/STATE.md" ] && [ -f "$tgt/agent-memory/README.md" ]; then
+   && [ -f "$tgt/specs/README.md" ] && [ -f "$tgt/specs/STATE.md" ] \
+   && [ -f "$tgt/docs/solutions/README.md" ] && [ -f "$tgt/docs/solutions/INDEX.md" ] \
+   && [ -f "$tgt/docs/solutions/critical-patterns.md" ] && [ -f "$tgt/techstacks/README.md" ] \
+   && [ ! -e "$tgt/$MEMORY_DIR" ] \
+   && ! grep -q '^memory:' "$tgt/.claude/agents/coding.md" \
+   && ! grep -q '^memory:' "$tgt/.claude/agents/reviewer.md" \
+   && ! grep -q '^memory:' "$tgt/.claude/agents/test-runner.md"; then
   pass
 else
   fail "rc=$RC — structural scaffolding missing: $(ls -a "$tgt" | tr '\n' ' ')"
 fi
+
+t "reinstall does not recreate the removed directory"
+tgt=$(target)
+run_install "$tgt"
+run_install "$tgt"
+if [ "$RC" -eq 0 ] && [ ! -e "$tgt/$MEMORY_DIR" ]; then pass; else fail "rc=$RC"; fi
+
+t "pre-existing consumer directory is untouched"
+tgt=$(target)
+mkdir -p "$tgt/$MEMORY_DIR/nested"
+printf 'KEEP ME\n' > "$tgt/$MEMORY_DIR/KEEP.md"
+printf 'NESTED\n' > "$tgt/$MEMORY_DIR/nested/value.txt"
+manifest_before=$(find "$tgt/$MEMORY_DIR" -type f -print | sed "s#^$tgt/$MEMORY_DIR/##" | sort)
+content_before=$(cat "$tgt/$MEMORY_DIR/KEEP.md")
+run_install "$tgt"
+manifest_after=$(find "$tgt/$MEMORY_DIR" -type f -print | sed "s#^$tgt/$MEMORY_DIR/##" | sort)
+content_after=$(cat "$tgt/$MEMORY_DIR/KEEP.md")
+if [ "$RC" -eq 0 ] && [ "$manifest_before" = "$manifest_after" ] && [ "$content_before" = "$content_after" ]; then pass; else fail "rc=$RC manifest/content changed"; fi
 
 t "install never clobbers a pre-existing structural file"
 tgt=$(target)

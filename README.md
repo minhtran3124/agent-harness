@@ -62,7 +62,7 @@ human. Each engineering question maps to an enforced mechanism, not a convention
 | What type of work, how risky? | `/feature-intake` runs first — a 10-flag checklist + hard gates assign a **lane** (`tiny\|normal\|high-risk`) and a **confidence** to `specs/<slug>/SUMMARY.md`. |
 | Which contract does it touch? | Hard gates (auth · migration · public contract · high-blast file) force `high-risk`; `blast-radius` hook flags edits outside the plan. |
 | What proof shows it's done? | A re-runnable `### Verify` artifact in `SUMMARY.md` backs every "done" — machine-recheckable via `verify_summary.py`. |
-| What should future agents inherit? | `/compound` crystallizes non-obvious learnings into `docs/solutions/`; `agent-memory/` carries facts forward with confidence decay. |
+| What should future agents inherit? | `/compound` crystallizes non-obvious learnings into `docs/solutions/`, the harness's sole committed knowledge path. |
 
 And the claim is corroborated by code: at commit time, hooks check the staged diff against the
 declared lane — the agent can't label a risky change "tiny" and slip it through.
@@ -80,7 +80,7 @@ One-liner that clones the harness, builds `.claude/`, and leaves your project ro
 curl -fsSL "https://raw.githubusercontent.com/minhtran3124/harness-skills/main/scripts/install-harness.sh?$(date +%s)" | bash -s -- --yes
 ```
 
-Everything the harness needs lives in a gitignored `.claude/` (skills, agents, hooks, rules, templates, settings). At the project root it touches only two things: `.mcp.json` (wires the code-review-graph MCP server — merged into your existing one if present; Claude Code only reads this file at the root), and the workflow's structural dirs (`specs/`, `docs/solutions/`, `agent-memory/`), scaffolded **create-if-missing**. The installer never overwrites or deletes anything at your root — it only adds structural files that are absent. **To update, just re-run the one-liner** (idempotent; `.claude/` is merge-synced, non-harness entries and locally-generated files kept; a protected file that differs from incoming is reported via a `<file>.harness-incoming` sidecar rather than overwritten).
+Everything the harness needs lives in a gitignored `.claude/` (skills, agents, hooks, rules, templates, settings). At the project root it touches only two things: `.mcp.json` (wires the code-review-graph MCP server — merged into your existing one if present; Claude Code only reads this file at the root), and the workflow's structural dirs (`specs/`, `docs/solutions/`), scaffolded **create-if-missing**. The installer never overwrites or deletes anything at your root — it only adds structural files that are absent. **To update, just re-run the one-liner** (idempotent; `.claude/` is merge-synced, non-harness entries and locally-generated files kept; a protected file that differs from incoming is reported via a `<file>.harness-incoming` sidecar rather than overwritten).
 
 Needs `git` + [jq](https://jqlang.github.io/jq/); [uv](https://docs.astral.sh/uv/) is strongly recommended — the code-review-graph MCP server launches through `uvx`, and the installer warns when it's missing.
 Flags: `--directory <path>` · `--branch <name>` · `--source <local checkout>` · `--keep-sources` · `--dry-run` · `--overwrite-conflicts` (replace protected files with the incoming copy; `--force`/`--yes` keep local files instead of overwriting them).

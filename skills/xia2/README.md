@@ -33,7 +33,7 @@ Skill auto-classifies depth from the built-in **Common signals** in `SKILL.md` (
 
 To bypass the research step entirely (rare): start the prompt with *"skip research"* or *"just implement it"*. The skill notes the waiver but still surfaces any Deep-signal risks per the HARD-GATE rule.
 
-**First time in a project?** Run `bash scripts/init-structure.sh` once to scaffold `specs/`, `docs/solutions/`, and `agent-memory/`. xia2 itself needs no per-project setup.
+**First time in a project?** Run `bash scripts/init-structure.sh` once to scaffold `specs/` and `docs/solutions/`. xia2 itself needs no per-project setup.
 
 ---
 
@@ -62,7 +62,7 @@ Use both when validating major skill changes.
 To use `xia2` in a different project:
 
 1. **Copy the entire `.claude/skills/xia2/` folder** to `<new-project>/.claude/skills/xia2/`. No auto-scan skill needed — xia2 is zero-config.
-2. **Scaffold structure** — run `bash scripts/init-structure.sh` in the new repo to create `specs/`, `docs/solutions/`, `agent-memory/`.
+2. **Scaffold structure** — run `bash scripts/init-structure.sh` in the new repo to create `specs/` and `docs/solutions/`.
 3. **Keep `tests/structural/depth-modes-test-cases.md`** — it is a portable regression set against the common signals; extend it with project-specific prompts if useful.
 4. **Keep `tests/behavioural/pressure-scenarios.md`** — most scenarios are universal (project-specific examples are easy to swap).
 
@@ -163,4 +163,4 @@ Treat the test suites as the canonical regression check. If a future maintainer 
 ## See also
 
 - `xia` — the original Edgeful-specific version. Kept for backwards compatibility; `xia2` is the recommended portable replacement.
-- `scripts/init-structure.sh` — scaffolds the structural dirs (`specs/`, `docs/solutions/`, `agent-memory/`) in a bare repo.
+- `scripts/init-structure.sh` — scaffolds the structural dirs (`specs/`, `docs/solutions/`) in a bare repo.
