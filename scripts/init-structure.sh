@@ -17,7 +17,6 @@ SRC="$(cd "$(dirname "$0")/.." && pwd)/templates/structure"
 rows='
 specs-README.md|specs/README.md
 specs-STATE.md|specs/STATE.md
-agent-memory-README.md|agent-memory/README.md
 docs-solutions-README.md|docs/solutions/README.md
 docs-solutions-INDEX.md|docs/solutions/INDEX.md
 docs-solutions-critical-patterns.md|docs/solutions/critical-patterns.md

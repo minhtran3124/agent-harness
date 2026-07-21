@@ -31,7 +31,7 @@ cd "$(dirname "$0")/.." || exit 1
 shopt -s nullglob
 DOCS=(CLAUDE.md README.md HARNESS.md skills/README.md agents/*.md rules/*.md)
 shopt -u nullglob
-KNOWN_ROOTS="skills rules hooks docs templates agents scripts tests agent-memory xia2 .github .claude"
+KNOWN_ROOTS="skills rules hooks docs templates agents scripts tests xia2 .github .claude"
 FAILED=0
 err() { printf '  ✗ %s\n' "$1"; FAILED=1; }
 

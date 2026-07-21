@@ -3,7 +3,7 @@
 #
 # Fetches the harness source (git clone into a temp dir, or a local checkout via --source),
 # then builds the loadable .claude/ in the target via deploy-harness.sh --target, and scaffolds
-# the workflow's structural dirs (specs/, docs/solutions/, agent-memory/) via
+# the workflow's structural dirs (specs/, docs/solutions/) via
 # init-structure.sh — CREATE-IF-MISSING only. The installer never DELETES or OVERWRITES a
 # target file: it merge-syncs .claude/, merges one server entry into .mcp.json, and only ADDS
 # structural files that are absent. (The historical data-loss incident was a prior installer
@@ -223,7 +223,7 @@ bash "$SRC/scripts/deploy-harness.sh" "${DEPLOY_ARGS[@]}"
 # Folds the standalone scripts/init-structure.sh into install so users run one command.
 # Safe by construction: it only writes a structural file when its destination is absent.
 if [ "$DRY_RUN" -eq 1 ]; then
-  info "Would scaffold specs/, docs/solutions/, agent-memory/ (create-if-missing)"
+  info "Would scaffold specs/, docs/solutions/ (create-if-missing)"
 else
   printf '\n'
   bash "$SRC/scripts/init-structure.sh" --root "$TARGET_DIR"
