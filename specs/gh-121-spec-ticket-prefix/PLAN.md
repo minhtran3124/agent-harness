@@ -459,7 +459,11 @@ No hook/script code changes. No prefix vocabulary beyond `gh-`/`lin-`.
   slug resolving against the real specs root is itself evidence);
   keep `### Rollback` (`git revert <sha>`). Append the wave results to PLAN.md `## 6. Status Log`.
 - **Verify:** `bash scripts/run-tests.sh`
-  (integration gate — the one intentionally >60s exception; per-task verifies above stay fast)
+  (local integration gate only — do NOT copy this command into SUMMARY.md's `### Verify` table:
+  `ci-strict-gate.sh` re-runs every Verify row under a hard 60s cap with no exception
+  (`docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md`), so a whole-suite
+  row always times out in CI. This PLAN.md task-level Verify field is fine — it is never
+  re-run by CI, only run locally by whoever executes this task.)
 - **Done:** Suite prints `ALL GREEN`; SUMMARY evidence-complete (passes `python3 scripts/check_lane_evidence.py gh-121-spec-ticket-prefix`); Status Log updated.
 
 ## 5. Risks
@@ -512,3 +516,13 @@ No hook/script code changes. No prefix vocabulary beyond `gh-`/`lin-`.
   confirmed-opaque doc-sweep approach — judged behaviorally equivalent); no gap or excess. Both
   outcomes recorded in SUMMARY.md (`### Review Findings`, `### Advisory Findings`,
   `### Intent Findings`). `status: shipped` via `feat/gh-121-spec-ticket-prefix` (PR #126).
+- 2026-07-21 — CI (`strict-gate`, PR #126) BLOCKED: `TIMEOUT [Full integration suite] (limit:
+  60s)`. Root cause: SUMMARY.md's `### Verify` table included `bash scripts/run-tests.sh` as a
+  row — `ci-strict-gate.sh` re-runs every Verify row under a hard 60s cap with **no exception**,
+  contradicting this plan's own (incorrect) note that a whole-suite row was an allowed
+  exception. This is exactly `docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md`
+  (loaded into context at session start, then still violated). Fix: removed the full-suite row
+  from SUMMARY.md's Verify table, replaced with a prose note per the doc's "Correct Approach"
+  (full suite is covered by CI's own `tests` job, not re-runnable as a Verify row); corrected
+  this task's own Verify-field note (line ~462) to state the real constraint instead of the
+  false "intentional exception" claim.

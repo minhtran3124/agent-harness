@@ -189,7 +189,13 @@ Settled in brainstorming/design (E001, E002 in `ESCALATIONS.md`; declined option
 | Script/engine regression (prefixed slugs) | `bash tests/scripts/spec-prefix-compat.test.sh` | 0 | bookkeeping, ci-strict-gate, lane-evidence resolve prefixed slugs |
 | Doc-truth lint | `bash scripts/lint-doc-truth.sh` | 0 | no missing paths, hook table matches settings.json |
 | Lane evidence (dogfood slug) | `python3 scripts/check_lane_evidence.py gh-121-spec-ticket-prefix` | 0 | this SUMMARY resolves against the real specs root -> evidence-complete |
-| Full integration suite | `bash scripts/run-tests.sh` | 0 | ALL GREEN — doc-truth, manifest, all bash suites, 150 python tests |
+
+> Full-suite run (`bash scripts/run-tests.sh`) is deliberately **not** a Verify row —
+> `docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md` documents that
+> `ci-strict-gate.sh` re-runs every row under a hard 60s cap with no exception, so a whole-suite
+> row always times out in CI even though it finishes in seconds locally. It was run locally
+> multiple times during implementation (ALL GREEN each time — doc-truth, manifest, all bash
+> suites, 150 python tests) and is separately covered by CI's own `tests` job.
 
 ### Rollback
 
