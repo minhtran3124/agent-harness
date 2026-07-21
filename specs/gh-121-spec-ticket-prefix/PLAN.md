@@ -1,6 +1,6 @@
 ---
 slug: gh-121-spec-ticket-prefix
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-07-20
 ---
@@ -505,3 +505,11 @@ No hook/script code changes. No prefix vocabulary beyond `gh-`/`lin-`.
   gh-121-spec-ticket-prefix` → exit 0. SUMMARY.md + PLAN.md committed together (first commit to
   touch this slug's path — evidence now real, so Check 1.6 passes). `status:` left `active` for
   `finishing-a-development-branch` to flip to `shipped` with the branch-finish commit.
+- 2026-07-21 — `/correctness-review` (six angles, BASE=c6da388 HEAD=23868cf): no defect scoring
+  ≥80; one non-blocking advisory (test-design note on `check_lane_evidence.py`'s failing-case
+  assertion, empirically confirmed not live). `/intent-review` (blind fresh subagent, BASE=c6da388
+  HEAD=f36b1dd): one drift finding routed report-only (acceptance-criterion wording vs. the
+  confirmed-opaque doc-sweep approach — judged behaviorally equivalent); no gap or excess. Both
+  outcomes recorded in SUMMARY.md (`### Review Findings`, `### Advisory Findings`,
+  `### Intent Findings`). `status: shipped` via `feat/gh-121-spec-ticket-prefix`
+  (`finishing-a-development-branch`).
