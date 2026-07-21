@@ -98,6 +98,11 @@ Task tool (general-purpose):
 
     ## Auto-Correction Scope
 
+    FIRST: Read `.claude/rules/auto-correct-scope.md` now. It is path-scoped (not
+    auto-loaded), and this prompt pastes your task text instead of having you read the
+    plan — so nothing else puts the rule in your context. You need its full Rule 1–4
+    definitions (especially the Rule 4 STOP list) before applying any self-fix.
+
     Classify every self-fix you apply against `.claude/rules/auto-correct-scope.md`:
 
     - Rule 1 — auto-fix obvious bugs
