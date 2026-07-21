@@ -65,6 +65,27 @@ Full harness suite (`scripts/run-tests.sh`, same as the CI `harness-ci` job) was
 after wave 1 and after the lint-comment fix — ALL GREEN, 150 python + hook contract tests.
 Cited in prose per the strict-gate cap on whole-suite Verify rows.
 
+#### Post-deploy end-to-end verification (2026-07-21)
+
+After `bash scripts/deploy-harness.sh --yes` synced the `paths:` frontmatter into
+`.claude/rules/` (7 rules, 12 hooks), a mock project mirroring the **deployed** rule files
+(with per-rule canary markers) was probed with three headless `claude -p` runs on v2.1.216.
+Canaries: `behavior`/`orchestration` (always-on controls); `plan-format`/`wave-parallelism`
+(`paths: specs/**/PLAN.md`); `auto-correct-scope` (`paths: specs/**`).
+
+| Case | Action | Canaries loaded | Expected? |
+| --- | --- | --- | --- |
+| T1 baseline | no file read | behavior, orchestration | ✅ 3 scoped rules absent at session start |
+| T2 | Read `specs/mock-feature/PLAN.md` | + plan-format, wave-parallelism, auto-correct-scope | ✅ `specs/**/PLAN.md` + `specs/**` both match |
+| T3 | Read `specs/mock-feature/SUMMARY.md` (non-PLAN) | + auto-correct-scope only | ✅ `specs/**` matches; PLAN-only globs correctly do NOT |
+
+Proves the tiered semantics on the real deployed files: scoped rules stay out of the
+session-start payload (~15 KB / ~55% saved), `specs/**/PLAN.md` rules load only for PLAN
+operations, and the broader `specs/**` rule loads for any spec file. Repro:
+`scratchpad/mock-run` (ephemeral). Note: the deploy writes gitignored `.claude/`; the tiered
+behavior takes effect from the next Claude Code session in a repo (a restart), which is why
+the isolated `claude -p` probes — reading the freshly-synced `.claude/rules/` — reflect it.
+
 ### Rollback
 
 - `git revert <sha>`

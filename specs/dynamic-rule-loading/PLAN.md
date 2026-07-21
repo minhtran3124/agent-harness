@@ -115,4 +115,9 @@ so explicit skill Step-0 Read lines are load-bearing for the plan-authoring flow
 - 2026-07-21 — status: active; executing waves 1–2 in-place on `feat/dynamic-rule-loading`.
 - 2026-07-21 — waves 1–2 complete, commit `60286de`. Suite ALL GREEN ×2; reviewer two-pass
   PASS/PASS (finding 3: deploy of `.claude/rules/` pending human confirmation; finding 4 fixed).
-- 2026-07-21 — shipped via `feat/dynamic-rule-loading` (PR pending)
+- 2026-07-21 — shipped via `feat/dynamic-rule-loading` (PR #141)
+- 2026-07-21 — Codex P1 addressed (commit `d61e155`): implementer-prompt.md now Reads the
+  path-scoped auto-correct-scope rule explicitly.
+- 2026-07-21 — deployed (`deploy-harness.sh --yes`) + post-deploy end-to-end verification:
+  T1/T2/T3 canary probes on the real `.claude/rules/` all match the tiered spec (see SUMMARY
+  → Post-deploy verification).
