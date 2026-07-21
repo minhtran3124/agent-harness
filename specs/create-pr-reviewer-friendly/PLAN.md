@@ -1,6 +1,6 @@
 ---
 slug: create-pr-reviewer-friendly
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-07-21
 ---
@@ -183,3 +183,7 @@ this plan proceeds directly from intake.
   normal lane, no design fork → no `design.md`/`research-brief.md` required.
 - 2026-07-21 — Task 1.1 implemented (`943a4ed`), spec + quality review found a fence-nesting
   bug and an orphan Rules-table line, fixed in `bff3342`, both re-reviewed and approved.
+- 2026-07-21 — correctness-review: 2 candidates scored below threshold (65, 25) -> advisory,
+  no fix-loop needed. intent-review: 1 drift, behaviorally near-equivalent -> advisory. Suite
+  262+ tests ALL GREEN. Ready for finishing-a-development-branch.
+- 2026-07-21 — shipped via `feat/create-pr-reviewer-friendly`.
