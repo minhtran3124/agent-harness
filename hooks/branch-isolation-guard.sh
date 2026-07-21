@@ -21,7 +21,6 @@
 #
 # Break-glass: set BRANCH_ISOLATION_REASON="<why>" to allow the write; the override is
 # appended to docs/harness-experimental/break-glass-log.md (override → audit trail).
-# Mirrors protected-path-guard.sh's pattern.
 set -u
 
 INPUT=$(cat)
