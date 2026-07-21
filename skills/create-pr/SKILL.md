@@ -44,7 +44,7 @@ git diff {BASE_BRANCH}...HEAD --stat
 
 ## PR Template
 
-```markdown
+````markdown
 ## Title
 
 type: short description  <!-- feat | fix | refactor | chore | docs | test | perf — max 72 chars -->
@@ -70,7 +70,7 @@ flowchart LR
 ## Notes
 
 [Only the main points and important changes a reviewer needs flagged — breaking changes, migration steps, follow-ups, known limitations. Omit routine detail already visible in the diff. Remove this whole section if nothing rises to that bar.]
-```
+````
 
 ---
 
@@ -83,7 +83,5 @@ flowchart LR
 | **Tasks** | One bullet per task. Clear and direct. No over-explaining. |
 | **Diagram** | Include only when the change is flow/process-shaped (multi-step process, state machine, request/data flow) or the ticket already has one. Omit otherwise. |
 | **Notes** | Only main points and important changes (breaking changes, follow-ups, known limitations). Omit the whole section if nothing rises to that bar. |
-
-**Change type labels:** `Added` · `Modified` · `Deleted` · `Renamed` · `Refactored`
 
 **Do not** include line-by-line code explanations, or restate the file list — the diff view already shows every changed file.
