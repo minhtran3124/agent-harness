@@ -46,6 +46,7 @@ Implements the research doc's recommendation: deterministic load triggers only �
 ### Deviations
 
 - PR review fix (Codex P1, PR #141) — `implementer-prompt.md` referenced `auto-correct-scope.md` without instructing a Read; since implementers get pasted task text (never read specs/**), the path-scoped rule would never load in their context. Added an explicit "Read it FIRST" instruction to the template. Other dispatch templates checked: plan-document-reviewer reads the PLAN file (paths: triggers), correctness-reviewer inlines the Rule 1–4 definitions — no change needed.
+- PR review fix (Codex P2, PR #141) — correction to the above: the correctness reviewer's inline Rule-4 list was a subset (5 of 8 STOP cases, missing session-scope, high-blast files, replacing a service), and being plan-blind it never reads specs/** to auto-load the rule. Completed the inline STOP list and added an explicit Read of `.claude/rules/auto-correct-scope.md` in both `correctness-reviewer-prompt.md` (dispatch path) and `correctness-review/SKILL.md` (standalone/main-thread fix-routing path).
 
 - Rule 1 — Fixed stale comment "rules/*.md auto-load every session" in `scripts/lint-doc-truth.sh` (reviewer finding 4; the change made it false). Added to PLAN Task 2.1 Files after blast-radius warning.
 - Route deviation — in-place branch `feat/dynamic-rule-loading` instead of a worktree: per recorded memory, no-deploy worktrees break the Skill tool in this repo.

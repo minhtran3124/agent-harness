@@ -119,6 +119,12 @@ The finder needs a `BASE_SHA..HEAD_SHA` range (and the list of touched files):
 
 ## Fix routing by Rule class
 
+> Before routing, **Read `.claude/rules/auto-correct-scope.md`** for the full Rule 4 STOP list
+> (schema · API contract · removing behavior · new external dep · auth/authz · session/txn scope ·
+> high-blast file `settings.json`/`hooks/*`/skill engine · replacing a service). It is path-scoped
+> (`paths: specs/**`), so it does not auto-load when the reviewed diff is outside `specs/**` —
+> misclassifying a Rule 4 as Rule 1–3 would send an architectural change into the auto-fix loop.
+
 - **Rule 1–3** → implementer auto-fixes (fresh dispatch) → re-review → repeat until ✅. Log each
   fix as a deviation in `SUMMARY.md` when a slug is in play.
 - **Rule 4** → STOP immediately. Do not attempt a fix. Write the finding to

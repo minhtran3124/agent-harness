@@ -170,9 +170,14 @@ For each finding:
   or a crash on an edge path) | `P2` (degraded behavior, not fatal) | `P3` (minor correctness
   issue).
 - **Rule class**: `Rule 1–3` (a mechanical fix an implementer can apply directly) | `Rule 4`
-  (STOP — the fix needs an architectural decision: schema, API contract, auth or authorization
-  design, removing behavior, or a new external dependency). Definitions:
-  `.claude/rules/auto-correct-scope.md`.
+  (STOP — the fix needs an architectural decision). Rule 4 STOP cases: schema change, API
+  contract change, removing existing behavior, new external dependency, auth/authorization
+  design, session/transaction scope change, a high-blast-radius file (`settings.json`, any
+  `hooks/*`, a core skill engine), or replacing a service/pattern. This list is a summary —
+  before classifying any finding as Rule 4 vs Rule 1–3, **Read `.claude/rules/auto-correct-scope.md`**
+  for the authoritative definitions. It is path-scoped (`paths: specs/**`) and this review is
+  plan-blind, so nothing auto-loads it — the explicit Read is required. (Reading the governance
+  rule does not break plan-blindness; it is not the plan or spec.)
 - **Location**: `file:line`.
 - **Trigger**: the specific input, state, or event sequence that reaches the bug.
 - **Wrong outcome**: what the code does, and what it should do.
