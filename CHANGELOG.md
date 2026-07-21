@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 - feat(rules): path-scope the contextual rules (`plan-format`, `wave-parallelism`, `auto-correct-scope`) via `paths:` frontmatter — loaded on demand instead of every session (~55% off the always-on rule payload); consuming skills gained explicit Read steps (write-flows don't trigger `paths:` injection — verified empirically on v2.1.216). Phase 3 (orchestration.md core split) deferred. Research: `docs/research/2026-07-21-dynamic-rule-loading-research.md`
 
+## [2.14.0] — 2026-07-21
+
+- feat(rules): path-scope contextual rules for on-demand loading (PR #141)
+
 ## [2.12.0] — 2026-07-21
 
 - refactor(create-pr): drop File Changes table, reviewer-first Summary, conditional Diagram (PR #139)
