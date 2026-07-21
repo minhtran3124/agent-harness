@@ -86,8 +86,7 @@
     { "name": "scope-gate.sh",             "wired": true },
     { "name": "state-breadcrumb.sh",       "wired": true },
     { "name": "session-knowledge.sh",      "wired": true },
-    { "name": "auto-test-on-change.sh",    "wired": false },
-    { "name": "protected-path-guard.sh",   "wired": false }
+    { "name": "auto-test-on-change.sh",    "wired": false }
   ],
 
   "skills": [

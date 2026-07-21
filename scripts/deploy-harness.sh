@@ -26,7 +26,6 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd -P)"
 # profile, engineering guidelines, the agents convention index, and the behavior skeleton the
 # project tunes. (`init-structure.sh` may create some on first setup; thereafter they are
 # hand-maintained.) Deliberately NOT named PROTECTED_* — that prefix already denotes the unrelated
-# hooks/protected-path-guard.sh / PROTECTED_PATH_REASON set.
 BOOTSTRAP_OWNED_FILES=(
   "rules/architecture.md"
   "rules/guidelines.md"
