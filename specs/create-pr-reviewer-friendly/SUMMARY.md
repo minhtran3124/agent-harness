@@ -57,8 +57,8 @@ not fixed, per the residual-work gate.
 
 | Score | Location | Claim | Fix direction (not applied) |
 | --- | --- | --- | --- |
-| 65 | skills/create-pr/SKILL.md:61-73 | `## Diagram` template body shows concrete renderable Mermaid (`A[Before] --> B[After]`) instead of a bracketed `[...]` placeholder like every other section, and its omit-if-not-applicable condition lives only in an HTML comment rather than the visible bracket text `## Notes` uses -- risk an agent copies the generic diagram verbatim or leaves the section in for a non-flow change. | Make the Diagram body a `[...]`-style placeholder and move the omit instruction into visible bracket text, matching the Notes pattern. |
-| 25 | skills/create-pr/SKILL.md:3 | Frontmatter `description` lists "notes" as a flat, always-present output section while the template/Rules table make `## Notes` optional -- pre-existing wording nit (same contradiction existed before this diff for the same reason), authoritative template/Rules already govern actual behavior. | Reword description to "...plus optional diagram and notes" if tightened later. |
+| 65 | skills/create-pr/SKILL.md:61-73 | `## Diagram` template body shows concrete renderable Mermaid (`A[Before] --> B[After]`) instead of a bracketed `[...]` placeholder like every other section, and its omit-if-not-applicable condition lives only in an HTML comment rather than the visible bracket text `## Notes` uses -- risk an agent copies the generic diagram verbatim or leaves the section in for a non-flow change. | Make the Diagram body a `[...]`-style placeholder and move the omit instruction into visible bracket text, matching the Notes pattern. Still open -- not fixed. |
+| 25 | skills/create-pr/SKILL.md:3 | Frontmatter `description` lists "notes" as a flat, always-present output section while the template/Rules table make `## Notes` optional -- pre-existing wording nit (same contradiction existed before this diff for the same reason), authoritative template/Rules already govern actual behavior. | Reword description to "...plus optional diagram and notes" if tightened later. Still open -- not fixed. |
 
 Six angles ran (enclosing-function, removed-behavior, call-site-impact, stack-defects,
 guard-completeness, prior-art); `call-site-impact` and `prior-art` returned clean (no findings;
@@ -72,14 +72,14 @@ converged on initially.
 Intent review (fresh reviewer, blind to PLAN.md, oracle = issue #138 verbatim) over
 BASE=981c22e..HEAD=bff3342 found 1 drift, routed advisory (no gaps, no excess):
 
-- **drift, advisory** -- `skills/create-pr/SKILL.md:33/63/84`. Intent's third diagram trigger was
-  "a ticket that's naturally visual"; the diff's guidance instead triggers on "the linked
-  ticket/spec already has one [a diagram]". These are not the same set (a ticket can be
-  naturally visual without yet containing a diagram), but the diff's primary trigger
-  ("multi-step process, state machine, or request/data flow") already covers most such cases, so
-  this is behaviorally near-equivalent, not a functional gap. Not fixed; recorded per the
-  residual-work gate. If tightened later: reword to "or the linked ticket/spec is itself about a
-  flow/process" rather than "already has one."
+- **drift, FIXED** -- `skills/create-pr/SKILL.md:33/63/84`. Intent's third diagram trigger was
+  "a ticket that's naturally visual"; the diff originally triggered only on "the linked
+  ticket/spec already has one [a diagram]" -- not the same set (a ticket can be naturally
+  visual without yet containing a diagram). Initially recorded advisory (behaviorally
+  near-equivalent via the primary trigger). Independently flagged by Codex's automated PR
+  review (P2, PR #139 review 4743200066) after PR open -- fixed in `c489c8b`: all three
+  occurrences now also trigger when the ticket/spec is itself about a flow/process, not only
+  when it already contains a diagram.
 
 ### Deviations
 
