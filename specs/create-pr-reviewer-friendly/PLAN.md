@@ -186,4 +186,4 @@ this plan proceeds directly from intake.
 - 2026-07-21 — correctness-review: 2 candidates scored below threshold (65, 25) -> advisory,
   no fix-loop needed. intent-review: 1 drift, behaviorally near-equivalent -> advisory. Suite
   262+ tests ALL GREEN. Ready for finishing-a-development-branch.
-- 2026-07-21 — shipped via `feat/create-pr-reviewer-friendly`.
+- 2026-07-21 — shipped via `feat/create-pr-reviewer-friendly` (PR #139).
