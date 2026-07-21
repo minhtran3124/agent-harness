@@ -511,5 +511,4 @@ No hook/script code changes. No prefix vocabulary beyond `gh-`/`lin-`.
   HEAD=f36b1dd): one drift finding routed report-only (acceptance-criterion wording vs. the
   confirmed-opaque doc-sweep approach — judged behaviorally equivalent); no gap or excess. Both
   outcomes recorded in SUMMARY.md (`### Review Findings`, `### Advisory Findings`,
-  `### Intent Findings`). `status: shipped` via `feat/gh-121-spec-ticket-prefix`
-  (`finishing-a-development-branch`).
+  `### Intent Findings`). `status: shipped` via `feat/gh-121-spec-ticket-prefix` (PR #126).
