@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.11.0] — 2026-07-21
+
+- refactor: remove dormant protected-path guard (PR #133)
+
 ## [2.10.0] — 2026-07-21
 
 - feat: add ticket-source prefix for spec folders (gh-/lin-) (PR #126)
