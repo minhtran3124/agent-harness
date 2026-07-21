@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.10.0] — 2026-07-21
+
+- feat: remove unused agent memory (PR #131)
+
 ## [2.9.1] — 2026-07-20
 
 - chore(lint): widen doc-truth scope to agents/ and rules/ (4 → 17 docs) (PR #122)
