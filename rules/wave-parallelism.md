@@ -1,4 +1,12 @@
+---
+paths:
+  - "specs/**/PLAN.md"
+---
+
 # Wave Parallelism Rule
+
+Path-scoped (not auto-loaded): injected when a `specs/**/PLAN.md` file is read; wave
+execution also loads it via the explicit Read step in `executing-plans` / `subagent-driven-development`.
 
 Tasks in `specs/<slug>/PLAN.md` group into waves. Same-wave tasks run in parallel; wave N+1 waits for wave N.
 

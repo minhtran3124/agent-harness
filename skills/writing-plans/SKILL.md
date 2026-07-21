@@ -19,6 +19,10 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 Artifact + slug convention: specs/README.md + .claude/rules/plan-format.md
 
+**Step 0 — load the format rule:** Read `.claude/rules/plan-format.md` now. It is path-scoped
+(not auto-loaded), and writing a brand-new PLAN.md does not trigger its `paths:` injection —
+this explicit Read is the load-bearing step.
+
 ## Input Artifacts
 
 Before writing anything, read both files from the spec directory:

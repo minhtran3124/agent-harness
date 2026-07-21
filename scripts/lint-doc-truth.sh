@@ -21,8 +21,8 @@
 set -u
 cd "$(dirname "$0")/.." || exit 1
 
-# Scope: the docs an agent actually loads. rules/*.md auto-load every session via
-# .claude/rules/, and agents/*.md is read by every execution subagent — so a dangling
+# Scope: the docs an agent actually loads. rules/*.md load via .claude/rules/ (always-on
+# or path-scoped by `paths:` frontmatter), and agents/*.md is read by every execution subagent — so a dangling
 # path there misleads exactly as much as one in CLAUDE.md. Both were unlinted until
 # PR #119 found stale skills/xia2/PROJECT.md pointers surviving in agents/ precisely
 # because this list did not reach them.

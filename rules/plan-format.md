@@ -1,6 +1,13 @@
+---
+paths:
+  - "specs/**/PLAN.md"
+---
+
 # Plan Format Rule
 
 Applies when writing `specs/<slug>/PLAN.md` for multi-step work.
+Path-scoped (not auto-loaded): injected when a `specs/**/PLAN.md` file is read; authoring
+flows load it via the explicit Read step in `writing-plans` / `executing-plans`.
 
 Related: `auto-correct-scope.md`. See also `CLAUDE.local.md` → Development Workflow → Planning Layer.
 
