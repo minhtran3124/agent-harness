@@ -43,13 +43,13 @@ auto, skipped 2.13.0 section, orphaned Unreleased bullet). Single-owner removes 
 
 ### Deviations
 
-- none
+- PR review fix (Codex P1, PR #144) — the first cut made Step 1b a blanket "don't bump manually", but `finishing-a-development-branch` is deployed into consuming repos while `bookkeeping.sh` + `post-merge-maintenance.yml` are NOT in the install payload — so it would suppress versioning in every consuming repo. Rewrote Step 1b to branch on the presence of `.github/workflows/post-merge-maintenance.yml`: automation present → defer; absent → bump manually as before. Compound doc updated with the dual-audience caveat.
 
 ### Verify
 
 | Check | Command | Exit | Notes |
 | --- | --- | --- | --- |
-| Step 1b no longer instructs a manual VERSION bump | `grep -c "bump root .VERSION." skills/finishing-a-development-branch/SKILL.md` | 0 | expect 0 matches after edit |
+| Step 1b branches on the automation's presence | `grep -q "post-merge-maintenance.yml" skills/finishing-a-development-branch/SKILL.md` | 0 | conditional: defer if present, bump manually if absent |
 | doc-truth lint | `bash scripts/lint-doc-truth.sh` | 0 | new solutions doc paths resolve |
 
 ### Rollback

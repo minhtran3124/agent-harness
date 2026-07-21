@@ -44,12 +44,21 @@ one PR.
 
 ## Correct Approach
 
-Let the automation be the sole owner. Do **not** bump `VERSION` or add a CHANGELOG entry in the
-feature PR — merge the feature, then let `post-merge-maintenance.yml` open the bookkeeping PR
-that records the trust-metrics row, the CHANGELOG section, and the single VERSION bump, all
-parsed from the merged `SUMMARY.md`. Review that PR for correctness instead of pre-writing it.
-If a bump has already leaked into a feature PR, reconcile on the bookkeeping branch to a single
-coherent release (one dated section, no skipped version, `Unreleased` emptied) before merging it.
+Let the automation be the sole owner **in the repo that has it**. In harness-skills: do **not**
+bump `VERSION` or add a CHANGELOG entry in the feature PR — merge the feature, then let
+`post-merge-maintenance.yml` open the bookkeeping PR that records the trust-metrics row, the
+CHANGELOG section, and the single VERSION bump, all parsed from the merged `SUMMARY.md`. Review
+that PR instead of pre-writing it. If a bump already leaked into a feature PR, reconcile on the
+bookkeeping branch to a single coherent release (one dated section, no skipped version,
+`Unreleased` emptied) before merging.
+
+**Dual-audience caveat:** `finishing-a-development-branch` is *deployed into consuming project
+repos*, but `scripts/bookkeeping.sh` and `.github/workflows/post-merge-maintenance.yml` are
+**not** in the install payload — they exist only here. So the "don't bump manually" rule is
+conditional on the automation being present: a consuming repo with no post-merge job must still
+bump `VERSION`/CHANGELOG **by hand**, or nothing will. Step 1b branches on the presence of
+`.github/workflows/post-merge-maintenance.yml`. A blanket "the automation owns it" instruction
+would silently suppress versioning in every consuming repo — a `meta-repo-signal-remapping` trap.
 
 ## Guardrail
 
