@@ -12,6 +12,7 @@ _Nothing yet._
 ## [2.10.0] — 2026-07-21
 
 - feat: add ticket-source prefix for spec folders (gh-/lin-) (PR #126)
+- feat: remove unused agent memory (PR #131)
 
 ## [2.9.1] — 2026-07-20
 

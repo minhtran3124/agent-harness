@@ -3,7 +3,6 @@ name: coding
 description: "Write, review, or refactor code end-to-end — implement features, fix bugs, and add/update tests with minimal, scoped diffs. Stack-agnostic: defers all project specifics to agents/PROJECT.md."
 model: sonnet
 color: orange
-memory: project
 ---
 
 # Coding Agent

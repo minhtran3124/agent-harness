@@ -12,7 +12,7 @@ This file is the single source of truth for overview, workflow, and cross-skill 
 
 ```
 scripts/init-structure.sh  (first-time repo setup only)
-  → scaffolds specs/, docs/solutions/, agent-memory/ (create-if-missing)
+  → scaffolds specs/, docs/solutions/ (create-if-missing)
       ↓
 /feature-intake  (routing entry point — run first on every change request)
   → classifies input type + 10-flag risk checklist + hard gates
@@ -88,7 +88,7 @@ fix (implement directly or via /subagent-driven-development)
 ### Setup
 
 No skill covers first-time setup — it is a script: `bash scripts/init-structure.sh` scaffolds
-`specs/`, `docs/solutions/`, and `agent-memory/` (create-if-missing). Run it once per repo.
+`specs/` and `docs/solutions/` (create-if-missing). Run it once per repo.
 
 ### Discovery & Design
 
@@ -211,21 +211,6 @@ reads  ◄── /brainstorming  (decision track only — avoid re-proposing rej
 Schema reference: `docs/solutions/README.md` (scaffolded by `scripts/init-structure.sh`).
 
 ---
-
-## Agent Memory
-
-Per-agent persistent memory with confidence decay: `agent-memory/`
-
-Each entry carries:
-```
-<!-- confirmed: YYYY-MM-DD | confidence: high|medium|low | review-by: YYYY-MM-DD -->
-```
-
-- `high` — verified this session
-- `medium` — 1+ month old, or inferred
-- `low` — >3 months old or uncertain; treat as hypothesis, verify before acting
-
-**Write protocol:** when re-verifying an entry, update `confirmed` to today and adjust `confidence`. Expired `review-by`: downgrade confidence one tier on next read.
 
 ---
 
@@ -356,7 +341,7 @@ graph LR
 - **Zero-config.** xia2 classifies from its built-in Common signals; nothing to bootstrap.
 - **Fork to another project:**
   1. Copy `skills/xia2/`.
-  2. Run `bash scripts/init-structure.sh` in the new repo to scaffold `specs/`, `docs/solutions/`, `agent-memory/`.
+  2. Run `bash scripts/init-structure.sh` in the new repo to scaffold `specs/` and `docs/solutions/`.
   3. `tests/structural/depth-modes-test-cases.md` is a portable regression set against the common signals — keep or extend it.
   4. Keep `tests/behavioural/pressure-scenarios.md` — most scenarios are universal.
 - **Maintenance discipline:**
