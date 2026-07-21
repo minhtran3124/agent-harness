@@ -195,6 +195,30 @@ Settled in brainstorming/design (E001, E002 in `ESCALATIONS.md`; declined option
 
 - `git revert <sha>` (docs/skills/hooks are all tracked; no data migration involved)
 
+### Review Findings
+
+- none — `/correctness-review` (six angles: enclosing-function, removed-behavior,
+  call-site-impact, stack-defects, guard-completeness, prior-art) run over the full diff
+  (`c6da388..23868cf`) found no defect scoring ≥80. Every hook-assertion string in both new
+  test files was cross-checked against the real hook/script source and empirically confirmed
+  by re-running both files directly (11/11, 5/5, exit 0).
+
+### Advisory Findings
+
+- `guard-completeness` (score ≤25, non-blocking): `tests/scripts/spec-prefix-compat.test.sh`'s
+  `check_lane_evidence.py` failing-evidence case asserts only the exit code (`assert_rc 1`),
+  which in principle cannot distinguish "correctly detected missing evidence" from "crashed
+  with an unrelated exception" (Python's default uncaught-exception exit code is also 1).
+  Verified empirically that in this specific case the real output is the correct detection
+  message, not a traceback — not a live bug, just a theoretical test-design gap worth knowing
+  if the script's error handling changes later.
+
 ### Harness-Delta
 
-- none
+- backlog — the six `reviewer`-type correctness-angle subagents (and, earlier, all five
+  per-task `reviewer`-type spec-compliance reviewers) went idle after being dispatched and
+  never produced final report content, even after repeated `SendMessage` nudges over an
+  extended period. `general-purpose`-type subagents (the implementers) reported reliably and
+  promptly throughout the same session. Recovery both times was to perform the review directly
+  in the main thread instead of continuing to wait. Worth a `/compound` entry investigating
+  whether `subagent_type: reviewer` has a structural issue distinct from `general-purpose`.
