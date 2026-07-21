@@ -30,7 +30,7 @@ git diff {BASE_BRANCH}...HEAD --stat
 **3. Analyze changes**
 - Identify the overall purpose: `feat`, `fix`, `refactor`, `chore`, `docs`, `test`, `perf`
 - Identify the behavioral delta — what a reviewer needs to know to understand the change without reading the diff
-- Decide if a diagram helps: does the change alter a multi-step process, state machine, or request/data flow — or does the linked ticket/spec already include one? If yes, sketch a small Mermaid diagram for the `## Diagram` section; if no, omit that section entirely
+- Decide if a diagram helps: does the change alter a multi-step process, state machine, or request/data flow — or is the linked ticket/spec itself about a flow/process (naturally visual), or does it already include a diagram? If yes, sketch a small Mermaid diagram for the `## Diagram` section; if no, omit that section entirely
 
 **4. Generate the PR template** using the template below
 
@@ -60,7 +60,7 @@ type: short description  <!-- feat | fix | refactor | chore | docs | test | perf
 
 ## Diagram
 
-<!-- Include ONLY when the change is flow/process-shaped: a multi-step process, state machine, or request/data flow — or the linked ticket/spec already has one. Omit this whole section otherwise; do not force a diagram onto a change that doesn't need one. -->
+<!-- Include ONLY when the change is flow/process-shaped: a multi-step process, state machine, or request/data flow — or the linked ticket/spec is itself about a flow/process, or already includes a diagram. Omit this whole section otherwise; do not force a diagram onto a change that doesn't need one. -->
 
 ```mermaid
 flowchart LR
@@ -81,7 +81,7 @@ flowchart LR
 | **Title** | `type: description`, max 72 chars |
 | **Summary** | 2–4 sentences, reviewer-first: what changed + why it matters, readable in ~10 seconds without opening the diff. No diff narration. |
 | **Tasks** | One bullet per task. Clear and direct. No over-explaining. |
-| **Diagram** | Include only when the change is flow/process-shaped (multi-step process, state machine, request/data flow) or the ticket already has one. Omit otherwise. |
+| **Diagram** | Include only when the change is flow/process-shaped (multi-step process, state machine, request/data flow), or the linked ticket/spec is itself about a flow/process, or already has a diagram. Omit otherwise. |
 | **Notes** | Only main points and important changes (breaking changes, follow-ups, known limitations). Omit the whole section if nothing rises to that bar. |
 
 **Do not** include line-by-line code explanations, or restate the file list — the diff view already shows every changed file.
