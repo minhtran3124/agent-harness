@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.19.0] — 2026-07-22
+
+- fix(review): close context-propagation escapes — issue #143 Phases 0–5 (PR #155)
+
 ## [2.18.0] — 2026-07-22
 
 - fix(correctness-review): lower scorer threshold to 75 to match discrete anchors (PR #153)
