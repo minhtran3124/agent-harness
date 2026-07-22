@@ -84,6 +84,25 @@ revision is recorded here. Past result files state which fixture version they me
   reviewer`) reports **CLEAN** on both v2 fixtures — no asserted runtime bug, unknowns labeled —
   confirming they are now true false-positive probes.
 
+## Feeding the ledger
+
+This corpus should **grow from real escapes**, not only from hand-authored fixtures. The
+review-escape ledger (`docs/review-escapes.md`) records every post-push finding by an external or
+heterogeneous reviewer (e.g. Codex on a GitHub PR) that slipped past the local review chain. The
+standing rule links the two directions:
+
+- **Ledger row → fixture.** Every escape row whose `status` is *fixed* should have a corresponding
+  regression artifact in its `fixture` cell — a fixture under `fixtures/<name>/` here (planted with
+  that escape's defect class), a test file, or a documented won't-fix. An escape with no such
+  artifact is unfinished: the lesson has not been made permanent.
+- **Fixture → ledger row.** When a new fixture here is seeded from a real escape (rather than a
+  synthetic defect), add or point at its ledger row so the provenance is traceable.
+
+So the loop is: an external reviewer catches what our in-chain oracles missed → the escape becomes a
+ledger row → the row becomes a fixture in this corpus → the benchmark now measures whether the chain
+would catch that class next time. See `docs/review-escapes.md` for the current rows and the seeded
+escapes (`context-rule-unread`, `stale-inline-policy`).
+
 ## Honesty rules
 
 - Report misses plainly. A miss is a finding about the skill, not a failure of the benchmark.
