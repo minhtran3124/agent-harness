@@ -73,6 +73,23 @@ If the base branch is not mentioned in chat, default to `main`. Only ask ("This 
 
 ### Step 3: Push and Open PR
 
+**Gate 0 — review receipt (normal + high-risk lanes; tiny skips).** Before anything else in this
+step, verify the reviews ran against the code being pushed:
+
+```bash
+python3 scripts/check_review_receipt.py specs/<slug> --require correctness,intent
+```
+
+Exit 1 (receipt missing / malformed / `reviewed_head_sha != HEAD` / any review `result: fail` / any
+`blocking_open > 0` / a required type absent) means the pinned reviews are stale or incomplete —
+**REFUSE to push or open the PR.** Route back to `subagent-driven-development` to re-run the affected
+review and re-write the receipt; never hand-edit `.review-receipt.json` to pass the gate. Exit 0 →
+continue. **Tiny lane:** skip this gate — its route has no review chain to pin.
+
+For high-risk **workflow-engine** changes (`harness-manifest.json` → `workflow-engine`), the existing
+heterogeneous Codex PR review remains an optional post-push merge requirement — reference only, run on
+the PR after push; nothing is mirrored locally (per the non-goals).
+
 1. **Mark the plan shipped** — run Step 4. This updates `specs/<slug>/PLAN.md`, which is **tracked** in git, so stage and commit the status change with the work (it lands in the branch/PR). If no plan matches, skip silently.
 1b. **`CHANGELOG.md` + `VERSION` — who bumps depends on whether this repo has the post-merge automation.** Check for `.github/workflows/post-merge-maintenance.yml` (paired with `scripts/bookkeeping.sh`):
    - **Automation present (the harness-skills meta-repo):** do **NOT** bump by hand. The workflow owns it end-to-end — on merge it runs `bookkeeping.sh`, which bumps `VERSION`, inserts the dated CHANGELOG section, and appends the trust-metrics + audit-log rows, all parsed from the merged `SUMMARY.md`. A manual pre-bump double-counts: `bookkeeping.sh` bumps again from the value you set (skipping a version) and orphans your `## [Unreleased]` bullet. This matches `feature-intake` → "Do NOT hand-append the ledger. CI records it on merge." Your job is a correct `SUMMARY.md`, then review the bookkeeping PR after merge.

@@ -225,6 +225,29 @@ design misread the intent, every gate passes consistently. The three oracles are
 spec-review against the plan, correctness-review against runtime (blind to plan), intent-review
 against the original request (blind to plan). This pass is the last check before the human merge gate.
 
+## Review Receipt
+
+Once correctness and intent have both passed (and the context-propagation audit, if it ran), write
+`specs/<slug>/.review-receipt.json` from `templates/REVIEW-RECEIPT.template.json` before handing off
+to `finishing-a-development-branch`. This is the machine-checkable proof that the reviews actually
+ran against the code being shipped — `finishing-a-development-branch` Step 3 gates the push on it via
+`scripts/check_review_receipt.py`. The receipt is gitignored (derived / machine-local).
+
+Fill it as:
+
+- `reviewed_head_sha` — `git rev-parse HEAD` (the exact commit the reviews saw).
+- `reviews` — one entry per review actually run this session: `correctness`, `intent`, and
+  `context-propagation-audit` if the pre-gate fired. Each records `reviewer` (model or tier),
+  `result` (`pass` / `fail`), and the open-finding counts (`blocking_open`, `advisory_open`) left
+  after the fix-loop. Handoff requires every entry `result: pass` with `blocking_open: 0`.
+- `created` — current ISO-8601 timestamp.
+
+**Re-review after fix (invalidation rule).** ANY fix commit landed after the receipt is written
+makes it stale — `reviewed_head_sha` no longer equals `HEAD`, and the finishing gate will refuse the
+push. When a post-review fix commit lands, re-run the affected review(s) against the new HEAD and
+re-write the receipt (new sha + refreshed results) before handoff. Never hand-edit the sha to match;
+re-run the review that the fix invalidated.
+
 ## Reporting — Rule 1–3 Deviation Logging
 
 Every implementer subagent MUST classify and log each auto-fix it applied during task
@@ -412,6 +435,7 @@ Done!
 - Run the final correctness review with the same model as the implementer (defeats ensemble diversity)
 - **Skip the intent review, or hand off with unrouted intent findings** (this is the gate that catches "passed the plan and tests but not what the user asked for")
 - Run the intent review with the implementer's context (it must be a fresh subagent, blind to PLAN.md — otherwise it re-confirms the plan's possible misreading of intent)
+- **Hand off with a stale review receipt** — a fix commit after the receipt is written invalidates it (`reviewed_head_sha != HEAD`); re-run the affected review and re-write the receipt before handoff, never hand-edit the sha
 
 **If subagent asks questions:**
 - Answer clearly and completely

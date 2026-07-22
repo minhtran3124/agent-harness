@@ -1,0 +1,13 @@
+{
+  "reviewed_head_sha": "",
+  "reviews": [
+    {
+      "type": "correctness|intent|context-propagation-audit",
+      "reviewer": "<model-or-tier>",
+      "result": "pass|fail",
+      "blocking_open": 0,
+      "advisory_open": 0
+    }
+  ],
+  "created": "<iso8601>"
+}
