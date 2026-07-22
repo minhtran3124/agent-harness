@@ -49,20 +49,8 @@ _TEMPLATE_ROLLBACK_RE = re.compile(r"^`?git revert <sha>`?$")
 _TRIVIAL_RE = re.compile(r"^\s*(?:true|:|exit\s+0|echo\b[^|&;`$()]*)\s*$")
 
 
-def parse_verify_table(text: str) -> list[dict]:
-    """Parse the ### Verify table rows from SUMMARY.md text.
-
-    Returns a list of dicts with keys: check, command, claimed_exit, notes.
-    Placeholder rows (em-dash, <command>, or empty command) are excluded.
-    """
-    # Find the ### Verify section
-    verify_match = re.search(r"^###\s+Verify\s*$", text, re.MULTILINE)
-    if not verify_match:
-        return []
-
-    section = text[verify_match.end() :]
-
-    # Collect table rows until we hit the next section heading or end
+def _parse_verify_rows(section: str) -> list[dict]:
+    """Parse Verify table rows from an already-resolved section body."""
     rows: list[dict] = []
     in_table = False
     for line in section.splitlines():
@@ -113,6 +101,18 @@ def parse_verify_table(text: str) -> list[dict]:
         )
 
     return rows
+
+
+def parse_verify_table(text: str) -> list[dict]:
+    """Parse the canonical ### Verify table rows from SUMMARY.md text.
+
+    Returns a list of dicts with keys: check, command, claimed_exit, notes.
+    Placeholder rows (em-dash, <command>, or empty command) are excluded.
+    """
+    verify_match = re.search(r"^###\s+Verify\s*$", text, re.MULTILINE)
+    if not verify_match:
+        return []
+    return _parse_verify_rows(text[verify_match.end() :])
 
 
 def _is_placeholder(value: str) -> bool:
@@ -197,7 +197,7 @@ def check_lane_evidence(text: str) -> list[str]:
         verify = _section(text, "Verify")
         if verify is None:
             errors.append(f"lane `{lane}`: missing `### Verify` section")
-        elif not parse_verify_table(text):
+        elif not _parse_verify_rows(verify):
             errors.append(
                 f"lane `{lane}`: `### Verify` has no real command row "
                 "(all rows are placeholders)"

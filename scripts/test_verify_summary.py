@@ -471,6 +471,12 @@ class TestLaneEvidence:
             )
         )
 
+    def test_normal_accepts_supported_verify_heading_levels(self):
+        canonical = _lane_summary(lane="normal", verify=REAL_LANE_VERIFY)
+        for heading in ("# Verify", "## Verify"):
+            text = canonical.replace("### Verify", heading)
+            assert vs.check_lane_evidence(text) == []
+
     def test_high_risk_requires_a_real_rollback(self):
         complete = _lane_summary(
             lane="high-risk",
