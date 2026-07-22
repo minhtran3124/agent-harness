@@ -49,6 +49,13 @@ The loop (implement → test → review → fix) lacked an objective feature-lev
 ### Deviations
 
 - Rule 3 — Added missing `import os` in `scripts/check_verify_rows.py`; `main()`'s PLAN.md/SUMMARY.md routing calls `os.path.basename` but the tests exercised `check_plan_text` directly, so the omission slipped past the pytest suite. Caught by running the linter on this spec's own PLAN.md. Commit `fb37f7e`.
+- Plan gap (context-propagation audit FAIL) — Tasks 2.2/2.3 edited only the SKILL.md prose ("quote SC rows into the reviewer prompt") but the reusable dispatch templates `spec-reviewer-prompt.md` / `intent-reviewer-prompt.md` (not in either task's Files set) had no SC slot, so delivery to the isolated reviewers was `assumed`. Added the SC input slots + a Method step to both templates. Commit `7b44342`. PLAN 2.2/2.3 Files were under-scoped.
+
+### Review Findings (final-pass oracles over `main..HEAD`)
+
+- **B (fixed)** — reviewer-prompt templates lacked SC slots → context-propagation FAIL. Fixed in `7b44342` (see Deviations).
+- **A (open — needs decision, Rule 4 hook)** — `hooks/commit-quality-gate.sh` Check 1.6 runs `verify_summary.py --lane` against a `mktemp` copy of the staged SUMMARY, whose parent dir has no `PLAN.md`, so `_sc_map_for_summary` fail-opens and **SC coverage is never enforced at commit time**. The *designed* ship gate (`verify_summary.py --check <slug>`, task 2.2 handoff) resolves the real sibling PLAN.md and DOES enforce it, so the feature works as specified — but the plan Risk note's claim that "the commit gate enforces SC coverage on THIS spec" is false. Fix requires a hook edit (Rule 4 / high-blast) or a `--plan-dir` override on `verify_summary.py`. Corroborated independently by correctness-review #1 and the context-propagation audit #6.
+- **C (open — needs decision, ambiguous intent scope)** — The loop budget (cap + progress guard) was added only to `correctness-review`; the `intent-review` and per-task spec-reviewer fix-loops remain textually unbounded ("repeat until ✅"). Design deliberately scoped the budget to correctness-review's Rule 1–3 loop, but the verbatim request ("run test, review code ... hạn chế loop vô tận") reads as spanning all post-code review loops. Intent-review flagged this as a `gap` to surface, not silently resolve.
 
 ### Verify
 
