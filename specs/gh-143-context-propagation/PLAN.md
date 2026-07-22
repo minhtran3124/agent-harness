@@ -1,6 +1,6 @@
 ---
 slug: gh-143-context-propagation
-status: proposed
+status: active
 owner: Minh Tran
 created: 2026-07-22
 ---
