@@ -1,11 +1,11 @@
 # Research Brief — Phase 2 Wave 1 (zero-coupling deletes)
 
-Source: `docs/reviews/phase-2-deep-review-2026-07-16.md` (merged PR #77) → "Wave 1" items.
+Source: `docs/research/harness-review-improvements/reviews/phase-2-deep-review-2026-07-16.md` (merged PR #77) → "Wave 1" items.
 All claims below **re-verified fresh on 2026-07-17** in the main session (not trusted from the review):
 
 ## W1.1 — `scripts/context-monitor.py` (298 lines)
 
-- `grep -rn "context-monitor|context_monitor"` excluding `.git/.claude`: **only hits are docs/reviews/** (the audit docs themselves). Re-confirmed zero live refs.
+- `grep -rn "context-monitor|context_monitor"` excluding `.git/.claude`: **only hits are docs/research/harness-review-improvements/reviews/** (the audit docs themselves). Re-confirmed zero live refs.
 - `jq keys settings.json settings.local.json` → `["hooks"]` only — **no `statusLine` key** anywhere, so the script has no invocation path.
 - Not in harness-manifest.json, run-tests.sh, tests/, .github/.
 - **Delete = rm the file.** No coordinated edits.
@@ -13,7 +13,7 @@ All claims below **re-verified fresh on 2026-07-17** in the main session (not tr
 ## W1.2 — `REQ.md` (22 lines)
 
 - Zero refs in the doc-truth-lint scan set (CLAUDE.md, README.md, HARNESS.md, skills/README.md) — re-confirmed (`grep -n "REQ.md"` → no hits).
-- Remaining refs are prose/historical only: `docs/research-harness-req-assessment.md` (a per-question assessment OF REQ.md), `docs/harness-v03-plan-overview.md`, `docs/research/2026-07-03-deep-review…`, `specs/harness-reliability-improvements/{PLAN,SUMMARY}` (shipped), `specs/STATE.md` (breadcrumb noise).
+- Remaining refs are prose/historical only: `docs/research/harness-review-improvements/research-harness-req-assessment.md` (a per-question assessment OF REQ.md), `docs/harness-v03-plan-overview.md`, `docs/research/harness-review-improvements/2026-07-03-deep-review…`, `specs/harness-reliability-improvements/{PLAN,SUMMARY}` (shipped), `specs/STATE.md` (breadcrumb noise).
 - Courtesy step from the review: paste REQ.md's 6 questions into `research-harness-req-assessment.md`'s preamble so that assessment doesn't orphan its subject.
 
 ## W1.3 — `templates/TEST_MATRIX.template.md` (34 lines)

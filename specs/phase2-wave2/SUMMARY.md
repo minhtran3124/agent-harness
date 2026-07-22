@@ -9,7 +9,7 @@ Input-type: harness improvement
 
 ### Intent
 
-"merge v3 to main and start wave after that" — Phase 2 Wave 2 (coordinated deletes) per docs/reviews/phase-2-deep-review-2026-07-16.md.
+"merge v3 to main and start wave after that" — Phase 2 Wave 2 (coordinated deletes) per docs/research/harness-review-improvements/reviews/phase-2-deep-review-2026-07-16.md.
 
 ## What changed
 

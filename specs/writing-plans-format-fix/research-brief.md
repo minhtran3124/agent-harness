@@ -1,6 +1,6 @@
 # Research Brief — writing-plans format conflict (C1)
 
-Source finding: `docs/reviews/over-engineering-review-2026-07-16.md` §2 C1 (HIGH).
+Source finding: `docs/research/harness-review-improvements/reviews/over-engineering-review-2026-07-16.md` §2 C1 (HIGH).
 All claims below re-verified against the working tree on 2026-07-16.
 
 ## The conflict is three-way, not two-way

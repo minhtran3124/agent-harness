@@ -13,7 +13,7 @@ Input-type: harness improvement
 
 ### Intent
 
-Turn 1: "from docs/reviews/over-engineering-review-2026-07-16.md
+Turn 1: "from docs/research/harness-review-improvements/reviews/over-engineering-review-2026-07-16.md
 check C1. writing-plans teaches a plan format its own downstream gate rejects ✅ — HIGH
 research and review all aspects of the problem, create design + plan for it"
 

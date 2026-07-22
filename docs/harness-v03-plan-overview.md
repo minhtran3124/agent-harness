@@ -3,9 +3,9 @@
 - **Ngày:** 2026-07-03
 - **Verdict đã chốt:** IMPROVE in-place, không rewrite. Đặt tên chu kỳ là **v0.3** (minor bump theo CHANGELOG rule sẵn có — đụng hooks/ + settings.json).
 - **Nguồn (3 research):**
-  1. `docs/research/2026-07-03-deep-review-harness-trustworthiness.md` — 2 critical, 9 high, 12 medium (ID: DR-*)
-  2. `docs/research/2026-07-03-repository-harness-recheck-v2-proposal.md` — adoption audit + 5 phase v2 (ID: RC-*)
-  3. `docs/research-repository-harness-ideas.md` (2026-06-09) — 16 IDEA gốc, verdict adapt/skip còn hiệu lực
+  1. `docs/research/harness-review-improvements/2026-07-03-deep-review-harness-trustworthiness.md` — 2 critical, 9 high, 12 medium (ID: DR-*)
+  2. `docs/research/harness-review-improvements/2026-07-03-repository-harness-recheck-v2-proposal.md` — adoption audit + 5 phase v2 (ID: RC-*)
+  3. `docs/research/harness-review-improvements/research-repository-harness-ideas.md` (2026-06-09) — 16 IDEA gốc, verdict adapt/skip còn hiệu lực
 - **Tiền lệ format:** `docs/harness-gap-closure-plan.md`
 
 ---

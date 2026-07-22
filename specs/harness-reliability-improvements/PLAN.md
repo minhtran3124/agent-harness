@@ -10,7 +10,7 @@ created: 2026-06-11
 > **For Claude:** REQUIRED SUB-SKILL: Use subagent-driven-development (or executing-plans in a
 > parallel session) to execute this plan task-by-task.
 
-**Goal:** Execute the 6 priority items from `docs/research-harness-req-assessment.md` — complete the
+**Goal:** Execute the 6 priority items from `docs/research/harness-review-improvements/research-harness-req-assessment.md` — complete the
 `specs/` migration, answer Q3 (Affects + PROJECT.md), move proof to machine-verified, close the
 knowledge loop, and enable strict mode in CI.
 
@@ -27,7 +27,7 @@ Edit the **source tree** (root `hooks/`, `settings.json`, `skills/`) — do NOT 
 
 ## 1. Motivation
 
-The 2026-06-11 research (`docs/research-harness-req-assessment.md`) concluded: the repo answers
+The 2026-06-11 research (`docs/research/harness-review-improvements/research-harness-req-assessment.md`) concluded: the repo answers
 4 of the 6 REQ.md questions well, but (a) Q3 "which product contract is affected?" has no mechanism
 to answer it, (b) proof is self-reported (the Exit column is typed by hand, not re-run), (c) the
 knowledge loop is half-closed (pull-only), (d) removing `specs/` from gitignore (06-11) is only half

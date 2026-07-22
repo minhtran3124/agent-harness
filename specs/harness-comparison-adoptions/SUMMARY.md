@@ -26,7 +26,7 @@ Input-type: harness improvement
 
 ## What changed
 
-Research report written (`docs/research-claude-code-harness-comparison.md` + `.vi.md`).
+Research report written (`docs/research/harness-review-improvements/research-claude-code-harness-comparison.md` + `.vi.md`).
 This spec holds the decision-ready PLAN.md covering all 9 adoption ideas from that report,
 structured as independent tracks (1–9) so the user can greenlight a subset.
 

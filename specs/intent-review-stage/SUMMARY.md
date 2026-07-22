@@ -33,7 +33,7 @@ section + red flags + example + prompt list). Updated the inventory/handoff/chai
 
 ### Rationale
 
-The gap was diagnosed in the 2026-06-11 session (the conversation following `docs/research-harness-req-assessment.md`):
+The gap was diagnosed in the 2026-06-11 session (the conversation following `docs/research/harness-review-improvements/research-harness-req-assessment.md`):
 the current oracle chain validates code↔plan and code↔runtime but has no gate that validates
 result↔intent after completion; if intake misunderstands the intent, the entire chain passes consistently yet is still wrong.
 The hard gate (templates/ + workflow) was authorized directly by the user via the explicit named request

@@ -1,6 +1,6 @@
 # Research Brief — Phase 2 Wave 2 (coordinated deletes)
 
-Source: `docs/reviews/phase-2-deep-review-2026-07-16.md` Wave 2. Re-verified fresh 2026-07-17 on `feat/phase2-wave2` (branched from v3, synced with main post-#80).
+Source: `docs/research/harness-review-improvements/reviews/phase-2-deep-review-2026-07-16.md` Wave 2. Re-verified fresh 2026-07-17 on `feat/phase2-wave2` (branched from v3, synced with main post-#80).
 
 ## W2.1 — `check_plan_format.py` (198) + `test_check_plan_format.py` (242)
 

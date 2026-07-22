@@ -15,7 +15,7 @@ created: 2026-07-17
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
 | 1 | 1.1 | Delete context-monitor.py (wave 1) | scripts/context-monitor.py | File gone; zero refs outside docs/reviews; nothing else changed. |
-| 1 | 1.2 | Delete REQ.md, preserve its questions in the assessment doc (wave 1) | REQ.md, docs/research-harness-req-assessment.md | REQ.md gone; assessment doc self-contained; doc-truth lint green. |
+| 1 | 1.2 | Delete REQ.md, preserve its questions in the assessment doc (wave 1) | REQ.md, docs/research/harness-review-improvements/research-harness-req-assessment.md | REQ.md gone; assessment doc self-contained; doc-truth lint green. |
 | 1 | 1.3 | Delete TEST_MATRIX template and its three prose mandates (wave 1) | templates/TEST_MATRIX.template.md, rules/orchestration.md, HARNESS.md, README.md | Template gone; zero non-historical mandates remain; lint green. |
 | 1 | 1.4 | Remove the deploy-harness spinner animation, keep step() contract (wave 1) | scripts/deploy-harness.sh | Animation gone; step()/✓ output and all installer test suites unchanged and gree… |
 | 2 | 2.1 | Full-suite regression + machine-verified evidence (wave 2) | specs/phase2-wave1/SUMMARY.md | ALL GREEN; SUMMARY proof machine-verified; strict gate will pass on CI. |
@@ -44,7 +44,7 @@ flowchart LR
 
 ## 1. Motivation
 
-First execution wave of issue #67 Phase 2, scoped to the four items `docs/reviews/phase-2-deep-review-2026-07-16.md` verified as deletable with no coordinated machine edits (~375 lines). Fresh re-verification: `specs/phase2-wave1/research-brief.md`; decisions: `design.md`.
+First execution wave of issue #67 Phase 2, scoped to the four items `docs/research/harness-review-improvements/reviews/phase-2-deep-review-2026-07-16.md` verified as deletable with no coordinated machine edits (~375 lines). Fresh re-verification: `specs/phase2-wave1/research-brief.md`; decisions: `design.md`.
 
 ## 2. Non-goals
 
@@ -52,7 +52,7 @@ Wave 2 (check_plan_format.py, harness-audit check #4, PR_TEMPLATE.md), Wave 3 ow
 
 ## 3. Success Criteria
 
-- The four items are gone; no live reference to any of them survives outside historical docs (docs/reviews/, docs/research*, shipped specs).
+- The four items are gone; no live reference to any of them survives outside historical docs (docs/research/harness-review-improvements/reviews/, docs/research*, shipped specs).
 - Full harness suite + doc-truth lint green; installer test suites byte-green (spinner trim invisible to them).
 - CI strict gate satisfied: this spec's SUMMARY declares `Lane: high-risk` and its Verify table passes `verify_summary.py --check`.
 
@@ -67,9 +67,9 @@ Wave 2 (check_plan_format.py, harness-audit check #4, PR_TEMPLATE.md), Wave 3 ow
 
 ### Task 1.2 — Delete REQ.md, preserve its questions in the assessment doc (wave 1)
 
-- **Files:** REQ.md, docs/research-harness-req-assessment.md
-- **Action:** Prepend a "Source questions (from REQ.md, deleted 2026-07-17)" block to docs/research-harness-req-assessment.md quoting REQ.md's 6 questions verbatim, then `git rm REQ.md`. Do not touch other historical docs that mention REQ.md.
-- **Verify:** `bash -c 'test ! -f REQ.md && grep -q "Source questions" docs/research-harness-req-assessment.md && bash scripts/lint-doc-truth.sh'`
+- **Files:** REQ.md, docs/research/harness-review-improvements/research-harness-req-assessment.md
+- **Action:** Prepend a "Source questions (from REQ.md, deleted 2026-07-17)" block to docs/research/harness-review-improvements/research-harness-req-assessment.md quoting REQ.md's 6 questions verbatim, then `git rm REQ.md`. Do not touch other historical docs that mention REQ.md.
+- **Verify:** `bash -c 'test ! -f REQ.md && grep -q "Source questions" docs/research/harness-review-improvements/research-harness-req-assessment.md && bash scripts/lint-doc-truth.sh'`
 - **Done:** REQ.md gone; assessment doc self-contained; doc-truth lint green.
 
 ### Task 1.3 — Delete TEST_MATRIX template and its three prose mandates (wave 1)

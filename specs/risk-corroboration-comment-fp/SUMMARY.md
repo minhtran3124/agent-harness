@@ -9,7 +9,7 @@ Input-type: harness improvement
 
 ### Intent
 
-"merge PR #71 và tiếp tục C4" — per docs/reviews/over-engineering-review-2026-07-16.md §2 C4: the documented risk-corroboration false positive (auth words like "session"/"permission" in comments under tests/) is still unfixed; apply the repo's own failure memo.
+"merge PR #71 và tiếp tục C4" — per docs/research/harness-review-improvements/reviews/over-engineering-review-2026-07-16.md §2 C4: the documented risk-corroboration false positive (auth words like "session"/"permission" in comments under tests/) is still unfixed; apply the repo's own failure memo.
 
 ## What changed
 

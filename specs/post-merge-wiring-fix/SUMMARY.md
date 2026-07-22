@@ -9,7 +9,7 @@ Input-type: harness improvement
 
 ### Intent
 
-"merge PR #70 và tiếp tục C3" — per docs/reviews/over-engineering-review-2026-07-16.md §2 C3: post-merge-maintenance.yml fires only on `branches: [v2]` but PRs now merge to `main`; bookkeeping.sh + audit-trend JSONL are inert. Fix: one line (`branches: [main]`) — or retire the pipeline.
+"merge PR #70 và tiếp tục C3" — per docs/research/harness-review-improvements/reviews/over-engineering-review-2026-07-16.md §2 C3: post-merge-maintenance.yml fires only on `branches: [v2]` but PRs now merge to `main`; bookkeeping.sh + audit-trend JSONL are inert. Fix: one line (`branches: [main]`) — or retire the pipeline.
 
 ## What changed
 

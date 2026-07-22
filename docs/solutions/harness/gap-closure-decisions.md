@@ -8,7 +8,7 @@ supersedes: null
 confidence: high
 confirmed_at: 2026-07-17
 affects:
-  - docs/research-openai-harness-engineering.md
+  - docs/research/harness-review-improvements/research-openai-harness-engineering.md
   - hooks/protected-path-guard.sh
   - settings.json
 ---

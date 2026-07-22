@@ -9,7 +9,7 @@ created: 2026-07-03
 
 ## 1. Motivation
 
-Adoption audit (docs/research/2026-07-03-repository-harness-recheck-v2-proposal.md) proved the
+Adoption audit (docs/research/harness-review-improvements/2026-07-03-repository-harness-recheck-v2-proposal.md) proved the
 trust-ledger, CHANGELOG, and VERSION all flatlined on 2026-06-14 because they require manual
 append. Make them written by the **merge event** instead: a GitHub Action on PR-merge opens a
 bookkeeping PR that appends the ledger row, inserts a CHANGELOG section, and bumps VERSION.

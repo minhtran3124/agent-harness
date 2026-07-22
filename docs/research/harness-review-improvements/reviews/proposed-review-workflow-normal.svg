@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 1320" role="img" aria-labelledby="title desc" font-family="system-ui, sans-serif" font-size="14" fill="#0f172a">
+  <title id="title">Normal lane review workflow</title>
+  <desc id="desc">Normal changes use one combined task review, one or two correctness methods selected by change type, no per-finding scorer, and intent review only when confidence is not high. Final review evidence is pinned to HEAD.</desc>
+  <defs>
+    <style>
+      .title { font: 600 30px system-ui, sans-serif; fill: #0f172a; }
+      .subtitle { font: 400 17px system-ui, sans-serif; fill: #475569; }
+      .label { font: 500 15px system-ui, sans-serif; fill: #0f172a; }
+      .body { font: 400 14px system-ui, sans-serif; fill: #0f172a; }
+      .small { font: 400 13px system-ui, sans-serif; fill: #475569; }
+      .node { fill: #f8fafc; stroke: #94a3b8; stroke-width: 1.5; }
+      .state { fill: #eff6ff; stroke: #3b82f6; stroke-width: 1.8; }
+      .decision { fill: #fff7ed; stroke: #f97316; stroke-width: 1.8; }
+      .persist { fill: #f5f3ff; stroke: #8b5cf6; stroke-width: 1.8; }
+      .success { fill: #ecfdf5; stroke: #10b981; stroke-width: 1.8; }
+      .danger { fill: #fef2f2; stroke: #ef4444; stroke-width: 1.8; }
+      .edge { fill: none; stroke: #475569; stroke-width: 1.8; marker-end: url(#arrow); }
+      .return { fill: none; stroke: #2563eb; stroke-width: 2; stroke-dasharray: 7 5; marker-end: url(#arrowBlue); }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#475569"/></marker>
+    <marker id="arrowBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#2563eb"/></marker>
+  </defs>
+  <rect width="1300" height="1320" fill="#ffffff"/>
+  <text x="60" y="65" class="title" font-size="30" font-weight="600" fill="#0f172a">Normal lane</text>
+  <text x="60" y="100" class="subtitle" font-size="17" font-weight="400" fill="#475569">Mục tiêu: 2–3 review calls; chọn đúng method thay vì chạy toàn bộ stack.</text>
+
+  <rect x="60" y="132" width="560" height="62" rx="10" class="state" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.8"/>
+  <text x="84" y="158" class="small">DEFAULT PROFILE</text>
+  <text x="84" y="181" class="body">Combined task review · 1–2 correctness methods · no scorer</text>
+  <rect x="650" y="132" width="590" height="62" rx="10" class="node" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="674" y="158" class="small">CONDITIONAL</text>
+  <text x="674" y="181" class="body">Intent review only when Confidence ≠ high</text>
+
+  <rect x="420" y="232" width="460" height="78" rx="10" class="state" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.8"/>
+  <text x="650" y="264" text-anchor="middle" class="label">Feature intake + deterministic prechecks</text>
+  <text x="650" y="290" text-anchor="middle" class="small">Intent · Lane · Confidence · change type</text>
+
+  <rect x="420" y="355" width="460" height="86" rx="10" class="node" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="650" y="388" text-anchor="middle" class="label">Implement task</text>
+  <text x="650" y="416" text-anchor="middle" class="body">Fresh implementer context</text>
+  <path d="M650 310V355" class="edge" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow)"/>
+
+  <rect x="420" y="485" width="460" height="108" rx="10" class="node" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="650" y="518" text-anchor="middle" class="label">One combined task review</text>
+  <text x="650" y="548" text-anchor="middle" class="body">Spec compliance + code quality</text>
+  <text x="650" y="575" text-anchor="middle" class="small">Same task/PLAN oracle, so one reviewer context</text>
+  <path d="M650 441V485" class="edge" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <path d="M420 539H345V398H420" class="return" fill="none" stroke="#2563eb" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrowBlue)"/>
+  <text x="326" y="473" text-anchor="end" class="small">finding → fix</text>
+
+  <rect x="250" y="640" width="800" height="170" rx="20" class="persist" fill="#f5f3ff" stroke="#8b5cf6" stroke-width="1.8"/>
+  <text x="650" y="675" text-anchor="middle" class="label">Select at most 1–2 correctness methods by change type</text>
+  <text x="360" y="708" class="body">Local implementation</text><text x="675" y="708" class="body">→ enclosing-function</text>
+  <text x="360" y="732" class="body">Deleted/replaced behavior</text><text x="675" y="732" class="body">→ removed-behavior</text>
+  <text x="360" y="756" class="body">Contract/signature</text><text x="675" y="756" class="body">→ call-site-impact</text>
+  <text x="360" y="780" class="body">Guard/error path</text><text x="675" y="780" class="body">→ guard-completeness</text>
+  <text x="360" y="804" class="body">Prompt/rule/isolation</text><text x="675" y="804" class="body">→ context-propagation</text>
+  <path d="M650 593V640" class="edge" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow)"/>
+
+  <polygon points="650,850 805,905 650,960 495,905" class="decision" fill="#fff7ed" stroke="#f97316" stroke-width="1.8"/>
+  <text x="650" y="898" text-anchor="middle" class="label">Finding?</text>
+  <text x="650" y="924" text-anchor="middle" class="small">Confirmed vs unknown/advisory</text>
+  <path d="M650 810V850" class="edge" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow)"/>
+
+  <rect x="930" y="865" width="300" height="80" rx="10" class="danger" fill="#fef2f2" stroke="#ef4444" stroke-width="1.8"/>
+  <text x="1080" y="896" text-anchor="middle" class="label">Confirmed → fix</text>
+  <text x="1080" y="923" text-anchor="middle" class="small">Then rerun selected method</text>
+  <path d="M805 905H930" class="edge" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <path d="M1080 865V830H1075V725H1050" class="return" fill="none" stroke="#2563eb" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrowBlue)"/>
+
+  <polygon points="650,1000 800,1050 650,1100 500,1050" class="decision" fill="#fff7ed" stroke="#f97316" stroke-width="1.8"/>
+  <text x="650" y="1044" text-anchor="middle" class="label">Confidence high?</text>
+  <text x="650" y="1070" text-anchor="middle" class="small">Advisories are recorded, not scored</text>
+  <path d="M650 960V1000" class="edge" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow)"/>
+
+  <rect x="925" y="1010" width="305" height="80" rx="10" class="node" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="1077" y="1042" text-anchor="middle" class="label">Intent review</text>
+  <text x="1077" y="1068" text-anchor="middle" class="small">Only medium / low confidence</text>
+  <path d="M800 1050H925" class="edge" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <text x="852" y="1034" class="small">NO</text>
+  <path d="M1077 1090V1130H650" class="edge" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow)"/>
+
+  <rect x="420" y="1130" width="460" height="86" rx="20" class="persist" fill="#f5f3ff" stroke="#8b5cf6" stroke-width="1.8"/>
+  <text x="650" y="1162" text-anchor="middle" class="label">Review receipt</text>
+  <text x="650" y="1190" text-anchor="middle" class="body">reviewed_head_sha = current HEAD</text>
+  <path d="M650 1100V1130" class="edge" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <text x="670" y="1118" class="small">YES</text>
+
+  <polygon points="650,1245 755,1280 650,1315 545,1280" class="decision" fill="#fff7ed" stroke="#f97316" stroke-width="1.8"/>
+  <text x="650" y="1275" text-anchor="middle" class="label">HEAD changed?</text>
+  <text x="650" y="1297" text-anchor="middle" class="small">No → open PR</text>
+  <path d="M650 1216V1245" class="edge" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <path d="M545 1280H175V725H250" class="return" fill="none" stroke="#2563eb" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrowBlue)"/>
+  <text x="45" y="1000" class="small">YES · rerun</text>
+  <text x="45" y="1022" class="small">selected review</text>
+</svg>

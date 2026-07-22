@@ -6,7 +6,7 @@ Two related-but-distinct changes to the skill framework, one commit each.
 
 Adds a **final whole-diff adversarial correctness review** to `subagent-driven-development`, then upgrades it with three mechanics borrowed from Every's `/ce-code-review` (compared against Boris's `/code-review` during design):
 
-- **C — compound read-back:** the reviewer reads `docs/solutions/critical-patterns.md` + the `failure` track (graceful when absent), turning each past bug into a check. **Closes the compound loop at review time** — previously only `/xia2` and `/brainstorming` pulled from `docs/solutions/` (see `docs/research-compound-loop-closure.md`).
+- **C — compound read-back:** the reviewer reads `docs/solutions/critical-patterns.md` + the `failure` track (graceful when absent), turning each past bug into a check. **Closes the compound loop at review time** — previously only `/xia2` and `/brainstorming` pulled from `docs/solutions/` (see `docs/research/harness-review-improvements/research-compound-loop-closure.md`).
 - **D — two-axis classification:** every finding carries `Severity P0–P3` × `Rule 1–4` (reuses `.claude/rules/auto-correct-scope.md`, no new taxonomy).
 - **E — residual work gate:** unresolved findings must land in `SUMMARY.md` (Rule 1–3) or `ESCALATIONS.md` (Rule 4); nothing silently dropped.
 

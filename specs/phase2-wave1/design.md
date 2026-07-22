@@ -1,7 +1,7 @@
 # Design — Phase 2 Wave 1: zero-coupling deletes
 
 Status: proposed · Companions: `research-brief.md` (fresh re-verification), `PLAN.md`.
-Source: `docs/reviews/phase-2-deep-review-2026-07-16.md` Wave 1 (merged PR #77); parent: issue #67 Phase 2.
+Source: `docs/research/harness-review-improvements/reviews/phase-2-deep-review-2026-07-16.md` Wave 1 (merged PR #77); parent: issue #67 Phase 2.
 
 ## Goal
 
@@ -11,7 +11,7 @@ Delete the four verified zero-coupling dead-weight items (~375 lines) with zero 
 
 1. **`context-monitor.py` — plain delete.** Zero refs re-confirmed; no coordinated edits exist by construction. No tombstone note needed — the two review docs record its story.
 
-2. **`REQ.md` — delete + preserve the questions where they are actually used.** Its only living function is as the subject of `docs/research-harness-req-assessment.md`. Rather than leaving that assessment pointing at a deleted file, prepend a short "Source questions (from REQ.md, deleted 2026-07-17)" block quoting the 6 questions verbatim. Rejected alternative: folding REQ.md into README — nothing in README's audience needs a historical research prompt.
+2. **`REQ.md` — delete + preserve the questions where they are actually used.** Its only living function is as the subject of `docs/research/harness-review-improvements/research-harness-req-assessment.md`. Rather than leaving that assessment pointing at a deleted file, prepend a short "Source questions (from REQ.md, deleted 2026-07-17)" block quoting the 6 questions verbatim. Rejected alternative: folding REQ.md into README — nothing in README's audience needs a historical research prompt.
 
 3. **`TEST_MATRIX.template.md` — delete template AND all 3 mandates in the same commit.** The review's key insight is that prose claiming a mechanism nothing runs is the same defect class as C5 (unenforced fiction). Replacement wording keeps the true part of each sentence — SUMMARY's `### Verify` is the behavior-to-proof surface:
    - `rules/orchestration.md:62` → single sentence: behavior-to-proof lives in the SUMMARY `### Verify` table (a row per check actually run).

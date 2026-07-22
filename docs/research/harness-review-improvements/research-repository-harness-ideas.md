@@ -81,7 +81,7 @@
 Giữ **trọng số trong data** (assoc array / json sidecar) vì caveat của họ đúng: trọng số là magic number chưa hiệu chỉnh. **Báo cả tổng thô lẫn banded** — đừng `min(100)` âm thầm. Emit JSONL vào `docs/harness-experimental/audit-log.jsonl`, wire như dòng opt-in trong `harness-status.sh`, **không** làm blocking hook.
 
 ### IDEA-05 — Generator self-improvement từ friction tích lũy (fit 68)
-**Gap:** tín hiệu `Harness-Delta` (fix-direct/backlog/none) trong SUMMARY là gitignored → **chết ngõ cụt**; `/compound` chỉ đọc 1 phiên, không đếm xuyên phiên. `docs/research-compound-loop-closure.md` của ta đã chẩn loop này "mở/bán-khép".
+**Gap:** tín hiệu `Harness-Delta` (fix-direct/backlog/none) trong SUMMARY là gitignored → **chết ngõ cụt**; `/compound` chỉ đọc 1 phiên, không đếm xuyên phiên. `docs/research/harness-review-improvements/research-compound-loop-closure.md` của ta đã chẩn loop này "mở/bán-khép".
 **Reshape (markdown/grep, hybrid):**
 1. Thêm cột `Harness-Delta` vào ledger `docs/harness-experimental/trust-metrics.md` (committed, dòng có ngày);
 2. Mở rộng `harness-status.sh --propose`: group friction theo key normalize, gate count≥2, confidence (high≥3 else medium), emit proposal;

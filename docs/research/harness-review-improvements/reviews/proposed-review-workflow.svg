@@ -1,0 +1,254 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 1500" role="img" aria-labelledby="title desc">
+  <title id="title">Proposed risk-scaled code review workflow</title>
+  <desc id="desc">A workflow in which lane controls review depth and change type controls review methods. Tiny changes use deterministic checks, normal changes use combined task review and one or two selected correctness methods, and high-risk changes use a fuller application or workflow-engine review. Every final review is pinned to the current HEAD SHA.</desc>
+
+  <defs>
+    <style>
+      :root {
+        --bg: #f8fafc;
+        --surface: #ffffff;
+        --surface-2: #f1f5f9;
+        --text: #172033;
+        --muted: #5d6b82;
+        --line: #94a3b8;
+        --border: #cbd5e1;
+        --shared: #2563eb;
+        --shared-soft: #dbeafe;
+        --tiny: #0f766e;
+        --tiny-soft: #ccfbf1;
+        --normal: #a16207;
+        --normal-soft: #fef3c7;
+        --high: #b42318;
+        --high-soft: #fee2e2;
+        --engine: #6d28d9;
+        --engine-soft: #ede9fe;
+        --ok: #15803d;
+        --ok-soft: #dcfce7;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0f172a;
+          --surface: #162033;
+          --surface-2: #1e293b;
+          --text: #e5edf8;
+          --muted: #a8b4c8;
+          --line: #64748b;
+          --border: #40506a;
+          --shared: #60a5fa;
+          --shared-soft: #172f53;
+          --tiny: #5eead4;
+          --tiny-soft: #123b3b;
+          --normal: #facc15;
+          --normal-soft: #473812;
+          --high: #fca5a5;
+          --high-soft: #4a2025;
+          --engine: #c4b5fd;
+          --engine-soft: #33265d;
+          --ok: #86efac;
+          --ok-soft: #173e2a;
+        }
+      }
+      text { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: var(--text); }
+      .title { font-size: 38px; font-weight: 500; }
+      .subtitle { font-size: 20px; fill: var(--muted); }
+      .section { font-size: 24px; font-weight: 500; }
+      .label { font-size: 19px; font-weight: 500; }
+      .body { font-size: 17px; }
+      .small { font-size: 15px; fill: var(--muted); }
+      .lane { fill: var(--surface); stroke: var(--border); stroke-width: 2; }
+      .node { fill: var(--surface); stroke: var(--border); stroke-width: 2; }
+      .shared { fill: var(--shared-soft); stroke: var(--shared); }
+      .tiny { fill: var(--tiny-soft); stroke: var(--tiny); }
+      .normal { fill: var(--normal-soft); stroke: var(--normal); }
+      .high { fill: var(--high-soft); stroke: var(--high); }
+      .engine { fill: var(--engine-soft); stroke: var(--engine); }
+      .ok { fill: var(--ok-soft); stroke: var(--ok); }
+      .axis { fill: var(--surface-2); stroke: var(--border); stroke-width: 1.5; }
+      .arrow { fill: none; stroke: var(--line); stroke-width: 3; marker-end: url(#arrow); }
+      .feedback { fill: none; stroke: var(--normal); stroke-width: 2.5; stroke-dasharray: 8 7; marker-end: url(#arrow-normal); }
+      .feedback-high { fill: none; stroke: var(--high); stroke-width: 2.5; stroke-dasharray: 8 7; marker-end: url(#arrow-high); }
+      .stale { fill: none; stroke: var(--engine); stroke-width: 3; stroke-dasharray: 10 8; marker-end: url(#arrow-engine); }
+      .divider { stroke: var(--border); stroke-width: 2; }
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--line)"/>
+    </marker>
+    <marker id="arrow-normal" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--normal)"/>
+    </marker>
+    <marker id="arrow-high" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--high)"/>
+    </marker>
+    <marker id="arrow-engine" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--engine)"/>
+    </marker>
+  </defs>
+
+  <rect width="1800" height="1500" fill="var(--bg)"/>
+
+  <text x="70" y="68" class="title">Risk-scaled review workflow</text>
+  <text x="70" y="103" class="subtitle">Không thêm reviewer luôn chạy — chọn review theo risk và loại thay đổi.</text>
+
+  <rect x="70" y="132" width="365" height="62" rx="18" class="axis"/>
+  <text x="92" y="158" class="small">TRỤC 1 · LANE</text>
+  <text x="92" y="181" class="body">Quyết định độ sâu review</text>
+  <rect x="455" y="132" width="465" height="62" rx="18" class="axis"/>
+  <text x="477" y="158" class="small">TRỤC 2 · CHANGE TYPE</text>
+  <text x="477" y="181" class="body">Quyết định review method</text>
+  <rect x="940" y="132" width="790" height="62" rx="18" class="axis"/>
+  <text x="962" y="158" class="small">NGUYÊN TẮC</text>
+  <text x="962" y="181" class="body">Deterministic proof trước · LLM chỉ chạy khi method phù hợp</text>
+
+  <rect x="100" y="228" width="250" height="74" rx="18" class="node shared"/>
+  <text x="225" y="259" text-anchor="middle" class="label">User request</text>
+  <text x="225" y="283" text-anchor="middle" class="small">Original intent</text>
+  <rect x="430" y="228" width="300" height="74" rx="18" class="node shared"/>
+  <text x="580" y="259" text-anchor="middle" class="label">Feature intake</text>
+  <text x="580" y="283" text-anchor="middle" class="small">Lane · Confidence · Intent</text>
+  <rect x="810" y="228" width="330" height="74" rx="18" class="node shared"/>
+  <text x="975" y="259" text-anchor="middle" class="label">Classify change type</text>
+  <text x="975" y="283" text-anchor="middle" class="small">App · Contract · Workflow engine</text>
+  <rect x="1220" y="228" width="430" height="74" rx="18" class="node ok"/>
+  <text x="1435" y="259" text-anchor="middle" class="label">Deterministic checks first</text>
+  <text x="1435" y="283" text-anchor="middle" class="small">Hooks · lint · tests · graph/registry checks</text>
+
+  <path d="M350 265 H430" class="arrow"/>
+  <path d="M730 265 H810" class="arrow"/>
+  <path d="M1140 265 H1220" class="arrow"/>
+  <path d="M1435 302 V338 H900" class="arrow"/>
+
+  <!-- Lane containers -->
+  <rect x="55" y="360" width="500" height="765" rx="26" class="lane"/>
+  <rect x="650" y="360" width="500" height="765" rx="26" class="lane"/>
+  <rect x="1245" y="360" width="500" height="865" rx="26" class="lane"/>
+
+  <rect x="55" y="360" width="500" height="62" rx="26" class="tiny"/>
+  <rect x="650" y="360" width="500" height="62" rx="26" class="normal"/>
+  <rect x="1245" y="360" width="500" height="62" rx="26" class="high"/>
+  <text x="305" y="400" text-anchor="middle" class="section">TINY</text>
+  <text x="900" y="400" text-anchor="middle" class="section">NORMAL</text>
+  <text x="1495" y="400" text-anchor="middle" class="section">HIGH-RISK</text>
+
+  <!-- Lane fork -->
+  <circle cx="900" cy="338" r="7" fill="var(--shared)"/>
+  <path d="M900 338 H305 V455" class="arrow"/>
+  <path d="M900 338 V455" class="arrow"/>
+  <path d="M900 338 H1495 V455" class="arrow"/>
+
+  <!-- Tiny -->
+  <rect x="115" y="455" width="380" height="92" rx="18" class="node tiny"/>
+  <text x="305" y="489" text-anchor="middle" class="label">No default LLM review</text>
+  <text x="305" y="518" text-anchor="middle" class="body">Focused tests + existing hooks</text>
+  <rect x="115" y="602" width="380" height="112" rx="18" class="node"/>
+  <text x="305" y="635" text-anchor="middle" class="label">Evidence</text>
+  <text x="305" y="666" text-anchor="middle" class="body">Commands · exits · touched files</text>
+  <text x="305" y="693" text-anchor="middle" class="small">Escalate only on ambiguity or hard gate</text>
+  <path d="M305 547 V602" class="arrow"/>
+  <path d="M305 714 V1306 H555" class="arrow"/>
+
+  <!-- Normal -->
+  <rect x="710" y="455" width="380" height="92" rx="18" class="node normal"/>
+  <text x="900" y="487" text-anchor="middle" class="label">Implement task</text>
+  <text x="900" y="517" text-anchor="middle" class="body">One focused implementer context</text>
+  <rect x="710" y="585" width="380" height="105" rx="18" class="node normal"/>
+  <text x="900" y="617" text-anchor="middle" class="label">Combined task review</text>
+  <text x="900" y="646" text-anchor="middle" class="body">Spec compliance + code quality</text>
+  <text x="900" y="672" text-anchor="middle" class="small">One call because both use task/PLAN context</text>
+  <rect x="710" y="730" width="380" height="118" rx="18" class="node normal"/>
+  <text x="900" y="762" text-anchor="middle" class="label">Select 1–2 methods</text>
+  <text x="900" y="791" text-anchor="middle" class="body">Enclosing · Removed behavior</text>
+  <text x="900" y="818" text-anchor="middle" class="body">Call-site · Guard · Prior-art</text>
+  <rect x="710" y="894" width="380" height="104" rx="18" class="node"/>
+  <text x="900" y="927" text-anchor="middle" class="label">Intent review?</text>
+  <text x="900" y="958" text-anchor="middle" class="body">Only when Confidence ≠ high</text>
+  <text x="900" y="981" text-anchor="middle" class="small">No per-finding scorer in normal lane</text>
+  <path d="M900 547 V585" class="arrow"/>
+  <path d="M900 690 V730" class="arrow"/>
+  <path d="M900 848 V894" class="arrow"/>
+  <path d="M900 998 V1260" class="arrow"/>
+  <path d="M710 638 H675 V501 H710" class="feedback"/>
+  <text x="662" y="573" text-anchor="end" class="small">fix loop</text>
+
+  <!-- High-risk -->
+  <rect x="1305" y="455" width="380" height="92" rx="18" class="node high"/>
+  <text x="1495" y="487" text-anchor="middle" class="label">Implement + task review</text>
+  <text x="1495" y="517" text-anchor="middle" class="body">Full evidence contract</text>
+
+  <rect x="1280" y="588" width="200" height="128" rx="18" class="node high"/>
+  <text x="1380" y="620" text-anchor="middle" class="label">App code</text>
+  <text x="1380" y="650" text-anchor="middle" class="body">Relevant full pack</text>
+  <text x="1380" y="678" text-anchor="middle" class="body">up to 6 methods</text>
+  <text x="1380" y="701" text-anchor="middle" class="small">Only relevant angles</text>
+
+  <rect x="1510" y="588" width="200" height="128" rx="18" class="node engine"/>
+  <text x="1610" y="620" text-anchor="middle" class="label">Workflow engine</text>
+  <text x="1610" y="650" text-anchor="middle" class="body">Context audit</text>
+  <text x="1610" y="678" text-anchor="middle" class="body">+ behavior methods</text>
+  <text x="1610" y="701" text-anchor="middle" class="small">Not generic runtime stack</text>
+
+  <rect x="1305" y="760" width="380" height="135" rx="18" class="node engine"/>
+  <text x="1495" y="793" text-anchor="middle" class="label">Workflow context contract</text>
+  <text x="1495" y="824" text-anchor="middle" class="body">Canonical source → every consumer</text>
+  <text x="1495" y="852" text-anchor="middle" class="body">Delivery proof + mutation fixtures</text>
+  <text x="1495" y="878" text-anchor="middle" class="small">Assumed / unknown delivery blocks completion</text>
+
+  <rect x="1305" y="937" width="380" height="92" rx="18" class="node high"/>
+  <text x="1495" y="969" text-anchor="middle" class="label">Dedup + independent scorer</text>
+  <text x="1495" y="999" text-anchor="middle" class="body">Only for high-risk findings</text>
+
+  <rect x="1270" y="1060" width="130" height="52" rx="16" class="node high"/>
+  <text x="1335" y="1092" text-anchor="middle" class="body">Rule 1–3</text>
+  <rect x="1430" y="1060" width="130" height="52" rx="16" class="node ok"/>
+  <text x="1495" y="1092" text-anchor="middle" class="body">Clean / advisory</text>
+  <rect x="1590" y="1060" width="130" height="52" rx="16" class="node high"/>
+  <text x="1655" y="1092" text-anchor="middle" class="body">Rule 4</text>
+
+  <rect x="1270" y="1140" width="270" height="72" rx="18" class="node high"/>
+  <text x="1405" y="1169" text-anchor="middle" class="label">Intent review</text>
+  <text x="1405" y="1195" text-anchor="middle" class="small">Always for high-risk</text>
+  <rect x="1570" y="1140" width="150" height="72" rx="18" class="node high"/>
+  <text x="1645" y="1169" text-anchor="middle" class="label">Human</text>
+  <text x="1645" y="1195" text-anchor="middle" class="small">Ambiguity / Rule 4</text>
+
+  <path d="M1495 547 V570 H1380 V588" class="arrow"/>
+  <path d="M1495 570 H1610 V588" class="arrow"/>
+  <path d="M1380 716 V735 H1495 V760" class="arrow"/>
+  <path d="M1610 716 V760" class="arrow"/>
+  <path d="M1495 895 V937" class="arrow"/>
+  <path d="M1495 1029 V1045 H1335 V1060" class="arrow"/>
+  <path d="M1495 1045 V1060" class="arrow"/>
+  <path d="M1495 1045 H1655 V1060" class="arrow"/>
+  <path d="M1335 1112 V1125 H1230 V501 H1305" class="feedback-high"/>
+  <text x="1215" y="817" text-anchor="end" class="small">fresh fix loop</text>
+  <path d="M1495 1112 V1125 H1405 V1140" class="arrow"/>
+  <path d="M1655 1112 V1140" class="arrow"/>
+  <path d="M1540 1176 H1570" class="arrow"/>
+  <path d="M1405 1212 V1306 H1245" class="arrow"/>
+  <path d="M1645 1212 H1765 V325 H975 V228" class="feedback-high"/>
+
+  <!-- Shared final gate -->
+  <rect x="555" y="1260" width="690" height="92" rx="20" class="node ok"/>
+  <text x="900" y="1292" text-anchor="middle" class="label">Machine-readable review receipt</text>
+  <text x="900" y="1322" text-anchor="middle" class="body">reviewed_head_sha = current HEAD · methods · result · unresolved count</text>
+
+  <polygon points="900,1370 1025,1415 900,1460 775,1415" class="node shared"/>
+  <text x="900" y="1409" text-anchor="middle" class="label">HEAD changed?</text>
+  <text x="900" y="1435" text-anchor="middle" class="small">Receipt freshness gate</text>
+  <path d="M900 1352 V1370" class="arrow"/>
+
+  <rect x="1215" y="1378" width="255" height="74" rx="18" class="node ok"/>
+  <text x="1343" y="1409" text-anchor="middle" class="label">Open PR</text>
+  <text x="1343" y="1434" text-anchor="middle" class="small">Human reviews and merges</text>
+  <path d="M1025 1415 H1215" class="arrow"/>
+  <text x="1115" y="1400" text-anchor="middle" class="small">NO</text>
+
+  <path d="M775 1415 H440 V325 H975 V228" class="stale"/>
+  <text x="423" y="892" text-anchor="end" class="small">YES · receipt stale</text>
+
+  <!-- Compact method legend -->
+  <line x1="90" y1="1170" x2="475" y2="1170" class="divider"/>
+  <text x="90" y="1200" class="small">NORMAL METHOD SELECTION</text>
+  <text x="90" y="1227" class="body">Local → enclosing · Delete → removed behavior</text>
+  <text x="90" y="1253" class="body">Contract → call-site · Guard → completeness</text>
+  <text x="90" y="1279" class="body">Prompt/rule/isolation → context propagation</text>
+</svg>

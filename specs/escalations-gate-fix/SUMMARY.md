@@ -9,7 +9,7 @@ Input-type: harness improvement
 
 ### Intent
 
-"merge PR #72 và #73, tiếp tục C5" — per docs/reviews/over-engineering-review-2026-07-16.md §2 C5: the ESCALATIONS "deny-on-no-response" gate is unenforced fiction (no hook/script reads ESCALATIONS.md; specs/resync-protected-files shipped with E001 `decision: pending`). Fix: a ~5-line check in commit-quality-gate.sh failing on `decision: pending`, or delete the claim.
+"merge PR #72 và #73, tiếp tục C5" — per docs/research/harness-review-improvements/reviews/over-engineering-review-2026-07-16.md §2 C5: the ESCALATIONS "deny-on-no-response" gate is unenforced fiction (no hook/script reads ESCALATIONS.md; specs/resync-protected-files shipped with E001 `decision: pending`). Fix: a ~5-line check in commit-quality-gate.sh failing on `decision: pending`, or delete the claim.
 
 ## What changed
 

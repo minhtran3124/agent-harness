@@ -9,7 +9,7 @@ Input-type: harness improvement
 
 ### Intent
 
-"do the doc-stale follow-up" — the deep review (docs/reviews/phase-2-deep-review-2026-07-16.md) flagged CLAUDE.md:54 + settings.json statusMessage as still describing branch-isolation-guard's removed active-plan condition.
+"do the doc-stale follow-up" — the deep review (docs/research/harness-review-improvements/reviews/phase-2-deep-review-2026-07-16.md) flagged CLAUDE.md:54 + settings.json statusMessage as still describing branch-isolation-guard's removed active-plan condition.
 
 ## What changed
 

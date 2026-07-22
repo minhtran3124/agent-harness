@@ -15,7 +15,7 @@ Input-type: harness improvement
 
 > "tôi đang suy nghĩ về việc load dynamic rule, hien tại tất cả các rules đều dc load khi claude chay. hãy suy nghi ve việc load on demand, vd nhu khi generate ra plan thi moi load rule plan-format, khi nao execution lien quan den wave thi moi load wave-parallelism, etc ... Make deep research ve van de nay"
 
-then, after the research doc (`docs/research/2026-07-21-dynamic-rule-loading-research.md`) was delivered with a per-rule recommendation and phasing:
+then, after the research doc (`docs/research/harness-review-improvements/2026-07-21-dynamic-rule-loading-research.md`) was delivered with a per-rule recommendation and phasing:
 
 > "Ok, chay di"
 

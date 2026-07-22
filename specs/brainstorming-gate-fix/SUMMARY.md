@@ -9,7 +9,7 @@ Input-type: harness improvement
 
 ### Intent
 
-"start for C2 - brainstorming hard-gate" — per docs/reviews/over-engineering-review-2026-07-16.md §2 C2: brainstorming's HARD-GATE ("EVERY project regardless of perceived simplicity") contradicts feature-intake's lane routing; delete the "Too Simple To Need A Design" block and state that brainstorming applies only when intake routes to it.
+"start for C2 - brainstorming hard-gate" — per docs/research/harness-review-improvements/reviews/over-engineering-review-2026-07-16.md §2 C2: brainstorming's HARD-GATE ("EVERY project regardless of perceived simplicity") contradicts feature-intake's lane routing; delete the "Too Simple To Need A Design" block and state that brainstorming applies only when intake routes to it.
 
 ## What changed
 

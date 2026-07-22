@@ -2,8 +2,8 @@
 
 - **Ngày:** 2026-07-03
 - **Nguồn:** https://github.com/hoangnb24/repository-harness (clone HEAD, tag `harness-cli-v0.1.10`)
-- **Bối cảnh:** đây là lần nghiên cứu THỨ HAI. Lần đầu: `docs/research-repository-harness-ideas.md` (2026-06-09, tại v0.1.9, 16 IDEA, kế hoạch 10 bước). Lần này có 2 input mới:
-  1. **Deep review 2026-07-03** (`docs/research/2026-07-03-deep-review-harness-trustworthiness.md`) — tìm ra các failure mode hệ thống của repo ta;
+- **Bối cảnh:** đây là lần nghiên cứu THỨ HAI. Lần đầu: `docs/research/harness-review-improvements/research-repository-harness-ideas.md` (2026-06-09, tại v0.1.9, 16 IDEA, kế hoạch 10 bước). Lần này có 2 input mới:
+  1. **Deep review 2026-07-03** (`docs/research/harness-review-improvements/2026-07-03-deep-review-harness-trustworthiness.md`) — tìm ra các failure mode hệ thống của repo ta;
   2. **Adoption audit** — soi từng IDEA cũ xem đã adopt đến đâu và còn sống không.
 - **Phương pháp:** 2 agent song song (mechanism-level read repo họ · adoption audit repo ta), mọi claim verify bằng đọc code/git log.
 

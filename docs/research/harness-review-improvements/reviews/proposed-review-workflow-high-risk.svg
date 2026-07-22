@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1450 1520" role="img" aria-labelledby="title desc" font-family="system-ui, sans-serif" font-size="14" fill="#0f172a">
+  <title id="title">High-risk lane review workflow</title>
+  <desc id="desc">High-risk changes receive deterministic prechecks, task review, and methods selected by change type. Application changes can use the full correctness pack. Workflow-engine changes use a context-propagation contract audit. Findings are deduplicated and independently scored, intent is always reviewed, and the receipt is pinned to HEAD.</desc>
+  <defs>
+    <style>
+      .title { font: 600 30px system-ui, sans-serif; fill: #0f172a; }
+      .subtitle { font: 400 17px system-ui, sans-serif; fill: #475569; }
+      .label { font: 500 15px system-ui, sans-serif; fill: #0f172a; }
+      .body { font: 400 14px system-ui, sans-serif; fill: #0f172a; }
+      .small { font: 400 13px system-ui, sans-serif; fill: #475569; }
+      .node { fill: #f8fafc; stroke: #94a3b8; stroke-width: 1.5; }
+      .state { fill: #eff6ff; stroke: #3b82f6; stroke-width: 1.8; }
+      .decision { fill: #fff7ed; stroke: #f97316; stroke-width: 1.8; }
+      .persist { fill: #f5f3ff; stroke: #8b5cf6; stroke-width: 1.8; }
+      .success { fill: #ecfdf5; stroke: #10b981; stroke-width: 1.8; }
+      .danger { fill: #fef2f2; stroke: #ef4444; stroke-width: 1.8; }
+      .edge { fill: none; stroke: #475569; stroke-width: 1.8; marker-end: url(#arrow); }
+      .return { fill: none; stroke: #2563eb; stroke-width: 2; stroke-dasharray: 7 5; marker-end: url(#arrowBlue); }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#475569"/></marker>
+    <marker id="arrowBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#2563eb"/></marker>
+  </defs>
+  <rect width="1450" height="1520" fill="#ffffff"/>
+  <text x="60" y="65" class="title" font-size="30" font-weight="600" fill="#0f172a">High-risk lane</text>
+  <text x="60" y="100" class="subtitle" font-size="17" font-weight="400" fill="#475569">Mục tiêu: proof sâu, nhưng method vẫn phải phù hợp loại thay đổi.</text>
+
+  <rect x="60" y="132" width="640" height="62" rx="10" class="state" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.8"/>
+  <text x="84" y="158" class="small">DEPTH</text>
+  <text x="84" y="181" class="body">Task review · dedup · scorer · intent review · SHA receipt</text>
+  <rect x="730" y="132" width="660" height="62" rx="20" class="persist" fill="#f5f3ff" stroke="#8b5cf6" stroke-width="1.8"/>
+  <text x="754" y="158" class="small">METHOD</text>
+  <text x="754" y="181" class="body">Application pack OR workflow-context audit</text>
+
+  <rect x="470" y="230" width="510" height="82" rx="10" class="state" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.8"/>
+  <text x="725" y="262" text-anchor="middle" class="label">Feature intake + deterministic prechecks</text>
+  <text x="725" y="289" text-anchor="middle" class="small">Hard gate · intent · change type · test/graph/registry proof</text>
+
+  <rect x="470" y="358" width="510" height="88" rx="10" class="node" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="725" y="391" text-anchor="middle" class="label">Implement + per-task review</text>
+  <text x="725" y="420" text-anchor="middle" class="body">Full task evidence contract</text>
+  <path d="M725 312V358" class="edge" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow)"/>
+
+  <polygon points="725,490 890,548 725,606 560,548" class="decision" fill="#fff7ed" stroke="#f97316" stroke-width="1.8"/>
+  <text x="725" y="541" text-anchor="middle" class="label">Change type?</text>
+  <text x="725" y="568" text-anchor="middle" class="small">Risk controls depth; type controls method</text>
+  <path d="M725 446V490" class="edge" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow)"/>
+
+  <rect x="90" y="645" width="560" height="180" rx="10" class="node" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="370" y="680" text-anchor="middle" class="label">Application / runtime code</text>
+  <text x="370" y="715" text-anchor="middle" class="body">Relevant full correctness pack, up to 6 methods</text>
+  <text x="135" y="752" class="body">Enclosing · Removed behavior · Call-site</text>
+  <text x="135" y="784" class="body">Stack defects · Guard completeness · Prior-art</text>
+  <text x="370" y="811" text-anchor="middle" class="small">Do not run irrelevant methods just to reach six</text>
+
+  <rect x="800" y="645" width="560" height="180" rx="20" class="persist" fill="#f5f3ff" stroke="#8b5cf6" stroke-width="1.8"/>
+  <text x="1080" y="680" text-anchor="middle" class="label">Workflow engine / prompt / rule</text>
+  <text x="1080" y="715" text-anchor="middle" class="body">Context-propagation contract audit</text>
+  <text x="845" y="752" class="body">Canonical source → every consumer/context</text>
+  <text x="845" y="784" class="body">Explicit Read · path trigger · generated reference</text>
+  <text x="1080" y="811" text-anchor="middle" class="small">Do not run generic runtime-stack angles on Markdown</text>
+
+  <path d="M560 548H370V645" class="edge" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <path d="M890 548H1080V645" class="edge" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow)"/>
+
+  <rect x="800" y="870" width="560" height="126" rx="20" class="persist" fill="#f5f3ff" stroke="#8b5cf6" stroke-width="1.8"/>
+  <text x="1080" y="904" text-anchor="middle" class="label">Context delivery proof</text>
+  <text x="1080" y="936" text-anchor="middle" class="body">Enumerate consumers · cite delivery mechanism</text>
+  <text x="1080" y="966" text-anchor="middle" class="body">Run PR-141 regression + mutation fixtures</text>
+  <path d="M1080 825V870" class="edge" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow)"/>
+
+  <rect x="470" y="1040" width="510" height="94" rx="10" class="node" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="725" y="1074" text-anchor="middle" class="label">Pool → deduplicate → independent scorer</text>
+  <text x="725" y="1105" text-anchor="middle" class="body">Coherent threshold: highly confident is actionable</text>
+  <path d="M370 825V1087H470" class="edge" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <path d="M1080 996V1087H980" class="edge" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow)"/>
+
+  <rect x="105" y="1190" width="300" height="84" rx="10" class="node" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="255" y="1222" text-anchor="middle" class="label">Rule 1–3</text>
+  <text x="255" y="1250" text-anchor="middle" class="body">Fresh implementer fix-loop</text>
+  <rect x="575" y="1190" width="300" height="84" rx="10" class="success" fill="#ecfdf5" stroke="#10b981" stroke-width="1.8"/>
+  <text x="725" y="1222" text-anchor="middle" class="label">Clean / advisory</text>
+  <text x="725" y="1250" text-anchor="middle" class="body">Proceed, record residuals</text>
+  <rect x="1045" y="1190" width="300" height="84" rx="10" class="danger" fill="#fef2f2" stroke="#ef4444" stroke-width="1.8"/>
+  <text x="1195" y="1222" text-anchor="middle" class="label">Rule 4 / unknown delivery</text>
+  <text x="1195" y="1250" text-anchor="middle" class="body">Stop for human decision</text>
+  <path d="M725 1134V1160H255V1190" class="edge" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <path d="M725 1160V1190" class="edge" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <path d="M725 1160H1195V1190" class="edge" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow)"/>
+
+  <path d="M255 1190V1160H45V402H470" class="return" fill="none" stroke="#2563eb" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrowBlue)"/>
+  <text x="58" y="1018" class="small">fix then rerun</text>
+  <text x="58" y="1040" class="small">relevant method</text>
+  <path d="M1195 1274V1305H1390V271H980" class="return" fill="none" stroke="#2563eb" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrowBlue)"/>
+  <text x="1375" y="1115" text-anchor="end" class="small">decision → reclassify / resume</text>
+
+  <rect x="575" y="1315" width="300" height="82" rx="10" class="node" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="725" y="1347" text-anchor="middle" class="label">Intent review</text>
+  <text x="725" y="1375" text-anchor="middle" class="body">Always for high-risk</text>
+  <path d="M725 1274V1315" class="edge" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow)"/>
+
+  <rect x="470" y="1430" width="510" height="78" rx="20" class="persist" fill="#f5f3ff" stroke="#8b5cf6" stroke-width="1.8"/>
+  <text x="725" y="1461" text-anchor="middle" class="label">Review receipt pinned to HEAD</text>
+  <text x="725" y="1487" text-anchor="middle" class="small">HEAD changes → receipt stale → rerun selected review</text>
+  <path d="M725 1397V1430" class="edge" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow)"/>
+</svg>

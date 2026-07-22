@@ -14,7 +14,7 @@ Input-type: harness improvement
 ## What changed
 
 (Not yet implemented — this is the intake for drafting the PLAN.md that improves the harness per
-`docs/research-harness-req-assessment.md`: complete the migration of specs/, answer Q3 (Affects field
+`docs/research/harness-review-improvements/research-harness-req-assessment.md`: complete the migration of specs/, answer Q3 (Affects field
 + PROJECT.md), machine-verified proof (verify-summary), close the knowledge loop, strict-in-CI,
 story-sizing gate, harness-audit.)
 

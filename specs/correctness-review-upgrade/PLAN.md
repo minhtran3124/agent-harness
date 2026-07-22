@@ -16,7 +16,7 @@ created: 2026-06-09
 grafting the best mechanics from Boris `/code-review` and Every `/ce-code-review` onto our
 existing infrastructure — without inventing new machinery.
 
-**Design source:** conversation synthesis (Boris vs Every comparison) + `docs/research-compound-loop-closure.md`
+**Design source:** conversation synthesis (Boris vs Every comparison) + `docs/research/harness-review-improvements/research-compound-loop-closure.md`
 (the compound loop is OPEN — `/compound` writes, only `/xia2` + `/brainstorming` pull back; the
 review stage does not). No separate `design.md` was produced; this header + research doc are the spec.
 

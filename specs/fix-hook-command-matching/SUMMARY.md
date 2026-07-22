@@ -17,7 +17,7 @@ Input-type: harness improvement
 
 ### Intent
 
-Wave 0a của harness v0.3 (docs/harness-v03-plan-overview.md): fix command-matching bypass trong các commit-gate hook. Cụ thể: hooks/commit-quality-gate.sh, hooks/risk-corroboration.sh, hooks/branch-guard.sh filter bằng grep -qE '^git commit' nên bypass được bằng 'cd x && git commit', 'git -C dir commit', 'git -c k=v commit', 'command git commit', 'echo done; git commit' (đã chứng minh live trong docs/research/2026-07-03-deep-review-harness-trustworthiness.md DR-1); hooks/check-untracked-py.sh substring match cũng thua 'git -C'. Kèm theo: bỏ field '"if"' và 'statusMessage' không thuộc schema hooks trong settings.json. Thêm regression test cho từng bypass form. Đây là thay đổi hooks/* + settings.json = high-blast Rule 4.
+Wave 0a của harness v0.3 (docs/harness-v03-plan-overview.md): fix command-matching bypass trong các commit-gate hook. Cụ thể: hooks/commit-quality-gate.sh, hooks/risk-corroboration.sh, hooks/branch-guard.sh filter bằng grep -qE '^git commit' nên bypass được bằng 'cd x && git commit', 'git -C dir commit', 'git -c k=v commit', 'command git commit', 'echo done; git commit' (đã chứng minh live trong docs/research/harness-review-improvements/2026-07-03-deep-review-harness-trustworthiness.md DR-1); hooks/check-untracked-py.sh substring match cũng thua 'git -C'. Kèm theo: bỏ field '"if"' và 'statusMessage' không thuộc schema hooks trong settings.json. Thêm regression test cho từng bypass form. Đây là thay đổi hooks/* + settings.json = high-blast Rule 4.
 
 ## What changed
 

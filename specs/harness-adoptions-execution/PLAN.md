@@ -13,7 +13,7 @@ created: 2026-06-12
 
 **Goal:** Implement the four tracks the user selected from
 `specs/harness-comparison-adoptions/PLAN.md` (the decision plan derived from
-`docs/research-claude-code-harness-comparison.md`): structurally read-only review agents,
+`docs/research/harness-review-improvements/research-claude-code-harness-comparison.md`): structurally read-only review agents,
 the `not_observed != absent` rule, the integration evidence-tier table, and the
 review-chain micro-benchmark with a baseline catch rate.
 

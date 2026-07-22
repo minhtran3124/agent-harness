@@ -1,7 +1,7 @@
 # Tổng hợp chuyên sâu: Nên cải thiện skill `brainstorming` thế nào — và bằng chứng
 
 > Ngày: 2026-06-15
-> Đầu vào: `docs/research/2026-06-15-ce-brainstorm-comparison.md` + `docs/research/2026-06-15-superpowers-comparison.md`
+> Đầu vào: `docs/research/harness-review-improvements/2026-06-15-ce-brainstorm-comparison.md` + `docs/research/harness-review-improvements/2026-06-15-superpowers-comparison.md`
 > Mục tiêu: Lọc ra những thay đổi mang lại **hiệu quả thực sự**, kèm bằng chứng ngoài (academic + industry) để biện minh CÓ nên update và update NHƯ THẾ NÀO.
 > Phương pháp bằng chứng: 4 truy vấn web có chủ đích cho 4 tuyên bố chịu lực nhất (anchoring, LLM self-correction, product discovery, cost-of-change). Nguồn liệt kê ở cuối. Mọi tuyên bố cấu trúc về 2 skill đã đối chiếu trực tiếp với văn bản trong context.
 

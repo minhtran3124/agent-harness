@@ -16,7 +16,7 @@ External AI reviewers (added by the client) catch real runtime bugs our design/p
 
 - **Boris `/code-review` find→score→threshold + multi-lens fan-out** — deferred (out of scope here); the precision-filter pattern is the next candidate.
 - **B — feature-intake flag→reviewer-persona mapping** — deferred as a separate high-blast follow-up (touches `skills/feature-intake/`).
-- **SessionStart hook to auto-load critical-patterns** (the "medium" loop-closure option from `docs/research-compound-loop-closure.md`) — deferred; Rule 4 high-blast (`settings.json` + hook).
+- **SessionStart hook to auto-load critical-patterns** (the "medium" loop-closure option from `docs/research/harness-review-improvements/research-compound-loop-closure.md`) — deferred; Rule 4 high-blast (`settings.json` + hook).
 
 ## Deviations
 

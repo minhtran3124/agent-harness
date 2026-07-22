@@ -9,7 +9,7 @@ Input-type: harness improvement
 
 ### Intent
 
-"merge #77 first / next make deep research and review for docs/reviews/phase-2-deep-review-2026-07-16.md again. / start for wave1: design + plan"
+"merge #77 first / next make deep research and review for docs/research/harness-review-improvements/reviews/phase-2-deep-review-2026-07-16.md again. / start for wave1: design + plan"
 
 ## What changed
 
@@ -35,7 +35,7 @@ Wave 1 is scoped to exactly the items whose deletion requires no coordinated mac
 | --- | --- | --- | --- |
 | plan parses (markdown syntax, 5 tasks / 2 waves) | `bash -c 'python3 skills/visual-planner/render_plan.py specs/phase2-wave1/PLAN.md /tmp/p2w1.html > /tmp/p2w1.out 2>&1 && grep -q "tasks=5 waves=2" /tmp/p2w1.out'` | 0 | dogfood of PR #69 syntax |
 | 1.1 context-monitor gone, zero refs | `bash -c 'test ! -f scripts/context-monitor.py && ! grep -rq "context-monitor" scripts/ hooks/ skills/ rules/ templates/ tests/ settings.json harness-manifest.json'` | 0 | |
-| 1.2 REQ.md gone, questions preserved | `bash -c 'test ! -f REQ.md && grep -q "Source questions" docs/research-harness-req-assessment.md'` | 0 | |
+| 1.2 REQ.md gone, questions preserved | `bash -c 'test ! -f REQ.md && grep -q "Source questions" docs/research/harness-review-improvements/research-harness-req-assessment.md'` | 0 | |
 | 1.3 TEST_MATRIX template + mandates gone | `bash -c 'test ! -f templates/TEST_MATRIX.template.md && ! grep -rq "TEST_MATRIX" README.md HARNESS.md rules/ templates/ skills/ scripts/ tests/'` | 0 | 3 prose edits keep the Verify clause |
 | 1.4 spinner gone, step() contract intact | `bash -c '! grep -q "SPIN" scripts/deploy-harness.sh && ! grep -q "sleep 0.045" scripts/deploy-harness.sh && grep -q "step()" scripts/deploy-harness.sh'` | 0 | animation out; wrapper kept |
 | installer suites (deploy/install behavior unchanged) | `bash -c 'bash tests/scripts/resync-conflict.test.sh && bash tests/scripts/install-tty-gate.test.sh && bash tests/scripts/settings-merge.test.sh && bash tests/scripts/settings-wiring.test.sh'` | 0 | 5+3+9+4 cases |

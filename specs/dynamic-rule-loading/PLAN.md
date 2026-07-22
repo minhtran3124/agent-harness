@@ -42,7 +42,7 @@ flowchart LR
 ## 1. Motivation
 
 All 7 rules auto-load every session (~27.6 KB ≈ 7k tokens); ~55% is contextual. Research:
-`docs/research/2026-07-21-dynamic-rule-loading-research.md`. Phase 0 (done, see Status Log)
+`docs/research/harness-review-improvements/2026-07-21-dynamic-rule-loading-research.md`. Phase 0 (done, see Status Log)
 confirmed `paths:` frontmatter is supported in Claude Code v2.1.216: scoped rules skip
 session-start load and inject on Read of a matching file — but NOT on Write of a new file,
 so explicit skill Step-0 Read lines are load-bearing for the plan-authoring flow.

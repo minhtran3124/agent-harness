@@ -11,7 +11,7 @@ created: 2026-06-12
 > executing-plans (parallel session) to implement this plan task-by-task — **after the user
 > selects which tracks to run.**
 
-**Goal:** Implement the adoption ideas from `docs/research-claude-code-harness-comparison.md`
+**Goal:** Implement the adoption ideas from `docs/research/harness-review-improvements/research-claude-code-harness-comparison.md`
 (comparison against Chachamaru127/claude-code-harness), packaged as 9 independent tracks so
 the user can greenlight any subset.
 
@@ -248,7 +248,7 @@ smallest credible version.
 ```xml
 <task id="8.1" wave="1">
   <files>specs/gate-dispatcher/design.md</files>
-  <action>Write the design document (no implementation) for consolidating the four commit-time hooks (commit-quality-gate.sh, risk-corroboration.sh, branch-guard.sh, check-untracked-py.sh) behind one dispatcher, adapting the claude-code-harness model (docs/research-claude-code-harness-comparison.md §1.1): single entrypoint registered once in settings.json; declarative ordered rule table, first-match-wins; each rule a pure check function returning block/warn/pass + reason; fail-open with per-rule timeout; every decision appended to a ledger (file-based JSONL first — SQLite only if Track 9 lands). MUST address: language choice (bash thin-shim vs Python — recommend one with rationale), migration path (hooks keep working standalone until cutover), how tests/hooks/*.test.sh contracts carry over unchanged, and rollback. End with open questions for /writing-plans. This unblocks a future /brainstorming → /writing-plans run; no settings.json change in this task.</action>
+  <action>Write the design document (no implementation) for consolidating the four commit-time hooks (commit-quality-gate.sh, risk-corroboration.sh, branch-guard.sh, check-untracked-py.sh) behind one dispatcher, adapting the claude-code-harness model (docs/research/harness-review-improvements/research-claude-code-harness-comparison.md §1.1): single entrypoint registered once in settings.json; declarative ordered rule table, first-match-wins; each rule a pure check function returning block/warn/pass + reason; fail-open with per-rule timeout; every decision appended to a ledger (file-based JSONL first — SQLite only if Track 9 lands). MUST address: language choice (bash thin-shim vs Python — recommend one with rationale), migration path (hooks keep working standalone until cutover), how tests/hooks/*.test.sh contracts carry over unchanged, and rollback. End with open questions for /writing-plans. This unblocks a future /brainstorming → /writing-plans run; no settings.json change in this task.</action>
   <verify>test -f specs/gate-dispatcher/design.md && grep -q 'first-match-wins' specs/gate-dispatcher/design.md</verify>
   <done>design.md exists, names the rule-table architecture, migration, and rollback; ready for its own PLAN.</done>
 </task>
