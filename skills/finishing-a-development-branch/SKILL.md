@@ -74,17 +74,30 @@ If the base branch is not mentioned in chat, default to `main`. Only ask ("This 
 ### Step 3: Push and Open PR
 
 **Gate 0 — review receipt (normal + high-risk lanes; tiny skips).** Before anything else in this
-step, verify the reviews ran against the code being pushed:
+step, verify the reviews ran against the code being pushed.
+
+First **resolve the plan directory** with Step 4a's rule (exact `specs/<slug>` from the branch, else
+the best-matching `specs/*/PLAN.md`, else *no plan* → skip Gate 0 exactly as Step 4 skips). Use that
+resolved `<plan_dir>` — not a bare branch-derived slug — for the checks below, so a branch like
+`fix/foo` backed by `specs/gh-143-context-propagation` checks the receipt where it was actually
+written. Determine `<base>` = the base branch from Step 2 (e.g. `origin/main`).
 
 ```bash
-python3 scripts/check_review_receipt.py specs/<slug> --require correctness,intent
+python3 scripts/check_review_receipt.py <plan_dir> --require correctness,intent --require-audit-if <base>
 ```
 
-Exit 1 (receipt missing / malformed / any review `result: fail` / any `blocking_open > 0` / a required
-type absent / HEAD advanced with **code** outside `specs/` since the review) means the pinned reviews
-are stale or incomplete — **REFUSE to push or open the PR.** Route back to `subagent-driven-development`
-to re-run the affected review and re-write the receipt; never hand-edit `.review-receipt.json` to pass
-the gate. Exit 0 → continue. **Tiny lane:** skip this gate — its route has no review chain to pin.
+`--require-audit-if <base>` makes the gate **path-aware**: when the `<base>..HEAD` diff touches a
+workflow-engine surface (`skills/*/SKILL.md`, dispatch prompts incl. `subagents/`, `agents/`,
+`rules/`), it additionally requires a passing `context-propagation-audit` entry — so the
+change-triggered audit cannot be skipped for exactly the prompt/rule edits it protects.
+
+Exit 1 (receipt missing / malformed / any recorded review not `pass` — `fail`, `pending`, `skipped`,
+absent all count / any `blocking_open > 0` / a required type absent, including the audit on a
+workflow-engine diff / HEAD advanced with **code** outside `specs/` since the review) means the pinned
+reviews are stale or incomplete — **REFUSE to push or open the PR.** Route back to
+`subagent-driven-development` to re-run the affected review and re-write the receipt; never hand-edit
+`.review-receipt.json` to pass the gate. Exit 0 → continue. **Tiny lane:** skip this gate — its route
+has no review chain to pin.
 
 > **Order note (the plan-`shipped` commit is safe):** step 1 below commits the `specs/`-only status
 > change *after* this gate, advancing HEAD past `reviewed_head_sha`. The checker deliberately
@@ -103,7 +116,7 @@ the PR after push; nothing is mirrored locally (per the non-goals).
    - **Automation absent (a consuming project — the harness deploys this skill but not `bookkeeping.sh`/the workflow):** bump manually, as there is nothing else to do it. When the change is user-visible (a new/changed skill or hook, a schema change, a fix worth announcing), add a bullet under `## [Unreleased]` and bump root `VERSION` per the CHANGELOG's own rule (patch = fix/docs · minor = new/changed skill or hook contract · major = breaking workflow/schema change). Skip for purely internal docs/research. Commit these with the work so the PR carries them.
 
    See `docs/solutions/harness/manual-version-bump-collides-with-event-sourced-bookkeeping.md` (the double-bump this scoping prevents).
-2. **Re-run Gate 0** (`python3 scripts/check_review_receipt.py specs/<slug> --require correctness,intent`)
+2. **Re-run Gate 0** (`python3 scripts/check_review_receipt.py <plan_dir> --require correctness,intent --require-audit-if <base>`)
    immediately before pushing — it passes if the only advance since review is the `specs/`-only
    shipped commit, and blocks if unreviewed code slipped in. Then push:
    `git push -u github <current_branch>`.

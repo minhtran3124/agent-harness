@@ -84,6 +84,7 @@ owner directing the work on their own issue.
 | P1/P2 regression guard | `bash tests/scripts/context-propagation-regression.test.sh` | 0 | mutation cases detect removed Reads / STOP case |
 | Inline-policy drift guard | `bash tests/scripts/inline-policy-drift.test.sh` | 0 | Rule-4 STOP list drift detected |
 | Doc-truth lint | `bash scripts/lint-doc-truth.sh` | 0 | all referenced paths exist; hook table matches settings.json |
+| workflow-engine regex parity (hook ↔ receipt gate) | `bash tests/scripts/workflow-engine-regex-parity.test.sh` | 0 | include+exclude patterns byte-identical; mutation detected |
 
 The receipt engine (`scripts/check_review_receipt.py`) is proven by `scripts/test_check_review_receipt.py`
 (11 pytest cases incl. stale-sha, blocking-open, malformed, symbolic-sha reject, specs-only-advance

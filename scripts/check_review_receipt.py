@@ -42,6 +42,28 @@ RECEIPT_NAME = ".review-receipt.json"
 # always empty — silently defeating the stale-sha gate. Require 40 hex chars.
 _SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 
+# Workflow-engine path signal — the surfaces whose changes require a passing
+# /context-propagation-audit before push. This is a literal copy of the signal in
+# hooks/risk-corroboration.sh (add_cat "workflow-engine"); the two are kept
+# byte-identical by tests/scripts/workflow-engine-regex-parity.test.sh, so this
+# copy cannot drift silently. Include, then subtract the prose exclusions.
+_WF_INCLUDE = re.compile(
+    r"^skills/[^/]+/SKILL\.md$|^skills/[^/]+/.*prompt[^/]*\.md$|^agents/[^/]+\.md$|^rules/[^/]+\.md$"
+)
+_WF_EXCLUDE = re.compile(r"(^|/)(README\.md|[A-Za-z0-9_-]+\.template\.md)$")
+_WF_AUDIT_TYPE = "context-propagation-audit"
+
+
+def _touches_workflow_engine(slug_dir: Path, base_ref: str) -> bool | None:
+    """True if the base_ref..HEAD diff touches a workflow-engine surface.
+
+    None if the range is undiffable (bad ref) — the caller fails closed.
+    """
+    changed = _changed_files(slug_dir, base_ref, "HEAD")
+    if changed is None:
+        return None
+    return any(_WF_INCLUDE.match(p) and not _WF_EXCLUDE.search(p) for p in changed)
+
 
 def _git_head(slug_dir: Path) -> str | None:
     """Return the current HEAD sha of the repo containing slug_dir, or None."""
@@ -79,8 +101,16 @@ def _changed_files(slug_dir: Path, a: str, b: str) -> list[str] | None:
     return [line for line in proc.stdout.splitlines() if line.strip()]
 
 
-def check_receipt(slug_dir: Path, require: list[str]) -> str | None:
-    """Validate the receipt. Return a one-line failure reason, or None if valid."""
+def check_receipt(
+    slug_dir: Path, require: list[str], require_audit_if: str | None = None
+) -> str | None:
+    """Validate the receipt. Return a one-line failure reason, or None if valid.
+
+    require_audit_if: a base ref. When the base..HEAD diff touches a
+    workflow-engine surface, `context-propagation-audit` is added to `require`,
+    so a workflow-engine change cannot be pushed on a receipt that omits (or did
+    not pass) the audit it is meant to trigger.
+    """
     receipt_path = slug_dir / RECEIPT_NAME
     if not receipt_path.is_file():
         return f"missing: no review receipt at {receipt_path}"
@@ -135,22 +165,49 @@ def check_receipt(slug_dir: Path, require: list[str]) -> str | None:
         if not isinstance(review, dict):
             return f"malformed: {receipt_path} has a non-object review entry"
         rtype = review.get("type", "<unknown>")
-        if review.get("result") == "fail":
-            return f"review-failed: review '{rtype}' has result: fail"
+        # Every recorded review must have passed. `fail`, `pending`, `skipped`, a
+        # typo, or an absent result are all non-pass and fatal — an incomplete or
+        # unrecorded outcome must never authorize a push (a recorded audit that was
+        # skipped/pending would otherwise slip through the --require pass check).
+        result = review.get("result")
+        if result != "pass":
+            return (
+                f"review-failed: review '{rtype}' has result {result!r} — every "
+                f"recorded review must be 'pass'"
+            )
         blocking = review.get("blocking_open", 0)
         if isinstance(blocking, bool) or not isinstance(blocking, int):
             return f"malformed: review '{rtype}' has non-integer blocking_open"
         if blocking > 0:
             return f"blocking-open: review '{rtype}' has {blocking} blocking open"
 
+    required = list(require)
+    if require_audit_if is not None:
+        touched = _touches_workflow_engine(slug_dir, require_audit_if)
+        if touched is None:
+            return (
+                f"stale-sha: cannot diff workflow-engine base {require_audit_if!r} "
+                f"— re-check with a valid base ref"
+            )
+        if touched and _WF_AUDIT_TYPE not in required:
+            required.append(_WF_AUDIT_TYPE)
+
     passed_types = {
         r.get("type")
         for r in reviews
         if isinstance(r, dict) and r.get("result") == "pass"
     }
-    for req in require:
+    for req in required:
         if req not in passed_types:
-            return f"missing-required-type: required review '{req}' not present with result pass"
+            suffix = (
+                " (diff touches the workflow-engine inventory)"
+                if req == _WF_AUDIT_TYPE
+                else ""
+            )
+            return (
+                f"missing-required-type: required review '{req}' not present with "
+                f"result pass{suffix}"
+            )
 
     return None
 
@@ -161,6 +218,13 @@ def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(prog="check_review_receipt.py", add_help=True)
     parser.add_argument("slug_dir")
     parser.add_argument("--require", default="")
+    parser.add_argument(
+        "--require-audit-if",
+        default=None,
+        metavar="BASE_REF",
+        help="also require context-propagation-audit when BASE_REF..HEAD touches "
+        "a workflow-engine surface (skills/*/SKILL.md, dispatch prompts, agents/, rules/)",
+    )
     args = parser.parse_args(argv)
 
     require = [t.strip() for t in args.require.split(",") if t.strip()]
@@ -170,7 +234,7 @@ def main(argv: list[str]) -> int:
         print(f"missing: {slug_dir} is not a directory", file=sys.stderr)
         return 1
 
-    reason = check_receipt(slug_dir, require)
+    reason = check_receipt(slug_dir, require, require_audit_if=args.require_audit_if)
     if reason is not None:
         print(reason, file=sys.stderr)
         return 1

@@ -66,6 +66,29 @@ def new_specs_commit(repo: Path, slug: str) -> None:
     _git(repo, "commit", "-q", "-m", "chore: mark plan shipped")
 
 
+def commit_file(repo: Path, relpath: str, content: str = "x\n") -> None:
+    """Create/overwrite relpath and commit it; return nothing."""
+    p = repo / relpath
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(content, encoding="utf-8")
+    _git(repo, "add", relpath)
+    _git(repo, "commit", "-q", "-m", f"add {relpath}")
+
+
+def audit_data(sha: str, audit_result: str = "pass") -> dict:
+    d = valid_data(sha)
+    d["reviews"].append(
+        {
+            "type": "context-propagation-audit",
+            "reviewer": "sonnet",
+            "result": audit_result,
+            "blocking_open": 0,
+            "advisory_open": 0,
+        }
+    )
+    return d
+
+
 def write_receipt(repo: Path, slug: str, data) -> Path:
     slug_dir = repo / "specs" / slug
     slug_dir.mkdir(parents=True)
@@ -151,6 +174,89 @@ def test_mixed_advance_with_code_still_stale(tmp_path, capsys):
     _git(repo, "add", "-A")
     _git(repo, "commit", "-q", "-m", "shipped + code")
     assert crr.main([str(slug_dir)]) == 1
+    assert "stale-sha" in capsys.readouterr().err
+
+
+def test_non_pass_result_is_rejected(tmp_path, capsys):
+    # A recorded review with result 'pending' (or skipped/typo/absent) must fail —
+    # not only 'fail'. An incomplete outcome cannot authorize a push.
+    repo = make_repo(tmp_path)
+    data = audit_data(head_sha(repo), audit_result="pending")
+    slug_dir = write_receipt(repo, "gh-x", data)
+    assert crr.main([str(slug_dir), "--require", "correctness,intent"]) == 1
+    assert "review-failed" in capsys.readouterr().err
+
+
+def test_missing_result_is_rejected(tmp_path, capsys):
+    repo = make_repo(tmp_path)
+    data = valid_data(head_sha(repo))
+    del data["reviews"][0]["result"]  # absent result
+    slug_dir = write_receipt(repo, "gh-x", data)
+    assert crr.main([str(slug_dir)]) == 1
+    assert "review-failed" in capsys.readouterr().err
+
+
+def test_require_audit_if_workflow_engine_change_missing_audit(tmp_path, capsys):
+    # A workflow-engine diff with a receipt that omits context-propagation-audit
+    # must be blocked when --require-audit-if is given.
+    repo = make_repo(tmp_path)
+    base = head_sha(repo)
+    commit_file(repo, "skills/demo/SKILL.md", "# demo skill\n")
+    slug_dir = write_receipt(repo, "gh-x", valid_data(head_sha(repo)))
+    rc = crr.main(
+        [str(slug_dir), "--require", "correctness,intent", "--require-audit-if", base]
+    )
+    assert rc == 1
+    assert "context-propagation-audit" in capsys.readouterr().err
+
+
+def test_require_audit_if_workflow_engine_change_with_audit_passes(tmp_path):
+    repo = make_repo(tmp_path)
+    base = head_sha(repo)
+    commit_file(repo, "skills/demo/subagents/worker-prompt.md", "# nested prompt\n")
+    slug_dir = write_receipt(repo, "gh-x", audit_data(head_sha(repo)))
+    rc = crr.main(
+        [str(slug_dir), "--require", "correctness,intent", "--require-audit-if", base]
+    )
+    assert rc == 0
+
+
+def test_require_audit_if_non_workflow_change_does_not_require_audit(tmp_path):
+    # A prose-only / code-only diff that does NOT touch a workflow-engine surface
+    # must not demand the audit.
+    repo = make_repo(tmp_path)
+    base = head_sha(repo)
+    commit_file(repo, "app/service.py", "x = 1\n")
+    slug_dir = write_receipt(repo, "gh-x", valid_data(head_sha(repo)))
+    rc = crr.main(
+        [str(slug_dir), "--require", "correctness,intent", "--require-audit-if", base]
+    )
+    assert rc == 0
+
+
+def test_require_audit_if_readme_excluded(tmp_path):
+    # agents/README.md is prose — excluded from the workflow-engine signal.
+    repo = make_repo(tmp_path)
+    base = head_sha(repo)
+    commit_file(repo, "agents/README.md", "# agents inventory\n")
+    slug_dir = write_receipt(repo, "gh-x", valid_data(head_sha(repo)))
+    rc = crr.main(
+        [str(slug_dir), "--require", "correctness,intent", "--require-audit-if", base]
+    )
+    assert rc == 0
+
+
+def test_require_audit_if_bad_base_fails_closed(tmp_path, capsys):
+    repo = make_repo(tmp_path)
+    slug_dir = write_receipt(repo, "gh-x", valid_data(head_sha(repo)))
+    rc = crr.main(
+        [
+            str(slug_dir),
+            "--require-audit-if",
+            "0000000000000000000000000000000000000000",
+        ]
+    )
+    assert rc == 1
     assert "stale-sha" in capsys.readouterr().err
 
 
