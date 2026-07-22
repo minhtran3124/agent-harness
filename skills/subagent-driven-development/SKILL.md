@@ -39,25 +39,11 @@ digraph when_to_use {
 
 ## The Process
 
-**Step 0 — Ensure branch isolation (before any code change).** Implementation must never begin on
-`main`/`master` or another shared branch. Before dispatching wave 1:
-
-1. Check the current branch: `git symbolic-ref --short HEAD`.
-2. If on a shared/protected branch — `main`, `master`, or any branch in
-   `HARNESS_SHARED_BRANCHES` (the same list `hooks/branch-isolation-guard.sh` enforces) —
-   **invoke `using-git-worktrees`** to create an isolated worktree + feature branch, then
-   continue execution there. Do not proceed on the shared branch.
-3. If already on a dedicated feature branch (or inside a worktree created for this slug), proceed.
-
-This is the structural point that creates the branch. It is now backstopped at write time by
-`hooks/branch-isolation-guard.sh`, which **hard-blocks** any code edit made on a shared branch
-regardless of plan state (break-glass: `BRANCH_ISOLATION_REASON`). `branch-guard.sh` only
-warns, and only at commit time — so do not rely on it; create the branch here.
-
-**Next — load the path-scoped rules.** `.claude/rules/auto-correct-scope.md` and
-`.claude/rules/wave-parallelism.md` are path-scoped (not auto-loaded). Read both now, and keep
-the `auto-correct-scope.md` path in every implementer dispatch prompt so each subagent Reads it
-in its own context (subagents cannot rely on the orchestrator's copy).
+**Step 0 — Load rules and ensure branch isolation.** Read the path-scoped
+`.claude/rules/auto-correct-scope.md` and `.claude/rules/wave-parallelism.md`, then apply
+`auto-correct-scope.md` → Branch isolation before dispatching wave 1. Do not proceed until work is
+on the lane-appropriate dedicated branch. Keep the auto-correct rule path in every implementer
+prompt because subagents cannot rely on the orchestrator's copy.
 
 **Next — mark the plan active.** Before dispatching wave 1, set the frontmatter
 `status: proposed → active` in `specs/<slug>/PLAN.md` (canonical values only:

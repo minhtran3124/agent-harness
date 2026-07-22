@@ -149,33 +149,14 @@ For autonomous (no-human) work the `### Verify` evidence + independent review **
 the human gate — not extra documents.** Set `FULL_ARTIFACTS=1` to force the full set regardless
 of lane (audit-heavy work / calibrating trust). See `rules/orchestration.md` → Artifact policy.
 
-**Every lane cuts a branch before implementing.** No exceptions, no lane opt-out — see the
-branch rule below the table.
+**Every lane cuts a branch before implementing.** Apply the canonical policy in
+`.claude/rules/auto-correct-scope.md` → Branch isolation; no lane may opt out.
 
 | Lane | Route | Human checkpoint |
 |---|---|---|
 | **tiny** | `git checkout -b <type>/<slug>` → direct `Edit` (no plan). Proof = quick-check hooks (`ruff-on-edit`, `auto-test-on-change`, `commit-quality-gate`). | none (unless confidence low / ambiguous) |
 | **normal** | `/using-git-worktrees` (isolated worktree + branch) → `/subagent-driven-development` (+ `wave-parallelism` for independent tasks). Two-stage agent review per task. | only if confidence low / ambiguous |
 | **high-risk** | Full chain: `/brainstorming` → `/xia2` → `/writing-plans` → `/using-git-worktrees` → `/subagent-driven-development`; record a decision via `/compound` when architecture/behavior changes. | only on ambiguity or a hard gate |
-
-### The branch rule (applies to every lane)
-
-**Never implement on a shared branch.** The branch comes first, before the first `Edit`:
-
-- **tiny** — a plain in-place branch is enough: `git checkout -b fix/<slug>`. A worktree is
-  overkill for a one-file patch.
-- **normal / high-risk** — `/using-git-worktrees`, which creates an isolated worktree **and** the
-  branch, so the work cannot collide with whatever else is checked out.
-
-Ceremony still scales with risk (plans, reviews, artifacts) — **the branch does not.** A one-line
-typo fix committed straight to `main` is still a commit on `main`; "how small is the change" and
-"where may I write it" are different questions, and only the first one is a lane question.
-
-This is enforced structurally, not by prompt: `hooks/branch-isolation-guard.sh` (PreToolUse on
-Write|Edit) **denies** any implementation edit made while `HEAD` is on a shared branch
-(`HARNESS_SHARED_BRANCHES`, default `main master`) — for every lane, plan or no plan. `specs/`
-stays writable so intake can write `SUMMARY.md` *before* the branch exists. Break-glass:
-`BRANCH_ISOLATION_REASON=<why>` (logged to `docs/harness-experimental/break-glass-log.md`).
 
 After routing, hand off. The downstream skills already enforce their own gates and proof.
 
