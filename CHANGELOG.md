@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.15.0] — 2026-07-22
+
+- refactor(compound): use canonical templates (PR #146)
+
 ## [2.14.0] — 2026-07-21
 
 - fix(finishing-branch): make bookkeeping the single owner of VERSION/CHANGELOG (PR #144)
