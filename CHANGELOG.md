@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.16.0] — 2026-07-22
+
+- refactor(workflow): centralize branch isolation policy (PR #148)
+
 ## [2.15.0] — 2026-07-22
 
 - refactor(compound): use canonical templates (PR #146)
