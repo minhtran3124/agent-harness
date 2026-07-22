@@ -73,6 +73,10 @@ digraph process {
 
     "Read plan, extract all tasks with full text, note context, create TodoWrite" [shape=box];
     "More tasks remain?" [shape=diamond];
+    "Diff touches workflow-engine inventory?" [shape=diamond];
+    "Run /context-propagation-audit" [shape=box];
+    "Audit passes?" [shape=diamond];
+    "Fix delivery / escalate per routing" [shape=box];
     "Run /correctness-review over entire diff" [shape=box];
     "Correctness reviewer finds bugs?" [shape=diamond];
     "Implementer subagent fixes correctness bugs" [shape=box];
@@ -97,7 +101,13 @@ digraph process {
     "Code quality reviewer subagent approves?" -> "Mark task complete in TodoWrite" [label="yes"];
     "Mark task complete in TodoWrite" -> "More tasks remain?";
     "More tasks remain?" -> "Dispatch implementer subagent (./implementer-prompt.md)" [label="yes"];
-    "More tasks remain?" -> "Run /correctness-review over entire diff" [label="no"];
+    "More tasks remain?" -> "Diff touches workflow-engine inventory?" [label="no"];
+    "Diff touches workflow-engine inventory?" -> "Run /context-propagation-audit" [label="yes"];
+    "Diff touches workflow-engine inventory?" -> "Run /correctness-review over entire diff" [label="no"];
+    "Run /context-propagation-audit" -> "Audit passes?";
+    "Audit passes?" -> "Run /correctness-review over entire diff" [label="yes"];
+    "Audit passes?" -> "Fix delivery / escalate per routing" [label="no"];
+    "Fix delivery / escalate per routing" -> "Run /context-propagation-audit" [label="re-audit"];
     "Run /correctness-review over entire diff" -> "Correctness reviewer finds bugs?";
     "Correctness reviewer finds bugs?" -> "Implementer subagent fixes correctness bugs" [label="yes"];
     "Implementer subagent fixes correctness bugs" -> "Run /correctness-review over entire diff" [label="re-review"];
@@ -162,6 +172,11 @@ Implementer subagents report one of four statuses. Handle each appropriately:
 **Never** ignore an escalation or force the same model to retry without changes. If the implementer said it's stuck, something needs to change.
 
 ## Final Adversarial Correctness Review
+
+**Pre-gate — context-propagation audit (change-triggered).** If the cumulative diff touches the
+workflow-engine inventory (`harness-manifest.json` → `workflow-engine`), run
+`/context-propagation-audit` first; an audit FAIL blocks the review chain until delivery is proven
+or the change is escalated.
 
 After every task's spec + quality review passes, run **one** adversarial correctness review over
 the entire implementation diff before handing off to `finishing-a-development-branch`. This pass

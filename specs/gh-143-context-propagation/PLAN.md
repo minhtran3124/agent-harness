@@ -19,7 +19,7 @@ created: 2026-07-22
 | 1 | 0.3 | Deterministic regression test for the shipped P1/P2 fixes (wave 1) | tests/scripts/context-propagation-regression.test.sh | 5 cases pass on HEAD; removing either explicit Read (or one STOP case) in a temp… |
 | 2 | 1.1 | workflow-engine path signal in risk corroboration (wave 2) | hooks/risk-corroboration.sh, harness-manifest.json, tests/hooks/risk-corroboration.test.sh | 18 hook cases pass; manifest↔hook agreement holds — Success Criterion 2 (block h… |
 | 2 | 1.2 | feature-intake guidance: Markdown is not prose-only (wave 2) | skills/feature-intake/SKILL.md, CLAUDE.md | Intake guidance names the workflow-engine gate; hook table stays lint-clean. |
-| 3 | 2.1 | context-propagation-audit skill (wave 3) | skills/context-propagation-audit/SKILL.md | Skill documents trigger, matrix, hard-fail rules, and output location — Success … |
+| 3 | 2.1 | context-propagation-audit skill (wave 3) | skills/context-propagation-audit/SKILL.md, harness-manifest.json | Skill documents trigger, matrix, hard-fail rules, and output location — Success … |
 | 3 | 2.2 | wire the audit into the workflow (wave 3) | skills/subagent-driven-development/SKILL.md, skills/README.md | Audit is reachable from the standard chain exactly when the trigger fires — Succ… |
 | 3 | 2.3 | inline-policy drift lint (wave 3) | tests/scripts/inline-policy-drift.test.sh | A silently drifted inline STOP copy fails CI — design.md acceptance criterion 4. |
 | 4 | 3.1 | context-boundary probe protocol (wave 4) | evals/context-boundaries/README.md, evals/context-boundaries/probes/main-session.md, evals/context-boundaries/probes/implementer-subagent.md, evals/context-boundaries/probes/reviewer-agent.md, evals/context-boundaries/probes/scorer-agent.md | Protocol exists with positive+negative probes per context and version-pinning ru… |
@@ -205,8 +205,11 @@ stay non-high-risk; no new inline copies of authoritative policy lists.
 
 ### Task 2.1 — context-propagation-audit skill (wave 3)
 
-- **Files:** skills/context-propagation-audit/SKILL.md
-- **Action:** New change-triggered (NOT always-on) skill. Trigger: the diff touches the
+- **Files:** skills/context-propagation-audit/SKILL.md, harness-manifest.json
+- **Action:** New change-triggered (NOT always-on) skill. Register it in `harness-manifest.json`
+  `skills` (alphabetical) — `scripts/check_manifest.py` (run by `run-tests.sh`) fails if a
+  `skills/<name>/SKILL.md` on disk is unlisted. The SKILL.md needs `name:` + `description:`
+  frontmatter like every other skill. Trigger: the diff touches the
   workflow-engine inventory from Task 1.1. Protocol: for every changed source-of-truth
   (rule/policy/prompt contract), build the matrix
   `Source | Consumer | Execution context (main / implementer / reviewer / scorer / new session) | Delivery (always-loaded / paths:-triggered / pasted / explicit Read) | Proof (test or inspected call site)`.

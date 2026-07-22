@@ -97,6 +97,7 @@
   "skills": [
     "brainstorming",
     "compound",
+    "context-propagation-audit",
     "correctness-review",
     "create-pr",
     "executing-plans",
