@@ -340,9 +340,7 @@ class TestStampSemantics:
     def test_no_verified_stamp_on_failure(self, tmp_path):
         content = make_summary("| bad | `test 1 = 2` | 0 | |\n")
         p = write_summary(tmp_path, "stamp-slug", content)
-        rc = vs.main(
-            ["stamp-slug", "--timeout", "10"], specs_root=tmp_path / "specs"
-        )
+        rc = vs.main(["stamp-slug", "--timeout", "10"], specs_root=tmp_path / "specs")
         assert rc == 1
         assert "Verified:" not in p.read_text()
 
@@ -401,3 +399,169 @@ class TestRewriteQueueAlignment:
         assert "| 0 |" in line_a
         assert "| 9 |" in line_b  # placeholder row untouched — no fabricated exit
         assert "| 1 |" in line_c  # real row got ITS OWN actual exit
+
+
+# ---------------------------------------------------------------------------
+# --lane mode
+# ---------------------------------------------------------------------------
+
+
+def _lane_summary(
+    lane="tiny",
+    confidence="high",
+    reason="obvious one-file edit",
+    verify=None,
+    rollback=None,
+):
+    parts = [
+        "# demo — Summary",
+        "",
+        f"Lane: {lane}",
+        f"Confidence: {confidence}",
+        f"Reason: {reason}",
+        "Flags: none",
+        "",
+        "## What changed",
+        "Did the thing.",
+    ]
+    if verify is not None:
+        parts += [
+            "",
+            "### Verify",
+            "",
+            "| Check | Command | Exit | Notes |",
+            "| --- | --- | --- | --- |",
+            verify,
+        ]
+    if rollback is not None:
+        parts += ["", "### Rollback", "", rollback]
+    return "\n".join(parts) + "\n"
+
+
+REAL_LANE_VERIFY = "| unit | `pytest -q` | 0 | all pass |"
+PLACEHOLDER_LANE_VERIFY = "| <unit / lint> | `<command>` | 0 | <excerpt> |"
+
+
+class TestLaneEvidence:
+    def test_tiny_header_only_passes(self):
+        assert vs.check_lane_evidence(_lane_summary(lane="tiny")) == []
+
+    def test_missing_and_placeholder_headers_fail(self):
+        missing = _lane_summary(lane="tiny").replace("Confidence: high\n", "")
+        assert any("Confidence" in e for e in vs.check_lane_evidence(missing))
+
+        placeholder = _lane_summary(reason="<one sentence — why this lane>")
+        errors = vs.check_lane_evidence(placeholder)
+        assert any("Reason" in e and "placeholder" in e for e in errors)
+
+    def test_normal_requires_a_real_verify_row(self):
+        assert (
+            vs.check_lane_evidence(
+                _lane_summary(lane="normal", verify=REAL_LANE_VERIFY)
+            )
+            == []
+        )
+        assert any(
+            "Verify" in e for e in vs.check_lane_evidence(_lane_summary(lane="normal"))
+        )
+        assert any(
+            "no real command row" in e
+            for e in vs.check_lane_evidence(
+                _lane_summary(lane="normal", verify=PLACEHOLDER_LANE_VERIFY)
+            )
+        )
+
+    def test_high_risk_requires_a_real_rollback(self):
+        complete = _lane_summary(
+            lane="high-risk",
+            verify=REAL_LANE_VERIFY,
+            rollback="- `alembic downgrade -1`",
+        )
+        assert vs.check_lane_evidence(complete) == []
+
+        missing = _lane_summary(lane="high-risk", verify=REAL_LANE_VERIFY)
+        assert any("Rollback" in e for e in vs.check_lane_evidence(missing))
+
+        comment_only = _lane_summary(
+            lane="high-risk",
+            verify=REAL_LANE_VERIFY,
+            rollback="<!-- only a comment -->",
+        )
+        assert any(
+            "Rollback" in e and "empty" in e
+            for e in vs.check_lane_evidence(comment_only)
+        )
+
+    def test_unresolvable_lane_values_fail(self):
+        for raw_lane in ("maybe", "not-normal", "tiny | normal | high-risk"):
+            text = _lane_summary().replace("Lane: tiny", f"Lane: {raw_lane}")
+            errors = vs.check_lane_evidence(text)
+            assert errors and "cannot resolve" in errors[0]
+
+    def test_decorated_and_bold_lane_values_resolve(self):
+        decorated = _lane_summary(
+            lane="high-risk (hard gate: hooks/*)",
+            verify=REAL_LANE_VERIFY,
+            rollback="- Revert the PR: `git revert abc1234`",
+        )
+        assert vs.check_lane_evidence(decorated) == []
+
+        bold = _lane_summary(lane="normal", verify=REAL_LANE_VERIFY)
+        bold = (
+            bold.replace("Lane: normal", "**Lane:** normal")
+            .replace("Confidence: high", "**Confidence:** high")
+            .replace("Reason: ", "**Reason:** ")
+        )
+        assert vs.check_lane_evidence(bold) == []
+
+    def test_reason_with_piped_regex_is_not_a_placeholder(self):
+        reason = "Risk raised because `(^|/)hooks/` matches the new test paths"
+        assert vs.check_lane_evidence(_lane_summary(reason=reason)) == []
+
+    def test_template_only_rollback_is_rejected(self):
+        template_only = _lane_summary(
+            lane="high-risk",
+            verify=REAL_LANE_VERIFY,
+            rollback="- `git revert <sha>`",
+        )
+        errors = vs.check_lane_evidence(template_only)
+        assert errors and "Rollback" in errors[0] and "template" in errors[0]
+
+        with_real_step = template_only.replace(
+            "- `git revert <sha>`",
+            "- `git revert <sha>`\n- Redeploy: `bash scripts/deploy-harness.sh`",
+        )
+        assert vs.check_lane_evidence(with_real_step) == []
+
+
+class TestLaneMode:
+    def test_slug_and_direct_path_targets_pass(self, tmp_path):
+        path = write_summary(tmp_path, "lane-slug", _lane_summary())
+        specs_root = tmp_path / "specs"
+        assert vs.main(["--lane", "lane-slug"], specs_root=specs_root) == 0
+        assert vs.main(["--lane", str(path)], specs_root=specs_root) == 0
+
+    def test_multiple_targets_fail_if_any_target_fails(self, tmp_path):
+        good = write_summary(tmp_path, "good", _lane_summary())
+        bad = write_summary(tmp_path, "bad", _lane_summary(lane="normal"))
+        assert vs.main(["--lane", str(good), str(bad)]) == 1
+
+    def test_lane_mode_never_executes_verify_commands(self, tmp_path):
+        marker = tmp_path / "must-not-exist"
+        command = f"touch {marker}"
+        write_summary(
+            tmp_path,
+            "structural-only",
+            _lane_summary(lane="normal", verify=f"| proof | `{command}` | 0 | |"),
+        )
+        assert (
+            vs.main(["--lane", "structural-only"], specs_root=tmp_path / "specs") == 0
+        )
+        assert not marker.exists()
+
+    def test_lane_with_check_is_bad_invocation(self, tmp_path):
+        write_summary(tmp_path, "lane-slug", _lane_summary())
+        assert (
+            vs.main(["--lane", "--check", "lane-slug"], specs_root=tmp_path / "specs")
+            == 2
+        )

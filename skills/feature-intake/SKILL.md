@@ -159,6 +159,8 @@ of lane (audit-heavy work / calibrating trust). See `rules/orchestration.md` →
 | **high-risk** | Full chain: `/brainstorming` → `/xia2` → `/writing-plans` → `/using-git-worktrees` → `/subagent-driven-development`; record a decision via `/compound` when architecture/behavior changes. | only on ambiguity or a hard gate |
 
 After routing, hand off. The downstream skills already enforce their own gates and proof.
+Before handoff, run `python scripts/verify_summary.py --lane <slug>`; this is the canonical
+lane → evidence check used by the commit gate.
 
 ---
 

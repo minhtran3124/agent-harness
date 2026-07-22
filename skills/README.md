@@ -221,7 +221,7 @@ Schema reference: `docs/solutions/README.md` (scaffolded by `scripts/init-struct
 1.5. Pending-escalation gate — denies a commit touching `specs/<slug>/` while that slug's
    `ESCALATIONS.md` has `decision: pending` (deny-on-no-response)
 1.6. Lane-evidence gate — for each staged `specs/<slug>/SUMMARY.md`, runs
-   `scripts/check_lane_evidence.py` and blocks when the evidence the declared `Lane:` requires
+   `scripts/verify_summary.py --lane` and blocks when the evidence the declared `Lane:` requires
    is missing (tiny → filled header; normal → + a real `### Verify` row; high-risk → + a
    non-empty `### Rollback`). The **staged** copy is checked, so a commit that adds the evidence
    self-unblocks. Fail-open when `python3` is unavailable
@@ -236,12 +236,12 @@ Schema reference: `docs/solutions/README.md` (scaffolded by `scripts/init-struct
 When ≥5 `app/` files are staged, the hook hints: `★ Consider running /compound`.
 
 > **Two different evidence gates — do not conflate them.** Check **1.6** is the row-presence
-> gate: `scripts/check_lane_evidence.py`, always on, asserts the SUMMARY carries what its `Lane:`
+> gate: `scripts/verify_summary.py --lane`, always on, asserts the SUMMARY carries what its `Lane:`
 > requires. Check **2.5** is the row-*accuracy* gate: opt-in via `REQUIRE_VERIFY=1`, it re-runs
 > real rows and blocks on a claimed-vs-actual exit mismatch — but a table of only placeholders
 > passes it with a `no checks ran` warning. Evidence *exists* because of 1.6; evidence is
 > *honest* because of 2.5. You can still run the former by hand:
-> `python scripts/check_lane_evidence.py <slug>`.
+> `python scripts/verify_summary.py --lane <slug>`.
 
 This is one of several wired hooks — see the full table in the root `CLAUDE.md`.
 

@@ -1,18 +1,22 @@
 #!/usr/bin/env python3
-"""Re-run the ### Verify table in a spec's SUMMARY.md and write real exit codes.
+"""Validate lane evidence or re-run a spec's SUMMARY.md Verify table.
 
-Turns proof from self-reported assertion into machine-verified fact.
+Lane mode checks that the SUMMARY carries the evidence required by its declared
+risk lane. Verify mode turns self-reported command results into machine-verified
+fact.
 
 Usage:
     python3 scripts/verify_summary.py <slug> [--check] [--timeout <seconds>]
+    python3 scripts/verify_summary.py --lane <slug|path-to-SUMMARY.md> [more ...]
 
-    <slug>        Spec slug — reads specs/<slug>/SUMMARY.md
+    <slug>        Spec slug -- reads specs/<slug>/SUMMARY.md
     --check       Compare only; do NOT overwrite the file (for hooks/CI)
+    --lane        Check lane-required evidence; never execute Verify commands
     --timeout N   Per-command timeout in seconds (default: 60)
 
 Exit codes:
-    0  All non-placeholder commands ran, matched claimed exits, and passed.
-    1  Any command failed, timed out, or claimed exit != actual exit.
+    0  Verification passed, or every target satisfies its declared lane.
+    1  Verification failed, or any target lacks lane-required evidence.
     2  Bad invocation.
 """
 
@@ -30,9 +34,10 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 _ROW_RE = re.compile(r"^\|(.+)\|$")
 
 # Placeholder values in the Command column that mean "skip this row".
-# Kept identical to scripts/check_lane_evidence.py's set (em-dash, en-dash, ASCII
-# hyphen — the old duplicate em-dash here was a typo'd hyphen and the sets diverged).
 _PLACEHOLDER_COMMANDS = {"—", "–", "-", "<command>", ""}
+
+# The untouched SUMMARY-template rollback line is not a real rollback plan.
+_TEMPLATE_ROLLBACK_RE = re.compile(r"^`?git revert <sha>`?$")
 
 # A whole command that proves nothing: exit-0 of a no-op is not evidence.
 # `true`, `:`, `exit 0`, or a bare `echo …` (echo piped/chained into a real tool is
@@ -108,6 +113,133 @@ def parse_verify_table(text: str) -> list[dict]:
         )
 
     return rows
+
+
+def _is_placeholder(value: str) -> bool:
+    """Return whether a SUMMARY header value still has a template shape."""
+    value = value.strip()
+    if not value:
+        return True
+    if value.startswith("<") and value.endswith(">"):
+        return True
+    # Keep this narrow: real prose may contain a pipe in backticks or angle
+    # brackets mid-sentence. Only a whole option-list value is a placeholder.
+    return bool(" | " in value and re.fullmatch(r"[\w/ +-]+(?: \| [\w/ +-]+)+", value))
+
+
+def _header_value(text: str, field: str) -> str | None:
+    """Read a plain or markdown-bold `Field:` header value."""
+    match = re.search(
+        rf"^\*{{0,2}}\s*{field}\s*:\s*(.*)$",
+        text,
+        re.MULTILINE | re.IGNORECASE,
+    )
+    if not match:
+        return None
+    return match.group(1).strip().strip("*").strip()
+
+
+def _resolve_lane(text: str) -> str | None:
+    raw = _header_value(text, "Lane")
+    if raw is None:
+        return None
+    raw = raw.strip().lower()
+    if "|" in raw:
+        return None
+    match = re.match(r"(tiny|normal|high-risk)(?![\w-])", raw)
+    return match.group(1) if match else None
+
+
+def _section(text: str, heading: str) -> str | None:
+    """Return a markdown section body through the next level 1-3 heading."""
+    match = re.search(rf"^#{{1,3}}\s+{re.escape(heading)}\s*$", text, re.MULTILINE)
+    if not match:
+        return None
+    rest = text[match.end() :]
+    next_heading = re.search(r"^#{1,3}\s+\S", rest, re.MULTILINE)
+    return rest[: next_heading.start()] if next_heading else rest
+
+
+def _has_real_rollback(section: str) -> bool:
+    """Return whether Rollback contains content beyond comments/template text."""
+    in_comment = False
+    for line in section.splitlines():
+        value = line.strip()
+        if not value:
+            continue
+        if value.startswith("<!--"):
+            in_comment = "-->" not in value
+            continue
+        if in_comment:
+            in_comment = "-->" not in value
+            continue
+        stripped = value.lstrip("-* ").strip()
+        if stripped and not _TEMPLATE_ROLLBACK_RE.match(stripped):
+            return True
+    return False
+
+
+def check_lane_evidence(text: str) -> list[str]:
+    """Return missing-evidence messages for the SUMMARY's declared lane."""
+    errors: list[str] = []
+    lane = _resolve_lane(text)
+    if lane is None:
+        return ["header: cannot resolve `Lane:` (tiny | normal | high-risk)"]
+
+    for field in ("Lane", "Confidence", "Reason"):
+        value = _header_value(text, field)
+        if value is None:
+            errors.append(f"header: missing `{field}:` line")
+        elif _is_placeholder(value):
+            errors.append(f"header: `{field}:` is unfilled (still a placeholder)")
+
+    if lane in ("normal", "high-risk"):
+        verify = _section(text, "Verify")
+        if verify is None:
+            errors.append(f"lane `{lane}`: missing `### Verify` section")
+        elif not parse_verify_table(text):
+            errors.append(
+                f"lane `{lane}`: `### Verify` has no real command row "
+                "(all rows are placeholders)"
+            )
+
+    if lane == "high-risk":
+        rollback = _section(text, "Rollback")
+        if rollback is None:
+            errors.append("lane `high-risk`: missing `### Rollback` section")
+        elif not _has_real_rollback(rollback):
+            errors.append(
+                "lane `high-risk`: `### Rollback` is empty or only the unedited "
+                "template (`git revert <sha>`) -- write the real undo steps"
+            )
+
+    return errors
+
+
+def _resolve_summary_path(target: str, specs_root: Path) -> Path:
+    """Resolve a lane target as a direct file path first, then as a slug."""
+    path = Path(target)
+    if path.is_file():
+        return path
+    return specs_root / target / "SUMMARY.md"
+
+
+def _check_lane_targets(targets: list[str], specs_root: Path) -> int:
+    failed = False
+    for target in targets:
+        path = _resolve_summary_path(target, specs_root)
+        if path.is_file():
+            errors = check_lane_evidence(path.read_text(encoding="utf-8"))
+        else:
+            errors = [f"{path}: not a file"]
+        if errors:
+            failed = True
+            print(f"✗ {path} -- {len(errors)} missing:")
+            for error in errors:
+                print(f"    - {error}")
+        else:
+            print(f"✓ {path}")
+    return 1 if failed else 0
 
 
 def run_checks(
@@ -266,21 +398,32 @@ def main(argv: list[str], specs_root: Path | None = None) -> int:
     import argparse
 
     parser = argparse.ArgumentParser(prog="verify_summary.py", add_help=False)
-    parser.add_argument("slug", nargs="?", default=None)
+    parser.add_argument("targets", nargs="*")
     parser.add_argument("--check", action="store_true")
+    parser.add_argument("--lane", action="store_true")
     parser.add_argument("--timeout", type=int, default=60)
     parser.add_argument("-h", "--help", action="store_true")
 
     args = parser.parse_args(argv)
 
-    if args.help or args.slug is None:
+    if args.help:
         print(__doc__, file=sys.stderr)
         return 2
 
     if specs_root is None:
         specs_root = _REPO_ROOT / "specs"
 
-    summary_path = specs_root / args.slug / "SUMMARY.md"
+    if args.lane:
+        if args.check or not args.targets:
+            print(__doc__, file=sys.stderr)
+            return 2
+        return _check_lane_targets(args.targets, specs_root)
+
+    if len(args.targets) != 1:
+        print(__doc__, file=sys.stderr)
+        return 2
+
+    summary_path = specs_root / args.targets[0] / "SUMMARY.md"
     if not summary_path.is_file():
         print(f"error: {summary_path} not found", file=sys.stderr)
         return 2

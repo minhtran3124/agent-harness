@@ -73,7 +73,7 @@ assert_rc 1
 
 # ── python engines: prefixed slug → specs/<slug>/SUMMARY.md path join ──
 if command -v python3 >/dev/null 2>&1; then
-  t "check_lane_evidence.py resolves a prefixed slug via specs_root"
+  t "verify_summary.py --lane resolves a prefixed slug via specs_root"
   d2=$(mktemp -d); _CLEANUP_DIRS+=("$d2")
   mkdir -p "$d2/specs/$GH"
   printf 'Lane: tiny\nConfidence: high\nReason: a real filled reason\n' > "$d2/specs/$GH/SUMMARY.md"
@@ -81,12 +81,12 @@ if command -v python3 >/dev/null 2>&1; then
 import sys
 from pathlib import Path
 sys.path.insert(0, '$ROOT/scripts')
-from check_lane_evidence import main
-sys.exit(main(['$GH'], specs_root=Path('$d2/specs')))
+from verify_summary import main
+sys.exit(main(['--lane', '$GH'], specs_root=Path('$d2/specs')))
 " 2>&1); RC=$?
   assert_rc 0
 
-  t "check_lane_evidence.py fails a prefixed slug whose evidence is missing (resolution really happened)"
+  t "verify_summary.py --lane fails a prefixed slug whose evidence is missing (resolution really happened)"
   d3=$(mktemp -d); _CLEANUP_DIRS+=("$d3")
   mkdir -p "$d3/specs/$GH"
   printf 'Lane: high-risk\nConfidence: medium\nReason: r\n' > "$d3/specs/$GH/SUMMARY.md"
@@ -94,8 +94,8 @@ sys.exit(main(['$GH'], specs_root=Path('$d2/specs')))
 import sys
 from pathlib import Path
 sys.path.insert(0, '$ROOT/scripts')
-from check_lane_evidence import main
-sys.exit(main(['$GH'], specs_root=Path('$d3/specs')))
+from verify_summary import main
+sys.exit(main(['--lane', '$GH'], specs_root=Path('$d3/specs')))
 " 2>&1); RC=$?
   assert_rc 1
 else
