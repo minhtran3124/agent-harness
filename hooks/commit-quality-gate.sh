@@ -74,8 +74,8 @@ echo "[COMMIT GATE] Escalations... PASSED" >&2
 # ─────────────────────────────────────────────
 # Check 1.6: Lane evidence (mechanizes rules/auto-correct-scope.md)
 # ─────────────────────────────────────────────
-# rules/auto-correct-scope.md calls scripts/check_lane_evidence.py the single
-# source of truth for the lane -> evidence mapping, but nothing invoked it
+# rules/auto-correct-scope.md calls scripts/verify_summary.py --lane the single
+# source of truth for the lane -> evidence mapping, but nothing originally invoked it
 # (PR #119 review finding: the script was proven by unit tests and then never
 # run against a real SUMMARY). This makes the mapping real.
 # Scope mirrors Check 1.5: only commits touching specs/<slug>/, and the STAGED
@@ -85,7 +85,7 @@ echo "[COMMIT GATE] Escalations... PASSED" >&2
 EV_SLUGS=$(git diff --cached --name-only 2>/dev/null \
   | grep -oE '^specs/[^/]+/' | sort -u || true)
 if [ -n "$EV_SLUGS" ]; then
-  if command -v python3 >/dev/null 2>&1 && [ -f scripts/check_lane_evidence.py ]; then
+  if command -v python3 >/dev/null 2>&1 && [ -f scripts/verify_summary.py ]; then
     EV_FAILED=0
     for slug_dir in $EV_SLUGS; do
       summary="${slug_dir}SUMMARY.md"
@@ -102,7 +102,7 @@ if [ -n "$EV_SLUGS" ]; then
       fi
       # Capture rather than stream: the script names the temp path, which would
       # be meaningless to the committer. Re-label it as the real SUMMARY.
-      if ! ev_out=$(python3 scripts/check_lane_evidence.py "$ev_tmp" 2>&1); then
+      if ! ev_out=$(python3 scripts/verify_summary.py --lane "$ev_tmp" 2>&1); then
         echo "${ev_out//$ev_tmp/$summary}" >&2
         EV_FAILED=1
       fi
@@ -117,7 +117,7 @@ if [ -n "$EV_SLUGS" ]; then
     fi
     echo "[COMMIT GATE] Lane evidence... PASSED" >&2
   else
-    echo "[COMMIT GATE] Lane evidence skipped: python3 or scripts/check_lane_evidence.py unavailable." >&2
+    echo "[COMMIT GATE] Lane evidence skipped: python3 or scripts/verify_summary.py unavailable." >&2
   fi
 fi
 

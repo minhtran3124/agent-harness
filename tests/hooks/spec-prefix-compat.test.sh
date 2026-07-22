@@ -28,7 +28,7 @@ run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_contains 0 "Escalations... PASSED"
 
 # ── commit-quality-gate.sh: Check 1.6 (lane evidence) on a lin-prefixed SUMMARY ──
-LANE_PY="$ROOT/scripts/check_lane_evidence.py"
+LANE_PY="$ROOT/scripts/verify_summary.py"
 LANE_BAD=$'Lane: normal\nConfidence: high\nReason: a real filled reason\n\n### Verify\n\n| Check | Command | Exit | Notes |\n| --- | --- | --- | --- |\n| p | `<command>` | 0 | placeholder only |\n'
 LANE_OK=$'Lane: normal\nConfidence: high\nReason: a real filled reason\n\n### Verify\n\n| Check | Command | Exit | Notes |\n| --- | --- | --- | --- |\n| p | `true` | 0 | a real command |\n'
 

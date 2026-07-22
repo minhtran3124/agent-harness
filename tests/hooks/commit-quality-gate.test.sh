@@ -63,8 +63,9 @@ assert_rc_contains 0 "Evidence (### Verify present)... PASSED"
 
 # ── Task 3.2: REQUIRE_VERIFY=1 re-runs the ### Verify table (machine-verified proof) ──
 VERIFY_PY="$ROOT/scripts/verify_summary.py"
-VERIFY_TABLE_OK=$'### Verify\n\n| Check | Command | Exit | Notes |\n| --- | --- | --- | --- |\n| ok | test 1 = 1 | 0 | matches |\n'
-VERIFY_TABLE_BAD=$'### Verify\n\n| Check | Command | Exit | Notes |\n| --- | --- | --- | --- |\n| bad | false | 0 | claimed 0 but exits 1 |\n'
+VERIFY_HEADER=$'Lane: normal\nConfidence: high\nReason: exercise the Verify re-run gate\n\n'
+VERIFY_TABLE_OK="${VERIFY_HEADER}"$'### Verify\n\n| Check | Command | Exit | Notes |\n| --- | --- | --- | --- |\n| ok | test 1 = 1 | 0 | matches |\n'
+VERIFY_TABLE_BAD="${VERIFY_HEADER}"$'### Verify\n\n| Check | Command | Exit | Notes |\n| --- | --- | --- | --- |\n| bad | false | 0 | claimed 0 but exits 1 |\n'
 
 t "REQUIRE_VERIFY=1: ### Verify table whose command matches its claimed exit → re-run PASSES"
 repo=$(new_repo $H)
@@ -147,9 +148,9 @@ run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_contains 2 "deny-on-no-response"
 
 # ── Check 1.6: lane evidence (mechanizes rules/auto-correct-scope.md) ──
-# Wired in response to the PR #119 review: check_lane_evidence.py was proven by
+# Wired in response to the PR #119 review: lane evidence was proven by
 # unit tests but never invoked against a real SUMMARY.
-LANE_PY="$ROOT/scripts/check_lane_evidence.py"
+LANE_PY="$ROOT/scripts/verify_summary.py"
 LANE_TINY=$'Lane: tiny\nConfidence: high\nReason: a real filled reason\n'
 LANE_NORMAL_BAD=$'Lane: normal\nConfidence: high\nReason: a real filled reason\n\n### Verify\n\n| Check | Command | Exit | Notes |\n| --- | --- | --- | --- |\n| p | `<command>` | 0 | placeholder only |\n'
 LANE_NORMAL_OK=$'Lane: normal\nConfidence: high\nReason: a real filled reason\n\n### Verify\n\n| Check | Command | Exit | Notes |\n| --- | --- | --- | --- |\n| p | `true` | 0 | a real command |\n'
