@@ -152,12 +152,9 @@ approach to use — present a clear A/B choice (use the `AskUserQuestion` tool w
 
 **Which approach?"**
 
-**Either approach — isolate the branch first.** Before any code change, ensure work runs on a
-dedicated feature branch, not a shared one. If on `main`/`master` (or any branch in
-`HARNESS_SHARED_BRANCHES`), **invoke `using-git-worktrees` first** to create an isolated worktree +
-branch. This is the only step that creates the branch; `hooks/branch-isolation-guard.sh` hard-blocks
-code edits on a shared branch regardless of plan state, so skipping it stalls execution.
-(Only `specs/*` bookkeeping is exempt, so intake can record `SUMMARY.md` before the branch exists.)
+**Either approach:** before the first code change, apply
+`.claude/rules/auto-correct-scope.md` → Branch isolation and do not hand off until work is on the
+lane-appropriate dedicated branch.
 
 **If Subagent-Driven chosen:**
 

@@ -19,9 +19,11 @@ Load plan, review critically, execute tasks in batches, report for review betwee
 
 **Gate — run BEFORE any implementation step. If ANY check fails, STOP, surface the specific violation(s) to the user, and do NOT execute.**
 
-References: `.claude/rules/plan-format.md` (task schema — two accepted syntaxes — + guardrails) and `.claude/rules/wave-parallelism.md` (zero file overlap invariant).
+References: `.claude/rules/plan-format.md` (task schema — two accepted syntaxes — + guardrails),
+`.claude/rules/wave-parallelism.md` (zero file overlap invariant), and
+`.claude/rules/auto-correct-scope.md` (branch isolation + execution autonomy).
 
-Both rules are path-scoped (not auto-loaded). Read both files now, before running the checks —
+These rules are path-scoped (not auto-loaded). Read all three now, before running the checks —
 reading the plan alone triggers their `paths:` injection, but do not rely on it.
 
 A task is a `### Task <id>` markdown heading with `- **Files/Action/Verify/Done:**` field
@@ -42,19 +44,9 @@ Run these four guardrail checks against the plan:
 
 ### Step 0b: Ensure branch isolation (before any code change)
 
-Implementation must never begin on `main`/`master` or another shared branch. Before the first task:
-
-1. Check the current branch: `git symbolic-ref --short HEAD`.
-2. If on a shared/protected branch — `main`, `master`, or any branch in
-   `HARNESS_SHARED_BRANCHES` (the same list `hooks/branch-isolation-guard.sh` enforces) —
-   **invoke `using-git-worktrees`** to create an isolated worktree + feature branch, then
-   continue execution there. Do not proceed on the shared branch.
-3. If already on a dedicated feature branch (or inside a worktree created for this slug), proceed.
-
-This is the structural point that creates the branch. It is now backstopped at write time by
-`hooks/branch-isolation-guard.sh`, which **hard-blocks** any code edit made on a shared branch
-regardless of plan state (break-glass: `BRANCH_ISOLATION_REASON`). `branch-guard.sh` only
-warns, and only at commit time — so do not rely on it; create the branch here.
+Apply `.claude/rules/auto-correct-scope.md` → Branch isolation. Do not start task 1 until work is
+on the lane-appropriate dedicated branch; `branch-isolation-guard.sh` is only the enforcement
+backstop, not the branch-creation step.
 
 ### Step 1: Load and Review Plan
 
