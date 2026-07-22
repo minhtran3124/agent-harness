@@ -42,6 +42,7 @@ Option 1 from issue #152 (lower threshold to 75) is the smallest diff that makes
 | No stale prose threshold | `sh -c '! grep -rn "threshold 80" skills/'` | 0 | zero remaining prose references |
 | New default present | `grep -cq "default \*\*75\*\*" skills/correctness-review/correctness-scorer-prompt.md` | 0 | scorer prompt states default 75 |
 | Doc-truth lint | `bash scripts/lint-doc-truth.sh` | 0 | paths + hook table consistent |
+| Threshold contract test | `bash tests/scripts/scorer-threshold-contract.test.sh` | 0 | 6 cases; fails (exit 1) on pre-fix main worktree |
 
 ### Rollback
 
