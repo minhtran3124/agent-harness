@@ -134,4 +134,25 @@ stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc 0
 
+t "workflow-engine: agents/coding.md + Lane: normal → BLOCKED (real agent prompt is an engine surface)"
+repo=$(new_repo $H)
+stage "$repo" "agents/coding.md" '# Coding agent'
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "workflow-engine"
+
+t "workflow-engine: agents/README.md → silent pass (inventory prose, mirrors skills/README.md)"
+repo=$(new_repo $H)
+stage "$repo" "agents/README.md" '# Agents inventory'
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc 0
+
+t "workflow-engine: agents/PROJECT.template.md → silent pass (fill-in scaffold, not an engine surface)"
+repo=$(new_repo $H)
+stage "$repo" "agents/PROJECT.template.md" '# Project template'
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc 0
+
 finish

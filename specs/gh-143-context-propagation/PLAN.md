@@ -10,7 +10,7 @@ created: 2026-07-22
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**14 tasks · 6 waves · 31 files · 0/14 done**
+**14 tasks · 6 waves · 31 files · 14/14 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -65,20 +65,20 @@ flowchart LR
 ```
 
 ### Progress
-- [ ] 0.1 — P1 regression fixture: rule referenced, never Read (wave 1)
-- [ ] 0.2 — P2 regression fixture: stale inline policy subset (wave 1)
-- [ ] 0.3 — Deterministic regression test for the shipped P1/P2 fixes (wave 1)
-- [ ] 1.1 — workflow-engine path signal in risk corroboration (wave 2)
-- [ ] 1.2 — feature-intake guidance: Markdown is not prose-only (wave 2)
-- [ ] 2.1 — context-propagation-audit skill (wave 3)
-- [ ] 2.2 — wire the audit into the workflow (wave 3)
-- [ ] 2.3 — inline-policy drift lint (wave 3)
-- [ ] 3.1 — context-boundary probe protocol (wave 4)
-- [ ] 3.2 — run the probes, record evidence (wave 4)
-- [ ] 4.1 — review-receipt engine (wave 5)
-- [ ] 4.2 — wire receipt writing and the pre-push gate (wave 5)
-- [ ] 5.1 — threshold-75 benchmark run (wave 6)
-- [ ] 5.2 — review-escape ledger (wave 6)
+- [x] 0.1 — P1 regression fixture: rule referenced, never Read (wave 1)
+- [x] 0.2 — P2 regression fixture: stale inline policy subset (wave 1)
+- [x] 0.3 — Deterministic regression test for the shipped P1/P2 fixes (wave 1)
+- [x] 1.1 — workflow-engine path signal in risk corroboration (wave 2)
+- [x] 1.2 — feature-intake guidance: Markdown is not prose-only (wave 2)
+- [x] 2.1 — context-propagation-audit skill (wave 3)
+- [x] 2.2 — wire the audit into the workflow (wave 3)
+- [x] 2.3 — inline-policy drift lint (wave 3)
+- [x] 3.1 — context-boundary probe protocol (wave 4)
+- [x] 3.2 — run the probes, record evidence (wave 4)
+- [x] 4.1 — review-receipt engine (wave 5)
+- [x] 4.2 — wire receipt writing and the pre-push gate (wave 5)
+- [x] 5.1 — threshold-75 benchmark run (wave 6)
+- [x] 5.2 — review-escape ledger (wave 6)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -378,4 +378,13 @@ stay non-high-risk; no new inline copies of authoritative policy lists.
 ## 6. Status Log
 
 - 2026-07-22 — Plan drafted (all phases of issue #143). Phase 5 threshold half pre-shipped via
-  issue #152 / PR #153 (`aa92c22`, `879dfcc` on `fix/scorer-threshold-152`, PR open).
+  issue #152 / PR #153 (`aa92c22`, `879dfcc` on `fix/scorer-threshold-152`, merged).
+- 2026-07-22 — Executed all 6 waves on `feature/gh-143-context-propagation`:
+  - Wave 1 (Phase 0) `89422d1` — Tasks 0.1/0.2/0.3.
+  - Wave 2 (Phase 1) `d094b23` — Tasks 1.1/1.2.
+  - Wave 3 (Phase 2) `546485a` — Tasks 2.1/2.2/2.3.
+  - Wave 4 (Phase 3) `cef237a` — Tasks 3.1/3.2 (probes run at Claude Code 2.1.217).
+  - Wave 5 (Phase 4) `bfe0fa6` — Tasks 4.1/4.2.
+  - Wave 6 (Phase 5 remainder) `3f362a5` — Tasks 5.1/5.2.
+  Each wave: two-stage subagent review (spec + quality, sonnet) passed; full suite green
+  (153 tests). Final adversarial correctness + intent + context-propagation-audit pending.

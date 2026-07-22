@@ -15,16 +15,41 @@ Input-type: harness improvement
 
 > now, let make plan for all phases first
 
+Then, after the plan was presented, the user chose **Subagent-Driven (this session)** execution
+and said:
+
+> resume working
+
 (Context: "all phases" = Phases 0–5 of minhtran3124/agent-harness issue #143 — "fix(review):
 close context-propagation escapes in Claude Code workflow changes" — reviewed and summarized
 earlier in the same session. Phase 5's threshold half already shipped as issue #152 / PR #153.
-The deliverable of this turn is the plan itself; execution is a separate approved handoff.)
+The intent therefore spans BOTH planning all phases AND executing them in this session via
+subagent-driven-development.)
 
 ## What changed
 
-Planning artifacts only (no implementation yet): `design.md` (condensed from issue #143),
-`research-brief.md` (ground-truth research), `PLAN.md` (13 tasks across 6 waves mapping to the
-issue's Phases 0–5, minus the already-shipped threshold fix).
+Planned and then executed all 6 waves (Phases 0–5 of issue #143) on
+`feature/gh-143-context-propagation`. The product delta:
+
+- **Phase 0** — two review-chain regression fixtures (`context-rule-unread`,
+  `stale-inline-policy`) reproducing the PR #141 P1/P2 escapes, plus
+  `tests/scripts/context-propagation-regression.test.sh` (parses the live skill files; mutation
+  cases prove the two explicit Reads + the 8-case STOP list are load-bearing).
+- **Phase 1** — a `workflow-engine` hard-gate path signal in `hooks/risk-corroboration.sh`
+  (mirrored in `harness-manifest.json` + `category_mode`) so workflow-as-code Markdown can't stay
+  `Lane: normal`; `feature-intake` + `CLAUDE.md` guidance that such Markdown is executable.
+- **Phase 2** — the change-triggered `/context-propagation-audit` skill (consumer/context
+  delivery matrix; assumed/unconfirmed delivery FAILS), wired into subagent-driven-development;
+  `tests/scripts/inline-policy-drift.test.sh` guards the Rule-4 STOP list against silent drift.
+- **Phase 3** — `evals/context-boundaries/` probe protocol + a baseline run (Claude Code 2.1.217)
+  proving delivery per isolated context, honestly recording the cheap-model + main-session
+  `unconfirmed` cases.
+- **Phase 4** — `scripts/check_review_receipt.py` (fail-closed, HEAD-pinned) + template + tests,
+  wired to write receipts after review and gate the finishing-branch push.
+- **Phase 5 (remainder)** — the threshold-75 benchmark (catch rate 7/7, 1 soft FP, honest
+  harness caveats) and `docs/review-escapes.md` ledger seeded with the three known escapes.
+
+Planning artifacts (`design.md`, `research-brief.md`, `PLAN.md`) were written first.
 
 ### Rationale
 
@@ -43,19 +68,35 @@ owner directing the work on their own issue.
 
 ### Deviations
 
-- none
+- Rule 1 — Final correctness review found the `workflow-engine` signal over-matched
+  `agents/README.md` / `agents/*.template.md` (prose), asymmetric with the `skills/README.md`
+  exclusion. Fixed the regex in `hooks/risk-corroboration.sh` + added three agents/ test cases.
+- Rule 2 (plan correction) — Task 2.1's declared Files omitted `harness-manifest.json`; a new
+  `skills/<name>/SKILL.md` must be registered there or `check_manifest.py` fails. Added to the
+  plan before dispatch, so the audit skill was registered.
 
 ### Verify
 
 | Check | Command | Exit | Notes |
 | --- | --- | --- | --- |
-| Doc-truth lint clean with new spec files | `bash scripts/lint-doc-truth.sh` | 0 | plan/design/brief reference no missing paths |
-| Plan has all 14 task sections | `test "$(grep -c '^### Task' specs/gh-143-context-propagation/PLAN.md)" -eq 14` | 0 | 6 waves, phases 0–5 |
+| Full harness suite (all waves) | `bash scripts/run-tests.sh` | 0 | ALL GREEN, 153 tests (145 baseline + 8 receipt) |
+| workflow-engine gate + agents/ exclusions | `bash tests/hooks/risk-corroboration.test.sh` | 0 | 21 cases incl. agents/README + template silent-pass |
+| Manifest ↔ hook ↔ disk parity | `python3 scripts/check_manifest.py` | 0 | workflow-engine slug + audit skill registered |
+| P1/P2 regression guard | `bash tests/scripts/context-propagation-regression.test.sh` | 0 | mutation cases detect removed Reads / STOP case |
+| Inline-policy drift guard | `bash tests/scripts/inline-policy-drift.test.sh` | 0 | Rule-4 STOP list drift detected |
+| Receipt engine fail-closed | `bash scripts/test_check_review_receipt.py` via pytest | 0 | 8 cases incl. stale-sha, blocking-open, malformed |
+| Doc-truth lint | `bash scripts/lint-doc-truth.sh` | 0 | all referenced paths exist; hook table matches settings.json |
 
 ### Rollback
 
-- Planning artifacts only: `git rm -r specs/gh-143-context-propagation/` (or leave — inert until execution).
+- Revert the whole branch: `git revert --no-edit 89422d1..3f362a5` (and the follow-up review-fix
+  commit), or drop the branch entirely: `git checkout main && git branch -D feature/gh-143-context-propagation`.
+- The `workflow-engine` gate and `check_review_receipt.py` are source-only (not deployed to
+  `.claude/`), so reverting the branch fully disarms them; no separate un-deploy step.
 
 ### Harness-Delta
 
-- none
+- backlog — the `/context-propagation-audit` benchmark (wave 6) showed the two new fixtures are
+  *easier* than the cross-context escapes they model (a single-diff correctness pass catches
+  them). A harder cross-context fixture variant is needed to truly exercise the audit; recorded
+  in `evals/skills/review-chain/results/2026-07-22-threshold-75.md` and `docs/review-escapes.md`.
