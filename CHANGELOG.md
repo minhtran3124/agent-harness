@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.18.0] — 2026-07-22
+
+- fix(correctness-review): lower scorer threshold to 75 to match discrete anchors (PR #153)
+
 ## [2.17.0] — 2026-07-22
 
 - refactor(evidence): consolidate lane validation (PR #150)
