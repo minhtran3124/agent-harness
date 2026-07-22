@@ -1,6 +1,6 @@
 ---
 slug: gh-143-context-propagation
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-07-22
 ---
@@ -387,4 +387,9 @@ stay non-high-risk; no new inline copies of authoritative policy lists.
   - Wave 5 (Phase 4) `bfe0fa6` — Tasks 4.1/4.2.
   - Wave 6 (Phase 5 remainder) `3f362a5` — Tasks 5.1/5.2.
   Each wave: two-stage subagent review (spec + quality, sonnet) passed; full suite green
-  (153 tests). Final adversarial correctness + intent + context-propagation-audit pending.
+  (153 tests).
+- 2026-07-22 — Final adversarial gates (all sonnet, ensemble-diverse from Opus orchestrator):
+  correctness (1 finding: agents/ prose over-match → fixed `108438c`), intent (7/7 ACs; 1
+  report-only SUMMARY-staleness → fixed), context-propagation-audit dogfooded → PASS. Review
+  receipt written + validated (HEAD-pinned, `check_review_receipt.py` exit 0).
+- 2026-07-22 — shipped via `feature/gh-143-context-propagation`.
