@@ -63,11 +63,14 @@ Input-type: new spec | spec slice | change request | new initiative | maintenanc
 
 <!-- Evidence over assertion: one row per check that was actually RUN.
      A claim of "done" is only valid with a re-runnable command + its result.
-     Do not list a command that was not run. -->
+     Do not list a command that was not run.
+     The trailing `Criterion` column is optional: name an `SC-n` from PLAN.md §3
+     when the row satisfies one; every SC must be covered by >=1 passing row
+     (enforced by scripts/verify_summary.py). Leave blank for rows that map to no SC. -->
 
-| Check | Command | Exit | Notes |
-| --- | --- | --- | --- |
-| <unit / lint / build / behavior> | `<command>` | 0 | <output excerpt on fail> |
+| Check | Command | Exit | Notes | Criterion |
+| --- | --- | --- | --- | --- |
+| <unit / lint / build / behavior> | `<command>` | 0 | <output excerpt on fail> | <SC-n or blank> |
 
 ### Rollback
 

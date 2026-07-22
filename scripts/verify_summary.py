@@ -48,6 +48,57 @@ _TEMPLATE_ROLLBACK_RE = re.compile(r"^`?git revert <sha>`?$")
 # denylist removes the laziest forgery class (DR-6).
 _TRIVIAL_RE = re.compile(r"^\s*(?:true|:|exit\s+0|echo\b[^|&;`$()]*)\s*$")
 
+# A PLAN.md §3 Success-Criteria id: `SC-1`, `SC-2`, ...
+_SC_ID_RE = re.compile(r"^SC-\d+$")
+
+# An `Expected` cell must lead with the machine-read token `exit <n>` (n may be
+# non-zero — negative proof is legal); free text may follow.
+_SC_EXPECTED_RE = re.compile(r"^exit\s+(\d+)\b")
+
+
+def parse_sc_table(plan_text: str) -> dict[str, str]:
+    """Map each `SC-<n>` id to its expected-exit token from a PLAN.md §3 table.
+
+    Only markdown table rows whose first cell matches `^SC-\\d+$` are read; fenced
+    blocks (illustrations) are skipped via a simple in-fence toggle. A value is the
+    numeric exit string (e.g. "0", "1"). Malformed rows map the id to an
+    `ERROR: ...` string instead: a duplicate id, or an `Expected` cell that does
+    not lead with `exit <n>`.
+    """
+    result: dict[str, str] = {}
+    in_fence = False
+    for line in plan_text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("```"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+
+        m = _ROW_RE.match(stripped)
+        if not m:
+            continue
+
+        cells = [c.strip() for c in m.group(1).split("|")]
+        sc_id = cells[0]
+        if not _SC_ID_RE.match(sc_id):
+            continue
+
+        if sc_id in result:
+            result[sc_id] = f"ERROR: duplicate id {sc_id}"
+            continue
+
+        expected = cells[3] if len(cells) > 3 else ""
+        em = _SC_EXPECTED_RE.match(expected)
+        if not em:
+            result[sc_id] = (
+                f"ERROR: {sc_id} `Expected` must lead with `exit <n>` (got {expected!r})"
+            )
+            continue
+
+        result[sc_id] = em.group(1)
+    return result
+
 
 def _parse_verify_rows(section: str) -> list[dict]:
     """Parse Verify table rows from an already-resolved section body."""
@@ -83,6 +134,7 @@ def _parse_verify_rows(section: str) -> list[dict]:
         raw_command = cells[1]
         claimed_exit = cells[2] if len(cells) > 2 else ""
         notes = cells[3] if len(cells) > 3 else ""
+        criterion = cells[4] if len(cells) > 4 else ""
 
         # Strip surrounding backticks from command
         command = raw_command.strip("`").strip()
@@ -97,6 +149,7 @@ def _parse_verify_rows(section: str) -> list[dict]:
                 "command": command,
                 "claimed_exit": claimed_exit.strip(),
                 "notes": notes.strip(),
+                "criterion": criterion.strip(),
             }
         )
 
@@ -179,7 +232,61 @@ def _has_real_rollback(section: str) -> bool:
     return False
 
 
-def check_lane_evidence(text: str) -> list[str]:
+def _sc_map_for_summary(summary_path: Path | None) -> dict[str, str]:
+    """Parse the SC table of the sibling PLAN.md, or {} when none applies."""
+    if summary_path is None:
+        return {}
+    plan_path = Path(summary_path).parent / "PLAN.md"
+    if not plan_path.is_file():
+        return {}
+    return parse_sc_table(plan_path.read_text(encoding="utf-8"))
+
+
+def _check_sc_coverage(text: str, summary_path: Path | None) -> list[str]:
+    """Return SC-coverage errors when a sibling PLAN.md declares an SC table.
+
+    Fail-open: no PLAN.md or no SC table → no checks. Otherwise every SC id must be
+    named by ≥1 Verify row whose claimed exit matches the SC's expected exit; a
+    Criterion naming an unknown SC id is an error (typo guard).
+    """
+    sc_map = _sc_map_for_summary(summary_path)
+    if not sc_map:
+        return []
+
+    errors: list[str] = []
+    for sc_id, value in sc_map.items():
+        if value.startswith("ERROR:"):
+            errors.append(f"SC table: {value[len('ERROR:') :].strip()}")
+
+    valid = {k: v for k, v in sc_map.items() if not v.startswith("ERROR:")}
+
+    verify = _section(text, "Verify")
+    rows = _parse_verify_rows(verify) if verify else []
+
+    covered: dict[str, set[str]] = {}
+    for row in rows:
+        criterion = row.get("criterion", "")
+        if not criterion:
+            continue
+        if criterion not in sc_map:
+            errors.append(
+                f"Verify row `{row['check']}` Criterion `{criterion}` names an "
+                "unknown SC id (not in PLAN.md §3)"
+            )
+            continue
+        covered.setdefault(criterion, set()).add(row["claimed_exit"])
+
+    for sc_id, expected in valid.items():
+        if expected not in covered.get(sc_id, set()):
+            errors.append(
+                f"SC coverage: `{sc_id}` (expected exit {expected}) is not named by "
+                "any Verify row with a matching claimed exit"
+            )
+
+    return errors
+
+
+def check_lane_evidence(text: str, summary_path: Path | None = None) -> list[str]:
     """Return missing-evidence messages for the SUMMARY's declared lane."""
     errors: list[str] = []
     lane = _resolve_lane(text)
@@ -213,6 +320,8 @@ def check_lane_evidence(text: str) -> list[str]:
                 "template (`git revert <sha>`) -- write the real undo steps"
             )
 
+    errors += _check_sc_coverage(text, summary_path)
+
     return errors
 
 
@@ -229,7 +338,9 @@ def _check_lane_targets(targets: list[str], specs_root: Path) -> int:
     for target in targets:
         path = _resolve_summary_path(target, specs_root)
         if path.is_file():
-            errors = check_lane_evidence(path.read_text(encoding="utf-8"))
+            errors = check_lane_evidence(
+                path.read_text(encoding="utf-8"), summary_path=path
+            )
         else:
             errors = [f"{path}: not a file"]
         if errors:
@@ -444,6 +555,10 @@ def main(argv: list[str], specs_root: Path | None = None) -> int:
     repo_root = _REPO_ROOT
     results = run_checks(rows, repo_root=repo_root, timeout=args.timeout)
 
+    # SC expected exits from the sibling PLAN.md (empty when none) — a
+    # Criterion-mapped row is also validated against its SC's expected exit.
+    sc_map = _sc_map_for_summary(summary_path)
+
     failed = False
     for r in results:
         if r.get("trivial"):
@@ -468,6 +583,21 @@ def main(argv: list[str], specs_root: Path | None = None) -> int:
             claimed = None
 
         actual = r["actual_exit"]
+
+        # SC gate: a Criterion-mapped row must actually exit its SC's expected
+        # code. Distinct from claimed-vs-actual — it catches a row that matches
+        # its own claim but points at the wrong SC.
+        criterion = r.get("criterion", "")
+        sc_expected = sc_map.get(criterion)
+        if sc_expected is not None and not sc_expected.startswith("ERROR:"):
+            if actual != int(sc_expected):
+                print(
+                    f"SC-FAIL  [{r['check']}]  criterion={criterion}  "
+                    f"sc_expected={sc_expected}  actual={actual}  "
+                    f"command: {r['command']}"
+                )
+                failed = True
+                continue
 
         # A row PASSES when the claim matches reality — even a non-zero claim
         # (negative proof: "this command must fail" is a legitimate, pinnable check).
