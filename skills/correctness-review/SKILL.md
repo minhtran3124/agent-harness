@@ -1,6 +1,6 @@
 ---
 name: correctness-review
-description: Run one adversarial correctness review over a diff — assumes ≥1 runtime bug exists and hunts for it (None/async/DB/auth/concurrency/contract breaks), independent of any plan or spec. Find→score→threshold(80)→classify→fix-loop. Invokable standalone on any diff, and called by subagent-driven-development as its final pre-ship gate. Not a style/cleanup pass; for that use /code-review.
+description: Run one adversarial correctness review over a diff — assumes ≥1 runtime bug exists and hunts for it (None/async/DB/auth/concurrency/contract breaks), independent of any plan or spec. Find→score→threshold(75)→classify→fix-loop. Invokable standalone on any diff, and called by subagent-driven-development as its final pre-ship gate. Not a style/cleanup pass; for that use /code-review.
 ---
 
 # Adversarial Correctness Review
@@ -42,7 +42,7 @@ The finder needs a `BASE_SHA..HEAD_SHA` range (and the list of touched files):
 - **Standalone, explicit range:** the user names `BASE`/`HEAD` or a PR.
 - **In-flow:** `BASE` = commit before task 1, `HEAD` = current commit after all tasks.
 
-## Pipeline — FIND (6 angles) → dedup → SCORE → THRESHOLD(80) → classify → fix-loop
+## Pipeline — FIND (6 angles) → dedup → SCORE → THRESHOLD(75) → classify → fix-loop
 
 **What makes this pass different from the other reviewers:**
 
@@ -99,7 +99,7 @@ The finder needs a `BASE_SHA..HEAD_SHA` range (and the list of touched files):
    > precision gate, it asserted three defects that the fixtures had each named **in advance** as
    > false positives. SCORE filters the opposite direction. It stays.
 
-4. **THRESHOLD** — findings scoring below **80** do not enter the fix-loop. They are recorded as
+4. **THRESHOLD** — findings scoring below **75** do not enter the fix-loop. They are recorded as
    `advisory` in `specs/<slug>/SUMMARY.md` under `### Advisory Findings` (reported inline in
    standalone use with no slug). **Below-threshold does not mean discarded** — every
    `unmodified-line` finding scores 0 by rule and lands here, real and reported, simply not
@@ -164,4 +164,4 @@ standalone use). A finding with neither is a hard block — do not report succes
 ## Prompt Templates
 
 - `./correctness-reviewer-prompt.md` — the FIND stage: six angles, dispatched in parallel over the whole diff.
-- `./correctness-scorer-prompt.md` — the SCORE stage: one cheap-model scorer per deduplicated location (0–100, threshold 80).
+- `./correctness-scorer-prompt.md` — the SCORE stage: one cheap-model scorer per deduplicated location (0–100, threshold 75).

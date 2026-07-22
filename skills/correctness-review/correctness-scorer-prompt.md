@@ -6,7 +6,7 @@ any fix work begins.
 
 **Purpose:** Filter the high-recall finding list for precision. The angles are tuned to report
 when uncertain; this stage assigns a 0–100 confidence score to each candidate so that the
-fix-loop only acts on findings that meet the threshold (default **80**).
+fix-loop only acts on findings that meet the threshold (default **75**).
 
 **One score per `(file, line)`, not one per angle.** The FIND stage deduplicates by location
 before this stage runs. When several angles reported the same location, it arrives here as a
@@ -114,7 +114,7 @@ Task tool (reviewer):
     high-recall engine asserted three defects — an IDOR on correct auth wiring, an unstable
     `ORDER BY`, an unbounded read — each resting on a file absent from the tree, and each was
     a false positive the fixture had named in advance. The mechanism was real in every case;
-    the *trigger* was unverifiable. That is exactly a 50, not an 80.
+    the *trigger* was unverifiable. That is exactly a 50, not a 75.
 
     ## Scoring is independent of severity
 
@@ -139,12 +139,13 @@ Task tool (reviewer):
 
 ## Threshold and routing
 
-The default threshold is **80**. A finding with `score >= 80` proceeds to the fix-loop
-(severity × Rule-class classification → auto-fix or escalate). A finding with `score < 80`
+The default threshold is **75**. A finding with `score >= 75` proceeds to the fix-loop
+(severity × Rule-class classification → auto-fix or escalate). A finding with `score < 75`
 is recorded as `advisory` in `specs/<slug>/SUMMARY.md` and does not block shipping.
 
-The threshold is adjustable: set it lower (e.g. 60) on high-risk lanes where recall matters
-more, or higher (e.g. 90) when false-positive noise is a known problem.
+The threshold is adjustable: set it higher (e.g. 90) when false-positive noise is a known
+problem — with the discrete anchors, anything above 75 admits only a perfect 100. Lowering it
+below 75 has no effect until it crosses 50 — and the floor of 60 below forbids going that low.
 
 **The threshold must never be set to 50 or below.** The unreadable-file rule above caps such
 findings at exactly 50. A threshold of 50 or lower therefore admits every capped finding into the

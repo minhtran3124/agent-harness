@@ -121,7 +121,7 @@ two different things, and they are easy to confuse:
 
 So: if you can name a concrete input that reaches the bug but you are unsure whether that input
 is reachable in production, **report it**. Uncertainty is expected and is handled downstream —
-the SCORE stage rates every finding 0–100 in a fresh context and only findings scoring 80 or
+the SCORE stage rates every finding 0–100 in a fresh context and only findings scoring 75 or
 above enter the fix loop. Lower-scoring findings are recorded as advisory; they are not
 discarded. Do not suppress a finding because you are unsure it is real. Suppress a finding only
 when you cannot name any trigger at all.

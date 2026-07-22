@@ -169,7 +169,7 @@ the entire implementation diff before handing off to `finishing-a-development-br
 
 **Range to pass:** `BASE` = commit before task 1, `HEAD` = current commit after all tasks, plus the
 list of touched files. `/correctness-review` then runs its own pipeline —
-**FIND (6 parallel angles) → dedup → SCORE → THRESHOLD(80) → classify → fix-loop** — and enforces
+**FIND (6 parallel angles) → dedup → SCORE → THRESHOLD(75) → classify → fix-loop** — and enforces
 the residual-work gate: every finding is fixed with a sha, escalated, or recorded as advisory
 before handoff.
 
