@@ -392,4 +392,4 @@ stay non-high-risk; no new inline copies of authoritative policy lists.
   correctness (1 finding: agents/ prose over-match → fixed `108438c`), intent (7/7 ACs; 1
   report-only SUMMARY-staleness → fixed), context-propagation-audit dogfooded → PASS. Review
   receipt written + validated (HEAD-pinned, `check_review_receipt.py` exit 0).
-- 2026-07-22 — shipped via `feature/gh-143-context-propagation`.
+- 2026-07-22 — shipped via `feature/gh-143-context-propagation` (PR #155).
