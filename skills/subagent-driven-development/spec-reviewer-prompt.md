@@ -18,6 +18,14 @@ Task tool (general-purpose):
 
     [From implementer's report]
 
+    ## Success Criteria This Task Must Satisfy (from PLAN.md §3 — the acceptance contract)
+
+    [Quote VERBATIM the SC-<n> rows from PLAN.md §3 that this task maps to, or write
+    "none — this task maps to no SC". You are an isolated context and CANNOT see PLAN.md;
+    these quoted rows are the only SC oracle you get — an SC you are not given is one you
+    cannot verify. For each quoted SC, confirm the implementation adds a passing `Criterion`
+    row proving it (via the SUMMARY `### Verify` table) where the task is responsible for one.]
+
     ## CRITICAL: Do Not Trust the Report
 
     The implementer finished suspiciously quickly. Their report may be incomplete,
