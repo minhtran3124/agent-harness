@@ -112,4 +112,54 @@ stage "$repo" "specs/x/SUMMARY.md" "Lane: tiny"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc 0
 
+t "workflow-engine: skills/x/SKILL.md + Lane: normal → BLOCKED (names workflow-engine)"
+repo=$(new_repo $H)
+stage "$repo" "skills/x/SKILL.md" '# Skill x'
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "workflow-engine"
+
+t "workflow-engine: prose docs/notes.md → silent pass (not an engine surface)"
+repo=$(new_repo $H)
+stage "$repo" "docs/notes.md" '# Notes
+Some prose.'
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc 0
+
+t "workflow-engine: skills/README.md → silent pass (inventory prose, not an engine surface)"
+repo=$(new_repo $H)
+stage "$repo" "skills/README.md" '# Skills inventory'
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc 0
+
+t "workflow-engine: agents/coding.md + Lane: normal → BLOCKED (real agent prompt is an engine surface)"
+repo=$(new_repo $H)
+stage "$repo" "agents/coding.md" '# Coding agent'
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "workflow-engine"
+
+t "workflow-engine: agents/README.md → silent pass (inventory prose, mirrors skills/README.md)"
+repo=$(new_repo $H)
+stage "$repo" "agents/README.md" '# Agents inventory'
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc 0
+
+t "workflow-engine: agents/PROJECT.template.md → silent pass (fill-in scaffold, not an engine surface)"
+repo=$(new_repo $H)
+stage "$repo" "agents/PROJECT.template.md" '# Project template'
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc 0
+
+t "workflow-engine: NESTED dispatch prompt skills/x/subagents/y-prompt.md + Lane: normal → BLOCKED"
+repo=$(new_repo $H)
+stage "$repo" "skills/x/subagents/analyzer-prompt.md" '# Analyzer dispatch prompt'
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "workflow-engine"
+
 finish

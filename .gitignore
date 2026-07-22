@@ -36,6 +36,8 @@ docs/memory/
 # Specifications — tracked, EXCEPT derived artifacts rebuildable from PLAN.md via render_plan.py
 specs/**/PLAN.html
 specs/**/.plan-review.json
+# Derived, machine-local review receipt (written after review passes; not shipped)
+specs/**/.review-receipt.json
 
 .vercel
 

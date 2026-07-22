@@ -59,6 +59,7 @@ category_mode() {
     public-contract)    echo "block" ;;
     weakening-validation) echo "block" ;;
     high-blast)         echo "block" ;;
+    workflow-engine)    echo "block" ;;
     *)                  echo "block" ;;
   esac
 }
@@ -86,6 +87,7 @@ add_cat() { TRIPPED="$TRIPPED $1"; }
 echo "$STAGED_PATHS" | grep -qE '(^|/)settings\.json$|^hooks/|(^|/)\.claude/hooks/|render_plan\.py$' && add_cat "high-blast"
 echo "$STAGED_PATHS" | grep -qE '(^|/)(migrations?|alembic)/' && add_cat "data-loss/migration"
 echo "$STAGED_PATHS" | grep -qE '(^|/)(requirements[^/]*\.txt|package\.json|pyproject\.toml|go\.mod|Gemfile)$' && add_cat "external-provider"
+echo "$STAGED_PATHS" | grep -E '^skills/[^/]+/SKILL\.md$|^skills/[^/]+/.*prompt[^/]*\.md$|^agents/[^/]+\.md$|^rules/[^/]+\.md$' | grep -qvE '(^|/)(README\.md|[A-Za-z0-9_-]+\.template\.md)$' && add_cat "workflow-engine"
 
 # ── Keyword categories (added code lines only) ───────────────────────────
 echo "$CODE_ADDED" | grep -qiE '(login|logout|\bsession\b|jwt|password|refresh_token|oauth|set_cookie|bcrypt|hashpw)' && add_cat "auth"

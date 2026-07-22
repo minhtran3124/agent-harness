@@ -73,13 +73,53 @@ If the base branch is not mentioned in chat, default to `main`. Only ask ("This 
 
 ### Step 3: Push and Open PR
 
+**Gate 0 — review receipt (normal + high-risk lanes; tiny skips).** Before anything else in this
+step, verify the reviews ran against the code being pushed.
+
+First **resolve the plan directory** with Step 4a's rule (exact `specs/<slug>` from the branch, else
+the best-matching `specs/*/PLAN.md`, else *no plan* → skip Gate 0 exactly as Step 4 skips). Use that
+resolved `<plan_dir>` — not a bare branch-derived slug — for the checks below, so a branch like
+`fix/foo` backed by `specs/gh-143-context-propagation` checks the receipt where it was actually
+written. Determine `<base>` = the base branch from Step 2 (e.g. `origin/main`).
+
+```bash
+python3 scripts/check_review_receipt.py <plan_dir> --require correctness,intent --require-audit-if <base>
+```
+
+`--require-audit-if <base>` makes the gate **path-aware**: when the `<base>..HEAD` diff touches a
+workflow-engine surface (`skills/*/SKILL.md`, dispatch prompts incl. `subagents/`, `agents/`,
+`rules/`), it additionally requires a passing `context-propagation-audit` entry — so the
+change-triggered audit cannot be skipped for exactly the prompt/rule edits it protects.
+
+Exit 1 (receipt missing / malformed / any recorded review not `pass` — `fail`, `pending`, `skipped`,
+absent all count / any `blocking_open > 0` / a required type absent, including the audit on a
+workflow-engine diff / HEAD advanced with **code** outside `specs/` since the review) means the pinned
+reviews are stale or incomplete — **REFUSE to push or open the PR.** Route back to
+`subagent-driven-development` to re-run the affected review and re-write the receipt; never hand-edit
+`.review-receipt.json` to pass the gate. Exit 0 → continue. **Tiny lane:** skip this gate — its route
+has no review chain to pin.
+
+> **Order note (the plan-`shipped` commit is safe):** step 1 below commits the `specs/`-only status
+> change *after* this gate, advancing HEAD past `reviewed_head_sha`. The checker deliberately
+> **tolerates a `specs/`-only advance** (bookkeeping carries no reviewable code), so re-running Gate 0
+> immediately before the push (step 2) still passes. Run it again there as a belt-and-braces check —
+> if any **non-`specs/`** change slipped in after review, that re-check fails and blocks the push,
+> which is exactly the stale-review protection working.
+
+For high-risk **workflow-engine** changes (`harness-manifest.json` → `workflow-engine`), the existing
+heterogeneous Codex PR review remains an optional post-push merge requirement — reference only, run on
+the PR after push; nothing is mirrored locally (per the non-goals).
+
 1. **Mark the plan shipped** — run Step 4. This updates `specs/<slug>/PLAN.md`, which is **tracked** in git, so stage and commit the status change with the work (it lands in the branch/PR). If no plan matches, skip silently.
 1b. **`CHANGELOG.md` + `VERSION` — who bumps depends on whether this repo has the post-merge automation.** Check for `.github/workflows/post-merge-maintenance.yml` (paired with `scripts/bookkeeping.sh`):
    - **Automation present (the harness-skills meta-repo):** do **NOT** bump by hand. The workflow owns it end-to-end — on merge it runs `bookkeeping.sh`, which bumps `VERSION`, inserts the dated CHANGELOG section, and appends the trust-metrics + audit-log rows, all parsed from the merged `SUMMARY.md`. A manual pre-bump double-counts: `bookkeeping.sh` bumps again from the value you set (skipping a version) and orphans your `## [Unreleased]` bullet. This matches `feature-intake` → "Do NOT hand-append the ledger. CI records it on merge." Your job is a correct `SUMMARY.md`, then review the bookkeeping PR after merge.
    - **Automation absent (a consuming project — the harness deploys this skill but not `bookkeeping.sh`/the workflow):** bump manually, as there is nothing else to do it. When the change is user-visible (a new/changed skill or hook, a schema change, a fix worth announcing), add a bullet under `## [Unreleased]` and bump root `VERSION` per the CHANGELOG's own rule (patch = fix/docs · minor = new/changed skill or hook contract · major = breaking workflow/schema change). Skip for purely internal docs/research. Commit these with the work so the PR carries them.
 
    See `docs/solutions/harness/manual-version-bump-collides-with-event-sourced-bookkeeping.md` (the double-bump this scoping prevents).
-2. Push to remote: `git push -u github <current_branch>`.
+2. **Re-run Gate 0** (`python3 scripts/check_review_receipt.py <plan_dir> --require correctness,intent --require-audit-if <base>`)
+   immediately before pushing — it passes if the only advance since review is the `specs/`-only
+   shipped commit, and blocks if unreviewed code slipped in. Then push:
+   `git push -u github <current_branch>`.
 3. Invoke the **create-pr** skill to generate `.pr-body.md`.
 4. Create the PR with `gh pr create` against `<base_branch>`, using the generated template content for the body.
 5. Return the PR URL to the user. **Stop here** — do not merge.

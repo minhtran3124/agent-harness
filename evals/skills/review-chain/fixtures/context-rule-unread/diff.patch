@@ -1,0 +1,28 @@
+diff --git a/skills/demo-dispatch/worker-prompt.md b/skills/demo-dispatch/worker-prompt.md
+new file mode 100644
+index 0000000..7f3c9e2
+--- /dev/null
++++ b/skills/demo-dispatch/worker-prompt.md
+@@ -0,0 +1,21 @@
++# Worker dispatch prompt
++
++You are a dispatched implementer subagent running in an isolated context.
++Execute exactly one task from the active `specs/<slug>/PLAN.md` and return a summary.
++
++## Task
++
++{{TASK_BODY}}
++
++## Self-fix classification
++
++While implementing, you will discover small issues (typos, missing guards, wrong
++imports). Classify every self-fix you apply against `.claude/rules/auto-correct-scope.md`
++(Rule 1–3 vs Rule 4 STOP): apply Rule 1–3 fixes and record each under `### Deviations`,
++but STOP and escalate on any Rule 4 hard gate.
++
++## Return contract
++
++- Commits made (sha + subject)
++- Files touched
++- Deviations (labeled by rule)
++- Verify status

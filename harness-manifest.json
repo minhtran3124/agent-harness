@@ -43,6 +43,11 @@
         "slug": "high-blast",
         "mode": "block",
         "desc": "settings.json, hooks/*, .claude/hooks/*, a core skill engine (render_plan.py)"
+      },
+      {
+        "slug": "workflow-engine",
+        "mode": "block",
+        "desc": "workflow-as-code: skills/*/SKILL.md, skill dispatch prompts, agents/*.md, rules/*.md — instruction delivery, routing, review gates"
       }
     ],
     "judgment": [
@@ -92,6 +97,7 @@
   "skills": [
     "brainstorming",
     "compound",
+    "context-propagation-audit",
     "correctness-review",
     "create-pr",
     "executing-plans",
