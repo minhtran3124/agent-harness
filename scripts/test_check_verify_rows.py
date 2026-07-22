@@ -46,12 +46,18 @@ def test_make_test_flagged():
 
 def test_grep_argument_run_tests_is_not_flagged():
     # command greps FOR the string run-tests.sh — it does not RUN it
-    text = _summary("| unwired | `grep -q check_plan_format harness-manifest.json scripts/run-tests.sh` | 1 | grep target |")
+    text = _summary(
+        "| unwired | `grep -q check_plan_format harness-manifest.json scripts/run-tests.sh` | 1 | grep target |"
+    )
     assert c.check_summary_text(text) == []
 
 
 def test_executed_run_tests_variants_flagged():
-    for cmd in ("bash scripts/run-tests.sh", "sh run-tests.sh", "./scripts/run-tests.sh"):
+    for cmd in (
+        "bash scripts/run-tests.sh",
+        "sh run-tests.sh",
+        "./scripts/run-tests.sh",
+    ):
         text = _summary(f"| suite | `{cmd}` | 0 | |")
         assert c.check_summary_text(text) != [], cmd
 
@@ -64,3 +70,55 @@ def test_placeholder_command_ignored():
     # a not-yet-filled row shouldn't trip the lint on content it doesn't have
     text = _summary("| <check> | `<command>` | 0 | placeholder |")
     assert c.check_summary_text(text) == []
+
+
+# --- check_plan_text: SC-table Check-cell lint ---------------------------------
+
+_SC_HEADER = (
+    "## 3. Success Criteria\n\n"
+    "| ID | Behavior (observable) | Check (re-runnable) | Expected |\n"
+    "| --- | --- | --- | --- |\n"
+)
+
+
+def _plan(*rows: str) -> str:
+    return _SC_HEADER + "".join(r + "\n" for r in rows)
+
+
+def test_sc_table_pipe_rejected():
+    # an unescaped pipe in the SC Check command splits the cell → flagged
+    text = _plan('| SC-1 | greps two names | `grep -E "a|b" file` | exit 0 |')
+    v = c.check_plan_text(text)
+    assert len(v) == 1 and "SC-1" in v[0] and "pipe" in v[0].lower()
+
+
+def test_sc_table_full_suite_rejected():
+    text = _plan("| SC-2 | runs everything | `bash scripts/run-tests.sh` | exit 0 |")
+    v = c.check_plan_text(text)
+    assert len(v) == 1 and "SC-2" in v[0] and "full suite" in v[0].lower()
+
+
+def test_sc_table_clean_passes():
+    text = _plan(
+        "| SC-1 | unit passes | `python3 -m pytest scripts/test_x.py -q` | exit 0 |",
+        "| SC-2 | grep guard | `grep -e a -e b file` | exit 1 |",
+    )
+    assert c.check_plan_text(text) == []
+
+
+def test_plan_without_sc_table_passes():
+    # a plan with an ordinary table but no SC-<n> rows is untouched
+    text = "# Plan\n\n| Step | Detail |\n| --- | --- |\n| 1 | do the thing |\n"
+    assert c.check_plan_text(text) == []
+
+
+def test_sc_table_in_fence_is_ignored():
+    # a fenced illustration table must not trip the lint
+    text = (
+        "## Example\n\n```\n"
+        "| ID | Behavior | Check | Expected |\n"
+        "| --- | --- | --- | --- |\n"
+        "| SC-1 | demo | `bash scripts/run-tests.sh` | exit 0 |\n"
+        "```\n"
+    )
+    assert c.check_plan_text(text) == []

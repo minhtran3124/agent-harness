@@ -239,8 +239,19 @@ Fill it as:
 - `reviews` — one entry per review actually run this session: `correctness`, `intent`, and
   `context-propagation-audit` if the pre-gate fired. Each records `reviewer` (model or tier),
   `result` (`pass` / `fail`), and the open-finding counts (`blocking_open`, `advisory_open`) left
-  after the fix-loop. Handoff requires every entry `result: pass` with `blocking_open: 0`.
+  after the fix-loop.
 - `created` — current ISO-8601 timestamp.
+
+**Ship gate (conjunction).** Handoff to `finishing-a-development-branch` requires BOTH conditions,
+not either alone:
+
+1. `python scripts/verify_summary.py --check <slug>` passes **including SC coverage** — every
+   Success Criterion in `specs/<slug>/PLAN.md` §3 has a passing `Criterion` row in the SUMMARY
+   `### Verify` table (SC ↔ passing row). An SC with no passing Criterion row fails the check.
+2. **AND** every receipt entry is `result: pass` with `blocking_open: 0`.
+
+Both must hold. A green receipt with an uncovered SC does not ship, and full SC coverage with an
+open blocking finding does not ship.
 
 **Re-review after fix (invalidation rule).** ANY fix commit landed after the receipt is written
 makes it stale — `reviewed_head_sha` no longer equals `HEAD`, and the finishing gate will refuse the
@@ -284,7 +295,12 @@ per `auto-correct-scope.md` → Reporting.
 ## Prompt Templates
 
 - `./implementer-prompt.md` - Dispatch implementer subagent
-- `./spec-reviewer-prompt.md` - Dispatch spec compliance reviewer subagent (per task)
+- `./spec-reviewer-prompt.md` - Dispatch spec compliance reviewer subagent (per task). When the
+  task maps to one or more Success Criteria (SC) rows in `specs/<slug>/PLAN.md` §3, **quote those SC
+  rows verbatim into the reviewer prompt** — the spec reviewer is an isolated context and cannot see
+  the plan, so an SC it never receives is an SC it cannot verify. Have it confirm each quoted SC is
+  satisfied by the code (and, where the task adds one, by a passing `Criterion` row in the SUMMARY
+  `### Verify` table), not just that the task text was implemented.
 - `./code-quality-reviewer-prompt.md` - Dispatch code quality reviewer subagent (per task)
 - Final adversarial correctness pass - delegated to `/correctness-review` (see `skills/correctness-review/`); its `correctness-{reviewer,scorer}-prompt.md` live there, not here.
 - Final intent review - delegated to `/intent-review` (see `skills/intent-review/`); its `intent-reviewer-prompt.md` lives there, not here.
@@ -436,6 +452,7 @@ Done!
 - **Skip the intent review, or hand off with unrouted intent findings** (this is the gate that catches "passed the plan and tests but not what the user asked for")
 - Run the intent review with the implementer's context (it must be a fresh subagent, blind to PLAN.md — otherwise it re-confirms the plan's possible misreading of intent)
 - **Hand off with a stale review receipt** — a fix commit after the receipt is written invalidates it (`reviewed_head_sha != HEAD`); re-run the affected review and re-write the receipt before handoff, never hand-edit the sha
+- **Ship with an SC lacking a passing `Criterion` row** — the ship gate requires `verify_summary.py --check <slug>` to pass *including SC coverage*; an uncovered Success Criterion blocks handoff even when the receipt is green
 
 **If subagent asks questions:**
 - Answer clearly and completely

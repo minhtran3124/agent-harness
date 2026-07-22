@@ -24,16 +24,17 @@ else
   echo "  skip — no python3"
 fi
 
-echo "== L1: verify-row lint (changed SUMMARYs only) =="
-# Lint only SUMMARY.md files changed vs origin/main — new/edited rows must be
-# pipe-free + <60s; shipped specs are grandfathered (scope matches ci-strict-gate's
-# changed-SUMMARY model). No origin/main (or nothing changed) → no-op.
+echo "== L1: verify-row lint (changed SUMMARY/PLAN only) =="
+# Lint only SUMMARY.md + PLAN.md files changed vs origin/main — new/edited Verify
+# rows and SC-table Check cells must be pipe-free + <60s; shipped specs are
+# grandfathered (scope matches ci-strict-gate's changed-file model). No origin/main
+# (or nothing changed) → no-op.
 if command -v python3 >/dev/null 2>&1 && git rev-parse --verify -q origin/main >/dev/null 2>&1; then
-  changed="$(git diff --name-only origin/main -- 'specs/*/SUMMARY.md' 2>/dev/null)"
+  changed="$(git diff --name-only origin/main -- 'specs/*/SUMMARY.md' 'specs/*/PLAN.md' 2>/dev/null)"
   if [ -n "$changed" ]; then
     printf '%s\n' "$changed" | python3 scripts/check_verify_rows.py || FAILED=1
   else
-    echo "  skip — no changed SUMMARY.md vs origin/main"
+    echo "  skip — no changed SUMMARY.md/PLAN.md vs origin/main"
   fi
 else
   echo "  skip — no python3 or no origin/main ref"

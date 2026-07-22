@@ -26,6 +26,7 @@ Task tool (general-purpose):
     | File Structure | Files have clear single responsibilities, split by responsibility not layer |
     | File Size | Would any new or modified file likely grow large enough to be hard to reason about as a whole? |
 | Task Syntax | Every task is a `### Task <id> [— title] [(wave K)]` heading with `- **Files/Action/Verify/Done:**` field bullets, all four fields populated, per `.claude/rules/plan-format.md` |
+    | Success Criteria | `## 3. Success Criteria` table present; `SC-<n>` ids unique; Check cells pipe-free and <60s; Expected cells start `exit <n>`; per `.claude/rules/plan-format.md` |
     | Chunk Size | Each chunk under 1000 lines |
 
     ## CRITICAL
