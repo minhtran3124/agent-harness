@@ -29,11 +29,18 @@ Exit codes:
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
 
 RECEIPT_NAME = ".review-receipt.json"
+
+# reviewed_head_sha MUST be a resolved full commit sha. A symbolic ref (e.g. the
+# literal "HEAD", "@", or a branch name) would make `git diff <ref>..<HEAD>`
+# resolve the ref to the current commit and diff the repo against itself —
+# always empty — silently defeating the stale-sha gate. Require 40 hex chars.
+_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 
 
 def _git_head(slug_dir: Path) -> str | None:
@@ -50,6 +57,26 @@ def _git_head(slug_dir: Path) -> str | None:
     if proc.returncode != 0:
         return None
     return proc.stdout.strip() or None
+
+
+def _changed_files(slug_dir: Path, a: str, b: str) -> list[str] | None:
+    """File paths changed between commits a and b, or None if the range is undiffable.
+
+    Used to distinguish a review-neutral bookkeeping advance (the plan-`shipped`
+    commit only touches `specs/`) from an unreviewed code change after review.
+    """
+    try:
+        proc = subprocess.run(
+            ["git", "diff", "--name-only", f"{a}..{b}"],
+            cwd=slug_dir,
+            capture_output=True,
+            text=True,
+        )
+    except OSError:
+        return None
+    if proc.returncode != 0:
+        return None
+    return [line for line in proc.stdout.splitlines() if line.strip()]
 
 
 def check_receipt(slug_dir: Path, require: list[str]) -> str | None:
@@ -69,15 +96,36 @@ def check_receipt(slug_dir: Path, require: list[str]) -> str | None:
     reviewed = data.get("reviewed_head_sha")
     if not isinstance(reviewed, str) or not reviewed.strip():
         return f"malformed: {receipt_path} has no reviewed_head_sha"
+    if not _SHA_RE.match(reviewed.strip()):
+        return (
+            f"malformed: reviewed_head_sha {reviewed.strip()!r} is not a resolved "
+            f"40-char hex commit sha (symbolic refs like 'HEAD' are rejected)"
+        )
 
     head = _git_head(slug_dir)
     if head is None:
         return f"stale-sha: cannot resolve git HEAD for {slug_dir}"
-    if reviewed.strip() != head:
-        return (
-            f"stale-sha: receipt reviewed {reviewed.strip()[:12]} "
-            f"but HEAD is {head[:12]} — re-review at current HEAD"
-        )
+    reviewed = reviewed.strip()
+    if reviewed != head:
+        # HEAD moved since review. Tolerate a review-neutral bookkeeping advance —
+        # the plan-`shipped` transition (finishing-a-development-branch Step 4)
+        # commits only `specs/`, carries no reviewable code, and must not stale a
+        # valid receipt. Any change OUTSIDE specs/ since the review is unreviewed
+        # code and stays fatal.
+        changed = _changed_files(slug_dir, reviewed, head)
+        if changed is None:
+            return (
+                f"stale-sha: receipt reviewed {reviewed[:12]} but HEAD is "
+                f"{head[:12]} and the range is undiffable — re-review at current HEAD"
+            )
+        unreviewed = [p for p in changed if not p.startswith("specs/")]
+        if unreviewed:
+            return (
+                f"stale-sha: receipt reviewed {reviewed[:12]} but HEAD {head[:12]} "
+                f"adds unreviewed changes outside specs/ (e.g. {unreviewed[0]}) — "
+                f"re-review at current HEAD"
+            )
+        # else: specs/-only advance (bookkeeping) — receipt remains valid.
 
     reviews = data.get("reviews")
     if not isinstance(reviews, list):

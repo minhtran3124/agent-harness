@@ -79,13 +79,16 @@ owner directing the work on their own issue.
 
 | Check | Command | Exit | Notes |
 | --- | --- | --- | --- |
-| Full harness suite (all waves) | `bash scripts/run-tests.sh` | 0 | ALL GREEN, 153 tests (145 baseline + 8 receipt) |
-| workflow-engine gate + agents/ exclusions | `bash tests/hooks/risk-corroboration.test.sh` | 0 | 21 cases incl. agents/README + template silent-pass |
+| workflow-engine gate + agents/ exclusions + nested prompts | `bash tests/hooks/risk-corroboration.test.sh` | 0 | 22 cases incl. agents/README+template silent-pass, nested prompt block |
 | Manifest ↔ hook ↔ disk parity | `python3 scripts/check_manifest.py` | 0 | workflow-engine slug + audit skill registered |
 | P1/P2 regression guard | `bash tests/scripts/context-propagation-regression.test.sh` | 0 | mutation cases detect removed Reads / STOP case |
 | Inline-policy drift guard | `bash tests/scripts/inline-policy-drift.test.sh` | 0 | Rule-4 STOP list drift detected |
-| Receipt engine fail-closed | `bash scripts/test_check_review_receipt.py` via pytest | 0 | 8 cases incl. stale-sha, blocking-open, malformed |
 | Doc-truth lint | `bash scripts/lint-doc-truth.sh` | 0 | all referenced paths exist; hook table matches settings.json |
+
+The receipt engine (`scripts/check_review_receipt.py`) is proven by `scripts/test_check_review_receipt.py`
+(11 pytest cases incl. stale-sha, blocking-open, malformed, symbolic-sha reject, specs-only-advance
+tolerance) — run by the `harness-ci` test job, not listed above because the strict-gate job has no
+pytest and every `### Verify` row must run self-contained in <60s.
 
 ### Rollback
 

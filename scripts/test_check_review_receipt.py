@@ -58,6 +58,14 @@ def new_commit(repo: Path) -> None:
     _git(repo, "commit", "-q", "-m", "second")
 
 
+def new_specs_commit(repo: Path, slug: str) -> None:
+    """Advance HEAD with a specs/-only bookkeeping commit (the plan-shipped kind)."""
+    plan = repo / "specs" / slug / "PLAN.md"
+    plan.write_text("status: shipped\n", encoding="utf-8")
+    _git(repo, "add", str(plan.relative_to(repo)))
+    _git(repo, "commit", "-q", "-m", "chore: mark plan shipped")
+
+
 def write_receipt(repo: Path, slug: str, data) -> Path:
     slug_dir = repo / "specs" / slug
     slug_dir.mkdir(parents=True)
@@ -107,6 +115,41 @@ def test_new_commit_makes_receipt_stale(tmp_path, capsys):
     repo = make_repo(tmp_path)
     slug_dir = write_receipt(repo, "gh-x", valid_data(head_sha(repo)))
     new_commit(repo)
+    assert crr.main([str(slug_dir)]) == 1
+    assert "stale-sha" in capsys.readouterr().err
+
+
+def test_specs_only_advance_stays_valid(tmp_path):
+    # The plan-shipped bookkeeping commit touches only specs/ — it must NOT stale
+    # a valid receipt (Codex P1 on PR #155): finishing validates, commits the
+    # shipped status, then pushes; the pushed SHA differs only by that commit.
+    repo = make_repo(tmp_path)
+    slug_dir = write_receipt(repo, "gh-x", valid_data(head_sha(repo)))
+    new_specs_commit(repo, "gh-x")
+    assert crr.main([str(slug_dir), "--require", "correctness,intent"]) == 0
+
+
+def test_symbolic_reviewed_sha_is_rejected(tmp_path, capsys):
+    # A symbolic ref (e.g. literal "HEAD") must NOT be accepted: git diff HEAD..HEAD
+    # is always empty and would fail-open. Require a resolved 40-hex sha.
+    repo = make_repo(tmp_path)
+    data = valid_data("HEAD")
+    slug_dir = write_receipt(repo, "gh-x", data)
+    new_commit(repo)  # land unreviewed code after review
+    assert crr.main([str(slug_dir), "--require", "correctness,intent"]) == 1
+    assert "malformed" in capsys.readouterr().err
+
+
+def test_mixed_advance_with_code_still_stale(tmp_path, capsys):
+    # A specs/ change AND a code change after review is unreviewed code → stale.
+    repo = make_repo(tmp_path)
+    slug_dir = write_receipt(repo, "gh-x", valid_data(head_sha(repo)))
+    (repo / "specs" / "gh-x" / "PLAN.md").write_text(
+        "status: shipped\n", encoding="utf-8"
+    )
+    (repo / "seed.txt").write_text("sneaky code change\n", encoding="utf-8")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "shipped + code")
     assert crr.main([str(slug_dir)]) == 1
     assert "stale-sha" in capsys.readouterr().err
 

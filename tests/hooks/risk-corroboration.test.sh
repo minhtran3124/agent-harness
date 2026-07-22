@@ -155,4 +155,11 @@ stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc 0
 
+t "workflow-engine: NESTED dispatch prompt skills/x/subagents/y-prompt.md + Lane: normal → BLOCKED"
+repo=$(new_repo $H)
+stage "$repo" "skills/x/subagents/analyzer-prompt.md" '# Analyzer dispatch prompt'
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "workflow-engine"
+
 finish

@@ -80,11 +80,18 @@ step, verify the reviews ran against the code being pushed:
 python3 scripts/check_review_receipt.py specs/<slug> --require correctness,intent
 ```
 
-Exit 1 (receipt missing / malformed / `reviewed_head_sha != HEAD` / any review `result: fail` / any
-`blocking_open > 0` / a required type absent) means the pinned reviews are stale or incomplete —
-**REFUSE to push or open the PR.** Route back to `subagent-driven-development` to re-run the affected
-review and re-write the receipt; never hand-edit `.review-receipt.json` to pass the gate. Exit 0 →
-continue. **Tiny lane:** skip this gate — its route has no review chain to pin.
+Exit 1 (receipt missing / malformed / any review `result: fail` / any `blocking_open > 0` / a required
+type absent / HEAD advanced with **code** outside `specs/` since the review) means the pinned reviews
+are stale or incomplete — **REFUSE to push or open the PR.** Route back to `subagent-driven-development`
+to re-run the affected review and re-write the receipt; never hand-edit `.review-receipt.json` to pass
+the gate. Exit 0 → continue. **Tiny lane:** skip this gate — its route has no review chain to pin.
+
+> **Order note (the plan-`shipped` commit is safe):** step 1 below commits the `specs/`-only status
+> change *after* this gate, advancing HEAD past `reviewed_head_sha`. The checker deliberately
+> **tolerates a `specs/`-only advance** (bookkeeping carries no reviewable code), so re-running Gate 0
+> immediately before the push (step 2) still passes. Run it again there as a belt-and-braces check —
+> if any **non-`specs/`** change slipped in after review, that re-check fails and blocks the push,
+> which is exactly the stale-review protection working.
 
 For high-risk **workflow-engine** changes (`harness-manifest.json` → `workflow-engine`), the existing
 heterogeneous Codex PR review remains an optional post-push merge requirement — reference only, run on
@@ -96,7 +103,10 @@ the PR after push; nothing is mirrored locally (per the non-goals).
    - **Automation absent (a consuming project — the harness deploys this skill but not `bookkeeping.sh`/the workflow):** bump manually, as there is nothing else to do it. When the change is user-visible (a new/changed skill or hook, a schema change, a fix worth announcing), add a bullet under `## [Unreleased]` and bump root `VERSION` per the CHANGELOG's own rule (patch = fix/docs · minor = new/changed skill or hook contract · major = breaking workflow/schema change). Skip for purely internal docs/research. Commit these with the work so the PR carries them.
 
    See `docs/solutions/harness/manual-version-bump-collides-with-event-sourced-bookkeeping.md` (the double-bump this scoping prevents).
-2. Push to remote: `git push -u github <current_branch>`.
+2. **Re-run Gate 0** (`python3 scripts/check_review_receipt.py specs/<slug> --require correctness,intent`)
+   immediately before pushing — it passes if the only advance since review is the `specs/`-only
+   shipped commit, and blocks if unreviewed code slipped in. Then push:
+   `git push -u github <current_branch>`.
 3. Invoke the **create-pr** skill to generate `.pr-body.md`.
 4. Create the PR with `gh pr create` against `<base_branch>`, using the generated template content for the body.
 5. Return the PR URL to the user. **Stop here** — do not merge.
