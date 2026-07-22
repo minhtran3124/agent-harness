@@ -112,4 +112,26 @@ stage "$repo" "specs/x/SUMMARY.md" "Lane: tiny"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc 0
 
+t "workflow-engine: skills/x/SKILL.md + Lane: normal → BLOCKED (names workflow-engine)"
+repo=$(new_repo $H)
+stage "$repo" "skills/x/SKILL.md" '# Skill x'
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "workflow-engine"
+
+t "workflow-engine: prose docs/notes.md → silent pass (not an engine surface)"
+repo=$(new_repo $H)
+stage "$repo" "docs/notes.md" '# Notes
+Some prose.'
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc 0
+
+t "workflow-engine: skills/README.md → silent pass (inventory prose, not an engine surface)"
+repo=$(new_repo $H)
+stage "$repo" "skills/README.md" '# Skills inventory'
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc 0
+
 finish

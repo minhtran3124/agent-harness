@@ -66,6 +66,8 @@ field in SUMMARY.md).
 | 9 | Weak proof | unclear or missing tests around the affected area |
 | 10 | Multi-domain | more than one product domain changes at once |
 
+Markdown under the workflow-engine paths (see the hard gate below) is executable workflow code — classify by what it changes (instruction delivery, routing, review gates), never as prose.
+
 ## Step 3 — Assign the lane
 
 ```text
@@ -85,6 +87,7 @@ any hard gate    -> high-risk (only a human narrowing scope may lower it)
 - Public contract (API route/method, response envelope, client-visible behavior).
 - Removing or weakening validation requirements.
 - Touching a high-blast-radius file: `.claude/settings.json`, any `.claude/hooks/*`, or a core skill engine.
+- Workflow-engine surface: `skills/*/SKILL.md`, skill dispatch prompts, `agents/`, `rules/` — workflow-as-code, not prose (likewise defined in `harness-manifest.json` as the `workflow-engine` gate).
 
 **Canonical source:** the detectable gate list lives in `harness-manifest.json` (`hard_gates`) —
 do not diverge from it. These mirror `.claude/rules/auto-correct-scope.md` Rule 4 and are
