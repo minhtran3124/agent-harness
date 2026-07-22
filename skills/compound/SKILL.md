@@ -105,201 +105,21 @@ For each emitted track, create the directory if needed and write the file.
 Write tersely — apply the **density budget** from Key Constraints when assembling
 each body from the subagent content.
 
-**Bug track:**
-```markdown
----
-problem_type: bug
-module: [module from CONTEXT_ANALYSIS]
-tags: [tags from CONTEXT_ANALYSIS]
-severity: [severity from CONTEXT_ANALYSIS]
-applicable_when: [applicable_when from CONTEXT_ANALYSIS]
-affects:
-  - [primary file from BUG_TRACK Fix section — file path only, one per line]
-supersedes: null
-confidence: high
-confirmed_at: [today's date YYYY-MM-DD]
----
-## Problem
-[Problem content from BUG_TRACK]
+Read the selected template completely before writing. Paths are relative to this
+`SKILL.md`; after deployment they live under `.claude/skills/compound/templates/`.
 
-## Root Cause
-[Root_Cause content from BUG_TRACK]
+| Output | Canonical template |
+|---|---|
+| Bug track | `templates/bug-track.md` |
+| Knowledge track | `templates/knowledge-track.md` |
+| One decision track | `templates/decision-track.md` |
+| Multiple decision tracks | `templates/decision-consolidated.md` |
+| Failure track | `templates/failure-track.md` |
 
-## Fix
-[Fix content from BUG_TRACK]
-
-## Regression Test
-[Regression_Test content from BUG_TRACK — REQUIRED; do NOT omit even when [none]]
-
-## Code Example
-[Code_Example content from BUG_TRACK — omit section if [none]]
-
-## Prevention
-[Prevention content from BUG_TRACK — omit section if [none]]
-
-## Related
-[Paths from RELATED_DOCS.existing_files — omit section if empty]
-```
-
-**Knowledge track:**
-```markdown
----
-problem_type: knowledge
-module: [module from CONTEXT_ANALYSIS]
-tags: [tags from CONTEXT_ANALYSIS]
-severity: [severity from CONTEXT_ANALYSIS]
-applicable_when: [Applicable_When from KNOWLEDGE_TRACK]
-affects:
-  - [files this pattern applies to — from KNOWLEDGE_TRACK, file path only, one per line]
-supersedes: null
-confidence: high
-confirmed_at: [today's date YYYY-MM-DD]
----
-## Applicable When
-[Applicable_When content from KNOWLEDGE_TRACK]
-
-## Pattern
-[Pattern content from KNOWLEDGE_TRACK]
-
-## How to Use
-[How_to_Use content from KNOWLEDGE_TRACK]
-
-## Code Example
-[Code_Example content from KNOWLEDGE_TRACK — omit section if [none]]
-
-## Gotchas
-[Gotchas content from KNOWLEDGE_TRACK — omit section if [none]]
-
-## Related
-[Paths from RELATED_DOCS.existing_files — omit section if empty]
-```
-
-**Decision track:**
-```markdown
----
-problem_type: decision
-module: [module from CONTEXT_ANALYSIS]
-tags: [tags from CONTEXT_ANALYSIS]
-severity: [severity from CONTEXT_ANALYSIS]
-applicable_when: [Applicable_When from DECISION_TRACK]
-affects:
-  - [files impacted by this decision — from DECISION_TRACK]
-supersedes: null
-confidence: high
-confirmed_at: [today's date YYYY-MM-DD]
----
-## Applicable When
-[Applicable_When content from DECISION_TRACK]
-
-## Context
-[Context content from DECISION_TRACK]
-
-## Options Considered
-[Options_Considered content from DECISION_TRACK]
-
-## Decision & Rationale
-[Decision_and_Rationale content from DECISION_TRACK]
-
-## Consequences
-[Consequences content from DECISION_TRACK — omit section if [none]]
-
-## Related
-[Paths from RELATED_DOCS.existing_files — omit section if empty]
-```
-
-If multiple DECISION_TRACK blocks exist (DECISION_TRACK_1, DECISION_TRACK_2, etc.),
-write a SINGLE consolidated file: `[slug]-decisions.md`.
-Do NOT write separate files per decision — decisions from the same session share
-context and must be read together.
-
-Use this template for the consolidated file:
-
-```markdown
----
-problem_type: decision
-module: [module from CONTEXT_ANALYSIS]
-tags: [union of tags from all DECISION_TRACK blocks + CONTEXT_ANALYSIS — deduplicated]
-severity: [severity from CONTEXT_ANALYSIS]
-applicable_when: [applicable_when from CONTEXT_ANALYSIS]
-affects:
-  - [union of affected files across all DECISION_TRACK blocks — one per line]
-supersedes: null
-confidence: high
-confirmed_at: [today's date YYYY-MM-DD]
----
-
-## Applicable When
-[applicable_when from CONTEXT_ANALYSIS]
-
-## Decision 1
-### Context
-[Context from DECISION_TRACK_1]
-### Options Considered
-[Options_Considered from DECISION_TRACK_1]
-### Decision & Rationale
-[Decision_and_Rationale from DECISION_TRACK_1]
-### Applicable When
-[Applicable_When from DECISION_TRACK_1]
-### Consequences
-[Consequences from DECISION_TRACK_1 — omit section if [none]]
-
-## Decision 2
-### Context
-[Context from DECISION_TRACK_2]
-### Options Considered
-[Options_Considered from DECISION_TRACK_2]
-### Decision & Rationale
-[Decision_and_Rationale from DECISION_TRACK_2]
-### Applicable When
-[Applicable_When from DECISION_TRACK_2]
-### Consequences
-[Consequences from DECISION_TRACK_2 — omit section if [none]]
-
-(Repeat ## Decision N pattern for each additional DECISION_TRACK_N block.)
-
-## Related
-[Paths from RELATED_DOCS.existing_files — omit section if empty]
-```
-
-If only one DECISION_TRACK block exists, use the single-decision template defined in
-Steps 1–5 of this task (same frontmatter structure + body starting with ## Applicable When,
-no `-decisions` suffix on the filename).
-
-**Failure track:**
-```markdown
----
-problem_type: failure
-module: [module from CONTEXT_ANALYSIS]
-tags: [tags from CONTEXT_ANALYSIS]
-severity: [severity from CONTEXT_ANALYSIS]
-applicable_when: [Applicable_When from FAILURE_TRACK]
-affects:
-  - [files named in FAILURE_TRACK Correct_Approach (where the working code landed) — file path only, one per line]
-supersedes: null
-confidence: high
-confirmed_at: [today's date YYYY-MM-DD]
----
-## Applicable When
-[Applicable_When content from FAILURE_TRACK]
-
-## Symptom
-[Symptom content from FAILURE_TRACK]
-
-## Wrong Approach
-[Wrong_Approach content from FAILURE_TRACK]
-
-## Why It Failed
-[Why_It_Failed content from FAILURE_TRACK]
-
-## Correct Approach
-[Correct_Approach content from FAILURE_TRACK]
-
-## Guardrail
-[Guardrail content from FAILURE_TRACK — a buildable artifact tagged `existing:` or `proposed:`]
-
-## Related
-[Paths from RELATED_DOCS.existing_files — omit section if empty]
-```
+If multiple `DECISION_TRACK` blocks exist (`DECISION_TRACK_1`,
+`DECISION_TRACK_2`, etc.), write one `[slug]-decisions.md` using the consolidated
+template. Do not write separate files per decision. If only one block exists,
+use the single-decision template and the normal `[slug].md` path.
 
 **Ratchet backlog (failure track only).** After writing a failure doc whose `Guardrail` is tagged
 `proposed:`, append one row to `docs/harness-experimental/improvement-backlog.md` (create from the
@@ -336,30 +156,10 @@ Check `severity` from CONTEXT_ANALYSIS.
 1. If `docs/solutions/` directory does not exist, create it first.
 
 2. Check if `docs/solutions/critical-patterns.md` exists.
-   - If NO: create it with this header:
-     ```markdown
-     # Critical Patterns
-
-     Promoted learnings that cost the most to discover and save the most by knowing.
-     Read this file at the start of every planning session.
-     Items here met all three criteria: affects multiple features, would waste ≥30 min if unknown, generalizable.
-
-     ---
-     ```
+   - If NO: create it from `templates/critical-patterns-header.md`.
 
 3. Append one entry per emitted track (bug / knowledge / decision / failure):
-   ```markdown
-   ## [YYYY-MM-DD] <slug from CONTEXT_ANALYSIS>
-   **Type:** [bug | knowledge | decision | failure]
-   **Module:** [module from CONTEXT_ANALYSIS]
-   **Tags:** [tags from CONTEXT_ANALYSIS]
-   **Applicable when:** [applicable_when from CONTEXT_ANALYSIS]
-
-   [2-3 sentence summary. For bug: what broke and the root cause. For knowledge: what the pattern is and why it matters. For decision: what was chosen and why. For failure: what was tried, why it failed, and the correct path.]
-
-   **Full doc:** docs/solutions/[category]/[slug].md
-   ---
-   ```
+   read and fill `templates/critical-patterns-entry.md` once for each track.
 
 4. Do NOT truncate existing entries. Always append at the end of the file.
 
@@ -382,23 +182,8 @@ Note: failure-track files are automatically included — the scan covers all `.m
 4. Group files by category. Within each category, sort by `confirmed_at` descending
    (most recent first).
 
-5. Write `docs/solutions/INDEX.md` (overwrite entirely):
-
-   ```markdown
-   # Knowledge Base Index
-   > Auto-generated by /compound — do not edit manually.
-   > Last updated: [today's date YYYY-MM-DD] | [N total entries]
-
-   ## [category-1]
-   | File | Type | Severity | Tags | Applicable When |
-   |---|---|---|---|---|
-   | [slug](category-1/slug.md) | [problem_type] | [severity] | [tags] | [applicable_when] |
-
-   ## [category-2]
-   | File | Type | Severity | Tags | Applicable When |
-   |---|---|---|---|---|
-   | [slug](category-2/slug.md) | [problem_type] | [severity] | [tags] | [applicable_when] |
-   ```
+5. Read `templates/index.md`, fill it from the grouped entries, and overwrite
+   `docs/solutions/INDEX.md` with the result.
 
    Rules for table content:
    - File column: markdown link `[slug](relative-path.md)` — relative path from `docs/solutions/`, use filename without extension as link text
