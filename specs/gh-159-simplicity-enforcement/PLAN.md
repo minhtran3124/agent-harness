@@ -144,3 +144,11 @@ or `risk-corroboration.sh` beyond targeted insertions.
   that it's a genuine compiled-in built-in command, not a repo skill). `bash
   tests/hooks/risk-corroboration.test.sh` (31/31) and `bash scripts/run-tests.sh` (ALL GREEN)
   both pass on HEAD.
+- 2026-07-23 — `/context-propagation-audit` PASS. `/correctness-review`: 3 candidates scored (1
+  at 100 entered the fix loop, 2 at 0 advisory). Fix loop closed in 2 rounds on
+  `hooks/risk-corroboration.sh`'s diff-size signal — round 1 (`8d7aff9`) fixed the excluded-paths
+  scope mismatch but introduced a `-U0` patch-body-inflation bug; round 2 (`a58181b`) fixed that,
+  independently re-verified CLOSED. `/intent-review`: 1 gap-class finding (`/simplify` existence)
+  resolved as a false positive with hard evidence (binary `strings` match + the check actually
+  ran earlier this session), not escalated. Review receipt written and validated.
+- 2026-07-23 — shipped via `feat/gh-159-simplicity-enforcement` (PR #163) against base `loop`.
