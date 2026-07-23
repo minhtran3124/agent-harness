@@ -37,7 +37,9 @@ Two mechanisms, landed across 3 waves (branch `feature/acceptance-contract-loop-
 
 Post-review follow-up (user-authorized): `scripts/verify_summary.py` gains a `--plan-dir` override and `hooks/commit-quality-gate.sh` uses it, so commit-time SC coverage no longer silently fail-opens on the staged/temp SUMMARY copy (Finding A). Contract extended with **SC-7**.
 
-This SUMMARY is the first contract-enforced record — its `### Verify` table below proves all 7 SCs.
+PR #157 Codex review follow-up: (P1) `--check` — the documented ship gate, and what `ci-strict-gate.sh` runs — validated only Criterion-mapped rows and never ran SC coverage, so a PLAN with SC-1+SC-2 whose SUMMARY proved only SC-1 exited 0. Coverage now runs in single-target mode too (including the placeholder-only early return). (P2) The commit gate read the WORKING-TREE `PLAN.md` while verifying the STAGED SUMMARY; it now materializes the indexed `PLAN.md` next to the indexed SUMMARY and points `--plan-dir` at that temp dir. Contract extended with **SC-8** / **SC-9**.
+
+This SUMMARY is the first contract-enforced record — its `### Verify` table below proves all 9 SCs.
 
 ### Rationale
 
@@ -72,6 +74,8 @@ The loop (implement → test → review → fix) lacked an objective feature-lev
 | SC-5 loop budget | `grep -q "Loop budget (cap + progress guard)" skills/correctness-review/SKILL.md` | 0 | cap+guard subsection present | SC-5 |
 | SC-6 rule schema | `grep -q "Success Criteria schema" rules/plan-format.md` | 0 | SC schema defined in the rule | SC-6 |
 | SC-7 commit-gate override | `python3 -m pytest scripts/test_verify_summary.py -q -k plan_dir` | 0 | --plan-dir enforces coverage on staged/temp copy | SC-7 |
+| SC-8 check-mode coverage | `python3 -m pytest scripts/test_verify_summary.py -q -k fails_check_mode` | 0 | ship gate fails an uncovered SC (incl. empty table) | SC-8 |
+| SC-9 indexed PLAN at commit | `grep -q "SC table is enforced even after the worktree PLAN is emptied" tests/hooks/commit-quality-gate.test.sh` | 0 | behavior itself runs in the L1 hook suite (CI tests job, 57s — over the 60s Verify cap) | SC-9 |
 
 ### Rollback
 

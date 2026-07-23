@@ -752,6 +752,35 @@ class TestScCoverage:
             == 1
         )
 
+    def test_sc_coverage_missing_fails_check_mode(self, tmp_path):
+        # PR #157 review (P1): `--check <slug>` is the documented ship gate and what
+        # ci-strict-gate.sh runs, but it only validated Criterion-mapped rows — a PLAN
+        # with SC-1 and SC-2 whose SUMMARY proved only SC-1 exited 0.
+        verify = "| c1 | `test 1 = 1` | 0 | | SC-1 |"
+        text = _lane_summary(lane="normal", verify=verify)
+        path = write_summary(tmp_path, "chk-cov", text)
+        write_plan(path, SC_PLAN_TWO)
+        assert (
+            vs.main(
+                ["chk-cov", "--check", "--timeout", "10"], specs_root=tmp_path / "specs"
+            )
+            == 1
+        )
+
+    def test_sc_coverage_missing_fails_check_mode_with_no_real_rows(self, tmp_path):
+        # Same gate, placeholder-only Verify table: the early "no checks ran" return
+        # must not short-circuit past SC coverage.
+        text = _lane_summary(lane="normal", verify="| p | `<command>` | 0 | | |")
+        path = write_summary(tmp_path, "chk-cov-empty", text)
+        write_plan(path, SC_PLAN_TWO)
+        assert (
+            vs.main(
+                ["chk-cov-empty", "--check", "--timeout", "10"],
+                specs_root=tmp_path / "specs",
+            )
+            == 1
+        )
+
     def test_criterion_check_mode_actual_exit(self, tmp_path):
         # Well-formed: each criterion row actually exits its SC's expected code.
         verify = (

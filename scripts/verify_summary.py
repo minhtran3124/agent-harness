@@ -562,6 +562,14 @@ def main(argv: list[str], specs_root: Path | None = None) -> int:
     text = summary_path.read_text(encoding="utf-8")
     rows = parse_verify_table(text)
 
+    # SC coverage is a property of the tables, not of execution — it must hold in
+    # single-target mode too. `--check <slug>` is the documented ship gate (and what
+    # ci-strict-gate.sh runs), so an uncovered Success Criterion has to fail HERE,
+    # not only under --lane.
+    coverage_errors = _check_sc_coverage(text, summary_path, plan_dir)
+    for error in coverage_errors:
+        print(f"SC-COVERAGE  {error}")
+
     if not rows:
         print(
             "warning: no checks ran (all commands are placeholders or table is empty)"
@@ -570,7 +578,7 @@ def main(argv: list[str], specs_root: Path | None = None) -> int:
             # Still add Verified line even when no checks ran? No — don't
             # claim machine-verified if nothing ran. Just return 0 with warning.
             pass
-        return 0
+        return 1 if coverage_errors else 0
 
     repo_root = _REPO_ROOT
     results = run_checks(rows, repo_root=repo_root, timeout=args.timeout)
@@ -579,7 +587,7 @@ def main(argv: list[str], specs_root: Path | None = None) -> int:
     # Criterion-mapped row is also validated against its SC's expected exit.
     sc_map = _sc_map_for_summary(summary_path, plan_dir)
 
-    failed = False
+    failed = bool(coverage_errors)
     for r in results:
         if r.get("trivial"):
             print(

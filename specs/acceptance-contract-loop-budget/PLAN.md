@@ -83,6 +83,8 @@ correctness-review fix-loop is textually unbounded ("repeat until ✅"). Design:
 | SC-5 | correctness-review SKILL.md mechanizes the loop budget (cap 3 + progress guard + escalation routing) | `grep -q "Loop budget (cap + progress guard)" skills/correctness-review/SKILL.md` | exit 0 |
 | SC-6 | plan-format rule defines the SC table schema and its guardrails | `grep -q "Success Criteria schema" rules/plan-format.md` | exit 0 |
 | SC-7 | commit-gate `--plan-dir` override enforces SC coverage against the real spec dir (no fail-open when SUMMARY is read from a staged/temp copy) | `python3 -m pytest scripts/test_verify_summary.py -q -k plan_dir` | exit 0 |
+| SC-8 | Single-target/`--check` mode (the documented ship gate) fails an uncovered SC, including when the Verify table has no runnable row | `python3 -m pytest scripts/test_verify_summary.py -q -k fails_check_mode` | exit 0 |
+| SC-9 | The commit gate judges SC coverage against the INDEXED PLAN, so editing the PLAN in the worktree after staging cannot fail it open | `grep -q "SC table is enforced even after the worktree PLAN is emptied" tests/hooks/commit-quality-gate.test.sh` | exit 0 |
 
 ## 4. Tasks
 
