@@ -8,6 +8,9 @@ Task tool (general-purpose):
   prompt: |
     You are implementing Task N: [task name]
 
+    **Simplicity First — read before you start.** minimum code that solves the problem. No
+    abstractions for single-use code. Every changed line must trace to the request.
+
     ## Task Description
 
     [FULL TEXT of task from plan - paste it here, don't make subagent read file]
