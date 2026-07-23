@@ -92,13 +92,17 @@ re-deriving it avoids relitigating decisions the repo owner already made with fi
 
 | Check | Command | Exit | Notes | Criterion |
 | --- | --- | --- | --- | --- |
-| baseline | `bash scripts/run-tests.sh` | 0 | ALL GREEN before implementation (185 python tests + shell suites) | |
 | simplify step present | `grep -n "simplify" skills/subagent-driven-development/SKILL.md` | 0 | match at line 140, before the correctness-review pipeline description | SC-1 |
 | excess wording present | `grep -q "config knob" skills/intent-review/intent-reviewer-prompt.md` | 0 | match confirmed | SC-2 |
 | implementer prompt constraint | `grep -in "minimum code that solves the problem" skills/subagent-driven-development/implementer-prompt.md` | 0 | match at line 11, above the self-check line at 91 | SC-3 |
 | hook contract tests | `bash tests/hooks/risk-corroboration.test.sh` | 0 | 33 passed (31 wave-1 + fix-loop rounds 1-2) | SC-4 |
-| full suite after fix loop | `bash scripts/run-tests.sh` | 0 | ALL GREEN | SC-5 |
 | doc-truth lint | `bash scripts/lint-doc-truth.sh` | 0 | passes after all skill/prompt edits | SC-5 |
+
+Full suite (`bash scripts/run-tests.sh` — ALL GREEN, 185 python + all shell suites) was run
+directly (not as a Verify row, since a whole-suite command violates
+`docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md`) at baseline, after each
+wave-1 task, and after both fix-loop rounds; each run is cited inline in `PLAN.md` §6 Status Log
+and the commit messages above.
 
 ### Rollback
 
