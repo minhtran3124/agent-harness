@@ -41,13 +41,46 @@ re-deriving it avoids relitigating decisions the repo owner already made with fi
 
 ### Deviations
 
-- none
+- Rule 2 — Quality-review fixes: capitalized sentence fragment (`0e121fc`) and removed a
+  duplicated phrase (`4669f20`), both flagged by per-task code-quality review.
+- Rule 2 — `/simplify` pass fix: removed a redundant Rule-4 parenthetical in the D3 carve-out
+  sentence (`7bf20ab`), flagged by the simplification angle.
+- Rule 1 — `/correctness-review` fix loop, 2 rounds, on `hooks/risk-corroboration.sh`'s
+  diff-size signal (Rule-4-flagged file; escalated to the human before fixing since Task 1.4's
+  own literal spec was the root cause, not an implementer slip — human approved the "count
+  unfiltered diff lines" direction): round 1 (`8d7aff9`) replaced the keyword-scan-filtered
+  `$CODE_ADDED`/`$CODE_REMOVED` reuse with `git diff --cached -U0 --numstat`; a fresh
+  re-verification pass caught a NEW bug the round-1 fix introduced (`-U0` forces patch-body
+  emission that `--numstat` doesn't suppress, inflating the count ~100x on content with
+  numeric-looking tokens); round 2 (`a58181b`) dropped `-U0`, independently re-verified CLOSED
+  with no residual issue.
+
+### Advisory Findings
+
+<!-- Findings scored below the correctness-review threshold (75) — not auto-fixed, reported. -->
+
+- **`hooks/risk-corroboration.sh` — stale disk-fallback lane attribution** (score 0). The
+  diff-size note can print a lane inferred from an unrelated slug's `SUMMARY.md` (the `ls -t`
+  disk fallback) when no `SUMMARY.md` is staged in the current commit. Scored 0: the
+  disk-fallback mechanism itself is pre-existing (already used by the block/warn decision before
+  this diff) — this diff only adds a second consumer of it, not a new defect in the mechanism.
+- **`hooks/risk-corroboration.sh` — `CHANGED_LINES` double-counts modified lines** (score 0,
+  superseded). The original `$CODE_ADDED + $CODE_REMOVED` computation counted a single-line
+  modification as 2 changed lines (one added, one removed). Scored 0 as spec-literal, non-fatal
+  advisory-message imprecision — moot after the round-1/round-2 fix loop above replaced this
+  computation entirely with an unfiltered `--numstat` sum, which does not double-count.
 
 ### Verify
 
 | Check | Command | Exit | Notes | Criterion |
 | --- | --- | --- | --- | --- |
 | baseline | `bash scripts/run-tests.sh` | 0 | ALL GREEN before implementation (185 python tests + shell suites) | |
+| simplify step present | `grep -n "simplify" skills/subagent-driven-development/SKILL.md` | 0 | match at line 140, before the correctness-review pipeline description | SC-1 |
+| excess wording present | `grep -q "config knob" skills/intent-review/intent-reviewer-prompt.md` | 0 | match confirmed | SC-2 |
+| implementer prompt constraint | `grep -in "minimum code that solves the problem" skills/subagent-driven-development/implementer-prompt.md` | 0 | match at line 11, above the self-check line at 91 | SC-3 |
+| hook contract tests | `bash tests/hooks/risk-corroboration.test.sh` | 0 | 33 passed (31 wave-1 + fix-loop rounds 1-2) | SC-4 |
+| full suite after fix loop | `bash scripts/run-tests.sh` | 0 | ALL GREEN | SC-5 |
+| doc-truth lint | `bash scripts/lint-doc-truth.sh` | 0 | passes after all skill/prompt edits | SC-5 |
 
 ### Rollback
 

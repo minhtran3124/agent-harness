@@ -56,7 +56,7 @@ or `risk-corroboration.sh` beyond targeted insertions.
 |----|------------------------|----------------------|----------|
 | SC-1 | `subagent-driven-development` runs `/simplify` on the accumulated diff before `/correctness-review` whenever the diff crosses the D4 threshold | `grep -n "simplify" skills/subagent-driven-development/SKILL.md` | exit 0 — step present, ordered before the correctness-review section |
 | SC-2 | `intent-review`'s `excess` definition names config knobs and new public surface explicitly | `grep -q "config knob" skills/intent-review/intent-reviewer-prompt.md` | exit 0 |
-| SC-3 | The implementer dispatch prompt restates Simplicity First constraints before the task body, not only in the trailing self-check | `grep -n "minimum code that solves the problem" skills/subagent-driven-development/implementer-prompt.md` | exit 0 — match appears above line 88 (the existing self-check line) |
+| SC-3 | The implementer dispatch prompt restates Simplicity First constraints before the task body, not only in the trailing self-check | `grep -in "minimum code that solves the problem" skills/subagent-driven-development/implementer-prompt.md` | exit 0 — match appears above line 91 (the existing self-check line) |
 | SC-4 | `risk-corroboration.sh` prints a warn-only note (never blocks) when changed-line count is out of proportion to the declared lane | `bash tests/hooks/risk-corroboration.test.sh` | exit 0 — new diff-size case passes, exit code of the hook itself stays 0 on the warn path |
 | SC-5 | The doc-truth lint stays clean after all four skill/prompt/hook edits | `bash scripts/lint-doc-truth.sh` | exit 0 |
 
