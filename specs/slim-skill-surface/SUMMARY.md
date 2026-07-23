@@ -173,6 +173,22 @@ every `$VAR` in a `bash`/`sh` block of `skills/**/*.md` must be assigned in the 
 a known environment variable. Reverting the fix makes the lint fail, so this class cannot recur
 silently.
 
+**Frame diversity, not just model diversity (follow-up to the Codex P1).** The three local oracles
+used two models and three methods but one *reading frame* — "this is a policy document, trace the
+constraints" — in which `path=` is formatting. Codex read the same file as code. Two mechanisms
+were added so that gap is covered structurally rather than by hoping a future reviewer looks
+differently:
+
+- `scripts/lint-skill-bash.sh` now also runs `bash -n` and `shellcheck -S error` per block. A
+  parser does not share an LLM's frame at all. Blocks carrying a `<placeholder>` are skipped as
+  illustrative and severity is pinned to `error`: at default severity these doc fragments emit
+  SC2012 on a deliberate `ls -1t` and SC2046 on a deliberately unquoted `$(git merge-base …)…HEAD`
+  range — a gate that fires on correct code teaches people to ignore it. Current state: 7 runnable
+  blocks checked, 10 illustrative skipped, 0 findings. CI installs shellcheck on macOS so the pass
+  really runs there.
+- `finishing-a-development-branch` Gate 0b: the heterogeneous Codex review is now a **required**
+  merge gate for workflow-engine diffs, no longer "optional — reference only".
+
 Every guard added by this branch is mutation-checked. Reverting the tracked-`.claude` detection
 fails its case; widening the probe back fails 3 cases; deleting the skip notice fails 1.
 `tests/scripts/install-gitignore.test.sh` grew 7 → 15 cases across the two rounds.

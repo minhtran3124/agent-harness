@@ -106,9 +106,29 @@ has no review chain to pin.
 > if any **non-`specs/`** change slipped in after review, that re-check fails and blocks the push,
 > which is exactly the stale-review protection working.
 
-For high-risk **workflow-engine** changes (`harness-manifest.json` → `workflow-engine`), the existing
-heterogeneous Codex PR review remains an optional post-push merge requirement — reference only, run on
-the PR after push; nothing is mirrored locally (per the non-goals).
+**Gate 0b — heterogeneous external review (workflow-engine diffs only).** When the `<base>..HEAD`
+diff touches the `workflow-engine` surface (`harness-manifest.json` → `workflow-engine`), the PR is
+**not mergeable** until an external reviewer outside this harness's prompt lineage — the Codex PR
+review — has landed and every finding it raises is fixed, refuted in a reply, or recorded. This is
+a **merge** requirement, not a push requirement: push and open the PR normally, then check before
+merging.
+
+```bash
+gh pr view <pr> --json reviews --jq '[.reviews[] | select(.author.login | test("codex"))] | length'
+```
+
+`0` means the review has not landed — wait for it. Nothing is mirrored locally; the check runs on
+the PR.
+
+**Why this is required rather than advisory.** The three local oracles
+(`/correctness-review`, `/intent-review`, `/context-propagation-audit`) share a reading frame:
+they are dispatched by this harness, with its prompts, and they read a `SKILL.md` as policy prose.
+On PR #158 all three passed a diff in which trimming `using-git-worktrees` had deleted the line
+assigning `path=` while a later step still ran `deploy-harness.sh --target "$path"` — every route
+reached it unset, so a fresh worktree silently got no `.claude/`. Codex caught it because it read
+the same file as **code**. Model diversity does not produce that; a reviewer outside the lineage
+does. (The specific class is now also caught mechanically by `scripts/lint-skill-bash.sh`, but the
+general lesson is why this gate exists — a lint only covers the frame gap you already found.)
 
 1. **Mark the plan shipped** — run Step 4. This updates `specs/<slug>/PLAN.md`, which is **tracked** in git, so stage and commit the status change with the work (it lands in the branch/PR). If no plan matches, skip silently.
 1b. **`CHANGELOG.md` + `VERSION` — who bumps depends on whether this repo has the post-merge automation.** Check for `.github/workflows/post-merge-maintenance.yml` (paired with `scripts/bookkeeping.sh`):

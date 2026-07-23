@@ -12,6 +12,19 @@
 #
 # Scope: `bash`/`sh` fenced blocks in skills/**/*.md, treated as ONE document per file (a skill
 # is read top to bottom, so an assignment in an earlier block covers a later reference).
+#
+# Three checks, in order of how much they can prove:
+#   1. unbound-variable (above) — whole file, always runs.
+#   2. `bash -n` syntax — per block, on blocks with no placeholder.
+#   3. `shellcheck -S error` — per block, same scope, only when shellcheck is installed.
+#
+# Blocks containing a `<placeholder>` or `[optional]` are ILLUSTRATIVE, not runnable, and are
+# skipped by 2 and 3: shellcheck parses `view_plan.py <slug>` as a stdin redirection and reports
+# a parse error, which is noise, not signal. Severity is pinned to `error` for the same reason —
+# at default severity these doc fragments emit SC2012 ("use find instead of ls", when `ls -1t`
+# is exactly what was meant) and SC2046 on a deliberately unquoted `$(git merge-base …)…HEAD`
+# range. A gate that fires on correct code teaches people to ignore it.
+#
 # Usage: bash scripts/lint-skill-bash.sh [--root DIR]
 set -u
 ROOT="."
@@ -68,8 +81,49 @@ for p in sorted(pathlib.Path("skills").rglob("*.md")):
         failed = 1
         bound.add(name)   # report each name once per file
 
+import shutil, subprocess, tempfile, os
+
+# A block carrying `<placeholder>` / `[optional]` is documentation, not a runnable script.
+PLACEHOLDER = re.compile(r"<[a-z][a-z0-9_.\- ]*>|\[[a-z][a-z0-9_.\-]*\]")
+HAS_SHELLCHECK = shutil.which("shellcheck") is not None
+
+runnable = skipped = 0
+for p in sorted(pathlib.Path("skills").rglob("*.md")):
+    for idx, block in enumerate(FENCE.findall(p.read_text(encoding="utf-8")), 1):
+        # strip comment-only lines before deciding: `# see <type>/<slug>` is prose, not a placeholder
+        code = "\n".join(l for l in block.splitlines() if not l.strip().startswith("#"))
+        if PLACEHOLDER.search(code):
+            skipped += 1
+            continue
+        runnable += 1
+        d = tempfile.mkdtemp()
+        f = os.path.join(d, "block.sh")
+        with open(f, "w", encoding="utf-8") as fh:
+            fh.write("#!/bin/bash\n" + block)
+
+        r = subprocess.run(["bash", "-n", f], capture_output=True, text=True)
+        if r.returncode:
+            msg = r.stderr.replace(f, f"{p} #{idx}").strip().splitlines()
+            print(f"  ✗ {p} block #{idx}: bash syntax error", file=sys.stderr)
+            for line in msg[:3]:
+                print(f"      {line}", file=sys.stderr)
+            failed = 1
+
+        if HAS_SHELLCHECK:
+            r = subprocess.run(
+                ["shellcheck", "-S", "error", "-f", "gcc", f], capture_output=True, text=True
+            )
+            for line in r.stdout.strip().splitlines():
+                print(f"  ✗ {p} block #{idx}: {line.split(':', 3)[-1].strip()}", file=sys.stderr)
+                failed = 1
+
 if failed:
-    print("\n  skill-bash lint: unbound variable(s) in runnable skill blocks.", file=sys.stderr)
+    print("\n  skill-bash lint: problems in runnable skill blocks.", file=sys.stderr)
     sys.exit(1)
-print(f"  ✓ skill-bash lint: {checked} skill doc(s) with bash blocks, no unbound variables")
+
+sc = "shellcheck -S error" if HAS_SHELLCHECK else "shellcheck absent — syntax only"
+print(
+    f"  ✓ skill-bash lint: {checked} doc(s), {runnable} runnable block(s) checked "
+    f"({skipped} illustrative skipped); no unbound vars, {sc} clean"
+)
 PY
