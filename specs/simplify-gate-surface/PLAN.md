@@ -10,7 +10,7 @@ created: 2026-07-23
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**5 tasks · 3 waves · 12 files · 0/5 done**
+**5 tasks · 3 waves · 12 files · 5/5 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -38,11 +38,11 @@ flowchart LR
 ```
 
 ### Progress
-- [ ] 1.1 — Hook resolves gate mode from the manifest (wave 1)
-- [ ] 1.2 — `check_manifest.py` stops regex-parsing the hook for modes (wave 1)
-- [ ] 2.1 — Flip the two noisy gates to warn (wave 2)
-- [ ] 2.2 — Align the docs with the new contract (wave 2)
-- [ ] 3.1 — End-to-end proof + evidence (wave 3)
+- [x] 1.1 — Hook resolves gate mode from the manifest (wave 1)
+- [x] 1.2 — `check_manifest.py` stops regex-parsing the hook for modes (wave 1)
+- [x] 2.1 — Flip the two noisy gates to warn (wave 2)
+- [x] 2.2 — Align the docs with the new contract (wave 2)
+- [x] 3.1 — End-to-end proof + evidence (wave 3)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -205,6 +205,10 @@ Full analysis, measurements, and the rejected alternatives: `design.md`.
 
 - 2026-07-23 — Spec created (design + plan) from the gate review. Status: `proposed`,
   awaiting go-ahead before Wave 1.
+- 2026-07-23 — Waves 1–3 executed on `feat/simplify-gate-surface`. Tasks 1.1 + 1.2 done
+  (`bcc595d`), 2.1 + 2.2 done (`3e440da`), 3.1 done (this commit). All SC-1…SC-7 verified —
+  see SUMMARY `### Verify`. `bash scripts/run-tests.sh` ALL GREEN. **Activation pending:**
+  awaiting human-confirmed `deploy-harness.sh` run to refresh `.claude/hooks/`.
 - 2026-07-23 — Gap review against the live codebase closed 4 holes: (1) activation step added
   to Task 3.1 — the live gate is `.claude/hooks/risk-corroboration.sh`, so merging without a
   human-confirmed re-deploy changes nothing; (2) `check_gate_modes_smoke.py` wired into

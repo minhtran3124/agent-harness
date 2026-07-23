@@ -29,9 +29,24 @@ Items 1→3 of the review's cut list, verbatim as delivered:
 
 ## What changed
 
-<!-- filled at ship time -->
+- `hooks/risk-corroboration.sh` — `category_mode()` now reads per-gate `mode` from
+  `harness-manifest.json` (one `jq` call; fail-safe `block` on absent/invalid manifest, so
+  consumer repos keep strict behavior). Comments + BLOCKED message now give a working
+  override path (`settings.local.json → env` / manifest `mode`), replacing the impossible
+  inline `VAR=x git commit` advice.
+- `scripts/check_manifest.py` — dropped the `category_mode` source-regex; the manifest is the
+  mode authority. `add_cat` ↔ `detectable` stays bidirectional.
+- `harness-manifest.json` — `workflow-engine` (85% firing) and `weakening-validation`
+  (precision 0) flipped to `mode: warn`; measurements recorded in each `desc`.
+- `scripts/check_gate_modes_smoke.py` (new, wired into `run-tests.sh`) — pins 2-warn/7-block.
+- `tests/hooks/warn-mode-smoke.test.sh` (new) — proves the incident commit passes and the
+  loosening stays scoped (hooks/ still blocks).
+- Docs aligned: `CLAUDE.md:52`, feature-intake HARD-GATE + gate list, `rules/orchestration.md`.
+- Intake classification unchanged — both gates still force `Lane: high-risk` (LC-11 valid).
 
-Not yet implemented — this spec carries the design + plan only.
+**Activation pending:** the live gate is the deployed copy `.claude/hooks/risk-corroboration.sh`;
+a human-confirmed `scripts/deploy-harness.sh` run is required for this change to take effect
+in this repo (see PLAN Task 3.1 / design §4b).
 
 ### Rationale
 
@@ -70,6 +85,9 @@ Once mode is data, loosening a noisy gate is a one-line JSON edit instead of a c
 | Checker unit tests | `python3 -m pytest scripts/test_check_manifest.py -q --no-header -p no:cacheprovider` | 0 | 11 passed — wave 1 | SC-2 |
 | Gate modes pinned (2 warn, 7 block) | `python3 scripts/check_gate_modes_smoke.py` | 0 | wired into run-tests.sh — wave 2 | SC-4 |
 | Docs match wiring | `bash scripts/lint-doc-truth.sh` | 0 | + 4 prose sites hand-verified (CLAUDE.md:52, SKILL.md:29, SKILL.md:~95, orchestration.md:39) — wave 2 | SC-6 |
+| Working override path documented | `grep -q settings.local.json hooks/risk-corroboration.sh` | 0 | no inline VAR=x advice remains — wave 3 | SC-5 |
+| Incident commit passes; loosening scoped | `bash tests/hooks/warn-mode-smoke.test.sh` | 0 | 2 passed against the real manifest — wave 3 | SC-7 |
+| Full harness suite | `bash scripts/run-tests.sh` | 0 | ALL GREEN (185 pytest + all hook suites) — wave 3 | SC-1 |
 
 ### Rollback
 
