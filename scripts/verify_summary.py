@@ -542,11 +542,12 @@ def main(argv: list[str], specs_root: Path | None = None) -> int:
     if specs_root is None:
         specs_root = _REPO_ROOT / "specs"
 
+    plan_dir = Path(args.plan_dir) if args.plan_dir else None
+
     if args.lane:
         if args.check or not args.targets:
             print(__doc__, file=sys.stderr)
             return 2
-        plan_dir = Path(args.plan_dir) if args.plan_dir else None
         return _check_lane_targets(args.targets, specs_root, plan_dir=plan_dir)
 
     if len(args.targets) != 1:
@@ -576,7 +577,7 @@ def main(argv: list[str], specs_root: Path | None = None) -> int:
 
     # SC expected exits from the sibling PLAN.md (empty when none) — a
     # Criterion-mapped row is also validated against its SC's expected exit.
-    sc_map = _sc_map_for_summary(summary_path)
+    sc_map = _sc_map_for_summary(summary_path, plan_dir)
 
     failed = False
     for r in results:

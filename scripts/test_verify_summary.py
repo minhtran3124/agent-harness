@@ -723,6 +723,35 @@ class TestScCoverage:
             == 1
         )
 
+    def test_plan_dir_override_via_check_mode(self, tmp_path):
+        # --plan-dir must also be honored in single-target/check mode, not only --lane.
+        # SUMMARY slug dir has NO PLAN.md, so the parent-based lookup fail-opens; the
+        # real SC table lives in a separate dir pointed at by --plan-dir. The row's
+        # Criterion (SC-2, expected exit 1) with a command that exits 0 is caught ONLY
+        # when plan_dir is consulted.
+        verify = "| c1 | `test 1 = 1` | 0 | | SC-2 |"
+        text = _lane_summary(lane="normal", verify=verify)
+        write_summary(tmp_path, "chk-plandir", text)  # no sibling PLAN.md written
+        real = tmp_path / "real-spec"
+        real.mkdir()
+        (real / "PLAN.md").write_text(SC_PLAN_TWO, encoding="utf-8")
+        specs_root = tmp_path / "specs"
+        # Without --plan-dir: no sibling PLAN → sc_map empty → claimed==actual → exit 0.
+        assert (
+            vs.main(
+                ["chk-plandir", "--check", "--timeout", "10"], specs_root=specs_root
+            )
+            == 0
+        )
+        # With --plan-dir: SC-2 expects exit 1 but the command exits 0 → mismatch → exit 1.
+        assert (
+            vs.main(
+                ["chk-plandir", "--check", "--plan-dir", str(real), "--timeout", "10"],
+                specs_root=specs_root,
+            )
+            == 1
+        )
+
     def test_criterion_check_mode_actual_exit(self, tmp_path):
         # Well-formed: each criterion row actually exits its SC's expected code.
         verify = (
