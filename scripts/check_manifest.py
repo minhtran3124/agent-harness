@@ -5,7 +5,8 @@ Checks (all mechanical, stdlib-only so CI needs no pyyaml):
   A. inventory presence scan (register-vs-scan): every manifest hook/skill/agent exists on disk
      and every disk component is in the manifest; each hook's `wired` flag matches settings.json.
   B. gate <-> enforcer: hard_gates.detectable slugs == risk-corroboration.sh's `add_cat` set
-     == its category_mode branches (bidirectional).
+     (bidirectional — a detector must exist for every manifest gate and vice versa).
+     Gate modes (block|warn) are manifest-owned and read by the hook at runtime — not mirrored.
 
 Exit 0 = consistent. Exit 1 = drift (one "manifest: ... drift: ..." line per problem).
 Run: python3 scripts/check_manifest.py [--root DIR]
@@ -78,13 +79,9 @@ def check(root: Path) -> int:
     for name in disk_agents - man_agents:
         problem("agents", f"{name} on disk but missing from manifest")
 
-    # ── B. detectable gates <-> risk-corroboration.sh (add_cat + category_mode) ─
+    # ── B. detectable gates <-> risk-corroboration.sh (add_cat set) ────────────
     rc = (root / "hooks" / "risk-corroboration.sh").read_text()
     hook_added = set(re.findall(r'add_cat\s+"([^"]+)"', rc))
-    # category_mode branches look like:  auth) ... ;;   or  data-loss/migration) ... ;;
-    hook_modes = set(
-        re.findall(r"^\s*([a-z][a-z/-]*)\)\s*echo\s+\"(?:block|warn)\"", rc, re.M)
-    )
     man_detect = {g["slug"] for g in m.get("hard_gates", {}).get("detectable", [])}
 
     for slug in man_detect - hook_added:
@@ -96,11 +93,6 @@ def check(root: Path) -> int:
         problem(
             "hard_gates",
             f"add_cat '{slug}' in risk-corroboration.sh but not in manifest detectable",
-        )
-    for slug in man_detect - hook_modes:
-        problem(
-            "hard_gates",
-            f"detectable '{slug}' has no category_mode branch in risk-corroboration.sh",
         )
 
     # ── C. contracts <-> disk ──────────────────────────────────────────────────

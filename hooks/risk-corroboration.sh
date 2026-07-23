@@ -7,9 +7,11 @@
 # declared Lane in specs/<slug>/SUMMARY.md is below `high-risk`, the commit is
 # BLOCKED (exit 2) — the agent under-classified its own work.
 #
-# CANONICAL GATE LIST: harness-manifest.json (hard_gates.detectable). The add_cat +
-# category_mode categories below MUST match it exactly — scripts/check_manifest.py fails
-# CI on any drift. Edit the manifest, then mirror it here.
+# CANONICAL GATE LIST + MODES: harness-manifest.json (hard_gates.detectable). The
+# manifest is the mode authority — category_mode() reads each slug's `mode` (block|warn)
+# from it at runtime. Only the add_cat detector set is mirrored here;
+# scripts/check_manifest.py fails CI if that set drifts from the manifest.
+# To loosen or re-tighten a gate, edit its manifest `mode` field — not this file.
 #
 # Safety for a docs/framework repo:
 #   - Keyword categories scan only ADDED CODE lines, excluding prose
@@ -18,8 +20,9 @@
 #   - When a signal is present but NO Lane is declared, this WARNS (exit 0)
 #     rather than blocking — there is nothing to corroborate against.
 #     Set RISK_CORROBORATION_STRICT=1 to make the no-Lane case fail-closed.
-#   - Per-category mode (block|warn) is configured in category_mode() below
-#     (Phase 7 loosening). Default: every category blocks.
+#   - Per-category mode (block|warn) is read from harness-manifest.json at runtime.
+#     Unknown slug / missing mode / missing or invalid manifest => block (fail-safe).
+#     Consumer repos have no manifest at their root, so every category blocks there.
 #
 # Exits 0 to allow, 2 to block. No set -e (flow is controlled explicitly).
 
@@ -40,28 +43,32 @@ REPO_DIR="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null)"
 [ -z "$REPO_DIR" ] && REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$REPO_DIR" || exit 0
 
-# ── Per-category mode (Phase 7): echo "block" or "warn" ──────────────────
-# Loosen a category WITHOUT editing this file by listing it in RISK_WARN_CATEGORIES
-# (comma/space separated), e.g. RISK_WARN_CATEGORIES="data-loss/migration".
+# ── Per-category mode: harness-manifest.json is the authority ────────────
+# Durable loosening: set the category's "mode" to "warn" in harness-manifest.json.
+# Session-scoped loosening: list categories in RISK_WARN_CATEGORIES (comma/space
+# separated), e.g. RISK_WARN_CATEGORIES="data-loss/migration". The variable must be
+# in the HOOK'S OWN process environment — .claude/settings.local.json -> "env", or a
+# var exported in the session. An inline `VAR=x git commit` prefix does NOT work:
+# a PreToolUse hook runs before the command, so the prefix never reaches it.
 # Loosen one at a time; never auth/external-provider first; revert on any incident.
+GATE_MODES=""
+[ -f "$REPO_DIR/harness-manifest.json" ] && GATE_MODES=$(jq -r \
+  '.hard_gates.detectable[]? | "\(.slug)=\(.mode // "block")"' \
+  "$REPO_DIR/harness-manifest.json" 2>/dev/null || true)
+
 category_mode() {
   local _wl
   _wl=$(echo " ${RISK_WARN_CATEGORIES:-} " | tr ',' ' ')
   case "$_wl" in
     *" $1 "*) echo "warn"; return ;;
   esac
-  case "$1" in
-    auth)               echo "block" ;;
-    authorization)      echo "block" ;;
-    data-loss/migration) echo "block" ;;
-    audit/security)     echo "block" ;;
-    external-provider)  echo "block" ;;
-    public-contract)    echo "block" ;;
-    weakening-validation) echo "block" ;;
-    high-blast)         echo "block" ;;
-    workflow-engine)    echo "block" ;;
-    *)                  echo "block" ;;
-  esac
+  # Manifest lookup — anything but an explicit "warn" blocks (fail-safe: absent
+  # slug, missing mode, missing/unreadable/invalid manifest all fall through).
+  if printf '%s\n' "$GATE_MODES" | grep -qxF "$1=warn"; then
+    echo "warn"
+  else
+    echo "block"
+  fi
 }
 
 # ── Gather the staged diff ───────────────────────────────────────────────
@@ -147,6 +154,8 @@ if [ -n "$LANE_VAL" ]; then
   echo "  Staged diff trips hard-gate categories:$BLOCKING" >&2
   echo "  But specs SUMMARY declares  Lane: $LANE_VAL  (below high-risk)." >&2
   echo "  Re-classify via /feature-intake (set Lane: high-risk), or have a human narrow scope." >&2
+  echo "  Loosen: set the category's \"mode\" to \"warn\" in harness-manifest.json (durable), or put" >&2
+  echo "  RISK_WARN_CATEGORIES in .claude/settings.local.json -> env (an inline VAR=x prefix never reaches a PreToolUse hook)." >&2
   exit 2
 fi
 

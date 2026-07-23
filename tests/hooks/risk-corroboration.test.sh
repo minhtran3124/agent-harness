@@ -162,4 +162,45 @@ stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_contains 2 "workflow-engine"
 
+# ── Manifest-driven gate modes (harness-manifest.json is the authority) ──
+
+t "manifest mode=warn loosens the category for a below-high-risk lane (exit 0)"
+repo=$(new_repo $H)
+printf '%s\n' '{"hard_gates":{"detectable":[{"slug":"data-loss/migration","mode":"warn"}]}}' > "$repo/harness-manifest.json"
+stage "$repo" "alembic/versions/abc_add_table.py" "def upgrade(): pass"
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 0 "warn-mode"
+
+t "manifest mode=block still blocks a below-high-risk lane (exit 2)"
+repo=$(new_repo $H)
+printf '%s\n' '{"hard_gates":{"detectable":[{"slug":"data-loss/migration","mode":"block"}]}}' > "$repo/harness-manifest.json"
+stage "$repo" "alembic/versions/abc_add_table.py" "def upgrade(): pass"
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "BLOCKED"
+
+t "manifest absent (consumer repo) → fallback block (exit 2)"
+repo=$(new_repo $H)
+stage "$repo" "alembic/versions/abc_add_table.py" "def upgrade(): pass"
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "BLOCKED"
+
+t "malformed manifest JSON → fail-safe block (exit 2)"
+repo=$(new_repo $H)
+printf '%s\n' 'this is not json {' > "$repo/harness-manifest.json"
+stage "$repo" "alembic/versions/abc_add_table.py" "def upgrade(): pass"
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "BLOCKED"
+
+t "manifest warn on one slug does not loosen a sibling prefix slug (auth vs authorization)"
+repo=$(new_repo $H)
+printf '%s\n' '{"hard_gates":{"detectable":[{"slug":"auth","mode":"warn"}]}}' > "$repo/harness-manifest.json"
+stage "$repo" "app/perm.py" 'def check(): return require_role("admin")'
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "BLOCKED"
+
 finish
