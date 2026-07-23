@@ -83,9 +83,9 @@ Task tool (reviewer):
       it. Note whether the difference is *behaviorally equivalent* (same outcome the user wanted,
       different surface) or *behaviorally different* (a different outcome).
     - **excess** — the diff ships something NOBODY asked for — scope beyond the intent. (Extra
-      features, options, endpoints, abstractions not traceable to any intent clause — including
-      config knobs / new public surface not traceable to any intent clause. Flag findings of this
-      class BY DEFAULT, not just when convenient.) This `excess` verdict is a post-hoc check on
+      features, options, endpoints, abstractions, config knobs, or new public surface not
+      traceable to any intent clause. Flag findings of this class BY DEFAULT, not just when
+      convenient.) This `excess` verdict is a post-hoc check on
       the FINAL diff and stays report-only (Rule 4 governs removal of shipped functionality) —
       distinct from the separate `/simplify` pass, which edits an unmerged pre-ship diff where
       deletion is allowed.
