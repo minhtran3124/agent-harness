@@ -11,13 +11,21 @@ name: post-merge-maintenance
 on:
   pull_request_target:
     types: [closed]
-    # Keep this list to the branch(es) PRs are actually merged into. History: the list
-    # was [v2] while v2 was the working branch and main lacked scripts/bookkeeping.sh
-    # (PR #44 crashed on that gap; PR #36 added the file to main only to register
-    # pull_request_target). After the v2 → main promotion (VERSION 2.0.0) PRs merge to
-    # main, which now carries the full toolchain — the stale [v2] list silently skipped
-    # PRs #66/#68/#69/#70 (found by the 2026-07-16 over-engineering review, C3).
-    branches: [main, v3]  # v3 = integration/staging branch (2026-07-17); PRs merge here first
+    # THIS FILE MUST BE SYNCED ON `main`: pull_request_target always loads the workflow
+    # definition from the repo's real DEFAULT branch (main), regardless of the PR's base.
+    # Editing this list only on an integration branch has NO effect (observed 2026-07-04,
+    # docs/harness-v03-plan-overview.md; same pattern as PRs #36/#44/#45 — sync to main
+    # in its own small PR).
+    #
+    # Keep the list to the branch(es) PRs are actually merged into. IT ROTS SILENTLY: a PR
+    # merged into a branch missing here fires nothing — no run, no log, no error.
+    # History: [v2] while v2 was the working branch (main then lacked
+    # scripts/bookkeeping.sh — PR #44 crashed on that gap; PR #36 added it to main only to
+    # register pull_request_target). After the v2 → main promotion the stale [v2] silently
+    # skipped PRs #66/#68/#69/#70 (2026-07-16 over-engineering review, C3). Then [main, v3]
+    # outlived v3 — no longer on the remote — and silently skipped PRs #158 and #160,
+    # merged into `loop` (2026-07-23).
+    branches: [main, loop]  # loop = integration/staging branch (2026-07-23); PRs merge here first
 
 permissions:
   contents: write
