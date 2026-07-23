@@ -63,7 +63,18 @@ standing automation:
 
 ### Deviations
 
-- none
+- Rule 1 — Codex external review (PR #161, P1): **this change alone is inert.**
+  `pull_request_target` loads its workflow definition from the repo's real **default**
+  branch (`main`), not the PR base, so a list edited only on `loop` is never read. Verified
+  independently: `main` still carries `[main, v3]`; PR #155 (base=`main`) produced a
+  bookkeeping run while #158 and #160 (base=`loop`) produced none; the rule was already
+  observed here on 2026-07-04 (`docs/harness-v03-plan-overview.md`) and fixed then by the
+  same straight-to-`main` sync pattern (PRs #36/#44/#45).
+  Action: opened **PR #162** against `main` with the sync-only change — that is the PR that
+  makes the trigger fire. This PR keeps `loop`'s copy byte-identical so the two cannot
+  diverge again, and both comments now state the default-branch rule.
+  Consequence for the queued ratchet: the check must assert the **default-branch** copy of
+  the trigger list; asserting the base-branch copy would have passed on this very PR.
 
 ### Verify
 
