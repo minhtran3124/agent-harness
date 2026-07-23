@@ -73,7 +73,30 @@ Once mode is data, loosening a noisy gate is a one-line JSON edit instead of a c
 
 ### Deviations
 
-- none
+- Rule 1 — correctness-review round 1 (3 findings ≥75, all fixed in one round):
+  - `scripts/check_gate_modes_smoke.py` — malformed `detectable` entry (missing `slug` /
+    non-dict) crashed with a traceback; now reported as a clean `gate-modes:` drift line.
+  - `hooks/risk-corroboration.sh` header comment — fail-safe claim narrowed: it assumes `jq`
+    (without jq the hook never gates at all — pre-existing behavior, now stated).
+  - SUMMARY `### Verify` — the full-suite row violated
+    `verify-row-must-be-pipe-free-and-under-60s` and would have turned CI red; replaced with
+    the prose line under the table.
+- Rule 3 — `specs/slim-skill-surface/PLAN.md` still said `status: active` after its PR merged,
+  which mis-aimed `blast-radius-check`; flipped to `shipped` (wave 1 commit).
+
+### Advisory Findings
+
+Correctness-review advisories (scored <75, not auto-fixed — recorded for the human):
+
+- `scripts/check_manifest.py:85` — the same unguarded `g["slug"]` KeyError exposure exists
+  here, pre-existing (`unmodified-line`, score 0). Same fix shape as the smoke script if wanted.
+- `tests/hooks/risk-corroboration.test.sh` — the pre-existing `workflow-engine → BLOCKED`
+  cases now pass only because `new_repo` temp repos carry no manifest (they exercise the
+  consumer-repo fallback, not this repo's warn behavior). Coverage drift, not a runtime bug;
+  the warn path is covered by the new manifest-mode cases + `warn-mode-smoke.test.sh`.
+- `hooks/risk-corroboration.sh:32` — with `jq` absent the hook exits 0 before any gating
+  (fail-open), pre-existing on unmodified lines; the header comment now documents it. A
+  `command -v jq` fail-closed guard is a possible hardening, deliberately out of this scope.
 
 ### Verify
 
@@ -87,7 +110,8 @@ Once mode is data, loosening a noisy gate is a one-line JSON edit instead of a c
 | Docs match wiring | `bash scripts/lint-doc-truth.sh` | 0 | + 4 prose sites hand-verified (CLAUDE.md:52, SKILL.md:29, SKILL.md:~95, orchestration.md:39) — wave 2 | SC-6 |
 | Working override path documented | `grep -q settings.local.json hooks/risk-corroboration.sh` | 0 | no inline VAR=x advice remains — wave 3 | SC-5 |
 | Incident commit passes; loosening scoped | `bash tests/hooks/warn-mode-smoke.test.sh` | 0 | 2 passed against the real manifest — wave 3 | SC-7 |
-| Full harness suite | `bash scripts/run-tests.sh` | 0 | ALL GREEN (185 pytest + all hook suites) — wave 3 | SC-1 |
+
+Full suite: `bash scripts/run-tests.sh` ran ALL GREEN (185 pytest + all hook suites) in wave 3 — re-run by the CI `tests` job; not a Verify row per docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md.
 
 ### Rollback
 

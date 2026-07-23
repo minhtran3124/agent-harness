@@ -26,11 +26,15 @@ def check(root: Path) -> int:
         print(f"gate-modes: cannot read {manifest_path}: {e}", file=sys.stderr)
         return 1
 
-    modes = {
-        g["slug"]: g.get("mode", "block")
-        for g in m.get("hard_gates", {}).get("detectable", [])
-    }
     problems = []
+    modes = {}
+    for g in m.get("hard_gates", {}).get("detectable", []):
+        if not isinstance(g, dict) or not g.get("slug"):
+            problems.append(
+                f"gate-modes: malformed detectable entry (missing slug): {g!r}"
+            )
+            continue
+        modes[g["slug"]] = g.get("mode", "block")
     warn = {s for s, mode in modes.items() if mode == "warn"}
     for slug in EXPECTED_WARN - modes.keys():
         problems.append(

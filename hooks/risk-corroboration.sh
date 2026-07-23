@@ -23,6 +23,8 @@
 #   - Per-category mode (block|warn) is read from harness-manifest.json at runtime.
 #     Unknown slug / missing mode / missing or invalid manifest => block (fail-safe).
 #     Consumer repos have no manifest at their root, so every category blocks there.
+#     (Assumes `jq`, which stdin parsing already requires — without jq this hook
+#     never gates anything at all; that is pre-existing behavior, not mode fallback.)
 #
 # Exits 0 to allow, 2 to block. No set -e (flow is controlled explicitly).
 
