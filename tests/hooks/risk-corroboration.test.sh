@@ -216,4 +216,32 @@ stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_contains 2 "BLOCKED"
 
+# ── Diff-size sanity signal (warn-only, never changes exit code) ────────
+# Content is deliberately benign (no gate keywords) so no other category trips.
+
+t "diff >150 changed lines + Lane: tiny → /simplify note printed, exit 0"
+repo=$(new_repo $H)
+big_content=$(for i in $(seq 1 200); do printf 'line %d = %d\n' "$i" "$i"; done)
+stage "$repo" "app/data.py" "$big_content"
+stage "$repo" "specs/x/SUMMARY.md" "Lane: tiny"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 0 "/simplify"
+
+t "diff >600 changed lines + Lane: normal → /simplify note printed, exit 0"
+repo=$(new_repo $H)
+big_content=$(for i in $(seq 1 700); do printf 'line %d = %d\n' "$i" "$i"; done)
+stage "$repo" "app/data.py" "$big_content"
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 0 "/simplify"
+
+t "small diff under both thresholds → no /simplify note"
+repo=$(new_repo $H)
+small_content=$(for i in $(seq 1 10); do printf 'line %d = %d\n' "$i" "$i"; done)
+stage "$repo" "app/data.py" "$small_content"
+stage "$repo" "specs/x/SUMMARY.md" "Lane: tiny"
+run_hook "$repo" $H "$COMMIT_JSON"
+if [ "$RC" -eq 0 ] && ! echo "$OUT" | grep -qF "/simplify"; then pass
+else fail "want rc=0 and no /simplify note — rc=$RC out: $(echo "$OUT" | head -3 | tr '\n' ' ')"; fi
+
 finish

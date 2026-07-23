@@ -91,6 +91,43 @@ CODE_ADDED=$(git diff --cached -U0 -- . ':!*.md' ':!docs/' ':!specs/' ':!skills/
 CODE_REMOVED=$(git diff --cached -U0 -- . ':!*.md' ':!docs/' ':!specs/' ':!skills/' ':!hooks/' ':!.claude/' 2>/dev/null \
   | grep -E '^-[^-]' | grep -vE '^-[[:space:]]*#' || true)
 
+# ── Resolve the declared Lane ────────────────────────────────────────────
+# Moved ahead of category scanning so the diff-size signal below (which needs
+# LANE_VAL) still runs even when no hard-gate category trips (that path exits
+# early, before the original Lane-resolution block further down).
+LANE=""
+# Prefer a SUMMARY.md staged in this commit
+for f in $(echo "$STAGED_PATHS" | grep -E '(^|/)SUMMARY\.md$' || true); do
+  L=$(git show ":$f" 2>/dev/null | grep -iE '^Lane:' | head -1)
+  [ -n "$L" ] && LANE="$L" && break
+done
+# Else the most recently modified specs/*/SUMMARY.md on disk
+if [ -z "$LANE" ]; then
+  RECENT=$(ls -t specs/*/SUMMARY.md 2>/dev/null | head -1)
+  [ -n "$RECENT" ] && LANE=$(grep -iE '^Lane:' "$RECENT" | head -1)
+fi
+# Normalize: extract tiny|normal|high-risk
+LANE_VAL=$(echo "$LANE" | tr 'A-Z' 'a-z' | grep -oE 'tiny|normal|high-risk' | head -1)
+
+# ── Diff-size sanity signal (warn-only — never affects exit code) ────────
+# Large diffs for a lightweight declared lane are a simplicity smell.
+# tiny=150, normal=600 changed (added+removed) lines; high-risk / no lane:
+# no threshold (ceremony is already expected, or there is nothing to compare
+# against).
+count_lines() {
+  [ -z "$1" ] && { echo 0; return; }
+  printf '%s\n' "$1" | grep -c '^'
+}
+CHANGED_LINES=$(( $(count_lines "$CODE_ADDED") + $(count_lines "$CODE_REMOVED") ))
+SIZE_THRESHOLD=""
+case "$LANE_VAL" in
+  tiny)   SIZE_THRESHOLD=150 ;;
+  normal) SIZE_THRESHOLD=600 ;;
+esac
+if [ -n "$SIZE_THRESHOLD" ] && [ "$CHANGED_LINES" -gt "$SIZE_THRESHOLD" ]; then
+  echo "[RISK CORROBORATION] note: $CHANGED_LINES changed lines for a Lane: $LANE_VAL task — consider running /simplify before commit." >&2
+fi
+
 TRIPPED=""
 add_cat() { TRIPPED="$TRIPPED $1"; }
 
@@ -123,21 +160,6 @@ for cat in $TRIPPED; do
     WARNING="$WARNING $cat"
   fi
 done
-
-# ── Resolve the declared Lane ────────────────────────────────────────────
-LANE=""
-# Prefer a SUMMARY.md staged in this commit
-for f in $(echo "$STAGED_PATHS" | grep -E '(^|/)SUMMARY\.md$' || true); do
-  L=$(git show ":$f" 2>/dev/null | grep -iE '^Lane:' | head -1)
-  [ -n "$L" ] && LANE="$L" && break
-done
-# Else the most recently modified specs/*/SUMMARY.md on disk
-if [ -z "$LANE" ]; then
-  RECENT=$(ls -t specs/*/SUMMARY.md 2>/dev/null | head -1)
-  [ -n "$RECENT" ] && LANE=$(grep -iE '^Lane:' "$RECENT" | head -1)
-fi
-# Normalize: extract tiny|normal|high-risk
-LANE_VAL=$(echo "$LANE" | tr 'A-Z' 'a-z' | grep -oE 'tiny|normal|high-risk' | head -1)
 
 # ── Decision ─────────────────────────────────────────────────────────────
 if [ -n "$WARNING" ]; then
