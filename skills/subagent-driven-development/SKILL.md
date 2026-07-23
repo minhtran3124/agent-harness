@@ -136,6 +136,13 @@ Implementer subagents report one of four statuses. Handle each appropriately:
 
 ## Final Adversarial Correctness Review
 
+**Simplify pass (threshold-triggered).** If the cumulative diff has ≥10 substantive
+(non-docs/format/lockfile) changed lines, run `/simplify` over the diff before
+`/correctness-review`; if it applies fixes, re-run the affected task's test loop. This pass
+edits an unmerged, pre-ship diff, so deletion is allowed here — unlike `/intent-review`'s
+post-hoc `excess` verdict (below), which stays report-only because removing *shipped*
+functionality is a Rule-4 human decision.
+
 **Pre-gate — context-propagation audit (change-triggered).** If the cumulative diff touches the
 workflow-engine inventory (`harness-manifest.json` → `workflow-engine`), run
 `/context-propagation-audit` first; an audit FAIL blocks the review chain until delivery is proven
