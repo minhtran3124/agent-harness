@@ -119,7 +119,7 @@ LANE_VAL=$(echo "$LANE" | tr 'A-Z' 'a-z' | grep -oE 'tiny|normal|high-risk' | he
 # or a large diff confined to those excluded paths would compute near-zero and never
 # warn. --numstat gives "<added>\t<removed>\t<path>" per file; binary files report
 # "-\t-\t<path>" and are skipped (treated as 0, not an arithmetic error).
-CHANGED_LINES=$(git diff --cached -U0 --numstat 2>/dev/null | awk '
+CHANGED_LINES=$(git diff --cached --numstat 2>/dev/null | awk '
   { a=$1; r=$2; if (a ~ /^[0-9]+$/) sum+=a; if (r ~ /^[0-9]+$/) sum+=r }
   END { print sum+0 }
 ')

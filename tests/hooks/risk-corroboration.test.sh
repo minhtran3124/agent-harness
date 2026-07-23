@@ -243,6 +243,21 @@ stage "$repo" "specs/x/SUMMARY.md" "Lane: tiny"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_contains 0 "/simplify"
 
+# Regression for the -U0 numstat bug (gh-159 fix-loop round 2): `-U0` forces `git diff`
+# to emit patch mode, so `--numstat` output was numstat rows PLUS the full unified diff
+# body — the awk parser then mis-read a content line's SECOND whitespace token as the
+# numstat "removed" column whenever it looked numeric (e.g. "timeout 30000" → +=30000).
+# True line count here (25 new lines) stays well under the tiny-lane 150 threshold; the
+# buggy version inflated it into the tens of thousands and fired the note incorrectly.
+t "moderate diff (~25 lines) with numeric-looking tokens under tiny threshold → no /simplify note (guards -U0 numstat-inflation regression)"
+repo=$(new_repo $H)
+numeric_content=$(for i in $(seq 1 25); do printf 'timeout %d\n' "$((i * 1000))"; done)
+stage "$repo" "app/config.py" "$numeric_content"
+stage "$repo" "specs/x/SUMMARY.md" "Lane: tiny"
+run_hook "$repo" $H "$COMMIT_JSON"
+if [ "$RC" -eq 0 ] && ! echo "$OUT" | grep -qF "/simplify"; then pass
+else fail "want rc=0 and no /simplify note — rc=$RC out: $(echo "$OUT" | head -3 | tr '\n' ' ')"; fi
+
 t "small diff under both thresholds → no /simplify note"
 repo=$(new_repo $H)
 small_content=$(for i in $(seq 1 10); do printf 'line %d = %d\n' "$i" "$i"; done)
