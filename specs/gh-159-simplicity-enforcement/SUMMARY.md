@@ -70,6 +70,24 @@ re-deriving it avoids relitigating decisions the repo owner already made with fi
   advisory-message imprecision — moot after the round-1/round-2 fix loop above replaced this
   computation entirely with an unfiltered `--numstat` sum, which does not double-count.
 
+### Intent Findings
+
+<!-- /intent-review findings — gap/drift/excess against the verbatim original request. -->
+
+- **`gap` (resolved, not escalated) — "`/simplify` does not exist" claim.** The blind intent
+  reviewer flagged issue #159 acceptance criterion (a) ("a simplification/YAGNI check *runs* on
+  the ship path") as unmet, asserting `/simplify` is a dangling reference — its search surface
+  was `skills/`, `settings.json`, and `git log` in this repo, none of which contain compiled-in
+  CLI built-ins. Two independent pieces of hard evidence resolve this as a false positive: (1)
+  `strings` on the actual `claude` binary (`~/.local/bin/claude`) contains the exact command
+  definition verbatim — `description:"Review the changed code for reuse, simplification,
+  efficiency, and altitude cleanups, then apply the fixes. Quality only — it does not hunt for
+  bugs; use /code-review for that."`, matching this session's own available-skills listing for
+  `simplify`; (2) `/simplify` was actually **invoked and ran** earlier in this same session (the
+  wave-1 `/simplify` pass — 4 parallel cleanup-angle agents, one fix applied) — the check does
+  not just exist, it already executed successfully in this very ship run. Not escalated: the
+  evidence is conclusive, not ambiguous.
+
 ### Verify
 
 | Check | Command | Exit | Notes | Criterion |
