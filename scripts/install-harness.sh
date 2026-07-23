@@ -254,13 +254,22 @@ if [ "$DRY_RUN" -eq 0 ]; then
   gi_skip=""
   if git -C "$TARGET_DIR" ls-files --error-unmatch -- .claude >/dev/null 2>&1; then
     gi_skip="tracked"
-  elif [ -f "$GI" ] && grep -qE '(^|[^[:alnum:]_.-])!?/?\.claude(/|$|/\*)' "$GI" 2>/dev/null; then
+  elif [ -f "$GI" ] && gi_line=$(grep -nE '^[[:space:]]*!?/?\.claude(/\*?)?[[:space:]]*$' "$GI" 2>/dev/null | head -1) \
+       && [ -n "$gi_line" ]; then
     gi_skip="declared"
   fi
+  # The "declared" probe must match only DIRECTORY-scoped rules — `.claude`, `.claude/`,
+  # `.claude/*`, with an optional `/` or `!` prefix — and nothing else. A looser pattern
+  # matched a comment (`# .claude/ is intentionally not ignored`) and a narrow per-file rule
+  # (`.claude/settings.local.json`), so the installer skipped and silently restored the exact
+  # bug this block exists to fix. Anchoring to end-of-line rejects both; `^…#` can never match.
   if [ -n "$gi_skip" ]; then
     if [ "$gi_skip" = "tracked" ]; then
       warn ".claude/ is tracked in this repo — leaving .gitignore alone."
       warn "  The deploy wrote files into a tracked tree; review 'git status' before committing."
+    else
+      # Never skip silently: a skipped step and a successful one must not look identical.
+      info ".gitignore already scopes .claude (line ${gi_line%%:*}: ${gi_line#*:}) — left as is."
     fi
   elif ! {
         { [ ! -s "$GI" ] || [ -z "$(tail -c 1 "$GI" 2>/dev/null)" ] || printf '\n' >> "$GI"; } &&

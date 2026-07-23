@@ -146,8 +146,20 @@ tool whitelist, models different from the implementer).
 | 8 | Two install tests consulted the machine's global `core.excludesFile`, so they passed with the fix deleted | P3 | Pinned `-c core.excludesFile=/dev/null`; added 4 regression cases |
 
 Findings 1–3 and 8 are defects in *this branch's own* hook/installer fix — the sandbox proved the
-original bug was gone but not that the fix was safe. Every new guard is mutation-checked: reverting
-the tracked-`.claude` detection fails case 8, and narrowing the pattern back fails cases 9–10.
+original bug was gone but not that the fix was safe.
+
+**Re-review after the fix commit** (the invalidation rule: a fix advances HEAD and makes the prior
+pass stale). All 8 confirmed CLOSED by execution, and **2 new defects found in the fixes
+themselves**:
+
+| # | Finding | Sev | Fix |
+|---|---|---|---|
+| N1 | The widened "already declared" probe matched a **comment** (`# .claude/ is intentionally not ignored`) and a **per-file** rule (`.claude/settings.local.json`), so the installer skipped and silently restored the original bug — measured: 90 files under `.claude/` staged by `git add -A` | P2 | Anchored the probe to directory-scoped rules only (`.claude`, `.claude/`, `.claude/*`, optional `/` or `!` prefix, terminating at end of line) |
+| N2 | The "declared" skip was completely silent — a skipped step and a successful one looked identical in the transcript | P3 | Reports the matched line number and content via `info` |
+
+Every guard added by this branch is mutation-checked. Reverting the tracked-`.claude` detection
+fails its case; widening the probe back fails 3 cases; deleting the skip notice fails 1.
+`tests/scripts/install-gitignore.test.sh` grew 7 → 15 cases across the two rounds.
 
 ### Rollback
 

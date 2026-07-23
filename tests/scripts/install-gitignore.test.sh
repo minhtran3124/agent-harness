@@ -110,4 +110,34 @@ chmod 644 "$d/.gitignore"
 if [ "$rc" = "0" ] && grep -q "Harness installed" "$d/.install.log"; then pass
 else fail "install aborted (rc=$rc) on an unwritable .gitignore; deploy had already run"; fi
 
+# ── N1/N2: the "already declared" probe must not over-match (re-review, 2026-07-23) ──
+
+t "a COMMENT mentioning .claude/ does not suppress the append"
+d=$(new_target)
+printf '# .claude/ is intentionally NOT ignored here, see docs\nnode_modules/\n' > "$d/.gitignore"
+install_into "$d"
+if grep -qE '^\.claude/$' "$d/.gitignore"; then pass
+else fail "a comment line was read as a declared rule; .claude/ left untracked-and-visible"; fi
+
+t "a narrow per-file rule (.claude/settings.local.json) does not suppress the append"
+d=$(new_target)
+printf 'node_modules/\n.claude/settings.local.json\n' > "$d/.gitignore"
+install_into "$d"
+if grep -qE '^\.claude/$' "$d/.gitignore"; then pass
+else fail "a per-file rule was read as directory-scoped; the derived tree stays visible"; fi
+
+t "after that install the derived tree is really ignored"
+d=$(new_target)
+printf 'node_modules/\n.claude/settings.local.json\n' > "$d/.gitignore"
+install_into "$d"
+if git -C "$d" -c core.excludesFile=/dev/null check-ignore -q .claude; then pass
+else fail ".claude/ still visible to git — the original bug is back"; fi
+
+t "a genuine directory rule IS respected and the skip is reported, not silent"
+d=$(new_target)
+printf '.claude/*\n!.claude/settings.json\n' > "$d/.gitignore"
+( cd "$d" && bash "$INSTALL" --source "$ROOT" --yes ) >"$d/.log" 2>&1
+if ! grep -qE '^\.claude/$' "$d/.gitignore" && grep -q 'already scopes .claude' "$d/.log"; then pass
+else fail "skip was silent or the rule was overridden: $(grep -c . "$d/.log") log lines"; fi
+
 finish
