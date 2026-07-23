@@ -48,12 +48,16 @@ cannot track.
    create the worktree. Skipping this is not cosmetic: `git add -A` turns the untracked
    worktree into an embedded-repo **gitlink**, committing a broken entry that no hook catches
    (`git ls-files --others` reports the directory, never the files inside it).
-3. `git worktree add <dir>/<branch> -b <branch>`, then continue at Step 2.
+3. `git worktree add <dir>/<branch> -b <branch>`, then `cd` into it and continue at Step 2.
 
 ## Step 2 — Deploy the harness into the worktree
 
+Run this **from inside** the new workspace — every path into this step (already isolated,
+native tool, or the fallback) has you standing in it, so the target is resolved from where you
+are rather than carried in a variable set several steps earlier:
+
 ```bash
-[ -f scripts/deploy-harness.sh ] && bash scripts/deploy-harness.sh --target "$path"
+bash scripts/deploy-harness.sh --target "$(git rev-parse --show-toplevel)"
 ```
 
 **Run this before anything else in the new workspace.** `.claude/` is gitignored (a derived

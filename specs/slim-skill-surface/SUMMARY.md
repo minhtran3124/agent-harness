@@ -157,6 +157,22 @@ themselves**:
 | N1 | The widened "already declared" probe matched a **comment** (`# .claude/ is intentionally not ignored`) and a **per-file** rule (`.claude/settings.local.json`), so the installer skipped and silently restored the original bug — measured: 90 files under `.claude/` staged by `git add -A` | P2 | Anchored the probe to directory-scoped rules only (`.claude`, `.claude/`, `.claude/*`, optional `/` or `!` prefix, terminating at end of line) |
 | N2 | The "declared" skip was completely silent — a skipped step and a successful one looked identical in the transcript | P3 | Reports the matched line number and content via `info` |
 
+**External review (Codex on PR #158, commit `6eca207`)** — 2 comments:
+
+| # | Finding | Status |
+|---|---|---|
+| P1 | `skills/using-git-worktrees/SKILL.md` Step 2 ran `deploy-harness.sh --target "$path"`, but the trim deleted the section that assigned `path=`. All three routes into that step reached it unset → `--target ""` → `${2:?--target needs a path}` aborts, so a fresh worktree gets no `.claude/` at all | **Fixed** — Step 2 now derives the target inline from `git rev-parse --show-toplevel`, removing the cross-step binding rather than restoring it |
+| P2 | `check_slim_surface.py` wired into nothing | **Already fixed** in `a6727bd` (same finding as internal F7); the comment reviewed an earlier commit |
+
+The P1 is the one finding **all three internal oracles missed**, and it sits squarely in the class
+`removed-behavior` was hunting: a deleted line that defined what a surviving line depends on. The
+internal reviewer traced *constraints* (gates, rules) and treated `path=` as formatting. The
+external reviewer read the skill as **code**. For a skill carrying runnable bash, that reading is
+the correct one — so the fix ships with `scripts/lint-skill-bash.sh` (wired into `run-tests.sh` L1):
+every `$VAR` in a `bash`/`sh` block of `skills/**/*.md` must be assigned in the same document or be
+a known environment variable. Reverting the fix makes the lint fail, so this class cannot recur
+silently.
+
 Every guard added by this branch is mutation-checked. Reverting the tracked-`.claude` detection
 fails its case; widening the probe back fails 3 cases; deleting the skip notice fails 1.
 `tests/scripts/install-gitignore.test.sh` grew 7 → 15 cases across the two rounds.
