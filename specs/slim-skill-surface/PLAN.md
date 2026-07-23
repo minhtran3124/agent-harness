@@ -70,7 +70,9 @@ Full analysis, the two falsified hypotheses, and what is deliberately kept: `des
 - No change to any review oracle (`correctness-review`, `intent-review`,
   `context-propagation-audit`), to `feature-intake`, or to `evals/` — reading them showed each
   is backed by measured evidence.
-- No hook, script, or CI gate changes. This is a skills/docs diff only.
+- No CI gate changes. Originally scoped as a skills/docs diff only; the sandbox walk (Task 5.1)
+  surfaced a blocking pre-existing install bug, and the user authorised fixing it on this branch,
+  so `hooks/check-untracked-py.sh` and `scripts/install-harness.sh` are now in scope.
 - `xia2`'s depth classifier is **not** merged with `feature-intake`'s lane here (item 7,
   follow-on spec — it requires re-running `skills/xia2/tests/structural/`).
 - `compound` Step 5.75 is **not** converted to a script here (item 8).
@@ -88,6 +90,8 @@ Full analysis, the two falsified hypotheses, and what is deliberately kept: `des
 | SC-5 | Trimming `subagent-driven-development` did not drop the review-receipt ship gate | `grep -q check_review_receipt skills/subagent-driven-development/SKILL.md` | exit 0 |
 | SC-6 | Trimming `using-git-worktrees` did not drop the harness-deploy step | `grep -q "deploy-harness.sh --target" skills/using-git-worktrees/SKILL.md` | exit 0 |
 | SC-7 | The parallel-session execution path survives the merge | `grep -qi "parallel session" skills/subagent-driven-development/SKILL.md` | exit 0 |
+| SC-8 | A root-level `.claude/` no longer denies every commit in a fresh consumer | `bash tests/hooks/check-untracked-py.test.sh` | exit 0 |
+| SC-9 | A fresh install gitignores `.claude/` so the derived tree is never committed | `bash tests/scripts/install-gitignore.test.sh` | exit 0 |
 
 ## 4. Tasks
 
@@ -206,6 +210,27 @@ Full analysis, the two falsified hypotheses, and what is deliberately kept: `des
 - **Done:** `run-tests.sh` reports ALL GREEN; the dry-run prune report names all three deleted
   skills; the SUMMARY `### Verify` table covers every SC with a pipe-free re-runnable command.
 
+### Task 5.1 — Fix the fresh-consumer install blocker found by the sandbox walk (wave 5)
+
+- **Files:** hooks/check-untracked-py.sh, scripts/install-harness.sh, tests/hooks/check-untracked-py.test.sh, tests/scripts/install-gitignore.test.sh
+- **Action:** Out-of-original-scope, authorised by the user after the sandbox walk proved a fresh
+  consumer **cannot commit at all** after installing the harness. Two compounding causes, both
+  pre-existing (identical at the branch point `f97764e` and in the repo's initial commit):
+  (a) `check-untracked-py.sh` excluded the deployed harness with `grep -v '/\.claude/'`, which
+  requires a leading slash and therefore misses the root-level `.claude/skills/...` paths
+  `git ls-files` actually returns — so the four `visual-planner` `.py` files denied every
+  `git commit` and `git push`. Anchor it: `grep -vE '(^|/)\.claude/'`.
+  (b) `install-harness.sh` never added `.claude/` to the consumer's `.gitignore`, leaving the
+  derived tree untracked in the first place. Append the pattern only when absent — never rewrite
+  an existing `.gitignore`, and preserve a missing trailing newline.
+  Add a regression test for the ROOT-level case (the existing suite only covered a *nested*
+  `app/.claude/`, which is why the bug survived), plus an install-level test asserting the
+  `.gitignore` line is added once, is not duplicated on re-install, and that an existing entry is
+  respected.
+- **Verify:** `bash tests/hooks/check-untracked-py.test.sh`
+- **Done:** Both tests pass; reverting either fix makes its test fail (mutation-checked); a fresh
+  `install-harness.sh` into an empty repo can commit immediately.
+
 ## 5. Risks
 
 | Risk | Mitigation |
@@ -215,6 +240,7 @@ Full analysis, the two falsified hypotheses, and what is deliberately kept: `des
 | Stale skill copies linger in `.claude/` after deletion | `deploy-harness.sh` prunes deleted-skill orphans via its per-deploy manifest (commit `0eb0a77`). Task 4.1 proves it with `--dry-run` before any real sync. |
 | Someone re-proposes cutting the review oracles or `evals/` later | Both hypotheses and the evidence that falsified them are recorded in `design.md` §1 and the SUMMARY `### Alternatives considered`. |
 | This PR trips `ci-strict-gate.sh` and the `workflow-engine` gate | Intended — it edits `skills/*/SKILL.md`. `SUMMARY.md` declares `Lane: high-risk`, which corroborates, and Task 4.1 supplies the machine-verified `### Verify` row the CI gate requires. |
+| Task 5.1 widens the diff into `hooks/` mid-flight | Authorised explicitly by the user after the sandbox walk. Both fixes are two lines each, both are mutation-checked by a new test, and the bug they close is a total blocker for every fresh consumer — leaving it for a later spec means shipping a harness that cannot commit. |
 | Losing the browser companion removes a capability someone relies on | It has no consumer outside its own directory and its `SKILL.md` describes it as "still new and can be token-intensive". Artifacts cover the use case; the git history keeps the code if it is ever wanted back. |
 
 ## 6. Status Log
@@ -225,3 +251,7 @@ Full analysis, the two falsified hypotheses, and what is deliberately kept: `des
 - 2026-07-23 — Wave 4 complete: `run-tests.sh` ALL GREEN, `deploy-harness --dry-run` reports all
   three retired skills as would-be-pruned, and all 8 SUMMARY `### Verify` rows re-run PASS via
   `verify_summary.py --check`. Status: `active` until the PR opens.
+- 2026-07-23 — PR #158 opened against `loop`.
+- 2026-07-23 — Sandbox walk (52 checks over a fresh install, an old-consumer re-sync, the hook
+  chain, and a full workflow run) found a pre-existing blocker: a fresh consumer cannot commit.
+  Task 5.1 added and fixed on this branch with the user's authorisation.

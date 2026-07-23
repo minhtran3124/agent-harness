@@ -48,6 +48,15 @@ lines (−27%).
 No gate was removed. Every constraint that lived only inside a deleted `Red Flags` section was
 moved into the section that owns it, and SC-5/SC-6/SC-7 pin three of them mechanically.
 
+**Plus one out-of-original-scope fix (Task 5.1, user-authorised).** A 52-check sandbox walk — a
+fresh consumer install, an old-consumer re-sync + prune, the hook chain, and a full workflow run
+from intake to the push gate — found that a **fresh consumer could not commit at all**:
+`check-untracked-py.sh` excluded the deployed harness with `grep -v '/\.claude/'`, which needs a
+leading slash and so misses the root-level `.claude/skills/...` paths `git ls-files` returns, and
+`install-harness.sh` never gitignored the derived tree. Both fixed, both pre-existing, both
+pinned by a new mutation-checked test. The existing hook suite only covered a *nested*
+`app/.claude/` — the exact case the broken pattern handled — which is why it survived.
+
 ### Rationale
 
 Measured across the 14 non-visual-planner skills: 463 of 2.817 lines are boilerplate written
@@ -79,7 +88,13 @@ Cutting is scoped to duplication and dead weight: every review oracle, `feature-
 
 ### Deviations
 
-- none
+- **Scope widened, user-authorised.** The plan's non-goals said "no hook, script, or CI gate
+  changes". The sandbox walk then proved a fresh consumer **cannot commit at all** after
+  installing the harness, and the user authorised fixing it on this branch. Added Task 5.1:
+  `hooks/check-untracked-py.sh` (anchor the `.claude/` exclusion) and
+  `scripts/install-harness.sh` (gitignore the derived tree), each with a mutation-checked test.
+  Both bugs are pre-existing — the hook pattern is identical at the branch point `f97764e` and
+  in the repo's initial commit.
 
 ### Verify
 
@@ -93,6 +108,8 @@ Cutting is scoped to duplication and dead weight: every review oracle, `feature-
 | worktree harness-deploy step survived | `grep -q "deploy-harness.sh --target" skills/using-git-worktrees/SKILL.md` | 0 | without it a worktree has no .claude/ | SC-6 |
 | parallel-session path survived the merge | `grep -qi "parallel session" skills/subagent-driven-development/SKILL.md` | 0 | absorbed from executing-plans | SC-7 |
 | deploy prunes the retired skills | `bash scripts/deploy-harness.sh --dry-run` | 0 | reports all three as "would prune stale ... (removed from source)" | |
+| root-level .claude/ no longer denies a commit | `bash tests/hooks/check-untracked-py.test.sh` | 0 | 7 cases; reverting the anchor fails the new one | SC-8 |
+| fresh install gitignores the derived tree | `bash tests/scripts/install-gitignore.test.sh` | 0 | 7 cases incl. re-install, pre-existing entry, missing trailing newline | SC-9 |
 
 The full harness suite (`scripts/run-tests.sh` — L1 syntax + doc-truth + manifest + verify-row
 lint, L2 hook contract tests, L3 script integration tests, 185 python unit tests) was run after

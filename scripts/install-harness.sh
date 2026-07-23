@@ -224,9 +224,24 @@ bash "$SRC/scripts/deploy-harness.sh" "${DEPLOY_ARGS[@]}"
 # Safe by construction: it only writes a structural file when its destination is absent.
 if [ "$DRY_RUN" -eq 1 ]; then
   info "Would scaffold specs/, docs/solutions/ (create-if-missing)"
+  info "Would ensure .gitignore lists .claude/"
 else
   printf '\n'
   bash "$SRC/scripts/init-structure.sh" --root "$TARGET_DIR"
+fi
+
+# ---------- ensure .claude/ is gitignored (append-only; never rewrites the file) ----------
+# .claude/ is a derived artifact — it is rebuilt from source on every deploy, so committing it
+# is wrong. It also carries .py files (visual-planner), and an untracked .py denies every commit
+# via hooks/check-untracked-py.sh. Without this line a fresh consumer installs the harness and
+# then cannot commit at all. Append only when the pattern is absent; never touch existing lines.
+if [ "$DRY_RUN" -eq 0 ]; then
+  GI="$TARGET_DIR/.gitignore"
+  if ! { [ -f "$GI" ] && grep -qE '^[[:space:]]*/?\.claude/?[[:space:]]*$' "$GI"; }; then
+    [ -s "$GI" ] && [ -n "$(tail -c 1 "$GI")" ] && printf '\n' >> "$GI"
+    printf '# Harness: .claude/ is derived — rebuilt by deploy-harness.sh on every sync\n.claude/\n' >> "$GI"
+    ok ".gitignore now lists .claude/"
+  fi
 fi
 
 # ---------- optional: keep a copy of the sources in the target ----------
