@@ -235,6 +235,14 @@ stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_contains 0 "/simplify"
 
+t "large diff confined to .claude/ (excluded from CODE_ADDED, no other gate) + Lane: tiny → /simplify note still fires (unfiltered numstat)"
+repo=$(new_repo $H)
+big_content=$(for i in $(seq 1 200); do printf 'line %d = %d\n' "$i" "$i"; done)
+stage "$repo" ".claude/rules/notes.md" "$big_content"
+stage "$repo" "specs/x/SUMMARY.md" "Lane: tiny"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 0 "/simplify"
+
 t "small diff under both thresholds → no /simplify note"
 repo=$(new_repo $H)
 small_content=$(for i in $(seq 1 10); do printf 'line %d = %d\n' "$i" "$i"; done)
