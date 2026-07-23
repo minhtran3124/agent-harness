@@ -53,6 +53,51 @@ Conventions:
 - `wave`: the `(wave K)` suffix on the task heading. Same-wave tasks MAY run in parallel; waves execute sequentially. Omit for single-wave plans.
 - Files: comma-separated paths. Used by the wave-parallelism rule to check overlap and by `hooks/blast-radius-check.sh` as the in-scope set.
 
+## Success Criteria schema (the acceptance contract)
+
+The `## 3. Success Criteria` section is the plan's **acceptance contract**: the observable
+behaviors the finished work must exhibit, each paired with a re-runnable check. For every new
+markdown plan it MUST be a markdown table with exactly these columns:
+
+| ID | Behavior (observable) | Check (re-runnable) | Expected |
+
+Column rules:
+
+- **ID** — `SC-<n>`, sequential and unique within the plan (`SC-1`, `SC-2`, …). No gaps, no reuse.
+- **Behavior (observable)** — the externally-visible outcome, phrased so a reader can tell it
+  happened without reading the diff. Not an implementation note.
+- **Check (re-runnable)** — a command that inherits the same guardrails as a task `Verify` (see
+  `docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md`): a **single** command,
+  **pipe-free** (no `|`), finishes in **<60s**, and never a whole-suite row. Split anything larger
+  into more SC rows.
+- **Expected** — grammar is a leading machine-read token `exit <n>` (a non-zero code is allowed
+  when the check asserts failure), optionally followed by free text describing the expectation.
+  Examples: `exit 0`, `exit 1 — rejects the unsigned request`.
+
+Same fencing rule as tasks: a Success Criteria table written **inside a code fence** is an
+illustration and is ignored; the live contract is the non-fenced table. Example (fenced, so
+illustrative only):
+
+```markdown
+## 3. Success Criteria
+
+| ID | Behavior (observable) | Check (re-runnable) | Expected |
+|------|-------------------------|-----------------------|------------|
+| SC-1 | New markdown plan without an SC table is rejected | `python scripts/verify_summary.py --lint specs/<slug>` | exit 1 — missing SC table |
+| SC-2 | A well-formed SC table passes the lint | `python scripts/verify_summary.py --lint specs/<slug>` | exit 0 |
+```
+
+Exemptions: legacy XML plans (see "Legacy XML plans" below) and pre-existing specs authored
+before this rule are exempt — the SC table is required only for **new** markdown plans.
+
+### SUMMARY side — the `Criterion` column
+
+When a plan declares an SC table, its sibling `SUMMARY.md` closes the loop from the other end: the
+`### Verify` table accepts an optional trailing **`Criterion`** column naming the `SC-<n>` id that
+each row satisfies (`Check | Command | Exit | Notes | Criterion`). `scripts/verify_summary.py`
+enforces this coupling — when the sibling `PLAN.md` declares an SC table, the referenced ids must
+resolve to real `SC-<n>` rows in that plan. The column is optional when no SC table exists.
+
 ## Guardrails
 
 1. **Zero file overlap** across same-wave tasks — prevents merge conflicts when executed in parallel.
@@ -110,7 +155,7 @@ created: YYYY-MM-DD
 
 ## 1. Motivation
 ## 2. Non-goals
-## 3. Success Criteria
+## 3. Success Criteria  (the acceptance-contract table — see "Success Criteria schema" above)
 ## 4. Tasks (one `### Task` section per task)
 ## 5. Risks
 ## 6. Status Log

@@ -194,6 +194,29 @@ git -C "$repo" add -f specs/demo/SUMMARY.md
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_contains 0 "Lane evidence... PASSED"
 
+# SC coverage must be judged against the INDEXED PLAN, not the working tree: staging a
+# PLAN that declares an SC contract and then editing it away before `git commit` used to
+# make the gate fail open while the staged contract went in (PR #157 review, P2).
+LANE_SC_PLAN=$'# demo\n\n## 3. Success Criteria\n\n| ID | Behavior | Check | Expected |\n| --- | --- | --- | --- |\n| SC-1 | first | `true` | exit 0 |\n| SC-2 | second | `false` | exit 1 |\n'
+LANE_SC_SUMMARY=$'Lane: normal\nConfidence: high\nReason: a real filled reason\n\n### Verify\n\n| Check | Command | Exit | Notes | Criterion |\n| --- | --- | --- | --- | --- |\n| c1 | `true` | 0 | real | SC-1 |\n'
+
+t "Check 1.6: staged PLAN's SC table is enforced even after the worktree PLAN is emptied"
+repo=$(new_repo $H)
+mkdir -p "$repo/scripts"; cp "$LANE_PY" "$repo/scripts/"
+stage "$repo" "specs/demo/PLAN.md" "$LANE_SC_PLAN"
+stage "$repo" "specs/demo/SUMMARY.md" "$LANE_SC_SUMMARY"
+printf '# demo\n\nno SC table here\n' > "$repo/specs/demo/PLAN.md"   # worktree edit, unstaged
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "SC-2"
+
+t "Check 1.6: SC coverage complete against the staged PLAN → PASSES"
+repo=$(new_repo $H)
+mkdir -p "$repo/scripts"; cp "$LANE_PY" "$repo/scripts/"
+stage "$repo" "specs/demo/PLAN.md" "$LANE_SC_PLAN"
+stage "$repo" "specs/demo/SUMMARY.md" "${LANE_SC_SUMMARY}"$'| c2 | `false` | 1 | real | SC-2 |\n'
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 0 "Lane evidence... PASSED"
+
 t "Check 1.6: a commit touching no specs/ path is unaffected"
 repo=$(new_repo $H)
 mkdir -p "$repo/scripts"; cp "$LANE_PY" "$repo/scripts/"

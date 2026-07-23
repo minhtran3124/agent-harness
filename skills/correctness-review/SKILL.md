@@ -42,7 +42,7 @@ The finder needs a `BASE_SHA..HEAD_SHA` range (and the list of touched files):
 - **Standalone, explicit range:** the user names `BASE`/`HEAD` or a PR.
 - **In-flow:** `BASE` = commit before task 1, `HEAD` = current commit after all tasks.
 
-## Pipeline — FIND (6 angles) → dedup → SCORE → THRESHOLD(75) → classify → fix-loop
+## Pipeline — FIND (6 angles) → dedup → SCORE → THRESHOLD(75) → classify → fix-loop (budget: max 3 rounds + progress guard)
 
 **What makes this pass different from the other reviewers:**
 
@@ -125,11 +125,34 @@ The finder needs a `BASE_SHA..HEAD_SHA` range (and the list of touched files):
 > (`paths: specs/**`), so it does not auto-load when the reviewed diff is outside `specs/**` —
 > misclassifying a Rule 4 as Rule 1–3 would send an architectural change into the auto-fix loop.
 
-- **Rule 1–3** → implementer auto-fixes (fresh dispatch) → re-review → repeat until ✅. Log each
-  fix as a deviation in `SUMMARY.md` when a slug is in play.
+- **Rule 1–3** → implementer auto-fixes (fresh dispatch) → re-review → loop under the budget below.
+  Log each fix as a deviation in `SUMMARY.md` when a slug is in play.
 - **Rule 4** → STOP immediately. Do not attempt a fix. Write the finding to
   `specs/<slug>/ESCALATIONS.md` (or surface it directly to the user in standalone use) before
   proceeding. The plan was wrong or underspecified; a human must narrow scope.
+
+## Loop budget (cap + progress guard)
+
+The Rule 1–3 fix→re-review loop is bounded. It does not run until ✅ unconditionally.
+
+- **Cap.** At most **max 3** fix→re-review rounds per finding. The round counter is in-session
+  orchestrator state — the review receipt schema is unchanged. On reaching the cap: stop retrying,
+  write the finding to `specs/<slug>/ESCALATIONS.md` (standalone: surface it directly to the user),
+  and record the rounds used in `SUMMARY.md` under `Deviations`. Rationale: three fresh-context
+  fix attempts that still fail to close a finding indicate a plan/spec problem, not a coding slip —
+  the blocker class `orchestration.md` already escalates ("the plan itself is wrong").
+- **Progress guard.** After each round, hash the full reviewed diff and compare against the
+  previous round. Compute it pipe-free: `git diff <base>..HEAD > /tmp/round.diff` then
+  `git hash-object /tmp/round.diff` (`<base>` = the base of the reviewed diff range; standalone:
+  the range the review was invoked with). If the open blocking count did **not** decrease **and**
+  the diff hash is unchanged versus the previous round → escalate immediately: the fix is a no-op
+  or the loop is ping-ponging, and further rounds will not converge.
+- **Mid-loop findings.** A finding first surfaced mid-loop starts its own counter at **1** — it is
+  not charged for rounds spent on other findings.
+
+The residual-work gate below (fixed ✅ or durably recorded) is unchanged: a capped or
+progress-guard-escalated finding is durably recorded via `ESCALATIONS.md` (or the standalone
+surface), which satisfies the gate.
 
 ## Residual work gate
 

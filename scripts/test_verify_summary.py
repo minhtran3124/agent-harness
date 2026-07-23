@@ -61,6 +61,13 @@ def write_summary(tmp_path: Path, slug: str, content: str) -> Path:
     return p
 
 
+def write_plan(summary_path: Path, content: str) -> Path:
+    """Write a sibling PLAN.md next to a SUMMARY.md and return its path."""
+    p = summary_path.parent / "PLAN.md"
+    p.write_text(content, encoding="utf-8")
+    return p
+
+
 # ---------------------------------------------------------------------------
 # parse_verify_table
 # ---------------------------------------------------------------------------
@@ -571,3 +578,247 @@ class TestLaneMode:
             vs.main(["--lane", "--check", "lane-slug"], specs_root=tmp_path / "specs")
             == 2
         )
+
+
+# ---------------------------------------------------------------------------
+# SC-table parsing + coverage enforcement
+# ---------------------------------------------------------------------------
+
+
+SC_PLAN_ONE = """\
+# demo — plan
+
+## 3. Success Criteria
+
+| ID | Behavior (observable) | Check (re-runnable) | Expected |
+| --- | --- | --- | --- |
+| SC-1 | first behavior | `test 1 = 1` | exit 0 |
+"""
+
+SC_PLAN_TWO = """\
+# demo — plan
+
+## 3. Success Criteria
+
+| ID | Behavior (observable) | Check (re-runnable) | Expected |
+| --- | --- | --- | --- |
+| SC-1 | first behavior | `test 1 = 1` | exit 0 |
+| SC-2 | second behavior | `test 1 = 2` | exit 1 |
+"""
+
+
+class TestParseScTable:
+    def test_maps_id_to_expected_exit(self):
+        table = vs.parse_sc_table(SC_PLAN_TWO)
+        assert table == {"SC-1": "0", "SC-2": "1"}
+
+    def test_fenced_table_is_ignored(self):
+        fenced = (
+            "# demo\n\n## 3. Success Criteria\n\n"
+            "```\n"
+            "| ID | Behavior | Check | Expected |\n"
+            "| --- | --- | --- | --- |\n"
+            "| SC-1 | example | `x` | exit 0 |\n"
+            "```\n"
+        )
+        assert vs.parse_sc_table(fenced) == {}
+
+    def test_bad_expected_grammar_is_error(self):
+        plan = SC_PLAN_ONE.replace("| exit 0 |", "| zero |")
+        table = vs.parse_sc_table(plan)
+        assert table["SC-1"].startswith("ERROR")
+
+
+class TestScCoverage:
+    def _write(self, tmp_path, slug, verify, plan):
+        text = _lane_summary(lane="normal", verify=verify)
+        path = write_summary(tmp_path, slug, text)
+        write_plan(path, plan)
+        return text, path
+
+    def test_sc_coverage_complete_passes_lane(self, tmp_path):
+        verify = (
+            "| c1 | `test 1 = 1` | 0 | ok | SC-1 |\n"
+            "| c2 | `test 1 = 2` | 1 | ok | SC-2 |"
+        )
+        text, path = self._write(tmp_path, "cov-ok", verify, SC_PLAN_TWO)
+        assert vs.check_lane_evidence(text, summary_path=path) == []
+
+    def test_sc_coverage_missing_fails_lane(self, tmp_path):
+        verify = "| c1 | `test 1 = 1` | 0 | ok | SC-1 |"
+        text, path = self._write(tmp_path, "cov-miss", verify, SC_PLAN_TWO)
+        errors = vs.check_lane_evidence(text, summary_path=path)
+        assert any("SC-2" in e for e in errors)
+
+    def test_sc_coverage_wrong_claimed_exit_fails_lane(self, tmp_path):
+        # SC-2 expects exit 1, but the covering row claims exit 0 → not covered.
+        verify = (
+            "| c1 | `test 1 = 1` | 0 | | SC-1 |\n| c2 | `test 1 = 2` | 0 | | SC-2 |"
+        )
+        text, path = self._write(tmp_path, "cov-wrong", verify, SC_PLAN_TWO)
+        errors = vs.check_lane_evidence(text, summary_path=path)
+        assert any("SC-2" in e for e in errors)
+
+    def test_sc_unknown_criterion_fails(self, tmp_path):
+        verify = (
+            "| c1 | `test 1 = 1` | 0 | | SC-1 |\n| c2 | `test 1 = 2` | 1 | | SC-9 |"
+        )
+        text, path = self._write(tmp_path, "cov-unknown", verify, SC_PLAN_TWO)
+        errors = vs.check_lane_evidence(text, summary_path=path)
+        assert any("SC-9" in e and "unknown" in e.lower() for e in errors)
+
+    def test_sc_duplicate_id_fails(self, tmp_path):
+        dup_plan = SC_PLAN_ONE + "| SC-1 | dup behavior | `test 1 = 1` | exit 0 |\n"
+        assert vs.parse_sc_table(dup_plan)["SC-1"].startswith("ERROR")
+        verify = "| c1 | `test 1 = 1` | 0 | | SC-1 |"
+        text, path = self._write(tmp_path, "cov-dup", verify, dup_plan)
+        errors = vs.check_lane_evidence(text, summary_path=path)
+        assert any("duplicate" in e.lower() for e in errors)
+
+    def test_backward_compat_4col_no_plan(self, tmp_path):
+        text = _lane_summary(lane="normal", verify=REAL_LANE_VERIFY)
+        path = write_summary(tmp_path, "bc-4col", text)
+        # No sibling PLAN.md written — fail-open, no new checks.
+        assert vs.check_lane_evidence(text, summary_path=path) == []
+
+    def test_backward_compat_plan_without_sc_table(self, tmp_path):
+        text = _lane_summary(lane="normal", verify=REAL_LANE_VERIFY)
+        path = write_summary(tmp_path, "bc-nosc", text)
+        write_plan(path, "# demo\n\n## 1. Motivation\n\nNo SC table here.\n")
+        assert vs.check_lane_evidence(text, summary_path=path) == []
+
+    def test_plan_dir_override_enforces_sc_coverage(self, tmp_path):
+        # Reproduces the commit-gate scenario: the SUMMARY content is read from a
+        # detached copy (mktemp) whose parent has NO sibling PLAN.md. Without the
+        # plan_dir override SC coverage silently fail-opens; with it, the real spec
+        # dir's PLAN.md is consulted and the missing SC-2 is caught.
+        verify = "| c1 | `test 1 = 1` | 0 | ok | SC-1 |"
+        text, real_path = self._write(tmp_path, "cov-plandir", verify, SC_PLAN_TWO)
+
+        detached = tmp_path / "mktemp-copy"  # a path whose parent has no PLAN.md
+        detached.write_text(text, encoding="utf-8")
+
+        # Bug reproduction: parent has no PLAN.md → fail-open (no SC error).
+        assert vs.check_lane_evidence(text, summary_path=detached) == []
+        # Override: SC coverage is enforced against the real spec dir's PLAN.md.
+        errors = vs.check_lane_evidence(
+            text, summary_path=detached, plan_dir=real_path.parent
+        )
+        assert any("SC-2" in e for e in errors)
+
+    def test_plan_dir_override_via_lane_cli(self, tmp_path):
+        # The --lane CLI path threads --plan-dir through to SC coverage.
+        verify = "| c1 | `test 1 = 1` | 0 | ok | SC-1 |"
+        _text, real_path = self._write(tmp_path, "cli-plandir", verify, SC_PLAN_TWO)
+        detached = tmp_path / "mktemp-copy2"
+        detached.write_text(_text, encoding="utf-8")
+        # Without --plan-dir: fail-open → exit 0.
+        assert vs.main(["--lane", str(detached)], specs_root=tmp_path / "specs") == 0
+        # With --plan-dir pointing at the real spec dir: SC-2 uncovered → exit 1.
+        assert (
+            vs.main(
+                ["--lane", str(detached), "--plan-dir", str(real_path.parent)],
+                specs_root=tmp_path / "specs",
+            )
+            == 1
+        )
+
+    def test_plan_dir_override_via_check_mode(self, tmp_path):
+        # --plan-dir must also be honored in single-target/check mode, not only --lane.
+        # SUMMARY slug dir has NO PLAN.md, so the parent-based lookup fail-opens; the
+        # real SC table lives in a separate dir pointed at by --plan-dir. The row's
+        # Criterion (SC-2, expected exit 1) with a command that exits 0 is caught ONLY
+        # when plan_dir is consulted.
+        verify = "| c1 | `test 1 = 1` | 0 | | SC-2 |"
+        text = _lane_summary(lane="normal", verify=verify)
+        write_summary(tmp_path, "chk-plandir", text)  # no sibling PLAN.md written
+        real = tmp_path / "real-spec"
+        real.mkdir()
+        (real / "PLAN.md").write_text(SC_PLAN_TWO, encoding="utf-8")
+        specs_root = tmp_path / "specs"
+        # Without --plan-dir: no sibling PLAN → sc_map empty → claimed==actual → exit 0.
+        assert (
+            vs.main(
+                ["chk-plandir", "--check", "--timeout", "10"], specs_root=specs_root
+            )
+            == 0
+        )
+        # With --plan-dir: SC-2 expects exit 1 but the command exits 0 → mismatch → exit 1.
+        assert (
+            vs.main(
+                ["chk-plandir", "--check", "--plan-dir", str(real), "--timeout", "10"],
+                specs_root=specs_root,
+            )
+            == 1
+        )
+
+    def test_sc_coverage_missing_fails_check_mode(self, tmp_path):
+        # PR #157 review (P1): `--check <slug>` is the documented ship gate and what
+        # ci-strict-gate.sh runs, but it only validated Criterion-mapped rows — a PLAN
+        # with SC-1 and SC-2 whose SUMMARY proved only SC-1 exited 0.
+        verify = "| c1 | `test 1 = 1` | 0 | | SC-1 |"
+        text = _lane_summary(lane="normal", verify=verify)
+        path = write_summary(tmp_path, "chk-cov", text)
+        write_plan(path, SC_PLAN_TWO)
+        assert (
+            vs.main(
+                ["chk-cov", "--check", "--timeout", "10"], specs_root=tmp_path / "specs"
+            )
+            == 1
+        )
+
+    def test_sc_coverage_missing_fails_check_mode_with_no_real_rows(self, tmp_path):
+        # Same gate, placeholder-only Verify table: the early "no checks ran" return
+        # must not short-circuit past SC coverage.
+        text = _lane_summary(lane="normal", verify="| p | `<command>` | 0 | | |")
+        path = write_summary(tmp_path, "chk-cov-empty", text)
+        write_plan(path, SC_PLAN_TWO)
+        assert (
+            vs.main(
+                ["chk-cov-empty", "--check", "--timeout", "10"],
+                specs_root=tmp_path / "specs",
+            )
+            == 1
+        )
+
+    def test_criterion_check_mode_actual_exit(self, tmp_path):
+        # Well-formed: each criterion row actually exits its SC's expected code.
+        verify = (
+            "| c1 | `test 1 = 1` | 0 | | SC-1 |\n| c2 | `test 1 = 2` | 1 | | SC-2 |"
+        )
+        text = _lane_summary(lane="normal", verify=verify)
+        write_summary(tmp_path, "cm-ok", text)
+        write_plan((tmp_path / "specs" / "cm-ok" / "SUMMARY.md"), SC_PLAN_TWO)
+        assert (
+            vs.main(
+                ["cm-ok", "--check", "--timeout", "10"], specs_root=tmp_path / "specs"
+            )
+            == 0
+        )
+
+        # Row's claimed exit matches its actual exit, so the claimed-vs-actual
+        # check passes — but the criterion points at SC-2 (expected exit 1) while
+        # the command actually exits 0. Only the SC comparison catches this.
+        verify_bad = "| c1 | `test 1 = 1` | 0 | | SC-2 |"
+        text_bad = _lane_summary(lane="normal", verify=verify_bad)
+        write_summary(tmp_path, "cm-bad", text_bad)
+        write_plan((tmp_path / "specs" / "cm-bad" / "SUMMARY.md"), SC_PLAN_TWO)
+        assert (
+            vs.main(
+                ["cm-bad", "--check", "--timeout", "10"], specs_root=tmp_path / "specs"
+            )
+            == 1
+        )
+
+    def test_rewrite_table_preserves_criterion_column(self, tmp_path):
+        verify = "| c1 | `test 1 = 1` | 0 | note | SC-1 |"
+        text = _lane_summary(lane="normal", verify=verify)
+        path = write_summary(tmp_path, "rw-slug", text)
+        write_plan(path, SC_PLAN_ONE)
+        rc = vs.main(["rw-slug", "--timeout", "10"], specs_root=tmp_path / "specs")
+        assert rc == 0
+        out = path.read_text(encoding="utf-8")
+        line = next(ln for ln in out.splitlines() if ln.startswith("| c1"))
+        assert "SC-1" in line  # trailing Criterion column preserved
+        assert "| 0 |" in line  # actual exit written back
+        assert "Verified:" in out

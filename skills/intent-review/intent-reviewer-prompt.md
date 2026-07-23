@@ -39,6 +39,12 @@ Task tool (reviewer):
       [paste the `### Intent` block from specs/<slug>/SUMMARY.md, verbatim]
     - SUCCESS CRITERIA (secondary oracle, only if specs/<slug>/design.md exists):
       [paste design.md Success Criteria, or "none"]
+    - PLAN §3 SC TABLE (secondary oracle, only if specs/<slug>/PLAN.md declares one):
+      [paste the SC-<n> table rows from PLAN.md §3, VERBATIM, or "none". You receive these
+      rows here so you do NOT read PLAN.md yourself — the blind rule below still holds. Read
+      each SC only as a checklist of promised outcomes.]
+    - SUMMARY ### Verify TABLE (to check each SC is proven via its `Criterion` column):
+      [paste the `### Verify` table from specs/<slug>/SUMMARY.md, VERBATIM, or "none"]
     - BASE_SHA: [commit before the first task]
     - HEAD_SHA: [current commit after all tasks]
     - Files touched: [list of paths]
@@ -81,6 +87,11 @@ Task tool (reviewer):
 
     Also flag, as a `drift` finding, any case where the SUCCESS CRITERIA (secondary oracle)
     contradicts the VERBATIM intent — that means design drifted from intent at the start.
+
+    If a PLAN §3 SC TABLE was provided, additionally check each `SC-<n>` against the SUMMARY
+    `### Verify` table: an SC with no passing `Criterion` row proving it is **unproven** — flag
+    it as a `gap`. Read the SC rows only as promised outcomes; do not treat them as the intent
+    oracle (the verbatim request still wins on any conflict).
 
     ## Method
 

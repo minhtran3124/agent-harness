@@ -89,24 +89,39 @@ if [ -n "$EV_SLUGS" ]; then
     EV_FAILED=0
     for slug_dir in $EV_SLUGS; do
       summary="${slug_dir}SUMMARY.md"
+      plan="${slug_dir}PLAN.md"
+      # Materialize the INDEXED spec pair into one temp dir: the gate must judge the
+      # tree that is actually being committed, not the working copy. Staging a PLAN
+      # with an SC contract and then editing/removing it before `git commit` must not
+      # let the commit through against different (or absent) criteria.
+      ev_dir=$(mktemp -d 2>/dev/null) || continue
+      ev_tmp="$ev_dir/SUMMARY.md"
       # Prefer the staged copy; fall back to on-disk (slug touched but SUMMARY unstaged)
-      ev_tmp=$(mktemp 2>/dev/null) || continue
       if ! git show ":$summary" >"$ev_tmp" 2>/dev/null; then
         if [ -f "$summary" ]; then
-          cp "$summary" "$ev_tmp" 2>/dev/null || { rm -f "$ev_tmp"; continue; }
+          cp "$summary" "$ev_tmp" 2>/dev/null || { rm -rf "$ev_dir"; continue; }
         else
           # No SUMMARY at all for this slug — not this check's business
           # (a slug dir can hold only PLAN.md/design.md).
-          rm -f "$ev_tmp"; continue
+          rm -rf "$ev_dir"; continue
         fi
+      fi
+      # Same rule for the PLAN that supplies the SC table. `git show :PLAN.md` covers
+      # both "staged edit" and "tracked, unmodified"; the on-disk fallback only fires
+      # for an untracked PLAN (which the commit is not recording anyway).
+      if ! git show ":$plan" >"$ev_dir/PLAN.md" 2>/dev/null; then
+        rm -f "$ev_dir/PLAN.md"
+        [ -f "$plan" ] && cp "$plan" "$ev_dir/PLAN.md" 2>/dev/null || true
       fi
       # Capture rather than stream: the script names the temp path, which would
       # be meaningless to the committer. Re-label it as the real SUMMARY.
-      if ! ev_out=$(python3 scripts/verify_summary.py --lane "$ev_tmp" 2>&1); then
+      # --plan-dir points SC-coverage at the materialized index copy — the sibling
+      # lookup would otherwise resolve against the working tree.
+      if ! ev_out=$(python3 scripts/verify_summary.py --lane "$ev_tmp" --plan-dir "$ev_dir" 2>&1); then
         echo "${ev_out//$ev_tmp/$summary}" >&2
         EV_FAILED=1
       fi
-      rm -f "$ev_tmp"
+      rm -rf "$ev_dir"
     done
     if [ "$EV_FAILED" = "1" ]; then
       echo "[COMMIT GATE] Lane evidence... FAILED" >&2

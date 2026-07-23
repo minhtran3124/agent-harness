@@ -25,6 +25,7 @@ lints new/edited rows, it does not retroactively police already-shipped specs.
 
 from __future__ import annotations
 
+import os
 import re
 import sys
 
@@ -101,6 +102,51 @@ def check_summary_text(text: str) -> list[str]:
     return violations
 
 
+def check_plan_text(text: str) -> list[str]:
+    """Lint the SC-table Check cells in a PLAN.md (empty = clean).
+
+    Applies the SAME command rules as `check_summary_text` (pipe → error,
+    full-suite/build → error) to every row whose FIRST cell matches `SC-<n>`.
+    The Check command is the 3rd column of the SC table
+    (`| ID | Behavior | Check | Expected |`). Fenced blocks are illustrations
+    and skipped.
+    """
+    violations: list[str] = []
+    in_fence = False
+    for line in text.splitlines():
+        s = line.strip()
+        if s.startswith("```") or s.startswith("~~~"):
+            in_fence = not in_fence
+            continue
+        if in_fence or not s.startswith("|"):
+            continue
+        cells = _split_escaped(s)
+        if not cells or not re.fullmatch(r"SC-\d+", cells[0]):
+            continue
+        label = cells[0]
+        # Rule 1a — an unescaped pipe split the SC row into the wrong column count.
+        if len(cells) != 4:
+            violations.append(
+                f"[{label}] SC check row has {len(cells)} cells (expected 4) "
+                f"— an unescaped `|` in the command splits the cell; rewrite pipe-free"
+            )
+            continue
+        cmd = cells[2].strip("`").strip()
+        # Rule 1b — an escaped pipe survived: the command still uses a pipe.
+        if "|" in cmd:
+            violations.append(
+                f"[{label}] SC check command contains a pipe `|` — rewrite pipe-free "
+                f"(grep -e a -e b / capture $? / redirect instead of `| wc`): {cmd}"
+            )
+        # Rule 2 — full-suite / build as an SC check (exceeds the 60s strict-gate cap).
+        if _is_too_slow(cmd):
+            violations.append(
+                f"[{label}] SC check command runs a full suite/build (>60s strict-gate cap) "
+                f"— cite it in prose (CI `tests` job), don't make it an SC check: {cmd}"
+            )
+    return violations
+
+
 def main(argv: list[str]) -> int:
     paths = argv[1:] if len(argv) > 1 else [p.strip() for p in sys.stdin if p.strip()]
     if not paths:
@@ -110,13 +156,18 @@ def main(argv: list[str]) -> int:
         try:
             text = open(path, encoding="utf-8").read()
         except OSError:
-            continue  # a deleted SUMMARY in the diff — skip
-        for v in check_summary_text(text):
+            continue  # a deleted SUMMARY/PLAN in the diff — skip
+        checker = (
+            check_plan_text
+            if os.path.basename(path) == "PLAN.md"
+            else check_summary_text
+        )
+        for v in checker(text):
             print(f"{path}: {v}")
             failed = True
     if not failed:
         print(
-            "  ✓ verify-row lint: all checked SUMMARY Verify rows are pipe-free and <60s"
+            "  ✓ verify-row lint: all checked SUMMARY/PLAN rows are pipe-free and <60s"
         )
     return 1 if failed else 0
 

@@ -47,6 +47,12 @@ Before defining tasks, map out which files will be created or modified and what 
 
 This structure informs the task decomposition. Each task should produce self-contained changes that make sense independently.
 
+Then, **before decomposing tasks**, author the `## 3. Success Criteria` table — the acceptance
+contract (schema in `.claude/rules/plan-format.md` → Success Criteria schema). Writing the
+observable behaviors and their re-runnable checks first gives the tasks something to trace to:
+every task should serve one or more SCs. A new markdown plan that ships without this table fails
+plan review.
+
 ## Plan Format (canonical: `.claude/rules/plan-format.md`)
 
 The plan format has exactly one home: `.claude/rules/plan-format.md`. Do not restate the
@@ -68,6 +74,8 @@ schema here or in the plan. Non-negotiables it defines:
   ```
 
 - guardrails: zero same-wave file overlap; Verify = one automated command, <60s
+- the `## 3. Success Criteria` acceptance-contract table (`SC-<n>` ids, pipe-free <60s checks,
+  `exit <n>` Expected) — schema in `.claude/rules/plan-format.md` → Success Criteria schema
 
 When writing Action and Verify bodies:
 

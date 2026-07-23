@@ -62,14 +62,20 @@ Before anything else, assemble the oracle. The intent is the **user's original r
    request captured verbatim at intake (`feature-intake` Step 6). It is the source of truth.
 2. **Secondary oracle (if it exists)** — the **Success Criteria** of `specs/<slug>/design.md`.
    Use it to sharpen the intent, never to replace the verbatim request.
+3. **Secondary oracle (if it exists)** — the **§3 SC table** of `specs/<slug>/PLAN.md`. Each SC row
+   is a checkable oracle: verify it is proven by a passing row in the SUMMARY `### Verify` table via
+   the `Criterion` column mapping. An SC with no proving Verify row is **unproven** — flag it as a
+   `gap` finding. This reads the SC table only as a checklist of promised outcomes; it does **not**
+   license reading the rest of PLAN.md (the blind rule, Section 2, still holds).
 
-**If both are absent → STOP.** Ask the user to provide the original request. Do **not** reconstruct
+**If both the primary and the design.md secondary oracle are absent → STOP.** Ask the user to provide the original request. Do **not** reconstruct
 intent from PLAN.md, research-brief.md, or the diff itself — those are downstream of the intent and
 inherit any misreading. Inferring intent from the plan defeats the entire purpose of a third oracle.
 
-**If the two oracles conflict** (the verbatim request and design.md Success Criteria describe
-different things): the **verbatim request wins**, and the conflict is itself a `drift` finding that
-must escalate — it signals the design drifted from intent at the very start.
+**If a secondary oracle conflicts with the verbatim request** (design.md Success Criteria or a
+PLAN §3 SC row describes something different): the **verbatim request wins** over both secondary
+oracles, and the conflict is itself a `drift` finding that must escalate — it signals the design or
+plan drifted from intent at the very start.
 
 ## 2. Blind rule — the reviewer must not read the plan
 
@@ -91,6 +97,9 @@ The reviewer needs a `BASE_SHA..HEAD_SHA` range and the list of touched files:
 
 Dispatch **one** reviewer subagent with fresh context, using `./intent-reviewer-prompt.md`. It
 receives: the intent oracle + the full diff (`git diff BASE..HEAD`) + the list of touched files.
+When PLAN.md §3 has an SC table, pass it **verbatim** alongside the SUMMARY `### Verify` table
+(with its `Criterion` column) so the isolated reviewer can check each SC against its proving Verify
+row — pass only these two tables, not the rest of PLAN.md (the blind rule holds).
 
 **Use a different model than the implementer** (ensemble diversity, same discipline as
 correctness-review). The reviewer must quote the **verbatim intent sentence** each finding violates
@@ -100,7 +109,8 @@ correctness-review). The reviewer must quote the **verbatim intent sentence** ea
 
 Every finding is one of three classes. Routing differs by class:
 
-- **`gap`** — the intent asked for something that was **not shipped**.
+- **`gap`** — the intent asked for something that was **not shipped**, or a PLAN §3 SC is
+  **unproven** (no passing SUMMARY `### Verify` row maps to it via the `Criterion` column).
   - *Clear and in scope* → implementer **fix-loop** → re-review until resolved.
   - *Ambiguous* (more than one reasonable reading) → `specs/<slug>/ESCALATIONS.md`; a human
     narrows scope. Do not guess.

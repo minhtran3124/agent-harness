@@ -34,5 +34,15 @@ jobs:
           fetch-depth: 0
       - name: Fetch base ref
         run: git fetch --no-tags origin "${{ github.base_ref }}"
+      # ci-strict-gate.sh re-runs each changed high-risk SUMMARY's `### Verify`
+      # rows for machine-verified proof. Those commands can be the project's test
+      # runner (e.g. `python3 -m pytest ...` for an SC-coverage row), so the gate
+      # job must have pytest on the same `python3` — the `test` job relies on
+      # ambient pytest, which is not guaranteed here. Provision it deterministically.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install proof runner (pytest)
+        run: python -m pip install --quiet pytest
       - name: Strict gate (hard-gate paths require high-risk SUMMARY + verified proof)
         run: bash scripts/ci-strict-gate.sh "origin/${{ github.base_ref }}"
