@@ -10,7 +10,7 @@ created: 2026-07-23
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**4 tasks · 1 waves · 6 files · 0/4 done**
+**4 tasks · 1 waves · 6 files · 4/4 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -30,10 +30,10 @@ flowchart LR
 ```
 
 ### Progress
-- [ ] 1.1 — Simplify step in the ship path (wave 1)
-- [ ] 1.2 — `excess` wording in intent-review (wave 1)
-- [ ] 1.3 — Implementer prompt dispatch-time guardrails (wave 1)
-- [ ] 1.4 — Diff-size sanity signal in risk-corroboration (wave 1)
+- [x] 1.1 — Simplify step in the ship path (wave 1)
+- [x] 1.2 — `excess` wording in intent-review (wave 1)
+- [x] 1.3 — Implementer prompt dispatch-time guardrails (wave 1)
+- [x] 1.4 — Diff-size sanity signal in risk-corroboration (wave 1)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -132,3 +132,15 @@ or `risk-corroboration.sh` beyond targeted insertions.
   comment (context-propagation-audit dogfood, CHANGELOG/VERSION bookkeeping) are execution-time
   ceremony, not authored plan tasks — they run automatically via the standard ship chain and the
   post-merge bookkeeping PR when this plan is executed, per `docs/solutions/harness/manual-version-bump-collides-with-event-sourced-bookkeeping.md`.
+- 2026-07-23 — Executed wave 1 on `feat/gh-159-simplicity-enforcement` (worktree
+  `.claude/worktrees/feat+gh-159-simplicity-enforcement`): Task 1.1 `07f76b8`, Task 1.2 `31e6784`
+  (+ quality-review fix `4669f20`), Task 1.3 `9d972ad` (+ quality-review fix `0e121fc`), Task 1.4
+  `514f8cc` (relocated from an errant commit `55bcabf` an implementer subagent made on the shared
+  `loop` branch by using the wrong working directory — cherry-picked onto the correct branch, the
+  errant commit reset off `loop`, and `loop`'s pre-existing uncommitted STATE.md breadcrumb
+  restored exactly). All four tasks passed spec-compliance review; code-quality review found two
+  minor wording issues (1.2, 1.3, both fixed) and one false-positive "critical" (a reviewer
+  couldn't find `/simplify` as a repo skill file — confirmed via `strings` on the `claude` binary
+  that it's a genuine compiled-in built-in command, not a repo skill). `bash
+  tests/hooks/risk-corroboration.test.sh` (31/31) and `bash scripts/run-tests.sh` (ALL GREEN)
+  both pass on HEAD.
