@@ -38,6 +38,13 @@ path-scoped, so do not rely on `paths:` injection to have loaded them.
 4. **Plan scope matches the trigger threshold** — >3 discrete steps OR >2 files OR ETA >30 min.
    Below all three, stop and suggest a direct edit instead.
 
+Then read the plan for **substantive** concerns and raise them before marking it `active`. The
+four checks above are mechanical: a plan can satisfy every one of them and still be wrong —
+missing a migration its tasks depend on, sequencing waves against a real dependency, solving the
+wrong problem. Surfacing that after wave 1 has burned a task is strictly worse than surfacing it
+now. If the approach itself looks wrong, say so and wait; the `BLOCKED` ladder below is the
+recovery path, not the intended one.
+
 ## The Process
 
 **Step 1 — Load rules and ensure branch isolation.** Read the path-scoped

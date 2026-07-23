@@ -20,6 +20,7 @@ bash scripts/lint-doc-truth.sh || FAILED=1
 echo "== L1: manifest consistency =="
 if command -v python3 >/dev/null 2>&1; then
   python3 scripts/check_manifest.py || FAILED=1
+  python3 scripts/check_slim_surface.py || FAILED=1
 else
   echo "  skip — no python3"
 fi

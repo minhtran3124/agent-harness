@@ -35,13 +35,13 @@ else fail "no .claude/ entry in .gitignore: $(cat "$d/.gitignore" 2>&1)"; fi
 t "the deployed .claude/ is actually ignored by git afterwards"
 d=$(new_target)
 install_into "$d"
-if git -C "$d" check-ignore -q .claude; then pass
+if git -C "$d" -c core.excludesFile=/dev/null check-ignore -q .claude; then pass
 else fail ".claude/ is still visible to git after install"; fi
 
 t "no untracked .py remains, so the commit gate does not deny"
 d=$(new_target)
 install_into "$d"
-loose=$(git -C "$d" ls-files --others --exclude-standard | grep -E '\.py$' || true)
+loose=$(git -C "$d" -c core.excludesFile=/dev/null ls-files --others --exclude-standard | grep -E '\.py$' || true)
 if [ -z "$loose" ]; then pass; else fail "untracked .py survives install: $loose"; fi
 
 t "re-install does not duplicate the .claude/ entry"
@@ -72,5 +72,42 @@ printf 'dist/' > "$d/.gitignore"   # deliberately no trailing \n
 install_into "$d"
 if grep -qE '^dist/$' "$d/.gitignore" && grep -qE '^\.claude/$' "$d/.gitignore"; then pass
 else fail "line merge corrupted the file: $(cat "$d/.gitignore")"; fi
+
+# ── Regressions found by the correctness review (2026-07-23) ─────────────────
+
+t "a repo that TRACKS .claude/ is left alone (never hide a tracked tree)"
+d=$(new_target)
+mkdir -p "$d/.claude"
+printf '{}\n' > "$d/.claude/settings.json"
+git -C "$d" add .claude/settings.json
+git -C "$d" -c user.email=t@t -c user.name=t commit -qm "track .claude" >/dev/null
+install_into "$d"
+if [ ! -f "$d/.gitignore" ] || ! grep -qE '^\.claude/$' "$d/.gitignore"; then pass
+else fail "installer ignored an already-tracked .claude/, hiding the files it just deployed"; fi
+
+t "an existing .claude/* + !.claude/settings.json negation is not overridden"
+d=$(new_target)
+printf '.claude/*\n!.claude/settings.json\n' > "$d/.gitignore"
+install_into "$d"
+n=$(grep -cE '^\.claude/$' "$d/.gitignore" || true)
+if [ "$n" = "0" ]; then pass
+else fail "appended .claude/ over a deliberate negation — the ! rule becomes unreachable"; fi
+
+t "the negated file stays visible to git after install"
+d=$(new_target)
+printf '.claude/*\n!.claude/settings.json\n' > "$d/.gitignore"
+install_into "$d"
+if ! git -C "$d" -c core.excludesFile=/dev/null check-ignore -q .claude/settings.json; then pass
+else fail ".claude/settings.json became ignored despite the ! rule"; fi
+
+t "a read-only .gitignore warns instead of aborting the install"
+d=$(new_target)
+printf 'dist/\n' > "$d/.gitignore"
+chmod 444 "$d/.gitignore"
+( cd "$d" && bash "$INSTALL" --source "$ROOT" --yes ) >"$d/.install.log" 2>&1
+rc=$?
+chmod 644 "$d/.gitignore"
+if [ "$rc" = "0" ] && grep -q "Harness installed" "$d/.install.log"; then pass
+else fail "install aborted (rc=$rc) on an unwritable .gitignore; deploy had already run"; fi
 
 finish

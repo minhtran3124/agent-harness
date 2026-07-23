@@ -117,6 +117,38 @@ wave 3 and reported **ALL GREEN**. It is cited here rather than tabled because a
 invocation exceeds the strict gate's 60s per-command cap
 (`docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md`); CI's `tests` job runs it.
 
+### Review Findings
+
+Three oracles run 2026-07-23 on `f97764e..226fc6b` as isolated `reviewer` subagents (read-only by
+tool whitelist, models different from the implementer).
+
+- **`/intent-review`** (blind to PLAN/design) — **PASS**, no gap / excess / drift. It flagged in
+  passing that `harness-manifest.json` had changed 139 lines for a 3-line edit; verified and
+  fixed — a `json.dumps` round-trip had escaped em-dashes to `\u2014` and reflowed the file.
+  Nothing mechanical caught it (valid JSON, checker green): a diff-reading oracle did.
+- **`/context-propagation-audit`** — **PASS**, 14 matrix rows, no failing delivery. Confirmed all
+  four constraints that lived only in the deleted `## Red Flags` reach the isolated contexts that
+  rely on them, and that the rewritten "loaded via the explicit Read step in X" sentences in
+  `rules/plan-format.md` / `rules/wave-parallelism.md` are now true of the named skill.
+- **`/correctness-review`** (3 angles: `removed-behavior`, `stack-defects`+`enclosing-function`
+  +`guard-completeness`, `call-site`+`prior-art`) — **8 findings, all fixed**, each reproduced by
+  the reviewer before reporting:
+
+| # | Finding | Sev | Fix |
+|---|---|---|---|
+| 1 | Installer would ignore a `.claude/` the consumer **tracks**, hiding the ~90 files the deploy just wrote | P1 | Detect tracked `.claude/`; warn and leave `.gitignore` alone |
+| 2 | Guard missed `.claude/*` + `!.claude/settings.json`; appending `.claude/` makes the negation unreachable | P2 | Widened match to any `.claude`-bearing line → skip |
+| 3 | Unwritable `.gitignore` aborted the installer **after** the deploy, swallowing the success banner | P2 | Bounded the whole block; warns instead |
+| 4 | `using-git-worktrees` kept the gitignore *check* but lost its *remediation* branch — repro: `git add -A` commits the worktree as an embedded gitlink | P2 | Restored "add the pattern, commit it, then create" |
+| 5 | Same skill lost the directory-selection priority (existing dir / CLAUDE.md / ask) | P3 | Restored as one numbered step |
+| 6 | `executing-plans`' "review the plan critically before starting" never reached the merged skill | P3 | Added to Step 0, before `status: active` |
+| 7 | `check_slim_surface.py` was invoked by nothing — the half-revert guard could not fire | P3 | Wired into `run-tests.sh` beside `check_manifest.py` |
+| 8 | Two install tests consulted the machine's global `core.excludesFile`, so they passed with the fix deleted | P3 | Pinned `-c core.excludesFile=/dev/null`; added 4 regression cases |
+
+Findings 1–3 and 8 are defects in *this branch's own* hook/installer fix — the sandbox proved the
+original bug was gone but not that the fix was safe. Every new guard is mutation-checked: reverting
+the tracked-`.claude` detection fails case 8, and narrowing the pattern back fails cases 9–10.
+
 ### Rollback
 
 - `git revert <sha>` — the change is source-only (skills, docs, manifest); no migration and no

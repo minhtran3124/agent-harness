@@ -36,9 +36,19 @@ directory placement, branch creation, and cleanup, and the harness can see and c
 result. Running `git worktree add` when a native tool exists creates phantom state the harness
 cannot track.
 
-**Fallback, only when no native tool exists:** create the worktree in a gitignored directory —
-`git worktree add .worktrees/<branch> -b <branch>` — and verify the directory is ignored
-(`git check-ignore -q .worktrees`) before creating it, so worktree contents never get committed.
+**Fallback, only when no native tool exists:**
+
+1. **Pick the location, do not assume it.** Reuse an existing `.worktrees/` or `worktrees/`
+   (`.worktrees` wins if both exist), else the directory `CLAUDE.md` names
+   (`grep -i "worktree.*director" CLAUDE.md`), else ask the user — offer project-local
+   `.worktrees/` or a path outside the repo entirely. Defaulting silently splits worktrees
+   across two roots, and `finishing-a-development-branch` then cleans up only one of them.
+2. **Make sure it is ignored — and fix it if it is not.** `git check-ignore -q .worktrees`.
+   If it is NOT ignored: add the pattern to `.gitignore` and commit that **first**, then
+   create the worktree. Skipping this is not cosmetic: `git add -A` turns the untracked
+   worktree into an embedded-repo **gitlink**, committing a broken entry that no hook catches
+   (`git ls-files --others` reports the directory, never the files inside it).
+3. `git worktree add <dir>/<branch> -b <branch>`, then continue at Step 2.
 
 ## Step 2 — Deploy the harness into the worktree
 

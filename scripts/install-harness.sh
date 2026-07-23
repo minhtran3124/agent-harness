@@ -235,11 +235,39 @@ fi
 # is wrong. It also carries .py files (visual-planner), and an untracked .py denies every commit
 # via hooks/check-untracked-py.sh. Without this line a fresh consumer installs the harness and
 # then cannot commit at all. Append only when the pattern is absent; never touch existing lines.
+#
+# Three things this must NOT do, each found by review:
+#   1. Ignore a .claude/ the consumer already TRACKS. Some projects deliberately commit
+#      .claude/ to share settings with their team. Appending the pattern there would hide the
+#      ~90 files the deploy just wrote — git keeps showing only the already-tracked ones, and
+#      the developer pushes a half-updated harness with no warning. Detect and skip.
+#   2. Override a deliberate .claude-scoped rule. `.claude/*` + `!.claude/settings.json` is a
+#      common shape; neither line matches an anchored `.claude/?` pattern, so a naive guard
+#      appends `.claude/` — which excludes the DIRECTORY, making the negation unreachable
+#      (git cannot re-include a file whose parent dir is excluded). Any line mentioning
+#      .claude means the consumer already decided. Skip.
+#   3. Abort the install. This is a convenience step running after the deploy already
+#      succeeded; a read-only or directory .gitignore must not kill the script under
+#      `set -euo pipefail` and swallow the success banner. Bound the whole block.
 if [ "$DRY_RUN" -eq 0 ]; then
   GI="$TARGET_DIR/.gitignore"
-  if ! { [ -f "$GI" ] && grep -qE '^[[:space:]]*/?\.claude/?[[:space:]]*$' "$GI"; }; then
-    [ -s "$GI" ] && [ -n "$(tail -c 1 "$GI")" ] && printf '\n' >> "$GI"
-    printf '# Harness: .claude/ is derived — rebuilt by deploy-harness.sh on every sync\n.claude/\n' >> "$GI"
+  gi_skip=""
+  if git -C "$TARGET_DIR" ls-files --error-unmatch -- .claude >/dev/null 2>&1; then
+    gi_skip="tracked"
+  elif [ -f "$GI" ] && grep -qE '(^|[^[:alnum:]_.-])!?/?\.claude(/|$|/\*)' "$GI" 2>/dev/null; then
+    gi_skip="declared"
+  fi
+  if [ -n "$gi_skip" ]; then
+    if [ "$gi_skip" = "tracked" ]; then
+      warn ".claude/ is tracked in this repo — leaving .gitignore alone."
+      warn "  The deploy wrote files into a tracked tree; review 'git status' before committing."
+    fi
+  elif ! {
+        { [ ! -s "$GI" ] || [ -z "$(tail -c 1 "$GI" 2>/dev/null)" ] || printf '\n' >> "$GI"; } &&
+        printf '# Harness: .claude/ is derived — rebuilt by deploy-harness.sh on every sync\n.claude/\n' >> "$GI"
+      } 2>/dev/null; then
+    warn "could not update .gitignore — add '.claude/' to it manually."
+  elif [ -z "$gi_skip" ]; then
     ok ".gitignore now lists .claude/"
   fi
 fi

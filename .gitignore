@@ -48,5 +48,5 @@ docs/harness-engineering-review.en.md
 # bootstrap-xia2 review artifacts — per-repo, never shipped by the harness
 *.proposed
 
-# create-pr output (generated PR description, not committed)
+# generated PR description (finishing-a-development-branch Step 3), not committed
 .pr-body.md
