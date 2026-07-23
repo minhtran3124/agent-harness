@@ -53,6 +53,28 @@ re-deriving it avoids relitigating decisions the repo owner already made with fi
 
 - `git revert <sha>` (per task commit, or the wave-boundary commit if squashed)
 
+### Context-Propagation Audit
+
+**Verdict: PASS.** Range `5aef660..HEAD` (07f76b8, 31e6784, 9d972ad, 514f8cc, 0e121fc, 4669f20,
+a03bc97). Trigger: all four task files match the `workflow-engine` inventory
+(`skills/*/SKILL.md`, dispatch prompts, `hooks/*.sh`).
+
+| Source | Consumer | Execution context | Delivery | Proof |
+|---|---|---|---|---|
+| New "Simplify pass" paragraph, `skills/subagent-driven-development/SKILL.md` | Whoever executes `/subagent-driven-development` | main session / parallel session (orchestrator) | **always-loaded** — the entire SKILL.md is pasted wholesale into the invoking session on `Skill` dispatch (not path-scoped, no partial load) | Inspected call site: this very session received the full file body verbatim from the `Skill` tool result when `/subagent-driven-development` was invoked (see this session's own transcript) |
+| New `excess` wording + D3 carve-out, `skills/intent-review/intent-reviewer-prompt.md` | The isolated intent-review reviewer subagent | reviewer (isolated, blind to PLAN.md) | **pasted** — `intent-review/SKILL.md` instructs the orchestrator to paste `intent-reviewer-prompt.md`'s content directly into the reviewer's dispatch prompt (no Read-based indirection) | Inspected call site: `skills/intent-review/SKILL.md` dispatch section names `intent-reviewer-prompt.md` as the template to paste, not to reference |
+| Mirrored `excess` sentence, `skills/intent-review/SKILL.md` | Whoever executes `/intent-review` (orchestrator) | main / parallel session | **always-loaded** — same wholesale-paste mechanism as above | Same as row 1 |
+| New "Simplicity First" constraint block, `skills/subagent-driven-development/implementer-prompt.md` | Isolated implementer subagent | implementer (isolated, fresh context per task) | **pasted** — `subagent-driven-development/SKILL.md` Step 2 instructs pasting `implementer-prompt.md`'s full templated body into each task's dispatch prompt (explicit: "A subagent must never be told to go read PLAN.md itself: it gets exactly the constructed context") | Inspected call site: `subagent-driven-development/SKILL.md` §Step 2.1; corroborated live in this session — all 4 wave-1 implementer subagents received the full template body pasted, including the new block, per their dispatch prompts issued this session |
+| `hooks/risk-corroboration.sh` diff-size note | The hook's own execution (PreToolUse on `git commit`) | hook execution context (not a prompt/instruction consumer) | **n/a** — this is executable shell code invoked directly by the harness on every commit, not an instruction referenced by a separate isolated context | `tests/hooks/risk-corroboration.test.sh` (31/31 passing) exercises the code path directly |
+
+**"No stale/duplicate copy" check** (search surface: `grep -rln` over `.` for each new phrase —
+`"excess.*NOBODY asked"` / `"excess.*scope beyond the intent"`, `"Did I avoid overbuilding"`,
+`"Simplify pass"` / `"/simplify"` restricted to `skills/`, `rules/`, `agents/`): each phrase
+appears only in its own source file(s) plus this SUMMARY/design.md — no second, independently
+maintained inline copy exists anywhere else in the repo that could silently drift from these four
+changes. No hard-fail rule (assumed/unconfirmed delivery, main-session-as-proof-for-child-context,
+unanchored inline subset) is tripped.
+
 ### Harness-Delta
 
 - none
