@@ -113,6 +113,29 @@ Correctness-review advisories (scored <75, not auto-fixed — recorded for the h
 
 Full suite: `bash scripts/run-tests.sh` ran ALL GREEN (185 pytest + all hook suites) in wave 3 — re-run by the CI `tests` job; not a Verify row per docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md.
 
+### Intent Findings
+
+Blind intent review (oracle = verbatim request; reviewer forbidden from PLAN.md) — 3 findings,
+all advisory/report-only, none blocking:
+
+1. **drift, advisory** — item 2 asked literally for "an `env` block in `settings.json`" with
+   `RISK_WARN_CATEGORIES="weakening-validation"`; neither literal artifact shipped. The stated
+   *purpose* ("fixes your screenshot incident permanently and correctly") IS met via manifest
+   `mode: warn` (proven by SC-7), under the design §3 reshape the human approved pre-implementation
+   (a top-level `env` key would be silently dropped on every consumer re-sync). Residual nuance:
+   "so the knobs are reachable" now means a machine-local gitignored knob
+   (`.claude/settings.local.json`), not a repo-tracked one. If a shared in-repo knob is still
+   wanted, that is a follow-up decision.
+2. **drift, behaviorally equivalent** — item 1 said "delete `category_mode()`"; the function
+   survives as a thin manifest-lookup wrapper (it also carries the session override). The
+   coupling that motivated the deletion — the source-regex in `check_manifest.py` — is gone
+   (SC-2). Means differed; outcome identical.
+3. **excess, report-only** — `specs/slim-skill-surface/PLAN.md` status `active → shipped` is
+   housekeeping outside items 1→3 (already logged under Deviations, Rule 3; kept — removal
+   would re-break `blast-radius-check` plan resolution).
+
+All SC-1…SC-7 verified proven via the Verify table's `Criterion` mapping — no unproven SC.
+
 ### Rollback
 
 - `git revert <sha>` — the change is source-only (hook + manifest + checker + docs); no
