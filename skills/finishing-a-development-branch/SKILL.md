@@ -106,29 +106,27 @@ has no review chain to pin.
 > if any **non-`specs/`** change slipped in after review, that re-check fails and blocks the push,
 > which is exactly the stale-review protection working.
 
-**Gate 0b — heterogeneous external review (workflow-engine diffs only).** When the `<base>..HEAD`
-diff touches the `workflow-engine` surface (`harness-manifest.json` → `workflow-engine`), the PR is
-**not mergeable** until an external reviewer outside this harness's prompt lineage — the Codex PR
-review — has landed and every finding it raises is fixed, refuted in a reply, or recorded. This is
-a **merge** requirement, not a push requirement: push and open the PR normally, then check before
-merging.
+**Recommended for workflow-engine diffs: a review from outside this harness.** When the
+`<base>..HEAD` diff touches the `workflow-engine` surface (`harness-manifest.json` →
+`workflow-engine`), the change is worth one more pass by a reviewer that is **not** dispatched by
+this harness — whatever your project already uses: a PR review bot, a required human reviewer, or
+another agent with its own prompts. Detect what the project has; the harness assumes none and
+requires none. This is a **merge**-time suggestion, never a push gate: nothing here blocks, and
+nothing is mirrored locally.
 
-```bash
-gh pr view <pr> --json reviews --jq '[.reviews[] | select(.author.login | test("codex"))] | length'
-```
-
-`0` means the review has not landed — wait for it. Nothing is mirrored locally; the check runs on
-the PR.
-
-**Why this is required rather than advisory.** The three local oracles
-(`/correctness-review`, `/intent-review`, `/context-propagation-audit`) share a reading frame:
+**Why it is worth the wait.** The three local oracles (`/correctness-review`, `/intent-review`,
+`/context-propagation-audit`) can run on different models and still share one *reading frame* —
 they are dispatched by this harness, with its prompts, and they read a `SKILL.md` as policy prose.
 On PR #158 all three passed a diff in which trimming `using-git-worktrees` had deleted the line
-assigning `path=` while a later step still ran `deploy-harness.sh --target "$path"` — every route
-reached it unset, so a fresh worktree silently got no `.claude/`. Codex caught it because it read
-the same file as **code**. Model diversity does not produce that; a reviewer outside the lineage
-does. (The specific class is now also caught mechanically by `scripts/lint-skill-bash.sh`, but the
-general lesson is why this gate exists — a lint only covers the frame gap you already found.)
+assigning `path=` while a later step still ran `deploy-harness.sh --target "$path"`; every route
+reached it unset, so a fresh worktree silently got no `.claude/`. The external reviewer caught it
+by reading the same file as **code**. Model diversity does not produce that — a different frame
+does, and a reviewer outside the lineage is the cheapest source of one.
+
+That specific class is now caught mechanically by `scripts/lint-skill-bash.sh`, which is the
+portable half of the lesson: prefer a deterministic check you can ship over a reviewer you cannot
+assume exists. A lint only covers the frame gap you already found, so an outside pass still earns
+its keep where one is available.
 
 1. **Mark the plan shipped** — run Step 4. This updates `specs/<slug>/PLAN.md`, which is **tracked** in git, so stage and commit the status change with the work (it lands in the branch/PR). If no plan matches, skip silently.
 1b. **`CHANGELOG.md` + `VERSION` — who bumps depends on whether this repo has the post-merge automation.** Check for `.github/workflows/post-merge-maintenance.yml` (paired with `scripts/bookkeeping.sh`):

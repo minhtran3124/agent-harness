@@ -186,8 +186,14 @@ differently:
   range — a gate that fires on correct code teaches people to ignore it. Current state: 7 runnable
   blocks checked, 10 illustrative skipped, 0 findings. CI installs shellcheck on macOS so the pass
   really runs there.
-- `finishing-a-development-branch` Gate 0b: the heterogeneous Codex review is now a **required**
-  merge gate for workflow-engine diffs, no longer "optional — reference only".
+- `finishing-a-development-branch`: for workflow-engine diffs, a review from outside this harness
+  is **recommended** at merge time and the reason is recorded — but it names **no vendor and
+  requires nothing**. An earlier revision of this branch made "the Codex review" a required merge
+  gate; that was reverted as a design error. The harness installs anywhere, so hard-coding one
+  vendor's bot into a deployed skill would hand every consumer a gate they cannot satisfy — the
+  same mistake `techstacks/` decoupling and xia2's zero-config rewrite already fixed elsewhere.
+  The portable half of the lesson is the lint: prefer a deterministic check you can ship over a
+  reviewer you cannot assume exists.
 
 Every guard added by this branch is mutation-checked. Reverting the tracked-`.claude` detection
 fails its case; widening the probe back fails 3 cases; deleting the skip notice fails 1.
