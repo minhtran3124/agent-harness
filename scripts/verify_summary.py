@@ -232,24 +232,37 @@ def _has_real_rollback(section: str) -> bool:
     return False
 
 
-def _sc_map_for_summary(summary_path: Path | None) -> dict[str, str]:
-    """Parse the SC table of the sibling PLAN.md, or {} when none applies."""
-    if summary_path is None:
+def _sc_map_for_summary(
+    summary_path: Path | None, plan_dir: Path | None = None
+) -> dict[str, str]:
+    """Parse the SC table of the sibling PLAN.md, or {} when none applies.
+
+    `plan_dir` overrides where PLAN.md is looked up. It is required when the SUMMARY
+    content is read from a staged/temp copy (e.g. `commit-quality-gate.sh` stages the
+    SUMMARY into a mktemp file) whose parent is NOT the real spec dir — without it,
+    `parent / PLAN.md` never resolves and SC coverage silently fail-opens.
+    """
+    if plan_dir is not None:
+        plan_path = Path(plan_dir) / "PLAN.md"
+    elif summary_path is not None:
+        plan_path = Path(summary_path).parent / "PLAN.md"
+    else:
         return {}
-    plan_path = Path(summary_path).parent / "PLAN.md"
     if not plan_path.is_file():
         return {}
     return parse_sc_table(plan_path.read_text(encoding="utf-8"))
 
 
-def _check_sc_coverage(text: str, summary_path: Path | None) -> list[str]:
+def _check_sc_coverage(
+    text: str, summary_path: Path | None, plan_dir: Path | None = None
+) -> list[str]:
     """Return SC-coverage errors when a sibling PLAN.md declares an SC table.
 
     Fail-open: no PLAN.md or no SC table → no checks. Otherwise every SC id must be
     named by ≥1 Verify row whose claimed exit matches the SC's expected exit; a
     Criterion naming an unknown SC id is an error (typo guard).
     """
-    sc_map = _sc_map_for_summary(summary_path)
+    sc_map = _sc_map_for_summary(summary_path, plan_dir)
     if not sc_map:
         return []
 
@@ -286,7 +299,9 @@ def _check_sc_coverage(text: str, summary_path: Path | None) -> list[str]:
     return errors
 
 
-def check_lane_evidence(text: str, summary_path: Path | None = None) -> list[str]:
+def check_lane_evidence(
+    text: str, summary_path: Path | None = None, plan_dir: Path | None = None
+) -> list[str]:
     """Return missing-evidence messages for the SUMMARY's declared lane."""
     errors: list[str] = []
     lane = _resolve_lane(text)
@@ -320,7 +335,7 @@ def check_lane_evidence(text: str, summary_path: Path | None = None) -> list[str
                 "template (`git revert <sha>`) -- write the real undo steps"
             )
 
-    errors += _check_sc_coverage(text, summary_path)
+    errors += _check_sc_coverage(text, summary_path, plan_dir)
 
     return errors
 
@@ -333,13 +348,15 @@ def _resolve_summary_path(target: str, specs_root: Path) -> Path:
     return specs_root / target / "SUMMARY.md"
 
 
-def _check_lane_targets(targets: list[str], specs_root: Path) -> int:
+def _check_lane_targets(
+    targets: list[str], specs_root: Path, plan_dir: Path | None = None
+) -> int:
     failed = False
     for target in targets:
         path = _resolve_summary_path(target, specs_root)
         if path.is_file():
             errors = check_lane_evidence(
-                path.read_text(encoding="utf-8"), summary_path=path
+                path.read_text(encoding="utf-8"), summary_path=path, plan_dir=plan_dir
             )
         else:
             errors = [f"{path}: not a file"]
@@ -512,6 +529,7 @@ def main(argv: list[str], specs_root: Path | None = None) -> int:
     parser.add_argument("targets", nargs="*")
     parser.add_argument("--check", action="store_true")
     parser.add_argument("--lane", action="store_true")
+    parser.add_argument("--plan-dir", default=None)
     parser.add_argument("--timeout", type=int, default=60)
     parser.add_argument("-h", "--help", action="store_true")
 
@@ -528,7 +546,8 @@ def main(argv: list[str], specs_root: Path | None = None) -> int:
         if args.check or not args.targets:
             print(__doc__, file=sys.stderr)
             return 2
-        return _check_lane_targets(args.targets, specs_root)
+        plan_dir = Path(args.plan_dir) if args.plan_dir else None
+        return _check_lane_targets(args.targets, specs_root, plan_dir=plan_dir)
 
     if len(args.targets) != 1:
         print(__doc__, file=sys.stderr)

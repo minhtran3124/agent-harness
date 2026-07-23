@@ -102,7 +102,10 @@ if [ -n "$EV_SLUGS" ]; then
       fi
       # Capture rather than stream: the script names the temp path, which would
       # be meaningless to the committer. Re-label it as the real SUMMARY.
-      if ! ev_out=$(python3 scripts/verify_summary.py --lane "$ev_tmp" 2>&1); then
+      # --plan-dir points SC-coverage at the real spec dir: the SUMMARY content is
+      # read from the mktemp copy, whose parent has no PLAN.md, so without this the
+      # sibling-PLAN.md lookup (and thus SC coverage) would silently fail-open.
+      if ! ev_out=$(python3 scripts/verify_summary.py --lane "$ev_tmp" --plan-dir "$slug_dir" 2>&1); then
         echo "${ev_out//$ev_tmp/$summary}" >&2
         EV_FAILED=1
       fi

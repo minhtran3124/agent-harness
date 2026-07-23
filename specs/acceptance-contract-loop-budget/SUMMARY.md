@@ -35,7 +35,9 @@ Two mechanisms, landed across 3 waves (branch `feature/acceptance-contract-loop-
 **Loop Budget**
 - `skills/correctness-review/SKILL.md` — replaced the unbounded "repeat until ✅" with `## Loop budget (cap + progress guard)`: cap 3 fix→re-review rounds/finding, diff-hash progress guard, mid-loop counter rule, escalation routing to ESCALATIONS.md.
 
-This SUMMARY is the first contract-enforced record — its `### Verify` table below proves all 6 SCs.
+Post-review follow-up (user-authorized): `scripts/verify_summary.py` gains a `--plan-dir` override and `hooks/commit-quality-gate.sh` uses it, so commit-time SC coverage no longer silently fail-opens on the staged/temp SUMMARY copy (Finding A). Contract extended with **SC-7**.
+
+This SUMMARY is the first contract-enforced record — its `### Verify` table below proves all 7 SCs.
 
 ### Rationale
 
@@ -50,12 +52,13 @@ The loop (implement → test → review → fix) lacked an objective feature-lev
 
 - Rule 3 — Added missing `import os` in `scripts/check_verify_rows.py`; `main()`'s PLAN.md/SUMMARY.md routing calls `os.path.basename` but the tests exercised `check_plan_text` directly, so the omission slipped past the pytest suite. Caught by running the linter on this spec's own PLAN.md. Commit `fb37f7e`.
 - Plan gap (context-propagation audit FAIL) — Tasks 2.2/2.3 edited only the SKILL.md prose ("quote SC rows into the reviewer prompt") but the reusable dispatch templates `spec-reviewer-prompt.md` / `intent-reviewer-prompt.md` (not in either task's Files set) had no SC slot, so delivery to the isolated reviewers was `assumed`. Added the SC input slots + a Method step to both templates. Commit `7b44342`. PLAN 2.2/2.3 Files were under-scoped.
+- Rule 4 (user-authorized) — Finding A fix touches a high-blast hook. Added a `--plan-dir` override to `scripts/verify_summary.py` (threaded through `_sc_map_for_summary`/`_check_sc_coverage`/`check_lane_evidence`/`_check_lane_targets`) and pointed `hooks/commit-quality-gate.sh` Check 1.6 at the real spec dir, so commit-time SC coverage no longer fail-opens on the mktemp copy. Out of the plan's `<files>` set (blast-radius flagged); user approved fixing in this branch. +2 tests (`test_plan_dir_override_*`). Added SC-7 to the contract.
 
 ### Review Findings (final-pass oracles over `main..HEAD`)
 
-- **B (fixed)** — reviewer-prompt templates lacked SC slots → context-propagation FAIL. Fixed in `7b44342` (see Deviations).
-- **A (open — needs decision, Rule 4 hook)** — `hooks/commit-quality-gate.sh` Check 1.6 runs `verify_summary.py --lane` against a `mktemp` copy of the staged SUMMARY, whose parent dir has no `PLAN.md`, so `_sc_map_for_summary` fail-opens and **SC coverage is never enforced at commit time**. The *designed* ship gate (`verify_summary.py --check <slug>`, task 2.2 handoff) resolves the real sibling PLAN.md and DOES enforce it, so the feature works as specified — but the plan Risk note's claim that "the commit gate enforces SC coverage on THIS spec" is false. Fix requires a hook edit (Rule 4 / high-blast) or a `--plan-dir` override on `verify_summary.py`. Corroborated independently by correctness-review #1 and the context-propagation audit #6.
-- **C (open — needs decision, ambiguous intent scope)** — The loop budget (cap + progress guard) was added only to `correctness-review`; the `intent-review` and per-task spec-reviewer fix-loops remain textually unbounded ("repeat until ✅"). Design deliberately scoped the budget to correctness-review's Rule 1–3 loop, but the verbatim request ("run test, review code ... hạn chế loop vô tận") reads as spanning all post-code review loops. Intent-review flagged this as a `gap` to surface, not silently resolve.
+- **B (FIXED)** — reviewer-prompt templates lacked SC slots → context-propagation FAIL. Fixed in `7b44342` (see Deviations).
+- **A (FIXED — user-authorized)** — `hooks/commit-quality-gate.sh` Check 1.6 ran `verify_summary.py --lane` against a `mktemp` copy whose parent had no `PLAN.md`, so `_sc_map_for_summary` fail-opened and SC coverage was never enforced at commit time. Fixed via the `--plan-dir` override (see Deviations); now enforced by SC-7. Corroborated by correctness-review #1 and context-propagation audit #6. The plan Risk note's "commit gate enforces SC coverage on THIS spec" claim is now true.
+- **C (RESOLVED — keep design scope)** — The loop budget was added only to `correctness-review`; `intent-review` and the spec-reviewer fix-loops stay textually unbounded. User confirmed the design-scoped decision: correctness-review held the literal unbounded "repeat until ✅" that motivated the request; the others are out of scope for this change. No code change.
 
 ### Verify
 
@@ -67,10 +70,12 @@ The loop (implement → test → review → fix) lacked an objective feature-lev
 | SC-4 SC-table lint | `python3 -m pytest scripts/test_check_verify_rows.py -q -k sc_table` | 0 | piped/whole-suite SC checks rejected at L1 | SC-4 |
 | SC-5 loop budget | `grep -q "Loop budget (cap + progress guard)" skills/correctness-review/SKILL.md` | 0 | cap+guard subsection present | SC-5 |
 | SC-6 rule schema | `grep -q "Success Criteria schema" rules/plan-format.md` | 0 | SC schema defined in the rule | SC-6 |
+| SC-7 commit-gate override | `python3 -m pytest scripts/test_verify_summary.py -q -k plan_dir` | 0 | --plan-dir enforces coverage on staged/temp copy | SC-7 |
 
 ### Rollback
 
-- `git revert <merge-sha>` (all changes are markdown/skill/template/script edits on one branch; no data or schema involved)
+- `git revert <merge-sha>` (all changes are markdown/skill/template/script edits on one branch; no data or schema involved).
+- The Rule-4 hook change (Finding A) is isolated in its own commit — revert just it with `git revert <finding-A-sha>` to drop the `--plan-dir` override + `hooks/commit-quality-gate.sh` edit while keeping the rest; SC-7 must be removed from PLAN §3 / SUMMARY in the same revert.
 
 ### Harness-Delta
 

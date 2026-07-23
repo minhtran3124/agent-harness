@@ -687,6 +687,42 @@ class TestScCoverage:
         write_plan(path, "# demo\n\n## 1. Motivation\n\nNo SC table here.\n")
         assert vs.check_lane_evidence(text, summary_path=path) == []
 
+    def test_plan_dir_override_enforces_sc_coverage(self, tmp_path):
+        # Reproduces the commit-gate scenario: the SUMMARY content is read from a
+        # detached copy (mktemp) whose parent has NO sibling PLAN.md. Without the
+        # plan_dir override SC coverage silently fail-opens; with it, the real spec
+        # dir's PLAN.md is consulted and the missing SC-2 is caught.
+        verify = "| c1 | `test 1 = 1` | 0 | ok | SC-1 |"
+        text, real_path = self._write(tmp_path, "cov-plandir", verify, SC_PLAN_TWO)
+
+        detached = tmp_path / "mktemp-copy"  # a path whose parent has no PLAN.md
+        detached.write_text(text, encoding="utf-8")
+
+        # Bug reproduction: parent has no PLAN.md → fail-open (no SC error).
+        assert vs.check_lane_evidence(text, summary_path=detached) == []
+        # Override: SC coverage is enforced against the real spec dir's PLAN.md.
+        errors = vs.check_lane_evidence(
+            text, summary_path=detached, plan_dir=real_path.parent
+        )
+        assert any("SC-2" in e for e in errors)
+
+    def test_plan_dir_override_via_lane_cli(self, tmp_path):
+        # The --lane CLI path threads --plan-dir through to SC coverage.
+        verify = "| c1 | `test 1 = 1` | 0 | ok | SC-1 |"
+        _text, real_path = self._write(tmp_path, "cli-plandir", verify, SC_PLAN_TWO)
+        detached = tmp_path / "mktemp-copy2"
+        detached.write_text(_text, encoding="utf-8")
+        # Without --plan-dir: fail-open → exit 0.
+        assert vs.main(["--lane", str(detached)], specs_root=tmp_path / "specs") == 0
+        # With --plan-dir pointing at the real spec dir: SC-2 uncovered → exit 1.
+        assert (
+            vs.main(
+                ["--lane", str(detached), "--plan-dir", str(real_path.parent)],
+                specs_root=tmp_path / "specs",
+            )
+            == 1
+        )
+
     def test_criterion_check_mode_actual_exit(self, tmp_path):
         # Well-formed: each criterion row actually exits its SC's expected code.
         verify = (

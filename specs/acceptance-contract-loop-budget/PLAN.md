@@ -82,6 +82,7 @@ correctness-review fix-loop is textually unbounded ("repeat until ✅"). Design:
 | SC-4 | The verify-row lint rejects a piped or whole-suite command inside a PLAN.md SC table | `python3 -m pytest scripts/test_check_verify_rows.py -q -k sc_table` | exit 0 |
 | SC-5 | correctness-review SKILL.md mechanizes the loop budget (cap 3 + progress guard + escalation routing) | `grep -q "Loop budget (cap + progress guard)" skills/correctness-review/SKILL.md` | exit 0 |
 | SC-6 | plan-format rule defines the SC table schema and its guardrails | `grep -q "Success Criteria schema" rules/plan-format.md` | exit 0 |
+| SC-7 | commit-gate `--plan-dir` override enforces SC coverage against the real spec dir (no fail-open when SUMMARY is read from a staged/temp copy) | `python3 -m pytest scripts/test_verify_summary.py -q -k plan_dir` | exit 0 |
 
 ## 4. Tasks
 
@@ -252,3 +253,4 @@ correctness-review fix-loop is textually unbounded ("repeat until ✅"). Design:
 
 - 2026-07-22 — plan written (design approved same day; spec review 2 rounds, approved).
 - 2026-07-22 — wave 1 shipped (`78db5a6`): tasks 1.1–1.4. wave 2 shipped (`fb37f7e`): tasks 2.1–2.4 (Rule-3 fix: missing `import os` in check_verify_rows.py). wave 3: full suite green (180 py + bash), SUMMARY dogfooded — all 6 SCs proven, `verify_summary.py --lane` passes under SC-coverage enforcement.
+- 2026-07-23 — final-pass review (correctness + intent + context-propagation). B fixed (`7b44342`): SC slots added to isolated reviewer templates. A fixed (user-authorized Rule-4 hook change): `--plan-dir` override so commit-gate SC coverage no longer fail-opens on the staged/temp copy — added **SC-7** (182+2 tests green). C resolved: loop budget stays correctness-review-scoped per design.
