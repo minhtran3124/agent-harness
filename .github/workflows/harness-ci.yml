@@ -17,6 +17,13 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4
+      # scripts/lint-skill-bash.sh degrades to syntax-only when shellcheck is missing, so the
+      # suite passes either way — but CI is where the shellcheck pass must actually run, or the
+      # gate is only as strong as whatever each contributor happens to have installed.
+      # ubuntu-latest ships it; macos-latest does not.
+      - name: Install shellcheck (macOS)
+        if: runner.os == 'macOS'
+        run: brew install shellcheck
       - name: Run harness test suite
         run: bash scripts/run-tests.sh
 

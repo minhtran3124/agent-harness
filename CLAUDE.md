@@ -27,7 +27,7 @@ Skipping a step the lane requires is a hard gate violation:
 ```
 feature-intake (classify → lane + confidence → route)
   → [brainstorming → xia2 →] writing-plans → using-git-worktrees
-  → subagent-driven-development (or executing-plans)
+  → subagent-driven-development (same session, or a parallel session — same skill)
   → correctness-review (final adversarial pass — also invokable standalone on any diff)
   → intent-review (diff ↔ original request, blind to plan — the third oracle)
   → compound → finishing-a-development-branch

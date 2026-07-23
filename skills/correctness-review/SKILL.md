@@ -180,7 +180,6 @@ standalone use). A finding with neither is a hard block — do not report succes
   checklist. The `enclosing-function`, `removed-behavior`, `call-site-impact`, and
   `guard-completeness` angles all come from reading its source. Its recall-biased verdict ladder we
   deliberately did not take — see the SCORE callout above.
-- **`/review-diff`:** visualizes what changed (C4 diagrams + walkthrough). Not a correctness pass.
 - **`subagent-driven-development`:** calls this skill as its final adversarial gate. Invoking
   `/correctness-review` standalone runs the exact same pipeline without the rest of the workflow.
 

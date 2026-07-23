@@ -106,9 +106,27 @@ has no review chain to pin.
 > if any **non-`specs/`** change slipped in after review, that re-check fails and blocks the push,
 > which is exactly the stale-review protection working.
 
-For high-risk **workflow-engine** changes (`harness-manifest.json` → `workflow-engine`), the existing
-heterogeneous Codex PR review remains an optional post-push merge requirement — reference only, run on
-the PR after push; nothing is mirrored locally (per the non-goals).
+**Recommended for workflow-engine diffs: a review from outside this harness.** When the
+`<base>..HEAD` diff touches the `workflow-engine` surface (`harness-manifest.json` →
+`workflow-engine`), the change is worth one more pass by a reviewer that is **not** dispatched by
+this harness — whatever your project already uses: a PR review bot, a required human reviewer, or
+another agent with its own prompts. Detect what the project has; the harness assumes none and
+requires none. This is a **merge**-time suggestion, never a push gate: nothing here blocks, and
+nothing is mirrored locally.
+
+**Why it is worth the wait.** The three local oracles (`/correctness-review`, `/intent-review`,
+`/context-propagation-audit`) can run on different models and still share one *reading frame* —
+they are dispatched by this harness, with its prompts, and they read a `SKILL.md` as policy prose.
+On PR #158 all three passed a diff in which trimming `using-git-worktrees` had deleted the line
+assigning `path=` while a later step still ran `deploy-harness.sh --target "$path"`; every route
+reached it unset, so a fresh worktree silently got no `.claude/`. The external reviewer caught it
+by reading the same file as **code**. Model diversity does not produce that — a different frame
+does, and a reviewer outside the lineage is the cheapest source of one.
+
+That specific class is now caught mechanically by `scripts/lint-skill-bash.sh`, which is the
+portable half of the lesson: prefer a deterministic check you can ship over a reviewer you cannot
+assume exists. A lint only covers the frame gap you already found, so an outside pass still earns
+its keep where one is available.
 
 1. **Mark the plan shipped** — run Step 4. This updates `specs/<slug>/PLAN.md`, which is **tracked** in git, so stage and commit the status change with the work (it lands in the branch/PR). If no plan matches, skip silently.
 1b. **`CHANGELOG.md` + `VERSION` — who bumps depends on whether this repo has the post-merge automation.** Check for `.github/workflows/post-merge-maintenance.yml` (paired with `scripts/bookkeeping.sh`):
@@ -120,9 +138,47 @@ the PR after push; nothing is mirrored locally (per the non-goals).
    immediately before pushing — it passes if the only advance since review is the `specs/`-only
    shipped commit, and blocks if unreviewed code slipped in. Then push:
    `git push -u github <current_branch>`.
-3. Invoke the **create-pr** skill to generate `.pr-body.md`.
-4. Create the PR with `gh pr create` against `<base_branch>`, using the generated template content for the body.
+3. Write the PR body to `.pr-body.md` (gitignored) using the template below.
+4. Create the PR with `gh pr create` against `<base_branch>`, using that file as the body.
 5. Return the PR URL to the user. **Stop here** — do not merge.
+
+#### PR body template
+
+Gather context first: `git log <base>...HEAD --oneline` and `git diff <base>...HEAD --stat`.
+
+````markdown
+## Title
+
+type: short description  <!-- feat | fix | refactor | chore | docs | test | perf — max 72 chars -->
+
+## Summary
+
+[2–4 sentences a reviewer reads in ~10 seconds to understand the change without opening the
+diff. Lead with the behavioral delta and why it matters, as before → after. Not diff narration.]
+
+## Tasks
+
+- [One clear line per task. No implementation detail.]
+
+## Diagram
+
+<!-- Include ONLY when the change is flow-shaped — a multi-step process, state machine, or
+     request/data flow — or the linked ticket/spec is itself about a flow or already has a
+     diagram. Otherwise delete this whole section; never force a diagram onto a change that
+     does not have a shape. -->
+
+```mermaid
+flowchart LR
+    A[Before] --> B[After]
+```
+
+## Notes
+
+[Only what a reviewer must be flagged about: breaking changes, migration steps, follow-ups,
+known limitations. Delete the section if nothing rises to that bar.]
+````
+
+Do not restate the file list or explain the code line by line — the diff view already shows both.
 
 If a PR already exists for this branch, push the new commits and report the existing PR URL instead of creating a duplicate.
 
@@ -184,10 +240,6 @@ Stage and commit this edit — `specs/` is tracked, so the status update lands i
 - Set the matching plan's `status: shipped` using only canonical status values, and commit it (`specs/` is tracked, so the transition is committed with the work)
 
 ## Integration
-
-### Skills
-
-- **create-pr** skill — creates a PR template and fills it with the current branch
 
 ### Sub Agents
 

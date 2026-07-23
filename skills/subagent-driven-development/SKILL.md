@@ -13,33 +13,41 @@ Execute plan by dispatching fresh subagent per task, with two-stage review after
 
 ## When to Use
 
-```dot
-digraph when_to_use {
-    "Have implementation plan?" [shape=diamond];
-    "Tasks mostly independent?" [shape=diamond];
-    "Stay in this session?" [shape=diamond];
-    "subagent-driven-development" [shape=box];
-    "executing-plans" [shape=box];
-    "Manual execution or brainstorm first" [shape=box];
+Use this skill when a written plan exists and its tasks are mostly independent. Tightly coupled
+tasks are a planning problem — re-plan the waves before executing. With no plan at all, go back to
+`writing-plans` (or `brainstorming` if the design is not settled).
 
-    "Have implementation plan?" -> "Tasks mostly independent?" [label="yes"];
-    "Have implementation plan?" -> "Manual execution or brainstorm first" [label="no"];
-    "Tasks mostly independent?" -> "Stay in this session?" [label="yes"];
-    "Tasks mostly independent?" -> "Manual execution or brainstorm first" [label="no - tightly coupled"];
-    "Stay in this session?" -> "subagent-driven-development" [label="yes"];
-    "Stay in this session?" -> "executing-plans" [label="no - parallel session"];
-}
-```
+The same pipeline serves both execution modes — see `## Parallel session` below for the
+separate-session variant.
 
-**vs. Executing Plans (parallel session):**
-- Same session (no context switch)
-- Fresh subagent per task (no context pollution)
-- Two-stage review after each task: spec compliance first, then code quality
-- Faster iteration (no human-in-loop between tasks)
+## Step 0 — Validate the plan before any implementation
+
+**Gate. Run these four checks BEFORE the first task. If any fails, STOP, name the specific
+violation, and do not execute.** Read `.claude/rules/plan-format.md`,
+`.claude/rules/wave-parallelism.md`, and `.claude/rules/auto-correct-scope.md` first — they are
+path-scoped, so do not rely on `paths:` injection to have loaded them.
+
+1. **Required fields populated.** Every task has all four non-empty: Files, Action, Verify, Done.
+   A `### Task` heading with no field bullets is prose, not a task — but a Tasks section with no
+   parseable task at all is a violation. Legacy fenced `<task>` XML blocks carry the same four
+   semantics and remain executable: reject a plan for missing semantics, never for its syntax.
+2. **Zero file overlap across same-wave tasks** (`wave-parallelism.md` Invariant 1). Name the task
+   ids and the overlapping path.
+3. **Verify is a single automated shell command**, exit-code-checkable. Reject "manually test in
+   browser", "open and check", "visually inspect".
+4. **Plan scope matches the trigger threshold** — >3 discrete steps OR >2 files OR ETA >30 min.
+   Below all three, stop and suggest a direct edit instead.
+
+Then read the plan for **substantive** concerns and raise them before marking it `active`. The
+four checks above are mechanical: a plan can satisfy every one of them and still be wrong —
+missing a migration its tasks depend on, sequencing waves against a real dependency, solving the
+wrong problem. Surfacing that after wave 1 has burned a task is strictly worse than surfacing it
+now. If the approach itself looks wrong, say so and wait; the `BLOCKED` ladder below is the
+recovery path, not the intended one.
 
 ## The Process
 
-**Step 0 — Load rules and ensure branch isolation.** Read the path-scoped
+**Step 1 — Load rules and ensure branch isolation.** Read the path-scoped
 `.claude/rules/auto-correct-scope.md` and `.claude/rules/wave-parallelism.md`, then apply
 `auto-correct-scope.md` → Branch isolation before dispatching wave 1. Do not proceed until work is
 on the lane-appropriate dedicated branch. Keep the auto-correct rule path in every implementer
@@ -52,72 +60,27 @@ identify the active plan, and the edit auto-re-renders `PLAN.html` via `render-p
 Append commit shas to `## Status Log` after each wave (`rules/wave-parallelism.md`); the `shipped`
 transition happens later in `finishing-a-development-branch`.
 
-```dot
-digraph process {
-    rankdir=TB;
+**Step 2 — Per task, in order.** For each task in the current wave:
 
-    subgraph cluster_per_task {
-        label="Per Task";
-        "Dispatch implementer subagent (./implementer-prompt.md)" [shape=box];
-        "Implementer subagent asks questions?" [shape=diamond];
-        "Answer questions, provide context" [shape=box];
-        "Implementer subagent implements, tests, self-reviews" [shape=box];
-        "Dispatch spec reviewer subagent (./spec-reviewer-prompt.md)" [shape=box];
-        "Spec reviewer subagent confirms code matches spec?" [shape=diamond];
-        "Implementer subagent fixes spec gaps" [shape=box];
-        "Dispatch code quality reviewer subagent (./code-quality-reviewer-prompt.md)" [shape=box];
-        "Code quality reviewer subagent approves?" [shape=diamond];
-        "Implementer subagent fixes quality issues" [shape=box];
-        "Mark task complete in TodoWrite" [shape=box];
-    }
+1. **Dispatch the implementer** (`./implementer-prompt.md`) with the task's **full text** —
+   the controller extracts every task from the plan up front and pastes what the subagent needs.
+   A subagent must never be told to go read `PLAN.md` itself: it gets exactly the constructed
+   context, and nothing of the orchestrator's session history.
+2. **Answer its questions before it works.** If it asks, answer completely and re-dispatch; do
+   not rush it into implementing on a guess.
+3. **Spec compliance review** (`./spec-reviewer-prompt.md`) — does the code match the task spec,
+   with nothing missing and nothing extra? Issues → the same implementer fixes → re-review.
+4. **Code quality review** (`./code-quality-reviewer-prompt.md`) — **only after spec compliance
+   is green.** Running quality first is the wrong order: it polishes code that may not yet be the
+   right code. Issues → fix → re-review.
+5. **Mark the task complete** and move on. Never advance while either review has an open issue.
 
-    "Read plan, extract all tasks with full text, note context, create TodoWrite" [shape=box];
-    "More tasks remain?" [shape=diamond];
-    "Diff touches workflow-engine inventory?" [shape=diamond];
-    "Run /context-propagation-audit" [shape=box];
-    "Audit passes?" [shape=diamond];
-    "Fix delivery / escalate per routing" [shape=box];
-    "Run /correctness-review over entire diff" [shape=box];
-    "Correctness reviewer finds bugs?" [shape=diamond];
-    "Implementer subagent fixes correctness bugs" [shape=box];
-    "Run /intent-review (oracle: SUMMARY ### Intent + design.md; blind to PLAN)" [shape=box];
-    "Intent findings?" [shape=diamond];
-    "Implementer fixes gaps / escalate per routing" [shape=box];
-    "Use finishing-a-development-branch" [shape=box style=filled fillcolor=lightgreen];
+**Step 3 — After all tasks pass, run the final chain over the whole diff, in this order:**
+`/context-propagation-audit` (only if the cumulative diff touches the workflow-engine inventory)
+→ `/correctness-review` → `/intent-review` → write the review receipt →
+`finishing-a-development-branch`. Each stage below owns its own contract; an unresolved finding at
+any stage blocks the next.
 
-    "Read plan, extract all tasks with full text, note context, create TodoWrite" -> "Dispatch implementer subagent (./implementer-prompt.md)";
-    "Dispatch implementer subagent (./implementer-prompt.md)" -> "Implementer subagent asks questions?";
-    "Implementer subagent asks questions?" -> "Answer questions, provide context" [label="yes"];
-    "Answer questions, provide context" -> "Dispatch implementer subagent (./implementer-prompt.md)";
-    "Implementer subagent asks questions?" -> "Implementer subagent implements, tests, self-reviews" [label="no"];
-    "Implementer subagent implements, tests, self-reviews" -> "Dispatch spec reviewer subagent (./spec-reviewer-prompt.md)";
-    "Dispatch spec reviewer subagent (./spec-reviewer-prompt.md)" -> "Spec reviewer subagent confirms code matches spec?";
-    "Spec reviewer subagent confirms code matches spec?" -> "Implementer subagent fixes spec gaps" [label="no"];
-    "Implementer subagent fixes spec gaps" -> "Dispatch spec reviewer subagent (./spec-reviewer-prompt.md)" [label="re-review"];
-    "Spec reviewer subagent confirms code matches spec?" -> "Dispatch code quality reviewer subagent (./code-quality-reviewer-prompt.md)" [label="yes"];
-    "Dispatch code quality reviewer subagent (./code-quality-reviewer-prompt.md)" -> "Code quality reviewer subagent approves?";
-    "Code quality reviewer subagent approves?" -> "Implementer subagent fixes quality issues" [label="no"];
-    "Implementer subagent fixes quality issues" -> "Dispatch code quality reviewer subagent (./code-quality-reviewer-prompt.md)" [label="re-review"];
-    "Code quality reviewer subagent approves?" -> "Mark task complete in TodoWrite" [label="yes"];
-    "Mark task complete in TodoWrite" -> "More tasks remain?";
-    "More tasks remain?" -> "Dispatch implementer subagent (./implementer-prompt.md)" [label="yes"];
-    "More tasks remain?" -> "Diff touches workflow-engine inventory?" [label="no"];
-    "Diff touches workflow-engine inventory?" -> "Run /context-propagation-audit" [label="yes"];
-    "Diff touches workflow-engine inventory?" -> "Run /correctness-review over entire diff" [label="no"];
-    "Run /context-propagation-audit" -> "Audit passes?";
-    "Audit passes?" -> "Run /correctness-review over entire diff" [label="yes"];
-    "Audit passes?" -> "Fix delivery / escalate per routing" [label="no"];
-    "Fix delivery / escalate per routing" -> "Run /context-propagation-audit" [label="re-audit"];
-    "Run /correctness-review over entire diff" -> "Correctness reviewer finds bugs?";
-    "Correctness reviewer finds bugs?" -> "Implementer subagent fixes correctness bugs" [label="yes"];
-    "Implementer subagent fixes correctness bugs" -> "Run /correctness-review over entire diff" [label="re-review"];
-    "Correctness reviewer finds bugs?" -> "Run /intent-review (oracle: SUMMARY ### Intent + design.md; blind to PLAN)" [label="no"];
-    "Run /intent-review (oracle: SUMMARY ### Intent + design.md; blind to PLAN)" -> "Intent findings?";
-    "Intent findings?" -> "Implementer fixes gaps / escalate per routing" [label="yes"];
-    "Implementer fixes gaps / escalate per routing" -> "Run /intent-review (oracle: SUMMARY ### Intent + design.md; blind to PLAN)" [label="re-review"];
-    "Intent findings?" -> "Use finishing-a-development-branch" [label="no"];
-}
-```
 
 ## Wave-aware parallelism policy
 
@@ -181,6 +144,8 @@ or the change is escalated.
 After every task's spec + quality review passes, run **one** adversarial correctness review over
 the entire implementation diff before handing off to `finishing-a-development-branch`. This pass
 **is the `/correctness-review` skill — delegate to it; do not re-implement the pipeline here.**
+Dispatch it with a **different model than the implementer** — running it with the model that wrote
+the code defeats the ensemble diversity the pass depends on.
 
 **Range to pass:** `BASE` = commit before task 1, `HEAD` = current commit after all tasks, plus the
 list of touched files. `/correctness-review` then runs its own pipeline —
@@ -305,169 +270,22 @@ per `auto-correct-scope.md` → Reporting.
 - Final adversarial correctness pass - delegated to `/correctness-review` (see `skills/correctness-review/`); its `correctness-{reviewer,scorer}-prompt.md` live there, not here.
 - Final intent review - delegated to `/intent-review` (see `skills/intent-review/`); its `intent-reviewer-prompt.md` lives there, not here.
 
-## Example Workflow
+## Parallel session
 
-```
-You: I'm using Subagent-Driven Development to execute this plan.
+The plan can also be executed from a **separate session** — open one in the worktree and run this
+same skill there. Everything above still applies: the Step-0 four-check gate, branch isolation,
+`status: active`, and the full `/context-propagation-audit` → `/correctness-review` →
+`/intent-review` → receipt chain. Running in another session never buys fewer gates.
 
-[Read plan file once: docs/superpowers/plans/feature-plan.md]
-[Extract all 5 tasks with full text and context]
-[Create TodoWrite with all tasks]
+What changes is only the granularity of control. In a separate session there is no orchestrator
+watching each task, so execute in **batches with a checkpoint between them**: run a batch, report
+what landed and what verified, and wait before starting the next. Per-task subagent dispatch is
+optional there — the controller may implement tasks directly, provided each task's `Verify`
+command still runs and passes before the task is marked complete.
 
-Task 1: Hook installation script
-
-[Get Task 1 text and context (already extracted)]
-[Dispatch implementation subagent with full task text + context]
-
-Implementer: "Before I begin - should the hook be installed at user or system level?"
-
-You: "User level (~/.config/superpowers/hooks/)"
-
-Implementer: "Got it. Implementing now..."
-[Later] Implementer:
-  - Implemented install-hook command
-  - Added tests, 5/5 passing
-  - Self-review: Found I missed --force flag, added it
-  - Committed
-
-[Dispatch spec compliance reviewer]
-Spec reviewer: ✅ Spec compliant - all requirements met, nothing extra
-
-[Get git SHAs, dispatch code quality reviewer]
-Code reviewer: Strengths: Good test coverage, clean. Issues: None. Approved.
-
-[Mark Task 1 complete]
-
-Task 2: Recovery modes
-
-[Get Task 2 text and context (already extracted)]
-[Dispatch implementation subagent with full task text + context]
-
-Implementer: [No questions, proceeds]
-Implementer:
-  - Added verify/repair modes
-  - 8/8 tests passing
-  - Self-review: All good
-  - Committed
-
-[Dispatch spec compliance reviewer]
-Spec reviewer: ❌ Issues:
-  - Missing: Progress reporting (spec says "report every 100 items")
-  - Extra: Added --json flag (not requested)
-
-[Implementer fixes issues]
-Implementer: Removed --json flag, added progress reporting
-
-[Spec reviewer reviews again]
-Spec reviewer: ✅ Spec compliant now
-
-[Dispatch code quality reviewer]
-Code reviewer: Strengths: Solid. Issues (Important): Magic number (100)
-
-[Implementer fixes]
-Implementer: Extracted PROGRESS_INTERVAL constant
-
-[Code reviewer reviews again]
-Code reviewer: ✅ Approved
-
-[Mark Task 2 complete]
-
-...
-
-[After all tasks — final adversarial correctness review over the whole diff]
-[Run /correctness-review over the whole diff (BASE = before task 1, HEAD = now)]
-Correctness reviewer: 🐛 P1 / Rule 1 — app/services/trade_log_service.py:42
-  Trigger: get_recent() called for a user with zero logs
-  Wrong outcome: returns None, router does len(None) → 500
-  Fix: return [] when query yields nothing
-
-[Implementer fixes: return empty list]
-[Re-dispatch correctness reviewer]
-Correctness reviewer: ✅ No correctness defects found. Paths traced:
-  create_entry happy + invalid trade_type, get_recent empty + populated, soft-deleted filter
-
-[After correctness — final intent review against the original request]
-[Run /intent-review over the whole diff (oracle: SUMMARY ### Intent; blind to PLAN; fresh subagent)]
-Intent reviewer: ⚠️ Intent findings: 1
-  gap — request said "and email the user a receipt"; no email path in the diff. Route: fix-loop.
-
-[Implementer adds the receipt email; re-dispatch intent reviewer]
-Intent reviewer: ✅ No intent divergence. Intent clauses checked: log the trade, return recent, email receipt.
-
-[Hand off to finishing-a-development-branch]
-
-Done!
-```
-
-## Advantages
-
-**vs. Manual execution:**
-- Subagents follow TDD naturally
-- Fresh context per task (no confusion)
-- Parallel-safe (subagents don't interfere)
-- Subagent can ask questions (before AND during work)
-
-**vs. Executing Plans:**
-- Same session (no handoff)
-- Continuous progress (no waiting)
-- Review checkpoints automatic
-
-**Efficiency gains:**
-- No file reading overhead (controller provides full text)
-- Controller curates exactly what context is needed
-- Subagent gets complete information upfront
-- Questions surfaced before work begins (not after)
-
-**Quality gates:**
-- Self-review catches issues before handoff
-- Two-stage review: spec compliance, then code quality
-- Review loops ensure fixes actually work
-- Spec compliance prevents over/under-building
-- Code quality ensures implementation is well-built
-- Final adversarial correctness review catches runtime bugs the plan-anchored reviewers miss (different model, whole diff)
-
-**Cost:**
-- More subagent invocations (implementer + 2 reviewers per task)
-- Controller does more prep work (extracting all tasks upfront)
-- Review loops add iterations
-- But catches issues early (cheaper than debugging later)
-
-## Red Flags
-
-**Never:**
-- Start implementation on main/master branch without explicit user consent
-- Skip reviews (spec compliance OR code quality)
-- Proceed with unfixed issues
-- Dispatch implementation subagents in parallel when file overlap or unresolved dependencies exist
-- Make subagent read plan file (provide full text instead)
-- Skip scene-setting context (subagent needs to understand where task fits)
-- Ignore subagent questions (answer before letting them proceed)
-- Accept "close enough" on spec compliance (spec reviewer found issues = not done)
-- Skip review loops (reviewer found issues = implementer fixes = review again)
-- Let implementer self-review replace actual review (both are needed)
-- **Start code quality review before spec compliance is ✅** (wrong order)
-- Move to next task while either review has open issues
-- **Skip the final adversarial correctness review, or hand off to `finishing-a-development-branch` with open correctness bugs** (this is the gate that catches runtime bugs the spec/quality reviewers miss)
-- Run the final correctness review with the same model as the implementer (defeats ensemble diversity)
-- **Skip the intent review, or hand off with unrouted intent findings** (this is the gate that catches "passed the plan and tests but not what the user asked for")
-- Run the intent review with the implementer's context (it must be a fresh subagent, blind to PLAN.md — otherwise it re-confirms the plan's possible misreading of intent)
-- **Hand off with a stale review receipt** — a fix commit after the receipt is written invalidates it (`reviewed_head_sha != HEAD`); re-run the affected review and re-write the receipt before handoff, never hand-edit the sha
-- **Ship with an SC lacking a passing `Criterion` row** — the ship gate requires `verify_summary.py --check <slug>` to pass *including SC coverage*; an uncovered Success Criterion blocks handoff even when the receipt is green
-
-**If subagent asks questions:**
-- Answer clearly and completely
-- Provide additional context if needed
-- Don't rush them into implementation
-
-**If reviewer finds issues:**
-- Implementer (same subagent) fixes them
-- Reviewer reviews again
-- Repeat until approved
-- Don't skip the re-review
-
-**If subagent fails task:**
-- Dispatch fix subagent with specific instructions
-- Don't try to fix manually (context pollution)
+**Stop and ask** — in either mode — when a blocker appears mid-batch (missing dependency, an
+instruction you do not understand, a `Verify` that fails repeatedly), or when the plan has a gap
+that prevents starting. Do not force through a blocker on a guess.
 
 ## Integration
 
@@ -479,6 +297,3 @@ Done!
 
 **Subagents should use:**
 - **superpowers:test-driven-development** - Subagents follow TDD for each task (external)
-
-**Alternative workflow:**
-- **executing-plans** - Use for parallel session instead of same-session execution

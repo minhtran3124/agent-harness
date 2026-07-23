@@ -224,9 +224,61 @@ bash "$SRC/scripts/deploy-harness.sh" "${DEPLOY_ARGS[@]}"
 # Safe by construction: it only writes a structural file when its destination is absent.
 if [ "$DRY_RUN" -eq 1 ]; then
   info "Would scaffold specs/, docs/solutions/ (create-if-missing)"
+  info "Would ensure .gitignore lists .claude/"
 else
   printf '\n'
   bash "$SRC/scripts/init-structure.sh" --root "$TARGET_DIR"
+fi
+
+# ---------- ensure .claude/ is gitignored (append-only; never rewrites the file) ----------
+# .claude/ is a derived artifact — it is rebuilt from source on every deploy, so committing it
+# is wrong. It also carries .py files (visual-planner), and an untracked .py denies every commit
+# via hooks/check-untracked-py.sh. Without this line a fresh consumer installs the harness and
+# then cannot commit at all. Append only when the pattern is absent; never touch existing lines.
+#
+# Three things this must NOT do, each found by review:
+#   1. Ignore a .claude/ the consumer already TRACKS. Some projects deliberately commit
+#      .claude/ to share settings with their team. Appending the pattern there would hide the
+#      ~90 files the deploy just wrote — git keeps showing only the already-tracked ones, and
+#      the developer pushes a half-updated harness with no warning. Detect and skip.
+#   2. Override a deliberate .claude-scoped rule. `.claude/*` + `!.claude/settings.json` is a
+#      common shape; neither line matches an anchored `.claude/?` pattern, so a naive guard
+#      appends `.claude/` — which excludes the DIRECTORY, making the negation unreachable
+#      (git cannot re-include a file whose parent dir is excluded). Any line mentioning
+#      .claude means the consumer already decided. Skip.
+#   3. Abort the install. This is a convenience step running after the deploy already
+#      succeeded; a read-only or directory .gitignore must not kill the script under
+#      `set -euo pipefail` and swallow the success banner. Bound the whole block.
+if [ "$DRY_RUN" -eq 0 ]; then
+  GI="$TARGET_DIR/.gitignore"
+  gi_skip=""
+  if git -C "$TARGET_DIR" ls-files --error-unmatch -- .claude >/dev/null 2>&1; then
+    gi_skip="tracked"
+  elif [ -f "$GI" ] && gi_line=$(grep -nE '^[[:space:]]*!?/?\.claude(/\*?)?[[:space:]]*$' "$GI" 2>/dev/null | head -1) \
+       && [ -n "$gi_line" ]; then
+    gi_skip="declared"
+  fi
+  # The "declared" probe must match only DIRECTORY-scoped rules — `.claude`, `.claude/`,
+  # `.claude/*`, with an optional `/` or `!` prefix — and nothing else. A looser pattern
+  # matched a comment (`# .claude/ is intentionally not ignored`) and a narrow per-file rule
+  # (`.claude/settings.local.json`), so the installer skipped and silently restored the exact
+  # bug this block exists to fix. Anchoring to end-of-line rejects both; `^…#` can never match.
+  if [ -n "$gi_skip" ]; then
+    if [ "$gi_skip" = "tracked" ]; then
+      warn ".claude/ is tracked in this repo — leaving .gitignore alone."
+      warn "  The deploy wrote files into a tracked tree; review 'git status' before committing."
+    else
+      # Never skip silently: a skipped step and a successful one must not look identical.
+      info ".gitignore already scopes .claude (line ${gi_line%%:*}: ${gi_line#*:}) — left as is."
+    fi
+  elif ! {
+        { [ ! -s "$GI" ] || [ -z "$(tail -c 1 "$GI" 2>/dev/null)" ] || printf '\n' >> "$GI"; } &&
+        printf '# Harness: .claude/ is derived — rebuilt by deploy-harness.sh on every sync\n.claude/\n' >> "$GI"
+      } 2>/dev/null; then
+    warn "could not update .gitignore — add '.claude/' to it manually."
+  elif [ -z "$gi_skip" ]; then
+    ok ".gitignore now lists .claude/"
+  fi
 fi
 
 # ---------- optional: keep a copy of the sources in the target ----------

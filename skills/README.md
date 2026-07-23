@@ -38,8 +38,7 @@ scripts/init-structure.sh  (first-time repo setup only)
 /using-git-worktrees
   → creates isolated worktree + branch
       ↓
-/subagent-driven-development        ← same session
-  OR /executing-plans               ← parallel session
+/subagent-driven-development        ← same session, or a parallel session in the worktree
   → implements plan task-by-task
   → two-stage review per task (spec compliance → code quality)
   → final adversarial correctness review (/correctness-review) over the whole diff before shipping
@@ -109,8 +108,7 @@ No skill covers first-time setup — it is a script: `bash scripts/init-structur
 | Skill | Trigger | Output |
 |---|---|---|
 | `/using-git-worktrees` | Before starting feature work needing isolation | Isolated worktree + branch |
-| `/subagent-driven-development` | Executing a plan in the current session (fresh subagent per task) | Implemented tasks, two-stage reviewed per task + final adversarial correctness review (delegates to `/correctness-review`) |
-| `/executing-plans` | Executing a plan in a separate parallel session (checkpoint-based) | Same as above |
+| `/subagent-driven-development` | Executing a plan — fresh subagent per task in this session, or the same skill run from a parallel session (batch + checkpoint). Same gates either way | Implemented tasks, two-stage reviewed per task + final adversarial correctness review (delegates to `/correctness-review`) |
 
 ### Review & Shipping
 
@@ -119,9 +117,7 @@ No skill covers first-time setup — it is a script: `bash scripts/init-structur
 | `/correctness-review` | After implementation — adversarial runtime-bug search over a diff, run as **6 parallel angles**, each named for its method (`enclosing-function` · `removed-behavior` · `call-site-impact` · `stack-defects` · `guard-completeness` · `prior-art`). **Standalone** (any diff, no workflow gate) or called by `/subagent-driven-development` as its final pass. Context-propagation defects (a load-bearing instruction never delivered to an isolated context) are **not** its province — they belong to `/context-propagation-audit`, not this bug hunt | Candidates deduped by location → scored (0–100, threshold 75) → classified (Severity + Rule class) → fixes, escalations, or advisory |
 | `/context-propagation-audit` | **change-triggered** — Change-triggered consumer audit for workflow-as-code changes: enumerates every consumer + execution context (main / implementer / reviewer / scorer / new session) and proves how each receives the authoritative instruction; assumed/unconfirmed delivery on a load-bearing instruction FAILS. Runs only when the diff touches the workflow-engine inventory. Not a bug hunt (`/correctness-review`) or intent check (`/intent-review`) | PASS/FAIL per consumer → assumed delivery on a load-bearing instruction FAILS → fix (prove delivery) or escalate |
 | `/intent-review` | After correctness-review — checks the diff against the original request verbatim, blind to PLAN (the third oracle). **Standalone** on any diff that has an intent statement, or called by `/subagent-driven-development` as its last pass | Findings classified `gap` / `excess` / `drift` → fix-loop · escalate · report-only |
-| `/review-diff` | After implementation — visualize what changed | Markdown review with C4 diagrams |
 | `/compound` | After session with non-obvious bug fix, pattern, or architectural decision | `docs/solutions/<category>/<slug>.md` |
-| `/create-pr` | When only a PR description is needed | `.pr-body.md` |
 | `/finishing-a-development-branch` | Implementation complete, tests pass | Runs tests, pushes, opens a PR (never merges) |
 
 ---
@@ -179,14 +175,10 @@ that proves the run.
 /xia2                       ──► research brief → user/skill decides next step
 /writing-plans              ──► (PLAN.html auto-rendered by hook) → /using-git-worktrees
                                 → /subagent-driven-development
-                                OR /executing-plans (parallel session)
 /visual-planner             ──► PLAN.html (terminal — visual artifact; back to writing-plans handoff)
 /subagent-driven-development ──► /correctness-review → /intent-review (final passes) → /compound → /finishing-a-development-branch
-/executing-plans            ──► same terminal chain as /subagent-driven-development
 /correctness-review         ──► (standalone — runs the same pipeline ad-hoc on any diff; no gate)
 /intent-review              ──► (standalone — same pipeline; needs ### Intent in SUMMARY or intent provided by the user)
-/review-diff                ──► .review/review.md (terminal — visualization only, not a gate)
-/create-pr                  ──► .pr-body.md (terminal — description only; never pushes or opens a PR)
 /systematic-debugging       ──► fix → /compound
 /compound                   ──► nothing (terminal — crystallization is end state)
 /finishing-a-development-branch ──► nothing (terminal — shipped)
