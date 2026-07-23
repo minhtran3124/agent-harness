@@ -11,13 +11,17 @@ name: post-merge-maintenance
 on:
   pull_request_target:
     types: [closed]
-    # Keep this list to the branch(es) PRs are actually merged into. History: the list
-    # was [v2] while v2 was the working branch and main lacked scripts/bookkeeping.sh
-    # (PR #44 crashed on that gap; PR #36 added the file to main only to register
-    # pull_request_target). After the v2 → main promotion (VERSION 2.0.0) PRs merge to
-    # main, which now carries the full toolchain — the stale [v2] list silently skipped
-    # PRs #66/#68/#69/#70 (found by the 2026-07-16 over-engineering review, C3).
-    branches: [main, v3]  # v3 = integration/staging branch (2026-07-17); PRs merge here first
+    # Keep this list to the branch(es) PRs are actually merged into. THIS LIST ROTS
+    # SILENTLY: a PR merged into a branch that is missing here fires nothing — no
+    # bookkeeping PR, no error, no signal. Whenever the integration branch is renamed
+    # or replaced, update this list in the SAME change.
+    # History: [v2] while v2 was the working branch (main then lacked
+    # scripts/bookkeeping.sh — PR #44 crashed on that gap; PR #36 added it to main only
+    # to register pull_request_target). After the v2 → main promotion the stale [v2]
+    # silently skipped PRs #66/#68/#69/#70 (2026-07-16 over-engineering review, C3).
+    # Then [main, v3] outlived v3 — which no longer exists on the remote — and silently
+    # skipped PR #160, merged into `loop` (2026-07-23).
+    branches: [main, loop]  # loop = integration/staging branch (2026-07-23); PRs merge here first
 
 permissions:
   contents: write
