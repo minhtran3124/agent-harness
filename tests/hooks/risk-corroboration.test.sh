@@ -162,4 +162,58 @@ stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_contains 2 "workflow-engine"
 
+# ── Manifest-driven gate modes (harness-manifest.json is the authority) ──
+# The hook reads the manifest from the INDEX (git show :harness-manifest.json),
+# so these cases stage it — a worktree-only manifest must NOT loosen anything.
+
+t "staged manifest mode=warn loosens the category for a below-high-risk lane (exit 0)"
+repo=$(new_repo $H)
+stage "$repo" "harness-manifest.json" '{"hard_gates":{"detectable":[{"slug":"data-loss/migration","mode":"warn"}]}}'
+stage "$repo" "alembic/versions/abc_add_table.py" "def upgrade(): pass"
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 0 "warn-mode"
+
+t "staged manifest mode=block still blocks a below-high-risk lane (exit 2)"
+repo=$(new_repo $H)
+stage "$repo" "harness-manifest.json" '{"hard_gates":{"detectable":[{"slug":"data-loss/migration","mode":"block"}]}}'
+stage "$repo" "alembic/versions/abc_add_table.py" "def upgrade(): pass"
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "BLOCKED"
+
+t "UNSTAGED worktree mode=warn does NOT loosen — index rules (exit 2, Codex PR#160)"
+repo=$(new_repo $H)
+# committed manifest says block; worktree edit flips to warn but is never staged
+stage "$repo" "harness-manifest.json" '{"hard_gates":{"detectable":[{"slug":"data-loss/migration","mode":"block"}]}}'
+git -C "$repo" commit -qm base
+printf '%s\n' '{"hard_gates":{"detectable":[{"slug":"data-loss/migration","mode":"warn"}]}}' > "$repo/harness-manifest.json"
+stage "$repo" "alembic/versions/abc_add_table.py" "def upgrade(): pass"
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "BLOCKED"
+
+t "manifest absent from index (consumer repo) → fallback block (exit 2)"
+repo=$(new_repo $H)
+stage "$repo" "alembic/versions/abc_add_table.py" "def upgrade(): pass"
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "BLOCKED"
+
+t "malformed staged manifest JSON → fail-safe block (exit 2)"
+repo=$(new_repo $H)
+stage "$repo" "harness-manifest.json" 'this is not json {'
+stage "$repo" "alembic/versions/abc_add_table.py" "def upgrade(): pass"
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "BLOCKED"
+
+t "manifest warn on one slug does not loosen a sibling prefix slug (auth vs authorization)"
+repo=$(new_repo $H)
+stage "$repo" "harness-manifest.json" '{"hard_gates":{"detectable":[{"slug":"auth","mode":"warn"}]}}'
+stage "$repo" "app/perm.py" 'def check(): return require_role("admin")'
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "BLOCKED"
+
 finish

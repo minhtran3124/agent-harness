@@ -26,7 +26,9 @@ to `specs/<slug>/SUMMARY.md` (shape: `templates/SUMMARY.template.md`).
 
 A hard gate (see below) forces `high-risk` and cannot be self-downgraded — only a human
 narrowing scope may lower it. The orchestrator MUST write a `Lane:` line: `.claude/hooks/risk-corroboration.sh`
-blocks a commit whose diff trips a hard gate while the declared lane is below `high-risk`.
+blocks a commit whose diff trips a **block-mode** hard gate while the declared lane is below
+`high-risk` (per-gate mode lives in `harness-manifest.json`; warn-mode gates print a note
+and allow, but still force `high-risk` at intake).
 (A *missing* lane only warns — fail-open — unless `RISK_CORROBORATION_STRICT=1` is set, so
 write the lane rather than rely on the hook.)
 </HARD-GATE>
@@ -88,6 +90,10 @@ any hard gate    -> high-risk (only a human narrowing scope may lower it)
 - Removing or weakening validation requirements.
 - Touching a high-blast-radius file: `.claude/settings.json`, any `.claude/hooks/*`, or a core skill engine.
 - Workflow-engine surface: `skills/*/SKILL.md`, skill dispatch prompts, `agents/`, `rules/` — workflow-as-code, not prose (likewise defined in `harness-manifest.json` as the `workflow-engine` gate).
+
+`workflow-engine` and `weakening-validation` are **warn-mode at commit time** (manifest
+`mode: warn`): intake still classifies them `high-risk`, but the commit hook prints a note
+instead of blocking when they fire alone.
 
 **Canonical source:** the detectable gate list lives in `harness-manifest.json` (`hard_gates`) —
 do not diverge from it. These mirror `.claude/rules/auto-correct-scope.md` Rule 4 and are

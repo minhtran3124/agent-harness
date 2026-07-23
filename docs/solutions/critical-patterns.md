@@ -118,3 +118,9 @@ Eval a prompt skill with **auto-score / manual-run**: labeled fixtures (`request
 
 **Full doc:** docs/solutions/harness/skill-eval-blind-run-scoring.md
 ---
+
+## [2026-07-23] gate-config-must-read-index
+**Type:** bug
+**Module:** hooks/risk-corroboration.sh + harness-manifest.json (gate-mode contract)
+**Tags:** commit-time-hooks, index-vs-worktree, gate-integrity, fail-closed, policy-toctou, external-review
+**Applicable when:** A PreToolUse commit hook reads any config/policy file that influences allow/deny — it must read the INDEX-side copy (`git show :<path>`, fail-closed on absence) so unstaged edits cannot loosen the decision for the committed tree.

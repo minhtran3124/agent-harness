@@ -36,7 +36,7 @@ At intake — before dispatching any task — the orchestrator runs `/feature-in
 - **Lane** — `tiny | normal | high-risk` (drives ceremony / how much proof).
 - **Confidence** — `high | medium | low` (drives interruption / whether a human is asked).
 
-These two fields are load-bearing: `hooks/risk-corroboration.sh` reads `Lane:` to corroborate it against the staged diff, and the trust-metrics ledger reads both. The orchestrator MUST write a `Lane:` line: a declared lane below `high-risk` is **blocked** when the diff trips a hard-gate signal, but a *missing* lane only **warns** (fail-open) unless `RISK_CORROBORATION_STRICT=1` is set.
+These two fields are load-bearing: `hooks/risk-corroboration.sh` reads `Lane:` to corroborate it against the staged diff, and the trust-metrics ledger reads both. The orchestrator MUST write a `Lane:` line: a declared lane below `high-risk` is **blocked** when the diff trips a **block-mode** hard-gate signal (per-gate mode lives in `harness-manifest.json`; warn-mode gates — `workflow-engine`, `weakening-validation` — print a note and allow), and a *missing* lane only **warns** (fail-open) unless `RISK_CORROBORATION_STRICT=1` is set.
 
 ## Subagent contract
 

@@ -10,7 +10,7 @@ affects:
   - scripts/ci-strict-gate.sh
 supersedes: null
 confidence: high
-confirmed_at: 2026-07-17
+confirmed_at: 2026-07-23
 ---
 ## Applicable When
 

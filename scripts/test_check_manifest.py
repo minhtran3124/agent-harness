@@ -7,17 +7,11 @@ from pathlib import Path
 
 CHECKER = Path(__file__).resolve().parent / "check_manifest.py"
 
-# A minimal risk-corroboration.sh stub exposing add_cat + category_mode for two gates.
+# A minimal risk-corroboration.sh stub exposing add_cat for two gates.
+# Gate modes are manifest-owned (read by the hook at runtime) — not mirrored here.
 RC_STUB = """#!/bin/bash
 add_cat "auth"
 add_cat "high-blast"
-category_mode() {
-  case "$1" in
-    auth)       echo "block" ;;
-    high-blast) echo "block" ;;
-    *)          echo "block" ;;
-  esac
-}
 """
 
 MANIFEST_OK = {
