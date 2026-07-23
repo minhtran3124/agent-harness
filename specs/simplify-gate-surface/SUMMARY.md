@@ -115,7 +115,7 @@ Correctness-review advisories (scored <75, not auto-fixed — recorded for the h
 | Hook contract tests (27 cases, incl. 5 manifest-mode) | `bash tests/hooks/risk-corroboration.test.sh` | 0 | 27 passed — wave 1 | SC-1 |
 | Mode source-regex gone from checker | `grep -q category_mode scripts/check_manifest.py` | 1 | 0 occurrences — wave 1 | SC-2 |
 | Manifest inventory invariant holds | `python3 scripts/check_manifest.py` | 0 | consistent — wave 1 | SC-3 |
-| Checker unit tests | `python3 -m pytest scripts/test_check_manifest.py -q --no-header -p no:cacheprovider` | 0 | 11 passed — wave 1 | SC-2 |
+| Checker unit tests | `python3 -m pytest scripts/test_check_manifest.py -q --no-header -p no:cacheprovider` | 0 | 11 passed — wave 1; supporting evidence, no SC (SC-2 is the exit-1 grep) | |
 | Gate modes pinned (2 warn, 7 block) | `python3 scripts/check_gate_modes_smoke.py` | 0 | wired into run-tests.sh — wave 2 | SC-4 |
 | Docs match wiring | `bash scripts/lint-doc-truth.sh` | 0 | + 4 prose sites hand-verified (CLAUDE.md:52, SKILL.md:29, SKILL.md:~95, orchestration.md:39) — wave 2 | SC-6 |
 | Working override path documented | `grep -q settings.local.json hooks/risk-corroboration.sh` | 0 | no inline VAR=x advice remains — wave 3 | SC-5 |
