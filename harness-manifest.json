@@ -2,7 +2,7 @@
   "__doc__": "Single source of truth for the harness's hard-gate vocabulary and component inventory. Machine-read by scripts/check_manifest.py (CI). Edit HERE — the copies in skills/feature-intake, rules/auto-correct-scope.md, and hooks/risk-corroboration.sh must not diverge (the checker enforces the hook match). JSON (not YAML) so the checker needs only the Python stdlib.",
 
   "hard_gates": {
-    "__doc__": "detectable = diff-scannable by risk-corroboration.sh (must match its add_cat + category_mode exactly). judgment = Rule-4 STOP items that cannot be regex-detected (human/agent judgment only).",
+    "__doc__": "detectable = diff-scannable by risk-corroboration.sh (its add_cat set must match these slugs exactly; per-slug `mode` here is the block|warn authority, read by the hook at runtime). judgment = Rule-4 STOP items that cannot be regex-detected (human/agent judgment only).",
     "detectable": [
       {
         "slug": "auth",
@@ -36,8 +36,8 @@
       },
       {
         "slug": "weakening-validation",
-        "mode": "block",
-        "desc": "removing assert / validator / required / raise"
+        "mode": "warn",
+        "desc": "removing assert / validator / required / raise — warn-mode since 2026-07-23: 1 firing in the last 40 commits and it was a refactor (precision 0); intake still classifies it high-risk"
       },
       {
         "slug": "high-blast",
@@ -46,8 +46,8 @@
       },
       {
         "slug": "workflow-engine",
-        "mode": "block",
-        "desc": "workflow-as-code: skills/*/SKILL.md, skill dispatch prompts, agents/*.md, rules/*.md — instruction delivery, routing, review gates"
+        "mode": "warn",
+        "desc": "workflow-as-code: skills/*/SKILL.md, skill dispatch prompts, agents/*.md, rules/*.md — instruction delivery, routing, review gates. Warn-mode since 2026-07-23: fired on 34/40 recent commits (85%) — in this meta-repo those paths ARE the product, so blocking carried ~0 bits; intake still classifies it high-risk"
       }
     ],
     "judgment": [
