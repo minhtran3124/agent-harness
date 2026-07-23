@@ -136,6 +136,23 @@ all advisory/report-only, none blocking:
 
 All SC-1…SC-7 verified proven via the Verify table's `Criterion` mapping — no unproven SC.
 
+### Context-Propagation Audit
+
+Trigger: diff touches workflow-engine surfaces (`skills/feature-intake/SKILL.md`,
+`rules/orchestration.md`). Matrix (delivery corroborated by direct grep/test, not graph-only):
+
+| Source | Consumer | Execution context | Delivery | Proof |
+|---|---|---|---|---|
+| manifest `mode` field (new authority) | `hooks/risk-corroboration.sh` | hook process (isolated, per commit) | explicit runtime read (`jq`) | 5 manifest-mode contract tests + `warn-mode-smoke.test.sh`, exit 0 |
+| manifest `mode` field | `scripts/check_gate_modes_smoke.py` | CI / run-tests | explicit read | wired at `run-tests.sh` L1; exit 0 |
+| manifest `mode` field | deployed hook in **consumer repos** | consumer hook process | **deliberate non-delivery** (manifest not in deploy payload) → fallback `block` | test "manifest absent → BLOCKED" (exit 2); design §2 |
+| warn-mode split (2 slugs) | `skills/feature-intake/SKILL.md` (intake) | main session via Skill load | inline sentence; deployed copy verified (`grep block-mode .claude/skills/feature-intake/SKILL.md` = 1) | slug list anchored: `check_gate_modes_smoke.py` pins exactly {workflow-engine, weakening-validation} in CI — a third warn gate fails CI before docs can silently drift. Mode is also non-load-bearing for classification (all hard gates → high-risk regardless) |
+| corrected block/warn claim | `rules/orchestration.md:39` → orchestrator | main session | always-loaded rule; deployed copy verified | `grep block-mode .claude/rules/orchestration.md` = 1 |
+| override-path pointer | any agent hitting a BLOCKED commit | whichever context runs the commit (incl. isolated subagents) | pasted into the hook's stderr at block time | BLOCKED-path contract tests exercise the message |
+
+No `assumed`/`unconfirmed` delivery on a load-bearing instruction; no unanchored inline policy
+copy; consumer-repo non-delivery is intentional and test-proven fail-safe. **Verdict: PASS.**
+
 ### Rollback
 
 - `git revert <sha>` — the change is source-only (hook + manifest + checker + docs); no

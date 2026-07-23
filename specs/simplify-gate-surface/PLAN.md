@@ -1,6 +1,6 @@
 ---
 slug: simplify-gate-surface
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-07-23
 ---
@@ -202,6 +202,10 @@ Full analysis, measurements, and the rejected alternatives: `design.md`.
 | The change merges but never activates: the live gate is the deployed copy in `.claude/hooks/`, which this spec must not mutate autonomously | Explicit activation step in Task 3.1 — human-confirmed `deploy-harness.sh` run, outcome logged. |
 
 ## 6. Status Log
+
+- 2026-07-23 — shipped via `feat/simplify-gate-surface` (PR opened by finishing-a-development-branch;
+  reviews: correctness pass at `96308d0` · intent pass · context-propagation-audit PASS ·
+  full suite 603 green). Deployed to `.claude/` same day (human-confirmed).
 
 - 2026-07-23 — Spec created (design + plan) from the gate review. Status: `proposed`,
   awaiting go-ahead before Wave 1.
