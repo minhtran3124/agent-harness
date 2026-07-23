@@ -53,10 +53,12 @@ cd "$REPO_DIR" || exit 0
 # var exported in the session. An inline `VAR=x git commit` prefix does NOT work:
 # a PreToolUse hook runs before the command, so the prefix never reaches it.
 # Loosen one at a time; never auth/external-provider first; revert on any incident.
-GATE_MODES=""
-[ -f "$REPO_DIR/harness-manifest.json" ] && GATE_MODES=$(jq -r \
-  '.hard_gates.detectable[]? | "\(.slug)=\(.mode // "block")"' \
-  "$REPO_DIR/harness-manifest.json" 2>/dev/null || true)
+# Read the manifest from the INDEX (`git show :path`), not the worktree — the risk
+# signals and the Lane are both index-side, so the mode must be too. Otherwise an
+# UNSTAGED "mode": "warn" edit would loosen a gate for a commit whose tree still
+# ships block-mode (Codex review, PR #160). Index copy absent/invalid => "" => block.
+GATE_MODES=$(git show :harness-manifest.json 2>/dev/null | jq -r \
+  '.hard_gates.detectable[]? | "\(.slug)=\(.mode // "block")"' 2>/dev/null || true)
 
 category_mode() {
   local _wl

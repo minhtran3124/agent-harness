@@ -14,6 +14,7 @@ COMMIT_JSON=$(json_cmd 'git commit -m x')
 t "real manifest: removed raise + Lane: normal → warn-mode note, allowed (exit 0)"
 repo=$(new_repo $H)
 cp "$ROOT/harness-manifest.json" "$repo/"
+git -C "$repo" add -f harness-manifest.json
 stage "$repo" "app/svc.py" 'def f(x):
     if not x:
         raise ValueError("x")
@@ -28,6 +29,7 @@ assert_rc_contains 0 "warn-mode"
 t "real manifest: same diff + hooks/ file → high-blast still blocks (exit 2)"
 repo=$(new_repo $H)
 cp "$ROOT/harness-manifest.json" "$repo/"
+git -C "$repo" add -f harness-manifest.json
 stage "$repo" "app/svc.py" 'def f(x):
     if not x:
         raise ValueError("x")

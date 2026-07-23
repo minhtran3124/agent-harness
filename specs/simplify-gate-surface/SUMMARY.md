@@ -82,7 +82,13 @@ Once mode is data, loosening a noisy gate is a one-line JSON edit instead of a c
     `verify-row-must-be-pipe-free-and-under-60s` and would have turned CI red; replaced with
     the prose line under the table.
 - Rule 3 — `specs/slim-skill-surface/PLAN.md` still said `status: active` after its PR merged,
-  which mis-aimed `blast-radius-check`; flipped to `shipped` (wave 1 commit).
+  which mis-aimed `blast-radius-check`; flipped to `shipped` (wave 1 commit). Same fix for
+  `specs/wire-lane-evidence-gate/PLAN.md` (merged PR #120, still active) in the Codex round.
+- Rule 1 — Codex external review (PR #160, P2): the hook read the manifest from the
+  **worktree** while signals + Lane are index-side — an unstaged `mode: warn` edit could
+  loosen a gate for a commit whose tree ships block-mode. Now reads
+  `git show :harness-manifest.json` (index), fail-closed; +1 contract test pinning the
+  unstaged-edit scenario; manifest-mode tests now stage their fixture manifests.
 
 ### Advisory Findings
 
@@ -97,6 +103,10 @@ Correctness-review advisories (scored <75, not auto-fixed — recorded for the h
 - `hooks/risk-corroboration.sh:32` — with `jq` absent the hook exits 0 before any gating
   (fail-open), pre-existing on unmodified lines; the header comment now documents it. A
   `command -v jq` fail-closed guard is a possible hardening, deliberately out of this scope.
+- Codex PR #160 finding 2 (pre-existing, different hook, out of scope): `commit-quality-gate.sh`
+  Check 1.6 falls back to the **worktree** PLAN.md when `git show :$plan` fails — including when
+  the PLAN is staged for deletion, where the documented no-PLAN fail-open should apply. Backlog:
+  use the on-disk fallback only when the path is untracked, not when staged-deleted.
 
 ### Verify
 
