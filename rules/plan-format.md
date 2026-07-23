@@ -7,7 +7,7 @@ paths:
 
 Applies when writing `specs/<slug>/PLAN.md` for multi-step work.
 Path-scoped (not auto-loaded): injected when a `specs/**/PLAN.md` file is read; authoring
-flows load it via the explicit Read step in `writing-plans` / `executing-plans`.
+flows load it via the explicit Read step in `writing-plans` / `subagent-driven-development`.
 
 Related: `auto-correct-scope.md`. See also `CLAUDE.local.md` → Development Workflow → Planning Layer.
 
@@ -165,7 +165,7 @@ The examples above show the full task shape; `specs/` is tracked in git, so plan
 
 ## Legacy XML plans (read-only support)
 
-Plans written before 2026-07-16 use fenced `<task id="N.M" wave="K"><files><action><verify><done>` XML blocks. The renderer, the executing-plans Step-0 gate, and `hooks/blast-radius-check.sh` still parse that syntax, so existing plans keep rendering and executing unchanged — but it is **not** an authoring format: never write new plans in XML. One exception: when adding a task to an existing XML plan, keep that plan's XML syntax — in a mixed file the parser reads only the XML tasks, so a markdown task added to an XML plan would be invisible.
+Plans written before 2026-07-16 use fenced `<task id="N.M" wave="K"><files><action><verify><done>` XML blocks. The renderer, the `subagent-driven-development` Step-0 gate, and `hooks/blast-radius-check.sh` still parse that syntax, so existing plans keep rendering and executing unchanged — but it is **not** an authoring format: never write new plans in XML. One exception: when adding a task to an existing XML plan, keep that plan's XML syntax — in a mixed file the parser reads only the XML tasks, so a markdown task added to an XML plan would be invisible.
 
 ## Auto-generated "At a glance" block
 

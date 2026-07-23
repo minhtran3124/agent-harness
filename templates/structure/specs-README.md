@@ -37,7 +37,7 @@ this line if you change it.
 /xia2          → research-brief.md
 /writing-plans → plan.md
 /using-git-worktrees → worktree + branch
-/subagent-driven-development | /executing-plans → implementation
+/subagent-driven-development → implementation
 /compound → crystallize learnings into docs/solutions/
 /finishing-a-development-branch → PR (never merges)
 ```

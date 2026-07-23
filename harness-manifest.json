@@ -1,6 +1,5 @@
 {
-  "__doc__": "Single source of truth for the harness's hard-gate vocabulary and component inventory. Machine-read by scripts/check_manifest.py (CI). Edit HERE — the copies in skills/feature-intake, rules/auto-correct-scope.md, and hooks/risk-corroboration.sh must not diverge (the checker enforces the hook match). JSON (not YAML) so the checker needs only the Python stdlib.",
-
+  "__doc__": "Single source of truth for the harness's hard-gate vocabulary and component inventory. Machine-read by scripts/check_manifest.py (CI). Edit HERE \u2014 the copies in skills/feature-intake, rules/auto-correct-scope.md, and hooks/risk-corroboration.sh must not diverge (the checker enforces the hook match). JSON (not YAML) so the checker needs only the Python stdlib.",
   "hard_gates": {
     "__doc__": "detectable = diff-scannable by risk-corroboration.sh (must match its add_cat + category_mode exactly). judgment = Rule-4 STOP items that cannot be regex-detected (human/agent judgment only).",
     "detectable": [
@@ -47,7 +46,7 @@
       {
         "slug": "workflow-engine",
         "mode": "block",
-        "desc": "workflow-as-code: skills/*/SKILL.md, skill dispatch prompts, agents/*.md, rules/*.md — instruction delivery, routing, review gates"
+        "desc": "workflow-as-code: skills/*/SKILL.md, skill dispatch prompts, agents/*.md, rules/*.md \u2014 instruction delivery, routing, review gates"
       }
     ],
     "judgment": [
@@ -65,51 +64,129 @@
       }
     ]
   },
-
   "contracts": {
     "__doc__": "contract surface->consumers map for Q3 blast-radius; read by scripts/check-contract-impact.sh, validated by scripts/check_manifest.py.",
-    "hook-registration":       { "surface": ["settings.json"],                 "consumers": ["CLAUDE.md", "scripts/lint-doc-truth.sh"],                                                      "desc": "hook wiring source of truth" },
-    "artifact-schema-summary": { "surface": ["templates/SUMMARY.template.md"],  "consumers": ["scripts/verify_summary.py", "hooks/commit-quality-gate.sh"], "desc": "SUMMARY.md shape contract" },
-    "artifact-schema-plan":    { "surface": ["rules/plan-format.md"],           "consumers": ["skills/visual-planner/render_plan.py"],                        "desc": "PLAN.md task XML schema contract" },
-    "lane-evidence-mapping":   { "surface": ["scripts/verify_summary.py"],      "consumers": ["skills/feature-intake/SKILL.md", "rules/auto-correct-scope.md"],                               "desc": "lane -> required evidence mapping" },
-    "hard-gate-vocabulary":    { "surface": ["harness-manifest.json"],          "consumers": ["hooks/risk-corroboration.sh", "rules/auto-correct-scope.md", "skills/feature-intake/SKILL.md"], "desc": "hard-gate slug/mode/desc vocabulary" }
+    "hook-registration": {
+      "surface": [
+        "settings.json"
+      ],
+      "consumers": [
+        "CLAUDE.md",
+        "scripts/lint-doc-truth.sh"
+      ],
+      "desc": "hook wiring source of truth"
+    },
+    "artifact-schema-summary": {
+      "surface": [
+        "templates/SUMMARY.template.md"
+      ],
+      "consumers": [
+        "scripts/verify_summary.py",
+        "hooks/commit-quality-gate.sh"
+      ],
+      "desc": "SUMMARY.md shape contract"
+    },
+    "artifact-schema-plan": {
+      "surface": [
+        "rules/plan-format.md"
+      ],
+      "consumers": [
+        "skills/visual-planner/render_plan.py"
+      ],
+      "desc": "PLAN.md task XML schema contract"
+    },
+    "lane-evidence-mapping": {
+      "surface": [
+        "scripts/verify_summary.py"
+      ],
+      "consumers": [
+        "skills/feature-intake/SKILL.md",
+        "rules/auto-correct-scope.md"
+      ],
+      "desc": "lane -> required evidence mapping"
+    },
+    "hard-gate-vocabulary": {
+      "surface": [
+        "harness-manifest.json"
+      ],
+      "consumers": [
+        "hooks/risk-corroboration.sh",
+        "rules/auto-correct-scope.md",
+        "skills/feature-intake/SKILL.md"
+      ],
+      "desc": "hard-gate slug/mode/desc vocabulary"
+    }
   },
-
   "notes": {
-    "external_provider_vs_rule3": "A dependency-manifest edit (requirements*.txt / package.json / pyproject.toml / go.mod / Gemfile) trips external-provider, but auto-correct-scope Rule 3 authorizes auto-adding a dependency. Resolution: a pure dependency bump runs in the high-risk lane OR is recorded as a Rule-3 deviation in SUMMARY. The gate stays broad by design — over-flagging a dependency change is safer than missing a new SDK integration."
+    "external_provider_vs_rule3": "A dependency-manifest edit (requirements*.txt / package.json / pyproject.toml / go.mod / Gemfile) trips external-provider, but auto-correct-scope Rule 3 authorizes auto-adding a dependency. Resolution: a pure dependency bump runs in the high-risk lane OR is recorded as a Rule-3 deviation in SUMMARY. The gate stays broad by design \u2014 over-flagging a dependency change is safer than missing a new SDK integration."
   },
-
   "hooks": [
-    { "name": "check-untracked-py.sh",     "wired": true },
-    { "name": "commit-quality-gate.sh",    "wired": true },
-    { "name": "risk-corroboration.sh",     "wired": true },
-    { "name": "branch-guard.sh",           "wired": true },
-    { "name": "branch-isolation-guard.sh", "wired": true },
-    { "name": "ruff-on-edit.sh",           "wired": true },
-    { "name": "blast-radius-check.sh",     "wired": true },
-    { "name": "render-plan-on-write.sh",   "wired": true },
-    { "name": "scope-gate.sh",             "wired": true },
-    { "name": "state-breadcrumb.sh",       "wired": true },
-    { "name": "session-knowledge.sh",      "wired": true },
-    { "name": "auto-test-on-change.sh",    "wired": false }
+    {
+      "name": "check-untracked-py.sh",
+      "wired": true
+    },
+    {
+      "name": "commit-quality-gate.sh",
+      "wired": true
+    },
+    {
+      "name": "risk-corroboration.sh",
+      "wired": true
+    },
+    {
+      "name": "branch-guard.sh",
+      "wired": true
+    },
+    {
+      "name": "branch-isolation-guard.sh",
+      "wired": true
+    },
+    {
+      "name": "ruff-on-edit.sh",
+      "wired": true
+    },
+    {
+      "name": "blast-radius-check.sh",
+      "wired": true
+    },
+    {
+      "name": "render-plan-on-write.sh",
+      "wired": true
+    },
+    {
+      "name": "scope-gate.sh",
+      "wired": true
+    },
+    {
+      "name": "state-breadcrumb.sh",
+      "wired": true
+    },
+    {
+      "name": "session-knowledge.sh",
+      "wired": true
+    },
+    {
+      "name": "auto-test-on-change.sh",
+      "wired": false
+    }
   ],
-
   "skills": [
     "brainstorming",
     "compound",
     "context-propagation-audit",
     "correctness-review",
-    "create-pr",
-    "executing-plans",
     "feature-intake",
     "finishing-a-development-branch",
     "intent-review",
-    "review-diff",
     "subagent-driven-development",
     "using-git-worktrees",
     "visual-planner",
-    "writing-plans", "xia2"
+    "writing-plans",
+    "xia2"
   ],
-
-  "agents": ["coding", "reviewer", "test-runner"]
+  "agents": [
+    "coding",
+    "reviewer",
+    "test-runner"
+  ]
 }

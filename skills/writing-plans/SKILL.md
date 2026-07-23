@@ -149,28 +149,16 @@ flows right into the question. A user who wants the localhost/clipboard experien
 
 ## Execution Handoff
 
-After saving the plan, rendering `PLAN.html`, and auto-viewing it, **ask the user** which execution
-approach to use — present a clear A/B choice (use the `AskUserQuestion` tool when available):
+After saving the plan, rendering `PLAN.html`, and auto-viewing it, hand off to execution:
 
-**"Plan complete and saved to `specs/<slug>/PLAN.md` (visual: `specs/<slug>/PLAN.html`). Two execution options:**
+**"Plan complete and saved to `specs/<slug>/PLAN.md` (visual: `specs/<slug>/PLAN.html`)."**
 
-**1. Subagent-Driven (this session)** - I dispatch fresh subagent per task, review between tasks, fast iteration
+- **REQUIRED SUB-SKILL:** `using-git-worktrees` (if not already isolated), then
+  `subagent-driven-development`.
+- Before the first code change, apply `.claude/rules/auto-correct-scope.md` → Branch isolation.
+  Do not hand off until work is on the lane-appropriate dedicated branch.
 
-**2. Parallel Session (separate)** - Open new session with executing-plans, batch execution with checkpoints
-
-**Which approach?"**
-
-**Either approach:** before the first code change, apply
-`.claude/rules/auto-correct-scope.md` → Branch isolation and do not hand off until work is on the
-lane-appropriate dedicated branch.
-
-**If Subagent-Driven chosen:**
-
-- **REQUIRED SUB-SKILL:** Use `using-git-worktrees` (if not already isolated), then subagent-driven-development
-- Stay in this session
-- Fresh subagent per task + code review
-
-**If Parallel Session chosen:**
-
-- Guide them to open a new session in the worktree (created via `using-git-worktrees`)
-- **REQUIRED SUB-SKILL:** New session uses executing-plans
+`subagent-driven-development` covers both execution modes: fresh subagent per task in this
+session (the default), or the same skill run from a parallel session in the worktree, which
+executes in batches with a checkpoint between them. Ask the user which they want only if they
+have not already said — the gates are identical either way.

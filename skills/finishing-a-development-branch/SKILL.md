@@ -120,9 +120,47 @@ the PR after push; nothing is mirrored locally (per the non-goals).
    immediately before pushing — it passes if the only advance since review is the `specs/`-only
    shipped commit, and blocks if unreviewed code slipped in. Then push:
    `git push -u github <current_branch>`.
-3. Invoke the **create-pr** skill to generate `.pr-body.md`.
-4. Create the PR with `gh pr create` against `<base_branch>`, using the generated template content for the body.
+3. Write the PR body to `.pr-body.md` (gitignored) using the template below.
+4. Create the PR with `gh pr create` against `<base_branch>`, using that file as the body.
 5. Return the PR URL to the user. **Stop here** — do not merge.
+
+#### PR body template
+
+Gather context first: `git log <base>...HEAD --oneline` and `git diff <base>...HEAD --stat`.
+
+````markdown
+## Title
+
+type: short description  <!-- feat | fix | refactor | chore | docs | test | perf — max 72 chars -->
+
+## Summary
+
+[2–4 sentences a reviewer reads in ~10 seconds to understand the change without opening the
+diff. Lead with the behavioral delta and why it matters, as before → after. Not diff narration.]
+
+## Tasks
+
+- [One clear line per task. No implementation detail.]
+
+## Diagram
+
+<!-- Include ONLY when the change is flow-shaped — a multi-step process, state machine, or
+     request/data flow — or the linked ticket/spec is itself about a flow or already has a
+     diagram. Otherwise delete this whole section; never force a diagram onto a change that
+     does not have a shape. -->
+
+```mermaid
+flowchart LR
+    A[Before] --> B[After]
+```
+
+## Notes
+
+[Only what a reviewer must be flagged about: breaking changes, migration steps, follow-ups,
+known limitations. Delete the section if nothing rises to that bar.]
+````
+
+Do not restate the file list or explain the code line by line — the diff view already shows both.
 
 If a PR already exists for this branch, push the new commits and report the existing PR URL instead of creating a duplicate.
 
@@ -184,10 +222,6 @@ Stage and commit this edit — `specs/` is tracked, so the status update lands i
 - Set the matching plan's `status: shipped` using only canonical status values, and commit it (`specs/` is tracked, so the transition is committed with the work)
 
 ## Integration
-
-### Skills
-
-- **create-pr** skill — creates a PR template and fills it with the current branch
 
 ### Sub Agents
 
