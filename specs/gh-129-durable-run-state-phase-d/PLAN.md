@@ -400,4 +400,4 @@ passes the existing macOS+Ubuntu CI matrix.
   - Full suite: ALL GREEN (214 python tests + shell suites). All 5 tasks across 3 waves complete.
 - 2026-07-24 — Correctness-review PASS (9 findings, all fixed); intent-review PASS (0
   gap/drift/excess). Full suite: 586 tests, ALL GREEN.
-- 2026-07-24 — shipped via `feat/gh-129-durable-run-state-phase-d` (PR pending)
+- 2026-07-24 — shipped via `feat/gh-129-durable-run-state-phase-d` (PR #168)
