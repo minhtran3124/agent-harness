@@ -24,6 +24,29 @@ Source of truth for the currently-active spec. Updated by skills and by the `sta
 - `/session-tracker` reads this file to resume work across sessions
 - If the Active Spec block is stale (>7 days without update), treat as idle
 
+## RUN/Event State vs. This File
+
+This file and `specs/<slug>/RUN.json` + `events.jsonl` (added in GitHub issue #129, "Durable
+Run State Contract") track different things at different granularities — they are
+complementary, not competing:
+
+| | `specs/STATE.md` (this file) | `specs/<slug>/RUN.json` + `events.jsonl` |
+|---|---|---|
+| Scope | One session's current focus | One spec's entire lifecycle |
+| Granularity | Session-level: "what am I working on right now" | Per-spec-slug: durable FSM state (`queued` → ... → `shipped`) |
+| Written by | `hooks/state-breadcrumb.sh` (SessionEnd), manually by skills | `runtime/run_state.py` (`init`/`transition`), called from `feature-intake`, `subagent-driven-development`, `finishing-a-development-branch`, and (meta-repo-only) `post-merge-maintenance.yml` |
+| Lifetime | Overwritten each session; "Active Spec" always names the most recent | Append-only event log per slug; every spec that ever ran `feature-intake` keeps its own record indefinitely |
+| Discoverable via | Read directly, or `/session-tracker` | `runtime/run_state.py list --active[--json]`, surfaced at SessionStart (`hooks/session-knowledge.sh`) and on-demand (`scripts/harness-status.sh`, meta-repo-only) |
+| Answers | "What was I doing when the session ended?" | "Where is spec X in its lifecycle, across every session that ever touched it?" |
+
+**Compatibility boundary.** A spec created before GitHub issue #129 (no `RUN.json`) is
+unaffected: every run-state checkpoint call is unconditionally non-fatal (`|| true`), so an
+older spec with no `RUN.json` simply never gets tracked by the new system — it remains fully
+usable via `STATE.md`/`/session-tracker` exactly as before. The two mechanisms never write to
+or read from each other's files; a consuming repo can have `STATE.md` with no `RUN.json`
+anywhere (Phase A/B not yet wired) or vice versa is not possible (Phase C's checkpoints are
+additive prose in already-existing skills, not a replacement for `state-breadcrumb.sh`).
+
 ## Session End Log
 
 ### 2026-06-11T15:24:59Z
