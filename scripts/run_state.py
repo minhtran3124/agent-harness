@@ -33,10 +33,13 @@ Exit codes: 0 success or idempotent no-op; 2 invalid input or invalid transition
 3 missing/corrupt storage or I/O failure.
 """
 
+import argparse
 import fcntl
 import json
 import os
 import re
+import sys
+import uuid
 from datetime import datetime, timezone
 
 
@@ -241,3 +244,180 @@ def project(events):
         "updated_at": last["ts"],
         "last_event_id": last["event_id"],
     }
+
+
+# --- CLI ---------------------------------------------------------------
+
+
+def cmd_init(args):
+    slug = args.slug
+    run_id = args.run_id or str(uuid.uuid4())
+    with locked_run(slug):
+        ev_path = events_path(slug)
+        if os.path.exists(ev_path):
+            existing = read_events(slug)
+            if existing[0].get("run_id") == run_id:
+                print(f"already initialized (run_id={run_id})")
+                return 0
+            raise ConflictError(f"{slug} already initialized with a different run_id")
+        event = {
+            "event_id": str(uuid.uuid4()),
+            "seq": 1,
+            "ts": now_iso(),
+            "slug": slug,
+            "run_id": run_id,
+            "from_state": None,
+            "to_state": "queued",
+            "event": "run.init",
+            "waiting_on": None,
+            "resume_event": None,
+            "sha": None,
+            "metadata": {},
+        }
+        with open(ev_path, "w") as f:
+            f.write(json.dumps(event, sort_keys=True) + "\n")
+            f.flush()
+            os.fsync(f.fileno())
+        atomic_write_json(run_json_path(slug), project(read_events(slug)))
+    print(f"initialized {slug} run_id={run_id} state=queued")
+    return 0
+
+
+def cmd_transition(args):
+    slug = args.slug
+    with locked_run(slug):
+        events = read_events(slug)
+        current = project(events)
+        from_state = current["state"]
+
+        if args.event_id:
+            for ev in events:
+                if ev["event_id"] == args.event_id:
+                    # Note: do NOT compare ev["from_state"] to the freshly recomputed
+                    # `from_state` here — by replay time the projection has already
+                    # advanced past this event, so from_state now equals the event's
+                    # recorded to_state, not its from_state. Matching on to_state/event/
+                    # waiting_on/resume_event/sha is sufficient since event_id already
+                    # scopes the lookup to one historical event.
+                    same = (
+                        ev["to_state"] == args.to
+                        and ev["event"] == args.event
+                        and ev.get("waiting_on") == args.waiting_on
+                        and ev.get("resume_event") == args.resume_event
+                        and ev.get("sha") == args.sha
+                    )
+                    if same:
+                        print(
+                            f"idempotent no-op: {slug} already at "
+                            f"{ev['to_state']} via event_id={args.event_id}"
+                        )
+                        return 0
+                    raise ConflictError(
+                        f"event_id {args.event_id} already used for a "
+                        "different transition"
+                    )
+
+        validate_transition(from_state, args.to, args.waiting_on, args.resume_event)
+
+        if args.to == "shipped":
+            if not args.sha or not SHA_RE.match(args.sha):
+                raise InvalidTransitionError(
+                    "shipped requires --sha matching a git SHA (7-40 hex chars)"
+                )
+
+        event = {
+            "event_id": args.event_id or str(uuid.uuid4()),
+            "seq": events[-1]["seq"] + 1,
+            "ts": now_iso(),
+            "slug": slug,
+            "run_id": current["run_id"],
+            "from_state": from_state,
+            "to_state": args.to,
+            "event": args.event,
+            "waiting_on": args.waiting_on,
+            "resume_event": args.resume_event,
+            "sha": args.sha,
+            "metadata": args.meta,
+        }
+        with open(events_path(slug), "a") as f:
+            f.write(json.dumps(event, sort_keys=True) + "\n")
+            f.flush()
+            os.fsync(f.fileno())
+        atomic_write_json(run_json_path(slug), project(read_events(slug)))
+    print(f"{slug}: {from_state} -> {args.to}")
+    return 0
+
+
+def cmd_status(args):
+    data = read_json(run_json_path(args.slug))
+    if args.json:
+        print(json.dumps(data, indent=2, sort_keys=True))
+    else:
+        for k in (
+            "slug",
+            "run_id",
+            "state",
+            "seq",
+            "waiting_on",
+            "resume_event",
+            "sha",
+            "updated_at",
+        ):
+            print(f"{k}: {data.get(k)}")
+    return 0
+
+
+def parse_meta(pairs):
+    meta = {}
+    for pair in pairs:
+        if "=" not in pair:
+            raise RunStateError(f"invalid --meta {pair!r}; expected key=value")
+        k, v = pair.split("=", 1)
+        meta[k] = v
+    return meta
+
+
+def build_parser():
+    p = argparse.ArgumentParser(prog="run_state.py")
+    sub = p.add_subparsers(dest="command", required=True)
+
+    p_init = sub.add_parser("init")
+    p_init.add_argument("--slug", required=True)
+    p_init.add_argument("--run-id")
+
+    p_tr = sub.add_parser("transition")
+    p_tr.add_argument("--slug", required=True)
+    p_tr.add_argument("--to", required=True, choices=sorted(ALL_STATES))
+    p_tr.add_argument("--event", required=True)
+    p_tr.add_argument("--event-id")
+    p_tr.add_argument("--waiting-on")
+    p_tr.add_argument("--resume-event")
+    p_tr.add_argument("--sha")
+    p_tr.add_argument("--meta", action="append", default=[])
+
+    p_st = sub.add_parser("status")
+    p_st.add_argument("--slug", required=True)
+    p_st.add_argument("--json", action="store_true")
+
+    return p, sub
+
+
+def main(argv=None):
+    parser, sub = build_parser()
+    args = parser.parse_args(argv)
+    if args.command == "transition":
+        args.meta = parse_meta(args.meta)
+    handlers = {
+        "init": cmd_init,
+        "transition": cmd_transition,
+        "status": cmd_status,
+    }
+    try:
+        return handlers[args.command](args)
+    except RunStateError as e:
+        print(str(e), file=sys.stderr)
+        return e.exit_code
+
+
+if __name__ == "__main__":
+    sys.exit(main())

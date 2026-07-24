@@ -128,3 +128,175 @@ def test_project_folds_events_and_carries_sha_forward():
     )  # carried forward, not cleared by the sha-less event
     assert proj["created_at"] == "t1"
     assert proj["updated_at"] == "t3"
+
+
+def test_init_creates_queued_run():
+    assert rs.main(["init", "--slug", "demo", "--run-id", "r1"]) == 0
+    assert rs.read_json("specs/demo/RUN.json")["state"] == "queued"
+    assert rs.read_json("specs/demo/RUN.json")["run_id"] == "r1"
+
+
+def test_init_idempotent_same_run_id():
+    assert rs.main(["init", "--slug", "demo", "--run-id", "r1"]) == 0
+    assert rs.main(["init", "--slug", "demo", "--run-id", "r1"]) == 0
+
+
+def test_init_conflict_different_run_id():
+    assert rs.main(["init", "--slug", "demo", "--run-id", "r1"]) == 0
+    assert rs.main(["init", "--slug", "demo", "--run-id", "r2"]) == 2
+
+
+def test_transition_happy_path():
+    rs.main(["init", "--slug", "demo", "--run-id", "r1"])
+    rc = rs.main(
+        [
+            "transition",
+            "--slug",
+            "demo",
+            "--to",
+            "investigating",
+            "--event",
+            "agent.started",
+        ]
+    )
+    assert rc == 0
+    assert rs.read_json("specs/demo/RUN.json")["state"] == "investigating"
+
+
+def test_idempotent_replay_and_conflict():
+    rs.main(["init", "--slug", "demo", "--run-id", "r1"])
+    args = [
+        "transition",
+        "--slug",
+        "demo",
+        "--to",
+        "investigating",
+        "--event",
+        "agent.started",
+        "--event-id",
+        "fixed-id",
+    ]
+    assert rs.main(args) == 0
+    line_count_after_first = sum(1 for _ in open("specs/demo/events.jsonl"))
+    assert rs.main(args) == 0  # replay: no-op
+    assert sum(1 for _ in open("specs/demo/events.jsonl")) == line_count_after_first
+
+    conflicting = [
+        "transition",
+        "--slug",
+        "demo",
+        "--to",
+        "planning",
+        "--event",
+        "agent.started",
+        "--event-id",
+        "fixed-id",
+    ]
+    assert rs.main(conflicting) == 2
+
+
+def test_shipped_requires_valid_sha():
+    rs.main(["init", "--slug", "demo", "--run-id", "r1"])
+    for to_state in (
+        "investigating",
+        "planning",
+        "implementing",
+        "verifying",
+        "ready_to_merge",
+    ):
+        rs.main(
+            [
+                "transition",
+                "--slug",
+                "demo",
+                "--to",
+                to_state,
+                "--event",
+                "agent.step",
+            ]
+        )
+    assert (
+        rs.main(
+            [
+                "transition",
+                "--slug",
+                "demo",
+                "--to",
+                "shipped",
+                "--event",
+                "ci.merged",
+            ]
+        )
+        == 2
+    )
+    assert (
+        rs.main(
+            [
+                "transition",
+                "--slug",
+                "demo",
+                "--to",
+                "shipped",
+                "--event",
+                "ci.merged",
+                "--sha",
+                "not-a-sha",
+            ]
+        )
+        == 2
+    )
+    assert (
+        rs.main(
+            [
+                "transition",
+                "--slug",
+                "demo",
+                "--to",
+                "shipped",
+                "--event",
+                "ci.merged",
+                "--sha",
+                "abc1234",
+            ]
+        )
+        == 0
+    )
+
+
+def test_post_terminal_transition_rejected():
+    rs.main(["init", "--slug", "demo", "--run-id", "r1"])
+    for to_state in (
+        "investigating",
+        "planning",
+        "implementing",
+        "verifying",
+        "ready_to_merge",
+    ):
+        rs.main(["transition", "--slug", "demo", "--to", to_state, "--event", "e"])
+    rs.main(
+        [
+            "transition",
+            "--slug",
+            "demo",
+            "--to",
+            "shipped",
+            "--event",
+            "e",
+            "--sha",
+            "abc1234",
+        ]
+    )
+    assert (
+        rs.main(
+            [
+                "transition",
+                "--slug",
+                "demo",
+                "--to",
+                "investigating",
+                "--event",
+                "e",
+            ]
+        )
+        == 2
+    )
