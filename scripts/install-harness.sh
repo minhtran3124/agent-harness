@@ -158,6 +158,9 @@ fi
 if [ ! -f "$TARGET_DIR/scripts/install-harness.sh" ]; then
   LEGACY=()
   for item in "${PAYLOAD[@]}"; do
+    # "runtime" was added to PAYLOAD in this phase, so no prior installer version could ever
+    # have staged it at a consumer's root — any hit here is always the consumer's own dir.
+    [ "$item" = "runtime" ] && continue
     [ -e "$TARGET_DIR/$item" ] && LEGACY+=("$item")
   done
   if [ "${#LEGACY[@]}" -gt 0 ]; then
