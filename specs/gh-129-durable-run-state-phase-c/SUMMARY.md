@@ -94,6 +94,19 @@ Full FIND (6 angles, parallel) → SCORE (independent scorers) → fix-loop pass
   `runtime/run_state.py` — outside Phase C's declared file scope (a Phase A engine file). User
   chose to defer as a documented, non-blocking known limitation rather than escalate-and-block.
 
+### Intent Findings
+
+Fresh blind reviewer (no PLAN.md/research-brief.md access) checked the diff `5dcaa90..a130aaa`
+against the `### Intent` block above plus two explicit later-session scope decisions (shipped-on-
+merge wiring; tiny-lane exclusion). **Verdict: faithfully implements the request.** All 9 PLAN §3
+Success Criteria proven via the Verify table above. No `gap`, no `excess`.
+
+- **advisory drift** — the shipped-on-merge checkpoint is syntactically wired (SC-8 passes,
+  matches the user's explicit "wire post-merge-maintenance.yml to shipped" instruction) but is not
+  functionally reliable in the common case, per the Correctness Review advisory finding above
+  (RUN.json/events.jsonl are never committed, so the transition frequently no-ops). Already
+  self-disclosed with rationale; reviewer recommends this stay advisory, not re-opened as a gap.
+
 ### Context-Propagation Audit
 
 **Verdict: PASS** (diff range `5dcaa90..6f51fbd`).
