@@ -116,7 +116,12 @@ references was already fixed before this phase started.
 | unit | `grep -q "templates runtime settings.json" scripts/install-harness.sh` | 0 | PAYLOAD includes runtime | SC-4 |
 | unit | `grep -q "runtime/test_run_state.py" scripts/run-tests.sh` | 0 | wiring gap closed | SC-5 |
 | integration | `bash tests/scripts/runtime-sync.test.sh` | 0 | 6/6 cases pass; mutation-tested by code-quality review (4/6 cases correctly fail when runtime/ registration is removed) | SC-6 |
-| repo | `bash scripts/run-tests.sh` | 0 | ALL GREEN — 214 python tests (185 + 29, wiring gap closed) + all shell suites |  |
+`bash scripts/run-tests.sh` was also run from the repo root and confirmed ALL GREEN (214 python
+tests + all shell suites, both before and after the correctness-review fixes) as a repo-wide
+regression check — not listed as its own Verify row per
+`docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md` (whole-suite command
+risks the 60s per-row re-run cap, and did in fact time out under `verify_summary.py --check`
+when tried as a row here).
 
 ### Intent Findings
 
