@@ -893,3 +893,24 @@ Source of truth for the currently-active spec. Updated by skills and by the `sta
 - last_commit: 0783b2d Merge pull request #163 from minhtran3124/feat/gh-159-simplicity-enforcement
 - user_turns: 0
 
+
+### 2026-07-24T02:40:03Z
+- session_id: f5012c0c-efc3-41a1-8aa4-1b401100e042
+- exit: 
+- last_commit: d762600 refactor: skip diff-size numstat scan outside tiny/normal lanes; dedup test assertion
+- user_turns: 0
+
+
+### 2026-07-24T02:41:08Z
+- session_id: 4399a518-a554-430a-a185-a5835bcb6ecf
+- exit: 
+- last_commit: eea8a00 chore(specs): append session-end breadcrumbs to STATE.md
+- user_turns: 0
+
+
+### 2026-07-24T03:39:15Z
+- session_id: 4a9d9aa0-6094-4b4f-acf3-6c62ced7fec8
+- exit: 
+- last_commit: 6404158 docs(specs): fix plan.md -> PLAN.md casing in specs/README.md
+- user_turns: 0
+
