@@ -107,6 +107,24 @@ risks the 60s per-row re-run cap).
   slugs matching `[^A-Za-z0-9._-]` or containing `..`) before Phase B/C exposes this to any
   less-trusted input path.
 
+### Intent Findings
+
+<!-- From /intent-review: findings against the verbatim original request, blind to PLAN.md. -->
+
+- **(gap, minor, report-only — advisory)** Issue #129's proposed CLI shows
+  `run_state.py list --active [--json|--prompt]`; only `--json` is implemented, `--prompt` is
+  absent. This was a deliberate, documented decision, not an oversight — see PLAN.md §2
+  Non-goals: "`--prompt` is speculative output shaping with no consumer yet in Phase A — add it
+  when Phase C actually needs it." No action taken.
+- **(drift, behaviorally different — ESCALATED, resolved, see ESCALATIONS.md E001)** Issue #129
+  Phase A asks to "Add machine-readable event and projection schemas." What shipped is a
+  docstring describing the event/RUN.json shape plus a runtime `REQUIRED_EVENT_KEYS` presence
+  check in `read_events()`, not a separate formal schema-validation artifact (e.g. JSON Schema).
+  Escalated as genuinely ambiguous rather than guessed at. **Decision (2026-07-24, Minh Tran):
+  accepted as sufficient for Phase A** — the issue's contrast is JSON (machine-readable) vs.
+  `specs/STATE.md` prose (human-only), not "informal" vs. "formal schema-validation artifact."
+  No further work.
+
 ### Rollback
 
 - `git revert <sha>`
