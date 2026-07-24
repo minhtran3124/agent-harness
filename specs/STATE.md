@@ -858,3 +858,38 @@ Source of truth for the currently-active spec. Updated by skills and by the `sta
 - last_commit: adac941 Merge pull request #160 from minhtran3124/feat/simplify-gate-surface
 - user_turns: 0
 
+
+### 2026-07-23T14:04:20Z
+- session_id: cc724d6c-b17a-4e8d-a228-c7044bde1e2a
+- exit: 
+- last_commit: 905c3cc chore(specs): append session-end breadcrumbs to STATE.md
+- user_turns: 0
+
+
+### 2026-07-23T15:21:25Z
+- session_id: 147fb794-fcd3-40b9-b01f-db8c2355d02a
+- exit: 
+- last_commit: d6d4f4c chore(specs): record PR #163 in gh-159-simplicity-enforcement status log
+- user_turns: 0
+
+
+### 2026-07-24T02:33:19Z
+- session_id: 9f373f86-8b80-459d-95e8-ff5f1bc41812
+- exit: 
+- last_commit: 905c3cc chore(specs): append session-end breadcrumbs to STATE.md
+- user_turns: 0
+
+
+### 2026-07-24T02:38:41Z
+- session_id: 1389ba62-ebc5-4042-8389-812bc3d4c5d5
+- exit: 
+- last_commit: d762600 refactor: skip diff-size numstat scan outside tiny/normal lanes; dedup test assertion
+- user_turns: 0
+
+
+### 2026-07-24T02:38:54Z
+- session_id: b78827bb-71ec-4503-beac-3255a57f626c
+- exit: 
+- last_commit: 0783b2d Merge pull request #163 from minhtran3124/feat/gh-159-simplicity-enforcement
+- user_turns: 0
+
