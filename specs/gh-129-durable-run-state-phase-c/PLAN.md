@@ -1,6 +1,6 @@
 ---
 slug: gh-129-durable-run-state-phase-c
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-07-24
 ---
@@ -576,3 +576,6 @@ stops at `investigating`, no synthetic/mock chain).
   - Task 2.1 (harness-manifest.json) — `8924863`
   - Full suite re-run post-wave: ALL GREEN (214 python tests + shell suites), no regressions.
   - All 7 tasks across 2 waves now complete.
+- 2026-07-24 — Context-propagation audit PASS; correctness-review pass (1 fixed, 2 advisory);
+  intent-review pass (0 gap/excess, 1 advisory drift). Full suite: 581 tests, ALL GREEN.
+- 2026-07-24 — shipped via `feat/gh-129-durable-run-state-phase-c` (PR pending)
