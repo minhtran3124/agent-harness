@@ -29,17 +29,17 @@ quoted verbatim from the issue, not restated here to avoid drift.
 
 | ID | Behavior (observable) | Check (re-runnable) | Expected |
 |------|-------------------------|-----------------------|------------|
-| AC-1 | A new run can be initialized from a spec SUMMARY and produces valid `RUN.json` + `events.jsonl` | `python3 -m pytest runtime/test_run_state.py -k test_init_creates_queued_run -q` | exit 0 — Phase A |
-| AC-2 | Valid transitions update both artifacts consistently | `python3 -m pytest runtime/test_run_state.py -k test_idempotent_replay_and_conflict -q` | exit 0 — Phase A |
-| AC-3 | Invalid, skipped, reversed, and post-terminal transitions fail without mutation | `python3 -m pytest runtime/test_run_state.py -k "test_invalid_transition_rejected or test_terminal_state_blocks_transition" -q` | exit 0 — Phase A |
-| AC-4 | Rebuilding from `events.jsonl` reproduces the current projection | `python3 -m pytest runtime/test_run_state.py -k test_rebuild_reproduces_projection -q` | exit 0 — Phase A |
-| AC-5 | Duplicate event replay is idempotent; conflicting event reuse is rejected | `python3 -m pytest runtime/test_run_state.py -k test_idempotent_replay_and_conflict -q` | exit 0 — Phase A |
-| AC-6 | Concurrent writers produce contiguous event sequences | `python3 -m pytest runtime/test_run_state.py -k test_concurrent_writers_sequence_contiguously -q` | exit 0 — Phase A (5 real OS processes) |
-| AC-7 | Corrupt or truncated logs fail visibly and do not silently fabricate state | `python3 -m pytest runtime/test_run_state.py -k test_corrupt_log_fails_visibly -q` | exit 0 — Phase A |
-| AC-8 | Active runs are discoverable from SessionStart/status surfaces | `bash tests/hooks/session-knowledge.test.sh` | exit 0 — Phase C |
-| AC-9 | Fresh install and resync deploy `.claude/runtime/` and preserve consumer-owned additions | `bash tests/scripts/runtime-sync.test.sh` | exit 0 — Phase B |
-| AC-10 | Legacy specs remain usable | `python3 -c "import glob,sys; bad=[1 for f in glob.glob('skills/*/SKILL.md') for l in open(f) if 'runtime/run_state.py' in l and 'true' not in l]; sys.exit(1 if bad else 0)"` | exit 0 — fails if any checkpoint call omits its non-fatal guard; passes vacuously before Phase C merges (no references yet) |
-| AC-11 | Full harness tests pass on macOS and Ubuntu | `gh pr checks` | exit 0 — this phase, SC-9 |
+| SC-1 | A new run can be initialized from a spec SUMMARY and produces valid `RUN.json` + `events.jsonl` | `python3 -m pytest runtime/test_run_state.py -k test_init_creates_queued_run -q` | exit 0 — Phase A |
+| SC-2 | Valid transitions update both artifacts consistently | `python3 -m pytest runtime/test_run_state.py -k test_transition_happy_path -q` | exit 0 — Phase A |
+| SC-3 | Invalid, skipped, reversed, and post-terminal transitions fail without mutation | `python3 -m pytest runtime/test_run_state.py -k "test_invalid_transition_rejected or test_terminal_state_blocks_transition" -q` | exit 0 — Phase A |
+| SC-4 | Rebuilding from `events.jsonl` reproduces the current projection | `python3 -m pytest runtime/test_run_state.py -k test_rebuild_reproduces_projection -q` | exit 0 — Phase A |
+| SC-5 | Duplicate event replay is idempotent; conflicting event reuse is rejected | `python3 -m pytest runtime/test_run_state.py -k test_idempotent_replay_and_conflict -q` | exit 0 — Phase A |
+| SC-6 | Concurrent writers produce contiguous event sequences | `python3 -m pytest runtime/test_run_state.py -k test_concurrent_writers_sequence_contiguously -q` | exit 0 — Phase A (5 real OS processes) |
+| SC-7 | Corrupt or truncated logs fail visibly and do not silently fabricate state | `python3 -m pytest runtime/test_run_state.py -k test_corrupt_log_fails_visibly -q` | exit 0 — Phase A |
+| SC-8 | Active runs are discoverable from SessionStart/status surfaces | `python3 -m pytest runtime/test_run_state.py -k test_list_active_excludes_terminal_states -q` | exit 0 — proves the engine-level `list --active` capability (Phase A); the SessionStart/status-surface integration is verified by Phase C's own `tests/hooks/session-knowledge.test.sh` + `tests/scripts/harness-status.test.sh` once merged |
+| SC-9 | Fresh install and resync deploy `.claude/runtime/` and preserve consumer-owned additions | `bash tests/scripts/runtime-sync.test.sh` | exit 0 — Phase B |
+| SC-10 | Legacy specs remain usable | `python3 -c "import glob,sys; bad=[1 for f in glob.glob('skills/*/SKILL.md') for l in open(f) if 'runtime/run_state.py' in l and '\|\| true' not in l]; sys.exit(1 if bad else 0)"` | exit 0 — fails if any checkpoint call omits its non-fatal `\|\| true` guard; passes vacuously before Phase C merges (no references yet) |
+| SC-11 | Full harness tests pass on macOS and Ubuntu | `gh pr checks` | exit 0 — this phase, SC-9 |
 
 ## 4. Tasks
 
