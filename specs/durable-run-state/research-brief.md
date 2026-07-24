@@ -10,9 +10,12 @@ and rollout) so a future reader never has to re-derive this from three separate 
   Subcommands: `init`, `transition`, `status`, `list`, `rebuild`. Exit codes: 0
   (success/idempotent), 2 (invalid input/transition), 3 (storage error). A 16-state FSM —
   `queued → investigating → planning → implementing → verifying → ready_to_merge → shipped`
-  (happy path), plus `TERMINAL_STATES` (`shipped`/`cancelled`/`superseded`), `INTERRUPT_STATES`
-  (`blocked`/`escalated`), `WAITING_STATES` (`awaiting_confirmation`/`awaiting_ci`/
-  `awaiting_review`). Storage: `specs/<slug>/events.jsonl` (append-only) +
+  (happy path), plus `fixing_ci` and `addressing_review` for the CI-failure/review-address loops —
+  together the 11 `ACTIVE_STATES` (`queued`/`investigating`/`awaiting_confirmation`/`planning`/
+  `implementing`/`verifying`/`awaiting_ci`/`fixing_ci`/`awaiting_review`/`addressing_review`/
+  `ready_to_merge`) — plus `TERMINAL_STATES` (`shipped`/`cancelled`/`superseded`), `INTERRUPT_STATES`
+  (`blocked`/`escalated`), and the `WAITING_STATES` subset of active states (`awaiting_confirmation`/
+  `awaiting_ci`/`awaiting_review`). Storage: `specs/<slug>/events.jsonl` (append-only) +
   `specs/<slug>/RUN.json` (current projection, atomically rewritten). `fcntl.flock` locking
   for concurrent-writer safety; idempotent event replay via `--event-id`.
 - **Portable deployment** (Phase B, PR #166): the engine lives at `runtime/` (not `scripts/`),
