@@ -16,15 +16,15 @@ flowchart LR
         D["deploy-harness.sh / install-harness.sh<br/>ships runtime/ to every consumer"]
     end
     subgraph "Phase C — Workflow checkpoints"
-        C1["feature-intake"] --> C2["subagent-driven-development"]
-        C2 --> C3["finishing-a-development-branch"]
-        C4["session-knowledge.sh"]
-        C5["harness-status.sh (meta-repo-only)"]
-        C6["post-merge-maintenance.yml (meta-repo-only)"]
+        FI["feature-intake"] --> SDD["subagent-driven-development"]
+        SDD --> FDB["finishing-a-development-branch"]
+        SK["session-knowledge.sh"]
+        HS["harness-status.sh (meta-repo-only)"]
+        PMM["post-merge-maintenance.yml (meta-repo-only)"]
     end
-    E --> D --> C1
-    C1 --> C4
-    C3 --> C6
+    E --> D --> FI
+    FI --> SK
+    FDB --> PMM
 ```
 
 ## 2. Ownership boundary with `specs/STATE.md`
@@ -37,18 +37,23 @@ per-spec-slug and durable across sessions. Neither reads nor writes the other's 
 
 Checkpoints 1–6 (per `specs/gh-129-durable-run-state-phase-c/design.md` §3) are portable —
 shipped to every consuming repo via Phase B's deploy/install registration. Checkpoints 7–8
-(`harness-status.sh`, `post-merge-maintenance.yml`) are meta-repo-only tooling: `scripts/` and
-`.github/workflows/` are never distributed (confirmed via direct grep of
-`SYNCED_DIRS_RE`/`PAYLOAD` in both distribution scripts — neither references `.github` or a
-bare `scripts/`).
+(`harness-status.sh`, `post-merge-maintenance.yml`) are meta-repo-only tooling: the whole
+`scripts/` directory is never synced as a unit — `SYNCED_DIRS_RE` in `deploy-harness.sh`
+(`^(skills|agents|hooks|rules|templates|runtime)/[^/]+$`) has no `scripts` alternation, and
+`.github/` is referenced nowhere in either distribution script as a real path (the only
+`.github` substring hits are inside `githubusercontent.com` URLs). `install-harness.sh`'s
+`PAYLOAD` array does ship two individually-named files out of `scripts/`
+(`scripts/deploy-harness.sh`, `scripts/init-structure.sh`), but `scripts/harness-status.sh` is
+not among them — confirmed absent via `grep -c "harness-status" scripts/install-harness.sh`
+returning `0`.
 
 ## 4. Known, disclosed limitations
 
-See `research-brief.md` → "Known, disclosed limitations." Both are Phase C findings, both
+See the "Known, disclosed limitations" section in `research-brief.md`. Both are Phase C findings, both
 explicitly deferred (one advisory/scored-below-fix-threshold, one by direct user decision) —
 not re-opened here.
 
 ## 5. Non-goals
 
-See `PLAN.md` §2 (issue #129's Phase D Non-goals, quoted verbatim) — this design doc does not
-restate them to avoid drift between two copies.
+See `specs/gh-129-durable-run-state-phase-d/PLAN.md` §2 (issue #129's Phase D Non-goals, quoted
+verbatim) — not restated here to avoid a third copy.
