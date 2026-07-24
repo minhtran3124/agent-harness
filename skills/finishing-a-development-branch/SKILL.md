@@ -140,6 +140,15 @@ its keep where one is available.
    `git push -u github <current_branch>`.
 3. Write the PR body to `.pr-body.md` (gitignored) using the template below.
 4. Create the PR with `gh pr create` against `<base_branch>`, using that file as the body.
+4b. **Run-state checkpoint (non-fatal).** After the PR is created, mark the run
+    `ready_to_merge` — this must never fail the PR-creation flow, and correctly no-ops for a
+    `tiny`-lane branch (whose run never left `investigating`, so the engine cleanly rejects
+    the transition):
+
+    ```bash
+    python3 runtime/run_state.py transition --slug <slug> --to ready_to_merge \
+      --event pr.opened || true
+    ```
 5. Return the PR URL to the user. **Stop here** — do not merge.
 
 #### PR body template

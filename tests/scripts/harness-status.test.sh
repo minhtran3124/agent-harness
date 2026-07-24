@@ -156,4 +156,29 @@ printf '| Date | Slug |\n|---|---|\n| 2026-07-04 | demo-slug | x | normal | x | 
 run_status "$r"
 assert_survived 'demo-slug'
 
+# ── Active Runs (Phase C, GitHub issue #129) ─────────────────────────────────────────────
+
+t "runtime/run_state.py absent → says so, script completes"
+mkrepo; run_status "$r"
+assert_survived "[not found: $r/runtime/run_state.py]"
+
+t "no active runs → says so, script completes"
+mkrepo
+mkdir -p "$r/runtime"; cp "$ROOT/runtime/run_state.py" "$r/runtime/"
+run_status "$r"
+assert_survived '[no active runs]'
+
+t "active run present → slug rendered, script completes"
+mkrepo
+mkdir -p "$r/runtime" "$r/specs/demo-slug"
+cp "$ROOT/runtime/run_state.py" "$r/runtime/"
+cat > "$r/specs/demo-slug/RUN.json" <<JSON
+{"slug": "demo-slug", "run_id": "r1", "state": "implementing", "seq": 1,
+ "waiting_on": null, "resume_event": null, "sha": null,
+ "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z",
+ "last_event_id": "e1"}
+JSON
+run_status "$r"
+assert_survived 'demo-slug'
+
 finish
