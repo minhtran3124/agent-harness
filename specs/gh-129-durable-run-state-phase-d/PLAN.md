@@ -10,7 +10,7 @@ created: 2026-07-24
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**5 tasks · 3 waves · 6 files · 4/5 done**
+**5 tasks · 3 waves · 6 files · 5/5 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -43,7 +43,7 @@ flowchart LR
 - [x] 1.2 — specs/durable-run-state/research-brief.md: canonical research brief (wave 1)
 - [x] 1.3 — specs/durable-run-state/design.md: canonical design (wave 1)
 - [x] 2.1 — specs/durable-run-state/PLAN.md: canonical acceptance-contract (wave 2)
-- [ ] 3.1 — Regression sweep: confirm cumulative evidence still holds (wave 3)
+- [x] 3.1 — Regression sweep: confirm cumulative evidence still holds (wave 3)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -392,3 +392,6 @@ passes the existing macOS+Ubuntu CI matrix.
 - 2026-07-24 — Wave 2 dispatched and complete, `<verify>` green, no deviations:
   - Task 2.1 (specs/durable-run-state/PLAN.md) — `811a413`
   - Full suite re-run post-wave: ALL GREEN (214 python tests + shell suites), no regressions.
+- 2026-07-24 — Wave 3 dispatched and complete, no regressions found, no deviations:
+  - Task 3.1 (regression sweep, SUMMARY.md evidence only) — `4214f5b`
+  - Full suite: ALL GREEN (214 python tests + shell suites). All 4 tasks across 3 waves complete.
