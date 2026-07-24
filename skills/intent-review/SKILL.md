@@ -118,10 +118,14 @@ Every finding is one of three classes. Routing differs by class:
   - *Behaviorally equivalent* (different surface, same outcome the user wanted) → record as an
     **advisory** with an explanation; do not block.
   - *Behaviorally different* → route like a `gap` (fix-loop if clear, escalate if ambiguous).
-- **`excess`** — something was shipped that **nobody asked for** (scope beyond the intent).
+- **`excess`** — something was shipped that **nobody asked for** (scope beyond the intent),
+  including config knobs or new public surface not traceable to any intent clause — flagged by
+  default.
   - **Report-only.** Do **not** auto-remove it: deleting shipped functionality is a Rule-4 change
     (`.claude/rules/auto-correct-scope.md` — "removing existing functionality"). Record it; removal
-    needs human approval.
+    needs human approval. This `excess` verdict is a post-hoc check on the final diff, distinct
+    from the separate `/simplify` pass, which edits an unmerged pre-ship diff where deletion is
+    allowed.
 
 ## 6. Residual gate — every finding fixed or durably recorded
 

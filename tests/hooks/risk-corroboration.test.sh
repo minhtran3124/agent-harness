@@ -216,4 +216,53 @@ stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_contains 2 "BLOCKED"
 
+# ── Diff-size sanity signal (warn-only, never changes exit code) ────────
+# Content is deliberately benign (no gate keywords) so no other category trips.
+
+t "diff >150 changed lines + Lane: tiny → /simplify note printed, exit 0"
+repo=$(new_repo $H)
+big_content=$(for i in $(seq 1 200); do printf 'line %d = %d\n' "$i" "$i"; done)
+stage "$repo" "app/data.py" "$big_content"
+stage "$repo" "specs/x/SUMMARY.md" "Lane: tiny"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 0 "/simplify"
+
+t "diff >600 changed lines + Lane: normal → /simplify note printed, exit 0"
+repo=$(new_repo $H)
+big_content=$(for i in $(seq 1 700); do printf 'line %d = %d\n' "$i" "$i"; done)
+stage "$repo" "app/data.py" "$big_content"
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 0 "/simplify"
+
+t "large diff confined to .claude/ (excluded from CODE_ADDED, no other gate) + Lane: tiny → /simplify note still fires (unfiltered numstat)"
+repo=$(new_repo $H)
+big_content=$(for i in $(seq 1 200); do printf 'line %d = %d\n' "$i" "$i"; done)
+stage "$repo" ".claude/rules/notes.md" "$big_content"
+stage "$repo" "specs/x/SUMMARY.md" "Lane: tiny"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 0 "/simplify"
+
+# Regression for the -U0 numstat bug (gh-159 fix-loop round 2): `-U0` forces `git diff`
+# to emit patch mode, so `--numstat` output was numstat rows PLUS the full unified diff
+# body — the awk parser then mis-read a content line's SECOND whitespace token as the
+# numstat "removed" column whenever it looked numeric (e.g. "timeout 30000" → +=30000).
+# True line count here (25 new lines) stays well under the tiny-lane 150 threshold; the
+# buggy version inflated it into the tens of thousands and fired the note incorrectly.
+t "moderate diff (~25 lines) with numeric-looking tokens under tiny threshold → no /simplify note (guards -U0 numstat-inflation regression)"
+repo=$(new_repo $H)
+numeric_content=$(for i in $(seq 1 25); do printf 'timeout %d\n' "$((i * 1000))"; done)
+stage "$repo" "app/config.py" "$numeric_content"
+stage "$repo" "specs/x/SUMMARY.md" "Lane: tiny"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_not_contains 0 "/simplify"
+
+t "small diff under both thresholds → no /simplify note"
+repo=$(new_repo $H)
+small_content=$(for i in $(seq 1 10); do printf 'line %d = %d\n' "$i" "$i"; done)
+stage "$repo" "app/data.py" "$small_content"
+stage "$repo" "specs/x/SUMMARY.md" "Lane: tiny"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_not_contains 0 "/simplify"
+
 finish

@@ -67,6 +67,10 @@ assert_rc_contains() { # assert_rc_contains <rc> <substring>
   if [ "$RC" -eq "$1" ] && echo "$OUT" | grep -qF "$2"; then pass
   else fail "rc=$RC (want $1), grep '$2' — out: $(echo "$OUT" | head -4 | tr '\n' ' ')"; fi
 }
+assert_rc_not_contains() { # assert_rc_not_contains <rc> <substring>
+  if [ "$RC" -eq "$1" ] && ! echo "$OUT" | grep -qF "$2"; then pass
+  else fail "want rc=$1 and no '$2' — rc=$RC out: $(echo "$OUT" | head -4 | tr '\n' ' ')"; fi
+}
 assert_silent_ok() {
   if [ "$RC" -eq 0 ] && [ -z "$OUT" ]; then pass; else fail "want silent rc=0; rc=$RC out:[$(echo "$OUT" | head -2 | tr '\n' ' ')]"; fi
 }

@@ -83,7 +83,11 @@ Task tool (reviewer):
       it. Note whether the difference is *behaviorally equivalent* (same outcome the user wanted,
       different surface) or *behaviorally different* (a different outcome).
     - **excess** — the diff ships something NOBODY asked for — scope beyond the intent. (Extra
-      features, options, endpoints, abstractions not traceable to any intent clause.)
+      features, options, endpoints, abstractions, config knobs, or new public surface not
+      traceable to any intent clause. Flag findings of this class BY DEFAULT, not just when
+      convenient.) This `excess` verdict is a post-hoc check on the FINAL diff — distinct from
+      the separate `/simplify` pass, which edits an unmerged pre-ship diff where deletion is
+      allowed.
 
     Also flag, as a `drift` finding, any case where the SUCCESS CRITERIA (secondary oracle)
     contradicts the VERBATIM intent — that means design drifted from intent at the start.
