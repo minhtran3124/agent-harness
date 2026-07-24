@@ -70,6 +70,41 @@ references was already fixed before this phase started.
 - Rule 2 — Fixed a stale "5 synced dirs" comment (now 6) directly adjacent to the Task 1.2 edit
   it was made stale by; flagged by code-quality review. `scripts/deploy-harness.sh`. Commit
   `a13ddf8`.
+- Rule 1 — Fixed 2 adversarial correctness-review findings (both mechanical, no architectural
+  judgment): `install-harness.sh`'s legacy-detection loop now skips `runtime` (it was added to
+  `PAYLOAD` this phase, so no prior installer version could ever have staged it at a consumer's
+  root — any hit was guaranteed to be the consumer's own directory, a false-positive warning
+  that risked misleading a user into deleting their own code); `runtime-sync.test.sh`'s
+  `new_target()` no longer loses its `_CLEANUP_DIRS` registration to a command-substitution
+  subshell (all 6 temp dirs were leaking on every run — confirmed via a temporary debug count,
+  0 before the fix, 6 after). `scripts/install-harness.sh`, `tests/scripts/runtime-sync.test.sh`.
+  Commit `bfbf619`.
+
+### Advisory Findings
+
+<!-- From /correctness-review: findings that scored 0 (unmodified-line rule) — not fixed,
+     not discarded — reported for a human to weigh. -->
+
+- **(unmodified-line) `scripts/lint-doc-truth.sh`'s `KNOWN_ROOTS` doesn't include `runtime`.**
+  `runtime/` is now a first-class synced repo root (same status as `skills`/`hooks`/`rules`/
+  `templates`/`agents`), but the doc-truth lint's root allowlist wasn't updated to match — a
+  backticked `` `runtime/…` `` path reference in a core doc (`CLAUDE.md`, `README.md`,
+  `rules/*.md`, etc.) with a typo would silently pass the lint instead of failing it, unlike
+  every other synced dir. No current trigger (no core doc references `runtime/` yet). Not fixed
+  in this phase (line wasn't touched by this diff); worth a one-line follow-up
+  (`scripts/lint-doc-truth.sh:34`, add `runtime` to `KNOWN_ROOTS`) before any doc references
+  `runtime/` paths.
+- **(unmodified-line, inherited from Phase A) `runtime/test_run_state.py:502`'s sibling-path
+  resolution via `os.path.abspath(__file__).replace(...)` is theoretically fragile if `__file__`
+  is ever relative when the concurrency test runs** (possible only under uncommon pytest
+  invocation modes; not observed in practice — normal `python -m pytest` invocation always
+  yields an absolute `__file__`). Byte-identical logic to the Phase A version; the `scripts/` →
+  `runtime/` move did not introduce or worsen it. Not fixed — flagged for visibility only.
+- **(unmodified-line) `scripts/deploy-harness.sh`'s summary output block (`SK`/`AG`/`HK`/`RL`
+  counters) still doesn't include a `runtime` line** — same as the pre-existing `templates` gap
+  (see PLAN.md §2 Non-goals: deliberately not added, to avoid an unexplained asymmetry). Not a
+  defect, restated here only because correctness-review independently surfaced it as a
+  non-finding worth noting.
 
 ### Verify
 
