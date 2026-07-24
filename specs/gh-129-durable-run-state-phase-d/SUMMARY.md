@@ -61,24 +61,54 @@ not `main`/`loop` directly).
 
 ## What changed
 
-<pending — filled in after implementation>
+Task 3.1 (regression sweep, read-only): re-ran every command listed in Phase A's and Phase B's
+`SUMMARY.md` `### Verify` tables (Phase A's commands adjusted from their stale
+`scripts/test_run_state.py` path to the current `runtime/test_run_state.py` path, per Phase B's
+relocation), plus `python3 scripts/check_manifest.py` and the full `bash scripts/run-tests.sh`.
+Every command exited 0 — no regression found, no code changed.
 
 ### Rationale
 
-<pending — filled in after implementation>
+This task exists to confirm the cumulative evidence from Phase A (engine, PR #164) and Phase B
+(portable deployment, PR #166) still holds after Phase D's documentation work landed in wave 1–2
+of this same phase, before the epic branch's final merge decision. A clean re-run is itself the
+deliverable.
 
 ### Alternatives considered
 
-- none yet
+- none — this is a fixed verification sweep, not a design decision.
 
 ### Deviations
 
-- none
+- none — every re-run command passed on the first try; no regression found, no code touched.
 
 ### Verify
 
 | Check | Command | Exit | Notes | Criterion |
 | --- | --- | --- | --- | --- |
+| unit | `python3 -m pytest runtime/test_run_state.py -k test_init_creates_queued_run -q` | 0 | Phase A SC-1, re-run at relocated path | SC-6 |
+| unit | `python3 -m pytest runtime/test_run_state.py -k test_invalid_transition_rejected -q` | 0 | Phase A SC-2, re-run at relocated path | SC-6 |
+| unit | `python3 -m pytest runtime/test_run_state.py -k test_terminal_state_blocks_transition -q` | 0 | Phase A SC-3, re-run at relocated path | SC-6 |
+| unit | `python3 -m pytest runtime/test_run_state.py -k test_idempotent_replay_and_conflict -q` | 0 | Phase A SC-4, re-run at relocated path | SC-6 |
+| unit | `python3 -m pytest runtime/test_run_state.py -k test_corrupt_log_fails_visibly -q` | 0 | Phase A SC-5, re-run at relocated path | SC-6 |
+| unit | `python3 -m pytest runtime/test_run_state.py -k test_rebuild_reproduces_projection -q` | 0 | Phase A SC-6, re-run at relocated path | SC-6 |
+| unit | `python3 -m pytest runtime/test_run_state.py -k test_concurrent_writers_sequence_contiguously -q` | 0 | Phase A SC-7, re-run at relocated path | SC-6 |
+| unit | `python3 -m pytest runtime/test_run_state.py -k test_shipped_requires_valid_sha -q` | 0 | Phase A SC-8, re-run at relocated path | SC-6 |
+| unit | `python3 -m pytest runtime/test_run_state.py -k test_waiting_and_resume_metadata_required -q` | 0 | Phase A SC-9, re-run at relocated path | SC-6 |
+| unit | `python3 -m pytest runtime/test_run_state.py -q` | 0 | Phase A full suite, 29 passed, re-run at relocated path | SC-6 |
+| unit | `python3 -m pytest runtime/test_run_state.py -q` | 0 | Phase B Verify SC-1, re-confirmed | SC-6 |
+| unit | `bash -c "! test -e scripts/run_state.py && ! test -e scripts/test_run_state.py"` | 0 | Phase B Verify SC-2, re-confirmed old paths still gone | SC-6 |
+| integration | `bash -c 'T=$(mktemp -d); bash scripts/deploy-harness.sh --target "$T" >/dev/null 2>&1; [ -f "$T/.claude/runtime/run_state.py" ]; rc=$?; rm -rf "$T"; exit $rc'` | 0 | Phase B Verify SC-3, re-confirmed | SC-7 |
+| unit | `grep -q "templates runtime settings.json" scripts/install-harness.sh` | 0 | Phase B Verify SC-4, re-confirmed | SC-7 |
+| unit | `grep -q "runtime/test_run_state.py" scripts/run-tests.sh` | 0 | Phase B Verify SC-5, re-confirmed | SC-7 |
+| integration | `bash tests/scripts/runtime-sync.test.sh` | 0 | Phase B Verify SC-6, re-confirmed, 6/6 cases | SC-7 |
+| integration | `python3 scripts/check_manifest.py` | 0 | cumulative manifest still consistent across all phases | SC-8 |
+
+`bash scripts/run-tests.sh` was also re-run from the repo root and confirmed ALL GREEN (214
+python tests + all shell suites) as the repo-wide regression check this task requires — not
+listed as its own Verify row per
+`docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md` (whole-suite command
+risks the 60s per-row re-run cap).
 
 ### Rollback
 
