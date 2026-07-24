@@ -49,6 +49,21 @@ def test_read_events_truncated_last_line_raises_storage_error():
         rs.read_events("demo")
 
 
+def test_read_events_missing_required_key_raises_storage_error():
+    os.makedirs("specs/demo", exist_ok=True)
+    with open("specs/demo/events.jsonl", "w") as f:
+        f.write('{"seq": 1}\n')  # valid JSON, but missing required keys
+    with pytest.raises(rs.StorageError):
+        rs.read_events("demo")
+
+
+def test_rebuild_missing_required_key_exits_3():
+    rs.main(["init", "--slug", "demo", "--run-id", "r1"])
+    with open("specs/demo/events.jsonl", "a") as f:
+        f.write('{"seq": 2}\n')  # valid JSON, missing to_state/slug/run_id/etc.
+    assert rs.main(["rebuild", "--slug", "demo"]) == 3
+
+
 def test_invalid_transition_rejected():
     with pytest.raises(rs.InvalidTransitionError):
         rs.validate_transition("queued", "shipped", None, None)
@@ -195,6 +210,96 @@ def test_idempotent_replay_and_conflict():
         "fixed-id",
     ]
     assert rs.main(conflicting) == 2
+
+
+def test_stale_event_id_replay_raises_conflict_not_false_success():
+    rs.main(["init", "--slug", "demo", "--run-id", "r1"])
+    first = [
+        "transition",
+        "--slug",
+        "demo",
+        "--to",
+        "investigating",
+        "--event",
+        "agent.started",
+        "--event-id",
+        "stale-id",
+    ]
+    assert rs.main(first) == 0
+    # Run has advanced further since "stale-id" was recorded.
+    assert (
+        rs.main(
+            [
+                "transition",
+                "--slug",
+                "demo",
+                "--to",
+                "planning",
+                "--event",
+                "agent.step",
+            ]
+        )
+        == 0
+    )
+    # Replaying the STALE event_id must NOT report a false idempotent success;
+    # it must surface as a conflict since it no longer matches the current state.
+    assert rs.main(first) == 2
+
+    # Meanwhile, replaying the event_id of the actual LAST event still no-ops.
+    last_line = json.loads(open("specs/demo/events.jsonl").readlines()[-1])
+    replay_last = [
+        "transition",
+        "--slug",
+        "demo",
+        "--to",
+        "planning",
+        "--event",
+        "agent.step",
+        "--event-id",
+        last_line["event_id"],
+    ]
+    line_count_before = sum(1 for _ in open("specs/demo/events.jsonl"))
+    assert rs.main(replay_last) == 0
+    assert sum(1 for _ in open("specs/demo/events.jsonl")) == line_count_before
+
+
+def test_init_without_run_id_is_idempotent():
+    assert rs.main(["init", "--slug", "demo"]) == 0
+    assert rs.main(["init", "--slug", "demo"]) == 0
+
+
+def test_transition_bad_meta_exits_2_not_traceback():
+    rs.main(["init", "--slug", "demo", "--run-id", "r1"])
+    assert (
+        rs.main(
+            [
+                "transition",
+                "--slug",
+                "demo",
+                "--to",
+                "investigating",
+                "--event",
+                "agent.started",
+                "--meta",
+                "badvalue",
+            ]
+        )
+        == 2
+    )
+
+
+def test_list_plaintext_skips_malformed_run_json_without_crashing():
+    rs.main(["init", "--slug", "alive", "--run-id", "r1"])
+    os.makedirs("specs/broken", exist_ok=True)
+    rs.atomic_write_json("specs/broken/RUN.json", {"not": "a real run"})
+    import io
+    import contextlib
+
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        rc = rs.main(["list"])
+    assert rc == 0
+    assert "alive" in buf.getvalue()
 
 
 def test_shipped_requires_valid_sha():

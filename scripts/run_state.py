@@ -101,6 +101,9 @@ def read_json(path):
         raise StorageError(f"corrupt JSON in {path}: {e}")
 
 
+REQUIRED_EVENT_KEYS = ("event_id", "seq", "ts", "slug", "run_id", "to_state")
+
+
 def read_events(slug):
     path = events_path(slug)
     if not os.path.exists(path):
@@ -112,9 +115,17 @@ def read_events(slug):
             if not line:
                 continue
             try:
-                events.append(json.loads(line))
+                event = json.loads(line)
             except json.JSONDecodeError as e:
                 raise StorageError(f"corrupt event log {path}:{lineno}: {e}")
+            if not isinstance(event, dict) or not all(
+                k in event for k in REQUIRED_EVENT_KEYS
+            ):
+                raise StorageError(
+                    f"malformed event log {path}:{lineno}: missing required "
+                    f"key(s) {REQUIRED_EVENT_KEYS}"
+                )
+            events.append(event)
     if not events:
         raise StorageError(f"empty event log: {path}")
     return events
@@ -251,15 +262,16 @@ def project(events):
 
 def cmd_init(args):
     slug = args.slug
-    run_id = args.run_id or str(uuid.uuid4())
     with locked_run(slug):
         ev_path = events_path(slug)
         if os.path.exists(ev_path):
             existing = read_events(slug)
-            if existing[0].get("run_id") == run_id:
-                print(f"already initialized (run_id={run_id})")
+            existing_run_id = existing[0].get("run_id")
+            if args.run_id is None or existing_run_id == args.run_id:
+                print(f"already initialized (run_id={existing_run_id})")
                 return 0
             raise ConflictError(f"{slug} already initialized with a different run_id")
+        run_id = args.run_id or str(uuid.uuid4())
         event = {
             "event_id": str(uuid.uuid4()),
             "seq": 1,
@@ -306,12 +318,18 @@ def cmd_transition(args):
                         and ev.get("resume_event") == args.resume_event
                         and ev.get("sha") == args.sha
                     )
-                    if same:
+                    if same and ev["event_id"] == events[-1]["event_id"]:
                         print(
                             f"idempotent no-op: {slug} already at "
                             f"{ev['to_state']} via event_id={args.event_id}"
                         )
                         return 0
+                    if same:
+                        raise ConflictError(
+                            f"event_id {args.event_id} matches a stale "
+                            f"historical transition; current state is "
+                            f"{from_state}, not {ev['to_state']}"
+                        )
                     raise ConflictError(
                         f"event_id {args.event_id} already used for a "
                         "different transition"
@@ -388,7 +406,8 @@ def cmd_list(args):
     else:
         for data in results:
             print(
-                f"{data['slug']}: {data['state']} (waiting_on={data.get('waiting_on')})"
+                f"{data.get('slug')}: {data.get('state')} "
+                f"(waiting_on={data.get('waiting_on')})"
             )
     return 0
 
@@ -455,8 +474,6 @@ def build_parser():
 def main(argv=None):
     parser, sub = build_parser()
     args = parser.parse_args(argv)
-    if args.command == "transition":
-        args.meta = parse_meta(args.meta)
     handlers = {
         "init": cmd_init,
         "transition": cmd_transition,
@@ -465,6 +482,8 @@ def main(argv=None):
         "rebuild": cmd_rebuild,
     }
     try:
+        if args.command == "transition":
+            args.meta = parse_meta(args.meta)
         return handlers[args.command](args)
     except RunStateError as e:
         print(str(e), file=sys.stderr)

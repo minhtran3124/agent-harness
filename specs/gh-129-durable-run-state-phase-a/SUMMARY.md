@@ -64,6 +64,7 @@ deployment/wiring work in later phases.
 - Rule 1 — Fixed a lock-fd leak in `locked_run.__enter__`: `fcntl.flock` raising after `open()` succeeded left `__exit__` unreachable, leaking the fd. Wrapped in try/except, close-and-reraise. `scripts/run_state.py`. Commit `17176b2`.
 - Rule 2 — Added `cmd_status` test coverage (happy-path `--json` + missing-run exit-3 path), which had zero tests; flagged by code-quality review as a real gap. `scripts/test_run_state.py`. Commit `7445f16`.
 - Rule 2 — Added a one-line stderr warning when `cmd_list` skips a slug with a corrupted `RUN.json`, instead of silently omitting it (previously gave a false-clean read on `list --active`). Flagged by code-quality review on task 1.4 as a near-zero-risk fix. `scripts/run_state.py`. Commit `3317490`.
+- Rule 1 — Fixed 6 adversarial correctness-review findings (all mechanical, no architectural judgment): `parse_meta` moved inside `main()`'s try/except so a malformed `--meta` exits 2 instead of an uncaught traceback; `read_events` now validates required event keys and raises `StorageError` (exit 3) on schema-incomplete-but-JSON-valid lines instead of a downstream `KeyError`/`TypeError`; `cmd_list`'s plaintext loop uses `.get()` instead of bare indexing so one malformed `RUN.json` no longer drops the whole listing; `cmd_transition`'s idempotency match now requires the matched `event_id` to be the LAST event (else raises `ConflictError` instead of falsely reporting success on a stale replay); `cmd_init` without `--run-id` is now idempotent (checks `os.path.exists` before generating a fresh uuid). `scripts/run_state.py`, `scripts/test_run_state.py` (23 → 29 tests). Commit `fix(run-state): correctness-review findings — exit-code contract, idempotency edge cases`.
 
 ### Verify
 
@@ -78,8 +79,13 @@ deployment/wiring work in later phases.
 | unit | `python -m pytest scripts/test_run_state.py -k test_concurrent_writers_sequence_contiguously -q` | 0 | 5 real OS processes, lock serializes, contiguous seq | SC-7 |
 | unit | `python -m pytest scripts/test_run_state.py -k test_shipped_requires_valid_sha -q` | 0 | shipped without valid --sha rejected | SC-8 |
 | unit | `python -m pytest scripts/test_run_state.py -k test_waiting_and_resume_metadata_required -q` | 0 | awaiting_*/blocked/escalated require metadata | SC-9 |
-| unit | `python -m pytest scripts/test_run_state.py -q` | 0 | full suite, 23 passed |  |
-| repo | `bash scripts/run-tests.sh` | 0 | repo-wide regression gate, ALL GREEN (185 python + shell suites) |  |
+| unit | `python -m pytest scripts/test_run_state.py -q` | 0 | full suite, 29 passed |  |
+
+`bash scripts/run-tests.sh` was also run from the repo root and confirmed ALL GREEN
+(185 python + shell suites) as a repo-wide regression check, after the correctness-review
+fixes below — not listed as its own Verify row per
+`docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md` (whole-suite command
+risks the 60s per-row re-run cap).
 
 ### Rollback
 
