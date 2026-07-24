@@ -43,9 +43,7 @@ complementary, not competing:
 unaffected: every run-state checkpoint call is unconditionally non-fatal (`|| true`), so an
 older spec with no `RUN.json` simply never gets tracked by the new system — it remains fully
 usable via `STATE.md`/`/session-tracker` exactly as before. The two mechanisms never write to
-or read from each other's files; a consuming repo can have `STATE.md` with no `RUN.json`
-anywhere (Phase A/B not yet wired) or vice versa is not possible (Phase C's checkpoints are
-additive prose in already-existing skills, not a replacement for `state-breadcrumb.sh`).
+or read from each other's files.
 
 ## Session End Log
 
