@@ -367,6 +367,47 @@ def cmd_status(args):
     return 0
 
 
+def cmd_list(args):
+    specs_root = "specs"
+    results = []
+    if os.path.isdir(specs_root):
+        for slug in sorted(os.listdir(specs_root)):
+            path = run_json_path(slug)
+            if not os.path.isfile(path):
+                continue
+            try:
+                data = read_json(path)
+            except StorageError:
+                continue
+            if args.active and data.get("state") in TERMINAL_STATES:
+                continue
+            results.append(data)
+    if args.json:
+        print(json.dumps(results, indent=2, sort_keys=True))
+    else:
+        for data in results:
+            print(
+                f"{data['slug']}: {data['state']} (waiting_on={data.get('waiting_on')})"
+            )
+    return 0
+
+
+def cmd_rebuild(args):
+    slug = args.slug
+    with locked_run(slug):
+        rebuilt = project(read_events(slug))
+        if args.check:
+            current = read_json(run_json_path(slug))
+            if current != rebuilt:
+                print("DRIFT: RUN.json does not match events.jsonl", file=sys.stderr)
+                return 3
+            print(f"{slug}: RUN.json matches events.jsonl (seq={rebuilt['seq']})")
+            return 0
+        atomic_write_json(run_json_path(slug), rebuilt)
+    print(f"{slug}: rebuilt RUN.json from events.jsonl (seq={rebuilt['seq']})")
+    return 0
+
+
 def parse_meta(pairs):
     meta = {}
     for pair in pairs:
@@ -399,6 +440,14 @@ def build_parser():
     p_st.add_argument("--slug", required=True)
     p_st.add_argument("--json", action="store_true")
 
+    p_ls = sub.add_parser("list")
+    p_ls.add_argument("--active", action="store_true")
+    p_ls.add_argument("--json", action="store_true")
+
+    p_rb = sub.add_parser("rebuild")
+    p_rb.add_argument("--slug", required=True)
+    p_rb.add_argument("--check", action="store_true")
+
     return p, sub
 
 
@@ -411,6 +460,8 @@ def main(argv=None):
         "init": cmd_init,
         "transition": cmd_transition,
         "status": cmd_status,
+        "list": cmd_list,
+        "rebuild": cmd_rebuild,
     }
     try:
         return handlers[args.command](args)

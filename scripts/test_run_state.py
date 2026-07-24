@@ -1,5 +1,6 @@
 import json
 import os
+import subprocess
 import sys
 
 import pytest
@@ -318,3 +319,108 @@ def test_status_json_output():
 
 def test_status_missing_run_exits_3():
     assert rs.main(["status", "--slug", "nope"]) == 3
+
+
+def test_rebuild_reproduces_projection():
+    rs.main(["init", "--slug", "demo", "--run-id", "r1"])
+    rs.main(["transition", "--slug", "demo", "--to", "investigating", "--event", "e"])
+    before = rs.read_json("specs/demo/RUN.json")
+    os.remove("specs/demo/RUN.json")
+    assert rs.main(["rebuild", "--slug", "demo"]) == 0
+    assert rs.read_json("specs/demo/RUN.json") == before
+
+
+def test_rebuild_check_detects_drift():
+    rs.main(["init", "--slug", "demo", "--run-id", "r1"])
+    rs.atomic_write_json("specs/demo/RUN.json", {"tampered": True})
+    assert rs.main(["rebuild", "--slug", "demo", "--check"]) == 3
+
+
+def test_corrupt_log_fails_visibly():
+    rs.main(["init", "--slug", "demo", "--run-id", "r1"])
+    with open("specs/demo/events.jsonl", "a") as f:
+        f.write("not json at all\n")
+    assert rs.main(["rebuild", "--slug", "demo"]) == 3
+    assert rs.main(["rebuild", "--slug", "demo", "--check"]) == 3
+
+
+def test_list_active_excludes_terminal_states():
+    rs.main(["init", "--slug", "alive", "--run-id", "r1"])
+    rs.main(["init", "--slug", "done", "--run-id", "r2"])
+    for to_state in (
+        "investigating",
+        "planning",
+        "implementing",
+        "verifying",
+        "ready_to_merge",
+    ):
+        rs.main(["transition", "--slug", "done", "--to", to_state, "--event", "e"])
+    rs.main(
+        [
+            "transition",
+            "--slug",
+            "done",
+            "--to",
+            "shipped",
+            "--event",
+            "e",
+            "--sha",
+            "abc1234",
+        ]
+    )
+    import io
+    import contextlib
+
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        rs.main(["list", "--active", "--json"])
+    slugs = {row["slug"] for row in json.loads(buf.getvalue())}
+    assert slugs == {"alive"}
+
+
+def test_concurrent_writers_sequence_contiguously():
+    # Separate OS processes (not threads) so the fcntl lock is exercised for real —
+    # threads share one process's fd table in a way that doesn't test flock the way
+    # independent CLI invocations (e.g. two separate agent sessions) would.
+    #
+    # All 5 processes attempt the SAME edge (queued -> investigating) with DISTINCT
+    # event_ids, so none can idempotently match another's line. Only the process that
+    # wins the lock first sees from_state == "queued" and succeeds; by the time the
+    # other 4 acquire the lock, the state has already moved to "investigating", and
+    # "investigating -> investigating" is not a valid transition (not in
+    # FORWARD_TRANSITIONS, and self-loops aren't part of the universal interrupt set
+    # either) — so they exit 2 without appending anything. This is the actual property
+    # SC-7 needs: the lock serializes concurrent access so exactly one FSM-valid winner
+    # commits and the losers fail cleanly, with no duplicate/gapped seq numbers and no
+    # partial or interleaved writes to events.jsonl.
+    rs.main(["init", "--slug", "demo", "--run-id", "r1"])
+    script = os.path.abspath(__file__).replace("test_run_state.py", "run_state.py")
+    procs = []
+    for i in range(5):
+        procs.append(
+            subprocess.Popen(
+                [
+                    sys.executable,
+                    script,
+                    "transition",
+                    "--slug",
+                    "demo",
+                    "--to",
+                    "investigating",
+                    "--event",
+                    "agent.started",
+                    "--event-id",
+                    f"writer-{i}",
+                ],
+                cwd=os.getcwd(),
+            )
+        )
+    returncodes = sorted(p.wait() for p in procs)
+    assert returncodes == [0, 2, 2, 2, 2]
+
+    events = rs.read_events("demo")
+    seqs = [ev["seq"] for ev in events]
+    assert seqs == list(range(1, len(events) + 1))  # contiguous: [1, 2], no gaps
+    assert len(set(seqs)) == len(seqs)  # no duplicates
+    assert len(events) == 2  # init + exactly one winner
+    assert rs.read_json("specs/demo/RUN.json")["state"] == "investigating"
