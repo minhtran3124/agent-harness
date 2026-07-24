@@ -82,6 +82,53 @@ deliverable.
 
 - none — every re-run command passed on the first try; no regression found, no code touched.
 
+### Correctness Review
+
+6-angle FIND (parallel) over `2d7d39f..6b1cb65` (docs-only diff — no code changed, so "bugs"
+translate to factual errors/internal contradictions in the new documentation). Findings pooled
+and fixed directly (high multi-angle corroboration substituted for a separate SCORE pass — several
+findings were independently confirmed by 2-4 angles each via direct command execution):
+
+- **Fixed (Rule 1, 4x-corroborated):** `durable-run-state/PLAN.md`'s AC-2 (now SC-2) cited the
+  same test as AC-5/SC-5 (`test_idempotent_replay_and_conflict`), proving the wrong behavior.
+  Changed to `test_transition_happy_path`. Commit `3871be7`.
+- **Fixed (Rule 1):** AC-8/SC-8's cited test (`tests/hooks/session-knowledge.test.sh`) doesn't
+  test active-run discovery in this checkout (Phase C unmerged, 0 `run_state` references).
+  Changed to `test_list_active_excludes_terminal_states` (the provable engine-level capability
+  today), with a note on the Phase C integration surface. Commit `3871be7`.
+- **Fixed (Rule 1):** AC-10/SC-10's guard used a loose `'true' not in l` substring match (false
+  negative/positive risk). Tightened to `'|| true' not in l`. Commit `3871be7`.
+- **Fixed (Rule 1, schema compliance):** `durable-run-state/PLAN.md` used `AC-<n>` ids in its §3
+  table, but `plan-format.md`/`verify_summary.py` only recognize `SC-<n>` — a sibling SUMMARY.md
+  added later would have silently seen zero declared criteria. Renamed `AC-1..AC-11` →
+  `SC-1..SC-11` throughout. Commit `3871be7`.
+- **Fixed (Rule 1, 2x-corroborated):** `design.md`'s "`scripts/` and `.github/workflows/` are
+  never distributed" overclaimed — `install-harness.sh`'s `PAYLOAD` does ship two named
+  `scripts/*.sh` files (the load-bearing conclusion, that `harness-status.sh` isn't among them,
+  was still correct). Reworded to state precisely what's true. Also fixed two minor cross-
+  reference imprecisions and renamed mermaid node ids so they no longer resemble (and contradict)
+  the checkpoint numbers in prose. Commit `418e0ed`.
+- **Fixed (Rule 1):** `research-brief.md`'s "16-state FSM" headline was correct but its inline
+  enumeration only listed 14 states, omitting `fixing_ci`/`addressing_review`. Completed the
+  enumeration. Commit `09892ce`.
+- **Fixed (Rule 1):** `specs/STATE.md`'s new "Compatibility boundary" paragraph ended with a
+  grammatically broken, factually unsupported clause ("or vice versa is not possible..."). Removed
+  it — the paragraph's actual point doesn't need the reverse claim. Commit `67ed6d3`.
+- **Fixed (Rule 1, blocking):** `specs/gh-129-durable-run-state-phase-d/SUMMARY.md`'s Verify table
+  was missing coverage rows for SC-1 through SC-5, failing `verify_summary.py --lane` (which
+  `hooks/commit-quality-gate.sh` enforces on every commit touching this spec folder). Added the
+  missing rows. Commit `294d674`.
+- **Fixed (Rule 1):** This plan's own Status Log said "All 4 tasks" when 5 tasks actually exist.
+  Commit `294d674`.
+- **Fixed (Rule 1, structural):** Declaring cross-OS CI validation as a formal `SC-9` row made
+  `--lane` permanently unsatisfiable pre-PR (no "deferred SC" mechanism exists), which would have
+  blocked every subsequent commit to this folder. Removed SC-9 from the table (last row, no gap);
+  moved the requirement to `PLAN.md` §5 Risks prose, matching how Phase C avoided this same trap.
+  Also fixed two `grep -c "AC-"` checks left stale by the SC-rename fix above. Commit `26b6eab`.
+
+Full suite re-run after every fix batch: ALL GREEN (214 python tests + shell suites), no
+regressions. `verify_summary.py --lane` and `--check` both pass cleanly as of the final commit.
+
 ### Verify
 
 | Check | Command | Exit | Notes | Criterion |
