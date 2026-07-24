@@ -118,6 +118,21 @@ references was already fixed before this phase started.
 | integration | `bash tests/scripts/runtime-sync.test.sh` | 0 | 6/6 cases pass; mutation-tested by code-quality review (4/6 cases correctly fail when runtime/ registration is removed) | SC-6 |
 | repo | `bash scripts/run-tests.sh` | 0 | ALL GREEN — 214 python tests (185 + 29, wiring gap closed) + all shell suites |  |
 
+### Intent Findings
+
+<!-- From /intent-review: findings against the verbatim original request, blind to PLAN.md. -->
+
+- **(drift, behaviorally different — report-only, already user-confirmed)** Issue #129's Phase B
+  bullet list includes "Register runtime contract paths in the harness manifest," but this diff
+  does not touch `harness-manifest.json` — deferred to Phase C (see Rationale above:
+  `check_manifest.py` Check C rejects an empty `consumers` list, no real consumer exists yet).
+  This deferral was explicitly confirmed with the user during `/brainstorming` before
+  implementation started, so intent-review correctly classified it as drift rather than an
+  unapproved gap, and routed it advisory/record rather than fix-loop or escalate. One practical
+  follow-up the reviewer flagged: issue #129's Phase B checklist item will read as unchecked
+  until Phase C adds the manifest entry — worth a comment on the issue noting the deferral so it
+  doesn't read as forgotten.
+
 ### Rollback
 
 - `git revert 8981203..HEAD` (or revert the individual task commits: `8981203` move,
