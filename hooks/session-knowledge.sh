@@ -4,7 +4,8 @@
 # #129). Emits hookSpecificOutput.additionalContext when either source has content; silent
 # exit 0 when both are empty/missing. NEVER blocks: every branch exits 0 — follows the
 # defensive pattern of state-breadcrumb.sh.
-# JSON shape follows scope-gate.sh (jq -cn with additionalContext).
+# JSON shape follows scope-gate.sh's additionalContext convention, encoded here via python3
+# (no jq dependency).
 #
 # Overridable for tests:
 #   SESSION_KNOWLEDGE_DIR=/path/to/fixture/docs/solutions  bash hooks/session-knowledge.sh
@@ -26,8 +27,8 @@ RUN_STATE_ROOT="${RUN_STATE_REPO_ROOT:-$REPO_ROOT}"
 INDEX="$KB_DIR/INDEX.md"
 CRITICAL="$KB_DIR/critical-patterns.md"
 
-# --- Guard: jq required for either source ---
-if ! command -v jq >/dev/null 2>&1; then
+# --- Guard: python3 required to encode JSON output for either source ---
+if ! command -v python3 >/dev/null 2>&1; then
     exit 0
 fi
 
