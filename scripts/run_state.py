@@ -377,7 +377,8 @@ def cmd_list(args):
                 continue
             try:
                 data = read_json(path)
-            except StorageError:
+            except StorageError as e:
+                print(f"warning: {slug}: {e} (run rebuild --check)", file=sys.stderr)
                 continue
             if args.active and data.get("state") in TERMINAL_STATES:
                 continue
