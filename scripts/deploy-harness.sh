@@ -103,7 +103,7 @@ BACKUP_TS=""
 # Safe by construction: only paths in the PREVIOUS harness manifest are ever eligible to prune,
 # so a consumer's own additions (never in the manifest) are never touched. See
 # specs/deploy-prune-orphans/.
-SYNCED_DIRS_RE='^(skills|agents|hooks|rules|templates)/[^/]+$'
+SYNCED_DIRS_RE='^(skills|agents|hooks|rules|templates|runtime)/[^/]+$'
 DEPLOYED_LIST="$(mktemp)"        # accumulates `<dir>/<entry>` written this run
 record_deployed() { printf '%s\n' "$1" >> "$DEPLOYED_LIST"; }
 
@@ -380,7 +380,7 @@ preflight_protected
 
 # ---------- pipeline ----------
 step "Preparing ${B}.claude/${R}"            prep_dir
-for d in skills agents hooks rules templates; do
+for d in skills agents hooks rules templates runtime; do
   [ -e "$d" ] || continue
   step "Syncing ${B}$d/${R}"                 copy_dir "$d"
 done
