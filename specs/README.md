@@ -28,14 +28,14 @@ this line if you change it.
 |---|---|---|
 | `design.md` | `/brainstorming` | Approved design — the WHAT and WHY |
 | `research-brief.md` | `/xia2` | What already exists, alternatives, lightest path |
-| `plan.md` | `/writing-plans` | Task-by-task plan (XML tasks per `rules/plan-format.md`) |
+| `PLAN.md` | `/writing-plans` | Task-by-task plan (XML tasks per `rules/plan-format.md`) |
 
 ## Lifecycle
 
 ```
 /brainstorming → design.md
 /xia2          → research-brief.md
-/writing-plans → plan.md
+/writing-plans → PLAN.md
 /using-git-worktrees → worktree + branch
 /subagent-driven-development → implementation
 /compound → crystallize learnings into docs/solutions/
