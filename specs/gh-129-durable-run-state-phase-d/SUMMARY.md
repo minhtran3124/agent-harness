@@ -86,6 +86,11 @@ deliverable.
 
 | Check | Command | Exit | Notes | Criterion |
 | --- | --- | --- | --- | --- |
+| doc | `grep -q "RUN.json" specs/STATE.md` | 0 | specs/STATE.md documents the RUN/event ownership boundary (Task 1.1) | SC-1 |
+| doc | `grep -q "runtime/run_state.py" specs/durable-run-state/research-brief.md` | 0 | research-brief.md exists and cites the real engine module (Task 1.2) | SC-2 |
+| doc | `grep -q "Phase D" specs/durable-run-state/design.md` | 0 | design.md exists and documents all 4 phases (Task 1.3) | SC-3 |
+| doc | `grep -q "## 3. Success Criteria" specs/durable-run-state/PLAN.md` | 0 | durable-run-state/PLAN.md exists with its own acceptance-contract table (Task 2.1) | SC-4 |
+| doc | `[ "$(grep -c "AC-" specs/durable-run-state/PLAN.md)" -ge 11 ]` | 0 | durable-run-state/PLAN.md maps all 11 issue acceptance criteria (Task 2.1) | SC-5 |
 | unit | `python3 -m pytest runtime/test_run_state.py -k test_init_creates_queued_run -q` | 0 | Phase A SC-1, re-run at relocated path | SC-6 |
 | unit | `python3 -m pytest runtime/test_run_state.py -k test_invalid_transition_rejected -q` | 0 | Phase A SC-2, re-run at relocated path | SC-6 |
 | unit | `python3 -m pytest runtime/test_run_state.py -k test_terminal_state_blocks_transition -q` | 0 | Phase A SC-3, re-run at relocated path | SC-6 |
@@ -109,6 +114,10 @@ python tests + all shell suites) as the repo-wide regression check this task req
 listed as its own Verify row per
 `docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md` (whole-suite command
 risks the 60s per-row re-run cap).
+
+SC-9 (`gh pr checks`, both matrix legs) cannot be proven here — no PR exists yet for this branch.
+It will be verified and recorded in this SUMMARY once `finishing-a-development-branch` opens the
+PR and CI runs, mirroring how Phase C handled its own CI-dependent SC.
 
 ### Rollback
 

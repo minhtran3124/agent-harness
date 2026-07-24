@@ -394,4 +394,4 @@ passes the existing macOS+Ubuntu CI matrix.
   - Full suite re-run post-wave: ALL GREEN (214 python tests + shell suites), no regressions.
 - 2026-07-24 — Wave 3 dispatched and complete, no regressions found, no deviations:
   - Task 3.1 (regression sweep, SUMMARY.md evidence only) — `4214f5b`
-  - Full suite: ALL GREEN (214 python tests + shell suites). All 4 tasks across 3 waves complete.
+  - Full suite: ALL GREEN (214 python tests + shell suites). All 5 tasks across 3 waves complete.
