@@ -30,7 +30,7 @@ KEEP_SOURCES=0
 # target root — a previous installer staged these at the root and pruned them afterward,
 # which destroyed real project files when those names already existed (or when run inside
 # the harness-skills repo itself).
-PAYLOAD=(skills agents hooks rules templates settings.json scripts/deploy-harness.sh scripts/init-structure.sh VERSION CHANGELOG.md)
+PAYLOAD=(skills agents hooks rules templates runtime settings.json scripts/deploy-harness.sh scripts/init-structure.sh VERSION CHANGELOG.md)
 STAGE_NAME=".harness-source"
 
 # ---------- styling ----------
@@ -158,6 +158,9 @@ fi
 if [ ! -f "$TARGET_DIR/scripts/install-harness.sh" ]; then
   LEGACY=()
   for item in "${PAYLOAD[@]}"; do
+    # "runtime" was added to PAYLOAD in this phase, so no prior installer version could ever
+    # have staged it at a consumer's root — any hit here is always the consumer's own dir.
+    [ "$item" = "runtime" ] && continue
     [ -e "$TARGET_DIR/$item" ] && LEGACY+=("$item")
   done
   if [ "${#LEGACY[@]}" -gt 0 ]; then
