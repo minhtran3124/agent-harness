@@ -1,6 +1,6 @@
 ---
 slug: gh-129-durable-run-state-phase-d
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-07-24
 ---
@@ -398,3 +398,6 @@ passes the existing macOS+Ubuntu CI matrix.
 - 2026-07-24 — Wave 3 dispatched and complete, no regressions found, no deviations:
   - Task 3.1 (regression sweep, SUMMARY.md evidence only) — `4214f5b`
   - Full suite: ALL GREEN (214 python tests + shell suites). All 5 tasks across 3 waves complete.
+- 2026-07-24 — Correctness-review PASS (9 findings, all fixed); intent-review PASS (0
+  gap/drift/excess). Full suite: 586 tests, ALL GREEN.
+- 2026-07-24 — shipped via `feat/gh-129-durable-run-state-phase-d` (PR pending)
