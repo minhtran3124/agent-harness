@@ -578,4 +578,4 @@ stops at `investigating`, no synthetic/mock chain).
   - All 7 tasks across 2 waves now complete.
 - 2026-07-24 — Context-propagation audit PASS; correctness-review pass (1 fixed, 2 advisory);
   intent-review pass (0 gap/excess, 1 advisory drift). Full suite: 581 tests, ALL GREEN.
-- 2026-07-24 — shipped via `feat/gh-129-durable-run-state-phase-c` (PR pending)
+- 2026-07-24 — shipped via `feat/gh-129-durable-run-state-phase-c` (PR #167)
