@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 
@@ -300,3 +301,20 @@ def test_post_terminal_transition_rejected():
         )
         == 2
     )
+
+
+def test_status_json_output():
+    rs.main(["init", "--slug", "demo", "--run-id", "r1"])
+    import io
+    import contextlib
+
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        assert rs.main(["status", "--slug", "demo", "--json"]) == 0
+    data = json.loads(buf.getvalue())
+    assert data["state"] == "queued"
+    assert data["run_id"] == "r1"
+
+
+def test_status_missing_run_exits_3():
+    assert rs.main(["status", "--slug", "nope"]) == 3
