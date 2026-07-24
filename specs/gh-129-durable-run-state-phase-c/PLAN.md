@@ -10,7 +10,7 @@ created: 2026-07-24
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**7 tasks · 2 waves · 9 files · 0/7 done**
+**7 tasks · 2 waves · 9 files · 6/7 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -39,12 +39,12 @@ flowchart LR
 ```
 
 ### Progress
-- [ ] 1.1 — feature-intake: init + investigating + planning checkpoints (wave 1)
-- [ ] 1.2 — subagent-driven-development: implementing + verifying checkpoints (wave 1)
-- [ ] 1.3 — finishing-a-development-branch: ready_to_merge checkpoint (wave 1)
-- [ ] 1.4 — session-knowledge.sh: active-run summary (wave 1)
-- [ ] 1.5 — harness-status.sh: Active Runs section (wave 1)
-- [ ] 1.6 — post-merge-maintenance.yml: shipped checkpoint (wave 1)
+- [x] 1.1 — feature-intake: init + investigating + planning checkpoints (wave 1)
+- [x] 1.2 — subagent-driven-development: implementing + verifying checkpoints (wave 1)
+- [x] 1.3 — finishing-a-development-branch: ready_to_merge checkpoint (wave 1)
+- [x] 1.4 — session-knowledge.sh: active-run summary (wave 1)
+- [x] 1.5 — harness-status.sh: Active Runs section (wave 1)
+- [x] 1.6 — post-merge-maintenance.yml: shipped checkpoint (wave 1)
 - [ ] 2.1 — harness-manifest.json: register the contract (wave 2)
 <!-- AT-A-GLANCE:END -->
 
@@ -563,3 +563,12 @@ stops at `investigating`, no synthetic/mock chain).
 ## 6. Status Log
 
 - 2026-07-24 — Plan created (proposed).
+- 2026-07-24 — Plan marked active; wave 1 dispatched (6 tasks, parallel, disjoint files).
+- 2026-07-24 — Wave 1 complete, all `<verify>` green, no deviations:
+  - Task 1.1 (feature-intake) — `9bd1574`
+  - Task 1.2 (subagent-driven-development) — `27329a1`
+  - Task 1.3 (finishing-a-development-branch) — `2929839`
+  - Task 1.4 (session-knowledge.sh) — `e4a89b6`
+  - Task 1.5 (harness-status.sh) — `018d208`
+  - Task 1.6 (post-merge-maintenance.yml) — `5b5c09f`
+  - Full suite re-run post-wave: ALL GREEN (214 python tests + shell suites), no regressions.
