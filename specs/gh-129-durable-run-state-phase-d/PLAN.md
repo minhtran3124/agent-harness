@@ -10,7 +10,7 @@ created: 2026-07-24
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**5 tasks · 3 waves · 6 files · 0/5 done**
+**5 tasks · 3 waves · 6 files · 3/5 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -39,9 +39,9 @@ flowchart LR
 ```
 
 ### Progress
-- [ ] 1.1 — specs/STATE.md: document the RUN/event ownership boundary (wave 1)
-- [ ] 1.2 — specs/durable-run-state/research-brief.md: canonical research brief (wave 1)
-- [ ] 1.3 — specs/durable-run-state/design.md: canonical design (wave 1)
+- [x] 1.1 — specs/STATE.md: document the RUN/event ownership boundary (wave 1)
+- [x] 1.2 — specs/durable-run-state/research-brief.md: canonical research brief (wave 1)
+- [x] 1.3 — specs/durable-run-state/design.md: canonical design (wave 1)
 - [ ] 2.1 — specs/durable-run-state/PLAN.md: canonical acceptance-contract (wave 2)
 - [ ] 3.1 — Regression sweep: confirm cumulative evidence still holds (wave 3)
 <!-- AT-A-GLANCE:END -->
@@ -383,3 +383,9 @@ passes the existing macOS+Ubuntu CI matrix.
 ## 6. Status Log
 
 - 2026-07-24 — Plan created (proposed).
+- 2026-07-24 — Plan marked active; wave 1 dispatched (3 tasks, parallel, disjoint files).
+- 2026-07-24 — Wave 1 complete, all `<verify>` green, no deviations:
+  - Task 1.1 (specs/STATE.md) — `9d65d77`
+  - Task 1.2 (research-brief.md) — `125bd27`
+  - Task 1.3 (design.md) — `777f7de`
+  - Full suite re-run post-wave: ALL GREEN (214 python tests + shell suites), no regressions.
