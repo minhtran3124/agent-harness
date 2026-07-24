@@ -64,7 +64,53 @@ blocking the workflow itself (every checkpoint call is unconditionally `|| true`
 
 ### Deviations
 
-- none
+- Rule 1 — `hooks/session-knowledge.sh`'s `jq` guard blocked both KB and active-run reporting on
+  any host without `jq`, even though neither source uses `jq` (both encode via `python3`). Fixed
+  the guard to check `python3` instead. Commit `0c1c7b8`.
+
+### Correctness Review
+
+Full FIND (6 angles, parallel) → SCORE (independent scorers) → fix-loop pass over
+`5dcaa90..6f51fbd`.
+
+- **Fixed (score 75, Rule 1):** `jq` guard bug above — re-verified: `bash
+  tests/hooks/session-knowledge.test.sh` 12/12 pass; manual no-`jq` PATH simulation confirmed the
+  hook now emits correct JSON without `jq` present. Full repo suite re-run post-fix: ALL GREEN.
+- **Advisory (score 50, below the 75 fix-loop threshold):** the CI `shipped` checkpoint
+  (`.github/workflows/post-merge-maintenance.yml`) writes `specs/<slug>/RUN.json` +
+  `events.jsonl` in the ephemeral runner checkout, but no step in the workflow (nor any skill)
+  stages/commits those files (the only commit step, "Open the bookkeeping PR", stages a fixed
+  list — `VERSION`, `CHANGELOG.md`, the two `docs/harness-experimental/` ledgers — never
+  `specs/**`). Independently reported by 5 of 6 FIND angles, but the independent scorer capped it
+  at 50 because the triggering precondition (a committed `RUN.json` reaching the merged tree at
+  all) is itself uncommon under current practice — no skill instructs committing it. Net effect:
+  the `shipped` transition frequently no-ops today. Not fixed in this phase (would require a
+  design decision — commit run-state sidecars as part of the workflow, or accept them as
+  local-only observability with `shipped` best-effort). Flagged for follow-up.
+- **Deferred, per user decision:** a `tiny`-lane (or abandoned) run never reaches a terminal
+  state, so `list --active`'s consumers (`hooks/session-knowledge.sh`,
+  `scripts/harness-status.sh`) will accumulate stale entries indefinitely (display capped at 5,
+  underlying set unbounded). Fixing requires adding staleness/filter logic to
+  `runtime/run_state.py` — outside Phase C's declared file scope (a Phase A engine file). User
+  chose to defer as a documented, non-blocking known limitation rather than escalate-and-block.
+
+### Context-Propagation Audit
+
+**Verdict: PASS** (diff range `5dcaa90..6f51fbd`).
+
+Both new checkpoints in `subagent-driven-development/SKILL.md` are orchestrator-scoped, not
+delegated to an isolated subagent: the "implementing" checkpoint fires in the same step as the
+`PLAN.md status: active` edit (controller action, before wave dispatch); the "verifying" checkpoint
+fires after the whole per-task dispatch loop completes. Confirmed via `git diff` line inspection
+plus a grep of `implementer-prompt.md`/`spec-reviewer-prompt.md`/`code-quality-reviewer-prompt.md`
+(no `run_state`/`Run-state` matches — none of the 3 dispatch/reviewer prompts were touched or
+reference the checkpoint), so there is no P1-class "instruction named in a dispatch prompt but
+never Read by the isolated worker" pattern. Every checkpoint across all 3 SKILL.md files is a
+complete, self-contained inline bash command (not a pointer to an external rule needing separate
+propagation). `hooks/session-knowledge.sh`/`scripts/harness-status.sh` are executable scripts
+(runtime correctness is `/correctness-review`'s job, not this audit's) and were ruled out of scope
+for the same reason. `harness-manifest.json`'s new entry registers exactly the 6 consumer files the
+diff touches, one-for-one — no unanchored subset.
 
 ### Verify
 
