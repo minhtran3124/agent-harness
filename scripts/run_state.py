@@ -36,6 +36,7 @@ Exit codes: 0 success or idempotent no-op; 2 invalid input or invalid transition
 import fcntl
 import json
 import os
+import re
 from datetime import datetime, timezone
 
 
@@ -139,3 +140,104 @@ class locked_run:
         fcntl.flock(self._fh.fileno(), fcntl.LOCK_UN)
         self._fh.close()
         return False
+
+
+# --- FSM: states, valid transitions, projection fold -----------------------
+
+TERMINAL_STATES = {"shipped", "cancelled", "superseded"}
+INTERRUPT_STATES = {"blocked", "escalated"}
+WAITING_STATES = {"awaiting_confirmation", "awaiting_ci", "awaiting_review"}
+ACTIVE_STATES = {
+    "queued",
+    "investigating",
+    "awaiting_confirmation",
+    "planning",
+    "implementing",
+    "verifying",
+    "awaiting_ci",
+    "fixing_ci",
+    "awaiting_review",
+    "addressing_review",
+    "ready_to_merge",
+}
+ALL_STATES = ACTIVE_STATES | INTERRUPT_STATES | TERMINAL_STATES
+
+# Happy-path forward edges. Every active state may ALSO go to blocked/escalated/
+# cancelled/superseded at any time (added by valid_targets) — those are universal
+# interrupts, not modeled per-state here to avoid repeating them 11 times.
+FORWARD_TRANSITIONS = {
+    "queued": {"investigating"},
+    "investigating": {"awaiting_confirmation", "planning"},
+    "awaiting_confirmation": {"planning"},
+    "planning": {"implementing"},
+    "implementing": {"verifying"},
+    "verifying": {"awaiting_ci", "ready_to_merge"},
+    "awaiting_ci": {"fixing_ci", "awaiting_review", "ready_to_merge"},
+    "fixing_ci": {"awaiting_ci", "verifying"},
+    "awaiting_review": {"addressing_review", "ready_to_merge"},
+    "addressing_review": {"awaiting_review", "verifying"},
+    "ready_to_merge": {"shipped"},
+}
+
+SHA_RE = re.compile(r"^[0-9a-f]{7,40}$", re.IGNORECASE)
+
+
+def valid_targets(state):
+    """States `state` may transition to. Empty set for terminal states."""
+    if state in TERMINAL_STATES:
+        return set()
+    if state in INTERRUPT_STATES:
+        # Resume into any active state, or give up.
+        return ACTIVE_STATES | {"cancelled"}
+    targets = set(FORWARD_TRANSITIONS.get(state, set()))
+    targets |= {"blocked", "escalated", "cancelled", "superseded"}
+    return targets
+
+
+def validate_transition(from_state, to_state, waiting_on, resume_event):
+    if from_state not in ALL_STATES:
+        raise InvalidTransitionError(f"unknown from_state: {from_state!r}")
+    if to_state not in ALL_STATES:
+        raise InvalidTransitionError(f"unknown to_state: {to_state!r}")
+    if from_state in TERMINAL_STATES:
+        raise InvalidTransitionError(
+            f"{from_state} is terminal; no further transitions"
+        )
+    if to_state not in valid_targets(from_state):
+        raise InvalidTransitionError(
+            f"{from_state} -> {to_state} is not a valid transition"
+        )
+    if to_state in WAITING_STATES and not waiting_on:
+        raise InvalidTransitionError(f"{to_state} requires --waiting-on")
+    if to_state in INTERRUPT_STATES and not resume_event:
+        raise InvalidTransitionError(f"{to_state} requires --resume-event")
+
+
+def project(events):
+    """Pure fold: replay an ordered event list into the current RUN.json projection."""
+    if not events:
+        raise StorageError("no events to project")
+    first = events[0]
+    state = first["to_state"]
+    waiting_on = first.get("waiting_on")
+    resume_event = first.get("resume_event")
+    sha = first.get("sha")
+    for ev in events[1:]:
+        state = ev["to_state"]
+        waiting_on = ev.get("waiting_on")
+        resume_event = ev.get("resume_event")
+        if ev.get("sha"):
+            sha = ev["sha"]
+    last = events[-1]
+    return {
+        "slug": first["slug"],
+        "run_id": first["run_id"],
+        "state": state,
+        "seq": last["seq"],
+        "waiting_on": waiting_on,
+        "resume_event": resume_event,
+        "sha": sha,
+        "created_at": first["ts"],
+        "updated_at": last["ts"],
+        "last_event_id": last["event_id"],
+    }
