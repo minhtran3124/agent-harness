@@ -10,7 +10,7 @@ created: 2026-07-24
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**7 tasks · 2 waves · 9 files · 6/7 done**
+**7 tasks · 2 waves · 9 files · 7/7 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -45,7 +45,7 @@ flowchart LR
 - [x] 1.4 — session-knowledge.sh: active-run summary (wave 1)
 - [x] 1.5 — harness-status.sh: Active Runs section (wave 1)
 - [x] 1.6 — post-merge-maintenance.yml: shipped checkpoint (wave 1)
-- [ ] 2.1 — harness-manifest.json: register the contract (wave 2)
+- [x] 2.1 — harness-manifest.json: register the contract (wave 2)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -572,3 +572,7 @@ stops at `investigating`, no synthetic/mock chain).
   - Task 1.5 (harness-status.sh) — `018d208`
   - Task 1.6 (post-merge-maintenance.yml) — `5b5c09f`
   - Full suite re-run post-wave: ALL GREEN (214 python tests + shell suites), no regressions.
+- 2026-07-24 — Wave 2 dispatched and complete, `<verify>` green, no deviations:
+  - Task 2.1 (harness-manifest.json) — `8924863`
+  - Full suite re-run post-wave: ALL GREEN (214 python tests + shell suites), no regressions.
+  - All 7 tasks across 2 waves now complete.

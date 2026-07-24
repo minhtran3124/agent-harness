@@ -36,15 +36,31 @@ CI validation of the full multi-phase contract).
 
 ## What changed
 
-<blocked pending escalation — see ESCALATIONS.md>
+Wired the durable run-state engine (`runtime/run_state.py`, Phases A+B) into 8 checkpoints across
+6 files: `skills/feature-intake/SKILL.md` (init + investigating + planning),
+`skills/subagent-driven-development/SKILL.md` (implementing + verifying),
+`skills/finishing-a-development-branch/SKILL.md` (ready_to_merge), `hooks/session-knowledge.sh`
+(SessionStart active-run summary), `scripts/harness-status.sh` (Active Runs section),
+`.github/workflows/post-merge-maintenance.yml` (shipped-on-merge), plus a
+`harness-manifest.json` `contracts` entry registering the 6 consumers. Fixed a real FSM gap found
+during design review (no direct `queued→implementing` edge) by adding the `investigating→planning`
+checkpoint, scoped to normal/high-risk lanes only.
 
 ### Rationale
 
-<blocked pending escalation>
+Phases A and B shipped the engine and its portable deployment, but nothing called it —
+`runtime/run_state.py` was inert. This phase closes that gap so the workflow's own steps produce
+a durable, queryable record of where each spec is in its lifecycle, without ever gating or
+blocking the workflow itself (every checkpoint call is unconditionally `|| true`).
 
 ### Alternatives considered
 
-- none yet
+- Mapping the `tiny` lane through the FSM too (via a mock/synthetic chain) — considered and
+  reversed; see `design.md` §5 and `ESCALATIONS.md` E001. Only normal/high-risk lanes get the full
+  chain; `tiny` stops at `investigating`.
+- Extending `deploy-harness.sh`/`install-harness.sh` to distribute `scripts/`/`.github/workflows/`
+  generally, making checkpoints 7-8 portable — ruled out as scope creep beyond the issue's ask
+  (`design.md` §2c).
 
 ### Deviations
 
@@ -54,10 +70,25 @@ CI validation of the full multi-phase contract).
 
 | Check | Command | Exit | Notes | Criterion |
 | --- | --- | --- | --- | --- |
+| feature-intake init checkpoint | `grep -q "run_state.py init" skills/feature-intake/SKILL.md` | 0 | | SC-1 |
+| feature-intake planning checkpoint | `grep -q "route.<lane>" skills/feature-intake/SKILL.md` | 0 | | SC-2 |
+| subagent-driven-development implementing checkpoint | `grep -q "plan.execution_started" skills/subagent-driven-development/SKILL.md` | 0 | | SC-3 |
+| subagent-driven-development verifying checkpoint | `grep -q "tasks.complete" skills/subagent-driven-development/SKILL.md` | 0 | | SC-4 |
+| finishing-a-development-branch ready_to_merge checkpoint | `grep -q "pr.opened" skills/finishing-a-development-branch/SKILL.md` | 0 | | SC-5 |
+| session-knowledge.sh test suite | `bash tests/hooks/session-knowledge.test.sh` | 0 | 12 passed (8 existing + 4 new) | SC-6 |
+| harness-status.sh test suite | `bash tests/scripts/harness-status.test.sh` | 0 | 19 passed (16 existing + 3 new) | SC-7 |
+| post-merge-maintenance.yml shipped checkpoint | `grep -q "Run-state checkpoint" .github/workflows/post-merge-maintenance.yml` | 0 | also validated with `yaml.safe_load()` | SC-8 |
+| harness-manifest.json contract | `python3 scripts/check_manifest.py` | 0 | | SC-9 |
+
+`bash scripts/run-tests.sh` (the full repo suite) was run manually after wave 1 and again after
+wave 2 — both times ALL GREEN (214 python tests + all shell suites), no regressions. Not included
+as a Verify row per `docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md`: a
+whole-suite invocation exceeds the 60s per-row cap this table enforces.
 
 ### Rollback
 
-- `git revert <sha>`
+- `git revert <sha>` for each of: `9bd1574`, `27329a1`, `2929839`, `e4a89b6`, `018d208`,
+  `5b5c09f`, `8924863` (each task is an independent, atomically-revertible commit).
 
 ### Harness-Delta
 
