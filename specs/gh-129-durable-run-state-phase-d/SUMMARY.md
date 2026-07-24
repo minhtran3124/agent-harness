@@ -129,6 +129,16 @@ findings were independently confirmed by 2-4 angles each via direct command exec
 Full suite re-run after every fix batch: ALL GREEN (214 python tests + shell suites), no
 regressions. `verify_summary.py --lane` and `--check` both pass cleanly as of the final commit.
 
+### Intent Findings
+
+Fresh blind reviewer (no `specs/gh-129-durable-run-state-phase-d/PLAN.md` access) checked the
+diff `2d7d39f~1..1e725e6` against issue #129's Phase D section (all 4 bullets + 11 acceptance
+criteria) and its Non-goals, verbatim. **Verdict: faithfully implements the request.** All 4
+Phase D bullets satisfied; all 11 acceptance criteria mapped in `specs/durable-run-state/PLAN.md`
+§3 (confirmed `grep -c "SC-"` = 11); two cited commands spot-checked and passing; the one
+criterion genuinely unprovable pre-PR (cross-OS CI) is honestly disclosed, not fabricated. No
+`gap`, no `drift`, no `excess`. No routing action required.
+
 ### Verify
 
 | Check | Command | Exit | Notes | Criterion |
