@@ -87,6 +87,26 @@ fixes below — not listed as its own Verify row per
 `docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md` (whole-suite command
 risks the 60s per-row re-run cap).
 
+### Advisory Findings
+
+<!-- From /correctness-review: findings that scored below the 75 fix-loop threshold. Not
+     fixed, not discarded — reported for a human to weigh. -->
+
+- **(score 50) `atomic_write_json` doesn't clean up its temp file or remap the exception if
+  `os.fsync`/`os.replace` raises** (`scripts/run_state.py`, `atomic_write_json`). A disk-full or
+  permission-denied failure mid-write leaves an orphan `<path>.tmp.<pid>` file and escapes as a
+  raw `OSError` (exit 1) instead of the documented `StorageError` (exit 3). Scored 50 (real but
+  low reachability — a small local JSON write to a repo directory rarely hits ENOSPC/EACCES in
+  normal usage). Not fixed in this phase; worth a `try/except OSError: unlink tmp; raise
+  StorageError` wrap if this surfaces in practice.
+- **(score 50) `--slug` accepts path separators / `..`, allowing storage to land outside
+  `specs/`** (`scripts/run_state.py`, `spec_dir`). `init --slug '../escaped'` writes
+  `events.jsonl`/`RUN.json` outside the `specs/` root with exit 0. Scored 50 — currently the CLI
+  has no external/untrusted caller (Phase B/C wiring is out of scope for this phase), so `--slug`
+  is always supplied by a trusted operator on their own machine. Should be revisited (reject
+  slugs matching `[^A-Za-z0-9._-]` or containing `..`) before Phase B/C exposes this to any
+  less-trusted input path.
+
 ### Rollback
 
 - `git revert <sha>`
