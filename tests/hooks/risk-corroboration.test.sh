@@ -255,8 +255,7 @@ numeric_content=$(for i in $(seq 1 25); do printf 'timeout %d\n' "$((i * 1000))"
 stage "$repo" "app/config.py" "$numeric_content"
 stage "$repo" "specs/x/SUMMARY.md" "Lane: tiny"
 run_hook "$repo" $H "$COMMIT_JSON"
-if [ "$RC" -eq 0 ] && ! echo "$OUT" | grep -qF "/simplify"; then pass
-else fail "want rc=0 and no /simplify note — rc=$RC out: $(echo "$OUT" | head -3 | tr '\n' ' ')"; fi
+assert_rc_not_contains 0 "/simplify"
 
 t "small diff under both thresholds → no /simplify note"
 repo=$(new_repo $H)
@@ -264,7 +263,6 @@ small_content=$(for i in $(seq 1 10); do printf 'line %d = %d\n' "$i" "$i"; done
 stage "$repo" "app/data.py" "$small_content"
 stage "$repo" "specs/x/SUMMARY.md" "Lane: tiny"
 run_hook "$repo" $H "$COMMIT_JSON"
-if [ "$RC" -eq 0 ] && ! echo "$OUT" | grep -qF "/simplify"; then pass
-else fail "want rc=0 and no /simplify note — rc=$RC out: $(echo "$OUT" | head -3 | tr '\n' ' ')"; fi
+assert_rc_not_contains 0 "/simplify"
 
 finish
