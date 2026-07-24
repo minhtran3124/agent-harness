@@ -1,6 +1,6 @@
 ---
 slug: gh-129-durable-run-state-phase-a
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-07-24
 ---
@@ -879,7 +879,14 @@ that a research-brief would otherwise establish; this plan treats the issue body
 
 - 2026-07-24 — Plan created (proposed).
 - 2026-07-24 — Marked active; execution started in worktree `feat/gh-129-durable-run-state-phase-a`.
-- 2026-07-24 — Wave 1 (Task 1.1, storage primitives): `27c480c`, fix `17176b2`. Spec + quality review passed.
-- 2026-07-24 — Wave 2 (Task 1.2, FSM + transition validation): `afda9ae`. Spec + quality review passed.
-- 2026-07-24 — Wave 3 (Task 1.3, CLI init/transition/status): `7dd812c`, follow-up `7445f16`. Spec + quality review passed.
-- 2026-07-24 — Wave 4 (Task 1.4, CLI list/rebuild + concurrency test): `90b0945`, fix `3317490`. Spec + quality review passed. All 9 SC rows green; 23/23 unit tests; repo-wide `run-tests.sh` ALL GREEN.
+- 2026-07-24 — Wave 1 (Task 1.1, storage primitives): `5b0a84b`, fix `429de18`. Spec + quality review passed.
+- 2026-07-24 — Wave 2 (Task 1.2, FSM + transition validation): `54ca91f`. Spec + quality review passed.
+- 2026-07-24 — Wave 3 (Task 1.3, CLI init/transition/status): `06a9f4f`, follow-up `94ebf69`. Spec + quality review passed.
+- 2026-07-24 — Wave 4 (Task 1.4, CLI list/rebuild + concurrency test): `17bae3e`, fix `cc649eb`. Spec + quality review passed. All 9 SC rows green; 23/23 unit tests; repo-wide `run-tests.sh` ALL GREEN.
+- 2026-07-24 — Rebased branch onto `github/main` (`3d1ba4d`): the worktree had originally branched
+  from a stale local `main`, pulling in ~70 unrelated files from prior, already-completed harness
+  work. Content of all 5 touched files verified byte-identical before/after rebase; commit SHAs
+  above are post-rebase.
+- 2026-07-24 — `/correctness-review` passed (6 findings fixed, 2 advisory recorded). `/intent-review`
+  passed (1 advisory, 1 ambiguous finding escalated as E001 and resolved — accept as-is).
+- 2026-07-24 — Marked shipped; PR opened via `finishing-a-development-branch`.
