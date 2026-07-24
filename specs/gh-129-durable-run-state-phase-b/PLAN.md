@@ -277,4 +277,4 @@ and the escalation resolved with the user during `/brainstorming`.
 - 2026-07-24 — Wave 2 (Task 1.2 `caf67be`, 1.3 `bfc7979`, 1.4 `d9ae778`, parallel): spec + quality review passed. Follow-up comment fix `a13ddf8` from quality review.
 - 2026-07-24 — Wave 3 (Task 1.5, runtime-sync test): `3c162e0`. Spec + quality review passed (quality review confirmed load-bearing assertions via mutation testing). All 6 SC rows green; 214/214 repo-wide unit tests; `bash scripts/run-tests.sh` ALL GREEN.
 - 2026-07-24 — `/correctness-review` passed (2 findings fixed via `bfbf619`, 3 advisory recorded — all `unmodified-line`). All 6 SC rows re-confirmed green post-fix.
-- 2026-07-24 — `/intent-review` passed (1 drift finding, already user-confirmed, routed advisory). Shipped via `feat/gh-129-durable-run-state-phase-b`, PR against `feat/gh-129-durable-run-state`.
+- 2026-07-24 — `/intent-review` passed (1 drift finding, already user-confirmed, routed advisory). Shipped via `feat/gh-129-durable-run-state-phase-b` (PR #166) against `feat/gh-129-durable-run-state`.
