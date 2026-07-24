@@ -128,7 +128,11 @@ class locked_run:
     def __enter__(self):
         os.makedirs(spec_dir(self.slug), exist_ok=True)
         self._fh = open(lock_path(self.slug), "a+")
-        fcntl.flock(self._fh.fileno(), fcntl.LOCK_EX)
+        try:
+            fcntl.flock(self._fh.fileno(), fcntl.LOCK_EX)
+        except Exception:
+            self._fh.close()
+            raise
         return self
 
     def __exit__(self, *exc):
