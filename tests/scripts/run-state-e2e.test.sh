@@ -26,6 +26,10 @@ new_sandbox() {
 
 LOG() { echo "$SANDBOX/specs/$1/events.jsonl"; }
 lines() { [ -f "$1" ] && wc -l < "$1" | tr -d ' ' || echo 0; }
+# Byte-level fingerprint (size + checksum). `wc -l` cannot see an in-place rewrite of an
+# existing event, nor an append with no trailing newline — both would leave the line count
+# unchanged while mutating the audit log. cksum is POSIX, present on macOS and Linux.
+digest() { [ -f "$1" ] && cksum < "$1" || echo "absent"; }
 
 # Drive the full lifecycle. Echoes nothing; leaves the run at `shipped`.
 run_full_lifecycle() {
@@ -71,7 +75,8 @@ if [ "$seqs" = "ok" ]; then pass; else fail "seq sequence was $seqs"; fi
 t "every event carries the full required key set"
 missing=$(python3 -c "
 import json,sys
-need={'event','event_id','from_state','to_state','run_id','seq','slug','ts','sha','waiting_on','metadata'}
+need={'event','event_id','from_state','to_state','run_id','seq','slug','ts','sha',
+      'waiting_on','resume_event','metadata'}
 bad=[]
 for i,l in enumerate(open(sys.argv[1]),1):
     if l.strip() and not need <= set(json.loads(l)): bad.append(i)
@@ -118,48 +123,58 @@ assert_rc 0
 # --------------------------------------------------------------------------- #
 # The append-nothing invariant — the property that makes the log trustworthy.
 # --------------------------------------------------------------------------- #
-t "a post-terminal transition is refused (exit 2) and appends nothing"
-before=$(lines "$LOGF")
+t "a post-terminal transition is refused (exit 2) and leaves the log byte-identical"
+before=$(digest "$LOGF")
 rs transition --slug "$SLUG" --to implementing --event "reopen after ship"
-after=$(lines "$LOGF")
-if [ "$RC" -eq 2 ] && [ "$before" -eq "$after" ]; then pass
-else fail "rc=$RC (want 2), lines $before -> $after"; fi
+after=$(digest "$LOGF")
+if [ "$RC" -eq 2 ] && [ "$before" = "$after" ]; then pass
+else fail "rc=$RC (want 2), cksum [$before] -> [$after]"; fi
 
-t "entering a waiting state without --waiting-on is refused and appends nothing"
+t "entering a waiting state without --waiting-on is refused and leaves the log byte-identical"
 new_sandbox
 rs init --slug "$SLUG"
 rs transition --slug "$SLUG" --to investigating --event i
 rs transition --slug "$SLUG" --to planning --event p
 rs transition --slug "$SLUG" --to implementing --event im
 rs transition --slug "$SLUG" --to verifying --event v
-L2=$(LOG "$SLUG"); before=$(lines "$L2")
+L2=$(LOG "$SLUG"); before=$(digest "$L2")
 rs transition --slug "$SLUG" --to awaiting_ci --event "no waiting-on"
-after=$(lines "$L2")
-if [ "$RC" -eq 2 ] && [ "$before" -eq "$after" ]; then pass
-else fail "rc=$RC (want 2), lines $before -> $after"; fi
+after=$(digest "$L2")
+if [ "$RC" -eq 2 ] && [ "$before" = "$after" ]; then pass
+else fail "rc=$RC (want 2), cksum [$before] -> [$after]"; fi
 
-t "a run that only ever gets refused transitions keeps a 1-line log"
+t "a run that only ever gets refused transitions keeps its init-only log unchanged"
 new_sandbox
 SLUG2="gh-208-skip-check"; mkdir -p "$SANDBOX/specs/$SLUG2"
 rs init --slug "$SLUG2"
+before=$(digest "$(LOG "$SLUG2")")
 rs transition --slug "$SLUG2" --to shipped   --event "skip the whole FSM"
 rs transition --slug "$SLUG2" --to queued    --event "self transition"
 rs transition --slug "$SLUG2" --to verifying --event "jump ahead"
-n=$(lines "$(LOG "$SLUG2")")
-if [ "$n" -eq 1 ]; then pass; else fail "log grew to $n lines from refused transitions alone"; fi
+n=$(lines "$(LOG "$SLUG2")"); after=$(digest "$(LOG "$SLUG2")")
+if [ "$n" -eq 1 ] && [ "$before" = "$after" ]; then pass
+else fail "lines=$n (want 1), cksum [$before] -> [$after]"; fi
 
-t "an idempotent replay returns 0 without appending or bumping seq"
+t "an idempotent replay returns 0 and leaves the log byte-identical, seq unchanged"
 rs transition --slug "$SLUG2" --to investigating --event "intake" --event-id evt-fixed-001
-before=$(lines "$(LOG "$SLUG2")")
+before=$(digest "$(LOG "$SLUG2")")
 rs transition --slug "$SLUG2" --to investigating --event "intake" --event-id evt-fixed-001
-after=$(lines "$(LOG "$SLUG2")")
+after=$(digest "$(LOG "$SLUG2")")
 seq=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['seq'])" "$SANDBOX/specs/$SLUG2/RUN.json")
-if [ "$RC" -eq 0 ] && [ "$before" -eq "$after" ] && [ "$seq" -eq 2 ]; then pass
-else fail "rc=$RC, lines $before -> $after, seq=$seq (want rc=0, no growth, seq=2)"; fi
+if [ "$RC" -eq 0 ] && [ "$before" = "$after" ] && [ "$seq" -eq 2 ]; then pass
+else fail "rc=$RC, cksum [$before] -> [$after], seq=$seq (want rc=0, unchanged, seq=2)"; fi
 
-t "list --active shows the unfinished run and omits the shipped one"
+# Both runs must live in the SAME sandbox: `list --active` scans specs/ under CWD, so an
+# assertion made where no terminal run exists would still pass if --active stopped filtering.
+t "list --active shows the unfinished run and omits a shipped run in the same specs root"
+run_full_lifecycle   # $SLUG -> shipped, alongside $SLUG2 which is still investigating
 rs list --active
-if echo "$OUT" | grep -q "$SLUG2" && ! echo "$OUT" | grep -q "shipped"; then pass
+if echo "$OUT" | grep -q "$SLUG2" && ! echo "$OUT" | grep -q "$SLUG:"; then pass
 else fail "list --active: $OUT"; fi
+
+t "list (no --active) does show the shipped run — proving the filter is what hides it"
+rs list
+if echo "$OUT" | grep -q "$SLUG:" && echo "$OUT" | grep -q "$SLUG2"; then pass
+else fail "list: $OUT"; fi
 
 finish
