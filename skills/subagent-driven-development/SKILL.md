@@ -36,7 +36,7 @@ this skill at all — the Skill tool has nothing to load. Run
 ### Step -1 — Reconstruct the cursor (resume only)
 
 A fresh session has no history, so before touching anything establish **where the last session
-stopped**. Read all four sources — each answers a different question, and none is trusted alone:
+stopped**. Read all five sources — each answers a different question, and none is trusted alone:
 
 1. `specs/<slug>/PLAN.md` → `## Status Log` plus the derived `### Progress` checklist: which task
    ids were logged complete, against which commits.
@@ -52,6 +52,10 @@ stopped**. Read all four sources — each answers a different question, and none
    anything into the log.
 4. `specs/<slug>/SUMMARY.md` → `### Deviations` — Rule 1–3 auto-fixes an earlier session already
    applied, so you neither re-fix nor contradict them.
+5. `specs/STATE.md` → the `## Active Spec` block — where a **paused wave writes its blocker cursor**
+   (`rules/wave-parallelism.md` → Collection protocol step 4). The other four sources can show a task
+   as merely *not started* when it is in fact **blocked**; only this one carries the blocker and its
+   context. Skip the `## Session End Log` breadcrumbs — they are session noise, not plan state.
 
 Then **re-run the `Verify` command of every task the log claims complete.** A checkbox is not
 evidence; a passing exit code is. Report the cursor to the user — done / next / blocked — and

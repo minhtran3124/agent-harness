@@ -175,6 +175,25 @@ wording this diff changed (`hooks/*.sh` grep for `Status Log` / `Parallel sessio
 Log contract is delivered to its machine consumer, proven behaviorally by SC-7 against the live
 `render_plan.py`.
 
+**External review (Codex, PR #173, reviewed commit `9365fbf`) — the outside-the-harness pass the
+local oracles cannot substitute for. Two P2 findings:**
+
+- **P2-1 CONFIRMED and fixed.** Step -1 omitted `specs/STATE.md`, which is exactly where
+  `rules/wave-parallelism.md` → Collection protocol step 4 writes a **paused wave's blocker cursor**.
+  The other four sources can show a task as merely *not started* when it is in fact *blocked*, so a
+  resuming session could re-enter a blocked task instead of reporting `blocked`. Added as source 5
+  (scoped to the `## Active Spec` block; the Session End Log breadcrumbs are session noise). Verified
+  against ground truth before accepting: `grep -n "STATE.md" rules/wave-parallelism.md` → line 57
+  writes it, `grep -c "STATE.md" skills/subagent-driven-development/SKILL.md` → **0** reads of it.
+  Note the local review chain and the inline passes both missed this, including while *editing* that
+  very step-4 line — the finding is the reviewer's, not a re-discovery.
+- **P2-2 resolved by automation; reviewer lacked the later commit.** It flagged `RUN.json` committed at
+  `verifying` for a shipped plan, permanently advertised by `run_state.py list --active` via
+  `hooks/session-knowledge.sh`. The state advanced to `ready_to_merge` in the commit after the one
+  reviewed, and `.github/workflows/post-merge-maintenance.yml:28,77-87` triggers on
+  `branches: [main, loop]` and performs the terminal `--to shipped` transition on merge. `ready_to_merge`
+  is the correct non-terminal state for a PR awaiting merge, so no change made.
+
 **Advisory, not fixed by design:** `specs/slim-skill-surface/PLAN.md:92` (SC-7) and its
 `SUMMARY.md:109` Verify row grep for `"parallel session"` in
 `skills/subagent-driven-development/SKILL.md` and now exit 1. That spec is `status: shipped` and
