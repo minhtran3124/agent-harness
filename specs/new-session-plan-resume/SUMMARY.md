@@ -105,14 +105,14 @@ truth for the Step-0 gate and the ship gate.
   row TIMEOUT-ed against the 60s cap (removed — whole-suite rows are banned per
   `docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md`; the ALL GREEN result is
   recorded in `PLAN.md ## Status Log` instead). Note `scripts/check_verify_rows.py` passed both rows —
-  only `verify_summary.py --check`, which actually executes them, caught it. Commit `<sha3>`.
+  only `verify_summary.py --check`, which actually executes them, caught it. Commit `3df5366`.
 - Rule 1 (blocking, caught by the correctness pass) — Removed the `run_state.py init --slug <slug>
   || true` line that task 1.1(d) had added before the `implementing` transition: proved by running the
   real engine that `init` lands in `queued` and `queued -> implementing` is not a legal edge, so the
   transition failed exit 2, `|| true` swallowed it, and the run stayed `queued` while implementing —
   a wrong state where there had merely been a missing one. Replaced with the exit-3 semantics plus an
   explicit prohibition; SC-6 rewritten to assert the correct behavior.
-  `skills/subagent-driven-development/SKILL.md`, `specs/new-session-plan-resume/PLAN.md`. Commit `<sha3>`.
+  `skills/subagent-driven-development/SKILL.md`, `specs/new-session-plan-resume/PLAN.md`. Commit `3df5366`.
 - Rule 1 — PLAN.md SC-1's check contained an escaped pipe inside a markdown table cell, so the
   command would have matched a literal `|` if copy-pasted; rewritten pipe-free per
   `docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md`. Commit `bdd4acf`.
