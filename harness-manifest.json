@@ -72,7 +72,19 @@
     "artifact-schema-summary": { "surface": ["templates/SUMMARY.template.md"],  "consumers": ["scripts/verify_summary.py", "hooks/commit-quality-gate.sh"], "desc": "SUMMARY.md shape contract" },
     "artifact-schema-plan":    { "surface": ["rules/plan-format.md"],           "consumers": ["skills/visual-planner/render_plan.py"],                        "desc": "PLAN.md task XML schema contract" },
     "lane-evidence-mapping":   { "surface": ["scripts/verify_summary.py"],      "consumers": ["skills/feature-intake/SKILL.md", "rules/auto-correct-scope.md"],                               "desc": "lane -> required evidence mapping" },
-    "hard-gate-vocabulary":    { "surface": ["harness-manifest.json"],          "consumers": ["hooks/risk-corroboration.sh", "rules/auto-correct-scope.md", "skills/feature-intake/SKILL.md"], "desc": "hard-gate slug/mode/desc vocabulary" }
+    "hard-gate-vocabulary":    { "surface": ["harness-manifest.json"],          "consumers": ["hooks/risk-corroboration.sh", "rules/auto-correct-scope.md", "skills/feature-intake/SKILL.md"], "desc": "hard-gate slug/mode/desc vocabulary" },
+    "durable-run-state-checkpoints": {
+      "surface": ["runtime/run_state.py"],
+      "consumers": [
+        "skills/feature-intake/SKILL.md",
+        "skills/subagent-driven-development/SKILL.md",
+        "skills/finishing-a-development-branch/SKILL.md",
+        "hooks/session-knowledge.sh",
+        "scripts/harness-status.sh",
+        ".github/workflows/post-merge-maintenance.yml"
+      ],
+      "desc": "Phase C (GitHub issue #129) workflow checkpoints that call runtime/run_state.py"
+    }
   },
 
   "notes": {

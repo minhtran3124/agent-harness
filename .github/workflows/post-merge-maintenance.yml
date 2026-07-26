@@ -74,6 +74,19 @@ jobs:
             echo "bookkeeping made no changes (already recorded) — skipping PR"
           fi
 
+      - name: Run-state checkpoint — mark shipped (non-fatal, Phase C)
+        run: |
+          slug=$(grep -oE 'specs/[^/]+/SUMMARY\.md' /tmp/changed-files.txt | head -1 | cut -d/ -f2 || true)
+          if [ -z "$slug" ]; then
+            echo "no specs/<slug>/SUMMARY.md in this PR — skipping run-state transition"
+          elif [ ! -f "specs/$slug/RUN.json" ]; then
+            echo "no RUN.json for $slug — skipping run-state transition"
+          else
+            python3 runtime/run_state.py transition --slug "$slug" --to shipped \
+              --event ci.merged --sha "$MERGE_SHA" \
+              || echo "::warning::run-state transition to shipped failed/skipped for $slug"
+          fi
+
       - name: Open the bookkeeping PR
         if: steps.book.outputs.changed == 'true'
         run: |

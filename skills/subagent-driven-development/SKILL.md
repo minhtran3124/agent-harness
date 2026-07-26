@@ -60,6 +60,13 @@ identify the active plan, and the edit auto-re-renders `PLAN.html` via `render-p
 Append commit shas to `## Status Log` after each wave (`rules/wave-parallelism.md`); the `shipped`
 transition happens later in `finishing-a-development-branch`.
 
+**Run-state checkpoint (non-fatal).** In the same step, mark the run as implementing:
+
+```bash
+python3 runtime/run_state.py transition --slug <slug> --to implementing \
+  --event plan.execution_started || true
+```
+
 **Step 2 — Per task, in order.** For each task in the current wave:
 
 1. **Dispatch the implementer** (`./implementer-prompt.md`) with the task's **full text** —
@@ -74,6 +81,14 @@ transition happens later in `finishing-a-development-branch`.
    is green.** Running quality first is the wrong order: it polishes code that may not yet be the
    right code. Issues → fix → re-review.
 5. **Mark the task complete** and move on. Never advance while either review has an open issue.
+
+**Run-state checkpoint (non-fatal).** Once every task in every wave has passed both reviews,
+before starting the final chain below, mark the run as verifying:
+
+```bash
+python3 runtime/run_state.py transition --slug <slug> --to verifying \
+  --event tasks.complete || true
+```
 
 **Step 3 — After all tasks pass, run the final chain over the whole diff, in this order:**
 `/context-propagation-audit` (only if the cumulative diff touches the workflow-engine inventory)
