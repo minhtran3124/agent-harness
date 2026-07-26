@@ -44,8 +44,11 @@ stopped**. Read all four sources — each answers a different question, and none
    `resume_event` when the run was left `blocked` or `escalated`. Exit 3 here means *no run was ever
    initialized* (a spec predating GitHub issue #129), not that the plan is untouched — fall back to
    the other three sources and let Step 1's `init` start tracking it.
-3. `git log --oneline <base>..HEAD` on the branch, where `<base>` is the branch point (usually
-   `main`) — what actually landed. This is the only source that cannot be written by a claim.
+3. `git log --oneline $(git merge-base HEAD <base-branch>)..HEAD` — what actually landed. This is
+   the only source that cannot be written by a claim. `<base-branch>` is the branch this work was
+   cut from, **not** always `main` (this repo integrates through `loop`). Sanity check the output:
+   if it is much longer than the plan's task count, the base is wrong — re-derive it before reading
+   anything into the log.
 4. `specs/<slug>/SUMMARY.md` → `### Deviations` — Rule 1–3 auto-fixes an earlier session already
    applied, so you neither re-fix nor contradict them.
 
