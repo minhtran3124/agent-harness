@@ -79,23 +79,23 @@ truth for the Step-0 gate and the ship gate.
 
 - Rule 3 — Added `skills/writing-plans/SKILL.md` to task 1.3's Files: its Execution Handoff pointed
   readers at the old "parallel session" name, which task 1.1's rename turned into a stale pointer.
-  Plan amended rather than edited silently. Commit `<sha>`.
+  Plan amended rather than edited silently. Commit `bdd4acf`.
 - Rule 1 — Step -1 source 2: documented that `run_state.py status` exit 3 means *no run was ever
   initialized*, not *plan untouched* (`not_observed != absent`); a resuming session would otherwise
-  read an error as an absence. `skills/subagent-driven-development/SKILL.md`. Commit `<sha>`.
+  read an error as an absence. `skills/subagent-driven-development/SKILL.md`. Commit `bdd4acf`.
 - Rule 1 — Step -1 source 3: defined `<base>` as the branch point (usually `main`); the bare
   placeholder was unresolvable for a session with no history — the exact context this step serves.
-  `skills/subagent-driven-development/SKILL.md`. Commit `<sha>`.
+  `skills/subagent-driven-development/SKILL.md`. Commit `bdd4acf`.
 - Rule 1 — `rules/wave-parallelism.md` step 2 referenced `## 7. Status Log`; the canonical section is
   `## 6. Status Log` (`rules/plan-format.md`) and consumers accept `## Status Log` or `## N. Status
-  Log`. Corrected to the neutral form on the line being edited. Commit `<sha>`.
+  Log`. Corrected to the neutral form on the line being edited. Commit `bdd4acf`.
 - Rule 3 — Added `specs/**/events.jsonl.lock` to `.gitignore`: this spec is the first live run-state
   run in the repo, so the fcntl lock file appeared as a tracked artifact for the first time. `RUN.json`
   and `events.jsonl` stay tracked (the durable record); the lock is machine-local. `hooks/blast-radius-check.sh`
-  flagged `.gitignore` as outside the plan's Files set, so the plan was amended. Commit `<sha>`.
+  flagged `.gitignore` as outside the plan's Files set, so the plan was amended. Commit `bdd4acf`.
 - Rule 1 — PLAN.md SC-1's check contained an escaped pipe inside a markdown table cell, so the
   command would have matched a literal `|` if copy-pasted; rewritten pipe-free per
-  `docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md`. Commit `<sha>`.
+  `docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md`. Commit `bdd4acf`.
 
 ### Verify
 
