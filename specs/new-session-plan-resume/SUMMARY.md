@@ -60,9 +60,12 @@ pins it from returning to disk **and** the manifest. What the fold actually left
 name but four delivery gaps: the frontmatter still says "in the current session" (so the
 parallel-session mode is unroutable — a context-propagation defect by this repo's own standard),
 there is no resume-cursor protocol, `## Status Log` records only shas so `_done_task_ids` cannot
-derive the cursor, and the run-state FSM has never been initialized (`ls specs/*/RUN.json` → empty),
-so every checkpoint is a swallowed no-op. Fixing those four is additive and keeps one source of
-truth for the Step-0 gate and the ship gate.
+derive the cursor, and no spec had ever been run-state-initialized (`ls specs/*/RUN.json` → empty), so
+every checkpoint was a swallowed no-op. Fixing those four is additive and keeps one source of truth for
+the Step-0 gate and the ship gate. Gap 4 is closed by *disclosure*, not by forcing state: the
+checkpoint now documents the exit-3 case and forbids `init` there (see `### Review` for why the first,
+`init`-based attempt was wrong), and `/feature-intake` remains the single owner of `init` — which is
+how this spec became the repo's first live run.
 
 ### Alternatives considered
 
