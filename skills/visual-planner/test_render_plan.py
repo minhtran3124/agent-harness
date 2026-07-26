@@ -345,7 +345,14 @@ class TestOutputPathByMode:
 # render_summary_block — pure, deterministic "At a glance" block builder.
 # --------------------------------------------------------------------------- #
 def _task(id, wave, files, done, title=None):
-    t = {"id": id, "wave": wave, "files": files, "verify": "", "action": "", "done": done}
+    t = {
+        "id": id,
+        "wave": wave,
+        "files": files,
+        "verify": "",
+        "action": "",
+        "done": done,
+    }
     if title is not None:
         t["title"] = title
     return t
@@ -354,16 +361,22 @@ def _task(id, wave, files, done, title=None):
 class TestSummaryBlock:
     def _tasks(self):
         return [
-            _task("1.1", "1", "app/models/x.py, alembic/y.py", "Migration applies clean", "model+migration"),
+            _task(
+                "1.1",
+                "1",
+                "app/models/x.py, alembic/y.py",
+                "Migration applies clean",
+                "model+migration",
+            ),
             _task("1.2", "1", "app/schemas/x.py", "Schemas validate", "schemas"),
             _task("2.1", "2", "app/repos/x.py", "Repo tests pass", "repository"),
         ]
 
     def test_deterministic(self):
         # multiple done ids + multiple files so set-iteration order could differ between runs
-        assert rp.render_summary_block(self._tasks(), {"1.1", "2.1"}) == rp.render_summary_block(
+        assert rp.render_summary_block(
             self._tasks(), {"1.1", "2.1"}
-        )
+        ) == rp.render_summary_block(self._tasks(), {"1.1", "2.1"})
 
     def test_count_ignores_unknown_done_ids(self):
         # a stale Status-Log id not among the tasks must not inflate the done count
@@ -397,7 +410,9 @@ class TestSummaryBlock:
 
     def test_all_dash_waves_count_one_wave(self):
         t = [_task("1", "—", "a.py", "d"), _task("2", "—", "b.py", "d")]
-        assert "2 tasks · 1 waves · 2 files · 0/2 done" in rp.render_summary_block(t, set())
+        assert "2 tasks · 1 waves · 2 files · 0/2 done" in rp.render_summary_block(
+            t, set()
+        )
 
     def test_done_truncated_to_80(self):
         b = rp.render_summary_block([_task("1.1", "1", "a.py", "x" * 200)], set())
@@ -409,6 +424,20 @@ class TestSummaryBlock:
         assert "No tasks defined yet" in b
         assert rp.SUMMARY_BEGIN in b and rp.SUMMARY_END in b
 
+    def test_empty_tasks_shipped_plan_drops_the_pending_claim(self):
+        b = rp.render_summary_block([], set(), "shipped")
+        assert "No tasks recorded in this plan." in b
+        assert "yet" not in b
+        assert rp.SUMMARY_BEGIN in b and rp.SUMMARY_END in b
+
+    def test_empty_tasks_shipped_plan_does_not_guess_rollup(self):
+        # `shipped` is a lifecycle signal, not a rollup marker — the renderer must
+        # not label an ordinary task-less shipped plan a rollup.
+        assert "ollup" not in rp.render_summary_block([], set(), "shipped")
+
+    def test_empty_tasks_active_plan_still_says_yet(self):
+        assert "No tasks defined yet" in rp.render_summary_block([], set(), "active")
+
 
 class TestInjectSummaryBlock:
     BLOCK = rp.SUMMARY_BEGIN + "\nBODY\n" + rp.SUMMARY_END
@@ -416,11 +445,21 @@ class TestInjectSummaryBlock:
     def test_inserts_before_first_h2_preserving_directive(self):
         text = "# Title\n\n> **For Claude:** directive\n\n## 1. Motivation\nfoo\n"
         out = rp.inject_summary_block(text, self.BLOCK)
-        assert out.index("# Title") < out.index("> **For Claude:**") < out.index(rp.SUMMARY_BEGIN)
+        assert (
+            out.index("# Title")
+            < out.index("> **For Claude:**")
+            < out.index(rp.SUMMARY_BEGIN)
+        )
         assert out.index(rp.SUMMARY_END) < out.index("## 1. Motivation")
 
     def test_replaces_between_sentinels_idempotent(self):
-        text = "# T\n\n" + rp.SUMMARY_BEGIN + "\nOLD\n" + rp.SUMMARY_END + "\n\n## 1. M\nx\n"
+        text = (
+            "# T\n\n"
+            + rp.SUMMARY_BEGIN
+            + "\nOLD\n"
+            + rp.SUMMARY_END
+            + "\n\n## 1. M\nx\n"
+        )
         out = rp.inject_summary_block(text, self.BLOCK)
         assert "OLD" not in out
         assert out.count(rp.SUMMARY_BEGIN) == 1
@@ -454,7 +493,10 @@ class TestInjectSummaryBlock:
         # detection must still REPLACE the block (refresh), not append a duplicate.
         text = (
             "# T\n\n"
-            + rp.SUMMARY_BEGIN + "   \nOLD\n" + rp.SUMMARY_END + "\t\n"
+            + rp.SUMMARY_BEGIN
+            + "   \nOLD\n"
+            + rp.SUMMARY_END
+            + "\t\n"
             + "\n## 1. M\nx\n"
         )
         out = rp.inject_summary_block(text, self.BLOCK)
@@ -470,16 +512,20 @@ class TestInjectSummaryBlock:
         end_line = '    SUMMARY_END = "' + rp.SUMMARY_END + '"'
         text = "# T\n\n" + begin_line + "\n" + end_line + "\n\n## 1. M\nreal body\n"
         out = rp.inject_summary_block(text, self.BLOCK)
-        assert begin_line in out and end_line in out  # documented source survives verbatim
+        assert (
+            begin_line in out and end_line in out
+        )  # documented source survives verbatim
         assert "real body" in out
-        assert out.index("BODY") < out.index("## 1. M")  # fresh block landed before the section
+        assert out.index("BODY") < out.index(
+            "## 1. M"
+        )  # fresh block landed before the section
 
 
 _PLAN = (
     "---\nslug: demo\nstatus: active\nowner: X\ncreated: 2026-07-15\n---\n\n"
     "# Demo plan\n\n> **For Claude:** directive\n\n## 1. Motivation\nwhy\n\n"
     "## 4. Tasks\n\n### Task 1.1 — first\n\n```xml\n"
-    "<task id=\"1.1\" wave=\"1\">\n<files>a.py</files>\n<action>do</action>\n"
+    '<task id="1.1" wave="1">\n<files>a.py</files>\n<action>do</action>\n'
     "<verify>true</verify>\n<done>done</done>\n</task>\n```\n\n"
     "## Status Log\n\n- 2026-07-15 — 1.1 complete ✓\n"
 )
@@ -493,7 +539,11 @@ class TestSummarizePlanFile:
         out = p.read_text(encoding="utf-8")
         assert rp.SUMMARY_BEGIN in out
         assert "- [x] 1.1 — first" in out
-        assert out.index("> **For Claude:**") < out.index(rp.SUMMARY_BEGIN) < out.index("## 1. Motivation")
+        assert (
+            out.index("> **For Claude:**")
+            < out.index(rp.SUMMARY_BEGIN)
+            < out.index("## 1. Motivation")
+        )
 
     def test_second_run_is_noop(self, tmp_path):
         p = tmp_path / "PLAN.md"
@@ -506,7 +556,10 @@ class TestSummarizePlanFile:
     def test_no_status_log_all_unchecked(self, tmp_path):
         # a plan without a '## Status Log' section -> empty done set, 0/N done
         p = tmp_path / "PLAN.md"
-        p.write_text(_PLAN.replace("## Status Log\n\n- 2026-07-15 — 1.1 complete ✓\n", ""), encoding="utf-8")
+        p.write_text(
+            _PLAN.replace("## Status Log\n\n- 2026-07-15 — 1.1 complete ✓\n", ""),
+            encoding="utf-8",
+        )
         assert rp.summarize_plan_file(p) is True
         out = p.read_text(encoding="utf-8")
         assert "1 tasks · 1 waves · 1 files · 0/1 done" in out
@@ -523,7 +576,10 @@ class TestSummarizePlanFile:
             "# Meta plan\n\n## 1. Motivation\nintro\n\n"
             "## 4. Tasks\n\n### Task 1.1 — x\n\n```xml\n"
             '<task id="1.1" wave="1">\n<files>a.py</files>\n<action>\n'
-            + begin_line + "\n" + end_line + "\n"
+            + begin_line
+            + "\n"
+            + end_line
+            + "\n"
             "</action>\n<verify>true</verify>\n<done>d</done>\n</task>\n```\n"
         )
         p = tmp_path / "PLAN.md"
@@ -532,7 +588,9 @@ class TestSummarizePlanFile:
         out = p.read_text(encoding="utf-8")
         assert begin_line in out and end_line in out  # documented source preserved
         assert "<verify>true</verify>" in out and "<done>d</done>" in out
-        assert out.index(rp.SUMMARY_BEGIN + "\n") < out.index("## 1. Motivation")  # real block before section
+        assert out.index(rp.SUMMARY_BEGIN + "\n") < out.index(
+            "## 1. Motivation"
+        )  # real block before section
         before = out
         assert rp.summarize_plan_file(p) is False  # idempotent, no content churn
         assert p.read_text(encoding="utf-8") == before
