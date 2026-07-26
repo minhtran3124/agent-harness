@@ -18,12 +18,15 @@ I noted "the canonical `PLAN.md` At-a-glance block still renders '_No tasks defi
 ## What changed
 
 `render_summary_block` now takes the plan's frontmatter `status` and, for a task-less plan,
-branches its empty-state wording: `status: shipped` renders `_Rollup plan — no tasks of its
-own._`; every other status keeps the existing `_No tasks defined yet._`. `summarize_plan_file`
-was already parsing frontmatter and discarding it — it now keeps it and passes `status` through.
-A shipped plan with no tasks is a deliberate rollup of work done elsewhere (e.g.
-`specs/durable-run-state/PLAN.md`, an acceptance-contract rollup over Phases A–D), not a plan
-whose tasks are still pending, so "yet" was a false statement about the plan's state.
+branches its empty-state wording: `status: shipped` renders `_No tasks recorded in this plan._`;
+every other status keeps the existing `_No tasks defined yet._`. `summarize_plan_file` was
+already parsing frontmatter and discarding it — it now keeps it and passes `status` through.
+
+The defect being fixed is the word "yet": it claims the plan's tasks are still pending. That is
+accurate while a plan is being drafted, but false once the plan has shipped — as in
+`specs/durable-run-state/PLAN.md`, an acceptance-contract rollup over Phases A–D whose §4 reads
+"None — this is a rollup of already-completed work". The shipped wording is deliberately neutral
+rather than naming the rollup case: see the review round below.
 
 ### Rationale
 
@@ -36,11 +39,13 @@ distinguishes "rollup" from "not written yet", and it required no new plan-schem
 
 - Hand-edit the rendered line in `specs/durable-run-state/PLAN.md` — rejected: the sentinel block
   is regenerated on every save, so the edit would not survive.
-- Change the empty-state wording unconditionally (e.g. "_No tasks in this plan._") — rejected:
-  accurate for a rollup but drops the useful "not authored yet" signal for a genuinely empty
-  draft plan.
-- Add a dedicated `rollup: true` frontmatter field — rejected as speculative; `status: shipped`
-  already carries the distinction.
+- Change the empty-state wording unconditionally — rejected: it would drop the useful "not
+  authored yet" signal for a genuinely empty draft plan, which is still accurate there.
+- Add a dedicated `rollup: true` frontmatter field — rejected: it would require a
+  `rules/plan-format.md` schema change for a rendering nicety. Neutral wording gets the false
+  claim out without adding a field authors must remember to set.
+- Label the shipped-and-empty case a rollup (the first revision of this change) — **withdrawn
+  after review**, see below.
 
 ### Deviations
 
@@ -50,9 +55,43 @@ distinguishes "rollup" from "not written yet", and it required no new plan-schem
 
 | Check | Command | Exit | Notes | Criterion |
 | --- | --- | --- | --- | --- |
-| renderer unit tests (incl. 2 new empty-state cases) | `python3 -m pytest skills/visual-planner/test_render_plan.py -q` | 0 | 81 passed | |
-| full harness suite (shell + python) | `bash scripts/run-tests.sh` | 0 | ALL GREEN — 216 python tests; run on the pre-split working tree, same two-file delta | |
-| ruff format conformance (touched files) | `ruff format --check skills/visual-planner/render_plan.py skills/visual-planner/test_render_plan.py` | 0 | 2 files already formatted | |
+| renderer unit tests (incl. the empty-state cases) | `python3 -m pytest skills/visual-planner/test_render_plan.py -q` | 0 | 82 passed | |
+| shipped + task-less renders neutral wording, never a guessed "rollup" | `python3 -m pytest skills/visual-planner/test_render_plan.py -k empty_tasks -q` | 0 | 4 passed, 78 deselected | |
+| plan renderer still round-trips a real plan end-to-end | `python3 skills/visual-planner/render_plan.py specs/plan-at-a-glance/PLAN.md` | 0 | writes PLAN.html (gitignored) | |
+
+<!-- Deliberately NOT listed: `bash scripts/run-tests.sh` (whole-suite row — exceeds the 60s
+     cap, per docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md) and
+     `ruff format --check` (exit 127 on the CI runner — ruff is not installed there, so the
+     row is not re-runnable where the gate runs). Both were listed in the first revision of
+     this file and both were rejected by ci-strict-gate; see the Review round below. The full
+     suite was still run locally (ALL GREEN) — it is just not a valid Verify row. -->
+
+
+### Review round — PR #170
+
+**Codex P2 — "Require an actual rollup signal" (accepted, premise corrected).** The first
+revision rendered `_Rollup plan — no tasks of its own._` for a `status: shipped` task-less plan.
+Verified the objection against ground truth: `skills/finishing-a-development-branch/SKILL.md`
+Step 4 sets `status: shipped` on whichever `PLAN.md` the branch resolves to, as a lifecycle
+signal that "the feature reached a PR". It carries no rollup semantics, so
+"shipped + no tasks ⟹ rollup" was an unsound inference — any ordinary task-less plan that
+shipped would have been mislabelled, and regenerated that false claim on every save.
+
+Fixed by making the shipped case **neutral** (`_No tasks recorded in this plan._`) instead of
+guessing. That still removes the original defect — "yet" falsely claiming pending work — without
+asserting something the renderer cannot know. Added a regression test that fails if the word
+"rollup" ever reappears in the shipped empty-state output.
+
+**ci-strict-gate BLOCKED (run 30192872992) — my Verify rows were not machine-verifiable.**
+Two of the three rows in the first revision failed `verify_summary --check`:
+
+| Row | Gate result | Cause |
+| --- | --- | --- |
+| `bash scripts/run-tests.sh` | `TIMEOUT (limit: 60s)` | A whole-suite row — exactly what `docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md` says never to list |
+| `ruff format --check …` | `MISMATCH claimed=0 actual=127` | Exit 127 = command not found; `ruff` is not installed on the CI runner, so the row is not re-runnable where the gate runs |
+
+Replaced with three targeted rows that run in CI in well under 60s. The full suite is still run
+locally; it is simply not a valid Verify row.
 
 ### Rollback
 

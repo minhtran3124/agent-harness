@@ -424,11 +424,16 @@ class TestSummaryBlock:
         assert "No tasks defined yet" in b
         assert rp.SUMMARY_BEGIN in b and rp.SUMMARY_END in b
 
-    def test_empty_tasks_shipped_plan_reads_as_rollup(self):
+    def test_empty_tasks_shipped_plan_drops_the_pending_claim(self):
         b = rp.render_summary_block([], set(), "shipped")
-        assert "Rollup plan — no tasks of its own." in b
+        assert "No tasks recorded in this plan." in b
         assert "yet" not in b
         assert rp.SUMMARY_BEGIN in b and rp.SUMMARY_END in b
+
+    def test_empty_tasks_shipped_plan_does_not_guess_rollup(self):
+        # `shipped` is a lifecycle signal, not a rollup marker — the renderer must
+        # not label an ordinary task-less shipped plan a rollup.
+        assert "ollup" not in rp.render_summary_block([], set(), "shipped")
 
     def test_empty_tasks_active_plan_still_says_yet(self):
         assert "No tasks defined yet" in rp.render_summary_block([], set(), "active")

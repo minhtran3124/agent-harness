@@ -710,10 +710,14 @@ def _mermaid_node_id(task_id):
 def render_summary_block(tasks, done_ids, status=None):
     """Additive 'At a glance' block (both sentinels included). Pure + deterministic."""
     if not tasks:
-        # A shipped plan with no tasks is a deliberate rollup of work done
-        # elsewhere, not a plan whose tasks are still pending — "yet" would lie.
+        # "yet" claims the tasks are still pending. That is right for a plan being
+        # drafted, but false once the plan has shipped — so shipped gets neutral
+        # wording. It stays neutral on purpose: `shipped` is a lifecycle signal set
+        # by finishing-a-development-branch for ANY plan on a branch that reached a
+        # PR, so it cannot tell an acceptance-contract rollup from any other
+        # task-less completed plan. Naming it a rollup here would be a guess.
         empty = (
-            "_Rollup plan — no tasks of its own._"
+            "_No tasks recorded in this plan._"
             if (status or "").lower() == "shipped"
             else "_No tasks defined yet._"
         )
