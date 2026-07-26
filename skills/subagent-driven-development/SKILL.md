@@ -42,8 +42,9 @@ stopped**. Read all four sources — each answers a different question, and none
    ids were logged complete, against which commits.
 2. `python3 runtime/run_state.py status --slug <slug>` — the durable FSM state, plus `waiting_on` /
    `resume_event` when the run was left `blocked` or `escalated`. Exit 3 here means *no run was ever
-   initialized* (a spec predating GitHub issue #129), not that the plan is untouched — fall back to
-   the other three sources and let Step 1's `init` start tracking it.
+   initialized* (a spec predating GitHub issue #129, or one that skipped `/feature-intake`), not that
+   the plan is untouched — fall back to the other three sources and do not try to `init` it into
+   existence (see Step 1's checkpoint for why that produces a wrong state, not a missing one).
 3. `git log --oneline $(git merge-base HEAD <base-branch>)..HEAD` — what actually landed. This is
    the only source that cannot be written by a claim. `<base-branch>` is the branch this work was
    cut from, **not** always `main` (this repo integrates through `loop`). Sanity check the output:
@@ -109,17 +110,20 @@ identify the active plan, and the edit auto-re-renders `PLAN.html` via `render-p
 Append commit shas to `## Status Log` after each wave (`rules/wave-parallelism.md`); the `shipped`
 transition happens later in `finishing-a-development-branch`.
 
-**Run-state checkpoint (non-fatal).** In the same step, mark the run as implementing. `init` first:
-a spec whose run was never initialized — one created before GitHub issue #129, or one that reached
-here without `/feature-intake` — would otherwise have every downstream `transition` fail exit 3 and
-be swallowed by `|| true`, leaving the run invisible to `run_state.py list --active` and to the
-resume path above. `init` is idempotent on an existing run, and both calls stay non-fatal.
+**Run-state checkpoint (non-fatal).** In the same step, mark the run as implementing:
 
 ```bash
-python3 runtime/run_state.py init --slug <slug> || true
 python3 runtime/run_state.py transition --slug <slug> --to implementing \
   --event plan.execution_started || true
 ```
+
+Exit 3 here means the run was never initialized — `/feature-intake` owns `init`, and a spec that
+reached execution without it (or one predating GitHub issue #129) simply stays untracked. **Do not
+`init` here to "fix" that.** A fresh `init` lands in `queued`, and `queued -> implementing` is not a
+legal edge (`runtime/run_state.py` → `FORWARD_TRANSITIONS`), so the transition fails exit 2, `|| true`
+swallows it, and the run sits at `queued` while the work is really implementing — `list --active` then
+reports a state that is *wrong* rather than *absent*. An untracked run is honest; a stuck one is not.
+Step -1's resume path reads that exit 3 the same way and falls back to its other three sources.
 
 **Step 2 — Per task, in order.** For each task in the current wave:
 

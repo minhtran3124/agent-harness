@@ -40,8 +40,9 @@ restoring the deleted skill file. Four additive edits across five files:
    (`## Status Log` + derived `### Progress`, `run_state.py status`, `git log <base>..HEAD`,
    `SUMMARY.md ### Deviations`), **re-run the `Verify` of every task claimed complete**, report
    done/next/blocked, continue from the first task not verified green. Plus
-   `run_state.py init --slug <slug> || true` before the `implementing` transition, so a run that was
-   never initialized stops silently swallowing exit 3.
+   the exit-3 contract at the `implementing` checkpoint with an explicit **prohibition** on calling
+   `init` there (a fresh `init` lands in `queued`, and `queued -> implementing` is not a legal FSM edge,
+   so it would produce a stuck run instead of an untracked one — see `### Review`).
 4. `rules/wave-parallelism.md` collection protocol now requires **task ids + shas + a completion
    marker** in one Status Log entry (with the entry shape and the reason: `_done_task_ids` derives
    the cursor from ids, not shas). `skills/README.md`, `CLAUDE.md`, and
@@ -98,6 +99,20 @@ truth for the Step-0 gate and the ship gate.
   run in the repo, so the fcntl lock file appeared as a tracked artifact for the first time. `RUN.json`
   and `events.jsonl` stay tracked (the durable record); the lock is machine-local. `hooks/blast-radius-check.sh`
   flagged `.gitignore` as outside the plan's Files set, so the plan was amended. Commit `bdd4acf`.
+- Rule 1 (caught by the ship gate re-running the table) — Two bookkeeping defects in this SUMMARY's
+  own `### Verify` table: the exit-3 contract row was tagged `SC-6` whose `Expected` is `exit 0`
+  (SC-FAIL — untagged, since the row asserts a non-zero contract), and a `bash scripts/run-tests.sh`
+  row TIMEOUT-ed against the 60s cap (removed — whole-suite rows are banned per
+  `docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md`; the ALL GREEN result is
+  recorded in `PLAN.md ## Status Log` instead). Note `scripts/check_verify_rows.py` passed both rows —
+  only `verify_summary.py --check`, which actually executes them, caught it. Commit `<sha3>`.
+- Rule 1 (blocking, caught by the correctness pass) — Removed the `run_state.py init --slug <slug>
+  || true` line that task 1.1(d) had added before the `implementing` transition: proved by running the
+  real engine that `init` lands in `queued` and `queued -> implementing` is not a legal edge, so the
+  transition failed exit 2, `|| true` swallowed it, and the run stayed `queued` while implementing —
+  a wrong state where there had merely been a missing one. Replaced with the exit-3 semantics plus an
+  explicit prohibition; SC-6 rewritten to assert the correct behavior.
+  `skills/subagent-driven-development/SKILL.md`, `specs/new-session-plan-resume/PLAN.md`. Commit `<sha3>`.
 - Rule 1 — PLAN.md SC-1's check contained an escaped pipe inside a markdown table cell, so the
   command would have matched a literal `|` if copy-pasted; rewritten pipe-free per
   `docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md`. Commit `bdd4acf`.
@@ -111,14 +126,14 @@ truth for the Step-0 gate and the ship gate.
 | behavior | `python3 -c "t=open('skills/subagent-driven-development/SKILL.md').read();import sys;sys.exit(0 if all(s in t for s in ['Status Log','run_state.py status','git log','SUMMARY.md']) else 1)"` | 0 | all four cursor sources named | SC-3 |
 | behavior | `grep -q 'resume <slug>' skills/subagent-driven-development/SKILL.md` | 0 | invocable by argument, no new skill name | SC-4 |
 | behavior | `grep -q 'task ids' rules/wave-parallelism.md` | 0 | Status Log contract tightened | SC-5 |
-| behavior | `grep -q 'run_state.py init --slug' skills/subagent-driven-development/SKILL.md` | 0 | run initialized before first transition | SC-6 |
+| behavior | `python3 -c "t=open('skills/subagent-driven-development/SKILL.md').read();import sys;sys.exit(0 if 'Do not' in t and 'queued -> implementing' in t and 'FORWARD_TRANSITIONS' in t else 1)"` | 0 | uninitialized run reported untracked, never forced into a wrong state | SC-6 |
+| behavior | `python3 runtime/run_state.py transition --slug probe-nonexistent --to implementing --event x` | 3 | asserts the exit-3 contract Step -1 and Step 1 both document (missing run, not a stuck one). Deliberately untagged: SC-6 expects exit 0, this row asserts a non-zero contract | |
 | behavior | `python3 -c "import sys;sys.path.insert(0,'skills/visual-planner');import render_plan as r;e=r.parse_status_entries('## Status Log' + chr(10)*2 + '- 2026-07-26 — tasks 1.1, 1.2 complete; commits abc1234, def5678' + chr(10));sys.exit(0 if r._done_task_ids(e,['1.1','1.2'])=={'1.1','1.2'} else 1)"` | 0 | documented entry shape really yields a cursor, against the live renderer | SC-7 |
 | guard | `python3 scripts/check_slim_surface.py` | 0 | no retired skill returned to disk or manifest | SC-8 |
 | registry | `python3 scripts/check_manifest.py` | 0 | skills[] still 12, bidirectionally consistent | SC-9 |
 | lint | `bash scripts/lint-doc-truth.sh` | 0 | no dangling path in CLAUDE.md / skills/README.md / rules/ | SC-10 |
-| lint | `bash scripts/lint-skill-bash.sh` | 0 | the added `run_state.py init` block is shellcheck-clean | |
+| lint | `bash scripts/lint-skill-bash.sh` | 0 | the edited run-state bash block is shellcheck-clean | |
 | lint | `python3 scripts/check_verify_rows.py specs/new-session-plan-resume` | 0 | all PLAN/SUMMARY rows pipe-free and <60s | |
-| suite | `bash scripts/run-tests.sh` | 0 | ALL GREEN — 217 python + every hook/script suite | |
 | dogfood | `grep -q '3/3 done' specs/new-session-plan-resume/PLAN.md` | 0 | this plan's own Status Log entry, written in the new shape, moved the derived Progress cursor 0/3 → 3/3 — the capability proven end-to-end on itself | SC-7 |
 
 ### Rollback
@@ -128,9 +143,49 @@ truth for the Step-0 gate and the ship gate.
 
 ### Review
 
-Run inline by the main session, not as independent subagents — this session was instructed not to
-dispatch agents, so the ensemble diversity the skill's contract assumes was **not** available. What
-was actually run, honestly scoped:
+Four reviewers were dispatched as independent read-only subagents on a different model (`reviewer`
+agent type, model `sonnet`, range `6cc968b..94e3da9`): context-propagation audit, correctness, intent,
+simplicity. **All four went idle without returning a report**, so their conclusions are not available
+and are not claimed here. The passes below were then executed by the main session with mechanical
+verification. This is weaker than the skill's contract (no ensemble diversity) and is recorded as
+such rather than papered over.
+
+**Blocking finding, found and fixed (correctness):** the first version of task 1.1(d) added
+`run_state.py init --slug <slug> || true` before the `implementing` transition. Proved wrong by
+running it against the real engine in a throwaway specs root:
+
+```
+init                         -> state=queued, exit 0
+transition --to implementing -> "queued -> implementing is not a valid transition", exit 2  (swallowed by || true)
+status                       -> state: queued        <- stuck there permanently
+```
+
+`queued -> implementing` is not an edge in `runtime/run_state.py` `FORWARD_TRANSITIONS`, so the added
+`init` converted an honest *absence* of run state into a *wrong* one — `list --active` would report
+`queued` for a spec being actively implemented. Fixed by removing the `init` and instead documenting
+the exit-3 case plus an explicit prohibition (`/feature-intake` owns `init`). SC-6 asserted the wrong
+requirement and was rewritten to assert the correct behavior; task 1.1(d) records the reversal.
+
+**Audit (mechanical parts, run):** no live reference to the removed `## Parallel session` name
+survives outside `specs/**` and `docs/research/**` (verified by repo-wide grep); no hook depends on
+wording this diff changed (`hooks/*.sh` grep for `Status Log` / `Parallel session` → none); the Status
+Log contract is delivered to its machine consumer, proven behaviorally by SC-7 against the live
+`render_plan.py`.
+
+**Advisory, not fixed by design:** `specs/slim-skill-surface/PLAN.md:92` (SC-7) and its
+`SUMMARY.md:109` Verify row grep for `"parallel session"` in
+`skills/subagent-driven-development/SKILL.md` and now exit 1. That spec is `status: shipped` and
+`scripts/ci-strict-gate.sh` only re-runs SUMMARYs **changed in the diff**, so nothing breaks. Editing a
+shipped spec to match the present is exactly what `specs/slim-skill-surface/design.md` §4 refuses to
+do to an audit trail — left as-is deliberately.
+
+**Open delivery condition (audit finding 1, verified live):** `.claude/rules/wave-parallelism.md` and
+`.claude/skills/subagent-driven-development/SKILL.md` still hold the pre-change copies (`diff` against
+source differs), and live sessions load the `.claude/` copies. Nothing in this change reaches a running
+session until `scripts/deploy-harness.sh` runs — not done here, since mutating `.claude/` needs
+explicit human confirmation.
+
+What was run before the reviewer dispatch, for completeness:
 
 - **context-propagation audit (inline).** Consumers of the changed instructions enumerated:
   main-session controller (delivery proven — Skill tool loads the whole `SKILL.md`), new-session
@@ -141,9 +196,12 @@ was actually run, honestly scoped:
   `.claude/skills/…`/`.claude/rules/…`, so none of this reaches a live session until
   `scripts/deploy-harness.sh` runs. Not done here — mutating `.claude/` needs explicit human
   confirmation.
-- **correctness pass (inline).** Three findings, all fixed above (Rule-1 deviations: run_state
+- **correctness pass (inline).** Three findings, all fixed (Rule-1 deviations: run_state
   exit-3 semantics, `<base>` undefined, the escaped-pipe SC command). `init` idempotency was checked
-  live, not assumed: the second call printed `already initialized`.
+  live, not assumed: the second call printed `already initialized`. **This pass missed the blocking
+  FSM defect above** — it verified that `init` is idempotent on an *existing* run and stopped there,
+  never testing the `init`-then-`implementing` sequence on a *fresh* one. The second pass caught it
+  only by running that exact sequence. Idempotency was the wrong question.
 - **intent pass (inline).** Against the verbatim `### Intent`: no `gap` (research + opinion
   delivered, capability restored, workflow unbroken), no `excess` beyond the Rule-3 addition recorded
   above. The user's literal words asked to bring back the *skill*; they then chose enhance-in-place

@@ -68,7 +68,7 @@ This plan restores the **capability** at one source of truth instead of restorin
 | SC-3 | The reconstruction recipe names all four cursor sources (Status Log/Progress, run_state status, git log, SUMMARY) | `python3 -c "t=open('skills/subagent-driven-development/SKILL.md').read();import sys;sys.exit(0 if all(s in t for s in ['Status Log','run_state.py status','git log','SUMMARY.md']) else 1)"` | exit 0 |
 | SC-4 | Resume is invocable by argument, with no new skill name | `grep -q 'resume <slug>' skills/subagent-driven-development/SKILL.md` | exit 0 |
 | SC-5 | The wave collection protocol requires task ids (not only shas) in the Status Log | `grep -q 'task ids' rules/wave-parallelism.md` | exit 0 |
-| SC-6 | The run is initialized before the first transition, so downstream checkpoints stop being no-ops | `grep -q 'run_state.py init --slug' skills/subagent-driven-development/SKILL.md` | exit 0 |
+| SC-6 | An uninitialized run is reported as untracked, never forced into a wrong state — the skill forbids `init` at the execution checkpoint and says why | `python3 -c "t=open('skills/subagent-driven-development/SKILL.md').read();import sys;sys.exit(0 if 'Do not' in t and 'queued -> implementing' in t and 'FORWARD_TRANSITIONS' in t else 1)"` | exit 0 — revised after the correctness pass proved `queued -> implementing` is not a legal edge |
 | SC-7 | A Status Log entry written per the new protocol yields a derivable done-task cursor | `python3 -c "import sys;sys.path.insert(0,'skills/visual-planner');import render_plan as r;e=r.parse_status_entries('## Status Log' + chr(10)*2 + '- 2026-07-26 — tasks 1.1, 1.2 complete; commits abc1234, def5678' + chr(10));sys.exit(0 if r._done_task_ids(e,['1.1','1.2'])=={'1.1','1.2'} else 1)"` | exit 0 — proves gap 3 is closed end-to-end |
 | SC-8 | The retirement guard is still green — no skill returned to disk or the manifest | `python3 scripts/check_slim_surface.py` | exit 0 |
 | SC-9 | Skill registry unchanged and bidirectionally consistent | `python3 scripts/check_manifest.py` | exit 0 |
@@ -94,14 +94,17 @@ This plan restores the **capability** at one source of truth instead of restorin
   every task the log claims complete** before trusting it — a checkbox is not evidence — report the
   cursor (done / next / blocked) to the user, and continue from the first task that is not verified
   green. Fall through to Step 0 (the four-check gate) as normal; resuming never buys fewer gates.
-  (d) In `## The Process` Step 1, add `python3 runtime/run_state.py init --slug <slug> || true`
-  immediately before the existing `transition --to implementing` call, so a spec whose run was never
-  initialized (or a spec created before issue #129) starts being tracked instead of silently
-  swallowing exit 3. Keep both calls non-fatal.
+  (d) In `## The Process` Step 1, document the exit-3 case at the `transition --to implementing`
+  checkpoint: an uninitialized run stays untracked (`/feature-intake` owns `init`), and the skill must
+  **forbid** calling `init` here — a fresh `init` lands in `queued`, `queued -> implementing` is not a
+  legal edge in `FORWARD_TRANSITIONS`, so the transition fails exit 2, `|| true` swallows it, and the
+  run reports `queued` while the work is implementing: a wrong state instead of a missing one.
+  (Revised mid-execution: the first attempt *added* the blind `init`; the correctness pass proved the
+  edge illegal by running it — see SUMMARY `### Deviations`.)
   Also document the argument contract near the top of the resume section: `/subagent-driven-development
   resume <slug>` (no new skill name, no alias file). Do not touch Step 0, the wave policy, the review
   chain, the receipt section, or the ship gate.
-- **Verify:** `python3 -c "t=open('skills/subagent-driven-development/SKILL.md').read();import re,sys;sys.exit(0 if all(s in t for s in ['New-session / resume mode','Step -1','resume <slug>','run_state.py init --slug','run_state.py status']) and re.search(r'^description:.*(new session|resum)',t,re.M) else 1)"`
+- **Verify:** `python3 -c "t=open('skills/subagent-driven-development/SKILL.md').read();import re,sys;sys.exit(0 if all(s in t for s in ['New-session / resume mode','Step -1','resume <slug>','FORWARD_TRANSITIONS','run_state.py status']) and re.search(r'^description:.*(new session|resum)',t,re.M) else 1)"`
 - **Done:** SC-1, SC-2, SC-3, SC-4, SC-6 pass; the file still contains its Step-0 gate, receipt
   section, and both review-oracle sections unchanged.
 
@@ -160,3 +163,10 @@ This plan restores the **capability** at one source of truth instead of restorin
   `check_manifest`, `check_slim_surface`, `lint-skill-bash` all exit 0. Two Rule-1 precision fixes
   applied in Step -1 (run_state exit-3 semantics, `<base>` definition) and one Rule-3 scope addition
   (`skills/writing-plans/SKILL.md` stale "parallel session" pointer). Commits appended below.
+- 2026-07-26 — review chain run. One **blocking** correctness finding fixed: the `run_state.py init`
+  added by task 1.1(d) made `queued -> implementing` fail exit 2 (illegal FSM edge), leaving the run
+  stuck at `queued` — removed, replaced with the exit-3 contract + an explicit prohibition; SC-6
+  rewritten. Two SUMMARY bookkeeping defects fixed (SC-6 mis-tag, whole-suite row TIMEOUT).
+  `verify_summary.py --check new-session-plan-resume`: 14/14 rows PASS, SC coverage complete.
+  `scripts/run-tests.sh` ALL GREEN (217 python + every hook/script suite) — recorded here rather than
+  as a Verify row, per the 60s cap.
