@@ -90,7 +90,7 @@ truth for the Step-0 gate and the ship gate.
   point (usually `main`)" produced a 100+ commit dump in this repo, because branches here are cut
   from the `loop` integration branch. Replaced with `$(git merge-base HEAD <base-branch>)` plus the
   wrong-base heuristic (output much longer than the task count ⇒ wrong base).
-  `skills/subagent-driven-development/SKILL.md`. Commit `<sha2>`.
+  `skills/subagent-driven-development/SKILL.md`. Commit `7bfc604`.
 - Rule 1 — `rules/wave-parallelism.md` step 2 referenced `## 7. Status Log`; the canonical section is
   `## 6. Status Log` (`rules/plan-format.md`) and consumers accept `## Status Log` or `## N. Status
   Log`. Corrected to the neutral form on the line being edited. Commit `bdd4acf`.
