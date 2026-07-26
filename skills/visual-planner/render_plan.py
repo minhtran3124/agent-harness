@@ -707,12 +707,17 @@ def _mermaid_node_id(task_id):
     return "T" + re.sub(r"[^0-9A-Za-z]", "_", task_id)
 
 
-def render_summary_block(tasks, done_ids):
+def render_summary_block(tasks, done_ids, status=None):
     """Additive 'At a glance' block (both sentinels included). Pure + deterministic."""
     if not tasks:
-        return (
-            f"{SUMMARY_BEGIN}\n## At a glance\n\n_No tasks defined yet._\n{SUMMARY_END}"
+        # A shipped plan with no tasks is a deliberate rollup of work done
+        # elsewhere, not a plan whose tasks are still pending — "yet" would lie.
+        empty = (
+            "_Rollup plan — no tasks of its own._"
+            if (status or "").lower() == "shipped"
+            else "_No tasks defined yet._"
         )
+        return f"{SUMMARY_BEGIN}\n## At a glance\n\n{empty}\n{SUMMARY_END}"
     files = set()
     for t in tasks:
         for f in t["files"].split(","):
@@ -801,7 +806,7 @@ def inject_summary_block(plan_text, block):
 def summarize_plan_file(plan_path):
     """Read -> build block -> inject -> write only if changed. Returns True if written."""
     text = plan_path.read_text(encoding="utf-8").replace("\r\n", "\n")
-    _, body = parse_frontmatter(text)
+    fm, body = parse_frontmatter(text)
     tasks, _ = extract_tasks(body)
     attach_titles(tasks, body)
     done_ids = set()
@@ -810,7 +815,7 @@ def summarize_plan_file(plan_path):
             entries = parse_status_entries(content)
             done_ids = _done_task_ids(entries, [t["id"] for t in tasks])
             break
-    block = render_summary_block(tasks, done_ids)
+    block = render_summary_block(tasks, done_ids, fm.get("status"))
     new_text = inject_summary_block(text, block)
     if new_text != text:
         plan_path.write_text(new_text, encoding="utf-8")
