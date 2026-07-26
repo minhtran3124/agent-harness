@@ -6,7 +6,9 @@ work from any process, including the orchestrator's Bash tool.
 ## Spawn
 
 ```bash
-herdr agent start worker-<n> --cwd <worktree-path> [--workspace ID] [--env K=V] -- claude "<task prompt>"
+herdr agent start worker-<n> --cwd <worktree-path> \
+  [--workspace ID] [--tab ID] [--split right|down] [--env K=V] [--no-focus] \
+  -- claude "<task prompt>"
 ```
 
 - **Never spawn with `-p` / print mode.** A print-mode `claude` process runs to
@@ -15,6 +17,9 @@ herdr agent start worker-<n> --cwd <worktree-path> [--workspace ID] [--env K=V] 
   the task prompt as a plain positional argument to interactive `claude` so the session
   stays open and idles in-pane after the turn.
 - `agent start` returns once herdr detects the agent is ready for input.
+- **Pass `--no-focus` when spawning a wave.** Each `agent start` otherwise steals the
+  human's focus; three workers in a row means three focus jumps while they are reading
+  something else. Panes stay visible either way — that is the whole point.
 - Name workers after their task (`worker-gh129-d1`), not sequentially — names are how
   you target `send` / `wait` / `read` later.
 - Precondition: the worktree is armed (`parallel-worktrees.md`). A worker spawned in an
@@ -26,6 +31,10 @@ herdr agent start worker-<n> --cwd <worktree-path> [--workspace ID] [--env K=V] 
 herdr agent wait worker-<n> --status idle --timeout <ms>     # settled (turn finished)
 herdr wait agent-status <pane-id> --status blocked --timeout <ms>  # waiting on permission/input
 ```
+
+- The two commands take **different status sets**. `agent wait` accepts
+  `idle|working|blocked|unknown`; `wait agent-status` additionally accepts `done`. Asking
+  `agent wait --status done` is a usage error, not a longer wait.
 
 - `idle` means the session finished a turn — **not** that the task succeeded. Truth
   lives in the files (`verification-and-safety.md`). Confirmed by testing: a `wait
@@ -63,8 +72,9 @@ stop — the human decides. Never auto-respawn (see `verification-and-safety.md`
 
 ## Collect and close
 
-1. Read `specs/<slug>/SUMMARY.md` (and `RUN.json` if run-state is in use) from the
-   worktree — that is the return value.
+1. Read `<worktree>/specs/<slug>/SUMMARY.md` (and `RUN.json`, when the worker's chain
+   emitted one) — that is the return value. Read it from the **worktree path**; your own
+   checkout has a different `specs/<slug>/` at a different commit.
 2. Close the pane (`herdr pane close <pane-id>`) or leave it open for the human to
    inspect; remove the worktree only after the branch is pushed/merged
    (`parallel-worktrees.md`).

@@ -5,14 +5,41 @@
 `herdr agent wait --status idle` only proves the worker's turn ended — success, failure,
 and "stopped to ask a question" all look identical. After every wait, verify from files:
 
-1. `specs/<slug>/SUMMARY.md` in the worktree — Verify rows filled with real exit codes?
+1. `<worktree>/specs/<slug>/SUMMARY.md` — Verify rows filled with real exit codes?
    Deviations recorded? Blockers empty?
 2. `git -C <worktree> log --oneline` — did the promised commit actually land?
-3. If run-state is in use: `python3 runtime/run_state.py status <slug>` — is the state
-   the one the worker claims?
+3. Run-state, if the worker's chain emitted any:
 
-A worker that says "done" with an empty Verify table is not done
-(`rules/orchestration.md` → evidence over assertion).
+   ```bash
+   (cd "$WT" && python3 runtime/run_state.py status --slug <slug>)   # --slug is required
+   (cd "$WT" && python3 runtime/run_state.py list --active --json)
+   ```
+
+   Both resolve `specs/<slug>/` from the **current directory** — run them from the
+   worktree or you are reading your own repo's state. A missing `RUN.json` means the
+   best-effort transitions never fired; it is not evidence of failure (`delegation.md`).
+
+Check 2 outranks check 3, and check 1 outranks both when they disagree: a worker that
+says "done" with an empty Verify table is not done (`rules/orchestration.md` → evidence
+over assertion), whatever `RUN.json` says.
+
+## Reading a worker's run-state
+
+When `RUN.json` is present, `state` tells you where in the chain the worker got to. The
+FSM is 16 states — 11 active, 2 interrupts, 3 terminal — and it has **no heartbeat, lease,
+or staleness field** (deliberately deferred). That is exactly why liveness comes from the
+pane layer and durability from the file:
+
+| `state` | What it means for the orchestrator |
+| --- | --- |
+| `investigating` / `planning` | intake ran; no code yet |
+| `implementing` / `verifying` | the worker is inside `subagent-driven-development` |
+| `awaiting_review` / `addressing_review` / `awaiting_ci` / `fixing_ci` | post-diff chain |
+| `ready_to_merge` | `finishing-a-development-branch` opened the PR — **your stop line** |
+| `blocked` / `escalated` | interrupt; `waiting_on` + `resume_event` say what unblocks it |
+| `shipped` / `cancelled` / `superseded` | terminal — a stall check on these is a false positive |
+
+Non-terminal state + dead pane = stalled. Terminal state = done regardless of the pane.
 
 ## Gates still apply inside workers
 

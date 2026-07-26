@@ -32,6 +32,34 @@ demand before spawning herdr-visible worker sessions: README.md (entry, core loo
 agent-lifecycle.md, delegation.md, parallel-worktrees.md, model-routing-and-context.md,
 verification-and-safety.md.
 
+**2026-07-26 accuracy pass** (rebased onto `cc-herdr`, 132 commits of drift since the
+branch was cut). Every command re-run against herdr 0.7.3 and this tree; four claims were
+wrong and are corrected:
+
+1. `run_state.py status <slug>` → **`status --slug <slug>`**. The documented form exits 2
+   with a usage error.
+2. The arm step must invoke the **worktree's own** `deploy-harness.sh`
+   (`bash "$WT/scripts/deploy-harness.sh"`). The script resolves sources from its own path
+   (`ROOT="$(dirname "$0")/.."`), so the previous `bash scripts/deploy-harness.sh --target
+   "$WT"` armed the worker with the *orchestrator's* branch of skills/hooks/rules. Added
+   `--yes` — a re-arm with a differing protected file otherwise blocks on `/dev/tty`.
+3. "The worker records `claude_session_id`/`herdr_pane_id` in event metadata at claim
+   time" was stated as fact; **no shipped skill does this.** Reframed as an opt-in the
+   task prompt must request, with the real `transition --meta k=v` invocation.
+4. `run_state.py` resolves `specs/<slug>/` from **cwd** — read-backs must be
+   `(cd "$WT" && …)` or they report the orchestrator's own specs.
+
+Also brought current: run-state is now wired into the standard chain (feature-intake /
+subagent-driven-development / finishing) but every call is best-effort `|| true`, so
+`RUN.json` is opportunistic, not a contract — added a state→meaning table and made
+SUMMARY.md + `git log` the ranked oracles; `herdr worktree` placement
+(`~/.herdr/worktrees/…`, not `.worktrees/`) and JSON path resolution, since the core loop
+used `<worktree-path>` without saying where it comes from; `--cwd`/`--no-focus` on the
+herdr calls; the `agent wait` vs `wait agent-status` status-set difference; the four
+commit gates a worker will hit (lane evidence, Verify-row shape, split add/commit, risk
+corroboration); `--session-id` un-hedged to "flag verified, argv combination still
+untested". The research doc keeps its 2026-07-24 snapshot with a dated addendum.
+
 ### Rationale
 
 Read-on-demand docs (same convention as `techstacks/`) instead of a new skill or rule:
@@ -50,16 +78,26 @@ to a skill stays available as a follow-up.
 
 - Intake classification done inline (this file) rather than via the full /feature-intake
   skill run — MVP scope, docs-only, zero risk flags; recorded here per "record always-on".
+- Rule 2 (2026-07-26): rebased the branch onto `cc-herdr` before verifying. Checking the
+  docs against the stale base would have re-verified them against code the PR does not
+  merge into.
 
 ### Verify
 
 | Check | Command | Exit | Notes |
 | --- | --- | --- | --- |
+| Doc-truth lint (every referenced path exists) | `bash scripts/lint-doc-truth.sh` | 0 | all referenced paths exist; hook table matches settings.json |
+| Old `status <slug>` form is genuinely broken | `python3 runtime/run_state.py status durable-run-state` | 2 | usage error — `--slug` is required; corrected in verification-and-safety.md |
+| Corrected `status --slug` form parses | `python3 runtime/run_state.py status --slug durable-run-state` | 3 | reaches storage, exits 3 only because no run exists yet — no usage error |
+| Arm recipe runs non-interactively | `bash scripts/deploy-harness.sh --target /tmp/harness-arm-dryrun --yes --dry-run` | 0 | first-time install path, no protected-file prompt |
+| Worktree path resolution works | `herdr worktree list --cwd . --json` | 0 | `.result.worktrees[]` carries branch + path; herdr 0.7.3 |
+| Lane-evidence gate denies an empty Verify table | `python3 scripts/verify_summary.py --lane specs/herdr-orchestrator-guide/SUMMARY.md --plan-dir specs/herdr-orchestrator-guide` | 0 | tiny lane passes; a synthetic `normal` SUMMARY with the same empty table exited 1 — the claim in delegation.md |
 
 ### Rollback
 
-- `rm -rf docs/herdr-orchestrator/ specs/herdr-orchestrator-guide/` (files are untracked
-  until committed; once committed, `git revert <sha>`)
+- `git revert <sha>` (branch `docs/herdr-orchestrator-guide`, PR #169). The accuracy pass
+  is a single follow-up commit on top of the original doc commit; reverting it restores
+  the 2026-07-24 text without removing the doc set.
 
 ### Harness-Delta
 

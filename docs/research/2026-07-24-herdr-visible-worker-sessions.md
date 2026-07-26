@@ -9,6 +9,17 @@ three open questions from that discussion. Evidence labels: **[verified-local]**
 the command / read the file on this machine; **[verified-web]** = herdr official docs;
 **[unverified]** = not independently confirmed.
 
+> **Addendum 2026-07-26 — what has landed since.** This doc is a dated snapshot; the
+> living guidance is `docs/herdr-orchestrator/`. Re-checked against the current tree:
+> the run-state engine is unchanged at 494 lines but **phases A–D plus an end-to-end
+> suite are now merged**, and the standard skill chain emits transitions best-effort
+> (`/feature-intake` init, `subagent-driven-development` implementing/verifying,
+> `finishing-a-development-branch` ready_to_merge). Still true: no heartbeat/lease, and
+> `metadata` correlation ids are **not** recorded by any shipped skill — Q2's layered
+> proposal remains a proposal. Two spawn-recipe details below are incomplete as written
+> and are corrected in `parallel-worktrees.md`: `deploy-harness.sh` must be invoked as
+> the *worktree's own* copy, and it needs `--yes` to stay non-interactive on a re-arm.
+
 ---
 
 ## Q1 — Can herdr see, spawn, and steer worker sessions?
