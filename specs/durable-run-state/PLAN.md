@@ -10,7 +10,7 @@ created: 2026-07-24
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-_No tasks defined yet._
+_No tasks recorded in this plan._
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
