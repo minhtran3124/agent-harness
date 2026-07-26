@@ -217,6 +217,15 @@ until the real chain is run.
 
 ### Harness-Delta
 
+- backlog — **The review chain has no fallback when a dispatched reviewer returns no report.** All
+  four reviewers dispatched here (`reviewer` agent type, model `sonnet`) went idle without delivering
+  their findings text; follow-up `SendMessage` requests to three of them produced another idle
+  notification and no report. The skill's contract assumes a returning subagent and says nothing about
+  this failure mode, so the controller is left choosing silently between blocking forever and
+  substituting a weaker inline pass. Two things are missing: an explicit instruction on what a
+  no-report dispatch means (it is *not* a pass), and a receipt convention that distinguishes
+  "reviewed independently" from "reviewed by the controller". This run recorded the distinction in
+  prose because the receipt schema has no field for it. → `/compound`.
 - backlog — `specs/STATE.md:24` and `templates/structure/specs-STATE.md:24` both advertise a
   `/session-tracker` skill that does not exist on disk (verified: not in `skills/`, not in
   `harness-manifest.json`). Resume guidance now lives in `subagent-driven-development`; those two
