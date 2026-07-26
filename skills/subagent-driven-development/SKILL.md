@@ -1,6 +1,6 @@
 ---
 name: subagent-driven-development
-description: Use when executing implementation plans with independent tasks in the current session
+description: Use when executing an implementation plan with independent tasks — in the current session, or resumed from a new session (invoked as `resume <slug>`; the cursor is reconstructed first)
 ---
 
 # Subagent-Driven Development
@@ -17,8 +17,54 @@ Use this skill when a written plan exists and its tasks are mostly independent. 
 tasks are a planning problem — re-plan the waves before executing. With no plan at all, go back to
 `writing-plans` (or `brainstorming` if the design is not settled).
 
-The same pipeline serves both execution modes — see `## Parallel session` below for the
-separate-session variant.
+The same pipeline serves both execution modes — see `## New-session / resume mode` immediately
+below for the separate-session variant.
+
+## New-session / resume mode
+
+The plan can also be executed — or **resumed** — from a **separate session**: open one in the
+worktree and run this same skill there, invoked as `/subagent-driven-development resume <slug>`
+(there is no separate execution skill; the mode is an argument, not a second file). Everything
+below still applies: the Step-0 four-check gate, branch isolation, `status: active`, and the full
+`/context-propagation-audit` → `/correctness-review` → `/intent-review` → receipt chain. Running in
+another session never buys fewer gates.
+
+**Prerequisite.** A new session opened in a worktree with no deployed `.claude/` cannot resolve
+this skill at all — the Skill tool has nothing to load. Run
+`scripts/deploy-harness.sh --target <worktree>` first (see `skills/using-git-worktrees/SKILL.md`).
+
+### Step -1 — Reconstruct the cursor (resume only)
+
+A fresh session has no history, so before touching anything establish **where the last session
+stopped**. Read all four sources — each answers a different question, and none is trusted alone:
+
+1. `specs/<slug>/PLAN.md` → `## Status Log` plus the derived `### Progress` checklist: which task
+   ids were logged complete, against which commits.
+2. `python3 runtime/run_state.py status --slug <slug>` — the durable FSM state, plus `waiting_on` /
+   `resume_event` when the run was left `blocked` or `escalated`. Exit 3 here means *no run was ever
+   initialized* (a spec predating GitHub issue #129), not that the plan is untouched — fall back to
+   the other three sources and let Step 1's `init` start tracking it.
+3. `git log --oneline <base>..HEAD` on the branch, where `<base>` is the branch point (usually
+   `main`) — what actually landed. This is the only source that cannot be written by a claim.
+4. `specs/<slug>/SUMMARY.md` → `### Deviations` — Rule 1–3 auto-fixes an earlier session already
+   applied, so you neither re-fix nor contradict them.
+
+Then **re-run the `Verify` command of every task the log claims complete.** A checkbox is not
+evidence; a passing exit code is. Report the cursor to the user — done / next / blocked — and
+continue from the first task that is not verified green. A task whose `Verify` fails now is not
+done: re-open it before advancing.
+
+Then fall through to Step 0 — the four-check plan gate runs on resume exactly as on a first run.
+
+**Granularity of control.** In a separate session there is no orchestrator watching each task, so
+execute in **batches with a checkpoint between them**: run a batch, report what landed and what
+verified, and wait before starting the next. Per-task subagent dispatch is optional there — the
+controller may implement tasks directly, provided each task's `Verify` command still runs and
+passes before the task is marked complete.
+
+**Stop and ask** — in either mode — when a blocker appears mid-batch (missing dependency, an
+instruction you do not understand, a `Verify` that fails repeatedly), or when the plan has a gap
+that prevents starting. Do not force through a blocker on a guess.
 
 ## Step 0 — Validate the plan before any implementation
 
@@ -60,9 +106,14 @@ identify the active plan, and the edit auto-re-renders `PLAN.html` via `render-p
 Append commit shas to `## Status Log` after each wave (`rules/wave-parallelism.md`); the `shipped`
 transition happens later in `finishing-a-development-branch`.
 
-**Run-state checkpoint (non-fatal).** In the same step, mark the run as implementing:
+**Run-state checkpoint (non-fatal).** In the same step, mark the run as implementing. `init` first:
+a spec whose run was never initialized — one created before GitHub issue #129, or one that reached
+here without `/feature-intake` — would otherwise have every downstream `transition` fail exit 3 and
+be swallowed by `|| true`, leaving the run invisible to `run_state.py list --active` and to the
+resume path above. `init` is idempotent on an existing run, and both calls stay non-fatal.
 
 ```bash
+python3 runtime/run_state.py init --slug <slug> || true
 python3 runtime/run_state.py transition --slug <slug> --to implementing \
   --event plan.execution_started || true
 ```
@@ -291,23 +342,6 @@ per `auto-correct-scope.md` → Reporting.
 - `./code-quality-reviewer-prompt.md` - Dispatch code quality reviewer subagent (per task)
 - Final adversarial correctness pass - delegated to `/correctness-review` (see `skills/correctness-review/`); its `correctness-{reviewer,scorer}-prompt.md` live there, not here.
 - Final intent review - delegated to `/intent-review` (see `skills/intent-review/`); its `intent-reviewer-prompt.md` lives there, not here.
-
-## Parallel session
-
-The plan can also be executed from a **separate session** — open one in the worktree and run this
-same skill there. Everything above still applies: the Step-0 four-check gate, branch isolation,
-`status: active`, and the full `/context-propagation-audit` → `/correctness-review` →
-`/intent-review` → receipt chain. Running in another session never buys fewer gates.
-
-What changes is only the granularity of control. In a separate session there is no orchestrator
-watching each task, so execute in **batches with a checkpoint between them**: run a batch, report
-what landed and what verified, and wait before starting the next. Per-task subagent dispatch is
-optional there — the controller may implement tasks directly, provided each task's `Verify`
-command still runs and passes before the task is marked complete.
-
-**Stop and ask** — in either mode — when a blocker appears mid-batch (missing dependency, an
-instruction you do not understand, a `Verify` that fails repeatedly), or when the plan has a gap
-that prevents starting. Do not force through a blocker on a guess.
 
 ## Integration
 

@@ -41,9 +41,21 @@ Same-wave files are disjoint:
 After a wave completes:
 
 1. Read each subagent summary; verify every `<verify>` passed
-2. Append task commit shas to PLAN.md `## 7. Status Log`
+2. Append one entry to PLAN.md `## Status Log` naming the **task ids**, their commit shas, and a
+   completion marker (`complete` or `✓`) — all three in the same entry:
+
+   ```markdown
+   - 2026-07-26 — tasks 1.1, 1.2 complete; commits abc1234, def5678
+   ```
+
+   Shas alone are not enough. `render_plan.py`'s `_done_task_ids` derives the done set by extracting
+   **task ids** from entries that read as completions, and that set is what fills the `### Progress`
+   checklist — the cursor a session resuming this plan reads first
+   (`skills/subagent-driven-development/SKILL.md` → New-session / resume mode, Step -1). An entry
+   like "all 9 tasks executed" yields zero ids and leaves a resuming session with no cursor.
 3. Append Rule 1–3 deviations to `specs/<slug>/SUMMARY.md` `### Deviations`
-4. If any blocker → pause wave chain, update STATE.md with cursor, surface to user
+4. If any blocker → pause wave chain, update STATE.md with cursor, surface to user. The Status Log
+   entry from step 2 is what makes that pause resumable from another session
 5. Only then spawn next wave
 
 ## Orchestrator commit (per wave)

@@ -38,6 +38,8 @@ specs/**/PLAN.html
 specs/**/.plan-review.json
 # Derived, machine-local review receipt (written after review passes; not shipped)
 specs/**/.review-receipt.json
+# Machine-local fcntl lock guarding events.jsonl appends (RUN.json + events.jsonl stay tracked)
+specs/**/events.jsonl.lock
 
 .vercel
 

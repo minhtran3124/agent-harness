@@ -38,7 +38,7 @@ scripts/init-structure.sh  (first-time repo setup only)
 /using-git-worktrees
   → creates isolated worktree + branch
       ↓
-/subagent-driven-development        ← same session, or a parallel session in the worktree
+/subagent-driven-development        ← same session, or `resume <slug>` from a new session
   → implements plan task-by-task
   → two-stage review per task (spec compliance → code quality)
   → final adversarial correctness review (/correctness-review) over the whole diff before shipping
@@ -108,7 +108,7 @@ No skill covers first-time setup — it is a script: `bash scripts/init-structur
 | Skill | Trigger | Output |
 |---|---|---|
 | `/using-git-worktrees` | Before starting feature work needing isolation | Isolated worktree + branch |
-| `/subagent-driven-development` | Executing a plan — fresh subagent per task in this session, or the same skill run from a parallel session (batch + checkpoint). Same gates either way | Implemented tasks, two-stage reviewed per task + final adversarial correctness review (delegates to `/correctness-review`) |
+| `/subagent-driven-development` | Executing a plan — fresh subagent per task in this session, or `resume <slug>` from a new session (New-session / resume mode: reconstruct the cursor at Step -1, then batch + checkpoint). Same gates either way | Implemented tasks, two-stage reviewed per task + final adversarial correctness review (delegates to `/correctness-review`) |
 
 ### Review & Shipping
 
