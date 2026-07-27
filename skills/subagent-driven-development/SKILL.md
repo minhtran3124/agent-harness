@@ -78,6 +78,16 @@ stopped**. Read all five sources — each answers a different question, and none
      `--check` is non-mutating: exit 0 prints `RUN.json matches events.jsonl (seq=N)`; exit 3 prints
      `DRIFT: …` (projection stale — `rebuild` without `--check`, then re-read `status`) or a corruption
      message (**stop and surface it**; do not resume on a guess).
+
+     **What `--check` proves, and what it does not.** It proves only that the projection equals a fold of
+     the log. It does **not** validate that the log is a legal history: `read_events` checks required-key
+     presence and `project` folds blindly, so a log with duplicate `seq`, a mismatched `from_state`, or
+     entries from two different `run_id`s rebuilds and `--check`s clean (verified: a forged
+     `queued` → `shipped` pair produced `state: shipped, seq: 1` under the first event's `run_id`). So read
+     the projection with your own eyes before trusting it: a state the plan's own history cannot explain,
+     a `seq` that does not advance, or a `sha` you cannot find in `git log` means **stop and surface it**,
+     `--check` exit 0 notwithstanding. Engine-side chain validation is tracked separately — it is a change
+     to the run-state engine, not to this skill.
 3. `git log --oneline $(git merge-base HEAD <base-branch>)..HEAD` — what actually landed. This is
    the only source that cannot be written by a claim. `<base-branch>` is the branch this work was
    cut from, **not** always `main` (this repo integrates through `loop`). Sanity check the output:
@@ -113,6 +123,13 @@ state, `test_step_minus_one_covers_every_run_state` fails until this table cover
 | `awaiting_confirmation`, `awaiting_ci`, `awaiting_review`, `ready_to_merge` | **STOP and report** | The run is parked on someone or something else. `awaiting_confirmation` exists because a human decision is pending — resuming past it bypasses that gate. The other three have a CI run, a review, or a receipt in flight, and a fresh commit invalidates it: `reviewed_head_sha` stops matching HEAD and `finishing-a-development-branch` Gate 0 refuses the push. |
 | `blocked`, `escalated` | **STOP until the recorded condition is met** | See the erasure hazard below. |
 | `cancelled`, `superseded`, `shipped` | **STOP — human decision** | Someone ended this run deliberately, or it already shipped. Resuming is a decision, not a cursor question. See the hidden-rejection hazard below. |
+
+**The run state is not the only lifecycle — check `PLAN.md` too.** `finishing-a-development-branch`
+Step 4 marks the plan `status: shipped` **before** the push, so a plan can sit `shipped` while its PR is
+still open (this spec's own `PLAN.md` demonstrates exactly that combination). A `shipped` plan on an
+unmerged branch means the work is in review, not available for resumption: **stop and report** rather
+than execute tasks against it. Two things would otherwise go wrong at once — new commits invalidate the
+review receipt, and `hooks/blast-radius-check.sh` stays disarmed because the plan is not `active`.
 
 **Two reasons the STOP rows are load-bearing rather than advice**, both because Step 1's checkpoint is
 non-fatal and therefore silent:

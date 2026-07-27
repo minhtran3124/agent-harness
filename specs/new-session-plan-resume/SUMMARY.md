@@ -371,6 +371,41 @@ re-authored. Mutate a **copy** when the working tree holds unstaged work.
   asserts the skill instructs it. Mutation-checked on a **copy** this time: replacing the walk sentence
   fails the test. Pinned as **SC-15**.
 
+**Codex round 8.5 (review on `f4ea405`) — MISSED on the first pass, then fixed.** Two reviews arrived
+between round 7 and round 8 and only the later one was handled; this one was skipped. Its finding was
+still live: the STOP rows keyed on **run state** only, while `finishing-a-development-branch` Step 4 marks
+`PLAN.md` `status: shipped` **before** the push — so a plan sits `shipped` with its PR still open (this
+spec's own `PLAN.md` is the live example). A resumed session would then execute tasks against shipped
+work, with two failures at once: new commits invalidate the review receipt, and
+`hooks/blast-radius-check.sh` stays disarmed because the plan is not `active`. Step -1 now checks the
+**plan** lifecycle alongside the run state and stops on a `shipped` plan whose branch is unmerged.
+
+**Codex round 9 (reviewed commit `d102290`) — CONFIRMED, split between a fix here and issue #174.**
+
+- The round-4 claim that `rebuild --check` validates the run state **over-promised**. `read_events`
+  checks required-key presence and `project` is a blind fold — no `seq` continuity, no `from_state`
+  chaining, no `slug`/`run_id` consistency, no transition legality. Verified by forging a log whose keys
+  are all present but whose history is impossible (`queued` at `seq 1`, then `shipped` also at `seq 1`
+  with `from_state: verifying` and a different `run_id`):
+
+  ```
+  rebuild         → rebuilt RUN.json from events.jsonl (seq=1)   exit 0
+  rebuild --check → RUN.json matches events.jsonl (seq=1)        exit 0
+  status          → state: shipped  seq: 1  run_id: r1  sha: deadbee
+  ```
+
+  A projection stitched from two different runs, reporting a terminal state its history cannot reach —
+  and `--check` calls it a match, because "matches" means *projection equals fold(log)*, nothing more.
+- **Fixed here (prompt side):** Step -1 now states exactly what `--check` proves and what it does not,
+  and requires the reader to sanity-check the projection — a state the plan's history cannot explain, a
+  `seq` that does not advance, or a `sha` absent from `git log` means stop, exit 0 notwithstanding.
+- **Deliberately NOT fixed here (engine side):** chain validation belongs in `runtime/run_state.py`,
+  a core engine and a Rule-4 high-blast file, and is unrelated to this PR's intent (resume mode).
+  Bundling it would be exactly the `excess` that `/intent-review` exists to catch. Filed as
+  **issue #174** with the reproduction, the suggested direction (validate in `read_events`, fail
+  `StorageError`/exit 3 so every existing caller inherits it), and the compatibility question that
+  should be settled first.
+
 **Advisory, not fixed by design:** `specs/slim-skill-surface/PLAN.md:92` (SC-7) and its
 `SUMMARY.md:109` Verify row grep for `"parallel session"` in
 `skills/subagent-driven-development/SKILL.md` and now exit 1. That spec is `status: shipped` and
@@ -413,6 +448,10 @@ until the real chain is run.
 
 ### Harness-Delta
 
+- backlog — **A review round can be skipped silently when two arrive back to back.** Reviews on
+  `f4ea405` and `221840d` landed 9 minutes apart; only the later one was handled, and its finding stayed
+  live for two more rounds. Handling reviews by "the latest one" is unsafe — the loop needs to track the
+  last-handled review id per PR, not the last-seen commit. → `/compound`.
 - backlog — **The review chain has no fallback when a dispatched reviewer returns no report.** All
   four reviewers dispatched here (`reviewer` agent type, model `sonnet`) went idle without delivering
   their findings text; follow-up `SendMessage` requests to three of them produced another idle
