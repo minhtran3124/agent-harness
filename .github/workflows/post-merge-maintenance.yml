@@ -11,13 +11,21 @@ name: post-merge-maintenance
 on:
   pull_request_target:
     types: [closed]
-    # Keep this list to the branch(es) PRs are actually merged into. History: the list
-    # was [v2] while v2 was the working branch and main lacked scripts/bookkeeping.sh
-    # (PR #44 crashed on that gap; PR #36 added the file to main only to register
-    # pull_request_target). After the v2 → main promotion (VERSION 2.0.0) PRs merge to
-    # main, which now carries the full toolchain — the stale [v2] list silently skipped
-    # PRs #66/#68/#69/#70 (found by the 2026-07-16 over-engineering review, C3).
-    branches: [main, v3]  # v3 = integration/staging branch (2026-07-17); PRs merge here first
+    # THIS FILE MUST BE SYNCED ON `main`: pull_request_target always loads the workflow
+    # definition from the repo's real DEFAULT branch (main), regardless of the PR's base.
+    # Editing this list only on an integration branch has NO effect (observed 2026-07-04,
+    # docs/harness-v03-plan-overview.md; same pattern as PRs #36/#44/#45 — sync to main
+    # in its own small PR).
+    #
+    # Keep the list to the branch(es) PRs are actually merged into. IT ROTS SILENTLY: a PR
+    # merged into a branch missing here fires nothing — no run, no log, no error.
+    # History: [v2] while v2 was the working branch (main then lacked
+    # scripts/bookkeeping.sh — PR #44 crashed on that gap; PR #36 added it to main only to
+    # register pull_request_target). After the v2 → main promotion the stale [v2] silently
+    # skipped PRs #66/#68/#69/#70 (2026-07-16 over-engineering review, C3). Then [main, v3]
+    # outlived v3 — no longer on the remote — and silently skipped PRs #158 and #160,
+    # merged into `loop` (2026-07-23).
+    branches: [main, loop]  # loop = integration/staging branch (2026-07-23); PRs merge here first
 
 permissions:
   contents: write
@@ -50,6 +58,28 @@ jobs:
           gh pr view "$PR_NUMBER" --json files --jq '.files[].path' > /tmp/changed-files.txt
           echo "changed $(wc -l < /tmp/changed-files.txt) files"
 
+      # MUST run BEFORE the bookkeeping step's dirty-tree check: this transition mutates
+      # specs/<slug>/{RUN.json,events.jsonl}, and that check is what decides whether a PR
+      # is opened at all. Ordered after it, a run-state-only change was invisible —
+      # `changed=false` skipped the PR and the transition died with the runner.
+      - name: Run-state checkpoint — mark shipped (non-fatal, Phase C)
+        id: runstate
+        run: |
+          slug=$(grep -oE 'specs/[^/]+/SUMMARY\.md' /tmp/changed-files.txt | head -1 | cut -d/ -f2 || true)
+          if [ -z "$slug" ]; then
+            echo "no specs/<slug>/SUMMARY.md in this PR — skipping run-state transition"
+          elif [ ! -f "specs/$slug/RUN.json" ]; then
+            echo "no RUN.json for $slug — skipping run-state transition"
+          elif python3 runtime/run_state.py transition --slug "$slug" --to shipped \
+                 --event ci.merged --sha "$MERGE_SHA"; then
+            # Publish the slug ONLY on success. The PR step stages this slug's two
+            # run-state files; staging them after a failed transition would commit
+            # nothing, and staging a slug that was never transitioned would be a lie.
+            echo "slug=$slug" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::run-state transition to shipped failed/skipped for $slug"
+          fi
+
       - name: Run bookkeeping
         id: book
         run: |
@@ -59,25 +89,37 @@ jobs:
             --sha "$MERGE_SHA" \
             --files "$(cat /tmp/changed-files.txt)" \
             --date "$(date +%F)"
+          # Covers BOTH this step's bookkeeping files and the run-state files written
+          # above — a run-state-only change is still a reason to open the PR.
           if [ -n "$(git status --porcelain)" ]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "bookkeeping made no changes (already recorded) — skipping PR"
+            echo "nothing to record (already up to date) — skipping PR"
           fi
 
       - name: Open the bookkeeping PR
         if: steps.book.outputs.changed == 'true'
+        env:
+          RUNSTATE_SLUG: ${{ steps.runstate.outputs.slug }}
         run: |
           branch="chore/bookkeeping-${PR_NUMBER}"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$branch"
           git add VERSION CHANGELOG.md docs/harness-experimental/trust-metrics.md docs/harness-experimental/audit-log.jsonl
+          # The run-state transition writes specs/<slug>/RUN.json and appends to
+          # specs/<slug>/events.jsonl. Both must be staged HERE — `git commit` has no
+          # `-a`, so anything unstaged is discarded with the runner and the run stays
+          # non-terminal forever while the step reports success. Guarded by
+          # tests/scripts/post-merge-runstate-staging.test.sh.
+          if [ -n "$RUNSTATE_SLUG" ]; then
+            git add "specs/$RUNSTATE_SLUG/RUN.json" "specs/$RUNSTATE_SLUG/events.jsonl"
+          fi
           git commit -m "chore(bookkeeping): record PR #${PR_NUMBER}"
           git push origin "$branch"
           gh pr create \
             --base "$BASE_REF" \
             --head "$branch" \
             --title "chore(bookkeeping): record PR #${PR_NUMBER}" \
-            --body "Automated post-merge bookkeeping for #${PR_NUMBER}: trust-metrics row, CHANGELOG entry, VERSION bump. Generated by post-merge-maintenance.yml."
+            --body "Automated post-merge bookkeeping for #${PR_NUMBER}: trust-metrics row, CHANGELOG entry, VERSION bump${RUNSTATE_SLUG:+, and the run-state \`shipped\` transition for \`$RUNSTATE_SLUG\`}. Generated by post-merge-maintenance.yml."
