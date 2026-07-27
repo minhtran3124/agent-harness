@@ -39,3 +39,4 @@
 {"date": "2026-07-22", "findings": 0, "band": "healthy", "checks": {"verify_missing": 0, "plan_stale": 0, "backlog_stale": 0, "manifest_degraded": 0, "solutions_stale": 0, "contract_impact": 0}, "pr": 150}
 {"date": "2026-07-22", "findings": 0, "band": "healthy", "checks": {"verify_missing": 0, "plan_stale": 0, "backlog_stale": 0, "manifest_degraded": 0, "solutions_stale": 0, "contract_impact": 0}, "pr": 153}
 {"date": "2026-07-22", "findings": 0, "band": "healthy", "checks": {"verify_missing": 0, "plan_stale": 0, "backlog_stale": 0, "manifest_degraded": 0, "solutions_stale": 0, "contract_impact": 0}, "pr": 155}
+{"date": "2026-07-27", "findings": 1, "band": "minor drift", "checks": {"verify_missing": 0, "plan_stale": 0, "backlog_stale": 1, "manifest_degraded": 0, "solutions_stale": 0, "contract_impact": 0}, "pr": 176}
