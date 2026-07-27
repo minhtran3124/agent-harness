@@ -121,7 +121,7 @@ state, `test_step_minus_one_covers_every_run_state` fails until this table cover
 | `fixing_ci`, `addressing_review` | **Proceed, but not into plan tasks** | Resume the loop the state names (CI fixes / review feedback). Re-entering wave execution here re-does shipped work. |
 | `verifying` | **Skip the tasks; re-enter the review chain** | Tasks passed already. Resume at `/correctness-review` → `/intent-review` → receipt. |
 | `awaiting_confirmation`, `awaiting_ci`, `awaiting_review`, `ready_to_merge` | **STOP and report** | The run is parked on someone or something else. `awaiting_confirmation` exists because a human decision is pending — resuming past it bypasses that gate. The other three have a CI run, a review, or a receipt in flight, and a fresh commit invalidates it: `reviewed_head_sha` stops matching HEAD and `finishing-a-development-branch` Gate 0 refuses the push. |
-| `blocked`, `escalated` | **STOP until the recorded condition is met** | See the erasure hazard below. |
+| `blocked`, `escalated` | **STOP until the recorded condition is met — then return to the state the interrupt came from** | These are *universal* interrupts: a run can enter them from `verifying`, `fixing_ci` or `addressing_review` just as easily as from `implementing`, and the state alone does not say which. Recover `from_state` from the **last event in `events.jsonl`** (`RUN.json` does not carry it), transition back to that state once the condition is confirmed, then follow **that** state's row. See the erasure hazard below for what a blind fall-through costs. |
 | `cancelled`, `superseded`, `shipped` | **STOP — human decision** | Someone ended this run deliberately, or it already shipped. Resuming is a decision, not a cursor question. See the hidden-rejection hazard below. |
 
 **The run state is not the only lifecycle — check `PLAN.md` too.** `finishing-a-development-branch`
@@ -152,6 +152,17 @@ non-fatal and therefore silent:
 
    The record of *why* work was paused is gone, and the batch runs as if nothing was blocked. Pinned by
    `test_blocked_to_implementing_clears_blocker_metadata`.
+
+   Worse, `implementing` may not even be where the run was: because interrupts are universal, a run
+   blocked out of `verifying` or `addressing_review` would be dragged into wave execution by that same
+   legal transition. So when the condition **is** met, do not fall through — read the last event:
+
+   ```bash
+   python3 -c "import json;print([json.loads(l) for l in open('specs/<slug>/events.jsonl') if l.strip()][-1]['from_state'])"
+   ```
+
+   Transition back to that state (`blocked → <from_state>` is legal for any active state), then follow its
+   row in the table. Pinned by `test_interrupt_origin_is_only_in_the_event_log`.
 2. **A terminal state's refusal is invisible.** `valid_targets` returns nothing for a terminal state, so
    the same transition is *rejected* with exit 2 — and `|| true` converts that to exit 0. The session
    then edits and ships a cancelled plan with its run frozen. Pinned by

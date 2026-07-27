@@ -142,6 +142,7 @@ how this spec became the repo's first live run.
 | unit | `python3 -m pytest runtime/test_run_state.py -k only_planning_and_interrupts -q` | 0 | 1 passed — pins that only `planning`/`blocked`/`escalated` reach `implementing` in one hop, and that the skill instructs the walk; mutation-checked against the skill text | SC-15 |
 | unit | `python3 -m pytest runtime/test_run_state.py -k shipped_plan_stop_exempts -q` | 0 | 1 passed — shipped-plan rule stays scoped to plan tasks and keeps exempting `fixing_ci` / `addressing_review`; mutation-checked | SC-16 |
 | unit | `python3 -m pytest runtime/test_run_state.py -k task_cursor_directive -q` | 0 | 1 passed — task sweep scoped to plan-execution states, repair states + `verifying` routed elsewhere; mutation-checked | SC-17 |
+| unit | `python3 -m pytest runtime/test_run_state.py -k interrupt_origin -q` | 0 | 1 passed — projection omits `from_state`, event log carries it, return-to-origin is legal | SC-18 |
 | lint | `bash scripts/lint-skill-bash.sh` | 0 | the edited run-state bash block is shellcheck-clean | |
 | lint | `python3 scripts/check_verify_rows.py specs/new-session-plan-resume` | 0 | all PLAN/SUMMARY rows pipe-free and <60s | |
 | dogfood | `grep -q '3/3 done' specs/new-session-plan-resume/PLAN.md` | 0 | this plan's own Status Log entry, written in the new shape, moved the derived Progress cursor 0/3 → 3/3 — the capability proven end-to-end on itself | SC-7 |
@@ -454,6 +455,29 @@ tests that read the prose. That is a state machine described in English and chec
 the wrong medium. The proposal (extract the reconstruction into a script the skill calls, so the logic is
 executed and unit-tested instead of narrated) is a new public callable and a scope expansion, so it is
 **not** bundled here — same reasoning as #174.
+
+**Codex round 12 (reviewed commit `97103c2`) — 1 P2, CONFIRMED and fixed. Unlike rounds 8/10/11 this is
+not a wording contradiction: it is a missing route.**
+
+- The `blocked` / `escalated` row said "STOP until the recorded condition is met" and stopped there — no
+  path forward once it *is* met. And because interrupts are **universal** (`valid_targets` adds them to
+  every active state), a run can be blocked out of `verifying`, `fixing_ci` or `addressing_review`, not
+  only `implementing` — the state alone does not say which. Falling through to Step 1 would then legally
+  drag a run blocked out of *review-addressing* into wave execution. Verified:
+
+  ```
+  RUN.json keys  → no from_state          (status cannot answer "from where?")
+  last event     → from_state: verifying  (only the log knows)
+  blocked → verifying   exit 0            (return to origin works)
+  blocked → implementing exit 0           (…and the blind hop is equally legal, so nothing stops it)
+  ```
+
+  Fixed: recover `from_state` from the last event in `events.jsonl`, transition back to that state once
+  the condition is confirmed, then follow **that** state's row. Pinned as **SC-18**
+  (`test_interrupt_origin_is_only_in_the_event_log`), which asserts the projection omits `from_state`
+  while the log carries it — the asymmetry the instruction depends on.
+- The SC-14 coverage guard was re-mutation-checked after the row rewrite (renaming the row's states fails
+  with `does not classify: ['blocked', 'escalated']`), since that guard rotted once already.
 
 **Advisory, not fixed by design:** `specs/slim-skill-surface/PLAN.md:92` (SC-7) and its
 `SUMMARY.md:109` Verify row grep for `"parallel session"` in

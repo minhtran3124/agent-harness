@@ -702,6 +702,45 @@ def test_task_cursor_directive_is_scoped_to_plan_execution_states():
         )
 
 
+def test_interrupt_origin_is_only_in_the_event_log():
+    """Interrupts are universal, so `blocked` does not say where the run came from —
+    and the projection does not carry `from_state`, only the event log does. A resume
+    that falls through to `implementing` therefore drags a run blocked out of
+    `verifying` into wave execution, which is legal and thus unstopped."""
+    rs.main(["init", "--slug", "v", "--run-id", "r1"])
+    for to_state in ("investigating", "planning", "implementing", "verifying"):
+        rs.main(["transition", "--slug", "v", "--to", to_state, "--event", "e"])
+    rs.main(
+        [
+            "transition",
+            "--slug",
+            "v",
+            "--to",
+            "blocked",
+            "--event",
+            "ci.red",
+            "--resume-event",
+            "fix-landed",
+            "--waiting-on",
+            "flaky test",
+        ]
+    )
+
+    projection = rs.read_json("specs/v/RUN.json")
+    assert projection["state"] == "blocked"
+    assert "from_state" not in projection  # status cannot answer "from where?"
+
+    last = rs.read_events("v")[-1]
+    assert last["from_state"] == "verifying"  # only the log knows
+
+    # returning to the origin is legal — and so is the blind hop that skips it
+    assert (
+        rs.main(["transition", "--slug", "v", "--to", "verifying", "--event", "ok"])
+        == 0
+    )
+    assert rs.read_json("specs/v/RUN.json")["state"] == "verifying"
+
+
 def test_corrupt_log_fails_visibly():
     rs.main(["init", "--slug", "demo", "--run-id", "r1"])
     with open("specs/demo/events.jsonl", "a") as f:
