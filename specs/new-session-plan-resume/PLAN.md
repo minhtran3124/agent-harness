@@ -82,6 +82,7 @@ This plan restores the **capability** at one source of truth instead of restorin
 | SC-17 | The task-cursor sweep and Step-0 fall-through apply only to plan-execution states; the repair states and `verifying` are routed elsewhere | `python3 -m pytest runtime/test_run_state.py -k task_cursor_directive -q` | exit 0 — added after Codex round 11; mutation-checked |
 | SC-18 | An interrupt's origin lives only in `events.jsonl` — the projection omits `from_state` — so a resolved interrupt must return to that state instead of falling through to `implementing` | `python3 -m pytest runtime/test_run_state.py -k interrupt_origin -q` | exit 0 — added after Codex round 12 |
 | SC-19 | Returning to a **waiting** origin needs its original `waiting_on`, which the interrupt event overwrote — recovered from the event that entered the wait; the plain return exits 2 | `python3 -m pytest runtime/test_run_state.py -k returning_to_a_waiting_state -q` | exit 0 — added after Codex round 13 |
+| SC-20 | A completed-but-interrupted wait has a named successor for every outcome, and the documented set matches the engine's forward edges for all three waiting states | `python3 -m pytest runtime/test_run_state.py -k waiting_state_successors -q` | exit 0 — added after Codex round 14; mutation-checked (dropping a row fails by transition name) |
 
 ## 4. Tasks
 

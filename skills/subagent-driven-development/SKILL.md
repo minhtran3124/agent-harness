@@ -173,10 +173,28 @@ non-fatal and therefore silent:
    python3 -c "import json;e=[json.loads(l) for l in open('specs/<slug>/events.jsonl') if l.strip()];s=e[-1]['from_state'];print(s, next(x['waiting_on'] for x in reversed(e[:-1]) if x['to_state']==s))"
    ```
 
-   Pass that value back (`--waiting-on "<recovered>"`), or — if the thing being waited on has since
-   completed, which is common when a blocker outlived a CI run — do not restore a finished wait: route
-   forward per that state's row instead. Following the plain instruction here without `--waiting-on` exits
-   2 and leaves the run `blocked`. Pinned by `test_returning_to_a_waiting_state_needs_its_waiting_on`.
+   Pass that value back (`--waiting-on "<recovered>"`). Following the plain instruction here without
+   `--waiting-on` exits 2 and leaves the run `blocked`. Pinned by
+   `test_returning_to_a_waiting_state_needs_its_waiting_on`.
+
+   **If the wait itself finished while the run was interrupted** — common when a blocker outlives a CI
+   run — do not restore a completed wait. Transition to its successor instead, chosen by the outcome.
+   The table's `STOP and report` verdict is about *arriving* in a waiting state; it is not a successor
+   list, so use these (they are exactly `FORWARD_TRANSITIONS` for each, pinned by
+   `test_waiting_state_successors_are_documented`):
+
+   | Origin wait | Outcome | Transition to |
+   |---|---|---|
+   | `awaiting_confirmation` | the decision arrived | `planning` |
+   | `awaiting_confirmation` | the decision was "do not proceed" | `cancelled` (terminal — stop) |
+   | `awaiting_ci` | CI red | `fixing_ci` |
+   | `awaiting_ci` | CI green, a review gate applies | `awaiting_review` |
+   | `awaiting_ci` | CI green, no review gate | `ready_to_merge` |
+   | `awaiting_review` | review left changes to address | `addressing_review` |
+   | `awaiting_review` | review approved | `ready_to_merge` |
+
+   Then follow the row of whatever state you land in — `fixing_ci` / `addressing_review` resume their
+   repair loop, `ready_to_merge` stops and reports.
 2. **A terminal state's refusal is invisible.** `valid_targets` returns nothing for a terminal state, so
    the same transition is *rejected* with exit 2 — and `|| true` converts that to exit 0. The session
    then edits and ships a cancelled plan with its run frozen. Pinned by

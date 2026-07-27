@@ -144,6 +144,7 @@ how this spec became the repo's first live run.
 | unit | `python3 -m pytest runtime/test_run_state.py -k task_cursor_directive -q` | 0 | 1 passed — task sweep scoped to plan-execution states, repair states + `verifying` routed elsewhere; mutation-checked | SC-17 |
 | unit | `python3 -m pytest runtime/test_run_state.py -k interrupt_origin -q` | 0 | 1 passed — projection omits `from_state`, event log carries it, return-to-origin is legal | SC-18 |
 | unit | `python3 -m pytest runtime/test_run_state.py -k returning_to_a_waiting_state -q` | 0 | 1 passed — plain return to a waiting origin exits 2; recovering `waiting_on` from the entering event restores it | SC-19 |
+| unit | `python3 -m pytest runtime/test_run_state.py -k waiting_state_successors -q` | 0 | 1 passed — every legal forward edge of all 3 waiting states is documented; mutation-checked (dropping a row fails by transition name) | SC-20 |
 | lint | `bash scripts/lint-skill-bash.sh` | 0 | the edited run-state bash block is shellcheck-clean | |
 | lint | `python3 scripts/check_verify_rows.py specs/new-session-plan-resume` | 0 | all PLAN/SUMMARY rows pipe-free and <60s | |
 | dogfood | `grep -q '3/3 done' specs/new-session-plan-resume/PLAN.md` | 0 | this plan's own Status Log entry, written in the new shape, moved the derived Progress cursor 0/3 → 3/3 — the capability proven end-to-end on itself | SC-7 |
@@ -507,6 +508,36 @@ route created a defect in the route's preconditions. Combined with rounds 8/10/1
 contradictions), 5 of the last 6 findings were defects in prose this PR added rather than in the original
 change. The state logic has outgrown the medium — which is exactly what #175 proposes to fix by making it
 code.
+
+**Codex round 14 (reviewed commit `e613e71`) — 1 P2, CONFIRMED and fixed. Third link of the same chain
+(12 → 13 → 14): each fix's own preconditions became the next finding.**
+
+- Round 13 ended with "if the wait finished, route forward per that state's row" — but that row says only
+  **STOP and report**, so the instruction was circular: verbatim it leaves the run `blocked`, and deviating
+  means guessing between `planning`, `fixing_ci`, `awaiting_review` and `ready_to_merge`. Confirmed by
+  reading both places (row at the table, sentence in the interrupt path).
+- Fixed by taking the successors from the engine rather than inventing them — `FORWARD_TRANSITIONS` already
+  defines them, and for `awaiting_ci` the choice is genuinely outcome-dependent:
+
+  | Origin wait | Legal successors (engine) |
+  |---|---|
+  | `awaiting_confirmation` | `planning` |
+  | `awaiting_ci` | `fixing_ci` (red) · `awaiting_review` / `ready_to_merge` (green) |
+  | `awaiting_review` | `addressing_review` (changes) · `ready_to_merge` (approved) |
+
+  Added as an outcome → transition table, plus the clarification the finding exposed: the verdict table's
+  `STOP and report` is about **arriving** in a waiting state, not a successor list.
+- **Pinned as SC-20** (`test_waiting_state_successors_are_documented`), which asserts every legal forward
+  edge of every waiting state appears — derived from `rs.FORWARD_TRANSITIONS`, so it self-updates if the
+  engine changes. Mutation-checked twice: dropping the CI-red row fails with
+  `awaiting_ci -> fixing_ci not documented`; dropping the `awaiting_review` pair fails with
+  `awaiting_review -> addressing_review not documented`. The first version of this test also parsed **0
+  rows** because the table is indented inside a list item — caught by the assertion on row count, which is
+  why that assertion is there.
+
+**Fourth data point for #175.** The chain is now 12 → 13 → 14, and 6 of the last 7 findings were defects
+in prose this PR added. Each fix is individually correct and individually creates the next gap, because
+the preconditions live in the engine and prose does not force enumeration.
 
 **Advisory, not fixed by design:** `specs/slim-skill-surface/PLAN.md:92` (SC-7) and its
 `SUMMARY.md:109` Verify row grep for `"parallel session"` in

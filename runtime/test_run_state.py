@@ -815,6 +815,36 @@ def test_returning_to_a_waiting_state_needs_its_waiting_on():
     assert projection["waiting_on"] == "CI run 42"
 
 
+def test_waiting_state_successors_are_documented():
+    """Follow-on to SC-19: when an interrupted wait completes, the recipe must name a
+    successor. The table's verdict for the waiting states is `STOP and report`, which
+    is about ARRIVING there — so the successor mapping is separate, and it must match
+    the engine. Every legal forward target of every waiting state has to appear in the
+    successor table, or the recipe sends the reader to guess."""
+    skill = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "skills",
+        "subagent-driven-development",
+        "SKILL.md",
+    )
+    with open(skill, encoding="utf-8") as f:
+        text = f.read()
+    start = text.index("| Origin wait | Outcome | Transition to |")
+    rows = []
+    for line in text[start:].splitlines()[2:]:
+        stripped = line.strip()  # this table is indented inside a list item
+        if not stripped.startswith("|"):
+            break
+        rows.append(stripped)
+    table = "\n".join(rows)
+    assert len(rows) >= 5, f"successor table parsed as {len(rows)} rows"
+
+    for wait in sorted(rs.WAITING_STATES):
+        assert f"`{wait}`" in table, f"{wait} has no successor row"
+        for target in sorted(rs.FORWARD_TRANSITIONS[wait]):
+            assert f"`{target}`" in table, f"{wait} -> {target} not documented"
+
+
 def test_corrupt_log_fails_visibly():
     rs.main(["init", "--slug", "demo", "--run-id", "r1"])
     with open("specs/demo/events.jsonl", "a") as f:
