@@ -144,7 +144,7 @@ how this spec became the repo's first live run.
 | unit | `python3 -m pytest runtime/test_run_state.py -k task_cursor_directive -q` | 0 | 1 passed — task sweep scoped to plan-execution states, repair states + `verifying` routed elsewhere; mutation-checked | SC-17 |
 | unit | `python3 -m pytest runtime/test_run_state.py -k interrupt_origin -q` | 0 | 1 passed — projection omits `from_state`, event log carries it, return-to-origin is legal | SC-18 |
 | unit | `python3 -m pytest runtime/test_run_state.py -k returning_to_a_waiting_state -q` | 0 | 1 passed — plain return to a waiting origin exits 2; recovering `waiting_on` from the entering event restores it | SC-19 |
-| unit | `python3 -m pytest runtime/test_run_state.py -k waiting_state_successors -q` | 0 | 1 passed — every legal forward edge of all 3 waiting states is documented; mutation-checked (dropping a row fails by transition name) | SC-20 |
+| unit | `python3 -m pytest runtime/test_run_state.py -k waiting_state_successors -q` | 0 | 1 passed — every documented successor is executed from `blocked`, not just named; mutation-checked both halves (missing row → "not documented"; unreachable row → "not takeable") | SC-20 |
 | lint | `bash scripts/lint-skill-bash.sh` | 0 | the edited run-state bash block is shellcheck-clean | |
 | lint | `python3 scripts/check_verify_rows.py specs/new-session-plan-resume` | 0 | all PLAN/SUMMARY rows pipe-free and <60s | |
 | dogfood | `grep -q '3/3 done' specs/new-session-plan-resume/PLAN.md` | 0 | this plan's own Status Log entry, written in the new shape, moved the derived Progress cursor 0/3 → 3/3 — the capability proven end-to-end on itself | SC-7 |
@@ -538,6 +538,32 @@ code.
 **Fourth data point for #175.** The chain is now 12 → 13 → 14, and 6 of the last 7 findings were defects
 in prose this PR added. Each fix is individually correct and individually creates the next gap, because
 the preconditions live in the engine and prose does not force enumeration.
+
+**Codex round 15 (reviewed commit `85ca46b`) — 1 P2, CONFIRMED and fixed. Fourth link of the chain, and
+the same defect class as round 13 reappearing one step later.**
+
+- Round 14's successor table routes `awaiting_ci` + green + review gate → `awaiting_review`. But
+  `awaiting_review` is *itself* a waiting state, so `validate_transition` demands `--waiting-on`, which the
+  table never supplied. Following it verbatim:
+
+  ```
+  transition --to awaiting_review --event ci.green
+      awaiting_review requires --waiting-on   exit 2  → run stays blocked
+  with --waiting-on "PR #173 review"          exit 0  → awaiting_review
+  ```
+
+  This is exactly round 13's failure — a waiting target needing its own `waiting_on` — recurring because
+  the fix was written for the *return* path and the successor table was authored separately.
+- Fixed as a **general rule** rather than a per-row patch: any successor that is itself a waiting state
+  needs its own `--waiting-on` (in this table, `awaiting_review`, and the identifier to pass is the
+  review's — e.g. `PR #<n> review`), with the ordinary active states and the terminal one called out as
+  needing nothing extra.
+- **SC-20 upgraded from membership to execution**, which is the durable half. It now runs every documented
+  successor from `blocked`, supplying whatever the engine demands per target class, and asserts a waiting
+  target is *rejected* without its `waiting_on` first — so the assertion cannot pass vacuously.
+  Mutation-checked both halves: deleting a row fails with `awaiting_ci -> fixing_ci not documented`;
+  documenting an unreachable successor fails with `documented successor blocked -> shipped is not takeable`.
+  Any future row that names an untakeable route now fails here instead of in a live resume.
 
 **Advisory, not fixed by design:** `specs/slim-skill-surface/PLAN.md:92` (SC-7) and its
 `SUMMARY.md:109` Verify row grep for `"parallel session"` in

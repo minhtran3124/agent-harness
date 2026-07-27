@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import subprocess
 import sys
 
@@ -843,6 +844,51 @@ def test_waiting_state_successors_are_documented():
         assert f"`{wait}`" in table, f"{wait} has no successor row"
         for target in sorted(rs.FORWARD_TRANSITIONS[wait]):
             assert f"`{target}`" in table, f"{wait} -> {target} not documented"
+
+    # Membership is not enough: EXECUTE every documented successor from `blocked`,
+    # supplying whatever the engine requires for that target's class. This is what
+    # catches a documented route that cannot actually be taken — the defect class that
+    # hit the return path first, then this table one step later.
+    targets = set()
+    for row in rows:
+        cells = [c.strip() for c in row.strip("|").split("|")]
+        targets.update(re.findall(r"`([a-z_]+)`", cells[-1]))
+    assert {"awaiting_review", "fixing_ci", "planning"} <= targets, targets
+
+    for i, target in enumerate(sorted(targets)):
+        slug = f"succ{i}"
+        os.makedirs(f"specs/{slug}", exist_ok=True)
+        rs.main(["init", "--slug", slug, "--run-id", f"r{i}"])
+        rs.main(["transition", "--slug", slug, "--to", "investigating", "--event", "e"])
+        rs.main(
+            [
+                "transition",
+                "--slug",
+                slug,
+                "--to",
+                "blocked",
+                "--event",
+                "hit",
+                "--resume-event",
+                "cleared",
+                "--waiting-on",
+                "the blocker",
+            ]
+        )
+        argv = ["transition", "--slug", slug, "--to", target, "--event", "resume"]
+        if target in rs.WAITING_STATES:
+            # a waiting target without its own waiting_on is rejected — prove it,
+            # so this assertion cannot pass vacuously
+            assert rs.main(list(argv)) == 2, f"{target} accepted without waiting_on"
+            argv += ["--waiting-on", "the successor wait"]
+        if target in rs.INTERRUPT_STATES:
+            argv += ["--resume-event", "later"]
+        if target == "shipped":
+            argv += ["--sha", "abc1234"]
+        assert rs.main(argv) == 0, (
+            f"documented successor blocked -> {target} is not takeable"
+        )
+        assert rs.read_json(f"specs/{slug}/RUN.json")["state"] == target
 
 
 def test_corrupt_log_fails_visibly():

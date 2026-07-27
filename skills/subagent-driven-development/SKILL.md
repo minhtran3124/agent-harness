@@ -193,6 +193,14 @@ non-fatal and therefore silent:
    | `awaiting_review` | review left changes to address | `addressing_review` |
    | `awaiting_review` | review approved | `ready_to_merge` |
 
+   **A successor that is itself a waiting state needs its own `--waiting-on`** — the same
+   `validate_transition` rule that bit the return path, applied one step later. In this table that is
+   `awaiting_review`: pass the review's identifier, e.g.
+   `--waiting-on "PR #<n> review"`. Omit it and the transition exits 2 with
+   `awaiting_review requires --waiting-on`, leaving the run interrupted. (`planning`, `fixing_ci`,
+   `addressing_review`, `ready_to_merge` are ordinary active states and need nothing extra; `cancelled`
+   is terminal and ends the run.)
+
    Then follow the row of whatever state you land in — `fixing_ci` / `addressing_review` resume their
    repair loop, `ready_to_merge` stops and reports.
 2. **A terminal state's refusal is invisible.** `valid_targets` returns nothing for a terminal state, so
