@@ -124,3 +124,25 @@ Eval a prompt skill with **auto-score / manual-run**: labeled fixtures (`request
 **Module:** hooks/risk-corroboration.sh + harness-manifest.json (gate-mode contract)
 **Tags:** commit-time-hooks, index-vs-worktree, gate-integrity, fail-closed, policy-toctou, external-review
 **Applicable when:** A PreToolUse commit hook reads any config/policy file that influences allow/deny — it must read the INDEX-side copy (`git show :<path>`, fail-closed on absence) so unstaged edits cannot loosen the decision for the committed tree.
+
+## [2026-07-27] no-report-reviewer-dispatch-is-not-a-pass
+**Type:** failure
+**Module:** harness (review chain + review receipt)
+**Tags:** review-chain, subagent-dispatch, no-report, review-receipt, independence, silent-degradation
+**Applicable when:** A dispatched reviewer subagent (correctness / intent / context-propagation) returns no findings text — it went idle, errored, or the channel dropped — and you are about to continue the ship chain.
+
+Four reviewers dispatched in one message all went idle without delivering findings; follow-up requests produced more silence. Silence is the absence of a review, not a clean result, and the receipt schema has no field for independence — so substituting a controller-run pass serializes identically to an independent one and Gate 0 passes on an overstated receipt. Re-dispatch or run it inline and say so verbatim in the `reviewer` string and `SUMMARY.md ### Review`; on a workflow-engine diff, get the missing independence from a reviewer outside the harness.
+
+**Full doc:** docs/solutions/harness/no-report-reviewer-dispatch-is-not-a-pass.md
+---
+
+## [2026-07-27] prose-encoded-state-logic-accrues-contradiction-chains
+**Type:** knowledge
+**Module:** harness (skill authoring — workflow-as-code)
+**Tags:** workflow-as-code, prose-vs-code, state-machine, skill-authoring, contradiction-chain, exhaustive-enumeration
+**Applicable when:** A SKILL.md section is about to branch on more than a couple of states of a real state machine (run-state FSM, plan lifecycle, CI status) — decide the medium before writing the third branch.
+
+State logic written as prose accrues contradiction chains: each correction is individually right and creates the next gap, because the preconditions live in the engine and prose never forces enumeration. Measured on PR #173: 6 of the last 8 findings were defects in prose that PR had just added, four of them a single chain (12→13→14→15), and two fixes ended by copying `FORWARD_TRANSITIONS` into markdown with a test comparing the copy to the original. Enumerate all states explicitly, assert executability rather than wording, and extract to a script once the branch count outgrows the medium — and remember every `|| true` in a skill is a place where such defects cannot announce themselves.
+
+**Full doc:** docs/solutions/harness/prose-encoded-state-logic-accrues-contradiction-chains.md
+---
