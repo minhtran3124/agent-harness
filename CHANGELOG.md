@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.19.1] — 2026-07-27
+
+- ci(sync): put the corrected post-merge trigger on main, where it is read (PR #176)
+
 ## [2.19.0] — 2026-07-22
 
 - fix(review): close context-propagation escapes — issue #143 Phases 0–5 (PR #155)
