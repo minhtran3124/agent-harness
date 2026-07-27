@@ -1,6 +1,6 @@
 ---
 name: subagent-driven-development
-description: Use when executing implementation plans with independent tasks in the current session
+description: Use when executing an implementation plan with independent tasks — in the current session, or resumed from a new session (invoked as `resume <slug>`; the cursor is reconstructed first)
 ---
 
 # Subagent-Driven Development
@@ -17,8 +17,227 @@ Use this skill when a written plan exists and its tasks are mostly independent. 
 tasks are a planning problem — re-plan the waves before executing. With no plan at all, go back to
 `writing-plans` (or `brainstorming` if the design is not settled).
 
-The same pipeline serves both execution modes — see `## Parallel session` below for the
-separate-session variant.
+The same pipeline serves both execution modes — see `## New-session / resume mode` immediately
+below for the separate-session variant.
+
+## New-session / resume mode
+
+The plan can also be executed — or **resumed** — from a **separate session**: open one in the
+worktree and run this same skill there, invoked as `/subagent-driven-development resume <slug>`
+(there is no separate execution skill; the mode is an argument, not a second file). Everything
+below still applies: the Step-0 four-check gate, branch isolation, `status: active`, and the full
+`/context-propagation-audit` → `/correctness-review` → `/intent-review` → receipt chain. Running in
+another session never buys fewer gates.
+
+**Prerequisite.** A new session opened in a worktree with no deployed `.claude/` cannot resolve
+this skill at all — the Skill tool has nothing to load. Run
+`scripts/deploy-harness.sh --target <worktree>` first (see `skills/using-git-worktrees/SKILL.md`).
+
+### Step -1 — Reconstruct the cursor (resume only)
+
+A fresh session has no history, so before touching anything establish **where the last session
+stopped**. Read all five sources — each answers a different question, and none is trusted alone:
+
+1. `specs/<slug>/PLAN.md` → `## Status Log` plus the derived `### Progress` checklist: which task
+   ids were logged complete, against which commits.
+2. `python3 runtime/run_state.py status --slug <slug>` — the durable FSM state, plus `waiting_on` /
+   `resume_event` when the run was left `blocked` or `escalated`.
+
+   **Exit 3 covers three different worlds, and the message does not separate them** — a
+   never-initialized run and a run whose projection was lost both print
+   `missing: specs/<slug>/RUN.json` (`runtime/run_state.py` → "3 missing/corrupt storage or I/O
+   failure"). **The discriminator is whether `specs/<slug>/events.jsonl` exists** — test that, then
+   branch:
+
+   - **Neither file exists** → no run was ever initialized (a spec predating GitHub issue #129, or one
+     that skipped `/feature-intake`). **Skip the validation below**: there is nothing to validate, and
+     its `missing: events.jsonl` exit 3 is not a corruption signal. This is also not "the plan is
+     untouched" — fall back to the other four sources, and do not `init` it into existence (Step 1's
+     checkpoint explains why that yields a wrong state rather than a missing one).
+   - **`RUN.json` exists but `events.jsonl` does not** → the canonical log is gone. This is **storage
+     corruption, not a fresh start**: `status` still exits 0 and will happily report a state (even a
+     `blocked` one with a `resume_event`), but that projection cannot be rebuilt or verified against
+     anything. **Stop and surface it** — never resume on a projection with no log behind it.
+   - **`events.jsonl` exists but `RUN.json` does not** → the projection was lost (e.g. an `init` or
+     `transition` interrupted after its event `fsync`, before the projection write). The FSM state is
+     **recoverable**: run `python3 runtime/run_state.py rebuild --slug <slug>` to reproject, then
+     re-read `status`. Treating this as "never initialized" is how a real `blocked` / `resume_event`
+     gets silently discarded — pinned by `runtime/test_run_state.py`
+     → `test_missing_projection_over_valid_log_recovers_blocked_state`.
+   - **Both exist** (so `status` exited 0) → the state is readable but not yet trustworthy. Validate the
+     log against the projection:
+
+     ```bash
+     python3 runtime/run_state.py rebuild --slug <slug> --check
+     ```
+
+     `cmd_transition` appends+fsyncs the event *before* rewriting the projection, so an interruption
+     between those two writes leaves `events.jsonl` ahead while `status` exits **0** reporting an older
+     state — omitting the latest `blocked` / `resume_event`. No other cursor source can recover FSM
+     state, so this is a silent way to resume a *blocked* run as if it were merely unstarted.
+     `--check` is non-mutating: exit 0 prints `RUN.json matches events.jsonl (seq=N)`; exit 3 prints
+     `DRIFT: …` (projection stale — `rebuild` without `--check`, then re-read `status`) or a corruption
+     message (**stop and surface it**; do not resume on a guess).
+
+     **What `--check` proves, and what it does not.** It proves only that the projection equals a fold of
+     the log. It does **not** validate that the log is a legal history: `read_events` checks required-key
+     presence and `project` folds blindly, so a log with duplicate `seq`, a mismatched `from_state`, or
+     entries from two different `run_id`s rebuilds and `--check`s clean (verified: a forged
+     `queued` → `shipped` pair produced `state: shipped, seq: 1` under the first event's `run_id`). So read
+     the projection with your own eyes before trusting it: a state the plan's own history cannot explain,
+     a `seq` that does not advance, or a `sha` you cannot find in `git log` means **stop and surface it**,
+     `--check` exit 0 notwithstanding. Engine-side chain validation is tracked separately — it is a change
+     to the run-state engine, not to this skill.
+3. `git log --oneline $(git merge-base HEAD <base-branch>)..HEAD` — what actually landed. This is
+   the only source that cannot be written by a claim. `<base-branch>` is the branch this work was
+   cut from, **not** always `main` (this repo integrates through `loop`). Sanity check the output:
+   if it is much longer than the plan's task count, the base is wrong — re-derive it before reading
+   anything into the log.
+4. `specs/<slug>/SUMMARY.md` → `### Deviations` — Rule 1–3 auto-fixes an earlier session already
+   applied, so you neither re-fix nor contradict them.
+5. `specs/STATE.md` → the `## Active Spec` block — where a **paused wave writes its blocker cursor**
+   (`rules/wave-parallelism.md` → Collection protocol step 4). The other four sources can show a task
+   as merely *not started* when it is in fact **blocked**; only this one carries the blocker and its
+   context. Skip the `## Session End Log` breadcrumbs — they are session noise, not plan state.
+
+   **Consume it only when it is about your slug.** This block is a single global slot, overwritten by
+   whatever ran last, and `specs/STATE.md` itself says to treat it as idle once it is >7 days old. So:
+   read `- **Slug:**` first, and if it is not `<slug>`, or `- **Updated:**` is stale, this source
+   carries **no signal for you** — ignore it rather than importing another spec's blocker. Sources 1–4
+   are all slug-scoped; this one is the only one that can lie about whose state it is.
+
+### What the run state means for resuming — all 16, no default
+
+The state from source 2 decides **whether you resume tasks at all**. Do not treat "not stopped" as
+"proceed": every state below has an explicit entry, because each hazard in this section was originally
+a state the recipe simply did not branch on. `runtime/run_state.py` owns the state set; if it gains a
+state, `test_step_minus_one_covers_every_run_state` fails until this table covers it.
+
+| Run state | On resume | Why |
+|---|---|---|
+| `planning` | **Proceed to Step 0** | Execution never started — a first run, not a resume. Reconstruct anyway: the cursor may show work the run state never recorded. |
+| `queued`, `investigating` | **Proceed, but walk the run state forward first** | Same as `planning` for the *work*, but Step 1's `transition --to implementing` is **not legal from here** — `FORWARD_TRANSITIONS` allows only `queued → investigating` and `investigating → {awaiting_confirmation, planning}`. Advance one legal hop at a time to `planning` (e.g. `--event run.state_catch_up`) before the checkpoint, or it exits 2, `\|\| true` hides it, and the run stays stale while implementation proceeds. |
+| `implementing` | **Proceed** | The normal resume case. |
+| `fixing_ci`, `addressing_review` | **Proceed, but not into plan tasks** | Resume the loop the state names (CI fixes / review feedback). Re-entering wave execution here re-does shipped work. |
+| `verifying` | **Skip the tasks; re-enter the review chain** | Tasks passed already. Resume at `/correctness-review` → `/intent-review` → receipt. |
+| `awaiting_confirmation`, `awaiting_ci`, `awaiting_review`, `ready_to_merge` | **STOP and report** | The run is parked on someone or something else. `awaiting_confirmation` exists because a human decision is pending — resuming past it bypasses that gate. The other three have a CI run, a review, or a receipt in flight, and a fresh commit invalidates it: `reviewed_head_sha` stops matching HEAD and `finishing-a-development-branch` Gate 0 refuses the push. |
+| `blocked`, `escalated` | **STOP until the recorded condition is met — then return to the state the interrupt came from** | These are *universal* interrupts: a run can enter them from `verifying`, `fixing_ci` or `addressing_review` just as easily as from `implementing`, and the state alone does not say which. Recover `from_state` from the **last event in `events.jsonl`** (`RUN.json` does not carry it), transition back to that state once the condition is confirmed, then follow **that** state's row. See the erasure hazard below for what a blind fall-through costs. |
+| `cancelled`, `superseded`, `shipped` | **STOP — human decision** | Someone ended this run deliberately, or it already shipped. Resuming is a decision, not a cursor question. See the hidden-rejection hazard below. |
+
+**The run state is not the only lifecycle — check `PLAN.md` too.** `finishing-a-development-branch`
+marks the plan `status: shipped` **before** the push and the PR (Step 3.1, ahead of 3.2/3.4), so a plan
+sits `shipped` while its PR is still open — this spec's own `PLAN.md` demonstrates exactly that
+combination.
+
+**A `shipped` plan bars plan-task execution, and nothing else.** Do not run waves against it: the work
+is already in review, new commits invalidate the review receipt, and `hooks/blast-radius-check.sh` is
+disarmed anyway because the plan is not `active`. But this is **not** a blanket stop — the two repair
+states above (`fixing_ci`, `addressing_review`) *necessarily* meet a shipped plan, since they only exist
+after the PR does. They proceed per the table, into the CI or review fix they name. Reading this as a
+full stop would block exactly the work such a resume was started for. Because the plan is `shipped`
+rather than `active` during repair, blast-radius is not watching: keep those edits tight to the failing
+check, and treat anything wider as a signal to re-open the plan properly instead.
+
+**Two reasons the STOP rows are load-bearing rather than advice**, both because Step 1's checkpoint is
+non-fatal and therefore silent:
+
+1. **An interrupt state resumes "successfully" and erases the blocker.** `valid_targets` lets `blocked`
+   / `escalated` enter **any** active state, so `transition --to implementing` succeeds (exit 0), and
+   the new event — carrying no `waiting_on` / `resume_event` of its own — wipes both from the projection:
+
+   ```
+   before  state: blocked      waiting_on: PR #999   resume_event: dep-merged
+   after   state: implementing waiting_on: None      resume_event: None
+   ```
+
+   The record of *why* work was paused is gone, and the batch runs as if nothing was blocked. Pinned by
+   `test_blocked_to_implementing_clears_blocker_metadata`.
+
+   Worse, `implementing` may not even be where the run was: because interrupts are universal, a run
+   blocked out of `verifying` or `addressing_review` would be dragged into wave execution by that same
+   legal transition. So when the condition **is** met, do not fall through — read the last event:
+
+   ```bash
+   python3 -c "import json;print([json.loads(l) for l in open('specs/<slug>/events.jsonl') if l.strip()][-1]['from_state'])"
+   ```
+
+   Transition back to that state (`blocked → <from_state>` is legal for any active state), then follow its
+   row in the table. Pinned by `test_interrupt_origin_is_only_in_the_event_log`.
+
+   **If `from_state` is a waiting state** (`awaiting_confirmation`, `awaiting_ci`, `awaiting_review`), that
+   transition needs `--waiting-on` — `validate_transition` rejects a waiting target without it — and the
+   interrupt event has already overwritten `waiting_on` with its own blocker. The original is in the event
+   that *entered* the wait, not the last one:
+
+   ```bash
+   python3 -c "import json;e=[json.loads(l) for l in open('specs/<slug>/events.jsonl') if l.strip()];s=e[-1]['from_state'];print(s, next(x['waiting_on'] for x in reversed(e[:-1]) if x['to_state']==s))"
+   ```
+
+   Pass that value back (`--waiting-on "<recovered>"`). Following the plain instruction here without
+   `--waiting-on` exits 2 and leaves the run `blocked`. Pinned by
+   `test_returning_to_a_waiting_state_needs_its_waiting_on`.
+
+   **If the wait itself finished while the run was interrupted** — common when a blocker outlives a CI
+   run — do not restore a completed wait. Transition to its successor instead, chosen by the outcome.
+   The table's `STOP and report` verdict is about *arriving* in a waiting state; it is not a successor
+   list, so use these (they are exactly `FORWARD_TRANSITIONS` for each, pinned by
+   `test_waiting_state_successors_are_documented`):
+
+   | Origin wait | Outcome | Transition to |
+   |---|---|---|
+   | `awaiting_confirmation` | the decision arrived | `planning` |
+   | `awaiting_confirmation` | the decision was "do not proceed" | `cancelled` (terminal — stop) |
+   | `awaiting_ci` | CI red | `fixing_ci` |
+   | `awaiting_ci` | CI green, a review gate applies | `awaiting_review` |
+   | `awaiting_ci` | CI green, no review gate | `ready_to_merge` |
+   | `awaiting_review` | review left changes to address | `addressing_review` |
+   | `awaiting_review` | review approved | `ready_to_merge` |
+
+   **A successor that is itself a waiting state needs its own `--waiting-on`** — the same
+   `validate_transition` rule that bit the return path, applied one step later. In this table that is
+   `awaiting_review`: pass the review's identifier, e.g.
+   `--waiting-on "PR #<n> review"`. Omit it and the transition exits 2 with
+   `awaiting_review requires --waiting-on`, leaving the run interrupted. (`planning`, `fixing_ci`,
+   `addressing_review`, `ready_to_merge` are ordinary active states and need nothing extra; `cancelled`
+   is terminal and ends the run.)
+
+   Then follow the row of whatever state you land in — `fixing_ci` / `addressing_review` resume their
+   repair loop, `ready_to_merge` stops and reports.
+2. **A terminal state's refusal is invisible.** `valid_targets` returns nothing for a terminal state, so
+   the same transition is *rejected* with exit 2 — and `|| true` converts that to exit 0. The session
+   then edits and ships a cancelled plan with its run frozen. Pinned by
+   `test_terminal_run_rejects_resume_transition_at_cli`.
+
+**Two of the table's verdicts do not lead here at all.** `fixing_ci` and `addressing_review` proceed into
+the loop they name and **never** into plan tasks, so the task-cursor directive below and the Step-0
+fall-through do not apply to them: route straight to the CI fix or the review feedback, using the failing
+check or the review thread as the cursor. This matters because a failing check is the *expected* reason
+for being in either state — running the task-cursor sweep there would treat that failure as a plan task
+to re-open, widening a repair into shipped wave work and invalidating the review evidence that repair
+exists to preserve. Same for `verifying`: re-enter the review chain, do not sweep the tasks.
+
+**For the verdicts that do resume plan execution** (`planning`, `implementing`, and `queued` /
+`investigating` after their walk): **re-run the `Verify` command of every task the log claims complete.**
+A checkbox is not evidence; a passing exit code is. Report the cursor to the user — done / next /
+blocked — and continue from the first task that is not verified green. A task whose `Verify` fails now is
+not done: re-open it before advancing.
+
+Then fall through to Step 0 — the four-check plan gate runs on resume exactly as on a first run.
+
+**If the plan is `status: paused`, set it back to `active` before dispatching the resumed batch.**
+Step 1's transition is written `proposed → active` and does not cover this case, and
+`hooks/blast-radius-check.sh` arms on `status: active` and nothing else — so resuming a paused plan
+without flipping it means every edit in that batch runs with blast-radius protection silently off.
+
+**Granularity of control.** In a separate session there is no orchestrator watching each task, so
+execute in **batches with a checkpoint between them**: run a batch, report what landed and what
+verified, and wait before starting the next. Per-task subagent dispatch is optional there — the
+controller may implement tasks directly, provided each task's `Verify` command still runs and
+passes before the task is marked complete.
+
+**Stop and ask** — in either mode — when a blocker appears mid-batch (missing dependency, an
+instruction you do not understand, a `Verify` that fails repeatedly), or when the plan has a gap
+that prevents starting. Do not force through a blocker on a guess.
 
 ## Step 0 — Validate the plan before any implementation
 
@@ -53,8 +272,9 @@ recovery path, not the intended one.
 on the lane-appropriate dedicated branch. Keep the auto-correct rule path in every implementer
 prompt because subagents cannot rely on the orchestrator's copy.
 
-**Next — mark the plan active.** Before dispatching wave 1, set the frontmatter
-`status: proposed → active` in `specs/<slug>/PLAN.md` (canonical values only:
+**Next — mark the plan active.** Before dispatching wave 1, set the frontmatter to
+`status: active` in `specs/<slug>/PLAN.md` — from `proposed` on a first run, or from `paused` when
+resuming a plan an earlier session parked (canonical values only:
 `proposed | active | paused | shipped`). `hooks/blast-radius-check.sh` keys on `status: active` to
 identify the active plan, and the edit auto-re-renders `PLAN.html` via `render-plan-on-write.sh`.
 Append commit shas to `## Status Log` after each wave (`rules/wave-parallelism.md`); the `shipped`
@@ -66,6 +286,15 @@ transition happens later in `finishing-a-development-branch`.
 python3 runtime/run_state.py transition --slug <slug> --to implementing \
   --event plan.execution_started || true
 ```
+
+Exit 3 with `missing: …` means the run was never initialized — `/feature-intake` owns `init`, and a
+spec that reached execution without it (or one predating GitHub issue #129) simply stays untracked.
+(Exit 3 with a corruption message is a different problem — see Step -1 source 2.) **Do not `init`
+here to "fix" the missing case.** A fresh `init` lands in `queued`, and `queued -> implementing` is not a
+legal edge (`runtime/run_state.py` → `FORWARD_TRANSITIONS`), so the transition fails exit 2, `|| true`
+swallows it, and the run sits at `queued` while the work is really implementing — `list --active` then
+reports a state that is *wrong* rather than *absent*. An untracked run is honest; a stuck one is not.
+Step -1's resume path reads that exit 3 the same way and falls back to its other three sources.
 
 **Step 2 — Per task, in order.** For each task in the current wave:
 
@@ -291,23 +520,6 @@ per `auto-correct-scope.md` → Reporting.
 - `./code-quality-reviewer-prompt.md` - Dispatch code quality reviewer subagent (per task)
 - Final adversarial correctness pass - delegated to `/correctness-review` (see `skills/correctness-review/`); its `correctness-{reviewer,scorer}-prompt.md` live there, not here.
 - Final intent review - delegated to `/intent-review` (see `skills/intent-review/`); its `intent-reviewer-prompt.md` lives there, not here.
-
-## Parallel session
-
-The plan can also be executed from a **separate session** — open one in the worktree and run this
-same skill there. Everything above still applies: the Step-0 four-check gate, branch isolation,
-`status: active`, and the full `/context-propagation-audit` → `/correctness-review` →
-`/intent-review` → receipt chain. Running in another session never buys fewer gates.
-
-What changes is only the granularity of control. In a separate session there is no orchestrator
-watching each task, so execute in **batches with a checkpoint between them**: run a batch, report
-what landed and what verified, and wait before starting the next. Per-task subagent dispatch is
-optional there — the controller may implement tasks directly, provided each task's `Verify`
-command still runs and passes before the task is marked complete.
-
-**Stop and ask** — in either mode — when a blocker appears mid-batch (missing dependency, an
-instruction you do not understand, a `Verify` that fails repeatedly), or when the plan has a gap
-that prevents starting. Do not force through a blocker on a guess.
 
 ## Integration
 

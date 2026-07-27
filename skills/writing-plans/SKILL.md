@@ -159,6 +159,7 @@ After saving the plan, rendering `PLAN.html`, and auto-viewing it, hand off to e
   Do not hand off until work is on the lane-appropriate dedicated branch.
 
 `subagent-driven-development` covers both execution modes: fresh subagent per task in this
-session (the default), or the same skill run from a parallel session in the worktree, which
-executes in batches with a checkpoint between them. Ask the user which they want only if they
-have not already said — the gates are identical either way.
+session (the default), or the same skill invoked as `resume <slug>` from a new session in the
+worktree, which reconstructs the task cursor first (Step -1) and then executes in batches with a
+checkpoint between them. Ask the user which they want only if they have not already said — the
+gates are identical either way.

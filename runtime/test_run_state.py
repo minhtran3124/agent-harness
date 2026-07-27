@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import subprocess
 import sys
 
@@ -439,6 +440,474 @@ def test_rebuild_check_detects_drift():
     rs.main(["init", "--slug", "demo", "--run-id", "r1"])
     rs.atomic_write_json("specs/demo/RUN.json", {"tampered": True})
     assert rs.main(["rebuild", "--slug", "demo", "--check"]) == 3
+
+
+def test_never_initialized_run_is_not_checkable():
+    """Branch A of the resume recipe: nothing exists, so `--check` has nothing to
+    validate and must not be read as corruption. Pins the contract that
+    `subagent-driven-development` Step -1 relies on to skip the check for a legacy
+    (pre-#129) or intake-skipped spec."""
+    os.makedirs("specs/legacy", exist_ok=True)
+    assert not os.path.exists("specs/legacy/events.jsonl")
+    assert rs.main(["status", "--slug", "legacy"]) == 3
+    assert rs.main(["rebuild", "--slug", "legacy", "--check"]) == 3
+
+
+def test_missing_projection_over_valid_log_recovers_blocked_state():
+    """Branch B: `status` reports the SAME `missing: RUN.json` as branch A, so the
+    message is not a discriminator — the presence of events.jsonl is. The FSM state
+    here is recoverable, so a resume that treats this as 'never initialized' would
+    silently discard a real blocked run and its resume_event."""
+    rs.main(["init", "--slug", "torn", "--run-id", "r1"])
+    rs.main(["transition", "--slug", "torn", "--to", "investigating", "--event", "a"])
+    rs.main(
+        [
+            "transition",
+            "--slug",
+            "torn",
+            "--to",
+            "blocked",
+            "--event",
+            "b",
+            "--resume-event",
+            "unblock",
+        ]
+    )
+    os.remove("specs/torn/RUN.json")
+    assert os.path.exists("specs/torn/events.jsonl")  # the discriminator
+    assert rs.main(["status", "--slug", "torn"]) == 3
+    assert rs.main(["rebuild", "--slug", "torn", "--check"]) == 3
+    assert rs.main(["rebuild", "--slug", "torn"]) == 0
+    recovered = rs.read_json("specs/torn/RUN.json")
+    assert recovered["state"] == "blocked"
+    assert recovered["resume_event"] == "unblock"
+
+
+def test_blocked_to_implementing_clears_blocker_metadata():
+    """Why `subagent-driven-development` Step -1 must STOP on blocked/escalated: the
+    engine deliberately allows an interrupt state into any active state, and the new
+    event carries no waiting_on/resume_event of its own — so resuming blindly erases
+    the record of why the work was paused. If this ever becomes an invalid transition,
+    this test fails and the skill's stop rule can be relaxed."""
+    rs.main(["init", "--slug", "b", "--run-id", "r1"])
+    for to_state in ("investigating", "planning"):
+        rs.main(["transition", "--slug", "b", "--to", to_state, "--event", "e"])
+    rs.main(
+        [
+            "transition",
+            "--slug",
+            "b",
+            "--to",
+            "blocked",
+            "--event",
+            "hit",
+            "--resume-event",
+            "dep-merged",
+            "--waiting-on",
+            "PR #999",
+        ]
+    )
+    before = rs.read_json("specs/b/RUN.json")
+    assert before["waiting_on"] == "PR #999"
+    assert before["resume_event"] == "dep-merged"
+
+    assert (
+        rs.main(["transition", "--slug", "b", "--to", "implementing", "--event", "go"])
+        == 0
+    )
+    after = rs.read_json("specs/b/RUN.json")
+    assert after["state"] == "implementing"
+    assert after["waiting_on"] is None
+    assert after["resume_event"] is None
+
+
+def test_projection_without_event_log_is_unrebuildable():
+    """A RUN.json with no events.jsonl behind it is corruption, not a fresh start:
+    `status` still exits 0 and reports a state (even a blocked one), while the
+    projection can no longer be rebuilt or verified. Step -1 must stop here rather
+    than classify it as never-initialized."""
+    rs.main(["init", "--slug", "runonly", "--run-id", "r1"])
+    rs.main(
+        ["transition", "--slug", "runonly", "--to", "investigating", "--event", "a"]
+    )
+    rs.main(
+        [
+            "transition",
+            "--slug",
+            "runonly",
+            "--to",
+            "blocked",
+            "--event",
+            "b",
+            "--resume-event",
+            "unblock",
+        ]
+    )
+    os.remove("specs/runonly/events.jsonl")
+    assert os.path.exists("specs/runonly/RUN.json")
+    assert rs.main(["status", "--slug", "runonly"]) == 0  # looks healthy
+    assert rs.read_json("specs/runonly/RUN.json")["state"] == "blocked"
+    assert rs.main(["rebuild", "--slug", "runonly", "--check"]) == 3
+
+
+def test_terminal_run_rejects_resume_transition_at_cli():
+    """Why Step -1 must STOP on a terminal run. `test_terminal_state_blocks_transition`
+    pins this at the unit level; this one goes through the CLI, which is the layer the
+    skill's prescribed `|| true` silences: the rejection is exit 2, so `|| true` turns it
+    into exit 0 and a cancelled/superseded/shipped plan would be edited and shipped with
+    the run frozen at its terminal state."""
+
+    def _build(slug, terminal):
+        rs.main(["init", "--slug", slug, "--run-id", f"r-{slug}"])
+        rs.main(["transition", "--slug", slug, "--to", "investigating", "--event", "e"])
+        if terminal == "shipped":
+            for to_state in ("planning", "implementing", "verifying", "ready_to_merge"):
+                rs.main(
+                    ["transition", "--slug", slug, "--to", to_state, "--event", "e"]
+                )
+            rs.main(
+                [
+                    "transition",
+                    "--slug",
+                    slug,
+                    "--to",
+                    "shipped",
+                    "--event",
+                    "m",
+                    "--sha",
+                    "abc1234",
+                ]
+            )
+        else:
+            rs.main(["transition", "--slug", slug, "--to", terminal, "--event", "end"])
+
+    for terminal in sorted(rs.TERMINAL_STATES):
+        slug = f"t-{terminal}"
+        os.makedirs(f"specs/{slug}", exist_ok=True)
+        _build(slug, terminal)
+        assert rs.read_json(f"specs/{slug}/RUN.json")["state"] == terminal
+        # the exact call Step 1's checkpoint makes, minus the `|| true`
+        assert (
+            rs.main(
+                ["transition", "--slug", slug, "--to", "implementing", "--event", "go"]
+            )
+            == 2
+        )
+        assert rs.read_json(f"specs/{slug}/RUN.json")["state"] == terminal
+
+
+def test_step_minus_one_covers_every_run_state():
+    """The resume recipe must branch on EVERY state this engine can hold — four of the
+    hazards found in review were simply states it did not mention. This fails when
+    ALL_STATES gains a member the skill's table has not classified, which is the only
+    durable guard: the table is prose, the state set is code."""
+    skill = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "skills",
+        "subagent-driven-development",
+        "SKILL.md",
+    )
+    with open(skill, encoding="utf-8") as f:
+        text = f.read()
+    # Read the TABLE ROWS only, not the surrounding prose. Two earlier versions of this
+    # slice were wrong in opposite directions: a sentence anchor that a rewording voided,
+    # then a section-wide slice that went vacuous because the prose also names the states.
+    start = text.index("| Run state | On resume | Why |")
+    rows = []
+    for line in text[start:].splitlines()[2:]:  # skip header + separator
+        if not line.startswith("|"):
+            break
+        rows.append(line)
+    table = "\n".join(rows)
+    assert len(rows) >= 5, f"resume-state table parsed as {len(rows)} rows"
+    uncovered = sorted(s for s in rs.ALL_STATES if f"`{s}`" not in table)
+    assert not uncovered, f"resume recipe does not classify: {uncovered}"
+
+
+def test_only_planning_and_interrupts_reach_implementing_directly():
+    """The exhaustiveness table is not enough on its own: a state can be *classified*
+    and still have no legal one-hop path to the checkpoint's target. Only `planning`
+    (forward edge) and the interrupt states (resume-into-any-active) may enter
+    `implementing` directly, so every other 'proceed' verdict owes the reader a walk.
+    If the engine adds an edge here, this fails and the table must be revisited."""
+    direct = {s for s in rs.ALL_STATES if "implementing" in rs.valid_targets(s)}
+    assert direct == {"planning", "blocked", "escalated"}
+
+    # queued/investigating cannot shortcut, and the walk is what works
+    rs.main(["init", "--slug", "q", "--run-id", "r1"])
+    assert (
+        rs.main(["transition", "--slug", "q", "--to", "implementing", "--event", "go"])
+        == 2
+    )
+    assert rs.read_json("specs/q/RUN.json")["state"] == "queued"
+    for hop in ("investigating", "planning", "implementing"):
+        assert (
+            rs.main(["transition", "--slug", "q", "--to", hop, "--event", "walk"]) == 0
+        )
+    assert rs.read_json("specs/q/RUN.json")["state"] == "implementing"
+
+    # and the skill tells the reader to walk rather than shortcut
+    skill = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "skills",
+        "subagent-driven-development",
+        "SKILL.md",
+    )
+    with open(skill, encoding="utf-8") as f:
+        text = f.read()
+    assert "walk the run state forward first" in text
+
+
+def test_shipped_plan_stop_exempts_the_repair_states():
+    """The shipped-plan rule bars plan-task execution only. `fixing_ci` and
+    `addressing_review` always meet a shipped plan — finishing marks the plan shipped
+    before the PR exists, and those states only exist after it — so a blanket stop
+    would block the very fixes such a resume was started for. Pins the exemption
+    against a future edit that re-broadens the rule."""
+    skill = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "skills",
+        "subagent-driven-development",
+        "SKILL.md",
+    )
+    with open(skill, encoding="utf-8") as f:
+        text = f.read()
+    start = text.index("A `shipped` plan bars plan-task execution")
+    para = text[start : start + 1200]
+    assert "not** a blanket stop" in para
+    for repair_state in ("fixing_ci", "addressing_review"):
+        assert f"`{repair_state}`" in para, f"{repair_state} not exempted"
+
+
+def test_task_cursor_directive_is_scoped_to_plan_execution_states():
+    """The task-cursor sweep and the Step-0 fall-through apply only to states that
+    actually resume plan execution. `fixing_ci` / `addressing_review` / `verifying`
+    must be routed elsewhere: a failing check is the EXPECTED reason for a repair
+    state, so sweeping tasks there turns a repair into shipped wave work. Pins the
+    scoping against a future edit that re-broadens the directive."""
+    skill = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "skills",
+        "subagent-driven-development",
+        "SKILL.md",
+    )
+    with open(skill, encoding="utf-8") as f:
+        text = f.read()
+    start = text.index("Two of the table's verdicts do not lead here at all")
+    scope = text[start : text.index("Then fall through to Step 0", start)]
+    for excluded in ("fixing_ci", "addressing_review", "verifying"):
+        assert f"`{excluded}`" in scope, f"{excluded} not excluded from the task sweep"
+    for included in ("planning", "implementing", "queued", "investigating"):
+        assert f"`{included}`" in scope, (
+            f"{included} not named as a plan-execution state"
+        )
+
+
+def test_interrupt_origin_is_only_in_the_event_log():
+    """Interrupts are universal, so `blocked` does not say where the run came from —
+    and the projection does not carry `from_state`, only the event log does. A resume
+    that falls through to `implementing` therefore drags a run blocked out of
+    `verifying` into wave execution, which is legal and thus unstopped."""
+    rs.main(["init", "--slug", "v", "--run-id", "r1"])
+    for to_state in ("investigating", "planning", "implementing", "verifying"):
+        rs.main(["transition", "--slug", "v", "--to", to_state, "--event", "e"])
+    rs.main(
+        [
+            "transition",
+            "--slug",
+            "v",
+            "--to",
+            "blocked",
+            "--event",
+            "ci.red",
+            "--resume-event",
+            "fix-landed",
+            "--waiting-on",
+            "flaky test",
+        ]
+    )
+
+    projection = rs.read_json("specs/v/RUN.json")
+    assert projection["state"] == "blocked"
+    assert "from_state" not in projection  # status cannot answer "from where?"
+
+    last = rs.read_events("v")[-1]
+    assert last["from_state"] == "verifying"  # only the log knows
+
+    # returning to the origin is legal — and so is the blind hop that skips it
+    assert (
+        rs.main(["transition", "--slug", "v", "--to", "verifying", "--event", "ok"])
+        == 0
+    )
+    assert rs.read_json("specs/v/RUN.json")["state"] == "verifying"
+
+
+def test_returning_to_a_waiting_state_needs_its_waiting_on():
+    """Follow-on to SC-18: returning to `from_state` is not always a plain transition.
+    A waiting target requires --waiting-on, and the interrupt event has overwritten
+    waiting_on with its own blocker — the original lives in the event that ENTERED the
+    wait. Without recovering it the return exits 2 and the run stays blocked."""
+    rs.main(["init", "--slug", "w", "--run-id", "r1"])
+    for to_state in ("investigating", "planning", "implementing", "verifying"):
+        rs.main(["transition", "--slug", "w", "--to", to_state, "--event", "e"])
+    rs.main(
+        [
+            "transition",
+            "--slug",
+            "w",
+            "--to",
+            "awaiting_ci",
+            "--event",
+            "pushed",
+            "--waiting-on",
+            "CI run 42",
+        ]
+    )
+    rs.main(
+        [
+            "transition",
+            "--slug",
+            "w",
+            "--to",
+            "blocked",
+            "--event",
+            "infra.down",
+            "--resume-event",
+            "runner-back",
+            "--waiting-on",
+            "GH runners outage",
+        ]
+    )
+    assert rs.read_json("specs/w/RUN.json")["waiting_on"] == "GH runners outage"
+
+    events = rs.read_events("w")
+    origin = events[-1]["from_state"]
+    assert origin == "awaiting_ci"
+
+    # the plain return fails — this is what the round-12 wording would have produced
+    assert (
+        rs.main(["transition", "--slug", "w", "--to", origin, "--event", "back"]) == 2
+    )
+    assert rs.read_json("specs/w/RUN.json")["state"] == "blocked"
+
+    # the original waiting_on is in the event that entered the wait, not the last one
+    recovered = next(
+        e["waiting_on"] for e in reversed(events[:-1]) if e["to_state"] == origin
+    )
+    assert recovered == "CI run 42"
+    assert (
+        rs.main(
+            [
+                "transition",
+                "--slug",
+                "w",
+                "--to",
+                origin,
+                "--event",
+                "back",
+                "--waiting-on",
+                recovered,
+            ]
+        )
+        == 0
+    )
+    projection = rs.read_json("specs/w/RUN.json")
+    assert projection["state"] == "awaiting_ci"
+    assert projection["waiting_on"] == "CI run 42"
+
+
+def test_waiting_state_successors_are_documented():
+    """Follow-on to SC-19: when an interrupted wait completes, the recipe must name a
+    successor. The table's verdict for the waiting states is `STOP and report`, which
+    is about ARRIVING there — so the successor mapping is separate, and it must match
+    the engine. Every legal forward target of every waiting state has to appear in the
+    successor table, or the recipe sends the reader to guess."""
+    skill = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "skills",
+        "subagent-driven-development",
+        "SKILL.md",
+    )
+    with open(skill, encoding="utf-8") as f:
+        text = f.read()
+    start = text.index("| Origin wait | Outcome | Transition to |")
+    rows = []
+    for line in text[start:].splitlines()[2:]:
+        stripped = line.strip()  # this table is indented inside a list item
+        if not stripped.startswith("|"):
+            break
+        rows.append(stripped)
+    table = "\n".join(rows)
+    assert len(rows) >= 5, f"successor table parsed as {len(rows)} rows"
+
+    # Validate each row as an (origin, target) PAIR against that origin's forward edges.
+    # Whole-table name membership is not enough: a target filed under the wrong origin
+    # would pass while the recipe routes a resume to the wrong lifecycle successor.
+    CANCEL_ROUTE = {"cancelled"}  # deliberate abandon path, not a forward edge
+    documented = {}
+    for row in rows:
+        cells = [c.strip() for c in row.strip("|").split("|")]
+        origins = re.findall(r"`([a-z_]+)`", cells[0])
+        targets = re.findall(r"`([a-z_]+)`", cells[-1])
+        assert len(origins) == 1, f"row names {len(origins)} origins: {row}"
+        assert len(targets) == 1, f"row names {len(targets)} targets: {row}"
+        origin, target = origins[0], targets[0]
+        assert origin in rs.WAITING_STATES, f"{origin} is not a waiting state: {row}"
+        legal = rs.FORWARD_TRANSITIONS[origin] | CANCEL_ROUTE
+        assert target in legal, (
+            f"{origin} -> {target} is not a legal successor of {origin}"
+        )
+        documented.setdefault(origin, set()).add(target)
+
+    for wait in sorted(rs.WAITING_STATES):
+        assert wait in documented, f"{wait} has no successor row"
+        missing = rs.FORWARD_TRANSITIONS[wait] - documented[wait]
+        assert not missing, f"{wait} -> {sorted(missing)} not documented"
+
+    # Membership is not enough: EXECUTE every documented successor from `blocked`,
+    # supplying whatever the engine requires for that target's class. This is what
+    # catches a documented route that cannot actually be taken — the defect class that
+    # hit the return path first, then this table one step later.
+    targets = set()
+    for row in rows:
+        cells = [c.strip() for c in row.strip("|").split("|")]
+        targets.update(re.findall(r"`([a-z_]+)`", cells[-1]))
+    assert {"awaiting_review", "fixing_ci", "planning"} <= targets, targets
+
+    for i, target in enumerate(sorted(targets)):
+        slug = f"succ{i}"
+        os.makedirs(f"specs/{slug}", exist_ok=True)
+        rs.main(["init", "--slug", slug, "--run-id", f"r{i}"])
+        rs.main(["transition", "--slug", slug, "--to", "investigating", "--event", "e"])
+        rs.main(
+            [
+                "transition",
+                "--slug",
+                slug,
+                "--to",
+                "blocked",
+                "--event",
+                "hit",
+                "--resume-event",
+                "cleared",
+                "--waiting-on",
+                "the blocker",
+            ]
+        )
+        argv = ["transition", "--slug", slug, "--to", target, "--event", "resume"]
+        if target in rs.WAITING_STATES:
+            # a waiting target without its own waiting_on is rejected — prove it,
+            # so this assertion cannot pass vacuously
+            assert rs.main(list(argv)) == 2, f"{target} accepted without waiting_on"
+            argv += ["--waiting-on", "the successor wait"]
+        if target in rs.INTERRUPT_STATES:
+            argv += ["--resume-event", "later"]
+        if target == "shipped":
+            argv += ["--sha", "abc1234"]
+        assert rs.main(argv) == 0, (
+            f"documented successor blocked -> {target} is not takeable"
+        )
+        assert rs.read_json(f"specs/{slug}/RUN.json")["state"] == target
 
 
 def test_corrupt_log_fails_visibly():
