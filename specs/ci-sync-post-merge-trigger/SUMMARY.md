@@ -21,13 +21,18 @@ committed only on `loop`, where the trigger never reads it. Fourth instance of t
 
 ## What changed
 
-`.github/workflows/post-merge-maintenance.yml` on `main` replaced with `loop`'s copy, verbatim. Two
+`.github/workflows/post-merge-maintenance.yml` on `main` replaced with `loop`'s copy, verbatim. Three
 deltas come with it:
 
 1. `branches: [main, v3]` → `[main, loop]`, plus the comment block that states the rule this bug keeps
    violating — *this file must be synced on `main`; editing the list only on an integration branch has
    no effect* — and the full rot history.
 2. The `Run-state checkpoint — mark shipped` step (issue #129 Phase C), which `main` never received.
+3. **Re-synced after PR #177** (merged into `loop` as `7747657`): that step was itself broken — it wrote
+   `specs/<slug>/{RUN.json,events.jsonl}` which the bookkeeping PR never staged, and `changed` was
+   computed before it ran. Syncing before #177 would have carried the broken version to `main`; the
+   `git diff --quiet github/loop` row below is what keeps this an exact sync rather than a snapshot of
+   whatever `loop` looked like when the branch was cut.
 
 ### Rationale
 
