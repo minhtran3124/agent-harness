@@ -230,6 +230,25 @@ Both CONFIRMED against live evidence and fixed:**
   corruption, **stop and surface it** rather than resume on a guess. The third row is called out too,
   since `status` reads the projection and cannot see a corrupt event log.
 
+**Codex round 4 (reviewed commit `4665c7f`) — 1 P2, CONFIRMED and fixed:**
+
+- **P2-6 — round 3 *documented* the projection blind spot instead of closing it.** Both halves of the
+  finding check out against the code: `cmd_transition` appends + `fsync`s the event **before**
+  `atomic_write_json(RUN.json, …)` (`runtime/run_state.py`, transition body), so an interruption between
+  those two writes leaves `events.jsonl` ahead of the projection; and `rebuild --check` exists as a
+  genuinely non-mutating validator. Reproduced end-to-end — a stale projection hid a real blocked run:
+
+  ```
+  status                 → state: investigating, resume_event: None, exit 0   ← looks healthy
+  rebuild --slug --check → DRIFT: RUN.json does not match events.jsonl, exit 3
+  rebuild --slug         → rebuilt (seq=3);  status → state: blocked, resume_event: unblock
+  ```
+
+  A resuming session would have treated a `blocked` run as merely unstarted, and no other cursor source
+  can recover FSM state. Step -1 source 2 now **requires** `rebuild --slug <slug> --check` during
+  reconstruction: exit 0 confirms the projection, `DRIFT` routes to a reproject-then-re-read, a
+  corruption message stops the resume.
+
 **Advisory, not fixed by design:** `specs/slim-skill-surface/PLAN.md:92` (SC-7) and its
 `SUMMARY.md:109` Verify row grep for `"parallel session"` in
 `skills/subagent-driven-development/SKILL.md` and now exit 1. That spec is `status: shipped` and

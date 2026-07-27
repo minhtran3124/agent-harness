@@ -55,8 +55,20 @@ stopped**. Read all five sources — each answers a different question, and none
      `events.jsonl`); if that also reports corruption, **stop and surface it** — do not resume on a
      guess about where the run was.
 
-   Note `status` reads the `RUN.json` projection, so a corrupt `events.jsonl` behind a valid
-   projection exits **0** and looks healthy; `rebuild` is what surfaces that one.
+   **Then validate the log against the projection — `status` alone is not enough:**
+
+   ```bash
+   python3 runtime/run_state.py rebuild --slug <slug> --check
+   ```
+
+   `status` reads `RUN.json`, and `cmd_transition` appends+fsyncs the event *before* rewriting that
+   projection — so an interruption between those two writes leaves `events.jsonl` ahead, and `status`
+   then exits **0** while reporting an older state and omitting the latest `blocked` / `resume_event`.
+   The other four sources cannot recover FSM state, so this is a silent way to resume a *blocked* run
+   as if it were merely unstarted. `--check` is non-mutating: exit 0 prints `RUN.json matches
+   events.jsonl (seq=N)`; exit 3 prints `DRIFT: …` (projection stale — run `rebuild --slug <slug>`
+   without `--check` to reproject, then re-read `status`) or a corruption message (**stop and surface
+   it**; do not resume).
 3. `git log --oneline $(git merge-base HEAD <base-branch>)..HEAD` — what actually landed. This is
    the only source that cannot be written by a claim. `<base-branch>` is the branch this work was
    cut from, **not** always `main` (this repo integrates through `loop`). Sanity check the output:
