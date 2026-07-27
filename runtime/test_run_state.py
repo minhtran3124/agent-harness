@@ -741,6 +741,80 @@ def test_interrupt_origin_is_only_in_the_event_log():
     assert rs.read_json("specs/v/RUN.json")["state"] == "verifying"
 
 
+def test_returning_to_a_waiting_state_needs_its_waiting_on():
+    """Follow-on to SC-18: returning to `from_state` is not always a plain transition.
+    A waiting target requires --waiting-on, and the interrupt event has overwritten
+    waiting_on with its own blocker — the original lives in the event that ENTERED the
+    wait. Without recovering it the return exits 2 and the run stays blocked."""
+    rs.main(["init", "--slug", "w", "--run-id", "r1"])
+    for to_state in ("investigating", "planning", "implementing", "verifying"):
+        rs.main(["transition", "--slug", "w", "--to", to_state, "--event", "e"])
+    rs.main(
+        [
+            "transition",
+            "--slug",
+            "w",
+            "--to",
+            "awaiting_ci",
+            "--event",
+            "pushed",
+            "--waiting-on",
+            "CI run 42",
+        ]
+    )
+    rs.main(
+        [
+            "transition",
+            "--slug",
+            "w",
+            "--to",
+            "blocked",
+            "--event",
+            "infra.down",
+            "--resume-event",
+            "runner-back",
+            "--waiting-on",
+            "GH runners outage",
+        ]
+    )
+    assert rs.read_json("specs/w/RUN.json")["waiting_on"] == "GH runners outage"
+
+    events = rs.read_events("w")
+    origin = events[-1]["from_state"]
+    assert origin == "awaiting_ci"
+
+    # the plain return fails — this is what the round-12 wording would have produced
+    assert (
+        rs.main(["transition", "--slug", "w", "--to", origin, "--event", "back"]) == 2
+    )
+    assert rs.read_json("specs/w/RUN.json")["state"] == "blocked"
+
+    # the original waiting_on is in the event that entered the wait, not the last one
+    recovered = next(
+        e["waiting_on"] for e in reversed(events[:-1]) if e["to_state"] == origin
+    )
+    assert recovered == "CI run 42"
+    assert (
+        rs.main(
+            [
+                "transition",
+                "--slug",
+                "w",
+                "--to",
+                origin,
+                "--event",
+                "back",
+                "--waiting-on",
+                recovered,
+            ]
+        )
+        == 0
+    )
+    projection = rs.read_json("specs/w/RUN.json")
+    assert projection["state"] == "awaiting_ci"
+    assert projection["waiting_on"] == "CI run 42"
+
+
 def test_corrupt_log_fails_visibly():
     rs.main(["init", "--slug", "demo", "--run-id", "r1"])
     with open("specs/demo/events.jsonl", "a") as f:

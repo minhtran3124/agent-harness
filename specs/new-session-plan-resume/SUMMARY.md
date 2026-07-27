@@ -143,6 +143,7 @@ how this spec became the repo's first live run.
 | unit | `python3 -m pytest runtime/test_run_state.py -k shipped_plan_stop_exempts -q` | 0 | 1 passed — shipped-plan rule stays scoped to plan tasks and keeps exempting `fixing_ci` / `addressing_review`; mutation-checked | SC-16 |
 | unit | `python3 -m pytest runtime/test_run_state.py -k task_cursor_directive -q` | 0 | 1 passed — task sweep scoped to plan-execution states, repair states + `verifying` routed elsewhere; mutation-checked | SC-17 |
 | unit | `python3 -m pytest runtime/test_run_state.py -k interrupt_origin -q` | 0 | 1 passed — projection omits `from_state`, event log carries it, return-to-origin is legal | SC-18 |
+| unit | `python3 -m pytest runtime/test_run_state.py -k returning_to_a_waiting_state -q` | 0 | 1 passed — plain return to a waiting origin exits 2; recovering `waiting_on` from the entering event restores it | SC-19 |
 | lint | `bash scripts/lint-skill-bash.sh` | 0 | the edited run-state bash block is shellcheck-clean | |
 | lint | `python3 scripts/check_verify_rows.py specs/new-session-plan-resume` | 0 | all PLAN/SUMMARY rows pipe-free and <60s | |
 | dogfood | `grep -q '3/3 done' specs/new-session-plan-resume/PLAN.md` | 0 | this plan's own Status Log entry, written in the new shape, moved the derived Progress cursor 0/3 → 3/3 — the capability proven end-to-end on itself | SC-7 |
@@ -478,6 +479,34 @@ not a wording contradiction: it is a missing route.**
   while the log carries it — the asymmetry the instruction depends on.
 - The SC-14 coverage guard was re-mutation-checked after the row rewrite (renaming the row's states fails
   with `does not classify: ['blocked', 'escalated']`), since that guard rotted once already.
+
+**Codex round 13 (reviewed commit `2810d60`) — 1 P2, CONFIRMED and fixed. It is the follow-on defect of
+round 12's fix, which is now the second consecutive time a fix produced the next finding.**
+
+- Round 12 said "recover `from_state` and transition back". For 3 of the 11 active states that is not a
+  plain transition: `validate_transition` rejects a **waiting** target without `--waiting-on`
+  (`runtime/run_state.py`, `if to_state in WAITING_STATES and not waiting_on`), and the interrupt event has
+  already overwritten `waiting_on` with its own blocker. Running the round-12 instruction verbatim:
+
+  ```
+  at awaiting_ci     waiting_on: CI run 42
+  → blocked          waiting_on: GH runners outage      (interrupt overwrote it)
+  → transition --to awaiting_ci --event back
+      awaiting_ci requires --waiting-on   exit 2  → run stays blocked
+  ```
+
+  The original value is in the event that **entered** the wait (seq 6), not the last one (seq 7). Fixed
+  with the recovery one-liner (verified to print `awaiting_ci CI run 42`, not just described) plus the
+  judgement call the reviewer named: if the wait itself has completed — common when a blocker outlives a
+  CI run — do not restore a finished wait, route forward per that state's row. Pinned as **SC-19**, which
+  asserts both halves: the plain return exits 2 and leaves the run `blocked`; the recovered return exits 0
+  and restores `waiting_on`.
+
+**Third data point for #175, added to that issue.** Rounds 12 → 13 form a chain: the fix for a missing
+route created a defect in the route's preconditions. Combined with rounds 8/10/11 (internal
+contradictions), 5 of the last 6 findings were defects in prose this PR added rather than in the original
+change. The state logic has outgrown the medium — which is exactly what #175 proposes to fix by making it
+code.
 
 **Advisory, not fixed by design:** `specs/slim-skill-surface/PLAN.md:92` (SC-7) and its
 `SUMMARY.md:109` Verify row grep for `"parallel session"` in

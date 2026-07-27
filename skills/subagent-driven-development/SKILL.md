@@ -163,6 +163,20 @@ non-fatal and therefore silent:
 
    Transition back to that state (`blocked → <from_state>` is legal for any active state), then follow its
    row in the table. Pinned by `test_interrupt_origin_is_only_in_the_event_log`.
+
+   **If `from_state` is a waiting state** (`awaiting_confirmation`, `awaiting_ci`, `awaiting_review`), that
+   transition needs `--waiting-on` — `validate_transition` rejects a waiting target without it — and the
+   interrupt event has already overwritten `waiting_on` with its own blocker. The original is in the event
+   that *entered* the wait, not the last one:
+
+   ```bash
+   python3 -c "import json;e=[json.loads(l) for l in open('specs/<slug>/events.jsonl') if l.strip()];s=e[-1]['from_state'];print(s, next(x['waiting_on'] for x in reversed(e[:-1]) if x['to_state']==s))"
+   ```
+
+   Pass that value back (`--waiting-on "<recovered>"`), or — if the thing being waited on has since
+   completed, which is common when a blocker outlived a CI run — do not restore a finished wait: route
+   forward per that state's row instead. Following the plain instruction here without `--waiting-on` exits
+   2 and leaves the run `blocked`. Pinned by `test_returning_to_a_waiting_state_needs_its_waiting_on`.
 2. **A terminal state's refusal is invisible.** `valid_targets` returns nothing for a terminal state, so
    the same transition is *rejected* with exit 2 — and `|| true` converts that to exit 0. The session
    then edits and ships a cancelled plan with its run frozen. Pinned by
