@@ -43,32 +43,37 @@ stopped**. Read all five sources — each answers a different question, and none
 2. `python3 runtime/run_state.py status --slug <slug>` — the durable FSM state, plus `waiting_on` /
    `resume_event` when the run was left `blocked` or `escalated`.
 
-   **Exit 3 covers two different worlds — read the message, not just the code** (`runtime/run_state.py`
-   → "3 missing/corrupt storage or I/O failure"):
-   - `missing: specs/<slug>/RUN.json` → no run was ever initialized (a spec predating GitHub issue
-     #129, or one that skipped `/feature-intake`). Not the same as "the plan is untouched": fall back
-     to the other four sources, and do not `init` it into existence (Step 1's checkpoint explains why
-     that yields a wrong state rather than a missing one).
-   - anything else, e.g. `corrupt JSON in specs/<slug>/RUN.json: …` → a **damaged tracked run**.
-     Treating this as "never initialized" silently discards a real `blocked` / `waiting_on` state.
-     Try `python3 runtime/run_state.py rebuild --slug <slug>` (it reprojects `RUN.json` from
-     `events.jsonl`); if that also reports corruption, **stop and surface it** — do not resume on a
-     guess about where the run was.
+   **Exit 3 covers three different worlds, and the message does not separate them** — a
+   never-initialized run and a run whose projection was lost both print
+   `missing: specs/<slug>/RUN.json` (`runtime/run_state.py` → "3 missing/corrupt storage or I/O
+   failure"). **The discriminator is whether `specs/<slug>/events.jsonl` exists** — test that, then
+   branch:
 
-   **Then validate the log against the projection — `status` alone is not enough:**
+   - **No `events.jsonl`** → no run was ever initialized (a spec predating GitHub issue #129, or one
+     that skipped `/feature-intake`). **Skip the validation below**: there is nothing to validate, and
+     its `missing: events.jsonl` exit 3 is not a corruption signal. This is also not "the plan is
+     untouched" — fall back to the other four sources, and do not `init` it into existence (Step 1's
+     checkpoint explains why that yields a wrong state rather than a missing one).
+   - **`events.jsonl` exists but `RUN.json` does not** → the projection was lost (e.g. an `init` or
+     `transition` interrupted after its event `fsync`, before the projection write). The FSM state is
+     **recoverable**: run `python3 runtime/run_state.py rebuild --slug <slug>` to reproject, then
+     re-read `status`. Treating this as "never initialized" is how a real `blocked` / `resume_event`
+     gets silently discarded — pinned by `runtime/test_run_state.py`
+     → `test_missing_projection_over_valid_log_recovers_blocked_state`.
+   - **Both exist** (so `status` exited 0) → the state is readable but not yet trustworthy. Validate the
+     log against the projection:
 
-   ```bash
-   python3 runtime/run_state.py rebuild --slug <slug> --check
-   ```
+     ```bash
+     python3 runtime/run_state.py rebuild --slug <slug> --check
+     ```
 
-   `status` reads `RUN.json`, and `cmd_transition` appends+fsyncs the event *before* rewriting that
-   projection — so an interruption between those two writes leaves `events.jsonl` ahead, and `status`
-   then exits **0** while reporting an older state and omitting the latest `blocked` / `resume_event`.
-   The other four sources cannot recover FSM state, so this is a silent way to resume a *blocked* run
-   as if it were merely unstarted. `--check` is non-mutating: exit 0 prints `RUN.json matches
-   events.jsonl (seq=N)`; exit 3 prints `DRIFT: …` (projection stale — run `rebuild --slug <slug>`
-   without `--check` to reproject, then re-read `status`) or a corruption message (**stop and surface
-   it**; do not resume).
+     `cmd_transition` appends+fsyncs the event *before* rewriting the projection, so an interruption
+     between those two writes leaves `events.jsonl` ahead while `status` exits **0** reporting an older
+     state — omitting the latest `blocked` / `resume_event`. No other cursor source can recover FSM
+     state, so this is a silent way to resume a *blocked* run as if it were merely unstarted.
+     `--check` is non-mutating: exit 0 prints `RUN.json matches events.jsonl (seq=N)`; exit 3 prints
+     `DRIFT: …` (projection stale — `rebuild` without `--check`, then re-read `status`) or a corruption
+     message (**stop and surface it**; do not resume on a guess).
 3. `git log --oneline $(git merge-base HEAD <base-branch>)..HEAD` — what actually landed. This is
    the only source that cannot be written by a claim. `<base-branch>` is the branch this work was
    cut from, **not** always `main` (this repo integrates through `loop`). Sanity check the output:

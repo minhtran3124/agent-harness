@@ -14,11 +14,11 @@ created: 2026-07-26
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**3 tasks · 1 waves · 6 files · 3/3 done**
+**3 tasks · 1 waves · 7 files · 3/3 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
-| 1 | 1.1 | Make the resume mode routable and give it a cursor protocol (wave 1) | skills/subagent-driven-development/SKILL.md | SC-1, SC-2, SC-3, SC-4, SC-6 pass; the file still contains its Step-0 gate, rece… |
+| 1 | 1.1 | Make the resume mode routable and give it a cursor protocol (wave 1) | skills/subagent-driven-development/SKILL.md, runtime/test_run_state.py | SC-1, SC-2, SC-3, SC-4, SC-6 pass; the file still contains its Step-0 gate, rece… |
 | 1 | 1.2 | Make the Status Log a machine-readable cursor (wave 1) | rules/wave-parallelism.md | SC-5 and SC-7 pass; the rule still says the same thing about waves, only the log… |
 | 1 | 1.3 | Sync the two human-facing indexes (wave 1) | skills/README.md, CLAUDE.md, skills/writing-plans/SKILL.md, .gitignore | SC-10 passes; both indexes describe the same two modes the skill now implements. |
 
@@ -73,12 +73,13 @@ This plan restores the **capability** at one source of truth instead of restorin
 | SC-8 | The retirement guard is still green — no skill returned to disk or the manifest | `python3 scripts/check_slim_surface.py` | exit 0 |
 | SC-9 | Skill registry unchanged and bidirectionally consistent | `python3 scripts/check_manifest.py` | exit 0 |
 | SC-10 | Every path named in the touched docs exists (no dangling reference) | `bash scripts/lint-doc-truth.sh` | exit 0 |
+| SC-11 | The two run-state branches Step -1 must distinguish are pinned mechanically, not only in prose: a never-initialized run is not checkable, and a lost projection over a valid log recovers its `blocked` state | `python3 -m pytest runtime/test_run_state.py -k "never_initialized or missing_projection" -q` | exit 0 — added after Codex round 5 |
 
 ## 4. Tasks
 
 ### Task 1.1 — Make the resume mode routable and give it a cursor protocol (wave 1)
 
-- **Files:** skills/subagent-driven-development/SKILL.md
+- **Files:** skills/subagent-driven-development/SKILL.md, runtime/test_run_state.py
 - **Action:** Four additive edits to the one file that owns plan execution.
   (a) Frontmatter `description`: extend to name both modes — executing a plan in the current
   session **or resuming one from a new session** — so the router surfaces it (SC-1).

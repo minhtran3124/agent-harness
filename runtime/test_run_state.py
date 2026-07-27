@@ -441,6 +441,47 @@ def test_rebuild_check_detects_drift():
     assert rs.main(["rebuild", "--slug", "demo", "--check"]) == 3
 
 
+def test_never_initialized_run_is_not_checkable():
+    """Branch A of the resume recipe: nothing exists, so `--check` has nothing to
+    validate and must not be read as corruption. Pins the contract that
+    `subagent-driven-development` Step -1 relies on to skip the check for a legacy
+    (pre-#129) or intake-skipped spec."""
+    os.makedirs("specs/legacy", exist_ok=True)
+    assert not os.path.exists("specs/legacy/events.jsonl")
+    assert rs.main(["status", "--slug", "legacy"]) == 3
+    assert rs.main(["rebuild", "--slug", "legacy", "--check"]) == 3
+
+
+def test_missing_projection_over_valid_log_recovers_blocked_state():
+    """Branch B: `status` reports the SAME `missing: RUN.json` as branch A, so the
+    message is not a discriminator — the presence of events.jsonl is. The FSM state
+    here is recoverable, so a resume that treats this as 'never initialized' would
+    silently discard a real blocked run and its resume_event."""
+    rs.main(["init", "--slug", "torn", "--run-id", "r1"])
+    rs.main(["transition", "--slug", "torn", "--to", "investigating", "--event", "a"])
+    rs.main(
+        [
+            "transition",
+            "--slug",
+            "torn",
+            "--to",
+            "blocked",
+            "--event",
+            "b",
+            "--resume-event",
+            "unblock",
+        ]
+    )
+    os.remove("specs/torn/RUN.json")
+    assert os.path.exists("specs/torn/events.jsonl")  # the discriminator
+    assert rs.main(["status", "--slug", "torn"]) == 3
+    assert rs.main(["rebuild", "--slug", "torn", "--check"]) == 3
+    assert rs.main(["rebuild", "--slug", "torn"]) == 0
+    recovered = rs.read_json("specs/torn/RUN.json")
+    assert recovered["state"] == "blocked"
+    assert recovered["resume_event"] == "unblock"
+
+
 def test_corrupt_log_fails_visibly():
     rs.main(["init", "--slug", "demo", "--run-id", "r1"])
     with open("specs/demo/events.jsonl", "a") as f:

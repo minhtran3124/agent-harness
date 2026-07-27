@@ -135,6 +135,7 @@ how this spec became the repo's first live run.
 | guard | `python3 scripts/check_slim_surface.py` | 0 | no retired skill returned to disk or manifest | SC-8 |
 | registry | `python3 scripts/check_manifest.py` | 0 | skills[] still 12, bidirectionally consistent | SC-9 |
 | lint | `bash scripts/lint-doc-truth.sh` | 0 | no dangling path in CLAUDE.md / skills/README.md / rules/ | SC-10 |
+| unit | `python3 -m pytest runtime/test_run_state.py -k "never_initialized or missing_projection" -q` | 0 | 2 passed — pins both run-state branches Step -1 must distinguish | SC-11 |
 | lint | `bash scripts/lint-skill-bash.sh` | 0 | the edited run-state bash block is shellcheck-clean | |
 | lint | `python3 scripts/check_verify_rows.py specs/new-session-plan-resume` | 0 | all PLAN/SUMMARY rows pipe-free and <60s | |
 | dogfood | `grep -q '3/3 done' specs/new-session-plan-resume/PLAN.md` | 0 | this plan's own Status Log entry, written in the new shape, moved the derived Progress cursor 0/3 → 3/3 — the capability proven end-to-end on itself | SC-7 |
@@ -248,6 +249,29 @@ Both CONFIRMED against live evidence and fixed:**
   can recover FSM state. Step -1 source 2 now **requires** `rebuild --slug <slug> --check` during
   reconstruction: exit 0 confirms the projection, `DRIFT` routes to a reproject-then-re-read, a
   corruption message stops the resume.
+
+**Codex round 5 (reviewed commit `1ae652d`) — 1 P2, CONFIRMED and fixed, plus the regression it asked
+for:**
+
+- **P2-7 — the round-4 `--check` was unconditional, and exit-3 `missing:` is ambiguous.** Verified both
+  branches by running them:
+
+  | Case | `status` | `rebuild --check` | Truth |
+  |---|---|---|---|
+  | legacy: no `events.jsonl`, no `RUN.json` | `missing: RUN.json` exit 3 | `missing: events.jsonl` exit 3 | never initialized |
+  | valid `events.jsonl`, `RUN.json` gone | `missing: RUN.json` **exit 3 — same message** | `missing: RUN.json` exit 3 | `rebuild` recovers `state: blocked`, `resume_event: unblock` |
+
+  So `status`'s message cannot separate "never initialized" from "projection lost", and the previous
+  text's `missing:` branch would have discarded recoverable FSM state — while a plain legacy resume got
+  an unexplained second exit 3. Source 2 now branches on **whether `events.jsonl` exists** (the real
+  discriminator): absent → skip validation entirely; present with no projection → `rebuild`, then
+  re-read `status`; both present → the round-4 `--check`.
+- **Regression added** (`runtime/test_run_state.py`, +2 tests, suite 217 → **219**):
+  `test_never_initialized_run_is_not_checkable` and
+  `test_missing_projection_over_valid_log_recovers_blocked_state` — the latter asserts the recovered
+  projection really carries `blocked` / `unblock`, so the branch cannot silently regress into
+  prose-only. Pinned as **SC-11**. This is the repo's own preference over documentation:
+  *prefer a deterministic check you can ship over a reviewer you cannot assume exists.*
 
 **Advisory, not fixed by design:** `specs/slim-skill-surface/PLAN.md:92` (SC-7) and its
 `SUMMARY.md:109` Verify row grep for `"parallel session"` in
