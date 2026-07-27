@@ -139,6 +139,7 @@ how this spec became the repo's first live run.
 | unit | `python3 -m pytest runtime/test_run_state.py -k "blocked_to_implementing or projection_without_event_log" -q` | 0 | 2 passed — pins the blocker-erasure path and the log-less projection | SC-12 |
 | unit | `python3 -m pytest runtime/test_run_state.py -k terminal_run_rejects -q` | 0 | 1 passed — terminal run rejects the checkpoint at the CLI layer (exit 2, state unchanged) | SC-13 |
 | unit | `python3 -m pytest runtime/test_run_state.py -k covers_every_run_state -q` | 0 | 1 passed — all 16 states classified; mutation-checked (dropping `verifying` fails with "does not classify: ['verifying']") | SC-14 |
+| unit | `python3 -m pytest runtime/test_run_state.py -k only_planning_and_interrupts -q` | 0 | 1 passed — pins that only `planning`/`blocked`/`escalated` reach `implementing` in one hop, and that the skill instructs the walk; mutation-checked against the skill text | SC-15 |
 | lint | `bash scripts/lint-skill-bash.sh` | 0 | the edited run-state bash block is shellcheck-clean | |
 | lint | `python3 scripts/check_verify_rows.py specs/new-session-plan-resume` | 0 | all PLAN/SUMMARY rows pipe-free and <60s | |
 | dogfood | `grep -q '3/3 done' specs/new-session-plan-resume/PLAN.md` | 0 | this plan's own Status Log entry, written in the new shape, moved the derived Progress cursor 0/3 → 3/3 — the capability proven end-to-end on itself | SC-7 |
@@ -342,6 +343,33 @@ rather than assumed — dropping `verifying` from the table fails with
 Process note, recorded because it cost real work: while proving that guard bites, `git checkout --` was
 used to undo the mutation and silently discarded the uncommitted table with it. The table had to be
 re-authored. Mutate a **copy** when the working tree holds unstaged work.
+
+**Codex round 8 (reviewed commit `221840d`) — 1 P2, CONFIRMED and fixed. It landed inside the
+"pattern closure" itself, and that is the most useful thing the review produced:**
+
+- **P2-11 — a state can be *classified* and still have no legal path to the checkpoint's target.** The
+  16-state table gave `queued`, `investigating` and `planning` one shared verdict ("Proceed to Step 0"),
+  but `FORWARD_TRANSITIONS` allows only `queued → investigating` and
+  `investigating → {awaiting_confirmation, planning}`. So from the first two, Step 1's
+  `transition --to implementing` exits 2, `|| true` hides it, and the run stays stale while
+  implementation proceeds. Run live:
+
+  ```
+  state: queued  →  transition --to implementing  →  "queued -> implementing is not a valid
+                                                      transition", exit 2  →  || true → exit 0
+  state after: queued        (stale, while the batch runs)
+  legal walk:  queued → investigating → planning → implementing   ✓
+  ```
+
+  `queued` / `investigating` now get their own row: proceed with the *work*, but walk the run state one
+  legal hop at a time to `planning` first.
+- **The guard was the real defect.** `test_step_minus_one_covers_every_run_state` asserted every state is
+  *mentioned* — not that a "proceed" verdict is *reachable*. That is the same blind spot one level up:
+  exhaustive enumeration of states, with no check against the transition graph. Fixed by
+  `test_only_planning_and_interrupts_reach_implementing_directly`, which pins the exact one-hop set
+  (`{planning, blocked, escalated}` — computed, not assumed), proves the walk works from `queued`, and
+  asserts the skill instructs it. Mutation-checked on a **copy** this time: replacing the walk sentence
+  fails the test. Pinned as **SC-15**.
 
 **Advisory, not fixed by design:** `specs/slim-skill-surface/PLAN.md:92` (SC-7) and its
 `SUMMARY.md:109` Verify row grep for `"parallel session"` in

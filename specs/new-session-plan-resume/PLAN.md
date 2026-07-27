@@ -77,6 +77,7 @@ This plan restores the **capability** at one source of truth instead of restorin
 | SC-12 | The two hazards that make Step -1's stop rules load-bearing are pinned: resuming a `blocked` run erases its `waiting_on`/`resume_event`, and a projection with no event log behind it still reads healthy | `python3 -m pytest runtime/test_run_state.py -k "blocked_to_implementing or projection_without_event_log" -q` | exit 0 — added after Codex round 6 |
 | SC-13 | A terminal run rejects the resume checkpoint **at the CLI layer** (exit 2, state unchanged) — the layer the checkpoint's non-fatal guard silences | `python3 -m pytest runtime/test_run_state.py -k terminal_run_rejects -q` | exit 0 — added after Codex round 7 |
 | SC-14 | Step -1 classifies **every** state the engine can hold, and a future state added to the FSM cannot slip past unclassified | `python3 -m pytest runtime/test_run_state.py -k covers_every_run_state -q` | exit 0 — mutation-checked: dropping one state from the table fails the test by name |
+| SC-15 | Classification alone is not enough: only `planning` and the interrupt states may enter `implementing` in one hop, so any other proceed verdict must instruct a legal walk — and the skill does | `python3 -m pytest runtime/test_run_state.py -k only_planning_and_interrupts -q` | exit 0 — added after Codex round 8; mutation-checked against the skill text |
 
 ## 4. Tasks
 

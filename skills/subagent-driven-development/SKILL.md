@@ -105,7 +105,8 @@ state, `test_step_minus_one_covers_every_run_state` fails until this table cover
 
 | Run state | On resume | Why |
 |---|---|---|
-| `queued`, `investigating`, `planning` | **Proceed to Step 0** | Execution never started — this is a first run, not a resume. Reconstruct anyway: the cursor may show work the run state never recorded. |
+| `planning` | **Proceed to Step 0** | Execution never started — a first run, not a resume. Reconstruct anyway: the cursor may show work the run state never recorded. |
+| `queued`, `investigating` | **Proceed, but walk the run state forward first** | Same as `planning` for the *work*, but Step 1's `transition --to implementing` is **not legal from here** — `FORWARD_TRANSITIONS` allows only `queued → investigating` and `investigating → {awaiting_confirmation, planning}`. Advance one legal hop at a time to `planning` (e.g. `--event run.state_catch_up`) before the checkpoint, or it exits 2, `\|\| true` hides it, and the run stays stale while implementation proceeds. |
 | `implementing` | **Proceed** | The normal resume case. |
 | `fixing_ci`, `addressing_review` | **Proceed, but not into plan tasks** | Resume the loop the state names (CI fixes / review feedback). Re-entering wave execution here re-does shipped work. |
 | `verifying` | **Skip the tasks; re-enter the review chain** | Tasks passed already. Resume at `/correctness-review` → `/intent-review` → receipt. |

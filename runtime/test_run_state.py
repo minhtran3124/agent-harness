@@ -615,6 +615,40 @@ def test_step_minus_one_covers_every_run_state():
     assert not uncovered, f"resume recipe does not classify: {uncovered}"
 
 
+def test_only_planning_and_interrupts_reach_implementing_directly():
+    """The exhaustiveness table is not enough on its own: a state can be *classified*
+    and still have no legal one-hop path to the checkpoint's target. Only `planning`
+    (forward edge) and the interrupt states (resume-into-any-active) may enter
+    `implementing` directly, so every other 'proceed' verdict owes the reader a walk.
+    If the engine adds an edge here, this fails and the table must be revisited."""
+    direct = {s for s in rs.ALL_STATES if "implementing" in rs.valid_targets(s)}
+    assert direct == {"planning", "blocked", "escalated"}
+
+    # queued/investigating cannot shortcut, and the walk is what works
+    rs.main(["init", "--slug", "q", "--run-id", "r1"])
+    assert (
+        rs.main(["transition", "--slug", "q", "--to", "implementing", "--event", "go"])
+        == 2
+    )
+    assert rs.read_json("specs/q/RUN.json")["state"] == "queued"
+    for hop in ("investigating", "planning", "implementing"):
+        assert (
+            rs.main(["transition", "--slug", "q", "--to", hop, "--event", "walk"]) == 0
+        )
+    assert rs.read_json("specs/q/RUN.json")["state"] == "implementing"
+
+    # and the skill tells the reader to walk rather than shortcut
+    skill = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "skills",
+        "subagent-driven-development",
+        "SKILL.md",
+    )
+    with open(skill, encoding="utf-8") as f:
+        text = f.read()
+    assert "walk the run state forward first" in text
+
+
 def test_corrupt_log_fails_visibly():
     rs.main(["init", "--slug", "demo", "--run-id", "r1"])
     with open("specs/demo/events.jsonl", "a") as f:
