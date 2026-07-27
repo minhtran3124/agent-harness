@@ -49,11 +49,15 @@ stopped**. Read all five sources — each answers a different question, and none
    failure"). **The discriminator is whether `specs/<slug>/events.jsonl` exists** — test that, then
    branch:
 
-   - **No `events.jsonl`** → no run was ever initialized (a spec predating GitHub issue #129, or one
+   - **Neither file exists** → no run was ever initialized (a spec predating GitHub issue #129, or one
      that skipped `/feature-intake`). **Skip the validation below**: there is nothing to validate, and
      its `missing: events.jsonl` exit 3 is not a corruption signal. This is also not "the plan is
      untouched" — fall back to the other four sources, and do not `init` it into existence (Step 1's
      checkpoint explains why that yields a wrong state rather than a missing one).
+   - **`RUN.json` exists but `events.jsonl` does not** → the canonical log is gone. This is **storage
+     corruption, not a fresh start**: `status` still exits 0 and will happily report a state (even a
+     `blocked` one with a `resume_event`), but that projection cannot be rebuilt or verified against
+     anything. **Stop and surface it** — never resume on a projection with no log behind it.
    - **`events.jsonl` exists but `RUN.json` does not** → the projection was lost (e.g. an `init` or
      `transition` interrupted after its event `fsync`, before the projection write). The FSM state is
      **recoverable**: run `python3 runtime/run_state.py rebuild --slug <slug>` to reproject, then
@@ -92,7 +96,22 @@ stopped**. Read all five sources — each answers a different question, and none
    carries **no signal for you** — ignore it rather than importing another spec's blocker. Sources 1–4
    are all slug-scoped; this one is the only one that can lie about whose state it is.
 
-Then **re-run the `Verify` command of every task the log claims complete.** A checkbox is not
+**STOP if the run is `blocked` or `escalated` and its resume condition has not been met.** Report the
+recorded `waiting_on` / `resume_event` and wait for confirmation that the condition is resolved — do
+**not** continue into the tasks. Nothing downstream protects you here: `valid_targets` lets an interrupt
+state enter **any** active state, so Step 1's `transition --to implementing` succeeds (exit 0) and the
+new event, carrying no `waiting_on` / `resume_event` of its own, **erases both from the projection**:
+
+```
+before  state: blocked      waiting_on: PR #999   resume_event: dep-merged
+after   state: implementing waiting_on: None      resume_event: None
+```
+
+That is the record of *why* the work was paused, gone — and the resumed batch then runs as if nothing
+was ever blocked. Pinned by `runtime/test_run_state.py`
+→ `test_blocked_to_implementing_clears_blocker_metadata`.
+
+Otherwise: **re-run the `Verify` command of every task the log claims complete.** A checkbox is not
 evidence; a passing exit code is. Report the cursor to the user — done / next / blocked — and
 continue from the first task that is not verified green. A task whose `Verify` fails now is not
 done: re-open it before advancing.

@@ -482,6 +482,73 @@ def test_missing_projection_over_valid_log_recovers_blocked_state():
     assert recovered["resume_event"] == "unblock"
 
 
+def test_blocked_to_implementing_clears_blocker_metadata():
+    """Why `subagent-driven-development` Step -1 must STOP on blocked/escalated: the
+    engine deliberately allows an interrupt state into any active state, and the new
+    event carries no waiting_on/resume_event of its own — so resuming blindly erases
+    the record of why the work was paused. If this ever becomes an invalid transition,
+    this test fails and the skill's stop rule can be relaxed."""
+    rs.main(["init", "--slug", "b", "--run-id", "r1"])
+    for to_state in ("investigating", "planning"):
+        rs.main(["transition", "--slug", "b", "--to", to_state, "--event", "e"])
+    rs.main(
+        [
+            "transition",
+            "--slug",
+            "b",
+            "--to",
+            "blocked",
+            "--event",
+            "hit",
+            "--resume-event",
+            "dep-merged",
+            "--waiting-on",
+            "PR #999",
+        ]
+    )
+    before = rs.read_json("specs/b/RUN.json")
+    assert before["waiting_on"] == "PR #999"
+    assert before["resume_event"] == "dep-merged"
+
+    assert (
+        rs.main(["transition", "--slug", "b", "--to", "implementing", "--event", "go"])
+        == 0
+    )
+    after = rs.read_json("specs/b/RUN.json")
+    assert after["state"] == "implementing"
+    assert after["waiting_on"] is None
+    assert after["resume_event"] is None
+
+
+def test_projection_without_event_log_is_unrebuildable():
+    """A RUN.json with no events.jsonl behind it is corruption, not a fresh start:
+    `status` still exits 0 and reports a state (even a blocked one), while the
+    projection can no longer be rebuilt or verified. Step -1 must stop here rather
+    than classify it as never-initialized."""
+    rs.main(["init", "--slug", "runonly", "--run-id", "r1"])
+    rs.main(
+        ["transition", "--slug", "runonly", "--to", "investigating", "--event", "a"]
+    )
+    rs.main(
+        [
+            "transition",
+            "--slug",
+            "runonly",
+            "--to",
+            "blocked",
+            "--event",
+            "b",
+            "--resume-event",
+            "unblock",
+        ]
+    )
+    os.remove("specs/runonly/events.jsonl")
+    assert os.path.exists("specs/runonly/RUN.json")
+    assert rs.main(["status", "--slug", "runonly"]) == 0  # looks healthy
+    assert rs.read_json("specs/runonly/RUN.json")["state"] == "blocked"
+    assert rs.main(["rebuild", "--slug", "runonly", "--check"]) == 3
+
+
 def test_corrupt_log_fails_visibly():
     rs.main(["init", "--slug", "demo", "--run-id", "r1"])
     with open("specs/demo/events.jsonl", "a") as f:

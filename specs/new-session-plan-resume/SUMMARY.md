@@ -136,6 +136,7 @@ how this spec became the repo's first live run.
 | registry | `python3 scripts/check_manifest.py` | 0 | skills[] still 12, bidirectionally consistent | SC-9 |
 | lint | `bash scripts/lint-doc-truth.sh` | 0 | no dangling path in CLAUDE.md / skills/README.md / rules/ | SC-10 |
 | unit | `python3 -m pytest runtime/test_run_state.py -k "never_initialized or missing_projection" -q` | 0 | 2 passed — pins both run-state branches Step -1 must distinguish | SC-11 |
+| unit | `python3 -m pytest runtime/test_run_state.py -k "blocked_to_implementing or projection_without_event_log" -q` | 0 | 2 passed — pins the blocker-erasure path and the log-less projection | SC-12 |
 | lint | `bash scripts/lint-skill-bash.sh` | 0 | the edited run-state bash block is shellcheck-clean | |
 | lint | `python3 scripts/check_verify_rows.py specs/new-session-plan-resume` | 0 | all PLAN/SUMMARY rows pipe-free and <60s | |
 | dogfood | `grep -q '3/3 done' specs/new-session-plan-resume/PLAN.md` | 0 | this plan's own Status Log entry, written in the new shape, moved the derived Progress cursor 0/3 → 3/3 — the capability proven end-to-end on itself | SC-7 |
@@ -272,6 +273,31 @@ for:**
   projection really carries `blocked` / `unblock`, so the branch cannot silently regress into
   prose-only. Pinned as **SC-11**. This is the repo's own preference over documentation:
   *prefer a deterministic check you can ship over a reviewer you cannot assume exists.*
+
+**Codex round 6 (reviewed commit `db094f9`) — 2 P2, both CONFIRMED and fixed. The first is the most
+serious finding of all six rounds: it destroys data.**
+
+- **P2-8 — resuming a `blocked` run silently erased the blocker.** Step -1 said to report the cursor
+  and continue; nothing downstream stopped that. `valid_targets` deliberately lets an interrupt state
+  enter **any** active state, so Step 1's `transition --to implementing` succeeds, and the new event —
+  carrying no `waiting_on` / `resume_event` of its own — wipes both from the projection. Run live:
+
+  ```
+  before  state: blocked      waiting_on: PR #999   resume_event: dep-merged
+  after   state: implementing waiting_on: None      resume_event: None      (exit 0)
+  ```
+
+  The record of *why* work was paused, gone — and the resumed batch proceeds as if nothing was blocked.
+  Step -1 now **STOPs** on `blocked` / `escalated` until the recorded resume condition is confirmed.
+- **P2-9 — `RUN.json` without `events.jsonl` was classified as "never initialized".** The round-5
+  branch keyed on the absence of `events.jsonl` alone. But with the projection still present, `status`
+  exits **0** and reports a state — including a `blocked` one with a `resume_event` — while that
+  projection can no longer be rebuilt or verified. The legacy case now requires **both** files absent;
+  a projection with no log behind it is treated as storage corruption → stop.
+- **Regression added** (`runtime/test_run_state.py`, +2 tests, suite 219 → **221**), pinned as **SC-12**:
+  `test_blocked_to_implementing_clears_blocker_metadata` (asserts the erasure, so if the engine ever
+  forbids that edge the skill's stop rule can be relaxed on evidence) and
+  `test_projection_without_event_log_is_unrebuildable`.
 
 **Advisory, not fixed by design:** `specs/slim-skill-surface/PLAN.md:92` (SC-7) and its
 `SUMMARY.md:109` Verify row grep for `"parallel session"` in
