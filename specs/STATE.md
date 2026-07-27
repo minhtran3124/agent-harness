@@ -935,3 +935,52 @@ or read from each other's files.
 - last_commit: 6404158 docs(specs): fix plan.md -> PLAN.md casing in specs/README.md
 - user_turns: 0
 
+
+### 2026-07-26T10:06:40Z
+- session_id: ca798742-8152-4ce4-a334-3b605e1ff566
+- exit: 
+- last_commit: 6cc968b Merge pull request #172 from minhtran3124/chore/refresh-durable-run-state-at-a-glance
+- user_turns: 0
+
+
+### 2026-07-26T10:27:27Z
+- session_id: 8960eac8-874b-4d33-a7e3-f4611457a7c6
+- exit: 
+- last_commit: 6cc968b Merge pull request #172 from minhtran3124/chore/refresh-durable-run-state-at-a-glance
+- user_turns: 0
+
+
+### 2026-07-27T14:10:27Z
+- session_id: d2da0551-5898-4a74-a490-5d6108452edf
+- exit: 
+- last_commit: 6e42296 fix(ci): stage the run-state transition, or the bookkeeping PR discards it
+- user_turns: 0
+
+
+### 2026-07-27T14:10:30Z
+- session_id: fbb47ae7-ee8c-4e76-9437-3b0087b8ec8b
+- exit: 
+- last_commit: 6e42296 fix(ci): stage the run-state transition, or the bookkeeping PR discards it
+- user_turns: 0
+
+
+### 2026-07-27T14:10:35Z
+- session_id: b2697248-3d51-4f38-a9aa-a5263715ebdb
+- exit: 
+- last_commit: 6e42296 fix(ci): stage the run-state transition, or the bookkeeping PR discards it
+- user_turns: 0
+
+
+### 2026-07-27T14:10:38Z
+- session_id: 7c9fa8e2-b3a9-4f71-9281-07082f076ce2
+- exit: 
+- last_commit: 6e42296 fix(ci): stage the run-state transition, or the bookkeeping PR discards it
+- user_turns: 0
+
+
+### 2026-07-27T14:40:44Z
+- session_id: c0e1f0d5-30b0-44b7-93f7-5dc3fe6e7fe8
+- exit: 
+- last_commit: 7747657 Merge pull request #177 from minhtran3124/fix/post-merge-runstate-staging
+- user_turns: 0
+
