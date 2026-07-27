@@ -549,6 +549,52 @@ def test_projection_without_event_log_is_unrebuildable():
     assert rs.main(["rebuild", "--slug", "runonly", "--check"]) == 3
 
 
+def test_terminal_run_rejects_resume_transition_at_cli():
+    """Why Step -1 must STOP on a terminal run. `test_terminal_state_blocks_transition`
+    pins this at the unit level; this one goes through the CLI, which is the layer the
+    skill's prescribed `|| true` silences: the rejection is exit 2, so `|| true` turns it
+    into exit 0 and a cancelled/superseded/shipped plan would be edited and shipped with
+    the run frozen at its terminal state."""
+
+    def _build(slug, terminal):
+        rs.main(["init", "--slug", slug, "--run-id", f"r-{slug}"])
+        rs.main(["transition", "--slug", slug, "--to", "investigating", "--event", "e"])
+        if terminal == "shipped":
+            for to_state in ("planning", "implementing", "verifying", "ready_to_merge"):
+                rs.main(
+                    ["transition", "--slug", slug, "--to", to_state, "--event", "e"]
+                )
+            rs.main(
+                [
+                    "transition",
+                    "--slug",
+                    slug,
+                    "--to",
+                    "shipped",
+                    "--event",
+                    "m",
+                    "--sha",
+                    "abc1234",
+                ]
+            )
+        else:
+            rs.main(["transition", "--slug", slug, "--to", terminal, "--event", "end"])
+
+    for terminal in sorted(rs.TERMINAL_STATES):
+        slug = f"t-{terminal}"
+        os.makedirs(f"specs/{slug}", exist_ok=True)
+        _build(slug, terminal)
+        assert rs.read_json(f"specs/{slug}/RUN.json")["state"] == terminal
+        # the exact call Step 1's checkpoint makes, minus the `|| true`
+        assert (
+            rs.main(
+                ["transition", "--slug", slug, "--to", "implementing", "--event", "go"]
+            )
+            == 2
+        )
+        assert rs.read_json(f"specs/{slug}/RUN.json")["state"] == terminal
+
+
 def test_corrupt_log_fails_visibly():
     rs.main(["init", "--slug", "demo", "--run-id", "r1"])
     with open("specs/demo/events.jsonl", "a") as f:

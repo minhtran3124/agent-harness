@@ -96,6 +96,14 @@ stopped**. Read all five sources — each answers a different question, and none
    carries **no signal for you** — ignore it rather than importing another spec's blocker. Sources 1–4
    are all slug-scoped; this one is the only one that can lie about whose state it is.
 
+**STOP if the run is terminal — `cancelled`, `superseded`, or `shipped`.** Someone ended this run
+deliberately (or it already shipped), so resuming it is a human decision, not a cursor question: report
+which terminal state it is and wait. Do not read the `|| true` on Step 1's checkpoint as permission —
+`valid_targets` returns nothing for a terminal state, so that transition is *rejected* with exit 2 and
+`|| true` converts it to exit 0, leaving the rejection invisible while the session goes on to edit and
+ship a cancelled plan. Pinned by `runtime/test_run_state.py`
+→ `test_terminal_run_rejects_resume_transition_at_cli`.
+
 **STOP if the run is `blocked` or `escalated` and its resume condition has not been met.** Report the
 recorded `waiting_on` / `resume_event` and wait for confirmation that the condition is resolved — do
 **not** continue into the tasks. Nothing downstream protects you here: `valid_targets` lets an interrupt

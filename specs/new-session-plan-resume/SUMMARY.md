@@ -137,6 +137,7 @@ how this spec became the repo's first live run.
 | lint | `bash scripts/lint-doc-truth.sh` | 0 | no dangling path in CLAUDE.md / skills/README.md / rules/ | SC-10 |
 | unit | `python3 -m pytest runtime/test_run_state.py -k "never_initialized or missing_projection" -q` | 0 | 2 passed — pins both run-state branches Step -1 must distinguish | SC-11 |
 | unit | `python3 -m pytest runtime/test_run_state.py -k "blocked_to_implementing or projection_without_event_log" -q` | 0 | 2 passed — pins the blocker-erasure path and the log-less projection | SC-12 |
+| unit | `python3 -m pytest runtime/test_run_state.py -k terminal_run_rejects -q` | 0 | 1 passed — terminal run rejects the checkpoint at the CLI layer (exit 2, state unchanged) | SC-13 |
 | lint | `bash scripts/lint-skill-bash.sh` | 0 | the edited run-state bash block is shellcheck-clean | |
 | lint | `python3 scripts/check_verify_rows.py specs/new-session-plan-resume` | 0 | all PLAN/SUMMARY rows pipe-free and <60s | |
 | dogfood | `grep -q '3/3 done' specs/new-session-plan-resume/PLAN.md` | 0 | this plan's own Status Log entry, written in the new shape, moved the derived Progress cursor 0/3 → 3/3 — the capability proven end-to-end on itself | SC-7 |
@@ -298,6 +299,29 @@ serious finding of all six rounds: it destroys data.**
   `test_blocked_to_implementing_clears_blocker_metadata` (asserts the erasure, so if the engine ever
   forbids that edge the skill's stop rule can be relaxed on evidence) and
   `test_projection_without_event_log_is_unrebuildable`.
+
+**Codex round 7 (reviewed commit `97dc642`) — 1 P2, CONFIRMED and fixed:**
+
+- **P2-10 — a terminal run (`cancelled` / `superseded` / `shipped`) fell through into task resumption.**
+  Round 6 added stop rules for `blocked` / `escalated` but not for the terminal states. Run live, the
+  rejection is real and then hidden:
+
+  ```
+  transition --to implementing            → "cancelled is terminal; no further transitions", exit 2
+  transition --to implementing || true    → exit 0        ← rejection invisible
+  status                                  → state: cancelled (unchanged, while the session edits on)
+  ```
+
+  So a plan someone deliberately cancelled — or one already shipped — could be edited and sent through
+  the shipping flow with its run frozen. Step -1 now STOPs on terminal states and states explicitly that
+  the checkpoint's non-fatal guard is not permission.
+- **Regression added** (suite 221 → **222**), pinned as **SC-13**:
+  `test_terminal_run_rejects_resume_transition_at_cli`. Deliberately **not** a duplicate of the existing
+  `test_terminal_state_blocks_transition`, which asserts `valid_targets` / `validate_transition` at the
+  *unit* level and never goes through `main()` — the CLI exit code is precisely the layer the non-fatal
+  guard silences, so that is the layer this rule depends on and the layer now pinned.
+- Also caught while writing SC-13: its Behavior cell originally contained an escaped pipe (the same
+  markdown-table hazard as the earlier SC-1 defect). Reworded pipe-free before committing.
 
 **Advisory, not fixed by design:** `specs/slim-skill-surface/PLAN.md:92` (SC-7) and its
 `SUMMARY.md:109` Verify row grep for `"parallel session"` in
