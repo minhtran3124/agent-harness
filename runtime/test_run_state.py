@@ -595,6 +595,26 @@ def test_terminal_run_rejects_resume_transition_at_cli():
         assert rs.read_json(f"specs/{slug}/RUN.json")["state"] == terminal
 
 
+def test_step_minus_one_covers_every_run_state():
+    """The resume recipe must branch on EVERY state this engine can hold — four of the
+    hazards found in review were simply states it did not mention. This fails when
+    ALL_STATES gains a member the skill's table has not classified, which is the only
+    durable guard: the table is prose, the state set is code."""
+    skill = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "skills",
+        "subagent-driven-development",
+        "SKILL.md",
+    )
+    with open(skill, encoding="utf-8") as f:
+        text = f.read()
+    start = text.index("### What the run state means for resuming")
+    end = text.index("When the table says proceed:", start)
+    table = text[start:end]
+    uncovered = sorted(s for s in rs.ALL_STATES if f"`{s}`" not in table)
+    assert not uncovered, f"resume recipe does not classify: {uncovered}"
+
+
 def test_corrupt_log_fails_visibly():
     rs.main(["init", "--slug", "demo", "--run-id", "r1"])
     with open("specs/demo/events.jsonl", "a") as f:

@@ -96,30 +96,43 @@ stopped**. Read all five sources — each answers a different question, and none
    carries **no signal for you** — ignore it rather than importing another spec's blocker. Sources 1–4
    are all slug-scoped; this one is the only one that can lie about whose state it is.
 
-**STOP if the run is terminal — `cancelled`, `superseded`, or `shipped`.** Someone ended this run
-deliberately (or it already shipped), so resuming it is a human decision, not a cursor question: report
-which terminal state it is and wait. Do not read the `|| true` on Step 1's checkpoint as permission —
-`valid_targets` returns nothing for a terminal state, so that transition is *rejected* with exit 2 and
-`|| true` converts it to exit 0, leaving the rejection invisible while the session goes on to edit and
-ship a cancelled plan. Pinned by `runtime/test_run_state.py`
-→ `test_terminal_run_rejects_resume_transition_at_cli`.
+### What the run state means for resuming — all 16, no default
 
-**STOP if the run is `blocked` or `escalated` and its resume condition has not been met.** Report the
-recorded `waiting_on` / `resume_event` and wait for confirmation that the condition is resolved — do
-**not** continue into the tasks. Nothing downstream protects you here: `valid_targets` lets an interrupt
-state enter **any** active state, so Step 1's `transition --to implementing` succeeds (exit 0) and the
-new event, carrying no `waiting_on` / `resume_event` of its own, **erases both from the projection**:
+The state from source 2 decides **whether you resume tasks at all**. Do not treat "not stopped" as
+"proceed": every state below has an explicit entry, because each hazard in this section was originally
+a state the recipe simply did not branch on. `runtime/run_state.py` owns the state set; if it gains a
+state, `test_step_minus_one_covers_every_run_state` fails until this table covers it.
 
-```
-before  state: blocked      waiting_on: PR #999   resume_event: dep-merged
-after   state: implementing waiting_on: None      resume_event: None
-```
+| Run state | On resume | Why |
+|---|---|---|
+| `queued`, `investigating`, `planning` | **Proceed to Step 0** | Execution never started — this is a first run, not a resume. Reconstruct anyway: the cursor may show work the run state never recorded. |
+| `implementing` | **Proceed** | The normal resume case. |
+| `fixing_ci`, `addressing_review` | **Proceed, but not into plan tasks** | Resume the loop the state names (CI fixes / review feedback). Re-entering wave execution here re-does shipped work. |
+| `verifying` | **Skip the tasks; re-enter the review chain** | Tasks passed already. Resume at `/correctness-review` → `/intent-review` → receipt. |
+| `awaiting_confirmation`, `awaiting_ci`, `awaiting_review`, `ready_to_merge` | **STOP and report** | The run is parked on someone or something else. `awaiting_confirmation` exists because a human decision is pending — resuming past it bypasses that gate. The other three have a CI run, a review, or a receipt in flight, and a fresh commit invalidates it: `reviewed_head_sha` stops matching HEAD and `finishing-a-development-branch` Gate 0 refuses the push. |
+| `blocked`, `escalated` | **STOP until the recorded condition is met** | See the erasure hazard below. |
+| `cancelled`, `superseded`, `shipped` | **STOP — human decision** | Someone ended this run deliberately, or it already shipped. Resuming is a decision, not a cursor question. See the hidden-rejection hazard below. |
 
-That is the record of *why* the work was paused, gone — and the resumed batch then runs as if nothing
-was ever blocked. Pinned by `runtime/test_run_state.py`
-→ `test_blocked_to_implementing_clears_blocker_metadata`.
+**Two reasons the STOP rows are load-bearing rather than advice**, both because Step 1's checkpoint is
+non-fatal and therefore silent:
 
-Otherwise: **re-run the `Verify` command of every task the log claims complete.** A checkbox is not
+1. **An interrupt state resumes "successfully" and erases the blocker.** `valid_targets` lets `blocked`
+   / `escalated` enter **any** active state, so `transition --to implementing` succeeds (exit 0), and
+   the new event — carrying no `waiting_on` / `resume_event` of its own — wipes both from the projection:
+
+   ```
+   before  state: blocked      waiting_on: PR #999   resume_event: dep-merged
+   after   state: implementing waiting_on: None      resume_event: None
+   ```
+
+   The record of *why* work was paused is gone, and the batch runs as if nothing was blocked. Pinned by
+   `test_blocked_to_implementing_clears_blocker_metadata`.
+2. **A terminal state's refusal is invisible.** `valid_targets` returns nothing for a terminal state, so
+   the same transition is *rejected* with exit 2 — and `|| true` converts that to exit 0. The session
+   then edits and ships a cancelled plan with its run frozen. Pinned by
+   `test_terminal_run_rejects_resume_transition_at_cli`.
+
+When the table says proceed: **re-run the `Verify` command of every task the log claims complete.** A checkbox is not
 evidence; a passing exit code is. Report the cursor to the user — done / next / blocked — and
 continue from the first task that is not verified green. A task whose `Verify` fails now is not
 done: re-open it before advancing.

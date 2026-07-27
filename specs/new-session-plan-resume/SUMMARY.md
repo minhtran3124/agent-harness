@@ -138,6 +138,7 @@ how this spec became the repo's first live run.
 | unit | `python3 -m pytest runtime/test_run_state.py -k "never_initialized or missing_projection" -q` | 0 | 2 passed — pins both run-state branches Step -1 must distinguish | SC-11 |
 | unit | `python3 -m pytest runtime/test_run_state.py -k "blocked_to_implementing or projection_without_event_log" -q` | 0 | 2 passed — pins the blocker-erasure path and the log-less projection | SC-12 |
 | unit | `python3 -m pytest runtime/test_run_state.py -k terminal_run_rejects -q` | 0 | 1 passed — terminal run rejects the checkpoint at the CLI layer (exit 2, state unchanged) | SC-13 |
+| unit | `python3 -m pytest runtime/test_run_state.py -k covers_every_run_state -q` | 0 | 1 passed — all 16 states classified; mutation-checked (dropping `verifying` fails with "does not classify: ['verifying']") | SC-14 |
 | lint | `bash scripts/lint-skill-bash.sh` | 0 | the edited run-state bash block is shellcheck-clean | |
 | lint | `python3 scripts/check_verify_rows.py specs/new-session-plan-resume` | 0 | all PLAN/SUMMARY rows pipe-free and <60s | |
 | dogfood | `grep -q '3/3 done' specs/new-session-plan-resume/PLAN.md` | 0 | this plan's own Status Log entry, written in the new shape, moved the derived Progress cursor 0/3 → 3/3 — the capability proven end-to-end on itself | SC-7 |
@@ -322,6 +323,25 @@ serious finding of all six rounds: it destroys data.**
   guard silences, so that is the layer this rule depends on and the layer now pinned.
 - Also caught while writing SC-13: its Behavior cell originally contained an escaped pipe (the same
   markdown-table hazard as the earlier SC-1 defect). Reworded pipe-free before committing.
+
+**Closing the pattern, not the next instance (user-directed, after round 7).** Four of the seven review
+rounds found the same shape of defect: *a run state the resume path could encounter but did not branch
+on*, with Step 1's non-fatal `|| true` hiding the consequence each time. Patching the fifth instance
+would have repeated the mistake, so Step -1 now carries an **exhaustive 16-state table** — the 11 active,
+2 interrupt and 3 terminal states of `runtime/run_state.py`, each with an explicit verdict
+(proceed / proceed-elsewhere / stop) and its reason. Notably this classified four states no reviewer had
+raised yet: `awaiting_confirmation` (a pending human decision), `awaiting_ci`, `awaiting_review` and
+`ready_to_merge` — the last three all have a CI run, a review, or a receipt in flight that a fresh commit
+would invalidate.
+
+The durable part is the guard, not the table: `test_step_minus_one_covers_every_run_state` reads the
+skill's own table and fails when `rs.ALL_STATES` gains a member it does not classify. **Mutation-checked**
+rather than assumed — dropping `verifying` from the table fails with
+`resume recipe does not classify: ['verifying']`, so the assertion is not vacuous. Pinned as **SC-14**.
+
+Process note, recorded because it cost real work: while proving that guard bites, `git checkout --` was
+used to undo the mutation and silently discarded the uncommitted table with it. The table had to be
+re-authored. Mutate a **copy** when the working tree holds unstaged work.
 
 **Advisory, not fixed by design:** `specs/slim-skill-surface/PLAN.md:92` (SC-7) and its
 `SUMMARY.md:109` Verify row grep for `"parallel session"` in
