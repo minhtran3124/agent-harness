@@ -565,6 +565,24 @@ the same defect class as round 13 reappearing one step later.**
   documenting an unreachable successor fails with `documented successor blocked -> shipped is not takeable`.
   Any future row that names an untakeable route now fails here instead of in a live resume.
 
+**Codex round 16 (reviewed commit `c00d1e6`) — 1 P2 on the SC-20 guard itself, CONFIRMED and fixed.
+Third time a guard of mine was weaker than it read.**
+
+- The round-15 upgrade validated target names against the **whole table**, not per `(origin, target)` pair,
+  and its executability half transitioned from `blocked` — which accepts every active state. So a successor
+  filed under the wrong origin stayed green: documenting `awaiting_ci → planning`, or moving `fixing_ci`
+  under `awaiting_review`, both passed while the recipe would route a resume to the wrong lifecycle
+  successor.
+- Fixed by parsing each row into an `(origin, target)` pair and validating it against
+  `FORWARD_TRANSITIONS[origin]` (plus `cancelled` as the deliberate abandon route), then asserting every
+  forward edge of every waiting state is covered. Mutation-checked on both of the reviewer's scenarios:
+  `awaiting_ci -> planning is not a legal successor of awaiting_ci`;
+  `awaiting_review -> fixing_ci is not a legal successor of awaiting_review`.
+- Pattern worth naming: rounds 11, 15 and 16 were all *my guards* passing while asserting less than they
+  claimed — text slice too wide, membership instead of execution, and now membership instead of pairing.
+  Each was caught by an outside reader, not by the suite. Recorded in
+  `docs/solutions/harness/mutation-testing-proves-a-suite-is-load-bearing.md`.
+
 **Advisory, not fixed by design:** `specs/slim-skill-surface/PLAN.md:92` (SC-7) and its
 `SUMMARY.md:109` Verify row grep for `"parallel session"` in
 `skills/subagent-driven-development/SKILL.md` and now exit 1. That spec is `status: shipped` and

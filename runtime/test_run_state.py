@@ -840,10 +840,29 @@ def test_waiting_state_successors_are_documented():
     table = "\n".join(rows)
     assert len(rows) >= 5, f"successor table parsed as {len(rows)} rows"
 
+    # Validate each row as an (origin, target) PAIR against that origin's forward edges.
+    # Whole-table name membership is not enough: a target filed under the wrong origin
+    # would pass while the recipe routes a resume to the wrong lifecycle successor.
+    CANCEL_ROUTE = {"cancelled"}  # deliberate abandon path, not a forward edge
+    documented = {}
+    for row in rows:
+        cells = [c.strip() for c in row.strip("|").split("|")]
+        origins = re.findall(r"`([a-z_]+)`", cells[0])
+        targets = re.findall(r"`([a-z_]+)`", cells[-1])
+        assert len(origins) == 1, f"row names {len(origins)} origins: {row}"
+        assert len(targets) == 1, f"row names {len(targets)} targets: {row}"
+        origin, target = origins[0], targets[0]
+        assert origin in rs.WAITING_STATES, f"{origin} is not a waiting state: {row}"
+        legal = rs.FORWARD_TRANSITIONS[origin] | CANCEL_ROUTE
+        assert target in legal, (
+            f"{origin} -> {target} is not a legal successor of {origin}"
+        )
+        documented.setdefault(origin, set()).add(target)
+
     for wait in sorted(rs.WAITING_STATES):
-        assert f"`{wait}`" in table, f"{wait} has no successor row"
-        for target in sorted(rs.FORWARD_TRANSITIONS[wait]):
-            assert f"`{target}`" in table, f"{wait} -> {target} not documented"
+        assert wait in documented, f"{wait} has no successor row"
+        missing = rs.FORWARD_TRANSITIONS[wait] - documented[wait]
+        assert not missing, f"{wait} -> {sorted(missing)} not documented"
 
     # Membership is not enough: EXECUTE every documented successor from `blocked`,
     # supplying whatever the engine requires for that target's class. This is what
