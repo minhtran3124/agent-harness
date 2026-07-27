@@ -41,10 +41,22 @@ stopped**. Read all five sources — each answers a different question, and none
 1. `specs/<slug>/PLAN.md` → `## Status Log` plus the derived `### Progress` checklist: which task
    ids were logged complete, against which commits.
 2. `python3 runtime/run_state.py status --slug <slug>` — the durable FSM state, plus `waiting_on` /
-   `resume_event` when the run was left `blocked` or `escalated`. Exit 3 here means *no run was ever
-   initialized* (a spec predating GitHub issue #129, or one that skipped `/feature-intake`), not that
-   the plan is untouched — fall back to the other three sources and do not try to `init` it into
-   existence (see Step 1's checkpoint for why that produces a wrong state, not a missing one).
+   `resume_event` when the run was left `blocked` or `escalated`.
+
+   **Exit 3 covers two different worlds — read the message, not just the code** (`runtime/run_state.py`
+   → "3 missing/corrupt storage or I/O failure"):
+   - `missing: specs/<slug>/RUN.json` → no run was ever initialized (a spec predating GitHub issue
+     #129, or one that skipped `/feature-intake`). Not the same as "the plan is untouched": fall back
+     to the other four sources, and do not `init` it into existence (Step 1's checkpoint explains why
+     that yields a wrong state rather than a missing one).
+   - anything else, e.g. `corrupt JSON in specs/<slug>/RUN.json: …` → a **damaged tracked run**.
+     Treating this as "never initialized" silently discards a real `blocked` / `waiting_on` state.
+     Try `python3 runtime/run_state.py rebuild --slug <slug>` (it reprojects `RUN.json` from
+     `events.jsonl`); if that also reports corruption, **stop and surface it** — do not resume on a
+     guess about where the run was.
+
+   Note `status` reads the `RUN.json` projection, so a corrupt `events.jsonl` behind a valid
+   projection exits **0** and looks healthy; `rebuild` is what surfaces that one.
 3. `git log --oneline $(git merge-base HEAD <base-branch>)..HEAD` — what actually landed. This is
    the only source that cannot be written by a claim. `<base-branch>` is the branch this work was
    cut from, **not** always `main` (this repo integrates through `loop`). Sanity check the output:
@@ -133,9 +145,10 @@ python3 runtime/run_state.py transition --slug <slug> --to implementing \
   --event plan.execution_started || true
 ```
 
-Exit 3 here means the run was never initialized — `/feature-intake` owns `init`, and a spec that
-reached execution without it (or one predating GitHub issue #129) simply stays untracked. **Do not
-`init` here to "fix" that.** A fresh `init` lands in `queued`, and `queued -> implementing` is not a
+Exit 3 with `missing: …` means the run was never initialized — `/feature-intake` owns `init`, and a
+spec that reached execution without it (or one predating GitHub issue #129) simply stays untracked.
+(Exit 3 with a corruption message is a different problem — see Step -1 source 2.) **Do not `init`
+here to "fix" the missing case.** A fresh `init` lands in `queued`, and `queued -> implementing` is not a
 legal edge (`runtime/run_state.py` → `FORWARD_TRANSITIONS`), so the transition fails exit 2, `|| true`
 swallows it, and the run sits at `queued` while the work is really implementing — `list --active` then
 reports a state that is *wrong* rather than *absent*. An untracked run is honest; a stuck one is not.

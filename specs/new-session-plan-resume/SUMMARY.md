@@ -211,6 +211,25 @@ Both CONFIRMED against live evidence and fixed:**
   "from `proposed` on a first run, or from `paused` when resuming", and Step -1 states the requirement
   explicitly before dispatch.
 
+**Codex round 3 (reviewed commit `7a02fc4`) — 1 P2, CONFIRMED and fixed:**
+
+- **P2-5 — exit 3 conflated "never initialized" with "corrupt storage".** `runtime/run_state.py:32-33`
+  defines 3 as *missing/**corrupt** storage or I/O failure*, but the text said exit 3 means the run was
+  never initialized. A damaged tracked run would therefore be read as an absent one, silently
+  discarding a real `blocked` / `waiting_on` state before resuming. Verified empirically — the two
+  worlds are distinguishable by message, which is now what the skill tells you to read:
+
+  | Case | Output | Exit |
+  |---|---|---|
+  | never initialized | `missing: specs/<slug>/RUN.json` | 3 |
+  | `RUN.json` corrupt | `corrupt JSON in specs/<slug>/RUN.json: …` | 3 |
+  | `events.jsonl` corrupt behind a valid projection | normal state output | **0** |
+
+  Fixed in both places (Step -1 source 2 and the Step 1 checkpoint): `missing:` → fall back to the
+  other four sources; any other exit-3 message → try `rebuild --slug <slug>`, and if that also reports
+  corruption, **stop and surface it** rather than resume on a guess. The third row is called out too,
+  since `status` reads the projection and cannot see a corrupt event log.
+
 **Advisory, not fixed by design:** `specs/slim-skill-surface/PLAN.md:92` (SC-7) and its
 `SUMMARY.md:109` Verify row grep for `"parallel session"` in
 `skills/subagent-driven-development/SKILL.md` and now exit 1. That spec is `status: shipped` and
