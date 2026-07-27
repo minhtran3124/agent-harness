@@ -608,9 +608,17 @@ def test_step_minus_one_covers_every_run_state():
     )
     with open(skill, encoding="utf-8") as f:
         text = f.read()
-    start = text.index("### What the run state means for resuming")
-    end = text.index("When the table says proceed:", start)
-    table = text[start:end]
+    # Read the TABLE ROWS only, not the surrounding prose. Two earlier versions of this
+    # slice were wrong in opposite directions: a sentence anchor that a rewording voided,
+    # then a section-wide slice that went vacuous because the prose also names the states.
+    start = text.index("| Run state | On resume | Why |")
+    rows = []
+    for line in text[start:].splitlines()[2:]:  # skip header + separator
+        if not line.startswith("|"):
+            break
+        rows.append(line)
+    table = "\n".join(rows)
+    assert len(rows) >= 5, f"resume-state table parsed as {len(rows)} rows"
     uncovered = sorted(s for s in rs.ALL_STATES if f"`{s}`" not in table)
     assert not uncovered, f"resume recipe does not classify: {uncovered}"
 
@@ -668,6 +676,30 @@ def test_shipped_plan_stop_exempts_the_repair_states():
     assert "not** a blanket stop" in para
     for repair_state in ("fixing_ci", "addressing_review"):
         assert f"`{repair_state}`" in para, f"{repair_state} not exempted"
+
+
+def test_task_cursor_directive_is_scoped_to_plan_execution_states():
+    """The task-cursor sweep and the Step-0 fall-through apply only to states that
+    actually resume plan execution. `fixing_ci` / `addressing_review` / `verifying`
+    must be routed elsewhere: a failing check is the EXPECTED reason for a repair
+    state, so sweeping tasks there turns a repair into shipped wave work. Pins the
+    scoping against a future edit that re-broadens the directive."""
+    skill = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "skills",
+        "subagent-driven-development",
+        "SKILL.md",
+    )
+    with open(skill, encoding="utf-8") as f:
+        text = f.read()
+    start = text.index("Two of the table's verdicts do not lead here at all")
+    scope = text[start : text.index("Then fall through to Step 0", start)]
+    for excluded in ("fixing_ci", "addressing_review", "verifying"):
+        assert f"`{excluded}`" in scope, f"{excluded} not excluded from the task sweep"
+    for included in ("planning", "implementing", "queued", "investigating"):
+        assert f"`{included}`" in scope, (
+            f"{included} not named as a plan-execution state"
+        )
 
 
 def test_corrupt_log_fails_visibly():

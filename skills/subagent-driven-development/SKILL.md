@@ -157,10 +157,19 @@ non-fatal and therefore silent:
    then edits and ships a cancelled plan with its run frozen. Pinned by
    `test_terminal_run_rejects_resume_transition_at_cli`.
 
-When the table says proceed: **re-run the `Verify` command of every task the log claims complete.** A checkbox is not
-evidence; a passing exit code is. Report the cursor to the user — done / next / blocked — and
-continue from the first task that is not verified green. A task whose `Verify` fails now is not
-done: re-open it before advancing.
+**Two of the table's verdicts do not lead here at all.** `fixing_ci` and `addressing_review` proceed into
+the loop they name and **never** into plan tasks, so the task-cursor directive below and the Step-0
+fall-through do not apply to them: route straight to the CI fix or the review feedback, using the failing
+check or the review thread as the cursor. This matters because a failing check is the *expected* reason
+for being in either state — running the task-cursor sweep there would treat that failure as a plan task
+to re-open, widening a repair into shipped wave work and invalidating the review evidence that repair
+exists to preserve. Same for `verifying`: re-enter the review chain, do not sweep the tasks.
+
+**For the verdicts that do resume plan execution** (`planning`, `implementing`, and `queued` /
+`investigating` after their walk): **re-run the `Verify` command of every task the log claims complete.**
+A checkbox is not evidence; a passing exit code is. Report the cursor to the user — done / next /
+blocked — and continue from the first task that is not verified green. A task whose `Verify` fails now is
+not done: re-open it before advancing.
 
 Then fall through to Step 0 — the four-check plan gate runs on resume exactly as on a first run.
 

@@ -141,6 +141,7 @@ how this spec became the repo's first live run.
 | unit | `python3 -m pytest runtime/test_run_state.py -k covers_every_run_state -q` | 0 | 1 passed — all 16 states classified; mutation-checked (dropping `verifying` fails with "does not classify: ['verifying']") | SC-14 |
 | unit | `python3 -m pytest runtime/test_run_state.py -k only_planning_and_interrupts -q` | 0 | 1 passed — pins that only `planning`/`blocked`/`escalated` reach `implementing` in one hop, and that the skill instructs the walk; mutation-checked against the skill text | SC-15 |
 | unit | `python3 -m pytest runtime/test_run_state.py -k shipped_plan_stop_exempts -q` | 0 | 1 passed — shipped-plan rule stays scoped to plan tasks and keeps exempting `fixing_ci` / `addressing_review`; mutation-checked | SC-16 |
+| unit | `python3 -m pytest runtime/test_run_state.py -k task_cursor_directive -q` | 0 | 1 passed — task sweep scoped to plan-execution states, repair states + `verifying` routed elsewhere; mutation-checked | SC-17 |
 | lint | `bash scripts/lint-skill-bash.sh` | 0 | the edited run-state bash block is shellcheck-clean | |
 | lint | `python3 scripts/check_verify_rows.py specs/new-session-plan-resume` | 0 | all PLAN/SUMMARY rows pipe-free and <60s | |
 | dogfood | `grep -q '3/3 done' specs/new-session-plan-resume/PLAN.md` | 0 | this plan's own Status Log entry, written in the new shape, moved the derived Progress cursor 0/3 → 3/3 — the capability proven end-to-end on itself | SC-7 |
@@ -424,6 +425,35 @@ contradiction the previous fix introduced.**
 - **Regression added** (suite 224 → **225**), pinned as **SC-16**:
   `test_shipped_plan_stop_exempts_the_repair_states` asserts the rule still says "not a blanket stop" and
   still names both repair states. Mutation-checked on a copy — re-broadening the rule fails it.
+
+**Codex round 11 (reviewed commit `6f86af0`) — 1 P2, CONFIRMED and fixed. Third consecutive round whose
+finding is a contradiction inside prose this PR added.**
+
+- The task-cursor directive read "When the table says proceed: re-run the `Verify` of every task…", then
+  fell through to Step 0. But two of the table's proceed verdicts — `fixing_ci`, `addressing_review` —
+  say *proceed into the repair loop, never into plan tasks*. A failing check is the **expected** reason
+  for being in a repair state, so the sweep would treat it as a plan task to re-open: a repair widening
+  into shipped wave work, destroying the review evidence repair exists to protect. Fixed by splitting the
+  directive — the repair states and `verifying` are routed to their own loops, and the sweep is scoped to
+  the states that actually resume plan execution. Pinned as **SC-17**.
+- **A guard of mine went vacuous mid-fix, and only mutation testing caught it.** The coverage test
+  (SC-14) sliced the section between a heading and the sentence "When the table says proceed:" — which
+  this round's edit reworded, so the test errored. The first repair widened the slice to the whole
+  section, which made it **pass while asserting nothing**: the new prose also names the states, so
+  deleting a row from the table no longer failed it. Now it parses the **table rows only**, and both
+  mutations bite by name — dropping `verifying` from the table (while prose keeps it) →
+  `does not classify: ['verifying']`; dropping the terminal row → `['cancelled', 'shipped',
+  'superseded']`. Direct instance of
+  `docs/solutions/harness/mutation-testing-proves-a-suite-is-load-bearing.md`: green was not evidence,
+  and a text-anchored assertion is exactly where that rots.
+
+**Structural conclusion, filed not built: issue #175.** Rounds 8, 10 and 11 were all internal
+contradictions in hand-maintained state prose, not defects in what the feature does. Step -1 now carries
+a 16-state table, five stop conditions, three exit-3 branches and four consistency guards written as
+tests that read the prose. That is a state machine described in English and checked by string matching —
+the wrong medium. The proposal (extract the reconstruction into a script the skill calls, so the logic is
+executed and unit-tested instead of narrated) is a new public callable and a scope expansion, so it is
+**not** bundled here — same reasoning as #174.
 
 **Advisory, not fixed by design:** `specs/slim-skill-surface/PLAN.md:92` (SC-7) and its
 `SUMMARY.md:109` Verify row grep for `"parallel session"` in
