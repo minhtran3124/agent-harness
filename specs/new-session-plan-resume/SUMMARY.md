@@ -194,6 +194,23 @@ local oracles cannot substitute for. Two P2 findings:**
   `branches: [main, loop]` and performs the terminal `--to shipped` transition on merge. `ready_to_merge`
   is the correct non-terminal state for a PR awaiting merge, so no change made.
 
+**Codex round 2 (reviewed commit `02e27a8`) — both P2s land on the source-5 text round 1 produced.
+Both CONFIRMED against live evidence and fixed:**
+
+- **P2-3 — `specs/STATE.md` is a global slot; match the slug before consuming it.** The round-1 fix
+  told a resuming session to read the `## Active Spec` blocker without checking whose spec it belongs
+  to. Live counter-example in this very repo: that block currently names `review-chain-benchmark`,
+  `Updated: 2026-07-15` — a *different* spec, 12 days stale — so resuming spec A would have imported
+  spec B's blocker. Now gated on `- **Slug:**` matching `<slug>` and a non-stale `- **Updated:**`,
+  with the reason stated: sources 1–4 are slug-scoped, this is the only one that can lie about whose
+  state it is.
+- **P2-4 — a `paused` plan must be reactivated or blast-radius protection stays off.** Step 1's
+  transition was written `proposed → active` only, and `hooks/blast-radius-check.sh:32,38` states
+  `status: active` is the ONLY thing that arms the hook. Resuming a parked plan would therefore have
+  run the whole batch with blast-radius silently disarmed. Fixed in both places: Step 1 now reads
+  "from `proposed` on a first run, or from `paused` when resuming", and Step -1 states the requirement
+  explicitly before dispatch.
+
 **Advisory, not fixed by design:** `specs/slim-skill-surface/PLAN.md:92` (SC-7) and its
 `SUMMARY.md:109` Verify row grep for `"parallel session"` in
 `skills/subagent-driven-development/SKILL.md` and now exit 1. That spec is `status: shipped` and

@@ -57,12 +57,23 @@ stopped**. Read all five sources — each answers a different question, and none
    as merely *not started* when it is in fact **blocked**; only this one carries the blocker and its
    context. Skip the `## Session End Log` breadcrumbs — they are session noise, not plan state.
 
+   **Consume it only when it is about your slug.** This block is a single global slot, overwritten by
+   whatever ran last, and `specs/STATE.md` itself says to treat it as idle once it is >7 days old. So:
+   read `- **Slug:**` first, and if it is not `<slug>`, or `- **Updated:**` is stale, this source
+   carries **no signal for you** — ignore it rather than importing another spec's blocker. Sources 1–4
+   are all slug-scoped; this one is the only one that can lie about whose state it is.
+
 Then **re-run the `Verify` command of every task the log claims complete.** A checkbox is not
 evidence; a passing exit code is. Report the cursor to the user — done / next / blocked — and
 continue from the first task that is not verified green. A task whose `Verify` fails now is not
 done: re-open it before advancing.
 
 Then fall through to Step 0 — the four-check plan gate runs on resume exactly as on a first run.
+
+**If the plan is `status: paused`, set it back to `active` before dispatching the resumed batch.**
+Step 1's transition is written `proposed → active` and does not cover this case, and
+`hooks/blast-radius-check.sh` arms on `status: active` and nothing else — so resuming a paused plan
+without flipping it means every edit in that batch runs with blast-radius protection silently off.
 
 **Granularity of control.** In a separate session there is no orchestrator watching each task, so
 execute in **batches with a checkpoint between them**: run a batch, report what landed and what
@@ -107,8 +118,9 @@ recovery path, not the intended one.
 on the lane-appropriate dedicated branch. Keep the auto-correct rule path in every implementer
 prompt because subagents cannot rely on the orchestrator's copy.
 
-**Next — mark the plan active.** Before dispatching wave 1, set the frontmatter
-`status: proposed → active` in `specs/<slug>/PLAN.md` (canonical values only:
+**Next — mark the plan active.** Before dispatching wave 1, set the frontmatter to
+`status: active` in `specs/<slug>/PLAN.md` — from `proposed` on a first run, or from `paused` when
+resuming a plan an earlier session parked (canonical values only:
 `proposed | active | paused | shipped`). `hooks/blast-radius-check.sh` keys on `status: active` to
 identify the active plan, and the edit auto-re-renders `PLAN.html` via `render-plan-on-write.sh`.
 Append commit shas to `## Status Log` after each wave (`rules/wave-parallelism.md`); the `shipped`
