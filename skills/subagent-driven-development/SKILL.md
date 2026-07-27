@@ -125,11 +125,18 @@ state, `test_step_minus_one_covers_every_run_state` fails until this table cover
 | `cancelled`, `superseded`, `shipped` | **STOP — human decision** | Someone ended this run deliberately, or it already shipped. Resuming is a decision, not a cursor question. See the hidden-rejection hazard below. |
 
 **The run state is not the only lifecycle — check `PLAN.md` too.** `finishing-a-development-branch`
-Step 4 marks the plan `status: shipped` **before** the push, so a plan can sit `shipped` while its PR is
-still open (this spec's own `PLAN.md` demonstrates exactly that combination). A `shipped` plan on an
-unmerged branch means the work is in review, not available for resumption: **stop and report** rather
-than execute tasks against it. Two things would otherwise go wrong at once — new commits invalidate the
-review receipt, and `hooks/blast-radius-check.sh` stays disarmed because the plan is not `active`.
+marks the plan `status: shipped` **before** the push and the PR (Step 3.1, ahead of 3.2/3.4), so a plan
+sits `shipped` while its PR is still open — this spec's own `PLAN.md` demonstrates exactly that
+combination.
+
+**A `shipped` plan bars plan-task execution, and nothing else.** Do not run waves against it: the work
+is already in review, new commits invalidate the review receipt, and `hooks/blast-radius-check.sh` is
+disarmed anyway because the plan is not `active`. But this is **not** a blanket stop — the two repair
+states above (`fixing_ci`, `addressing_review`) *necessarily* meet a shipped plan, since they only exist
+after the PR does. They proceed per the table, into the CI or review fix they name. Reading this as a
+full stop would block exactly the work such a resume was started for. Because the plan is `shipped`
+rather than `active` during repair, blast-radius is not watching: keep those edits tight to the failing
+check, and treat anything wider as a signal to re-open the plan properly instead.
 
 **Two reasons the STOP rows are load-bearing rather than advice**, both because Step 1's checkpoint is
 non-fatal and therefore silent:

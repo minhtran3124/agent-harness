@@ -140,6 +140,7 @@ how this spec became the repo's first live run.
 | unit | `python3 -m pytest runtime/test_run_state.py -k terminal_run_rejects -q` | 0 | 1 passed — terminal run rejects the checkpoint at the CLI layer (exit 2, state unchanged) | SC-13 |
 | unit | `python3 -m pytest runtime/test_run_state.py -k covers_every_run_state -q` | 0 | 1 passed — all 16 states classified; mutation-checked (dropping `verifying` fails with "does not classify: ['verifying']") | SC-14 |
 | unit | `python3 -m pytest runtime/test_run_state.py -k only_planning_and_interrupts -q` | 0 | 1 passed — pins that only `planning`/`blocked`/`escalated` reach `implementing` in one hop, and that the skill instructs the walk; mutation-checked against the skill text | SC-15 |
+| unit | `python3 -m pytest runtime/test_run_state.py -k shipped_plan_stop_exempts -q` | 0 | 1 passed — shipped-plan rule stays scoped to plan tasks and keeps exempting `fixing_ci` / `addressing_review`; mutation-checked | SC-16 |
 | lint | `bash scripts/lint-skill-bash.sh` | 0 | the edited run-state bash block is shellcheck-clean | |
 | lint | `python3 scripts/check_verify_rows.py specs/new-session-plan-resume` | 0 | all PLAN/SUMMARY rows pipe-free and <60s | |
 | dogfood | `grep -q '3/3 done' specs/new-session-plan-resume/PLAN.md` | 0 | this plan's own Status Log entry, written in the new shape, moved the derived Progress cursor 0/3 → 3/3 — the capability proven end-to-end on itself | SC-7 |
@@ -405,6 +406,24 @@ work, with two failures at once: new commits invalidate the review receipt, and
   **issue #174** with the reproduction, the suggested direction (validate in `read_events`, fail
   `StorageError`/exit 3 so every existing caller inherits it), and the compatibility question that
   should be settled first.
+
+**Codex round 10 (reviewed commit `f3df0cf`) — 1 P2, CONFIRMED and fixed. The finding is a
+contradiction the previous fix introduced.**
+
+- The round-8.5 plan-lifecycle rule was written as a blanket stop ("a `shipped` plan … is not available
+  for resumption: stop and report"), which contradicts the table two paragraphs above it, where
+  `fixing_ci` and `addressing_review` are told to **proceed**. And those two states *necessarily* meet a
+  shipped plan: `finishing-a-development-branch` marks the plan `shipped` at Step 3.1, ahead of the push
+  (3.2) and the PR (3.4) — so a repair state, which only exists after the PR does, always finds
+  `status: shipped`. Reading the rule as a full stop would block exactly the CI or review fix such a
+  resume was started for.
+- Fixed by scoping the rule to what it is actually about: a shipped plan bars **plan-task execution**,
+  nothing else, with the two repair states named as explicit exemptions. Added the honest consequence
+  too — during repair the plan is `shipped`, not `active`, so `hooks/blast-radius-check.sh` is not
+  watching: keep those edits tight to the failing check.
+- **Regression added** (suite 224 → **225**), pinned as **SC-16**:
+  `test_shipped_plan_stop_exempts_the_repair_states` asserts the rule still says "not a blanket stop" and
+  still names both repair states. Mutation-checked on a copy — re-broadening the rule fails it.
 
 **Advisory, not fixed by design:** `specs/slim-skill-surface/PLAN.md:92` (SC-7) and its
 `SUMMARY.md:109` Verify row grep for `"parallel session"` in

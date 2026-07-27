@@ -649,6 +649,27 @@ def test_only_planning_and_interrupts_reach_implementing_directly():
     assert "walk the run state forward first" in text
 
 
+def test_shipped_plan_stop_exempts_the_repair_states():
+    """The shipped-plan rule bars plan-task execution only. `fixing_ci` and
+    `addressing_review` always meet a shipped plan — finishing marks the plan shipped
+    before the PR exists, and those states only exist after it — so a blanket stop
+    would block the very fixes such a resume was started for. Pins the exemption
+    against a future edit that re-broadens the rule."""
+    skill = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "skills",
+        "subagent-driven-development",
+        "SKILL.md",
+    )
+    with open(skill, encoding="utf-8") as f:
+        text = f.read()
+    start = text.index("A `shipped` plan bars plan-task execution")
+    para = text[start : start + 1200]
+    assert "not** a blanket stop" in para
+    for repair_state in ("fixing_ci", "addressing_review"):
+        assert f"`{repair_state}`" in para, f"{repair_state} not exempted"
+
+
 def test_corrupt_log_fails_visibly():
     rs.main(["init", "--slug", "demo", "--run-id", "r1"])
     with open("specs/demo/events.jsonl", "a") as f:
