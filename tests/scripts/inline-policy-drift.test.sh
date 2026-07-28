@@ -4,11 +4,12 @@
 # PR #141 P2 escaped because an inline copy of the Rule-4 STOP list (in the
 # correctness reviewer prompt) had silently drifted to a 5-of-8 subset of the
 # authoritative source. This test is the standing guard: the STOP list lives
-# canonically in rules/auto-correct-scope.md (the REGISTRY) and is duplicated,
-# in prose, into the correctness-review skill files (the COPIES below). We parse
-# the registry's case set down to a per-case anchor KEYWORD, assert every keyword
-# appears in the registry AND in each copy, and mutation-check ourselves (drop
-# one case from a temp copy → detected) so the lint is provably load-bearing.
+# canonically in rules/auto-correct-scope.md (the REGISTRY) and is composed into
+# every correctness reviewer prompt from the shared prompt fragment (the COPIES
+# below). We parse the registry's case set down to a per-case anchor KEYWORD,
+# assert every keyword appears in the registry AND in each composed-policy source,
+# and mutation-check ourselves (drop one case from a temp copy → detected) so the
+# lint is provably load-bearing.
 #
 # Keyword, not phrase: registry and copy wording have legitimately drifted
 # (registry "Removing existing functionality" vs a copy's "removing existing
@@ -24,10 +25,10 @@ source "$(dirname "$0")/../lib.sh"
 # Canonical source of the STOP list.
 REGISTRY="rules/auto-correct-scope.md"
 
-# Known inline copies of the STOP list. Adding a future copy is one line here.
+# Prompt fragments which contribute the STOP list. Adding a future policy-bearing
+# fragment is one line here.
 COPIES=(
-  "skills/correctness-review/correctness-reviewer-prompt.md"
-  "skills/correctness-review/SKILL.md"
+  "skills/correctness-review/prompts/shared.md"
 )
 
 # The 8 Rule-4 STOP cases, as per-case anchor keywords (see auto-correct-scope.md
@@ -48,7 +49,7 @@ KEYWORDS=(
 # non-zero (and prints the first missing keyword to stderr) otherwise.
 # Whitespace is collapsed so a keyword split across a line break still matches.
 stop_list_ok() {
-  local text; text=$(tr '[:space:]' ' ' < "$1/$2")
+  local text; text=$(tr -s '[:space:]' ' ' < "$1/$2")
   local kw
   for kw in "${KEYWORDS[@]}"; do
     if ! printf '%s' "$text" | grep -qiF "$kw"; then
@@ -64,7 +65,7 @@ if stop_list_ok "$ROOT" "$REGISTRY" 2>/dev/null; then pass
 else fail "a KEYWORD is not present in the registry — anchors drifted from the source"; fi
 
 for copy in "${COPIES[@]}"; do
-  t "inline copy covers all 8 STOP cases: $copy"
+  t "composed policy source covers all 8 STOP cases: $copy"
   if miss=$(stop_list_ok "$ROOT" "$copy" 2>&1); then pass
   else fail "$copy is missing a STOP case ($miss) — it has drifted from $REGISTRY"; fi
 done

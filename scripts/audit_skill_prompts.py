@@ -200,7 +200,7 @@ def main() -> int:
     parser.add_argument("--check-baseline", type=Path, help="compare current inventory to JSON")
     parser.add_argument("--validate-inventory", type=Path, help="validate a pinned inventory without comparing it to current source")
     parser.add_argument("--compare", nargs=2, type=Path, metavar=("BASELINE", "CANDIDATE"),
-                        help="verify a candidate inventory reduces total words by at least 25%")
+                        help="verify a candidate inventory reduces total words by at least 25%%")
     args = parser.parse_args()
 
     try:
