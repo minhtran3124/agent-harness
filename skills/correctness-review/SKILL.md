@@ -1,189 +1,37 @@
 ---
 name: correctness-review
-description: Run one adversarial correctness review over a diff — assumes ≥1 runtime bug exists and hunts for it (None/async/DB/auth/concurrency/contract breaks), independent of any plan or spec. Find→score→threshold(75)→classify→fix-loop. Invokable standalone on any diff, and called by subagent-driven-development as its final pre-ship gate. Not a style/cleanup pass; for that use /code-review.
+description: Run an adversarial runtime-correctness review over a diff. Independently find, score, route, and close concrete bugs before a PR; use standalone or as SDD’s final pre-ship gate.
 ---
 
 # Adversarial Correctness Review
 
-Run **one** adversarial correctness review over a diff and route every surviving finding to a
-fix or a durable record. The pipeline is FIND → SCORE → THRESHOLD → classify → fix-loop, backed
-by `./correctness-reviewer-prompt.md` (high-recall finder) and `./correctness-scorer-prompt.md`
-(cheap-model scorer).
+Review runtime behavior, not style or plan compliance. Determine the intended `BASE..HEAD` range
+(merge-base for a branch, working-tree diff for uncommitted work, explicit range when supplied).
+In SDD, use the commit before task 1 through current HEAD.
 
-**Two entry points, one pipeline:**
+## Pipeline
 
-- **Standalone** — `/correctness-review` on any diff, ad-hoc, outside the workflow gates. Use it
-  on a branch before a PR, on uncommitted work, or on any range you name.
-- **In-flow** — `subagent-driven-development` calls this as its always-on final pass after all
-  tasks pass their spec + quality reviews, before `finishing-a-development-branch`.
+1. Read `review-config.json`, then render six independent FIND prompts from `correctness-reviewer-prompt.md`: enclosing-function,
+   removed-behavior, call-site-impact, stack-defects, guard-completeness, and prior-art. Each
+   candidate names a concrete trigger and wrong result.
+2. Deduplicate by `(file, line)`. Angles are provenance only—never evidence and never scorer input.
+3. Dispatch one independent SCORE prompt per remaining location using
+   `correctness-scorer-prompt.md`. The scorer reads the code/diff, not finder reasoning.
+4. Route scores at the configured threshold to classification; record lower scores as advisory in
+   `SUMMARY.md` (or inline standalone). Never lower the threshold below its configured floor.
+5. Before classifying, **read `.claude/rules/auto-correct-scope.md`**. Rule 1–3 findings may be
+   fixed; Rule 4 is STOP and goes to `ESCALATIONS.md` (or directly to the user standalone).
+6. Re-review each Rule 1–3 fix. Cap each finding at three rounds; if open blocking findings do not
+   decrease and the reviewed diff hash is unchanged, escalate immediately.
 
-**Why this stage exists.** Per-task spec and quality reviewers are anchored to the plan as the
-oracle — spec review asks *"does it match the spec?"*, quality review asks *"is it clean?"*.
-Neither asks *"even if the spec is right, does this code fail at runtime?"*. A bug that faithfully
-implements a flawed spec passes both. This is the gap that lets real bugs survive to production
-and get caught by external reviewers post-push.
+The scorer owns anchor scores, unreadable-code caps, JSON schema, and threshold rationale. The
+finder owns the six-angle methods and output shape. Compose isolated child prompts with
+`scripts/render_skill_prompt.py`; never assume they inherited controller context.
 
-## When to Use
+## Completion gate
 
-- Before opening a PR or merging a branch — a final bug hunt over the whole change.
-- After any implementation, when you want correctness coverage decoupled from the full workflow.
-- Automatically, as the final gate inside `subagent-driven-development` (no manual call needed).
+Before reporting success or handing to `finishing-a-development-branch`, every finding is either
+fixed with a commit SHA or durably recorded: advisory/carry-over in `SUMMARY.md`, or a STOP/capped
+blocker in `ESCALATIONS.md`. Anything else blocks completion.
 
-Not for style, naming, or maintainability — that is `/code-review`'s cleanup pass or the per-task
-quality reviewer. This skill hunts **runtime bugs only**.
-
-## Determine the diff range
-
-The finder needs a `BASE_SHA..HEAD_SHA` range (and the list of touched files):
-
-- **Standalone, branch vs main:** `BASE = git merge-base main HEAD`, `HEAD = HEAD`.
-- **Standalone, uncommitted work:** review the working tree (`git diff` / `git diff --staged`);
-  stage or stash as needed so the reviewer sees the intended change.
-- **Standalone, explicit range:** the user names `BASE`/`HEAD` or a PR.
-- **In-flow:** `BASE` = commit before task 1, `HEAD` = current commit after all tasks.
-
-## Pipeline — FIND (6 angles) → dedup → SCORE → THRESHOLD(75) → classify → fix-loop (budget: max 3 rounds + progress guard)
-
-**What makes this pass different from the other reviewers:**
-
-- **Ignores the plan.** Checks what the code does at runtime, not what someone intended.
-- **Assumes a bug exists.** Looks for defects rather than confirming compliance.
-- **Whole-diff.** Runs once over the entire change, so it catches integration bugs spanning
-  several commits or tasks — invisible to any single per-task review.
-- **Different model.** Dispatched with a different (ideally most capable) model than the one that
-  wrote the code. A different model finds different bugs.
-
-1. **FIND — six angles, in parallel** (`./correctness-reviewer-prompt.md`). Not one reviewer with
-   a checklist: six subagents, each in its own context, each looking by a different **method**.
-   Each returns at most 6 candidates, and every candidate must name a concrete trigger (the input
-   or state that reaches the bug) and the wrong outcome it produces.
-
-   Each angle is named for its method — the name is what the agent reports under, and what the
-   dedup step records as provenance.
-
-   | Angle | Method |
-   |---|---|
-   | **`enclosing-function`** | Read each changed hunk, then the **whole function containing it**. Bugs on unmodified lines inside a changed function are in scope, marked `unmodified-line`. |
-   | **`removed-behavior`** | For every deleted or replaced line, state what it enforced, then find where the new code re-establishes it. If it does not, that is a finding. |
-   | **`call-site-impact`** | Grep the callers and callees of every changed signature; check for a broken precondition, changed return shape, new exception, or new ordering requirement. |
-   | **`stack-defects`** | The None/async/DB/auth/concurrency/contract checklist — adapted to whatever language the diff is actually in. |
-   | **`guard-completeness`** | Where the code guards against failure, does the guard cover *every* way it can fail, or only the ones the author had in mind? |
-   | **`prior-art`** | Read `docs/solutions/` and check the diff against the failures this repo has already paid for, by name. |
-
-   `enclosing-function` and `removed-behavior` are the two the old single-finder checklist could not
-   reach, because they are not defect classes — they are procedures. That gap was not theoretical:
-   the PR #51 review's most valuable finding sat entirely on lines the diff never modified.
-
-   > The benchmark results under `evals/skills/review-chain/results/` predate this naming and refer to
-   > the angles as `A`–`F`, in the table's order.
-
-2. **Dedup by `(file, line)`.** Several angles will land on the same location. Merge them into one
-   candidate and record which angles reported it. **Agreement between angles is provenance, not
-   evidence** — it does not raise the score, and the angle list is *not* passed to the scorer.
-   Angles sharing a blind spot agree just as readily as angles sharing an insight.
-
-3. **SCORE** (`./correctness-scorer-prompt.md`) — a cheap-model agent scores each deduplicated
-   location 0–100 in independent context (no access to the finder's reasoning). One scorer per
-   location; dispatch in parallel. Rubric: 0 = false positive, pre-existing, or not on a changed
-   line · 25 = maybe real, unverified · 50 = real but minor or rare · 75 = highly confident ·
-   100 = certain, confirmed by code. Score 0 automatically when `ruff-on-edit`,
-   `commit-quality-gate`, or `risk-corroboration` would already catch it. **Cap at 50 any finding
-   that rests on a file the reviewer could not read** — `not_observed != absent`.
-
-   > **Why a precision gate, and why we did not adopt `/code-review`'s verifier.** The built-in
-   > `/code-review` verifies its own findings with a `CONFIRMED / PLAUSIBLE / REFUTED` ladder that
-   > is *recall*-biased by its own instruction ("PLAUSIBLE by default — do not refute for being
-   > speculative"). In a tree where a dependency cannot be read, nothing is constructible, so
-   > nothing gets refuted and every speculation survives. That is correct for a high-recall finder
-   > and wrong for a gate. Measured on `evals/skills/review-chain` (2026-07-13): run without a
-   > precision gate, it asserted three defects that the fixtures had each named **in advance** as
-   > false positives. SCORE filters the opposite direction. It stays.
-
-4. **THRESHOLD** — findings scoring below **75** do not enter the fix-loop. They are recorded as
-   `advisory` in `specs/<slug>/SUMMARY.md` under `### Advisory Findings` (reported inline in
-   standalone use with no slug). **Below-threshold does not mean discarded** — every
-   `unmodified-line` finding scores 0 by rule and lands here, real and reported, simply not
-   auto-fixed. Adjustable: raise it when false-positive noise is a known problem. **Never set it
-   to 50 or below** — that would admit every unreadable-file finding the cap exists to hold back.
-   Floor: 60.
-
-5. **Two-axis classification.** Findings that survive the threshold carry two labels:
-
-- **Severity** — `P0` (data loss / security / crash) · `P1` (wrong output / broken path) ·
-  `P2` (degraded behavior, non-fatal) · `P3` (minor correctness issue)
-- **Rule class** — per `.claude/rules/auto-correct-scope.md`: `Rule 1` (auto-fix obvious bug) ·
-  `Rule 2` (auto-add missing standards) · `Rule 3` (auto-fix blocker) · `Rule 4` (STOP — needs
-  architectural judgment)
-
-6. **Residual gate + fix-loop.** See below.
-
-## Fix routing by Rule class
-
-> Before routing, **Read `.claude/rules/auto-correct-scope.md`** for the full Rule 4 STOP list
-> (schema · API contract · removing behavior · new external dep · auth/authz · session/txn scope ·
-> high-blast file `settings.json`/`hooks/*`/skill engine · replacing a service). It is path-scoped
-> (`paths: specs/**`), so it does not auto-load when the reviewed diff is outside `specs/**` —
-> misclassifying a Rule 4 as Rule 1–3 would send an architectural change into the auto-fix loop.
-
-- **Rule 1–3** → implementer auto-fixes (fresh dispatch) → re-review → loop under the budget below.
-  Log each fix as a deviation in `SUMMARY.md` when a slug is in play.
-- **Rule 4** → STOP immediately. Do not attempt a fix. Write the finding to
-  `specs/<slug>/ESCALATIONS.md` (or surface it directly to the user in standalone use) before
-  proceeding. The plan was wrong or underspecified; a human must narrow scope.
-
-## Loop budget (cap + progress guard)
-
-The Rule 1–3 fix→re-review loop is bounded. It does not run until ✅ unconditionally.
-
-- **Cap.** At most **max 3** fix→re-review rounds per finding. The round counter is in-session
-  orchestrator state — the review receipt schema is unchanged. On reaching the cap: stop retrying,
-  write the finding to `specs/<slug>/ESCALATIONS.md` (standalone: surface it directly to the user),
-  and record the rounds used in `SUMMARY.md` under `Deviations`. Rationale: three fresh-context
-  fix attempts that still fail to close a finding indicate a plan/spec problem, not a coding slip —
-  the blocker class `orchestration.md` already escalates ("the plan itself is wrong").
-- **Progress guard.** After each round, hash the full reviewed diff and compare against the
-  previous round. Compute it pipe-free: `git diff <base>..HEAD > /tmp/round.diff` then
-  `git hash-object /tmp/round.diff` (`<base>` = the base of the reviewed diff range; standalone:
-  the range the review was invoked with). If the open blocking count did **not** decrease **and**
-  the diff hash is unchanged versus the previous round → escalate immediately: the fix is a no-op
-  or the loop is ping-ponging, and further rounds will not converge.
-- **Mid-loop findings.** A finding first surfaced mid-loop starts its own counter at **1** — it is
-  not charged for rounds spent on other findings.
-
-The residual-work gate below (fixed ✅ or durably recorded) is unchanged: a capped or
-progress-guard-escalated finding is durably recorded via `ESCALATIONS.md` (or the standalone
-surface), which satisfies the gate.
-
-## Residual work gate
-
-Before reporting done (in-flow: before handing off to `finishing-a-development-branch`), every
-finding must be in one of two states: fixed (✅, with a commit sha) or durably recorded
-(`SUMMARY.md` for Rule 1–3 carry-overs, `ESCALATIONS.md` for Rule 4 blocks; or surfaced inline in
-standalone use). A finding with neither is a hard block — do not report success.
-
-## Relationship to other review skills
-
-- **`/code-review` (built-in):** a **sibling**, not a component. It reviews correctness *and*
-  cleanup (reuse, simplification, efficiency, conventions) at several effort levels, plus a cloud
-  `ultra` mode. Run it standalone for an ad-hoc sweep with no gates. It does not replace this
-  skill and this skill does not invoke it.
-
-  **What we measured, and what we took.** On `evals/skills/review-chain` (2026-07-13) we tested
-  replacing this skill's finder with `/code-review`. It matched recall (3/3) but produced **3 hard
-  false positives against a baseline of 0** — each one a false positive the fixture had named in
-  advance — and cost 10–15× the tokens (`results/2026-07-13-code-review-swap.md`). **The swap was
-  rejected.** A second stage that ran it as an additional engine (FIND-B) was also built, measured
-  against its cost, and **deleted**: parallel angles inside our own finder buy the same diversity
-  for roughly a tenth of the tokens.
-
-  What we *did* take is its **structure**: reviewing by several independent angles rather than one
-  checklist. The `enclosing-function`, `removed-behavior`, `call-site-impact`, and
-  `guard-completeness` angles all come from reading its source. Its recall-biased verdict ladder we
-  deliberately did not take — see the SCORE callout above.
-- **`subagent-driven-development`:** calls this skill as its final adversarial gate. Invoking
-  `/correctness-review` standalone runs the exact same pipeline without the rest of the workflow.
-
-## Prompt Templates
-
-- `./correctness-reviewer-prompt.md` — the FIND stage: six angles, dispatched in parallel over the whole diff.
-- `./correctness-scorer-prompt.md` — the SCORE stage: one cheap-model scorer per deduplicated location (0–100, threshold 75).
+`/code-review` is a sibling cleanup review, not a replacement for this runtime-bug oracle.

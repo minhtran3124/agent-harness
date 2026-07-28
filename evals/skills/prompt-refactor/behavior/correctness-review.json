@@ -1,0 +1,22 @@
+{
+  "cases": [
+    {
+      "id": "correctness-review-golden",
+      "skill": "correctness-review",
+      "kind": "golden",
+      "expectation": "review a complete diff"
+    },
+    {
+      "id": "correctness-review-boundary",
+      "skill": "correctness-review",
+      "kind": "boundary",
+      "expectation": "route a Rule 4 finding to escalation"
+    },
+    {
+      "id": "correctness-review-handoff",
+      "skill": "correctness-review",
+      "kind": "handoff",
+      "expectation": "deduplicate and score candidates"
+    }
+  ]
+}

@@ -1,0 +1,116 @@
+{
+  "cases": [
+    {
+      "id": "subagent-driven-development-trigger-1",
+      "skill": "subagent-driven-development",
+      "query": "Execute the active implementation plan in waves with isolated implementers and reviews.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "subagent-driven-development-trigger-2",
+      "skill": "subagent-driven-development",
+      "query": "Before we touch code, execute the active implementation plan in waves with isolated implementers and reviews.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "subagent-driven-development-trigger-3",
+      "skill": "subagent-driven-development",
+      "query": "I am unsure of the safest workflow; execute the active implementation plan in waves with isolated implementers and reviews.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "subagent-driven-development-trigger-4",
+      "skill": "subagent-driven-development",
+      "query": "Please do this in the repository: execute the active implementation plan in waves with isolated implementers and reviews.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "subagent-driven-development-trigger-5",
+      "skill": "subagent-driven-development",
+      "query": "This is time-sensitive, but execute the active implementation plan in waves with isolated implementers and reviews.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "subagent-driven-development-trigger-6",
+      "skill": "subagent-driven-development",
+      "query": "Use the project workflow to execute the active implementation plan in waves with isolated implementers and reviews.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "subagent-driven-development-trigger-7",
+      "skill": "subagent-driven-development",
+      "query": "Can you take ownership of this request? Execute the active implementation plan in waves with isolated implementers and reviews.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "subagent-driven-development-trigger-8",
+      "skill": "subagent-driven-development",
+      "query": "Do not implement anything else; execute the active implementation plan in waves with isolated implementers and reviews.",
+      "should_trigger": true,
+      "split": "holdout"
+    },
+    {
+      "id": "subagent-driven-development-near-miss-1",
+      "skill": "subagent-driven-development",
+      "query": "Create an implementation plan from this approved design.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "subagent-driven-development-near-miss-2",
+      "skill": "subagent-driven-development",
+      "query": "Do only this instead: create an implementation plan from this approved design.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "subagent-driven-development-near-miss-3",
+      "skill": "subagent-driven-development",
+      "query": "The user asked us to create an implementation plan from this approved design.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "subagent-driven-development-near-miss-4",
+      "skill": "subagent-driven-development",
+      "query": "This request is adjacent but distinct: create an implementation plan from this approved design.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "subagent-driven-development-near-miss-5",
+      "skill": "subagent-driven-development",
+      "query": "Do not route to the wrong specialist; create an implementation plan from this approved design.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "subagent-driven-development-near-miss-6",
+      "skill": "subagent-driven-development",
+      "query": "For this branch, create an implementation plan from this approved design.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "subagent-driven-development-near-miss-7",
+      "skill": "subagent-driven-development",
+      "query": "Handle the direct request: create an implementation plan from this approved design.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "subagent-driven-development-near-miss-8",
+      "skill": "subagent-driven-development",
+      "query": "The next action should be: create an implementation plan from this approved design.",
+      "should_trigger": false,
+      "split": "holdout"
+    }
+  ]
+}

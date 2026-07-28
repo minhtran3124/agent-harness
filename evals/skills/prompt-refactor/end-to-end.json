@@ -1,0 +1,29 @@
+{
+  "cases": [
+    {
+      "id": "e2e-tiny",
+      "lane": "tiny",
+      "expectation": "branch then direct edit with SUMMARY evidence"
+    },
+    {
+      "id": "e2e-normal",
+      "lane": "normal",
+      "expectation": "isolate, execute plan, review, and open PR"
+    },
+    {
+      "id": "e2e-high-risk",
+      "lane": "high-risk",
+      "expectation": "design, research, plan, execution, review, and receipt"
+    },
+    {
+      "id": "e2e-resume",
+      "lane": "normal",
+      "expectation": "reconstruct cursor before any resumed task"
+    },
+    {
+      "id": "e2e-workflow-engine",
+      "lane": "high-risk",
+      "expectation": "context-propagation audit precedes correctness and intent"
+    }
+  ]
+}

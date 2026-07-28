@@ -1,0 +1,22 @@
+{
+  "cases": [
+    {
+      "id": "subagent-driven-development-golden",
+      "skill": "subagent-driven-development",
+      "kind": "golden",
+      "expectation": "execute a valid plan"
+    },
+    {
+      "id": "subagent-driven-development-boundary",
+      "skill": "subagent-driven-development",
+      "kind": "boundary",
+      "expectation": "stop on an invalid or blocked resume state"
+    },
+    {
+      "id": "subagent-driven-development-handoff",
+      "skill": "subagent-driven-development",
+      "kind": "handoff",
+      "expectation": "run final review receipt chain"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "cases": [
+    {
+      "id": "context-propagation-audit-golden",
+      "skill": "context-propagation-audit",
+      "kind": "golden",
+      "expectation": "audit a workflow-engine change"
+    },
+    {
+      "id": "context-propagation-audit-boundary",
+      "skill": "context-propagation-audit",
+      "kind": "boundary",
+      "expectation": "skip a non-workflow diff"
+    },
+    {
+      "id": "context-propagation-audit-handoff",
+      "skill": "context-propagation-audit",
+      "kind": "handoff",
+      "expectation": "report delivery proof for every consumer"
+    }
+  ]
+}

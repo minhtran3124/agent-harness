@@ -1,0 +1,22 @@
+{
+  "cases": [
+    {
+      "id": "intent-review-golden",
+      "skill": "intent-review",
+      "kind": "golden",
+      "expectation": "review verbatim intent"
+    },
+    {
+      "id": "intent-review-boundary",
+      "skill": "intent-review",
+      "kind": "boundary",
+      "expectation": "stop when no intent oracle exists"
+    },
+    {
+      "id": "intent-review-handoff",
+      "skill": "intent-review",
+      "kind": "handoff",
+      "expectation": "record gap excess or drift"
+    }
+  ]
+}

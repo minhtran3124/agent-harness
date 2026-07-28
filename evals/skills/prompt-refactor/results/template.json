@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "commit_sha": "<git sha>",
+  "environment": {
+    "model": "<pinned model snapshot>",
+    "client_version": "<client version>",
+    "reasoning": "<reasoning setting>"
+  },
+  "records": [
+    {
+      "case_id": "<stable case id>",
+      "skill": "<registered skill>",
+      "suite": "activation",
+      "split": "holdout",
+      "first_run": true,
+      "observation": "<concise observed behavior and evidence>",
+      "verdict": "pass",
+      "safety_critical": false,
+      "tokens": 0,
+      "tool_calls": 0,
+      "elapsed_ms": 0
+    }
+  ]
+}

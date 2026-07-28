@@ -1,0 +1,116 @@
+{
+  "cases": [
+    {
+      "id": "intent-review-trigger-1",
+      "skill": "intent-review",
+      "query": "Compare this completed diff against the user's original request, not the plan.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "intent-review-trigger-2",
+      "skill": "intent-review",
+      "query": "Before we touch code, compare this completed diff against the user's original request, not the plan.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "intent-review-trigger-3",
+      "skill": "intent-review",
+      "query": "I am unsure of the safest workflow; compare this completed diff against the user's original request, not the plan.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "intent-review-trigger-4",
+      "skill": "intent-review",
+      "query": "Please do this in the repository: compare this completed diff against the user's original request, not the plan.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "intent-review-trigger-5",
+      "skill": "intent-review",
+      "query": "This is time-sensitive, but compare this completed diff against the user's original request, not the plan.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "intent-review-trigger-6",
+      "skill": "intent-review",
+      "query": "Use the project workflow to compare this completed diff against the user's original request, not the plan.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "intent-review-trigger-7",
+      "skill": "intent-review",
+      "query": "Can you take ownership of this request? Compare this completed diff against the user's original request, not the plan.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "intent-review-trigger-8",
+      "skill": "intent-review",
+      "query": "Do not implement anything else; compare this completed diff against the user's original request, not the plan.",
+      "should_trigger": true,
+      "split": "holdout"
+    },
+    {
+      "id": "intent-review-near-miss-1",
+      "skill": "intent-review",
+      "query": "Find async, database, and contract runtime bugs in this diff.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "intent-review-near-miss-2",
+      "skill": "intent-review",
+      "query": "Do only this instead: find async, database, and contract runtime bugs in this diff.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "intent-review-near-miss-3",
+      "skill": "intent-review",
+      "query": "The user asked us to find async, database, and contract runtime bugs in this diff.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "intent-review-near-miss-4",
+      "skill": "intent-review",
+      "query": "This request is adjacent but distinct: find async, database, and contract runtime bugs in this diff.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "intent-review-near-miss-5",
+      "skill": "intent-review",
+      "query": "Do not route to the wrong specialist; find async, database, and contract runtime bugs in this diff.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "intent-review-near-miss-6",
+      "skill": "intent-review",
+      "query": "For this branch, find async, database, and contract runtime bugs in this diff.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "intent-review-near-miss-7",
+      "skill": "intent-review",
+      "query": "Handle the direct request: find async, database, and contract runtime bugs in this diff.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "intent-review-near-miss-8",
+      "skill": "intent-review",
+      "query": "The next action should be: find async, database, and contract runtime bugs in this diff.",
+      "should_trigger": false,
+      "split": "holdout"
+    }
+  ]
+}

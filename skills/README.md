@@ -41,7 +41,7 @@ scripts/init-structure.sh  (first-time repo setup only)
 /subagent-driven-development        ← same session, or `resume <slug>` from a new session
   → implements plan task-by-task
   → two-stage review per task (spec compliance → code quality)
-  → final adversarial correctness review (/correctness-review) over the whole diff before shipping
+  → workflow-engine diffs first pass /context-propagation-audit, then final adversarial correctness review (/correctness-review)
   → final intent review (/intent-review) — diff vs the original request, blind to PLAN
       ↓
 /compound  (if non-obvious pattern found)
@@ -108,7 +108,7 @@ No skill covers first-time setup — it is a script: `bash scripts/init-structur
 | Skill | Trigger | Output |
 |---|---|---|
 | `/using-git-worktrees` | Before starting feature work needing isolation | Isolated worktree + branch |
-| `/subagent-driven-development` | Executing a plan — fresh subagent per task in this session, or `resume <slug>` from a new session (New-session / resume mode: reconstruct the cursor at Step -1, then batch + checkpoint). Same gates either way | Implemented tasks, two-stage reviewed per task + final adversarial correctness review (delegates to `/correctness-review`) |
+| `/subagent-driven-development` | Executing a plan — fresh subagent per task in this session, or `resume <slug>` from a new session (New-session / resume mode: reconstruct the cursor at Step -1, then batch + checkpoint). Same gates either way | Implemented tasks, two-stage review; workflow-engine context audit when triggered; final correctness and intent review |
 
 ### Review & Shipping
 
@@ -176,8 +176,9 @@ that proves the run.
 /writing-plans              ──► (PLAN.html auto-rendered by hook) → /using-git-worktrees
                                 → /subagent-driven-development
 /visual-planner             ──► PLAN.html (terminal — visual artifact; back to writing-plans handoff)
-/subagent-driven-development ──► /correctness-review → /intent-review (final passes) → /compound → /finishing-a-development-branch
+/subagent-driven-development ──► workflow-engine diff: /context-propagation-audit → /correctness-review → /intent-review → /compound → /finishing-a-development-branch
 /correctness-review         ──► (standalone — runs the same pipeline ad-hoc on any diff; no gate)
+/context-propagation-audit ──► (conditional workflow-engine delivery gate, then /correctness-review)
 /intent-review              ──► (standalone — same pipeline; needs ### Intent in SUMMARY or intent provided by the user)
 /systematic-debugging       ──► fix → /compound
 /compound                   ──► nothing (terminal — crystallization is end state)

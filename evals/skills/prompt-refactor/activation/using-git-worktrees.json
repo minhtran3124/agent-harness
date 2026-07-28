@@ -1,0 +1,116 @@
+{
+  "cases": [
+    {
+      "id": "using-git-worktrees-trigger-1",
+      "skill": "using-git-worktrees",
+      "query": "Set up an isolated worktree and branch before we start feature implementation.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "using-git-worktrees-trigger-2",
+      "skill": "using-git-worktrees",
+      "query": "Before we touch code, set up an isolated worktree and branch before we start feature implementation.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "using-git-worktrees-trigger-3",
+      "skill": "using-git-worktrees",
+      "query": "I am unsure of the safest workflow; set up an isolated worktree and branch before we start feature implementation.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "using-git-worktrees-trigger-4",
+      "skill": "using-git-worktrees",
+      "query": "Please do this in the repository: set up an isolated worktree and branch before we start feature implementation.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "using-git-worktrees-trigger-5",
+      "skill": "using-git-worktrees",
+      "query": "This is time-sensitive, but set up an isolated worktree and branch before we start feature implementation.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "using-git-worktrees-trigger-6",
+      "skill": "using-git-worktrees",
+      "query": "Use the project workflow to set up an isolated worktree and branch before we start feature implementation.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "using-git-worktrees-trigger-7",
+      "skill": "using-git-worktrees",
+      "query": "Can you take ownership of this request? Set up an isolated worktree and branch before we start feature implementation.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "using-git-worktrees-trigger-8",
+      "skill": "using-git-worktrees",
+      "query": "Do not implement anything else; set up an isolated worktree and branch before we start feature implementation.",
+      "should_trigger": true,
+      "split": "holdout"
+    },
+    {
+      "id": "using-git-worktrees-near-miss-1",
+      "skill": "using-git-worktrees",
+      "query": "Open a pull request for an already completed branch.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "using-git-worktrees-near-miss-2",
+      "skill": "using-git-worktrees",
+      "query": "Do only this instead: open a pull request for an already completed branch.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "using-git-worktrees-near-miss-3",
+      "skill": "using-git-worktrees",
+      "query": "The user asked us to open a pull request for an already completed branch.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "using-git-worktrees-near-miss-4",
+      "skill": "using-git-worktrees",
+      "query": "This request is adjacent but distinct: open a pull request for an already completed branch.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "using-git-worktrees-near-miss-5",
+      "skill": "using-git-worktrees",
+      "query": "Do not route to the wrong specialist; open a pull request for an already completed branch.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "using-git-worktrees-near-miss-6",
+      "skill": "using-git-worktrees",
+      "query": "For this branch, open a pull request for an already completed branch.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "using-git-worktrees-near-miss-7",
+      "skill": "using-git-worktrees",
+      "query": "Handle the direct request: open a pull request for an already completed branch.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "using-git-worktrees-near-miss-8",
+      "skill": "using-git-worktrees",
+      "query": "The next action should be: open a pull request for an already completed branch.",
+      "should_trigger": false,
+      "split": "holdout"
+    }
+  ]
+}

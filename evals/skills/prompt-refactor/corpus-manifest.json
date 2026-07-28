@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "skills": [
+    {
+      "name": "brainstorming",
+      "activation": "evals/skills/prompt-refactor/activation/brainstorming.json",
+      "behavior": "evals/skills/prompt-refactor/behavior/brainstorming.json"
+    },
+    {
+      "name": "compound",
+      "activation": "evals/skills/prompt-refactor/activation/compound.json",
+      "behavior": "evals/skills/prompt-refactor/behavior/compound.json"
+    },
+    {
+      "name": "context-propagation-audit",
+      "activation": "evals/skills/prompt-refactor/activation/context-propagation-audit.json",
+      "behavior": "evals/skills/prompt-refactor/behavior/context-propagation-audit.json"
+    },
+    {
+      "name": "correctness-review",
+      "activation": "evals/skills/prompt-refactor/activation/correctness-review.json",
+      "behavior": "evals/skills/prompt-refactor/behavior/correctness-review.json"
+    },
+    {
+      "name": "feature-intake",
+      "activation": "evals/skills/prompt-refactor/activation/feature-intake.json",
+      "behavior": "evals/skills/prompt-refactor/behavior/feature-intake.json"
+    },
+    {
+      "name": "finishing-a-development-branch",
+      "activation": "evals/skills/prompt-refactor/activation/finishing-a-development-branch.json",
+      "behavior": "evals/skills/prompt-refactor/behavior/finishing-a-development-branch.json"
+    },
+    {
+      "name": "intent-review",
+      "activation": "evals/skills/prompt-refactor/activation/intent-review.json",
+      "behavior": "evals/skills/prompt-refactor/behavior/intent-review.json"
+    },
+    {
+      "name": "subagent-driven-development",
+      "activation": "evals/skills/prompt-refactor/activation/subagent-driven-development.json",
+      "behavior": "evals/skills/prompt-refactor/behavior/subagent-driven-development.json"
+    },
+    {
+      "name": "using-git-worktrees",
+      "activation": "evals/skills/prompt-refactor/activation/using-git-worktrees.json",
+      "behavior": "evals/skills/prompt-refactor/behavior/using-git-worktrees.json"
+    },
+    {
+      "name": "visual-planner",
+      "activation": "evals/skills/prompt-refactor/activation/visual-planner.json",
+      "behavior": "evals/skills/prompt-refactor/behavior/visual-planner.json"
+    },
+    {
+      "name": "writing-plans",
+      "activation": "evals/skills/prompt-refactor/activation/writing-plans.json",
+      "behavior": "evals/skills/prompt-refactor/behavior/writing-plans.json"
+    },
+    {
+      "name": "xia2",
+      "activation": "evals/skills/prompt-refactor/activation/xia2.json",
+      "behavior": "evals/skills/prompt-refactor/behavior/xia2.json"
+    }
+  ],
+  "end_to_end": "evals/skills/prompt-refactor/end-to-end.json"
+}
