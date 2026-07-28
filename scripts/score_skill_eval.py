@@ -152,13 +152,35 @@ def candidate_errors(root: Path, data: dict, suite: str | None) -> list[str]:
     return errors
 
 
-def compare(baseline: dict, candidate: dict) -> list[str]:
+def compare(baseline: dict, candidate: dict, *, require_corpus: bool = False, root: Path | None = None) -> list[str]:
     errors = result_errors(baseline) + result_errors(candidate)
     for key in ("model", "client_version", "reasoning"):
         if baseline.get("environment", {}).get(key) != candidate.get("environment", {}).get(key):
             errors.append(f"compare: environment mismatch for {key}")
     old = {record.get("case_id"): record for record in baseline.get("records", []) if isinstance(record, dict)}
     new = {record.get("case_id"): record for record in candidate.get("records", []) if isinstance(record, dict)}
+    if require_corpus and root is not None:
+        expected: set[str] = set()
+        manifest = read_json(root / "evals/skills/prompt-refactor/corpus-manifest.json")
+        for entry in manifest["skills"]:
+            for key in ("activation", "behavior"):
+                expected.update(
+                    case["id"]
+                    for case in read_json(root / entry[key]).get("cases", [])
+                    if isinstance(case, dict) and case.get("id")
+                )
+        expected.update(
+            case["id"]
+            for case in read_json(root / manifest["end_to_end"]).get("cases", [])
+            if isinstance(case, dict) and case.get("id")
+        )
+        for label, records in (("baseline", old), ("candidate", new)):
+            missing = sorted(expected - set(records))
+            if missing:
+                errors.append(
+                    f"compare: {label} is missing {len(missing)} canonical corpus cases; "
+                    f"first missing: {', '.join(missing[:5])}"
+                )
     for case_id, before in old.items():
         after = new.get(case_id)
         if after is None:
@@ -187,7 +209,17 @@ def main() -> int:
         if args.validate_corpus:
             errors = corpus_errors(root)
         elif args.compare:
-            errors = compare(read_json(args.compare[0]), read_json(args.compare[1]))
+            result_root = Path(__file__).resolve().parent.parent
+            result_dir = result_root / "evals/skills/prompt-refactor/results"
+            require_corpus = all(
+                path.resolve().parent == result_dir for path in args.compare
+            )
+            errors = compare(
+                read_json(args.compare[0]),
+                read_json(args.compare[1]),
+                require_corpus=require_corpus,
+                root=result_root,
+            )
         elif args.candidate:
             path = root / "evals/skills/prompt-refactor/results/candidate.json"
             errors = candidate_errors(root, read_json(path), args.suite)

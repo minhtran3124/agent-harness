@@ -31,6 +31,10 @@ python3 scripts/score_skill_eval.py --compare results/baseline.json results/cand
 ```
 
 Coverage is bounded by the corpus. A behavior without a fixture is unmeasured, not proven safe.
+When the comparison paths are the repository's canonical `results/baseline.json` and
+`results/candidate.json`, the scorer also requires both files to contain every activation,
+behavior, and end-to-end corpus case; a partial historical collection fails loudly instead of
+being reported as SC-9 evidence.
 
 ## Recording a live observation
 

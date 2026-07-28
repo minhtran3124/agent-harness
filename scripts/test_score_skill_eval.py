@@ -46,6 +46,33 @@ def test_compare_accepts_matching_passes(tmp_path):
     assert run("--compare", str(baseline), str(candidate)).returncode == 0
 
 
+def test_compare_repo_artifacts_require_canonical_corpus(tmp_path):
+    baseline, candidate = tmp_path / "baseline.json", tmp_path / "candidate.json"
+    baseline.write_text(json.dumps(result("b-1")))
+    candidate.write_text(json.dumps(result("b-1")))
+    assert MODULE.compare(json.loads(baseline.read_text()), json.loads(candidate.read_text())) == []
+
+
+def test_compare_strict_mode_rejects_partial_corpus(tmp_path):
+    eval_root = tmp_path / "evals/skills/prompt-refactor"
+    (eval_root / "activation").mkdir(parents=True)
+    (eval_root / "behavior").mkdir()
+    (eval_root / "activation/alpha.json").write_text(json.dumps({"cases": [{"id": "a-1"}]}))
+    (eval_root / "behavior/alpha.json").write_text(json.dumps({"cases": [{"id": "b-1"}]}))
+    (eval_root / "end-to-end.json").write_text(json.dumps({"cases": [{"id": "e-1"}]}))
+    (eval_root / "corpus-manifest.json").write_text(json.dumps({
+        "skills": [{
+            "name": "alpha",
+            "activation": "evals/skills/prompt-refactor/activation/alpha.json",
+            "behavior": "evals/skills/prompt-refactor/behavior/alpha.json",
+        }],
+        "end_to_end": "evals/skills/prompt-refactor/end-to-end.json",
+    }))
+    data = result("b-1")
+    errors = MODULE.compare(data, data, require_corpus=True, root=tmp_path)
+    assert any("baseline is missing 2 canonical corpus cases" in error for error in errors)
+
+
 def test_compare_rejects_quality_regression_and_new_false_positive(tmp_path):
     baseline, candidate = tmp_path / "baseline.json", tmp_path / "candidate.json"
     baseline.write_text(json.dumps(result("b-1")))
