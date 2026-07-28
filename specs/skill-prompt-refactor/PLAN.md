@@ -10,7 +10,7 @@ created: 2026-07-28
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**21 tasks · 8 waves · 88 files · 4/21 done**
+**21 tasks · 8 waves · 88 files · 19/21 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -88,22 +88,22 @@ flowchart LR
 - [x] 1.1 — Build the prompt inventory and freeze the baseline (wave 1)
 - [x] 1.2 — Add a versioned skill-eval schema and scorer (wave 1)
 - [x] 1.3 — Create activation and behavioral fixtures for all skills (wave 1)
-- [ ] 2.1 — Move resume decisions from prose into a structured helper (wave 2)
+- [x] 2.1 — Move resume decisions from prose into a structured helper (wave 2)
 - [x] 2.2 — Make solution-index rebuilding deterministic (wave 2)
-- [ ] 2.3 — Make finish-context resolution deterministic (wave 2)
-- [ ] 2.4 — Add deterministic isolated-prompt composition (wave 2)
-- [ ] 3.1 — Align intake risk with xia2 research depth (wave 3)
-- [ ] 3.2 — Reduce brainstorming to the design decision path (wave 3)
-- [ ] 3.3 — Make writing-plans a thin consumer of the plan-format authority (wave 3)
-- [ ] 3.4 — Replace worktree shell prose with a tested detection path (wave 3)
-- [ ] 4.1 — Refactor SDD around the executable resume decision (wave 4)
+- [x] 2.3 — Make finish-context resolution deterministic (wave 2)
+- [x] 2.4 — Add deterministic isolated-prompt composition (wave 2)
+- [x] 3.1 — Align intake risk with xia2 research depth (wave 3)
+- [x] 3.2 — Reduce brainstorming to the design decision path (wave 3)
+- [x] 3.3 — Make writing-plans a thin consumer of the plan-format authority (wave 3)
+- [x] 3.4 — Replace worktree shell prose with a tested detection path (wave 3)
+- [x] 4.1 — Refactor SDD around the executable resume decision (wave 4)
 - [x] 4.2 — Split and simplify the correctness review prompts (wave 4)
-- [ ] 4.3 — Clarify and slim the intent oracle (wave 4)
-- [ ] 4.4 — Slim the context-delivery oracle without weakening proof (wave 4)
-- [ ] 5.1 — Make compound a thin orchestrator over templates and scripts (wave 5)
-- [ ] 5.2 — Simplify finishing around one resolved context (wave 5)
-- [ ] 5.3 — Reduce visual-planner instructions to its executable interface (wave 5)
-- [ ] 6.1 — Tune descriptions and synchronize cross-skill contracts (wave 6)
+- [x] 4.3 — Clarify and slim the intent oracle (wave 4)
+- [x] 4.4 — Slim the context-delivery oracle without weakening proof (wave 4)
+- [x] 5.1 — Make compound a thin orchestrator over templates and scripts (wave 5)
+- [x] 5.2 — Simplify finishing around one resolved context (wave 5)
+- [x] 5.3 — Reduce visual-planner instructions to its executable interface (wave 5)
+- [x] 6.1 — Tune descriptions and synchronize cross-skill contracts (wave 6)
 - [ ] 7.1 — Run the controlled A/B and reject regressions (wave 7)
 - [ ] 8.1 — Final workflow proof, deployment, and evidence (wave 8)
 <!-- AT-A-GLANCE:END -->
@@ -455,6 +455,10 @@ inventory and current progressive-disclosure guidance.
 | Existing untracked research file is overwritten | Preserve `docs/research/2026-07-22-self-improving-harness-adoption.md`; it is outside this plan's Files set |
 
 ## 6. Status Log
+
+- 2026-07-28 — Tasks 2.1, 2.3, 2.4, 3.1, 3.2, 3.3, 3.4, 4.1, 4.3, 4.4, 5.1, 5.2,
+  5.3, and 6.1 completed: the executable helpers, prompt refactors, cross-skill contracts, and
+  their focused regressions are present; the CI-equivalent full suite passed at `84123a3`.
 
 - 2026-07-28 — Task 4.2 completed: correctness FIND is now a dispatcher over one shared child
   contract plus exactly one configured angle. All six composed prompts, threshold/config parity,

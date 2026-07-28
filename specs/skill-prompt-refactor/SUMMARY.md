@@ -48,7 +48,7 @@ requires quality parity before accepting token reduction.
 | Resume decision contract | `python3 -m pytest runtime/test_run_state.py runtime/test_resume_decision.py -q` | 0 | State routing and transitions are executable, not prompt-parsed | SC-5 |
 | Prompt composition contract | `python3 scripts/render_skill_prompt.py --check-all` | 0 | Required policy delivery and correctness config validate | SC-7 |
 | Context delivery regression | `bash tests/scripts/context-propagation-regression.test.sh` | 0 | Both known isolated-context escapes remain blocked | SC-8 |
-| Prompt surface reduction | `python3 scripts/audit_skill_prompts.py --compare evals/skills/prompt-refactor/results/baseline.json evals/skills/prompt-refactor/results/candidate-inventory.json` | 0 | 57.4% word reduction | SC-10 |
+| Prompt surface reduction | `python3 scripts/audit_skill_prompts.py --compare evals/skills/prompt-refactor/results/baseline.json evals/skills/prompt-refactor/results/candidate-inventory.json` | 0 | 67.9% word reduction | SC-10 |
 | Registry consistency | `python3 scripts/check_manifest.py` | 0 | Manifest, inventory, settings, and gate vocabulary agree | SC-11 |
 
 ### Rollback
