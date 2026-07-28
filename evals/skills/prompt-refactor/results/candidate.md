@@ -24,7 +24,9 @@ replaced only after `capture_skill_eval.py` saved a raw response for a valid cle
 
 This is partial evidence only. It does **not** satisfy Task 7.1's required activation, all-behavior,
 review-chain, context-boundary, and end-to-end coverage, and it must not be used to claim quality
-non-regression. The current candidate behavior collection covers all case IDs, but
-`python3 scripts/score_skill_eval.py --suite behavior --candidate` intentionally fails on the two
-recorded first-run misses and an intent-handoff fixture without the required oracle inputs. Baseline
-comparison, activation, review-chain, context-boundary, and end-to-end coverage remain outstanding.
+non-regression. The current candidate behavior collection covers all case IDs and passes the
+explicit behavior gate (`python3 scripts/score_skill_eval.py --suite behavior --candidate`).
+Baseline comparison, activation, review-chain, context-boundary, and end-to-end coverage remain
+outstanding. The historical Edgeful baseline batch is currently blocked by the local profile being
+logged out (`cld-edgeful auth status` reports `loggedIn: false`); no unauthenticated output is
+treated as model evidence.
