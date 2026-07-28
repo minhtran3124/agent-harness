@@ -11,6 +11,7 @@ import argparse
 import json
 import subprocess
 import sys
+import os
 from pathlib import Path
 
 
@@ -42,6 +43,27 @@ def evaluation_prompt(case: dict[str, str], suite: str) -> str:
     )
 
 
+def auth_preflight(claude: str, config_dir: str) -> str | None:
+    """Return a concise blocker when the configured Claude profile is not logged in."""
+    result = subprocess.run(
+        [claude, "auth", "status"],
+        text=True,
+        capture_output=True,
+        stdin=subprocess.DEVNULL,
+        env={**os.environ, "CLAUDE_CONFIG_DIR": config_dir},
+        check=False,
+    )
+    if result.returncode:
+        return result.stderr.strip() or f"{claude} auth status exited {result.returncode}"
+    try:
+        status = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        return "auth status was not valid JSON"
+    if not status.get("loggedIn"):
+        return "configured Claude profile is not logged in"
+    return None
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parent.parent)
@@ -50,6 +72,8 @@ def main() -> int:
     parser.add_argument("--transcripts", type=Path, required=True)
     parser.add_argument("--summaries", type=Path, required=True)
     parser.add_argument("--config-dir", required=True)
+    parser.add_argument("--claude", default="claude", help="Claude executable or wrapper command")
+    parser.add_argument("--skip-auth-check", action="store_true", help="skip the login preflight")
     args = parser.parse_args()
     root = args.root.resolve()
     capture = root / "scripts/capture_skill_eval.py"
@@ -57,6 +81,11 @@ def main() -> int:
     args.transcripts.mkdir(parents=True, exist_ok=True)
     args.summaries.mkdir(parents=True, exist_ok=True)
     try:
+        if not args.skip_auth_check:
+            blocker = auth_preflight(args.claude, args.config_dir)
+            if blocker:
+                print(f"skill-eval-batch: auth preflight blocked: {blocker}", file=sys.stderr)
+                return 2
         suite_cases = cases(root, args.suite)
         for case in suite_cases:
             prompt = evaluation_prompt(case, args.suite)
@@ -70,12 +99,14 @@ def main() -> int:
                     str(args.transcripts / f"{case['id']}.json"),
                     "--prompt",
                     prompt,
+                    "--claude",
+                    args.claude,
                 ],
                 cwd=root,
                 stdin=subprocess.DEVNULL,
                 text=True,
                 capture_output=True,
-                env={**__import__("os").environ, "CLAUDE_CONFIG_DIR": args.config_dir},
+                env={**os.environ, "CLAUDE_CONFIG_DIR": args.config_dir},
             )
             (args.summaries / f"{case['id']}.json").write_text(result.stdout + result.stderr, encoding="utf-8")
             if result.returncode:

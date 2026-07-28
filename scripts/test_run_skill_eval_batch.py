@@ -41,3 +41,13 @@ def test_evaluation_prompt_forces_behavior_dispatch():
     prompt = MODULE.evaluation_prompt(case, "behavior")
     assert prompt.startswith("/alpha")
     assert "key safety gate" in prompt
+
+
+def test_auth_preflight_reports_logged_out_profile(monkeypatch):
+    class Result:
+        returncode = 0
+        stdout = '{"loggedIn": false}'
+        stderr = ""
+
+    monkeypatch.setattr(MODULE.subprocess, "run", lambda *args, **kwargs: Result())
+    assert MODULE.auth_preflight("claude", "/tmp/profile") == "configured Claude profile is not logged in"

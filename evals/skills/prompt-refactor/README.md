@@ -69,6 +69,18 @@ Review the saved transcript, then call `record_skill_eval.py` exactly once for t
 profile path above is the current Edgeful CLI profile; use an equivalent pinned profile when the
 evaluation environment changes.
 
+For a corpus batch, use `run_skill_eval_batch.py`. It performs an auth preflight and exits before
+creating transcripts when the configured profile is logged out; `--skip-auth-check` is intended
+only for harness tests, never for evidence collection.
+
+```bash
+python3 scripts/run_skill_eval_batch.py --suite behavior \
+  --cwd <baseline-or-candidate-worktree> \
+  --transcripts /tmp/skill-eval-transcripts \
+  --summaries /tmp/skill-eval-summaries \
+  --config-dir ~/.claude-edgeful
+```
+
 When the corpus was introduced after the baseline checkout, run the recorder from the current
 corpus root and pass that checkout's immutable SHA explicitly:
 
