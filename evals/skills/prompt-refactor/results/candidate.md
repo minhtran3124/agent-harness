@@ -26,5 +26,6 @@ reported as passes.
 
 This is partial evidence only. It does **not** satisfy Task 7.1's required activation, all-behavior,
 review-chain, context-boundary, and end-to-end coverage, and it must not be used to claim quality
-non-regression. The deterministic comparison presently validates the matched records and passes;
-coverage remains an explicit outstanding requirement.
+non-regression. The deterministic comparison validates the matched records and passes, while
+`python3 scripts/score_skill_eval.py --suite behavior --candidate` intentionally fails until every
+behavior case has a passing first-run record. Coverage remains an explicit outstanding requirement.

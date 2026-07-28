@@ -3,11 +3,16 @@
 from __future__ import annotations
 
 import json
+import importlib.util
 import subprocess
 import sys
 from pathlib import Path
 
 SCRIPT = Path(__file__).with_name("score_skill_eval.py")
+SPEC = importlib.util.spec_from_file_location("score_skill_eval", SCRIPT)
+assert SPEC and SPEC.loader
+MODULE = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(MODULE)
 
 
 def result(case_id: str, verdict: str = "pass", *, critical: bool = False) -> dict:
@@ -81,3 +86,24 @@ def test_rejects_missing_result_metadata(tmp_path):
     result_run = run("--compare", str(path), str(path))
     assert result_run.returncode == 1
     assert "commit_sha" in result_run.stderr
+
+
+def test_candidate_coverage_rejects_missing_and_blocked_cases(tmp_path):
+    base = tmp_path / "evals/skills/prompt-refactor"
+    (base / "behavior").mkdir(parents=True)
+    (base / "activation").mkdir()
+    (base / "behavior/alpha.json").write_text(json.dumps({"cases": [{"id": "behavior-1"}, {"id": "behavior-2"}]}))
+    (base / "activation/alpha.json").write_text(json.dumps({"cases": []}))
+    (base / "end-to-end.json").write_text(json.dumps({"cases": []}))
+    (base / "corpus-manifest.json").write_text(json.dumps({
+        "skills": [{
+            "name": "alpha",
+            "activation": "evals/skills/prompt-refactor/activation/alpha.json",
+            "behavior": "evals/skills/prompt-refactor/behavior/alpha.json",
+        }],
+        "end_to_end": "evals/skills/prompt-refactor/end-to-end.json",
+    }))
+    data = result("behavior-1", "blocked")
+    errors = MODULE.candidate_errors(tmp_path, data, "behavior")
+    assert "candidate: missing behavior cases: behavior-2" in errors
+    assert "candidate: behavior case behavior-1 has non-passing first-run verdict: blocked" in errors

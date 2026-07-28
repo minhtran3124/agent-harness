@@ -10,7 +10,6 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from collections import defaultdict
 from pathlib import Path
 
 
@@ -115,6 +114,44 @@ def result_errors(data: dict, suite: str | None = None) -> list[str]:
     return errors
 
 
+def expected_case_ids(root: Path, suite: str) -> set[str] | None:
+    """Return corpus case IDs for suites that have an in-repo canonical corpus."""
+    if suite == "review-chain":
+        # The review-chain corpus predates this schema and has no record manifest yet.
+        return None
+    manifest = read_json(root / "evals/skills/prompt-refactor/corpus-manifest.json")
+    if suite == "end-to-end":
+        cases = read_json(root / manifest["end_to_end"]).get("cases", [])
+        return {case["id"] for case in cases if isinstance(case, dict) and case.get("id")}
+    case_key = "activation" if suite == "activation" else "behavior"
+    ids: set[str] = set()
+    for entry in manifest["skills"]:
+        cases = read_json(root / entry[case_key]).get("cases", [])
+        ids.update(case["id"] for case in cases if isinstance(case, dict) and case.get("id"))
+    return ids
+
+
+def candidate_errors(root: Path, data: dict, suite: str | None) -> list[str]:
+    errors = result_errors(data, suite)
+    if suite is None:
+        return errors
+    expected = expected_case_ids(root, suite)
+    if expected is None:
+        return errors
+    records = [record for record in data.get("records", []) if isinstance(record, dict) and record.get("suite") == suite]
+    observed = {record.get("case_id") for record in records}
+    missing = sorted(expected - observed)
+    if missing:
+        errors.append(f"candidate: missing {suite} cases: {', '.join(missing)}")
+    for record in records:
+        if record.get("case_id") in expected and record.get("verdict") != "pass":
+            errors.append(
+                f"candidate: {suite} case {record.get('case_id')} has non-passing first-run verdict: "
+                f"{record.get('verdict')}"
+            )
+    return errors
+
+
 def compare(baseline: dict, candidate: dict) -> list[str]:
     errors = result_errors(baseline) + result_errors(candidate)
     for key in ("model", "client_version", "reasoning"):
@@ -153,7 +190,7 @@ def main() -> int:
             errors = compare(read_json(args.compare[0]), read_json(args.compare[1]))
         elif args.candidate:
             path = root / "evals/skills/prompt-refactor/results/candidate.json"
-            errors = result_errors(read_json(path), args.suite)
+            errors = candidate_errors(root, read_json(path), args.suite)
         else:
             parser.error("choose --validate-corpus, --compare, or --candidate")
     except (OSError, ValueError, json.JSONDecodeError) as exc:
