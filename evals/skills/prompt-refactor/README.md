@@ -48,6 +48,23 @@ python3 scripts/record_skill_eval.py \
 The recorder stores only an observation; it does not invoke a model. Record a rerun in a separate
 attempt file rather than replacing the first result.
 
+## Capturing a live response
+
+Use the capture helper before grading a real first-run dispatch. It invokes Claude with no tools,
+stores the final response plus usage in a transcript, and prints a compact summary; it does not
+assign a verdict or write a result record.
+
+```bash
+CLAUDE_CONFIG_DIR=~/.claude-edgeful \
+python3 scripts/capture_skill_eval.py \
+  --output evals/skills/prompt-refactor/results/transcripts/<case-id>.json \
+  --prompt '/<skill> ...clean behavior-evaluation probe...'
+```
+
+Review the saved transcript, then call `record_skill_eval.py` exactly once for that case. The
+profile path above is the current Edgeful CLI profile; use an equivalent pinned profile when the
+evaluation environment changes.
+
 When the corpus was introduced after the baseline checkout, run the recorder from the current
 corpus root and pass that checkout's immutable SHA explicitly:
 
