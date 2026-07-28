@@ -27,6 +27,21 @@ def cases(root: Path, suite: str) -> list[dict[str, str]]:
     return found
 
 
+def evaluation_prompt(case: dict[str, str], suite: str) -> str:
+    """Build a prompt without forcing activation for the activation suite."""
+    if suite == "activation":
+        return (
+            f"{case['prompt']}\n\n"
+            "Decide whether a repository skill should handle this request. Reply with exactly "
+            "TRIGGER or NO-TRIGGER followed by one short reason. Do not make changes."
+        )
+    return (
+        f"/{case['skill']}\n\n{case['prompt']}\n\n"
+        "State the concrete required workflow action and key safety gate. "
+        "Do not make changes. Answer in at most 120 words."
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parent.parent)
@@ -44,7 +59,7 @@ def main() -> int:
     try:
         suite_cases = cases(root, args.suite)
         for case in suite_cases:
-            prompt = f"/{case['skill']}\n\n{case['prompt']}\n\nState the concrete required workflow action and key safety gate. Do not make changes. Answer in at most 120 words."
+            prompt = evaluation_prompt(case, args.suite)
             result = subprocess.run(
                 [
                     sys.executable,

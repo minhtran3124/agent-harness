@@ -27,3 +27,17 @@ def test_cases_reads_behavior_prompts_and_falls_back_to_expectation(tmp_path):
         {"id": "alpha-a", "skill": "alpha", "prompt": "scenario"},
         {"id": "alpha-b", "skill": "alpha", "prompt": "fallback"},
     ]
+
+
+def test_evaluation_prompt_does_not_force_activation():
+    case = {"id": "near-miss", "skill": "alpha", "prompt": "explain a poem"}
+    prompt = MODULE.evaluation_prompt(case, "activation")
+    assert not prompt.startswith("/alpha")
+    assert "TRIGGER or NO-TRIGGER" in prompt
+
+
+def test_evaluation_prompt_forces_behavior_dispatch():
+    case = {"id": "golden", "skill": "alpha", "prompt": "plan this change"}
+    prompt = MODULE.evaluation_prompt(case, "behavior")
+    assert prompt.startswith("/alpha")
+    assert "key safety gate" in prompt
