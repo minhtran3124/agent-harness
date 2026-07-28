@@ -57,7 +57,14 @@ def main() -> int:
         args.prompt,
     ]
     try:
-        completed = subprocess.run(command, cwd=args.cwd, text=True, capture_output=True, check=False)
+        completed = subprocess.run(
+            command,
+            cwd=args.cwd,
+            stdin=subprocess.DEVNULL,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
         payload = json.loads(completed.stdout)
         result, usage = extract_result(payload)
         transcript = {
