@@ -47,3 +47,16 @@ python3 scripts/record_skill_eval.py \
 
 The recorder stores only an observation; it does not invoke a model. Record a rerun in a separate
 attempt file rather than replacing the first result.
+
+When the corpus was introduced after the baseline checkout, run the recorder from the current
+corpus root and pass that checkout's immutable SHA explicitly:
+
+```bash
+python3 scripts/record_skill_eval.py \
+  --results evals/skills/prompt-refactor/results/baseline.json \
+  --commit-sha <historical-baseline-sha> \
+  # ...the same case/environment/observation fields
+```
+
+This preserves the pinned inventory in `baseline.json` while adding a result record. The override
+is restricted to hexadecimal Git SHAs, so the evaluated revision remains auditable.

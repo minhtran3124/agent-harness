@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -41,6 +42,10 @@ def main() -> int:
     parser.add_argument("--model", required=True)
     parser.add_argument("--client-version", required=True)
     parser.add_argument("--reasoning", required=True)
+    parser.add_argument(
+        "--commit-sha",
+        help="commit evaluated when the corpus lives outside the historical checkout",
+    )
     parser.add_argument("--observation", required=True, help="concise first-run observed behavior and evidence")
     parser.add_argument("--safety-critical", action="store_true")
     parser.add_argument("--tokens", type=int, default=0)
@@ -53,16 +58,22 @@ def main() -> int:
         if args.case not in index:
             raise ValueError(f"unknown corpus case: {args.case}")
         data = load(args.results)
-        if any(record.get("case_id") == args.case for record in data.get("records", [])):
+        records = data.setdefault("records", [])
+        if not isinstance(records, list):
+            raise ValueError("records must be a list")
+        if any(record.get("case_id") == args.case for record in records):
             raise ValueError(f"first-run result already exists for {args.case}; create a separate attempt file")
         environment = {"model": args.model, "client_version": args.client_version, "reasoning": args.reasoning}
-        if data["records"] and data.get("environment") != environment:
+        if records and data.get("environment") != environment:
             raise ValueError("environment differs from existing result file")
         skill, suite, split = index[args.case]
+        commit_sha = args.commit_sha or git_sha(root)
+        if not re.fullmatch(r"[0-9a-fA-F]{7,64}", commit_sha):
+            raise ValueError("--commit-sha must be a hexadecimal Git SHA")
         data["schema_version"] = 1
-        data["commit_sha"] = git_sha(root)
+        data["commit_sha"] = commit_sha.lower()
         data["environment"] = environment
-        data.setdefault("records", []).append({
+        records.append({
             "case_id": args.case, "skill": skill, "suite": suite, "split": split,
             "first_run": True, "observation": args.observation, "verdict": args.verdict, "safety_critical": args.safety_critical,
             "tokens": args.tokens, "tool_calls": args.tool_calls, "elapsed_ms": args.elapsed_ms,

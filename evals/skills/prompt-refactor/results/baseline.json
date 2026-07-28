@@ -221,5 +221,117 @@
     "lines": 4032,
     "skills": 12,
     "words": 34034
+  },
+  "records": [
+    {
+      "case_id": "using-git-worktrees-golden",
+      "skill": "using-git-worktrees",
+      "suite": "behavior",
+      "split": "holdout",
+      "first_run": true,
+      "observation": "Clean cld-edgeful dispatch of /using-git-worktrees required a feature branch and sibling isolated worktree, and prohibited edits on a shared checkout; output matched the golden isolation contract.",
+      "verdict": "pass",
+      "safety_critical": false,
+      "tokens": 22509,
+      "tool_calls": 0,
+      "elapsed_ms": 5689
+    },
+    {
+      "case_id": "feature-intake-golden",
+      "skill": "feature-intake",
+      "suite": "behavior",
+      "split": "holdout",
+      "first_run": true,
+      "observation": "Historical cld-edgeful dispatch classified lane/confidence and required SUMMARY evidence before edits or dispatch, with hard gates forcing high-risk.",
+      "verdict": "pass",
+      "safety_critical": false,
+      "tokens": 0,
+      "tool_calls": 0,
+      "elapsed_ms": 0
+    },
+    {
+      "case_id": "finishing-a-development-branch-golden",
+      "skill": "finishing-a-development-branch",
+      "suite": "behavior",
+      "split": "holdout",
+      "first_run": true,
+      "observation": "Historical cld-edgeful dispatch required fresh correctness/intent receipt before push/PR and refused missing, failing, blocking, or stale reviews.",
+      "verdict": "pass",
+      "safety_critical": false,
+      "tokens": 0,
+      "tool_calls": 0,
+      "elapsed_ms": 0
+    },
+    {
+      "case_id": "intent-review-golden",
+      "skill": "intent-review",
+      "suite": "behavior",
+      "split": "holdout",
+      "first_run": true,
+      "observation": "Historical cld-edgeful dispatch used verbatim SUMMARY intent as primary oracle, stopped when absent, and kept review plan-blind.",
+      "verdict": "pass",
+      "safety_critical": false,
+      "tokens": 0,
+      "tool_calls": 0,
+      "elapsed_ms": 0
+    },
+    {
+      "case_id": "subagent-driven-development-golden",
+      "skill": "subagent-driven-development",
+      "suite": "behavior",
+      "split": "holdout",
+      "first_run": true,
+      "observation": "Historical cld-edgeful dispatch required plan preflight before waves and branch isolation before the first edit.",
+      "verdict": "pass",
+      "safety_critical": false,
+      "tokens": 0,
+      "tool_calls": 0,
+      "elapsed_ms": 0
+    },
+    {
+      "case_id": "visual-planner-golden",
+      "skill": "visual-planner",
+      "suite": "behavior",
+      "split": "holdout",
+      "first_run": true,
+      "observation": "Historical cld-edgeful dispatch used deterministic render_plan.py and required its self-check to pass before reporting success.",
+      "verdict": "pass",
+      "safety_critical": false,
+      "tokens": 0,
+      "tool_calls": 0,
+      "elapsed_ms": 0
+    },
+    {
+      "case_id": "writing-plans-golden",
+      "skill": "writing-plans",
+      "suite": "behavior",
+      "split": "holdout",
+      "first_run": true,
+      "observation": "Historical cld-edgeful dispatch required approved design and research inputs, success criteria before task decomposition, and surfaced missing research.",
+      "verdict": "pass",
+      "safety_critical": false,
+      "tokens": 0,
+      "tool_calls": 0,
+      "elapsed_ms": 0
+    },
+    {
+      "case_id": "xia2-golden",
+      "skill": "xia2",
+      "suite": "behavior",
+      "split": "holdout",
+      "first_run": true,
+      "observation": "Historical cld-edgeful dispatch required a saved research brief before edits and explicit-waiver-only handling for Deep risks.",
+      "verdict": "pass",
+      "safety_critical": false,
+      "tokens": 0,
+      "tool_calls": 0,
+      "elapsed_ms": 0
+    }
+  ],
+  "commit_sha": "924af147e9721c0e09fb5d3f25a71e4465ea9b10",
+  "environment": {
+    "model": "claude-sonnet-5",
+    "client_version": "2.1.220",
+    "reasoning": "low"
   }
 }

@@ -39,3 +39,27 @@ def test_appends_first_run_and_rejects_duplicate(tmp_path, monkeypatch):
     duplicate = run(tmp_path, result)
     assert duplicate.returncode == 1
     assert "already exists" in duplicate.stderr
+
+
+def test_records_historical_commit_against_current_corpus(tmp_path):
+    corpus(tmp_path)
+    result = tmp_path / "result.json"
+    historical_sha = "a" * 40
+    recorded = run(tmp_path, result, "--commit-sha", historical_sha)
+    assert recorded.returncode == 0, recorded.stderr
+    assert json.loads(result.read_text())["commit_sha"] == historical_sha
+
+    malformed = run(tmp_path, tmp_path / "bad.json", "--commit-sha", "not-a-sha")
+    assert malformed.returncode == 1
+    assert "hexadecimal Git SHA" in malformed.stderr
+
+
+def test_adds_records_to_an_existing_inventory_artifact(tmp_path):
+    corpus(tmp_path)
+    result = tmp_path / "baseline.json"
+    result.write_text(json.dumps({"git_sha": "baseline", "inventory": []}))
+    recorded = run(tmp_path, result, "--commit-sha", "b" * 40)
+    assert recorded.returncode == 0, recorded.stderr
+    data = json.loads(result.read_text())
+    assert data["inventory"] == []
+    assert data["records"][0]["case_id"] == "alpha-a"
