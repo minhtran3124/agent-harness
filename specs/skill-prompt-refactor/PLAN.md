@@ -465,6 +465,10 @@ inventory and current progressive-disclosure guidance.
   instead of treating a small matching subset as quality evidence. Focused scorer tests and the
   full CI-equivalent suite pass; the current comparison correctly reports missing corpus cases.
 
+- 2026-07-28 — Live batch capture now performs an authentication preflight and exits before
+  creating non-evidence transcripts when the configured Edgeful profile is logged out. Four
+  focused batch tests pass.
+
 - 2026-07-28 — Tasks 2.1, 2.3, 2.4, 3.1, 3.2, 3.3, 3.4, 4.1, 4.3, 4.4, 5.1, 5.2,
   5.3, and 6.1 completed: the executable helpers, prompt refactors, cross-skill contracts, and
   their focused regressions are present; the CI-equivalent full suite passed at `84123a3`.
