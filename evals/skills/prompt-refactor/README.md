@@ -81,6 +81,12 @@ python3 scripts/run_skill_eval_batch.py --suite behavior \
   --config-dir ~/.claude-edgeful
 ```
 
+Before starting a long run, inspect readiness and missing case counts:
+
+```bash
+python3 scripts/check_skill_eval_readiness.py --config-dir ~/.claude-edgeful
+```
+
 When the corpus was introduced after the baseline checkout, run the recorder from the current
 corpus root and pass that checkout's immutable SHA explicitly:
 
