@@ -46,7 +46,7 @@ def evaluation_prompt(case: dict[str, str], suite: str) -> str:
 def auth_preflight(claude: str, config_dir: str) -> str | None:
     """Return a concise blocker when the configured Claude profile is not logged in."""
     result = subprocess.run(
-        [claude, "auth", "status"],
+        command_argv(claude, ["auth", "status"]),
         text=True,
         capture_output=True,
         stdin=subprocess.DEVNULL,
@@ -62,6 +62,12 @@ def auth_preflight(claude: str, config_dir: str) -> str | None:
     if not status.get("loggedIn"):
         return "configured Claude profile is not logged in"
     return None
+
+
+def command_argv(executable: str, arguments: list[str]) -> list[str]:
+    if executable == "cld-edgeful":
+        return ["zsh", "-ic", 'cld-edgeful "$@"', "--", *arguments]
+    return [executable, *arguments]
 
 
 def main() -> int:

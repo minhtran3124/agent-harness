@@ -36,7 +36,7 @@ def observed_ids(path: Path, suite: str) -> set[str]:
 
 def auth_state(claude: str, config_dir: str) -> tuple[bool, str]:
     result = subprocess.run(
-        [claude, "auth", "status"],
+        command_argv(claude, ["auth", "status"]),
         text=True,
         capture_output=True,
         stdin=subprocess.DEVNULL,
@@ -50,6 +50,12 @@ def auth_state(claude: str, config_dir: str) -> tuple[bool, str]:
     except json.JSONDecodeError:
         return False, "auth status was not valid JSON"
     return bool(status.get("loggedIn")), "logged in" if status.get("loggedIn") else "not logged in"
+
+
+def command_argv(executable: str, arguments: list[str]) -> list[str]:
+    if executable == "cld-edgeful":
+        return ["zsh", "-ic", 'cld-edgeful "$@"', "--", *arguments]
+    return [executable, *arguments]
 
 
 def main() -> int:

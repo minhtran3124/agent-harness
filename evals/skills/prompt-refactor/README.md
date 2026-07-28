@@ -61,6 +61,7 @@ assign a verdict or write a result record.
 ```bash
 CLAUDE_CONFIG_DIR=~/.claude-edgeful \
 python3 scripts/capture_skill_eval.py \
+  --claude cld-edgeful \
   --output evals/skills/prompt-refactor/results/transcripts/<case-id>.json \
   --prompt '/<skill> ...clean behavior-evaluation probe...'
 ```
@@ -78,13 +79,14 @@ python3 scripts/run_skill_eval_batch.py --suite behavior \
   --cwd <baseline-or-candidate-worktree> \
   --transcripts /tmp/skill-eval-transcripts \
   --summaries /tmp/skill-eval-summaries \
-  --config-dir ~/.claude-edgeful
+  --config-dir ~/.claude-edgeful \
+  --claude cld-edgeful
 ```
 
 Before starting a long run, inspect readiness and missing case counts:
 
 ```bash
-python3 scripts/check_skill_eval_readiness.py --config-dir ~/.claude-edgeful
+python3 scripts/check_skill_eval_readiness.py --config-dir ~/.claude-edgeful --claude cld-edgeful
 ```
 
 When the corpus was introduced after the baseline checkout, run the recorder from the current
