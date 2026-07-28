@@ -45,6 +45,7 @@ requires quality parity before accepting token reduction.
 | Deployed harness smoke | `bash scripts/deploy-harness.sh` | 0 | Source sync confirmed; deployed detector and renderer executed | SC-4 |
 | Resolver mismatch regression | `python3 -m pytest scripts/test_resolve_finish_context.py -q` | 0 | Branch `refactor/skill-prompt-surface` resolves `skill-prompt-refactor` by unique token evidence | SC-4 |
 | Inventory baseline validity | `python3 scripts/audit_skill_prompts.py --validate-inventory evals/skills/prompt-refactor/results/baseline.json` | 0 | Pinned pre-refactor inventory is structurally valid | SC-1 |
+| Behavioral corpus gate | `python3 scripts/score_skill_eval.py --suite behavior --candidate` | 0 | All 36 golden, boundary, and handoff cases have recorded passing first-run candidate observations | SC-3 |
 | Resume decision contract | `python3 -m pytest runtime/test_run_state.py runtime/test_resume_decision.py -q` | 0 | State routing and transitions are executable, not prompt-parsed | SC-5 |
 | Prompt composition contract | `python3 scripts/render_skill_prompt.py --check-all` | 0 | Required policy delivery and correctness config validate | SC-7 |
 | Context delivery regression | `bash tests/scripts/context-propagation-regression.test.sh` | 0 | Both known isolated-context escapes remain blocked | SC-8 |
