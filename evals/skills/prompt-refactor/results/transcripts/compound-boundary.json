@@ -17,31 +17,31 @@
   ],
   "cwd": "/Users/minhtran/Documents/minhtran3124/developer/harness-skills",
   "returncode": 0,
-  "result": "Required action: read `specs/<slug>/research-brief.md` before authoring the plan. Since it's missing, stop \u2014 do not draft `PLAN.md`.\n\nSafety gate: `writing-plans` requires research-brief.md (and design.md) as inputs; a missing required brief halts the skill rather than proceeding on assumptions.",
+  "result": "This is a behavior-eval probe with no complete learning track to emit \u2014 skipping per Compound's \"skip incomplete or `[none]` tracks\" rule.\n\nRequired workflow action: every skill lane must cut a branch before the first implementation edit.\n\nKey safety gate: `hooks/branch-isolation-guard.sh` (PreToolUse on Edit/Write) hard-blocks code edits on a shared branch (`main`/`master`) regardless of plan state, unless a break-glass `BRANCH_ISOLATION_REASON` is explicitly set. `specs/*` bookkeeping is exempt since intake writes `SUMMARY.md` before the branch exists.\n\nNo changes made.",
   "usage": {
     "input_tokens": 2,
-    "cache_creation_input_tokens": 21302,
+    "cache_creation_input_tokens": 20809,
     "cache_read_input_tokens": 3304,
-    "output_tokens": 111,
+    "output_tokens": 229,
     "server_tool_use": {
       "web_search_requests": 0,
       "web_fetch_requests": 0
     },
     "service_tier": "standard",
     "cache_creation": {
-      "ephemeral_1h_input_tokens": 21302,
+      "ephemeral_1h_input_tokens": 20809,
       "ephemeral_5m_input_tokens": 0
     },
     "inference_geo": "not_available",
     "iterations": [
       {
         "input_tokens": 2,
-        "output_tokens": 111,
+        "output_tokens": 229,
         "cache_read_input_tokens": 3304,
-        "cache_creation_input_tokens": 21302,
+        "cache_creation_input_tokens": 20809,
         "cache_creation": {
           "ephemeral_5m_input_tokens": 0,
-          "ephemeral_1h_input_tokens": 21302
+          "ephemeral_1h_input_tokens": 20809
         },
         "type": "message"
       }

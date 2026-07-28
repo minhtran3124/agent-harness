@@ -18,14 +18,13 @@ matching passing golden-path observations for these eight skill families:
 - `writing-plans`
 - `xia2`
 
-The first candidate sessions for `brainstorming`, `compound`, `context-propagation-audit`, and
-`correctness-review` completed, but the one-shot collection command addressed the JSON result as
-an object instead of its final array element. Their model responses were not recoverable after the
-non-persistent sessions ended, so they are honestly recorded as `blocked` rather than rerun or
-reported as passes.
+Eight early dispatches had response-collection or environment failures. Their original blocked
+records are preserved in `invalid-collections.json`; they are not model observations and were
+replaced only after `capture_skill_eval.py` saved a raw response for a valid clean dispatch.
 
 This is partial evidence only. It does **not** satisfy Task 7.1's required activation, all-behavior,
 review-chain, context-boundary, and end-to-end coverage, and it must not be used to claim quality
-non-regression. The deterministic comparison validates the matched records and passes, while
-`python3 scripts/score_skill_eval.py --suite behavior --candidate` intentionally fails until every
-behavior case has a passing first-run record. Coverage remains an explicit outstanding requirement.
+non-regression. The current candidate behavior collection covers all case IDs, but
+`python3 scripts/score_skill_eval.py --suite behavior --candidate` intentionally fails on the two
+recorded first-run misses and an intent-handoff fixture without the required oracle inputs. Baseline
+comparison, activation, review-chain, context-boundary, and end-to-end coverage remain outstanding.
