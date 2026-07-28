@@ -4,19 +4,22 @@
       "id": "subagent-driven-development-golden",
       "skill": "subagent-driven-development",
       "kind": "golden",
-      "expectation": "execute a valid plan"
+      "expectation": "execute a valid plan",
+      "prompt": "execute a valid plan"
     },
     {
       "id": "subagent-driven-development-boundary",
       "skill": "subagent-driven-development",
       "kind": "boundary",
-      "expectation": "stop on an invalid or blocked resume state"
+      "expectation": "stop on an invalid or blocked resume state",
+      "prompt": "stop on an invalid or blocked resume state"
     },
     {
       "id": "subagent-driven-development-handoff",
       "skill": "subagent-driven-development",
       "kind": "handoff",
-      "expectation": "run final review receipt chain"
+      "expectation": "run final review receipt chain",
+      "prompt": "run final review receipt chain"
     }
   ]
 }

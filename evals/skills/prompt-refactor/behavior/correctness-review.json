@@ -4,19 +4,22 @@
       "id": "correctness-review-golden",
       "skill": "correctness-review",
       "kind": "golden",
-      "expectation": "review a complete diff"
+      "expectation": "review a complete diff",
+      "prompt": "review a complete diff"
     },
     {
       "id": "correctness-review-boundary",
       "skill": "correctness-review",
       "kind": "boundary",
-      "expectation": "route a Rule 4 finding to escalation"
+      "expectation": "route a Rule 4 finding to escalation",
+      "prompt": "route a Rule 4 finding to escalation"
     },
     {
       "id": "correctness-review-handoff",
       "skill": "correctness-review",
       "kind": "handoff",
-      "expectation": "deduplicate and score candidates"
+      "expectation": "deduplicate and score candidates",
+      "prompt": "deduplicate and score candidates"
     }
   ]
 }

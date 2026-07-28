@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
-FAILURE_MARKERS = ("did not preserve", "truncation prevented", "invalid environment")
+FAILURE_MARKERS = ("did not preserve", "truncation prevented", "invalid environment", "fixture omitted", "fixture still omitted")
 
 
 def main() -> int:
@@ -24,6 +24,7 @@ def main() -> int:
     parser.add_argument("--case", required=True)
     parser.add_argument("--reason", required=True)
     parser.add_argument("--ledger", type=Path, required=True)
+    parser.add_argument("--fixture-revised", action="store_true", help="withdraw a result collected against a documented incomplete fixture")
     args = parser.parse_args()
     try:
         data = json.loads(args.results.read_text(encoding="utf-8"))
@@ -35,7 +36,9 @@ def main() -> int:
             raise ValueError(f"expected exactly one record for {args.case}")
         record = matches[0]
         observation = str(record.get("observation", "")).lower()
-        if record.get("verdict") != "blocked" or not any(marker in observation for marker in FAILURE_MARKERS):
+        transport_failure = record.get("verdict") == "blocked" and any(marker in observation for marker in FAILURE_MARKERS)
+        revised_fixture = args.fixture_revised and "fixture" in args.reason.lower()
+        if not (transport_failure or revised_fixture):
             raise ValueError("only explicitly unobserved blocked collection failures may be invalidated")
         ledger = []
         if args.ledger.exists():

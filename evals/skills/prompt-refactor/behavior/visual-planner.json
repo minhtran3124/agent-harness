@@ -4,19 +4,22 @@
       "id": "visual-planner-golden",
       "skill": "visual-planner",
       "kind": "golden",
-      "expectation": "render a plain plan"
+      "expectation": "render a plain plan",
+      "prompt": "render a plain plan"
     },
     {
       "id": "visual-planner-boundary",
       "skill": "visual-planner",
       "kind": "boundary",
-      "expectation": "surface renderer self-check failure"
+      "expectation": "surface renderer self-check failure",
+      "prompt": "surface renderer self-check failure"
     },
     {
       "id": "visual-planner-handoff",
       "skill": "visual-planner",
       "kind": "handoff",
-      "expectation": "render graph review sidecar"
+      "expectation": "render graph review sidecar",
+      "prompt": "render graph review sidecar"
     }
   ]
 }

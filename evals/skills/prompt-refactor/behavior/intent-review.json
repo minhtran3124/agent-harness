@@ -4,19 +4,22 @@
       "id": "intent-review-golden",
       "skill": "intent-review",
       "kind": "golden",
-      "expectation": "review verbatim intent"
+      "expectation": "review verbatim intent",
+      "prompt": "review verbatim intent"
     },
     {
       "id": "intent-review-boundary",
       "skill": "intent-review",
       "kind": "boundary",
-      "expectation": "stop when no intent oracle exists"
+      "expectation": "stop when no intent oracle exists",
+      "prompt": "stop when no intent oracle exists"
     },
     {
       "id": "intent-review-handoff",
       "skill": "intent-review",
       "kind": "handoff",
-      "expectation": "record gap excess or drift"
+      "expectation": "record gap excess or drift",
+      "prompt": "Verbatim intent: 'Show a warning before deleting a project; do not delete until confirmation.' Diff behavior: the UI deletes immediately after the first click. Perform the intent-review handoff and record the applicable gap, excess, or drift finding."
     }
   ]
 }

@@ -64,7 +64,7 @@ def corpus_errors(root: Path) -> list[str]:
             errors.append(f"corpus: {name} behavior cases must be a list")
             continue
         for index, case in enumerate(behavior):
-            if not isinstance(case, dict) or case.get("skill") != name or not case.get("id") or not case.get("expectation"):
+            if not isinstance(case, dict) or case.get("skill") != name or not case.get("id") or not case.get("expectation") or not case.get("prompt"):
                 errors.append(f"corpus: {name} behavior case {index} is malformed")
         kinds = {case.get("kind") for case in behavior}
         missing = REQUIRED_KINDS - kinds

@@ -75,6 +75,21 @@ SPECS = {
     ),
 }
 
+# Behavior probes need the prerequisites that a real skill consumes; an expectation label alone
+# is not a runnable scenario (notably compound needs a complete learning and intent needs an
+# oracle plus a diff). Unlisted cases use the concise generic probe constructed below.
+BEHAVIOR_PROMPTS = {
+    "compound": {
+        "golden": "Incident record: Deploying v2 served stale tenant permissions after role changes. Trigger: revoke a role then refresh within 60s. Root cause: cache key omitted permission version. Failed attempt: lowering cache TTL. Fix: include permission version in the key. Proof: regression test revokes a role then asserts 403 after refresh. Affected paths: auth/cache.py and policy service. Reusable decision: cache authorization by versioned permission state. Compound this complete failure record into durable knowledge.",
+    },
+    "feature-intake": {
+        "handoff": "A request adds a public OAuth callback route and token validation. Classify it, write the required SUMMARY fields, and explicitly name the next workflow route.",
+    },
+    "intent-review": {
+        "handoff": "Verbatim intent: 'Show a warning before deleting a project; do not delete until confirmation.' Diff behavior: the UI deletes immediately after the first click. Perform the intent-review handoff and record the applicable gap, excess, or drift finding.",
+    },
+}
+
 
 def activation_cases(skill: str, positive: str, negative: str) -> list[dict[str, object]]:
     positive_variants = [
@@ -113,10 +128,11 @@ def activation_cases(skill: str, positive: str, negative: str) -> list[dict[str,
 
 
 def behavior_cases(skill: str, golden: str, boundary: str, handoff: str) -> list[dict[str, str]]:
+    prompts = BEHAVIOR_PROMPTS.get(skill, {})
     return [
-        {"id": f"{skill}-golden", "skill": skill, "kind": "golden", "expectation": golden},
-        {"id": f"{skill}-boundary", "skill": skill, "kind": "boundary", "expectation": boundary},
-        {"id": f"{skill}-handoff", "skill": skill, "kind": "handoff", "expectation": handoff},
+        {"id": f"{skill}-golden", "skill": skill, "kind": "golden", "expectation": golden, "prompt": prompts.get("golden", golden)},
+        {"id": f"{skill}-boundary", "skill": skill, "kind": "boundary", "expectation": boundary, "prompt": prompts.get("boundary", boundary)},
+        {"id": f"{skill}-handoff", "skill": skill, "kind": "handoff", "expectation": handoff, "prompt": prompts.get("handoff", handoff)},
     ]
 
 

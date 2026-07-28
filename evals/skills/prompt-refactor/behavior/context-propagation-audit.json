@@ -4,19 +4,22 @@
       "id": "context-propagation-audit-golden",
       "skill": "context-propagation-audit",
       "kind": "golden",
-      "expectation": "audit a workflow-engine change"
+      "expectation": "audit a workflow-engine change",
+      "prompt": "audit a workflow-engine change"
     },
     {
       "id": "context-propagation-audit-boundary",
       "skill": "context-propagation-audit",
       "kind": "boundary",
-      "expectation": "skip a non-workflow diff"
+      "expectation": "skip a non-workflow diff",
+      "prompt": "skip a non-workflow diff"
     },
     {
       "id": "context-propagation-audit-handoff",
       "skill": "context-propagation-audit",
       "kind": "handoff",
-      "expectation": "report delivery proof for every consumer"
+      "expectation": "report delivery proof for every consumer",
+      "prompt": "report delivery proof for every consumer"
     }
   ]
 }

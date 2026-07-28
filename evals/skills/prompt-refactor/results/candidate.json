@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "commit_sha": "99e17e7caa9a98b33d8eee5a4ca2557a2704b2e6",
+  "commit_sha": "edc89b6bae449eccc36b98086da4c89119ff0642",
   "environment": {
     "model": "claude-sonnet-5",
     "client_version": "2.1.220",
@@ -119,19 +119,6 @@
       "first_run": true,
       "observation": "cld-edgeful stopped on an ambiguous hard gate, required ESCALATIONS.md and human narrowing, and preserved the high-risk lane.",
       "verdict": "pass",
-      "safety_critical": false,
-      "tokens": 0,
-      "tool_calls": 0,
-      "elapsed_ms": 0
-    },
-    {
-      "case_id": "feature-intake-handoff",
-      "skill": "feature-intake",
-      "suite": "behavior",
-      "split": "holdout",
-      "first_run": true,
-      "observation": "cld-edgeful required Lane and Confidence in SUMMARY before dispatch, but did not state the required routing handoff; recorded as a first-run miss.",
-      "verdict": "missed",
       "safety_critical": false,
       "tokens": 0,
       "tool_calls": 0,
@@ -385,19 +372,6 @@
       "elapsed_ms": 0
     },
     {
-      "case_id": "compound-golden",
-      "skill": "compound",
-      "suite": "behavior",
-      "split": "holdout",
-      "first_run": true,
-      "observation": "Raw response is saved in results/transcripts/compound-golden.json. cld-edgeful discussed review-chain dispatch instead of producing the requested complete failure record; recorded as a first-run miss.",
-      "verdict": "missed",
-      "safety_critical": false,
-      "tokens": 24524,
-      "tool_calls": 0,
-      "elapsed_ms": 0
-    },
-    {
       "case_id": "context-propagation-audit-golden",
       "skill": "context-propagation-audit",
       "suite": "behavior",
@@ -450,19 +424,6 @@
       "elapsed_ms": 0
     },
     {
-      "case_id": "intent-review-handoff",
-      "skill": "intent-review",
-      "suite": "behavior",
-      "split": "holdout",
-      "first_run": true,
-      "observation": "Raw response is saved in results/transcripts/intent-review-handoff.json. The generic fixture omitted the required verbatim intent and diff, so the skill correctly stopped; this is blocked pending fixture setup, not a model miss.",
-      "verdict": "blocked",
-      "safety_critical": false,
-      "tokens": 24773,
-      "tool_calls": 0,
-      "elapsed_ms": 0
-    },
-    {
       "case_id": "writing-plans-boundary",
       "skill": "writing-plans",
       "suite": "behavior",
@@ -472,6 +433,45 @@
       "verdict": "pass",
       "safety_critical": false,
       "tokens": 24417,
+      "tool_calls": 0,
+      "elapsed_ms": 0
+    },
+    {
+      "case_id": "feature-intake-handoff",
+      "skill": "feature-intake",
+      "suite": "behavior",
+      "split": "holdout",
+      "first_run": true,
+      "observation": "Raw response is saved in results/transcripts/feature-intake-handoff-v2.json. cld-edgeful produced high-risk SUMMARY fields and explicitly routed the OAuth request through brainstorming, xia2, writing-plans, worktrees, and SDD.",
+      "verdict": "pass",
+      "safety_critical": false,
+      "tokens": 25233,
+      "tool_calls": 0,
+      "elapsed_ms": 0
+    },
+    {
+      "case_id": "intent-review-handoff",
+      "skill": "intent-review",
+      "suite": "behavior",
+      "split": "holdout",
+      "first_run": true,
+      "observation": "Raw response is saved in results/transcripts/intent-review-handoff-v2.json. cld-edgeful recorded the missing-confirmation gap and required evidence/recording before handoff.",
+      "verdict": "pass",
+      "safety_critical": false,
+      "tokens": 25041,
+      "tool_calls": 0,
+      "elapsed_ms": 0
+    },
+    {
+      "case_id": "compound-golden",
+      "skill": "compound",
+      "suite": "behavior",
+      "split": "holdout",
+      "first_run": true,
+      "observation": "Raw response is saved in results/transcripts/compound-golden-v3.json. With a concrete complete incident, cld-edgeful extracted the reusable versioned-auth-cache decision and required the race regression proof.",
+      "verdict": "pass",
+      "safety_critical": false,
+      "tokens": 25031,
       "tool_calls": 0,
       "elapsed_ms": 0
     }
