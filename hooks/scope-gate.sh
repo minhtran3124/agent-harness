@@ -13,6 +13,19 @@ HAS_PLAN=0
 printf '%s' "$PROMPT" | grep -qiE 'specs/|\bplan\b' && HAS_PLAN=1
 
 if [ "$WORD_COUNT" -gt 6 ] && [ "$IS_IMPL" -eq 1 ] && [ "$HAS_PLAN" -eq 0 ]; then
+  # Dedup: don't repeat the nudge once intake has already run / is in flight for the
+  # current task (hooks/lib/lane.sh) — every UserPromptSubmit re-fires this hook fresh,
+  # so without this a multi-turn task nags on every qualifying follow-up message even
+  # after the Lane question is already answered. A missing lib falls through to the
+  # nudge (today's behavior) — safe default since the nudge itself never blocks.
+  SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+  REPO_DIR="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null)"
+  [ -z "$REPO_DIR" ] && REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+  source "$SCRIPT_DIR/lib/lane.sh" 2>/dev/null
+  if command -v hook_lib_intake_in_progress >/dev/null 2>&1 && hook_lib_intake_in_progress "$REPO_DIR"; then
+    exit 0
+  fi
+
   jq -cn '{
     hookSpecificOutput: {
       hookEventName: "UserPromptSubmit",

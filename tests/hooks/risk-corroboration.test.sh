@@ -265,4 +265,53 @@ stage "$repo" "specs/x/SUMMARY.md" "Lane: tiny"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_not_contains 0 "/simplify"
 
+# ── Lane resolution fallback (hooks/lib/lane.sh) — F1 regression coverage ──
+# The commit under test touches NO specs/ path, so there is no staged SUMMARY.md to
+# read. Before the fix, risk-corroboration.sh fell back to "most recently modified
+# specs/*/SUMMARY.md on disk" — an unrelated, merely-recently-touched spec could
+# corroborate (or wrongly block) a commit it has nothing to do with. The fix requires
+# an explicit `status: active` PLAN.md instead of a bare mtime guess.
+
+t "commit touching no specs/ path does NOT borrow an unrelated (non-active) spec's Lane — no active plan, no lane declared → warns, does not corroborate as high-risk"
+repo=$(new_repo $H)
+# An unrelated, non-active spec sits on disk with a high-risk Lane and is the most
+# recently modified SUMMARY.md — the old mtime fallback would have picked this up.
+mkdir -p "$repo/specs/unrelated-recent-task"
+printf 'Lane: high-risk\n' > "$repo/specs/unrelated-recent-task/SUMMARY.md"
+stage "$repo" "alembic/versions/abc_add_table.py" "def upgrade(): pass"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 0 "no declared Lane"
+
+t "commit touching no specs/ path DOES corroborate against the status:active plan's Lane"
+repo=$(new_repo $H)
+mkdir -p "$repo/specs/active-task"
+printf 'Lane: high-risk\n' > "$repo/specs/active-task/SUMMARY.md"
+git -C "$repo" add -f specs/active-task/SUMMARY.md >/dev/null 2>&1
+cat > "$repo/specs/active-task/PLAN.md" <<'EOF'
+---
+status: active
+---
+EOF
+git -C "$repo" add -f specs/active-task/PLAN.md >/dev/null 2>&1
+git -C "$repo" commit -qm "seed active task" >/dev/null 2>&1
+stage "$repo" "alembic/versions/abc_add_table.py" "def upgrade(): pass"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 0 "corroborated"
+
+t "commit touching no specs/ path, active plan is below high-risk → BLOCKED (fallback still enforces, not just corroborates)"
+repo=$(new_repo $H)
+mkdir -p "$repo/specs/active-task"
+printf 'Lane: normal\n' > "$repo/specs/active-task/SUMMARY.md"
+git -C "$repo" add -f specs/active-task/SUMMARY.md >/dev/null 2>&1
+cat > "$repo/specs/active-task/PLAN.md" <<'EOF'
+---
+status: active
+---
+EOF
+git -C "$repo" add -f specs/active-task/PLAN.md >/dev/null 2>&1
+git -C "$repo" commit -qm "seed active task" >/dev/null 2>&1
+stage "$repo" "alembic/versions/abc_add_table.py" "def upgrade(): pass"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "BLOCKED"
+
 finish
