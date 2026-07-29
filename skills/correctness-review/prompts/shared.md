@@ -10,10 +10,13 @@ method. Do the method you are given. Do not attempt the other five.
 - BASE_SHA: [commit before the first task]
 - HEAD_SHA: [current commit after all tasks]
 - Files touched: [list of paths]
+- REVIEW_PACKAGE_PATH: [the SDD-generated mechanical review package, or "none"]
 
-Read the diff (`git diff BASE_SHA..HEAD_SHA`) and the actual files on disk. You may read code
-outside the diff — callers, callees, base classes, config — whenever you need it to judge
-whether a change is correct.
+When `REVIEW_PACKAGE_PATH` is provided, read that package first for the exact range, commit
+list, stat, and mechanical diff; do not rebuild the same full diff. Otherwise, read the diff
+(`git diff BASE_SHA..HEAD_SHA`). Read the actual files on disk. You may read code outside the
+diff — callers, callees, base classes, config — whenever you need it to judge whether a change
+is correct.
 
 ## Assume a bug exists
 
@@ -120,4 +123,3 @@ End with exactly one of:
 ````
 
 ---
-

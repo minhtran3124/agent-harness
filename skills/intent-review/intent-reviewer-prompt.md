@@ -48,9 +48,12 @@ Task tool (reviewer):
     - BASE_SHA: [commit before the first task]
     - HEAD_SHA: [current commit after all tasks]
     - Files touched: [list of paths]
+    - REVIEW_PACKAGE_PATH: [the SDD-generated mechanical review package, or "none"]
 
-    Read the full diff (`git diff BASE_SHA..HEAD_SHA`) and the actual files. You may read
-    surrounding code to judge whether the intent was met.
+    When `REVIEW_PACKAGE_PATH` is provided, read that package first for the exact range, commit
+    list, stat, and mechanical diff; do not rebuild the same full diff. Otherwise, read the full
+    diff (`git diff BASE_SHA..HEAD_SHA`). You may read actual files and surrounding code to judge
+    whether the intent was met.
 
     ## Hard blind rule — DO NOT read the plan
 
