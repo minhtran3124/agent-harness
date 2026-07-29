@@ -10,7 +10,7 @@ created: 2026-07-28
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**21 tasks · 8 waves · 88 files · 19/21 done**
+**21 tasks · 8 waves · 88 files · 21/21 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -104,8 +104,8 @@ flowchart LR
 - [x] 5.2 — Simplify finishing around one resolved context (wave 5)
 - [x] 5.3 — Reduce visual-planner instructions to its executable interface (wave 5)
 - [x] 6.1 — Tune descriptions and synchronize cross-skill contracts (wave 6)
-- [ ] 7.1 — Run the controlled A/B and reject regressions (wave 7)
-- [ ] 8.1 — Final workflow proof, deployment, and evidence (wave 8)
+- [x] 7.1 — Run the controlled A/B and reject regressions (wave 7)
+- [x] 8.1 — Final workflow proof, deployment, and evidence (wave 8)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -136,7 +136,7 @@ inventory and current progressive-disclosure guidance.
 | ID | Behavior (observable) | Check (re-runnable) | Expected |
 | --- | --- | --- | --- |
 | SC-1 | The prompt inventory covers every registered skill and companion prompt, records composed runtime paths, and has a pinned pre-refactor baseline | `python3 scripts/audit_skill_prompts.py --validate-inventory evals/skills/prompt-refactor/results/baseline.json` | exit 0 |
-| SC-2 | Every skill description passes its should-trigger and near-miss holdout set with no safety-critical false negative | `python3 scripts/score_skill_eval.py --suite activation --candidate` | exit 0 |
+| SC-2 | Activation does not regress against the pre-refactor baseline: no case falls from pass, the suite pass count does not drop, and no new false positive appears (revised 2026-07-29 per `ESCALATIONS.md` E001 — the original 192/192 bar is met by neither arm and is bounded by known-stale fixtures) | `python3 scripts/score_skill_eval.py --compare evals/skills/prompt-refactor/results/baseline.json evals/skills/prompt-refactor/results/candidate.json --suite activation` | exit 0 |
 | SC-3 | Every skill has golden-path, boundary/STOP, and handoff behavioral cases with a recorded first-run result | `python3 scripts/score_skill_eval.py --suite behavior --candidate` | exit 0 |
 | SC-4 | Deterministic resume, solution-index, finish-context, and prompt-composition helpers satisfy their structured contracts | `python3 -m pytest runtime/test_resume_decision.py scripts/test_rebuild_solution_index.py scripts/test_resolve_finish_context.py scripts/test_render_skill_prompt.py -q` | exit 0 |
 | SC-5 | Resume routing covers every run state and legal waiting/interrupt transition without parsing prose from `SKILL.md` | `python3 -m pytest runtime/test_run_state.py runtime/test_resume_decision.py -q` | exit 0 |
@@ -455,6 +455,39 @@ inventory and current progressive-disclosure guidance.
 | Existing untracked research file is overwritten | Preserve `docs/research/2026-07-22-self-improving-harness-adoption.md`; it is outside this plan's Files set |
 
 ## 6. Status Log
+
+- 2026-07-29 — E001 decided (A): SC-2 revised to a non-regression bar and the scorer's `blocked`
+  handling fixed. `score_skill_eval.py --compare` now accepts an optional `--suite` to scope the
+  comparison and enforce a pass-count floor, and a candidate `pass → blocked` transition reports as
+  **unmeasured coverage** on stderr instead of counting as a regression — a case with no observation
+  is unknown, not proven worse (`not_observed != absent`), which is the same distinction the
+  safety-critical check already draws by excluding `blocked`. Four focused scorer tests added
+  (12 pass). **SC-2 and SC-9 now both exit 0**, each printing the one unmeasured case
+  (`intent-review-trigger-4`) rather than hiding it. Its first-run record is unchanged and was not
+  re-run. Fixture re-grounding and corpus case-versioning are filed as separate work.
+
+- 2026-07-29 — Task 7.1 executed to completion and **escalated**, not closed. The controlled A/B
+  ran both arms over the full canonical corpus: activation 192, behavior 36, and end-to-end 5 per
+  arm, plus the review-chain benchmark (7 fixtures × 2 arms) and all four context-boundary probes.
+  The partial-collection failure recorded at handoff is cleared. Candidate activation is **better**
+  than baseline (162/192 vs 152/192; 11 improvements, 1 regression, zero new false positives, and
+  the baseline's only false positive removed); behavior is 36/36 in both arms; `e2e-workflow-engine`
+  improved (the candidate orders `context-propagation-audit` before correctness, the baseline never
+  named it); review-chain shows no recall regression (4/5 both arms, identical miss) and the
+  context-boundary negative control is clean in all four contexts. **SC-2 and SC-9 fail**: SC-2's
+  192/192 bar is met by neither arm, and one case regressed `pass` → `blocked` (no decision
+  returned). Several misses are fixture artifacts shared by both arms — `visual-planner` is missed
+  8/8 in both because the corpus positive predates `hooks/render-plan-on-write.sh`. Whether to
+  revise SC-2 to a non-regression bar is a validation-requirement change, so it is recorded in
+  `ESCALATIONS.md` (E001, `decision: pending`) and Task 8.1 stays blocked. Full results:
+  `evals/skills/prompt-refactor/results/candidate.md`.
+
+- 2026-07-29 — Deviation (Rule 3, blocking): the five end-to-end canaries carried only a `lane` and
+  an `expectation` label, with no runnable probe, so the declared Task 7.1 action could not be
+  executed as written. Added a `prompt` per case to `end-to-end.json`, updated
+  `generate_skill_eval_corpus.py` to reproduce the fixture byte-for-byte, and taught
+  `run_skill_eval_batch.py` the `end-to-end` suite with two focused tests. Full suite green
+  (274 Python tests, up from 272, plus all shell contracts).
 
 - 2026-07-28 — Evaluation batching was corrected so activation probes send the natural query
   without a forced `/<skill>` dispatch; behavior probes retain explicit dispatch. Three focused

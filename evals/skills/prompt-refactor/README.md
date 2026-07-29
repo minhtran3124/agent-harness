@@ -30,6 +30,16 @@ or changes the evaluation environment.
 python3 scripts/score_skill_eval.py --compare results/baseline.json results/candidate.json
 ```
 
+Add `--suite <activation|behavior|end-to-end>` to scope the comparison to one suite and additionally
+enforce that suite's **non-regression bar**: the candidate's pass count may not fall below the
+baseline's. This is how SC-2 is checked.
+
+A candidate case whose verdict is `blocked` produced **no observation at all**, so a `pass → blocked`
+transition is reported as **unmeasured coverage** on stderr rather than counted as a regression — the
+case is unknown, not proven worse (`not_observed != absent`). It is printed on every run so it can
+never be mistaken for proven parity. An observed wrong answer (`missed`, `false-positive`) still
+fails the comparison.
+
 Coverage is bounded by the corpus. A behavior without a fixture is unmeasured, not proven safe.
 When the comparison paths are the repository's canonical `results/baseline.json` and
 `results/candidate.json`, the scorer also requires both files to contain every activation,

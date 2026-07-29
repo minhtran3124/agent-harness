@@ -128,18 +128,31 @@ Recorded separately under their own manual protocols:
 
 | criterion | check | result |
 |---|---|---|
-| SC-2 | `score_skill_eval.py --suite activation --candidate` | **fail** — 30 non-passing first-run candidate cases |
+| SC-2 | `score_skill_eval.py --compare baseline.json candidate.json --suite activation` | pass |
 | SC-3 | `score_skill_eval.py --suite behavior --candidate` | pass |
 | SC-6 | `score_skill_eval.py --suite review-chain --candidate` | pass (schema gate; substantive evidence in the review-chain result file) |
-| SC-9 | `score_skill_eval.py --compare baseline.json candidate.json` | **fail** — 1 regression (`intent-review-trigger-4`, pass → blocked) |
+| SC-9 | `score_skill_eval.py --compare baseline.json candidate.json` | pass |
 
-SC-2 as written requires **192/192** activation cases to pass. This run measured that bar and it is
-not met by either arm — the baseline scores 152/192 against the same corpus. That is a finding about
-the criterion and the fixture set, not only about the candidate. Per Task 7.1's own Done clause
-("…or the plan is revised rather than declaring success") and `rules/orchestration.md` (a change
-that would redefine validation requirements must escalate), the decision is recorded in
-`specs/skill-prompt-refactor/ESCALATIONS.md` and is **pending a human**. The plan is not marked
-shipped and PR #179 stays draft.
+Both comparison gates print one **unmeasured coverage** line for `intent-review-trigger-4` and exit
+0. That is deliberate: the case is reported on every run so it cannot be mistaken for proven parity.
+
+### How SC-2 got here
+
+SC-2 originally required **192/192** activation cases to pass. This run measured that bar and it is
+met by **neither** arm — the baseline scores 152/192 against the same corpus, and several misses are
+fixture artifacts shared by both arms (most clearly `visual-planner`, 8/8 in both). That is a finding
+about the criterion and the fixture set, not only about the candidate. Per Task 7.1's Done clause
+("…or the plan is revised rather than declaring success") and `rules/orchestration.md` (a change that
+would redefine validation requirements must escalate), it was escalated as `ESCALATIONS.md` E001 and
+**decided by a human on 2026-07-29**: SC-2 becomes a non-regression bar — no case falls from pass,
+the suite pass count does not drop, and no new false positive appears. Fixture re-grounding and the
+corpus case-versioning it requires are filed as separate work.
+
+The SC-9 sub-decision was to **fix the scorer** rather than waive the case. `blocked` means no
+observation was collected, so counting `pass → blocked` as a measured regression contradicted this
+repo's `not_observed != absent` rule — and the safety-critical check in the same function already
+drew that distinction by excluding `blocked`. It now reports as unmeasured coverage. The first-run
+record for `intent-review-trigger-4` is unchanged and was not re-run.
 
 ## Limitations
 

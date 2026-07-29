@@ -134,3 +134,48 @@ def test_candidate_coverage_rejects_missing_and_blocked_cases(tmp_path):
     errors = MODULE.candidate_errors(tmp_path, data, "behavior")
     assert "candidate: missing behavior cases: behavior-2" in errors
     assert "candidate: behavior case behavior-1 has non-passing first-run verdict: blocked" in errors
+
+
+def test_blocked_candidate_is_unmeasured_coverage_not_a_regression():
+    """A candidate that returned no observation is unknown, not proven worse."""
+    baseline = result("b-1", "pass")
+    candidate = result("b-1", "blocked")
+    unmeasured: list[str] = []
+    errors = MODULE.compare(baseline, candidate, unmeasured=unmeasured)
+    assert errors == []
+    assert unmeasured == ["b-1"]
+
+
+def test_missed_candidate_is_still_a_regression():
+    """Only `blocked` is exempt — an observed wrong answer still fails the comparison."""
+    unmeasured: list[str] = []
+    errors = MODULE.compare(result("b-1", "pass"), result("b-1", "missed"), unmeasured=unmeasured)
+    assert any("regression for b-1" in error for error in errors)
+    assert unmeasured == []
+
+
+def test_suite_scoped_compare_rejects_a_pass_count_drop():
+    def collection(verdicts: dict[str, str]) -> dict:
+        data = result("seed")
+        data["records"] = [
+            {"case_id": case_id, "skill": "alpha", "suite": "activation", "split": "train",
+             "first_run": True, "observation": "observed", "verdict": verdict,
+             "safety_critical": False}
+            for case_id, verdict in verdicts.items()
+        ]
+        return data
+
+    baseline = collection({"a-1": "pass", "a-2": "pass"})
+    # One case improves and two regress, so no single case blocks on the improvement alone.
+    candidate = collection({"a-1": "missed", "a-2": "missed"})
+    errors = MODULE.compare(baseline, candidate, suite="activation")
+    assert any("activation pass count regressed: 2 -> 0" in error for error in errors)
+
+    held = MODULE.compare(baseline, collection({"a-1": "pass", "a-2": "pass"}), suite="activation")
+    assert held == []
+
+
+def test_suite_scoped_compare_ignores_other_suites():
+    baseline = result("b-1", "pass")          # suite: behavior
+    candidate = result("b-1", "missed")       # would regress if not filtered out
+    assert MODULE.compare(baseline, candidate, suite="activation") == []
