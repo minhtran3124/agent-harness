@@ -88,3 +88,24 @@ def test_artifact_name_containing_produces_is_not_an_interface_separator():
 - **Interfaces:** Consumes: `produces.py`. Produces: `out.py`
 """
     assert errors(text) == []
+
+
+def test_artifact_name_does_not_satisfy_required_produces_verb():
+    text = """## Global Constraints
+
+- x
+
+## 3. Success Criteria
+
+| ID | x | x | x |
+|---|---|---|---|
+| SC-1 | x | x | exit 0 |
+
+## 4. Tasks
+
+### Task 1.1 — consumer
+
+- **Criteria:** SC-1
+- **Interfaces:** Consumes: `produces.py`
+"""
+    assert any("must name what it consumes and produces" in item for item in errors(text))

@@ -32,6 +32,12 @@ def interface_values(interface: str, verb: str) -> list[str]:
     return values
 
 
+def interface_verbs(interface: str) -> set[str]:
+    """Return real interface verbs, excluding text inside backticked artifact names."""
+    masked = re.sub(r"`[^`]*`", lambda match: "`" + "x" * (len(match.group(0)) - 2) + "`", interface)
+    return {match.group(1).lower().rstrip("s") for match in INTERFACE_CLAUSE.finditer(masked)}
+
+
 def errors(text: str, name: str = "PLAN.md") -> list[str]:
     if "## Global Constraints" not in text:
         return []  # Legacy markdown/XML remains executable.
@@ -61,7 +67,8 @@ def errors(text: str, name: str = "PLAN.md") -> list[str]:
         if unknown:
             found.append(f"{name}: Task {task_id} references unknown criteria: {', '.join(sorted(unknown))}")
         interface = fields["Interfaces"]
-        if not re.search(r"\bConsumes?\b", interface, re.I) or not re.search(r"\bProduces?\b", interface, re.I):
+        verbs = interface_verbs(interface)
+        if "consume" not in verbs or "produce" not in verbs:
             found.append(f"{name}: Task {task_id} Interfaces must name what it consumes and produces")
         produced.update(interface_values(interface, "produce"))
         for value in interface_values(interface, "consume"):
