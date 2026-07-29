@@ -163,3 +163,5 @@ A/B evaluation.
 - 2026-07-29 — External context, correctness, and intent reviews re-ran through `2697714`.
   A child-prompt package-delivery gap and parser edge cases were fixed; full suite and adoption
   checks passed before the receipt refresh. PR creation remains blocked by collaborator permission.
+- 2026-07-29 — Final branch head `26d5af5` pushed. A second draft-PR attempt against `simplify`
+  failed with `GraphQL: must be a collaborator (createPullRequest)`; no merge was attempted.

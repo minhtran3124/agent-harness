@@ -87,8 +87,8 @@ correctness and intent child prompts receive `REVIEW_PACKAGE_PATH`, not only the
 
 ### Delivery Status
 
-- Branch `feat/superpowers-6-review-pipeline` pushed to `github`; final commits will be pushed
-  after this receipt refresh.
+- Branch `feat/superpowers-6-review-pipeline` pushed to `github` at `26d5af5`.
 - Draft PR creation was attempted against `simplify` and rejected by GitHub: the configured
-  credential is not a collaborator. No merge was attempted. A repository collaborator can open
-  the PR from the pushed branch.
+  credential is not a collaborator (`GraphQL: must be a collaborator (createPullRequest)`). It
+  was retried after the final push with the same result. No merge was attempted. A repository
+  collaborator can open the PR from the pushed branch.
