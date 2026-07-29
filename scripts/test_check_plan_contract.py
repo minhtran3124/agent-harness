@@ -25,9 +25,40 @@ def test_dotted_consumed_artifact_requires_a_producer():
 
 ## 4. Tasks
 
+### Task 1.0 — source
+
+- **Criteria:** SC-1
+- **Interfaces:** Consumes: input. Produces: `in.py`
+
 ### Task 1.1 — x
 
 - **Criteria:** SC-1
 - **Interfaces:** Consumes: `missing_module.py`. Produces: `output.json`.
 """
     assert any("missing_module.py with no producer" in item for item in errors(text))
+
+
+def test_colonless_produces_clause_keeps_both_artifacts_separate():
+    text = """## Global Constraints
+
+- x
+
+## 3. Success Criteria
+
+| ID | x | x | x |
+|---|---|---|---|
+| SC-1 | x | x | exit 0 |
+
+## 4. Tasks
+
+### Task 1.0 — source
+
+- **Criteria:** SC-1
+- **Interfaces:** Consumes: input. Produces: `in.py`
+
+### Task 1.1 — x
+
+- **Criteria:** SC-1
+- **Interfaces:** Consumes: `in.py`, produces `helper.py`
+"""
+    assert errors(text) == []

@@ -15,7 +15,7 @@ TASK = re.compile(r"(?ms)^### Task ([0-9][\w.]*)[^\n]*\n(.*?)(?=^### Task |^## |
 FIELD = re.compile(r"(?m)^[-*] \*\*(Criteria|Interfaces):\*\*\s*(.+)$")
 SC = re.compile(r"\bSC-\d+\b")
 INTERFACE_CLAUSE = re.compile(
-    r"\b(Consumes?|Produces?)\b\s*:?\s*(.*?)(?=\s*\b(?:Consumes?|Produces?)\b\s*:|$)",
+    r"\b(Consumes?|Produces?)\b\s*:?\s*(.*?)(?=\s*\b(?:Consumes?|Produces?)\b\s*:?\s*|$)",
     re.I,
 )
 

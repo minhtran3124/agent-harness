@@ -14,6 +14,11 @@ def test_task_id_match_is_exact():
     assert task_brief.task_block(text, "1.1") is None
 
 
+def test_task_id_accepts_colon_heading_separator():
+    text = "### Task 1.1: supported\n\n- **Action:** right\n"
+    assert task_brief.task_block(text, "1.1") is not None
+
+
 def test_mapped_rows_do_not_match_sc_prefixes():
     text = """## 3. Success Criteria
 

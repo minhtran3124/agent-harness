@@ -21,7 +21,7 @@ def section(text: str, heading: str) -> str:
 def task_block(text: str, task_id: str) -> re.Match[str] | None:
     """Find an exact markdown task ID, never a dotted-prefix sibling."""
     return re.search(
-        rf"(?ms)^### Task {re.escape(task_id)}(?=\s|—|-|$)[^\n]*\n(.*?)(?=^### Task |^## |\Z)",
+        rf"(?ms)^### Task {re.escape(task_id)}(?=\s|:|—|-|$)[^\n]*\n(.*?)(?=^### Task |^## |\Z)",
         text,
     )
 
