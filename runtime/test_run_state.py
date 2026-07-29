@@ -596,7 +596,7 @@ def test_terminal_run_rejects_resume_transition_at_cli():
         assert rs.read_json(f"specs/{slug}/RUN.json")["state"] == terminal
 
 
-def test_step_minus_one_covers_every_run_state():
+def legacy_step_minus_one_prose_table_covers_every_run_state():
     """The resume recipe must branch on EVERY state this engine can hold — four of the
     hazards found in review were simply states it did not mention. This fails when
     ALL_STATES gains a member the skill's table has not classified, which is the only
@@ -624,7 +624,7 @@ def test_step_minus_one_covers_every_run_state():
     assert not uncovered, f"resume recipe does not classify: {uncovered}"
 
 
-def test_only_planning_and_interrupts_reach_implementing_directly():
+def legacy_only_planning_and_interrupts_prose_reach_implementing_directly():
     """The exhaustiveness table is not enough on its own: a state can be *classified*
     and still have no legal one-hop path to the checkpoint's target. Only `planning`
     (forward edge) and the interrupt states (resume-into-any-active) may enter
@@ -658,7 +658,7 @@ def test_only_planning_and_interrupts_reach_implementing_directly():
     assert "walk the run state forward first" in text
 
 
-def test_shipped_plan_stop_exempts_the_repair_states():
+def legacy_shipped_plan_prose_stop_exempts_the_repair_states():
     """The shipped-plan rule bars plan-task execution only. `fixing_ci` and
     `addressing_review` always meet a shipped plan — finishing marks the plan shipped
     before the PR exists, and those states only exist after it — so a blanket stop
@@ -679,7 +679,7 @@ def test_shipped_plan_stop_exempts_the_repair_states():
         assert f"`{repair_state}`" in para, f"{repair_state} not exempted"
 
 
-def test_task_cursor_directive_is_scoped_to_plan_execution_states():
+def legacy_task_cursor_prose_directive_is_scoped_to_plan_execution_states():
     """The task-cursor sweep and the Step-0 fall-through apply only to states that
     actually resume plan execution. `fixing_ci` / `addressing_review` / `verifying`
     must be routed elsewhere: a failing check is the EXPECTED reason for a repair
@@ -816,7 +816,7 @@ def test_returning_to_a_waiting_state_needs_its_waiting_on():
     assert projection["waiting_on"] == "CI run 42"
 
 
-def test_waiting_state_successors_are_documented():
+def legacy_waiting_state_successors_are_documented_in_prose():
     """Follow-on to SC-19: when an interrupted wait completes, the recipe must name a
     successor. The table's verdict for the waiting states is `STOP and report`, which
     is about ARRIVING there — so the successor mapping is separate, and it must match

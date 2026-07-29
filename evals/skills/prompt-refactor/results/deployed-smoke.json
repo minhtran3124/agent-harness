@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "commit_sha": "924af147e9721c0e09fb5d3f25a71e4465ea9b10",
+  "environment": {
+    "model": "deployed-script-smoke",
+    "client_version": "bash-python3",
+    "reasoning": "deterministic"
+  },
+  "records": [
+    {
+      "case_id": "using-git-worktrees-handoff",
+      "skill": "using-git-worktrees",
+      "suite": "behavior",
+      "split": "holdout",
+      "first_run": true,
+      "observation": "deploy-harness synced current source into .claude; deployed detect-isolation reported main-worktree and deployed renderer wrote PLAN.html.",
+      "verdict": "pass",
+      "safety_critical": false,
+      "tokens": 0,
+      "tool_calls": 0,
+      "elapsed_ms": 0
+    },
+    {
+      "case_id": "finishing-a-development-branch-boundary",
+      "skill": "finishing-a-development-branch",
+      "suite": "behavior",
+      "split": "holdout",
+      "first_run": true,
+      "observation": "Resolved the high-risk plan from the refactor branch; check_review_receipt exited 1 because no receipt existed, correctly preventing a push.",
+      "verdict": "pass",
+      "safety_critical": false,
+      "tokens": 0,
+      "tool_calls": 0,
+      "elapsed_ms": 0
+    }
+  ]
+}

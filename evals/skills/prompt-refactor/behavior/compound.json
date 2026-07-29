@@ -1,0 +1,25 @@
+{
+  "cases": [
+    {
+      "id": "compound-golden",
+      "skill": "compound",
+      "kind": "golden",
+      "expectation": "compound a complete failure record",
+      "prompt": "Incident record: Deploying v2 served stale tenant permissions after role changes. Trigger: revoke a role then refresh within 60s. Root cause: cache key omitted permission version. Failed attempt: lowering cache TTL. Fix: include permission version in the key. Proof: regression test revokes a role then asserts 403 after refresh. Affected paths: auth/cache.py and policy service. Reusable decision: cache authorization by versioned permission state. Compound this complete failure record into durable knowledge."
+    },
+    {
+      "id": "compound-boundary",
+      "skill": "compound",
+      "kind": "boundary",
+      "expectation": "skip an incomplete learning",
+      "prompt": "skip an incomplete learning"
+    },
+    {
+      "id": "compound-handoff",
+      "skill": "compound",
+      "kind": "handoff",
+      "expectation": "write docs and rebuild the index",
+      "prompt": "write docs and rebuild the index"
+    }
+  ]
+}

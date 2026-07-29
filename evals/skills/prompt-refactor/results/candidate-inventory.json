@@ -1,0 +1,225 @@
+{
+  "git_sha": "924af147e9721c0e09fb5d3f25a71e4465ea9b10",
+  "inventory": [
+    {
+      "companion_prompts": [
+        {
+          "characters": 1778,
+          "lines": 50,
+          "path": "skills/brainstorming/spec-document-reviewer-prompt.md",
+          "words": 244
+        }
+      ],
+      "description_characters": 211,
+      "name": "brainstorming",
+      "skill": {
+        "characters": 2081,
+        "lines": 39,
+        "path": "skills/brainstorming/SKILL.md",
+        "words": 287
+      }
+    },
+    {
+      "companion_prompts": [
+        {
+          "characters": 3306,
+          "lines": 54,
+          "path": "skills/compound/subagents/context-analyzer-prompt.md",
+          "words": 470
+        },
+        {
+          "characters": 3909,
+          "lines": 78,
+          "path": "skills/compound/subagents/decision-extractor-prompt.md",
+          "words": 578
+        },
+        {
+          "characters": 2529,
+          "lines": 60,
+          "path": "skills/compound/subagents/related-docs-finder-prompt.md",
+          "words": 359
+        },
+        {
+          "characters": 4827,
+          "lines": 92,
+          "path": "skills/compound/subagents/solution-extractor-prompt.md",
+          "words": 718
+        }
+      ],
+      "description_characters": 193,
+      "name": "compound",
+      "skill": {
+        "characters": 2191,
+        "lines": 51,
+        "path": "skills/compound/SKILL.md",
+        "words": 297
+      }
+    },
+    {
+      "companion_prompts": [],
+      "description_characters": 202,
+      "name": "context-propagation-audit",
+      "skill": {
+        "characters": 2069,
+        "lines": 38,
+        "path": "skills/context-propagation-audit/SKILL.md",
+        "words": 289
+      }
+    },
+    {
+      "companion_prompts": [
+        {
+          "characters": 1237,
+          "lines": 23,
+          "path": "skills/correctness-review/correctness-reviewer-prompt.md",
+          "words": 146
+        },
+        {
+          "characters": 9486,
+          "lines": 171,
+          "path": "skills/correctness-review/correctness-scorer-prompt.md",
+          "words": 1485
+        }
+      ],
+      "description_characters": 177,
+      "name": "correctness-review",
+      "skill": {
+        "characters": 2256,
+        "lines": 37,
+        "path": "skills/correctness-review/SKILL.md",
+        "words": 296
+      }
+    },
+    {
+      "companion_prompts": [],
+      "description_characters": 202,
+      "name": "feature-intake",
+      "skill": {
+        "characters": 3820,
+        "lines": 76,
+        "path": "skills/feature-intake/SKILL.md",
+        "words": 496
+      }
+    },
+    {
+      "companion_prompts": [],
+      "description_characters": 171,
+      "name": "finishing-a-development-branch",
+      "skill": {
+        "characters": 2330,
+        "lines": 51,
+        "path": "skills/finishing-a-development-branch/SKILL.md",
+        "words": 327
+      }
+    },
+    {
+      "companion_prompts": [
+        {
+          "characters": 9176,
+          "lines": 169,
+          "path": "skills/intent-review/intent-reviewer-prompt.md",
+          "words": 1395
+        }
+      ],
+      "description_characters": 192,
+      "name": "intent-review",
+      "skill": {
+        "characters": 2250,
+        "lines": 39,
+        "path": "skills/intent-review/SKILL.md",
+        "words": 323
+      }
+    },
+    {
+      "companion_prompts": [
+        {
+          "characters": 1550,
+          "lines": 33,
+          "path": "skills/subagent-driven-development/code-quality-reviewer-prompt.md",
+          "words": 199
+        },
+        {
+          "characters": 5800,
+          "lines": 139,
+          "path": "skills/subagent-driven-development/implementer-prompt.md",
+          "words": 858
+        },
+        {
+          "characters": 2541,
+          "lines": 69,
+          "path": "skills/subagent-driven-development/spec-reviewer-prompt.md",
+          "words": 369
+        }
+      ],
+      "description_characters": 225,
+      "name": "subagent-driven-development",
+      "skill": {
+        "characters": 2703,
+        "lines": 52,
+        "path": "skills/subagent-driven-development/SKILL.md",
+        "words": 362
+      }
+    },
+    {
+      "companion_prompts": [],
+      "description_characters": 195,
+      "name": "using-git-worktrees",
+      "skill": {
+        "characters": 1704,
+        "lines": 40,
+        "path": "skills/using-git-worktrees/SKILL.md",
+        "words": 232
+      }
+    },
+    {
+      "companion_prompts": [],
+      "description_characters": 165,
+      "name": "visual-planner",
+      "skill": {
+        "characters": 1993,
+        "lines": 41,
+        "path": "skills/visual-planner/SKILL.md",
+        "words": 223
+      }
+    },
+    {
+      "companion_prompts": [
+        {
+          "characters": 2384,
+          "lines": 54,
+          "path": "skills/writing-plans/plan-document-reviewer-prompt.md",
+          "words": 348
+        }
+      ],
+      "description_characters": 132,
+      "name": "writing-plans",
+      "skill": {
+        "characters": 1752,
+        "lines": 33,
+        "path": "skills/writing-plans/SKILL.md",
+        "words": 242
+      }
+    },
+    {
+      "companion_prompts": [],
+      "description_characters": 249,
+      "name": "xia2",
+      "skill": {
+        "characters": 2784,
+        "lines": 50,
+        "path": "skills/xia2/SKILL.md",
+        "words": 370
+      }
+    }
+  ],
+  "measurement": "whitespace words; lines exclude a trailing empty line",
+  "problems": [],
+  "schema_version": 1,
+  "totals": {
+    "characters": 76456,
+    "companion_prompts": 12,
+    "lines": 1539,
+    "skills": 12,
+    "words": 10913
+  }
+}

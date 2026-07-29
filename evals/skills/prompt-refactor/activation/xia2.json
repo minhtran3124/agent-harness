@@ -1,0 +1,116 @@
+{
+  "cases": [
+    {
+      "id": "xia2-trigger-1",
+      "skill": "xia2",
+      "query": "Research what already exists locally and upstream before we implement this capability.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "xia2-trigger-2",
+      "skill": "xia2",
+      "query": "Before we touch code, research what already exists locally and upstream before we implement this capability.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "xia2-trigger-3",
+      "skill": "xia2",
+      "query": "I am unsure of the safest workflow; research what already exists locally and upstream before we implement this capability.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "xia2-trigger-4",
+      "skill": "xia2",
+      "query": "Please do this in the repository: research what already exists locally and upstream before we implement this capability.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "xia2-trigger-5",
+      "skill": "xia2",
+      "query": "This is time-sensitive, but research what already exists locally and upstream before we implement this capability.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "xia2-trigger-6",
+      "skill": "xia2",
+      "query": "Use the project workflow to research what already exists locally and upstream before we implement this capability.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "xia2-trigger-7",
+      "skill": "xia2",
+      "query": "Can you take ownership of this request? Research what already exists locally and upstream before we implement this capability.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "xia2-trigger-8",
+      "skill": "xia2",
+      "query": "Do not implement anything else; research what already exists locally and upstream before we implement this capability.",
+      "should_trigger": true,
+      "split": "holdout"
+    },
+    {
+      "id": "xia2-near-miss-1",
+      "skill": "xia2",
+      "query": "Apply the already approved implementation task without additional research.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "xia2-near-miss-2",
+      "skill": "xia2",
+      "query": "Do only this instead: apply the already approved implementation task without additional research.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "xia2-near-miss-3",
+      "skill": "xia2",
+      "query": "The user asked us to apply the already approved implementation task without additional research.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "xia2-near-miss-4",
+      "skill": "xia2",
+      "query": "This request is adjacent but distinct: apply the already approved implementation task without additional research.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "xia2-near-miss-5",
+      "skill": "xia2",
+      "query": "Do not route to the wrong specialist; apply the already approved implementation task without additional research.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "xia2-near-miss-6",
+      "skill": "xia2",
+      "query": "For this branch, apply the already approved implementation task without additional research.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "xia2-near-miss-7",
+      "skill": "xia2",
+      "query": "Handle the direct request: apply the already approved implementation task without additional research.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "xia2-near-miss-8",
+      "skill": "xia2",
+      "query": "The next action should be: apply the already approved implementation task without additional research.",
+      "should_trigger": false,
+      "split": "holdout"
+    }
+  ]
+}

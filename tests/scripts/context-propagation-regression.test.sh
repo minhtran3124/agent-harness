@@ -7,18 +7,18 @@
 #      gained an explicit "FIRST: Read `.claude/rules/auto-correct-scope.md`" so an
 #      isolated implementer actually loads the rule (its task text is pasted, so
 #      nothing else puts the path-scoped rule in context).
-#   P2 (commit 1c0f01d) — skills/correctness-review/correctness-reviewer-prompt.md
+#   P2 (commit 1c0f01d) — the correctness FIND shared fragment
 #      completed the inline Rule-4 STOP list to all 8 cases AND added an explicit
 #      "**Read `.claude/rules/auto-correct-scope.md`**" before Rule-4 classification
 #      (the review is plan-blind, so the `paths: specs/**` rule never auto-loads).
 #
-# Like scorer-threshold-contract.test.sh, this parses the LIVE skill files (not a
+# Like scorer-threshold-contract.test.sh, this parses the LIVE composed sources (not a
 # snapshot): a future edit that drops either explicit Read, or drops a STOP case
 # from the reviewer prompt's inline list, fails the suite instead of shipping.
 source "$(dirname "$0")/../lib.sh"
 
 IMPL="skills/subagent-driven-development/implementer-prompt.md"
-REVIEWER="skills/correctness-review/correctness-reviewer-prompt.md"
+REVIEWER="skills/correctness-review/prompts/shared.md"
 
 # The 8 Rule-4 STOP cases, as one stable keyword token each. Registry wording
 # (rules/auto-correct-scope.md Rule 4) and the prompt's inline copy have legitimately
@@ -40,7 +40,7 @@ implementer_read_ok() {
   grep -qE 'FIRST: Read .*auto-correct-scope\.md' "$1/$IMPL"
 }
 
-# reviewer_read_ok <dir> → 0 iff the reviewer prompt still has the explicit bolded
+# reviewer_read_ok <dir> → 0 iff the shared child prompt still has the explicit bolded
 # Read of auto-correct-scope.md before Rule-4 classification (the 1c0f01d fix).
 reviewer_read_ok() {
   grep -qE '\*\*Read .*auto-correct-scope\.md' "$1/$REVIEWER"
@@ -66,7 +66,7 @@ t "implementer prompt has the FIRST: Read of auto-correct-scope.md (d61e155)"
 if implementer_read_ok "$ROOT"; then pass
 else fail "no 'FIRST: Read ... auto-correct-scope.md' line in $IMPL"; fi
 
-t "reviewer prompt has an explicit Read of auto-correct-scope.md before Rule-4 (1c0f01d)"
+t "reviewer shared fragment has an explicit Read of auto-correct-scope.md before Rule-4 (1c0f01d)"
 if reviewer_read_ok "$ROOT"; then pass
 else fail "no explicit '**Read ... auto-correct-scope.md' in $REVIEWER"; fi
 
@@ -86,7 +86,7 @@ sed -i.bak '/\*\*Read .*auto-correct-scope/d'    "$m/$REVIEWER" && rm -f "$m/$RE
 if ! implementer_read_ok "$m" && ! reviewer_read_ok "$m"; then pass
 else fail "deleting the Read line was NOT detected — impl_ok=$(implementer_read_ok "$m"; echo $?) rev_ok=$(reviewer_read_ok "$m"; echo $?)"; fi
 
-t "mutation: removing one STOP case from the reviewer prompt is detected"
+t "mutation: removing one STOP case from the reviewer shared fragment is detected"
 m2=$(mktemp -d); _CLEANUP_DIRS+=("$m2")
 cp -R "$ROOT/skills" "$m2/skills"
 # Drop the 'high-blast' case (unique to line 175 of the STOP region).

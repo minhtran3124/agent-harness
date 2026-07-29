@@ -1,0 +1,34 @@
+{
+  "cases": [
+    {
+      "id": "e2e-tiny",
+      "lane": "tiny",
+      "expectation": "branch then direct edit with SUMMARY evidence",
+      "prompt": "Scenario: one line of README.md has a typo. Nothing else changes. Name, in order, the workflow steps this repository requires from intake to shipping, and the evidence artifact that must be written."
+    },
+    {
+      "id": "e2e-normal",
+      "lane": "normal",
+      "expectation": "isolate, execute plan, review, and open PR",
+      "prompt": "Scenario: add an optional --format flag to an existing script; roughly three files and five steps. Name, in order, the workflow steps this repository requires from intake to opening a pull request."
+    },
+    {
+      "id": "e2e-high-risk",
+      "lane": "high-risk",
+      "expectation": "design, research, plan, execution, review, and receipt",
+      "prompt": "Scenario: add a new OAuth login provider plus a database migration that rewrites the users table. Name, in order, the workflow steps this repository requires from intake to shipping, including every required artifact and gate."
+    },
+    {
+      "id": "e2e-resume",
+      "lane": "normal",
+      "expectation": "reconstruct cursor before any resumed task",
+      "prompt": "Scenario: an earlier session partly executed specs/<slug>/PLAN.md and ended. You are starting a brand-new session with no memory of that work. State exactly what you must establish before dispatching any remaining task."
+    },
+    {
+      "id": "e2e-workflow-engine",
+      "lane": "high-risk",
+      "expectation": "context-propagation audit precedes correctness and intent",
+      "prompt": "Scenario: the finished diff changes skills/, agent dispatch prompts, and rules/. State the required review sequence, in order, before this branch may ship."
+    }
+  ]
+}

@@ -1,0 +1,116 @@
+{
+  "cases": [
+    {
+      "id": "correctness-review-trigger-1",
+      "skill": "correctness-review",
+      "query": "Run an adversarial runtime-bug review over this finished diff.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "correctness-review-trigger-2",
+      "skill": "correctness-review",
+      "query": "Before we touch code, run an adversarial runtime-bug review over this finished diff.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "correctness-review-trigger-3",
+      "skill": "correctness-review",
+      "query": "I am unsure of the safest workflow; run an adversarial runtime-bug review over this finished diff.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "correctness-review-trigger-4",
+      "skill": "correctness-review",
+      "query": "Please do this in the repository: run an adversarial runtime-bug review over this finished diff.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "correctness-review-trigger-5",
+      "skill": "correctness-review",
+      "query": "This is time-sensitive, but run an adversarial runtime-bug review over this finished diff.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "correctness-review-trigger-6",
+      "skill": "correctness-review",
+      "query": "Use the project workflow to run an adversarial runtime-bug review over this finished diff.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "correctness-review-trigger-7",
+      "skill": "correctness-review",
+      "query": "Can you take ownership of this request? Run an adversarial runtime-bug review over this finished diff.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "correctness-review-trigger-8",
+      "skill": "correctness-review",
+      "query": "Do not implement anything else; run an adversarial runtime-bug review over this finished diff.",
+      "should_trigger": true,
+      "split": "holdout"
+    },
+    {
+      "id": "correctness-review-near-miss-1",
+      "skill": "correctness-review",
+      "query": "Check whether this diff matches the user's original request.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "correctness-review-near-miss-2",
+      "skill": "correctness-review",
+      "query": "Do only this instead: check whether this diff matches the user's original request.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "correctness-review-near-miss-3",
+      "skill": "correctness-review",
+      "query": "The user asked us to check whether this diff matches the user's original request.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "correctness-review-near-miss-4",
+      "skill": "correctness-review",
+      "query": "This request is adjacent but distinct: check whether this diff matches the user's original request.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "correctness-review-near-miss-5",
+      "skill": "correctness-review",
+      "query": "Do not route to the wrong specialist; check whether this diff matches the user's original request.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "correctness-review-near-miss-6",
+      "skill": "correctness-review",
+      "query": "For this branch, check whether this diff matches the user's original request.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "correctness-review-near-miss-7",
+      "skill": "correctness-review",
+      "query": "Handle the direct request: check whether this diff matches the user's original request.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "correctness-review-near-miss-8",
+      "skill": "correctness-review",
+      "query": "The next action should be: check whether this diff matches the user's original request.",
+      "should_trigger": false,
+      "split": "holdout"
+    }
+  ]
+}

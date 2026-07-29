@@ -1,0 +1,2116 @@
+{
+  "run_date": "2026-07-29",
+  "arm": "baseline",
+  "environment": {
+    "model": "claude-sonnet-5",
+    "client_version": "2.1.220",
+    "reasoning": "low"
+  },
+  "commit_sha": "924af147e9721c0e09fb5d3f25a71e4465ea9b10",
+  "worktree": "/private/tmp/harness-skills-baseline-ab",
+  "suites": {
+    "activation": {
+      "brainstorming-near-miss-1": {
+        "result": "TRIGGER — implementing a plan's first task falls under subagent-driven-development, which requires an active PLAN.md/branch workflow rather than a direct edit.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 56,
+          "cache_creation_input_tokens": 13618,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "brainstorming-near-miss-2": {
+        "result": "NO-TRIGGER — no plan or design referenced in this conversation to implement from; needs feature-intake/plan context first.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 43,
+          "cache_creation_input_tokens": 13625,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "brainstorming-near-miss-3": {
+        "result": "TRIGGER — implementation of an approved design/plan should go through subagent-driven-development (per skill workflow), not an ad-hoc edit.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 50,
+          "cache_creation_input_tokens": 13624,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "brainstorming-near-miss-4": {
+        "result": "TRIGGER — implementing a task from an approved design requires /feature-intake to set the lane before any edits, per the skill workflow chain.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 47,
+          "cache_creation_input_tokens": 13630,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "brainstorming-near-miss-5": {
+        "result": "NO-TRIGGER — no repository skill invocation requested; this is a direct implementation instruction to proceed with an already-approved design.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 46,
+          "cache_creation_input_tokens": 13631,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "brainstorming-near-miss-6": {
+        "result": "TRIGGER — implementation work should route through feature-intake first per the workflow, since no plan/lane has been established yet.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 41,
+          "cache_creation_input_tokens": 13623,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "brainstorming-near-miss-7": {
+        "result": "TRIGGER — implementation work off an approved design should go through subagent-driven-development (or feature-intake first if no plan/lane exists yet).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 49,
+          "cache_creation_input_tokens": 13626,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "brainstorming-near-miss-8": {
+        "result": "TRIGGER — implementing an approved plan's first task is subagent-driven-development territory, per the skill workflow chain.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 42,
+          "cache_creation_input_tokens": 13624,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "brainstorming-trigger-1": {
+        "result": "TRIGGER — this matches brainstorming (explore alternatives, converge to a design) which feeds into writing-plans per the skill workflow.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 49,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 22722
+        }
+      },
+      "brainstorming-trigger-2": {
+        "result": "TRIGGER — this maps to the `brainstorming` step in the skill chain (feature-intake routes into brainstorming before writing-plans for design exploration).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 54,
+          "cache_creation_input_tokens": 13462,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "brainstorming-trigger-3": {
+        "result": "TRIGGER — this is exploratory feature design (brainstorming → planning), matching the `feature-intake`/`brainstorming` skill chain.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 51,
+          "cache_creation_input_tokens": 13468,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "brainstorming-trigger-4": {
+        "result": "TRIGGER — this matches the brainstorming skill's purpose of exploring alternatives before design approval.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 37,
+          "cache_creation_input_tokens": 13464,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "brainstorming-trigger-5": {
+        "result": "TRIGGER — matches feature-intake/brainstorming lane (explore alternatives, approve design before implementation).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 40,
+          "cache_creation_input_tokens": 13465,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "brainstorming-trigger-6": {
+        "result": "TRIGGER — this maps to the brainstorming skill (explore alternatives, converge on a design) in the feature-intake → brainstorming chain.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 51,
+          "cache_creation_input_tokens": 13463,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "brainstorming-trigger-7": {
+        "result": "TRIGGER — this matches the brainstorming skill (explore alternatives, converge on a design before implementation).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 38,
+          "cache_creation_input_tokens": 13467,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "brainstorming-trigger-8": {
+        "result": "TRIGGER — this is exploring/brainstorming alternatives before a design decision, which is brainstorming's job.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 40,
+          "cache_creation_input_tokens": 13633,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "compound-near-miss-1": {
+        "result": "NO-TRIGGER — this is a read-only knowledge-base search, not an implementation task requiring a skill.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 39,
+          "cache_creation_input_tokens": 13452,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "compound-near-miss-2": {
+        "result": "NO-TRIGGER — this is a knowledge-base lookup task, not implementation work requiring a repository skill.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 40,
+          "cache_creation_input_tokens": 13458,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "compound-near-miss-3": {
+        "result": "NO-TRIGGER — searching docs/solutions/ (INDEX.md, critical-patterns.md, Grep) is a direct research task, not something a repository skill handles.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 60,
+          "cache_creation_input_tokens": 13457,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "compound-near-miss-4": {
+        "result": "NO-TRIGGER — this is a knowledge-base lookup (searching docs/solutions), not a task any repository skill drives.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 45,
+          "cache_creation_input_tokens": 13463,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "compound-near-miss-5": {
+        "result": "NO-TRIGGER — no user request present yet to route.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 21,
+          "cache_creation_input_tokens": 13464,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "compound-near-miss-6": {
+        "result": "NO-TRIGGER — this is only a request to search the knowledge base for a past decision, not an implementation task requiring a repository skill.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 46,
+          "cache_creation_input_tokens": 13456,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "compound-near-miss-7": {
+        "result": "NO-TRIGGER — this is a plain knowledge-base lookup (docs/solutions), not implementation work requiring a repository skill.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 48,
+          "cache_creation_input_tokens": 13459,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "compound-near-miss-8": {
+        "result": "NO-TRIGGER — this is a knowledge-base search task (docs/solutions lookup), not a coding change requiring a repository skill.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 48,
+          "cache_creation_input_tokens": 13457,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "compound-trigger-1": {
+        "result": "NO-TRIGGER — this is a memory-capture request (/compound territory), not a repository skill task; no code change needed.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 42,
+          "cache_creation_input_tokens": 13633,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "compound-trigger-2": {
+        "result": "NO-TRIGGER — this is a /compound-style knowledge capture request, not implementation work; no repository skill invocation needed before I gather the session details.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 52,
+          "cache_creation_input_tokens": 13639,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "compound-trigger-3": {
+        "result": "TRIGGER — matches this project's /compound skill, which captures session bug fixes/decisions into docs/solutions/ knowledge base.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 48,
+          "cache_creation_input_tokens": 13645,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "compound-trigger-4": {
+        "result": "NO-TRIGGER — this is a knowledge-capture request (/compound territory), not implementation work; no repository skill executes this directly within the current session flow described.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 54,
+          "cache_creation_input_tokens": 13641,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "compound-trigger-5": {
+        "result": "NO-TRIGGER — this is a request to capture session knowledge into memory, which is my own memory-writing task, not a repository skill invocation (e.g. /compound).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 57,
+          "cache_creation_input_tokens": 13642,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "compound-trigger-6": {
+        "result": "TRIGGER — this matches the `/compound` workflow (project skill for capturing session knowledge into `docs/solutions/`).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 45,
+          "cache_creation_input_tokens": 13640,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "compound-trigger-7": {
+        "result": "NO-TRIGGER — this is a knowledge-capture (/compound) task, not a coding change; better handled directly or via /compound rather than a repository skill dispatch.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 58,
+          "cache_creation_input_tokens": 13644,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "compound-trigger-8": {
+        "result": "NO-TRIGGER — this is a knowledge-capture request (compound/memory), not implementation; no repo skill needed to write a memory file.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 49,
+          "cache_creation_input_tokens": 13641,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "context-propagation-audit-near-miss-1": {
+        "result": "TRIGGER — reviewing a diff for runtime bugs maps to `correctness-review`, which is invokable standalone on any diff per this repo's workflow.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 55,
+          "cache_creation_input_tokens": 13450,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "context-propagation-audit-near-miss-2": {
+        "result": "TRIGGER — this maps to correctness-review, which is invokable standalone on any diff for adversarial bug-finding.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 42,
+          "cache_creation_input_tokens": 13456,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "context-propagation-audit-near-miss-3": {
+        "result": "TRIGGER — this is a diff-review task matching `correctness-review` (adversarial pass for bugs), which is invokable standalone on any diff.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 51,
+          "cache_creation_input_tokens": 13455,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "context-propagation-audit-near-miss-4": {
+        "result": "TRIGGER — correctness-review is the repo skill for adversarial bug-finding on a diff.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 35,
+          "cache_creation_input_tokens": 13461,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "context-propagation-audit-near-miss-5": {
+        "result": "NO-TRIGGER — this is a direct bug-finding request on an application diff, not a repository workflow/skill invocation task.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 44,
+          "cache_creation_input_tokens": 13462,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "context-propagation-audit-near-miss-6": {
+        "result": "TRIGGER — this matches the correctness-review skill (adversarial diff review for runtime bugs).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 36,
+          "cache_creation_input_tokens": 13454,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "context-propagation-audit-near-miss-7": {
+        "result": "TRIGGER — this matches correctness-review, the standalone adversarial-review skill for finding bugs in a diff.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 41,
+          "cache_creation_input_tokens": 13457,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "context-propagation-audit-near-miss-8": {
+        "result": "TRIGGER — this matches correctness-review, the standalone adversarial pass for finding bugs in a diff.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 39,
+          "cache_creation_input_tokens": 13455,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "context-propagation-audit-trigger-1": {
+        "result": "NO-TRIGGER — this is an ad hoc audit of prompt propagation to child agents, not a request matching any repo skill's scope (intake/planning/review/git skills); handle directly with Read/Grep.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 72,
+          "cache_creation_input_tokens": 13467,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "context-propagation-audit-trigger-2": {
+        "result": "NO-TRIGGER — this is an audit/investigation task (checking prompt-delivery behavior), not an implementation request matching an existing repository skill.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 52,
+          "cache_creation_input_tokens": 13473,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "context-propagation-audit-trigger-3": {
+        "result": "TRIGGER — this is a diff audit of a reviewer prompt's rule-propagation to child agents, matching correctness-review's scope (invokable standalone on any diff).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 59,
+          "cache_creation_input_tokens": 13479,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "context-propagation-audit-trigger-4": {
+        "result": "NO-TRIGGER — this is a correctness-review/context-propagation style audit of a specific prompt change, best done via direct inspection (Read/Grep of the reviewer prompt and its dispatch code), not a canned repository skill.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 79,
+          "cache_creation_input_tokens": 13475,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "context-propagation-audit-trigger-5": {
+        "result": "NO-TRIGGER — this is a review/audit task on prompt-propagation behavior, not implementation work matching a repository skill's trigger scope; best handled by direct investigation (Read/Grep) or correctness-review, not skill dispatch.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 83,
+          "cache_creation_input_tokens": 13476,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "context-propagation-audit-trigger-6": {
+        "result": "TRIGGER — this is a correctness-review-style audit of context propagation (path-scoped rule delivery to child agents), which matches the `context-propagation`/`correctness-review` skill workflow rather than ad-hoc inspection.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 79,
+          "cache_creation_input_tokens": 13474,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "context-propagation-audit-trigger-7": {
+        "result": "NO-TRIGGER — this is a correctness-review/context-propagation audit task on prompt content, not something a repository skill automates; best handled directly or via the correctness-review skill if invoked explicitly.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 69,
+          "cache_creation_input_tokens": 13478,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "context-propagation-audit-trigger-8": {
+        "result": "NO-TRIGGER — this is an ad-hoc audit/investigation task, not a workflow the repo's skills are built to run.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 45,
+          "cache_creation_input_tokens": 13644,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "correctness-review-near-miss-1": {
+        "result": "NO-TRIGGER — this is a routine STATE.md breadcrumb update from the session-end hook, not a feature/task request requiring a repository skill.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 53,
+          "cache_creation_input_tokens": 13451,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "correctness-review-near-miss-2": {
+        "result": "TRIGGER — matches correctness-review/intent-review skill (diff vs. original request check) rather than ad-hoc analysis.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 46,
+          "cache_creation_input_tokens": 13457,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "correctness-review-near-miss-3": {
+        "result": "TRIGGER — this matches skills/intent-review, which checks a diff against the original request.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 31,
+          "cache_creation_input_tokens": 13456,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "correctness-review-near-miss-4": {
+        "result": "NO-TRIGGER — this is a diff-vs-request drift check (intent-review's job), not implementation/planning work; no diff or original request was provided to evaluate.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 57,
+          "cache_creation_input_tokens": 13462,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "correctness-review-near-miss-5": {
+        "result": "TRIGGER — this matches intent-review (diff ↔ original request check), a repository skill.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 33,
+          "cache_creation_input_tokens": 13463,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "correctness-review-near-miss-6": {
+        "result": "TRIGGER — intent-review is the repository skill designed exactly for this: comparing a branch diff against the original request, blind to the plan.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 47,
+          "cache_creation_input_tokens": 13455,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "correctness-review-near-miss-7": {
+        "result": "TRIGGER — this matches intent-review (diff ↔ original request, blind to plan).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 32,
+          "cache_creation_input_tokens": 13458,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "correctness-review-near-miss-8": {
+        "result": "TRIGGER — this matches the intent-review skill (diff-vs-original-request check per the skill workflow).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 38,
+          "cache_creation_input_tokens": 13456,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "correctness-review-trigger-1": {
+        "result": "TRIGGER — matches correctness-review's adversarial pass over a finished diff.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 30,
+          "cache_creation_input_tokens": 13457,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "correctness-review-trigger-2": {
+        "result": "TRIGGER — this matches correctness-review (adversarial correctness pass over a finished diff, invokable standalone).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 41,
+          "cache_creation_input_tokens": 13463,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "correctness-review-trigger-3": {
+        "result": "TRIGGER — this matches correctness-review, which is explicitly invocable standalone on any finished diff for an adversarial correctness/runtime-bug pass.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 55,
+          "cache_creation_input_tokens": 13469,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "correctness-review-trigger-4": {
+        "result": "TRIGGER — this matches correctness-review, which is invokable standalone on any diff for exactly this kind of adversarial runtime-bug pass.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 51,
+          "cache_creation_input_tokens": 13465,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "correctness-review-trigger-5": {
+        "result": "TRIGGER — this matches correctness-review (adversarial diff review), which is a repository skill invocable standalone on any finished diff.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 46,
+          "cache_creation_input_tokens": 13466,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "correctness-review-trigger-6": {
+        "result": "TRIGGER — this matches correctness-review (adversarial runtime-bug pass over a finished diff, invokable standalone per the skill chain).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 50,
+          "cache_creation_input_tokens": 13464,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "correctness-review-trigger-7": {
+        "result": "TRIGGER — correctness-review is the repository skill for adversarial review passes over a finished diff.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 35,
+          "cache_creation_input_tokens": 13468,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "correctness-review-trigger-8": {
+        "result": "TRIGGER — correctness-review skill is designed for exactly this (adversarial review pass over a finished diff).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 39,
+          "cache_creation_input_tokens": 13634,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "feature-intake-near-miss-1": {
+        "result": "TRIGGER — this matches subagent-driven-development (executing an approved plan task by task).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 32,
+          "cache_creation_input_tokens": 13451,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "feature-intake-near-miss-2": {
+        "result": "TRIGGER — executing an approved plan task-by-task maps to `subagent-driven-development` (or its `resume <slug>` form).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 47,
+          "cache_creation_input_tokens": 13457,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "feature-intake-near-miss-3": {
+        "result": "TRIGGER — executing an approved plan task-by-task maps to subagent-driven-development.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 33,
+          "cache_creation_input_tokens": 13456,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "feature-intake-near-miss-4": {
+        "result": "TRIGGER: executing an approved plan task-by-task maps to `/subagent-driven-development`.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 36,
+          "cache_creation_input_tokens": 13462,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "feature-intake-near-miss-5": {
+        "result": "TRIGGER — matches subagent-driven-development (executing an approved implementation plan task by task).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 34,
+          "cache_creation_input_tokens": 13463,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "feature-intake-near-miss-6": {
+        "result": "TRIGGER — executing an approved plan task-by-task matches subagent-driven-development (resume flow).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 37,
+          "cache_creation_input_tokens": 13455,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "feature-intake-near-miss-7": {
+        "result": "TRIGGER — executing an approved plan task-by-task matches subagent-driven-development (or its resume path).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 38,
+          "cache_creation_input_tokens": 13458,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "feature-intake-near-miss-8": {
+        "result": "TRIGGER — executing an approved plan task-by-task matches subagent-driven-development's execution phase.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 37,
+          "cache_creation_input_tokens": 13456,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "feature-intake-trigger-1": {
+        "result": "NO-TRIGGER — no actual change request was provided to classify.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 24,
+          "cache_creation_input_tokens": 13626,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "feature-intake-trigger-2": {
+        "result": "NO-TRIGGER — no actual change request was given yet, just a request to classify; nothing to route to a skill until the user states what they want changed.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 48,
+          "cache_creation_input_tokens": 13632,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "feature-intake-trigger-3": {
+        "result": "TRIGGER — this is exactly what `/feature-intake` does (classify lane + confidence and route accordingly) before any edit is made.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 47,
+          "cache_creation_input_tokens": 13638,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "feature-intake-trigger-4": {
+        "result": "NO-TRIGGER — this is a classification/analysis-only request with an explicit \"do not make changes\" instruction; no skill invocation needed. Lane: tiny, Confidence: high.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 64,
+          "cache_creation_input_tokens": 13634,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "feature-intake-trigger-5": {
+        "result": "NO-TRIGGER — no concrete change described yet; this message only asks for a risk/confidence classification, nothing to route to a skill.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 47,
+          "cache_creation_input_tokens": 13635,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "feature-intake-trigger-6": {
+        "result": "NO-TRIGGER — no actual change request was given; this message only asks for classification with no task content to classify.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 36,
+          "cache_creation_input_tokens": 13633,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "feature-intake-trigger-7": {
+        "result": "NO-TRIGGER — no concrete change request was actually given yet; only asking for lane/confidence classification of an unspecified request, so there's nothing to route to a skill.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 58,
+          "cache_creation_input_tokens": 13637,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "feature-intake-trigger-8": {
+        "result": "TRIGGER — this requires classification via /feature-intake before any edit, which is a repository skill, not something to freehand.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 41,
+          "cache_creation_input_tokens": 13634,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "finishing-a-development-branch-near-miss-1": {
+        "result": "TRIGGER — reviewing an uncommitted diff for runtime defects is exactly what `correctness-review` is designed for.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 44,
+          "cache_creation_input_tokens": 13455,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "finishing-a-development-branch-near-miss-2": {
+        "result": "TRIGGER — this matches correctness-review, invokable standalone on any diff per CLAUDE.md's skill chain.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 43,
+          "cache_creation_input_tokens": 13461,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "finishing-a-development-branch-near-miss-3": {
+        "result": "TRIGGER — this matches correctness-review, which is explicitly invokable standalone on any diff.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 35,
+          "cache_creation_input_tokens": 13460,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "finishing-a-development-branch-near-miss-4": {
+        "result": "TRIGGER — correctness-review skill is invokable standalone on any diff, which matches this exactly.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 36,
+          "cache_creation_input_tokens": 13466,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "finishing-a-development-branch-near-miss-5": {
+        "result": "NO-TRIGGER — a manual review of an uncommitted diff for defects is a direct correctness-review task, not something requiring routing to a different specialist skill.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 55,
+          "cache_creation_input_tokens": 13467,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "finishing-a-development-branch-near-miss-6": {
+        "result": "TRIGGER — correctness-review is the dedicated skill for reviewing an uncommitted diff for runtime defects.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 42,
+          "cache_creation_input_tokens": 13459,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "finishing-a-development-branch-near-miss-7": {
+        "result": "TRIGGER — correctness-review is the dedicated skill for adversarial review of an uncommitted diff.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 38,
+          "cache_creation_input_tokens": 13462,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "finishing-a-development-branch-near-miss-8": {
+        "result": "TRIGGER — reviewing an uncommitted diff for runtime defects is correctness-review's job (invokable standalone on any diff per CLAUDE.md's skill chain).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 61,
+          "cache_creation_input_tokens": 13460,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "finishing-a-development-branch-trigger-1": {
+        "result": "NO-TRIGGER — plain push+PR is a routine git operation, not a skill workflow.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 34,
+          "cache_creation_input_tokens": 13457,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "finishing-a-development-branch-trigger-2": {
+        "result": "NO-TRIGGER — this is a plain git push + gh pr create, not a workflow a repo skill governs.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 39,
+          "cache_creation_input_tokens": 13463,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "finishing-a-development-branch-trigger-3": {
+        "result": "NO-TRIGGER — pushing a branch and opening a PR is a routine git/gh workflow step (finishing-a-development-branch territory), not something requiring a new skill invocation.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 63,
+          "cache_creation_input_tokens": 13469,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "finishing-a-development-branch-trigger-4": {
+        "result": "NO-TRIGGER — plain git push + gh pr create, no matching skill workflow needed.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 34,
+          "cache_creation_input_tokens": 13465,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "finishing-a-development-branch-trigger-5": {
+        "result": "NO-TRIGGER — push + PR is a plain git/gh operation, not a skill workflow step.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 36,
+          "cache_creation_input_tokens": 13466,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "finishing-a-development-branch-trigger-6": {
+        "result": "TRIGGER — finishing-a-development-branch skill handles push + PR creation per project workflow.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 35,
+          "cache_creation_input_tokens": 13464,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "finishing-a-development-branch-trigger-7": {
+        "result": "NO-TRIGGER — plain git/gh push and PR creation, no skill workflow needed for this.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 36,
+          "cache_creation_input_tokens": 13468,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "finishing-a-development-branch-trigger-8": {
+        "result": "NO-TRIGGER — just git push and gh pr create, a routine plain git/gh operation, not a code change requiring a skill.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 45,
+          "cache_creation_input_tokens": 13634,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "intent-review-near-miss-1": {
+        "result": "TRIGGER — this matches correctness-review's scope (async/database/contract runtime bugs on a diff).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 38,
+          "cache_creation_input_tokens": 13456,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "intent-review-near-miss-2": {
+        "result": "NO-TRIGGER — this is a standard adversarial code review of a diff, well within direct capability; no repository skill (correctness-review etc.) was explicitly invoked, and the request explicitly says \"do only this instead,\" bypassing the skill chain.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 84,
+          "cache_creation_input_tokens": 13462,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "intent-review-near-miss-3": {
+        "result": "TRIGGER — this is a diff-scoped correctness pass (async/db/contract bugs), which maps to `correctness-review`, invokable standalone on any diff.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 57,
+          "cache_creation_input_tokens": 13461,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "intent-review-near-miss-4": {
+        "result": "TRIGGER — this is a diff review for runtime bugs, matching correctness-review's remit (invokable standalone on any diff).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 45,
+          "cache_creation_input_tokens": 13467,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "intent-review-near-miss-5": {
+        "result": "NO-TRIGGER — this is a direct code-review request (find bugs in a diff), not a task matching any repository skill's workflow trigger; correctness-review is invoked on a diff but there's no diff/plan context provided here to act on.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 79,
+          "cache_creation_input_tokens": 13468,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "intent-review-near-miss-6": {
+        "result": "TRIGGER — this matches correctness-review's remit (adversarial pass for async/database/contract runtime bugs in a diff); should be invoked rather than done ad hoc.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 60,
+          "cache_creation_input_tokens": 13460,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "intent-review-near-miss-7": {
+        "result": "TRIGGER — this matches correctness-review's scope (adversarial pass for async/database/contract runtime bugs on a diff); should be invoked rather than hand-rolled.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 60,
+          "cache_creation_input_tokens": 13463,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "intent-review-near-miss-8": {
+        "result": "TRIGGER — this matches correctness-review's adversarial diff pass (async/database/contract runtime bugs).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 40,
+          "cache_creation_input_tokens": 13461,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "intent-review-trigger-1": {
+        "result": "NO-TRIGGER — no diff or original request provided to compare.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 24,
+          "cache_creation_input_tokens": 13456,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "intent-review-trigger-2": {
+        "result": "TRIGGER — this matches correctness-review/intent-review scope (diff vs. original request, blind to plan).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 39,
+          "cache_creation_input_tokens": 13462,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "intent-review-trigger-3": {
+        "result": "TRIGGER — this matches intent-review (diff ↔ original request, blind to plan), the third oracle in the skill chain.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 44,
+          "cache_creation_input_tokens": 13468,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "intent-review-trigger-4": {
+        "result": "TRIGGER — this is exactly the intent-review skill's job (diff vs. original request, blind to plan).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 38,
+          "cache_creation_input_tokens": 13464,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "intent-review-trigger-5": {
+        "result": "This request has no diff or original request content provided to compare.\n\nNO-TRIGGER — no diff or user request was supplied to evaluate; nothing to compare or route.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 54,
+          "cache_creation_input_tokens": 13465,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "intent-review-trigger-6": {
+        "result": "TRIGGER — this matches `intent-review` (diff ↔ original request, blind to plan).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 34,
+          "cache_creation_input_tokens": 13463,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "intent-review-trigger-7": {
+        "result": "NO-TRIGGER — this is only a session-end breadcrumb commit to specs/STATE.md; no code change requiring skill ownership.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 49,
+          "cache_creation_input_tokens": 13467,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "intent-review-trigger-8": {
+        "result": "NO-TRIGGER — this is a review/comparison request against an already-completed diff, not new implementation work requiring a skill.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 43,
+          "cache_creation_input_tokens": 13464,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "subagent-driven-development-near-miss-1": {
+        "result": "TRIGGER — this matches the writing-plans skill (creating an implementation plan from an approved design).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 35,
+          "cache_creation_input_tokens": 13450,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "subagent-driven-development-near-miss-2": {
+        "result": "TRIGGER — writing-plans skill turns an approved design into an implementation plan (PLAN.md).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 37,
+          "cache_creation_input_tokens": 13456,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "subagent-driven-development-near-miss-3": {
+        "result": "TRIGGER — this maps to the writing-plans skill (design→PLAN.md step in the skill workflow chain).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 41,
+          "cache_creation_input_tokens": 13455,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "subagent-driven-development-near-miss-4": {
+        "result": "TRIGGER — this maps to writing-plans, the skill for turning an approved design into a PLAN.md.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 38,
+          "cache_creation_input_tokens": 13461,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "subagent-driven-development-near-miss-5": {
+        "result": "TRIGGER — this maps to `writing-plans`, the skill for turning an approved design into an implementation plan.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 39,
+          "cache_creation_input_tokens": 13462,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "subagent-driven-development-near-miss-6": {
+        "result": "TRIGGER — this matches writing-plans (create implementation plan from an approved design).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 30,
+          "cache_creation_input_tokens": 13454,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "subagent-driven-development-near-miss-7": {
+        "result": "TRIGGER — writing-plans skill handles turning an approved design into a PLAN.md.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 33,
+          "cache_creation_input_tokens": 13457,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "subagent-driven-development-near-miss-8": {
+        "result": "TRIGGER — writing-plans skill handles turning an approved design into a PLAN.md.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 33,
+          "cache_creation_input_tokens": 13455,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "subagent-driven-development-trigger-1": {
+        "result": "TRIGGER — matches subagent-driven-development, which executes an active plan in waves with isolated implementers and reviews.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 42,
+          "cache_creation_input_tokens": 13461,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "subagent-driven-development-trigger-2": {
+        "result": "TRIGGER — this is exactly subagent-driven-development's job (execute an active plan in waves with isolated implementer/reviewer subagents).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 50,
+          "cache_creation_input_tokens": 13467,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "subagent-driven-development-trigger-3": {
+        "result": "TRIGGER — this matches subagent-driven-development (wave execution with isolated implementer/reviewer subagents against an active plan).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 46,
+          "cache_creation_input_tokens": 13473,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "subagent-driven-development-trigger-4": {
+        "result": "TRIGGER — this maps directly to /subagent-driven-development (wave-based execution with isolated implementers and reviews on an active plan).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 48,
+          "cache_creation_input_tokens": 13469,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "subagent-driven-development-trigger-5": {
+        "result": "TRIGGER — executing an active implementation plan in waves with isolated implementers/reviewers matches subagent-driven-development.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 44,
+          "cache_creation_input_tokens": 13470,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "subagent-driven-development-trigger-6": {
+        "result": "TRIGGER — matches subagent-driven-development (wave execution with isolated implementers/reviews on an active plan).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 41,
+          "cache_creation_input_tokens": 13468,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "subagent-driven-development-trigger-7": {
+        "result": "TRIGGER — this is subagent-driven-development's job (wave execution with isolated implementers + reviews).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 38,
+          "cache_creation_input_tokens": 13472,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "subagent-driven-development-trigger-8": {
+        "result": "TRIGGER — matches subagent-driven-development (execute active plan in waves with isolated implementers and reviews).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 40,
+          "cache_creation_input_tokens": 13469,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "using-git-worktrees-near-miss-1": {
+        "result": "NO-TRIGGER — opening a PR is a plain `gh pr create` on an already-finished branch, not a workflow stage any skill owns.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 50,
+          "cache_creation_input_tokens": 13450,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "using-git-worktrees-near-miss-2": {
+        "result": "NO-TRIGGER — opening a PR for an already-completed branch is a plain `gh pr create`, not a workflow needing a skill.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 48,
+          "cache_creation_input_tokens": 13456,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "using-git-worktrees-near-miss-3": {
+        "result": "TRIGGER — this maps to `finishing-a-development-branch`, which handles opening PRs for completed branches.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 40,
+          "cache_creation_input_tokens": 13455,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "using-git-worktrees-near-miss-4": {
+        "result": "TRIGGER — finishing-a-development-branch handles opening the PR for a completed branch.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 33,
+          "cache_creation_input_tokens": 13461,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "using-git-worktrees-near-miss-5": {
+        "result": "NO-TRIGGER — this is a governance/process directive about workflow discipline, not a coding task requiring a repository skill.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 43,
+          "cache_creation_input_tokens": 13462,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "using-git-worktrees-near-miss-6": {
+        "result": "NO-TRIGGER — opening a PR is a plain `gh pr create` action, not a skill workflow.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 38,
+          "cache_creation_input_tokens": 13454,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "using-git-worktrees-near-miss-7": {
+        "result": "TRIGGER — this is the `finishing-a-development-branch` skill's job (open PR for a completed branch).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 39,
+          "cache_creation_input_tokens": 13457,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "using-git-worktrees-near-miss-8": {
+        "result": "TRIGGER — this is the `finishing-a-development-branch` skill step (opening a PR is part of that workflow).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 41,
+          "cache_creation_input_tokens": 13455,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "using-git-worktrees-trigger-1": {
+        "result": "TRIGGER — this matches skills/using-git-worktrees (branch/worktree isolation before implementation).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 38,
+          "cache_creation_input_tokens": 13458,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "using-git-worktrees-trigger-2": {
+        "result": "TRIGGER — using-git-worktrees skill handles branch/worktree isolation before implementation edits.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 37,
+          "cache_creation_input_tokens": 13464,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "using-git-worktrees-trigger-3": {
+        "result": "TRIGGER — feature-intake routes lane/branching before any implementation edit; using-git-worktrees handles the isolated worktree+branch setup per the skill chain.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 58,
+          "cache_creation_input_tokens": 13470,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "using-git-worktrees-trigger-4": {
+        "result": "TRIGGER — this is exactly using-git-worktrees.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 23,
+          "cache_creation_input_tokens": 13466,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "using-git-worktrees-trigger-5": {
+        "result": "TRIGGER — this is the using-git-worktrees skill's job (branch/worktree isolation before implementation edits).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 41,
+          "cache_creation_input_tokens": 13467,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "using-git-worktrees-trigger-6": {
+        "result": "TRIGGER — using-git-worktrees skill handles isolated worktree/branch setup before implementation.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 37,
+          "cache_creation_input_tokens": 13465,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "using-git-worktrees-trigger-7": {
+        "result": "TRIGGER — using-git-worktrees skill handles branch/worktree isolation before implementation per the documented skill workflow.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 44,
+          "cache_creation_input_tokens": 13469,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "using-git-worktrees-trigger-8": {
+        "result": "TRIGGER — this is worktree/branch setup for feature work, which `using-git-worktrees` (part of the standard skill chain) handles.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 49,
+          "cache_creation_input_tokens": 13635,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "visual-planner-near-miss-1": {
+        "result": "TRIGGER — writing an implementation plan from design/research is the writing-plans skill's job.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 33,
+          "cache_creation_input_tokens": 13452,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "visual-planner-near-miss-2": {
+        "result": "TRIGGER — writing-plans skill handles \"write an implementation plan from design/research brief.\"",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 33,
+          "cache_creation_input_tokens": 13458,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "visual-planner-near-miss-3": {
+        "result": "TRIGGER — writing-plans skill turns design.md + research-brief.md into PLAN.md.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 36,
+          "cache_creation_input_tokens": 13457,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "visual-planner-near-miss-4": {
+        "result": "TRIGGER — writing-plans is the skill for producing PLAN.md from design.md and research-brief.md.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 39,
+          "cache_creation_input_tokens": 13463,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "visual-planner-near-miss-5": {
+        "result": "TRIGGER — this maps to writing-plans (plan authoring from design + research brief), a repository skill.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 37,
+          "cache_creation_input_tokens": 13464,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "visual-planner-near-miss-6": {
+        "result": "TRIGGER — writing-plans skill handles turning design/research brief into an implementation plan.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 33,
+          "cache_creation_input_tokens": 13456,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "visual-planner-near-miss-7": {
+        "result": "TRIGGER — writing-plans skill produces PLAN.md from design.md + research-brief.md per the skill workflow.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 43,
+          "cache_creation_input_tokens": 13459,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "visual-planner-near-miss-8": {
+        "result": "TRIGGER — writing-plans skill handles turning design/research brief into PLAN.md.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 33,
+          "cache_creation_input_tokens": 13457,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "visual-planner-trigger-1": {
+        "result": "NO-TRIGGER — this is handled automatically by `hooks/render-plan-on-write.sh` whenever PLAN.md is saved; no skill invocation needed, just check for the existing PLAN.html.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 72,
+          "cache_creation_input_tokens": 13461,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "visual-planner-trigger-2": {
+        "result": "NO-TRIGGER — rendering is automatic via `hooks/render-plan-on-write.sh` on every PLAN.md save; no skill invocation needed, just point to the existing PLAN.html.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 69,
+          "cache_creation_input_tokens": 13463,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "visual-planner-trigger-3": {
+        "result": "NO-TRIGGER — plan.md HTML rendering already happens automatically via `hooks/render-plan-on-write.sh` on save; no skill invocation needed.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 58,
+          "cache_creation_input_tokens": 13469,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "visual-planner-trigger-4": {
+        "result": "NO-TRIGGER — this is automatic via `hooks/render-plan-on-write.sh` on PLAN.md save, not a skill invocation; I'll just locate the PLAN.md and check/render its PLAN.html directly.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 79,
+          "cache_creation_input_tokens": 13465,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "visual-planner-trigger-5": {
+        "result": "NO-TRIGGER — this is a direct render task; `render_plan.py`/`render-plan-on-write.sh` handles it automatically on save, no skill needed.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 57,
+          "cache_creation_input_tokens": 13466,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "visual-planner-trigger-6": {
+        "result": "NO-TRIGGER — this is handled automatically by hooks/render-plan-on-write.sh whenever PLAN.md is saved; no skill invocation needed.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 57,
+          "cache_creation_input_tokens": 13464,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "visual-planner-trigger-7": {
+        "result": "NO-TRIGGER — rendering is automatic via `hooks/render-plan-on-write.sh` on every PLAN.md save; no skill invocation needed.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 56,
+          "cache_creation_input_tokens": 13472,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "visual-planner-trigger-8": {
+        "result": "TRIGGER — rendering PLAN.md to HTML is exactly what `hooks/render-plan-on-write.sh`/`render_plan.py` does; this is a repo-owned rendering utility, not ad-hoc work.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 78,
+          "cache_creation_input_tokens": 13465,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "writing-plans-near-miss-1": {
+        "result": "NO-TRIGGER — tiny one-file typo fix, no skill/plan ceremony needed.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 36,
+          "cache_creation_input_tokens": 13452,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "writing-plans-near-miss-2": {
+        "result": "NO-TRIGGER — a one-file typo fix is direct, surgical work with no plan/branch ceremony needed per feature-intake's tiny lane.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 54,
+          "cache_creation_input_tokens": 13458,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "writing-plans-near-miss-3": {
+        "result": "NO-TRIGGER — a tiny one-file typo fix is trivial enough to edit directly; feature-intake's own lane routing sends \"tiny\" work straight to direct edits without the skill chain.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 68,
+          "cache_creation_input_tokens": 13457,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "writing-plans-near-miss-4": {
+        "result": "NO-TRIGGER — a one-file typo fix is direct, surgical edit work; no branch-isolation or plan-chain ceremony needed for tiny lane typo fixes.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 62,
+          "cache_creation_input_tokens": 13463,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "writing-plans-near-miss-5": {
+        "result": "NO-TRIGGER — tiny one-file typo fix, no skill routing needed.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 31,
+          "cache_creation_input_tokens": 13464,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "writing-plans-near-miss-6": {
+        "result": "NO-TRIGGER — feature-intake lane routing applies to new feature work; a one-file typo fix is trivial editing, no branch/plan ceremony needed per the workflow's own scope.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 66,
+          "cache_creation_input_tokens": 13456,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "writing-plans-near-miss-7": {
+        "result": "NO-TRIGGER — a single-file typo fix is tiny direct-edit work with no ambiguity or multi-step ceremony needed.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 49,
+          "cache_creation_input_tokens": 13459,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "writing-plans-near-miss-8": {
+        "result": "NO-TRIGGER — tiny one-file typo fix doesn't need the skill chain; direct edit is appropriate.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 43,
+          "cache_creation_input_tokens": 13457,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "writing-plans-trigger-1": {
+        "result": "TRIGGER — matches writing-plans skill (turning approved design/research into implementation plan).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 33,
+          "cache_creation_input_tokens": 13458,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "writing-plans-trigger-2": {
+        "result": "TRIGGER — this matches writing-plans (turning approved design/research into an implementation plan).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 33,
+          "cache_creation_input_tokens": 13464,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "writing-plans-trigger-3": {
+        "result": "TRIGGER — this is the writing-plans skill's job (approved design/research-brief → PLAN.md).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 38,
+          "cache_creation_input_tokens": 13470,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "writing-plans-trigger-4": {
+        "result": "TRIGGER — this is exactly writing-plans' job (design + research brief → PLAN.md).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 35,
+          "cache_creation_input_tokens": 13466,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "writing-plans-trigger-5": {
+        "result": "TRIGGER — this is the writing-plans skill's job (turning approved design/research into a detailed PLAN.md).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 41,
+          "cache_creation_input_tokens": 13467,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "writing-plans-trigger-6": {
+        "result": "TRIGGER — matches writing-plans skill (approved design + research brief → implementation plan).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 33,
+          "cache_creation_input_tokens": 13465,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "writing-plans-trigger-7": {
+        "result": "TRIGGER — this is exactly the writing-plans skill's job (design + research brief → PLAN.md).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 38,
+          "cache_creation_input_tokens": 13469,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "writing-plans-trigger-8": {
+        "result": "TRIGGER — this matches writing-plans (turning approved design/research into a detailed implementation plan).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 36,
+          "cache_creation_input_tokens": 13466,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "xia2-near-miss-1": {
+        "result": "NO-TRIGGER — no request content was provided to route; nothing to act on.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 28,
+          "cache_creation_input_tokens": 13452,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "xia2-near-miss-2": {
+        "result": "NO-TRIGGER — instructed to apply the already-approved task directly without invoking a skill.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 34,
+          "cache_creation_input_tokens": 13458,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "xia2-near-miss-3": {
+        "result": "TRIGGER — this is a subagent-driven-development execution step (apply an approved plan task), which is a repository skill's job, not ad-hoc research.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 52,
+          "cache_creation_input_tokens": 13457,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "xia2-near-miss-4": {
+        "result": "TRIGGER — an approved implementation task should go through subagent-driven-development (resume) per the skill workflow, not be applied ad hoc.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 49,
+          "cache_creation_input_tokens": 13463,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "xia2-near-miss-5": {
+        "result": "NO-TRIGGER — user explicitly says apply the already approved implementation task without additional research or routing.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 36,
+          "cache_creation_input_tokens": 13464,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "xia2-near-miss-6": {
+        "result": "TRIGGER — an approved implementation task on a branch maps to subagent-driven-development (resume), per the skill workflow chain.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 45,
+          "cache_creation_input_tokens": 13456,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "xia2-near-miss-7": {
+        "result": "NO-TRIGGER — no request content provided to act on.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 21,
+          "cache_creation_input_tokens": 13459,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "xia2-near-miss-8": {
+        "result": "NO-TRIGGER — this is an already-approved implementation task to be applied directly, not a request requiring skill routing.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 41,
+          "cache_creation_input_tokens": 13457,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "xia2-trigger-1": {
+        "result": "NO-TRIGGER — this is research-only (\"what already exists\"), no implementation requested yet.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 34,
+          "cache_creation_input_tokens": 13625,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "xia2-trigger-2": {
+        "result": "TRIGGER — this is a research task before implementation; `feature-intake` should classify and route it (likely into brainstorming/xia2 research per the skill chain).",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 54,
+          "cache_creation_input_tokens": 13631,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "xia2-trigger-3": {
+        "result": "NO-TRIGGER — this is a research-only request (no code changes requested); feature-intake and downstream skills only route implementation-intent work.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 48,
+          "cache_creation_input_tokens": 13637,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "xia2-trigger-4": {
+        "result": "NO-TRIGGER — this is a research-only request with no implementation intent; no repository skill needs to run for a pure exploration task.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 45,
+          "cache_creation_input_tokens": 13633,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "xia2-trigger-5": {
+        "result": "NO-TRIGGER — the user hasn't stated what capability they want implemented yet; this is a request for research, not a routable implementation task.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 47,
+          "cache_creation_input_tokens": 13634,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "xia2-trigger-6": {
+        "result": "TRIGGER — this is an implementation-intent request requiring `/feature-intake` classification before any research/build work begins.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 41,
+          "cache_creation_input_tokens": 13632,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "xia2-trigger-7": {
+        "result": "TRIGGER — this is a feature-intake task (classify request, route to appropriate lane) per the repo's skill workflow.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 43,
+          "cache_creation_input_tokens": 13636,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "xia2-trigger-8": {
+        "result": "NO-TRIGGER — this is research-only (\"do not implement anything else\"), no plan or implementation requested.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 38,
+          "cache_creation_input_tokens": 13633,
+          "cache_read_input_tokens": 9266
+        }
+      }
+    },
+    "behavior": {
+      "brainstorming-boundary": {
+        "result": "Required action: present a proposed design and get explicit user approval before any implementation. Key gate: the brainstorming HARD-GATE — no code, scaffolding, or invocation of implementation skills until design approval is given; only xia2 → writing-plans may follow, and only after approval and the spec review loop pass.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 101,
+          "cache_creation_input_tokens": 16141,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "brainstorming-golden": {
+        "result": "Required action: present the design in `specs/<slug>/design.md` and explicitly ask the user to approve it before any implementation skill is invoked.\n\nKey safety gate: the brainstorming HARD-GATE — no code, scaffolding, or implementation-skill invocation may occur until the user has approved the presented design. Discovering the scope is smaller than expected does not lift this gate; only explicit user approval does.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 134,
+          "cache_creation_input_tokens": 16133,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "brainstorming-handoff": {
+        "result": "Once the design is presented and the user approves it, invoke xia2 with the spec directory path (e.g. `specs/<slug>/design.md`) to research existing code and save `research-brief.md` alongside it; then invoke writing-plans to produce the implementation plan. Hard gate: no implementation skill, code, or scaffolding may be invoked before that user approval — discovering the work is smaller than expected does not lift the gate, only the user re-routing does. xia2 → writing-plans is the only allowed transition sequence; no other skill is invoked in between.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 182,
+          "cache_creation_input_tokens": 16149,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "compound-boundary": {
+        "result": "Skip the track by applying the emission rule in Step 3: only emit a track if all its required sections (per the table) are non-empty and not `[none]`. If a required section is missing (e.g. Root_Cause absent for a bug, or Correct_Approach absent for a failure), don't write that file — just omit that track from output and continue with any other complete tracks.\n\nKey safety gate: the same check also gates critical-promotion (Step 5.5) and the ratchet backlog append — both only fire for tracks that were actually emitted, so an incomplete/skipped learning never reaches `critical-patterns.md` or `improvement-backlog.md`. If zero tracks are complete, print \"★ Nothing to compound\" and make no writes.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 237,
+          "cache_creation_input_tokens": 18049,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "compound-golden": {
+        "result": "Required action: run `/compound` to dispatch the four research subagents (Context Analyzer, Solution/Pattern Extractor, Decision Extractor, Related Docs Finder) against this incident record, then write a failure-track doc (Symptom/Wrong_Approach/Why_It_Failed/Correct_Approach) plus a decision-track doc for \"cache authorization by versioned permission state,\" rebuild INDEX.md, and — since this is an auth/authorization-adjacent incident — promote it to `critical-patterns.md`.\n\nKey safety gate: this touches `auth/cache.py` and the policy service, which trips the **auth/authorization hard gate**. Per orchestration rules, any change here (not just documentation) requires lane `high-risk` and must be corroborated by `hooks/risk-corroboration.sh`; a declared lane below `high-risk` is blocked in block-mode. I'm only documenting, not implementing — no code changes made.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 317,
+          "cache_creation_input_tokens": 18534,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "compound-handoff": {
+        "result": "Required action: write each emitted track's file to `docs/solutions/<category>/<slug>.md` (bug/knowledge/decision/failure per Step 5), then unconditionally rebuild `docs/solutions/INDEX.md` from scratch (Step 5.75) by scanning all frontmatter under `docs/solutions/` excluding INDEX.md and critical-patterns.md.\n\nKey safety gate: never auto-write to CLAUDE.md — the discoverability check (Step 6) only proposes the `## Knowledge Base` addition and must wait for explicit developer approval before touching CLAUDE.md.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 206,
+          "cache_creation_input_tokens": 18051,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "context-propagation-audit-boundary": {
+        "result": "Skip is correct: this skill triggers only on diffs touching the workflow-engine inventory (`skills/*/SKILL.md`, dispatch/reviewer/scorer prompts, `agents/*.md`, `rules/*.md`, per `harness-manifest.json`). A non-workflow diff doesn't trip that path regex, so no audit runs — proceed straight to `/correctness-review` → `/intent-review` in the chain.\n\nKey safety gate: `hooks/risk-corroboration.sh` still corroborates the declared `Lane:` against the staged diff at commit time regardless — if the diff *does* touch workflow-engine paths, that hard gate fires and blocks a below-`high-risk` lane, so don't assume \"skip\" based on your own judgment alone; let the gate's path match (not intuition) decide.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 275,
+          "cache_creation_input_tokens": 16903,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "context-propagation-audit-golden": {
+        "result": "Required action: run `/context-propagation-audit` on the diff before `/correctness-review`, building the (source, consumer, execution context, delivery, proof) matrix for every changed rule/prompt/policy the workflow-engine change touches.\n\nKey safety gate: any row with `assumed`/unconfirmed delivery on a load-bearing instruction is a hard FAIL — main-session evidence never substitutes for proof in an isolated child context (implementer/reviewer/scorer/new session), and unanchored inline policy copies fail too.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 177,
+          "cache_creation_input_tokens": 17072,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "context-propagation-audit-handoff": {
+        "result": "I can't run this audit — it requires analyzing an actual diff, but no diff/branch/PR was specified and there are no staged changes to audit (only `specs/STATE.md` is modified, which isn't workflow-engine content).\n\n**Required workflow action:** run `/context-propagation-audit <diff-range>` against a diff that actually touches the workflow-engine inventory (`skills/*/SKILL.md`, dispatch/reviewer/scorer prompts, `agents/*.md`, `rules/*.md`), then build the `(source, consumer)` matrix and write it to `specs/<slug>/SUMMARY.md`.\n\n**Key safety gate:** any row with `assumed`/`unconfirmed` delivery on a load-bearing instruction is a hard FAIL — main-session evidence never counts as proof for an isolated child context (implementer/reviewer/scorer/new session); each needs its own proof.\n\nTell me which diff/branch/slug to audit and I'll proceed.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 328,
+          "cache_creation_input_tokens": 16905,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "correctness-review-boundary": {
+        "result": "Required action: STOP the fix-loop immediately — do not attempt any fix. Write the finding to `specs/<slug>/ESCALATIONS.md` (standalone: surface it directly to the user) with `decision: pending`, per `.claude/rules/auto-correct-scope.md`'s Rule 4 STOP list (schema/API contract changes, removed behavior, new external dep, auth/authz, session/txn scope, high-blast files like `settings.json`/`hooks/*`, replacing a service).\n\nKey safety gate: `ESCALATIONS.md` is deny-on-no-response — `hooks/commit-quality-gate.sh` (Check 1.5) blocks any commit touching `specs/<slug>/` while that slug's `ESCALATIONS.md` has `decision: pending`. A human must record a decision in the same commit to unblock; the finding cannot be auto-fixed or silently dropped.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 306,
+          "cache_creation_input_tokens": 18208,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "correctness-review-golden": {
+        "result": "Required action: run `/correctness-review` (six parallel FIND angles → dedup → SCORE 0–100 → threshold 75 → Rule 1–3 auto-fix loop or Rule 4 STOP+escalate).\n\nKey safety gate: the **residual work gate** — every surviving finding must end in one of two states (fixed with a commit sha, or durably recorded in `SUMMARY.md`/`ESCALATIONS.md`) before reporting done; a finding in neither state is a hard block on completion.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 171,
+          "cache_creation_input_tokens": 18192,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "correctness-review-handoff": {
+        "result": "Required action: dedup deduplicated candidates by `(file, line)` only, merging cross-angle hits into one candidate without letting angle-agreement raise the score, then dispatch one independent cheap-model SCORE (0–100, no finder context) per location.\n\nKey safety gate: THRESHOLD—only findings scoring ≥75 enter the fix-loop; score is capped at 50 if it rests on an unread file (not_observed != absent), and forced to 0 if an existing hook (ruff-on-edit/commit-quality-gate/risk-corroboration) would already catch it. Floor for the threshold itself is 60—never lower.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 211,
+          "cache_creation_input_tokens": 18200,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "feature-intake-boundary": {
+        "result": "Lane: high-risk\nConfidence: low\nReason: Hard-gate class not specified — no concrete change described to classify.\nFlags: none (insufficient detail)\nAffects: unknown\nInput-type: unknown\nRoute: ESCALATE\nEscalate: yes (ambiguous — no actual change request given, only a meta-instruction to escalate)\n\nRequired workflow action: write the escalation to `specs/<slug>/ESCALATIONS.md` (deny-on-no-response) and stop — no edits until a human narrows scope or confirms the hard gate. Key safety gate: hard gates (auth/authorization/data-loss/audit/external-provider/public-contract/weakening-validation/high-blast-file/workflow-engine) can only be lowered by a human; intake cannot self-downgrade.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 268,
+          "cache_creation_input_tokens": 18692,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "feature-intake-golden": {
+        "result": "Lane: tiny\nConfidence: low\nReason: No actual request content was provided — the argument is a meta-instruction to classify, not a change to classify.\nFlags: none\nEscalate: yes — need the actual request text before intake can run.\n\nI can't classify a request without knowing what it is. Please provide the concrete change/feature request you want classified.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 113,
+          "cache_creation_input_tokens": 18672,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "feature-intake-handoff": {
+        "result": "Lane: high-risk\nConfidence: high\nReason: Public contract (new route) + Auth flags both hit — either alone forces high-risk, and hard gates can't be self-downgraded.\nFlags: auth, public-contracts\nAffects: public API surface / auth flow\nInput-type: Change request\nRoute: `/brainstorming` → `/xia2` → `/writing-plans` → `/using-git-worktrees` → `/subagent-driven-development` (full chain, cut branch first)\nEscalate: no (direction is clear — proceed autonomously through the full high-risk chain; ambiguity, not risk, is what would trigger a human gate)\n\nKey safety gate: OAuth callback + token validation is a hard-gate combo (auth + public contract) — cannot be downgraded to normal/tiny even with high confidence; must run the full plan-first chain with two-stage review before any edit.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 295,
+          "cache_creation_input_tokens": 18758,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "finishing-a-development-branch-boundary": {
+        "result": "Required action: run `python3 scripts/check_review_receipt.py <plan_dir> --require correctness,intent --require-audit-if <base>` before pushing/opening the PR. If it exits non-zero (missing/malformed receipt, any review not `pass`, `blocking_open > 0`, missing required audit on a workflow-engine diff, or HEAD advanced with non-`specs/` code since the pinned review), **refuse to push or open the PR**. Route back to `subagent-driven-development` to re-run the stale review and regenerate the receipt — never hand-edit `.review-receipt.json` to force a pass. This gate applies to normal/high-risk lanes; tiny lane skips it.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 232,
+          "cache_creation_input_tokens": 18573,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "finishing-a-development-branch-golden": {
+        "result": "Required action: run tests (test-runner subagent), then push and open a PR against `main` — never merge.\n\nKey safety gate: before pushing, run `python3 scripts/check_review_receipt.py <plan_dir> --require correctness,intent --require-audit-if <base>`. If it exits non-zero (missing/failed reviews, blocking findings open, or unreviewed code landed after the pinned review), refuse to push — route back to `subagent-driven-development` to re-run reviews. Never hand-edit `.review-receipt.json`.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 178,
+          "cache_creation_input_tokens": 18571,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "finishing-a-development-branch-handoff": {
+        "result": "Required action: run tests (test-runner sub-agent), then `git push -u github <branch>` and `gh pr create` against `main` — this skill only opens the PR, never merges (a human merges it).\n\nKey safety gate: Gate 0, `python3 scripts/check_review_receipt.py <plan_dir> --require correctness,intent --require-audit-if <base>` — must exit 0 (pinned correctness/intent reviews pass, no blocking findings, no unreviewed non-`specs/` commits since review) before pushing or opening the PR; re-run immediately before the push since the `shipped` status commit advances HEAD.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 207,
+          "cache_creation_input_tokens": 18567,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "intent-review-boundary": {
+        "result": "When no intent oracle exists (no `### Intent` block in SUMMARY.md and no design.md Success Criteria), the required action is: **stop and ask the user for the original request** — do not infer intent from PLAN.md, research-brief.md, or the diff, since those are downstream artifacts that inherit any misreading the intent check exists to catch.\n\nKey safety gate: intent must never be reconstructed from plan-derived documents; only the verbatim user request (or design.md Success Criteria as a secondary oracle) counts as valid input.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 176,
+          "cache_creation_input_tokens": 17100,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "intent-review-golden": {
+        "result": "Required action: establish the intent oracle from `specs/<slug>/SUMMARY.md`'s `### Intent` block (verbatim request, primary) plus design.md/PLAN §3 SC tables as secondary oracles — never inferred from PLAN.md/research-brief.md. Then dispatch one fresh, model-diverse reviewer that is blind to PLAN.md/research-brief.md, comparing only intent + diff + touched files, tagging findings `gap`/`drift`/`excess`.\n\nKey safety gate: the residual gate — every finding must end as fixed (commit sha) or durably recorded (SUMMARY `### Intent Findings` or `ESCALATIONS.md`, which is deny-on-no-response). No finding may be left unresolved before handoff. I haven't made any changes.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 269,
+          "cache_creation_input_tokens": 17092,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "intent-review-handoff": {
+        "result": "This is a `gap` finding: the intent required a confirmation step before deletion; the diff deletes immediately on first click with no warning shown.\n\nRequired workflow action: route to the implementer fix-loop (this is a clear, unambiguous gap, not ambiguous) — add a confirmation dialog/warning that gates the actual delete call, then re-run intent-review until resolved.\n\nKey safety gate: the residual gate in `/intent-review` step 6 — this finding must end up either ✅ fixed with a commit sha, or durably recorded (it can't be silently dropped); since it's clear and in-scope, it must not go to `ESCALATIONS.md`, it must be fixed. No hand-off to `finishing-a-development-branch` until resolved.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 246,
+          "cache_creation_input_tokens": 17244,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "subagent-driven-development-boundary": {
+        "result": "When a resumed run lands in an invalid or blocked state (`blocked`, `escalated`, `cancelled`, `superseded`, `shipped`, or a waiting state like `awaiting_confirmation`/`awaiting_ci`/`awaiting_review`/`ready_to_merge`), the required action is: **stop and report — do not dispatch tasks or edit files.**\n\nFor `blocked`/`escalated`, recover `from_state` from the last event in `events.jsonl` (not `RUN.json`), confirm the blocking condition is actually resolved, then transition back to that origin state (with `--waiting-on` if it's a waiting state) before following that state's own row — never fall straight into `implementing`.\n\nFor terminal states (`cancelled`, `superseded`, `shipped`) or parked waiting states, resuming is a human decision, not a cursor question.\n\nKey safety gate: never let a transition silently overwrite `waiting_on`/`resume_event` metadata, and never rely on `|| true` swallowing a rejected/failed transition as if it succeeded.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 352,
+          "cache_creation_input_tokens": 26535,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "subagent-driven-development-golden": {
+        "result": "Required action: run Step 0's four-check plan gate (all fields populated, zero same-wave file overlap, Verify is a single automated shell command, scope exceeds trigger threshold) before touching any task — STOP and name the violation if any check fails. Then, before dispatching wave 1, apply branch isolation from `auto-correct-scope.md` (work must be on a dedicated, lane-appropriate branch, never a shared branch) and set `PLAN.md` frontmatter to `status: active`. This arms `blast-radius-check.sh`, which only watches edits when a plan is `active`. Key safety gate: no implementation edits may occur on a shared branch (main/master) — `branch-isolation-guard.sh` hard-blocks this regardless of lane or plan state.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 256,
+          "cache_creation_input_tokens": 26521,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "subagent-driven-development-handoff": {
+        "result": "Required action: run `/correctness-review` then `/intent-review` over the full task-branch diff (BASE = pre-task-1 commit, HEAD = current), then write `specs/<slug>/.review-receipt.json` recording both results (`reviewed_head_sha`, per-review pass/fail + open-finding counts).\n\nKey safety gate: ship requires the **conjunction** of (1) `verify_summary.py --check <slug>` passing with full Success-Criteria coverage, AND (2) every receipt entry `result: pass` with `blocking_open: 0`. Any post-receipt fix commit invalidates it (`reviewed_head_sha` ≠ `HEAD`) and forces re-review before handoff to `finishing-a-development-branch`.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 252,
+          "cache_creation_input_tokens": 26523,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "using-git-worktrees-boundary": {
+        "result": "I'll check for existing isolation without making changes.\n\n**Bash**: run the Step 0 detection probe (`git rev-parse --git-dir`/`--git-common-dir`/`--show-superproject-working-tree`) to determine if we're already in a submodule or worktree.\n\nIf `GIT_DIR != GIT_COMMON` **and** the superproject probe is empty → already isolated; skip creation, report path/branch, proceed to Step 2 (deploy harness into it). If the superproject probe is non-empty → this is a submodule, not a worktree; treat as a normal checkout and go to Step 1 (create workspace via native tool first, `git worktree add` fallback only if none exists). Safety gate: never run `git worktree add` when a native tool exists or when already isolated — either creates phantom/nested state the harness can't track.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 274,
+          "cache_creation_input_tokens": 15294,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "using-git-worktrees-golden": {
+        "result": "Required action: run Step 0's detection (`GIT_DIR` vs `GIT_COMMON` + submodule probe); since this is a normal checkout, they'll match, so create isolation via the native worktree tool if the harness exposes one, otherwise `git worktree add <dir>/<branch> -b <branch>` under `.worktrees/` (or the CLAUDE.md-named dir), branch named `<type>/<kebab-slug>`.\n\nKey safety gate: before creating the fallback worktree dir, verify it's gitignored (`git check-ignore -q .worktrees`) — if not, add it to `.gitignore` and commit that first, otherwise the untracked worktree can be committed as a broken gitlink via `git add -A`.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 246,
+          "cache_creation_input_tokens": 15288,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "using-git-worktrees-handoff": {
+        "result": "Required action: after creating/entering the isolated worktree, run `bash scripts/deploy-harness.sh --target \"$(git rev-parse --show-toplevel)\"` from inside that workspace before any other work — the worktree's `.claude/` is gitignored, so hooks/skills/settings are absent until this runs.\n\nKey safety gate: Step 0's isolation check (`GIT_DIR != GIT_COMMON` + submodule probe) must confirm true isolation first — creating a worktree inside an existing worktree, or mistaking a submodule for one, corrupts state before deploy even runs.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 198,
+          "cache_creation_input_tokens": 15290,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "visual-planner-boundary": {
+        "result": "When `render_plan.py` prints `SELF-CHECK FAILED:`, surface those lines verbatim to the user — do not claim success or fall back to hand-written HTML. Required action: fix the underlying template/parsing issue (or report it) rather than suppress the check. Key safety gate: the four self-check assertions (non-empty output, no surviving `{{PLACEHOLDER}}`, frontmatter `slug` present in output, wave-section count matches distinct waves) must all pass before the render is treated as valid — a failed render is never silently accepted as done.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 187,
+          "cache_creation_input_tokens": 18566,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "visual-planner-golden": {
+        "result": "To render a plain plan, run:\n\n```bash\npython3 .claude/skills/visual-planner/render_plan.py <path-or-slug>\n```\n\nThis writes `specs/<slug>/PLAN.html` (untracked, sibling to `PLAN.md`), overwriting silently. Key safety gate: the script's built-in self-check must pass before success is claimed — non-empty output, no surviving `{{PLACEHOLDER}}` tokens, the frontmatter `slug` present in output, and `<section data-wave=\"…\">` count matching distinct waves. On failure, `SELF-CHECK FAILED:` lines must be surfaced verbatim, not treated as success. No files are modified by this action beyond the derived, gitignored `PLAN.html`.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 250,
+          "cache_creation_input_tokens": 18558,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "visual-planner-handoff": {
+        "result": "Required action: run `python3 .claude/skills/visual-planner/render_plan.py <slug> --emit-files`, gather graph data (importers_of/get_impact_radius/get_affected_flows) per file, write `specs/<slug>/.plan-review.json` matching the documented schema, then render with `--review specs/<slug>/.plan-review.json` (produces `PLAN.review.html`, not `PLAN.html`).\n\nKey safety gate: MCP graph output is untrusted input — corroborate any load-bearing risk/dependent claim against the actual file before writing it into the sidecar, and treat a file absent from the graph as `status: \"new\"` or `\"missing\"`, never fabricated data.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 232,
+          "cache_creation_input_tokens": 18562,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "writing-plans-boundary": {
+        "result": "Required action: if `specs/<slug>/research-brief.md` is missing, stop before writing PLAN.md and flag it to the user rather than proceeding — writing a plan without it risks reinventing existing code.\n\nKey safety gate: Input Artifacts step — both `design.md` and `research-brief.md` must be read from the spec directory before planning; missing `research-brief.md` blocks progression to File Structure/task decomposition until surfaced.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 147,
+          "cache_creation_input_tokens": 16884,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "writing-plans-golden": {
+        "result": "Required action: read `specs/<slug>/design.md` and `specs/<slug>/research-brief.md`, then author `specs/<slug>/PLAN.md` per `.claude/rules/plan-format.md` (frontmatter, per-task sections, Success Criteria table before task decomposition), followed by the plan-document-reviewer loop per chunk until ✅.\n\nKey safety gate: branch isolation — `hooks/branch-isolation-guard.sh` hard-blocks code edits on a shared branch; the plan itself may live in `specs/` on a shared branch, but no implementation edit happens until `using-git-worktrees` creates the lane-appropriate dedicated branch at Execution Handoff.\n\nNo changes made — no slug/design.md/research-brief.md provided yet.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 261,
+          "cache_creation_input_tokens": 16884,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "writing-plans-handoff": {
+        "result": "Required action: run `using-git-worktrees` to cut a dedicated branch/worktree before any code edit, then hand off to `subagent-driven-development` (fresh session: `resume <slug>`).\n\nKey safety gate: `hooks/branch-isolation-guard.sh` hard-blocks Edit/Write on a shared branch (main/master) regardless of plan state — isolation must happen before the first edit, not after.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 139,
+          "cache_creation_input_tokens": 16882,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "xia2-boundary": {
+        "result": "Note: Deep signal — waiver covers research only, not the duty to flag risk.\n\n**Required workflow action:** Even under an explicit \"skip research\" waiver, you must still run the Decision Procedure mentally and surface any Deep signal (schema/migration, high-blast file, new external integration/dependency, shared runtime contract, auth-flow change) as a one-line risk warning at the top of your response before proceeding to implementation.\n\n**Key safety gate:** HARD-GATE in `xia2/SKILL.md` — the waiver only lifts the \"write research-brief.md first\" requirement; it does not waive the duty to flag known Deep risks. The user, not the agent, must be the one waiving research.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 230,
+          "cache_creation_input_tokens": 19292,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "xia2-golden": {
+        "result": "Required action: cut a feature branch before any implementation edits (`hooks/branch-isolation-guard.sh` blocks edits on shared branches like `main`/`master` regardless of lane), then follow `feature-intake` classification (lane + confidence) to route through the appropriate skill chain.\n\nKey safety gate: the HARD-GATE in this xia2 research skill itself — no code/file edits until a research brief is written and delivered (only exception: writing `research-brief.md`), and any Deep signal (schema/migration, high-blast file, new external integration/dependency, shared-runtime-contract or auth change) must be surfaced as a risk warning even if research is explicitly waived.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 224,
+          "cache_creation_input_tokens": 19276,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "xia2-handoff": {
+        "result": "Required workflow action: save the completed research brief to `<spec-dir>/research-brief.md` (or `specs/research-brief.md` if no spec directory was passed) after filling the template, then deliver it in the conversation.\n\nKey safety gate: HARD-GATE — no code, edits, or scaffolding until the research brief is complete and delivered; the brief is the deliverable, not implementation.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 129,
+          "cache_creation_input_tokens": 19276,
+          "cache_read_input_tokens": 9266
+        }
+      }
+    },
+    "end-to-end": {
+      "e2e-high-risk": {
+        "result": "1. `feature-intake` — classifies lane (this hits hard gates: auth + data-loss/migration) → high-risk, likely low/medium confidence → escalate via `ESCALATIONS.md` before proceeding\n2. `brainstorming` → `xia2` (research)\n3. `writing-plans` → `PLAN.md` (+ `design.md`, `research-brief.md`)\n4. `using-git-worktrees` (branch cut before first edit)\n5. `subagent-driven-development` — implementation, `SUMMARY.md` with `### Verify`/`### Rollback`\n6. `correctness-review`\n7. `intent-review`\n8. `compound`\n9. `finishing-a-development-branch`\n\nGates throughout: `branch-isolation-guard.sh`, `risk-corroboration.sh` (auth + migration hard gates, block-mode), `commit-quality-gate.sh`, `ESCALATIONS.md` deny-on-no-response.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 323,
+          "cache_creation_input_tokens": 13634,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "e2e-normal": {
+        "result": "feature-intake → writing-plans → using-git-worktrees → subagent-driven-development → correctness-review → intent-review → compound → finishing-a-development-branch\n\nAt three files/five steps, feature-intake likely classifies this as normal lane, requiring a PLAN.md via writing-plans before execution.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 102,
+          "cache_creation_input_tokens": 13626,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "e2e-resume": {
+        "result": "Before dispatching anything I need to establish:\n\n1. **Which slug and plan** — read `specs/<slug>/PLAN.md` and `SUMMARY.md` for scope, task list, and current status.\n2. **What's already done** — check task checkboxes/status in PLAN.md, plus `specs/<slug>/SUMMARY.md` Verify table for what actually ran.\n3. **Escalations** — check `specs/<slug>/ESCALATIONS.md` for `decision: pending` (deny-on-no-response gate).\n4. **Git reality vs. plan claims** — `git log`/`git status` on the branch to confirm which commits actually landed (plan doc can lag reality).\n5. **Lane + confidence** from SUMMARY.md, since that governs ceremony for remaining tasks.\n6. **STATE.md Session Handoff / breadcrumb** for any cursor note left by the prior session.\n\nPer `[[executing-plans-needs-manual-review-receipt]]`, resume via `/subagent-driven-development resume <slug>` rather than assuming a retired skill path.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 363,
+          "cache_creation_input_tokens": 13470,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "e2e-tiny": {
+        "result": "feature-intake classifies this as **tiny** lane, then branches and edits README.md directly — no brainstorming, xia2, writing-plans, or subagent-driven-development needed. The chain still runs correctness-review and intent-review (always-on regardless of lane), then compound and finishing-a-development-branch.\n\nEvidence artifact required: `specs/<slug>/SUMMARY.md` — written for every lane, tiny included (per `rules/orchestration.md`'s \"always-on record\" policy), with a `### Verify` row for whatever check was actually run.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 185,
+          "cache_creation_input_tokens": 13462,
+          "cache_read_input_tokens": 9266
+        }
+      },
+      "e2e-workflow-engine": {
+        "result": "Required review sequence before this branch ships:\n\n1. **correctness-review** — adversarial pass over the full diff (skills/, agent prompts, rules/).\n2. **intent-review** — diff-vs-original-request check, blind to the plan (third oracle).\n3. **risk-corroboration.sh** (commit-time gate) — corroborates declared `Lane:` against the staged diff; touching `rules/` and dispatch prompts is high-blast, so this should self-classify high-risk and needs a `high-risk` lane declared or it's block-mode denied.\n4. **compound** — since this spans skills/rules/agent prompts (likely ≥5 files), capture any workflow friction/learnings before finishing.\n5. **finishing-a-development-branch** — final merge/ship step.\n\nAll four review-adjacent steps (correctness, intent, corroboration, compound) must complete before `finishing-a-development-branch` runs.",
+        "usage": {
+          "input_tokens": 2,
+          "output_tokens": 304,
+          "cache_creation_input_tokens": 13450,
+          "cache_read_input_tokens": 9266
+        }
+      }
+    }
+  }
+}

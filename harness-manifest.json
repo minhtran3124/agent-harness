@@ -72,6 +72,8 @@
     "artifact-schema-summary": { "surface": ["templates/SUMMARY.template.md"],  "consumers": ["scripts/verify_summary.py", "hooks/commit-quality-gate.sh"], "desc": "SUMMARY.md shape contract" },
     "artifact-schema-plan":    { "surface": ["rules/plan-format.md"],           "consumers": ["skills/visual-planner/render_plan.py"],                        "desc": "PLAN.md task XML schema contract" },
     "lane-evidence-mapping":   { "surface": ["scripts/verify_summary.py"],      "consumers": ["skills/feature-intake/SKILL.md", "rules/auto-correct-scope.md"],                               "desc": "lane -> required evidence mapping" },
+    "research-depth-policy":   { "surface": ["rules/research-depth.md"],       "consumers": ["skills/feature-intake/SKILL.md", "skills/xia2/SKILL.md"],                                          "desc": "intake lane -> xia2 research-depth mapping" },
+    "finish-context-resolution": { "surface": ["scripts/resolve_finish_context.py"], "consumers": ["skills/finishing-a-development-branch/SKILL.md"],                                           "desc": "branch/base/plan/lane resolution for branch finishing" },
     "hard-gate-vocabulary":    { "surface": ["harness-manifest.json"],          "consumers": ["hooks/risk-corroboration.sh", "rules/auto-correct-scope.md", "skills/feature-intake/SKILL.md"], "desc": "hard-gate slug/mode/desc vocabulary" },
     "durable-run-state-checkpoints": {
       "surface": ["runtime/run_state.py"],

@@ -1,0 +1,25 @@
+{
+  "cases": [
+    {
+      "id": "brainstorming-golden",
+      "skill": "brainstorming",
+      "kind": "golden",
+      "expectation": "design approval before code",
+      "prompt": "design approval before code"
+    },
+    {
+      "id": "brainstorming-boundary",
+      "skill": "brainstorming",
+      "kind": "boundary",
+      "expectation": "stop implementation until design approval",
+      "prompt": "stop implementation until design approval"
+    },
+    {
+      "id": "brainstorming-handoff",
+      "skill": "brainstorming",
+      "kind": "handoff",
+      "expectation": "handoff xia2 then writing-plans",
+      "prompt": "handoff xia2 then writing-plans"
+    }
+  ]
+}

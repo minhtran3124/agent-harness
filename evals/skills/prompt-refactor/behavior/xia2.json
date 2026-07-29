@@ -1,0 +1,25 @@
+{
+  "cases": [
+    {
+      "id": "xia2-golden",
+      "skill": "xia2",
+      "kind": "golden",
+      "expectation": "research a new capability",
+      "prompt": "research a new capability"
+    },
+    {
+      "id": "xia2-boundary",
+      "skill": "xia2",
+      "kind": "boundary",
+      "expectation": "surface a Deep risk under a waiver",
+      "prompt": "surface a Deep risk under a waiver"
+    },
+    {
+      "id": "xia2-handoff",
+      "skill": "xia2",
+      "kind": "handoff",
+      "expectation": "save the research brief",
+      "prompt": "save the research brief"
+    }
+  ]
+}

@@ -1,0 +1,116 @@
+{
+  "cases": [
+    {
+      "id": "writing-plans-trigger-1",
+      "skill": "writing-plans",
+      "query": "Turn the approved design and research brief into a detailed implementation plan.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "writing-plans-trigger-2",
+      "skill": "writing-plans",
+      "query": "Before we touch code, turn the approved design and research brief into a detailed implementation plan.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "writing-plans-trigger-3",
+      "skill": "writing-plans",
+      "query": "I am unsure of the safest workflow; turn the approved design and research brief into a detailed implementation plan.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "writing-plans-trigger-4",
+      "skill": "writing-plans",
+      "query": "Please do this in the repository: turn the approved design and research brief into a detailed implementation plan.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "writing-plans-trigger-5",
+      "skill": "writing-plans",
+      "query": "This is time-sensitive, but turn the approved design and research brief into a detailed implementation plan.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "writing-plans-trigger-6",
+      "skill": "writing-plans",
+      "query": "Use the project workflow to turn the approved design and research brief into a detailed implementation plan.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "writing-plans-trigger-7",
+      "skill": "writing-plans",
+      "query": "Can you take ownership of this request? Turn the approved design and research brief into a detailed implementation plan.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "writing-plans-trigger-8",
+      "skill": "writing-plans",
+      "query": "Do not implement anything else; turn the approved design and research brief into a detailed implementation plan.",
+      "should_trigger": true,
+      "split": "holdout"
+    },
+    {
+      "id": "writing-plans-near-miss-1",
+      "skill": "writing-plans",
+      "query": "Start editing code for this tiny one-file typo.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "writing-plans-near-miss-2",
+      "skill": "writing-plans",
+      "query": "Do only this instead: start editing code for this tiny one-file typo.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "writing-plans-near-miss-3",
+      "skill": "writing-plans",
+      "query": "The user asked us to start editing code for this tiny one-file typo.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "writing-plans-near-miss-4",
+      "skill": "writing-plans",
+      "query": "This request is adjacent but distinct: start editing code for this tiny one-file typo.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "writing-plans-near-miss-5",
+      "skill": "writing-plans",
+      "query": "Do not route to the wrong specialist; start editing code for this tiny one-file typo.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "writing-plans-near-miss-6",
+      "skill": "writing-plans",
+      "query": "For this branch, start editing code for this tiny one-file typo.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "writing-plans-near-miss-7",
+      "skill": "writing-plans",
+      "query": "Handle the direct request: start editing code for this tiny one-file typo.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "writing-plans-near-miss-8",
+      "skill": "writing-plans",
+      "query": "The next action should be: start editing code for this tiny one-file typo.",
+      "should_trigger": false,
+      "split": "holdout"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "cases": [
+    {
+      "id": "using-git-worktrees-golden",
+      "skill": "using-git-worktrees",
+      "kind": "golden",
+      "expectation": "isolate a normal checkout",
+      "prompt": "isolate a normal checkout"
+    },
+    {
+      "id": "using-git-worktrees-boundary",
+      "skill": "using-git-worktrees",
+      "kind": "boundary",
+      "expectation": "detect a submodule or existing worktree",
+      "prompt": "detect a submodule or existing worktree"
+    },
+    {
+      "id": "using-git-worktrees-handoff",
+      "skill": "using-git-worktrees",
+      "kind": "handoff",
+      "expectation": "deploy harness in the workspace",
+      "prompt": "deploy harness in the workspace"
+    }
+  ]
+}

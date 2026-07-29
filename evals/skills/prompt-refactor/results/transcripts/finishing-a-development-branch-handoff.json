@@ -1,0 +1,52 @@
+{
+  "command": [
+    "claude",
+    "--dangerously-skip-permissions",
+    "-p",
+    "--output-format",
+    "json",
+    "--no-session-persistence",
+    "--tools",
+    "",
+    "--max-budget-usd",
+    "0.25",
+    "--model",
+    "sonnet",
+    "--effort",
+    "low"
+  ],
+  "cwd": "/Users/minhtran/Documents/minhtran3124/developer/harness-skills",
+  "returncode": 0,
+  "result": "Required action: push the branch and open (or update) one PR against the resolved base \u2014 never merge it.\n\nKey safety gate: before push, `check_review_receipt.py` must show a passing, non-stale correctness+intent receipt pinned to the resolved base (for non-tiny/planned work); merging itself is explicitly excluded \u2014 a human reviews and merges.",
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 21390,
+    "cache_read_input_tokens": 3304,
+    "output_tokens": 115,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 21390,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 115,
+        "cache_read_input_tokens": 3304,
+        "cache_creation_input_tokens": 21390,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 21390
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "stderr": ""
+}

@@ -1,0 +1,25 @@
+{
+  "cases": [
+    {
+      "id": "feature-intake-golden",
+      "skill": "feature-intake",
+      "kind": "golden",
+      "expectation": "classify a new request",
+      "prompt": "classify a new request"
+    },
+    {
+      "id": "feature-intake-boundary",
+      "skill": "feature-intake",
+      "kind": "boundary",
+      "expectation": "escalate an ambiguous hard-gate request",
+      "prompt": "escalate an ambiguous hard-gate request"
+    },
+    {
+      "id": "feature-intake-handoff",
+      "skill": "feature-intake",
+      "kind": "handoff",
+      "expectation": "write SUMMARY and route work",
+      "prompt": "A request adds a public OAuth callback route and token validation. Classify it, write the required SUMMARY fields, and explicitly name the next workflow route."
+    }
+  ]
+}
