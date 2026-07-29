@@ -1,26 +1,26 @@
 {
-  "reviewed_head_sha": "3cd33070b05d827ea9c9beac83df33ea9adf938b",
+  "reviewed_head_sha": "2697714e937b8f81cecf89648781da3c267a31cb",
   "reviews": [
     {
       "type": "context-propagation-audit",
       "result": "pass",
       "blocking_open": 0,
-      "method": "deterministic-static",
-      "evidence": "final-review-package-contract.test.sh; check_task_review_adoption.py; explicit delivery search"
+      "method": "external-claude",
+      "evidence": "External context review: task_brief.py, review-chain.md, correctness shared prompt, intent reviewer prompt, and final-review-package-contract.test.sh; PASS"
     },
     {
       "type": "correctness",
       "result": "pass",
       "blocking_open": 0,
-      "method": "deterministic-static",
-      "evidence": "run-tests.sh (278 passed); py_compile; A/B scorer; explicit range package"
+      "method": "external-claude",
+      "evidence": "External correctness re-review of 43bd00c and 2697714; artifact-name verb masking and package-prompt delivery verified; PASS"
     },
     {
       "type": "intent",
       "result": "pass",
       "blocking_open": 0,
-      "method": "deterministic-static",
-      "evidence": "SUMMARY Intent, PLAN SC-1..SC-9, verify_summary --check, final diff inspection"
+      "method": "external-claude",
+      "evidence": "External intent review against simplify: implementation scope, A/B evidence, and recorded PR permission blocker verified; all source scope PASS"
     }
   ]
 }

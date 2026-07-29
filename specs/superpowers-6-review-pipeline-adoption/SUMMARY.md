@@ -74,19 +74,21 @@ research, risk boundaries, and measurable quality gates would be insufficient.
 | Minor/unknown routing | controller and final review | main/final handoff | SDD durable-route instructions | routing contract test |
 
 Result: PASS. Every load-bearing new instruction has an explicit source-to-consumer delivery path;
-no assumed parent-history delivery remains. This was a deterministic static audit because the
-external Claude final-review client was rate-limited at the time of review.
+no assumed parent-history delivery remains. An independent external review confirmed the actual
+correctness and intent child prompts receive `REVIEW_PACKAGE_PATH`, not only the controller prose.
 
 ### Final Review
 
-- Correctness — PASS (deterministic static review of `3cae3f5..3cd3307`; full CI, Python compile,
-  package/routing contracts, and A/B quality-first gate all passed).
-- Intent — PASS (the diff creates the requested branch-based implementation, completes SC-1…SC-9,
-  keeps the rejected A/B iteration, and preserves human review/no-merge boundary).
+- Correctness — PASS (independent external re-review through source commit `2697714`; it found and
+  verified fixes for interface-verb masking and final child-prompt package delivery).
+- Intent — PASS for all source scope at `2697714`: the diff implements SC-1…SC-9, retains the
+  rejected A/B iteration, and preserves the human-review/no-merge boundary. The previous receipt
+  was stale; this receipt refresh records the current reviewed source head.
 
 ### Delivery Status
 
-- Branch `feat/superpowers-6-review-pipeline` pushed to `github` at `d203d5c`.
+- Branch `feat/superpowers-6-review-pipeline` pushed to `github`; final commits will be pushed
+  after this receipt refresh.
 - Draft PR creation was attempted against `simplify` and rejected by GitHub: the configured
   credential is not a collaborator. No merge was attempted. A repository collaborator can open
   the PR from the pushed branch.

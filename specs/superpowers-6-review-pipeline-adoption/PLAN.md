@@ -160,3 +160,6 @@ A/B evaluation.
 - 2026-07-29 — All success criteria verified, derived harness deployed, and receipt recorded.
   Status changed to `shipped`; branch was pushed and awaits human PR review. Draft-PR creation
   was attempted but blocked by the configured GitHub credential lacking collaborator permission.
+- 2026-07-29 — External context, correctness, and intent reviews re-ran through `2697714`.
+  A child-prompt package-delivery gap and parser edge cases were fixed; full suite and adoption
+  checks passed before the receipt refresh. PR creation remains blocked by collaborator permission.
