@@ -1,86 +1,86 @@
-# Research — Liệu vòng lặp `/compound` có khép kín không?
+# Research — Is the `/compound` loop closed?
 
-> Câu hỏi: Sau khi chạy `/compound` và sinh ra file trong `docs/solutions/`, các session mới sau này có **tự đọc lại** không, và harness có **rút được kinh nghiệm** từ nó không?
-> Phạm vi: repo `harness-skills`
-> Ngày nghiên cứu: 2026-06-08
-> Phương pháp: trace wiring thực tế (SKILL.md, settings.json, hooks/, CLAUDE.md) — không dựa vào mô tả README.
+> Question: After running `/compound` and generating a file in `docs/solutions/`, do later new sessions **read it back automatically**, and does the harness **learn** from it?
+> Scope: `harness-skills` repo
+> Research date: 2026-06-08
+> Method: trace the actual wiring (SKILL.md, settings.json, hooks/, CLAUDE.md) — not relying on README descriptions.
 
 ---
 
 ## Verdict
 
-**Vòng lặp đang MỞ (semi-closed).** `/compound` **ghi** kiến thức bền vững thành công, nhưng harness **không có cơ chế tự kéo** kiến thức đó vào context của một session mới. Kiến thức chỉ quay lại khi **một người/skill chủ động pull**.
+**The loop is OPEN (semi-closed).** `/compound` successfully **writes** durable knowledge, but the harness has **no mechanism to automatically pull** that knowledge into a new session's context. The knowledge only comes back when **a person/skill actively pulls** it.
 
 ---
 
-## Bằng chứng
+## Evidence
 
-### 1. `/compound` ghi gì (CONFIRMED)
-`skills/compound/SKILL.md` ghi ra đúng 3 đường dẫn:
-- `docs/solutions/<category>/<slug>.md` — entry theo track (bug/knowledge/decision/failure) — *line ~90*
-- `docs/solutions/critical-patterns.md` — khi `severity = critical` — *line ~309*
-- `docs/solutions/INDEX.md` — rebuild toàn bộ sau mỗi lần chạy — *line ~343*
+### 1. What `/compound` writes (CONFIRMED)
+`skills/compound/SKILL.md` writes to exactly 3 paths:
+- `docs/solutions/<category>/<slug>.md` — entry by track (bug/knowledge/decision/failure) — *line ~90*
+- `docs/solutions/critical-patterns.md` — when `severity = critical` — *line ~309*
+- `docs/solutions/INDEX.md` — fully rebuilt after each run — *line ~343*
 
-### 2. Tự đọc lúc session start (NOT FOUND)
-- ❌ Không có **SessionStart hook**: grep `"SessionStart"` toàn repo → 0 kết quả.
-- ❌ `settings.json` / `settings.local.json` chỉ đăng ký SessionEnd (`state-breadcrumb.sh`), không có SessionStart.
-- ❌ Không hook nào trong `hooks/` đọc/`cat` `docs/solutions/`.
+### 2. Automatic read at session start (NOT FOUND)
+- ❌ No **SessionStart hook**: grep `"SessionStart"` across the repo → 0 results.
+- ❌ `settings.json` / `settings.local.json` only register SessionEnd (`state-breadcrumb.sh`), no SessionStart.
+- ❌ No hook in `hooks/` reads/`cat`s `docs/solutions/`.
 
-### 3. Đọc bởi skill (pull, không phải push) — CONFIRMED
-- **`/xia2`** (`skills/xia2/SKILL.md:93-99`): đọc INDEX trước → đọc `critical-patterns.md` **bất kể domain** → đọc tối đa **3** file solution theo recency. Fallback grep nếu không khai báo Index trong `PROJECT.md`.
-- **`/brainstorming`** (`skills/brainstorming/SKILL.md:79-83`): `grep "problem_type: decision" docs/solutions/` → đọc các file decision để tránh đề xuất lại phương án đã bị loại.
+### 3. Read by skill (pull, not push) — CONFIRMED
+- **`/xia2`** (`skills/xia2/SKILL.md:93-99`): reads INDEX first → reads `critical-patterns.md` **regardless of domain** → reads at most **3** solution files by recency. Falls back to grep if the Index is not declared in `PROJECT.md`.
+- **`/brainstorming`** (`skills/brainstorming/SKILL.md:79-83`): `grep "problem_type: decision" docs/solutions/` → reads the decision files to avoid re-proposing an already-rejected approach.
 
-### 4. Khoảng trống thực sự
+### 4. The real gap
 ```
-Session 1: làm việc → phát hiện bug → /compound → ghi docs/solutions/foo/bar.md
-   ↓ [kết thúc session 1]
-Session 2 (mới): context KHÔNG chứa bar.md
+Session 1: work → find a bug → /compound → write docs/solutions/foo/bar.md
+   ↓ [session 1 ends]
+Session 2 (new): context does NOT contain bar.md
    ↓
-   ├─ Gọi /xia2 hoặc /brainstorming?  → CÓ: skill pull từ docs/solutions/
-   └─ Không gọi?                       → kiến thức VÔ HÌNH trong session này
+   ├─ Call /xia2 or /brainstorming?  → YES: the skill pulls from docs/solutions/
+   └─ Don't call?                     → the knowledge is INVISIBLE in this session
 ```
-Không có đường nào để `critical-patterns.md` (hay entry bất kỳ) tự nạp vào context session mới nếu không có hành động chủ động.
+There is no path for `critical-patterns.md` (or any entry) to load itself into a new session's context without an active action.
 
-### 5. Sắc thái: vì sao là "bán-khép" chứ không hoàn toàn mở
-`CLAUDE.md` **được auto-load** mỗi session và chứa dòng:
+### 5. Nuance: why "semi-closed" rather than fully open
+`CLAUDE.md` **is auto-loaded** every session and contains the line:
 > "Critical learnings (read at planning time): `docs/solutions/critical-patterns.md`"
 
-→ Đây là **con trỏ tự nổi lên**, nhưng **nội dung thì không tự nạp**. Nó chỉ *nhắc* model đọc lúc planning — phụ thuộc model có tuân theo hay không. Pointer auto, content on-demand.
+→ This is a **self-surfacing pointer**, but **the content does not load itself**. It only *reminds* the model to read at planning time — dependent on whether the model complies. Pointer auto, content on-demand.
 
-### 6. Thực trạng dữ liệu
-`docs/solutions/` **chưa tồn tại** (scaffold-only) — chưa từng chạy `/compound` hay `/bootstrap-xia2`. Loop hiện chưa có dữ liệu để kiểm chứng end-to-end.
+### 6. Current data state
+`docs/solutions/` **does not exist yet** (scaffold-only) — `/compound` and `/bootstrap-xia2` have never been run. The loop currently has no data to verify end-to-end.
 
 ---
 
-## Bảng tổng hợp
+## Summary table
 
-| Thành phần | Trạng thái | Bằng chứng |
+| Component | Status | Evidence |
 |---|---|---|
-| Compound ghi file | ✅ | `compound/SKILL.md` line ~90, ~309, ~343 |
-| Auto-load lúc SessionStart | ❌ Không có | 0 SessionStart hook; grep 0 match |
-| Hook đọc docs/solutions | ❌ Không có | chỉ SessionEnd `state-breadcrumb.sh` |
-| `/xia2` pull | ✅ | `xia2/SKILL.md:93-99` (INDEX → critical-patterns → ≤3 file) |
+| Compound writes files | ✅ | `compound/SKILL.md` line ~90, ~309, ~343 |
+| Auto-load at SessionStart | ❌ None | 0 SessionStart hooks; grep 0 matches |
+| Hook reads docs/solutions | ❌ None | only SessionEnd `state-breadcrumb.sh` |
+| `/xia2` pull | ✅ | `xia2/SKILL.md:93-99` (INDEX → critical-patterns → ≤3 files) |
 | `/brainstorming` pull | ✅ | `brainstorming/SKILL.md:79-83` (grep decision) |
-| critical-patterns tự nạp | ❌ | chỉ đọc khi gọi `/xia2` |
-| docs/solutions/ hiện tại | TRỐNG | thư mục chưa tồn tại |
-| **Trạng thái vòng lặp** | **MỞ / bán-khép** | resurface chỉ khi pull |
+| critical-patterns self-loads | ❌ | only read when `/xia2` is called |
+| docs/solutions/ today | EMPTY | directory does not exist yet |
+| **Loop status** | **OPEN / semi-closed** | resurfaces only on pull |
 
 ---
 
-## Phương án khép vòng lặp (chưa triển khai — chỉ ghi nhận)
+## Options for closing the loop (not implemented — recorded only)
 
-| Mức | Cách làm | Đánh đổi |
+| Level | Approach | Trade-off |
 |---|---|---|
-| **Nhẹ** | Sửa pointer trong `CLAUDE.md` thành imperative ("ALWAYS read `critical-patterns.md` before planning/implementation") | Vẫn phụ thuộc model tuân lệnh; 0 token nền |
-| **Vừa (khuyến nghị)** | Thêm **SessionStart hook** in nội dung `INDEX.md` + `critical-patterns.md` (hoặc tiêu đề) vào context | Tốn ít token/session; khép loop thật, không phụ thuộc skill |
-| **Nặng** | SessionStart hook + relevance-filter (chỉ surface entry khớp file/branch đang mở) | Phức tạp, cần script lọc |
+| **Light** | Change the pointer in `CLAUDE.md` to an imperative ("ALWAYS read `critical-patterns.md` before planning/implementation") | Still depends on model compliance; 0 baseline tokens |
+| **Medium (recommended)** | Add a **SessionStart hook** that prints the contents of `INDEX.md` + `critical-patterns.md` (or their titles) into context | Costs a few tokens/session; genuinely closes the loop, no skill dependency |
+| **Heavy** | SessionStart hook + relevance-filter (surface only entries matching the open file/branch) | Complex, needs a filtering script |
 
-> ⚠️ SessionStart hook + `settings.json` là **high-blast file** (Rule 4, `auto-correct-scope.md`) → cần xác nhận của người dùng trước khi sửa.
+> ⚠️ The SessionStart hook + `settings.json` are a **high-blast file** (Rule 4, `auto-correct-scope.md`) → user confirmation is required before modifying them.
 
 ---
 
-## Hệ quả thực tế
-Cho tới khi loop được khép, để tái sử dụng kiến thức `/compound` ở session mới, cần **chủ động** một trong các cách:
-1. Gọi `/xia2` (đọc INDEX + critical-patterns + ≤3 solution).
-2. Gọi `/brainstorming` (đọc các decision liên quan).
-3. Tự đọc `docs/solutions/INDEX.md` hoặc `critical-patterns.md` rồi dẫn vào prompt.
+## Practical consequence
+Until the loop is closed, reusing `/compound` knowledge in a new session requires **actively** doing one of the following:
+1. Call `/xia2` (reads INDEX + critical-patterns + ≤3 solutions).
+2. Call `/brainstorming` (reads the relevant decisions).
+3. Read `docs/solutions/INDEX.md` or `critical-patterns.md` yourself and feed it into the prompt.

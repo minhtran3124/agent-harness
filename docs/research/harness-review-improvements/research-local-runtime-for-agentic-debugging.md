@@ -1,26 +1,26 @@
-# Nghiên cứu: Local Runtime Environment cho AI Agent tự debug và verify
+# Research: Local Runtime Environment for AI agents to self-debug and verify
 
-> **Ngày:** 2026-07-21  
-> **Trạng thái:** Research / đề xuất hướng thiết kế, chưa triển khai  
-> **Phạm vi:** mở rộng harness để AI có thể quan sát và tương tác an toàn với ứng dụng đang chạy local, bao gồm native process và Docker Compose.
+> **Date:** 2026-07-21  
+> **Status:** Research / proposed design direction, not yet implemented  
+> **Scope:** extend the harness so AI can safely observe and interact with a locally running application, covering both native processes and Docker Compose.
 
-## 1. Câu hỏi nghiên cứu
+## 1. Research question
 
-Làm thế nào để cung cấp cho AI agent một môi trường local đủ thật để agent có thể:
+How do we give an AI agent a local environment realistic enough that the agent can:
 
-- tự khởi động và kiểm tra ứng dụng;
-- đọc log của backend, worker, database và các dependency;
-- tái hiện lỗi bằng test, HTTP request hoặc command;
-- phân biệt lỗi code với lỗi môi trường/runtime;
-- sửa code, restart thành phần liên quan và kiểm tra lại;
-- tạo ra bằng chứng verify có thể xem lại và chạy lại;
-- thực hiện các thao tác trên mà không có quyền phá huỷ dữ liệu hoặc làm ảnh hưởng production.
+- start up and check the application itself;
+- read logs from the backend, worker, database, and other dependencies;
+- reproduce bugs via tests, HTTP requests, or commands;
+- distinguish code bugs from environment/runtime bugs;
+- fix code, restart the relevant component, and re-check;
+- produce verification evidence that can be reviewed and re-run;
+- perform all of the above without the ability to destroy data or affect production.
 
-## 2. Luận điểm chính
+## 2. Main thesis
 
-Harness hiện tại đã bao phủ phần lớn workflow tĩnh: intake, planning, implementation, review, test và commit gate. Khoảng trống tiếp theo là **runtime observability và runtime control**.
+The current harness already covers most of the static workflow: intake, planning, implementation, review, test, and commit gate. The next gap is **runtime observability and runtime control**.
 
-AI không nên phải tự đoán các command đặc thù của từng project. Harness nên cung cấp một **local runtime contract** chuẩn hóa, còn phần triển khai cụ thể được xử lý bởi adapter:
+AI should not have to guess each project's idiosyncratic commands. The harness should provide a standardized **local runtime contract**, with the concrete implementation handled by an adapter:
 
 ```text
 AI Agent
@@ -40,33 +40,33 @@ Local Runtime Adapter
         └── Local Kubernetes / custom runner
 ```
 
-Mục tiêu không phải là cho agent quyền tuyệt đối, mà là tạo một vòng lặp có kiểm soát:
+The goal is not to give the agent absolute authority, but to create a controlled loop:
 
 ```text
 observe → diagnose → reproduce → change → restart → verify → record evidence
 ```
 
-## 3. Liên hệ với harness hiện tại
+## 3. Relationship to the current harness
 
-### Đã có
+### Already present
 
-- `hooks/auto-test-on-change.sh` có khả năng phát hiện ecosystem và chạy targeted test.
-- `agents/test-runner.md` đã có vai trò chạy và chẩn đoán test.
-- `agents/coding.md` yêu cầu implementation agent tự kiểm tra kết quả.
-- `SUMMARY.md` có khuôn `### Verify` để ghi bằng chứng hoàn thành.
-- Các hook và commit gate đã tạo nền tảng cho audit, risk control và workflow enforcement.
+- `hooks/auto-test-on-change.sh` can detect the ecosystem and run targeted tests.
+- `agents/test-runner.md` already has the role of running and diagnosing tests.
+- `agents/coding.md` requires the implementation agent to check its own results.
+- `SUMMARY.md` has a `### Verify` block for recording completion evidence.
+- The hooks and commit gate already lay the groundwork for audit, risk control, and workflow enforcement.
 
-### Còn thiếu
+### Still missing
 
-- Không có runtime registry mô tả cách start, stop, status và healthcheck project.
-- Không có interface chuẩn cho đọc log theo service.
-- Không có correlation giữa code change, failing test, runtime log và lần verify.
-- Không có wrapper an toàn cho `docker compose exec`, restart hoặc các mutation khác.
-- Bằng chứng runtime chưa được lưu thành artifact có cấu trúc.
+- No runtime registry describing how to start, stop, get status of, and healthcheck a project.
+- No standard interface for reading logs per service.
+- No correlation between code change, failing test, runtime log, and the verification run.
+- No safe wrapper for `docker compose exec`, restart, or other mutations.
+- Runtime evidence is not saved as a structured artifact.
 
-## 4. Mô hình runtime contract
+## 4. Runtime contract model
 
-Một project tiêu thụ harness có thể khai báo `.harness/runtime.yaml`:
+A project consuming the harness can declare `.harness/runtime.yaml`:
 
 ```yaml
 runtime: docker-compose
@@ -95,23 +95,23 @@ commands:
   restart: docker compose restart {service}
 ```
 
-Contract nên mô tả tối thiểu:
+The contract should describe at minimum:
 
-| Nhóm | Nội dung |
+| Group | Content |
 |---|---|
-| Runtime kind | Docker Compose, native process hoặc custom |
-| Services | Tên logical, tên process/container thực tế |
+| Runtime kind | Docker Compose, native process, or custom |
+| Services | Logical name, actual process/container name |
 | Lifecycle | start, stop, restart, status |
 | Observability | logs, healthcheck, port, readiness |
 | Verification | test command, smoke test, regression command |
-| Permissions | command read-only, command mutation, command cần approval |
-| Redaction | environment variable và pattern không được xuất vào log |
+| Permissions | read-only commands, mutating commands, commands requiring approval |
+| Redaction | environment variables and patterns that must not be emitted into logs |
 
-Nếu không có config, harness có thể discovery từ `compose.yaml`, `docker-compose.yml`, `package.json`, `pyproject.toml`, `Makefile` hoặc framework conventions. Discovery chỉ nên tạo **đề xuất**, không tự động cấp thêm quyền.
+If there is no config, the harness can discover from `compose.yaml`, `docker-compose.yml`, `package.json`, `pyproject.toml`, `Makefile`, or framework conventions. Discovery should only produce a **proposal**, never automatically grant additional permissions.
 
 ## 5. Runtime adapter API
 
-Các thao tác nên được expose dưới dạng semantic operation thay vì để agent tự ghép shell command:
+Operations should be exposed as semantic operations instead of letting the agent assemble shell commands itself:
 
 ```text
 runtime.status()
@@ -123,7 +123,7 @@ runtime.run_test(target="auth")
 runtime.snapshot()
 ```
 
-Mỗi operation nên trả về dữ liệu có cấu trúc:
+Each operation should return structured data:
 
 ```json
 {
@@ -139,7 +139,7 @@ Mỗi operation nên trả về dữ liệu có cấu trúc:
 }
 ```
 
-`signals` có thể bắt đầu bằng rule-based classifier, ví dụ:
+`signals` can start out as a rule-based classifier, for example:
 
 - `database_connection_error`;
 - `dependency_unhealthy`;
@@ -149,75 +149,75 @@ Mỗi operation nên trả về dữ liệu có cấu trúc:
 - `application_exception`;
 - `out_of_memory`.
 
-Classifier chỉ là tín hiệu hỗ trợ, không phải ground truth. Agent vẫn phải kiểm tra log và source code thực tế trước khi kết luận.
+The classifier is only a supporting signal, not ground truth. The agent must still check the actual logs and source code before concluding.
 
 ## 6. Docker Compose debugging flow
 
-Khi một endpoint hoặc test bị lỗi, flow dự kiến là:
+When an endpoint or test fails, the expected flow is:
 
-1. Kiểm tra trạng thái toàn bộ service.
-2. Chạy healthcheck của service bị ảnh hưởng.
-3. Đọc log có timestamp trong khoảng thời gian liên quan.
-4. Xác định lỗi thuộc application, dependency, network, configuration hay test.
-5. Tạo reproduction tối thiểu bằng test, `curl` hoặc command trong container.
-6. Đọc source và thực hiện thay đổi nhỏ nhất có thể.
-7. Restart đúng service, tránh restart toàn bộ stack nếu không cần.
-8. Chạy lại reproduction và targeted test.
-9. Chạy healthcheck và đọc log mới để đảm bảo không xuất hiện regression.
-10. Ghi lại command, exit code và kết quả vào runtime evidence.
+1. Check the status of every service.
+2. Run the healthcheck of the affected service.
+3. Read timestamped logs over the relevant time window.
+4. Determine whether the fault lies in the application, a dependency, the network, configuration, or the test.
+5. Create a minimal reproduction via a test, `curl`, or a command inside the container.
+6. Read the source and make the smallest possible change.
+7. Restart the correct service, avoiding a full stack restart when not needed.
+8. Re-run the reproduction and the targeted test.
+9. Run the healthcheck and read the new logs to make sure no regression appears.
+10. Record the command, exit code, and result into the runtime evidence.
 
-Ví dụ, `api` trả HTTP 500 nhưng process vẫn sống:
+For example, `api` returns HTTP 500 but the process is still alive:
 
 ```text
-healthcheck api       → process healthy nhưng endpoint lỗi
+healthcheck api       → process healthy but the endpoint fails
 logs api               → database connection refused
 status                 → postgres unhealthy
-logs postgres          → database chưa ready
-restart api            → không đủ, lỗi tái diễn
+logs postgres          → database not ready yet
+restart api            → not enough, the error recurs
 reproduction           → startup race condition
-fix                    → thêm retry/readiness handling
-verify                 → healthcheck + integration test + log sạch
+fix                    → add retry/readiness handling
+verify                 → healthcheck + integration test + clean logs
 ```
 
-Điểm cần tránh là kết luận vội rằng mọi lỗi trong log đều cần sửa code. Nhiều lỗi thực tế là dependency chưa ready, port bị chiếm, config thiếu hoặc container đã chết.
+The pitfall to avoid is hastily concluding that every error in the logs requires a code fix. In practice many errors are a dependency not yet ready, an occupied port, missing config, or a container that has already died.
 
 ## 7. Safety model
 
-Runtime access có rủi ro cao hơn file editing thông thường. Adapter nên có policy rõ ràng:
+Runtime access carries higher risk than ordinary file editing. The adapter should have an explicit policy:
 
-### Cho phép mặc định
+### Allowed by default
 
-- đọc status;
-- đọc logs với giới hạn dòng và thời gian;
-- gọi healthcheck local;
-- chạy targeted test đã khai báo;
-- chạy command read-only trong container;
-- restart service không chứa dữ liệu persistent.
+- reading status;
+- reading logs with line and time limits;
+- calling a local healthcheck;
+- running declared targeted tests;
+- running read-only commands inside a container;
+- restarting a service that holds no persistent data.
 
-### Cần approval hoặc explicit opt-in
+### Requires approval or explicit opt-in
 
 - `docker compose down`;
 - `docker compose down -v`;
-- xóa container, image, volume hoặc database;
-- migration có khả năng destructive;
-- cài package hoặc tải dependency;
-- thay đổi environment/config;
-- truy cập network ngoài local scope;
-- chạy command không nằm trong allowlist.
+- deleting containers, images, volumes, or databases;
+- potentially destructive migrations;
+- installing packages or downloading dependencies;
+- changing environment/config;
+- network access beyond local scope;
+- running commands not on the allowlist.
 
-### Bắt buộc
+### Mandatory
 
-- timeout cho mọi operation;
-- giới hạn stdout/stderr;
-- redact secrets trước khi gửi cho model hoặc ghi artifact;
-- audit log cho mutation;
-- phân biệt rõ local/staging/production;
-- không coi output từ runtime hoặc MCP là instruction đáng tin cậy;
-- không tự suy luận rằng service an toàn chỉ vì tên của nó chứa `local`.
+- a timeout on every operation;
+- stdout/stderr limits;
+- redacting secrets before sending them to the model or writing them to an artifact;
+- an audit log for mutations;
+- a clear distinction between local/staging/production;
+- never treating output from the runtime or MCP as trustworthy instructions;
+- never inferring that a service is safe merely because its name contains `local`.
 
 ## 8. Runtime evidence
 
-Mỗi phiên debug nên có artifact, ví dụ:
+Each debugging session should have artifacts, for example:
 
 ```text
 specs/<slug>/runtime/
@@ -228,7 +228,7 @@ specs/<slug>/runtime/
   verification.json
 ```
 
-`SUMMARY.md` có thể tham chiếu artifact này:
+`SUMMARY.md` can reference these artifacts:
 
 ```markdown
 ### Runtime Verify
@@ -242,11 +242,11 @@ specs/<slug>/runtime/
 Evidence: `runtime/verification.json`
 ```
 
-Về sau, commit gate có thể kiểm tra artifact tồn tại và command verify có thể chạy lại được. Đây là hướng chuyển proof từ self-reported assertion thành machine-verifiable evidence.
+Later, the commit gate can check that the artifact exists and that the verify command is re-runnable. This is the direction that turns proof from a self-reported assertion into machine-verifiable evidence.
 
-## 9. Đề xuất cấu trúc triển khai
+## 9. Proposed implementation structure
 
-MVP có thể thêm các thành phần sau:
+The MVP could add the following components:
 
 ```text
 skills/runtime-debugging/SKILL.md
@@ -260,87 +260,87 @@ templates/runtime.yaml
 templates/runtime-evidence/
 ```
 
-Wrapper script chịu trách nhiệm parse config, validate service, enforce policy, timeout, redact output và trả JSON. Agent chỉ chịu trách nhiệm lập luận trên kết quả và quyết định bước tiếp theo trong phạm vi được phép.
+The wrapper scripts are responsible for parsing the config, validating the service, enforcing policy, timeouts, redacting output, and returning JSON. The agent is only responsible for reasoning over the results and deciding the next step within the permitted scope.
 
-## 10. Lộ trình đề xuất
+## 10. Proposed roadmap
 
-### Phase 0 — Contract và discovery
+### Phase 0 — Contract and discovery
 
-- Chốt schema `.harness/runtime.yaml`.
-- Viết discovery report, không mutation.
-- Xác định distinction giữa local runtime và production.
-- Test contract parser bằng fixture.
+- Finalize the `.harness/runtime.yaml` schema.
+- Write a discovery report, no mutation.
+- Establish the distinction between local runtime and production.
+- Test the contract parser with fixtures.
 
 ### Phase 1 — Docker Compose MVP
 
 - Implement `status`, `logs`, `healthcheck`, `exec`, `restart`.
-- Giới hạn service và command.
-- Hỗ trợ output JSON.
-- Lưu runtime evidence.
-- Viết `runtime-debugger` agent.
+- Restrict services and commands.
+- Support JSON output.
+- Save runtime evidence.
+- Write the `runtime-debugger` agent.
 
 ### Phase 2 — Workflow integration
 
-- Kết nối với `agents/test-runner.md`.
-- Cho phép `SUMMARY.md` tham chiếu runtime verification.
-- Thêm command correlation với changed files và failing tests.
-- Thêm rule nhắc agent đọc runtime evidence trước khi kết luận.
+- Connect with `agents/test-runner.md`.
+- Let `SUMMARY.md` reference runtime verification.
+- Add command correlation with changed files and failing tests.
+- Add a rule reminding the agent to read runtime evidence before concluding.
 
-### Phase 3 — Native processes và richer diagnostics
+### Phase 3 — Native processes and richer diagnostics
 
-- Hỗ trợ process chạy ngoài Docker.
-- HTTP smoke tests và database connectivity checks.
-- Log classifier có cấu trúc.
-- Snapshot trước/sau thay đổi.
+- Support processes running outside Docker.
+- HTTP smoke tests and database connectivity checks.
+- A structured log classifier.
+- Snapshots before/after a change.
 
 ### Phase 4 — Advanced observability
 
-- Metrics và traces local.
+- Local metrics and traces.
 - Browser/e2e integration.
 - Failure fingerprinting.
-- Reproduction tự động từ request hoặc test case.
+- Automatic reproduction from a request or test case.
 
-Không nên bắt đầu bằng multi-agent orchestration hoặc một observability platform đầy đủ. Giá trị đầu tiên nằm ở contract nhỏ, output ổn định và verification đáng tin cậy.
+We should not start with multi-agent orchestration or a full observability platform. The first value lies in a small contract, stable output, and trustworthy verification.
 
-## 11. Rủi ro và trade-off
+## 11. Risks and trade-offs
 
-| Rủi ro | Hệ quả | Biện pháp |
+| Risk | Consequence | Mitigation |
 |---|---|---|
-| Log quá lớn | Làm nhiễu context và tốn token | Tail, since, filter, truncation |
-| Log chứa secret | Rò rỉ credential | Redaction trước khi trả output |
-| Agent sửa nhầm môi trường | Mất dữ liệu hoặc tác động ngoài scope | Environment identity + approval gate |
-| Restart làm mất state | Khó tái hiện lỗi | Snapshot trước mutation, restart theo service |
-| Classifier đoán sai | Agent sửa sai nguyên nhân | Bắt buộc corroborate bằng log/source/test |
-| Config drift | Command không còn đúng | Runtime contract lint + smoke test |
-| Tool quá tổng quát | Agent có quyền shell nguy hiểm | Semantic wrapper + allowlist |
-| Runtime không deterministic | Kết quả verify không ổn định | Health/readiness, isolated fixture, retry có giới hạn |
+| Logs too large | Pollutes context and burns tokens | Tail, since, filter, truncation |
+| Logs contain secrets | Credential leak | Redaction before returning output |
+| Agent modifies the wrong environment | Data loss or out-of-scope impact | Environment identity + approval gate |
+| Restart loses state | Hard to reproduce the bug | Snapshot before mutation, restart per service |
+| Classifier guesses wrong | Agent fixes the wrong root cause | Mandatory corroboration via log/source/test |
+| Config drift | Commands no longer correct | Runtime contract lint + smoke test |
+| Tool too general-purpose | Agent gains dangerous shell access | Semantic wrapper + allowlist |
+| Non-deterministic runtime | Unstable verification results | Health/readiness, isolated fixtures, bounded retry |
 
-## 12. Các câu hỏi còn mở
+## 12. Open questions
 
-1. Runtime contract đặt ở project root hay trong `agents/PROJECT.md`?
-2. Có nên dùng YAML hay JSON để dễ validate bằng shell/python?
-3. `runtime.exec` cho phép arbitrary command trong container hay chỉ command đã đăng ký?
-4. Có cần một local daemon giữ session, hay wrapper process là đủ cho MVP?
-5. Runtime evidence có commit mặc định hay chỉ lưu trong `specs/` tùy lane?
-6. Làm thế nào nhận diện chắc chắn local environment để tránh nhầm staging?
-7. Có cần MCP server riêng cho runtime, hay skill + wrapper script đủ cho giai đoạn đầu?
+1. Does the runtime contract live at the project root or inside `agents/PROJECT.md`?
+2. Should we use YAML or JSON, for easier validation from shell/python?
+3. Does `runtime.exec` allow arbitrary commands inside the container, or only registered commands?
+4. Do we need a local daemon holding a session, or is a wrapper process enough for the MVP?
+5. Is runtime evidence committed by default, or only stored under `specs/` depending on the lane?
+6. How do we reliably identify the local environment to avoid mistaking it for staging?
+7. Do we need a dedicated MCP server for the runtime, or are a skill plus wrapper scripts enough for the early stage?
 
-## 13. Tiêu chí thành công của MVP
+## 13. MVP success criteria
 
-MVP được xem là đạt khi agent có thể xử lý một bug runtime đơn giản trong fixture Docker Compose:
+The MVP is considered achieved when the agent can handle a simple runtime bug in a Docker Compose fixture:
 
-- phát hiện service lỗi;
-- lấy đúng log có liên quan;
-- chạy reproduction;
-- sửa code trong phạm vi task;
-- restart service cần thiết;
-- chạy lại test và healthcheck;
-- xác nhận log mới không còn lỗi;
-- ghi lại evidence có command và exit code;
-- không truy cập secret hoặc thực hiện destructive operation ngoài policy.
+- detect the failing service;
+- fetch the correct relevant logs;
+- run the reproduction;
+- fix code within the task's scope;
+- restart the necessary service;
+- re-run the test and healthcheck;
+- confirm the new logs no longer show the error;
+- record evidence including command and exit code;
+- not access secrets or perform destructive operations outside policy.
 
-## 14. Kết luận
+## 14. Conclusion
 
-Local runtime environment nên được xem là một **execution and observability layer** của harness, không phải một tập lệnh Docker rời rạc. Thiết kế quan trọng nhất là semantic runtime contract và safety boundary.
+The local runtime environment should be seen as an **execution and observability layer** of the harness, not a loose collection of Docker commands. The most important design pieces are the semantic runtime contract and the safety boundary.
 
-Hướng ưu tiên là Docker Compose adapter nhỏ, có output JSON, log redaction, timeout, allowlist và runtime evidence. Khi vòng lặp `observe → reproduce → fix → verify` hoạt động đáng tin cậy, native process, browser testing, metrics và tracing có thể được thêm dần mà không làm vỡ mô hình ban đầu.
+The priority direction is a small Docker Compose adapter with JSON output, log redaction, timeouts, an allowlist, and runtime evidence. Once the `observe → reproduce → fix → verify` loop works reliably, native processes, browser testing, metrics, and tracing can be added incrementally without breaking the original model.

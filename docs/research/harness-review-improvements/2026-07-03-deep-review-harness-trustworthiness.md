@@ -2,157 +2,157 @@
 
 - **Date:** 2026-07-03
 - **Scope:** hooks/ + settings.json · scripts/ + CI · skills/ + agents/ · rules/ + templates/ + specs/ + docs governance
-- **Method:** 4 review agent song song, mỗi phát hiện được verify bằng cách đọc code hoặc chạy thực tế (không suy đoán). Các bypass ở mục Critical đã được chứng minh live.
-- **Status:** findings only — chưa fix gì.
+- **Method:** 4 review agents in parallel; every finding verified by reading the code or running it for real (no speculation). The bypasses in the Critical section were demonstrated live.
+- **Status:** findings only — nothing fixed yet.
 
 ---
 
-## Đánh giá tổng thể
+## Overall assessment
 
-Nền tảng của repo tốt hơn mức trung bình rõ rệt: merge logic của deploy/install có backup và test thật, CI chạy đúng những gì docs nói, benchmark review-chain có kết quả thật, và bảng Evidence Tiers trung thực. **Nhưng lớp "enforcement" — thứ tạo ra niềm tin — đang thủng ở đúng những chỗ quan trọng nhất**: mọi commit gate bypass được bằng một tiền tố lệnh, hook knowledge-base đã chết âm thầm ở vị trí deploy, và mọi cơ chế chỉ dựa vào prose (trust ledger, STATE.md, agent-memory decay) đều đã mục.
+The repo's foundation is distinctly better than average: the merge logic in deploy/install has backups and real tests, CI runs exactly what the docs say it does, the review-chain benchmark has real results, and the Evidence Tiers table is honest. **But the "enforcement" layer — the thing that creates trust — is leaking in precisely the places that matter most**: every commit gate can be bypassed with a command prefix, the knowledge-base hook has died silently at its deployed location, and every mechanism that rests on prose alone (trust ledger, STATE.md, agent-memory decay) has rotted.
 
-Repo tự chứng minh luận điểm của chính nó: *cái gì không được cơ giới hoá thì sẽ decay*.
-
----
-
-## 🔴 Critical — cần fix ngay
-
-### 1. Mọi commit gate bypass được bằng tiền tố lệnh
-
-- **Vị trí:** `hooks/commit-quality-gate.sh:11`, `hooks/risk-corroboration.sh:26`, `hooks/branch-guard.sh:14`
-- Cả 3 gate filter bằng `grep -qE '^git commit'` (neo đầu dòng). **Đã chứng minh live:** `cd /tmp && git commit -m x` và `git -C . commit` đi qua cả 3 gate với exit 0, không một dòng output.
-- Các dạng bypass: `cd x && git commit` · `git -C dir commit` · `git -c k=v commit` · `command git commit` · `echo done; git commit`.
-- Secrets scan, debug-artifact check, pytest gate, lane corroboration — tất cả chỉ cách một dấu `&&` là im lặng.
-- **Kèm theo:** field `"if": "Bash(git *)"` trong settings.json **không tồn tại trong schema hooks của Claude Code** (schema chỉ có matcher/type/command/timeout) — nó bị silently ignore, nên cả 4 script chạy trên *mọi* Bash call và toàn bộ việc gating phụ thuộc vào chính cái self-filter bị hỏng nói trên. `statusMessage` cũng không phải field hợp lệ.
-- `check-untracked-py.sh:9` dùng substring match nên sống sót qua `cd x &&` nhưng vẫn thua `git -C dir commit`.
-
-### 2. `session-knowledge.sh` đã chết ở vị trí deploy
-
-- **Vị trí:** `hooks/session-knowledge.sh:17-19`
-- Hook resolve knowledge base bằng `$HOOK_DIR/../docs/solutions`, nhưng bản được đăng ký chạy từ `.claude/hooks/` → nó tìm `.claude/docs/solutions` (không tồn tại).
-- **Đã chạy thử:** `bash .claude/hooks/session-knowledge.sh` emit rỗng; bản top-level emit đủ 5 entry INDEX.
-- `exec 2>/dev/null` đảm bảo không ai phát hiện — mọi session khởi động **không có** knowledge base mà CLAUDE.md tuyên bố được load. Đây chính xác là lỗi `not_observed != absent` mà rules của repo cảnh báo.
-- Mọi hook khác tránh lỗi này bằng `git -C "$SCRIPT_DIR" rev-parse --show-toplevel`; riêng hook này thì không.
+The repo proves its own thesis: *whatever is not mechanized will decay*.
 
 ---
 
-## 🟠 High — làm sai lệch mô hình an toàn
+## 🔴 Critical — fix immediately
 
-### 3. `executing-plans` không có review gate nào
+### 1. Every commit gate can be bypassed with a command prefix
 
-- README (`skills/README.md`) và CLAUDE.md nói executing-plans "same as subagent-driven-development" (two-stage review per task + correctness-review + intent-review).
-- Thực tế `skills/executing-plans/SKILL.md`: Step 2 chạy task, Step 3 handoff thẳng đến finishing-a-development-branch. Không spec review, không quality review, không correctness, không intent.
-- **Hệ quả:** plan nào chạy qua đường "parallel session" sẽ ship hoàn toàn không qua review trong khi harness tin là đã qua.
+- **Location:** `hooks/commit-quality-gate.sh:11`, `hooks/risk-corroboration.sh:26`, `hooks/branch-guard.sh:14`
+- All 3 gates filter with `grep -qE '^git commit'` (anchored at line start). **Demonstrated live:** `cd /tmp && git commit -m x` and `git -C . commit` pass all 3 gates with exit 0 and not a single line of output.
+- Bypass forms: `cd x && git commit` · `git -C dir commit` · `git -c k=v commit` · `command git commit` · `echo done; git commit`.
+- Secrets scan, debug-artifact check, pytest gate, lane corroboration — all of them are one `&&` away from silence.
+- **On top of that:** the `"if": "Bash(git *)"` field in settings.json **does not exist in the Claude Code hooks schema** (the schema only has matcher/type/command/timeout) — it is silently ignored, so all 4 scripts run on *every* Bash call and the entire gating story depends on that very same broken self-filter. `statusMessage` is likewise not a valid field.
+- `check-untracked-py.sh:9` uses a substring match, so it survives `cd x &&` but still loses to `git -C dir commit`.
 
-### 4. Hard-gate list lệch nhau giữa 4 nguồn
+### 2. `session-knowledge.sh` is dead at its deployed location
 
-- `skills/feature-intake/SKILL.md` (Step 3, ~dòng 78–86): 6 gates — **thiếu** *public contract*, *removing existing functionality*, *session/transaction scope*.
-- `.claude/rules/orchestration.md` (Escalation): 8 gates, có public contract.
-- `rules/auto-correct-scope.md` Rule 4: thêm removing-functionality + session/transaction scope.
-- `hooks/risk-corroboration.sh:80`: **block** cơ giới trên category `public-contract` (regex route-decorator).
-- **Hệ quả:** intake phân lane `normal` hợp lệ cho một thay đổi route → commit hook chặn exit 2 → classifier và corroborator đánh nhau by design; đúng loại under-classification mà trust ledger sinh ra để bắt, nhưng do docs tự gây.
-- **Cùng loại:** `risk-corroboration.sh:73` coi mọi thay đổi `package.json`/`pyproject.toml`/`requirements*.txt` là hard-gate `external-provider`, mâu thuẫn trực tiếp Rule 3 (cho phép auto-add dependency ở mọi lane) → mọi dependency bump lane normal đều bị block trừ khi re-classify high-risk.
+- **Location:** `hooks/session-knowledge.sh:17-19`
+- The hook resolves the knowledge base via `$HOOK_DIR/../docs/solutions`, but the registered copy runs from `.claude/hooks/` → it looks for `.claude/docs/solutions` (which does not exist).
+- **Tried it:** `bash .claude/hooks/session-knowledge.sh` emits nothing; the top-level copy emits all 5 INDEX entries.
+- `exec 2>/dev/null` guarantees nobody notices — every session starts up **without** the knowledge base that CLAUDE.md claims is loaded. This is exactly the `not_observed != absent` failure the repo's own rules warn about.
+- Every other hook avoids this bug with `git -C "$SCRIPT_DIR" rev-parse --show-toplevel`; this one alone does not.
 
-### 5. Lane corroboration self-referential và fail-open
+---
 
-- **Vị trí:** `hooks/risk-corroboration.sh:103,109,112`
-- Parse đòi dòng bắt đầu đúng `Lane:`; chính repo này có `specs/correctness-review-upgrade/SUMMARY.md:3` dùng `**Lane:** normal` → grep miss → không tìm thấy lane → warn-and-allow (fail-open) kể cả khi diff dính hard-gate.
-- Fallback `ls -t specs/*/SUMMARY.md | head -1` chọn SUMMARY *được sửa gần nhất* → lane được corroborate có thể thuộc task khác.
-- Block message chỉ cho agent cách tự unblock (tự ghi `Lane: high-risk`; không có human trong loop) → hook enforce **tính nhất quán**, không phải **an toàn**.
+## 🟠 High — distorts the safety model
 
-### 6. CI strict gate chứng minh "một lệnh đã chạy", không phải "bằng chứng"
+### 3. `executing-plans` has no review gate at all
 
-- **Vị trí:** `scripts/ci-strict-gate.sh:38-62`
-- PR đụng hard-gate path (`hooks/`, `settings.json`, `templates/`) pass được bằng cách ship một SUMMARY mới có `Lane: high-risk` + row `| x | \`true\` | 0 | |` — `verify_summary --check` chạy `true`, exit 0, gate OK.
-- Rollback bằng template chưa sửa (`- \`git revert <sha>\``) được `check_lane_evidence.py:110-127` chấp nhận (**đã verify empirically** — zero errors): yêu cầu duy nhất của lane high-risk thoả mãn được bằng cách *không sửa gì*.
-- **Side-effect:** CI thực thi shell tuỳ ý lấy từ SUMMARY.md do PR author viết (`verify_summary.py:112`, `shell=True`).
+- The README (`skills/README.md`) and CLAUDE.md say executing-plans is "same as subagent-driven-development" (two-stage review per task + correctness-review + intent-review).
+- In reality `skills/executing-plans/SKILL.md`: Step 2 runs the task, Step 3 hands off straight to finishing-a-development-branch. No spec review, no quality review, no correctness, no intent.
+- **Consequence:** any plan that runs through the "parallel session" path ships entirely unreviewed while the harness believes it was reviewed.
 
-### 7. `test_verify_summary.py` không bao giờ được chạy trong CI
+### 4. The hard-gate list diverges across 4 sources
 
-- **Vị trí:** `scripts/run-tests.sh:33` — `PYTESTS` liệt kê thiếu file này.
-- **Đã verify:** suite báo 102 passed; chạy tay file bị bỏ sót cho thêm 19 test pass. Parser mà CI strict gate phụ thuộc là đúng script duy nhất không có coverage trong CI. Fix một dòng.
+- `skills/feature-intake/SKILL.md` (Step 3, ~lines 78–86): 6 gates — **missing** *public contract*, *removing existing functionality*, *session/transaction scope*.
+- `.claude/rules/orchestration.md` (Escalation): 8 gates, includes public contract.
+- `rules/auto-correct-scope.md` Rule 4: adds removing-functionality + session/transaction scope.
+- `hooks/risk-corroboration.sh:80`: mechanically **blocks** on the `public-contract` category (route-decorator regex).
+- **Consequence:** intake legitimately classifies a route change as lane `normal` → the commit hook blocks with exit 2 → classifier and corroborator fight each other by design; exactly the kind of under-classification the trust ledger exists to catch, except it is self-inflicted by the docs.
+- **Same class:** `risk-corroboration.sh:73` treats any change to `package.json`/`pyproject.toml`/`requirements*.txt` as the `external-provider` hard gate, in direct contradiction with Rule 3 (which permits auto-adding a dependency in any lane) → every normal-lane dependency bump is blocked unless re-classified as high-risk.
 
-### 8. `finishing-a-development-branch` viết trên tiền đề sai
+### 5. Lane corroboration is self-referential and fail-open
 
-- 4 chỗ (dòng ~77, 90, 115, 141) nói "`specs/` is gitignored" — mâu thuẫn CLAUDE.md, plan-format.md, writing-plans, visual-planner (specs được track, transition `shipped` phải commit). Agent theo skill này sẽ để `status: shipped` uncommitted → đúng loại cross-machine drift mà skill cảnh báo.
-- Step 1b hardcode `cd apps/api && python -m pytest` (repo khác — suite thật là `scripts/run-tests.sh`); Step 3 hardcode remote tên `github` (vỡ ở mọi clone dùng `origin`).
+- **Location:** `hooks/risk-corroboration.sh:103,109,112`
+- The parser requires a line beginning exactly with `Lane:`; this very repo has `specs/correctness-review-upgrade/SUMMARY.md:3` using `**Lane:** normal` → grep misses → no lane found → warn-and-allow (fail-open) even when the diff touches a hard gate.
+- The fallback `ls -t specs/*/SUMMARY.md | head -1` picks the *most recently modified* SUMMARY → the lane being corroborated may belong to a different task.
+- The block message only tells the agent how to unblock itself (write `Lane: high-risk` on its own; no human in the loop) → the hook enforces **consistency**, not **safety**.
 
-### 9. `agents/reviewer.md` — guarantee "structurally read-only" không còn đúng
+### 6. The CI strict gate proves "a command ran", not "evidence"
 
-- Frontmatter khai `tools: Glob, Grep, Read, Bash`, nhưng registry thực tế của session hiện tại resolve reviewer với cả `Write, Edit` (gần như chắc chắn do `memory: project` inject).
-- Claim cốt lõi "review independence is enforced by the harness, not by instruction" hiện sai — reviewer có thể sửa file.
+- **Location:** `scripts/ci-strict-gate.sh:38-62`
+- A PR touching a hard-gate path (`hooks/`, `settings.json`, `templates/`) can pass by shipping a new SUMMARY with `Lane: high-risk` plus the row `| x | \`true\` | 0 | |` — `verify_summary --check` runs `true`, exits 0, gate OK.
+- A rollback left as the unedited template (`- \`git revert <sha>\``) is accepted by `check_lane_evidence.py:110-127` (**verified empirically** — zero errors): the sole requirement of the high-risk lane can be satisfied by *changing nothing*.
+- **Side effect:** CI executes arbitrary shell taken from a SUMMARY.md written by the PR author (`verify_summary.py:112`, `shell=True`).
 
-### 10. Branch-isolation "hard block" chỉ phủ 2 kênh ghi
+### 7. `test_verify_summary.py` is never run in CI
 
-- **Vị trí:** `.claude/settings.json` matcher `Write|Edit`.
-- Mọi Bash write (`echo >`, `tee`, `sed -i`, `python -c`, `patch`, heredoc) và `NotebookEdit` đi qua tự do; các Bash-hook chỉ soi lệnh git.
-- **Break-glass unreachable giữa session:** `BRANCH_ISOLATION_REASON`/`PROTECTED_PATH_REASON` đọc từ env của process Claude Code lúc launch — model không set được env cho một tool call. Đường duy nhất là ghi vào `settings.json` `"env"` → thành bypass **vĩnh viễn** với một dòng log stale. `RISK_CORROBORATION_STRICT`/`BLAST_RADIUS_STRICT` default off = fail-open có chủ đích, cùng ràng buộc launch-time.
+- **Location:** `scripts/run-tests.sh:33` — `PYTESTS` omits this file.
+- **Verified:** the suite reports 102 passed; running the skipped file by hand adds 19 more passing tests. The parser the CI strict gate depends on is the one script with no coverage in CI. One-line fix.
 
-### 11. Per-task quality review dispatch một agent không tồn tại
+### 8. `finishing-a-development-branch` is written on a false premise
 
-- `skills/subagent-driven-development/code-quality-reviewer-prompt.md` dispatch `Task tool (superpowers:code-reviewer)` với template `requesting-code-review/code-reviewer.md` — cả agent type lẫn template đều không tồn tại trong môi trường này (README tier nó documented-only).
-- Gate bắt buộc ("Never skip reviews") không có fallback → controller hoặc lỗi hoặc tự improvise pass review.
+- 4 places (lines ~77, 90, 115, 141) say "`specs/` is gitignored" — contradicting CLAUDE.md, plan-format.md, writing-plans, visual-planner (specs are tracked, and the `shipped` transition must be committed). An agent following this skill will leave `status: shipped` uncommitted → exactly the cross-machine drift the skill warns about.
+- Step 1b hardcodes `cd apps/api && python -m pytest` (a different repo — the real suite is `scripts/run-tests.sh`); Step 3 hardcodes a remote named `github` (breaks on every clone that uses `origin`).
+
+### 9. `agents/reviewer.md` — the "structurally read-only" guarantee no longer holds
+
+- The frontmatter declares `tools: Glob, Grep, Read, Bash`, but the actual registry of the current session resolves reviewer with `Write, Edit` as well (almost certainly injected by `memory: project`).
+- The core claim "review independence is enforced by the harness, not by instruction" is currently false — the reviewer can edit files.
+
+### 10. The branch-isolation "hard block" covers only 2 write channels
+
+- **Location:** `.claude/settings.json` matcher `Write|Edit`.
+- Every Bash write (`echo >`, `tee`, `sed -i`, `python -c`, `patch`, heredoc) and `NotebookEdit` passes freely; the Bash hooks only inspect git commands.
+- **Break-glass is unreachable mid-session:** `BRANCH_ISOLATION_REASON`/`PROTECTED_PATH_REASON` are read from the environment of the Claude Code process at launch — the model cannot set an env var for a single tool call. The only path is writing into `settings.json` `"env"` → which turns it into a **permanent** bypass with one stale log line. `RISK_CORROBORATION_STRICT`/`BLAST_RADIUS_STRICT` default off = deliberately fail-open, under the same launch-time constraint.
+
+### 11. Per-task quality review dispatches an agent that does not exist
+
+- `skills/subagent-driven-development/code-quality-reviewer-prompt.md` dispatches `Task tool (superpowers:code-reviewer)` with the template `requesting-code-review/code-reviewer.md` — neither the agent type nor the template exists in this environment (the README tiers it as documented-only).
+- A mandatory gate ("Never skip reviews") with no fallback → the controller either errors out or improvises a passing review on its own.
 
 ---
 
 ## 🟡 Medium — decay & lifecycle
 
-| # | Phát hiện | Vị trí / bằng chứng |
+| # | Finding | Location / evidence |
 |---|---|---|
-| 12 | **Trust ledger chết 3 tuần** — không cơ chế nào append cơ giới; row cuối 2026-06-14 (còn ghi "done (uncommitted)"), PRs #26–#30 ship 06-15→06-19 với 0 row. File sinh ra để "calibrate autonomy" stale ngay khi hết chú ý | `docs/harness-experimental/trust-metrics.md` |
-| 13 | **STATE.md chưa bao giờ hoạt động đúng** — Active Spec luôn `(none)` dù có 19 spec dirs; `user_turns` luôn 0 vì `grep -c '"role": "user"'` không khớp format transcript; Session End Log append vô hạn (32 entries/8 ngày, 232/258 dòng). Agent resume đọc STATE.md không học được gì hơn `git log -1` | `specs/STATE.md`, `hooks/state-breadcrumb.sh:98-105` |
-| 14 | **deploy-harness chỉ thêm, không xoá** — hook bị xoá/rename upstream vẫn nằm lại `.claude/` consumer, và registration cũ được classify "foreign" nên **được giữ qua merge** → dead hook chạy mãi, mỗi lần re-sync | `scripts/deploy-harness.sh:65-107` |
-| 15 | **`python -m pytest` hardcode** — macOS stock không có binary `python` → exit 127 → `exit 2` → block *mọi* commit ở repo adopt có staged `app/` files (fail-closed vì lý do sai; `auto-test-on-change.sh:78-80` làm đúng fallback python3) | `hooks/commit-quality-gate.sh:153` |
-| 16 | **Command-injection primitive** — `eval "$CMD"` với `$FILE_PATH` nội suy; path dạng `test_"; rm -rf x; ".py` thực thi shell tuỳ ý. Dormant hôm nay, nhưng là hook docs khuyên người khác wire lên | `hooks/auto-test-on-change.sh:107` |
-| 17 | **blast-radius fallback sai plan** — không có plan `status: active` thì lấy PLAN.md *mới nhất* bất kể status → plan đã shipped tiếp tục sinh cảnh báo scope-creep (và block giả dưới STRICT=1); dòng 34 unquoted `$(ls -t …)` vỡ với path có space | `hooks/blast-radius-check.sh:34,37` |
-| 18 | **Placeholder rules phân kỳ giữa 2 checker** — `verify_summary.py:33` có em-dash lặp trong set (size 3, một cái gần như chắc là ASCII `-` gõ nhầm); row command `-` được parse là thật và **được execute**. Comment của ci-strict-gate claim placeholder rules "stay in one place" — không đúng | `scripts/verify_summary.py:33` vs `check_lane_evidence.py:34` |
-| 19 | **verify_summary semantics traps** — (a) row khai exit ≠ 0 trung thực vẫn FAIL kể cả khi `claimed == actual` (negative-proof không biểu diễn được); (b) write mode stamp `Verified:` cả khi checks FAILED; (c) `_rewrite_table` map theo tên check → tên trùng thì collide | `scripts/verify_summary.py:292,307-309,145` |
-| 20 | **render_plan self-check pass trên output truncate** — fence ``` không đóng làm `md_to_html` nuốt đến EOF, section biến mất khỏi render nhưng self-check (non-empty, no `{{X}}`, slug, wave count) vẫn pass | `skills/visual-planner/render_plan.py:262-277,1269-1290` |
-| 21 | **Hygiene mâu thuẫn chính mình** — `settings copy.json` (bản stale pre-branch-isolation-guard của file blast-radius cao nhất), `.claude copy/` (~20 file drift, giấu qua `.git/info/exclude` — teammate không nhìn thấy), 3 dir `.harness-backup-*` (06-09→06-11), REQ.md / PR_TEMPLATE.md / docs/research untracked nhiều tuần | git status, repo root |
-| 22 | **agent-memory decay protocol là prose chết** — 0 entry sau ~1 tháng; không script nào parse `confirmed:/review-by:` hay downgrade confidence; phụ thuộc hoàn toàn vào agent tự nhớ, và chưa agent nào nhớ | `agent-memory/` |
-| 23 | **feature-intake trích dẫn path derived** — cite `.claude/rules/...` và `.claude/hooks/*` (cây gitignored, regenerate bởi deploy-harness) làm high-blast list, trong khi CLAUDE.md và corroboration hook key trên `hooks/`/`settings.json` top-level → agent sửa source tree nhận tham chiếu path mâu thuẫn | `skills/feature-intake/SKILL.md` |
+| 12 | **Trust ledger dead for 3 weeks** — no mechanism appends to it; last row 2026-06-14 (still reading "done (uncommitted)"), PRs #26–#30 shipped 06-15→06-19 with 0 rows. A file created to "calibrate autonomy" goes stale the moment attention lapses | `docs/harness-experimental/trust-metrics.md` |
+| 13 | **STATE.md has never worked correctly** — Active Spec is always `(none)` despite 19 spec dirs; `user_turns` is always 0 because `grep -c '"role": "user"'` does not match the transcript format; the Session End Log appends without bound (32 entries / 8 days, 232 of 258 lines). An agent resuming from STATE.md learns nothing more than `git log -1` would tell it | `specs/STATE.md`, `hooks/state-breadcrumb.sh:98-105` |
+| 14 | **deploy-harness only adds, never removes** — a hook deleted/renamed upstream stays behind in the consumer's `.claude/`, and the old registration is classified "foreign" so it is **kept through the merge** → the dead hook keeps running, on every re-sync | `scripts/deploy-harness.sh:65-107` |
+| 15 | **`python -m pytest` hardcoded** — stock macOS has no `python` binary → exit 127 → `exit 2` → blocks *every* commit in an adopting repo that has staged `app/` files (fail-closed for the wrong reason; `auto-test-on-change.sh:78-80` does the python3 fallback correctly) | `hooks/commit-quality-gate.sh:153` |
+| 16 | **Command-injection primitive** — `eval "$CMD"` with `$FILE_PATH` interpolated; a path like `test_"; rm -rf x; ".py` executes arbitrary shell. Dormant today, but it is a hook the docs advise others to wire up | `hooks/auto-test-on-change.sh:107` |
+| 17 | **blast-radius falls back to the wrong plan** — with no plan at `status: active` it picks the *newest* PLAN.md regardless of status → an already-shipped plan keeps producing scope-creep warnings (and false blocks under STRICT=1); line 34's unquoted `$(ls -t …)` breaks on paths with spaces | `hooks/blast-radius-check.sh:34,37` |
+| 18 | **Placeholder rules diverge between the 2 checkers** — `verify_summary.py:33` has a duplicated em-dash in the set (size 3, one of them almost certainly a mistyped ASCII `-`); a row command of `-` is parsed as real and **gets executed**. The ci-strict-gate comment claims the placeholder rules "stay in one place" — untrue | `scripts/verify_summary.py:33` vs `check_lane_evidence.py:34` |
+| 19 | **verify_summary semantics traps** — (a) a row that honestly declares exit ≠ 0 still FAILs even when `claimed == actual` (negative proof is inexpressible); (b) write mode stamps `Verified:` even when checks FAILED; (c) `_rewrite_table` maps by check name → duplicate names collide | `scripts/verify_summary.py:292,307-309,145` |
+| 20 | **render_plan self-check passes on truncated output** — an unclosed ``` fence makes `md_to_html` swallow everything to EOF, the section disappears from the render, yet the self-check (non-empty, no `{{X}}`, slug, wave count) still passes | `skills/visual-planner/render_plan.py:262-277,1269-1290` |
+| 21 | **Hygiene contradicts itself** — `settings copy.json` (a stale pre-branch-isolation-guard copy of the highest-blast-radius file), `.claude copy/` (~20 drifted files, hidden via `.git/info/exclude` — invisible to teammates), 3 `.harness-backup-*` dirs (06-09→06-11), REQ.md / PR_TEMPLATE.md / docs/research untracked for weeks | git status, repo root |
+| 22 | **The agent-memory decay protocol is dead prose** — 0 entries after ~1 month; no script parses `confirmed:/review-by:` or downgrades confidence; it depends entirely on the agent remembering, and no agent has | `agent-memory/` |
+| 23 | **feature-intake cites derived paths** — it cites `.claude/rules/...` and `.claude/hooks/*` (a gitignored tree, regenerated by deploy-harness) as the high-blast list, while CLAUDE.md and the corroboration hook key on top-level `hooks/`/`settings.json` → an agent editing the source tree gets contradictory path references | `skills/feature-intake/SKILL.md` |
 
 ## 🟢 Low
 
-- `check_lane_evidence.py:73` — lane match substring: `Lane: not-normal` resolve thành `normal`; `Reason: —`/`Reason: TBD` pass là "filled".
-- `render_plan.py:229` — `[x](javascript:...)` render thành `<a href="javascript:...">` sống trong PLAN.html (quote breakout bị chặn bởi esc, scheme thì không).
-- `render_plan.py:1257-1259` — sequential `template.replace`: prose chứa literal `{{TASKS}}` bị substitute nguyên block tasks; `{{UPPER}}` khác trong prose gây self-check fail giả.
-- `run-tests.sh:12` — unquoted glob dưới `set -u`: `tests/scripts/` rỗng → pattern literal vào `bash -n` → fail giả.
-- `check-untracked-py.sh:10` — `grep -v '/\.claude/'` không bao giờ khớp path repo-relative (không có leading slash) → exclusion chết; `git ls-files` chạy ở cwd session, không phải repo đích của commit.
-- `create-pr` default base `dev` vs `finishing-a-development-branch` default `main` (repo này main là `main`) → PR body diff sai.
-- `using-git-worktrees` claim "Called by: brainstorming (Phase 4) — REQUIRED" nhưng brainstorming cấm ("The ONLY skills you invoke after brainstorming are xia2 → writing-plans", dòng 72) — một trong hai sai.
-- Câu tiếng Việt copy-paste sót trong `subagent-driven-development/SKILL.md:192` và `correctness-review/SKILL.md:22` — rationale load-bearing không đọc được với agent/user không cấu hình tiếng Việt.
-- `executing-plans` Step 3 mô tả finishing "present options, execute choice" — stale (skill đó giờ unconditionally push + PR).
-- "Never merges" là prose-only — không hook nào gate `gh pr merge`/`git merge` (tương phản branch-isolation là hook-enforced).
-- `subagent-driven-development` (433 dòng, 2 DOT digraph) và `compound` (469 dòng) đẩy rủi ro instruction-following; digraph là nơi duy nhất spec full control flow.
-- docs/solutions: cả 5 entry có `confirmed_at` ≥ 30 ngày tính đến 2026-07-03 → theo rule của chính repo, toàn bộ "potentially stale".
-- state-breadcrumb: concurrent SessionEnd có thể interleave multi-`printf` block; idempotency chỉ per session_id.
+- `check_lane_evidence.py:73` — lane matched as a substring: `Lane: not-normal` resolves to `normal`; `Reason: —`/`Reason: TBD` pass as "filled".
+- `render_plan.py:229` — `[x](javascript:...)` renders to `<a href="javascript:...">` living inside PLAN.html (quote breakout is blocked by escaping, the scheme is not).
+- `render_plan.py:1257-1259` — sequential `template.replace`: prose containing a literal `{{TASKS}}` gets the whole tasks block substituted in; a different `{{UPPER}}` in prose causes a false self-check failure.
+- `run-tests.sh:12` — unquoted glob under `set -u`: if `tests/scripts/` is empty the literal pattern is passed to `bash -n` → false failure.
+- `check-untracked-py.sh:10` — `grep -v '/\.claude/'` never matches a repo-relative path (no leading slash) → the exclusion is dead; `git ls-files` runs in the session cwd, not the repo the commit targets.
+- `create-pr` defaults the base to `dev` while `finishing-a-development-branch` defaults to `main` (this repo's main is `main`) → wrong diff in the PR body.
+- `using-git-worktrees` claims "Called by: brainstorming (Phase 4) — REQUIRED", but brainstorming forbids it ("The ONLY skills you invoke after brainstorming are xia2 → writing-plans", line 72) — one of the two is wrong.
+- Leftover copy-pasted Vietnamese sentences in `subagent-driven-development/SKILL.md:192` and `correctness-review/SKILL.md:22` — load-bearing rationale that is unreadable to an agent/user not configured for Vietnamese.
+- `executing-plans` Step 3 describes finishing as "present options, execute choice" — stale (that skill now unconditionally pushes + opens a PR).
+- "Never merges" is prose-only — no hook gates `gh pr merge`/`git merge` (in contrast to branch-isolation, which is hook-enforced).
+- `subagent-driven-development` (433 lines, 2 DOT digraphs) and `compound` (469 lines) push instruction-following risk; the digraph is the only place the full control flow is specified.
+- docs/solutions: all 5 entries have `confirmed_at` ≥ 30 days old as of 2026-07-03 → by the repo's own rule, every one of them is "potentially stale".
+- state-breadcrumb: concurrent SessionEnd runs can interleave the multi-`printf` block; idempotency is only per session_id.
 
 ---
 
-## ✅ Những gì thực sự tốt (verified)
+## ✅ What is genuinely good (verified)
 
-- `install-harness.sh` / `deploy-harness.sh`: backup trước merge, không clobber JSON invalid, không stage ở target root, giữ foreign keys/hooks — có test thật (`tests/scripts/settings-merge.test.sh`).
-- `bash scripts/run-tests.sh` → **ALL GREEN** (102 passed, 1 skipped, + hook/script suites). `.github/workflows/harness-ci.yml` thật sự chạy run-tests trên ubuntu + macos và ci-strict-gate trên PR với base-ref fetch đúng.
-- Registration audit: 11 hooks "wired ✅" trong CLAUDE.md khớp `.claude/settings.json` chính xác (event type + matcher); 2 dormant đúng là chưa đăng ký.
-- Templates khớp field-by-field với `check_lane_evidence.py` (Lane/Confidence/Reason, Verify table header, Rollback) — không drift.
-- Benchmark `benchmarks/review-chain/`: 5 fixture thật, 2 result file thật (06-12 baseline; 06-14 reviewer-agent: 5/5 catch, 0 FP, ~354k tokens), claim-discipline mẫu mực.
-- Evidence Tiers table trung thực: tự khai documented-only cho mọi external skill/MCP; claim manually-verified duy nhất (commit `a2a4349`) resolve ra commit thật.
-- Python checker tests là test thật (tmp-file round-trip, exit codes, timeouts), không tautology; checkers reject đúng raw template header, handle CRLF + bold-header.
-- Spine routing (feature-intake → sdd → correctness-review → intent-review, thiết kế "ba oracle", `subagent_type: reviewer` dispatch, residual gates) được spec cụ thể, executable.
-- `docs/solutions/INDEX.md` (5 entries) khớp chính xác 5 doc thật.
+- `install-harness.sh` / `deploy-harness.sh`: back up before merging, do not clobber on invalid JSON, do not stage at the target root, preserve foreign keys/hooks — with real tests (`tests/scripts/settings-merge.test.sh`).
+- `bash scripts/run-tests.sh` → **ALL GREEN** (102 passed, 1 skipped, plus the hook/script suites). `.github/workflows/harness-ci.yml` genuinely runs run-tests on ubuntu + macos and ci-strict-gate on PRs with a correct base-ref fetch.
+- Registration audit: the 11 hooks marked "wired ✅" in CLAUDE.md match `.claude/settings.json` exactly (event type + matcher); the 2 dormant ones are indeed unregistered.
+- Templates match `check_lane_evidence.py` field by field (Lane/Confidence/Reason, Verify table header, Rollback) — no drift.
+- Benchmark `benchmarks/review-chain/`: 5 real fixtures, 2 real result files (06-12 baseline; 06-14 reviewer-agent: 5/5 caught, 0 FP, ~354k tokens), exemplary claim discipline.
+- The Evidence Tiers table is honest: it self-declares documented-only for every external skill/MCP; the single manually-verified claim (commit `a2a4349`) resolves to a real commit.
+- The Python checker tests are real tests (tmp-file round-trip, exit codes, timeouts), not tautologies; the checkers correctly reject a raw template header and handle CRLF + bold headers.
+- Spine routing (feature-intake → sdd → correctness-review → intent-review, the "three oracle" design, `subagent_type: reviewer` dispatch, residual gates) is specified concretely and executably.
+- `docs/solutions/INDEX.md` (5 entries) matches the 5 real docs exactly.
 
 ---
 
-## Đề xuất ưu tiên (thứ tự thực thi)
+## Recommended priorities (execution order)
 
-1. **Fix command matching trong 3 commit hook** — tokenize/normalize lệnh (bắt `git … commit` ở bất kỳ segment nào sau `&&`/`;`/`|`, chấp nhận `-C`/`-c`/`command`), bỏ field `"if"` giả trong settings.json. Lỗ lớn nhất.
-2. **Fix root resolution của `session-knowledge.sh`** theo pattern `git rev-parse --show-toplevel` như các hook anh em; bỏ `exec 2>/dev/null` để lỗi nhìn thấy được.
-3. **Thống nhất hard-gate list về 1 nguồn máy-đọc-được** (YAML/JSON mà feature-intake, Rule 4, orchestration.md, risk-corroboration.sh cùng đọc). Giải luôn xung đột dependency-bump (Rule 3 vs hook line 73).
-4. **Đưa review chain vào `executing-plans`** hoặc sửa docs thôi tuyên bố parity; sửa tiền đề sai + hardcode trong `finishing-a-development-branch`; sửa/fallback cho quality-reviewer dispatch không tồn tại; thống nhất base branch create-pr vs finishing.
-5. **Siết evidence checks:** verify command phải tham chiếu file trong diff hoặc nằm trong allowlist (cấm `true`); rollback phải khác template; thêm `test_verify_summary.py` vào `run-tests.sh:33` (1 dòng); chạy verify command trong sandbox thay vì `shell=True` trên CI; unify placeholder sets về một module.
-6. **Cơ giới hoá những gì đang là prose:** hook append trust-ledger row lúc PR merge; drift-check `hooks/` vs `.claude/hooks/` trong CI; deploy-harness học un-deploy (manifest-based); fix hoặc xoá metric `user_turns`; rotation cho Session End Log.
-7. **Mở rộng branch-isolation coverage** sang Bash write + NotebookEdit; thiết kế lại break-glass để dùng được mid-session (vd. file-based flag có TTL thay vì env var).
-8. **Dọn working tree:** xoá `settings copy.json`, `.claude copy/`, 3 backup dirs; commit hoặc xoá REQ.md / PR_TEMPLATE.md / docs/research.
+1. **Fix command matching in the 3 commit hooks** — tokenize/normalize the command (catch `git … commit` in any segment after `&&`/`;`/`|`, accept `-C`/`-c`/`command`), and drop the bogus `"if"` field from settings.json. The biggest hole.
+2. **Fix root resolution in `session-knowledge.sh`** using the `git rev-parse --show-toplevel` pattern its sibling hooks use; drop `exec 2>/dev/null` so errors become visible.
+3. **Consolidate the hard-gate list into 1 machine-readable source** (YAML/JSON read by feature-intake, Rule 4, orchestration.md, and risk-corroboration.sh alike). This also resolves the dependency-bump conflict (Rule 3 vs hook line 73).
+4. **Bring the review chain into `executing-plans`** — or fix the docs to stop claiming parity; fix the false premise + hardcoding in `finishing-a-development-branch`; fix or add a fallback for the nonexistent quality-reviewer dispatch; unify the base branch between create-pr and finishing.
+5. **Tighten evidence checks:** a verify command must reference a file in the diff or sit on an allowlist (ban `true`); the rollback must differ from the template; add `test_verify_summary.py` to `run-tests.sh:33` (1 line); run verify commands in a sandbox instead of `shell=True` on CI; unify the placeholder sets into one module.
+6. **Mechanize what is currently prose:** a hook that appends a trust-ledger row at PR merge; a drift check of `hooks/` vs `.claude/hooks/` in CI; teach deploy-harness to un-deploy (manifest-based); fix or delete the `user_turns` metric; rotation for the Session End Log.
+7. **Extend branch-isolation coverage** to Bash writes + NotebookEdit; redesign break-glass so it is usable mid-session (e.g. a file-based flag with a TTL instead of an env var).
+8. **Clean the working tree:** delete `settings copy.json`, `.claude copy/`, and the 3 backup dirs; commit or delete REQ.md / PR_TEMPLATE.md / docs/research.
 
-> Lưu ý lane: nhóm 1, 2, 7 đụng `hooks/*` + `settings.json` = high-blast theo Rule 4 của chính repo → đi lane **high-risk** với PLAN + Rollback đầy đủ.
+> Lane note: groups 1, 2, and 7 touch `hooks/*` + `settings.json` = high-blast under the repo's own Rule 4 → run them in the **high-risk** lane with a full PLAN + Rollback.

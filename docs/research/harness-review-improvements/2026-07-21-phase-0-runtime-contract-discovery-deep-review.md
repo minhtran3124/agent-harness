@@ -1,52 +1,52 @@
-# Deep Research/Review: Phase 0 — Runtime Contract và Discovery
+# Deep Research/Review: Phase 0 — Runtime Contract and Discovery
 
-> **Ngày:** 2026-07-21  
-> **Trạng thái:** Research / design review, chưa triển khai  
+> **Date:** 2026-07-21  
+> **Status:** Research / design review, not yet implemented  
 > **Parent:** [`docs/research/harness-review-improvements/research-local-runtime-for-agentic-debugging.md`](research-local-runtime-for-agentic-debugging.md)
 
 ## 1. Executive summary
 
-Phase 0 không nên được xem là “thêm một file YAML để chứa vài command”. Nó là việc định nghĩa một **contract an toàn giữa project, harness, runtime adapter và AI agent**.
+Phase 0 should not be seen as "adding a YAML file to hold a few commands". It is about defining a **safety contract between the project, the harness, the runtime adapter, and the AI agent**.
 
-Khuyến nghị sau review:
+Recommendations after review:
 
-1. Tách ba lớp dữ liệu: declared contract, discovery report và resolved runtime model.
-2. Discovery chỉ tạo candidate và warning; không tự cấp quyền mutation.
-3. Dùng logical service name làm lớp ổn định; mapping xuống Docker Compose service là implementation detail.
-4. Không cho contract chứa arbitrary shell command ở Phase 0. Contract tham chiếu semantic operation và test target đã đăng ký.
-5. Resolve Docker Compose bằng chính Compose CLI (`docker compose config --format json`), không tự viết lại Compose parser. Lệnh này render model canonical, merge file và resolve interpolation. [Compose config reference](https://docs.docker.com/reference/cli/docker/compose/config/)
-6. `.harness/runtime.yaml` tốt cho UX, nhưng parser strategy phải được chốt trước khi code. Nếu muốn giữ stdlib-only như `harness-manifest.json`, JSON là lựa chọn đơn giản hơn.
-7. Phase 0 chỉ hoàn tất khi discovery deterministic, có provenance, conflict handling, secret-safe output và fixture tests.
+1. Separate the three data layers: declared contract, discovery report, and resolved runtime model.
+2. Discovery only produces candidates and warnings; it does not grant itself mutation permission.
+3. Use the logical service name as the stable layer; mapping down to a Docker Compose service is an implementation detail.
+4. Do not let the contract contain arbitrary shell commands in Phase 0. The contract references semantic operations and registered test targets.
+5. Resolve Docker Compose using the Compose CLI itself (`docker compose config --format json`); do not rewrite a Compose parser. That command renders the canonical model, merges files, and resolves interpolation. [Compose config reference](https://docs.docker.com/reference/cli/docker/compose/config/)
+6. `.harness/runtime.yaml` is good for UX, but the parser strategy must be settled before writing code. If you want to stay stdlib-only like `harness-manifest.json`, JSON is the simpler choice.
+7. Phase 0 is only complete when discovery is deterministic, with provenance, conflict handling, secret-safe output, and fixture tests.
 
-## 2. Câu hỏi Phase 0 phải trả lời
+## 2. Questions Phase 0 must answer
 
-| Câu hỏi | Kết quả cần có |
+| Question | Required result |
 |---|---|
-| Runtime nào đang được dùng? | `docker-compose`, `native`, `unknown` |
-| Source of truth ở đâu? | path cụ thể và hash |
-| Project identity là gì? | root, project name, environment label |
-| Service nào tồn tại? | logical name, runtime name, profile, state |
-| Service nào agent được phép quan sát? | capability rõ ràng |
-| Service nào được phép mutate? | allowlist và approval policy |
-| Làm sao biết service ready? | healthcheck/readiness hoặc `unknown` |
-| Test/smoke check nào chạy được? | registered target và provenance |
-| Điều gì chưa biết? | warnings, conflicts, unsupported features |
+| Which runtime is in use? | `docker-compose`, `native`, `unknown` |
+| Where is the source of truth? | specific path and hash |
+| What is the project identity? | root, project name, environment label |
+| Which services exist? | logical name, runtime name, profile, state |
+| Which services may the agent observe? | explicit capability |
+| Which services may be mutated? | allowlist and approval policy |
+| How do we know a service is ready? | healthcheck/readiness or `unknown` |
+| Which test/smoke checks can run? | registered target and provenance |
+| What is still unknown? | warnings, conflicts, unsupported features |
 
-Discovery thành công không có nghĩa runtime an toàn để điều khiển; chỉ có nghĩa harness hiểu đủ context để quyết định bước tiếp theo.
+Successful discovery does not mean the runtime is safe to control; it only means the harness understands enough context to decide the next step.
 
-## 3. Boundary và thuật ngữ
+## 3. Boundaries and terminology
 
 ### Declared contract
 
-File do project owner commit, ví dụ `.harness/runtime.yaml`. Nó khai báo runtime kind, Compose files/profile/project name, logical services, healthchecks, verification targets, policy và redaction rules. Contract có thể outdated, nên phải đối chiếu với runtime thực tế.
+A file committed by the project owner, e.g. `.harness/runtime.yaml`. It declares runtime kind, Compose files/profile/project name, logical services, healthchecks, verification targets, policy, and redaction rules. The contract can be outdated, so it must be cross-checked against the actual runtime.
 
 ### Discovery
 
-Quá trình read-only tìm evidence từ filesystem và runtime CLI: Compose files, manifests, process listeners, Compose project/service list, health metadata và test runner declarations. Discovery output không phải instruction và không tự động là permission.
+A read-only process that finds evidence from the filesystem and runtime CLI: Compose files, manifests, process listeners, Compose project/service list, health metadata, and test runner declarations. Discovery output is not an instruction and is not automatically a permission.
 
 ### Resolved runtime model
 
-Model canonical kết hợp contract, discovered evidence và runtime state. Chỉ model đã validate mới được đưa vào runtime adapter.
+The canonical model combining the contract, discovered evidence, and runtime state. Only a validated model may be handed to the runtime adapter.
 
 ```text
 declared contract + discovery + runtime observation
@@ -58,21 +58,21 @@ validation + precedence + conflict handling
 resolved model → read-only capabilities / gated mutations
 ```
 
-### Logical service và runtime service
+### Logical service and runtime service
 
-`api` là logical service. Nó có thể map tới Compose service `backend`, native process `uvicorn`, hoặc Make target. Agent dùng logical name; adapter giữ mapping runtime-specific.
+`api` is a logical service. It may map to the Compose service `backend`, the native process `uvicorn`, or a Make target. The agent uses the logical name; the adapter holds the runtime-specific mapping.
 
-### Configuration và runtime state
+### Configuration and runtime state
 
-Configuration nói cách runtime nên được điều khiển. State nói runtime hiện tại ra sao. Không ghi runtime state ngược vào contract.
+Configuration says how the runtime should be controlled. State says what the runtime currently looks like. Never write runtime state back into the contract.
 
 ## 4. Docker Compose constraints
 
-### Multiple files và project model
+### Multiple files and the project model
 
-Compose có `compose.yaml`, `compose.yml`, override files, `-f`, `COMPOSE_FILE`, profiles, `include` và `extends`. Nhiều file được merge theo thứ tự; path trong model merge được resolve theo base file. [Application model](https://docs.docker.com/compose/intro/compose-application-model/), [merge files](https://docs.docker.com/compose/how-tos/multiple-compose-files/merge/)
+Compose has `compose.yaml`, `compose.yml`, override files, `-f`, `COMPOSE_FILE`, profiles, `include`, and `extends`. Multiple files are merged in order; paths in the merged model are resolved relative to the base file. [Application model](https://docs.docker.com/compose/intro/compose-application-model/), [merge files](https://docs.docker.com/compose/how-tos/multiple-compose-files/merge/)
 
-Discovery phải lưu:
+Discovery must record:
 
 ```text
 selected compose files
@@ -84,31 +84,31 @@ project name
 resolved model hash
 ```
 
-Không đủ an toàn nếu chỉ tìm `compose.yaml` rồi parse danh sách services.
+It is not safe enough to just find `compose.yaml` and then parse the services list.
 
-### Interpolation và environment
+### Interpolation and environment
 
-Compose hỗ trợ `${VAR}`, default/required expression và `$$`; interpolation diễn ra trước merge theo từng file. Biến unresolved có thể tạo warning và thành empty string. [Interpolation](https://docs.docker.com/reference/compose-file/interpolation/)
+Compose supports `${VAR}`, default/required expressions, and `$$`; interpolation happens before merge, per file. Unresolved variables can produce warnings and become empty strings. [Interpolation](https://docs.docker.com/reference/compose-file/interpolation/)
 
-`.env`, shell environment, `--env-file`, `environment`, `env_file` và CLI có precedence khác nhau. [Environment precedence](https://docs.docker.com/compose/how-tos/environment-variables/envvars-precedence/)
+`.env`, the shell environment, `--env-file`, `environment`, `env_file`, and the CLI all have different precedence. [Environment precedence](https://docs.docker.com/compose/how-tos/environment-variables/envvars-precedence/)
 
-Hệ quả:
+Consequences:
 
-- model trên disk chưa chắc là model runtime nhìn thấy;
-- raw `docker compose config` có thể chứa secret;
-- discovery phải dùng canonical Compose model nhưng redact trước khi trả cho model hoặc lưu artifact.
+- the model on disk is not necessarily the model the runtime sees;
+- raw `docker compose config` may contain secrets;
+- discovery must use the canonical Compose model but redact before returning it to the model or storing an artifact.
 
-### Project name và isolation
+### Project name and isolation
 
-Project name ảnh hưởng container/resource names và isolation. Precedence gồm `-p`, `COMPOSE_PROJECT_NAME`, top-level `name`, thư mục chứa Compose file và current directory. [Project name](https://docs.docker.com/compose/how-tos/project-name/)
+The project name affects container/resource names and isolation. Precedence covers `-p`, `COMPOSE_PROJECT_NAME`, the top-level `name`, the directory containing the Compose file, and the current directory. [Project name](https://docs.docker.com/compose/how-tos/project-name/)
 
-Worktree/branch có thể va chạm nếu dùng directory basename. Phase 0 phải report project name và cảnh báo nếu identity không ổn định; không tự đổi name nếu chưa có explicit policy.
+Worktrees/branches can collide if the directory basename is used. Phase 0 must report the project name and warn if the identity is unstable; do not change the name without an explicit policy.
 
-### Profiles và active graph
+### Profiles and the active graph
 
-Service có profile có thể không active. Service được target trực tiếp có thể activate profile; dependency giữa profile không tương thích có thể làm model invalid. [Profiles](https://docs.docker.com/reference/compose-file/profiles/)
+A service with a profile may not be active. A service targeted directly can activate a profile; a dependency between incompatible profiles can make the model invalid. [Profiles](https://docs.docker.com/reference/compose-file/profiles/)
 
-Report phải phân biệt:
+The report must distinguish:
 
 ```text
 declared service: debug-ui
@@ -118,11 +118,11 @@ available with profile=debug: true
 capability: observe=false until explicitly selected
 ```
 
-### Healthcheck và readiness
+### Healthcheck and readiness
 
-Compose healthcheck là command xác định container health; `depends_on: condition: service_healthy` có thể chờ dependency healthy. Nhưng container health không nhất thiết là business readiness. [Compose services](https://docs.docker.com/reference/compose-file/services/), [Compose specification](https://compose-spec.github.io/compose-spec/spec.html)
+A Compose healthcheck is the command that determines container health; `depends_on: condition: service_healthy` can wait for a dependency to be healthy. But container health is not necessarily business readiness. [Compose services](https://docs.docker.com/reference/compose-file/services/), [Compose specification](https://compose-spec.github.io/compose-spec/spec.html)
 
-Contract nên phân biệt:
+The contract should distinguish:
 
 ```text
 container_health → Docker health status
@@ -130,11 +130,11 @@ service_ready    → service-level readiness
 application_smoke → HTTP/CLI business check
 ```
 
-Nếu chỉ có container health, output phải ghi `readiness_level: container`, không gọi là application healthy.
+If only container health exists, the output must record `readiness_level: container` and must not call it application healthy.
 
 ### Canonical resolution
 
-`docker compose config --format json` là nguồn resolved model: merge files, resolve variables và expand short notation. Adapter không nên tái triển khai Compose merge/interpolation bằng regex hoặc parser riêng.
+`docker compose config --format json` is the source of the resolved model: it merges files, resolves variables, and expands short notation. The adapter should not reimplement Compose merge/interpolation with regexes or a bespoke parser.
 
 ## 5. Contract design review
 
@@ -149,7 +149,7 @@ services:
       command: docker compose exec api pytest
 ```
 
-Linh hoạt nhưng biến config thành shell execution surface; khó allowlist, dễ injection, khó port sang native runtime. **Không khuyến nghị cho v1.**
+Flexible, but it turns config into a shell execution surface; hard to allowlist, easy to inject into, hard to port to a native runtime. **Not recommended for v1.**
 
 ### Option B — Semantic targets
 
@@ -170,27 +170,27 @@ services:
         selector: tests/auth/
 ```
 
-Adapter chọn command an toàn cho status/logs/health/verify. Portable, validate được và dễ cấp capability; đổi lại cần extension cho edge case. **Khuyến nghị cho v1.**
+The adapter picks a safe command for status/logs/health/verify. Portable, validatable, and easy to grant capabilities for; the tradeoff is that edge cases need extensions. **Recommended for v1.**
 
-### Option C — Semantic core + custom operation gated
+### Option C — Semantic core + gated custom operations
 
-Cho phép custom operation chỉ khi có id ổn định, `read_only`, timeout/output limit, argv array thay vì shell string, approval cho mutation và fixture test. **Phù hợp sau MVP, không phải default.**
+Allow custom operations only when there is a stable id, `read_only`, timeout/output limits, an argv array instead of a shell string, approval for mutations, and fixture tests. **Suitable after the MVP, not as the default.**
 
-## 6. YAML hay JSON?
+## 6. YAML or JSON?
 
 ### YAML
 
-Dễ đọc, hợp config DevOps, hỗ trợ comment; nhưng cần parser dependency và phải kiểm soát duplicate keys, aliases, anchors và implicit typing.
+Easy to read, fits DevOps config, supports comments; but it needs a parser dependency and requires controlling duplicate keys, aliases, anchors, and implicit typing.
 
 ### JSON
 
-Parser stdlib, semantics ít mơ hồ, phù hợp tooling hiện tại và `harness-manifest.json`; nhưng verbose và không có comment native.
+Stdlib parser, less ambiguous semantics, fits the current tooling and `harness-manifest.json`; but it is verbose and has no native comments.
 
-JSON Schema 2020-12 là meta-schema hiện hành, nhưng JSON Schema không tự parse YAML; đây là hai concerns khác nhau. [JSON Schema specification](https://json-schema.org/specification)
+JSON Schema 2020-12 is the current meta-schema, but JSON Schema does not parse YAML by itself; these are two different concerns. [JSON Schema specification](https://json-schema.org/specification)
 
 ### Recommendation
 
-Chốt parser strategy trước khi triển khai. Nếu không muốn thêm dependency cho harness, dùng JSON. Nếu giữ `.harness/runtime.yaml`, phải ghi rõ parser, version, duplicate-key behavior và test contract.
+Settle the parser strategy before implementing. If you do not want to add a dependency to the harness, use JSON. If you keep `.harness/runtime.yaml`, you must document the parser, its version, duplicate-key behavior, and the test contract.
 
 ## 7. Proposed contract v1
 
@@ -239,19 +239,19 @@ redaction:
 
 Schema rules:
 
-- `version` bắt buộc và chỉ nhận version đã biết;
-- runtime kind là enum; `unknown` chỉ là discovery state, không phải adapter;
-- paths relative tới root/project directory; reject escape như `../../prod`;
-- service names và runtime names không chứa shell metacharacters;
-- HTTP probe chỉ local scope trong MVP;
-- selector không biến thành raw shell string;
-- `mutate: true` không bypass approval;
-- limits có upper bound;
-- unknown keys phải reject hoặc nằm trong explicit `extensions`, không silently ignore.
+- `version` is required and only known versions are accepted;
+- runtime kind is an enum; `unknown` is only a discovery state, not an adapter;
+- paths are relative to the root/project directory; reject escapes such as `../../prod`;
+- service names and runtime names must not contain shell metacharacters;
+- HTTP probes are local scope only in the MVP;
+- a selector must not become a raw shell string;
+- `mutate: true` does not bypass approval;
+- limits have upper bounds;
+- unknown keys must be rejected or live under an explicit `extensions`, never silently ignored.
 
-## 8. Precedence và conflict handling
+## 8. Precedence and conflict handling
 
-Đề xuất thứ tự từ authoritative đến heuristic:
+Proposed order from authoritative to heuristic:
 
 1. Explicit invocation flags.
 2. Committed runtime contract.
@@ -262,13 +262,13 @@ Schema rules:
 
 Rules:
 
-- contract xác nhận intended mapping, không xác nhận service đang healthy;
-- runtime model xác nhận service tồn tại, không cấp mutation permission;
-- heuristic chỉ tạo candidate;
-- conflict giữa explicit contract và runtime là `error` hoặc `needs_review`, không silent override;
-- missing signal là `unknown`, không phải `false`.
+- the contract confirms the intended mapping, not that a service is currently healthy;
+- the runtime model confirms that a service exists, it does not grant mutation permission;
+- heuristics only produce candidates;
+- a conflict between an explicit contract and the runtime is `error` or `needs_review`, never a silent override;
+- a missing signal is `unknown`, not `false`.
 
-Ví dụ:
+Examples:
 
 ```text
 contract: api -> backend
@@ -286,46 +286,46 @@ result: capability observe=true, state=absent
 
 ### Step 0 — Root
 
-- nhận root explicit;
-- canonicalize path và symlink;
-- reject `/`, home hoặc broad unsafe target;
-- xác nhận `.git`/project marker;
-- không scan parent ngoài scope nếu chưa bật.
+- take an explicit root;
+- canonicalize the path and symlinks;
+- reject `/`, home, or broad unsafe targets;
+- confirm a `.git`/project marker;
+- do not scan parents outside scope unless enabled.
 
 ### Step 1 — Contract
 
-- tìm `.harness/runtime.yaml` hoặc `.harness/runtime.json`;
-- nếu cả hai tồn tại mà chưa có precedence, fail;
-- parse, schema validate, lưu source/hash/parser version.
+- look for `.harness/runtime.yaml` or `.harness/runtime.json`;
+- if both exist and there is no precedence rule, fail;
+- parse, schema-validate, and record source/hash/parser version.
 
 ### Step 2 — Candidates
 
-Deterministic order: explicit contract → `compose.yaml` → `compose.yml` → `docker-compose.yml` → `docker-compose.yaml` → known native manifests/scripts → unknown. Không scan mọi YAML vì có thể nhầm Kubernetes/CI fixture.
+Deterministic order: explicit contract → `compose.yaml` → `compose.yml` → `docker-compose.yml` → `docker-compose.yaml` → known native manifests/scripts → unknown. Do not scan every YAML file, since Kubernetes/CI fixtures could be mistaken for Compose.
 
 ### Step 3 — Resolve Compose
 
-- lấy file list từ contract hoặc explicit invocation;
+- take the file list from the contract or explicit invocation;
 - resolve project directory/profile/env policy;
-- chạy `docker compose ... config --format json`;
-- capture exit code, stderr warning, Compose version và model hash;
-- không lưu expanded secret values;
-- tách declared, active và profile services.
+- run `docker compose ... config --format json`;
+- capture exit code, stderr warnings, Compose version, and model hash;
+- do not store expanded secret values;
+- separate declared, active, and profile services.
 
 ### Step 4 — Observe state
 
-- `docker compose ps --all --format json` nếu available;
-- fallback parser chỉ khi cần và phải warning;
-- lấy health/status/restart count;
-- không chạy `logs --follow` trong discovery;
-- logs chỉ tail bounded sample khi caller yêu cầu.
+- `docker compose ps --all --format json` when available;
+- a fallback parser only when needed, and it must warn;
+- collect health/status/restart count;
+- do not run `logs --follow` during discovery;
+- logs only tail a bounded sample when the caller requests it.
 
 ### Step 5 — Map services
 
-- explicit mapping thắng heuristic;
-- exact name match confidence cao nhưng ghi provenance;
-- role guesses (`api`, `web`, `db`, `worker`) chỉ là candidate;
-- ambiguous mapping là `needs_review`;
-- profile inactive không phải running/usable.
+- explicit mapping beats heuristics;
+- an exact name match is high confidence but still records provenance;
+- role guesses (`api`, `web`, `db`, `worker`) are only candidates;
+- ambiguous mapping is `needs_review`;
+- an inactive profile is not running/usable.
 
 ### Step 6 — Emit
 
@@ -334,11 +334,11 @@ discovery-report.json  # evidence, warnings, candidates, provenance
 resolved-runtime.json  # validated model and gated capabilities
 ```
 
-Resolved output không chứa raw environment, token, secret hoặc full unredacted config.
+Resolved output must not contain raw environment, tokens, secrets, or a full unredacted config.
 
-## 10. Confidence và provenance
+## 10. Confidence and provenance
 
-Mỗi fact cần source, method, confidence và timestamp:
+Every fact needs a source, method, confidence, and timestamp:
 
 ```json
 {
@@ -350,20 +350,20 @@ Mỗi fact cần source, method, confidence và timestamp:
 }
 ```
 
-Confidence chỉ giúp orchestration, không tự cấp quyền:
+Confidence only helps orchestration, it does not grant permission by itself:
 
-| Signal | Confidence | Sử dụng |
+| Signal | Confidence | Use |
 |---|---:|---|
-| explicit contract | 1.0 | dùng sau schema/policy validation |
-| exact runtime match | 0.9 | read-only; mutation vẫn cần policy |
-| role heuristic | 0.6 | đề xuất / needs review |
-| filename/script guess | <0.6 | không executable |
+| explicit contract | 1.0 | use after schema/policy validation |
+| exact runtime match | 0.9 | read-only; mutation still needs policy |
+| role heuristic | 0.6 | suggestion / needs review |
+| filename/script guess | <0.6 | not executable |
 
-“Không quan sát được” phải là `unknown`; không có kết quả không chứng minh “không tồn tại”.
+"Not observable" must be `unknown`; the absence of a result does not prove "does not exist".
 
 ## 11. Capability model
 
-Không map `observe: true` thành shell tổng quát. Capability nên granular:
+Do not map `observe: true` to a general-purpose shell. Capabilities should be granular:
 
 ```text
 service.api.logs
@@ -376,26 +376,26 @@ project.stop
 project.database_mutation
 ```
 
-Mỗi capability có subject, operation, read-only/mutating, source, approval, timeout/output limit và audit requirement. Default nên là observe-only; `down -v` và volume/database destruction hard-block trong MVP.
+Each capability has a subject, operation, read-only/mutating flag, source, approval, timeout/output limit, and audit requirement. The default should be observe-only; `down -v` and volume/database destruction are hard-blocked in the MVP.
 
-## 12. Environment và secret handling
+## 12. Environment and secret handling
 
-Không gửi raw `docker compose config`, không chạy `docker compose exec env` mặc định, không đưa `.env` contents vào report. Chỉ emit variable names/presence marker khi cần, mask values và hỗ trợ project redaction patterns. Docker cũng khuyến nghị cẩn trọng với sensitive data trong environment và cân nhắc Secrets. [Environment best practices](https://docs.docker.com/compose/how-tos/environment-variables/best-practices/)
+Do not send raw `docker compose config`, do not run `docker compose exec env` by default, and do not put `.env` contents into the report. Emit only variable names/presence markers when needed, mask values, and support project redaction patterns. Docker likewise recommends caution with sensitive data in the environment and suggests considering Secrets. [Environment best practices](https://docs.docker.com/compose/how-tos/environment-variables/best-practices/)
 
-Redaction cần test cả:
+Redaction must be tested against all of:
 
 - `TOKEN`, `PASSWORD`, `SECRET`, `PRIVATE_KEY`;
-- URL chứa credential;
+- URLs containing credentials;
 - JSON log fields;
 - multiline private keys;
 - ANSI/control characters;
-- secret bị split qua nhiều dòng.
+- secrets split across multiple lines.
 
 ## 13. Native process discovery
 
-Native adapter là phase sau; Phase 0 chỉ report candidate từ `package.json`, `pyproject.toml`, `Makefile`, `Procfile`, README và listening ports.
+The native adapter is a later phase; Phase 0 only reports candidates from `package.json`, `pyproject.toml`, `Makefile`, `Procfile`, README, and listening ports.
 
-Một script tên `dev` không mặc nhiên là start command an toàn:
+A script named `dev` is not automatically a safe start command:
 
 ```text
 candidate: npm run dev
@@ -405,38 +405,38 @@ executable: false
 reason: no explicit runtime contract permission
 ```
 
-Native runtime còn có process group, child process, signal forwarding, port collision, PID reuse, cwd, environment, TTY và cleanup. Vì vậy chưa auto-start process ở Phase 0.
+A native runtime also involves process groups, child processes, signal forwarding, port collisions, PID reuse, cwd, environment, TTY, and cleanup. That is why processes are not auto-started in Phase 0.
 
 ## 14. Failure modes
 
 | Failure | Required behavior |
 |---|---|
-| Không tìm thấy contract | `unknown`, không mutate |
-| Có cả YAML và JSON | fail validation |
+| No contract found | `unknown`, no mutation |
+| Both YAML and JSON present | fail validation |
 | Compose invalid | stop before capability issuance |
 | Missing required env | preserve warning/error |
 | Service mapping mismatch | hard validation error |
 | Multiple Compose candidates | `needs_review` |
-| Profile inactive | `inactive`, không readiness claim |
-| Healthcheck thiếu | `readiness=unknown` |
-| Project-name collision risk | warning hoặc explicit name required |
-| Secret trong output | redact + audit |
+| Profile inactive | `inactive`, no readiness claim |
+| Healthcheck missing | `readiness=unknown` |
+| Project-name collision risk | warning or explicit name required |
+| Secret in output | redact + audit |
 | Unsupported Compose feature | fail closed for mutation |
-| Docker unavailable | config discovery có thể pass; state unknown |
+| Docker unavailable | config discovery may pass; state unknown |
 
 ## 15. Testing strategy
 
 ### Schema tests
 
-Test minimal valid contract, every runtime kind, unknown version/key, path traversal, invalid service name, invalid URL scope, invalid limits và mutation thiếu approval.
+Test a minimal valid contract, every runtime kind, unknown version/key, path traversal, invalid service name, invalid URL scope, invalid limits, and mutation missing approval.
 
 ### Discovery fixtures
 
 | Fixture | Expected result |
 |---|---|
 | only `compose.yaml` | one deterministic candidate |
-| base + override | selected files và provenance đúng |
-| profiles | inactive services không healthy |
+| base + override | correct selected files and provenance |
+| profiles | inactive services are not healthy |
 | explicit mapping mismatch | validation error |
 | exact mapping | high-confidence mapping |
 | ambiguous api/backend | needs review |
@@ -448,15 +448,15 @@ Test minimal valid contract, every runtime kind, unknown version/key, path trave
 
 ### Golden output
 
-Snapshot normalized model, không snapshot container ID, timestamp, log order hoặc các volatile fields. Tách deterministic model, volatile observation và invocation metadata.
+Snapshot the normalized model; do not snapshot container IDs, timestamps, log order, or other volatile fields. Separate the deterministic model, volatile observation, and invocation metadata.
 
 ### Drift tests
 
-CI nên kiểm tra schema version có parser, verification runner có adapter, service mapping tồn tại trong canonical model, docs/schema không drift và fixture secret không lọt ra output.
+CI should check that every schema version has a parser, every verification runner has an adapter, every service mapping exists in the canonical model, docs/schema do not drift, and fixture secrets do not leak into the output.
 
 ## 16. Discovery observability
 
-Report phải giải thích vì sao chọn model nào:
+The report must explain why a given model was chosen:
 
 ```json
 {
@@ -475,22 +475,22 @@ Report phải giải thích vì sao chọn model nào:
 }
 ```
 
-Agent phải biết source, age, confidence và warnings của model; không nhận một model opaque.
+The agent must know the model's source, age, confidence, and warnings; it must not receive an opaque model.
 
-## 17. Decisions cần chốt trước khi code
+## 17. Decisions to settle before coding
 
-1. **File format:** JSON nếu zero dependency là ưu tiên; YAML nếu parser policy được ghi rõ.
-2. **Raw commands:** không có trong core v1; semantic targets trước.
+1. **File format:** JSON if zero dependencies is the priority; YAML if the parser policy is documented clearly.
+2. **Raw commands:** not in core v1; semantic targets first.
 3. **Authority:** explicit contract > canonical model > runtime state > convention > heuristic.
-4. **Compose parsing:** delegate cho `docker compose config --format json`.
-5. **Scope:** Compose discovery/model trước; native chỉ report candidate.
-6. **Capability:** observe-only mặc định; mutation explicit + audit; `down -v` hard-block.
-7. **Evidence:** `specs/<slug>/runtime/` khi gắn task; không secret; generated output không thay contract.
+4. **Compose parsing:** delegate to `docker compose config --format json`.
+5. **Scope:** Compose discovery/model first; native only reports candidates.
+6. **Capability:** observe-only by default; mutation explicit + audited; `down -v` hard-blocked.
+7. **Evidence:** `specs/<slug>/runtime/` when attached to a task; no secrets; generated output does not replace the contract.
 
-## 18. Deliverables đề xuất
+## 18. Proposed deliverables
 
 ```text
-.harness/runtime.schema.json       # hoặc schema tương đương
+.harness/runtime.schema.json       # or an equivalent schema
 scripts/runtime-discover.py        # read-only discovery
 scripts/runtime-validate.py        # schema + semantic validation
 scripts/runtime-normalize.py       # canonical model
@@ -498,38 +498,38 @@ templates/runtime-contract.yaml
 tests/runtime/fixtures/
 ```
 
-Logic parsing/hashing/JSON nên nằm trong Python; Bash wrapper chỉ giữ invocation và exit-code contract.
+Parsing/hashing/JSON logic should live in Python; the Bash wrapper only holds the invocation and exit-code contract.
 
 ## 19. Acceptance criteria
 
-Phase 0 đạt khi:
+Phase 0 is done when:
 
-1. Có schema versioned và parser strategy được ghi rõ.
-2. Discovery chạy read-only trên fixture repo.
-3. Compose model lấy từ `docker compose config --format json`.
-4. Selected files, project directory, profile và project name có provenance.
-5. Contract mismatch tạo lỗi rõ ràng, không tự sửa config.
-6. Mapping phân biệt logical name, runtime name và active state.
-7. Thiếu healthcheck cho `readiness=unknown`.
-8. Report không chứa raw secret values.
-9. Heuristic discovery không cấp mutation capability.
-10. Có fixtures cho override, profile, interpolation failure, missing runtime, ambiguity và redaction.
-11. Normalized model deterministic.
-12. Agent biết khi nào `proceed`, `needs_review` hoặc `blocked`.
+1. There is a versioned schema and a clearly documented parser strategy.
+2. Discovery runs read-only on a fixture repo.
+3. The Compose model comes from `docker compose config --format json`.
+4. Selected files, project directory, profile, and project name all have provenance.
+5. A contract mismatch produces a clear error and does not auto-fix the config.
+6. Mapping distinguishes logical name, runtime name, and active state.
+7. A missing healthcheck yields `readiness=unknown`.
+8. The report contains no raw secret values.
+9. Heuristic discovery grants no mutation capability.
+10. There are fixtures for override, profile, interpolation failure, missing runtime, ambiguity, and redaction.
+11. The normalized model is deterministic.
+12. The agent knows when to `proceed`, `needs_review`, or `blocked`.
 
-## 20. Kết luận review
+## 20. Review conclusion
 
-Phase 0 nên tối ưu cho **giải thích được, deterministic và fail-closed ở capability boundary**, không phải coverage mọi loại project.
+Phase 0 should optimize for being **explainable, deterministic, and fail-closed at the capability boundary**, not for covering every kind of project.
 
 ```text
-AI biết runtime nào tồn tại,
-biết điều gì đã được xác nhận,
-biết điều gì chỉ là phỏng đoán,
-biết service nào đang active,
-và bị chặn trước mutation chưa được cấp quyền.
+The AI knows which runtimes exist,
+knows what has been confirmed,
+knows what is only a guess,
+knows which services are active,
+and is blocked before any mutation that was not granted.
 ```
 
-Nếu các boundary này được chốt trước, những phase sau có thể thêm logs, exec, restart và automated verification mà không biến harness thành một shell-access layer khó kiểm soát.
+If these boundaries are settled first, later phases can add logs, exec, restart, and automated verification without turning the harness into a shell-access layer that is hard to control.
 
 ## 21. References
 

@@ -1,25 +1,25 @@
-# Codex Deep Review: Self-Harness và hướng tự cải thiện cho `harness-skills`
+# Codex Deep Review: Self-Harness and self-improvement directions for `harness-skills`
 
-> **Ngày:** 2026-07-22  
-> **Nguồn chính:** [Self-Harness: Harnesses That Improve Themselves](https://arxiv.org/html/2606.09498v1)  
-> **Phạm vi:** đối chiếu phương pháp, kết quả và giới hạn của paper với contracts, implementation,
-> tests, evals, telemetry và research artifacts hiện có trong repository.  
-> **Phương pháp:** đọc paper; trace code/docs thực tế; chạy `scripts/harness-audit.sh`,
-> `scripts/harness-status.sh` và suite CI-equivalent `scripts/run-tests.sh`.
+> **Date:** 2026-07-22  
+> **Primary source:** [Self-Harness: Harnesses That Improve Themselves](https://arxiv.org/html/2606.09498v1)  
+> **Scope:** compare the paper's method, results and limitations against the contracts, implementation,
+> tests, evals, telemetry and research artifacts currently present in the repository.  
+> **Method:** read the paper; trace the actual code/docs; run `scripts/harness-audit.sh`,
+> `scripts/harness-status.sh` and the CI-equivalent suite `scripts/run-tests.sh`.
 
-## 1. Kết luận
+## 1. Conclusion
 
-Repository đã có nền móng tốt cho Self-Harness: contracts rõ, deterministic tests, audit trend,
-trust ledger, behavioral evals và cơ chế `/compound` biến failure thành guardrail backlog. Tuy
-nhiên nó mới ở trạng thái **harness có khả năng tự quan sát một phần**, chưa phải **harness tự cải
-thiện dựa trên bằng chứng**.
+The repository already has a good foundation for Self-Harness: clear contracts, deterministic tests, audit trend,
+trust ledger, behavioral evals, and a `/compound` mechanism that turns failures into a guardrail backlog. However,
+it is only at the state of a **harness that can partially observe itself**, not yet a **harness that improves itself
+based on evidence**.
 
-Khoảng trống lớn nhất là:
+The biggest gap is:
 
-> Repo đang đo tính nhất quán của artifacts và một số skill riêng lẻ, nhưng chưa ghi execution
-> behavior đủ chuẩn để chứng minh một thay đổi harness làm toàn workflow tốt hơn.
+> The repo currently measures the consistency of artifacts and a few individual skills, but does not yet record
+> execution behavior with enough rigor to prove that a harness change makes the whole workflow better.
 
-Paper đề xuất vòng lặp:
+The paper proposes this loop:
 
 ```text
 execution traces
@@ -29,108 +29,108 @@ execution traces
     → accepted harness lineage
 ```
 
-Paper báo cáo held-out pass rate tăng từ 40.5% lên 61.9% cho MiniMax M2.5, 23.8% lên 38.1% cho
-Qwen3.5-35B-A3B và 42.9% lên 57.1% cho GLM-5. Điểm quan trọng hơn con số là mỗi model nhận các
-thay đổi khác nhau: artifact recovery, retry discipline, tool-loop limits, environment persistence
-và chuyển từ exploration sang implementation. Đây không phải một generic prompt dài dùng chung.
+The paper reports held-out pass rate rising from 40.5% to 61.9% for MiniMax M2.5, 23.8% to 38.1% for
+Qwen3.5-35B-A3B, and 42.9% to 57.1% for GLM-5. More important than the numbers is that each model received
+different changes: artifact recovery, retry discipline, tool-loop limits, environment persistence,
+and the shift from exploration to implementation. This is not one long generic prompt shared by all.
 
-## 2. Paper thực sự đóng góp gì
+## 2. What the paper actually contributes
 
-### 2.1. Harness improvement là một empirical state transition
+### 2.1. Harness improvement is an empirical state transition
 
-Một harness edit chỉ đáng promote khi record được:
+A harness edit is only worth promoting when you can record:
 
-1. behavior muốn thay đổi;
-2. editable surface bị sửa;
-3. evidence dẫn tới hypothesis;
-4. regression result biện minh cho promotion.
+1. the behavior you want to change;
+2. the editable surface that was modified;
+3. the evidence that led to the hypothesis;
+4. the regression result that justifies the promotion.
 
-Model, evaluator, tool set, budget và benchmark protocol được giữ cố định; chỉ harness thay đổi.
-Thiết kế này giúp tách hiệu quả của harness edit khỏi thay đổi model hoặc môi trường.
+Model, evaluator, tool set, budget and benchmark protocol are held fixed; only the harness changes.
+This design isolates the effect of a harness edit from changes in the model or the environment.
 
-### 2.2. Failure phải được quy về reusable mechanism
+### 2.2. Failures must be reduced to a reusable mechanism
 
-Weakness Mining không cluster đơn thuần theo outcome như `timeout` hoặc `missing artifact`. Mỗi
-failure signature tách ba thành phần:
+Weakness Mining does not cluster purely by outcome such as `timeout` or `missing artifact`. Each
+failure signature separates three components:
 
 ```text
 terminal verifier cause
-    + causal status của hành vi agent
+    + causal status of the agent behavior
     + reusable agent mechanism
 ```
 
-Hai run cùng timeout có thể cần hai intervention khác nhau nếu một run bị kẹt ở exact-command
-retry còn run kia exploration quá lâu mà không tạo artifact.
+Two runs with the same timeout may need two different interventions if one run got stuck in exact-command
+retry while the other explored too long without producing an artifact.
 
-### 2.3. Proposal phải đa dạng giữa branches, tối thiểu trong từng branch
+### 2.3. Proposals must be diverse across branches, minimal within each branch
 
-Mỗi candidate nhắm một failure mechanism và một editable surface. Proposal record phải nêu expected
-behavioral effect và regression risk. Rejected proposals vẫn được lưu để lineage audit được.
+Each candidate targets one failure mechanism and one editable surface. The proposal record must state the expected
+behavioral effect and the regression risk. Rejected proposals are still stored so the lineage remains auditable.
 
-### 2.4. Promotion phải non-regressive
+### 2.4. Promotion must be non-regressive
 
-Paper chỉ accept candidate nếu nó cải thiện ít nhất một split và không làm split còn lại giảm.
-Stochastic evaluations được lặp lại và dùng aggregate pass counts. Nhiều candidate tương thích có
-thể được merge thành harness kế tiếp.
+The paper only accepts a candidate if it improves at least one split and does not degrade the remaining split.
+Stochastic evaluations are repeated and aggregate pass counts are used. Multiple compatible candidates
+may be merged into the next harness.
 
-## 3. Repo hiện đã có gì
+## 3. What the repo already has
 
-| Thành phần Self-Harness | Repo hiện có | Khoảng trống |
+| Self-Harness component | Present in the repo | Gap |
 |---|---|---|
-| Verifiable outcomes | Test suite, `### Verify`, CI gates | Chưa gắn outcome với harness/model/run identity |
-| Execution traces | Session transcript, SUMMARY, breadcrumbs | Không có trace schema chuẩn, causal evidence hay tool-event lineage |
-| Failure mining | `/compound`, solutions, improvement backlog | Manual, per-session, không cluster failure xuyên nhiều run |
-| Candidate proposals | Guardrail backlog | Không có candidate ID, parent harness, hypothesis, isolated branch hay rejected archive |
-| Regression validation | Hai behavioral eval suites | Manual, nhỏ, không có diagnostic/promotion/final split |
-| Promotion | PR và human review | Chưa có machine-readable promotion rule cho behavioral candidates |
-| Model-specific harness | Chưa có | Một harness chung; eval record không pin đầy đủ model/runtime profile |
-| Harness lineage | Git history, trust ledger | Không biểu diễn lineage theo candidate và evidence |
-| Safety boundary | Hard gates, strict CI, branch isolation | Chưa khai báo rõ editable surfaces và immutable trusted core |
+| Verifiable outcomes | Test suite, `### Verify`, CI gates | Outcomes not yet tied to harness/model/run identity |
+| Execution traces | Session transcript, SUMMARY, breadcrumbs | No standard trace schema, causal evidence, or tool-event lineage |
+| Failure mining | `/compound`, solutions, improvement backlog | Manual, per-session, no failure clustering across many runs |
+| Candidate proposals | Guardrail backlog | No candidate ID, parent harness, hypothesis, isolated branch, or rejected archive |
+| Regression validation | Two behavioral eval suites | Manual, small, no diagnostic/promotion/final split |
+| Promotion | PR and human review | No machine-readable promotion rule for behavioral candidates yet |
+| Model-specific harness | Not present | One shared harness; eval records do not fully pin model/runtime profile |
+| Harness lineage | Git history, trust ledger | Lineage not represented by candidate and evidence |
+| Safety boundary | Hard gates, strict CI, branch isolation | Editable surfaces and the immutable trusted core are not clearly declared |
 
-### 3.1. Nền tảng tốt cần giữ
+### 3.1. Good foundations to keep
 
-- `HARNESS.md` tách risk và ambiguity thành hai trục độc lập.
-- Completion claim cần proof có thể chạy lại, không chỉ prose.
-- `skills/compound/SKILL.md` đã có ratchet từ failure track sang
+- `HARNESS.md` separates risk and ambiguity into two independent axes.
+- A completion claim requires re-runnable proof, not just prose.
+- `skills/compound/SKILL.md` already has a ratchet from a failure track into
   `docs/harness-experimental/improvement-backlog.md`.
-- `evals/README.md` quy định labeled fixtures, blind runs, first-run record và claim discipline.
-- `scripts/bookkeeping.sh` cùng post-merge workflow đã biến trust ledger thành event-sourced record.
-- `scripts/harness-audit.sh` đã có JSON output và trend log.
-- `docs/research/harness-review-improvements/2026-07-20-production-agent-harness-review.md` đã phác thảo đúng tiền đề
-  `RUN.json`, `events.jsonl`, bounded recovery và run observability.
+- `evals/README.md` prescribes labeled fixtures, blind runs, first-run records, and claim discipline.
+- `scripts/bookkeeping.sh` together with the post-merge workflow has turned the trust ledger into an event-sourced record.
+- `scripts/harness-audit.sh` already has JSON output and a trend log.
+- `docs/research/harness-review-improvements/2026-07-20-production-agent-harness-review.md` already sketched the right premises:
+  `RUN.json`, `events.jsonl`, bounded recovery, and run observability.
 
-### 3.2. Behavioral coverage còn hẹp
+### 3.2. Behavioral coverage is still narrow
 
-Repo có 14 skill directories nhưng behavioral eval hiện mới đo:
+The repo has 14 skill directories, but behavioral evals currently only measure:
 
 - `/feature-intake`;
 - `/correctness-review`;
 - `/intent-review`.
 
-`evals/skills/review-chain` có năm planted-defect fixtures. `evals/workflow/intake-classifier` có
-bảy classification fixtures. Đây là nền tốt nhưng chưa đủ để claim full-workflow improvement.
-Các LLM runs vẫn manual; CI chỉ chạy deterministic scorers và contract tests.
+`evals/skills/review-chain` has five planted-defect fixtures. `evals/workflow/intake-classifier` has
+seven classification fixtures. This is a good foundation but not yet enough to claim full-workflow improvement.
+The LLM runs are still manual; CI only runs deterministic scorers and contract tests.
 
-### 3.3. Audit hiện đo repository drift, không đo agent behavior
+### 3.3. The audit currently measures repository drift, not agent behavior
 
-`scripts/harness-audit.sh` đo SUMMARY thiếu Verify, stale plan, stale solution, stale backlog,
-manifest degradation và dirty contract surfaces. Nó chưa trả lời:
+`scripts/harness-audit.sh` measures SUMMARY missing Verify, stale plans, stale solutions, stale backlog,
+manifest degradation, and dirty contract surfaces. It does not yet answer:
 
-- run nào lặp tool error;
-- model nào thường thiếu required artifact;
+- which run repeats tool errors;
+- which model frequently misses a required artifact;
 - recovery success rate;
-- số human corrections;
+- the number of human corrections;
 - token/tool-call/wall-time regression;
-- harness version nào thực sự tăng task success.
+- which harness version actually increases task success.
 
-Vì vậy `findings=0, band=healthy` chỉ có nghĩa governance artifacts đang sạch theo sáu check hiện
-tại, không có nghĩa harness behavior đã được chứng minh tối ưu.
+Therefore `findings=0, band=healthy` only means the governance artifacts are clean according to the six current
+checks; it does not mean harness behavior has been proven optimal.
 
-## 4. Những thứ repo nên học và áp dụng
+## 4. What the repo should learn and apply
 
-### 4.1. Chuẩn hóa behavioral trace trước khi xây optimizer
+### 4.1. Standardize behavioral traces before building an optimizer
 
-Mỗi run cần một record tối thiểu:
+Every run needs a minimal record:
 
 ```json
 {
@@ -149,15 +149,15 @@ Mỗi run cần một record tối thiểu:
 }
 ```
 
-Nên mở rộng trực tiếp proposal `specs/<slug>/RUN.json` và `specs/<slug>/events.jsonl` trong research
-hiện có, không tạo observability schema song song. V1 chưa cần OpenTelemetry Collector hay raw
-transcript storage.
+We should extend the existing `specs/<slug>/RUN.json` and `specs/<slug>/events.jsonl` proposal from the current
+research directly, rather than creating a parallel observability schema. V1 does not yet need an OpenTelemetry
+Collector or raw transcript storage.
 
-Trace phải bounded, redact secrets và lưu artifact references thay vì commit toàn bộ hội thoại.
+Traces must be bounded, redact secrets, and store artifact references instead of committing entire conversations.
 
-### 4.2. Dùng failure signature ba tầng
+### 4.2. Use a three-layer failure signature
 
-Schema gợi ý:
+Suggested schema:
 
 ```yaml
 verifier_cause: required_artifact_missing
@@ -171,25 +171,25 @@ evidence_refs:
   - runtime/run-123/events.jsonl
 ```
 
-Failure fingerprint dùng để deduplicate; failure signature dùng để quyết định loại harness
-intervention. Không auto-patch chỉ vì fingerprint match.
+The failure fingerprint is used to deduplicate; the failure signature is used to decide which kind of harness
+intervention to apply. Do not auto-patch merely because a fingerprint matches.
 
-### 4.3. Biến `/compound` thành consumer của evidence
+### 4.3. Turn `/compound` into a consumer of evidence
 
-`/compound` phù hợp cho knowledge crystallization nhưng không nên là nguồn evidence duy nhất. Thêm
-một tầng deterministic trước nó:
+`/compound` is a good fit for knowledge crystallization but should not be the only source of evidence. Add
+a deterministic layer in front of it:
 
 1. ingest failed run records;
 2. group exact failure signatures;
-3. chỉ tạo weakness khi support ≥2 hoặc failure safety-critical;
-4. tạo evidence bundle gồm failed và representative passing behaviors;
-5. giao bundle cho `/compound` hoặc proposer model để sinh candidate.
+3. only create a weakness when support ≥2 or the failure is safety-critical;
+4. produce an evidence bundle containing failed and representative passing behaviors;
+5. hand the bundle to `/compound` or a proposer model to generate candidates.
 
-Không tự động chạy toàn `/compound` sau mọi task.
+Do not automatically run the whole of `/compound` after every task.
 
-### 4.4. Khai báo editable surfaces và trusted core
+### 4.4. Declare editable surfaces and the trusted core
 
-Mở rộng `harness-manifest.json`:
+Extend `harness-manifest.json`:
 
 ```json
 {
@@ -210,11 +210,11 @@ Mở rộng `harness-manifest.json`:
 }
 ```
 
-Agent có thể đề xuất PR cho editable surfaces nhưng không được sửa evaluator, answer keys hoặc
-promotion rule trong cùng candidate. Policy, permissions, hooks và recovery boundaries vẫn cần
-human review. Self-improvement không đồng nghĩa self-authorization.
+An agent may propose a PR for editable surfaces but must not modify the evaluator, answer keys, or the
+promotion rule within the same candidate. Policy, permissions, hooks and recovery boundaries still require
+human review. Self-improvement does not mean self-authorization.
 
-### 4.5. Mỗi proposal phải nhỏ và có lineage
+### 4.5. Every proposal must be small and have lineage
 
 Candidate record:
 
@@ -232,63 +232,63 @@ evaluation_runs:
 decision: proposed|accepted|rejected
 ```
 
-Mỗi candidate chỉ nên sửa một mechanism hoặc một surface. Các candidate chạy ở worktree riêng.
-Rejected candidates phải được lưu để proposer không lặp lại cùng hypothesis bằng wording khác.
+Each candidate should modify only one mechanism or one surface. Candidates run in their own worktrees.
+Rejected candidates must be stored so the proposer does not repeat the same hypothesis with different wording.
 
-Nếu nhiều candidate pass độc lập, phải test lại bản merge tổng hợp. `A pass` và `B pass` không chứng
-minh `A+B pass`.
+If several candidates pass independently, the merged combination must be tested again. `A pass` and `B pass` do not
+prove `A+B pass`.
 
-### 4.6. Xây eval pyramid
+### 4.6. Build an eval pyramid
 
-Ba tầng đề xuất:
+Three proposed layers:
 
-1. **Component eval:** từng skill, router, reviewer và middleware.
+1. **Component eval:** each skill, router, reviewer and middleware.
 2. **Workflow eval:** request → intake → plan → implement → review → verify.
-3. **Real-run shadow eval:** failures/corrections thực tế đã redact và đóng băng.
+3. **Real-run shadow eval:** real failures/corrections, redacted and frozen.
 
-Ưu tiên fixture cho các behavior paper chứng minh có giá trị:
+Prioritize fixtures for the behaviors the paper proved valuable:
 
-- required artifact được tạo sớm và còn tồn tại lúc kết thúc;
-- không retry exact command vô hạn;
-- tool error chuyển sang artifact-focused recovery;
-- exploration có budget và chuyển sang implementation;
-- environment changes được verify qua shell session mới;
-- agent không final khi verifier hoặc sanity check còn fail.
+- the required artifact is created early and still exists at the end;
+- no infinite retry of the exact same command;
+- a tool error switches to artifact-focused recovery;
+- exploration has a budget and transitions into implementation;
+- environment changes are verified through a new shell session;
+- the agent does not finalize while the verifier or a sanity check still fails.
 
-### 4.7. Dùng ba split thay vì chỉ held-in/held-out
+### 4.7. Use three splits instead of only held-in/held-out
 
-Một giới hạn của paper là split gọi là held-out vẫn được dùng lặp lại để quyết định promotion. Vì
-vậy nó thực chất là validation set, không còn là final untouched test.
+One limitation of the paper is that the split called held-out is still used repeatedly to decide promotion.
+It is therefore effectively a validation set, no longer a final untouched test.
 
-Repo nên dùng:
+The repo should use:
 
-- `diagnostic`: trace được đưa cho weakness miner và proposer;
-- `promotion`: chỉ trả aggregate outcomes cho gate;
-- `final-shadow`: không được query trong candidate search, chỉ chạy lúc release/milestone.
+- `diagnostic`: traces handed to the weakness miner and the proposer;
+- `promotion`: returns only aggregate outcomes to the gate;
+- `final-shadow`: must not be queried during candidate search, run only at release/milestone time.
 
-Nếu thử nhiều candidate trên cùng promotion set, cần rotation hoặc sequential-testing budget để
-giảm adaptive overfitting.
+If many candidates are tried on the same promotion set, rotation or a sequential-testing budget is needed to
+reduce adaptive overfitting.
 
-### 4.8. Promotion gate phải đa mục tiêu
+### 4.8. The promotion gate must be multi-objective
 
-Candidate chỉ được accept khi:
+A candidate is accepted only when:
 
-- deterministic suite không regression;
-- behavioral target cải thiện;
-- safety fixtures giữ 100%;
-- artifact completeness không giảm;
-- false positives và human escalations không vượt threshold;
-- token/tool-call/wall-time nằm trong budget;
-- không thêm permission hoặc làm yếu validation;
-- combined candidate đã được test lại;
-- có rollback rõ và diff nhỏ.
+- the deterministic suite has no regression;
+- the behavioral target improves;
+- safety fixtures stay at 100%;
+- artifact completeness does not decrease;
+- false positives and human escalations do not exceed thresholds;
+- token/tool-call/wall-time stay within budget;
+- no permission is added and no validation is weakened;
+- the combined candidate has been re-tested;
+- there is a clear rollback and a small diff.
 
-Với stochastic eval, dùng paired repeats và confidence intervals hoặc bootstrap. Hai attempts như
-paper chỉ nên xem là tín hiệu ban đầu, chưa đủ mạnh cho high-risk policy changes.
+For stochastic evals, use paired repeats and confidence intervals or bootstrap. Two attempts as in the
+paper should be treated only as an initial signal, not strong enough for high-risk policy changes.
 
-### 4.9. Thêm model/runtime overlays, không fork toàn repo
+### 4.9. Add model/runtime overlays, do not fork the whole repo
 
-Giữ kiến trúc:
+Keep the architecture:
 
 ```text
 core harness contracts
@@ -296,32 +296,32 @@ core harness contracts
     + project-specific rules
 ```
 
-Không cần tạo nhiều bản skill tree. Pin model/runtime identity trong eval và chỉ condition một số
-guidance/middleware theo profile khi có evidence. Chưa nên xây portability layer lớn nếu chưa có
-model hoặc consumer thứ hai thực sự sử dụng repo.
+There is no need to create multiple copies of the skill tree. Pin model/runtime identity in evals and condition
+only some guidance/middleware on the profile when there is evidence. Do not build a large portability layer
+until a second model or consumer genuinely uses the repo.
 
-### 4.10. Biến human correction thành training signal
+### 4.10. Turn human corrections into a training signal
 
-Trust ledger nên bổ sung typed interventions:
+The trust ledger should add typed interventions:
 
 ```text
 correction | override | rework | approval | false_alarm
 ```
 
-Record cần nêu source, run ID, candidate ID, corrected behavior và commit/PR. Đây là nguồn weakness
-mining thực tế giá trị hơn chỉ nhìn test failure.
+The record needs to state the source, run ID, candidate ID, corrected behavior, and commit/PR. This is a
+weakness-mining source that is more valuable in practice than only looking at test failures.
 
-## 5. Finding live phát hiện trong review
+## 5. Live finding discovered during the review
 
-`scripts/harness-status.sh` đang đọc sai cột trust ledger.
+`scripts/harness-status.sh` is reading the trust ledger columns incorrectly.
 
-Schema thật:
+The real schema:
 
 ```text
 Date | Slug | Lane | Affects | Confidence | Flags | Escalated | Outcome | Notes
 ```
 
-Nhưng script lấy:
+But the script takes:
 
 ```text
 column 5 → lane
@@ -329,110 +329,110 @@ column 7 → confidence
 column 9 → hook
 ```
 
-Do `awk -F'|'` có empty field trước dấu `|` đầu tiên, mapping đúng phải tính cả offset đó. Output
-hiện đưa `Affects` vào `lane`, `Flags` vào `conf` và `Outcome` vào `hook`.
+Because `awk -F'|'` produces an empty field before the first `|`, the correct mapping must account for that offset.
+The current output puts `Affects` into `lane`, `Flags` into `conf`, and `Outcome` into `hook`.
 
-Test `tests/scripts/harness-status.test.sh` chỉ assert data row được render và script không abort;
-nó không assert semantic mapping của từng field. Đây là ví dụ trực tiếp rằng có telemetry chưa đủ:
-reader/evaluator của telemetry cũng cần regression test về semantic correctness.
+The test `tests/scripts/harness-status.test.sh` only asserts that a data row is rendered and that the script does not
+abort; it does not assert the semantic mapping of each field. This is a direct example that having telemetry is not
+enough: the telemetry's reader/evaluator also needs regression tests for semantic correctness.
 
-## 6. Critique paper cần giữ khi áp dụng
+## 6. Critiques of the paper to keep in mind when applying it
 
-### 6.1. Held-out không phải final untouched test
+### 6.1. Held-out is not a final untouched test
 
-Outcome của held-out split được dùng trong mỗi promotion decision. Candidate search vì vậy có thể
-overfit thích nghi vào split này dù raw traces không lộ cho proposer.
+The held-out split's outcome is used in every promotion decision. Candidate search can therefore adaptively overfit
+to this split even though the raw traces are not exposed to the proposer.
 
-### 6.2. Primary metric quá hẹp
+### 6.2. The primary metric is too narrow
 
-Pass rate không đo cost, latency, tool calls, safety regressions, human intervention hoặc độ phức
-tạp tăng thêm của harness.
+Pass rate does not measure cost, latency, tool calls, safety regressions, human intervention, or the additional
+complexity added to the harness.
 
-### 6.3. Hai repeats còn yếu
+### 6.3. Two repeats is still weak
 
-Với 64 tasks và agent behavior stochastic, hai attempts không cung cấp statistical confidence mạnh
-cho high-risk changes.
+With 64 tasks and stochastic agent behavior, two attempts do not provide strong statistical confidence
+for high-risk changes.
 
-### 6.4. Candidate merge có interaction risk
+### 6.4. Candidate merges carry interaction risk
 
-Các edit pass riêng lẻ vẫn có thể xung đột khi merge. Final combined harness phải được đánh giá như
-một candidate mới.
+Edits that pass individually can still conflict when merged. The final combined harness must be evaluated as
+a new candidate.
 
-### 6.5. Benchmark và evaluator là trust bottleneck
+### 6.5. The benchmark and the evaluator are the trust bottleneck
 
-Paper thừa nhận accepted edits có thể benchmark-specific và phụ thuộc chất lượng verifier/trace.
-Higher-stakes changes cần acceptance gate mạnh hơn pass-rate non-regression.
+The paper acknowledges that accepted edits may be benchmark-specific and depend on the quality of the verifier/traces.
+Higher-stakes changes need an acceptance gate stronger than pass-rate non-regression.
 
-### 6.6. Chưa chứng minh cross-model transfer
+### 6.6. Cross-model transfer is not demonstrated
 
-Paper chứng minh model-specific adaptation, nhưng không đánh giá đầy đủ việc harness tối ưu cho model
-A chạy trên model B. Repo không nên gọi một overlay là universal nếu chưa có cross-profile matrix.
+The paper demonstrates model-specific adaptation, but does not fully evaluate running a harness optimized for model
+A on model B. The repo should not call an overlay universal without a cross-profile matrix.
 
-## 7. Roadmap khuyến nghị
+## 7. Recommended roadmap
 
-### P0 — Sửa semantic observability
+### P0 — Fix semantic observability
 
-- Fix mapping trong `scripts/harness-status.sh`.
-- Thêm contract test pin đúng `Lane`, `Confidence`, `Outcome` từ schema thực.
-- Không parse cột bằng magic index nếu có thể đọc header thành map.
+- Fix the mapping in `scripts/harness-status.sh`.
+- Add a contract test that pins `Lane`, `Confidence`, `Outcome` correctly from the real schema.
+- Do not parse columns by magic index when the header can be read into a map.
 
 ### P1 — Run evidence contract
 
-- Triển khai tối thiểu `RUN.json`, `events.jsonl`.
-- Pin model, harness SHA, evaluator, budget và environment identity.
-- Bounded retention và redaction.
+- Implement a minimal `RUN.json`, `events.jsonl`.
+- Pin model, harness SHA, evaluator, budget and environment identity.
+- Bounded retention and redaction.
 
 ### P2 — Eval registry
 
-- Khai báo component/workflow evals.
+- Declare component/workflow evals.
 - Diagnostic/promotion/final-shadow splits.
-- Metrics, safety invariants và resource budgets.
+- Metrics, safety invariants and resource budgets.
 
 ### P3 — Weakness miner
 
 - Deterministic failure signatures.
 - Support/actionability threshold.
-- Evidence bundle chứa failed và passing exemplars.
+- Evidence bundle containing failed and passing exemplars.
 
 ### P4 — Candidate runner
 
-- Worktree riêng cho mỗi candidate.
-- Bounded diff và declared surface.
-- Lineage cùng rejected-candidate archive.
+- A separate worktree per candidate.
+- Bounded diff and declared surface.
+- Lineage plus a rejected-candidate archive.
 
 ### P5 — Promotion gate
 
 - Multi-objective acceptance.
 - Paired repeated runs.
 - Combined-candidate re-evaluation.
-- Human-reviewed PR, không auto-merge.
+- Human-reviewed PR, no auto-merge.
 
 ### P6 — Model overlays
 
-- Chỉ triển khai sau khi có dữ liệu cho ít nhất hai model/runtime profiles.
-- Tách universal core khỏi evidence-backed overlays.
+- Only implement after there is data for at least two model/runtime profiles.
+- Separate the universal core from evidence-backed overlays.
 
-## 8. Không nên làm lúc này
+## 8. What not to do right now
 
-- Không auto-merge self-generated harness changes.
-- Không commit raw transcripts.
-- Không cho proposer sửa evaluator hoặc promotion rule của chính candidate.
-- Không dựng dashboard, OpenTelemetry backend hoặc persistent Collector trước trace schema.
-- Không tăng độ dài system prompt hàng loạt mà không có failure mechanism cụ thể.
-- Không dùng pass rate làm metric duy nhất.
-- Không port Rust/SQLite/database substrate chỉ để bắt chước một self-evolving platform.
-- Không tự động chạy ceremony đầy đủ cho tiny tasks; giữ nguyên nguyên tắc ceremony scales with risk.
+- Do not auto-merge self-generated harness changes.
+- Do not commit raw transcripts.
+- Do not let the proposer modify the evaluator or the promotion rule of its own candidate.
+- Do not build a dashboard, an OpenTelemetry backend, or a persistent Collector before the trace schema exists.
+- Do not increase system prompt length wholesale without a specific failure mechanism.
+- Do not use pass rate as the only metric.
+- Do not port a Rust/SQLite/database substrate just to imitate a self-evolving platform.
+- Do not automatically run the full ceremony for tiny tasks; keep the principle that ceremony scales with risk.
 
 ## 9. Verification snapshot
 
-Tại thời điểm review:
+At the time of the review:
 
-- `bash scripts/harness-audit.sh --json` trả `findings: 0`, `band: healthy`;
-- `bash scripts/run-tests.sh` kết thúc `ALL GREEN` cho các contract suites đã chạy;
-- Python unit tests và một số pytest-dependent cases bị skip vì môi trường không có pytest;
-- behavioral evals vẫn là manual-run, không nằm trong CI-equivalent suite;
-- worktree đã có các thay đổi/untracked research artifacts từ trước review; review này không sửa hoặc
-  xóa các artifacts đó.
+- `bash scripts/harness-audit.sh --json` returned `findings: 0`, `band: healthy`;
+- `bash scripts/run-tests.sh` finished `ALL GREEN` for the contract suites that ran;
+- Python unit tests and some pytest-dependent cases were skipped because the environment has no pytest;
+- behavioral evals are still manual-run and are not part of the CI-equivalent suite;
+- the worktree already had changed/untracked research artifacts from before the review; this review did not modify or
+  delete those artifacts.
 
 ## 10. References
 

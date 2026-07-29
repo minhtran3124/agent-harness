@@ -1,21 +1,22 @@
-# Nghiên cứu: repo `harness-skills` đối chiếu REQ.md — đáp ứng được gì, thiếu gì, cải thiện gì
+# Research: the `harness-skills` repo against REQ.md — what it satisfies, what is missing, what to improve
 
-> **Câu hỏi:** Repo hiện tại đáp ứng được bao nhiêu phần của "The Harness Approach" (REQ.md)?
-> Thiếu gì, cải thiện gì để đáng tin cậy hơn, và hạn chế cấu trúc nào cần khắc phục?
-> **Ngày:** 2026-06-11
-> **Phương pháp:** 2 agent khảo sát song song (inventory + adversarial gap audit) trên toàn bộ
-> skills/ hooks/ rules/ templates/ tests/ docs/, sau đó xác minh tại chỗ các điểm mâu thuẫn
-> (PROJECT.md, ledger, defaults, test coverage). Kế thừa 2 nghiên cứu trước:
-> `research-compound-loop-closure.md` (2026-06-08) và `research-repository-harness-ideas.md` (2026-06-09).
-> **Lưu ý xác minh:** một finding của agent audit ("CI không test hành vi hook") bị bác —
-> `tests/hooks/` có đủ 10 file test hành vi; ledger `docs/harness-experimental/trust-metrics.md`
-> đã tồn tại, được git-track, có 5 dòng dữ liệu thật (khác với trạng thái vaporware ghi nhận 2026-06-09).
-> **Cập nhật cùng ngày (sau phản hồi của owner):**
-> (1) Đây là **repo nguồn** tạo/setup harness — `docs/solutions/` rỗng là trạng thái kỳ vọng
-> (entries sinh ra ở repo tiêu thụ hoặc qua dogfood), không phải defect.
-> (2) `specs/` **đã được bỏ khỏi `.gitignore`** (`#specs/`) — finding "audit trail không persist"
-> đã được giải quyết về cơ chế; còn lại việc commit lần đầu + cập nhật doc còn khẳng định ngược
-> (`CLAUDE.md:61`, `rules/plan-format.md:125`) và quyết định có ignore riêng `PLAN.html` hay không.
+> **Question:** How much of "The Harness Approach" (REQ.md) does the current repo satisfy?
+> What is missing, what should be improved to make it more trustworthy, and which structural
+> limitations need to be addressed?
+> **Date:** 2026-06-11
+> **Method:** 2 agents surveying in parallel (inventory + adversarial gap audit) across all of
+> skills/ hooks/ rules/ templates/ tests/ docs/, followed by in-place verification of the contradictory
+> points (PROJECT.md, ledger, defaults, test coverage). Builds on 2 prior research documents:
+> `research-compound-loop-closure.md` (2026-06-08) and `research-repository-harness-ideas.md` (2026-06-09).
+> **Verification note:** one finding from the audit agent ("CI does not test hook behavior") was rejected —
+> `tests/hooks/` contains a full set of 10 behavioral test files; the ledger `docs/harness-experimental/trust-metrics.md`
+> already exists, is git-tracked, and holds 5 rows of real data (unlike the vaporware state recorded on 2026-06-09).
+> **Same-day update (after owner feedback):**
+> (1) This is the **source repo** that creates/sets up the harness — an empty `docs/solutions/` is the expected state
+> (entries are generated in consumer repos or through dogfooding), not a defect.
+> (2) `specs/` **has been removed from `.gitignore`** (`#specs/`) — the "audit trail does not persist" finding
+> is mechanically resolved; what remains is the initial commit plus updating the docs that still assert the opposite
+> (`CLAUDE.md:61`, `rules/plan-format.md:125`) and the decision on whether to separately ignore `PLAN.html`.
 
 ---
 
@@ -35,146 +36,146 @@
 
 ## 1. TL;DR
 
-- **Điểm theo 6 câu hỏi REQ.md: trả lời tốt 4/6.** Mạnh nhất là *"How risky?"* (Q4) và
-  *"What type of work?"* (Q2) — có classifier + hook corroboration bằng máy. Yếu nhất là
-  *"Which product contract does it affect?"* (Q3 — **không có cơ chế nào trả lời**) và
-  *"What lesson should future agents inherit?"* (Q6 — máy móc đã build nhưng **kho rỗng, vòng lặp bán-khép**).
-- **Khoảng cách lớn nhất giữa thiết kế và thực tế:** hạ tầng enforce (hooks, CI, test, ledger) đã
-  trưởng thành đáng kể, nhưng **lớp dữ liệu chưa được nạp**. Với `docs/solutions/` và
-  `agent-memory/` điều này là *kỳ vọng* (repo nguồn — dữ liệu sinh ở repo tiêu thụ); hệ quả thật
-  còn lại là pipeline `/compound` **chưa được kiểm chứng end-to-end với dữ liệu thật**, và
-  `xia2/PROJECT.md` vẫn là template placeholder cho chính repo này.
-- **Hai gate quan trọng nhất đang fail-open theo mặc định** (`REQUIRE_VERIFY=0`,
-  `RISK_CORROBORATION_STRICT=0`). Riêng strict-default là **quyết định chủ đích có ghi trong ledger**
-  ("strict-default decision: keep warn", slug `p3-hook-fixes`) — không phải bug, nhưng là tradeoff
-  cần nhìn lại khi harness rời giai đoạn dogfood.
-- **Proof hiện là assertion, chưa phải fact:** cột `Exit` trong bảng `### Verify` do agent gõ tay,
-  không có gì chạy lại. Việc bỏ `specs/` khỏi gitignore (2026-06-11) giải quyết vế *persist* —
-  artifact proof giờ commit được — nhưng vế *machine-verified* (re-run lệnh Verify) vẫn mở.
+- **Score across the 6 REQ.md questions: 4/6 answered well.** Strongest are *"How risky?"* (Q4) and
+  *"What type of work?"* (Q2) — there is a classifier plus machine-enforced hook corroboration. Weakest are
+  *"Which product contract does it affect?"* (Q3 — **no mechanism answers it**) and
+  *"What lesson should future agents inherit?"* (Q6 — the machinery is built but the **store is empty and the loop is half-closed**).
+- **The biggest gap between design and reality:** the enforcement infrastructure (hooks, CI, tests, ledger) has
+  matured considerably, but **the data layer has not been loaded**. For `docs/solutions/` and
+  `agent-memory/` this is *expected* (source repo — data is generated in consumer repos); the real remaining
+  consequences are that the `/compound` pipeline **has not been validated end-to-end with real data**, and
+  `xia2/PROJECT.md` is still a placeholder template for this very repo.
+- **The two most important gates currently fail open by default** (`REQUIRE_VERIFY=0`,
+  `RISK_CORROBORATION_STRICT=0`). The strict-default in particular is a **deliberate decision recorded in the ledger**
+  ("strict-default decision: keep warn", slug `p3-hook-fixes`) — not a bug, but a tradeoff
+  worth revisiting once the harness leaves the dogfood phase.
+- **Proof is currently assertion, not fact:** the `Exit` column in the `### Verify` table is typed by hand by the agent,
+  with nothing re-running it. Removing `specs/` from gitignore (2026-06-11) resolves the *persistence* half —
+  proof artifacts can now be committed — but the *machine-verified* half (re-running the Verify commands) is still open.
 
 ---
 
-## 2. Repo đã đáp ứng được gì (đối chiếu 6 câu hỏi REQ.md)
+## 2. What the repo already satisfies (against the 6 REQ.md questions)
 
-| # | Câu hỏi REQ.md | Cơ chế trả lời | Mức enforce | Đánh giá |
+| # | REQ.md question | Answering mechanism | Enforcement level | Assessment |
 |---|---|---|---|---|
-| Q1 | What should I read first? | `CLAUDE.md` auto-load + `@`-import `rules/behavior.md`, `skills/README.md`; pointer tới `docs/solutions/critical-patterns.md`; `agents/PROJECT.md` cho execution agents | Document/convention — pointer tự nổi, **nội dung không tự nạp** | ✅ Khá — entry doc rõ, nhưng phụ thuộc model tuân theo pointer |
-| Q2 | What type of work is this? | `/feature-intake`: 6 input-type, 10-flag checklist, 3 lane (tiny/normal/high-risk) + confidence → ghi `specs/<slug>/SUMMARY.md` | **Hook-corroborated** — `risk-corroboration.sh` chặn commit khi diff trip hard-gate mà Lane < high-risk | ✅ Mạnh nhất hệ thống |
-| Q3 | Which product contract does it affect? | Chỉ gián tiếp: mục High-Blast Files / Shared Contracts trong `xia2/PROJECT.md` | **Không có** — PROJECT.md là placeholder; SUMMARY template không có field contract/module; intake không hỏi | ❌ Không được trả lời |
-| Q4 | How risky is the change? | 10-flag + hard gates (intake) · `risk-corroboration.sh` · `blast-radius-check.sh` · `branch-guard.sh` · Rule 1–4 `auto-correct-scope.md` | Hook chặn được — **nhưng fail-open khi thiếu Lane** (trừ khi `RISK_CORROBORATION_STRICT=1`) | ✅ Mạnh, có lỗ mặc định |
-| Q5 | What proof will show the work is done? | Bảng `### Verify` (SUMMARY) · `<verify>` per task (PLAN.md, <60s, exit-0) · `TEST_MATRIX.md` · `commit-quality-gate.sh` (secrets + debug + targeted pytest) | Một phần — pytest targeted có chạy thật; nhưng check `### Verify` là **opt-in** (`REQUIRE_VERIFY=1`) và chỉ grep sự hiện diện, **không chạy lại lệnh** | ⚠️ Trung bình — proof là self-reported |
-| Q6 | What lesson should future agents inherit? | `/compound` (4 track bug/knowledge/decision/failure) · `docs/solutions/` schema + INDEX · `critical-patterns.md` · ledger `trust-metrics.md` (committed, 5 dòng) · `agent-memory/` confidence-decay | Pull-only — `/xia2` và `/brainstorming` có đọc lại, **không có SessionStart auto-load** | ⚠️ Thiết kế tốt; kho rỗng là kỳ vọng (repo nguồn) nhưng pipeline chưa kiểm chứng thực chiến, loop bán-khép |
+| Q1 | What should I read first? | `CLAUDE.md` auto-load + `@`-import of `rules/behavior.md`, `skills/README.md`; pointer to `docs/solutions/critical-patterns.md`; `agents/PROJECT.md` for execution agents | Document/convention — the pointer surfaces itself, **the content does not auto-load** | ✅ Decent — the entry doc is clear, but it depends on the model following the pointer |
+| Q2 | What type of work is this? | `/feature-intake`: 6 input types, 10-flag checklist, 3 lanes (tiny/normal/high-risk) + confidence → written to `specs/<slug>/SUMMARY.md` | **Hook-corroborated** — `risk-corroboration.sh` blocks the commit when the diff trips a hard gate while Lane < high-risk | ✅ The strongest part of the system |
+| Q3 | Which product contract does it affect? | Only indirectly: the High-Blast Files / Shared Contracts section in `xia2/PROJECT.md` | **None** — PROJECT.md is a placeholder; the SUMMARY template has no contract/module field; intake never asks | ❌ Not answered |
+| Q4 | How risky is the change? | 10 flags + hard gates (intake) · `risk-corroboration.sh` · `blast-radius-check.sh` · `branch-guard.sh` · Rules 1–4 of `auto-correct-scope.md` | Hooks can block — **but fail open when Lane is missing** (unless `RISK_CORROBORATION_STRICT=1`) | ✅ Strong, with a default-state hole |
+| Q5 | What proof will show the work is done? | The `### Verify` table (SUMMARY) · per-task `<verify>` (PLAN.md, <60s, exit-0) · `TEST_MATRIX.md` · `commit-quality-gate.sh` (secrets + debug + targeted pytest) | Partial — the targeted pytest really runs; but the `### Verify` check is **opt-in** (`REQUIRE_VERIFY=1`) and only greps for presence, **it does not re-run the commands** | ⚠️ Medium — proof is self-reported |
+| Q6 | What lesson should future agents inherit? | `/compound` (4 tracks: bug/knowledge/decision/failure) · `docs/solutions/` schema + INDEX · `critical-patterns.md` · the `trust-metrics.md` ledger (committed, 5 rows) · `agent-memory/` confidence decay | Pull-only — `/xia2` and `/brainstorming` do read back, **there is no SessionStart auto-load** | ⚠️ Good design; the empty store is expected (source repo) but the pipeline is unvalidated in practice, and the loop is half-closed |
 
-### Đối chiếu 5 failure mode mà REQ.md muốn ngăn
+### Against the 5 failure modes REQ.md wants to prevent
 
-| Failure mode (REQ.md) | Đã ngăn chưa | Bằng cách nào |
+| Failure mode (REQ.md) | Prevented? | How |
 |---|---|---|
-| Agent sửa code trước khi hiểu intent | ✅ phần lớn | `/feature-intake` bắt buộc chạy đầu; `scope-gate.sh` cảnh báo prompt có ý định implement mà không có plan (nhưng chỉ warn, không chặn) |
-| Constraint chỉ sống trong chat | ✅ phần lớn | `rules/` + `CLAUDE.md` committed; SUMMARY/ESCALATIONS template hoá quyết định; `specs/` đã bỏ ignore (06-11) nên constraint per-task giờ persist được — cần commit lần đầu |
-| Kỳ vọng validation mơ hồ / phát hiện muộn | ⚠️ một nửa | `<verify>` per task + `### Verify` + TEST_MATRIX có khuôn; nhưng REQUIRE_VERIFY mặc định tắt, không re-run |
-| Tradeoff kiến trúc bị lặp lại thay vì kế thừa | ❌ chưa | Cơ chế `/compound` → `docs/solutions/` có, nhưng 0 entry, 0 critical pattern, loop chỉ pull |
-| Request lớn không được bẻ thành story-sized | ⚠️ một nửa | `plan-format.md` có ngưỡng (>3 steps / >2 files / >30min) + wave-parallelism + `check_plan_format.py` validate **format**; nhưng ngưỡng kích thước chỉ là prose, không gì kiểm |
+| Agent edits code before understanding intent | ✅ mostly | `/feature-intake` is required to run first; `scope-gate.sh` warns on a prompt with implementation intent and no plan (but it only warns, it does not block) |
+| Constraints live only in chat | ✅ mostly | `rules/` + `CLAUDE.md` are committed; the SUMMARY/ESCALATIONS templates turn decisions into artifacts; `specs/` is no longer ignored (06-11) so per-task constraints can now persist — the initial commit is still needed |
+| Vague validation expectations / late detection | ⚠️ half | per-task `<verify>` + `### Verify` + TEST_MATRIX provide the shape; but REQUIRE_VERIFY is off by default and nothing is re-run |
+| Architectural tradeoffs repeated instead of inherited | ❌ not yet | The `/compound` → `docs/solutions/` mechanism exists, but there are 0 entries, 0 critical patterns, and the loop is pull-only |
+| Large requests not broken into story-sized pieces | ⚠️ half | `plan-format.md` has thresholds (>3 steps / >2 files / >30min) + wave-parallelism + `check_plan_format.py` validating **format**; but the size thresholds are prose only, nothing checks them |
 
-### Nền hạ tầng đã có (điểm cộng đáng kể)
+### Infrastructure already in place (a significant plus)
 
-- **9 hook wired** + 1 dormant, bảng hook trong CLAUDE.md **khớp** `settings.json` (đã xác minh).
-- **Test thật:** 10 file test hành vi hook (`tests/hooks/*.test.sh`), 2 test script, pytest cho
-  `check_plan_format` / `render_plan` / feature-intake canaries; CI `harness-ci` chạy ubuntu+macos
-  kèm **doc-truth lint** (fail khi doc tham chiếu path không tồn tại — chính là thuốc cho đợt drift 06-09).
-- **Ledger `trust-metrics.md` đã build, committed, có dữ liệu** — gap lớn nhất của nghiên cứu 06-09
-  (IDEA-01) đã được đóng ở tier nhẹ.
-- 14 skill phủ trọn vòng đời intake → brainstorm → research → plan → execute → review → compound → ship.
-
----
-
-## 3. Repo đang thiếu gì
-
-Xếp theo mức nghiêm trọng:
-
-1. **(Cao) Q3 không có lời giải — không registry contract/domain nào.**
-   SUMMARY template có Lane/Confidence/Reason/Flags nhưng không có field "contract/module bị ảnh hưởng";
-   intake không hỏi; `xia2/PROJECT.md` (nơi thiết kế để khai High-Blast Files + Shared Contracts)
-   **vẫn là placeholder `<your project name>` cho chính repo này** → `/xia2` mất nguồn tín hiệu chính,
-   PROJECT-CONFIG-GATE đáng lẽ phải halt.
-2. **(Cao → một nửa đã giải quyết 06-11) Proof không re-run; persist đã mở khoá nhưng chưa hoàn tất.**
-   `specs/` đã bỏ khỏi `.gitignore` → SUMMARY/PLAN/ESCALATIONS/STATE/TEST_MATRIX commit được
-   (10 slug + STATE.md hiện đang untracked, chờ commit lần đầu). Việc còn lại: (a) cột Exit trong
-   `### Verify` vẫn do agent tự khai, không cơ chế nào chạy lại (IDEA-02 chưa làm); (b) 2 doc tracked
-   vẫn khẳng định ngược — `CLAUDE.md:61` ("specs/ is fully gitignored") và `rules/plan-format.md:125`;
-   (c) cần quyết định có ignore riêng artifact dẫn xuất (`PLAN.html`) hay không.
-3. **(Hạ cấp: kỳ vọng của repo nguồn) Kho tri thức rỗng.** `docs/solutions/INDEX.md` 0 entry,
-   `critical-patterns.md` "none yet", `agent-memory/` chỉ có README — **đây là trạng thái đúng của
-   repo nguồn**: dữ liệu sinh ra ở repo tiêu thụ harness, hoặc qua dogfood. Hai hệ quả thật còn lại:
-   (a) pipeline `/compound` (collision handling, severity triage, INDEX rebuild) **chưa từng chạy với
-   dữ liệu thật** nên chưa được kiểm chứng end-to-end; (b) vòng lặp đọc-lại vẫn bán-khép ở mọi repo
-   deploy harness (chỉ pull qua `/xia2`/`/brainstorming`, không SessionStart hook — kết luận 06-08
-   vẫn nguyên hiệu lực và áp cho consumer).
-4. **(Vừa) Hai gate chủ lực fail-open mặc định.** `REQUIRE_VERIFY=0` (evidence check tắt) và
-   `RISK_CORROBORATION_STRICT=0` (diff trip hard-gate mà *không khai Lane* → chỉ warn). Ghi nhận:
-   keep-warn là quyết định chủ đích trong ledger — nhưng nghĩa là tầng an toàn cuối phụ thuộc
-   kỷ luật khai Lane của agent.
-5. **(Vừa) Story-sizing là guideline, không phải gate.** Ngưỡng >3 steps / >2 files không được
-   script nào kiểm; một plan 10-file 1-wave vẫn đi qua trơn tru.
-6. **(Vừa) Không version/changelog cho payload phân phối.** `install-harness.sh` pin `main`,
-   consumer nhận HEAD lặng lẽ (IDEA-15, chưa làm).
-7. **(Thấp) `auto-test-on-change.sh` dormant** — feedback test bị dồn về commit-time.
-8. **(Thấp) `scope-gate.sh` chỉ advisory** — không gì *buộc* `/feature-intake` chạy trước; cả
-   workflow routing phụ thuộc model tuân thủ prompt.
+- **9 hooks wired** + 1 dormant, and the hook table in CLAUDE.md **matches** `settings.json` (verified).
+- **Real tests:** 10 hook behavior test files (`tests/hooks/*.test.sh`), 2 script tests, pytest for
+  `check_plan_format` / `render_plan` / feature-intake canaries; CI `harness-ci` runs on ubuntu+macos
+  including the **doc-truth lint** (fails when a doc references a nonexistent path — precisely the cure for the 06-09 drift episode).
+- **The `trust-metrics.md` ledger is built, committed, and holds data** — the biggest gap from the 06-09 research
+  (IDEA-01) has been closed at a lightweight tier.
+- 14 skills covering the full lifecycle: intake → brainstorm → research → plan → execute → review → compound → ship.
 
 ---
 
-## 4. Cải thiện gì để đáng tin cậy hơn (ưu tiên giảm dần)
+## 3. What the repo is missing
 
-1. **Chạy `/bootstrap-xia2` điền `xia2/PROJECT.md` cho chính repo này** — rẻ nhất, mở khoá Q3+Q4:
-   khai High-Blast Files thật (`settings.json`, `hooks/*`, `skills/visual-planner/render_plan.py`…),
-   Shared Contracts (schema SUMMARY, ledger columns, hook exit-code contract).
-2. **Thêm field `Affects:` (contract/module) vào `templates/SUMMARY.template.md` + một bước hỏi
-   trong `/feature-intake`** — câu trả lời trực tiếp cho Q3; ledger thêm cột tương ứng để query được.
-3. **`scripts/verify-summary.py` (IDEA-02): chạy lại bảng `### Verify`, ghi đè cột Exit bằng exit
-   code thật** — chuyển proof từ assertion sang fact. Đã có tiền lệ khuôn (`check_plan_format.py` + test).
-   Lưu ý footgun: chỉ chạy slug active, yêu cầu lệnh idempotent; sửa `commit-quality-gate.sh` là Rule-4.
-4. **Khép vòng tri thức:** SessionStart hook in `INDEX.md` + `critical-patterns.md` (mức "vừa"
-   trong research 06-08). Rule-4 (đụng `settings.json`) → cần người xác nhận. Song song:
-   bắt đầu *thực sự chạy* `/compound` sau các phiên có lesson — hạ tầng đọc đã có sẵn, đang đói dữ liệu.
-5. **Nâng dần fail-open → fail-closed có chủ đích:** bật `REQUIRE_VERIFY=1` +
-   `RISK_CORROBORATION_STRICT=1` **trong CI trước** (an toàn, không chặn local dev), đo tỷ lệ vỡ
-   qua ledger vài tuần rồi mới cân nhắc bật local. Tôn trọng quyết định keep-warn hiện hữu —
-   đây là đề xuất nâng theo giai đoạn, không phải đảo quyết định.
-6. **Hoàn tất việc mở specs/ (đã bỏ ignore 06-11):** (a) commit lần đầu 10 slug + STATE.md đang
-   untracked; (b) sửa 2 doc còn khẳng định ngược (`CLAUDE.md:61` mục Gotchas,
-   `rules/plan-format.md:125`) — và rà các skill mô tả "PLAN.html untracked/local-only"
-   (`skills/README.md`, `visual-planner`); (c) quyết định ignore riêng artifact dẫn xuất
-   (`specs/**/PLAN.html`) để tránh commit file HTML build được lại từ PLAN.md.
-7. **Gate kích thước story:** mở rộng `check_plan_format.py` đếm `<files>`/steps mỗi task, warn khi
-   vượt ngưỡng `plan-format.md` — biến ngưỡng prose thành check chạy được.
-8. **Drift tự bắt:** `scripts/harness-audit.sh` (IDEA-04/12 gộp) check phantom references định kỳ —
-   doc-truth lint trong CI đã phủ một phần, phần còn lại là SUMMARY thiếu Verify, PLAN active mà
-   Status Log nguội, solutions `confirmed_at` >30 ngày.
-9. **VERSION + CHANGELOG cho installer** (IDEA-15) khi bắt đầu có consumer thứ hai.
+Ordered by severity:
+
+1. **(High) Q3 has no solution — there is no contract/domain registry.**
+   The SUMMARY template has Lane/Confidence/Reason/Flags but no "affected contract/module" field;
+   intake does not ask; `xia2/PROJECT.md` (the place designed to declare High-Blast Files + Shared Contracts)
+   **is still the `<your project name>` placeholder for this very repo** → `/xia2` loses its main signal source,
+   and PROJECT-CONFIG-GATE should be halting.
+2. **(High → half resolved on 06-11) Proof is not re-run; persistence is unlocked but incomplete.**
+   `specs/` has been removed from `.gitignore` → SUMMARY/PLAN/ESCALATIONS/STATE/TEST_MATRIX can be committed
+   (10 slugs + STATE.md are currently untracked, awaiting the initial commit). What remains: (a) the Exit column in
+   `### Verify` is still self-declared by the agent, with no mechanism re-running it (IDEA-02 not done); (b) 2 tracked docs
+   still assert the opposite — `CLAUDE.md:61` ("specs/ is fully gitignored") and `rules/plan-format.md:125`;
+   (c) a decision is needed on whether to separately ignore derived artifacts (`PLAN.html`).
+3. **(Downgraded: expected for a source repo) The knowledge store is empty.** `docs/solutions/INDEX.md` has 0 entries,
+   `critical-patterns.md` says "none yet", `agent-memory/` has only a README — **this is the correct state for a
+   source repo**: the data is generated in repos that consume the harness, or through dogfooding. Two real consequences remain:
+   (a) the `/compound` pipeline (collision handling, severity triage, INDEX rebuild) **has never run with
+   real data** and is therefore unvalidated end-to-end; (b) the read-back loop is still half-closed in every repo
+   the harness is deployed to (pull-only via `/xia2`/`/brainstorming`, no SessionStart hook — the 06-08 conclusion
+   still holds in full and applies to consumers).
+4. **(Medium) The two main gates fail open by default.** `REQUIRE_VERIFY=0` (evidence check off) and
+   `RISK_CORROBORATION_STRICT=0` (a diff that trips a hard gate *without a declared Lane* → warn only). Noted:
+   keep-warn is a deliberate decision in the ledger — but it means the last safety layer depends on
+   the agent's discipline in declaring the Lane.
+5. **(Medium) Story sizing is a guideline, not a gate.** The >3 steps / >2 files thresholds are not checked by
+   any script; a 10-file, 1-wave plan still sails straight through.
+6. **(Medium) No version/changelog for the distributed payload.** `install-harness.sh` pins `main`, so
+   consumers silently receive HEAD (IDEA-15, not done).
+7. **(Low) `auto-test-on-change.sh` is dormant** — test feedback is pushed back to commit time.
+8. **(Low) `scope-gate.sh` is advisory only** — nothing *forces* `/feature-intake` to run first; the whole
+   workflow routing depends on the model complying with the prompt.
 
 ---
 
-## 5. Hạn chế cấu trúc & cách khắc phục
+## 4. What to improve to make it more trustworthy (descending priority)
 
-| Hạn chế | Bản chất | Khắc phục |
+1. **Run `/bootstrap-xia2` to fill in `xia2/PROJECT.md` for this very repo** — the cheapest move, and it unlocks Q3+Q4:
+   declare the real High-Blast Files (`settings.json`, `hooks/*`, `skills/visual-planner/render_plan.py`…) and
+   Shared Contracts (the SUMMARY schema, ledger columns, hook exit-code contract).
+2. **Add an `Affects:` field (contract/module) to `templates/SUMMARY.template.md` plus an asking step
+   in `/feature-intake`** — a direct answer to Q3; add a matching ledger column so it becomes queryable.
+3. **`scripts/verify-summary.py` (IDEA-02): re-run the `### Verify` table and overwrite the Exit column with the real exit
+   code** — turning proof from assertion into fact. There is already a precedent for the shape (`check_plan_format.py` + tests).
+   Footgun note: only run the active slug, and require idempotent commands; modifying `commit-quality-gate.sh` is Rule-4.
+4. **Close the knowledge loop:** a SessionStart hook printing `INDEX.md` + `critical-patterns.md` (the "medium" tier
+   from the 06-08 research). Rule-4 (touching `settings.json`) → needs human confirmation. In parallel:
+   start *actually running* `/compound` after sessions that produced a lesson — the read infrastructure exists, it is starved of data.
+5. **Gradually raise fail-open → deliberate fail-closed:** turn on `REQUIRE_VERIFY=1` +
+   `RISK_CORROBORATION_STRICT=1` **in CI first** (safe, does not block local dev), measure the breakage rate
+   through the ledger for a few weeks, and only then consider enabling it locally. Respect the existing keep-warn decision —
+   this is a staged upgrade proposal, not a reversal of that decision.
+6. **Finish opening up specs/ (ignore removed on 06-11):** (a) make the initial commit of the 10 slugs + STATE.md that are
+   untracked; (b) fix the 2 docs that still assert the opposite (`CLAUDE.md:61` Gotchas section,
+   `rules/plan-format.md:125`) — and sweep the skills describing "PLAN.html untracked/local-only"
+   (`skills/README.md`, `visual-planner`); (c) decide on separately ignoring derived artifacts
+   (`specs/**/PLAN.html`) to avoid committing an HTML file that can be rebuilt from PLAN.md.
+7. **A story-size gate:** extend `check_plan_format.py` to count `<files>`/steps per task and warn when
+   the `plan-format.md` threshold is exceeded — turning a prose threshold into a runnable check.
+8. **Self-detecting drift:** `scripts/harness-audit.sh` (IDEA-04/12 merged) periodically checking phantom references —
+   the doc-truth lint in CI covers part of this; the rest is SUMMARYs missing Verify, an active PLAN whose
+   Status Log has gone cold, and solutions with `confirmed_at` >30 days.
+9. **VERSION + CHANGELOG for the installer** (IDEA-15) once a second consumer appears.
+
+---
+
+## 5. Structural limitations & how to address them
+
+| Limitation | Nature | Remedy |
 |---|---|---|
-| **Enforcement bằng prompt** — skill là markdown; lane mapping, escalation, subagent contract đều là prose model *nên* tuân theo | Cố hữu của prompt-framework; model có thể bỏ qua bất kỳ bước nào không có hook chặn | Tiếp tục chuyển các check load-bearing xuống hook/script exit-code (tiền lệ tốt: `check_plan_format.py`, `risk-corroboration.sh`, doc-truth lint). Ưu tiên: lane→evidence mapping (IDEA-10) để 3 bản sao prose có một nguồn sự thật chạy được |
-| **`specs/` từng local-only** — đã bỏ ignore 2026-06-11, nhưng chuyển đổi chưa hoàn tất | Hạn chế gốc đã được gỡ về cơ chế; rủi ro còn lại là trạng thái nửa vời (slug chưa commit, doc nói ngược) | Commit lần đầu specs/; sửa `CLAUDE.md:61` + `rules/plan-format.md:125`; ignore riêng `PLAN.html` dẫn xuất; ledger vẫn là lớp tổng hợp xuyên-slug |
-| **Hook detection bằng grep/regex** — đã có false-positive thật (ledger: "corroboration regex false-positive on tests/hooks/" ×2) | Regex trên diff không hiểu ngữ nghĩa; sẽ tiếp tục có cả false-positive lẫn false-negative | Đã đi đúng hướng (fix precision + 10 test hành vi). Chấp nhận đây là lưới thô — không tinh chỉnh vô hạn; tầng bù là review adversarial (`/correctness-review`) |
-| **Vòng tri thức phụ thuộc người gọi skill** — `/compound` không tự chạy, solutions không tự nạp | "Pointer auto, content on-demand" | SessionStart hook (mục 4.4); thêm trigger nhắc `/compound` đã có (commit hook hint ≥5 app/ files) nhưng chưa từng có dịp nổ — theo dõi qua ledger |
-| **Dogfood một người, Claude-Code-only** — chưa kiểm chứng đa-agent/đa-máy/đa-consumer | Mọi con số tin cậy hiện tại đến từ 1 user; fail-open chấp nhận được *vì* chỉ 1 user kỷ luật | Không vội agnostic-hoá (kết luận 06-09 vẫn đúng). Khi có consumer thứ 2: HARNESS.md vào payload installer + marked-block (IDEA-14/13) + VERSION |
-| **Pipeline tri thức chưa qua thực chiến** — kho rỗng là kỳ vọng của repo nguồn, nhưng hệ quả là collision handling, severity triage, INDEX rebuild của `/compound` chưa chạy với dữ liệu thật bao giờ | Thiết kế chưa được kiểm chứng end-to-end trước khi deploy cho consumer | Dogfood `/compound` ngay tại repo nguồn cho các phiên harness gần đây (5 slug trong ledger đều có lesson đáng ghi — vd. quyết định keep-warn, false-positive regex) — vừa smoke-test skill vừa có corpus mẫu cho consumer |
+| **Enforcement by prompt** — skills are markdown; lane mapping, escalation, and the subagent contract are all prose the model is *supposed* to follow | Inherent to a prompt framework; the model can skip any step that has no blocking hook | Keep pushing load-bearing checks down into hook/script exit codes (good precedents: `check_plan_format.py`, `risk-corroboration.sh`, the doc-truth lint). Priority: lane→evidence mapping (IDEA-10) so the 3 prose copies get one runnable source of truth |
+| **`specs/` used to be local-only** — the ignore was removed 2026-06-11, but the transition is incomplete | The root limitation is mechanically resolved; the remaining risk is the half-done state (slugs uncommitted, docs saying the opposite) | Make the initial specs/ commit; fix `CLAUDE.md:61` + `rules/plan-format.md:125`; separately ignore the derived `PLAN.html`; the ledger remains the cross-slug aggregation layer |
+| **Hook detection by grep/regex** — there have been real false positives (ledger: "corroboration regex false-positive on tests/hooks/" ×2) | Regex over a diff does not understand semantics; both false positives and false negatives will keep occurring | The direction is already right (precision fixes + 10 behavioral tests). Accept this as a coarse net — do not tune it infinitely; the compensating layer is adversarial review (`/correctness-review`) |
+| **The knowledge loop depends on someone invoking the skill** — `/compound` does not self-run, solutions do not auto-load | "Pointer auto, content on-demand" | A SessionStart hook (section 4.4); a reminder trigger for `/compound` already exists (the commit hook hint at ≥5 app/ files) but has never had occasion to fire — track it through the ledger |
+| **Single-person, Claude-Code-only dogfooding** — untested across multiple agents/machines/consumers | Every trust number so far comes from 1 user; fail-open is acceptable *because* there is only 1 disciplined user | Do not rush to make it agnostic (the 06-09 conclusion still holds). When a 2nd consumer appears: HARNESS.md into the installer payload + marked-block (IDEA-14/13) + VERSION |
+| **The knowledge pipeline is untested in practice** — an empty store is expected for a source repo, but the consequence is that `/compound`'s collision handling, severity triage, and INDEX rebuild have never run against real data | The design has not been validated end-to-end before being deployed to consumers | Dogfood `/compound` right here in the source repo for recent harness sessions (all 5 slugs in the ledger have a lesson worth recording — e.g. the keep-warn decision, the regex false positive) — this both smoke-tests the skill and produces a sample corpus for consumers |
 
 ---
 
-## 6. Kết luận
+## 6. Conclusion
 
-Repo này **đã vượt qua giai đoạn "bộ prompt rời rạc"**: có classifier intake thật, gate commit bằng
-máy, test + CI cho chính harness, ledger committed, và (từ 06-11) `specs/` persist được — tức là
-4/6 câu hỏi REQ.md có cơ chế trả lời, trong đó Q2/Q4 ở mức tốt hiếm thấy với một prompt-framework.
-Vì đây là **repo nguồn**, kho tri thức rỗng không phải defect; ba việc quyết định độ tin cậy giai
-đoạn tới: **(1) hoàn tất chuyển đổi specs/** (commit lần đầu + sửa doc nói ngược + ignore PLAN.html
-dẫn xuất), **(2) chuyển proof từ self-reported sang machine-verified** (re-run Verify, nâng strict
-theo giai đoạn), và **(3) dogfood `/compound` + điền `xia2/PROJECT.md`** để pipeline tri thức được
-kiểm chứng trước khi consumer dựa vào nó. Câu hỏi Q3 (product contract) là lỗ hổng thiết kế duy nhất
-chưa có cơ chế nào — cần thêm field + điền PROJECT.md, không cần xây hệ thống mới.
+This repo **has moved past the "loose collection of prompts" stage**: there is a real intake classifier, machine-enforced
+commit gates, tests + CI for the harness itself, a committed ledger, and (since 06-11) `specs/` that can persist — meaning
+4 of the 6 REQ.md questions have an answering mechanism, with Q2/Q4 at a level rarely seen in a prompt framework.
+Because this is a **source repo**, an empty knowledge store is not a defect; three things will determine trustworthiness in the
+next phase: **(1) finish the specs/ transition** (initial commit + fix the docs that say the opposite + ignore the derived
+PLAN.html), **(2) move proof from self-reported to machine-verified** (re-run Verify, raise strict
+in stages), and **(3) dogfood `/compound` + fill in `xia2/PROJECT.md`** so the knowledge pipeline is
+validated before consumers rely on it. Question Q3 (product contract) is the one design hole
+with no mechanism at all — it needs an added field plus a filled-in PROJECT.md, not a new system.

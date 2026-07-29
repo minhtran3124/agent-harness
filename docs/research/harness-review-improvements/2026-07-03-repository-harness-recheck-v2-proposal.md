@@ -1,178 +1,178 @@
-# Re-check `hoangnb24/repository-harness` (v0.1.10) — Adoption Audit & Đề xuất v2
+# Re-check `hoangnb24/repository-harness` (v0.1.10) — Adoption Audit & v2 Proposal
 
-- **Ngày:** 2026-07-03
-- **Nguồn:** https://github.com/hoangnb24/repository-harness (clone HEAD, tag `harness-cli-v0.1.10`)
-- **Bối cảnh:** đây là lần nghiên cứu THỨ HAI. Lần đầu: `docs/research/harness-review-improvements/research-repository-harness-ideas.md` (2026-06-09, tại v0.1.9, 16 IDEA, kế hoạch 10 bước). Lần này có 2 input mới:
-  1. **Deep review 2026-07-03** (`docs/research/harness-review-improvements/2026-07-03-deep-review-harness-trustworthiness.md`) — tìm ra các failure mode hệ thống của repo ta;
-  2. **Adoption audit** — soi từng IDEA cũ xem đã adopt đến đâu và còn sống không.
-- **Phương pháp:** 2 agent song song (mechanism-level read repo họ · adoption audit repo ta), mọi claim verify bằng đọc code/git log.
+- **Date:** 2026-07-03
+- **Source:** https://github.com/hoangnb24/repository-harness (clone HEAD, tag `harness-cli-v0.1.10`)
+- **Context:** this is the SECOND round of research. The first: `docs/research/harness-review-improvements/research-repository-harness-ideas.md` (2026-06-09, at v0.1.9, 16 IDEAs, a 10-step plan). This time there are 2 new inputs:
+  1. **Deep review 2026-07-03** (`docs/research/harness-review-improvements/2026-07-03-deep-review-harness-trustworthiness.md`) — identified the systemic failure modes of our repo;
+  2. **Adoption audit** — examining each old IDEA to see how far it was adopted and whether it is still alive.
+- **Method:** 2 parallel agents (mechanism-level read of their repo · adoption audit of our repo), every claim verified by reading code/git log.
 
 ---
 
 ## 1. TL;DR
 
-- **Delta bên họ từ 06-09 → nay rất nhỏ:** chỉ thêm **inbound tool registry kind-aware với presence scanning** (US-027, PR #19) + fix installer + release v0.1.10. Toàn bộ Phase 4/5 (entropy, propose, interventions, trace scoring) đã nằm trong nghiên cứu cũ.
-- **Phát hiện quan trọng nhất KHÔNG nằm bên họ mà nằm bên ta:** audit adoption cho thấy một **lằn ranh sạch tuyệt đối** — mọi thứ được **CI/hook enforce** (lint-doc-truth, verify_summary --check, ci-strict-gate, test suites) vẫn sống và chạy; mọi thứ dựa vào **kỷ luật append tay** (ledger, CHANGELOG, VERSION, backlog triage) **flatline đúng ngày 2026-06-14** — ngày burst adoption cuối cùng. PR #27 ship một hook wired mới (high-risk!) mà không có ledger row, không CHANGELOG entry, và **không gì chặn**.
-- **Kết luận chiến lược:** repo ta đã tự chứng minh thesis "proof by machine, not assertion" trên chính mình trong 3 tuần. Bài học lớn nhất từ repo họ lần này không phải là một feature — mà là **nguyên tắc kiến trúc: bookkeeping phải được ghi bởi SỰ KIỆN (event), không phải bởi kỷ luật (discipline)**. Post-merge-maintenance.yml của họ là ví dụ hoàn hảo: CHANGELOG/tag/version được ghi bởi chính event merge, con người không bao giờ phải nhớ.
-- **Đề xuất:** một **v2 theo hướng "Event-Sourced Trust Layer"** — 5 phase, chi tiết ở §6. Không Rust, không SQLite (giữ nguyên verdict cũ); chỉ đổi *ai là người ghi record*.
+- **Their delta from 06-09 → now is very small:** only the addition of the **kind-aware inbound tool registry with presence scanning** (US-027, PR #19) + an installer fix + release v0.1.10. All of Phase 4/5 (entropy, propose, interventions, trace scoring) was already covered in the earlier research.
+- **The most important finding is NOT on their side but on ours:** the adoption audit reveals an **absolutely clean dividing line** — everything **enforced by CI/hook** (lint-doc-truth, verify_summary --check, ci-strict-gate, test suites) is still alive and running; everything relying on **manual append discipline** (ledger, CHANGELOG, VERSION, backlog triage) **flatlined exactly on 2026-06-14** — the day of the last adoption burst. PR #27 shipped a new wired hook (high-risk!) with no ledger row, no CHANGELOG entry, and **nothing blocked it**.
+- **Strategic conclusion:** our repo has proven the "proof by machine, not assertion" thesis on itself over 3 weeks. The biggest lesson from their repo this time is not a feature — it is an **architectural principle: bookkeeping must be written by an EVENT, not by discipline**. Their post-merge-maintenance.yml is the perfect example: CHANGELOG/tag/version are written by the merge event itself, and a human never has to remember.
+- **Proposal:** a **v2 along the lines of an "Event-Sourced Trust Layer"** — 5 phases, detailed in §6. No Rust, no SQLite (the earlier verdict stands); only *who writes the record* changes.
 
 ---
 
-## 2. Delta bên họ từ v0.1.9 → v0.1.10
+## 2. Their delta from v0.1.9 → v0.1.10
 
-| Thay đổi | Nội dung | Đáng học? |
+| Change | Content | Worth learning? |
 |---|---|---|
-| US-027 tool registry (PR #19) | `tool register --kind cli\|binary\|mcp\|skill\|http` ghi *ý định*; `tool check` đối chiếu với *thực tế* bằng probe theo kind (PATH exec-check, file resolution, TCP), ghi `status + checked_at`, luôn exit 0. Degrade ladder: **Inactive** (chưa từng đăng ký → skip sạch) / **Degraded** (đăng ký nhưng mất trên đĩa → cờ "Weak proof") / **Full** | ✅ Rất đáng — xem §4.2 |
-| Fix installer (PR #20) | Thêm file thiếu vào file-list installer | Không |
-| Release v0.1.10 | Auto qua post-merge-maintenance | Cơ chế đáng học (§4.1) |
+| US-027 tool registry (PR #19) | `tool register --kind cli\|binary\|mcp\|skill\|http` records *intent*; `tool check` reconciles it against *reality* by probing per kind (PATH exec-check, file resolution, TCP), records `status + checked_at`, always exits 0. Degrade ladder: **Inactive** (never registered → clean skip) / **Degraded** (registered but missing on disk → flagged "Weak proof") / **Full** | ✅ Very much — see §4.2 |
+| Installer fix (PR #20) | Added missing files to the installer file-list | No |
+| Release v0.1.10 | Automatic via post-merge-maintenance | The mechanism is worth learning (§4.1) |
 
 ---
 
-## 3. Adoption audit — nghiên cứu 06-09 đã được thực thi đến đâu
+## 3. Adoption audit — how far the 06-09 research was actually executed
 
-Adoption diễn ra 2 đợt: **06-11** (PRs #10–#13) và **06-14** (gap-closure #18–#25), route qua `docs/harness-gap-closure-plan.md`. **Sau 06-14: zero hoạt động adoption.**
+Adoption happened in 2 bursts: **06-11** (PRs #10–#13) and **06-14** (gap-closure #18–#25), routed through `docs/harness-gap-closure-plan.md`. **After 06-14: zero adoption activity.**
 
-| IDEA | Trạng thái | Bằng chứng |
+| IDEA | Status | Evidence |
 |---|---|---|
-| 01 ledger | **adopted-then-decayed** | trust-metrics.md tracked, schema locked (`2582d64`), 15 rows — nhưng `query-ledger.sh` không bao giờ build; row + commit cuối đều 06-14 (`fe43d1a`). PRs #27–#30 (kể cả high-risk branch-isolation-guard, có SUMMARY `929d4da`) **không có row nào** dù feature-intake Guardrails bắt buộc |
-| 02 verify_summary | **adopted-faithfully** | Script + test, wired `commit-quality-gate.sh` (REQUIRE_VERIFY) + `ci-strict-gate.sh`, CI chạy thật. Footgun `--all` được né bằng cách *không implement* — đọc research an toàn nhất có thể |
-| 03 record-quality-gate | **adopted-with-gaps (folded)** | Mapping lane→sections gộp vào `check_lane_evidence.py`; nhưng **không có PreToolUse hook nào gọi nó** — enforcement chỉ là CI unit test |
-| 04 harness-audit | **adopted-with-gaps** | Script tồn tại (`4dd42df`), advisory, wired vào harness-status. Nhưng: không entropy 0–100, band hardcode (0/≤3/>3), **không audit-log.jsonl** → không lịch sử, không trend line — đúng cái "một con số theo thời gian" mà idea nhắm tới thì thiếu |
-| 05 friction→propose | **adopted-with-gaps, cảnh báo đang thành sự thật** | Không `--propose`, không group count≥2. Backlog có **đúng 1 entry, status `open`, 19 ngày không ai đụng** — "backlog thành nghĩa địa" đang xảy ra |
-| 07 CORRECTIONS | **not-adopted** (đúng plan — conditional) | Không file nào |
-| 08 predicted/actual | **not-adopted** | Fields chỉ tồn tại trong chính research doc |
-| 09/12 drift check | **adopted-faithfully (consolidated)** | `lint-doc-truth.sh` check 2 chiều bảng hook ↔ settings.json, chạy CI ubuntu+macos. HARNESS_MATURITY.md không tạo — vai trò do Evidence Tiers table gánh một phần |
-| 10 lane evidence | **adopted-with-gaps** | Script + 13 tests trong CI. Nhưng: **feature-intake Step 7 không hề nhắc tới nó** dù auto-correct-scope.md *claim* là có — một doc-drift sống đúng class mà cả nỗ lực này nhắm tới, và `lint-doc-truth.sh` không bắt được (path tồn tại). Không hook runtime nào gọi script |
-| 13/14 marked-block/HARNESS.md payload | **not-adopted (deferral có chủ đích)** | Re-deferred trong research-harness-req-assessment: "when a second consumer arrives" |
-| 15 VERSION/CHANGELOG | **adopted-then-decayed** | Tạo `9e74138`, bump 0.2.0 `fe43d1a` (đều 06-14). Từ đó: PR #27 ship hook wired mới (minor-bump theo chính rule của CHANGELOG) + #28/#30 — `[Unreleased]` **rỗng**, VERSION đóng băng. Duy trì được đúng một chu kỳ release |
+| 01 ledger | **adopted-then-decayed** | trust-metrics.md tracked, schema locked (`2582d64`), 15 rows — but `query-ledger.sh` was never built; the last row and last commit are both 06-14 (`fe43d1a`). PRs #27–#30 (including the high-risk branch-isolation-guard, which has a SUMMARY `929d4da`) have **no rows at all** even though the feature-intake Guardrails require them |
+| 02 verify_summary | **adopted-faithfully** | Script + test, wired into `commit-quality-gate.sh` (REQUIRE_VERIFY) + `ci-strict-gate.sh`, actually running in CI. The `--all` footgun was avoided by *not implementing it* — about as safe a reading of the research as possible |
+| 03 record-quality-gate | **adopted-with-gaps (folded)** | The lane→sections mapping was folded into `check_lane_evidence.py`; but **no PreToolUse hook calls it** — enforcement is only a CI unit test |
+| 04 harness-audit | **adopted-with-gaps** | The script exists (`4dd42df`), advisory, wired into harness-status. But: no 0–100 entropy, bands hardcoded (0/≤3/>3), **no audit-log.jsonl** → no history, no trend line — precisely the "one number over time" the idea aimed at is missing |
+| 05 friction→propose | **adopted-with-gaps, the warning is coming true** | No `--propose`, no grouping with count≥2. The backlog has **exactly 1 entry, status `open`, untouched for 19 days** — "the backlog becomes a graveyard" is happening |
+| 07 CORRECTIONS | **not-adopted** (as planned — conditional) | No files |
+| 08 predicted/actual | **not-adopted** | The fields exist only in the research doc itself |
+| 09/12 drift check | **adopted-faithfully (consolidated)** | `lint-doc-truth.sh` performs a two-way check of the hook table ↔ settings.json, running in CI on ubuntu+macos. HARNESS_MATURITY.md was not created — the Evidence Tiers table carries part of that role |
+| 10 lane evidence | **adopted-with-gaps** | Script + 13 tests in CI. But: **feature-intake Step 7 never mentions it** even though auto-correct-scope.md *claims* it does — a live doc-drift of exactly the class this whole effort targeted, and `lint-doc-truth.sh` cannot catch it (the path exists). No runtime hook calls the script |
+| 13/14 marked-block/HARNESS.md payload | **not-adopted (deliberate deferral)** | Re-deferred in research-harness-req-assessment: "when a second consumer arrives" |
+| 15 VERSION/CHANGELOG | **adopted-then-decayed** | Created `9e74138`, bumped to 0.2.0 `fe43d1a` (both 06-14). Since then: PR #27 shipped a new wired hook (a minor bump under CHANGELOG's own rule) + #28/#30 — `[Unreleased]` is **empty**, VERSION frozen. Sustained for exactly one release cycle |
 
-**Tỷ lệ:** 2 faithful · 5 with-gaps · 2 decayed · 4 not-adopted (~70% có công việc thật; bước 1–7, 9 của plan được thử; bước 8, 10 thì không).
+**Ratio:** 2 faithful · 5 with-gaps · 2 decayed · 4 not-adopted (~70% had real work done; steps 1–7 and 9 of the plan were attempted; steps 8 and 10 were not).
 
-**Lằn ranh sống/chết (bài học trung tâm):**
+**The alive/dead dividing line (the central lesson):**
 
 ```
-SỐNG  = được máy chạy:      lint-doc-truth (CI) · verify_summary --check (CI+hook) · ci-strict-gate (CI) · test suites (CI)
-CHẾT  = chờ người append:   ledger rows · CHANGELOG entries · VERSION bumps · backlog triage · STATE.md Active Spec
+ALIVE = run by machine:       lint-doc-truth (CI) · verify_summary --check (CI+hook) · ci-strict-gate (CI) · test suites (CI)
+DEAD  = waiting for a human:  ledger rows · CHANGELOG entries · VERSION bumps · backlog triage · STATE.md Active Spec
 ```
 
 ---
 
-## 4. Những cơ chế đáng học từ repo họ (mechanism-level, có caveat trung thực)
+## 4. Mechanisms worth learning from their repo (mechanism-level, with honest caveats)
 
-### 4.1. Post-merge maintenance bằng CI event — ⭐ đáng học nhất
+### 4.1. Post-merge maintenance via a CI event — ⭐ the most worth learning
 
-`.github/workflows/post-merge-maintenance.yml`: `pull_request_target: closed` trên main, gate `merged == true`. Một step bash: `gh pr view` lấy title/author/files/mergeCommit → nếu file match regex CLI thì patch-bump version, prepend CHANGELOG entry có cấu trúc (date, PR#, author, merge SHA, file list), commit, push, tag idempotent (guard `git ls-remote --exit-code`), dispatch release workflow.
+`.github/workflows/post-merge-maintenance.yml`: `pull_request_target: closed` on main, gated on `merged == true`. One bash step: `gh pr view` fetches title/author/files/mergeCommit → if the files match the CLI regex it patch-bumps the version, prepends a structured CHANGELOG entry (date, PR#, author, merge SHA, file list), commits, pushes, tags idempotently (guarded by `git ls-remote --exit-code`), and dispatches the release workflow.
 
-- **Giải đúng bệnh của ta:** record được ghi bởi *event merge*, không bởi kỷ luật ai cả. CHANGELOG của họ khớp chính xác mọi merge từ khi workflow land (PR #13/#19/#20); các merge trước automation đơn giản là vắng — một cutover trung thực.
-- **Failure modes họ đã gặp:** chỉ fire trên PR merge (push thẳng main vô hình); chính automation cũng từng ship bug (`7e6c199` fix printf); race khi merge đồng thời.
-- **Portability: xuất sắc** — thuần gh/jq/bash, drop-in cho repo ta.
+- **It cures exactly our disease:** the record is written by the *merge event*, not by anyone's discipline. Their CHANGELOG matches every merge exactly since the workflow landed (PRs #13/#19/#20); merges before the automation are simply absent — an honest cutover.
+- **Failure modes they hit:** it only fires on PR merges (direct pushes to main are invisible); the automation itself once shipped a bug (`7e6c199` fixed printf); races on concurrent merges.
+- **Portability: excellent** — pure gh/jq/bash, drop-in for our repo.
 
-### 4.2. Tool registry: register-vs-scan + degrade ladder (US-027 — mới)
+### 4.2. Tool registry: register-vs-scan + degrade ladder (US-027 — new)
 
-Tách **ý định** (đăng ký) khỏi **thực tế** (probe theo kind). Ba trạng thái then chốt: *chưa-đăng-ký = không phải drift* (skip sạch); *đăng-ký-nhưng-mất = failed validity gate* (cờ Weak proof); *có mặt = Full*. `tool check` luôn exit 0 — "một extension mất là một sự thật cần báo, không phải một lỗi CLI".
+Separates **intent** (registration) from **reality** (probing per kind). Three pivotal states: *not-registered = not drift* (clean skip); *registered-but-missing = failed validity gate* (Weak proof flag); *present = Full*. `tool check` always exits 0 — "a missing extension is a fact to report, not a CLI error".
 
-- **Map thẳng vào bệnh của ta:** bảng hook trong CLAUDE.md *chính là* một registry — nhưng không gì scan nó (lint-doc-truth mới check path-tồn-tại, chưa check "skill X reference agent Y không tồn tại" — đúng lỗi `superpowers:code-reviewer` phantom mà deep review tìm ra).
-- **Caveat họ tự khai:** `present` = "có trên đĩa", không phải "chạy được" (TOOL_REGISTRY.md:88-92).
+- **Maps directly onto our disease:** the hook table in CLAUDE.md *is* a registry — but nothing scans it (lint-doc-truth only checks path-existence, not "skill X references agent Y that does not exist" — exactly the phantom `superpowers:code-reviewer` bug the deep review found).
+- **Caveat they declare themselves:** `present` = "exists on disk", not "runnable" (TOOL_REGISTRY.md:88-92).
 
-### 4.3. Verify command lưu-và-chạy-lại + audit never-run/stale
+### 4.3. Store-and-rerun verify command + never-run/stale audit
 
-`story verify` chạy `verify_command` đã lưu, ghi pass/fail + timestamp; `verify-all` batch; `audit` đếm command chưa-từng-chạy là drift. Pre-close gate (US-017) **advisory, không block**.
+`story verify` runs the stored `verify_command` and records pass/fail + timestamp; `verify-all` batches it; `audit` counts never-run commands as drift. The pre-close gate (US-017) is **advisory, not blocking**.
 
-- **Cái gì chặn `true`? — Không gì cả.** Exit-0 của một lệnh do agent tự viết là toàn bộ "proof". Mitigation của họ là cấu trúc (human thấy `true` lúc review PR), không phải cơ chế. → Giải được "evidence không bao giờ được chạy lại" (bệnh STATE.md của ta), **không** giải được "evidence trivially satisfiable" (bệnh ci-strict-gate của ta — cả hai repo cùng lỗ này).
-- **Ta phải tự thêm phần họ thiếu:** denylist (`true`, `:`, `echo`, `exit 0`) + bắt buộc command reference một path trong diff.
+- **What stops `true`? — Nothing at all.** The exit-0 of a command the agent wrote itself is the entire "proof". Their mitigation is structural (a human sees `true` during PR review), not mechanical. → It solves "evidence is never re-run" (our STATE.md disease), but **not** "evidence is trivially satisfiable" (our ci-strict-gate disease — both repos share this hole).
+- **We must add the part they lack ourselves:** a denylist (`true`, `:`, `echo`, `exit 0`) + a requirement that the command reference a path in the diff.
 
-### 4.4. Entropy audit — một con số, có trend
+### 4.4. Entropy audit — one number, with a trend
 
-6 check SQL cố định, mỗi cái là một "promise-vs-evidence mismatch": orphaned story ×10, verify chưa chạy ×5, backlog implemented thiếu `actual_outcome` ×2, stale >30d ×3, broken tool ×8 → weighted sum cap 100.
+6 fixed SQL checks, each one a "promise-vs-evidence mismatch": orphaned story ×10, verify not run ×5, implemented backlog item missing `actual_outcome` ×2, stale >30d ×3, broken tool ×8 → weighted sum capped at 100.
 
-- Signal chọn tốt; trọng số tùy tiện chưa validate; chỉ thấy cái trong DB — việc không khai báo là vô hình (blind spot họ tự nhận). Nó dời bài toán từ "có ai append ledger không" sang "có ai record story không".
-- **Ta port:** mỗi check ≈ 10 dòng Python trên `specs/*/SUMMARY.md` + front-matter docs/solutions; bỏ cap-100 màu mè; **quan trọng nhất là emit JSONL để có trend** — thứ harness-audit.sh hiện tại thiếu.
+- The signals are well chosen; the weights are arbitrary and unvalidated; it only sees what is in the DB — anything undeclared is invisible (a blind spot they acknowledge). It shifts the problem from "will anyone append to the ledger" to "will anyone record a story".
+- **What we port:** each check ≈ 10 lines of Python over `specs/*/SUMMARY.md` + docs/solutions front-matter; drop the cosmetic cap-100; **most importantly, emit JSONL to get a trend** — the thing today's harness-audit.sh lacks.
 
-### 4.5. Intervention typed + propose rule-based + vòng khép tự police
+### 4.5. Typed interventions + rule-based propose + a self-policing closed loop
 
-`intervention` table (type: correction/override/escalation/approval; source: human/reviewer/ci/agent). `propose` **cố tình rule-based, không LLM** (decision 0007 — vì auditability): group friction/intervention text normalize, count≥2 → proposal kèm evidence/predicted_impact/validation_plan; confidence = count≥3→high. Đóng backlog item **bắt buộc** `actual_outcome`; item đóng thiếu outcome bị **entropy audit đếm là drift** — vòng lặp tự police chính nó.
+An `intervention` table (type: correction/override/escalation/approval; source: human/reviewer/ci/agent). `propose` is **deliberately rule-based, not LLM** (decision 0007 — for auditability): it groups normalized friction/intervention text, count≥2 → a proposal with evidence/predicted_impact/validation_plan; confidence = count≥3→high. Closing a backlog item **requires** `actual_outcome`; a closed item missing its outcome is **counted as drift by the entropy audit** — a loop that polices itself.
 
-- **Đây là mảnh ghép ta thiếu nhất cho luận điểm Lane×Confidence:** "autonomy có thực sự earned không" cần đúng data human-correction này. Grouping của họ naive (token-normalize, tự nhận trong 0007) — chấp nhận được.
+- **This is the piece we most lack for the Lane×Confidence thesis:** "is autonomy actually earned" needs exactly this human-correction data. Their grouping is naive (token-normalize, acknowledged in 0007) — acceptable.
 
-### 4.6. Maturity claims bị cap bởi evidence kiểm tra được
+### 4.6. Maturity claims capped by checkable evidence
 
-HARNESS_MATURITY.md ladder H0–H5, mỗi level có criteria file-inspectable; repo họ tự chấm H3/H5 "Partial" và **nêu tên evidence còn thiếu**. Kỷ luật này ta đã có một phần (Evidence Tiers table) — đáng giữ và mở rộng.
+HARNESS_MATURITY.md ladder H0–H5, each level with file-inspectable criteria; their repo scores itself H3/H5 "Partial" and **names the missing evidence**. We already have part of this discipline (the Evidence Tiers table) — worth keeping and extending.
 
-### 4.7. Nguyên tắc quản trị (decision 0007, PHASE4/5)
+### 4.7. Governance principles (decision 0007, PHASE4/5)
 
-- **Deterministic cho tầng evolution** (không để LLM tự đề xuất sửa policy của chính nó);
-- **Advisory trước, blocking sau** — gate warn trước, "earn strictness";
-- **Harness không bao giờ tự rewrite policy của mình** without human review;
-- Mọi claim phase phải có story + Evidence section.
+- **Deterministic for the evolution layer** (never let an LLM propose changes to its own policy);
+- **Advisory first, blocking later** — gates warn first, "earn strictness";
+- **The harness never rewrites its own policy** without human review;
+- Every phase claim must have a story + an Evidence section.
 
-### Điểm yếu của họ (để không thần thánh hóa)
+### Their weaknesses (so as not to idolize them)
 
-- **Gates check format, không check substance** ở mọi nơi: trace tier đếm field-presence (`["x"]` pass list-check, `harness_friction: "none"` pass Standard); placeholder-filled trace vẫn score Detailed. Lane của họ cũng **self-declared** tại `intake --lane` — cùng lỗi self-reference với ta.
-- **Path nhúng cứng trong Rust biên dịch** (context rules, retrieval triggers) — doc rename là scorer rot âm thầm, không test nào buộc CONTEXT_RULES.md ↔ code. Context scoring là cơ chế yếu nhất: `files_read` do agent tự khai.
-- **Dogfood của chính họ vô hình:** `harness.db` gitignored, binary absent — không record bền nào inspect được in-repo; Evidence sections ("26 passed") là prose không pin — đúng tier documented-only mà ta phạt.
+- **Gates check format, not substance** everywhere: trace tiers count field-presence (`["x"]` passes the list-check, `harness_friction: "none"` passes Standard); a placeholder-filled trace still scores Detailed. Their lane is also **self-declared** at `intake --lane` — the same self-reference bug we have.
+- **Paths hardcoded in compiled Rust** (context rules, retrieval triggers) — a doc rename is silent scorer rot, and no test binds CONTEXT_RULES.md ↔ code. Context scoring is the weakest mechanism: `files_read` is self-declared by the agent.
+- **Their own dogfooding is invisible:** `harness.db` is gitignored, the binary is absent — no durable record is inspectable in-repo; Evidence sections ("26 passed") are unpinned prose — exactly the documented-only tier we penalize.
 
 ---
 
-## 5. So khớp: bệnh của ta (deep review 07-03) ↔ thuốc của họ
+## 5. Matching up: our diseases (deep review 07-03) ↔ their cures
 
-| Bệnh của ta (verified) | Cơ chế của họ | Mức khớp |
+| Our disease (verified) | Their mechanism | Degree of fit |
 |---|---|---|
-| Trust ledger chết 3 tuần; CHANGELOG/VERSION đóng băng sau 1 chu kỳ | Post-merge maintenance CI (§4.1) | **Trực tiếp — thuốc đúng bệnh** |
-| Hard-gate list lệch 4 nguồn; skill reference agent phantom; reviewer.md claim sai | Registry register-vs-scan + degrade ladder (§4.2) | **Trực tiếp** (mở rộng lint-doc-truth hiện có) |
-| STATE.md/harness-audit không lịch sử, không trend, "harness có đang mục không?" không trả lời được | Entropy score + JSONL trend (§4.4) | **Trực tiếp** |
-| ci-strict-gate pass bằng `true`; rollback template chưa sửa vẫn pass | Verify lưu-và-chạy-lại (§4.3) — **nhưng họ cũng dính lỗi `true`** | **Một phần** — ta phải tự thêm substance denylist |
-| Lane self-declared, hook chỉ enforce consistency; không data nào đo "autonomy earned chưa" | Intervention typed + propose + predicted-vs-actual loop (§4.5) | **Trực tiếp cho phần data**; self-declared lane thì họ cũng chưa giải |
-| Backlog 1 entry mồ côi 19 ngày | Propose gate count≥2 + đóng-phải-có-outcome bị audit police (§4.5) | **Trực tiếp** |
-| Commit-gate bypass, session-knowledge chết, break-glass unreachable | *(không có tương đương — bug bash của riêng ta)* | Phải tự fix, xem deep review §Critical |
+| Trust ledger dead for 3 weeks; CHANGELOG/VERSION frozen after 1 cycle | Post-merge maintenance CI (§4.1) | **Direct — the right cure for the disease** |
+| Hard-gate list diverges across 4 sources; skill references a phantom agent; reviewer.md claims are wrong | Registry register-vs-scan + degrade ladder (§4.2) | **Direct** (extends the existing lint-doc-truth) |
+| STATE.md/harness-audit has no history, no trend; "is the harness rotting?" cannot be answered | Entropy score + JSONL trend (§4.4) | **Direct** |
+| ci-strict-gate passes with `true`; an unedited rollback template still passes | Store-and-rerun verify (§4.3) — **but they have the `true` bug too** | **Partial** — we must add the substance denylist ourselves |
+| Lane is self-declared, hooks only enforce consistency; no data measures "is autonomy earned yet" | Typed interventions + propose + predicted-vs-actual loop (§4.5) | **Direct for the data part**; the self-declared lane is unsolved on their side too |
+| Backlog with 1 orphaned entry for 19 days | Propose gate count≥2 + close-requires-outcome policed by the audit (§4.5) | **Direct** |
+| Commit-gate bypass, session-knowledge dead, break-glass unreachable | *(no equivalent — our own bug bash)* | Must fix ourselves, see deep review §Critical |
 
 ---
 
-## 6. Đề xuất v2 — "Event-Sourced Trust Layer"
+## 6. v2 proposal — "Event-Sourced Trust Layer"
 
-**Nguyên tắc đổi mới duy nhất:** *mọi record mà harness mandate phải được ghi bởi một event máy (CI trigger, hook trigger), hoặc bị một checker máy chặn khi vắng. Không record nào được phép phụ thuộc vào việc agent/người "nhớ append".* Giữ nguyên chất nền markdown + bash + python (tái khẳng định verdict 06-09: không Rust, không SQLite). Ceremony giữ nguyên; chỉ đổi **ai là người ghi sổ**.
+**The single innovating principle:** *every record the harness mandates must be written by a machine event (CI trigger, hook trigger), or be blocked by a machine checker when absent. No record may depend on an agent/human "remembering to append".* Keep the markdown + bash + python substrate (reaffirming the 06-09 verdict: no Rust, no SQLite). Ceremony stays the same; only **who keeps the books** changes.
 
-### Phase 0 — Vá nền móng (tiền đề, từ deep review — không thuộc cảm hứng repo họ)
-Fix 2 critical + nhóm high: command matching 3 commit hook (tokenize, bắt `git … commit` mọi segment); session-knowledge root resolution; hard-gate list về 1 nguồn data (xem Phase 2); review chain cho executing-plans; tiền đề sai trong finishing-a-development-branch. *Không có Phase 0 thì mọi tầng đo lường phía trên đo một hệ thống đang thủng.*
+### Phase 0 — Patch the foundation (prerequisite, from the deep review — not inspired by their repo)
+Fix the 2 criticals + the high group: command matching in the 3 commit hooks (tokenize, catch `git … commit` in any segment); session-knowledge root resolution; consolidate the hard-gate list into 1 data source (see Phase 2); the review chain for executing-plans; the false premise in finishing-a-development-branch. *Without Phase 0, every measurement layer above it measures a leaking system.*
 
-### Phase 1 — Bookkeeping theo event (port §4.1)
-- `.github/workflows/post-merge-maintenance.yml` bản của ta: trên PR merged → `gh pr view` JSON → **(a)** append row vào `trust-metrics.md` (Date|PR|Slug|Lane — lane đọc từ SUMMARY trong diff, `?` nếu vắng), **(b)** prepend CHANGELOG entry, **(c)** bump VERSION (minor khi diff đụng `hooks/`+`settings.json`, patch còn lại), **(d)** commit + push idempotent.
-- Ledger từ nay **không ai append tay nữa** — xóa mandate "Append to the ledger" trong feature-intake Guardrails, thay bằng "CI appends; kiểm tra row sau merge".
-- Fix `state-breadcrumb.sh` metric hỏng hoặc xóa `user_turns`; rotation cho Session End Log.
+### Phase 1 — Event-driven bookkeeping (port §4.1)
+- Our own `.github/workflows/post-merge-maintenance.yml`: on a merged PR → `gh pr view` JSON → **(a)** append a row to `trust-metrics.md` (Date|PR|Slug|Lane — lane read from the SUMMARY in the diff, `?` if absent), **(b)** prepend a CHANGELOG entry, **(c)** bump VERSION (minor when the diff touches `hooks/`+`settings.json`, patch otherwise), **(d)** commit + push idempotently.
+- From now on **nobody appends to the ledger by hand** — delete the "Append to the ledger" mandate in the feature-intake Guardrails, replacing it with "CI appends; check the row after merge".
+- Fix the broken `state-breadcrumb.sh` metric or delete `user_turns`; add rotation for the Session End Log.
 
-### Phase 2 — Một registry, một nguồn gate (port §4.2 + fix lệch 4 nguồn)
-- `harness-manifest.yaml` (root, tracked) — nguồn sự thật duy nhất, 4 section: `skills` (name, path, handoffs, external-deps như agent types), `hooks` (path, event, matcher, wired), `agents`, `hard_gates` (danh sách 8 gate + regex signal).
-- `scripts/check-manifest.py` (thay/mở rộng lint-doc-truth): probe theo kind — skill path tồn tại, hook registered đúng trong settings.json 2 chiều, agent type được skill reference phải có trong manifest, external dep vắng → **Degraded** (báo, không fail) theo degrade ladder của họ. Chạy CI.
-- `feature-intake` Step 3, `auto-correct-scope.md` Rule 4, `risk-corroboration.sh` **cùng đọc `hard_gates` từ manifest** (hook parse yaml bằng python one-liner hoặc sinh file .sh từ manifest lúc CI) — hết lệch 4 nguồn về mặt cấu trúc.
+### Phase 2 — One registry, one gate source (port §4.2 + fix the 4-source divergence)
+- `harness-manifest.yaml` (root, tracked) — the single source of truth, 4 sections: `skills` (name, path, handoffs, external deps such as agent types), `hooks` (path, event, matcher, wired), `agents`, `hard_gates` (the list of 8 gates + regex signals).
+- `scripts/check-manifest.py` (replacing/extending lint-doc-truth): probe per kind — skill path exists, hook correctly registered in settings.json both ways, an agent type referenced by a skill must be present in the manifest, a missing external dep → **Degraded** (report, do not fail) following their degrade ladder. Runs in CI.
+- `feature-intake` Step 3, `auto-correct-scope.md` Rule 4, and `risk-corroboration.sh` **all read `hard_gates` from the manifest** (the hook parses the yaml with a python one-liner, or a .sh file is generated from the manifest at CI time) — structurally ending the 4-source divergence.
 
-### Phase 3 — Verify có substance + entropy có trend (port §4.3 + §4.4, vá lỗ họ cũng dính)
-- `verify_summary.py`: thêm **substance denylist** (`true`, `:`, `echo …`, `exit 0`, command không reference path nào trong `git diff --name-only` của PR → FAIL với message rõ); fix em-dash duplicate + 3 semantics trap đã tìm ra; thêm `test_verify_summary.py` vào run-tests (1 dòng); sandbox verify command trên CI (timeout + không network nếu được).
-- `check_lane_evidence.py`: rollback phải khác template byte-wise; lane match exact.
-- `harness-audit.sh` → nâng thành entropy có 6 check + **emit `docs/harness-experimental/audit-log.jsonl` mỗi lần CI chạy** → có trend line thật. Check gồm: plan active >30d không status-log mới · SUMMARY thiếu Verify · verify never-re-run · backlog item open >14d · manifest Degraded rows · solutions confirmed_at >30d.
+### Phase 3 — Verify with substance + entropy with a trend (port §4.3 + §4.4, patching the hole they also have)
+- `verify_summary.py`: add a **substance denylist** (`true`, `:`, `echo …`, `exit 0`, a command that references no path in the PR's `git diff --name-only` → FAIL with a clear message); fix the em-dash duplicate + the 3 semantics traps already found; add `test_verify_summary.py` to run-tests (1 line); sandbox verify commands in CI (timeout + no network if possible).
+- `check_lane_evidence.py`: rollback must differ from the template byte-wise; lane must match exactly.
+- `harness-audit.sh` → upgraded into an entropy score with 6 checks + **emit `docs/harness-experimental/audit-log.jsonl` on every CI run** → a real trend line. Checks include: plan active >30d with no new status-log · SUMMARY missing Verify · verify never re-run · backlog item open >14d · manifest Degraded rows · solutions confirmed_at >30d.
 
-### Phase 4 — Vòng cải tiến khép kín (port §4.5, chỉ sau khi Phase 1–3 có data)
-- `specs/<slug>/CORRECTIONS.md` append-only (type: correction|override|rework|approval, source, commit) — hook/skill ghi khi human sửa diff autonomous.
-- `scripts/propose.py` rule-based (theo decision 0007 của họ: KHÔNG để LLM tự đề xuất sửa policy): group friction + corrections, count≥2 → backlog entry kèm `predicted_impact`; **đóng entry bắt buộc `actual_outcome`**, entry đóng thiếu outcome bị entropy audit đếm — vòng tự police.
-- `/compound` giữ vai trò cluster ngữ nghĩa near-duplicate (hybrid như research cũ đề xuất).
+### Phase 4 — The closed improvement loop (port §4.5, only after Phases 1–3 produce data)
+- `specs/<slug>/CORRECTIONS.md` append-only (type: correction|override|rework|approval, source, commit) — written by a hook/skill when a human fixes an autonomous diff.
+- `scripts/propose.py` rule-based (per their decision 0007: do NOT let an LLM propose changes to policy): group friction + corrections, count≥2 → a backlog entry with `predicted_impact`; **closing an entry requires `actual_outcome`**, and a closed entry missing its outcome is counted by the entropy audit — a self-policing loop.
+- `/compound` keeps its role of semantically clustering near-duplicates (a hybrid, as the earlier research proposed).
 
-### Phase 5 — (điều kiện) Portability
-Giữ deferral hiện tại: marked-block + HARNESS.md payload chỉ làm "when a second consumer arrives". Không đổi.
+### Phase 5 — (conditional) Portability
+Keep the current deferral: marked-block + HARNESS.md payload only "when a second consumer arrives". No change.
 
-### Không làm (tái khẳng định)
-Rust/SQLite substrate · context-read scorer (self-reported files_read — họ cũng yếu) · schema versioning/importer · agnostic AGENTS.md cho Codex/Cursor (zero consumer) · maturity matrix 6×11.
+### Not doing (reaffirmed)
+Rust/SQLite substrate · context-read scorer (self-reported files_read — weak on their side too) · schema versioning/importer · agnostic AGENTS.md for Codex/Cursor (zero consumers) · a 6×11 maturity matrix.
 
-### Thước đo thành công của v2
-1. **Zero record chờ người append** — grep toàn repo không còn mandate "append X" nào mà không có event/checker đi kèm.
-2. PR merge bất kỳ → trust ledger + CHANGELOG có entry trong ≤1 phút, không ai gõ.
-3. `harness-audit` cho một con số + trend qua ≥3 tuần dữ liệu JSONL.
-4. `ci-strict-gate` **không thể** pass bằng `| x | true | 0 | |` (có test chứng minh).
-5. Hard-gate list tồn tại đúng **một** nơi máy đọc được; 3 consumer đều trỏ về nó (có test).
+### Success measures for v2
+1. **Zero records waiting on a human to append** — a repo-wide grep finds no remaining "append X" mandate without an accompanying event/checker.
+2. Any PR merge → trust ledger + CHANGELOG have an entry within ≤1 minute, with nobody typing.
+3. `harness-audit` yields one number + a trend across ≥3 weeks of JSONL data.
+4. `ci-strict-gate` **cannot** be passed with `| x | true | 0 | |` (with a test proving it).
+5. The hard-gate list exists in exactly **one** machine-readable place; all 3 consumers point at it (with a test).
 
 ---
 
-## 7. Bước đi kế tiếp đề xuất (thứ tự)
+## 7. Proposed next steps (in order)
 
-1. **Phase 0 critical fixes** (commit-hook matching + session-knowledge) — lane **high-risk** (đụng hooks/ + settings.json), full chain.
-2. **Phase 1 post-merge workflow** — độc lập, giá trị/effort cao nhất trong nhóm mới; một file workflow + sửa Guardrails.
-3. **Phase 3 substance denylist + test_verify_summary vào CI** — vá lỗ chung của cả hai repo; nhỏ, đo được ngay.
-4. **Phase 2 manifest** — lớn hơn, đáng một PLAN.md riêng.
-5. **Phase 4** — chỉ start khi ledger event-driven đã có ≥2 tuần data thật.
+1. **Phase 0 critical fixes** (commit-hook matching + session-knowledge) — **high-risk** lane (touches hooks/ + settings.json), full chain.
+2. **Phase 1 post-merge workflow** — independent, the highest value/effort ratio in the new group; one workflow file + a Guardrails edit.
+3. **Phase 3 substance denylist + test_verify_summary into CI** — patches the hole both repos share; small, immediately measurable.
+4. **Phase 2 manifest** — larger, deserves its own PLAN.md.
+5. **Phase 4** — only start once the event-driven ledger has ≥2 weeks of real data.

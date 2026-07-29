@@ -1,176 +1,178 @@
-# Research — Context Engineering cho Claude 5 & rà soát skill/rule trong harness-skills
+# Research — Context Engineering for Claude 5 & review of the skills/rules in harness-skills
 
-> Ngày: 2026-07-29 · Nguồn: [The New Rules of Context Engineering for Claude 5-Generation Models](https://claude.com/blog/the-new-rules-of-context-engineering-for-claude-5-generation-models)
-> (Anthropic blog) · Câu hỏi: repo `harness-skills` (skills + rules + CLAUDE.md) nên áp dụng gì từ
-> triết lý context-engineering mới này, và hiện đang lệch/khớp ở đâu?
+> Date: 2026-07-29 · Source: [The New Rules of Context Engineering for Claude 5-Generation Models](https://claude.com/blog/the-new-rules-of-context-engineering-for-claude-5-generation-models)
+> (Anthropic blog) · Question: what should the `harness-skills` repo (skills + rules + CLAUDE.md) adopt from
+> this new context-engineering philosophy, and where does it currently diverge from / align with it?
 >
-> Phương pháp: fetch + trích toàn văn bài viết → khảo sát thực tế repo bằng 1 subagent Explore
-> (line count, mật độ ngôn ngữ cứng nhắc MUST/NEVER/ALWAYS, kiểm tra lặp lại, progressive
-> disclosure, prose vs. schema) → đối chiếu 2 nguồn để ra đề xuất. Đây là tài liệu **research/đề
-> xuất**, chưa triển khai — các mục ở phần 4 là candidate cho một lane riêng nếu được duyệt.
+> Method: fetch + extract the full text of the article → survey the actual repo with 1 Explore subagent
+> (line count, density of rigid MUST/NEVER/ALWAYS language, repetition check, progressive
+> disclosure, prose vs. schema) → cross-reference the 2 sources to produce recommendations. This is a **research /
+> proposal** document, not yet implemented — the items in section 4 are candidates for a separate lane if approved.
 
 ---
 
-## 1. Tóm tắt bài viết
+## 1. Summary of the article
 
-**Phát hiện cốt lõi:** Anthropic đã lược bỏ hơn 80% system prompt của Claude Code cho các model
-thế hệ mới (Opus 5, Fable 5) mà không đo được suy giảm hiệu suất trên coding eval. Các model mới
-đủ khả năng phán đoán nên phần "giàn giáo quy tắc" (rule-scaffolding) nặng nề trở thành yếu tố gây
-hại ròng — tạo chi phí cân nhắc thừa và tê liệt do chỉ dẫn mâu thuẫn (ví dụ cũ: "để lại tài liệu
-khi phù hợp" đối lập với "KHÔNG được thêm comment").
+**Core finding:** Anthropic stripped away more than 80% of Claude Code's system prompt for the new-generation
+models (Opus 5, Fable 5) with no measurable performance degradation on coding evals. The new models
+have enough judgment that the heavy "rule-scaffolding" becomes a net harmful factor —
+creating excess deliberation cost and paralysis from contradictory instructions (old example: "leave documentation
+where appropriate" conflicting with "do NOT add comments").
 
-**5 thay đổi, cũ → mới:**
+**5 changes, old → new:**
 
-| Cũ | Mới |
+| Old | New |
 |---|---|
-| Quy tắc tường minh ("không bao giờ viết docstring nhiều đoạn, tối đa một dòng") | Hướng dẫn theo phán đoán ("khớp mật độ comment với code xung quanh") |
-| Ví dụ minh họa cách dùng tool đúng | Thiết kế tool rõ ràng (tham số/enum rõ ràng) tự ngụ ý cách dùng đúng |
-| Nhồi toàn bộ thông tin vào system prompt từ đầu | Tiết lộ dần (progressive disclosure) — tách thành Skills load theo nhu cầu, schema tool trì hoãn |
-| Lặp lại cùng chỉ dẫn ở cả system prompt lẫn mô tả tool | Một nơi thẩm quyền duy nhất cho mỗi chỉ dẫn |
-| Lưu memory thủ công qua phím tắt `#` | Tự động ghi nhận memory |
-| Spec bằng markdown thuần | Tham chiếu phong phú — HTML mockup, test suite thật, rubric, code thật |
+| Explicit rules ("never write multi-paragraph docstrings, one line maximum") | Judgment-based guidance ("match comment density to the surrounding code") |
+| Examples illustrating correct tool usage | Clear tool design (clear parameters/enums) implies correct usage on its own |
+| Cramming all information into the system prompt up front | Progressive disclosure — split into Skills loaded on demand, deferred tool schemas |
+| Repeating the same instruction in both the system prompt and the tool description | A single authoritative place for each instruction |
+| Manually saving memory via the `#` shortcut | Automatic memory capture |
+| Specs in plain markdown | Rich references — HTML mockups, real test suites, rubrics, real code |
 
-**Hướng dẫn thực tế của bài viết:**
-- CLAUDE.md nên gọn nhẹ, chỉ chứa điều "không hiển nhiên" (bỏ qua những gì Claude tự khám phá
-  được từ filesystem).
-- Dùng `/doctor` để cân chỉnh lại context định kỳ.
-- Loại bỏ mâu thuẫn giữa system prompt / Skills / lượt yêu cầu của user.
-- Ưu tiên spec dạng code (mockup HTML, test suite, rubric) hơn mô tả văn xuôi/ảnh chụp màn hình —
-  vì code là ngôn ngữ model hiểu với độ trung thực cao.
+**The article's practical guidance:**
+- CLAUDE.md should be lightweight, containing only what is "non-obvious" (omitting whatever Claude can discover
+  on its own from the filesystem).
+- Use `/doctor` to periodically recalibrate context.
+- Eliminate contradictions between the system prompt / Skills / the user's request turns.
+- Prefer code-form specs (HTML mockups, test suites, rubrics) over prose descriptions/screenshots —
+  because code is a language the model understands with high fidelity.
 
-## 2. Ý tưởng chắt lọc
+## 2. Distilled ideas
 
-Chủ đề xuyên suốt: **đừng quyết định thay model những gì model có thể tự quyết, và đừng nói cùng
-một điều hai lần.** Chỉ ràng buộc tuyệt đối ở nơi một phán đoán sai thực sự tốn kém (không thể đảo
-ngược, ảnh hưởng diện rộng, liên quan bảo mật/mất dữ liệu); còn lại nói rõ *lý do* (why) và để
-model tự quyết *cách làm* (how). Về cấu trúc: ít quy tắc tuyệt đối hơn, nhiều điểm tham chiếu
-nguồn-duy-nhất hơn, nội dung chỉ load khi task thực sự cần.
+The theme running through it all: **don't decide for the model what the model can decide for itself, and don't say
+the same thing twice.** Impose absolute constraints only where a wrong judgment is genuinely expensive (irreversible,
+wide blast radius, security/data-loss related); otherwise state the *why* clearly and let the
+model decide the *how*. Structurally: fewer absolute rules, more single-source reference points,
+content loaded only when the task actually needs it.
 
-## 3. Đối chiếu với repo hiện tại
+## 3. Comparison against the current repo
 
-Khảo sát thực hiện bằng 1 subagent Explore, đọc toàn văn `rules/behavior.md`,
-`rules/orchestration.md`, `CLAUDE.md`; sample-read các SKILL.md lớn nhất.
+The survey was carried out with 1 Explore subagent, reading `rules/behavior.md`,
+`rules/orchestration.md`, `CLAUDE.md` in full; sample-reading the largest SKILL.md files.
 
-### 3.1 Những gì repo đã làm đúng
+### 3.1 What the repo already does right
 
-- **Không SKILL.md nào vượt 76 dòng** (`feature-intake` lớn nhất trong 12 skill) — còn xa ngưỡng
-  cần tiết lộ dần thêm. `rules/*.md` dao động 9–180 dòng (`plan-format.md` lớn nhất), `CLAUDE.md`
-  92 dòng — tất cả dưới ngưỡng ~300 dòng.
-- **7/12 skill đã externalize chi tiết** ra `references/`, `templates/`, `tests/`, hoặc file
-  prompt riêng thay vì gộp vào một SKILL.md monolithic: `brainstorming`, `compound`,
+- **No SKILL.md exceeds 76 lines** (`feature-intake` is the largest of the 12 skills) — still far from the
+  threshold that would require more progressive disclosure. `rules/*.md` range from 9–180 lines (`plan-format.md`
+  largest), `CLAUDE.md` is 92 lines — all below the ~300-line threshold.
+- **7/12 skills already externalize details** into `references/`, `templates/`, `tests/`, or separate
+  prompt files instead of merging them into one monolithic SKILL.md: `brainstorming`, `compound`,
   `finishing-a-development-branch`, `subagent-driven-development`, `visual-planner`,
   `writing-plans`, `xia2`.
-- **`rules/behavior.md` — tài liệu định hình phán đoán chung — có 0 lượt xuất hiện
-  MUST/NEVER/ALWAYS/hard-gate.** Dùng ngôn ngữ mềm ("bias toward caution", "use judgment"), đúng
-  tinh thần "tin tưởng model" của bài viết.
-- **Ngôn ngữ cứng nhắc tập trung đúng chỗ**: MUST/NEVER/hard-gate xuất hiện chủ yếu ở
-  `rules/auto-correct-scope.md` (5 lượt) và `rules/orchestration.md` (3 lượt) — cả hai quản lý
-  ranh giới tự chủ và hành động không thể đảo ngược. Đúng nguyên tắc "chỉ ràng buộc nơi phán đoán
-  sai thực sự tốn kém" — không cần sửa.
-- **4 skill cốt lõi được kiểm tra** (feature-intake, correctness-review,
-  subagent-driven-development, writing-plans) đều **tham chiếu** (`Read rules/...` ở đầu) thay vì
-  copy-paste rule chung — nguyên tắc nguồn-duy-nhất được tôn trọng khá tốt ở tầng này.
-- **`rules/plan-format.md` đã dùng schema/ví dụ inline thật** (task block ~dòng 1-164) thay vì mô
-  tả văn xuôi — đúng nguyên tắc "code hơn mô tả" của bài viết.
+- **`rules/behavior.md` — the document that shapes general judgment — has 0 occurrences of
+  MUST/NEVER/ALWAYS/hard-gate.** It uses soft language ("bias toward caution", "use judgment"), matching
+  the article's "trust the model" spirit.
+- **Rigid language is concentrated in the right places**: MUST/NEVER/hard-gate appear mainly in
+  `rules/auto-correct-scope.md` (5 occurrences) and `rules/orchestration.md` (3 occurrences) — both govern
+  autonomy boundaries and irreversible actions. This matches the "only constrain where a wrong judgment
+  is genuinely expensive" principle — no fix needed.
+- **4 core skills were checked** (feature-intake, correctness-review,
+  subagent-driven-development, writing-plans) and all **reference** (`Read rules/...` at the top) instead of
+  copy-pasting shared rules — the single-source principle is fairly well respected at this layer.
+- **`rules/plan-format.md` already uses a real inline schema/examples** (task block ~lines 1-164) instead of a
+  prose description — matching the article's "code over description" principle.
 
-### 3.2 Những điểm lệch khỏi triết lý bài viết
+### 3.2 Points that diverge from the article's philosophy
 
-> Đánh số nối tiếp danh sách 4 mục gốc trong phần thảo luận trước khi viết doc này — mục **1**
-> (ngôn ngữ cứng nhắc đặt đúng chỗ) đã chuyển sang §3.1 vì không phải điểm lệch, nên phần này bắt
-> đầu từ **2**.
+> The numbering continues the original 4-item list from the discussion that preceded this doc — item **1**
+> (rigid language placed in the right spot) moved to §3.1 because it is not a divergence, so this section
+> starts at **2**.
 
-**(2) Lane/Confidence taxonomy lặp lại ở 4 nơi, không có điểm định nghĩa gốc duy nhất.**
-`tiny | normal | high-risk` và `high | medium | low` xuất hiện ở:
-- `rules/orchestration.md` (mục "Intake fields")
-- `rules/auto-correct-scope.md` (bảng lane-aware autonomy, dòng ~19-26)
-- `skills/feature-intake/SKILL.md` (bước classify/assign, dòng ~23-32; bảng Routes dòng ~48)
-- `CLAUDE.md` (chuỗi workflow, dòng ~21-34)
+**(2) The Lane/Confidence taxonomy is repeated in 4 places, with no single point of origin definition.**
+`tiny | normal | high-risk` and `high | medium | low` appear in:
+- `rules/orchestration.md` (the "Intake fields" section)
+- `rules/auto-correct-scope.md` (lane-aware autonomy table, lines ~19-26)
+- `skills/feature-intake/SKILL.md` (classify/assign step, lines ~23-32; Routes table line ~48)
+- `CLAUDE.md` (workflow chain, lines ~21-34)
 
-Mỗi chỗ có góc nhìn khác nhau (phạm vi tự chủ vs. yêu cầu bằng chứng vs. quy trình phân loại vs.
-chuỗi workflow) nên không phải copy-paste thuần, nhưng không có điểm neo "định nghĩa nằm ở đây,
-chỗ khác chỉ link tới". Đây đúng kiểu lặp lại bài viết cảnh báo: nếu sửa một bản mà quên sửa bản
-khác, chúng lệch nhau âm thầm — vi phạm nguyên tắc "một nơi thẩm quyền duy nhất".
+Each place has a different angle (autonomy scope vs. evidence requirements vs. classification procedure vs.
+workflow chain), so it is not pure copy-paste, but there is no anchor point saying "the definition lives here,
+everywhere else just links to it". This is exactly the kind of repetition the article warns about: if one copy is
+fixed and another is forgotten, they silently drift apart — violating the "single authoritative place" principle.
 
-> **Thảo luận 2026-07-29 (rà soát trước khi triển khai mục 2 ở §4).** Đọc lại cả 4 nơi cho thấy
-> đề xuất gốc gộp nhầm 4 thứ khác nhau làm một. Chỉ 1/4 nơi thật sự chứa *định nghĩa* — thuật toán
-> phân loại (`feature-intake/SKILL.md` Step 3, dòng 23-25: hard gate → `high-risk`; 0-1 flag +
-> 1-file → `tiny`; 2-3 flag → `normal`; 4+ → `high-risk`). Ba nơi còn lại chứa thông tin **không
-> thể thay bằng link mà không mất nội dung**: `orchestration.md` §Intake fields khai field +
-> consumer (`risk-corroboration.sh`, trust ledger), không phải cách tính; `auto-correct-scope.md`
-> bảng lane-aware là **hệ quả tự chủ** của mỗi lane (autonomy/plan/human-confirm) — một trục thông
-> tin khác hẳn, không trùng lặp; `CLAUDE.md` (dòng 21-36) đã tự trỏ nguồn từ trước ("See
-> `rules/orchestration.md`, `skills/feature-intake/SKILL.md`... for the full inventory") và không
-> liệt kê đủ enum — không cần sửa. Cái thật sự lặp lại chỉ là **chuỗi giá trị enum** xuất hiện ở
-> 3/4 nơi, giống một type dùng chung ở nhiều module — rủi ro hẹp hơn nhiều so với mô tả gốc: drift
-> khi rename, không phải chỉ dẫn mâu thuẫn.
+> **Discussion 2026-07-29 (review before implementing item 2 in §4).** Re-reading all 4 places shows the
+> original proposal wrongly lumped 4 different things into one. Only 1 of the 4 places actually contains a
+> *definition* — the classification algorithm (`feature-intake/SKILL.md` Step 3, lines 23-25: hard gate →
+> `high-risk`; 0-1 flags + 1 file → `tiny`; 2-3 flags → `normal`; 4+ → `high-risk`). The other three places
+> contain information that **cannot be replaced by a link without losing content**: `orchestration.md`
+> §Intake fields declares the field + consumers (`risk-corroboration.sh`, trust ledger), not how it is computed;
+> the `auto-correct-scope.md` lane-aware table is the **autonomy consequence** of each lane
+> (autonomy/plan/human-confirm) — an entirely different information axis, not duplication; `CLAUDE.md`
+> (lines 21-36) already pointed at the source beforehand ("See
+> `rules/orchestration.md`, `skills/feature-intake/SKILL.md`... for the full inventory") and does not
+> list the full enum — no fix needed. What is genuinely repeated is only the **enum value string** appearing in
+> 3 of the 4 places, like a shared type used across several modules — a far narrower risk than the original
+> description: drift on rename, not contradictory instructions.
 >
-> Cân nhắc 2 hướng khắc phục: (1) chỉ gắn nhãn "nguồn gốc" trỏ về `feature-intake/SKILL.md` Step 3
-> ở 2 nơi còn lại — rẻ, không đổi hành vi, nhưng không tự động ngăn drift; (2) cơ giới hóa bằng
-> script check enum values giữa các file (giống pattern `scripts/verify_summary.py --lane` +
-> `check_manifest.py` đã làm cho evidence mapping) — ngăn drift thật nhưng tốn công hơn nhiều
-> (sửa `scripts/`, cần test riêng) để giải quyết một rủi ro **chưa từng xảy ra** trong lịch sử
-> repo — ngược nguyên tắc "đừng thiết kế cho yêu cầu giả định" của chính CLAUDE.md.
+> Two remediation directions were considered: (1) just add a "source of origin" label pointing back to
+> `feature-intake/SKILL.md` Step 3 in the 2 remaining places — cheap, no behavior change, but does not
+> automatically prevent drift; (2) mechanize it with a script that checks enum values across files (like the
+> `scripts/verify_summary.py --lane` + `check_manifest.py` pattern already used for evidence mapping) —
+> actually prevents drift but is far more work (modifying `scripts/`, needing separate tests) to solve a risk
+> that has **never occurred** in the repo's history — against CLAUDE.md's own "don't design for hypothetical
+> requirements" principle.
 >
-> **Quyết định:** hướng (1) — thu hẹp. Thêm 1 dòng ở `rules/orchestration.md` §Intake fields và
-> `rules/auto-correct-scope.md` bảng lane-aware, trỏ về `feature-intake/SKILL.md` Step 3 là nơi
-> thuật toán phân loại sống. Không xóa/thay bảng hay thuật toán nào ở 3 nơi kia. Chưa triển khai —
-> để lại cho một lượt riêng.
+> **Decision:** direction (1) — narrow it down. Add 1 line in `rules/orchestration.md` §Intake fields and
+> the `rules/auto-correct-scope.md` lane-aware table, pointing back to `feature-intake/SKILL.md` Step 3 as where
+> the classification algorithm lives. Do not delete/replace any table or algorithm in the other 3 places.
+> Not yet implemented — left for a separate turn.
 
-**(3) `correctness-scorer-prompt.md` nhúng giai thoại văn xuôi thay vì case có cấu trúc.**
-Dòng ~93-98 kể một câu chuyện văn xuôi ("Worked example, 2026-07-13, PR #51") thay vì bảng/rubric
-như `skills/feature-intake/tests/*.md` đã làm cho canary case. Nguyên tắc "tham chiếu độ trung
-thực cao hơn ví dụ văn xuôi" gợi ý chuyển thành test case có cấu trúc — pattern repo đã dùng ở nơi
-khác (`skills/xia2/tests/`, `skills/feature-intake/tests/`), chỉ chưa áp dụng ở đây.
+**(3) `correctness-scorer-prompt.md` embeds a prose anecdote instead of a structured case.**
+Lines ~93-98 tell a prose story ("Worked example, 2026-07-13, PR #51") instead of a table/rubric
+the way `skills/feature-intake/tests/*.md` does for canary cases. The "higher-fidelity references over
+prose examples" principle suggests turning this into a structured test case — a pattern the repo already uses
+elsewhere (`skills/xia2/tests/`, `skills/feature-intake/tests/`), just not applied here yet.
 
-> **Thảo luận 2026-07-29 (rà soát trước khi triển khai mục 3 ở §4).** Điểm quan trọng bị bỏ sót
-> ở lần khảo sát đầu: đoạn giai thoại này **không phải tài liệu bên lề** — nó nằm bên trong khối
-> ` ``` ` (dòng 31-138) chính là nội dung `prompt: |` gửi thẳng cho scorer subagent lúc runtime.
-> Ngược lại, `feature-intake/tests/lane-classification-cases.md` — pattern được lấy làm hình mẫu —
-> là file canary/eval nằm **ngoài** context runtime, chỉ dùng để kiểm hồi quy `SKILL.md`, không
-> được nạp vào prompt lúc chạy. Hai việc khác bản chất: một là few-shot calibration sống trong
-> prompt thật, một là fixture kiểm định bên ngoài. Do đó "bê nguyên giai thoại ra
-> `skills/correctness-review/tests/` và xóa khỏi prompt" — như đề xuất gốc mô tả — là **thay đổi
-> hành vi runtime**, không phải "sửa tài liệu thuần" như bảng rủi ro ở §4 từng ghi.
+> **Discussion 2026-07-29 (review before implementing item 3 in §4).** An important point missed
+> in the first survey: this anecdote is **not side documentation** — it sits inside the
+> ` ``` ` block (lines 31-138) that is exactly the `prompt: |` content sent straight to the scorer subagent at runtime.
+> Conversely, `feature-intake/tests/lane-classification-cases.md` — the pattern taken as the model —
+> is a canary/eval file sitting **outside** the runtime context, used only for regression-checking `SKILL.md`, never
+> loaded into the prompt at run time. The two are different in nature: one is few-shot calibration living in
+> the real prompt, the other is an external verification fixture. Therefore "lift the anecdote verbatim into
+> `skills/correctness-review/tests/` and delete it from the prompt" — as the original proposal described — is a
+> **runtime behavior change**, not the "pure documentation fix" the risk table in §4 once recorded.
 >
-> **Quyết định:** giữ giai thoại **in-prompt** (không chuyển ra `tests/`), chỉ **nén còn 1-2 dòng
-> structured** (case + verdict) để cắt phần văn xuôi thừa mà không mất tín hiệu hiệu chỉnh cho
-> model chấm điểm. Chưa triển khai — sửa `correctness-scorer-prompt.md` dòng 93-98 để lại cho một
-> lượt riêng.
+> **Decision:** keep the anecdote **in-prompt** (do not move it to `tests/`), only **compress it to 1-2
+> structured lines** (case + verdict) to cut the excess prose without losing the calibration signal for
+> the scoring model. Not yet implemented — the `correctness-scorer-prompt.md` lines 93-98 edit is left for a
+> separate turn.
 
-**(4) `context-propagation-audit` là skill duy nhất không có file `references/` hỗ trợ.**
-Ở mức 38 dòng thì chưa cần tách — chỉ ghi nhận làm điểm cần theo dõi nếu skill này phình to.
+**(4) `context-propagation-audit` is the only skill without a supporting `references/` file.**
+At 38 lines it doesn't need splitting yet — recorded only as a point to watch if this skill grows.
 
-## 4. Đề xuất (candidate cho lane riêng, chưa triển khai)
+## 4. Proposals (candidates for a separate lane, not yet implemented)
 
-| # | Đề xuất | Giá trị | Rủi ro/effort |
+| # | Proposal | Value | Risk/effort |
 |---|---|---|---|
-| 2 | ~~Chỉ định orchestration.md là nguồn chính thức, 3 chỗ còn lại link tới~~ → **Gắn nhãn "nguồn gốc" trỏ về `feature-intake/SKILL.md` Step 3 (nơi thuật toán phân loại thật sự sống) ở `rules/orchestration.md` §Intake fields và `rules/auto-correct-scope.md` bảng lane-aware; không xóa/thay nội dung nào ở 2 nơi này hay ở `CLAUDE.md`** (quyết định sau thảo luận §3.2 mục 2 — xem hộp thảo luận) | Đóng lỗ hổng "không biết định nghĩa taxonomy nằm ở đâu" mà không mất bảng autonomy hay thuật toán phân loại đang có | Thấp — 2 dòng thêm ở 2 file doc, không đổi `scripts/`/`hooks/`; không tự động ngăn drift khi rename lane (đã cân nhắc và loại phương án cơ giới hóa vì tốn công cho rủi ro chưa từng xảy ra) |
-| 3 | ~~Chuyển giai thoại ra `tests/`~~ → **Nén giai thoại "Worked example PR #51" trong `correctness-scorer-prompt.md` (dòng 93-98) thành 1-2 dòng structured, giữ nguyên vị trí in-prompt** (quyết định sau thảo luận §3.2 mục 3 — xem hộp thảo luận) | Cắt văn xuôi thừa mà không mất tín hiệu hiệu chỉnh cho scorer model lúc runtime | Thấp-trung bình — sửa nội dung nằm trong prompt runtime thật (không phải doc thuần); nên đối chiếu lại 1-2 lượt scorer sau khi sửa để chắc hành vi score-0 trên `unmodified-line` không đổi |
-| 4 (không làm) | Tách `context-propagation-audit` ra `references/` | Chưa cần — 38 dòng, dưới ngưỡng | — |
-| 1 (không làm) | Giảm mật độ MUST/NEVER ở `auto-correct-scope.md`/`orchestration.md` | Sai hướng — đây là đúng chỗ để có ngôn ngữ cứng theo chính bài viết (ranh giới tự chủ, hành động khó đảo ngược) | — |
+| 2 | ~~Designate orchestration.md as the official source, with the other 3 places linking to it~~ → **Add a "source of origin" label pointing back to `feature-intake/SKILL.md` Step 3 (where the classification algorithm actually lives) in `rules/orchestration.md` §Intake fields and the `rules/auto-correct-scope.md` lane-aware table; delete/replace no content in these 2 places or in `CLAUDE.md`** (decision after the discussion in §3.2 item 2 — see the discussion box) | Closes the "no idea where the taxonomy definition lives" gap without losing the existing autonomy table or classification algorithm | Low — 2 added lines in 2 doc files, no change to `scripts/`/`hooks/`; does not automatically prevent drift when a lane is renamed (the mechanized option was considered and rejected as too much work for a risk that has never occurred) |
+| 3 | ~~Move the anecdote out to `tests/`~~ → **Compress the "Worked example PR #51" anecdote in `correctness-scorer-prompt.md` (lines 93-98) into 1-2 structured lines, keeping it in-prompt** (decision after the discussion in §3.2 item 3 — see the discussion box) | Cuts the excess prose without losing the calibration signal for the scorer model at runtime | Low-medium — edits content sitting inside a real runtime prompt (not pure docs); 1-2 scorer runs should be cross-checked after the edit to be sure the score-0 behavior on `unmodified-line` is unchanged |
+| 4 (not doing) | Split `context-propagation-audit` out into `references/` | Not needed yet — 38 lines, below the threshold | — |
+| 1 (not doing) | Reduce MUST/NEVER density in `auto-correct-scope.md`/`orchestration.md` | Wrong direction — by the article's own reasoning this is exactly where hard language belongs (autonomy boundaries, hard-to-reverse actions) | — |
 
-**Khuyến nghị:** mục 2 và 3 vẫn là hai mục có giá trị triển khai thật, nhưng không còn đồng nhất
-về hồ sơ rủi ro sau thảo luận. Mục 2, sau khi xác định chỉ 1/4 nơi (`feature-intake/SKILL.md` Step
-3) chứa định nghĩa thật và 3 nơi còn lại không thể thay bằng link mà không mất nội dung, đã thu hẹp
-xuống thành 2 dòng anchor thuần túy — sửa tài liệu, không đổi `scripts/`/`hooks/`, không mất bảng
-autonomy hay thuật toán phân loại nào đang có. Mục 3, sau khi xác định giai thoại nằm trong prompt
-runtime (không phải doc bên lề), là sửa nội dung ảnh hưởng hành vi model chấm điểm — vẫn nhỏ (1
-file, nén 5 dòng còn 1-2 dòng) nhưng nên đối chiếu hành vi scorer trước/sau, không coi là "không
-đổi logic" nữa. Cả hai vẫn có thể làm trực tiếp (lane tiny) nếu được duyệt — không cần plan/design
-riêng, chỉ cần thêm bước đối chiếu cho mục 3.
+**Recommendation:** items 2 and 3 remain the two with real implementation value, but they are no longer uniform
+in risk profile after the discussion. Item 2, after establishing that only 1 of the 4 places
+(`feature-intake/SKILL.md` Step 3) holds the real definition and that the other 3 cannot be replaced by a link
+without losing content, has narrowed down to 2 purely anchor lines — a documentation edit, no change to
+`scripts/`/`hooks/`, no loss of any existing autonomy table or classification algorithm. Item 3, after
+establishing that the anecdote sits inside a runtime prompt (not side documentation), is an edit affecting the
+scoring model's behavior — still small (1 file, compressing 5 lines to 1-2) but the scorer's behavior should be
+cross-checked before/after; it can no longer be treated as "no logic change". Both can still be done directly
+(tiny lane) if approved — no separate plan/design needed, just an added cross-check step for item 3.
 
-## 5. Trạng thái
+## 5. Status
 
-Mục 2 và mục 3 **đã triển khai** (2026-07-29, branch `chore/context-eng-lane-anchors` off
-`simplify`), theo đúng hướng chốt sau thảo luận:
+Items 2 and 3 are **implemented** (2026-07-29, branch `chore/context-eng-lane-anchors` off
+`simplify`), following exactly the direction settled after the discussion:
 
-- `rules/orchestration.md` §Intake fields — thêm 1 câu trỏ về `skills/feature-intake/SKILL.md`
-  Step 3–4 làm nguồn định nghĩa taxonomy.
-- `rules/auto-correct-scope.md` §Lane-aware autonomy — thêm 1 câu tương tự, giữ nguyên bảng
-  autonomy.
-- `skills/correctness-review/correctness-scorer-prompt.md` dòng 93-95 — nén giai thoại PR #51 từ
-  6 dòng văn xuôi còn 3 dòng structured (Case/Verdict), vẫn in-prompt.
+- `rules/orchestration.md` §Intake fields — added 1 sentence pointing to `skills/feature-intake/SKILL.md`
+  Steps 3–4 as the source of the taxonomy definition.
+- `rules/auto-correct-scope.md` §Lane-aware autonomy — added a similar sentence, keeping the autonomy
+  table unchanged.
+- `skills/correctness-review/correctness-scorer-prompt.md` lines 93-95 — compressed the PR #51 anecdote from
+  6 prose lines to 3 structured lines (Case/Verdict), still in-prompt.
 
-Full test suite (`bash scripts/run-tests.sh`) chạy sau khi sửa: `ALL GREEN` (278 unit test +
-toàn bộ shell test file pass). Chưa commit — chờ xác nhận của người dùng. Mục 1 và mục 4 giữ
-nguyên kết luận "không làm".
+The full test suite (`bash scripts/run-tests.sh`) run after the edits: `ALL GREEN` (278 unit tests +
+all shell test files pass). Not yet committed — awaiting user confirmation. Items 1 and 4 keep their
+"not doing" conclusion.
