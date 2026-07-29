@@ -18,6 +18,23 @@ def section(text: str, heading: str) -> str:
     return match.group(1).strip() if match else "none"
 
 
+def task_block(text: str, task_id: str) -> re.Match[str] | None:
+    """Find an exact markdown task ID, never a dotted-prefix sibling."""
+    return re.search(
+        rf"(?ms)^### Task {re.escape(task_id)}(?=\s|—|-|$)[^\n]*\n(.*?)(?=^### Task |^## |\Z)",
+        text,
+    )
+
+
+def mapped_rows(text: str, ids: list[str]) -> list[str]:
+    wanted = set(ids)
+    return [
+        line
+        for line in section(text, "3. Success Criteria").splitlines()
+        if (match := re.match(r"^\|\s*(SC-\d+)\s*\|", line)) and match.group(1) in wanted
+    ]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--plan", type=Path, required=True)
@@ -26,12 +43,12 @@ def main() -> int:
     args = parser.parse_args()
     plan = args.plan.resolve()
     text = plan.read_text(encoding="utf-8")
-    task = re.search(rf"(?ms)^### Task {re.escape(args.task)}[^\n]*\n(.*?)(?=^### Task |^## |\Z)", text)
+    task = task_block(text, args.task)
     if not task:
         raise SystemExit(f"task-brief: task {args.task} not found in {plan}")
     criteria = re.search(r"(?m)^[-*] \*\*Criteria:\*\*\s*(.+)$", task.group(1))
     ids = re.findall(r"SC-\d+", criteria.group(1) if criteria else "")
-    rows = [line for line in section(text, "3. Success Criteria").splitlines() if any(i in line for i in ids)]
+    rows = mapped_rows(text, ids)
     root = git_root()
     digest = hashlib.sha256(f"{plan}:{args.task}".encode()).hexdigest()[:12]
     output = args.output or root / ".harness-state" / "sdd" / f"{plan.parent.name}-{args.task}-{digest}.brief.md"

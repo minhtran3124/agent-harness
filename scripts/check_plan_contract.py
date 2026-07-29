@@ -14,6 +14,19 @@ from pathlib import Path
 TASK = re.compile(r"(?ms)^### Task ([0-9][\w.]*)[^\n]*\n(.*?)(?=^### Task |^## |\Z)")
 FIELD = re.compile(r"(?m)^[-*] \*\*(Criteria|Interfaces):\*\*\s*(.+)$")
 SC = re.compile(r"\bSC-\d+\b")
+INTERFACE_CLAUSE = re.compile(
+    r"\b(Consumes?|Produces?)\b\s*:?\s*(.*?)(?=\s*\b(?:Consumes?|Produces?)\b\s*:|$)",
+    re.I,
+)
+
+
+def interface_values(interface: str, verb: str) -> list[str]:
+    """Return backticked artifacts after one interface verb without truncating dots."""
+    values = []
+    for found_verb, value in INTERFACE_CLAUSE.findall(interface):
+        if found_verb.lower().startswith(verb.lower()):
+            values.extend(re.findall(r"`([^`]+)`", value))
+    return values
 
 
 def errors(text: str, name: str = "PLAN.md") -> list[str]:
@@ -47,14 +60,11 @@ def errors(text: str, name: str = "PLAN.md") -> list[str]:
         interface = fields["Interfaces"]
         if not re.search(r"\bConsumes?\b", interface, re.I) or not re.search(r"\bProduces?\b", interface, re.I):
             found.append(f"{name}: Task {task_id} Interfaces must name what it consumes and produces")
-        for value in re.findall(r"(?:Produces?|produces)\s*:?\s*([^.;]+)", interface, re.I):
-            for token in re.findall(r"`?([\w./-]+)`?", value):
-                if token not in {"and", "or"}:
-                    produced.add(token)
-        for value in re.findall(r"(?:Consumes?|consumes)\s*:?\s*([^.;]+)", interface, re.I):
+        produced.update(interface_values(interface, "produce"))
+        for value in interface_values(interface, "consume"):
             consumed.append((task_id, value))
-    for task_id, value in consumed:
-        for token in re.findall(r"`([\w./-]+)`", value):
+    for task_id, token in consumed:
+        if token:
             if token not in produced and not token.endswith((".md", ".json")):
                 found.append(f"{name}: Task {task_id} consumes {token} with no producer")
     return found

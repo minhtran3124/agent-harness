@@ -10,3 +10,24 @@ def test_legacy_is_accepted():
 def test_new_contract_requires_task_fields():
     text = "## Global Constraints\n\n- x\n\n## 3. Success Criteria\n\n| ID | x | x | x |\n|---|---|---|---|\n| SC-1 | x | x | exit 0 |\n\n## 4. Tasks\n\n### Task 1.1 — x\n\n- **Files:** x\n"
     assert any("missing Criteria" in item for item in errors(text))
+
+
+def test_dotted_consumed_artifact_requires_a_producer():
+    text = """## Global Constraints
+
+- x
+
+## 3. Success Criteria
+
+| ID | x | x | x |
+|---|---|---|---|
+| SC-1 | x | x | exit 0 |
+
+## 4. Tasks
+
+### Task 1.1 — x
+
+- **Criteria:** SC-1
+- **Interfaces:** Consumes: `missing_module.py`. Produces: `output.json`.
+"""
+    assert any("missing_module.py with no producer" in item for item in errors(text))
