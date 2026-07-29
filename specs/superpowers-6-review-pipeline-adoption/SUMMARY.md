@@ -83,3 +83,10 @@ external Claude final-review client was rate-limited at the time of review.
   package/routing contracts, and A/B quality-first gate all passed).
 - Intent — PASS (the diff creates the requested branch-based implementation, completes SC-1…SC-9,
   keeps the rejected A/B iteration, and preserves human review/no-merge boundary).
+
+### Delivery Status
+
+- Branch `feat/superpowers-6-review-pipeline` pushed to `github` at `d203d5c`.
+- Draft PR creation was attempted against `simplify` and rejected by GitHub: the configured
+  credential is not a collaborator. No merge was attempted. A repository collaborator can open
+  the PR from the pushed branch.

@@ -158,4 +158,5 @@ A/B evaluation.
 - 2026-07-29 — Research reviewed, benchmark claim corrected, design and implementation plan
   created. Status changed to `active`; runtime implementation is in progress.
 - 2026-07-29 — All success criteria verified, derived harness deployed, and receipt recorded.
-  Status changed to `shipped`; branch remains awaiting human PR review.
+  Status changed to `shipped`; branch was pushed and awaits human PR review. Draft-PR creation
+  was attempted but blocked by the configured GitHub credential lacking collaborator permission.
