@@ -1,6 +1,6 @@
 ---
 slug: fix-hooks-gate-lane-divergence
-status: active
+status: shipped
 owner: minhtran3124
 created: 2026-07-29
 ---
@@ -112,3 +112,5 @@ in-flight task. Both are fixable without touching the 7 block-mode risk-corrobor
 ## 6. Status Log
 
 - 2026-07-29 — plan created, work started same session.
+- 2026-07-29 — all 5 tasks implemented, full test suite green (`bash scripts/run-tests.sh` →
+  278 passed, ALL GREEN), committed `75dcc9f`. Shipped.
