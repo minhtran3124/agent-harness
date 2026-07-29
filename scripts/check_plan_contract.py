@@ -23,8 +23,11 @@ INTERFACE_CLAUSE = re.compile(
 def interface_values(interface: str, verb: str) -> list[str]:
     """Return backticked artifacts after one interface verb without truncating dots."""
     values = []
-    for found_verb, value in INTERFACE_CLAUSE.findall(interface):
+    masked = re.sub(r"`[^`]*`", lambda match: "`" + "x" * (len(match.group(0)) - 2) + "`", interface)
+    for match in INTERFACE_CLAUSE.finditer(masked):
+        found_verb = match.group(1)
         if found_verb.lower().startswith(verb.lower()):
+            value = interface[match.start(2) : match.end(2)]
             values.extend(re.findall(r"`([^`]+)`", value))
     return values
 

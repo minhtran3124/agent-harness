@@ -62,3 +62,29 @@ def test_colonless_produces_clause_keeps_both_artifacts_separate():
 - **Interfaces:** Consumes: `in.py`, produces `helper.py`
 """
     assert errors(text) == []
+
+
+def test_artifact_name_containing_produces_is_not_an_interface_separator():
+    text = """## Global Constraints
+
+- x
+
+## 3. Success Criteria
+
+| ID | x | x | x |
+|---|---|---|---|
+| SC-1 | x | x | exit 0 |
+
+## 4. Tasks
+
+### Task 1.0 — source
+
+- **Criteria:** SC-1
+- **Interfaces:** Consumes: input. Produces: `produces.py`
+
+### Task 1.1 — consumer
+
+- **Criteria:** SC-1
+- **Interfaces:** Consumes: `produces.py`. Produces: `out.py`
+"""
+    assert errors(text) == []
