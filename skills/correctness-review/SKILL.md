@@ -9,6 +9,12 @@ Review runtime behavior, not style or plan compliance. Determine the intended `B
 (merge-base for a branch, working-tree diff for uncommitted work, explicit range when supplied).
 In SDD, use the commit before task 1 through current HEAD.
 
+When SDD supplies `REVIEW_PACKAGE_PATH`, read that explicit package first for the exact SHAs,
+commit list, stat, and mechanical diff instead of reconstructing a duplicate diff. It is not an
+oracle: use it only as runtime evidence, retain this skill's plan-blindness, and perform a named
+focused read outside it only for a concrete runtime risk. Standalone calls without a package keep
+the existing range-construction behavior.
+
 ## Pipeline
 
 1. Read `review-config.json`, then render six independent FIND prompts from `correctness-reviewer-prompt.md`: enclosing-function,
