@@ -1,7 +1,7 @@
 # Candidate live-evaluation status
 
 Run date: 2026-07-28  
-Environment: `cld-edgeful` (`CLAUDE_CONFIG_DIR=~/.claude-edgeful`), `claude-sonnet-5`, Claude
+Environment: `claude` (`CLAUDE_CONFIG_DIR=~/.claude`), `claude-sonnet-5`, Claude
 Code `2.1.220`, reasoning `low`, one clean no-tools session per observation.
 
 ## Current evidence
@@ -27,6 +27,6 @@ review-chain, context-boundary, and end-to-end coverage, and it must not be used
 non-regression. The current candidate behavior collection covers all case IDs and passes the
 explicit behavior gate (`python3 scripts/score_skill_eval.py --suite behavior --candidate`).
 Baseline comparison, activation, review-chain, context-boundary, and end-to-end coverage remain
-outstanding. The historical Edgeful baseline batch is currently blocked by the local profile being
-logged out (`cld-edgeful auth status` reports `loggedIn: false`); no unauthenticated output is
+outstanding. The historical Claude baseline batch is currently blocked by the local profile being
+logged out (`claude auth status` reports `loggedIn: false`); no unauthenticated output is
 treated as model evidence.

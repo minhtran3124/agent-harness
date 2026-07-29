@@ -51,9 +51,3 @@ def test_auth_preflight_reports_logged_out_profile(monkeypatch):
 
     monkeypatch.setattr(MODULE.subprocess, "run", lambda *args, **kwargs: Result())
     assert MODULE.auth_preflight("claude", "/tmp/profile") == "configured Claude profile is not logged in"
-
-
-def test_batch_expands_edgeful_alias():
-    assert MODULE.command_argv("cld-edgeful", ["auth", "status"])[0:3] == [
-        "zsh", "-ic", 'cld-edgeful "$@"'
-    ]

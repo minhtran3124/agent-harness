@@ -59,15 +59,15 @@ stores the final response plus usage in a transcript, and prints a compact summa
 assign a verdict or write a result record.
 
 ```bash
-CLAUDE_CONFIG_DIR=~/.claude-edgeful \
+CLAUDE_CONFIG_DIR=~/.claude \
 python3 scripts/capture_skill_eval.py \
-  --claude cld-edgeful \
+  --claude claude \
   --output evals/skills/prompt-refactor/results/transcripts/<case-id>.json \
   --prompt '/<skill> ...clean behavior-evaluation probe...'
 ```
 
 Review the saved transcript, then call `record_skill_eval.py` exactly once for that case. The
-profile path above is the current Edgeful CLI profile; use an equivalent pinned profile when the
+profile path above is the current Claude CLI profile; use an equivalent pinned profile when the
 evaluation environment changes.
 
 For a corpus batch, use `run_skill_eval_batch.py`. It performs an auth preflight and exits before
@@ -79,14 +79,14 @@ python3 scripts/run_skill_eval_batch.py --suite behavior \
   --cwd <baseline-or-candidate-worktree> \
   --transcripts /tmp/skill-eval-transcripts \
   --summaries /tmp/skill-eval-summaries \
-  --config-dir ~/.claude-edgeful \
-  --claude cld-edgeful
+  --config-dir ~/.claude \
+  --claude claude
 ```
 
 Before starting a long run, inspect readiness and missing case counts:
 
 ```bash
-python3 scripts/check_skill_eval_readiness.py --config-dir ~/.claude-edgeful --claude cld-edgeful
+python3 scripts/check_skill_eval_readiness.py --config-dir ~/.claude --claude claude
 ```
 
 When the corpus was introduced after the baseline checkout, run the recorder from the current

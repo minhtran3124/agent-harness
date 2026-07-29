@@ -28,13 +28,6 @@ def extract_result(payload: Any) -> tuple[str, dict[str, Any]]:
     raise ValueError("Claude JSON contains no final result")
 
 
-def command_argv(executable: str, arguments: list[str]) -> list[str]:
-    """Expand the interactive `cld-edgeful` alias when subprocess aliases are unavailable."""
-    if executable == "cld-edgeful":
-        return ["zsh", "-ic", 'cld-edgeful "$@"', "--", *arguments]
-    return [executable, *arguments]
-
-
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--prompt", required=True)
@@ -62,7 +55,7 @@ def main() -> int:
         args.effort,
         args.prompt,
     ]
-    command = command_argv(args.claude, arguments)
+    command = [args.claude, *arguments]
     try:
         completed = subprocess.run(
             command,

@@ -36,7 +36,7 @@ def observed_ids(path: Path, suite: str) -> set[str]:
 
 def auth_state(claude: str, config_dir: str) -> tuple[bool, str]:
     result = subprocess.run(
-        command_argv(claude, ["auth", "status"]),
+        [claude, "auth", "status"],
         text=True,
         capture_output=True,
         stdin=subprocess.DEVNULL,
@@ -52,18 +52,12 @@ def auth_state(claude: str, config_dir: str) -> tuple[bool, str]:
     return bool(status.get("loggedIn")), "logged in" if status.get("loggedIn") else "not logged in"
 
 
-def command_argv(executable: str, arguments: list[str]) -> list[str]:
-    if executable == "cld-edgeful":
-        return ["zsh", "-ic", 'cld-edgeful "$@"', "--", *arguments]
-    return [executable, *arguments]
-
-
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parent.parent)
     parser.add_argument("--baseline", type=Path, default=Path("evals/skills/prompt-refactor/results/baseline.json"))
     parser.add_argument("--candidate", type=Path, default=Path("evals/skills/prompt-refactor/results/candidate.json"))
-    parser.add_argument("--config-dir", default=os.environ.get("CLAUDE_CONFIG_DIR", "~/.claude-edgeful"))
+    parser.add_argument("--config-dir", default=os.environ.get("CLAUDE_CONFIG_DIR", "~/.claude"))
     parser.add_argument("--claude", default="claude")
     parser.add_argument("--skip-auth-check", action="store_true")
     args = parser.parse_args()

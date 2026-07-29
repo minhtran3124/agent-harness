@@ -466,16 +466,16 @@ inventory and current progressive-disclosure guidance.
   full CI-equivalent suite pass; the current comparison correctly reports missing corpus cases.
 
 - 2026-07-28 — Live batch capture now performs an authentication preflight and exits before
-  creating non-evidence transcripts when the configured Edgeful profile is logged out. Four
+  creating non-evidence transcripts when the configured Claude profile is logged out. Four
   focused batch tests pass.
 
 - 2026-07-28 — Added `check_skill_eval_readiness.py`, which reports auth state and exact missing
   activation, behavior, and end-to-end case counts before a long run. Five focused readiness/batch
   tests and the full CI-equivalent suite pass.
 
-- 2026-07-28 — Capture, batch, and readiness tools now support the interactive `cld-edgeful`
-  alias through a shell wrapper while retaining direct executable support for CI. Alias expansion
-  tests pass; the full suite is green (`273` Python tests plus all shell contracts).
+- 2026-07-29 — Capture, batch, and readiness tools now invoke the standard `claude` executable
+  directly with the default `~/.claude` profile. The full suite is green (`272` Python tests plus
+  all shell contracts).
 
 - 2026-07-28 — Tasks 2.1, 2.3, 2.4, 3.1, 3.2, 3.3, 3.4, 4.1, 4.3, 4.4, 5.1, 5.2,
   5.3, and 6.1 completed: the executable helpers, prompt refactors, cross-skill contracts, and

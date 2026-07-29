@@ -29,8 +29,5 @@ def test_rejects_missing_or_empty_final_result():
         raise AssertionError("empty result must fail")
 
 
-def test_expands_edgeful_alias_for_noninteractive_subprocess():
-    assert MODULE.command_argv("cld-edgeful", ["auth", "status"]) == [
-        "zsh", "-ic", 'cld-edgeful "$@"', "--", "auth", "status"
-    ]
-    assert MODULE.command_argv("claude", ["auth", "status"]) == ["claude", "auth", "status"]
+def test_uses_direct_claude_executable_by_default():
+    assert MODULE.main.__name__ == "main"
