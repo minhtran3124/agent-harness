@@ -16,6 +16,7 @@ FILE=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null)"
 [ -z "$REPO_DIR" ] && REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+source "$SCRIPT_DIR/lib/lane.sh" 2>/dev/null
 
 # Canonicalize both so the repo-prefix strip is reliable (handles symlinked roots)
 REPO_DIR="$(cd "$REPO_DIR" 2>/dev/null && pwd -P)"
@@ -33,10 +34,14 @@ esac
 # deliberately no "else most recent" fallback. A shipped plan's <files> set is a record of what
 # that work touched, not a scope constraint on everything that comes after it; falling back to it
 # made every long-finished plan police every future edit, forever.
-PLAN=""
-for p in $(ls -t "$REPO_DIR"/specs/*/PLAN.md 2>/dev/null); do
-  if grep -qiE '^status:[[:space:]]*active' "$p"; then PLAN="$p"; break; fi
-done
+# hooks/lib/lane.sh (shared with risk-corroboration.sh's Lane fallback). A missing lib
+# fails OPEN here (command -v guard), consistent with this hook's own default: no
+# active-plan signal available → no scope to creep out of.
+if command -v hook_lib_find_active_plan >/dev/null 2>&1; then
+  PLAN=$(hook_lib_find_active_plan "$REPO_DIR") || PLAN=""
+else
+  PLAN=""
+fi
 [ -z "$PLAN" ] && exit 0   # no plan in flight → no scope to creep out of
 
 # Declared files: <files>...</files> tags (XML syntax) plus `- **Files:** ...`

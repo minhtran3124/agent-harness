@@ -1011,4 +1011,3 @@ or read from each other's files.
 - exit: 
 - last_commit: 67adeb8 Merge pull request #179 from minhtran3124/refactor/skill-prompt-surface
 - user_turns: 0
-
