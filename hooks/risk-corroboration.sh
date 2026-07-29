@@ -40,6 +40,14 @@ command -v hook_cmd_is_git_commit >/dev/null 2>&1 || {
 }
 hook_cmd_is_git_commit "$COMMAND" || exit 0
 
+source "$(cd "$(dirname "$0")" && pwd)/lib/lane.sh" 2>/dev/null
+# Fail closed: same convention as the git-command lib above — a missing Lane-resolution
+# lib must not silently let corroboration run against no Lane at all.
+command -v hook_lib_resolve_lane >/dev/null 2>&1 || {
+  echo "[RISK] lane lib missing — redeploy harness (blocking to fail safe)." >&2
+  exit 2
+}
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null)"
 [ -z "$REPO_DIR" ] && REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -95,17 +103,11 @@ CODE_REMOVED=$(git diff --cached -U0 -- . ':!*.md' ':!docs/' ':!specs/' ':!skill
 # Moved ahead of category scanning so the diff-size signal below (which needs
 # LANE_VAL) still runs even when no hard-gate category trips (that path exits
 # early, before the original Lane-resolution block further down).
-LANE=""
-# Prefer a SUMMARY.md staged in this commit
-for f in $(echo "$STAGED_PATHS" | grep -E '(^|/)SUMMARY\.md$' || true); do
-  L=$(git show ":$f" 2>/dev/null | grep -iE '^Lane:' | head -1)
-  [ -n "$L" ] && LANE="$L" && break
-done
-# Else the most recently modified specs/*/SUMMARY.md on disk
-if [ -z "$LANE" ]; then
-  RECENT=$(ls -t specs/*/SUMMARY.md 2>/dev/null | head -1)
-  [ -n "$RECENT" ] && LANE=$(grep -iE '^Lane:' "$RECENT" | head -1)
-fi
+# Shared with blast-radius-check.sh via hooks/lib/lane.sh: prefer a staged SUMMARY.md,
+# else the status:active plan's sibling SUMMARY.md — never a bare "most recently
+# modified on disk" guess, which could borrow an unrelated spec's Lane for a commit
+# that never touched specs/ at all.
+LANE=$(hook_lib_resolve_lane "$REPO_DIR" "$STAGED_PATHS")
 # Normalize: extract tiny|normal|high-risk
 LANE_VAL=$(echo "$LANE" | tr 'A-Z' 'a-z' | grep -oE 'tiny|normal|high-risk' | head -1)
 
