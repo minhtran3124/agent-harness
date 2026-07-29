@@ -39,6 +39,17 @@ and populated `Files / Action / Verify / Done`:
 - **Done:** Measurable acceptance state
 ```
 
+### Context contract for new plans
+
+New markdown plans add a non-empty `## Global Constraints` section. Each task also carries:
+
+- **Criteria:** one or more mapped `SC-n` rows;
+- **Interfaces:** a concise statement of what the task consumes and produces.
+
+Run `python3 scripts/check_plan_contract.py <PLAN.md>` before execution. The checker applies this
+contract only to plans that declare `Global Constraints`, so legacy markdown/XML plans continue to
+parse and execute unchanged.
+
 Rules:
 
 - Real tasks are plain markdown — never wrap them in code fences (fenced task sections are

@@ -40,7 +40,7 @@ scripts/init-structure.sh  (first-time repo setup only)
       ↓
 /subagent-driven-development        ← same session, or `resume <slug>` from a new session
   → implements plan task-by-task
-  → two-stage review per task (spec compliance → code quality)
+  → one read-only task reviewer per task (separate spec + quality verdicts; file handoffs)
   → workflow-engine diffs first pass /context-propagation-audit, then final adversarial correctness review (/correctness-review)
   → final intent review (/intent-review) — diff vs the original request, blind to PLAN
       ↓
@@ -108,7 +108,7 @@ No skill covers first-time setup — it is a script: `bash scripts/init-structur
 | Skill | Trigger | Output |
 |---|---|---|
 | `/using-git-worktrees` | Before starting feature work needing isolation | Isolated worktree + branch |
-| `/subagent-driven-development` | Executing a plan — fresh subagent per task in this session, or `resume <slug>` from a new session (New-session / resume mode: reconstruct the cursor at Step -1, then batch + checkpoint). Same gates either way | Implemented tasks, two-stage review; workflow-engine context audit when triggered; final correctness and intent review |
+| `/subagent-driven-development` | Executing a plan — fresh subagent per task in this session, or `resume <slug>` from a new session (New-session / resume mode: reconstruct the cursor at Step -1, then batch + checkpoint). Same gates either way | Implemented tasks, one task reviewer with two verdicts and durable Minor handoff; workflow-engine context audit when triggered; final correctness and intent review |
 
 ### Review & Shipping
 

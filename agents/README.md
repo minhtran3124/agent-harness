@@ -10,6 +10,7 @@ pointed to from — `PROJECT.md`.
 |---|---|---|---|
 | `coding` | Implement/refactor/fix code, end-to-end | sonnet | `subagent-driven-development`, ad-hoc |
 | `reviewer` | Structurally read-only review passes (correctness-review, intent-review) | caller-set | review skills |
+| `task-reviewer` | Read-only per-task spec + quality review | caller-set | `subagent-driven-development` |
 | `test-runner` | Run the minimal relevant tests and report/diagnose results | haiku | after implementation |
 
 ## Portability model (mirrors xia2)

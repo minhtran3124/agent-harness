@@ -1,0 +1,37 @@
+{
+  "outputs": [
+    "**spec_verdict: fail**\n**quality_verdict: needs_fixes**\n\n**Findings:**\n\n- **Critical \u2014 Required Criterion row is absent from SUMMARY.** The task's contract is explicit: \"Every task must add a passing Criterion row to SUMMARY.\" The fixture states the behavior is implemented but \"no verification row or Criterion mapping exists.\" This is a directly observed absence of a mandated deliverable, not unknown evidence \u2014 the fixture affirmatively tells us the row is missing, so the verdict is `fail`, not `cannot_verify`. Evidence: fixture implementation statement, \"no verification row or Criterion mapping exists.\"\n\n- **Important \u2014 Implemented behavior is unproven.** With no Criterion mapping and no verification row, the claim \"the behavior is implemented\" has no re-runnable proof attached (evidence-over-assertion). Even if the code is correct, the task cannot be accepted as done because its acceptance mechanism \u2014 a *passing* Criterion row \u2014 was the deliverable being gated.\n\n**Why not cannot_verify:** `cannot_verify` is reserved for an external contract the fixture says is unavailable. Here the evidence is present and conclusive: the required artifact is explicitly stated to not exist. A stated absence of a required deliverable is a verifiable failure.\n\n**Remediation (for the fixer, not applied here):** add the Criterion row to SUMMARY mapping the task's acceptance criterion to a re-runnable check, run it, and record the passing result."
+  ],
+  "usage": [
+    {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 32020,
+      "cache_read_input_tokens": 20043,
+      "output_tokens": 727,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 32020,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 727,
+          "cache_read_input_tokens": 20043,
+          "cache_creation_input_tokens": 32020,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 32020
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard"
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "outputs": [
+    "spec_verdict: **pass**\nquality_verdict: **approved**\n\nFindings:\n- **Minor** \u2014 vague helper name. Evidence: fixture states \"A helper name is slightly vague.\" Naming clarity only; no behavioral impact.\n\nEvidence for verdicts: the fixture states \"Names are sorted correctly\" (spec requirement met) and \"behavior and tests are complete\" (verification claimed present). No external contract is stated as unavailable, so cannot_verify does not apply. A slightly vague helper name alone does not rise to needs_fixes."
+  ],
+  "usage": [
+    {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 31863,
+      "cache_read_input_tokens": 20043,
+      "output_tokens": 344,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 31863,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 344,
+          "cache_read_input_tokens": 20043,
+          "cache_creation_input_tokens": 31863,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 31863
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard"
+    }
+  ]
+}

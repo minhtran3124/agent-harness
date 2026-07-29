@@ -70,7 +70,7 @@
     "__doc__": "contract surface->consumers map for Q3 blast-radius; read by scripts/check-contract-impact.sh, validated by scripts/check_manifest.py.",
     "hook-registration":       { "surface": ["settings.json"],                 "consumers": ["CLAUDE.md", "scripts/lint-doc-truth.sh"],                                                      "desc": "hook wiring source of truth" },
     "artifact-schema-summary": { "surface": ["templates/SUMMARY.template.md"],  "consumers": ["scripts/verify_summary.py", "hooks/commit-quality-gate.sh"], "desc": "SUMMARY.md shape contract" },
-    "artifact-schema-plan":    { "surface": ["rules/plan-format.md"],           "consumers": ["skills/visual-planner/render_plan.py"],                        "desc": "PLAN.md task XML schema contract" },
+    "artifact-schema-plan":    { "surface": ["rules/plan-format.md", "scripts/check_plan_contract.py"], "consumers": ["skills/visual-planner/render_plan.py", "skills/writing-plans/SKILL.md", "skills/subagent-driven-development/SKILL.md"], "desc": "PLAN.md task and context-contract schema" },
     "lane-evidence-mapping":   { "surface": ["scripts/verify_summary.py"],      "consumers": ["skills/feature-intake/SKILL.md", "rules/auto-correct-scope.md"],                               "desc": "lane -> required evidence mapping" },
     "research-depth-policy":   { "surface": ["rules/research-depth.md"],       "consumers": ["skills/feature-intake/SKILL.md", "skills/xia2/SKILL.md"],                                          "desc": "intake lane -> xia2 research-depth mapping" },
     "finish-context-resolution": { "surface": ["scripts/resolve_finish_context.py"], "consumers": ["skills/finishing-a-development-branch/SKILL.md"],                                           "desc": "branch/base/plan/lane resolution for branch finishing" },
@@ -122,5 +122,5 @@
     "writing-plans", "xia2"
   ],
 
-  "agents": ["coding", "reviewer", "test-runner"]
+  "agents": ["coding", "reviewer", "task-reviewer", "test-runner"]
 }

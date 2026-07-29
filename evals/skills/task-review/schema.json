@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["schema_version", "commit_sha", "environment", "records"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "commit_sha": {"type": "string", "minLength": 7},
+    "environment": {"type": "object", "required": ["model", "client_version", "reasoning"]},
+    "records": {"type": "array", "minItems": 1}
+  }
+}

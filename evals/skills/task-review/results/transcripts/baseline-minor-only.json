@@ -1,0 +1,68 @@
+{
+  "outputs": [
+    "**SPEC: PASS**\n\n- **Missing behavior:** none \u2014 the requested behavior (sort names alphabetically) is implemented and covered by tests.\n- **Extra behavior:** none identified \u2014 nothing beyond the request is described.\n- **Evidence:** \"Names are sorted correctly \u2026 behavior and tests are complete\" \u2014 this is exactly the requested scope.\n- **Out-of-scope note:** the vague helper name is a code-quality concern, not a spec violation. It belongs to the quality review pass and does not affect the spec verdict.",
+    "**QUALITY: approved**\n\n- **Concern (Minor):** vague helper name.\n  - Evidence: fixture states \"A helper name is slightly vague but behavior and tests are complete.\"\n- **No Critical or Important concerns:** sorting behavior is correct and test coverage is complete per the fixture, so the task's goal is met.\n\nRationale: naming vagueness with correct behavior and full tests is a polish-level issue \u2014 it doesn't change what the code does or leave the requirement unverified, so it doesn't warrant `needs_fixes`."
+  ],
+  "usage": [
+    {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 31765,
+      "cache_read_input_tokens": 20043,
+      "output_tokens": 308,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 31765,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 308,
+          "cache_read_input_tokens": 20043,
+          "cache_creation_input_tokens": 31765,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 31765
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard"
+    },
+    {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 31764,
+      "cache_read_input_tokens": 20043,
+      "output_tokens": 272,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 31764,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 272,
+          "cache_read_input_tokens": 20043,
+          "cache_creation_input_tokens": 31764,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 31764
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard"
+    }
+  ]
+}

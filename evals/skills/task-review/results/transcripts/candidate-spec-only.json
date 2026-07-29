@@ -1,0 +1,37 @@
+{
+  "outputs": [
+    "spec_verdict: **fail**\nquality_verdict: **needs_fixes**\n\nFindings:\n\n- **Critical** \u2014 `--dry-run` does not suppress writes. The task requires that `--dry-run` \"does not write files,\" but the fixture states `run.py` \"always calls `write_output()`\" regardless of the parsed flag. The flag is parsed but never gates the write path, so the core acceptance criterion fails. Evidence: fixture statement \"parses `--dry-run` but always calls `write_output()`.\"\n\nNo cannot_verify items \u2014 the fixture's own statements are sufficient to establish the failure; no external contract is declared unavailable."
+  ],
+  "usage": [
+    {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 32022,
+      "cache_read_input_tokens": 20043,
+      "output_tokens": 310,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 32022,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 310,
+          "cache_read_input_tokens": 20043,
+          "cache_creation_input_tokens": 32022,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 32022
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard"
+    }
+  ]
+}

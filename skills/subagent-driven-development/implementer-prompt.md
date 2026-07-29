@@ -13,7 +13,8 @@ Task tool (general-purpose):
 
     ## Task Description
 
-    [FULL TEXT of task from plan - paste it here, don't make subagent read file]
+    Read the complete task-local contract at `[TASK_BRIEF_PATH]`. It includes the exact task,
+    mapped Success Criteria, Global Constraints, and interfaces. Do not depend on parent history.
 
     ## Context
 
@@ -118,7 +119,8 @@ Task tool (general-purpose):
 
     ## Report Format
 
-    When done, return this structured contract:
+    Write the detailed structured contract below to `[IMPLEMENTER_REPORT_PATH]`, then return only
+    `status`, commit SHAs, Verify result, and that report path to the controller:
 
     - **status:** DONE | DONE_WITH_CONCERNS | BLOCKED | NEEDS_CONTEXT
     - **commits:** list of `{sha, subject}` for commits you authored during this task

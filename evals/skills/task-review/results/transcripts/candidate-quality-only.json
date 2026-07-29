@@ -1,0 +1,37 @@
+{
+  "outputs": [
+    "**spec_verdict: pass** \u2014 the task asked for a parser of a single JSON config file, and the fixture states `config.py` opens and parses the input. The requested behavior exists; malformed-input handling was not part of the stated spec.\n\n**quality_verdict: needs_fixes**\n\nFindings:\n\n1. **Important \u2014 unhandled malformed input.** Evidence: fixture states \"malformed JSON raises a raw traceback.\" A config parser's expected failure mode (bad user-supplied file) escapes as a raw `json.JSONDecodeError` instead of a clear, actionable error. This is a real, reachable path, not speculative hardening.\n2. **Important \u2014 no test coverage.** Evidence: fixture states \"no test exists.\" Neither the happy path nor the malformed-JSON path is verified, so \"done\" rests on assertion rather than a re-runnable check.\n\nNo Critical findings: the happy path works as specified and nothing suggests data loss or a broken contract. No cannot_verify: the fixture declares all evidence explicitly and claims no unavailable external contract."
+  ],
+  "usage": [
+    {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 32032,
+      "cache_read_input_tokens": 20043,
+      "output_tokens": 741,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 32032,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 741,
+          "cache_read_input_tokens": 20043,
+          "cache_creation_input_tokens": 32032,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 32032
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard"
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "outputs": [
+    "spec_verdict: **cannot_verify**\nquality_verdict: **approved**\n\nFindings:\n\n- **Critical \u2014 spec unverifiable: external signing contract unavailable.** The task's success criterion is compatibility with an external webhook signature, but the fixture explicitly states \"The signing protocol and external contract are unavailable.\" Compatibility with an unavailable contract cannot be checked from a caller name alone; per `not_observed != absent`, absence of evidence here is *unknown*, not *pass* and not *fail*. Evidence: fixture implementation statement (\"signing protocol and external contract are unavailable\").\n- **Minor \u2014 evidence limited to a caller name.** No signing logic, tests, or fixture-provided protocol description exist to corroborate even partial behavior, so no narrower claim (e.g. \"algorithm unchanged\") can be substantiated either.\n\nQuality rationale: the visible evidence (a caller name only) surfaces no code-quality defects \u2014 nothing observable to flag as needs_fixes. The blocker is spec verifiability, not implementation quality, so it is carried on the spec verdict rather than the quality verdict."
+  ],
+  "usage": [
+    {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 31872,
+      "cache_read_input_tokens": 20043,
+      "output_tokens": 814,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 31872,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 814,
+          "cache_read_input_tokens": 20043,
+          "cache_creation_input_tokens": 31872,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 31872
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard"
+    }
+  ]
+}
