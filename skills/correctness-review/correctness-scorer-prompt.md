@@ -90,12 +90,9 @@ Task tool (reviewer):
     Score it 0 and move on. Do not argue in your justification that it deserves more; say what
     the bug is, so the human reading the advisory list can act on it.
 
-    **Worked example (2026-07-13, PR #51).** A review of a change to one section of
-    `scripts/harness-status.sh` surfaced three real, reproducible aborts in *other* sections of
-    the same file — every one on a line the diff never touched. All three were genuine: the
-    script died on a fresh clone. All three were correctly scored 0, kept out of the fix loop,
-    and reported to the author, who fixed them deliberately in a separate commit. That is the
-    rule working, not the rule failing.
+    **Case (2026-07-13, PR #51):** 3 real, reproducible aborts found in `harness-status.sh` on
+    lines the diff never touched. **Verdict:** all scored 0, kept out of the fix loop, reported
+    to the author — who fixed them separately. Rule working as intended, not a false negative.
 
     ## Cap the score at 50 when the claim rests on code you cannot read
 

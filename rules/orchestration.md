@@ -36,6 +36,9 @@ At intake — before dispatching any task — the orchestrator runs `/feature-in
 - **Lane** — `tiny | normal | high-risk` (drives ceremony / how much proof).
 - **Confidence** — `high | medium | low` (drives interruption / whether a human is asked).
 
+The classification algorithm that assigns these values lives in `skills/feature-intake/SKILL.md`
+Step 3–4 — that is the canonical source; this section only names the fields and their consumers.
+
 These two fields are load-bearing: `hooks/risk-corroboration.sh` reads `Lane:` to corroborate it against the staged diff, and the trust-metrics ledger reads both. The orchestrator MUST write a `Lane:` line: a declared lane below `high-risk` is **blocked** when the diff trips a **block-mode** hard-gate signal (per-gate mode lives in `harness-manifest.json`; warn-mode gates — `workflow-engine`, `weakening-validation` — print a note and allow), and a *missing* lane only **warns** (fail-open) unless `RISK_CORROBORATION_STRICT=1` is set.
 
 ## Subagent contract
