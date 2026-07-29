@@ -94,6 +94,40 @@ Two rows differ from `2026-07-22-baseline.md`:
 - The probes measure delivery of two specific path-scoped rules. A rule or dispatch not probed here
   is **unmeasured**, not confirmed delivered.
 
+## Addendum — path-scoped delivery DOES fire in a child context that reads a matching file
+
+Run later the same day, in a disposable sandbox worktree (`/tmp/harness-sandbox-test`, harness
+deployed, `bcdb68c`). This probe answers a question the four probes above structurally could not,
+because each of them only ever tested a child that read **no** matching file.
+
+**Question.** `rules/plan-format.md` is scoped `paths: ["specs/**/PLAN.md"]`. Does it reach an
+isolated `general-purpose` subagent that **reads** a `specs/**/PLAN.md` file, with no Read
+instruction for the rule itself?
+
+**Marker.** Not a heading — headings here are reconstructable from filenames, the same weakness
+that keeps the scorer positive `unconfirmed` above. The marker is the **cut-off date inside the
+rule's legacy-XML paragraph** (`2026-07-16`), which is not guessable from the filename or topic.
+
+| arm | reads `specs/**/PLAN.md`? | observed | verdict |
+|---|---|---|---|
+| read-planmd | yes (547 lines) | quoted `2026-07-16` correctly | **delivered** |
+| control-no-read | no | `NOT IN CONTEXT` | **not-delivered** (expected) |
+
+The single variable between arms is whether a matching file was read, and the control rules out
+prior knowledge and filename guessing.
+
+**Consequence for `probes/implementer-subagent.md`.** Its wording — "no path-scoped rule auto-loads
+here; a rule arrives ONLY if the dispatch prompt explicitly instructs a Read" — is **too strong**
+and should be narrowed to: *a path-scoped rule does not auto-load in a child context unless that
+child reads a file matching the rule's glob.* The probes above remain valid; their negative
+controls read no matching file, so they measured the referenced-but-unread case specifically.
+
+**This does not reopen or weaken #141.** That escape had the isolated worker reading no `specs/**`
+file at all, so the rule genuinely never arrived. The explicit-Read fix pattern in
+`implementer-prompt.md` and `correctness-review/prompts/shared.md` remains the correct and more
+robust construction — delivery that depends on a consumer happening to read a path-matching file is
+fragile, and silently disappears if that consumer is later handed inline text instead of a path.
+
 ## Follow-up
 
 - The scorer positive needs a **non-guessable marker** (e.g. a nonce line inside the rule body
