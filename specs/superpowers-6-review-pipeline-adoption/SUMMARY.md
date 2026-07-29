@@ -62,3 +62,24 @@ research, risk boundaries, and measurable quality gates would be insufficient.
 
 - implemented — consolidated task review, context-plan contract, file handoffs, durable routing,
   corpus A/B, and deterministic adoption checks.
+
+### Context-Propagation Audit
+
+| Source | Consumer | Context | Delivery | Proof |
+| --- | --- | --- | --- | --- |
+| `writing-plans/SKILL.md` plan contract | plan author | main session | explicit check command | `check_plan_contract.py` + unit tests |
+| `task_brief.py` | implementer | isolated child | explicit `TASK_BRIEF_PATH` | SDD + handoff test |
+| `task-reviewer-prompt.md` + `task-reviewer.md` | task reviewer | isolated child | explicit artifact paths/read-only agent | contract and readonly tests |
+| `review_package.py` | correctness and intent reviewers | isolated final children | `REVIEW_PACKAGE_PATH` documented in both skills | final package contract test |
+| Minor/unknown routing | controller and final review | main/final handoff | SDD durable-route instructions | routing contract test |
+
+Result: PASS. Every load-bearing new instruction has an explicit source-to-consumer delivery path;
+no assumed parent-history delivery remains. This was a deterministic static audit because the
+external Claude final-review client was rate-limited at the time of review.
+
+### Final Review
+
+- Correctness — PASS (deterministic static review of `3cae3f5..3cd3307`; full CI, Python compile,
+  package/routing contracts, and A/B quality-first gate all passed).
+- Intent — PASS (the diff creates the requested branch-based implementation, completes SC-1…SC-9,
+  keeps the rejected A/B iteration, and preserves human review/no-merge boundary).
