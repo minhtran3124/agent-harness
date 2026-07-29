@@ -15,13 +15,28 @@ SPEC.loader.exec_module(MODULE)
 def test_cases_reads_behavior_prompts_and_falls_back_to_expectation(tmp_path):
     base = tmp_path / "evals/skills/prompt-refactor"
     (base / "behavior").mkdir(parents=True)
-    (base / "behavior/alpha.json").write_text(json.dumps({"cases": [
-        {"id": "alpha-a", "skill": "alpha", "prompt": "scenario"},
-        {"id": "alpha-b", "skill": "alpha", "expectation": "fallback"},
-    ]}))
-    (base / "corpus-manifest.json").write_text(json.dumps({"skills": [{
-        "name": "alpha", "behavior": "evals/skills/prompt-refactor/behavior/alpha.json"
-    }]}))
+    (base / "behavior/alpha.json").write_text(
+        json.dumps(
+            {
+                "cases": [
+                    {"id": "alpha-a", "skill": "alpha", "prompt": "scenario"},
+                    {"id": "alpha-b", "skill": "alpha", "expectation": "fallback"},
+                ]
+            }
+        )
+    )
+    (base / "corpus-manifest.json").write_text(
+        json.dumps(
+            {
+                "skills": [
+                    {
+                        "name": "alpha",
+                        "behavior": "evals/skills/prompt-refactor/behavior/alpha.json",
+                    }
+                ]
+            }
+        )
+    )
     found = MODULE.cases(tmp_path, "behavior")
     assert found == [
         {"id": "alpha-a", "skill": "alpha", "prompt": "scenario"},
@@ -43,6 +58,41 @@ def test_evaluation_prompt_forces_behavior_dispatch():
     assert "key safety gate" in prompt
 
 
+def test_cases_reads_end_to_end_canaries(tmp_path):
+    base = tmp_path / "evals/skills/prompt-refactor"
+    base.mkdir(parents=True)
+    (base / "end-to-end.json").write_text(
+        json.dumps(
+            {
+                "cases": [
+                    {
+                        "id": "e2e-tiny",
+                        "lane": "tiny",
+                        "expectation": "label",
+                        "prompt": "chain scenario",
+                    },
+                ]
+            }
+        )
+    )
+    (base / "corpus-manifest.json").write_text(
+        json.dumps(
+            {"skills": [], "end_to_end": "evals/skills/prompt-refactor/end-to-end.json"}
+        )
+    )
+    assert MODULE.cases(tmp_path, "end-to-end") == [
+        {"id": "e2e-tiny", "skill": "tiny", "prompt": "chain scenario"},
+    ]
+
+
+def test_evaluation_prompt_does_not_force_a_skill_for_chain_canaries():
+    case = {"id": "e2e-high-risk", "skill": "high-risk", "prompt": "chain scenario"}
+    prompt = MODULE.evaluation_prompt(case, "end-to-end")
+    assert not prompt.startswith("/")
+    assert "TRIGGER or NO-TRIGGER" not in prompt
+    assert prompt.startswith("chain scenario")
+
+
 def test_auth_preflight_reports_logged_out_profile(monkeypatch):
     class Result:
         returncode = 0
@@ -50,4 +100,7 @@ def test_auth_preflight_reports_logged_out_profile(monkeypatch):
         stderr = ""
 
     monkeypatch.setattr(MODULE.subprocess, "run", lambda *args, **kwargs: Result())
-    assert MODULE.auth_preflight("claude", "/tmp/profile") == "configured Claude profile is not logged in"
+    assert (
+        MODULE.auth_preflight("claude", "/tmp/profile")
+        == "configured Claude profile is not logged in"
+    )

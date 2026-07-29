@@ -5,6 +5,7 @@ Each invocation has stdin closed and its own transcript path. A failed case is l
 not prevent later cases from running; this makes a batch a transport convenience, not a grading
 step. A human or a separate scorer must still assign verdicts.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -16,10 +17,22 @@ from pathlib import Path
 
 
 def cases(root: Path, suite: str) -> list[dict[str, str]]:
-    manifest = json.loads((root / "evals/skills/prompt-refactor/corpus-manifest.json").read_text())
-    if suite not in {"activation", "behavior"}:
-        raise ValueError("batch runner currently supports activation and behavior")
+    manifest = json.loads(
+        (root / "evals/skills/prompt-refactor/corpus-manifest.json").read_text()
+    )
+    if suite not in {"activation", "behavior", "end-to-end"}:
+        raise ValueError(
+            "batch runner currently supports activation, behavior, and end-to-end"
+        )
     found: list[dict[str, str]] = []
+    if suite == "end-to-end":
+        for case in json.loads((root / manifest["end_to_end"]).read_text()).get(
+            "cases", []
+        ):
+            found.append(
+                {"id": case["id"], "skill": case["lane"], "prompt": case["prompt"]}
+            )
+        return found
     for entry in manifest["skills"]:
         path = root / entry[suite]
         for case in json.loads(path.read_text()).get("cases", []):
@@ -36,6 +49,9 @@ def evaluation_prompt(case: dict[str, str], suite: str) -> str:
             "Decide whether a repository skill should handle this request. Reply with exactly "
             "TRIGGER or NO-TRIGGER followed by one short reason. Do not make changes."
         )
+    if suite == "end-to-end":
+        # A chain canary probes routing across skills, so it must not force one skill's dispatch.
+        return f"{case['prompt']}\n\nDo not make changes. Answer in at most 120 words."
     return (
         f"/{case['skill']}\n\n{case['prompt']}\n\n"
         "State the concrete required workflow action and key safety gate. "
@@ -54,7 +70,9 @@ def auth_preflight(claude: str, config_dir: str) -> str | None:
         check=False,
     )
     if result.returncode:
-        return result.stderr.strip() or f"{claude} auth status exited {result.returncode}"
+        return (
+            result.stderr.strip() or f"{claude} auth status exited {result.returncode}"
+        )
     try:
         status = json.loads(result.stdout)
     except json.JSONDecodeError:
@@ -66,14 +84,22 @@ def auth_preflight(claude: str, config_dir: str) -> str | None:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parent.parent)
-    parser.add_argument("--suite", choices=("activation", "behavior"), required=True)
+    parser.add_argument(
+        "--root", type=Path, default=Path(__file__).resolve().parent.parent
+    )
+    parser.add_argument(
+        "--suite", choices=("activation", "behavior", "end-to-end"), required=True
+    )
     parser.add_argument("--cwd", type=Path, required=True)
     parser.add_argument("--transcripts", type=Path, required=True)
     parser.add_argument("--summaries", type=Path, required=True)
     parser.add_argument("--config-dir", required=True)
-    parser.add_argument("--claude", default="claude", help="Claude executable or wrapper command")
-    parser.add_argument("--skip-auth-check", action="store_true", help="skip the login preflight")
+    parser.add_argument(
+        "--claude", default="claude", help="Claude executable or wrapper command"
+    )
+    parser.add_argument(
+        "--skip-auth-check", action="store_true", help="skip the login preflight"
+    )
     args = parser.parse_args()
     root = args.root.resolve()
     capture = root / "scripts/capture_skill_eval.py"
@@ -84,7 +110,10 @@ def main() -> int:
         if not args.skip_auth_check:
             blocker = auth_preflight(args.claude, args.config_dir)
             if blocker:
-                print(f"skill-eval-batch: auth preflight blocked: {blocker}", file=sys.stderr)
+                print(
+                    f"skill-eval-batch: auth preflight blocked: {blocker}",
+                    file=sys.stderr,
+                )
                 return 2
         suite_cases = cases(root, args.suite)
         for case in suite_cases:
@@ -108,11 +137,20 @@ def main() -> int:
                 capture_output=True,
                 env={**os.environ, "CLAUDE_CONFIG_DIR": args.config_dir},
             )
-            (args.summaries / f"{case['id']}.json").write_text(result.stdout + result.stderr, encoding="utf-8")
+            (args.summaries / f"{case['id']}.json").write_text(
+                result.stdout + result.stderr, encoding="utf-8"
+            )
             if result.returncode:
                 failures.append(case["id"])
-        report = {"suite": args.suite, "total": len(suite_cases), "captured": len(suite_cases) - len(failures), "failures": failures}
-        (args.summaries / "batch-report.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+        report = {
+            "suite": args.suite,
+            "total": len(suite_cases),
+            "captured": len(suite_cases) - len(failures),
+            "failures": failures,
+        }
+        (args.summaries / "batch-report.json").write_text(
+            json.dumps(report, indent=2) + "\n", encoding="utf-8"
+        )
         print(json.dumps(report))
         return 1 if failures else 0
     except (OSError, KeyError, ValueError, json.JSONDecodeError) as exc:
