@@ -663,8 +663,14 @@ def _collect_case(
             "Use Claude Code's bundled Skill tool to invoke `simplify` exactly once. "
             "Inspect the cumulative branch diff at the explicit target "
             f"{base_sha}..{pre_sha}. Apply only behavior-preserving cleanup in this "
-            "isolated worktree, do not commit, and return a concise outcome summary. "
-            "Do not search outside this repository."
+            "isolated worktree that is unambiguous and low-risk. For a reuse/DRY "
+            "consolidation, apply it only when the duplicated code encodes a real "
+            "shared rule or nontrivial computation that could drift out of sync if "
+            "left duplicated; skip it when the reuse target is just a trivial "
+            "one-line delegation to a builtin/stdlib call with no rule of its own, "
+            "since coupling to it would not reduce real complexity. When in doubt, "
+            "leave the code as-is. Do not commit, and return a concise outcome "
+            "summary. Do not search outside this repository."
         )
         claude_command = [
             claude,
