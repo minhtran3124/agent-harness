@@ -23,11 +23,13 @@ user; if no plan exists, use the tiny/no-plan path instead of guessing.
 2. For non-tiny work with a resolved plan, pin reviews at the resolved base:
 
    ```bash
-   python3 scripts/check_review_receipt.py <plan_dir> --require correctness,intent --require-audit-if <base>
+   python3 scripts/check_review_receipt.py <plan_dir> --require correctness,intent --require-audit-if <base> --require-simplify-if <base>
    ```
 
-   A missing, stale, failing, or blocking receipt stops the flow. Re-run the affected review; never
-   edit the receipt to pass. Re-run this gate immediately before push. Tiny/no-plan work skips it.
+   A missing, stale, failing, or blocking receipt for any required type — correctness, intent, the
+   conditional context-delivery audit, or the conditional simplify pass — stops the flow. Re-run the
+   affected review; never edit the receipt to pass. Re-run this gate immediately before push.
+   Tiny/no-plan work skips it.
 3. Mark the resolved plan `status: shipped`, append a dated status-log entry, and commit the
    tracked `specs/` update. The helper-selected plan—not a branch-name guess—is authoritative.
    Do not manually change version/changelog/trust ledger when post-merge automation exists.
