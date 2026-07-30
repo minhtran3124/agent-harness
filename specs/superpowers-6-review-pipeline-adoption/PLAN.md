@@ -7,6 +7,68 @@ created: 2026-07-29
 
 # Superpowers 6.0 Review-Pipeline Adoption
 
+<!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
+## At a glance
+
+**10 tasks · 6 waves · 50 files · 0/10 done**
+
+| Wave | Task | Title | Files | Done (acceptance) |
+|---|---|---|---|---|
+| 1 | 1.1 | Freeze the dual-review baseline and evaluation corpus (wave 1) | evals/skills/task-review/README.md, evals/skills/task-review/schema.json, evals/skills/task-review/fixtures/, evals/skills/task-review/results/baseline.json, scripts/run_task_review_eval.py, scripts/score_task_review_eval.py, scripts/test_run_task_review_eval.py, scripts/test_score_task_review_eval.py | The immutable baseline and its environment metadata exist, all fixture truths ar… |
+| 2 | 2.1 | Add the new PLAN context contract (wave 2) | rules/plan-format.md, skills/writing-plans/SKILL.md, skills/writing-plans/plan-document-reviewer-prompt.md, scripts/check_plan_contract.py, scripts/test_check_plan_contract.py, skills/visual-planner/render_plan.py, skills/visual-planner/test_render_plan.py | New plans fail closed on missing context contracts, legacy plans still parse/ren… |
+| 2 | 2.2 | Build deterministic SDD artifact handoffs (wave 2) | skills/subagent-driven-development/scripts/task_brief.py, skills/subagent-driven-development/scripts/review_package.py, tests/scripts/sdd-artifact-handoffs.test.sh | The controller can obtain all three handoff paths without reading artifact conte… |
+| 3 | 3.1 | Replace dual prompts with one bounded task reviewer (wave 3) | skills/subagent-driven-development/task-reviewer-prompt.md, skills/subagent-driven-development/spec-reviewer-prompt.md, skills/subagent-driven-development/code-quality-reviewer-prompt.md, scripts/check_task_review_contract.py, scripts/test_check_task_review_contract.py | One self-contained local prompt covers both judgments, unknown evidence, severit… |
+| 3 | 3.2 | Enforce a genuinely read-only task-review role (wave 3) | agents/task-reviewer.md, agents/README.md, tests/scripts/task-reviewer-readonly.test.sh | Per-task review independence is structural, while the existing final reviewer ro… |
+| 4 | 4.1 | Rewire SDD around file handoffs and combined routing (wave 4) | skills/subagent-driven-development/SKILL.md, skills/subagent-driven-development/implementer-prompt.md, skills/subagent-driven-development/references/review-chain.md, tests/scripts/sdd-task-review-routing.test.sh | A clean task uses one reviewer; every blocking, unknown, Minor, fix, resume, and… |
+| 4 | 4.2 | Reuse a branch review package without merging final oracles (wave 4) | skills/correctness-review/SKILL.md, skills/correctness-review/prompts/shared.md, skills/intent-review/SKILL.md, skills/intent-review/intent-reviewer-prompt.md, tests/scripts/final-review-package-contract.test.sh | Final reviewers share only mechanical diff evidence; no oracle, threshold, findi… |
+| 5 | 5.1 | Synchronize workflow documentation and deterministic gates (wave 5) | HARNESS.md, skills/README.md, rules/orchestration.md, rules/auto-correct-scope.md, CLAUDE.md, harness-manifest.json, scripts/run-tests.sh, scripts/check_task_review_adoption.py, scripts/test_check_task_review_adoption.py | No stale pre-6.0 runtime claim remains, one authority exists for each new contra… |
+| 5 | 5.2 | Run the controlled candidate A/B and adjudicate results (wave 5) | evals/skills/task-review/results/candidate.json, evals/skills/task-review/results/comparison.md, evals/skills/task-review/results/transcripts/ | SC-7 and SC-8 pass on a complete version-pinned collection, or the rollout stops… |
+| 6 | 6.1 | Final verification, deployment, and human-review handoff (wave 6) | specs/superpowers-6-review-pipeline-adoption/SUMMARY.md, specs/superpowers-6-review-pipeline-adoption/PLAN.md, .review-receipt.json | Every SC has passing evidence, full tests and all three final oracles are green,… |
+
+```mermaid
+flowchart LR
+  subgraph W0[Wave 1]
+    T1_1["1.1 Freeze the dual-review baseline and evaluation corpus (wave 1)"]
+  end
+  subgraph W1[Wave 2]
+    T2_1["2.1 Add the new PLAN context contract (wave 2)"]
+    T2_2["2.2 Build deterministic SDD artifact handoffs (wave 2)"]
+  end
+  subgraph W2[Wave 3]
+    T3_1["3.1 Replace dual prompts with one bounded task reviewer (wave 3)"]
+    T3_2["3.2 Enforce a genuinely read-only task-review role (wave 3)"]
+  end
+  subgraph W3[Wave 4]
+    T4_1["4.1 Rewire SDD around file handoffs and combined routing (wave 4)"]
+    T4_2["4.2 Reuse a branch review package without merging final oracles (wave 4)"]
+  end
+  subgraph W4[Wave 5]
+    T5_1["5.1 Synchronize workflow documentation and deterministic gates (wave 5)"]
+    T5_2["5.2 Run the controlled candidate A/B and adjudicate results (wave 5)"]
+  end
+  subgraph W5[Wave 6]
+    T6_1["6.1 Final verification, deployment, and human-review handoff (wave 6)"]
+  end
+  W0 --> W1
+  W1 --> W2
+  W2 --> W3
+  W3 --> W4
+  W4 --> W5
+```
+
+### Progress
+- [ ] 1.1 — Freeze the dual-review baseline and evaluation corpus (wave 1)
+- [ ] 2.1 — Add the new PLAN context contract (wave 2)
+- [ ] 2.2 — Build deterministic SDD artifact handoffs (wave 2)
+- [ ] 3.1 — Replace dual prompts with one bounded task reviewer (wave 3)
+- [ ] 3.2 — Enforce a genuinely read-only task-review role (wave 3)
+- [ ] 4.1 — Rewire SDD around file handoffs and combined routing (wave 4)
+- [ ] 4.2 — Reuse a branch review package without merging final oracles (wave 4)
+- [ ] 5.1 — Synchronize workflow documentation and deterministic gates (wave 5)
+- [ ] 5.2 — Run the controlled candidate A/B and adjudicate results (wave 5)
+- [ ] 6.1 — Final verification, deployment, and human-review handoff (wave 6)
+<!-- AT-A-GLANCE:END -->
+
 ## 1. Motivation
 
 Remove duplicate per-task review work while preserving or strengthening every local safety
@@ -165,3 +227,6 @@ A/B evaluation.
   checks passed before the receipt refresh. PR creation remains blocked by collaborator permission.
 - 2026-07-29 — Final branch head `26d5af5` pushed. A second draft-PR attempt against `simplify`
   failed with `GraphQL: must be a collaborator (createPullRequest)`; no merge was attempted.
+- 2026-07-30 — Draft PR #183 opened against `simplify` (https://github.com/minhtran3124/agent-harness/pull/183).
+  The earlier rejections were an active-`gh`-account drift; switching to `minhtran3124` in the same
+  call as the `gh pr create` resolved it. No merge was attempted.
