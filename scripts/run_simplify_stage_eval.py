@@ -524,6 +524,7 @@ def _sandbox_environment(
             "PATH": os.pathsep.join(system_path),
             "TMPDIR": str(runtime),
             "XDG_CACHE_HOME": str(runtime / "cache"),
+            "CLAUDE_CONFIG_DIR": str(runtime / "claude-config"),
             "NO_COLOR": "1",
             "PYTHONDONTWRITEBYTECODE": "1",
             "PYTHONNOUSERSITE": "1",
@@ -664,6 +665,7 @@ def _collect_case(
             claude_command[0] = str(resolved_client)
             runtime = temp_root / "runtime"
             runtime.mkdir()
+            (runtime / "claude-config").mkdir()
             git_dir_text = _git(worktree, "rev-parse", "--git-dir").strip()
             git_dir = Path(git_dir_text)
             if not git_dir.is_absolute():

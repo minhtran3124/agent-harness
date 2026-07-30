@@ -453,6 +453,18 @@ def test_auth_environment_is_token_only_and_drops_cloud_credentials(monkeypatch)
     }
 
 
+def test_sandbox_environment_redirects_claude_config_dir_under_runtime(tmp_path):
+    runtime = tmp_path / "runtime"
+    runtime.mkdir()
+    client = tmp_path / "client" / "fake-claude"
+    client.parent.mkdir()
+    client.touch()
+
+    environment = MODULE._sandbox_environment(runtime, client, {})
+
+    assert environment["CLAUDE_CONFIG_DIR"] == str(runtime / "claude-config")
+
+
 def test_failed_sandbox_auth_preflight_creates_no_run_artifacts(tmp_path):
     fixture = write_fixture(tmp_path)
     client = tmp_path / "client"
