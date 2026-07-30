@@ -1,0 +1,10 @@
+diff --git a/app.py b/app.py
+index 51d60e8..fa6849b 100644
+--- a/app.py
++++ b/app.py
+@@ -3,4 +3,4 @@ def normalize(value):
+ 
+ 
+ def normalize_all(values):
+-    return [value.strip().lower() for value in values]
++    return [normalize(value) for value in values]

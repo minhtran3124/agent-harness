@@ -1,0 +1,12 @@
+diff --git a/app.py b/app.py
+index c81a54b..17ed642 100644
+--- a/app.py
++++ b/app.py
+@@ -1,2 +1,7 @@
+ def format_user(name):
+     return name.strip().title()
++
++
++def format_owner(name):
++    cleaned = name.strip()
++    return cleaned.title()

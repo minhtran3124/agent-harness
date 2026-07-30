@@ -9,7 +9,7 @@
         "-q"
       ],
       "returncode": 0,
-      "elapsed_seconds": 0.044407,
+      "elapsed_seconds": 0.033394,
       "stdout": "",
       "stderr": "----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
     }
@@ -24,7 +24,7 @@
         "test_app.py"
       ],
       "returncode": 0,
-      "elapsed_seconds": 0.026189,
+      "elapsed_seconds": 0.026275,
       "stdout": "",
       "stderr": ""
     }

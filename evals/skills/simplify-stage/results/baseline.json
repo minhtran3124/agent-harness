@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "mode": "advisory",
-  "collected_at": "2026-07-30T07:06:05.302977+00:00",
-  "source_commit_sha": "5a34caefd114f279bdca690102c233de8797bed6",
-  "input_digest": "acd10f3a98b30c7f6a7edd7560460e9ebffdcf5b6975553f24af76446c3e18b4",
+  "collected_at": "2026-07-30T14:22:00.241593+00:00",
+  "source_commit_sha": "f5f135cb2e66295ff5f26adc61356c72c846cc51",
+  "input_digest": "64bc41c6cfdde5c68d9512c5280446e3017dca295ed60d723cf5a08eeef08001",
   "environment": {
     "client_version": "2.1.220",
     "expected_client_version": "2.1.220",
@@ -13,10 +13,10 @@
     {
       "case_id": "abstraction-altitude",
       "fixture_digest": "384befc5b7008bea0858ddf2a353fdb317114aed4af7c3747ccfb542dd6ed593",
-      "worktree": "/var/folders/q6/7rd6k6715qj62b4x6g1gnqrh0000gn/T/simplify-eval-abstraction-altitude-mq57jyxq/worktree",
-      "base_sha": "d70f9e70f2273efbe94dde3c60ea0f358c506472",
-      "pre_sha": "c85509080dda634da05f69f33a047f15ecac43e0",
-      "post_sha": "c85509080dda634da05f69f33a047f15ecac43e0",
+      "worktree": "/var/folders/q6/7rd6k6715qj62b4x6g1gnqrh0000gn/T/simplify-eval-abstraction-altitude-bm7qwlo3/worktree",
+      "base_sha": "eceb14e58cb0c1d819cd575571541e827ad532ad",
+      "pre_sha": "b16fda5d7a78fd2f398d8f4748777d252affc76d",
+      "post_sha": "b16fda5d7a78fd2f398d8f4748777d252affc76d",
       "outcome": "no_op",
       "changed_files": [],
       "diff_stats": {
@@ -42,7 +42,7 @@
             "-q"
           ],
           "returncode": 0,
-          "elapsed_seconds": 0.038177,
+          "elapsed_seconds": 0.032898,
           "stdout": "",
           "stderr": "----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
         }
@@ -57,7 +57,7 @@
             "test_app.py"
           ],
           "returncode": 0,
-          "elapsed_seconds": 0.06447,
+          "elapsed_seconds": 0.025001,
           "stdout": "",
           "stderr": ""
         }
@@ -77,25 +77,25 @@
         },
         "transcript": {
           "path": "transcripts/baseline/abstraction-altitude.json",
-          "sha256": "931254365260e5d9cc6e9c42cf2127d2c1686f671100c5c59a7af181aade324a"
+          "sha256": "3ee4b4047f916d447a73a9f49e719de6b280e2bd6f3130c4caa4e223dc26f239"
         },
         "checks": {
           "path": "artifacts/baseline/abstraction-altitude/checks.json",
-          "sha256": "9a5e809a8bc014c07d60ba1d715b185e12f8bb226493e57614acaa7c862ba7b7"
+          "sha256": "a292a7d799a1d8f9f0d78e66f7856688bedf38d1994a00b0697041a8bd43fa6f"
         },
         "history_bundle": {
           "path": "artifacts/baseline/abstraction-altitude/history.bundle",
-          "sha256": "64aa8c651adf2bb3bdb3e2808413c752d650e0a537c1f9a2ced5c2c3c86f00e6"
+          "sha256": "33f6c6b693819b11b7cdab7855eb4ccaef5f30e54ad1fded4e2bbf6410488df6"
         }
       }
     },
     {
       "case_id": "already-simple",
       "fixture_digest": "c6c9be3982ecad7d00c0d61482c629ab2e88323a7d94eae10e5c0122b92a9056",
-      "worktree": "/var/folders/q6/7rd6k6715qj62b4x6g1gnqrh0000gn/T/simplify-eval-already-simple-e49df0w1/worktree",
-      "base_sha": "1e8a36d6cc78e96acd04d6cdbaed8b7e638fc989",
-      "pre_sha": "297402fcc51efb9cfad89f2f169c2c52642e1482",
-      "post_sha": "297402fcc51efb9cfad89f2f169c2c52642e1482",
+      "worktree": "/var/folders/q6/7rd6k6715qj62b4x6g1gnqrh0000gn/T/simplify-eval-already-simple-ya3y224f/worktree",
+      "base_sha": "71f4f97884a58835e85148152e54c4f1013f503d",
+      "pre_sha": "73af5b8872473ae2d9e5a87b0200a1582e386d94",
+      "post_sha": "73af5b8872473ae2d9e5a87b0200a1582e386d94",
       "outcome": "no_op",
       "changed_files": [],
       "diff_stats": {
@@ -121,7 +121,7 @@
             "-q"
           ],
           "returncode": 0,
-          "elapsed_seconds": 0.036153,
+          "elapsed_seconds": 0.030888,
           "stdout": "",
           "stderr": "----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
         }
@@ -136,7 +136,7 @@
             "test_app.py"
           ],
           "returncode": 0,
-          "elapsed_seconds": 0.031293,
+          "elapsed_seconds": 0.023933,
           "stdout": "",
           "stderr": ""
         }
@@ -156,25 +156,25 @@
         },
         "transcript": {
           "path": "transcripts/baseline/already-simple.json",
-          "sha256": "e0c82049b669b0585daf2e13f7c41aad1adf41719441474573780add86d02e5d"
+          "sha256": "e0437eb368411a018dc95c0bcba36565933d84a816436eaa9ec2898c7a604c54"
         },
         "checks": {
           "path": "artifacts/baseline/already-simple/checks.json",
-          "sha256": "2c4ebfd3e61c0dee2201f7918291563a8dce9e1c8b8d52fc3cb36cf787112f02"
+          "sha256": "f786a4c2ab593596a51bce1f2a058bb0f4693f43aeef9db5f92bd8d6a29a75a9"
         },
         "history_bundle": {
           "path": "artifacts/baseline/already-simple/history.bundle",
-          "sha256": "49125fce7047b91fdf1b73044113e798cf6e552defac4e79edc844f035778542"
+          "sha256": "89b23c16113981b6353ba632b98a04aa3deaf12e5f112723051796a284a20d74"
         }
       }
     },
     {
       "case_id": "cross-task-duplication",
       "fixture_digest": "1dfe846becf25240a9034e92e6b0749216236c20b091c1ab57d9191691c0c0d7",
-      "worktree": "/var/folders/q6/7rd6k6715qj62b4x6g1gnqrh0000gn/T/simplify-eval-cross-task-duplication-c95hdvsr/worktree",
-      "base_sha": "7d92c47f7b6596fd1453307d0aa130752f048757",
-      "pre_sha": "bbfa9335bed36ad4ad7f6d3cb70a24f1e022fdfe",
-      "post_sha": "bbfa9335bed36ad4ad7f6d3cb70a24f1e022fdfe",
+      "worktree": "/var/folders/q6/7rd6k6715qj62b4x6g1gnqrh0000gn/T/simplify-eval-cross-task-duplication-zcj1m3un/worktree",
+      "base_sha": "39d04aae4b6932f5033ec151d2334f48118e600a",
+      "pre_sha": "fca27e31e6ec162734ce304e6fe0404e799a9fff",
+      "post_sha": "fca27e31e6ec162734ce304e6fe0404e799a9fff",
       "outcome": "no_op",
       "changed_files": [],
       "diff_stats": {
@@ -200,7 +200,7 @@
             "-q"
           ],
           "returncode": 0,
-          "elapsed_seconds": 0.034567,
+          "elapsed_seconds": 0.03068,
           "stdout": "",
           "stderr": "----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
         }
@@ -215,7 +215,7 @@
             "test_app.py"
           ],
           "returncode": 0,
-          "elapsed_seconds": 0.026235,
+          "elapsed_seconds": 0.024037,
           "stdout": "",
           "stderr": ""
         }
@@ -235,25 +235,25 @@
         },
         "transcript": {
           "path": "transcripts/baseline/cross-task-duplication.json",
-          "sha256": "8dff1c9cc359d7073278ab22215724868d97eb00180a863d465f97e4643fadce"
+          "sha256": "658c8bbf3225ff5aefda02e5e46e97d677e3e21d308a14c7d39fb12902be9e9d"
         },
         "checks": {
           "path": "artifacts/baseline/cross-task-duplication/checks.json",
-          "sha256": "0de44e397baee6ec4cfdb72b37035967daa5d9e9d5932c8f6f3ed6a6f93d8032"
+          "sha256": "5edf2221e2aadadea08bdbe6ff40cb3d7e8975053083df261e32a65dff439cd9"
         },
         "history_bundle": {
           "path": "artifacts/baseline/cross-task-duplication/history.bundle",
-          "sha256": "b14716c456ba744bf466dc0b5a184d77d543f8bd5951600cb499ec099944b25d"
+          "sha256": "0e8101cd4fd7d137550476cff12f1f956a81d9010139746cbcebedf610b32058"
         }
       }
     },
     {
       "case_id": "docs-only",
       "fixture_digest": "b10e95901f116b8ce7fd6e8f98699a7fbd95f7a159577ede31b7cf9be9bb692f",
-      "worktree": "/var/folders/q6/7rd6k6715qj62b4x6g1gnqrh0000gn/T/simplify-eval-docs-only-eflvgvcd/worktree",
-      "base_sha": "7d918d053e8a2d6065d34b01c0d237d010599e61",
-      "pre_sha": "ced74dd9975ad534f4925f7bc11d78f65d16fa7b",
-      "post_sha": "ced74dd9975ad534f4925f7bc11d78f65d16fa7b",
+      "worktree": "/var/folders/q6/7rd6k6715qj62b4x6g1gnqrh0000gn/T/simplify-eval-docs-only-6dv3fdwa/worktree",
+      "base_sha": "ec9676ccaafc22ba9e06ac458e4dbfd37570eb62",
+      "pre_sha": "d91bbb0ee7d0da2b9086b8ed2c1428c7885eb845",
+      "post_sha": "d91bbb0ee7d0da2b9086b8ed2c1428c7885eb845",
       "outcome": "no_op",
       "changed_files": [],
       "diff_stats": {
@@ -279,7 +279,7 @@
             "-q"
           ],
           "returncode": 0,
-          "elapsed_seconds": 0.032957,
+          "elapsed_seconds": 0.032336,
           "stdout": "",
           "stderr": "----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
         }
@@ -294,7 +294,7 @@
             "test_app.py"
           ],
           "returncode": 0,
-          "elapsed_seconds": 0.025776,
+          "elapsed_seconds": 0.025099,
           "stdout": "",
           "stderr": ""
         }
@@ -314,25 +314,25 @@
         },
         "transcript": {
           "path": "transcripts/baseline/docs-only.json",
-          "sha256": "8e8ee9c8910a5312c7a439e65fa293ffe7239daa39cc22a7e783eb9c626c5754"
+          "sha256": "f73cf4d887587f6f26f6d9ca4fdec68ec6b413b6bec06050033f989e94cde309"
         },
         "checks": {
           "path": "artifacts/baseline/docs-only/checks.json",
-          "sha256": "4a3c7f2ce0c3fc3f587813bf1b1d00586b4ba4c357be5979b866b7579e71bb73"
+          "sha256": "62a8431c9202c3dcd4dd07f80db33e48f678fede750202f8f54d9179bcd26d4b"
         },
         "history_bundle": {
           "path": "artifacts/baseline/docs-only/history.bundle",
-          "sha256": "33c26cafe6b911c4376e58150bfc0ad9e874a30ee5ceca0544e78c1da07e7b75"
+          "sha256": "8511ce931fe9d4b0b469cca0a743599ea86c587599131d4b7ab48f30e158807f"
         }
       }
     },
     {
       "case_id": "efficiency-materialization",
       "fixture_digest": "3498502fe7b91d41b13ed37fbdb63ea1e3493b5cd7262abf6722a372812768ba",
-      "worktree": "/var/folders/q6/7rd6k6715qj62b4x6g1gnqrh0000gn/T/simplify-eval-efficiency-materialization-qaajxwws/worktree",
-      "base_sha": "a70481bc3ffbcc459527e0c1f3e4d3d572c9dbac",
-      "pre_sha": "ce090432d59d9bae7828937ae03dea112a536773",
-      "post_sha": "ce090432d59d9bae7828937ae03dea112a536773",
+      "worktree": "/var/folders/q6/7rd6k6715qj62b4x6g1gnqrh0000gn/T/simplify-eval-efficiency-materialization-gv9_th64/worktree",
+      "base_sha": "f8333bdc48dd921f64db4e474bc84ca5afe1e239",
+      "pre_sha": "3b2379dea2d84a2e52115965e656b718b8789823",
+      "post_sha": "3b2379dea2d84a2e52115965e656b718b8789823",
       "outcome": "no_op",
       "changed_files": [],
       "diff_stats": {
@@ -358,7 +358,7 @@
             "-q"
           ],
           "returncode": 0,
-          "elapsed_seconds": 0.037934,
+          "elapsed_seconds": 0.032395,
           "stdout": "",
           "stderr": "----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
         }
@@ -373,7 +373,7 @@
             "test_app.py"
           ],
           "returncode": 0,
-          "elapsed_seconds": 0.02651,
+          "elapsed_seconds": 0.025408,
           "stdout": "",
           "stderr": ""
         }
@@ -393,25 +393,25 @@
         },
         "transcript": {
           "path": "transcripts/baseline/efficiency-materialization.json",
-          "sha256": "3bcb2639d8bd9f837c70f5b8ca9057aa18ecf517ed5f5e08faef3cf0a5d1ee95"
+          "sha256": "e573d4e1365c7c99dbc47702f9a7e0757ea796d0b36ed7c1435d0114bbfcc093"
         },
         "checks": {
           "path": "artifacts/baseline/efficiency-materialization/checks.json",
-          "sha256": "ee0b47bdb2281e0f6391a22bf2ecd3575cd876a15575d906256bf055dacf5bfa"
+          "sha256": "e5aac92d0ba31825d458a98849778460d7654bd304db1c5d0e6d6c7727b00cdd"
         },
         "history_bundle": {
           "path": "artifacts/baseline/efficiency-materialization/history.bundle",
-          "sha256": "81bbb840f52001a4767cf1485ff215e010513f59e614c91e1cb7511f6498765c"
+          "sha256": "e6df4ddf48750fea676e1609e7df2279f99c065dca7bf5bbf1139a44a44d6daf"
         }
       }
     },
     {
       "case_id": "public-contract",
       "fixture_digest": "228074c79ad28dc6f8c6f78cdd6349c5a509736c7f7159d1afbc9d6365603b00",
-      "worktree": "/var/folders/q6/7rd6k6715qj62b4x6g1gnqrh0000gn/T/simplify-eval-public-contract-g3fkwsqj/worktree",
-      "base_sha": "ba2f0e17725f2d544b80f2994876ce963006dca9",
-      "pre_sha": "12cd3c18a7b817ffba778baa75bad680c208a916",
-      "post_sha": "12cd3c18a7b817ffba778baa75bad680c208a916",
+      "worktree": "/var/folders/q6/7rd6k6715qj62b4x6g1gnqrh0000gn/T/simplify-eval-public-contract-eo4ix5np/worktree",
+      "base_sha": "5e4555dea65fcbb66a26ef0765ae6107252bfaac",
+      "pre_sha": "fe859b5029475810ae0fa999baa1137e5f915a1c",
+      "post_sha": "fe859b5029475810ae0fa999baa1137e5f915a1c",
       "outcome": "no_op",
       "changed_files": [],
       "diff_stats": {
@@ -437,7 +437,7 @@
             "-q"
           ],
           "returncode": 0,
-          "elapsed_seconds": 0.032904,
+          "elapsed_seconds": 0.032421,
           "stdout": "",
           "stderr": "----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
         }
@@ -452,7 +452,7 @@
             "test_app.py"
           ],
           "returncode": 0,
-          "elapsed_seconds": 0.025508,
+          "elapsed_seconds": 0.024244,
           "stdout": "",
           "stderr": ""
         }
@@ -472,25 +472,25 @@
         },
         "transcript": {
           "path": "transcripts/baseline/public-contract.json",
-          "sha256": "3e411a573f2c4d000cd124e789486542365836f280d4d42100dee29e5c43a254"
+          "sha256": "1739b3307392d1c11f28257c4fc6c4a827960086adbcbaba4b00f0812fc41e75"
         },
         "checks": {
           "path": "artifacts/baseline/public-contract/checks.json",
-          "sha256": "61cb5fd0bcc1fc7e038a3ebfad4f83a12487676b8018cc2fcd90424545c913cb"
+          "sha256": "f143fb354e2bc6d3d3247eefa194d058c0675007b6718e0cb8192096203b6d39"
         },
         "history_bundle": {
           "path": "artifacts/baseline/public-contract/history.bundle",
-          "sha256": "44b84b7b63f32805dc8f94a06ff2d53fb2c48a8511dbee81801dabbd2c4ba102"
+          "sha256": "ef6fb3e3c72a6cea1768fc8b91554fb9c79abc8a550441f7236fa846dae09943"
         }
       }
     },
     {
       "case_id": "required-behavior",
       "fixture_digest": "6bd5718de2dd64e01667f5741c47da699d8f6ecf7b1e75106df3ccb5c9b1676d",
-      "worktree": "/var/folders/q6/7rd6k6715qj62b4x6g1gnqrh0000gn/T/simplify-eval-required-behavior-ejk6phut/worktree",
-      "base_sha": "d7e2a78bfbb5591177e0e1ce5dc6ad3966486a7d",
-      "pre_sha": "56a04de77b339d38bb6ac6724fd504d684a6639c",
-      "post_sha": "56a04de77b339d38bb6ac6724fd504d684a6639c",
+      "worktree": "/var/folders/q6/7rd6k6715qj62b4x6g1gnqrh0000gn/T/simplify-eval-required-behavior-brv8z1yi/worktree",
+      "base_sha": "868d087b401222fec17b461505202c17f2ce4f31",
+      "pre_sha": "90c475b35d197ac34baed7be2112bb12da74d408",
+      "post_sha": "90c475b35d197ac34baed7be2112bb12da74d408",
       "outcome": "no_op",
       "changed_files": [],
       "diff_stats": {
@@ -516,7 +516,7 @@
             "-q"
           ],
           "returncode": 0,
-          "elapsed_seconds": 0.035726,
+          "elapsed_seconds": 0.031168,
           "stdout": "",
           "stderr": "----------------------------------------------------------------------\nRan 2 tests in 0.000s\n\nOK\n"
         }
@@ -531,7 +531,7 @@
             "test_app.py"
           ],
           "returncode": 0,
-          "elapsed_seconds": 0.028218,
+          "elapsed_seconds": 0.024281,
           "stdout": "",
           "stderr": ""
         }
@@ -551,25 +551,25 @@
         },
         "transcript": {
           "path": "transcripts/baseline/required-behavior.json",
-          "sha256": "037e5a589fee853b9d1244bf0736793377d71da9968d898b58aadaa7b376e1cb"
+          "sha256": "c583dbc89d7b62023f6f00d64baa02e8190bd75fb232b661646ddea60e78e3b2"
         },
         "checks": {
           "path": "artifacts/baseline/required-behavior/checks.json",
-          "sha256": "b3f409449782c6e328b84532b0db1ac36514d3fbedc96402f1dc94603b4a0f74"
+          "sha256": "cc0c6d5be2e8807dddfb1a745033718d27f829bf035db601809f4f0aec7e4a70"
         },
         "history_bundle": {
           "path": "artifacts/baseline/required-behavior/history.bundle",
-          "sha256": "8f8e2d8812f92624480ede4bf646bf910858a186f2e7ea419ab656704cfec9cd"
+          "sha256": "6b5ad07e0def27a598c5c5b82b6589d1a3fc43820a92affa58349641590b8f25"
         }
       }
     },
     {
       "case_id": "reuse-existing-helper",
       "fixture_digest": "fecf2a983b28097b8549e37be4099b6701cda79fb696d39b8912b224f39e374b",
-      "worktree": "/var/folders/q6/7rd6k6715qj62b4x6g1gnqrh0000gn/T/simplify-eval-reuse-existing-helper-v0no5s4c/worktree",
-      "base_sha": "87aa97739bd75b644209aa894d6aa562b735e866",
-      "pre_sha": "20d095fb33742b0ff8163da9fe254224a8edb931",
-      "post_sha": "20d095fb33742b0ff8163da9fe254224a8edb931",
+      "worktree": "/var/folders/q6/7rd6k6715qj62b4x6g1gnqrh0000gn/T/simplify-eval-reuse-existing-helper-pqhxiu72/worktree",
+      "base_sha": "ba122c12b33dec2dde1b5c10c36d284e615ebf80",
+      "pre_sha": "3bf2b37cda47e93b20bad524fcac4ed0c8e0d26e",
+      "post_sha": "3bf2b37cda47e93b20bad524fcac4ed0c8e0d26e",
       "outcome": "no_op",
       "changed_files": [],
       "diff_stats": {
@@ -595,7 +595,7 @@
             "-q"
           ],
           "returncode": 0,
-          "elapsed_seconds": 0.040664,
+          "elapsed_seconds": 0.034552,
           "stdout": "",
           "stderr": "----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
         }
@@ -610,7 +610,7 @@
             "test_app.py"
           ],
           "returncode": 0,
-          "elapsed_seconds": 0.027267,
+          "elapsed_seconds": 0.025914,
           "stdout": "",
           "stderr": ""
         }
@@ -630,15 +630,15 @@
         },
         "transcript": {
           "path": "transcripts/baseline/reuse-existing-helper.json",
-          "sha256": "c8a8696670903a4f169f4129e9a0c534f35719e2a0f7a0d6708cac089ec7a95a"
+          "sha256": "e0ecfe2032228d1e78d8454ec539d8c12e0264816c9a2954b85432caa0c725c3"
         },
         "checks": {
           "path": "artifacts/baseline/reuse-existing-helper/checks.json",
-          "sha256": "09b955e7a08a0e65274bb91c6702d955b4f9a761582dc3d908e76858f7de1559"
+          "sha256": "44033c6455b972e916e6d28ec4c0bad516158fad7f00d25f9654112be00f412b"
         },
         "history_bundle": {
           "path": "artifacts/baseline/reuse-existing-helper/history.bundle",
-          "sha256": "95291b906d09297a27b0d0eca5f09a2e0f26475417b3e6a8e7ac343f4a199057"
+          "sha256": "bce4e47d9f2e8d9cb82e4c579ad7eaca3b1eba3aadd895449f7e4fa7ff6347ea"
         }
       }
     }

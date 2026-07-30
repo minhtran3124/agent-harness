@@ -1,0 +1,13 @@
+{
+  "case_id": "required-behavior",
+  "command": [],
+  "cwd": "/var/folders/q6/7rd6k6715qj62b4x6g1gnqrh0000gn/T/simplify-eval-required-behavior-ejk6phut/worktree",
+  "returncode": 0,
+  "elapsed_seconds": 0.0,
+  "stdout": "",
+  "stderr": "",
+  "result": "advisory baseline: simplify not invoked",
+  "usage": {},
+  "observed_skill_invocations": [],
+  "skill_tool_evidence": null
+}

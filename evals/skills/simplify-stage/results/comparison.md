@@ -1,12 +1,79 @@
 # Shadow-eval comparison — require-claude-simplify-gate, Task 2.1
 
-## Rollout decision: **ACCEPT** (round 3, current) — after REJECT (round 1) → REJECT, different cause (round 2)
+## Rollout decision: **ACCEPT** (round 4, current) — re-collected after round 3's evidence went digest-stale
 
-Three full real-candidate rounds ran against Claude Code 2.1.220. See "Round 3" immediately below
-for the current, passing state; rounds 1 and 2 are preserved as history further down for anyone
+Four full real-candidate rounds ran against Claude Code 2.1.220. See "Round 4" immediately below
+for the current, passing state; rounds 1-3 are preserved as history further down for anyone
 auditing how the prompt reached this point.
 
-### Round 3 (current) — **ACCEPT**: both quality and value gates pass
+### Round 4 (current) — **ACCEPT**: re-collected after digest staleness; same prompt, same result
+
+Round 3's evidence (`baseline.json`/`candidate.json` at commit `5a34cae`) was pinned and ACCEPTed,
+but the branch's own later real `/simplify` self-application (commit `e90413b`, Task 2.1's
+production run against this branch's own diff) applied conservative cleanup to
+`scripts/run_simplify_stage_eval.py` and `scripts/score_simplify_stage_eval.py` themselves — two of
+the files `evaluation_input_digest()` deliberately binds as "executable eval code." That is exactly
+what the digest is designed to catch: `verify_summary.py --check` correctly reported
+`evaluation input digest is stale against current inputs` for SC-8/SC-9 at the post-cleanup HEAD.
+The prompt in `_collect_case()` did not change (only internal refactors — a duplicate-function
+merge and a delegate-to-shared-helper change, per `e90413b`'s commit message) so a re-run was
+expected to reproduce round 3's result exactly, and it did.
+
+Round 3's `baseline.json`/`candidate.json` and their artifacts/transcripts are preserved, renamed
+`*-superseded-precommit-5a34cae-round3-accept`, not deleted. Two throwaway candidate attempts were
+also preserved as rejected evidence before the successful round-4 collection: one hit the
+`/tmp/claude-<uid>` sandbox path correctly (no sandbox issue this time) but failed with an expired
+Keychain OAuth token unrelated to any code in this branch (`candidate-rejected-oauth-token-expired`,
+`-attempt2`) — a real successful `claude auth login` refreshed a *different*, suffixed Keychain
+service entry (`Claude Code-credentials-2302d70c`) than the unsuffixed name the harness's
+`_resolve_auth_environment()` hard-codes; the fresh token was passed in via the harness's existing
+`CLAUDE_CODE_OAUTH_TOKEN` env-var override (no code change) to unblock this run without touching
+the already-reviewed Keychain-extraction code this late in the branch.
+
+Re-ran baseline + candidate at HEAD `f5f135c`:
+
+```
+python3 scripts/score_simplify_stage_eval.py --compare baseline.json candidate.json \
+  --fixtures evals/skills/simplify-stage/fixtures --quality-gate
+```
+```json
+{
+  "quality_pass": true,
+  "value_evaluated": true,
+  "value_pass": true,
+  "baseline_value_score": 0,
+  "value_score": 4,
+  "minimum_value_score": 3,
+  "errors": []
+}
+```
+
+All 8 fixtures matched their `truth.json` expectation exactly, identical to round 3:
+
+| Fixture | Expected | Actual (round 4) | Match |
+| --- | --- | --- | --- |
+| `abstraction-altitude` | changed/no_op, `app.py` only | changed, `app.py` only | yes |
+| `already-simple` | **no_op only** | **no_op** | yes |
+| `cross-task-duplication` | changed/no_op, `app.py` only | changed, `app.py` only | yes |
+| `docs-only` | no_op only | no_op | yes |
+| `efficiency-materialization` | changed/no_op, `app.py` only | changed, `app.py` only | yes |
+| `public-contract` | no_op only | no_op | yes |
+| `required-behavior` | no_op only | no_op | yes |
+| `reuse-existing-helper` | changed/no_op, `app.py` only | changed, `app.py` only | yes |
+
+Runtime/tokens: 559.6s total elapsed, 35,834 output tokens across the 8 real invocations
+(consistent with rounds 1-3; no material cost change).
+
+**Conclusion for round 4:** re-collecting after a digest-invalidating internal refactor to the eval
+harness itself reproduced round 3's ACCEPT exactly, confirming the harness's own recalibration
+requirement (design.md §7) works as intended — code drift in the pinned eval's own executable
+surface is caught, not silently ignored, and re-validation is cheap when the invocation prompt is
+unchanged. This is the current pinned-prompt contract; a future change to `_collect_case()`'s
+invocation prompt should be re-validated against this same corpus before being trusted.
+
+---
+
+### Round 3 (superseded — digest went stale after round 4's cause, see above) — ACCEPT: both quality and value gates pass
 
 Round 2 fixed the original safety miss but overcorrected, suppressing genuine DRY consolidation on
 two `value_opportunity` fixtures, plus leaving a stray file. Commit `5a34cae` re-anchored the
