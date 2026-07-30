@@ -1,0 +1,261 @@
+#!/usr/bin/env python3
+"""Aggregate consistency check for the required Claude Code `/simplify` stage.
+
+Mirrors scripts/check_manifest.py's pattern: a stdlib-only `check(root) -> int` that collects
+one "simplify-adoption: <category> drift: <detail>" line per problem. Exit 0 = consistent.
+Exit 1 = drift.
+
+Checks:
+  A. policy       — rules/simplify-stage.md's stated version floor matches
+                     scripts/check_claude_simplify.py's MINIMUM_VERSION.
+  B. ordering     — skills/subagent-driven-development/SKILL.md hands off to
+                     references/simplify-stage.md strictly before references/review-chain.md.
+  C. receipt      — scripts/check_review_receipt.py still defines --require-simplify-if.
+  D. hook         — hooks/risk-corroboration.sh's tiny-lane SIZE_THRESHOLD matches
+                     scripts/check_claude_simplify.py's TINY_SOURCE_LINE_THRESHOLD.
+  E. documentation — no stale claim that /simplify is optional on required scope or that it
+                     owns correctness, in CLAUDE.md / HARNESS.md / skills/README.md / rules/*.md.
+  F. deployed parity — when a deployed .claude/ mirror exists, the simplify-stage contract's
+                     surface/consumer files under a synced top-level dir are not stale there.
+                     No .claude/ mirror => skip this check with a note (pre-deploy is valid).
+
+Run: python3 scripts/check_simplify_adoption.py [--root DIR]
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import sys
+from pathlib import Path
+
+PREFIX = "simplify-adoption"
+
+# Top-level dirs scripts/deploy-harness.sh mirrors whole into .claude/ (SYNCED_DIRS_RE there).
+_DEPLOY_PREFIXES = ("skills/", "agents/", "hooks/", "rules/", "templates/", "runtime/")
+
+_VERSION_FLOOR_RE = re.compile(
+    r"supported by Claude Code \*\*(\d+\.\d+\.\d+) or newer\*\*"
+)
+_MINIMUM_VERSION_RE = re.compile(r"MINIMUM_VERSION\s*=\s*\(([^)]+)\)")
+_TINY_THRESHOLD_CONST_RE = re.compile(r"TINY_SOURCE_LINE_THRESHOLD\s*=\s*(\d+)")
+_HOOK_TINY_THRESHOLD_RE = re.compile(r"tiny\)\s*SIZE_THRESHOLD=(\d+)")
+
+_STALE_DOC_PATTERNS = [
+    re.compile(r"/simplify[^.\n]{0,80}\boptional\b", re.IGNORECASE),
+    re.compile(r"\boptional\b[^.\n]{0,80}/simplify", re.IGNORECASE),
+    re.compile(r"/simplify[^.\n]{0,80}\bowns?\s+correctness\b", re.IGNORECASE),
+]
+
+_DOC_STATIC_FILES = ("CLAUDE.md", "HARNESS.md", "skills/README.md")
+
+
+def _problem(problems: list[str], kind: str, detail: str) -> None:
+    problems.append(f"{PREFIX}: {kind} drift: {detail}")
+
+
+def _check_version_floor(root: Path, problems: list[str]) -> None:
+    policy_path = root / "rules" / "simplify-stage.md"
+    checker_path = root / "scripts" / "check_claude_simplify.py"
+    if not policy_path.is_file() or not checker_path.is_file():
+        _problem(problems, "policy", f"missing {policy_path} or {checker_path}")
+        return
+
+    m_policy = _VERSION_FLOOR_RE.search(policy_path.read_text(encoding="utf-8"))
+    if not m_policy:
+        _problem(
+            problems,
+            "policy",
+            f"{policy_path} has no 'supported by Claude Code **X.Y.Z or newer**' statement",
+        )
+        return
+
+    m_checker = _MINIMUM_VERSION_RE.search(checker_path.read_text(encoding="utf-8"))
+    if not m_checker:
+        _problem(problems, "policy", f"{checker_path} has no MINIMUM_VERSION constant")
+        return
+
+    policy_version = m_policy.group(1)
+    checker_version = ".".join(p.strip() for p in m_checker.group(1).split(","))
+    if policy_version != checker_version:
+        _problem(
+            problems,
+            "policy",
+            f"rules/simplify-stage.md states {policy_version} but "
+            f"check_claude_simplify.py MINIMUM_VERSION is {checker_version}",
+        )
+
+
+def _check_ordering(root: Path, problems: list[str]) -> None:
+    skill_path = root / "skills" / "subagent-driven-development" / "SKILL.md"
+    if not skill_path.is_file():
+        _problem(problems, "ordering", f"{skill_path} not found")
+        return
+
+    text = skill_path.read_text(encoding="utf-8")
+    simplify_idx = text.find("references/simplify-stage.md")
+    chain_idx = text.find("references/review-chain.md")
+    if simplify_idx == -1 or chain_idx == -1:
+        _problem(
+            problems,
+            "ordering",
+            "SKILL.md is missing a reference to references/simplify-stage.md "
+            "or references/review-chain.md",
+        )
+        return
+
+    if not simplify_idx < chain_idx:
+        _problem(
+            problems,
+            "ordering",
+            "SKILL.md does not place references/simplify-stage.md before "
+            "references/review-chain.md",
+        )
+
+
+def _check_receipt_flag(root: Path, problems: list[str]) -> None:
+    path = root / "scripts" / "check_review_receipt.py"
+    if not path.is_file():
+        _problem(problems, "receipt", f"{path} not found")
+        return
+    if '"--require-simplify-if"' not in path.read_text(encoding="utf-8"):
+        _problem(problems, "receipt", f"{path} no longer defines --require-simplify-if")
+
+
+def _check_hook_threshold(root: Path, problems: list[str]) -> None:
+    hook_path = root / "hooks" / "risk-corroboration.sh"
+    checker_path = root / "scripts" / "check_claude_simplify.py"
+    if not hook_path.is_file() or not checker_path.is_file():
+        _problem(problems, "hook", f"missing {hook_path} or {checker_path}")
+        return
+
+    m_hook = _HOOK_TINY_THRESHOLD_RE.search(hook_path.read_text(encoding="utf-8"))
+    if not m_hook:
+        _problem(problems, "hook", f"{hook_path} has no tiny-lane SIZE_THRESHOLD")
+        return
+
+    m_checker = _TINY_THRESHOLD_CONST_RE.search(
+        checker_path.read_text(encoding="utf-8")
+    )
+    if not m_checker:
+        _problem(
+            problems,
+            "hook",
+            f"{checker_path} has no TINY_SOURCE_LINE_THRESHOLD constant",
+        )
+        return
+
+    if m_hook.group(1) != m_checker.group(1):
+        _problem(
+            problems,
+            "hook",
+            f"hooks/risk-corroboration.sh tiny SIZE_THRESHOLD={m_hook.group(1)} but "
+            f"check_claude_simplify.py TINY_SOURCE_LINE_THRESHOLD={m_checker.group(1)}",
+        )
+
+
+def _check_documentation(root: Path, problems: list[str]) -> None:
+    paths = [root / p for p in _DOC_STATIC_FILES]
+    rules_dir = root / "rules"
+    if rules_dir.is_dir():
+        paths.extend(sorted(rules_dir.glob("*.md")))
+
+    for path in paths:
+        if not path.is_file():
+            continue
+        text = path.read_text(encoding="utf-8")
+        for pattern in _STALE_DOC_PATTERNS:
+            if pattern.search(text):
+                try:
+                    rel = path.relative_to(root)
+                except ValueError:
+                    rel = path
+                _problem(
+                    problems,
+                    "documentation",
+                    f"{rel} contains a stale claim matching {pattern.pattern!r}",
+                )
+
+
+def _deployed_targets(root: Path) -> list[str]:
+    manifest_path = root / "harness-manifest.json"
+    if not manifest_path.is_file():
+        return []
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return []
+
+    contract = manifest.get("contracts", {}).get("simplify-stage-contract")
+    if not isinstance(contract, dict):
+        return []
+
+    paths = list(contract.get("surface", [])) + list(contract.get("consumers", []))
+    return sorted(
+        {p for p in paths if isinstance(p, str) and p.startswith(_DEPLOY_PREFIXES)}
+    )
+
+
+def _check_deployed_parity(root: Path, problems: list[str]) -> None:
+    claude_dir = root / ".claude"
+    if not claude_dir.is_dir():
+        print(
+            f"{PREFIX}: deployed-parity: no .claude/ mirror present — skipping "
+            "(pre-deploy state; run scripts/deploy-harness.sh to populate it)",
+            file=sys.stderr,
+        )
+        return
+
+    for rel in _deployed_targets(root):
+        src = root / rel
+        if not src.is_file():
+            # Missing on source is not this check's concern (covered elsewhere).
+            continue
+        dst = claude_dir / rel
+        if not dst.is_file():
+            _problem(
+                problems, "deployed-parity", f"{rel} not deployed to .claude/{rel}"
+            )
+            continue
+        if src.read_text(encoding="utf-8") != dst.read_text(encoding="utf-8"):
+            _problem(
+                problems, "deployed-parity", f".claude/{rel} is stale relative to {rel}"
+            )
+
+
+def check(root: Path) -> int:
+    problems: list[str] = []  # local, not module-global — safe to call repeatedly
+
+    _check_version_floor(root, problems)
+    _check_ordering(root, problems)
+    _check_receipt_flag(root, problems)
+    _check_hook_threshold(root, problems)
+    _check_documentation(root, problems)
+    _check_deployed_parity(root, problems)
+
+    if problems:
+        for p in problems:
+            print(p, file=sys.stderr)
+        print(f"\n{len(problems)} simplify-adoption drift problem(s).", file=sys.stderr)
+        return 1
+
+    print(
+        "simplify-adoption: consistent — policy, ordering, receipt, hook, docs, and "
+        "deployed harness (if present) all agree"
+    )
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument(
+        "--root", default=None, help="repo root (default: script's parent dir)"
+    )
+    args = ap.parse_args(argv)
+    root = Path(args.root) if args.root else Path(__file__).resolve().parent.parent
+    return check(root)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

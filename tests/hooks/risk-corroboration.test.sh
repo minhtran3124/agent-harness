@@ -226,6 +226,7 @@ stage "$repo" "app/data.py" "$big_content"
 stage "$repo" "specs/x/SUMMARY.md" "Lane: tiny"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_contains 0 "/simplify"
+assert_rc_contains 0 "required final"
 
 t "diff >600 changed lines + Lane: normal → /simplify note printed, exit 0"
 repo=$(new_repo $H)
@@ -234,6 +235,7 @@ stage "$repo" "app/data.py" "$big_content"
 stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_contains 0 "/simplify"
+assert_rc_contains 0 "required final"
 
 t "large diff confined to .claude/ (excluded from CODE_ADDED, no other gate) + Lane: tiny → /simplify note still fires (unfiltered numstat)"
 repo=$(new_repo $H)
@@ -242,6 +244,7 @@ stage "$repo" ".claude/rules/notes.md" "$big_content"
 stage "$repo" "specs/x/SUMMARY.md" "Lane: tiny"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_contains 0 "/simplify"
+assert_rc_contains 0 "required final"
 
 # Regression for the -U0 numstat bug (gh-159 fix-loop round 2): `-U0` forces `git diff`
 # to emit patch mode, so `--numstat` output was numstat rows PLUS the full unified diff

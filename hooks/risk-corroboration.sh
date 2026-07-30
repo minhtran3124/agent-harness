@@ -132,7 +132,7 @@ if [ -n "$SIZE_THRESHOLD" ]; then
     END { print sum+0 }
   ')
   if [ "$CHANGED_LINES" -gt "$SIZE_THRESHOLD" ]; then
-    echo "[RISK CORROBORATION] note: $CHANGED_LINES changed lines for a Lane: $LANE_VAL task — consider running /simplify before commit." >&2
+    echo "[RISK CORROBORATION] note: $CHANGED_LINES changed lines for a Lane: $LANE_VAL task — the required final /simplify stage runs once before finishing (skills/subagent-driven-development/references/simplify-stage.md); running /simplify now as an early checkpoint can still help." >&2
   fi
 fi
 

@@ -86,6 +86,18 @@
         ".github/workflows/post-merge-maintenance.yml"
       ],
       "desc": "Phase C (GitHub issue #129) workflow checkpoints that call runtime/run_state.py"
+    },
+    "simplify-stage-contract": {
+      "surface": ["rules/simplify-stage.md", "scripts/check_claude_simplify.py"],
+      "consumers": [
+        "skills/subagent-driven-development/references/simplify-stage.md",
+        "skills/subagent-driven-development/references/resume.md",
+        "skills/subagent-driven-development/references/review-chain.md",
+        "scripts/check_review_receipt.py",
+        "hooks/risk-corroboration.sh",
+        "skills/finishing-a-development-branch/SKILL.md"
+      ],
+      "desc": "simplify-stage policy authority -> SDD ordering, receipt gate, hook advisory, finishing gate; validated by scripts/check_simplify_adoption.py"
     }
   },
 

@@ -28,6 +28,7 @@ Skipping a step the lane requires is a hard gate violation:
 feature-intake (classify → lane + confidence → route)
   → [brainstorming → xia2 →] writing-plans → using-git-worktrees
   → subagent-driven-development (file handoffs + one task reviewer with two verdicts; same session, or `resume <slug>` from a new session — same skill)
+  → simplify-stage (required bundled `/simplify` cleanup on qualifying diffs, once, before the branch package + oracles — `skills/subagent-driven-development/references/simplify-stage.md`)
   → workflow-engine diffs: context-propagation-audit, then correctness-review (final adversarial pass — also invokable standalone on any diff)
   → intent-review (diff ↔ original request, blind to plan — the third oracle)
   → compound → finishing-a-development-branch
@@ -49,7 +50,7 @@ Hooks live in `hooks/` (top-level). Register them in `settings.json` under the a
 |---|---|---|---|
 | `check-untracked-py.sh` | PreToolUse (Bash `git *`) | Block commit/push if untracked `.py` files exist | ✅ |
 | `commit-quality-gate.sh` | PreToolUse (Bash `git commit`) | Secrets scan + pending-escalation gate + lane-evidence gate (`verify_summary.py --lane` on each staged `SUMMARY.md`) + debug artifact check + targeted pytest | ✅ |
-| `risk-corroboration.sh` | PreToolUse (Bash `git commit`) | Corroborate the declared `Lane:` against the staged diff; per-gate mode comes from `harness-manifest.json` (`hard_gates.detectable[].mode`) — block-mode gates deny a below-`high-risk` lane, warn-mode gates (`workflow-engine`, `weakening-validation`) print a note and allow | ✅ |
+| `risk-corroboration.sh` | PreToolUse (Bash `git commit`) | Corroborate the declared `Lane:` against the staged diff; per-gate mode comes from `harness-manifest.json` (`hard_gates.detectable[].mode`) — block-mode gates deny a below-`high-risk` lane, warn-mode gates (`workflow-engine`, `weakening-validation`) print a note and allow; also warns (never blocks) that the required final `/simplify` stage runs before finishing when a diff exceeds its lane's size threshold | ✅ |
 | `branch-guard.sh` | PreToolUse (Bash `git commit`) | Warn when committing on `main` | ✅ |
 | `branch-isolation-guard.sh` | PreToolUse (Edit/Write) | Hard-block code edits on a shared branch (`HARNESS_SHARED_BRANCHES`, default `main`/`master`) regardless of plan state, unless break-glass `BRANCH_ISOLATION_REASON` is set. `specs/*` bookkeeping is exempt (intake writes `SUMMARY.md` before the branch exists). (Write-time enforcement; `branch-guard.sh` only warns at commit time.) | ✅ |
 | `ruff-on-edit.sh` | PostToolUse (Edit/Write) | `ruff --fix` + `ruff format` on edited `.py` files | ✅ |
