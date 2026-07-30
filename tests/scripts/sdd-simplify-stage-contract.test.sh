@@ -110,6 +110,19 @@ t "no repository skill named simplify exists (explicit non-goal)"
 if [ ! -d "$ROOT/skills/simplify" ]; then pass
 else fail "skills/simplify/ must not exist"; fi
 
+# stage_delta_brief_wired_ok <dir> — 0 iff simplify-stage.md builds the delta reviewer's
+# brief via task_brief.py --delta-description (which mechanically embeds the plan's
+# Global Constraints), not just a prose claim with no delivery mechanism (a real gap a
+# context-propagation audit found and this closes).
+stage_delta_brief_wired_ok() {
+  grep -q -- '--delta-description' "$1/$STAGE" \
+    && flat "$1" "$STAGE" | grep -qiF 'not `--task`'
+}
+
+t "simplify-stage.md builds the delta brief via task_brief.py --delta-description, not just prose"
+if stage_delta_brief_wired_ok "$ROOT"; then pass
+else fail "no --delta-description wiring in $STAGE"; fi
+
 # --- SC-5: changed outcome rejects on cannot_verify/needs_fixes/Critical-Important --
 
 # stage_rejects_ok <dir> — 0 iff simplify-stage.md rejects a changed outcome on
@@ -223,6 +236,12 @@ m=$(mut_dir)
 sed -i.bak 's/exactly once/once/' "$m/$STAGE" && rm -f "$m/$STAGE.bak"
 if ! stage_once_ok "$m"; then pass
 else fail "weakening 'exactly once' to 'once' was NOT detected"; fi
+
+t "mutation: removing the --delta-description brief wiring is detected"
+m=$(mut_dir)
+sed -i.bak '/--delta-description/d' "$m/$STAGE" && rm -f "$m/$STAGE.bak"
+if ! stage_delta_brief_wired_ok "$m"; then pass
+else fail "removing --delta-description wiring was NOT detected"; fi
 
 t "mutation: a repository skills/simplify/ directory is detected as a violation"
 m=$(mut_dir)

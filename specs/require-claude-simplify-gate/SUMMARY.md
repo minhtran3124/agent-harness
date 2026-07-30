@@ -51,6 +51,15 @@ and final reviews over the resulting HEAD.
   bookkeeping decision on `reviewable_paths` instead of `required`. Commit `0611dbb`.
 - Rule 1 — Assorted unused-variable removals and lint fixups caught by `ruff`/mutation-review
   passes across waves 1-5 (no behavior change, folded into each wave's own commit).
+- Rule 3 — Wave 6's real, production `/simplify` invocation over this branch's own diff (Global
+  Constraint requires shipping this feature to eat its own dogfood) surfaced a context-propagation
+  audit FAIL: `simplify-stage.md`'s delta-review dispatch said "with the plan's Global Constraints
+  as context" but had no delivery mechanism for a non-task delta (`task_brief.py` required a
+  `### Task N.N` id). Added a `--delta-description` mode to `task_brief.py` reusing the same
+  `Global Constraints` extraction, wired it into `simplify-stage.md`, and added a mutation-tested
+  drift check. Independently re-verified the FAIL is closed. Not committed as its own numbered
+  wave — a final-review-cycle fix required before the receipt/PR, per the same Rule-3 authority as
+  the other entries above.
 
 ### Verify
 
