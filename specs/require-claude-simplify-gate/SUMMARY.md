@@ -16,9 +16,23 @@ Input-type: harness improvement
 
 ## What changed
 
-Created a research brief, approved design, and executable proposed plan for adding Claude Code's
-bundled `/simplify` as a signal-gated cleanup stage before final review. No runtime workflow
-behavior was changed.
+Started as a research brief, approved design, and executable proposed plan for adding Claude
+Code's bundled `/simplify` as a signal-gated cleanup stage before final review — the user's
+verbatim request above. After that planning phase, the user explicitly directed continuing into
+implementation ("continue implementation from the exact checkpoint until completion", their
+own words opening a later session on this branch) and, mid-implementation, made two further
+explicit decisions that only a human could make (`ESCALATIONS.md` E001, E002). This is a durable
+record of that authorization chain, since the verbatim `### Intent` quote above captures only the
+original planning request, not the later continue-to-implementation instruction.
+
+**Runtime workflow behavior now IS changed** (this sentence used to say the opposite — stale
+planning-era text, corrected during final intent review): the diff ships real enforcement, not
+just docs. `skills/finishing-a-development-branch/SKILL.md` requires `--require-simplify-if <base>`
+before every push (unconditionally for non-tiny work, and — after `ESCALATIONS.md` E002 — for
+tiny-lane plan work too); `skills/subagent-driven-development/SKILL.md` inserts a required
+`/simplify` stage before the final review chain; `scripts/check_review_receipt.py` validates that
+evidence; `hooks/risk-corroboration.sh`, `harness-manifest.json`, `CLAUDE.md`, and
+`skills/README.md` are synchronized to describe the same, now-live contract.
 
 ### Rationale
 
@@ -106,7 +120,12 @@ and final reviews over the resulting HEAD.
 | Finishing contract | `bash tests/scripts/finishing-branch-contract.test.sh` | 0 | 4 passed, incl. simplify-clause mutation check | SC-7 |
 | Shadow-eval quality gate | `python3 scripts/score_simplify_stage_eval.py --compare evals/skills/simplify-stage/results/baseline.json evals/skills/simplify-stage/results/candidate.json --fixtures evals/skills/simplify-stage/fixtures --quality-gate` | 0 | Round 3 (HEAD `5a34cae`): `quality_pass: true`, 8/8 fixtures matched `truth.json`. Rounds 1-2 rejected first (`comparison.md`) | SC-8 |
 | Shadow-eval value gate | `python3 scripts/score_simplify_stage_eval.py --compare evals/skills/simplify-stage/results/baseline.json evals/skills/simplify-stage/results/candidate.json --fixtures evals/skills/simplify-stage/fixtures --value-gate` | 0 | `value_pass: true`, `value_score: 4` ≥ `minimum_value_score: 3` | SC-9 |
-| Adoption/deployed parity | `python3 scripts/check_simplify_adoption.py` | 0 | `consistent` — policy, ordering, receipt, hook, docs, deployed harness all agree (post `deploy-harness.sh`) | SC-10 |
+| Adoption/deployed parity | `python3 scripts/check_simplify_adoption.py` | 0 | `consistent` — policy, ordering, receipt, hook, docs, deployed harness all agree (post `deploy-harness.sh`, re-run at final HEAD) | SC-10 |
+| Adoption checker's own tests | `python3 -m pytest scripts/test_check_simplify_adoption.py -q` | 0 | 19 passed | |
+| Eval runner tests | `python3 -m pytest scripts/test_run_simplify_stage_eval.py -q` | 0 | 20 passed | |
+| Eval scorer tests | `python3 -m pytest scripts/test_score_simplify_stage_eval.py -q` | 0 | 7 passed | |
+| Task-brief delta-description tests | `python3 -m pytest skills/subagent-driven-development/scripts/test_task_brief.py -q` | 0 | 6 passed | |
+| Hook contract tests | `bash tests/hooks/risk-corroboration.test.sh` | 0 | 39 passed | |
 
 The full suite (`GOCACHE=/tmp/harness-skills-go-cache bash scripts/run-tests.sh`, all L1-L3 layers,
 measured ~130s — over the 60s `verify_summary.py --check` re-run cap, so it is cited here in prose
@@ -121,6 +140,71 @@ regressions.
 - Independent review — PASS. Same-wave files are disjoint; shadow evaluation precedes hard-gate
   wiring; `/simplify` runs before the branch package and final oracles; changed outcomes require
   verification plus spec/quality delta review; receipt freshness covers the post-simplify HEAD.
+
+### Context-Propagation Audit
+
+- FAIL then repaired (see `### Deviations`): `simplify-stage.md`'s delta-review dispatch said
+  "with the plan's Global Constraints as context" with no actual delivery mechanism for a
+  non-task delta. Fixed via `task_brief.py --delta-description`, mutation-tested. Re-audited:
+  PASS.
+
+### Correctness Review
+
+- Six FIND angles over the branch diff (`29a5419..af7b014`, excluding pure-data eval results).
+  Two independent angles converged on the same real, reproduced bug (receipt validator deadlock
+  on a resumed session's superseded simplify entry) — fixed. Three more real findings fixed
+  (missing adoption-checker coverage of the finishing gate, a missing PYTESTS registration, two
+  whole-suite Verify rows over the 60s CI cap). One finding (finishing gate's tiny-lane exemption
+  ignoring the actual diff-size signal) required a human decision — `ESCALATIONS.md` E002,
+  decided and fixed. Full detail in `### Deviations` above.
+
+### Intent Review
+
+- Independently reviewed blind to `PLAN.md`/`research-brief.md` (Opus, ensemble diversity from
+  the Sonnet implementer), against the verbatim `### Intent` quote above plus the PLAN §3 SC
+  table and this file's own `### Verify` table. Verdict: CHANGES REQUESTED, then addressed:
+  - **Fixed**: the adoption checker's deployed-parity check had gone stale (more commits landed
+    after the last `deploy-harness.sh` run, without a re-deploy) — re-deployed, re-verified SC-10
+    passes at the true final HEAD (`### Verify` row updated).
+  - **Fixed**: `## What changed` and `### Harness-Delta` still carried pre-implementation
+    "proposed" / "no runtime behavior changed" language from before Wave 1 — rewritten to
+    describe what's actually shipped, and to durably record the continue-to-implementation
+    authorization (the verbatim `### Intent` above captures only the original planning request,
+    not the later "continue implementation... until completion" instruction that started the
+    implementation session, nor the two explicit mid-implementation decisions in
+    `ESCALATIONS.md` E001/E002).
+  - **Fixed**: four new test files (`test_check_simplify_adoption.py`,
+    `test_run_simplify_stage_eval.py`, `test_score_simplify_stage_eval.py`, `test_task_brief.py`)
+    and the extended `risk-corroboration.test.sh` were only attested in prose — added explicit
+    per-file `### Verify` rows (each well under the 60s cap).
+  - **Recorded as advisory, already addressed at design time, no further action** (per the
+    intent-review skill's own routing: advisory drift/excess goes here, not to a new
+    escalation):
+    - The literal "require skill simplify" was interpreted as Claude Code's *bundled* skill, not
+      a new repository skill named `simplify` — the single largest interpretive fork in this
+      diff. Already disclosed and reasoned in `### Alternatives considered` above and
+      `design.md` §1/§8 (never creating a shadowing local skill was itself an explicit
+      non-goal from intake).
+    - "Require" became conditional on a 150-line tiny-lane threshold and several non-code
+      exclusions, rather than an unconditional requirement — disclosed in
+      `### Alternatives considered` ("Require it for every branch — rejected for tiny and
+      non-code changes") and `rules/simplify-stage.md`'s signal-policy table.
+    - The `type: simplify` receipt entry's `changed_files`/`post_sha` were extended across
+      several post-simplify correctness-review fix commits rather than staying scoped to only
+      the original `/simplify` mutation commit (`e90413b`) — intentional per `design.md` §6
+      ("a final reviewer change re-runs the affected review and refreshes the receipt") and the
+      receipt validator's own freshness contract (`post_sha == reviewed_head_sha`); the delta
+      review's spec/quality verdict covers the full extended range, not just the original
+      mutation.
+    - `specs/STATE.md`'s active-spec pointer and this slug's durable-run tracking were not
+      updated during this session — `specs/STATE.md` is explicitly a user-owned file this
+      session was instructed to preserve untouched throughout (see `HANDOFF.md`), and no
+      durable-run (`RUN.json`) was ever initialized for this slug to begin with, so there is
+      nothing to reconcile.
+  - The intent-review's own "worth doing" question (`có đáng làm ko?`) noted no artifact stated
+    the cost side explicitly (diff size, new vendor version dependency, ongoing per-branch
+    invocation cost) — added a `design.md` "Assessment" section stating it, alongside the
+    benefit the shadow-eval's ACCEPT verdict already demonstrated.
 
 ### Rollback
 
@@ -140,4 +224,7 @@ regressions.
 
 ### Harness-Delta
 
-- proposed — add a capability-pinned, signal-gated cleanup stage without weakening existing final oracles.
+- shipped — a capability-pinned, signal-gated `/simplify` cleanup stage is now required before
+  push (subject to policy) without weakening existing final oracles; see SC-1..SC-10 for the
+  proof and `evals/skills/simplify-stage/results/comparison.md` for the shadow-eval evidence that
+  justified enabling the hard gate.

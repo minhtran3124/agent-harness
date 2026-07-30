@@ -171,7 +171,36 @@ Upgrade the recorded supported version only after rerunning the corpus.
   the cleanup-only ownership boundary.
 - **Keep warn-only forever:** leaves branch-level cleanup dependent on memory rather than workflow.
 
-## 9. Success definition
+## 9. Assessment
+
+This section states the cost side explicitly, since a design that only lists benefits cannot answer
+"is this worth doing."
+
+**Cost:**
+
+- **Footprint.** This is a high-risk-lane change: a new policy checker, a sandboxed shadow-eval
+  harness, an evidence recorder, receipt/finishing-gate extensions, and SDD prose wiring — not a
+  small addition to review.
+- **Vendor-version dependency.** The stage is pinned to Claude Code ≥ 2.1.154's bundled `/simplify`
+  skill. That is a new dependency on behavior this repository does not control; any future release
+  that changes `/simplify`'s semantics invalidates the pinned shadow-eval and must be recalibrated
+  (§7 Recalibration) before the version floor can move.
+- **Recurring cost.** Every required branch now pays one `/simplify` invocation plus a combined
+  spec/quality delta review before it can finish — real per-branch latency and reviewer-agent cost,
+  not a one-time setup charge.
+
+**Benefit:** the shadow-eval corpus (`evals/skills/simplify-stage/results/comparison.md`) reached a
+Round-3 ACCEPT verdict — all 8/8 fixtures matched `truth.json`, `quality_pass: true`,
+`value_pass: true` (`value_score: 4` against a minimum of `3`) — evidence that the bundled skill's
+cleanup-only behavior is safe and adds signal beyond what per-task review already catches, for the
+signal-gated subset of branches this stage actually requires.
+
+**Verdict:** worth doing for the reviewable-code-change subset this policy actually requires (see
+§3 policy authority and the `POLICY_REASONS` bounds in `scripts/check_claude_simplify.py`) — the
+recurring cost is paid only when there is reviewable scope, and the recalibration cost is bounded to
+version bumps that actually change `/simplify`'s behavior, not every Claude Code release.
+
+## 10. Success definition
 
 The design succeeds when required code-bearing branches cannot finish without a version-valid,
 durably recorded simplify stage; any simplify mutation is independently verified before all final
