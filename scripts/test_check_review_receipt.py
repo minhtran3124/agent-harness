@@ -311,3 +311,289 @@ def test_require_present_but_failed_is_not_satisfied(tmp_path, capsys):
     # review-failed is caught before the --require check
     assert crr.main([str(slug_dir), "--require", "intent"]) == 1
     assert "review-failed" in capsys.readouterr().err
+
+
+# ---------------------------------------------------------------------------
+# --require-simplify-if (Task 3.1, SC-3/SC-5/SC-6)
+# ---------------------------------------------------------------------------
+
+
+def make_simplify_repo(tmp_path):
+    """Build base -> pre -> post commit chain touching a reviewable path.
+
+    Returns (repo, base_sha, pre_sha, post_sha). base..HEAD contains a
+    reviewable (non-excluded) source path, so simplify is "required" per
+    check_claude_simplify.classify_path.
+    """
+    repo = make_repo(tmp_path)
+    commit_file(repo, "src/app.py", "x = 1\n")
+    base = head_sha(repo)
+    commit_file(repo, "src/app.py", "x = 1\ny = 2\n")
+    pre = head_sha(repo)
+    commit_file(repo, "src/app.py", "x = 1\ny = 2\nz = 3\n")
+    post = head_sha(repo)
+    return repo, base, pre, post
+
+
+def simplify_entry(base, pre, post, **overrides):
+    entry = {
+        "type": "simplify",
+        "result": "pass",
+        "blocking_open": 0,
+        "base_sha": base,
+        "pre_sha": pre,
+        "post_sha": post,
+        "claude_code_version": "2.1.154",
+        "reason": "non_tiny_source_change",
+        "outcome": "changed",
+        "changed_files": ["src/app.py"],
+        "verification_result": "pass",
+        "delta_verdict": {"spec_verdict": "pass", "quality_verdict": "approved"},
+    }
+    entry.update(overrides)
+    return entry
+
+
+def receipt_data(reviewed_head_sha, review):
+    return {"reviewed_head_sha": reviewed_head_sha, "reviews": [review]}
+
+
+def test_require_simplify_if_passing_entry_unblocks(tmp_path):
+    repo, base, pre, post = make_simplify_repo(tmp_path)
+    slug_dir = write_receipt(
+        repo, "gh-x", receipt_data(post, simplify_entry(base, pre, post))
+    )
+    assert crr.main([str(slug_dir), "--require-simplify-if", base]) == 0
+
+
+def test_require_simplify_if_missing_entry_fails(tmp_path, capsys):
+    repo, base, pre, post = make_simplify_repo(tmp_path)
+    slug_dir = write_receipt(
+        repo,
+        "gh-x",
+        receipt_data(
+            post,
+            {
+                "type": "correctness",
+                "result": "pass",
+                "blocking_open": 0,
+            },
+        ),
+    )
+    assert crr.main([str(slug_dir), "--require-simplify-if", base]) == 1
+    assert "missing-required-type" in capsys.readouterr().err
+
+
+def test_require_simplify_if_wrong_type_is_treated_as_missing(tmp_path, capsys):
+    repo, base, pre, post = make_simplify_repo(tmp_path)
+    wrong = simplify_entry(base, pre, post)
+    wrong["type"] = "not-simplify"
+    slug_dir = write_receipt(repo, "gh-x", receipt_data(post, wrong))
+    assert crr.main([str(slug_dir), "--require-simplify-if", base]) == 1
+    assert "missing-required-type" in capsys.readouterr().err
+
+
+def test_require_simplify_if_non_reviewable_diff_does_not_require_entry(tmp_path):
+    repo = make_repo(tmp_path)
+    base = head_sha(repo)
+    commit_file(repo, "docs/guide.md", "# guide\n")
+    slug_dir = write_receipt(repo, "gh-x", valid_data(head_sha(repo)))
+    assert crr.main([str(slug_dir), "--require-simplify-if", base]) == 0
+
+
+def test_require_simplify_if_symbolic_sha_is_rejected(tmp_path, capsys):
+    repo, base, pre, post = make_simplify_repo(tmp_path)
+    entry = simplify_entry(base, pre, post, pre_sha="HEAD")
+    slug_dir = write_receipt(repo, "gh-x", receipt_data(post, entry))
+    assert crr.main([str(slug_dir), "--require-simplify-if", base]) == 1
+    assert "malformed" in capsys.readouterr().err
+
+
+def test_require_simplify_if_short_sha_is_rejected(tmp_path, capsys):
+    repo, base, pre, post = make_simplify_repo(tmp_path)
+    entry = simplify_entry(base, pre, post, post_sha=post[:12])
+    slug_dir = write_receipt(repo, "gh-x", receipt_data(post, entry))
+    assert crr.main([str(slug_dir), "--require-simplify-if", base]) == 1
+    assert "malformed" in capsys.readouterr().err
+
+
+def test_require_simplify_if_non_hex_sha_is_rejected(tmp_path, capsys):
+    repo, base, pre, post = make_simplify_repo(tmp_path)
+    bogus = "g" * 40
+    entry = simplify_entry(base, pre, post, base_sha=bogus)
+    slug_dir = write_receipt(repo, "gh-x", receipt_data(post, entry))
+    assert crr.main([str(slug_dir), "--require-simplify-if", base]) == 1
+    assert "malformed" in capsys.readouterr().err
+
+
+def test_require_simplify_if_old_version_is_rejected(tmp_path, capsys):
+    repo, base, pre, post = make_simplify_repo(tmp_path)
+    entry = simplify_entry(base, pre, post, claude_code_version="2.1.153")
+    slug_dir = write_receipt(repo, "gh-x", receipt_data(post, entry))
+    assert crr.main([str(slug_dir), "--require-simplify-if", base]) == 1
+    assert "malformed" in capsys.readouterr().err
+
+
+def test_require_simplify_if_minimum_version_boundary_accepted(tmp_path):
+    repo, base, pre, post = make_simplify_repo(tmp_path)
+    entry = simplify_entry(base, pre, post, claude_code_version="2.1.154")
+    slug_dir = write_receipt(repo, "gh-x", receipt_data(post, entry))
+    assert crr.main([str(slug_dir), "--require-simplify-if", base]) == 0
+
+
+def test_require_simplify_if_no_op_with_nonempty_changed_files_rejected(
+    tmp_path, capsys
+):
+    # Real git HEAD must stay at `pre` here (no third commit) so the entry's
+    # claimed no_op (pre_sha == post_sha, nothing further happened) matches
+    # reviewed_head_sha == actual current HEAD, isolating the contradiction
+    # under test (no_op outcome with non-empty changed_files) from the
+    # unrelated top-level stale-sha check.
+    repo = make_repo(tmp_path)
+    commit_file(repo, "src/app.py", "x = 1\n")
+    base = head_sha(repo)
+    commit_file(repo, "src/app.py", "x = 1\ny = 2\n")
+    pre = head_sha(repo)
+    entry = simplify_entry(
+        base,
+        pre,
+        pre,
+        outcome="no_op",
+        changed_files=["src/app.py"],
+        verification_result=None,
+        delta_verdict=None,
+    )
+    slug_dir = write_receipt(repo, "gh-x", receipt_data(pre, entry))
+    assert crr.main([str(slug_dir), "--require-simplify-if", base]) == 1
+    assert "malformed" in capsys.readouterr().err
+
+
+def test_require_simplify_if_changed_with_empty_changed_files_rejected(
+    tmp_path, capsys
+):
+    repo, base, pre, post = make_simplify_repo(tmp_path)
+    entry = simplify_entry(base, pre, post, changed_files=[])
+    slug_dir = write_receipt(repo, "gh-x", receipt_data(post, entry))
+    assert crr.main([str(slug_dir), "--require-simplify-if", base]) == 1
+    assert "malformed" in capsys.readouterr().err
+
+
+def test_require_simplify_if_failing_verification_rejected(tmp_path, capsys):
+    repo, base, pre, post = make_simplify_repo(tmp_path)
+    entry = simplify_entry(base, pre, post, verification_result="fail")
+    slug_dir = write_receipt(repo, "gh-x", receipt_data(post, entry))
+    assert crr.main([str(slug_dir), "--require-simplify-if", base]) == 1
+    assert "review-failed" in capsys.readouterr().err
+
+
+def test_require_simplify_if_pending_spec_verdict_rejected(tmp_path, capsys):
+    repo, base, pre, post = make_simplify_repo(tmp_path)
+    entry = simplify_entry(
+        base,
+        pre,
+        post,
+        delta_verdict={"spec_verdict": "cannot_verify", "quality_verdict": "approved"},
+    )
+    slug_dir = write_receipt(repo, "gh-x", receipt_data(post, entry))
+    assert crr.main([str(slug_dir), "--require-simplify-if", base]) == 1
+    assert "review-failed" in capsys.readouterr().err
+
+
+def test_require_simplify_if_needs_fixes_quality_verdict_rejected(tmp_path, capsys):
+    repo, base, pre, post = make_simplify_repo(tmp_path)
+    entry = simplify_entry(
+        base,
+        pre,
+        post,
+        delta_verdict={"spec_verdict": "pass", "quality_verdict": "needs_fixes"},
+    )
+    slug_dir = write_receipt(repo, "gh-x", receipt_data(post, entry))
+    assert crr.main([str(slug_dir), "--require-simplify-if", base]) == 1
+    assert "review-failed" in capsys.readouterr().err
+
+
+def test_require_simplify_if_forged_pass_result_does_not_bypass_failing_evidence(
+    tmp_path, capsys
+):
+    # Mutation guard: self-reported result="pass" must not be trusted when the
+    # underlying verification/delta evidence actually failed.
+    repo, base, pre, post = make_simplify_repo(tmp_path)
+    entry = simplify_entry(base, pre, post, result="pass", verification_result="fail")
+    slug_dir = write_receipt(repo, "gh-x", receipt_data(post, entry))
+    assert crr.main([str(slug_dir), "--require-simplify-if", base]) == 1
+    assert "review-failed" in capsys.readouterr().err
+
+
+def test_require_simplify_if_pre_sha_not_descendant_of_base_rejected(tmp_path, capsys):
+    repo, base, pre, post = make_simplify_repo(tmp_path)
+    # Build an unrelated commit to stand in as a forged "pre_sha" that never
+    # descended from `base`.
+    _git(repo, "checkout", "-q", "--orphan", "unrelated")
+    (repo / "other.py").write_text("q = 1\n", encoding="utf-8")
+    _git(repo, "add", "other.py")
+    _git(repo, "commit", "-q", "-m", "unrelated root")
+    unrelated = head_sha(repo)
+    _git(repo, "checkout", "-q", "main")
+    entry = simplify_entry(base, unrelated, post)
+    slug_dir = write_receipt(repo, "gh-x", receipt_data(post, entry))
+    assert crr.main([str(slug_dir), "--require-simplify-if", base]) == 1
+    assert "malformed" in capsys.readouterr().err
+
+
+def test_require_simplify_if_post_sha_not_descendant_of_pre_rejected(tmp_path, capsys):
+    repo, base, pre, post = make_simplify_repo(tmp_path)
+    _git(repo, "checkout", "-q", "--orphan", "unrelated")
+    (repo / "other.py").write_text("q = 1\n", encoding="utf-8")
+    _git(repo, "add", "other.py")
+    _git(repo, "commit", "-q", "-m", "unrelated root")
+    unrelated = head_sha(repo)
+    _git(repo, "checkout", "-q", "main")
+    # Real current HEAD is still `post` (checking out main did not move it) —
+    # keep reviewed_head_sha == post so the top-level stale-sha check does not
+    # preempt the ancestry check under test.
+    entry = simplify_entry(base, pre, unrelated)
+    slug_dir = write_receipt(repo, "gh-x", receipt_data(post, entry))
+    assert crr.main([str(slug_dir), "--require-simplify-if", base]) == 1
+    assert "malformed" in capsys.readouterr().err
+
+
+def test_require_simplify_if_post_sha_not_covered_by_reviewed_head_rejected(
+    tmp_path, capsys
+):
+    # The simplify entry's post_sha must be the exact commit the final review
+    # package covered — a receipt claiming a different reviewed_head_sha means
+    # post-simplify code was never reviewed.
+    repo, base, pre, post = make_simplify_repo(tmp_path)
+    entry = simplify_entry(base, pre, post)
+    slug_dir = write_receipt(repo, "gh-x", receipt_data(pre, entry))
+    assert crr.main([str(slug_dir), "--require-simplify-if", base]) == 1
+    assert "stale-sha" in capsys.readouterr().err
+
+
+def test_require_simplify_if_specs_only_bookkeeping_advance_stays_valid(tmp_path):
+    repo, base, pre, post = make_simplify_repo(tmp_path)
+    slug_dir = write_receipt(
+        repo, "gh-x", receipt_data(post, simplify_entry(base, pre, post))
+    )
+    new_specs_commit(repo, "gh-x")
+    assert crr.main([str(slug_dir), "--require-simplify-if", base]) == 0
+
+
+def test_require_simplify_if_bad_base_fails_closed(tmp_path, capsys):
+    repo, base, pre, post = make_simplify_repo(tmp_path)
+    slug_dir = write_receipt(
+        repo, "gh-x", receipt_data(post, simplify_entry(base, pre, post))
+    )
+    rc = crr.main(
+        [
+            str(slug_dir),
+            "--require-simplify-if",
+            "0000000000000000000000000000000000000000",
+        ]
+    )
+    assert rc == 1
+    assert "stale-sha" in capsys.readouterr().err
+
+
+def test_self_test_simplify_cli_passes():
+    assert crr.main(["--self-test-simplify"]) == 0

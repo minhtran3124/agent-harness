@@ -28,10 +28,12 @@ Exit codes:
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import re
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 RECEIPT_NAME = ".review-receipt.json"
@@ -41,6 +43,25 @@ RECEIPT_NAME = ".review-receipt.json"
 # resolve the ref to the current commit and diff the repo against itself —
 # always empty — silently defeating the stale-sha gate. Require 40 hex chars.
 _SHA_RE = re.compile(r"^[0-9a-f]{40}$")
+
+# check_claude_simplify.py is a sibling script in this same directory; load it
+# by explicit path (not a bare `import`) so this module works correctly
+# regardless of the caller's sys.path/cwd — matching this repo's existing
+# import-by-path convention for cross-script reuse (see the test files under
+# scripts/ that load their target module the same way).
+_CCS_SPEC = importlib.util.spec_from_file_location(
+    "check_claude_simplify",
+    Path(__file__).resolve().parent / "check_claude_simplify.py",
+)
+assert _CCS_SPEC and _CCS_SPEC.loader, "could not load check_claude_simplify.py"
+check_claude_simplify = importlib.util.module_from_spec(_CCS_SPEC)
+_CCS_SPEC.loader.exec_module(check_claude_simplify)
+
+_SIMPLIFY_TYPE = "simplify"
+_SIMPLIFY_OUTCOMES = frozenset({"changed", "no_op"})
+_SIMPLIFY_RESULTS = frozenset({"pass", "fail"})
+_SPEC_VERDICTS = frozenset({"pass", "fail", "cannot_verify"})
+_QUALITY_VERDICTS = frozenset({"approved", "needs_fixes"})
 
 # Workflow-engine path signal — the surfaces whose changes require a passing
 # /context-propagation-audit before push. This is a literal copy of the signal in
@@ -101,8 +122,169 @@ def _changed_files(slug_dir: Path, a: str, b: str) -> list[str] | None:
     return [line for line in proc.stdout.splitlines() if line.strip()]
 
 
+def _is_ancestor(slug_dir: Path, ancestor: str, descendant: str) -> bool | None:
+    """True if ancestor is an ancestor of (or identical to) descendant.
+
+    None if ancestry cannot be determined (bad ref) — the caller fails closed.
+    """
+    try:
+        proc = subprocess.run(
+            ["git", "merge-base", "--is-ancestor", ancestor, descendant],
+            cwd=slug_dir,
+            capture_output=True,
+            text=True,
+        )
+    except OSError:
+        return None
+    if proc.returncode == 0:
+        return True
+    if proc.returncode == 1:
+        return False
+    return None
+
+
+def _simplify_required(slug_dir: Path, base_ref: str) -> bool | None:
+    """True if base_ref..HEAD touches any reviewable (non-excluded) path.
+
+    None if the range is undiffable, or a changed path cannot be classified —
+    the caller fails closed in either case.
+    """
+    changed = _changed_files(slug_dir, base_ref, "HEAD")
+    if changed is None:
+        return None
+    try:
+        return any(
+            check_claude_simplify.classify_path(p) == "reviewable" for p in changed
+        )
+    except ValueError:
+        return None
+
+
+def simplify_shape_error(entry: dict) -> str | None:
+    """Pure structural validation of a `type: simplify` receipt entry.
+
+    Checks SHA format, the Claude Code capability version floor, bounded
+    reason/outcome/result vocabulary, and internal changed/no_op
+    evidence-shape consistency (empty evidence for a no-op, well-formed
+    evidence for a change). Returns a one-line failure reason, or None if the
+    entry is internally well-formed.
+
+    Does not perform git ancestry checks or cross-check against
+    `reviewed_head_sha` — the caller (which holds the repo) does that
+    separately, since this function has no filesystem/git access.
+    """
+    for field in ("base_sha", "pre_sha", "post_sha"):
+        value = entry.get(field)
+        if not isinstance(value, str) or not _SHA_RE.match(value):
+            return (
+                f"malformed: simplify entry {field} {value!r} is not a resolved "
+                f"40-char hex commit sha"
+            )
+
+    version = entry.get("claude_code_version")
+    capability = check_claude_simplify.capability_status(
+        version if isinstance(version, str) else None
+    )
+    if capability["status"] != "supported":
+        return (
+            f"malformed: simplify entry claude_code_version {version!r} is "
+            f"{capability['status']} (minimum {capability['minimum']})"
+        )
+
+    if entry.get("reason") not in check_claude_simplify.POLICY_REASONS:
+        return (
+            f"malformed: simplify entry reason {entry.get('reason')!r} is not a "
+            f"recognized policy reason"
+        )
+
+    if entry.get("result") not in _SIMPLIFY_RESULTS:
+        return (
+            f"malformed: simplify entry result {entry.get('result')!r} must be "
+            f"'pass' or 'fail'"
+        )
+
+    outcome = entry.get("outcome")
+    if outcome not in _SIMPLIFY_OUTCOMES:
+        return f"malformed: simplify entry outcome {outcome!r} must be 'changed' or 'no_op'"
+
+    changed_files = entry.get("changed_files")
+    if (
+        not isinstance(changed_files, list)
+        or any(not isinstance(p, str) or not p for p in changed_files)
+        or len(changed_files) != len(set(changed_files))
+    ):
+        return (
+            "malformed: simplify entry changed_files must be a list of unique "
+            "non-empty paths"
+        )
+
+    pre_sha = entry.get("pre_sha")
+    post_sha = entry.get("post_sha")
+    verification_result = entry.get("verification_result")
+    delta_verdict = entry.get("delta_verdict")
+
+    if outcome == "no_op":
+        if pre_sha != post_sha or changed_files:
+            return (
+                "malformed: simplify entry outcome no_op contradicts identical "
+                "pre/post sha or empty changed_files"
+            )
+        if verification_result is not None or delta_verdict is not None:
+            return (
+                "malformed: simplify entry outcome no_op must carry empty "
+                "verification/delta evidence"
+            )
+        return None
+
+    # outcome == "changed"
+    if pre_sha == post_sha or not changed_files:
+        return (
+            "malformed: simplify entry outcome changed contradicts distinct "
+            "pre/post sha or non-empty changed_files"
+        )
+    if verification_result not in {"pass", "fail"}:
+        return (
+            f"malformed: simplify entry verification_result "
+            f"{verification_result!r} must be 'pass' or 'fail'"
+        )
+    if not isinstance(delta_verdict, dict):
+        return "malformed: simplify entry delta_verdict must be an object for a changed outcome"
+    if delta_verdict.get("spec_verdict") not in _SPEC_VERDICTS:
+        return (
+            f"malformed: simplify entry delta_verdict.spec_verdict "
+            f"{delta_verdict.get('spec_verdict')!r} is not a recognized verdict"
+        )
+    if delta_verdict.get("quality_verdict") not in _QUALITY_VERDICTS:
+        return (
+            f"malformed: simplify entry delta_verdict.quality_verdict "
+            f"{delta_verdict.get('quality_verdict')!r} is not a recognized verdict"
+        )
+    return None
+
+
+def simplify_entry_passes(entry: dict) -> bool:
+    """Whether the recorded evidence indicates a passing simplify outcome.
+
+    Deliberately ignores the entry's own self-reported `result` field — an
+    entry that claims `result: "pass"` while its verification/delta evidence
+    says otherwise must not be trusted. Assumes `simplify_shape_error` already
+    returned None for this entry.
+    """
+    if entry["outcome"] == "no_op":
+        return True
+    delta_verdict = entry["delta_verdict"]
+    return (
+        entry["verification_result"] == "pass"
+        and delta_verdict.get("spec_verdict") == "pass"
+        and delta_verdict.get("quality_verdict") == "approved"
+    )
+
+
 def check_receipt(
-    slug_dir: Path, require: list[str], require_audit_if: str | None = None
+    slug_dir: Path,
+    require: list[str],
+    require_audit_if: str | None = None,
+    require_simplify_if: str | None = None,
 ) -> str | None:
     """Validate the receipt. Return a one-line failure reason, or None if valid.
 
@@ -110,6 +292,15 @@ def check_receipt(
     workflow-engine surface, `context-propagation-audit` is added to `require`,
     so a workflow-engine change cannot be pushed on a receipt that omits (or did
     not pass) the audit it is meant to trigger.
+
+    require_simplify_if: a base ref. When the base..HEAD diff touches any
+    reviewable (non-excluded) path, a passing `type: simplify` entry is
+    required and deeply validated: resolved-SHA format, ancestry
+    (base_sha -> pre_sha -> post_sha), the Claude Code version floor, a
+    bounded policy reason, changed/no_op evidence-shape consistency, passing
+    verification and spec/quality delta verdicts for a changed outcome, and
+    that post_sha is the exact commit covered by `reviewed_head_sha` (so
+    post-simplify code cannot ship unreviewed).
     """
     receipt_path = slug_dir / RECEIPT_NAME
     if not receipt_path.is_file():
@@ -192,6 +383,16 @@ def check_receipt(
         if touched and _WF_AUDIT_TYPE not in required:
             required.append(_WF_AUDIT_TYPE)
 
+    if require_simplify_if is not None:
+        needed = _simplify_required(slug_dir, require_simplify_if)
+        if needed is None:
+            return (
+                f"stale-sha: cannot diff simplify base {require_simplify_if!r} "
+                f"— re-check with a valid base ref"
+            )
+        if needed and _SIMPLIFY_TYPE not in required:
+            required.append(_SIMPLIFY_TYPE)
+
     passed_types = {
         r.get("type")
         for r in reviews
@@ -202,6 +403,8 @@ def check_receipt(
             suffix = (
                 " (diff touches the workflow-engine inventory)"
                 if req == _WF_AUDIT_TYPE
+                else " (diff touches a reviewable path)"
+                if req == _SIMPLIFY_TYPE
                 else ""
             )
             return (
@@ -209,14 +412,191 @@ def check_receipt(
                 f"result pass{suffix}"
             )
 
+    if require_simplify_if is not None:
+        for review in reviews:
+            if not (isinstance(review, dict) and review.get("type") == _SIMPLIFY_TYPE):
+                continue
+            shape_error = simplify_shape_error(review)
+            if shape_error is not None:
+                return shape_error
+            base_sha, pre_sha, post_sha = (
+                review["base_sha"],
+                review["pre_sha"],
+                review["post_sha"],
+            )
+            base_ancestor = _is_ancestor(slug_dir, base_sha, pre_sha)
+            if base_ancestor is None:
+                return (
+                    f"stale-sha: cannot verify simplify ancestry for base_sha "
+                    f"{base_sha[:12]}"
+                )
+            if not base_ancestor:
+                return (
+                    f"malformed: simplify entry pre_sha {pre_sha[:12]} is not a "
+                    f"descendant of its declared base_sha {base_sha[:12]}"
+                )
+            post_ancestor = _is_ancestor(slug_dir, pre_sha, post_sha)
+            if post_ancestor is None:
+                return (
+                    f"stale-sha: cannot verify simplify ancestry for pre_sha "
+                    f"{pre_sha[:12]}"
+                )
+            if not post_ancestor:
+                return (
+                    f"malformed: simplify entry post_sha {post_sha[:12]} is not a "
+                    f"descendant of its own pre_sha {pre_sha[:12]}"
+                )
+            if post_sha != reviewed:
+                return (
+                    f"stale-sha: simplify entry post_sha {post_sha[:12]} does not "
+                    f"match reviewed_head_sha {reviewed[:12]} — post-simplify code "
+                    f"was not reviewed"
+                )
+            if not simplify_entry_passes(review):
+                return (
+                    "review-failed: simplify entry does not indicate a passing "
+                    "outcome (verification/delta evidence)"
+                )
+
     return None
+
+
+def _self_test_simplify() -> int:
+    """Exercise the --require-simplify-if gate against a throwaway git repo.
+
+    Mirrors check_claude_simplify.py's `_self_test_policy` shape: a compact
+    positive + representative-negative sweep, not the full matrix (that lives
+    in scripts/test_check_review_receipt.py).
+    """
+    with tempfile.TemporaryDirectory(
+        prefix="check-review-receipt-simplify-self-test-"
+    ) as tmp:
+        repo = Path(tmp)
+
+        def run(*args: str) -> None:
+            subprocess.run(
+                ["git", *args], cwd=repo, check=True, capture_output=True, text=True
+            )
+
+        def head() -> str:
+            proc = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=repo,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            return proc.stdout.strip()
+
+        run("init", "-q", "-b", "main")
+        run("config", "user.email", "self-test@example.invalid")
+        run("config", "user.name", "Self Test")
+        (repo / "src.py").write_text("x = 1\n", encoding="utf-8")
+        run("add", "-A")
+        run("commit", "-q", "-m", "base")
+        base = head()
+        (repo / "src.py").write_text("x = 1\ny = 2\n", encoding="utf-8")
+        run("add", "-A")
+        run("commit", "-q", "-m", "pre-simplify checkpoint")
+        pre = head()
+        (repo / "src.py").write_text("x = 1\ny = 2\nz = 3\n", encoding="utf-8")
+        run("add", "-A")
+        run("commit", "-q", "-m", "post-simplify")
+        post = head()
+
+        slug_dir = repo / "specs" / "demo"
+        slug_dir.mkdir(parents=True)
+        receipt_path = slug_dir / RECEIPT_NAME
+
+        def entry(**overrides):
+            base_entry = {
+                "type": "simplify",
+                "result": "pass",
+                "blocking_open": 0,
+                "base_sha": base,
+                "pre_sha": pre,
+                "post_sha": post,
+                "claude_code_version": "2.1.154",
+                "reason": "non_tiny_source_change",
+                "outcome": "changed",
+                "changed_files": ["src.py"],
+                "verification_result": "pass",
+                "delta_verdict": {
+                    "spec_verdict": "pass",
+                    "quality_verdict": "approved",
+                },
+            }
+            base_entry.update(overrides)
+            return base_entry
+
+        def write(review: dict, reviewed_head_sha: str = post) -> None:
+            data = {"reviewed_head_sha": reviewed_head_sha, "reviews": [review]}
+            receipt_path.write_text(json.dumps(data), encoding="utf-8")
+
+        write(entry())
+        good = check_receipt(slug_dir, [], require_simplify_if=base) is None
+
+        write(entry(pre_sha="HEAD"))
+        symbolic_sha_rejected = (
+            check_receipt(slug_dir, [], require_simplify_if=base) is not None
+        )
+
+        write(entry(claude_code_version="2.1.153"))
+        old_version_rejected = (
+            check_receipt(slug_dir, [], require_simplify_if=base) is not None
+        )
+
+        write(
+            entry(
+                outcome="no_op",
+                post_sha=pre,
+                changed_files=["src.py"],
+                verification_result=None,
+                delta_verdict=None,
+            ),
+            reviewed_head_sha=pre,
+        )
+        no_op_contradiction_rejected = (
+            check_receipt(slug_dir, [], require_simplify_if=base) is not None
+        )
+
+        write(entry(verification_result="fail"))
+        failing_verification_rejected = (
+            check_receipt(slug_dir, [], require_simplify_if=base) is not None
+        )
+
+        write(entry(), reviewed_head_sha=pre)
+        unreviewed_post_simplify_rejected = (
+            check_receipt(slug_dir, [], require_simplify_if=base) is not None
+        )
+
+        data = {"reviewed_head_sha": post, "reviews": []}
+        receipt_path.write_text(json.dumps(data), encoding="utf-8")
+        missing_entry_rejected = (
+            check_receipt(slug_dir, [], require_simplify_if=base) is not None
+        )
+
+        passed = (
+            good
+            and symbolic_sha_rejected
+            and old_version_rejected
+            and no_op_contradiction_rejected
+            and failing_verification_rejected
+            and unreviewed_post_simplify_rejected
+            and missing_entry_rejected
+        )
+    if not passed:
+        print("check-review-receipt: simplify self-test failed", file=sys.stderr)
+        return 1
+    print("check-review-receipt: simplify self-test passed")
+    return 0
 
 
 def main(argv: list[str]) -> int:
     import argparse
 
     parser = argparse.ArgumentParser(prog="check_review_receipt.py", add_help=True)
-    parser.add_argument("slug_dir")
+    parser.add_argument("slug_dir", nargs="?", default=None)
     parser.add_argument("--require", default="")
     parser.add_argument(
         "--require-audit-if",
@@ -225,7 +605,22 @@ def main(argv: list[str]) -> int:
         help="also require context-propagation-audit when BASE_REF..HEAD touches "
         "a workflow-engine surface (skills/*/SKILL.md, dispatch prompts, agents/, rules/)",
     )
+    parser.add_argument(
+        "--require-simplify-if",
+        default=None,
+        metavar="BASE_REF",
+        help="also require a passing type:simplify entry when BASE_REF..HEAD touches "
+        "a reviewable (non-excluded) path; deeply validates its SHAs, ancestry, "
+        "version, reason, changed/no_op evidence, and coverage of reviewed_head_sha",
+    )
+    parser.add_argument("--self-test-simplify", action="store_true")
     args = parser.parse_args(argv)
+
+    if args.self_test_simplify:
+        return _self_test_simplify()
+
+    if args.slug_dir is None:
+        parser.error("slug_dir is required unless --self-test-simplify is given")
 
     require = [t.strip() for t in args.require.split(",") if t.strip()]
 
@@ -234,7 +629,12 @@ def main(argv: list[str]) -> int:
         print(f"missing: {slug_dir} is not a directory", file=sys.stderr)
         return 1
 
-    reason = check_receipt(slug_dir, require, require_audit_if=args.require_audit_if)
+    reason = check_receipt(
+        slug_dir,
+        require,
+        require_audit_if=args.require_audit_if,
+        require_simplify_if=args.require_simplify_if,
+    )
     if reason is not None:
         print(reason, file=sys.stderr)
         return 1
