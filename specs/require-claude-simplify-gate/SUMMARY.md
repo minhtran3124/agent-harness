@@ -60,6 +60,36 @@ and final reviews over the resulting HEAD.
   drift check. Independently re-verified the FAIL is closed. Not committed as its own numbered
   wave — a final-review-cycle fix required before the receipt/PR, per the same Rule-3 authority as
   the other entries above.
+- Rule 3 — The final `/correctness-review` pass (6 independent FIND angles) found and fixed:
+  (1) [enclosing-function + stack-defects, converged independently] `check_review_receipt.py`'s
+  `--require-simplify-if` deep-validation loop required *every* `type: simplify` entry to have
+  `post_sha == reviewed_head_sha` — but `simplify-stage.md` documents *appending* a fresh entry on
+  each resume cycle, so a legitimate second cycle would leave a superseded first entry that
+  permanently fails that check, deadlocking an otherwise-valid receipt. Reproduced independently by
+  both finders. Fixed: only an entry whose `post_sha` matches `reviewed_head_sha` is required to
+  pass freshness/verdict checks; every entry (current or historical) still has its shape/ancestry
+  validated, so a corrupt historical entry is still caught. Two new tests added (a valid two-cycle
+  receipt now passes; a malformed superseded entry still fails).
+  (2) [guard-completeness, P2] `check_simplify_adoption.py` never checked
+  `finishing-a-development-branch/SKILL.md` despite the manifest naming it a contract consumer —
+  added `_check_finish_gate` plus two tests.
+  (3) [stack-defects, P2] The four Python test files added to `run-tests.sh`'s `PYTESTS` list in
+  wave 5 didn't include `skills/subagent-driven-development/scripts/test_task_brief.py` (added
+  after wave 5, in the audit-repair fix above) — added it.
+  (4) [prior-art, P1] This SUMMARY's own `### Verify` table had two whole-suite rows
+  (`bash scripts/run-tests.sh`, measured ~130s) — over `verify_summary.py --check`'s 60s re-run
+  cap, which would make CI's strict gate fail-closed on this very SUMMARY despite the suite
+  actually passing. Fixed per `docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md`:
+  removed the two rows, cited the full-suite result in prose instead.
+  [P1, guard-completeness] `finishing-a-development-branch/SKILL.md`'s pre-existing "Tiny/no-plan
+  work skips it" exemption was keyed only on intake lane label, not on `check_claude_simplify.py`'s
+  actual `required`/`oversized_tiny_source_change` signal — an oversized-but-mislabeled-tiny diff
+  would never hit `--require-simplify-if` at all. This exemption predates this diff (already
+  applied identically to `correctness,intent`), so fixing it was a genuine scope/design decision,
+  not a mechanical patch — escalated as `ESCALATIONS.md` E002 with 3 options; user chose A: narrow
+  only `--require-simplify-if` to run for tiny-lane plan work too (it already no-ops on a
+  non-reviewable diff), leaving the pre-existing correctness/intent/audit exemption untouched.
+  Fixed with 2 new contract checks + 2 mutation tests.
 
 ### Verify
 
@@ -67,7 +97,6 @@ and final reviews over the resulting HEAD.
 | --- | --- | --- | --- | --- |
 | Planning contract | `python3 scripts/check_plan_contract.py specs/require-claude-simplify-gate/PLAN.md` | 0 | Contract passed on 2026-07-30 | |
 | Plan render | `python3 skills/visual-planner/render_plan.py specs/require-claude-simplify-gate/PLAN.md` | 0 | Parsed 8 tasks across 6 waves | |
-| Pre-change full suite | `GOCACHE=/tmp/harness-skills-go-cache bash scripts/run-tests.sh` | 0 | 278 Python tests; all shell contracts green (pre-implementation baseline) | |
 | Capability/policy tests | `python3 -m pytest scripts/test_check_claude_simplify.py -q` | 0 | 103 passed | SC-1 |
 | Policy self-test | `python3 scripts/check_claude_simplify.py --self-test-policy` | 0 | `simplify-policy: self-test passed` | SC-2 |
 | Evidence recorder tests | `python3 -m pytest skills/subagent-driven-development/scripts/test_simplify_record.py -q` | 0 | 27 passed; dirty-worktree, symbolic/short SHA, ancestry all rejected | SC-3 |
@@ -78,7 +107,14 @@ and final reviews over the resulting HEAD.
 | Shadow-eval quality gate | `python3 scripts/score_simplify_stage_eval.py --compare evals/skills/simplify-stage/results/baseline.json evals/skills/simplify-stage/results/candidate.json --fixtures evals/skills/simplify-stage/fixtures --quality-gate` | 0 | Round 3 (HEAD `5a34cae`): `quality_pass: true`, 8/8 fixtures matched `truth.json`. Rounds 1-2 rejected first (`comparison.md`) | SC-8 |
 | Shadow-eval value gate | `python3 scripts/score_simplify_stage_eval.py --compare evals/skills/simplify-stage/results/baseline.json evals/skills/simplify-stage/results/candidate.json --fixtures evals/skills/simplify-stage/fixtures --value-gate` | 0 | `value_pass: true`, `value_score: 4` ≥ `minimum_value_score: 3` | SC-9 |
 | Adoption/deployed parity | `python3 scripts/check_simplify_adoption.py` | 0 | `consistent` — policy, ordering, receipt, hook, docs, deployed harness all agree (post `deploy-harness.sh`) | SC-10 |
-| Post-change full suite | `GOCACHE=/tmp/harness-skills-go-cache bash scripts/run-tests.sh` | 0 | 473 passed (was 278 at intake — CI-registration gap for the 4 new Python test files closed in wave 5) | |
+
+The full suite (`GOCACHE=/tmp/harness-skills-go-cache bash scripts/run-tests.sh`, all L1-L3 layers,
+measured ~130s — over the 60s `verify_summary.py --check` re-run cap, so it is cited here in prose
+rather than as a Verify row per `docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md`)
+passed at intake (278 Python tests, all shell contracts green) and passes at every checkpoint since:
+473 passed at the final HEAD (up from 278 — the wave-5 fix closed a real CI-registration gap for
+four Python test files that existed but were never in `run-tests.sh`'s `PYTESTS` list), zero
+regressions.
 
 ### Plan Review
 

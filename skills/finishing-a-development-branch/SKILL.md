@@ -29,7 +29,17 @@ user; if no plan exists, use the tiny/no-plan path instead of guessing.
    A missing, stale, failing, or blocking receipt for any required type — correctness, intent, the
    conditional context-delivery audit, or the conditional simplify pass — stops the flow. Re-run the
    affected review; never edit the receipt to pass. Re-run this gate immediately before push.
-   Tiny/no-plan work skips it.
+   Tiny work with a resolved plan still runs `--require-simplify-if <base>` alone (it is already
+   internally conditional — a no-op when the diff has no reviewable path — so this closes the gap
+   where an intake lane label of `tiny` could otherwise let an actually-oversized diff bypass the
+   simplify requirement entirely):
+
+   ```bash
+   python3 scripts/check_review_receipt.py <plan_dir> --require-simplify-if <base>
+   ```
+
+   Only true no-plan work (no plan directory at all — nowhere to record any receipt) skips both
+   invocations.
 3. Mark the resolved plan `status: shipped`, append a dated status-log entry, and commit the
    tracked `specs/` update. The helper-selected plan—not a branch-name guess—is authoritative.
    Do not manually change version/changelog/trust ledger when post-merge automation exists.

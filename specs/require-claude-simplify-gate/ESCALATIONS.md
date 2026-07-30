@@ -41,4 +41,28 @@ Default: **deny-on-no-response**. No recorded decision → work stays blocked.
 - decided_by: Minh Tran
 - decided_at: 2026-07-30
 
+---
+
+## E002
+
+- raised_by: agent (final `/correctness-review` pass, guard-completeness angle, before push)
+- date: 2026-07-30
+- trigger: judgment-ambiguous (Rule-4: architectural — changes when a mandatory review gate applies)
+- question: `skills/finishing-a-development-branch/SKILL.md`'s step 2 says "Tiny/no-plan work skips it" for the whole receipt-gate invocation (`--require correctness,intent --require-audit-if <base> --require-simplify-if <base>`), keyed purely on the intake `Lane: tiny` label. But `scripts/check_claude_simplify.py` (this feature) explicitly defines an `oversized_tiny_source_change` reason — a tiny-lane diff whose reviewable lines exceed `TINY_SOURCE_LINE_THRESHOLD` (150) is `required: true` regardless of its lane label. Since the finishing gate's skip is keyed on the label alone, an oversized-but-mislabeled-tiny diff never reaches `--require-simplify-if` at all — the exact case that reason value exists to catch. Should this exemption be narrowed?
+- context: Found and reproduced by one of six independent correctness-review FIND angles (`guard-completeness`) over this branch's own diff. This exemption **predates** this diff — it already applied identically to `--require correctness,intent` before `--require-simplify-if` was added (commit `f1a9e8f`, Task 4.2) — so this diff didn't introduce a NEW bypass, it added a new required-review type into an EXISTING bypass whose scope this diff never re-examined. `check_claude_simplify.py`'s own `evaluate_policy()` already computes the right answer (`required`/`reason`) for the ACTUAL diff at hand; `finishing-a-development-branch/SKILL.md` just never consults it — it only asks "what lane was this classified at intake," which can drift from the diff's real, current size (intake happens once, before all commits land).
+
+  This blocks: nothing about *this* PR (this branch's own diff is `Lane: high-risk`, never hits the tiny-skip path at all — confirmed via `resolve_finish_context.py` output for this branch). It's a residual-risk finding about the shipped mechanism's own completeness, not a defect in this branch's own commits.
+- options:
+  - A) **Narrow the finishing-gate exemption**: change step 2 so `--require-simplify-if <base>` runs unconditionally (it's already internally conditional — see E001-era design notes: it independently no-ops when the diff has no reviewable path) regardless of lane, while `--require correctness,intent --require-audit-if <base>` keeps the existing tiny/no-plan skip as-is. This targets the fix precisely at the one flag this diff introduced, without touching the pre-existing correctness/intent/audit exemption's own semantics — smallest blast radius, but means "tiny" work now always pays the (usually free, since `_simplify_required` no-ops on non-reviewable diffs) cost of one more subprocess call.
+  - B) **Re-derive the exemption from the diff, not the label**: change finishing-a-development-branch's tiny/no-plan check itself to ask `check_claude_simplify.py` (or `resolve_finish_context.py`, if extended to expose it) whether the diff is actually reviewable/oversized, for ALL required-review types at once — a deeper, more correct fix, but touches the shared exemption logic multiple other gate types already rely on and needs its own dedicated design/test pass, not a quick patch this late in this branch's own review cycle.
+  - C) **Leave as-is; accept the residual risk**: this exemption pattern (lane-label-only, not diff-size-aware) already existed for `correctness,intent` before this feature; treat "is the tiny-lane skip itself diff-size-aware" as a pre-existing, separately-scoped harness question rather than this feature's responsibility to fix, since `check_claude_simplify.py`'s own SIZE_THRESHOLD constant and the harness's tiny-lane conventions elsewhere (e.g. `hooks/risk-corroboration.sh`'s advisory note) already assume tiny-lane diffs stay genuinely small in practice.
+- default_if_no_response: BLOCK
+- decision: A — narrow only `--require-simplify-if <base>` to run for tiny-lane plan work too
+  (it's already internally conditional, no-ops on a non-reviewable diff); leave the pre-existing
+  `--require correctness,intent --require-audit-if <base>` tiny-lane exemption untouched. Fixed in
+  `skills/finishing-a-development-branch/SKILL.md` + `tests/scripts/finishing-branch-contract.test.sh`
+  (2 new checks, 2 new mutation tests).
+- decided_by: Minh Tran
+- decided_at: 2026-07-30
+
 <!-- copy the E0xx block for each new escalation -->
