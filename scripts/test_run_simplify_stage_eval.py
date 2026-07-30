@@ -453,6 +453,37 @@ def test_auth_environment_is_token_only_and_drops_cloud_credentials(monkeypatch)
     }
 
 
+def test_sandbox_profile_allows_writes_and_reads_under_claude_scratch_root(tmp_path):
+    worktree = tmp_path / "worktree"
+    git_dir = tmp_path / "git-dir"
+    runtime = tmp_path / "runtime"
+    fixture_root = tmp_path / "fixtures"
+    output_parent = tmp_path / "results"
+    client = tmp_path / "client" / "fake-claude"
+    client.parent.mkdir()
+    client.touch()
+    for path in (worktree, git_dir, runtime, fixture_root, output_parent):
+        path.mkdir()
+
+    scratch_root = MODULE._claude_scratch_root()
+    assert str(scratch_root) == f"/tmp/claude-{os.getuid()}"
+
+    profile = MODULE._sandbox_profile(
+        worktree=worktree,
+        git_dir=git_dir,
+        runtime=runtime,
+        client=client,
+        source_root=SCRIPT.parent.parent,
+        fixture=fixture_root,
+        output_parent=output_parent,
+    )
+
+    assert MODULE._sandbox_quote(scratch_root.resolve()) in profile
+    write_deny_clause = profile.splitlines()[-2]
+    assert "file-write*" in write_deny_clause
+    assert MODULE._sandbox_quote(scratch_root.resolve()) in write_deny_clause
+
+
 def test_sandbox_environment_redirects_claude_config_dir_under_runtime(tmp_path):
     runtime = tmp_path / "runtime"
     runtime.mkdir()

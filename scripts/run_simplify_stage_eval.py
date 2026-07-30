@@ -353,6 +353,10 @@ def _sandbox_quote(path: Path) -> str:
     return json.dumps(str(path.resolve()))
 
 
+def _claude_scratch_root() -> Path:
+    return Path(f"/tmp/claude-{os.getuid()}")
+
+
 def _sandbox_profile(
     *,
     worktree: Path,
@@ -365,6 +369,7 @@ def _sandbox_profile(
 ) -> str:
     home = Path.home()
     auth_roots = [client.parent]
+    claude_scratch_root = _claude_scratch_root()
     protected_roots = {
         source_root.resolve(),
         fixture.resolve(),
@@ -375,6 +380,7 @@ def _sandbox_profile(
         git_dir.resolve(),
         runtime.resolve(),
         client.parent.resolve(),
+        claude_scratch_root.resolve(),
         *(path.resolve() for path in auth_roots if path.exists()),
     }
     system_read_roots = {
@@ -450,7 +456,8 @@ def _sandbox_profile(
         f"(require-not (require-any {home_exceptions}))))\n"
         "(deny file-write* (require-all "
         f"(require-not (subpath {_sandbox_quote(worktree)})) "
-        f"(require-not (subpath {_sandbox_quote(runtime)}))))\n"
+        f"(require-not (subpath {_sandbox_quote(runtime)})) "
+        f"(require-not (subpath {_sandbox_quote(claude_scratch_root)}))))\n"
         f"(deny file-write* (literal {_sandbox_quote(worktree / '.git')}))\n"
     )
 
@@ -666,6 +673,7 @@ def _collect_case(
             runtime = temp_root / "runtime"
             runtime.mkdir()
             (runtime / "claude-config").mkdir()
+            _claude_scratch_root().mkdir(parents=True, exist_ok=True)
             git_dir_text = _git(worktree, "rev-parse", "--git-dir").strip()
             git_dir = Path(git_dir_text)
             if not git_dir.is_absolute():
