@@ -1,0 +1,10 @@
+diff --git a/README.md b/README.md
+index c006706..be3f470 100644
+--- a/README.md
++++ b/README.md
+@@ -1,3 +1,4 @@
+ # Fixture
+ 
+-The service reports whether it is ready.
++The service reports whether it is ready. Call `status()` and expect the stable
++string `ready`.

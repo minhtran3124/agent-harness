@@ -1,0 +1,32 @@
+{
+  "case_id": "public-contract",
+  "verification": [
+    {
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "-q"
+      ],
+      "returncode": 0,
+      "elapsed_seconds": 0.032961,
+      "stdout": "",
+      "stderr": "----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
+    }
+  ],
+  "final_review": [
+    {
+      "command": [
+        "python3",
+        "-m",
+        "py_compile",
+        "app.py",
+        "test_app.py"
+      ],
+      "returncode": 0,
+      "elapsed_seconds": 0.027492,
+      "stdout": "",
+      "stderr": ""
+    }
+  ]
+}

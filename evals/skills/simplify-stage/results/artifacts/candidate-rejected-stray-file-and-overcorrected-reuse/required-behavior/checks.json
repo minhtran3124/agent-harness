@@ -1,0 +1,32 @@
+{
+  "case_id": "required-behavior",
+  "verification": [
+    {
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "-q"
+      ],
+      "returncode": 0,
+      "elapsed_seconds": 0.051744,
+      "stdout": "",
+      "stderr": "----------------------------------------------------------------------\nRan 2 tests in 0.000s\n\nOK\n"
+    }
+  ],
+  "final_review": [
+    {
+      "command": [
+        "python3",
+        "-m",
+        "py_compile",
+        "app.py",
+        "test_app.py"
+      ],
+      "returncode": 0,
+      "elapsed_seconds": 0.025835,
+      "stdout": "",
+      "stderr": ""
+    }
+  ]
+}

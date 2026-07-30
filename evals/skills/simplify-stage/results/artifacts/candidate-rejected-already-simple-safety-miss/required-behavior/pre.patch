@@ -1,0 +1,9 @@
+diff --git a/app.py b/app.py
+index a367d77..15fc017 100644
+--- a/app.py
++++ b/app.py
+@@ -1,2 +1,4 @@
+ def square(value):
++    if value < 0:
++        raise ValueError("negative values are forbidden")
+     return value * value

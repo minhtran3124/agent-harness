@@ -1,0 +1,646 @@
+{
+  "schema_version": 1,
+  "mode": "advisory",
+  "collected_at": "2026-07-30T04:14:20.318102+00:00",
+  "source_commit_sha": "0eb1287b605957b655162e7dfab1b0f7b9e31651",
+  "input_digest": "7ef7602c3a7cf64b4a14f5fd788154c377ef31884ea8f97d8e1c700a86ad0e20",
+  "environment": {
+    "client_version": "2.1.220",
+    "expected_client_version": "2.1.220",
+    "model": "sonnet"
+  },
+  "records": [
+    {
+      "case_id": "abstraction-altitude",
+      "fixture_digest": "384befc5b7008bea0858ddf2a353fdb317114aed4af7c3747ccfb542dd6ed593",
+      "worktree": "/var/folders/q6/7rd6k6715qj62b4x6g1gnqrh0000gn/T/simplify-eval-abstraction-altitude-ba0r3cj0/worktree",
+      "base_sha": "042a65db2ee95ce3b97b5343fab8c7cbebe12b5f",
+      "pre_sha": "beda851b56d2a68f5556a86807caeccaa2c594e7",
+      "post_sha": "beda851b56d2a68f5556a86807caeccaa2c594e7",
+      "outcome": "no_op",
+      "changed_files": [],
+      "diff_stats": {
+        "simplify_added_lines": 0,
+        "simplify_removed_lines": 0
+      },
+      "claude": {
+        "invocations": 0,
+        "command": [],
+        "returncode": 0,
+        "elapsed_seconds": 0.0,
+        "result": "advisory baseline: simplify not invoked",
+        "usage": {},
+        "observed_skill_invocations": [],
+        "skill_tool_evidence": null
+      },
+      "verification": [
+        {
+          "command": [
+            "python3",
+            "-m",
+            "unittest",
+            "-q"
+          ],
+          "returncode": 0,
+          "elapsed_seconds": 0.040669,
+          "stdout": "",
+          "stderr": "----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
+        }
+      ],
+      "final_review": [
+        {
+          "command": [
+            "python3",
+            "-m",
+            "py_compile",
+            "app.py",
+            "test_app.py"
+          ],
+          "returncode": 0,
+          "elapsed_seconds": 0.027423,
+          "stdout": "",
+          "stderr": ""
+        }
+      ],
+      "artifacts": {
+        "pre_diff": {
+          "path": "artifacts/baseline/abstraction-altitude/pre.patch",
+          "sha256": "f47827f79e59f92ab6d277a9841ee42cb163760e9346cf406d10164b26335073"
+        },
+        "simplify_diff": {
+          "path": "artifacts/baseline/abstraction-altitude/simplify.patch",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "post_diff": {
+          "path": "artifacts/baseline/abstraction-altitude/post.patch",
+          "sha256": "f47827f79e59f92ab6d277a9841ee42cb163760e9346cf406d10164b26335073"
+        },
+        "transcript": {
+          "path": "transcripts/baseline/abstraction-altitude.json",
+          "sha256": "c0e1222f3870109884c56aca0d479c400ee3849a84a1dd1799f4c3137ad058ab"
+        },
+        "checks": {
+          "path": "artifacts/baseline/abstraction-altitude/checks.json",
+          "sha256": "4463fcf5fe3ce4795c3d3a17616efef2528fdde22599eba0cc99a2274baa6b1c"
+        },
+        "history_bundle": {
+          "path": "artifacts/baseline/abstraction-altitude/history.bundle",
+          "sha256": "503eb89189d8128ed84bd3059714e191367f435c2a8e6a022aef8d70f30fb8a5"
+        }
+      }
+    },
+    {
+      "case_id": "already-simple",
+      "fixture_digest": "c6c9be3982ecad7d00c0d61482c629ab2e88323a7d94eae10e5c0122b92a9056",
+      "worktree": "/var/folders/q6/7rd6k6715qj62b4x6g1gnqrh0000gn/T/simplify-eval-already-simple-z9nee2ay/worktree",
+      "base_sha": "a17fce011ac6d7d28ba170f231dc8b70085772cb",
+      "pre_sha": "5fe69a3a1789afd88a375b234791135693870050",
+      "post_sha": "5fe69a3a1789afd88a375b234791135693870050",
+      "outcome": "no_op",
+      "changed_files": [],
+      "diff_stats": {
+        "simplify_added_lines": 0,
+        "simplify_removed_lines": 0
+      },
+      "claude": {
+        "invocations": 0,
+        "command": [],
+        "returncode": 0,
+        "elapsed_seconds": 0.0,
+        "result": "advisory baseline: simplify not invoked",
+        "usage": {},
+        "observed_skill_invocations": [],
+        "skill_tool_evidence": null
+      },
+      "verification": [
+        {
+          "command": [
+            "python3",
+            "-m",
+            "unittest",
+            "-q"
+          ],
+          "returncode": 0,
+          "elapsed_seconds": 0.034751,
+          "stdout": "",
+          "stderr": "----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
+        }
+      ],
+      "final_review": [
+        {
+          "command": [
+            "python3",
+            "-m",
+            "py_compile",
+            "app.py",
+            "test_app.py"
+          ],
+          "returncode": 0,
+          "elapsed_seconds": 0.028144,
+          "stdout": "",
+          "stderr": ""
+        }
+      ],
+      "artifacts": {
+        "pre_diff": {
+          "path": "artifacts/baseline/already-simple/pre.patch",
+          "sha256": "6f758b0fa1ff747e031d331526758a67e32631414ac70d7e4b7e471a0b3b3ce3"
+        },
+        "simplify_diff": {
+          "path": "artifacts/baseline/already-simple/simplify.patch",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "post_diff": {
+          "path": "artifacts/baseline/already-simple/post.patch",
+          "sha256": "6f758b0fa1ff747e031d331526758a67e32631414ac70d7e4b7e471a0b3b3ce3"
+        },
+        "transcript": {
+          "path": "transcripts/baseline/already-simple.json",
+          "sha256": "010dfe4ac73ff57b7b78c12c0b8c9d51e3f61c87fd02937e825c1190ad1e1e0f"
+        },
+        "checks": {
+          "path": "artifacts/baseline/already-simple/checks.json",
+          "sha256": "2673e685bd846a866e66be100af16a78b85b2cbe9d1026e49642401c923a936f"
+        },
+        "history_bundle": {
+          "path": "artifacts/baseline/already-simple/history.bundle",
+          "sha256": "7073f9c2ae99d2fb9673068bb3900904d53cc00521e1928d77ab655e5581c800"
+        }
+      }
+    },
+    {
+      "case_id": "cross-task-duplication",
+      "fixture_digest": "1dfe846becf25240a9034e92e6b0749216236c20b091c1ab57d9191691c0c0d7",
+      "worktree": "/var/folders/q6/7rd6k6715qj62b4x6g1gnqrh0000gn/T/simplify-eval-cross-task-duplication-_bs1weqn/worktree",
+      "base_sha": "7b9a7ec68fb582e03aaec454ce01c00d376a2afb",
+      "pre_sha": "430e13389ed3040131a52cf391c552b0c0943de5",
+      "post_sha": "430e13389ed3040131a52cf391c552b0c0943de5",
+      "outcome": "no_op",
+      "changed_files": [],
+      "diff_stats": {
+        "simplify_added_lines": 0,
+        "simplify_removed_lines": 0
+      },
+      "claude": {
+        "invocations": 0,
+        "command": [],
+        "returncode": 0,
+        "elapsed_seconds": 0.0,
+        "result": "advisory baseline: simplify not invoked",
+        "usage": {},
+        "observed_skill_invocations": [],
+        "skill_tool_evidence": null
+      },
+      "verification": [
+        {
+          "command": [
+            "python3",
+            "-m",
+            "unittest",
+            "-q"
+          ],
+          "returncode": 0,
+          "elapsed_seconds": 0.034215,
+          "stdout": "",
+          "stderr": "----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
+        }
+      ],
+      "final_review": [
+        {
+          "command": [
+            "python3",
+            "-m",
+            "py_compile",
+            "app.py",
+            "test_app.py"
+          ],
+          "returncode": 0,
+          "elapsed_seconds": 0.029683,
+          "stdout": "",
+          "stderr": ""
+        }
+      ],
+      "artifacts": {
+        "pre_diff": {
+          "path": "artifacts/baseline/cross-task-duplication/pre.patch",
+          "sha256": "cc681af01d367d5e2110a95d549cde99f196c29d4972149c0a8561545645e653"
+        },
+        "simplify_diff": {
+          "path": "artifacts/baseline/cross-task-duplication/simplify.patch",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "post_diff": {
+          "path": "artifacts/baseline/cross-task-duplication/post.patch",
+          "sha256": "cc681af01d367d5e2110a95d549cde99f196c29d4972149c0a8561545645e653"
+        },
+        "transcript": {
+          "path": "transcripts/baseline/cross-task-duplication.json",
+          "sha256": "b0e3432c56cbdd4c473d6fbb384c9259916e6c57a10091bd9d1614be144a242c"
+        },
+        "checks": {
+          "path": "artifacts/baseline/cross-task-duplication/checks.json",
+          "sha256": "20dcacdc3bb59343ebded0b4ff8d2db847eff23cbfb072b66d5ada5a7727672a"
+        },
+        "history_bundle": {
+          "path": "artifacts/baseline/cross-task-duplication/history.bundle",
+          "sha256": "3dda45470c153d0817d4bb988167df789e7eb68331827d41728a8c52a99b1649"
+        }
+      }
+    },
+    {
+      "case_id": "docs-only",
+      "fixture_digest": "b10e95901f116b8ce7fd6e8f98699a7fbd95f7a159577ede31b7cf9be9bb692f",
+      "worktree": "/var/folders/q6/7rd6k6715qj62b4x6g1gnqrh0000gn/T/simplify-eval-docs-only-xhre937j/worktree",
+      "base_sha": "2cc22ff322c62a6144fc9855b81fbdc1513c5956",
+      "pre_sha": "99c10698ac7ac1dcfbe1490d363f73f945312e20",
+      "post_sha": "99c10698ac7ac1dcfbe1490d363f73f945312e20",
+      "outcome": "no_op",
+      "changed_files": [],
+      "diff_stats": {
+        "simplify_added_lines": 0,
+        "simplify_removed_lines": 0
+      },
+      "claude": {
+        "invocations": 0,
+        "command": [],
+        "returncode": 0,
+        "elapsed_seconds": 0.0,
+        "result": "advisory baseline: simplify not invoked",
+        "usage": {},
+        "observed_skill_invocations": [],
+        "skill_tool_evidence": null
+      },
+      "verification": [
+        {
+          "command": [
+            "python3",
+            "-m",
+            "unittest",
+            "-q"
+          ],
+          "returncode": 0,
+          "elapsed_seconds": 0.032899,
+          "stdout": "",
+          "stderr": "----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
+        }
+      ],
+      "final_review": [
+        {
+          "command": [
+            "python3",
+            "-m",
+            "py_compile",
+            "app.py",
+            "test_app.py"
+          ],
+          "returncode": 0,
+          "elapsed_seconds": 0.030386,
+          "stdout": "",
+          "stderr": ""
+        }
+      ],
+      "artifacts": {
+        "pre_diff": {
+          "path": "artifacts/baseline/docs-only/pre.patch",
+          "sha256": "857069f5fe640498acf31be95e00ee6b78e0971a8c4cf99919ada9a5921a0063"
+        },
+        "simplify_diff": {
+          "path": "artifacts/baseline/docs-only/simplify.patch",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "post_diff": {
+          "path": "artifacts/baseline/docs-only/post.patch",
+          "sha256": "857069f5fe640498acf31be95e00ee6b78e0971a8c4cf99919ada9a5921a0063"
+        },
+        "transcript": {
+          "path": "transcripts/baseline/docs-only.json",
+          "sha256": "510fcb2f2ec2f28a1d1d446c1497729788445288b161ce59a8a1646aeb06c534"
+        },
+        "checks": {
+          "path": "artifacts/baseline/docs-only/checks.json",
+          "sha256": "5940add07c4fee703fbaf828026bb6fc01ce47e82f3bdafb7971c96692f5578e"
+        },
+        "history_bundle": {
+          "path": "artifacts/baseline/docs-only/history.bundle",
+          "sha256": "9d403424228430b75fe509eac920d68ee9ab6749611c9fc695483906bd48329f"
+        }
+      }
+    },
+    {
+      "case_id": "efficiency-materialization",
+      "fixture_digest": "3498502fe7b91d41b13ed37fbdb63ea1e3493b5cd7262abf6722a372812768ba",
+      "worktree": "/var/folders/q6/7rd6k6715qj62b4x6g1gnqrh0000gn/T/simplify-eval-efficiency-materialization-lp749lvz/worktree",
+      "base_sha": "dbcd61ac29db857e77760af7009513f8842f0394",
+      "pre_sha": "ae621be6eefe91f63fc7b4c77b56e8604b888063",
+      "post_sha": "ae621be6eefe91f63fc7b4c77b56e8604b888063",
+      "outcome": "no_op",
+      "changed_files": [],
+      "diff_stats": {
+        "simplify_added_lines": 0,
+        "simplify_removed_lines": 0
+      },
+      "claude": {
+        "invocations": 0,
+        "command": [],
+        "returncode": 0,
+        "elapsed_seconds": 0.0,
+        "result": "advisory baseline: simplify not invoked",
+        "usage": {},
+        "observed_skill_invocations": [],
+        "skill_tool_evidence": null
+      },
+      "verification": [
+        {
+          "command": [
+            "python3",
+            "-m",
+            "unittest",
+            "-q"
+          ],
+          "returncode": 0,
+          "elapsed_seconds": 0.035573,
+          "stdout": "",
+          "stderr": "----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
+        }
+      ],
+      "final_review": [
+        {
+          "command": [
+            "python3",
+            "-m",
+            "py_compile",
+            "app.py",
+            "test_app.py"
+          ],
+          "returncode": 0,
+          "elapsed_seconds": 0.027207,
+          "stdout": "",
+          "stderr": ""
+        }
+      ],
+      "artifacts": {
+        "pre_diff": {
+          "path": "artifacts/baseline/efficiency-materialization/pre.patch",
+          "sha256": "0fcb86b476c3e22209c1009f8228f448b3c07e0d648c852a5cac06cb67080095"
+        },
+        "simplify_diff": {
+          "path": "artifacts/baseline/efficiency-materialization/simplify.patch",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "post_diff": {
+          "path": "artifacts/baseline/efficiency-materialization/post.patch",
+          "sha256": "0fcb86b476c3e22209c1009f8228f448b3c07e0d648c852a5cac06cb67080095"
+        },
+        "transcript": {
+          "path": "transcripts/baseline/efficiency-materialization.json",
+          "sha256": "bd30191ebef20ca937322a1885aad3ed23f69ee75f5fa708980aaa7083b4af4d"
+        },
+        "checks": {
+          "path": "artifacts/baseline/efficiency-materialization/checks.json",
+          "sha256": "5e2f1ebbb16d77b0838b413eef5853c28307fe74f466640e3ce39243517e5f3f"
+        },
+        "history_bundle": {
+          "path": "artifacts/baseline/efficiency-materialization/history.bundle",
+          "sha256": "222cebeec955f0057e212554f44774ae439cfb3b8eb4f61ed8a123a26f484ecf"
+        }
+      }
+    },
+    {
+      "case_id": "public-contract",
+      "fixture_digest": "228074c79ad28dc6f8c6f78cdd6349c5a509736c7f7159d1afbc9d6365603b00",
+      "worktree": "/var/folders/q6/7rd6k6715qj62b4x6g1gnqrh0000gn/T/simplify-eval-public-contract-5bj60tkh/worktree",
+      "base_sha": "1b386e749757e15acb9aa5d48ba72662864dcee5",
+      "pre_sha": "73fdbd5c78a587d8cf9d0c5bed23f389d7e25808",
+      "post_sha": "73fdbd5c78a587d8cf9d0c5bed23f389d7e25808",
+      "outcome": "no_op",
+      "changed_files": [],
+      "diff_stats": {
+        "simplify_added_lines": 0,
+        "simplify_removed_lines": 0
+      },
+      "claude": {
+        "invocations": 0,
+        "command": [],
+        "returncode": 0,
+        "elapsed_seconds": 0.0,
+        "result": "advisory baseline: simplify not invoked",
+        "usage": {},
+        "observed_skill_invocations": [],
+        "skill_tool_evidence": null
+      },
+      "verification": [
+        {
+          "command": [
+            "python3",
+            "-m",
+            "unittest",
+            "-q"
+          ],
+          "returncode": 0,
+          "elapsed_seconds": 0.037114,
+          "stdout": "",
+          "stderr": "----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
+        }
+      ],
+      "final_review": [
+        {
+          "command": [
+            "python3",
+            "-m",
+            "py_compile",
+            "app.py",
+            "test_app.py"
+          ],
+          "returncode": 0,
+          "elapsed_seconds": 0.074478,
+          "stdout": "",
+          "stderr": ""
+        }
+      ],
+      "artifacts": {
+        "pre_diff": {
+          "path": "artifacts/baseline/public-contract/pre.patch",
+          "sha256": "65d309369ff666357e346b85ac3a9c7cc0b8237d52b76f41ed637881b87151d3"
+        },
+        "simplify_diff": {
+          "path": "artifacts/baseline/public-contract/simplify.patch",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "post_diff": {
+          "path": "artifacts/baseline/public-contract/post.patch",
+          "sha256": "65d309369ff666357e346b85ac3a9c7cc0b8237d52b76f41ed637881b87151d3"
+        },
+        "transcript": {
+          "path": "transcripts/baseline/public-contract.json",
+          "sha256": "c5cd536925f34d959ef766c103c6d07f3bfde0d26f911d0478aa697a7b1d93e9"
+        },
+        "checks": {
+          "path": "artifacts/baseline/public-contract/checks.json",
+          "sha256": "5d59b21a6c493726d79af0e087913887b11870f10061f1a8eb7f88d77ca82abc"
+        },
+        "history_bundle": {
+          "path": "artifacts/baseline/public-contract/history.bundle",
+          "sha256": "9b8bfe17ad1fe3e6563378711a3e53de2f8a70e604c3e804a1295a6586ec4b58"
+        }
+      }
+    },
+    {
+      "case_id": "required-behavior",
+      "fixture_digest": "6bd5718de2dd64e01667f5741c47da699d8f6ecf7b1e75106df3ccb5c9b1676d",
+      "worktree": "/var/folders/q6/7rd6k6715qj62b4x6g1gnqrh0000gn/T/simplify-eval-required-behavior-8eek_ope/worktree",
+      "base_sha": "3ed3ff62e31002ac63a53175b5fe1eaacc854ebe",
+      "pre_sha": "7ae58ceccc9eb6489628e4b2843ca07d69d00d21",
+      "post_sha": "7ae58ceccc9eb6489628e4b2843ca07d69d00d21",
+      "outcome": "no_op",
+      "changed_files": [],
+      "diff_stats": {
+        "simplify_added_lines": 0,
+        "simplify_removed_lines": 0
+      },
+      "claude": {
+        "invocations": 0,
+        "command": [],
+        "returncode": 0,
+        "elapsed_seconds": 0.0,
+        "result": "advisory baseline: simplify not invoked",
+        "usage": {},
+        "observed_skill_invocations": [],
+        "skill_tool_evidence": null
+      },
+      "verification": [
+        {
+          "command": [
+            "python3",
+            "-m",
+            "unittest",
+            "-q"
+          ],
+          "returncode": 0,
+          "elapsed_seconds": 0.040462,
+          "stdout": "",
+          "stderr": "----------------------------------------------------------------------\nRan 2 tests in 0.000s\n\nOK\n"
+        }
+      ],
+      "final_review": [
+        {
+          "command": [
+            "python3",
+            "-m",
+            "py_compile",
+            "app.py",
+            "test_app.py"
+          ],
+          "returncode": 0,
+          "elapsed_seconds": 0.027352,
+          "stdout": "",
+          "stderr": ""
+        }
+      ],
+      "artifacts": {
+        "pre_diff": {
+          "path": "artifacts/baseline/required-behavior/pre.patch",
+          "sha256": "bc5d4b92fa33eb0bc47744f80a75af51b8e65039b821fc3b59263e54b3514e46"
+        },
+        "simplify_diff": {
+          "path": "artifacts/baseline/required-behavior/simplify.patch",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "post_diff": {
+          "path": "artifacts/baseline/required-behavior/post.patch",
+          "sha256": "bc5d4b92fa33eb0bc47744f80a75af51b8e65039b821fc3b59263e54b3514e46"
+        },
+        "transcript": {
+          "path": "transcripts/baseline/required-behavior.json",
+          "sha256": "018bfbe8e013157bc77a4457692b076d8d2d432de7a0f7786f8b3ffce07a87b3"
+        },
+        "checks": {
+          "path": "artifacts/baseline/required-behavior/checks.json",
+          "sha256": "c1bb4fa162b6d829609e2e099aceba8430d405f6e708f64469fcdc7ef9412424"
+        },
+        "history_bundle": {
+          "path": "artifacts/baseline/required-behavior/history.bundle",
+          "sha256": "cb82a0cce5463efd1767d8a56c2841c975d55074b574f59829bf028c3393e099"
+        }
+      }
+    },
+    {
+      "case_id": "reuse-existing-helper",
+      "fixture_digest": "fecf2a983b28097b8549e37be4099b6701cda79fb696d39b8912b224f39e374b",
+      "worktree": "/var/folders/q6/7rd6k6715qj62b4x6g1gnqrh0000gn/T/simplify-eval-reuse-existing-helper-95qivp2b/worktree",
+      "base_sha": "aa2ddb7be621955beb2cb19cc27021f6b0591d66",
+      "pre_sha": "ebd19dc2725fb63091ddaf852891d86cc175d15f",
+      "post_sha": "ebd19dc2725fb63091ddaf852891d86cc175d15f",
+      "outcome": "no_op",
+      "changed_files": [],
+      "diff_stats": {
+        "simplify_added_lines": 0,
+        "simplify_removed_lines": 0
+      },
+      "claude": {
+        "invocations": 0,
+        "command": [],
+        "returncode": 0,
+        "elapsed_seconds": 0.0,
+        "result": "advisory baseline: simplify not invoked",
+        "usage": {},
+        "observed_skill_invocations": [],
+        "skill_tool_evidence": null
+      },
+      "verification": [
+        {
+          "command": [
+            "python3",
+            "-m",
+            "unittest",
+            "-q"
+          ],
+          "returncode": 0,
+          "elapsed_seconds": 0.036471,
+          "stdout": "",
+          "stderr": "----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
+        }
+      ],
+      "final_review": [
+        {
+          "command": [
+            "python3",
+            "-m",
+            "py_compile",
+            "app.py",
+            "test_app.py"
+          ],
+          "returncode": 0,
+          "elapsed_seconds": 0.028642,
+          "stdout": "",
+          "stderr": ""
+        }
+      ],
+      "artifacts": {
+        "pre_diff": {
+          "path": "artifacts/baseline/reuse-existing-helper/pre.patch",
+          "sha256": "e8adbaef8ad87fe53a21b24292d690cb4a3d252e59f3b7c343177f6025c992db"
+        },
+        "simplify_diff": {
+          "path": "artifacts/baseline/reuse-existing-helper/simplify.patch",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "post_diff": {
+          "path": "artifacts/baseline/reuse-existing-helper/post.patch",
+          "sha256": "e8adbaef8ad87fe53a21b24292d690cb4a3d252e59f3b7c343177f6025c992db"
+        },
+        "transcript": {
+          "path": "transcripts/baseline/reuse-existing-helper.json",
+          "sha256": "60bab48f370fe22c2a92728bd6e050c135677e7c1dff5df050b0551e69f4e84b"
+        },
+        "checks": {
+          "path": "artifacts/baseline/reuse-existing-helper/checks.json",
+          "sha256": "9da4c3f3c86e6d25acded16e4bd71a277831eba87c71505fa32bae13dfcf9bb6"
+        },
+        "history_bundle": {
+          "path": "artifacts/baseline/reuse-existing-helper/history.bundle",
+          "sha256": "e9d64831b962bd07f64a0b393ef5ae98bd320c3d911a42b3ce0cbbb609206dba"
+        }
+      }
+    }
+  ]
+}

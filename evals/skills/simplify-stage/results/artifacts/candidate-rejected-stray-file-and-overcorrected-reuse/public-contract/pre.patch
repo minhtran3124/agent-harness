@@ -1,0 +1,9 @@
+diff --git a/app.py b/app.py
+index e3b8b1b..7fb5036 100644
+--- a/app.py
++++ b/app.py
+@@ -1,2 +1,2 @@
+-def fetch(resource):
+-    return {"resource": resource}
++def fetch(resource, *, timeout=30):
++    return {"resource": resource, "timeout": timeout}

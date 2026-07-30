@@ -1,0 +1,14 @@
+diff --git a/app.py b/app.py
+index c81a54b..82bebf2 100644
+--- a/app.py
++++ b/app.py
+@@ -1,2 +1,6 @@
+ def format_user(name):
+     return name.strip().title()
++
++
++def format_owner(name):
++    return name.strip().title()
+diff --git a/target.diff b/target.diff
+new file mode 100644
+index 0000000..e69de29

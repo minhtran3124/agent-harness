@@ -1,0 +1,10 @@
+diff --git a/app.py b/app.py
+index 8bc84fb..aaaa5c1 100644
+--- a/app.py
++++ b/app.py
+@@ -3,4 +3,4 @@ def total(values):
+ 
+ 
+ def mean(values):
+-    return sum(values) / len(values)
++    return total(values) / len(values)

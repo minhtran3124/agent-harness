@@ -1,0 +1,14 @@
+diff --git a/app.py b/app.py
+index 02c4408..547a836 100644
+--- a/app.py
++++ b/app.py
+@@ -1,8 +1,2 @@
+-class GreetingStrategy:
+-    def render(self, name):
+-        return f"Hello, {name}!"
+-
+-
+ def greeting(name):
+-    strategy = GreetingStrategy()
+-    return strategy.render(name)
++    return f"Hello, {name}!"
