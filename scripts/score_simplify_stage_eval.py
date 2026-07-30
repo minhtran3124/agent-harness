@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Score `/simplify` shadow evidence with safety before cleanup value."""
+
 from __future__ import annotations
 
 import argparse
 import fnmatch
-import hashlib
 import importlib.util
 import json
 import subprocess
@@ -101,8 +101,7 @@ def _all_checks_pass(record: dict[str, Any], field: str) -> bool:
         isinstance(checks, list)
         and bool(checks)
         and all(
-            isinstance(check, dict) and check.get("returncode") == 0
-            for check in checks
+            isinstance(check, dict) and check.get("returncode") == 0 for check in checks
         )
     )
 
@@ -200,12 +199,9 @@ def score_collections(
     candidate_digest = candidate.get("input_digest")
     if baseline_digest != candidate_digest:
         errors.append("baseline/candidate evaluation input digest mismatch")
-    if (
-        current_input_digest is not None
-        and (
-            baseline_digest != current_input_digest
-            or candidate_digest != current_input_digest
-        )
+    if current_input_digest is not None and (
+        baseline_digest != current_input_digest
+        or candidate_digest != current_input_digest
     ):
         errors.append("evaluation input digest is stale against current inputs")
     for key in ("client_version", "expected_client_version", "model"):
@@ -286,9 +282,7 @@ def score_collections(
     baseline_score = _value_score(baseline_records, truths)
     candidate_score = _value_score(candidate_records, truths)
     scoring_path = fixtures / "scoring.json"
-    opportunities = sum(
-        1 for truth in truths.values() if truth["value_opportunity"]
-    )
+    opportunities = sum(1 for truth in truths.values() if truth["value_opportunity"])
     minimum = opportunities
     if scoring_path.is_file():
         try:
@@ -338,7 +332,7 @@ def score_collections(
 
 
 def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    return RUNNER.sha256_file(path)
 
 
 def artifact_errors(collection: dict[str, Any], collection_path: Path) -> list[str]:

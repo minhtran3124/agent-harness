@@ -81,13 +81,12 @@ def resolve_sha(repo_root: Path, ref: str) -> str:
 
 def is_ancestor(repo_root: Path, ancestor: str, descendant: str) -> bool:
     """True if ancestor is an ancestor of, or identical to, descendant."""
-    proc = _run_git(repo_root, "merge-base", "--is-ancestor", ancestor, descendant)
-    if proc.returncode not in (0, 1):
+    result = check_review_receipt._is_ancestor(repo_root, ancestor, descendant)
+    if result is None:
         raise SimplifyRecordError(
-            f"cannot determine ancestry between {ancestor} and {descendant}: "
-            f"{proc.stderr.strip()}"
+            f"cannot determine ancestry between {ancestor} and {descendant}"
         )
-    return proc.returncode == 0
+    return result
 
 
 def begin(

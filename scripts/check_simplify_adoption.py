@@ -25,10 +25,12 @@ Run: python3 scripts/check_simplify_adoption.py [--root DIR]
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import re
 import sys
 from pathlib import Path
+from types import ModuleType
 
 PREFIX = "simplify-adoption"
 
@@ -38,9 +40,26 @@ _DEPLOY_PREFIXES = ("skills/", "agents/", "hooks/", "rules/", "templates/", "run
 _VERSION_FLOOR_RE = re.compile(
     r"supported by Claude Code \*\*(\d+\.\d+\.\d+) or newer\*\*"
 )
-_MINIMUM_VERSION_RE = re.compile(r"MINIMUM_VERSION\s*=\s*\(([^)]+)\)")
-_TINY_THRESHOLD_CONST_RE = re.compile(r"TINY_SOURCE_LINE_THRESHOLD\s*=\s*(\d+)")
 _HOOK_TINY_THRESHOLD_RE = re.compile(r"tiny\)\s*SIZE_THRESHOLD=(\d+)")
+
+
+def _load_check_claude_simplify(root: Path) -> ModuleType | None:
+    """Import scripts/check_claude_simplify.py by path; None if unavailable.
+
+    Reading its actual MINIMUM_VERSION/TINY_SOURCE_LINE_THRESHOLD constants this
+    way, instead of regexing the source text, can't misparse and surfaces a
+    renamed/removed constant as an AttributeError rather than a silent miss.
+    """
+    path = root / "scripts" / "check_claude_simplify.py"
+    if not path.is_file():
+        return None
+    spec = importlib.util.spec_from_file_location("check_claude_simplify", path)
+    if spec is None or spec.loader is None:
+        return None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
 
 _STALE_DOC_PATTERNS = [
     re.compile(r"/simplify[^.\n]{0,80}\boptional\b", re.IGNORECASE),
@@ -57,9 +76,13 @@ def _problem(problems: list[str], kind: str, detail: str) -> None:
 
 def _check_version_floor(root: Path, problems: list[str]) -> None:
     policy_path = root / "rules" / "simplify-stage.md"
-    checker_path = root / "scripts" / "check_claude_simplify.py"
-    if not policy_path.is_file() or not checker_path.is_file():
-        _problem(problems, "policy", f"missing {policy_path} or {checker_path}")
+    checker = _load_check_claude_simplify(root)
+    if not policy_path.is_file() or checker is None:
+        _problem(
+            problems,
+            "policy",
+            f"missing {policy_path} or scripts/check_claude_simplify.py",
+        )
         return
 
     m_policy = _VERSION_FLOOR_RE.search(policy_path.read_text(encoding="utf-8"))
@@ -71,13 +94,17 @@ def _check_version_floor(root: Path, problems: list[str]) -> None:
         )
         return
 
-    m_checker = _MINIMUM_VERSION_RE.search(checker_path.read_text(encoding="utf-8"))
-    if not m_checker:
-        _problem(problems, "policy", f"{checker_path} has no MINIMUM_VERSION constant")
+    try:
+        checker_version = ".".join(str(part) for part in checker.MINIMUM_VERSION)
+    except AttributeError:
+        _problem(
+            problems,
+            "policy",
+            "check_claude_simplify.py has no MINIMUM_VERSION constant",
+        )
         return
 
     policy_version = m_policy.group(1)
-    checker_version = ".".join(p.strip() for p in m_checker.group(1).split(","))
     if policy_version != checker_version:
         _problem(
             problems,
@@ -125,9 +152,11 @@ def _check_receipt_flag(root: Path, problems: list[str]) -> None:
 
 def _check_hook_threshold(root: Path, problems: list[str]) -> None:
     hook_path = root / "hooks" / "risk-corroboration.sh"
-    checker_path = root / "scripts" / "check_claude_simplify.py"
-    if not hook_path.is_file() or not checker_path.is_file():
-        _problem(problems, "hook", f"missing {hook_path} or {checker_path}")
+    checker = _load_check_claude_simplify(root)
+    if not hook_path.is_file() or checker is None:
+        _problem(
+            problems, "hook", f"missing {hook_path} or scripts/check_claude_simplify.py"
+        )
         return
 
     m_hook = _HOOK_TINY_THRESHOLD_RE.search(hook_path.read_text(encoding="utf-8"))
@@ -135,23 +164,22 @@ def _check_hook_threshold(root: Path, problems: list[str]) -> None:
         _problem(problems, "hook", f"{hook_path} has no tiny-lane SIZE_THRESHOLD")
         return
 
-    m_checker = _TINY_THRESHOLD_CONST_RE.search(
-        checker_path.read_text(encoding="utf-8")
-    )
-    if not m_checker:
+    try:
+        checker_threshold = checker.TINY_SOURCE_LINE_THRESHOLD
+    except AttributeError:
         _problem(
             problems,
             "hook",
-            f"{checker_path} has no TINY_SOURCE_LINE_THRESHOLD constant",
+            "check_claude_simplify.py has no TINY_SOURCE_LINE_THRESHOLD constant",
         )
         return
 
-    if m_hook.group(1) != m_checker.group(1):
+    if int(m_hook.group(1)) != checker_threshold:
         _problem(
             problems,
             "hook",
             f"hooks/risk-corroboration.sh tiny SIZE_THRESHOLD={m_hook.group(1)} but "
-            f"check_claude_simplify.py TINY_SOURCE_LINE_THRESHOLD={m_checker.group(1)}",
+            f"check_claude_simplify.py TINY_SOURCE_LINE_THRESHOLD={checker_threshold}",
         )
 
 

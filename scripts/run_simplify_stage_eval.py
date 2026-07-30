@@ -39,22 +39,15 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _write_immutable(path: Path, content: str) -> None:
+def _write_immutable(path: Path, content: str | bytes) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     try:
-        with path.open("x", encoding="utf-8") as handle:
-            handle.write(content)
-    except FileExistsError as exc:
-        raise CollectionError(
-            f"refusing to overwrite first-run artifact: {path}"
-        ) from exc
-
-
-def _write_bytes_immutable(path: Path, content: bytes) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    try:
-        with path.open("xb") as handle:
-            handle.write(content)
+        if isinstance(content, bytes):
+            with path.open("xb") as handle:
+                handle.write(content)
+        else:
+            with path.open("x", encoding="utf-8") as handle:
+                handle.write(content)
     except FileExistsError as exc:
         raise CollectionError(
             f"refusing to overwrite first-run artifact: {path}"
@@ -611,10 +604,7 @@ def _artifact(
     path: Path,
     content: str | bytes,
 ) -> dict[str, str]:
-    if isinstance(content, bytes):
-        _write_bytes_immutable(path, content)
-    else:
-        _write_immutable(path, content)
+    _write_immutable(path, content)
     return {
         "path": str(path.relative_to(output_parent)),
         "sha256": sha256_file(path),

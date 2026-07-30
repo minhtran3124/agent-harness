@@ -5,6 +5,7 @@ The checker is intentionally independent of the current Git branch. Callers
 must resolve and supply BASE, HEAD, changed paths, and Git numstat explicitly.
 The resulting JSON is suitable for orchestration and durable review evidence.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -48,7 +49,9 @@ _DOCUMENT_NAMES = frozenset(
     }
 )
 _DOCUMENT_SUFFIXES = frozenset({".md", ".mdx", ".rst", ".adoc"})
-_VENDOR_PARTS = frozenset({"vendor", "vendors", "third_party", "third-party", "node_modules"})
+_VENDOR_PARTS = frozenset(
+    {"vendor", "vendors", "third_party", "third-party", "node_modules"}
+)
 _ROOT_GENERATED_DIRS = frozenset(
     {
         "dist",
@@ -114,7 +117,10 @@ def _normalized_path(raw: str) -> str:
 
 def _has_directory_subtree(parts: tuple[str, ...], authorities: frozenset[str]) -> bool:
     """Return true only when an authority token has a child path component."""
-    return any(part in authorities and index < len(parts) - 1 for index, part in enumerate(parts))
+    return any(
+        part in authorities and index < len(parts) - 1
+        for index, part in enumerate(parts)
+    )
 
 
 def classify_path(raw: str) -> str:
@@ -129,16 +135,20 @@ def classify_path(raw: str) -> str:
         return "generated"
     if len(lowered_parts) > 1 and lowered_parts[0] == "specs":
         return "specs_bookkeeping"
-    if len(lowered_parts) > 2 and lowered_parts[0] == "evals" and any(
-        part in {"results", "result", "raw", "transcripts"} for part in lowered_parts[1:-1]
+    if (
+        len(lowered_parts) > 2
+        and lowered_parts[0] == "evals"
+        and any(
+            part in {"results", "result", "raw", "transcripts"}
+            for part in lowered_parts[1:-1]
+        )
     ):
         return "evaluation"
     if _has_directory_subtree(lowered_parts, _VENDOR_PARTS):
         return "vendor"
     if (
-        (len(lowered_parts) > 1 and lowered_parts[0] in _ROOT_GENERATED_DIRS)
-        or _has_directory_subtree(lowered_parts, _UNAMBIGUOUS_GENERATED_PARTS)
-    ):
+        len(lowered_parts) > 1 and lowered_parts[0] in _ROOT_GENERATED_DIRS
+    ) or _has_directory_subtree(lowered_parts, _UNAMBIGUOUS_GENERATED_PARTS):
         return "generated"
     if (
         lowered_name in _GENERATED_NAMES
@@ -147,7 +157,10 @@ def classify_path(raw: str) -> str:
     ):
         return "generated"
     if (
-        (len(lowered_parts) > 1 and lowered_parts[0] in {"doc", "docs", "documentation"})
+        (
+            len(lowered_parts) > 1
+            and lowered_parts[0] in {"doc", "docs", "documentation"}
+        )
         or lowered_name in _DOCUMENT_NAMES
         or parsed.suffix.lower() in _DOCUMENT_SUFFIXES
     ):
@@ -225,8 +238,12 @@ def evaluate_policy(
 
     paths = sorted(set(_normalized_path(path) for path in changed_paths))
     categories = {path: classify_path(path) for path in paths}
-    reviewable = sorted(path for path, category in categories.items() if category == "reviewable")
-    excluded_categories = {category for category in categories.values() if category != "reviewable"}
+    reviewable = sorted(
+        path for path, category in categories.items() if category == "reviewable"
+    )
+    excluded_categories = {
+        category for category in categories.values() if category != "reviewable"
+    }
     counts = parse_numstat(numstat)
     if set(counts) != set(paths):
         missing = sorted(set(paths) - set(counts))
@@ -236,10 +253,9 @@ def evaluate_policy(
             details.append("missing: " + ", ".join(missing))
         if unexpected:
             details.append("unexpected: " + ", ".join(unexpected))
-        raise ValueError("changed paths and numstat disagree (" + "; ".join(details) + ")")
-    missing_stats = [path for path in reviewable if path not in counts]
-    if missing_stats:
-        raise ValueError("numstat is missing reviewable paths: " + ", ".join(missing_stats))
+        raise ValueError(
+            "changed paths and numstat disagree (" + "; ".join(details) + ")"
+        )
     changed_source_lines = sum(counts[path] for path in reviewable)
 
     if not reviewable:
