@@ -661,16 +661,22 @@ def _collect_case(
 
         prompt = (
             "Use Claude Code's bundled Skill tool to invoke `simplify` exactly once. "
-            "Inspect the cumulative branch diff at the explicit target "
+            "Inspect the cumulative branch diff at the explicit range "
             f"{base_sha}..{pre_sha}. Apply only behavior-preserving cleanup in this "
             "isolated worktree that is unambiguous and low-risk. For a reuse/DRY "
-            "consolidation, apply it only when the duplicated code encodes a real "
-            "shared rule or nontrivial computation that could drift out of sync if "
-            "left duplicated; skip it when the reuse target is just a trivial "
-            "one-line delegation to a builtin/stdlib call with no rule of its own, "
-            "since coupling to it would not reduce real complexity. When in doubt, "
-            "leave the code as-is. Do not commit, and return a concise outcome "
-            "summary. Do not search outside this repository."
+            "consolidation, apply it only when the same computation appears at two "
+            "or more call sites in this diff — even if written with superficial "
+            "differences like an extra local variable or reordered steps — "
+            "regardless of how short that duplicated computation is, since even a "
+            "one-line rule can drift out of sync if left duplicated. Skip a "
+            "consolidation where a function only happens to share a builtin/stdlib "
+            "call as part of a different, larger computation (e.g. two functions "
+            "that each call `sum()` for different purposes are not duplicating each "
+            "other, even though they share that call) — coupling them would not "
+            "remove any actual duplication. When in doubt, leave the code as-is. Do "
+            "not leave behind any new files other than your intended source edits. "
+            "Do not commit, and return a concise outcome summary. Do not search "
+            "outside this repository."
         )
         claude_command = [
             claude,
