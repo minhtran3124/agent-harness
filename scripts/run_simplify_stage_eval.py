@@ -4,6 +4,7 @@
 The runner deliberately never opens fixture ``truth.json`` files. Those files are
 reserved for the separate scorer so expected answers cannot leak into collection.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -44,7 +45,9 @@ def _write_immutable(path: Path, content: str) -> None:
         with path.open("x", encoding="utf-8") as handle:
             handle.write(content)
     except FileExistsError as exc:
-        raise CollectionError(f"refusing to overwrite first-run artifact: {path}") from exc
+        raise CollectionError(
+            f"refusing to overwrite first-run artifact: {path}"
+        ) from exc
 
 
 def _write_bytes_immutable(path: Path, content: bytes) -> None:
@@ -53,7 +56,9 @@ def _write_bytes_immutable(path: Path, content: bytes) -> None:
         with path.open("xb") as handle:
             handle.write(content)
     except FileExistsError as exc:
-        raise CollectionError(f"refusing to overwrite first-run artifact: {path}") from exc
+        raise CollectionError(
+            f"refusing to overwrite first-run artifact: {path}"
+        ) from exc
 
 
 def _run(
@@ -130,11 +135,7 @@ def evaluation_input_digest(fixtures: Path) -> str:
         (
             "evals/skills/simplify-stage/schema.json",
             (
-                source_root
-                / "evals"
-                / "skills"
-                / "simplify-stage"
-                / "schema.json"
+                source_root / "evals" / "skills" / "simplify-stage" / "schema.json"
             ).resolve(),
         ),
     ]
@@ -146,7 +147,9 @@ def evaluation_input_digest(fixtures: Path) -> str:
         for path in fixtures.iterdir()
         if path.is_dir() and (path / "fixture.json").is_file()
     ):
-        inputs.append((f"fixtures/{fixture.name}/fixture.json", fixture / "fixture.json"))
+        inputs.append(
+            (f"fixtures/{fixture.name}/fixture.json", fixture / "fixture.json")
+        )
         for dirname in ("base", "candidate"):
             root = fixture / dirname
             for path in sorted(root.rglob("*")):
@@ -250,7 +253,9 @@ def capture_head_state(worktree: Path) -> HeadState:
     resolved = _git(worktree, "rev-parse", "HEAD").strip()
     symbolic_result = _run(["git", "symbolic-ref", "-q", "HEAD"], cwd=worktree)
     if symbolic_result.returncode not in {0, 1}:
-        raise CollectionError(f"unable to resolve symbolic HEAD: {symbolic_result.stderr}")
+        raise CollectionError(
+            f"unable to resolve symbolic HEAD: {symbolic_result.stderr}"
+        )
     git_marker = worktree / ".git"
     pointer = git_marker.read_bytes() if git_marker.is_file() else b""
     return HeadState(resolved, symbolic_result.stdout.strip(), pointer)
@@ -312,10 +317,7 @@ def _parse_claude_stream(
                         block.get("is_error") is True
                     )
                 continue
-            if (
-                event.get("type") != "assistant"
-                or block.get("type") != "tool_use"
-            ):
+            if event.get("type") != "assistant" or block.get("type") != "tool_use":
                 continue
             tool_id = block.get("id")
             if not isinstance(tool_id, str) or not tool_id:
@@ -363,7 +365,11 @@ def _sandbox_profile(
 ) -> str:
     home = Path.home()
     auth_roots = [client.parent]
-    protected_roots = {source_root.resolve(), fixture.resolve(), output_parent.resolve()}
+    protected_roots = {
+        source_root.resolve(),
+        fixture.resolve(),
+        output_parent.resolve(),
+    }
     allowed_roots = {
         worktree.resolve(),
         git_dir.resolve(),
@@ -386,7 +392,11 @@ def _sandbox_profile(
     }
     for protected in protected_roots:
         for allowed in allowed_roots:
-            if protected == allowed or protected in allowed.parents or allowed in protected.parents:
+            if (
+                protected == allowed
+                or protected in allowed.parents
+                or allowed in protected.parents
+            ):
                 raise CollectionError(
                     "sandbox protected/allowed roots overlap: "
                     f"protected={protected}, allowed={allowed}"
@@ -405,10 +415,7 @@ def _sandbox_profile(
         for alias in aliases(root)
     )
     home_exception_paths = {
-        alias
-        for path in auth_roots
-        if path.exists()
-        for alias in aliases(path)
+        alias for path in auth_roots if path.exists() for alias in aliases(path)
     }
     home_exceptions = " ".join(
         (
@@ -428,8 +435,7 @@ def _sandbox_profile(
         for alias in aliases(root)
     }
     read_exceptions = " ".join(
-        f"(require-not (subpath {_sandbox_quote(path)}))"
-        for path in readable_roots
+        f"(require-not (subpath {_sandbox_quote(path)}))" for path in readable_roots
     )
     return (
         "(version 1)\n"
@@ -458,8 +464,7 @@ def _resolve_auth_environment() -> dict[str, str]:
         return {"CLAUDE_CODE_OAUTH_TOKEN": oauth_token}
     if sys.platform != "darwin":
         raise CollectionError(
-            "candidate collection requires ANTHROPIC_API_KEY or "
-            "CLAUDE_CODE_OAUTH_TOKEN"
+            "candidate collection requires ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN"
         )
     security = subprocess.Popen(
         [
@@ -539,10 +544,7 @@ def _commands(
         "{fixture}": str(fixture),
     }
     for raw_command in commands:
-        command = [
-            replacements.get(part, part)
-            for part in raw_command
-        ]
+        command = [replacements.get(part, part) for part in raw_command]
         started = time.monotonic()
         completed = _run(command, cwd=worktree)
         results.append(
@@ -647,9 +649,7 @@ def _collect_case(
             model,
             "--dangerously-skip-permissions",
         ]
-        transcript_path = (
-            output_parent / "transcripts" / run_id / f"{case_id}.json"
-        )
+        transcript_path = output_parent / "transcripts" / run_id / f"{case_id}.json"
         transcript_artifact: dict[str, str] | None = None
         if mode == "candidate":
             sandbox = shutil.which("sandbox-exec")
@@ -727,11 +727,7 @@ def _collect_case(
                 observed_skills,
                 skill_evidence,
             ) = _parse_claude_stream(completed.stdout)
-            successful_skill = (
-                skill_evidence[0]
-                if len(skill_evidence) == 1
-                else None
-            )
+            successful_skill = skill_evidence[0] if len(skill_evidence) == 1 else None
             claude_result = {
                 "invocations": 1,
                 "command": [part for part in sandboxed_command if part != prompt],
@@ -1050,6 +1046,10 @@ def collect(
     model: str,
     source_commit: str,
 ) -> dict[str, Any]:
+    fixtures = fixtures.resolve()
+    output = output.resolve()
+    if os.sep in claude or (os.altsep and os.altsep in claude):
+        claude = str(Path(claude).resolve())
     if output.exists():
         raise CollectionError(f"refusing to overwrite first-run result: {output}")
     if not HEX_SHA.fullmatch(source_commit):
@@ -1102,9 +1102,7 @@ def collect(
     for root in (artifact_root, transcript_root):
         if root.exists():
             raise CollectionError(f"refusing to overwrite first-run artifacts: {root}")
-    auth_environment = (
-        _resolve_auth_environment() if mode == "candidate" else {}
-    )
+    auth_environment = _resolve_auth_environment() if mode == "candidate" else {}
     records = [
         _collect_case(
             fixture=fixture,

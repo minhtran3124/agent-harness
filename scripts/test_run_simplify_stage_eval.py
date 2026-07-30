@@ -25,8 +25,7 @@ def write_fixture(root: Path, *, failing_checks: bool = False) -> Path:
     (fixture / "base").mkdir(parents=True)
     (fixture / "candidate").mkdir()
     (fixture / "base" / "app.py").write_text(
-        "def total(values):\n"
-        "    return sum(values)\n",
+        "def total(values):\n    return sum(values)\n",
         encoding="utf-8",
     )
     (fixture / "candidate" / "app.py").write_text(
@@ -43,10 +42,7 @@ def write_fixture(root: Path, *, failing_checks: bool = False) -> Path:
             [
                 sys.executable,
                 "-c",
-                (
-                    "import app; "
-                    f"assert app.total([1, 2, 3]) == {expected}"
-                ),
+                (f"import app; assert app.total([1, 2, 3]) == {expected}"),
             ]
         ],
         "final_review_commands": [
@@ -123,13 +119,12 @@ def write_fake_claude(
             if forbidden_exec
             else ""
         )
-        +
-        "path = pathlib.Path.cwd() / 'app.py'\n"
+        + "path = pathlib.Path.cwd() / 'app.py'\n"
         "text = path.read_text()\n"
         "path.write_text(text.replace("
-        "\"    copied = [value for value in values]\\n"
-        "    return sum(copied)\\n\", "
-        "\"    return sum(values)\\n\"))\n"
+        '"    copied = [value for value in values]\\n'
+        '    return sum(copied)\\n", '
+        '"    return sum(values)\\n"))\n'
         f"for index, skill in enumerate({skill_names!r}):\n"
         "    print(json.dumps({'type': 'assistant', 'message': {'content': "
         "[{'type': 'tool_use', 'id': 'skill-' + str(index), 'name': 'Skill', "
@@ -207,12 +202,9 @@ def test_candidate_isolated_collection_hides_truth_and_captures_evidence(tmp_pat
             Path("/System/Volumes/Data")
             / str(Path.home() / ".claude.json").lstrip("/"),
             Path("/System/Volumes/Data")
-            / str(
-                Path.home()
-                / "Library"
-                / "Keychains"
-                / "login.keychain-db"
-            ).lstrip("/"),
+            / str(Path.home() / "Library" / "Keychains" / "login.keychain-db").lstrip(
+                "/"
+            ),
         ),
         forbidden_write=forbidden_output,
     )
@@ -258,9 +250,7 @@ def test_first_run_artifacts_are_never_overwritten(tmp_path):
     first = invoke(fixture.parent, output, fake)
     assert first.returncode == 0, first.stderr
     before = {
-        path: path.read_bytes()
-        for path in output.parent.rglob("*")
-        if path.is_file()
+        path: path.read_bytes() for path in output.parent.rglob("*") if path.is_file()
     }
 
     second = invoke(fixture.parent, output, fake)
@@ -268,9 +258,7 @@ def test_first_run_artifacts_are_never_overwritten(tmp_path):
     assert second.returncode != 0
     assert "refusing to overwrite" in second.stderr
     assert before == {
-        path: path.read_bytes()
-        for path in output.parent.rglob("*")
-        if path.is_file()
+        path: path.read_bytes() for path in output.parent.rglob("*") if path.is_file()
     }
 
 
@@ -337,6 +325,60 @@ def test_advisory_mode_does_not_invoke_simplify(tmp_path):
     assert record["outcome"] == "no_op"
     assert record["claude"]["invocations"] == 0
     assert record["pre_sha"] == record["post_sha"]
+
+
+def test_relative_output_and_fixtures_resolve_from_caller_cwd(tmp_path):
+    write_fixture(tmp_path)
+    client = tmp_path / "client"
+    client.mkdir()
+    write_fake_claude(client)
+    caller = tmp_path / "caller"
+    caller.mkdir()
+    subprocess.run(["git", "init", "-q", "-b", "main"], cwd=caller, check=True)
+    subprocess.run(["git", "config", "user.name", "Test"], cwd=caller, check=True)
+    subprocess.run(
+        ["git", "config", "user.email", "test@example.invalid"],
+        cwd=caller,
+        check=True,
+    )
+    (caller / "source.txt").write_text("source\n", encoding="utf-8")
+    subprocess.run(["git", "add", "source.txt"], cwd=caller, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "source"], cwd=caller, check=True)
+    source_commit = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"],
+        cwd=caller,
+        text=True,
+    ).strip()
+
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--mode",
+            "advisory",
+            "--fixtures",
+            "../fixtures",
+            "--output",
+            "results/baseline.json",
+            "--claude",
+            "../client/fake-claude",
+            "--expected-client-version",
+            "2.1.220",
+            "--source-commit",
+            source_commit,
+        ],
+        cwd=caller,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    output = caller / "results" / "baseline.json"
+    result = json.loads(output.read_text(encoding="utf-8"))
+    for artifact in result["records"][0]["artifacts"].values():
+        assert not Path(artifact["path"]).is_absolute()
+        assert (output.parent / artifact["path"]).is_file()
 
 
 def test_candidate_rejects_zero_multiple_or_wrong_skill_tool_use(tmp_path):
@@ -542,7 +584,13 @@ def test_real_safe_mode_auth_succeeds_but_security_cannot_read_keychain(tmp_path
 
 
 def test_remove_paths_reject_traversal_backslash_and_absolute_paths(tmp_path):
-    for raw in ("../outside", "nested/../../outside", "nested\\outside", "/outside", "."):
+    for raw in (
+        "../outside",
+        "nested/../../outside",
+        "nested\\outside",
+        "/outside",
+        ".",
+    ):
         try:
             MODULE.validate_remove_path(raw)
         except MODULE.CollectionError:
@@ -599,23 +647,23 @@ def test_cached_patch_captures_untracked_deleted_rename_and_binary(tmp_path):
     fake.write_text(
         "#!/usr/bin/python3\n"
         "import json, pathlib, sys\n"
-            "if '--version' in sys.argv:\n"
-            "    print('2.1.220 (Claude Code)')\n"
-            "    raise SystemExit(0)\n"
-            "if 'auth' in sys.argv and 'status' in sys.argv:\n"
-            "    print(json.dumps({'loggedIn': True, 'authMethod': 'oauth_token'}))\n"
-            "    raise SystemExit(0)\n"
+        "if '--version' in sys.argv:\n"
+        "    print('2.1.220 (Claude Code)')\n"
+        "    raise SystemExit(0)\n"
+        "if 'auth' in sys.argv and 'status' in sys.argv:\n"
+        "    print(json.dumps({'loggedIn': True, 'authMethod': 'oauth_token'}))\n"
+        "    raise SystemExit(0)\n"
         "root = pathlib.Path.cwd()\n"
         "(root / 'app.py').rename(root / 'renamed.py')\n"
         "(root / 'old.txt').unlink()\n"
         "(root / 'new.txt').write_text('new file\\n')\n"
         "(root / 'binary.bin').write_bytes(bytes(range(256)))\n"
         "print(json.dumps({'type': 'assistant', 'message': {'content': "
-            "[{'type': 'tool_use', 'id': 'one', 'name': 'Skill', "
-            "'input': {'skill': 'simplify'}}]}}))\n"
-            "print(json.dumps({'type': 'user', 'message': {'content': "
-            "[{'type': 'tool_result', 'tool_use_id': 'one', "
-            "'is_error': False, 'content': 'done'}]}}))\n"
+        "[{'type': 'tool_use', 'id': 'one', 'name': 'Skill', "
+        "'input': {'skill': 'simplify'}}]}}))\n"
+        "print(json.dumps({'type': 'user', 'message': {'content': "
+        "[{'type': 'tool_result', 'tool_use_id': 'one', "
+        "'is_error': False, 'content': 'done'}]}}))\n"
         "print(json.dumps({'type': 'result', 'result': 'done', 'usage': {}}))\n",
         encoding="utf-8",
     )
