@@ -1,5 +1,8 @@
 # Final review chain
 
+This chain starts only after `references/simplify-stage.md` has recorded its outcome and any
+accepted cleanup is committed — the diff and HEAD below are already post-simplify.
+
 If the cumulative diff touches workflow-engine paths, run `/context-propagation-audit` first.
 Create one explicit branch review package (`BASE..HEAD`) using `review_package.py` and give its
 path to `/correctness-review` and `/intent-review`. They may share only this mechanical evidence:

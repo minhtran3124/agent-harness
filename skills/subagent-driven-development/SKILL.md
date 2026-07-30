@@ -47,8 +47,10 @@ Ensure branch isolation, set the plan `status: active`, and transition the durab
   split, or escalated when the plan itself is wrong. Repeated verification failure or blast-radius
   escape is an escalation signal. Keep controller narration to one short status line between calls.
 
-After all tasks pass, transition to `verifying` when tracked and read
-`references/review-chain.md` for the final sequence.
+After all tasks pass, transition to `verifying` when tracked. Read
+`references/simplify-stage.md` first — it resolves whether Claude Code's bundled `/simplify`
+cleanup stage is required and records its outcome, committing any accepted mutation before any
+final evidence exists — then read `references/review-chain.md` for the remaining final sequence.
 
 ## Receipt and ship gate
 
