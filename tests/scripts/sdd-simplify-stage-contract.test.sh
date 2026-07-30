@@ -59,7 +59,7 @@ else fail "no 'committed before the branch review package' clause in $STAGE"; fi
 # stage_policy_wired_ok <dir> — 0 iff simplify-stage.md resolves policy via the wave-1
 # checker and reads its required/ok fields, rather than re-deriving the decision.
 stage_policy_wired_ok() {
-  grep -q 'check_claude_simplify\.py' "$1/$STAGE" && flat "$1" "$STAGE" | grep -qF 'do not re-derive it from the diff yourself'
+  grep -q 'check_claude_simplify\.py' "$1/$STAGE" && flat "$1" "$STAGE" | grep -qF 'do not re-derive any of it from the diff yourself'
 }
 
 t "simplify-stage.md resolves the policy decision via check_claude_simplify.py, not ad hoc"
@@ -78,6 +78,20 @@ stage_begin_wired_ok() {
 t "simplify-stage.md defers the dirty-worktree/base refusal to simplify_record.py begin"
 if stage_begin_wired_ok "$ROOT"; then pass
 else fail "no simplify_record.py begin call with a do-not-reimplement clause in $STAGE"; fi
+
+# stage_begin_not_gated_on_required_ok <dir> — 0 iff begin() runs whenever reviewable
+# paths exist, regardless of `required`. Otherwise a tiny/advisory (not-required) diff with
+# reviewable paths would reach finish()'s required --begin-state with nothing to pass —
+# finish() has no valid input, and the receipt gate (which only checks "any reviewable path
+# touched", not the lane/tiny-size threshold) would then find no entry to validate.
+stage_begin_not_gated_on_required_ok() {
+  flat "$1" "$STAGE" | grep -qiF 'regardless of `required`' \
+    && flat "$1" "$STAGE" | grep -qiF 'reviewable_paths` is empty'
+}
+
+t "simplify-stage.md runs begin() whenever reviewable paths exist, not gated on required"
+if stage_begin_not_gated_on_required_ok "$ROOT"; then pass
+else fail "begin() is not clearly decoupled from 'required' in $STAGE"; fi
 
 # --- exactly-once invocation / no local skill ---------------------------------------
 
@@ -138,7 +152,7 @@ resume_covers_stage_ok() {
   local f="$1/$RESUME"
   grep -q 'simplify-stage\.md' "$f" \
     && grep -q -- '--require-simplify-if' "$f" \
-    && grep -q 'stale-sha' "$f" \
+    && grep -qi 'exit code' "$f" \
     && flat "$1" "$RESUME" | grep -qiF 'do not re-run `references/simplify-stage.md`'
 }
 
@@ -198,6 +212,12 @@ sed -i.bak '/simplify_record\.py begin/d' "$m/$STAGE" && rm -f "$m/$STAGE.bak"
 if ! stage_begin_wired_ok "$m"; then pass
 else fail "removing the simplify_record.py begin wiring was NOT detected"; fi
 
+t "mutation: gating begin() on 'required' (reintroducing the executability gap) is detected"
+m=$(mut_dir)
+sed -i.bak 's/regardless of `required`//' "$m/$STAGE" && rm -f "$m/$STAGE.bak"
+if ! stage_begin_not_gated_on_required_ok "$m"; then pass
+else fail "re-gating begin() on 'required' was NOT detected"; fi
+
 t "mutation: removing the exactly-once invocation clause is detected"
 m=$(mut_dir)
 sed -i.bak 's/exactly once/once/' "$m/$STAGE" && rm -f "$m/$STAGE.bak"
@@ -231,7 +251,7 @@ else fail "removing the never-hand-set clause was NOT detected"; fi
 
 t "mutation: removing resume.md's simplify-stage evidence gate is detected"
 m=$(mut_dir)
-sed -i.bak '/simplify-stage\.md/d; /--require-simplify-if/d; /stale-sha/d' "$m/$RESUME" && rm -f "$m/$RESUME.bak"
+sed -i.bak '/simplify-stage\.md/d; /--require-simplify-if/d; /exit code/d' "$m/$RESUME" && rm -f "$m/$RESUME.bak"
 if ! resume_covers_stage_ok "$m"; then pass
 else fail "removing resume.md's simplify-stage evidence gate was NOT detected"; fi
 
