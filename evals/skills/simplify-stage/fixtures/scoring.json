@@ -1,0 +1,5 @@
+{
+  "schema_version": 1,
+  "minimum_value_score": 3,
+  "quality_policy": "all_cases_must_pass"
+}

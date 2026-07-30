@@ -1,0 +1,327 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-harness.local/evals/simplify-stage/schema.json",
+  "title": "Simplify-stage immutable collection",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "mode",
+    "collected_at",
+    "source_commit_sha",
+    "input_digest",
+    "environment",
+    "records"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "mode": {
+      "enum": [
+        "advisory",
+        "candidate"
+      ]
+    },
+    "collected_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source_commit_sha": {
+      "$ref": "#/$defs/sha"
+    },
+    "input_digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "client_version",
+        "expected_client_version",
+        "model"
+      ],
+      "properties": {
+        "client_version": {
+          "$ref": "#/$defs/version"
+        },
+        "expected_client_version": {
+          "$ref": "#/$defs/version"
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "records": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/record"
+      }
+    }
+  },
+  "$defs": {
+    "sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "command_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command",
+        "returncode",
+        "elapsed_seconds",
+        "stdout",
+        "stderr"
+      ],
+      "properties": {
+        "command": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "returncode": {
+          "type": "integer"
+        },
+        "elapsed_seconds": {
+          "type": "number",
+          "minimum": 0
+        },
+        "stdout": {
+          "type": "string"
+        },
+        "stderr": {
+          "type": "string"
+        }
+      }
+    },
+    "record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "case_id",
+        "fixture_digest",
+        "worktree",
+        "base_sha",
+        "pre_sha",
+        "post_sha",
+        "outcome",
+        "changed_files",
+        "diff_stats",
+        "claude",
+        "verification",
+        "final_review",
+        "artifacts"
+      ],
+      "properties": {
+        "case_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "fixture_digest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "worktree": {
+          "type": "string",
+          "minLength": 1
+        },
+        "base_sha": {
+          "$ref": "#/$defs/sha"
+        },
+        "pre_sha": {
+          "$ref": "#/$defs/sha"
+        },
+        "post_sha": {
+          "$ref": "#/$defs/sha"
+        },
+        "outcome": {
+          "enum": [
+            "changed",
+            "no_op"
+          ]
+        },
+        "changed_files": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "diff_stats": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "simplify_added_lines",
+            "simplify_removed_lines"
+          ],
+          "properties": {
+            "simplify_added_lines": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "simplify_removed_lines": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "claude": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "invocations",
+            "command",
+            "returncode",
+            "elapsed_seconds",
+            "result",
+            "usage",
+            "observed_skill_invocations",
+            "skill_tool_evidence"
+          ],
+          "properties": {
+            "invocations": {
+              "enum": [
+                0,
+                1
+              ]
+            },
+            "command": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "returncode": {
+              "type": "integer"
+            },
+            "elapsed_seconds": {
+              "type": "number",
+              "minimum": 0
+            },
+            "result": {
+              "type": "string"
+            },
+            "usage": {
+              "type": "object"
+            },
+            "observed_skill_invocations": {
+              "type": "array",
+              "maxItems": 1,
+              "items": {
+                "const": "simplify"
+              }
+            },
+            "skill_tool_evidence": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "tool_use_id",
+                    "skill",
+                    "result_count",
+                    "result_status"
+                  ],
+                  "properties": {
+                    "tool_use_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "skill": {
+                      "const": "simplify"
+                    },
+                    "result_count": {
+                      "const": 1
+                    },
+                    "result_status": {
+                      "const": "success"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "verification": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/command_result"
+          }
+        },
+        "final_review": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/command_result"
+          }
+        },
+        "artifacts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "pre_diff",
+            "simplify_diff",
+            "post_diff",
+            "transcript",
+            "checks",
+            "history_bundle"
+          ],
+          "properties": {
+            "pre_diff": {
+              "$ref": "#/$defs/artifact"
+            },
+            "simplify_diff": {
+              "$ref": "#/$defs/artifact"
+            },
+            "post_diff": {
+              "$ref": "#/$defs/artifact"
+            },
+            "transcript": {
+              "$ref": "#/$defs/artifact"
+            },
+            "checks": {
+              "$ref": "#/$defs/artifact"
+            },
+            "history_bundle": {
+              "$ref": "#/$defs/artifact"
+            }
+          }
+        }
+      }
+    }
+  }
+}

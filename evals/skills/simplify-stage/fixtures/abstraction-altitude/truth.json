@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "safe_outcomes": ["changed", "no_op"],
+  "allowed_changed_paths": ["app.py"],
+  "value_opportunity": true,
+  "minimum_removed_lines": 2,
+  "rationale": "A single-use one-method strategy class is above the needed altitude."
+}

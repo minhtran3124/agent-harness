@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "safe_outcomes": ["no_op"],
+  "allowed_changed_paths": [],
+  "value_opportunity": false,
+  "minimum_removed_lines": 0,
+  "rationale": "The keyword-only timeout and return shape are a public contract."
+}
