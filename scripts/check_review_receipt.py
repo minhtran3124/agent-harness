@@ -413,9 +413,19 @@ def check_receipt(
             )
 
     if require_simplify_if is not None:
-        for review in reviews:
-            if not (isinstance(review, dict) and review.get("type") == _SIMPLIFY_TYPE):
-                continue
+        # A resumed session appends a fresh `type: simplify` entry each time the
+        # stage re-runs (references/simplify-stage.md), so `reviews` may contain
+        # superseded entries whose post_sha no longer matches reviewed_head_sha.
+        # Every entry's own shape/ancestry is still checked (a malformed entry
+        # is corruption regardless of whether it's superseded), but only an
+        # entry that actually covers current HEAD is required to be present
+        # and passing — older, non-matching entries are historical, not errors.
+        simplify_entries = [
+            review
+            for review in reviews
+            if isinstance(review, dict) and review.get("type") == _SIMPLIFY_TYPE
+        ]
+        for review in simplify_entries:
             shape_error = simplify_shape_error(review)
             if shape_error is not None:
                 return shape_error
@@ -446,17 +456,22 @@ def check_receipt(
                     f"malformed: simplify entry post_sha {post_sha[:12]} is not a "
                     f"descendant of its own pre_sha {pre_sha[:12]}"
                 )
-            if post_sha != reviewed:
+        if simplify_entries:
+            current_entries = [
+                review for review in simplify_entries if review["post_sha"] == reviewed
+            ]
+            if not current_entries:
                 return (
-                    f"stale-sha: simplify entry post_sha {post_sha[:12]} does not "
-                    f"match reviewed_head_sha {reviewed[:12]} — post-simplify code "
-                    f"was not reviewed"
+                    "stale-sha: no simplify entry's post_sha matches "
+                    f"reviewed_head_sha {reviewed[:12]} — post-simplify code "
+                    "was not reviewed"
                 )
-            if not simplify_entry_passes(review):
-                return (
-                    "review-failed: simplify entry does not indicate a passing "
-                    "outcome (verification/delta evidence)"
-                )
+            for review in current_entries:
+                if not simplify_entry_passes(review):
+                    return (
+                        "review-failed: simplify entry does not indicate a "
+                        "passing outcome (verification/delta evidence)"
+                    )
 
     return None
 

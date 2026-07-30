@@ -366,6 +366,49 @@ def test_require_simplify_if_passing_entry_unblocks(tmp_path):
     assert crr.main([str(slug_dir), "--require-simplify-if", base]) == 0
 
 
+def test_require_simplify_if_superseded_entry_from_a_resume_cycle_does_not_block(
+    tmp_path,
+):
+    # references/simplify-stage.md appends a fresh entry each time the stage
+    # re-runs on resume, so a receipt can legitimately hold a stale entry
+    # (post_sha1) alongside the current one (post_sha2 == reviewed_head_sha).
+    # The stale entry must not fatally block validation of the current one.
+    repo, base, pre1, post1 = make_simplify_repo(tmp_path)
+    commit_file(repo, "src/app.py", "x = 1\ny = 2\nz = 3\nw = 4\n")
+    post2 = head_sha(repo)
+    stale_entry = simplify_entry(base, pre1, post1)
+    current_entry = simplify_entry(base, post1, post2)
+    slug_dir = write_receipt(
+        repo,
+        "gh-x",
+        {"reviewed_head_sha": post2, "reviews": [stale_entry, current_entry]},
+    )
+    assert crr.main([str(slug_dir), "--require-simplify-if", base]) == 0
+
+
+def test_require_simplify_if_malformed_superseded_entry_still_rejected(
+    tmp_path, capsys
+):
+    # A stale/superseded entry is not re-validated for freshness, but a
+    # structurally corrupt one is still a fatal error — "historical" does not
+    # mean "unvalidated".
+    repo, base, pre1, post1 = make_simplify_repo(tmp_path)
+    commit_file(repo, "src/app.py", "x = 1\ny = 2\nz = 3\nw = 4\n")
+    post2 = head_sha(repo)
+    malformed_stale_entry = simplify_entry(base, pre1, post1[:12])
+    current_entry = simplify_entry(base, post1, post2)
+    slug_dir = write_receipt(
+        repo,
+        "gh-x",
+        {
+            "reviewed_head_sha": post2,
+            "reviews": [malformed_stale_entry, current_entry],
+        },
+    )
+    assert crr.main([str(slug_dir), "--require-simplify-if", base]) == 1
+    assert "malformed" in capsys.readouterr().err
+
+
 def test_require_simplify_if_missing_entry_fails(tmp_path, capsys):
     repo, base, pre, post = make_simplify_repo(tmp_path)
     slug_dir = write_receipt(

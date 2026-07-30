@@ -11,11 +11,13 @@ Checks:
   B. ordering     — skills/subagent-driven-development/SKILL.md hands off to
                      references/simplify-stage.md strictly before references/review-chain.md.
   C. receipt      — scripts/check_review_receipt.py still defines --require-simplify-if.
-  D. hook         — hooks/risk-corroboration.sh's tiny-lane SIZE_THRESHOLD matches
+  D. finish-gate  — skills/finishing-a-development-branch/SKILL.md still requires
+                     --require-simplify-if before push.
+  E. hook         — hooks/risk-corroboration.sh's tiny-lane SIZE_THRESHOLD matches
                      scripts/check_claude_simplify.py's TINY_SOURCE_LINE_THRESHOLD.
-  E. documentation — no stale claim that /simplify is optional on required scope or that it
+  F. documentation — no stale claim that /simplify is optional on required scope or that it
                      owns correctness, in CLAUDE.md / HARNESS.md / skills/README.md / rules/*.md.
-  F. deployed parity — when a deployed .claude/ mirror exists, the simplify-stage contract's
+  G. deployed parity — when a deployed .claude/ mirror exists, the simplify-stage contract's
                      surface/consumer files under a synced top-level dir are not stale there.
                      No .claude/ mirror => skip this check with a note (pre-deploy is valid).
 
@@ -150,6 +152,19 @@ def _check_receipt_flag(root: Path, problems: list[str]) -> None:
         _problem(problems, "receipt", f"{path} no longer defines --require-simplify-if")
 
 
+def _check_finish_gate(root: Path, problems: list[str]) -> None:
+    path = root / "skills" / "finishing-a-development-branch" / "SKILL.md"
+    if not path.is_file():
+        _problem(problems, "finish-gate", f"{path} not found")
+        return
+    if "--require-simplify-if" not in path.read_text(encoding="utf-8"):
+        _problem(
+            problems,
+            "finish-gate",
+            f"{path} no longer requires --require-simplify-if before push",
+        )
+
+
 def _check_hook_threshold(root: Path, problems: list[str]) -> None:
     hook_path = root / "hooks" / "risk-corroboration.sh"
     checker = _load_check_claude_simplify(root)
@@ -258,6 +273,7 @@ def check(root: Path) -> int:
     _check_version_floor(root, problems)
     _check_ordering(root, problems)
     _check_receipt_flag(root, problems)
+    _check_finish_gate(root, problems)
     _check_hook_threshold(root, problems)
     _check_documentation(root, problems)
     _check_deployed_parity(root, problems)

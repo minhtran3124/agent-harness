@@ -31,7 +31,11 @@ Reference stage doc.
 
 RESUME_MD = "# Resume\n"
 REVIEW_CHAIN_MD = "# Review chain\n"
-FINISHING_SKILL_MD = "# finishing-a-development-branch\n"
+FINISHING_SKILL_MD = (
+    "# finishing-a-development-branch\n\n"
+    "python3 scripts/check_review_receipt.py <plan_dir> --require correctness,intent "
+    "--require-audit-if <base> --require-simplify-if <base>\n"
+)
 
 POLICY_MD = """# Claude Code `/simplify` stage policy
 
@@ -154,6 +158,7 @@ def test_real_repo_documentation_and_version_checks_pass():
     problems: list[str] = []
     csa._check_version_floor(root, problems)
     csa._check_receipt_flag(root, problems)
+    csa._check_finish_gate(root, problems)
     csa._check_hook_threshold(root, problems)
     csa._check_documentation(root, problems)
     assert problems == []
@@ -214,6 +219,23 @@ def test_receipt_missing_require_simplify_if_flag_is_detected(tmp_path):
     (tmp_path / "scripts" / "check_review_receipt.py").write_text(
         "def main(argv):\n    pass\n", encoding="utf-8"
     )
+    assert csa.check(tmp_path) == 1
+
+
+# --- finish-gate ------------------------------------------------------------------------
+
+
+def test_finish_gate_missing_require_simplify_if_flag_is_detected(tmp_path):
+    build(tmp_path)
+    (tmp_path / "skills" / "finishing-a-development-branch" / "SKILL.md").write_text(
+        "# finishing-a-development-branch\n\nno gate here.\n", encoding="utf-8"
+    )
+    assert csa.check(tmp_path) == 1
+
+
+def test_finish_gate_missing_file_is_detected(tmp_path):
+    build(tmp_path)
+    (tmp_path / "skills" / "finishing-a-development-branch" / "SKILL.md").unlink()
     assert csa.check(tmp_path) == 1
 
 
