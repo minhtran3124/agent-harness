@@ -453,16 +453,70 @@ def test_auth_environment_is_token_only_and_drops_cloud_credentials(monkeypatch)
     }
 
 
-def test_sandbox_profile_allows_writes_and_reads_under_claude_scratch_root(tmp_path):
+def test_sandbox_profile_allows_git_common_dir_and_safe_devices(tmp_path):
     worktree = tmp_path / "worktree"
     git_dir = tmp_path / "git-dir"
+    git_common_dir = tmp_path / "git-common-dir"
     runtime = tmp_path / "runtime"
     fixture_root = tmp_path / "fixtures"
     output_parent = tmp_path / "results"
     client = tmp_path / "client" / "fake-claude"
     client.parent.mkdir()
     client.touch()
-    for path in (worktree, git_dir, runtime, fixture_root, output_parent):
+    for path in (
+        worktree,
+        git_dir,
+        git_common_dir,
+        runtime,
+        fixture_root,
+        output_parent,
+    ):
+        path.mkdir()
+
+    profile = MODULE._sandbox_profile(
+        worktree=worktree,
+        git_dir=git_dir,
+        git_common_dir=git_common_dir,
+        runtime=runtime,
+        client=client,
+        source_root=SCRIPT.parent.parent,
+        fixture=fixture_root,
+        output_parent=output_parent,
+    )
+
+    write_deny_clause = profile.splitlines()[-2]
+    assert "file-write*" in write_deny_clause
+    assert f"(require-not (subpath {MODULE._sandbox_quote(git_dir)}))" in (
+        write_deny_clause
+    )
+    assert f"(require-not (subpath {MODULE._sandbox_quote(git_common_dir)}))" in (
+        write_deny_clause
+    )
+    for device in ("/dev/null", "/dev/zero", "/dev/urandom", "/dev/random", "/dev/tty"):
+        assert (
+            f"(require-not (literal {MODULE._sandbox_quote(Path(device))}))"
+            in write_deny_clause
+        )
+
+
+def test_sandbox_profile_allows_writes_and_reads_under_claude_scratch_root(tmp_path):
+    worktree = tmp_path / "worktree"
+    git_dir = tmp_path / "git-dir"
+    git_common_dir = tmp_path / "git-common-dir"
+    runtime = tmp_path / "runtime"
+    fixture_root = tmp_path / "fixtures"
+    output_parent = tmp_path / "results"
+    client = tmp_path / "client" / "fake-claude"
+    client.parent.mkdir()
+    client.touch()
+    for path in (
+        worktree,
+        git_dir,
+        git_common_dir,
+        runtime,
+        fixture_root,
+        output_parent,
+    ):
         path.mkdir()
 
     scratch_root = MODULE._claude_scratch_root()
@@ -471,6 +525,7 @@ def test_sandbox_profile_allows_writes_and_reads_under_claude_scratch_root(tmp_p
     profile = MODULE._sandbox_profile(
         worktree=worktree,
         git_dir=git_dir,
+        git_common_dir=git_common_dir,
         runtime=runtime,
         client=client,
         source_root=SCRIPT.parent.parent,
@@ -557,16 +612,25 @@ def test_real_safe_mode_auth_succeeds_but_security_cannot_read_keychain(tmp_path
     client = Path(claude).resolve()
     worktree = tmp_path / "worktree"
     git_dir = tmp_path / "git-dir"
+    git_common_dir = tmp_path / "git-common-dir"
     runtime = tmp_path / "runtime"
     fixture_root = tmp_path / "fixtures"
     output_parent = tmp_path / "results"
-    for path in (worktree, git_dir, runtime, fixture_root, output_parent):
+    for path in (
+        worktree,
+        git_dir,
+        git_common_dir,
+        runtime,
+        fixture_root,
+        output_parent,
+    ):
         path.mkdir()
     profile = runtime / "sandbox.sb"
     profile.write_text(
         MODULE._sandbox_profile(
             worktree=worktree,
             git_dir=git_dir,
+            git_common_dir=git_common_dir,
             runtime=runtime,
             client=client,
             source_root=SCRIPT.parent.parent,

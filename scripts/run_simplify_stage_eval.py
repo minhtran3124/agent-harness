@@ -361,6 +361,7 @@ def _sandbox_profile(
     *,
     worktree: Path,
     git_dir: Path,
+    git_common_dir: Path,
     runtime: Path,
     client: Path,
     source_root: Path,
@@ -378,6 +379,7 @@ def _sandbox_profile(
     allowed_roots = {
         worktree.resolve(),
         git_dir.resolve(),
+        git_common_dir.resolve(),
         runtime.resolve(),
         client.parent.resolve(),
         claude_scratch_root.resolve(),
@@ -443,6 +445,29 @@ def _sandbox_profile(
     read_exceptions = " ".join(
         f"(require-not (subpath {_sandbox_quote(path)}))" for path in readable_roots
     )
+    safe_devices = {
+        Path("/dev/null"),
+        Path("/dev/zero"),
+        Path("/dev/urandom"),
+        Path("/dev/random"),
+        Path("/dev/tty"),
+    }
+    write_exceptions = (
+        " ".join(
+            f"(require-not (subpath {_sandbox_quote(path)}))"
+            for path in (
+                worktree,
+                runtime,
+                claude_scratch_root,
+                git_dir,
+                git_common_dir,
+            )
+        )
+        + " "
+        + " ".join(
+            f"(require-not (literal {_sandbox_quote(path)}))" for path in safe_devices
+        )
+    )
     return (
         "(version 1)\n"
         "(allow default)\n"
@@ -454,10 +479,7 @@ def _sandbox_profile(
         "(deny file-read* (require-all "
         f"(require-any {home_filters}) "
         f"(require-not (require-any {home_exceptions}))))\n"
-        "(deny file-write* (require-all "
-        f"(require-not (subpath {_sandbox_quote(worktree)})) "
-        f"(require-not (subpath {_sandbox_quote(runtime)})) "
-        f"(require-not (subpath {_sandbox_quote(claude_scratch_root)}))))\n"
+        f"(deny file-write* (require-all {write_exceptions}))\n"
         f"(deny file-write* (literal {_sandbox_quote(worktree / '.git')}))\n"
     )
 
@@ -678,11 +700,18 @@ def _collect_case(
             git_dir = Path(git_dir_text)
             if not git_dir.is_absolute():
                 git_dir = (worktree / git_dir).resolve()
+            git_common_dir_text = _git(
+                worktree, "rev-parse", "--git-common-dir"
+            ).strip()
+            git_common_dir = Path(git_common_dir_text)
+            if not git_common_dir.is_absolute():
+                git_common_dir = (worktree / git_common_dir).resolve()
             profile = runtime / "sandbox.sb"
             profile.write_text(
                 _sandbox_profile(
                     worktree=worktree,
                     git_dir=git_dir,
+                    git_common_dir=git_common_dir,
                     runtime=runtime,
                     client=resolved_client,
                     source_root=source_root,
