@@ -7,6 +7,10 @@ commit: a fix committed after the review advances HEAD, makes the receipt stale,
 and this checker fails — so a stale review can never silently authorize a newer
 HEAD.
 
+One exception: an advance that touches only receipt-neutral paths (`specs/`
+bookkeeping and stored `evals/` results/transcripts) adds no reviewable surface,
+so it does not stale the receipt. See `_RECEIPT_NEUTRAL_CATEGORIES`.
+
 Usage:
     python3 scripts/check_review_receipt.py <specs/slug-dir> [--require type1,type2]
 
@@ -58,6 +62,29 @@ check_claude_simplify = importlib.util.module_from_spec(_CCS_SPEC)
 _CCS_SPEC.loader.exec_module(check_claude_simplify)
 
 _SIMPLIFY_TYPE = "simplify"
+
+# Categories from check_claude_simplify.classify_path that carry no reviewable
+# surface, so a commit touching only these must not stale an otherwise valid
+# receipt. Deliberately narrower than that module's full exclusion set:
+# `documentation` is prose a human reads (intent drift hides there),
+# and `vendor`/`generated` can carry a dependency bump or a regenerated
+# lockfile — real shipped behavior that must not ride an old receipt.
+_RECEIPT_NEUTRAL_CATEGORIES = frozenset({"specs_bookkeeping", "evaluation"})
+
+
+def _is_unreviewed(path: str) -> bool:
+    """True when `path` carries reviewable surface, failing closed on garbage.
+
+    A path that classify_path cannot parse is treated as reviewable: an
+    unclassifiable path is unknown, not exempt.
+    """
+    try:
+        category = check_claude_simplify.classify_path(path)
+    except ValueError:
+        return True
+    return category not in _RECEIPT_NEUTRAL_CATEGORIES
+
+
 _SIMPLIFY_OUTCOMES = frozenset({"changed", "no_op"})
 _SIMPLIFY_RESULTS = frozenset({"pass", "fail"})
 _SPEC_VERDICTS = frozenset({"pass", "fail", "cannot_verify"})
@@ -105,8 +132,8 @@ def _git_head(slug_dir: Path) -> str | None:
 def _changed_files(slug_dir: Path, a: str, b: str) -> list[str] | None:
     """File paths changed between commits a and b, or None if the range is undiffable.
 
-    Used to distinguish a review-neutral bookkeeping advance (the plan-`shipped`
-    commit only touches `specs/`) from an unreviewed code change after review.
+    Used to distinguish a review-neutral advance (bookkeeping or stored eval
+    evidence) from an unreviewed code change after review.
     """
     try:
         proc = subprocess.run(
@@ -328,25 +355,26 @@ def check_receipt(
         return f"stale-sha: cannot resolve git HEAD for {slug_dir}"
     reviewed = reviewed.strip()
     if reviewed != head:
-        # HEAD moved since review. Tolerate a review-neutral bookkeeping advance —
-        # the plan-`shipped` transition (finishing-a-development-branch Step 4)
-        # commits only `specs/`, carries no reviewable code, and must not stale a
-        # valid receipt. Any change OUTSIDE specs/ since the review is unreviewed
-        # code and stays fatal.
+        # HEAD moved since review. Tolerate a review-neutral advance — the
+        # plan-`shipped` transition (finishing-a-development-branch Step 4)
+        # commits only `specs/`, and re-collected eval evidence under
+        # `evals/**/results|transcripts/` is recorded output, not reviewable
+        # source. Neither carries code, so neither must stale a valid receipt.
+        # Any change in a reviewable category since the review stays fatal.
         changed = _changed_files(slug_dir, reviewed, head)
         if changed is None:
             return (
                 f"stale-sha: receipt reviewed {reviewed[:12]} but HEAD is "
                 f"{head[:12]} and the range is undiffable — re-review at current HEAD"
             )
-        unreviewed = [p for p in changed if not p.startswith("specs/")]
+        unreviewed = [p for p in changed if _is_unreviewed(p)]
         if unreviewed:
             return (
                 f"stale-sha: receipt reviewed {reviewed[:12]} but HEAD {head[:12]} "
-                f"adds unreviewed changes outside specs/ (e.g. {unreviewed[0]}) — "
+                f"adds unreviewed reviewable changes (e.g. {unreviewed[0]}) — "
                 f"re-review at current HEAD"
             )
-        # else: specs/-only advance (bookkeeping) — receipt remains valid.
+        # else: review-neutral advance (bookkeeping/eval evidence) — receipt valid.
 
     reviews = data.get("reviews")
     if not isinstance(reviews, list):

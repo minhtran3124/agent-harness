@@ -1011,3 +1011,605 @@ or read from each other's files.
 - exit: 
 - last_commit: 67adeb8 Merge pull request #179 from minhtran3124/refactor/skill-prompt-surface
 - user_turns: 0
+
+### 2026-07-29T04:26:17Z
+- session_id: bbe5fe07-6bdf-4291-b1a8-4b81320d5a92
+- exit: 
+- last_commit: b7aa185 Merge remote-tracking branch 'github/simplify' into simplify
+- user_turns: 0
+
+
+### 2026-07-29T04:54:51Z
+- session_id: 0f4b3074-4164-4815-bb0d-a0e5858ccf16
+- exit: 
+- last_commit: b7aa185 Merge remote-tracking branch 'github/simplify' into simplify
+- user_turns: 0
+
+
+### 2026-07-29T06:58:47Z
+- session_id: c33517e0-3c84-4a0e-a0e9-2fe25d2c2074
+- exit: 
+- last_commit: 018342f refactor(brainstorming): make judgment calls checkable, add pre-write drift checkpoint
+- user_turns: 0
+
+
+### 2026-07-29T07:15:43Z
+- session_id: bd79f216-7fdc-434c-84c2-256780c2560c
+- exit: 
+- last_commit: 6a92033 docs: translate Vietnamese-only research docs to English
+- user_turns: 0
+
+
+### 2026-07-29T07:15:43Z
+- session_id: 4e00ebd6-3c60-4955-80ef-9432cc05b573
+- exit: 
+- last_commit: 6a92033 docs: translate Vietnamese-only research docs to English
+- user_turns: 0
+
+
+### 2026-07-29T07:15:43Z
+- session_id: 2b6310b8-1cb0-4d55-9a5b-61dc4052723c
+- exit: 
+- last_commit: 6a92033 docs: translate Vietnamese-only research docs to English
+- user_turns: 0
+
+
+### 2026-07-29T07:15:44Z
+- session_id: 8c53fafe-5e7a-4df2-96c5-cfd933e4f753
+- exit: 
+- last_commit: 6a92033 docs: translate Vietnamese-only research docs to English
+- user_turns: 0
+
+
+### 2026-07-29T07:15:44Z
+- session_id: 8bfb73c4-3a71-4f1b-ac43-acc6c4f5c0d6
+- exit: 
+- last_commit: 6a92033 docs: translate Vietnamese-only research docs to English
+- user_turns: 0
+
+
+### 2026-07-29T07:15:44Z
+- session_id: 538b8e8c-f01c-4aff-ada7-799f3925d0f3
+- exit: 
+- last_commit: 6a92033 docs: translate Vietnamese-only research docs to English
+- user_turns: 0
+
+
+### 2026-07-29T07:15:45Z
+- session_id: c213abfc-ac72-4076-92cd-b2044be4217f
+- exit: 
+- last_commit: 6a92033 docs: translate Vietnamese-only research docs to English
+- user_turns: 0
+
+
+### 2026-07-29T07:15:45Z
+- session_id: 0a4ad6e8-067b-4abb-a34b-9983d242ca2d
+- exit: 
+- last_commit: 6a92033 docs: translate Vietnamese-only research docs to English
+- user_turns: 0
+
+
+### 2026-07-29T07:15:45Z
+- session_id: c694f24a-6945-4823-ad48-fbc5714165d6
+- exit: 
+- last_commit: 6a92033 docs: translate Vietnamese-only research docs to English
+- user_turns: 0
+
+
+### 2026-07-29T07:15:45Z
+- session_id: df2deb5b-c748-43c9-b744-74723f7c21cb
+- exit: 
+- last_commit: 6a92033 docs: translate Vietnamese-only research docs to English
+- user_turns: 0
+
+
+### 2026-07-29T07:15:46Z
+- session_id: f48fdd55-d5aa-4625-b309-444cfd274674
+- exit: 
+- last_commit: 6a92033 docs: translate Vietnamese-only research docs to English
+- user_turns: 0
+
+
+### 2026-07-29T07:15:46Z
+- session_id: 4a610a7e-231c-4733-a93a-af9fc8d108fa
+- exit: 
+- last_commit: 6a92033 docs: translate Vietnamese-only research docs to English
+- user_turns: 0
+
+
+### 2026-07-29T07:15:46Z
+- session_id: f93997f8-fe7d-4451-b39e-473febf4b461
+- exit: 
+- last_commit: 6a92033 docs: translate Vietnamese-only research docs to English
+- user_turns: 0
+
+
+### 2026-07-29T07:15:46Z
+- session_id: 89fac125-ca24-4b69-b69f-73caed9c922c
+- exit: 
+- last_commit: 6a92033 docs: translate Vietnamese-only research docs to English
+- user_turns: 0
+
+
+### 2026-07-29T07:15:47Z
+- session_id: 0412e522-1f57-4d6e-baae-d8f403a4eff5
+- exit: 
+- last_commit: 6a92033 docs: translate Vietnamese-only research docs to English
+- user_turns: 0
+
+
+### 2026-07-29T07:15:47Z
+- session_id: 130db6c4-26ed-4663-b759-c59739a9f228
+- exit: 
+- last_commit: 6a92033 docs: translate Vietnamese-only research docs to English
+- user_turns: 0
+
+
+### 2026-07-29T07:15:47Z
+- session_id: 044e634f-9cde-4155-ac0b-1b14b6dfe0ef
+- exit: 
+- last_commit: 6a92033 docs: translate Vietnamese-only research docs to English
+- user_turns: 0
+
+
+### 2026-07-29T07:15:47Z
+- session_id: a0edb1c5-7c60-4ece-b824-6e72f938dfd2
+- exit: 
+- last_commit: 6a92033 docs: translate Vietnamese-only research docs to English
+- user_turns: 0
+
+
+### 2026-07-29T07:16:03Z
+- session_id: 409c1f20-1e05-4c09-bfc9-7bbc25bf2210
+- exit: 
+- last_commit: 6a92033 docs: translate Vietnamese-only research docs to English
+- user_turns: 0
+
+
+### 2026-07-29T09:30:04Z
+- session_id: e5a04c48-2508-4eed-86be-5ebcf2313d82
+- exit: 
+- last_commit: 6a92033 docs: translate Vietnamese-only research docs to English
+- user_turns: 0
+
+
+### 2026-07-29T14:03:14Z
+- session_id: 46b95afe-feb2-4d50-96c3-0aeca9f5543c
+- exit: 
+- last_commit: 3cae3f5 Add banner hero for readme
+- user_turns: 0
+
+
+### 2026-07-29T14:03:14Z
+- session_id: e5386fdf-b169-47df-873c-5967b6035c1c
+- exit: 
+- last_commit: 3cae3f5 Add banner hero for readme
+- user_turns: 0
+
+
+### 2026-07-29T14:04:50Z
+- session_id: 62c02e7e-9288-4c79-bbdb-54ce9461edcd
+- exit: 
+- last_commit: 3cae3f5 Add banner hero for readme
+- user_turns: 0
+
+
+### 2026-07-29T14:04:50Z
+- session_id: 4363b137-184e-4d72-9119-de6ce3d417f9
+- exit: 
+- last_commit: 3cae3f5 Add banner hero for readme
+- user_turns: 0
+
+
+### 2026-07-29T14:44:12Z
+- session_id: d0159e6f-bb0d-4273-86d2-e09f5c8396d4
+- exit: 
+- last_commit: 3cae3f5 Add banner hero for readme
+- user_turns: 0
+
+
+### 2026-07-29T14:47:11Z
+- session_id: c3444657-cd50-4253-afe8-943f3aad0b83
+- exit: 
+- last_commit: 3cae3f5 Add banner hero for readme
+- user_turns: 0
+
+
+### 2026-07-29T14:47:28Z
+- session_id: 9157321a-17ff-433b-a2f5-bb3b6cb9bf02
+- exit: 
+- last_commit: 3cae3f5 Add banner hero for readme
+- user_turns: 0
+
+
+### 2026-07-29T14:47:37Z
+- session_id: 26259f14-5974-4a38-855a-e7f96decf807
+- exit: 
+- last_commit: 3cae3f5 Add banner hero for readme
+- user_turns: 0
+
+
+### 2026-07-29T14:47:51Z
+- session_id: 9ac148b0-cc79-4e3d-b536-c8f0a71ff535
+- exit: 
+- last_commit: 3cae3f5 Add banner hero for readme
+- user_turns: 0
+
+
+### 2026-07-29T14:48:01Z
+- session_id: ed4283a8-d128-4245-b366-406478b42942
+- exit: 
+- last_commit: 3cae3f5 Add banner hero for readme
+- user_turns: 0
+
+
+### 2026-07-29T14:48:10Z
+- session_id: 2489dd32-3138-4167-ab93-a0aca692eb88
+- exit: 
+- last_commit: 3cae3f5 Add banner hero for readme
+- user_turns: 0
+
+
+### 2026-07-29T14:48:25Z
+- session_id: ed328e00-a4ea-4c15-8fbe-8227b77ac96f
+- exit: 
+- last_commit: 3cae3f5 Add banner hero for readme
+- user_turns: 0
+
+
+### 2026-07-29T14:48:35Z
+- session_id: 03e518ab-3464-419e-9480-34465b281c3a
+- exit: 
+- last_commit: 3cae3f5 Add banner hero for readme
+- user_turns: 0
+
+
+### 2026-07-29T14:48:45Z
+- session_id: 6c0886b2-7107-4b25-8dfd-a88de855da15
+- exit: 
+- last_commit: 3cae3f5 Add banner hero for readme
+- user_turns: 0
+
+
+### 2026-07-29T14:49:03Z
+- session_id: 378ad03c-dd5b-41c7-8a52-9c784aa7d817
+- exit: 
+- last_commit: 3cae3f5 Add banner hero for readme
+- user_turns: 0
+
+
+### 2026-07-29T14:49:17Z
+- session_id: 2e10a65d-cc7e-41ec-af76-9c75edc242cf
+- exit: 
+- last_commit: 3cae3f5 Add banner hero for readme
+- user_turns: 0
+
+
+### 2026-07-29T14:49:32Z
+- session_id: 9ba4d2ee-8575-45d9-ad18-9a8ced674c7b
+- exit: 
+- last_commit: 3cae3f5 Add banner hero for readme
+- user_turns: 0
+
+
+### 2026-07-29T14:49:42Z
+- session_id: db2b3a7a-47f6-4f14-908f-df8dd16a693f
+- exit: 
+- last_commit: 3cae3f5 Add banner hero for readme
+- user_turns: 0
+
+
+### 2026-07-29T14:49:51Z
+- session_id: ed2b620a-3b5a-48aa-884d-e79609233b6e
+- exit: 
+- last_commit: 3cae3f5 Add banner hero for readme
+- user_turns: 0
+
+
+### 2026-07-29T14:50:22Z
+- session_id: 106479a9-a5c1-459f-b50b-6c5a2f552f81
+- exit: 
+- last_commit: 3cae3f5 Add banner hero for readme
+- user_turns: 0
+
+
+### 2026-07-29T14:50:36Z
+- session_id: 41ebae8d-953a-4129-b5b0-d3284d62d9b1
+- exit: 
+- last_commit: 3cae3f5 Add banner hero for readme
+- user_turns: 0
+
+
+### 2026-07-29T14:50:53Z
+- session_id: 714b42c9-3017-4855-8495-f81b2b492aae
+- exit: 
+- last_commit: 3cae3f5 Add banner hero for readme
+- user_turns: 0
+
+
+### 2026-07-29T14:51:02Z
+- session_id: 3a5fc9be-46db-4042-8280-61f5bdb1cd90
+- exit: 
+- last_commit: 3cae3f5 Add banner hero for readme
+- user_turns: 0
+
+
+### 2026-07-29T14:51:16Z
+- session_id: e23a7a47-5d0e-486a-8750-146b5b902601
+- exit: 
+- last_commit: 3cae3f5 Add banner hero for readme
+- user_turns: 0
+
+
+### 2026-07-29T14:51:37Z
+- session_id: 8bfb7398-03f2-4f8b-a473-f14bfb602e99
+- exit: 
+- last_commit: 3cae3f5 Add banner hero for readme
+- user_turns: 0
+
+
+### 2026-07-29T14:51:51Z
+- session_id: ad2a9cc9-63a0-49a4-8a90-8c8b74c65782
+- exit: 
+- last_commit: 3cae3f5 Add banner hero for readme
+- user_turns: 0
+
+
+### 2026-07-29T14:52:38Z
+- session_id: 13fc6d3b-bd89-4e92-b1af-509af71eed83
+- exit: 
+- last_commit: 3cae3f5 Add banner hero for readme
+- user_turns: 0
+
+
+### 2026-07-29T14:52:53Z
+- session_id: f26b4247-2652-4f9e-a0ed-ae48766f93e5
+- exit: 
+- last_commit: 3cae3f5 Add banner hero for readme
+- user_turns: 0
+
+
+### 2026-07-29T14:53:01Z
+- session_id: 5e456d7a-e124-4aca-980f-aa2b1afed730
+- exit: 
+- last_commit: 3cae3f5 Add banner hero for readme
+- user_turns: 0
+
+
+### 2026-07-29T14:53:11Z
+- session_id: d734df18-18bc-4b3f-992c-1877f4eb0a51
+- exit: 
+- last_commit: 3cae3f5 Add banner hero for readme
+- user_turns: 0
+
+
+### 2026-07-29T14:53:26Z
+- session_id: 6df172e0-f48a-427f-a4da-34fa19e0090e
+- exit: 
+- last_commit: 3cae3f5 Add banner hero for readme
+- user_turns: 0
+
+
+### 2026-07-29T14:53:39Z
+- session_id: 3daed48a-1c97-4033-b053-787ce05364ba
+- exit: 
+- last_commit: 3cae3f5 Add banner hero for readme
+- user_turns: 0
+
+
+### 2026-07-29T14:53:49Z
+- session_id: 2c9103b9-5b85-4592-9c13-b8d9024d4755
+- exit: 
+- last_commit: 3cae3f5 Add banner hero for readme
+- user_turns: 0
+
+
+### 2026-07-29T14:59:20Z
+- session_id: eb4d809b-4257-49f1-8130-0f432a69c583
+- exit: 
+- last_commit: bd84d18 feat(skills): consolidate task review pipeline
+- user_turns: 0
+
+
+### 2026-07-29T14:59:21Z
+- session_id: 1af67ce0-7070-47cf-983c-c71c5510bb09
+- exit: 
+- last_commit: bd84d18 feat(skills): consolidate task review pipeline
+- user_turns: 0
+
+
+### 2026-07-29T15:00:09Z
+- session_id: eb60280d-8959-4841-b7dd-25428aacc19f
+- exit: 
+- last_commit: bd84d18 feat(skills): consolidate task review pipeline
+- user_turns: 0
+
+
+### 2026-07-29T15:01:25Z
+- session_id: 18b6c050-3bca-4dbf-97ff-398923c55795
+- exit: 
+- last_commit: 3cd3307 fix(review): deliver shared package to final oracles
+- user_turns: 0
+
+
+### 2026-07-29T15:06:38Z
+- session_id: f240791e-f67c-454b-af8c-c14fadbb4c9c
+- exit: 
+- last_commit: c14cde3 docs(specs): record pr delivery blocker
+- user_turns: 0
+
+
+### 2026-07-29T15:09:44Z
+- session_id: 9b599f09-f18e-4be4-979d-6b2c296d69b5
+- exit: 
+- last_commit: c14cde3 docs(specs): record pr delivery blocker
+- user_turns: 0
+
+
+### 2026-07-29T15:10:35Z
+- session_id: 83392280-958e-4044-abcb-6920fd0bd0e5
+- exit: 
+- last_commit: c14cde3 docs(specs): record pr delivery blocker
+- user_turns: 0
+
+
+### 2026-07-29T15:12:05Z
+- session_id: d1742231-b2e4-4076-9805-821569caebf3
+- exit: 
+- last_commit: c14cde3 docs(specs): record pr delivery blocker
+- user_turns: 0
+
+
+### 2026-07-29T15:12:44Z
+- session_id: 19550c87-fba2-4290-9c92-447fa88f0fa5
+- exit: 
+- last_commit: c14cde3 docs(specs): record pr delivery blocker
+- user_turns: 0
+
+
+### 2026-07-29T15:12:50Z
+- session_id: 2b0b92c4-ed47-41be-867c-52356b279533
+- exit: 
+- last_commit: c14cde3 docs(specs): record pr delivery blocker
+- user_turns: 0
+
+
+### 2026-07-29T15:17:14Z
+- session_id: 3c512c67-7bd6-41fa-b6a2-56b5e564f448
+- exit: 
+- last_commit: d0e9759 fix(sdd): validate exact task and interface identifiers
+- user_turns: 0
+
+
+### 2026-07-29T15:22:02Z
+- session_id: 07b63588-7440-4976-b710-4db670f8bca5
+- exit: 
+- last_commit: b650b59 fix(sdd): accept compatible task separators
+- user_turns: 0
+
+
+### 2026-07-29T15:25:49Z
+- session_id: 92d67153-0df8-46ca-b874-96d50ff61e8d
+- exit: 
+- last_commit: d53a61b fix(plans): ignore interface verbs in artifacts
+- user_turns: 0
+
+
+### 2026-07-29T15:29:37Z
+- session_id: 8ac35318-157b-4d9b-9c7f-fb9b7c63e1bb
+- exit: 
+- last_commit: 43bd00c fix(plans): mask artifacts when checking verbs
+- user_turns: 0
+
+
+### 2026-07-29T15:32:14Z
+- session_id: af6976bd-c720-4371-a1a9-b9aa84e80b2b
+- exit: 
+- last_commit: 43bd00c fix(plans): mask artifacts when checking verbs
+- user_turns: 0
+
+
+### 2026-07-29T15:35:46Z
+- session_id: 71fed0c2-c5fe-481b-9d2f-4fdf6ea6504c
+- exit: 
+- last_commit: 43bd00c fix(plans): mask artifacts when checking verbs
+- user_turns: 0
+
+
+### 2026-07-29T15:36:50Z
+- session_id: abebcca2-684d-445e-8971-74e6d49b5482
+- exit: 
+- last_commit: 43bd00c fix(plans): mask artifacts when checking verbs
+- user_turns: 0
+
+
+### 2026-07-29T15:40:02Z
+- session_id: 7a91f14d-fe5c-4ec1-9a34-abe56b0e5ed5
+- exit: 
+- last_commit: 2697714 fix(review): pass shared package to oracle prompts
+- user_turns: 0
+
+
+### 2026-07-29T15:41:30Z
+- session_id: 3a5a1ce0-fb41-4e38-932c-03168ca2f2e6
+- exit: 
+- last_commit: 2697714 fix(review): pass shared package to oracle prompts
+- user_turns: 0
+
+
+### 2026-07-29T23:58:03Z
+- session_id: 4da169f8-4e5b-454d-8114-52a265a6afd8
+- exit: 
+- last_commit: 3e1bfcc docs(specs): record final pr blocker
+- user_turns: 0
+
+
+### 2026-07-30T02:37:15Z
+- session_id: c2194168-ec77-4a7f-af4b-006eb58fe564
+- exit: 
+- last_commit: 29a5419 docs(specs): record draft PR #183 delivery
+- user_turns: 0
+
+
+### 2026-07-30T02:39:18Z
+- session_id: 7e1f5108-d789-4506-9625-89605b267971
+- exit: 
+- last_commit: 29a5419 docs(specs): record draft PR #183 delivery
+- user_turns: 0
+
+
+### 2026-07-30T04:29:11Z
+- session_id: abade98d-671a-4865-a36b-34bb067bc93c
+- exit: 
+- last_commit: 0eb1287 fix(eval): resolve simplify artifact paths
+- user_turns: 0
+
+
+### 2026-07-30T06:33:25Z
+- session_id: 2bc4de43-15df-4795-8731-7dedcb711b4f
+- exit: 
+- last_commit: 50e3470 fix(eval): allow the sandboxed candidate's own git internals
+- user_turns: 0
+
+
+### 2026-07-30T14:22:53Z
+- session_id: 15bb1d8f-c21b-4b8f-b0ba-8291c5e4d113
+- exit: 
+- last_commit: f5f135c docs(specs): address intent-review findings on require-claude-simplify-gate
+- user_turns: 0
+
+
+### 2026-07-30T14:23:56Z
+- session_id: 91df7ca4-def4-4b6f-a52e-c231f89e2cba
+- exit: 
+- last_commit: f5f135c docs(specs): address intent-review findings on require-claude-simplify-gate
+- user_turns: 0
+
+
+### 2026-07-30T14:55:12Z
+- session_id: 8dadfbd3-2a42-462d-a165-9b80e32fe869
+- exit: 
+- last_commit: 9bbd134 fix(eval): re-collect shadow-eval evidence after digest staleness
+- user_turns: 0
+
+
+### 2026-07-30T14:55:12Z
+- session_id: 6fe969ce-5a6f-464e-b038-8f931a8f1c63
+- exit: 
+- last_commit: 9bbd134 fix(eval): re-collect shadow-eval evidence after digest staleness
+- user_turns: 0
+
+
+### 2026-07-30T14:55:12Z
+- session_id: ec4e3d23-eaeb-4aa1-ab8e-cb89557a4f1d
+- exit: 
+- last_commit: 9bbd134 fix(eval): re-collect shadow-eval evidence after digest staleness
+- user_turns: 0
+
+
+### 2026-07-31T01:10:43Z
+- session_id: 0c8796e3-d648-4d0d-b4d6-12305427c92d
+- exit: 
+- last_commit: 9bbd134 fix(eval): re-collect shadow-eval evidence after digest staleness
+- user_turns: 0
+

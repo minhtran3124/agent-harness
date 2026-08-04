@@ -152,6 +152,75 @@ def test_specs_only_advance_stays_valid(tmp_path):
     assert crr.main([str(slug_dir), "--require", "correctness,intent"]) == 0
 
 
+def test_eval_evidence_only_advance_stays_valid(tmp_path):
+    # Re-collecting stored shadow-eval evidence advances HEAD but adds no
+    # reviewable surface — rules/simplify-stage.md excludes evals/ results and
+    # transcripts, and the branch review package scopes them out as pure data.
+    # Such a commit must not stale an otherwise valid receipt.
+    repo = make_repo(tmp_path)
+    slug_dir = write_receipt(repo, "gh-x", valid_data(head_sha(repo)))
+    commit_file(repo, "evals/skills/s/results/candidate.json", "{}\n")
+    assert crr.main([str(slug_dir), "--require", "correctness,intent"]) == 0
+
+
+def test_eval_evidence_plus_code_advance_still_stale(tmp_path, capsys):
+    # The exemption is per-path, not per-commit: real code riding along with
+    # eval evidence is still unreviewed.
+    repo = make_repo(tmp_path)
+    slug_dir = write_receipt(repo, "gh-x", valid_data(head_sha(repo)))
+    (repo / "evals" / "skills" / "s" / "results").mkdir(parents=True)
+    (repo / "evals" / "skills" / "s" / "results" / "candidate.json").write_text(
+        "{}\n", encoding="utf-8"
+    )
+    (repo / "seed.txt").write_text("sneaky code change\n", encoding="utf-8")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "eval evidence + code")
+    assert crr.main([str(slug_dir)]) == 1
+    assert "stale-sha" in capsys.readouterr().err
+
+
+def test_docs_only_advance_is_still_stale(tmp_path, capsys):
+    # `documentation` is excluded from *simplify* scope but is NOT receipt
+    # neutral: prose is where intent drift hides, so it must still stale.
+    repo = make_repo(tmp_path)
+    slug_dir = write_receipt(repo, "gh-x", valid_data(head_sha(repo)))
+    commit_file(repo, "docs/guide.md", "new prose\n")
+    assert crr.main([str(slug_dir)]) == 1
+    assert "stale-sha" in capsys.readouterr().err
+
+
+def test_vendored_advance_is_still_stale(tmp_path, capsys):
+    # A vendored dependency bump is shipped behavior — never receipt neutral.
+    repo = make_repo(tmp_path)
+    slug_dir = write_receipt(repo, "gh-x", valid_data(head_sha(repo)))
+    commit_file(repo, "vendor/lib/thing.py", "payload\n")
+    assert crr.main([str(slug_dir)]) == 1
+    assert "stale-sha" in capsys.readouterr().err
+
+
+def test_unclassifiable_path_fails_closed(tmp_path, capsys):
+    # classify_path raises on a non-canonical spelling; an unclassifiable path
+    # is unknown, not exempt, so it must count as reviewable.
+    assert crr._is_unreviewed("evals/skills/s/results/../../../etc/passwd") is True
+    assert crr._is_unreviewed("") is True
+
+
+def test_root_singleton_files_are_not_exempt():
+    # A root FILE named for a directory authority has no child component, so it
+    # is not that authority — it stays reviewable, matching classify_path's rule.
+    # Asserted at unit level: a `specs` file cannot coexist with the slug dir.
+    assert crr._is_unreviewed("specs") is True
+    assert crr._is_unreviewed("evals") is True
+
+
+def test_eval_fixtures_are_not_exempt():
+    # Only stored results/transcripts are recorded output. Eval *fixtures* and
+    # harness code under evals/ are real source and must still stale a receipt.
+    assert crr._is_unreviewed("evals/skills/s/fixtures/case/app.py") is True
+    assert crr._is_unreviewed("evals/skills/s/results/candidate.json") is False
+    assert crr._is_unreviewed("evals/skills/s/transcripts/run/log.txt") is False
+
+
 def test_symbolic_reviewed_sha_is_rejected(tmp_path, capsys):
     # A symbolic ref (e.g. literal "HEAD") must NOT be accepted: git diff HEAD..HEAD
     # is always empty and would fail-open. Require a resolved 40-hex sha.
