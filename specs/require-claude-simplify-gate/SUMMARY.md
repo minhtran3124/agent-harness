@@ -206,7 +206,31 @@ regressions.
 
 ### Intent Review
 
-- Independently reviewed blind to `PLAN.md`/`research-brief.md` (Opus, ensemble diversity from
+- Round 2 (receipt-refresh chain, package at `491c396`, plan-blind, read-only). Verdict:
+  **PASS** — no Critical or Important finding against the verbatim request on any axis.
+  - **Missing** — none above advisory. The request's research/advisory half (*có đúng ko / có
+    hợp lý ko / có đáng làm ko*) is answered durably in `research-brief.md` §8 and `design.md`
+    §9. Advisory, already self-disclosed: §9's explicit cost statement was added during round-1
+    intent review, i.e. after the bulk of implementation, not before the user authorized it.
+  - **Drift** — both interpretive forks judged defensible *and* disclosed: bundled `/simplify`
+    rather than a repo skill of that name (rejected alternative recorded at `### Alternatives
+    considered`; the no-shadowing rule is enforced in `rules/simplify-stage.md`), and "require"
+    becoming lane/size-conditional (the research's own conclusion that universal invocation is
+    not justified — narrowing answers the question asked rather than dodging it).
+  - **Excess** — Important but plan-scoped and traceable: ~3.9k lines of enforcement core
+    against ~21k lines of surrounding evidence apparatus, of which stored eval results are
+    524 files / ~16.9k lines. The shadow eval was the authorized precondition for enabling the
+    gate, so the bulk is in scope. Thin spot, recorded as advisory: ~6.7k of those insertions
+    are superseded or infrastructure-rejected runs (expired-OAuth transcripts, sandbox EPERM
+    partials, pre-commit superseded generations) preserved under this branch's own
+    `evals/.../README.md` "preserve rejected first runs" policy. The reviewer proposed pruning
+    the infrastructure-failure artifacts and keeping `baseline/`, `candidate/`, the accepted
+    round-3/4 pair and `comparison.md`. Not applied here — deleting stored evidence is a
+    deliberate call for the branch owner, not a review-cycle cleanup.
+  - Reviewer also independently surfaced the partial round-2 correctness coverage recorded
+    above and left the ship/no-ship call to the orchestrator.
+
+- Round 1 — independently reviewed blind to `PLAN.md`/`research-brief.md` (Opus, ensemble diversity from
   the Sonnet implementer), against the verbatim `### Intent` quote above plus the PLAN §3 SC
   table and this file's own `### Verify` table. Verdict: CHANGES REQUESTED, then addressed:
   - **Fixed**: the adoption checker's deployed-parity check had gone stale (more commits landed
