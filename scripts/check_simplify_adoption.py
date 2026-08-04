@@ -76,9 +76,12 @@ def _problem(problems: list[str], kind: str, detail: str) -> None:
     problems.append(f"{PREFIX}: {kind} drift: {detail}")
 
 
-def _check_version_floor(root: Path, problems: list[str]) -> None:
+def _check_version_floor(
+    root: Path, problems: list[str], checker: ModuleType | None = None
+) -> None:
     policy_path = root / "rules" / "simplify-stage.md"
-    checker = _load_check_claude_simplify(root)
+    if checker is None:
+        checker = _load_check_claude_simplify(root)
     if not policy_path.is_file() or checker is None:
         _problem(
             problems,
@@ -165,9 +168,12 @@ def _check_finish_gate(root: Path, problems: list[str]) -> None:
         )
 
 
-def _check_hook_threshold(root: Path, problems: list[str]) -> None:
+def _check_hook_threshold(
+    root: Path, problems: list[str], checker: ModuleType | None = None
+) -> None:
     hook_path = root / "hooks" / "risk-corroboration.sh"
-    checker = _load_check_claude_simplify(root)
+    if checker is None:
+        checker = _load_check_claude_simplify(root)
     if not hook_path.is_file() or checker is None:
         _problem(
             problems, "hook", f"missing {hook_path} or scripts/check_claude_simplify.py"
@@ -270,11 +276,13 @@ def _check_deployed_parity(root: Path, problems: list[str]) -> None:
 def check(root: Path) -> int:
     problems: list[str] = []  # local, not module-global — safe to call repeatedly
 
-    _check_version_floor(root, problems)
+    # Load the policy module once; both consumers get the same instance.
+    checker = _load_check_claude_simplify(root)
+    _check_version_floor(root, problems, checker)
     _check_ordering(root, problems)
     _check_receipt_flag(root, problems)
     _check_finish_gate(root, problems)
-    _check_hook_threshold(root, problems)
+    _check_hook_threshold(root, problems, checker)
     _check_documentation(root, problems)
     _check_deployed_parity(root, problems)
 

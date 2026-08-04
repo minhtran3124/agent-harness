@@ -46,7 +46,7 @@ RECEIPT_NAME = ".review-receipt.json"
 # literal "HEAD", "@", or a branch name) would make `git diff <ref>..<HEAD>`
 # resolve the ref to the current commit and diff the repo against itself —
 # always empty — silently defeating the stale-sha gate. Require 40 hex chars.
-_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
+SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 
 # check_claude_simplify.py is a sibling script in this same directory; load it
 # by explicit path (not a bare `import`) so this module works correctly
@@ -72,7 +72,7 @@ _SIMPLIFY_TYPE = "simplify"
 _RECEIPT_NEUTRAL_CATEGORIES = frozenset({"specs_bookkeeping", "evaluation"})
 
 
-def _is_unreviewed(path: str) -> bool:
+def _carries_reviewable_surface(path: str) -> bool:
     """True when `path` carries reviewable surface, failing closed on garbage.
 
     A path that classify_path cannot parse is treated as reviewable: an
@@ -102,12 +102,11 @@ _WF_EXCLUDE = re.compile(r"(^|/)(README\.md|[A-Za-z0-9_-]+\.template\.md)$")
 _WF_AUDIT_TYPE = "context-propagation-audit"
 
 
-def _touches_workflow_engine(slug_dir: Path, base_ref: str) -> bool | None:
-    """True if the base_ref..HEAD diff touches a workflow-engine surface.
+def _touches_workflow_engine(changed: list[str] | None) -> bool | None:
+    """True if the base..HEAD changed set touches a workflow-engine surface.
 
-    None if the range is undiffable (bad ref) — the caller fails closed.
+    None if the range was undiffable (bad ref) — the caller fails closed.
     """
-    changed = _changed_files(slug_dir, base_ref, "HEAD")
     if changed is None:
         return None
     return any(_WF_INCLUDE.match(p) and not _WF_EXCLUDE.search(p) for p in changed)
@@ -149,7 +148,7 @@ def _changed_files(slug_dir: Path, a: str, b: str) -> list[str] | None:
     return [line for line in proc.stdout.splitlines() if line.strip()]
 
 
-def _is_ancestor(slug_dir: Path, ancestor: str, descendant: str) -> bool | None:
+def is_ancestor(slug_dir: Path, ancestor: str, descendant: str) -> bool | None:
     """True if ancestor is an ancestor of (or identical to) descendant.
 
     None if ancestry cannot be determined (bad ref) — the caller fails closed.
@@ -170,13 +169,12 @@ def _is_ancestor(slug_dir: Path, ancestor: str, descendant: str) -> bool | None:
     return None
 
 
-def _simplify_required(slug_dir: Path, base_ref: str) -> bool | None:
-    """True if base_ref..HEAD touches any reviewable (non-excluded) path.
+def _simplify_required(changed: list[str] | None) -> bool | None:
+    """True if the base..HEAD changed set touches any reviewable path.
 
-    None if the range is undiffable, or a changed path cannot be classified —
+    None if the range was undiffable, or a changed path cannot be classified —
     the caller fails closed in either case.
     """
-    changed = _changed_files(slug_dir, base_ref, "HEAD")
     if changed is None:
         return None
     try:
@@ -202,7 +200,7 @@ def simplify_shape_error(entry: dict) -> str | None:
     """
     for field in ("base_sha", "pre_sha", "post_sha"):
         value = entry.get(field)
-        if not isinstance(value, str) or not _SHA_RE.match(value):
+        if not isinstance(value, str) or not SHA_RE.match(value):
             return (
                 f"malformed: simplify entry {field} {value!r} is not a resolved "
                 f"40-char hex commit sha"
@@ -344,7 +342,7 @@ def check_receipt(
     reviewed = data.get("reviewed_head_sha")
     if not isinstance(reviewed, str) or not reviewed.strip():
         return f"malformed: {receipt_path} has no reviewed_head_sha"
-    if not _SHA_RE.match(reviewed.strip()):
+    if not SHA_RE.match(reviewed.strip()):
         return (
             f"malformed: reviewed_head_sha {reviewed.strip()!r} is not a resolved "
             f"40-char hex commit sha (symbolic refs like 'HEAD' are rejected)"
@@ -367,7 +365,7 @@ def check_receipt(
                 f"stale-sha: receipt reviewed {reviewed[:12]} but HEAD is "
                 f"{head[:12]} and the range is undiffable — re-review at current HEAD"
             )
-        unreviewed = [p for p in changed if _is_unreviewed(p)]
+        unreviewed = [p for p in changed if _carries_reviewable_surface(p)]
         if unreviewed:
             return (
                 f"stale-sha: receipt reviewed {reviewed[:12]} but HEAD {head[:12]} "
@@ -401,8 +399,18 @@ def check_receipt(
             return f"blocking-open: review '{rtype}' has {blocking} blocking open"
 
     required = list(require)
+    # Both conditional requirements diff the same base..HEAD range in the
+    # documented invocation (finishing passes one base to both flags) — run
+    # the diff once per distinct base and share the changed set.
+    changed_since: dict[str, list[str] | None] = {}
+
+    def _changed_since_base(base_ref: str) -> list[str] | None:
+        if base_ref not in changed_since:
+            changed_since[base_ref] = _changed_files(slug_dir, base_ref, "HEAD")
+        return changed_since[base_ref]
+
     if require_audit_if is not None:
-        touched = _touches_workflow_engine(slug_dir, require_audit_if)
+        touched = _touches_workflow_engine(_changed_since_base(require_audit_if))
         if touched is None:
             return (
                 f"stale-sha: cannot diff workflow-engine base {require_audit_if!r} "
@@ -412,7 +420,7 @@ def check_receipt(
             required.append(_WF_AUDIT_TYPE)
 
     if require_simplify_if is not None:
-        needed = _simplify_required(slug_dir, require_simplify_if)
+        needed = _simplify_required(_changed_since_base(require_simplify_if))
         if needed is None:
             return (
                 f"stale-sha: cannot diff simplify base {require_simplify_if!r} "
@@ -462,7 +470,7 @@ def check_receipt(
                 review["pre_sha"],
                 review["post_sha"],
             )
-            base_ancestor = _is_ancestor(slug_dir, base_sha, pre_sha)
+            base_ancestor = is_ancestor(slug_dir, base_sha, pre_sha)
             if base_ancestor is None:
                 return (
                     f"stale-sha: cannot verify simplify ancestry for base_sha "
@@ -473,7 +481,7 @@ def check_receipt(
                     f"malformed: simplify entry pre_sha {pre_sha[:12]} is not a "
                     f"descendant of its declared base_sha {base_sha[:12]}"
                 )
-            post_ancestor = _is_ancestor(slug_dir, pre_sha, post_sha)
+            post_ancestor = is_ancestor(slug_dir, pre_sha, post_sha)
             if post_ancestor is None:
                 return (
                     f"stale-sha: cannot verify simplify ancestry for pre_sha "

@@ -201,24 +201,24 @@ def test_vendored_advance_is_still_stale(tmp_path, capsys):
 def test_unclassifiable_path_fails_closed(tmp_path, capsys):
     # classify_path raises on a non-canonical spelling; an unclassifiable path
     # is unknown, not exempt, so it must count as reviewable.
-    assert crr._is_unreviewed("evals/skills/s/results/../../../etc/passwd") is True
-    assert crr._is_unreviewed("") is True
+    assert crr._carries_reviewable_surface("evals/skills/s/results/../../../etc/passwd") is True
+    assert crr._carries_reviewable_surface("") is True
 
 
 def test_root_singleton_files_are_not_exempt():
     # A root FILE named for a directory authority has no child component, so it
     # is not that authority — it stays reviewable, matching classify_path's rule.
     # Asserted at unit level: a `specs` file cannot coexist with the slug dir.
-    assert crr._is_unreviewed("specs") is True
-    assert crr._is_unreviewed("evals") is True
+    assert crr._carries_reviewable_surface("specs") is True
+    assert crr._carries_reviewable_surface("evals") is True
 
 
 def test_eval_fixtures_are_not_exempt():
     # Only stored results/transcripts are recorded output. Eval *fixtures* and
     # harness code under evals/ are real source and must still stale a receipt.
-    assert crr._is_unreviewed("evals/skills/s/fixtures/case/app.py") is True
-    assert crr._is_unreviewed("evals/skills/s/results/candidate.json") is False
-    assert crr._is_unreviewed("evals/skills/s/transcripts/run/log.txt") is False
+    assert crr._carries_reviewable_surface("evals/skills/s/fixtures/case/app.py") is True
+    assert crr._carries_reviewable_surface("evals/skills/s/results/candidate.json") is False
+    assert crr._carries_reviewable_surface("evals/skills/s/transcripts/run/log.txt") is False
 
 
 def test_symbolic_reviewed_sha_is_rejected(tmp_path, capsys):

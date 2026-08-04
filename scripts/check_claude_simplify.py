@@ -283,7 +283,9 @@ def evaluate_policy(
         "base": base,
         "head": head,
         "reviewable_paths": reviewable,
-        "excluded_paths": sorted(path for path in paths if path not in reviewable),
+        "excluded_paths": sorted(
+            path for path, category in categories.items() if category != "reviewable"
+        ),
         "changed_source_lines": changed_source_lines,
         "ok": ok,
     }

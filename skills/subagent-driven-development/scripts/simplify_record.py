@@ -19,13 +19,10 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import json
-import re
 import subprocess
 import sys
 from pathlib import Path
 from typing import Any
-
-_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 
 # Repo root: this file lives at <root>/skills/subagent-driven-development/scripts/.
 _REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -42,12 +39,15 @@ def _load_module(name: str, path: Path):
 # Cross-directory reuse, loaded by explicit path (not a bare `import`) so this
 # module works regardless of the caller's sys.path/cwd — see check_review_receipt.py
 # for the identical convention used for its own same-directory sibling import.
-check_claude_simplify = _load_module(
-    "check_claude_simplify", _REPO_ROOT / "scripts" / "check_claude_simplify.py"
-)
+# check_review_receipt already loads check_claude_simplify; reuse its instance
+# rather than compiling the module a second time.
 check_review_receipt = _load_module(
     "check_review_receipt", _REPO_ROOT / "scripts" / "check_review_receipt.py"
 )
+check_claude_simplify = check_review_receipt.check_claude_simplify
+
+# One spelling of the resolved-SHA contract, shared with the receipt validator.
+_SHA_RE = check_review_receipt.SHA_RE
 
 
 class SimplifyRecordError(Exception):
@@ -81,7 +81,7 @@ def resolve_sha(repo_root: Path, ref: str) -> str:
 
 def is_ancestor(repo_root: Path, ancestor: str, descendant: str) -> bool:
     """True if ancestor is an ancestor of, or identical to, descendant."""
-    result = check_review_receipt._is_ancestor(repo_root, ancestor, descendant)
+    result = check_review_receipt.is_ancestor(repo_root, ancestor, descendant)
     if result is None:
         raise SimplifyRecordError(
             f"cannot determine ancestry between {ancestor} and {descendant}"
@@ -216,7 +216,7 @@ def main(argv: list[str] | None = None) -> int:
     finish_parser.add_argument("--changed-files", nargs="*", default=[])
     finish_parser.add_argument("--reason", required=True)
     finish_parser.add_argument(
-        "--verification-result", default=None, choices=(None, "pass", "fail")
+        "--verification-result", default=None, choices=("pass", "fail")
     )
     finish_parser.add_argument(
         "--delta-verdict",

@@ -322,3 +322,21 @@ def test_cli_reports_problems_on_stderr(tmp_path, capsys):
     assert rc == 1
     captured = capsys.readouterr()
     assert re.search(r"simplify-adoption:.*drift", captured.err)
+
+
+# --- deploy-prefix parity ------------------------------------------------------------
+
+
+def test_deploy_prefixes_match_deploy_harness_synced_dirs():
+    # _DEPLOY_PREFIXES hand-copies deploy-harness.sh's SYNCED_DIRS_RE; this repo's
+    # bar for deliberate duplication is a parity test (cf. the workflow-engine
+    # regex). Parse the authoritative regex out of the real script and assert the
+    # two spellings name the same directory set, so a new synced dir cannot
+    # silently shrink deployed-parity coverage.
+    deploy_script = CHECKER.parent / "deploy-harness.sh"
+    text = deploy_script.read_text(encoding="utf-8")
+    m = re.search(r"^SYNCED_DIRS_RE='\^\(([a-z|]+)\)/", text, re.MULTILINE)
+    assert m, "deploy-harness.sh no longer defines SYNCED_DIRS_RE in the known shape"
+    synced_dirs = set(m.group(1).split("|"))
+    prefix_dirs = {p.rstrip("/") for p in csa._DEPLOY_PREFIXES}
+    assert prefix_dirs == synced_dirs
