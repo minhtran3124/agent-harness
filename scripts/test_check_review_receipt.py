@@ -201,7 +201,10 @@ def test_vendored_advance_is_still_stale(tmp_path, capsys):
 def test_unclassifiable_path_fails_closed(tmp_path, capsys):
     # classify_path raises on a non-canonical spelling; an unclassifiable path
     # is unknown, not exempt, so it must count as reviewable.
-    assert crr._carries_reviewable_surface("evals/skills/s/results/../../../etc/passwd") is True
+    assert (
+        crr._carries_reviewable_surface("evals/skills/s/results/../../../etc/passwd")
+        is True
+    )
     assert crr._carries_reviewable_surface("") is True
 
 
@@ -213,12 +216,43 @@ def test_root_singleton_files_are_not_exempt():
     assert crr._carries_reviewable_surface("evals") is True
 
 
+def test_case_variant_neutral_paths_stay_reviewable():
+    # classify_path folds case when matching authorities; the staleness gate
+    # must not. `Specs/` or `evals/Raw/` is a different directory on a
+    # case-sensitive filesystem — honoring the folded match would let unreviewed
+    # code ship under a case-variant spelling (removed-behavior finding at
+    # ac161a0). Exact-lowercase spellings stay neutral; variants stay fatal.
+    assert crr._carries_reviewable_surface("Specs/x/PLAN.md") is True
+    assert crr._carries_reviewable_surface("SPECS/anything.sh") is True
+    assert crr._carries_reviewable_surface("specs/x/PLAN.md") is False
+    assert crr._carries_reviewable_surface("evals/skills/s/Results/x.json") is True
+    assert crr._carries_reviewable_surface("Evals/skills/s/results/x.json") is True
+    assert crr._carries_reviewable_surface("evals/skills/s/results/x.json") is False
+
+
+def test_case_variant_specs_commit_stales_receipt(tmp_path, capsys):
+    # End-to-end: a post-review commit under `Specs/` (not `specs/`) must stale.
+    repo = make_repo(tmp_path)
+    slug_dir = write_receipt(repo, "gh-x", valid_data(head_sha(repo)))
+    commit_file(repo, "Specs/payload.py", "code\n")
+    assert crr.main([str(slug_dir)]) == 1
+    assert "stale-sha" in capsys.readouterr().err
+
+
 def test_eval_fixtures_are_not_exempt():
     # Only stored results/transcripts are recorded output. Eval *fixtures* and
     # harness code under evals/ are real source and must still stale a receipt.
-    assert crr._carries_reviewable_surface("evals/skills/s/fixtures/case/app.py") is True
-    assert crr._carries_reviewable_surface("evals/skills/s/results/candidate.json") is False
-    assert crr._carries_reviewable_surface("evals/skills/s/transcripts/run/log.txt") is False
+    assert (
+        crr._carries_reviewable_surface("evals/skills/s/fixtures/case/app.py") is True
+    )
+    assert (
+        crr._carries_reviewable_surface("evals/skills/s/results/candidate.json")
+        is False
+    )
+    assert (
+        crr._carries_reviewable_surface("evals/skills/s/transcripts/run/log.txt")
+        is False
+    )
 
 
 def test_symbolic_reviewed_sha_is_rejected(tmp_path, capsys):

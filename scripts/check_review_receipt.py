@@ -72,17 +72,35 @@ _SIMPLIFY_TYPE = "simplify"
 _RECEIPT_NEUTRAL_CATEGORIES = frozenset({"specs_bookkeeping", "evaluation"})
 
 
+# Exact-case spellings of the neutral authorities. classify_path matches its
+# authority tokens case-insensitively (fine for the simplify policy, whose
+# lenient direction merely skips a cleanup); this gate's lenient direction is
+# a review bypass, so a case-variant `Specs/` or `evals/Raw/` — a different
+# directory on a case-sensitive filesystem — must stay reviewable.
+_EVAL_OUTPUT_PARTS = frozenset({"results", "result", "raw", "transcripts"})
+
+
 def _carries_reviewable_surface(path: str) -> bool:
     """True when `path` carries reviewable surface, failing closed on garbage.
 
     A path that classify_path cannot parse is treated as reviewable: an
-    unclassifiable path is unknown, not exempt.
+    unclassifiable path is unknown, not exempt. A path whose neutral category
+    was matched only through case folding is likewise treated as reviewable.
     """
     try:
         category = check_claude_simplify.classify_path(path)
     except ValueError:
         return True
-    return category not in _RECEIPT_NEUTRAL_CATEGORIES
+    if category not in _RECEIPT_NEUTRAL_CATEGORIES:
+        return True
+    parts = path.split("/")
+    if category == "specs_bookkeeping":
+        return parts[0] != "specs"
+    # category == "evaluation": corroborate the exact-case spelling of the
+    # authority components classify_path matched case-insensitively.
+    return not (
+        parts[0] == "evals" and any(part in _EVAL_OUTPUT_PARTS for part in parts[1:-1])
+    )
 
 
 _SIMPLIFY_OUTCOMES = frozenset({"changed", "no_op"})
