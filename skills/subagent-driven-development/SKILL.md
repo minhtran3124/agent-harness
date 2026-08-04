@@ -13,8 +13,10 @@ after its Verify command and both per-task reviews are green.
 For `resume <slug>`, run `python3 runtime/resume_decision.py --slug <slug>` before editing.
 Follow its action exactly: `execute-plan`, `resume-repair`, `resume-review-chain`, `wait`, `stop`,
 or `rebuild`. Do not reconstruct the FSM from prose or initialize a missing historical run during
-execution. Read `references/resume.md` only when its returned action requires a manual transition
-or repair.
+execution. Read `references/resume.md` before acting on `resume-repair`, `resume-review-chain`, or
+`rebuild` — for `resume-review-chain` it holds the required simplify-evidence re-check that decides
+whether `references/simplify-stage.md` must re-run. `wait` and `stop` are self-sufficient from the
+returned reason; only `execute-plan` enters the preflight and wave loop below.
 
 ## Preflight
 

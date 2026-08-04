@@ -173,6 +173,21 @@ t "resume.md is idempotent on valid simplify evidence and resumes on missing/sta
 if resume_covers_stage_ok "$ROOT"; then pass
 else fail "resume-review-chain does not gate on simplify-stage evidence in $RESUME"; fi
 
+# skill_resume_read_gate_ok <dir> — 0 iff SKILL.md's Resume-first clause explicitly requires
+# reading references/resume.md for the resume-review-chain action. resume.md's simplify
+# re-check is load-bearing only if a fresh resumed session is actually sent there
+# (context-propagation audit finding at 8e6eca5: the old "only when its returned action
+# requires a manual transition or repair" gate let a fresh session plausibly skip the read).
+skill_resume_read_gate_ok() {
+  # The action must appear in the read-gate's action list itself (before the em-dash
+  # rationale), not merely somewhere later in the sentence.
+  flat "$1" "$SKILL" | grep -q 'Read `references/resume\.md` before acting on [^—]*`resume-review-chain`'
+}
+
+t "SKILL.md requires reading resume.md for resume-review-chain"
+if skill_resume_read_gate_ok "$ROOT"; then pass
+else fail "SKILL.md's Resume-first clause does not send resume-review-chain through $RESUME"; fi
+
 # --- mutation tests: prove each check is load-bearing --------------------------------
 
 mut_dir() {
@@ -273,5 +288,11 @@ m=$(mut_dir)
 sed -i.bak '/simplify-stage\.md/d; /--require-simplify-if/d; /exit code/d' "$m/$RESUME" && rm -f "$m/$RESUME.bak"
 if ! resume_covers_stage_ok "$m"; then pass
 else fail "removing resume.md's simplify-stage evidence gate was NOT detected"; fi
+
+t "mutation: dropping resume-review-chain from SKILL.md's resume read gate is detected"
+m=$(mut_dir)
+sed -i.bak 's/`resume-review-chain`, //' "$m/$SKILL" && rm -f "$m/$SKILL.bak"
+if ! skill_resume_read_gate_ok "$m"; then pass
+else fail "dropping resume-review-chain from the read gate was NOT detected"; fi
 
 finish
