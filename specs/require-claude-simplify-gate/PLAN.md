@@ -1,6 +1,6 @@
 ---
 slug: require-claude-simplify-gate
-status: active
+status: shipped
 owner: minhtran
 created: 2026-07-30
 ---
@@ -331,3 +331,17 @@ mutates code, so require it only by deterministic signal and place it before all
   passed. Full suite `bash scripts/run-tests.sh` — 473 passed (up from 299, confirming the PYTESTS
   gap is now closed), no regressions. Independently re-verified directly (not just trusting the
   implementing agent's self-report, which stalled mid-task) before committing.
+
+- 2026-08-04 — Receipt-refresh chain run and branch finished. A commit of re-collected shadow-eval
+  evidence (`9bbd134`, 153 files, zero code) had staled the review receipt, because
+  `check_review_receipt.py` forgave only `specs/` while `rules/simplify-stage.md` also excludes
+  stored `evals/` results. Fixed the exemption (`a2e34c9`), then ran the full required chain at the
+  new HEAD: `/simplify` stage (`8e6eca5`, delta review `spec: pass` / `quality: approved`),
+  context-propagation audit (**FAIL** on SKILL.md's resume read gate letting a fresh session skip
+  `resume.md`'s simplify re-check — repaired `ac161a0`, independently re-verified CLOSED),
+  correctness review (one real bug: the new exemption inherited `classify_path`'s case folding, so
+  `Specs/x.py` shipped unreviewed — fixed `ed77172`), and plan-blind intent review (**PASS**).
+  Correctness coverage is **partial and recorded as such**: 3 of 6 FIND angles never reported
+  (usage limit, then user-stopped) and are owed, per
+  `docs/solutions/harness/no-report-reviewer-dispatch-is-not-a-pass.md`. Full suite green: 493
+  Python tests and all shell contracts. Status changed to `shipped`.
