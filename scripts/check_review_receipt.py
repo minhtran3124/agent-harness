@@ -7,9 +7,10 @@ commit: a fix committed after the review advances HEAD, makes the receipt stale,
 and this checker fails — so a stale review can never silently authorize a newer
 HEAD.
 
-One exception: an advance that touches only receipt-neutral paths (`specs/`
-bookkeeping and stored `evals/` results/transcripts) adds no reviewable surface,
-so it does not stale the receipt. See `_RECEIPT_NEUTRAL_CATEGORIES`.
+One exception: an advance that touches only receipt-neutral paths adds no
+reviewable surface, so it does not stale the receipt — `specs/` bookkeeping, and
+stored eval output under an `evals/**/<results|result|raw|transcripts>/**`
+directory. See `_RECEIPT_NEUTRAL_CATEGORIES` and `_EVAL_OUTPUT_PARTS`.
 
 Usage:
     python3 scripts/check_review_receipt.py <specs/slug-dir> [--require type1,type2]

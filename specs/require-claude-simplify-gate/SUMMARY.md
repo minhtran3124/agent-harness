@@ -147,6 +147,17 @@ regressions.
   "with the plan's Global Constraints as context" with no actual delivery mechanism for a
   non-task delta. Fixed via `task_brief.py --delta-description`, mutation-tested. Re-audited:
   PASS.
+- Round 2 (receipt-refresh chain at `8e6eca5`, fresh-context auditor): FAIL on one row, then
+  repaired. `SKILL.md`'s Resume-first gate ("read resume.md only when its returned action
+  requires a manual transition or repair") let a fresh resumed session plausibly skip
+  `references/resume.md` for `resume-review-chain` — skipping the simplify-evidence re-check
+  that this branch made load-bearing there. Repaired in `ac161a0`: the read gate now names
+  `resume-repair`/`resume-review-chain`/`rebuild` explicitly, with a mutation-verified contract
+  check (`skill_resume_read_gate_ok`). Independently re-verified CLOSED by a second
+  fresh-context reviewer, including an adversarial search for bypass routes into
+  `review-chain.md` (none found: all references route through Execute-waves-after-simplify,
+  simplify-stage.md itself, or resume.md's re-check). All other matrix rows PASS with
+  file:line/test proof.
 
 ### Correctness Review
 
@@ -157,6 +168,41 @@ regressions.
   whole-suite Verify rows over the 60s CI cap). One finding (finishing gate's tiny-lane exemption
   ignoring the actual diff-size signal) required a human decision — `ESCALATIONS.md` E002,
   decided and fixed. Full detail in `### Deviations` above.
+- Round 2 (receipt-refresh chain, package at `ed77172`). **Coverage is partial and this is
+  deliberate, not a pass:** of the six FIND angles, `removed-behavior`, `prior-art`, and
+  `enclosing-function` reported; `call-site-impact`, `stack-defects`, and `guard-completeness`
+  did not — the first dispatch died on a session usage limit and the re-dispatch was stopped by
+  the user. Per `docs/solutions/harness/no-report-reviewer-dispatch-is-not-a-pass.md` a
+  non-reporting angle is *unknown*, never clean; those three angles remain owed on this range.
+  - **Fixed — real bug, `ed77172`:** `removed-behavior` found the round-2 staleness exemption
+    inherited `classify_path`'s case folding. On a case-sensitive filesystem a post-review commit
+    of `Specs/payload.py` or `evals/Raw/tool.py` (distinct directories) classified
+    receipt-neutral and shipped unreviewed, where the replaced byte-exact `startswith("specs/")`
+    guard had staled it. `_carries_reviewable_surface` now corroborates the exact-case spelling
+    after the category match; two tests pin both directions.
+  - **Fixed — doc drift:** the module docstring said the neutral eval paths were
+    "results/transcripts" while `_EVAL_OUTPUT_PARTS` also grants `result`/`raw`; docstring now
+    names all four. `.gitignore`'s `.harness-state/` anchored to `/.harness-state/`.
+  - **Advisory, recorded, no action:**
+    - The `evaluation` exemption is path-shape-based, so a post-review commit that *edits*
+      stored eval JSON (not just re-collects it) rides the existing receipt. Deliberate in
+      `a2e34c9`; the per-path rule still stales any code riding along
+      (`test_eval_evidence_plus_code_advance_still_stale`).
+    - `simplify-stage.md` step 6 enumerates delta-review rejections but not the
+      reviewer-returns-nothing case, and the receipt schema still has no `independent` field —
+      the guardrail proposed by `no-report-reviewer-dispatch-is-not-a-pass.md` is unimplemented
+      repo-wide (not a regression of this branch). Bounded `--delta-verdict` vocabularies mean
+      silence cannot serialize as a pass without a controller fabricating a verdict.
+    - `task_brief.py`'s missing-`--task` exit code moved 2 → 1 (argparse usage error → explicit
+      XOR `SystemExit`). Still fails closed; no caller branches on the code.
+    - `check_simplify_adoption.py`'s load-once passes `None` through on load failure, so the
+      per-check fallback retries; harmless (both retries also return `None`) and the fallback is
+      what lets the tests call each check directly.
+  - **Carry-over to the base branch, not this range:** `prior-art` flagged worktree-side
+    `Lane:`/`status:` reads in `hooks/lib/lane.sh` as a policy-TOCTOU contradicting
+    `docs/solutions/harness/gate-config-must-read-index.md`. That file arrived in `75dcc9f` on
+    `feat/superpowers-6-review-pipeline` (PR #183), this branch's base — the finder diffed
+    against `main`, which spans both. Real finding, wrong branch; it belongs to PR #183.
 
 ### Intent Review
 

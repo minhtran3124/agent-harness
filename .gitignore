@@ -43,7 +43,7 @@ specs/**/events.jsonl.lock
 
 # Subagent-driven-development scratch: implementer reports and review packages
 # written per run (skills/subagent-driven-development/SKILL.md), never shipped
-.harness-state/
+/.harness-state/
 
 .vercel
 
