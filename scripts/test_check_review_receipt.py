@@ -39,7 +39,12 @@ def make_repo(tmp_path: Path) -> Path:
     """Init a throwaway repo with one commit; return the repo root."""
     repo = tmp_path / "repo"
     repo.mkdir()
-    _git(repo, "init", "-q")
+    # Pin the initial branch name: two ancestry tests below check out `main` by
+    # name after an orphan branch. `git init` alone uses the host's
+    # init.defaultBranch, so those tests passed only on machines configured for
+    # `main` and failed on CI runners defaulting to `master`. Matches the idiom
+    # already used in skills/subagent-driven-development/scripts/test_simplify_record.py.
+    _git(repo, "init", "-q", "-b", "main")
     _git(repo, "config", "user.email", "test@example.com")
     _git(repo, "config", "user.name", "Test")
     (repo / "seed.txt").write_text("seed\n", encoding="utf-8")
