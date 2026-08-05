@@ -753,7 +753,9 @@ def _collect_case(
             ):
                 raise CollectionError(
                     f"{case_id}: Claude auth preflight failed inside sandbox "
-                    f"(returncode={auth_check.returncode})"
+                    f"(returncode={auth_check.returncode}) "
+                    f"stderr={auth_check.stderr.strip()[:400]!r} "
+                    f"stdout={auth_check.stdout.strip()[:200]!r}"
                 )
             started = time.monotonic()
             completed = _run(

@@ -149,6 +149,15 @@ def invoke(
     expected_version: str = "2.1.220",
     source_commit: str | None = None,
 ) -> subprocess.CompletedProcess[str]:
+    # Candidate collection is macOS-only by design: the runner refuses to run
+    # without Seatbelt rather than fall back to an unsandboxed client
+    # ("candidate collection requires macOS sandbox-exec"). Asserting success on
+    # a platform the code deliberately does not support is a test bug, so gate
+    # here — the single choke point every candidate test funnels through, which
+    # cannot drift as tests are added. Same precedent as the genuine-Seatbelt
+    # probe below.
+    if sys.platform != "darwin" or not shutil.which("sandbox-exec"):
+        pytest.skip("candidate collection requires macOS sandbox-exec")
     return subprocess.run(
         [
             sys.executable,
