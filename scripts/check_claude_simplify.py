@@ -172,11 +172,21 @@ def classify_path(raw: str) -> str:
 
 
 def _rename_destination(raw: str) -> str:
-    """Normalize Git's human-readable numstat rename notation to its new path."""
+    """Normalize Git's human-readable numstat rename notation to its new path.
+
+    The new-mid segment may be EMPTY: moving a file up a level inside a shared
+    prefix spells as `a/{b/c => }/deep.c`, which rebuilds to `a//deep.c` and
+    must collapse to `a/deep.c`. Requiring at least one character there sent
+    that spelling to the unbraced `rsplit` branch, which returned the fragment
+    `}/deep.c` and made the whole policy decision fail as malformed input.
+    Git only uses the braced form when a common prefix exists, so the rebuilt
+    path can never start with the collapsed separator.
+    """
     path = raw
-    braced = re.search(r"\{[^{}]*? => ([^{}]+)\}", path)
+    braced = re.search(r"\{[^{}]*? => ([^{}]*)\}", path)
     if braced:
-        return path[: braced.start()] + braced.group(1) + path[braced.end() :]
+        rebuilt = path[: braced.start()] + braced.group(1) + path[braced.end() :]
+        return re.sub(r"/{2,}", "/", rebuilt)
     if " => " in path:
         return path.rsplit(" => ", 1)[1]
     return path

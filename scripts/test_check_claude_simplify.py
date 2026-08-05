@@ -423,6 +423,67 @@ def test_rename_numstat_is_attributed_to_destination_path():
     assert result["changed_source_lines"] == 151
 
 
+@pytest.mark.parametrize(
+    ("spelling", "expected"),
+    [
+        # Empty new-mid: moving a file UP a level inside a shared prefix. This
+        # spelling fell through to the unbraced rsplit branch and returned the
+        # fragment `}/deep.c`, failing the whole decision as malformed input.
+        ("a/{b/c => }/deep.c", "a/deep.c"),
+        ("src/{foo => }/bar.c", "src/bar.c"),
+        # Mirror images that already worked — pinned so a fix here cannot break them.
+        ("src/{ => foo}/bar.c", "src/foo/bar.c"),
+        ("src/{foo => baz}/bar.c", "src/baz/bar.c"),
+        ("src/{old.py => new.py}", "src/new.py"),
+        # Unbraced form: git uses it when there is no common prefix.
+        ("foo/bar.c => bar.c", "bar.c"),
+        ("plain/path.py", "plain/path.py"),
+    ],
+)
+def test_rename_destination_handles_every_git_spelling(spelling, expected):
+    assert MODULE._rename_destination(spelling) == expected
+
+
+def test_move_up_a_level_resolves_against_real_git_output(tmp_path):
+    """End-to-end: git's own numstat for a move-up must satisfy evaluate_policy."""
+
+    def git(*args):
+        return subprocess.run(
+            ["git", *args], cwd=tmp_path, capture_output=True, text=True, check=True
+        ).stdout
+
+    git("init", "-q", "-b", "main", ".")
+    git("config", "user.email", "test@example.com")
+    git("config", "user.name", "Test")
+    nested = tmp_path / "a" / "b" / "c"
+    nested.mkdir(parents=True)
+    (nested / "deep.py").write_text("x = 1\n", encoding="utf-8")
+    git("add", "-A")
+    git("commit", "-q", "-m", "seed")
+    base = git("rev-parse", "HEAD").strip()
+    git("mv", "a/b/c/deep.py", "a/deep.py")
+    git("commit", "-q", "-m", "move up a level")
+    head = git("rev-parse", "HEAD").strip()
+
+    numstat = git("diff", "--numstat", f"{base}..{head}")
+    assert "=> }" in numstat, f"git no longer emits the empty new-mid form: {numstat!r}"
+    changed = [
+        p for p in git("diff", "--name-only", f"{base}..{head}").split("\n") if p
+    ]
+
+    # Must resolve, not raise "changed paths and numstat disagree".
+    result = MODULE.evaluate_policy(
+        lane="normal",
+        base=base,
+        head=head,
+        changed_paths=changed,
+        numstat=numstat,
+        version="2.1.154",
+    )
+    assert result["reviewable_paths"] == ["a/deep.py"]
+    assert result["required"] is True
+
+
 def test_binary_reviewable_change_remains_reviewable_but_adds_no_line_count():
     result = MODULE.evaluate_policy(
         lane="normal",
