@@ -342,6 +342,12 @@ def artifact_errors(collection: dict[str, Any], collection_path: Path) -> list[s
     if not isinstance(records, list):
         return ["collection records must be a list"]
     for record in records:
+        # Match _records: report a non-object rather than crashing on .get().
+        # artifact_errors runs before score_collections, so an AttributeError
+        # here escaped main() as a traceback instead of the structured report.
+        if not isinstance(record, dict):
+            errors.append("record must be an object")
+            continue
         case_id = record.get("case_id", "<unknown>")
         artifacts = record.get("artifacts")
         if not isinstance(artifacts, dict):

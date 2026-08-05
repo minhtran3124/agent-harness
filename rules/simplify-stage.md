@@ -8,8 +8,12 @@ uses Claude Code's bundled `/simplify`; the repository must not define a skill w
 
 The cleanup-only behavior is supported by Claude Code **2.1.154 or newer**. The controller records
 the client version and passes it to the checker. A required case fails closed when the client is
-missing, its version is malformed, or it is older than 2.1.154. An advisory or excluded case may
+missing, its version is malformed, or it is below that floor. An advisory or excluded case may
 continue while recording the capability status.
+
+> The bold sentence above is the single authoritative statement of the floor — it is the one
+> `check_simplify_adoption.py` check A anchors against `MINIMUM_VERSION`. Do not restate the number
+> elsewhere in this file; a second spelling can drift out of sync without the drift test noticing.
 
 The client version is not permission to invoke the stage by itself. The controller must also
 confirm that the bundled Skill invocation is available before running it; later workflow gates own
@@ -91,9 +95,16 @@ and emits `required_capability_unavailable` for a required decision without that
 
 ## Command contract
 
-Callers write newline-delimited changed paths and raw numstat to files, then run:
+Callers write newline-delimited changed paths and raw numstat to files. **Both producer commands
+must disable Git's path quoting**, or any non-ASCII filename arrives as `"caf\303\251.py"` and the
+checker rejects the backslash spelling as invalid input — a valid branch would be unable to resolve
+a decision at all, with the error blaming the caller. `--name-only` has `-z`; `--numstat` does not,
+so `-c core.quotePath=false` is the spelling that works for both:
 
 ```bash
+git -c core.quotePath=false diff --name-only "$BASE_SHA..$HEAD_SHA" > "$CHANGED_PATHS_FILE"
+git -c core.quotePath=false diff --numstat   "$BASE_SHA..$HEAD_SHA" > "$NUMSTAT_FILE"
+
 python3 scripts/check_claude_simplify.py \
   --lane normal \
   --base "$BASE_SHA" \

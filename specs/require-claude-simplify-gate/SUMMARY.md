@@ -111,10 +111,10 @@ and final reviews over the resulting HEAD.
 | --- | --- | --- | --- | --- |
 | Planning contract | `python3 scripts/check_plan_contract.py specs/require-claude-simplify-gate/PLAN.md` | 0 | Contract passed on 2026-07-30 | |
 | Plan render | `python3 skills/visual-planner/render_plan.py specs/require-claude-simplify-gate/PLAN.md` | 0 | Parsed 8 tasks across 6 waves | |
-| Capability/policy tests | `python3 -m pytest scripts/test_check_claude_simplify.py -q` | 0 | 147 passed (103 → 119 round 3 exact-case → 127 round-4 rename spellings → 147 with E006's program-text surface) | SC-1 |
+| Capability/policy tests | `python3 -m pytest scripts/test_check_claude_simplify.py -q` | 0 | 148 passed (103 → 119 round 3 exact-case → 127 round-4 rename spellings → 148 with E006's program-text surface and the Git-quoted-path diagnostic) | SC-1 |
 | Policy self-test | `python3 scripts/check_claude_simplify.py --self-test-policy` | 0 | `simplify-policy: self-test passed` | SC-2 |
-| Evidence recorder tests | `python3 -m pytest skills/subagent-driven-development/scripts/test_simplify_record.py -q` | 0 | 27 passed; dirty-worktree, symbolic/short SHA, ancestry all rejected | SC-3 |
-| SDD ordering contract | `bash tests/scripts/sdd-simplify-stage-contract.test.sh` | 0 | 31 passed, incl. 13 mutation checks; round 3 added the adoption-checker wiring check | SC-4 |
+| Evidence recorder tests | `python3 -m pytest skills/subagent-driven-development/scripts/test_simplify_record.py -q` | 0 | 32 passed; dirty-worktree, symbolic/short SHA, ancestry all rejected, plus round-4 begin-state validation | SC-3 |
+| SDD ordering contract | `bash tests/scripts/sdd-simplify-stage-contract.test.sh` | 0 | 32 passed, incl. 14 mutation checks; round 3 added the adoption-checker wiring check, round 4 re-anchored the commit-ordering check | SC-4 |
 | Receipt validation tests | `python3 -m pytest scripts/test_check_review_receipt.py -q` | 0 | 58 passed (39 → 52 round 3 → 58 with E004's base anchor and E005's conditional-only relaxation; every new test verified failing on the pre-fix code) | SC-5 |
 | Receipt self-test | `python3 scripts/check_review_receipt.py --self-test-simplify` | 0 | `check-review-receipt: simplify self-test passed` | SC-6 |
 | Finishing contract | `bash tests/scripts/finishing-branch-contract.test.sh` | 0 | 6 passed, incl. simplify-clause mutation check | SC-7 |
@@ -350,7 +350,26 @@ fixes is itself evidence — none of the round-3 defects was caught by the suite
     about the surface. Plain option A was checked first and would have been a half fix —
     `_WF_INCLUDE` does not match `skills/*/references/*.md` or `skills/*/prompts/**`, which is
     where this stage's own instructions and the six angle prompts live.
-  - **Recorded, not fixed — P2s:** `references/simplify-stage.md` runs `simplify_record.py finish`
+  - **Fixed after the escalations closed — the round-4 P2s and advisories.**
+    `references/simplify-stage.md` now requires the `changed` mutation to be committed inside the
+    handle-the-result step, with the reason stated (`review_package.py` diffs two commits, and
+    `finish` resolves `post_sha` from HEAD), and the trailing step became an ordering confirmation
+    rather than the place the obligation first appears; the contract check was re-anchored to the
+    new wording and given a second mutation pair, since the old anchor phrase no longer exists.
+    The command contract in `rules/simplify-stage.md` now shows both producer commands with
+    `git -c core.quotePath=false` — `--numstat` has no `-z`, so `57650be`'s fix did not reach it —
+    and `_normalized_path` detects the quoted form and names that flag instead of reporting a
+    generic backslash error. Patch artifacts are captured through a new `_git_bytes` helper so a
+    CRLF fixture cannot lose its CR bytes and contradict the scorer's own bundle cross-check.
+    `_changed_files` decodes with `surrogateescape`, so a non-UTF-8 filename can no longer raise
+    `UnicodeDecodeError` past `except OSError`. `simplify_record.py` validates `--begin-state`
+    (readable, JSON, an object, required keys, resolved SHAs, and **not** a `finish` entry — which
+    carries the same key names and previously produced a fresh entry stamped with a stale run's
+    SHAs) and reports a malformed `--delta-verdict` as its own error line; five tests pin those.
+    `score_simplify_stage_eval.py` reports a non-object record instead of crashing on `.get()`.
+    `rules/simplify-stage.md` no longer restates the version floor in prose, and says why: the
+    bold sentence is the single spelling adoption check A anchors against.
+  - **Previously recorded as not fixed — P2s (all now closed above):** `references/simplify-stage.md` runs `simplify_record.py finish`
     at step 7 but only instructs the commit at step 8, so `post_sha` still equals `pre_sha` and
     `finish` refuses a `changed` outcome — the stage is unexecutable as written for its main
     branch of behavior (two angles converged). The `--numstat` half of the command contract still

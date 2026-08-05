@@ -36,10 +36,15 @@ stage_handoff_ok() {
   [ -f "$1/$STAGE" ] && grep -q 'references/review-chain\.md' "$1/$STAGE"
 }
 
-# stage_commit_before_ok <dir> — 0 iff simplify-stage.md requires an accepted changed
-# outcome to be committed before the branch review package is created.
+# stage_commit_before_ok <dir> — 0 iff simplify-stage.md requires a changed outcome to be
+# committed BEFORE the delta review package is built. The ordering used to be stated only at
+# the trailing "commit accepted cleanup" step, which put it AFTER the step that runs
+# simplify_record.py finish — and finish resolves post_sha from HEAD, so following the document
+# literally left post_sha == pre_sha and the entry was refused as malformed. The obligation now
+# lives in the handle-the-result step; anchor on that, not on the old trailing phrasing.
 stage_commit_before_ok() {
-  flat "$1" "$STAGE" | grep -qF 'committed before the branch review package'
+  flat "$1" "$STAGE" | grep -qF 'commit it first' &&
+    flat "$1" "$STAGE" | grep -qF 'diffs two commits'
 }
 
 t "SKILL.md hands off to simplify-stage.md strictly before review-chain.md"
@@ -224,9 +229,15 @@ else fail "removing the review-chain.md handoff was NOT detected"; fi
 
 t "mutation: removing the commit-before-package clause is detected"
 m=$(mut_dir)
-sed -i.bak '/committed before the branch review package/d' "$m/$STAGE" && rm -f "$m/$STAGE.bak"
+sed -i.bak '/commit it first/d' "$m/$STAGE" && rm -f "$m/$STAGE.bak"
 if ! stage_commit_before_ok "$m"; then pass
-else fail "removing the commit-before-package clause was NOT detected"; fi
+else fail "removing the commit-first instruction was NOT detected"; fi
+
+t "mutation: removing the reason the commit must come first is detected"
+m=$(mut_dir)
+sed -i.bak '/diffs two commits/d' "$m/$STAGE" && rm -f "$m/$STAGE.bak"
+if ! stage_commit_before_ok "$m"; then pass
+else fail "removing the two-commits rationale was NOT detected"; fi
 
 t "mutation: removing the check_claude_simplify.py policy wiring is detected"
 m=$(mut_dir)

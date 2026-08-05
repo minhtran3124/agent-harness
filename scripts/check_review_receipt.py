@@ -157,19 +157,26 @@ def _changed_files(slug_dir: Path, a: str, b: str) -> list[str] | None:
     control character (`"src/caf\\303\\251.py"`), and classify_path rejects the
     backslash spelling — which would fail the whole gate closed on a valid
     branch, blaming the base ref. NUL-delimited output is never quoted.
+
+    Decoded with `surrogateescape` rather than `text=True`: a filename that is
+    not valid UTF-8 would otherwise raise `UnicodeDecodeError` — a `ValueError`,
+    not an `OSError` — straight past the guard below, killing the gate with a
+    traceback instead of the documented undiffable-range failure. A surrogate
+    path then fails `classify_path`, which the callers already treat as unknown
+    and therefore reviewable.
     """
     try:
         proc = subprocess.run(
             ["git", "diff", "--name-only", "-z", f"{a}..{b}"],
             cwd=slug_dir,
             capture_output=True,
-            text=True,
         )
     except OSError:
         return None
     if proc.returncode != 0:
         return None
-    return [path for path in proc.stdout.split("\0") if path.strip()]
+    decoded = proc.stdout.decode("utf-8", errors="surrogateescape")
+    return [path for path in decoded.split("\0") if path.strip()]
 
 
 def _resolve_sha(slug_dir: Path, ref: str) -> str | None:

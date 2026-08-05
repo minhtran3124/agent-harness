@@ -108,6 +108,11 @@ def _normalized_path(raw: str) -> str:
         raise ValueError("changed paths must not contain blank entries")
     if raw != raw.strip():
         raise ValueError(f"changed path has unsafe surrounding whitespace: {raw!r}")
+    if len(raw) > 1 and raw.startswith('"') and raw.endswith('"'):
+        raise ValueError(
+            f"changed path is Git-quoted: {raw!r} — re-run the producer command "
+            f"with `git -c core.quotePath=false ...` (`--numstat` has no `-z`)"
+        )
     if "\\" in raw:
         raise ValueError(f"changed path uses unsupported backslash spelling: {raw!r}")
     parsed = PurePosixPath(raw)

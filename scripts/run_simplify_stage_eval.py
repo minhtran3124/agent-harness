@@ -79,6 +79,28 @@ def _git(cwd: Path, *arguments: str, check: bool = True) -> str:
     return completed.stdout
 
 
+def _git_bytes(cwd: Path, *arguments: str) -> bytes:
+    """Run git and return stdout as raw bytes.
+
+    Patch artifacts must not go through `text=True`: universal-newline decoding
+    rewrites every CRLF to LF, so a fixture with CRLF endings would produce an
+    archived patch that no longer applies faithfully, and the scorer's
+    `_crosscheck_record_artifacts` — which recomputes the same diff as bytes —
+    would report the run as contradicting its own history bundle.
+    """
+    completed = subprocess.run(
+        ["git", *arguments],
+        cwd=cwd,
+        stdin=subprocess.DEVNULL,
+        capture_output=True,
+        check=False,
+    )
+    if completed.returncode:
+        detail = completed.stderr.decode("utf-8", "replace").strip()
+        raise CollectionError(f"git {' '.join(arguments)} failed: {detail}")
+    return completed.stdout
+
+
 def _copy_tree(source: Path, destination: Path) -> None:
     if not source.is_dir():
         raise CollectionError(f"fixture tree is missing: {source}")
@@ -647,7 +669,7 @@ def _collect_case(
             _git(worktree, "commit", "-q", "-m", "fixture candidate")
         pre_sha = _git(worktree, "rev-parse", "HEAD").strip()
         head_state = capture_head_state(worktree)
-        pre_patch = _git(worktree, "diff", "--binary", base_sha, pre_sha)
+        pre_patch = _git_bytes(worktree, "diff", "--binary", base_sha, pre_sha)
 
         prompt = (
             "Use Claude Code's bundled Skill tool to invoke `simplify` exactly once. "
@@ -844,7 +866,7 @@ def _collect_case(
             }
 
         _git(worktree, "add", "-A")
-        simplify_patch = _git(
+        simplify_patch = _git_bytes(
             worktree,
             "diff",
             "--cached",
@@ -860,7 +882,7 @@ def _collect_case(
         else:
             post_sha = pre_sha
             outcome = "no_op"
-        post_patch = _git(worktree, "diff", "--binary", base_sha, post_sha)
+        post_patch = _git_bytes(worktree, "diff", "--binary", base_sha, post_sha)
         changed_files = (
             _git(worktree, "diff", "--name-only", pre_sha, post_sha).splitlines()
             if post_sha != pre_sha

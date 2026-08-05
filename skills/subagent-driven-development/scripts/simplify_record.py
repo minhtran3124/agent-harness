@@ -188,10 +188,51 @@ def finish(
     return entry
 
 
+_BEGIN_STATE_KEYS = ("base_sha", "pre_sha", "claude_code_version")
+
+
 def _read_json_arg(raw: str | None) -> Any:
     if raw is None:
         return None
-    return json.loads(raw)
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError as error:
+        raise SimplifyRecordError(f"--delta-verdict is not valid JSON: {error}")
+
+
+def _load_begin_state(path: Path) -> dict[str, Any]:
+    """Read and shape-check begin()'s output.
+
+    Without this, a truncated file or a mistakenly-supplied `finish` output
+    (which carries the same key names) reached `finish` unvalidated: the first
+    raised `KeyError` as a traceback instead of the module's own error line, and
+    the second silently produced a fresh entry carrying a stale run's SHAs.
+    """
+    try:
+        state = json.loads(path.read_text(encoding="utf-8"))
+    except OSError as error:
+        raise SimplifyRecordError(f"cannot read --begin-state {path}: {error}")
+    except json.JSONDecodeError as error:
+        raise SimplifyRecordError(f"--begin-state {path} is not valid JSON: {error}")
+    if not isinstance(state, dict):
+        raise SimplifyRecordError(f"--begin-state {path} is not a JSON object")
+    missing = [key for key in _BEGIN_STATE_KEYS if key not in state]
+    if missing:
+        raise SimplifyRecordError(
+            f"--begin-state {path} is missing {', '.join(missing)}"
+        )
+    if "post_sha" in state:
+        raise SimplifyRecordError(
+            f"--begin-state {path} carries a post_sha, so it is a finish entry, "
+            f"not a begin checkpoint — re-run begin for this range"
+        )
+    for key in ("base_sha", "pre_sha"):
+        if not isinstance(state[key], str) or not _SHA_RE.fullmatch(state[key]):
+            raise SimplifyRecordError(
+                f"--begin-state {path} {key} {state[key]!r} is not a resolved "
+                f"40-char lowercase hex sha"
+            )
+    return state
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -237,7 +278,7 @@ def main(argv: list[str] | None = None) -> int:
                 claude_code_version=args.claude_code_version,
             )
         else:
-            begin_state = json.loads(args.begin_state.read_text(encoding="utf-8"))
+            begin_state = _load_begin_state(args.begin_state)
             result = finish(
                 repo_root=repo_root,
                 begin_state=begin_state,

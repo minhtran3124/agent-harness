@@ -511,3 +511,105 @@ def test_cli_begin_reports_dirty_worktree_error(tmp_path, capsys):
     rc = sr.main(["--repo-root", str(repo), "begin", "--base", base])
     assert rc == 1
     assert "dirty worktree" in capsys.readouterr().err
+
+
+# ---------------------------------------------------------------------------
+# --begin-state validation (round-4 advisory: these escaped as tracebacks)
+# ---------------------------------------------------------------------------
+
+
+def _finish_argv(repo: Path, state_path: Path) -> list[str]:
+    return [
+        "--repo-root",
+        str(repo),
+        "finish",
+        "--begin-state",
+        str(state_path),
+        "--outcome",
+        "no_op",
+        "--reason",
+        "tiny_source_change",
+    ]
+
+
+def test_finish_reports_a_missing_begin_state_file(tmp_path, capsys):
+    repo = make_repo(tmp_path)
+    rc = sr.main(_finish_argv(repo, tmp_path / "nope.json"))
+    assert rc == 1
+    assert "cannot read --begin-state" in capsys.readouterr().err
+
+
+def test_finish_reports_malformed_begin_state_json(tmp_path, capsys):
+    repo = make_repo(tmp_path)
+    state = tmp_path / "begin.json"
+    state.write_text("{not json", encoding="utf-8")
+    rc = sr.main(_finish_argv(repo, state))
+    assert rc == 1
+    assert "is not valid JSON" in capsys.readouterr().err
+
+
+def test_finish_reports_a_begin_state_missing_keys(tmp_path, capsys):
+    repo = make_repo(tmp_path)
+    state = tmp_path / "begin.json"
+    state.write_text(json.dumps({"base_sha": "a" * 40}), encoding="utf-8")
+    rc = sr.main(_finish_argv(repo, state))
+    assert rc == 1
+    err = capsys.readouterr().err
+    assert "missing" in err and "pre_sha" in err
+
+
+def test_finish_refuses_a_finish_entry_supplied_as_begin_state(tmp_path, capsys):
+    # A finish entry carries base_sha/pre_sha too, so it passed the key check and
+    # silently produced a fresh entry stamped with the STALE run's SHAs.
+    repo = make_repo(tmp_path)
+    sha = _git(repo, "rev-parse", "HEAD")
+    state = tmp_path / "begin.json"
+    state.write_text(
+        json.dumps(
+            {
+                "base_sha": sha,
+                "pre_sha": sha,
+                "post_sha": sha,
+                "claude_code_version": "2.1.222",
+            }
+        ),
+        encoding="utf-8",
+    )
+    rc = sr.main(_finish_argv(repo, state))
+    assert rc == 1
+    assert "is a finish entry" in capsys.readouterr().err
+
+
+def test_finish_reports_malformed_delta_verdict_json(tmp_path, capsys):
+    repo = make_repo(tmp_path)
+    base = _git(repo, "rev-parse", "HEAD")
+    commit_file(repo, "src/app.py", "x = 1\n")
+    pre = _git(repo, "rev-parse", "HEAD")
+    state = tmp_path / "begin.json"
+    state.write_text(
+        json.dumps(
+            {"base_sha": base, "pre_sha": pre, "claude_code_version": "2.1.222"}
+        ),
+        encoding="utf-8",
+    )
+    rc = sr.main(
+        [
+            "--repo-root",
+            str(repo),
+            "finish",
+            "--begin-state",
+            str(state),
+            "--outcome",
+            "changed",
+            "--changed-files",
+            "src/app.py",
+            "--reason",
+            "non_tiny_source_change",
+            "--verification-result",
+            "pass",
+            "--delta-verdict",
+            "spec_verdict:pass",  # lost its braces to an unquoted expansion
+        ]
+    )
+    assert rc == 1
+    assert "--delta-verdict is not valid JSON" in capsys.readouterr().err

@@ -302,6 +302,15 @@ def test_prose_about_the_surface_stays_documentation(path):
     assert MODULE.classify_path(path) == "documentation"
 
 
+def test_git_quoted_path_names_the_flag_that_fixes_it():
+    # `--numstat` has no `-z`, so a non-ASCII filename arrives quoted. The old
+    # message blamed a "backslash spelling", which does not tell the caller what
+    # to change; `-c core.quotePath=false` is the fix for both producer commands.
+    with pytest.raises(ValueError) as excinfo:
+        MODULE.classify_path('"src/caf\\303\\251.py"')
+    assert "core.quotePath=false" in str(excinfo.value)
+
+
 def test_program_text_narrowing_does_not_override_more_specific_authorities():
     # Ordering guard: a deployed mirror and spec bookkeeping still win.
     assert MODULE.classify_path(".claude/skills/foo/SKILL.md") == "generated"
