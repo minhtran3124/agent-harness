@@ -192,7 +192,9 @@ def test_dependency_manifest_with_txt_suffix_is_not_mistaken_for_documentation()
         ("coverage", "reviewable"),
     ],
 )
-def test_mutation_guard_ambiguous_generated_directories_are_root_anchored(path, expected):
+def test_mutation_guard_ambiguous_generated_directories_are_root_anchored(
+    path, expected
+):
     assert MODULE.classify_path(path) == expected
 
 
@@ -232,6 +234,46 @@ def test_mutation_guard_directory_authority_singleton_files_are_reviewable(path)
     ],
 )
 def test_mutation_guard_directory_authority_requires_an_actual_subtree(path, expected):
+    assert MODULE.classify_path(path) == expected
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "Docs/mod.py",
+        "DOCS/mod.py",
+        "Specs/payload.py",
+        "Evals/raw/tool.py",
+        "evals/Raw/tool.py",
+        "Vendor/lib/thing.py",
+        "src/Node_Modules/acme/index.js",
+        ".Claude/settings.json",
+        "Build/artifact.js",
+    ],
+)
+def test_mutation_guard_case_variant_directory_authorities_stay_reviewable(path):
+    # On a case-sensitive filesystem these are different directories from the
+    # lowercase authorities, so folding case here would exempt real source from
+    # the stage — both in evaluate_policy and in check_review_receipt's
+    # --require-simplify-if trigger.
+    assert MODULE.classify_path(path) == "reviewable"
+
+
+@pytest.mark.parametrize(
+    ("path", "expected"),
+    [
+        ("README", "documentation"),
+        ("ReadMe", "documentation"),
+        ("docs/GUIDE.MD", "documentation"),
+        ("LICENSE", "documentation"),
+        ("specs/x/PLAN.html", "specs_bookkeeping"),
+        ("PLAN.html", "generated"),
+        ("bundle.MIN.JS", "generated"),
+    ],
+)
+def test_file_names_and_suffixes_still_fold_case(path, expected):
+    # A file name is the same file whatever its caps; only directory
+    # authorities need the exact-case rule.
     assert MODULE.classify_path(path) == expected
 
 
@@ -407,7 +449,9 @@ def test_binary_reviewable_change_remains_reviewable_but_adds_no_line_count():
         ),
     ],
 )
-def test_mutation_guard_changed_paths_and_numstat_sets_must_match(changed_paths, numstat):
+def test_mutation_guard_changed_paths_and_numstat_sets_must_match(
+    changed_paths, numstat
+):
     with pytest.raises(ValueError, match="changed paths and numstat disagree"):
         MODULE.evaluate_policy(
             lane="high-risk",

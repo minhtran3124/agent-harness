@@ -48,6 +48,11 @@ A directory-name exclusion applies only when that authority token has a child co
 changed file path. A singleton root file named `docs`, `specs`, `vendor`, `.claude`, or another
 directory authority remains reviewable.
 
+Directory authorities match exact-case. On a case-sensitive filesystem `Docs/`, `Specs/`, and
+`Evals/Raw/` are different directories from their lowercase spellings, so a case variant stays
+reviewable rather than inheriting the exclusion. File names and suffixes still match
+case-insensitively: `README`, `.MD`, and `PLAN.html` are the same file however they are spelled.
+
 Large excluded files never contribute to the source-line threshold. A binary reviewable change is
 still reviewable even though Git reports no numeric line count. Malformed numstat, or numstat that
 omits a reviewable path, is invalid input rather than evidence for an advisory decision.

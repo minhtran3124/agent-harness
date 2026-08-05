@@ -124,31 +124,37 @@ def _has_directory_subtree(parts: tuple[str, ...], authorities: frozenset[str]) 
 
 
 def classify_path(raw: str) -> str:
-    """Classify a path as one permitted exclusion or reviewable source."""
+    """Classify a path as one permitted exclusion or reviewable source.
+
+    Directory authorities are matched **exact-case**: on a case-sensitive
+    filesystem `Docs/` is a different directory from `docs/`, so folding case
+    there would exempt real source from the stage on a case-variant spelling.
+    File names and suffixes still fold case — `README`, `.MD`, and `PLAN.html`
+    are the same file whatever the shell caps look like.
+    """
     path = _normalized_path(raw)
     parsed = PurePosixPath(path)
-    lowered_parts = tuple(part.lower() for part in parsed.parts)
+    parts = parsed.parts
     lowered_name = parsed.name.lower()
 
     # More specific directory authorities take precedence over file suffixes.
-    if _has_directory_subtree(lowered_parts, frozenset({".claude"})):
+    if _has_directory_subtree(parts, frozenset({".claude"})):
         return "generated"
-    if len(lowered_parts) > 1 and lowered_parts[0] == "specs":
+    if len(parts) > 1 and parts[0] == "specs":
         return "specs_bookkeeping"
     if (
-        len(lowered_parts) > 2
-        and lowered_parts[0] == "evals"
+        len(parts) > 2
+        and parts[0] == "evals"
         and any(
-            part in {"results", "result", "raw", "transcripts"}
-            for part in lowered_parts[1:-1]
+            part in {"results", "result", "raw", "transcripts"} for part in parts[1:-1]
         )
     ):
         return "evaluation"
-    if _has_directory_subtree(lowered_parts, _VENDOR_PARTS):
+    if _has_directory_subtree(parts, _VENDOR_PARTS):
         return "vendor"
-    if (
-        len(lowered_parts) > 1 and lowered_parts[0] in _ROOT_GENERATED_DIRS
-    ) or _has_directory_subtree(lowered_parts, _UNAMBIGUOUS_GENERATED_PARTS):
+    if (len(parts) > 1 and parts[0] in _ROOT_GENERATED_DIRS) or _has_directory_subtree(
+        parts, _UNAMBIGUOUS_GENERATED_PARTS
+    ):
         return "generated"
     if (
         lowered_name in _GENERATED_NAMES
@@ -157,10 +163,7 @@ def classify_path(raw: str) -> str:
     ):
         return "generated"
     if (
-        (
-            len(lowered_parts) > 1
-            and lowered_parts[0] in {"doc", "docs", "documentation"}
-        )
+        (len(parts) > 1 and parts[0] in {"doc", "docs", "documentation"})
         or lowered_name in _DOCUMENT_NAMES
         or parsed.suffix.lower() in _DOCUMENT_SUFFIXES
     ):

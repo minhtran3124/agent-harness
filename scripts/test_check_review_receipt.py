@@ -552,6 +552,22 @@ def test_require_simplify_if_non_reviewable_diff_does_not_require_entry(tmp_path
     assert crr.main([str(slug_dir), "--require-simplify-if", base]) == 0
 
 
+def test_require_simplify_if_case_variant_excluded_dir_still_requires_entry(
+    tmp_path, capsys
+):
+    # The staleness exemption was taught exact-case at ed77172, but the
+    # requirement trigger still folded case, so real source under `Docs/` or
+    # `Evals/Raw/` — different directories on a case-sensitive filesystem —
+    # answered "no reviewable path" and skipped the required stage entirely.
+    repo = make_repo(tmp_path)
+    base = head_sha(repo)
+    commit_file(repo, "Docs/mod.py", "def f():\n    return 1\n")
+    commit_file(repo, "Evals/Raw/mod.py", "def g():\n    return 2\n")
+    slug_dir = write_receipt(repo, "gh-x", valid_data(head_sha(repo)))
+    assert crr.main([str(slug_dir), "--require-simplify-if", base]) == 1
+    assert "missing-required-type" in capsys.readouterr().err
+
+
 def test_require_simplify_if_symbolic_sha_is_rejected(tmp_path, capsys):
     repo, base, pre, post = make_simplify_repo(tmp_path)
     entry = simplify_entry(base, pre, post, pre_sha="HEAD")
