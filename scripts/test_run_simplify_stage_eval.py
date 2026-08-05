@@ -576,7 +576,14 @@ def test_failed_sandbox_auth_preflight_creates_no_run_artifacts(tmp_path):
     assert not (output.parent / "transcripts").exists()
 
 
+@pytest.mark.skipif(
+    sys.platform != "darwin",
+    reason="probes macOS-only content roots (/private/tmp, /Users/Shared, /Volumes)",
+)
 def test_sandbox_denies_unrelated_content_roots(tmp_path):
+    # Guarded at test level, not via invoke(): the /private/tmp sentinel assertion
+    # below runs before invoke() is ever called, so it fails on Linux (where the
+    # probe roots do not exist) before the shared skip can fire.
     sentinels: list[Path] = []
     temp_dirs: list[tempfile.TemporaryDirectory[str]] = []
     try:
