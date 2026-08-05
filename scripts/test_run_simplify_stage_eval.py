@@ -912,27 +912,67 @@ def test_cached_patch_captures_untracked_deleted_rename_and_binary(tmp_path):
     client = tmp_path / "client"
     client.mkdir()
     fake = client / "fake-claude"
+    # POSIX sh for the same reason as the shared fixture: #!/usr/bin/python3 is
+    # the Xcode stub on macOS runners and dies under Seatbelt. This one is
+    # hand-rolled rather than using write_fake_claude because it exercises a
+    # bespoke set of worktree mutations (rename, delete, new file, binary).
     fake.write_text(
-        "#!/usr/bin/python3\n"
-        "import json, pathlib, sys\n"
-        "if '--version' in sys.argv:\n"
-        "    print('2.1.220 (Claude Code)')\n"
-        "    raise SystemExit(0)\n"
-        "if 'auth' in sys.argv and 'status' in sys.argv:\n"
-        "    print(json.dumps({'loggedIn': True, 'authMethod': 'oauth_token'}))\n"
-        "    raise SystemExit(0)\n"
-        "root = pathlib.Path.cwd()\n"
-        "(root / 'app.py').rename(root / 'renamed.py')\n"
-        "(root / 'old.txt').unlink()\n"
-        "(root / 'new.txt').write_text('new file\\n')\n"
-        "(root / 'binary.bin').write_bytes(bytes(range(256)))\n"
-        "print(json.dumps({'type': 'assistant', 'message': {'content': "
-        "[{'type': 'tool_use', 'id': 'one', 'name': 'Skill', "
-        "'input': {'skill': 'simplify'}}]}}))\n"
-        "print(json.dumps({'type': 'user', 'message': {'content': "
-        "[{'type': 'tool_result', 'tool_use_id': 'one', "
-        "'is_error': False, 'content': 'done'}]}}))\n"
-        "print(json.dumps({'type': 'result', 'result': 'done', 'usage': {}}))\n",
+        "#!/bin/sh\n"
+        'for arg in "$@"; do\n'
+        '  [ "$arg" = "--version" ] && { echo "2.1.220 (Claude Code)"; exit 0; }\n'
+        "done\n"
+        'case " $* " in\n'
+        '  *\\ auth\\ *) case " $* " in *\\ status\\ *) '
+        + "printf %s\\\\n "
+        + _sh_quote(json.dumps({"loggedIn": True, "authMethod": "oauth_token"}))
+        + "; exit 0;; esac;;\n"
+        "esac\n"
+        "mv app.py renamed.py\n"
+        "rm -f old.txt\n"
+        "printf 'new file\\n' > new.txt\n"
+        # 256 bytes, 0x00-0xFF — the same binary payload the Python fake wrote.
+        "awk 'BEGIN{for(i=0;i<256;i++)printf \"%c\", i}' > binary.bin\n"
+        + "printf %s\\\\n "
+        + _sh_quote(
+            json.dumps(
+                {
+                    "type": "assistant",
+                    "message": {
+                        "content": [
+                            {
+                                "type": "tool_use",
+                                "id": "one",
+                                "name": "Skill",
+                                "input": {"skill": "simplify"},
+                            }
+                        ]
+                    },
+                }
+            )
+        )
+        + "\n"
+        + "printf %s\\\\n "
+        + _sh_quote(
+            json.dumps(
+                {
+                    "type": "user",
+                    "message": {
+                        "content": [
+                            {
+                                "type": "tool_result",
+                                "tool_use_id": "one",
+                                "is_error": False,
+                                "content": "done",
+                            }
+                        ]
+                    },
+                }
+            )
+        )
+        + "\n"
+        + "printf %s\\\\n "
+        + _sh_quote(json.dumps({"type": "result", "result": "done", "usage": {}}))
+        + "\n",
         encoding="utf-8",
     )
     fake.chmod(0o755)
