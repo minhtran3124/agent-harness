@@ -111,21 +111,23 @@ and final reviews over the resulting HEAD.
 | --- | --- | --- | --- | --- |
 | Planning contract | `python3 scripts/check_plan_contract.py specs/require-claude-simplify-gate/PLAN.md` | 0 | Contract passed on 2026-07-30 | |
 | Plan render | `python3 skills/visual-planner/render_plan.py specs/require-claude-simplify-gate/PLAN.md` | 0 | Parsed 8 tasks across 6 waves | |
-| Capability/policy tests | `python3 -m pytest scripts/test_check_claude_simplify.py -q` | 0 | 103 passed | SC-1 |
+| Capability/policy tests | `python3 -m pytest scripts/test_check_claude_simplify.py -q` | 0 | 119 passed (was 103; +16 pinning exact-case directory authorities vs case-folding file names, round 3) | SC-1 |
 | Policy self-test | `python3 scripts/check_claude_simplify.py --self-test-policy` | 0 | `simplify-policy: self-test passed` | SC-2 |
 | Evidence recorder tests | `python3 -m pytest skills/subagent-driven-development/scripts/test_simplify_record.py -q` | 0 | 27 passed; dirty-worktree, symbolic/short SHA, ancestry all rejected | SC-3 |
-| SDD ordering contract | `bash tests/scripts/sdd-simplify-stage-contract.test.sh` | 0 | 25 passed, incl. 12 mutation checks | SC-4 |
-| Receipt validation tests | `python3 -m pytest scripts/test_check_review_receipt.py -q` | 0 | 39 passed | SC-5 |
+| SDD ordering contract | `bash tests/scripts/sdd-simplify-stage-contract.test.sh` | 0 | 31 passed, incl. 13 mutation checks; round 3 added the adoption-checker wiring check | SC-4 |
+| Receipt validation tests | `python3 -m pytest scripts/test_check_review_receipt.py -q` | 0 | 52 passed (was 39; round 3 added the case-variant bypass and non-ASCII-path regressions, both verified failing on the pre-fix code) | SC-5 |
 | Receipt self-test | `python3 scripts/check_review_receipt.py --self-test-simplify` | 0 | `check-review-receipt: simplify self-test passed` | SC-6 |
-| Finishing contract | `bash tests/scripts/finishing-branch-contract.test.sh` | 0 | 4 passed, incl. simplify-clause mutation check | SC-7 |
+| Finishing contract | `bash tests/scripts/finishing-branch-contract.test.sh` | 0 | 6 passed, incl. simplify-clause mutation check | SC-7 |
 | Shadow-eval quality gate | `python3 scripts/score_simplify_stage_eval.py --compare evals/skills/simplify-stage/results/baseline.json evals/skills/simplify-stage/results/candidate.json --fixtures evals/skills/simplify-stage/fixtures --quality-gate` | 0 | Round 4 (HEAD `f5f135c`): `quality_pass: true`, 8/8 fixtures matched `truth.json`. Round 3's evidence (HEAD `5a34cae`) went digest-stale once the branch's own `/simplify` self-application (`e90413b`) edited the eval harness's own source; re-collected, identical result. Rounds 1-2 rejected first (`comparison.md`) | SC-8 |
 | Shadow-eval value gate | `python3 scripts/score_simplify_stage_eval.py --compare evals/skills/simplify-stage/results/baseline.json evals/skills/simplify-stage/results/candidate.json --fixtures evals/skills/simplify-stage/fixtures --value-gate` | 0 | `value_pass: true`, `value_score: 4` ≥ `minimum_value_score: 3` (round 4) | SC-9 |
-| Adoption/deployed parity | `python3 scripts/check_simplify_adoption.py` | 0 | `consistent` — policy, ordering, receipt, hook, docs, deployed harness all agree (post `deploy-harness.sh`, re-run at final HEAD) | SC-10 |
-| Adoption checker's own tests | `python3 -m pytest scripts/test_check_simplify_adoption.py -q` | 0 | 19 passed | |
+| Adoption/deployed parity | `python3 scripts/check_simplify_adoption.py` | 0 | `consistent` — policy, ordering, receipt, hook, docs, deployed harness all agree (post `deploy-harness.sh`, re-run at final HEAD). Re-run this bare form after any re-sync; the local `.claude/` mirror is stale until then | SC-10 |
+| Adoption drift, as CI runs it | `python3 scripts/check_simplify_adoption.py --skip-deployed-parity` | 0 | `consistent` — checks A-F. Round 3 wired this into `run-tests.sh`; it had never been invoked by any suite | SC-10 |
+| Adoption checker's own tests | `python3 -m pytest scripts/test_check_simplify_adoption.py -q` | 0 | 22 passed (was 19; +3 for the skip flag) | |
 | Eval runner tests | `python3 -m pytest scripts/test_run_simplify_stage_eval.py -q` | 0 | 20 passed | |
 | Eval scorer tests | `python3 -m pytest scripts/test_score_simplify_stage_eval.py -q` | 0 | 7 passed | |
 | Task-brief delta-description tests | `python3 -m pytest skills/subagent-driven-development/scripts/test_task_brief.py -q` | 0 | 6 passed | |
 | Hook contract tests | `bash tests/hooks/risk-corroboration.test.sh` | 0 | 39 passed | |
+| Install/deploy contract (E003) | `bash tests/scripts/install-harness.test.sh` | 0 | 12 passed (was 10). New: the deployed skill helper loads its dependency; a consumer's own `scripts/` is not flagged as legacy. Both verified failing against the pre-fix scripts | |
 
 The full suite (`GOCACHE=/tmp/harness-skills-go-cache bash scripts/run-tests.sh`, all L1-L3 layers,
 measured ~130s — over the 60s `verify_summary.py --check` re-run cap, so it is cited here in prose
@@ -133,7 +135,9 @@ rather than as a Verify row per `docs/solutions/harness/verify-row-must-be-pipe-
 passed at intake (278 Python tests, all shell contracts green) and passes at every checkpoint since:
 473 passed at the final HEAD (up from 278 — the wave-5 fix closed a real CI-registration gap for
 four Python test files that existed but were never in `run-tests.sh`'s `PYTESTS` list), zero
-regressions.
+regressions. After the round-3 fixes: **513 passed, ALL GREEN** (up from 493 at `f62fcc0`; the 20
+new tests are the round-3 regressions and their mutation pairs). The 493-green run before those
+fixes is itself evidence — none of the round-3 defects was caught by the suite as it stood.
 
 ### Plan Review
 
@@ -203,6 +207,96 @@ regressions.
     `docs/solutions/harness/gate-config-must-read-index.md`. That file arrived in `75dcc9f` on
     `feat/superpowers-6-review-pipeline` (PR #183), this branch's base — the finder diffed
     against `main`, which spans both. Real finding, wrong branch; it belongs to PR #183.
+- Round 3 (2026-08-04/05, range `29a5419..8bfacc1`) — **the three angles round 2 left owed**
+  (`call-site-impact`, `stack-defects`, `guard-completeness`) were run and are no longer owed.
+
+  The bulk of the pass covered `29a5419..f62fcc0`. Three commits (`c1dafb5`, `1385496`, `8bfacc1`
+  — +25/-2, eval tooling and test-harness portability) landed after that, two of them while the
+  pass was running, so the range was re-checked to `8bfacc1` before this was written. Nothing in
+  that delta is a defect: `_run` sets `capture_output=True, text=True`, so the widened
+  `CollectionError` interpolation cannot hit `None.strip()`; `shutil`/`sys`/`pytest` are all
+  imported at module level, so the new non-darwin `pytest.skip` guard in `invoke()` cannot
+  `NameError` on Linux despite `sys.platform != "darwin"` short-circuiting past `shutil.which`
+  on the machine where it was tested.
+
+  The round-3 fixes landed as `a0ccb63` (E003 deploy contract), `dda9b2d` (exact-case authorities),
+  and `57650be` (NUL-delimited changed paths). Three further eval-harness commits — `b2d6816`,
+  `46b6765`, `d01af39` — landed alongside them from concurrent work and are **outside** the
+  reviewed range; they are not covered by this pass.
+
+  **Independence caveat, recorded because it changes how much this pass is worth.** The subagent
+  dispatch channel failed: two `reviewer` agents spawned and went idle in ~7s without returning any
+  findings text (three times, including after a direct request), and every further spawn failed with
+  `fork failed: Device not configured`. The angles were therefore run by the controller thread,
+  which had already read this SUMMARY and the PR body — so this pass is **not plan-blind and not
+  context-independent**. Every finding below carries a re-runnable reproduction so the claim does
+  not rest on that pass's judgment; the independence property itself is simply absent. Per
+  `docs/solutions/harness/no-report-reviewer-dispatch-is-not-a-pass.md`, the silent agents
+  contributed nothing and are not counted.
+
+  - **Fixed — P1, `guard-completeness`:** the round-2 exact-case repair landed on
+    `_carries_reviewable_surface` (the staleness exemption) but not on `_simplify_required` (the
+    requirement trigger), and `classify_path` itself still folded case. Real source under `Docs/`,
+    `Specs/`, or `Evals/Raw/` — different directories on a case-sensitive filesystem — answered
+    "no reviewable path", so `--require-simplify-if` exited 0 against a receipt with an empty
+    `reviews` list and the required stage was skipped entirely. Reproduced end-to-end in a
+    throwaway repo. Fixed at the root: `classify_path` now matches **directory authorities**
+    exact-case while file names and suffixes keep folding case (`README`, `.MD`, `PLAN.html` are
+    the same file however spelled). This also closes the same hole in `evaluate_policy`, the
+    standalone checker. The in-code comment claiming case folding was "fine for the simplify
+    policy, whose lenient direction merely skips a cleanup" was true before `f1a9e8f` and stale
+    after it — that commit made the lenient direction skip a push-blocking gate.
+    `rules/simplify-stage.md` now states the rule; 16 parametrized cases pin both directions, and
+    the e2e test fails on the pre-fix code.
+  - **Fixed — P2, `stack-defects`:** `_changed_files` ran `git diff --name-only` without `-z`, so
+    Git's default `core.quotePath` quoted any non-ASCII path (`"src/caf\303\251.py"`).
+    `classify_path` rejects the backslash spelling, so `_simplify_required` returned `None` and the
+    gate failed closed with `stale-sha: cannot diff simplify base ... — re-check with a valid base
+    ref`: a branch containing one non-ASCII filename became unpushable, with a message blaming the
+    base ref, and no base ref could fix it. Now `-z` with NUL-delimited parsing. Fail-closed
+    throughout, so this was lost work rather than a bypass.
+  - **Fixed — P2, `guard-completeness`:** `scripts/check_simplify_adoption.py` — SC-10's whole
+    drift guard — was **never invoked**. `run-tests.sh` ran `check_manifest.py`,
+    `check_gate_modes_smoke.py`, and `check_slim_surface.py`; CI runs only `run-tests.sh`; only the
+    checker's *own* unit tests ran, and those build synthetic roots that never look at this
+    repository. A `MINIMUM_VERSION` bump without the matching `rules/simplify-stage.md` edit would
+    have shipped green. Now wired into `run-tests.sh` with a paired mutation check.
+
+    Wiring it surfaced a second problem and changed the fix: check G (deployed parity) compares
+    against `.claude/`, which is untracked local state, so the shared suite failed on any source
+    edit made before a re-sync — while CI, having no mirror, never enforced it at all. The suite
+    now runs checks A–F via a new `--skip-deployed-parity` flag; a bare manual invocation keeps
+    check G. This is the one place the fix went beyond restoring the intended behavior, and it is
+    a deliberate narrowing, not an oversight.
+  - **Advisory, recorded, no action:**
+    - `simplify_record.py:251` catches only `SimplifyRecordError`, so a `--begin-state` path that is
+      missing, malformed JSON, or missing a key escapes as `OSError` / `JSONDecodeError` /
+      `KeyError` — a traceback instead of the clean `simplify-record: <error>` line. Exit stays
+      nonzero, so it fails closed; cosmetic only.
+    - ~~`run_simplify_stage_eval.py:753` (from `1385496`) interpolates up to 400 chars of the
+      sandboxed client's stderr and 200 of its stdout into the auth-preflight `CollectionError`,
+      which can be captured into stored eval evidence — unbounded third-party text this repo does
+      not control.~~ **Moot:** `d01af39` reverted that diagnostic (to restore the eval digest, for
+      unrelated reasons); the message is back to `returncode` only. Recorded because the concern
+      applies again if the diagnostic is ever reinstated.
+    - `check_simplify_adoption.py:48` `exec_module`s the checked root's own
+      `check_claude_simplify.py`, writing `__pycache__` into that tree. An edit that preserves byte
+      size within the same mtime second is then served from stale bytecode — observed live: the
+      `2.1.154` → `2.1.999` mutation reported `consistent` until `__pycache__` was removed. This
+      one fails **open**, but cannot fire in CI (fresh checkout, no cache) and needs an
+      equal-length same-second edit locally.
+  - **Fixed after escalation — P1, `call-site-impact`, `ESCALATIONS.md` E003 (decision A):**
+    `simplify_record.py` resolves `check_review_receipt.py` through `parents[3]/scripts/`, but
+    `deploy-harness.sh` mirrored only `skills|agents|hooks|rules|templates|runtime`, so a deployed
+    copy looked for a `.claude/scripts/` that never exists and died at import with
+    `FileNotFoundError` before argparse — in any consuming repo the required stage could not
+    record evidence at all. Rule 4, so it went to the human: decision A adds `scripts/` to
+    `SYNCED_DIRS_RE`, the deploy loop, and the installer `PAYLOAD`. That also makes
+    `scripts/check_review_receipt.py` reachable, so the finishing gate itself is runnable in a
+    consuming repo for the first time. The installer's legacy-root scan was split onto its own
+    list in the same change, or every project owning a `scripts/` dir would have been told to
+    delete it. Full rationale, the prune-safety argument, and the distribution-contract scope note
+    are in E003.
 
 ### Intent Review
 
