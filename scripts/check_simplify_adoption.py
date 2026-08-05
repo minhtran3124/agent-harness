@@ -21,7 +21,10 @@ Checks:
                      surface/consumer files under a synced top-level dir are not stale there.
                      No .claude/ mirror => skip this check with a note (pre-deploy is valid).
 
-Run: python3 scripts/check_simplify_adoption.py [--root DIR]
+Run: python3 scripts/check_simplify_adoption.py [--root DIR] [--skip-deployed-parity]
+
+`scripts/run-tests.sh` runs checks A-F with --skip-deployed-parity: .claude/ is untracked
+local state, so a shared suite must not fail on a mirror that has not been re-synced.
 """
 
 from __future__ import annotations
@@ -37,7 +40,15 @@ from types import ModuleType
 PREFIX = "simplify-adoption"
 
 # Top-level dirs scripts/deploy-harness.sh mirrors whole into .claude/ (SYNCED_DIRS_RE there).
-_DEPLOY_PREFIXES = ("skills/", "agents/", "hooks/", "rules/", "templates/", "runtime/")
+_DEPLOY_PREFIXES = (
+    "skills/",
+    "agents/",
+    "hooks/",
+    "rules/",
+    "templates/",
+    "runtime/",
+    "scripts/",
+)
 
 _VERSION_FLOOR_RE = re.compile(
     r"supported by Claude Code \*\*(\d+\.\d+\.\d+) or newer\*\*"
@@ -273,7 +284,7 @@ def _check_deployed_parity(root: Path, problems: list[str]) -> None:
             )
 
 
-def check(root: Path) -> int:
+def check(root: Path, skip_deployed_parity: bool = False) -> int:
     problems: list[str] = []  # local, not module-global — safe to call repeatedly
 
     # Load the policy module once; both consumers get the same instance.
@@ -284,7 +295,8 @@ def check(root: Path) -> int:
     _check_finish_gate(root, problems)
     _check_hook_threshold(root, problems, checker)
     _check_documentation(root, problems)
-    _check_deployed_parity(root, problems)
+    if not skip_deployed_parity:
+        _check_deployed_parity(root, problems)
 
     if problems:
         for p in problems:
@@ -292,10 +304,13 @@ def check(root: Path) -> int:
         print(f"\n{len(problems)} simplify-adoption drift problem(s).", file=sys.stderr)
         return 1
 
-    print(
-        "simplify-adoption: consistent — policy, ordering, receipt, hook, docs, and "
-        "deployed harness (if present) all agree"
+    scope = (
+        "policy, ordering, receipt, hook, and docs agree (deployed parity skipped)"
+        if skip_deployed_parity
+        else "policy, ordering, receipt, hook, docs, and deployed harness "
+        "(if present) all agree"
     )
+    print(f"simplify-adoption: consistent — {scope}")
     return 0
 
 
@@ -304,9 +319,15 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument(
         "--root", default=None, help="repo root (default: script's parent dir)"
     )
+    ap.add_argument(
+        "--skip-deployed-parity",
+        action="store_true",
+        help="skip check G. .claude/ is untracked local state, so a shared test "
+        "suite must not fail on a mirror the developer has not re-synced yet.",
+    )
     args = ap.parse_args(argv)
     root = Path(args.root) if args.root else Path(__file__).resolve().parent.parent
-    return check(root)
+    return check(root, skip_deployed_parity=args.skip_deployed_parity)
 
 
 if __name__ == "__main__":

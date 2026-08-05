@@ -103,6 +103,34 @@ else
   fail "rc=$RC content=[$(cat "$tgt/.mcp.json")]"
 fi
 
+t "install deploys scripts/ so a deployed skill helper can load its dependency"
+# E003 (specs/require-claude-simplify-gate/): skills/**/scripts/simplify_record.py resolves
+# check_review_receipt.py through the repo root. Without a deployed .claude/scripts/ it died at
+# import — before argparse — in every consuming repo. Run the DEPLOYED copy, not the source.
+tgt=$(target)
+run_install "$tgt"
+helper="$tgt/.claude/skills/subagent-driven-development/scripts/simplify_record.py"
+if [ "$RC" -eq 0 ] && [ -f "$tgt/.claude/scripts/check_review_receipt.py" ] \
+   && [ -f "$helper" ] && (cd /tmp && python3 "$helper" --help >/dev/null 2>&1); then
+  pass
+else
+  fail "rc=$RC — deployed helper cannot load its dependency: $(cd /tmp && python3 "$helper" --help 2>&1 | tail -1)"
+fi
+
+t "a consumer's own scripts/ is not reported as harness leftovers"
+# `scripts` joined PAYLOAD for E003, but no prior installer ever staged it at a consumer root.
+# Scanning PAYLOAD for legacy paths would tell every project with a scripts/ dir to delete it.
+tgt=$(target)
+mkdir -p "$tgt/scripts"
+printf 'echo mine\n' > "$tgt/scripts/build.sh"
+run_install "$tgt"
+if [ "$RC" -eq 0 ] && [ -f "$tgt/scripts/build.sh" ] \
+   && ! echo "$OUT" | grep -qE "older install layout:.*(^|[[:space:]])scripts([[:space:]]|$)"; then
+  pass
+else
+  fail "rc=$RC — consumer scripts/ flagged as legacy or removed: $(echo "$OUT" | grep -i 'older install layout' || echo 'file missing')"
+fi
+
 t "missing uvx warns at preflight but does not fail the install"
 tgt=$(target)
 OUT=$(env PATH=/usr/bin:/bin bash "$INSTALL" --source "$ROOT" --dry-run -d "$tgt" 2>&1); RC=$?

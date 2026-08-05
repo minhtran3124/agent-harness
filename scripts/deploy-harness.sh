@@ -98,12 +98,18 @@ POLICY=""
 BACKUP_TS=""
 
 # Deploy manifest: the set of top-level `<dir>/<entry>` paths the harness deploys this run,
-# under the 6 synced dirs. Written to $OUT/.harness-deployed at the end; read at the start of
+# under the 7 synced dirs. Written to $OUT/.harness-deployed at the end; read at the start of
 # the NEXT deploy to prune entries the harness previously shipped but source has since deleted.
 # Safe by construction: only paths in the PREVIOUS harness manifest are ever eligible to prune,
 # so a consumer's own additions (never in the manifest) are never touched. See
 # specs/deploy-prune-orphans/.
-SYNCED_DIRS_RE='^(skills|agents|hooks|rules|templates|runtime)/[^/]+$'
+#
+# `scripts/` joined the set for ESCALATIONS.md E003 (specs/require-claude-simplify-gate/):
+# deployed skills under skills/**/scripts/ load shared helpers by path through the repo root,
+# so without a deployed .claude/scripts/ they die at import in every consuming repo. A consumer
+# with its own scripts/ dir is unaffected — this regex only ever governs .claude/, and pruning
+# is still gated on the previous harness manifest, which no consumer file can be in.
+SYNCED_DIRS_RE='^(skills|agents|hooks|rules|templates|runtime|scripts)/[^/]+$'
 DEPLOYED_LIST="$(mktemp)"        # accumulates `<dir>/<entry>` written this run
 record_deployed() { printf '%s\n' "$1" >> "$DEPLOYED_LIST"; }
 
@@ -380,7 +386,7 @@ preflight_protected
 
 # ---------- pipeline ----------
 step "Preparing ${B}.claude/${R}"            prep_dir
-for d in skills agents hooks rules templates runtime; do
+for d in skills agents hooks rules templates runtime scripts; do
   [ -e "$d" ] || continue
   step "Syncing ${B}$d/${R}"                 copy_dir "$d"
 done
@@ -388,9 +394,9 @@ step "Stripping archived skills"             strip_archive
 step "Deriving ${B}settings.json${R} ${D}(hook paths)${R}" derive_settings
 
 # ---------- prune orphans (entries the harness shipped last time, gone from source now) ----------
-# Eligible = in the PREVIOUS manifest AND not deployed this run. Shape-guarded to the 5 synced
-# dirs. Consumer additions never entered the manifest → never eligible. First deploy (no prior
-# manifest) prunes nothing. See specs/deploy-prune-orphans/.
+# Eligible = in the PREVIOUS manifest AND not deployed this run. Shape-guarded to the synced
+# dirs named in SYNCED_DIRS_RE. Consumer additions never entered the manifest → never eligible.
+# First deploy (no prior manifest) prunes nothing. See specs/deploy-prune-orphans/.
 prune_orphans() {
   local prev="$OUT/.harness-deployed" path
   [ -f "$prev" ] || return 0

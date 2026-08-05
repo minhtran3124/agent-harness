@@ -123,17 +123,18 @@ def build(root: Path) -> None:
 
 
 def mirror_to_claude(root: Path) -> None:
-    """Copy every deployable target file into a matching .claude/ mirror."""
+    """Copy every deployable target file into a matching .claude/ mirror.
+
+    Derived from `_deployed_targets`, not hardcoded: when `scripts/` joined
+    `_DEPLOY_PREFIXES` (E003) a hardcoded list silently stopped mirroring
+    everything the checker looks at, and the in-sync fixture started reporting
+    drift against itself.
+    """
     claude = root / ".claude"
-    for rel in (
-        "rules/simplify-stage.md",
-        "skills/subagent-driven-development/references/simplify-stage.md",
-        "skills/subagent-driven-development/references/resume.md",
-        "skills/subagent-driven-development/references/review-chain.md",
-        "hooks/risk-corroboration.sh",
-        "skills/finishing-a-development-branch/SKILL.md",
-    ):
+    for rel in csa._deployed_targets(root):
         src = root / rel
+        if not src.is_file():
+            continue
         dst = claude / rel
         dst.parent.mkdir(parents=True, exist_ok=True)
         dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
@@ -301,6 +302,27 @@ def test_deployed_parity_missing_mirrored_file_is_detected(tmp_path):
     mirror_to_claude(tmp_path)
     (tmp_path / ".claude" / "rules" / "simplify-stage.md").unlink()
     assert csa.check(tmp_path) == 1
+
+
+def test_skip_deployed_parity_ignores_a_stale_mirror(tmp_path):
+    # run-tests.sh runs the checker this way: .claude/ is untracked local state,
+    # so an un-resynced mirror must not fail the shared suite. The hermetic
+    # source-side checks (A-F) still run.
+    build(tmp_path)
+    mirror_to_claude(tmp_path)
+    (tmp_path / ".claude" / "rules" / "simplify-stage.md").unlink()
+    assert csa.check(tmp_path, skip_deployed_parity=True) == 0
+    assert csa.main(["--root", str(tmp_path), "--skip-deployed-parity"]) == 0
+
+
+def test_skip_deployed_parity_still_reports_source_side_drift(tmp_path):
+    build(tmp_path)
+    mirror_to_claude(tmp_path)
+    (tmp_path / "scripts" / "check_claude_simplify.py").write_text(
+        "MINIMUM_VERSION = (9, 9, 9)\nTINY_SOURCE_LINE_THRESHOLD = 150\n",
+        encoding="utf-8",
+    )
+    assert csa.main(["--root", str(tmp_path), "--skip-deployed-parity"]) == 1
 
 
 # --- CLI -----------------------------------------------------------------------------

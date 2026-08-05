@@ -295,4 +295,25 @@ sed -i.bak 's/`resume-review-chain`, //' "$m/$SKILL" && rm -f "$m/$SKILL.bak"
 if ! skill_resume_read_gate_ok "$m"; then pass
 else fail "dropping resume-review-chain from the read gate was NOT detected"; fi
 
+# --- SC-10: the aggregate drift checker is actually invoked -------------------------
+
+RUNTESTS="scripts/run-tests.sh"
+
+# adoption_wired_ok <run-tests-path> — 0 iff the suite runs check_simplify_adoption.py.
+# The checker only guards the simplify-stage contract if something runs it against this
+# repository; its own unit tests build synthetic roots and never look at the real tree.
+adoption_wired_ok() {
+  grep -qE '^[[:space:]]*python3 scripts/check_simplify_adoption\.py' "$1"
+}
+
+t "run-tests.sh invokes the simplify-adoption drift checker"
+if adoption_wired_ok "$ROOT/$RUNTESTS"; then pass
+else fail "$RUNTESTS never runs scripts/check_simplify_adoption.py — SC-10 drift ships green"; fi
+
+t "mutation: dropping the adoption-checker invocation is detected"
+m=$(mktemp -d); _CLEANUP_DIRS+=("$m")
+sed '/check_simplify_adoption\.py/d' "$ROOT/$RUNTESTS" > "$m/run-tests.sh"
+if ! adoption_wired_ok "$m/run-tests.sh"; then pass
+else fail "dropping the adoption-checker invocation was NOT detected"; fi
+
 finish

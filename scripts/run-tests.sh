@@ -25,6 +25,9 @@ if command -v python3 >/dev/null 2>&1; then
   python3 scripts/check_manifest.py || FAILED=1
   python3 scripts/check_gate_modes_smoke.py || FAILED=1
   python3 scripts/check_slim_surface.py || FAILED=1
+  # Checks A–F only: .claude/ is untracked local state, so check G (deployed
+  # parity) would fail this shared suite on any source edit made before a re-sync.
+  python3 scripts/check_simplify_adoption.py --skip-deployed-parity || FAILED=1
 else
   echo "  skip — no python3"
 fi

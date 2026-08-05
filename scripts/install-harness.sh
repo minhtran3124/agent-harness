@@ -30,7 +30,13 @@ KEEP_SOURCES=0
 # target root — a previous installer staged these at the root and pruned them afterward,
 # which destroyed real project files when those names already existed (or when run inside
 # the harness-skills repo itself).
-PAYLOAD=(skills agents hooks rules templates runtime settings.json scripts/deploy-harness.sh scripts/init-structure.sh VERSION CHANGELOG.md)
+PAYLOAD=(skills agents hooks rules templates runtime settings.json scripts VERSION CHANGELOG.md)
+
+# Root-level paths an OLDER installer layout could have staged in a consuming project. Scanned
+# separately from PAYLOAD because PAYLOAD now carries `scripts` as a whole directory (E003,
+# specs/require-claude-simplify-gate/) and nearly every real project has its own scripts/ —
+# scanning that name would tell the user their own directory is harness leftovers.
+LEGACY_ROOT_PATHS=(skills agents hooks rules templates settings.json scripts/deploy-harness.sh scripts/init-structure.sh VERSION CHANGELOG.md)
 STAGE_NAME=".harness-source"
 
 # ---------- styling ----------
@@ -157,10 +163,10 @@ fi
 # project: in the harness-skills repo itself they ARE the source of truth.
 if [ ! -f "$TARGET_DIR/scripts/install-harness.sh" ]; then
   LEGACY=()
-  for item in "${PAYLOAD[@]}"; do
-    # "runtime" was added to PAYLOAD in this phase, so no prior installer version could ever
-    # have staged it at a consumer's root — any hit here is always the consumer's own dir.
-    [ "$item" = "runtime" ] && continue
+  # LEGACY_ROOT_PATHS, not PAYLOAD: `runtime` and `scripts` are in PAYLOAD but no prior installer
+  # version ever staged either at a consumer's root, so a hit there is always the consumer's own
+  # directory. The two script FILES an old layout really did stage are listed individually.
+  for item in "${LEGACY_ROOT_PATHS[@]}"; do
     [ -e "$TARGET_DIR/$item" ] && LEGACY+=("$item")
   done
   if [ "${#LEGACY[@]}" -gt 0 ]; then

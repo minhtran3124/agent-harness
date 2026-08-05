@@ -65,4 +65,82 @@ Default: **deny-on-no-response**. No recorded decision → work stays blocked.
 - decided_by: Minh Tran
 - decided_at: 2026-07-30
 
+---
+
+## E003
+
+- raised_by: agent (owed `call-site-impact` FIND angle, run 2026-08-04 after the PR was opened)
+- date: 2026-08-04
+- trigger: Rule-4 (architectural — the deploy contract / a core skill-engine dependency edge)
+- question: `skills/subagent-driven-development/scripts/simplify_record.py` (new in this branch)
+  resolves its dependency as `_REPO_ROOT / "scripts" / "check_review_receipt.py"`, where
+  `_REPO_ROOT = Path(__file__).resolve().parents[3]`. That works in this meta-repo, where the file
+  is run from the source tree. It does **not** work anywhere the harness is installed:
+  `scripts/deploy-harness.sh:106` mirrors only `^(skills|agents|hooks|rules|templates|runtime)/[^/]+$`
+  into `.claude/`, so the deployed copy resolves `_REPO_ROOT` to `.claude/` and looks for a
+  `.claude/scripts/` directory that is never created. How should a deployed `skills/**/scripts/`
+  helper reach a `scripts/` module?
+- context: Reproduced twice, read-only. (1) The already-deployed copy in this checkout:
+  `python3 .claude/skills/subagent-driven-development/scripts/simplify_record.py --help` →
+  `FileNotFoundError: .../.claude/scripts/check_claude_simplify.py`. (2) The current source copied
+  into a fresh `.claude/skills/subagent-driven-development/scripts/` tree → the same crash, naming
+  `.claude/scripts/check_review_receipt.py`. The failure is at module import, before argparse, so
+  every subcommand dies.
+
+  This blocks: the required simplify stage in any consumer repo. `references/simplify-stage.md`
+  step 3 tells the controller to run `simplify_record.py begin`, and there the stage can never
+  record its evidence. It does **not** block this repo's own use of the stage, and it does not
+  affect any gate's fail-closed direction — a crash is a hard stop, not a bypass.
+
+  Related pre-existing scope: `scripts/check_review_receipt.py` itself is likewise undeployed, so
+  `finishing-a-development-branch`'s receipt gate has the same reach problem in a consumer repo.
+  That predates this branch; only the new `simplify_record.py` edge is this branch's own.
+- options:
+  - A) **Add `scripts/` to the deploy payload** — extend `SYNCED_DIRS_RE` so `scripts/` mirrors into
+    `.claude/scripts/`. Fixes the whole class at once (including the pre-existing
+    `check_review_receipt.py` reach gap), but widens the deploy surface for every consumer and
+    changes what `deploy-harness.sh` owns, with its own conflict-guard/prune implications.
+  - B) **Deploy a named subset** — mirror only the scripts the deployed skills actually invoke.
+    Narrower blast radius, but introduces a second dependency list that can drift from the imports.
+  - C) **Vendor the dependency under `skills/`** — move or copy the shared helpers into the skill's
+    own `scripts/` dir so a deployed skill is self-contained. No deploy-contract change, but
+    duplicates `check_review_receipt.py`/`check_claude_simplify.py` logic, which the branch has
+    deliberately kept single-sourced.
+  - D) **Scope the stage to this repo** — accept that the simplify stage is meta-repo-only for now
+    and say so in `references/simplify-stage.md`, deferring consumer support. Honest, cheap, but
+    ships a documented gap in a stage this branch makes mandatory.
+- default_if_no_response: BLOCK
+- decision: A — add `scripts/` to the deploy payload. `SYNCED_DIRS_RE` and the sync loop in
+  `scripts/deploy-harness.sh` now include `scripts`, and `PAYLOAD` in `scripts/install-harness.sh`
+  carries the whole `scripts` directory instead of two named files. This also closes the
+  pre-existing reach gap for `scripts/check_review_receipt.py`, so the finishing gate is runnable
+  in a consuming repo for the first time.
+
+  Two consequences handled as part of the fix:
+  - **Legacy-scan false positive.** `install-harness.sh` scanned `PAYLOAD` for root-level paths
+    left by an older installer layout. With `scripts` in `PAYLOAD`, every project that has its own
+    `scripts/` would be told its directory is harness leftovers to remove. The scan now reads a
+    separate `LEGACY_ROOT_PATHS` list that keeps the two script *files* an old layout really did
+    stage, and omits `runtime`/`scripts` as whole directories.
+  - **Prune safety.** `prune_orphans` is gated on the *previous* deploy manifest, which has never
+    contained a `scripts/` entry, so no first deploy after this change can prune anything under
+    `scripts/`. A consumer's own files are never in the manifest and stay ineligible, unchanged.
+
+  Verified against a throwaway target (`--target <tmp> --yes`, never the real `.claude/`): 64
+  entries land in `.claude/scripts/`, and the deployed
+  `.claude/skills/subagent-driven-development/scripts/simplify_record.py --help` now runs instead
+  of dying at import. Two regression tests added to `tests/scripts/install-harness.test.sh`, each
+  verified failing against the pre-fix code.
+
+  **Scope note, recorded rather than hidden:** this repo's own precedent treats a `SYNCED_DIRS_RE`
+  change as its own high-risk feature — adding `runtime/` got a dedicated design, plan, and test
+  pass (`specs/gh-129-durable-run-state-phase-b/`), and `specs/durable-run-state/design.md:41`
+  records that `scripts/` was deliberately never synced as a unit. Option A was chosen with that
+  trade-off stated in the options above; it changes the distribution contract for every consuming
+  repo and now ships all 64 files in `scripts/` (test files and eval runners included, matching how
+  `skills/` already deploys its own tests). If that surface is unwanted, option B (a named subset)
+  is the narrower alternative and this decision can be revisited without touching the callers.
+- decided_by: Minh Tran
+- decided_at: 2026-08-05
+
 <!-- copy the E0xx block for each new escalation -->
