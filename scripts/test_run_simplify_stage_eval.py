@@ -61,6 +61,134 @@ def write_fixture(root: Path, *, failing_checks: bool = False) -> Path:
     return fixture
 
 
+def _sh_quote(value: str) -> str:
+    return "'" + value.replace("'", "'\\''") + "'"
+
+
+def _fake_claude_sh(
+    *,
+    version: str,
+    skill_names: tuple[str, ...],
+    attempts: list[str],
+    readable: list[str],
+    forbidden_write: Path | None,
+    forbidden_exec: Path | None,
+    tool_results: tuple[tuple[str, bool], ...],
+    auth_logged_in: bool,
+) -> str:
+    """A POSIX-sh fake Claude client.
+
+    Deliberately NOT a `#!/usr/bin/python3` script: on macOS that path is the
+    Xcode stub, which shells out to `xcrun` and dlopens libxcrun from
+    /Applications/Xcode*.app. The Seatbelt profile does not grant /Applications
+    (correctly — the real Node client never needs Xcode), so the stub dies before
+    emitting anything and every candidate test fails with an opaque
+    "auth preflight failed (returncode=1)". /bin/sh is a real binary under an
+    already-allowed read root, so it runs wherever the sandbox runs.
+
+    Trade-off: sh sets PWD/OLDPWD itself, so those two cannot be checked here.
+    The Python flavor keeps that assertion — see
+    test_python_client_env_is_fully_scrubbed.
+    """
+    lines = [
+        "#!/bin/sh",
+        'for arg in "$@"; do',
+        '  [ "$arg" = "--version" ] && { printf %s\\\\n '
+        + _sh_quote(f"{version} (Claude Code)")
+        + "; exit 0; }",
+        "done",
+        'case " $* " in',
+        '  *\\ auth\\ *) case " $* " in *\\ status\\ *) printf %s\\\\n '
+        + _sh_quote(
+            json.dumps(
+                {"loggedIn": auth_logged_in, "authMethod": "oauth_token"},
+            )
+        )
+        + "; exit 0;; esac;;",
+        "esac",
+        # sh recreates PWD/OLDPWD, so only the env vars it does not synthesize
+        # are checkable from a shell client.
+        "for key in PYTHONPATH VIRTUAL_ENV GIT_DIR; do",
+        '  eval "value=\\${$key-}"',
+        '  [ -n "$value" ] && { echo "unscrubbed path env: $key" >&2; exit 1; }',
+        "done",
+    ]
+    for path in attempts:
+        lines.append(
+            f"if cat {_sh_quote(path)} >/dev/null 2>&1; then "
+            f'echo "sandbox allowed forbidden read: {path}" >&2; exit 1; fi'
+        )
+    for path in readable:
+        lines.append(
+            f"if ! head -c 1 {_sh_quote(path)} >/dev/null 2>&1; then "
+            f'echo "sandbox denied an allowed read: {path}" >&2; exit 1; fi'
+        )
+    if forbidden_write:
+        lines.append(
+            f"if echo escaped > {_sh_quote(str(forbidden_write))} 2>/dev/null; then "
+            'echo "sandbox allowed forbidden write" >&2; exit 1; fi'
+        )
+    if forbidden_exec:
+        lines.append(
+            f"if {_sh_quote(str(forbidden_exec))} -h >/dev/null 2>&1 </dev/null; then "
+            'echo "sandbox allowed forbidden process-exec" >&2; exit 1; fi'
+        )
+    # Same mutation the Python flavor performs: collapse the copied-list helper
+    # into a direct sum, line for line.
+    lines += [
+        "sed -e '/^    copied = \\[value for value in values\\]$/d' "
+        "-e 's/^    return sum(copied)$/    return sum(values)/' "
+        "app.py > app.py.tmp && mv app.py.tmp app.py",
+    ]
+    for index, skill in enumerate(skill_names):
+        payload = json.dumps(
+            {
+                "type": "assistant",
+                "message": {
+                    "content": [
+                        {
+                            "type": "tool_use",
+                            "id": f"skill-{index}",
+                            "name": "Skill",
+                            "input": {"skill": skill},
+                        }
+                    ]
+                },
+            }
+        )
+        lines.append("printf %s\\\\n " + _sh_quote(payload))
+    for tool_id, is_error in tool_results:
+        payload = json.dumps(
+            {
+                "type": "user",
+                "message": {
+                    "content": [
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": tool_id,
+                            "is_error": is_error,
+                            "content": "done",
+                        }
+                    ]
+                },
+            }
+        )
+        lines.append("printf %s\\\\n " + _sh_quote(payload))
+    lines.append(
+        "printf %s\\\\n "
+        + _sh_quote(
+            json.dumps(
+                {
+                    "type": "result",
+                    "result": "simplified",
+                    "usage": {"input_tokens": 5, "output_tokens": 7},
+                }
+            )
+        )
+    )
+    return "\n".join(lines) + "\n"
+
+
 def write_fake_claude(
     root: Path,
     *,
@@ -72,6 +200,7 @@ def write_fake_claude(
     forbidden_exec: Path | None = None,
     tool_results: tuple[tuple[str, bool], ...] | None = None,
     auth_logged_in: bool = True,
+    flavor: str = "sh",
 ) -> Path:
     fake = root / "fake-claude"
     attempts = [str(path) for path in forbidden_reads]
@@ -80,6 +209,22 @@ def write_fake_claude(
         tool_results = tuple(
             (f"skill-{index}", False) for index, _ in enumerate(skill_names)
         )
+    if flavor == "sh":
+        fake.write_text(
+            _fake_claude_sh(
+                version=version,
+                skill_names=skill_names,
+                attempts=attempts,
+                readable=readable,
+                forbidden_write=forbidden_write,
+                forbidden_exec=forbidden_exec,
+                tool_results=tool_results,
+                auth_logged_in=auth_logged_in,
+            ),
+            encoding="utf-8",
+        )
+        fake.chmod(0o755)
+        return fake
     fake.write_text(
         "#!/usr/bin/python3\n"
         "import json, os, pathlib, subprocess, sys\n"
@@ -811,3 +956,29 @@ def test_cached_patch_captures_untracked_deleted_rename_and_binary(tmp_path):
         "old.txt",
         "renamed.py",
     ]
+
+
+@pytest.mark.skipif(
+    sys.platform != "darwin" or bool(os.environ.get("CI")),
+    reason=(
+        "the Python fake client's #!/usr/bin/python3 is the Xcode stub, which "
+        "needs xcrun/libxcrun under /Applications — correctly denied by the "
+        "Seatbelt profile. Runs on macOS dev machines where /usr/bin/python3 "
+        "resolves to Command Line Tools under the allowed /Library root."
+    ),
+)
+def test_python_client_env_is_fully_scrubbed(tmp_path):
+    # The sh fake cannot assert PWD/OLDPWD scrubbing because sh synthesizes both
+    # itself. This test keeps that half of the guarantee honest by running the
+    # Python flavor, which reads the inherited environment verbatim.
+    fixture = write_fixture(tmp_path)
+    client = tmp_path / "client"
+    client.mkdir()
+    fake = write_fake_claude(client, flavor="python")
+    completed = invoke(
+        fixture.parent,
+        tmp_path / "results" / "candidate.json",
+        fake,
+    )
+    assert completed.returncode == 0, completed.stderr
+    assert "unscrubbed path env" not in completed.stderr
