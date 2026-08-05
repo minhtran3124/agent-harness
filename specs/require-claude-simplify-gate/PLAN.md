@@ -345,3 +345,21 @@ mutates code, so require it only by deterministic signal and place it before all
   (usage limit, then user-stopped) and are owed, per
   `docs/solutions/harness/no-report-reviewer-dispatch-is-not-a-pass.md`. Full suite green: 493
   Python tests and all shell contracts. Status changed to `shipped`.
+
+- 2026-08-05 — CI green, and the three FIND angles Round 2 left owed are discharged. CI failed on
+  first push for four separate causes, each fixed and verified: `make_repo` used `git init -q` so
+  two ancestry tests checked out `main` by name on runners defaulting to `master` (`c1dafb5`,
+  reproduced locally via `init.defaultBranch=master`); candidate eval tests asserted success on
+  Linux where the runner refuses by design without Seatbelt (`1385496`, `8bfacc1`); the fake
+  Claude client's `#!/usr/bin/python3` is the Xcode stub, which dlopens libxcrun from
+  `/Applications` and is correctly denied by the sandbox — fixed in the fixture, on `/bin/sh`,
+  rather than by widening the live security boundary (`b2d6816`, `46b6765`); and a stderr
+  diagnostic added to `run_simplify_stage_eval.py` staled the digest-pinned shadow-eval evidence,
+  failing SC-8/SC-9, so it was reverted once it had served its purpose (`d01af39`).
+  Round 3 then ran `call-site-impact`, `stack-defects`, and `guard-completeness` and found a P1 or
+  P2 in each: deployed skill helpers could not resolve `scripts/` imports in any consumer repo
+  (`ESCALATIONS.md` E003, decision A → `a0ccb63`); `classify_path` still folded case on directory
+  authorities, so real source under `Docs/` or `Evals/Raw/` skipped the required stage entirely
+  (`dda9b2d`); and `git diff --name-only` without `-z` quoted non-ASCII paths, failing the gate
+  closed on a valid branch (`57650be`). Full suite green: 514 passed.
+

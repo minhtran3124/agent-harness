@@ -177,7 +177,8 @@ fixes is itself evidence — none of the round-3 defects was caught by the suite
   `enclosing-function` reported; `call-site-impact`, `stack-defects`, and `guard-completeness`
   did not — the first dispatch died on a session usage limit and the re-dispatch was stopped by
   the user. Per `docs/solutions/harness/no-report-reviewer-dispatch-is-not-a-pass.md` a
-  non-reporting angle is *unknown*, never clean; those three angles remain owed on this range.
+  non-reporting angle is *unknown*, never clean; those three angles were owed on this range —
+  **since discharged: Round 3 below ran all three and fixed a P1 from each.**
   - **Fixed — real bug, `ed77172`:** `removed-behavior` found the round-2 staleness exemption
     inherited `classify_path`'s case folding. On a case-sensitive filesystem a post-review commit
     of `Specs/payload.py` or `evals/Raw/tool.py` (distinct directories) classified
