@@ -568,6 +568,20 @@ def test_require_simplify_if_case_variant_excluded_dir_still_requires_entry(
     assert "missing-required-type" in capsys.readouterr().err
 
 
+def test_require_simplify_if_survives_a_non_ascii_path(tmp_path):
+    # `git diff --name-only` quotes non-ASCII paths ("src/caf\303\251.py").
+    # classify_path rejects the backslash spelling, so without `-z` the whole
+    # gate failed closed on a valid branch and blamed the base ref.
+    repo, base, pre, post = make_simplify_repo(tmp_path)
+    assert crr._changed_files(repo, base, post) == ["src/app.py"]
+    commit_file(repo, "src/café.py", "x = 1\n")
+    post = head_sha(repo)
+    assert crr._changed_files(repo, base, post) == ["src/app.py", "src/café.py"]
+    entry = simplify_entry(base, pre, post)
+    slug_dir = write_receipt(repo, "gh-x", receipt_data(post, entry))
+    assert crr.main([str(slug_dir), "--require-simplify-if", base]) == 0
+
+
 def test_require_simplify_if_symbolic_sha_is_rejected(tmp_path, capsys):
     repo, base, pre, post = make_simplify_repo(tmp_path)
     entry = simplify_entry(base, pre, post, pre_sha="HEAD")

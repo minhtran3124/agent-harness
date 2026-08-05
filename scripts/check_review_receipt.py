@@ -152,10 +152,15 @@ def _changed_files(slug_dir: Path, a: str, b: str) -> list[str] | None:
 
     Used to distinguish a review-neutral advance (bookkeeping or stored eval
     evidence) from an unreviewed code change after review.
+
+    `-z` is load-bearing: without it Git quotes any path with a non-ASCII or
+    control character (`"src/caf\\303\\251.py"`), and classify_path rejects the
+    backslash spelling — which would fail the whole gate closed on a valid
+    branch, blaming the base ref. NUL-delimited output is never quoted.
     """
     try:
         proc = subprocess.run(
-            ["git", "diff", "--name-only", f"{a}..{b}"],
+            ["git", "diff", "--name-only", "-z", f"{a}..{b}"],
             cwd=slug_dir,
             capture_output=True,
             text=True,
@@ -164,7 +169,7 @@ def _changed_files(slug_dir: Path, a: str, b: str) -> list[str] | None:
         return None
     if proc.returncode != 0:
         return None
-    return [line for line in proc.stdout.splitlines() if line.strip()]
+    return [path for path in proc.stdout.split("\0") if path.strip()]
 
 
 def is_ancestor(slug_dir: Path, ancestor: str, descendant: str) -> bool | None:
