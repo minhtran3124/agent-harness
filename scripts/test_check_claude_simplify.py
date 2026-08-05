@@ -260,6 +260,72 @@ def test_mutation_guard_case_variant_directory_authorities_stay_reviewable(path)
 
 
 @pytest.mark.parametrize(
+    "path",
+    [
+        "skills/foo/SKILL.md",
+        "skills/subagent-driven-development/references/resume.md",
+        "skills/correctness-review/prompts/shared.md",
+        "skills/correctness-review/prompts/angles/prior-art.md",
+        "skills/correctness-review/correctness-reviewer-prompt.md",
+        "agents/reviewer.md",
+        "rules/behavior.md",
+        # Case-insensitive here on purpose: for program text, folding case only
+        # ever GROWS coverage, so it is the safe direction.
+        "Skills/foo/SKILL.md",
+        "RULES/behavior.md",
+    ],
+)
+def test_markdown_program_text_is_reviewable(path):
+    # E006: in a prompt-driven harness these files ARE the program — editing one
+    # changes runtime behavior. Classifying them as documentation excluded the
+    # highest-risk change class from the stage entirely.
+    assert MODULE.classify_path(path) == "reviewable"
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "skills/README.md",
+        "skills/foo/README.md",
+        "agents/README.md",
+        "rules/README.md",
+        "templates/SUMMARY.template.md",
+        "rules/plan.template.md",
+        "docs/guide.md",
+        "README.md",
+        "CHANGELOG.md",
+    ],
+)
+def test_prose_about_the_surface_stays_documentation(path):
+    # The narrowing is bounded: a human-facing index and a template a consumer
+    # fills in are not instructions any agent executes.
+    assert MODULE.classify_path(path) == "documentation"
+
+
+def test_program_text_narrowing_does_not_override_more_specific_authorities():
+    # Ordering guard: a deployed mirror and spec bookkeeping still win.
+    assert MODULE.classify_path(".claude/skills/foo/SKILL.md") == "generated"
+    assert MODULE.classify_path("specs/x/PLAN.md") == "specs_bookkeeping"
+    assert MODULE.classify_path("vendor/pkg/rules/behavior.md") == "vendor"
+
+
+def test_workflow_engine_diff_now_requires_the_stage():
+    # End-to-end: the exact shape that silently skipped the mandated stage.
+    result = MODULE.evaluate_policy(
+        lane="high-risk",
+        base=BASE_SHA,
+        head=HEAD_SHA,
+        changed_paths=["skills/foo/SKILL.md", "rules/behavior.md"],
+        numstat="1200\t0\tskills/foo/SKILL.md\n200\t2\trules/behavior.md\n",
+        version="2.1.154",
+    )
+    assert result["required"] is True
+    assert result["reason"] == "non_tiny_source_change"
+    assert result["changed_source_lines"] == 1402
+    assert result["reviewable_paths"] == ["rules/behavior.md", "skills/foo/SKILL.md"]
+
+
+@pytest.mark.parametrize(
     ("path", "expected"),
     [
         ("README", "documentation"),

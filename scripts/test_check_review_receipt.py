@@ -552,6 +552,93 @@ def test_require_simplify_if_non_reviewable_diff_does_not_require_entry(tmp_path
     assert crr.main([str(slug_dir), "--require-simplify-if", base]) == 0
 
 
+def test_require_simplify_if_rejects_an_entry_anchored_to_a_narrower_base(
+    tmp_path, capsys
+):
+    # E004: ancestry alone only proves the entry is internally coherent. An
+    # entry recorded from a LATER base covers strictly less code than the
+    # branch, so the commits between the real base and that one never got the
+    # cleanup the gate claims they did.
+    repo = make_repo(tmp_path)
+    commit_file(repo, "src/a.py", "a = 1\n")
+    base = head_sha(repo)
+    commit_file(repo, "src/b.py", "b = 2\n")  # unreviewed code the entry skips
+    narrower = head_sha(repo)
+    commit_file(repo, "src/c.py", "c = 3\n")
+    pre = head_sha(repo)
+    commit_file(repo, "src/c.py", "c = 4\n")
+    post = head_sha(repo)
+    entry = simplify_entry(narrower, pre, post)
+    slug_dir = write_receipt(repo, "gh-x", receipt_data(post, entry))
+    assert crr.main([str(slug_dir), "--require-simplify-if", base]) == 1
+    assert "does not match the gated base" in capsys.readouterr().err
+
+
+def test_require_simplify_if_rejects_an_empty_range_entry(tmp_path, capsys):
+    # E004, degenerate form: base == pre means nothing was examined at all.
+    repo, base, pre, post = make_simplify_repo(tmp_path)
+    entry = simplify_entry(
+        post,
+        post,
+        post,
+        outcome="no_op",
+        reason="no_changes",
+        changed_files=[],
+        verification_result=None,
+        delta_verdict=None,
+    )
+    slug_dir = write_receipt(repo, "gh-x", receipt_data(post, entry))
+    assert crr.main([str(slug_dir), "--require-simplify-if", base]) == 1
+    assert "covers an empty range" in capsys.readouterr().err
+
+
+def test_matching_base_still_passes(tmp_path):
+    # The anchor must not reject the honest full-range entry.
+    repo, base, pre, post = make_simplify_repo(tmp_path)
+    slug_dir = write_receipt(
+        repo, "gh-x", receipt_data(post, simplify_entry(base, pre, post))
+    )
+    assert crr.main([str(slug_dir), "--require-simplify-if", base]) == 0
+
+
+def test_conditional_only_invocation_passes_without_a_receipt(tmp_path):
+    # E005: `finishing-a-development-branch` promises the tiny-lane invocation
+    # is "a no-op when the diff has no reviewable path". Tiny lane runs no
+    # review chain, so the gitignored receipt is never written and no
+    # documented step creates one — demanding it made that promise false.
+    repo = make_repo(tmp_path)
+    base = head_sha(repo)
+    commit_file(repo, "docs/guide.md", "# prose\n")
+    slug_dir = repo / "specs" / "gh-x"
+    slug_dir.mkdir(parents=True)
+    assert not (slug_dir / crr.RECEIPT_NAME).exists()
+    assert crr.main([str(slug_dir), "--require-simplify-if", base]) == 0
+
+
+def test_conditional_only_invocation_still_fails_once_something_is_owed(
+    tmp_path, capsys
+):
+    # The relaxation is bounded: the moment a reviewable path appears, the
+    # receipt is required again.
+    repo = make_repo(tmp_path)
+    base = head_sha(repo)
+    commit_file(repo, "src/app.py", "x = 1\n")
+    slug_dir = repo / "specs" / "gh-x"
+    slug_dir.mkdir(parents=True)
+    assert crr.main([str(slug_dir), "--require-simplify-if", base]) == 1
+    assert "missing: no review receipt" in capsys.readouterr().err
+
+
+def test_bare_invocation_without_a_receipt_still_fails(tmp_path, capsys):
+    # A caller naming no requirement at all is asking "is this receipt valid?".
+    # E005 must not turn that question into a pass.
+    repo = make_repo(tmp_path)
+    slug_dir = repo / "specs" / "gh-x"
+    slug_dir.mkdir(parents=True)
+    assert crr.main([str(slug_dir)]) == 1
+    assert "missing: no review receipt" in capsys.readouterr().err
+
+
 def test_require_simplify_if_case_variant_excluded_dir_still_requires_entry(
     tmp_path, capsys
 ):

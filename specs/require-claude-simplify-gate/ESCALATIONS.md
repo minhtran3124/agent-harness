@@ -143,4 +143,190 @@ Default: **deny-on-no-response**. No recorded decision → work stays blocked.
 - decided_by: Minh Tran
 - decided_at: 2026-08-05
 
+---
+
+## E004
+
+- raised_by: agent (round-4 `/correctness-review`, `guard-completeness` angle, fresh context)
+- date: 2026-08-05
+- trigger: Rule-4 (architectural — changes what a fail-closed push gate accepts, and invalidates
+  already-recorded receipts)
+- question: `check_review_receipt.py`'s `--require-simplify-if` validates a `type: simplify`
+  entry's *internal* chain — `base_sha → pre_sha → post_sha` ancestry, and
+  `post_sha == reviewed_head_sha` — but never anchors `base_sha` to the range it is gating. The
+  recorded cleanup may therefore cover a strictly narrower range than the branch, down to an empty
+  one, while the gate reports the required stage as satisfied. Should the entry's `base_sha` be
+  required to equal the gated base?
+- context: Reproduced independently in a throwaway repo, twice:
+
+  1. Branch `B→c1→c2→pre→post` (4 reviewable commits). Entry with `base_sha = c2` — skipping two
+     commits of unreviewed code. `check_review_receipt.py <slug> --require-simplify-if B` → **exit 0**.
+  2. Degenerate: entry with `base_sha == pre_sha == post_sha`, `outcome: no_op`, covering an
+     **empty** range, on the same 4-commit branch → **exit 0**.
+
+  Nothing filters the empty case: `is_ancestor` is documented "ancestor of, **or identical to**",
+  and `simplify_shape_error` never requires `base_sha != pre_sha`. `simplify_record.begin()` does
+  reject `base == target`, but this gate is explicitly the fail-closed consumer that re-derives
+  rather than trusting the recorder — it ignores the entry's self-reported `result` for exactly
+  that reason. The base anchor is the one thing it re-derives nothing about. Search surface:
+  `grep -rn "base_sha" scripts/ skills/ hooks/ rules/` — read only at `check_review_receipt.py`
+  ancestry, written at `simplify_record.py`; nothing compares it to `require_simplify_if`.
+
+  This blocks: the central guarantee of this feature. A branch can satisfy the mandatory stage
+  with evidence covering no code at all.
+- options:
+  - A) **Require exact equality** — resolve `require_simplify_if` to a SHA and require the
+    covering entry's `base_sha` to equal it, and reject `base_sha == pre_sha`. Strongest and
+    simplest to reason about, but **invalidates every already-recorded receipt** whose entry was
+    written against a different base — including this branch's own, forcing a re-run of the stage
+    before this PR can push.
+  - B) **Require coverage, not identity** — accept an entry whose `base_sha` is an ancestor of the
+    gated base (so a wider cleanup still counts) while rejecting a narrower one and the empty
+    range. More permissive on resume cycles; slightly more logic to get right.
+  - C) **Reject only the degenerate empty range** — add `base_sha != pre_sha` to
+    `simplify_shape_error` and leave the narrowing case. Cheapest, keeps existing receipts valid,
+    but leaves case 1 (skipping real commits) open, so it fixes the extreme and not the class.
+- default_if_no_response: BLOCK
+- decision: A — require exact equality. `check_receipt` now resolves `--require-simplify-if` to a
+  SHA (`_resolve_sha`) and requires the covering entry's `base_sha` to equal it, and
+  `simplify_shape_error` rejects `base_sha == pre_sha` outright as an empty range. The anchor is
+  enforced only when the stage is actually required, so an unrequired historical entry cannot
+  block a push it was never gating; the empty-range check is shape-level and applies to every
+  entry, matching what `simplify_record.begin()` already refuses. Both original reproductions now
+  fail closed. Accepted cost: this branch's own receipt is invalidated and the stage must re-run
+  before push — a cost E006 forces anyway.
+- decided_by: Minh Tran
+- decided_at: 2026-08-05
+
+---
+
+## E005
+
+- raised_by: agent (round-4 `/correctness-review`; `removed-behavior`, `enclosing-function`, and
+  `call-site-impact` converged on it independently in separate fresh contexts)
+- date: 2026-08-05
+- trigger: Rule-4 (architectural — decides whether a lane that is documented to need no review
+  must nonetheless produce a review artifact)
+- question: `finishing-a-development-branch/SKILL.md:32` claims the tiny-lane invocation "is
+  already internally conditional — a no-op when the diff has no reviewable path". It is not.
+  `check_receipt` returns `missing: no review receipt` at its first statement, long before
+  `require_simplify_if` is consulted. Which is correct — the claim, or the code?
+- context: Reproduced: a tiny-lane branch with `specs/<slug>/PLAN.md` and a docs-only diff, no
+  receipt file → `missing: no review receipt at specs/demo/.review-receipt.json`, exit 1. Same
+  repo with an empty-`reviews` receipt present → exit 0, which isolates the receipt-existence
+  precheck as the blocker rather than the simplify conditional.
+
+  The operator has no legitimate exit. Tiny lane grants "full auto — direct patch on a fresh
+  branch" with no plan chain, so the SDD review chain never runs and `.review-receipt.json`
+  (gitignored, machine-local) is never written. `SKILL.md:36` says *"never edit the receipt to
+  pass"*, and `references/simplify-stage.md:19-21` says *"do not call `simplify_record.py` at
+  all"* for a diff with no reviewable path. Nothing in the documented workflow creates the file.
+
+  Introduced by this branch: `af7b014` (E002 option A) deleted "Tiny/no-plan work skips it" and
+  replaced it with a premise the code does not implement. The deletion also silently widened
+  scope — the tiny invocation now additionally imposes the stale-SHA check and the "every
+  recorded review must pass / `blocking_open == 0`" checks, none of which the replacement prose
+  mentions.
+
+  This blocks: any compliant tiny-lane branch that happens to have a plan directory.
+- options:
+  - A) **Make the code match the claim** — evaluate the conditional requirements before the
+    receipt-existence check when `--require` is empty, so a diff with no reviewable path exits 0
+    with no receipt. Matches what SKILL.md already promises operators; the receipt stays required
+    the moment anything reviewable appears.
+  - B) **Make the claim match the code** — drop "internally conditional" from SKILL.md and state
+    that tiny plan-backed work must produce a receipt. Honest, no code change, but imposes a
+    review artifact on a lane the harness defines as needing none, and no documented step creates
+    one.
+  - C) **Key the skip on the lane, not the plan dir** — restore a tiny-lane skip in the finishing
+    gate. Simplest, but re-opens exactly the hole E002 option A was chosen to close.
+- default_if_no_response: BLOCK
+- decision: A — make the code match the claim. `check_receipt` now resolves the conditional
+  requirements *before* demanding the receipt file, and returns success when a **purely
+  conditional** invocation finds nothing owed.
+
+  The relaxation is deliberately narrow, and the existing suite caught the first attempt at it:
+  returning success whenever `required` was empty also let a **bare** `check_review_receipt.py
+  <slug>` pass with no receipt, breaking `test_missing_receipt_fails`. A caller naming no
+  requirement at all is asking "is this receipt valid?", and the answer to that is still no. The
+  shipped condition therefore requires that `--require` be empty *and* at least one `*_if` flag
+  be present *and* nothing fire. The moment a reviewable path appears, the receipt is required
+  again — pinned by `test_conditional_only_invocation_still_fails_once_something_is_owed`.
+- decided_by: Minh Tran
+- decided_at: 2026-08-05
+
+---
+
+## E006
+
+- raised_by: agent (round-4 `/correctness-review`, `stack-defects` angle, fresh context)
+- date: 2026-08-05
+- trigger: Rule-4 (redefines the gate's validation scope — authoritative policy in
+  `rules/simplify-stage.md`, the manifest contract, and every consuming repo)
+- question: `classify_path` returns `documentation` for every Markdown path, so
+  `skills/*/SKILL.md`, `skills/*/references/*.md`, `skills/*/prompts/*.md`, `agents/*.md`, and
+  `rules/*.md` are all excluded from the reviewable set. In this repository those files **are the
+  program** — CLAUDE.md defines skills as "Markdown prompt documents … invoked as `/skill-name`".
+  Should the documentation exclusion be narrowed so prompt documents stay reviewable?
+- context: Reproduced end-to-end. A throwaway repo, `high-risk` lane, 1,402 changed lines across
+  `skills/foo/SKILL.md` and `rules/behavior.md`, receipt carrying correctness/intent/audit but no
+  `type: simplify` entry:
+
+  ```
+  {"reason": "documentation_only", "required": false, "changed_source_lines": 0,
+   "reviewable_paths": [], "excluded_paths": ["rules/behavior.md", "skills/foo/SKILL.md"]}
+  ```
+
+  `check_review_receipt.py --require correctness,intent --require-audit-if B --require-simplify-if B`
+  → **exit 0**. The mandated stage is skipped on 1,402 lines of program text.
+
+  The same file already disagrees with itself about this: `_RECEIPT_NEUTRAL_CATEGORIES`
+  (`check_review_receipt.py:73`) deliberately keeps `documentation` **out** of its neutral set,
+  with the comment "documentation is prose a human reads (intent drift hides there)". So the
+  staleness gate treats `.md` as reviewable while the requirement gate does not.
+
+  This is precisely the change class `_WF_INCLUDE` flags as highest-risk and routes to
+  `/context-propagation-audit`. It is also the change class of this very branch — the stage fired
+  here only because the diff happens to carry `.py` files alongside the skills.
+
+  This blocks: nothing mechanically (the gate fails open, quietly), which is why it needs a
+  decision rather than a patch. Search surface for the no-second-gate claim:
+  `grep -rn -e '--require-simplify-if' -e 'check_claude_simplify' .` excluding
+  `specs/ evals/ .claude/ .git/ test_*` — only the manifest, the finishing skill, and one
+  contract test.
+- options:
+  - A) **Subtract the `_WF_INCLUDE` surface from the documentation exclusion** — a Markdown file
+    that matches the workflow-engine signal stays reviewable; ordinary prose stays excluded. Uses
+    a signal the repo already defines and keeps one meaning of "workflow engine". Portable: a
+    consumer repo with no `skills/` simply never matches.
+  - B) **Make the exclusion project-scoped** — let a repo declare which paths are program text.
+    Most correct across consumers, but adds a configuration surface the checker has deliberately
+    avoided (it takes no implicit input today).
+  - C) **Exclude only by directory, not by suffix** — treat `.md` under `docs/` as documentation
+    and everything else by location. Simple, but reclassifies README/CHANGELOG-style files
+    throughout the tree and would surprise consumers.
+  - D) **Accept and document** — record that the simplify stage does not cover prompt-document
+    changes, and rely on `/context-propagation-audit` plus the per-task quality reviewer for that
+    surface. No code change; but the feature's headline guarantee then does not hold for the
+    repository that ships it.
+- default_if_no_response: BLOCK
+- decision: A′ — option A, widened to cover the whole surface. Checking what `_WF_INCLUDE`
+  actually matches showed plain A would have been a **half fix**: it covers `skills/*/SKILL.md`,
+  `*prompt*.md`, `agents/*.md`, and `rules/*.md`, but **not** `skills/*/references/*.md` or
+  `skills/*/prompts/**` — which includes `references/simplify-stage.md`, this stage's own
+  instructions, and the six angle prompts that found every defect in this round.
+
+  Shipped instead: Markdown under `skills/`, `agents/`, or `rules/` classifies as `reviewable`,
+  with `README.md` and `*.template.md` still excluded as prose about the surface rather than
+  instructions an agent executes. Matched case-insensitively, unlike the exclusion authorities —
+  the exact-case rule exists so a case variant can never *shrink* coverage, and here folding only
+  grows it. Portable: a repository without those directories never matches. `templates/` is
+  deliberately not included; it ships forms for consumers to fill in.
+
+  This also resolves the contradiction inside `check_review_receipt.py`, where
+  `_RECEIPT_NEUTRAL_CATEGORIES` already kept `documentation` out of the staleness gate's neutral
+  set ("intent drift hides there") while the requirement gate excluded it.
+- decided_by: Minh Tran
+- decided_at: 2026-08-05
+
 <!-- copy the E0xx block for each new escalation -->

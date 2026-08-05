@@ -48,6 +48,15 @@ A directory-name exclusion applies only when that authority token has a child co
 changed file path. A singleton root file named `docs`, `specs`, `vendor`, `.claude`, or another
 directory authority remains reviewable.
 
+Markdown under `skills/`, `agents/`, or `rules/` is **program text, not documentation**, and stays
+reviewable. In a prompt-driven harness those files are what the agent executes, so editing one
+changes runtime behavior; excluding them would drop the highest-risk change class out of the stage
+entirely. Two exceptions stay excluded because they are prose *about* the surface rather than
+instructions an agent runs: `README.md` at any depth, and any `*.template.md`. Unlike the exclusion
+authorities, these three roots match case-insensitively — folding case here only ever grows
+coverage, so it is the safe direction. A repository without those directories never matches, so the
+rule stays portable.
+
 Directory authorities match exact-case. On a case-sensitive filesystem `Docs/`, `Specs/`, and
 `Evals/Raw/` are different directories from their lowercase spellings, so a case variant stays
 reviewable rather than inheriting the exclusion. File names and suffixes still match

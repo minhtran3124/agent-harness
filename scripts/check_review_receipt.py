@@ -172,6 +172,23 @@ def _changed_files(slug_dir: Path, a: str, b: str) -> list[str] | None:
     return [path for path in proc.stdout.split("\0") if path.strip()]
 
 
+def _resolve_sha(slug_dir: Path, ref: str) -> str | None:
+    """Resolve ref to a full lowercase 40-hex commit sha, or None."""
+    try:
+        proc = subprocess.run(
+            ["git", "rev-parse", "--verify", f"{ref}^{{commit}}"],
+            cwd=slug_dir,
+            capture_output=True,
+            text=True,
+        )
+    except OSError:
+        return None
+    if proc.returncode != 0:
+        return None
+    sha = proc.stdout.strip()
+    return sha if SHA_RE.match(sha) else None
+
+
 def is_ancestor(slug_dir: Path, ancestor: str, descendant: str) -> bool | None:
     """True if ancestor is an ancestor of (or identical to) descendant.
 
@@ -250,6 +267,18 @@ def simplify_shape_error(entry: dict) -> str | None:
         return (
             f"malformed: simplify entry result {entry.get('result')!r} must be "
             f"'pass' or 'fail'"
+        )
+
+    # E004: an entry whose base and pre are the same commit covers an EMPTY
+    # range — it is evidence that nothing was examined. `simplify_record.begin()`
+    # already refuses this ("there is no diff to simplify"); rejecting it here
+    # too means a hand-written or corrupted receipt cannot smuggle it past the
+    # gate, which is the consumer that deliberately re-derives rather than
+    # trusting the recorder.
+    if entry.get("base_sha") == entry.get("pre_sha"):
+        return (
+            "malformed: simplify entry base_sha equals pre_sha — the recorded "
+            "cleanup covers an empty range"
         )
 
     outcome = entry.get("outcome")
@@ -352,7 +381,60 @@ def check_receipt(
     post-simplify code cannot ship unreviewed).
     """
     receipt_path = slug_dir / RECEIPT_NAME
+
+    # Resolve what is actually required BEFORE demanding a receipt file (E005).
+    # `finishing-a-development-branch` tells operators the tiny-lane invocation
+    # is "internally conditional — a no-op when the diff has no reviewable
+    # path", and it must be: tiny lane runs no review chain, so the gitignored
+    # receipt is never written, and no documented step creates one. Demanding
+    # the file first made that claim false and left no legitimate exit.
+    changed_since: dict[str, list[str] | None] = {}
+
+    def _changed_since_base(base_ref: str) -> list[str] | None:
+        if base_ref not in changed_since:
+            changed_since[base_ref] = _changed_files(slug_dir, base_ref, "HEAD")
+        return changed_since[base_ref]
+
+    required = list(require)
+    if require_audit_if is not None:
+        touched = _touches_workflow_engine(_changed_since_base(require_audit_if))
+        if touched is None:
+            return (
+                f"stale-sha: cannot diff workflow-engine base {require_audit_if!r} "
+                f"— re-check with a valid base ref"
+            )
+        if touched and _WF_AUDIT_TYPE not in required:
+            required.append(_WF_AUDIT_TYPE)
+
+    simplify_base: str | None = None
+    if require_simplify_if is not None:
+        needed = _simplify_required(_changed_since_base(require_simplify_if))
+        if needed is None:
+            return (
+                f"stale-sha: cannot diff simplify base {require_simplify_if!r} "
+                f"— re-check with a valid base ref"
+            )
+        if needed:
+            # E004: the entry must be anchored to THIS range, so resolve the
+            # gated base once, here, while the ref is still in hand.
+            simplify_base = _resolve_sha(slug_dir, require_simplify_if)
+            if simplify_base is None:
+                return (
+                    f"stale-sha: cannot resolve simplify base "
+                    f"{require_simplify_if!r} to a commit sha"
+                )
+            if _SIMPLIFY_TYPE not in required:
+                required.append(_SIMPLIFY_TYPE)
+
     if not receipt_path.is_file():
+        # Only a purely CONDITIONAL invocation may pass without a receipt. A
+        # caller that named requirements — or named none at all, which is the
+        # bare "is this receipt valid?" question — still needs the file.
+        conditional_only = not require and (
+            require_audit_if is not None or require_simplify_if is not None
+        )
+        if conditional_only and not required:
+            return None  # Nothing was owed; an absent receipt is correct.
         return f"missing: no review receipt at {receipt_path}"
 
     try:
@@ -421,37 +503,6 @@ def check_receipt(
             return f"malformed: review '{rtype}' has non-integer blocking_open"
         if blocking > 0:
             return f"blocking-open: review '{rtype}' has {blocking} blocking open"
-
-    required = list(require)
-    # Both conditional requirements diff the same base..HEAD range in the
-    # documented invocation (finishing passes one base to both flags) — run
-    # the diff once per distinct base and share the changed set.
-    changed_since: dict[str, list[str] | None] = {}
-
-    def _changed_since_base(base_ref: str) -> list[str] | None:
-        if base_ref not in changed_since:
-            changed_since[base_ref] = _changed_files(slug_dir, base_ref, "HEAD")
-        return changed_since[base_ref]
-
-    if require_audit_if is not None:
-        touched = _touches_workflow_engine(_changed_since_base(require_audit_if))
-        if touched is None:
-            return (
-                f"stale-sha: cannot diff workflow-engine base {require_audit_if!r} "
-                f"— re-check with a valid base ref"
-            )
-        if touched and _WF_AUDIT_TYPE not in required:
-            required.append(_WF_AUDIT_TYPE)
-
-    if require_simplify_if is not None:
-        needed = _simplify_required(_changed_since_base(require_simplify_if))
-        if needed is None:
-            return (
-                f"stale-sha: cannot diff simplify base {require_simplify_if!r} "
-                f"— re-check with a valid base ref"
-            )
-        if needed and _SIMPLIFY_TYPE not in required:
-            required.append(_SIMPLIFY_TYPE)
 
     passed_types = {
         r.get("type")
@@ -531,6 +582,20 @@ def check_receipt(
                     return (
                         "review-failed: simplify entry does not indicate a "
                         "passing outcome (verification/delta evidence)"
+                    )
+                # E004: anchor the covering entry to the range being gated.
+                # Ancestry alone only proves the entry is internally coherent —
+                # a cleanup recorded from a LATER base covers strictly less code
+                # than the branch, and the gate would still pass it. Only
+                # enforced when the stage is actually required (simplify_base is
+                # None otherwise), so an unrequired historical entry cannot
+                # block a push it was never gating.
+                if simplify_base is not None and review["base_sha"] != simplify_base:
+                    return (
+                        f"stale-sha: simplify entry base_sha "
+                        f"{review['base_sha'][:12]} does not match the gated base "
+                        f"{simplify_base[:12]} — the recorded cleanup covers a "
+                        f"different range than the one being pushed"
                     )
 
     return None

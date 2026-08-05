@@ -111,11 +111,11 @@ and final reviews over the resulting HEAD.
 | --- | --- | --- | --- | --- |
 | Planning contract | `python3 scripts/check_plan_contract.py specs/require-claude-simplify-gate/PLAN.md` | 0 | Contract passed on 2026-07-30 | |
 | Plan render | `python3 skills/visual-planner/render_plan.py specs/require-claude-simplify-gate/PLAN.md` | 0 | Parsed 8 tasks across 6 waves | |
-| Capability/policy tests | `python3 -m pytest scripts/test_check_claude_simplify.py -q` | 0 | 119 passed (was 103; +16 pinning exact-case directory authorities vs case-folding file names, round 3) | SC-1 |
+| Capability/policy tests | `python3 -m pytest scripts/test_check_claude_simplify.py -q` | 0 | 147 passed (103 → 119 round 3 exact-case → 127 round-4 rename spellings → 147 with E006's program-text surface) | SC-1 |
 | Policy self-test | `python3 scripts/check_claude_simplify.py --self-test-policy` | 0 | `simplify-policy: self-test passed` | SC-2 |
 | Evidence recorder tests | `python3 -m pytest skills/subagent-driven-development/scripts/test_simplify_record.py -q` | 0 | 27 passed; dirty-worktree, symbolic/short SHA, ancestry all rejected | SC-3 |
 | SDD ordering contract | `bash tests/scripts/sdd-simplify-stage-contract.test.sh` | 0 | 31 passed, incl. 13 mutation checks; round 3 added the adoption-checker wiring check | SC-4 |
-| Receipt validation tests | `python3 -m pytest scripts/test_check_review_receipt.py -q` | 0 | 52 passed (was 39; round 3 added the case-variant bypass and non-ASCII-path regressions, both verified failing on the pre-fix code) | SC-5 |
+| Receipt validation tests | `python3 -m pytest scripts/test_check_review_receipt.py -q` | 0 | 58 passed (39 → 52 round 3 → 58 with E004's base anchor and E005's conditional-only relaxation; every new test verified failing on the pre-fix code) | SC-5 |
 | Receipt self-test | `python3 scripts/check_review_receipt.py --self-test-simplify` | 0 | `check-review-receipt: simplify self-test passed` | SC-6 |
 | Finishing contract | `bash tests/scripts/finishing-branch-contract.test.sh` | 0 | 6 passed, incl. simplify-clause mutation check | SC-7 |
 | Shadow-eval quality gate | `python3 scripts/score_simplify_stage_eval.py --compare evals/skills/simplify-stage/results/baseline.json evals/skills/simplify-stage/results/candidate.json --fixtures evals/skills/simplify-stage/fixtures --quality-gate` | 0 | Round 4 (HEAD `f5f135c`): `quality_pass: true`, 8/8 fixtures matched `truth.json`. Round 3's evidence (HEAD `5a34cae`) went digest-stale once the branch's own `/simplify` self-application (`e90413b`) edited the eval harness's own source; re-collected, identical result. Rounds 1-2 rejected first (`comparison.md`) | SC-8 |
@@ -298,9 +298,96 @@ fixes is itself evidence — none of the round-3 defects was caught by the suite
     list in the same change, or every project owning a `scripts/` dir would have been told to
     delete it. Full rationale, the prune-safety argument, and the distribution-contract scope note
     are in E003.
+- Round 4 (2026-08-05, range `29a5419..01174df`) — **the first round of this branch whose oracles
+  were genuinely independent.** The Agent-tool dispatch channel was still dead (four agents idle
+  with no report), so each reviewer ran as its own `claude -p` process: a real fresh context, not
+  the controller thread. All six FIND angles plus the audit and intent oracles returned findings
+  text; none went silent, so no angle is recorded as *unknown* this round. Reviewers read a
+  source-scoped package (`evals/` and `specs/` excluded as pure data) — the full-range package is
+  6.3 MB and would not fit a reviewer context.
+
+  19 raw candidates. Every finding below was **re-reproduced by the controller** before being
+  recorded; agent reports were not taken at face value.
+
+  - **Fixed — P1, `enclosing-function`, `6fe157c`:** git spells a move-up-a-level rename with an
+    empty new-mid segment (`a/{b/c => }/deep.c`). `_rename_destination` required at least one
+    character there, fell through to the unbraced `rsplit`, and returned the fragment
+    `}/deep.c`; `evaluate_policy` then raised "changed paths and numstat disagree" and the
+    checker exited 2, blaming a caller whose inputs were correct. No branch that moves a file up
+    a level could resolve a policy decision. Verified against real `git diff --numstat` output;
+    the regression test asserts git still emits that spelling before relying on it.
+  - **Fixed after escalation — P1, `guard-completeness`, E004 decision A:** the gate never anchors a
+    simplify entry's `base_sha` to the range it is gating. Reproduced twice: an entry with
+    `base_sha = c2` (skipping two commits of unreviewed code) and a degenerate
+    `base_sha == pre_sha == post_sha` `no_op` entry covering an **empty** range both satisfy
+    `--require-simplify-if` for a 4-commit branch. The feature's central guarantee can be met with
+    evidence covering no code at all. **Decision A, fixed:** the gate resolves the gated base to a
+    SHA and requires the covering entry's `base_sha` to equal it; `simplify_shape_error` rejects
+    `base_sha == pre_sha` as an empty range. Both original reproductions now fail closed.
+  - **Fixed after escalation — P1, E005 decision A — four angles converged independently**
+    (`removed-behavior`, `enclosing-function`, `call-site-impact`, `prior-art`, each in a separate
+    fresh context): `finishing/SKILL.md:32`'s claim that the tiny-lane invocation is "already
+    internally conditional" is false. `check_receipt`'s receipt-existence check runs first, so a
+    compliant tiny-lane branch with a plan and a docs-only diff is blocked by
+    `missing: no review receipt` — with no legitimate remedy, since the same skill forbids editing
+    the receipt and `simplify-stage.md` forbids calling the recorder when nothing is reviewable.
+    Introduced by this branch in `af7b014` (E002 option A). **Decision A, fixed:** conditional
+    requirements are resolved before the receipt file is demanded, and a purely conditional
+    invocation that finds nothing owed returns success. The first attempt at this relaxed too far
+    — returning success whenever nothing was required also let a *bare* invocation pass with no
+    receipt, which `test_missing_receipt_fails` caught. The shipped condition additionally
+    requires that at least one `*_if` flag was actually passed.
+  - **Fixed after escalation — P1, `stack-defects`, E006 decision A′:** `classify_path` returns
+    `documentation` for every Markdown path, so `skills/*/SKILL.md`, `agents/*.md`, and
+    `rules/*.md` — the surface `_WF_INCLUDE` treats as highest-risk, and the program text of this
+    repository — are excluded from the reviewable set. Reproduced: 1,402 changed lines of skill
+    and rule text on a `high-risk` lane yields `documentation_only, required: false`, and the push
+    gate exits 0 with no simplify entry. The same file already disagrees with itself here:
+    `_RECEIPT_NEUTRAL_CATEGORIES` deliberately keeps `documentation` out of the staleness gate's
+    neutral set. The stage fired on this branch only because its diff happens to carry `.py`
+    files alongside the skills. **Decision A′, fixed:** Markdown under `skills/`, `agents/`, or
+    `rules/` is now `reviewable`, with `README.md` and `*.template.md` still excluded as prose
+    about the surface. Plain option A was checked first and would have been a half fix —
+    `_WF_INCLUDE` does not match `skills/*/references/*.md` or `skills/*/prompts/**`, which is
+    where this stage's own instructions and the six angle prompts live.
+  - **Recorded, not fixed — P2s:** `references/simplify-stage.md` runs `simplify_record.py finish`
+    at step 7 but only instructs the commit at step 8, so `post_sha` still equals `pre_sha` and
+    `finish` refuses a `changed` outcome — the stage is unexecutable as written for its main
+    branch of behavior (two angles converged). The `--numstat` half of the command contract still
+    carries the quoted-path defect `57650be` fixed for `--name-only`: `--numstat` has no `-z`, and
+    the contract never tells the caller to pass `-c core.quotePath=false`. Patch artifacts are
+    captured with `text=True`, so a CRLF fixture would silently lose its CR bytes and fail the
+    scorer's bundle cross-check (latent — no fixture has CRLF today).
+  - **Advisory:** `_changed_files` decodes with `text=True`, so a non-UTF-8 filename raises
+    `UnicodeDecodeError` past `except OSError` (not reproducible on APFS, which rejects the
+    filename at creation — evidence is the exception hierarchy, not a live run).
+    `simplify_record.py finish` still leaks `KeyError`/`JSONDecodeError` past its own handler, and
+    never validates the begin-state's shape, so pointing `--begin-state` at a previous `finish`
+    output silently emits an entry carrying the stale run's SHAs. `score_simplify_stage_eval.py`
+    calls `.get()` on unvalidated record entries and crashes on a non-object.
+  - **Audit observation, not fixed:** `rules/simplify-stage.md:11` restates the version floor in
+    prose, but adoption check A's regex anchors only the bold sentence two lines above, so a
+    future floor bump could leave the two contradicting each other undetected.
 
 ### Intent Review
 
+- Round 3 (2026-08-05, range `29a5419..01174df`, fresh `claude -p` context, plan-blind,
+  read-only). Verdict: **1 gap + 3 disclosed excess.**
+  - **Gap, escalate-shaped:** E002 option A closed only the *plan-bearing* half of the tiny-lane
+    hole. A tiny-lane branch with **no plan** still skips both receipt invocations — lane `tiny`
+    grants `Plan: none`, so `resolve_finish_context.py` returns `plan_dir: null` — even when the
+    diff is `oversized_tiny_source_change, required: true` under the policy this branch ships.
+    The reviewer grepped `skills rules hooks scripts templates agents` and confirmed
+    `--require-simplify-if` has exactly one enforcement call site, so nothing else catches it.
+    This is the same class as E004: together they mean the gate can be satisfied by evidence
+    covering nothing, or skipped entirely.
+  - **Excess, all previously disclosed, no action:** implementation beyond "viết plan vào doc
+    trước" (recorded in `## What changed` with the continue-to-implementation authorization);
+    the `scripts/` deploy surface (E003, `decided_by: Minh Tran`, with option B named as the
+    narrower alternative); four lines of `.gitignore` hygiene traceable to no intent clause.
+  - **SC coverage:** SC-1…SC-10 each have a passing `Criterion` row. The reviewer re-ran SC-8 in
+    the PLAN's literal form (without the Verify row's added `--fixtures`) — exit 0, so the
+    promised command works as written.
 - Round 2 (receipt-refresh chain, package at `491c396`, plan-blind, read-only). Verdict:
   **PASS** — no Critical or Important finding against the verbatim request on any axis.
   - **Missing** — none above advisory. The request's research/advisory half (*có đúng ko / có

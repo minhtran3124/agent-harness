@@ -61,6 +61,10 @@ _ROOT_GENERATED_DIRS = frozenset(
     }
 )
 _UNAMBIGUOUS_GENERATED_PARTS = frozenset({".claude", "generated", "__pycache__"})
+# Roots whose Markdown is executable program text, not prose (E006). Portable:
+# a repository without these directories simply never matches. `templates/` is
+# deliberately absent — it ships forms for consumers to fill in.
+_PROGRAM_TEXT_ROOTS = frozenset({"skills", "agents", "rules"})
 _GENERATED_NAMES = frozenset(
     {
         "package-lock.json",
@@ -162,6 +166,24 @@ def classify_path(raw: str) -> str:
         or lowered_name.endswith((".min.js", ".min.css", ".map"))
     ):
         return "generated"
+    # Program text that happens to be Markdown. In a prompt-driven harness a
+    # SKILL.md, an agent definition, a rule, a reference, or a prompt fragment
+    # IS the program — editing one changes runtime behavior. Classifying those
+    # as documentation excluded the highest-risk change class from the stage
+    # (ESCALATIONS.md E006). Prose ABOUT the surface stays excluded: README.md
+    # is a human-facing index, and `*.template.md` is a template a consumer
+    # fills in, not an instruction any agent executes.
+    # Matched case-INSENSITIVELY, unlike the exclusion authorities above. That
+    # rule exists so a case variant can never shrink coverage; here folding case
+    # only ever grows it, so `Skills/foo/SKILL.md` stays reviewable too.
+    if (
+        len(parts) > 1
+        and parts[0].lower() in _PROGRAM_TEXT_ROOTS
+        and parsed.suffix.lower() in _DOCUMENT_SUFFIXES
+        and lowered_name != "readme.md"
+        and not lowered_name.endswith(".template.md")
+    ):
+        return "reviewable"
     if (
         (len(parts) > 1 and parts[0] in {"doc", "docs", "documentation"})
         or lowered_name in _DOCUMENT_NAMES
