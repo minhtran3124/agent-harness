@@ -9,8 +9,7 @@ Review runtime behavior, not style or plan compliance. Determine the intended `B
 (merge-base for a branch, working-tree diff for uncommitted work, explicit range when supplied).
 In SDD, use the commit before task 1 through current HEAD.
 
-When SDD supplies `REVIEW_PACKAGE_PATH`, pass it into the FIND/SCORE prompts, which own how to
-read it. It is runtime evidence, not an oracle: retain this skill's plan-blindness and do a named
+When SDD supplies `REVIEW_PACKAGE_PATH`, pass it into the FIND prompts, which own how to read it. It is runtime evidence, not an oracle: retain this skill's plan-blindness and do a named
 focused read outside it only for a concrete runtime risk. Standalone calls without a package keep
 the existing range-construction behavior.
 
