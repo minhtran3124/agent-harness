@@ -1,6 +1,6 @@
 ---
 slug: hook-surface-slim
-status: active
+status: shipped
 owner: minhtran3124
 created: 2026-08-06
 ---
@@ -238,3 +238,4 @@ Two design contracts are **invariants** (see `design-ab.md` §2.2 and §3.3):
 - 2026-08-06 — tasks 1.1, 1.2, 1.3 complete; commits d93c085, 4c0228c, 7bc23b5. All Verify green (SC-1/2/3/4/6 exit 0); task reviews spec=pass, quality=approved. Minor (non-blocking, rolled up to final review): 1.1 test under-guards stdout-vs-stderr on the deny channel; 1.3 CLAUDE.md hook-table Action prose still says app checks are unconditional (fixed by task 2.1). ✓
 - 2026-08-06 — task 2.1 complete; commit 6d2cb4f. Verify green (check_manifest + lint-doc-truth exit 0; SC-5, SC-10); task review spec=pass, quality=approved, zero findings. Resolves the 1.3 doc-drift. Rule-1 deviation: four dispatched hooks kept as non-✅ "↳ dispatched" rows (lint-doc-truth needs a row per on-disk hook). ✓
 - 2026-08-06 — tasks 3.1, 3.2 complete; commits 570c69d, 505f6ec. Verify green (warn-mode-smoke, risk-corroboration, check_gate_modes_smoke; lint-doc-truth; SC-7/8/9/10); task reviews spec=pass, quality=approved. SC-8 bypass-guard proven non-vacuous (index-vs-.claude contrast). Full suite ALL GREEN after refreshing stale worktree .claude. Rule-1: 3 workflow-engine tests flipped block→warn (embedded-parity consequence). Follow-ups to fix pre-ship: gate-mode-as-data-decisions.md Decision 1 stale (says consumers block-all), "CI-generated" wording, INDEX.md row. Known follow-up (separate spec): derive_settings merge does not prune source-removed hooks → in-place consumer upgrade double-registers the 4 old Bash hooks. ✓
+- 2026-08-06 — All final gates green: simplify (clean), context-propagation-audit / correctness / intent all PASS (0 blocking), receipt valid at a6e9679, ship gate `verify_summary --check` 11/11, full suite ALL GREEN. Status: shipped. Opening PR feat/hook-surface-slim-b3 → simplify.
