@@ -26,6 +26,7 @@ Implemented the corrected **B3-only** Package A+B on branch `feat/hook-surface-s
 - **A4-opt-in** — commit-quality Checks 2/2.5/3 gated behind `REQUIRE_APP_GATES=1` (off by default; **not** the rejected A4-detect). Commit 7bc23b5.
 - **A3** — deleted dormant `auto-test-on-change.sh` + reconciled `harness-manifest.json`/`CLAUDE.md`. Commit 6d2cb4f.
 - **B3-only** — `hooks/lib/gate-modes.default.sh` embedded defaults + `risk-corroboration.sh` resolves modes ONLY from the git index (`git show :`) or embedded defaults, **never `.claude/`** (avoids TOCTOU #160). Consumers fall back to 2-warn/7-block parity, not block-all. Commit 570c69d + docs 505f6ec, a098af1.
+- **Deploy prune-on-merge** (task 4.1) — `derive_settings` now prunes source-removed harness hooks on an in-place upgrade so the retired 4 Bash hooks don't double-register alongside the dispatcher; foreign hooks preserved. Commit 83045b1.
 
 Final gates: simplify (clean, no mutation), correctness-review (no Critical/High/Medium bugs), intent-review (FULFILLED). Full suite ALL GREEN.
 
@@ -61,6 +62,7 @@ Highest ROI without loosening true hard gates: cut the always-on Bash spawn tax 
 | .claude bypass guard | `bash tests/hooks/risk-corroboration.test.sh` | 0 | all-warn .claude does NOT loosen auth | SC-8 |
 | gate-modes drift | `python3 scripts/check_gate_modes_smoke.py` | 0 | defaults == manifest detectable | SC-9 |
 | inventory consistency | `python3 scripts/check_manifest.py` | 0 | manifest ↔ settings ↔ CLAUDE.md | SC-10 |
+| deploy prune-on-merge | `bash tests/scripts/settings-merge.test.sh` | 0 | in-place upgrade prunes source-removed harness hooks; foreign hooks survive | SC-11 |
 | lane intake | `python3 scripts/verify_summary.py --lane hook-surface-slim` | 0 | high-risk evidence present | |
 
 ### Rollback
@@ -71,4 +73,4 @@ Highest ROI without loosening true hard gates: cut the always-on Bash spawn tax 
 
 ### Harness-Delta
 
-- backlog (→ separate spec) — `derive_settings` in `scripts/deploy-harness.sh` merges without pruning source-removed harness hooks: a consumer upgrading **in place** keeps the 4 old Bash registrations alongside the dispatcher → the four gates fire twice until a re-sync prune. Fresh installs are clean. Needs a deploy-harness prune-on-merge enhancement (high-blast; out of this plan's scope).
+- fix-direct — **FIXED in task 4.1** (commit 83045b1). `derive_settings` in `scripts/deploy-harness.sh` now prunes any prior harness hook registration (command under `$CLAUDE_PROJECT_DIR/.claude/hooks/`), not just the current source set, so an **in-place consumer upgrade** drops the 4 old Bash registrations instead of double-registering them alongside the dispatcher. Consumer-owned foreign hooks (other paths) survive. Covered by SC-11.

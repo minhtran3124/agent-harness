@@ -1,6 +1,6 @@
 ---
 slug: hook-surface-slim
-status: active
+status: shipped
 owner: minhtran3124
 created: 2026-08-06
 ---
@@ -10,7 +10,7 @@ created: 2026-08-06
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**7 tasks · 4 waves · 19 files · 6/7 done**
+**7 tasks · 4 waves · 19 files · 7/7 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -51,7 +51,7 @@ flowchart LR
 - [x] 2.1 — A3 delete dormant auto-test + reconcile inventory & docs (wave 2)
 - [x] 3.1 — B3 embedded gate-mode defaults + index-safe resolve (wave 3)
 - [x] 3.2 — B3 consumer docs + compound learning (wave 3)
-- [ ] 4.1 — Prune source-removed harness hooks on settings merge (wave 4)
+- [x] 4.1 — Prune source-removed harness hooks on settings merge (wave 4)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -266,3 +266,4 @@ Two design contracts are **invariants** (see `design-ab.md` §2.2 and §3.3):
 - 2026-08-06 — task 2.1 complete; commit 6d2cb4f. Verify green (check_manifest + lint-doc-truth exit 0; SC-5, SC-10); task review spec=pass, quality=approved, zero findings. Resolves the 1.3 doc-drift. Rule-1 deviation: four dispatched hooks kept as non-✅ "↳ dispatched" rows (lint-doc-truth needs a row per on-disk hook). ✓
 - 2026-08-06 — tasks 3.1, 3.2 complete; commits 570c69d, 505f6ec. Verify green (warn-mode-smoke, risk-corroboration, check_gate_modes_smoke; lint-doc-truth; SC-7/8/9/10); task reviews spec=pass, quality=approved. SC-8 bypass-guard proven non-vacuous (index-vs-.claude contrast). Full suite ALL GREEN after refreshing stale worktree .claude. Rule-1: 3 workflow-engine tests flipped block→warn (embedded-parity consequence). Follow-ups to fix pre-ship: gate-mode-as-data-decisions.md Decision 1 stale (says consumers block-all), "CI-generated" wording, INDEX.md row. Known follow-up (separate spec): derive_settings merge does not prune source-removed hooks → in-place consumer upgrade double-registers the 4 old Bash hooks. ✓
 - 2026-08-06 — All final gates green: simplify (clean), context-propagation-audit / correctness / intent all PASS (0 blocking), receipt valid at a6e9679, ship gate `verify_summary --check` 11/11, full suite ALL GREEN. Status: shipped. Opening PR feat/hook-surface-slim-b3 → simplify.
+- 2026-08-06 — task 4.1 (deploy prune-on-merge) added at user request to complete the consumer-upgrade safety story; commit 83045b1. Verify green (settings-merge SC-11; settings-wiring + resync-conflict regressions pass); task review spec=pass, quality=approved (2 non-blocking Minor). Full suite ALL GREEN. Harness-Delta flipped backlog→fix-direct. Status: shipped (re-ship). ✓
