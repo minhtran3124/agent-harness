@@ -15,7 +15,7 @@ assert_silent_ok
 t "clean staged docs pass (no app/ files → skip tests)"
 repo=$(new_repo $H)
 stage "$repo" "README.md" "hello"
-run_hook "$repo" $H "$COMMIT_JSON"
+run_hook "$repo" $H "$COMMIT_JSON" REQUIRE_APP_GATES=1
 assert_rc_contains 0 "No app/ Python files staged"
 
 t "hardcoded api_key in staged code → BLOCKED"
@@ -36,29 +36,36 @@ stage "$repo" "tests/fixtures.py" 'api_key = "fakefakefake12345"'
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc 0
 
-t "breakpoint() added in app/ code → BLOCKED"
+# ── Task 1.3: app gates (Checks 2/2.5/3) are opt-in via REQUIRE_APP_GATES=1 ──
+t "REQUIRE_APP_GATES unset (default): breakpoint() in staged app/ does NOT block"
 repo=$(new_repo $H)
 stage "$repo" "app/services/calc.py" 'breakpoint()'
 run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 0 "App checks"
+
+t "REQUIRE_APP_GATES=1: breakpoint() added in app/ code → BLOCKED"
+repo=$(new_repo $H)
+stage "$repo" "app/services/calc.py" 'breakpoint()'
+run_hook "$repo" $H "$COMMIT_JSON" REQUIRE_APP_GATES=1
 assert_rc_contains 2 "breakpoint"
 
-t "bare print( added in app/ code → BLOCKED"
+t "REQUIRE_APP_GATES=1: bare print( added in app/ code → BLOCKED"
 repo=$(new_repo $H)
 stage "$repo" "app/services/calc.py" 'print("debug")'
-run_hook "$repo" $H "$COMMIT_JSON"
+run_hook "$repo" $H "$COMMIT_JSON" REQUIRE_APP_GATES=1
 assert_rc_contains 2 "bare print()"
 
-t "REQUIRE_VERIFY=1: app/ staged without a ### Verify block → BLOCKED"
+t "REQUIRE_APP_GATES=1 + REQUIRE_VERIFY=1: app/ staged without a ### Verify block → BLOCKED"
 repo=$(new_repo $H)
 stage "$repo" "app/services/calc.py" 'x = 1'
-run_hook "$repo" $H "$COMMIT_JSON" REQUIRE_VERIFY=1
+run_hook "$repo" $H "$COMMIT_JSON" REQUIRE_APP_GATES=1 REQUIRE_VERIFY=1
 assert_rc_contains 2 "### Verify"
 
-t "REQUIRE_VERIFY=1: staged SUMMARY with ### Verify satisfies the gate"
+t "REQUIRE_APP_GATES=1 + REQUIRE_VERIFY=1: staged SUMMARY with ### Verify satisfies the gate"
 repo=$(new_repo $H)
 stage "$repo" "app/services/calc.py" 'x = 1'
 stage "$repo" "specs/x/SUMMARY.md" '### Verify'
-run_hook "$repo" $H "$COMMIT_JSON" REQUIRE_VERIFY=1
+run_hook "$repo" $H "$COMMIT_JSON" REQUIRE_APP_GATES=1 REQUIRE_VERIFY=1
 assert_rc_contains 0 "Evidence (### Verify present)... PASSED"
 
 # ── Task 3.2: REQUIRE_VERIFY=1 re-runs the ### Verify table (machine-verified proof) ──
@@ -72,7 +79,7 @@ repo=$(new_repo $H)
 mkdir -p "$repo/scripts"; cp "$VERIFY_PY" "$repo/scripts/"
 stage "$repo" "app/services/calc.py" 'x = 1'
 stage "$repo" "specs/x/SUMMARY.md" "$VERIFY_TABLE_OK"
-run_hook "$repo" $H "$COMMIT_JSON" REQUIRE_VERIFY=1
+run_hook "$repo" $H "$COMMIT_JSON" REQUIRE_APP_GATES=1 REQUIRE_VERIFY=1
 assert_rc_contains 0 "Evidence (### Verify re-run)... PASSED"
 
 t "REQUIRE_VERIFY=1: claimed Exit != actual exit → re-run BLOCKS (exit 2)"
@@ -80,7 +87,7 @@ repo=$(new_repo $H)
 mkdir -p "$repo/scripts"; cp "$VERIFY_PY" "$repo/scripts/"
 stage "$repo" "app/services/calc.py" 'x = 1'
 stage "$repo" "specs/x/SUMMARY.md" "$VERIFY_TABLE_BAD"
-run_hook "$repo" $H "$COMMIT_JSON" REQUIRE_VERIFY=1
+run_hook "$repo" $H "$COMMIT_JSON" REQUIRE_APP_GATES=1 REQUIRE_VERIFY=1
 assert_rc_contains 2 "Evidence (### Verify re-run)... FAILED"
 
 t "REQUIRE_VERIFY=1: python3 absent → degrade (warn, do not block) even with a mismatch"
@@ -99,7 +106,7 @@ for d in "${_pd[@]}"; do
     [ -e "$nopy/$b" ] || ln -s "$f" "$nopy/$b" 2>/dev/null
   done
 done
-run_hook "$repo" $H "$COMMIT_JSON" REQUIRE_VERIFY=1 PATH="$nopy"
+run_hook "$repo" $H "$COMMIT_JSON" REQUIRE_APP_GATES=1 REQUIRE_VERIFY=1 PATH="$nopy"
 assert_rc_contains 0 "Evidence re-run skipped"
 
 t "REQUIRE_VERIFY=0 (default): a mismatching ### Verify table is NOT re-run (regression)"
@@ -107,7 +114,7 @@ repo=$(new_repo $H)
 mkdir -p "$repo/scripts"; cp "$VERIFY_PY" "$repo/scripts/"
 stage "$repo" "app/services/calc.py" 'x = 1'
 stage "$repo" "specs/x/SUMMARY.md" "$VERIFY_TABLE_BAD"
-run_hook "$repo" $H "$COMMIT_JSON"
+run_hook "$repo" $H "$COMMIT_JSON" REQUIRE_APP_GATES=1
 assert_rc 0
 
 # Check 1.5: pending escalations (deny-on-no-response, review C5)
@@ -255,21 +262,21 @@ if ensure_pyenv; then
   repo=$(new_repo $H)
   stage "$repo" "app/services/calc.py" 'def add(a, b): return a + b'
   stage "$repo" "tests/services/test_calc.py" 'def test_add(): assert 1 + 1 == 2'
-  run_hook "$repo" $H "$COMMIT_JSON" PATH="$PYSHIM:$PATH"
+  run_hook "$repo" $H "$COMMIT_JSON" REQUIRE_APP_GATES=1 PATH="$PYSHIM:$PATH"
   assert_rc_contains 0 "Tests... PASSED"
 
   t "≥5 app/ files staged → /compound crystallization hint"
   repo=$(new_repo $H)
   for i in 1 2 3 4 5; do stage "$repo" "app/services/m$i.py" "x = $i"; done
   stage "$repo" "tests/services/test_m1.py" 'def test_m(): assert True'
-  run_hook "$repo" $H "$COMMIT_JSON" PATH="$PYSHIM:$PATH"
+  run_hook "$repo" $H "$COMMIT_JSON" REQUIRE_APP_GATES=1 PATH="$PYSHIM:$PATH"
   assert_rc_contains 0 "Large session detected"
 
   t "failing matching test BLOCKS the commit (exit 2)"
   repo=$(new_repo $H)
   stage "$repo" "app/services/calc.py" 'def add(a, b): return a + b'
   stage "$repo" "tests/services/test_calc.py" 'def test_add(): assert False'
-  run_hook "$repo" $H "$COMMIT_JSON" PATH="$PYSHIM:$PATH"
+  run_hook "$repo" $H "$COMMIT_JSON" REQUIRE_APP_GATES=1 PATH="$PYSHIM:$PATH"
   assert_rc_contains 2 "Tests... FAILED"
 else
   t "pytest-dependent cases"; skip "python3 venv with pytest unavailable"

@@ -43,14 +43,15 @@ Critical learnings (read at planning time): `docs/solutions/critical-patterns.md
 
 ## Hooks
 
-Hooks live in `hooks/` (top-level). Register them in `settings.json` under the appropriate trigger key. **Wired** = currently registered in `settings.json` and firing; **dormant** = present on disk but not registered.
+Hooks live in `hooks/` (top-level). Register them in `settings.json` under the appropriate trigger key. **Wired** (✅) = currently registered in `settings.json` and firing; **dispatched** (↳) = on disk and firing, but invoked by `pre-bash-dispatch.sh` rather than registered directly; **dormant** (⬜) = present on disk but not registered and not firing. The four git sub-hooks (`check-untracked-py`, `commit-quality-gate`, `risk-corroboration`, `branch-guard`) are no longer registered individually — `pre-bash-dispatch.sh` is the single registered PreToolUse Bash hook and fans out to them.
 
 | Hook | Trigger | Action | Wired |
 |---|---|---|---|
-| `check-untracked-py.sh` | PreToolUse (Bash `git *`) | Block commit/push if untracked `.py` files exist | ✅ |
-| `commit-quality-gate.sh` | PreToolUse (Bash `git commit`) | Secrets scan + pending-escalation gate + lane-evidence gate (`verify_summary.py --lane` on each staged `SUMMARY.md`) + debug artifact check + targeted pytest | ✅ |
-| `risk-corroboration.sh` | PreToolUse (Bash `git commit`) | Corroborate the declared `Lane:` against the staged diff; per-gate mode comes from `harness-manifest.json` (`hard_gates.detectable[].mode`) — block-mode gates deny a below-`high-risk` lane, warn-mode gates (`workflow-engine`, `weakening-validation`) print a note and allow | ✅ |
-| `branch-guard.sh` | PreToolUse (Bash `git commit`) | Warn when committing on `main` | ✅ |
+| `pre-bash-dispatch.sh` | PreToolUse (Bash) | Fast-path exit 0 on non-git Bash; on `git commit`/`push` fans out to the four git sub-hooks below in settings order (check-untracked-py → commit-quality-gate → risk-corroboration → branch-guard), relaying each sub-hook's stdout/stderr unchanged and propagating an exit-2 block | ✅ |
+| `check-untracked-py.sh` | PreToolUse (Bash `git *`, via dispatch) | Block commit/push if untracked `.py` files exist | ↳ |
+| `commit-quality-gate.sh` | PreToolUse (Bash `git commit`, via dispatch) | Secrets scan + pending-escalation gate + lane-evidence gate (`verify_summary.py --lane` on each staged `SUMMARY.md`); debug-artifact check + targeted pytest are opt-in via `REQUIRE_APP_GATES=1` (off by default — the harness core ships no `app/` code) | ↳ |
+| `risk-corroboration.sh` | PreToolUse (Bash `git commit`, via dispatch) | Corroborate the declared `Lane:` against the staged diff; per-gate mode comes from `harness-manifest.json` (`hard_gates.detectable[].mode`) — block-mode gates deny a below-`high-risk` lane, warn-mode gates (`workflow-engine`, `weakening-validation`) print a note and allow | ↳ |
+| `branch-guard.sh` | PreToolUse (Bash `git commit`, via dispatch) | Warn when committing on `main` | ↳ |
 | `branch-isolation-guard.sh` | PreToolUse (Edit/Write) | Hard-block code edits on a shared branch (`HARNESS_SHARED_BRANCHES`, default `main`/`master`) regardless of plan state, unless break-glass `BRANCH_ISOLATION_REASON` is set. `specs/*` bookkeeping is exempt (intake writes `SUMMARY.md` before the branch exists). (Write-time enforcement; `branch-guard.sh` only warns at commit time.) | ✅ |
 | `ruff-on-edit.sh` | PostToolUse (Edit/Write) | `ruff --fix` + `ruff format` on edited `.py` files | ✅ |
 | `blast-radius-check.sh` | PostToolUse (Edit/Write) | Warn when an edit touches a file outside the active plan `<files>` set | ✅ |
@@ -58,7 +59,6 @@ Hooks live in `hooks/` (top-level). Register them in `settings.json` under the a
 | `scope-gate.sh` | UserPromptSubmit | Warn on implementation intent with no plan referenced (lane-aware) | ✅ |
 | `state-breadcrumb.sh` | SessionEnd | Append a dated session breadcrumb to `specs/STATE.md` (`## Session End Log`) for cross-session resumption; never blocks | ✅ |
 | `session-knowledge.sh` | SessionStart | Load `docs/solutions/INDEX.md` + `critical-patterns.md` into context when the store has data; silent when empty; never blocks | ✅ |
-| `auto-test-on-change.sh` | PostToolUse (Edit/Write) | Run the matching test runner on a changed test file — pytest / vitest / jest / `npm test` / `go test`, detected per file; `AUTO_TEST_CMD` (+ `AUTO_TEST_PATTERN`) overrides for other ecosystems | ⬜ dormant |
 
 ## Gotchas
 
@@ -70,6 +70,7 @@ Hooks live in `hooks/` (top-level). Register them in `settings.json` under the a
 - Before changing `hooks/` or `scripts/`, run `bash scripts/run-tests.sh` — CI (`harness-ci`) runs the same suite on ubuntu + macos, including the doc-truth lint (fails on missing paths or a hook table that contradicts `settings.json`)
 - Stage and commit in **separate** Bash calls when untracked `.py` files exist — `hooks/check-untracked-py.sh` (PreToolUse) scans the whole command string before it runs, so `git add x.py && git commit ...` in one call still sees `x.py` as untracked and denies the commit. Run `git add`, then `git commit` in a second call (see `docs/solutions/harness/pretooluse-hook-denies-combined-git-add-commit.md`)
 - Re-sync (`scripts/install-harness.sh` / `scripts/deploy-harness.sh`) is conflict-guarded for protected files (e.g. `<path under rules/ or agents/>`, including any locally-generated per-repo files): a differing local copy is kept by default and the incoming version is written beside it as `<file>.harness-incoming` for review, instead of being silently overwritten. Pass `--overwrite-conflicts` to replace protected files with the incoming copy instead of keeping local
+- Consumer gate modes are **not** block-all: a consumer's `risk-corroboration.sh` resolves each gate's block/warn mode from only two index-safe sources — `git show :harness-manifest.json` if the consumer opts into tracking a root `harness-manifest.json`, otherwise the embedded defaults compiled into the hook (hand-mirrored from the manifest, CI-drift-guarded to **2 warn / 7 block** parity with this repo). A consumer with no tracked manifest falls back to that embedded parity, not deny-everything. The hook **never** reads `.claude/harness-manifest.json` or any worktree file — `.claude/` is gitignored in consumers, so an on-disk policy read would be agent-writable and un-index-checkable (the TOCTOU `docs/solutions/harness/gate-config-must-read-index.md` closed). Break-glass loosening: durable via the manifest `mode` field, session-scoped via `RISK_WARN_CATEGORIES` in the machine-local `settings.local.json` `env` block. Full rationale: `docs/solutions/harness/consumer-risk-modes-index-safe.md`
 
 <!-- code-review-graph MCP tools -->
 ## MCP Tools: code-review-graph

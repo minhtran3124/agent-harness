@@ -341,9 +341,15 @@ derive_settings() {
       | .hooks = (
           (($curh | keys) + ($newh | keys) | unique)
           | reduce .[] as $ev ({};
-              # foreign blocks for this event: drop harness commands, then drop now-empty blocks
+              # foreign blocks for this event: drop harness commands, then drop now-empty blocks.
+              # A harness command is either one in the CURRENT source set ($hcmds) OR any command
+              # under the derived harness hooks dir ($CLAUDE_PROJECT_DIR/.claude/hooks/) — that dir
+              # is entirely harness-owned, so a hook REMOVED from source is pruned too (no stale
+              # double-registration). Consumer foreign hooks live elsewhere and pass through.
               ( ($curh[$ev] // [])
-                | map(.hooks |= map(select(.command as $c | $hcmds | index($c) | not)))
+                | map(.hooks |= map(select(.command as $c
+                    | ($hcmds | index($c) | not)
+                      and ($c | startswith("$CLAUDE_PROJECT_DIR/.claude/hooks/") | not))))
                 | map(select((.hooks | length) > 0)) ) as $foreign
               | .[$ev] = ($foreign + ($newh[$ev] // []))
             )

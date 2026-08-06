@@ -31,9 +31,15 @@ hook. Loosening one gate = 4-file coordinated edit + CI.
 - Make `mode` load-bearing data in the manifest; hook reads it at runtime; drop the source-regex.
 ### Decision & Rationale
 Data. Removes the *reason* the deletion objection existed instead of fighting the checker.
-Fail-safe: slug absent / mode missing / manifest unreadable-or-absent ⇒ `block`. Consumer repos
-never get the manifest (deliberate — the 85% firing rate is a meta-repo artifact; consumers stay
-strict). Cost of a future loosening: one JSON field.
+Fail-safe (per-field, when a manifest IS resolved): slug absent / mode missing ⇒ `block`. Cost of a
+future loosening: one JSON field.
+
+> **Revised by B3 (2026-08-06, `hook-surface-slim`, see [[consumer-risk-modes-index-safe]]):** the
+> *absent-index-manifest* fallback is no longer block-all. `risk-corroboration.sh` now resolves modes
+> from the git index (`git show :harness-manifest.json`) else **embedded defaults**
+> (`hooks/lib/gate-modes.default.sh`, 2-warn/7-block parity, CI-drift-guarded). A consumer without a
+> tracked manifest gets that parity, not deny-everything — and the hook never reads `.claude/`/worktree
+> policy. The per-field fail-safe above still holds for a present-but-incomplete manifest.
 - Always: when a checker regex-parses source to validate config, invert it — config becomes the runtime input, regex dies.
 - Never: hand-mirror the same policy in code and data with a regex bridging them.
 ### Consequences

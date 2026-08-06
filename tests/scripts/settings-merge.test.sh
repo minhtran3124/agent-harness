@@ -67,4 +67,41 @@ t "a fresh valid harness settings.json is written after invalid backup"
 if jq -e '[.hooks[][].hooks[].command] | any(startswith("$CLAUDE_PROJECT_DIR/.claude/hooks/"))' "$T2/.claude/settings.json" >/dev/null 2>&1; then pass
 else fail "replacement settings.json is not valid / missing harness hooks"; fi
 
+# Source-removed harness hooks: a consumer's settings.json holding OLD harness hook
+# registrations (harness hooks that no longer exist in source — e.g. the four Bash sub-hooks
+# retired by the pre-bash-dispatch change) must be pruned on in-place re-deploy, NOT preserved
+# as "foreign". Any command under $CLAUDE_PROJECT_DIR/.claude/hooks/ is harness-owned; the
+# consumer's own foreign hooks (elsewhere) must survive.
+T3=$(mktemp -d); _CLEANUP_DIRS+=("$T3")
+mkdir -p "$T3/.claude"
+cat > "$T3/.claude/settings.json" <<'EOF'
+{
+  "hooks": {
+    "PreToolUse": [
+      { "matcher": "Bash", "hooks": [
+        { "type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/check-untracked-py.sh" },
+        { "type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/commit-quality-gate.sh" },
+        { "type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/risk-corroboration.sh" },
+        { "type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/branch-guard.sh" },
+        { "type": "command", "command": "$CLAUDE_PROJECT_DIR/scripts/my-own-hook.sh" }
+      ] }
+    ]
+  }
+}
+EOF
+bash "$DEPLOY" --target "$T3" >/dev/null 2>&1
+S3="$T3/.claude/settings.json"
+
+t "in-place re-deploy prunes source-removed harness hooks (no double-registration)"
+n=$(jq '[.hooks[][].hooks[] | select((.command//"")|test("/hooks/(check-untracked-py|commit-quality-gate|risk-corroboration|branch-guard)\\.sh$"))] | length' "$S3")
+if [ "$n" = "0" ]; then pass; else fail "old harness hooks still registered: count=$n, want 0"; fi
+
+t "in-place re-deploy registers the current dispatcher exactly once"
+n=$(jq '[.hooks[][].hooks[] | select((.command//"")|test("/hooks/pre-bash-dispatch\\.sh$"))] | length' "$S3")
+if [ "$n" = "1" ]; then pass; else fail "pre-bash-dispatch.sh count=$n, want 1"; fi
+
+t "in-place re-deploy keeps the consumer's own foreign hook"
+n=$(jq '[.hooks[][].hooks[] | select((.command//"")=="$CLAUDE_PROJECT_DIR/scripts/my-own-hook.sh")] | length' "$S3")
+if [ "$n" = "1" ]; then pass; else fail "foreign my-own-hook.sh count=$n, want 1"; fi
+
 finish
