@@ -112,12 +112,12 @@ stage "$repo" "specs/x/SUMMARY.md" "Lane: tiny"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc 0
 
-t "workflow-engine: skills/x/SKILL.md + Lane: normal → BLOCKED (names workflow-engine)"
+t "workflow-engine: skills/x/SKILL.md + Lane: normal → warn via defaults (names workflow-engine)"
 repo=$(new_repo $H)
 stage "$repo" "skills/x/SKILL.md" '# Skill x'
 stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
 run_hook "$repo" $H "$COMMIT_JSON"
-assert_rc_contains 2 "workflow-engine"
+assert_rc_contains 0 "workflow-engine"
 
 t "workflow-engine: prose docs/notes.md → silent pass (not an engine surface)"
 repo=$(new_repo $H)
@@ -134,12 +134,12 @@ stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc 0
 
-t "workflow-engine: agents/coding.md + Lane: normal → BLOCKED (real agent prompt is an engine surface)"
+t "workflow-engine: agents/coding.md + Lane: normal → warn via defaults (real agent prompt is an engine surface)"
 repo=$(new_repo $H)
 stage "$repo" "agents/coding.md" '# Coding agent'
 stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
 run_hook "$repo" $H "$COMMIT_JSON"
-assert_rc_contains 2 "workflow-engine"
+assert_rc_contains 0 "workflow-engine"
 
 t "workflow-engine: agents/README.md → silent pass (inventory prose, mirrors skills/README.md)"
 repo=$(new_repo $H)
@@ -155,12 +155,20 @@ stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc 0
 
-t "workflow-engine: NESTED dispatch prompt skills/x/subagents/y-prompt.md + Lane: normal → BLOCKED"
+t "workflow-engine: NESTED dispatch prompt skills/x/subagents/y-prompt.md + Lane: normal → warn via defaults"
 repo=$(new_repo $H)
 stage "$repo" "skills/x/subagents/analyzer-prompt.md" '# Analyzer dispatch prompt'
 stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
 run_hook "$repo" $H "$COMMIT_JSON"
-assert_rc_contains 2 "workflow-engine"
+assert_rc_contains 0 "workflow-engine"
+
+t "workflow-engine mode=block in staged manifest still blocks skills/ + Lane normal"
+repo=$(new_repo $H)
+stage "$repo" "harness-manifest.json" '{"hard_gates":{"detectable":[{"slug":"workflow-engine","mode":"block"}]}}'
+stage "$repo" "skills/x/SKILL.md" '# Skill x'
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "BLOCKED"
 
 # ── Manifest-driven gate modes (harness-manifest.json is the authority) ──
 # The hook reads the manifest from the INDEX (git show :harness-manifest.json),
@@ -193,7 +201,7 @@ stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_contains 2 "BLOCKED"
 
-t "manifest absent from index (consumer repo) → fallback block (exit 2)"
+t "manifest absent from index (consumer repo) → defaults still block data-loss (exit 2)"
 repo=$(new_repo $H)
 stage "$repo" "alembic/versions/abc_add_table.py" "def upgrade(): pass"
 stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"

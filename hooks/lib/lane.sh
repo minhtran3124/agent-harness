@@ -22,12 +22,16 @@
 #   hook_lib_intake_in_progress "$REPO_DIR" && echo "intake already ran / is in flight"
 
 # hook_lib_find_active_plan <repo_dir>
-# Echoes the path to the specs/*/PLAN.md carrying `status: active` (most-recently
-# modified first when more than one somehow qualifies) and exits 0. Exits 1 with no
-# output when none exists — there is deliberately no other fallback.
+# Echoes the path to a specs/*/PLAN.md carrying `status: active` and exits 0.
+# Short-circuits on the first match (A2e) — does not sort the whole specs tree by
+# mtime. When more than one plan is active (should be rare), the first path-expand
+# match wins. Exits 1 with no output when none exists — deliberately no mtime fallback.
 hook_lib_find_active_plan() {
   local repo_dir="$1" p
-  for p in $(ls -t "$repo_dir"/specs/*/PLAN.md 2>/dev/null); do
+  # Unsorted glob + stop at first hit: common case is zero active plans across many
+  # shipped specs; avoid `ls -t` sorting the entire tree on every Edit/Write.
+  for p in "$repo_dir"/specs/*/PLAN.md; do
+    [ -f "$p" ] || continue
     if grep -qiE '^status:[[:space:]]*active' "$p" 2>/dev/null; then
       echo "$p"
       return 0

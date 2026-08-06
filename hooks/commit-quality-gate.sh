@@ -137,6 +137,15 @@ if [ -n "$EV_SLUGS" ]; then
 fi
 
 # ─────────────────────────────────────────────
+# Checks 2 / 2.5 / 3 only apply to app-layout repos (root `app/` directory).
+# Meta/harness and non-app consumers skip — secrets/escalations/lane evidence above still run.
+# ─────────────────────────────────────────────
+if [ ! -d app ]; then
+  echo "[COMMIT GATE] No app/ directory — skipping app debug/verify/test checks." >&2
+  exit 0
+fi
+
+# ─────────────────────────────────────────────
 # Check 2: Debug artifacts in app/ code
 # ─────────────────────────────────────────────
 echo "[COMMIT GATE] Debug artifacts..." >&2

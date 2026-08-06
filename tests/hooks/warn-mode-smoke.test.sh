@@ -42,4 +42,42 @@ stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_contains 2 "BLOCKED"
 
+t "no root manifest: .claude/harness-manifest.json restores warn for weakening-validation"
+repo=$(new_repo $H)
+mkdir -p "$repo/.claude"
+cp "$ROOT/harness-manifest.json" "$repo/.claude/"
+stage "$repo" "app/svc.py" 'def f(x):
+    if not x:
+        raise ValueError("x")
+    return x'
+git -C "$repo" commit -qm base
+printf '%s\n' 'def f(x):' '    return x' > "$repo/app/svc.py"
+git -C "$repo" add app/svc.py
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 0 "warn-mode"
+
+t "no manifest anywhere: generated defaults still warn on weakening-validation"
+repo=$(new_repo $H)
+# lib/gate-modes-default.sh is copied by new_repo via hooks/lib
+stage "$repo" "app/svc.py" 'def f(x):
+    if not x:
+        raise ValueError("x")
+    return x'
+git -C "$repo" commit -qm base
+printf '%s\n' 'def f(x):' '    return x' > "$repo/app/svc.py"
+git -C "$repo" add app/svc.py
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 0 "warn-mode"
+
+t "defaults: auth keyword + Lane normal still blocks"
+repo=$(new_repo $H)
+stage "$repo" "app/auth.py" 'def login():
+    password = "x"
+    return password'
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "BLOCKED"
+
 finish

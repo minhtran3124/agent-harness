@@ -93,19 +93,19 @@
     "external_provider_vs_rule3": "A dependency-manifest edit (requirements*.txt / package.json / pyproject.toml / go.mod / Gemfile) trips external-provider, but auto-correct-scope Rule 3 authorizes auto-adding a dependency. Resolution: a pure dependency bump runs in the high-risk lane OR is recorded as a Rule-3 deviation in SUMMARY. The gate stays broad by design — over-flagging a dependency change is safer than missing a new SDK integration."
   },
 
-  "hooks": [
-    { "name": "check-untracked-py.sh",     "wired": true },
-    { "name": "commit-quality-gate.sh",    "wired": true },
-    { "name": "risk-corroboration.sh",     "wired": true },
-    { "name": "branch-guard.sh",           "wired": true },
+    "hooks": [
+    { "name": "pre-bash-dispatch.sh",      "wired": true },
+    { "name": "check-untracked-py.sh",     "wired": false },
+    { "name": "commit-quality-gate.sh",    "wired": false },
+    { "name": "risk-corroboration.sh",     "wired": false },
+    { "name": "branch-guard.sh",           "wired": false },
     { "name": "branch-isolation-guard.sh", "wired": true },
     { "name": "ruff-on-edit.sh",           "wired": true },
     { "name": "blast-radius-check.sh",     "wired": true },
     { "name": "render-plan-on-write.sh",   "wired": true },
     { "name": "scope-gate.sh",             "wired": true },
     { "name": "state-breadcrumb.sh",       "wired": true },
-    { "name": "session-knowledge.sh",      "wired": true },
-    { "name": "auto-test-on-change.sh",    "wired": false }
+    { "name": "session-knowledge.sh",      "wired": true }
   ],
 
   "skills": [

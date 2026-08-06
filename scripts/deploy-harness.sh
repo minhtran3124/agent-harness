@@ -341,9 +341,15 @@ derive_settings() {
       | .hooks = (
           (($curh | keys) + ($newh | keys) | unique)
           | reduce .[] as $ev ({};
-              # foreign blocks for this event: drop harness commands, then drop now-empty blocks
+              # foreign blocks for this event: drop current harness commands AND any
+              # prior harness hook under .claude/hooks/ that is no longer registered
+              # (e.g. four Bash gates collapsed into pre-bash-dispatch.sh). Keep only
+              # true consumer commands outside the harness hooks namespace.
               ( ($curh[$ev] // [])
-                | map(.hooks |= map(select(.command as $c | $hcmds | index($c) | not)))
+                | map(.hooks |= map(select(.command as $c |
+                    ($hcmds | index($c) | not)
+                    and ($c | startswith("$CLAUDE_PROJECT_DIR/.claude/hooks/") | not)
+                  )))
                 | map(select((.hooks | length) > 0)) ) as $foreign
               | .[$ev] = ($foreign + ($newh[$ev] // []))
             )
@@ -386,6 +392,13 @@ for d in skills agents hooks rules templates runtime; do
 done
 step "Stripping archived skills"             strip_archive
 step "Deriving ${B}settings.json${R} ${D}(hook paths)${R}" derive_settings
+
+# Consumer risk modes: copy harness-manifest.json into .claude/ so risk-corroboration
+# can resolve warn/block parity without a root tracked manifest (specs/hook-surface-slim B-hybrid).
+if [ -f harness-manifest.json ]; then
+  cp harness-manifest.json "$OUT/harness-manifest.json"
+  printf "  ${D}·${R} risk modes → ${B}.claude/harness-manifest.json${R}\n"
+fi
 
 # ---------- prune orphans (entries the harness shipped last time, gone from source now) ----------
 # Eligible = in the PREVIOUS manifest AND not deployed this run. Shape-guarded to the 5 synced

@@ -12,11 +12,11 @@ repo=$(new_repo $H)
 run_hook "$repo" $H "$(json_cmd 'git push')"
 assert_silent_ok
 
-t "clean staged docs pass (no app/ files → skip tests)"
+t "clean staged docs pass (no app/ dir → skip app checks)"
 repo=$(new_repo $H)
 stage "$repo" "README.md" "hello"
 run_hook "$repo" $H "$COMMIT_JSON"
-assert_rc_contains 0 "No app/ Python files staged"
+assert_rc_contains 0 "No app/ directory"
 
 t "hardcoded api_key in staged code → BLOCKED"
 repo=$(new_repo $H)

@@ -47,18 +47,18 @@ Hooks live in `hooks/` (top-level). Register them in `settings.json` under the a
 
 | Hook | Trigger | Action | Wired |
 |---|---|---|---|
-| `check-untracked-py.sh` | PreToolUse (Bash `git *`) | Block commit/push if untracked `.py` files exist | ✅ |
-| `commit-quality-gate.sh` | PreToolUse (Bash `git commit`) | Secrets scan + pending-escalation gate + lane-evidence gate (`verify_summary.py --lane` on each staged `SUMMARY.md`) + debug artifact check + targeted pytest | ✅ |
-| `risk-corroboration.sh` | PreToolUse (Bash `git commit`) | Corroborate the declared `Lane:` against the staged diff; per-gate mode comes from `harness-manifest.json` (`hard_gates.detectable[].mode`) — block-mode gates deny a below-`high-risk` lane, warn-mode gates (`workflow-engine`, `weakening-validation`) print a note and allow | ✅ |
-| `branch-guard.sh` | PreToolUse (Bash `git commit`) | Warn when committing on `main` | ✅ |
-| `branch-isolation-guard.sh` | PreToolUse (Edit/Write) | Hard-block code edits on a shared branch (`HARNESS_SHARED_BRANCHES`, default `main`/`master`) regardless of plan state, unless break-glass `BRANCH_ISOLATION_REASON` is set. `specs/*` bookkeeping is exempt (intake writes `SUMMARY.md` before the branch exists). (Write-time enforcement; `branch-guard.sh` only warns at commit time.) | ✅ |
+| `pre-bash-dispatch.sh` | PreToolUse (Bash) | Single entrypoint for git commit/push gates — dispatches untracked-py → commit-quality → risk-corroboration → branch-guard | ✅ |
+| `check-untracked-py.sh` | (via dispatch) | Block commit/push if untracked `.py` files exist | ⬜ child |
+| `commit-quality-gate.sh` | (via dispatch) | Secrets scan + pending-escalation gate + lane-evidence gate + app/ debug/pytest when `app/` exists | ⬜ child |
+| `risk-corroboration.sh` | (via dispatch) | Corroborate declared `Lane:` against staged diff; modes from manifest / `.claude` copy / defaults | ⬜ child |
+| `branch-guard.sh` | (via dispatch) | Warn when committing on `main` | ⬜ child |
+| `branch-isolation-guard.sh` | PreToolUse (Edit/Write) | Hard-block code edits on a shared branch (`HARNESS_SHARED_BRANCHES`, default `main`/`master`) regardless of plan state, unless break-glass `BRANCH_ISOLATION_REASON` is set. `specs/*` bookkeeping is exempt | ✅ |
 | `ruff-on-edit.sh` | PostToolUse (Edit/Write) | `ruff --fix` + `ruff format` on edited `.py` files | ✅ |
 | `blast-radius-check.sh` | PostToolUse (Edit/Write) | Warn when an edit touches a file outside the active plan `<files>` set | ✅ |
 | `render-plan-on-write.sh` | PostToolUse (Edit/Write on `specs/*/PLAN.md`) | Auto-re-render `PLAN.html` via `render_plan.py` (deterministic, non-blocking) | ✅ |
 | `scope-gate.sh` | UserPromptSubmit | Warn on implementation intent with no plan referenced (lane-aware) | ✅ |
 | `state-breadcrumb.sh` | SessionEnd | Append a dated session breadcrumb to `specs/STATE.md` (`## Session End Log`) for cross-session resumption; never blocks | ✅ |
 | `session-knowledge.sh` | SessionStart | Load `docs/solutions/INDEX.md` + `critical-patterns.md` into context when the store has data; silent when empty; never blocks | ✅ |
-| `auto-test-on-change.sh` | PostToolUse (Edit/Write) | Run the matching test runner on a changed test file — pytest / vitest / jest / `npm test` / `go test`, detected per file; `AUTO_TEST_CMD` (+ `AUTO_TEST_PATTERN`) overrides for other ecosystems | ⬜ dormant |
 
 ## Gotchas
 

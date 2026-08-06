@@ -22,7 +22,7 @@
 #     Set RISK_CORROBORATION_STRICT=1 to make the no-Lane case fail-closed.
 #   - Per-category mode (block|warn) is read from harness-manifest.json at runtime.
 #     Unknown slug / missing mode / missing or invalid manifest => block (fail-safe).
-#     Consumer repos have no manifest at their root, so every category blocks there.
+#     Consumer modes: index root manifest, else worktree root, else .claude/harness-manifest.json (deploy), else hooks/lib/gate-modes-default.sh (parity with upstream warn/block).
 #     (Assumes `jq`, which stdin parsing already requires — without jq this hook
 #     never gates anything at all; that is pre-existing behavior, not mode fallback.)
 #
@@ -61,12 +61,38 @@ cd "$REPO_DIR" || exit 0
 # var exported in the session. An inline `VAR=x git commit` prefix does NOT work:
 # a PreToolUse hook runs before the command, so the prefix never reaches it.
 # Loosen one at a time; never auth/external-provider first; revert on any incident.
-# Read the manifest from the INDEX (`git show :path`), not the worktree — the risk
-# signals and the Lane are both index-side, so the mode must be too. Otherwise an
-# UNSTAGED "mode": "warn" edit would loosen a gate for a commit whose tree still
-# ships block-mode (Codex review, PR #160). Index copy absent/invalid => "" => block.
-GATE_MODES=$(git show :harness-manifest.json 2>/dev/null | jq -r \
-  '.hard_gates.detectable[]? | "\(.slug)=\(.mode // "block")"' 2>/dev/null || true)
+# Mode resolution (B-hybrid — specs/hook-surface-slim):
+#   1. INDEX root harness-manifest.json (meta-repo / consumer-tracked) — index-side
+#      so an unstaged worktree mode edit cannot loosen a commit (PR #160).
+#   2. Else worktree root harness-manifest.json (untracked local).
+#   3. Else .claude/harness-manifest.json (deployed derived copy for consumers).
+#   4. Else hooks/lib/gate-modes-default.sh generated defaults (parity with upstream).
+# Missing everything still fail-safe blocks unknown slugs via category_mode().
+_load_gate_modes() {
+  local raw=""
+  raw=$(git show :harness-manifest.json 2>/dev/null | jq -r \
+    '.hard_gates.detectable[]? | "\(.slug)=\(.mode // "block")"' 2>/dev/null || true)
+  if [ -n "$raw" ]; then printf '%s\n' "$raw"; return 0; fi
+  if [ -f harness-manifest.json ]; then
+    raw=$(jq -r '.hard_gates.detectable[]? | "\(.slug)=\(.mode // "block")"' \
+      harness-manifest.json 2>/dev/null || true)
+    if [ -n "$raw" ]; then printf '%s\n' "$raw"; return 0; fi
+  fi
+  if [ -f .claude/harness-manifest.json ]; then
+    raw=$(jq -r '.hard_gates.detectable[]? | "\(.slug)=\(.mode // "block")"' \
+      .claude/harness-manifest.json 2>/dev/null || true)
+    if [ -n "$raw" ]; then printf '%s\n' "$raw"; return 0; fi
+  fi
+  # Defaults shipped next to this hook (source or deployed .claude/hooks/lib/).
+  # shellcheck source=/dev/null
+  source "$SCRIPT_DIR/lib/gate-modes-default.sh" 2>/dev/null || true
+  if command -v hook_lib_default_gate_modes >/dev/null 2>&1; then
+    hook_lib_default_gate_modes
+    return 0
+  fi
+  return 1
+}
+GATE_MODES=$(_load_gate_modes || true)
 
 category_mode() {
   local _wl

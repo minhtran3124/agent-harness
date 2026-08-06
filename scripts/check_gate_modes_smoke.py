@@ -57,6 +57,23 @@ def check(root: Path) -> int:
             print(p, file=sys.stderr)
         return 1
     blockers = len(modes) - len(warn)
+    # Defaults file must match manifest (B-hybrid consumer fallback).
+    gen = root / "scripts" / "generate_gate_modes_default.py"
+    if gen.is_file():
+        import subprocess
+
+        r = subprocess.run(
+            [sys.executable, str(gen), "--check"],
+            cwd=root,
+            capture_output=True,
+            text=True,
+        )
+        if r.returncode != 0:
+            problems.append((r.stderr or r.stdout or "gate-modes-default drift").strip())
+    if problems:
+        for p in problems:
+            print(p, file=sys.stderr)
+        return 1
     print(f"gate-modes: OK — {sorted(warn)} warn, {blockers} gates block")
     return 0
 
