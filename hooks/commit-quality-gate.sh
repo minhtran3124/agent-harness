@@ -137,6 +137,18 @@ if [ -n "$EV_SLUGS" ]; then
 fi
 
 # ─────────────────────────────────────────────
+# App gates (Checks 2, 2.5, 3) — opt-in via REQUIRE_APP_GATES=1
+# ─────────────────────────────────────────────
+# The harness core ships no app/ code; the debug-artifact scan, ### Verify
+# evidence gate, and targeted-pytest run all target app/**/*.py. They stay OFF
+# by default and are enabled per-repo by exporting REQUIRE_APP_GATES=1. Checks
+# 1/1.5/1.6 above run unconditionally regardless of this flag.
+if [ "${REQUIRE_APP_GATES:-}" != "1" ]; then
+  echo "[COMMIT GATE] App checks (debug artifacts / evidence / targeted tests) skipped: set REQUIRE_APP_GATES=1 to enable." >&2
+  exit 0
+fi
+
+# ─────────────────────────────────────────────
 # Check 2: Debug artifacts in app/ code
 # ─────────────────────────────────────────────
 echo "[COMMIT GATE] Debug artifacts..." >&2
