@@ -1,6 +1,6 @@
 ---
 slug: hook-surface-slim
-status: shipped
+status: active
 owner: minhtran3124
 created: 2026-08-06
 ---
@@ -10,7 +10,7 @@ created: 2026-08-06
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**6 tasks · 3 waves · 17 files · 6/6 done**
+**7 tasks · 4 waves · 19 files · 6/7 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -20,6 +20,7 @@ created: 2026-08-06
 | 2 | 2.1 | A3 delete dormant auto-test + reconcile inventory & docs (wave 2) | hooks/auto-test-on-change.sh, tests/hooks/auto-test-on-change.test.sh, harness-manifest.json, CLAUDE.md | auto-test hook + test gone; manifest, settings, and CLAUDE.md consistent; both c… |
 | 3 | 3.1 | B3 embedded gate-mode defaults + index-safe resolve (wave 3) | hooks/lib/gate-modes.default.sh, hooks/risk-corroboration.sh, scripts/check_gate_modes_smoke.py, tests/hooks/warn-mode-smoke.test.sh, tests/hooks/risk-corroboration.test.sh | both tests pass including the bypass guard; `check_gate_modes_smoke.py` passes; … |
 | 3 | 3.2 | B3 consumer docs + compound learning (wave 3) | CLAUDE.md, docs/solutions/harness/consumer-risk-modes-index-safe.md | doc-truth passes; consumer note + solution entry present. |
+| 4 | 4.1 | Prune source-removed harness hooks on settings merge (wave 4) | scripts/deploy-harness.sh, tests/scripts/settings-merge.test.sh | in-place upgrade prunes source-removed harness hooks; no double-registration; fo… |
 
 ```mermaid
 flowchart LR
@@ -35,8 +36,12 @@ flowchart LR
     T3_1["3.1 B3 embedded gate-mode defaults + index-safe resolve (wave 3)"]
     T3_2["3.2 B3 consumer docs + compound learning (wave 3)"]
   end
+  subgraph W3[Wave 4]
+    T4_1["4.1 Prune source-removed harness hooks on settings merge (wave 4)"]
+  end
   W0 --> W1
   W1 --> W2
+  W2 --> W3
 ```
 
 ### Progress
@@ -46,6 +51,7 @@ flowchart LR
 - [x] 2.1 — A3 delete dormant auto-test + reconcile inventory & docs (wave 2)
 - [x] 3.1 — B3 embedded gate-mode defaults + index-safe resolve (wave 3)
 - [x] 3.2 — B3 consumer docs + compound learning (wave 3)
+- [ ] 4.1 — Prune source-removed harness hooks on settings merge (wave 4)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -109,6 +115,7 @@ Two design contracts are **invariants** (see `design-ab.md` §2.2 and §3.3):
 | SC-8 | A worktree `.claude/harness-manifest.json` set all-warn does NOT loosen the auth gate (index/embedded only) | `bash tests/hooks/risk-corroboration.test.sh` | exit 0 |
 | SC-9 | `hooks/lib/gate-modes.default.sh` mode-set matches `harness-manifest.json` detectable (drift fails) | `python3 scripts/check_gate_modes_smoke.py` | exit 0 |
 | SC-10 | `harness-manifest.json` ↔ `settings.json` ↔ CLAUDE.md hook table stay consistent | `python3 scripts/check_manifest.py` | exit 0 |
+| SC-11 | An in-place re-deploy over a consumer settings.json holding old harness hook registrations prunes the source-removed ones (no double-registration); the consumer's own foreign hooks survive | `bash tests/scripts/settings-merge.test.sh` | exit 0 |
 
 ## 4. Tasks
 
@@ -214,6 +221,26 @@ Two design contracts are **invariants** (see `design-ab.md` §2.2 and §3.3):
 - **Done:** doc-truth passes; consumer note + solution entry present.
 - **Criteria:** SC-10
 - **Interfaces:** Consumes the Task 3.1 runtime behavior. Produces `docs/solutions/harness/consumer-risk-modes-index-safe.md` and an updated `CLAUDE.md` consumer note.
+
+### Task 4.1 — Prune source-removed harness hooks on settings merge (wave 4)
+
+- **Files:** scripts/deploy-harness.sh, tests/scripts/settings-merge.test.sh
+- **Action:** Fix `derive_settings` so an **in-place re-deploy** does not leave stale harness hook
+  registrations in a consumer's `.claude/settings.json`. Today the per-event merge drops only
+  commands present in the **current** source set (`$hcmds`), so a harness hook removed from source
+  (e.g. the four Bash sub-hooks after A1-thin) is misclassified as "foreign" and preserved →
+  double-registration alongside the dispatcher. Since `.claude/hooks/` is entirely harness-owned
+  (consumer hooks live elsewhere; `prune_orphans` already treats that dir as harness-managed), change
+  the drop predicate to also remove any existing hook whose command starts with the derived harness
+  hooks prefix `$CLAUDE_PROJECT_DIR/.claude/hooks/`, then re-add the current harness set fresh. Foreign
+  hooks (absolute paths / other dirs) must still pass through untouched. Test-first: seed an existing
+  consumer `settings.json` with the four OLD Bash hook registrations **plus** one foreign hook, run the
+  derive/merge, assert the four old harness registrations are gone, the dispatcher is present exactly
+  once, and the foreign hook survives.
+- **Verify:** `bash tests/scripts/settings-merge.test.sh`
+- **Done:** in-place upgrade prunes source-removed harness hooks; no double-registration; foreign hooks preserved.
+- **Criteria:** SC-11
+- **Interfaces:** Consumes the source settings.json and an existing consumer .claude/settings.json. Produces a prune-on-merge `derive_settings` in `scripts/deploy-harness.sh`.
 
 ## 5. Risks
 
