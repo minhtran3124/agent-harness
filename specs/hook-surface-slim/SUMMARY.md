@@ -55,7 +55,6 @@ Cut always-on Bash multi-spawn tax and give consumers the same risk warn/block m
 | deploy modes artifact | `bash tests/scripts/deploy-manifest-modes.test.sh` | 0 | 1 passed | SC-7 |
 | doc-truth | `bash scripts/lint-doc-truth.sh` | 0 | hook table matches settings | SC-8 |
 | gate-modes pin | `python3 scripts/check_gate_modes_smoke.py` | 0 | defaults ↔ manifest | SC-6 |
-| full suite | `bash scripts/run-tests.sh` | 0 | ALL GREEN (supporting; not SC row) | |
 
 ### Rollback
 

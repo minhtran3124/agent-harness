@@ -1,0 +1,26 @@
+{
+  "reviewed_head_sha": "2ff87079d5d19409ea84559203a5c2e3acb50350",
+  "reviews": [
+    {
+      "type": "correctness",
+      "result": "pass",
+      "blocking_open": 0,
+      "method": "controller-adversarial-pass",
+      "evidence": "Adversarial review of 2ff8707: (1) pre-bash-dispatch stop-on-deny and exit-2 propagation verified by pre-bash-dispatch.test.sh (6); (2) risk mode chain index→root→.claude→defaults; defaults pin via check_gate_modes_smoke+generate --check; auth still blocks without root manifest (warn-mode-smoke); (3) deploy merge strips retired .claude/hooks/* commands — settings-wiring green after re-sync; (4) app/ skip does not bypass secrets/escalations/lane evidence; (5) active-plan short-circuit preserves blast-radius suite (12). Full run-tests.sh ALL GREEN (299 pytest). No Critical/Important open."
+    },
+    {
+      "type": "intent",
+      "result": "pass",
+      "blocking_open": 0,
+      "method": "controller-adversarial-pass",
+      "evidence": "Blind to excess vs approved design defaults (A1-thin, A2e, A3-delete, A4-detect app/, B-hybrid, A→B). Diff implements all five; no A1-lib, no A2a marker, no B1 root pollution, no Package E. Consumer unstuck path present (deploy .claude manifest + defaults). Intent oracle (user: reduce hook burden + stuck in other repos; approve default recommend) covered. No blocking drift."
+    },
+    {
+      "type": "context-propagation-audit",
+      "result": "pass",
+      "blocking_open": 0,
+      "method": "controller-adversarial-pass",
+      "evidence": "Workflow-engine touch: CLAUDE.md hook table + settings.json + harness-manifest hooks inventory kept in lockstep (lint-doc-truth + check_manifest exit 0). risk-corroboration mode authority still harness-manifest; consumers get copy via deploy + defaults file next to hook lib. check_gate_modes_smoke pins default↔manifest. No assumed delivery of mode policy without a runtime read path."
+    }
+  ]
+}
