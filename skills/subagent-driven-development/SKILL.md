@@ -1,6 +1,6 @@
 ---
 name: subagent-driven-development
-description: Use to execute an approved multi-task PLAN.md in waves, including a separate-session resume. Runs isolated implementers, file handoffs, one read-only task reviewer with separate spec/quality verdicts, final delivery/correctness/intent gates, and a review receipt before shipping.
+description: Use to execute an approved multi-task PLAN.md: waves of isolated implementer subagents with per-task review, separate-session resume, and final delivery/correctness/intent gates before shipping.
 ---
 
 # Subagent-Driven Development

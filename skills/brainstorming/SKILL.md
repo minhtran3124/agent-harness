@@ -1,6 +1,6 @@
 ---
 name: brainstorming
-description: "Use when feature-intake routes a high-risk or ambiguous feature/design fork here. Clarify intent, compare viable approaches, obtain approval, and write specs/<slug>/design.md before research or implementation."
+description: "Use to turn an unclear or high-risk feature/design idea into an approved specs/<slug>/design.md: clarify intent, compare viable approaches, and obtain approval before research or implementation. Typically entered via feature-intake routing."
 ---
 
 # Brainstorming Ideas Into Designs
