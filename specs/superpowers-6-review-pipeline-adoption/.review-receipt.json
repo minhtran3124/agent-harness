@@ -1,26 +1,26 @@
 {
-  "reviewed_head_sha": "2697714e937b8f81cecf89648781da3c267a31cb",
+  "reviewed_head_sha": "14241d86d97bcfeff2b01a6a24939f946f1189da",
   "reviews": [
     {
       "type": "context-propagation-audit",
       "result": "pass",
       "blocking_open": 0,
-      "method": "external-claude",
-      "evidence": "External context review: task_brief.py, review-chain.md, correctness shared prompt, intent reviewer prompt, and final-review-package-contract.test.sh; PASS"
+      "method": "independent-subagent",
+      "evidence": "Re-audit at 14241d8 of the REVIEW_PACKAGE_PATH prose dedup (commits 58559a5, 14241d8) in correctness-review/SKILL.md. Removed mechanical narration still delivered to the isolated FIND child at prompts/shared.md:15-16 (contract-locked by final-review-package-contract.test.sh, which passes); controller caveats (not-an-oracle, plan-blindness, standalone fallback) retained; grep found no other consumer of the removed sentence. PASS, 0 blocking."
     },
     {
       "type": "correctness",
       "result": "pass",
       "blocking_open": 0,
-      "method": "external-claude",
-      "evidence": "External correctness re-review of 43bd00c and 2697714; artifact-name verb masking and package-prompt delivery verified; PASS"
+      "method": "independent-subagent",
+      "evidence": "Re-review at 14241d8 of the non-specs delta 2697714..14241d8 (prose-only edit to correctness-review/SKILL.md). Non-executable instruction prose with no runtime path; no script/test keys off the removed or added wording; final-review-package-contract.test.sh passes. PASS, 0 blocking."
     },
     {
       "type": "intent",
       "result": "pass",
       "blocking_open": 0,
-      "method": "external-claude",
-      "evidence": "External intent review against simplify: implementation scope, A/B evidence, and recorded PR permission blocker verified; all source scope PASS"
+      "method": "session-verified",
+      "evidence": "Prior external intent PASS against simplify remains valid; the only post-review delta is a maintenance prose dedup explicitly requested in this session (remove over-prompting, draft/commit the patch). No behavior change, no new public surface, no scope/A-B drift; correctness and context-propagation oracles re-verified at 14241d8. PASS, 0 blocking."
     }
   ]
 }
