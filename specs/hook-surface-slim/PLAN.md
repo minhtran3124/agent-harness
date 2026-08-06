@@ -10,7 +10,7 @@ created: 2026-08-06
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**6 tasks · 3 waves · 17 files · 0/6 done**
+**6 tasks · 3 waves · 17 files · 4/6 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -40,10 +40,10 @@ flowchart LR
 ```
 
 ### Progress
-- [ ] 1.1 — A1-thin Bash PreToolUse dispatcher (wave 1)
-- [ ] 1.2 — A2e blast-radius active-plan fast-path (wave 1)
-- [ ] 1.3 — A4 app-gate opt-in (wave 1)
-- [ ] 2.1 — A3 delete dormant auto-test + reconcile inventory & docs (wave 2)
+- [x] 1.1 — A1-thin Bash PreToolUse dispatcher (wave 1)
+- [x] 1.2 — A2e blast-radius active-plan fast-path (wave 1)
+- [x] 1.3 — A4 app-gate opt-in (wave 1)
+- [x] 2.1 — A3 delete dormant auto-test + reconcile inventory & docs (wave 2)
 - [ ] 3.1 — B3 embedded gate-mode defaults + index-safe resolve (wave 3)
 - [ ] 3.2 — B3 consumer docs + compound learning (wave 3)
 <!-- AT-A-GLANCE:END -->
@@ -234,3 +234,5 @@ Two design contracts are **invariants** (see `design-ab.md` §2.2 and §3.3):
 ## 6. Status Log
 
 - 2026-08-06 — Plan drafted from the corrected `design-ab.md` (B3-only + A4-opt-in + relay-stdout contract). Replaced an earlier active PLAN.md that used the rejected B-hybrid/`.claude` + A4-detect design. Status: proposed.
+- 2026-08-06 — Execution started on isolated branch `feat/hook-surface-slim-b3` (base 30dc501). Status: active.
+- 2026-08-06 — tasks 1.1, 1.2, 1.3 complete; commits d93c085, 4c0228c, 7bc23b5. All Verify green (SC-1/2/3/4/6 exit 0); task reviews spec=pass, quality=approved. Minor (non-blocking, rolled up to final review): 1.1 test under-guards stdout-vs-stderr on the deny channel; 1.3 CLAUDE.md hook-table Action prose still says app checks are unconditional (fixed by task 2.1). ✓
