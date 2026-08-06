@@ -9,10 +9,18 @@ import statistics
 import sys
 from pathlib import Path
 
-# A negated mention ("no minor findings", "0 minor") must not be credited as a
-# Minor finding — otherwise a reviewer that reports *no* Minor issue still
-# satisfies the minor-only fixture on the bare substring.
-_NEG_MINOR = re.compile(r"\b(no|zero|0|without|not any|no new)\s+minor\b")
+# Credit a Minor finding only for a whole-word `minor` (never "minority") that is
+# not immediately negated ("no minor", "0 minor"). Scanning per occurrence means a
+# co-occurring "no minor ..." elsewhere cannot suppress a genuine Minor finding.
+_MINOR = re.compile(r"\bminor\b")
+_NEG_BEFORE_MINOR = re.compile(r"\b(no|zero|0|without|not any|no new)\s+$")
+
+
+def _has_minor(text: str) -> bool:
+    return any(
+        not _NEG_BEFORE_MINOR.search(text[max(0, m.start() - 10):m.start()])
+        for m in _MINOR.finditer(text)
+    )
 
 
 def labels(outputs: list[str]) -> set[str]:
@@ -21,7 +29,7 @@ def labels(outputs: list[str]) -> set[str]:
     if "cannot_verify" in text or "cannot verify" in text: found.add("cannot_verify")
     if "spec_verdict: fail" in text or "spec: fail" in text: found.add("spec_fail")
     if "quality_verdict: needs_fixes" in text or "needs_fixes" in text or "needs fixes" in text: found.add("quality_fix")
-    if "minor" in text and not _NEG_MINOR.search(text): found.add("minor")
+    if _has_minor(text): found.add("minor")
     if "plan-mandated" in text or "criterion" in text or "secret" in text: found.add("plan_mandated")
     if "spec_verdict: pass" in text or "spec: pass" in text: found.add("spec_pass")
     return found
@@ -30,7 +38,7 @@ def labels(outputs: list[str]) -> set[str]:
 def record_tokens(record: dict) -> int:
     """Input+output reviewer tokens for one case, summed across its dispatches."""
     total = 0
-    for usage in record.get("usage", []):
+    for usage in record.get("usage") or []:
         if isinstance(usage, dict):
             total += (usage.get("input_tokens") or 0) + (usage.get("output_tokens") or 0)
     return total
