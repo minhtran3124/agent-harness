@@ -1,0 +1,27 @@
+{
+  "reviewed_head_sha": "c780fe61be0ef22ca07f67ab29b3564f69a01601",
+  "reviews": [
+    {
+      "type": "correctness",
+      "result": "pass",
+      "blocking_open": 0,
+      "method": "sdd-final-gate + controller cross-PR re-verification",
+      "evidence": "SDD-session adversarial correctness review recorded in SUMMARY.md (0 Critical/High/Medium) at the d5e9cea code state; independently re-verified 2026-08-06 during the PR #186 vs #187 cross-review: full run-tests.sh ALL GREEN on this branch (299 pytest + all contract suites), dispatcher fd1/fd2 stream separation confirmed empirically against a live commit (SC-1: exit-0 stdout-JSON deny relayed unmerged; warn text stays on stderr), SC-8 asserts an all-warn .claude manifest cannot loosen the auth gate. c780fe6 on top is a specs-only design.md §9 correction, no reviewable code."
+    },
+    {
+      "type": "intent",
+      "result": "pass",
+      "blocking_open": 0,
+      "method": "sdd-final-gate + controller cross-PR re-verification",
+      "evidence": "SDD-session intent review recorded FULFILLED against the original request (reduce hook burden / perf + unstick consumer repos). Cross-PR review 2026-08-06 re-checked the diff against the corrected design (B3-only, A4-opt-in, A1-thin, A2e, A3-delete): all implemented, no excess scope, B-hybrid/.claude policy read correctly absent (would reopen gate-config-must-read-index TOCTOU). design.md §9 corrected at c780fe6 so the recorded approval matches the shipped implementation."
+    },
+    {
+      "type": "context-propagation-audit",
+      "result": "pass",
+      "blocking_open": 0,
+      "method": "sdd-final-gate + controller cross-PR re-verification",
+      "evidence": "SDD-session context-propagation-audit passed (PR body). Cross-check 2026-08-06: CLAUDE.md hook table matches settings.json single pre-bash-dispatch registration (doc-truth lint green in full suite run); embedded gate-modes.default.sh pinned byte-consistent to harness-manifest.json by check_gate_modes_smoke.py (SC-9); consumer delivery path is hooks/lib/ sync via deploy (no .claude manifest copy needed under B3); rules/auto-correct-scope.md workflow-engine touch covered by the audit requirement this receipt satisfies."
+    }
+  ],
+  "created": "2026-08-06T15:20:00+07:00"
+}
