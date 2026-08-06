@@ -459,6 +459,14 @@ Human approved **default recommend** from §6/§8:
 - A1: **thin** dispatcher
 - A2: **A2e** short-circuit active-plan lookup (no marker file)
 - A3: **delete** dormant `auto-test-on-change.sh`
-- A4: **detect `app/`** directory before Checks 2/2.5/3
-- B: **B-hybrid** (`.claude` manifest deploy + embed/generated defaults + resolve chain)
+- A4: **opt-in** — Checks 2/2.5/3 chỉ chạy khi `REQUIRE_APP_GATES=1`
+- B: **B3-only** — embedded defaults trong hook code; policy chỉ đọc từ index (`git show :`) hoặc embedded defaults, **không bao giờ** từ worktree/`.claude`
 - Package E (simplify/task-review ceremony): **out of scope**
+
+> **Corrigendum (2026-08-06):** bản đầu của mục này ghi A4-**detect** và B-**hybrid**, mâu thuẫn
+> với chính phân tích §4/§5 của tài liệu. Hai lựa chọn đó đã bị loại sau review: B-hybrid đọc
+> `.claude/`/worktree manifest tái tạo lỗ hổng policy-TOCTOU **critical**
+> `docs/solutions/harness/gate-config-must-read-index.md` (đã đóng ở PR #160); A4-detect bật
+> pytest-at-commit theo heuristic tên thư mục `app/` mà không opt-in. Human xác nhận lại phương án
+> **B3-only + A4-opt-in** ngày 2026-08-06 khi chọn PR #186 (B3-only) thay vì PR #187 (B-hybrid)
+> sau cross-PR review; PR #187 đóng với lý do tham chiếu entry trên.
