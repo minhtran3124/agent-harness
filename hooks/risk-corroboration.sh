@@ -20,9 +20,12 @@
 #   - When a signal is present but NO Lane is declared, this WARNS (exit 0)
 #     rather than blocking — there is nothing to corroborate against.
 #     Set RISK_CORROBORATION_STRICT=1 to make the no-Lane case fail-closed.
-#   - Per-category mode (block|warn) is read from harness-manifest.json at runtime.
-#     Unknown slug / missing mode / missing or invalid manifest => block (fail-safe).
-#     Consumer repos have no manifest at their root, so every category blocks there.
+#   - Per-category mode (block|warn) comes from EXACTLY TWO index-safe sources: the
+#     git INDEX copy of harness-manifest.json (`git show :path`), else the embedded
+#     defaults in hooks/lib/gate-modes.default.sh (2 warn / 7 block parity). A worktree
+#     or .claude/ policy file is NEVER read (invariant #2, SC-8). Unknown slug / missing
+#     mode within a present index manifest still => block (fail-safe). Consumer repos
+#     with no tracked manifest get the embedded parity, not block-all.
 #     (Assumes `jq`, which stdin parsing already requires — without jq this hook
 #     never gates anything at all; that is pre-existing behavior, not mode fallback.)
 #
@@ -64,9 +67,20 @@ cd "$REPO_DIR" || exit 0
 # Read the manifest from the INDEX (`git show :path`), not the worktree — the risk
 # signals and the Lane are both index-side, so the mode must be too. Otherwise an
 # UNSTAGED "mode": "warn" edit would loosen a gate for a commit whose tree still
-# ships block-mode (Codex review, PR #160). Index copy absent/invalid => "" => block.
+# ships block-mode (Codex review, PR #160). INVARIANT #2 (SC-8): mode policy comes
+# from EXACTLY TWO index-safe sources — the git INDEX here, else the embedded defaults
+# below. NEVER a worktree file and NEVER .claude/harness-manifest.json.
 GATE_MODES=$(git show :harness-manifest.json 2>/dev/null | jq -r \
   '.hard_gates.detectable[]? | "\(.slug)=\(.mode // "block")"' 2>/dev/null || true)
+# Index copy absent/unreadable/invalid => fall back to the embedded defaults shipped
+# beside this hook (2 warn / 7 block parity), NOT block-all. The defaults are compile-
+# time constants inside the harness's own trust boundary — an unstaged edit cannot
+# touch them — so a consumer repo that does not track the manifest still gets the
+# intended modes. (Missing default file => "" => every category blocks, still fail-safe.)
+if [ -z "$GATE_MODES" ]; then
+  source "$SCRIPT_DIR/lib/gate-modes.default.sh" 2>/dev/null
+  GATE_MODES="$GATE_MODES_DEFAULT"
+fi
 
 category_mode() {
   local _wl

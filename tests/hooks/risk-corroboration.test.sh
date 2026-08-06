@@ -112,12 +112,15 @@ stage "$repo" "specs/x/SUMMARY.md" "Lane: tiny"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc 0
 
-t "workflow-engine: skills/x/SKILL.md + Lane: normal → BLOCKED (names workflow-engine)"
+# These test repos stage no index manifest, so the hook uses the embedded defaults
+# (hooks/lib/gate-modes.default.sh) where workflow-engine is warn — the surface is
+# still detected and named, but the commit is allowed with a note (exit 0).
+t "workflow-engine: skills/x/SKILL.md + Lane: normal → warn note, allowed (names workflow-engine, exit 0)"
 repo=$(new_repo $H)
 stage "$repo" "skills/x/SKILL.md" '# Skill x'
 stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
 run_hook "$repo" $H "$COMMIT_JSON"
-assert_rc_contains 2 "workflow-engine"
+assert_rc_contains 0 "workflow-engine"
 
 t "workflow-engine: prose docs/notes.md → silent pass (not an engine surface)"
 repo=$(new_repo $H)
@@ -134,12 +137,12 @@ stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc 0
 
-t "workflow-engine: agents/coding.md + Lane: normal → BLOCKED (real agent prompt is an engine surface)"
+t "workflow-engine: agents/coding.md + Lane: normal → warn note, allowed (real agent prompt is an engine surface, exit 0)"
 repo=$(new_repo $H)
 stage "$repo" "agents/coding.md" '# Coding agent'
 stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
 run_hook "$repo" $H "$COMMIT_JSON"
-assert_rc_contains 2 "workflow-engine"
+assert_rc_contains 0 "workflow-engine"
 
 t "workflow-engine: agents/README.md → silent pass (inventory prose, mirrors skills/README.md)"
 repo=$(new_repo $H)
@@ -155,12 +158,12 @@ stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc 0
 
-t "workflow-engine: NESTED dispatch prompt skills/x/subagents/y-prompt.md + Lane: normal → BLOCKED"
+t "workflow-engine: NESTED dispatch prompt skills/x/subagents/y-prompt.md + Lane: normal → warn note, allowed (exit 0)"
 repo=$(new_repo $H)
 stage "$repo" "skills/x/subagents/analyzer-prompt.md" '# Analyzer dispatch prompt'
 stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
 run_hook "$repo" $H "$COMMIT_JSON"
-assert_rc_contains 2 "workflow-engine"
+assert_rc_contains 0 "workflow-engine"
 
 # ── Manifest-driven gate modes (harness-manifest.json is the authority) ──
 # The hook reads the manifest from the INDEX (git show :harness-manifest.json),
@@ -193,12 +196,49 @@ stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_contains 2 "BLOCKED"
 
-t "manifest absent from index (consumer repo) → fallback block (exit 2)"
+t "manifest absent from index (consumer repo) → embedded default (data-loss/migration = block, exit 2)"
 repo=$(new_repo $H)
 stage "$repo" "alembic/versions/abc_add_table.py" "def upgrade(): pass"
 stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_contains 2 "BLOCKED"
+
+# ── Invariant #2 (SC-8): mode policy is index/embedded ONLY — never .claude/ ──
+# BYPASS GUARD: a worktree .claude/harness-manifest.json with EVERY category flipped to
+# warn must NOT loosen the auth gate. .claude/ is gitignored/agent-writable in consumers;
+# the hook reads only `git show :harness-manifest.json` (root, index) and the embedded
+# defaults, so this file is invisible and auth still blocks a below-high-risk lane.
+t "SC-8 bypass guard: .claude/harness-manifest.json all-warn does NOT loosen auth (exit 2)"
+repo=$(new_repo $H)
+mkdir -p "$repo/.claude"
+cat > "$repo/.claude/harness-manifest.json" <<'EOF'
+{"hard_gates":{"detectable":[
+  {"slug":"auth","mode":"warn"},
+  {"slug":"authorization","mode":"warn"},
+  {"slug":"data-loss/migration","mode":"warn"},
+  {"slug":"audit/security","mode":"warn"},
+  {"slug":"external-provider","mode":"warn"},
+  {"slug":"public-contract","mode":"warn"},
+  {"slug":"weakening-validation","mode":"warn"},
+  {"slug":"high-blast","mode":"warn"},
+  {"slug":"workflow-engine","mode":"warn"}
+]}}
+EOF
+stage "$repo" "app/auth.py" 'def login(password): return password'
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "BLOCKED"
+
+# Meta-repo behavior preserved: with the tracked INDEX manifest present, index modes win
+# (this is what the .claude bypass above is denied from doing). auth=warn in the index
+# loosens the auth gate; the same all-warn content in .claude/ above did not.
+t "meta-repo: tracked index manifest (auth=warn) wins → auth loosened, allowed (exit 0)"
+repo=$(new_repo $H)
+stage "$repo" "harness-manifest.json" '{"hard_gates":{"detectable":[{"slug":"auth","mode":"warn"}]}}'
+stage "$repo" "app/auth.py" 'def login(password): return password'
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 0 "warn-mode"
 
 t "malformed staged manifest JSON → fail-safe block (exit 2)"
 repo=$(new_repo $H)

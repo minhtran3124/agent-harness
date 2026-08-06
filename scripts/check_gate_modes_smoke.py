@@ -6,16 +6,50 @@ Exactly two detectable gates are warn-mode — `workflow-engine` and
 Any drift (silent re-tightening, or a new gate quietly shipped as warn) fails.
 This is SC-4's re-runnable check; wired into scripts/run-tests.sh so CI runs it.
 
+SC-9: also asserts hooks/lib/gate-modes.default.sh (the embedded fallback used by
+risk-corroboration.sh when no manifest is in the git index) is byte-consistent with
+harness-manifest.json hard_gates.detectable — any drift fails.
+
 Exit 0 = modes match the decision. Exit 1 = drift (one line per problem).
 Run: python3 scripts/check_gate_modes_smoke.py [--root DIR]
 """
 
 import argparse
 import json
+import subprocess
 import sys
 from pathlib import Path
 
 EXPECTED_WARN = {"workflow-engine", "weakening-validation"}
+
+
+def load_default_modes(root: Path) -> dict:
+    """Source hooks/lib/gate-modes.default.sh and parse its slug=mode map.
+
+    Sourcing via bash is ground truth — the same value risk-corroboration.sh gets —
+    rather than regex-parsing the shell file. The path is passed as $1 (not
+    interpolated into the script) so a path with spaces cannot break parsing.
+    """
+    default_path = root / "hooks" / "lib" / "gate-modes.default.sh"
+    proc = subprocess.run(
+        [
+            "bash",
+            "-c",
+            'source "$1" && printf "%s\\n" "$GATE_MODES_DEFAULT"',
+            "bash",
+            str(default_path),
+        ],
+        capture_output=True,
+        text=True,
+    )
+    modes = {}
+    for line in proc.stdout.splitlines():
+        line = line.strip()
+        if not line or "=" not in line:
+            continue
+        slug, mode = line.rsplit("=", 1)
+        modes[slug] = mode
+    return modes
 
 
 def check(root: Path) -> int:
@@ -51,6 +85,15 @@ def check(root: Path) -> int:
     for slug, mode in modes.items():
         if mode not in ("block", "warn"):
             problems.append(f"gate-modes: '{slug}' has invalid mode '{mode}'")
+
+    # SC-9: the embedded fallback map must be byte-consistent with the manifest.
+    default_modes = load_default_modes(root)
+    for slug in modes.keys() | default_modes.keys():
+        if modes.get(slug) != default_modes.get(slug):
+            problems.append(
+                "gate-modes: hooks/lib/gate-modes.default.sh drift for "
+                f"'{slug}': manifest={modes.get(slug)!r} default={default_modes.get(slug)!r}"
+            )
 
     if problems:
         for p in problems:

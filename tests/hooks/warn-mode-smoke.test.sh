@@ -42,4 +42,30 @@ stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_contains 2 "BLOCKED"
 
+# ── Embedded defaults (SC-7): NO manifest anywhere in the index ──────────────
+# new_repo copies hooks/lib (incl. gate-modes.default.sh) but stages no manifest,
+# so `git show :harness-manifest.json` misses and the hook sources the embedded
+# defaults — the same 2-warn/7-block parity as the shipped manifest, NOT block-all.
+
+t "embedded defaults: workflow-engine surface + Lane: normal → warn note, allowed (exit 0)"
+repo=$(new_repo $H)
+stage "$repo" "skills/x/SKILL.md" '# Skill x'
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 0 "workflow-engine"
+
+t "embedded defaults: auth code + Lane: tiny → block (exit 2)"
+repo=$(new_repo $H)
+stage "$repo" "app/auth.py" 'def login(password): return password'
+stage "$repo" "specs/x/SUMMARY.md" "Lane: tiny"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "BLOCKED"
+
+t "embedded defaults: hooks/ file (high-blast) + Lane: normal → block (exit 2)"
+repo=$(new_repo $H)
+stage "$repo" "hooks/new-gate.sh" '#!/bin/bash'
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "high-blast"
+
 finish
