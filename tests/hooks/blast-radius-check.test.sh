@@ -115,4 +115,46 @@ assert_silent_ok
 run_hook "$repo" $H "$(json_file "$repo/app/md_task.py")"
 assert_silent_ok
 
+# --- Task 1.2: active-plan fast-path (hooks/lib/lane.sh) ---
+# The fast-path replaces a per-file grep loop with a single `grep -l`. These assert the
+# two contract endpoints across MULTIPLE plan files (the case the single-dir tests above
+# don't exercise): 0 active among many → silent; exactly one active among many → enforced.
+
+# make_plan_at <repo> <specdir> <status> <files-csv>
+make_plan_at() {
+  mkdir -p "$1/specs/$2"
+  cat > "$1/specs/$2/PLAN.md" <<EOF
+---
+status: $3
+---
+\`\`\`xml
+<task id="1.1"><files>$4</files><action>x</action></task>
+\`\`\`
+EOF
+}
+
+t "fast-path: multiple PLAN.md files, none active → silent even out-of-scope"
+repo=$(new_repo $H)
+make_plan_at "$repo" alpha shipped  "app/foo.py"
+make_plan_at "$repo" beta  proposed "app/bar.py"
+make_plan_at "$repo" gamma shipped  "app/baz.py"
+run_hook "$repo" $H "$(json_file "$repo/app/rogue.py")"
+assert_silent_ok
+
+t "fast-path: exactly one active plan among many → its <files> set is enforced (out-of-scope warns)"
+repo=$(new_repo $H)
+make_plan_at "$repo" alpha shipped "app/old.py"
+make_plan_at "$repo" beta  active  "app/foo.py"
+make_plan_at "$repo" gamma shipped "app/other.py"
+run_hook "$repo" $H "$(json_file "$repo/app/rogue.py")"
+assert_rc_contains 0 "blast-radius"
+
+t "fast-path: in-scope edit against the one active plan among many → silent"
+repo=$(new_repo $H)
+make_plan_at "$repo" alpha shipped "app/old.py"
+make_plan_at "$repo" beta  active  "app/foo.py"
+make_plan_at "$repo" gamma shipped "app/other.py"
+run_hook "$repo" $H "$(json_file "$repo/app/foo.py")"
+assert_silent_ok
+
 finish

@@ -22,17 +22,18 @@
 #   hook_lib_intake_in_progress "$REPO_DIR" && echo "intake already ran / is in flight"
 
 # hook_lib_find_active_plan <repo_dir>
-# Echoes the path to the specs/*/PLAN.md carrying `status: active` (most-recently
-# modified first when more than one somehow qualifies) and exits 0. Exits 1 with no
-# output when none exists — there is deliberately no other fallback.
+# Echoes the path to the specs/*/PLAN.md carrying `status: active` and exits 0. Exits 1
+# with no output when none exists — there is deliberately no other fallback.
+#
+# Fast-path: a single `grep -l` across all plan files, not one grep process per file. When
+# zero plans are active (the common case — this runs on every edit) that is one process
+# instead of N; `head -1` short-circuits at the first hit (SIGPIPE ends grep before it
+# scans the rest). The rare multi-active case resolves to the FIRST FOUND — lexical glob
+# order of the spec dirs, not most-recently-modified as the prior mtime scan did.
 hook_lib_find_active_plan() {
-  local repo_dir="$1" p
-  for p in $(ls -t "$repo_dir"/specs/*/PLAN.md 2>/dev/null); do
-    if grep -qiE '^status:[[:space:]]*active' "$p" 2>/dev/null; then
-      echo "$p"
-      return 0
-    fi
-  done
+  local repo_dir="$1" match
+  match=$(grep -lEi '^status:[[:space:]]*active' "$repo_dir"/specs/*/PLAN.md 2>/dev/null | head -1)
+  [ -n "$match" ] && { printf '%s\n' "$match"; return 0; }
   return 1
 }
 
