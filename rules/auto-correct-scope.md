@@ -21,7 +21,7 @@ The intake lane (`specs/<slug>/SUMMARY.md`, set by `/feature-intake`) decides ho
 | Lane | Autonomy | Plan | Human confirm |
 |---|---|---|---|
 | **tiny** | Full auto — direct patch on a fresh branch | none | none (machine gates are the safety net: `ruff-on-edit`, `auto-test-on-change`, `commit-quality-gate`, `risk-corroboration`) |
-| **normal** | Auto with proof gates (subagent two-stage review) | yes | only if confidence low / ambiguous |
+| **normal** | Auto with proof gates (one task reviewer, two verdicts) | yes | only if confidence low / ambiguous |
 | **high-risk** | Auto-plan, gated-execute | yes (full chain) | only on ambiguity or a hard gate (Rule 4) |
 
 ### Branch isolation (canonical policy)

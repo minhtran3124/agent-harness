@@ -71,7 +71,7 @@ Two kinds of artifact, sized differently:
 - **The record** — `SUMMARY.md` is written for **every** lane, tiny included. It is the always-on audit trail; its `Rationale` + `Alternatives` make an autonomous decision reconstructable without re-reading the diff. "No human" never means "no record."
 - **Plan-ahead scaffolding** — `design.md` / `research-brief.md` / `PLAN.md` exist to reduce *uncertainty*, so they are triggered by **signal**, not by lane alone: `PLAN.md` at >3 steps or >2 files (`rules/plan-format.md`); `research-brief.md` for unfamiliar code or high-risk; `design.md` only on a real design fork (≥2 viable approaches) or high-risk.
 
-For autonomous work the substitute for the human gate is **verification, not more documents**: a re-runnable `### Verify` row + independent two-stage review. Over-documenting reversible work manufactures unread artifacts that are harder to audit than the diff and erode the record's value.
+For autonomous work the substitute for the human gate is **verification, not more documents**: a re-runnable `### Verify` row + independent task review with separate spec and quality verdicts. Over-documenting reversible work manufactures unread artifacts that are harder to audit than the diff and erode the record's value.
 
 `FULL_ARTIFACTS=1` (opt-in) forces the complete artifact set regardless of lane — for audit-heavy changes or while calibrating trust. Default is signal-scaled.
 

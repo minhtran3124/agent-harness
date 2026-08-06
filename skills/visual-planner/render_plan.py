@@ -241,7 +241,7 @@ def extract_tasks(body: str):
 _MD_TASK_HEAD = re.compile(r"(?m)^###\s+Task\s+([0-9][\w.]*)[^\n]*$")
 _MD_WAVE = re.compile(r"\(\s*wave\s*(\d+)\s*\)", re.I)
 _MD_FIELD = re.compile(
-    r"^[-*]\s+\*\*(Files|Action|Verify|Done)(?::\*\*|\*\*:)\s*(.*)$", re.I
+    r"^[-*]\s+\*\*(Files|Action|Verify|Done|Criteria|Interfaces)(?::\*\*|\*\*:)\s*(.*)$", re.I
 )
 _MD_NEXT_HEAD = re.compile(r"(?m)^#{2,3}\s")
 
@@ -249,7 +249,7 @@ _MD_NEXT_HEAD = re.compile(r"(?m)^#{2,3}\s")
 def _parse_md_task(block: str, task_id: str) -> dict:
     head, _, rest = block.partition("\n")
     wm = _MD_WAVE.search(head)
-    fields = {"files": [], "action": [], "verify": [], "done": []}
+    fields = {"files": [], "action": [], "verify": [], "done": [], "criteria": [], "interfaces": []}
     cur = None
     for line in rest.split("\n"):
         s = line.strip()
@@ -274,6 +274,8 @@ def _parse_md_task(block: str, task_id: str) -> dict:
         "action": join("action"),
         "verify": verify,
         "done": join("done"),
+        "criteria": join("criteria"),
+        "interfaces": join("interfaces"),
     }
 
 
@@ -332,6 +334,8 @@ def parse_task_block(block: str) -> dict:
         "action": action,
         "verify": verify.strip(),
         "done": done.strip(),
+        "criteria": "",
+        "interfaces": "",
     }
 
 
@@ -897,6 +901,8 @@ def render_task_card(task, expanded=False, subtask_html=""):
     title_html = render_inline(title) if title else ""
     action_html = md_to_html(task["action"]) if task["action"] else ""
     done_html = md_to_html(task["done"]) if task["done"] else ""
+    criteria_html = md_to_html(task.get("criteria", "")) if task.get("criteria") else ""
+    interfaces_html = md_to_html(task.get("interfaces", "")) if task.get("interfaces") else ""
     return f"""<article class="task-card" id="task-{slugify(tid)}" data-collapsed="{collapsed}">
   <div class="task-card-header">
     <span class="id">Task {esc(tid)}</span>
@@ -912,6 +918,8 @@ def render_task_card(task, expanded=False, subtask_html=""):
       <button type="button" class="copy-btn">Copy</button>
     </div>
     <div class="task-block"><div class="task-block-label">Done</div><div>{done_html}</div></div>
+    {f'<div class="task-block"><div class="task-block-label">Criteria</div><div>{criteria_html}</div></div>' if criteria_html else ''}
+    {f'<div class="task-block"><div class="task-block-label">Interfaces</div><div>{interfaces_html}</div></div>' if interfaces_html else ''}
     {subtask_html}
   </div>
 </article>"""

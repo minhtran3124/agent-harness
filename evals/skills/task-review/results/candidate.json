@@ -1,0 +1,320 @@
+{
+  "schema_version": 1,
+  "commit_sha": "3cae3f5df777526c7f00bf4b5d0969793cc50720",
+  "environment": {
+    "model": "claude-fable-5",
+    "client_version": "2.1.220 (Claude Code)",
+    "reasoning": "standard"
+  },
+  "mode": "candidate",
+  "records": [
+    {
+      "case_id": "cannot-verify",
+      "first_run": true,
+      "dispatches": 1,
+      "outputs": [
+        "spec_verdict: **cannot_verify**\nquality_verdict: **approved** (scoped strictly to the visible material \u2014 this is not an endorsement of the unseen implementation)\n\n**Findings**\n\n1. **Critical \u2014 Signature compatibility is unverifiable from the provided material.** The task requires keeping an external webhook signature compatible, but the fixture exposes only a caller name; the signing protocol, the algorithm/encoding details, and the external contract are all stated as unavailable. There is no artifact against which compatibility can be checked, so no pass/fail claim is possible either way. Evidence: cannot_verify (fixture explicitly withholds the protocol and contract). Resolution requires the external contract definition or a fixture-based test that signs a known payload and compares against a recorded expected signature.\n\n2. **Important \u2014 No re-runnable verification exists for an externally-owned contract.** Even independent of this fixture's gaps, a change touching an external signature must carry evidence (e.g., a golden-payload signature test) before \"compatible\" can be asserted. None is present. Evidence: cannot_verify.\n\n**Rationale for the verdict split:** `pass` would assert compatibility with an unseen contract, and `fail` would assert a concrete breakage \u2014 neither is supported by evidence, so the spec verdict is cannot_verify per the unknown-evidence rule. The quality verdict covers only what is inspectable; the single visible element (a caller name) exhibits no quality defect, so there is no concrete fix to demand \u2014 the blocking concern is the evidence gap, which the spec verdict and the Critical finding carry."
+      ],
+      "usage": [
+        {
+          "input_tokens": 2,
+          "cache_creation_input_tokens": 31799,
+          "cache_read_input_tokens": 20043,
+          "output_tokens": 1730,
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 31799,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 1730,
+              "cache_read_input_tokens": 20043,
+              "cache_creation_input_tokens": 31799,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 31799
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard"
+        }
+      ],
+      "elapsed_seconds": [
+        26.884
+      ],
+      "transcript": "evals/skills/task-review/results/transcripts/candidate-cannot-verify.json"
+    },
+    {
+      "case_id": "combined",
+      "first_run": true,
+      "dispatches": 1,
+      "outputs": [
+        "**spec_verdict: fail** \u2014 the task requires rejecting blank input; the fixture states the validator accepts blank strings. That is a direct contradiction of a stated requirement.\n\n**quality_verdict: needs_fixes**\n\n**Findings**\n\n- **Critical** \u2014 Blank input accepted. Evidence: fixture states \"the validator accepts blank strings\"; the task's only explicit requirement besides validation is \"reject blank input.\" This is a spec violation, not just a quality issue.\n- **Important** \u2014 400-line single nested conditional. Evidence: stated in the fixture. Unmaintainable and near-impossible to test exhaustively; should be decomposed (early-return guard for blank, then format check).\n- **Important** \u2014 Duplicated branches. Evidence: stated in the fixture. Duplication in validation logic invites divergent fixes where one copy gets patched and the other silently keeps the bug.\n- **cannot_verify** \u2014 Correctness of the email-format validation itself (which addresses are accepted/rejected, regex vs. parser, edge cases like quoted local parts). The fixture provides no code or test output for this behavior, so no verdict beyond the blank-input failure can be grounded.\n\nNote: the two verdicts above rest entirely on the fixture's own description \u2014 no source was provided to inspect. If the described behavior were not stipulated as ground truth, spec_verdict would degrade to cannot_verify."
+      ],
+      "usage": [
+        {
+          "input_tokens": 2,
+          "cache_creation_input_tokens": 31802,
+          "cache_read_input_tokens": 20043,
+          "output_tokens": 823,
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 31802,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 823,
+              "cache_read_input_tokens": 20043,
+              "cache_creation_input_tokens": 31802,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 31802
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard"
+        }
+      ],
+      "elapsed_seconds": [
+        14.604
+      ],
+      "transcript": "evals/skills/task-review/results/transcripts/candidate-combined.json"
+    },
+    {
+      "case_id": "minor-only",
+      "first_run": true,
+      "dispatches": 1,
+      "outputs": [
+        "spec_verdict: **cannot_verify**\nquality_verdict: **approved**\n\n**Findings:**\n\n- **Important** \u2014 No verifiable evidence provided. The fixture contains only prose assertions (\"Names are sorted correctly\", \"tests are complete\") with no diff, code, test commands, or test output. A claim of correctness without a re-runnable artifact is unknown evidence, so the spec verdict cannot be pass. Evidence: the Implementation section is a description, not an implementation.\n- **Minor** \u2014 Helper name is vague (per the fixture's own statement). Naming clarity is a polish issue, not a behavioral defect; alone it does not warrant needs_fixes.\n\n**Rationale:** Spec compliance requires observed proof (sorted output or passing test run), and none is present \u2014 asserted \u2260 verified, so cannot_verify rather than pass or fail (no evidence of failure either). Quality has no Critical or Important code-structure defects; the only quality item is a Minor naming nit, so approved."
+      ],
+      "usage": [
+        {
+          "input_tokens": 2,
+          "cache_creation_input_tokens": 31810,
+          "cache_read_input_tokens": 20043,
+          "output_tokens": 910,
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 31810,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 910,
+              "cache_read_input_tokens": 20043,
+              "cache_creation_input_tokens": 31810,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 31810
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard"
+        }
+      ],
+      "elapsed_seconds": [
+        16.634
+      ],
+      "transcript": "evals/skills/task-review/results/transcripts/candidate-minor-only.json"
+    },
+    {
+      "case_id": "missing-global-constraint",
+      "first_run": true,
+      "dispatches": 1,
+      "outputs": [
+        "spec_verdict: **fail**\nquality_verdict: **needs_fixes**\n\n## Findings\n\n**Critical \u2014 secret value logged, violating the global constraint**\n- Evidence: The implementation states the failure handler \"logs the complete request including `Authorization`.\" The `Authorization` header carries credentials (bearer tokens, API keys, Basic auth), so logging it logs a secret value \u2014 a direct violation of \"Never log secret values.\"\n- This is a spec contradiction, not a judgment call: the constraint is absolute (\"never\"), and the described behavior is enumerated as included in the log output, so no cannot_verify applies \u2014 the violation is asserted by the fixture text itself.\n- Expected fix: redact or drop `Authorization` (and any other credential-bearing fields, e.g. `Cookie`, `X-Api-Key`, request bodies with tokens) before logging the request in the failure handler.\n\nNo Important or Minor findings \u2014 the fixture provides no further implementation detail to assess."
+      ],
+      "usage": [
+        {
+          "input_tokens": 2,
+          "cache_creation_input_tokens": 31788,
+          "cache_read_input_tokens": 20043,
+          "output_tokens": 440,
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 31788,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 440,
+              "cache_read_input_tokens": 20043,
+              "cache_creation_input_tokens": 31788,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 31788
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard"
+        }
+      ],
+      "elapsed_seconds": [
+        8.994
+      ],
+      "transcript": "evals/skills/task-review/results/transcripts/candidate-missing-global-constraint.json"
+    },
+    {
+      "case_id": "plan-mandated",
+      "first_run": true,
+      "dispatches": 1,
+      "outputs": [
+        "**spec_verdict: fail**\n**quality_verdict: needs_fixes**\n\n## Findings\n\n**Critical \u2014 Required Criterion row is absent from SUMMARY.**\nEvidence: the fixture states \"no verification row or Criterion mapping exists.\" The spec's only requirement is \"Every task must add a passing Criterion row to SUMMARY\" \u2014 absence of the row is directly observed, not unknown, so this is a definite `fail`, not `cannot_verify`.\n\n**Important \u2014 The \"behavior is implemented\" claim has no re-runnable evidence.**\nEvidence: with no verification row, there is no command/exit-code proof backing the implementation claim. Per evidence-over-assertion, the *behavior* claim itself is `cannot_verify` \u2014 but this does not soften the spec verdict, because the missing row is itself the spec violation.\n\nNo Minor findings.\n\nNote on verdict reasoning: `cannot_verify` applies when evidence is unknown or unobservable. Here the deliverable (the Criterion row) is confirmed missing, which is observed non-compliance \u2014 hence `fail`. Only the underlying behavior claim is unverifiable."
+      ],
+      "usage": [
+        {
+          "input_tokens": 2,
+          "cache_creation_input_tokens": 31957,
+          "cache_read_input_tokens": 20043,
+          "output_tokens": 778,
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 31957,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 778,
+              "cache_read_input_tokens": 20043,
+              "cache_creation_input_tokens": 31957,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 31957
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard"
+        }
+      ],
+      "elapsed_seconds": [
+        13.432
+      ],
+      "transcript": "evals/skills/task-review/results/transcripts/candidate-plan-mandated.json"
+    },
+    {
+      "case_id": "quality-only",
+      "first_run": true,
+      "dispatches": 1,
+      "outputs": [
+        "Reviewed as an isolated fixture from the described evidence only (no code file or test run available to inspect).\n\n**spec_verdict: cannot_verify**\n- The claim \"opens and parses the input\" is assertion-only: no test exists and no run output is provided, so there is no re-runnable evidence the parser satisfies the spec even on well-formed JSON. Evidence: fixture states \"no test exists\" \u2014 cannot_verify.\n\n**quality_verdict: needs_fixes**\n\n**Findings**\n\n1. **Important \u2014 No test coverage.** Evidence: fixture states \"no test exists.\" A parser with zero tests fails the goal-driven execution bar (behavior must be proven, not asserted); minimum is one happy-path test plus one malformed-input test.\n\n2. **Important \u2014 Malformed JSON escapes as a raw traceback.** Evidence: fixture states \"malformed JSON raises a raw traceback.\" A config parser's most likely real-world failure is a bad config file; the uncaught `json.JSONDecodeError` gives the user no file path or actionable message. Catch it and re-raise (or report) with the config filename and position context. Not Critical: no data corruption or silent wrong result \u2014 the failure is loud, just hostile.\n\n3. **Minor \u2014 Missing-file behavior unknown.** Evidence: cannot_verify \u2014 the fixture describes only the malformed-JSON path; whether a nonexistent path also surfaces as a raw `FileNotFoundError` traceback is unstated. Worth covering in the same test additions.\n\nNet: spec compliance is unproven rather than disproven (cannot_verify), and quality needs fixes \u2014 add the two tests and wrap the decode error before approval."
+      ],
+      "usage": [
+        {
+          "input_tokens": 2,
+          "cache_creation_input_tokens": 31959,
+          "cache_read_input_tokens": 20043,
+          "output_tokens": 1206,
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 31959,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 1206,
+              "cache_read_input_tokens": 20043,
+              "cache_creation_input_tokens": 31959,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 31959
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard"
+        }
+      ],
+      "elapsed_seconds": [
+        21.473
+      ],
+      "transcript": "evals/skills/task-review/results/transcripts/candidate-quality-only.json"
+    },
+    {
+      "case_id": "spec-only",
+      "first_run": true,
+      "dispatches": 1,
+      "outputs": [
+        "spec_verdict: **fail**\nquality_verdict: **needs_fixes**\n\nFindings:\n\n- **Critical** \u2014 The spec's core requirement (\"ensure it does not write files\") is violated: per the fixture, `run.py` parses `--dry-run` but unconditionally calls `write_output()`, so `--dry-run` still writes files. Evidence: fixture implementation statement \"always calls `write_output()`\" with no conditional gate on the parsed flag.\n- **Important** \u2014 The flag is dead code as implemented: parsed but never consulted, which misleads users into believing the mode is safe. Evidence: same statement; no code path shown that reads the flag's value after parsing.\n\nNo other findings can be assessed (tests, error handling, output messaging in dry-run mode are not described in the fixture) \u2014 those aspects are cannot_verify, but the primary spec violation is directly evidenced by the fixture itself, so the overall spec_verdict is fail rather than cannot_verify."
+      ],
+      "usage": [
+        {
+          "input_tokens": 2,
+          "cache_creation_input_tokens": 31959,
+          "cache_read_input_tokens": 20043,
+          "output_tokens": 748,
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 31959,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 748,
+              "cache_read_input_tokens": 20043,
+              "cache_creation_input_tokens": 31959,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 31959
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard"
+        }
+      ],
+      "elapsed_seconds": [
+        13.821
+      ],
+      "transcript": "evals/skills/task-review/results/transcripts/candidate-spec-only.json"
+    }
+  ]
+}

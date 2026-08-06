@@ -1,6 +1,6 @@
 ---
 name: subagent-driven-development
-description: Use to execute an approved multi-task PLAN.md in waves, including a separate-session resume. Runs isolated implementers, spec then quality review, final delivery/correctness/intent gates, and a review receipt before shipping.
+description: Use to execute an approved multi-task PLAN.md in waves, including a separate-session resume. Runs isolated implementers, file handoffs, one read-only task reviewer with separate spec/quality verdicts, final delivery/correctness/intent gates, and a review receipt before shipping.
 ---
 
 # Subagent-Driven Development
@@ -21,7 +21,8 @@ or repair.
 Before the first task, read `.claude/rules/plan-format.md`,
 `.claude/rules/wave-parallelism.md`, and `.claude/rules/auto-correct-scope.md`. Stop unless:
 
-1. Every parsed task has Files, Action, Verify, and Done.
+1. Every parsed task has Files, Action, Verify, and Done. New contract plans additionally pass
+   `python3 scripts/check_plan_contract.py <PLAN.md>`.
 2. Same-wave task file sets do not overlap and dependencies are ordered across waves.
 3. Every Verify is one automated, exit-code-checkable command.
 4. The plan meets the repository's plan threshold.
@@ -31,15 +32,20 @@ Ensure branch isolation, set the plan `status: active`, and transition the durab
 
 ## Execute waves
 
-- Dispatch one fresh implementer per independent same-wave task; dispatch all parallel tasks in
-  one message. Give the child the complete task text and required SC rows, never parent history.
-- The implementer must read `auto-correct-scope.md`, run the task Verify, return files, commits,
-  deviations, blockers, and evidence.
-- Review in this order: spec compliance, then code quality. Fix with the same implementer and
-  repeat the affected review. Do not advance with an open issue.
+- Before dispatch, generate a deterministic brief using
+  `skills/subagent-driven-development/scripts/task_brief.py`; pass its path to the implementer.
+  The implementer writes its detailed report to a path in `.harness-state/sdd/` and returns only a
+  short status, commits, and report path. Do not paste task history or report contents.
+- Generate one explicit `BASE..HEAD` package with `review_package.py`; pass brief/report/package
+  paths to `task-reviewer` with an explicit standard-or-better model. One reviewer returns both
+  `spec_verdict` and `quality_verdict` using `task-reviewer-prompt.md`.
+- `cannot_verify` gets one focused context or test-runner retry. If still unknown, escalate; never
+  treat it as a pass. Fix all Critical/Important findings in one dispatch, then re-review both
+  verdicts. Record Minor findings in SUMMARY and the progress ledger; provide their roll-up to the
+  final review chain.
 - `NEEDS_CONTEXT` receives missing context; `BLOCKED` is re-dispatched with changed context/model,
   split, or escalated when the plan itself is wrong. Repeated verification failure or blast-radius
-  escape is an escalation signal.
+  escape is an escalation signal. Keep controller narration to one short status line between calls.
 
 After all tasks pass, transition to `verifying` when tracked and read
 `references/review-chain.md` for the final sequence.

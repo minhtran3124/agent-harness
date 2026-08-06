@@ -19,11 +19,13 @@ required brief is missing. If the scope contains independent subsystems, propose
    unit a clear boundary; do not introduce unrelated refactors.
 2. Write `## 3. Success Criteria` first. Each observable behavior needs a re-runnable, pipe-free,
    sub-60-second check and expected exit code, using the canonical schema from `plan-format.md`.
-3. Decompose tasks in canonical `### Task` syntax. Give every task exact Files, imperative Action,
-   automated Verify, and measurable Done fields. Make actions test-first where applicable.
+3. For every new plan, add exact `## Global Constraints`. Decompose tasks in canonical `### Task`
+   syntax. Give every task Files, imperative Action, automated Verify, measurable Done, mapped
+   `Criteria` (`SC-n`), and an `Interfaces` line naming what it consumes/produces. Make actions
+   test-first where applicable.
 4. Ensure same-wave tasks have no file overlap and no unresolved dependency. Use waves only for
    genuinely independent work.
-5. Read `references/review-loop.md`, review the plan, and save it. The write hook renders the
+5. Run `python3 scripts/check_plan_contract.py specs/<slug>/PLAN.md`, read `references/review-loop.md`, review the plan, and save it. The write hook renders the
    plain `PLAN.html`; use `visual-planner` only when the user asks for its graph-derived overlay.
 
 ## Handoff

@@ -18,6 +18,11 @@ with a supplied intent, or after correctness review in SDD before finishing a br
    explicit range). Give the reviewer the oracle, diff, touched files, SC table, and SUMMARY
    Verify table—but never `PLAN.md` prose or `research-brief.md`.
 
+When SDD supplies `REVIEW_PACKAGE_PATH`, the reviewer reads that mechanical `BASE..HEAD` package
+first instead of rebuilding the same diff. The package carries no intent oracle; do not use it to
+read PLAN prose or research material. Standalone calls without a package retain explicit-range
+construction.
+
 Dispatch `intent-reviewer-prompt.md` in fresh context, preferably with a model different from the
 implementer. Every finding must quote the intent sentence it evaluates.
 

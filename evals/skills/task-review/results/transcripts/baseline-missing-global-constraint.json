@@ -1,0 +1,68 @@
+{
+  "outputs": [
+    "**SPEC: FAIL**\n\n- **Violated global constraint:** \"Never log secret values.\" The `Authorization` header carries credentials (bearer token / basic-auth secret), so logging the complete request including `Authorization` logs a secret value.\n- **Extra (unrequested/prohibited) behavior:** emitting the `Authorization` header value into logs. Evidence: implementation states it \"logs the complete request including `Authorization`.\"\n- **Missing behavior:** redaction/omission of secret-bearing fields (`Authorization`, and by extension any credential headers) before logging the failed request.\n\nMinimal fix direction: log the request with `Authorization` (and similar secret fields) stripped or masked (e.g. `Authorization: [REDACTED]`).",
+    "**Verdict: needs_fixes**\n\n**Critical \u2014 secret leakage in logs (violates global constraint \"Never log secret values\")**\n- Evidence: the failure handler logs the complete request including the `Authorization` header. That header carries credentials (bearer token, API key, or basic-auth password), so logging it writes a secret value to the log \u2014 a direct violation of the stated constraint, and a real exposure vector (logs are typically retained, aggregated, and readable by more people/systems than the credential itself).\n- Required fix: redact or drop `Authorization` (and any other credential-bearing fields, e.g. `Cookie`, `X-Api-Key`, tokens in the body/query) before logging \u2014 either log an allowlisted subset of headers or replace sensitive values with `[REDACTED]`.\n\nNo other concerns are assessable from the fixture; the failure-handler logging itself is fine once secrets are stripped."
+  ],
+  "usage": [
+    {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 31750,
+      "cache_read_input_tokens": 20043,
+      "output_tokens": 556,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 31750,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 556,
+          "cache_read_input_tokens": 20043,
+          "cache_creation_input_tokens": 31750,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 31750
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard"
+    },
+    {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 31752,
+      "cache_read_input_tokens": 20043,
+      "output_tokens": 377,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 31752,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 377,
+          "cache_read_input_tokens": 20043,
+          "cache_creation_input_tokens": 31752,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 31752
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard"
+    }
+  ]
+}

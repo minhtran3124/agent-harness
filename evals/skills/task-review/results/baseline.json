@@ -1,0 +1,544 @@
+{
+  "schema_version": 1,
+  "commit_sha": "3cae3f5df777526c7f00bf4b5d0969793cc50720",
+  "environment": {
+    "model": "claude-fable-5",
+    "client_version": "2.1.220 (Claude Code)",
+    "reasoning": "standard"
+  },
+  "mode": "baseline",
+  "records": [
+    {
+      "case_id": "cannot-verify",
+      "first_run": true,
+      "dispatches": 2,
+      "outputs": [
+        "**SPEC: FAIL** (fail-closed \u2014 unverifiable, not confirmed-broken)\n\n**Evidence**\n- The requested behavior is \"keep the external webhook signature compatible.\" Verifying that requires the signing protocol (algorithm, key handling, payload canonicalization, header format) and the external contract to compare against. Neither is available in the fixture \u2014 only a caller name is shown.\n- Per `not_observed != absent` (rules/behavior.md \u00a71): an unread contract means *unknown*, not *compatible*. A compatibility claim with zero observable signing logic cannot be affirmed, and an external-contract change is exactly the class where a wrong \"pass\" is expensive (external provider / public contract is a hard-gate category in `rules/orchestration.md`).\n\n**Missing requested behavior**\n- No observable evidence that the signature scheme is preserved \u2014 no signing code, no protocol spec, no fixture of a known-good signature, no round-trip/verify check against the external consumer's expectations.\n\n**Extra behavior**\n- None observable (nothing beyond a caller name is shown, so no excess scope can be confirmed either).\n\n**Label:** `spec-fail: insufficient-evidence` \u2014 the correct disposition is to block/escalate for the signing protocol and external contract (or a re-runnable signature-compatibility check), not to pass on absence of visible breakage.",
+        "**Verdict: needs_fixes** (cannot approve \u2014 insufficient evidence, not a confirmed defect in the code itself)\n\n**Concern: Critical \u2014 external compatibility claim is unverifiable from the provided material.**\n\n- **Evidence:** The task's success criterion is \"webhook signature stays compatible with an external consumer,\" but the fixture exposes only a caller name. The signing protocol (algorithm, key derivation, payload canonicalization, header format, encoding) and the external contract are explicitly unavailable, so there is nothing to compare the implementation against.\n- **Why Critical, not Minor:** A signature scheme fails on any byte-level deviation (field ordering, whitespace, encoding, timestamp format), and the failure surface is an external party \u2014 not caught by local tests unless a contract fixture exists. Approving here would be a claim of compatibility with zero observations supporting it (`not_observed != absent`).\n\n**What would flip this to approved:**\n1. The signing function's implementation plus the external contract (provider docs or a recorded known-good signature) to diff against.\n2. A verification artifact \u2014 a golden-vector test asserting the produced signature for a fixed payload/key matches a known-valid external sample, run with exit code shown.\n\nNo Important/Minor findings \u2014 there is no visible code to critique at those levels."
+      ],
+      "usage": [
+        {
+          "input_tokens": 2,
+          "cache_creation_input_tokens": 36306,
+          "cache_read_input_tokens": 15491,
+          "output_tokens": 971,
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 36306,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 971,
+              "cache_read_input_tokens": 15491,
+              "cache_creation_input_tokens": 36306,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 36306
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard"
+        },
+        {
+          "input_tokens": 2,
+          "cache_creation_input_tokens": 31763,
+          "cache_read_input_tokens": 20043,
+          "output_tokens": 627,
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 31763,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 627,
+              "cache_read_input_tokens": 20043,
+              "cache_creation_input_tokens": 31763,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 31763
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard"
+        }
+      ],
+      "elapsed_seconds": [
+        16.835,
+        16.925
+      ],
+      "transcript": "evals/skills/task-review/results/transcripts/baseline-cannot-verify.json"
+    },
+    {
+      "case_id": "combined",
+      "first_run": true,
+      "dispatches": 2,
+      "outputs": [
+        "**SPEC: FAIL**\n\n- **Missing requested behavior:** blank-input rejection. The task explicitly requires \"reject blank input,\" but the validator accepts blank strings \u2014 a direct contradiction of a stated requirement, so this alone fails spec.\n- **Missing/unverified:** email validation itself can't be confirmed correct from the description, but no evidence of absence \u2014 the failure is anchored on the blank-input requirement.\n- **Extra behavior:** none identified. The 400-line nested conditional with duplicated branches is not extra *behavior* \u2014 it's the same requested scope implemented badly.\n\n**Scope note:** the complexity and duplication are quality findings (maintainability), not spec findings. Spec review judges requested-behavior presence/absence only; that structure belongs to the quality reviewer's verdict, not this one.",
+        "QUALITY: **needs_fixes**\n\n- **Critical (spec-side, flagging for routing):** Accepts blank strings \u2014 directly violates the stated requirement \"reject blank input.\" Evidence: task says reject blank; implementation states it accepts them. This is a spec violation, not merely quality, so it belongs on the spec verdict \u2014 but it must block regardless of which verdict carries it.\n- **Important (quality):** 400-line nested conditional for a single-purpose validator. Evidence: task scope is one validation; a senior engineer would expect ~10\u201330 lines (or a regex/library call). Unreviewable complexity for the problem size.\n- **Important (quality):** Duplicated branches within the conditional. Evidence: duplication stated outright; duplicated validation logic guarantees the branches drift apart under future edits and is a likely contributor to the blank-input bug slipping through.\n\nNet: not approvable \u2014 one behavior bug plus structural complexity far exceeding the task. Minimal fix path: rewrite as a small guard-clause validator (blank check first, then format check), which resolves all three concerns at once."
+      ],
+      "usage": [
+        {
+          "input_tokens": 2,
+          "cache_creation_input_tokens": 31767,
+          "cache_read_input_tokens": 20043,
+          "output_tokens": 394,
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 31767,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 394,
+              "cache_read_input_tokens": 20043,
+              "cache_creation_input_tokens": 31767,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 31767
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard"
+        },
+        {
+          "input_tokens": 2,
+          "cache_creation_input_tokens": 31766,
+          "cache_read_input_tokens": 20043,
+          "output_tokens": 759,
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 31766,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 759,
+              "cache_read_input_tokens": 20043,
+              "cache_creation_input_tokens": 31766,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 31766
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard"
+        }
+      ],
+      "elapsed_seconds": [
+        9.121,
+        13.967
+      ],
+      "transcript": "evals/skills/task-review/results/transcripts/baseline-combined.json"
+    },
+    {
+      "case_id": "minor-only",
+      "first_run": true,
+      "dispatches": 2,
+      "outputs": [
+        "**SPEC: PASS**\n\n- **Missing behavior:** none \u2014 the requested behavior (sort names alphabetically) is implemented and covered by tests.\n- **Extra behavior:** none identified \u2014 nothing beyond the request is described.\n- **Evidence:** \"Names are sorted correctly \u2026 behavior and tests are complete\" \u2014 this is exactly the requested scope.\n- **Out-of-scope note:** the vague helper name is a code-quality concern, not a spec violation. It belongs to the quality review pass and does not affect the spec verdict.",
+        "**QUALITY: approved**\n\n- **Concern (Minor):** vague helper name.\n  - Evidence: fixture states \"A helper name is slightly vague but behavior and tests are complete.\"\n- **No Critical or Important concerns:** sorting behavior is correct and test coverage is complete per the fixture, so the task's goal is met.\n\nRationale: naming vagueness with correct behavior and full tests is a polish-level issue \u2014 it doesn't change what the code does or leave the requirement unverified, so it doesn't warrant `needs_fixes`."
+      ],
+      "usage": [
+        {
+          "input_tokens": 2,
+          "cache_creation_input_tokens": 31765,
+          "cache_read_input_tokens": 20043,
+          "output_tokens": 308,
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 31765,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 308,
+              "cache_read_input_tokens": 20043,
+              "cache_creation_input_tokens": 31765,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 31765
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard"
+        },
+        {
+          "input_tokens": 2,
+          "cache_creation_input_tokens": 31764,
+          "cache_read_input_tokens": 20043,
+          "output_tokens": 272,
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 31764,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 272,
+              "cache_read_input_tokens": 20043,
+              "cache_creation_input_tokens": 31764,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 31764
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard"
+        }
+      ],
+      "elapsed_seconds": [
+        9.63,
+        9.293
+      ],
+      "transcript": "evals/skills/task-review/results/transcripts/baseline-minor-only.json"
+    },
+    {
+      "case_id": "missing-global-constraint",
+      "first_run": true,
+      "dispatches": 2,
+      "outputs": [
+        "**SPEC: FAIL**\n\n- **Violated global constraint:** \"Never log secret values.\" The `Authorization` header carries credentials (bearer token / basic-auth secret), so logging the complete request including `Authorization` logs a secret value.\n- **Extra (unrequested/prohibited) behavior:** emitting the `Authorization` header value into logs. Evidence: implementation states it \"logs the complete request including `Authorization`.\"\n- **Missing behavior:** redaction/omission of secret-bearing fields (`Authorization`, and by extension any credential headers) before logging the failed request.\n\nMinimal fix direction: log the request with `Authorization` (and similar secret fields) stripped or masked (e.g. `Authorization: [REDACTED]`).",
+        "**Verdict: needs_fixes**\n\n**Critical \u2014 secret leakage in logs (violates global constraint \"Never log secret values\")**\n- Evidence: the failure handler logs the complete request including the `Authorization` header. That header carries credentials (bearer token, API key, or basic-auth password), so logging it writes a secret value to the log \u2014 a direct violation of the stated constraint, and a real exposure vector (logs are typically retained, aggregated, and readable by more people/systems than the credential itself).\n- Required fix: redact or drop `Authorization` (and any other credential-bearing fields, e.g. `Cookie`, `X-Api-Key`, tokens in the body/query) before logging \u2014 either log an allowlisted subset of headers or replace sensitive values with `[REDACTED]`.\n\nNo other concerns are assessable from the fixture; the failure-handler logging itself is fine once secrets are stripped."
+      ],
+      "usage": [
+        {
+          "input_tokens": 2,
+          "cache_creation_input_tokens": 31750,
+          "cache_read_input_tokens": 20043,
+          "output_tokens": 556,
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 31750,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 556,
+              "cache_read_input_tokens": 20043,
+              "cache_creation_input_tokens": 31750,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 31750
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard"
+        },
+        {
+          "input_tokens": 2,
+          "cache_creation_input_tokens": 31752,
+          "cache_read_input_tokens": 20043,
+          "output_tokens": 377,
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 31752,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 377,
+              "cache_read_input_tokens": 20043,
+              "cache_creation_input_tokens": 31752,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 31752
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard"
+        }
+      ],
+      "elapsed_seconds": [
+        14.872,
+        9.968
+      ],
+      "transcript": "evals/skills/task-review/results/transcripts/baseline-missing-global-constraint.json"
+    },
+    {
+      "case_id": "plan-mandated",
+      "first_run": true,
+      "dispatches": 2,
+      "outputs": [
+        "**SPEC: FAIL**\n\n- **Missing requested behavior:** The task explicitly requires \"a passing Criterion row\" added to SUMMARY. The fixture states no verification row or Criterion mapping exists \u2014 the required artifact is absent. The Criterion row is not incidental bookkeeping; it is itself the requested behavior (evidence-over-assertion: a claim of \"done\" is only valid with a re-runnable artifact).\n- **Extra behavior:** None identified.\n- **Evidence:** Fixture text \u2014 \"no verification row or Criterion mapping exists\" \u2014 directly contradicts the requirement \"must add a passing Criterion row to SUMMARY.\"\n\nNote the implemented behavior does not rescue the verdict: an unverified implementation satisfies at most part of the task, and the unmet part is exactly the spec's explicit deliverable.",
+        "**Verdict: needs_fixes**\n\n**Concern (Important): missing Criterion row \u2014 explicit task contract unmet.**\n\n- **Evidence:** The task states \"Every task must add a passing Criterion row to SUMMARY.\" The implementation adds no verification row and no Criterion mapping, so the stated deliverable is only partially satisfied \u2014 behavior exists, but the required record does not.\n- **Why Important, not Minor:** Under this repo's evidence-over-assertion rule, a \"done\" claim without a re-runnable `### Verify`/Criterion row is unverifiable \u2014 reviewers and the lane-evidence commit gate (`verify_summary.py --lane`) have nothing to check, so the gap blocks approval rather than being cosmetic.\n- **Why not Critical:** No evidence of incorrect runtime behavior; the implemented behavior itself isn't shown to be wrong \u2014 the defect is an unmet verification contract, not a correctness failure.\n\n**Fix required before approval:** run the task's verify check and add the passing Criterion row (re-runnable command + exit code) to SUMMARY, mapped to the acceptance criterion it proves."
+      ],
+      "usage": [
+        {
+          "input_tokens": 2,
+          "cache_creation_input_tokens": 31912,
+          "cache_read_input_tokens": 20043,
+          "output_tokens": 401,
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 31912,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 401,
+              "cache_read_input_tokens": 20043,
+              "cache_creation_input_tokens": 31912,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 31912
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard"
+        },
+        {
+          "input_tokens": 2,
+          "cache_creation_input_tokens": 31931,
+          "cache_read_input_tokens": 20043,
+          "output_tokens": 839,
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 31931,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 839,
+              "cache_read_input_tokens": 20043,
+              "cache_creation_input_tokens": 31931,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 31931
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard"
+        }
+      ],
+      "elapsed_seconds": [
+        10.596,
+        17.39
+      ],
+      "transcript": "evals/skills/task-review/results/transcripts/baseline-plan-mandated.json"
+    },
+    {
+      "case_id": "quality-only",
+      "first_run": true,
+      "dispatches": 2,
+      "outputs": [
+        "**SPEC: PASS**\n\n**Requested behavior, per the task text:** \"Add a parser for a single JSON config file.\"\n\n- **Present:** `config.py` opens the input file and parses its JSON \u2014 that is the entirety of what was requested.\n- **Missing requested behavior:** none. The task did not ask for error handling of malformed input, nor for tests.\n- **Extra behavior:** none described.\n\n**Evidence:** the implementation description (\"opens and parses the input\") maps 1:1 onto the request; no requirement in the task sentence is unaddressed.\n\n**Out-of-scope for the spec verdict (belongs in the quality verdict):**\n1. *Raw traceback on malformed JSON* \u2014 robustness gap, not a spec miss; the task never specified error behavior.\n2. *No test exists* \u2014 coverage gap; again a quality finding, since tests weren't requested.\n\nLabel summary: `spec=pass`, `quality-findings=[unhandled-malformed-json, missing-test]`. If the grading rubric treats \"parser\" as implying graceful failure on invalid input, that would be the only defensible route to a spec fail \u2014 but on the literal request text, it passes.",
+        "**QUALITY verdict: `needs_fixes`**\n\n| Concern | Severity | Evidence |\n|---|---|---|\n| No test exists | Important | Fixture states \"no test exists.\" A parser with zero tests has no re-runnable proof it works \u2014 violates evidence-over-assertion; a `### Verify` row can't even be written. Not Critical because the happy path is trivial and mechanically verifiable once a test is added. |\n| Malformed JSON raises a raw traceback | Important | Malformed input is an *expected* failure mode for a config-file parser, not an impossible scenario \u2014 handling it is in-scope per behavior.md \u00a72 (\"no error handling for impossible scenarios\" implies handling the possible ones). Should raise/report a clear config error naming the file. Not Critical: it fails loudly rather than silently producing wrong config, so there's no data-corruption or security exposure. |\n\nNo Critical concerns: the described behavior fails fast and loud, doesn't touch a hard-gate domain (auth, data-loss, external provider), and the scope matches the task. No Minor concerns worth listing \u2014 the two above are the whole gap.\n\n**Fix expectation:** wrap the parse to surface a clear error for invalid JSON (and arguably a missing file), and add tests for the valid-config and malformed-config paths \u2014 per the TDD rule, the malformed-JSON test should be written first and made to pass."
+      ],
+      "usage": [
+        {
+          "input_tokens": 2,
+          "cache_creation_input_tokens": 31914,
+          "cache_read_input_tokens": 20043,
+          "output_tokens": 737,
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 31914,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 737,
+              "cache_read_input_tokens": 20043,
+              "cache_creation_input_tokens": 31914,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 31914
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard"
+        },
+        {
+          "input_tokens": 2,
+          "cache_creation_input_tokens": 31923,
+          "cache_read_input_tokens": 20043,
+          "output_tokens": 711,
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 31923,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 711,
+              "cache_read_input_tokens": 20043,
+              "cache_creation_input_tokens": 31923,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 31923
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard"
+        }
+      ],
+      "elapsed_seconds": [
+        13.878,
+        15.396
+      ],
+      "transcript": "evals/skills/task-review/results/transcripts/baseline-quality-only.json"
+    },
+    {
+      "case_id": "spec-only",
+      "first_run": true,
+      "dispatches": 2,
+      "outputs": [
+        "**SPEC: FAIL**\n\n- **Present:** `--dry-run` flag is parsed \u2014 the CLI surface half of the request exists.\n- **Missing (core requirement):** the flag never gates the write path \u2014 `write_output()` is called unconditionally, so `--dry-run` still writes files. The explicit acceptance criterion \"does not write files\" is violated.\n- **Extra behavior:** none identified.\n\nEvidence: the stated implementation (\"parses `--dry-run` but always calls `write_output()`\") means there is no branch such as `if not args.dry_run: write_output()`. A flag that is parsed but never read is dead input; behaviorally the program is identical to before the change, minus accepting the new argument.\n\nVerdict label: **fail \u2014 requested behavior partially implemented (flag plumbing only), enforcement missing**.",
+        "**Verdict: needs_fixes**\n\n**Critical \u2014 `--dry-run` does not suppress writes.** The task's core acceptance criterion is \"does not write files,\" but `run.py` calls `write_output()` unconditionally after parsing the flag. Evidence: the stated implementation (\"parses `--dry-run` but always calls `write_output()`\") means running with `--dry-run` produces the exact same file writes as running without it. The flag is parsed but never consulted on the write path, so the feature is non-functional \u2014 worse than absent, since users will pass `--dry-run` expecting safety and still mutate files on disk.\n\nRequired fix: gate the write call on the parsed flag (e.g. `if not args.dry_run: write_output()`), and add a test asserting no files are created/modified when `--dry-run` is passed.\n\nNo Important or Minor concerns \u2014 the defect is singular and blocking."
+      ],
+      "usage": [
+        {
+          "input_tokens": 2,
+          "cache_creation_input_tokens": 31924,
+          "cache_read_input_tokens": 20043,
+          "output_tokens": 397,
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 31924,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 397,
+              "cache_read_input_tokens": 20043,
+              "cache_creation_input_tokens": 31924,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 31924
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard"
+        },
+        {
+          "input_tokens": 2,
+          "cache_creation_input_tokens": 31923,
+          "cache_read_input_tokens": 20043,
+          "output_tokens": 391,
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 31923,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 391,
+              "cache_read_input_tokens": 20043,
+              "cache_creation_input_tokens": 31923,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 31923
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard"
+        }
+      ],
+      "elapsed_seconds": [
+        9.528,
+        9.657
+      ],
+      "transcript": "evals/skills/task-review/results/transcripts/baseline-spec-only.json"
+    }
+  ]
+}

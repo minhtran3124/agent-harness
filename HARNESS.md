@@ -39,7 +39,7 @@ request → /feature-intake → Lane + Confidence → route → build → hooks 
    | Lane | Path | Plan? | Human gate |
    |---|---|---|---|
    | **tiny** | direct `Edit` | no | none (hooks are the safety net) |
-   | **normal** | `/subagent-driven-development`, two-stage review per task | yes | only if low confidence / ambiguous |
+   | **normal** | `/subagent-driven-development`, one task reviewer with spec + quality verdicts | yes | only if low confidence / ambiguous |
    | **high-risk** | full chain: `/brainstorming → /xia2 → /writing-plans → build` | yes | only on ambiguity or a hard gate |
 
 3. **Confidence decides escalation.** Low confidence (any lane), or a hard gate, → stop and ask (recorded in `specs/<slug>/ESCALATIONS.md`, deny-on-no-response).
