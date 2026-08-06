@@ -38,9 +38,9 @@ in order:
 
 1. `git show :harness-manifest.json` — used only when the consumer **opts in** to tracking a root
    `harness-manifest.json` (index-side, staged, auditable in the same commit).
-2. **Embedded defaults** baked into the hook — `hooks/lib/gate-modes.default.sh`, CI-generated
-   from the meta-repo `harness-manifest.json` to give **2 warn / 7 block parity**. This is the
-   source for every ordinary consumer (no tracked manifest).
+2. **Embedded defaults** baked into the hook — `hooks/lib/gate-modes.default.sh`, hand-mirrored
+   from the meta-repo `harness-manifest.json` and CI-drift-guarded to give **2 warn / 7 block
+   parity**. This is the source for every ordinary consumer (no tracked manifest).
 
 The hook **never** reads `.claude/harness-manifest.json` or any worktree/on-disk policy file.
 
@@ -61,9 +61,10 @@ so there is no agent-writable, un-index-checkable vector at all.
 - Absent-manifest fallback changes from **block-all** to **embedded 2-warn/7-block parity**. This
   revises `gate-mode-as-data-decisions.md` Decision 1's "consumers stay strict" fail-safe: the
   fail-safe is now parity, not deny-everything.
-- **Drift risk** (embedded defaults vs manifest) is mitigated by generating
-  `hooks/lib/gate-modes.default.sh` from `harness-manifest.json` in CI; a mismatch fails CI, so the
-  duplicate never silently diverges.
+- **Drift risk** (embedded defaults vs manifest) is mitigated by `scripts/check_gate_modes_smoke.py`,
+  which pins the hand-mirrored `hooks/lib/gate-modes.default.sh` to `harness-manifest.json` in CI; a
+  mismatch fails CI, so the duplicate never silently diverges. (The mirror is manual — change the
+  manifest, then update the defaults file; CI enforces they match.)
 - **Break-glass loosening** (unchanged mechanism, per `gate-mode-as-data-decisions.md` Decision 2):
   durable block→warn lives in the manifest `mode` field; session-scoped override is
   `RISK_WARN_CATEGORIES` in the machine-local `settings.local.json` `env` block — the only place a
