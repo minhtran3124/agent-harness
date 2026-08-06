@@ -4,9 +4,15 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import statistics
 import sys
 from pathlib import Path
+
+# A negated mention ("no minor findings", "0 minor") must not be credited as a
+# Minor finding — otherwise a reviewer that reports *no* Minor issue still
+# satisfies the minor-only fixture on the bare substring.
+_NEG_MINOR = re.compile(r"\b(no|zero|0|without|not any|no new)\s+minor\b")
 
 
 def labels(outputs: list[str]) -> set[str]:
@@ -15,10 +21,19 @@ def labels(outputs: list[str]) -> set[str]:
     if "cannot_verify" in text or "cannot verify" in text: found.add("cannot_verify")
     if "spec_verdict: fail" in text or "spec: fail" in text: found.add("spec_fail")
     if "quality_verdict: needs_fixes" in text or "needs_fixes" in text or "needs fixes" in text: found.add("quality_fix")
-    if "minor" in text: found.add("minor")
+    if "minor" in text and not _NEG_MINOR.search(text): found.add("minor")
     if "plan-mandated" in text or "criterion" in text or "secret" in text: found.add("plan_mandated")
     if "spec_verdict: pass" in text or "spec: pass" in text: found.add("spec_pass")
     return found
+
+
+def record_tokens(record: dict) -> int:
+    """Input+output reviewer tokens for one case, summed across its dispatches."""
+    total = 0
+    for usage in record.get("usage", []):
+        if isinstance(usage, dict):
+            total += (usage.get("input_tokens") or 0) + (usage.get("output_tokens") or 0)
+    return total
 
 
 def main() -> int:
@@ -45,9 +60,13 @@ def main() -> int:
         for label, collection in (("baseline", b), ("candidate", c)):
             for record in collection.values():
                 if not record.get("elapsed_seconds"): errors.append(f"{label}: missing elapsed time")
+                if record_tokens(record) <= 0: errors.append(f"{label}: {record['case_id']} missing token usage")
         if not errors:
             old = statistics.median(sum(r["elapsed_seconds"]) for r in b.values()); new = statistics.median(sum(r["elapsed_seconds"]) for r in c.values())
             if new > old: errors.append(f"median runtime regressed: {old} -> {new}")
+            # SC-8 also promises candidate median reviewer *tokens* do not exceed baseline.
+            old_tok = statistics.median(record_tokens(r) for r in b.values()); new_tok = statistics.median(record_tokens(r) for r in c.values())
+            if new_tok > old_tok: errors.append(f"median reviewer tokens regressed: {old_tok} -> {new_tok}")
     if errors:
         print("\n".join(errors), file=sys.stderr); return 1
     print("task-review-eval: passed")
