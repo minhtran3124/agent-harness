@@ -44,7 +44,9 @@ and populated `Files / Action / Verify / Done`:
 New markdown plans add a non-empty `## Global Constraints` section. Each task also carries:
 
 - **Criteria:** one or more mapped `SC-n` rows;
-- **Interfaces:** a concise statement of what the task consumes and produces.
+- **Interfaces:** a concise statement of what the task consumes and produces. The
+  `Produces` clause must name at least one artifact in backticks (e.g. `` `foo.py` ``)
+  so producers are machine-trackable; `Consumes` may stay prose for external inputs.
 
 Run `python3 scripts/check_plan_contract.py <PLAN.md>` before execution. The checker applies this
 contract only to plans that declare `Global Constraints`, so legacy markdown/XML plans continue to

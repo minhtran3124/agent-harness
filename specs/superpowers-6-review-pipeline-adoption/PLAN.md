@@ -114,7 +114,7 @@ A/B evaluation.
 
 - **Files:** evals/skills/task-review/README.md, evals/skills/task-review/schema.json, evals/skills/task-review/fixtures/, evals/skills/task-review/results/baseline.json, scripts/run_task_review_eval.py, scripts/score_task_review_eval.py, scripts/test_run_task_review_eval.py, scripts/test_score_task_review_eval.py
 - **Criteria:** SC-7, SC-8
-- **Interfaces:** Consumes the current spec and quality reviewer prompts plus raw fixture artifacts; produces a version-pinned baseline JSON and a scorer contract reused unchanged by the candidate.
+- **Interfaces:** Consumes the current spec and quality reviewer prompts plus raw fixture artifacts; produces a version-pinned `baseline.json` and a scorer contract reused unchanged by the candidate.
 - **Action:** Before editing any script, run and record `bash scripts/run-tests.sh`. Define fixtures for spec-only, quality-only, combined, Minor-only, cannot-verify, missing-global-constraint, and plan-mandated defects. Build a runner that captures model/client/commit, both reviewer calls, verdicts, token usage, tool calls, and elapsed time without exposing truth files. Add a scorer that evaluates quality before efficiency. Capture the first baseline run before Task 3 deletes either old prompt.
 - **Verify:** `python3 -m pytest scripts/test_run_task_review_eval.py scripts/test_score_task_review_eval.py -q`
 - **Done:** The immutable baseline and its environment metadata exist, all fixture truths are hidden from reviewers, and the scorer rejects incomplete or quality-regressing collections.
@@ -123,7 +123,7 @@ A/B evaluation.
 
 - **Files:** rules/plan-format.md, skills/writing-plans/SKILL.md, skills/writing-plans/plan-document-reviewer-prompt.md, scripts/check_plan_contract.py, scripts/test_check_plan_contract.py, skills/visual-planner/render_plan.py, skills/visual-planner/test_render_plan.py
 - **Criteria:** SC-4
-- **Interfaces:** Consumes existing markdown/XML parsing and SC schema; produces Global Constraints, Criteria, and Interfaces for new markdown plans plus backward-compatible parsed task data.
+- **Interfaces:** Consumes existing markdown/XML parsing and SC schema; produces `check_plan_contract.py` enforcing Global Constraints, Criteria, and Interfaces for new markdown plans plus backward-compatible parsed task data.
 - **Action:** Run the full suite before editing scripts. Define a cut-over rule for new plans. Require exact Global Constraints, task-to-SC Criteria mappings, and `Consumes`/`Produces` Interfaces. Add semantic preflight checks for contradictory constraints, missing interface producers, incompatible names/types, and plan-mandated reviewer defects. Keep legacy markdown/XML plans valid and render the new fields in PLAN HTML. Add positive, mutation, and legacy fixtures.
 - **Verify:** `python3 -m pytest scripts/test_check_plan_contract.py skills/visual-planner/test_render_plan.py -q`
 - **Done:** New plans fail closed on missing context contracts, legacy plans still parse/render, and semantic preflight reports all conflicts in one batch.
@@ -132,7 +132,7 @@ A/B evaluation.
 
 - **Files:** skills/subagent-driven-development/scripts/task_brief.py, skills/subagent-driven-development/scripts/review_package.py, tests/scripts/sdd-artifact-handoffs.test.sh
 - **Criteria:** SC-2
-- **Interfaces:** Consumes PLAN path/task id and explicit BASE/HEAD; produces unique task brief, report path, and review package paths under the Git-resolved SDD state directory.
+- **Interfaces:** Consumes PLAN path/task id and explicit BASE/HEAD; produces `task_brief.py` and `review_package.py` writing brief, report, and package paths under the Git-resolved SDD state directory.
 - **Action:** Implement low-freedom CLIs. `task_brief.py` must extract the exact task, mapped SC rows, Global Constraints, and Interfaces. `review_package.py` must validate both SHAs and ancestry, then write commit list, diff stat, and `git diff -U10 BASE..HEAD`; never infer `HEAD~1`. Make filenames slug/task/SHA scoped, owner-only where supported, collision-safe, and valid in linked worktrees. Test multi-commit tasks, spaces, missing/invalid SHAs, legacy plan input, and parallel task isolation.
 - **Verify:** `bash tests/scripts/sdd-artifact-handoffs.test.sh`
 - **Done:** The controller can obtain all three handoff paths without reading artifact contents, and the package always covers the complete requested range.
@@ -141,7 +141,7 @@ A/B evaluation.
 
 - **Files:** skills/subagent-driven-development/task-reviewer-prompt.md, skills/subagent-driven-development/spec-reviewer-prompt.md, skills/subagent-driven-development/code-quality-reviewer-prompt.md, scripts/check_task_review_contract.py, scripts/test_check_task_review_contract.py
 - **Criteria:** SC-1, SC-3
-- **Interfaces:** Consumes brief/report/diff paths and exact Global Constraints; produces two verdicts plus bounded evidence-backed findings.
+- **Interfaces:** Consumes brief/report/diff paths and exact Global Constraints; produces `task-reviewer-prompt.md` returning two verdicts plus bounded evidence-backed findings.
 - **Action:** Add the consolidated prompt with `spec_verdict = pass|fail|cannot_verify`, `quality_verdict = approved|needs_fixes`, and bounded findings containing severity/category/file:line/rationale/action. Ban reviewer coaching, pre-rated severity, report trust, mutation, and broad codebase crawling. Allow one named focused search per concrete risk. Mark plan-mandated defects. Remove the optional external Superpowers reviewer branch and retire the two old prompts only after baseline evidence exists. Add a deterministic contract checker and mutation tests.
 - **Verify:** `python3 -m pytest scripts/test_check_task_review_contract.py -q`
 - **Done:** One self-contained local prompt covers both judgments, unknown evidence, severity calibration, and terse output; old prompt paths have no live consumer.
@@ -150,7 +150,7 @@ A/B evaluation.
 
 - **Files:** agents/task-reviewer.md, agents/README.md, tests/scripts/task-reviewer-readonly.test.sh
 - **Criteria:** SC-5
-- **Interfaces:** Consumes artifact paths and review prompt; produces findings only, with no mutation or nested-agent capability.
+- **Interfaces:** Consumes artifact paths and review prompt; produces `task-reviewer.md` agent yielding findings only, with no mutation or nested-agent capability.
 - **Action:** Add a dedicated task-review agent rather than weakening capabilities needed by correctness/intent reviewers. Whitelist only read/search operations and narrowly scoped read-only commands if the harness supports them. Route any focused test request to `test-runner`. Add a contract test that fails if Write/Edit/Agent or general mutation-capable Bash enters the declared tool surface.
 - **Verify:** `bash tests/scripts/task-reviewer-readonly.test.sh`
 - **Done:** Per-task review independence is structural, while the existing final reviewer role retains the capabilities required by its separate oracles.
@@ -159,7 +159,7 @@ A/B evaluation.
 
 - **Files:** skills/subagent-driven-development/SKILL.md, skills/subagent-driven-development/implementer-prompt.md, skills/subagent-driven-development/references/review-chain.md, tests/scripts/sdd-task-review-routing.test.sh
 - **Criteria:** SC-1, SC-2, SC-3
-- **Interfaces:** Consumes the new PLAN/task-artifact/reviewer contracts; produces task completion state, durable Minor findings, and final-review inputs.
+- **Interfaces:** Consumes the new PLAN/task-artifact/reviewer contracts; produces `SKILL.md` orchestration for task completion state, durable Minor findings, and final-review inputs.
 - **Action:** Generate a brief before implementation, require the detailed implementer report in its report file, and accept only a short return summary. Generate the review package from the recorded pre-task BASE through current HEAD. Dispatch the task-reviewer with an explicit model. Route `cannot_verify` to one focused context/check retry and then escalation. Send all Critical/Important findings in one fix dispatch and re-review both verdicts. Append Minor findings to SUMMARY and the progress ledger, then pass the roll-up to final review. Bound narration to one short status line between tool calls. Never paste accumulated task history or diff contents.
 - **Verify:** `bash tests/scripts/sdd-task-review-routing.test.sh`
 - **Done:** A clean task uses one reviewer; every blocking, unknown, Minor, fix, resume, and multi-commit branch has an explicit durable route.
@@ -168,7 +168,7 @@ A/B evaluation.
 
 - **Files:** skills/correctness-review/SKILL.md, skills/correctness-review/prompts/shared.md, skills/intent-review/SKILL.md, skills/intent-review/intent-reviewer-prompt.md, tests/scripts/final-review-package-contract.test.sh
 - **Criteria:** SC-6
-- **Interfaces:** Consumes a shared branch diff package path; produces correctness and intent findings under their existing independent oracle contracts.
+- **Interfaces:** Consumes a shared branch diff package path; produces `review-chain.md` wiring correctness and intent findings under their existing independent oracle contracts.
 - **Action:** Let both final reviews read the pre-generated branch package and avoid rebuilding the same Git diff. Preserve their distinct context inputs and blindness rules. Permit focused inspection outside the package only for a named risk with a cited search surface. Keep fallback diff construction for standalone invocation when no package is supplied. Test that PLAN prose never leaks into intent review and intent never leaks into correctness FIND/scorer prompts.
 - **Verify:** `bash tests/scripts/final-review-package-contract.test.sh`
 - **Done:** Final reviewers share only mechanical diff evidence; no oracle, threshold, finding taxonomy, or completion gate is merged or weakened.
@@ -177,7 +177,7 @@ A/B evaluation.
 
 - **Files:** HARNESS.md, skills/README.md, rules/orchestration.md, rules/auto-correct-scope.md, CLAUDE.md, harness-manifest.json, scripts/run-tests.sh, scripts/check_task_review_adoption.py, scripts/test_check_task_review_adoption.py
 - **Criteria:** SC-1, SC-3, SC-4, SC-9
-- **Interfaces:** Consumes the implemented source contracts; produces one coherent documented workflow and an aggregate deterministic acceptance check.
+- **Interfaces:** Consumes the implemented source contracts; produces one coherent documented workflow and an aggregate `check_task_review_adoption.py` acceptance check.
 - **Action:** Run the full suite before script edits. Replace “two-stage review” wording with “one reviewer, two verdicts,” document severity/unknown/file handoffs, and register the new plan/task-review contract paths in the manifest. Add all new deterministic tests to the CI-equivalent runner. Build an aggregate check that verifies prompt retirement, schema authority, docs truth, Minor/final handoff, derived-install parity, and receipt readiness without executing stochastic evals.
 - **Verify:** `python3 -m pytest scripts/test_check_task_review_adoption.py -q`
 - **Done:** No stale pre-6.0 runtime claim remains, one authority exists for each new contract, and the aggregate source check passes.
@@ -186,7 +186,7 @@ A/B evaluation.
 
 - **Files:** evals/skills/task-review/results/candidate.json, evals/skills/task-review/results/comparison.md, evals/skills/task-review/results/transcripts/
 - **Criteria:** SC-7, SC-8
-- **Interfaces:** Consumes the frozen runner/scorer/fixtures and deployed candidate; produces immutable raw transcripts, candidate JSON, and a human-readable comparison.
+- **Interfaces:** Consumes the frozen runner/scorer/fixtures and deployed candidate; produces immutable raw transcripts, `candidate-v2.json`, and a human-readable comparison.
 - **Action:** Run candidate with the exact baseline model, client, reasoning, clean-worktree, and first-run settings. Score quality first. Reject the candidate on a new miss, unsafe pass, false-positive class, unresolved unknown, or skipped Minor roll-up. Only then evaluate reviewer dispatches, tokens, tool calls, latency, and variance. Do not tune and re-run a failed case; record the miss and change the prompt in a new candidate iteration.
 - **Verify:** `python3 scripts/score_task_review_eval.py --compare evals/skills/task-review/results/baseline.json evals/skills/task-review/results/candidate.json --quality-gate --efficiency-gate`
 - **Done:** SC-7 and SC-8 pass on a complete version-pinned collection, or the rollout stops with the failed hypothesis recorded.
@@ -195,7 +195,7 @@ A/B evaluation.
 
 - **Files:** specs/superpowers-6-review-pipeline-adoption/SUMMARY.md, specs/superpowers-6-review-pipeline-adoption/PLAN.md, .review-receipt.json
 - **Criteria:** SC-1, SC-2, SC-3, SC-4, SC-5, SC-6, SC-7, SC-8, SC-9
-- **Interfaces:** Consumes all task evidence and A/B results; produces a SC-complete SUMMARY, deployed harness, reviewed HEAD receipt, and PR-ready branch.
+- **Interfaces:** Consumes all task evidence and A/B results; produces a SC-complete `SUMMARY.md`, deployed harness, reviewed HEAD receipt, and PR-ready branch.
 - **Action:** Run focused checks, full `bash scripts/run-tests.sh`, context-propagation audit, correctness review, and intent review. Fill SUMMARY only with commands actually run and map every SC. Resolve every finding, write the receipt at reviewed HEAD, deploy with `bash scripts/deploy-harness.sh`, rerun source/deployed parity checks, and open a PR for human review. Never merge it.
 - **Verify:** `python3 scripts/verify_summary.py --check superpowers-6-review-pipeline-adoption`
 - **Done:** Every SC has passing evidence, full tests and all three final oracles are green, source equals deployed state, receipt matches HEAD, and the PR awaits human review.
