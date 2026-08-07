@@ -8,10 +8,10 @@ pointed to from — `PROJECT.md`.
 
 | Agent | Role | Model | Dispatched by |
 |---|---|---|---|
-| `coding` | Implement/refactor/fix code, end-to-end | sonnet | `subagent-driven-development`, ad-hoc |
-| `reviewer` | Structurally read-only review passes (correctness-review, intent-review) | caller-set | review skills |
-| `task-reviewer` | Read-only per-task spec + quality review | caller-set | `subagent-driven-development` |
-| `test-runner` | Run the minimal relevant tests and report/diagnose results | haiku | after implementation |
+| `coding` | Implement/refactor/fix code, end-to-end | `claude-opus-4-8` | `subagent-driven-development`, ad-hoc |
+| `reviewer` | Structurally read-only review passes (correctness-review, intent-review) | `claude-opus-5` default; scorer overrides to `claude-opus-4-8` | review skills |
+| `task-reviewer` | Read-only per-task spec + quality review | `claude-opus-5` | `subagent-driven-development` |
+| `test-runner` | Run the minimal relevant tests and report/diagnose results | `claude-haiku-4-5-20251001` | after implementation |
 
 ## Portability model (mirrors xia2)
 
