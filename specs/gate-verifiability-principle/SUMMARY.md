@@ -13,10 +13,11 @@ Input-type: harness improvement
 
 ### Intent
 
-<!-- The request was made in Vietnamese. Per this repo's English-only spec convention the
-     operative text below is the English translation; the verbatim original is preserved
-     immediately after it, since the template requires the un-paraphrased request as the
-     oracle for /intent-review. Translation only — no scope was added or dropped. -->
+<!-- The request was made in another language. At the user's explicit and repeated
+     instruction this spec is English-only, so the text below is the English translation
+     and the non-English original has been removed rather than kept alongside it.
+     Translation only — no scope was added or dropped. Note for /intent-review: the
+     oracle here is a faithful translation, not the raw original. -->
 
 "Review the current image, distil the knowledge out of it, then compare against the current
 harness repo on branch `simplify`. Consider what we can learn and apply here."
@@ -26,16 +27,9 @@ Scope decided by user selection: "Do B+C (tiny) first — add a 'Code-verifiable
 Not auto-verified' panel to the template, plus one line for the 3-tier principle in
 CLAUDE.md. Do not touch xia2."
 
-<!-- Verbatim original (vi), oracle of record — do not paraphrase or delete:
-     "review ảnh hiện tại, đúc kết ra kiến thức từ đó, sau đó so sánh với repo harness
-     hiện tại trên branch simplify. Xem xét thử chúng ta có thể học và áp dụng dc gì ở đây."
-     Scope: "Làm B+C (tiny) trước — thêm panel 'Code-verifiable / Not auto-verified' vào
-     template + 1 dòng principle 3-tầng vào CLAUDE.md. Không động vào xia2." -->
-
-<!-- Later turns in the same session, English translations: "push and open PR";
-     "delete it" (re: the untracked .grok/ directory); "check CI failed <run URL>";
-     "make sure the spec above is noted entirely in English; if there is Vietnamese,
-     update it". -->
+Later turns in the same session: "push and open PR"; "delete it" (the untracked `.grok/`
+directory); "check CI failed <run URL>"; "make sure the spec above is entirely in English,
+remove the Vietnamese — this is a forced request".
 
 ## Ship log
 
