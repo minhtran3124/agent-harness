@@ -72,6 +72,21 @@ Input-type: new spec | spec slice | change request | new initiative | maintenanc
 | --- | --- | --- | --- | --- |
 | <unit / lint / build / behavior> | `<command>` | 0 | <output excerpt on fail> | <SC-n or blank> |
 
+### Not auto-verified
+
+<!-- The other half of the panel. `### Verify` above is the CODE-VERIFIABLE side: every
+     row there is a command a machine re-ran. This section is the negative scope — what
+     this change CLAIMS that no gate checks. Per CLAUDE.md "Gate verifiability", name the
+     tier each such claim actually reached:
+       traceability — structure matches (an ID exists, a render agrees with its ledger)
+       provenance   — evidence re-derived from the source of truth (receipt pinned at base)
+       truth        — behavior re-run (command re-executed, exit codes compared)
+     Listing an unverified claim here is not a defect; leaving one UNLISTED is — that is
+     how a traceability-tier check gets read as proof of truth.
+     Use `- none` only when every claim in this SUMMARY is covered by a Verify row. -->
+
+- <claim> — reached <traceability | provenance>; not re-run because <reason>
+
 ### Rollback
 
 <!-- Required for any high-risk / Rule-4 action: the exact command(s) to undo it.

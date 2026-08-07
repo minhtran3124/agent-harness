@@ -49,7 +49,7 @@ Hooks live in `hooks/` (top-level). Register them in `settings.json` under the a
 |---|---|---|---|
 | `pre-bash-dispatch.sh` | PreToolUse (Bash) | Fast-path exit 0 on non-git Bash; on `git commit`/`push` fans out to the four git sub-hooks below in settings order (check-untracked-py → commit-quality-gate → risk-corroboration → branch-guard), relaying each sub-hook's stdout/stderr unchanged and propagating an exit-2 block | ✅ |
 | `check-untracked-py.sh` | PreToolUse (Bash `git *`, via dispatch) | Block commit/push if untracked `.py` files exist | ↳ |
-| `commit-quality-gate.sh` | PreToolUse (Bash `git commit`, via dispatch) | Secrets scan + pending-escalation gate + lane-evidence gate (`verify_summary.py --lane` on each staged `SUMMARY.md`); debug-artifact check + targeted pytest are opt-in via `REQUIRE_APP_GATES=1` (off by default — the harness core ships no `app/` code) | ↳ |
+| `commit-quality-gate.sh` | PreToolUse (Bash `git commit`, via dispatch) | Secrets scan + pending-escalation gate + lane-evidence gate (`verify_summary.py --lane` on each staged `SUMMARY.md`, whose advisories are relayed on the passing path too); debug-artifact check + targeted pytest are opt-in via `REQUIRE_APP_GATES=1` (off by default — the harness core ships no `app/` code); the high-risk `### Not auto-verified` check is opt-in via `REQUIRE_NOT_AUTO_VERIFIED=1` (warn-only by default) | ↳ |
 | `risk-corroboration.sh` | PreToolUse (Bash `git commit`, via dispatch) | Corroborate the declared `Lane:` against the staged diff; per-gate mode comes from `harness-manifest.json` (`hard_gates.detectable[].mode`) — block-mode gates deny a below-`high-risk` lane, warn-mode gates (`workflow-engine`, `weakening-validation`) print a note and allow | ↳ |
 | `branch-guard.sh` | PreToolUse (Bash `git commit`, via dispatch) | Warn when committing on `main` | ↳ |
 | `branch-isolation-guard.sh` | PreToolUse (Edit/Write) | Hard-block code edits on a shared branch (`HARNESS_SHARED_BRANCHES`, default `main`/`master`) regardless of plan state, unless break-glass `BRANCH_ISOLATION_REASON` is set. `specs/*` bookkeeping is exempt (intake writes `SUMMARY.md` before the branch exists). (Write-time enforcement; `branch-guard.sh` only warns at commit time.) | ✅ |
@@ -59,6 +59,12 @@ Hooks live in `hooks/` (top-level). Register them in `settings.json` under the a
 | `scope-gate.sh` | UserPromptSubmit | Warn on implementation intent with no plan referenced (lane-aware) | ✅ |
 | `state-breadcrumb.sh` | SessionEnd | Append a dated session breadcrumb to `specs/STATE.md` (`## Session End Log`) for cross-session resumption; never blocks | ✅ |
 | `session-knowledge.sh` | SessionStart | Load `docs/solutions/INDEX.md` + `critical-patterns.md` into context when the store has data; silent when empty; never blocks | ✅ |
+
+### Gate verifiability (traceability ≠ provenance ≠ truth)
+
+Every gate enforces exactly one evidence tier and must not claim a higher one: **traceability** (structure matches — an ID exists, a rendered artifact agrees with its ledger), **provenance** (evidence is re-derived from the source of truth — a receipt pinned at base, an INDEX rebuilt), or **truth** (behavior is re-run — a Verify row re-executes and exit codes are compared). When adding a gate or hook, document two lines: `Verifies:` what code checks, and `Does not verify:` the negative scope. Existing example — the lane-evidence gate verifies a `### Verify` row *exists*; it does not verify the row is *honest* (that is the opt-in `REQUIRE_VERIFY=1` re-run gate).
+
+Each `SUMMARY.md` states its own negative scope in `### Not auto-verified`: the claims it makes that no gate checks, each labelled with the tier it reached. On the high-risk lane this is checked — **advisory by default**, blocking under `REQUIRE_NOT_AUTO_VERIFIED=1`. That check is itself traceability-tier: `Verifies:` the section exists and holds a non-placeholder bullet (or `- none`); `Does not verify:` that the claims are complete or their tier labels correct. `- none` satisfies it, deliberately — it forces the question to be answered, not answered truthfully.
 
 ## Gotchas
 
