@@ -1,6 +1,6 @@
 ---
 name: correctness-review
-description: Run an adversarial runtime-correctness review over a diff. Independently find, score, route, and close concrete bugs before a PR; use standalone or as SDD’s final pre-ship gate.
+description: Run an adversarial runtime-correctness review over a diff. Independently find, score, route, and close concrete bugs before a PR; use standalone or as subagent-driven-development’s final pre-ship gate.
 ---
 
 # Adversarial Correctness Review
