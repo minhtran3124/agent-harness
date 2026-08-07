@@ -37,7 +37,7 @@ Ensure branch isolation, set the plan `status: active`, and transition the durab
   The implementer writes its detailed report to a path in `.harness-state/sdd/` and returns only a
   short status, commits, and report path. Do not paste task history or report contents.
 - Generate one explicit `BASE..HEAD` package with `review_package.py`; pass brief/report/package
-  paths to `task-reviewer` with an explicit standard-or-better model. One reviewer returns both
+  paths to `task-reviewer`, which pins `claude-opus-5`. One reviewer returns both
   `spec_verdict` and `quality_verdict` using `task-reviewer-prompt.md`.
 - `cannot_verify` gets one focused context or test-runner retry. If still unknown, escalate; never
   treat it as a pass. Fix all Critical/Important findings in one dispatch, then re-review both

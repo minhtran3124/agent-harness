@@ -21,14 +21,16 @@ reviewer that sees the plan anchors on it and re-confirms the plan's possible mi
 Symmetric with correctness-review's plan-blindness; here it exists to catch intent drift.
 
 **Use a different model than the implementer** (ensemble diversity — a different model notices
-different drift). Prefer the most capable model available for this pass.
+different drift). Pinned to `claude-opus-5` — the most capable tier, and a distinct model from the
+implementer's `claude-opus-4-8` (`agents/coding.md`), which preserves the diversity this pass
+depends on.
 
 ```
 Task tool (reviewer):
   description: "Intent review for <slug>"
   subagent_type: reviewer
   # reviewer is a read-only agent (no Write/Edit/Agent) — review independence is enforced structurally, not by instruction.
-  model: <different from implementer; most capable available>
+  model: claude-opus-5
   prompt: |
     You are an intent reviewer. Your ONLY job is to judge whether this finished diff is
     what the user ORIGINALLY ASKED FOR — not whether it matches a plan, not whether it runs.

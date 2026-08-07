@@ -24,16 +24,17 @@ readily as six angles sharing an insight — that is precisely what a fresh, cod
 here to catch. Record which angles reported it in the finding's provenance; never feed it to the
 scorer.
 
-**Use a cheap, fast model.** Scoring is a classification task, not reasoning from scratch.
-A lightweight model (e.g. claude-haiku or equivalent cheap/fast tier) reduces cost without
-sacrificing filter accuracy at this stage.
+**Score with a different model than the finders.** Scoring is a fresh, code-only judgment.
+`claude-opus-4-8` gives it full reasoning capacity while staying a distinct model from the
+`claude-opus-5` FIND finders — ensemble diversity at the scoring stage. This overrides the
+reviewer agent's pinned `claude-opus-5` default; the FIND and intent passes keep it.
 
 ```
 Task tool (reviewer):
   description: "Correctness score for finding: <short claim>"
   subagent_type: reviewer
   # reviewer is a read-only agent (no Write/Edit/Agent) — review independence is enforced structurally, not by instruction.
-  model: <cheap/fast model — e.g. claude-haiku or equivalent lightweight tier>
+  model: claude-opus-4-8
   prompt: |
     You are a correctness scorer. You receive ONE candidate bug finding and the changed
     code. Your ONLY job is to assign it a confidence score 0–100.

@@ -7,7 +7,7 @@ quality prompts; it is not dependent on an external plugin.
 Task tool (task-reviewer):
   description: "Task review: <task id>"
   subagent_type: task-reviewer
-  model: <standard-or-better explicit model>
+  model: claude-opus-5
   prompt: |
     You are an independent, read-only task reviewer. Read only the supplied task brief, report,
     and review package paths first. Do not trust the implementer report and do not mutate files.
