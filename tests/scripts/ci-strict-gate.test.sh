@@ -88,4 +88,50 @@ t "diff touches templates/ (the ^templates/ extension) with NO SUMMARY → BLOCK
 r=$(mkrepo); mkdir -p "$r/templates"; echo 'x' > "$r/templates/FOO.template.md"; commit_run "$r"
 assert_rc 1
 
+# ── scripts/ WARN tier ────────────────────────────────────────────────────────
+# scripts/ holds the gate logic itself (verify_summary.py decides what every other
+# gate accepts), so it is gated — but warn-first, because 9 of the last 80 PRs
+# would have blocked on it. REQUIRE_SCRIPTS_PROOF=1 promotes warn → block.
+
+t "diff touches scripts/ with NO SUMMARY → WARN, not block (exit 0)"
+r=$(mkrepo); echo '# edit' >> "$r/scripts/verify_summary.py"; commit_run "$r"
+assert_rc 0
+
+t "the scripts/ warn tier still SAYS what is missing (a silent warn is no gate)"
+r=$(mkrepo); echo '# edit' >> "$r/scripts/verify_summary.py"; commit_run "$r"
+assert_rc_contains 0 "WARN-ONLY"
+
+t "scripts/ + REQUIRE_SCRIPTS_PROOF=1 and no SUMMARY → BLOCK (exit 1)"
+r=$(mkrepo); echo '# edit' >> "$r/scripts/verify_summary.py"
+base=$(git -C "$r" rev-parse HEAD)
+git -C "$r" add -A >/dev/null 2>&1; git -C "$r" commit -qm change
+OUT=$(cd "$r" && REQUIRE_SCRIPTS_PROOF=1 bash "$GATE" "$base" 2>&1); RC=$?
+assert_rc 1
+
+t "scripts/ + a real high-risk SUMMARY → PASS (exit 0)"
+r=$(mkrepo); echo '# edit' >> "$r/scripts/verify_summary.py"
+write_summary "$r" "high-risk" "test 1 = 1"; commit_run "$r"
+assert_rc 0
+
+t "diff touches ONLY scripts/test_*.py (excluded false-positive class) → PASS silently (exit 0)"
+r=$(mkrepo); echo 'x' > "$r/scripts/test_thing.py"; commit_run "$r"
+assert_silent_ok
+
+t "scripts/test_*.py stays excluded even under REQUIRE_SCRIPTS_PROOF=1"
+r=$(mkrepo); echo 'x' > "$r/scripts/test_thing.py"
+base=$(git -C "$r" rev-parse HEAD)
+git -C "$r" add -A >/dev/null 2>&1; git -C "$r" commit -qm change
+OUT=$(cd "$r" && REQUIRE_SCRIPTS_PROOF=1 bash "$GATE" "$base" 2>&1); RC=$?
+assert_rc 0
+
+t "a test-only scripts/ edit ALONGSIDE a real one is still gated (exclusion is per-file, not per-diff)"
+r=$(mkrepo); echo 'x' > "$r/scripts/test_thing.py"; echo '# edit' >> "$r/scripts/verify_summary.py"
+commit_run "$r"
+assert_rc_contains 0 "WARN-ONLY"
+
+t "hooks/ keeps BLOCKING even while scripts/ is warn-tier (tiers do not leak)"
+r=$(mkrepo); mkdir -p "$r/hooks"; echo '#!/bin/bash' > "$r/hooks/foo.sh"
+echo '# edit' >> "$r/scripts/verify_summary.py"; commit_run "$r"
+assert_rc 1
+
 finish
