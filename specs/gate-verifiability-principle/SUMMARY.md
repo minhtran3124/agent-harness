@@ -1,10 +1,10 @@
 # gate-verifiability-principle — Summary
 
-Lane: tiny
+Lane: high-risk
 Confidence: high
-Reason: docs-only, one file (CLAUDE.md), no new public callable; CLAUDE.md is outside the workflow-engine and high-blast hard-gate surfaces
-Flags: none
-Affects: none
+Reason: re-classified from `tiny` mid-implementation — the scope grew to `templates/SUMMARY.template.md`, which `scripts/ci-strict-gate.sh` treats as a hard-gate path (the SUMMARY schema is machine-read by the ledger + risk-corroboration, so a template edit is a contract change). The original `tiny` call was made when the scope was CLAUDE.md only.
+Flags: hard-gate:contract-surface (templates/ — CI-only arm of the strict-gate regex, absent from the local risk-corroboration hook)
+Affects: artifact-schema-summary (templates/SUMMARY.template.md) → consumers scripts/verify_summary.py, hooks/commit-quality-gate.sh
 Input-type: harness improvement
 
 > `Lane` drives **ceremony** (how much proof). `Confidence` drives **interruption**
@@ -42,16 +42,36 @@ v0.20 model (TRACEABILITY ≠ VERIFIED PROVENANCE ≠ TRUTH).
 
 ### Deviations
 
-- none
+- **Lane re-classification (in-flight hard gate)** — intake recorded `tiny` when the scope
+  was CLAUDE.md only. Adding `templates/SUMMARY.template.md` tripped the `^templates/` arm
+  of `scripts/ci-strict-gate.sh`, an in-flight trigger per `rules/orchestration.md`
+  ("hard gate discovered mid-implementation"). Lane corrected to `high-risk` and the
+  required evidence supplied. The gate itself was **not** weakened — the human had already
+  narrowed this gate by explicitly requesting the template panel, so the work proceeded.
+- **Verify table rebuilt** — `bash scripts/run-tests.sh` was removed as a row; the strict
+  gate re-runs each row under a 60s cap and a cold runner exceeds it
+  (`docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md`). Replaced with
+  bounded, pipe-free checks.
 
 ### Verify
+
+<!-- Rows are pipe-free and individually <60s: ci-strict-gate.sh re-runs each one
+     under a 60s per-command cap. The full suite is deliberately NOT a row (it is
+     covered by the CI `tests` job on ubuntu + macos); making it one is the
+     documented TIMEOUT failure in
+     docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md. -->
 
 | Check | Command | Exit | Notes | Criterion |
 | --- | --- | --- | --- | --- |
 | doc-truth lint | `bash scripts/lint-doc-truth.sh` | 0 | paths + hook table consistent | |
-| harness suite | `bash scripts/run-tests.sh` | 0 | template change parse-safe for both consumers | |
+| schema parser contract | `python3 -m pytest scripts/test_verify_summary.py -q` | 0 | canonical guard for the template surface | |
+| panel present in template | `grep -q "^### Not auto-verified" templates/SUMMARY.template.md` | 0 | part B shipped | |
+| tier principle in CLAUDE.md | `grep -q "Gate verifiability" CLAUDE.md` | 0 | part C shipped | |
+| lane evidence | `python3 scripts/verify_summary.py --lane gate-verifiability-principle` | 0 | high-risk evidence present | |
 | contract consumers | `bash scripts/check-contract-impact.sh templates/SUMMARY.template.md` | 0 | verify_summary.py + commit-quality-gate.sh | |
-| lane evidence | `python scripts/verify_summary.py --lane gate-verifiability-principle` | 0 | tiny-lane evidence present | |
+
+Full suite (`bash scripts/run-tests.sh`) was run by hand — 299 passed, ALL GREEN — and is
+covered by the CI `tests` job; it is kept out of the table on purpose (60s cap).
 
 ### Not auto-verified
 
@@ -64,8 +84,21 @@ v0.20 model (TRACEABILITY ≠ VERIFIED PROVENANCE ≠ TRUTH).
 
 ### Rollback
 
-- `git revert <sha>` (docs-only)
+Docs-only and fully reversible; no migration, no runtime code path.
+
+- Revert both commits: `git revert 81c9e32 ecdcb49`
+- Or drop the branch entirely: `git push github --delete docs/gate-verifiability-principle`
+- Reverting restores `templates/SUMMARY.template.md` to its 4-section shape; no existing
+  `specs/*/SUMMARY.md` depends on the new section, so nothing else breaks.
 
 ### Harness-Delta
 
-- none
+- **backlog** — `scripts/ci-strict-gate.sh` carries a `^templates/` hard-gate arm that
+  `hooks/risk-corroboration.sh` deliberately lacks. A template-only change therefore commits
+  clean locally at `tiny` and is only rejected at CI, after the PR is open. The asymmetry is
+  documented as intentional in the script comment, but it means intake cannot classify
+  correctly for this path. Worth `/compound` — either mirror the arm into the local hook or
+  have intake read the CI regex.
+- **backlog** — `scripts/resolve_finish_context.py` resolved `base: main` for a branch cut
+  from `simplify`, yielding a 363-file diff and a spurious
+  `context_propagation_audit_required: true`. Base had to be corrected by hand.
