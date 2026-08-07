@@ -1,0 +1,12 @@
+{
+  "created_at": "2026-08-07T03:37:38Z",
+  "last_event_id": "9da9695a-af04-42cb-bcf8-a53d056daaf5",
+  "resume_event": null,
+  "run_id": "327e6b1a-2ff8-48a8-b788-5c4a6b43c5e8",
+  "seq": 5,
+  "sha": null,
+  "slug": "gate-verifiability-principle",
+  "state": "verifying",
+  "updated_at": "2026-08-07T03:52:27Z",
+  "waiting_on": null
+}

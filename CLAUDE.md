@@ -60,6 +60,10 @@ Hooks live in `hooks/` (top-level). Register them in `settings.json` under the a
 | `state-breadcrumb.sh` | SessionEnd | Append a dated session breadcrumb to `specs/STATE.md` (`## Session End Log`) for cross-session resumption; never blocks | ✅ |
 | `session-knowledge.sh` | SessionStart | Load `docs/solutions/INDEX.md` + `critical-patterns.md` into context when the store has data; silent when empty; never blocks | ✅ |
 
+### Gate verifiability (traceability ≠ provenance ≠ truth)
+
+Every gate enforces exactly one evidence tier and must not claim a higher one: **traceability** (structure matches — an ID exists, a rendered artifact agrees with its ledger), **provenance** (evidence is re-derived from the source of truth — a receipt pinned at base, an INDEX rebuilt), or **truth** (behavior is re-run — a Verify row re-executes and exit codes are compared). When adding a gate or hook, document two lines: `Verifies:` what code checks, and `Does not verify:` the negative scope. Existing example — the lane-evidence gate verifies a `### Verify` row *exists*; it does not verify the row is *honest* (that is the opt-in `REQUIRE_VERIFY=1` re-run gate).
+
 ## Gotchas
 
 - `specs/` is tracked — `PLAN.md`, `design.md`, `research-brief.md`, and sidecars are committed; `PLAN.html` and `.plan-review.json` (rebuildable derived artifacts) stay gitignored. Skills update plans in-place; the `shipped` transition is committed with the rest
