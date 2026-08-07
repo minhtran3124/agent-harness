@@ -22,6 +22,7 @@ Exit codes:
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 import sys
@@ -44,6 +45,14 @@ _TEMPLATE_ROLLBACK_RE = re.compile(r"^`?git revert <sha>`?$")
 # placeholder. `- none` is deliberately NOT matched here — it is a legitimate answer
 # (every claim covered by a Verify row) and the template says so.
 _TEMPLATE_NOT_VERIFIED_RE = re.compile(r"^<claim>\b|^<.*>\s*$")
+
+# Rollout: WARN-FIRST. 52 of the 53 pre-existing high-risk specs predate the
+# `### Not auto-verified` section, so requiring it outright would tax every future
+# edit to a legacy spec -- including a typo fix. Default is a printed warning with a
+# zero exit; set REQUIRE_NOT_AUTO_VERIFIED=1 to make it blocking. Flip the default
+# here (not at each call site) once the back catalogue has drained.
+# Same opt-in shape as REQUIRE_VERIFY / REQUIRE_APP_GATES / RISK_CORROBORATION_STRICT.
+_NOT_AUTO_VERIFIED_ENV = "REQUIRE_NOT_AUTO_VERIFIED"
 
 # A whole command that proves nothing: exit-0 of a no-op is not evidence.
 # `true`, `:`, `exit 0`, or a bare `echo …` (echo piped/chained into a real tool is
@@ -268,6 +277,46 @@ def _has_real_not_auto_verified(section: str) -> bool:
     return False
 
 
+def _not_auto_verified_is_blocking() -> bool:
+    """Return whether a missing `### Not auto-verified` should fail the lane gate."""
+    return os.environ.get(_NOT_AUTO_VERIFIED_ENV, "").strip() not in ("", "0", "false")
+
+
+def _not_auto_verified_issue(text: str) -> str | None:
+    """Return the negative-scope complaint for this SUMMARY, or None if satisfied.
+
+    Lane-agnostic: the caller decides which lanes it applies to, and
+    `_not_auto_verified_is_blocking()` decides whether it blocks or only warns.
+    """
+    section = _section(text, "Not auto-verified")
+    if section is None:
+        return (
+            "`### Not auto-verified` section missing -- state the negative scope "
+            "(what this change claims that no gate checks), or `- none`"
+        )
+    if not _has_real_not_auto_verified(section):
+        return (
+            "`### Not auto-verified` is empty or only the unedited template bullet "
+            "-- write the real unverified claims, or `- none`"
+        )
+    return None
+
+
+def check_lane_warnings(text: str) -> list[str]:
+    """Return non-blocking lane advisories.
+
+    Currently only the warn-first `### Not auto-verified` rollout. These are printed
+    but never change an exit code -- see `_NOT_AUTO_VERIFIED_ENV`.
+    """
+    if _not_auto_verified_is_blocking():
+        return []  # it is an error instead; do not report it twice
+    lane = _resolve_lane(text)
+    if lane != "high-risk":
+        return []
+    issue = _not_auto_verified_issue(text)
+    return [f"lane `high-risk`: {issue}"] if issue else []
+
+
 def _sc_map_for_summary(
     summary_path: Path | None, plan_dir: Path | None = None
 ) -> dict[str, str]:
@@ -362,17 +411,9 @@ def check_lane_evidence(
             )
 
     if lane == "high-risk":
-        not_verified = _section(text, "Not auto-verified")
-        if not_verified is None:
-            errors.append(
-                "lane `high-risk`: missing `### Not auto-verified` section -- state the "
-                "negative scope (what this change claims that no gate checks), or `- none`"
-            )
-        elif not _has_real_not_auto_verified(not_verified):
-            errors.append(
-                "lane `high-risk`: `### Not auto-verified` is empty or only the unedited "
-                "template bullet -- write the real unverified claims, or `- none`"
-            )
+        issue = _not_auto_verified_issue(text)
+        if issue and _not_auto_verified_is_blocking():
+            errors.append(f"lane `high-risk`: {issue}")
 
         rollback = _section(text, "Rollback")
         if rollback is None:
@@ -402,10 +443,11 @@ def _check_lane_targets(
     failed = False
     for target in targets:
         path = _resolve_summary_path(target, specs_root)
+        warnings: list[str] = []
         if path.is_file():
-            errors = check_lane_evidence(
-                path.read_text(encoding="utf-8"), summary_path=path, plan_dir=plan_dir
-            )
+            text = path.read_text(encoding="utf-8")
+            errors = check_lane_evidence(text, summary_path=path, plan_dir=plan_dir)
+            warnings = check_lane_warnings(text)
         else:
             errors = [f"{path}: not a file"]
         if errors:
@@ -415,6 +457,12 @@ def _check_lane_targets(
                 print(f"    - {error}")
         else:
             print(f"✓ {path}")
+        # Advisories print on BOTH paths and never set `failed`. They must survive a
+        # passing run: a warning only emitted on failure is a warning nobody reads.
+        for warning in warnings:
+            print(
+                f"    ! {warning} (warn-only; set {_NOT_AUTO_VERIFIED_ENV}=1 to enforce)"
+            )
     return 1 if failed else 0
 
 

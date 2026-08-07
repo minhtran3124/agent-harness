@@ -117,9 +117,14 @@ if [ -n "$EV_SLUGS" ]; then
       # be meaningless to the committer. Re-label it as the real SUMMARY.
       # --plan-dir points SC-coverage at the materialized index copy — the sibling
       # lookup would otherwise resolve against the working tree.
+      # Warn-first advisories (e.g. the `### Not auto-verified` rollout) are printed
+      # by --lane on a PASSING run too, so the output is relayed on both paths. A
+      # warning only echoed on failure is a warning nobody ever reads.
       if ! ev_out=$(python3 scripts/verify_summary.py --lane "$ev_tmp" --plan-dir "$ev_dir" 2>&1); then
         echo "${ev_out//$ev_tmp/$summary}" >&2
         EV_FAILED=1
+      else
+        echo "${ev_out//$ev_tmp/$summary}" | grep '^[[:space:]]*!' >&2 || true
       fi
       rm -rf "$ev_dir"
     done

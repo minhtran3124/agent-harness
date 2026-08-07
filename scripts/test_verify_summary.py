@@ -547,15 +547,25 @@ class TestLaneEvidence:
         reason = "Risk raised because `(^|/)hooks/` matches the new test paths"
         assert vs.check_lane_evidence(_lane_summary(reason=reason)) == []
 
-    def test_high_risk_requires_a_real_not_auto_verified_section(self):
-        complete = _lane_summary(
+    def test_missing_not_auto_verified_warns_but_does_not_block_by_default(
+        self, monkeypatch
+    ):
+        """WARN-FIRST rollout: advisory only until REQUIRE_NOT_AUTO_VERIFIED=1.
+
+        52 of 53 pre-existing high-risk specs predate the section, so the default
+        must not tax a typo fix to a legacy spec.
+        """
+        monkeypatch.delenv("REQUIRE_NOT_AUTO_VERIFIED", raising=False)
+        missing = _lane_summary(
             lane="high-risk",
             verify=REAL_LANE_VERIFY,
             rollback="- `alembic downgrade -1`",
-            not_verified=REAL_NOT_VERIFIED,
         )
-        assert vs.check_lane_evidence(complete) == []
+        assert vs.check_lane_evidence(missing) == []
+        assert any("Not auto-verified" in w for w in vs.check_lane_warnings(missing))
 
+    def test_missing_not_auto_verified_blocks_when_opted_in(self, monkeypatch):
+        monkeypatch.setenv("REQUIRE_NOT_AUTO_VERIFIED", "1")
         missing = _lane_summary(
             lane="high-risk",
             verify=REAL_LANE_VERIFY,
@@ -565,32 +575,42 @@ class TestLaneEvidence:
             "Not auto-verified" in e and "missing" in e
             for e in vs.check_lane_evidence(missing)
         )
+        # Never reported twice: once it is an error it must not also be a warning.
+        assert vs.check_lane_warnings(missing) == []
 
-        comment_only = _lane_summary(
-            lane="high-risk",
-            verify=REAL_LANE_VERIFY,
-            rollback="- `alembic downgrade -1`",
-            not_verified="<!-- only a comment -->",
-        )
-        assert any(
-            "Not auto-verified" in e and "empty" in e
-            for e in vs.check_lane_evidence(comment_only)
-        )
+    def test_satisfied_section_produces_neither_error_nor_warning(self, monkeypatch):
+        for value in ("1", ""):
+            if value:
+                monkeypatch.setenv("REQUIRE_NOT_AUTO_VERIFIED", value)
+            else:
+                monkeypatch.delenv("REQUIRE_NOT_AUTO_VERIFIED", raising=False)
+            complete = _lane_summary(
+                lane="high-risk",
+                verify=REAL_LANE_VERIFY,
+                rollback="- `alembic downgrade -1`",
+                not_verified=REAL_NOT_VERIFIED,
+            )
+            assert vs.check_lane_evidence(complete) == []
+            assert vs.check_lane_warnings(complete) == []
 
-    def test_template_only_not_auto_verified_is_rejected(self):
-        template_only = _lane_summary(
-            lane="high-risk",
-            verify=REAL_LANE_VERIFY,
-            rollback="- `alembic downgrade -1`",
-            not_verified=(
+    def test_comment_only_and_template_bullet_are_not_real_answers(self, monkeypatch):
+        monkeypatch.setenv("REQUIRE_NOT_AUTO_VERIFIED", "1")
+        for body, word in (
+            ("<!-- only a comment -->", "empty"),
+            (
                 "- <claim> — reached <traceability | provenance>; "
-                "not re-run because <reason>"
+                "not re-run because <reason>",
+                "template",
             ),
-        )
-        errors = vs.check_lane_evidence(template_only)
-        assert errors and any(
-            "Not auto-verified" in e and "template" in e for e in errors
-        )
+        ):
+            text = _lane_summary(
+                lane="high-risk",
+                verify=REAL_LANE_VERIFY,
+                rollback="- `alembic downgrade -1`",
+                not_verified=body,
+            )
+            errors = vs.check_lane_evidence(text)
+            assert any("Not auto-verified" in e and word in e for e in errors), body
 
     def test_explicit_none_is_accepted(self):
         """`- none` is a legitimate answer: every claim is covered by a Verify row.

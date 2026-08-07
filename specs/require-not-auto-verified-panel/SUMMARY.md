@@ -1,8 +1,8 @@
 # require-not-auto-verified-panel — Summary
 
 Lane: high-risk
-Confidence: medium
-Reason: changes `scripts/verify_summary.py` — the single source of truth for the lane→evidence mapping (`rules/auto-correct-scope.md`), consumed by `hooks/commit-quality-gate.sh` and `scripts/ci-strict-gate.sh`. Adding a required section is a governance change, not a code change. Confidence is `medium`, not `high`, because the rollout policy (block now vs warn-first) is a judgment call the author should not make alone — see `### Open decision`.
+Confidence: high
+Reason: changes `scripts/verify_summary.py` — the single source of truth for the lane→evidence mapping (`rules/auto-correct-scope.md`), consumed by `hooks/commit-quality-gate.sh` and `scripts/ci-strict-gate.sh`. Adding a required section is a governance change, not a code change.
 Flags: strengthening-validation (new required evidence for the high-risk lane)
 Affects: artifact-schema-summary — scripts/verify_summary.py → consumers hooks/commit-quality-gate.sh, scripts/ci-strict-gate.sh
 Input-type: harness improvement
@@ -19,13 +19,16 @@ that PR's own panel honestly records as unenforced.
 
 ## What changed
 
-`check_lane_evidence()` now requires a `### Not auto-verified` section on the **high-risk
-lane only**, alongside the existing `### Rollback` requirement. A new
+The lane gate now checks for a `### Not auto-verified` section on the **high-risk lane
+only**, and by default **warns without blocking** — see `### Rollout` below.
 `_has_real_not_auto_verified()` accepts either a written-out claim or an explicit `- none`,
 and rejects an absent section, a comment-only body, or the unedited template bullet.
 
-Deliberately **not** enforced on `tiny` or `normal`: those lanes keep the existing
-evidence set, which leaves the 28 non-high-risk specs in the back catalogue valid.
+Deliberately **not** checked on `tiny` or `normal`: those lanes keep the existing evidence
+set, which leaves the 28 non-high-risk specs in the back catalogue valid.
+
+`hooks/commit-quality-gate.sh` now relays `--lane` output on the passing path too, so the
+advisory is actually visible to the committer.
 
 ### Rationale
 
@@ -61,13 +64,15 @@ matches the tier the `### Rollback` requirement already sits at.
 
 | Check | Command | Exit | Notes | Criterion |
 | --- | --- | --- | --- | --- |
-| verify_summary tests | `python3 -m pytest scripts/test_verify_summary.py -q` | 0 | 67 passed, +4 new | |
+| verify_summary tests | `python3 -m pytest scripts/test_verify_summary.py -q` | 0 | 69 passed, +6 new | |
 | this spec satisfies its own rule | `python3 scripts/verify_summary.py --lane require-not-auto-verified-panel` | 0 | dogfood | |
 | legacy `normal` spec still passes | `python3 scripts/verify_summary.py --lane compound-ddr-improvements` | 0 | lower lanes unaffected | |
-| legacy `high-risk` spec now blocked | `python3 scripts/verify_summary.py --lane at-a-glance-rollup-wording` | 1 | the migration cost, made concrete | |
+| legacy `high-risk` spec warns, not blocks | `python3 scripts/verify_summary.py --lane at-a-glance-rollup-wording` | 0 | warn-first default | |
+| enforcement still works when opted in | `env REQUIRE_NOT_AUTO_VERIFIED=1 python3 scripts/verify_summary.py --lane at-a-glance-rollup-wording` | 1 | the flip is real | |
+| hook relays advisories on pass | `bash tests/hooks/commit-quality-gate.test.sh` | 0 | 31 passed | |
 | doc-truth lint | `bash scripts/lint-doc-truth.sh` | 0 | | |
 
-Full suite run by hand: 303 passed, ALL GREEN (was 299; +4 new tests). Kept out of the
+Full suite run by hand: 305 passed, ALL GREEN (was 299; +6 new tests). Kept out of the
 table on purpose — the strict gate re-runs each row under a 60s cap.
 
 ### Not auto-verified
@@ -80,35 +85,43 @@ table on purpose — the strict gate re-runs each row under a 60s cap.
 - **That the tier labels are correct.** Reached nothing. Nothing parses
   "traceability/provenance/truth" out of the bullets or checks them against the Verify
   table. A row labelled `truth` that was never re-run passes.
-- **The rollout blast radius beyond this repo.** Reached traceability. Measured here (52
-  of 53 legacy high-risk specs fail `--lane`), but consumers of the harness carry their own
-  `specs/` back catalogues that were not measured.
+- **The rollout blast radius beyond this repo.** Reached traceability. Measured here (0
+  blocked by default, 52 under `REQUIRE_NOT_AUTO_VERIFIED=1`), but consumers of the harness
+  carry their own `specs/` back catalogues that were not measured.
+- **That anyone acts on the warning.** Reached nothing. Warn-first trades enforcement for
+  goodwill: if the advisories are ignored, the catalogue never drains and the default is
+  never flippable. Nothing measures whether the warning changes behaviour.
 
 ### Rollback
 
 - Revert the rule: `git revert <sha of this commit>` — restores the previous
   `check_lane_evidence()` and the original test fixtures in one step.
 - No data migration and no state change; nothing is written to disk by the rule.
-- Partial loosening without a full revert: delete the `Not auto-verified` block in
-  `check_lane_evidence()` and keep `_has_real_not_auto_verified()` unused, or gate it
-  behind an env flag for a warn-first rollout.
+- Partial loosening without a full revert: the rule is already opt-in-to-block. To silence
+  the advisory too, return `[]` from `check_lane_warnings()`.
 
-### Open decision
+### Rollout — warn-first (decided)
 
-**This is a draft — the rollout policy is unresolved and needs a human call.**
+The user chose **warn-first** over blocking immediately.
 
-The rule is containment-checked: `--lane` runs only on **staged** SUMMARYs
-(`hooks/commit-quality-gate.sh` reads `git diff --cached`) and CI's strict gate uses
-`--check`, which does not run lane evidence. So the 52 legacy high-risk specs do **not**
-break CI today — they break only when someone next edits one.
+Default behaviour: a high-risk SUMMARY with no `### Not auto-verified` section prints an
+advisory and exits **0**. Setting `REQUIRE_NOT_AUTO_VERIFIED=1` makes it blocking. Same
+opt-in shape as `REQUIRE_VERIFY` / `REQUIRE_APP_GATES` / `RISK_CORROBORATION_STRICT`.
 
-That still means a one-line typo fix to an old high-risk SUMMARY now demands writing a
-negative-scope section. Three ways to land it:
+Measured, not assumed:
 
-1. **Block immediately** (what this draft implements) — strongest, with that friction.
-2. **Warn-first** — print the message, exit 0, flip to blocking after the catalogue drains.
-3. **Block only for specs created after a cutoff** — no legacy friction, but adds a date
-   check to the evidence mapping, which is the kind of special case that rots.
+| Back catalogue (54 high-risk specs) | Blocked |
+| --- | --- |
+| Default (warn-first) | **0** |
+| `REQUIRE_NOT_AUTO_VERIFIED=1` | 52 |
+
+To flip the default once the catalogue has drained, change
+`_not_auto_verified_is_blocking()` in `scripts/verify_summary.py` — one function, not each
+call site.
+
+A warning nobody reads is not a warning, so `hooks/commit-quality-gate.sh` was changed too:
+it previously relayed `--lane` output **only on failure**, which would have swallowed every
+advisory. It now relays advisory lines on the passing path as well.
 
 ### Harness-Delta
 
