@@ -4,8 +4,19 @@
 # When a PR diff touches hard-gate paths, it must carry proof: a CHANGED
 # specs/*/SUMMARY.md that declares `Lane: high-risk` AND has at least one
 # non-placeholder `### Verify` row, and that SUMMARY's checks must re-run clean
-# (via scripts/verify_summary.py --check). Diffs that do NOT touch hard-gate
-# paths pass silently.
+# (via scripts/verify_summary.py --check). Diffs that do NOT touch a gated path
+# pass silently.
+#
+# Two tiers:
+#   BLOCK  hooks/, settings.json, templates/, render_plan.py  — missing proof exits 1
+#   WARN   scripts/ (excluding scripts/test_*)                — missing proof exits 0
+#          with a report; REQUIRE_SCRIPTS_PROOF=1 promotes it to BLOCK.
+#
+# Verifies:        that a PR touching a gated path carries >=1 re-run, exit-code-matched
+#                  Verify row on a high-risk SUMMARY.
+# Does not verify: that the Verify rows COVER the change. A PR can rewrite
+#                  verify_summary.py and satisfy the gate with one unrelated passing
+#                  row. Coverage is a judgment call left to human review.
 #
 # This is the "strict-in-CI-first" layer: the strict semantics live HERE, in the
 # script — NOT in an env var. Local commit hooks keep their warn-by-default
@@ -26,14 +37,53 @@ BASE="${1:-origin/main}"
 # is NOT present in the local hook's pattern.
 HARD_GATE_RE='(^|/)settings\.json$|^hooks/|(^|/)\.claude/hooks/|render_plan\.py$|^templates/'
 
+# WARN-TIER path: `scripts/` holds the gate logic itself — scripts/verify_summary.py
+# decides what every other gate accepts as evidence, yet was never re-run. Measured
+# over the last 80 PRs: adding it catches 15 more PRs, of which 9 would block today.
+# So it rolls out warn-first (same shape as REQUIRE_NOT_AUTO_VERIFIED), and
+# REQUIRE_SCRIPTS_PROOF=1 promotes it to blocking.
+#
+# `scripts/test_*.py` is EXCLUDED: 21 of the 55 files under scripts/ are tests, and a
+# test-only edit carries no production risk. This mirrors why `^hooks/` excludes
+# tests/hooks/ — the documented false-positive class.
+#
+# `rules/` was surveyed and deliberately REJECTED: all 8 files are prose (no command's
+# re-run proves a sentence correct), AND rules/*.md is already gated by the
+# `workflow-engine` signal in risk-corroboration.sh + check_review_receipt.py, which
+# demands a context-propagation audit — the right evidence shape for prose.
+WARN_GATE_RE='^scripts/'
+WARN_GATE_EXCLUDE_RE='^scripts/test_'
+
 DIFF=$(git diff --name-only "$BASE"...HEAD 2>/dev/null || true)
 [ -z "$DIFF" ] && exit 0
 
-if ! echo "$DIFF" | grep -qE "$HARD_GATE_RE"; then
-  exit 0  # no hard-gate paths touched → nothing to corroborate
+# MODE: block = a failure exits 1; warn = a failure is reported and exits 0.
+if echo "$DIFF" | grep -qE "$HARD_GATE_RE"; then
+  MODE=block
+  echo "[ci-strict-gate] diff touches hard-gate paths — requiring a high-risk SUMMARY with machine-verified proof" >&2
+elif echo "$DIFF" | grep -E "$WARN_GATE_RE" | grep -qvE "$WARN_GATE_EXCLUDE_RE"; then
+  if [ "${REQUIRE_SCRIPTS_PROOF:-0}" = "1" ]; then
+    MODE=block
+    echo "[ci-strict-gate] diff touches scripts/ — REQUIRE_SCRIPTS_PROOF=1, enforcing" >&2
+  else
+    MODE=warn
+    echo "[ci-strict-gate] diff touches scripts/ — checking for proof (WARN-ONLY rollout)" >&2
+  fi
+else
+  exit 0  # no gated paths touched → nothing to corroborate
 fi
 
-echo "[ci-strict-gate] diff touches hard-gate paths — requiring a high-risk SUMMARY with machine-verified proof" >&2
+# Report a gate failure, then exit per MODE. Warn mode must still SAY what is missing;
+# a silent warn tier is indistinguishable from no gate at all.
+gate_fail() {
+  echo "  $1" >&2
+  if [ "$MODE" = "warn" ]; then
+    echo "[ci-strict-gate] WARN-ONLY — not blocking. Set REQUIRE_SCRIPTS_PROOF=1 to enforce." >&2
+    exit 0
+  fi
+  echo "[ci-strict-gate] BLOCKED" >&2
+  exit 1
+}
 
 CHANGED_SUMMARIES=$(echo "$DIFF" | grep -E '(^|/)specs/[^/]+/SUMMARY\.md$' || true)
 
@@ -56,9 +106,7 @@ print(len(v.parse_verify_table(Path(sys.argv[1]).read_text(encoding='utf-8'))))
 done <<< "$CHANGED_SUMMARIES"
 
 if [ -z "$QUALIFYING_SLUGS" ]; then
-  echo "  ✗ diff touches hard-gate paths but no changed specs/*/SUMMARY.md declares 'Lane: high-risk' with a non-placeholder ### Verify row" >&2
-  echo "[ci-strict-gate] BLOCKED" >&2
-  exit 1
+  gate_fail "✗ diff touches gated paths but no changed specs/*/SUMMARY.md declares 'Lane: high-risk' with a non-placeholder ### Verify row"
 fi
 
 # Re-run each qualifying slug's Verify table. The PR must carry proof: at least ONE
@@ -81,6 +129,4 @@ if [ "$PASSED" -ge 1 ]; then
   echo "[ci-strict-gate] OK ($PASSED high-risk SUMMARY verified)" >&2
   exit 0
 fi
-echo "  ✗ no changed high-risk SUMMARY passed verify_summary --check (proof not machine-verified)" >&2
-echo "[ci-strict-gate] BLOCKED" >&2
-exit 1
+gate_fail "✗ no changed high-risk SUMMARY passed verify_summary --check (proof not machine-verified)"
