@@ -39,6 +39,12 @@ _PLACEHOLDER_COMMANDS = {"—", "–", "-", "<command>", ""}
 # The untouched SUMMARY-template rollback line is not a real rollback plan.
 _TEMPLATE_ROLLBACK_RE = re.compile(r"^`?git revert <sha>`?$")
 
+# The untouched `### Not auto-verified` template bullet. Same idea as the rollback
+# line above: the section being present proves nothing if it still holds the shipped
+# placeholder. `- none` is deliberately NOT matched here — it is a legitimate answer
+# (every claim covered by a Verify row) and the template says so.
+_TEMPLATE_NOT_VERIFIED_RE = re.compile(r"^<claim>\b|^<.*>\s*$")
+
 # A whole command that proves nothing: exit-0 of a no-op is not evidence.
 # `true`, `:`, `exit 0`, or a bare `echo …` (echo piped/chained into a real tool is
 # NOT trivial — `echo x | grep x` still asserts something).
@@ -232,6 +238,36 @@ def _has_real_rollback(section: str) -> bool:
     return False
 
 
+def _has_real_not_auto_verified(section: str) -> bool:
+    """Return whether `### Not auto-verified` holds a real entry.
+
+    Evidence tier: TRACEABILITY.
+
+    Verifies: the section exists and carries at least one non-placeholder bullet —
+        either an explicit `- none` (every claim is covered by a Verify row) or a
+        written-out claim.
+    Does not verify: that the listed claims are COMPLETE, that their tier labels
+        (traceability / provenance / truth) are correct, or that an unlisted claim
+        does not exist. Those are judgment calls, left to human PR review. This gate
+        forces the author to answer the question; it cannot check the answer.
+    """
+    in_comment = False
+    for line in section.splitlines():
+        value = line.strip()
+        if not value:
+            continue
+        if value.startswith("<!--"):
+            in_comment = "-->" not in value
+            continue
+        if in_comment:
+            in_comment = "-->" not in value
+            continue
+        stripped = value.lstrip("-* ").strip()
+        if stripped and not _TEMPLATE_NOT_VERIFIED_RE.match(stripped):
+            return True
+    return False
+
+
 def _sc_map_for_summary(
     summary_path: Path | None, plan_dir: Path | None = None
 ) -> dict[str, str]:
@@ -326,6 +362,18 @@ def check_lane_evidence(
             )
 
     if lane == "high-risk":
+        not_verified = _section(text, "Not auto-verified")
+        if not_verified is None:
+            errors.append(
+                "lane `high-risk`: missing `### Not auto-verified` section -- state the "
+                "negative scope (what this change claims that no gate checks), or `- none`"
+            )
+        elif not _has_real_not_auto_verified(not_verified):
+            errors.append(
+                "lane `high-risk`: `### Not auto-verified` is empty or only the unedited "
+                "template bullet -- write the real unverified claims, or `- none`"
+            )
+
         rollback = _section(text, "Rollback")
         if rollback is None:
             errors.append("lane `high-risk`: missing `### Rollback` section")

@@ -419,6 +419,7 @@ def _lane_summary(
     reason="obvious one-file edit",
     verify=None,
     rollback=None,
+    not_verified=None,
 ):
     parts = [
         "# demo — Summary",
@@ -440,9 +441,17 @@ def _lane_summary(
             "| --- | --- | --- | --- |",
             verify,
         ]
+    if not_verified is not None:
+        parts += ["", "### Not auto-verified", "", not_verified]
     if rollback is not None:
         parts += ["", "### Rollback", "", rollback]
     return "\n".join(parts) + "\n"
+
+
+# A filled-in `### Not auto-verified` body, for high-risk fixtures whose subject is
+# some OTHER evidence requirement (rollback, lane parsing) and which must not trip
+# the negative-scope check as a side effect.
+REAL_NOT_VERIFIED = "- Emitted JSON shape is unasserted — reached traceability only."
 
 
 REAL_LANE_VERIFY = "| unit | `pytest -q` | 0 | all pass |"
@@ -489,16 +498,22 @@ class TestLaneEvidence:
             lane="high-risk",
             verify=REAL_LANE_VERIFY,
             rollback="- `alembic downgrade -1`",
+            not_verified=REAL_NOT_VERIFIED,
         )
         assert vs.check_lane_evidence(complete) == []
 
-        missing = _lane_summary(lane="high-risk", verify=REAL_LANE_VERIFY)
+        missing = _lane_summary(
+            lane="high-risk",
+            verify=REAL_LANE_VERIFY,
+            not_verified=REAL_NOT_VERIFIED,
+        )
         assert any("Rollback" in e for e in vs.check_lane_evidence(missing))
 
         comment_only = _lane_summary(
             lane="high-risk",
             verify=REAL_LANE_VERIFY,
             rollback="<!-- only a comment -->",
+            not_verified=REAL_NOT_VERIFIED,
         )
         assert any(
             "Rollback" in e and "empty" in e
@@ -516,6 +531,7 @@ class TestLaneEvidence:
             lane="high-risk (hard gate: hooks/*)",
             verify=REAL_LANE_VERIFY,
             rollback="- Revert the PR: `git revert abc1234`",
+            not_verified=REAL_NOT_VERIFIED,
         )
         assert vs.check_lane_evidence(decorated) == []
 
@@ -531,11 +547,81 @@ class TestLaneEvidence:
         reason = "Risk raised because `(^|/)hooks/` matches the new test paths"
         assert vs.check_lane_evidence(_lane_summary(reason=reason)) == []
 
+    def test_high_risk_requires_a_real_not_auto_verified_section(self):
+        complete = _lane_summary(
+            lane="high-risk",
+            verify=REAL_LANE_VERIFY,
+            rollback="- `alembic downgrade -1`",
+            not_verified=REAL_NOT_VERIFIED,
+        )
+        assert vs.check_lane_evidence(complete) == []
+
+        missing = _lane_summary(
+            lane="high-risk",
+            verify=REAL_LANE_VERIFY,
+            rollback="- `alembic downgrade -1`",
+        )
+        assert any(
+            "Not auto-verified" in e and "missing" in e
+            for e in vs.check_lane_evidence(missing)
+        )
+
+        comment_only = _lane_summary(
+            lane="high-risk",
+            verify=REAL_LANE_VERIFY,
+            rollback="- `alembic downgrade -1`",
+            not_verified="<!-- only a comment -->",
+        )
+        assert any(
+            "Not auto-verified" in e and "empty" in e
+            for e in vs.check_lane_evidence(comment_only)
+        )
+
+    def test_template_only_not_auto_verified_is_rejected(self):
+        template_only = _lane_summary(
+            lane="high-risk",
+            verify=REAL_LANE_VERIFY,
+            rollback="- `alembic downgrade -1`",
+            not_verified=(
+                "- <claim> — reached <traceability | provenance>; "
+                "not re-run because <reason>"
+            ),
+        )
+        errors = vs.check_lane_evidence(template_only)
+        assert errors and any(
+            "Not auto-verified" in e and "template" in e for e in errors
+        )
+
+    def test_explicit_none_is_accepted(self):
+        """`- none` is a legitimate answer: every claim is covered by a Verify row.
+
+        This is the gate's deliberate loophole, documented rather than closed --
+        it enforces that the question was ANSWERED, not that the answer is true.
+        """
+        none_answer = _lane_summary(
+            lane="high-risk",
+            verify=REAL_LANE_VERIFY,
+            rollback="- `alembic downgrade -1`",
+            not_verified="- none",
+        )
+        assert vs.check_lane_evidence(none_answer) == []
+
+    def test_lower_lanes_do_not_require_the_section(self):
+        """tiny/normal are unaffected -- this keeps the 80-spec back catalogue valid."""
+        assert vs.check_lane_evidence(_lane_summary(lane="tiny")) == []
+        assert (
+            vs.check_lane_evidence(
+                _lane_summary(lane="normal", verify=REAL_LANE_VERIFY)
+            )
+            == []
+        )
+
     def test_template_only_rollback_is_rejected(self):
         template_only = _lane_summary(
             lane="high-risk",
             verify=REAL_LANE_VERIFY,
             rollback="- `git revert <sha>`",
+            not_verified=REAL_NOT_VERIFIED,
         )
         errors = vs.check_lane_evidence(template_only)
         assert errors and "Rollback" in errors[0] and "template" in errors[0]
