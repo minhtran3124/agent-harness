@@ -137,15 +137,23 @@ exceeds the 60s strict-gate cap. The targeted rows below are the ones re-run her
 - **The corrected depth policy is livable** — reached traceability; this branch's own
   `research-brief.md` records `- none (local-only; no external surface)` as a dogfood, but one
   brief does not prove the rule scales across future work.
-- **`fetch-depth: 0` makes the lint fire in CI** — reached traceability at commit time (the YAML
-  is valid, and case 3 of the resolver test simulates the `origin/<base>` ref that
-  `actions/checkout` is expected to create); truth-tier confirmation requires the CI run on
-  this PR, which cannot execute before the commit exists. Specifically unproven: that
-  `actions/checkout@v4` with `fetch-depth: 0` populates `refs/remotes/origin/<base_ref>` — the
-  test *stubs* that ref rather than observing the action produce it.
-- **The lint now selects this branch's own changed files and no others** — reached truth for
-  the local case (`VERIFY_ROWS_BASE=simplify` selects exactly this spec's SUMMARY, re-run
-  above); reached traceability for the CI case, which depends on the unproven claim above.
+- ~~**`fetch-depth: 0` makes the lint fire in CI**~~ — **now reached truth.** Confirmed by this
+  PR's own CI run [`31243744831`](https://github.com/minhtran3124/agent-harness/actions/runs/31243744831):
+  both `tests (ubuntu-latest)` and `tests (macos-latest)` print
+  `✓ verify-row lint: all checked SUMMARY/PLAN rows are pipe-free and <60s` where the previous
+  run (`31239698394`) printed `skip — no python3 or no origin/main ref`. The `✓` branch is only
+  reachable with a non-empty changed-set — an empty one prints `skip — no changed
+  SUMMARY.md/PLAN.md vs <ref>` — so this also confirms the lint selected real files rather than
+  running vacuously. Green alone would not have shown this; the log line was read directly,
+  because a skip is also green. That ambiguity was the original bug.
+- **`actions/checkout@v4` semantics** — still only inferred. The CI run proves `origin/<base>`
+  was present; it does not isolate whether `fetch-depth: 0` or the explicit
+  `git fetch --no-tags origin <base_ref>` step produced it. Both ship together deliberately, so
+  the mechanism is unattributed by design rather than unverified by omission.
+- **The lint selects this branch's own changed files and no others** — reached truth locally
+  (`VERIFY_ROWS_BASE=simplify` selects exactly this spec's SUMMARY) and truth in CI per the run
+  above. Not verified: that the selection is identical in both, since the CI diff is computed
+  against `origin/simplify` rather than the local `simplify`.
 - **No other gate depends on the hardcoded `origin/main`** — reached provenance; re-derived by
   grepping `scripts/ hooks/ .github/` for `origin/main`, which returned only `run-tests.sh` and
   `ci-strict-gate.sh` (the latter always receives an explicit base from CI, so its default is
