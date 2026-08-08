@@ -21,8 +21,19 @@ and shared configuration read by many modules. Urgency and prompt brevity never 
 
 ## Coverage
 
+External sources are required by **surface**, not by depth alone. A change has an *external
+surface* when it adds or upgrades a dependency, integrates an external system, or relies on a
+version-specific API. Depth sets how broadly to look; surface sets whether to look outside.
+
 - Quick: local artifact and reuse search.
-- Standard: Quick coverage plus upstream patterns and version-matched official documentation.
-- Deep: broad local mapping, multiple upstream sources, changelogs, and explicit risk analysis.
+- Standard: Quick coverage plus upstream patterns, and version-matched official documentation
+  when the change has an external surface.
+- Deep: broad local mapping and explicit risk analysis, and — when an external surface exists —
+  multiple upstream sources and changelogs.
+
+When no external surface exists, record it in `research-brief.md` under Source Pack as
+`- none (local-only; no external surface)`. Silence is not the same as "none": an empty Source
+Pack cannot be distinguished from research that was skipped, which is how a Deep declaration
+comes to mean nothing.
 
 Document the selected depth and any later upgrade in `research-brief.md`.

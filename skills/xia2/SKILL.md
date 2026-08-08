@@ -27,15 +27,20 @@ classifier. New evidence may raise depth, never lower it; uncertainty is Standar
 3. Detect the stack and versions from manifests/configuration, then map local reuse, extension
    points, tests, and configuration. Do not infer a stack from directory names or stop after one
    empty search.
-4. At Standard/Deep, search upstream implementations and version-matched official documentation.
-   Label each finding `Local`, `Upstream`, `Docs`, or `Inference`; upstream failure is non-blocking.
+4. At Standard/Deep, search upstream implementations, and version-matched official documentation
+   when the change has an external surface (adds/upgrades a dependency, integrates an external
+   system, or relies on a version-specific API). Label each finding `Local`, `Upstream`, `Docs`,
+   or `Inference`; upstream failure is non-blocking. With no external surface, record that in
+   Source Pack as `- none (local-only; no external surface)` — never leave it silently empty.
 5. Re-run the depth classifier with evidence. State any upgrade and its source.
 6. Fill `references/research-brief-template.md`, save it to the supplied spec directory (or
    `specs/research-brief.md`), and deliver it. Recommend reuse → adapt upstream → built-in →
    build, explaining why rejected alternatives lost.
 
-Quick performs local artifact and reuse search only. Standard adds upstream and official docs.
-Deep adds broad local coverage, multiple upstream sources, changelogs, and explicit risk analysis.
+Quick performs local artifact and reuse search only. Standard adds upstream patterns. Deep adds
+broad local coverage and explicit risk analysis. Official docs, multiple upstream sources, and
+changelogs are required by *external surface*, not by depth alone — see `rules/research-depth.md`
+§Coverage. Depth sets how broadly to look; surface sets whether to look outside the repo.
 
 ## Arguments
 

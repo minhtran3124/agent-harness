@@ -27,7 +27,21 @@
 # Usage: scripts/ci-strict-gate.sh [base-ref]   (default base: origin/main)
 set -uo pipefail
 
-BASE="${1:-origin/main}"
+# CI always passes the base explicitly (harness-ci.yml: `origin/${{ github.base_ref }}`),
+# so this default only affects local invocation. It used to be a bare `origin/main`, which
+# resolves nowhere in a clone whose remote is not named `origin` — `git diff` would then
+# fail, DIFF would come back empty, and the STRICT gate would exit 0 having checked
+# nothing. A gate that passes because it could not run is the failure mode this repo just
+# spent a branch removing from run-tests.sh, so refuse instead of guessing.
+if [ $# -ge 1 ]; then
+  BASE="$1"
+elif BASE="$(bash "$(dirname "$0")/resolve-base-ref.sh" 2>&1)"; then
+  :
+else
+  echo "ci-strict-gate: skipped — $BASE" >&2
+  echo "ci-strict-gate: pass a base ref explicitly to run it (scripts/ci-strict-gate.sh <base>)" >&2
+  exit 0
+fi
 
 # Hard-gate path regex — reuse risk-corroboration.sh's fix-precision pattern. The
 # `^hooks/` anchor deliberately EXCLUDES tests/hooks/ (the documented

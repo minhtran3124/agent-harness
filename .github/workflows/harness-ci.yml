@@ -16,7 +16,20 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
     steps:
+      # fetch-depth: 0 is load-bearing, not hygiene. run-tests.sh's verify-row lint scopes
+      # itself to SUMMARY/PLAN files changed vs a base ref; under the default shallow
+      # checkout no base ref exists, so the lint skipped on every run since it shipped.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # Materialise origin/<base> explicitly rather than relying on what checkout's refspec
+      # happens to leave behind — same two-step the strict-gate job below already uses and
+      # which is proven to work in this repo's CI. Skipped on push builds, where there is no
+      # base ref; resolve-base-ref.sh then reports "no base ref declared" and the lint skips
+      # with a named reason instead of silently.
+      - name: Fetch base ref (pull requests only)
+        if: github.event_name == 'pull_request'
+        run: git fetch --no-tags origin "${{ github.base_ref }}"
       # scripts/lint-skill-bash.sh degrades to syntax-only when shellcheck is missing, so the
       # suite passes either way — but CI is where the shellcheck pass must actually run, or the
       # gate is only as strong as whatever each contributor happens to have installed.

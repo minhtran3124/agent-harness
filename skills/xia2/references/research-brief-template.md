@@ -74,7 +74,9 @@ _(Standard + Deep only. Skip if Quick mode.)_
 
 ## Docs Findings
 
-_(Standard + Deep only. Skip if Quick mode.)_
+_(Standard + Deep, and only when the change has an external surface — it adds or upgrades a
+dependency, integrates an external system, or relies on a version-specific API. With no external
+surface, say so here in one line rather than deleting the section.)_
 
 - **Official sources checked:**
 - **Version-matched vs latest-stable status:**
@@ -104,9 +106,12 @@ _(Standard + Deep only. Skip if Quick mode.)_
 
 ## Source Pack
 
+_Never leave a line blank. An empty Source Pack cannot be told apart from research that was
+skipped — write `- none (local-only; no external surface)` when nothing external applies._
+
 - **Local files read:** _list paths_
-- **Upstream repositories or pages checked:** _list URLs_
-- **Official docs domains or pages checked:** _list URLs_
+- **Upstream repositories or pages checked:** _list URLs, or `- none (local-only; no external surface)`_
+- **Official docs domains or pages checked:** _list URLs, or `- none (local-only; no external surface)`_
 
 ---
 
