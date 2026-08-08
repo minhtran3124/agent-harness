@@ -36,14 +36,27 @@ if [ -n "${VERIFY_ROWS_BASE:-}" ]; then
 elif [ -n "${GITHUB_BASE_REF:-}" ]; then
   ref="origin/$GITHUB_BASE_REF"; why="GITHUB_BASE_REF (CI pull request)"
 elif upstream="$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null)"; then
+  # An upstream is only a BASE when it tracks a different branch. The dominant flow here
+  # is `git push -u <remote> <branch>`, which sets upstream to the branch's OWN remote
+  # copy — diffing against that yields only unpushed edits, i.e. nothing once pushed, and
+  # the caller then prints "compared and found nothing". That is the same skip-looks-like-
+  # pass ambiguity this whole script exists to remove, so refuse it rather than resolve it.
+  branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
+  if [ -n "$branch" ] && [ "${upstream##*/}" = "$branch" ]; then
+    echo "upstream '$upstream' tracks this same branch, so it is not a base — set VERIFY_ROWS_BASE to the integration branch instead" >&2
+    exit 1
+  fi
   ref="$upstream"; why="branch upstream"
 else
   echo "no base ref declared — set VERIFY_ROWS_BASE, or give the branch an upstream (git branch -u <remote>/<base>)" >&2
   exit 1
 fi
 
-if ! git rev-parse --verify -q "$ref" >/dev/null 2>&1; then
-  echo "base ref '$ref' (from $why) does not resolve" >&2
+# `^{commit}` is load-bearing: plain `--verify` accepts ANY object, so a blob or tree sha
+# passes here and then makes `git diff <blob> -- <pathspec>` die with a fatal the caller
+# swallows — surfacing as "compared and found nothing" instead of "bad base".
+if ! git rev-parse --verify -q "${ref}^{commit}" >/dev/null 2>&1; then
+  echo "base ref '$ref' (from $why) does not resolve to a commit" >&2
   exit 1
 fi
 

@@ -75,6 +75,34 @@ git -C "$d" branch -q --set-upstream-to=main feature
 out=$(run_in "$d"); rc=$?
 if [ "$rc" -eq 0 ] && [ "$out" = "main" ]; then pass; else fail "rc=$rc out='$out' (want 'main')"; fi
 
+# ── 5b. THE REAL-WORLD UPSTREAM SHAPE: `git push -u` tracks the branch's OWN remote copy ──
+# Case 5 above sets upstream to a DIFFERENT branch, which `git push -u` never produces. In
+# this repo every tracked branch maps to github/<its-own-name>. Diffing against that yields
+# only unpushed edits — nothing once pushed — and the caller then prints "compared and found
+# nothing", the very skip-looks-like-pass ambiguity this script exists to remove. Refusing is
+# the only honest answer, so this case pins the refusal.
+t "an upstream tracking this same branch is refused, not used as a base"
+d=$(make_repo)
+# `git remote add` is required: without a configured remote git refuses to record the
+# upstream at all, and the case would silently degrade into the "no upstream" path — a
+# green test that never reaches the guard it is meant to pin.
+git -C "$d" remote add github /dev/null
+git -C "$d" update-ref refs/remotes/github/feature "$(git -C "$d" rev-parse feature)"
+git -C "$d" branch -q --set-upstream-to=github/feature feature
+out=$(run_in "$d"); rc=$?
+if [ "$rc" -ne 0 ] && echo "$out" | grep -q "tracks this same branch"; then pass
+else fail "rc=$rc out='$out' (want nonzero + 'tracks this same branch'; using it silently lints nothing)"; fi
+
+# ── 5c. A non-commit object must not pass as a base ──────────────────────────
+# `git rev-parse --verify <blob>` succeeds, but `git diff <blob> -- <pathspec>` dies with a
+# fatal the caller swallows, surfacing as "compared and found nothing" instead of "bad base".
+t "an object that is not a commit (blob sha) is refused"
+d=$(make_repo)
+blob=$(git -C "$d" rev-parse feature:f)
+out=$(run_in "$d" VERIFY_ROWS_BASE="$blob"); rc=$?
+if [ "$rc" -ne 0 ] && echo "$out" | grep -q "does not resolve to a commit"; then pass
+else fail "rc=$rc out='$out' (want nonzero + 'does not resolve to a commit')"; fi
+
 # ── 6. THE REGRESSION GUARD: no declared base must NOT guess ─────────────────
 t "no declared base and no upstream exits nonzero without guessing a branch name"
 d=$(make_repo)   # `main` exists and is tempting — the script must still refuse

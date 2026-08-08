@@ -1,6 +1,6 @@
 ---
 name: xia2
-description: Research-first feature discovery: inspect the local repository, upstream patterns, and version-matched official docs, then deliver the lightest credible implementation path. Use before implementing unfamiliar features, capabilities, or integrations.
+description: Research-first feature discovery: inspect the local repository, upstream patterns, and — when the change has an external surface — version-matched official docs, then deliver the lightest credible implementation path. Use before implementing unfamiliar features, capabilities, or integrations.
 allowed-tools: Glob, Grep, Read, Write, WebSearch, WebFetch, Bash(git log *), Bash(git show *), Bash(cat *), Bash(ls *)
 ---
 

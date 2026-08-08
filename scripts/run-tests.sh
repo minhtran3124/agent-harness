@@ -45,8 +45,15 @@ if [ "$BASE_RC" -ne 0 ]; then
 elif ! command -v python3 >/dev/null 2>&1; then
   echo "  skip — no python3"
 else
-  changed="$(git diff --name-only "$BASE_OUT" -- 'specs/*/SUMMARY.md' 'specs/*/PLAN.md' 2>/dev/null)"
-  if [ -n "$changed" ]; then
+  # Three-dot, matching scripts/ci-strict-gate.sh — two-dot also picks up files changed on
+  # the BASE since the fork point, i.e. specs this branch never touched. Do not swallow
+  # git's exit status: a failed diff and an empty diff both produce no output, and
+  # reporting the first as the second is the exact confusion this block was rewritten to end.
+  changed="$(git diff --name-only "$BASE_OUT"...HEAD -- 'specs/*/SUMMARY.md' 'specs/*/PLAN.md')"; diff_rc=$?
+  if [ "$diff_rc" -ne 0 ]; then
+    echo "  ✗ git diff against '$BASE_OUT' failed (rc=$diff_rc) — scope unknown, not treating as clean"
+    FAILED=1
+  elif [ -n "$changed" ]; then
     printf '%s\n' "$changed" | python3 scripts/check_verify_rows.py || FAILED=1
   else
     echo "  skip — no changed SUMMARY.md/PLAN.md vs $BASE_OUT"

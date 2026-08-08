@@ -29,7 +29,12 @@ jobs:
       # with a named reason instead of silently.
       - name: Fetch base ref (pull requests only)
         if: github.event_name == 'pull_request'
-        run: git fetch --no-tags origin "${{ github.base_ref }}"
+        # Via env, not inline `${{ }}`: expressions are substituted into the script text
+        # before bash parses it, so quotes do not contain a branch name with shell
+        # metacharacters. Low reachability (needs push access to the base repo) but free to close.
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: git fetch --no-tags origin "$BASE_REF"
       # scripts/lint-skill-bash.sh degrades to syntax-only when shellcheck is missing, so the
       # suite passes either way — but CI is where the shellcheck pass must actually run, or the
       # gate is only as strong as whatever each contributor happens to have installed.
@@ -53,7 +58,12 @@ jobs:
         with:
           fetch-depth: 0
       - name: Fetch base ref
-        run: git fetch --no-tags origin "${{ github.base_ref }}"
+        # Via env, not inline `${{ }}`: expressions are substituted into the script text
+        # before bash parses it, so quotes do not contain a branch name with shell
+        # metacharacters. Low reachability (needs push access to the base repo) but free to close.
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: git fetch --no-tags origin "$BASE_REF"
       # ci-strict-gate.sh re-runs each changed high-risk SUMMARY's `### Verify`
       # rows for machine-verified proof. Those commands can be the project's test
       # runner (e.g. `python3 -m pytest ...` for an SC-coverage row), so the gate

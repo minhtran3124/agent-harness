@@ -101,6 +101,11 @@ repair the check that already exists.
   selector that died silently*; logic inline in a 100-line suite runner cannot be unit-tested,
   so an inline fix would be as unprotected against silent death as the code it replaces. Two
   of the eight cases are regression guards for the exact original failures.
+- Rule 1 — Fixed the pre-existing `${{ github.base_ref }}` interpolation in the **strict-gate**
+  job of `.github/workflows/harness-ci.yml`, not only the instance this branch added. Normally
+  adjacent code is left alone (`rules/behavior.md` §3), but it is the identical one-line defect
+  in the same file, and shipping one fixed instance beside an unfixed twin reads as a deliberate
+  distinction that does not exist.
 - Rule 1 — Rejected the branch-name fallback chain (`origin/main` → `github/main` → `main`)
   that was approved at intake, after measuring it: on this branch it selects `main`, yielding
   36 changed spec files instead of 0 and surfacing 7 pre-existing violations in already-shipped
@@ -108,33 +113,69 @@ repair the check that already exists.
   touched. Replaced with declared-bases-only + loud refusal. Same goal (the lint stops being
   dead), corrected mechanism.
 
+### Correctness Review
+
+Six isolated FIND angles over `1f1c351...HEAD`, deduplicated by `(file, line)`. **9 findings
+fixed, 2 recorded as advisory.** The review found real defects in this branch's own fixes —
+including three that recreate, in new clothing, the exact failure the branch exists to remove.
+
+| # | Location | Defect | Status |
+|---|---|---|---|
+| 1 | `scripts/resolve-base-ref.sh` `@{upstream}` tier | `git push -u` sets upstream to the branch's **own** remote copy, so the lint diffed the branch against itself → empty set → `skip — compared and found nothing`. The skip-looks-like-pass ambiguity, rebuilt. | fixed — refuse a same-branch upstream |
+| 2 | `scripts/resolve-base-ref.sh` validation | `rev-parse --verify` accepts **any** object; a blob sha passed, then `git diff` died with a fatal the caller swallowed → same false "nothing changed". | fixed — `^{commit}` |
+| 3 | `scripts/ci-strict-gate.sh:36` | Only the *fallback* base was validated. CI always passes an explicit base, so the **only path CI takes** was unguarded: `ci-strict-gate.sh no/such/ref` → exit 0, no output. A strict gate passing because it could not run — the precise thing its own new comment claimed to have removed. | fixed — validate both paths; 2 new contract tests |
+| 4 | `scripts/run-tests.sh:48` | Two-dot `git diff BASE` also picks up files changed on the base since the fork point (36 vs 35 files measured), while the comment claimed parity with `ci-strict-gate`'s three-dot. `2>/dev/null` also hid diff failures as empty results. | fixed — three-dot; failed diff sets `FAILED=1` |
+| 5 | `SUMMARY.md` `### Verify` | One row invoked `ci-strict-gate.sh`, which re-enters `verify_summary --check` and re-runs this table — unbounded recursion locally, vacuous pass in CI. Three rows read the gitignored `.claude/` tree; one needed PyYAML the strict-gate job never installs. | fixed — table rebuilt bare-checkout-only |
+| 6 | `tests/scripts/research-depth-drift.test.sh` | Stem anchors `depend` / `integrat` were satisfied by `independently` and the frontmatter word `integrations`, so deleting a whole trigger clause left the guard green — 2 of 5 anchors vacuous. The stale-wording check matched only 1 of 3 retired phrasings, and no mutation covered *re-adding* a retired claim. | fixed — multi-word anchors, per-trigger + re-add mutations, section-scoped template check |
+| 7 | `skills/xia2/SKILL.md:3` | The frontmatter `description:` — the routing text an agent reads first — still stated official docs unconditionally, contradicting step 4 in the same file. Survived propagation because it does not look like policy prose. | fixed — + a stale-sentence guard |
+| 8 | `.github/workflows/harness-ci.yml` | `${{ github.base_ref }}` interpolated into `run:` before bash parses it; quotes do not contain a branch name with shell metacharacters. | fixed — passed via `env:` |
+| 9 | `scripts/ci-strict-gate.sh:27` | Usage line still documented the deleted `origin/main` default. | fixed |
+
+**Advisory — recorded, not fixed (out of this branch's scope):**
+
+- **A PR targeting `main` will fail the revived lint on 7 pre-existing violations.** With
+  `GITHUB_BASE_REF=main` the changed set is 36 spec files, surfacing violations in
+  `specs/durable-run-state/PLAN.md`, `specs/fix-hooks-gate-lane-divergence/*`,
+  `specs/gh-129-run-state-e2e/SUMMARY.md`, and `specs/strict-gate-scripts-warn/SUMMARY.md` —
+  shipped specs this branch never touched. Refusing to *guess* a base does not cover this,
+  because `main` arrives as a **declared** base. Against `simplify` the same command is clean,
+  so this branch's PR passes and the failure lands on the eventual `simplify → main`
+  integration PR. Fixing 7 shipped specs is a separate change; whoever opens that PR must do it
+  first, or pin a grandfather commit.
+- **Local runs still skip for a standard clone with no upstream and no `VERIFY_ROWS_BASE`.**
+  Previously `origin/main` supplied a base for such contributors. Refusing beats guessing, but
+  it is a narrowing: the lint is live in CI and opt-in locally.
+
 ### Verify
 
 The full suite (`scripts/run-tests.sh`) is exercised by the CI `tests` job on both
 ubuntu-latest and macos-latest; it is cited in prose rather than as a row because it
 exceeds the 60s strict-gate cap. The targeted rows below are the ones re-run here.
 
+Every row below re-runs from a **bare checkout** with no extra dependencies. An earlier
+revision of this table failed that: four rows mismatched in CI run `31245252833` — three read
+the gitignored `.claude/` tree, one needed PyYAML which the strict-gate job does not install —
+so `verify_summary --check` reported *"no changed high-risk SUMMARY passed"* and the branch
+shipped with zero machine-verified proof behind a green tick. A fifth row invoked
+`ci-strict-gate.sh` on itself, which re-enters `verify_summary --check` and re-runs this whole
+table. Those rows are gone; the deployment evidence they carried lives in the audit prose below,
+which is where environment-local facts belong.
+
 | Check | Command | Exit | Notes | Criterion |
 | --- | --- | --- | --- | --- |
-| Base-ref resolution, 8 cases incl. the two regression guards | `bash tests/scripts/resolve-base-ref.test.sh` | 0 | covers shallow-CI absent ref + refusal to guess a branch name | |
-| This SUMMARY passes the lint this branch re-enables | `python3 scripts/check_verify_rows.py specs/depth-policy-and-base-ref/SUMMARY.md` | 0 | dogfood: the check caught 3 violations in this file's first draft | |
-| Base ref resolves for this branch's real base | `VERIFY_ROWS_BASE=simplify bash scripts/resolve-base-ref.sh` | 0 | prints `simplify` | |
-| Resolution refuses to guess when nothing is declared | `bash tests/scripts/resolve-base-ref.test.sh` | 0 | case 6 — `main` exists and is still refused | |
+| Base-ref resolution, 10 cases | `bash tests/scripts/resolve-base-ref.test.sh` | 0 | incl. refusal of a same-branch upstream, a non-commit object, and any branch-name guess | |
+| This SUMMARY passes the lint this branch re-enables | `python3 scripts/check_verify_rows.py specs/depth-policy-and-base-ref/SUMMARY.md` | 0 | dogfood: caught 3 violations in this file's first draft | |
+| Strict-gate contract tests, 19 cases | `bash tests/scripts/ci-strict-gate.test.sh` | 0 | incl. the 2 new cases pinning refusal of an unresolvable explicit base | |
+| Policy drift guard, 11 cases incl. 6 mutation checks | `bash tests/scripts/research-depth-drift.test.sh` | 0 | repairs audit FAIL 1 | |
 | Doc-truth lint (paths named in the new files exist) | `bash scripts/lint-doc-truth.sh` | 0 | | |
-| Shell syntax of both changed/added scripts | `bash -n scripts/run-tests.sh` | 0 | | |
+| Doc-truth contract tests | `bash tests/scripts/lint-doc-truth.test.sh` | 0 | 7 passed | |
+| Brainstorming contract tests (xia2 handoff untouched) | `bash tests/scripts/brainstorming-contract.test.sh` | 0 | | |
+| Shell syntax of the suite runner | `bash -n scripts/run-tests.sh` | 0 | | |
 | Shell syntax of the new resolver | `bash -n scripts/resolve-base-ref.sh` | 0 | | |
 | Shell syntax of the strict gate | `bash -n scripts/ci-strict-gate.sh` | 0 | | |
-| Strict gate still runs with an explicit base (the CI path) | `bash scripts/ci-strict-gate.sh simplify` | 0 | 17 contract tests also pass | |
-| Depth rule reached the xia2 consumer context | `grep -q "external surface" skills/xia2/SKILL.md` | 0 | rule-only edit would reach no agent | |
-| Policy drift guard, incl. 2 mutation checks proving it is load-bearing | `bash tests/scripts/research-depth-drift.test.sh` | 0 | 6 passed; repairs audit FAIL 1 | |
-| Deployed rule reached the auto-loaded session context | `grep -c "external surface" .claude/rules/research-depth.md` | 0 | 4 (was 0); repairs audit FAIL 2 | |
-| Deployed xia2 skill + template carry the rule | `grep -q "external surface" .claude/skills/xia2/SKILL.md` | 0 | | |
-| Deploy overwrote rather than shadowing with a sidecar | `test -z "$(find .claude -name '*.harness-incoming')"` | 0 | a sidecar would leave the stale rule live while looking successful | |
+| Depth rule reached the xia2 skill | `grep -q "external surface" skills/xia2/SKILL.md` | 0 | a rule-only edit would reach no agent | |
 | Depth rule reached the brief template | `grep -q "external surface" skills/xia2/references/research-brief-template.md` | 0 | | |
-| xia2/brainstorming/doc-truth contract tests | `bash tests/scripts/brainstorming-contract.test.sh` | 0 | | |
-| Doc-truth contract tests | `bash tests/scripts/lint-doc-truth.test.sh` | 0 | 7 passed | |
-| CI workflow parses and the base-ref fetch step is present in the `test` job | `python3 -c "import yaml; d=yaml.safe_load(open('.github/workflows/harness-ci.yml')); assert any(s.get('name','').startswith('Fetch base ref') for s in d['jobs']['test']['steps'])"` | 0 | | |
-| Strict-gate contract tests | `bash tests/scripts/ci-strict-gate.test.sh` | 0 | 17 passed | |
+| CI `test` job fetches the PR base ref | `grep -q "name: Fetch base ref" .github/workflows/harness-ci.yml` | 0 | stdlib-only; the PyYAML version mismatched in CI | |
 
 ### Not auto-verified
 

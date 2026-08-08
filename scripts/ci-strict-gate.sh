@@ -24,17 +24,28 @@
 # official strict gate. Breakage data is read from CI history + the ledger before
 # anyone considers flipping the local default.
 #
-# Usage: scripts/ci-strict-gate.sh [base-ref]   (default base: origin/main)
+# Usage: scripts/ci-strict-gate.sh [base-ref]
+#   base-ref omitted → resolved by scripts/resolve-base-ref.sh; the gate SKIPS (exit 0,
+#   named reason on stderr) when no base is declared. It never falls back to a guess.
 set -uo pipefail
 
-# CI always passes the base explicitly (harness-ci.yml: `origin/${{ github.base_ref }}`),
-# so this default only affects local invocation. It used to be a bare `origin/main`, which
-# resolves nowhere in a clone whose remote is not named `origin` — `git diff` would then
-# fail, DIFF would come back empty, and the STRICT gate would exit 0 having checked
-# nothing. A gate that passes because it could not run is the failure mode this repo just
-# spent a branch removing from run-tests.sh, so refuse instead of guessing.
+# The base must RESOLVE, whoever supplied it. `git diff <bad-ref>...HEAD 2>/dev/null || true`
+# below swallows git's fatal, leaving DIFF empty, and an empty DIFF exits 0 — so an
+# unresolvable base makes this STRICT gate report success having inspected nothing.
+#
+# Validating only the fallback is not enough, and was the bug an earlier draft of this
+# block shipped: CI always passes the base explicitly (harness-ci.yml:
+# `origin/${{ github.base_ref }}`), so the *only* path CI takes was the unvalidated one.
+# `bash scripts/ci-strict-gate.sh no/such/ref` exited 0 with no output. Both paths are
+# checked here; a bad base is a hard error, while a genuinely undeclared base is a skip.
 if [ $# -ge 1 ]; then
   BASE="$1"
+  if ! git rev-parse --verify -q "${BASE}^{commit}" >/dev/null 2>&1; then
+    echo "ci-strict-gate: base ref '$BASE' does not resolve to a commit — refusing to" >&2
+    echo "  report a result. An unresolvable base yields an empty diff, which this gate" >&2
+    echo "  would otherwise read as 'nothing to check' and pass." >&2
+    exit 1
+  fi
 elif BASE="$(bash "$(dirname "$0")/resolve-base-ref.sh" 2>&1)"; then
   :
 else
