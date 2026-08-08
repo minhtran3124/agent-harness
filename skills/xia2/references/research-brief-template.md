@@ -107,11 +107,18 @@ surface, say so here in one line rather than deleting the section.)_
 ## Source Pack
 
 _Never leave a line blank. An empty Source Pack cannot be told apart from research that was
-skipped — write `- none (local-only; no external surface)` when nothing external applies._
+skipped. The two "nothing to report" answers are **not** interchangeable:_
+
+- `- none found` — the search ran and returned nothing.
+- `- none (local-only; no external surface)` — the search did not apply, because the change has
+  no external surface (see `rules/research-depth.md` §Coverage).
+
+_Only **official docs** is gated by external surface. Upstream search stays unconditional at
+Standard/Deep, so its line takes `- none found`, never the not-applicable form._
 
 - **Local files read:** _list paths_
-- **Upstream repositories or pages checked:** _list URLs, or `- none (local-only; no external surface)`_
-- **Official docs domains or pages checked:** _list URLs, or `- none (local-only; no external surface)`_
+- **Upstream repositories or pages checked:** _list URLs, or `- none found`_
+- **Official docs domains or pages checked:** _list URLs, `- none found`, or `- none (local-only; no external surface)`_
 
 ---
 

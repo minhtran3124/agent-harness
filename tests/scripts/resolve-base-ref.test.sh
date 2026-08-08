@@ -81,7 +81,7 @@ if [ "$rc" -eq 0 ] && [ "$out" = "main" ]; then pass; else fail "rc=$rc out='$ou
 # only unpushed edits — nothing once pushed — and the caller then prints "compared and found
 # nothing", the very skip-looks-like-pass ambiguity this script exists to remove. Refusing is
 # the only honest answer, so this case pins the refusal.
-t "an upstream tracking this same branch is refused, not used as a base"
+t "an upstream tracking this same branch is skipped, and the real base is derived instead"
 d=$(make_repo)
 # `git remote add` is required: without a configured remote git refuses to record the
 # upstream at all, and the case would silently degrade into the "no upstream" path — a
@@ -90,8 +90,50 @@ git -C "$d" remote add github /dev/null
 git -C "$d" update-ref refs/remotes/github/feature "$(git -C "$d" rev-parse feature)"
 git -C "$d" branch -q --set-upstream-to=github/feature feature
 out=$(run_in "$d"); rc=$?
-if [ "$rc" -ne 0 ] && echo "$out" | grep -q "tracks this same branch"; then pass
-else fail "rc=$rc out='$out' (want nonzero + 'tracks this same branch'; using it silently lints nothing)"; fi
+if [ "$rc" -eq 0 ] && [ "$out" = "main" ]; then pass
+else fail "rc=$rc out='$out' (want 'main': a self-tracking upstream is not a base, but the branch still has one)"; fi
+
+# ── TIER 4: derive the base from history rather than guessing a name ─────────
+# A name chain (`origin/main` → `github/main` → `main`) picks `main` on a branch cut from
+# another integration branch — a ref that is not even an ancestor of HEAD. Ordering
+# candidates by NAME is the bug; the base is a fact about history.
+t "the nearest ancestor is derived when nothing is declared"
+d=$(make_repo)
+out=$(run_in "$d"); rc=$?
+if [ "$rc" -eq 0 ] && [ "$out" = "main" ]; then pass; else fail "rc=$rc out='$out' (want 'main')"; fi
+
+t "a ref that is NOT an ancestor of HEAD is never chosen, however tempting its name"
+d=$(make_repo)
+# `release` diverges: it holds a commit HEAD does not, exactly like `main` relative to a
+# branch cut from `simplify`. It must be disqualified outright, not merely outranked.
+git -C "$d" checkout -q -b release main
+echo diverged > "$d/g"; git -C "$d" add g; git -C "$d" commit -qm diverge
+git -C "$d" checkout -q feature
+out=$(run_in "$d"); rc=$?
+if [ "$rc" -eq 0 ] && [ "$out" = "main" ]; then pass
+else fail "rc=$rc out='$out' (want 'main'; 'release' is not an ancestor and must be excluded)"; fi
+
+t "the branch's own remote copy is excluded even though it is an ancestor at distance 0"
+d=$(make_repo)
+git -C "$d" remote add github /dev/null
+# After `git push`, <remote>/<branch> equals HEAD: an ancestor, distance 0, so it would win
+# every ranking and produce an empty diff — the self-comparison this script exists to stop.
+git -C "$d" update-ref refs/remotes/github/feature "$(git -C "$d" rev-parse feature)"
+out=$(run_in "$d"); rc=$?
+if [ "$rc" -eq 0 ] && [ "$out" = "main" ]; then pass
+else fail "rc=$rc out='$out' (want 'main'; picking github/feature diffs the branch against itself)"; fi
+
+t "a branch name containing slashes is still recognised as its own remote copy"
+d=$(make_repo)
+git -C "$d" checkout -q -b fix/nested-name   # cut from `feature`, so `feature` is its base
+git -C "$d" remote add github /dev/null
+git -C "$d" update-ref refs/remotes/github/fix/nested-name "$(git -C "$d" rev-parse HEAD)"
+out=$(run_in "$d"); rc=$?
+# Suffix-stripping (`${ref##*/}`) yields "nested-name" here, not "fix/nested-name", so a
+# naive exclusion misses the self copy — which sits at distance 0 and would win, giving an
+# empty diff. Expect `feature`: the real base of a branch cut from `feature`.
+if [ "$rc" -eq 0 ] && [ "$out" = "feature" ]; then pass
+else fail "rc=$rc out='$out' (want 'feature'; 'github/fix/nested-name' means the self-exclusion missed a slashed name)"; fi
 
 # ── 5c. A non-commit object must not pass as a base ──────────────────────────
 # `git rev-parse --verify <blob>` succeeds, but `git diff <blob> -- <pathspec>` dies with a
@@ -103,16 +145,32 @@ out=$(run_in "$d" VERIFY_ROWS_BASE="$blob"); rc=$?
 if [ "$rc" -ne 0 ] && echo "$out" | grep -q "does not resolve to a commit"; then pass
 else fail "rc=$rc out='$out' (want nonzero + 'does not resolve to a commit')"; fi
 
-# ── 6. THE REGRESSION GUARD: no declared base must NOT guess ─────────────────
-t "no declared base and no upstream exits nonzero without guessing a branch name"
-d=$(make_repo)   # `main` exists and is tempting — the script must still refuse
+# ── 6. THE REGRESSION GUARD: with no candidate at all, refuse — never invent one ──
+# `make_orphan` has no ref that is an ancestor of HEAD, so derivation legitimately finds
+# nothing. That must be a loud refusal, not a fallback to whatever branch name exists.
+make_orphan() {
+  local d
+  d=$(mktemp -d); _CLEANUP_DIRS+=("$d")
+  git -C "$d" init -q -b main
+  git -C "$d" config user.email t@t.t
+  git -C "$d" config user.name t
+  echo seed > "$d/f"; git -C "$d" add f; git -C "$d" commit -qm seed
+  # An orphan branch shares no history with main, so main is not an ancestor of HEAD.
+  git -C "$d" checkout -q --orphan solo
+  git -C "$d" rm -rq --cached . 2>/dev/null || true
+  echo alone > "$d/h"; git -C "$d" add h; git -C "$d" commit -qm alone
+  echo "$d"
+}
+
+t "no declared base and no ancestor candidate exits nonzero instead of inventing one"
+d=$(make_orphan)   # `main` exists and is tempting — but it is not an ancestor
 out=$(run_in "$d"); rc=$?
-if [ "$rc" -ne 0 ] && echo "$out" | grep -q "no base ref declared"; then pass
-else fail "rc=$rc out='$out' (want nonzero + 'no base ref declared'; guessing 'main' is the bug)"; fi
+if [ "$rc" -ne 0 ] && echo "$out" | grep -q "could be declared or derived"; then pass
+else fail "rc=$rc out='$out' (want nonzero; picking the unrelated 'main' is the bug)"; fi
 
 # ── 7. Nothing is printed to stdout on failure — callers must not diff a reason ─
 t "failure writes the reason to stderr, leaving stdout empty"
-d=$(make_repo)
+d=$(make_orphan)
 out=$( cd "$d" && env -u VERIFY_ROWS_BASE -u GITHUB_BASE_REF bash "$SCRIPT" 2>/dev/null )
 if [ -z "$out" ]; then pass; else fail "stdout was '$out', expected empty (a caller would diff against it)"; fi
 

@@ -54,9 +54,12 @@ a rule that asserts something no one checks.
    its base ref from a hardcoded `origin/main` that resolves **nowhere**: not locally (this
    repo's remote is `github`, there is no `origin`), and not in CI (the `test` job used a
    shallow `actions/checkout@v4`). The lint has therefore never executed since it shipped.
-   Resolution now comes from declared bases only — `VERIFY_ROWS_BASE`, then `GITHUB_BASE_REF`
-   (as `origin/<ref>`), then the branch's `@{upstream}` — and an undeclared or unresolvable
-   base exits nonzero with a named reason instead of falling back to a guess. On CI, the `test`
+   Resolution is now declared-then-derived, never guessed by name: `VERIFY_ROWS_BASE`, then
+   `GITHUB_BASE_REF` (as `origin/<ref>`), then `@{upstream}` when it tracks a *different* branch,
+   then the base **derived from history** — the ancestor ref fewest commits behind HEAD, with the
+   branch's own remote copies excluded. Ordering candidates by name was the original bug: on a
+   branch cut from `simplify` a name chain picks `main`, which is not even an ancestor of HEAD.
+   An unresolvable base, or no ancestor candidate at all, exits nonzero with a named reason. On CI, the `test`
    job gains `fetch-depth: 0` plus an explicit `git fetch --no-tags origin <base_ref>` — the same
    two-step the `strict-gate` job already uses and which is proven to work in this repo's CI,
    rather than relying on whatever refspec `actions/checkout` happens to leave behind.
@@ -96,22 +99,25 @@ repair the check that already exists.
 ### Deviations
 
 - Rule 2 — Extracted the base-ref resolution into `scripts/resolve-base-ref.sh` and added
-  `tests/scripts/resolve-base-ref.test.sh` (8 cases). Not in the intake scope, which said
+  `tests/scripts/resolve-base-ref.test.sh` (now 14 cases). Not in the intake scope, which said
   "fix the base ref in `run-tests.sh`". Justification: the defect being fixed is a *scope
   selector that died silently*; logic inline in a 100-line suite runner cannot be unit-tested,
-  so an inline fix would be as unprotected against silent death as the code it replaces. Two
-  of the eight cases are regression guards for the exact original failures.
+  so an inline fix would be as unprotected against silent death as the code it replaces. Six
+  of the cases are regression guards for defects found after the first draft shipped.
 - Rule 1 — Fixed the pre-existing `${{ github.base_ref }}` interpolation in the **strict-gate**
   job of `.github/workflows/harness-ci.yml`, not only the instance this branch added. Normally
   adjacent code is left alone (`rules/behavior.md` §3), but it is the identical one-line defect
   in the same file, and shipping one fixed instance beside an unfixed twin reads as a deliberate
   distinction that does not exist.
-- Rule 1 — Rejected the branch-name fallback chain (`origin/main` → `github/main` → `main`)
-  that was approved at intake, after measuring it: on this branch it selects `main`, yielding
-  36 changed spec files instead of 0 and surfacing 7 pre-existing violations in already-shipped
-  specs — i.e. the approved variant would have turned CI red for work this branch never
-  touched. Replaced with declared-bases-only + loud refusal. Same goal (the lint stops being
-  dead), corrected mechanism.
+- Rule 1 — Replaced the branch-name fallback chain (`origin/main` → `github/main` → `main`)
+  approved at intake. Measured first: on this branch it selects `main`, yielding 36 changed spec
+  files instead of 1 and surfacing 7 pre-existing violations in already-shipped specs — CI red
+  for work this branch never touched. The first replacement was a flat refusal; the human then
+  asked the question that reframed it — *cut from `simplify`, why pick `main` at all?* — and the
+  final mechanism derives the base from history instead: the ancestor ref fewest commits behind
+  HEAD, with the branch's own remote copies excluded. `main` fails the ancestor test outright.
+  Same goal (the lint stops being dead), and a stronger result than either option on the table:
+  the lint now runs locally with zero configuration, which the approved chain never did.
 
 ### Correctness Review
 
@@ -121,7 +127,7 @@ including three that recreate, in new clothing, the exact failure the branch exi
 
 | # | Location | Defect | Status |
 |---|---|---|---|
-| 1 | `scripts/resolve-base-ref.sh` `@{upstream}` tier | `git push -u` sets upstream to the branch's **own** remote copy, so the lint diffed the branch against itself → empty set → `skip — compared and found nothing`. The skip-looks-like-pass ambiguity, rebuilt. | fixed — refuse a same-branch upstream |
+| 1 | `scripts/resolve-base-ref.sh` `@{upstream}` tier | `git push -u` sets upstream to the branch's **own** remote copy, so the lint diffed the branch against itself → empty set → `skip — compared and found nothing`. The skip-looks-like-pass ambiguity, rebuilt. | fixed — skip a same-branch upstream and derive the real base (Intent Finding 2) |
 | 2 | `scripts/resolve-base-ref.sh` validation | `rev-parse --verify` accepts **any** object; a blob sha passed, then `git diff` died with a fatal the caller swallowed → same false "nothing changed". | fixed — `^{commit}` |
 | 3 | `scripts/ci-strict-gate.sh:36` | Only the *fallback* base was validated. CI always passes an explicit base, so the **only path CI takes** was unguarded: `ci-strict-gate.sh no/such/ref` → exit 0, no output. A strict gate passing because it could not run — the precise thing its own new comment claimed to have removed. | fixed — validate both paths; 2 new contract tests |
 | 4 | `scripts/run-tests.sh:48` | Two-dot `git diff BASE` also picks up files changed on the base since the fork point (36 vs 35 files measured), while the comment claimed parity with `ci-strict-gate`'s three-dot. `2>/dev/null` also hid diff failures as empty results. | fixed — three-dot; failed diff sets `FAILED=1` |
@@ -142,9 +148,56 @@ including three that recreate, in new clothing, the exact failure the branch exi
   so this branch's PR passes and the failure lands on the eventual `simplify → main`
   integration PR. Fixing 7 shipped specs is a separate change; whoever opens that PR must do it
   first, or pin a grandfather commit.
-- **Local runs still skip for a standard clone with no upstream and no `VERIFY_ROWS_BASE`.**
-  Previously `origin/main` supplied a base for such contributors. Refusing beats guessing, but
-  it is a narrowing: the lint is live in CI and opt-in locally.
+- ~~**Local runs still skip for a standard clone with no upstream and no `VERIFY_ROWS_BASE`.**~~
+  **Closed** by the derivation tier: `env -u VERIFY_ROWS_BASE bash scripts/run-tests.sh` on this
+  branch now resolves `github/simplify` and prints `✓ verify-row lint`, with no configuration.
+  The lint is live locally *and* in CI, which the original branch-name chain never achieved.
+
+### Intent Findings
+
+Plan-blind review of the diff against the verbatim request. **1 fixed, 1 escalated for
+confirmation, 1 report-only.**
+
+> **Independence caveat.** The reviewer self-reported a read-scope breach: it was scoped to
+> `### Verify` and `### Correctness Review`, but its diff read pulled in the whole SUMMARY,
+> including `### Deviations` — where the mechanism change in finding 2 is self-reported. So
+> finding 2 is **not** an independent discovery and is recorded at reduced weight. Findings 1
+> and 3 are corroborated by evidence visible in the diff itself.
+
+1. **drift — FIXED.** The approved policy variant gates *official documentation* on external
+   surface and keeps *upstream patterns* unconditional at Standard/Deep. The brief template
+   nonetheless offered `- none (local-only; no external surface)` on the **Upstream** Source Pack
+   line, contradicting the still-mandatory `## Upstream Findings` section directly above it —
+   quietly widening the approved narrowing. Fixed by separating two answers that are not
+   interchangeable: `- none found` (the search ran, returned nothing) versus
+   `- none (local-only; no external surface)` (the search did not apply). Only official docs may
+   take the second. This branch's own `research-brief.md` made exactly that conflation and was
+   corrected the same way.
+
+2. **drift — RESOLVED, and the escalation withdrawn.** The intake decision approved a base-ref
+   *fallback chain* (`origin/main` → `github/main` → `main`). The first revision replaced it with
+   a flat refusal, which the reviewer flagged: the oracle does not say what the chain's last tier
+   should do on a total miss. Raising it with the human produced the right question — *this branch
+   was cut from `simplify`; why would anything pick `main` at all?* — and the answer dissolved the
+   dilemma. Both options were wrong because both treated the base as a **preference over names**.
+   It is a **fact about history**, and git can state it: `main` is not even an ancestor of HEAD
+   (it holds 5 commits HEAD lacks; merge-base 268 commits back), so it is disqualified outright,
+   not merely outranked. Tier 4 now derives the base — the ancestor ref fewest commits behind
+   HEAD, excluding the branch's own remote copies. On this branch it yields `github/simplify` and
+   selects exactly this branch's own SUMMARY. No guess, no refusal, and the local lint needs no
+   configuration at all.
+
+3. **excess — report-only.** `tests/scripts/research-depth-drift.test.sh` (11 cases, 6 mutation
+   checks) and the two-path validation hardening in `scripts/ci-strict-gate.sh` are not literally
+   requested by any clause. They are outputs of the context-propagation audit and correctness
+   review the request did ask for ("have any side effect... do have anything will broken"), and
+   each closes a defect those reviews found in this branch's own work. Kept; flagged so the scope
+   growth is visible rather than assumed.
+
+**Reported as `unknown`, not absent** (the reviewer's search surface could not settle them):
+whether the conversational asks — "is it correct or not", "should we do it", "how we adopt it",
+the comparison table — were answered. They were, in conversation rather than in the diff; no
+artifact in the repo records them, and this SUMMARY does not claim otherwise.
 
 ### Verify
 
@@ -163,7 +216,7 @@ which is where environment-local facts belong.
 
 | Check | Command | Exit | Notes | Criterion |
 | --- | --- | --- | --- | --- |
-| Base-ref resolution, 10 cases | `bash tests/scripts/resolve-base-ref.test.sh` | 0 | incl. refusal of a same-branch upstream, a non-commit object, and any branch-name guess | |
+| Base-ref resolution, 14 cases | `bash tests/scripts/resolve-base-ref.test.sh` | 0 | incl. derivation of the nearest ancestor, exclusion of non-ancestors and of the branch's own remote copy (slashed names too) | |
 | This SUMMARY passes the lint this branch re-enables | `python3 scripts/check_verify_rows.py specs/depth-policy-and-base-ref/SUMMARY.md` | 0 | dogfood: caught 3 violations in this file's first draft | |
 | Strict-gate contract tests, 19 cases | `bash tests/scripts/ci-strict-gate.test.sh` | 0 | incl. the 2 new cases pinning refusal of an unresolvable explicit base | |
 | Policy drift guard, 11 cases incl. 6 mutation checks | `bash tests/scripts/research-depth-drift.test.sh` | 0 | repairs audit FAIL 1 | |

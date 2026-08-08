@@ -129,7 +129,9 @@ stronger evidence than the documentation would have been.
   `scripts/check_slim_surface.py`, `scripts/lint-doc-truth.sh`, `scripts/verify_summary.py`,
   `templates/SUMMARY.template.md`, `harness-manifest.json`, `CLAUDE.md`,
   `.github/workflows/harness-ci.yml`, all 21 `specs/*/research-brief.md`.
-- **Upstream repositories or pages checked:** `- none (local-only; no external surface)`
+- **Upstream repositories or pages checked:** `- none found` — upstream search is unconditional
+  at Deep, so it ran: no repository outside this one implements a harness base-ref selector or a
+  research-depth coverage rule to model. Absence of a result, not absence of a search.
 - **Official docs domains or pages checked:** `- none (local-only; no external surface)`
 
 ---
