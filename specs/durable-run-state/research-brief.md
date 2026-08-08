@@ -36,15 +36,34 @@ and rollout) so a future reader never has to re-derive this from three separate 
   (Task 1.1) documents the boundary between the two; they do not read or write each other's
   files.
 
-## Known, disclosed limitations (not fixed by this phase — see Non-goals)
+## Known limitations
 
-- The CI `shipped` checkpoint (`post-merge-maintenance.yml`) writes `RUN.json`/`events.jsonl`
-  in the runner's ephemeral checkout, but nothing commits those files, so the transition
-  frequently no-ops today. Recorded as advisory in Phase C's `SUMMARY.md`.
 - A `tiny`-lane or abandoned run never reaches a terminal state, so `list --active`'s consumers
   (`session-knowledge.sh`, `harness-status.sh`) will accumulate stale entries over time
-  (bounded to 5 displayed, unbounded underlying). Deferred by explicit user decision during
-  Phase C.
+  (bounded to 5 displayed, unbounded underlying). This is by design — a `tiny` run intentionally
+  stops at `investigating` — not a terminalization defect.
+
+## Close-out (gh-196, GitHub issue #196) — current contract
+
+The following were resolved after Phase D; the pre-#177 limitations above are fixed, not deferred:
+
+- **Semantic event-chain validation (#174).** `read_events` now runs `validate_chain` by default,
+  so every read surface that trusts history — `status`, `list`, `rebuild`, `rebuild --check`, and
+  the resume decision — fails visibly with the storage-error contract (exit 3) on a JSON-valid but
+  semantically impossible log (bad `seq`, broken `from_state` chaining, mixed run identity, an
+  illegal transition, or a `shipped` event without a valid `sha`) instead of projecting a fabricated
+  history — and does so without mutating either artifact. Escape hatches:
+  `rebuild --allow-invalid-chain`, and closing a bricked run to `cancelled`/`superseded`.
+- **Reliable terminalization.** The staging no-op (#177) is fixed — the bookkeeping PR stages both
+  `RUN.json` and `events.jsonl`. The trigger is now **base-branch-agnostic**: `post-merge-maintenance.yml`
+  carries no static `branches:` base-branch allowlist, so a merged PR carrying a tracked run
+  (`specs/<slug>/SUMMARY.md` + `RUN.json`) transitions to `shipped` exactly once with the confirmed
+  merge SHA regardless of which integration branch it targeted. The checkpoint can no longer silently
+  disappear when the integration branch is renamed. Caveat: `pull_request_target` loads its definition
+  from the repo default branch (`main`), so the trigger change is inert until synced there.
+- **Stale runs reconciled.** The two runs left at `ready_to_merge` (`new-session-plan-resume`,
+  `gate-verifiability-principle`) were terminalized to `shipped` from confirmed GitHub merge SHAs
+  (PRs #173 and #189) via the real CLI — one appended event each, chains still validate.
 
 ## What Phase D adds
 
