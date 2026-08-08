@@ -127,6 +127,9 @@ exceeds the 60s strict-gate cap. The targeted rows below are the ones re-run her
 | Strict gate still runs with an explicit base (the CI path) | `bash scripts/ci-strict-gate.sh simplify` | 0 | 17 contract tests also pass | |
 | Depth rule reached the xia2 consumer context | `grep -q "external surface" skills/xia2/SKILL.md` | 0 | rule-only edit would reach no agent | |
 | Policy drift guard, incl. 2 mutation checks proving it is load-bearing | `bash tests/scripts/research-depth-drift.test.sh` | 0 | 6 passed; repairs audit FAIL 1 | |
+| Deployed rule reached the auto-loaded session context | `grep -c "external surface" .claude/rules/research-depth.md` | 0 | 4 (was 0); repairs audit FAIL 2 | |
+| Deployed xia2 skill + template carry the rule | `grep -q "external surface" .claude/skills/xia2/SKILL.md` | 0 | | |
+| Deploy overwrote rather than shadowing with a sidecar | `test -z "$(find .claude -name '*.harness-incoming')"` | 0 | a sidecar would leave the stale rule live while looking successful | |
 | Depth rule reached the brief template | `grep -q "external surface" skills/xia2/references/research-brief-template.md` | 0 | | |
 | xia2/brainstorming/doc-truth contract tests | `bash tests/scripts/brainstorming-contract.test.sh` | 0 | | |
 | Doc-truth contract tests | `bash tests/scripts/lint-doc-truth.test.sh` | 0 | 7 passed | |
@@ -165,7 +168,7 @@ exceeds the 60s strict-gate cap. The targeted rows below are the ones re-run her
 
 ### Context-Propagation Audit
 
-**Verdict: FAIL → repaired (1 of 2 rows); 1 row open, needs a human.**
+**Verdict: FAIL → both rows repaired.**
 
 Search surface, so a "no consumer" result is not read as proof of absence: `grep -rl` for
 `research-depth`, `official documentation`, `upstream sources`, `version-matched` across
@@ -190,18 +193,26 @@ copies + per-concept anchor keywords, a check that the retired unconditional wor
 and two mutation checks (strip the condition → detected; drop only the `local-only` sentinel →
 detected) proving the lint is load-bearing rather than vacuous.
 
-**FAIL 2 — the deployed `.claude/` tree still carries the retired rule. OPEN.**
+**FAIL 2 — the deployed `.claude/` tree carried the retired rule. REPAIRED.**
 `.claude/rules/research-depth.md`, `.claude/skills/xia2/SKILL.md`, and
-`.claude/skills/xia2/references/research-brief-template.md` all contain **0** occurrences of
+`.claude/skills/xia2/references/research-brief-template.md` each contained **0** occurrences of
 `external surface` (dated Aug 7, before this change). `.claude/rules/` is **auto-loaded into
-every session in this repo**, so until a redeploy every agent here reads the unconditional rule
-while the source says otherwise — a live contradiction in the consumer context, which is
-precisely what this audit exists to detect. It is *not* shipped by this PR: `.claude/` is
-gitignored (`.gitignore:26`) and untracked, so the PR diff is unaffected and consumers who
-re-sync get the corrected files. The repair is `scripts/deploy-harness.sh`, which mutates
-`.claude/` and is therefore withheld pending explicit human authorisation rather than run
-autonomously. Not escalated to `ESCALATIONS.md`: this is the harness's normal
-source→deploy lag, not a defect in the change under review.
+every session in this repo**, so every agent here was reading the unconditional rule while the
+source said otherwise — a live contradiction in the consumer context, which is precisely what
+this audit exists to detect, and the row hand-propagation missed.
+
+Repaired by `scripts/deploy-harness.sh --yes`, run with explicit human authorisation (it mutates
+the local `.claude/` tree, so it is never run autonomously). `--dry-run` first reported **no
+protected-file conflicts** — `research-depth.md` is not consumer-owned, so it was overwritten
+cleanly rather than being kept and shadowed by a `.harness-incoming` sidecar, which is the
+outcome that would have left the stale rule in place while appearing to succeed. Confirmed
+after: 4 occurrences of `external surface` in each of the three files, and
+`find .claude -name '*.harness-incoming'` returns empty.
+
+Not shipped by this PR either way: `.claude/` is gitignored (`.gitignore:26`) and untracked, so
+the diff is unaffected and consumers get the corrected files on their own re-sync. Not escalated
+to `ESCALATIONS.md`: this is the harness's normal source→deploy lag, not a defect in the change
+under review.
 
 **Not verified by this audit:** that any agent *obeys* the propagated rule. Every row above is
 traceability tier — text reaches a context — never truth. The drift test proves the keywords are
