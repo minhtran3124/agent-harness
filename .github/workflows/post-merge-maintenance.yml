@@ -11,21 +11,26 @@ name: post-merge-maintenance
 on:
   pull_request_target:
     types: [closed]
-    # THIS FILE MUST BE SYNCED ON `main`: pull_request_target always loads the workflow
-    # definition from the repo's real DEFAULT branch (main), regardless of the PR's base.
-    # Editing this list only on an integration branch has NO effect (observed 2026-07-04,
-    # docs/harness-v03-plan-overview.md; same pattern as PRs #36/#44/#45 — sync to main
-    # in its own small PR).
+    # NO `branches:` base-branch allowlist — deliberately. The authoritative
+    # terminalization policy is decided IN-JOB below: a merged PR is recorded (and its
+    # run transitioned to `shipped`) iff it carries a tracked run — `specs/<slug>/SUMMARY.md`
+    # plus `specs/<slug>/RUN.json`. That makes `shipped` independent of which branch is the
+    # current integration target, so the checkpoint cannot silently disappear when the
+    # integration branch is renamed.
     #
-    # Keep the list to the branch(es) PRs are actually merged into. IT ROTS SILENTLY: a PR
-    # merged into a branch missing here fires nothing — no run, no log, no error.
-    # History: [v2] while v2 was the working branch (main then lacked
-    # scripts/bookkeeping.sh — PR #44 crashed on that gap; PR #36 added it to main only to
-    # register pull_request_target). After the v2 → main promotion the stale [v2] silently
-    # skipped PRs #66/#68/#69/#70 (2026-07-16 over-engineering review, C3). Then [main, v3]
-    # outlived v3 — no longer on the remote — and silently skipped PRs #158 and #160,
-    # merged into `loop` (2026-07-23).
-    branches: [main, loop]  # loop = integration/staging branch (2026-07-23); PRs merge here first
+    # Why a static allowlist was removed (issue #196): a `branches:` filter gates on the
+    # PR's BASE branch. The list ROTTED SILENTLY every time integration moved: [v2] outlived
+    # v2 (skipped PRs #66/#68/#69/#70); [main, v3] outlived v3; [main, loop] then excluded
+    # `simplify` and fired NOTHING for every PR merged there after 2026-07-27 — no run, no
+    # log, no error — leaving `gate-verifiability-principle` (PR #189) stuck at
+    # `ready_to_merge`. Deciding on the tracked run instead of the base name ends that rot.
+    # Non-run PRs (no tracked SUMMARY/RUN.json) no-op in the first seconds; the bookkeeping
+    # step's `changed=false` early-exit skips opening a PR when there is nothing to record.
+    #
+    # STILL MUST BE SYNCED ON `main`: pull_request_target always loads this workflow
+    # definition from the repo's real DEFAULT branch (main), regardless of the PR's base, so
+    # this change is inert until it lands on `main` (sync in its own small PR, as with
+    # #36/#44/#45). Guarded by tests/scripts/post-merge-runstate-staging.test.sh.
 
 permissions:
   contents: write
