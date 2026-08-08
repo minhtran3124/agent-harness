@@ -126,6 +126,7 @@ exceeds the 60s strict-gate cap. The targeted rows below are the ones re-run her
 | Shell syntax of the strict gate | `bash -n scripts/ci-strict-gate.sh` | 0 | | |
 | Strict gate still runs with an explicit base (the CI path) | `bash scripts/ci-strict-gate.sh simplify` | 0 | 17 contract tests also pass | |
 | Depth rule reached the xia2 consumer context | `grep -q "external surface" skills/xia2/SKILL.md` | 0 | rule-only edit would reach no agent | |
+| Policy drift guard, incl. 2 mutation checks proving it is load-bearing | `bash tests/scripts/research-depth-drift.test.sh` | 0 | 6 passed; repairs audit FAIL 1 | |
 | Depth rule reached the brief template | `grep -q "external surface" skills/xia2/references/research-brief-template.md` | 0 | | |
 | xia2/brainstorming/doc-truth contract tests | `bash tests/scripts/brainstorming-contract.test.sh` | 0 | | |
 | Doc-truth contract tests | `bash tests/scripts/lint-doc-truth.test.sh` | 0 | 7 passed | |
@@ -161,6 +162,50 @@ exceeds the 60s strict-gate cap. The targeted rows below are the ones re-run her
 - **Retiring the unconditional external-source requirement loses no real signal** — reached
   traceability; based on 19/21 briefs citing zero URLs, which measures past behavior, not
   whether that behavior was correct.
+
+### Context-Propagation Audit
+
+**Verdict: FAIL → repaired (1 of 2 rows); 1 row open, needs a human.**
+
+Search surface, so a "no consumer" result is not read as proof of absence: `grep -rl` for
+`research-depth`, `official documentation`, `upstream sources`, `version-matched` across
+`*.md|*.py|*.sh|*.json` at repo root excluding `.git/` and `.worktrees/`; plus a directed read of
+`agents/*.md`, `templates/`, `tests/`, `evals/`, and the deployed `.claude/` tree.
+
+| Source | Consumer | Context | Delivery | Proof |
+| --- | --- | --- | --- | --- |
+| `rules/research-depth.md` §Coverage | `skills/xia2/SKILL.md` steps 4 + depth summary | xia2 agent (fresh child) | inline copy + explicit pointer to `rules/research-depth.md` §Coverage | `tests/scripts/research-depth-drift.test.sh` (6 cases, 2 mutation) |
+| `rules/research-depth.md` §Coverage | `skills/xia2/references/research-brief-template.md` (Docs Findings, Source Pack) | xia2 agent filling the brief | inline copy | same drift test |
+| `rules/research-depth.md` | `skills/xia2/references/depth-classifier.md` | xia2 agent | explicit Read anchor (`Use this reference with rules/research-depth.md`); restates depth *selection* only, never Coverage | inspected: no Coverage text to drift |
+| `rules/research-depth.md` | `skills/feature-intake/SKILL.md` §Research-depth handoff | intake (main) | explicit path reference; maps lane→depth only, never Coverage | inspected: no Coverage text to drift |
+| `rules/auto-correct-scope.md` Rule-4 list | `skills/correctness-review/prompts/shared.md` | reviewer | pre-existing, untouched by this diff | `tests/scripts/inline-policy-drift.test.sh` |
+| — | `agents/*.md` | reviewer/implementer | no depth or Coverage text present | grep over `agents/*.md` for `Standard|Deep|research` → empty |
+| — | `evals/skills/review-chain/fixtures/{context-rule-unread,stale-inline-policy}/` | eval | escape probes preserved | `git diff simplify -- evals/` → empty |
+
+**FAIL 1 — three copies of one definition, no drift guard. REPAIRED.** The external-surface
+definition now lives in the rule *and* two xia2 files (agents load the skill and template; they
+do not read `rules/`). Three unguarded copies is the exact `stale-inline-policy` escape the
+review-chain fixture pins. Added `tests/scripts/research-depth-drift.test.sh`: registry +
+copies + per-concept anchor keywords, a check that the retired unconditional wording is gone,
+and two mutation checks (strip the condition → detected; drop only the `local-only` sentinel →
+detected) proving the lint is load-bearing rather than vacuous.
+
+**FAIL 2 — the deployed `.claude/` tree still carries the retired rule. OPEN.**
+`.claude/rules/research-depth.md`, `.claude/skills/xia2/SKILL.md`, and
+`.claude/skills/xia2/references/research-brief-template.md` all contain **0** occurrences of
+`external surface` (dated Aug 7, before this change). `.claude/rules/` is **auto-loaded into
+every session in this repo**, so until a redeploy every agent here reads the unconditional rule
+while the source says otherwise — a live contradiction in the consumer context, which is
+precisely what this audit exists to detect. It is *not* shipped by this PR: `.claude/` is
+gitignored (`.gitignore:26`) and untracked, so the PR diff is unaffected and consumers who
+re-sync get the corrected files. The repair is `scripts/deploy-harness.sh`, which mutates
+`.claude/` and is therefore withheld pending explicit human authorisation rather than run
+autonomously. Not escalated to `ESCALATIONS.md`: this is the harness's normal
+source→deploy lag, not a defect in the change under review.
+
+**Not verified by this audit:** that any agent *obeys* the propagated rule. Every row above is
+traceability tier — text reaches a context — never truth. The drift test proves the keywords are
+present in each copy; it does not prove the copies say the same thing about them.
 
 ### Rollback
 
