@@ -24,10 +24,35 @@
 # official strict gate. Breakage data is read from CI history + the ledger before
 # anyone considers flipping the local default.
 #
-# Usage: scripts/ci-strict-gate.sh [base-ref]   (default base: origin/main)
+# Usage: scripts/ci-strict-gate.sh [base-ref]
+#   base-ref omitted → resolved by scripts/resolve-base-ref.sh; the gate SKIPS (exit 0,
+#   named reason on stderr) when no base is declared. It never falls back to a guess.
 set -uo pipefail
 
-BASE="${1:-origin/main}"
+# The base must RESOLVE, whoever supplied it. `git diff <bad-ref>...HEAD 2>/dev/null || true`
+# below swallows git's fatal, leaving DIFF empty, and an empty DIFF exits 0 — so an
+# unresolvable base makes this STRICT gate report success having inspected nothing.
+#
+# Validating only the fallback is not enough, and was the bug an earlier draft of this
+# block shipped: CI always passes the base explicitly (harness-ci.yml:
+# `origin/${{ github.base_ref }}`), so the *only* path CI takes was the unvalidated one.
+# `bash scripts/ci-strict-gate.sh no/such/ref` exited 0 with no output. Both paths are
+# checked here; a bad base is a hard error, while a genuinely undeclared base is a skip.
+if [ $# -ge 1 ]; then
+  BASE="$1"
+  if ! git rev-parse --verify -q "${BASE}^{commit}" >/dev/null 2>&1; then
+    echo "ci-strict-gate: base ref '$BASE' does not resolve to a commit — refusing to" >&2
+    echo "  report a result. An unresolvable base yields an empty diff, which this gate" >&2
+    echo "  would otherwise read as 'nothing to check' and pass." >&2
+    exit 1
+  fi
+elif BASE="$(bash "$(dirname "$0")/resolve-base-ref.sh" 2>&1)"; then
+  :
+else
+  echo "ci-strict-gate: skipped — $BASE" >&2
+  echo "ci-strict-gate: pass a base ref explicitly to run it (scripts/ci-strict-gate.sh <base>)" >&2
+  exit 0
+fi
 
 # Hard-gate path regex — reuse risk-corroboration.sh's fix-precision pattern. The
 # `^hooks/` anchor deliberately EXCLUDES tests/hooks/ (the documented

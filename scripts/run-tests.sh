@@ -30,19 +30,34 @@ else
 fi
 
 echo "== L1: verify-row lint (changed SUMMARY/PLAN only) =="
-# Lint only SUMMARY.md + PLAN.md files changed vs origin/main — new/edited Verify
+# Lint only SUMMARY.md + PLAN.md files changed vs the base ref — new/edited Verify
 # rows and SC-table Check cells must be pipe-free + <60s; shipped specs are
-# grandfathered (scope matches ci-strict-gate's changed-file model). No origin/main
-# (or nothing changed) → no-op.
-if command -v python3 >/dev/null 2>&1 && git rev-parse --verify -q origin/main >/dev/null 2>&1; then
-  changed="$(git diff --name-only origin/main -- 'specs/*/SUMMARY.md' 'specs/*/PLAN.md' 2>/dev/null)"
-  if [ -n "$changed" ]; then
+# grandfathered (scope matches ci-strict-gate's changed-file model).
+#
+# The base ref is resolved by scripts/resolve-base-ref.sh (which carries the rationale
+# and is covered by tests/scripts/resolve-base-ref.test.sh); `fetch-depth: 0` on the CI
+# `test` job is the other half of that fix. Every skip below names its reason —
+# distinguishing "no base to compare against" from "compared and found nothing" is the
+# whole point, since that ambiguity is what let the original bug report green.
+BASE_OUT="$(bash scripts/resolve-base-ref.sh 2>&1)"; BASE_RC=$?
+if [ "$BASE_RC" -ne 0 ]; then
+  echo "  skip — $BASE_OUT"
+elif ! command -v python3 >/dev/null 2>&1; then
+  echo "  skip — no python3"
+else
+  # Three-dot, matching scripts/ci-strict-gate.sh — two-dot also picks up files changed on
+  # the BASE since the fork point, i.e. specs this branch never touched. Do not swallow
+  # git's exit status: a failed diff and an empty diff both produce no output, and
+  # reporting the first as the second is the exact confusion this block was rewritten to end.
+  changed="$(git diff --name-only "$BASE_OUT"...HEAD -- 'specs/*/SUMMARY.md' 'specs/*/PLAN.md')"; diff_rc=$?
+  if [ "$diff_rc" -ne 0 ]; then
+    echo "  ✗ git diff against '$BASE_OUT' failed (rc=$diff_rc) — scope unknown, not treating as clean"
+    FAILED=1
+  elif [ -n "$changed" ]; then
     printf '%s\n' "$changed" | python3 scripts/check_verify_rows.py || FAILED=1
   else
-    echo "  skip — no changed SUMMARY.md/PLAN.md vs origin/main"
+    echo "  skip — no changed SUMMARY.md/PLAN.md vs $BASE_OUT"
   fi
-else
-  echo "  skip — no python3 or no origin/main ref"
 fi
 
 for suite in tests/hooks/*.test.sh tests/scripts/*.test.sh; do

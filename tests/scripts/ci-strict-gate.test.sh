@@ -134,4 +134,24 @@ r=$(mkrepo); mkdir -p "$r/hooks"; echo '#!/bin/bash' > "$r/hooks/foo.sh"
 echo '# edit' >> "$r/scripts/verify_summary.py"; commit_run "$r"
 assert_rc 1
 
+# ── An unresolvable EXPLICIT base must be a hard error, not a silent pass ─────
+# Every case above passes a valid base sha, so until now the argument path had no
+# coverage at all — and it is the ONLY path CI takes (harness-ci.yml passes
+# `origin/${{ github.base_ref }}`). With a bad base, `git diff ... 2>/dev/null || true`
+# swallows the fatal, DIFF is empty, and the gate exits 0 having inspected nothing:
+# a STRICT gate reporting success because it could not run. Measured before the fix:
+# `bash scripts/ci-strict-gate.sh no/such/ref` → exit 0, zero output.
+t "an explicit base ref that does not resolve is refused (exit 1), not silently passed"
+r=$(mkrepo); mkdir -p "$r/hooks"; echo '#!/bin/bash' > "$r/hooks/foo.sh"
+git -C "$r" add -A >/dev/null 2>&1; git -C "$r" commit -qm change
+OUT=$(cd "$r" && bash "$GATE" no/such/ref 2>&1); RC=$?
+assert_rc_contains 1 "does not resolve to a commit"
+
+t "a base that resolves to a non-commit object (blob) is refused too"
+r=$(mkrepo); echo "more" >> "$r/README.md"
+git -C "$r" add -A >/dev/null 2>&1; git -C "$r" commit -qm change
+blob=$(git -C "$r" rev-parse HEAD:README.md)
+OUT=$(cd "$r" && bash "$GATE" "$blob" 2>&1); RC=$?
+assert_rc_contains 1 "does not resolve to a commit"
+
 finish
