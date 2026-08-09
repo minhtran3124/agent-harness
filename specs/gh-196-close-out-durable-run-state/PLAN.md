@@ -1,6 +1,6 @@
 ---
 slug: gh-196-close-out-durable-run-state
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-08-08
 ---
@@ -10,7 +10,7 @@ created: 2026-08-08
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**6 tasks · 4 waves · 17 files · 0/6 done**
+**6 tasks · 4 waves · 17 files · 5/6 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -43,12 +43,12 @@ flowchart LR
 ```
 
 ### Progress
-- [ ] 1.1 — Port the chain-validation engine + its tests (wave 1)
+- [x] 1.1 — Port the chain-validation engine + its tests (wave 1)
 - [ ] 1.2 — Reapply the `--check` doc correction if stale (wave 1)
-- [ ] 2.1 — Fix the terminalization allowlist + regression-test the policy (wave 2)
-- [ ] 2.2 — Restore the `ready_to_merge` producer (wave 2)
-- [ ] 3.1 — Reconcile the two stale `ready_to_merge` runs (wave 3)
-- [ ] 4.1 — Refresh the canonical durable-run-state docs (wave 4)
+- [x] 2.1 — Fix the terminalization allowlist + regression-test the policy (wave 2)
+- [x] 2.2 — Restore the `ready_to_merge` producer (wave 2)
+- [x] 3.1 — Reconcile the two stale `ready_to_merge` runs (wave 3)
+- [x] 4.1 — Refresh the canonical durable-run-state docs (wave 4)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -205,3 +205,9 @@ defect. Full context: `research-brief.md`, `design.md`.
 
 - 2026-08-08 — Plan authored (high-risk lane). Research + design complete; feat/gh-174 mapped as the
   Part-1 source; stale-run merge SHAs confirmed via `gh pr view`. Ready to execute.
+- 2026-08-09 — All tasks complete; commits `2af7ec5` (1.1), `4f0355f`+`91336a3`+`b8f663f` (2.1),
+  `b8f663f` (2.2), `720a526` (3.1), `e4c9d52` (4.1). Three-oracle review run (correctness,
+  context-propagation, intent) — all blocking findings fixed; advisories recorded in SUMMARY.
+  Full suite green (`scripts/run-tests.sh` exit 0, 361 pytest + all shell suites). Plan `shipped`.
+  Follow-up: sync the workflow allowlist to `main` so AC4 takes effect (pull_request_target reads
+  the default branch).
