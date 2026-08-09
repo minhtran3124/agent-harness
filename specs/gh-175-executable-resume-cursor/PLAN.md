@@ -10,7 +10,7 @@ created: 2026-08-09
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**3 tasks · 3 waves · 9 files · 0/3 done**
+**3 tasks · 3 waves · 9 files · 1/3 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -34,7 +34,7 @@ flowchart LR
 ```
 
 ### Progress
-- [ ] 1.1 — Expose one locked durable-state snapshot (wave 1)
+- [x] 1.1 — Expose one locked durable-state snapshot (wave 1)
 - [ ] 2.1 — Complete the versioned resume cursor authority (wave 2)
 - [ ] 3.1 — Wire the portable command and contract consumers (wave 3)
 <!-- AT-A-GLANCE:END -->
@@ -184,3 +184,6 @@ existing authority rather than adding a second resume script. See `research-brie
   workflow-engine behavior and the durable-state contract. No implementation performed.
 - 2026-08-09 — Planning artifacts validated: plan contract, Verify-row lint, and doc-truth lint
   pass; `bash scripts/run-tests.sh` is ALL GREEN (305 Python tests plus all hook/script suites).
+- 2026-08-09 — task 1.1 complete; commit bec4ef4. Task Verify green (11 passed); full run_state
+  suite 86 passed, no regression. Task review: spec pass, quality approved; one Minor (untested-edge
+  stderr message precedence, recorded in SUMMARY ### Not auto-verified) forwarded to final review.
