@@ -10,10 +10,24 @@ after its Verify command and both per-task reviews are green.
 
 ## Resume first
 
-For `resume <slug>`, run `python3 runtime/resume_decision.py --slug <slug>` before editing.
-Follow its action exactly: `execute-plan`, `resume-repair`, `resume-review-chain`, `wait`, `stop`,
-or `rebuild`. Do not reconstruct the FSM from prose or initialize a missing historical run during
-execution. Read `references/resume.md` only when its returned action requires a manual transition
+For `resume <slug>`, run the resume authority before editing — source tree first, deployed runtime
+second:
+
+```
+python3 runtime/resume_decision.py --slug <slug> 2>/dev/null \
+  || python3 .claude/runtime/resume_decision.py --slug <slug>
+```
+
+A default consumer install owns `.claude/runtime/resume_decision.py`, not a root `runtime/`; its
+sibling `run_state.py` resolves because Python puts the script's own directory on `sys.path`. Branch
+only on the structured `action`/`reason_code`: `execute-plan`, `resume-repair`,
+`resume-review-chain`, `wait`, `stop`, or `rebuild`.
+
+On `execute-plan`, first re-run every `cursor.checks_to_rerun` item (each claimed-complete task's
+exact Verify) and dispatch NO pending task until those claims verify; a failed check routes to the
+repair path. Apply `required_transition` ONLY after the session confirms the external condition it
+names. Do not reconstruct the FSM from prose or initialize a missing historical run during
+execution. Read `references/resume.md` only when the returned action requires a manual transition
 or repair.
 
 ## Preflight

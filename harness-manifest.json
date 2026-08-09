@@ -86,6 +86,16 @@
         ".github/workflows/post-merge-maintenance.yml"
       ],
       "desc": "Phase C (GitHub issue #129) workflow checkpoints that call runtime/run_state.py"
+    },
+    "resume-cursor-decision": {
+      "surface": ["runtime/resume_decision.py", "runtime/run_state.py"],
+      "consumers": [
+        "skills/subagent-driven-development/SKILL.md",
+        "skills/subagent-driven-development/references/resume.md",
+        "tests/scripts/sdd-resume-cursor.test.sh",
+        "tests/scripts/runtime-sync.test.sh"
+      ],
+      "desc": "issue #175 executable resume decision schema (action/reason_code + task cursor)"
     }
   },
 
