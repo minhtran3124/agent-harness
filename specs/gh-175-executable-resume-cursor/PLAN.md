@@ -10,7 +10,7 @@ created: 2026-08-09
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**3 tasks · 3 waves · 9 files · 1/3 done**
+**3 tasks · 3 waves · 9 files · 2/3 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -35,7 +35,7 @@ flowchart LR
 
 ### Progress
 - [x] 1.1 — Expose one locked durable-state snapshot (wave 1)
-- [ ] 2.1 — Complete the versioned resume cursor authority (wave 2)
+- [x] 2.1 — Complete the versioned resume cursor authority (wave 2)
 - [ ] 3.1 — Wire the portable command and contract consumers (wave 3)
 <!-- AT-A-GLANCE:END -->
 
@@ -187,3 +187,8 @@ existing authority rather than adding a second resume script. See `research-brie
 - 2026-08-09 — task 1.1 complete; commit bec4ef4. Task Verify green (11 passed); full run_state
   suite 86 passed, no regression. Task review: spec pass, quality approved; one Minor (untested-edge
   stderr message precedence, recorded in SUMMARY ### Not auto-verified) forwarded to final review.
+- 2026-08-09 — task 2.1 complete; commit e791638. Task Verify green (24 passed; SC-2..SC-7 selectors
+  all pass); run_state engine suite 86 passed, full run-tests.sh ALL GREEN (389 python). Task review:
+  spec pass, quality approved; landmine (per-task-mention completion) confirmed closed; two Minors
+  (soft-marker completion edge, byte-snapshot coverage narrower than canonical set) recorded in
+  SUMMARY ### Not auto-verified and forwarded to final review.
