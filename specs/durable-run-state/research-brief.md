@@ -22,15 +22,19 @@ and rollout) so a future reader never has to re-derive this from three separate 
   registered in `scripts/deploy-harness.sh`'s `SYNCED_DIRS_RE` and
   `scripts/install-harness.sh`'s `PAYLOAD` array — every consuming repo gets it on
   install/resync, landing at `.claude/runtime/run_state.py`.
-- **Workflow checkpoints** (Phase C, PR #167, open against the epic branch): 8 checkpoints
-  across 6 files call the engine — `skills/feature-intake/SKILL.md` (init + investigating +
-  lane-scoped planning), `skills/subagent-driven-development/SKILL.md` (implementing +
-  verifying), `skills/finishing-a-development-branch/SKILL.md` (ready_to_merge),
+- **Workflow checkpoints** (Phase C, PR #167, merged): checkpoints across the workflow call the
+  engine — `skills/feature-intake/SKILL.md` (init + investigating + lane-scoped planning),
+  `skills/finishing-a-development-branch/SKILL.md` (ready_to_merge),
   `hooks/session-knowledge.sh` (SessionStart active-run summary),
   `scripts/harness-status.sh` (on-demand Active Runs section, meta-repo-only),
   `.github/workflows/post-merge-maintenance.yml` (shipped-on-merge, meta-repo-only). Every
   checkpoint call is unconditionally non-fatal (`|| true`). Only normal/high-risk lanes get the
   full chain; `tiny`-lane runs intentionally stop at `investigating`.
+  Note: the slim-surface refactor (`8e04bc5`) retired the `implementing`/`verifying` checkpoints
+  from `skills/subagent-driven-development/SKILL.md`; the `ready_to_merge` producer in
+  finishing-a-development-branch was restored as a concrete command by gh-196 (issue #196) — see
+  the close-out below. So a run advances `queued → investigating → planning` (intake) then
+  `→ ready_to_merge` (finish) `→ shipped` (post-merge), skipping the retired intermediate hops.
 - **Pre-existing, adjacent mechanism**: `specs/STATE.md` + `hooks/state-breadcrumb.sh`
   (SessionEnd) — tracks one session's current focus, not a per-spec durable FSM. Phase D
   (Task 1.1) documents the boundary between the two; they do not read or write each other's
@@ -45,22 +49,35 @@ and rollout) so a future reader never has to re-derive this from three separate 
 
 ## Close-out (gh-196, GitHub issue #196) — current contract
 
-The following were resolved after Phase D; the pre-#177 limitations above are fixed, not deferred:
+These were resolved after Phase D. The pre-#177 CI-staging no-op previously listed as a limitation
+is fixed, not deferred (the one remaining item under "Known limitations" above — the tiny-lane
+non-terminal run — is by design):
 
 - **Semantic event-chain validation (#174).** `read_events` now runs `validate_chain` by default,
-  so every read surface that trusts history — `status`, `list`, `rebuild`, `rebuild --check`, and
-  the resume decision — fails visibly with the storage-error contract (exit 3) on a JSON-valid but
-  semantically impossible log (bad `seq`, broken `from_state` chaining, mixed run identity, an
-  illegal transition, or a `shipped` event without a valid `sha`) instead of projecting a fabricated
-  history — and does so without mutating either artifact. Escape hatches:
-  `rebuild --allow-invalid-chain`, and closing a bricked run to `cancelled`/`superseded`.
+  so every read surface that trusts history — `status`, `list`, `rebuild`, `rebuild --check` (each
+  via the exit-3 storage-error contract), and the resume decision (which signals `action: stop`,
+  `state: corrupt` in its own JSON protocol) — fails visibly on a JSON-valid but semantically
+  impossible log (bad `seq`, broken `from_state` chaining, mixed run identity, an illegal
+  transition, or a `shipped` event without a valid `sha`) instead of projecting a fabricated
+  history — and does so without mutating either artifact. `list` validates each run whose log
+  exists and exits 3 if any is illegal. Escape hatches: `rebuild --allow-invalid-chain` (folds an
+  unvalidated projection with a loud warning; does not unblock `transition`), and closing a bricked
+  run to `cancelled`/`superseded`.
 - **Reliable terminalization.** The staging no-op (#177) is fixed — the bookkeeping PR stages both
-  `RUN.json` and `events.jsonl`. The trigger is now **base-branch-agnostic**: `post-merge-maintenance.yml`
-  carries no static `branches:` base-branch allowlist, so a merged PR carrying a tracked run
+  `RUN.json` and `events.jsonl`. The trigger uses an explicit **integration-branch allowlist**
+  (`branches: [main, loop, simplify]`), scoped to mainline branches so it never fires on a
+  feature→feature merge (which would run merged code with the workflow's write token or terminalize
+  a run on an intermediate merge). A merged PR carrying a tracked run
   (`specs/<slug>/SUMMARY.md` + `RUN.json`) transitions to `shipped` exactly once with the confirmed
-  merge SHA regardless of which integration branch it targeted. The checkpoint can no longer silently
-  disappear when the integration branch is renamed. Caveat: `pull_request_target` loads its definition
-  from the repo default branch (`main`), so the trigger change is inert until synced there.
+  merge SHA. The allowlist is the one authoritative place for the base-branch policy; the previous
+  `[main, loop]` list silently excluded `simplify` and stranded a run — `simplify` was added and a
+  regression test now asserts the active integration branch stays present so the list cannot
+  silently rot. Caveat: `pull_request_target` loads its definition (and this list) from the repo
+  default branch (`main`), so a trigger change is inert until synced there.
+- **Producer restored.** The slim-surface refactor had left the `ready_to_merge` transition as
+  prose only in finishing-a-development-branch; gh-196 restored it as a concrete non-fatal command,
+  so a run actually reaches `ready_to_merge` and can terminalize end-to-end (without it a run
+  stalls at `planning` and `planning → shipped` is illegal).
 - **Stale runs reconciled.** The two runs left at `ready_to_merge` (`new-session-plan-resume`,
   `gate-verifiability-principle`) were terminalized to `shipped` from confirmed GitHub merge SHAs
   (PRs #173 and #189) via the real CLI — one appended event each, chains still validate.
@@ -80,8 +97,6 @@ The following were resolved after Phase D; the pre-#177 limitations above are fi
   Advisory/Intent Findings).
 - `specs/gh-129-durable-run-state-phase-b/SUMMARY.md`, `PLAN.md`, `design.md` — portable
   deployment.
-- `specs/gh-129-durable-run-state-phase-c/SUMMARY.md`, `PLAN.md`, `design.md` (on branch
-  `feat/gh-129-durable-run-state-phase-c`, PR #167 — not present in this checkout since it is
-  unmerged; cited from the PR/branch, not re-read line-by-line here since the branch this task
-  runs from does not have it checked out).
+- `specs/gh-129-durable-run-state-phase-c/SUMMARY.md`, `PLAN.md`, `design.md` — PR #167 merged
+  (commit `cc2d275`); the folder is tracked in this checkout.
 - `runtime/run_state.py` (current, this checkout).

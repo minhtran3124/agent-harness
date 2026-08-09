@@ -161,6 +161,18 @@ if [ "$RC" -eq 3 ] && echo "$OUT" | grep -qF "invalid event chain"; then pass
 else fail "rc=$RC out: $OUT"; fi
 
 # --------------------------------------------------------------------------- #
+# Case 6b — issue #196 acceptance: `list` must ALSO stop visibly on an impossible
+# chain. Before the fix, cmd_list read only RUN.json and printed the forged run's
+# folded state (shipped) with exit 0 — the bricked run looked completed. It must now
+# validate each run whose log exists, exit 3, and not advertise the invalid run's
+# state as healthy.
+# --------------------------------------------------------------------------- #
+t "list exits 3 on the forged log and surfaces it as an error, not a healthy state"
+rs list
+if [ "$RC" -eq 3 ] && echo "$OUT" | grep -qF "error: $SLUG"; then pass
+else fail "rc=$RC out: $OUT"; fi
+
+# --------------------------------------------------------------------------- #
 # Case 7 — Fix 2: a bricked run (this same forged log) must be closeable via a
 # transition to a terminal, non-shipped target. Proves the CLI contract, not just
 # the Python unit-level behavior already pinned in runtime/test_run_state.py.

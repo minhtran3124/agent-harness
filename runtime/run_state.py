@@ -754,6 +754,7 @@ def cmd_status(args):
 def cmd_list(args):
     specs_root = "specs"
     results = []
+    invalid = []
     if os.path.isdir(specs_root):
         for slug in sorted(os.listdir(specs_root)):
             path = run_json_path(slug)
@@ -764,6 +765,20 @@ def cmd_list(args):
             except StorageError as e:
                 print(f"warning: {slug}: {e} (run rebuild --check)", file=sys.stderr)
                 continue
+            # When a log exists, its chain must be a legal history or the RUN.json
+            # projection cannot be trusted. Surface the invalid run and drop it from
+            # the listing instead of advertising a possibly-fabricated state (issue
+            # #196: `list` must stop visibly on an impossible chain, like status /
+            # rebuild --check / resume). read_events is non-mutating and validates by
+            # default. A run with RUN.json and no log is unaffected (the status
+            # Branch-B case), so this only fires on a log that exists and is illegal.
+            if os.path.isfile(events_path(slug)):
+                try:
+                    read_events(slug)
+                except StorageError as e:
+                    print(f"error: {slug}: {e}", file=sys.stderr)
+                    invalid.append(slug)
+                    continue
             if args.active and data.get("state") in TERMINAL_STATES:
                 continue
             results.append(data)
@@ -775,7 +790,10 @@ def cmd_list(args):
                 f"{data.get('slug')}: {data.get('state')} "
                 f"(waiting_on={data.get('waiting_on')})"
             )
-    return 0
+    # Exit 3 (storage-error contract) if any listed run has an invalid chain — the
+    # valid entries are still printed, but the command fails visibly so a caller
+    # (or `set -e`) cannot read a clean exit as "all runs healthy".
+    return 3 if invalid else 0
 
 
 def cmd_rebuild(args):
