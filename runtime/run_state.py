@@ -30,7 +30,7 @@ RUN.json projection schema:
   }
 
 Exit codes: 0 success or idempotent no-op; 2 invalid input or invalid transition;
-3 missing/corrupt storage or I/O failure.
+3 missing/corrupt storage, illegal event chain, projection drift, or I/O failure.
 """
 
 import argparse
@@ -99,35 +99,57 @@ def read_json(path):
         raise StorageError(f"missing: {path}")
     except json.JSONDecodeError as e:
         raise StorageError(f"corrupt JSON in {path}: {e}")
+    except (OSError, UnicodeDecodeError) as e:
+        # Round-16 review (Fix 4): FileNotFoundError is an OSError subclass and is
+        # matched by the more specific clause above first. Everything else an open()
+        # or a read can raise on corrupted/inaccessible storage - IsADirectoryError,
+        # PermissionError, a non-UTF-8 byte - used to propagate uncaught (exit 1, a
+        # traceback), outside the documented 0/2/3 contract. Corruption is precisely
+        # this feature's scenario, not a hypothetical input.
+        raise StorageError(f"cannot read {path}: {e}")
 
 
 REQUIRED_EVENT_KEYS = ("event_id", "seq", "ts", "slug", "run_id", "to_state")
 
 
-def read_events(slug):
+def read_events(slug, validate=True):
     path = events_path(slug)
     if not os.path.exists(path):
         raise StorageError(f"missing: {path}")
     events = []
-    with open(path) as f:
-        for lineno, line in enumerate(f, start=1):
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                event = json.loads(line)
-            except json.JSONDecodeError as e:
-                raise StorageError(f"corrupt event log {path}:{lineno}: {e}")
-            if not isinstance(event, dict) or not all(
-                k in event for k in REQUIRED_EVENT_KEYS
-            ):
-                raise StorageError(
-                    f"malformed event log {path}:{lineno}: missing required "
-                    f"key(s) {REQUIRED_EVENT_KEYS}"
-                )
-            events.append(event)
+    try:
+        with open(path) as f:
+            for lineno, line in enumerate(f, start=1):
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    event = json.loads(line)
+                except json.JSONDecodeError as e:
+                    raise StorageError(f"corrupt event log {path}:{lineno}: {e}")
+                if not isinstance(event, dict) or not all(
+                    k in event for k in REQUIRED_EVENT_KEYS
+                ):
+                    raise StorageError(
+                        f"malformed event log {path}:{lineno}: missing required "
+                        f"key(s) {REQUIRED_EVENT_KEYS}"
+                    )
+                events.append(event)
+    except (OSError, UnicodeDecodeError) as e:
+        # Round-16 review (Fix 4): the pre-existing os.path.exists check above only
+        # rules out a missing file - it does not rule out events.jsonl being a
+        # directory (IsADirectoryError), unreadable (PermissionError), or containing
+        # a non-UTF-8 byte (UnicodeDecodeError). cmd_status now reads this on every
+        # call (the prior commit's Fix 1), so this input class is directly reachable,
+        # not hypothetical - and it used to raise uncaught (exit 1, a traceback),
+        # outside the documented 0/2/3 contract. StorageError raised deliberately
+        # inside this same try (corrupt JSON / malformed event) is not an OSError or
+        # UnicodeDecodeError, so it is unaffected and still propagates as-is.
+        raise StorageError(f"cannot read {path}: {e}")
     if not events:
         raise StorageError(f"empty event log: {path}")
+    if validate:
+        validate_chain(events, slug, path)
     return events
 
 
@@ -156,9 +178,61 @@ class locked_run:
         return False
 
 
+class locked_run_readonly:
+    """Read-only counterpart to locked_run, used by cmd_status (Round-16 review,
+    Fix 1). cmd_status reads RUN.json, then reads+folds events.jsonl, to compare
+    them; without a lock spanning both reads, a transition landing between them
+    (cmd_transition holds locked_run across its append+fsync -> atomic_write_json)
+    can make the fold newer than the projection it's compared against, reporting
+    'projection drift' on a store that was never actually corrupt.
+
+    Two deliberate departures from locked_run, both load-bearing:
+
+    - Only acquires when `spec_dir(slug)` already exists. locked_run.__enter__
+      unconditionally does os.makedirs(spec_dir) + open(lock_path, "a+"), so using
+      it as-is here would make a read-only command fabricate a directory and a
+      .lock file for ANY slug argument, including a typo — status on a slug that
+      was never initialized must still fail cleanly with nothing created, exactly
+      as it did before this fix (pinned by
+      test_status_readonly_lock_does_not_create_storage_for_a_typo_slug).
+    - Takes LOCK_SH, not LOCK_EX. A writer's LOCK_EX (locked_run) blocks against
+      any LOCK_SH, so this still serializes against a transition in flight - that
+      is the property this fix needs. But LOCK_SH does not block other LOCK_SH
+      holders, so concurrent `status` calls do not needlessly serialize against
+      each other, only against writers.
+    """
+
+    def __init__(self, slug):
+        self.slug = slug
+        self._fh = None
+
+    def __enter__(self):
+        if os.path.isdir(spec_dir(self.slug)):
+            self._fh = open(lock_path(self.slug), "a+")
+            try:
+                fcntl.flock(self._fh.fileno(), fcntl.LOCK_SH)
+            except Exception:
+                self._fh.close()
+                self._fh = None
+                raise
+        return self
+
+    def __exit__(self, *exc):
+        if self._fh is not None:
+            fcntl.flock(self._fh.fileno(), fcntl.LOCK_UN)
+            self._fh.close()
+        return False
+
+
 # --- FSM: states, valid transitions, projection fold -----------------------
 
 TERMINAL_STATES = {"shipped", "cancelled", "superseded"}
+# GitHub issue #174 follow-up (Fix 2): the only targets a `transition` may reach
+# over an INVALID event chain - closing a bricked run, not extending its history.
+# `shipped` is deliberately excluded even though it is also terminal: it asserts
+# the run finished successfully and requires a real --sha, neither of which this
+# bypass has any honest way to earn from a chain it does not trust.
+CLOSEABLE_OVER_INVALID_CHAIN = {"cancelled", "superseded"}
 INTERRUPT_STATES = {"blocked", "escalated"}
 WAITING_STATES = {"awaiting_confirmation", "awaiting_ci", "awaiting_review"}
 ACTIVE_STATES = {
@@ -257,6 +331,119 @@ def project(events):
     }
 
 
+def validate_chain(events, slug, path):
+    """Pure validator: raises StorageError on the first violation of one of eight
+    invariants (numbered 1-8 below), so that project() only ever folds a history
+    that could actually have happened."""
+    first = events[0]
+    seen_event_ids = set()
+    prev = None
+    for n, ev in enumerate(events, start=1):
+        # 1. seq contiguous from 1. type(...) is int, not isinstance - bool is an int
+        # subclass and True == 1 would otherwise satisfy contiguity without being one.
+        if type(ev.get("seq")) is not int:
+            raise StorageError(f"invalid event chain {path}:{n}: seq is not an int")
+        if ev["seq"] != n:
+            raise StorageError(
+                f"invalid event chain {path}:{n}: expected seq {n}, got {ev['seq']!r}"
+            )
+
+        # 2. from_state chains to the previous event's to_state. Genesis (seq 1) has
+        # no previous event, so this is skipped for it.
+        if prev is not None and ev.get("from_state") != prev["to_state"]:
+            raise StorageError(
+                f"invalid event chain {path}:{n}: from_state "
+                f"{ev.get('from_state')!r} does not match previous to_state "
+                f"{prev['to_state']!r}"
+            )
+
+        # 3. slug and run_id constant across the whole chain, and the chain's own
+        # slug matches the slug argument.
+        if ev.get("slug") != first.get("slug"):
+            raise StorageError(
+                f"invalid event chain {path}:{n}: slug {ev.get('slug')!r} does not "
+                f"match chain slug {first.get('slug')!r}"
+            )
+        if ev.get("run_id") != first.get("run_id"):
+            raise StorageError(
+                f"invalid event chain {path}:{n}: run_id {ev.get('run_id')!r} does "
+                f"not match chain run_id {first.get('run_id')!r}"
+            )
+        if n == 1 and first.get("slug") != slug:
+            raise StorageError(
+                f"invalid event chain {path}:{n}: chain slug {first.get('slug')!r} "
+                f"does not match requested slug {slug!r}"
+            )
+
+        # 4. Genesis carve-out, stated positively: seq 1 must have from_state None
+        # and to_state "queued". `!=` is safe against non-str values (no TypeError),
+        # so this needs no type guard of its own.
+        if n == 1 and (
+            ev.get("from_state") is not None or ev.get("to_state") != "queued"
+        ):
+            raise StorageError(
+                f"invalid event chain {path}:{n}: genesis must have from_state None "
+                f"and to_state {'queued'!r}, got from_state "
+                f"{ev.get('from_state')!r} to_state {ev.get('to_state')!r}"
+            )
+
+        # 5. Hop legality, delegated to validate_transition - skipped for genesis
+        # (seq 1), which invariant 4 above has already forced to from_state None,
+        # to_state "queued". The to_state type guard is unconditional but, at n == 1,
+        # defensive only and unreachable in practice: invariant 4 already forces
+        # to_state == "queued" (a str) for any event that gets this far. It remains
+        # load-bearing for n > 1, where an unhashable to_state would otherwise raise
+        # TypeError from validate_transition's `to_state not in ALL_STATES`
+        # membership test.
+        if type(ev.get("to_state")) is not str:
+            raise StorageError(
+                f"invalid event chain {path}:{n}: to_state is not a string"
+            )
+        if n > 1:
+            try:
+                validate_transition(
+                    ev["from_state"],
+                    ev["to_state"],
+                    ev.get("waiting_on"),
+                    ev.get("resume_event"),
+                )
+            except InvalidTransitionError as e:
+                raise StorageError(f"invalid event chain {path}:{n}: {e}")
+
+        # 6. event_id unique across the whole chain.
+        if type(ev.get("event_id")) is not str:
+            raise StorageError(
+                f"invalid event chain {path}:{n}: event_id is not a string"
+            )
+        if ev["event_id"] in seen_event_ids:
+            raise StorageError(
+                f"invalid event chain {path}:{n}: duplicate event_id {ev['event_id']!r}"
+            )
+        seen_event_ids.add(ev["event_id"])
+
+        # 7. event is a string. REQUIRED_EVENT_KEYS omits "event", and nothing else
+        # checks it - cmd_transition's idempotent-replay scan dereferences it with a
+        # bare subscript (`ev["event"] == args.event`), which would otherwise raise an
+        # uncaught KeyError on a log entry missing the key entirely.
+        if type(ev.get("event")) is not str:
+            raise StorageError(f"invalid event chain {path}:{n}: event is not a string")
+
+        # 8. shipped requires a real sha. cmd_transition enforces --sha (matching
+        # SHA_RE) only on the write path; validate_transition (invariant 5) knows
+        # nothing about sha, so a hand-written log ending in a shipped event with
+        # sha None or garbage would otherwise validate clean. to_state is already
+        # confirmed to be a str by the guard above, so a bare subscript is safe here.
+        if ev["to_state"] == "shipped":
+            sha = ev.get("sha")
+            if type(sha) is not str or not SHA_RE.match(sha):
+                raise StorageError(
+                    f"invalid event chain {path}:{n}: shipped requires sha matching "
+                    f"a git SHA (7-40 hex chars), got {sha!r}"
+                )
+
+        prev = ev
+
+
 # --- CLI ---------------------------------------------------------------
 
 
@@ -295,10 +482,158 @@ def cmd_init(args):
     return 0
 
 
+# Metadata sentinel stamped on every event `_close_run_over_invalid_chain` writes,
+# so a LATER call can recognize "the last event is our own prior close" and not
+# confuse it with a forged/corrupt chain whose fabricated last line merely looks
+# terminal (see the already-closed check in _close_run_over_invalid_chain).
+_CLOSED_OVER_INVALID_CHAIN_KEY = "_closed_over_invalid_chain"
+
+
+def _closing_seq_over_invalid_chain(events):
+    """The closing event's own seq must not perpetuate whatever is broken about the
+    chain's numbering — the issue's own forged log reuses seq=1 twice, so a naive
+    `events[-1]["seq"] + 1` would land right back on a duplicate. Take the max of
+    every syntactically valid int seq seen anywhere in the raw log and add 1; with
+    no int seq anywhere, fall back to the event count. Either way this is a
+    best-effort placement for an honest audit trail, not a claim that the resulting
+    number continues a legal sequence — the chain it's appended to already isn't
+    one."""
+    int_seqs = [ev["seq"] for ev in events if type(ev.get("seq")) is int]
+    return (max(int_seqs) + 1) if int_seqs else len(events) + 1
+
+
+def _close_run_over_invalid_chain(slug, args, events, chain_error):
+    """Append a closing event (`--to` already checked by the caller to be in
+    CLOSEABLE_OVER_INVALID_CHAIN) to a log whose chain does not validate. This is
+    the one deliberate bypass of the write path's normal refusal to extend an
+    illegal history (E002-C / GitHub issue #174 follow-up) — narrow on purpose:
+    abandoning a run is not extending its history, so it doesn't hand back the
+    guarantee that refusal buys for every other target, which the caller still
+    hard-blocks with no bypass.
+
+    `from_state` cannot come from project(events): that fold over an illegal chain
+    is exactly the fabricated value this feature exists to distrust. Instead this
+    records the LAST event's raw `to_state` field, taken literally with no
+    replay/fold logic applied — an honest "this is what the log's last line said",
+    not a claim that reaching it was a legal transition. `seq` is handled by
+    _closing_seq_over_invalid_chain for the same reason.
+
+    Round-16 review added two more guards, both load-bearing before anything is
+    written:
+
+    - Already-closed check (Fix 3): the caller has already confirmed `args.to` is
+      in CLOSEABLE_OVER_INVALID_CHAIN, which is itself a set of TERMINAL states -
+      so the run is always terminal after the first successful close. Any further
+      close call - same --to, a different --to, matching --event-id or not - must
+      therefore be an idempotent no-op that reports what's already on disk, never
+      a fresh append. Without this: a second `--to cancelled` appended a
+      `cancelled -> cancelled` self-loop; a second call with a DIFFERENT --to (e.g.
+      `superseded`) appended a `cancelled -> superseded` hop validate_transition
+      forbids out of a terminal state; and two calls sharing one --event-id
+      appended two events with that event_id, violating validate_chain's own
+      invariant 6 (Fix 2) - all three are the same root cause and this one check
+      closes all of them, since every repeat call hits it before reaching the
+      append below.
+
+      The detector cannot be "the raw last to_state is a terminal string" alone -
+      a FORGED chain's fabricated last line can itself already claim "shipped"
+      (the issue's own repro fixture does exactly this), and that must still be
+      closeable on the FIRST call, not mistaken for "already closed by us". So
+      the marker is narrower: `events[-1]["metadata"]` carries the
+      `_CLOSED_OVER_INVALID_CHAIN_KEY` sentinel this function itself stamps on
+      (below) - only an event THIS function previously wrote can carry it, so a
+      merely terminal-looking but foreign last event does not trip the check.
+    - run_id honesty (Fix 5): project() takes run_id from events[0], which
+      invariant 3 is exactly what an invalid chain may have corrupted. slug is
+      handled by overriding it with the caller's REQUESTED slug after the fold
+      below (always honest - it's a function argument, not log data); run_id has
+      no equivalent external source of truth, so if events[0]'s run_id is not a
+      string this function cannot manufacture one — it refuses to close rather
+      than write a RUN.json with fabricated content (the observed symptom was
+      `list` printing a raw dict where a run_id belongs).
+    """
+    last_event = events[-1]
+    last_to_state = last_event.get("to_state")
+    last_metadata = last_event.get("metadata")
+    already_closed_by_us = (
+        type(last_to_state) is str
+        and last_to_state in TERMINAL_STATES
+        and isinstance(last_metadata, dict)
+        and last_metadata.get(_CLOSED_OVER_INVALID_CHAIN_KEY) is True
+    )
+    if already_closed_by_us:
+        print(
+            f"{slug} is already closed at {last_to_state!r} over an invalid event "
+            f"chain ({chain_error}); no new event appended (idempotent no-op)",
+            file=sys.stderr,
+        )
+        print(f"{slug}: {last_to_state} (already closed)")
+        return 0
+
+    run_id = events[0].get("run_id")
+    if type(run_id) is not str:
+        raise StorageError(
+            f"cannot close {slug} over an invalid chain: events[0].run_id is "
+            f"{run_id!r}, not a string — closing would have to invent a run_id "
+            "rather than record an honest one"
+        )
+
+    event = {
+        "event_id": args.event_id or str(uuid.uuid4()),
+        "seq": _closing_seq_over_invalid_chain(events),
+        "ts": now_iso(),
+        "slug": slug,
+        "run_id": run_id,
+        "from_state": last_to_state,
+        "to_state": args.to,
+        "event": args.event,
+        "waiting_on": args.waiting_on,
+        "resume_event": args.resume_event,
+        "sha": args.sha,
+        # The sentinel is what lets a LATER call to this same function recognize
+        # its own prior work (see already_closed_by_us above) without confusing it
+        # with a forged chain whose fabricated last line merely looks terminal.
+        # It rides in metadata rather than replacing --event/--to so the caller's
+        # own audit intent (e.g. "operator.abandon") is still recorded honestly.
+        "metadata": {**args.meta, _CLOSED_OVER_INVALID_CHAIN_KEY: True},
+    }
+    with open(events_path(slug), "a") as f:
+        f.write(json.dumps(event, sort_keys=True) + "\n")
+        f.flush()
+        os.fsync(f.fileno())
+    # Deliberately NOT project(read_events(slug)): that re-reads with the default
+    # validate=True and would immediately raise on the very corruption this path
+    # exists to close over. Fold the raw events plus the new closing event directly
+    # instead — the same "unvalidated fold" project() already performs for
+    # `rebuild --allow-invalid-chain` — so RUN.json here never claims the preceding
+    # history was legal.
+    projected = project(events + [event])
+    # project() takes slug from events[0] too, and invariant 3 (chain slug must
+    # match the requested slug) is exactly what an invalid chain may have broken -
+    # override with the REQUESTED slug, which is always honest (a function
+    # argument, never log data).
+    projected["slug"] = slug
+    atomic_write_json(run_json_path(slug), projected)
+    print(
+        f"warning: {slug} closed to {args.to!r} over an INVALID event chain "
+        f"({chain_error}); RUN.json is an unvalidated fold, not a verified history",
+        file=sys.stderr,
+    )
+    print(f"{slug}: {last_to_state} -> {args.to} (closed over invalid chain)")
+    return 0
+
+
 def cmd_transition(args):
     slug = args.slug
     with locked_run(slug):
-        events = read_events(slug)
+        events = read_events(slug, validate=False)
+        try:
+            validate_chain(events, slug, events_path(slug))
+        except StorageError as chain_error:
+            if args.to not in CLOSEABLE_OVER_INVALID_CHAIN:
+                raise
+            return _close_run_over_invalid_chain(slug, args, events, chain_error)
+
         current = project(events)
         from_state = current["state"]
 
@@ -367,7 +702,38 @@ def cmd_transition(args):
 
 
 def cmd_status(args):
-    data = read_json(run_json_path(args.slug))
+    slug = args.slug
+    # Round-16 review (Fix 1): both reads below happen under a shared lock, so a
+    # transition landing between them (cmd_transition holds an exclusive lock across
+    # its own append+fsync -> atomic_write_json) cannot make the fold read here newer
+    # than the RUN.json it's compared against. See locked_run_readonly's docstring
+    # for why this is a shared lock and why it does not fire for a slug whose spec
+    # directory does not exist.
+    with locked_run_readonly(slug):
+        data = read_json(run_json_path(slug))
+        if os.path.exists(events_path(slug)):
+            # events.jsonl exists, so - unlike the branch below - there is something
+            # to check it against. read_events(validate=True) raises StorageError
+            # (exit 3) on an illegal chain (issue #174's third repro line: a
+            # forged/hand-edited log that `status` used to never look at). A legal
+            # chain can still disagree with RUN.json (drift, e.g. a hand-edited
+            # RUN.json, or an interrupted transition) - that is a second, distinct
+            # failure this project() comparison catches, named separately from
+            # "invalid event chain" so the two causes are never confused in the
+            # message.
+            projected = project(read_events(slug))
+            if projected != data:
+                raise StorageError(
+                    f"RUN.json does not match events.jsonl for {slug}: projection "
+                    "drift (run `rebuild --slug " + slug + " --check` for details, "
+                    "then `rebuild --slug " + slug + "` to repair)"
+                )
+        # else: no events.jsonl to validate against - this is Step -1 source 2's
+        # Branch B (RUN.json exists, the log does not) as much as it could ever be
+        # Branch A (neither exists, read_json above would already have raised).
+        # Behavior here is deliberately unchanged: print whatever RUN.json says,
+        # exit 0. See SKILL.md Step -1 source 2 for why that branch must not be
+        # "improved" into a stop here.
     if args.json:
         print(json.dumps(data, indent=2, sort_keys=True))
     else:
@@ -388,6 +754,7 @@ def cmd_status(args):
 def cmd_list(args):
     specs_root = "specs"
     results = []
+    invalid = []
     if os.path.isdir(specs_root):
         for slug in sorted(os.listdir(specs_root)):
             path = run_json_path(slug)
@@ -398,6 +765,20 @@ def cmd_list(args):
             except StorageError as e:
                 print(f"warning: {slug}: {e} (run rebuild --check)", file=sys.stderr)
                 continue
+            # When a log exists, its chain must be a legal history or the RUN.json
+            # projection cannot be trusted. Surface the invalid run and drop it from
+            # the listing instead of advertising a possibly-fabricated state (issue
+            # #196: `list` must stop visibly on an impossible chain, like status /
+            # rebuild --check / resume). read_events is non-mutating and validates by
+            # default. A run with RUN.json and no log is unaffected (the status
+            # Branch-B case), so this only fires on a log that exists and is illegal.
+            if os.path.isfile(events_path(slug)):
+                try:
+                    read_events(slug)
+                except StorageError as e:
+                    print(f"error: {slug}: {e}", file=sys.stderr)
+                    invalid.append(slug)
+                    continue
             if args.active and data.get("state") in TERMINAL_STATES:
                 continue
             results.append(data)
@@ -409,19 +790,39 @@ def cmd_list(args):
                 f"{data.get('slug')}: {data.get('state')} "
                 f"(waiting_on={data.get('waiting_on')})"
             )
-    return 0
+    # Exit 3 (storage-error contract) if any listed run has an invalid chain — the
+    # valid entries are still printed, but the command fails visibly so a caller
+    # (or `set -e`) cannot read a clean exit as "all runs healthy".
+    return 3 if invalid else 0
 
 
 def cmd_rebuild(args):
     slug = args.slug
     with locked_run(slug):
-        rebuilt = project(read_events(slug))
+        if args.allow_invalid_chain:
+            print(
+                "warning: chain validation skipped (--allow-invalid-chain); "
+                "RUN.json is a fold of a possibly-illegal history, and a "
+                '"matches" verdict only means RUN.json agrees with that fold',
+                file=sys.stderr,
+            )
+        rebuilt = project(read_events(slug, validate=not args.allow_invalid_chain))
         if args.check:
             current = read_json(run_json_path(slug))
             if current != rebuilt:
                 print("DRIFT: RUN.json does not match events.jsonl", file=sys.stderr)
                 return 3
-            print(f"{slug}: RUN.json matches events.jsonl (seq={rebuilt['seq']})")
+            if args.allow_invalid_chain:
+                # Distinct from the plain-match message below: chain legality was
+                # never checked, so this proves only that RUN.json agrees with an
+                # unvalidated fold - not that the log is a legal history. A consumer
+                # capturing stdout alone (the `2>/dev/null` idiom) must not be able to
+                # mistake this for a fully validated pass.
+                print(
+                    f"{slug}: RUN.json matches an UNVALIDATED fold (seq={rebuilt['seq']})"
+                )
+            else:
+                print(f"{slug}: RUN.json matches events.jsonl (seq={rebuilt['seq']})")
             return 0
         atomic_write_json(run_json_path(slug), rebuilt)
     print(f"{slug}: rebuilt RUN.json from events.jsonl (seq={rebuilt['seq']})")
@@ -467,6 +868,7 @@ def build_parser():
     p_rb = sub.add_parser("rebuild")
     p_rb.add_argument("--slug", required=True)
     p_rb.add_argument("--check", action="store_true")
+    p_rb.add_argument("--allow-invalid-chain", action="store_true")
 
     return p, sub
 

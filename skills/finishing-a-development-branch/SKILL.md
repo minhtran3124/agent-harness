@@ -36,7 +36,9 @@ user; if no plan exists, use the tiny/no-plan path instead of guessing.
 
 Push without force. Create or update one PR against the resolved base, using a concise body with
 behavioral summary, tasks, and only a useful flow diagram. After creation, best-effort transition
-the run to `ready_to_merge`; return the URL and stop. A human reviews and merges.
+the run to `ready_to_merge` — run `python3 runtime/run_state.py transition --slug <slug> --to ready_to_merge --event pr.opened || true` (non-fatal; the concrete form of this checkpoint). This is the
+hop the post-merge `shipped` transition depends on: `shipped` is legal only from `ready_to_merge`,
+so a run left at `verifying` never terminalizes. Return the URL and stop. A human reviews and merges.
 
 ## Safety boundary
 

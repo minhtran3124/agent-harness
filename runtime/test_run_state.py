@@ -148,6 +148,258 @@ def test_project_folds_events_and_carries_sha_forward():
     assert proj["updated_at"] == "t3"
 
 
+def test_chain_seq_must_be_contiguous_from_one():
+    rs.main(["init", "--slug", "demo", "--run-id", "r1"])
+    rs.main(["transition", "--slug", "demo", "--to", "investigating", "--event", "e"])
+    events = rs.read_events("demo")
+    events[1]["seq"] = 3  # skips seq 2
+    with pytest.raises(rs.StorageError, match="expected seq 2, got 3"):
+        rs.validate_chain(events, "demo", rs.events_path("demo"))
+
+
+def test_chain_seq_must_be_int_not_bool():
+    rs.main(["init", "--slug", "demo", "--run-id", "r1"])
+    events = rs.read_events("demo")
+    events[0]["seq"] = True  # True == 1, so only a type guard catches this
+    with pytest.raises(rs.StorageError, match="seq is not an int"):
+        rs.validate_chain(events, "demo", rs.events_path("demo"))
+
+
+def test_chain_from_state_must_chain_to_previous_to_state():
+    """A rewind: seq 3 claims from_state "queued" (matching seq 1's to_state), but
+    its actual predecessor is seq 2, whose to_state is "investigating". Each hop is
+    individually legal ("queued" -> "investigating" twice), so only invariant 2 - not
+    hop legality - can catch this. A simpler fixture like from_state="planning" would
+    raise identically with invariant 2 removed, since validate_transition would
+    reject "planning" -> "investigating" on its own (vacuous per SC-12)."""
+    events = [
+        {
+            "event_id": "e1",
+            "seq": 1,
+            "slug": "demo",
+            "run_id": "r1",
+            "from_state": None,
+            "to_state": "queued",
+            "event": "e",
+            "waiting_on": None,
+            "resume_event": None,
+        },
+        {
+            "event_id": "e2",
+            "seq": 2,
+            "slug": "demo",
+            "run_id": "r1",
+            "from_state": "queued",
+            "to_state": "investigating",
+            "event": "e",
+            "waiting_on": None,
+            "resume_event": None,
+        },
+        {
+            "event_id": "e3",
+            "seq": 3,
+            "slug": "demo",
+            "run_id": "r1",
+            "from_state": "queued",  # should be "investigating" (seq 2's to_state)
+            "to_state": "investigating",
+            "event": "e",
+            "waiting_on": None,
+            "resume_event": None,
+        },
+    ]
+    with pytest.raises(rs.StorageError, match="does not match previous to_state"):
+        rs.validate_chain(events, "demo", "specs/demo/events.jsonl")
+
+
+def test_chain_slug_and_run_id_constant():
+    rs.main(["init", "--slug", "demo", "--run-id", "r1"])
+    rs.main(["transition", "--slug", "demo", "--to", "investigating", "--event", "e"])
+    events = rs.read_events("demo")
+
+    tampered = [dict(e) for e in events]
+    tampered[1]["run_id"] = "other-run"
+    with pytest.raises(rs.StorageError, match="does not match chain run_id"):
+        rs.validate_chain(tampered, "demo", rs.events_path("demo"))
+
+    # per-event slug must also stay constant across the chain
+    slug_tampered = [dict(e) for e in events]
+    slug_tampered[1]["slug"] = "other-slug"
+    with pytest.raises(rs.StorageError, match="does not match chain slug"):
+        rs.validate_chain(slug_tampered, "demo", rs.events_path("demo"))
+
+    # events[0]["slug"] must also match the slug argument passed in
+    with pytest.raises(rs.StorageError, match="does not match requested slug"):
+        rs.validate_chain(events, "not-demo", rs.events_path("demo"))
+
+
+def test_chain_legality_wraps_as_storage_error():
+    rs.main(["init", "--slug", "demo", "--run-id", "r1"])
+    events = rs.read_events("demo")
+    illegal = dict(events[0])
+    illegal.update(
+        {
+            "event_id": "bad-hop",
+            "seq": 2,
+            "from_state": "queued",
+            "to_state": "shipped",  # not a legal hop from queued
+        }
+    )
+    chain = events + [illegal]
+    with pytest.raises(rs.StorageError, match="not a valid transition") as exc_info:
+        rs.validate_chain(chain, "demo", rs.events_path("demo"))
+    assert exc_info.value.exit_code == 3
+
+
+def test_chain_event_id_unique():
+    rs.main(["init", "--slug", "demo", "--run-id", "r1"])
+    rs.main(["transition", "--slug", "demo", "--to", "investigating", "--event", "e"])
+    events = rs.read_events("demo")
+    events[1]["event_id"] = events[0]["event_id"]  # duplicate
+    with pytest.raises(rs.StorageError, match="duplicate event_id"):
+        rs.validate_chain(events, "demo", rs.events_path("demo"))
+
+
+def test_chain_genesis_accepted_and_each_bad_variant_rejected():
+    """SC-4: genesis is accepted, and a non-genesis event with a null from_state is
+    not. Also covers the positive genesis assertion added after round-1 review: a
+    bogus genesis (valid types, wrong values) is rejected only by that assertion,
+    since hop legality is skipped for seq 1 - nothing else checks that the first
+    event's to_state is a real state or its from_state is None. The assertion's two
+    clauses are pinned separately (each fixture below violates exactly one), so
+    dropping either clause alone still fails one of these."""
+    rs.main(["init", "--slug", "demo", "--run-id", "r1"])
+    genesis = rs.read_events("demo")
+    rs.validate_chain(genesis, "demo", rs.events_path("demo"))  # no exception
+
+    rs.main(["transition", "--slug", "demo", "--to", "investigating", "--event", "e"])
+    events = rs.read_events("demo")
+    events[1]["from_state"] = None
+    with pytest.raises(rs.StorageError, match="does not match previous to_state"):
+        rs.validate_chain(events, "demo", rs.events_path("demo"))
+
+    bad_genesis_from_state = [dict(genesis[0])]
+    bad_genesis_from_state[0]["from_state"] = "verifying"  # to_state stays "queued"
+    with pytest.raises(
+        rs.StorageError, match=r"from_state 'verifying' to_state 'queued'"
+    ):
+        rs.validate_chain(bad_genesis_from_state, "demo", rs.events_path("demo"))
+
+    bad_genesis_to_state = [dict(genesis[0])]
+    bad_genesis_to_state[0]["to_state"] = "investigating"  # from_state stays None
+    with pytest.raises(
+        rs.StorageError, match=r"from_state None to_state 'investigating'"
+    ):
+        rs.validate_chain(bad_genesis_to_state, "demo", rs.events_path("demo"))
+
+
+def test_chain_unhashable_to_state_raises_storage_error_not_typeerror():
+    """Must be on a non-genesis event: at seq 1 the positive genesis assertion
+    (`to_state != "queued"`) already rejects ["investigating"] with a plain `!=`, no
+    TypeError involved, which would make this vacuous for the guard under test. At
+    seq 2, only the to_state type guard stands between this and
+    validate_transition's `to_state not in ALL_STATES`, which raises TypeError on an
+    unhashable value."""
+    rs.main(["init", "--slug", "demo", "--run-id", "r1"])
+    rs.main(["transition", "--slug", "demo", "--to", "investigating", "--event", "e"])
+    events = rs.read_events("demo")
+    events[1]["to_state"] = ["investigating"]  # unhashable
+    with pytest.raises(rs.StorageError, match="to_state is not a string"):
+        rs.validate_chain(events, "demo", rs.events_path("demo"))
+
+
+def test_chain_unhashable_event_id_raises_storage_error_not_typeerror():
+    rs.main(["init", "--slug", "demo", "--run-id", "r1"])
+    events = rs.read_events("demo")
+    events[0]["event_id"] = {}  # unhashable
+    with pytest.raises(rs.StorageError, match="event_id is not a string"):
+        rs.validate_chain(events, "demo", rs.events_path("demo"))
+
+
+def test_chain_event_field_must_be_a_string():
+    """REQUIRED_EVENT_KEYS omits "event", and no invariant previously checked it -
+    cmd_transition's idempotent-replay scan dereferences it with a bare subscript
+    (`ev["event"] == args.event` at :410), which raises an uncaught KeyError on a log
+    entry missing the key entirely rather than the documented 0/2/3 exit contract."""
+    rs.main(["init", "--slug", "demo", "--run-id", "r1"])
+    rs.main(["transition", "--slug", "demo", "--to", "investigating", "--event", "e"])
+    events = rs.read_events("demo")
+    del events[1]["event"]
+    with pytest.raises(rs.StorageError, match="event is not a string"):
+        rs.validate_chain(events, "demo", rs.events_path("demo"))
+
+
+def test_event_field_missing_rejected_by_rebuild_and_transition():
+    """Issue repro: a log missing "event" on a non-genesis event used to pass
+    `rebuild` clean, and a later `transition` then raised an uncaught KeyError (exit
+    1, a traceback) instead of the documented 0/2/3 contract. Both paths must now
+    reject the log with exit 3, not crash."""
+    rs.main(["init", "--slug", "demo", "--run-id", "r1"])
+    rs.main(["transition", "--slug", "demo", "--to", "investigating", "--event", "e"])
+    with open("specs/demo/events.jsonl") as f:
+        lines = [json.loads(line) for line in f if line.strip()]
+    del lines[1]["event"]
+    with open("specs/demo/events.jsonl", "w") as f:
+        for ev in lines:
+            f.write(json.dumps(ev, sort_keys=True) + "\n")
+
+    assert rs.main(["rebuild", "--slug", "demo"]) == 3
+
+    rc = rs.main(
+        [
+            "transition",
+            "--slug",
+            "demo",
+            "--to",
+            "planning",
+            "--event",
+            "e2",
+            "--event-id",
+            "e2",
+        ]
+    )
+    assert rc == 3
+
+
+def test_chain_shipped_requires_sha():
+    """A forged `shipped` event with sha None (or garbage) must be rejected by the
+    validator itself. cmd_transition:434-438 enforces --sha matching SHA_RE only on
+    the write path; validate_transition (hop legality) knows nothing about sha, so a
+    hand-written log reaching read_events would otherwise validate clean."""
+    rs.main(["init", "--slug", "demo", "--run-id", "r1"])
+    for to_state in (
+        "investigating",
+        "planning",
+        "implementing",
+        "verifying",
+        "ready_to_merge",
+    ):
+        rs.main(["transition", "--slug", "demo", "--to", to_state, "--event", "e"])
+    rs.main(
+        [
+            "transition",
+            "--slug",
+            "demo",
+            "--to",
+            "shipped",
+            "--event",
+            "e",
+            "--sha",
+            "abc1234",
+        ]
+    )
+    events = rs.read_events("demo")
+
+    no_sha = [dict(e) for e in events]
+    no_sha[-1]["sha"] = None
+    with pytest.raises(rs.StorageError, match="shipped requires sha"):
+        rs.validate_chain(no_sha, "demo", rs.events_path("demo"))
+
+    bad_sha = [dict(e) for e in events]
+    bad_sha[-1]["sha"] = "zzzzzzz"  # not hex
+    with pytest.raises(rs.StorageError, match="shipped requires sha"):
+        rs.validate_chain(bad_sha, "demo", rs.events_path("demo"))
+
+
 def test_init_creates_queued_run():
     assert rs.main(["init", "--slug", "demo", "--run-id", "r1"]) == 0
     assert rs.read_json("specs/demo/RUN.json")["state"] == "queued"
@@ -998,3 +1250,741 @@ def test_concurrent_writers_sequence_contiguously():
     assert len(set(seqs)) == len(seqs)  # no duplicates
     assert len(events) == 2  # init + exactly one winner
     assert rs.read_json("specs/demo/RUN.json")["state"] == "investigating"
+
+
+def _write_forged_log(slug):
+    """Writes the issue's exact repro to specs/<slug>/events.jsonl: two events, both
+    `seq: 1` - the second forged with from_state "verifying" straight to the terminal
+    "shipped", under a different run_id. Before validate_chain was wired in, project()
+    blindly folded this into a RUN.json reporting `shipped`.
+
+    Returns the (genesis, forged) dicts it wrote, so a caller that also needs the raw
+    events (e.g. to compute the pre-fix blind projection) gets the identical objects
+    rather than a second, independently-constructed pair."""
+    genesis = {
+        "event_id": "e1",
+        "seq": 1,
+        "ts": "2026-01-01T00:00:00Z",
+        "slug": slug,
+        "run_id": "r1",
+        "from_state": None,
+        "to_state": "queued",
+        "event": "run.init",
+        "waiting_on": None,
+        "resume_event": None,
+        "sha": None,
+        "metadata": {},
+    }
+    forged = {
+        "event_id": "e2",
+        "seq": 1,
+        "ts": "2026-01-01T00:00:01Z",
+        "slug": slug,
+        "run_id": "r2",
+        "from_state": "verifying",
+        "to_state": "shipped",
+        "event": "ci.merged",
+        "waiting_on": None,
+        "resume_event": None,
+        "sha": "abc1234",
+        "metadata": {},
+    }
+    os.makedirs(f"specs/{slug}", exist_ok=True)
+    with open(f"specs/{slug}/events.jsonl", "w") as f:
+        f.write(json.dumps(genesis, sort_keys=True) + "\n")
+        f.write(json.dumps(forged, sort_keys=True) + "\n")
+    return genesis, forged
+
+
+def test_issue_174_forged_log_rejected_by_rebuild():
+    # Exit 3 has four producers on this path (missing:, corrupt event log, empty
+    # event log, invalid event chain) - pin the message too, or a drifted
+    # _write_forged_log (wrong slug, wrong dir, file not written) could go green on
+    # an unrelated "missing:" instead of the chain rejection this test exists for.
+    _write_forged_log("forged1")
+    import io
+    import contextlib
+
+    err = io.StringIO()
+    with contextlib.redirect_stderr(err):
+        rc = rs.main(["rebuild", "--slug", "forged1"])
+    assert rc == 3
+    assert "invalid event chain" in err.getvalue()
+
+
+def test_issue_174_forged_log_rejected_by_rebuild_check():
+    # Seed RUN.json with exactly what the pre-fix blind project() computes over this
+    # log - --check needs something to compare against, and the seeded genesis/forged
+    # objects (returned by _write_forged_log, not reconstructed) are the ones that
+    # actually landed on disk.
+    genesis, forged = _write_forged_log("forged2")
+    rs.atomic_write_json("specs/forged2/RUN.json", rs.project([genesis, forged]))
+
+    import io
+    import contextlib
+
+    err = io.StringIO()
+    with contextlib.redirect_stderr(err):
+        rc = rs.main(["rebuild", "--slug", "forged2", "--check"])
+    assert rc == 3
+    assert "invalid event chain" in err.getvalue()
+
+
+def test_allow_invalid_chain_rebuilds_with_warning():
+    _write_forged_log("forged3")
+    import io
+    import contextlib
+
+    err = io.StringIO()
+    with contextlib.redirect_stderr(err):
+        rc = rs.main(["rebuild", "--slug", "forged3", "--allow-invalid-chain"])
+    assert rc == 0
+    assert "chain validation skipped (--allow-invalid-chain)" in err.getvalue()
+    assert os.path.exists("specs/forged3/RUN.json")
+    assert rs.read_json("specs/forged3/RUN.json")["state"] == "shipped"
+
+
+def test_allow_invalid_chain_with_check_returns_drift_verdict():
+    # rebuild --allow-invalid-chain writes RUN.json first: --check needs an existing
+    # RUN.json to compare the rebuilt projection against.
+    _write_forged_log("forged4")
+    assert rs.main(["rebuild", "--slug", "forged4", "--allow-invalid-chain"]) == 0
+
+    import io
+    import contextlib
+
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        rc = rs.main(
+            ["rebuild", "--slug", "forged4", "--check", "--allow-invalid-chain"]
+        )
+    assert rc == 0
+    # Must be a distinct verdict from the fully-validated match message, byte-
+    # distinguishable on stdout alone (a `2>/dev/null` consumer never sees the
+    # "chain validation skipped" warning, which is stderr-only).
+    assert "matches an UNVALIDATED fold" in buf.getvalue()
+    assert "matches events.jsonl" not in buf.getvalue()
+
+    rs.atomic_write_json("specs/forged4/RUN.json", {"tampered": True})
+    err = io.StringIO()
+    with contextlib.redirect_stderr(err):
+        rc = rs.main(
+            ["rebuild", "--slug", "forged4", "--check", "--allow-invalid-chain"]
+        )
+    assert rc == 3
+    assert "DRIFT:" in err.getvalue()
+
+
+def test_transition_on_invalid_chain_exits_3_and_appends_nothing():
+    # Before validate_chain was wired in, this exits 2: project() folds the forged
+    # log to "shipped" (a terminal state) and validate_transition rejects the
+    # transition as post-terminal. The contract value is 3, from the exit-code
+    # docstring - do not copy the pre-wiring 2.
+    _write_forged_log("forged5")
+    before = open("specs/forged5/events.jsonl", "rb").read()
+    rc = rs.main(
+        ["transition", "--slug", "forged5", "--to", "investigating", "--event", "e"]
+    )
+    assert rc == 3
+    after = open("specs/forged5/events.jsonl", "rb").read()
+    assert after == before
+
+
+def test_status_detects_invalid_chain_and_exits_3():
+    """Issue #174's third repro line: 'status' used to read RUN.json directly and
+    never touch the event log, so a forged/corrupted events.jsonl was invisible to
+    it and it happily reported a state (exit 0). Reuses the exact forged-log
+    fixture the rebuild tests above already trust."""
+    genesis, forged = _write_forged_log("statuschain")
+    rs.atomic_write_json("specs/statuschain/RUN.json", rs.project([genesis, forged]))
+    import io
+    import contextlib
+
+    err = io.StringIO()
+    with contextlib.redirect_stderr(err):
+        rc = rs.main(["status", "--slug", "statuschain"])
+    assert rc == 3
+    assert "invalid event chain" in err.getvalue()
+
+
+def test_status_json_mode_also_detects_invalid_chain():
+    """--json must get the identical treatment, not a separate code path that
+    forgot the check — both branches go through the same guard before printing."""
+    genesis, forged = _write_forged_log("statuschainjson")
+    rs.atomic_write_json(
+        "specs/statuschainjson/RUN.json", rs.project([genesis, forged])
+    )
+    import io
+    import contextlib
+
+    err = io.StringIO()
+    with contextlib.redirect_stderr(err):
+        rc = rs.main(["status", "--slug", "statuschainjson", "--json"])
+    assert rc == 3
+    assert "invalid event chain" in err.getvalue()
+
+
+def test_status_detects_run_json_drift_distinctly_from_invalid_chain():
+    """A chain-VALID log whose RUN.json was hand-edited is a SEPARATE failure mode
+    from a corrupted chain, and must be named distinctly — not by reusing the
+    "invalid event chain" wording that belongs to chain corruption, or a reader
+    debugging drift would go looking for the wrong thing (a bad event, not a bad
+    RUN.json)."""
+    rs.main(["init", "--slug", "drifted", "--run-id", "r1"])
+    rs.main(
+        ["transition", "--slug", "drifted", "--to", "investigating", "--event", "e"]
+    )
+    tampered = rs.read_json("specs/drifted/RUN.json")
+    tampered["state"] = "planning"  # log actually says "investigating"
+    rs.atomic_write_json("specs/drifted/RUN.json", tampered)
+
+    import io
+    import contextlib
+
+    err = io.StringIO()
+    with contextlib.redirect_stderr(err):
+        rc = rs.main(["status", "--slug", "drifted"])
+    assert rc == 3
+    assert "does not match events.jsonl" in err.getvalue()
+    assert "invalid event chain" not in err.getvalue()
+
+
+def test_status_agreement_still_prints_projection_and_exits_0():
+    """The non-corruption path must be unchanged: a clean chain that agrees with
+    RUN.json still prints the projection and exits 0, in both plaintext and --json,
+    exactly as before this fix."""
+    rs.main(["init", "--slug", "clean", "--run-id", "r1"])
+    rs.main(["transition", "--slug", "clean", "--to", "investigating", "--event", "e"])
+
+    import io
+    import contextlib
+
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        rc = rs.main(["status", "--slug", "clean", "--json"])
+    assert rc == 0
+    data = json.loads(buf.getvalue())
+    assert data["state"] == "investigating"
+
+    buf2 = io.StringIO()
+    with contextlib.redirect_stdout(buf2):
+        rc2 = rs.main(["status", "--slug", "clean"])
+    assert rc2 == 0
+    assert "state: investigating" in buf2.getvalue()
+
+
+def test_transition_to_cancelled_closes_a_bricked_run():
+    """GitHub issue #174 Fix 2: once the chain is invalid, `transition` used to
+    exit 3 forever with no way to close the run out. A transition to a TERMINAL,
+    non-shipped target (`cancelled`/`superseded`) must now be allowed to proceed
+    over the invalid chain, appending a closing event and writing a RUN.json whose
+    state is the closed state — so `list --active` stops advertising it."""
+    _write_forged_log("brick1")
+    import io
+    import contextlib
+
+    err = io.StringIO()
+    out = io.StringIO()
+    with contextlib.redirect_stderr(err), contextlib.redirect_stdout(out):
+        rc = rs.main(
+            [
+                "transition",
+                "--slug",
+                "brick1",
+                "--to",
+                "cancelled",
+                "--event",
+                "operator.abandon",
+            ]
+        )
+    assert rc == 0
+    assert "INVALID event chain" in err.getvalue()  # loud, on stderr
+    assert "closed over invalid chain" in out.getvalue()
+
+    run_json = rs.read_json("specs/brick1/RUN.json")
+    assert run_json["state"] == "cancelled"
+
+    # the closing event landed on disk, honestly labeled
+    events = rs.read_events("brick1", validate=False)
+    closing = events[-1]
+    assert closing["to_state"] == "cancelled"
+    assert closing["from_state"] == "shipped"  # the forged log's last recorded to_state
+    assert closing["seq"] == 2  # max int seq in the forged log (1) + 1, not 1 again
+
+
+def test_transition_to_shipped_over_invalid_chain_still_hard_blocked():
+    """`shipped` is terminal too, but it is NOT in CLOSEABLE_OVER_INVALID_CHAIN —
+    only cancelled/superseded may bypass. This is the "nothing else" half of Fix 2:
+    without it, any terminal target would silently acquire the bypass."""
+    _write_forged_log("brick2")
+    rc = rs.main(
+        [
+            "transition",
+            "--slug",
+            "brick2",
+            "--to",
+            "shipped",
+            "--event",
+            "e",
+            "--sha",
+            "abc1234",
+        ]
+    )
+    assert rc == 3
+    before = open("specs/brick2/events.jsonl", "rb").read()
+    assert rc == 3
+    with open("specs/brick2/events.jsonl", "rb") as f:
+        assert f.read() == before  # nothing appended
+
+
+def test_transition_to_non_terminal_over_invalid_chain_still_hard_blocked():
+    """The bypass is scoped to terminal closure only — a non-terminal target
+    (e.g. resuming into `implementing`) over an invalid chain must still be refused
+    exactly as before Fix 2, with nothing appended to the log."""
+    _write_forged_log("brick3")
+    before = open("specs/brick3/events.jsonl", "rb").read()
+    rc = rs.main(
+        ["transition", "--slug", "brick3", "--to", "implementing", "--event", "e"]
+    )
+    assert rc == 3
+    with open("specs/brick3/events.jsonl", "rb") as f:
+        assert f.read() == before
+
+
+def test_closing_seq_does_not_reuse_a_duplicated_seq():
+    """Direct unit test of the seq-repair helper: the forged log has TWO events both
+    claiming seq=1. A naive `events[-1]["seq"] + 1` would compute 2 only by luck of
+    which event is last; pin the actual property, that the closing seq is beyond
+    the max int seq anywhere in the log, not just the last line."""
+    genesis, forged = _write_forged_log("seqcheck")
+    events = rs.read_events("seqcheck", validate=False)
+    assert [e["seq"] for e in events] == [1, 1]  # both claim seq 1
+    assert rs._closing_seq_over_invalid_chain(events) == 2
+
+
+def test_closing_seq_falls_back_to_event_count_with_no_int_seq():
+    """If every seq in the log is non-int (total corruption), there is no int max
+    to take — the fallback must still produce a seq, not raise."""
+    events = [
+        {"event_id": "e1", "seq": "not-an-int", "to_state": "queued"},
+        {"event_id": "e2", "seq": None, "to_state": "investigating"},
+    ]
+    assert rs._closing_seq_over_invalid_chain(events) == 3  # len(events) + 1
+
+
+def test_real_repo_event_logs_all_validate():
+    """SC-3: every real events.jsonl checked into this repo must still validate - no
+    false positives from the new invariants. isolated_cwd chdirs into a tmp_path, so
+    the repo's events.jsonl files are resolved from __file__ and read/validated
+    directly (rs.read_events's relative specs/<slug> path is unusable here).
+
+    `runtime/` ships to consumer repos (scripts/install-harness.sh PAYLOAD,
+    scripts/deploy-harness.sh SYNCED_DIRS_RE) where specs/*/events.jsonl may
+    legitimately be empty - that is ground truth this harness does not own, not a
+    failure. It also must not contradict --allow-invalid-chain: the moment anyone
+    legitimately uses that flag on a real spec, a hard failure here would redden the
+    whole suite on every unrelated branch. Skip rather than fail when there is
+    nothing to check; the per-log assertion below stays a hard failure."""
+    import glob
+
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    logs = glob.glob(os.path.join(repo_root, "specs", "*", "events.jsonl"))
+    if not logs:
+        pytest.skip("no real events.jsonl found under specs/ to validate")
+    for path in logs:
+        slug = os.path.basename(os.path.dirname(path))
+        events = []
+        with open(path) as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    events.append(json.loads(line))
+        rs.validate_chain(events, slug, path)  # raises on any violation
+
+
+def test_rebuild_on_empty_event_log_exits_3_with_empty_log_message():
+    """Pins two things at once: the pre-existing empty-log contract at
+    run_state.py:129-130 (no test anywhere exercised this branch before) and the
+    ordering constraint that validate_chain runs AFTER the `if not events` check. If
+    validate_chain moved above it, `first = events[0]` would raise an uncaught
+    IndexError on an empty list instead of this clean StorageError - a traceback and
+    exit 1, not this test's exit 3. The message assertion (not just the exit code)
+    is what pins the ordering: an IndexError never reaches main()'s `except
+    RunStateError` handler, so it can't produce this message under any exit code."""
+    os.makedirs("specs/empty", exist_ok=True)
+    open("specs/empty/events.jsonl", "w").close()  # zero events, zero bytes
+
+    import io
+    import contextlib
+
+    err = io.StringIO()
+    with contextlib.redirect_stderr(err):
+        rc = rs.main(["rebuild", "--slug", "empty"])
+    assert rc == 3
+    assert "empty event log" in err.getvalue()
+
+
+# --- Round-16 review fixes (5 confirmed defects in cmd_status's chain check and the
+# cmd_transition close-over-invalid-chain bypass, both added in 751118f) ---------
+
+
+def test_status_holds_a_lock_across_its_two_reads():
+    """Fix 1: cmd_status used to read RUN.json, then read+fold events.jsonl,
+    OUTSIDE any lock — a transition landing between the two reads could make the
+    fold newer than the projection it's compared against, reporting phantom
+    'projection drift' on a store that was never actually corrupt.
+
+    A real two-process race is not reliably reproducible in a unit test (timing-
+    dependent), so this pins the MECHANISM instead: cmd_status must hold the lock
+    file (shared, so concurrent status calls don't serialize against each other —
+    only against a writer's exclusive lock) for the duration of both reads. We spy
+    on read_json (the first read cmd_status performs) and, from inside the spy,
+    attempt a NON-BLOCKING EXCLUSIVE lock on the same lock file cmd_status should
+    already be holding shared. If cmd_status is not actually holding a lock at
+    that point, the exclusive attempt SUCCEEDS (the race window is still open); if
+    the fix holds the shared lock first, the exclusive attempt must fail with
+    BlockingIOError. flock locks apply to open file descriptions, not processes or
+    threads, so a second open() from within the same process still contends
+    correctly against a lock held via a different open() on the same path.
+
+    This does not cover the race directly — only the locking mechanism the fix
+    relies on to close it."""
+    import fcntl
+
+    rs.main(["init", "--slug", "demo", "--run-id", "r1"])
+    rs.main(["transition", "--slug", "demo", "--to", "investigating", "--event", "e"])
+
+    attempts = []
+    original_read_json = rs.read_json
+
+    def spy_read_json(path):
+        lock_fh = open(rs.lock_path("demo"), "a+")
+        try:
+            fcntl.flock(lock_fh.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            attempts.append("acquired")  # BAD: no lock was held by cmd_status
+            fcntl.flock(lock_fh.fileno(), fcntl.LOCK_UN)
+        except BlockingIOError:
+            attempts.append("blocked")  # GOOD: cmd_status already holds it
+        finally:
+            lock_fh.close()
+        return original_read_json(path)
+
+    import pytest as _pytest  # local import: only needed for monkeypatch below
+
+    mp = _pytest.MonkeyPatch()
+    try:
+        mp.setattr(rs, "read_json", spy_read_json)
+        assert rs.main(["status", "--slug", "demo"]) == 0
+    finally:
+        mp.undo()
+    assert attempts == ["blocked"]
+
+
+def test_status_readonly_lock_does_not_create_storage_for_a_typo_slug():
+    """Wrinkle called out in the review: locked_run.__enter__ unconditionally does
+    os.makedirs(spec_dir) and open(lock_path, "a+") — naively reusing it for a
+    read-only command would make `status` fabricate a directory and a .lock file
+    for ANY slug argument, including a typo. Pins that a status call on a slug
+    whose spec directory does not exist creates nothing at all — identical to the
+    pre-fix behavior, which never touched the filesystem beyond the failed read."""
+    assert not os.path.exists("specs/typo-slug")
+    assert rs.main(["status", "--slug", "typo-slug"]) == 3
+    assert not os.path.exists("specs/typo-slug")
+
+
+def test_status_readonly_lock_still_detects_real_drift():
+    """The lock in Fix 1 must not swallow the drift detection it's guarding —
+    holding the lock during the read is additive, not a replacement for the
+    existing compare-and-raise logic."""
+    rs.main(["init", "--slug", "drifted2", "--run-id", "r1"])
+    rs.main(
+        ["transition", "--slug", "drifted2", "--to", "investigating", "--event", "e"]
+    )
+    tampered = rs.read_json("specs/drifted2/RUN.json")
+    tampered["state"] = "planning"  # log actually says "investigating"
+    rs.atomic_write_json("specs/drifted2/RUN.json", tampered)
+    assert rs.main(["status", "--slug", "drifted2"]) == 3
+
+
+def test_close_over_invalid_chain_is_idempotent_on_event_id_replay():
+    """Fix 2: the close path skipped the --event-id historical-replay scan the
+    normal path performs. Closing twice with the SAME --event-id used to append
+    TWO events sharing that event_id — a violation of validate_chain's own
+    uniqueness invariant (6), authored by the repair path itself into a log it
+    exists to be honest about. A repeat with the same id must be an idempotent
+    no-op returning 0, exactly as the normal path behaves for a replayed id."""
+    _write_forged_log("closeidem")
+    first = rs.main(
+        [
+            "transition",
+            "--slug",
+            "closeidem",
+            "--to",
+            "cancelled",
+            "--event",
+            "operator.abandon",
+            "--event-id",
+            "close-1",
+        ]
+    )
+    assert first == 0
+    line_count_after_first = sum(1 for _ in open("specs/closeidem/events.jsonl"))
+
+    second = rs.main(
+        [
+            "transition",
+            "--slug",
+            "closeidem",
+            "--to",
+            "cancelled",
+            "--event",
+            "operator.abandon",
+            "--event-id",
+            "close-1",
+        ]
+    )
+    assert second == 0
+    assert (
+        sum(1 for _ in open("specs/closeidem/events.jsonl")) == line_count_after_first
+    )  # nothing new appended
+
+    events = rs.read_events("closeidem", validate=False)
+    event_ids = [e["event_id"] for e in events]
+    assert len(event_ids) == len(set(event_ids)), f"duplicate event_id in {event_ids}"
+
+
+def test_close_over_invalid_chain_cannot_hop_out_of_terminal_state():
+    """Fix 3: the bypass guard only checked `args.to`, never the run's current
+    state — so a closed run stayed closeable forever. Reproduced: --to cancelled
+    then --to superseded both used to exit 0, appending a `cancelled ->
+    superseded` hop that validate_transition forbids out of a terminal state.
+    Once closed, ANY further close attempt (even a different --to) must be an
+    idempotent no-op, not a fresh forbidden hop."""
+    _write_forged_log("brick-hop")
+    first = rs.main(
+        [
+            "transition",
+            "--slug",
+            "brick-hop",
+            "--to",
+            "cancelled",
+            "--event",
+            "operator.abandon",
+        ]
+    )
+    assert first == 0
+    line_count_after_first = sum(1 for _ in open("specs/brick-hop/events.jsonl"))
+
+    second = rs.main(
+        [
+            "transition",
+            "--slug",
+            "brick-hop",
+            "--to",
+            "superseded",
+            "--event",
+            "operator.supersede",
+        ]
+    )
+    assert second == 0  # idempotent no-op, not a fresh hop
+    assert (
+        sum(1 for _ in open("specs/brick-hop/events.jsonl")) == line_count_after_first
+    )  # nothing appended
+
+    events = rs.read_events("brick-hop", validate=False)
+    assert events[-1]["to_state"] == "cancelled"  # still the FIRST close, untouched
+    run_json = rs.read_json("specs/brick-hop/RUN.json")
+    assert run_json["state"] == "cancelled"
+
+
+def test_close_over_invalid_chain_repeated_same_target_no_self_loop():
+    """Companion to the hop case: repeating the SAME --to target (cancelled twice,
+    no matching --event-id the second time) must not append a `cancelled ->
+    cancelled` self-loop either — the already-closed check is unconditional on
+    args, not just on --event-id matching."""
+    _write_forged_log("brick-selfloop")
+    assert (
+        rs.main(
+            [
+                "transition",
+                "--slug",
+                "brick-selfloop",
+                "--to",
+                "cancelled",
+                "--event",
+                "operator.abandon",
+            ]
+        )
+        == 0
+    )
+    line_count_after_first = sum(1 for _ in open("specs/brick-selfloop/events.jsonl"))
+
+    assert (
+        rs.main(
+            [
+                "transition",
+                "--slug",
+                "brick-selfloop",
+                "--to",
+                "cancelled",
+                "--event",
+                "operator.abandon.retry",
+            ]
+        )
+        == 0
+    )
+    assert (
+        sum(1 for _ in open("specs/brick-selfloop/events.jsonl"))
+        == line_count_after_first
+    )
+    events = rs.read_events("brick-selfloop", validate=False)
+    assert events[-1]["event"] == "operator.abandon"  # the retry appended nothing
+
+
+def test_close_over_invalid_chain_uses_requested_slug_not_chain_slug():
+    """Fix 5: project() (used by the close path) takes slug from events[0], which
+    invariant 3 is exactly what an invalid chain can have broken — a chain slug
+    that does not match the directory it lives in (e.g. the renamed-directory
+    case). The projection the close path writes must carry the REQUESTED slug
+    (the directory it's actually writing into), not whatever the corrupt chain's
+    first event claims."""
+    genesis = {
+        "event_id": "e1",
+        "seq": 1,
+        "ts": "2026-01-01T00:00:00Z",
+        "slug": "old-slug-before-rename",  # does not match the directory below
+        "run_id": "r1",
+        "from_state": None,
+        "to_state": "queued",
+        "event": "run.init",
+        "waiting_on": None,
+        "resume_event": None,
+        "sha": None,
+        "metadata": {},
+    }
+    os.makedirs("specs/new-slug-after-rename", exist_ok=True)
+    with open("specs/new-slug-after-rename/events.jsonl", "w") as f:
+        f.write(json.dumps(genesis, sort_keys=True) + "\n")
+
+    rc = rs.main(
+        [
+            "transition",
+            "--slug",
+            "new-slug-after-rename",
+            "--to",
+            "cancelled",
+            "--event",
+            "operator.abandon",
+        ]
+    )
+    assert rc == 0
+    run_json = rs.read_json("specs/new-slug-after-rename/RUN.json")
+    assert run_json["slug"] == "new-slug-after-rename"  # the REQUESTED slug
+    assert run_json["slug"] != "old-slug-before-rename"
+
+
+def test_close_over_invalid_chain_refuses_when_run_id_is_not_a_string():
+    """Fix 5, second half: run_id has no equivalent external source of truth (unlike
+    slug, which is always the caller's own argument) — if events[0]'s run_id is not
+    a string, the close path cannot honestly manufacture one. It must refuse to
+    close rather than write a RUN.json whose run_id is a raw dict/int/None (the
+    observed symptom: `list` printing `{'x': 1}: cancelled`), and it must leave the
+    log byte-identical — the refusal writes nothing."""
+    genesis = {
+        "event_id": "e1",
+        "seq": 1,
+        "ts": "2026-01-01T00:00:00Z",
+        "slug": "badrunid",
+        "run_id": {"x": 1},  # not a string
+        "from_state": None,
+        "to_state": "queued",
+        "event": "run.init",
+        "waiting_on": None,
+        "resume_event": None,
+        "sha": None,
+        "metadata": {},
+    }
+    forged = dict(genesis)
+    forged.update(
+        {"event_id": "e2", "seq": 1, "to_state": "shipped", "from_state": "verifying"}
+    )  # duplicate seq -> invalid chain, same shape as _write_forged_log
+    os.makedirs("specs/badrunid", exist_ok=True)
+    with open("specs/badrunid/events.jsonl", "w") as f:
+        f.write(json.dumps(genesis, sort_keys=True) + "\n")
+        f.write(json.dumps(forged, sort_keys=True) + "\n")
+    before = open("specs/badrunid/events.jsonl", "rb").read()
+
+    rc = rs.main(
+        [
+            "transition",
+            "--slug",
+            "badrunid",
+            "--to",
+            "cancelled",
+            "--event",
+            "operator.abandon",
+        ]
+    )
+    assert rc == 3
+    with open("specs/badrunid/events.jsonl", "rb") as f:
+        assert f.read() == before  # nothing appended
+    assert not os.path.exists("specs/badrunid/RUN.json")  # nothing written
+
+
+def test_read_events_non_utf8_byte_raises_storage_error_not_traceback():
+    """Fix 4: read_events only guarded FileNotFoundError / JSONDecodeError. A
+    non-UTF-8 byte anywhere in the log used to raise an uncaught
+    UnicodeDecodeError — exit 1 with a traceback, outside the documented 0/2/3
+    contract, on a corrupted-log input this feature's whole scenario is about."""
+    rs.main(["init", "--slug", "demo", "--run-id", "r1"])
+    with open("specs/demo/events.jsonl", "ab") as f:
+        f.write(b"\xff\xfe not valid utf-8\n")
+    with pytest.raises(rs.StorageError, match="cannot read"):
+        rs.read_events("demo")
+
+
+def test_read_events_directory_raises_storage_error_not_traceback():
+    """Same chokepoint, a different OSError subclass: events.jsonl being a
+    directory (os.path.exists is True for directories too, so the existing
+    FileNotFoundError guard does not catch this) used to raise an uncaught
+    IsADirectoryError."""
+    rs.main(["init", "--slug", "demo", "--run-id", "r1"])
+    os.remove("specs/demo/events.jsonl")
+    os.makedirs("specs/demo/events.jsonl")
+    with pytest.raises(rs.StorageError, match="cannot read"):
+        rs.read_events("demo")
+
+
+@pytest.mark.skipif(
+    os.name != "posix" or (hasattr(os, "geteuid") and os.geteuid() == 0),
+    reason="permission bits are meaningless as root or on a non-POSIX filesystem",
+)
+def test_read_events_permission_denied_raises_storage_error_not_traceback():
+    """Third OSError subclass in the same repro set: chmod 000 used to raise an
+    uncaught PermissionError."""
+    rs.main(["init", "--slug", "demo", "--run-id", "r1"])
+    os.chmod("specs/demo/events.jsonl", 0o000)
+    try:
+        with pytest.raises(rs.StorageError, match="cannot read"):
+            rs.read_events("demo")
+    finally:
+        os.chmod("specs/demo/events.jsonl", 0o644)  # let tmp_path teardown clean up
+
+
+def test_read_json_directory_raises_storage_error_not_traceback():
+    """Same fix, the other chokepoint: read_json only guarded FileNotFoundError /
+    JSONDecodeError. RUN.json being a directory used to raise an uncaught
+    IsADirectoryError instead of the documented StorageError."""
+    os.makedirs("specs/demo/RUN.json", exist_ok=True)
+    with pytest.raises(rs.StorageError, match="cannot read"):
+        rs.read_json("specs/demo/RUN.json")
+
+
+def test_status_on_non_utf8_event_log_exits_3_not_traceback():
+    """End-to-end through the CLI: cmd_status now reads events.jsonl too (the
+    prior commit's Fix 1), so this corruption class is directly reachable through
+    `status`, not just through read_events in isolation."""
+    rs.main(["init", "--slug", "demo", "--run-id", "r1"])
+    with open("specs/demo/events.jsonl", "ab") as f:
+        f.write(b"\xff\xfe garbage\n")
+    assert rs.main(["status", "--slug", "demo"]) == 3

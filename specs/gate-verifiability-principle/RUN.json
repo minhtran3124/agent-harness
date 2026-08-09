@@ -1,12 +1,12 @@
 {
   "created_at": "2026-08-07T03:37:38Z",
-  "last_event_id": "db1446fa-da56-4dc6-8d33-524242c89339",
+  "last_event_id": "719e0e86-75d4-48df-8398-9497bf5e0aab",
   "resume_event": null,
   "run_id": "327e6b1a-2ff8-48a8-b788-5c4a6b43c5e8",
-  "seq": 6,
-  "sha": "ecdcb49619509cde0388aff874de91d003c96398",
+  "seq": 7,
+  "sha": "c9b3b7ef3f36f846a5df3e0194b819b85656ebd4",
   "slug": "gate-verifiability-principle",
-  "state": "ready_to_merge",
-  "updated_at": "2026-08-07T04:00:59Z",
+  "state": "shipped",
+  "updated_at": "2026-08-08T15:10:43Z",
   "waiting_on": null
 }

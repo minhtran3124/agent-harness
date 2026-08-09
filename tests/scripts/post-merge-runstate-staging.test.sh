@@ -7,10 +7,62 @@
 # This test does not grep for wording. It measures which files a real transition writes,
 # then asserts the workflow stages every one of them — so adding a third artifact to the
 # engine fails here instead of silently vanishing in CI.
+#
+# It ALSO guards the trigger/base-branch policy (issue #196): the `branches:` allowlist is
+# the one authoritative place for the policy and rots silently. Section 0 pins the branches
+# that MUST be present — the active integration branch (`simplify`) and the default branch
+# (`main`) — plus the main-sync caveat, so the specific rot that stranded a run at
+# `ready_to_merge` cannot silently return. It asserts required members, not an exact list.
 source "$(dirname "$0")/../lib.sh"
 
 WF="$ROOT/.github/workflows/post-merge-maintenance.yml"
 RS="$ROOT/runtime/run_state.py"
+
+# ---- 0. Trigger policy: the allowlist covers the active integration branch (issue #196) --
+# The `branches:` allowlist is the one authoritative place for the base-branch policy. It
+# rots silently — a PR merged into a branch missing here fires nothing. These assertions pin
+# the two branches that MUST be present (the active integration branch `simplify`, and the
+# default branch `main` that pull_request_target reads and that integration ships into) plus
+# the main-sync caveat, so the specific rot #196 fixed cannot silently return. This is a
+# policy assertion, not "the list equals exactly X" — extra integration branches are fine.
+# Isolate the `on:` block (up to the next top-level key) so a `branches:` under an unrelated
+# job step cannot be mistaken for the trigger's.
+ON_BLOCK=$(awk '/^on:/{f=1} f&&/^[a-z]/&&!/^on:/{exit} f' "$WF")
+BRANCHES_LINE=$(echo "$ON_BLOCK" | grep -E '^[[:space:]]*branches:')
+
+t "the pull_request_target trigger declares a base-branch allowlist"
+if [ -n "$BRANCHES_LINE" ]; then pass; else fail "no branches: allowlist under pull_request_target — either the trigger is unbounded (over-broad write-token surface) or the filter was lost"; fi
+
+t "the allowlist includes the active integration branch (simplify)"
+if echo "$BRANCHES_LINE" | grep -qE '\bsimplify\b'; then
+  pass
+else
+  fail "simplify is not in the branches: allowlist — every PR merged into it silently skips shipped (the exact #196 gap). Add the active integration branch here and sync to main."
+fi
+
+t "the allowlist includes the default branch (main)"
+if echo "$BRANCHES_LINE" | grep -qE '\bmain\b'; then
+  pass
+else
+  fail "main is not in the branches: allowlist — the default branch that integration ships into would skip terminalization"
+fi
+
+t "the shipped decision keys on the tracked run (specs/<slug>/RUN.json), not the base ref"
+RUNSTATE_STEP=$(sed -n '/id: runstate/,/Run bookkeeping/p' "$WF")
+if echo "$RUNSTATE_STEP" | grep -q 'RUN.json' && ! echo "$RUNSTATE_STEP" | grep -qE 'BASE_REF|base\.ref|base_ref'; then
+  pass
+else
+  fail "run-state step must gate on specs/<slug>/RUN.json presence and not condition its transition on the base ref"
+fi
+
+t "the main-sync caveat is documented in the trigger block"
+# pull_request_target loads the definition (and this list) from the DEFAULT branch (main);
+# the fix is inert until synced there. Keep that load-bearing caveat present.
+if echo "$ON_BLOCK" | grep -qiE 'DEFAULT branch|synced on .main.|SYNCED ON .main.|land.* on .main'; then
+  pass
+else
+  fail "the on: block must document that pull_request_target reads its definition/list from main (default branch)"
+fi
 
 # ---- 1. Measure the real write set of a `shipped` transition -------------------------
 probe=$(mktemp -d)
@@ -64,8 +116,18 @@ else
 fi
 
 t "the slug output is published only on a successful transition"
-if sed -n '/id: runstate/,/Run bookkeeping/p' "$WF" | grep -qE '^\s*elif python3 .*run_state\.py transition'; then
+# The transition must be the `if` condition guarding the slug publish, and `echo "slug="` must
+# come after it — so a failed transition never publishes a slug (which would stage files the
+# transition never wrote). Structure-agnostic to head-1-vs-loop: checks the guard + ordering.
+STEP=$(sed -n '/id: runstate/,/Run bookkeeping/p' "$WF")
+if_ln=$(echo "$STEP" | grep -nE '^[[:space:]]*if python3 .*run_state\.py transition' | head -1 | cut -d: -f1)
+slug_ln=$(echo "$STEP" | grep -nE 'echo "slug=' | head -1 | cut -d: -f1)
+if [ -n "$if_ln" ] && [ -n "$slug_ln" ] && [ "$slug_ln" -gt "$if_ln" ]; then
   pass
 else
-  fail "transition is not the elif condition — slug could be published after a failure"
+  fail "slug output must be published inside the successful-transition branch (if python3 ... transition; then echo slug=)"
 fi
+
+# Convert any FAIL into a non-zero exit — without this the script's status is the last
+# command's (always 0) and every assertion above, new and pre-existing, silently no-ops.
+finish

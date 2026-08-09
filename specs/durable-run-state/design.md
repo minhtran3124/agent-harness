@@ -47,11 +47,14 @@ shipped to every consuming repo via Phase B's deploy/install registration. Check
 not among them — confirmed absent via `grep -c "harness-status" scripts/install-harness.sh`
 returning `0`.
 
-## 4. Known, disclosed limitations
+## 4. Known limitations
 
-See the "Known, disclosed limitations" section in `research-brief.md`. Both are Phase C findings, both
-explicitly deferred (one advisory/scored-below-fix-threshold, one by direct user decision) —
-not re-opened here.
+See "Known limitations" and "Close-out (gh-196)" in `research-brief.md`. The Phase C CI-staging
+no-op was **fixed** (#177 staging + gh-196's integration-branch allowlist that now includes
+`simplify`); it is no longer a limitation. Caveat: the allowlist change is inert until synced to the
+default branch (`main`), because `pull_request_target` loads its definition from there. The
+remaining item — a `tiny`-lane / abandoned run never reaching a terminal state — is by design (a
+`tiny` run stops at `investigating`), not a terminalization defect.
 
 ## 5. Non-goals
 
