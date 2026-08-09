@@ -30,11 +30,12 @@ and rollout) so a future reader never has to re-derive this from three separate 
   `.github/workflows/post-merge-maintenance.yml` (shipped-on-merge, meta-repo-only). Every
   checkpoint call is unconditionally non-fatal (`|| true`). Only normal/high-risk lanes get the
   full chain; `tiny`-lane runs intentionally stop at `investigating`.
-  Note: the slim-surface refactor (`8e04bc5`) retired the `implementing`/`verifying` checkpoints
-  from `skills/subagent-driven-development/SKILL.md`; the `ready_to_merge` producer in
-  finishing-a-development-branch was restored as a concrete command by gh-196 (issue #196) — see
-  the close-out below. So a run advances `queued → investigating → planning` (intake) then
-  `→ ready_to_merge` (finish) `→ shipped` (post-merge), skipping the retired intermediate hops.
+  Note: the slim-surface refactor (`8e04bc5`) rewrote the concrete `run_state.py` commands in these
+  skills into prose instructions — the checkpoints remain (SDD still calls for `implementing` and
+  `verifying`; finishing for `ready_to_merge`), just as best-effort prose. gh-196 (issue #196)
+  restored the finishing `ready_to_merge` transition as a concrete command for reliability. The full
+  chain is `queued → investigating → planning` (intake) `→ implementing → verifying` (SDD)
+  `→ ready_to_merge` (finish) `→ shipped` (post-merge).
 - **Pre-existing, adjacent mechanism**: `specs/STATE.md` + `hooks/state-breadcrumb.sh`
   (SessionEnd) — tracks one session's current focus, not a per-spec durable FSM. Phase D
   (Task 1.1) documents the boundary between the two; they do not read or write each other's
@@ -76,8 +77,8 @@ non-terminal run — is by design):
   default branch (`main`), so a trigger change is inert until synced there.
 - **Producer restored.** The slim-surface refactor had left the `ready_to_merge` transition as
   prose only in finishing-a-development-branch; gh-196 restored it as a concrete non-fatal command,
-  so a run actually reaches `ready_to_merge` and can terminalize end-to-end (without it a run
-  stalls at `planning` and `planning → shipped` is illegal).
+  so a run reliably reaches `ready_to_merge` and can terminalize end-to-end. `shipped` is legal only
+  from `ready_to_merge`, so a run left at `verifying` would otherwise never terminalize.
 - **Stale runs reconciled.** The two runs left at `ready_to_merge` (`new-session-plan-resume`,
   `gate-verifiability-principle`) were terminalized to `shipped` from confirmed GitHub merge SHAs
   (PRs #173 and #189) via the real CLI — one appended event each, chains still validate.

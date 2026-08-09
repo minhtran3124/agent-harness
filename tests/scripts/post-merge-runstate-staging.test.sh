@@ -116,10 +116,16 @@ else
 fi
 
 t "the slug output is published only on a successful transition"
-if sed -n '/id: runstate/,/Run bookkeeping/p' "$WF" | grep -qE '^\s*elif python3 .*run_state\.py transition'; then
+# The transition must be the `if` condition guarding the slug publish, and `echo "slug="` must
+# come after it — so a failed transition never publishes a slug (which would stage files the
+# transition never wrote). Structure-agnostic to head-1-vs-loop: checks the guard + ordering.
+STEP=$(sed -n '/id: runstate/,/Run bookkeeping/p' "$WF")
+if_ln=$(echo "$STEP" | grep -nE '^[[:space:]]*if python3 .*run_state\.py transition' | head -1 | cut -d: -f1)
+slug_ln=$(echo "$STEP" | grep -nE 'echo "slug=' | head -1 | cut -d: -f1)
+if [ -n "$if_ln" ] && [ -n "$slug_ln" ] && [ "$slug_ln" -gt "$if_ln" ]; then
   pass
 else
-  fail "transition is not the elif condition — slug could be published after a failure"
+  fail "slug output must be published inside the successful-transition branch (if python3 ... transition; then echo slug=)"
 fi
 
 # Convert any FAIL into a non-zero exit — without this the script's status is the last

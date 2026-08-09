@@ -71,25 +71,30 @@ jobs:
       - name: Run-state checkpoint — mark shipped (non-fatal, Phase C)
         id: runstate
         run: |
-          # A PR can touch several specs/<slug>/SUMMARY.md. Pick the FIRST slug that has a
-          # RUN.json — don't `head -1` blindly, or a PR whose first-listed slug is untracked
-          # silently skips the tracked run behind it (the exact silent-skip class of #196;
-          # PR #189 carried both a tracked and an untracked slug and only escaped by sort
-          # order). No tracked slug at all → skip (non-run PRs stay non-fatal).
-          slug=""
+          # A PR can touch several specs/<slug>/SUMMARY.md. Try each tracked candidate (one with a
+          # RUN.json) and stop at the FIRST whose `shipped` transition succeeds — don't `head -1`
+          # and give up, or a PR silently skips the tracked run behind an untracked OR
+          # already-terminal first slug (the exact silent-skip class of #196; PR #189 carried a
+          # tracked + an untracked slug and only escaped by sort order). Letting the FSM decide
+          # (shipped is legal only from ready_to_merge) means a terminal/non-ready candidate is
+          # skipped, not the whole PR. No transitionable run → skip (non-run PRs stay non-fatal).
+          shipped=""
           for cand in $(grep -oE 'specs/[^/]+/SUMMARY\.md' /tmp/changed-files.txt | cut -d/ -f2); do
-            if [ -f "specs/$cand/RUN.json" ]; then slug="$cand"; break; fi
-          done
-          if [ -z "$slug" ]; then
-            echo "no specs/<slug>/ with a RUN.json in this PR — skipping run-state transition"
-          elif python3 runtime/run_state.py transition --slug "$slug" --to shipped \
+            [ -f "specs/$cand/RUN.json" ] || continue
+            if python3 runtime/run_state.py transition --slug "$cand" --to shipped \
                  --event ci.merged --sha "$MERGE_SHA"; then
-            # Publish the slug ONLY on success. The PR step stages this slug's two
-            # run-state files; staging them after a failed transition would commit
-            # nothing, and staging a slug that was never transitioned would be a lie.
-            echo "slug=$slug" >> "$GITHUB_OUTPUT"
-          else
-            echo "::warning::run-state transition to shipped failed/skipped for $slug"
+              # Publish the slug ONLY on success. The PR step stages this slug's two run-state
+              # files; staging them after a failed transition would commit nothing, and staging a
+              # slug that was never transitioned would be a lie.
+              echo "slug=$cand" >> "$GITHUB_OUTPUT"
+              shipped="$cand"
+              break
+            else
+              echo "::warning::run-state transition to shipped failed/skipped for $cand"
+            fi
+          done
+          if [ -z "$shipped" ]; then
+            echo "no transitionable tracked run in this PR — skipping run-state transition"
           fi
 
       - name: Run bookkeeping
