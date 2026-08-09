@@ -10,7 +10,7 @@ created: 2026-08-09
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**3 tasks · 3 waves · 9 files · 2/3 done**
+**3 tasks · 3 waves · 9 files · 3/3 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -36,7 +36,7 @@ flowchart LR
 ### Progress
 - [x] 1.1 — Expose one locked durable-state snapshot (wave 1)
 - [x] 2.1 — Complete the versioned resume cursor authority (wave 2)
-- [ ] 3.1 — Wire the portable command and contract consumers (wave 3)
+- [x] 3.1 — Wire the portable command and contract consumers (wave 3)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -192,3 +192,7 @@ existing authority rather than adding a second resume script. See `research-brie
   spec pass, quality approved; landmine (per-task-mention completion) confirmed closed; two Minors
   (soft-marker completion edge, byte-snapshot coverage narrower than canonical set) recorded in
   SUMMARY ### Not auto-verified and forwarded to final review.
+- 2026-08-09 — task 3.1 complete; commit c24cb5c. Verify green at truth tier: check_manifest exit 0,
+  runtime-sync.test.sh 7 passed, sdd-resume-cursor.test.sh 9 passed, full run-tests.sh ALL GREEN
+  (389 python). Task review: spec pass, quality approved; two Minors (reviewer had no Bash — exits
+  since re-confirmed 0/0/0; cosmetic report quote) — no code change needed. All three waves done.
