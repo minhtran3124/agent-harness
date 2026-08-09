@@ -8,6 +8,11 @@ source "$(dirname "$0")/../lib.sh"
 RD="$ROOT/runtime/resume_decision.py"
 RS="$ROOT/runtime/run_state.py"
 
+# A declared base (VERIFY_ROWS_BASE / GITHUB_BASE_REF) is now validated even with no claimed
+# commits (finding G); CI pull-request jobs export GITHUB_BASE_REF, which would turn these
+# no-commit execute-plan fixtures into base-unresolved stops. Keep the shell contract hermetic.
+unset VERIFY_ROWS_BASE GITHUB_BASE_REF
+
 ws() { W=$(mktemp -d); _CLEANUP_DIRS+=("$W"); }
 
 plan_body() { # <status> [status-log line]
@@ -146,14 +151,28 @@ else fail "rc=$RC a=$a reason=$rc conflict=$ct"; fi
 
 # --- portable path: the exact deployed-fallback command emits valid structured JSON ---
 
-t "portable command falls back to .claude/runtime and emits schema-stable JSON"
+t "portable command falls back to .claude/runtime ONLY when the source file is absent"
 ws
 mkdir -p "$W/.claude/runtime"; cp "$RD" "$RS" "$W/.claude/runtime/"
 write_plan "$W" portable active
-out=$( cd "$W" && python3 runtime/resume_decision.py --slug portable 2>/dev/null \
-       || python3 .claude/runtime/resume_decision.py --slug portable )
+# The published form: source-tree first, deployed copy only when the source is ABSENT.
+out=$( cd "$W" && if [ -f runtime/resume_decision.py ]; then python3 runtime/resume_decision.py --slug portable; else python3 .claude/runtime/resume_decision.py --slug portable; fi )
 parsed=$( printf '%s' "$out" | python3 -c "import sys,json;d=json.load(sys.stdin);print(d['schema_version'],d['action'])" 2>/dev/null )
 if [ "$parsed" = "1 execute-plan" ]; then pass
 else fail "fallback command did not emit valid JSON: parsed=[$parsed] out=[$(printf '%s' "$out" | head -1)]"; fi
+
+# --- fail-closed: a source-copy ERROR must NOT be re-answered from the stale deployed copy ---
+
+t "portable command does NOT fall through to the deployed copy on a source-copy error (exit 3)"
+ws
+mkdir -p "$W/runtime" "$W/.claude/runtime"
+# A stale/broken SOURCE copy that fails closed with exit 3.
+printf '#!/usr/bin/env python3\nimport sys\nsys.stderr.write("SOURCE-EXIT-3\\n")\nsys.exit(3)\n' > "$W/runtime/resume_decision.py"
+# The deployed copy WOULD answer execute-plan if wrongly consulted.
+cp "$RD" "$RS" "$W/.claude/runtime/"
+write_plan "$W" e3 active
+out=$( cd "$W" && { if [ -f runtime/resume_decision.py ]; then python3 runtime/resume_decision.py --slug e3; else python3 .claude/runtime/resume_decision.py --slug e3; fi; } 2>/dev/null ); RC3=$?
+if [ "$RC3" -eq 3 ] && ! printf '%s' "$out" | grep -q '"action"'; then pass
+else fail "fell through to the stale deployed copy: rc=$RC3 out=[$(printf '%s' "$out" | head -1)]"; fi
 
 finish

@@ -52,8 +52,21 @@ _MD_FIELD = re.compile(
 # A completion claim is evaluated PER task mention (design 5.4).  A completion marker
 # associated with one `Task X.Y` mention never completes another task named in the same
 # entry; an explicit non-completion marker keeps that task pending.
-_TASK_MENTION = re.compile(r"(?i)\btasks?\s+#?(\d+(?:\.\d+)+)")
-_COMPLETE_RE = re.compile(r"✓|\bcomplete|\bdone\b|\bshipped\b", re.I)
+_ID_RE = re.compile(r"\d+(?:\.\d+)+")
+# A keyword-anchored id list after one `task(s)` keyword: `Tasks 2.1, 2.2, 2.3` or a
+# `1.1–1.4` range.  Used only to decide which non-plan ids are `unknown` (fail closed) vs
+# a bare number to ignore.
+_TASK_KEYWORD = re.compile(
+    r"(?i)\btasks?\s+#?(\d+(?:\.\d+)+(?:\s*(?:,|and|&|\+|·|–|-)\s*#?\d+(?:\.\d+)+)*)"
+)
+# render_plan's build-kind vocabulary + ✓ + done: the completion signals resume must
+# recognise to stay at parity with the renderer's done set on non-pending entries.
+_COMPLETE_RE = re.compile(
+    r"✓|\bbuilt\b|\bbuild\b|\bship(?:s|ped)?\b|\bimplement(?:ed)?\b"
+    r"|\bexecut(?:e[ds]?|ed|ing)?\b|\bcomplete[ds]?\b|\bverified\b|\bpassed\b"
+    r"|\bmerged\b|\blanded\b|\bdone\b",
+    re.I,
+)
 _NONCOMPLETE_RE = re.compile(
     r"\bpending\b|\bin[-\s]?progress\b|\bblocked\b|\bincomplete\b|\bwip\b|\btodo\b"
     r"|\bnot\s+(?:yet\s+)?(?:done|complete)",
@@ -61,12 +74,89 @@ _NONCOMPLETE_RE = re.compile(
 )
 _BACKTICK_SHA = re.compile(r"`([0-9a-fA-F]{7,40})`")
 
+# Sentinel distinct from "missing": PLAN.md exists but could not be read (finding O).
+_UNREADABLE = object()
 
-def read_plan_text(slug: str) -> str | None:
+
+def mask_fences(body: str) -> str:
+    """Blank fenced code regions (offsets preserved), mirroring render_plan.mask_fences
+    so example/illustration <task> blocks and prose `<task…>` mentions cannot parse as
+    real tasks."""
+    out = []
+    in_fence = False
+    for line in body.split("\n"):
+        if line.lstrip().startswith("```"):
+            in_fence = not in_fence
+            out.append(" " * len(line))
+            continue
+        out.append(" " * len(line) if in_fence else line)
+    return "\n".join(out)
+
+
+def mask_inline_code(text: str) -> str:
+    """Blank inline `code` spans (offsets preserved), mirroring render_plan."""
+    return "\n".join(
+        re.sub(r"`[^`\n]*`", lambda m: " " * len(m.group(0)), line)
+        for line in text.split("\n")
+    )
+
+
+def _balanced_task_spans(scan: str) -> list[tuple[int, int]]:
+    """Top-level <task>…</task> char spans in `scan` (depth-balanced), mirroring
+    render_plan._balanced_spans so a nested example <task> inside an <action> is ignored."""
+    spans: list[tuple[int, int]] = []
+    depth = 0
+    start = None
+    for tok in re.finditer(r"</?task\b[^>]*>", scan):
+        if not tok.group(0).startswith("</"):
+            if depth == 0:
+                start = tok.start()
+            depth += 1
+        else:
+            depth -= 1
+            if depth == 0 and start is not None:
+                spans.append((start, tok.end()))
+                start = None
+            if depth < 0:
+                depth = 0
+    return spans
+
+
+def _fenced_blocks(body: str) -> list[tuple[int, int]]:
+    """(start, end) char spans of fenced code-block CONTENTS, mirroring render_plan."""
+    spans: list[tuple[int, int]] = []
+    off = 0
+    in_fence = False
+    start = 0
+    for line in body.split("\n"):
+        nxt = off + len(line) + 1
+        if line.lstrip().startswith("```"):
+            if in_fence:
+                spans.append((start, off))
+            else:
+                start = nxt
+            in_fence = not in_fence
+        off = nxt
+    return spans
+
+
+def _plan_format(ptext: str) -> str:
+    """xml vs markdown decided on the fence/inline-masked copy, so a markdown plan that
+    merely mentions `<task` in prose is not mislabelled xml (finding A)."""
+    return "xml" if "<task" in mask_inline_code(mask_fences(ptext)) else "markdown"
+
+
+def read_plan_text(slug: str):
+    """PLAN.md text, or None when absent, or the ``_UNREADABLE`` sentinel when it exists
+    but cannot be read (encoding/I/O error) — so the decision fails closed rather than
+    crashing on a non-UTF-8 byte (finding O)."""
     path = Path("specs") / slug / "PLAN.md"
     if not path.is_file():
         return None
-    return path.read_text(encoding="utf-8")
+    try:
+        return path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return _UNREADABLE
 
 
 def plan_status_from_text(ptext: str) -> str | None:
@@ -79,12 +169,9 @@ def plan_status_from_text(ptext: str) -> str | None:
 
 def _plan_block(slug: str) -> dict:
     ptext = read_plan_text(slug)
-    if ptext is None:
+    if ptext is None or ptext is _UNREADABLE:
         return {"status": None, "format": None}
-    return {
-        "status": plan_status_from_text(ptext),
-        "format": "xml" if "<task" in ptext else "markdown",
-    }
+    return {"status": plan_status_from_text(ptext), "format": _plan_format(ptext)}
 
 
 def _md_fields(block: str) -> dict:
@@ -110,9 +197,13 @@ def _md_fields(block: str) -> dict:
 
 
 def _parse_md_tasks(ptext: str) -> list[dict]:
+    """Markdown tasks, parity with render_plan._extract_md_tasks: headings are detected on
+    the fence/inline-masked copy (fenced or backticked examples ignored; offsets
+    preserved) and fields are sliced from the ORIGINAL body."""
+    scan = mask_inline_code(mask_fences(ptext))
     tasks = []
-    for h in _MD_TASK_HEAD.finditer(ptext):
-        nm = _MD_NEXT_HEAD.search(ptext, h.end())
+    for h in _MD_TASK_HEAD.finditer(scan):
+        nm = _MD_NEXT_HEAD.search(scan, h.end())
         block = ptext[h.start() : (nm.start() if nm else len(ptext))]
         f = _md_fields(block)
         if f["files"] or f["action"] or f["verify"] or f["done"]:
@@ -120,25 +211,44 @@ def _parse_md_tasks(ptext: str) -> list[dict]:
     return tasks
 
 
+def _xml_task_from_block(block: str) -> dict:
+    idm = re.search(r'<task\b[^>]*\bid="([^"]*)"', block)
+    tid = idm.group(1).strip() if idm else ""
+    vm = re.search(r"<verify>(.*?)</verify>", block, re.DOTALL)
+    return {"id": tid, "verify": vm.group(1).strip() if vm else ""}
+
+
 def _parse_xml_tasks(ptext: str) -> list[dict]:
-    opens = list(re.finditer(r"<task\b([^>]*)>", ptext))
-    tasks = []
-    for i, m in enumerate(opens):
-        idm = re.search(r'id="([^"]*)"', m.group(1))
-        tid = idm.group(1).strip() if idm else ""
-        if not tid:
-            continue
-        end = opens[i + 1].start() if i + 1 < len(opens) else len(ptext)
-        seg = ptext[m.end() : end]
-        vm = re.search(r"<verify>(.*?)</verify>", seg, re.DOTALL)
-        tasks.append({"id": tid, "verify": vm.group(1).strip() if vm else ""})
-    return tasks
+    """XML tasks, parity with render_plan.extract_tasks' XML path: scan a fence- and
+    inline-code-masked copy so only real <task> blocks match, slice id/verify from the
+    ORIGINAL, and fall back to per-fence scanning when no raw tasks exist."""
+    spans = _balanced_task_spans(mask_inline_code(mask_fences(ptext)))
+    keep = [t for t in (_xml_task_from_block(ptext[s:e]) for s, e in spans) if t["id"]]
+    if not keep:
+        for s, e in _fenced_blocks(ptext):
+            blk = ptext[s:e]
+            if "<task" not in blk:
+                continue
+            inner = _balanced_task_spans(mask_inline_code(blk))
+            if inner:
+                for bs, be in inner:
+                    t = _xml_task_from_block(blk[bs:be])
+                    if t["id"]:
+                        keep.append(t)
+            else:
+                t = _xml_task_from_block(blk)
+                if t["id"]:
+                    keep.append(t)
+    return keep
 
 
 def parse_tasks(ptext: str) -> tuple[list[dict], list[str]]:
-    """Ordered task list plus any duplicate ids.  XML wins in mixed files, mirroring
-    render_plan; parity is asserted over ORDERED IDS in the test suite, not here."""
-    tasks = _parse_xml_tasks(ptext) if "<task" in ptext else _parse_md_tasks(ptext)
+    """Ordered task list plus any duplicate ids.  Mirrors render_plan.extract_tasks: the
+    fence-masked XML scan (with a per-fence fallback) wins; markdown is the fallback when
+    it yields nothing — so a markdown plan that merely mentions `<task` in a fence or
+    backticks is not misparsed as zero-task XML (finding A/B).  Parity over ORDERED IDS is
+    asserted in the test suite."""
+    tasks = _parse_xml_tasks(ptext) or _parse_md_tasks(ptext)
     seen: set[str] = set()
     dups: list[str] = []
     for t in tasks:
@@ -165,8 +275,10 @@ def _status_log_section(ptext: str) -> str:
 
 
 def _status_entries(section: str) -> list[str]:
-    """Group each top-level bullet with its indented continuation into one entry blob,
-    so a completion marker cannot leak across entries."""
+    """Group each top-level bullet with its INDENTED continuation lines into one entry
+    blob.  An indent-0 non-bullet line CLOSES the current entry (finding L): it must not
+    fold into the previous bullet, or a completion marker on that trailing line would leak
+    across the boundary and complete a task the bullet only started."""
     entries: list[list[str]] = []
     cur: list[str] | None = None
     for line in section.split("\n"):
@@ -177,37 +289,70 @@ def _status_entries(section: str) -> list[str]:
         if indent == 0 and m:
             cur = [m.group(1)]
             entries.append(cur)
-        elif cur is not None:
+        elif indent > 0 and cur is not None:
             cur.append(line.strip())
+        else:
+            cur = None
     return [" ".join(c) for c in entries]
 
 
-def parse_status_completion(ptext: str, valid: set[str]) -> dict:
-    """Reconstruct per-mention completion from the Status Log.
+def _fill_range(a: str, b: str, valid: set[str]) -> list[str]:
+    """Ids between same-parent endpoints a..b that exist in the plan (finding C): a
+    hyphen/en-dash range `1.1–1.4` means 1.1,1.2,1.3,1.4, not just its endpoints, but only
+    the ids the plan actually defines."""
+    pa, pb = a.rsplit(".", 1), b.rsplit(".", 1)
+    if pa[0] != pb[0]:
+        return []
+    try:
+        lo, hi = int(pa[1]), int(pb[1])
+    except ValueError:
+        return []
+    return [f"{pa[0]}.{n}" for n in range(lo, hi + 1) if f"{pa[0]}.{n}" in valid]
 
-    Returns {complete: set, unknown: list, commits: {id: [sha]}}.  A task id is claimed
-    complete only when ITS OWN mention carries a completion marker and no non-completion
-    marker; `Task 1.1 complete; Task 1.2 pending` claims only 1.1.
+
+def parse_status_completion(ptext: str, valid: set[str]) -> dict:
+    """Reconstruct completion from the Status Log, per task mention (design 5.4).
+
+    Returns {complete: set, unknown: list, commits: {id: [sha]}}.  An entry with NO
+    non-completion marker is read WHOLE (render_plan parity): if it carries a completion
+    signal, every task id it names is claimed, and comma/`and`-lists plus hyphen/en-dash
+    ranges expand.  An entry that carries a pending/blocked/in-progress marker is split
+    into `;` clauses and each clause judged on its own, so `Task 1.1 complete; Task 1.2
+    pending` claims only 1.1 (the landmine stays closed).  SHAs are attributed to each
+    mention's own segment, never entry-wide.  A keyword-anchored id outside the plan is
+    `unknown` (fail closed); a bare non-plan number is ignored.
     """
     complete: set[str] = set()
     unknown: list[str] = []
     commits: dict[str, list[str]] = {}
     for blob in _status_entries(_status_log_section(ptext)):
-        shas = _BACKTICK_SHA.findall(blob)
-        mentions = list(_TASK_MENTION.finditer(blob))
-        for j, mm in enumerate(mentions):
-            end = mentions[j + 1].start() if j + 1 < len(mentions) else len(blob)
-            seg = blob[mm.start() : end]
-            if _COMPLETE_RE.search(seg) and not _NONCOMPLETE_RE.search(seg):
-                tid = mm.group(1)
-                if tid in valid:
-                    complete.add(tid)
-                    bucket = commits.setdefault(tid, [])
-                    for s in shas:
-                        if s not in bucket:
-                            bucket.append(s)
-                elif tid not in unknown:
-                    unknown.append(tid)
+        clauses = blob.split(";") if _NONCOMPLETE_RE.search(blob) else [blob]
+        for clause in clauses:
+            if not (_COMPLETE_RE.search(clause) and not _NONCOMPLETE_RE.search(clause)):
+                continue
+            keyword_ids = {
+                idm.group(0)
+                for km in _TASK_KEYWORD.finditer(clause)
+                for idm in _ID_RE.finditer(km.group(1))
+            }
+            toks = [(m.group(0), m.start(), m.end()) for m in _ID_RE.finditer(clause)]
+            for i, (tid, start, end) in enumerate(toks):
+                seg_end = toks[i + 1][1] if i + 1 < len(toks) else len(clause)
+                shas = _BACKTICK_SHA.findall(clause[start:seg_end])
+                ids = [tid]
+                if i + 1 < len(toks) and re.fullmatch(
+                    r"\s*[–-]\s*", clause[end : toks[i + 1][1]]
+                ):
+                    ids += _fill_range(tid, toks[i + 1][0], valid)
+                for cid in ids:
+                    if cid in valid:
+                        complete.add(cid)
+                        bucket = commits.setdefault(cid, [])
+                        for s in shas:
+                            if s not in bucket:
+                                bucket.append(s)
+                    elif cid in keyword_ids and cid not in unknown:
+                        unknown.append(cid)
     return {"complete": complete, "unknown": unknown, "commits": commits}
 
 
@@ -259,7 +404,13 @@ def _derive_base() -> str | None:
         cc, cnt = _git(["rev-list", "--count", f"{r}..HEAD"])
         if cc != 0:
             continue
-        cands.append((int(cnt or 0), r))
+        n = int(cnt or 0)
+        if n == 0:
+            # ref is AT HEAD (e.g. a backup branch): a zero-length range would sort
+            # first and yield an empty BASE..HEAD -> a false git-evidence conflict
+            # (finding I).  Skip it, same as the excluded self/remote copies.
+            continue
+        cands.append((n, r))
     if not cands:
         return None
     cands.sort(
@@ -309,7 +460,27 @@ def _resolve_base(base: str | None) -> tuple[str | None, str, str | None]:
 
 def _validate_commits(pairs: list[tuple[str, str]], base: str | None) -> dict:
     """Validate claimed (task_id, sha) pairs resolve inside BASE..HEAD."""
+    # A DECLARED base (explicit --base, or VERIFY_ROWS_BASE / GITHUB_BASE_REF) is resolved
+    # and validated UNCONDITIONALLY — before the no-commits short-circuit — mirroring
+    # resolve-base-ref.sh, which errors on an unresolvable declared base rather than
+    # falling through (finding G).  The auto-derived (undeclared) path still falls through.
+    declared = (
+        bool(base)
+        or bool(os.environ.get("VERIFY_ROWS_BASE"))
+        or bool(os.environ.get("GITHUB_BASE_REF"))
+    )
     if not pairs:
+        if declared:
+            ref, reason, _full = _resolve_base(base)
+            if not ref:
+                return {
+                    "base_ref": None,
+                    "base_reason": reason,
+                    "range": None,
+                    "conflicts": [
+                        {"type": "base-unresolved", "task_id": None, "sha": None}
+                    ],
+                }
         return {
             "base_ref": None,
             "base_reason": "no-claimed-commits",
@@ -329,7 +500,20 @@ def _validate_commits(pairs: list[tuple[str, str]], base: str | None) -> dict:
             "conflicts": conflicts,
         }
     rc, rangelist = _git(["rev-list", f"{full_base}..HEAD"])
-    in_range = set(rangelist.split()) if rc == 0 else set()
+    if rc != 0:
+        # rev-list itself failed (e.g. a shallow clone where BASE is unreachable): the
+        # range is UNKNOWN, not empty.  Emit a distinct conflict so this is not
+        # misreported as every commit being out of range (finding J).
+        return {
+            "base_ref": ref,
+            "base_reason": "range-unavailable",
+            "range": f"{full_base}..HEAD",
+            "conflicts": [
+                {"type": "range-unavailable", "task_id": tid, "sha": sha}
+                for tid, sha in pairs
+            ],
+        }
+    in_range = set(rangelist.split())
     conflicts = []
     for tid, sha in pairs:
         rc2, full = _git(["rev-parse", "--verify", "-q", f"{sha}^{{commit}}"])
@@ -360,7 +544,16 @@ def _build_cursor(ptext: str, base: str | None) -> tuple[dict, list[dict], dict]
     complete_set = comp["complete"] & valid
     claimed = [tid for tid in task_ids if tid in complete_set]
     pending = [tid for tid in task_ids if tid not in complete_set]
-    checks = [{"task_id": tid, "command": verify_by_id.get(tid, "")} for tid in claimed]
+    # A claimed-complete task with no Verify command cannot be re-verified: an empty
+    # command "passes" vacuously.  Fail closed with a conflict (→ stop), like every other
+    # evidence defect, rather than emitting {"command": ""} (finding F).
+    checks = []
+    for tid in claimed:
+        cmd = (verify_by_id.get(tid) or "").strip()
+        if cmd:
+            checks.append({"task_id": tid, "command": cmd})
+        else:
+            cur_conflicts.append({"type": "missing-verify", "task_id": tid})
     pairs = [(tid, sha) for tid in claimed for sha in comp["commits"].get(tid, [])]
     git_block = _validate_commits(pairs, base)
     cursor = {
@@ -378,6 +571,10 @@ def _conflict_reason_code(conflicts: list[dict]) -> str:
     types = {c["type"] for c in conflicts}
     if "base-unresolved" in types:
         return "base-unresolved"
+    if "range-unavailable" in types:
+        return "range-unavailable"
+    if "missing-verify" in types:
+        return "missing-verify"
     if types & {"unresolvable-commit", "commit-out-of-range"}:
         return "git-evidence-conflict"
     return "cursor-conflict"
@@ -400,11 +597,15 @@ def _build_execution(slug: str, base: str | None, state: str | None) -> dict:
             "reason": "no PLAN.md; there is no executable task contract",
             "plan": {"status": None, "format": None},
         }
+    if ptext is _UNREADABLE:
+        return {
+            "action": "stop",
+            "reason_code": "plan-unreadable",
+            "reason": "PLAN.md exists but could not be read (encoding or I/O error)",
+            "plan": {"status": None, "format": None},
+        }
     pstatus = plan_status_from_text(ptext)
-    plan_block = {
-        "status": pstatus,
-        "format": "xml" if "<task" in ptext else "markdown",
-    }
+    plan_block = {"status": pstatus, "format": _plan_format(ptext)}
     if pstatus not in PLAN_STATUSES:
         return {
             "action": "stop",
@@ -516,7 +717,12 @@ def _read_deviations(slug: str) -> tuple[list[str], list[str]]:
     path = Path("specs") / slug / "SUMMARY.md"
     if not path.is_file():
         return [], []
-    lines = path.read_text(encoding="utf-8").split("\n")
+    try:
+        lines = path.read_text(encoding="utf-8").split("\n")
+    except (OSError, UnicodeDecodeError):
+        # Advisory reader: degrade to no deviations + a warning, never crash the decision
+        # (finding O).
+        return [], ["summary-unreadable"]
     out: list[str] = []
     found = False
     i = 0
@@ -544,7 +750,12 @@ def _read_state_hint(slug: str) -> tuple[dict | None, list[str]]:
     path = Path("specs") / "STATE.md"
     if not path.is_file():
         return None, []
-    text = path.read_text(encoding="utf-8")
+    try:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        # STATE.md is repo-global advisory context: degrade to no hint + a warning rather
+        # than crashing the whole decision on one unreadable byte (finding O).
+        return None, ["state-unreadable"]
     m = re.search(r"(?m)^##\s+Active Spec\b(.*?)(?=^##\s|\Z)", text, re.DOTALL)
     if not m:
         return None, []
@@ -590,13 +801,17 @@ def _base_schema(slug: str, action: str, reason_code: str, reason: str) -> dict:
         "deviations": [],
         "required_transition": None,
         "warnings": [],
+        "waiting_on": None,
     }
 
 
 def decide(slug: str, base: str | None = None) -> dict:
     snap = rs.snapshot_run_state(slug)
     status = snap.status
-    projection = snap.projection or {}
+    # A truthy non-dict RUN.json (e.g. `[1,2]`, `"x"`, `5`) is a valid projection-only
+    # topology, not a crash: guard the .get() deref so it fails closed via the topology
+    # branch below instead of raising AttributeError -> exit 3 (finding D).
+    projection = snap.projection if isinstance(snap.projection, dict) else {}
     state = projection.get("state")
     run_block = {"status": status, "state": state}
     deviations, dev_warnings = _read_deviations(slug)
@@ -675,6 +890,9 @@ def decide(slug: str, base: str | None = None) -> dict:
                 "action": "wait",
                 "reason_code": "awaiting-external",
                 "reason": "run is waiting on an external decision or result",
+                # Surface the blocker identity on the wait route (finding H): legitimately
+                # null for ready_to_merge, which carries no waiting_on.
+                "waiting_on": projection.get("waiting_on"),
             }
         )
     if state in rs.INTERRUPT_STATES:

@@ -1,6 +1,15 @@
 # Resume actions
 
-`resume_decision.py` is the authority. For `rebuild`, run the named non-mutating check first, then
+`resume_decision.py` is the authority. Invoke it source-tree-first, deployed-copy only when the
+source is ABSENT — never as an error fallback, so a fail-closed exit 3 is not re-answered from a
+stale deployed copy:
+
+```
+if [ -f runtime/resume_decision.py ]; then python3 runtime/resume_decision.py --slug <slug>; else python3 .claude/runtime/resume_decision.py --slug <slug>; fi
+```
+
+Do not discard stderr. Treat ANY non-zero exit as `stop`, and require `schema_version == 1` before
+acting on `action`. For `rebuild`, run the named non-mutating check first, then
 rebuild only when it reports projection drift. For `wait` or `stop`, report the returned reason and
 do not edit. For `resume-repair` follow the named CI/review loop; do not re-run plan tasks. For
 `resume-review-chain`, start final delivery/correctness/intent review. Only `execute-plan` enters

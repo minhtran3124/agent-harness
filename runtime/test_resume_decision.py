@@ -25,6 +25,16 @@ import run_state as rs  # noqa: E402
 import resume_decision as decision  # noqa: E402
 
 
+@pytest.fixture(autouse=True)
+def _hermetic_base_env(monkeypatch):
+    """A declared base (VERIFY_ROWS_BASE / GITHUB_BASE_REF) is now validated even with no
+    claimed commits (finding G); CI PR jobs export GITHUB_BASE_REF, so clear both by
+    default and let base-specific tests set them explicitly.  Keeps every other test
+    hermetic regardless of the CI environment."""
+    monkeypatch.delenv("VERIFY_ROWS_BASE", raising=False)
+    monkeypatch.delenv("GITHUB_BASE_REF", raising=False)
+
+
 # --- fixtures / helpers ----------------------------------------------------------------
 
 _ACTIVE_MD_PLAN = """\
@@ -628,6 +638,7 @@ _KEYS = {
     "deviations",
     "required_transition",
     "warnings",
+    "waiting_on",
 }
 
 
@@ -735,3 +746,311 @@ def test_readonly_cli_exit_codes(tmp_path, monkeypatch):
     with pytest.raises(SystemExit) as ei:  # CLI misuse -> argparse exit 2
         decision.main([])
     assert ei.value.code == 2
+
+
+# --- adversarial correctness fixes (gh-175 review) -------------------------------------
+
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+
+_FOUR_TASK_PLAN = """\
+issue: 175
+status: active
+
+# Plan
+
+### Task 1.1 — a (wave 1)
+- **Files:** a.py
+- **Action:** do a
+- **Verify:** `pytest -k a`
+- **Done:** a
+
+### Task 1.2 — b (wave 1)
+- **Files:** b.py
+- **Action:** do b
+- **Verify:** `pytest -k b`
+- **Done:** b
+
+### Task 1.3 — c (wave 1)
+- **Files:** c.py
+- **Action:** do c
+- **Verify:** `pytest -k c`
+- **Done:** c
+
+### Task 1.4 — d (wave 1)
+- **Files:** d.py
+- **Action:** do d
+- **Verify:** `pytest -k d`
+- **Done:** d
+"""
+
+
+def _corpus_plans():
+    plans = sorted((_REPO_ROOT / "specs").glob("*/PLAN.md"))
+    assert plans, "expected a non-empty specs/*/PLAN.md corpus"
+    return plans
+
+
+def test_corpus_parity_parse_tasks_matches_render_plan():
+    """Finding A regression guard: resume's ordered task ids must equal render_plan's for
+    EVERY real PLAN.md, so a fenced/inline `<task` mention can never zero out a plan."""
+    import render_plan  # noqa: E402
+
+    for p in _corpus_plans():
+        txt = p.read_text(encoding="utf-8")
+        mine = [t["id"] for t in decision.parse_tasks(txt)[0]]
+        theirs = [t["id"] for t in render_plan.extract_tasks(txt)[0]]
+        assert mine == theirs, p
+
+
+def test_corpus_completion_never_drops_ids_render_marks_done():
+    """Finding C corpus guard: on entries with NO explicit non-completion marker, resume's
+    claimed-complete set must cover render_plan's done set, and no real entry may produce a
+    spurious `unknown` (which would stop a healthy resume)."""
+    import re as _re
+
+    import render_plan  # noqa: E402
+
+    for p in _corpus_plans():
+        txt = p.read_text(encoding="utf-8")
+        valid = {t["id"] for t in decision.parse_tasks(txt)[0]}
+        comp = decision.parse_status_completion(txt, valid)
+        entries = render_plan.parse_status_entries(decision._status_log_section(txt))
+        theirs = set()
+        for e in entries:
+            blob = e["note"] + " " + " ".join(e["subs"])
+            if decision._NONCOMPLETE_RE.search(blob):
+                continue
+            if (
+                e.get("kind") == "build"
+                or "✓" in blob
+                or _re.search(r"\bcomplete", blob)
+            ):
+                theirs |= set(_re.findall(r"\bP?\d+(?:\.\d+)+\b", blob)) & valid
+        assert theirs <= comp["complete"], (p, sorted(theirs - comp["complete"]))
+        assert comp["unknown"] == [], (p, comp["unknown"])
+
+
+def test_parser_markdown_plan_mentioning_task_tag_is_not_misparsed_as_xml(
+    tmp_path, monkeypatch
+):
+    """Finding A/B: a markdown plan that mentions `<task` inside a fence AND inline code
+    must still parse its markdown tasks, not collapse to zero-task XML."""
+    monkeypatch.chdir(tmp_path)
+    plan = (
+        _ACTIVE_MD_PLAN
+        + "\n## Notes\n\nInline `<task>` is prose, not a task.\n\n"
+        + "```xml\n<task>fenced illustration, no id</task>\n```\n"
+    )
+    write_plan("fence", plan)
+    init_to("fence", ("investigating", "planning", "implementing"))
+    v = decision.decide("fence")
+    assert v["plan"]["format"] == "markdown"
+    assert v["cursor"]["task_ids"] == ["1.1", "1.2"]
+
+
+def test_completion_multi_id_list_after_one_keyword(tmp_path, monkeypatch):
+    """Finding C(a): `Tasks 1.1, 1.2, 1.3 complete` claims all three."""
+    monkeypatch.chdir(tmp_path)
+    plan = (
+        _FOUR_TASK_PLAN
+        + "\n## Status Log\n\n- 2026-08-09 — Wave 1 / Tasks 1.1, 1.2, 1.3 complete.\n"
+    )
+    write_plan("multi", plan)
+    init_to("multi", ("investigating", "planning", "implementing"))
+    v = decision.decide("multi")
+    assert v["cursor"]["claimed_complete"] == ["1.1", "1.2", "1.3"]
+    assert v["cursor"]["pending"] == ["1.4"]
+
+
+def test_completion_range_expands_to_existing_ids(tmp_path, monkeypatch):
+    """Finding C(b): an en-dash range `tasks 1.1–1.4` claims 1.1..1.4, not just endpoints."""
+    monkeypatch.chdir(tmp_path)
+    plan = _FOUR_TASK_PLAN + "\n## Status Log\n\n- 2026-08-09 — tasks 1.1–1.4 done.\n"
+    write_plan("range", plan)
+    init_to("range", ("investigating", "planning", "implementing"))
+    v = decision.decide("range")
+    assert v["cursor"]["claimed_complete"] == ["1.1", "1.2", "1.3", "1.4"]
+    assert v["cursor"]["pending"] == []
+
+
+def test_completion_range_plus_pending_keeps_landmine_closed(tmp_path, monkeypatch):
+    """Finding C landmine: a range completes only within its own clause; a `; ... pending`
+    clause never completes."""
+    monkeypatch.chdir(tmp_path)
+    plan = (
+        _FOUR_TASK_PLAN
+        + "\n## Status Log\n\n- 2026-08-09 — Tasks 1.1–1.3 done; Task 1.4 pending\n"
+    )
+    write_plan("rp", plan)
+    init_to("rp", ("investigating", "planning", "implementing"))
+    v = decision.decide("rp")
+    assert v["cursor"]["claimed_complete"] == ["1.1", "1.2", "1.3"]
+    assert v["cursor"]["pending"] == ["1.4"]
+
+
+def test_completion_shas_scoped_to_each_mention_segment(tmp_path, monkeypatch):
+    """Finding C: a sha is attributed to its own mention's segment, not entry-wide."""
+    monkeypatch.chdir(tmp_path)
+    comp = decision.parse_status_completion(
+        "## Status Log\n\n- Task 1.1 complete (`aaaaaaa`); Task 1.2 complete (`bbbbbbb`).\n",
+        {"1.1", "1.2"},
+    )
+    assert comp["commits"] == {"1.1": ["aaaaaaa"], "1.2": ["bbbbbbb"]}
+
+
+def test_non_dict_projection_stops_without_crash(tmp_path, monkeypatch):
+    """Finding D: a truthy non-dict RUN.json is projection-only, never an exit-3 crash."""
+    monkeypatch.chdir(tmp_path)
+    for i, payload in enumerate(("[1, 2]", '"x"', "5")):
+        slug = f"nd{i}"
+        Path(f"specs/{slug}").mkdir(parents=True)
+        Path(rs.run_json_path(slug)).write_text(payload)
+        v = decision.decide(slug)
+        assert (v["action"], v["reason_code"]) == ("stop", "storage-projection-only")
+        assert decision.main(["--slug", slug]) == 0
+
+
+def test_claimed_task_without_verify_fails_closed(tmp_path, monkeypatch):
+    """Finding F: a claimed-complete task with no Verify cannot pass vacuously."""
+    monkeypatch.chdir(tmp_path)
+    plan = _ACTIVE_MD_PLAN.replace("- **Verify:** `pytest -k a`\n", "")
+    plan += "\n## Status Log\n\n- 2026-08-09 — Task 1.1 complete.\n"
+    write_plan("nv", plan)
+    init_to("nv", ("investigating", "planning", "implementing"))
+    v = decision.decide("nv")
+    assert (v["action"], v["reason_code"]) == ("stop", "missing-verify")
+    assert any(
+        c["type"] == "missing-verify" and c["task_id"] == "1.1"
+        for c in v["cursor"]["conflicts"]
+    )
+
+
+def test_unreadable_plan_stops_and_advisory_reads_degrade(tmp_path, monkeypatch):
+    """Finding O: a non-UTF-8 byte never crashes the decision (exit 3).  The plan read
+    fails closed; SUMMARY/STATE degrade to a warning."""
+    monkeypatch.chdir(tmp_path)
+    # PLAN unreadable -> structured stop.
+    init_to("urp", ("investigating", "planning", "implementing"))
+    Path("specs/urp/PLAN.md").write_bytes(b"status: active\n\xff\xfe bad\n")
+    v = decision.decide("urp")
+    assert (v["action"], v["reason_code"]) == ("stop", "plan-unreadable")
+    assert decision.main(["--slug", "urp"]) == 0
+
+    # SUMMARY unreadable -> advisory warning, route unaffected.
+    write_plan("urs")
+    init_to("urs", ("investigating", "planning", "implementing"))
+    Path("specs/urs/SUMMARY.md").write_bytes(b"# S\n\xff\n")
+    v = decision.decide("urs")
+    assert "summary-unreadable" in v["warnings"]
+    assert v["action"] == "execute-plan"
+
+    # STATE unreadable -> advisory warning, no hint.
+    write_plan("urt")
+    init_to("urt", ("investigating", "planning", "implementing"))
+    Path("specs/STATE.md").write_bytes(b"# State\n\xff\n")
+    v = decision.decide("urt")
+    assert "state-unreadable" in v["warnings"]
+    assert v["session_hint"] is None
+
+
+def test_declared_bogus_base_without_commits_stops(tmp_path, monkeypatch):
+    """Finding G: an explicit --base (or declared env base) that does not resolve fails
+    closed even when there are no claimed commits."""
+    monkeypatch.chdir(tmp_path)
+    write_plan("gb")  # no Status Log -> no claimed commits
+    init_to("gb", ("investigating", "planning", "implementing"))
+    v = decision.decide("gb", base="does-not-exist")
+    assert (v["action"], v["reason_code"]) == ("stop", "base-unresolved")
+
+    monkeypatch.setenv("GITHUB_BASE_REF", "no-such-branch")
+    v2 = decision.decide("gb")
+    assert (v2["action"], v2["reason_code"]) == ("stop", "base-unresolved")
+
+
+def test_no_declared_base_and_no_commits_proceeds(tmp_path, monkeypatch):
+    """Finding G scope: the auto-derived (undeclared) path still falls through cleanly when
+    there is nothing to validate."""
+    monkeypatch.chdir(tmp_path)
+    write_plan("nd-base")
+    init_to("nd-base", ("investigating", "planning", "implementing"))
+    v = decision.decide("nd-base")
+    assert v["action"] == "execute-plan"
+    assert v["git"]["conflicts"] == []
+
+
+def test_derive_base_skips_candidate_at_head(tmp_path, monkeypatch):
+    """Finding I: a ref sitting exactly at HEAD must not be chosen as base (empty range ->
+    false git-evidence-conflict); the real ancestor base is used instead."""
+    monkeypatch.chdir(tmp_path)
+
+    def g(*a):
+        subprocess.run(
+            ["git", *a], cwd=tmp_path, check=True, capture_output=True, text=True
+        )
+
+    g("init", "-q")
+    g("config", "user.email", "t@t")
+    g("config", "user.name", "t")
+    g("commit", "--allow-empty", "-q", "-m", "base")
+    g("checkout", "-q", "-b", "feat")
+    g("commit", "--allow-empty", "-q", "-m", "head")
+    head = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=tmp_path, capture_output=True, text=True
+    ).stdout.strip()
+    g("branch", "backup")  # sits at HEAD -> must be skipped, not chosen as base
+    write_plan("db", _plan_with_claim(head))
+    init_to("db", ("investigating", "planning", "implementing"))
+    v = decision.decide("db")  # no explicit base -> derive
+    assert v["action"] == "execute-plan", (v["reason_code"], v["git"])
+    assert v["git"]["conflicts"] == []
+
+
+def test_rev_list_failure_reports_range_unavailable(tmp_path, monkeypatch):
+    """Finding J: a rev-list failure (e.g. shallow clone) is UNKNOWN range, not empty; it
+    must not masquerade as every commit being out of range."""
+    monkeypatch.chdir(tmp_path)
+    base, head = _git_repo(tmp_path)
+    write_plan("rl", _plan_with_claim(head))
+    init_to("rl", ("investigating", "planning", "implementing"))
+    real_git = decision._git
+
+    def fake(args):
+        if args[:1] == ["rev-list"] and "--count" not in args:
+            return 1, ""
+        return real_git(args)
+
+    monkeypatch.setattr(decision, "_git", fake)
+    v = decision.decide("rl", base=base)
+    assert (v["action"], v["reason_code"]) == ("stop", "range-unavailable")
+    assert v["git"]["conflicts"][0]["type"] == "range-unavailable"
+
+
+def test_status_log_indent0_line_does_not_fold_into_prior_entry(tmp_path, monkeypatch):
+    """Finding L: an indent-0 non-bullet line closes the entry; a trailing completion
+    sentence must not complete a task the bullet only started."""
+    monkeypatch.chdir(tmp_path)
+    plan = (
+        _ACTIVE_MD_PLAN
+        + "\n## Status Log\n\n- 2026-08-09 — started Task 1.2\nAll remaining work is done.\n"
+    )
+    write_plan("fold", plan)
+    init_to("fold", ("investigating", "planning", "implementing"))
+    v = decision.decide("fold")
+    assert "1.2" not in v["cursor"]["claimed_complete"]
+    assert v["cursor"]["pending"] == ["1.1", "1.2"]
+
+
+def test_wait_route_surfaces_waiting_on(tmp_path, monkeypatch):
+    """Finding H: the wait route carries the blocker identity; ready_to_merge is null."""
+    monkeypatch.chdir(tmp_path)
+    write_plan("wt")
+    init_to("wt", PATHS["awaiting_ci"])
+    v = decision.decide("wt")
+    assert v["action"] == "wait"
+    assert v["waiting_on"] == "awaiting_ci"
+
+    write_plan("rtm")
+    init_to("rtm", PATHS["ready_to_merge"])
+    v2 = decision.decide("rtm")
+    assert v2["action"] == "wait"
+    assert v2["waiting_on"] is None
