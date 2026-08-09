@@ -53,11 +53,26 @@ _MD_FIELD = re.compile(
 # associated with one `Task X.Y` mention never completes another task named in the same
 # entry; an explicit non-completion marker keeps that task pending.
 _ID_RE = re.compile(r"\d+(?:\.\d+)+")
-# A keyword-anchored id list after one `task(s)` keyword: `Tasks 2.1, 2.2, 2.3` or a
-# `1.1–1.4` range.  Used only to decide which non-plan ids are `unknown` (fail closed) vs
-# a bare number to ignore.
+# A keyword-anchored id list after one `task(s)` keyword: `Tasks 2.1, 2.2, 2.3`, a
+# `Tasks 0.1/0.2/0.3` slash-list, or a `1.1–1.4` range.  A keyword-anchored id is claimable
+# on the strength of the entry's completion alone (a cross-reference like `task 3.1` beside
+# a per-wave completion); a BARE number needs completion evidence in its own clause, which
+# is what separates a real task ref from `ruff to 1.2` / `design 5.4`.  Also decides which
+# non-plan ids are `unknown` (fail closed) vs a bare number to ignore.
 _TASK_KEYWORD = re.compile(
-    r"(?i)\btasks?\s+#?(\d+(?:\.\d+)+(?:\s*(?:,|and|&|\+|·|–|-)\s*#?\d+(?:\.\d+)+)*)"
+    r"(?i)\btasks?\s+#?(\d+(?:\.\d+)+(?:\s*(?:,|and|&|\+|·|/|–|-)\s*#?\d+(?:\.\d+)+)*)"
+)
+# Clause boundaries: sentence/`;` breaks plus the em-dash the Status Log uses between a
+# mention and its follow-on note.  Splitting only scopes suppression locality — the
+# completion gate is entry-level — so a finer split never drops a real completion.
+_CLAUSE_SEP = re.compile(r"[;.]\s+|\s+—\s+")
+# A reference decimal (a version, doc section, or percentage) that collides with a real
+# task id: `bumped ruff to 1.2`, `per design 5.4`, `coverage 2.1%`.  Suppressed by the word
+# immediately before the id or a trailing `%` — corpus-checked to hit no real task mention,
+# which never sits right after one of these words (it sits after `task`/`wave`/`(`/a sha).
+_REF_PRE = re.compile(
+    r"(?i)\b(?:to|per|of|via|v|versions?|sections?|§|design|coverage|ruff|deps?"
+    r"|bump(?:ed)?)\s+#?$"
 )
 # render_plan's build-kind vocabulary + ✓ + done: the completion signals resume must
 # recognise to stay at parity with the renderer's done set on non-pending entries.
@@ -70,6 +85,14 @@ _COMPLETE_RE = re.compile(
 _NONCOMPLETE_RE = re.compile(
     r"\bpending\b|\bin[-\s]?progress\b|\bblocked\b|\bincomplete\b|\bwip\b|\btodo\b"
     r"|\bnot\s+(?:yet\s+)?(?:done|complete)",
+    re.I,
+)
+# Future / queued markers keep a mention pending even inside an otherwise-completed entry:
+# `Task 1.2 will follow` sits in a clause whose completion governs a *sibling*, not 1.2
+# (design 5.4).  Scoped to a single mention's own forward span so it never suppresses a
+# sibling that really is done.
+_FUTURE_RE = re.compile(
+    r"will\s+follow|to\s+follow|\bup\s+next\b|\bnext\b|\bstarting\b|\bupcoming\b",
     re.I,
 )
 _BACKTICK_SHA = re.compile(r"`([0-9a-fA-F]{7,40})`")
@@ -212,7 +235,13 @@ def _parse_md_tasks(ptext: str) -> list[dict]:
 
 
 def _xml_task_from_block(block: str) -> dict:
-    idm = re.search(r'<task\b[^>]*\bid="([^"]*)"', block)
+    # Bind the FIRST real `id` attribute of the opening tag (finding 4).  The old greedy
+    # `[^>]*\bid="` bound the LAST id-suffixed attribute (a trailing `data-id` would win);
+    # reading the attribute run like render_plan.parse_task_block and rejecting hyphen/word-
+    # prefixed names (`wave-id`, `data-id`) via the lookbehind binds only a standalone `id`.
+    open_m = re.search(r"<task\b([^>]*)>", block)
+    attrs = open_m.group(1) if open_m else ""
+    idm = re.search(r'(?<![\w-])id="([^"]*)"', attrs)
     tid = idm.group(1).strip() if idm else ""
     vm = re.search(r"<verify>(.*?)</verify>", block, re.DOTALL)
     return {"id": tid, "verify": vm.group(1).strip() if vm else ""}
@@ -313,32 +342,48 @@ def _fill_range(a: str, b: str, valid: set[str]) -> list[str]:
 def parse_status_completion(ptext: str, valid: set[str]) -> dict:
     """Reconstruct completion from the Status Log, per task mention (design 5.4).
 
-    Returns {complete: set, unknown: list, commits: {id: [sha]}}.  An entry with NO
-    non-completion marker is read WHOLE (render_plan parity): if it carries a completion
-    signal, every task id it names is claimed, and comma/`and`-lists plus hyphen/en-dash
-    ranges expand.  An entry that carries a pending/blocked/in-progress marker is split
-    into `;` clauses and each clause judged on its own, so `Task 1.1 complete; Task 1.2
-    pending` claims only 1.1 (the landmine stays closed).  SHAs are attributed to each
-    mention's own segment, never entry-wide.  A keyword-anchored id outside the plan is
-    `unknown` (fail closed); a bare non-plan number is ignored.
+    Returns {complete: set, unknown: list, commits: {id: [sha]}}.  An entry is considered
+    only when it carries completion evidence of its own — a completion marker or a commit
+    sha — so a pure note (`started Task 1.2`) claims nothing.  Within such an entry each
+    mention is judged in its own CELL (the span bounded by its neighbouring ids, clamped to
+    its clause): a non-completion or future marker in that cell (`pending`, `will follow`,
+    `next`) keeps only THAT mention pending, so `Task 1.1 done and Task 1.2 will follow`
+    stays at {1.1} — the reopened over-claim landmine — while a governing completion still
+    reaches sibling ids merely listed under one wave/sha (`Wave 1 — sha (1.1, 2.1)`).  A
+    reference decimal that collides with a task id is dropped when a version/section word
+    sits immediately before it (`ruff to 1.2`, `design 5.4`) or a `%` immediately after
+    (`coverage 2.1%`).  Comma/`and`/slash lists and hyphen/en-dash ranges under a `task(s)`
+    keyword expand.  A sha is attributed to its own mention's segment; the first mention's
+    segment widens back to the clause start so a leading `(sha): tasks 1.1–1.4` attributes.
+    A keyword-anchored id outside the plan is `unknown` (fail closed); a bare one is ignored.
     """
     complete: set[str] = set()
     unknown: list[str] = []
     commits: dict[str, list[str]] = {}
     for blob in _status_entries(_status_log_section(ptext)):
-        clauses = blob.split(";") if _NONCOMPLETE_RE.search(blob) else [blob]
-        for clause in clauses:
-            if not (_COMPLETE_RE.search(clause) and not _NONCOMPLETE_RE.search(clause)):
-                continue
-            keyword_ids = {
-                idm.group(0)
-                for km in _TASK_KEYWORD.finditer(clause)
-                for idm in _ID_RE.finditer(km.group(1))
-            }
+        # Entry-level gate: no completion evidence anywhere in the entry -> nothing is done.
+        if not (_COMPLETE_RE.search(blob) or _BACKTICK_SHA.search(blob)):
+            continue
+        for clause in _CLAUSE_SEP.split(blob):
+            kw_spans = [m.span(1) for m in _TASK_KEYWORD.finditer(clause)]
             toks = [(m.group(0), m.start(), m.end()) for m in _ID_RE.finditer(clause)]
             for i, (tid, start, end) in enumerate(toks):
-                seg_end = toks[i + 1][1] if i + 1 < len(toks) else len(clause)
-                shas = _BACKTICK_SHA.findall(clause[start:seg_end])
+                # Cell = this mention's neighbourhood (prev id end .. next id start, clamped
+                # to the clause); a non-completion / future marker here suppresses only this
+                # mention, catching both `X pending` (after) and `next up: X` (before).
+                cell_lo = toks[i - 1][2] if i > 0 else 0
+                cell_hi = toks[i + 1][1] if i + 1 < len(toks) else len(clause)
+                cell = clause[cell_lo:cell_hi]
+                if _NONCOMPLETE_RE.search(cell) or _FUTURE_RE.search(cell):
+                    continue
+                # Reject a reference decimal that collides with a task id (`ruff to 1.2`,
+                # `2.1%`): a real mention never sits right after a version/section word.
+                if _REF_PRE.search(clause[:start]) or clause[end : end + 1] == "%":
+                    continue
+                is_keyword = any(lo <= start < hi for lo, hi in kw_spans)
+                # SHA span widens back to the previous mention (clause start for the first)
+                # so a leading `(sha): tasks 1.1–1.4` attributes to the ids that follow it.
+                shas = _BACKTICK_SHA.findall(clause[(0 if i == 0 else start) : cell_hi])
                 ids = [tid]
                 if i + 1 < len(toks) and re.fullmatch(
                     r"\s*[–-]\s*", clause[end : toks[i + 1][1]]
@@ -351,7 +396,7 @@ def parse_status_completion(ptext: str, valid: set[str]) -> dict:
                         for s in shas:
                             if s not in bucket:
                                 bucket.append(s)
-                    elif cid in keyword_ids and cid not in unknown:
+                    elif is_keyword and cid not in unknown:
                         unknown.append(cid)
     return {"complete": complete, "unknown": unknown, "commits": commits}
 
@@ -435,16 +480,21 @@ def _resolve_base(base: str | None) -> tuple[str | None, str, str | None]:
             return None, "explicit-not-ancestor", None
         return base, "explicit", full
 
+    # Env-declared bases are TERMINAL, mirroring resolve-base-ref.sh which binds the env
+    # tier and exits 1 when it does not resolve rather than falling through to
+    # upstream/derivation and silently diffing against a different base (finding G).
     if os.environ.get("VERIFY_ROWS_BASE"):
         ref = os.environ["VERIFY_ROWS_BASE"]
         full = commit(ref)
         if full:
             return ref, "VERIFY_ROWS_BASE", full
+        return None, "VERIFY_ROWS_BASE-unresolved", None
     if os.environ.get("GITHUB_BASE_REF"):
         ref = f"origin/{os.environ['GITHUB_BASE_REF']}"
         full = commit(ref)
         if full:
             return ref, "GITHUB_BASE_REF", full
+        return None, "GITHUB_BASE_REF-unresolved", None
     up = _upstream_nonself()
     if up:
         full = commit(up)
@@ -707,6 +757,9 @@ def _build_interrupt(state: str, snap) -> dict:
         "reason": "resolve the interrupt, then return to the recorded origin state",
         "interrupt": interrupt,
         "required_transition": required_transition,
+        # Every action=="wait" response carries the blocker at the same stable top-level
+        # path (finding H): the interrupt's own waiting_on, or the recovered origin blocker.
+        "waiting_on": proj.get("waiting_on") or recovered,
     }
 
 

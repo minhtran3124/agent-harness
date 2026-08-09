@@ -967,6 +967,49 @@ def test_declared_bogus_base_without_commits_stops(tmp_path, monkeypatch):
     assert (v2["action"], v2["reason_code"]) == ("stop", "base-unresolved")
 
 
+def test_declared_env_base_fails_closed_in_real_repo(tmp_path, monkeypatch):
+    """Finding G (round 2): an env-declared base (VERIFY_ROWS_BASE / GITHUB_BASE_REF) that
+    does not resolve must be TERMINAL — never fall through to upstream/derivation and
+    silently diff against a different base (resolve-base-ref.sh exits 1 there).  Runs inside
+    a real git repo with a derivable ancestor so the fall-through is genuinely exercised;
+    the tmp-dir-only test above passes for the wrong reason (a non-git dir has nothing to
+    fall through to)."""
+    monkeypatch.chdir(tmp_path)
+
+    def g(*a):
+        subprocess.run(
+            ["git", *a], cwd=tmp_path, check=True, capture_output=True, text=True
+        )
+
+    g("init", "-q")
+    g("config", "user.email", "t@t")
+    g("config", "user.name", "t")
+    g("commit", "--allow-empty", "-q", "-m", "base")
+    g("branch", "mainline")  # an ancestor ref derivation WOULD fall through to
+    g("commit", "--allow-empty", "-q", "-m", "head")
+    head = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=tmp_path, capture_output=True, text=True
+    ).stdout.strip()
+
+    # bogus VERIFY_ROWS_BASE, no claimed commits -> stop, never no-claimed-commits.
+    write_plan("eb")
+    init_to("eb", ("investigating", "planning", "implementing"))
+    monkeypatch.setenv("VERIFY_ROWS_BASE", "bogusref")
+    v = decision.decide("eb")
+    assert (v["action"], v["reason_code"]) == ("stop", "base-unresolved")
+    assert v["git"]["base_reason"] == "VERIFY_ROWS_BASE-unresolved"
+
+    # bogus GITHUB_BASE_REF WITH a claimed commit -> still stops; must NOT validate the sha
+    # against the derived `mainline` ancestor.
+    monkeypatch.delenv("VERIFY_ROWS_BASE")
+    monkeypatch.setenv("GITHUB_BASE_REF", "no-such-branch")
+    write_plan("eb2", _plan_with_claim(head))
+    init_to("eb2", ("investigating", "planning", "implementing"))
+    v2 = decision.decide("eb2")
+    assert (v2["action"], v2["reason_code"]) == ("stop", "base-unresolved")
+    assert v2["git"]["base_reason"] == "GITHUB_BASE_REF-unresolved"
+
+
 def test_no_declared_base_and_no_commits_proceeds(tmp_path, monkeypatch):
     """Finding G scope: the auto-derived (undeclared) path still falls through cleanly when
     there is nothing to validate."""
@@ -1054,3 +1097,117 @@ def test_wait_route_surfaces_waiting_on(tmp_path, monkeypatch):
     v2 = decision.decide("rtm")
     assert v2["action"] == "wait"
     assert v2["waiting_on"] is None
+
+
+# --- round-2 correctness regressions ---------------------------------------------------
+
+_V4 = {"1.1", "1.2", "1.3", "1.4"}
+
+
+def _comp(text, valid=_V4):
+    return decision.parse_status_completion(
+        "## Status Log\n\n- 2026-08-09 — " + text + "\n", set(valid)
+    )
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Task 1.1 done and Task 1.2 will follow",
+        "Task 1.1 shipped. Next up: Task 1.2",
+        "Task 1.1 merged, Task 1.2 next",
+        "Task 1.1 verified; starting Task 1.2",
+        "Task 1.1 complete. Task 1.2 pending",
+    ],
+)
+def test_completion_landmine_claims_only_the_completed_mention(text):
+    """Round-2 finding 1: a completion marker governing one mention must NOT complete a
+    future/pending sibling named in the same entry (the reopened over-claim landmine)."""
+    assert sorted(_comp(text)["complete"]) == ["1.1"]
+
+
+def test_completion_mixed_list_with_trailing_pending_endash():
+    """Round-2 finding 1: `Tasks 1.1, 1.2 complete — 1.3 pending` claims the completed list
+    but not the trailing pending id."""
+    assert sorted(_comp("Tasks 1.1, 1.2 complete — 1.3 pending")["complete"]) == [
+        "1.1",
+        "1.2",
+    ]
+
+
+@pytest.mark.parametrize(
+    "text,expected",
+    [
+        ("implemented exactly per design 5.4", []),
+        ("Task 1.1 complete (coverage 2.1% -> 5.4%)", ["1.1"]),
+        ("Task 1.1 done; bumped ruff to 1.2", ["1.1"]),
+    ],
+)
+def test_completion_reference_decimals_are_not_claimed(text, expected):
+    """Round-2 finding 1: a version/section/percentage decimal that collides with a task id
+    (`ruff to 1.2` — 1.2 IS a plan task here) must not be claimed as complete."""
+    assert sorted(_comp(text)["complete"]) == expected
+
+
+def test_completion_multi_id_and_range_still_expand():
+    """Round-2 finding 1: legitimate multi-id lists and ranges keep expanding to members."""
+    v6 = {"2.1", "2.2", "2.3", "2.4"}
+    assert sorted(_comp("Tasks 2.1, 2.2, 2.3 done", v6)["complete"]) == [
+        "2.1",
+        "2.2",
+        "2.3",
+    ]
+    assert sorted(_comp("tasks 1.1–1.4 complete")["complete"]) == [
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+    ]
+
+
+def test_completion_leading_sha_attributes_to_following_ids():
+    """Round-2 finding 1: a sha stated BEFORE the ids (`wave 1 shipped (sha): tasks 1.1–1.4`)
+    is attributed to every id that follows it, not dropped."""
+    comp = _comp("wave 1 shipped (`78db5a6`): tasks 1.1–1.4")
+    assert comp["commits"] == {tid: ["78db5a6"] for tid in ("1.1", "1.2", "1.3", "1.4")}
+
+
+def test_interrupt_route_carries_waiting_on_at_top_level(tmp_path, monkeypatch):
+    """Round-2 finding 3: the interrupt route is action==wait, so it must expose the blocker
+    at the same stable top-level `waiting_on` path as every other wait response."""
+    monkeypatch.chdir(tmp_path)
+    write_plan("iw")
+    init_to("iw", ("investigating", "planning", "blocked"))
+    v = decision.decide("iw")
+    assert v["action"] == "wait"
+    assert v["waiting_on"] == "blocker"  # the interrupt's own waiting_on
+    assert set(v.keys()) == _KEYS and v["schema_version"] == 1
+
+
+def test_interrupt_route_waiting_on_falls_back_to_recovered_origin(
+    tmp_path, monkeypatch
+):
+    """Round-2 finding 3: when a waiting-origin interrupt recovers the original blocker, the
+    top-level waiting_on is populated (never null on a wait route)."""
+    monkeypatch.chdir(tmp_path)
+    write_plan("iw2")
+    init_to("iw2", ("investigating", "planning", "blocked"))
+    v = decision.decide("iw2")
+    assert v["action"] == "wait" and v["waiting_on"] is not None
+
+
+def test_xml_id_binding_prefers_first_real_id_attribute():
+    """Round-2 finding 4: bind the first REAL id attribute — a leading `wave-id` or a
+    trailing `data-id` must never win over the standalone `id`."""
+    assert (
+        decision._xml_task_from_block(
+            '<task wave-id="3" id="1.1"><verify>v</verify></task>'
+        )["id"]
+        == "1.1"
+    )
+    assert (
+        decision._xml_task_from_block(
+            '<task id="1.1" data-id="99"><verify>v</verify></task>'
+        )["id"]
+        == "1.1"
+    )
