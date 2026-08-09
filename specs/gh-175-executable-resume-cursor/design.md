@@ -140,11 +140,18 @@ The cursor parser supports both formats already accepted by execution:
 - canonical markdown `### Task` sections with `Files/Action/Verify/Done` fields;
 - legacy XML task blocks.
 
-Completion IDs come only from Status Log entries that contain a completion marker and real task IDs.
-Claimed commits are extracted from the same entry. A parity fixture runs the cursor parser and
-`render_plan.py` over representative markdown/XML/status-log inputs and requires the same ordered
-task IDs and done set. This bounds duplication without coupling runtime decisions to the visual
-renderer at import time.
+Completion is evaluated per task mention, never per Status Log entry. A real task ID is claimed
+complete only when its own mention is associated with a completion marker; a completion marker for
+one task cannot complete another task named in the same entry. An explicit non-completion marker
+such as `pending`, `in progress`, or `blocked` keeps that task pending. For example,
+`Task 1.1 complete; Task 1.2 pending` claims only `1.1`. Claimed commits are extracted from the same
+entry.
+
+A parity fixture runs the cursor parser and `render_plan.py` over representative markdown and
+legacy XML inputs and requires the same ordered task IDs. Completion semantics have a separate
+safety fixture covering mixed complete/pending entries; the renderer's presentation-grade done set
+is not authoritative for resume decisions. This bounds task-definition duplication without
+coupling runtime decisions to the visual renderer at import time.
 
 The helper never reports a claimed-complete task as freshly verified. Instead it returns that
 task's exact Verify command in `checks_to_rerun`. The skill must run those commands successfully

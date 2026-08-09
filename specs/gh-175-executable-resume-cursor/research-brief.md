@@ -85,9 +85,10 @@ not know that changing the decision schema affects `subagent-driven-development`
 
 - `runtime/run_state.py`: state sets, legal edges, chain validation, projection fold, and shared
   read lock. The resume helper must derive state vocabulary from this module rather than copy it.
-- `skills/visual-planner/render_plan.py`: current semantics for markdown/legacy task extraction,
-  Status Log parsing, and completed-task IDs. A small resume parser may be local to the helper, but
-  parity fixtures must prevent it from disagreeing with the renderer.
+- `skills/visual-planner/render_plan.py`: current semantics for markdown/legacy task extraction and
+  Status Log presentation. A small resume parser may be local to the helper; parity fixtures must
+  keep ordered task extraction aligned, while safety-critical completion is evaluated and tested
+  per task mention rather than inheriting the renderer's entry-wide done-set semantics.
 - `scripts/resolve-base-ref.sh`: the current conservative base-resolution policy. The runtime
   helper cannot depend on this path in a default consumer install, so it should accept an explicit
   `--base` and implement/test the same conservative fallback rules when none is supplied.

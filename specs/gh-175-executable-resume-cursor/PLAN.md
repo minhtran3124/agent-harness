@@ -71,7 +71,8 @@ existing authority rather than adding a second resume script. See `research-brie
 - Human/session judgment remains responsible for confirming waits/blockers and evaluating
   deviations; code supplies evidence and required transitions only.
 - Canonical markdown and legacy XML plans remain resumable, with parity fixtures against the live
-  renderer's ordered task IDs and done set.
+  renderer's ordered task IDs. Resume completion is associated per task mention and tested
+  independently from the renderer's presentation-grade done set.
 - No test may parse `SKILL.md` prose to prove lifecycle behavior.
 - Every focused Verify below must finish in under 60 seconds; run `bash scripts/run-tests.sh` once
   before shipping and record it in the Status Log/SUMMARY rather than as an SC row.
@@ -115,9 +116,11 @@ existing authority rather than adding a second resume script. See `research-brie
 - **Files:** runtime/resume_decision.py, runtime/test_resume_decision.py
 - **Action:** Replace the current partial verdict with the design's version-1 structured schema.
   Consume Task 1.1's locked snapshot; parse canonical markdown and legacy XML task definitions,
-  Verify commands, plan status, and completion-bearing Status Log entries; return ordered
-  `claimed_complete`, `pending`, `next_task`, and `checks_to_rerun`. Accept `--base`, otherwise apply
-  the conservative non-self upstream/nearest-ancestor policy; require claimed SHAs to resolve inside
+  Verify commands, plan status, and Status Log completion markers associated with individual task
+  mentions; return ordered `claimed_complete`, `pending`, `next_task`, and `checks_to_rerun`. A
+  mixed entry such as `Task 1.1 complete; Task 1.2 pending` must claim only `1.1`. Accept `--base`;
+  otherwise apply the conservative non-self upstream/nearest-ancestor policy. Require claimed SHAs
+  to resolve inside
   the chosen `BASE..HEAD`, and stop on ambiguity/conflict. Extract SUMMARY deviations and only a
   same-slug, <=7-day STATE hint. Encode the exact lifecycle matrix, shipped-plan repair exception,
   proposed/paused activation action, missing/invalid-plan stop, untracked-run behavior, and
@@ -126,9 +129,10 @@ existing authority rather than adding a second resume script. See `research-brie
   task-cursor conflict cannot override terminal/wait/repair/review-chain routing. Keep every valid
   decision exit 0, CLI misuse exit 2, unexpected failure exit 3. Never execute a Verify command or
   rewrite canonical evidence.
-  Add exact expected-result tests for every state/storage/plan combination, parity fixtures against
-  renderer cursor semantics, wrong-base/stale-STATE/paused-plan cases, schema stability, and
-  before/after canonical-file byte snapshots proving semantic read-only behavior.
+  Add exact expected-result tests for every state/storage/plan combination, task-order parity
+  fixtures against the renderer, a mixed complete/pending completion fixture,
+  wrong-base/stale-STATE/paused-plan cases, schema stability, and before/after canonical-file byte
+  snapshots proving semantic read-only behavior.
 - **Verify:** `python3 -m pytest runtime/test_resume_decision.py -q`
 - **Done:** the helper answers both lifecycle route and task cursor with stable reason codes; all
   current states have exact expected actions; every reproduced #175 gap and negative evidence case
@@ -158,7 +162,8 @@ existing authority rather than adding a second resume script. See `research-brie
 ## 5. Risks
 
 - **Duplicated PLAN parsing drifts from the renderer.** Mitigation: support only the two already
-  executable formats and require parity fixtures over ordered task IDs and the done set.
+  executable formats and require parity fixtures over ordered task IDs. Test safety-critical,
+  per-task completion association independently from the renderer's entry-wide done set.
 - **Base inference selects an old but valid ancestor.** Mitigation: explicit `--base` wins, self
   refs are excluded, selection provenance is returned, claimed SHAs must be inside the range, and
   ambiguity stops rather than guesses a conventional branch.
