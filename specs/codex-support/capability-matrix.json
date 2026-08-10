@@ -18,12 +18,15 @@
       "platforms": ["macos-arm64"],
       "source": {
         "kind": "captured-fixture",
-        "reference": "sanitized local CLI capture",
+        "reference": "isolated shell hook probe observing the Bash tool payload",
         "checked_at": "2026-08-10",
         "expires_at": "2026-11-08"
       },
-      "config": {"scope": "not-applicable", "sha256": null},
-      "evidence_path": "specs/codex-support/evidence/codex-0.147.0/doctor.json",
+      "config": {
+        "scope": "effective",
+        "sha256": "e48620dceb6b5f3e6075f5208d9144234bb45eceeeab0cfa773b2cfb379912b6"
+      },
+      "evidence_path": "specs/codex-support/evidence/codex-0.147.0/hooks-shell.json",
       "owner": "codex-support",
       "exit_condition": null
     },
@@ -37,7 +40,7 @@
       "platforms": ["macos-arm64"],
       "source": {
         "kind": "captured-fixture",
-        "reference": "sanitized local CLI capture",
+        "reference": "sanitized local CLI capture — feature availability only, not the payload envelope shape (Task 4.1 captures that)",
         "checked_at": "2026-08-10",
         "expires_at": "2026-11-08"
       },

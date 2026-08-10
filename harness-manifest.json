@@ -81,7 +81,8 @@
       "consumers": [
         "scripts/capture_codex_capabilities.sh",
         "tests/scripts/codex-capability-probe.test.sh",
-        "specs/codex-support/PLAN.md"
+        "specs/codex-support-phase-1/PLAN.md",
+        "specs/codex-support-phase-4/PLAN.md"
       ],
       "desc": "version-pinned Codex capability claims, evidence freshness, and explicit unknown ownership"
     },

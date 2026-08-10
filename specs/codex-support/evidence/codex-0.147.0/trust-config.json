@@ -1,16 +1,16 @@
 {
-  "schema_version": 1,
-  "runtime": "codex",
-  "cli_version": "0.147.0",
-  "platform": "macos-arm64",
-  "captured_at": "2026-08-10",
-  "config_hash": "sha256:e48620dceb6b5f3e6075f5208d9144234bb45eceeeab0cfa773b2cfb379912b6",
   "capture": "controlled-project-config",
+  "captured_at": "2026-08-10",
+  "cli_version": "0.147.0",
+  "config_hash": "sha256:e48620dceb6b5f3e6075f5208d9144234bb45eceeeab0cfa773b2cfb379912b6",
+  "platform": "macos-arm64",
   "result": {
-    "status": "observed",
-    "hooks_feature": "stable-enabled",
     "canonical_config_hashed": true,
+    "hooks_feature": "stable-enabled",
     "project_trust_status": "unknown",
+    "status": "observed",
     "trust_evidence_boundary": "requires disposable-account probe"
-  }
+  },
+  "runtime": "codex",
+  "schema_version": 1
 }

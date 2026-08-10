@@ -327,13 +327,20 @@ write(
     ),
 )
 
+hooks_entry = features.get("hooks", {})
+hooks_enabled = hooks_entry.get("enabled") is True
+if not hooks_entry:
+    hooks_feature = "unknown"
+else:
+    hooks_feature = f"{hooks_entry.get('maturity', 'unknown')}-{'enabled' if hooks_enabled else 'disabled'}"
+
 write(
     "trust-config.json",
     base(
         "controlled-project-config",
         {
             "status": "observed",
-            "hooks_feature": features.get("hooks", {}).get("maturity", "unknown"),
+            "hooks_feature": hooks_feature,
             "canonical_config_hashed": True,
             "project_trust_status": "unknown",
             "trust_evidence_boundary": "requires disposable-account probe",
@@ -361,8 +368,15 @@ def event_pair(tool_name):
     return {"PreToolUse", "PostToolUse"}.issubset(names)
 
 
-shell_observed = event_pair("Bash")
-patch_observed = event_pair("apply_patch")
+# A disabled/untrusted hooks feature cannot produce trustworthy hook evidence, so an
+# event that arrives anyway must not be promoted to observed.
+shell_observed = hooks_enabled and event_pair("Bash")
+patch_observed = hooks_enabled and event_pair("apply_patch")
+hook_exit_condition = (
+    "Run the explicit live probe in a trusted disposable project."
+    if hooks_enabled
+    else "Enable and trust the Codex hooks feature, then re-run the explicit live probe."
+)
 write(
     "hooks-shell.json",
     base(
@@ -373,7 +387,7 @@ write(
             "events": ["PreToolUse", "PostToolUse"] if shell_observed else [],
             "tool_input_keys": ["command"] if shell_observed else [],
             "command_redacted": True,
-            "exit_condition": None if shell_observed else "Run the explicit live probe in a trusted disposable project.",
+            "exit_condition": None if shell_observed else hook_exit_condition,
         },
         f"sha256:{config_digest}",
     ),
@@ -389,7 +403,7 @@ write(
             "matcher_aliases": ["Edit", "Write"],
             "tool_input_keys": ["command"] if patch_observed else [],
             "patch_redacted": True,
-            "exit_condition": None if patch_observed else "Run the explicit live probe in a trusted disposable project.",
+            "exit_condition": None if patch_observed else hook_exit_condition,
         },
         f"sha256:{config_digest}",
     ),
@@ -451,13 +465,16 @@ benchmark_ok = dependencies.get("jq", False)
 benchmark_root = work / "session-end-benchmark"
 (benchmark_root / "specs").mkdir(parents=True, exist_ok=True)
 (benchmark_root / "specs/STATE.md").write_text("# State\n\n## Session End Log\n")
-hook = pathlib.Path(__file__).resolve() if False else pathlib.Path.cwd() / "hooks/state-breadcrumb.sh"
 # The capture script is run from any directory, so use the exported repository hook path.
-hook = pathlib.Path(os.environ.get("STATE_BREADCRUMB_HOOK", str(hook)))
-for index in range(20):
-    if not hook.is_file():
-        benchmark_ok = False
-        break
+hook = pathlib.Path(
+    os.environ.get(
+        "STATE_BREADCRUMB_HOOK", str(pathlib.Path.cwd() / "hooks/state-breadcrumb.sh")
+    )
+)
+hook_present = hook.is_file()
+if not hook_present:
+    benchmark_ok = False
+for index in range(20 if hook_present else 0):
     payload = json.dumps(
         {
             "session_id": f"benchmark-{index}",
@@ -502,7 +519,13 @@ write(
             "documented_max_timeout_ms": 3000,
             "support_threshold_ms": 800,
             "within_threshold": within,
-            "exit_condition": None if within else "Install dependencies and keep max runtime below 800 ms.",
+            "exit_condition": None
+            if within
+            else (
+                f"Run the capture from a checkout that contains {hook.name}."
+                if not hook_present
+                else "Install dependencies and keep max runtime below 800 ms."
+            ),
         },
     ),
 )
@@ -529,8 +552,10 @@ for path in sorted(staged.glob("*.json")):
         raise SystemExit(f"unsafe private data remained in {path.name}: {', '.join(problems)}")
 PY
 
+# An observed SessionEnd claim needs the full 20-run budget; a benchmark that could not
+# run at all is published as an explicit unknown rather than aborting the whole capture.
 if [ ! -f "$STAGED/session-end-timing.json" ] || \
-   ! python3 -c 'import json,sys; assert json.load(open(sys.argv[1]))["result"]["samples"] >= 20' "$STAGED/session-end-timing.json" 2>/dev/null; then
+   ! python3 -c 'import json,sys; r=json.load(open(sys.argv[1]))["result"]; assert r["samples"] >= 20 or r["status"] == "unknown"' "$STAGED/session-end-timing.json" 2>/dev/null; then
   die "SessionEnd benchmark did not complete"
 fi
 

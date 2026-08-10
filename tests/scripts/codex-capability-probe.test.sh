@@ -40,7 +40,7 @@ case "${1:-}" in
     printf 'codex-cli %s\n' "${FAKE_VERSION:-0.147.0}"
     ;;
   features)
-    printf '%-36s %-18s %s\n' hooks stable true
+    printf '%-36s %-18s %s\n' hooks stable "${FAKE_HOOKS_ENABLED:-true}"
     printf '%-36s %-18s %s\n' multi_agent stable true
     printf '%-36s %-18s %s\n' plugins stable true
     printf '%-36s %-18s %s\n' unified_exec stable true
@@ -48,6 +48,11 @@ case "${1:-}" in
   doctor)
     if [ "${FAKE_DOCTOR_FAIL:-0}" = 1 ]; then
       exit 9
+    fi
+    if [ "${FAKE_DOCTOR_LEAKS_ID:-0}" = 1 ]; then
+      # A retained field (not a dropped `details` blob) carrying a private path.
+      printf '%s\n' '{"schemaVersion":1,"overallStatus":"ok","checks":{"config.load":{"id":"/Users/private/repo/config.load","category":"config","status":"ok"}}}'
+      exit 0
     fi
     printf '%s\n' '{"schemaVersion":1,"overallStatus":"ok","codexVersion":"0.147.0","checks":{"config.load":{"id":"config.load","category":"config","status":"ok","details":{"cwd":"/Users/private/repo","auth file":"/Users/private/.codex/auth.json"}}}}'
     ;;
@@ -169,6 +174,43 @@ if PATH="$TOOL_PATH" CODEX_CAPTURE_DATE=2026-08-10 "$SCRIPT" \
 else
   not_ok "missing tools degrade to explicit unknown"
 fi
+
+DISABLED="$TMP/hooks-disabled"
+if FAKE_HOOKS_ENABLED=false CODEX_CAPTURE_DATE=2026-08-10 "$SCRIPT" \
+  --output "$DISABLED" --codex-bin "$FAKE" --platform-label macos-arm64 \
+  --allow-live-model-probe >/dev/null; then
+  assert "disabled/untrusted hooks keep hook evidence unknown" python3 -c \
+    'import json,sys; d=json.load(open(sys.argv[1]))["result"]; assert d["status"] == "unknown" and "trust" in d["exit_condition"].lower()' \
+    "$DISABLED/hooks-shell.json"
+  assert "disabled hooks feature is recorded, not silently dropped" python3 -c \
+    'import json,sys; assert json.load(open(sys.argv[1]))["result"]["hooks_feature"] == "stable-disabled"' \
+    "$DISABLED/trust-config.json"
+else
+  not_ok "disabled/untrusted hooks keep hook evidence unknown"
+fi
+
+# A checkout without hooks/state-breadcrumb.sh must publish an explicit unknown rather
+# than aborting the whole capture (the benchmark is one row, not the whole contract).
+NOHOOK="$TMP/no-hook-checkout"
+mkdir -p "$NOHOOK/scripts"
+cp "$SCRIPT" "$NOHOOK/scripts/"
+if CODEX_CAPTURE_DATE=2026-08-10 "$NOHOOK/scripts/capture_codex_capabilities.sh" \
+  --output "$NOHOOK/out" --codex-bin "$FAKE" --platform-label macos-arm64 >/dev/null; then
+  assert "absent breadcrumb hook degrades to explicit unknown" python3 -c \
+    'import json,sys; d=json.load(open(sys.argv[1]))["result"]; assert d["status"] == "unknown" and d["samples"] == 0 and "state-breadcrumb.sh" in d["exit_condition"]' \
+    "$NOHOOK/out/session-end-timing.json"
+else
+  not_ok "absent breadcrumb hook degrades to explicit unknown"
+fi
+
+LEAK="$TMP/sanitizer-rejection"
+if FAKE_DOCTOR_LEAKS_ID=1 CODEX_CAPTURE_DATE=2026-08-10 "$SCRIPT" \
+  --output "$LEAK" --codex-bin "$FAKE" --platform-label macos-arm64 >/dev/null 2>&1; then
+  not_ok "sanitizer rejects a private path that survived normalization"
+else
+  ok "sanitizer rejects a private path that survived normalization"
+fi
+assert "rejected capture publishes no evidence" test ! -e "$LEAK/doctor.json"
 
 FALLBACK="$TMP/doctor-fallback"
 if FAKE_DOCTOR_FAIL=1 CODEX_CAPTURE_DATE=2026-08-10 "$SCRIPT" \

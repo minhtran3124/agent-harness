@@ -31,7 +31,7 @@ def valid_matrix(tmp_path):
                 "platform": "macos-arm64",
                 "captured_at": "2026-08-10",
                 "config_hash": "not-applicable",
-                "capture": "deterministic-probe",
+                "capture": "isolated-live-model-probe",
                 "result": {"status": "observed", "tool_name": "Bash"},
             }
         )
@@ -229,6 +229,25 @@ def test_fixture_with_private_path_is_rejected(valid_matrix):
     payload["result"]["cwd"] = "/Users/private/repository"
     fixture.write_text(json.dumps(payload))
     assert any("private or absolute path" in error for error in validate(valid_matrix))
+
+
+def test_fixture_capture_label_must_be_in_the_closed_vocabulary(valid_matrix):
+    """A hand-authored fixture must not be able to wear a captured provenance label."""
+    root, _, _ = valid_matrix
+    fixture = root / "specs/codex-support/evidence/codex-0.147.0/shell.json"
+    payload = json.loads(fixture.read_text())
+    payload["capture"] = "hand-written-by-an-agent"
+    fixture.write_text(json.dumps(payload))
+    assert any("capture unsupported" in error for error in validate(valid_matrix))
+
+
+def test_transcribed_capture_label_is_accepted(valid_matrix):
+    root, _, _ = valid_matrix
+    fixture = root / "specs/codex-support/evidence/codex-0.147.0/shell.json"
+    payload = json.loads(fixture.read_text())
+    payload["capture"] = "transcribed-isolated-live-probe"
+    fixture.write_text(json.dumps(payload))
+    assert validate(valid_matrix) == []
 
 
 def test_observed_claim_rejects_unknown_fixture_result(valid_matrix):

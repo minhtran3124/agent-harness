@@ -61,6 +61,20 @@ ALLOWED_SOURCE_KINDS = {
     "unavailable",
 }
 ALLOWED_CONFIG_SCOPES = {"effective", "not-applicable", "unknown"}
+# A fixture's `capture` names how it was produced.  The first group is emitted verbatim
+# by scripts/capture_codex_capabilities.sh; `transcribed-isolated-live-probe` is the only
+# label a human may write by hand, and it means the fixture was transcribed from an
+# earlier observed run rather than re-derived by the capture tool.  Keeping the vocabulary
+# closed is what stops a hand-authored file from wearing a captured label.
+ALLOWED_CAPTURES = {
+    "local-cli-non-model",
+    "local-dependency-probe",
+    "controlled-project-config",
+    "isolated-local-benchmark",
+    "isolated-live-model-probe",
+    "live-model-probe-not-observed",
+    "transcribed-isolated-live-probe",
+}
 OFFICIAL_DOC_HOSTS = {
     "developers.openai.com",
     "learn.chatgpt.com",
@@ -212,6 +226,10 @@ def _validate_fixture(
     if payload.get("platform") not in capability.get("platforms", []):
         errors.append(
             f"{label}.evidence fixture platform is not declared by the capability"
+        )
+    if payload.get("capture") not in ALLOWED_CAPTURES:
+        errors.append(
+            f"{label}.evidence fixture capture unsupported: {payload.get('capture')!r}"
         )
     result = payload.get("result")
     if not isinstance(result, dict) or result.get("status") != "observed":

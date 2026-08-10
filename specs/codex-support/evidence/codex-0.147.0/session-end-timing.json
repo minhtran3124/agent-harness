@@ -1,21 +1,22 @@
 {
-  "schema_version": 1,
-  "runtime": "codex",
-  "cli_version": "0.147.0",
-  "platform": "macos-arm64",
-  "captured_at": "2026-08-10",
-  "config_hash": "not-applicable",
   "capture": "isolated-local-benchmark",
+  "captured_at": "2026-08-10",
+  "cli_version": "0.147.0",
+  "config_hash": "not-applicable",
+  "platform": "macos-arm64",
   "result": {
-    "status": "observed",
-    "hook": "state-breadcrumb.sh",
-    "samples": 20,
-    "min_ms": 34.493,
-    "p95_ms": 36.299,
-    "max_ms": 39.087,
     "documented_default_timeout_ms": 1000,
     "documented_max_timeout_ms": 3000,
+    "exit_condition": null,
+    "hook": "hooks/state-breadcrumb.sh",
+    "max_ms": 28.599,
+    "min_ms": 26.598,
+    "p95_ms": 27.878,
+    "samples": 20,
+    "status": "observed",
     "support_threshold_ms": 800,
     "within_threshold": true
-  }
+  },
+  "runtime": "codex",
+  "schema_version": 1
 }
