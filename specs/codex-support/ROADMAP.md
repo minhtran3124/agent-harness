@@ -15,7 +15,7 @@ with a complete and honest evidence record instead of waiting on the whole initi
 | Phase | Plan | Status | Delivers |
 | --- | --- | --- | --- |
 | 1 | `specs/codex-support-phase-1/PLAN.md` | active | versioned capability baseline: matrix, validator, sanitized 0.147.0 evidence, capture contract suite |
-| 2 | `specs/codex-support-phase-2/PLAN.md` | proposed | evidence-driven packaging decision: disposable hybrid-vs-direct probe, recorded decision + fallback trigger |
+| 2 | `specs/codex-support-phase-2/PLAN.md` | active | evidence-driven packaging decision: disposable hybrid-vs-direct probe, recorded decision + fallback trigger |
 | 3 | `specs/codex-support-phase-3/PLAN.md` | proposed | semantic source neutralisation: repository-rooted rule delivery, invocation-neutral prose, neutral agent contracts |
 | 4 | `specs/codex-support-phase-4/PLAN.md` | proposed | runtime-neutral hook input seam: one payload normaliser, fail-closed gates, advisory hooks unchanged |
 
@@ -120,3 +120,7 @@ packaging decision, runtime-neutral instruction/agent policy, and one tested hoo
   SUMMARY's Verify rows cover **all** SC ids. Split into four phase slugs, each with its own SC
   table numbered from SC-1; this file became the roadmap. Task and constraint text was carried over
   verbatim except where a phase-specific correction is recorded in that phase's Status Log.
+- 2026-08-10 — Phase 2 completed locally against Codex CLI 0.147.0. The isolated local lifecycle
+  probe selected hybrid packaging; direct sync is an explicit but currently unproved fallback with
+  a Phase-5 owner/exit condition. Runtime skill invocation, hook trust, and direct project discovery
+  remain explicit Phase-5 gates. See `specs/codex-support-phase-2/SUMMARY.md`.

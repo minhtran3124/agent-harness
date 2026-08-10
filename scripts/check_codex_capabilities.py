@@ -74,6 +74,7 @@ ALLOWED_CAPTURES = {
     "isolated-live-model-probe",
     "live-model-probe-not-observed",
     "transcribed-isolated-live-probe",
+    "isolated-local-packaging-probe",
 }
 OFFICIAL_DOC_HOSTS = {
     "developers.openai.com",

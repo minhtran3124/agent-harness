@@ -349,12 +349,12 @@
       "platforms": ["macos-arm64"],
       "source": {
         "kind": "captured-fixture",
-        "reference": "CLI surface only; lifecycle remains Phase 2",
+        "reference": "isolated local marketplace and plugin lifecycle probe; runtime execution not claimed",
         "checked_at": "2026-08-10",
         "expires_at": "2026-11-08"
       },
       "config": {"scope": "not-applicable", "sha256": null},
-      "evidence_path": "specs/codex-support/evidence/codex-0.147.0/doctor.json",
+      "evidence_path": "specs/codex-support/evidence/codex-0.147.0/packaging-hybrid.json",
       "owner": "codex-support",
       "exit_condition": null
     },

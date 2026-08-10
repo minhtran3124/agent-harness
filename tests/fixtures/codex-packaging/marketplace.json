@@ -1,0 +1,20 @@
+{
+  "name": "harness-probe",
+  "interface": {
+    "displayName": "Harness Packaging Probe"
+  },
+  "plugins": [
+    {
+      "name": "harness-hybrid",
+      "source": {
+        "source": "local",
+        "path": "./plugins/harness-hybrid"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}
