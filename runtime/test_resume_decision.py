@@ -1117,19 +1117,24 @@ def _comp(text, valid=_V4):
 
 
 @pytest.mark.parametrize(
-    "text",
+    "left,marker",
     [
-        "Task 1.1 done and Task 1.2 will follow",
-        "Task 1.1 shipped. Next up: Task 1.2",
-        "Task 1.1 merged, Task 1.2 next",
-        "Task 1.1 verified; starting Task 1.2",
-        "Task 1.1 complete. Task 1.2 pending",
+        ("Task 1.1 done", "will follow Task 1.2"),
+        ("Task 1.1 shipped", "Next up: Task 1.2"),
+        ("Task 1.1 merged", "Task 1.2 next"),
+        ("Task 1.1 verified", "starting Task 1.2"),
+        ("Task 1.1 complete", "Task 1.2 pending"),
+        ("Task 1.1 complete", "up next Task 1.2"),
+        ("Task 1.1 done", "Task 1.2 blocked"),
     ],
 )
-def test_completion_landmine_claims_only_the_completed_mention(text):
-    """Round-2 finding 1: a completion marker governing one mention must NOT complete a
-    future/pending sibling named in the same entry (the reopened over-claim landmine)."""
-    assert sorted(_comp(text)["complete"]) == ["1.1"]
+@pytest.mark.parametrize("sep", [". ", "; ", ", ", " — ", "\n  - "])
+def test_completion_landmine_claims_only_the_completed_mention(left, marker, sep):
+    """Round-2/3 finding: a completion governing one mention must NOT complete a future/pending
+    sibling in the same entry — across EVERY separator.  Round-3's positional suppression bug
+    surfaced only for `,` and newline sub-bullets, which the old `.`/`;`-only fixtures missed;
+    sweeping separators is the regression guard for that whole class (design 5.4)."""
+    assert sorted(_comp(left + sep + marker)["complete"]) == ["1.1"]
 
 
 def test_completion_mixed_list_with_trailing_pending_endash():

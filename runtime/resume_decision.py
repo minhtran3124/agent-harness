@@ -405,21 +405,23 @@ def parse_status_completion(ptext: str, valid: set[str]) -> dict:
             nxt = toks[i + 1][1] if i + 1 < len(toks) else chi
             fwd = blob[end : min(chi, nxt)]
             back = blob[max(clo, toks[i - 1][2] if i > 0 else clo) : start]
-            # Completion-GOVERNED suppression.  A future word that precedes the id (`Next up:
-            # Task 1.2`, `starting Task 1.2`) suppresses it.  A non-completion/future word that
-            # follows suppresses ONLY when no completion marker sits between the id and it — so
-            # `1.2 next` / `1.2 will follow` stay pending, but `1.2 complete, next wave 2` is
-            # claimed (the completion governs; the later `next` is about a sibling/wave).
-            supp = bool(_FUTURE_RE.search(back)) and not _COMPLETE_RE.search(back)
+            # Suppression.  An explicit non-completion marker (`pending`/`blocked`/…) ALWAYS
+            # suppresses — the strongest negative signal is never overridden by word order.
+            # A FUTURE word is completion-GOVERNED: it suppresses only when no completion marker
+            # sits AFTER it, so `1.2 next` / `1.2 will follow` stay pending while `1.2 complete,
+            # next wave 2` is claimed (the completion governs; the later `next` is a sibling/
+            # wave).  Backward guard is positional too: a future word before the id (`Next up:
+            # Task 1.2`) suppresses unless a completion follows that future word within `back`.
+            back_fut = list(_FUTURE_RE.finditer(back))
+            supp = (
+                bool(back_fut) and _COMPLETE_RE.search(back, back_fut[-1].end()) is None
+            )
             if not supp:
-                marks = [
-                    m.start()
-                    for rx in (_NONCOMPLETE_RE, _FUTURE_RE)
-                    if (m := rx.search(fwd))
-                ]
-                if marks:
+                if _NONCOMPLETE_RE.search(fwd):
+                    supp = True
+                elif fm := _FUTURE_RE.search(fwd):
                     comp = _COMPLETE_RE.search(fwd)
-                    if comp is None or min(marks) < comp.start():
+                    if comp is None or fm.start() < comp.start():
                         supp = True
             if supp:
                 continue
