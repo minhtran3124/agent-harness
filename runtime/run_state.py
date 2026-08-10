@@ -40,6 +40,7 @@ import os
 import re
 import sys
 import uuid
+from dataclasses import dataclass
 from datetime import datetime, timezone
 
 
@@ -444,6 +445,92 @@ def validate_chain(events, slug, path):
         prev = ev
 
 
+# --- Locked durable-state snapshot (GitHub issue #175, Task 1.1) -------------
+
+# The closed vocabulary snapshot_run_state classifies a slug's on-disk storage into
+# (design section 5.1). Kept as a named set so both consumers - cmd_status here and
+# resume_decision in a later task - branch on the same six values, not scattered
+# string literals.
+SNAPSHOT_STATUSES = frozenset(
+    {
+        "untracked",  # neither RUN.json nor events.jsonl exists
+        "projection-only",  # RUN.json exists, the canonical log does not
+        "events-only",  # a valid log exists, its projection does not
+        "drift",  # both exist, but RUN.json differs from a validated fold
+        "invalid",  # unreadable storage or an illegal event chain (StorageError)
+        "consistent",  # validated events plus a matching projection
+    }
+)
+
+
+@dataclass
+class RunSnapshot:
+    """Neutral, read-only result of snapshot_run_state.
+
+    - status:     one of SNAPSHOT_STATUSES (storage topology).
+    - events:     the validated event list when a legal log was read
+                  (events-only / drift / consistent), else None.
+    - projection: the RUN.json-shaped dict where one is available - the fold of the
+                  log for events-only / drift / consistent, or the raw RUN.json for
+                  projection-only. None for untracked / invalid.
+    - error:      the StorageError message when status == "invalid", else None.
+    """
+
+    status: object
+    events: object = None
+    projection: object = None
+    error: object = None
+
+
+def snapshot_run_state(slug):
+    """Classify a slug's durable storage topology under the shared read lock and
+    return the validated data, without printing or mutating any canonical evidence.
+
+    This is the single locked primitive both cmd_status and (in a later task)
+    resume_decision consume; each keeps its own policy on top of the neutral result.
+    All reads happen inside locked_run_readonly, so a transition holding the exclusive
+    locked_run across its append -> projection-write cannot interleave and make the
+    fold read here newer than the RUN.json it is compared against - i.e. no false
+    `drift` verdict on storage that was always consistent.
+
+    Read-only by construction: it never writes, rebuilds, or creates a spec directory
+    or lock file beyond what locked_run_readonly already does when the spec dir
+    already exists (nothing at all for an uninitialized/typo slug). read_events uses
+    the default validate=True, so all issue #174 chain validation fires here and an
+    illegal chain is reported as `invalid`, never folded.
+    """
+    with locked_run_readonly(slug):
+        run_exists = os.path.exists(run_json_path(slug))
+        events_exist = os.path.exists(events_path(slug))
+        if not run_exists and not events_exist:
+            return RunSnapshot(status="untracked")
+        try:
+            if events_exist:
+                # A legal history only; an illegal chain raises StorageError and is
+                # caught below as `invalid`, so project() only ever folds a valid log.
+                events = read_events(slug)
+                projected = project(events)
+                if not run_exists:
+                    return RunSnapshot(
+                        status="events-only", events=events, projection=projected
+                    )
+                data = read_json(run_json_path(slug))
+                if projected != data:
+                    return RunSnapshot(
+                        status="drift", events=events, projection=projected
+                    )
+                return RunSnapshot(
+                    status="consistent", events=events, projection=projected
+                )
+            # RUN.json exists, events.jsonl does not: a projection with no canonical
+            # log behind it. read_json still raises (caught as `invalid`) if RUN.json
+            # is itself unreadable/corrupt.
+            data = read_json(run_json_path(slug))
+            return RunSnapshot(status="projection-only", projection=data)
+        except StorageError as e:
+            return RunSnapshot(status="invalid", error=str(e))
+
+
 # --- CLI ---------------------------------------------------------------
 
 
@@ -703,37 +790,41 @@ def cmd_transition(args):
 
 def cmd_status(args):
     slug = args.slug
-    # Round-16 review (Fix 1): both reads below happen under a shared lock, so a
-    # transition landing between them (cmd_transition holds an exclusive lock across
-    # its own append+fsync -> atomic_write_json) cannot make the fold read here newer
-    # than the RUN.json it's compared against. See locked_run_readonly's docstring
-    # for why this is a shared lock and why it does not fire for a slug whose spec
-    # directory does not exist.
-    with locked_run_readonly(slug):
-        data = read_json(run_json_path(slug))
-        if os.path.exists(events_path(slug)):
-            # events.jsonl exists, so - unlike the branch below - there is something
-            # to check it against. read_events(validate=True) raises StorageError
-            # (exit 3) on an illegal chain (issue #174's third repro line: a
-            # forged/hand-edited log that `status` used to never look at). A legal
-            # chain can still disagree with RUN.json (drift, e.g. a hand-edited
-            # RUN.json, or an interrupted transition) - that is a second, distinct
-            # failure this project() comparison catches, named separately from
-            # "invalid event chain" so the two causes are never confused in the
-            # message.
-            projected = project(read_events(slug))
-            if projected != data:
-                raise StorageError(
-                    f"RUN.json does not match events.jsonl for {slug}: projection "
-                    "drift (run `rebuild --slug " + slug + " --check` for details, "
-                    "then `rebuild --slug " + slug + "` to repair)"
-                )
-        # else: no events.jsonl to validate against - this is Step -1 source 2's
-        # Branch B (RUN.json exists, the log does not) as much as it could ever be
-        # Branch A (neither exists, read_json above would already have raised).
-        # Behavior here is deliberately unchanged: print whatever RUN.json says,
-        # exit 0. See SKILL.md Step -1 source 2 for why that branch must not be
-        # "improved" into a stop here.
+    # cmd_status now consumes the one shared locked snapshot (snapshot_run_state,
+    # issue #175 Task 1.1) so it and resume see the exact same locked, validated
+    # topology. Its own policy - exit codes, messages, and output format - is applied
+    # here and is byte-for-byte unchanged from the pre-snapshot implementation, pinned
+    # by the status tests. The snapshot performs both reads (RUN.json + a validated
+    # fold of events.jsonl) under the shared lock, which is what closes the torn-read
+    # race a transition's exclusive lock could otherwise open. See locked_run_readonly
+    # for why no storage is created for a slug whose spec directory does not exist.
+    snap = snapshot_run_state(slug)
+    if snap.status in ("untracked", "events-only"):
+        # RUN.json is the artifact `status` reads first, so its absence is the exit-3
+        # "missing" the CLI has always reported for both these topologies - a bare
+        # projection-less slug and a valid log whose projection was removed alike.
+        raise StorageError(f"missing: {run_json_path(slug)}")
+    if snap.status == "invalid":
+        # Illegal event chain (issue #174's third repro line: a forged/hand-edited log
+        # that `status` used to never look at) or unreadable storage - re-raise with
+        # the engine's own StorageError message, exit 3, exactly as read_events /
+        # read_json produced it before this refactor.
+        raise StorageError(snap.error)
+    if snap.status == "drift":
+        # A legal chain that disagrees with RUN.json (a hand-edited RUN.json, or an
+        # interrupted transition) is a second, distinct failure - named separately
+        # from "invalid event chain" so the two causes are never confused.
+        raise StorageError(
+            f"RUN.json does not match events.jsonl for {slug}: projection "
+            "drift (run `rebuild --slug " + slug + " --check` for details, "
+            "then `rebuild --slug " + slug + "` to repair)"
+        )
+    # projection-only or consistent: print whatever the projection says, exit 0. The
+    # projection-only branch is deliberately unchanged - Step -1 source 2's Branch B
+    # (RUN.json exists, the log does not) must NOT be "improved" into a stop here;
+    # resume applies that stricter policy. For `consistent`, snap.projection is the
+    # validated fold, equal to RUN.json by definition, so the output is identical.
+    data = snap.projection
     if args.json:
         print(json.dumps(data, indent=2, sort_keys=True))
     else:

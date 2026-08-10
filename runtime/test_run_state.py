@@ -1988,3 +1988,205 @@ def test_status_on_non_utf8_event_log_exits_3_not_traceback():
     with open("specs/demo/events.jsonl", "ab") as f:
         f.write(b"\xff\xfe garbage\n")
     assert rs.main(["status", "--slug", "demo"]) == 3
+
+
+# --- gh-175 Task 1.1: one locked durable-state snapshot (design section 5.1) -----
+# snapshot_run_state is the single locked, read-only primitive that classifies a
+# slug's storage topology into exactly six statuses and returns validated data.
+# cmd_status is refactored to consume it (its exit codes/messages/output are pinned
+# unchanged by the pre-existing status tests above); resume will consume the same
+# primitive under a stricter policy in a later task.
+
+
+def test_snapshot_untracked_when_neither_artifact_exists():
+    """Spec dir exists but holds neither RUN.json nor events.jsonl — nothing to
+    classify, so the neutral verdict is `untracked` with no events/projection."""
+    os.makedirs("specs/blank", exist_ok=True)
+    snap = rs.snapshot_run_state("blank")
+    assert snap.status == "untracked"
+    assert snap.events is None
+    assert snap.projection is None
+    assert snap.error is None
+
+
+def test_snapshot_projection_only_when_run_json_without_log():
+    """RUN.json present, canonical log absent: `projection-only`. The projection is
+    returned verbatim (status still trusts it for backward-compat); resume will map
+    this to a stop because a projection with no log behind it cannot be validated."""
+    rs.main(["init", "--slug", "proj", "--run-id", "r1"])
+    os.remove("specs/proj/events.jsonl")
+    snap = rs.snapshot_run_state("proj")
+    assert snap.status == "projection-only"
+    assert snap.projection == rs.read_json("specs/proj/RUN.json")
+    assert snap.events is None
+
+
+def test_snapshot_events_only_when_valid_log_without_projection():
+    """A valid log with its RUN.json removed folds cleanly but has no projection on
+    disk: `events-only`. The returned projection is the fold of the log (what a
+    rebuild would write), and the events are the validated list."""
+    rs.main(["init", "--slug", "evonly", "--run-id", "r1"])
+    rs.main(["transition", "--slug", "evonly", "--to", "investigating", "--event", "e"])
+    os.remove("specs/evonly/RUN.json")
+    snap = rs.snapshot_run_state("evonly")
+    assert snap.status == "events-only"
+    assert snap.projection == rs.project(rs.read_events("evonly"))
+    assert snap.projection["state"] == "investigating"
+    assert [e["seq"] for e in snap.events] == [1, 2]
+
+
+def test_snapshot_drift_when_projection_disagrees_with_fold():
+    """Both artifacts exist, the chain is legal, but RUN.json was hand-edited to
+    disagree with the fold: `drift`. The returned projection is the *correct* fold,
+    not the tampered RUN.json — so a consumer can rebuild from it."""
+    rs.main(["init", "--slug", "drift1", "--run-id", "r1"])
+    rs.main(["transition", "--slug", "drift1", "--to", "investigating", "--event", "e"])
+    tampered = rs.read_json("specs/drift1/RUN.json")
+    tampered["state"] = "planning"  # log actually says "investigating"
+    rs.atomic_write_json("specs/drift1/RUN.json", tampered)
+    snap = rs.snapshot_run_state("drift1")
+    assert snap.status == "drift"
+    assert snap.projection["state"] == "investigating"  # the validated fold
+    assert snap.projection != tampered
+
+
+def test_snapshot_invalid_on_forged_event_chain():
+    """#174 chain validation fires inside the snapshot: an illegal chain (the issue's
+    forged two-seq-1 log) is classified `invalid`, carrying the StorageError message,
+    and returns no events/projection — even when a matching RUN.json also exists, so
+    `invalid` deterministically wins over `drift`/`consistent`."""
+    genesis, forged = _write_forged_log("snapforged")
+    rs.atomic_write_json("specs/snapforged/RUN.json", rs.project([genesis, forged]))
+    snap = rs.snapshot_run_state("snapforged")
+    assert snap.status == "invalid"
+    assert "invalid event chain" in snap.error
+    assert snap.events is None
+    assert snap.projection is None
+
+
+def test_snapshot_consistent_on_validated_matching_pair():
+    """The healthy path: a legal log whose fold equals RUN.json is `consistent`, and
+    both the validated events and the matching projection are returned."""
+    rs.main(["init", "--slug", "ok", "--run-id", "r1"])
+    rs.main(["transition", "--slug", "ok", "--to", "investigating", "--event", "e"])
+    snap = rs.snapshot_run_state("ok")
+    assert snap.status == "consistent"
+    assert snap.projection == rs.read_json("specs/ok/RUN.json")
+    assert snap.projection["state"] == "investigating"
+    assert [e["seq"] for e in snap.events] == [1, 2]
+
+
+def test_snapshot_creates_no_storage_for_a_typo_slug():
+    """Read-only by construction: a snapshot on a slug whose spec directory does not
+    exist (a typo) classifies `untracked` and creates NOTHING — no directory, no lock
+    file. locked_run_readonly only acquires when spec_dir already exists."""
+    assert not os.path.exists("specs/typo-snap")
+    snap = rs.snapshot_run_state("typo-snap")
+    assert snap.status == "untracked"
+    assert not os.path.exists("specs/typo-snap")
+
+
+def test_snapshot_holds_shared_lock_across_both_reads():
+    """Torn-read mechanism (mirrors test_status_holds_a_lock_across_its_two_reads):
+    snapshot_run_state must hold the shared lock across BOTH the events read and the
+    RUN.json read, so a writer's exclusive lock cannot interleave and make the fold
+    newer than the projection it is compared against (a false `drift`). Spy on
+    read_json (the second read the snapshot performs on the consistent path) and,
+    from inside the spy, attempt a NON-BLOCKING EXCLUSIVE lock on the same lock file.
+    If the snapshot is holding the shared lock, that attempt must fail with
+    BlockingIOError. flock applies to open file descriptions, so a second open() from
+    the same process still contends against a lock held via a different open()."""
+    import fcntl
+
+    rs.main(["init", "--slug", "spy", "--run-id", "r1"])
+    rs.main(["transition", "--slug", "spy", "--to", "investigating", "--event", "e"])
+
+    attempts = []
+    original_read_json = rs.read_json
+
+    def spy_read_json(path):
+        lock_fh = open(rs.lock_path("spy"), "a+")
+        try:
+            fcntl.flock(lock_fh.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            attempts.append("acquired")  # BAD: no lock was held by the snapshot
+            fcntl.flock(lock_fh.fileno(), fcntl.LOCK_UN)
+        except BlockingIOError:
+            attempts.append("blocked")  # GOOD: the snapshot already holds it
+        finally:
+            lock_fh.close()
+        return original_read_json(path)
+
+    mp = pytest.MonkeyPatch()
+    try:
+        mp.setattr(rs, "read_json", spy_read_json)
+        snap = rs.snapshot_run_state("spy")
+    finally:
+        mp.undo()
+    assert snap.status == "consistent"
+    assert attempts == ["blocked"]
+
+
+def test_snapshot_serializes_behind_a_writer_and_never_sees_a_torn_pair():
+    """Behavioral torn-read proof. A transition holds locked_run (exclusive) across
+    its append -> projection-write; a snapshot reader needs the shared lock, so it
+    must block until the writer's whole critical section lands and can therefore never
+    fold a log line the projection has not yet caught up to.
+
+    Deterministic: a writer thread takes the exclusive lock, publishes the TORN state
+    (event appended, RUN.json still stale), signals, holds the window briefly, then
+    finishes the projection write and releases. The reader — released only after the
+    writer completes — observes a CONSISTENT pair, never `drift`. Correctness does not
+    depend on the sleep: the exclusive lock strictly serializes the reader behind the
+    writer regardless of timing, so a torn verdict is impossible, not merely unlikely."""
+    import threading
+    import time
+
+    rs.main(["init", "--slug", "tornsnap", "--run-id", "r1"])
+    rs.main(
+        ["transition", "--slug", "tornsnap", "--to", "investigating", "--event", "e"]
+    )
+
+    torn_published = threading.Event()
+    writer_done = threading.Event()
+
+    def writer():
+        with rs.locked_run("tornsnap"):
+            events = rs.read_events("tornsnap", validate=False)
+            new_event = {
+                "event_id": "torn-3",
+                "seq": events[-1]["seq"] + 1,
+                "ts": rs.now_iso(),
+                "slug": "tornsnap",
+                "run_id": events[0]["run_id"],
+                "from_state": "investigating",
+                "to_state": "planning",
+                "event": "agent.step",
+                "waiting_on": None,
+                "resume_event": None,
+                "sha": None,
+                "metadata": {},
+            }
+            with open(rs.events_path("tornsnap"), "a") as f:
+                f.write(json.dumps(new_event, sort_keys=True) + "\n")
+                f.flush()
+                os.fsync(f.fileno())
+            # On-disk state is now TORN: fold == seq 3 (planning), RUN.json == seq 2.
+            torn_published.set()
+            time.sleep(0.2)  # keep the torn window open past the reader's lock attempt
+            rs.atomic_write_json(
+                rs.run_json_path("tornsnap"),
+                rs.project(rs.read_events("tornsnap", validate=False)),
+            )
+        writer_done.set()
+
+    t = threading.Thread(target=writer)
+    t.start()
+    try:
+        assert torn_published.wait(timeout=5)
+        snap = rs.snapshot_run_state("tornsnap")
+    finally:
+        t.join(timeout=5)
+    assert writer_done.is_set()
+    assert snap.status == "consistent"  # never "drift" — the torn pair was invisible
+    assert snap.projection["state"] == "planning"
+    assert snap.projection["seq"] == 3

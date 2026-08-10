@@ -48,4 +48,13 @@ out=$(bash "$DEPLOY" --target "$T" --dry-run </dev/null 2>&1)
 if printf '%s' "$out" | grep -qF "would prune stale" && [ -e "$T/.claude/runtime/_ghost2.py" ]; then pass
 else fail "dry-run did not report, or it deleted: out=$(printf '%s' "$out" | grep -i prune | head -1)"; fi
 
+# SC-8: the exact deployed fallback command a resuming session runs must resolve and emit
+# valid structured JSON (run_state.py resolves because Python puts the script's dir on sys.path).
+t "a default deployed consumer runs the exact resume command and gets valid JSON"
+new_target; deploy "$T"
+out=$(cd "$T" && python3 "$T/.claude/runtime/resume_decision.py" --slug demo-resume-slug 2>&1); rc=$?
+parsed=$(printf '%s' "$out" | python3 -c "import sys,json;d=json.load(sys.stdin);print(d['schema_version'],'action' in d,'reason_code' in d)" 2>/dev/null)
+if [ "$rc" -eq 0 ] && [ "$parsed" = "1 True True" ]; then pass
+else fail "deployed resume command rc=$rc parsed=[$parsed] out=[$(printf '%s' "$out" | head -1)]"; fi
+
 finish
