@@ -1,338 +1,369 @@
 # Hỗ trợ Codex — Thiết kế tổng thể
 
-> Bản tiếng Anh (bản gốc, được các skill đọc): [`design.md`](./design.md)
+> Bản tiếng Anh: [`design.md`](./design.md)
 
-**Trạng thái:** chỉ thiết kế. Không triển khai, không chốt bố cục file, không có code.
-**Mục tiêu:** người dùng chạy **OpenAI Codex CLI** nhận được đúng bộ harness — cùng lane, cùng
-artifact, cùng các gate — như người dùng chạy Claude Code, từ **một nguồn duy nhất**.
+**Trạng thái:** chỉ cập nhật thiết kế; chưa triển khai adapter runtime hay thay đổi cơ chế cưỡng
+chế trong PR này.
+**Bằng chứng được làm mới:** 2026-08-10, dựa trên Codex CLI 0.147.0, tài liệu OpenAI hiện hành và
+nhánh `simplify`.
+**Mục tiêu:** người dùng OpenAI Codex nhận được cùng lane, artifact, workflow và release gate như
+người dùng Claude Code, từ một nguồn chân lý ngữ nghĩa duy nhất.
 
 ---
 
-## 1. Phát hiện khiến việc này khả thi
+## 1. Tính khả thi và đường cơ sở năng lực hiện tại
 
-Harness được xây dựng dựa trên mô hình mở rộng của Claude Code. Trong năm 2026, Codex CLI đã hội
-tụ về đúng mô hình đó. Cả ba bề mặt mà harness phụ thuộc giờ đều tồn tại trên cả hai runtime:
+Codex hiện có đủ ba bề mặt mở rộng mà harness cần: skill, lifecycle hook và custom subagent. Vì
+vậy adapter ngang hàng là khả thi, nhưng hai runtime không tương đương từng field. Thiết kế chia sẻ
+**ngữ nghĩa** và biểu diễn rõ các ánh xạ policy theo runtime.
 
-| Harness phụ thuộc vào | Claude Code | Codex CLI | Kết luận |
+| Phụ thuộc của harness | Claude Code | Codex | Kết luận thiết kế |
 |---|---|---|---|
-| Prompt program | `skills/<n>/SKILL.md`, frontmatter YAML `name`/`description` | Skills — **cùng tên file, cùng hai trường frontmatter bắt buộc**, model tự chọn *hoặc* gọi tường minh | gần như đồng nhất |
-| Cơ chế cưỡng chế | hooks: stdin JSON → exit 2 / `permissionDecision:"deny"` / `hookSpecificOutput.additionalContext`, regex `matcher`, `type:"command"` | hooks: **cùng contract, trùng từng trường** | gần như đồng nhất |
-| Context cô lập | `agents/*.md` + Task tool + whitelist tool | `.codex/agents/*.toml` + spawn tool + **`sandbox_mode`** | cùng ngữ nghĩa, khác cách mã hoá |
+| Chương trình prompt | `skills/<name>/SKILL.md` | skill `SKILL.md`, được tìm từ các skill root được hỗ trợ hoặc plugin | dùng chung nguồn skill; kiểm tra discovery trong từng kiểu đóng gói |
+| Cưỡng chế | lifecycle hook nhận JSON qua stdin | lifecycle hook bật mặc định, nhưng chịu ràng buộc trust của project và độ phủ của handler | dùng chung logic hook sau normalizer payload; phát hiện độ phủ hiệu lực từ bên ngoài hook |
+| Context cô lập | agent Markdown, allowlist model/tool | `.codex/agents/*.toml`, developer instructions, policy sandbox/config | dùng chung contract agent; sinh runtime binding đã kiểm thử thay vì chuyển field máy móc |
+| Chỉ dẫn repository | `CLAUDE.md` và rules | chuỗi `AGENTS.md` phân cấp từ root đến CWD | giữ nguyên `AGENTS.md` hiện có; chỉ quản lý một vùng hoặc con trỏ có ranh giới rõ |
 
-Vì vậy câu hỏi không còn là *"harness có chạy được trên Codex không"* mà là *"đường nối nhỏ nhất
-nào giữ được một nguồn sự thật phục vụ hai runtime."*
+Bản nháp trước coi Codex hook là thử nghiệm, phải opt-in và phần lớn không phủ `apply_patch`.
+Nhận định đó đã cũ. Tại ngày thu thập bằng chứng:
 
-**Hệ quả chi phối toàn bộ phần dưới:** khối lượng công việc là ~70% *trung tính hoá phần lõi hiện
-có* và ~30% *viết adapter cho Codex*. Nửa trung tính hoá cải thiện luôn cả phía Claude — nó gỡ bỏ
-những phụ thuộc ngầm vào một runtime duy nhất mà harness hiện chưa có oracle nào kiểm chứng.
+- Codex bật hook mặc định và `codex features list` báo `hooks` ở trạng thái stable;
+- probe cô lập thực tế quan sát được `PreToolUse` và `PostToolUse` cho cả shell và `apply_patch`;
+- payload `apply_patch` chứa raw patch trong `tool_input.command`, không phải một
+  `tool_input.file_path` duy nhất;
+- hook cấp project vẫn phụ thuộc trust/cấu hình; hosted tool không có lifecycle coverage, và một
+  số đường tool chuyên biệt có thể không tham gia.
+
+Vì vậy rủi ro là **payload không khớp và độ phủ hiệu lực không khớp**, không phải giả định Codex
+không phát event cho thao tác sửa file.
+
+### 1.1 Đường cơ sở nền tảng được hỗ trợ
+
+Hook hiện tại phụ thuộc Bash, `jq`, Git và Python. Tập nền tảng Codex được hỗ trợ đầu tiên vì thế là
+macOS, Linux và WSL có đủ các dependency này. Chưa tuyên bố hỗ trợ Windows native cho đến khi mọi
+hook có `commandWindows` hoặc có adapter native. Runtime doctor (§5) phải báo nền tảng không được hỗ
+trợ là advisory, không được âm thầm gắn nhãn ngang hàng.
 
 ---
 
-## 2. Kiến trúc — một nguồn, hai adapter
+## 2. Kiến trúc — một lõi ngữ nghĩa, runtime binding tường minh
 
-Hiện tại repo đã tách **nguồn** (gốc repo) khỏi **bản cài dẫn xuất** (`.claude/`, bị gitignore, do
-`deploy-harness.sh` dựng). Thiết kế giữ nguyên hình dạng đó và thêm một target thứ hai. Nó **không**
-thêm bản sao thứ hai của nguồn.
+Repository đã tách nguồn chỉnh sửa khỏi bản cài `.claude/` được sinh cho Claude. Hỗ trợ Codex giữ
+một lõi ngữ nghĩa duy nhất, sau đó thêm runtime binding và các bề mặt được sinh/cài đặt.
 
 ```
-        NGUỒN TRUNG TÍNH RUNTIME                ADAPTER              BẢN CÀI DẪN XUẤT
-  ┌──────────────────────────────────┐
-  │ skills/    agents/    rules/     │──┬──► claude adapter  ──►  .claude/
-  │ hooks/     templates/ runtime/   │  │                          (settings.json, skills/, …)
-  │ scripts/   harness-manifest.json │  │
-  └──────────────────────────────────┘  └──► codex adapter   ──►  .agents/skills/  +  .codex/
-                                                                   (hooks.json, agents/*.toml,
-                                                                    AGENTS.md)
+              NGUỒN NGỮ NGHĨA                         RUNTIME BINDING
+  ┌──────────────────────────────────────┐      ┌─────────────────────────┐
+  │ skills/  agents/  rules/  hooks/     │─────►│ Ánh xạ policy Claude    │──► .claude/
+  │ templates/  runtime/  scripts/       │      └─────────────────────────┘
+  │ harness-manifest.json                │      ┌─────────────────────────┐
+  └──────────────────────────────────────┘─────►│ Policy + đóng gói Codex │──► plugin/config project
+                                                └─────────────────────────┘
 ```
 
-Ba nguyên tắc chi phối đường nối này:
+Bốn quy tắc chi phối đường nối này:
 
-1. **Nguồn không bao giờ nhắc tên runtime.** Không đường dẫn `.claude/`, không cú pháp gọi
-   `/skill-name`, không tên tool chỉ có ở Claude — trong bất kỳ file nào thuộc `skills/`,
-   `agents/`, `rules/`.
-2. **Adapter chỉ làm việc cơ học.** Adapter mã hoá lại và đặt lại vị trí; nó không được mang
-   policy. Adapter nào cần *quyết định* điều gì tức là phần lõi trung tính đã bị rò rỉ.
-3. **Sai khác phải được khai báo, không để tự phát hiện.** Điều adapter không làm được phải ghi
-   vào một sổ đối chiếu kiểm tra được bằng máy (§5), không để người dùng gặp phải lúc chạy.
+1. **Workflow policy chỉ có một chủ sở hữu.** Lane, artifact, điều kiện STOP, trách nhiệm review và
+   quy tắc bằng chứng vẫn nằm trong nguồn chung.
+2. **Năng lực runtime là binding tường minh.** Tên model, quyền tool, sandbox policy, policy fork
+   context, matcher alias và vị trí package có thể khác nhau; tất cả phải được ánh xạ và kiểm thử.
+   Gọi toàn bộ phép chuyển đổi là “máy móc” sẽ che giấu policy thật.
+3. **File sinh ra phải tái lập được và được validate.** Cùng revision nguồn và input adapter phải
+   cho output ổn định theo byte; TOML/JSON sinh ra phải qua strict config parser của runtime.
+4. **Mọi phân kỳ đều được khai báo.** Năng lực thiếu phải là ngoại lệ có owner, hạn dùng và điều
+   kiện thoát trong runtime manifest, không phải khoảng trống best-effort im lặng.
 
-### 2.1 Bốn tầng, xét theo mức độ khả chuyển
+### 2.1 Quyết định đóng gói: mặc định hybrid
 
-| Tầng | Ví dụ | Khả chuyển | Việc cần làm |
+OpenAI khuyến nghị plugin cho gói tái sử dụng, và plugin Codex có thể chứa skill cùng hook. Custom
+agent cấp project và tích hợp `AGENTS.md` ở repository có quyền sở hữu và cách xử lý xung đột khác.
+Do đó lựa chọn ưu tiên là hybrid:
+
+- **plugin sở hữu:** skill tái sử dụng và đăng ký/tài nguyên hook;
+- **project adapter sở hữu:** `.codex/agents/*.toml` được sinh, trạng thái runtime và tích hợp
+  `AGENTS.md` có ranh giới ở §6;
+- **fallback:** sync trực tiếp toàn bộ asset Codex vào project chỉ khi spike đóng gói chứng minh
+  plugin discovery, trust hoặc cài đặt local-development không đáp ứng contract harness.
+
+Phase 2 ghi lại lựa chọn bằng probe discovery chạy được. Nguồn ngữ nghĩa và parity test không đổi
+nếu phải dùng fallback.
+
+### 2.2 Mức khả chuyển theo tầng
+
+| Tầng | Ví dụ | Mức khả chuyển kỳ vọng | Trách nhiệm adapter |
 |---|---|---|---|
-| **Lõi logic** | `runtime/run_state.py`, `scripts/*.py`, schema `specs/`, templates, manifest | 100% — Python và file thuần, không dính runtime | không |
-| **Cưỡng chế** | `hooks/*.sh` | ~85% — cùng contract, khác từ vựng và hình dạng payload | shim chuẩn hoá input (§3) |
-| **Bề mặt chỉ dẫn** | `skills/`, `agents/`, `rules/` | ~70% — cùng khái niệm, khác cách phân phối và mã hoá | trung tính hoá (§4) |
-| **Điểm vào** | `CLAUDE.md`, `settings.json`, script cài đặt | ~0% — bản chất là đặc thù runtime | adapter sinh ra |
-
-Việc lõi logic khả chuyển 100% là dữ kiện chịu lực: lane, quy tắc bằng chứng, FSM run-state,
-plan contract, lint verify-row và review receipt **vốn đã** trung tính với runtime. Hỗ trợ Codex
-không đụng đến phần tư duy thật sự của harness — chỉ đụng cách nó được phân phối và cưỡng chế.
+| Lõi logic | FSM run-state, schema, template, manifest | hoàn toàn | không có ngoài đường dẫn executable |
+| Bề mặt chỉ dẫn | skill và rule | cao | discovery, câu chữ trung tính cú pháp gọi, delivery rule tường minh |
+| Cưỡng chế | logic shell của hook | cao sau chuẩn hoá | config, matcher alias, chuẩn hoá payload, chẩn đoán coverage |
+| Policy agent | vai trò reviewer/implementer | chỉ dùng chung ngữ nghĩa | binding model, tool, sandbox, MCP, nesting và context fork |
+| Điểm vào/config | `CLAUDE.md`, `AGENTS.md`, settings | đặc thù runtime | sinh mới hoặc tích hợp vào vùng quản lý hữu hạn |
 
 ---
 
-## 3. Cưỡng chế — đường nối ở tầng hook
+## 3. Contract cưỡng chế — ma trận event chính xác và một đường chuẩn hoá
 
-### 3.1 Cái gì chuyển sang miễn phí
+Khi triển khai phải ghim một ma trận event/tool đã kiểm thử, thay vì coi “có hỗ trợ hook” là một
+boolean duy nhất.
 
-Tên sự kiện (`SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `Stop`,
-`SessionEnd`), cấu hình dạng `matcher` + `type:"command"`, chặn bằng exit 2, quyết định `deny`, và
-tiêm `additionalContext` — giống nhau trên cả hai runtime. Chín script hook **không cần viết lại**.
-
-### 3.2 Cái gì gãy — và gãy theo kiểu nào
-
-Ba khác biệt đáng kể, và hai trong số đó **fail open** — kiểu nguy hiểm:
-
-| Khác biệt | Tác động lên harness |
-|---|---|
-| **Từ vựng tool.** `tool_name` chính tắc của Codex cho mọi thao tác sửa file là `apply_patch` (`Write`/`Edit` chỉ là alias cho matcher); shell là `shell`/`unified_exec`. | Matcher phần lớn sống sót nhờ alias — cần xác nhận thực nghiệm. |
-| **Hình dạng payload.** `apply_patch` mang **một envelope patch**, không phải `{file_path}`. Bốn hook (`branch-isolation-guard`, `blast-radius-check`, `ruff-on-edit`, `render-plan-on-write`) đọc `.tool_input.file_path` với fallback `// empty`. | **Fail open âm thầm.** Chúng exit 0 và không cưỡng chế gì cả. Với `branch-isolation-guard`, nghĩa là edit code trên nhánh chung không còn bị chặn — không lỗi, không cảnh báo. |
-| **Độ phủ sự kiện.** Việc phát sự kiện hook của Codex là opt-in theo từng tool handler và còn lỗ hổng độ phủ đang mở ở upstream. | Một gate có thể được *cấu hình* mà vẫn không bao giờ chạy. |
-
-### 3.3 Hướng xử lý: một đường nối chuẩn hoá duy nhất
-
-Các hook ngừng tự parse stdin thô. Một shim dùng chung (được mọi hook source, đặt cạnh
-`hooks/lib/` sẵn có) đọc stdin một lần, nhận diện runtime, và xuất ra một khung nhìn chuẩn hoá:
-tool đang gọi, **tập** file bị đụng, câu lệnh shell, nội dung prompt.
-
-Vì sao chọn hình dạng này:
-
-- Nó là **một đường nối kiểm thử được**, không phải chín. Mẫu contract-test hiện có ở
-  `tests/hooks/*.test.sh` mở rộng sang đây trực tiếp.
-- Một envelope patch tự nhiên sinh ra *nhiều* file, nên contract trung tính phải là **tập** file.
-  Điều đó đúng hơn hẳn `file_path` đơn lẻ hiện tại — `blast-radius-check` và
-  `branch-isolation-guard` vốn đã mang ngữ nghĩa tập hợp.
-- Nó biến fail-open thành **quyết định policy tường minh cho từng hook**. Hook nào không xác định
-  được input của mình phải chọn: cảnh báo lớn, hoặc từ chối. Im lặng không còn là lựa chọn.
-
-### 3.4 Hai ràng buộc cứng từ phía Codex
-
-- **`SessionEnd` có timeout ~1s (tối đa 3s)**, so với ~600s ở các sự kiện khác.
-  `state-breadcrumb.sh` chạy git rồi append file. Phải đo; nếu không vừa thì chuyển sang `Stop`.
-  Đây là ràng buộc hành vi thật sự, không phải ghi chú tinh chỉnh.
-- **Hook đang ở dạng experimental, cần feature flag (`[features] hooks = true`), tắt trên Windows,
-  và hook cấp project yêu cầu thư mục `.codex/` được đánh dấu trusted.** Do đó một bản cài Codex
-  có thể triển khai đầy đủ mà **không có cưỡng chế nào**. Xem §6.
-
----
-
-## 4. Bề mặt chỉ dẫn — trung tính hoá phần lõi
-
-Bốn điểm dính cụ thể, mỗi điểm có một hướng xử lý. Cả bốn đều là *đơn giản hoá* nguồn hiện tại,
-không phải thêm thắt.
-
-### 4.1 Tự động nạp rule theo path — rủi ro lớn nhất
-
-Claude Code tự tiêm `rules/plan-format.md`, `wave-parallelism.md` và `auto-correct-scope.md` qua
-frontmatter `paths:` khi một file `specs/**` khớp được đọc. **Codex không có cơ chế tương đương.**
-Rule liên quan an toàn nhất của harness — `auto-correct-scope.md`, nơi chứa tiêu chí STOP của
-Rule 4 — đến được các context reviewer/implementer cô lập một phần là nhờ kênh này.
-
-Đây cũng đang là một khiếm khuyết tiềm ẩn *ngay hôm nay*: PR #141 đã ship một rule được tham chiếu
-nhưng chưa từng được đọc trong một context subagent cô lập — chính vì vậy mới có
-`/context-propagation-audit`.
-
-**Hướng xử lý:** hạ `paths:` từ *cơ chế* xuống *chất xúc tác*.
-
-- Bước `Read` tường minh trong skill tiêu thụ trở thành **bảo đảm phân phối duy nhất**. Một số
-  skill đã làm vậy (`writing-plans`, `correctness-review`, `intent-review`,
-  `subagent-driven-development`, `implementer-prompt.md`) — thiết kế biến điều đó thành phổ quát
-  và audit biến nó thành chứng minh được.
-- `/context-propagation-audit` trở thành oracle: với mỗi rule, mọi context tiêu thụ đều có một
-  Read. Skill này đã tồn tại và đã chạy trên các diff workflow-engine.
-- **Bác bỏ:** nhúng nội dung rule vào `AGENTS.md`. Đó chính là tái tạo khiếm khuyết
-  `stale-inline-policy` mà repo này từng dính.
-
-**Đây là hạng mục dễ khiến hỗ trợ Codex sai một cách âm thầm nhất, và nó được sửa luôn ở phía
-Claude bởi cùng một thay đổi.**
-
-### 4.2 Đường dẫn `.claude/` hard-code trong văn bản skill
-
-26 chỗ chỉ dẫn agent đọc `.claude/rules/...`. Dưới Codex không tồn tại `.claude/`.
-
-**Hướng xử lý:** tham chiếu rule theo đường dẫn **gốc repo** (`rules/…`) — nơi chúng vốn đã nằm
-trong nguồn, và nơi cả hai runtime đều đọc được. Bản sao `.claude/rules/` chỉ còn là fixture phục
-vụ auto-load của Claude, không còn là địa chỉ được nêu cho ai. Việc viết lại văn bản lúc deploy bị
-bác bỏ tường minh vì mờ đục và không kiểm thử được.
-
-### 4.3 Subagent
-
-Contract *ngữ nghĩa* vốn đã trung tính runtime và đã được ghi trong `rules/orchestration.md`:
-reviewer chỉ đọc, verdict spec/quality tách bạch, summary có cấu trúc 150–300 từ, không dump file
-thô. Chỉ **cách mã hoá** là khác (Markdown+frontmatter vs TOML), nên `agents/*.md` vẫn là nguồn và
-adapter Codex sinh ra TOML.
-
-Hai điểm cần mang sang khi triển khai:
-
-- `sandbox_mode = "read-only"` của Codex là bảo đảm độc lập **mạnh hơn** whitelist tool — nó được
-  cưỡng chế bởi sandbox chứ không bởi danh sách tool. Tính độc lập của reviewer *tốt lên* dưới
-  Codex, không xấu đi.
-- Codex "không tự động spawn subagent" — việc uỷ nhiệm phải tường minh trong prompt. Phần dispatch
-  theo wave của `subagent-driven-development` vốn đã tường minh; việc này cần xác minh, không cần
-  thiết kế lại.
-
-### 4.4 Cú pháp gọi và file điểm vào
-
-`/skill-name` (Claude) vs `$skill`/model tự chọn (Codex); `CLAUDE.md` vs `AGENTS.md`. Nguồn nên
-gọi *tên skill*, không gọi *cú pháp* ("invoke the feature-intake skill"). `AGENTS.md` đã tồn tại
-trong repo này và được adapter sinh ra từ cùng nội dung tạo ra `CLAUDE.md`.
-
----
-
-## 5. Parity là điều kiện release — hai tầng
-
-**Quyết định D2 đưa Codex thành runtime ngang hàng**, nên parity là điều kiện release chứ không
-phải một danh sách bào chữa. Nhưng Codex CLI là một tiến trình tốn tiền, không tất định và phụ
-thuộc mạng — chặn mọi PR bằng việc chạy Codex thật sẽ khiến CI chậm, đắt và hay lỗi vặt. Vì vậy
-thiết kế tách điều kiện này theo đúng trục mà repo đã dùng cho các mức bằng chứng:
-
-| Tầng | Chứng minh điều gì | Chi phí | Chạy khi nào |
+| Nhu cầu harness | Đường event/tool Codex | Đường cơ sở đã quan sát hoặc có tài liệu | Kiểm soát bắt buộc |
 |---|---|---|---|
-| **Static parity** (traceability) | Mọi skill, agent, rule và hook harness ship ra đều *được sinh* cho cả hai runtime; khối runtime trong manifest nhất quán nội tại; adapter không trôi dạt. | Miễn phí, tất định | **Mọi PR**, chặn |
-| **Behavioural parity** (truth) | Một bộ golden nhỏ các hành vi harness — phân loại lane, chạy plan, một commit bị chặn, một review receipt — cho ra artifact tương đương khi được *điều khiển* bởi từng runtime. | Tốn tiền, không tất định | Theo lịch + trước release, chỉ chặn ở release |
+| Gate lệnh Git | `PreToolUse` trên shell/unified execution | probe thực tế thấy event trước/sau shell | fixture matcher + chuẩn hoá command |
+| Cô lập khi sửa file | `PreToolUse` trên `apply_patch` | probe thực tế thấy event | parse mọi path trong patch; input không rõ đi theo fail policy tường minh của từng gate |
+| Kiểm tra sau sửa | `PostToolUse` trên `apply_patch` | probe thực tế thấy event | chuẩn hoá tập path; không bao giờ giả định một file |
+| Hướng dẫn scope prompt | `UserPromptSubmit` | lifecycle event có tài liệu | golden payload fixture |
+| Nạp knowledge | `SessionStart` | lifecycle event có tài liệu | chỉ bổ trợ; không thể tự chứng minh hook đang hoạt động |
+| Breadcrumb bền vững | `SessionEnd` | event có tài liệu với timeout ngắn | benchmark dưới timeout và giới hạn khối lượng công việc |
+| Hosted/tool chuyên biệt | tuỳ handler | hosted tool nằm ngoài lifecycle coverage; đường chuyên biệt có thể opt-out | doctor báo coverage; đường sửa file chưa hỗ trợ không được gọi là blocking parity |
 
-`harness-manifest.json` — vốn đã là nguồn sự thật duy nhất cho từ vựng và mode của hard-gate —
-được bổ sung một **khối runtime**: với mỗi gate, runtime nào cưỡng chế, ở cường độ nào
-(block / warn / không khả dụng), và vì sao. Static parity được kiểm tra dựa trên khối đó bằng một
-drift guard theo khuôn mẫu `check_manifest.py` và kiểm tra parity của embedded gate modes hiện có.
+### 3.1 Kiểu fail hiện tại
 
-**Dưới quy chế ngang hàng, sổ đối chiếu đổi vai trò.** Nó không còn là "đây là các khoảng trống";
-nó là một danh sách ngoại lệ ngắn, **có chủ sở hữu và có hạn**. Mỗi mục `unavailable` mang theo
-người chịu trách nhiệm và điều kiện thoát — nếu không, "ngang hàng" thoái hoá thành một từ ngữ và
-sổ đối chiếu trở thành thứ *che giấu* khoảng trống thay vì phơi bày nó.
+Bốn edit hook hiện đọc `.tool_input.file_path` rồi fallback về rỗng. Event `apply_patch` của Codex
+lại chứa patch envelope trong `tool_input.command`. Không có adapter, các hook này có thể âm thầm
+không thấy path và cho phép thao tác. Đây là fail-open thực sự dù event vẫn được phát.
+
+### 3.2 Input hook đã chuẩn hoá
+
+Mọi hook dùng chung một normalizer đọc stdin đúng một lần và cung cấp:
+
+- danh tính runtime và event;
+- loại tool chuẩn (`shell`, `edit`, `mcp` hoặc `other`);
+- tập đầy đủ, loại trùng các path trong repository bị tác động;
+- shell command, prompt text và kết quả tool khi phù hợp;
+- trạng thái parse: `known`, `partial` hoặc `unknown`.
+
+Patch nhiều file mặc định là dữ liệu dạng tập. `branch-isolation-guard`, `blast-radius-check`,
+`ruff-on-edit` và `render-plan-on-write` phải xét mọi path phù hợp. Lỗi parse phải nhìn thấy được.
+Mỗi gate khai báo `partial`/`unknown` sẽ block, warn hay unavailable; mặc định không bao giờ là
+thành công im lặng.
+
+Golden fixture bao phủ payload Claude và Codex, patch nhiều file, rename/delete, input hỏng, path có
+khoảng trắng và path ngoài repository. Matcher test riêng chứng minh tool handler nào thực sự đi
+đến normalizer.
+
+### 3.3 Công việc cuối session vẫn ở SessionEnd
+
+`state-breadcrumb.sh` hiện thuộc `SessionEnd`. Codex dành ngân sách cho event này nhỏ hơn nhiều so
+với hook thường, nên script phải được đo và thu gọn nếu cần. **Không** chuyển thẳng sang `Stop`:
+Stop có thể lặp trước khi session kết thúc, và tính idempotent theo session hiện tại có thể giữ lại
+snapshot đầu tiên đã cũ. Muốn chuyển phải thiết kế snapshot có thể thay thế và test sự lặp; đó là
+thay đổi riêng, không phải kế hoạch adapter mặc định.
 
 ---
 
-## 6. Chế độ advisory — chuyển tiếp, không phải trạng thái ổn định
+## 4. Contract agent — dùng chung vai trò, policy bảo mật theo runtime
 
-**Quyết định D2 và D3 mâu thuẫn nhau, và thiết kế không được lấp liếm điều đó.** Runtime ngang hàng
-nghĩa là parity là điều kiện release. Chế độ advisory nghĩa là Codex ship ra với cưỡng chế cơ học
-yếu hoặc không có. Một runtime ship ở chế độ advisory thì, xét trên tầng cưỡng chế, *theo định
-nghĩa là chưa ngang hàng*.
+Các file `agents/*.md` hiện chứa model ID và tool allowlist của Claude. `sandbox_mode` của Codex
+không tương đương các allowlist đó: filesystem read-only tự nó không tắt nested agent, shell, MCP
+hay mọi side effect ngoài filesystem. Vì vậy chuyển field trực tiếp từ Markdown sang TOML không thể
+bảo toàn contract vai trò.
 
-Cách giải quyết là nói chính xác **tầng nào đạt ngang hàng vào lúc nào**:
+Schema agent chung phải biểu diễn năng lực, không phải field theo vendor:
 
-| Tầng | Ngang hàng lúc ship? | Căn cứ |
+- chỉ dẫn vai trò và contract output;
+- quyền filesystem (`none`, `read-only` hoặc `workspace-write`);
+- shell policy và network policy;
+- MCP server/tool được phép;
+- có được delegation lồng nhau hay không;
+- context policy (`fresh`, `bounded` hoặc inherited);
+- yêu cầu lớp model và binding model theo runtime.
+
+Mỗi adapter sở hữu ánh xạ đã kiểm tra từ các năng lực trên sang runtime. Năng lực chưa có mapping là
+lỗi adapter, không được ngầm dùng default.
+
+### 4.1 Profile reviewer
+
+Review agent tối thiểu cần:
+
+- filesystem read-only;
+- tắt delegation nested-agent;
+- không có MCP tool gây side effect ngoài kiểm soát;
+- context fresh hoặc bounded tường minh, giữ ranh giới plan-blind/intent-blind;
+- contract verdict có cấu trúc đã được harness định nghĩa.
+
+Probe Codex thực tế xác nhận thêm một ràng buộc: có thể chọn custom agent profile khi fork fresh hoặc
+bounded, còn full-history fork kế thừa agent type của parent và từ chối override đó. Chỉ dẫn dispatch
+được sinh và behavioural test phải dùng đường fresh/bounded được hỗ trợ. Nếu runtime không cưỡng chế
+được một năng lực, parity ledger ghi đúng ngoại lệ; không mô tả `sandbox_mode` là mạnh hơn tool
+allowlist một cách khái quát.
+
+---
+
+## 5. Cưỡng chế hiệu lực và chế độ advisory
+
+Để hook tự báo trạng thái tạo ra vòng lặp logic: khi hook bị tắt, chưa trust, sai cấu hình hoặc bị
+bỏ qua, `SessionStart` không thể thông báo điều đó. Vì vậy phát hiện capability phải nằm **bên
+ngoài** hệ hook.
+
+Adapter cung cấp `harness doctor --runtime codex` (tên minh hoạ ở giai đoạn thiết kế). Doctor chạy
+khi cài đặt và từ entry/skill cấp cao nhất, không chỉ từ hook. Nó ghi nhận và đánh giá:
+
+- phiên bản Codex CLI và trạng thái tính năng hook được khai báo;
+- OS được hỗ trợ và executable bắt buộc;
+- trust hiệu lực của project cùng hash cấu hình hook đã trust;
+- hash cấu hình cài đặt/package so với output kỳ vọng;
+- coverage matcher event/tool bắt buộc từ ma trận capability đã ghim;
+- discovery của skill và custom agent;
+- probe live hoặc deterministic thành công gần nhất và độ mới của nó.
+
+Kết quả load-bearing không rõ hoặc quá cũ đều dẫn đến advisory. Khi hook chạy, thông báo
+`SessionStart` có thể nhắc lại kết quả nhưng không phải nguồn chân lý.
+
+### 5.1 Ngữ nghĩa mode
+
+| Mode | Ý nghĩa | Tuyên bố được phép |
 |---|---|---|
-| Bề mặt chỉ dẫn (skills, agents, rules) | **Có** | Cùng nguồn, adapter sinh ra, kiểm tra tĩnh được |
-| Artifact + workflow (lane, schema `specs/`, FSM run-state, review receipt) | **Có** | Lõi logic trung tính runtime, vốn đã khả chuyển |
-| Cưỡng chế (hooks) | **Không — advisory, theo dõi đến khi đóng** | Hook Codex còn experimental, phụ thuộc flag/trust/OS, còn lỗ hổng độ phủ ở upstream |
+| `enforced` | mọi đường blocking bắt buộc đều đã trust, còn mới, được hỗ trợ và có coverage | cưỡng chế ngang hàng trong phạm vi ma trận đã khai báo |
+| `advisory` | workflow dùng được nhưng một hay nhiều kiểm soát cơ học bị thiếu, cũ hoặc không rõ | không được tuyên bố gate blocking đã corroborate run |
+| `unsupported` | thiếu năng lực runtime/platform bắt buộc | không được tuyên bố Codex ngang hàng |
 
-Vậy: **ship advisory, tuyên bố ngang hàng ở hai trong ba tầng, và mang tầng thứ ba như một ngoại lệ
-có tên, có chủ, có hạn trong sổ parity.** Advisory là trạng thái chuyển tiếp có điều kiện thoát,
-không phải một hạng mức vĩnh viễn.
+Mode đang hoạt động và mã bằng chứng doctor được ghi vào metadata run artifact/SUMMARY. `unknown`
+không bao giờ được thu gọn thành `enforced`. Cài lại, sửa config, nâng CLI hoặc đổi trust hash đều
+làm vô hiệu chẩn đoán cache.
 
-Về mặt cơ chế, điều đó nghĩa là:
-
-- Trình cài đặt **dò** khả năng chạy hook và **báo cáo** kết quả thay vì mặc định giả sử có.
-- Khi không có hook, harness chạy ở chế độ advisory: skill, artifact, lane, quy tắc bằng chứng và
-  chuỗi review vẫn hoạt động — chỉ thiếu phần đối chứng cơ học.
-- Chế độ advisory phải **hiển thị và được ghi lại** — nêu ra lúc bắt đầu phiên và ghi vào artifact
-  — để một `SUMMARY.md` sinh ra khi không có đối chứng không bao giờ bị nhầm với bản đã qua đối
-  chứng.
-
-Phương án còn lại (âm thầm ship một harness mà các gate không làm gì, dưới nhãn "ngang hàng") chính
-là kiểu thất bại "đọc traceability thành truth" mà quy tắc gate-verifiability của repo sinh ra để
-ngăn chặn.
+D3 (“ship advisory”) cho phép người dùng alpha chạy với cưỡng chế yếu hơn khi mọi khoảng trống đều
+hiển thị. Nó không biện minh cho nhãn peer GA trước khi gate behavioural và effective-enforcement
+đạt yêu cầu.
 
 ---
 
-## 6a. Tính đa dạng ensemble phải nhận biết runtime
+## 6. Delivery chỉ dẫn và quyền sở hữu `AGENTS.md`
 
-**Quyết định D1 kéo theo một hệ quả phải được thiết kế, không được nuốt trôi.** Hiện nay reviewer
-ngoài khác chủng loại trên PR *chính là* Codex, và giá trị của nó đến từ việc nó thuộc dòng model
-khác với chuỗi Claude đã xây dựng phần việc đó — riêng PR #173 đã 16 vòng phát hiện độc lập. Một khi
-Codex cũng **điều khiển** harness, thì một PR do Codex xây dựng và được Codex review sẽ dùng chung
-cả dòng model lẫn chính các prompt của harness. Tính đa dạng từng làm nên giá trị của vòng review đó
-sụp đổ — âm thầm, không tín hiệu nào báo là nó đã xảy ra.
+### 6.1 Rule và path
 
-**Hướng xử lý:** biến oracle thành một hàm của người xây dựng, thay vì một hằng số.
+Cơ chế tự nạp `paths:` theo path của Claude không có đảm bảo tương đương ở Codex và vốn đã không an
+toàn cho context cô lập. Cơ chế này chỉ còn là tối ưu:
 
-- **Review receipt được thêm trường `runtime`** cho mỗi review đã ghi — runtime nào tạo ra nó.
-  Receipt vốn đã là artifact provenance ghim vào một HEAD sha; ghi runtime vào đó là chỗ tự nhiên,
-  và biến tính chất này thành kiểm tra được thay vì mặc định giả sử.
-- Quy tắc độc lập trở thành **chéo runtime**: oracle bên ngoài phải khác runtime đã xây dựng thay
-  đổi. Nhánh do Claude xây dựng thì Codex review ngoài (đúng như hiện nay, không đổi); nhánh do
-  Codex xây dựng thì Claude review ngoài.
-- Review PR bên ngoài vẫn **mù với harness** trong cả hai chiều — nó không được chạy chính các
-  prompt review của harness, nếu không nó lại thừa hưởng điểm mù của oracle bên trong, bất kể dòng
-  model nào.
+- mọi skill/agent sử dụng đều đọc tường minh từng rule load-bearing;
+- câu chữ tham chiếu path nguồn trong repository (`rules/...`), không dùng `.claude/rules/...`;
+- `context-propagation-audit` chứng minh delivery đến từng context cô lập;
+- từ chối viết lại prose lúc adapter chạy và từ chối inline policy trùng lặp.
 
-Việc này biến một tính chất repo đang ngầm dựa vào thành một tính chất tường minh và kiểm chứng
-được — và nó chỉ trở nên cần thiết *bởi vì* Codex được nâng từ oracle lên peer driver.
+### 6.2 `AGENTS.md` gốc hiện có thuộc quyền người dùng
+
+Codex tìm các file `AGENTS.md` phân cấp từ root repository đến thư mục làm việc. Nó **không** dùng
+`.codex/AGENTS.md` làm điểm vào chỉ dẫn repository. Repo này đã track một `AGENTS.md` ở root với nội
+dung chủ ý khác `CLAUDE.md`.
+
+Installer không bao giờ được thay toàn bộ file đó. Nó có thể chọn một trong hai chiến lược không ghi
+đè sau đây, được quyết định và test ở phase đóng gói:
+
+1. vùng được quản lý nằm giữa hai sentinel và trỏ tới chỉ dẫn entry chung của harness; hoặc
+2. một dòng con trỏ tường minh do người dùng chọn thêm, còn nội dung harness sinh ra nằm ở file khác.
+
+Contract test phải bao phủ cài mới, cài khi đã có nội dung custom, cài lại, chỉnh sửa local trong/
+ngoài sentinel và xung đột với bản mới. Khi xung đột, giữ file local và ghi bản incoming để review,
+phù hợp hành vi protected-file hiện tại của repository.
+
+### 6.3 Câu chữ trung tính cú pháp gọi
+
+Nguồn chung gọi tên skill (“invoke skill `feature-intake`”), không dùng `/feature-intake` hay
+`$feature-intake`. Tài liệu entry có thể hướng dẫn cú pháp riêng của từng runtime.
 
 ---
 
-## 7. Phân kỳ
+## 7. Parity và provenance là release gate
 
-Sắp xếp sao cho giá trị và việc giảm rủi ro đến trước khi tồn tại bất kỳ file đặc thù Codex nào.
+Trạng thái peer có hai tầng bằng chứng.
 
-| Giai đoạn | Sản phẩm | Vì sao theo thứ tự này |
+| Tầng | Chứng minh điều gì | Chạy khi nào |
 |---|---|---|
-| **0 — Spike** | Xác nhận thực nghiệm payload hook của Codex, alias tên tool, độ phủ sự kiện, ngân sách `SessionEnd`, thư mục discovery của skills, **và việc một wave subagent thực sự dispatch và trả kết quả dưới Codex**. | Tài liệu mâu thuẫn ở vài chỗ và còn bug độ phủ đang mở ở upstream. **Chặn** — mọi thứ phía sau dựng trên các dữ kiện này. D1 thêm phép dò subagent: nếu wave dispatch không chạy thì quy chế peer-driver là bất khả thi. |
-| **1 — Trung tính hoá** | Trung tính hoá đường dẫn rule, Read rule tường minh phổ quát, shim input cho hook, văn bản gọi skill trung tính. **Không file Codex nào.** | Refactor thuần phần harness hiện có, chứng minh được bằng bộ test sẵn có. Tạo giá trị (đóng một lỗ hổng thật phía Claude) kể cả khi sau này bỏ hỗ trợ Codex. |
-| **2 — Adapter** | Target deploy cho Codex: skills, `agents/*.toml`, `hooks.json`, `AGENTS.md`. | **Nằm trên đường găng do D1** — Codex điều khiển các agent nghĩa là bộ sinh TOML và cách ly reviewer bằng `sandbox_mode` là thành phần chịu lực, không phải tuỳ chọn. |
-| **3 — Parity + trung thực** | Khối runtime trong manifest, static-parity drift guard (mỗi PR), dò năng lực, báo cáo chế độ advisory, **trường `runtime` trong review receipt + quy tắc độc lập chéo runtime**. | Biến sai khác thành thứ kiểm tra được thay vì truyền miệng, và biến tính đa dạng ensemble thành thứ kiểm chứng được (§6a). |
-| **4 — Điểm vào** | `install-harness.sh --runtime claude\|codex\|both`, tài liệu, cập nhật `HARNESS.md`. | Cuối cùng: chưa có gì để cài cho tới khi 2–3 thành hình. |
-| **5 — Behavioural parity** | Bộ golden các hành vi harness chạy trên cả hai runtime; điều kiện theo lịch + trước release. | **Do D2 thêm vào.** Đây là thứ biến "ngang hàng" từ một tuyên bố thành bằng chứng mức truth. Để sau cùng vì đây là giai đoạn duy nhất tốn tiền mỗi lần chạy. |
+| Contract adapter deterministic | TOML/JSON sinh ổn định theo byte, strict config parsing, skill/agent discovery, coverage matcher/payload hook, manifest parity và cài đặt không ghi đè | mọi PR, blocking |
+| Behavioural parity | lane, artifact, thao tác bị block, resume, ranh giới review subagent và review receipt tương đương giữa Claude và Codex | theo lịch và trước release; blocking cho GA |
 
-**Giai đoạn 1 có giá trị độc lập và ship được độc lập.** Điều này là cố ý — nghĩa là quyết định về
-Codex có thể đảo ngược sau Giai đoạn 1 mà không mất gì.
+Test do model điều khiển là bằng chứng behavioural, không phải deterministic config test. Fixture của
+chúng ghim input, output invariant kỳ vọng, phiên bản CLI/runtime và field nondeterministic được phép.
 
-**D2 dời vạch đích, không dời vạch xuất phát.** Quy chế ngang hàng chỉ thành sự thật khi Giai đoạn 5
-tồn tại; Giai đoạn 0–4 là cùng khối lượng công việc dù chọn hướng nào. Tuyên bố ngang hàng trước
-Giai đoạn 5 tức là tuyên bố dựa trên bằng chứng tĩnh — chấp nhận được nếu nói thẳng ra (§6), không
-chấp nhận được nếu để ngầm hiểu.
+### 7.1 Review receipt nhận biết runtime
+
+Chỉ ghi runtime của reviewer là chưa đủ: không thể đánh giá độc lập khi thiếu provenance của builder.
+Về mặt khái niệm, receipt phát triển thành:
+
+```json
+{
+  "builder": {
+    "runtime": "claude|codex|mixed",
+    "client_version": "...",
+    "model_family": "..."
+  },
+  "reviews": [
+    {
+      "runtime": "...",
+      "model_family": "...",
+      "origin": "internal|external",
+      "harness_blind": true
+    }
+  ]
+}
+```
+
+Schema cuối vẫn giữ reviewed-SHA, loại review, finding và verdict hiện có của receipt.
+
+- `builder.runtime = mixed` nghĩa là nhiều hơn một runtime đã góp thay đổi implementation kể từ
+  ranh giới review được chấp nhận gần nhất; artifact ghi tập runtime/model tham gia.
+- External oracle phải harness-blind và, khi có thể, dùng runtime/model family không nằm trong tập
+  builder.
+- Nếu không có oracle tách biệt, run cần ngoại lệ có owner tường minh hoặc human review; không được
+  âm thầm tuyên bố đã có corroboration dị thể.
+
+Checker cưỡng chế hình dạng provenance và tính độc lập chéo runtime/model tách biệt với tính đúng
+của review. Nó không được tuyên bố nhãn khác nhau bảo đảm suy luận độc lập.
 
 ---
 
-## 8. Ngoài phạm vi (non-goals)
+## 8. Các phase triển khai và gate
 
-- **Fork skill theo từng runtime.** Một nguồn duy nhất, nếu không thì thiết kế đã thất bại.
-- **Một workflow riêng cho Codex.** Cùng lane, cùng artifact, cùng gate — nếu không, các tuyên bố
-  của harness hết so sánh được giữa các runtime.
-- **Hỗ trợ Cursor / OpenCode ngay bây giờ.** Đường nối adapter mở đường cho việc đó về sau; thêm
-  ngay lúc này là thiết kế dựa trên ẩn số.
-- **Sao chép mô hình cloud manager-worker sandbox của Codex.** Ngoài phạm vi; chỉ CLI cục bộ.
-- **Thay thế bản dựng `.claude/`.** Claude Code vẫn là target hạng nhất, hành vi không đổi.
+| Phase | Deliverable | Gate thoát |
+|---|---|---|
+| **1 — Đường cơ sở capability** | ma trận event/tool/platform có version; fixture live cho shell, `apply_patch`, trust/config, agent dispatch và thời gian SessionEnd | mọi claim load-bearing đã được quan sát hoặc đánh dấu unknown |
+| **2 — Quyết định đóng gói** | spike plugin/hybrid so với direct sync; hành vi discovery, upgrade và conflict | chọn một đường package với tiêu chí fallback được ghi lại |
+| **3 — Trung tính hoá ngữ nghĩa** | tham chiếu rule từ repo root, mọi explicit Read, prose trung tính cú pháp gọi, capability agent trung tính và binding map | hành vi Claude không đổi; context-delivery audit đạt |
+| **4 — Đường nối hook** | payload normalizer, unknown policy theo gate, fixture matcher/event chính xác | không còn silent fail-open cho đường tool được hỗ trợ |
+| **5 — Codex alpha adapter** | agent/config sinh ra, tích hợp `AGENTS.md` không ghi đè, runtime doctor, ghi mode | deterministic adapter suite đạt trên macOS/Linux/WSL baseline |
+| **6 — Parity gate mỗi PR** | runtime block trong manifest, strict config/discovery/install check, schema review provenance | deterministic check chặn drift trên mọi PR |
+| **7 — Behavioural parity** | golden workflow chéo runtime và test ranh giới subagent | golden bắt buộc đạt trên các phiên bản hỗ trợ đã ghim |
+| **8 — GA** | installer/docs công bố Codex là peer; review mọi ngoại lệ còn lại | không có ngoại lệ vô chủ/quá hạn; claim enforced hoặc advisory được giới hạn rõ |
+
+Phase 1–4 là điều kiện trước khi nối Codex alpha adapter vào hệ thống, không phải cleanup tuỳ chọn
+sau adapter. Phase 5 là **alpha**, không phải GA. Claim peer của D2 chỉ đúng sau Phase 6–7; D3 cho
+phép alpha advisory sớm hơn nhưng không dời đích đó.
 
 ---
 
 ## 9. Các quyết định
 
-Ghi nhận 2026-08-08. Đây từng là ba câu hỏi mở của thiết kế; cả ba đã được chốt.
-
-| # | Quyết định | Hệ quả trong thiết kế này |
+| # | Quyết định | Hệ quả |
 |---|---|---|
-| **D1** | **Codex chạy luôn các agent** — là peer driver đầy đủ, không chỉ là reviewer ngoài. | Bộ sinh TOML cho subagent và cách ly reviewer bằng `sandbox_mode` chuyển lên đường găng (§4.3, Giai đoạn 2). Wave dispatch subagent được thêm vào spike chặn ở Giai đoạn 0. Tính đa dạng ensemble phải nhận biết runtime (§6a). |
-| **D2** | **Codex là runtime ngang hàng**, không phải best-effort. | Parity thành điều kiện release, tách làm hai tầng: static (mỗi PR, miễn phí) và behavioural (theo lịch/trước release, tốn tiền) (§5). Thêm Giai đoạn 5. Sổ parity chuyển thành danh sách ngoại lệ có chủ, có hạn — không còn là bản kê khoảng trống. |
-| **D3** | **Ship advisory** — không chờ độ phủ hook ở upstream. | Advisory được định nghĩa là trạng thái chuyển tiếp có điều kiện thoát, và quy chế ngang hàng được tuyên bố theo từng tầng thay vì tuyên bố trọn gói (§6). |
-
-### Mâu thuẫn duy nhất còn lại
-
-**D2 và D3 kéo ngược nhau**, và thiết kế xử lý chứ không che: quy chế ngang hàng được tuyên bố ở
-tầng chỉ dẫn và tầng artifact/workflow ngay khi ship, còn tầng cưỡng chế ship ở chế độ advisory và
-được mang như một ngoại lệ có tên, có chủ, cho tới khi độ phủ hook của Codex hoàn thiện ở upstream.
-Mọi cách khác hoặc làm chậm việc ship (vi phạm D3), hoặc để chữ "ngang hàng" mang nghĩa nhẹ hơn
-những gì nó nói (vi phạm chính quy tắc gate-verifiability của repo).
-
-**Rủi ro còn lại cần canh:** một danh sách ngoại lệ không có hạn chính là cách "advisory" âm thầm
-trở thành vĩnh viễn. Điều kiện thoát và người chịu trách nhiệm trên mục sổ đó mới là cơ chế kiểm
-soát — không phải ý định sẽ sửa sau.
+| **D1** | Codex chạy agent như một workflow runtime đầy đủ. | mapping capability agent, dispatch fresh/bounded và behavioural test subagent nằm trên critical path |
+| **D2** | Codex hướng đến trạng thái peer. | deterministic parity chạy mỗi PR; behavioural parity chặn GA |
+| **D3** | ship alpha advisory trước khi mọi đường cơ học đều enforce được. | mode do doctor xác định phải hiển thị và được ghi lại; advisory không bị gọi ngầm là enforced |
+| **D4** | dùng chung nguồn ngữ nghĩa, không dùng chung field cấu hình runtime. | adapter chứa policy binding tường minh, được review |
+| **D5** | ưu tiên đóng gói hybrid plugin/project. | plugin sở hữu skill/hook tái sử dụng; project adapter sở hữu agent và tích hợp repository hữu hạn, tuỳ bằng chứng Phase 2 |
+| **D6** | bảo toàn `AGENTS.md` gốc. | không sinh/ghi đè toàn file; tích hợp vùng quản lý phải có conflict test |
 
 ---
 
-## 10. Nguồn tham khảo
+## 10. Ngoài phạm vi
 
-Các tuyên bố về năng lực Codex CLI trong tài liệu này được đọc từ tài liệu Codex của OpenAI
-(hook contract, skills discovery, schema TOML của subagent) và đối chiếu chéo với các tài liệu
-tham khảo bên thứ ba cùng hai issue độ phủ đang mở ở upstream. Chúng là bằng chứng **mức
-traceability** — đã đọc, chưa chạy — và đó chính là lý do Giai đoạn 0 tồn tại.
+- Fork skill hoặc workflow policy theo runtime.
+- Tuyên bố hỗ trợ Windows native trước khi có adapter hook Windows.
+- Mô phỏng orchestration cloud của Codex; thiết kế này nhắm tới CLI/runtime local.
+- Thay đường cài Claude hiện tại hoặc đổi ngữ nghĩa workflow của Claude.
+- Coi riêng nhãn runtime là bằng chứng review độc lập.
 
-- [Codex — Hooks](https://developers.openai.com/codex/hooks) ([URL hiện hành](https://learn.chatgpt.com/docs/hooks))
-- [Codex — Build skills](https://developers.openai.com/codex/skills)
-- [Codex — Subagents](https://learn.chatgpt.com/docs/agent-configuration/subagents)
-- [Codex — Custom prompts](https://developers.openai.com/codex/custom-prompts) (đã deprecated, thay bằng skills)
-- [Codex — Configuration reference](https://developers.openai.com/codex/config-reference)
-- [hookshot — Codex hook payload reference](https://github.com/CorridorSecurity/hookshot/blob/main/docs/reference-codex.md)
-- [openai/codex#16732 — apply_patch không phát PreToolUse/PostToolUse](https://github.com/openai/codex/issues/16732)
-- [openai/codex#20204 — độ phủ PreToolUse không nhất quán giữa các tool handler](https://github.com/openai/codex/issues/20204)
+---
+
+## 11. Nguồn và tầng bằng chứng
+
+Các claim capability đã được làm mới từ tài liệu chính thức của OpenAI và kiểm tra bằng probe local
+cô lập trên Codex CLI 0.147.0. Tài liệu là bằng chứng traceability; fixture deterministic/live được
+lưu ở Phase 1 sẽ trở thành bằng chứng provenance/behavioural. Các lỗ hổng hook lịch sử không còn được
+dùng làm tiền đề kiến trúc hiện tại.
+
+- [Codex hooks](https://developers.openai.com/codex/hooks)
+- [Codex skills](https://developers.openai.com/codex/skills)
+- [Codex subagents](https://developers.openai.com/codex/subagents)
+- [Codex configuration reference](https://developers.openai.com/codex/config-reference)
+- [Codex plugins](https://developers.openai.com/plugins/build/plugins)
+- [Chỉ dẫn repository bằng AGENTS.md](https://learn.chatgpt.com/docs/agent-configuration/agents-md)
+- [openai/codex#16732](https://github.com/openai/codex/issues/16732) — issue coverage
+  `apply_patch` lịch sử, nay đã đóng; chỉ giữ để giải thích vì sao thiết kế cũ có thể lỗi thời

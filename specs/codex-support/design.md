@@ -2,338 +2,373 @@
 
 > Vietnamese version: [`design.vi.md`](./design.vi.md)
 
-**Status:** design only. No implementation, no file layout committed, no code.
-**Goal:** a user driving **OpenAI Codex CLI** gets the same harness — same lanes, same
-artifacts, same gates — as a user driving Claude Code, from **one set of sources**.
+**Status:** revised design only. No runtime adapter or enforcement change is implemented here.
+**Evidence refreshed:** 2026-08-10 against Codex CLI 0.147.0, current OpenAI documentation,
+and the `simplify` branch.
+**Goal:** a user driving OpenAI Codex gets the same harness lanes, artifacts, workflow, and
+release gates as a Claude Code user, from one semantic source of truth.
 
 ---
 
-## 1. The finding that makes this tractable
+## 1. Feasibility and current capability baseline
 
-The harness was built against Claude Code's extensibility model. During 2026 Codex CLI
-converged on that same model. The three surfaces the harness depends on now exist on both:
+Codex now exposes the three extension surfaces the harness needs: skills, lifecycle hooks, and
+custom subagents. That makes a peer adapter feasible, but the two runtimes are not field-for-field
+equivalent. The design therefore shares **semantics** and makes runtime policy mappings explicit.
 
-| Harness dependency | Claude Code | Codex CLI | Verdict |
+| Harness dependency | Claude Code | Codex | Design conclusion |
 |---|---|---|---|
-| Prompt programs | `skills/<n>/SKILL.md`, YAML frontmatter `name`/`description` | Skills — **same file name, same two required frontmatter fields**, model-selected *or* explicit | near-identical |
-| Enforcement | hooks: stdin JSON → exit 2 / `permissionDecision:"deny"` / `hookSpecificOutput.additionalContext`, `matcher` regex, `type:"command"` | hooks: **the same contract, field for field** | near-identical |
-| Isolated contexts | `agents/*.md` + Task tool + tool whitelist | `.codex/agents/*.toml` + spawn tools + **`sandbox_mode`** | same semantics, different encoding |
+| Prompt programs | `skills/<name>/SKILL.md` | `SKILL.md` skills, discovered from supported skill roots or plugins | share skill sources; validate discovery in each package |
+| Enforcement | lifecycle hooks receiving JSON on stdin | lifecycle hooks enabled by default, with project trust and handler-coverage constraints | share hook logic behind a payload normaliser; detect effective coverage outside hooks |
+| Isolated contexts | Markdown agents, model/tool allowlists | `.codex/agents/*.toml`, developer instructions, sandbox/config policies | share an agent contract; emit tested runtime bindings rather than transliterating fields |
+| Repository instructions | `CLAUDE.md` and rules | hierarchical root-to-CWD `AGENTS.md` files | preserve existing `AGENTS.md`; manage only a bounded harness section or pointer |
 
-So the question is no longer *"can the harness run on Codex"* but *"what is the smallest seam
-that keeps one source of truth serving two runtimes."*
+The previous draft treated Codex hooks as experimental, opt-in, and broadly missing
+`apply_patch` coverage. That is stale. On the evidence date:
 
-**Corollary that shapes everything below:** the work is ~70% *neutralising the existing core*
-and ~30% *writing a Codex adapter*. The neutralisation half improves the Claude side too — it
-removes silent single-runtime dependencies the harness currently has no oracle for.
+- hooks are enabled by default in Codex and `codex features list` reports `hooks` as stable;
+- an isolated live probe observed `PreToolUse` and `PostToolUse` for both shell execution and
+  `apply_patch`;
+- the `apply_patch` payload contains the raw patch in `tool_input.command`, not a single
+  `tool_input.file_path`;
+- project hook execution still depends on project trust/configuration; hosted tools have no
+  lifecycle coverage, and specialised tool paths may opt out.
+
+The risk is therefore **payload and effective-coverage mismatch**, not an assumption that Codex
+never emits edit hooks.
+
+### 1.1 Supported platform baseline
+
+The existing hooks depend on Bash, `jq`, Git, and Python. The first supported Codex platform set
+is therefore macOS, Linux, and WSL with those dependencies present. Native Windows is not claimed
+until either every hook has a `commandWindows` implementation or a native adapter exists. The
+runtime doctor (§5) must report unsupported platforms as advisory, never silently label them peer.
 
 ---
 
-## 2. Architecture — one source, two adapters
+## 2. Architecture — one semantic core, explicit runtime bindings
 
-Today the repo already separates **source** (repo root) from **derived install** (`.claude/`,
-gitignored, built by `deploy-harness.sh`). The design keeps that shape and adds a second target.
-It does **not** add a second copy of the sources.
+The repository already separates editable sources from Claude's generated `.claude/` install.
+Codex support keeps one editable semantic core and adds runtime bindings plus generated/installable
+surfaces.
 
 ```
-        RUNTIME-NEUTRAL SOURCE                 ADAPTER              DERIVED INSTALL
-  ┌──────────────────────────────────┐
-  │ skills/    agents/    rules/     │──┬──► claude adapter  ──►  .claude/
-  │ hooks/     templates/ runtime/   │  │                          (settings.json, skills/, …)
-  │ scripts/   harness-manifest.json │  │
-  └──────────────────────────────────┘  └──► codex adapter   ──►  .agents/skills/  +  .codex/
-                                                                   (hooks.json, agents/*.toml,
-                                                                    AGENTS.md)
+              SEMANTIC SOURCE                         RUNTIME BINDINGS
+  ┌──────────────────────────────────────┐      ┌─────────────────────────┐
+  │ skills/  agents/  rules/  hooks/     │─────►│ Claude policy mapping   │──► .claude/
+  │ templates/  runtime/  scripts/       │      └─────────────────────────┘
+  │ harness-manifest.json                │      ┌─────────────────────────┐
+  └──────────────────────────────────────┘─────►│ Codex policy + packaging│──► plugin/project config
+                                                └─────────────────────────┘
 ```
 
-Three rules govern the seam:
+Four rules govern this seam:
 
-1. **Sources never name a runtime.** No `.claude/` path, no `/skill-name` invocation syntax, no
-   Claude-only tool name in any `skills/`, `agents/`, or `rules/` file.
-2. **Adapters are mechanical.** An adapter re-encodes and re-locates; it must not carry policy.
-   Any adapter that needs to *decide* something has found a leak in the neutral core.
-3. **Divergence is declared, never discovered.** What an adapter cannot deliver is recorded in a
-   machine-checked ledger (§5), not left for a user to find at runtime.
+1. **Workflow policy has one owner.** Lanes, artifacts, STOP conditions, review responsibilities,
+   and evidence rules remain in shared sources.
+2. **Runtime capabilities are explicit bindings.** Model names, tool permissions, sandbox policy,
+   context-fork policy, matcher aliases, and package locations may differ and must be mapped and
+   tested. Calling these transformations “mechanical” would hide real policy.
+3. **Generated files are reproducible and validated.** The same source revision and adapter
+   inputs must produce byte-stable output; generated TOML/JSON must pass the runtime's strict
+   configuration parser.
+4. **Divergence is declared.** Any missing capability is an owned, expiring exception with an exit
+   condition in the runtime manifest, not a silent best-effort gap.
 
-### 2.1 The four layers, by portability
+### 2.1 Packaging decision: hybrid by default
 
-| Layer | Examples | Portability | Work needed |
+OpenAI recommends plugins for reusable distributions, and a Codex plugin can bundle skills and
+hooks. Custom project agents and repository-level `AGENTS.md` integration have different ownership
+and conflict semantics. The preferred package is therefore hybrid:
+
+- **plugin-owned:** reusable skills and hook registration/assets;
+- **project-adapter-owned:** generated `.codex/agents/*.toml`, runtime state, and the bounded
+  `AGENTS.md` integration described in §6;
+- **fallback:** direct project sync for all Codex assets only if the packaging spike proves that
+  plugin discovery, trust, or local-development installation cannot satisfy the harness contract.
+
+Phase 2 records that decision with an executable discovery probe. The semantic sources and parity
+tests do not change if the fallback is selected.
+
+### 2.2 Portability by layer
+
+| Layer | Examples | Expected portability | Adapter responsibility |
 |---|---|---|---|
-| **Logic core** | `runtime/run_state.py`, `scripts/*.py`, `specs/` schema, templates, manifest | 100% — plain Python and files, zero runtime coupling | none |
-| **Enforcement** | `hooks/*.sh` | ~85% — same contract, different vocabulary and payload shapes | input-normalisation shim (§3) |
-| **Instruction surface** | `skills/`, `agents/`, `rules/` | ~70% — same concepts, different delivery and encoding | neutralisation (§4) |
-| **Entry point** | `CLAUDE.md`, `settings.json`, install script | ~0% — runtime-specific by definition | adapter-generated |
-
-The logic core being 100% portable is the load-bearing fact: lanes, evidence rules, run-state
-FSM, plan contract, verify-row linting and the review receipt are **already** runtime-agnostic.
-Codex support does not touch the harness's actual thinking — only how it is delivered and
-enforced.
+| Logic core | run-state FSM, schemas, templates, manifest | complete | none beyond executable paths |
+| Instruction surface | skills and rules | high | discovery, invocation-neutral prose, explicit rule delivery |
+| Enforcement | hook shell logic | high after normalisation | config, matcher aliases, payload normalisation, coverage diagnosis |
+| Agent policy | reviewer/implementer roles | semantic only | model, tools, sandbox, MCP, nesting, and context-fork bindings |
+| Entry/config | `CLAUDE.md`, `AGENTS.md`, settings | runtime-specific | generated or bounded managed integration |
 
 ---
 
-## 3. Enforcement — the hook seam
+## 3. Enforcement contract — exact event matrix and one normalisation seam
 
-### 3.1 What ports for free
+The implementation must pin a tested event/tool matrix instead of relying on “hook support” as a
+single boolean.
 
-Event names (`SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `Stop`,
-`SessionEnd`), the `matcher` + `type:"command"` config shape, exit-2 blocking, `deny`
-decisions, and `additionalContext` injection are the same on both runtimes. The nine hook
-scripts do not need to be rewritten.
-
-### 3.2 What breaks — and how it breaks
-
-Three divergences matter, and two of them **fail open**, which is the dangerous kind:
-
-| Divergence | Effect on the harness |
-|---|---|
-| **Tool vocabulary.** Codex's canonical `tool_name` for every file edit is `apply_patch` (with `Write`/`Edit` exposed only as matcher aliases); shell is `shell`/`unified_exec`. | Matchers mostly survive via aliasing — needs empirical confirmation. |
-| **Payload shape.** `apply_patch` carries a **patch envelope**, not `{file_path}`. Four hooks (`branch-isolation-guard`, `blast-radius-check`, `ruff-on-edit`, `render-plan-on-write`) read `.tool_input.file_path` with a `// empty` fallback. | **Silent fail-open.** They exit 0 and enforce nothing. For `branch-isolation-guard` that means implementation edits on a shared branch stop being blocked — with no error, no warning. |
-| **Event coverage.** Codex hook emission is opt-in per tool handler and has open upstream coverage gaps. | A gate can be *configured* and still never fire. |
-
-### 3.3 Design response: one normalisation seam
-
-Hooks stop parsing raw stdin. A single shared shim (sourced by all hooks, sitting beside the
-existing `hooks/lib/`) reads stdin once, detects the runtime, and exports a normalised view:
-the invoking tool, the **set** of files touched, the shell command, the prompt text.
-
-Why this shape:
-
-- It is **one testable seam**, not nine. The existing `tests/hooks/*.test.sh` contract-test
-  pattern extends to it directly.
-- A patch envelope naturally yields *many* files, so the neutral contract is a file **set**.
-  That is strictly more correct than today's single `file_path` — `blast-radius-check` and
-  `branch-isolation-guard` are both semantically set-valued already.
-- It converts the fail-open into an **explicit policy decision per hook**. A hook that cannot
-  determine its inputs must choose: warn loudly, or refuse. Silence stops being an option.
-
-### 3.4 Two hard constraints from the Codex side
-
-- **`SessionEnd` has a ~1s timeout (3s max)**, against ~600s for other events.
-  `state-breadcrumb.sh` does git work plus a file append. It must be measured, and if it does
-  not fit, moved to `Stop`. This is a real behavioural constraint, not a tuning note.
-- **Hooks are experimental, feature-flagged (`[features] hooks = true`), Windows-disabled, and
-  project-level hooks require the `.codex/` directory to be trusted.** A Codex install can
-  therefore be fully deployed and have **zero enforcement**. See §6.
-
----
-
-## 4. Instruction surface — neutralising the core
-
-Four concrete couplings, each with a design answer. All four are *simplifications* of the
-current source, not additions.
-
-### 4.1 Path-scoped rule auto-loading — the biggest risk
-
-Claude Code injects `rules/plan-format.md`, `wave-parallelism.md`, and `auto-correct-scope.md`
-automatically via `paths:` frontmatter when a matching `specs/**` file is read. **Codex has no
-equivalent.** The harness's most safety-relevant rule — `auto-correct-scope.md`, which carries
-the Rule-4 STOP criteria — reaches isolated reviewer and implementer contexts partly through
-this channel.
-
-This is also a latent defect *today*: PR #141 shipped a rule that was referenced but never read
-in an isolated subagent context, which is why `/context-propagation-audit` exists.
-
-**Design answer:** demote `paths:` from *mechanism* to *accelerant*.
-
-- Explicit `Read` steps in the consuming skill become the **only** delivery guarantee. Several
-  skills already do this (`writing-plans`, `correctness-review`, `intent-review`,
-  `subagent-driven-development`, `implementer-prompt.md`) — the design makes it universal and
-  the audit makes it provable.
-- `/context-propagation-audit` becomes the oracle: for every rule, every consuming context has a
-  Read. It already exists and already runs on workflow-engine diffs.
-- **Rejected:** inlining rule content into `AGENTS.md`. That reproduces the exact
-  `stale-inline-policy` defect this repo has already been bitten by.
-
-**This is the item most likely to make Codex support quietly wrong, and it is fixed on the
-Claude side by the same change.**
-
-### 4.2 Hard-coded `.claude/` paths in skill prose
-
-26 occurrences instruct agents to read `.claude/rules/...`. Under Codex there is no `.claude/`.
-
-**Design answer:** reference rules at their **repo-root** path (`rules/…`) — where they already
-live in source, and where both runtimes can read them. The `.claude/rules/` copy stays as
-Claude's auto-load fixture, not as the address anyone is told to use. Deploy-time prose
-rewriting is explicitly rejected as opaque and untestable.
-
-### 4.3 Subagents
-
-The *semantic* contract is already runtime-neutral and already written down in
-`rules/orchestration.md`: read-only reviewers, separate spec/quality verdicts, 150–300 word
-structured summaries, no raw file dumps. Only the **encoding** differs (Markdown+frontmatter vs
-TOML), so `agents/*.md` stays the source and the Codex adapter emits TOML.
-
-Two notes worth carrying into implementation:
-
-- Codex's `sandbox_mode = "read-only"` is a **stronger** independence guarantee than a tool
-  whitelist — it is enforced by the sandbox rather than by the tool list. Reviewer independence
-  gets better under Codex, not worse.
-- Codex "does not spawn subagents automatically" — delegation must be explicit in the prompt.
-  `subagent-driven-development`'s wave dispatch is already explicit; this needs verification,
-  not redesign.
-
-### 4.4 Invocation syntax and entry file
-
-`/skill-name` (Claude) vs `$skill`/model-selected (Codex); `CLAUDE.md` vs `AGENTS.md`. Sources
-should name skills, not invocation syntax ("invoke the feature-intake skill"). `AGENTS.md`
-already exists in this repo and is adapter-generated from the same content that produces
-`CLAUDE.md`.
-
----
-
-## 5. Parity as a release gate — two tiers
-
-**Decision D2 makes Codex a peer runtime**, so parity is a release gate, not a ledger of
-excuses. But Codex CLI is a paid, non-deterministic, network-dependent process — gating every
-PR on live Codex execution would make CI slow, expensive and flaky. The design therefore splits
-the gate along the axis the repo already uses for evidence tiers:
-
-| Tier | What it proves | Cost | When it runs |
+| Harness need | Codex event/tool path | Observed or documented baseline | Required control |
 |---|---|---|---|
-| **Static parity** (traceability) | Every skill, agent, rule and hook the harness ships is *emitted* for both runtimes; the manifest's runtime block is internally consistent; no adapter drift. | Free, deterministic | **Every PR**, blocking |
-| **Behavioural parity** (truth) | A small golden set of harness behaviours — a lane classification, a plan execution, a blocked commit, a review receipt — produces equivalent artifacts when *driven* by each runtime. | Paid, non-deterministic | Scheduled + pre-release, blocking on release only |
+| Git command gates | `PreToolUse` on shell/unified execution | live probe observed pre/post shell events | matcher fixture + command normalisation |
+| Edit isolation | `PreToolUse` on `apply_patch` | live probe observed event | parse every path in the patch; unknown input follows each gate's explicit fail policy |
+| Post-edit checks | `PostToolUse` on `apply_patch` | live probe observed event | path-set normalisation; never assume one file |
+| Prompt scope guidance | `UserPromptSubmit` | documented lifecycle event | golden payload fixture |
+| Knowledge injection | `SessionStart` | documented lifecycle event | supplementary only; cannot prove hooks are active |
+| Durable breadcrumb | `SessionEnd` | documented event with a short timeout | benchmark below the timeout and keep work bounded |
+| Hosted/specialised tools | handler-dependent | hosted tools are outside lifecycle coverage; specialised paths may opt out | doctor reports coverage; unsupported edit paths cannot be called blocking parity |
 
-`harness-manifest.json` — already the single source of truth for hard-gate vocabulary and
-modes — gains a **runtime block**: for each gate, which runtimes enforce it, at what strength
-(block / warn / unavailable), and why. Static parity is checked against that block by a drift
-guard shaped like the existing `check_manifest.py` and embedded-gate-modes parity check.
+### 3.1 Existing failure mode
 
-**Under peer status the ledger changes role.** It is no longer "here are the gaps"; it is a
-short, owned, expiring exception list. Every `unavailable` entry carries an owner and an exit
-condition — otherwise "peer" degrades into a word and the ledger becomes the thing that *hides*
-the gap instead of exposing it.
+Four current edit hooks read `.tool_input.file_path` and use an empty fallback. A Codex
+`apply_patch` event instead carries a patch envelope in `tool_input.command`. Without an adapter,
+those hooks can silently observe no path and allow the operation. This is a real fail-open, even
+though the event itself fires.
+
+### 3.2 Normalised hook input
+
+Every hook consumes a single normaliser that reads stdin once and exposes:
+
+- runtime and event identity;
+- canonical tool class (`shell`, `edit`, `mcp`, or `other`);
+- the complete, deduplicated set of touched repository paths;
+- shell command, prompt text, and tool outcome when applicable;
+- parse status: `known`, `partial`, or `unknown`.
+
+A patch touching multiple files is set-valued by definition. `branch-isolation-guard`,
+`blast-radius-check`, `ruff-on-edit`, and `render-plan-on-write` must evaluate every applicable
+path. A parse failure must be visible. Each gate declares whether `partial`/`unknown` blocks,
+warns, or is unavailable; the default is never silent success.
+
+Golden fixtures cover Claude and Codex payloads, multi-file patches, rename/delete operations,
+malformed input, paths with spaces, and paths outside the repository. Matcher tests separately
+prove which tool handlers actually reach the normaliser.
+
+### 3.3 Session-end work stays at SessionEnd
+
+`state-breadcrumb.sh` currently belongs to `SessionEnd`. Codex gives that event a much smaller
+budget than ordinary hooks, so the script must be timed and reduced if needed. It must **not** be
+moved directly to `Stop`: Stop may repeat before the session ends, and the current per-session
+idempotency could preserve the first, stale snapshot. Moving would require a replaceable snapshot
+design plus repetition tests; that is a separate change, not the default adapter plan.
 
 ---
 
-## 6. Advisory mode — transitional, not the steady state
+## 4. Agent contract — shared roles, runtime-specific security policy
 
-**Decisions D2 and D3 are in tension, and the design must not paper over it.** Peer runtime means
-parity is a release gate. Advisory mode means Codex ships with weaker or absent mechanical
-enforcement. A runtime shipping advisory is, on the enforcement layer, *by definition not at
-parity*.
+The current `agents/*.md` files contain Claude model identifiers and Claude tool allowlists.
+Codex `sandbox_mode` is not equivalent to those allowlists: read-only filesystem policy does not
+by itself disable nested agents, shell access, MCP calls, or every non-filesystem side effect.
+Therefore a direct Markdown-to-TOML field conversion cannot preserve the role contract.
 
-The resolution is to be precise about **which layers reach peer status when**:
+The shared agent schema must express capabilities, not vendor fields:
 
-| Layer | Peer at ship? | Basis |
+- role instructions and output contract;
+- filesystem access (`none`, `read-only`, or `workspace-write`);
+- shell policy and network policy;
+- allowed MCP servers/tools;
+- whether nested delegation is allowed;
+- context policy (`fresh`, `bounded`, or inherited);
+- model-class requirement and runtime-specific model binding.
+
+Each adapter owns a checked mapping from those capabilities to its runtime. An unmapped capability
+is an adapter error, not an implicit default.
+
+### 4.1 Reviewer profile
+
+Review agents require, at minimum:
+
+- read-only filesystem access;
+- nested-agent delegation disabled;
+- no uncontrolled side-effecting MCP tools;
+- fresh or explicitly bounded context, preserving plan-blind/intent-blind boundaries;
+- the structured verdict contract already defined by the harness.
+
+A live Codex probe confirmed another important constraint: a custom agent profile can be selected
+with a fresh/bounded fork, while a full-history fork inherits the parent's agent type and rejects
+that override. Generated dispatch instructions and behavioural tests must use the supported
+fresh/bounded path. If a runtime cannot enforce one capability, the parity ledger records the exact
+exception rather than describing `sandbox_mode` as stronger than a tool allowlist.
+
+---
+
+## 5. Effective enforcement and advisory mode
+
+Hook self-reporting is circular: when hooks are disabled, untrusted, misconfigured, or skipped,
+`SessionStart` cannot announce that fact. Capability detection must therefore live **outside** the
+hook system.
+
+The adapter provides `harness doctor --runtime codex` (name illustrative at design stage). It is
+invoked during installation and from the top-level entry/skill flow, not only from a hook. It
+records and evaluates:
+
+- Codex CLI version and declared hook feature state;
+- supported OS and required executables;
+- effective project trust and the hash of the trusted hook configuration;
+- installed/package configuration hash versus generated expectation;
+- required event/tool matcher coverage from the pinned capability matrix;
+- skill and custom-agent discovery;
+- last successful live or deterministic probe and its freshness.
+
+Any unknown or stale load-bearing result yields advisory mode. A `SessionStart` message may echo
+the result when hooks do run, but it is not the source of truth.
+
+### 5.1 Mode semantics
+
+| Mode | Meaning | Allowed claim |
 |---|---|---|
-| Instruction surface (skills, agents, rules) | **Yes** | Same sources, adapter-emitted, statically checkable |
-| Artifacts + workflow (lanes, `specs/` schema, run-state FSM, review receipt) | **Yes** | Runtime-agnostic logic core, already portable |
-| Enforcement (hooks) | **No — advisory, tracked to closure** | Codex hooks experimental, flag/trust/OS-gated, upstream coverage gaps |
+| `enforced` | all required blocking paths are trusted, current, supported, and covered | peer enforcement for the declared matrix |
+| `advisory` | workflow is usable but one or more mechanical controls are missing, stale, or unknown | no claim that blocking gates corroborated the run |
+| `unsupported` | required runtime/platform capability is absent | no Codex peer claim |
 
-So: **ship advisory, declare peer on two of three layers, and carry the third as a named,
-owned, expiring exception in the parity ledger.** Advisory is a transitional state with an exit
-criterion, not a permanent tier.
+The active mode and doctor evidence identifier are written into the run artifact/SUMMARY metadata.
+Unknown must never collapse to `enforced`. Re-installation, config edits, CLI upgrades, or trust-hash
+changes invalidate the cached diagnosis.
 
-Mechanically that means:
-
-- The installer **probes** for hook capability and reports the result rather than assuming it.
-- With hooks unavailable, the harness runs in advisory mode: skills, artifacts, lanes, evidence
-  rules and the review chain all still work — only the mechanical corroboration is absent.
-- Advisory mode is **visible and recorded** — surfaced at session start and written into the
-  artifact — so a `SUMMARY.md` produced without corroboration is never mistaken for one that
-  survived it.
-
-The alternative (silently shipping a harness whose gates do nothing, under a "peer" label) is
-exactly the traceability-read-as-truth failure the repo's gate-verifiability rule exists to
-prevent.
+D3 (“ship advisory”) means alpha users may run with weaker enforcement while gaps are visible. It
+does not justify a GA peer label before the behavioural and effective-enforcement gates pass.
 
 ---
 
-## 6a. Ensemble diversity becomes runtime-aware
+## 6. Instruction delivery and `AGENTS.md` ownership
 
-**Decision D1 has a consequence that must be designed for, not absorbed.** Today the external
-heterogeneous PR reviewer *is* Codex, and its value comes from being a different model family
-than the Claude chain that built the work — 16 rounds of independent findings on PR #173 alone.
-Once Codex also **drives** the harness, a Codex-built PR reviewed by a Codex oracle shares both
-the model family and the harness's own prompts. The diversity that made that review valuable
-collapses, silently, with no signal that it happened.
+### 6.1 Rules and paths
 
-**Design answer:** make the oracle a function of the builder, not a constant.
+Claude path-scoped `paths:` loading has no equivalent guarantee in Codex and is already unsafe for
+isolated contexts. It becomes an optimisation only:
 
-- The **review receipt gains a `runtime` field** per recorded review — which runtime produced it.
-  The receipt is already the provenance artifact pinned to a HEAD sha; recording the runtime is
-  the natural place, and it makes the property checkable rather than assumed.
-- The independence rule becomes **cross-runtime**: the external oracle must differ from the
-  runtime that built the change. A Claude-built branch gets a Codex external review (today's
-  behaviour, unchanged); a Codex-built branch gets a Claude external review.
-- The external PR review stays **harness-blind** either way — it must not run the harness's own
-  review prompts, or it re-inherits the inside oracle's blind spots regardless of model family.
+- every consuming skill/agent explicitly reads each load-bearing rule;
+- prose references the repository source path (`rules/...`), never `.claude/rules/...`;
+- `context-propagation-audit` proves delivery to each isolated context;
+- adapter-time prose rewriting and duplicated inline policy are rejected.
 
-This turns an implicit property the repo currently relies on into an explicit, verifiable one —
-and it only becomes necessary *because* Codex is being promoted from oracle to peer driver.
+### 6.2 Existing root `AGENTS.md` is user-owned
+
+Codex discovers hierarchical `AGENTS.md` files from the repository root toward the working
+directory. It does **not** use `.codex/AGENTS.md` as the repository instruction entry point. This
+repository already tracks a root `AGENTS.md` whose content intentionally differs from `CLAUDE.md`.
+
+The installer must never replace that file wholesale. It may use one of two non-clobbering
+strategies, selected and tested during the packaging phase:
+
+1. a sentinel-delimited managed section that points to the shared harness entry instructions; or
+2. an explicit one-line pointer that the user chooses to add, leaving generated harness content in
+   a separate file.
+
+Fresh install, existing-custom-content install, reinstall, local edits inside/outside the sentinel,
+and incoming conflict cases are contract tests. Conflicts preserve the local file and write a
+reviewable incoming copy, consistent with the repository's current protected-file behaviour.
+
+### 6.3 Invocation-neutral prose
+
+Shared sources name the skill (“invoke the `feature-intake` skill”), not `/feature-intake` or
+`$feature-intake`. Entry documents may teach runtime-specific invocation syntax.
 
 ---
 
-## 7. Phasing
+## 7. Parity and provenance are release gates
 
-Ordered so that value and risk-reduction land before any Codex-specific file exists.
+Peer status has two evidence tiers.
 
-| Phase | Deliverable | Why this order |
+| Tier | What it proves | When it runs |
 |---|---|---|
-| **0 — Spike** | Empirically confirm Codex hook payloads, tool-name aliasing, event coverage, `SessionEnd` budget, the skills discovery directory, **and that a subagent wave actually dispatches and returns under Codex**. | Docs disagree in places and upstream coverage bugs are open. **Blocking** — everything downstream is built on these facts. D1 adds the subagent probe: peer-driver status is unattainable if wave dispatch doesn't work. |
-| **1 — Neutralise** | Rule-path neutralisation, universal explicit rule Reads, hook input shim, neutral invocation prose. **No Codex files.** | Pure refactor of the existing harness, provable by the existing test suite. Ships value (closes a real Claude-side gap) even if Codex support is later dropped. |
-| **2 — Adapter** | Codex deploy target: skills, `agents/*.toml`, `hooks.json`, `AGENTS.md`. | **On the critical path under D1** — Codex driving the agents means the TOML emitter and `sandbox_mode` reviewer isolation are load-bearing, not optional. |
-| **3 — Parity + honesty** | Manifest runtime block, static-parity drift guard (per-PR), capability probe, advisory-mode reporting, **review-receipt `runtime` field + cross-runtime independence rule**. | Makes the divergence checkable rather than folkloric, and makes ensemble diversity verifiable (§6a). |
-| **4 — Entry** | `install-harness.sh --runtime claude\|codex\|both`, docs, `HARNESS.md` update. | Last: nothing to install until 2–3 are real. |
-| **5 — Behavioural parity** | Golden-set harness behaviours executed on both runtimes; scheduled + pre-release gate. | **Added by D2.** This is what converts "peer" from a claim into truth-tier evidence. Deferred to last because it is the only phase that costs money per run. |
+| Deterministic adapter contract | byte-stable generated TOML/JSON, strict config parsing, skill/agent discovery, hook matcher/payload coverage, manifest parity, and non-clobber install behaviour | every PR, blocking |
+| Behavioural parity | equivalent lane choice, artifacts, blocked operations, resumption, subagent review boundaries, and review receipt under Claude and Codex | scheduled and pre-release; blocking for GA |
 
-**Phase 1 is independently valuable and independently shippable.** That is deliberate — it means
-the Codex decision can be reversed after Phase 1 at no loss.
+Model-driven tests are behavioural evidence, not deterministic config tests. Their fixtures pin
+inputs, expected invariant outputs, CLI/runtime versions, and allowed nondeterministic fields.
 
-**D2 moves the finish line, not the start.** Peer status is only real once Phase 5 exists;
-Phases 0–4 are the same work either way. Declaring peer before Phase 5 means declaring it on
-static evidence alone — acceptable if said plainly (§6), not if left implied.
+### 7.1 Runtime-aware review receipt
+
+Recording only the reviewer runtime is insufficient: independence cannot be evaluated without the
+builder provenance. The receipt evolves conceptually to:
+
+```json
+{
+  "builder": {
+    "runtime": "claude|codex|mixed",
+    "client_version": "...",
+    "model_family": "..."
+  },
+  "reviews": [
+    {
+      "runtime": "...",
+      "model_family": "...",
+      "origin": "internal|external",
+      "harness_blind": true
+    }
+  ]
+}
+```
+
+The final schema also retains the receipt's existing reviewed-SHA, review types, findings, and
+verdict fields.
+
+- `builder.runtime = mixed` means more than one runtime contributed implementation changes since
+  the last accepted review boundary; the artifact records the contributing runtime/model set.
+- The external oracle must be harness-blind and, where available, use a runtime/model family not in
+  the builder set.
+- If no disjoint oracle is available, the run requires an explicit owned exception or human review;
+  it must not silently claim heterogeneous corroboration.
+
+The checker enforces provenance shape and cross-runtime/model independence separately from review
+truth. It must not claim that different labels guarantee independent reasoning.
 
 ---
 
-## 8. Non-goals
+## 8. Implementation phases and gates
 
-- **Forking skills per runtime.** One source or the design has failed.
-- **A Codex-specific workflow.** Same lanes, same artifacts, same gates — or the harness's
-  claims stop being comparable across runtimes.
-- **Cursor / OpenCode support now.** The adapter seam makes it possible later; adding it now
-  would design against unknowns.
-- **Mirroring Codex's cloud manager-worker sandbox model.** Out of scope; local CLI only.
-- **Replacing the `.claude/` build.** Claude Code remains a first-class target, unchanged in
-  behaviour.
+| Phase | Deliverable | Exit gate |
+|---|---|---|
+| **1 — Capability baseline** | versioned event/tool/platform matrix; live fixtures for shell, `apply_patch`, trust/config, agent dispatch, and SessionEnd timing | every load-bearing claim is observed or marked unknown |
+| **2 — Packaging decision** | plugin/hybrid spike versus direct sync; discovery and upgrade/conflict behaviour | one package path selected with a recorded fallback criterion |
+| **3 — Semantic neutralisation** | repo-root rule references, universal explicit reads, invocation-neutral prose, runtime-neutral agent capabilities and binding maps | Claude behaviour unchanged; context-delivery audit passes |
+| **4 — Hook seam** | payload normaliser, per-gate unknown policy, exact matcher/event fixtures | no silent fail-open for supported tool paths |
+| **5 — Codex alpha adapter** | generated agents/config, non-clobber `AGENTS.md` integration, runtime doctor, mode recording | deterministic adapter suite passes on macOS/Linux/WSL baseline |
+| **6 — Per-PR parity gate** | manifest runtime block, strict config/discovery/install checks, review provenance schema | deterministic checks block drift on every PR |
+| **7 — Behavioural parity** | cross-runtime golden workflows and subagent boundary tests | required goldens pass on pinned supported versions |
+| **8 — GA** | installer/docs expose Codex as peer; remaining exceptions reviewed | no unowned/expired exception; enforced or explicitly scoped advisory claim |
+
+Phases 1–4 are prerequisites to wiring the Codex alpha adapter, not optional cleanup after it.
+Phase 5 is an **alpha**, not GA. D2's peer claim becomes truthful only after Phases 6–7; D3 permits
+an earlier advisory alpha but does not move that finish line.
 
 ---
 
 ## 9. Decisions
 
-Recorded 2026-08-08. These were the design's three open questions; all are now settled.
-
-| # | Decision | Consequence in this design |
+| # | Decision | Consequence |
 |---|---|---|
-| **D1** | **Codex drives the agents too** — a full peer driver, not only the external reviewer. | Subagent TOML emitter and `sandbox_mode` reviewer isolation move onto the critical path (§4.3, Phase 2). Subagent wave dispatch joins the Phase-0 blocking spike. Ensemble diversity must become runtime-aware (§6a). |
-| **D2** | **Codex is a peer runtime**, not best-effort. | Parity becomes a release gate, split into static (per-PR, free) and behavioural (scheduled/pre-release, paid) tiers (§5). New Phase 5. The parity ledger becomes an owned, expiring exception list rather than a gap inventory. |
-| **D3** | **Ship advisory** — do not wait on upstream hook coverage. | Advisory is defined as a transitional state with an exit criterion, and peer status is declared per-layer rather than wholesale (§6). |
-
-### The one tension that survives
-
-**D2 and D3 pull against each other**, and the design resolves it rather than hiding it: peer
-status is claimed on the instruction and artifact/workflow layers at ship, while the enforcement
-layer ships advisory and is carried as a named, owned exception until Codex's hook coverage
-lands upstream. Anything else would either delay the ship (violating D3) or let "peer" mean less
-than it says (violating the repo's own gate-verifiability rule).
-
-**The residual risk to watch:** an exception list with no expiry is how "advisory" quietly
-becomes permanent. The exit condition and owner on that ledger entry are the control — not the
-intention to fix it later.
+| **D1** | Codex drives agents as a full workflow runtime. | agent capability mappings, fresh/bounded dispatch, and subagent behavioural tests are critical-path work |
+| **D2** | Codex targets peer status. | deterministic parity is per-PR; behavioural parity blocks GA |
+| **D3** | ship an advisory alpha before every mechanical path is enforceable. | doctor-derived mode is visible and recorded; advisory is not silently called enforced |
+| **D4** | share semantic sources, not runtime configuration fields. | adapters contain explicit, reviewed policy bindings |
+| **D5** | prefer hybrid plugin/project packaging. | plugin owns reusable skills/hooks; project adapter owns agents and bounded repository integration, subject to Phase-2 proof |
+| **D6** | preserve root `AGENTS.md`. | no wholesale generation or overwrite; managed integration is conflict-tested |
 
 ---
 
-## 10. Sources
+## 10. Non-goals
 
-Codex CLI capability claims in this document were read from OpenAI's Codex documentation
-(hooks contract, skills discovery, subagent TOML schema) and cross-checked against
-third-party references and two open upstream coverage issues. They are **traceability-tier**
-evidence — read, not executed — which is why Phase 0 exists.
+- Forking skills or workflow policy per runtime.
+- Claiming native Windows support before a Windows hook adapter exists.
+- Mirroring Codex cloud orchestration; this design targets the local CLI/runtime.
+- Replacing Claude's current install path or changing its workflow semantics.
+- Treating a runtime label alone as proof of review independence.
 
-- [Codex — Hooks](https://developers.openai.com/codex/hooks) ([current URL](https://learn.chatgpt.com/docs/hooks))
-- [Codex — Build skills](https://developers.openai.com/codex/skills)
-- [Codex — Subagents](https://learn.chatgpt.com/docs/agent-configuration/subagents)
-- [Codex — Custom prompts](https://developers.openai.com/codex/custom-prompts) (deprecated in favour of skills)
-- [Codex — Configuration reference](https://developers.openai.com/codex/config-reference)
-- [hookshot — Codex hook payload reference](https://github.com/CorridorSecurity/hookshot/blob/main/docs/reference-codex.md)
-- [openai/codex#16732 — apply_patch does not emit PreToolUse/PostToolUse](https://github.com/openai/codex/issues/16732)
-- [openai/codex#20204 — inconsistent PreToolUse hook coverage across tool handlers](https://github.com/openai/codex/issues/20204)
+---
+
+## 11. Sources and evidence level
+
+Capability claims were refreshed from official OpenAI documentation and checked with an isolated
+local Codex CLI 0.147.0 probe. Documentation is traceability evidence; captured deterministic/live
+fixtures in Phase 1 become provenance/behavioural evidence. Historical upstream hook gaps are not
+used as the current architecture premise.
+
+- [Codex hooks](https://developers.openai.com/codex/hooks)
+- [Codex skills](https://developers.openai.com/codex/skills)
+- [Codex subagents](https://developers.openai.com/codex/subagents)
+- [Codex configuration reference](https://developers.openai.com/codex/config-reference)
+- [Codex plugins](https://developers.openai.com/plugins/build/plugins)
+- [Repository instructions with AGENTS.md](https://learn.chatgpt.com/docs/agent-configuration/agents-md)
+- [openai/codex#16732](https://github.com/openai/codex/issues/16732) — historical
+  `apply_patch` coverage issue, now closed; retained only to explain why older designs may be stale
