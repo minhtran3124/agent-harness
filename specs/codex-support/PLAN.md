@@ -1,6 +1,6 @@
 ---
 slug: codex-support
-status: proposed
+status: active
 owner: Minh Tran
 created: 2026-08-10
 ---
@@ -10,21 +10,22 @@ created: 2026-08-10
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**11 tasks · 10 waves · 97 files · 0/11 done**
+**12 tasks · 11 waves · 112 files · 2/12 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
-| 1 | 1.1 | Define the capability evidence contract (wave 1) | specs/codex-support/capability-matrix.json, scripts/check_codex_capabilities.py, scripts/test_check_codex_capabilities.py, harness-manifest.json | the matrix is machine-readable and cannot silently turn absent/stale evidence in… |
-| 2 | 1.2 | Capture sanitized, replayable capability evidence (wave 2) | scripts/capture_codex_capabilities.sh, tests/scripts/codex-capability-probe.test.sh, specs/codex-support/evidence/codex-0.147.0/doctor.json, specs/codex-support/evidence/codex-0.147.0/hooks-shell.json, specs/codex-support/evidence/codex-0.147.0/hooks-apply-patch.json, specs/codex-support/evidence/codex-0.147.0/agents-fresh-bounded.json, specs/codex-support/evidence/codex-0.147.0/agents-full-history-rejection.json, specs/codex-support/evidence/codex-0.147.0/session-end-timing.json, specs/codex-support/evidence/codex-0.147.0/platform.json, specs/codex-support/capability-matrix.json | all Phase-1 load-bearing claims point to sanitized fixtures or explicit unknowns… |
+| 1 | 1.1 | Define the capability evidence contract (wave 1) | specs/codex-support/capability-matrix.json, scripts/check_codex_capabilities.py, scripts/test_check_codex_capabilities.py, scripts/run-tests.sh, harness-manifest.json | the matrix is machine-readable and cannot silently turn absent/stale evidence in… |
+| 2 | 1.2 | Capture sanitized, replayable capability evidence (wave 2) | scripts/capture_codex_capabilities.sh, tests/scripts/codex-capability-probe.test.sh, specs/codex-support/evidence/codex-0.147.0/doctor.json, specs/codex-support/evidence/codex-0.147.0/hooks-shell.json, specs/codex-support/evidence/codex-0.147.0/hooks-apply-patch.json, specs/codex-support/evidence/codex-0.147.0/agents-fresh-bounded.json, specs/codex-support/evidence/codex-0.147.0/agents-full-history-rejection.json, specs/codex-support/evidence/codex-0.147.0/session-end-timing.json, specs/codex-support/evidence/codex-0.147.0/platform.json, specs/codex-support/evidence/codex-0.147.0/trust-config.json, specs/codex-support/capability-matrix.json | all Phase-1 load-bearing claims point to sanitized fixtures or explicit unknowns… |
 | 3 | 2.1 | Build a disposable hybrid-versus-direct probe (wave 3) | scripts/probe_codex_packaging.sh, tests/scripts/codex-packaging-probe.test.sh, tests/fixtures/codex-packaging/marketplace.json, tests/fixtures/codex-packaging/plugin.json, tests/fixtures/codex-packaging/agents.toml, specs/codex-support/capability-matrix.json | one safe command compares both package boundaries across discovery and lifecycle… |
 | 4 | 2.2 | Record and enforce the packaging decision (wave 4) | specs/codex-support/packaging-decision.md, specs/codex-support/evidence/codex-0.147.0/packaging-hybrid.json, specs/codex-support/evidence/codex-0.147.0/packaging-direct.json, scripts/check_codex_packaging.py, scripts/test_check_codex_packaging.py, specs/codex-support/capability-matrix.json | Phase 5 has one evidence-backed package boundary and a deterministic reason to s… |
 | 5 | 3.1 | Freeze the neutralisation inventory and lint (wave 5) | specs/codex-support/neutralization-inventory.json, scripts/check_runtime_neutral_sources.py, scripts/test_check_runtime_neutral_sources.py, harness-manifest.json | the current coupling set is finite and machine-checked; later tasks cannot hide … |
-| 6 | 3.2 | Make rule delivery explicit and repository-rooted (wave 6) | agents/PROJECT.md, skills/README.md, skills/compound/README.md, skills/correctness-review/SKILL.md, skills/correctness-review/prompts/shared.md, skills/intent-review/SKILL.md, skills/subagent-driven-development/SKILL.md, skills/subagent-driven-development/implementer-prompt.md, skills/writing-plans/SKILL.md, skills/writing-plans/plan-document-reviewer-prompt.md, skills/xia2/references/research-brief-template.md, scripts/render_skill_prompt.py, scripts/test_render_skill_prompt.py, tests/scripts/context-propagation-regression.test.sh, specs/codex-support/neutralization-inventory.json | all contextual rules use portable source addresses and every isolated context ha… |
-| 7 | 3.3 | Neutralise skill invocation prose (wave 7) | agents/PROJECT.md, agents/PROJECT.template.md, agents/README.md, rules/auto-correct-scope.md, rules/orchestration.md, rules/wave-parallelism.md, skills/README.md, skills/brainstorming/SKILL.md, skills/compound/README.md, skills/compound/subagents/context-analyzer-prompt.md, skills/compound/subagents/decision-extractor-prompt.md, skills/compound/subagents/related-docs-finder-prompt.md, skills/compound/subagents/solution-extractor-prompt.md, skills/compound/templates/index.md, skills/correctness-review/SKILL.md, skills/correctness-review/correctness-reviewer-prompt.md, skills/feature-intake/SKILL.md, skills/feature-intake/tests/README.md, skills/intent-review/intent-reviewer-prompt.md, skills/subagent-driven-development/SKILL.md, skills/subagent-driven-development/references/review-chain.md, skills/using-git-worktrees/SKILL.md, skills/visual-planner/SKILL.md, skills/visual-planner/render_plan.py, skills/visual-planner/test_render_plan.py, skills/visual-planner/view_plan.py, skills/xia2/README.md, skills/xia2/tests/structural/depth-modes-test-cases.md, specs/codex-support/neutralization-inventory.json | shared instructions can be consumed by either runtime without deploy-time prose … |
+| 6 | 3.2 | Make rule delivery explicit and repository-rooted (wave 6) | agents/PROJECT.md, skills/README.md, skills/compound/README.md, skills/correctness-review/SKILL.md, skills/correctness-review/prompts/shared.md, skills/intent-review/SKILL.md, skills/subagent-driven-development/SKILL.md, skills/subagent-driven-development/implementer-prompt.md, skills/writing-plans/SKILL.md, skills/writing-plans/plan-document-reviewer-prompt.md, skills/xia2/references/research-brief-template.md, scripts/render_skill_prompt.py, scripts/test_render_skill_prompt.py, tests/scripts/context-propagation-regression.test.sh, tests/scripts/writing-plans-contract.test.sh, specs/codex-support/neutralization-inventory.json | all contextual rules use portable source addresses and every isolated context ha… |
+| 7 | 3.3 | Neutralise skill invocation prose (wave 7) | agents/PROJECT.md, agents/PROJECT.template.md, agents/README.md, rules/auto-correct-scope.md, rules/orchestration.md, rules/wave-parallelism.md, skills/README.md, skills/brainstorming/SKILL.md, skills/compound/README.md, skills/compound/subagents/context-analyzer-prompt.md, skills/compound/subagents/decision-extractor-prompt.md, skills/compound/subagents/related-docs-finder-prompt.md, skills/compound/subagents/solution-extractor-prompt.md, skills/compound/templates/index.md, skills/correctness-review/SKILL.md, skills/correctness-review/correctness-reviewer-prompt.md, skills/feature-intake/SKILL.md, skills/feature-intake/tests/README.md, skills/intent-review/intent-reviewer-prompt.md, skills/subagent-driven-development/SKILL.md, skills/subagent-driven-development/references/review-chain.md, skills/using-git-worktrees/SKILL.md, skills/visual-planner/SKILL.md, skills/visual-planner/render_plan.py, skills/visual-planner/test_render_plan.py, skills/visual-planner/view_plan.py, skills/xia2/README.md, skills/xia2/tests/structural/depth-modes-test-cases.md, templates/SUMMARY.template.md, templates/structure/docs-solutions-critical-patterns.md, templates/structure/docs-solutions-INDEX.md, templates/structure/docs-solutions-README.md, templates/structure/specs-README.md, specs/codex-support/neutralization-inventory.json | shared instructions can be consumed by either runtime without deploy-time prose … |
 | 8 | 3.4 | Extract neutral agent contracts and runtime bindings (wave 8) | agents/agent-contracts.json, agents/runtime-bindings.json, agents/coding.md, agents/reviewer.md, agents/task-reviewer.md, agents/test-runner.md, scripts/render_agent_definitions.py, scripts/test_render_agent_definitions.py, scripts/deploy-harness.sh, tests/scripts/deploy-prune.test.sh, tests/scripts/resync-conflict.test.sh, tests/scripts/settings-wiring.test.sh, tests/scripts/install-harness.test.sh, scripts/check_manifest.py, scripts/test_check_manifest.py, harness-manifest.json | semantic agent sources contain no Claude policy fields; both runtime bindings ar… |
-| 9 | 4.1 | Implement the canonical payload normaliser (wave 9) | hooks/lib/normalize-tool-input.py, tests/hooks/normalize-tool-input.test.sh, tests/fixtures/hook-input/claude-shell.json, tests/fixtures/hook-input/claude-write.json, tests/fixtures/hook-input/codex-shell.json, tests/fixtures/hook-input/codex-apply-patch-single.json, tests/fixtures/hook-input/codex-apply-patch-multi.json, tests/fixtures/hook-input/codex-apply-patch-move-delete.json, tests/fixtures/hook-input/malformed.json, specs/codex-support/capability-matrix.json, harness-manifest.json | every supported raw payload has one canonical representation; multi-file edits r… |
+| 9 | 4.1 | Implement the canonical payload normaliser (wave 9) | hooks/lib/normalize-tool-input.py, tests/hooks/normalize-tool-input.test.sh, tests/fixtures/hook-input/claude-shell.json, tests/fixtures/hook-input/claude-write.json, tests/fixtures/hook-input/codex-shell.json, tests/fixtures/hook-input/codex-unified-exec.json, tests/fixtures/hook-input/codex-apply-patch-single.json, tests/fixtures/hook-input/codex-apply-patch-multi.json, tests/fixtures/hook-input/codex-apply-patch-move-delete.json, tests/fixtures/hook-input/claude-user-prompt.json, tests/fixtures/hook-input/codex-user-prompt.json, tests/fixtures/hook-input/malformed.json, specs/codex-support/capability-matrix.json, harness-manifest.json | every supported raw payload has one canonical representation; multi-file edits r… |
 | 10 | 4.2 | Make branch isolation consume path sets and fail closed (wave 10) | hooks/branch-isolation-guard.sh, tests/hooks/branch-isolation-guard.test.sh | the hard gate cannot silently allow a supported Codex edit because a path is mis… |
 | 10 | 4.3 | Migrate advisory post-edit hooks without strengthening them (wave 10) | hooks/blast-radius-check.sh, hooks/ruff-on-edit.sh, hooks/render-plan-on-write.sh, tests/hooks/blast-radius-check.test.sh, tests/hooks/ruff-on-edit.test.sh, tests/hooks/render-plan-on-write.test.sh, tests/hooks/codex-edit-hooks.test.sh, CLAUDE.md | all four edit hooks share one payload truth; advisory hooks cover every known pa… |
+| 11 | 4.4 | Migrate the shell-dispatch and prompt gates onto the normaliser (wave 11) | hooks/pre-bash-dispatch.sh, hooks/scope-gate.sh, tests/hooks/pre-bash-dispatch.test.sh, tests/hooks/scope-gate.test.sh, CLAUDE.md, harness-manifest.json | no supported Codex shell path can bypass the git gates through an unparsed paylo… |
 
 ```mermaid
 flowchart LR
@@ -59,6 +60,9 @@ flowchart LR
     T4_2["4.2 Make branch isolation consume path sets and fail closed (wave 10)"]
     T4_3["4.3 Migrate advisory post-edit hooks without strengthening them (wave 10)"]
   end
+  subgraph W10[Wave 11]
+    T4_4["4.4 Migrate the shell-dispatch and prompt gates onto the normaliser (wave 11)"]
+  end
   W0 --> W1
   W1 --> W2
   W2 --> W3
@@ -68,11 +72,12 @@ flowchart LR
   W6 --> W7
   W7 --> W8
   W8 --> W9
+  W9 --> W10
 ```
 
 ### Progress
-- [ ] 1.1 — Define the capability evidence contract (wave 1)
-- [ ] 1.2 — Capture sanitized, replayable capability evidence (wave 2)
+- [x] 1.1 — Define the capability evidence contract (wave 1)
+- [x] 1.2 — Capture sanitized, replayable capability evidence (wave 2)
 - [ ] 2.1 — Build a disposable hybrid-versus-direct probe (wave 3)
 - [ ] 2.2 — Record and enforce the packaging decision (wave 4)
 - [ ] 3.1 — Freeze the neutralisation inventory and lint (wave 5)
@@ -82,6 +87,7 @@ flowchart LR
 - [ ] 4.1 — Implement the canonical payload normaliser (wave 9)
 - [ ] 4.2 — Make branch isolation consume path sets and fail closed (wave 10)
 - [ ] 4.3 — Migrate advisory post-edit hooks without strengthening them (wave 10)
+- [ ] 4.4 — Migrate the shell-dispatch and prompt gates onto the normaliser (wave 11)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -104,6 +110,9 @@ See `design.md` and `research-brief.md`.
 - Forking workflow policy, skills, rules, or hook bodies per runtime.
 - Running paid/networked Codex probes as blocking per-PR CI.
 - Cherry-picking the stale Claude-only `feature/plugin-namespace-packaging` branch.
+- Neutralising hook/script user-facing message prose (e.g. the `/compound` hint printed by
+  `hooks/commit-quality-gate.sh`): Task 3.1 classifies these as owned runtime-entry exceptions
+  deferred to Phase 5 rather than rewriting high-blast hook bodies in a bulk prose wave.
 
 ## Global Constraints
 
@@ -129,7 +138,9 @@ See `design.md` and `research-brief.md`.
   outside this plan and must remain byte-identical.
 - The hook normaliser returns every touched path plus `known`, `partial`, or `unknown`. It rejects
   traversal/out-of-repository paths, never invents a missing path, and keeps per-gate unknown policy
-  explicit: branch isolation blocks; advisory post-edit hooks warn and remain non-blocking.
+  explicit: branch isolation blocks; advisory post-edit hooks warn and remain non-blocking; the
+  shell-dispatch gate fails closed on an unclassifiable command payload, and the prompt-scope hook
+  warns and stays non-blocking — never silent success on partial/unknown input.
 - Keep Bash compatible with macOS Bash 3.2; prefer Python stdlib for structured parsing; all focused
   checks below are pipe-free and complete in under 60 seconds.
 - Workflow-engine changes require a context-propagation audit during implementation, followed by the
@@ -151,6 +162,8 @@ See `design.md` and `research-brief.md`.
 | SC-10 | Branch isolation evaluates every normalized path and blocks shared-branch edits when any path or required parse state is unsafe | `bash tests/hooks/branch-isolation-guard.test.sh` | exit 0 |
 | SC-11 | Ruff, blast-radius, and plan-render hooks process all applicable normalized paths and surface partial/unknown input without becoming blocking | `bash tests/hooks/codex-edit-hooks.test.sh` | exit 0 |
 | SC-12 | New capability, agent-binding, and hook-normalisation surfaces are registered without manifest or contract drift | `python3 scripts/check_manifest.py` | exit 0 |
+| SC-13 | The Bash dispatch gate evaluates normalized shell payloads from both runtimes and fails closed instead of silently passing an unclassifiable command through the git gates | `bash tests/hooks/pre-bash-dispatch.test.sh` | exit 0 |
+| SC-14 | The prompt-scope hook consumes normalized prompt payloads from both runtimes and surfaces partial/unknown input without becoming blocking | `bash tests/hooks/scope-gate.test.sh` | exit 0 |
 
 ## 4. Tasks
 
@@ -158,7 +171,7 @@ See `design.md` and `research-brief.md`.
 
 ### Task 1.1 — Define the capability evidence contract (wave 1)
 
-- **Files:** specs/codex-support/capability-matrix.json, scripts/check_codex_capabilities.py, scripts/test_check_codex_capabilities.py, harness-manifest.json
+- **Files:** specs/codex-support/capability-matrix.json, scripts/check_codex_capabilities.py, scripts/test_check_codex_capabilities.py, scripts/run-tests.sh, harness-manifest.json
 - **Action:** Test-first, define a stdlib-only matrix schema keyed by runtime/CLI version and
   platform. Require each event/tool/packaging/agent capability to declare support target, evidence
   level (`observed`, `documented`, `unknown`), source/freshness, config hash, fixture path when
@@ -166,7 +179,8 @@ See `design.md` and `research-brief.md`.
   `apply_patch`, SessionStart/UserPromptSubmit/SessionEnd, custom-agent fork, trust/config, plugin,
   strict-config, and platform rows. Reject absolute/private paths, missing fixtures, status values
   that overclaim unknown coverage, and observations whose CLI version does not match their evidence
-  directory. Register the matrix/checker as a manifest contract with its probe and Phase-5 consumers.
+  directory. Register the matrix/checker as a manifest contract with its probe and Phase-5 consumers,
+  and register its unit suite in the CI-equivalent Python test list.
 - **Verify:** `python3 -m pytest scripts/test_check_codex_capabilities.py -q && python3 scripts/check_codex_capabilities.py specs/codex-support/capability-matrix.json`
 - **Done:** the matrix is machine-readable and cannot silently turn absent/stale evidence into
   support; every design claim has a row and every unknown has an owner plus closure condition.
@@ -175,13 +189,17 @@ See `design.md` and `research-brief.md`.
 
 ### Task 1.2 — Capture sanitized, replayable capability evidence (wave 2)
 
-- **Files:** scripts/capture_codex_capabilities.sh, tests/scripts/codex-capability-probe.test.sh, specs/codex-support/evidence/codex-0.147.0/doctor.json, specs/codex-support/evidence/codex-0.147.0/hooks-shell.json, specs/codex-support/evidence/codex-0.147.0/hooks-apply-patch.json, specs/codex-support/evidence/codex-0.147.0/agents-fresh-bounded.json, specs/codex-support/evidence/codex-0.147.0/agents-full-history-rejection.json, specs/codex-support/evidence/codex-0.147.0/session-end-timing.json, specs/codex-support/evidence/codex-0.147.0/platform.json, specs/codex-support/capability-matrix.json
+- **Files:** scripts/capture_codex_capabilities.sh, tests/scripts/codex-capability-probe.test.sh, specs/codex-support/evidence/codex-0.147.0/doctor.json, specs/codex-support/evidence/codex-0.147.0/hooks-shell.json, specs/codex-support/evidence/codex-0.147.0/hooks-apply-patch.json, specs/codex-support/evidence/codex-0.147.0/agents-fresh-bounded.json, specs/codex-support/evidence/codex-0.147.0/agents-full-history-rejection.json, specs/codex-support/evidence/codex-0.147.0/session-end-timing.json, specs/codex-support/evidence/codex-0.147.0/platform.json, specs/codex-support/evidence/codex-0.147.0/trust-config.json, specs/codex-support/capability-matrix.json
 - **Action:** Build a capture command with explicit `--output`, `--codex-bin`, and
   `--allow-live-model-probe` boundaries. Default to non-model facts (`--version`, features,
   `--strict-config`, redacted doctor, platform/dependency checks) and use a temporary repository for
   hook/SessionEnd probes. Gate model-backed custom-agent observations behind the explicit flag.
   Normalize event records into schema-minimal fixtures, hash the effective hook config, strip all
   volatile/private fields, and refuse to overwrite evidence for a different version/platform.
+  Capture effective project trust state and the trusted hook-configuration hash into
+  `trust-config.json`; when a trust state cannot be reproduced deterministically, mark the
+  corresponding matrix rows unknown with owner and exit condition instead of leaving them
+  unevidenced by omission.
   Benchmark `state-breadcrumb.sh` for at least 20 isolated runs; record min/p95/max plus the
   documented SessionEnd timeout, and call it supported only when max stays below 80% of that budget.
   Create a fake-Codex contract test covering success, untrusted/disabled hooks, missing tools,
@@ -223,7 +241,10 @@ See `design.md` and `research-brief.md`.
   a stdlib checker that rejects missing evidence, a decision unsupported by its result, an absent
   fallback criterion, or claims broader than the capability matrix. Select hybrid only if every
   required discovery/lifecycle case passes; otherwise select direct sync without changing the
-  semantic-core contracts.
+  semantic-core contracts. If no approved disposable environment is available, do not run the probe
+  against real Codex state and do not fabricate evidence: record a `specs/codex-support/ESCALATIONS.md`
+  block (`decision: pending`) for environment provisioning and leave the packaging decision
+  unwritten — Phase 5 stays blocked rather than silently defaulting to either candidate.
 - **Verify:** `python3 -m pytest scripts/test_check_codex_packaging.py -q && python3 scripts/check_codex_packaging.py specs/codex-support/packaging-decision.md`
 - **Done:** Phase 5 has one evidence-backed package boundary and a deterministic reason to switch to
   the fallback; the matrix and decision agree on every unresolved capability.
@@ -240,7 +261,13 @@ See `design.md` and `research-brief.md`.
   language. Classify each finding as shared-source violation, runtime entry/binding exception, test
   fixture, or false positive with rationale. Implement a stdlib lint that scans only declared
   runtime source surfaces, rejects new unowned exceptions and stale inventory entries, understands
-  escaped/code-example cases, and reports exact file/line/search category. Register the neutral
+  escaped/code-example cases, and reports exact file/line/search category. Scan `templates/` as part
+  of the shared-source surface — templates instantiate into consumer repositories and carry
+  invocation prose. Classify hook and script user-facing message prose
+  (`hooks/commit-quality-gate.sh`, `hooks/risk-corroboration.sh`, `hooks/scope-gate.sh`,
+  `scripts/check_review_receipt.py`, `scripts/rebuild_solution_index.py`,
+  `scripts/score_intake_eval.py`, and the tests asserting those messages) as owned runtime-entry
+  exceptions deferred to Phase 5 — recorded decisions, never silent omissions. Register the neutral
   source contract and checker consumers in the manifest.
 - **Verify:** `python3 -m pytest scripts/test_check_runtime_neutral_sources.py -q && python3 scripts/check_runtime_neutral_sources.py --root .`
 - **Done:** the current coupling set is finite and machine-checked; later tasks cannot hide an
@@ -250,13 +277,16 @@ See `design.md` and `research-brief.md`.
 
 ### Task 3.2 — Make rule delivery explicit and repository-rooted (wave 6)
 
-- **Files:** agents/PROJECT.md, skills/README.md, skills/compound/README.md, skills/correctness-review/SKILL.md, skills/correctness-review/prompts/shared.md, skills/intent-review/SKILL.md, skills/subagent-driven-development/SKILL.md, skills/subagent-driven-development/implementer-prompt.md, skills/writing-plans/SKILL.md, skills/writing-plans/plan-document-reviewer-prompt.md, skills/xia2/references/research-brief-template.md, scripts/render_skill_prompt.py, scripts/test_render_skill_prompt.py, tests/scripts/context-propagation-regression.test.sh, specs/codex-support/neutralization-inventory.json
+- **Files:** agents/PROJECT.md, skills/README.md, skills/compound/README.md, skills/correctness-review/SKILL.md, skills/correctness-review/prompts/shared.md, skills/intent-review/SKILL.md, skills/subagent-driven-development/SKILL.md, skills/subagent-driven-development/implementer-prompt.md, skills/writing-plans/SKILL.md, skills/writing-plans/plan-document-reviewer-prompt.md, skills/xia2/references/research-brief-template.md, scripts/render_skill_prompt.py, scripts/test_render_skill_prompt.py, tests/scripts/context-propagation-regression.test.sh, tests/scripts/writing-plans-contract.test.sh, specs/codex-support/neutralization-inventory.json
 - **Action:** Replace shared-source `.claude/rules/...` addresses with canonical repository-root
   `rules/...` paths. For `plan-format`, `wave-parallelism`, and `auto-correct-scope`, enumerate every
   load-bearing main/implementer/task-reviewer/correctness-reviewer/scorer/resume consumer and add an
   explicit read or checked composition point before the instruction is used. Extend the existing
   render/context tests from their two historical anchors to the complete consumer matrix, including
-  mutation cases that remove one delivery edge. Keep `paths:` auto-loading as a Claude accelerator,
+  mutation cases that remove one delivery edge. Update
+  `tests/scripts/writing-plans-contract.test.sh`, which asserts the literal
+  `.claude/rules/plan-format.md` read in `skills/writing-plans/SKILL.md`, to expect the
+  repository-root path. Keep `paths:` auto-loading as a Claude accelerator,
   not the only guarantee; do not inline another copy of Rule 4.
 - **Verify:** `bash tests/scripts/context-propagation-regression.test.sh && python3 scripts/check_runtime_neutral_sources.py --root .`
 - **Done:** all contextual rules use portable source addresses and every isolated context has
@@ -266,10 +296,14 @@ See `design.md` and `research-brief.md`.
 
 ### Task 3.3 — Neutralise skill invocation prose (wave 7)
 
-- **Files:** agents/PROJECT.md, agents/PROJECT.template.md, agents/README.md, rules/auto-correct-scope.md, rules/orchestration.md, rules/wave-parallelism.md, skills/README.md, skills/brainstorming/SKILL.md, skills/compound/README.md, skills/compound/subagents/context-analyzer-prompt.md, skills/compound/subagents/decision-extractor-prompt.md, skills/compound/subagents/related-docs-finder-prompt.md, skills/compound/subagents/solution-extractor-prompt.md, skills/compound/templates/index.md, skills/correctness-review/SKILL.md, skills/correctness-review/correctness-reviewer-prompt.md, skills/feature-intake/SKILL.md, skills/feature-intake/tests/README.md, skills/intent-review/intent-reviewer-prompt.md, skills/subagent-driven-development/SKILL.md, skills/subagent-driven-development/references/review-chain.md, skills/using-git-worktrees/SKILL.md, skills/visual-planner/SKILL.md, skills/visual-planner/render_plan.py, skills/visual-planner/test_render_plan.py, skills/visual-planner/view_plan.py, skills/xia2/README.md, skills/xia2/tests/structural/depth-modes-test-cases.md, specs/codex-support/neutralization-inventory.json
+- **Files:** agents/PROJECT.md, agents/PROJECT.template.md, agents/README.md, rules/auto-correct-scope.md, rules/orchestration.md, rules/wave-parallelism.md, skills/README.md, skills/brainstorming/SKILL.md, skills/compound/README.md, skills/compound/subagents/context-analyzer-prompt.md, skills/compound/subagents/decision-extractor-prompt.md, skills/compound/subagents/related-docs-finder-prompt.md, skills/compound/subagents/solution-extractor-prompt.md, skills/compound/templates/index.md, skills/correctness-review/SKILL.md, skills/correctness-review/correctness-reviewer-prompt.md, skills/feature-intake/SKILL.md, skills/feature-intake/tests/README.md, skills/intent-review/intent-reviewer-prompt.md, skills/subagent-driven-development/SKILL.md, skills/subagent-driven-development/references/review-chain.md, skills/using-git-worktrees/SKILL.md, skills/visual-planner/SKILL.md, skills/visual-planner/render_plan.py, skills/visual-planner/test_render_plan.py, skills/visual-planner/view_plan.py, skills/xia2/README.md, skills/xia2/tests/structural/depth-modes-test-cases.md, templates/SUMMARY.template.md, templates/structure/docs-solutions-critical-patterns.md, templates/structure/docs-solutions-INDEX.md, templates/structure/docs-solutions-README.md, templates/structure/specs-README.md, specs/codex-support/neutralization-inventory.json
 - **Action:** Replace executable/shared `/skill-name` phrasing with invocation-neutral language such
   as “invoke the named skill,” while preserving literal repository paths, URLs, code operators,
-  historical evidence, and explicitly runtime-bound entry examples. Update behavior/structural tests
+  historical evidence, and explicitly runtime-bound entry examples. Neutralise the invocation prose
+  in `templates/` the same way — `SUMMARY.template.md` and the `templates/structure/` docs
+  instantiate into consumer repositories and must not teach Claude-only slash syntax. Leave
+  hook/script user-facing message prose to its Phase-5 owned exception per Task 3.1. Update
+  behavior/structural tests
   to assert semantic handoff names or generated runtime entry text rather than Claude slash syntax.
   Review every mechanical edit in context; do not rewrite policy, routing order, or review gates.
   Re-run the inventory lint and remove an exception only when the source is genuinely neutral.
@@ -301,14 +335,17 @@ See `design.md` and `research-brief.md`.
 
 ### Task 4.1 — Implement the canonical payload normaliser (wave 9)
 
-- **Files:** hooks/lib/normalize-tool-input.py, tests/hooks/normalize-tool-input.test.sh, tests/fixtures/hook-input/claude-shell.json, tests/fixtures/hook-input/claude-write.json, tests/fixtures/hook-input/codex-shell.json, tests/fixtures/hook-input/codex-apply-patch-single.json, tests/fixtures/hook-input/codex-apply-patch-multi.json, tests/fixtures/hook-input/codex-apply-patch-move-delete.json, tests/fixtures/hook-input/malformed.json, specs/codex-support/capability-matrix.json, harness-manifest.json
+- **Files:** hooks/lib/normalize-tool-input.py, tests/hooks/normalize-tool-input.test.sh, tests/fixtures/hook-input/claude-shell.json, tests/fixtures/hook-input/claude-write.json, tests/fixtures/hook-input/codex-shell.json, tests/fixtures/hook-input/codex-unified-exec.json, tests/fixtures/hook-input/codex-apply-patch-single.json, tests/fixtures/hook-input/codex-apply-patch-multi.json, tests/fixtures/hook-input/codex-apply-patch-move-delete.json, tests/fixtures/hook-input/claude-user-prompt.json, tests/fixtures/hook-input/codex-user-prompt.json, tests/fixtures/hook-input/malformed.json, specs/codex-support/capability-matrix.json, harness-manifest.json
 - **Action:** Test-first, add one stdlib executable that reads raw hook JSON once and emits a stable
   normalized JSON object containing runtime/event identity, canonical tool class, deduplicated path
   set, command/prompt/outcome fields, and `known`, `partial`, or `unknown`. Support the observed
   Claude file-path/response fields and Codex shell/unified-exec/`apply_patch` patch envelopes.
   Parse add/update/delete/move headers, retain all safe repo-relative paths, identify unparsed edit
   fragments as partial, and classify malformed/missing inputs unknown. Reject traversal, NUL, and
-  outside-root paths without collapsing valid siblings. Build table-driven golden/mutation tests
+  outside-root paths without collapsing valid siblings. Include golden fixtures for the Codex
+  unified-exec shell envelope and for Claude/Codex `UserPromptSubmit` prompt payloads so the
+  shell-dispatch and prompt-scope consumers in Task 4.4 have observed inputs. Build table-driven
+  golden/mutation tests
   from Phase-1 sanitized fixtures and register the seam/consumers in the manifest.
 - **Verify:** `bash tests/hooks/normalize-tool-input.test.sh && python3 scripts/check_manifest.py`
 - **Done:** every supported raw payload has one canonical representation; multi-file edits remain
@@ -348,6 +385,28 @@ See `design.md` and `research-brief.md`.
 - **Criteria:** SC-11
 - **Interfaces:** Consumes: normalized path-set/status contract from `hooks/lib/normalize-tool-input.py`. Produces: multi-path post-edit hooks, `tests/hooks/codex-edit-hooks.test.sh`, updated `CLAUDE.md` contract table.
 
+### Task 4.4 — Migrate the shell-dispatch and prompt gates onto the normaliser (wave 11)
+
+- **Files:** hooks/pre-bash-dispatch.sh, hooks/scope-gate.sh, tests/hooks/pre-bash-dispatch.test.sh, tests/hooks/scope-gate.test.sh, CLAUDE.md, harness-manifest.json
+- **Action:** Replace the direct `jq -r '.tool_input.command // ""'` read in
+  `hooks/pre-bash-dispatch.sh` and the `.prompt // ""` read in `hooks/scope-gate.sh` with Task 4.1
+  normalised output, closing the same empty-fallback fail-open the design names for edit hooks
+  (design §3.1): today an unparseable Codex payload silently exits 0 past all four git gates.
+  Dispatch: a `known` shell payload routes exactly as today; a `partial`/`unknown` payload emits a
+  visible reason and fails closed (exit 2), matching the hook's existing missing-lib/missing-sub-hook
+  fail-safe precedent, and all current Claude cases keep their behavior. Scope-gate stays advisory:
+  partial/unknown emits one bounded warning and exits 0. Add Claude and Codex
+  shell/unified-exec/prompt fixture tests plus mutation cases for malformed payloads. Update the
+  `CLAUDE.md` hook table rows for both hooks and register the two new normaliser consumers in the
+  manifest. Do not change `settings.json` or the git sub-hooks themselves — they keep receiving the
+  raw payload relay unchanged.
+- **Verify:** `bash tests/hooks/pre-bash-dispatch.test.sh && bash tests/hooks/scope-gate.test.sh && python3 scripts/check_manifest.py`
+- **Done:** no supported Codex shell path can bypass the git gates through an unparsed payload; the
+  prompt gate consumes both runtimes' payloads and stays non-blocking; existing Claude dispatch and
+  scope-gate behavior is unchanged.
+- **Criteria:** SC-13, SC-14, SC-12
+- **Interfaces:** Consumes: normalized command/prompt contract from `hooks/lib/normalize-tool-input.py`. Produces: runtime-neutral `hooks/pre-bash-dispatch.sh` and `hooks/scope-gate.sh`, extended dispatch/scope regression suites, updated `harness-manifest.json`.
+
 ## 5. Risks
 
 - **Capability evidence becomes stale while still looking complete.** Mitigation: version/platform/
@@ -368,6 +427,9 @@ See `design.md` and `research-brief.md`.
   once-per-path fixtures, and idempotent plan-render tests.
 - **macOS/Linux shell behavior diverges.** Mitigation: keep structured parsing in Python stdlib,
   preserve Bash 3.2 compatibility, and run the full cross-platform CI suite before shipping.
+- **Fail-closed dispatch on unknown payloads could block legitimate Bash calls if a runtime changes
+  its payload shape.** Mitigation: version-pinned capability-matrix rows for shell payloads, golden
+  fixtures per supported shape, and an actionable block message naming the unparsed field.
 - **Phase boundaries drift.** Mitigation: no production Codex install, root instruction mutation,
   runtime-mode schema, review provenance, or parity/GA work enters this plan; record any discovered
   need as a Phase-5+ follow-up rather than auto-expanding scope.
@@ -378,3 +440,18 @@ See `design.md` and `research-brief.md`.
   current tree, Codex CLI 0.147.0, official OpenAI documentation, installed CLI command surfaces,
   and the stale Claude plugin branch. `research-brief.md` and this proposed Phase 1–4 plan authored;
   no Phase 1–4 implementation performed.
+- 2026-08-10 — Claude Code reviewed the Codex-authored plan and updated it (file lists
+  grep-checked against the tree): added the missed `tests/scripts/writing-plans-contract.test.sh` to Task 3.2 (its line 5
+  asserts the literal `.claude/rules/plan-format.md` read that 3.2 rewrites); added `templates/`
+  neutralisation to Task 3.3 and the hook/script message-prose owned exception to Task 3.1 and
+  Non-goals; added Task 4.4 + SC-13/SC-14 closing the `pre-bash-dispatch.sh`/`scope-gate.sh`
+  empty-fallback fail-open (design §3.1 applied to shell/prompt gates) with unified-exec and
+  UserPromptSubmit golden fixtures added to Task 4.1; added the `trust-config.json` evidence fixture
+  to Task 1.2; added the blocked-environment escalation path to Task 2.2. No implementation
+  performed.
+- 2026-08-10 — Tasks 1.1 and 1.2 complete in `872dc32`. Added a version-pinned capability
+  matrix and stdlib validator, sanitized Codex 0.147.0 evidence, an opt-in disposable live-probe
+  path, a 20-run SessionEnd benchmark, and deterministic fake-CLI/privacy/downgrade tests. The
+  second plan review also registered the new Python suite in `scripts/run-tests.sh`; the final
+  CI-equivalent run completed `ALL GREEN` with 478 Python tests. Effective project trust, Linux,
+  WSL, and native Windows remain explicitly owned unknowns; no Phase 2 work was started.
