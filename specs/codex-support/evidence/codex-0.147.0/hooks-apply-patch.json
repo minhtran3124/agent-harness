@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "runtime": "codex",
+  "cli_version": "0.147.0",
+  "platform": "macos-arm64",
+  "captured_at": "2026-08-10",
+  "config_hash": "sha256:e48620dceb6b5f3e6075f5208d9144234bb45eceeeab0cfa773b2cfb379912b6",
+  "capture": "transcribed-isolated-live-probe",
+  "result": {
+    "status": "observed",
+    "tool_name": "apply_patch",
+    "events": ["PreToolUse", "PostToolUse"],
+    "matcher_aliases": ["Edit", "Write"],
+    "tool_input_keys": ["command"],
+    "patch_redacted": true,
+    "single_file_path_field": false
+  }
+}

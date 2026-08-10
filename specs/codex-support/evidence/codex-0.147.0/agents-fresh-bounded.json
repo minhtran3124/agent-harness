@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "runtime": "codex",
+  "cli_version": "0.147.0",
+  "platform": "macos-arm64",
+  "captured_at": "2026-08-10",
+  "config_hash": "sha256:640a78ac07d10b2f083049444246fa30957351ac410f73d997a787667c91ba9d",
+  "capture": "transcribed-isolated-live-probe",
+  "result": {
+    "status": "observed",
+    "fork_context": "fresh-bounded",
+    "requested_agent_profile_selected": true,
+    "full_history_inherited": false,
+    "instructions_redacted": true
+  }
+}

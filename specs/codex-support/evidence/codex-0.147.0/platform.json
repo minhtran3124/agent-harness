@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "runtime": "codex",
+  "cli_version": "0.147.0",
+  "platform": "macos-arm64",
+  "captured_at": "2026-08-10",
+  "config_hash": "not-applicable",
+  "capture": "local-dependency-probe",
+  "result": {
+    "status": "observed",
+    "os_family": "macos",
+    "architecture": "arm64",
+    "dependencies": {
+      "bash": true,
+      "git": true,
+      "jq": true,
+      "python3": true
+    },
+    "native_windows_claimed": false
+  }
+}
