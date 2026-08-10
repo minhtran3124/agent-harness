@@ -84,15 +84,18 @@ _COMPLETE_RE = re.compile(
 )
 _NONCOMPLETE_RE = re.compile(
     r"\bpending\b|\bin[-\s]?progress\b|\bblocked\b|\bincomplete\b|\bwip\b|\btodo\b"
-    r"|\bnot\s+(?:yet\s+)?(?:done|complete)",
+    r"|\bnot\s+(?:yet\s+)?(?:done|complete|started)|\bdeferr(?:ed|ing)\b"
+    r"|\bqueued\b|\bscheduled\b|remains?\s+open",
     re.I,
 )
-# Future / queued markers keep a mention pending even inside an otherwise-completed entry:
-# `Task 1.2 will follow` sits in a clause whose completion governs a *sibling*, not 1.2
-# (design 5.4).  Scoped to a single mention's own forward span so it never suppresses a
-# sibling that really is done.
+# Future / queued markers keep a keyword-anchored mention pending even inside an otherwise-
+# completed entry: `Task 1.2 will follow` / `Task 1.2 next` sits in a clause whose completion
+# governs a *sibling*, not 1.2 (design 5.4).  The bare `next` is kept (it is the trailing form
+# `Task 1.2 next`), but suppression is completion-GOVERNED (see parse_status_completion): a
+# completion marker between the id and the future word wins, so `1.2 complete, next wave 2`
+# still claims 1.2 while `1.2 next` does not.
 _FUTURE_RE = re.compile(
-    r"will\s+follow|to\s+follow|\bup\s+next\b|\bnext\b|\bstarting\b|\bupcoming\b",
+    r"will\s+follow|to\s+follow|\bup\s+next\b|\bnext\s+up\b|\bnext\b|\bstarting\b|\bupcoming\b",
     re.I,
 )
 _BACKTICK_SHA = re.compile(r"`([0-9a-fA-F]{7,40})`")
@@ -239,6 +242,10 @@ def _xml_task_from_block(block: str) -> dict:
     # `[^>]*\bid="` bound the LAST id-suffixed attribute (a trailing `data-id` would win);
     # reading the attribute run like render_plan.parse_task_block and rejecting hyphen/word-
     # prefixed names (`wave-id`, `data-id`) via the lookbehind binds only a standalone `id`.
+    # NOTE: deliberate divergence from render_plan.parse_task_block, which uses a bare
+    # `id="([^"]*)"` and so binds a leading `wave-id="3"` on `<task wave-id="3" id="1.1">`.
+    # resume binds the real `id` (1.1); the corpus parity fixture cannot detect this because
+    # no tracked XML plan carries an id-suffixed attribute (all 21 scanned identical).
     open_m = re.search(r"<task\b([^>]*)>", block)
     attrs = open_m.group(1) if open_m else ""
     idm = re.search(r'(?<![\w-])id="([^"]*)"', attrs)
@@ -364,40 +371,77 @@ def parse_status_completion(ptext: str, valid: set[str]) -> dict:
         # Entry-level gate: no completion evidence anywhere in the entry -> nothing is done.
         if not (_COMPLETE_RE.search(blob) or _BACKTICK_SHA.search(blob)):
             continue
-        for clause in _CLAUSE_SEP.split(blob):
-            kw_spans = [m.span(1) for m in _TASK_KEYWORD.finditer(clause)]
-            toks = [(m.group(0), m.start(), m.end()) for m in _ID_RE.finditer(clause)]
-            for i, (tid, start, end) in enumerate(toks):
-                # Cell = this mention's neighbourhood (prev id end .. next id start, clamped
-                # to the clause); a non-completion / future marker here suppresses only this
-                # mention, catching both `X pending` (after) and `next up: X` (before).
-                cell_lo = toks[i - 1][2] if i > 0 else 0
-                cell_hi = toks[i + 1][1] if i + 1 < len(toks) else len(clause)
-                cell = clause[cell_lo:cell_hi]
-                if _NONCOMPLETE_RE.search(cell) or _FUTURE_RE.search(cell):
-                    continue
-                # Reject a reference decimal that collides with a task id (`ruff to 1.2`,
-                # `2.1%`): a real mention never sits right after a version/section word.
-                if _REF_PRE.search(clause[:start]) or clause[end : end + 1] == "%":
-                    continue
-                is_keyword = any(lo <= start < hi for lo, hi in kw_spans)
-                # SHA span widens back to the previous mention (clause start for the first)
-                # so a leading `(sha): tasks 1.1–1.4` attributes to the ids that follow it.
-                shas = _BACKTICK_SHA.findall(clause[(0 if i == 0 else start) : cell_hi])
-                ids = [tid]
-                if i + 1 < len(toks) and re.fullmatch(
-                    r"\s*[–-]\s*", clause[end : toks[i + 1][1]]
-                ):
-                    ids += _fill_range(tid, toks[i + 1][0], valid)
-                for cid in ids:
-                    if cid in valid:
-                        complete.add(cid)
-                        bucket = commits.setdefault(cid, [])
-                        for s in shas:
-                            if s not in bucket:
-                                bucket.append(s)
-                    elif is_keyword and cid not in unknown:
-                        unknown.append(cid)
+        # Work on the whole entry blob (not clause fragments): clause boundaries only bound
+        # the suppression-marker search so a marker in another sentence cannot leak, while
+        # SHA attribution spans the raw blob so a trailing `Task X — `sha`` is not split off
+        # its own task (finding: the em-dash clause split misattributed shas to the next id).
+        seps = [(m.start(), m.end()) for m in _CLAUSE_SEP.finditer(blob)]
+
+        def _clause_span(p: int) -> tuple[int, int]:
+            lo, hi = 0, len(blob)
+            for s, e in seps:
+                if e <= p:
+                    lo = e
+                elif s >= p:
+                    hi = s
+                    break
+            return lo, hi
+
+        kw_spans = [m.span(1) for m in _TASK_KEYWORD.finditer(blob)]
+        toks = [(m.group(0), m.start(), m.end()) for m in _ID_RE.finditer(blob)]
+        for i, (tid, start, end) in enumerate(toks):
+            # Strict per-mention completion (design 5.4): only a KEYWORD-ANCHORED id (governed
+            # by a `task(s)` token, directly or as a member of its comma/and/slash list or
+            # hyphen/en-dash range) can be claimed.  A bare number is never claimed, which
+            # safely rejects `design 5.4`, `v1.2`, `Python 3.1`, `1.2 not started`, and
+            # `shipped 1.2 support` — under-claiming a bare mention re-dispatches its task
+            # (safe) rather than skipping real work (the forbidden over-claim direction).
+            if not any(lo <= start < hi for lo, hi in kw_spans):
+                continue
+            # Reference decimal immediately after a version/section word, or a trailing `%`.
+            if _REF_PRE.search(blob[:start]) or blob[end : end + 1] == "%":
+                continue
+            clo, chi = _clause_span(start)
+            nxt = toks[i + 1][1] if i + 1 < len(toks) else chi
+            fwd = blob[end : min(chi, nxt)]
+            back = blob[max(clo, toks[i - 1][2] if i > 0 else clo) : start]
+            # Completion-GOVERNED suppression.  A future word that precedes the id (`Next up:
+            # Task 1.2`, `starting Task 1.2`) suppresses it.  A non-completion/future word that
+            # follows suppresses ONLY when no completion marker sits between the id and it — so
+            # `1.2 next` / `1.2 will follow` stay pending, but `1.2 complete, next wave 2` is
+            # claimed (the completion governs; the later `next` is about a sibling/wave).
+            supp = bool(_FUTURE_RE.search(back)) and not _COMPLETE_RE.search(back)
+            if not supp:
+                marks = [
+                    m.start()
+                    for rx in (_NONCOMPLETE_RE, _FUTURE_RE)
+                    if (m := rx.search(fwd))
+                ]
+                if marks:
+                    comp = _COMPLETE_RE.search(fwd)
+                    if comp is None or min(marks) < comp.start():
+                        supp = True
+            if supp:
+                continue
+            # SHA attribution over the raw blob: a sha belongs to the anchored id it follows,
+            # so window = [this id start .. next id start]; the first id widens back to the
+            # entry start to catch a leading `(sha): tasks 1.1-1.4`.
+            sha_hi = toks[i + 1][1] if i + 1 < len(toks) else len(blob)
+            shas = _BACKTICK_SHA.findall(blob[(0 if i == 0 else start) : sha_hi])
+            ids = [tid]
+            if i + 1 < len(toks) and re.fullmatch(
+                r"\s*[–-]\s*", blob[end : toks[i + 1][1]]
+            ):
+                ids += _fill_range(tid, toks[i + 1][0], valid)
+            for cid in ids:
+                if cid in valid:
+                    complete.add(cid)
+                    bucket = commits.setdefault(cid, [])
+                    for s in shas:
+                        if s not in bucket:
+                            bucket.append(s)
+                elif cid not in unknown:
+                    unknown.append(cid)
     return {"complete": complete, "unknown": unknown, "commits": commits}
 
 

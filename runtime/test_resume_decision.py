@@ -802,31 +802,37 @@ def test_corpus_parity_parse_tasks_matches_render_plan():
         assert mine == theirs, p
 
 
-def test_corpus_completion_never_drops_ids_render_marks_done():
-    """Finding C corpus guard: on entries with NO explicit non-completion marker, resume's
-    claimed-complete set must cover render_plan's done set, and no real entry may produce a
-    spurious `unknown` (which would stop a healthy resume)."""
+def test_corpus_completion_never_over_claims_vs_render():
+    """Finding C corpus guard, design 5.4-faithful: resume must never claim MORE than the
+    (deliberately permissive) renderer done set on any real PLAN.md — over-claiming is the
+    only dangerous direction (it skips real work).  Under-claiming a bare, non-`task(s)`-
+    anchored mention is safe and expected: the task is re-dispatched and its Verify re-runs.
+    Also: no real entry may produce a spurious `unknown` (which would stop a healthy resume).
+    """
     import re as _re
-
-    import render_plan  # noqa: E402
 
     for p in _corpus_plans():
         txt = p.read_text(encoding="utf-8")
         valid = {t["id"] for t in decision.parse_tasks(txt)[0]}
         comp = decision.parse_status_completion(txt, valid)
-        entries = render_plan.parse_status_entries(decision._status_log_section(txt))
-        theirs = set()
-        for e in entries:
-            blob = e["note"] + " " + " ".join(e["subs"])
-            if decision._NONCOMPLETE_RE.search(blob):
-                continue
-            if (
-                e.get("kind") == "build"
-                or "✓" in blob
-                or _re.search(r"\bcomplete", blob)
+        # Permissive upper bound: any valid id that appears in an entry carrying completion
+        # evidence of its own (a completion marker by the parser's vocabulary, or a sha).
+        # Resume claims only keyword-anchored ids, a strict subset of this — so claiming an
+        # id outside any completing entry, or a non-existent id, is a real over-claim and
+        # fails here.  The fine per-mention landmine cases are pinned by the tests below.
+        upper = set()
+        for blob in decision._status_entries(decision._status_log_section(txt)):
+            if decision._COMPLETE_RE.search(blob) or decision._BACKTICK_SHA.search(
+                blob
             ):
-                theirs |= set(_re.findall(r"\bP?\d+(?:\.\d+)+\b", blob)) & valid
-        assert theirs <= comp["complete"], (p, sorted(theirs - comp["complete"]))
+                lits = _re.findall(r"\d+(?:\.\d+)+", blob)
+                upper |= set(lits) & valid
+                # a `X–Y` / `X-Y` range legitimately widens the claimable set to its members.
+                for a, b in _re.findall(
+                    r"(\d+(?:\.\d+)+)\s*[–-]\s*(\d+(?:\.\d+)+)", blob
+                ):
+                    upper |= set(decision._fill_range(a, b, valid))
+        assert comp["complete"] <= upper, (p, sorted(comp["complete"] - upper))
         assert comp["unknown"] == [], (p, comp["unknown"])
 
 
@@ -1172,6 +1178,40 @@ def test_completion_leading_sha_attributes_to_following_ids():
     assert comp["commits"] == {tid: ["78db5a6"] for tid in ("1.1", "1.2", "1.3", "1.4")}
 
 
+@pytest.mark.parametrize(
+    "text,expected",
+    [
+        ("Tasks 1.1, 1.2 complete, next wave 2 starts", ["1.1", "1.2"]),
+        ("Task 1.1 and Task 1.2 done, next up wave 2", ["1.1", "1.2"]),
+        ("Tasks 2.1, 2.2 shipped in the next release branch", ["2.1", "2.2"]),
+    ],
+)
+def test_completion_forward_marker_does_not_over_suppress_completed_siblings(
+    text, expected
+):
+    """Round-2 re-review finding 3: a future word AFTER a governing completion (`... complete,
+    next wave 2`) is about a sibling/wave, so it must NOT suppress the ids the completion
+    governs — suppression is completion-governed, not proximity-only."""
+    valid = {"1.1", "1.2", "2.1", "2.2"}
+    assert sorted(_comp(text, valid)["complete"]) == expected
+
+
+def test_completion_trailing_sha_attributes_to_its_own_task():
+    """Round-2 re-review finding 1: on the dominant `Task X.Y (name) — `sha`` form, the em-dash
+    clause split must not shift each sha to the NEXT task; each sha stays with the id it
+    follows."""
+    comp = _comp(
+        "Wave 1 complete. Task 1.1 (feature-intake) — `9bd1574` "
+        "Task 1.2 (sdd) — `27329a1` Task 1.3 (x) — `2929839`",
+        {"1.1", "1.2", "1.3"},
+    )
+    assert comp["commits"] == {
+        "1.1": ["9bd1574"],
+        "1.2": ["27329a1"],
+        "1.3": ["2929839"],
+    }
+
+
 def test_interrupt_route_carries_waiting_on_at_top_level(tmp_path, monkeypatch):
     """Round-2 finding 3: the interrupt route is action==wait, so it must expose the blocker
     at the same stable top-level `waiting_on` path as every other wait response."""
@@ -1187,13 +1227,52 @@ def test_interrupt_route_carries_waiting_on_at_top_level(tmp_path, monkeypatch):
 def test_interrupt_route_waiting_on_falls_back_to_recovered_origin(
     tmp_path, monkeypatch
 ):
-    """Round-2 finding 3: when a waiting-origin interrupt recovers the original blocker, the
-    top-level waiting_on is populated (never null on a wait route)."""
+    """Round-2 re-review: when an interrupt carries NO waiting_on of its own but its origin is
+    a waiting state, the top-level waiting_on is recovered from that origin (never null on a
+    wait route). Reach `blocked` FROM `awaiting_ci` with only --resume-event (no --waiting-on)
+    so the `proj.get("waiting_on") or recovered` fallback is genuinely exercised."""
     monkeypatch.chdir(tmp_path)
     write_plan("iw2")
-    init_to("iw2", ("investigating", "planning", "blocked"))
+    assert rs.main(["init", "--slug", "iw2", "--run-id", "run-iw2"]) == 0
+    for st in ("investigating", "planning", "implementing", "verifying"):
+        assert rs.main(["transition", "--slug", "iw2", "--to", st, "--event", "e"]) == 0
+    assert (
+        rs.main(
+            [
+                "transition",
+                "--slug",
+                "iw2",
+                "--to",
+                "awaiting_ci",
+                "--event",
+                "e",
+                "--waiting-on",
+                "ci-run-42",
+            ]
+        )
+        == 0
+    )
+    # blocked with only --resume-event: the interrupt itself has no waiting_on.
+    assert (
+        rs.main(
+            [
+                "transition",
+                "--slug",
+                "iw2",
+                "--to",
+                "blocked",
+                "--event",
+                "e",
+                "--resume-event",
+                "resolved",
+            ]
+        )
+        == 0
+    )
     v = decision.decide("iw2")
-    assert v["action"] == "wait" and v["waiting_on"] is not None
+    assert v["action"] == "wait"
+    assert v["interrupt"]["blocker"] is None  # the interrupt carried no waiting_on
+    assert v["waiting_on"] == "ci-run-42"  # recovered from the awaiting_ci origin
 
 
 def test_xml_id_binding_prefers_first_real_id_attribute():
