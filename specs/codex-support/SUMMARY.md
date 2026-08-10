@@ -80,7 +80,10 @@ The main corrections are:
 | --- | --- | --- | --- | --- |
 | English/Vietnamese top-level structure | `test "$(grep -c '^## [0-9]' specs/codex-support/design.md)" -eq "$(grep -c '^## [0-9]' specs/codex-support/design.vi.md)"` | 0 | both documents contain the same 11 numbered sections | |
 | Documentation truth lint | `bash scripts/lint-doc-truth.sh` | 0 | refreshed design references only supported repository paths | |
-| CI-equivalent suite | `bash scripts/run-tests.sh` | 0 | shell suites and Python tests pass | |
+
+The CI-equivalent `bash scripts/run-tests.sh` suite also completed locally with `ALL GREEN`.
+Full-suite evidence is intentionally supplied by the GitHub `tests` jobs rather than a Verify row,
+because Verify commands have a 60-second strict-gate budget.
 
 ### Not auto-verified
 
