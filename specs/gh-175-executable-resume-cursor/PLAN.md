@@ -1,6 +1,6 @@
 ---
 slug: gh-175-executable-resume-cursor
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-08-09
 ---
@@ -196,3 +196,10 @@ existing authority rather than adding a second resume script. See `research-brie
   runtime-sync.test.sh 7 passed, sdd-resume-cursor.test.sh 9 passed, full run-tests.sh ALL GREEN
   (389 python). Task review: spec pass, quality approved; two Minors (reviewer had no Bash — exits
   since re-confirmed 0/0/0; cosmetic report quote) — no code change needed. All three waves done.
+- 2026-08-10 — final review chain complete. context-propagation-audit PASS; correctness-review
+  (6 plan-blind finders) surfaced real over-claim/parser bugs the plan-anchored task reviews missed
+  (idealized fixtures), closed over fix rounds 401e1ce/5842539/9b7ab60/00b513b — the completion
+  parser is now strict per-mention (design §5.4), verified at truth-tier over the full adversarial
+  battery + 50-plan corpus; intent-review PASS (no gap/drift/excess). Review receipt pinned at
+  00b513b (correctness+intent+audit, 0 blocking). verify_summary --check: all 10 SC rows re-run
+  exit 0. Full suite ALL GREEN (454 python). status → shipped.
