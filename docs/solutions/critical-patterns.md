@@ -146,3 +146,14 @@ State logic written as prose accrues contradiction chains: each correction is in
 
 **Full doc:** docs/solutions/harness/prose-encoded-state-logic-accrues-contradiction-chains.md
 ---
+
+## [2026-08-10] plan-anchored-task-review-misses-fixture-fitted-bugs
+**Type:** failure
+**Module:** harness (review oracle)
+**Tags:** review-oracle, task-review, adversarial-review, corpus-testing, fixture-fitted-tests, plan-blind, green-is-not-correct
+**Applicable when:** A multi-task plan finished with every per-task review green (spec + quality) and the full suite passing, and you are about to treat that as sufficient correctness evidence — before the plan-blind adversarial correctness pass has run.
+
+On gh-175 every per-task review passed and 145 tests were green, yet the plan-blind `correctness-review` (six independent finder angles) then found ~11 real, reproduced bugs — including a markdown plan mentioning `<task` parsing to an empty cursor (a resuming session would skip every task). The per-task tests were written by the same subagent from the same idealized assumptions using synthetic fixtures, so they proved consistency, not correctness; the bugs lived exactly where real `specs/*/PLAN.md` diverge from the tidy fixture. Correct path: keep the plan-blind adversarial correctness pass as a hard gate (different oracle, not redundant), add corpus tests that run the parser over EVERY real spec (parity/subset property), not synthetic fixtures, and re-verify each finding at truth-tier.
+
+**Full doc:** docs/solutions/harness/plan-anchored-task-review-misses-fixture-fitted-bugs.md
+---
