@@ -237,6 +237,7 @@ Parent roadmap: `specs/codex-support/ROADMAP.md`. Preparation research:
 
 ## 6. Status Log
 
+- 2026-08-11 — task 5.1 complete; commit 48b1c85
 - 2026-08-11 — Task 5.1 completed after explicit live-probe authorization. Codex CLI 0.147.0 on
   macOS arm64 emitted the documented unified-exec `Bash`/`tool_input.command` shape and a redacted
   `UserPromptSubmit` envelope, so the Phase-4 normalizer required no change. The selected hybrid
