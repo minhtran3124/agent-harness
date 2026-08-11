@@ -5,7 +5,7 @@ owner: Minh Tran
 created: 2026-08-10
 ---
 
-# Codex Support — Phase Roadmap (Phases 1–4)
+# Codex Support — Phase Roadmap
 
 This is the umbrella record for making Codex a peer workflow runtime. It holds the shared design
 artifacts and the constraints every phase inherits. **Executable tasks and Success Criteria live in
@@ -18,6 +18,7 @@ with a complete and honest evidence record instead of waiting on the whole initi
 | 2 | `specs/codex-support-phase-2/PLAN.md` | shipped | evidence-driven packaging decision: disposable hybrid-vs-direct probe, recorded decision + fallback trigger |
 | 3 | `specs/codex-support-phase-3/PLAN.md` | shipped | semantic source neutralisation: repository-rooted rule delivery, invocation-neutral prose, neutral agent contracts |
 | 4 | `specs/codex-support-phase-4/PLAN.md` | shipped | runtime-neutral hook input seam: one payload normaliser, fail-closed gates, advisory hooks unchanged |
+| 5 | `specs/codex-support-phase-5/PLAN.md` | proposed | advisory alpha adapter: observed runtime packaging, generated Codex bindings, non-clobber install, doctor and mode record |
 
 Shared artifacts owned by this slug and consumed across phases:
 
@@ -25,6 +26,7 @@ Shared artifacts owned by this slug and consumed across phases:
 - `research-brief.md` — the deep research behind it.
 - `capability-matrix.json` + `evidence/codex-<version>/` — written in Phase 1, read by Phases 2 and 4.
 - `SUMMARY.md` — the design-phase record (PR #194).
+- `specs/codex-support-phase-5/RESEARCH.md` — current alpha-adapter obligations and proposed boundaries.
 
 ## 1. Motivation
 
@@ -33,7 +35,7 @@ not be built on session-only observations or field-for-field assumptions. Phases
 evidence and neutral seams that make Phase 5 safe: a versioned capability baseline, an executable
 packaging decision, runtime-neutral instruction/agent policy, and one tested hook-input contract.
 
-## 2. Non-goals
+## 2. Non-goals for shipped Phases 1–4
 
 - Emitting or installing the production Codex alpha adapter from Phase 5.
 - Modifying the root `AGENTS.md`, creating a production `.codex/` tree, or claiming non-clobber
@@ -67,8 +69,9 @@ packaging decision, runtime-neutral instruction/agent policy, and one tested hoo
 - Preserve Claude's installed behavior and conflict/prune guarantees.
 - Shared sources use repository-root rule paths and invocation-neutral skill names. Runtime-specific
   syntax belongs only in runtime entry/binding artifacts.
-- Root `AGENTS.md`, production `.codex/`, `settings.json`, and the Phase-5 installer surface are
-  outside these plans and must remain byte-identical.
+- Root `AGENTS.md`, production `.codex/`, `settings.json`, and the Phase-5 installer surface were
+  outside Phases 1–4. Phase 5 may manage only its bounded section/manifest-owned paths and must
+  preserve all user-owned content plus Claude's `settings.json` behavior.
 - Keep Bash compatible with macOS Bash 3.2; prefer Python stdlib for structured parsing; all focused
   checks are pipe-free and complete in under 60 seconds.
 - Workflow-engine changes require a context-propagation audit during implementation, followed by the
@@ -93,8 +96,8 @@ packaging decision, runtime-neutral instruction/agent policy, and one tested hoo
 - **macOS/Linux shell behavior diverges.** Mitigation: keep structured parsing in Python stdlib,
   preserve Bash 3.2 compatibility, and run the full cross-platform CI suite before shipping.
 - **Phase boundaries drift.** Mitigation: no production Codex install, root instruction mutation,
-  runtime-mode schema, review provenance, or parity/GA work enters Phases 1–4; record any discovered
-  need as a Phase-5+ follow-up rather than auto-expanding scope.
+  runtime-mode schema, review provenance, or parity/GA work enters Phases 1–4; Phase 5 owns only the
+  alpha adapter and records parity/provenance/GA needs as Phase-6+ follow-ups.
 
 ## 5. Status Log
 
