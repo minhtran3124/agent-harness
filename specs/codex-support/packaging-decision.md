@@ -5,7 +5,8 @@ cli_version: 0.147.0
 matrix: specs/codex-support/capability-matrix.json
 hybrid_evidence: specs/codex-support/evidence/codex-0.147.0/packaging-hybrid.json
 direct_evidence: specs/codex-support/evidence/codex-0.147.0/packaging-direct.json
-runtime_execution: not-observed
+runtime_evidence: specs/codex-support/evidence/codex-0.147.0/packaging-hybrid-runtime.json
+runtime_execution: observed
 fallback_trigger: Probe direct sync if Phase 5 cannot trust and load plugin skills/hooks; select it only after its own evidence passes.
 ---
 
@@ -31,6 +32,11 @@ created plugin state. It also proved strict parsing by rejecting an unknown conf
 parsing an empty valid configuration through to the expected non-terminal boundary. HOME and
 CODEX_HOME were fresh, distinct temporary roots.
 
+Phase 5 then invoked the installed plugin skill, executed the generated plugin hook, and dispatched
+the generated project agent in one disposable model-backed session. Hook execution used Codex's
+explicit automation trust-bypass flag against probe-generated, locally vetted hook source; the
+evidence does not claim persisted user hook trust.
+
 The direct candidate is deliberately recorded as `unknown`. Phase 2 materialized its representative
 project files but did not observe Codex discover them and did not run a real direct-sync conflict
 installer. Its evidence names Phase 5 as owner and defines the probe needed to make it selectable.
@@ -42,11 +48,10 @@ so the offline local-source probe uses remove/re-add for refresh.
 
 ## Unresolved gaps
 
-This evidence supports an advisory local distribution lifecycle and discovery surface, not runtime
-execution.
-It did not invoke a skill, execute a hook, dispatch the project agent, approve hook trust, test the
-ChatGPT desktop UI, or exercise a networked Git marketplace. Those claims remain outside Phase 2
-and must not be inferred from `plugin list` or cached files.
+This evidence supports an advisory local distribution lifecycle and observed runtime execution on
+the pinned macOS/CLI combination. It does not prove persisted user hook trust, the ChatGPT desktop
+UI, other platforms, or a networked Git marketplace. Those claims must not be inferred from the
+local probe.
 
 The historical `feature/plugin-namespace-packaging` branch was inspected as pattern evidence only;
 its Claude-specific `.claude-plugin` implementation was not reused.

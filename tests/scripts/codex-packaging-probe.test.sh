@@ -48,6 +48,19 @@ if [ "${1:-}" = "--strict-config" ] && [ "${2:-}" = "--no-alt-screen" ]; then
   exit 20
 fi
 
+if [ "${1:-}" = "exec" ]; then
+  [ -n "${HARNESS_PACKAGING_HOOK_LOG:-}" ] || exit 94
+  if [ "${FAKE_RUNTIME_OMIT_HOOK:-0}" != 1 ]; then
+    printf '%s' HARNESS_PACKAGING_HOOK_OK >"$HARNESS_PACKAGING_HOOK_LOG"
+  fi
+  if [ "${FAKE_RUNTIME_OMIT_AGENT:-0}" = 1 ]; then
+    printf '%s\n' '{"type":"item.completed","text":"HARNESS_PACKAGING_SKILL_OK"}'
+  else
+    printf '%s\n' '{"type":"item.completed","text":"HARNESS_PACKAGING_SKILL_OK HARNESS_PACKAGING_AGENT_OK"}'
+  fi
+  exit 0
+fi
+
 [ "${1:-}" = "plugin" ] || exit 92
 shift
 
@@ -114,12 +127,18 @@ else
 fi
 
 assert "hybrid result is emitted" test -f "$TMP/out/packaging-hybrid.json"
+assert "hybrid runtime boundary is emitted" test -f "$TMP/out/packaging-hybrid-runtime.json"
 assert "direct result is emitted" test -f "$TMP/out/packaging-direct.json"
 assert "caller Codex state stays untouched" test "$(cat "$CALLER_CODEX/sentinel")" = keep
 assert "probe does not leave a cache in caller state" test ! -e "$CALLER_CODEX/plugins"
 assert "hybrid lifecycle passes without claiming runtime execution" python3 -c \
   'import json,sys; r=json.load(open(sys.argv[1]))["result"]; assert r["passed"] and not r["runtime_execution_observed"] and all(r["checks"].values())' \
   "$TMP/out/packaging-hybrid.json"
+assert "default packaging probe never invokes a model" sh -c \
+  "! cut -d '|' -f 3- '$LOG' | grep -q '^exec '"
+assert "default runtime evidence remains an owned unknown" python3 -c \
+  'import json,sys; r=json.load(open(sys.argv[1]))["result"]; assert r["status"]=="unknown" and not r["passed"] and not r["runtime_execution_observed"] and r["owner"]=="codex-support-phase-5" and not any(r["checks"].values())' \
+  "$TMP/out/packaging-hybrid-runtime.json"
 assert "direct candidate remains owned unknown until a real adapter probe" python3 -c \
   'import json,sys; r=json.load(open(sys.argv[1]))["result"]; assert not r["passed"] and r["status"]=="unknown" and not r["runtime_execution_observed"] and r["owner"]=="codex-support-phase-5" and not all(r["checks"].values())' \
   "$TMP/out/packaging-direct.json"
@@ -132,6 +151,37 @@ assert "exact supported CLI lifecycle is exercised" python3 -c \
 assert "fixtures contain no absolute repository path" python3 -c \
   'import pathlib,sys; root=str(pathlib.Path(sys.argv[1]).resolve()); assert root not in pathlib.Path(sys.argv[2]).read_text()' \
   "$ROOT" "$TMP/out/packaging-hybrid.json"
+
+LIVE_OUT="$TMP/live-out"
+LIVE_LOG="$TMP/live-calls.log"
+: >"$LIVE_LOG"
+if HOME="$CALLER_HOME" CODEX_HOME="$CALLER_CODEX" FAKE_CODEX_LOG="$LIVE_LOG" \
+  "$SCRIPT" --output "$LIVE_OUT" --codex-bin "$FAKE" \
+  --allow-live-model-probe >/dev/null; then
+  ok "explicitly opted-in hybrid runtime probe succeeds"
+else
+  not_ok "explicitly opted-in hybrid runtime probe succeeds"
+fi
+assert "opted-in packaging probe invokes one disposable exec" sh -c \
+  "[ \"\$(cut -d '|' -f 3- '$LIVE_LOG' | grep -c '^exec ')\" -eq 1 ]"
+assert "runtime invocation is ephemeral and discloses automation hook-trust bypass" sh -c \
+  "cut -d '|' -f 3- '$LIVE_LOG' | grep -q '^exec --json --approve-for-me --dangerously-bypass-hook-trust --ephemeral --enable multi_agent '"
+assert "runtime evidence requires skill, hook, and agent execution" python3 -c \
+  'import json,sys; r=json.load(open(sys.argv[1]))["result"]; assert r["status"]=="observed" and r["passed"] and r["runtime_execution_observed"] and all(r["checks"].values())' \
+  "$LIVE_OUT/packaging-hybrid-runtime.json"
+assert "runtime evidence publishes no model transcript" sh -c \
+  "! grep -R -q 'item.completed' '$LIVE_OUT'"
+
+RUNTIME_FAIL_OUT="$TMP/runtime-fail-out"
+if HOME="$CALLER_HOME" CODEX_HOME="$CALLER_CODEX" FAKE_CODEX_LOG="$LIVE_LOG" \
+  FAKE_RUNTIME_OMIT_AGENT=1 "$SCRIPT" --output "$RUNTIME_FAIL_OUT" \
+  --codex-bin "$FAKE" --allow-live-model-probe >/dev/null; then
+  assert "partial runtime execution cannot promote hybrid evidence" python3 -c \
+    'import json,sys; r=json.load(open(sys.argv[1]))["result"]; assert r["status"]=="unknown" and not r["passed"] and not r["runtime_execution_observed"] and r["checks"]["installed_plugin_skill_invoked"] and not r["checks"]["project_agent_dispatched"] and r["checks"]["plugin_hook_executed"]' \
+    "$RUNTIME_FAIL_OUT/packaging-hybrid-runtime.json"
+else
+  not_ok "partial runtime execution is published as unknown"
+fi
 
 FAIL_OUT="$TMP/fail-out"
 if HOME="$CALLER_HOME" CODEX_HOME="$CALLER_CODEX" FAKE_CODEX_LOG="$LOG" \

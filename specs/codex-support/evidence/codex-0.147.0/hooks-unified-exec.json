@@ -1,0 +1,20 @@
+{
+  "capture": "isolated-live-model-probe",
+  "captured_at": "2026-08-11",
+  "cli_version": "0.147.0",
+  "config_hash": "sha256:7e5dda9b834e755bbee1e2d7363c39e5f33fc3c9f3bacec632c40be5923c9de9",
+  "platform": "macos-arm64",
+  "result": {
+    "does_not_verify": "Every unified-exec action shape or non-shell tool envelope.",
+    "events": ["PreToolUse", "PostToolUse"],
+    "exit_condition": null,
+    "feature": "unified_exec",
+    "hook_tool_name": "Bash",
+    "payload_values_redacted": true,
+    "status": "observed",
+    "tool_input_keys": ["command"],
+    "verifies": "The hook envelope emitted for one unified-exec shell action."
+  },
+  "runtime": "codex",
+  "schema_version": 1
+}

@@ -11,6 +11,7 @@ Options:
   --output DIR                    Required evidence output directory.
   --codex-bin PATH                Required Codex CLI executable.
   --platform-label LABEL          Override detected platform (for CI fixtures).
+  --auth-file PATH                Copy one Codex auth file into disposable state.
   --allow-live-model-probe        Explicitly allow the model-backed hook/agent probe.
   -h, --help                      Show this help.
 
@@ -28,6 +29,7 @@ die() {
 OUTPUT=""
 CODEX_BIN=""
 PLATFORM_LABEL=""
+AUTH_FILE=""
 ALLOW_LIVE=0
 
 while [ "$#" -gt 0 ]; do
@@ -45,6 +47,11 @@ while [ "$#" -gt 0 ]; do
     --platform-label)
       [ "$#" -ge 2 ] || die "--platform-label requires a value"
       PLATFORM_LABEL=$2
+      shift 2
+      ;;
+    --auth-file)
+      [ "$#" -ge 2 ] || die "--auth-file requires a value"
+      AUTH_FILE=$2
       shift 2
       ;;
     --allow-live-model-probe)
@@ -108,9 +115,19 @@ WORK=$(mktemp -d "${TMPDIR:-/tmp}/codex-capabilities.XXXXXX") || die "cannot cre
 trap 'rm -rf "$WORK"' EXIT HUP INT TERM
 RAW="$WORK/raw"
 STAGED="$WORK/staged"
-mkdir -p "$RAW" "$STAGED" || die "cannot initialize temporary capture"
+ISOLATED_HOME="$WORK/home"
+ISOLATED_CODEX_HOME="$WORK/codex-home"
+mkdir -p "$RAW" "$STAGED" "$ISOLATED_HOME" "$ISOLATED_CODEX_HOME" \
+  || die "cannot initialize temporary capture"
+if [ -n "$AUTH_FILE" ]; then
+  [ -f "$AUTH_FILE" ] || die "auth file not found: $AUTH_FILE"
+  cp "$AUTH_FILE" "$ISOLATED_CODEX_HOME/auth.json" || die "cannot seed disposable auth"
+  chmod 600 "$ISOLATED_CODEX_HOME/auth.json" || die "cannot protect disposable auth"
+fi
+: >"$ISOLATED_CODEX_HOME/config.toml"
 
-VERSION_TEXT=$("$CODEX_BIN" --version 2>/dev/null) || die "codex --version failed"
+VERSION_TEXT=$(HOME="$ISOLATED_HOME" CODEX_HOME="$ISOLATED_CODEX_HOME" \
+  "$CODEX_BIN" --version 2>/dev/null) || die "codex --version failed"
 CLI_VERSION=$(python3 -c 'import re,sys; m=re.search(r"\b(\d+\.\d+\.\d+)\b",sys.argv[1]); print(m.group(1) if m else "")' "$VERSION_TEXT")
 [ -n "$CLI_VERSION" ] || die "could not parse Codex CLI version"
 
@@ -141,18 +158,22 @@ for path in sorted(output.glob("*.json")):
 PY
 fi
 
-"$CODEX_BIN" features list >"$RAW/features.txt" 2>"$RAW/features.err"
+HOME="$ISOLATED_HOME" CODEX_HOME="$ISOLATED_CODEX_HOME" \
+  "$CODEX_BIN" features list >"$RAW/features.txt" 2>"$RAW/features.err"
 FEATURES_RC=$?
-"$CODEX_BIN" doctor --json >"$RAW/doctor.json" 2>"$RAW/doctor.err"
+HOME="$ISOLATED_HOME" CODEX_HOME="$ISOLATED_CODEX_HOME" \
+  "$CODEX_BIN" doctor --json >"$RAW/doctor.json" 2>"$RAW/doctor.err"
 DOCTOR_RC=$?
-"$CODEX_BIN" --strict-config --help >"$RAW/strict.txt" 2>"$RAW/strict.err"
+HOME="$ISOLATED_HOME" CODEX_HOME="$ISOLATED_CODEX_HOME" \
+  "$CODEX_BIN" --strict-config --help >"$RAW/strict.txt" 2>"$RAW/strict.err"
 STRICT_RC=$?
-"$CODEX_BIN" plugin --help >"$RAW/plugin.txt" 2>"$RAW/plugin.err"
+HOME="$ISOLATED_HOME" CODEX_HOME="$ISOLATED_CODEX_HOME" \
+  "$CODEX_BIN" plugin --help >"$RAW/plugin.txt" 2>"$RAW/plugin.err"
 PLUGIN_RC=$?
 
 CONFIG_HASH=$(python3 - <<'PY'
 import hashlib
-canonical = b'{"features":{"hooks":true},"hooks":{"PostToolUse":["Bash","apply_patch"],"PreToolUse":["Bash","apply_patch"],"SessionEnd":["other"]}}'
+canonical = b'{"features":{"hooks":true},"hooks":{"PostToolUse":["Bash","apply_patch"],"PreToolUse":["Bash","apply_patch"],"SessionEnd":["other"],"UserPromptSubmit":["all"]}}'
 print(hashlib.sha256(canonical).hexdigest())
 PY
 )
@@ -194,7 +215,20 @@ import sys
 target = pathlib.Path(sys.argv[1])
 command = "python3 " + shlex.quote(sys.argv[2])
 entry = {"matcher": "Bash|apply_patch|Edit|Write", "hooks": [{"type": "command", "command": command}]}
-target.write_text(json.dumps({"hooks": {"PreToolUse": [entry], "PostToolUse": [entry]}}, indent=2) + "\n")
+prompt_entry = {"hooks": [{"type": "command", "command": command}]}
+target.write_text(
+    json.dumps(
+        {
+            "hooks": {
+                "PreToolUse": [entry],
+                "PostToolUse": [entry],
+                "UserPromptSubmit": [prompt_entry],
+            }
+        },
+        indent=2,
+    )
+    + "\n"
+)
 PY
 
   python3 - "$PROBE_REPO/.codex/agents/harness-probe.toml" "$AGENT_NONCE" <<'PY'
@@ -211,7 +245,21 @@ path.write_text(
 )
 PY
 
-  HARNESS_PROBE_EVENT_LOG="$EVENT_LOG" "$CODEX_BIN" exec --json \
+  python3 - "$ISOLATED_CODEX_HOME/config.toml" "$PROBE_REPO" <<'PY'
+import pathlib
+import sys
+
+config = pathlib.Path(sys.argv[1])
+project = sys.argv[2].replace("\\", "\\\\").replace('"', '\\"')
+config.write_text(
+    '[features]\n hooks = true\n multi_agent = true\n unified_exec = true\n'
+    f'[projects."{project}"]\ntrust_level = "trusted"\n'
+)
+PY
+
+  HOME="$ISOLATED_HOME" CODEX_HOME="$ISOLATED_CODEX_HOME" \
+    HARNESS_PROBE_EVENT_LOG="$EVENT_LOG" "$CODEX_BIN" exec --json \
+    --approve-for-me --dangerously-bypass-hook-trust --ephemeral \
     --skip-git-repo-check -C "$PROBE_REPO" \
     "Use one shell command and apply_patch once. Delegate one fresh task to the harness_probe custom agent and report its exact response. Then attempt a full-history fork with an agent-type override and state whether the runtime rejects that override." \
     >"$LIVE_STDOUT" 2>"$RAW/live.stderr"
@@ -343,7 +391,8 @@ write(
             "hooks_feature": hooks_feature,
             "canonical_config_hashed": True,
             "project_trust_status": "unknown",
-            "trust_evidence_boundary": "requires disposable-account probe",
+            "hook_trust_mode": "automation-vetted-bypass" if int(os.environ["LIVE_RC"]) == 0 else "not-observed",
+            "trust_evidence_boundary": "project trust is disposable; persisted user hook trust is not claimed",
         },
         f"sha256:{config_digest}",
     ),
@@ -368,10 +417,25 @@ def event_pair(tool_name):
     return {"PreToolUse", "PostToolUse"}.issubset(names)
 
 
+def tool_input_keys(tool_name):
+    keys = set()
+    for event in events:
+        if event.get("tool_name") != tool_name:
+            continue
+        tool_input = event.get("tool_input")
+        if isinstance(tool_input, dict):
+            keys.update(str(key) for key in tool_input)
+    return sorted(keys)
+
+
 # A disabled/untrusted hooks feature cannot produce trustworthy hook evidence, so an
 # event that arrives anyway must not be promoted to observed.
 shell_observed = hooks_enabled and event_pair("Bash")
 patch_observed = hooks_enabled and event_pair("apply_patch")
+prompt_events = [
+    event for event in events if event.get("hook_event_name") == "UserPromptSubmit"
+]
+prompt_observed = hooks_enabled and bool(prompt_events)
 hook_exit_condition = (
     "Run the explicit live probe in a trusted disposable project."
     if hooks_enabled
@@ -385,8 +449,26 @@ write(
             "status": "observed" if shell_observed else "unknown",
             "tool_name": "Bash",
             "events": ["PreToolUse", "PostToolUse"] if shell_observed else [],
-            "tool_input_keys": ["command"] if shell_observed else [],
+            "tool_input_keys": tool_input_keys("Bash") if shell_observed else [],
             "command_redacted": True,
+            "exit_condition": None if shell_observed else hook_exit_condition,
+        },
+        f"sha256:{config_digest}",
+    ),
+)
+write(
+    "hooks-unified-exec.json",
+    base(
+        "isolated-live-model-probe" if shell_observed else "live-model-probe-not-observed",
+        {
+            "status": "observed" if shell_observed else "unknown",
+            "feature": "unified_exec",
+            "hook_tool_name": "Bash" if shell_observed else None,
+            "events": ["PreToolUse", "PostToolUse"] if shell_observed else [],
+            "tool_input_keys": tool_input_keys("Bash") if shell_observed else [],
+            "payload_values_redacted": True,
+            "verifies": "The hook envelope emitted for one unified-exec shell action.",
+            "does_not_verify": "Every unified-exec action shape or non-shell tool envelope.",
             "exit_condition": None if shell_observed else hook_exit_condition,
         },
         f"sha256:{config_digest}",
@@ -401,9 +483,34 @@ write(
             "tool_name": "apply_patch",
             "events": ["PreToolUse", "PostToolUse"] if patch_observed else [],
             "matcher_aliases": ["Edit", "Write"],
-            "tool_input_keys": ["command"] if patch_observed else [],
+            "tool_input_keys": tool_input_keys("apply_patch") if patch_observed else [],
             "patch_redacted": True,
             "exit_condition": None if patch_observed else hook_exit_condition,
+        },
+        f"sha256:{config_digest}",
+    ),
+)
+prompt_keys = sorted(
+    {
+        str(key)
+        for event in prompt_events
+        for key in event
+    }
+)
+write(
+    "hooks-user-prompt-submit.json",
+    base(
+        "isolated-live-model-probe" if prompt_observed else "live-model-probe-not-observed",
+        {
+            "status": "observed" if prompt_observed else "unknown",
+            "event": "UserPromptSubmit",
+            "envelope_keys": prompt_keys if prompt_observed else [],
+            "prompt_redacted": True,
+            "verifies": "Whether UserPromptSubmit emitted in the disposable exec session.",
+            "does_not_verify": "Interactive-app-only prompt submission behavior.",
+            "exit_condition": None
+            if prompt_observed
+            else "Capture UserPromptSubmit in an explicitly authorized trusted disposable session.",
         },
         f"sha256:{config_digest}",
     ),

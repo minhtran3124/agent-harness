@@ -155,6 +155,57 @@ def _validate_evidence(
     errors.extend(_private_strings(payload, label))
 
 
+def _validate_runtime_evidence(
+    payload: Any,
+    *,
+    candidate: str,
+    cli_version: str,
+    label: str,
+    errors: list[str],
+) -> None:
+    if not isinstance(payload, dict):
+        errors.append(f"{label} must be a JSON object")
+        return
+    expected = {
+        "schema_version": 1,
+        "runtime": "codex",
+        "cli_version": cli_version,
+        "candidate": candidate,
+        "capture": "isolated-live-packaging-probe",
+    }
+    for key, value in expected.items():
+        if payload.get(key) != value:
+            errors.append(f"{label}.{key} must be {value}")
+    if not isinstance(payload.get("captured_at"), str):
+        errors.append(f"{label}.captured_at must be present")
+    result = payload.get("result")
+    if not isinstance(result, dict):
+        errors.append(f"{label}.result must be an object")
+        return
+    checks = result.get("checks")
+    required_checks = {
+        "installed_plugin_skill_invoked",
+        "plugin_hook_executed",
+        "project_agent_dispatched",
+    }
+    if not isinstance(checks, dict) or set(checks) != required_checks:
+        errors.append(f"{label}.result.checks must contain the three runtime checks")
+    elif not all(value is True for value in checks.values()):
+        errors.append(f"{label} runtime checks must all pass")
+    if not (
+        result.get("status") == "observed"
+        and result.get("passed") is True
+        and result.get("runtime_execution_observed") is True
+    ):
+        errors.append(f"{label} must contain an observed passing runtime execution")
+    if result.get("hook_trust_mode") != "automation-vetted-bypass":
+        errors.append(f"{label}.result.hook_trust_mode must disclose automation-vetted-bypass")
+    for field in ("verifies", "does_not_verify"):
+        if not isinstance(result.get(field), str) or not result.get(field):
+            errors.append(f"{label}.result.{field} must be non-empty")
+    errors.extend(_private_strings(payload, label))
+
+
 def validate_decision(decision_path: Path, *, root: Path) -> list[str]:
     errors: list[str] = []
     try:
@@ -173,8 +224,8 @@ def validate_decision(decision_path: Path, *, root: Path) -> list[str]:
     cli_version = metadata.get("cli_version", "")
     if not VERSION_RE.fullmatch(cli_version):
         errors.append("cli_version must be semantic x.y.z")
-    if metadata.get("runtime_execution") != "not-observed":
-        errors.append("runtime_execution must remain not-observed for this probe")
+    if metadata.get("runtime_execution") not in {"not-observed", "observed"}:
+        errors.append("runtime_execution must be observed or not-observed")
     if len(metadata.get("fallback_trigger", "")) < 20:
         errors.append("fallback_trigger must be concrete and non-empty")
     for section in sorted(REQUIRED_SECTIONS):
@@ -211,6 +262,21 @@ def validate_decision(decision_path: Path, *, root: Path) -> list[str]:
         errors.append(
             "selected packaging candidate must have an observed passing result"
         )
+
+    runtime_relative = metadata.get("runtime_evidence")
+    if metadata.get("runtime_execution") == "observed":
+        relative = _relative_path(runtime_relative, "runtime_evidence", errors)
+        if relative is not None:
+            runtime_payload = _load_json(root / relative, "runtime_evidence", errors)
+            _validate_runtime_evidence(
+                runtime_payload,
+                candidate=selected,
+                cli_version=cli_version,
+                label="runtime_evidence",
+                errors=errors,
+            )
+    elif runtime_relative:
+        errors.append("runtime_evidence must be omitted until runtime_execution is observed")
 
     matrix_relative = _relative_path(metadata.get("matrix"), "matrix", errors)
     if matrix_relative is not None:

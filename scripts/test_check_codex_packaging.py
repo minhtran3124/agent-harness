@@ -211,6 +211,105 @@ def test_runtime_execution_overclaim_is_rejected(tmp_path):
     )
 
 
+def test_observed_runtime_requires_separate_passing_evidence(tmp_path):
+    decision, evidence_root, _ = build_contract(tmp_path)
+    runtime_path = evidence_root / "packaging-hybrid-runtime.json"
+    runtime_path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "runtime": "codex",
+                "cli_version": "0.147.0",
+                "platform": "macos-arm64",
+                "captured_at": "2026-08-11",
+                "config_hash": "not-applicable",
+                "capture": "isolated-live-packaging-probe",
+                "candidate": "hybrid",
+                "result": {
+                    "status": "observed",
+                    "passed": True,
+                    "checks": {
+                        "installed_plugin_skill_invoked": True,
+                        "plugin_hook_executed": True,
+                        "project_agent_dispatched": True,
+                    },
+                    "runtime_execution_observed": True,
+                    "hook_trust_mode": "automation-vetted-bypass",
+                    "verifies": "All three disposable runtime boundaries.",
+                    "does_not_verify": "The direct fallback.",
+                },
+            }
+        )
+    )
+    decision.write_text(
+        decision.read_text()
+        .replace("runtime_execution: not-observed", "runtime_execution: observed")
+        .replace(
+            "fallback_trigger:",
+            "runtime_evidence: specs/codex-support/evidence/codex-0.147.0/packaging-hybrid-runtime.json\nfallback_trigger:",
+        )
+    )
+    assert validate_decision(decision, root=tmp_path) == []
+
+
+def test_observed_runtime_rejects_a_failed_execution_check(tmp_path):
+    decision, evidence_root, _ = build_contract(tmp_path)
+    runtime_path = evidence_root / "packaging-hybrid-runtime.json"
+    runtime_path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "runtime": "codex",
+                "cli_version": "0.147.0",
+                "platform": "macos-arm64",
+                "captured_at": "2026-08-11",
+                "config_hash": "not-applicable",
+                "capture": "isolated-live-packaging-probe",
+                "candidate": "hybrid",
+                "result": {
+                    "status": "observed",
+                    "passed": True,
+                    "checks": {
+                        "installed_plugin_skill_invoked": True,
+                        "plugin_hook_executed": True,
+                        "project_agent_dispatched": False,
+                    },
+                    "runtime_execution_observed": True,
+                    "hook_trust_mode": "automation-vetted-bypass",
+                    "verifies": "Attempted runtime boundaries.",
+                    "does_not_verify": "The missing agent dispatch.",
+                },
+            }
+        )
+    )
+    decision.write_text(
+        decision.read_text()
+        .replace("runtime_execution: not-observed", "runtime_execution: observed")
+        .replace(
+            "fallback_trigger:",
+            "runtime_evidence: specs/codex-support/evidence/codex-0.147.0/packaging-hybrid-runtime.json\nfallback_trigger:",
+        )
+    )
+    assert any(
+        "runtime checks must all pass" in error
+        for error in validate_decision(decision, root=tmp_path)
+    )
+
+
+def test_not_observed_runtime_cannot_point_at_evidence(tmp_path):
+    decision, _, _ = build_contract(tmp_path)
+    decision.write_text(
+        decision.read_text().replace(
+            "fallback_trigger:",
+            "runtime_evidence: specs/codex-support/evidence/codex-0.147.0/runtime.json\nfallback_trigger:",
+        )
+    )
+    assert any(
+        "must be omitted" in error
+        for error in validate_decision(decision, root=tmp_path)
+    )
+
+
 def test_required_section_is_enforced(tmp_path):
     decision, _, _ = build_contract(tmp_path)
     decision.write_text(decision.read_text().replace("## Unresolved gaps", "## Notes"))

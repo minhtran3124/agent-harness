@@ -1,6 +1,6 @@
 ---
 slug: codex-support-phase-5
-status: proposed
+status: active
 owner: Minh Tran
 created: 2026-08-11
 ---
@@ -10,11 +10,11 @@ created: 2026-08-11
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**6 tasks · 4 waves · 71 files · 0/6 done**
+**6 tasks · 4 waves · 72 files · 1/6 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
-| 1 | 5.1 | Close the load-bearing alpha evidence gaps (wave 1) | scripts/capture_codex_capabilities.sh, scripts/probe_codex_packaging.sh, scripts/check_codex_capabilities.py, scripts/check_codex_packaging.py, scripts/test_check_codex_capabilities.py, scripts/test_check_codex_packaging.py, tests/scripts/codex-capability-probe.test.sh, tests/scripts/codex-packaging-probe.test.sh, tests/scripts/codex-alpha-evidence.test.sh, specs/codex-support/capability-matrix.json, specs/codex-support/packaging-decision.md, specs/codex-support/evidence/codex-0.147.0/hooks-unified-exec.json, specs/codex-support/evidence/codex-0.147.0/hooks-user-prompt-submit.json, specs/codex-support/evidence/codex-0.147.0/packaging-hybrid-runtime.json, specs/codex-support/evidence/codex-0.147.0/packaging-direct.json, hooks/pre-bash-dispatch.sh, tests/hooks/normalize-tool-input.test.sh, tests/hooks/pre-bash-dispatch.test.sh | the selected package path has observed runtime execution; load-bearing envelopes… |
+| 1 | 5.1 | Close the load-bearing alpha evidence gaps (wave 1) | scripts/capture_codex_capabilities.sh, scripts/probe_codex_packaging.sh, scripts/check_codex_capabilities.py, scripts/check_codex_packaging.py, scripts/test_check_codex_capabilities.py, scripts/test_check_codex_packaging.py, tests/scripts/codex-capability-probe.test.sh, tests/scripts/codex-packaging-probe.test.sh, tests/scripts/codex-alpha-evidence.test.sh, specs/codex-support/capability-matrix.json, specs/codex-support/packaging-decision.md, specs/codex-support/evidence/codex-0.147.0/hooks-unified-exec.json, specs/codex-support/evidence/codex-0.147.0/hooks-user-prompt-submit.json, specs/codex-support/evidence/codex-0.147.0/packaging-hybrid-runtime.json, specs/codex-support/evidence/codex-0.147.0/packaging-hybrid.json, specs/codex-support/evidence/codex-0.147.0/packaging-direct.json, hooks/pre-bash-dispatch.sh, tests/hooks/normalize-tool-input.test.sh, tests/hooks/pre-bash-dispatch.test.sh | the selected package path has observed runtime execution; load-bearing envelopes… |
 | 2 | 5.2 | Render deterministic Codex runtime artifacts (wave 2) | adapters/codex/plugin/.codex-plugin/plugin.json, adapters/codex/plugin/hooks/hooks.json, adapters/codex/project/harness-instructions.md, adapters/codex/schema.json, scripts/render_codex_adapter.py, scripts/test_render_codex_adapter.py, scripts/render_agent_definitions.py, scripts/test_render_agent_definitions.py, agents/runtime-bindings.json, harness-manifest.json | identical inputs produce identical valid Codex artifacts; every role/hook/skill … |
 | 3 | 5.3 | Install the hybrid adapter without clobbering user state (wave 3) | scripts/install-codex-harness.sh, scripts/deploy-codex-adapter.sh, tests/scripts/codex-install.test.sh, tests/fixtures/codex-install/custom-AGENTS.md, tests/fixtures/codex-install/custom-config.toml, docs/codex-alpha-install.md | adapter lifecycle is idempotent and recoverable; every user-owned canary survive… |
 | 3 | 5.4 | Add the outside-hook doctor and runtime-mode record (wave 3) | scripts/codex_harness_doctor.py, scripts/test_codex_harness_doctor.py, runtime/runtime_mode.py, runtime/test_runtime_mode.py, runtime/run_state.py, runtime/test_run_state.py, templates/SUMMARY.template.md, scripts/verify_summary.py, scripts/test_verify_summary.py, hooks/session-knowledge.sh, tests/hooks/session-knowledge.test.sh | deterministic fixtures cover all modes, invalidation, privacy, malformed/unavail… |
@@ -43,7 +43,7 @@ flowchart LR
 ```
 
 ### Progress
-- [ ] 5.1 — Close the load-bearing alpha evidence gaps (wave 1)
+- [x] 5.1 — Close the load-bearing alpha evidence gaps (wave 1)
 - [ ] 5.2 — Render deterministic Codex runtime artifacts (wave 2)
 - [ ] 5.3 — Install the hybrid adapter without clobbering user state (wave 3)
 - [ ] 5.4 — Add the outside-hook doctor and runtime-mode record (wave 3)
@@ -111,7 +111,7 @@ Parent roadmap: `specs/codex-support/ROADMAP.md`. Preparation research:
 
 ### Task 5.1 — Close the load-bearing alpha evidence gaps (wave 1)
 
-- **Files:** scripts/capture_codex_capabilities.sh, scripts/probe_codex_packaging.sh, scripts/check_codex_capabilities.py, scripts/check_codex_packaging.py, scripts/test_check_codex_capabilities.py, scripts/test_check_codex_packaging.py, tests/scripts/codex-capability-probe.test.sh, tests/scripts/codex-packaging-probe.test.sh, tests/scripts/codex-alpha-evidence.test.sh, specs/codex-support/capability-matrix.json, specs/codex-support/packaging-decision.md, specs/codex-support/evidence/codex-0.147.0/hooks-unified-exec.json, specs/codex-support/evidence/codex-0.147.0/hooks-user-prompt-submit.json, specs/codex-support/evidence/codex-0.147.0/packaging-hybrid-runtime.json, specs/codex-support/evidence/codex-0.147.0/packaging-direct.json, hooks/pre-bash-dispatch.sh, tests/hooks/normalize-tool-input.test.sh, tests/hooks/pre-bash-dispatch.test.sh
+- **Files:** scripts/capture_codex_capabilities.sh, scripts/probe_codex_packaging.sh, scripts/check_codex_capabilities.py, scripts/check_codex_packaging.py, scripts/test_check_codex_capabilities.py, scripts/test_check_codex_packaging.py, tests/scripts/codex-capability-probe.test.sh, tests/scripts/codex-packaging-probe.test.sh, tests/scripts/codex-alpha-evidence.test.sh, specs/codex-support/capability-matrix.json, specs/codex-support/packaging-decision.md, specs/codex-support/evidence/codex-0.147.0/hooks-unified-exec.json, specs/codex-support/evidence/codex-0.147.0/hooks-user-prompt-submit.json, specs/codex-support/evidence/codex-0.147.0/packaging-hybrid-runtime.json, specs/codex-support/evidence/codex-0.147.0/packaging-hybrid.json, specs/codex-support/evidence/codex-0.147.0/packaging-direct.json, hooks/pre-bash-dispatch.sh, tests/hooks/normalize-tool-input.test.sh, tests/hooks/pre-bash-dispatch.test.sh
 - **Action:** Extend the existing fake-CLI contracts first, then—only after explicit authorization—
   run one disposable model-backed capture that observes the real unified-exec envelope,
   `UserPromptSubmit` when emitted, installed plugin skill invocation, trusted plugin hook execution,
@@ -237,6 +237,21 @@ Parent roadmap: `specs/codex-support/ROADMAP.md`. Preparation research:
 
 ## 6. Status Log
 
+- 2026-08-11 — Task 5.1 completed after explicit live-probe authorization. Codex CLI 0.147.0 on
+  macOS arm64 emitted the documented unified-exec `Bash`/`tool_input.command` shape and a redacted
+  `UserPromptSubmit` envelope, so the Phase-4 normalizer required no change. The selected hybrid
+  package executed its installed skill, automation-vetted plugin hook, and generated project agent
+  in one isolated session. Direct remains an owned unknown and unselectable; persisted user hook
+  trust, other platforms, desktop UI, and network marketplace behavior remain outside this proof.
+- 2026-08-11 — Task 5.1 deterministic probe contracts implemented: capability capture now emits
+  sanitized unified-exec and `UserPromptSubmit` envelopes; packaging capture separates lifecycle
+  evidence from installed skill/hook/project-agent runtime proof; partial observations stay owned
+  unknown. Fake-CLI integration tests and runtime-evidence checker mutations pass, and the full
+  CI-equivalent suite is green (517 Python tests). Awaiting explicit authorization for the two
+  disposable model-backed captures before publishing observed evidence or changing the decision.
+- 2026-08-11 — Activated for implementation after Claude's pre-execution review commit `e95664d`.
+  Official OpenAI hook documentation was rechecked before code work; deterministic Task-5.1 work
+  starts first, while the model-backed capture remains gated on explicit user authorization.
 - 2026-08-11 — Pre-execution review amendments: `runtime/test_run_state.py` added to the SC-5 check
   (run-state changes previously had no proof row); `hooks/pre-bash-dispatch.sh` and its fixture
   tests added to Task 5.1 Files with an in-wave contradiction path and matching risk entry, so a
