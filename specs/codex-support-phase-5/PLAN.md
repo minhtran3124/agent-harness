@@ -149,7 +149,7 @@ Parent roadmap: `specs/codex-support/ROADMAP.md`. Preparation research:
 
 ### Task 5.3 — Install the hybrid adapter without clobbering user state (wave 3)
 
-- **Files:** scripts/install-codex-harness.sh, scripts/deploy-codex-adapter.sh, tests/scripts/codex-install.test.sh, tests/fixtures/codex-install/custom-AGENTS.md, tests/fixtures/codex-install/custom-config.toml, docs/codex-alpha-install.md
+- **Files:** scripts/install-codex-harness.sh, scripts/deploy-codex-adapter.sh, tests/scripts/codex-install.test.sh, tests/fixtures/codex-install/custom-AGENTS.md, tests/fixtures/codex-install/custom-config.toml, docs/codex-alpha-install.md, harness-manifest.json
 - **Action:** Build/install the rendered plugin and project overlay through an isolated Codex-aware
   installer. Own only deployment-manifest paths. Integrate the root `AGENTS.md` through a
   sentinel-delimited pointer to the generated harness instruction fragment: preserve content outside

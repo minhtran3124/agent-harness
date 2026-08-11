@@ -122,10 +122,22 @@
       ],
       "consumers": [
         "scripts/test_render_codex_adapter.py",
+        "scripts/deploy-codex-adapter.sh",
         "scripts/run-tests.sh",
         "specs/codex-support/packaging-decision.md"
       ],
       "desc": "deterministic Codex hybrid plugin and project-overlay rendering contract"
+    },
+    "codex-adapter-installation": {
+      "surface": [
+        "scripts/deploy-codex-adapter.sh",
+        "scripts/install-codex-harness.sh"
+      ],
+      "consumers": [
+        "tests/scripts/codex-install.test.sh",
+        "docs/codex-alpha-install.md"
+      ],
+      "desc": "non-clobber Codex plugin, project overlay, and bounded AGENTS.md lifecycle"
     },
     "hook-input-normalization": {
       "surface": [
