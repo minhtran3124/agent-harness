@@ -132,7 +132,7 @@ Parent roadmap: `specs/codex-support/ROADMAP.md`. Preparation research:
 
 ### Task 5.2 — Render deterministic Codex runtime artifacts (wave 2)
 
-- **Files:** adapters/codex/plugin/.codex-plugin/plugin.json, adapters/codex/plugin/hooks/hooks.json, adapters/codex/project/harness-instructions.md, adapters/codex/schema.json, scripts/render_codex_adapter.py, scripts/test_render_codex_adapter.py, scripts/render_agent_definitions.py, scripts/test_render_agent_definitions.py, agents/runtime-bindings.json, harness-manifest.json
+- **Files:** adapters/codex/plugin/.codex-plugin/plugin.json, adapters/codex/plugin/hooks/hooks.json, adapters/codex/project/harness-instructions.md, adapters/codex/schema.json, scripts/render_codex_adapter.py, scripts/test_render_codex_adapter.py, scripts/render_agent_definitions.py, scripts/test_render_agent_definitions.py, scripts/run-tests.sh, agents/runtime-bindings.json, harness-manifest.json
 - **Action:** Add a stdlib renderer that validates the selected package/evidence, reads the shared
   skills/hooks and neutral agent contracts, and writes a temporary plugin plus project overlay.
   Extend agent rendering to emit strict `.codex/agents/*.toml` profiles with explicit sandbox,

@@ -107,9 +107,25 @@
       "consumers": [
         "scripts/deploy-harness.sh",
         "scripts/check_manifest.py",
-        "scripts/test_render_agent_definitions.py"
+        "scripts/test_render_agent_definitions.py",
+        "scripts/render_codex_adapter.py",
+        "scripts/test_render_codex_adapter.py"
       ],
       "desc": "neutral agent capability contracts and checked runtime-specific bindings"
+    },
+    "codex-adapter-rendering": {
+      "surface": [
+        "adapters/codex/schema.json",
+        "adapters/codex/plugin/.codex-plugin/plugin.json",
+        "adapters/codex/plugin/hooks/hooks.json",
+        "scripts/render_codex_adapter.py"
+      ],
+      "consumers": [
+        "scripts/test_render_codex_adapter.py",
+        "scripts/run-tests.sh",
+        "specs/codex-support/packaging-decision.md"
+      ],
+      "desc": "deterministic Codex hybrid plugin and project-overlay rendering contract"
     },
     "hook-input-normalization": {
       "surface": [
