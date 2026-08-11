@@ -16,7 +16,7 @@ Related: `plan-format.md`, `guidelines.md`, `orchestration.md`, `skills/feature-
 
 ## Lane-aware autonomy
 
-The intake lane (`specs/<slug>/SUMMARY.md`, set by `/feature-intake`) decides how much autonomy applies. Rules 1–4 below are constant; the lane decides whether a plan and a human confirmation are required first. (The classification algorithm that assigns the lane in the first place lives in `skills/feature-intake/SKILL.md` Step 3 — canonical source; the table below is the autonomy this repo grants per lane, a separate axis.)
+The intake lane (`specs/<slug>/SUMMARY.md`, set by `feature-intake`) decides how much autonomy applies. Rules 1–4 below are constant; the lane decides whether a plan and a human confirmation are required first. (The classification algorithm that assigns the lane in the first place lives in `skills/feature-intake/SKILL.md` Step 3 — canonical source; the table below is the autonomy this repo grants per lane, a separate axis.)
 
 | Lane | Autonomy | Plan | Human confirm |
 |---|---|---|---|
@@ -28,7 +28,7 @@ The intake lane (`specs/<slug>/SUMMARY.md`, set by `/feature-intake`) decides ho
 
 Create a dedicated branch before the first implementation edit. This does not scale with
 ceremony: tiny uses `git checkout -b <type>/<slug>`; normal and high-risk use
-`/using-git-worktrees` for an isolated worktree + branch. Never implement on a shared branch.
+`using-git-worktrees` for an isolated worktree + branch. Never implement on a shared branch.
 
 `hooks/branch-isolation-guard.sh` enforces this for every lane using
 `HARNESS_SHARED_BRANCHES` (default `main master`). Only `specs/*` bookkeeping is exempt so intake

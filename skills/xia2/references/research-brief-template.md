@@ -24,7 +24,7 @@ Use this template as the output contract for every xia research session. Fill ev
 | Frameworks / platforms | _e.g., FastAPI 0.115, SQLAlchemy 2.0_ |
 | Relevant packages | _packages directly related to the feature_ |
 | Detectable versions | _from manifests or lockfiles_ |
-| Important constraints | _from CLAUDE.md, AGENTS.md, or .claude/rules/_ |
+| Important constraints | _from CLAUDE.md, AGENTS.md, or rules/_ |
 
 ---
 

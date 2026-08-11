@@ -1,5 +1,9 @@
 # Resume actions
 
+Before interpreting an `execute-plan` cursor, read `rules/plan-format.md` and
+`rules/wave-parallelism.md`. This new-session context does not inherit the original controller's
+path-scoped rule delivery.
+
 `resume_decision.py` is the authority. Invoke it source-tree-first, deployed-copy only when the
 source is ABSENT — never as an error fallback, so a fail-closed exit 3 is not re-answered from a
 stale deployed copy:

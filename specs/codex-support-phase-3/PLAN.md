@@ -1,6 +1,6 @@
 ---
 slug: codex-support-phase-3
-status: proposed
+status: active
 owner: Minh Tran
 created: 2026-08-10
 ---
@@ -10,14 +10,14 @@ created: 2026-08-10
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**4 tasks · 4 waves · 62 files · 0/4 done**
+**4 tasks · 4 waves · 66 files · 4/4 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
-| 1 | 3.1 | Freeze the neutralisation inventory and lint (wave 1) | specs/codex-support/neutralization-inventory.json, scripts/check_runtime_neutral_sources.py, scripts/test_check_runtime_neutral_sources.py, harness-manifest.json | the current coupling set is finite and machine-checked; later tasks cannot hide … |
-| 2 | 3.2 | Make rule delivery explicit and repository-rooted (wave 2) | agents/PROJECT.md, skills/README.md, skills/compound/README.md, skills/correctness-review/SKILL.md, skills/correctness-review/prompts/shared.md, skills/intent-review/SKILL.md, skills/subagent-driven-development/SKILL.md, skills/subagent-driven-development/implementer-prompt.md, skills/writing-plans/SKILL.md, skills/writing-plans/plan-document-reviewer-prompt.md, skills/xia2/references/research-brief-template.md, scripts/render_skill_prompt.py, scripts/test_render_skill_prompt.py, tests/scripts/context-propagation-regression.test.sh, tests/scripts/writing-plans-contract.test.sh, specs/codex-support/neutralization-inventory.json | all contextual rules use portable source addresses and every isolated context ha… |
-| 3 | 3.3 | Neutralise skill invocation prose (wave 3) | agents/PROJECT.md, agents/PROJECT.template.md, agents/README.md, rules/auto-correct-scope.md, rules/orchestration.md, rules/wave-parallelism.md, skills/README.md, skills/brainstorming/SKILL.md, skills/compound/README.md, skills/compound/subagents/context-analyzer-prompt.md, skills/compound/subagents/decision-extractor-prompt.md, skills/compound/subagents/related-docs-finder-prompt.md, skills/compound/subagents/solution-extractor-prompt.md, skills/compound/templates/index.md, skills/correctness-review/SKILL.md, skills/correctness-review/correctness-reviewer-prompt.md, skills/feature-intake/SKILL.md, skills/feature-intake/tests/README.md, skills/intent-review/intent-reviewer-prompt.md, skills/subagent-driven-development/SKILL.md, skills/subagent-driven-development/references/review-chain.md, skills/using-git-worktrees/SKILL.md, skills/visual-planner/SKILL.md, skills/visual-planner/render_plan.py, skills/visual-planner/test_render_plan.py, skills/visual-planner/view_plan.py, skills/xia2/README.md, skills/xia2/tests/structural/depth-modes-test-cases.md, templates/SUMMARY.template.md, templates/structure/docs-solutions-critical-patterns.md, templates/structure/docs-solutions-INDEX.md, templates/structure/docs-solutions-README.md, templates/structure/specs-README.md, specs/codex-support/neutralization-inventory.json | shared instructions can be consumed by either runtime without deploy-time prose … |
-| 4 | 3.4 | Extract neutral agent contracts and runtime bindings (wave 4) | agents/agent-contracts.json, agents/runtime-bindings.json, agents/coding.md, agents/reviewer.md, agents/task-reviewer.md, agents/test-runner.md, scripts/render_agent_definitions.py, scripts/test_render_agent_definitions.py, scripts/deploy-harness.sh, tests/scripts/deploy-prune.test.sh, tests/scripts/resync-conflict.test.sh, tests/scripts/settings-wiring.test.sh, tests/scripts/install-harness.test.sh, scripts/check_manifest.py, scripts/test_check_manifest.py, harness-manifest.json | semantic agent sources contain no Claude policy fields; both runtime bindings ar… |
+| 1 | 3.1 | Freeze the neutralisation inventory and lint (wave 1) | specs/codex-support/neutralization-inventory.json, scripts/check_runtime_neutral_sources.py, scripts/test_check_runtime_neutral_sources.py, scripts/run-tests.sh, harness-manifest.json | the current coupling set is finite and machine-checked; later tasks cannot hide … |
+| 2 | 3.2 | Make rule delivery explicit and repository-rooted (wave 2) | agents/PROJECT.md, skills/README.md, skills/compound/README.md, skills/correctness-review/SKILL.md, skills/correctness-review/prompts/shared.md, skills/intent-review/SKILL.md, skills/subagent-driven-development/SKILL.md, skills/subagent-driven-development/implementer-prompt.md, skills/subagent-driven-development/references/resume.md, skills/writing-plans/SKILL.md, skills/writing-plans/plan-document-reviewer-prompt.md, skills/xia2/references/research-brief-template.md, scripts/render_skill_prompt.py, scripts/test_render_skill_prompt.py, tests/scripts/context-propagation-regression.test.sh, tests/scripts/writing-plans-contract.test.sh, specs/codex-support/neutralization-inventory.json | all contextual rules use portable source addresses and every isolated context ha… |
+| 3 | 3.3 | Neutralise skill invocation prose (wave 3) | agents/PROJECT.md, agents/PROJECT.template.md, agents/README.md, rules/auto-correct-scope.md, rules/orchestration.md, rules/wave-parallelism.md, skills/README.md, skills/brainstorming/SKILL.md, skills/compound/README.md, skills/compound/subagents/context-analyzer-prompt.md, skills/compound/subagents/decision-extractor-prompt.md, skills/compound/subagents/related-docs-finder-prompt.md, skills/compound/subagents/solution-extractor-prompt.md, skills/compound/templates/index.md, skills/correctness-review/SKILL.md, skills/correctness-review/correctness-reviewer-prompt.md, skills/feature-intake/SKILL.md, skills/feature-intake/tests/README.md, skills/intent-review/intent-reviewer-prompt.md, skills/subagent-driven-development/SKILL.md, skills/subagent-driven-development/references/review-chain.md, skills/using-git-worktrees/SKILL.md, skills/visual-planner/SKILL.md, skills/visual-planner/render_plan.py, skills/visual-planner/test_render_plan.py, skills/visual-planner/view_plan.py, skills/xia2/README.md, skills/xia2/tests/structural/depth-modes-test-cases.md, templates/SUMMARY.template.md, templates/structure/docs-solutions-critical-patterns.md, templates/structure/docs-solutions-INDEX.md, templates/structure/docs-solutions-README.md, templates/structure/specs-README.md, templates/structure/specs-STATE.md, specs/codex-support/neutralization-inventory.json | shared instructions can be consumed by either runtime without deploy-time prose … |
+| 4 | 3.4 | Extract neutral agent contracts and runtime bindings (wave 4) | agents/agent-contracts.json, agents/runtime-bindings.json, agents/coding.md, agents/reviewer.md, agents/task-reviewer.md, agents/test-runner.md, scripts/render_agent_definitions.py, scripts/test_render_agent_definitions.py, scripts/deploy-harness.sh, scripts/run-tests.sh, tests/scripts/deploy-prune.test.sh, tests/scripts/resync-conflict.test.sh, tests/scripts/settings-wiring.test.sh, tests/scripts/install-harness.test.sh, tests/scripts/task-reviewer-readonly.test.sh, scripts/check_manifest.py, scripts/test_check_manifest.py, harness-manifest.json | semantic agent sources contain no Claude policy fields; both runtime bindings ar… |
 
 ```mermaid
 flowchart LR
@@ -39,10 +39,10 @@ flowchart LR
 ```
 
 ### Progress
-- [ ] 3.1 — Freeze the neutralisation inventory and lint (wave 1)
-- [ ] 3.2 — Make rule delivery explicit and repository-rooted (wave 2)
-- [ ] 3.3 — Neutralise skill invocation prose (wave 3)
-- [ ] 3.4 — Extract neutral agent contracts and runtime bindings (wave 4)
+- [x] 3.1 — Freeze the neutralisation inventory and lint (wave 1)
+- [x] 3.2 — Make rule delivery explicit and repository-rooted (wave 2)
+- [x] 3.3 — Neutralise skill invocation prose (wave 3)
+- [x] 3.4 — Extract neutral agent contracts and runtime bindings (wave 4)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -88,7 +88,7 @@ Parent roadmap: `specs/codex-support/ROADMAP.md`.
 | --- | --- | --- | --- |
 | SC-1 | Shared runtime sources contain no forbidden `.claude/rules/...` address or runtime-specific skill invocation outside declared entry/binding exceptions | `python3 scripts/check_runtime_neutral_sources.py --root .` | exit 0 |
 | SC-2 | Every load-bearing contextual rule reaches main, implementer, reviewer, scorer, and resume contexts through an explicit read or a checked equivalent | `bash tests/scripts/context-propagation-regression.test.sh` | exit 0 |
-| SC-3 | Neutral agent contracts map every capability for Claude and Codex, reject unmapped policy, and reproduce valid Claude agent definitions | `python3 -m pytest scripts/test_render_agent_definitions.py -q` | exit 0 |
+| SC-3 | Neutral agent contracts map every capability for Claude and Codex, reject unmapped policy, and reproduce valid Claude agent definitions | `python3 scripts/render_agent_definitions.py --check` | exit 0 |
 | SC-4 | New neutral-source and agent-binding surfaces are registered without manifest or contract drift | `python3 scripts/check_manifest.py` | exit 0 |
 
 > SC ids are per-plan (`rules/plan-format.md`). The roadmap's original global numbering maps as
@@ -98,7 +98,7 @@ Parent roadmap: `specs/codex-support/ROADMAP.md`.
 
 ### Task 3.1 — Freeze the neutralisation inventory and lint (wave 1)
 
-- **Files:** specs/codex-support/neutralization-inventory.json, scripts/check_runtime_neutral_sources.py, scripts/test_check_runtime_neutral_sources.py, harness-manifest.json
+- **Files:** specs/codex-support/neutralization-inventory.json, scripts/check_runtime_neutral_sources.py, scripts/test_check_runtime_neutral_sources.py, scripts/run-tests.sh, harness-manifest.json
 - **Action:** Test-first, inventory every shared instruction file containing `.claude/rules/...`,
   Claude `/skill-name` invocation syntax, Claude model/tool frontmatter, or runtime-bound entry
   language. Classify each finding as shared-source violation, runtime entry/binding exception, test
@@ -120,7 +120,7 @@ Parent roadmap: `specs/codex-support/ROADMAP.md`.
 
 ### Task 3.2 — Make rule delivery explicit and repository-rooted (wave 2)
 
-- **Files:** agents/PROJECT.md, skills/README.md, skills/compound/README.md, skills/correctness-review/SKILL.md, skills/correctness-review/prompts/shared.md, skills/intent-review/SKILL.md, skills/subagent-driven-development/SKILL.md, skills/subagent-driven-development/implementer-prompt.md, skills/writing-plans/SKILL.md, skills/writing-plans/plan-document-reviewer-prompt.md, skills/xia2/references/research-brief-template.md, scripts/render_skill_prompt.py, scripts/test_render_skill_prompt.py, tests/scripts/context-propagation-regression.test.sh, tests/scripts/writing-plans-contract.test.sh, specs/codex-support/neutralization-inventory.json
+- **Files:** agents/PROJECT.md, skills/README.md, skills/compound/README.md, skills/correctness-review/SKILL.md, skills/correctness-review/prompts/shared.md, skills/intent-review/SKILL.md, skills/subagent-driven-development/SKILL.md, skills/subagent-driven-development/implementer-prompt.md, skills/subagent-driven-development/references/resume.md, skills/writing-plans/SKILL.md, skills/writing-plans/plan-document-reviewer-prompt.md, skills/xia2/references/research-brief-template.md, scripts/render_skill_prompt.py, scripts/test_render_skill_prompt.py, tests/scripts/context-propagation-regression.test.sh, tests/scripts/writing-plans-contract.test.sh, specs/codex-support/neutralization-inventory.json
 - **Action:** Replace shared-source `.claude/rules/...` addresses with canonical repository-root
   `rules/...` paths. For `plan-format`, `wave-parallelism`, and `auto-correct-scope`, enumerate every
   load-bearing main/implementer/task-reviewer/correctness-reviewer/scorer/resume consumer and add an
@@ -139,7 +139,7 @@ Parent roadmap: `specs/codex-support/ROADMAP.md`.
 
 ### Task 3.3 — Neutralise skill invocation prose (wave 3)
 
-- **Files:** agents/PROJECT.md, agents/PROJECT.template.md, agents/README.md, rules/auto-correct-scope.md, rules/orchestration.md, rules/wave-parallelism.md, skills/README.md, skills/brainstorming/SKILL.md, skills/compound/README.md, skills/compound/subagents/context-analyzer-prompt.md, skills/compound/subagents/decision-extractor-prompt.md, skills/compound/subagents/related-docs-finder-prompt.md, skills/compound/subagents/solution-extractor-prompt.md, skills/compound/templates/index.md, skills/correctness-review/SKILL.md, skills/correctness-review/correctness-reviewer-prompt.md, skills/feature-intake/SKILL.md, skills/feature-intake/tests/README.md, skills/intent-review/intent-reviewer-prompt.md, skills/subagent-driven-development/SKILL.md, skills/subagent-driven-development/references/review-chain.md, skills/using-git-worktrees/SKILL.md, skills/visual-planner/SKILL.md, skills/visual-planner/render_plan.py, skills/visual-planner/test_render_plan.py, skills/visual-planner/view_plan.py, skills/xia2/README.md, skills/xia2/tests/structural/depth-modes-test-cases.md, templates/SUMMARY.template.md, templates/structure/docs-solutions-critical-patterns.md, templates/structure/docs-solutions-INDEX.md, templates/structure/docs-solutions-README.md, templates/structure/specs-README.md, specs/codex-support/neutralization-inventory.json
+- **Files:** agents/PROJECT.md, agents/PROJECT.template.md, agents/README.md, rules/auto-correct-scope.md, rules/orchestration.md, rules/wave-parallelism.md, skills/README.md, skills/brainstorming/SKILL.md, skills/compound/README.md, skills/compound/subagents/context-analyzer-prompt.md, skills/compound/subagents/decision-extractor-prompt.md, skills/compound/subagents/related-docs-finder-prompt.md, skills/compound/subagents/solution-extractor-prompt.md, skills/compound/templates/index.md, skills/correctness-review/SKILL.md, skills/correctness-review/correctness-reviewer-prompt.md, skills/feature-intake/SKILL.md, skills/feature-intake/tests/README.md, skills/intent-review/intent-reviewer-prompt.md, skills/subagent-driven-development/SKILL.md, skills/subagent-driven-development/references/review-chain.md, skills/using-git-worktrees/SKILL.md, skills/visual-planner/SKILL.md, skills/visual-planner/render_plan.py, skills/visual-planner/test_render_plan.py, skills/visual-planner/view_plan.py, skills/xia2/README.md, skills/xia2/tests/structural/depth-modes-test-cases.md, templates/SUMMARY.template.md, templates/structure/docs-solutions-critical-patterns.md, templates/structure/docs-solutions-INDEX.md, templates/structure/docs-solutions-README.md, templates/structure/specs-README.md, templates/structure/specs-STATE.md, specs/codex-support/neutralization-inventory.json
 - **Action:** Replace executable/shared `/skill-name` phrasing with invocation-neutral language such
   as “invoke the named skill,” while preserving literal repository paths, URLs, code operators,
   historical evidence, and explicitly runtime-bound entry examples. Neutralise the invocation prose
@@ -158,7 +158,7 @@ Parent roadmap: `specs/codex-support/ROADMAP.md`.
 
 ### Task 3.4 — Extract neutral agent contracts and runtime bindings (wave 4)
 
-- **Files:** agents/agent-contracts.json, agents/runtime-bindings.json, agents/coding.md, agents/reviewer.md, agents/task-reviewer.md, agents/test-runner.md, scripts/render_agent_definitions.py, scripts/test_render_agent_definitions.py, scripts/deploy-harness.sh, tests/scripts/deploy-prune.test.sh, tests/scripts/resync-conflict.test.sh, tests/scripts/settings-wiring.test.sh, tests/scripts/install-harness.test.sh, scripts/check_manifest.py, scripts/test_check_manifest.py, harness-manifest.json
+- **Files:** agents/agent-contracts.json, agents/runtime-bindings.json, agents/coding.md, agents/reviewer.md, agents/task-reviewer.md, agents/test-runner.md, scripts/render_agent_definitions.py, scripts/test_render_agent_definitions.py, scripts/deploy-harness.sh, scripts/run-tests.sh, tests/scripts/deploy-prune.test.sh, tests/scripts/resync-conflict.test.sh, tests/scripts/settings-wiring.test.sh, tests/scripts/install-harness.test.sh, tests/scripts/task-reviewer-readonly.test.sh, scripts/check_manifest.py, scripts/test_check_manifest.py, harness-manifest.json
 - **Action:** Test-first, move vendor model/tool fields out of semantic role documents into explicit
   bindings. Define neutral capabilities for filesystem, shell/network, MCP, nested delegation,
   context policy, model class, and output contract; require every role/runtime/capability to map or
@@ -186,3 +186,21 @@ Parent roadmap: `specs/codex-support/ROADMAP.md`.
 ## 6. Status Log
 
 - 2026-08-10 — Split out of the single four-phase `specs/codex-support/` plan; not started.
+- 2026-08-10 — Activated after Phase 2 review findings F1–F8 were resolved, the real Codex 0.147.0
+  evidence was recaptured, and the CI-equivalent suite completed `ALL GREEN` with 491 Python tests.
+- 2026-08-10 — Inventory discovery added the previously omitted
+  `templates/structure/specs-STATE.md` shared template and `scripts/run-tests.sh` registrations to
+  the declared task files before implementation; no production scope was expanded.
+- 2026-08-10 — Task 3.1 complete. The stdlib checker inventories 159 occurrences in 59 owned
+  path/category groups, rejects unowned/stale/duplicate exceptions, reports exact lines, and is
+  registered in both the manifest and CI-equivalent Python suite; 10 focused unit tests pass.
+- 2026-08-10 — Task 3.2 complete. All contextual-rule consumers now read repository-rooted
+  authorities explicitly; the renderer's complete main/implementer/reviewer/scorer/resume matrix
+  is mutation-tested, with 7 Python and 9 focused shell contract tests passing.
+- 2026-08-10 — Task 3.3 complete. Shared skill handoffs, generated templates, and deployed skill
+  addresses are invocation-neutral. The inventory now contains only 18 owned Phase-5 entry or test
+  occurrences in 13 groups and zero shared-source violations; visual-planner's 82 tests pass.
+- 2026-08-10 — Task 3.4 complete. Neutral capability contracts and total Claude/Codex bindings are
+  validated mechanically; Claude definitions render with the prior model/tool isolation, and
+  deploy/install/custom-agent/prune/conflict regressions pass. The CI-equivalent suite is
+  `ALL GREEN` with 513 Python tests.

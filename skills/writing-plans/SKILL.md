@@ -5,7 +5,7 @@ description: Use after an approved design and research brief to create a detaile
 
 # Writing Plans
 
-Create `specs/<slug>/PLAN.md` for work that needs a plan. Announce this skill, then **Read `.claude/rules/plan-format.md`** before authoring: it is path-scoped and a new plan does not load it
+Create `specs/<slug>/PLAN.md` for work that needs a plan. Announce this skill, then **Read `rules/plan-format.md`** before authoring: it is path-scoped and a new plan does not load it
 automatically.
 
 ## Required inputs

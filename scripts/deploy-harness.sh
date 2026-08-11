@@ -298,6 +298,12 @@ copy_dir()        {
     base="$(basename "$entry")"
     rel="$1/$base"
 
+    # Agent contracts/bindings are source-time adapter inputs, not Claude runtime files.
+    # The semantic Markdown roles are copied below and then deterministically rendered.
+    if [ "$1" = "agents" ] && [ "${base##*.}" = "json" ]; then
+      continue
+    fi
+
     # _archive is stripped post-copy (strip_archive) — never a harness-owned live path.
     [ "$base" = "_archive" ] || record_deployed "$rel"
 
@@ -315,6 +321,10 @@ copy_dir()        {
   done
 }
 strip_archive()   { rm -rf "$OUT/skills/_archive"; }   # archived skills must not register as live
+render_agents()   {
+  python3 scripts/render_agent_definitions.py \
+    --root "$ROOT" --runtime claude --output-dir "$OUT/agents"
+}
 derive_settings() {
   # Point relative hook commands at the deployed .claude/ copies via $CLAUDE_PROJECT_DIR so they
   # resolve from any launch directory. Absolute / $-prefixed commands are left untouched.
@@ -390,6 +400,7 @@ for d in skills agents hooks rules templates runtime; do
   [ -e "$d" ] || continue
   step "Syncing ${B}$d/${R}"                 copy_dir "$d"
 done
+step "Rendering ${B}Claude agent bindings${R}" render_agents
 step "Stripping archived skills"             strip_archive
 step "Deriving ${B}settings.json${R} ${D}(hook paths)${R}" derive_settings
 

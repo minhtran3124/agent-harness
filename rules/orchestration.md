@@ -31,7 +31,7 @@ At `<40%` mid-feature: commit/push current wave first (if executing), update STA
 
 ## Intake fields (orchestrator writes these)
 
-At intake — before dispatching any task — the orchestrator runs `/feature-intake` and writes the result to `specs/<slug>/SUMMARY.md` (shape: `templates/SUMMARY.template.md`):
+At intake — before dispatching any task — the orchestrator runs `feature-intake` and writes the result to `specs/<slug>/SUMMARY.md` (shape: `templates/SUMMARY.template.md`):
 
 - **Lane** — `tiny | normal | high-risk` (drives ceremony / how much proof).
 - **Confidence** — `high | medium | low` (drives interruption / whether a human is asked).
@@ -51,7 +51,7 @@ Every subagent returning to main thread MUST include in its summary:
 - **Deviations** — Rule 1–3 auto-fixes per `auto-correct-scope.md`, labeled by rule
 - **Blockers** — anything requiring main thread decision or user input
 - **Verify status** — pass/fail of task's `<verify>` command (with command output excerpt on fail)
-- **Harness-Delta** — friction this task revealed about the workflow itself: `fix-direct`, `backlog` (→ `/compound`), or `none`
+- **Harness-Delta** — friction this task revealed about the workflow itself: `fix-direct`, `backlog` (→ `compound`), or `none`
 
 Target length: 150–300 words. No raw file dumps. Main thread must be able to act on the summary alone without re-reading the subagent's work product.
 

@@ -1,6 +1,6 @@
 # Related Docs Finder — Compound Subagent
 
-You are the Related Docs Finder subagent for the `/compound` skill. Your job is to search the existing knowledge base for documentation that overlaps with the current session's topics, so the orchestrator can avoid creating duplicate docs.
+You are the Related Docs Finder subagent for the `compound` skill. Your job is to search the existing knowledge base for documentation that overlaps with the current session's topics, so the orchestrator can avoid creating duplicate docs.
 
 ## Your Input
 

@@ -1,8 +1,8 @@
-# /compound — Knowledge Compounding Skill
+# compound — Knowledge Compounding Skill
 
 Transforms session learnings into persistent, discoverable documentation under `docs/solutions/`.
 
-**Trigger:** `/compound` — never runs automatically. Only invoke after sessions where a bug was solved, a non-obvious pattern was discovered, or an architectural decision was made with considered alternatives.
+**Trigger:** `compound` — never runs automatically. Only invoke after sessions where a bug was solved, a non-obvious pattern was discovered, or an architectural decision was made with considered alternatives.
 
 ---
 
@@ -11,7 +11,7 @@ Transforms session learnings into persistent, discoverable documentation under `
 The skill uses an **orchestrator + 4 subagents** model. The orchestrator (`SKILL.md`) coordinates everything — subagents only read and return text, the orchestrator writes all files.
 
 ```
-/compound (orchestrator — SKILL.md)
+compound (orchestrator — SKILL.md)
 ├── subagents/context-analyzer-prompt.md     → classifies what happened, assigns severity
 ├── subagents/solution-extractor-prompt.md   → extracts bug fixes + knowledge patterns
 ├── subagents/decision-extractor-prompt.md   → extracts architectural decisions (ADR format)
@@ -141,7 +141,7 @@ One entry per emitted track (bug / knowledge / decision). Entries are never trun
 
 ### `INDEX.md`
 
-Full-rebuild index of all `docs/solutions/**/*.md` files. Rebuilt from scratch after every `/compound` run.
+Full-rebuild index of all `docs/solutions/**/*.md` files. Rebuilt from scratch after every `compound` run.
 
 **Why full rebuild (not append-only):** prevents orphaned rows when files are renamed, moved, or deleted. The docs/solutions/ directory grows to tens of files, not thousands — full scan is negligible.
 
@@ -154,7 +154,7 @@ Missing frontmatter fields → `—` in that cell.
 
 ## Discoverability Check
 
-At the end of every run, the orchestrator greps `CLAUDE.md` and `.claude/rules/` for both `docs/solutions` and `critical-patterns`. If either is missing, it proposes the following addition — but **never auto-writes** to `CLAUDE.md`. Always ask first.
+At the end of every run, the orchestrator greps `CLAUDE.md` and `rules/` for both `docs/solutions` and `critical-patterns`. If either is missing, it proposes the following addition — but **never auto-writes** to `CLAUDE.md`. Always ask first.
 
 ```markdown
 ## Knowledge Base
@@ -167,7 +167,7 @@ Critical learnings (read at planning time): `docs/solutions/critical-patterns.md
 
 ## Key Rules
 
-1. **Never run automatically** — only on explicit `/compound` trigger.
+1. **Never run automatically** — only on explicit `compound` trigger.
 2. **Subagents return text only** — the orchestrator writes all files.
 3. **Never auto-write to CLAUDE.md** — always propose and wait for approval.
 4. **Track emission is conservative** — skip any track with a single empty required section.

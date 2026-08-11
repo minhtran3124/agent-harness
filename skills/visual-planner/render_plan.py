@@ -1418,7 +1418,7 @@ def emit_files_json(plan_path: Path) -> str:
 # --------------------------------------------------------------------------- #
 def _specs_bases() -> list[Path]:
     """Candidate specs/ roots, in priority order: cwd/specs, then this skill's
-    own <root>/specs (TEMPLATE_PATH is .../.claude/skills/visual-planner/).
+    own installation root's specs/ directory (derived from TEMPLATE_PATH).
     Searching both lets the skill work whether invoked from apps/api or repo root."""
     bases, seen = [], set()
     for cand in (Path("specs"), TEMPLATE_PATH.parents[3] / "specs"):

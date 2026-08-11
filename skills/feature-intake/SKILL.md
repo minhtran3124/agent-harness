@@ -48,8 +48,8 @@ classify risk; ask only to resolve a material ambiguity or narrow a hard-gated s
 | Lane | Route |
 | --- | --- |
 | tiny | Create a branch, make the direct patch, and retain quick-check proof. |
-| normal | `/using-git-worktrees` → `/subagent-driven-development`. |
-| high-risk | `/brainstorming` → `/xia2` → `/writing-plans` → `/using-git-worktrees` → `/subagent-driven-development`; use `/compound` for durable decisions. |
+| normal | `using-git-worktrees` → `subagent-driven-development`. |
+| high-risk | `brainstorming` → `xia2` → `writing-plans` → `using-git-worktrees` → `subagent-driven-development`; use `compound` for durable decisions. |
 
 All lanes require branch isolation. Artifact requirements scale by signal: plan for more than
 three steps or two files, research for unfamiliar code or high-risk work, and a design for a real

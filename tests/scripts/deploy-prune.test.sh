@@ -27,6 +27,21 @@ deploy "$T"
 if [ -f "$T/.claude/skills/consumer-custom/SKILL.md" ]; then pass
 else fail "consumer's custom skill was destroyed — blind prune hazard"; fi
 
+t "Claude agents are rendered while source-time binding JSON stays undeployed"
+T=$(new_target); deploy "$T"
+if grep -q '^model: claude-opus-5$' "$T/.claude/agents/reviewer.md" \
+   && grep -q '^tools: Glob, Grep, Read, Bash$' "$T/.claude/agents/reviewer.md" \
+   && [ ! -e "$T/.claude/agents/agent-contracts.json" ] \
+   && [ ! -e "$T/.claude/agents/runtime-bindings.json" ]; then pass
+else fail "rendered reviewer or source-time binding boundary is wrong"; fi
+
+t "a consumer's custom agent survives rendered-agent re-sync"
+T=$(new_target); deploy "$T"
+printf '%s\n' custom > "$T/.claude/agents/consumer-custom.md"
+deploy "$T"
+if [ "$(cat "$T/.claude/agents/consumer-custom.md")" = custom ]; then pass
+else fail "consumer custom agent was overwritten or pruned"; fi
+
 t "sidecars and backups are never pruned"
 T=$(new_target); deploy "$T"
 touch "$T/.claude/skills/xia2.harness-incoming"
