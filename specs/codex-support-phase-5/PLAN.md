@@ -10,13 +10,13 @@ created: 2026-08-11
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**6 tasks · 4 waves · 72 files · 2/6 done**
+**6 tasks · 4 waves · 72 files · 3/6 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
 | 1 | 5.1 | Close the load-bearing alpha evidence gaps (wave 1) | scripts/capture_codex_capabilities.sh, scripts/probe_codex_packaging.sh, scripts/check_codex_capabilities.py, scripts/check_codex_packaging.py, scripts/test_check_codex_capabilities.py, scripts/test_check_codex_packaging.py, tests/scripts/codex-capability-probe.test.sh, tests/scripts/codex-packaging-probe.test.sh, tests/scripts/codex-alpha-evidence.test.sh, specs/codex-support/capability-matrix.json, specs/codex-support/packaging-decision.md, specs/codex-support/evidence/codex-0.147.0/hooks-unified-exec.json, specs/codex-support/evidence/codex-0.147.0/hooks-user-prompt-submit.json, specs/codex-support/evidence/codex-0.147.0/packaging-hybrid-runtime.json, specs/codex-support/evidence/codex-0.147.0/packaging-hybrid.json, specs/codex-support/evidence/codex-0.147.0/packaging-direct.json, hooks/pre-bash-dispatch.sh, tests/hooks/normalize-tool-input.test.sh, tests/hooks/pre-bash-dispatch.test.sh | the selected package path has observed runtime execution; load-bearing envelopes… |
 | 2 | 5.2 | Render deterministic Codex runtime artifacts (wave 2) | adapters/codex/plugin/.codex-plugin/plugin.json, adapters/codex/plugin/hooks/hooks.json, adapters/codex/project/harness-instructions.md, adapters/codex/schema.json, scripts/render_codex_adapter.py, scripts/test_render_codex_adapter.py, scripts/render_agent_definitions.py, scripts/test_render_agent_definitions.py, scripts/run-tests.sh, agents/runtime-bindings.json, harness-manifest.json | identical inputs produce identical valid Codex artifacts; every role/hook/skill … |
-| 3 | 5.3 | Install the hybrid adapter without clobbering user state (wave 3) | scripts/install-codex-harness.sh, scripts/deploy-codex-adapter.sh, tests/scripts/codex-install.test.sh, tests/fixtures/codex-install/custom-AGENTS.md, tests/fixtures/codex-install/custom-config.toml, docs/codex-alpha-install.md | adapter lifecycle is idempotent and recoverable; every user-owned canary survive… |
+| 3 | 5.3 | Install the hybrid adapter without clobbering user state (wave 3) | scripts/install-codex-harness.sh, scripts/deploy-codex-adapter.sh, tests/scripts/codex-install.test.sh, tests/fixtures/codex-install/custom-AGENTS.md, tests/fixtures/codex-install/custom-config.toml, docs/codex-alpha-install.md, harness-manifest.json | adapter lifecycle is idempotent and recoverable; every user-owned canary survive… |
 | 3 | 5.4 | Add the outside-hook doctor and runtime-mode record (wave 3) | scripts/codex_harness_doctor.py, scripts/test_codex_harness_doctor.py, runtime/runtime_mode.py, runtime/test_runtime_mode.py, runtime/run_state.py, runtime/test_run_state.py, templates/SUMMARY.template.md, scripts/verify_summary.py, scripts/test_verify_summary.py, hooks/session-knowledge.sh, tests/hooks/session-knowledge.test.sh | deterministic fixtures cover all modes, invalidation, privacy, malformed/unavail… |
 | 3 | 5.5 | Move runtime-entry prose behind one binding (wave 3) | adapters/runtime-entry-bindings.json, scripts/render_runtime_entry.py, scripts/test_render_runtime_entry.py, hooks/commit-quality-gate.sh, hooks/risk-corroboration.sh, hooks/scope-gate.sh, scripts/check_review_receipt.py, scripts/rebuild_solution_index.py, scripts/score_intake_eval.py, skills/correctness-review/correctness-scorer-prompt.md, skills/intent-review/intent-reviewer-prompt.md, skills/subagent-driven-development/task-reviewer-prompt.md, skills/feature-intake/tests/README.md, tests/hooks/commit-quality-gate.test.sh, tests/hooks/risk-corroboration.test.sh, tests/hooks/scope-gate.test.sh, tests/scripts/runtime-entry-bindings.test.sh, specs/codex-support/neutralization-inventory.json | every exception owned by `codex-support-phase-5` is closed or retained as a narr… |
 | 4 | 5.6 | Prove and document the advisory alpha boundary (wave 4) | tests/scripts/codex-alpha-contract.test.sh, .github/workflows/harness-ci.yml, scripts/run-tests.sh, harness-manifest.json, CLAUDE.md, HARNESS.md, skills/README.md, specs/codex-support/ROADMAP.md, specs/codex-support-phase-5/SUMMARY.md | the alpha is reproducible and truthfully labeled on every declared platform; CI … |
@@ -45,7 +45,7 @@ flowchart LR
 ### Progress
 - [x] 5.1 — Close the load-bearing alpha evidence gaps (wave 1)
 - [x] 5.2 — Render deterministic Codex runtime artifacts (wave 2)
-- [ ] 5.3 — Install the hybrid adapter without clobbering user state (wave 3)
+- [x] 5.3 — Install the hybrid adapter without clobbering user state (wave 3)
 - [ ] 5.4 — Add the outside-hook doctor and runtime-mode record (wave 3)
 - [ ] 5.5 — Move runtime-entry prose behind one binding (wave 3)
 - [ ] 5.6 — Prove and document the advisory alpha boundary (wave 4)
@@ -237,6 +237,10 @@ Parent roadmap: `specs/codex-support/ROADMAP.md`. Preparation research:
 
 ## 6. Status Log
 
+- 2026-08-11 — task 5.3 complete; commit a1697b7. Review fixes folded in before commit: guarded
+  empty-array expansion for stock macOS bash 3.2 (with /bin/bash regression test) and corrected
+  default clone repository/branch. Wave 3 stays open — the doctor/runtime-mode task and the
+  runtime-entry-binding task are still pending.
 - 2026-08-11 — task 5.2 complete; commit 38b41fa. Review fixes folded in before commit: unmapped
   mcp policies and unknown settings.json hook events now block rendering with mutation tests.
 - 2026-08-11 — task 5.1 complete; commit 48b1c85
