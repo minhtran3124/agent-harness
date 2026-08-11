@@ -23,7 +23,7 @@ the existing range-construction behavior.
    `correctness-scorer-prompt.md`. The scorer reads the code/diff, not finder reasoning.
 4. Route scores at the configured threshold to classification; record lower scores as advisory in
    `SUMMARY.md` (or inline standalone). Never lower the threshold below its configured floor.
-5. Before classifying, **read `.claude/rules/auto-correct-scope.md`**. Rule 1–3 findings may be
+5. Before classifying, **read `rules/auto-correct-scope.md`**. Rule 1–3 findings may be
    fixed; Rule 4 is STOP and goes to `ESCALATIONS.md` (or directly to the user standalone).
 6. Re-review each Rule 1–3 fix. Cap each finding at three rounds; if open blocking findings do not
    decrease and the reviewed diff hash is unchanged, escalate immediately.

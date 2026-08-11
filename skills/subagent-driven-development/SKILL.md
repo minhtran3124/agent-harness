@@ -34,8 +34,8 @@ or repair.
 
 ## Preflight
 
-Before the first task, read `.claude/rules/plan-format.md`,
-`.claude/rules/wave-parallelism.md`, and `.claude/rules/auto-correct-scope.md`. Stop unless:
+Before the first task, read `rules/plan-format.md`, `rules/wave-parallelism.md`, and
+`rules/auto-correct-scope.md`. Stop unless:
 
 1. Every parsed task has Files, Action, Verify, and Done. New contract plans additionally pass
    `python3 scripts/check_plan_contract.py <PLAN.md>`.

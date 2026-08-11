@@ -35,7 +35,7 @@ implementer. Every finding must quote the intent sentence it evaluates.
 - **excess:** unrequested behavior or public surface. Report only: do not remove shipped behavior
   without human approval.
 
-Before any fix routing, **read `.claude/rules/auto-correct-scope.md`**. Put ambiguous gaps/drift
+Before any fix routing, **read `rules/auto-correct-scope.md`**. Put ambiguous gaps/drift
 and intent conflicts in `ESCALATIONS.md`; put advisory drift, excess, and deferred findings in
 `SUMMARY.md` under `### Intent Findings`. A finding must be fixed with its commit SHA or durably
 recorded before handoff; otherwise completion is blocked.

@@ -102,12 +102,12 @@ Task tool (general-purpose):
 
     ## Auto-Correction Scope
 
-    FIRST: Read `.claude/rules/auto-correct-scope.md` now. It is path-scoped (not
+    FIRST: Read `rules/auto-correct-scope.md` now. It is path-scoped (not
     auto-loaded), and this prompt pastes your task text instead of having you read the
     plan — so nothing else puts the rule in your context. You need its full Rule 1–4
     definitions (especially the Rule 4 STOP list) before applying any self-fix.
 
-    Classify every self-fix you apply against `.claude/rules/auto-correct-scope.md`:
+    Classify every self-fix you apply against `rules/auto-correct-scope.md`:
 
     - Rule 1 — auto-fix obvious bugs
     - Rule 2 — auto-add missing functionality required by project standards
@@ -128,7 +128,7 @@ Task tool (general-purpose):
     - **verify:** pass | fail — result of the task's `<verify>` command (include output
       excerpt on fail)
     - **blockers:** anything needing controller or user decision (empty list if none)
-    - **deviations:** list of Rule 1–3 auto-fixes per `.claude/rules/auto-correct-scope.md`.
+    - **deviations:** list of Rule 1–3 auto-fixes per `rules/auto-correct-scope.md`.
       Each entry: `{rule: 1|2|3, description, file, commit_sha}`. Empty list if none.
     - What you implemented (or what you attempted, if blocked)
     - What you tested and test results

@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "required_capabilities": [
+    "filesystem",
+    "shell",
+    "network",
+    "mcp",
+    "nested_delegation",
+    "context_policy",
+    "model_class",
+    "output_contract"
+  ],
+  "roles": {
+    "coding": {
+      "source": "agents/coding.md",
+      "filesystem": "workspace-write",
+      "shell": "controlled-execution",
+      "network": "runtime-controlled",
+      "mcp": "runtime-controlled",
+      "nested_delegation": true,
+      "context_policy": "fresh-bounded",
+      "model_class": "implementation-high-capability",
+      "output_contract": "files-behavior-validation-followups"
+    },
+    "reviewer": {
+      "source": "agents/reviewer.md",
+      "filesystem": "read-only",
+      "shell": "read-only-inspection",
+      "network": "none",
+      "mcp": "none",
+      "nested_delegation": false,
+      "context_policy": "fresh-bounded",
+      "model_class": "review-high-capability-distinct-from-implementer",
+      "output_contract": "self-contained-findings-only"
+    },
+    "task-reviewer": {
+      "source": "agents/task-reviewer.md",
+      "filesystem": "read-only",
+      "shell": "none",
+      "network": "none",
+      "mcp": "none",
+      "nested_delegation": false,
+      "context_policy": "fresh-bounded",
+      "model_class": "review-high-capability",
+      "output_contract": "separate-spec-and-quality-verdicts"
+    },
+    "test-runner": {
+      "source": "agents/test-runner.md",
+      "filesystem": "read-only-with-test-artifacts",
+      "shell": "test-execution",
+      "network": "documentation-read-only",
+      "mcp": "context7-read-only",
+      "nested_delegation": false,
+      "context_policy": "fresh-bounded",
+      "model_class": "test-execution-fast",
+      "output_contract": "test-counts-failures-diagnostics"
+    }
+  }
+}

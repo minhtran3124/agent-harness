@@ -1,6 +1,6 @@
 # Claude Skills — Reference & Workflow
 
-Skills are reusable prompt programs invoked with `/skill-name`. Each skill has a defined scope, hard gates, and a handoff to the next skill.
+Skills are reusable prompt programs invoked by name through the active runtime. Each skill has a defined scope, hard gates, and a handoff to the next skill.
 
 This file is the single source of truth for overview, workflow, and cross-skill concerns — consult the `SKILL.md` of each skill for runtime behavior. Two skills keep deeper standalone docs: `skills/compound/README.md` and `skills/xia2/README.md`; the other per-skill `README.md` files have been removed (their rationale notes live at the bottom of this file).
 
@@ -14,51 +14,51 @@ This file is the single source of truth for overview, workflow, and cross-skill 
 scripts/init-structure.sh  (first-time repo setup only)
   → scaffolds specs/, docs/solutions/ (create-if-missing)
       ↓
-/feature-intake  (routing entry point — run first on every change request)
+feature-intake  (routing entry point — run first on every change request)
   → classifies input type + 10-flag risk checklist + hard gates
   → output: lane (tiny|normal|high-risk) + confidence → specs/<slug>/SUMMARY.md
   → routes: tiny → branch + direct edit · normal → subagent-driven · high-risk → full chain below
   → EVERY lane cuts a branch first (enforced by hooks/branch-isolation-guard.sh)
       ↓
-/brainstorming
+brainstorming
   → reads: CLAUDE.md, docs/solutions/ (decision track only), recent commits
   → output: specs/<slug>/design.md
       ↓
-/xia2
-  → reads: CLAUDE.md, .claude/rules/, techstacks/, docs/, docs/solutions/, specs/
+xia2
+  → reads: CLAUDE.md, rules/, techstacks/, docs/, docs/solutions/, specs/
   → classifies depth from built-in Common signals (zero-config — no PROJECT.md)
   → depth re-evaluated after reading docs
   → output: specs/<slug>/research-brief.md (no code)
       ↓
-/writing-plans
+writing-plans
   → input: design.md + research-brief.md
   → output: specs/<slug>/PLAN.md
   → PLAN.html auto-rendered by hooks/render-plan-on-write.sh on every save; writing-plans opens it
       ↓
-/using-git-worktrees
+using-git-worktrees
   → creates isolated worktree + branch
       ↓
-/subagent-driven-development        ← same session, or `resume <slug>` from a new session
+subagent-driven-development        ← same session, or `resume <slug>` from a new session
   → implements plan task-by-task
   → one read-only task reviewer per task (separate spec + quality verdicts; file handoffs)
-  → workflow-engine diffs first pass /context-propagation-audit, then final adversarial correctness review (/correctness-review)
-  → final intent review (/intent-review) — diff vs the original request, blind to PLAN
+  → workflow-engine diffs first pass context-propagation-audit, then final adversarial correctness review (correctness-review)
+  → final intent review (intent-review) — diff vs the original request, blind to PLAN
       ↓
-/compound  (if non-obvious pattern found)
+compound  (if non-obvious pattern found)
   → output: docs/solutions/<category>/<slug>.md
       ↓
-/finishing-a-development-branch
+finishing-a-development-branch
   → runs tests, pushes, opens a PR (never merges — a human reviews & merges)
 ```
 
 ### Minimum Viable Path (intent clear, in-place edit, <1 day)
 
 ```
-/feature-intake → /xia2 → /writing-plans → implement → /compound (if pattern found)
+feature-intake → xia2 → writing-plans → implement → compound (if pattern found)
 
-/feature-intake confirms the lane; a tiny lane branches (`git checkout -b`) then edits directly.
-Skip /brainstorming when intent is clear.
-Skip /using-git-worktrees for in-place edits — but NOT the branch: a plain
+feature-intake confirms the lane; a tiny lane branches (`git checkout -b`) then edits directly.
+Skip brainstorming when intent is clear.
+Skip using-git-worktrees for in-place edits — but NOT the branch: a plain
 `git checkout -b <type>/<slug>` is still required. No lane implements on a shared branch.
 PLAN.html still auto-renders on every PLAN.md save (`hooks/render-plan-on-write.sh`).
 ```
@@ -66,12 +66,12 @@ PLAN.html still auto-renders on every PLAN.md save (`hooks/render-plan-on-write.
 ### Bug Fix Path
 
 ```
-/systematic-debugging  (external — see below)
+systematic-debugging  (external — see below)
   → root cause analysis before any fix
       ↓
-fix (implement directly or via /subagent-driven-development)
+fix (implement directly or via subagent-driven-development)
       ↓
-/compound  (always — root cause is worth preserving)
+compound  (always — root cause is worth preserving)
 ```
 
 ---
@@ -82,7 +82,7 @@ fix (implement directly or via /subagent-driven-development)
 
 | Skill | Trigger | Output |
 |---|---|---|
-| `/feature-intake` | First, on every change request — classify risk lane + confidence and route | `specs/<slug>/SUMMARY.md` (Lane/Confidence/Reason/Flags) + a route decision |
+| `feature-intake` | First, on every change request — classify risk lane + confidence and route | `specs/<slug>/SUMMARY.md` (Lane/Confidence/Reason/Flags) + a route decision |
 
 ### Setup
 
@@ -93,46 +93,46 @@ No skill covers first-time setup — it is a script: `bash scripts/init-structur
 
 | Skill | Trigger | Output |
 |---|---|---|
-| `/brainstorming` | Before any new feature, component, or behavior change | `specs/<slug>/design.md` |
-| `/xia2` | Before implementing anything — research what already exists (portable; zero-config, classifies from built-in Common signals) | `specs/<slug>/research-brief.md` |
+| `brainstorming` | Before any new feature, component, or behavior change | `specs/<slug>/design.md` |
+| `xia2` | Before implementing anything — research what already exists (portable; zero-config, classifies from built-in Common signals) | `specs/<slug>/research-brief.md` |
 
 ### Planning
 
 | Skill | Trigger | Output |
 |---|---|---|
-| `/writing-plans` | After design is approved and xia2 brief is ready | `specs/<slug>/PLAN.md` (`PLAN.html` auto-rendered by the render-plan hook) |
-| `/visual-planner` | Standalone render of a `PLAN.md` — mainly for `--review` mode (blast-radius/risk overlay). Plain renders happen automatically via `hooks/render-plan-on-write.sh` | `specs/<slug>/PLAN.html` (untracked, local-only) |
+| `writing-plans` | After design is approved and xia2 brief is ready | `specs/<slug>/PLAN.md` (`PLAN.html` auto-rendered by the render-plan hook) |
+| `visual-planner` | Standalone render of a `PLAN.md` — mainly for `--review` mode (blast-radius/risk overlay). Plain renders happen automatically via `hooks/render-plan-on-write.sh` | `specs/<slug>/PLAN.html` (untracked, local-only) |
 
 ### Execution
 
 | Skill | Trigger | Output |
 |---|---|---|
-| `/using-git-worktrees` | Before starting feature work needing isolation | Isolated worktree + branch |
-| `/subagent-driven-development` | Executing a plan — fresh subagent per task in this session, or `resume <slug>` from a new session (New-session / resume mode: reconstruct the cursor at Step -1, then batch + checkpoint). Same gates either way | Implemented tasks, one task reviewer with two verdicts and durable Minor handoff; workflow-engine context audit when triggered; final correctness and intent review |
+| `using-git-worktrees` | Before starting feature work needing isolation | Isolated worktree + branch |
+| `subagent-driven-development` | Executing a plan — fresh subagent per task in this session, or `resume <slug>` from a new session (New-session / resume mode: reconstruct the cursor at Step -1, then batch + checkpoint). Same gates either way | Implemented tasks, one task reviewer with two verdicts and durable Minor handoff; workflow-engine context audit when triggered; final correctness and intent review |
 
 ### Review & Shipping
 
 | Skill | Trigger | Output |
 |---|---|---|
-| `/correctness-review` | After implementation — adversarial runtime-bug search over a diff, run as **6 parallel angles**, each named for its method (`enclosing-function` · `removed-behavior` · `call-site-impact` · `stack-defects` · `guard-completeness` · `prior-art`). **Standalone** (any diff, no workflow gate) or called by `/subagent-driven-development` as its final pass. Context-propagation defects (a load-bearing instruction never delivered to an isolated context) are **not** its province — they belong to `/context-propagation-audit`, not this bug hunt | Candidates deduped by location → scored (0–100, threshold 75) → classified (Severity + Rule class) → fixes, escalations, or advisory |
-| `/context-propagation-audit` | **change-triggered** — Change-triggered consumer audit for workflow-as-code changes: enumerates every consumer + execution context (main / implementer / reviewer / scorer / new session) and proves how each receives the authoritative instruction; assumed/unconfirmed delivery on a load-bearing instruction FAILS. Runs only when the diff touches the workflow-engine inventory. Not a bug hunt (`/correctness-review`) or intent check (`/intent-review`) | PASS/FAIL per consumer → assumed delivery on a load-bearing instruction FAILS → fix (prove delivery) or escalate |
-| `/intent-review` | After correctness-review — checks the diff against the original request verbatim, blind to PLAN (the third oracle). **Standalone** on any diff that has an intent statement, or called by `/subagent-driven-development` as its last pass | Findings classified `gap` / `excess` / `drift` → fix-loop · escalate · report-only |
-| `/compound` | After session with non-obvious bug fix, pattern, or architectural decision | `docs/solutions/<category>/<slug>.md` |
-| `/finishing-a-development-branch` | Implementation complete, tests pass | Runs tests, pushes, opens a PR (never merges) |
+| `correctness-review` | After implementation — adversarial runtime-bug search over a diff, run as **6 parallel angles**, each named for its method (`enclosing-function` · `removed-behavior` · `call-site-impact` · `stack-defects` · `guard-completeness` · `prior-art`). **Standalone** (any diff, no workflow gate) or called by `subagent-driven-development` as its final pass. Context-propagation defects (a load-bearing instruction never delivered to an isolated context) are **not** its province — they belong to `context-propagation-audit`, not this bug hunt | Candidates deduped by location → scored (0–100, threshold 75) → classified (Severity + Rule class) → fixes, escalations, or advisory |
+| `context-propagation-audit` | **change-triggered** — Change-triggered consumer audit for workflow-as-code changes: enumerates every consumer + execution context (main / implementer / reviewer / scorer / new session) and proves how each receives the authoritative instruction; assumed/unconfirmed delivery on a load-bearing instruction FAILS. Runs only when the diff touches the workflow-engine inventory. Not a bug hunt (`correctness-review`) or intent check (`intent-review`) | PASS/FAIL per consumer → assumed delivery on a load-bearing instruction FAILS → fix (prove delivery) or escalate |
+| `intent-review` | After correctness-review — checks the diff against the original request verbatim, blind to PLAN (the third oracle). **Standalone** on any diff that has an intent statement, or called by `subagent-driven-development` as its last pass | Findings classified `gap` / `excess` / `drift` → fix-loop · escalate · report-only |
+| `compound` | After session with non-obvious bug fix, pattern, or architectural decision | `docs/solutions/<category>/<slug>.md` |
+| `finishing-a-development-branch` | Implementation complete, tests pass | Runs tests, pushes, opens a PR (never merges) |
 
 ---
 
 ## External Skills (referenced but live elsewhere)
 
-These skills appear in workflows above but are provided by the global `superpowers` plugin or `~/.claude/skills/`, not by this repo:
+These skills appear in workflows above but are provided by the global `superpowers` plugin or the active runtime's user-level skill directory, not by this repo:
 
 | Skill | Role |
 |---|---|
-| `/systematic-debugging` | Root-cause analysis before a bug fix |
-| `/test-driven-development` | Tests-first protocol used by implementer subagents |
-| `/requesting-code-review` | Structured review template |
-| `/session-tracker` | Session resumption across conversations |
-| `/skill-creator` | Authoring new skills |
+| `systematic-debugging` | Root-cause analysis before a bug fix |
+| `test-driven-development` | Tests-first protocol used by implementer subagents |
+| `requesting-code-review` | Structured review template |
+| `session-tracker` | Session resumption across conversations |
+| `skill-creator` | Authoring new skills |
 
 If one of these isn't available in your environment, the workflows degrade gracefully — treat them as optional.
 
@@ -149,14 +149,14 @@ handoff edges — carries an honest evidence tier. The tiers:
 
 | Integration | Kind | Tier | Evidence |
 |---|---|---|---|
-| `/systematic-debugging` | external skill | documented-only | referenced in Bug Fix Path; no recorded run in this repo |
-| `/test-driven-development` | external skill | documented-only | named as implementer protocol; no recorded run here |
-| `/requesting-code-review` | external skill | documented-only | referenced template; no recorded run here |
-| `/session-tracker` | external skill | documented-only | referenced for resumption; no recorded run here |
-| `/skill-creator` | external skill | documented-only | referenced for authoring; no recorded run here |
+| `systematic-debugging` | external skill | documented-only | referenced in Bug Fix Path; no recorded run in this repo |
+| `test-driven-development` | external skill | documented-only | named as implementer protocol; no recorded run here |
+| `requesting-code-review` | external skill | documented-only | referenced template; no recorded run here |
+| `session-tracker` | external skill | documented-only | referenced for resumption; no recorded run here |
+| `skill-creator` | external skill | documented-only | referenced for authoring; no recorded run here |
 | `code-review-graph` | MCP server (`.mcp.json`) | documented-only | mandated by CLAUDE.md; no recorded review run pinned in-repo |
 | `context7` | MCP server (user-level) | documented-only | user-level docs lookup; no recorded run pinned in-repo |
-| `/subagent-driven-development` → `/correctness-review` → `/intent-review` | handoff edge | manually-verified (2026-06-12) | intent-review dogfood on its own diff — commit `a2a4349` |
+| `subagent-driven-development` → `correctness-review` → `intent-review` | handoff edge | manually-verified (2026-06-12) | intent-review dogfood on its own diff — commit `a2a4349` |
 
 **Graduation rule** (from the research report): an edge only moves **up** a tier when a
 recorded run exists *in this repo* — support claims are never inherited from upstream or from
@@ -169,20 +169,20 @@ that proves the run.
 ## Skill Handoff Map
 
 ```
-/feature-intake             ──► tiny: git checkout -b → direct edit · normal: /subagent-driven-development
-                                high-risk: /brainstorming (full chain) · low confidence: escalate
-/brainstorming              ──► /xia2 → /writing-plans (the only valid next skills)
-/xia2                       ──► research brief → user/skill decides next step
-/writing-plans              ──► (PLAN.html auto-rendered by hook) → /using-git-worktrees
-                                → /subagent-driven-development
-/visual-planner             ──► PLAN.html (terminal — visual artifact; back to writing-plans handoff)
-/subagent-driven-development ──► workflow-engine diff: /context-propagation-audit → /correctness-review → /intent-review → /compound → /finishing-a-development-branch
-/correctness-review         ──► (standalone — runs the same pipeline ad-hoc on any diff; no gate)
-/context-propagation-audit ──► (conditional workflow-engine delivery gate, then /correctness-review)
-/intent-review              ──► (standalone — same pipeline; needs ### Intent in SUMMARY or intent provided by the user)
-/systematic-debugging       ──► fix → /compound
-/compound                   ──► nothing (terminal — crystallization is end state)
-/finishing-a-development-branch ──► nothing (terminal — shipped)
+feature-intake             ──► tiny: git checkout -b → direct edit · normal: subagent-driven-development
+                                high-risk: brainstorming (full chain) · low confidence: escalate
+brainstorming              ──► xia2 → writing-plans (the only valid next skills)
+xia2                       ──► research brief → user/skill decides next step
+writing-plans              ──► (PLAN.html auto-rendered by hook) → using-git-worktrees
+                                → subagent-driven-development
+visual-planner             ──► PLAN.html (terminal — visual artifact; back to writing-plans handoff)
+subagent-driven-development ──► workflow-engine diff: context-propagation-audit → correctness-review → intent-review → compound → finishing-a-development-branch
+correctness-review         ──► (standalone — runs the same pipeline ad-hoc on any diff; no gate)
+context-propagation-audit ──► (conditional workflow-engine delivery gate, then correctness-review)
+intent-review              ──► (standalone — same pipeline; needs ### Intent in SUMMARY or intent provided by the user)
+systematic-debugging       ──► fix → compound
+compound                   ──► nothing (terminal — crystallization is end state)
+finishing-a-development-branch ──► nothing (terminal — shipped)
 ```
 
 ---
@@ -192,14 +192,14 @@ that proves the run.
 Skills read from and write to `docs/solutions/`:
 
 ```
-writes ──► /compound
+writes ──► compound
            docs/solutions/<category>/<slug>.md
            front-matter: problem_type (bug | knowledge | decision | failure),
                          module, tags, severity, applicable_when,
                          affects, supersedes, confidence, confirmed_at
 
-reads  ◄── /brainstorming  (decision track only — avoid re-proposing rejected approaches)
-       ◄── /xia2           (all tracks — module, affects, confidence filtering)
+reads  ◄── brainstorming  (decision track only — avoid re-proposing rejected approaches)
+       ◄── xia2           (all tracks — module, affects, confidence filtering)
 ```
 
 Schema reference: `docs/solutions/README.md` (scaffolded by `scripts/init-structure.sh`).
@@ -227,7 +227,7 @@ Schema reference: `docs/solutions/README.md` (scaffolded by `scripts/init-struct
    re-run degrades to presence-only if `python3` is unavailable
 3. Targeted pytest for changed `app/` files
 
-When ≥5 `app/` files are staged, the hook hints: `★ Consider running /compound`.
+When ≥5 `app/` files are staged, the hook hints: `★ Consider running compound`.
 
 > **Two different evidence gates — do not conflate them.** Check **1.6** is the row-presence
 > gate: `scripts/verify_summary.py --lane`, always on, asserts the SUMMARY carries what its `Lane:`
@@ -246,7 +246,7 @@ This is one of several wired hooks — see the full table in the root `CLAUDE.md
 Notes preserved from the former per-skill READMEs. For full runtime behavior read each skill's `SKILL.md`.
 The diagrams below render natively in the GitHub README — no clone needed.
 
-### `/compound`
+### `compound`
 
 > **One-liner:** an orchestrator fans out read-only subagents to mine the session transcript, then writes every knowledge doc itself.
 
@@ -287,7 +287,7 @@ graph LR
 | **Moderate** | partial match | Write `[slug]-2.md` |
 | **Low** | no real match | Write `[slug].md` |
 
-### `/visual-planner`
+### `visual-planner`
 
 > **One-liner:** a deterministic script (not the LLM) renders `PLAN.md` → a self-contained, untracked `PLAN.html`; a second script serves and opens it.
 
@@ -306,7 +306,7 @@ graph LR
 
 - **Deterministic script, not LLM transcription.** The skill only runs the script and relays its report — never emits HTML token-by-token. Transcribing a ~340-line template every run is expensive and the least reproducible part of the pipeline; a script makes the fill free and stable.
 - **Local-only output.** `PLAN.html` is untracked — it lives beside `PLAN.md` in `specs/` (which is tracked), but `PLAN.html` itself is gitignored as a derived artifact.
-- **Auto-rendered by a hook, not a sub-agent.** `hooks/render-plan-on-write.sh` (PostToolUse on `specs/*/PLAN.md`) runs `render_plan.py --summarize` on **every** save, so `PLAN.html` and the in-file "At a glance" block stay current without any skill dispatch. `/writing-plans` only *opens* the rendered file at the execution handoff. Run `/visual-planner <slug>` standalone when you want `--review` mode.
+- **Auto-rendered by a hook, not a sub-agent.** `hooks/render-plan-on-write.sh` (PostToolUse on `specs/*/PLAN.md`) runs `render_plan.py --summarize` on **every** save, so `PLAN.html` and the in-file "At a glance" block stay current without any skill dispatch. `writing-plans` only *opens* the rendered file at the execution handoff. Run `visual-planner <slug>` standalone when you want `--review` mode.
 - **Why serve instead of `file://`?** Localhost is a browser *secure context*, so per-task "copy `<verify>`" buttons use `navigator.clipboard`; `--file` (`file://`) is faster but falls back to `execCommand`. Auto-view is environment-dependent (no display on headless/remote), so it stays an explicit step.
 - **Self-check before claiming success.** The script asserts non-empty output, no surviving `{{PLACEHOLDER}}`, the `slug` present, and one `<section data-wave>` per distinct wave. On non-zero exit, surface the `SELF-CHECK FAILED:` lines verbatim — do not claim success.
 
@@ -319,7 +319,7 @@ graph LR
     C --> D["render_plan.py --review<br/>→ impact dashboard + blast-radius table + risk cards"]
 ```
 
-### `/xia2`
+### `xia2`
 
 > **One-liner:** one portable, zero-config skill — the risk signals are built into `SKILL.md` as common cross-project vocabulary, so there is nothing to configure per repo.
 

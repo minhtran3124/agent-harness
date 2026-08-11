@@ -25,7 +25,7 @@ Input-type: new spec | spec slice | change request | new initiative | maintenanc
 ### Intent
 
 <!-- The user's request VERBATIM at intake — do NOT paraphrase or summarize. This is the
-     oracle for /intent-review (the final stage of subagent-driven-development): the third
+     oracle for intent-review (the final stage of subagent-driven-development): the third
      reviewer is blind to PLAN.md and checks the finished diff against this text. If the
      request came over several conversational turns, quote the scope-deciding sentences in
      chronological order. Capturing intent here, not in the plan, is what keeps the intent
@@ -97,7 +97,7 @@ Input-type: new spec | spec slice | change request | new initiative | maintenanc
 ### Harness-Delta
 
 <!-- What friction did this task reveal about the workflow itself?
-     fix-direct (done in this task) or backlog (-> /compound -> docs/solutions/).
+     fix-direct (done in this task) or backlog (-> compound -> docs/solutions/).
      Leave `- none` if the workflow needed no change. -->
 
 - none

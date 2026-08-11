@@ -16,7 +16,7 @@ A portable version of `xia`. All logic — including the risk-classification sig
 | Modifying behaviour with possible local precedent | **Yes** |
 | Bumping a dependency, changing schema, touching shared infrastructure | **Yes** |
 | One-line typo fix, doc-only edit, comment cleanup | No — overkill |
-| Bug fix where root cause is already known | No — use `/systematic-debugging` |
+| Bug fix where root cause is already known | No — use `systematic-debugging` |
 
 When in doubt, invoke. The HARD-GATE prevents code being written, so the cost of a false positive is low (one research brief).
 
@@ -25,8 +25,8 @@ When in doubt, invoke. The HARD-GATE prevents code being written, so the cost of
 ## How to invoke
 
 ```
-/xia2 <feature description>                 # default: Standard depth
-/xia2 <feature> --depth=quick|standard|deep # explicit override
+xia2 <feature description>                 # default: Standard depth
+xia2 <feature> --depth=quick|standard|deep # explicit override
 ```
 
 Skill auto-classifies depth from the built-in **Common signals** in `SKILL.md` (no config file). Override with `--depth=` if you have stronger context than the prompt conveys.
@@ -61,7 +61,7 @@ Use both when validating major skill changes.
 
 To use `xia2` in a different project:
 
-1. **Copy the entire `.claude/skills/xia2/` folder** to `<new-project>/.claude/skills/xia2/`. No auto-scan skill needed — xia2 is zero-config.
+1. **Copy the entire `skills/xia2/` source folder** into the target runtime's skill directory as `xia2/`. No auto-scan skill needed — xia2 is zero-config.
 2. **Scaffold structure** — run `bash scripts/init-structure.sh` in the new repo to create `specs/` and `docs/solutions/`.
 3. **Keep `tests/structural/depth-modes-test-cases.md`** — it is a portable regression set against the common signals; extend it with project-specific prompts if useful.
 4. **Keep `tests/behavioural/pressure-scenarios.md`** — most scenarios are universal (project-specific examples are easy to swap).

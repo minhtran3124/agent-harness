@@ -142,7 +142,7 @@ def main(argv: list[str]) -> None:
         elif a == "--render":
             force_render = True
         elif a == "--view":
-            pass  # no-op: viewing is implied; accepted for `/visual-planner <arg> --view` passthrough
+            pass  # no-op: viewing is implied; accepted for `visual-planner <arg> --view` passthrough
         elif a == "--port":
             i += 1
             if i >= len(args):

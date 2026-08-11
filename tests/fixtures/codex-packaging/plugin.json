@@ -1,0 +1,7 @@
+{
+  "name": "harness-hybrid",
+  "version": "0.0.1",
+  "description": "Disposable harness packaging probe",
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json"
+}

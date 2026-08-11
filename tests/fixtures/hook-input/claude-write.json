@@ -1,0 +1,1 @@
+{"hook_event_name":"PostToolUse","session_id":"session-redacted","tool_name":"Write","tool_input":{"file_path":"src/example.py"},"tool_response":{"filePath":"src/example.py"}}

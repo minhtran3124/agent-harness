@@ -6,12 +6,12 @@ pointed to from — `PROJECT.md`.
 
 ## Inventory
 
-| Agent | Role | Model | Dispatched by |
+| Agent | Role | Model class | Dispatched by |
 |---|---|---|---|
-| `coding` | Implement/refactor/fix code, end-to-end | `claude-opus-4-8` | `subagent-driven-development`, ad-hoc |
-| `reviewer` | Structurally read-only review passes (correctness-review, intent-review) | `claude-opus-5` default; scorer overrides to `claude-opus-4-8` | review skills |
-| `task-reviewer` | Read-only per-task spec + quality review | `claude-opus-5` | `subagent-driven-development` |
-| `test-runner` | Run the minimal relevant tests and report/diagnose results | `claude-haiku-4-5-20251001` | after implementation |
+| `coding` | Implement/refactor/fix code, end-to-end | implementation high-capability | `subagent-driven-development`, ad-hoc |
+| `reviewer` | Structurally read-only review passes (correctness-review, intent-review) | review high-capability, distinct from implementer | review skills |
+| `task-reviewer` | Read-only per-task spec + quality review | review high-capability | `subagent-driven-development` |
+| `test-runner` | Run the minimal relevant tests and report/diagnose results | test-execution fast | after implementation |
 
 ## Portability model (mirrors xia2)
 
@@ -50,5 +50,5 @@ This boundary decides whether a capability belongs in `skills/` or `agents/`:
 
 **This is why there is no `brainstorming` agent.** Brainstorming is inherently interactive
 (one question at a time, approval gates, "user reviews the spec"), so it lives only as the
-`/brainstorming` **skill**. A brainstorming subagent would be a category error — and the old
-one was also a stale, drift-prone fork of the skill. Invoke `/brainstorming` directly.
+`brainstorming` **skill**. A brainstorming subagent would be a category error — and the old
+one was also a stale, drift-prone fork of the skill. Invoke `brainstorming` directly.

@@ -1,15 +1,16 @@
 #!/bin/bash
-# Regression guard for the two context-propagation fixes that escaped PR #141
-# (gh #143). Both defects were "the path-scoped auto-correct-scope rule never
-# reaches the subagent that classifies self-fixes against it":
+# Regression guard for contextual-rule delivery to every isolated workflow context.
+# It retains the two fixes that escaped PR #141 and delegates the complete consumer
+# matrix (main, implementer, task reviewer, plan reviewer, correctness reviewer,
+# scorer, intent controller, and resume) to render_skill_prompt.py --check-all.
 #
 #   P1 (commit d61e155) — skills/subagent-driven-development/implementer-prompt.md
-#      gained an explicit "FIRST: Read `.claude/rules/auto-correct-scope.md`" so an
+#      gained an explicit "FIRST: Read `rules/auto-correct-scope.md`" so an
 #      isolated implementer actually loads the rule (its task text is pasted, so
 #      nothing else puts the path-scoped rule in context).
 #   P2 (commit 1c0f01d) — the correctness FIND shared fragment
 #      completed the inline Rule-4 STOP list to all 8 cases AND added an explicit
-#      "**Read `.claude/rules/auto-correct-scope.md`**" before Rule-4 classification
+#      "**Read `rules/auto-correct-scope.md`**" before Rule-4 classification
 #      (the review is plan-blind, so the `paths: specs/**` rule never auto-loads).
 #
 # Like scorer-threshold-contract.test.sh, this parses the LIVE composed sources (not a
@@ -19,6 +20,7 @@ source "$(dirname "$0")/../lib.sh"
 
 IMPL="skills/subagent-driven-development/implementer-prompt.md"
 REVIEWER="skills/correctness-review/prompts/shared.md"
+COMPOSER="scripts/render_skill_prompt.py"
 
 # The 8 Rule-4 STOP cases, as one stable keyword token each. Registry wording
 # (rules/auto-correct-scope.md Rule 4) and the prompt's inline copy have legitimately
@@ -77,6 +79,10 @@ else
   for tok in "${STOP_TOKENS[@]}"; do printf '%s' "$region" | grep -qiF "$tok" || missing="$missing [$tok]"; done
   fail "missing STOP token(s):$missing — region: $region"
 fi
+
+t "complete contextual-rule consumer matrix is checked"
+if python3 "$ROOT/$COMPOSER" --root "$ROOT" --check-all >/dev/null; then pass
+else fail "render_skill_prompt.py rejected the live consumer matrix"; fi
 
 t "mutation: deleting either explicit Read is detected"
 m=$(mktemp -d); _CLEANUP_DIRS+=("$m")

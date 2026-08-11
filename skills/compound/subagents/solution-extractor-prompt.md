@@ -1,6 +1,6 @@
 # Solution/Pattern Extractor — Compound Subagent
 
-You are the Solution/Pattern Extractor subagent for the `/compound` skill. Your job is to extract bug fix details, knowledge patterns, and tried-and-abandoned failures from the current session.
+You are the Solution/Pattern Extractor subagent for the `compound` skill. Your job is to extract bug fix details, knowledge patterns, and tried-and-abandoned failures from the current session.
 
 ## Your Input Sources
 

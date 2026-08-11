@@ -175,7 +175,7 @@ Not applied. TC-22 still passes in Run 3.
 
 Symptom: Run 3 verifies classification when `PROJECT.md` is well-formed. No test exercises the halt-when-missing/incomplete behaviour.
 
-**Proposed:** add TC-31 — *"Invoke /xia2 in a project where PROJECT.md is missing"* → expected: skill halts and prompts user to run `/bootstrap-xia2`. Cannot be walked through alone — needs an actual missing PROJECT.md scenario in CI/integration setup.
+**Proposed:** add TC-31 — *"Invoke xia2 in a project where PROJECT.md is missing"* → expected: skill halts and prompts user to run `/bootstrap-xia2`. Cannot be walked through alone — needs an actual missing PROJECT.md scenario in CI/integration setup.
 
 ---
 

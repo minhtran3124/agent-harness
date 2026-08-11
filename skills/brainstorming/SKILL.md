@@ -5,7 +5,7 @@ description: "Use to turn an unclear or high-risk feature/design idea into an ap
 
 # Brainstorming Ideas Into Designs
 
-Turn an unclear or high-risk idea into an approved design. `/feature-intake` decides whether this
+Turn an unclear or high-risk idea into an approved design. `feature-intake` decides whether this
 skill runs; if no intake lane exists, run it first.
 
 <HARD-GATE>

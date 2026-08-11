@@ -49,6 +49,19 @@ else
   fail "rc=$RC — structural scaffolding missing: $(ls -a "$tgt" | tr '\n' ' ')"
 fi
 
+t "fresh install emits Claude-bound agents, not source-time binding metadata"
+tgt=$(target)
+run_install "$tgt"
+if [ "$RC" -eq 0 ] \
+   && grep -q '^model: claude-opus-5$' "$tgt/.claude/agents/reviewer.md" \
+   && grep -q '^tools: Glob, Grep, Read, Bash$' "$tgt/.claude/agents/reviewer.md" \
+   && [ ! -e "$tgt/.claude/agents/agent-contracts.json" ] \
+   && [ ! -e "$tgt/.claude/agents/runtime-bindings.json" ]; then
+  pass
+else
+  fail "rc=$RC — agent renderer output/boundary is wrong"
+fi
+
 t "reinstall does not recreate the removed directory"
 tgt=$(target)
 run_install "$tgt"

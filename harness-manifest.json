@@ -73,6 +73,61 @@
     "artifact-schema-plan":    { "surface": ["rules/plan-format.md", "scripts/check_plan_contract.py"], "consumers": ["skills/visual-planner/render_plan.py", "skills/writing-plans/SKILL.md", "skills/subagent-driven-development/SKILL.md"], "desc": "PLAN.md task and context-contract schema" },
     "lane-evidence-mapping":   { "surface": ["scripts/verify_summary.py"],      "consumers": ["skills/feature-intake/SKILL.md", "rules/auto-correct-scope.md"],                               "desc": "lane -> required evidence mapping" },
     "research-depth-policy":   { "surface": ["rules/research-depth.md"],       "consumers": ["skills/feature-intake/SKILL.md", "skills/xia2/SKILL.md"],                                          "desc": "intake lane -> xia2 research-depth mapping" },
+    "codex-capability-evidence": {
+      "surface": [
+        "specs/codex-support/capability-matrix.json",
+        "scripts/check_codex_capabilities.py"
+      ],
+      "consumers": [
+        "scripts/capture_codex_capabilities.sh",
+        "tests/scripts/codex-capability-probe.test.sh",
+        "specs/codex-support-phase-1/PLAN.md",
+        "specs/codex-support-phase-4/PLAN.md"
+      ],
+      "desc": "version-pinned Codex capability claims, evidence freshness, and explicit unknown ownership"
+    },
+    "runtime-neutral-sources": {
+      "surface": [
+        "specs/codex-support/neutralization-inventory.json",
+        "scripts/check_runtime_neutral_sources.py"
+      ],
+      "consumers": [
+        "scripts/test_check_runtime_neutral_sources.py",
+        "scripts/run-tests.sh",
+        "specs/codex-support-phase-3/PLAN.md"
+      ],
+      "desc": "owned inventory of runtime-specific shared-source coupling and Phase-5 entry exceptions"
+    },
+    "agent-runtime-bindings": {
+      "surface": [
+        "agents/agent-contracts.json",
+        "agents/runtime-bindings.json",
+        "scripts/render_agent_definitions.py"
+      ],
+      "consumers": [
+        "scripts/deploy-harness.sh",
+        "scripts/check_manifest.py",
+        "scripts/test_render_agent_definitions.py"
+      ],
+      "desc": "neutral agent capability contracts and checked runtime-specific bindings"
+    },
+    "hook-input-normalization": {
+      "surface": [
+        "hooks/lib/normalize-tool-input.py",
+        "specs/codex-support/capability-matrix.json"
+      ],
+      "consumers": [
+        "hooks/branch-isolation-guard.sh",
+        "hooks/ruff-on-edit.sh",
+        "hooks/blast-radius-check.sh",
+        "hooks/render-plan-on-write.sh",
+        "hooks/pre-bash-dispatch.sh",
+        "hooks/scope-gate.sh",
+        "tests/hooks/normalize-tool-input.test.sh",
+        "tests/hooks/codex-edit-hooks.test.sh"
+      ],
+      "desc": "canonical Claude/Codex hook payload, path-set, command, prompt, and uncertainty contract"
+    },
     "finish-context-resolution": { "surface": ["scripts/resolve_finish_context.py"], "consumers": ["skills/finishing-a-development-branch/SKILL.md"],                                           "desc": "branch/base/plan/lane resolution for branch finishing" },
     "hard-gate-vocabulary":    { "surface": ["harness-manifest.json"],          "consumers": ["hooks/risk-corroboration.sh", "rules/auto-correct-scope.md", "skills/feature-intake/SKILL.md"], "desc": "hard-gate slug/mode/desc vocabulary" },
     "durable-run-state-checkpoints": {
@@ -132,5 +187,12 @@
     "writing-plans", "xia2"
   ],
 
-  "agents": ["coding", "reviewer", "task-reviewer", "test-runner"]
+  "agents": ["coding", "reviewer", "task-reviewer", "test-runner"],
+
+  "agent_bindings": {
+    "contracts": "agents/agent-contracts.json",
+    "bindings": "agents/runtime-bindings.json",
+    "renderer": "scripts/render_agent_definitions.py",
+    "runtimes": ["claude", "codex"]
+  }
 }

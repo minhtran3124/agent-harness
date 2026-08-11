@@ -6,10 +6,11 @@ allowed-tools: Bash, Read, Glob, Write, mcp__code-review-graph__list_graph_stats
 
 # Plan → HTML Renderer
 
-The executable interface is authoritative; never hand-transcribe HTML:
+The executable interface is authoritative; never hand-transcribe HTML. Resolve
+`<visual-planner-dir>` to the directory containing this loaded `SKILL.md`:
 
 ```bash
-python3 .claude/skills/visual-planner/render_plan.py <path-or-slug> [output.html]
+python3 <visual-planner-dir>/render_plan.py <path-or-slug> [output.html]
 ```
 
 The renderer resolves a PLAN path or unambiguous slug, writes a sibling untracked `PLAN.html`,
@@ -24,8 +25,8 @@ its serving mode blocks. Do not auto-open from writing-plans or a headless envir
 For graph-backed plan review, first emit plan files, gather graph evidence, then render a sidecar:
 
 ```bash
-python3 .claude/skills/visual-planner/render_plan.py <slug> --emit-files
-python3 .claude/skills/visual-planner/render_plan.py <slug> --review specs/<slug>/.plan-review.json
+python3 <visual-planner-dir>/render_plan.py <slug> --emit-files
+python3 <visual-planner-dir>/render_plan.py <slug> --review specs/<slug>/.plan-review.json
 ```
 
 The sidecar records provenance plus per-file path, status (`new|existing|missing`), dependents,

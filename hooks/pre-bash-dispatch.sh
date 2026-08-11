@@ -14,12 +14,44 @@
 # dispatcher propagates exit 2.
 #
 # On non-commit/push Bash commands (the common case) this fast-paths exit 0 without spawning
-# any sub-hook — one jq, no child processes.
+# any sub-hook, preserving the raw payload relay expected by those consumers.
 
 INPUT=$(cat)
-CMD=$(printf '%s' "$INPUT" | jq -r '.tool_input.command // ""')
-
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT="${CLAUDE_PROJECT_DIR:-$PWD}"
+
+# Fast path: `tool_name == "Bash"` with a non-empty string command is the one shape the
+# normalizer can only ever classify as shell/known, so resolving it here is equivalent —
+# and it keeps the common case at one jq with no Python process. This hook runs on EVERY
+# Bash tool call; spawning an interpreter to re-derive a value already unambiguous in the
+# raw payload cost ~5x the whole hook's budget. Anything else goes to the normalizer.
+CMD=$(printf '%s' "$INPUT" | jq -r '
+  if (.tool_name == "Bash") and (.tool_input.command | type == "string") and (.tool_input.command != "")
+  then .tool_input.command else empty end' 2>/dev/null)
+
+if [ -z "$CMD" ]; then
+  NORMALIZER="$SCRIPT_DIR/lib/normalize-tool-input.py"
+  if command -v python3 >/dev/null 2>&1 && [ -f "$NORMALIZER" ]; then
+    NORMALIZED=$(printf '%s' "$INPUT" | python3 "$NORMALIZER" --root "$ROOT" 2>/dev/null)
+  else
+    NORMALIZED='{"status":"unknown","tool_class":"unknown","command":null,"diagnostics":["normalizer-unavailable"]}'
+  fi
+  # One jq for the gate decision (all three values are single-line by construction:
+  # status/tool_class are enum tokens, diagnostics are fixed slugs joined with ", ").
+  { read -r STATUS; read -r TOOL_CLASS; read -r DIAG; } <<EOF
+$(printf '%s' "$NORMALIZED" | jq -r '
+    (.status // "unknown"),
+    (.tool_class // "unknown"),
+    ((.diagnostics // []) | join(", "))' 2>/dev/null)
+EOF
+  if [ "${STATUS:-unknown}" != "known" ] || [ "${TOOL_CLASS:-unknown}" != "shell" ]; then
+    echo "[PRE-BASH DISPATCH] could not safely classify Bash payload (${DIAG:-unparsed payload}) — redeploy/update the harness normalizer (blocking to fail safe)." >&2
+    exit 2
+  fi
+  # Command is extracted separately: it may be multi-line, which a line-oriented read
+  # would silently truncate — and a truncated command is what the git matcher tokenizes.
+  CMD=$(printf '%s' "$NORMALIZED" | jq -r '.command // ""' 2>/dev/null)
+fi
 
 # Only fan out for git commit/push (tokenizing matcher — resists cd/&&/-C/-c bypass).
 source "$SCRIPT_DIR/lib/git-command.sh" 2>/dev/null

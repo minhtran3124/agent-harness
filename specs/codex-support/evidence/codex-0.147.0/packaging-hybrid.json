@@ -1,0 +1,33 @@
+{
+  "candidate": "hybrid",
+  "capture": "isolated-local-packaging-probe",
+  "captured_at": "2026-08-10",
+  "cli_version": "0.147.0",
+  "config_hash": "not-applicable",
+  "platform": "macos-arm64",
+  "result": {
+    "checks": {
+      "agent_discovery_surface": true,
+      "cleanup": true,
+      "hook_registration_visible_in_installed_copy": true,
+      "isolated_state_roots": true,
+      "local_source_remove_readd_refresh": true,
+      "marketplace_discovery": true,
+      "no_op_reinstall": true,
+      "plugin_discovery": true,
+      "plugin_install": true,
+      "plugin_removal": true,
+      "skill_discovery_visible_in_installed_copy": true,
+      "strict_config": true
+    },
+    "hook_trust": "not-observed",
+    "installed_cache_version": "0.0.1",
+    "local_source_update": "remove-readd-refresh-observed",
+    "passed": true,
+    "runtime_evidence_boundary": "installed-copy inspection only; no skill, hook, or agent execution",
+    "runtime_execution_observed": false,
+    "status": "observed"
+  },
+  "runtime": "codex",
+  "schema_version": 1
+}

@@ -1,0 +1,27 @@
+{
+  "reviewed_head_sha": "ba10cf9aae1e05e93c1f949fa049cb08d6401a73",
+  "reviews": [
+    {
+      "type": "correctness",
+      "result": "pass",
+      "blocking_open": 0,
+      "method": "ad-hoc adversarial review chain, session-documented in REVIEW.md",
+      "evidence": "Phase-2 diff reviewed pre-commit (specs/codex-support-phase-2/REVIEW.md, 8 findings incl. a self-fulfilling direct probe and an unrecordable fallback); all were fixed before 4a5a721 landed and each fix was re-verified by execution in-session at ba10cf9: probe suite 17/17 (fault-injected failure publication, reinstall fingerprint, strict-parse semantics), checker accepts a failing hybrid only for a separately proven direct selection, direct fixture is an owned unknown. SUMMARY Verify rows re-run clean at this sha."
+    },
+    {
+      "type": "intent",
+      "result": "pass",
+      "blocking_open": 0,
+      "method": "diff-vs-plan conformance review + cumulative branch review at ba10cf9",
+      "evidence": "Tasks 2.1/2.2 verified against specs/codex-support-phase-2/PLAN.md. Deliberate strengthening recorded: direct fallback is selectable only after its own probe passes (hybrid failure blocks rather than silently defaulting), stated in packaging-decision.md fallback trigger. Matrix packaging.plugins stays advisory, matching the runtime-execution-not-observed boundary."
+    },
+    {
+      "type": "context-propagation-audit",
+      "result": "pass",
+      "blocking_open": 0,
+      "method": "executable delivery matrix + doc-truth cross-check",
+      "evidence": "Phase 3 replaced assumed rule delivery with the ten-context matrix in render_skill_prompt.py --check-all (every isolated consumer declares its contextual rules or a rationale), enforced by tests/scripts/context-propagation-regression.test.sh incl. mutation cases; per-edge Read instructions hand-verified during the Phase-3 review. Phase 4's CLAUDE.md hook-table rows are pinned to settings.json by lint-doc-truth.sh (green in the final ALL GREEN run at this sha). Workflow-engine prose changes were inventory-first: check_runtime_neutral_sources.py --root . is count-exact and, since ba10cf9, runs as an L1 step in run-tests.sh."
+    }
+  ],
+  "created": "2026-08-11T04:22:44Z"
+}

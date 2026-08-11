@@ -4,7 +4,7 @@ Focus: the fuzzy-boundary logic that is easy to silently regress —
 clause splitting, verb classification, field rendering, multi-line field
 capture, and frontmatter hardening. Run:
 
-    python -m pytest .claude/skills/visual-planner/test_render_plan.py -q
+    python -m pytest skills/visual-planner/test_render_plan.py -q
 """
 
 import importlib.util

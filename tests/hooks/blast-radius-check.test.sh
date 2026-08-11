@@ -157,4 +157,19 @@ make_plan_at "$repo" gamma shipped "app/other.py"
 run_hook "$repo" $H "$(json_file "$repo/app/foo.py")"
 assert_silent_ok
 
+t "partial edit payload warns and remains non-blocking even in strict mode"
+repo=$(new_repo $H)
+make_plan "$repo" active "app/foo.py"
+payload=$(jq -cn --arg command $'*** Begin Patch\n*** Update File: app/rogue.py\n*** Add File: ../escape.py\n*** End Patch' '{turn_id:"t",hook_event_name:"PostToolUse",tool_name:"apply_patch",tool_input:{command:$command}}')
+run_hook "$repo" $H "$payload" BLAST_RADIUS_STRICT=1
+assert_rc_contains 0 'scope coverage is incomplete'
+
+t "multi-file patch reports every out-of-plan implementation path once"
+repo=$(new_repo $H)
+make_plan "$repo" active "app/in.py"
+payload=$(jq -cn --arg command $'*** Begin Patch\n*** Update File: app/out-a.py\n*** Add File: app/out-b.py\n*** Update File: app/out-a.py\n*** End Patch' '{turn_id:"t",hook_event_name:"PostToolUse",tool_name:"apply_patch",tool_input:{command:$command}}')
+run_hook "$repo" $H "$payload"
+if [ "$RC" -eq 0 ] && [ "$(printf '%s' "$OUT" | grep -o 'app/out-a.py' | wc -l | tr -d ' ')" = 1 ] && printf '%s' "$OUT" | grep -q 'app/out-b.py'; then pass
+else fail "multi-path output was missing or duplicated: $OUT"; fi
+
 finish

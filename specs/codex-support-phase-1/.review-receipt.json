@@ -1,0 +1,27 @@
+{
+  "reviewed_head_sha": "ba10cf9aae1e05e93c1f949fa049cb08d6401a73",
+  "reviews": [
+    {
+      "type": "correctness",
+      "result": "pass",
+      "blocking_open": 0,
+      "method": "ad-hoc adversarial review chain, session-documented in REVIEW.md",
+      "evidence": "Phase-1 diff (872dc32) adversarially reviewed in-session: 8 findings incl. hand-authored fixtures wearing capture-tool labels and a mislinked tools.shell evidence row; fixed in be9bc21 (re-derived deterministic fixtures from the installed Codex CLI 0.147.0, closed capture vocabulary, 2 new sanitizer/disabled-hooks contract cases). All 5 SUMMARY Verify rows re-run clean via verify_summary.py --check at ba10cf9; capability checker --require-evidence green; full suite ALL GREEN 514 pytest + all contract suites at this sha."
+    },
+    {
+      "type": "intent",
+      "result": "pass",
+      "blocking_open": 0,
+      "method": "diff-vs-plan conformance review + cumulative branch review at ba10cf9",
+      "evidence": "Task 1.1/1.2 file sets and acceptance criteria verified against specs/codex-support-phase-1/PLAN.md; no out-of-scope files; roadmap non-goals held (no production .codex/, settings.json byte-identical). Negative scope recorded in SUMMARY Not auto-verified (row coverage unchecked, unified-exec envelope owed to Phase 5)."
+    },
+    {
+      "type": "context-propagation-audit",
+      "result": "pass",
+      "blocking_open": 0,
+      "method": "executable delivery matrix + doc-truth cross-check",
+      "evidence": "Phase 3 replaced assumed rule delivery with the ten-context matrix in render_skill_prompt.py --check-all (every isolated consumer declares its contextual rules or a rationale), enforced by tests/scripts/context-propagation-regression.test.sh incl. mutation cases; per-edge Read instructions hand-verified during the Phase-3 review. Phase 4's CLAUDE.md hook-table rows are pinned to settings.json by lint-doc-truth.sh (green in the final ALL GREEN run at this sha). Workflow-engine prose changes were inventory-first: check_runtime_neutral_sources.py --root . is count-exact and, since ba10cf9, runs as an L1 step in run-tests.sh."
+    }
+  ],
+  "created": "2026-08-11T04:22:44Z"
+}

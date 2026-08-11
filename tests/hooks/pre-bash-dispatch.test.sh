@@ -39,4 +39,21 @@ assert_rc_contains 0 'Untracked .py'
 t "git push → commit-only gates stay silent (only untracked-py acts)"
 assert_rc_not_contains 0 'COMMIT GATE'
 
+t "Codex Bash/unified-exec shape reaches the same git gates"
+repo=$(new_repo $H $SUBS)
+printf 'x\n' > "$repo/loose.py"
+payload=$(jq -cn '{turn_id:"turn-redacted",hook_event_name:"PreToolUse",tool_name:"Bash",tool_input:{command:"git push origin main"}}')
+run_hook "$repo" $H "$payload"
+assert_rc_contains 0 'Untracked .py'
+
+t "malformed Bash payload fails closed instead of fast-pathing"
+repo=$(new_repo $H $SUBS)
+run_hook "$repo" $H '{not-json'
+assert_rc_contains 2 'could not safely classify Bash payload'
+
+t "missing command fails closed with an actionable diagnostic"
+repo=$(new_repo $H $SUBS)
+run_hook "$repo" $H '{"turn_id":"t","hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{}}'
+assert_rc_contains 2 'command-missing'
+
 finish

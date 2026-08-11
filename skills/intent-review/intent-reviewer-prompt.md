@@ -1,8 +1,8 @@
 # Intent Reviewer Prompt Template
 
 Use this template for a single intent-review pass — once, over the entire diff under review.
-Invoked two ways: standalone via `/intent-review` (ad-hoc on any diff with an intent statement),
-or as the last pass inside `subagent-driven-development` (after `/correctness-review` passes and
+Invoked two ways: standalone via `intent-review` (ad-hoc on any diff with an intent statement),
+or as the last pass inside `subagent-driven-development` (after `correctness-review` passes and
 before `finishing-a-development-branch`).
 
 **Purpose:** Catch the case where the diff *passed the plan and passed the tests but is not what

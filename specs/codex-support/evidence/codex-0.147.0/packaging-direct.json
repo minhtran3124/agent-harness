@@ -1,0 +1,23 @@
+{
+  "candidate": "direct",
+  "capture": "isolated-local-packaging-probe",
+  "captured_at": "2026-08-10",
+  "cli_version": "0.147.0",
+  "config_hash": "not-applicable",
+  "platform": "macos-arm64",
+  "result": {
+    "checks": {
+      "project_files_materialized": true,
+      "real_conflict_installer_observed": false,
+      "runtime_discovery_observed": false
+    },
+    "exit_condition": "A disposable direct-adapter probe must prove Codex skill, agent, and hook discovery plus real installer conflict behavior.",
+    "owner": "codex-support-phase-5",
+    "passed": false,
+    "runtime_evidence_boundary": "representative files only; no Codex discovery, installer conflict, or runtime execution",
+    "runtime_execution_observed": false,
+    "status": "unknown"
+  },
+  "runtime": "codex",
+  "schema_version": 1
+}

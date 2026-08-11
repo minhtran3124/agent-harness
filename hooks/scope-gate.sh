@@ -3,7 +3,22 @@
 # Non-blocking — injects additionalContext, never denies.
 
 INPUT=$(cat)
-PROMPT=$(printf '%s' "$INPUT" | jq -r '.prompt // ""')
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_DIR="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null)"
+[ -z "$REPO_DIR" ] && REPO_DIR="${CLAUDE_PROJECT_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}"
+NORMALIZER="$SCRIPT_DIR/lib/normalize-tool-input.py"
+if command -v python3 >/dev/null 2>&1 && [ -f "$NORMALIZER" ]; then
+  NORMALIZED=$(printf '%s' "$INPUT" | python3 "$NORMALIZER" --root "$REPO_DIR" 2>/dev/null)
+else
+  NORMALIZED='{"status":"unknown","prompt":null,"diagnostics":["normalizer-unavailable"]}'
+fi
+STATUS=$(printf '%s' "$NORMALIZED" | jq -r '.status // "unknown"' 2>/dev/null)
+PROMPT=$(printf '%s' "$NORMALIZED" | jq -r '.prompt // ""' 2>/dev/null)
+if [ "$STATUS" != "known" ]; then
+  DIAG=$(printf '%s' "$NORMALIZED" | jq -r '.diagnostics | join(", ")' 2>/dev/null)
+  jq -cn --arg d "${DIAG:-unparsed payload}" '{hookSpecificOutput:{hookEventName:"UserPromptSubmit",additionalContext:("scope-gate: prompt payload could not be classified (" + $d + "); planning guidance was not evaluated. Redeploy/update the harness normalizer.")}}'
+  exit 0
+fi
 WORD_COUNT=$(printf '%s' "$PROMPT" | wc -w)
 
 IS_IMPL=0
@@ -18,9 +33,6 @@ if [ "$WORD_COUNT" -gt 6 ] && [ "$IS_IMPL" -eq 1 ] && [ "$HAS_PLAN" -eq 0 ]; the
   # so without this a multi-turn task nags on every qualifying follow-up message even
   # after the Lane question is already answered. A missing lib falls through to the
   # nudge (today's behavior) — safe default since the nudge itself never blocks.
-  SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-  REPO_DIR="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null)"
-  [ -z "$REPO_DIR" ] && REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
   source "$SCRIPT_DIR/lib/lane.sh" 2>/dev/null
   if command -v hook_lib_intake_in_progress >/dev/null 2>&1 && hook_lib_intake_in_progress "$REPO_DIR"; then
     exit 0
