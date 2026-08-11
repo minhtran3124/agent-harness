@@ -10,11 +10,11 @@ created: 2026-08-11
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**6 tasks · 4 waves · 68 files · 0/6 done**
+**6 tasks · 4 waves · 71 files · 0/6 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
-| 1 | 5.1 | Close the load-bearing alpha evidence gaps (wave 1) | scripts/capture_codex_capabilities.sh, scripts/probe_codex_packaging.sh, scripts/check_codex_capabilities.py, scripts/check_codex_packaging.py, scripts/test_check_codex_capabilities.py, scripts/test_check_codex_packaging.py, tests/scripts/codex-capability-probe.test.sh, tests/scripts/codex-packaging-probe.test.sh, tests/scripts/codex-alpha-evidence.test.sh, specs/codex-support/capability-matrix.json, specs/codex-support/packaging-decision.md, specs/codex-support/evidence/codex-0.147.0/hooks-unified-exec.json, specs/codex-support/evidence/codex-0.147.0/hooks-user-prompt-submit.json, specs/codex-support/evidence/codex-0.147.0/packaging-hybrid-runtime.json, specs/codex-support/evidence/codex-0.147.0/packaging-direct.json | the selected package path has observed runtime execution; load-bearing envelopes… |
+| 1 | 5.1 | Close the load-bearing alpha evidence gaps (wave 1) | scripts/capture_codex_capabilities.sh, scripts/probe_codex_packaging.sh, scripts/check_codex_capabilities.py, scripts/check_codex_packaging.py, scripts/test_check_codex_capabilities.py, scripts/test_check_codex_packaging.py, tests/scripts/codex-capability-probe.test.sh, tests/scripts/codex-packaging-probe.test.sh, tests/scripts/codex-alpha-evidence.test.sh, specs/codex-support/capability-matrix.json, specs/codex-support/packaging-decision.md, specs/codex-support/evidence/codex-0.147.0/hooks-unified-exec.json, specs/codex-support/evidence/codex-0.147.0/hooks-user-prompt-submit.json, specs/codex-support/evidence/codex-0.147.0/packaging-hybrid-runtime.json, specs/codex-support/evidence/codex-0.147.0/packaging-direct.json, hooks/pre-bash-dispatch.sh, tests/hooks/normalize-tool-input.test.sh, tests/hooks/pre-bash-dispatch.test.sh | the selected package path has observed runtime execution; load-bearing envelopes… |
 | 2 | 5.2 | Render deterministic Codex runtime artifacts (wave 2) | adapters/codex/plugin/.codex-plugin/plugin.json, adapters/codex/plugin/hooks/hooks.json, adapters/codex/project/harness-instructions.md, adapters/codex/schema.json, scripts/render_codex_adapter.py, scripts/test_render_codex_adapter.py, scripts/render_agent_definitions.py, scripts/test_render_agent_definitions.py, agents/runtime-bindings.json, harness-manifest.json | identical inputs produce identical valid Codex artifacts; every role/hook/skill … |
 | 3 | 5.3 | Install the hybrid adapter without clobbering user state (wave 3) | scripts/install-codex-harness.sh, scripts/deploy-codex-adapter.sh, tests/scripts/codex-install.test.sh, tests/fixtures/codex-install/custom-AGENTS.md, tests/fixtures/codex-install/custom-config.toml, docs/codex-alpha-install.md | adapter lifecycle is idempotent and recoverable; every user-owned canary survive… |
 | 3 | 5.4 | Add the outside-hook doctor and runtime-mode record (wave 3) | scripts/codex_harness_doctor.py, scripts/test_codex_harness_doctor.py, runtime/runtime_mode.py, runtime/test_runtime_mode.py, runtime/run_state.py, runtime/test_run_state.py, templates/SUMMARY.template.md, scripts/verify_summary.py, scripts/test_verify_summary.py, hooks/session-knowledge.sh, tests/hooks/session-knowledge.test.sh | deterministic fixtures cover all modes, invalidation, privacy, malformed/unavail… |
@@ -102,7 +102,7 @@ Parent roadmap: `specs/codex-support/ROADMAP.md`. Preparation research:
 | SC-2 | One deterministic renderer emits byte-stable strict Codex plugin/project assets and rejects every incomplete agent capability mapping | `python3 -m pytest scripts/test_render_codex_adapter.py -q` | exit 0 |
 | SC-3 | Fresh install, reinstall, update, conflict, dry-run, and removal preserve user-owned `AGENTS.md`, `.codex/`, plugin, and marketplace content | `bash tests/scripts/codex-install.test.sh` | exit 0 |
 | SC-4 | The outside-hook doctor reports enforced/advisory/unsupported from version, platform, dependencies, discovery, trust, config hash, matcher coverage, and evidence freshness | `python3 -m pytest scripts/test_codex_harness_doctor.py -q` | exit 0 |
-| SC-5 | Codex runtime mode and sanitized doctor evidence id are recorded in local state plus run/SUMMARY metadata without weakening legacy artifacts | `python3 -m pytest runtime/test_runtime_mode.py scripts/test_verify_summary.py -q` | exit 0 |
+| SC-5 | Codex runtime mode and sanitized doctor evidence id are recorded in local state plus run/SUMMARY metadata without weakening legacy artifacts | `python3 -m pytest runtime/test_runtime_mode.py runtime/test_run_state.py scripts/test_verify_summary.py -q` | exit 0 |
 | SC-6 | Every Phase-5-owned runtime-entry exception is removed or rendered through one checked runtime binding while shared policy stays invocation-neutral | `bash tests/scripts/runtime-entry-bindings.test.sh` | exit 0 |
 | SC-7 | The deterministic alpha contract passes for the declared macOS/Linux/WSL baseline and makes missing WSL evidence explicitly advisory rather than peer | `bash tests/scripts/codex-alpha-contract.test.sh` | exit 0 |
 | SC-8 | Adapter, installer, doctor, mode, evidence, and runtime-entry contracts are registered without manifest, inventory, or documentation drift | `python3 scripts/check_manifest.py` | exit 0 |
@@ -111,7 +111,7 @@ Parent roadmap: `specs/codex-support/ROADMAP.md`. Preparation research:
 
 ### Task 5.1 — Close the load-bearing alpha evidence gaps (wave 1)
 
-- **Files:** scripts/capture_codex_capabilities.sh, scripts/probe_codex_packaging.sh, scripts/check_codex_capabilities.py, scripts/check_codex_packaging.py, scripts/test_check_codex_capabilities.py, scripts/test_check_codex_packaging.py, tests/scripts/codex-capability-probe.test.sh, tests/scripts/codex-packaging-probe.test.sh, tests/scripts/codex-alpha-evidence.test.sh, specs/codex-support/capability-matrix.json, specs/codex-support/packaging-decision.md, specs/codex-support/evidence/codex-0.147.0/hooks-unified-exec.json, specs/codex-support/evidence/codex-0.147.0/hooks-user-prompt-submit.json, specs/codex-support/evidence/codex-0.147.0/packaging-hybrid-runtime.json, specs/codex-support/evidence/codex-0.147.0/packaging-direct.json
+- **Files:** scripts/capture_codex_capabilities.sh, scripts/probe_codex_packaging.sh, scripts/check_codex_capabilities.py, scripts/check_codex_packaging.py, scripts/test_check_codex_capabilities.py, scripts/test_check_codex_packaging.py, tests/scripts/codex-capability-probe.test.sh, tests/scripts/codex-packaging-probe.test.sh, tests/scripts/codex-alpha-evidence.test.sh, specs/codex-support/capability-matrix.json, specs/codex-support/packaging-decision.md, specs/codex-support/evidence/codex-0.147.0/hooks-unified-exec.json, specs/codex-support/evidence/codex-0.147.0/hooks-user-prompt-submit.json, specs/codex-support/evidence/codex-0.147.0/packaging-hybrid-runtime.json, specs/codex-support/evidence/codex-0.147.0/packaging-direct.json, hooks/pre-bash-dispatch.sh, tests/hooks/normalize-tool-input.test.sh, tests/hooks/pre-bash-dispatch.test.sh
 - **Action:** Extend the existing fake-CLI contracts first, then—only after explicit authorization—
   run one disposable model-backed capture that observes the real unified-exec envelope,
   `UserPromptSubmit` when emitted, installed plugin skill invocation, trusted plugin hook execution,
@@ -120,7 +120,10 @@ Parent roadmap: `specs/codex-support/ROADMAP.md`. Preparation research:
   selected only if its execution proof passes. If it fails, execute the direct discovery/conflict
   probe and select direct only if its own evidence passes; otherwise stop Phase 5 blocked. Revert
   Phase-4 hand-written fixtures to documented/unknown rather than fabricating an observation when an
-  event cannot be captured.
+  event cannot be captured. If the observed unified-exec envelope contradicts the Phase-4
+  documentation-derived normalizer fixtures, update `hooks/pre-bash-dispatch.sh` and its fixture
+  tests in this task with the capture as provenance — never leave the normalizer asserting a shape
+  the runtime does not send.
 - **Verify:** `bash tests/scripts/codex-alpha-evidence.test.sh`
 - **Done:** the selected package path has observed runtime execution; load-bearing envelopes are
   captured or explicitly owned unknown/advisory; evidence publication is sanitized and mutation-tested.
@@ -228,9 +231,16 @@ Parent roadmap: `specs/codex-support/ROADMAP.md`. Preparation research:
   fixture replay and mutation tests.
 - **WSL remains unobserved.** Mitigation: do not block local advisory alpha usability, but force
   advisory/unsupported and block the baseline peer claim until WSL evidence passes.
+- **Observed unified-exec envelope contradicts Phase-4 normalizer fixtures.** Mitigation: Task 5.1
+  owns `hooks/pre-bash-dispatch.sh` and its fixture tests, so a contradiction is fixed in-wave with
+  the capture as provenance instead of drifting out of scope or being deferred.
 
 ## 6. Status Log
 
+- 2026-08-11 — Pre-execution review amendments: `runtime/test_run_state.py` added to the SC-5 check
+  (run-state changes previously had no proof row); `hooks/pre-bash-dispatch.sh` and its fixture
+  tests added to Task 5.1 Files with an in-wave contradiction path and matching risk entry, so a
+  captured envelope that contradicts the Phase-4 documentation-derived fixtures is fixed in scope.
 - 2026-08-11 — Prepared from merged `simplify` at `a54f5d5`. Official OpenAI hook documentation,
   local Codex CLI 0.147.0 surfaces, Phase-1–4 summaries/evidence, agent contracts, installer tests,
   and all Phase-5-owned neutralization exceptions were reviewed. Plan proposed; no adapter files,
