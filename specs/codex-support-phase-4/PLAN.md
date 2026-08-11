@@ -1,6 +1,6 @@
 ---
 slug: codex-support-phase-4
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-08-10
 ---
@@ -201,3 +201,4 @@ Parent roadmap: `specs/codex-support/ROADMAP.md`. Depends on Phase 1's payload e
   context-propagation consumer audit passed.
 - 2026-08-11 — Final `bash scripts/run-tests.sh` completed `ALL GREEN` with 514 Python tests. Plan
   remains active until review/commit/merge closes the phase.
+- 2026-08-11 — Shipped at `ba10cf9` (PR from `plan/codex-support-phases-1-4`). Fail-open closed and mutation-verified both layers; receipt pinned.

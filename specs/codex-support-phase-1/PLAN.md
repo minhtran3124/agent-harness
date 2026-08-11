@@ -1,6 +1,6 @@
 ---
 slug: codex-support-phase-1
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-08-10
 ---
@@ -166,3 +166,4 @@ Parent roadmap: `specs/codex-support/ROADMAP.md`. Design and research: `specs/co
 - 2026-08-10 — Split out of the single four-phase `specs/codex-support/` plan. The 14-SC contract
   made every mid-flight `specs/` commit fail the SC-coverage gate, so an honest Phase-1 record could
   not be landed until Phase 4 finished. Phases 2–4 are now sibling slugs.
+- 2026-08-11 — Shipped at `ba10cf9` (PR from `plan/codex-support-phases-1-4`). Review receipt pinned; all Verify rows re-run clean.

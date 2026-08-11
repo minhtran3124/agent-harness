@@ -1,6 +1,6 @@
 ---
 slug: codex-support-phase-2
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-08-10
 ---
@@ -164,3 +164,4 @@ Parent roadmap: `specs/codex-support/ROADMAP.md`. Depends on Phase 1's capabilit
   parsing and reinstall idempotence are measured rather than inferred; packaging remains advisory;
   sanitizer and fresh-root checks share the Phase-1 safety boundary; the interpreter-dependent
   pytest Verify row was removed while its 11-case suite remains in `run-tests.sh`.
+- 2026-08-11 — Shipped at `ba10cf9` (PR from `plan/codex-support-phases-1-4`). All 8 review findings closed pre-commit; receipt pinned.

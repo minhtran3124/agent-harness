@@ -1,0 +1,27 @@
+{
+  "reviewed_head_sha": "ba10cf9aae1e05e93c1f949fa049cb08d6401a73",
+  "reviews": [
+    {
+      "type": "correctness",
+      "result": "pass",
+      "blocking_open": 0,
+      "method": "ad-hoc adversarial review chain, session-documented in REVIEW.md",
+      "evidence": "Phase-4 diff adversarially reviewed in-session (specs/codex-support-phase-4/REVIEW.md, 6 findings): a reachable fail-open in branch-isolation (tool_name-less patch classified shell/known/no-paths, allowed on main) \u2014 closed in both layers and mutation-verified in both directions (either layer alone still denies); dispatcher latency regression fixed (~47ms -> ~12ms) with multiline-command truncation guard proven end-to-end; an evidence-gap-closed-by-rewording matrix edit reverted to honest negative scope. Nine SUMMARY Verify rows re-run clean at ba10cf9; ci-strict-gate.sh passes verifying all four high-risk SUMMARYs; deployed-consumer smoke: hooks/lib lands, dispatcher and hard gate behave from a consumer repo."
+    },
+    {
+      "type": "intent",
+      "result": "pass",
+      "blocking_open": 0,
+      "method": "diff-vs-plan conformance review + cumulative branch review at ba10cf9",
+      "evidence": "Tasks 4.1-4.4 verified against specs/codex-support-phase-4/PLAN.md. settings.json untouched, git sub-hooks receive the raw relay unchanged, advisory hooks probed non-blocking across 12 bad-input combinations. The Task-4.1 unified-exec capture/promotion shortfall is recorded honestly in SUMMARY Not auto-verified with a Phase-5 owner instead of being papered over."
+    },
+    {
+      "type": "context-propagation-audit",
+      "result": "pass",
+      "blocking_open": 0,
+      "method": "executable delivery matrix + doc-truth cross-check",
+      "evidence": "Phase 3 replaced assumed rule delivery with the ten-context matrix in render_skill_prompt.py --check-all (every isolated consumer declares its contextual rules or a rationale), enforced by tests/scripts/context-propagation-regression.test.sh incl. mutation cases; per-edge Read instructions hand-verified during the Phase-3 review. Phase 4's CLAUDE.md hook-table rows are pinned to settings.json by lint-doc-truth.sh (green in the final ALL GREEN run at this sha). Workflow-engine prose changes were inventory-first: check_runtime_neutral_sources.py --root . is count-exact and, since ba10cf9, runs as an L1 step in run-tests.sh."
+    }
+  ],
+  "created": "2026-08-11T04:22:44Z"
+}

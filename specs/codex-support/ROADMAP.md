@@ -14,10 +14,10 @@ with a complete and honest evidence record instead of waiting on the whole initi
 
 | Phase | Plan | Status | Delivers |
 | --- | --- | --- | --- |
-| 1 | `specs/codex-support-phase-1/PLAN.md` | active | versioned capability baseline: matrix, validator, sanitized 0.147.0 evidence, capture contract suite |
-| 2 | `specs/codex-support-phase-2/PLAN.md` | active | evidence-driven packaging decision: disposable hybrid-vs-direct probe, recorded decision + fallback trigger |
-| 3 | `specs/codex-support-phase-3/PLAN.md` | active | semantic source neutralisation: repository-rooted rule delivery, invocation-neutral prose, neutral agent contracts |
-| 4 | `specs/codex-support-phase-4/PLAN.md` | active | runtime-neutral hook input seam: one payload normaliser, fail-closed gates, advisory hooks unchanged |
+| 1 | `specs/codex-support-phase-1/PLAN.md` | shipped | versioned capability baseline: matrix, validator, sanitized 0.147.0 evidence, capture contract suite |
+| 2 | `specs/codex-support-phase-2/PLAN.md` | shipped | evidence-driven packaging decision: disposable hybrid-vs-direct probe, recorded decision + fallback trigger |
+| 3 | `specs/codex-support-phase-3/PLAN.md` | shipped | semantic source neutralisation: repository-rooted rule delivery, invocation-neutral prose, neutral agent contracts |
+| 4 | `specs/codex-support-phase-4/PLAN.md` | shipped | runtime-neutral hook input seam: one payload normaliser, fail-closed gates, advisory hooks unchanged |
 
 Shared artifacts owned by this slug and consumed across phases:
 
@@ -124,3 +124,4 @@ packaging decision, runtime-neutral instruction/agent policy, and one tested hoo
   probe selected hybrid packaging; direct sync is an explicit but currently unproved fallback with
   a Phase-5 owner/exit condition. Runtime skill invocation, hook trust, and direct project discovery
   remain explicit Phase-5 gates. See `specs/codex-support-phase-2/SUMMARY.md`.
+- 2026-08-11 — Phases 1–4 shipped from `plan/codex-support-phases-1-4` at `ba10cf9`; review receipts pinned per phase. Phase 5 (alpha adapter) is the next open phase and owns the unified-exec envelope capture, the direct-candidate runtime probe, and the message-prose neutralisation exceptions.

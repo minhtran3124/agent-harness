@@ -1,6 +1,6 @@
 ---
 slug: codex-support-phase-3
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-08-10
 ---
@@ -204,3 +204,4 @@ Parent roadmap: `specs/codex-support/ROADMAP.md`.
   validated mechanically; Claude definitions render with the prior model/tool isolation, and
   deploy/install/custom-agent/prune/conflict regressions pass. The CI-equivalent suite is
   `ALL GREEN` with 513 Python tests.
+- 2026-08-11 — Shipped at `ba10cf9` (PR from `plan/codex-support-phases-1-4`). Reviewer-substance golden and live neutral-source lint guard the corpus; receipt pinned.
