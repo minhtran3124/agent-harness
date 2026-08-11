@@ -10,25 +10,24 @@
 # active plan execution. Exits 0 unless STRICT + out-of-scope.
 
 INPUT=$(cat /dev/stdin)
-FILE=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)
-[ -z "$FILE" ] && exit 0
-
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null)"
 [ -z "$REPO_DIR" ] && REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "$SCRIPT_DIR/lib/lane.sh" 2>/dev/null
-
-# Canonicalize both so the repo-prefix strip is reliable (handles symlinked roots)
 REPO_DIR="$(cd "$REPO_DIR" 2>/dev/null && pwd -P)"
-if [ -e "$FILE" ]; then
-  FILE="$(cd "$(dirname "$FILE")" 2>/dev/null && pwd -P)/$(basename "$FILE")"
+NORMALIZER="$SCRIPT_DIR/lib/normalize-tool-input.py"
+if command -v python3 >/dev/null 2>&1 && [ -f "$NORMALIZER" ]; then
+  NORMALIZED=$(printf '%s' "$INPUT" | python3 "$NORMALIZER" --root "$REPO_DIR" 2>/dev/null)
+else
+  NORMALIZED='{"status":"unknown","paths":[],"diagnostics":["normalizer-unavailable"]}'
 fi
-REL="${FILE#"$REPO_DIR"/}"
-
-# Skip bookkeeping / non-implementation files
-case "$REL" in
-  specs/*|docs/*|*.md) exit 0 ;;
-esac
+STATUS=$(printf '%s' "$NORMALIZED" | jq -r '.status // "unknown"' 2>/dev/null)
+PATHS=$(printf '%s' "$NORMALIZED" | jq -r '.paths[]?' 2>/dev/null)
+MESSAGES=""
+if [ "$STATUS" != "known" ]; then
+  DIAG=$(printf '%s' "$NORMALIZED" | jq -r '.diagnostics | join(", ")' 2>/dev/null)
+  MESSAGES="blast-radius: edit payload was only partially understood (${DIAG:-unparsed payload}); valid paths were checked, but scope coverage is incomplete."
+fi
 
 # Find the active PLAN.md. `status: active` is the ONLY thing that arms this hook — there is
 # deliberately no "else most recent" fallback. A shipped plan's <files> set is a record of what
@@ -42,7 +41,10 @@ if command -v hook_lib_find_active_plan >/dev/null 2>&1; then
 else
   PLAN=""
 fi
-[ -z "$PLAN" ] && exit 0   # no plan in flight → no scope to creep out of
+if [ -z "$PLAN" ]; then
+  [ -z "$MESSAGES" ] || jq -cn --arg message "$MESSAGES" '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:$message}}'
+  exit 0
+fi
 
 # Declared files: <files>...</files> tags (XML syntax) plus `- **Files:** ...`
 # field bullets (markdown syntax, rules/plan-format.md "Task Schema — two
@@ -54,31 +56,43 @@ DECLARED_MD=$(grep -iE '^[-*][[:space:]]+\*\*Files(:\*\*|\*\*:)' "$PLAN" 2>/dev/
   | sed -E 's/^[-*][[:space:]]+\*\*[Ff]iles(:\*\*|\*\*:)[[:space:]]*//')
 DECLARED=$(printf '%s\n%s\n' "$DECLARED_XML" "$DECLARED_MD" \
   | tr ',' '\n' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//' | grep -v '^$')
-[ -z "$DECLARED" ] && exit 0
+[ -z "$DECLARED" ] && {
+  [ -z "$MESSAGES" ] || jq -cn --arg message "$MESSAGES" '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:$message}}'
+  exit 0
+}
 
-# In-scope? exact path, suffix path, or matching basename (lenient — advisory)
-INSCOPE=0
-bREL=$(basename "$REL")
-while IFS= read -r d; do
-  [ -z "$d" ] && continue
-  [ "$REL" = "$d" ] && INSCOPE=1 && break
-  case "$REL" in */"$d") INSCOPE=1; break ;; esac
-  [ "$bREL" = "$(basename "$d")" ] && INSCOPE=1 && break
-done <<EOF
+OUTSIDE=""
+while IFS= read -r REL; do
+  [ -n "$REL" ] || continue
+  case "$REL" in specs/*|docs/*|*.md) continue ;; esac
+  INSCOPE=0
+  bREL=$(basename "$REL")
+  while IFS= read -r d; do
+    [ -z "$d" ] && continue
+    [ "$REL" = "$d" ] && INSCOPE=1 && break
+    case "$REL" in */"$d") INSCOPE=1; break ;; esac
+    [ "$bREL" = "$(basename "$d")" ] && INSCOPE=1 && break
+  done <<EOF
 $DECLARED
 EOF
-[ "$INSCOPE" -eq 1 ] && exit 0
+  if [ "$INSCOPE" -eq 0 ]; then
+    OUTSIDE="${OUTSIDE}${OUTSIDE:+
+}$REL"
+  fi
+done <<EOF
+$PATHS
+EOF
 
-# Out of scope
-if [ "${BLAST_RADIUS_STRICT:-0}" = "1" ]; then
-  echo "[BLAST RADIUS] $REL is outside the active plan's <files> set (${PLAN#"$REPO_DIR"/})." >&2
-  echo "  Scope creep — escalate, or add the file to the plan." >&2
+if [ -n "$OUTSIDE" ] && [ "$STATUS" = "known" ] && [ "${BLAST_RADIUS_STRICT:-0}" = "1" ]; then
+  echo "[BLAST RADIUS] Paths outside the active plan's <files> set (${PLAN#"$REPO_DIR"/}):" >&2
+  printf '%s\n' "$OUTSIDE" >&2
+  echo "  Scope creep — escalate, or add the files to the plan." >&2
   exit 2
 fi
-jq -cn --arg f "$REL" --arg p "${PLAN#"$REPO_DIR"/}" '{
-  hookSpecificOutput: {
-    hookEventName: "PostToolUse",
-    additionalContext: ("blast-radius: edited " + $f + " which is NOT in the active plan <files> set (" + $p + "). If intentional, add it to the plan; otherwise treat as scope creep and consider escalating per rules/orchestration.md.")
-  }
-}'
+if [ -n "$OUTSIDE" ]; then
+  OUTSIDE_DISPLAY=$(printf '%s\n' "$OUTSIDE" | paste -sd ',' -)
+  MESSAGES="${MESSAGES}${MESSAGES:+
+}blast-radius: edited path(s) $OUTSIDE_DISPLAY which are NOT in the active plan <files> set (${PLAN#"$REPO_DIR"/}). If intentional, add them to the plan; otherwise treat as scope creep and consider escalating per rules/orchestration.md."
+fi
+[ -z "$MESSAGES" ] || jq -cn --arg message "$MESSAGES" '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:$message}}'
 exit 0

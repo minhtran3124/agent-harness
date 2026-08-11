@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "runtime": "codex",
-  "matrix_version": "2026-08-10",
+  "matrix_version": "2026-08-11",
   "cli_version": "0.147.0",
   "evidence_root": "specs/codex-support/evidence/codex-0.147.0",
   "supported_platforms": [
@@ -40,7 +40,7 @@
       "platforms": ["macos-arm64"],
       "source": {
         "kind": "captured-fixture",
-        "reference": "sanitized local CLI capture — feature availability only, not the payload envelope shape (Task 4.1 captures that)",
+        "reference": "sanitized local CLI capture — feature availability only. The payload envelope shape is NOT captured: the normaliser's unified-exec handling rests on the official hook schema (traceability tier) and hand-written fixtures. Phase 5 must capture the envelope in a disposable live probe before GA relies on fail-closed dispatch.",
         "checked_at": "2026-08-10",
         "expires_at": "2026-11-08"
       },

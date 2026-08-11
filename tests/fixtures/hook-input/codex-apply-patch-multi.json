@@ -1,0 +1,1 @@
+{"hook_event_name":"PreToolUse","turn_id":"turn-redacted","tool_name":"apply_patch","tool_input":{"command":"*** Begin Patch\n*** Update File: specs/demo/PLAN.md\n@@\n-old\n+new\n*** Add File: src/new file.py\n+value = 1\n*** Delete File: src/old.py\n*** End Patch"}}

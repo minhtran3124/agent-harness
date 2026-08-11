@@ -58,4 +58,20 @@ git -C "$repo" commit -qm "seed shipped spec" >/dev/null 2>&1
 run_hook "$repo" $H "$(json_prompt 'please add a new endpoint to handle user signup today')"
 assert_rc_contains 0 "Run /feature-intake"
 
+t "Codex UserPromptSubmit receives the same planning nudge"
+repo=$(new_repo $H)
+payload=$(jq -cn --arg prompt 'please add a new endpoint to handle user signup today' '{turn_id:"turn-redacted",hook_event_name:"UserPromptSubmit",prompt:$prompt}')
+run_hook "$repo" $H "$payload"
+assert_rc_contains 0 'Run /feature-intake'
+
+t "malformed prompt payload is fail-visible but remains non-blocking"
+repo=$(new_repo $H)
+run_hook "$repo" $H '{not-json'
+assert_rc_contains 0 'could not be classified'
+
+t "missing prompt is fail-visible but remains non-blocking"
+repo=$(new_repo $H)
+run_hook "$repo" $H '{"turn_id":"t","hook_event_name":"UserPromptSubmit"}'
+assert_rc_contains 0 'prompt-missing'
+
 finish

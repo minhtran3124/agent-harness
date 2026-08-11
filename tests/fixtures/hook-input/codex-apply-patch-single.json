@@ -1,0 +1,1 @@
+{"hook_event_name":"PreToolUse","turn_id":"turn-redacted","tool_name":"apply_patch","tool_input":{"command":"*** Begin Patch\n*** Update File: src/example.py\n@@\n-old\n+new\n*** End Patch"}}

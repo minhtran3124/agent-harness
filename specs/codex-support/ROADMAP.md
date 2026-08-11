@@ -17,7 +17,7 @@ with a complete and honest evidence record instead of waiting on the whole initi
 | 1 | `specs/codex-support-phase-1/PLAN.md` | active | versioned capability baseline: matrix, validator, sanitized 0.147.0 evidence, capture contract suite |
 | 2 | `specs/codex-support-phase-2/PLAN.md` | active | evidence-driven packaging decision: disposable hybrid-vs-direct probe, recorded decision + fallback trigger |
 | 3 | `specs/codex-support-phase-3/PLAN.md` | active | semantic source neutralisation: repository-rooted rule delivery, invocation-neutral prose, neutral agent contracts |
-| 4 | `specs/codex-support-phase-4/PLAN.md` | proposed | runtime-neutral hook input seam: one payload normaliser, fail-closed gates, advisory hooks unchanged |
+| 4 | `specs/codex-support-phase-4/PLAN.md` | active | runtime-neutral hook input seam: one payload normaliser, fail-closed gates, advisory hooks unchanged |
 
 Shared artifacts owned by this slug and consumed across phases:
 

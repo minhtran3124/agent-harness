@@ -1,0 +1,1 @@
+{"hook_event_name":"PostToolUse","turn_id":"turn-redacted","tool_name":"apply_patch","tool_input":{"command":"*** Begin Patch\n*** Update File: src/legacy.py\n*** Move to: src/current.py\n@@\n-old\n+new\n*** Delete File: src/unused.py\n*** End Patch"}}

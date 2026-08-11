@@ -38,6 +38,9 @@ new_repo() {
   [ -d "$ROOT/hooks/lib" ] && cp -R "$ROOT/hooks/lib" "$d/hooks/"
   local h
   for h in "$@"; do cp "$ROOT/hooks/$h" "$d/hooks/"; done
+  # Copied harness fixtures are test infrastructure, not repository state under test.
+  # Keep Python hook libraries from triggering check-untracked-py's fixture repos.
+  printf '/hooks/\n' >> "$d/.git/info/exclude"
   echo "$d"
 }
 

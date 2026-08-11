@@ -47,16 +47,16 @@ Hooks live in `hooks/` (top-level). Register them in `settings.json` under the a
 
 | Hook | Trigger | Action | Wired |
 |---|---|---|---|
-| `pre-bash-dispatch.sh` | PreToolUse (Bash) | Fast-path exit 0 on non-git Bash; on `git commit`/`push` fans out to the four git sub-hooks below in settings order (check-untracked-py → commit-quality-gate → risk-corroboration → branch-guard), relaying each sub-hook's stdout/stderr unchanged and propagating an exit-2 block | ✅ |
+| `pre-bash-dispatch.sh` | PreToolUse (Bash) | Normalizes Claude/Codex shell input (including unified exec); fast-path exit 0 on known non-git Bash; on `git commit`/`push` fans out to the four git sub-hooks below in settings order (check-untracked-py → commit-quality-gate → risk-corroboration → branch-guard), relaying each sub-hook's stdout/stderr unchanged and propagating an exit-2 block. Unknown/partial shell input fails closed. | ✅ |
 | `check-untracked-py.sh` | PreToolUse (Bash `git *`, via dispatch) | Block commit/push if untracked `.py` files exist | ↳ |
 | `commit-quality-gate.sh` | PreToolUse (Bash `git commit`, via dispatch) | Secrets scan + pending-escalation gate + lane-evidence gate (`verify_summary.py --lane` on each staged `SUMMARY.md`, whose advisories are relayed on the passing path too); debug-artifact check + targeted pytest are opt-in via `REQUIRE_APP_GATES=1` (off by default — the harness core ships no `app/` code); the high-risk `### Not auto-verified` check is opt-in via `REQUIRE_NOT_AUTO_VERIFIED=1` (warn-only by default) | ↳ |
 | `risk-corroboration.sh` | PreToolUse (Bash `git commit`, via dispatch) | Corroborate the declared `Lane:` against the staged diff; per-gate mode comes from `harness-manifest.json` (`hard_gates.detectable[].mode`) — block-mode gates deny a below-`high-risk` lane, warn-mode gates (`workflow-engine`, `weakening-validation`) print a note and allow | ↳ |
 | `branch-guard.sh` | PreToolUse (Bash `git commit`, via dispatch) | Warn when committing on `main` | ↳ |
-| `branch-isolation-guard.sh` | PreToolUse (Edit/Write) | Hard-block code edits on a shared branch (`HARNESS_SHARED_BRANCHES`, default `main`/`master`) regardless of plan state, unless break-glass `BRANCH_ISOLATION_REASON` is set. `specs/*` bookkeeping is exempt (intake writes `SUMMARY.md` before the branch exists). (Write-time enforcement; `branch-guard.sh` only warns at commit time.) | ✅ |
-| `ruff-on-edit.sh` | PostToolUse (Edit/Write) | `ruff --fix` + `ruff format` on edited `.py` files | ✅ |
-| `blast-radius-check.sh` | PostToolUse (Edit/Write) | Warn when an edit touches a file outside the active plan `<files>` set | ✅ |
-| `render-plan-on-write.sh` | PostToolUse (Edit/Write on `specs/*/PLAN.md`) | Auto-re-render `PLAN.html` via `render_plan.py` (deterministic, non-blocking) | ✅ |
-| `scope-gate.sh` | UserPromptSubmit | Warn on implementation intent with no plan referenced (lane-aware) | ✅ |
+| `branch-isolation-guard.sh` | PreToolUse (Edit/Write) | Normalizes every Claude/Codex edit path and hard-blocks when any implementation path is touched on a shared branch (`HARNESS_SHARED_BRANCHES`, default `main`/`master`), unless break-glass `BRANCH_ISOLATION_REASON` is set. An edit is bookkeeping-exempt only when all known paths are under `specs/*`; partial/unknown input fails closed on shared branches. | ✅ |
+| `ruff-on-edit.sh` | PostToolUse (Edit/Write) | Runs `ruff --fix` + `ruff format` on every existing edited `.py` path; partial/unknown path sets warn and remain non-blocking | ✅ |
+| `blast-radius-check.sh` | PostToolUse (Edit/Write) | Checks every implementation path against the active plan `<files>` set, reports out-of-plan paths once, and keeps partial/unknown input fail-visible but non-blocking (except strict mode on fully-known violations) | ✅ |
+| `render-plan-on-write.sh` | PostToolUse (Edit/Write on `specs/*/PLAN.md`) | Auto-renders every deduplicated touched `PLAN.md` via `render_plan.py`; partial/unknown path sets warn and remain non-blocking | ✅ |
+| `scope-gate.sh` | UserPromptSubmit | Normalizes Claude/Codex prompt input and warns on implementation intent with no plan referenced (lane-aware); malformed input is visible but non-blocking | ✅ |
 | `state-breadcrumb.sh` | SessionEnd | Append a dated session breadcrumb to `specs/STATE.md` (`## Session End Log`) for cross-session resumption; never blocks | ✅ |
 | `session-knowledge.sh` | SessionStart | Load `docs/solutions/INDEX.md` + `critical-patterns.md` into context when the store has data; silent when empty; never blocks | ✅ |
 

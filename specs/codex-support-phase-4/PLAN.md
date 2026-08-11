@@ -1,6 +1,6 @@
 ---
 slug: codex-support-phase-4
-status: proposed
+status: active
 owner: Minh Tran
 created: 2026-08-10
 ---
@@ -10,11 +10,11 @@ created: 2026-08-10
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**4 tasks · 3 waves · 28 files · 0/4 done**
+**4 tasks · 3 waves · 29 files · 4/4 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
-| 1 | 4.1 | Implement the canonical payload normaliser (wave 1) | hooks/lib/normalize-tool-input.py, tests/hooks/normalize-tool-input.test.sh, tests/fixtures/hook-input/claude-shell.json, tests/fixtures/hook-input/claude-write.json, tests/fixtures/hook-input/codex-shell.json, tests/fixtures/hook-input/codex-unified-exec.json, tests/fixtures/hook-input/codex-apply-patch-single.json, tests/fixtures/hook-input/codex-apply-patch-multi.json, tests/fixtures/hook-input/codex-apply-patch-move-delete.json, tests/fixtures/hook-input/claude-user-prompt.json, tests/fixtures/hook-input/codex-user-prompt.json, tests/fixtures/hook-input/malformed.json, specs/codex-support/capability-matrix.json, harness-manifest.json | every supported raw payload has one canonical representation; multi-file edits r… |
+| 1 | 4.1 | Implement the canonical payload normaliser (wave 1) | hooks/lib/normalize-tool-input.py, tests/lib.sh, tests/hooks/normalize-tool-input.test.sh, tests/fixtures/hook-input/claude-shell.json, tests/fixtures/hook-input/claude-write.json, tests/fixtures/hook-input/codex-shell.json, tests/fixtures/hook-input/codex-unified-exec.json, tests/fixtures/hook-input/codex-apply-patch-single.json, tests/fixtures/hook-input/codex-apply-patch-multi.json, tests/fixtures/hook-input/codex-apply-patch-move-delete.json, tests/fixtures/hook-input/claude-user-prompt.json, tests/fixtures/hook-input/codex-user-prompt.json, tests/fixtures/hook-input/malformed.json, specs/codex-support/capability-matrix.json, harness-manifest.json | every supported raw payload has one canonical representation; multi-file edits r… |
 | 2 | 4.2 | Make branch isolation consume path sets and fail closed (wave 2) | hooks/branch-isolation-guard.sh, tests/hooks/branch-isolation-guard.test.sh | the hard gate cannot silently allow a supported Codex edit because a path is mis… |
 | 2 | 4.3 | Migrate advisory post-edit hooks without strengthening them (wave 2) | hooks/blast-radius-check.sh, hooks/ruff-on-edit.sh, hooks/render-plan-on-write.sh, tests/hooks/blast-radius-check.test.sh, tests/hooks/ruff-on-edit.test.sh, tests/hooks/render-plan-on-write.test.sh, tests/hooks/codex-edit-hooks.test.sh, CLAUDE.md | all four edit hooks share one payload truth; advisory hooks cover every known pa… |
 | 3 | 4.4 | Migrate the shell-dispatch and prompt gates onto the normaliser (wave 3) | hooks/pre-bash-dispatch.sh, hooks/scope-gate.sh, tests/hooks/pre-bash-dispatch.test.sh, tests/hooks/scope-gate.test.sh, CLAUDE.md, harness-manifest.json | no supported Codex shell path can bypass the git gates through an unparsed paylo… |
@@ -36,20 +36,20 @@ flowchart LR
 ```
 
 ### Progress
-- [ ] 4.1 — Implement the canonical payload normaliser (wave 1)
-- [ ] 4.2 — Make branch isolation consume path sets and fail closed (wave 2)
-- [ ] 4.3 — Migrate advisory post-edit hooks without strengthening them (wave 2)
-- [ ] 4.4 — Migrate the shell-dispatch and prompt gates onto the normaliser (wave 3)
+- [x] 4.1 — Implement the canonical payload normaliser (wave 1)
+- [x] 4.2 — Make branch isolation consume path sets and fail closed (wave 2)
+- [x] 4.3 — Migrate advisory post-edit hooks without strengthening them (wave 2)
+- [x] 4.4 — Migrate the shell-dispatch and prompt gates onto the normaliser (wave 3)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
 
 Every hook today parses the raw Claude payload directly — `.tool_input.file_path` for edits,
 `.tool_input.command` for Bash, `.prompt` for prompts — and falls back to an empty string when the
-field is absent. A Codex `apply_patch` payload carries a multi-file patch envelope, not a single
-path, so that empty fallback is a silent fail-open: an unparsed payload exits 0 past a hard gate.
-Phase 4 replaces the per-hook parsing with one tested normaliser whose unknown policy is explicit
-per gate.
+field is absent. Codex reports `apply_patch` with the patch program in `tool_input.command`, not a
+single path, so the normaliser must extract a deduplicated path set from that command. The empty
+fallback is a silent fail-open: an unparsed payload exits 0 past a hard gate. Phase 4 replaces the
+per-hook parsing with one tested normaliser whose unknown policy is explicit per gate.
 
 Parent roadmap: `specs/codex-support/ROADMAP.md`. Depends on Phase 1's payload evidence.
 
@@ -97,19 +97,19 @@ Parent roadmap: `specs/codex-support/ROADMAP.md`. Depends on Phase 1's payload e
 
 ### Task 4.1 — Implement the canonical payload normaliser (wave 1)
 
-- **Files:** hooks/lib/normalize-tool-input.py, tests/hooks/normalize-tool-input.test.sh, tests/fixtures/hook-input/claude-shell.json, tests/fixtures/hook-input/claude-write.json, tests/fixtures/hook-input/codex-shell.json, tests/fixtures/hook-input/codex-unified-exec.json, tests/fixtures/hook-input/codex-apply-patch-single.json, tests/fixtures/hook-input/codex-apply-patch-multi.json, tests/fixtures/hook-input/codex-apply-patch-move-delete.json, tests/fixtures/hook-input/claude-user-prompt.json, tests/fixtures/hook-input/codex-user-prompt.json, tests/fixtures/hook-input/malformed.json, specs/codex-support/capability-matrix.json, harness-manifest.json
+- **Files:** hooks/lib/normalize-tool-input.py, tests/lib.sh, tests/hooks/normalize-tool-input.test.sh, tests/fixtures/hook-input/claude-shell.json, tests/fixtures/hook-input/claude-write.json, tests/fixtures/hook-input/codex-shell.json, tests/fixtures/hook-input/codex-unified-exec.json, tests/fixtures/hook-input/codex-apply-patch-single.json, tests/fixtures/hook-input/codex-apply-patch-multi.json, tests/fixtures/hook-input/codex-apply-patch-move-delete.json, tests/fixtures/hook-input/claude-user-prompt.json, tests/fixtures/hook-input/codex-user-prompt.json, tests/fixtures/hook-input/malformed.json, specs/codex-support/capability-matrix.json, harness-manifest.json
 - **Action:** Test-first, add one stdlib executable that reads raw hook JSON once and emits a stable
   normalized JSON object containing runtime/event identity, canonical tool class, deduplicated path
   set, command/prompt/outcome fields, and `known`, `partial`, or `unknown`. Support the observed
-  Claude file-path/response fields and Codex shell/unified-exec/`apply_patch` patch envelopes.
+  Claude file-path/response fields and the documented Codex shell/unified-exec/`apply_patch`
+  `tool_input.command` envelopes.
   Parse add/update/delete/move headers, retain all safe repo-relative paths, identify unparsed edit
   fragments as partial, and classify malformed/missing inputs unknown. Reject traversal, NUL, and
-  outside-root paths without collapsing valid siblings. Capture — do not transcribe from
-  documentation — the Codex unified-exec shell envelope and the Claude/Codex `UserPromptSubmit`
-  prompt payloads, and promote the corresponding capability-matrix rows
-  (`tools.unified_exec`, `hooks.user_prompt_submit`) from feature-availability/documented to
-  observed; Phase 1 recorded both as explicit negative scope. Build table-driven golden/mutation
-  tests from Phase-1 sanitized fixtures and register the seam/consumers in the manifest.
+  outside-root paths without collapsing valid siblings. Build fixtures from the Phase-1 observed
+  shell/`apply_patch` evidence and the official Codex hook schema for unified exec and
+  `UserPromptSubmit`. Preserve evidence levels honestly: documented contract fixtures do not become
+  `observed` without an explicitly authorised live model probe. Build table-driven golden/mutation
+  tests and register the seam/consumers in the manifest.
 - **Verify:** `bash tests/hooks/normalize-tool-input.test.sh && python3 scripts/check_manifest.py`
 - **Done:** every supported raw payload has one canonical representation; multi-file edits remain
   set-valued; malformed/unsafe data is visible and never becomes an empty successful edit.
@@ -190,3 +190,14 @@ Parent roadmap: `specs/codex-support/ROADMAP.md`. Depends on Phase 1's payload e
 - 2026-08-10 — Task 4.1 gained an explicit obligation to *capture* the unified-exec and
   UserPromptSubmit payloads and promote their matrix rows. Phase 1's review recorded both as
   evidence gaps that this phase's parsers would otherwise inherit as assumptions.
+- 2026-08-11 — Activated after Phase 3 commit `73671c6`. The CI-equivalent baseline completed
+  `ALL GREEN` with 514 Python tests. Official OpenAI hook documentation now defines unified exec as
+  `Bash`, `apply_patch` through `tool_input.command`, and `UserPromptSubmit.prompt`; Task 4.1 was
+  refined to consume that documented schema without falsely promoting it to observed evidence.
+- 2026-08-11 — Tasks 4.1, 4.2, 4.3, and 4.4 implemented. Focused suites passed: normalizer 17,
+  branch isolation 16,
+  Codex edit-hook integration 8, shell dispatch 8, scope gate 11, blast-radius 17, Ruff 4, and plan
+  render 9. Manifest, capability evidence, documentation truth, Python lint, Bash syntax, and the
+  context-propagation consumer audit passed.
+- 2026-08-11 — Final `bash scripts/run-tests.sh` completed `ALL GREEN` with 514 Python tests. Plan
+  remains active until review/commit/merge closes the phase.

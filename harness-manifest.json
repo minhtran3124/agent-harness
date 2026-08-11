@@ -111,6 +111,23 @@
       ],
       "desc": "neutral agent capability contracts and checked runtime-specific bindings"
     },
+    "hook-input-normalization": {
+      "surface": [
+        "hooks/lib/normalize-tool-input.py",
+        "specs/codex-support/capability-matrix.json"
+      ],
+      "consumers": [
+        "hooks/branch-isolation-guard.sh",
+        "hooks/ruff-on-edit.sh",
+        "hooks/blast-radius-check.sh",
+        "hooks/render-plan-on-write.sh",
+        "hooks/pre-bash-dispatch.sh",
+        "hooks/scope-gate.sh",
+        "tests/hooks/normalize-tool-input.test.sh",
+        "tests/hooks/codex-edit-hooks.test.sh"
+      ],
+      "desc": "canonical Claude/Codex hook payload, path-set, command, prompt, and uncertainty contract"
+    },
     "finish-context-resolution": { "surface": ["scripts/resolve_finish_context.py"], "consumers": ["skills/finishing-a-development-branch/SKILL.md"],                                           "desc": "branch/base/plan/lane resolution for branch finishing" },
     "hard-gate-vocabulary":    { "surface": ["harness-manifest.json"],          "consumers": ["hooks/risk-corroboration.sh", "rules/auto-correct-scope.md", "skills/feature-intake/SKILL.md"], "desc": "hard-gate slug/mode/desc vocabulary" },
     "durable-run-state-checkpoints": {

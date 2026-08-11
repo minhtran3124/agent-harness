@@ -24,14 +24,17 @@
 set -u
 
 INPUT=$(cat)
-FILE=$(printf '%s' "$INPUT" | jq -r '.tool_input.file_path // ""')
-[ -z "$FILE" ] && exit 0
-
 ROOT="${CLAUDE_PROJECT_DIR:-$PWD}"
-REL="${FILE#"$ROOT/"}"
-
-# (3) plan/spec bookkeeping is always allowed.
-case "$REL" in specs/*) exit 0 ;; esac
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+NORMALIZER="$SCRIPT_DIR/lib/normalize-tool-input.py"
+if command -v python3 >/dev/null 2>&1 && [ -f "$NORMALIZER" ]; then
+  NORMALIZED=$(printf '%s' "$INPUT" | python3 "$NORMALIZER" --root "$ROOT" 2>/dev/null)
+else
+  NORMALIZED='{"status":"unknown","paths":[],"diagnostics":["normalizer-unavailable"]}'
+fi
+STATUS=$(printf '%s' "$NORMALIZED" | jq -r '.status // "unknown"' 2>/dev/null)
+TOOL_CLASS=$(printf '%s' "$NORMALIZED" | jq -r '.tool_class // "unknown"' 2>/dev/null)
+PATHS=$(printf '%s' "$NORMALIZED" | jq -r '.paths[]?' 2>/dev/null)
 
 # (1) only act on a shared/protected branch.
 BR=$(git -C "$ROOT" symbolic-ref --short HEAD 2>/dev/null)
@@ -41,6 +44,8 @@ on_shared=0
 for s in $SHARED; do [ "$BR" = "$s" ] && on_shared=1 && break; done
 [ "$on_shared" -eq 0 ] && exit 0   # on a task branch / worktree → allow
 
+REL=$(printf '%s\n' "$PATHS" | paste -sd ',' -)
+[ -n "$REL" ] || REL="unparsed-edit-payload"
 REASON="${BRANCH_ISOLATION_REASON:-}"
 if [ -n "$REASON" ]; then
   LOG="$ROOT/docs/harness-experimental/break-glass-log.md"
@@ -51,10 +56,39 @@ if [ -n "$REASON" ]; then
   exit 0
 fi
 
+# On a shared branch, only a fully-known all-specs edit may pass. A mixed specs/code
+# patch is implementation, and partial/unknown input must not become an empty allow.
+#
+# tool_class is checked as well as status: this hook is registered on the Write|Edit
+# matcher, so a payload classified as anything but `edit` is a contradiction — the
+# normalizer could not tell what it was looking at. A `known` shell classification with
+# an empty path set would otherwise fall through the `[ -z "$PATHS" ]` allow below and
+# let an edit through on a shared branch (the exact fail-open Task 4.2 exists to close).
+if [ "$STATUS" != "known" ] || [ "$TOOL_CLASS" != "edit" ]; then
+  DIAG=$(printf '%s' "$NORMALIZED" | jq -r '.diagnostics | join(", ")' 2>/dev/null)
+  jq -cn --arg b "$BR" --arg c "tool_class=$TOOL_CLASS" --arg d "${DIAG:-unparsed payload}" '{
+    hookSpecificOutput: {
+      hookEventName: "PreToolUse",
+      permissionDecision: "deny",
+      permissionDecisionReason: ("Branch isolation could not safely classify the edit payload on shared branch " + $b + " (" + $c + "; " + $d + "). Re-run the edit after updating/redeploying the harness normalizer, or use the audited BRANCH_ISOLATION_REASON override.")
+    }
+  }'
+  exit 0
+fi
+
+[ -z "$PATHS" ] && exit 0
+ONLY_SPECS=1
+while IFS= read -r rel; do
+  case "$rel" in specs/*) ;; *) ONLY_SPECS=0 ;; esac
+done <<EOF
+$PATHS
+EOF
+[ "$ONLY_SPECS" -eq 1 ] && exit 0
+
 jq -cn --arg b "$BR" --arg f "$REL" '{
   hookSpecificOutput: {
     hookEventName: "PreToolUse",
     permissionDecision: "deny",
-    permissionDecisionReason: ("You are on shared branch " + $b + ". Every lane — tiny, normal and high-risk — cuts a branch BEFORE implementing, so editing " + $f + " here is not allowed.\nFix (tiny lane): git checkout -b <type>/<slug>, then re-apply the edit.\nFix (normal / high-risk): invoke the using-git-worktrees skill for an isolated worktree + branch, then continue there.\nspecs/ bookkeeping (SUMMARY.md, PLAN.md) stays writable here — only implementation is blocked.\nOverride after confirming: set BRANCH_ISOLATION_REASON=<why> (recorded to the break-glass log).")
+    permissionDecisionReason: ("You are on shared branch " + $b + ". Every lane — tiny, normal and high-risk — cuts a branch BEFORE implementing, so editing " + $f + " here is not allowed.\nFix (tiny lane): git checkout -b <type>/<slug>, then re-apply the edit.\nFix (normal / high-risk): invoke the using-git-worktrees skill for an isolated worktree + branch, then continue there.\nspecs/ bookkeeping (SUMMARY.md, PLAN.md) stays writable here only when every touched path is under specs/.\nOverride after confirming: set BRANCH_ISOLATION_REASON=<why> (recorded to the break-glass log).")
   }
 }'

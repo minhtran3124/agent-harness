@@ -1,0 +1,1 @@
+{"hook_event_name":"PostToolUse","turn_id":"turn-redacted","tool_name":"Bash","tool_input":{"command":"python3 -m pytest -q"},"tool_response":{"exit_code":0}}
