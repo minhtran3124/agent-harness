@@ -29,6 +29,16 @@ else
   echo "  skip — no python3"
 fi
 
+echo "== L1: runtime-neutral sources =="
+# The LIVE tree scan, not only the unit tests: the count-exact inventory only ratchets
+# if something re-runs it on every change. A hook-test edit in one phase silently broke
+# another phase's SC when this ran nowhere in CI (found in the phases-1-4 branch review).
+if command -v python3 >/dev/null 2>&1 && [ -f scripts/check_runtime_neutral_sources.py ]; then
+  python3 scripts/check_runtime_neutral_sources.py --root . || FAILED=1
+else
+  echo "  skip — no python3 or checker not present"
+fi
+
 echo "== L1: verify-row lint (changed SUMMARY/PLAN only) =="
 # Lint only SUMMARY.md + PLAN.md files changed vs the base ref — new/edited Verify
 # rows and SC-table Check cells must be pipe-free + <60s; shipped specs are

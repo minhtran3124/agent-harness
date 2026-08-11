@@ -49,6 +49,6 @@
     {"path":"skills/subagent-driven-development/task-reviewer-prompt.md","category":"vendor-agent-policy","classification":"runtime-entry-binding","count":1,"owner":"codex-support-phase-5","exit_condition":"Move this runtime-selected entry or model binding into the Phase-5 Codex/Claude adapter boundary."},
     {"path":"tests/hooks/commit-quality-gate.test.sh","category":"slash-skill-invocation","classification":"test-fixture","count":1,"owner":"codex-support-phase-5","exit_condition":"Update or remove this literal fixture when its owned runtime entry message is neutralized."},
     {"path":"tests/hooks/risk-corroboration.test.sh","category":"deployed-rule-path","classification":"test-fixture","count":1,"owner":"codex-support-phase-5","exit_condition":"Update or remove this literal fixture when its owned runtime entry message is neutralized."},
-    {"path":"tests/hooks/scope-gate.test.sh","category":"slash-skill-invocation","classification":"test-fixture","count":2,"owner":"codex-support-phase-5","exit_condition":"Update or remove this literal fixture when its owned runtime entry message is neutralized."}
+    {"path":"tests/hooks/scope-gate.test.sh","category":"slash-skill-invocation","classification":"test-fixture","count":3,"owner":"codex-support-phase-5","exit_condition":"Update or remove this literal fixture when its owned runtime entry message is neutralized."}
   ]
 }
