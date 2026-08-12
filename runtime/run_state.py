@@ -43,6 +43,9 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
+RUNTIME_MODES = {"enforced", "advisory", "unsupported"}
+RUNTIME_EVIDENCE_ID_RE = re.compile(r"^codex-mode-[0-9a-f]{16}$")
+
 
 class RunStateError(Exception):
     """Base for engine errors; carries the process exit code to use."""
@@ -311,14 +314,24 @@ def project(events):
     waiting_on = first.get("waiting_on")
     resume_event = first.get("resume_event")
     sha = first.get("sha")
+    runtime_mode = None
+    runtime_evidence_id = None
+    first_metadata = first.get("metadata")
+    if isinstance(first_metadata, dict):
+        runtime_mode = first_metadata.get("runtime_mode")
+        runtime_evidence_id = first_metadata.get("runtime_evidence_id")
     for ev in events[1:]:
         state = ev["to_state"]
         waiting_on = ev.get("waiting_on")
         resume_event = ev.get("resume_event")
         if ev.get("sha"):
             sha = ev["sha"]
+        metadata = ev.get("metadata")
+        if isinstance(metadata, dict) and "runtime_mode" in metadata:
+            runtime_mode = metadata.get("runtime_mode")
+            runtime_evidence_id = metadata.get("runtime_evidence_id")
     last = events[-1]
-    return {
+    result = {
         "slug": first["slug"],
         "run_id": first["run_id"],
         "state": state,
@@ -330,11 +343,27 @@ def project(events):
         "updated_at": last["ts"],
         "last_event_id": last["event_id"],
     }
+    if runtime_mode is not None and runtime_evidence_id is not None:
+        result["runtime_mode"] = runtime_mode
+        result["runtime_evidence_id"] = runtime_evidence_id
+    return result
+
+
+def runtime_metadata(mode, evidence_id):
+    """Validate an optional all-or-nothing sanitized Codex runtime diagnosis."""
+    if mode is None and evidence_id is None:
+        return {}
+    if mode not in RUNTIME_MODES or not isinstance(evidence_id, str) or not RUNTIME_EVIDENCE_ID_RE.fullmatch(evidence_id):
+        raise RunStateError(
+            "--runtime-mode and --runtime-evidence-id must be supplied together "
+            "with a valid Codex runtime diagnosis"
+        )
+    return {"runtime_mode": mode, "runtime_evidence_id": evidence_id}
 
 
 def validate_chain(events, slug, path):
-    """Pure validator: raises StorageError on the first violation of one of eight
-    invariants (numbered 1-8 below), so that project() only ever folds a history
+    """Pure validator: raises StorageError on the first violation of nine
+    invariants (numbered 1-9 below), so that project() only ever folds a history
     that could actually have happened."""
     first = events[0]
     seen_event_ids = set()
@@ -441,6 +470,20 @@ def validate_chain(events, slug, path):
                     f"invalid event chain {path}:{n}: shipped requires sha matching "
                     f"a git SHA (7-40 hex chars), got {sha!r}"
                 )
+
+        # 9. Optional runtime diagnosis metadata is an all-or-nothing sanitized
+        # pair. A forged `enforced` projection must not pass chain validation.
+        metadata = ev.get("metadata", {})
+        if not isinstance(metadata, dict):
+            raise StorageError(
+                f"invalid event chain {path}:{n}: metadata is not an object"
+            )
+        runtime_mode = metadata.get("runtime_mode")
+        runtime_evidence_id = metadata.get("runtime_evidence_id")
+        try:
+            runtime_metadata(runtime_mode, runtime_evidence_id)
+        except RunStateError as e:
+            raise StorageError(f"invalid event chain {path}:{n}: {e}")
 
         prev = ev
 
@@ -558,7 +601,9 @@ def cmd_init(args):
             "waiting_on": None,
             "resume_event": None,
             "sha": None,
-            "metadata": {},
+            "metadata": runtime_metadata(
+                args.runtime_mode, args.runtime_evidence_id
+            ),
         }
         with open(ev_path, "w") as f:
             f.write(json.dumps(event, sort_keys=True) + "\n")
@@ -682,7 +727,11 @@ def _close_run_over_invalid_chain(slug, args, events, chain_error):
         # with a forged chain whose fabricated last line merely looks terminal.
         # It rides in metadata rather than replacing --event/--to so the caller's
         # own audit intent (e.g. "operator.abandon") is still recorded honestly.
-        "metadata": {**args.meta, _CLOSED_OVER_INVALID_CHAIN_KEY: True},
+        "metadata": {
+            **args.meta,
+            **runtime_metadata(args.runtime_mode, args.runtime_evidence_id),
+            _CLOSED_OVER_INVALID_CHAIN_KEY: True,
+        },
     }
     with open(events_path(slug), "a") as f:
         f.write(json.dumps(event, sort_keys=True) + "\n")
@@ -739,6 +788,10 @@ def cmd_transition(args):
                         and ev.get("waiting_on") == args.waiting_on
                         and ev.get("resume_event") == args.resume_event
                         and ev.get("sha") == args.sha
+                        and ev.get("metadata", {}).get("runtime_mode")
+                        == args.meta.get("runtime_mode")
+                        and ev.get("metadata", {}).get("runtime_evidence_id")
+                        == args.meta.get("runtime_evidence_id")
                     )
                     if same and ev["event_id"] == events[-1]["event_id"]:
                         print(
@@ -777,7 +830,10 @@ def cmd_transition(args):
             "waiting_on": args.waiting_on,
             "resume_event": args.resume_event,
             "sha": args.sha,
-            "metadata": args.meta,
+            "metadata": {
+                **args.meta,
+                **runtime_metadata(args.runtime_mode, args.runtime_evidence_id),
+            },
         }
         with open(events_path(slug), "a") as f:
             f.write(json.dumps(event, sort_keys=True) + "\n")
@@ -937,6 +993,8 @@ def build_parser():
     p_init = sub.add_parser("init")
     p_init.add_argument("--slug", required=True)
     p_init.add_argument("--run-id")
+    p_init.add_argument("--runtime-mode", choices=sorted(RUNTIME_MODES))
+    p_init.add_argument("--runtime-evidence-id")
 
     p_tr = sub.add_parser("transition")
     p_tr.add_argument("--slug", required=True)
@@ -947,6 +1005,8 @@ def build_parser():
     p_tr.add_argument("--resume-event")
     p_tr.add_argument("--sha")
     p_tr.add_argument("--meta", action="append", default=[])
+    p_tr.add_argument("--runtime-mode", choices=sorted(RUNTIME_MODES))
+    p_tr.add_argument("--runtime-evidence-id")
 
     p_st = sub.add_parser("status")
     p_st.add_argument("--slug", required=True)
@@ -977,6 +1037,9 @@ def main(argv=None):
     try:
         if args.command == "transition":
             args.meta = parse_meta(args.meta)
+            args.meta.update(
+                runtime_metadata(args.runtime_mode, args.runtime_evidence_id)
+            )
         return handlers[args.command](args)
     except RunStateError as e:
         print(str(e), file=sys.stderr)

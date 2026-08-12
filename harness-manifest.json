@@ -139,6 +139,20 @@
       ],
       "desc": "non-clobber Codex plugin, project overlay, and bounded AGENTS.md lifecycle"
     },
+    "codex-runtime-diagnosis": {
+      "surface": [
+        "scripts/codex_harness_doctor.py",
+        "runtime/runtime_mode.py"
+      ],
+      "consumers": [
+        "runtime/run_state.py",
+        "scripts/verify_summary.py",
+        "hooks/session-knowledge.sh",
+        "templates/SUMMARY.template.md",
+        "scripts/run-tests.sh"
+      ],
+      "desc": "outside-hook Codex diagnosis, sanitized local runtime-mode evidence, invalidation, and optional artifact metadata"
+    },
     "hook-input-normalization": {
       "surface": [
         "hooks/lib/normalize-tool-input.py",

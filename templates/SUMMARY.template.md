@@ -17,6 +17,8 @@ Reason: <one sentence — why this lane (which flags / hard gates fired, or none
 Flags: <comma-separated risk flags that fired, or `none`>
 Affects: <affected contract/module, from PROJECT.md High-Blast/Shared-Contracts list or module name; 'none' if not applicable>
 Input-type: new spec | spec slice | change request | new initiative | maintenance | harness improvement
+<!-- Optional Codex diagnosis metadata is an all-or-nothing pair:
+     Runtime-mode and Runtime-evidence-id. Add it only from codex_harness_doctor.py. -->
 
 > `Lane` drives **ceremony** (how much proof). `Confidence` drives **interruption**
 > (whether a human is asked). A hard gate forces `high-risk`. Low confidence or an

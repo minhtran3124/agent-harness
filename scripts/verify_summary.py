@@ -22,6 +22,8 @@ Exit codes:
 
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 import re
 import subprocess
@@ -69,6 +71,93 @@ _SC_ID_RE = re.compile(r"^SC-\d+$")
 # An `Expected` cell must lead with the machine-read token `exit <n>` (n may be
 # non-zero — negative proof is legal); free text may follow.
 _SC_EXPECTED_RE = re.compile(r"^exit\s+(\d+)\b")
+_RUNTIME_MODES = {"enforced", "advisory", "unsupported"}
+_RUNTIME_EVIDENCE_ID_RE = re.compile(r"^codex-mode-[0-9a-f]{16}$")
+_RUNTIME_FINGERPRINT_KEYS = {
+    "install_hash",
+    "config_hash",
+    "cli_version",
+    "trust_hash",
+}
+
+
+def _runtime_record_is_valid(record: object) -> bool:
+    """Validate the portable schema without requiring runtime/ to be deployed."""
+    if not isinstance(record, dict) or not (
+        record.get("schema_version") == 1
+        and record.get("runtime") == "codex"
+        and record.get("mode") in _RUNTIME_MODES
+        and record.get("valid") is True
+    ):
+        return False
+    reasons = record.get("reason_codes")
+    if not isinstance(reasons, list) or reasons != sorted(set(reasons)) or any(
+        not isinstance(reason, str) or not re.fullmatch(r"[A-Z][A-Z0-9_]*", reason)
+        for reason in reasons
+    ):
+        return False
+    fingerprint = record.get("input_fingerprint")
+    if not isinstance(fingerprint, dict) or set(fingerprint) != _RUNTIME_FINGERPRINT_KEYS:
+        return False
+    if any(not isinstance(value, str) or not value for value in fingerprint.values()):
+        return False
+    summary = record.get("diagnostic_summary")
+    if not isinstance(summary, dict) or any(
+        not isinstance(key, str) or not isinstance(value, str)
+        for key, value in summary.items()
+    ):
+        return False
+    observed_at = record.get("observed_at")
+    expires_at = record.get("evidence_expires_at")
+    if not isinstance(observed_at, str) or not observed_at:
+        return False
+    if expires_at is not None and (not isinstance(expires_at, str) or not expires_at):
+        return False
+    identity = {
+        "mode": record["mode"],
+        "reason_codes": reasons,
+        "input_fingerprint": fingerprint,
+        "observed_at": observed_at,
+        "evidence_expires_at": expires_at,
+        "diagnostic_summary": summary,
+    }
+    digest = hashlib.sha256(
+        json.dumps(
+            identity, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ).encode()
+    ).hexdigest()
+    return record.get("evidence_id") == f"codex-mode-{digest[:16]}"
+
+
+def _check_runtime_metadata(text: str, summary_path: Path | None) -> list[str]:
+    """Validate optional all-or-nothing sanitized runtime diagnosis metadata."""
+    mode = _header_value(text, "Runtime-mode")
+    evidence_id = _header_value(text, "Runtime-evidence-id")
+    if mode is None and evidence_id is None:
+        return []
+    if mode is None or evidence_id is None:
+        return [
+            "runtime metadata: `Runtime-mode` and `Runtime-evidence-id` must be supplied together"
+        ]
+    if mode not in _RUNTIME_MODES:
+        return [f"runtime metadata: invalid Runtime-mode `{mode}`"]
+    if not _RUNTIME_EVIDENCE_ID_RE.fullmatch(evidence_id):
+        return ["runtime metadata: invalid Runtime-evidence-id"]
+
+    if summary_path is None or summary_path.parent.parent.name != "specs":
+        return []
+    state_path = summary_path.parent.parent.parent / ".harness-state/codex-runtime.json"
+    if not state_path.is_file():
+        return []
+    try:
+        record = json.loads(state_path.read_text())
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return ["runtime metadata: local Codex runtime record is malformed"]
+    if not _runtime_record_is_valid(record):
+        return ["runtime metadata: local Codex runtime record is not a valid diagnosis"]
+    if record.get("mode") != mode or record.get("evidence_id") != evidence_id:
+        return ["runtime metadata: SUMMARY does not match the local Codex runtime record"]
+    return []
 
 
 def parse_sc_table(plan_text: str) -> dict[str, str]:
@@ -425,6 +514,7 @@ def check_lane_evidence(
             )
 
     errors += _check_sc_coverage(text, summary_path, plan_dir)
+    errors += _check_runtime_metadata(text, summary_path)
 
     return errors
 

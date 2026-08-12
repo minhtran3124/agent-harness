@@ -2190,3 +2190,67 @@ def test_snapshot_serializes_behind_a_writer_and_never_sees_a_torn_pair():
     assert snap.status == "consistent"  # never "drift" — the torn pair was invisible
     assert snap.projection["state"] == "planning"
     assert snap.projection["seq"] == 3
+
+
+def test_runtime_diagnosis_is_optional_and_projects_last_supplied_pair():
+    evidence = "codex-mode-0123456789abcdef"
+    assert rs.main(
+        [
+            "init", "--slug", "mode", "--run-id", "r1",
+            "--runtime-mode", "advisory",
+            "--runtime-evidence-id", evidence,
+        ]
+    ) == 0
+    first = rs.read_events("mode")[0]
+    assert first["metadata"] == {
+        "runtime_mode": "advisory",
+        "runtime_evidence_id": evidence,
+    }
+    assert rs.main(
+        ["transition", "--slug", "mode", "--to", "investigating", "--event", "start"]
+    ) == 0
+    projection = rs.read_json("specs/mode/RUN.json")
+    assert projection["runtime_mode"] == "advisory"
+    assert projection["runtime_evidence_id"] == evidence
+
+    replacement = "codex-mode-fedcba9876543210"
+    assert rs.main(
+        [
+            "transition", "--slug", "mode", "--to", "planning", "--event", "plan",
+            "--runtime-mode", "unsupported",
+            "--runtime-evidence-id", replacement,
+        ]
+    ) == 0
+    projection = rs.read_json("specs/mode/RUN.json")
+    assert projection["runtime_mode"] == "unsupported"
+    assert projection["runtime_evidence_id"] == replacement
+
+
+def test_runtime_diagnosis_requires_a_valid_complete_pair_and_legacy_stays_exact():
+    assert rs.main(["init", "--slug", "legacy", "--run-id", "r1"]) == 0
+    projection = rs.read_json("specs/legacy/RUN.json")
+    assert "runtime_mode" not in projection
+    assert "runtime_evidence_id" not in projection
+    assert rs.main(
+        [
+            "transition", "--slug", "legacy", "--to", "investigating", "--event", "start",
+            "--runtime-mode", "enforced",
+        ]
+    ) == 2
+    assert rs.main(
+        [
+            "transition", "--slug", "legacy", "--to", "investigating", "--event", "start",
+            "--runtime-evidence-id", "codex-mode-0123456789abcdef",
+        ]
+    ) == 2
+
+
+def test_forged_runtime_metadata_makes_event_chain_invalid():
+    assert rs.main(["init", "--slug", "forged", "--run-id", "r1"]) == 0
+    path = "specs/forged/events.jsonl"
+    event = json.loads(open(path).readline())
+    event["metadata"] = {"runtime_mode": "enforced"}
+    with open(path, "w") as handle:
+        handle.write(json.dumps(event) + "\n")
+    with pytest.raises(rs.StorageError, match="supplied together"):
+        rs.read_events("forged")

@@ -27,6 +27,7 @@ CLAUDE.local.md
 
 # Timestamped harness backups (created by deploy/install scripts; not tracked)
 .harness-backup-*/
+.harness-state/
 
 # Local-only research notes (kept out of the tracked tree by request)
 docs/memory/

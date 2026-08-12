@@ -219,4 +219,62 @@ _count=$(echo "$OUT" | grep -oE 'slug-[0-9]' | sort -u | wc -l | tr -d ' ')
 if [ "$RC" -eq 0 ] && [ "$_count" -le 5 ]; then pass
 else fail "expected <=5 distinct slugs in output, got $_count — out: $(echo "$OUT" | head -5)"; fi
 
+# --- Cached Codex runtime diagnosis (Phase 5.4) -------------------------------
+
+make_runtime_record() {
+    local repo="$1"
+    mkdir -p "$repo/runtime"
+    cp "$ROOT/runtime/runtime_mode.py" "$repo/runtime/"
+    python3 - "$repo" <<'PY'
+import sys
+from pathlib import Path
+root = Path(sys.argv[1])
+sys.path.insert(0, str(root / "runtime"))
+import runtime_mode
+fingerprint = runtime_mode.make_fingerprint(
+    root, cli_version="0.147.0", trust={"hooks": "unknown"}
+)
+record = runtime_mode.make_record(
+    mode="advisory",
+    reason_codes=["TRUST_UNKNOWN"],
+    fingerprint=fingerprint,
+    observed_at="2026-08-11",
+    evidence_expires_at="2026-11-08",
+    diagnostic_summary={"platform": "macos-arm64"},
+)
+runtime_mode.persist_record(root, record)
+PY
+}
+
+t "cached runtime mode is displayed with a bounded evidence id"
+repo=$(new_repo $H)
+make_runtime_record "$repo"
+run_hook "$repo" $H "" RUN_STATE_REPO_ROOT="$repo" SESSION_KNOWLEDGE_DIR="$repo/missing-kb"
+if [ "$RC" -ne 0 ]; then fail "rc=$RC (want 0)"
+elif ! printf '%s' "$OUT" | jq -e . >/dev/null 2>&1; then fail "output is not valid JSON"
+elif ! echo "$OUT" | grep -q 'mode=advisory'; then fail "runtime mode missing"
+elif ! echo "$OUT" | grep -q 'codex-mode-'; then fail "runtime evidence id missing"
+else pass; fi
+
+t "changed local config invalidates cached enforcement to advisory context"
+repo=$(new_repo $H)
+make_runtime_record "$repo"
+mkdir -p "$repo/.codex"
+printf '%s\n' 'changed = true' > "$repo/.codex/config.toml"
+run_hook "$repo" $H "" RUN_STATE_REPO_ROOT="$repo" SESSION_KNOWLEDGE_DIR="$repo/missing-kb"
+if [ "$RC" -eq 0 ] && echo "$OUT" | grep -q 'STATE_INVALIDATED'; then pass
+else fail "expected invalidated cached context — rc=$RC out: $(echo "$OUT" | head -3)"; fi
+
+t "malformed runtime record is ignored and the hook never invokes the doctor"
+repo=$(new_repo $H)
+mkdir -p "$repo/runtime" "$repo/.harness-state"
+cp "$ROOT/runtime/runtime_mode.py" "$repo/runtime/"
+printf '%s\n' 'not json' > "$repo/.harness-state/codex-runtime.json"
+printf '%s\n' '#!/bin/sh' 'touch doctor-was-called' > "$repo/scripts-codex_harness_doctor.py"
+run_hook "$repo" $H "" RUN_STATE_REPO_ROOT="$repo" SESSION_KNOWLEDGE_DIR="$repo/missing-kb"
+if [ "$RC" -ne 0 ]; then fail "rc=$RC (want 0)"
+elif [ -n "$OUT" ]; then fail "malformed record should be silent — out: $OUT"
+elif [ -e "$repo/doctor-was-called" ]; then fail "SessionStart invoked the doctor"
+else pass; fi
+
 finish

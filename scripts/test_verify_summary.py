@@ -6,6 +6,8 @@ Run:
 """
 
 import importlib.util
+import hashlib
+import json
 from pathlib import Path
 
 
@@ -66,6 +68,68 @@ def write_plan(summary_path: Path, content: str) -> Path:
     p = summary_path.parent / "PLAN.md"
     p.write_text(content, encoding="utf-8")
     return p
+
+
+class TestRuntimeMetadata:
+    def test_legacy_absence_and_valid_durable_pair_are_accepted(self, tmp_path):
+        path = write_summary(tmp_path, "legacy", make_summary(""))
+        assert vs._check_runtime_metadata(path.read_text(), path) == []
+        text = path.read_text().replace(
+            "Input-type: maintenance",
+            "Input-type: maintenance\nRuntime-mode: advisory\n"
+            "Runtime-evidence-id: codex-mode-0123456789abcdef",
+        )
+        assert vs._check_runtime_metadata(text, path) == []
+
+    def test_partial_or_malformed_pair_is_rejected(self):
+        partial = SUMMARY_HEADER + "Runtime-mode: enforced\n"
+        assert "supplied together" in vs._check_runtime_metadata(partial, None)[0]
+        malformed = (
+            SUMMARY_HEADER
+            + "Runtime-mode: enforced\nRuntime-evidence-id: private-path\n"
+        )
+        assert "invalid Runtime-evidence-id" in vs._check_runtime_metadata(
+            malformed, None
+        )[0]
+
+    def test_local_record_must_be_valid_and_match(self, tmp_path):
+        path = write_summary(tmp_path, "local", make_summary(""))
+        text = path.read_text().replace(
+            "Input-type: maintenance",
+            "Input-type: maintenance\nRuntime-mode: enforced\n"
+            "Runtime-evidence-id: codex-mode-0123456789abcdef",
+        )
+        state = tmp_path / ".harness-state/codex-runtime.json"
+        state.parent.mkdir()
+        identity = {
+            "mode": "advisory",
+            "reason_codes": ["TRUST_UNKNOWN"],
+            "input_fingerprint": {
+                "install_hash": "i",
+                "config_hash": "c",
+                "cli_version": "0.147.0",
+                "trust_hash": "t",
+            },
+            "observed_at": "2026-08-11",
+            "evidence_expires_at": "2026-11-08",
+            "diagnostic_summary": {"platform": "macos-arm64"},
+        }
+        evidence = hashlib.sha256(
+            json.dumps(
+                identity, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+            ).encode()
+        ).hexdigest()[:16]
+        record = {
+            "schema_version": 1,
+            "runtime": "codex",
+            **identity,
+            "evidence_id": f"codex-mode-{evidence}",
+            "valid": True,
+        }
+        state.write_text(json.dumps(record))
+        assert "does not match" in vs._check_runtime_metadata(text, path)[0]
+        state.write_text("not json")
+        assert "malformed" in vs._check_runtime_metadata(text, path)[0]
 
 
 # ---------------------------------------------------------------------------
