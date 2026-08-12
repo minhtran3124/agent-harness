@@ -183,6 +183,14 @@ zero gaps:
   `'0 total entries'` regex in `hooks/session-knowledge.sh:45` matches "30 total entries" and
   silently suppresses the knowledge-base section, but both the line and the count predate this
   branch. It is a real pre-existing repo bug, filed here rather than fixed inside this diff.
+- **Fix re-review** — an independent reviewer re-ran every round-1/round-2 fix adversarially and
+  found three defects the fixes themselves introduced, all now closed and regression-tested:
+  a config-derived project approval was unlocking `enforced` (the capability matrix records that
+  value as necessary but not sufficient, so it now emits `TRUST_CONFIG_ONLY` and holds at
+  `advisory`); the trust reader leaked scope across a commented-out table header and multi-line
+  strings; and threading `--codex-home` into the fingerprint made every persisted record
+  `STATE_INVALIDATED` on its first read, since the reader resolves the home from the environment.
+  Items 1, 3, 4, 5, 6, 7 and 8 were confirmed closed with no new defect.
 - **Intent review** — findings above; no gap, one fix, four recorded.
 
 ### Rollback

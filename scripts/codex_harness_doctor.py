@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import platform as host_platform
 import re
 import shutil
@@ -149,8 +150,6 @@ def _doctor_payload(value: Any) -> tuple[dict[str, Any] | None, str, str, Any]:
 def _run_doctor(codex_bin: str, codex_home: Path | None, root: Path) -> Any | None:
     env = None
     if codex_home is not None:
-        import os
-
         env = dict(os.environ)
         env["CODEX_HOME"] = str(codex_home)
     try:
@@ -181,10 +180,19 @@ def _config_trust(root: Path, codex_home: Path | None) -> str | None:
         return None
     # Minimal reader for the one table shape that carries trust; tomllib is 3.11+
     # and the harness must stay stdlib-only on the supported baseline.
+    # Multi-line strings would need real lexing to skip safely; refuse the file
+    # rather than risk reading a value out of one.
+    if '"""' in text or "'''" in text:
+        return None
     wanted = str(root)
     in_table = False
     for raw in text.splitlines():
         line = raw.strip()
+        # A comment can carry a table header; treat any comment as scope-ending
+        # so a commented-out block never lends its scope to the lines below it.
+        if line.startswith("#"):
+            in_table = False
+            continue
         if line.startswith("[") and line.endswith("]"):
             match = re.fullmatch(r"""\[projects\.(?:"(.*)"|'(.*)')\]""", line)
             in_table = bool(match) and (match.group(1) or match.group(2)) == wanted
@@ -389,6 +397,13 @@ def diagnose(
     root = root.resolve()
     repo_root = repo_root.resolve()
     report, cli_version, reported_platform, trust = _doctor_payload(doctor_value)
+    # Codex `trust_level` is project APPROVAL, which the capability matrix records
+    # as necessary but not sufficient for hook execution ("effective trust cannot
+    # be reproduced from deterministic public CLI output"). A configured approval
+    # may therefore replace TRUST_UNKNOWN with a narrower reason, and an explicit
+    # non-trusted value is real negative evidence — but neither unlocks `enforced`,
+    # which stays gated on observed hook trust (Phase 6).
+    config_trust_only = False
     if isinstance(trust, dict) and trust.get("hooks") not in {
         "trusted",
         "enabled",
@@ -400,6 +415,7 @@ def diagnose(
         config_level = _config_trust(root, codex_home)
         if config_level == "trusted":
             trust = {**trust, "hooks": "trusted", "trust_source": "codex-home-config"}
+            config_trust_only = True
         elif config_level is not None:
             trust = {**trust, "hooks": "untrusted", "trust_source": "codex-home-config"}
     platform_id = platform_override or (
@@ -443,14 +459,21 @@ def diagnose(
     ):
         advisory.append("PLATFORM_REPORT_MISMATCH")
     advisory.extend(_doctor_reasons(report, trust))
+    if config_trust_only:
+        advisory.append("TRUST_CONFIG_ONLY")
     evidence, expires_at = _evidence_reasons(
         matrix, platform_id, trust, today or date.today()
     )
     advisory.extend(evidence)
     reasons = sorted(set(unsupported + advisory))
     mode = "unsupported" if unsupported else ("advisory" if reasons else "enforced")
+    # Deliberately NOT passing codex_home: the fingerprint must be reproducible
+    # by the reader (runtime_mode.local_fingerprint_for_record), which has only
+    # the record and the environment. main() exports CODEX_HOME when --codex-home
+    # is given, so both sides resolve the same file instead of the writer hashing
+    # one home and every later read hashing another (permanent STATE_INVALIDATED).
     fingerprint = runtime_mode.make_fingerprint(
-        root, cli_version=cli_version, trust=trust, codex_home=codex_home
+        root, cli_version=cli_version, trust=trust
     )
     return runtime_mode.make_record(
         mode=mode,
@@ -484,6 +507,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--summary", type=Path)
     parser.add_argument("--no-persist", action="store_true")
     args = parser.parse_args(argv)
+    if args.codex_home is not None:
+        # One resolution for the whole run: the doctor subprocess, the config
+        # hash written into the record, and any later read all see this home.
+        os.environ["CODEX_HOME"] = str(args.codex_home)
     try:
         if args.doctor_report:
             try:

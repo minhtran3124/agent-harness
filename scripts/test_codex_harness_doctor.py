@@ -121,9 +121,12 @@ def live_report():
     }
 
 
-def test_config_toml_trust_makes_enforced_reachable_from_live_shape(
+def test_config_trust_narrows_the_reason_but_never_unlocks_enforced(
     tmp_path, monkeypatch
 ):
+    """Codex trust_level is project approval, which the capability matrix records
+    as necessary but not sufficient for hook execution. It may replace the blunt
+    TRUST_UNKNOWN, and it must not produce `enforced`."""
     home = tmp_path / "codex-home"
     home.mkdir()
     monkeypatch.setenv("CODEX_HOME", str(home))
@@ -140,7 +143,46 @@ def test_config_toml_trust_makes_enforced_reachable_from_live_shape(
         today=date(2026, 8, 11),
     )
     assert "TRUST_UNKNOWN" not in result["reason_codes"]
-    assert result["mode"] == "enforced"
+    assert "TRUST_CONFIG_ONLY" in result["reason_codes"]
+    assert result["mode"] == "advisory"
+
+
+def test_config_trust_reader_refuses_scope_leaks(tmp_path):
+    home = tmp_path / "home"
+    home.mkdir()
+    root = tmp_path / "proj"
+    config = home / "config.toml"
+    # A commented-out header must not lend its scope to the lines beneath it,
+    # and a multi-line string could hide a header this reader cannot lex.
+    for text in (
+        f'[projects."{root}"]\nx = 1\n#[projects."/unrelated"]\ntrust_level = "trusted"\n',
+        f'[projects."/unrelated"]\nnote = """\n[projects."{root}"]\n"""\n'
+        'trust_level = "trusted"\n',
+        "[projects.'/unrelated']\nnote = '''\nx\n'''\ntrust_level = \"trusted\"\n",
+    ):
+        config.write_text(text)
+        assert doctor._config_trust(root, home) is None
+
+
+def test_persisted_record_is_stable_under_an_explicit_codex_home(tmp_path, monkeypatch):
+    """The writer must hash the same home the reader will resolve, or every
+    record is STATE_INVALIDATED on its first read."""
+    home = tmp_path / "explicit-home"
+    home.mkdir()
+    (home / "config.toml").write_text("[features]\nhooks = true\n")
+    monkeypatch.setenv("CODEX_HOME", str(home))
+    target = installed_project(tmp_path)
+    result = doctor.diagnose(
+        root=target,
+        repo_root=ROOT,
+        doctor_value=live_report(),
+        platform_override="macos-arm64",
+        dependencies={name: True for name in doctor.REQUIRED_DEPENDENCIES},
+        today=date(2026, 8, 11),
+        codex_home=home,
+    )
+    doctor.runtime_mode.persist_record(target, result)
+    assert "STATE_INVALIDATED" not in doctor.runtime_mode.context_line(target)
 
 
 def test_config_trust_reader_never_yields_a_permissive_false_positive(tmp_path):
