@@ -237,6 +237,11 @@ Parent roadmap: `specs/codex-support/ROADMAP.md`. Preparation research:
 
 ## 6. Status Log
 
+- 2026-08-12 — task 5.6 complete; commit 87b5917 — wave 4 closed, all six tasks implemented.
+  Review additions folded in before commit: MCP-scoping and non-hermetic-doctor bullets in
+  Not auto-verified, the manifest paper-overlap deviation, and the runtime-metadata gate's
+  Verifies / Does not verify scope in CLAUDE.md. Ship still requires the context-propagation
+  audit and the correctness/intent review chain.
 - 2026-08-12 — task 5.6 implementation complete. Added the composed advisory-alpha contract as a
   named macOS/Linux CI gate; registered its manifest consumers; documented install/update/remove,
   trust review, mode semantics, and the non-peer/non-GA boundary. Linux runtime execution and WSL
