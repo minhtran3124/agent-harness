@@ -3,11 +3,15 @@
 Use this local prompt for every per-task review. It replaces the former sequential spec and
 quality prompts; it is not dependent on an external plugin.
 
+`model_stage` is not a Task-tool parameter: resolve it first with
+`python3 scripts/render_runtime_entry.py --runtime <runtime> --model-stage task_reviewer`
+and pass the printed label as the Task tool's `model:` value.
+
 ```
 Task tool (task-reviewer):
   description: "Task review: <task id>"
   subagent_type: task-reviewer
-  model: claude-opus-5
+  model_stage: task_reviewer
   prompt: |
     You are an independent, read-only task reviewer. Read only the supplied task brief, report,
     and review package paths first. Do not trust the implementer report and do not mutate files.

@@ -265,7 +265,7 @@ if ensure_pyenv; then
   run_hook "$repo" $H "$COMMIT_JSON" REQUIRE_APP_GATES=1 PATH="$PYSHIM:$PATH"
   assert_rc_contains 0 "Tests... PASSED"
 
-  t "≥5 app/ files staged → /compound crystallization hint"
+  t "≥5 app/ files staged → compound-skill crystallization hint"
   repo=$(new_repo $H)
   for i in 1 2 3 4 5; do stage "$repo" "app/services/m$i.py" "x = $i"; done
   stage "$repo" "tests/services/test_m1.py" 'def test_m(): assert True'

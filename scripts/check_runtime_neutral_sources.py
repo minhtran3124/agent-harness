@@ -20,6 +20,9 @@ ALLOWED_CLASSIFICATIONS = {
     "false-positive",
 }
 VENDOR_FIELDS = {"model", "tools", "disallowedTools"}
+VENDOR_MODEL_RE = re.compile(
+    r"\b(?:claude-(?:opus|sonnet|haiku)-[A-Za-z0-9-]+|gpt-[0-9][A-Za-z0-9.-]*)\b"
+)
 SUPPORTED_CATEGORIES = {
     "deployed-rule-path",
     "deployed-skill-path",
@@ -87,9 +90,7 @@ def _scan_file(
             categories.append("deployed-skill-path")
         if slash.search(line):
             categories.append("slash-skill-invocation")
-        if number in vendor_lines or re.search(
-            r"\bmodel:\s*claude-[A-Za-z0-9-]+", line
-        ):
+        if number in vendor_lines or VENDOR_MODEL_RE.search(line):
             categories.append("vendor-agent-policy")
         for category in categories:
             found.append(

@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "model_stages": {
+    "correctness_finder": "reviewer",
+    "correctness_scorer": "coding",
+    "implementer": "coding",
+    "intent_reviewer": "reviewer",
+    "task_reviewer": "task-reviewer"
+  },
+  "runtimes": {
+    "claude": {
+      "cli": {
+        "arguments": ["-p", "{prompt}", "--output-format", "text"],
+        "executable": "claude"
+      },
+      "skill_prefix": "/"
+    },
+    "codex": {
+      "cli": {
+        "arguments": ["exec", "{prompt}"],
+        "executable": "codex"
+      },
+      "skill_prefix": "$"
+    }
+  }
+}

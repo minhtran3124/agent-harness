@@ -8,7 +8,7 @@ H=scope-gate.sh
 t "implementation intent, >6 words, no plan → injects guidance"
 repo=$(new_repo $H)
 run_hook "$repo" $H "$(json_prompt 'please add a new endpoint to handle user signup today')"
-assert_rc_contains 0 "Run /feature-intake"
+assert_rc_contains 0 "Run the feature-intake skill"
 
 t "prompt referencing a plan path → silent"
 repo=$(new_repo $H)
@@ -56,13 +56,13 @@ printf 'Lane: tiny\n' > "$repo/specs/shipped-demo/SUMMARY.md"
 git -C "$repo" add -f specs/shipped-demo/SUMMARY.md >/dev/null 2>&1
 git -C "$repo" commit -qm "seed shipped spec" >/dev/null 2>&1
 run_hook "$repo" $H "$(json_prompt 'please add a new endpoint to handle user signup today')"
-assert_rc_contains 0 "Run /feature-intake"
+assert_rc_contains 0 "Run the feature-intake skill"
 
 t "Codex UserPromptSubmit receives the same planning nudge"
 repo=$(new_repo $H)
 payload=$(jq -cn --arg prompt 'please add a new endpoint to handle user signup today' '{turn_id:"turn-redacted",hook_event_name:"UserPromptSubmit",prompt:$prompt}')
 run_hook "$repo" $H "$payload"
-assert_rc_contains 0 'Run /feature-intake'
+assert_rc_contains 0 'Run the feature-intake skill'
 
 t "malformed prompt payload is fail-visible but remains non-blocking"
 repo=$(new_repo $H)
