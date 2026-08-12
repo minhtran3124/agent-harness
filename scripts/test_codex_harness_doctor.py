@@ -143,6 +143,38 @@ def test_config_toml_trust_makes_enforced_reachable_from_live_shape(
     assert result["mode"] == "enforced"
 
 
+def test_config_trust_reader_never_yields_a_permissive_false_positive(tmp_path):
+    home = tmp_path / "home"
+    home.mkdir()
+    root = tmp_path / "proj"
+    config = home / "config.toml"
+
+    trusted_forms = (
+        f'[projects."{root}"]\ntrust_level = "trusted"\n',
+        f"[projects.\"{root}\"]\ntrust_level = 'trusted'\n",
+        f"[projects.'{root}']\ntrust_level = \"trusted\"\n",
+        f'[projects."{root}"]\ntrust_level = "trusted"  # note\n',
+    )
+    for text in trusted_forms:
+        config.write_text(text)
+        assert doctor._config_trust(root, home) == "trusted"
+
+    # Every ambiguous or non-matching shape must stay unknown, never trusted.
+    for text in (
+        '[projects."/somewhere/else"]\ntrust_level = "trusted"\n',
+        f'[projects."{root}"]\n# trust_level = "trusted"\n',
+        f'[projects."{root}"]\n[projects."{root}".sub]\ntrust_level = "trusted"\n',
+        "not toml at all\n",
+    ):
+        config.write_text(text)
+        assert doctor._config_trust(root, home) is None
+    config.write_text(
+        f'[projects."{root}"]\ntrust_level = "untrusted"\n'
+        '[projects."/other"]\ntrust_level = "trusted"\n'
+    )
+    assert doctor._config_trust(root, home) == "untrusted"
+
+
 def test_live_cli_doctor_shape_is_parsed_without_false_mismatches(
     tmp_path, monkeypatch
 ):

@@ -186,14 +186,18 @@ def _config_trust(root: Path, codex_home: Path | None) -> str | None:
     for raw in text.splitlines():
         line = raw.strip()
         if line.startswith("[") and line.endswith("]"):
-            match = re.fullmatch(r'\[projects\."(.*)"\]', line)
-            in_table = bool(match) and match.group(1) == wanted
+            match = re.fullmatch(r"""\[projects\.(?:"(.*)"|'(.*)')\]""", line)
+            in_table = bool(match) and (match.group(1) or match.group(2)) == wanted
             continue
         if not in_table:
             continue
-        match = re.fullmatch(r'trust_level\s*=\s*"([^"]*)"', line)
+        # Anything this reader cannot parse stays None, which keeps trust
+        # unknown and the mode advisory — never a permissive default.
+        match = re.match(
+            r"""trust_level\s*=\s*(?:"([^"]*)"|'([^']*)')\s*(?:#.*)?$""", line
+        )
         if match:
-            return match.group(1)
+            return match.group(1) if match.group(1) is not None else match.group(2)
     return None
 
 
