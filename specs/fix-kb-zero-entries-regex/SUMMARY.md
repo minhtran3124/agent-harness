@@ -50,7 +50,11 @@ Measured before and after on the real INDEX: 0 chars of knowledge-base context â
 | Check | Command | Exit | Notes |
 | --- | --- | --- | --- |
 | Hook contract | `bash tests/hooks/session-knowledge.test.sh` | 0 | 13 assertions incl. the new count-ending-in-zero regression |
-| Full suite | `bash scripts/run-tests.sh` | 0 | 514 Python tests, ALL GREEN |
+
+The CI-equivalent `bash scripts/run-tests.sh` completed `ALL GREEN` with 514 Python tests. It is
+recorded in prose, not as a Verify row: `ci-strict-gate` re-runs each row under a 60s cap, so a
+whole-suite row times out and blocks the PR
+(`docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md`).
 
 The new test is load-bearing, verified by mutation: with the hook reverted and the test kept, the
 suite reports `12 passed, 1 FAILED`; with the fix in place, 13 pass.
