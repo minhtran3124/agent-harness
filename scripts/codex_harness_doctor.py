@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 import platform as host_platform
+import re
 import shutil
 import subprocess
 import sys
@@ -167,6 +168,33 @@ def _run_doctor(codex_bin: str, codex_home: Path | None, root: Path) -> Any | No
         return json.loads(result.stdout)
     except (OSError, subprocess.TimeoutExpired, json.JSONDecodeError):
         return None
+
+
+def _config_trust(root: Path, codex_home: Path | None) -> str | None:
+    """Project trust from the effective user-level Codex config — the only
+    deterministic local trust source at alpha. Hook-definition trust freshness
+    is not derivable here and stays outside this signal."""
+    home = codex_home if codex_home is not None else runtime_mode.default_codex_home()
+    try:
+        text = (Path(home) / "config.toml").read_text()
+    except (OSError, UnicodeDecodeError):
+        return None
+    # Minimal reader for the one table shape that carries trust; tomllib is 3.11+
+    # and the harness must stay stdlib-only on the supported baseline.
+    wanted = str(root)
+    in_table = False
+    for raw in text.splitlines():
+        line = raw.strip()
+        if line.startswith("[") and line.endswith("]"):
+            match = re.fullmatch(r'\[projects\."(.*)"\]', line)
+            in_table = bool(match) and match.group(1) == wanted
+            continue
+        if not in_table:
+            continue
+        match = re.fullmatch(r'trust_level\s*=\s*"([^"]*)"', line)
+        if match:
+            return match.group(1)
+    return None
 
 
 def _doctor_reasons(report: dict[str, Any] | None, trust: Any) -> list[str]:
@@ -357,6 +385,19 @@ def diagnose(
     root = root.resolve()
     repo_root = repo_root.resolve()
     report, cli_version, reported_platform, trust = _doctor_payload(doctor_value)
+    if isinstance(trust, dict) and trust.get("hooks") not in {
+        "trusted",
+        "enabled",
+        True,
+        "untrusted",
+        "disabled",
+        False,
+    }:
+        config_level = _config_trust(root, codex_home)
+        if config_level == "trusted":
+            trust = {**trust, "hooks": "trusted", "trust_source": "codex-home-config"}
+        elif config_level is not None:
+            trust = {**trust, "hooks": "untrusted", "trust_source": "codex-home-config"}
     platform_id = platform_override or (
         reported_platform if reported_platform != "unknown" else detect_platform()
     )

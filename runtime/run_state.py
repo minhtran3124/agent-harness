@@ -353,7 +353,11 @@ def runtime_metadata(mode, evidence_id):
     """Validate an optional all-or-nothing sanitized Codex runtime diagnosis."""
     if mode is None and evidence_id is None:
         return {}
-    if mode not in RUNTIME_MODES or not isinstance(evidence_id, str) or not RUNTIME_EVIDENCE_ID_RE.fullmatch(evidence_id):
+    if (
+        mode not in RUNTIME_MODES
+        or not isinstance(evidence_id, str)
+        or not RUNTIME_EVIDENCE_ID_RE.fullmatch(evidence_id)
+    ):
         raise RunStateError(
             "--runtime-mode and --runtime-evidence-id must be supplied together "
             "with a valid Codex runtime diagnosis"
@@ -601,9 +605,7 @@ def cmd_init(args):
             "waiting_on": None,
             "resume_event": None,
             "sha": None,
-            "metadata": runtime_metadata(
-                args.runtime_mode, args.runtime_evidence_id
-            ),
+            "metadata": runtime_metadata(args.runtime_mode, args.runtime_evidence_id),
         }
         with open(ev_path, "w") as f:
             f.write(json.dumps(event, sort_keys=True) + "\n")
@@ -976,12 +978,24 @@ def cmd_rebuild(args):
     return 0
 
 
+RESERVED_META_KEYS = ("runtime_mode", "runtime_evidence_id")
+
+
 def parse_meta(pairs):
     meta = {}
     for pair in pairs:
         if "=" not in pair:
             raise RunStateError(f"invalid --meta {pair!r}; expected key=value")
         k, v = pair.split("=", 1)
+        # Reserved runtime-diagnosis keys must enter only through the validated
+        # --runtime-mode/--runtime-evidence-id flags: an unvalidated pair would
+        # either be appended and then brick the chain on read (invariant 9), or
+        # forge an enforcement claim the flags path would have rejected.
+        if k in RESERVED_META_KEYS:
+            raise RunStateError(
+                f"--meta may not set reserved key {k!r}; "
+                "use --runtime-mode/--runtime-evidence-id"
+            )
         meta[k] = v
     return meta
 

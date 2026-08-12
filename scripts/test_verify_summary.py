@@ -6,8 +6,6 @@ Run:
 """
 
 import importlib.util
-import hashlib
-import json
 from pathlib import Path
 
 
@@ -88,11 +86,15 @@ class TestRuntimeMetadata:
             SUMMARY_HEADER
             + "Runtime-mode: enforced\nRuntime-evidence-id: private-path\n"
         )
-        assert "invalid Runtime-evidence-id" in vs._check_runtime_metadata(
-            malformed, None
-        )[0]
+        assert (
+            "invalid Runtime-evidence-id"
+            in vs._check_runtime_metadata(malformed, None)[0]
+        )
 
-    def test_local_record_must_be_valid_and_match(self, tmp_path):
+    def test_check_is_format_only_and_never_reads_local_state(self, tmp_path):
+        # Deliberate traceability boundary: the local record is gitignored and
+        # agent-writable, so the gate must not pretend to corroborate it — a
+        # well-formed pair passes even when a contradicting record exists.
         path = write_summary(tmp_path, "local", make_summary(""))
         text = path.read_text().replace(
             "Input-type: maintenance",
@@ -101,35 +103,10 @@ class TestRuntimeMetadata:
         )
         state = tmp_path / ".harness-state/codex-runtime.json"
         state.parent.mkdir()
-        identity = {
-            "mode": "advisory",
-            "reason_codes": ["TRUST_UNKNOWN"],
-            "input_fingerprint": {
-                "install_hash": "i",
-                "config_hash": "c",
-                "cli_version": "0.147.0",
-                "trust_hash": "t",
-            },
-            "observed_at": "2026-08-11",
-            "evidence_expires_at": "2026-11-08",
-            "diagnostic_summary": {"platform": "macos-arm64"},
-        }
-        evidence = hashlib.sha256(
-            json.dumps(
-                identity, sort_keys=True, separators=(",", ":"), ensure_ascii=False
-            ).encode()
-        ).hexdigest()[:16]
-        record = {
-            "schema_version": 1,
-            "runtime": "codex",
-            **identity,
-            "evidence_id": f"codex-mode-{evidence}",
-            "valid": True,
-        }
-        state.write_text(json.dumps(record))
-        assert "does not match" in vs._check_runtime_metadata(text, path)[0]
+        state.write_text('{"mode": "advisory"}')
+        assert vs._check_runtime_metadata(text, path) == []
         state.write_text("not json")
-        assert "malformed" in vs._check_runtime_metadata(text, path)[0]
+        assert vs._check_runtime_metadata(text, path) == []
 
 
 # ---------------------------------------------------------------------------

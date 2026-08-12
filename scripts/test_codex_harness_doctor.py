@@ -100,8 +100,8 @@ def test_unknown_stale_version_and_unverified_platform_never_enforce(tmp_path):
     } <= set(result["reason_codes"])
 
 
-def test_live_cli_doctor_shape_is_parsed_without_false_mismatches(tmp_path):
-    live_report = {
+def live_report():
+    return {
         "schemaVersion": 1,
         "codexVersion": "0.147.0",
         "generatedAt": "2026-08-12T00:00:00Z",
@@ -119,7 +119,35 @@ def test_live_cli_doctor_shape_is_parsed_without_false_mismatches(tmp_path):
             },
         },
     }
-    _, result = diagnose(tmp_path, live_report)
+
+
+def test_config_toml_trust_makes_enforced_reachable_from_live_shape(
+    tmp_path, monkeypatch
+):
+    home = tmp_path / "codex-home"
+    home.mkdir()
+    monkeypatch.setenv("CODEX_HOME", str(home))
+    target = installed_project(tmp_path)
+    (home / "config.toml").write_text(
+        f'[projects."{target.resolve()}"]\ntrust_level = "trusted"\n'
+    )
+    result = doctor.diagnose(
+        root=target,
+        repo_root=ROOT,
+        doctor_value=live_report(),
+        platform_override="macos-arm64",
+        dependencies={name: True for name in doctor.REQUIRED_DEPENDENCIES},
+        today=date(2026, 8, 11),
+    )
+    assert "TRUST_UNKNOWN" not in result["reason_codes"]
+    assert result["mode"] == "enforced"
+
+
+def test_live_cli_doctor_shape_is_parsed_without_false_mismatches(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setenv("CODEX_HOME", str(tmp_path / "empty-codex-home"))
+    _, result = diagnose(tmp_path, live_report())
     assert "CLI_VERSION_MISMATCH" not in result["reason_codes"]
     assert "FEATURE_DISABLED" not in result["reason_codes"]
     # The live shape carries no trust key, so trust stays honestly unknown.

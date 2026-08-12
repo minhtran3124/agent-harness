@@ -106,7 +106,10 @@ fi
 # outside-hook result; it never runs the doctor or decides enforcement itself.
 # ============================================================
 _runtime_section=""
+# Source checkout keeps runtime/ at the repo root; deployed Claude consumers
+# receive it under .claude/runtime/ (deploy-harness payload). Probe both.
 _RUNTIME_MODE="$RUN_STATE_ROOT/runtime/runtime_mode.py"
+[ -f "$_RUNTIME_MODE" ] || _RUNTIME_MODE="$RUN_STATE_ROOT/.claude/runtime/runtime_mode.py"
 if [ -f "$_RUNTIME_MODE" ]; then
     _runtime_section=$(cd "$RUN_STATE_ROOT" && python3 "$_RUNTIME_MODE" context --root "$RUN_STATE_ROOT" --limit 500 2>/dev/null)
 fi

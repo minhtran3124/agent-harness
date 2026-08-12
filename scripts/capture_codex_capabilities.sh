@@ -171,6 +171,17 @@ HOME="$ISOLATED_HOME" CODEX_HOME="$ISOLATED_CODEX_HOME" \
   "$CODEX_BIN" plugin --help >"$RAW/plugin.txt" 2>"$RAW/plugin.err"
 PLUGIN_RC=$?
 
+# KNOWN GAP (correctness-review S14, owner codex-support-phase-6): this literal
+# is the attestation for EVERY fixture this run writes, but it is hand-maintained
+# and does not match the registration installed below (it names SessionEnd, which
+# the probe does not register, and omits the Edit|Write matcher aliases it does).
+# The committed evidence directory therefore holds two digests from two runs:
+# e48620dc (pre-UserPromptSubmit) on 7 matrix rows plus hooks-shell/apply-patch/
+# trust-config, and 7e5dda9b here. A same-version re-capture rewrites the older
+# fixtures and breaks those 7 rows, so a refresh MUST update the matrix
+# config.sha256 values in the same change. Deriving the digest from the
+# registration would produce a third value with no captured run behind it, which
+# would relabel provenance rather than establish it.
 CONFIG_HASH=$(python3 - <<'PY'
 import hashlib
 canonical = b'{"features":{"hooks":true},"hooks":{"PostToolUse":["Bash","apply_patch"],"PreToolUse":["Bash","apply_patch"],"SessionEnd":["other"],"UserPromptSubmit":["all"]}}'

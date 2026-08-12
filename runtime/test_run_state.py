@@ -2194,33 +2194,64 @@ def test_snapshot_serializes_behind_a_writer_and_never_sees_a_torn_pair():
 
 def test_runtime_diagnosis_is_optional_and_projects_last_supplied_pair():
     evidence = "codex-mode-0123456789abcdef"
-    assert rs.main(
-        [
-            "init", "--slug", "mode", "--run-id", "r1",
-            "--runtime-mode", "advisory",
-            "--runtime-evidence-id", evidence,
-        ]
-    ) == 0
+    assert (
+        rs.main(
+            [
+                "init",
+                "--slug",
+                "mode",
+                "--run-id",
+                "r1",
+                "--runtime-mode",
+                "advisory",
+                "--runtime-evidence-id",
+                evidence,
+            ]
+        )
+        == 0
+    )
     first = rs.read_events("mode")[0]
     assert first["metadata"] == {
         "runtime_mode": "advisory",
         "runtime_evidence_id": evidence,
     }
-    assert rs.main(
-        ["transition", "--slug", "mode", "--to", "investigating", "--event", "start"]
-    ) == 0
+    assert (
+        rs.main(
+            [
+                "transition",
+                "--slug",
+                "mode",
+                "--to",
+                "investigating",
+                "--event",
+                "start",
+            ]
+        )
+        == 0
+    )
     projection = rs.read_json("specs/mode/RUN.json")
     assert projection["runtime_mode"] == "advisory"
     assert projection["runtime_evidence_id"] == evidence
 
     replacement = "codex-mode-fedcba9876543210"
-    assert rs.main(
-        [
-            "transition", "--slug", "mode", "--to", "planning", "--event", "plan",
-            "--runtime-mode", "unsupported",
-            "--runtime-evidence-id", replacement,
-        ]
-    ) == 0
+    assert (
+        rs.main(
+            [
+                "transition",
+                "--slug",
+                "mode",
+                "--to",
+                "planning",
+                "--event",
+                "plan",
+                "--runtime-mode",
+                "unsupported",
+                "--runtime-evidence-id",
+                replacement,
+            ]
+        )
+        == 0
+    )
     projection = rs.read_json("specs/mode/RUN.json")
     assert projection["runtime_mode"] == "unsupported"
     assert projection["runtime_evidence_id"] == replacement
@@ -2231,18 +2262,71 @@ def test_runtime_diagnosis_requires_a_valid_complete_pair_and_legacy_stays_exact
     projection = rs.read_json("specs/legacy/RUN.json")
     assert "runtime_mode" not in projection
     assert "runtime_evidence_id" not in projection
-    assert rs.main(
+    assert (
+        rs.main(
+            [
+                "transition",
+                "--slug",
+                "legacy",
+                "--to",
+                "investigating",
+                "--event",
+                "start",
+                "--runtime-mode",
+                "enforced",
+            ]
+        )
+        == 2
+    )
+    assert (
+        rs.main(
+            [
+                "transition",
+                "--slug",
+                "legacy",
+                "--to",
+                "investigating",
+                "--event",
+                "start",
+                "--runtime-evidence-id",
+                "codex-mode-0123456789abcdef",
+            ]
+        )
+        == 2
+    )
+
+
+def test_meta_cannot_set_reserved_runtime_keys_or_touch_the_ledger():
+    """--meta must not reach metadata: a half pair would append first and then
+    brick the chain on read, and a full forged pair would assert enforcement."""
+    assert rs.main(["init", "--slug", "demo", "--run-id", "r1"]) == 0
+    before = open("specs/demo/events.jsonl").read()
+    for extra in (
+        ["--meta", "runtime_mode=enforced"],
         [
-            "transition", "--slug", "legacy", "--to", "investigating", "--event", "start",
-            "--runtime-mode", "enforced",
-        ]
-    ) == 2
-    assert rs.main(
-        [
-            "transition", "--slug", "legacy", "--to", "investigating", "--event", "start",
-            "--runtime-evidence-id", "codex-mode-0123456789abcdef",
-        ]
-    ) == 2
+            "--meta",
+            "runtime_mode=enforced",
+            "--meta",
+            "runtime_evidence_id=codex-mode-0123456789abcdef",
+        ],
+    ):
+        assert (
+            rs.main(
+                [
+                    "transition",
+                    "--slug",
+                    "demo",
+                    "--to",
+                    "investigating",
+                    "--event",
+                    "agent.started",
+                    *extra,
+                ]
+            )
+            == 2
+        )
+    assert open("specs/demo/events.jsonl").read() == before
+    assert rs.main(["status", "--slug", "demo", "--json"]) == 0
 
 
 def test_forged_runtime_metadata_makes_event_chain_invalid():

@@ -87,10 +87,21 @@ in prose rather than represented as a sub-60-second Verify row.
   and the doctor consumes its effective value, but no real user's decision was mutated or observed.
 - **Direct packaging remains unknown and unselectable (provenance).** Hybrid runtime execution was
   observed; direct discovery/runtime execution was not needed and therefore was not promoted.
+- **The Codex session banner is not delivered inside a Codex session (traceability).** The rendered
+  plugin ships no `runtime/`, so `session-knowledge.sh` finds no `runtime_mode.py` there; the probe
+  now also covers the deployed Claude path (`.claude/runtime/`). Surfacing the diagnosis inside
+  Codex — and fitting it under the 2500-char SessionStart context limit — carries over to Phase 6.
 - **Codex MCP scoping semantics are documentation-tier (traceability).** The rendered
   `mcp_servers = {}` isolation and context7-only enablement follow official configuration
   documentation; the live probe did not exercise MCP inheritance, so per-agent MCP confinement is
   not observed runtime behavior.
+- **The committed evidence directory holds two canonical config digests (provenance).** Fixtures
+  from two capture runs coexist: `e48620dc` on seven load-bearing matrix rows plus the shell,
+  apply-patch and trust fixtures, and `7e5dda9b` on the two runtime-envelope fixtures added here.
+  The evidence set is therefore not reproducible from a single run of the current script, and the
+  hand-maintained canonical literal does not match the registration the probe installs. A refresh
+  must re-capture and update the seven `config.sha256` values together; deriving the digest instead
+  would invent a third value with no captured run behind it. Owner: `codex-support-phase-6`.
 - **The doctor's default acquisition path is non-hermetic (traceability).** Without
   `--doctor-report`, it invokes the real read-only `codex doctor --json` against the user's
   effective Codex state; deterministic fixtures prove parsing and mode logic, not that live
