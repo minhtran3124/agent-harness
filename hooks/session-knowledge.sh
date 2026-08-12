@@ -41,8 +41,11 @@ if [ -f "$INDEX" ]; then
     _index_content=$(cat "$INDEX" 2>/dev/null)
     _kb_has_data=1
 
-    # Format 2: "0 total entries" in a header/comment line
-    if printf '%s\n' "$_index_content" | grep -qE '0 total entries' 2>/dev/null; then
+    # Format 2: "0 total entries" in a header/comment line. The leading boundary
+    # is load-bearing: unanchored, this matched the trailing zero of "30 total
+    # entries" and silently suppressed a populated knowledge base — every count
+    # ending in 0 (10, 20, 30, 100...) disabled the whole source.
+    if printf '%s\n' "$_index_content" | grep -qE '(^|[^0-9])0 total entries' 2>/dev/null; then
         _kb_has_data=0
     fi
 
