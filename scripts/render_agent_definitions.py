@@ -5,11 +5,17 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
 FORBIDDEN_SOURCE_FIELDS = {"model", "tools", "memory"}
 REVIEW_ROLES = {"reviewer", "task-reviewer"}
+CODEX_REQUIRED_FIELDS = {"model", "model_reasoning_effort", "sandbox_mode"}
+CODEX_MODELS = {"gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"}
+CODEX_EFFORTS = {"low", "medium", "high", "xhigh", "max", "ultra"}
+CODEX_SANDBOXES = {"read-only", "workspace-write", "danger-full-access"}
+CODEX_MCP_POLICIES = {"none", "context7-read-only", "runtime-controlled"}
 
 
 class ContractError(ValueError):
@@ -110,6 +116,23 @@ def validate(root: Path) -> tuple[dict, dict]:
                         f"{runtime}/{role}/{capability}: mapping must be explicit"
                     )
 
+            if runtime == "codex":
+                missing_fields = CODEX_REQUIRED_FIELDS - set(binding)
+                if missing_fields:
+                    raise ContractError(
+                        f"codex/{role}: missing profile fields: {sorted(missing_fields)}"
+                    )
+                if binding["model"] not in CODEX_MODELS:
+                    raise ContractError(f"codex/{role}: unsupported model binding")
+                if binding["model_reasoning_effort"] not in CODEX_EFFORTS:
+                    raise ContractError(f"codex/{role}: unsupported reasoning effort")
+                if binding["sandbox_mode"] not in CODEX_SANDBOXES:
+                    raise ContractError(f"codex/{role}: unsupported sandbox mode")
+                if any(isinstance(value, dict) for value in capabilities.values()):
+                    raise ContractError(
+                        f"codex/{role}: unsupported capability exception remains"
+                    )
+
     for role in REVIEW_ROLES:
         contract = roles[role]
         if contract["filesystem"] != "read-only":
@@ -162,6 +185,150 @@ def render_claude(root: Path, output_dir: Path) -> list[Path]:
     return written
 
 
+def _frontmatter_value(frontmatter: list[str], key: str, path: Path) -> str:
+    prefix = f"{key}:"
+    matches = [
+        line[len(prefix) :].strip() for line in frontmatter if line.startswith(prefix)
+    ]
+    if len(matches) != 1 or not matches[0]:
+        raise ContractError(f"{path}: expected one non-empty {key} field")
+    value = matches[0]
+    if len(value) >= 2 and value[0] == value[-1] == '"':
+        try:
+            decoded = json.loads(value)
+        except json.JSONDecodeError as exc:
+            raise ContractError(f"{path}: invalid quoted {key}") from exc
+        if not isinstance(decoded, str):
+            raise ContractError(f"{path}: {key} must be a string")
+        return decoded
+    return value
+
+
+def _codex_policy(contract: dict, binding: dict) -> str:
+    capabilities = binding["capabilities"]
+    rows = [
+        "Codex runtime policy (generated from agents/runtime-bindings.json):",
+        *[
+            f"- {name}: {capabilities[name]}"
+            for name in (
+                "filesystem",
+                "shell",
+                "network",
+                "mcp",
+                "nested_delegation",
+                "context_policy",
+                "model_class",
+                "output_contract",
+            )
+        ],
+        "",
+        "The native sandbox/model settings below are authoritative. Treat the remaining policy",
+        "lines as mandatory constraints; never widen them from inside the child session.",
+    ]
+    if contract["context_policy"] != "fresh-bounded":
+        raise ContractError("Codex agents require fresh-bounded context")
+    return "\n".join(rows)
+
+
+def _toml_string(value: str) -> str:
+    return json.dumps(value, ensure_ascii=False)
+
+
+def parse_codex_profile(text: str) -> dict:
+    """Strictly parse the small TOML subset emitted for Codex agent profiles."""
+    result: dict = {}
+    current = result
+    seen_keys: set[tuple[str, ...]] = set()
+    section: tuple[str, ...] = ()
+    for line_number, raw_line in enumerate(text.splitlines(), 1):
+        line = raw_line.strip()
+        if not line:
+            continue
+        if line.startswith("[") and line.endswith("]"):
+            section = tuple(line[1:-1].split("."))
+            if not section or any(
+                not re.fullmatch(r"[a-z][a-z0-9_]*", part) for part in section
+            ):
+                raise ContractError(f"invalid Codex TOML table on line {line_number}")
+            current = result
+            for part in section:
+                existing = current.setdefault(part, {})
+                if not isinstance(existing, dict):
+                    raise ContractError(
+                        f"Codex TOML table conflicts with a value on line {line_number}"
+                    )
+                current = existing
+            continue
+        if "=" not in line:
+            raise ContractError(f"invalid Codex TOML assignment on line {line_number}")
+        key, raw_value = (part.strip() for part in line.split("=", 1))
+        if not re.fullmatch(r"[a-z][a-z0-9_]*", key):
+            raise ContractError(f"invalid Codex TOML key on line {line_number}")
+        key_path = (*section, key)
+        if key_path in seen_keys or key in current:
+            raise ContractError(f"duplicate Codex TOML key on line {line_number}")
+        seen_keys.add(key_path)
+        if raw_value == "true":
+            value = True
+        elif raw_value == "false":
+            value = False
+        elif raw_value == "{}":
+            value = {}
+        else:
+            try:
+                value = json.loads(raw_value)
+            except json.JSONDecodeError as exc:
+                raise ContractError(
+                    f"invalid Codex TOML value on line {line_number}"
+                ) from exc
+            if not isinstance(value, str):
+                raise ContractError(
+                    f"unsupported Codex TOML value on line {line_number}"
+                )
+        current[key] = value
+    return result
+
+
+def render_codex(root: Path, output_dir: Path) -> list[Path]:
+    contracts, bindings = validate(root)
+    runtime_roles = bindings["runtimes"]["codex"]["roles"]
+    output_dir.mkdir(parents=True, exist_ok=True)
+    written: list[Path] = []
+    for role in sorted(contracts["roles"]):
+        source = root / f"agents/{role}.md"
+        frontmatter, body = split_frontmatter(source)
+        contract = contracts["roles"][role]
+        binding = runtime_roles[role]
+        name = _frontmatter_value(frontmatter, "name", source).replace("-", "_")
+        if not re.fullmatch(r"[a-z][a-z0-9_]*", name):
+            raise ContractError(f"{source}: invalid Codex agent name")
+        description = _frontmatter_value(frontmatter, "description", source)
+        instructions = _codex_policy(contract, binding) + "\n\n" + body
+        lines = [
+            f"name = {_toml_string(name)}",
+            f"description = {_toml_string(description)}",
+            f"model = {_toml_string(binding['model'])}",
+            f"model_reasoning_effort = {_toml_string(binding['model_reasoning_effort'])}",
+            f"sandbox_mode = {_toml_string(binding['sandbox_mode'])}",
+        ]
+        mcp_policy = contract["mcp"]
+        if mcp_policy not in CODEX_MCP_POLICIES:
+            raise ContractError(f"codex/{role}: unmapped mcp policy {mcp_policy!r}")
+        if mcp_policy == "none":
+            lines.append("mcp_servers = {}")
+        lines.append(f"developer_instructions = {_toml_string(instructions)}")
+        if contract["nested_delegation"] is False:
+            lines.extend(["", "[agents]", "enabled = false"])
+        if mcp_policy == "context7-read-only":
+            lines.extend(["", "[mcp_servers.context7]", "enabled = true"])
+        destination = output_dir / f"{role}.toml"
+        rendered = "\n".join(lines) + "\n"
+        parse_codex_profile(rendered)
+        destination.write_text(rendered)
+        written.append(destination)
+    return written
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -174,13 +341,12 @@ def main() -> int:
     try:
         validate(args.root)
         if not args.check:
-            if args.runtime == "codex":
-                raise ContractError(
-                    "Codex profile emission is owned by Phase 5; use --check"
-                )
             if args.output_dir is None:
                 raise ContractError("--output-dir is required when rendering")
-            render_claude(args.root, args.output_dir)
+            if args.runtime == "codex":
+                render_codex(args.root, args.output_dir)
+            else:
+                render_claude(args.root, args.output_dir)
     except ContractError as exc:
         print(f"agent-bindings: {exc}", file=sys.stderr)
         return 1

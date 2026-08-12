@@ -68,6 +68,47 @@ def write_plan(summary_path: Path, content: str) -> Path:
     return p
 
 
+class TestRuntimeMetadata:
+    def test_legacy_absence_and_valid_durable_pair_are_accepted(self, tmp_path):
+        path = write_summary(tmp_path, "legacy", make_summary(""))
+        assert vs._check_runtime_metadata(path.read_text(), path) == []
+        text = path.read_text().replace(
+            "Input-type: maintenance",
+            "Input-type: maintenance\nRuntime-mode: advisory\n"
+            "Runtime-evidence-id: codex-mode-0123456789abcdef",
+        )
+        assert vs._check_runtime_metadata(text, path) == []
+
+    def test_partial_or_malformed_pair_is_rejected(self):
+        partial = SUMMARY_HEADER + "Runtime-mode: enforced\n"
+        assert "supplied together" in vs._check_runtime_metadata(partial, None)[0]
+        malformed = (
+            SUMMARY_HEADER
+            + "Runtime-mode: enforced\nRuntime-evidence-id: private-path\n"
+        )
+        assert (
+            "invalid Runtime-evidence-id"
+            in vs._check_runtime_metadata(malformed, None)[0]
+        )
+
+    def test_check_is_format_only_and_never_reads_local_state(self, tmp_path):
+        # Deliberate traceability boundary: the local record is gitignored and
+        # agent-writable, so the gate must not pretend to corroborate it — a
+        # well-formed pair passes even when a contradicting record exists.
+        path = write_summary(tmp_path, "local", make_summary(""))
+        text = path.read_text().replace(
+            "Input-type: maintenance",
+            "Input-type: maintenance\nRuntime-mode: enforced\n"
+            "Runtime-evidence-id: codex-mode-0123456789abcdef",
+        )
+        state = tmp_path / ".harness-state/codex-runtime.json"
+        state.parent.mkdir()
+        state.write_text('{"mode": "advisory"}')
+        assert vs._check_runtime_metadata(text, path) == []
+        state.write_text("not json")
+        assert vs._check_runtime_metadata(text, path) == []
+
+
 # ---------------------------------------------------------------------------
 # parse_verify_table
 # ---------------------------------------------------------------------------

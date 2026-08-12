@@ -25,16 +25,18 @@ here to catch. Record which angles reported it in the finding's provenance; neve
 scorer.
 
 **Score with a different model than the finders.** Scoring is a fresh, code-only judgment.
-`claude-opus-4-8` gives it full reasoning capacity while staying a distinct model from the
-`claude-opus-5` FIND finders — ensemble diversity at the scoring stage. This overrides the
-reviewer agent's pinned `claude-opus-5` default; the FIND and intent passes keep it.
+Resolve the `correctness_scorer` model stage through the runtime entry binding; it is checked to
+remain distinct from `correctness_finder`, preserving ensemble diversity without embedding a
+vendor model label in this semantic prompt. `model_stage` is not a Task-tool parameter: run
+`python3 scripts/render_runtime_entry.py --runtime <runtime> --model-stage correctness_scorer`
+and pass the printed label as the Task tool's `model:` value.
 
 ```
 Task tool (reviewer):
   description: "Correctness score for finding: <short claim>"
   subagent_type: reviewer
   # reviewer is a read-only agent (no Write/Edit/Agent) — review independence is enforced structurally, not by instruction.
-  model: claude-opus-4-8
+  model_stage: correctness_scorer
   prompt: |
     You are a correctness scorer. You receive ONE candidate bug finding and the changed
     code. Your ONLY job is to assign it a confidence score 0–100.

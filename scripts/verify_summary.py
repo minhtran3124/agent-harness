@@ -69,6 +69,34 @@ _SC_ID_RE = re.compile(r"^SC-\d+$")
 # An `Expected` cell must lead with the machine-read token `exit <n>` (n may be
 # non-zero — negative proof is legal); free text may follow.
 _SC_EXPECTED_RE = re.compile(r"^exit\s+(\d+)\b")
+_RUNTIME_MODES = {"enforced", "advisory", "unsupported"}
+_RUNTIME_EVIDENCE_ID_RE = re.compile(r"^codex-mode-[0-9a-f]{16}$")
+
+
+def _check_runtime_metadata(text: str, summary_path: Path | None) -> list[str]:
+    """Validate optional all-or-nothing sanitized runtime diagnosis metadata.
+
+    Format-only by design (traceability tier). The local record lives in the
+    gitignored, agent-writable `.harness-state/` — a record comparison at
+    commit time can never be index-safe (see
+    docs/solutions/harness/gate-config-must-read-index.md), and the commit
+    gate judges a materialized temp copy anyway. The doctor and the session
+    banner are the record's read paths; this gate only refuses malformed or
+    half-supplied pairs.
+    """
+    mode = _header_value(text, "Runtime-mode")
+    evidence_id = _header_value(text, "Runtime-evidence-id")
+    if mode is None and evidence_id is None:
+        return []
+    if mode is None or evidence_id is None:
+        return [
+            "runtime metadata: `Runtime-mode` and `Runtime-evidence-id` must be supplied together"
+        ]
+    if mode not in _RUNTIME_MODES:
+        return [f"runtime metadata: invalid Runtime-mode `{mode}`"]
+    if not _RUNTIME_EVIDENCE_ID_RE.fullmatch(evidence_id):
+        return ["runtime metadata: invalid Runtime-evidence-id"]
+    return []
 
 
 def parse_sc_table(plan_text: str) -> dict[str, str]:
@@ -425,6 +453,7 @@ def check_lane_evidence(
             )
 
     errors += _check_sc_coverage(text, summary_path, plan_dir)
+    errors += _check_runtime_metadata(text, summary_path)
 
     return errors
 

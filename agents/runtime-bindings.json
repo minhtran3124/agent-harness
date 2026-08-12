@@ -63,10 +63,13 @@
       }
     },
     "codex": {
-      "format": "profile-contract",
-      "emission": "deferred-to-codex-support-phase-5",
+      "format": "toml-custom-agent",
+      "emission": "scripts/render_agent_definitions.py",
       "roles": {
         "coding": {
+          "model": "gpt-5.6-sol",
+          "model_reasoning_effort": "high",
+          "sandbox_mode": "workspace-write",
           "capabilities": {
             "filesystem": "workspace-write sandbox",
             "shell": "controlled execution tools",
@@ -79,6 +82,9 @@
           }
         },
         "reviewer": {
+          "model": "gpt-5.6-terra",
+          "model_reasoning_effort": "high",
+          "sandbox_mode": "read-only",
           "capabilities": {
             "filesystem": "read-only sandbox",
             "shell": "read-only inspection policy",
@@ -91,6 +97,9 @@
           }
         },
         "task-reviewer": {
+          "model": "gpt-5.6-terra",
+          "model_reasoning_effort": "high",
+          "sandbox_mode": "read-only",
           "capabilities": {
             "filesystem": "read-only sandbox",
             "shell": "disabled",
@@ -103,15 +112,14 @@
           }
         },
         "test-runner": {
+          "model": "gpt-5.6-luna",
+          "model_reasoning_effort": "medium",
+          "sandbox_mode": "workspace-write",
           "capabilities": {
             "filesystem": "read-only sandbox with test-artifact exception",
             "shell": "test execution tools",
             "network": "documentation-only policy",
-            "mcp": {
-              "status": "unsupported-exception",
-              "owner": "codex-support-phase-5",
-              "exit_condition": "Bind context7 read-only tools or remove the optional dependency from the role."
-            },
+            "mcp": "inherit configured context7 server; enable context7 only",
             "nested_delegation": "disabled",
             "context_policy": "fresh-bounded fork",
             "model_class": "fast test-execution profile",

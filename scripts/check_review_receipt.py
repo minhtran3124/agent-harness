@@ -43,7 +43,7 @@ RECEIPT_NAME = ".review-receipt.json"
 _SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 
 # Workflow-engine path signal — the surfaces whose changes require a passing
-# /context-propagation-audit before push. This is a literal copy of the signal in
+# context-propagation audit before push. This is a literal copy of the signal in
 # hooks/risk-corroboration.sh (add_cat "workflow-engine"); the two are kept
 # byte-identical by tests/scripts/workflow-engine-regex-parity.test.sh, so this
 # copy cannot drift silently. Include, then subtract the prose exclusions.

@@ -134,6 +134,47 @@ def test_rendered_roles_retain_load_bearing_substance(tmp_path):
         assert text  # rendered file is non-empty
 
 
+def test_codex_render_emits_strict_profiles_and_explicit_policy(tmp_path):
+    out = tmp_path / "agents"
+    written = renderer.render_codex(ROOT, out)
+    assert [path.name for path in written] == [
+        "coding.toml",
+        "reviewer.toml",
+        "task-reviewer.toml",
+        "test-runner.toml",
+    ]
+
+    required_capabilities = (
+        "filesystem",
+        "shell",
+        "network",
+        "mcp",
+        "nested_delegation",
+        "context_policy",
+        "model_class",
+        "output_contract",
+    )
+    for path in written:
+        profile = renderer.parse_codex_profile(path.read_text())
+        assert profile["name"] == path.stem.replace("-", "_")
+        assert profile["model"] in renderer.CODEX_MODELS
+        assert profile["model_reasoning_effort"] in renderer.CODEX_EFFORTS
+        assert profile["sandbox_mode"] in renderer.CODEX_SANDBOXES
+        for capability in required_capabilities:
+            assert f"- {capability}:" in profile["developer_instructions"]
+
+    reviewer = renderer.parse_codex_profile((out / "reviewer.toml").read_text())
+    assert reviewer["sandbox_mode"] == "read-only"
+    assert reviewer["mcp_servers"] == {}
+    assert reviewer["agents"]["enabled"] is False
+
+    test_runner = renderer.parse_codex_profile(
+        (out / "test-runner.toml").read_text()
+    )
+    assert test_runner["mcp_servers"]["context7"]["enabled"] is True
+    assert test_runner["agents"]["enabled"] is False
+
+
 def test_reviewer_profiles_are_read_only_no_nesting_no_mcp_and_fresh_bounded():
     contracts, _ = renderer.validate(ROOT)
     for role in renderer.REVIEW_ROLES:

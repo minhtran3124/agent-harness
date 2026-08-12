@@ -1,0 +1,7 @@
+model = "user-selected-model"
+
+[projects."/example/project"]
+trust_level = "trusted"
+
+[mcp_servers.user_server]
+command = "user-command"

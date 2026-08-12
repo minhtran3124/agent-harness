@@ -1,0 +1,18 @@
+{
+  "capture": "isolated-live-model-probe",
+  "captured_at": "2026-08-11",
+  "cli_version": "0.147.0",
+  "config_hash": "sha256:7e5dda9b834e755bbee1e2d7363c39e5f33fc3c9f3bacec632c40be5923c9de9",
+  "platform": "macos-arm64",
+  "result": {
+    "does_not_verify": "Interactive-app-only prompt submission behavior.",
+    "envelope_keys": ["cwd", "hook_event_name", "model", "permission_mode", "prompt", "session_id", "transcript_path", "turn_id"],
+    "event": "UserPromptSubmit",
+    "exit_condition": null,
+    "prompt_redacted": true,
+    "status": "observed",
+    "verifies": "Whether UserPromptSubmit emitted in the disposable exec session."
+  },
+  "runtime": "codex",
+  "schema_version": 1
+}

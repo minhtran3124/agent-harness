@@ -77,6 +77,9 @@ case "${1:-}" in
 {"hook_event_name":"PreToolUse","tool_name":"apply_patch","tool_input":{"command":"*** Begin Patch\n*** End Patch"}}
 {"hook_event_name":"PostToolUse","tool_name":"apply_patch","tool_input":{"command":"*** Begin Patch\n*** End Patch"}}
 EVENTS
+      if [ "${FAKE_OMIT_USER_PROMPT:-0}" != 1 ]; then
+        printf '%s\n' '{"hook_event_name":"UserPromptSubmit","prompt":"redacted probe prompt","session_id":"probe-session"}' >> "$HARNESS_PROBE_EVENT_LOG"
+      fi
     fi
     printf '%s\n' '{"type":"harness_agent_probe","fresh_bounded":true,"full_history_override_rejected":true}'
     ;;
@@ -102,7 +105,7 @@ else
   not_ok "default deterministic capture succeeds"
 fi
 
-EXPECTED="doctor.json hooks-shell.json hooks-apply-patch.json agents-fresh-bounded.json agents-full-history-rejection.json session-end-timing.json platform.json trust-config.json"
+EXPECTED="doctor.json hooks-shell.json hooks-apply-patch.json hooks-unified-exec.json hooks-user-prompt-submit.json agents-fresh-bounded.json agents-full-history-rejection.json session-end-timing.json platform.json trust-config.json"
 for _name in $EXPECTED; do
   assert "writes $_name" test -s "$OUT/$_name"
 done
@@ -114,6 +117,12 @@ assert "doctor output is sanitized" sh -c "! grep -R -q '/Users/private' '$OUT'"
 assert "default shell result is explicit unknown" python3 -c \
   'import json,sys; assert json.load(open(sys.argv[1]))["result"]["status"] == "unknown"' \
   "$OUT/hooks-shell.json"
+assert "default unified-exec envelope is explicit unknown" python3 -c \
+  'import json,sys; assert json.load(open(sys.argv[1]))["result"]["status"] == "unknown"' \
+  "$OUT/hooks-unified-exec.json"
+assert "default UserPromptSubmit envelope is explicit unknown" python3 -c \
+  'import json,sys; assert json.load(open(sys.argv[1]))["result"]["status"] == "unknown"' \
+  "$OUT/hooks-user-prompt-submit.json"
 assert "SessionEnd benchmark uses at least 20 samples" python3 -c \
   'import json,sys; d=json.load(open(sys.argv[1]))["result"]; assert d["samples"] >= 20 and d["max_ms"] < d["support_threshold_ms"]' \
   "$OUT/session-end-timing.json"
@@ -128,12 +137,33 @@ else
   not_ok "paid/model-backed probe requires and accepts explicit opt-in"
 fi
 assert "opted-in capture invokes exec" grep -q '^exec ' "$FAKE_LOG"
+assert "live invocation is ephemeral and uses automation hook-trust bypass" grep -q \
+  '^exec --json --approve-for-me --dangerously-bypass-hook-trust --ephemeral ' "$FAKE_LOG"
 assert "live hook result is observed when all events arrive" python3 -c \
   'import json,sys; assert json.load(open(sys.argv[1]))["result"]["status"] == "observed"' \
   "$LIVE/hooks-apply-patch.json"
+assert "live unified-exec envelope records observed keys without values" python3 -c \
+  'import json,sys; r=json.load(open(sys.argv[1]))["result"]; assert r["status"] == "observed" and r["hook_tool_name"] == "Bash" and r["tool_input_keys"] == ["command"] and r["payload_values_redacted"]' \
+  "$LIVE/hooks-unified-exec.json"
+assert "live UserPromptSubmit envelope is observed and prompt stays redacted" python3 -c \
+  'import json,sys; r=json.load(open(sys.argv[1]))["result"]; assert r["status"] == "observed" and r["event"] == "UserPromptSubmit" and r["envelope_keys"] == ["hook_event_name", "prompt", "session_id"] and r["prompt_redacted"]' \
+  "$LIVE/hooks-user-prompt-submit.json"
+assert "live evidence does not retain submitted prompt" sh -c \
+  "! grep -R -q 'redacted probe prompt' '$LIVE'"
 
 PROBE_REPO=$(sed -n 's/^PROBE_REPO=//p' "$FAKE_LOG" | tail -1)
 assert "temporary live-probe repository is cleaned up" test ! -e "$PROBE_REPO"
+
+NO_PROMPT="$TMP/no-prompt-evidence"
+if FAKE_OMIT_USER_PROMPT=1 CODEX_CAPTURE_DATE=2026-08-10 "$SCRIPT" \
+  --output "$NO_PROMPT" --codex-bin "$FAKE" --platform-label macos-arm64 \
+  --allow-live-model-probe >/dev/null; then
+  assert "missing UserPromptSubmit stays explicit unknown while other hooks remain observed" python3 -c \
+    'import json,sys; prompt=json.load(open(sys.argv[1]))["result"]; shell=json.load(open(sys.argv[2]))["result"]; assert prompt["status"] == "unknown" and prompt["exit_condition"] and shell["status"] == "observed"' \
+    "$NO_PROMPT/hooks-user-prompt-submit.json" "$NO_PROMPT/hooks-shell.json"
+else
+  not_ok "missing UserPromptSubmit is captured without aborting other evidence"
+fi
 
 if FAKE_VERSION=0.148.0 CODEX_CAPTURE_DATE=2026-08-10 "$SCRIPT" \
   --output "$OUT" --codex-bin "$FAKE" --platform-label macos-arm64 >/dev/null 2>&1; then

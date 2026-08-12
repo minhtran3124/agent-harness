@@ -21,16 +21,18 @@ reviewer that sees the plan anchors on it and re-confirms the plan's possible mi
 Symmetric with correctness-review's plan-blindness; here it exists to catch intent drift.
 
 **Use a different model than the implementer** (ensemble diversity — a different model notices
-different drift). Pinned to `claude-opus-5` — the most capable tier, and a distinct model from the
-implementer's `claude-opus-4-8` (`agents/coding.md`), which preserves the diversity this pass
-depends on.
+different drift). Resolve the `intent_reviewer` model stage through the runtime entry binding; it
+is checked to remain distinct from `implementer`, preserving the diversity this pass depends on.
+`model_stage` is not a Task-tool parameter: run
+`python3 scripts/render_runtime_entry.py --runtime <runtime> --model-stage intent_reviewer`
+and pass the printed label as the Task tool's `model:` value.
 
 ```
 Task tool (reviewer):
   description: "Intent review for <slug>"
   subagent_type: reviewer
   # reviewer is a read-only agent (no Write/Edit/Agent) — review independence is enforced structurally, not by instruction.
-  model: claude-opus-5
+  model_stage: intent_reviewer
   prompt: |
     You are an intent reviewer. Your ONLY job is to judge whether this finished diff is
     what the user ORIGINALLY ASKED FOR — not whether it matches a plan, not whether it runs.
@@ -91,7 +93,7 @@ Task tool (reviewer):
       features, options, endpoints, abstractions, config knobs, or new public surface not
       traceable to any intent clause. Flag findings of this class BY DEFAULT, not just when
       convenient.) This `excess` verdict is a post-hoc check on the FINAL diff — distinct from
-      the separate `/simplify` pass, which edits an unmerged pre-ship diff where deletion is
+      the separate simplify pass, which edits an unmerged pre-ship diff where deletion is
       allowed.
 
     Also flag, as a `drift` finding, any case where the SUCCESS CRITERIA (secondary oracle)

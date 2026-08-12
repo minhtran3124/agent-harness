@@ -5,7 +5,7 @@ owner: Minh Tran
 created: 2026-08-10
 ---
 
-# Codex Support — Phase Roadmap (Phases 1–4)
+# Codex Support — Phase Roadmap
 
 This is the umbrella record for making Codex a peer workflow runtime. It holds the shared design
 artifacts and the constraints every phase inherits. **Executable tasks and Success Criteria live in
@@ -18,6 +18,7 @@ with a complete and honest evidence record instead of waiting on the whole initi
 | 2 | `specs/codex-support-phase-2/PLAN.md` | shipped | evidence-driven packaging decision: disposable hybrid-vs-direct probe, recorded decision + fallback trigger |
 | 3 | `specs/codex-support-phase-3/PLAN.md` | shipped | semantic source neutralisation: repository-rooted rule delivery, invocation-neutral prose, neutral agent contracts |
 | 4 | `specs/codex-support-phase-4/PLAN.md` | shipped | runtime-neutral hook input seam: one payload normaliser, fail-closed gates, advisory hooks unchanged |
+| 5 | `specs/codex-support-phase-5/PLAN.md` | implemented; reviewed, awaiting merge | advisory alpha adapter: observed runtime packaging, generated Codex bindings, non-clobber install, doctor/mode record, macOS/Linux CI contract |
 
 Shared artifacts owned by this slug and consumed across phases:
 
@@ -25,6 +26,13 @@ Shared artifacts owned by this slug and consumed across phases:
 - `research-brief.md` — the deep research behind it.
 - `capability-matrix.json` + `evidence/codex-<version>/` — written in Phase 1, read by Phases 2 and 4.
 - `SUMMARY.md` — the design-phase record (PR #194).
+- `specs/codex-support-phase-5/RESEARCH.md` — current alpha-adapter obligations and proposed boundaries.
+
+Phase 5 remains an **advisory alpha**, not peer enforcement or GA. Its selected hybrid package was
+observed with Codex CLI 0.147.0 on macOS arm64. The deterministic contract runs on macOS and Linux
+CI, but Linux runtime execution and WSL remain unobserved; both therefore receive
+`PLATFORM_UNVERIFIED` from the doctor and cannot produce an enforced-mode claim. Phase 6 owns
+per-change parity evidence and review provenance before any peer-runtime language is considered.
 
 ## 1. Motivation
 
@@ -33,7 +41,7 @@ not be built on session-only observations or field-for-field assumptions. Phases
 evidence and neutral seams that make Phase 5 safe: a versioned capability baseline, an executable
 packaging decision, runtime-neutral instruction/agent policy, and one tested hook-input contract.
 
-## 2. Non-goals
+## 2. Non-goals for shipped Phases 1–4
 
 - Emitting or installing the production Codex alpha adapter from Phase 5.
 - Modifying the root `AGENTS.md`, creating a production `.codex/` tree, or claiming non-clobber
@@ -67,8 +75,9 @@ packaging decision, runtime-neutral instruction/agent policy, and one tested hoo
 - Preserve Claude's installed behavior and conflict/prune guarantees.
 - Shared sources use repository-root rule paths and invocation-neutral skill names. Runtime-specific
   syntax belongs only in runtime entry/binding artifacts.
-- Root `AGENTS.md`, production `.codex/`, `settings.json`, and the Phase-5 installer surface are
-  outside these plans and must remain byte-identical.
+- Root `AGENTS.md`, production `.codex/`, `settings.json`, and the Phase-5 installer surface were
+  outside Phases 1–4. Phase 5 may manage only its bounded section/manifest-owned paths and must
+  preserve all user-owned content plus Claude's `settings.json` behavior.
 - Keep Bash compatible with macOS Bash 3.2; prefer Python stdlib for structured parsing; all focused
   checks are pipe-free and complete in under 60 seconds.
 - Workflow-engine changes require a context-propagation audit during implementation, followed by the
@@ -93,10 +102,20 @@ packaging decision, runtime-neutral instruction/agent policy, and one tested hoo
 - **macOS/Linux shell behavior diverges.** Mitigation: keep structured parsing in Python stdlib,
   preserve Bash 3.2 compatibility, and run the full cross-platform CI suite before shipping.
 - **Phase boundaries drift.** Mitigation: no production Codex install, root instruction mutation,
-  runtime-mode schema, review provenance, or parity/GA work enters Phases 1–4; record any discovered
-  need as a Phase-5+ follow-up rather than auto-expanding scope.
+  runtime-mode schema, review provenance, or parity/GA work enters Phases 1–4; Phase 5 owns only the
+  alpha adapter and records parity/provenance/GA needs as Phase-6+ follow-ups.
 
 ## 5. Status Log
+
+- 2026-08-12 — Phase 5 implementation completed through Task 5.6. The composed advisory-alpha
+  contract joins evidence, deterministic rendering, non-clobber lifecycle, outside-hook diagnosis,
+  runtime-mode state, runtime-entry binding, platform boundaries, and Claude regressions. It is a
+  named check on macOS/Linux CI. WSL and Linux runtime execution remain explicit unobserved limits.
+- 2026-08-12 — Review chain complete: context-propagation audit PASS, adversarial correctness review
+  (six find angles, independent per-location scoring, three fix rounds), and an intent review that
+  re-ran all eight SC checks and found no gap. Receipts and residual findings live in
+  `specs/codex-support-phase-5/SUMMARY.md`. Two limits carry to Phase 6: the two-digest evidence
+  state, and delivering the runtime banner inside a Codex session.
 
 - 2026-08-10 — PR #194 merged into `simplify` at `cf29af3`. Deep research refreshed against the
   current tree, Codex CLI 0.147.0, official OpenAI documentation, installed CLI command surfaces,

@@ -40,12 +40,15 @@
       "platforms": ["macos-arm64"],
       "source": {
         "kind": "captured-fixture",
-        "reference": "sanitized local CLI capture — feature availability only. The payload envelope shape is NOT captured: the normaliser's unified-exec handling rests on the official hook schema (traceability tier) and hand-written fixtures. Phase 5 must capture the envelope in a disposable live probe before GA relies on fail-closed dispatch.",
-        "checked_at": "2026-08-10",
-        "expires_at": "2026-11-08"
+        "reference": "sanitized disposable live probe captured Bash PreToolUse/PostToolUse with tool_input.command for one unified-exec shell action",
+        "checked_at": "2026-08-11",
+        "expires_at": "2026-11-09"
       },
-      "config": {"scope": "not-applicable", "sha256": null},
-      "evidence_path": "specs/codex-support/evidence/codex-0.147.0/doctor.json",
+      "config": {
+        "scope": "effective",
+        "sha256": "7e5dda9b834e755bbee1e2d7363c39e5f33fc3c9f3bacec632c40be5923c9de9"
+      },
+      "evidence_path": "specs/codex-support/evidence/codex-0.147.0/hooks-unified-exec.json",
       "owner": "codex-support",
       "exit_condition": null
     },
@@ -184,16 +187,19 @@
       "support_target": "advisory",
       "load_bearing": false,
       "status": "supported",
-      "evidence_level": "documented",
-      "platforms": ["macos-arm64", "linux-x86_64", "wsl-x86_64"],
+      "evidence_level": "observed",
+      "platforms": ["macos-arm64"],
       "source": {
-        "kind": "official-documentation",
-        "reference": "https://learn.chatgpt.com/docs/hooks",
-        "checked_at": "2026-08-10",
-        "expires_at": "2026-11-08"
+        "kind": "captured-fixture",
+        "reference": "sanitized disposable live UserPromptSubmit capture; prompt value redacted",
+        "checked_at": "2026-08-11",
+        "expires_at": "2026-11-09"
       },
-      "config": {"scope": "not-applicable", "sha256": null},
-      "evidence_path": null,
+      "config": {
+        "scope": "effective",
+        "sha256": "7e5dda9b834e755bbee1e2d7363c39e5f33fc3c9f3bacec632c40be5923c9de9"
+      },
+      "evidence_path": "specs/codex-support/evidence/codex-0.147.0/hooks-user-prompt-submit.json",
       "owner": "codex-support",
       "exit_condition": null
     },
@@ -349,9 +355,9 @@
       "platforms": ["macos-arm64"],
       "source": {
         "kind": "captured-fixture",
-        "reference": "isolated local marketplace and plugin lifecycle probe; runtime execution not claimed",
-        "checked_at": "2026-08-10",
-        "expires_at": "2026-11-08"
+        "reference": "isolated local marketplace lifecycle plus separate observed hybrid skill, automation-vetted hook, and project-agent runtime evidence",
+        "checked_at": "2026-08-11",
+        "expires_at": "2026-11-09"
       },
       "config": {"scope": "not-applicable", "sha256": null},
       "evidence_path": "specs/codex-support/evidence/codex-0.147.0/packaging-hybrid.json",

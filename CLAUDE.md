@@ -16,6 +16,27 @@ See `rules/behavior.md` — that file is the single source of truth (deployed to
 - **Knowledge base** — `docs/solutions/<category>/<slug>.md` with YAML front-matter
 - **Agents** — Sub-agent role definitions in `agents/`
 
+## Runtime support boundary
+
+Claude Code remains the established deployment path. The **Codex advisory alpha** is a generated,
+non-clobber adapter pinned to observed Codex CLI 0.147.0 evidence on macOS arm64; it is **not GA**
+and does not make Codex a peer enforcement runtime. Install, update, conflict recovery, and removal
+are documented in `docs/codex-alpha-install.md`.
+
+Run `python3 scripts/codex_harness_doctor.py --root <project>` outside hooks after installation or
+after changing Codex version, configuration, or trust. Its local result has three meanings:
+`enforced` means every load-bearing check is current for the observed platform; `advisory` means the
+adapter remains usable but at least one guarantee is unknown, stale, untrusted, or mismatched; and
+`unsupported` means a required installation, package, dependency, or platform precondition is
+absent. Linux and WSL currently receive `PLATFORM_UNVERIFIED`, so they cannot inherit the observed
+macOS enforcement result. The doctor reports effective trust; the adapter never edits trust choices.
+
+At this alpha, **no available input carries observed hook trust**: Codex CLI 0.147.0's
+`doctor --json` has no trust field, and a project `trust_level` read from config is approval, not
+proof of hook execution — it yields `TRUST_CONFIG_ONLY` and holds the result at `advisory`. So a
+real run returns `advisory` or `unsupported`; `enforced` is implemented and reachable only once an
+input supplies observed hook trust, which Phase 6 owns. Treat an `enforced` claim today as a bug.
+
 ## Skill Workflow
 
 `feature-intake` runs first and **routes by lane** — it decides how much of the chain below
@@ -62,7 +83,7 @@ Hooks live in `hooks/` (top-level). Register them in `settings.json` under the a
 
 ### Gate verifiability (traceability ≠ provenance ≠ truth)
 
-Every gate enforces exactly one evidence tier and must not claim a higher one: **traceability** (structure matches — an ID exists, a rendered artifact agrees with its ledger), **provenance** (evidence is re-derived from the source of truth — a receipt pinned at base, an INDEX rebuilt), or **truth** (behavior is re-run — a Verify row re-executes and exit codes are compared). When adding a gate or hook, document two lines: `Verifies:` what code checks, and `Does not verify:` the negative scope. Existing example — the lane-evidence gate verifies a `### Verify` row *exists*; it does not verify the row is *honest* (that is the opt-in `REQUIRE_VERIFY=1` re-run gate).
+Every gate enforces exactly one evidence tier and must not claim a higher one: **traceability** (structure matches — an ID exists, a rendered artifact agrees with its ledger), **provenance** (evidence is re-derived from the source of truth — a receipt pinned at base, an INDEX rebuilt), or **truth** (behavior is re-run — a Verify row re-executes and exit codes are compared). When adding a gate or hook, document two lines: `Verifies:` what code checks, and `Does not verify:` the negative scope. Existing example — the lane-evidence gate verifies a `### Verify` row *exists*; it does not verify the row is *honest* (that is the opt-in `REQUIRE_VERIFY=1` re-run gate). Second example — the optional SUMMARY runtime-metadata check inside `scripts/verify_summary.py`. `Verifies:` the `Runtime-mode`/`Runtime-evidence-id` pair is present as a complete pair and well-formed (valid mode, valid evidence-id shape). `Does not verify:` that the pair matches any real diagnosis. The local record lives in the gitignored, agent-writable `.harness-state/`, so a commit-time comparison could never be index-safe (`docs/solutions/harness/gate-config-must-read-index.md`); the check is deliberately format-only, and the doctor — not this gate — is the authority on the mode.
 
 Each `SUMMARY.md` states its own negative scope in `### Not auto-verified`: the claims it makes that no gate checks, each labelled with the tier it reached. On the high-risk lane this is checked — **advisory by default**, blocking under `REQUIRE_NOT_AUTO_VERIFIED=1`. That check is itself traceability-tier: `Verifies:` the section exists and holds a non-placeholder bullet (or `- none`); `Does not verify:` that the claims are complete or their tier labels correct. `- none` satisfies it, deliberately — it forces the question to be answered, not answered truthfully.
 

@@ -281,7 +281,7 @@ STAGED_APP_COUNT=$(git diff --cached --name-only -- 'app/**/*.py' 2>/dev/null | 
 if [[ "$STAGED_APP_COUNT" -ge 5 ]]; then
   echo "" >&2
   echo "  ★ Large session detected ($STAGED_APP_COUNT app/ files)." >&2
-  echo "    Consider running /compound to crystallize learnings." >&2
+  echo "    Consider running the compound skill to crystallize learnings." >&2
   echo "" >&2
 fi
 

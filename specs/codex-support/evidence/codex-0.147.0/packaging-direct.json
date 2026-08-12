@@ -1,7 +1,7 @@
 {
   "candidate": "direct",
   "capture": "isolated-local-packaging-probe",
-  "captured_at": "2026-08-10",
+  "captured_at": "2026-08-11",
   "cli_version": "0.147.0",
   "config_hash": "not-applicable",
   "platform": "macos-arm64",

@@ -5,11 +5,12 @@ set -u
 
 usage() {
   cat <<'EOF'
-Usage: probe_codex_packaging.sh --output DIR --codex-bin PATH
+Usage: probe_codex_packaging.sh --output DIR --codex-bin PATH [options]
 
 The probe uses local fixture sources only. It redirects both HOME and CODEX_HOME
-to fresh temporary directories before invoking Codex, makes no model call, and
-publishes sanitized JSON for both candidates after capture completes.
+to fresh temporary directories before invoking Codex. By default it makes no
+model call. Pass --allow-live-model-probe to explicitly authorize one disposable
+runtime execution probe. Use --auth-file PATH to seed only its disposable Codex state.
 EOF
 }
 
@@ -20,6 +21,8 @@ die() {
 
 OUTPUT=""
 CODEX_BIN=""
+AUTH_FILE=""
+ALLOW_LIVE=0
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --output)
@@ -30,6 +33,15 @@ while [ "$#" -gt 0 ]; do
     --codex-bin)
       [ "$#" -ge 2 ] || die "--codex-bin requires a value"
       CODEX_BIN=$2
+      shift 2
+      ;;
+    --allow-live-model-probe)
+      ALLOW_LIVE=1
+      shift
+      ;;
+    --auth-file)
+      [ "$#" -ge 2 ] || die "--auth-file requires a value"
+      AUTH_FILE=$2
       shift 2
       ;;
     -h|--help)
@@ -81,6 +93,11 @@ if any(home.iterdir()) or any(codex_home.iterdir()):
     raise SystemExit(1)
 PY
 : >"$RAW/isolated-state-roots.present"
+if [ -n "$AUTH_FILE" ]; then
+  [ -f "$AUTH_FILE" ] || die "auth file not found: $AUTH_FILE"
+  cp "$AUTH_FILE" "$ISOLATED_CODEX_HOME/auth.json" || die "cannot seed disposable auth"
+  chmod 600 "$ISOLATED_CODEX_HOME/auth.json" || die "cannot protect disposable auth"
+fi
 
 python3 - "$FIXTURES" "$MARKET_ROOT" "$HYBRID_PROJECT" "$DIRECT_PROJECT" <<'PY' \
   || die "cannot materialize packaging candidates"
@@ -129,7 +146,7 @@ skill_text = "---\nname: harness-packaging-probe\ndescription: Disposable packag
                         "hooks": [
                             {
                                 "type": "command",
-                                "command": "printf HARNESS_PACKAGING_HOOK_OK",
+                                "command": "python3 -c \"import os,pathlib; pathlib.Path(os.environ['HARNESS_PACKAGING_HOOK_LOG']).write_text('HARNESS_PACKAGING_HOOK_OK')\"",
                             }
                         ]
                     }
@@ -178,6 +195,10 @@ esac
 CAPTURE_DATE=${CODEX_CAPTURE_DATE:-$(date -u +%Y-%m-%d 2>/dev/null)}
 python3 -c 'import datetime,sys; datetime.date.fromisoformat(sys.argv[1])' "$CAPTURE_DATE" \
   >/dev/null 2>&1 || die "capture date must be YYYY-MM-DD"
+LIVE_RC=125
+RUNTIME_STDOUT="$RAW/runtime.stdout"
+RUNTIME_HOOK_LOG="$RAW/runtime-hook.log"
+: >"$RUNTIME_STDOUT"
 printf 'definitely_unknown_packaging_probe_key = true\n' >"$ISOLATED_CODEX_HOME/config.toml"
 if HOME="$ISOLATED_HOME" CODEX_HOME="$ISOLATED_CODEX_HOME" \
   "$CODEX_BIN" --strict-config --no-alt-screen </dev/null \
@@ -280,6 +301,33 @@ PY
   : >"$RAW/cache-hooks.present"
   printf '%s\n' "$_cache_version" >"$RAW/cache-version.txt"
 
+  if [ "$ALLOW_LIVE" -eq 1 ]; then
+    git -C "$HYBRID_PROJECT" init -q >/dev/null 2>&1 || {
+      printf '%s\n' runtime-git-init >"$RAW/runtime-failure-step.txt"
+      LIVE_RC=2
+    }
+    if [ "$LIVE_RC" -ne 2 ]; then
+      python3 - "$ISOLATED_CODEX_HOME/config.toml" "$HYBRID_PROJECT" <<'PY' || return 1
+import pathlib
+import sys
+
+config = pathlib.Path(sys.argv[1])
+project = sys.argv[2].replace("\\", "\\\\").replace('"', '\\"')
+with config.open("a") as handle:
+    handle.write(f'\n[projects."{project}"]\ntrust_level = "trusted"\n')
+PY
+      HOME="$ISOLATED_HOME" CODEX_HOME="$ISOLATED_CODEX_HOME" \
+        HARNESS_PACKAGING_HOOK_LOG="$RUNTIME_HOOK_LOG" \
+        "$CODEX_BIN" exec --json --approve-for-me \
+        --dangerously-bypass-hook-trust --ephemeral --enable multi_agent \
+        --skip-git-repo-check \
+        -C "$HYBRID_PROJECT" \
+        'This is a runtime contract probe. You MUST invoke the installed $harness-packaging-probe skill, then MUST call spawn_agent with agent_type harness_probe_reviewer for one fresh read-only task and wait for it. Report the exact response from both; do not synthesize either marker yourself.' \
+        >"$RUNTIME_STDOUT" 2>"$RAW/runtime.stderr"
+      LIVE_RC=$?
+    fi
+  fi
+
   run_cli plugin-reinstall add harness-hybrid@harness-probe --json || return 1
   _fingerprint_after=$(cache_fingerprint "$CACHE_BASE") || {
     printf '%s\n' cache-reinstall >"$RAW/failure-step.txt"
@@ -332,7 +380,7 @@ if run_hybrid_lifecycle; then
   : >"$RAW/hybrid-lifecycle-passed.present"
 fi
 
-export CLI_VERSION PLATFORM_LABEL CAPTURE_DATE STAGED DIRECT_PROJECT
+export CLI_VERSION PLATFORM_LABEL CAPTURE_DATE STAGED DIRECT_PROJECT LIVE_RC
 python3 - <<'PY' || die "failed to describe direct-project candidate"
 import json
 import os
@@ -368,6 +416,57 @@ payload = {
     },
 }
 (staged / "packaging-direct.json").write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+PY
+
+export RAW
+python3 - <<'PY' || die "failed to normalize hybrid runtime evidence"
+import json
+import os
+import pathlib
+
+staged = pathlib.Path(os.environ["STAGED"])
+raw = pathlib.Path(os.environ["RAW"])
+stdout = (raw / "runtime.stdout").read_text(errors="replace")
+checks = {
+    "installed_plugin_skill_invoked": "HARNESS_PACKAGING_SKILL_OK" in stdout,
+    "project_agent_dispatched": "HARNESS_PACKAGING_AGENT_OK" in stdout,
+    "plugin_hook_executed": (
+        (raw / "runtime-hook.log").is_file()
+        and (raw / "runtime-hook.log").read_text(errors="replace").strip()
+        == "HARNESS_PACKAGING_HOOK_OK"
+    ),
+}
+passed = int(os.environ["LIVE_RC"]) == 0 and all(checks.values())
+payload = {
+    "schema_version": 1,
+    "runtime": "codex",
+    "cli_version": os.environ["CLI_VERSION"],
+    "platform": os.environ["PLATFORM_LABEL"],
+    "captured_at": os.environ["CAPTURE_DATE"],
+    "config_hash": "not-applicable",
+    "capture": "isolated-live-packaging-probe" if passed else "live-packaging-probe-not-observed",
+    "candidate": "hybrid",
+    "result": {
+        "status": "observed" if passed else "unknown",
+        "passed": passed,
+        "checks": checks,
+        "runtime_execution_observed": passed,
+        "payload_values_redacted": True,
+        "hook_trust_mode": "automation-vetted-bypass" if checks["plugin_hook_executed"] else "not-observed",
+        "verifies": "Installed plugin skill invocation, automation-vetted plugin hook execution, and project-agent dispatch in one disposable session.",
+        "does_not_verify": "Persisted user hook trust, interactive desktop behavior, network marketplace installation, or the direct-project fallback.",
+    },
+}
+if not passed:
+    payload["result"].update(
+        {
+            "owner": "codex-support-phase-5",
+            "exit_condition": "Run the explicitly authorized hybrid runtime probe until skill, hook, and agent checks all pass.",
+        }
+    )
+(staged / "packaging-hybrid-runtime.json").write_text(
+    json.dumps(payload, indent=2, sort_keys=True) + "\n"
+)
 PY
 
 export HYBRID_PROJECT RAW
@@ -462,7 +561,7 @@ for path in root.glob("*.json"):
 PY
 
 mkdir -p "$OUTPUT" || die "cannot create output directory"
-for _result in packaging-hybrid.json packaging-direct.json; do
+for _result in packaging-hybrid.json packaging-hybrid-runtime.json packaging-direct.json; do
   cp "$STAGED/$_result" "$OUTPUT/$_result" || die "cannot publish $_result"
 done
-printf 'codex-packaging-probe: wrote 2 sanitized fixtures for Codex %s\n' "$CLI_VERSION"
+printf 'codex-packaging-probe: wrote 3 sanitized fixtures for Codex %s\n' "$CLI_VERSION"
