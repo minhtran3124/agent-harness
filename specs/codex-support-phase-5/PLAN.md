@@ -10,7 +10,7 @@ created: 2026-08-11
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**6 tasks · 4 waves · 73 files · 4/6 done**
+**6 tasks · 4 waves · 77 files · 5/6 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -237,6 +237,10 @@ Parent roadmap: `specs/codex-support/ROADMAP.md`. Preparation research:
 
 ## 6. Status Log
 
+- 2026-08-12 — task 5.5 complete; commit 3d4aa98 — wave 3 closed. Review fixes folded in before
+  commit: every model_stage prompt names the exact render_runtime_entry.py resolve command so an
+  isolated dispatch cannot silently fall back to the wrong pinned model. The workflow-engine
+  surfaces changed here still require the context-propagation audit before ship.
 - 2026-08-12 — task 5.4 complete; commit e434b14. Review fix folded in before commit:
   documented-only load-bearing evidence now emits EVIDENCE_DOCUMENTED_ONLY so enforced can only
   rest on observed runtime truth. Wave 3 still open — the runtime-entry-binding task remains.
