@@ -42,6 +42,11 @@ jobs:
       - name: Install shellcheck (macOS)
         if: runner.os == 'macOS'
         run: brew install shellcheck
+      # This is intentionally explicit even though run-tests.sh discovers the same shell
+      # contract. It makes the Codex alpha boundary a named macOS/Linux CI result; WSL is
+      # not represented by GitHub-hosted CI and therefore remains advisory by contract.
+      - name: Run Codex advisory-alpha contract
+        run: bash tests/scripts/codex-alpha-contract.test.sh
       - name: Run harness test suite
         run: bash scripts/run-tests.sh
 

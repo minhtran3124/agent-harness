@@ -4,6 +4,15 @@ Skills are reusable prompt programs invoked by name through the active runtime. 
 
 This file is the single source of truth for overview, workflow, and cross-skill concerns — consult the `SKILL.md` of each skill for runtime behavior. Two skills keep deeper standalone docs: `skills/compound/README.md` and `skills/xia2/README.md`; the other per-skill `README.md` files have been removed (their rationale notes live at the bottom of this file).
 
+## Runtime entry syntax
+
+Skill names in this repository are semantic and runtime-neutral. At an entry boundary, the checked
+binding renders `/skill-name` for Claude Code and `$skill-name` for the **Codex advisory alpha**.
+Shared skills must not hard-code either form. Codex support is not GA or peer enforcement: the
+outside-hook doctor may report `enforced` only for a complete, current, trusted, observed local
+combination; Linux and WSL remain advisory while their platform evidence is unobserved. Installation
+and lifecycle details live in `docs/codex-alpha-install.md`.
+
 ---
 
 ## Development Workflows

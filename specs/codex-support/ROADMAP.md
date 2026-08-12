@@ -18,7 +18,7 @@ with a complete and honest evidence record instead of waiting on the whole initi
 | 2 | `specs/codex-support-phase-2/PLAN.md` | shipped | evidence-driven packaging decision: disposable hybrid-vs-direct probe, recorded decision + fallback trigger |
 | 3 | `specs/codex-support-phase-3/PLAN.md` | shipped | semantic source neutralisation: repository-rooted rule delivery, invocation-neutral prose, neutral agent contracts |
 | 4 | `specs/codex-support-phase-4/PLAN.md` | shipped | runtime-neutral hook input seam: one payload normaliser, fail-closed gates, advisory hooks unchanged |
-| 5 | `specs/codex-support-phase-5/PLAN.md` | proposed | advisory alpha adapter: observed runtime packaging, generated Codex bindings, non-clobber install, doctor and mode record |
+| 5 | `specs/codex-support-phase-5/PLAN.md` | implemented; review pending | advisory alpha adapter: observed runtime packaging, generated Codex bindings, non-clobber install, doctor/mode record, macOS/Linux CI contract |
 
 Shared artifacts owned by this slug and consumed across phases:
 
@@ -27,6 +27,12 @@ Shared artifacts owned by this slug and consumed across phases:
 - `capability-matrix.json` + `evidence/codex-<version>/` — written in Phase 1, read by Phases 2 and 4.
 - `SUMMARY.md` — the design-phase record (PR #194).
 - `specs/codex-support-phase-5/RESEARCH.md` — current alpha-adapter obligations and proposed boundaries.
+
+Phase 5 remains an **advisory alpha**, not peer enforcement or GA. Its selected hybrid package was
+observed with Codex CLI 0.147.0 on macOS arm64. The deterministic contract runs on macOS and Linux
+CI, but Linux runtime execution and WSL remain unobserved; both therefore receive
+`PLATFORM_UNVERIFIED` from the doctor and cannot produce an enforced-mode claim. Phase 6 owns
+per-change parity evidence and review provenance before any peer-runtime language is considered.
 
 ## 1. Motivation
 
@@ -100,6 +106,12 @@ packaging decision, runtime-neutral instruction/agent policy, and one tested hoo
   alpha adapter and records parity/provenance/GA needs as Phase-6+ follow-ups.
 
 ## 5. Status Log
+
+- 2026-08-12 — Phase 5 implementation completed through Task 5.6. The composed advisory-alpha
+  contract joins evidence, deterministic rendering, non-clobber lifecycle, outside-hook diagnosis,
+  runtime-mode state, runtime-entry binding, platform boundaries, and Claude regressions. It is a
+  named check on macOS/Linux CI. WSL and Linux runtime execution remain explicit unobserved limits;
+  correctness/context/intent review receipts are still required before Phase 5 can be marked shipped.
 
 - 2026-08-10 — PR #194 merged into `simplify` at `cf29af3`. Deep research refreshed against the
   current tree, Codex CLI 0.147.0, official OpenAI documentation, installed CLI command surfaces,

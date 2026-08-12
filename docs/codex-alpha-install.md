@@ -5,6 +5,11 @@ The Codex adapter is an advisory alpha pinned to the evidence boundary in
 Installation does not imply that hooks are trusted or that enforcement mode is active. Task 5.4's
 outside-hook doctor is the authority for that claim.
 
+The alpha is not GA and does not establish peer enforcement with Claude Code. The complete observed
+runtime baseline is macOS arm64. Linux and WSL are included in deterministic CI/contract coverage,
+but their real Codex runtime behavior is not yet observed, so the doctor emits
+`PLATFORM_UNVERIFIED` and cannot return `enforced` there.
+
 Codex requires a `.codex-plugin/plugin.json` manifest and supports adding a local marketplace with
 `codex plugin marketplace add`. The installer uses that supported lifecycle instead of editing
 Codex configuration directly. See the official [plugin packaging and marketplace
@@ -41,6 +46,30 @@ file; it does not create `.codex/AGENTS.md` or replace project prose. See the of
 The installer does not directly edit `.codex/config.toml`, project trust, project hooks, unrelated
 marketplaces/plugins, custom agents, or content outside its `AGENTS.md` markers. Marketplace and
 plugin registration go through the Codex CLI so Codex can merge its own state.
+
+## Review trust and runtime mode
+
+Review the project and user trust configuration in Codex itself; do not copy or delete trust entries
+to make the adapter pass. Then run the harness doctor outside any hook:
+
+```bash
+python3 scripts/codex_harness_doctor.py --root /path/to/project
+```
+
+The wrapper consumes the redacted machine-readable `codex doctor --json` report and persists only a
+sanitized record under `.harness-state/codex-runtime.json`:
+
+- `enforced` — every required feature, dependency, installed hash, matcher, discovery, trust, CLI,
+  platform, and fresh evidence check passed for this local combination;
+- `advisory` — the adapter may still be used, but one or more load-bearing claims are unknown,
+  stale, untrusted, or mismatched; and
+- `unsupported` — a required package, install, dependency, or supported platform precondition is
+  missing.
+
+Re-run the doctor after an install/update, Codex CLI change, config/trust change, or any managed-file
+conflict. A cached record is invalidated when its install, config, CLI, or trust fingerprint changes.
+The official [Codex CLI reference](https://developers.openai.com/codex/cli/reference) documents the
+underlying diagnostic command; the harness mode is a repository-owned conservative overlay.
 
 ## Conflicts
 

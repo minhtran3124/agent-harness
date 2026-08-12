@@ -10,7 +10,7 @@ created: 2026-08-11
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**6 tasks · 4 waves · 77 files · 5/6 done**
+**6 tasks · 4 waves · 77 files · 6/6 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -48,7 +48,7 @@ flowchart LR
 - [x] 5.3 — Install the hybrid adapter without clobbering user state (wave 3)
 - [x] 5.4 — Add the outside-hook doctor and runtime-mode record (wave 3)
 - [x] 5.5 — Move runtime-entry prose behind one binding (wave 3)
-- [ ] 5.6 — Prove and document the advisory alpha boundary (wave 4)
+- [x] 5.6 — Prove and document the advisory alpha boundary (wave 4)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -237,6 +237,12 @@ Parent roadmap: `specs/codex-support/ROADMAP.md`. Preparation research:
 
 ## 6. Status Log
 
+- 2026-08-12 — task 5.6 implementation complete. Added the composed advisory-alpha contract as a
+  named macOS/Linux CI gate; registered its manifest consumers; documented install/update/remove,
+  trust review, mode semantics, and the non-peer/non-GA boundary. Linux runtime execution and WSL
+  remain explicit unobserved platforms, so `PLATFORM_UNVERIFIED` forces advisory. All eight SUMMARY
+  Verify rows pass, and the CI-equivalent suite is `ALL GREEN` with 559 Python tests; final
+  context-propagation, correctness, and intent reviews remain before ship.
 - 2026-08-12 — task 5.5 complete; commit 3d4aa98 — wave 3 closed. Review fixes folded in before
   commit: every model_stage prompt names the exact render_runtime_entry.py resolve command so an
   isolated dispatch cannot silently fall back to the wrong pinned model. The workflow-engine
