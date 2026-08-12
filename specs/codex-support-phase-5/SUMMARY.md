@@ -104,6 +104,25 @@ in prose rather than represented as a sub-60-second Verify row.
   (traceability).** Deterministic implementation is complete, but the roadmap remains review-pending
   until their receipts are recorded.
 
+### Context-Propagation Audit
+
+**PASS** — every changed workflow-engine instruction reaches its isolated consumers through an
+explicit Read, an always-loaded surface, or a drift-tested render; no load-bearing row is assumed.
+
+| Source | Consumer | Context | Delivery | Proof |
+| --- | --- | --- | --- | --- |
+| `adapters/runtime-entry-bindings.json` (model stages) | `correctness-scorer-prompt.md`, `intent-reviewer-prompt.md`, `task-reviewer-prompt.md` | main orchestrator dispatching reviewer/scorer | each prompt carries the complete inline resolve command (`render_runtime_entry.py --model-stage …`) | `tests/scripts/runtime-entry-bindings.test.sh` greps all three `model_stage:` lines; scanner fails any reintroduced vendor label |
+| prompt files above | correctness-review / intent-review / SDD orchestrators | main session | explicit Read — each SKILL.md names its prompt file (`SKILL.md:23`, `:26`, `:57`) | inspected call sites |
+| same binding, Codex side | Codex child agents | fresh Codex agent session | model baked into rendered `.codex/agents/*.toml` at render time — no runtime resolution needed in-child | `test_render_codex_adapter.py` byte-stable render; `validate()` enforces scorer≠finder per runtime |
+| `agents/runtime-bindings.json` codex roles | `render_agent_definitions.render_codex`, `render_runtime_entry` | render-time | direct read + closed vocabularies | 20 + 18 pytest, mutation tests |
+| neutralized hook messages (scope-gate, risk-corroboration, commit-quality-gate) | any runtime agent at hook fire time | main session (either runtime) | always-loaded via `settings.json` registration (unchanged) | 80 hook-test assertions on the new wording; exit codes unchanged |
+| runtime boundary policy (CLAUDE.md / HARNESS.md / skills README / ROADMAP) | main session, human readers | always-loaded (CLAUDE.md) / linked docs | doc-truth lint + `codex-alpha-contract.test.sh` phrase assertions | contract test 7/7 |
+| `templates/SUMMARY.template.md` runtime-metadata comment | intake SUMMARY writers | new session | template copy at intake; optional all-or-nothing pair validated by `verify_summary.py` | `test_verify_summary.py` runtime-metadata cases |
+
+Note: the prompt-file resolve command references `scripts/render_runtime_entry.py`, which ships with
+the repository, not with the Codex plugin — on Codex the equivalent authority is the rendered agent
+profile, so no Codex child context depends on that script.
+
 ### Rollback
 
 - For an installed consumer, first run
