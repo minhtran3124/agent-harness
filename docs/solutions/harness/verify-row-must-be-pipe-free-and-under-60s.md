@@ -41,8 +41,11 @@ Every Verify command must be **pipe-free** AND **<60s re-runnable**:
 
 ## Guardrail
 
-`proposed:` a lint (extend `scripts/lint-doc-truth.sh` or a new `check_verify_rows.py`) that scans every `specs/*/SUMMARY.md` `### Verify` command cell and fails on (a) a literal `|` in the command, and (b) a command matching `run-tests.sh` / `make .*test` / "full suite". Wire into `run-tests.sh` L1 so the authoring mistake is caught before CI, not after a blocked strict gate.
+`existing:` `scripts/check_verify_rows.py`, wired into `run-tests.sh` L1, scans every changed `specs/*/SUMMARY.md` / `PLAN.md` `### Verify` command cell and fails on (a) a literal `|` in the command, and (b) a whole-suite/build invocation.
+
+**Reachability caveat (2026-08-12, PR #202):** that L1 step is scoped to files changed *in commits* (`git diff BASE...HEAD`), so it does not see a SUMMARY that is written but not yet committed — the usual authoring order. A whole-suite row therefore still reached CI and blocked all three jobs while local `run-tests.sh` said `ALL GREEN`. Lint the path directly before pushing (`python3 scripts/check_verify_rows.py specs/<slug>/SUMMARY.md`, and `python3 scripts/verify_summary.py <slug> --check` for the strict-gate re-run). See `committed-diff-scoped-lint-skips-uncommitted-work.md`.
 
 ## Related
+- docs/solutions/harness/committed-diff-scoped-lint-skips-uncommitted-work.md
 - docs/solutions/harness/mutation-testing-proves-a-suite-is-load-bearing.md
 - docs/solutions/scripts/bash-empty-array-and-jsonl-parsing-gotchas.md
