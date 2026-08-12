@@ -1,6 +1,6 @@
 ---
 slug: codex-support-phase-5
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-08-11
 ---
@@ -237,6 +237,13 @@ Parent roadmap: `specs/codex-support/ROADMAP.md`. Preparation research:
 
 ## 6. Status Log
 
+- 2026-08-12 — shipped. Review chain closed: context-propagation audit PASS, adversarial
+  correctness review (six angles, 15 scored locations, four fix rounds each re-reviewed), and an
+  intent review that re-ran all eight SC checks with no gap. The fix rounds themselves surfaced
+  three further defects — a config-derived trust unlocking `enforced`, trust-reader scope leaks,
+  and a fingerprint change that self-invalidated every record — all closed. Receipt pinned at
+  `fb63f4d`; full suite green (569 Python tests). `enforced` is documented as unreachable until
+  Phase 6 supplies observed hook trust.
 - 2026-08-12 — task 5.6 complete; commit 87b5917 — wave 4 closed, all six tasks implemented.
   Review additions folded in before commit: MCP-scoping and non-hermetic-doctor bullets in
   Not auto-verified, the manifest paper-overlap deviation, and the runtime-metadata gate's
