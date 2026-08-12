@@ -70,7 +70,7 @@ inherit macOS enforcement evidence on Linux or WSL.
 | Outside-hook diagnosis | `python3 -m pytest scripts/test_codex_harness_doctor.py -q` | 0 | mode, trust, platform, hash, discovery, privacy, and freshness fixtures | SC-4 |
 | Runtime-mode metadata | `python3 -m pytest runtime/test_runtime_mode.py runtime/test_run_state.py scripts/test_verify_summary.py -q` | 0 | sanitized state plus legacy-compatible run/SUMMARY metadata | SC-5 |
 | Runtime-entry binding | `bash tests/scripts/runtime-entry-bindings.test.sh` | 0 | paired Claude/Codex syntax and zero unowned entry exceptions | SC-6 |
-| Advisory-alpha composition | `bash tests/scripts/codex-alpha-contract.test.sh` | 0 | all Phase-5 surfaces, macOS/Linux CI gate, explicit WSL advisory boundary, Claude regressions | SC-7 |
+| Advisory-alpha composition | `bash tests/scripts/codex-alpha-contract.test.sh --quick` | 0 | unique alpha assertions (platform boundary, docs/manifest phrases, binding check); the full composed suite runs as a named CI step and inside run-tests.sh — a whole-suite row would break the 60s ci-strict-gate cap | SC-7 |
 | Manifest registration | `python3 scripts/check_manifest.py` | 0 | adapter, install, diagnosis, binding, and alpha consumers resolve on disk | SC-8 |
 
 The CI-equivalent `bash scripts/run-tests.sh` completed `ALL GREEN` before Task 5.6 with 552 Python

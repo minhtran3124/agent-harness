@@ -138,6 +138,23 @@ def test_vendor_model_label_in_shared_prose_is_detected(tmp_path):
     assert validate(tmp_path) == []
 
 
+def test_legacy_dated_claude_label_is_still_detected(tmp_path):
+    finding = {
+        "path": "skills/demo/SKILL.md",
+        "category": "vendor-agent-policy",
+        "classification": "shared-source-violation",
+        "count": 1,
+        "owner": "phase-5",
+        "exit_condition": "Resolve the label through the runtime binding.",
+    }
+    write_fixture(
+        tmp_path,
+        text="model: claude-3-5-sonnet-20241022\n",
+        findings=[finding],
+    )
+    assert validate(tmp_path) == []
+
+
 def test_exception_requires_owner_and_exit_condition(tmp_path):
     finding = {
         "path": "skills/demo/SKILL.md",

@@ -10,6 +10,7 @@ import os
 import re
 import sys
 import tempfile
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -81,10 +82,21 @@ def install_hash(root: Path) -> str:
     return _hash_files(rows)
 
 
+def default_codex_home() -> Path:
+    """Effective user-level Codex state root; env override, else ~/.codex."""
+    override = os.environ.get("CODEX_HOME")
+    return Path(override) if override else Path.home() / ".codex"
+
+
 def config_hash(root: Path, codex_home: Path | None = None) -> str:
-    rows = [("project-config", root.resolve() / ".codex/config.toml")]
-    if codex_home is not None:
-        rows.append(("user-config", codex_home.resolve() / "config.toml"))
+    """Hash the project config AND the user-level config: hook trust and feature
+    enablement live in the user file, so it must participate in invalidation."""
+    if codex_home is None:
+        codex_home = default_codex_home()
+    rows = [
+        ("project-config", root.resolve() / ".codex/config.toml"),
+        ("user-config", codex_home.resolve() / "config.toml"),
+    ]
     return _hash_files(rows)
 
 
@@ -127,7 +139,10 @@ def make_record(
         raise RuntimeModeError("reason codes must use the stable uppercase vocabulary")
     fingerprint = _validate_fingerprint(fingerprint)
     summary = dict(sorted(diagnostic_summary.items()))
-    if not all(isinstance(key, str) and isinstance(value, str) for key, value in summary.items()):
+    if not all(
+        isinstance(key, str) and isinstance(value, str)
+        for key, value in summary.items()
+    ):
         raise RuntimeModeError("diagnostic_summary must contain strings only")
     identity = {
         "mode": mode,
@@ -201,7 +216,9 @@ def persist_record(root: Path, record: dict[str, Any]) -> Path:
     destination = state_path(root)
     destination.parent.mkdir(parents=True, exist_ok=True)
     payload = json.dumps(record, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
-    with tempfile.NamedTemporaryFile("w", dir=destination.parent, delete=False) as handle:
+    with tempfile.NamedTemporaryFile(
+        "w", dir=destination.parent, delete=False
+    ) as handle:
         handle.write(payload)
         temporary = Path(handle.name)
     os.replace(temporary, destination)
@@ -251,11 +268,32 @@ def local_fingerprint_for_record(root: Path, record: dict[str, Any]) -> dict[str
     }
 
 
+def _expire_if_stale(
+    record: dict[str, Any], today: date | None = None
+) -> dict[str, Any]:
+    """A record whose evidence expired must not keep advertising `enforced`."""
+    expires_at = record.get("evidence_expires_at")
+    if not expires_at:
+        return record
+    try:
+        expired = date.fromisoformat(expires_at) < (today or date.today())
+    except ValueError:
+        expired = True
+    if not expired:
+        return record
+    reasons = sorted(set(record["reason_codes"]) | {"EVIDENCE_STALE"})
+    mode = "advisory" if record.get("mode") == "enforced" else record.get("mode")
+    return {**record, "mode": mode, "reason_codes": reasons, "valid": False}
+
+
 def context_line(root: Path, limit: int = 500) -> str:
     record = load_record(root)
     if record is None:
         return ""
-    effective = invalidate_if_changed(record, local_fingerprint_for_record(root, record))
+    effective = invalidate_if_changed(
+        record, local_fingerprint_for_record(root, record)
+    )
+    effective = _expire_if_stale(effective)
     reasons = ",".join(effective["reason_codes"][:6]) or "none"
     text = (
         f"[codex runtime] mode={effective['mode']} evidence={effective['evidence_id']} "

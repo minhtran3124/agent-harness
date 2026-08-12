@@ -68,6 +68,39 @@ def test_install_config_cli_and_trust_changes_invalidate_enforcement(key):
     assert "STATE_INVALIDATED" in invalidated["reason_codes"]
 
 
+def test_expired_evidence_cannot_keep_advertising_enforced(tmp_path, monkeypatch):
+    monkeypatch.setenv("CODEX_HOME", str(tmp_path / "codex-home"))
+    stale = record(
+        evidence_expires_at="2026-01-01",
+        fingerprint=mode.make_fingerprint(
+            tmp_path, cli_version="0.147.0", trust={"hooks": "trusted"}
+        ),
+    )
+    mode.persist_record(tmp_path, stale)
+    line = mode.context_line(tmp_path)
+    assert "mode=advisory" in line
+    assert "EVIDENCE_STALE" in line
+
+
+def test_user_level_config_change_invalidates_cached_diagnosis(tmp_path, monkeypatch):
+    home = tmp_path / "codex-home"
+    home.mkdir()
+    (home / "config.toml").write_text("[features]\nhooks = true\n")
+    monkeypatch.setenv("CODEX_HOME", str(home))
+    current = record(
+        fingerprint=mode.make_fingerprint(
+            tmp_path, cli_version="0.147.0", trust={"hooks": "trusted"}
+        ),
+        evidence_expires_at="2099-01-01",
+    )
+    mode.persist_record(tmp_path, current)
+    assert "mode=enforced" in mode.context_line(tmp_path)
+    (home / "config.toml").write_text("[features]\nhooks = false\n")
+    line = mode.context_line(tmp_path)
+    assert "mode=advisory" in line
+    assert "STATE_INVALIDATED" in line
+
+
 def test_unchanged_fingerprint_preserves_record_identity():
     original = record()
     assert mode.invalidate_if_changed(original, fingerprint()) is original
@@ -94,7 +127,9 @@ def test_context_is_bounded_and_rejects_locally_stale_file_hashes(tmp_path):
 
 def test_summary_metadata_is_optional_and_update_preserves_body(tmp_path):
     summary = tmp_path / "SUMMARY.md"
-    summary.write_text("# Demo\n\nInput-type: maintenance\n\n## What changed\n\nBody.\n")
+    summary.write_text(
+        "# Demo\n\nInput-type: maintenance\n\n## What changed\n\nBody.\n"
+    )
     expected = record(mode="advisory", reason_codes=["TRUST_UNKNOWN"])
     mode.update_summary_metadata(summary, expected["mode"], expected["evidence_id"])
     text = summary.read_text()

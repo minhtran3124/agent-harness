@@ -104,7 +104,7 @@ Parent roadmap: `specs/codex-support/ROADMAP.md`. Preparation research:
 | SC-4 | The outside-hook doctor reports enforced/advisory/unsupported from version, platform, dependencies, discovery, trust, config hash, matcher coverage, and evidence freshness | `python3 -m pytest scripts/test_codex_harness_doctor.py -q` | exit 0 |
 | SC-5 | Codex runtime mode and sanitized doctor evidence id are recorded in local state plus run/SUMMARY metadata without weakening legacy artifacts | `python3 -m pytest runtime/test_runtime_mode.py runtime/test_run_state.py scripts/test_verify_summary.py -q` | exit 0 |
 | SC-6 | Every Phase-5-owned runtime-entry exception is removed or rendered through one checked runtime binding while shared policy stays invocation-neutral | `bash tests/scripts/runtime-entry-bindings.test.sh` | exit 0 |
-| SC-7 | The deterministic alpha contract passes for the declared macOS/Linux/WSL baseline and makes missing WSL evidence explicitly advisory rather than peer | `bash tests/scripts/codex-alpha-contract.test.sh` | exit 0 |
+| SC-7 | The deterministic alpha contract passes for the declared macOS/Linux/WSL baseline and makes missing WSL evidence explicitly advisory rather than peer | `bash tests/scripts/codex-alpha-contract.test.sh --quick` | exit 0 |
 | SC-8 | Adapter, installer, doctor, mode, evidence, and runtime-entry contracts are registered without manifest, inventory, or documentation drift | `python3 scripts/check_manifest.py` | exit 0 |
 
 ## 4. Tasks

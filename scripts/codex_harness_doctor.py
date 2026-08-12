@@ -100,11 +100,40 @@ def _front_matter(path: Path) -> dict[str, str]:
     return {}
 
 
+def _live_features(report: dict[str, Any]) -> dict[str, Any] | None:
+    """Derive a features map from the live `codex doctor --json` shape (0.147.0),
+    where enabled flags live in checks['config.load'].details as one string."""
+    checks = report.get("checks")
+    if not isinstance(checks, dict):
+        return None
+    config_load = checks.get("config.load")
+    if not isinstance(config_load, dict):
+        return None
+    details = config_load.get("details")
+    if not isinstance(details, dict):
+        return None
+    flags = details.get("enabled feature flags")
+    if not isinstance(flags, str):
+        return None
+    enabled = {name.strip() for name in flags.split(",") if name.strip()}
+    return {name: {"enabled": True} for name in enabled}
+
+
 def _doctor_payload(value: Any) -> tuple[dict[str, Any] | None, str, str, Any]:
     if not isinstance(value, dict):
         return None, "unknown", "unknown", {"hooks": "unknown"}
     report = value.get("result") if isinstance(value.get("result"), dict) else value
-    cli_version = value.get("cli_version") or report.get("cli_version") or "unknown"
+    if not isinstance(report.get("features"), dict):
+        live_features = _live_features(report)
+        if live_features is not None:
+            report = {**report, "features": live_features}
+    cli_version = (
+        value.get("cli_version")
+        or report.get("cli_version")
+        or value.get("codexVersion")
+        or report.get("codexVersion")
+        or "unknown"
+    )
     platform_id = value.get("platform") or report.get("platform") or "unknown"
     trust: Any = report.get("effective_trust", report.get("trust"))
     if trust is None:
@@ -270,6 +299,7 @@ def _evidence_reasons(
     if not isinstance(capabilities, list):
         return ["EVIDENCE_UNKNOWN"], None
     hook_trust = trust.get("hooks") if isinstance(trust, dict) else None
+    matched_load_bearing = 0
     for row in capabilities:
         if not isinstance(row, dict) or row.get("load_bearing") is not True:
             continue
@@ -281,6 +311,7 @@ def _evidence_reasons(
             "config.project_trust"
         ):
             continue
+        matched_load_bearing += 1
         source = row.get("source")
         expires = source.get("expires_at") if isinstance(source, dict) else None
         try:
@@ -305,6 +336,10 @@ def _evidence_reasons(
             # Documentation is traceability, not truth: a load-bearing surface
             # that was never observed cannot silently support `enforced`.
             reasons.append("EVIDENCE_DOCUMENTED_ONLY")
+    if matched_load_bearing == 0:
+        # Zero matched load-bearing rows means no evidence, not clean evidence:
+        # an emptied or re-labelled matrix must not compute to `enforced`.
+        reasons.append("EVIDENCE_UNKNOWN")
     earliest = min(expiry_dates).isoformat() if expiry_dates else None
     return reasons, earliest
 
@@ -317,6 +352,7 @@ def diagnose(
     platform_override: str | None = None,
     dependencies: dict[str, bool] | None = None,
     today: date | None = None,
+    codex_home: Path | None = None,
 ) -> dict[str, Any]:
     root = root.resolve()
     repo_root = repo_root.resolve()
@@ -369,7 +405,7 @@ def diagnose(
     reasons = sorted(set(unsupported + advisory))
     mode = "unsupported" if unsupported else ("advisory" if reasons else "enforced")
     fingerprint = runtime_mode.make_fingerprint(
-        root, cli_version=cli_version, trust=trust
+        root, cli_version=cli_version, trust=trust, codex_home=codex_home
     )
     return runtime_mode.make_record(
         mode=mode,
@@ -425,6 +461,7 @@ def main(argv: list[str] | None = None) -> int:
             platform_override=args.platform,
             dependencies=dependencies,
             today=args.now,
+            codex_home=args.codex_home,
         )
         if not args.no_persist:
             runtime_mode.persist_record(args.root, record)

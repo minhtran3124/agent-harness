@@ -100,6 +100,52 @@ def test_unknown_stale_version_and_unverified_platform_never_enforce(tmp_path):
     } <= set(result["reason_codes"])
 
 
+def test_live_cli_doctor_shape_is_parsed_without_false_mismatches(tmp_path):
+    live_report = {
+        "schemaVersion": 1,
+        "codexVersion": "0.147.0",
+        "generatedAt": "2026-08-12T00:00:00Z",
+        "overallStatus": "ok",
+        "checks": {
+            "installation": {"id": "installation", "status": "ok"},
+            "config.load": {
+                "id": "config.load",
+                "status": "ok",
+                "details": {
+                    "enabled feature flags": (
+                        "shell_tool, unified_exec, hooks, multi_agent, plugins"
+                    )
+                },
+            },
+        },
+    }
+    _, result = diagnose(tmp_path, live_report)
+    assert "CLI_VERSION_MISMATCH" not in result["reason_codes"]
+    assert "FEATURE_DISABLED" not in result["reason_codes"]
+    # The live shape carries no trust key, so trust stays honestly unknown.
+    assert "TRUST_UNKNOWN" in result["reason_codes"]
+
+
+def test_zero_matched_load_bearing_rows_cannot_support_enforced():
+    reasons, earliest = doctor._evidence_reasons(
+        {"capabilities": []}, "macos-arm64", {"hooks": "trusted"}, date(2026, 8, 12)
+    )
+    assert "EVIDENCE_UNKNOWN" in reasons
+    assert earliest is None
+    relabelled = json.loads(
+        (ROOT / "specs/codex-support/capability-matrix.json").read_text()
+    )
+    relabelled["capabilities"] = [
+        {**row, "platforms": ["macos-14-arm64"]}
+        for row in relabelled["capabilities"]
+        if row.get("id") != "config.project_trust"
+    ]
+    reasons, _ = doctor._evidence_reasons(
+        relabelled, "macos-arm64", {"hooks": "trusted"}, date(2026, 8, 12)
+    )
+    assert "EVIDENCE_UNKNOWN" in reasons
+
+
 def test_documented_only_load_bearing_evidence_cannot_support_enforced():
     matrix = json.loads(
         (ROOT / "specs/codex-support/capability-matrix.json").read_text()

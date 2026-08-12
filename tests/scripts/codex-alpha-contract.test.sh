@@ -1,35 +1,45 @@
 #!/usr/bin/env bash
 # Deterministic release contract for the Phase-5 Codex advisory alpha.
+# --quick runs only this file's unique assertions (platform boundary, docs/
+# manifest phrases, binding check) and skips the nested component suites,
+# which SC-1..SC-6 already re-run individually. ci-strict-gate re-executes
+# each SUMMARY Verify row under a 60s cap, so the composed full run is CI's
+# named-step form, not a Verify-row form.
 source "$(dirname "$0")/../lib.sh"
 
-t "committed evidence still selects the observed hybrid package"
-if bash "$ROOT/tests/scripts/codex-alpha-evidence.test.sh" >/dev/null; then
-  pass
-else
-  fail "capability or packaging evidence contract failed"
-fi
+QUICK=0
+[ "${1:-}" = "--quick" ] && QUICK=1
 
-t "adapter rendering is deterministic and capability mappings stay total"
-if python3 -m pytest "$ROOT/scripts/test_render_codex_adapter.py" \
-  "$ROOT/scripts/test_render_agent_definitions.py" -q >/dev/null; then
-  pass
-else
-  fail "adapter or agent rendering contract failed"
-fi
+if [ "$QUICK" -eq 0 ]; then
+  t "committed evidence still selects the observed hybrid package"
+  if bash "$ROOT/tests/scripts/codex-alpha-evidence.test.sh" >/dev/null; then
+    pass
+  else
+    fail "capability or packaging evidence contract failed"
+  fi
 
-t "install, update, conflict, removal, and rollback preserve user state"
-if bash "$ROOT/tests/scripts/codex-install.test.sh" >/dev/null; then
-  pass
-else
-  fail "Codex install lifecycle contract failed"
-fi
+  t "adapter rendering is deterministic and capability mappings stay total"
+  if python3 -m pytest "$ROOT/scripts/test_render_codex_adapter.py" \
+    "$ROOT/scripts/test_render_agent_definitions.py" -q >/dev/null; then
+    pass
+  else
+    fail "adapter or agent rendering contract failed"
+  fi
 
-t "doctor and runtime-mode records fail closed without breaking legacy state"
-if python3 -m pytest "$ROOT/scripts/test_codex_harness_doctor.py" \
-  "$ROOT/runtime/test_runtime_mode.py" "$ROOT/runtime/test_run_state.py" -q >/dev/null; then
-  pass
-else
-  fail "doctor or runtime-mode contract failed"
+  t "install, update, conflict, removal, and rollback preserve user state"
+  if bash "$ROOT/tests/scripts/codex-install.test.sh" >/dev/null; then
+    pass
+  else
+    fail "Codex install lifecycle contract failed"
+  fi
+
+  t "doctor and runtime-mode records fail closed without breaking legacy state"
+  if python3 -m pytest "$ROOT/scripts/test_codex_harness_doctor.py" \
+    "$ROOT/runtime/test_runtime_mode.py" "$ROOT/runtime/test_run_state.py" -q >/dev/null; then
+    pass
+  else
+    fail "doctor or runtime-mode contract failed"
+  fi
 fi
 
 t "Linux and unobserved WSL can never inherit macOS enforcement evidence"
@@ -81,13 +91,22 @@ else
   fail "Linux/WSL advisory boundary failed"
 fi
 
-t "runtime entry binding and Claude deployment regression remain green"
-if bash "$ROOT/tests/scripts/runtime-entry-bindings.test.sh" >/dev/null \
-  && bash "$ROOT/tests/scripts/settings-wiring.test.sh" >/dev/null \
-  && bash "$ROOT/tests/scripts/deploy-prune.test.sh" >/dev/null; then
-  pass
+if [ "$QUICK" -eq 0 ]; then
+  t "runtime entry binding and Claude deployment regression remain green"
+  if bash "$ROOT/tests/scripts/runtime-entry-bindings.test.sh" >/dev/null \
+    && bash "$ROOT/tests/scripts/settings-wiring.test.sh" >/dev/null \
+    && bash "$ROOT/tests/scripts/deploy-prune.test.sh" >/dev/null; then
+    pass
+  else
+    fail "runtime entry or Claude regression contract failed"
+  fi
 else
-  fail "runtime entry or Claude regression contract failed"
+  t "runtime entry binding validates (quick)"
+  if python3 "$ROOT/scripts/render_runtime_entry.py" --root "$ROOT" --check >/dev/null; then
+    pass
+  else
+    fail "runtime entry binding failed validation"
+  fi
 fi
 
 t "public docs and manifest expose the advisory boundary without peer or GA claims"
