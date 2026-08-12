@@ -10,6 +10,22 @@ source "$(dirname "$0")/../lib.sh"
 QUICK=0
 [ "${1:-}" = "--quick" ] && QUICK=1
 
+# The pytest-backed rows below must run against an interpreter that HAS pytest.
+# A bare `python3 -m pytest` inherits whatever the runner happens to ship, which
+# on a fresh GitHub runner is an interpreter without it — that turned three real
+# contract rows into failures unrelated to the contract. Provision the shared
+# venv here instead of depending on another CI step having run first, and treat
+# an unavailable interpreter as a contract failure, never as a silent skip.
+PY=python3
+if [ "$QUICK" -eq 0 ]; then
+  if ensure_pyenv; then
+    PY="$PYENV_DIR/bin/python"
+  else
+    t "python interpreter with pytest is available"
+    fail "cannot provision pytest; the pytest-backed contract rows cannot run"
+  fi
+fi
+
 if [ "$QUICK" -eq 0 ]; then
   t "committed evidence still selects the observed hybrid package"
   if bash "$ROOT/tests/scripts/codex-alpha-evidence.test.sh" >/dev/null; then
@@ -19,7 +35,7 @@ if [ "$QUICK" -eq 0 ]; then
   fi
 
   t "adapter rendering is deterministic and capability mappings stay total"
-  if python3 -m pytest "$ROOT/scripts/test_render_codex_adapter.py" \
+  if "$PY" -m pytest "$ROOT/scripts/test_render_codex_adapter.py" \
     "$ROOT/scripts/test_render_agent_definitions.py" -q >/dev/null; then
     pass
   else
@@ -34,7 +50,7 @@ if [ "$QUICK" -eq 0 ]; then
   fi
 
   t "doctor and runtime-mode records fail closed without breaking legacy state"
-  if python3 -m pytest "$ROOT/scripts/test_codex_harness_doctor.py" \
+  if "$PY" -m pytest "$ROOT/scripts/test_codex_harness_doctor.py" \
     "$ROOT/runtime/test_runtime_mode.py" "$ROOT/runtime/test_run_state.py" -q >/dev/null; then
     pass
   else

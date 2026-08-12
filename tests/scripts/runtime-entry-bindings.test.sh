@@ -5,9 +5,17 @@ source "$(dirname "$0")/../lib.sh"
 RENDERER="scripts/render_runtime_entry.py"
 CHECKER="scripts/check_runtime_neutral_sources.py"
 
+# Resolve an interpreter that actually has pytest; a bare `python3` is whatever
+# the runner ships, which on a fresh CI runner lacks it. Missing pytest is a
+# failure here, not a skip — the focused tests are part of the contract.
+PY=python3
+if ensure_pyenv; then
+  PY="$PYENV_DIR/bin/python"
+fi
+
 t "runtime entry binding validates and focused Python tests pass"
 if python3 "$ROOT/$RENDERER" --root "$ROOT" --check >/dev/null \
-  && python3 -m pytest "$ROOT/scripts/test_render_runtime_entry.py" -q >/dev/null; then
+  && "$PY" -m pytest "$ROOT/scripts/test_render_runtime_entry.py" -q >/dev/null; then
   pass
 else
   fail "runtime entry binding or focused tests failed"
