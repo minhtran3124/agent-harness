@@ -18,7 +18,7 @@ with a complete and honest evidence record instead of waiting on the whole initi
 | 2 | `specs/codex-support-phase-2/PLAN.md` | shipped | evidence-driven packaging decision: disposable hybrid-vs-direct probe, recorded decision + fallback trigger |
 | 3 | `specs/codex-support-phase-3/PLAN.md` | shipped | semantic source neutralisation: repository-rooted rule delivery, invocation-neutral prose, neutral agent contracts |
 | 4 | `specs/codex-support-phase-4/PLAN.md` | shipped | runtime-neutral hook input seam: one payload normaliser, fail-closed gates, advisory hooks unchanged |
-| 5 | `specs/codex-support-phase-5/PLAN.md` | implemented; review pending | advisory alpha adapter: observed runtime packaging, generated Codex bindings, non-clobber install, doctor/mode record, macOS/Linux CI contract |
+| 5 | `specs/codex-support-phase-5/PLAN.md` | implemented; reviewed, awaiting merge | advisory alpha adapter: observed runtime packaging, generated Codex bindings, non-clobber install, doctor/mode record, macOS/Linux CI contract |
 
 Shared artifacts owned by this slug and consumed across phases:
 
@@ -110,8 +110,12 @@ packaging decision, runtime-neutral instruction/agent policy, and one tested hoo
 - 2026-08-12 — Phase 5 implementation completed through Task 5.6. The composed advisory-alpha
   contract joins evidence, deterministic rendering, non-clobber lifecycle, outside-hook diagnosis,
   runtime-mode state, runtime-entry binding, platform boundaries, and Claude regressions. It is a
-  named check on macOS/Linux CI. WSL and Linux runtime execution remain explicit unobserved limits;
-  correctness/context/intent review receipts are still required before Phase 5 can be marked shipped.
+  named check on macOS/Linux CI. WSL and Linux runtime execution remain explicit unobserved limits.
+- 2026-08-12 — Review chain complete: context-propagation audit PASS, adversarial correctness review
+  (six find angles, independent per-location scoring, three fix rounds), and an intent review that
+  re-ran all eight SC checks and found no gap. Receipts and residual findings live in
+  `specs/codex-support-phase-5/SUMMARY.md`. Two limits carry to Phase 6: the two-digest evidence
+  state, and delivering the runtime banner inside a Codex session.
 
 - 2026-08-10 — PR #194 merged into `simplify` at `cf29af3`. Deep research refreshed against the
   current tree, Codex CLI 0.147.0, official OpenAI documentation, installed CLI command surfaces,

@@ -122,9 +122,9 @@ in prose rather than represented as a sub-60-second Verify row.
 - **Behavioral/parity enforcement and review-receipt provenance are not part of the alpha
   (traceability).** Phase 6+ owns those gates; a local `enforced` doctor result is not peer-runtime
   parity or GA status.
-- **The final context-propagation, correctness, and intent review chains are pending
-  (traceability).** Deterministic implementation is complete, but the roadmap remains review-pending
-  until their receipts are recorded.
+- **Behavioural parity across the two runtimes is unmeasured (traceability).** The review chain
+  below proves this diff's own claims; it does not compare Claude and Codex outcomes on the same
+  task. Phase 7 owns that comparison.
 
 ### Context-Propagation Audit
 
@@ -144,6 +144,46 @@ explicit Read, an always-loaded surface, or a drift-tested render; no load-beari
 Note: the prompt-file resolve command references `scripts/render_runtime_entry.py`, which ships with
 the repository, not with the Codex plugin — on Codex the equivalent authority is the rendered agent
 profile, so no Codex child context depends on that script.
+
+### Intent Findings
+
+Independent intent review against the verbatim oracle (range `a54f5d5..78b388e`, blind to plan
+prose) re-ran all eight SC checks at HEAD — every one exit 0, so **no SC-class gap**. Five findings,
+zero gaps:
+
+- **drift, fixed** — `CLAUDE.md` still described the runtime-metadata gate as corroborating the
+  local record after round-2 made it format-only: the exact tier over-claim that paragraph forbids.
+  Corrected in the same change as this receipt.
+- **excess, reported** — the SessionStart runtime banner (`hooks/session-knowledge.sh`) is a new
+  always-on Claude surface that no intent turn requested and no SC covers; SC-5 promises only that
+  the mode is *recorded*. Kept because it is the read path for a record that would otherwise be
+  invisible, and it is bounded, advisory, and never the diagnostic authority. Not removed — removing
+  shipped behavior needs human approval (Rule 4).
+- **drift, human-authorized** — `install-codex-harness.sh` defaults to a different repository name
+  and to `simplify` rather than the sibling installer's `main`. This was the Task-5.3 review finding
+  the user explicitly approved ("sửa điểm 1 và 2 rồi commit"): the previous default pointed at a
+  repository/branch where the adapter does not exist. Recorded so the divergence from
+  `install-harness.sh` is visible rather than assumed.
+- **drift, equivalent (advisory)** — reviewer prompts now carry `model_stage` plus an explicit
+  resolve command instead of a pinned `model:`. Resolution is byte-identical on Claude
+  (scorer `claude-opus-4-8`, finder/intent `claude-opus-5`), but each dispatch now needs one
+  `render_runtime_entry.py` call. Traceable to SC-6.
+- **drift, self-resolving** — the "review chains are pending" note contradicted the recorded audit
+  PASS and two correctness rounds; replaced by the receipt below.
+
+### Review Chain
+
+- **Context-propagation audit** — PASS, matrix recorded above (`6517d38`).
+- **Correctness review** — six independent FIND angles over the full range, 15 deduplicated
+  locations, one independent scorer per location (threshold 75). Nine scored at or above threshold
+  and were fixed across `9e6260a`, `0839d18`, `e74d82e`; four Rule-4 decisions were put to the user
+  and applied as chosen. Two below-threshold findings stay advisory (Codex `additionalContextLimit`
+  ordering, scored 50 — truncation semantics are external and unobserved; MCP-server reset,
+  scored 25 — already disclosed above). One candidate scored 0 as out-of-range: the
+  `'0 total entries'` regex in `hooks/session-knowledge.sh:45` matches "30 total entries" and
+  silently suppresses the knowledge-base section, but both the line and the count predate this
+  branch. It is a real pre-existing repo bug, filed here rather than fixed inside this diff.
+- **Intent review** — findings above; no gap, one fix, four recorded.
 
 ### Rollback
 
