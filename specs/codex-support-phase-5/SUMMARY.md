@@ -19,6 +19,17 @@ Input-type: harness improvement
 
 > claudecode da review + minor fix, gio hay tiep tuc cho 5.6
 
+> review documents in specs/codex-support-phase-5 và cho tôi biết có điểm gì cần sửa chửa hay cải
+> thiện trước khi bắt đầu không
+
+> review code for phase 5.1 (code chua commit) … ok, sửa điểm 1 rồi commit
+> [repeated per task: 5.2, 5.4→5.3, 5.4, 5.5, 5.6 — review uncommitted code, apply the named
+> fixes, then commit]
+
+> ok, chay luon  [the review chain: context-propagation audit → correctness → intent]
+
+> tiep tuc di, xong re-review thi chay intent-review
+
 ## What changed
 
 - Captured sanitized, version/platform-pinned runtime evidence and selected the hybrid
