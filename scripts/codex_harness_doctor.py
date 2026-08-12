@@ -180,9 +180,15 @@ def _config_trust(root: Path, codex_home: Path | None) -> str | None:
         return None
     # Minimal reader for the one table shape that carries trust; tomllib is 3.11+
     # and the harness must stay stdlib-only on the supported baseline.
-    # Multi-line strings would need real lexing to skip safely; refuse the file
-    # rather than risk reading a value out of one.
+    # Multi-line strings and multi-line arrays would need real lexing to skip
+    # safely — inside either, a line can look exactly like a table header.
+    # Refuse the whole file rather than read a value out of the wrong scope.
     if '"""' in text or "'''" in text:
+        return None
+    if any(
+        re.match(r"^[^#=]+=\s*\[\s*(?:#.*)?$", line.strip())
+        for line in text.splitlines()
+    ):
         return None
     wanted = str(root)
     in_table = False

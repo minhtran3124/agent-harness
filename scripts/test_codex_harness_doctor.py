@@ -159,9 +159,14 @@ def test_config_trust_reader_refuses_scope_leaks(tmp_path):
         f'[projects."/unrelated"]\nnote = """\n[projects."{root}"]\n"""\n'
         'trust_level = "trusted"\n',
         "[projects.'/unrelated']\nnote = '''\nx\n'''\ntrust_level = \"trusted\"\n",
+        # A multi-line array can carry a line that looks exactly like a header.
+        f'matrix = [\n[projects."{root}"]\n]\ntrust_level = "trusted"\n',
     ):
         config.write_text(text)
         assert doctor._config_trust(root, home) is None
+    # A single-line array elsewhere must not disable the reader.
+    config.write_text(f'[projects."{root}"]\ntags = ["a"]\ntrust_level = "trusted"\n')
+    assert doctor._config_trust(root, home) == "trusted"
 
 
 def test_persisted_record_is_stable_under_an_explicit_codex_home(tmp_path, monkeypatch):

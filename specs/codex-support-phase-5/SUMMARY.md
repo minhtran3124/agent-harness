@@ -113,6 +113,13 @@ in prose rather than represented as a sub-60-second Verify row.
   hand-maintained canonical literal does not match the registration the probe installs. A refresh
   must re-capture and update the seven `config.sha256` values together; deriving the digest instead
   would invent a third value with no captured run behind it. Owner: `codex-support-phase-6`.
+- **`enforced` is unreachable from any input this alpha actually has (traceability).** Codex CLI
+  0.147.0's `doctor --json` carries no trust field, and a config `trust_level` is project approval
+  rather than observed hook execution, so every real run returns `advisory` or `unsupported`. The
+  mode is implemented and unit-tested, but treat a live `enforced` as a bug until Phase 6 supplies
+  observed hook trust. The trust reader is also deliberately narrow: inline tables, dotted keys and
+  array-of-tables forms read as unknown rather than being parsed, which costs a needless advisory
+  but can never manufacture trust.
 - **The doctor's default acquisition path is non-hermetic (traceability).** Without
   `--doctor-report`, it invokes the real read-only `codex doctor --json` against the user's
   effective Codex state; deterministic fixtures prove parsing and mode logic, not that live

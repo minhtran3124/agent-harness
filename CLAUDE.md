@@ -31,6 +31,12 @@ adapter remains usable but at least one guarantee is unknown, stale, untrusted, 
 absent. Linux and WSL currently receive `PLATFORM_UNVERIFIED`, so they cannot inherit the observed
 macOS enforcement result. The doctor reports effective trust; the adapter never edits trust choices.
 
+At this alpha, **no available input carries observed hook trust**: Codex CLI 0.147.0's
+`doctor --json` has no trust field, and a project `trust_level` read from config is approval, not
+proof of hook execution — it yields `TRUST_CONFIG_ONLY` and holds the result at `advisory`. So a
+real run returns `advisory` or `unsupported`; `enforced` is implemented and reachable only once an
+input supplies observed hook trust, which Phase 6 owns. Treat an `enforced` claim today as a bug.
+
 ## Skill Workflow
 
 `feature-intake` runs first and **routes by lane** — it decides how much of the chain below
