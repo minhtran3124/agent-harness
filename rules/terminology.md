@@ -91,8 +91,12 @@ Keep this section for human readability. Do not build a linter on it.
 (verified empirically, see `CHANGELOG.md` for v2.1.216). A skill that *writes* a covered
 artifact therefore never receives this file from the frontmatter above. Any write-flow that
 must apply §3 needs an **explicit Read step**; the frontmatter only covers the reviewer side.
-The three covered writers carry that step today: `skills/writing-plans/SKILL.md` (`PLAN.md`),
-`skills/xia2/SKILL.md` (`research-brief.md`), and `skills/feature-intake/SKILL.md`
-(`SUMMARY.md`). Each edge is registered in `scripts/render_skill_prompt.py` (`CONTEXT_MATRIX`
-`required_reads`) and enforced by its `--check-all`, so deleting an explicit Read fails the
-suite instead of shipping.
+The three writers that *create* a covered artifact carry that step today:
+`skills/writing-plans/SKILL.md` (`PLAN.md`), `skills/xia2/SKILL.md` (`research-brief.md`), and
+`skills/feature-intake/SKILL.md` (`SUMMARY.md`). Each edge is registered in
+`scripts/render_skill_prompt.py` (`CONTEXT_MATRIX` `required_reads`) and enforced by its
+`--check-all`, so deleting an explicit Read or its registration fails the suite instead of
+shipping. That check is traceability-tier: it proves the word `Read` and the rule path share a
+line in each writer, not that the instruction is imperative or obeyed. Later *update* flows
+(e.g. the execution-phase agent appending `SUMMARY.md ### Verify` rows) receive this file via
+`paths:` only when they read the artifact first — that edge is not gate-enforced.

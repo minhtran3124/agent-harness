@@ -58,6 +58,23 @@ def test_context_matrix_enumerates_every_isolated_context():
     }
 
 
+def test_required_reads_registrations_are_pinned():
+    # The registration IS the guard: `spec.get("required_reads", [])` silently no-ops
+    # when the key is deleted, so the mapping must be pinned exactly here.
+    expected = {
+        "main.plan-author": ["rules/terminology.md"],
+        "main.research-author": ["rules/terminology.md"],
+        "main.summary-author": ["rules/terminology.md"],
+        "plan-document-reviewer": ["rules/terminology.md"],
+    }
+    actual = {
+        context: spec["required_reads"]
+        for context, spec in module.CONTEXT_MATRIX.items()
+        if "required_reads" in spec
+    }
+    assert actual == expected
+
+
 def test_every_empty_delivery_has_a_rationale():
     for context, spec in module.CONTEXT_MATRIX.items():
         if not spec["required"]:
@@ -82,9 +99,11 @@ def test_each_policy_delivery_edge_is_load_bearing(tmp_path):
             target.unlink()
         for token in spec.get("required_reads", []):
             read_pattern = re.compile(rf"\bRead\b[^\n]*`{re.escape(token)}`")
+            original = (source_root / spec["path"]).read_text()
+            assert read_pattern.search(original), (context, token)
             weakened = read_pattern.sub(
                 lambda match: match.group(0).replace("Read", "See"),
-                (source_root / spec["path"]).read_text(),
+                original,
             )
             assert token in weakened, (context, token)
             assert not read_pattern.search(weakened), (context, token)
