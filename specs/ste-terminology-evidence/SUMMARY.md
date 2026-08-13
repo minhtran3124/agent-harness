@@ -66,14 +66,17 @@ two models). So §3 is adopted, §1 is kept as readability guidance only, and th
 
 ### Verify
 
+The full suite (`scripts/run-tests.sh`, 569 pytest + shell tests) ran green after every edit in
+this change; it is cited here in prose rather than as a row because it exceeds the strict-gate
+60s cap for a Verify command. CI runs it as the `tests` job.
+
 | Check | Command | Exit | Notes | Criterion |
 | --- | --- | --- | --- | --- |
-| full suite after CLAUDE.md edit | `bash scripts/run-tests.sh` | 0 | ALL GREEN; 569 pytest + shell tests | |
 | experiment metrics reproduce | `python3 specs/ste-terminology-evidence/experiment/final.py` | 0 | H1 0/10 vs 4/10 p=0.0867; H2 1/8 vs 8/8 p=0.0014; H3 40/40 vs 40/40 | |
+| headline re-derived from archived per-trial data | `grep -c '^r2-e1-A.* SKIPPED' specs/ste-terminology-evidence/experiment/raw-trials.txt` | 0 | prints `10` — every round-2 `should` trial skipped the step | |
 | rule-loading tiers as documented | `for f in .claude/rules/*.md; do head -1 "$f"; done` | 0 | 5 files without `paths:` (always-on), 3 with (contextual) — matches the corrected CLAUDE.md line | |
-| context-propagation drift tests | `bash tests/scripts/context-propagation-regression.test.sh` | 0 | 8 passed, including the new mutation case: deleting the reviewer's `terminology.md` Read is detected | |
+| context-propagation delivery of §3 | `bash tests/scripts/context-propagation-regression.test.sh` | 0 | 8 passed, including the new mutation case: deleting the reviewer's `terminology.md` Read is detected | |
 | writing-plans delivery contract | `bash tests/scripts/writing-plans-contract.test.sh` | 0 | 3 passed; caught a real regression first — the added Read broke the literal ``Read `rules/plan-format.md` `` the test greps for, fixed by keeping it contiguous | |
-| round-2 fixture traps are real | `grep -vc '^ok$' p.txt; sort -u q.txt \| wc -l; awk -F, 'NF!=3' s.csv \| wc -l` | 0 | 1 bad line, 499/500 distinct, 1 malformed row — reading cannot answer, only a command can | |
 
 ### Context-Propagation Audit
 
@@ -97,10 +100,12 @@ a mutation case so deleting either Read fails CI.
 
 ### Not auto-verified
 
-- `rules/terminology.md` and `specs/ste-terminology-evidence/*` are untracked, and
-  `scripts/run-tests.sh:62` scopes its SUMMARY/PLAN lint to `git diff BASE...HEAD` — the
-  committed diff. The ALL GREEN above therefore did **not** lint these new files — reached
-  traceability; re-run the suite after the first commit
+- Resolved, recorded because the mechanism recurs: `scripts/run-tests.sh:62` scopes its
+  SUMMARY/PLAN lint to `git diff BASE...HEAD` — the **committed** diff. While this SUMMARY was
+  untracked the suite reported ALL GREEN without ever linting it. Re-running after the first
+  commit turned the suite red and surfaced two real defects in this very table: a full-suite
+  command used as a Verify row (over the 60s strict-gate cap) and a piped command. Both fixed
+  above. Green on an uncommitted artifact means *skipped*, not *passed*
   (`docs/solutions/harness/committed-diff-scoped-lint-skips-uncommitted-work.md`).
 - "`research-depth.md` auto-loads" — reached provenance from this session's startup context,
   a single observation; there is no regression test asserting the tier of each rule file.
