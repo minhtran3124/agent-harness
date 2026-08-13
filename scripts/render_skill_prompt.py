@@ -16,6 +16,16 @@ CONTEXT_MATRIX = {
         "required": ["rules/plan-format.md", "rules/terminology.md"],
         "required_reads": ["rules/terminology.md"],
     },
+    "main.research-author": {
+        "path": "skills/xia2/SKILL.md",
+        "required": ["rules/terminology.md"],
+        "required_reads": ["rules/terminology.md"],
+    },
+    "main.summary-author": {
+        "path": "skills/feature-intake/SKILL.md",
+        "required": ["rules/terminology.md"],
+        "required_reads": ["rules/terminology.md"],
+    },
     "main.plan-executor": {
         "path": "skills/subagent-driven-development/SKILL.md",
         "required": [

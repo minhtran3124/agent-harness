@@ -88,6 +88,11 @@ Keep this section for human readability. Do not build a linter on it.
 ## Delivery
 
 `paths:` injection fires on **read**, not on write — write-flows do not trigger it
-(verified empirically, see `CHANGELOG.md` for v2.1.216). A skill that *writes* a `PLAN.md`
-therefore never receives this file from the frontmatter above. Any write-flow that must
-apply §3 needs an **explicit Read step**; the frontmatter only covers the reviewer side.
+(verified empirically, see `CHANGELOG.md` for v2.1.216). A skill that *writes* a covered
+artifact therefore never receives this file from the frontmatter above. Any write-flow that
+must apply §3 needs an **explicit Read step**; the frontmatter only covers the reviewer side.
+The three covered writers carry that step today: `skills/writing-plans/SKILL.md` (`PLAN.md`),
+`skills/xia2/SKILL.md` (`research-brief.md`), and `skills/feature-intake/SKILL.md`
+(`SUMMARY.md`). Each edge is registered in `scripts/render_skill_prompt.py` (`CONTEXT_MATRIX`
+`required_reads`) and enforced by its `--check-all`, so deleting an explicit Read fails the
+suite instead of shipping.

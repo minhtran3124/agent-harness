@@ -1,4 +1,5 @@
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -43,6 +44,8 @@ def test_live_required_policy_delivery_passes():
 def test_context_matrix_enumerates_every_isolated_context():
     assert set(module.CONTEXT_MATRIX) == {
         "main.plan-author",
+        "main.research-author",
+        "main.summary-author",
         "main.plan-executor",
         "implementer",
         "task-reviewer",
@@ -64,12 +67,28 @@ def test_every_empty_delivery_has_a_rationale():
 def test_each_policy_delivery_edge_is_load_bearing(tmp_path):
     source_root = SCRIPT.parent.parent
     for context, spec in module.CONTEXT_MATRIX.items():
+        target = tmp_path / spec["path"]
+        target.parent.mkdir(parents=True, exist_ok=True)
         for token in spec["required"]:
-            target = tmp_path / spec["path"]
-            target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text(
                 (source_root / spec["path"]).read_text().replace(token, "REMOVED")
             )
+            errors = module.check_all(tmp_path)
+            assert any(context in error and token in error for error in errors), (
+                context,
+                token,
+                errors,
+            )
+            target.unlink()
+        for token in spec.get("required_reads", []):
+            read_pattern = re.compile(rf"\bRead\b[^\n]*`{re.escape(token)}`")
+            weakened = read_pattern.sub(
+                lambda match: match.group(0).replace("Read", "See"),
+                (source_root / spec["path"]).read_text(),
+            )
+            assert token in weakened, (context, token)
+            assert not read_pattern.search(weakened), (context, token)
+            target.write_text(weakened)
             errors = module.check_all(tmp_path)
             assert any(context in error and token in error for error in errors), (
                 context,

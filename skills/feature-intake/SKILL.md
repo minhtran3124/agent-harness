@@ -26,7 +26,11 @@ classify risk; ask only to resolve a material ambiguity or narrow a hard-gated s
 4. Assign confidence: `high` for one clear interpretation, `medium` for a safe documented
    default, and `low` for materially different plausible interpretations. Low confidence stops
    for human confirmation regardless of lane.
-5. Write `SUMMARY.md` using `templates/SUMMARY.template.md`, including the user intent verbatim:
+5. **Read `rules/terminology.md`** before authoring — it is path-scoped and writing a new
+   `SUMMARY.md` does not load it. §3 applies to `### Verify` rows (state the observable — exact
+   string, count, or exit code — never "is correct"); Rationale/Alternatives are advisory; and
+   `### Intent` stays verbatim, excluded from every rule. Then write `SUMMARY.md` using
+   `templates/SUMMARY.template.md`, including the user intent verbatim:
 
    ```text
    Lane: <tiny | normal | high-risk>

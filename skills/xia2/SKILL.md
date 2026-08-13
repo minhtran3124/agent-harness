@@ -33,9 +33,12 @@ classifier. New evidence may raise depth, never lower it; uncertainty is Standar
    or `Inference`; upstream failure is non-blocking. With no external surface, record that in
    Source Pack as `- none (local-only; no external surface)` — never leave it silently empty.
 5. Re-run the depth classifier with evidence. State any upgrade and its source.
-6. Fill `references/research-brief-template.md`, save it to the supplied spec directory (or
-   `specs/research-brief.md`), and deliver it. Recommend reuse → adapt upstream → built-in →
-   build, explaining why rejected alternatives lost.
+6. **Read `rules/terminology.md`** before authoring the brief — it is path-scoped and writing a
+   new `research-brief.md` does not load it. For a research brief §1 (one concept, one word) is
+   advisory, and §3 stays excluded: hedged and negative findings are the content here, never to
+   be forced into false certainty. Fill `references/research-brief-template.md`, save it to the
+   supplied spec directory (or `specs/research-brief.md`), and deliver it. Recommend reuse →
+   adapt upstream → built-in → build, explaining why rejected alternatives lost.
 
 Quick performs local artifact and reuse search only. Standard adds upstream patterns. Deep adds
 broad local coverage and explicit risk analysis. Official docs, multiple upstream sources, and
