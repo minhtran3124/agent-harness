@@ -80,6 +80,28 @@ else
   fail "missing STOP token(s):$missing — region: $region"
 fi
 
+# terminology_reads_ok <dir> → 0 iff BOTH consumers of rules/terminology.md §3 still carry
+# an explicit Read. The rule is path-scoped, and `paths:` fires on read, never on write — so
+# the plan AUTHOR (writing-plans) and the isolated plan REVIEWER each need their own Read or
+# §3 silently stops reaching the context that decides acceptance criteria.
+PLAN_AUTHOR="skills/writing-plans/SKILL.md"
+PLAN_REVIEWER="skills/writing-plans/plan-document-reviewer-prompt.md"
+terminology_reads_ok() {
+  grep -qE '\*\*Read `rules/terminology\.md`\*\*' "$1/$PLAN_AUTHOR" &&
+  grep -qE '\*\*Read `rules/terminology\.md`\*\*' "$1/$PLAN_REVIEWER"
+}
+
+t "writing-plans author and isolated plan reviewer both explicitly Read terminology.md"
+if terminology_reads_ok "$ROOT"; then pass
+else fail "missing '**Read \`rules/terminology.md\`**' in $PLAN_AUTHOR and/or $PLAN_REVIEWER"; fi
+
+t "mutation: deleting either terminology.md Read is detected"
+m3=$(mktemp -d); _CLEANUP_DIRS+=("$m3")
+cp -R "$ROOT/skills" "$m3/skills"
+sed -i.bak 's/\*\*Read `rules\/terminology\.md`\*\*//' "$m3/$PLAN_REVIEWER" && rm -f "$m3/$PLAN_REVIEWER.bak"
+if ! terminology_reads_ok "$m3"; then pass
+else fail "deleting the reviewer's terminology.md Read was NOT detected"; fi
+
 t "complete contextual-rule consumer matrix is checked"
 if python3 "$ROOT/$COMPOSER" --root "$ROOT" --check-all >/dev/null; then pass
 else fail "render_skill_prompt.py rejected the live consumer matrix"; fi

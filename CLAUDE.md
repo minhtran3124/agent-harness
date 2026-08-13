@@ -4,7 +4,7 @@ Skill framework and governance system for Claude Code — reusable prompt-based 
 
 ## Behavioral Guidelines
 
-See `rules/behavior.md` — that file is the single source of truth (deployed to `.claude/rules/`, which auto-loads). Rule loading is two-tier: `behavior.md`, `architecture.md`, `guidelines.md` and `orchestration.md` auto-load every session; the contextual rules (`plan-format.md`, `wave-parallelism.md`, `auto-correct-scope.md`) are path-scoped via `paths:` frontmatter and load on demand — injected when a matching `specs/**` file is read, plus explicit Read steps in the consuming skills (write-flows don't trigger `paths:`).
+See `rules/behavior.md` — that file is the single source of truth (deployed to `.claude/rules/`, which auto-loads). Rule loading is two-tier, and the tier is decided by the file itself, not by a list kept here: a rule file **with** `paths:` frontmatter is contextual and loads on demand; a rule file **without** it auto-loads every session. Today that resolves to five always-on files (`behavior.md`, `architecture.md`, `guidelines.md`, `orchestration.md`, `research-depth.md`) and three path-scoped ones (`plan-format.md`, `wave-parallelism.md`, `auto-correct-scope.md`) — the contextual three are injected when a matching `specs/**` file is read, plus explicit Read steps in the consuming skills (write-flows don't trigger `paths:`). Adding `paths:` to a rule that currently lacks it **removes** it from the always-on set; that is a behavior change, not a formatting fix.
 
 ---
 

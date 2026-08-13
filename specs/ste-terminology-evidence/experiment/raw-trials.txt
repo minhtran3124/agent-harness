@@ -1,0 +1,65 @@
+# Raw per-trial outcomes
+
+## Round 1 E1 (LEDGER appended?)
+r1-e1-A1 APPENDED
+r1-e1-A2 APPENDED
+r1-e1-A3 APPENDED
+r1-e1-A4 APPENDED
+r1-e1-A5 APPENDED
+r1-e1-B1 APPENDED
+r1-e1-B2 APPENDED
+r1-e1-B3 APPENDED
+r1-e1-B4 APPENDED
+r1-e1-B5 APPENDED
+
+## Round 2 E1 (n=10/arm)
+r2-e1-A1 SKIPPED
+r2-e1-A2 SKIPPED
+r2-e1-A3 SKIPPED
+r2-e1-A4 SKIPPED
+r2-e1-A5 SKIPPED
+r2-e1-A6 SKIPPED
+r2-e1-A7 SKIPPED
+r2-e1-A8 SKIPPED
+r2-e1-A9 SKIPPED
+r2-e1-A10 SKIPPED
+r2-e1-B1 APPENDED
+r2-e1-B2 SKIPPED
+r2-e1-B3 APPENDED
+r2-e1-B4 SKIPPED
+r2-e1-B5 SKIPPED
+r2-e1-B6 SKIPPED
+r2-e1-B7 SKIPPED
+r2-e1-B8 APPENDED
+r2-e1-B9 SKIPPED
+r2-e1-B10 APPENDED
+
+## Round 2 E2 verdicts (truth=FAIL)
+r2-e2-sonnet-A1 PASS
+r2-e2-sonnet-A2 PASS
+r2-e2-sonnet-A3 PASS
+r2-e2-sonnet-A4 PASS
+r2-e2-sonnet-A5 PASS
+r2-e2-sonnet-B1 FAIL
+r2-e2-sonnet-B2 FAIL
+r2-e2-sonnet-B3 FAIL
+r2-e2-sonnet-B4 FAIL
+r2-e2-sonnet-B5 FAIL
+r2-e2-opus-A1 FAIL
+r2-e2-opus-A2 PASS
+r2-e2-opus-A3 PASS
+r2-e2-opus-B1 FAIL
+r2-e2-opus-B2 FAIL
+r2-e2-opus-B3 FAIL
+
+## Round 2 E4 findings (truth: 1:NO 2:NO 3:YES 4:NO)
+r2-e4-A1 1: NO 2: NO 3: YES 4: NO 
+r2-e4-A2 1: NO 2: NO 3: YES 4: NO 
+r2-e4-A3 1: NO 2: NO 3: YES 4: NO 
+r2-e4-A4 1: NO 2: NO 3: YES 4: NO 
+r2-e4-A5 1: NO 2: NO 3: YES 4: NO 
+r2-e4-B1 1: NO 2: NO 3: YES 4: NO 
+r2-e4-B2 1: NO 2: NO 3: YES 4: NO 
+r2-e4-B3 1: NO 2: NO 3: YES 4: NO 
+r2-e4-B4 1: NO 2: NO 3: YES 4: NO 
+r2-e4-B5 1: NO 2: NO 3: YES 4: NO 
