@@ -1,0 +1,12 @@
+{
+  "created_at": "2026-08-13T09:55:48Z",
+  "last_event_id": "d49af9ae-061a-4229-b5c9-eb481f5b333a",
+  "resume_event": null,
+  "run_id": "c546f0c1-302c-4f98-97b5-e0cbb4e171a5",
+  "seq": 6,
+  "sha": "159ed1e",
+  "slug": "ste-terminology-evidence",
+  "state": "ready_to_merge",
+  "updated_at": "2026-08-13T10:48:22Z",
+  "waiting_on": null
+}
