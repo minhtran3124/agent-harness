@@ -1,6 +1,7 @@
 ---
 paths:
   - "specs/**/PLAN.md"
+  - "specs/**/research-brief.md"
   - "specs/**/SUMMARY.md"
 ---
 
@@ -22,7 +23,6 @@ effect is advisory and **must not** be mechanised into a gate: see
 | `SUMMARY.md` `### Verify` rows | advisory | — | **required** | lintable |
 | `SUMMARY.md` Rationale / Alternatives | advisory | — | — | none |
 | `design.md`, `research-brief.md` | advisory | — | **excluded** | none |
-| `skills/`, `agents/`, `rules/` prose | advisory | advisory | **required** | lintable |
 | `SUMMARY.md` `### Intent` | **excluded** | **excluded** | **excluded** | never |
 <!-- /lint:scope -->
 
