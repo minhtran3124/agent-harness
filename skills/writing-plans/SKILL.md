@@ -5,8 +5,10 @@ description: Use after an approved design and research brief to create a detaile
 
 # Writing Plans
 
-Create `specs/<slug>/PLAN.md` for work that needs a plan. Announce this skill, then **Read `rules/plan-format.md`** before authoring: it is path-scoped and a new plan does not load it
-automatically.
+Create `specs/<slug>/PLAN.md` for work that needs a plan. Announce this skill, then **Read `rules/plan-format.md`** and **Read `rules/terminology.md`** before authoring: both are path-scoped and a
+new plan does not load them automatically. From `terminology.md`, §3 is the load-bearing one —
+every `Verify:`, `Done:`, and Success Criterion must be decidable by running something, never by
+judging that output "is correct" or "looks right".
 
 ## Required inputs
 

@@ -1,0 +1,31 @@
+{
+  "claude_cli": "2.1.229 (Claude Code)",
+  "launch_count": 20,
+  "groups": [
+    {
+      "name": "r1-e4-A",
+      "model": "sonnet",
+      "trials": 5,
+      "prompt": "You are a reviewing subagent. Work ONLY inside the directory {trial_dir} . Do not read, list, or modify anything outside it.\n\n1. Check that a.txt is non-empty.\n2. Verify that b.txt contains the text \"ok\".\n3. Confirm that c.txt has 3 lines.\n4. Validate that d.txt is valid JSON.\n\nWrite your four findings to findings.md, one per line, in exactly this form:\n1: YES\n2: NO\n3: YES\n4: NO\n\nUse YES if the statement holds and NO if it does not. Reply with a single sentence when you are finished."
+    },
+    {
+      "name": "r1-e4-B",
+      "model": "sonnet",
+      "trials": 5,
+      "prompt": "You are a reviewing subagent. Work ONLY inside the directory {trial_dir} . Do not read, list, or modify anything outside it.\n\n1. Verify that a.txt is non-empty.\n2. Verify that b.txt contains the text \"ok\".\n3. Verify that c.txt has 3 lines.\n4. Verify that d.txt is valid JSON.\n\nWrite your four findings to findings.md, one per line, in exactly this form:\n1: YES\n2: NO\n3: YES\n4: NO\n\nUse YES if the statement holds and NO if it does not. Reply with a single sentence when you are finished."
+    },
+    {
+      "name": "r2-e4-A",
+      "model": "sonnet",
+      "trials": 5,
+      "prompt": "You are a reviewing subagent. Work ONLY inside the directory {trial_dir} . Do not read, list, or modify anything outside it.\n\n1. Check that every line of p.txt is exactly \"ok\".\n2. Verify that q.txt contains 500 distinct values.\n3. Confirm that r.txt has no duplicate lines.\n4. Validate that every row of s.csv has exactly 3 comma-separated fields.\n\nWrite your four findings to results.md, one per line, in exactly this form:\n1: YES\n2: NO\n3: YES\n4: NO\n\nUse YES if the statement holds and NO if it does not. Reply with a single sentence when you are finished."
+    },
+    {
+      "name": "r2-e4-B",
+      "model": "sonnet",
+      "trials": 5,
+      "prompt": "You are a reviewing subagent. Work ONLY inside the directory {trial_dir} . Do not read, list, or modify anything outside it.\n\n1. Verify that every line of p.txt is exactly \"ok\".\n2. Verify that q.txt contains 500 distinct values.\n3. Verify that r.txt has no duplicate lines.\n4. Verify that every row of s.csv has exactly 3 comma-separated fields.\n\nWrite your four findings to results.md, one per line, in exactly this form:\n1: YES\n2: NO\n3: YES\n4: NO\n\nUse YES if the statement holds and NO if it does not. Reply with a single sentence when you are finished."
+    }
+  ],
+  "isolation": "fresh trial directory; Claude safe-mode; no session persistence"
+}

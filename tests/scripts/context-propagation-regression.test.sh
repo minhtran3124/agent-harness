@@ -80,9 +80,30 @@ else
   fail "missing STOP token(s):$missing — region: $region"
 fi
 
+# The rule is path-scoped, and `paths:` fires on read, never on write — so the plan AUTHOR
+# (writing-plans) and the isolated plan REVIEWER each need their own Read or §3 silently stops
+# reaching the context that decides acceptance criteria. The canonical CONTEXT_MATRIX owns this
+# contract; the mutation cases below prove both entries are enforced.
+PLAN_AUTHOR="skills/writing-plans/SKILL.md"
+PLAN_REVIEWER="skills/writing-plans/plan-document-reviewer-prompt.md"
+
 t "complete contextual-rule consumer matrix is checked"
 if python3 "$ROOT/$COMPOSER" --root "$ROOT" --check-all >/dev/null; then pass
 else fail "render_skill_prompt.py rejected the live consumer matrix"; fi
+
+t "mutation: canonical matrix detects a missing plan-author terminology.md Read"
+m3=$(mktemp -d); _CLEANUP_DIRS+=("$m3")
+cp -R "$ROOT/skills" "$m3/skills"
+sed -i.bak 's/\*\*Read `rules\/terminology\.md`\*\*//' "$m3/$PLAN_AUTHOR" && rm -f "$m3/$PLAN_AUTHOR.bak"
+if ! python3 "$ROOT/$COMPOSER" --root "$m3" --check-all >/dev/null 2>&1; then pass
+else fail "deleting the plan author's terminology.md Read was NOT detected"; fi
+
+t "mutation: canonical matrix detects a missing plan-reviewer terminology.md Read"
+m4=$(mktemp -d); _CLEANUP_DIRS+=("$m4")
+cp -R "$ROOT/skills" "$m4/skills"
+sed -i.bak 's/\*\*Read `rules\/terminology\.md`\*\*//' "$m4/$PLAN_REVIEWER" && rm -f "$m4/$PLAN_REVIEWER.bak"
+if ! python3 "$ROOT/$COMPOSER" --root "$m4" --check-all >/dev/null 2>&1; then pass
+else fail "deleting the plan reviewer's terminology.md Read was NOT detected"; fi
 
 t "mutation: deleting either explicit Read is detected"
 m=$(mktemp -d); _CLEANUP_DIRS+=("$m")
