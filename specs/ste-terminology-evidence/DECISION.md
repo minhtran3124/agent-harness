@@ -16,9 +16,12 @@ anything was mechanised.
 
 ## Method
 
-76 subagent trials, two rounds, ground truth read from the filesystem rather than from any
-agent's self-report. Each trial ran in its own sandbox with identical fixtures; **only the
-wording of the instruction differed between arms**.
+75 completed, scored subagent trials, two rounds, ground truth read from the filesystem rather
+than from any agent's self-report. Each trial ran in its own sandbox with identical fixtures;
+**only the wording of the instruction differed between arms**. Round 1 H3 has four completed
+one-verb trials rather than the planned five, so every result below uses the archived denominator.
+The original Round 1 E2/E4 per-agent files were not retained; `raw-trials.txt` reconstructs those
+identical per-trial outcomes from the archived aggregate and labels them accordingly.
 
 | Hypothesis | Arm A | Arm B | Outcome measured |
 | --- | --- | --- | --- |
@@ -32,8 +35,16 @@ obvious (H2), the required step conflicts with a stated constraint (H1), and rea
 cannot answer the question — only running a command can (H3). Round 2 is the result of
 record; round 1 is reported because a ceiling is itself evidence about when wording matters.
 
-Primary model Sonnet; H2 re-run on Opus as a generality check. Two-sided Fisher exact.
-Reproduce: `specs/ste-terminology-evidence/experiment/` (`setup.sh`, `setup2.sh`, `final.py`).
+Primary model Sonnet; H2 re-run on Opus as a generality check. Two-sided Fisher exact. Reproduce
+the metrics from the committed per-trial ledger with
+`python3 specs/ste-terminology-evidence/experiment/final.py`; `setup.sh` and `setup2.sh` rebuild
+the two rounds' fixtures but do not regenerate stochastic agent outputs.
+
+A fresh 76-launch benchmark plus a 20-trial exact-prompt E4 supplement was run on 2026-08-13.
+H2 replicated more strongly (0/8 vague vs 8/8 stated, p=0.0002), H3 replicated the null, and
+H1's rates changed to 5/10 vs 6/10 (p=1.0000) while preserving the conclusion that modal choice
+is not a dependable enforcement mechanism. See `experiment/RERUN.md` for protocol, raw-output
+locations, cost, limitations, and the side-by-side comparison.
 
 ## Results
 
@@ -62,10 +73,10 @@ was right; the mechanism it was attributed to was not.
 
 ### 2. §1 (one concept, one word) — KEEP AS ADVISORY, DO NOT MECHANISE
 
-Zero measurable effect across 40 assertions per arm at two difficulty levels. The proposal's
-central premise does not survive measurement. Keeping §1 as a readability convention is
-cheap; building `lint_ste.py`, a `<!-- lint:terms -->` parser, and a `PostToolUse` hook on
-top of it would buy a maintenance burden and a gate that proves nothing about behaviour.
+Zero measurable effect across 40 mixed-verb and 36 one-verb assertions at two difficulty levels.
+The proposal's central premise does not survive measurement. Keeping §1 as a readability
+convention is cheap; building `lint_ste.py`, a `<!-- lint:terms -->` parser, and a `PostToolUse`
+hook on top of it would buy a maintenance burden and a gate that proves nothing about behaviour.
 
 The word-frequency table that motivated it (`check` 88 / `verify` 61 / `confirm` 13 /
 `validate` 3, `must` 72 / `should` 20, `subagent` 65 / `sub-agent` 3) is real and reproducible

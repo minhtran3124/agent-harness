@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -12,7 +13,8 @@ from pathlib import Path
 CONTEXT_MATRIX = {
     "main.plan-author": {
         "path": "skills/writing-plans/SKILL.md",
-        "required": ["rules/plan-format.md"],
+        "required": ["rules/plan-format.md", "rules/terminology.md"],
+        "required_reads": ["rules/terminology.md"],
     },
     "main.plan-executor": {
         "path": "skills/subagent-driven-development/SKILL.md",
@@ -33,7 +35,8 @@ CONTEXT_MATRIX = {
     },
     "plan-document-reviewer": {
         "path": "skills/writing-plans/plan-document-reviewer-prompt.md",
-        "required": ["rules/plan-format.md"],
+        "required": ["rules/plan-format.md", "rules/terminology.md"],
+        "required_reads": ["rules/terminology.md"],
     },
     "correctness-controller": {
         "path": "skills/correctness-review/SKILL.md",
@@ -92,6 +95,12 @@ def check_all(root: Path) -> list[str]:
             if token not in text:
                 errors.append(
                     f"missing required policy delivery: {context} -> {spec['path']} -> {token}"
+                )
+        for token in spec.get("required_reads", []):
+            read_pattern = re.compile(rf"\bRead\b[^\n]*`{re.escape(token)}`")
+            if not read_pattern.search(text):
+                errors.append(
+                    f"missing required policy Read: {context} -> {spec['path']} -> {token}"
                 )
 
     config = root / "skills/correctness-review/review-config.json"

@@ -1,7 +1,7 @@
 ==========================================================================
 H1  §2 modality: does 'must' beat 'should' when a constraint competes?
-  round 1 (no competing constraint)  should 5/5   must 5/5   p=1.0000
-  round 2 (code freeze + foreign file) should 0/10  must 4/10  p=0.0867
+  round 1 (no competing constraint)       should 5/5   must 5/5   p=1.0000
+  round 2 (code freeze + foreign file)    should 0/10   must 4/10   p=0.0867
 ==========================================================================
 H2  §3 vague acceptance: does a measurable criterion beat 'is it correct?'
   round 1 (obvious defect)     vague 5/5   measurable 5/5   p=1.0000

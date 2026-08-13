@@ -1,0 +1,4 @@
+launched=20 completed=20 scored=20
+cost_usd=1.057917
+H3 round 1: mixed 20/20, one-verb 20/20
+H3 round 2: mixed 20/20, one-verb 20/20

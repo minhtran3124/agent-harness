@@ -12,7 +12,7 @@ would forbid this project's own vocabulary (`worktree`, `lane`, `gate`, `blast r
 
 Every rule below is labelled with the evidence that justifies it. A rule with no measured
 effect is advisory and **must not** be mechanised into a gate: see
-`specs/ste-terminology-evidence/DECISION.md` for the 76-trial A/B record.
+`specs/ste-terminology-evidence/DECISION.md` for the 75-trial A/B record.
 
 <!-- lint:scope -->
 | Target | §1 Terms | §2 Modality | §3 Acceptance | Enforcement |
@@ -69,9 +69,9 @@ pass from intake to merge; a *session* is one Claude Code process (`SessionStart
 `SessionEnd`, `session-knowledge.sh`). One run spans several sessions — that is what
 `subagent-driven-development resume <slug>` exists for. Never normalise one into the other.
 
-**Measured: no effect.** Mixing `check` / `verify` / `confirm` / `validate` across four
-assertions scored 40 of 40 correct, identical to using `verify` for all four, across two
-difficulty levels. Keep this section for human readability. Do not build a linter on it.
+**Measured: no effect.** Mixing `check` / `verify` / `confirm` / `validate` scored 40 of 40
+assertions correct; using `verify` for all four scored 36 of 36, across two difficulty levels.
+Keep this section for human readability. Do not build a linter on it.
 
 ## Hard exclusions
 
