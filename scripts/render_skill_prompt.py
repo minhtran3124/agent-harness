@@ -32,7 +32,9 @@ CONTEXT_MATRIX = {
             "rules/plan-format.md",
             "rules/wave-parallelism.md",
             "rules/auto-correct-scope.md",
+            "rules/terminology.md",
         ],
+        "required_reads": ["rules/terminology.md"],
     },
     "implementer": {
         "path": "skills/subagent-driven-development/implementer-prompt.md",

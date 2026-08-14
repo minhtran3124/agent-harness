@@ -8,6 +8,10 @@ description: Use to execute an approved multi-task PLAN.md: waves of isolated im
 Execute a valid plan with isolated implementation and review contexts. A task may advance only
 after its Verify command and both per-task reviews are green.
 
+Before executing or resuming a plan, **Read `rules/terminology.md`**. The main controller writes
+and updates `SUMMARY.md`, including the `### Verify` evidence rows; apply §3 to those rows while
+keeping `### Intent` verbatim and excluded.
+
 ## Resume first
 
 For `resume <slug>`, run the resume authority before editing — source tree first, deployed runtime

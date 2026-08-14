@@ -10,28 +10,29 @@ created: 2026-08-13
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**1 tasks · 1 waves · 6 files · 1/1 done**
+**1 tasks · 1 waves · 7 files · 1/1 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
-| 1 | 1.1 | Deliver the existing profile before both write-flows (wave 1) | skills/xia2/SKILL.md, skills/feature-intake/SKILL.md, scripts/render_skill_prompt.py, scripts/test_render_skill_prompt.py, rules/terminology.md, specs/ste-terminology-evidence/SUMMARY.md | Both writers receive the canonical rule before creating their artifact; deleting… |
+| 1 | 1.1 | Deliver the profile before both artifacts are written (wave 1) | skills/xia2/SKILL.md, skills/feature-intake/SKILL.md, skills/subagent-driven-development/SKILL.md, scripts/render_skill_prompt.py, scripts/test_render_skill_prompt.py, rules/terminology.md, specs/ste-terminology-evidence/SUMMARY.md | All three write contexts receive the canonical rule before creating or updating … |
 
 ```mermaid
 flowchart LR
   subgraph W0[Wave 1]
-    T1_1["1.1 Deliver the existing profile before both write-flows (wave 1)"]
+    T1_1["1.1 Deliver the profile before both artifacts are written (wave 1)"]
   end
 ```
 
 ### Progress
-- [x] 1.1 — Deliver the existing profile before both write-flows (wave 1)
+- [x] 1.1 — Deliver the profile before both artifacts are written (wave 1)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
 
 `rules/terminology.md` loads when a matching artifact is read, not before a new artifact is
-written. `writing-plans` already closes this gap for `PLAN.md`; `xia2` and `feature-intake` do not
-close it for `research-brief.md` and `SUMMARY.md`. Add the same explicit delivery contract while
+written. `writing-plans` already closes this gap for `PLAN.md`; `xia2`, `feature-intake`, and the
+SDD execution updater do not close it for `research-brief.md` and `SUMMARY.md`. Add the same
+explicit delivery contract while
 preserving the section-level exclusions approved in `design.md`.
 
 ## 2. Non-goals
@@ -48,8 +49,8 @@ preserving the section-level exclusions approved in `design.md`.
 - `research-brief.md` keeps §3 excluded so uncertainty and negative findings remain accurate.
 - `SUMMARY.md ### Intent` remains verbatim and excluded from every terminology rule.
 - `SUMMARY.md ### Verify` receives §3 before authoring; rationale and alternatives remain advisory.
-- Keep the implementation focused to the two authoring skills, the canonical matrix, its existing
-  tests, and the terminology delivery documentation.
+- Keep the implementation focused to the two artifact creators, the execution-phase summary
+  updater, the canonical matrix, its existing tests, and the terminology delivery documentation.
 - Run `bash scripts/run-tests.sh` once before shipping; record the full-suite result in
   `SUMMARY.md`, not as a Success Criterion row. Do **not** rebuild `.claude/` autonomously —
   deploying to `.claude/` requires explicit user confirmation, and the deploy conflict guard can
@@ -60,38 +61,41 @@ preserving the section-level exclusions approved in `design.md`.
 
 | ID | Behavior (observable) | Check (re-runnable) | Expected |
 | --- | --- | --- | --- |
-| SC-1 | The research and summary authoring contexts each require an explicit Read of `rules/terminology.md` | `python3 scripts/render_skill_prompt.py --check-all` | exit 0 |
-| SC-2 | Removing either new delivery edge — the rule-path token or the explicit `Read` verb — causes the context-matrix mutation test to fail | `python3 -m pytest scripts/test_render_skill_prompt.py -q` | exit 0 |
-| SC-3 | Existing context-propagation contracts remain green after adding the two authoring contexts | `bash tests/scripts/context-propagation-regression.test.sh` | exit 0 |
+| SC-1 | The research creator, summary creator, and execution-phase summary updater each require an explicit Read of `rules/terminology.md` | `python3 scripts/render_skill_prompt.py --check-all` | exit 0 |
+| SC-2 | Removing any new delivery edge — the rule-path token or the explicit `Read` verb — causes the context-matrix mutation test to fail | `python3 -m pytest scripts/test_render_skill_prompt.py -q` | exit 0 |
+| SC-3 | Existing context-propagation contracts remain green after adding the three write contexts | `bash tests/scripts/context-propagation-regression.test.sh` | exit 0 |
 | SC-4 | The updated terminology delivery prose references only repository paths that exist | `bash scripts/lint-doc-truth.sh` | exit 0 |
 
 ## 4. Tasks
 
-### Task 1.1 — Deliver the existing profile before both write-flows (wave 1)
+### Task 1.1 — Deliver the profile before both artifacts are written (wave 1)
 
-- **Files:** skills/xia2/SKILL.md, skills/feature-intake/SKILL.md, scripts/render_skill_prompt.py, scripts/test_render_skill_prompt.py, rules/terminology.md, specs/ste-terminology-evidence/SUMMARY.md
-- **Action:** Test-first, add `main.research-author` and `main.summary-author` to the canonical
-  context matrix and update its exact-inventory test. Require an explicit Read of
-  `rules/terminology.md` for both contexts so the existing generic delivery-edge mutation test
+- **Files:** skills/xia2/SKILL.md, skills/feature-intake/SKILL.md, skills/subagent-driven-development/SKILL.md, scripts/render_skill_prompt.py, scripts/test_render_skill_prompt.py, rules/terminology.md, specs/ste-terminology-evidence/SUMMARY.md
+- **Action:** Test-first, add `main.research-author`, `main.summary-author`, and the terminology
+  edge on `main.plan-executor` to the canonical context matrix; update its exact-inventory test.
+  Require an explicit Read of `rules/terminology.md` for all three contexts so the existing generic
+  delivery-edge mutation test
   covers them without bespoke test code. Extend that same generic mutation test
   (`test_each_policy_delivery_edge_is_load_bearing`) to also mutate each context's
   `required_reads` edge — weaken the `Read` verb while keeping the rule path — so dropping the
-  explicit Read (not just the path token) is detected for the two new contexts and
+  explicit Read (not just the path token) is detected for the three new contexts and
   `main.plan-author` alike; this stays inside the existing generic loop, not a bespoke test.
   In `xia2`, place the Read before research-brief
   authoring and state that §1 is advisory while §3 remains excluded for research uncertainty. In
   `feature-intake`, place the Read before `SUMMARY.md` authoring and state that §3 applies to
   `### Verify`, rationale/alternatives are advisory, and `### Intent` remains verbatim and
-  excluded. Generalize `terminology.md`'s Delivery paragraph from the plan-only example to the
-  three covered writers. Update the spec's context-propagation audit and Verify evidence with the
-  two new delivery edges after the focused checks have actually run. Do not add a hook, linter,
+  excluded. In `subagent-driven-development`, load the rule before both first-run and resumed
+  execution so the controller receives §3 before it populates `SUMMARY.md ### Verify`. Generalize
+  `terminology.md`'s Delivery paragraph to name the covered create and update writers. Update the
+  spec's context-propagation audit and Verify evidence with the three new delivery edges after the
+  focused checks have actually run. Do not add a hook, linter,
   template rule, or new standalone test file.
 - **Verify:** `bash -c 'python3 scripts/render_skill_prompt.py --check-all && python3 -m pytest scripts/test_render_skill_prompt.py -q && bash tests/scripts/context-propagation-regression.test.sh && bash scripts/lint-doc-truth.sh'`
-- **Done:** Both writers receive the canonical rule before creating their artifact; deleting either
-  explicit Read is detected; the documented exclusions and all existing delivery checks remain
-  intact.
+- **Done:** All three write contexts receive the canonical rule before creating or updating their
+  artifact; deleting any explicit Read is detected; the documented exclusions and all existing
+  delivery checks remain intact.
 - **Criteria:** SC-1, SC-2, SC-3, SC-4
-- **Interfaces:** Consumes: `rules/terminology.md`, the approved `design.md`, and the local `research-brief.md`. Produces: `skills/xia2/SKILL.md`, `skills/feature-intake/SKILL.md`, `scripts/render_skill_prompt.py`, `scripts/test_render_skill_prompt.py`, `rules/terminology.md`, `specs/ste-terminology-evidence/SUMMARY.md`.
+- **Interfaces:** Consumes: `rules/terminology.md`, the approved `design.md`, and the local `research-brief.md`. Produces: `skills/xia2/SKILL.md`, `skills/feature-intake/SKILL.md`, `skills/subagent-driven-development/SKILL.md`, `scripts/render_skill_prompt.py`, `scripts/test_render_skill_prompt.py`, `rules/terminology.md`, `specs/ste-terminology-evidence/SUMMARY.md`.
 
 ## 5. Risks
 
@@ -122,3 +126,6 @@ preserving the section-level exclusions approved in `design.md`.
   wording advisories fixed in 159ed1e; 9 advisory findings recorded. Intent review: 3 findings,
   all durably recorded (1 deferred scope decision, 1 design-corroborated drift, 1 accepted
   excess). Receipt pinned at 159ed1e; `verify_summary --check` and `--lane` both exit 0.
+- 2026-08-13 — independent review found two blocking gaps: the new SUMMARY replaced verbatim user
+  intent with a design-derived sentence, and the execution-phase writer of `### Verify` had no
+  registered delivery edge. Both are being repaired before handoff.

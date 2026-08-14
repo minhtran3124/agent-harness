@@ -11,15 +11,17 @@ artifact is read, but they do not put the rule into an agent's context before th
 new artifact. The plan flow closes this gap with an explicit Read in `writing-plans`; the research
 and summary authoring flows do not.
 
-This leaves two declared scopes dependent on incidental context:
+This leaves declared scopes dependent on incidental context:
 
 - `xia2` can write `research-brief.md` without receiving the advisory terminology profile.
 - `feature-intake` can write `SUMMARY.md` without receiving §3 before it authors `### Verify`.
+- The execution controller can populate the real `SUMMARY.md ### Verify` rows in a new or resumed
+  session without receiving §3 first.
 
 ## Decision
 
-Add an explicit Read of `rules/terminology.md` to the two source authoring skills and register both
-delivery edges in the existing context matrix.
+Add an explicit Read of `rules/terminology.md` to the two source authoring skills and the plan
+execution controller. Register all three delivery edges in the existing context matrix.
 
 Apply the existing profile exactly as written:
 
@@ -31,7 +33,7 @@ Apply the existing profile exactly as written:
 | `SUMMARY.md ### Intent` | all terminology rules remain excluded; preserve the user's words verbatim |
 
 The context matrix remains the deterministic authority for delivery. Its existing mutation test
-must fail when either new explicit Read disappears.
+must fail when any new explicit Read disappears.
 
 ## Non-goals
 
@@ -45,10 +47,9 @@ must fail when either new explicit Read disappears.
 
 - **The explicit Read exists but its applicable subset is unclear.** State the subset beside the
   Read in each authoring skill and keep the canonical definitions in `terminology.md`.
-- **A future edit silently removes one delivery edge.** Add both consumers to
+- **A future edit silently removes one delivery edge.** Add all consumers to
   `render_skill_prompt.py`'s context matrix; retain its generic mutation test.
 - **Research prose becomes falsely certain.** Keep §3's research exclusion unchanged and mention
   it in the `xia2` instruction.
 - **User intent is normalized.** Keep the hard exclusion for `### Intent` unchanged and mention it
   in the `feature-intake` instruction.
-

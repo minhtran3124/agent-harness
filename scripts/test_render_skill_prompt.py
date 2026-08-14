@@ -65,6 +65,7 @@ def test_required_reads_registrations_are_pinned():
         "main.plan-author": ["rules/terminology.md"],
         "main.research-author": ["rules/terminology.md"],
         "main.summary-author": ["rules/terminology.md"],
+        "main.plan-executor": ["rules/terminology.md"],
         "plan-document-reviewer": ["rules/terminology.md"],
     }
     actual = {

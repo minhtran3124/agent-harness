@@ -5,7 +5,7 @@
 | Field | Value |
 | --- | --- |
 | **Recommendation** | Reuse the existing explicit-Read and context-matrix pattern |
-| **Why this is the lightest credible path** | Two authoring instructions and two matrix entries close the write-side gap without a new loader or gate |
+| **Why this is the lightest credible path** | Three explicit Reads and matrix entries close the create/update gap without a new loader or gate |
 | **Confidence** | 95% |
 | **Next step** | Implement the single task in `PLAN.md` and run its focused contract checks |
 
@@ -22,8 +22,8 @@
 
 - **Requested feature:** Apply the repository's measured terminology profile when agents author
   `research-brief.md` and `SUMMARY.md`.
-- **Success:** Both authoring skills explicitly load the canonical rule before writing, and a
-  deterministic test detects removal of either delivery edge.
+- **Success:** The research creator, summary creator, and execution-phase summary updater load the
+  canonical rule before writing, and a deterministic test detects removal of any delivery edge.
 - **Assumption:** “Apply” means the existing per-section profile, not full ASD-STE100 compliance.
 - **Confirmed exclusion:** Research prose keeps uncertainty; `SUMMARY.md ### Intent` stays
   verbatim.
@@ -35,6 +35,7 @@
 | `Local` | `writing-plans/SKILL.md` already uses an explicit Read because new files do not trigger `paths:` |
 | `Local` | `xia2/SKILL.md` writes the research brief but does not read `terminology.md` |
 | `Local` | `feature-intake/SKILL.md` writes the summary but does not read `terminology.md` |
+| `Local` | `subagent-driven-development/SKILL.md` updates summary evidence but does not explicitly read `terminology.md` on each fresh or resumed run |
 | `Local` | `render_skill_prompt.py` owns the contextual-policy consumer matrix and checks explicit Reads |
 | `Inference` | Extending the established matrix is lower risk than introducing another delivery mechanism |
 
@@ -62,8 +63,8 @@
 
 ## Recommendation
 
-- **Primary:** Add one explicit Read to `xia2`, one to `feature-intake`, and register both in the
-  current context matrix.
+- **Primary:** Add explicit Reads to `xia2`, `feature-intake`, and the SDD execution controller;
+  register all three in the current context matrix.
 - **Why:** It fixes the timing problem at the source—before writing—using an already tested local
   pattern.
 - **Rejected alternative:** An always-on rule or hook would broaden context and enforcement beyond
@@ -88,8 +89,7 @@
 
 ## Evidence Boundary
 
-> Confirmed from artifacts: the two writers lack explicit Reads; the plan writer and context matrix
-> provide a reusable pattern; the scope exclusions already exist. Inferred from patterns: two new
-> matrix entries are sufficient delivery proof. Not checked: full ASD-STE100 conformance and
-> behavioral impact on long-form artifacts.
-
+> Confirmed from artifacts: the create and update writers lack explicit Reads; the plan writer and
+> context matrix provide a reusable pattern; the scope exclusions already exist. Inferred from
+> patterns: three new matrix entries are sufficient delivery proof. Not checked: full ASD-STE100
+> conformance and behavioral impact on long-form artifacts.
