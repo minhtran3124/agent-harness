@@ -1,0 +1,10 @@
+launched=76 completed=76 scored=76
+cost_usd=4.196416
+H1 round 1: should 5/5, must 5/5, p=1.0000
+H1 round 2: should 4/10, must 6/10, p=0.6563
+H2 round 1 sonnet: vague 5/5, stated 5/5, p=1.0000
+H2 round 2 sonnet: vague 0/5, stated 5/5, p=0.0079
+H2 round 2 opus: vague 0/3, stated 3/3, p=0.1000
+H2 round 2 pooled: vague 0/8, stated 8/8, p=0.0002
+H3 round 1: mixed 20/20, one-verb 20/20
+H3 round 2: mixed 20/20, one-verb 20/20
