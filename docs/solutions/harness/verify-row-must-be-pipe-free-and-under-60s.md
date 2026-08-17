@@ -10,7 +10,7 @@ affects:
   - scripts/ci-strict-gate.sh
 supersedes: null
 confidence: high
-confirmed_at: 2026-07-23
+confirmed_at: 2026-08-17
 ---
 ## Applicable When
 
@@ -42,6 +42,14 @@ Every Verify command must be **pipe-free** AND **<60s re-runnable**:
 ## Guardrail
 
 `existing:` `scripts/check_verify_rows.py`, wired into `run-tests.sh` L1, scans every changed `specs/*/SUMMARY.md` / `PLAN.md` `### Verify` command cell and fails on (a) a literal `|` in the command, and (b) a whole-suite/build invocation.
+
+**Phrase-collision caveat (2026-08-17, test-layer-ladder):** the whole-suite detector
+`_OTHER_SLOW` matches the literal `full[ -]suite` **anywhere in the command cell**, not only as
+an executed invocation. A Verify/SC row that greps *prose containing that phrase* —
+`grep -q "Never put the full suite" rules/plan-format.md` — false-positives and fails L1, so a
+rule sentence written with "full suite" becomes the one phrase in the repo that cannot be
+grep-pinned. When authoring rule prose that SC rows may later pin, prefer "whole suite" (not
+matched), or pin a different substring of the sentence.
 
 **Reachability caveat (2026-08-12, PR #202):** that L1 step is scoped to files changed *in commits* (`git diff BASE...HEAD`), so it does not see a SUMMARY that is written but not yet committed — the usual authoring order. A whole-suite row therefore still reached CI and blocked all three jobs while local `run-tests.sh` said `ALL GREEN`. Lint the path directly before pushing (`python3 scripts/check_verify_rows.py specs/<slug>/SUMMARY.md`, and `python3 scripts/verify_summary.py <slug> --check` for the strict-gate re-run). See `committed-diff-scoped-lint-skips-uncommitted-work.md`.
 
