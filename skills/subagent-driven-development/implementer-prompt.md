@@ -35,8 +35,9 @@ Task tool (general-purpose):
     Once you're clear on requirements:
     1. Implement exactly what the task specifies
     2. Write tests (following TDD if task says to)
-    3. Verify the implementation: run lint and type-check first, then the task's `<verify>`
-       command. Do not substitute the full suite — the suite runs at branch finish.
+    3. Verify the implementation: run your linter and type-checker first (when the stack
+       defines them), then the task's `<verify>` command. Do not substitute the whole
+       suite — it runs at branch finish and in CI.
     4. Self-review (see below)
     5. Report back
 
