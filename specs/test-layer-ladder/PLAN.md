@@ -81,12 +81,14 @@ weakening-validation gate, repeated-failure escalation) and is not restated.
 ### Task 1.1 — Add guardrail 4 (layer ladder) to plan-format (wave 1)
 
 - **Files:** rules/plan-format.md
-- **Action:** In `## Guardrails`, append item 4 verbatim from `design.md` §Exact edits (1):
-  "**Layer ladder** — run lint and type-check first, then the smallest test that touches the
-  change. Add an integration test only when the behavior spans modules. Never put the full
-  suite in a task `Verify` or an SC row — the suite runs at `finishing-a-development-branch`
-  (the release gate)." Do not change items 1–3 or any other section; keep the existing
-  "never a whole-suite row" line in the SC schema untouched.
+- **Action:** In `## Guardrails`, append item 4 verbatim from `design.md` §Exact edits (1)
+  (wording as revised in correctness round 1): "**Layer ladder** — run your linter and
+  type-checker first (when the stack defines them — see `techstacks/`), then the smallest test
+  that touches the change. Add an integration test only when the behavior spans modules. Never
+  put the whole suite in a task `Verify`, an SC row, or a SUMMARY `### Verify` row — cite it in
+  prose; the suite runs at `finishing-a-development-branch` (targeted, or full when no safe
+  subset is known) and in the CI `tests` job." Do not change items 1–3 or any other section;
+  keep the existing "never a whole-suite row" line in the SC schema untouched.
 - **Verify:** `grep -q "Layer ladder" rules/plan-format.md`
 - **Done:** Guardrail 4 present with the pinned wording; `grep -c "never a whole-suite row"` still
   reports the pre-existing SC-schema occurrence plus no removals; no other line changed.
@@ -97,12 +99,14 @@ weakening-validation gate, repeated-failure escalation) and is not restated.
 
 - **Files:** skills/subagent-driven-development/implementer-prompt.md
 - **Action:** Replace the single line `3. Verify implementation works` (line 38; the phrase
-  occurs exactly once outside `specs/` — spec files quote it, do not edit them) with the two-sentence step from `design.md` §Exact edits (2):
-  "3. Verify the implementation: run lint and type-check first, then the task's `<verify>`
-  command. Do not substitute the full suite — the suite runs at branch finish." Preserve the
+  occurs exactly once outside `specs/` — spec files quote it, do not edit them) with the
+  step from `design.md` §Exact edits (2) (wording as revised in correctness round 1):
+  "3. Verify the implementation: run your linter and type-checker first (when the stack
+  defines them), then the task's `<verify>` command. Do not substitute the whole
+  suite — it runs at branch finish and in CI." Preserve the
   4-space indentation of the surrounding prompt block and renumber nothing (the step count is
   unchanged). Do not touch the `rules/auto-correct-scope.md` reference elsewhere in the file.
-- **Verify:** `grep -q "run lint and type-check first" skills/subagent-driven-development/implementer-prompt.md`
+- **Verify:** `grep -q "run your linter and type-checker first" skills/subagent-driven-development/implementer-prompt.md`
 - **Done:** New step 3 present; the phrase `Verify implementation works` absent from the file;
   `python3 scripts/render_skill_prompt.py --check-all` exits 0.
 - **Criteria:** SC-3, SC-4, SC-6
@@ -163,3 +167,7 @@ weakening-validation gate, repeated-failure escalation) and is not restated.
   3 scored (75 / 25 / 50) + 2 unmodified-line auto-0. One fix applied at the ≥75 location
   (`rules/plan-format.md:119`) with its lockstep mirror in implementer step 3; SC-3 check
   re-pinned to the revised phrase. Sub-75 findings recorded as advisories in SUMMARY.
+- 2026-08-17 — correctness round 2: fix verdict RESOLVED_WITH_NEW_DEFECT — the §4 task blocks
+  still quoted the pre-fix wording (a resume would revert the fix and fail Task 1.2's stale
+  Verify). Task 1.1/1.2 Action quotes and Task 1.2 Verify re-pinned; regenerated brief carries
+  the revised wording; no code change. Review chain proceeds on HEAD.
