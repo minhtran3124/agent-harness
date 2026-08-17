@@ -30,7 +30,9 @@ and error handling live?
 **Key patterns** — what cross-cutting patterns does the codebase enforce (DI, factory,
 soft-delete, …)?
 **Infrastructure** — persistence, cache, messaging, hosting.
-**Testing** — runner, structure, coverage target.
+**Testing** — runner, structure, coverage target. Execution strategy:
+sequential by default or parallel-safe? Which changes need an E2E, race, load, or stress run
+(intentional, never default)?
 
 ## How the harness uses it
 
