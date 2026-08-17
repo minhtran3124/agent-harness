@@ -116,6 +116,7 @@ resolve to real `SC-<n>` rows in that plan. The column is optional when no SC ta
 1. **Zero file overlap** across same-wave tasks — prevents merge conflicts when executed in parallel.
 2. **Verify must be automated** — your test runner, HTTP probe, linter, type-checker, migration command. Reject "open browser and check" at task level (that belongs in phase-level user-acceptance testing).
 3. **Verify <60s** — if longer, split into sub-tasks.
+4. **Layer ladder** — run lint and type-check first, then the smallest test that touches the change. Add an integration test only when the behavior spans modules. Never put the full suite in a task `Verify` or an SC row — the suite runs at `finishing-a-development-branch` (the release gate).
 
 ## Examples
 
