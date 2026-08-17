@@ -59,7 +59,9 @@ works"; (3) `techstacks/README.md`'s starter-checklist Testing line asks the exe
 questions (sequential vs parallel-safe; intentional E2E/race/load/stress); (4) the same line is
 mirrored into `templates/structure/techstacks-README.md` (the init-structure scaffold source),
 restoring template/instance byte parity — added mid-flight after task review 1.3 surfaced the
-parity gap.
+parity gap. A fifth edit (Task 1.5, user-approved during intent review) appends the
+test-ownership question — "Which behavior does this codebase own, and which is delegated to
+dependencies (test only what you own)?" — to the Testing line in both files.
 
 ### Rationale
 
@@ -91,7 +93,8 @@ harness core ships no stack assumptions.
 | Banned vague phrase removed | `grep -q "Verify implementation works" skills/subagent-driven-development/implementer-prompt.md` | 1 | exit 1 expected — phrase absent | SC-4 |
 | Techstacks Testing line extended | `grep -q "sequential by default or parallel-safe" techstacks/README.md` | 0 | | SC-5 |
 | Context-matrix delivery edges intact | `python3 scripts/render_skill_prompt.py --check-all` | 0 | | SC-6 |
-| Template/instance byte parity restored | `diff -q templates/structure/techstacks-README.md techstacks/README.md` | 0 | | SC-7 |
+| Template/instance byte parity restored | `diff -q templates/structure/techstacks-README.md techstacks/README.md` | 0 | re-run after Task 1.5 | SC-7 |
+| Testing line asks test-ownership | `grep -q "test only what you own" techstacks/README.md` | 0 | added by Task 1.5 (intent-gap resolution) | SC-8 |
 
 ### Not auto-verified
 
@@ -150,6 +153,30 @@ consumers enumerated and corroborated by grep/read at the cited lines).
 
 No row assumed; no inline policy subset introduced (all inserted text is the authority itself,
 not a copy of another authority).
+
+### Intent Findings
+
+Verdict: substantially faithful; every SC has a passing Criterion-mapped Verify row. Recorded
+per routing (advisory/report-only stay here; the single gap was resolved by the user in-session):
+
+- **gap → user-resolved:** "Test behavior your application actually owns" has no mechanism in
+  the diff or the pre-existing harness — the Rationale's "already mechanized" enumeration does
+  not cover test *ownership* (reviewer grep over rules/, skills/, techstacks/, templates/ found
+  none). Resolution recorded in the Status Log.
+- **drift (equivalent, advisory):** implementer step 3 ships two explicit rungs (lint/type-check,
+  `<verify>`); the smallest-test rung is implicit in `<verify>` and the integration rung lives
+  only in Guardrail 4 — the layer choice is a plan-authoring decision, so the split is
+  deliberate.
+- **drift (equivalent, advisory):** "sequential by default or parallel-safe?" poses the intent's
+  default ("Run sequentially by default") as a symmetric question; a tightening like
+  "parallel-safe (and proven so)" would re-pin SC-5 and the template mirror — not worth the
+  churn now.
+- **drift (equivalent, advisory):** "spans modules" is narrower than the intent's "only when
+  needed" — also flagged sub-threshold by correctness (scored within the 75 composite as
+  subjective); left as-is.
+- **excess (report-only, justified):** `templates/structure/techstacks-README.md` was outside
+  the two files the approved scope named; required by the parity invariant, disclosed as the
+  mid-flight Task 1.4 addition.
 
 ### Harness-Delta
 

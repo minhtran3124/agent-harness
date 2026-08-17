@@ -60,7 +60,13 @@ it verifies).
 
    > **Testing** — runner, structure, coverage target. Execution strategy: sequential by
    > default or parallel-safe? Which changes need an E2E, race, load, or stress run
-   > (intentional, never default)?
+   > (intentional, never default)? Which behavior does this codebase own, and which is
+   > delegated to dependencies (test only what you own)?
+
+   The final question was added after intent review: the philosophy's first line ("Test
+   behavior your application actually owns") had no mechanism anywhere in the harness — the
+   intake-time claim that it was already covered did not survive the reviewer's grep. The user
+   approved this extension in-session (2026-08-17).
 
 4. `templates/structure/techstacks-README.md` → the same **Testing** line, extended with the
    identical pinned wording as (3). Added after task review 1.3 found the gap: this template is

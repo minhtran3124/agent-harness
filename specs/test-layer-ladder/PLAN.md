@@ -75,6 +75,7 @@ weakening-validation gate, repeated-failure escalation) and is not restated.
 | SC-5 | `techstacks/README.md` Testing line asks the execution-strategy questions | `grep -q "sequential by default or parallel-safe" techstacks/README.md` | exit 0 |
 | SC-6 | The context-matrix delivery edges survive the implementer-prompt edit | `python3 scripts/render_skill_prompt.py --check-all` | exit 0 |
 | SC-7 | Template source and scaffolded instance stay in parity | `diff -q templates/structure/techstacks-README.md techstacks/README.md` | exit 0 |
+| SC-8 | The Testing line asks which behavior the codebase owns | `grep -q "test only what you own" techstacks/README.md` | exit 0 |
 
 ## 4. Tasks
 
@@ -139,6 +140,19 @@ weakening-validation gate, repeated-failure escalation) and is not restated.
 - **Criteria:** SC-7
 - **Interfaces:** Consumes the pinned wording in `design.md` §Exact edits (4) and the Task 1.3 line-wrap layout. Produces `templates/structure/techstacks-README.md` (template source scaffolded to consumers by `scripts/init-structure.sh`).
 
+### Task 1.5 — Add the test-ownership question to the Testing line (wave 3)
+
+- **Files:** techstacks/README.md, templates/structure/techstacks-README.md
+- **Action:** Append to the `**Testing**` checklist line in both files, verbatim from
+  `design.md` §Exact edits (3): " Which behavior does this codebase own, and which is
+  delegated to dependencies (test only what you own)?" Keep identical line-wrap points in both
+  files so byte parity holds (SC-7). No other line changes. Added after intent review resolved
+  the "Test behavior your application actually owns" gap with the user (2026-08-17).
+- **Verify:** `grep -q "test only what you own" techstacks/README.md`
+- **Done:** Both files carry the extended line; `diff -q` between them exits 0.
+- **Criteria:** SC-8, SC-7
+- **Interfaces:** Consumes the pinned wording in `design.md` §Exact edits (3). Produces `techstacks/README.md` and `templates/structure/techstacks-README.md` (extended Testing line, template parity intact).
+
 ## 5. Risks
 
 - **Deploy drift:** `rules/plan-format.md` is currently identical to the deployed
@@ -171,3 +185,10 @@ weakening-validation gate, repeated-failure escalation) and is not restated.
   still quoted the pre-fix wording (a resume would revert the fix and fail Task 1.2's stale
   Verify). Task 1.1/1.2 Action quotes and Task 1.2 Verify re-pinned; regenerated brief carries
   the revised wording; no code change. Review chain proceeds on HEAD.
+- 2026-08-17 — intent review: substantially faithful; 3 equivalent drifts + 1 justified excess
+  recorded in SUMMARY. The one gap ("Test behavior your application actually owns" — no
+  mechanism anywhere in the harness) was put to the user, who approved extending the Testing
+  line → Task 1.5 + SC-8 added (wave 3).
+- 2026-08-17 — task 1.5 complete; commit c6e5ed8. Review 1.5 pass/approved (1 Minor:
+  provenance-tier parity proof — controller re-ran `diff -q` and the SC-8 grep live, both
+  exit 0). All 8 SC checks re-run at expected exits by the controller.
