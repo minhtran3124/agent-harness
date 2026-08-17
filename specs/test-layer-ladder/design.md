@@ -28,10 +28,19 @@ it verifies).
 
 1. `rules/plan-format.md` → Guardrails, new item 4:
 
-   > 4. **Layer ladder** — run lint and type-check first, then the smallest test that touches
-   > the change. Add an integration test only when the behavior spans modules. Never put the
-   > full suite in a task `Verify` or an SC row — the suite runs at
-   > `finishing-a-development-branch` (the release gate).
+   > 4. **Layer ladder** — run your linter and type-checker first (when the stack defines
+   > them — see `techstacks/`), then the smallest test that touches the change. Add an
+   > integration test only when the behavior spans modules. Never put the whole suite in a
+   > task `Verify`, an SC row, or a SUMMARY `### Verify` row — cite it in prose; the suite
+   > runs at `finishing-a-development-branch` (targeted, or full when no safe subset is
+   > known) and in the CI `tests` job.
+
+   Wording revised in correctness round 1 (score 75): the deferral clause now matches what
+   the finish skill actually does, the ban names the SUMMARY `### Verify` surface (the
+   historically recurring one), and the first rung carries the same possessive hedge as
+   Guardrail 2. "whole suite" (not "full suite") keeps the sentence pinnable — the
+   `check_verify_rows.py` `_OTHER_SLOW` regex matches the literal `full[ -]suite` anywhere in
+   a command cell.
 
    The final sentence deliberately reinforces the existing SC "Check" definition ("never a
    whole-suite row") — the implementer must not deduplicate that existing line.
@@ -40,8 +49,12 @@ it verifies).
    `3. Verify implementation works` (the current wording uses `works`, a §3-banned vague term)
    with:
 
-   > 3. Verify the implementation: run lint and type-check first, then the task's `<verify>`
-   >    command. Do not substitute the full suite — the suite runs at branch finish.
+   > 3. Verify the implementation: run your linter and type-checker first (when the stack
+   >    defines them), then the task's `<verify>` command. Do not substitute the whole
+   >    suite — it runs at branch finish and in CI.
+
+   Wording revised in correctness round 1 in lockstep with edit (1) — same confirmed defect
+   (an unconditional deferral promise), same hedge.
 
 3. `techstacks/README.md` → starter checklist, extend the **Testing** line:
 

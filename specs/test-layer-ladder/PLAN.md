@@ -70,7 +70,7 @@ weakening-validation gate, repeated-failure escalation) and is not restated.
 |------|-------------------------|-----------------------|------------|
 | SC-1 | `rules/plan-format.md` Guardrails carries the new layer-ladder item | `grep -q "Layer ladder" rules/plan-format.md` | exit 0 |
 | SC-2 | The pre-existing SC "Check" definition line survives un-deduplicated | `grep -q "never a whole-suite row" rules/plan-format.md` | exit 0 |
-| SC-3 | Implementer step 3 states the ladder ordering | `grep -q "run lint and type-check first" skills/subagent-driven-development/implementer-prompt.md` | exit 0 |
+| SC-3 | Implementer step 3 states the ladder ordering | `grep -q "run your linter and type-checker first" skills/subagent-driven-development/implementer-prompt.md` | exit 0 |
 | SC-4 | The §3-banned phrase is gone from the implementer prompt | `grep -q "Verify implementation works" skills/subagent-driven-development/implementer-prompt.md` | exit 1 — banned vague wording removed |
 | SC-5 | `techstacks/README.md` Testing line asks the execution-strategy questions | `grep -q "sequential by default or parallel-safe" techstacks/README.md` | exit 0 |
 | SC-6 | The context-matrix delivery edges survive the implementer-prompt edit | `python3 scripts/render_skill_prompt.py --check-all` | exit 0 |
@@ -159,3 +159,7 @@ weakening-validation gate, repeated-failure escalation) and is not restated.
   optional parity re-run — controller re-ran `diff -q`, exit 0; ragged wrap inherited from 1.3
   layout by SC-7 design). Resolves the 1.3 Important finding. All 7 SC checks re-run at expected
   exits by the controller. Wave execution complete → verifying.
+- 2026-08-17 — correctness round 1: six FIND angles → 28 candidates → 5 deduped locations →
+  3 scored (75 / 25 / 50) + 2 unmodified-line auto-0. One fix applied at the ≥75 location
+  (`rules/plan-format.md:119`) with its lockstep mirror in implementer step 3; SC-3 check
+  re-pinned to the revised phrase. Sub-75 findings recorded as advisories in SUMMARY.

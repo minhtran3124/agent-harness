@@ -87,7 +87,7 @@ harness core ships no stack assumptions.
 | --- | --- | --- | --- | --- |
 | Layer-ladder guardrail present | `grep -q "Layer ladder" rules/plan-format.md` | 0 | | SC-1 |
 | SC "Check" definition line survives | `grep -q "never a whole-suite row" rules/plan-format.md` | 0 | intentional duplication kept | SC-2 |
-| Implementer step 3 states the ladder | `grep -q "run lint and type-check first" skills/subagent-driven-development/implementer-prompt.md` | 0 | | SC-3 |
+| Implementer step 3 states the ladder | `grep -q "run your linter and type-checker first" skills/subagent-driven-development/implementer-prompt.md` | 0 | re-pinned after correctness round 1 | SC-3 |
 | Banned vague phrase removed | `grep -q "Verify implementation works" skills/subagent-driven-development/implementer-prompt.md` | 1 | exit 1 expected — phrase absent | SC-4 |
 | Techstacks Testing line extended | `grep -q "sequential by default or parallel-safe" techstacks/README.md` | 0 | | SC-5 |
 | Context-matrix delivery edges intact | `python3 scripts/render_skill_prompt.py --check-all` | 0 | | SC-6 |
@@ -109,6 +109,47 @@ harness core ships no stack assumptions.
 - `git revert 0d07c9a ee9cdd8 edf202d b90da10` (prose-only commits, one file each; reverting all
   four restores the prior state — revert `ee9cdd8` and `0d07c9a` together to keep template
   parity)
+
+### Correctness advisories (sub-threshold; recorded, not auto-fixed)
+
+Round 1 of the adversarial correctness pass (6 FIND angles → 28 candidates → 5 deduped
+locations). One location scored 75 and was fixed in-branch (see Status Log); these stayed below
+the 75 threshold or hit the unmodified-line auto-0 rule:
+
+- `skills/subagent-driven-development/implementer-prompt.md:38-40` (score 25) — residual claims:
+  the `<verify>` token is legacy-XML styling vs the brief's `**Verify:**` (pre-existing idiom at
+  line 130); a red first rung reports through Rule-3 `### Deviations`, not the `verify:` field.
+- `techstacks/README.md:33-35` (score 50) — the checklist still does not ask for the lint /
+  type-check *commands* the ladder's first rung needs (candidate follow-up: add them to the
+  Testing line); SC-7 byte parity is one-shot with no standing test, and the instance file is
+  project-owned, so parity is expected to drift on the next legitimate consumer edit.
+- `scripts/check_verify_rows.py:39` (auto-0, unmodified line) — `_OTHER_SLOW` matches the
+  literal `full[ -]suite` anywhere in a command cell, so a grep pinning a sentence containing
+  "full suite" false-positives; the revised Guardrail 4 avoids the phrase ("whole suite"), the
+  regex itself is untouched. Bare whole-suite invocations (`pytest`, `npm test`) are also not
+  matched — the lint is traceability-tier.
+- `scripts/init-structure.sh:29-31` (auto-0, unmodified line) — create-if-missing: existing
+  consumers keep the old Testing line; the template change reaches new scaffolds only (also
+  recorded in the audit matrix row below).
+
+### Context-Propagation Audit
+
+Result: **PASS** (diff e970c57..HEAD trips `workflow-engine`; every changed instruction's
+consumers enumerated and corroborated by grep/read at the cited lines).
+
+| Source | Consumer | Context | Delivery | Proof |
+| --- | --- | --- | --- | --- |
+| `rules/plan-format.md` Guardrail 4 | `writing-plans` | main (authoring) | explicit Read | `skills/writing-plans/SKILL.md:8` |
+| `rules/plan-format.md` Guardrail 4 | `subagent-driven-development` preflight | main (controller) | explicit Read | `skills/subagent-driven-development/SKILL.md:37` |
+| `rules/plan-format.md` Guardrail 4 | plan-document-reviewer | fresh child | explicit Read in prompt | `skills/writing-plans/plan-document-reviewer-prompt.md:5` |
+| `rules/plan-format.md` Guardrail 4 | any `specs/**/PLAN.md` reader | main, new session | paths-triggered | frontmatter `paths:` lines 1–3 |
+| `rules/plan-format.md` Guardrail 4 | runtime deployed copy `.claude/rules/` | every session | deploy re-sync | this worktree's gitignored `.claude/` re-deployed (`using-git-worktrees` prescribes the deploy step), `diff` clean; the main checkout's `.claude/` is untouched — its post-merge deploy is the documented user step (PLAN §Risks) |
+| implementer-prompt step 3 | implementer subagents | fresh child | controller instantiates companion prompt | `CONTEXT_MATRIX` registers the file; `render_skill_prompt.py --check-all` exit 0 (SC-6); deployed copy re-synced, `diff` clean |
+| `techstacks/README.md` Testing line | implementing/reviewing agents | main + child | always-loaded pointers instruct reading `techstacks/*.md` | `rules/guidelines.md:3-4`, `rules/architecture.md` |
+| template Testing line | consumer projects | new scaffolds | file copy at scaffold time | `scripts/init-structure.sh:23`; parity `diff -q` exit 0 (SC-7) |
+
+No row assumed; no inline policy subset introduced (all inserted text is the authority itself,
+not a copy of another authority).
 
 ### Harness-Delta
 
