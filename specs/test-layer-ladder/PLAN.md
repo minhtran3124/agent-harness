@@ -1,6 +1,6 @@
 ---
 slug: test-layer-ladder
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-08-17
 ---
@@ -192,3 +192,6 @@ weakening-validation gate, repeated-failure escalation) and is not restated.
 - 2026-08-17 — task 1.5 complete; commit c6e5ed8. Review 1.5 pass/approved (1 Minor:
   provenance-tier parity proof — controller re-ran `diff -q` and the SC-8 grep live, both
   exit 0). All 8 SC checks re-run at expected exits by the controller.
+- 2026-08-17 — shipped. Receipt pinned at 1c56714 (correctness, intent,
+  context-propagation-audit all pass; post-review KB commit delta-re-reviewed). Suite ALL
+  GREEN at the same sha. PR opened against `simplify`.
