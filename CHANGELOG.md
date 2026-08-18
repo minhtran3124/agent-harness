@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.19.3] — 2026-08-18
+
+- docs: align AGENTS.md and README.md with the v3 tree (PR #209)
+
 ## [2.19.2] — 2026-08-18
 
 - release(v3): evidence tiers, durable run state, and a runtime-neutral core (PR #207)
