@@ -8,7 +8,9 @@ Enforces the two rules a Verify row must obey so it survives machine re-executio
      (verify_summary.py). An unescaped `|` in a command splits the cell (the row
      then has the wrong column count); an escaped `\\|` survives but still means the
      command uses a pipe. Either way: rewrite pipe-free (`grep -e a -e b`,
-     `X; a=$?; test -a`, redirect instead of `| wc`).
+     `X; a=$?; test -a`, redirect instead of `| wc`). A `|` inside a quoted span
+     (`'|| true'`, `-e 'a|b'`) is DATA, not a shell pipe, and is allowed — the rule
+     is about re-execution semantics, not about the character.
   2. UNDER 60s — ci-strict-gate.sh re-runs each Verify command under a 60s
      per-command cap (= plan-format Guardrail 3). A full-suite / build invocation
      times out and blocks the gate. Those belong to the CI `tests` job, cited in
@@ -21,6 +23,9 @@ Usage:
 Exit 0 = clean, 1 = at least one violation, 2 = bad invocation.
 Scope is intentionally per-file (callers pass only the CHANGED SUMMARYs) — this
 lints new/edited rows, it does not retroactively police already-shipped specs.
+That guarantee lives in the CALLER: run-tests.sh intersects the changed set with a
+grandfather cutoff, because "changed vs base" alone stops meaning "new" once the
+base ref is `main` on a release PR (every accumulated spec then looks new).
 """
 
 from __future__ import annotations
@@ -30,6 +35,12 @@ import re
 import sys
 
 _SENTINEL = "\x00"
+# A `|` inside a quoted span is not a shell pipe — it is data (e.g. a Python string
+# literal `'|| true'`, or a grep pattern `-e 'a|b'`). Rule 1b exists because a real
+# shell pipe changes re-execution semantics under verify_summary; an inert quoted one
+# does not. Strip quoted spans before testing, or the rule fires on its own escaping
+# advice (observed: specs/durable-run-state/PLAN.md SC-10).
+_QUOTED = re.compile(r"'[^']*'|\"[^\"]*\"")
 # Full-suite / build invocations that exceed the strict gate's 60s per-command cap.
 # run-tests.sh is flagged only when EXECUTED (after bash/sh/source/./ or at a
 # command-segment start) — not when it is merely a grep argument or a path string.
@@ -41,6 +52,11 @@ _OTHER_SLOW = re.compile(r"\bmake\s+\S*test|\btox\b|full[ -]suite", re.I)
 
 def _is_too_slow(cmd: str) -> bool:
     return bool(_RUN_TESTS.search(cmd) or _OTHER_SLOW.search(cmd))
+
+
+def _has_shell_pipe(cmd: str) -> bool:
+    """True when `cmd` contains a `|` outside any quoted span."""
+    return "|" in _QUOTED.sub("", cmd)
 
 
 def _split_escaped(row: str) -> list[str]:
@@ -62,6 +78,13 @@ def check_summary_text(text: str) -> list[str]:
         if s.startswith("#"):
             break
         if not s.startswith("|"):
+            # The Verify table is a contiguous run of `|` rows. Once it has started,
+            # the first non-table line ENDS it — otherwise the scan bleeds into any
+            # later table in the section (a `**Mutation-tested**` block is bold text,
+            # not a `#` heading, so it never tripped the break above) and reports that
+            # table's narrower rows as malformed Verify rows.
+            if header_cols is not None:
+                break
             continue
         cells = _split_escaped(s)
         # separator row
@@ -87,8 +110,8 @@ def check_summary_text(text: str) -> list[str]:
                 f"— an unescaped `|` in the command splits the cell; rewrite pipe-free"
             )
             continue
-        # Rule 1b — an escaped pipe survived: the command still uses a pipe.
-        if "|" in cmd:
+        # Rule 1b — an escaped pipe survived: the command still uses a shell pipe.
+        if _has_shell_pipe(cmd):
             violations.append(
                 f"[{label}] Verify command contains a pipe `|` — rewrite pipe-free "
                 f"(grep -e a -e b / capture $? / redirect instead of `| wc`): {cmd}"
@@ -132,8 +155,8 @@ def check_plan_text(text: str) -> list[str]:
             )
             continue
         cmd = cells[2].strip("`").strip()
-        # Rule 1b — an escaped pipe survived: the command still uses a pipe.
-        if "|" in cmd:
+        # Rule 1b — an escaped pipe survived: the command still uses a shell pipe.
+        if _has_shell_pipe(cmd):
             violations.append(
                 f"[{label}] SC check command contains a pipe `|` — rewrite pipe-free "
                 f"(grep -e a -e b / capture $? / redirect instead of `| wc`): {cmd}"

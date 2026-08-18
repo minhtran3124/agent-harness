@@ -122,3 +122,73 @@ def test_sc_table_in_fence_is_ignored():
         "```\n"
     )
     assert c.check_plan_text(text) == []
+
+
+# --- regression: the Verify table must TERMINATE (release-PR false positives) ---
+
+
+def test_scan_stops_at_end_of_verify_table():
+    """A later table in the same section is not part of the Verify table.
+
+    `**Mutation-tested**` is bold text, not a `#` heading, so it never tripped the
+    heading break — the scan bled into the 2-column mutation table and reported its
+    rows as malformed 4-column Verify rows.
+    """
+    text = _summary("| lint | `bash -n x.sh` | 0 | |") + (
+        "\n**Mutation-tested**, per docs:\n\n"
+        "| Mutation | Result |\n| --- | --- |\n| break it | red |\n"
+    )
+    assert c.check_summary_text(text) == []
+
+
+def test_prose_after_the_table_does_not_reopen_it():
+    text = _summary("| lint | `bash -n x.sh` | 0 | |") + (
+        "\nFull suite run by hand: `scripts/run-tests.sh` → ALL GREEN.\n"
+    )
+    assert c.check_summary_text(text) == []
+
+
+def test_blank_line_before_the_table_is_still_tolerated():
+    # the header may be preceded by blanks/HTML comments — only a line AFTER the
+    # table has started may end it
+    text = (
+        "### Verify\n\n<!-- rows are pipe-free -->\n\n"
+        "| Check | Command | Exit | Notes |\n| --- | --- | --- | --- |\n"
+        "| lint | `bash -n x.sh` | 0 | |\n"
+    )
+    assert c.check_summary_text(text) == []
+
+
+# --- regression: a `|` inside a quoted span is data, not a shell pipe ---
+
+
+def test_quoted_pipe_is_not_a_shell_pipe():
+    text = _summary(
+        "| py guard | `python3 -c \"x = 'a\\\\|\\\\| b' or 1\"` | 0 | inert |"
+    )
+    assert c.check_summary_text(text) == []
+
+
+def test_unquoted_pipe_is_still_flagged_after_the_quote_fix():
+    # mutation guard: the quote-stripping must not swallow a REAL pipe
+    text = _summary("| bad | `cat 'f.txt' \\| wc -l` | 0 | real pipe |")
+    v = c.check_summary_text(text)
+    assert len(v) == 1 and "pipe" in v[0].lower()
+
+
+def test_sc_table_quoted_pipe_is_not_a_shell_pipe():
+    text = (
+        "| ID | Behavior | Check | Expected |\n| --- | --- | --- | --- |\n"
+        "| SC-1 | legacy specs usable | `python3 -c \"bad = '\\\\|\\\\| true' in s\"` "
+        "| exit 0 |\n"
+    )
+    assert c.check_plan_text(text) == []
+
+
+def test_sc_table_unquoted_pipe_still_rejected():
+    text = (
+        "| ID | Behavior | Check | Expected |\n| --- | --- | --- | --- |\n"
+        "| SC-1 | counts | `ls \\| wc -l` | exit 0 |\n"
+    )
+    v = c.check_plan_text(text)
+    assert len(v) == 1 and "pipe" in v[0].lower()
