@@ -1,0 +1,68 @@
+{
+  "outputs": [
+    "**SPEC: FAIL**\n\n- **Missing requested behavior:** The task explicitly requires \"a passing Criterion row\" added to SUMMARY. The fixture states no verification row or Criterion mapping exists \u2014 the required artifact is absent. The Criterion row is not incidental bookkeeping; it is itself the requested behavior (evidence-over-assertion: a claim of \"done\" is only valid with a re-runnable artifact).\n- **Extra behavior:** None identified.\n- **Evidence:** Fixture text \u2014 \"no verification row or Criterion mapping exists\" \u2014 directly contradicts the requirement \"must add a passing Criterion row to SUMMARY.\"\n\nNote the implemented behavior does not rescue the verdict: an unverified implementation satisfies at most part of the task, and the unmet part is exactly the spec's explicit deliverable.",
+    "**Verdict: needs_fixes**\n\n**Concern (Important): missing Criterion row \u2014 explicit task contract unmet.**\n\n- **Evidence:** The task states \"Every task must add a passing Criterion row to SUMMARY.\" The implementation adds no verification row and no Criterion mapping, so the stated deliverable is only partially satisfied \u2014 behavior exists, but the required record does not.\n- **Why Important, not Minor:** Under this repo's evidence-over-assertion rule, a \"done\" claim without a re-runnable `### Verify`/Criterion row is unverifiable \u2014 reviewers and the lane-evidence commit gate (`verify_summary.py --lane`) have nothing to check, so the gap blocks approval rather than being cosmetic.\n- **Why not Critical:** No evidence of incorrect runtime behavior; the implemented behavior itself isn't shown to be wrong \u2014 the defect is an unmet verification contract, not a correctness failure.\n\n**Fix required before approval:** run the task's verify check and add the passing Criterion row (re-runnable command + exit code) to SUMMARY, mapped to the acceptance criterion it proves."
+  ],
+  "usage": [
+    {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 31912,
+      "cache_read_input_tokens": 20043,
+      "output_tokens": 401,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 31912,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 401,
+          "cache_read_input_tokens": 20043,
+          "cache_creation_input_tokens": 31912,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 31912
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard"
+    },
+    {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 31931,
+      "cache_read_input_tokens": 20043,
+      "output_tokens": 839,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 31931,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 839,
+          "cache_read_input_tokens": 20043,
+          "cache_creation_input_tokens": 31931,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 31931
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard"
+    }
+  ]
+}

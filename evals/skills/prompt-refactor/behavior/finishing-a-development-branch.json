@@ -1,0 +1,25 @@
+{
+  "cases": [
+    {
+      "id": "finishing-a-development-branch-golden",
+      "skill": "finishing-a-development-branch",
+      "kind": "golden",
+      "expectation": "finish a reviewed branch",
+      "prompt": "finish a reviewed branch"
+    },
+    {
+      "id": "finishing-a-development-branch-boundary",
+      "skill": "finishing-a-development-branch",
+      "kind": "boundary",
+      "expectation": "refuse a stale review receipt",
+      "prompt": "refuse a stale review receipt"
+    },
+    {
+      "id": "finishing-a-development-branch-handoff",
+      "skill": "finishing-a-development-branch",
+      "kind": "handoff",
+      "expectation": "open PR but never merge",
+      "prompt": "open PR but never merge"
+    }
+  ]
+}

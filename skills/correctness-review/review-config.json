@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "finder_angles": [
+    "enclosing-function",
+    "removed-behavior",
+    "call-site-impact",
+    "stack-defects",
+    "guard-completeness",
+    "prior-art"
+  ],
+  "score_anchors": [0, 25, 50, 75, 100],
+  "default_threshold": 75,
+  "minimum_threshold": 60,
+  "maximum_fix_rounds": 3
+}

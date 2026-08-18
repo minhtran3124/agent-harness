@@ -1,0 +1,68 @@
+{
+  "outputs": [
+    "**SPEC: FAIL**\n\n- **Present:** `--dry-run` flag is parsed \u2014 the CLI surface half of the request exists.\n- **Missing (core requirement):** the flag never gates the write path \u2014 `write_output()` is called unconditionally, so `--dry-run` still writes files. The explicit acceptance criterion \"does not write files\" is violated.\n- **Extra behavior:** none identified.\n\nEvidence: the stated implementation (\"parses `--dry-run` but always calls `write_output()`\") means there is no branch such as `if not args.dry_run: write_output()`. A flag that is parsed but never read is dead input; behaviorally the program is identical to before the change, minus accepting the new argument.\n\nVerdict label: **fail \u2014 requested behavior partially implemented (flag plumbing only), enforcement missing**.",
+    "**Verdict: needs_fixes**\n\n**Critical \u2014 `--dry-run` does not suppress writes.** The task's core acceptance criterion is \"does not write files,\" but `run.py` calls `write_output()` unconditionally after parsing the flag. Evidence: the stated implementation (\"parses `--dry-run` but always calls `write_output()`\") means running with `--dry-run` produces the exact same file writes as running without it. The flag is parsed but never consulted on the write path, so the feature is non-functional \u2014 worse than absent, since users will pass `--dry-run` expecting safety and still mutate files on disk.\n\nRequired fix: gate the write call on the parsed flag (e.g. `if not args.dry_run: write_output()`), and add a test asserting no files are created/modified when `--dry-run` is passed.\n\nNo Important or Minor concerns \u2014 the defect is singular and blocking."
+  ],
+  "usage": [
+    {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 31924,
+      "cache_read_input_tokens": 20043,
+      "output_tokens": 397,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 31924,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 397,
+          "cache_read_input_tokens": 20043,
+          "cache_creation_input_tokens": 31924,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 31924
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard"
+    },
+    {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 31923,
+      "cache_read_input_tokens": 20043,
+      "output_tokens": 391,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 31923,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 391,
+          "cache_read_input_tokens": 20043,
+          "cache_creation_input_tokens": 31923,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 31923
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard"
+    }
+  ]
+}

@@ -24,16 +24,19 @@ readily as six angles sharing an insight — that is precisely what a fresh, cod
 here to catch. Record which angles reported it in the finding's provenance; never feed it to the
 scorer.
 
-**Use a cheap, fast model.** Scoring is a classification task, not reasoning from scratch.
-A lightweight model (e.g. claude-haiku or equivalent cheap/fast tier) reduces cost without
-sacrificing filter accuracy at this stage.
+**Score with a different model than the finders.** Scoring is a fresh, code-only judgment.
+Resolve the `correctness_scorer` model stage through the runtime entry binding; it is checked to
+remain distinct from `correctness_finder`, preserving ensemble diversity without embedding a
+vendor model label in this semantic prompt. `model_stage` is not a Task-tool parameter: run
+`python3 scripts/render_runtime_entry.py --runtime <runtime> --model-stage correctness_scorer`
+and pass the printed label as the Task tool's `model:` value.
 
 ```
 Task tool (reviewer):
   description: "Correctness score for finding: <short claim>"
   subagent_type: reviewer
   # reviewer is a read-only agent (no Write/Edit/Agent) — review independence is enforced structurally, not by instruction.
-  model: <cheap/fast model — e.g. claude-haiku or equivalent lightweight tier>
+  model_stage: correctness_scorer
   prompt: |
     You are a correctness scorer. You receive ONE candidate bug finding and the changed
     code. Your ONLY job is to assign it a confidence score 0–100.
@@ -90,12 +93,9 @@ Task tool (reviewer):
     Score it 0 and move on. Do not argue in your justification that it deserves more; say what
     the bug is, so the human reading the advisory list can act on it.
 
-    **Worked example (2026-07-13, PR #51).** A review of a change to one section of
-    `scripts/harness-status.sh` surfaced three real, reproducible aborts in *other* sections of
-    the same file — every one on a line the diff never touched. All three were genuine: the
-    script died on a fresh clone. All three were correctly scored 0, kept out of the fix loop,
-    and reported to the author, who fixed them deliberately in a separate commit. That is the
-    rule working, not the rule failing.
+    **Case (2026-07-13, PR #51):** 3 real, reproducible aborts found in `harness-status.sh` on
+    lines the diff never touched. **Verdict:** all scored 0, kept out of the fix loop, reported
+    to the author — who fixed them separately. Rule working as intended, not a false negative.
 
     ## Cap the score at 50 when the claim rests on code you cannot read
 

@@ -27,6 +27,7 @@ CLAUDE.local.md
 
 # Timestamped harness backups (created by deploy/install scripts; not tracked)
 .harness-backup-*/
+.harness-state/
 
 # Local-only research notes (kept out of the tracked tree by request)
 docs/memory/
@@ -38,6 +39,8 @@ specs/**/PLAN.html
 specs/**/.plan-review.json
 # Derived, machine-local review receipt (written after review passes; not shipped)
 specs/**/.review-receipt.json
+# Machine-local fcntl lock guarding events.jsonl appends (RUN.json + events.jsonl stay tracked)
+specs/**/events.jsonl.lock
 
 .vercel
 
@@ -48,5 +51,5 @@ docs/harness-engineering-review.en.md
 # bootstrap-xia2 review artifacts — per-repo, never shipped by the harness
 *.proposed
 
-# create-pr output (generated PR description, not committed)
+# generated PR description (finishing-a-development-branch Step 3), not committed
 .pr-body.md

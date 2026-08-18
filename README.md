@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/assets/skill-harness-hero.jpg" alt="A miniature papercraft workshop moving coding tasks through discovery, design, planning, execution, review, and shipping gates" width="100%">
+</p>
+
 <div align="center">
 
 # Skill Harness

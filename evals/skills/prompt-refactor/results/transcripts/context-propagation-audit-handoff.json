@@ -1,0 +1,52 @@
+{
+  "command": [
+    "claude",
+    "--dangerously-skip-permissions",
+    "-p",
+    "--output-format",
+    "json",
+    "--no-session-persistence",
+    "--tools",
+    "",
+    "--max-budget-usd",
+    "0.25",
+    "--model",
+    "sonnet",
+    "--effort",
+    "low"
+  ],
+  "cwd": "/Users/minhtran/Documents/minhtran3124/developer/harness-skills",
+  "returncode": 0,
+  "result": "PASS/FAIL requires an actual diff to audit \u2014 no diff was provided in this probe, so there are no changed instructions/consumers to enumerate against the matrix.\n\nConcrete required workflow action: identify the changed authority (skill/agent/rule) and its consumers (main, implementer, reviewer, scorer, fresh session), then corroborate each consumer's delivery mechanism (always-loaded / paths-triggered / explicit Read / pasted) against source \u2014 not against main-session behavior, since that never proves fresh-child delivery.\n\nKey safety gate: any load-bearing instruction whose delivery is `assumed`/`unconfirmed`, or whose child delivery is inferred rather than directly observed, fails the audit and must be repaired (explicit Read or drift-tested inline copy) or routed to `ESCALATIONS.md` before proceeding \u2014 this gate cannot be satisfied without a concrete diff to inspect.",
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 20933,
+    "cache_read_input_tokens": 3304,
+    "output_tokens": 307,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 20933,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 307,
+        "cache_read_input_tokens": 3304,
+        "cache_creation_input_tokens": 20933,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 20933
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "stderr": ""
+}

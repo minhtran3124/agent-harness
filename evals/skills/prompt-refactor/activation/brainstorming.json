@@ -1,0 +1,116 @@
+{
+  "cases": [
+    {
+      "id": "brainstorming-trigger-1",
+      "skill": "brainstorming",
+      "query": "Help me explore alternatives and approve a design for a new feature.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "brainstorming-trigger-2",
+      "skill": "brainstorming",
+      "query": "Before we touch code, help me explore alternatives and approve a design for a new feature.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "brainstorming-trigger-3",
+      "skill": "brainstorming",
+      "query": "I am unsure of the safest workflow; help me explore alternatives and approve a design for a new feature.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "brainstorming-trigger-4",
+      "skill": "brainstorming",
+      "query": "Please do this in the repository: help me explore alternatives and approve a design for a new feature.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "brainstorming-trigger-5",
+      "skill": "brainstorming",
+      "query": "This is time-sensitive, but help me explore alternatives and approve a design for a new feature.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "brainstorming-trigger-6",
+      "skill": "brainstorming",
+      "query": "Use the project workflow to help me explore alternatives and approve a design for a new feature.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "brainstorming-trigger-7",
+      "skill": "brainstorming",
+      "query": "Can you take ownership of this request? Help me explore alternatives and approve a design for a new feature.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "brainstorming-trigger-8",
+      "skill": "brainstorming",
+      "query": "Do not implement anything else; help me explore alternatives and approve a design for a new feature.",
+      "should_trigger": true,
+      "split": "holdout"
+    },
+    {
+      "id": "brainstorming-near-miss-1",
+      "skill": "brainstorming",
+      "query": "The design is approved; implement the first task now.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "brainstorming-near-miss-2",
+      "skill": "brainstorming",
+      "query": "Do only this instead: the design is approved; implement the first task now.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "brainstorming-near-miss-3",
+      "skill": "brainstorming",
+      "query": "The user asked us to the design is approved; implement the first task now.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "brainstorming-near-miss-4",
+      "skill": "brainstorming",
+      "query": "This request is adjacent but distinct: the design is approved; implement the first task now.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "brainstorming-near-miss-5",
+      "skill": "brainstorming",
+      "query": "Do not route to the wrong specialist; the design is approved; implement the first task now.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "brainstorming-near-miss-6",
+      "skill": "brainstorming",
+      "query": "For this branch, the design is approved; implement the first task now.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "brainstorming-near-miss-7",
+      "skill": "brainstorming",
+      "query": "Handle the direct request: the design is approved; implement the first task now.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "brainstorming-near-miss-8",
+      "skill": "brainstorming",
+      "query": "The next action should be: the design is approved; implement the first task now.",
+      "should_trigger": false,
+      "split": "holdout"
+    }
+  ]
+}

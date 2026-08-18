@@ -24,7 +24,7 @@ Use this template as the output contract for every xia research session. Fill ev
 | Frameworks / platforms | _e.g., FastAPI 0.115, SQLAlchemy 2.0_ |
 | Relevant packages | _packages directly related to the feature_ |
 | Detectable versions | _from manifests or lockfiles_ |
-| Important constraints | _from CLAUDE.md, AGENTS.md, or .claude/rules/_ |
+| Important constraints | _from CLAUDE.md, AGENTS.md, or rules/_ |
 
 ---
 
@@ -74,7 +74,9 @@ _(Standard + Deep only. Skip if Quick mode.)_
 
 ## Docs Findings
 
-_(Standard + Deep only. Skip if Quick mode.)_
+_(Standard + Deep, and only when the change has an external surface — it adds or upgrades a
+dependency, integrates an external system, or relies on a version-specific API. With no external
+surface, say so here in one line rather than deleting the section.)_
 
 - **Official sources checked:**
 - **Version-matched vs latest-stable status:**
@@ -104,9 +106,19 @@ _(Standard + Deep only. Skip if Quick mode.)_
 
 ## Source Pack
 
+_Never leave a line blank. An empty Source Pack cannot be told apart from research that was
+skipped. The two "nothing to report" answers are **not** interchangeable:_
+
+- `- none found` — the search ran and returned nothing.
+- `- none (local-only; no external surface)` — the search did not apply, because the change has
+  no external surface (see `rules/research-depth.md` §Coverage).
+
+_Only **official docs** is gated by external surface. Upstream search stays unconditional at
+Standard/Deep, so its line takes `- none found`, never the not-applicable form._
+
 - **Local files read:** _list paths_
-- **Upstream repositories or pages checked:** _list URLs_
-- **Official docs domains or pages checked:** _list URLs_
+- **Upstream repositories or pages checked:** _list URLs, or `- none found`_
+- **Official docs domains or pages checked:** _list URLs, `- none found`, or `- none (local-only; no external surface)`_
 
 ---
 

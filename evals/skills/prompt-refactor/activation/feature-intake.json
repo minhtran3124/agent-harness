@@ -1,0 +1,116 @@
+{
+  "cases": [
+    {
+      "id": "feature-intake-trigger-1",
+      "skill": "feature-intake",
+      "query": "Classify this change request into a risk lane and confidence before any edit.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "feature-intake-trigger-2",
+      "skill": "feature-intake",
+      "query": "Before we touch code, classify this change request into a risk lane and confidence before any edit.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "feature-intake-trigger-3",
+      "skill": "feature-intake",
+      "query": "I am unsure of the safest workflow; classify this change request into a risk lane and confidence before any edit.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "feature-intake-trigger-4",
+      "skill": "feature-intake",
+      "query": "Please do this in the repository: classify this change request into a risk lane and confidence before any edit.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "feature-intake-trigger-5",
+      "skill": "feature-intake",
+      "query": "This is time-sensitive, but classify this change request into a risk lane and confidence before any edit.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "feature-intake-trigger-6",
+      "skill": "feature-intake",
+      "query": "Use the project workflow to classify this change request into a risk lane and confidence before any edit.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "feature-intake-trigger-7",
+      "skill": "feature-intake",
+      "query": "Can you take ownership of this request? Classify this change request into a risk lane and confidence before any edit.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "feature-intake-trigger-8",
+      "skill": "feature-intake",
+      "query": "Do not implement anything else; classify this change request into a risk lane and confidence before any edit.",
+      "should_trigger": true,
+      "split": "holdout"
+    },
+    {
+      "id": "feature-intake-near-miss-1",
+      "skill": "feature-intake",
+      "query": "Execute the approved implementation plan task by task.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "feature-intake-near-miss-2",
+      "skill": "feature-intake",
+      "query": "Do only this instead: execute the approved implementation plan task by task.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "feature-intake-near-miss-3",
+      "skill": "feature-intake",
+      "query": "The user asked us to execute the approved implementation plan task by task.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "feature-intake-near-miss-4",
+      "skill": "feature-intake",
+      "query": "This request is adjacent but distinct: execute the approved implementation plan task by task.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "feature-intake-near-miss-5",
+      "skill": "feature-intake",
+      "query": "Do not route to the wrong specialist; execute the approved implementation plan task by task.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "feature-intake-near-miss-6",
+      "skill": "feature-intake",
+      "query": "For this branch, execute the approved implementation plan task by task.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "feature-intake-near-miss-7",
+      "skill": "feature-intake",
+      "query": "Handle the direct request: execute the approved implementation plan task by task.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "feature-intake-near-miss-8",
+      "skill": "feature-intake",
+      "query": "The next action should be: execute the approved implementation plan task by task.",
+      "should_trigger": false,
+      "split": "holdout"
+    }
+  ]
+}

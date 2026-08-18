@@ -16,26 +16,26 @@ Related: `plan-format.md`, `guidelines.md`, `orchestration.md`, `skills/feature-
 
 ## Lane-aware autonomy
 
-The intake lane (`specs/<slug>/SUMMARY.md`, set by `/feature-intake`) decides how much autonomy applies. Rules 1–4 below are constant; the lane decides whether a plan and a human confirmation are required first:
+The intake lane (`specs/<slug>/SUMMARY.md`, set by `feature-intake`) decides how much autonomy applies. Rules 1–4 below are constant; the lane decides whether a plan and a human confirmation are required first. (The classification algorithm that assigns the lane in the first place lives in `skills/feature-intake/SKILL.md` Step 3 — canonical source; the table below is the autonomy this repo grants per lane, a separate axis.)
 
 | Lane | Autonomy | Plan | Human confirm |
 |---|---|---|---|
-| **tiny** | Full auto — direct patch on a fresh branch | none | none (machine gates are the safety net: `ruff-on-edit`, `auto-test-on-change`, `commit-quality-gate`, `risk-corroboration`) |
-| **normal** | Auto with proof gates (subagent two-stage review) | yes | only if confidence low / ambiguous |
+| **tiny** | Full auto — direct patch on a fresh branch | none | none (machine gates are the safety net: `ruff-on-edit`, `commit-quality-gate`, `risk-corroboration`) |
+| **normal** | Auto with proof gates (one task reviewer, two verdicts) | yes | only if confidence low / ambiguous |
 | **high-risk** | Auto-plan, gated-execute | yes (full chain) | only on ambiguity or a hard gate (Rule 4) |
 
 ### Branch isolation (canonical policy)
 
 Create a dedicated branch before the first implementation edit. This does not scale with
 ceremony: tiny uses `git checkout -b <type>/<slug>`; normal and high-risk use
-`/using-git-worktrees` for an isolated worktree + branch. Never implement on a shared branch.
+`using-git-worktrees` for an isolated worktree + branch. Never implement on a shared branch.
 
 `hooks/branch-isolation-guard.sh` enforces this for every lane using
 `HARNESS_SHARED_BRANCHES` (default `main master`). Only `specs/*` bookkeeping is exempt so intake
 can record `SUMMARY.md` first. Break glass with `BRANCH_ISOLATION_REASON=<why>`; the hook records
 the override in `docs/harness-experimental/break-glass-log.md`.
 
-> **Evidence the lane requires (single source of truth):** `scripts/verify_summary.py --lane` mechanizes the lane → evidence mapping so this table, `skills/feature-intake/SKILL.md` (Step 7), and the `SUMMARY.md` checks do not drift. It reads `specs/<slug>/SUMMARY.md` and asserts: **tiny** → filled `Lane`/`Confidence`/`Reason`; **normal** → + a non-placeholder `### Verify` row; **high-risk** → + a non-empty `### Rollback`. Run `python scripts/verify_summary.py --lane <slug>` (exit 1 = missing evidence). Edit the mapping there, not only in prose. **Enforced** at commit time by `hooks/commit-quality-gate.sh` Check 1.6 on every staged `specs/<slug>/SUMMARY.md` — the staged copy is what is checked, so a commit that adds the missing evidence self-unblocks.
+> **Evidence the lane requires (single source of truth):** `scripts/verify_summary.py --lane` mechanizes the lane → evidence mapping so this table, `skills/feature-intake/SKILL.md` (Step 7), and the `SUMMARY.md` checks do not drift. It reads `specs/<slug>/SUMMARY.md` and asserts: **tiny** → filled `Lane`/`Confidence`/`Reason`; **normal** → + a non-placeholder `### Verify` row; **high-risk** → + a non-empty `### Rollback`, and a `### Not auto-verified` section (**advisory by default** — prints a warning and still exits 0; set `REQUIRE_NOT_AUTO_VERIFIED=1` to make it blocking, which is the intended end state once the back catalogue has drained). Run `python scripts/verify_summary.py --lane <slug>` (exit 1 = missing evidence). Edit the mapping there, not only in prose. **Enforced** at commit time by `hooks/commit-quality-gate.sh` Check 1.6 on every staged `specs/<slug>/SUMMARY.md` — the staged copy is what is checked, so a commit that adds the missing evidence self-unblocks.
 
 Rule 4 (STOP) still fires inside **every** lane — a hard gate discovered mid-task escalates regardless of how the work was classified. Ceremony scales with risk; the human gate scales with ambiguity, not risk.
 

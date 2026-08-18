@@ -22,6 +22,7 @@ Exit codes:
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 import sys
@@ -39,6 +40,20 @@ _PLACEHOLDER_COMMANDS = {"—", "–", "-", "<command>", ""}
 # The untouched SUMMARY-template rollback line is not a real rollback plan.
 _TEMPLATE_ROLLBACK_RE = re.compile(r"^`?git revert <sha>`?$")
 
+# The untouched `### Not auto-verified` template bullet. Same idea as the rollback
+# line above: the section being present proves nothing if it still holds the shipped
+# placeholder. `- none` is deliberately NOT matched here — it is a legitimate answer
+# (every claim covered by a Verify row) and the template says so.
+_TEMPLATE_NOT_VERIFIED_RE = re.compile(r"^<claim>\b|^<.*>\s*$")
+
+# Rollout: WARN-FIRST. 52 of the 53 pre-existing high-risk specs predate the
+# `### Not auto-verified` section, so requiring it outright would tax every future
+# edit to a legacy spec -- including a typo fix. Default is a printed warning with a
+# zero exit; set REQUIRE_NOT_AUTO_VERIFIED=1 to make it blocking. Flip the default
+# here (not at each call site) once the back catalogue has drained.
+# Same opt-in shape as REQUIRE_VERIFY / REQUIRE_APP_GATES / RISK_CORROBORATION_STRICT.
+_NOT_AUTO_VERIFIED_ENV = "REQUIRE_NOT_AUTO_VERIFIED"
+
 # A whole command that proves nothing: exit-0 of a no-op is not evidence.
 # `true`, `:`, `exit 0`, or a bare `echo …` (echo piped/chained into a real tool is
 # NOT trivial — `echo x | grep x` still asserts something).
@@ -47,6 +62,85 @@ _TEMPLATE_ROLLBACK_RE = re.compile(r"^`?git revert <sha>`?$")
 # and pass. The gate's real defense is human PR review of the Verify table; this
 # denylist removes the laziest forgery class (DR-6).
 _TRIVIAL_RE = re.compile(r"^\s*(?:true|:|exit\s+0|echo\b[^|&;`$()]*)\s*$")
+
+# A PLAN.md §3 Success-Criteria id: `SC-1`, `SC-2`, ...
+_SC_ID_RE = re.compile(r"^SC-\d+$")
+
+# An `Expected` cell must lead with the machine-read token `exit <n>` (n may be
+# non-zero — negative proof is legal); free text may follow.
+_SC_EXPECTED_RE = re.compile(r"^exit\s+(\d+)\b")
+_RUNTIME_MODES = {"enforced", "advisory", "unsupported"}
+_RUNTIME_EVIDENCE_ID_RE = re.compile(r"^codex-mode-[0-9a-f]{16}$")
+
+
+def _check_runtime_metadata(text: str, summary_path: Path | None) -> list[str]:
+    """Validate optional all-or-nothing sanitized runtime diagnosis metadata.
+
+    Format-only by design (traceability tier). The local record lives in the
+    gitignored, agent-writable `.harness-state/` — a record comparison at
+    commit time can never be index-safe (see
+    docs/solutions/harness/gate-config-must-read-index.md), and the commit
+    gate judges a materialized temp copy anyway. The doctor and the session
+    banner are the record's read paths; this gate only refuses malformed or
+    half-supplied pairs.
+    """
+    mode = _header_value(text, "Runtime-mode")
+    evidence_id = _header_value(text, "Runtime-evidence-id")
+    if mode is None and evidence_id is None:
+        return []
+    if mode is None or evidence_id is None:
+        return [
+            "runtime metadata: `Runtime-mode` and `Runtime-evidence-id` must be supplied together"
+        ]
+    if mode not in _RUNTIME_MODES:
+        return [f"runtime metadata: invalid Runtime-mode `{mode}`"]
+    if not _RUNTIME_EVIDENCE_ID_RE.fullmatch(evidence_id):
+        return ["runtime metadata: invalid Runtime-evidence-id"]
+    return []
+
+
+def parse_sc_table(plan_text: str) -> dict[str, str]:
+    """Map each `SC-<n>` id to its expected-exit token from a PLAN.md §3 table.
+
+    Only markdown table rows whose first cell matches `^SC-\\d+$` are read; fenced
+    blocks (illustrations) are skipped via a simple in-fence toggle. A value is the
+    numeric exit string (e.g. "0", "1"). Malformed rows map the id to an
+    `ERROR: ...` string instead: a duplicate id, or an `Expected` cell that does
+    not lead with `exit <n>`.
+    """
+    result: dict[str, str] = {}
+    in_fence = False
+    for line in plan_text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("```"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+
+        m = _ROW_RE.match(stripped)
+        if not m:
+            continue
+
+        cells = [c.strip() for c in m.group(1).split("|")]
+        sc_id = cells[0]
+        if not _SC_ID_RE.match(sc_id):
+            continue
+
+        if sc_id in result:
+            result[sc_id] = f"ERROR: duplicate id {sc_id}"
+            continue
+
+        expected = cells[3] if len(cells) > 3 else ""
+        em = _SC_EXPECTED_RE.match(expected)
+        if not em:
+            result[sc_id] = (
+                f"ERROR: {sc_id} `Expected` must lead with `exit <n>` (got {expected!r})"
+            )
+            continue
+
+        result[sc_id] = em.group(1)
+    return result
 
 
 def _parse_verify_rows(section: str) -> list[dict]:
@@ -83,6 +177,7 @@ def _parse_verify_rows(section: str) -> list[dict]:
         raw_command = cells[1]
         claimed_exit = cells[2] if len(cells) > 2 else ""
         notes = cells[3] if len(cells) > 3 else ""
+        criterion = cells[4] if len(cells) > 4 else ""
 
         # Strip surrounding backticks from command
         command = raw_command.strip("`").strip()
@@ -97,6 +192,7 @@ def _parse_verify_rows(section: str) -> list[dict]:
                 "command": command,
                 "claimed_exit": claimed_exit.strip(),
                 "notes": notes.strip(),
+                "criterion": criterion.strip(),
             }
         )
 
@@ -179,7 +275,146 @@ def _has_real_rollback(section: str) -> bool:
     return False
 
 
-def check_lane_evidence(text: str) -> list[str]:
+def _has_real_not_auto_verified(section: str) -> bool:
+    """Return whether `### Not auto-verified` holds a real entry.
+
+    Evidence tier: TRACEABILITY.
+
+    Verifies: the section exists and carries at least one non-placeholder bullet —
+        either an explicit `- none` (every claim is covered by a Verify row) or a
+        written-out claim.
+    Does not verify: that the listed claims are COMPLETE, that their tier labels
+        (traceability / provenance / truth) are correct, or that an unlisted claim
+        does not exist. Those are judgment calls, left to human PR review. This gate
+        forces the author to answer the question; it cannot check the answer.
+    """
+    in_comment = False
+    for line in section.splitlines():
+        value = line.strip()
+        if not value:
+            continue
+        if value.startswith("<!--"):
+            in_comment = "-->" not in value
+            continue
+        if in_comment:
+            in_comment = "-->" not in value
+            continue
+        stripped = value.lstrip("-* ").strip()
+        if stripped and not _TEMPLATE_NOT_VERIFIED_RE.match(stripped):
+            return True
+    return False
+
+
+def _not_auto_verified_is_blocking() -> bool:
+    """Return whether a missing `### Not auto-verified` should fail the lane gate."""
+    return os.environ.get(_NOT_AUTO_VERIFIED_ENV, "").strip() not in ("", "0", "false")
+
+
+def _not_auto_verified_issue(text: str) -> str | None:
+    """Return the negative-scope complaint for this SUMMARY, or None if satisfied.
+
+    Lane-agnostic: the caller decides which lanes it applies to, and
+    `_not_auto_verified_is_blocking()` decides whether it blocks or only warns.
+    """
+    section = _section(text, "Not auto-verified")
+    if section is None:
+        return (
+            "`### Not auto-verified` section missing -- state the negative scope "
+            "(what this change claims that no gate checks), or `- none`"
+        )
+    if not _has_real_not_auto_verified(section):
+        return (
+            "`### Not auto-verified` is empty or only the unedited template bullet "
+            "-- write the real unverified claims, or `- none`"
+        )
+    return None
+
+
+def check_lane_warnings(text: str) -> list[str]:
+    """Return non-blocking lane advisories.
+
+    Currently only the warn-first `### Not auto-verified` rollout. These are printed
+    but never change an exit code -- see `_NOT_AUTO_VERIFIED_ENV`.
+    """
+    if _not_auto_verified_is_blocking():
+        return []  # it is an error instead; do not report it twice
+    lane = _resolve_lane(text)
+    if lane != "high-risk":
+        return []
+    issue = _not_auto_verified_issue(text)
+    return [f"lane `high-risk`: {issue}"] if issue else []
+
+
+def _sc_map_for_summary(
+    summary_path: Path | None, plan_dir: Path | None = None
+) -> dict[str, str]:
+    """Parse the SC table of the sibling PLAN.md, or {} when none applies.
+
+    `plan_dir` overrides where PLAN.md is looked up. It is required when the SUMMARY
+    content is read from a staged/temp copy (e.g. `commit-quality-gate.sh` stages the
+    SUMMARY into a mktemp file) whose parent is NOT the real spec dir — without it,
+    `parent / PLAN.md` never resolves and SC coverage silently fail-opens.
+    """
+    if plan_dir is not None:
+        plan_path = Path(plan_dir) / "PLAN.md"
+    elif summary_path is not None:
+        plan_path = Path(summary_path).parent / "PLAN.md"
+    else:
+        return {}
+    if not plan_path.is_file():
+        return {}
+    return parse_sc_table(plan_path.read_text(encoding="utf-8"))
+
+
+def _check_sc_coverage(
+    text: str, summary_path: Path | None, plan_dir: Path | None = None
+) -> list[str]:
+    """Return SC-coverage errors when a sibling PLAN.md declares an SC table.
+
+    Fail-open: no PLAN.md or no SC table → no checks. Otherwise every SC id must be
+    named by ≥1 Verify row whose claimed exit matches the SC's expected exit; a
+    Criterion naming an unknown SC id is an error (typo guard).
+    """
+    sc_map = _sc_map_for_summary(summary_path, plan_dir)
+    if not sc_map:
+        return []
+
+    errors: list[str] = []
+    for sc_id, value in sc_map.items():
+        if value.startswith("ERROR:"):
+            errors.append(f"SC table: {value[len('ERROR:') :].strip()}")
+
+    valid = {k: v for k, v in sc_map.items() if not v.startswith("ERROR:")}
+
+    verify = _section(text, "Verify")
+    rows = _parse_verify_rows(verify) if verify else []
+
+    covered: dict[str, set[str]] = {}
+    for row in rows:
+        criterion = row.get("criterion", "")
+        if not criterion:
+            continue
+        if criterion not in sc_map:
+            errors.append(
+                f"Verify row `{row['check']}` Criterion `{criterion}` names an "
+                "unknown SC id (not in PLAN.md §3)"
+            )
+            continue
+        covered.setdefault(criterion, set()).add(row["claimed_exit"])
+
+    for sc_id, expected in valid.items():
+        if expected not in covered.get(sc_id, set()):
+            errors.append(
+                f"SC coverage: `{sc_id}` (expected exit {expected}) is not named by "
+                "any Verify row with a matching claimed exit"
+            )
+
+    return errors
+
+
+def check_lane_evidence(
+    text: str, summary_path: Path | None = None, plan_dir: Path | None = None
+) -> list[str]:
     """Return missing-evidence messages for the SUMMARY's declared lane."""
     errors: list[str] = []
     lane = _resolve_lane(text)
@@ -204,6 +439,10 @@ def check_lane_evidence(text: str) -> list[str]:
             )
 
     if lane == "high-risk":
+        issue = _not_auto_verified_issue(text)
+        if issue and _not_auto_verified_is_blocking():
+            errors.append(f"lane `high-risk`: {issue}")
+
         rollback = _section(text, "Rollback")
         if rollback is None:
             errors.append("lane `high-risk`: missing `### Rollback` section")
@@ -212,6 +451,9 @@ def check_lane_evidence(text: str) -> list[str]:
                 "lane `high-risk`: `### Rollback` is empty or only the unedited "
                 "template (`git revert <sha>`) -- write the real undo steps"
             )
+
+    errors += _check_sc_coverage(text, summary_path, plan_dir)
+    errors += _check_runtime_metadata(text, summary_path)
 
     return errors
 
@@ -224,12 +466,17 @@ def _resolve_summary_path(target: str, specs_root: Path) -> Path:
     return specs_root / target / "SUMMARY.md"
 
 
-def _check_lane_targets(targets: list[str], specs_root: Path) -> int:
+def _check_lane_targets(
+    targets: list[str], specs_root: Path, plan_dir: Path | None = None
+) -> int:
     failed = False
     for target in targets:
         path = _resolve_summary_path(target, specs_root)
+        warnings: list[str] = []
         if path.is_file():
-            errors = check_lane_evidence(path.read_text(encoding="utf-8"))
+            text = path.read_text(encoding="utf-8")
+            errors = check_lane_evidence(text, summary_path=path, plan_dir=plan_dir)
+            warnings = check_lane_warnings(text)
         else:
             errors = [f"{path}: not a file"]
         if errors:
@@ -239,6 +486,12 @@ def _check_lane_targets(targets: list[str], specs_root: Path) -> int:
                 print(f"    - {error}")
         else:
             print(f"✓ {path}")
+        # Advisories print on BOTH paths and never set `failed`. They must survive a
+        # passing run: a warning only emitted on failure is a warning nobody reads.
+        for warning in warnings:
+            print(
+                f"    ! {warning} (warn-only; set {_NOT_AUTO_VERIFIED_ENV}=1 to enforce)"
+            )
     return 1 if failed else 0
 
 
@@ -401,6 +654,7 @@ def main(argv: list[str], specs_root: Path | None = None) -> int:
     parser.add_argument("targets", nargs="*")
     parser.add_argument("--check", action="store_true")
     parser.add_argument("--lane", action="store_true")
+    parser.add_argument("--plan-dir", default=None)
     parser.add_argument("--timeout", type=int, default=60)
     parser.add_argument("-h", "--help", action="store_true")
 
@@ -413,11 +667,13 @@ def main(argv: list[str], specs_root: Path | None = None) -> int:
     if specs_root is None:
         specs_root = _REPO_ROOT / "specs"
 
+    plan_dir = Path(args.plan_dir) if args.plan_dir else None
+
     if args.lane:
         if args.check or not args.targets:
             print(__doc__, file=sys.stderr)
             return 2
-        return _check_lane_targets(args.targets, specs_root)
+        return _check_lane_targets(args.targets, specs_root, plan_dir=plan_dir)
 
     if len(args.targets) != 1:
         print(__doc__, file=sys.stderr)
@@ -431,6 +687,14 @@ def main(argv: list[str], specs_root: Path | None = None) -> int:
     text = summary_path.read_text(encoding="utf-8")
     rows = parse_verify_table(text)
 
+    # SC coverage is a property of the tables, not of execution — it must hold in
+    # single-target mode too. `--check <slug>` is the documented ship gate (and what
+    # ci-strict-gate.sh runs), so an uncovered Success Criterion has to fail HERE,
+    # not only under --lane.
+    coverage_errors = _check_sc_coverage(text, summary_path, plan_dir)
+    for error in coverage_errors:
+        print(f"SC-COVERAGE  {error}")
+
     if not rows:
         print(
             "warning: no checks ran (all commands are placeholders or table is empty)"
@@ -439,12 +703,16 @@ def main(argv: list[str], specs_root: Path | None = None) -> int:
             # Still add Verified line even when no checks ran? No — don't
             # claim machine-verified if nothing ran. Just return 0 with warning.
             pass
-        return 0
+        return 1 if coverage_errors else 0
 
     repo_root = _REPO_ROOT
     results = run_checks(rows, repo_root=repo_root, timeout=args.timeout)
 
-    failed = False
+    # SC expected exits from the sibling PLAN.md (empty when none) — a
+    # Criterion-mapped row is also validated against its SC's expected exit.
+    sc_map = _sc_map_for_summary(summary_path, plan_dir)
+
+    failed = bool(coverage_errors)
     for r in results:
         if r.get("trivial"):
             print(
@@ -468,6 +736,21 @@ def main(argv: list[str], specs_root: Path | None = None) -> int:
             claimed = None
 
         actual = r["actual_exit"]
+
+        # SC gate: a Criterion-mapped row must actually exit its SC's expected
+        # code. Distinct from claimed-vs-actual — it catches a row that matches
+        # its own claim but points at the wrong SC.
+        criterion = r.get("criterion", "")
+        sc_expected = sc_map.get(criterion)
+        if sc_expected is not None and not sc_expected.startswith("ERROR:"):
+            if actual != int(sc_expected):
+                print(
+                    f"SC-FAIL  [{r['check']}]  criterion={criterion}  "
+                    f"sc_expected={sc_expected}  actual={actual}  "
+                    f"command: {r['command']}"
+                )
+                failed = True
+                continue
 
         # A row PASSES when the claim matches reality — even a non-zero claim
         # (negative proof: "this command must fail" is a legitimate, pinnable check).

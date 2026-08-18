@@ -96,6 +96,23 @@ if not rendered:
 PY
 fi
 
+# ── Active Runs (Phase C, GitHub issue #129) ────────────────────────────────────
+echo ""
+echo "=== Active Runs ==="
+RUN_STATE="$REPO_ROOT/runtime/run_state.py"
+if [[ ! -f "$RUN_STATE" ]]; then
+    echo "  [not found: $RUN_STATE]"
+elif ! command -v python3 >/dev/null 2>&1; then
+    echo "  [python3 not available]"
+else
+    _active_runs_out=$( (cd "$REPO_ROOT" && python3 "$RUN_STATE" list --active) 2>/dev/null ) || true
+    if [[ -z "$_active_runs_out" ]]; then
+        echo "  [no active runs]"
+    else
+        echo "$_active_runs_out" | sed 's/^/  /'
+    fi
+fi
+
 # ── Drift Audit (advisory) ──────────────────────────────────────────────────────
 echo ""
 if [[ -x "$REPO_ROOT/scripts/harness-audit.sh" ]]; then

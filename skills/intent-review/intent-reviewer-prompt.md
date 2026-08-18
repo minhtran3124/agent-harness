@@ -1,8 +1,8 @@
 # Intent Reviewer Prompt Template
 
 Use this template for a single intent-review pass — once, over the entire diff under review.
-Invoked two ways: standalone via `/intent-review` (ad-hoc on any diff with an intent statement),
-or as the last pass inside `subagent-driven-development` (after `/correctness-review` passes and
+Invoked two ways: standalone via `intent-review` (ad-hoc on any diff with an intent statement),
+or as the last pass inside `subagent-driven-development` (after `correctness-review` passes and
 before `finishing-a-development-branch`).
 
 **Purpose:** Catch the case where the diff *passed the plan and passed the tests but is not what
@@ -21,14 +21,18 @@ reviewer that sees the plan anchors on it and re-confirms the plan's possible mi
 Symmetric with correctness-review's plan-blindness; here it exists to catch intent drift.
 
 **Use a different model than the implementer** (ensemble diversity — a different model notices
-different drift). Prefer the most capable model available for this pass.
+different drift). Resolve the `intent_reviewer` model stage through the runtime entry binding; it
+is checked to remain distinct from `implementer`, preserving the diversity this pass depends on.
+`model_stage` is not a Task-tool parameter: run
+`python3 scripts/render_runtime_entry.py --runtime <runtime> --model-stage intent_reviewer`
+and pass the printed label as the Task tool's `model:` value.
 
 ```
 Task tool (reviewer):
   description: "Intent review for <slug>"
   subagent_type: reviewer
   # reviewer is a read-only agent (no Write/Edit/Agent) — review independence is enforced structurally, not by instruction.
-  model: <different from implementer; most capable available>
+  model_stage: intent_reviewer
   prompt: |
     You are an intent reviewer. Your ONLY job is to judge whether this finished diff is
     what the user ORIGINALLY ASKED FOR — not whether it matches a plan, not whether it runs.
@@ -39,12 +43,21 @@ Task tool (reviewer):
       [paste the `### Intent` block from specs/<slug>/SUMMARY.md, verbatim]
     - SUCCESS CRITERIA (secondary oracle, only if specs/<slug>/design.md exists):
       [paste design.md Success Criteria, or "none"]
+    - PLAN §3 SC TABLE (secondary oracle, only if specs/<slug>/PLAN.md declares one):
+      [paste the SC-<n> table rows from PLAN.md §3, VERBATIM, or "none". You receive these
+      rows here so you do NOT read PLAN.md yourself — the blind rule below still holds. Read
+      each SC only as a checklist of promised outcomes.]
+    - SUMMARY ### Verify TABLE (to check each SC is proven via its `Criterion` column):
+      [paste the `### Verify` table from specs/<slug>/SUMMARY.md, VERBATIM, or "none"]
     - BASE_SHA: [commit before the first task]
     - HEAD_SHA: [current commit after all tasks]
     - Files touched: [list of paths]
+    - REVIEW_PACKAGE_PATH: [the SDD-generated mechanical review package, or "none"]
 
-    Read the full diff (`git diff BASE_SHA..HEAD_SHA`) and the actual files. You may read
-    surrounding code to judge whether the intent was met.
+    When `REVIEW_PACKAGE_PATH` is provided, read that package first for the exact range, commit
+    list, stat, and mechanical diff; do not rebuild the same full diff. Otherwise, read the full
+    diff (`git diff BASE_SHA..HEAD_SHA`). You may read actual files and surrounding code to judge
+    whether the intent was met.
 
     ## Hard blind rule — DO NOT read the plan
 
@@ -77,10 +90,19 @@ Task tool (reviewer):
       it. Note whether the difference is *behaviorally equivalent* (same outcome the user wanted,
       different surface) or *behaviorally different* (a different outcome).
     - **excess** — the diff ships something NOBODY asked for — scope beyond the intent. (Extra
-      features, options, endpoints, abstractions not traceable to any intent clause.)
+      features, options, endpoints, abstractions, config knobs, or new public surface not
+      traceable to any intent clause. Flag findings of this class BY DEFAULT, not just when
+      convenient.) This `excess` verdict is a post-hoc check on the FINAL diff — distinct from
+      the separate simplify pass, which edits an unmerged pre-ship diff where deletion is
+      allowed.
 
     Also flag, as a `drift` finding, any case where the SUCCESS CRITERIA (secondary oracle)
     contradicts the VERBATIM intent — that means design drifted from intent at the start.
+
+    If a PLAN §3 SC TABLE was provided, additionally check each `SC-<n>` against the SUMMARY
+    `### Verify` table: an SC with no passing `Criterion` row proving it is **unproven** — flag
+    it as a `gap`. Read the SC rows only as promised outcomes; do not treat them as the intent
+    oracle (the verbatim request still wins on any conflict).
 
     ## Method
 

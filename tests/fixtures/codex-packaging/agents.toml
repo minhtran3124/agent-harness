@@ -1,0 +1,4 @@
+name = "harness_probe_reviewer"
+description = "Disposable read-only packaging probe agent."
+sandbox_mode = "read-only"
+developer_instructions = "Return only HARNESS_PACKAGING_AGENT_OK."

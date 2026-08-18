@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "scan_roots": [
+    "agents",
+    "rules",
+    "skills",
+    "templates",
+    "hooks/commit-quality-gate.sh",
+    "hooks/risk-corroboration.sh",
+    "hooks/scope-gate.sh",
+    "scripts/check_review_receipt.py",
+    "scripts/rebuild_solution_index.py",
+    "scripts/score_intake_eval.py",
+    "tests/hooks/commit-quality-gate.test.sh",
+    "tests/hooks/risk-corroboration.test.sh",
+    "tests/hooks/scope-gate.test.sh",
+    "tests/scripts/compound-contract.test.sh",
+    "tests/scripts/context-propagation-regression.test.sh"
+  ],
+  "skill_names": [
+    "brainstorming",
+    "compound",
+    "context-propagation-audit",
+    "correctness-review",
+    "feature-intake",
+    "finishing-a-development-branch",
+    "intent-review",
+    "requesting-code-review",
+    "session-tracker",
+    "skill-creator",
+    "subagent-driven-development",
+    "systematic-debugging",
+    "test-driven-development",
+    "using-git-worktrees",
+    "visual-planner",
+    "writing-plans",
+    "xia2"
+  ],
+  "findings": []
+}

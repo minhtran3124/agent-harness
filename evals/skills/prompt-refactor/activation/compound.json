@@ -1,0 +1,116 @@
+{
+  "cases": [
+    {
+      "id": "compound-trigger-1",
+      "skill": "compound",
+      "query": "Capture the non-obvious bug fix and decision from this session as reusable knowledge.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "compound-trigger-2",
+      "skill": "compound",
+      "query": "Before we touch code, capture the non-obvious bug fix and decision from this session as reusable knowledge.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "compound-trigger-3",
+      "skill": "compound",
+      "query": "I am unsure of the safest workflow; capture the non-obvious bug fix and decision from this session as reusable knowledge.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "compound-trigger-4",
+      "skill": "compound",
+      "query": "Please do this in the repository: capture the non-obvious bug fix and decision from this session as reusable knowledge.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "compound-trigger-5",
+      "skill": "compound",
+      "query": "This is time-sensitive, but capture the non-obvious bug fix and decision from this session as reusable knowledge.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "compound-trigger-6",
+      "skill": "compound",
+      "query": "Use the project workflow to capture the non-obvious bug fix and decision from this session as reusable knowledge.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "compound-trigger-7",
+      "skill": "compound",
+      "query": "Can you take ownership of this request? Capture the non-obvious bug fix and decision from this session as reusable knowledge.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "compound-trigger-8",
+      "skill": "compound",
+      "query": "Do not implement anything else; capture the non-obvious bug fix and decision from this session as reusable knowledge.",
+      "should_trigger": true,
+      "split": "holdout"
+    },
+    {
+      "id": "compound-near-miss-1",
+      "skill": "compound",
+      "query": "Search the existing knowledge base for a past decision.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "compound-near-miss-2",
+      "skill": "compound",
+      "query": "Do only this instead: search the existing knowledge base for a past decision.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "compound-near-miss-3",
+      "skill": "compound",
+      "query": "The user asked us to search the existing knowledge base for a past decision.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "compound-near-miss-4",
+      "skill": "compound",
+      "query": "This request is adjacent but distinct: search the existing knowledge base for a past decision.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "compound-near-miss-5",
+      "skill": "compound",
+      "query": "Do not route to the wrong specialist; search the existing knowledge base for a past decision.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "compound-near-miss-6",
+      "skill": "compound",
+      "query": "For this branch, search the existing knowledge base for a past decision.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "compound-near-miss-7",
+      "skill": "compound",
+      "query": "Handle the direct request: search the existing knowledge base for a past decision.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "compound-near-miss-8",
+      "skill": "compound",
+      "query": "The next action should be: search the existing knowledge base for a past decision.",
+      "should_trigger": false,
+      "split": "holdout"
+    }
+  ]
+}

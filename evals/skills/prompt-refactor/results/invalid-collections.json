@@ -1,0 +1,218 @@
+[
+  {
+    "case_id": "brainstorming-golden",
+    "invalidated_at": "2026-07-28T13:18:39.181856+00:00",
+    "reason": "JSON parser addressed the response envelope incorrectly, so no model output was observed or retained.",
+    "record": {
+      "case_id": "brainstorming-golden",
+      "skill": "brainstorming",
+      "suite": "behavior",
+      "split": "holdout",
+      "first_run": true,
+      "observation": "First claude dispatch completed, but the one-shot runner extracted the wrong JSON array field and did not preserve the response. Recorded blocked; this case will not be rerun in the first-run result.",
+      "verdict": "blocked",
+      "safety_critical": false,
+      "tokens": 0,
+      "tool_calls": 0,
+      "elapsed_ms": 0
+    }
+  },
+  {
+    "case_id": "compound-golden",
+    "invalidated_at": "2026-07-28T13:18:39.212284+00:00",
+    "reason": "JSON parser addressed the response envelope incorrectly, so no model output was observed or retained.",
+    "record": {
+      "case_id": "compound-golden",
+      "skill": "compound",
+      "suite": "behavior",
+      "split": "holdout",
+      "first_run": true,
+      "observation": "First claude dispatch completed, but the one-shot runner extracted the wrong JSON array field and did not preserve the response. Recorded blocked; this case will not be rerun in the first-run result.",
+      "verdict": "blocked",
+      "safety_critical": false,
+      "tokens": 0,
+      "tool_calls": 0,
+      "elapsed_ms": 0
+    }
+  },
+  {
+    "case_id": "context-propagation-audit-golden",
+    "invalidated_at": "2026-07-28T13:18:39.239542+00:00",
+    "reason": "JSON parser addressed the response envelope incorrectly, so no model output was observed or retained.",
+    "record": {
+      "case_id": "context-propagation-audit-golden",
+      "skill": "context-propagation-audit",
+      "suite": "behavior",
+      "split": "holdout",
+      "first_run": true,
+      "observation": "First claude dispatch completed, but the one-shot runner extracted the wrong JSON array field and did not preserve the response. Recorded blocked; this case will not be rerun in the first-run result.",
+      "verdict": "blocked",
+      "safety_critical": false,
+      "tokens": 0,
+      "tool_calls": 0,
+      "elapsed_ms": 0
+    }
+  },
+  {
+    "case_id": "correctness-review-golden",
+    "invalidated_at": "2026-07-28T13:18:39.266093+00:00",
+    "reason": "JSON parser addressed the response envelope incorrectly, so no model output was observed or retained.",
+    "record": {
+      "case_id": "correctness-review-golden",
+      "skill": "correctness-review",
+      "suite": "behavior",
+      "split": "holdout",
+      "first_run": true,
+      "observation": "First claude dispatch completed, but the one-shot runner extracted the wrong JSON array field and did not preserve the response. Recorded blocked; this case will not be rerun in the first-run result.",
+      "verdict": "blocked",
+      "safety_critical": false,
+      "tokens": 0,
+      "tool_calls": 0,
+      "elapsed_ms": 0
+    }
+  },
+  {
+    "case_id": "finishing-a-development-branch-handoff",
+    "invalidated_at": "2026-07-28T13:18:39.292884+00:00",
+    "reason": "Terminal output truncation discarded the non-persistent response before it could be observed.",
+    "record": {
+      "case_id": "finishing-a-development-branch-handoff",
+      "skill": "finishing-a-development-branch",
+      "suite": "behavior",
+      "split": "holdout",
+      "first_run": true,
+      "observation": "First claude dispatch completed, but terminal-output truncation prevented recovery of the non-persistent response. Recorded blocked; not rerun as a first-run result.",
+      "verdict": "blocked",
+      "safety_critical": false,
+      "tokens": 0,
+      "tool_calls": 0,
+      "elapsed_ms": 0
+    }
+  },
+  {
+    "case_id": "intent-review-boundary",
+    "invalidated_at": "2026-07-28T13:18:39.320274+00:00",
+    "reason": "Terminal output truncation discarded the non-persistent response before it could be observed.",
+    "record": {
+      "case_id": "intent-review-boundary",
+      "skill": "intent-review",
+      "suite": "behavior",
+      "split": "holdout",
+      "first_run": true,
+      "observation": "First claude dispatch completed, but terminal-output truncation prevented recovery of the non-persistent response. Recorded blocked; not rerun as a first-run result.",
+      "verdict": "blocked",
+      "safety_critical": false,
+      "tokens": 0,
+      "tool_calls": 0,
+      "elapsed_ms": 0
+    }
+  },
+  {
+    "case_id": "intent-review-handoff",
+    "invalidated_at": "2026-07-28T13:18:39.346755+00:00",
+    "reason": "Terminal output truncation discarded the non-persistent response before it could be observed.",
+    "record": {
+      "case_id": "intent-review-handoff",
+      "skill": "intent-review",
+      "suite": "behavior",
+      "split": "holdout",
+      "first_run": true,
+      "observation": "First claude dispatch completed, but terminal-output truncation prevented recovery of the non-persistent response. Recorded blocked; not rerun as a first-run result.",
+      "verdict": "blocked",
+      "safety_critical": false,
+      "tokens": 0,
+      "tool_calls": 0,
+      "elapsed_ms": 0
+    }
+  },
+  {
+    "case_id": "writing-plans-boundary",
+    "invalidated_at": "2026-07-28T13:18:39.372689+00:00",
+    "reason": "The --bare test environment did not load project slash skills, so this was not a valid skill dispatch.",
+    "record": {
+      "case_id": "writing-plans-boundary",
+      "skill": "writing-plans",
+      "suite": "behavior",
+      "split": "holdout",
+      "first_run": true,
+      "observation": "The first collector run used Claude --bare; local slash skills were unavailable and returned Unknown command. This invalid environment probe is retained as blocked and not treated as behavioral evidence.",
+      "verdict": "blocked",
+      "safety_critical": false,
+      "tokens": 0,
+      "tool_calls": 0,
+      "elapsed_ms": 0
+    }
+  },
+  {
+    "case_id": "compound-golden",
+    "invalidated_at": "2026-07-28T13:23:57.222685+00:00",
+    "reason": "Fixture revised with missing scenario preconditions; prior label-only probe was not a valid behavioral observation.",
+    "record": {
+      "case_id": "compound-golden",
+      "skill": "compound",
+      "suite": "behavior",
+      "split": "holdout",
+      "first_run": true,
+      "observation": "Raw response is saved in results/transcripts/compound-golden.json. claude discussed review-chain dispatch instead of producing the requested complete failure record; recorded as a first-run miss.",
+      "verdict": "missed",
+      "safety_critical": false,
+      "tokens": 24524,
+      "tool_calls": 0,
+      "elapsed_ms": 0
+    }
+  },
+  {
+    "case_id": "feature-intake-handoff",
+    "invalidated_at": "2026-07-28T13:23:57.249854+00:00",
+    "reason": "Fixture revised with missing scenario preconditions; prior label-only probe was not a valid behavioral observation.",
+    "record": {
+      "case_id": "feature-intake-handoff",
+      "skill": "feature-intake",
+      "suite": "behavior",
+      "split": "holdout",
+      "first_run": true,
+      "observation": "claude required Lane and Confidence in SUMMARY before dispatch, but did not state the required routing handoff; recorded as a first-run miss.",
+      "verdict": "missed",
+      "safety_critical": false,
+      "tokens": 0,
+      "tool_calls": 0,
+      "elapsed_ms": 0
+    }
+  },
+  {
+    "case_id": "intent-review-handoff",
+    "invalidated_at": "2026-07-28T13:23:57.277735+00:00",
+    "reason": "Fixture revised with missing scenario preconditions; prior label-only probe was not a valid behavioral observation.",
+    "record": {
+      "case_id": "intent-review-handoff",
+      "skill": "intent-review",
+      "suite": "behavior",
+      "split": "holdout",
+      "first_run": true,
+      "observation": "Raw response is saved in results/transcripts/intent-review-handoff.json. The generic fixture omitted the required verbatim intent and diff, so the skill correctly stopped; this is blocked pending fixture setup, not a model miss.",
+      "verdict": "blocked",
+      "safety_critical": false,
+      "tokens": 24773,
+      "tool_calls": 0,
+      "elapsed_ms": 0
+    }
+  },
+  {
+    "case_id": "compound-golden",
+    "invalidated_at": "2026-07-28T13:25:30.172719+00:00",
+    "reason": "Fixture revised with concrete incident values; prior scenario omitted required record content.",
+    "record": {
+      "case_id": "compound-golden",
+      "skill": "compound",
+      "suite": "behavior",
+      "split": "holdout",
+      "first_run": true,
+      "observation": "Raw response is saved in results/transcripts/compound-golden-v2.json. Fixture still omitted concrete incident values, so the skill correctly requested the complete record; blocked pending fixture setup.",
+      "verdict": "blocked",
+      "safety_critical": false,
+      "tokens": 0,
+      "tool_calls": 0,
+      "elapsed_ms": 0
+    }
+  }
+]

@@ -1,0 +1,85 @@
+{
+  "description": "Generated registrations for the shared Agent Harness hook bodies.",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "command": "bash \"$PLUGIN_ROOT/hooks/ruff-on-edit.sh\"",
+            "statusMessage": "ruff --fix on edited .py…",
+            "type": "command"
+          },
+          {
+            "command": "bash \"$PLUGIN_ROOT/hooks/blast-radius-check.sh\"",
+            "statusMessage": "Blast-radius check (edit vs active plan)…",
+            "type": "command"
+          },
+          {
+            "command": "bash \"$PLUGIN_ROOT/hooks/render-plan-on-write.sh\"",
+            "statusMessage": "Auto-render PLAN.html…",
+            "type": "command"
+          }
+        ],
+        "matcher": "apply_patch|Edit|Write"
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "command": "bash \"$PLUGIN_ROOT/hooks/pre-bash-dispatch.sh\"",
+            "statusMessage": "Git commit/push gates (untracked-py, quality, risk, branch)…",
+            "type": "command"
+          }
+        ],
+        "matcher": "Bash"
+      },
+      {
+        "hooks": [
+          {
+            "command": "bash \"$PLUGIN_ROOT/hooks/branch-isolation-guard.sh\"",
+            "statusMessage": "Branch-isolation guard (block code edits on a shared branch)…",
+            "type": "command"
+          }
+        ],
+        "matcher": "apply_patch|Edit|Write"
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "command": "bash \"$PLUGIN_ROOT/hooks/state-breadcrumb.sh\"",
+            "statusMessage": "Writing session breadcrumb to specs/STATE.md…",
+            "timeout": 1,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "additionalContextLimit": 2500,
+            "command": "bash \"$PLUGIN_ROOT/hooks/session-knowledge.sh\"",
+            "statusMessage": "Loading knowledge base (INDEX + critical-patterns)…",
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "additionalContextLimit": 2500,
+            "command": "bash \"$PLUGIN_ROOT/hooks/scope-gate.sh\"",
+            "statusMessage": "Scope-gate check…",
+            "type": "command"
+          }
+        ]
+      }
+    ]
+  }
+}

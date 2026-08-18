@@ -1,209 +1,76 @@
 ---
 name: feature-intake
-description: The routing entry point for any change request. Classifies a prompt by input type, runs a 10-flag risk checklist + hard gates to assign a lane (tiny / normal / high-risk), scores confidence to decide whether a human is needed, writes the result to specs/<slug>/SUMMARY.md, and routes to the matching workflow path. Use FIRST, before xia2 / writing-plans / any edit, to decide how much ceremony and how much human oversight a task needs.
+description: First gate for a change request: classify its risk lane and confidence, record the decision in `specs/<slug>/SUMMARY.md`, then route to the appropriate workflow. Use before research, planning, or edits.
 allowed-tools: Read, Write, Grep, Glob, Bash(git log *), Bash(git diff *), Bash(ls *)
 ---
 
-# Feature Intake — Risk Lane Classifier & Router
-
-Every implementation prompt passes through this gate before code changes. The output is a
-**lane** (how much proof/ceremony) and a **confidence** (whether a human is asked), recorded
-in `specs/<slug>/SUMMARY.md` and used to route the rest of the workflow.
-
-> **The human does not classify risk. The harness does.**
-> Two independent axes:
-> - **Lane** scales with **RISK** → how much proof and ceremony.
-> - **Confidence/ambiguity** scales with **UNCERTAINTY** → whether to pause for a human.
->
-> A high-risk-but-unambiguous task runs autonomously through heavy proof.
-> A low-risk-but-ambiguous task still pauses. Never ask a human "is this risky?" — answer
-> that mechanically. Ask a human only "did I understand you?" and "may I cross this boundary?"
+# Feature Intake — classify and route
 
 <HARD-GATE>
-Do NOT edit files, scaffold, or dispatch implementation work until intake is complete:
-the lane is assigned, the intake statement is emitted, and `Lane:`/`Confidence:` are written
-to `specs/<slug>/SUMMARY.md` (shape: `templates/SUMMARY.template.md`).
-
-A hard gate (see below) forces `high-risk` and cannot be self-downgraded — only a human
-narrowing scope may lower it. The orchestrator MUST write a `Lane:` line: `.claude/hooks/risk-corroboration.sh`
-blocks a commit whose diff trips a hard gate while the declared lane is below `high-risk`.
-(A *missing* lane only warns — fail-open — unless `RISK_CORROBORATION_STRICT=1` is set, so
-write the lane rather than rely on the hook.)
+Do not edit, scaffold, or dispatch implementation until intake records `Lane:` and `Confidence:`
+in `specs/<slug>/SUMMARY.md`. The lane is risk; confidence is ambiguity. Never ask the user to
+classify risk; ask only to resolve a material ambiguity or narrow a hard-gated scope.
 </HARD-GATE>
 
----
+## Procedure
 
-## Step 1 — Classify the input type
+1. Read `harness-manifest.json` for canonical hard-gate vocabulary and modes. Read
+   `rules/orchestration.md` and `rules/auto-correct-scope.md` for routing and branch policy.
+2. Classify the input: new spec, spec slice, change request, initiative, maintenance, or harness
+   improvement. Mark applicable risk flags: auth, authorization, data model, audit/security,
+   external systems, public contracts, cross-platform, existing behavior, weak proof, and
+   multi-domain.
+3. Assign the lane: a manifest hard gate is `high-risk`; otherwise 0–1 flags is `tiny` only for
+   one-file/no-new-public-callable work (else `normal`), 2–3 is `normal`, and 4+ is `high-risk`.
+   A human may lower a hard-gated lane only by narrowing scope.
+4. Assign confidence: `high` for one clear interpretation, `medium` for a safe documented
+   default, and `low` for materially different plausible interpretations. Low confidence stops
+   for human confirmation regardless of lane.
+5. Write `SUMMARY.md` using `templates/SUMMARY.template.md`, including the user intent verbatim:
 
-Decide *where the work lands* before scoring risk. Use the type to pick the artifact, not to
-add ceremony — most types collapse onto an existing workflow path.
+   ```text
+   Lane: <tiny | normal | high-risk>
+   Confidence: <high | medium | low>
+   Reason: <flags/hard gate or none>
+   Flags: <comma-separated or none>
+   Affects: <contract/module from PROJECT.md or none>
+   Input-type: <type>
+   Route: <path>
+   Escalate: <yes (reason) | no>
+   ```
 
-| Input type | Use when | Lands as |
-|---|---|---|
-| New spec | A user-provided project spec must become docs + work | design.md + initiative notes |
-| Spec slice | A selected behavior from an accepted spec | one story/PLAN |
-| Change request | Change, fix, or refine accepted behavior | story/PLAN or direct patch |
-| New initiative | A larger area needing multiple stories | initiative notes + PLANs |
-| Maintenance | Dependency / perf / security / ops work | story/PLAN or decision |
-| Harness improvement | Change to .claude/skills/rules/hooks/docs themselves | direct docs/skill update or `/compound` |
+6. Initialize `runtime/run_state.py` as `investigating` on a best-effort basis. For normal and
+   high-risk lanes, transition to `planning`; failures are observability failures, never an intake
+   blocker. Run `python scripts/verify_summary.py --lane <slug>` before handoff.
 
-## Step 2 — Run the risk checklist (10 flags)
+## Routes
 
-Mark each flag that the work touches. Cross-check the expected diff against High-Blast Files +
-Shared Contracts in PROJECT.md to name the affected contract (used to populate the `Affects:`
-field in SUMMARY.md).
+| Lane | Route |
+| --- | --- |
+| tiny | Create a branch, make the direct patch, and retain quick-check proof. |
+| normal | `using-git-worktrees` → `subagent-driven-development`. |
+| high-risk | `brainstorming` → `xia2` → `writing-plans` → `using-git-worktrees` → `subagent-driven-development`; use `compound` for durable decisions. |
 
-| # | Risk flag | Fires when the work touches |
-|---|---|---|
-| 1 | Auth | login, logout, sessions, JWT, password, refresh token |
-| 2 | Authorization | roles, permissions, tenant/company scope |
-| 3 | Data model | schema, migrations, uniqueness, deletion, retention |
-| 4 | Audit/security | audit logs, privacy, sensitive data, access logs |
-| 5 | External systems | email, payments, cloud, provider SDKs, queues, webhooks |
-| 6 | Public contracts | API shape, response envelope, client-visible behavior |
-| 7 | Cross-platform | desktop/mobile/browser split, native shell, deep links |
-| 8 | Existing behavior | already-implemented or test-covered behavior changes |
-| 9 | Weak proof | unclear or missing tests around the affected area |
-| 10 | Multi-domain | more than one product domain changes at once |
+All lanes require branch isolation. Artifact requirements scale by signal: plan for more than
+three steps or two files, research for unfamiliar code or high-risk work, and a design for a real
+design fork or high-risk work. `FULL_ARTIFACTS=1` forces all artifacts.
 
-Markdown under the workflow-engine paths (see the hard gate below) is executable workflow code — classify by what it changes (instruction delivery, routing, review gates), never as prose.
+## Research-depth handoff
 
-## Step 3 — Assign the lane
-
-```text
-0–1 flags        -> tiny (if ≤1 file & no new public callable) or normal
-2–3 flags        -> normal (stronger validation)
-4+ flags         -> high-risk
-any hard gate    -> high-risk (only a human narrowing scope may lower it)
-```
-
-**Hard gates** (force high-risk regardless of flag count):
-
-- Auth.
-- Authorization.
-- Data loss or migration.
-- Audit/security.
-- External provider behavior.
-- Public contract (API route/method, response envelope, client-visible behavior).
-- Removing or weakening validation requirements.
-- Touching a high-blast-radius file: `.claude/settings.json`, any `.claude/hooks/*`, or a core skill engine.
-- Workflow-engine surface: `skills/*/SKILL.md`, skill dispatch prompts, `agents/`, `rules/` — workflow-as-code, not prose (likewise defined in `harness-manifest.json` as the `workflow-engine` gate).
-
-**Canonical source:** the detectable gate list lives in `harness-manifest.json` (`hard_gates`) —
-do not diverge from it. These mirror `.claude/rules/auto-correct-scope.md` Rule 4 and are
-corroborated mechanically by `.claude/hooks/risk-corroboration.sh` against the staged diff;
-`scripts/check_manifest.py` fails CI if the hook and the manifest disagree.
-
-## Step 4 — Score confidence (the interruption axis)
-
-Assess how well the *direction* is understood — separately from risk.
-
-| Confidence | When | Effect |
-|---|---|---|
-| **high** | One plausible interpretation; scope is clear | proceed autonomously in lane |
-| **medium** | Minor open questions; a reasonable default exists | proceed; note assumptions; escalate if also high-risk |
-| **low** | >1 materially different interpretation, or vague intent | **escalate** before work, regardless of lane |
-
-**Ambiguity rubric (conservative default):** if you cannot state the single thing the user
-wants in one sentence, or two competent engineers would build materially different things,
-confidence is **low** → escalate. When unsure, treat as ambiguous.
-
-## Step 5 — Escalation decision
-
-```text
-hard gate hit            -> ESCALATE: have a human narrow scope or confirm high-risk
-confidence == low        -> ESCALATE: confirm intent (even for a tiny task)
-ambiguous direction      -> ESCALATE: confirm intent
-else                     -> PROCEED autonomously in the assigned lane
-```
-
-Escalations are recorded in `specs/<slug>/ESCALATIONS.md` (shape: `templates/ESCALATIONS.template.md`),
-which defaults to deny-on-no-response. See `.claude/rules/orchestration.md` for the runtime decision step.
-
-## Step 6 — Emit the intake statement + write SUMMARY.md
-
-Emit, and write the header fields to `specs/<slug>/SUMMARY.md`:
-
-```text
-Lane: <tiny | normal | high-risk>
-Confidence: <high | medium | low>
-Reason: <one sentence — which flags / hard gates fired, or none>
-Flags: <comma-separated flags, or none>
-Affects: <affected contract/module from PROJECT.md High-Blast/Shared-Contracts, or 'none'>
-Input-type: <one of the six>
-Route: <see Step 7>
-Escalate: <yes (reason) | no>
-```
-
-Also write the `### Intent` section of `SUMMARY.md` with the user's request **verbatim** (do not
-paraphrase; if it spanned several turns, quote the scope-deciding sentences in order). This is the
-oracle for `/intent-review`, the final stage of `subagent-driven-development` — a reviewer blind to
-PLAN.md checks the finished diff against this text, so it must be captured here at intake, not
-reconstructed from the plan later.
-
-## Step 7 — Route to the workflow path
-
-**Artifacts scale by signal, not by lane alone.** `SUMMARY.md` is written for **every** lane —
-it is the always-on audit record (its `Rationale` / `Alternatives` fields make an autonomous
-decision reconstructable). The forward-looking artifacts are signal-triggered: `PLAN.md` at
->3 steps or >2 files (`rules/plan-format.md`); `research-brief.md` for unfamiliar code or a
-high-risk lane; `design.md` only on a genuine design fork (≥2 viable approaches) or high-risk.
-For autonomous (no-human) work the `### Verify` evidence + independent review **substitute for
-the human gate — not extra documents.** Set `FULL_ARTIFACTS=1` to force the full set regardless
-of lane (audit-heavy work / calibrating trust). See `rules/orchestration.md` → Artifact policy.
-
-**Every lane cuts a branch before implementing.** Apply the canonical policy in
-`.claude/rules/auto-correct-scope.md` → Branch isolation; no lane may opt out.
-
-| Lane | Route | Human checkpoint |
-|---|---|---|
-| **tiny** | `git checkout -b <type>/<slug>` → direct `Edit` (no plan). Proof = quick-check hooks (`ruff-on-edit`, `auto-test-on-change`, `commit-quality-gate`). | none (unless confidence low / ambiguous) |
-| **normal** | `/using-git-worktrees` (isolated worktree + branch) → `/subagent-driven-development` (+ `wave-parallelism` for independent tasks). Two-stage agent review per task. | only if confidence low / ambiguous |
-| **high-risk** | Full chain: `/brainstorming` → `/xia2` → `/writing-plans` → `/using-git-worktrees` → `/subagent-driven-development`; record a decision via `/compound` when architecture/behavior changes. | only on ambiguity or a hard gate |
-
-After routing, hand off. The downstream skills already enforce their own gates and proof.
-Before handoff, run `python scripts/verify_summary.py --lane <slug>`; this is the canonical
-lane → evidence check used by the commit gate.
-
----
-
-## Guardrails
-
-- **Never edit before intake.** The lane and SUMMARY come first, always (HARD-GATE).
-- **Never self-downgrade a hard gate.** Only a human narrowing scope may lower it.
-- **Decouple the axes.** Lane is about risk; the human gate is about ambiguity. Do not pause
-  a human merely because work is risky if the direction is clear — apply more proof instead.
-- **Write a `Lane:` line.** The corroboration hook and the trust-metrics ledger depend on it —
-  and the ledger row is now generated FROM the SUMMARY, so `Lane`/`Confidence`/`Flags`/`Affects`
-  must be correct at intake.
-- **Do NOT hand-append the ledger.** CI records it on merge: `post-merge-maintenance.yml` opens a
-  bookkeeping PR that appends the `trust-metrics.md` row, inserts a CHANGELOG entry, and bumps
-  VERSION — parsed from the merged SUMMARY. Your job is a correct SUMMARY, then verify the
-  bookkeeping PR after merge. (Manual appends decayed within three weeks — that is why this is
-  event-sourced now.)
+When intake metadata exists, xia2 must use it: `high-risk` starts **Deep**, `normal` starts
+**Standard**, and `tiny` may be **Quick** only after every Quick condition in
+`rules/research-depth.md` passes. Xia2 does not re-score risk; it can only increase research depth
+when evidence reveals a deeper signal.
 
 ## Arguments
 
-- `$ARGUMENTS` — the change request to classify. If omitted, ask the user what they want to do.
-- `<slug>` — the spec directory (e.g. `specs/<slug>/`). If absent, derive the folder name
-  with a **ticket-source prefix** — first match wins, in this order:
-  1. Request references a **GitHub issue** (URL, or `#N` resolvable in the working repo) →
-     `gh-<N>-<slug>` (e.g. `specs/gh-121-spec-folder-prefix/`).
-  2. Request references a **Linear ticket** (URL or `TEAM-###` identifier) →
-     `lin-<TICKET-ID>-<slug>` — the ticket ID keeps its native case (e.g.
-     `specs/lin-ENG-315-user-quota/`).
-  3. No ticket → plain kebab-case `<slug>` (unchanged behavior).
+`$ARGUMENTS` is the requested change. Derive `<slug>` using the ticket-prefix convention in
+`templates/structure/specs-README.md`; never rename an existing spec directory.
 
-  Canonical statement: `templates/structure/specs-README.md` → Slug Convention. Existing
-  folders are grandfathered — never rename. Branch names (`<type>/<slug>`) inherit the
-  prefix automatically because the slug carries it.
+## References
 
-## See also
-
-- `templates/SUMMARY.template.md` — the SUMMARY shape this skill writes.
-- `templates/ESCALATIONS.template.md` — the escalation channel.
-- `.claude/rules/orchestration.md` — the orchestrator loop + escalation-decision step.
-- `.claude/rules/auto-correct-scope.md` — Rule 4 hard gates (the autonomy boundary).
-- `.claude/hooks/risk-corroboration.sh` — mechanical corroboration of the declared lane.
-- `docs/harness-experimental/trust-metrics.md` — the per-task trust ledger this skill appends to.
-- [hoangnb24/harness-experimental](https://github.com/hoangnb24/harness-experimental) — the upstream research this skill implements.
+- `harness-manifest.json` — hard gates and modes (authority)
+- `rules/orchestration.md` — artifact and escalation policy
+- `rules/auto-correct-scope.md` — branch and autonomy boundaries
+- `skills/feature-intake/tests/lane-classification-cases.md` — lane canaries
+- `skills/feature-intake/tests/confidence-escalation-cases.md` — ambiguity canaries

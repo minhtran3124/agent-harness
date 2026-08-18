@@ -1,0 +1,116 @@
+{
+  "cases": [
+    {
+      "id": "context-propagation-audit-trigger-1",
+      "skill": "context-propagation-audit",
+      "query": "Audit whether a changed reviewer prompt delivers its path-scoped rule to child agents.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "context-propagation-audit-trigger-2",
+      "skill": "context-propagation-audit",
+      "query": "Before we touch code, audit whether a changed reviewer prompt delivers its path-scoped rule to child agents.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "context-propagation-audit-trigger-3",
+      "skill": "context-propagation-audit",
+      "query": "I am unsure of the safest workflow; audit whether a changed reviewer prompt delivers its path-scoped rule to child agents.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "context-propagation-audit-trigger-4",
+      "skill": "context-propagation-audit",
+      "query": "Please do this in the repository: audit whether a changed reviewer prompt delivers its path-scoped rule to child agents.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "context-propagation-audit-trigger-5",
+      "skill": "context-propagation-audit",
+      "query": "This is time-sensitive, but audit whether a changed reviewer prompt delivers its path-scoped rule to child agents.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "context-propagation-audit-trigger-6",
+      "skill": "context-propagation-audit",
+      "query": "Use the project workflow to audit whether a changed reviewer prompt delivers its path-scoped rule to child agents.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "context-propagation-audit-trigger-7",
+      "skill": "context-propagation-audit",
+      "query": "Can you take ownership of this request? Audit whether a changed reviewer prompt delivers its path-scoped rule to child agents.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "context-propagation-audit-trigger-8",
+      "skill": "context-propagation-audit",
+      "query": "Do not implement anything else; audit whether a changed reviewer prompt delivers its path-scoped rule to child agents.",
+      "should_trigger": true,
+      "split": "holdout"
+    },
+    {
+      "id": "context-propagation-audit-near-miss-1",
+      "skill": "context-propagation-audit",
+      "query": "Find runtime bugs in this application diff.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "context-propagation-audit-near-miss-2",
+      "skill": "context-propagation-audit",
+      "query": "Do only this instead: find runtime bugs in this application diff.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "context-propagation-audit-near-miss-3",
+      "skill": "context-propagation-audit",
+      "query": "The user asked us to find runtime bugs in this application diff.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "context-propagation-audit-near-miss-4",
+      "skill": "context-propagation-audit",
+      "query": "This request is adjacent but distinct: find runtime bugs in this application diff.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "context-propagation-audit-near-miss-5",
+      "skill": "context-propagation-audit",
+      "query": "Do not route to the wrong specialist; find runtime bugs in this application diff.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "context-propagation-audit-near-miss-6",
+      "skill": "context-propagation-audit",
+      "query": "For this branch, find runtime bugs in this application diff.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "context-propagation-audit-near-miss-7",
+      "skill": "context-propagation-audit",
+      "query": "Handle the direct request: find runtime bugs in this application diff.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "context-propagation-audit-near-miss-8",
+      "skill": "context-propagation-audit",
+      "query": "The next action should be: find runtime bugs in this application diff.",
+      "should_trigger": false,
+      "split": "holdout"
+    }
+  ]
+}

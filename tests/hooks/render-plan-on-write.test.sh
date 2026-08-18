@@ -163,4 +163,9 @@ else
   t "markdown prose heading"; skip "python3 or render_plan.py unavailable"
 fi
 
+t "malformed edit payload warns but render hook remains non-blocking"
+repo=$(new_repo $H)
+run_hook "$repo" $H '{not-json'
+assert_rc_contains 0 'only partially understood'
+
 finish

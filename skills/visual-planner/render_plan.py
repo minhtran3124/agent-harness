@@ -241,7 +241,7 @@ def extract_tasks(body: str):
 _MD_TASK_HEAD = re.compile(r"(?m)^###\s+Task\s+([0-9][\w.]*)[^\n]*$")
 _MD_WAVE = re.compile(r"\(\s*wave\s*(\d+)\s*\)", re.I)
 _MD_FIELD = re.compile(
-    r"^[-*]\s+\*\*(Files|Action|Verify|Done)(?::\*\*|\*\*:)\s*(.*)$", re.I
+    r"^[-*]\s+\*\*(Files|Action|Verify|Done|Criteria|Interfaces)(?::\*\*|\*\*:)\s*(.*)$", re.I
 )
 _MD_NEXT_HEAD = re.compile(r"(?m)^#{2,3}\s")
 
@@ -249,7 +249,7 @@ _MD_NEXT_HEAD = re.compile(r"(?m)^#{2,3}\s")
 def _parse_md_task(block: str, task_id: str) -> dict:
     head, _, rest = block.partition("\n")
     wm = _MD_WAVE.search(head)
-    fields = {"files": [], "action": [], "verify": [], "done": []}
+    fields = {"files": [], "action": [], "verify": [], "done": [], "criteria": [], "interfaces": []}
     cur = None
     for line in rest.split("\n"):
         s = line.strip()
@@ -274,6 +274,8 @@ def _parse_md_task(block: str, task_id: str) -> dict:
         "action": join("action"),
         "verify": verify,
         "done": join("done"),
+        "criteria": join("criteria"),
+        "interfaces": join("interfaces"),
     }
 
 
@@ -332,6 +334,8 @@ def parse_task_block(block: str) -> dict:
         "action": action,
         "verify": verify.strip(),
         "done": done.strip(),
+        "criteria": "",
+        "interfaces": "",
     }
 
 
@@ -707,12 +711,21 @@ def _mermaid_node_id(task_id):
     return "T" + re.sub(r"[^0-9A-Za-z]", "_", task_id)
 
 
-def render_summary_block(tasks, done_ids):
+def render_summary_block(tasks, done_ids, status=None):
     """Additive 'At a glance' block (both sentinels included). Pure + deterministic."""
     if not tasks:
-        return (
-            f"{SUMMARY_BEGIN}\n## At a glance\n\n_No tasks defined yet._\n{SUMMARY_END}"
+        # "yet" claims the tasks are still pending. That is right for a plan being
+        # drafted, but false once the plan has shipped — so shipped gets neutral
+        # wording. It stays neutral on purpose: `shipped` is a lifecycle signal set
+        # by finishing-a-development-branch for ANY plan on a branch that reached a
+        # PR, so it cannot tell an acceptance-contract rollup from any other
+        # task-less completed plan. Naming it a rollup here would be a guess.
+        empty = (
+            "_No tasks recorded in this plan._"
+            if (status or "").lower() == "shipped"
+            else "_No tasks defined yet._"
         )
+        return f"{SUMMARY_BEGIN}\n## At a glance\n\n{empty}\n{SUMMARY_END}"
     files = set()
     for t in tasks:
         for f in t["files"].split(","):
@@ -801,7 +814,7 @@ def inject_summary_block(plan_text, block):
 def summarize_plan_file(plan_path):
     """Read -> build block -> inject -> write only if changed. Returns True if written."""
     text = plan_path.read_text(encoding="utf-8").replace("\r\n", "\n")
-    _, body = parse_frontmatter(text)
+    fm, body = parse_frontmatter(text)
     tasks, _ = extract_tasks(body)
     attach_titles(tasks, body)
     done_ids = set()
@@ -810,7 +823,7 @@ def summarize_plan_file(plan_path):
             entries = parse_status_entries(content)
             done_ids = _done_task_ids(entries, [t["id"] for t in tasks])
             break
-    block = render_summary_block(tasks, done_ids)
+    block = render_summary_block(tasks, done_ids, fm.get("status"))
     new_text = inject_summary_block(text, block)
     if new_text != text:
         plan_path.write_text(new_text, encoding="utf-8")
@@ -888,6 +901,8 @@ def render_task_card(task, expanded=False, subtask_html=""):
     title_html = render_inline(title) if title else ""
     action_html = md_to_html(task["action"]) if task["action"] else ""
     done_html = md_to_html(task["done"]) if task["done"] else ""
+    criteria_html = md_to_html(task.get("criteria", "")) if task.get("criteria") else ""
+    interfaces_html = md_to_html(task.get("interfaces", "")) if task.get("interfaces") else ""
     return f"""<article class="task-card" id="task-{slugify(tid)}" data-collapsed="{collapsed}">
   <div class="task-card-header">
     <span class="id">Task {esc(tid)}</span>
@@ -903,6 +918,8 @@ def render_task_card(task, expanded=False, subtask_html=""):
       <button type="button" class="copy-btn">Copy</button>
     </div>
     <div class="task-block"><div class="task-block-label">Done</div><div>{done_html}</div></div>
+    {f'<div class="task-block"><div class="task-block-label">Criteria</div><div>{criteria_html}</div></div>' if criteria_html else ''}
+    {f'<div class="task-block"><div class="task-block-label">Interfaces</div><div>{interfaces_html}</div></div>' if interfaces_html else ''}
     {subtask_html}
   </div>
 </article>"""
@@ -1401,7 +1418,7 @@ def emit_files_json(plan_path: Path) -> str:
 # --------------------------------------------------------------------------- #
 def _specs_bases() -> list[Path]:
     """Candidate specs/ roots, in priority order: cwd/specs, then this skill's
-    own <root>/specs (TEMPLATE_PATH is .../.claude/skills/visual-planner/).
+    own installation root's specs/ directory (derived from TEMPLATE_PATH).
     Searching both lets the skill work whether invoked from apps/api or repo root."""
     bases, seen = [], set()
     for cand in (Path("specs"), TEMPLATE_PATH.parents[3] / "specs"):

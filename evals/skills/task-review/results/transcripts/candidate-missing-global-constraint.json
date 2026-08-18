@@ -1,0 +1,37 @@
+{
+  "outputs": [
+    "spec_verdict: **fail**\nquality_verdict: **needs_fixes**\n\n## Findings\n\n**Critical \u2014 secret value logged, violating the global constraint.**\n- Evidence: The global constraint states \"Never log secret values.\" The implementation states the failure handler \"logs the complete request including `Authorization`.\" The `Authorization` header carries credentials (bearer token, API key, or basic-auth secret), so logging the complete request with that header writes a secret value to logs \u2014 a direct contradiction of the constraint.\n- Verdict basis: Both statements are explicitly provided in the fixture, so the violation is verifiable on its face; no external contract is needed and `cannot_verify` does not apply.\n- Required fix direction: redact or strip `Authorization` (and any other credential-bearing fields) before logging the failed request.\n\nNo Important or Minor findings \u2014 the fixture provides no further implementation detail to assess."
+  ],
+  "usage": [
+    {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 31851,
+      "cache_read_input_tokens": 20043,
+      "output_tokens": 463,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 31851,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 463,
+          "cache_read_input_tokens": 20043,
+          "cache_creation_input_tokens": 31851,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 31851
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard"
+    }
+  ]
+}

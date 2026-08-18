@@ -17,6 +17,8 @@ Reason: <one sentence — why this lane (which flags / hard gates fired, or none
 Flags: <comma-separated risk flags that fired, or `none`>
 Affects: <affected contract/module, from PROJECT.md High-Blast/Shared-Contracts list or module name; 'none' if not applicable>
 Input-type: new spec | spec slice | change request | new initiative | maintenance | harness improvement
+<!-- Optional Codex diagnosis metadata is an all-or-nothing pair:
+     Runtime-mode and Runtime-evidence-id. Add it only from codex_harness_doctor.py. -->
 
 > `Lane` drives **ceremony** (how much proof). `Confidence` drives **interruption**
 > (whether a human is asked). A hard gate forces `high-risk`. Low confidence or an
@@ -25,7 +27,7 @@ Input-type: new spec | spec slice | change request | new initiative | maintenanc
 ### Intent
 
 <!-- The user's request VERBATIM at intake — do NOT paraphrase or summarize. This is the
-     oracle for /intent-review (the final stage of subagent-driven-development): the third
+     oracle for intent-review (the final stage of subagent-driven-development): the third
      reviewer is blind to PLAN.md and checks the finished diff against this text. If the
      request came over several conversational turns, quote the scope-deciding sentences in
      chronological order. Capturing intent here, not in the plan, is what keeps the intent
@@ -63,11 +65,29 @@ Input-type: new spec | spec slice | change request | new initiative | maintenanc
 
 <!-- Evidence over assertion: one row per check that was actually RUN.
      A claim of "done" is only valid with a re-runnable command + its result.
-     Do not list a command that was not run. -->
+     Do not list a command that was not run.
+     The trailing `Criterion` column is optional: name an `SC-n` from PLAN.md §3
+     when the row satisfies one; every SC must be covered by >=1 passing row
+     (enforced by scripts/verify_summary.py). Leave blank for rows that map to no SC. -->
 
-| Check | Command | Exit | Notes |
-| --- | --- | --- | --- |
-| <unit / lint / build / behavior> | `<command>` | 0 | <output excerpt on fail> |
+| Check | Command | Exit | Notes | Criterion |
+| --- | --- | --- | --- | --- |
+| <unit / lint / build / behavior> | `<command>` | 0 | <output excerpt on fail> | <SC-n or blank> |
+
+### Not auto-verified
+
+<!-- The other half of the panel. `### Verify` above is the CODE-VERIFIABLE side: every
+     row there is a command a machine re-ran. This section is the negative scope — what
+     this change CLAIMS that no gate checks. Per CLAUDE.md "Gate verifiability", name the
+     tier each such claim actually reached:
+       traceability — structure matches (an ID exists, a render agrees with its ledger)
+       provenance   — evidence re-derived from the source of truth (receipt pinned at base)
+       truth        — behavior re-run (command re-executed, exit codes compared)
+     Listing an unverified claim here is not a defect; leaving one UNLISTED is — that is
+     how a traceability-tier check gets read as proof of truth.
+     Use `- none` only when every claim in this SUMMARY is covered by a Verify row. -->
+
+- <claim> — reached <traceability | provenance>; not re-run because <reason>
 
 ### Rollback
 
@@ -79,7 +99,7 @@ Input-type: new spec | spec slice | change request | new initiative | maintenanc
 ### Harness-Delta
 
 <!-- What friction did this task reveal about the workflow itself?
-     fix-direct (done in this task) or backlog (-> /compound -> docs/solutions/).
+     fix-direct (done in this task) or backlog (-> compound -> docs/solutions/).
      Leave `- none` if the workflow needed no change. -->
 
 - none

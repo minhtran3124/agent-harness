@@ -1,0 +1,68 @@
+{
+  "outputs": [
+    "**SPEC: FAIL** (fail-closed \u2014 unverifiable, not confirmed-broken)\n\n**Evidence**\n- The requested behavior is \"keep the external webhook signature compatible.\" Verifying that requires the signing protocol (algorithm, key handling, payload canonicalization, header format) and the external contract to compare against. Neither is available in the fixture \u2014 only a caller name is shown.\n- Per `not_observed != absent` (rules/behavior.md \u00a71): an unread contract means *unknown*, not *compatible*. A compatibility claim with zero observable signing logic cannot be affirmed, and an external-contract change is exactly the class where a wrong \"pass\" is expensive (external provider / public contract is a hard-gate category in `rules/orchestration.md`).\n\n**Missing requested behavior**\n- No observable evidence that the signature scheme is preserved \u2014 no signing code, no protocol spec, no fixture of a known-good signature, no round-trip/verify check against the external consumer's expectations.\n\n**Extra behavior**\n- None observable (nothing beyond a caller name is shown, so no excess scope can be confirmed either).\n\n**Label:** `spec-fail: insufficient-evidence` \u2014 the correct disposition is to block/escalate for the signing protocol and external contract (or a re-runnable signature-compatibility check), not to pass on absence of visible breakage.",
+    "**Verdict: needs_fixes** (cannot approve \u2014 insufficient evidence, not a confirmed defect in the code itself)\n\n**Concern: Critical \u2014 external compatibility claim is unverifiable from the provided material.**\n\n- **Evidence:** The task's success criterion is \"webhook signature stays compatible with an external consumer,\" but the fixture exposes only a caller name. The signing protocol (algorithm, key derivation, payload canonicalization, header format, encoding) and the external contract are explicitly unavailable, so there is nothing to compare the implementation against.\n- **Why Critical, not Minor:** A signature scheme fails on any byte-level deviation (field ordering, whitespace, encoding, timestamp format), and the failure surface is an external party \u2014 not caught by local tests unless a contract fixture exists. Approving here would be a claim of compatibility with zero observations supporting it (`not_observed != absent`).\n\n**What would flip this to approved:**\n1. The signing function's implementation plus the external contract (provider docs or a recorded known-good signature) to diff against.\n2. A verification artifact \u2014 a golden-vector test asserting the produced signature for a fixed payload/key matches a known-valid external sample, run with exit code shown.\n\nNo Important/Minor findings \u2014 there is no visible code to critique at those levels."
+  ],
+  "usage": [
+    {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 36306,
+      "cache_read_input_tokens": 15491,
+      "output_tokens": 971,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 36306,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 971,
+          "cache_read_input_tokens": 15491,
+          "cache_creation_input_tokens": 36306,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 36306
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard"
+    },
+    {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 31763,
+      "cache_read_input_tokens": 20043,
+      "output_tokens": 627,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 31763,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 627,
+          "cache_read_input_tokens": 20043,
+          "cache_creation_input_tokens": 31763,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 31763
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard"
+    }
+  ]
+}

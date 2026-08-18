@@ -1,0 +1,52 @@
+{
+  "command": [
+    "claude",
+    "--dangerously-skip-permissions",
+    "-p",
+    "--output-format",
+    "json",
+    "--no-session-persistence",
+    "--tools",
+    "",
+    "--max-budget-usd",
+    "0.25",
+    "--model",
+    "sonnet",
+    "--effort",
+    "low"
+  ],
+  "cwd": "/Users/minhtran/Documents/minhtran3124/developer/harness-skills",
+  "returncode": 0,
+  "result": "Reviewing a complete diff: determine the BASE..HEAD range (merge-base for a branch, or explicit range if supplied), then run the six independent FIND prompts (enclosing-function, removed-behavior, call-site-impact, stack-defects, guard-completeness, prior-art), dedupe findings by (file, line), and dispatch one independent SCORE prompt per location.\n\nKey safety gate: findings scoring at or above the configured threshold must be classified and either fixed (Rule 1\u20133, per `auto-correct-scope.md`) or escalated (Rule 4 \u2192 `ESCALATIONS.md`) \u2014 never silently dropped, and the threshold must never be lowered below its configured floor. Completion requires every finding fixed with a commit SHA or durably recorded as advisory/blocker.",
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 21348,
+    "cache_read_input_tokens": 3304,
+    "output_tokens": 265,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 21348,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 265,
+        "cache_read_input_tokens": 3304,
+        "cache_creation_input_tokens": 21348,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 21348
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "stderr": ""
+}

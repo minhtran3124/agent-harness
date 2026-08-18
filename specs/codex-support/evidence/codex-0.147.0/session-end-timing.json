@@ -1,0 +1,22 @@
+{
+  "capture": "isolated-local-benchmark",
+  "captured_at": "2026-08-10",
+  "cli_version": "0.147.0",
+  "config_hash": "not-applicable",
+  "platform": "macos-arm64",
+  "result": {
+    "documented_default_timeout_ms": 1000,
+    "documented_max_timeout_ms": 3000,
+    "exit_condition": null,
+    "hook": "hooks/state-breadcrumb.sh",
+    "max_ms": 28.599,
+    "min_ms": 26.598,
+    "p95_ms": 27.878,
+    "samples": 20,
+    "status": "observed",
+    "support_threshold_ms": 800,
+    "within_threshold": true
+  },
+  "runtime": "codex",
+  "schema_version": 1
+}

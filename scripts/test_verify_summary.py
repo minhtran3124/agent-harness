@@ -61,6 +61,54 @@ def write_summary(tmp_path: Path, slug: str, content: str) -> Path:
     return p
 
 
+def write_plan(summary_path: Path, content: str) -> Path:
+    """Write a sibling PLAN.md next to a SUMMARY.md and return its path."""
+    p = summary_path.parent / "PLAN.md"
+    p.write_text(content, encoding="utf-8")
+    return p
+
+
+class TestRuntimeMetadata:
+    def test_legacy_absence_and_valid_durable_pair_are_accepted(self, tmp_path):
+        path = write_summary(tmp_path, "legacy", make_summary(""))
+        assert vs._check_runtime_metadata(path.read_text(), path) == []
+        text = path.read_text().replace(
+            "Input-type: maintenance",
+            "Input-type: maintenance\nRuntime-mode: advisory\n"
+            "Runtime-evidence-id: codex-mode-0123456789abcdef",
+        )
+        assert vs._check_runtime_metadata(text, path) == []
+
+    def test_partial_or_malformed_pair_is_rejected(self):
+        partial = SUMMARY_HEADER + "Runtime-mode: enforced\n"
+        assert "supplied together" in vs._check_runtime_metadata(partial, None)[0]
+        malformed = (
+            SUMMARY_HEADER
+            + "Runtime-mode: enforced\nRuntime-evidence-id: private-path\n"
+        )
+        assert (
+            "invalid Runtime-evidence-id"
+            in vs._check_runtime_metadata(malformed, None)[0]
+        )
+
+    def test_check_is_format_only_and_never_reads_local_state(self, tmp_path):
+        # Deliberate traceability boundary: the local record is gitignored and
+        # agent-writable, so the gate must not pretend to corroborate it — a
+        # well-formed pair passes even when a contradicting record exists.
+        path = write_summary(tmp_path, "local", make_summary(""))
+        text = path.read_text().replace(
+            "Input-type: maintenance",
+            "Input-type: maintenance\nRuntime-mode: enforced\n"
+            "Runtime-evidence-id: codex-mode-0123456789abcdef",
+        )
+        state = tmp_path / ".harness-state/codex-runtime.json"
+        state.parent.mkdir()
+        state.write_text('{"mode": "advisory"}')
+        assert vs._check_runtime_metadata(text, path) == []
+        state.write_text("not json")
+        assert vs._check_runtime_metadata(text, path) == []
+
+
 # ---------------------------------------------------------------------------
 # parse_verify_table
 # ---------------------------------------------------------------------------
@@ -412,6 +460,7 @@ def _lane_summary(
     reason="obvious one-file edit",
     verify=None,
     rollback=None,
+    not_verified=None,
 ):
     parts = [
         "# demo — Summary",
@@ -433,9 +482,17 @@ def _lane_summary(
             "| --- | --- | --- | --- |",
             verify,
         ]
+    if not_verified is not None:
+        parts += ["", "### Not auto-verified", "", not_verified]
     if rollback is not None:
         parts += ["", "### Rollback", "", rollback]
     return "\n".join(parts) + "\n"
+
+
+# A filled-in `### Not auto-verified` body, for high-risk fixtures whose subject is
+# some OTHER evidence requirement (rollback, lane parsing) and which must not trip
+# the negative-scope check as a side effect.
+REAL_NOT_VERIFIED = "- Emitted JSON shape is unasserted — reached traceability only."
 
 
 REAL_LANE_VERIFY = "| unit | `pytest -q` | 0 | all pass |"
@@ -482,16 +539,22 @@ class TestLaneEvidence:
             lane="high-risk",
             verify=REAL_LANE_VERIFY,
             rollback="- `alembic downgrade -1`",
+            not_verified=REAL_NOT_VERIFIED,
         )
         assert vs.check_lane_evidence(complete) == []
 
-        missing = _lane_summary(lane="high-risk", verify=REAL_LANE_VERIFY)
+        missing = _lane_summary(
+            lane="high-risk",
+            verify=REAL_LANE_VERIFY,
+            not_verified=REAL_NOT_VERIFIED,
+        )
         assert any("Rollback" in e for e in vs.check_lane_evidence(missing))
 
         comment_only = _lane_summary(
             lane="high-risk",
             verify=REAL_LANE_VERIFY,
             rollback="<!-- only a comment -->",
+            not_verified=REAL_NOT_VERIFIED,
         )
         assert any(
             "Rollback" in e and "empty" in e
@@ -509,6 +572,7 @@ class TestLaneEvidence:
             lane="high-risk (hard gate: hooks/*)",
             verify=REAL_LANE_VERIFY,
             rollback="- Revert the PR: `git revert abc1234`",
+            not_verified=REAL_NOT_VERIFIED,
         )
         assert vs.check_lane_evidence(decorated) == []
 
@@ -524,11 +588,101 @@ class TestLaneEvidence:
         reason = "Risk raised because `(^|/)hooks/` matches the new test paths"
         assert vs.check_lane_evidence(_lane_summary(reason=reason)) == []
 
+    def test_missing_not_auto_verified_warns_but_does_not_block_by_default(
+        self, monkeypatch
+    ):
+        """WARN-FIRST rollout: advisory only until REQUIRE_NOT_AUTO_VERIFIED=1.
+
+        52 of 53 pre-existing high-risk specs predate the section, so the default
+        must not tax a typo fix to a legacy spec.
+        """
+        monkeypatch.delenv("REQUIRE_NOT_AUTO_VERIFIED", raising=False)
+        missing = _lane_summary(
+            lane="high-risk",
+            verify=REAL_LANE_VERIFY,
+            rollback="- `alembic downgrade -1`",
+        )
+        assert vs.check_lane_evidence(missing) == []
+        assert any("Not auto-verified" in w for w in vs.check_lane_warnings(missing))
+
+    def test_missing_not_auto_verified_blocks_when_opted_in(self, monkeypatch):
+        monkeypatch.setenv("REQUIRE_NOT_AUTO_VERIFIED", "1")
+        missing = _lane_summary(
+            lane="high-risk",
+            verify=REAL_LANE_VERIFY,
+            rollback="- `alembic downgrade -1`",
+        )
+        assert any(
+            "Not auto-verified" in e and "missing" in e
+            for e in vs.check_lane_evidence(missing)
+        )
+        # Never reported twice: once it is an error it must not also be a warning.
+        assert vs.check_lane_warnings(missing) == []
+
+    def test_satisfied_section_produces_neither_error_nor_warning(self, monkeypatch):
+        for value in ("1", ""):
+            if value:
+                monkeypatch.setenv("REQUIRE_NOT_AUTO_VERIFIED", value)
+            else:
+                monkeypatch.delenv("REQUIRE_NOT_AUTO_VERIFIED", raising=False)
+            complete = _lane_summary(
+                lane="high-risk",
+                verify=REAL_LANE_VERIFY,
+                rollback="- `alembic downgrade -1`",
+                not_verified=REAL_NOT_VERIFIED,
+            )
+            assert vs.check_lane_evidence(complete) == []
+            assert vs.check_lane_warnings(complete) == []
+
+    def test_comment_only_and_template_bullet_are_not_real_answers(self, monkeypatch):
+        monkeypatch.setenv("REQUIRE_NOT_AUTO_VERIFIED", "1")
+        for body, word in (
+            ("<!-- only a comment -->", "empty"),
+            (
+                "- <claim> — reached <traceability | provenance>; "
+                "not re-run because <reason>",
+                "template",
+            ),
+        ):
+            text = _lane_summary(
+                lane="high-risk",
+                verify=REAL_LANE_VERIFY,
+                rollback="- `alembic downgrade -1`",
+                not_verified=body,
+            )
+            errors = vs.check_lane_evidence(text)
+            assert any("Not auto-verified" in e and word in e for e in errors), body
+
+    def test_explicit_none_is_accepted(self):
+        """`- none` is a legitimate answer: every claim is covered by a Verify row.
+
+        This is the gate's deliberate loophole, documented rather than closed --
+        it enforces that the question was ANSWERED, not that the answer is true.
+        """
+        none_answer = _lane_summary(
+            lane="high-risk",
+            verify=REAL_LANE_VERIFY,
+            rollback="- `alembic downgrade -1`",
+            not_verified="- none",
+        )
+        assert vs.check_lane_evidence(none_answer) == []
+
+    def test_lower_lanes_do_not_require_the_section(self):
+        """tiny/normal are unaffected -- this keeps the 80-spec back catalogue valid."""
+        assert vs.check_lane_evidence(_lane_summary(lane="tiny")) == []
+        assert (
+            vs.check_lane_evidence(
+                _lane_summary(lane="normal", verify=REAL_LANE_VERIFY)
+            )
+            == []
+        )
+
     def test_template_only_rollback_is_rejected(self):
         template_only = _lane_summary(
             lane="high-risk",
             verify=REAL_LANE_VERIFY,
             rollback="- `git revert <sha>`",
+            not_verified=REAL_NOT_VERIFIED,
         )
         errors = vs.check_lane_evidence(template_only)
         assert errors and "Rollback" in errors[0] and "template" in errors[0]
@@ -571,3 +725,247 @@ class TestLaneMode:
             vs.main(["--lane", "--check", "lane-slug"], specs_root=tmp_path / "specs")
             == 2
         )
+
+
+# ---------------------------------------------------------------------------
+# SC-table parsing + coverage enforcement
+# ---------------------------------------------------------------------------
+
+
+SC_PLAN_ONE = """\
+# demo — plan
+
+## 3. Success Criteria
+
+| ID | Behavior (observable) | Check (re-runnable) | Expected |
+| --- | --- | --- | --- |
+| SC-1 | first behavior | `test 1 = 1` | exit 0 |
+"""
+
+SC_PLAN_TWO = """\
+# demo — plan
+
+## 3. Success Criteria
+
+| ID | Behavior (observable) | Check (re-runnable) | Expected |
+| --- | --- | --- | --- |
+| SC-1 | first behavior | `test 1 = 1` | exit 0 |
+| SC-2 | second behavior | `test 1 = 2` | exit 1 |
+"""
+
+
+class TestParseScTable:
+    def test_maps_id_to_expected_exit(self):
+        table = vs.parse_sc_table(SC_PLAN_TWO)
+        assert table == {"SC-1": "0", "SC-2": "1"}
+
+    def test_fenced_table_is_ignored(self):
+        fenced = (
+            "# demo\n\n## 3. Success Criteria\n\n"
+            "```\n"
+            "| ID | Behavior | Check | Expected |\n"
+            "| --- | --- | --- | --- |\n"
+            "| SC-1 | example | `x` | exit 0 |\n"
+            "```\n"
+        )
+        assert vs.parse_sc_table(fenced) == {}
+
+    def test_bad_expected_grammar_is_error(self):
+        plan = SC_PLAN_ONE.replace("| exit 0 |", "| zero |")
+        table = vs.parse_sc_table(plan)
+        assert table["SC-1"].startswith("ERROR")
+
+
+class TestScCoverage:
+    def _write(self, tmp_path, slug, verify, plan):
+        text = _lane_summary(lane="normal", verify=verify)
+        path = write_summary(tmp_path, slug, text)
+        write_plan(path, plan)
+        return text, path
+
+    def test_sc_coverage_complete_passes_lane(self, tmp_path):
+        verify = (
+            "| c1 | `test 1 = 1` | 0 | ok | SC-1 |\n"
+            "| c2 | `test 1 = 2` | 1 | ok | SC-2 |"
+        )
+        text, path = self._write(tmp_path, "cov-ok", verify, SC_PLAN_TWO)
+        assert vs.check_lane_evidence(text, summary_path=path) == []
+
+    def test_sc_coverage_missing_fails_lane(self, tmp_path):
+        verify = "| c1 | `test 1 = 1` | 0 | ok | SC-1 |"
+        text, path = self._write(tmp_path, "cov-miss", verify, SC_PLAN_TWO)
+        errors = vs.check_lane_evidence(text, summary_path=path)
+        assert any("SC-2" in e for e in errors)
+
+    def test_sc_coverage_wrong_claimed_exit_fails_lane(self, tmp_path):
+        # SC-2 expects exit 1, but the covering row claims exit 0 → not covered.
+        verify = (
+            "| c1 | `test 1 = 1` | 0 | | SC-1 |\n| c2 | `test 1 = 2` | 0 | | SC-2 |"
+        )
+        text, path = self._write(tmp_path, "cov-wrong", verify, SC_PLAN_TWO)
+        errors = vs.check_lane_evidence(text, summary_path=path)
+        assert any("SC-2" in e for e in errors)
+
+    def test_sc_unknown_criterion_fails(self, tmp_path):
+        verify = (
+            "| c1 | `test 1 = 1` | 0 | | SC-1 |\n| c2 | `test 1 = 2` | 1 | | SC-9 |"
+        )
+        text, path = self._write(tmp_path, "cov-unknown", verify, SC_PLAN_TWO)
+        errors = vs.check_lane_evidence(text, summary_path=path)
+        assert any("SC-9" in e and "unknown" in e.lower() for e in errors)
+
+    def test_sc_duplicate_id_fails(self, tmp_path):
+        dup_plan = SC_PLAN_ONE + "| SC-1 | dup behavior | `test 1 = 1` | exit 0 |\n"
+        assert vs.parse_sc_table(dup_plan)["SC-1"].startswith("ERROR")
+        verify = "| c1 | `test 1 = 1` | 0 | | SC-1 |"
+        text, path = self._write(tmp_path, "cov-dup", verify, dup_plan)
+        errors = vs.check_lane_evidence(text, summary_path=path)
+        assert any("duplicate" in e.lower() for e in errors)
+
+    def test_backward_compat_4col_no_plan(self, tmp_path):
+        text = _lane_summary(lane="normal", verify=REAL_LANE_VERIFY)
+        path = write_summary(tmp_path, "bc-4col", text)
+        # No sibling PLAN.md written — fail-open, no new checks.
+        assert vs.check_lane_evidence(text, summary_path=path) == []
+
+    def test_backward_compat_plan_without_sc_table(self, tmp_path):
+        text = _lane_summary(lane="normal", verify=REAL_LANE_VERIFY)
+        path = write_summary(tmp_path, "bc-nosc", text)
+        write_plan(path, "# demo\n\n## 1. Motivation\n\nNo SC table here.\n")
+        assert vs.check_lane_evidence(text, summary_path=path) == []
+
+    def test_plan_dir_override_enforces_sc_coverage(self, tmp_path):
+        # Reproduces the commit-gate scenario: the SUMMARY content is read from a
+        # detached copy (mktemp) whose parent has NO sibling PLAN.md. Without the
+        # plan_dir override SC coverage silently fail-opens; with it, the real spec
+        # dir's PLAN.md is consulted and the missing SC-2 is caught.
+        verify = "| c1 | `test 1 = 1` | 0 | ok | SC-1 |"
+        text, real_path = self._write(tmp_path, "cov-plandir", verify, SC_PLAN_TWO)
+
+        detached = tmp_path / "mktemp-copy"  # a path whose parent has no PLAN.md
+        detached.write_text(text, encoding="utf-8")
+
+        # Bug reproduction: parent has no PLAN.md → fail-open (no SC error).
+        assert vs.check_lane_evidence(text, summary_path=detached) == []
+        # Override: SC coverage is enforced against the real spec dir's PLAN.md.
+        errors = vs.check_lane_evidence(
+            text, summary_path=detached, plan_dir=real_path.parent
+        )
+        assert any("SC-2" in e for e in errors)
+
+    def test_plan_dir_override_via_lane_cli(self, tmp_path):
+        # The --lane CLI path threads --plan-dir through to SC coverage.
+        verify = "| c1 | `test 1 = 1` | 0 | ok | SC-1 |"
+        _text, real_path = self._write(tmp_path, "cli-plandir", verify, SC_PLAN_TWO)
+        detached = tmp_path / "mktemp-copy2"
+        detached.write_text(_text, encoding="utf-8")
+        # Without --plan-dir: fail-open → exit 0.
+        assert vs.main(["--lane", str(detached)], specs_root=tmp_path / "specs") == 0
+        # With --plan-dir pointing at the real spec dir: SC-2 uncovered → exit 1.
+        assert (
+            vs.main(
+                ["--lane", str(detached), "--plan-dir", str(real_path.parent)],
+                specs_root=tmp_path / "specs",
+            )
+            == 1
+        )
+
+    def test_plan_dir_override_via_check_mode(self, tmp_path):
+        # --plan-dir must also be honored in single-target/check mode, not only --lane.
+        # SUMMARY slug dir has NO PLAN.md, so the parent-based lookup fail-opens; the
+        # real SC table lives in a separate dir pointed at by --plan-dir. The row's
+        # Criterion (SC-2, expected exit 1) with a command that exits 0 is caught ONLY
+        # when plan_dir is consulted.
+        verify = "| c1 | `test 1 = 1` | 0 | | SC-2 |"
+        text = _lane_summary(lane="normal", verify=verify)
+        write_summary(tmp_path, "chk-plandir", text)  # no sibling PLAN.md written
+        real = tmp_path / "real-spec"
+        real.mkdir()
+        (real / "PLAN.md").write_text(SC_PLAN_TWO, encoding="utf-8")
+        specs_root = tmp_path / "specs"
+        # Without --plan-dir: no sibling PLAN → sc_map empty → claimed==actual → exit 0.
+        assert (
+            vs.main(
+                ["chk-plandir", "--check", "--timeout", "10"], specs_root=specs_root
+            )
+            == 0
+        )
+        # With --plan-dir: SC-2 expects exit 1 but the command exits 0 → mismatch → exit 1.
+        assert (
+            vs.main(
+                ["chk-plandir", "--check", "--plan-dir", str(real), "--timeout", "10"],
+                specs_root=specs_root,
+            )
+            == 1
+        )
+
+    def test_sc_coverage_missing_fails_check_mode(self, tmp_path):
+        # PR #157 review (P1): `--check <slug>` is the documented ship gate and what
+        # ci-strict-gate.sh runs, but it only validated Criterion-mapped rows — a PLAN
+        # with SC-1 and SC-2 whose SUMMARY proved only SC-1 exited 0.
+        verify = "| c1 | `test 1 = 1` | 0 | | SC-1 |"
+        text = _lane_summary(lane="normal", verify=verify)
+        path = write_summary(tmp_path, "chk-cov", text)
+        write_plan(path, SC_PLAN_TWO)
+        assert (
+            vs.main(
+                ["chk-cov", "--check", "--timeout", "10"], specs_root=tmp_path / "specs"
+            )
+            == 1
+        )
+
+    def test_sc_coverage_missing_fails_check_mode_with_no_real_rows(self, tmp_path):
+        # Same gate, placeholder-only Verify table: the early "no checks ran" return
+        # must not short-circuit past SC coverage.
+        text = _lane_summary(lane="normal", verify="| p | `<command>` | 0 | | |")
+        path = write_summary(tmp_path, "chk-cov-empty", text)
+        write_plan(path, SC_PLAN_TWO)
+        assert (
+            vs.main(
+                ["chk-cov-empty", "--check", "--timeout", "10"],
+                specs_root=tmp_path / "specs",
+            )
+            == 1
+        )
+
+    def test_criterion_check_mode_actual_exit(self, tmp_path):
+        # Well-formed: each criterion row actually exits its SC's expected code.
+        verify = (
+            "| c1 | `test 1 = 1` | 0 | | SC-1 |\n| c2 | `test 1 = 2` | 1 | | SC-2 |"
+        )
+        text = _lane_summary(lane="normal", verify=verify)
+        write_summary(tmp_path, "cm-ok", text)
+        write_plan((tmp_path / "specs" / "cm-ok" / "SUMMARY.md"), SC_PLAN_TWO)
+        assert (
+            vs.main(
+                ["cm-ok", "--check", "--timeout", "10"], specs_root=tmp_path / "specs"
+            )
+            == 0
+        )
+
+        # Row's claimed exit matches its actual exit, so the claimed-vs-actual
+        # check passes — but the criterion points at SC-2 (expected exit 1) while
+        # the command actually exits 0. Only the SC comparison catches this.
+        verify_bad = "| c1 | `test 1 = 1` | 0 | | SC-2 |"
+        text_bad = _lane_summary(lane="normal", verify=verify_bad)
+        write_summary(tmp_path, "cm-bad", text_bad)
+        write_plan((tmp_path / "specs" / "cm-bad" / "SUMMARY.md"), SC_PLAN_TWO)
+        assert (
+            vs.main(
+                ["cm-bad", "--check", "--timeout", "10"], specs_root=tmp_path / "specs"
+            )
+            == 1
+        )
+
+    def test_rewrite_table_preserves_criterion_column(self, tmp_path):
+        verify = "| c1 | `test 1 = 1` | 0 | note | SC-1 |"
+        text = _lane_summary(lane="normal", verify=verify)
+        path = write_summary(tmp_path, "rw-slug", text)
+        write_plan(path, SC_PLAN_ONE)
+        rc = vs.main(["rw-slug", "--timeout", "10"], specs_root=tmp_path / "specs")
+        assert rc == 0
+        out = path.read_text(encoding="utf-8")
+        line = next(ln for ln in out.splitlines() if ln.startswith("| c1"))
+        assert "SC-1" in line  # trailing Criterion column preserved
+        assert "| 0 |" in line  # actual exit written back
+        assert "Verified:" in out

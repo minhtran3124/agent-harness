@@ -118,3 +118,42 @@ Eval a prompt skill with **auto-score / manual-run**: labeled fixtures (`request
 
 **Full doc:** docs/solutions/harness/skill-eval-blind-run-scoring.md
 ---
+
+## [2026-07-23] gate-config-must-read-index
+**Type:** bug
+**Module:** hooks/risk-corroboration.sh + harness-manifest.json (gate-mode contract)
+**Tags:** commit-time-hooks, index-vs-worktree, gate-integrity, fail-closed, policy-toctou, external-review
+**Applicable when:** A PreToolUse commit hook reads any config/policy file that influences allow/deny — it must read the INDEX-side copy (`git show :<path>`, fail-closed on absence) so unstaged edits cannot loosen the decision for the committed tree.
+
+## [2026-07-27] no-report-reviewer-dispatch-is-not-a-pass
+**Type:** failure
+**Module:** harness (review chain + review receipt)
+**Tags:** review-chain, subagent-dispatch, no-report, review-receipt, independence, silent-degradation
+**Applicable when:** A dispatched reviewer subagent (correctness / intent / context-propagation) returns no findings text — it went idle, errored, or the channel dropped — and you are about to continue the ship chain.
+
+Four reviewers dispatched in one message all went idle without delivering findings; follow-up requests produced more silence. Silence is the absence of a review, not a clean result, and the receipt schema has no field for independence — so substituting a controller-run pass serializes identically to an independent one and Gate 0 passes on an overstated receipt. Re-dispatch or run it inline and say so verbatim in the `reviewer` string and `SUMMARY.md ### Review`; on a workflow-engine diff, get the missing independence from a reviewer outside the harness.
+
+**Full doc:** docs/solutions/harness/no-report-reviewer-dispatch-is-not-a-pass.md
+---
+
+## [2026-07-27] prose-encoded-state-logic-accrues-contradiction-chains
+**Type:** knowledge
+**Module:** harness (skill authoring — workflow-as-code)
+**Tags:** workflow-as-code, prose-vs-code, state-machine, skill-authoring, contradiction-chain, exhaustive-enumeration
+**Applicable when:** A SKILL.md section is about to branch on more than a couple of states of a real state machine (run-state FSM, plan lifecycle, CI status) — decide the medium before writing the third branch.
+
+State logic written as prose accrues contradiction chains: each correction is individually right and creates the next gap, because the preconditions live in the engine and prose never forces enumeration. Measured on PR #173: 6 of the last 8 findings were defects in prose that PR had just added, four of them a single chain (12→13→14→15), and two fixes ended by copying `FORWARD_TRANSITIONS` into markdown with a test comparing the copy to the original. Enumerate all states explicitly, assert executability rather than wording, and extract to a script once the branch count outgrows the medium — and remember every `|| true` in a skill is a place where such defects cannot announce themselves.
+
+**Full doc:** docs/solutions/harness/prose-encoded-state-logic-accrues-contradiction-chains.md
+---
+
+## [2026-08-10] plan-anchored-task-review-misses-fixture-fitted-bugs
+**Type:** failure
+**Module:** harness (review oracle)
+**Tags:** review-oracle, task-review, adversarial-review, corpus-testing, fixture-fitted-tests, plan-blind, green-is-not-correct
+**Applicable when:** A multi-task plan finished with every per-task review green (spec + quality) and the full suite passing, and you are about to treat that as sufficient correctness evidence — before the plan-blind adversarial correctness pass has run.
+
+On gh-175 every per-task review passed and 145 tests were green, yet the plan-blind `correctness-review` (six independent finder angles) then found ~11 real, reproduced bugs — including a markdown plan mentioning `<task` parsing to an empty cursor (a resuming session would skip every task). The per-task tests were written by the same subagent from the same idealized assumptions using synthetic fixtures, so they proved consistency, not correctness; the bugs lived exactly where real `specs/*/PLAN.md` diverge from the tidy fixture. Correct path: keep the plan-blind adversarial correctness pass as a hard gate (different oracle, not redundant), add corpus tests that run the parser over EVERY real spec (parity/subset property), not synthetic fixtures, and re-verify each finding at truth-tier.
+
+**Full doc:** docs/solutions/harness/plan-anchored-task-review-misses-fixture-fitted-bugs.md
+---

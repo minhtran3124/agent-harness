@@ -36,4 +36,24 @@ printf 'x\n' > "$repo/app/.claude/derived.py"   # not gitignored here → git li
 run_hook "$repo" $H "$(json_cmd 'git commit -m x')"
 assert_silent_ok
 
+# Regression: the deployed harness lives at the repo ROOT, so `git ls-files` reports
+# `.claude/skills/...` with NO leading slash. A `/\.claude/` pattern misses it and denies
+# every commit in a fresh consumer whose .gitignore does not yet list .claude/ — the install
+# path found in the 2026-07-23 sandbox walk. The nested case above passed all along, which is
+# exactly why this was never caught.
+t "untracked .py under a ROOT-level .claude/ is also excluded (fresh-consumer install)"
+repo=$(new_repo $H)
+mkdir -p "$repo/.claude/skills/visual-planner"
+printf 'x\n' > "$repo/.claude/skills/visual-planner/render_plan.py"
+run_hook "$repo" $H "$(json_cmd 'git commit -m x')"
+assert_silent_ok
+
+t "a real untracked .py still denies even when a root .claude/ is present"
+repo=$(new_repo $H)
+mkdir -p "$repo/.claude/skills/visual-planner"
+printf 'x\n' > "$repo/.claude/skills/visual-planner/render_plan.py"
+printf 'x\n' > "$repo/loose.py"
+run_hook "$repo" $H "$(json_cmd 'git commit -m x')"
+assert_rc_contains 0 'loose.py'
+
 finish

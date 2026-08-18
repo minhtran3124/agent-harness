@@ -1,0 +1,52 @@
+{
+  "command": [
+    "claude",
+    "--dangerously-skip-permissions",
+    "-p",
+    "--output-format",
+    "json",
+    "--no-session-persistence",
+    "--tools",
+    "",
+    "--max-budget-usd",
+    "0.25",
+    "--model",
+    "sonnet",
+    "--effort",
+    "low"
+  ],
+  "cwd": "/Users/minhtran/Documents/minhtran3124/developer/harness-skills",
+  "returncode": 0,
+  "result": "Required action: run `render_plan.py <slug> --emit-files` then `--review specs/<slug>/.plan-review.json` to produce the graph-backed sidecar (`PLAN.review.html`).\n\nKey safety gate: the sidecar must not fabricate graph coverage \u2014 any file/dependent/test/risk not actually returned by the graph must be marked `missing` (or omitted), never invented; risk levels must trace to real evidence, not inference.",
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 20671,
+    "cache_read_input_tokens": 3304,
+    "output_tokens": 149,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 20671,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 149,
+        "cache_read_input_tokens": 3304,
+        "cache_creation_input_tokens": 20671,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 20671
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "stderr": ""
+}

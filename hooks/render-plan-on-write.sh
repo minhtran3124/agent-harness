@@ -9,28 +9,44 @@ command -v jq >/dev/null 2>&1 || exit 0
 command -v python3 >/dev/null 2>&1 || exit 0
 
 INPUT=$(cat /dev/stdin)
-FILE=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)
-[ -z "$FILE" ] && exit 0
-
-# Only act on a PLAN.md under specs/
-case "$FILE" in
-  */specs/*/PLAN.md|specs/*/PLAN.md) ;;
-  *) exit 0 ;;
-esac
-[ -f "$FILE" ] || exit 0
-
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null)"
 [ -z "$REPO_DIR" ] && REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+NORMALIZER="$SCRIPT_DIR/lib/normalize-tool-input.py"
+if [ -f "$NORMALIZER" ]; then
+  NORMALIZED=$(printf '%s' "$INPUT" | python3 "$NORMALIZER" --root "$REPO_DIR" 2>/dev/null)
+else
+  NORMALIZED='{"status":"unknown","paths":[],"diagnostics":["normalizer-unavailable"]}'
+fi
+STATUS=$(printf '%s' "$NORMALIZED" | jq -r '.status // "unknown"' 2>/dev/null)
+PATHS=$(printf '%s' "$NORMALIZED" | jq -r '.paths[]?' 2>/dev/null)
 
 RENDER="$REPO_DIR/skills/visual-planner/render_plan.py"
-[ -f "$RENDER" ] || exit 0
-
-OUT=$(python3 "$RENDER" "$FILE" --summarize 2>&1)
-if [ $? -eq 0 ]; then
-  HTML=$(printf '%s' "$OUT" | grep -oE '/[^ ]*PLAN\.html' | head -1)
-  jq -cn --arg h "$HTML" '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:("🖼️ PLAN.html auto-rendered: " + $h)}}'
-else
-  jq -cn --arg o "$OUT" '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:("⚠️ PLAN.html render failed:\n" + $o)}}'
+MESSAGES=""
+if [ -f "$RENDER" ]; then
+  while IFS= read -r rel; do
+    [ -n "$rel" ] || continue
+    case "$rel" in specs/*/PLAN.md) ;; *) continue ;; esac
+    FILE="$REPO_DIR/$rel"
+    [ -f "$FILE" ] || continue
+    OUT=$(python3 "$RENDER" "$FILE" --summarize 2>&1)
+    if [ $? -eq 0 ]; then
+      HTML=$(printf '%s' "$OUT" | grep -oE '/[^ ]*PLAN\.html' | head -1)
+      MESSAGES="${MESSAGES}${MESSAGES:+
+}🖼️ PLAN.html auto-rendered: $HTML"
+    else
+      MESSAGES="${MESSAGES}${MESSAGES:+
+}⚠️ PLAN.html render failed for $rel: $OUT"
+    fi
+  done <<EOF
+$PATHS
+EOF
 fi
+
+if [ "$STATUS" != "known" ]; then
+  DIAG=$(printf '%s' "$NORMALIZED" | jq -r '.diagnostics | join(", ")' 2>/dev/null)
+  MESSAGES="${MESSAGES}${MESSAGES:+
+}render-plan-on-write: edit payload was only partially understood (${DIAG:-unparsed payload}); valid PLAN.md paths were processed."
+fi
+[ -z "$MESSAGES" ] || jq -cn --arg message "$MESSAGES" '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:$message}}'
 exit 0

@@ -98,12 +98,12 @@ POLICY=""
 BACKUP_TS=""
 
 # Deploy manifest: the set of top-level `<dir>/<entry>` paths the harness deploys this run,
-# under the 5 synced dirs. Written to $OUT/.harness-deployed at the end; read at the start of
+# under the 6 synced dirs. Written to $OUT/.harness-deployed at the end; read at the start of
 # the NEXT deploy to prune entries the harness previously shipped but source has since deleted.
 # Safe by construction: only paths in the PREVIOUS harness manifest are ever eligible to prune,
 # so a consumer's own additions (never in the manifest) are never touched. See
 # specs/deploy-prune-orphans/.
-SYNCED_DIRS_RE='^(skills|agents|hooks|rules|templates)/[^/]+$'
+SYNCED_DIRS_RE='^(skills|agents|hooks|rules|templates|runtime)/[^/]+$'
 DEPLOYED_LIST="$(mktemp)"        # accumulates `<dir>/<entry>` written this run
 record_deployed() { printf '%s\n' "$1" >> "$DEPLOYED_LIST"; }
 
@@ -298,6 +298,12 @@ copy_dir()        {
     base="$(basename "$entry")"
     rel="$1/$base"
 
+    # Agent contracts/bindings are source-time adapter inputs, not Claude runtime files.
+    # The semantic Markdown roles are copied below and then deterministically rendered.
+    if [ "$1" = "agents" ] && [ "${base##*.}" = "json" ]; then
+      continue
+    fi
+
     # _archive is stripped post-copy (strip_archive) — never a harness-owned live path.
     [ "$base" = "_archive" ] || record_deployed "$rel"
 
@@ -315,6 +321,10 @@ copy_dir()        {
   done
 }
 strip_archive()   { rm -rf "$OUT/skills/_archive"; }   # archived skills must not register as live
+render_agents()   {
+  python3 scripts/render_agent_definitions.py \
+    --root "$ROOT" --runtime claude --output-dir "$OUT/agents"
+}
 derive_settings() {
   # Point relative hook commands at the deployed .claude/ copies via $CLAUDE_PROJECT_DIR so they
   # resolve from any launch directory. Absolute / $-prefixed commands are left untouched.
@@ -341,9 +351,15 @@ derive_settings() {
       | .hooks = (
           (($curh | keys) + ($newh | keys) | unique)
           | reduce .[] as $ev ({};
-              # foreign blocks for this event: drop harness commands, then drop now-empty blocks
+              # foreign blocks for this event: drop harness commands, then drop now-empty blocks.
+              # A harness command is either one in the CURRENT source set ($hcmds) OR any command
+              # under the derived harness hooks dir ($CLAUDE_PROJECT_DIR/.claude/hooks/) — that dir
+              # is entirely harness-owned, so a hook REMOVED from source is pruned too (no stale
+              # double-registration). Consumer foreign hooks live elsewhere and pass through.
               ( ($curh[$ev] // [])
-                | map(.hooks |= map(select(.command as $c | $hcmds | index($c) | not)))
+                | map(.hooks |= map(select(.command as $c
+                    | ($hcmds | index($c) | not)
+                      and ($c | startswith("$CLAUDE_PROJECT_DIR/.claude/hooks/") | not))))
                 | map(select((.hooks | length) > 0)) ) as $foreign
               | .[$ev] = ($foreign + ($newh[$ev] // []))
             )
@@ -380,10 +396,11 @@ preflight_protected
 
 # ---------- pipeline ----------
 step "Preparing ${B}.claude/${R}"            prep_dir
-for d in skills agents hooks rules templates; do
+for d in skills agents hooks rules templates runtime; do
   [ -e "$d" ] || continue
   step "Syncing ${B}$d/${R}"                 copy_dir "$d"
 done
+step "Rendering ${B}Claude agent bindings${R}" render_agents
 step "Stripping archived skills"             strip_archive
 step "Deriving ${B}settings.json${R} ${D}(hook paths)${R}" derive_settings
 

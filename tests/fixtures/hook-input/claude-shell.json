@@ -1,0 +1,1 @@
+{"hook_event_name":"PreToolUse","session_id":"session-redacted","tool_name":"Bash","tool_input":{"command":"git status"}}

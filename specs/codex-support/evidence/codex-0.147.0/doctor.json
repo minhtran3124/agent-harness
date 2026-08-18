@@ -1,0 +1,126 @@
+{
+  "capture": "local-cli-non-model",
+  "captured_at": "2026-08-10",
+  "cli_version": "0.147.0",
+  "config_hash": "not-applicable",
+  "platform": "macos-arm64",
+  "result": {
+    "checks": [
+      {
+        "category": "app-server",
+        "id": "app_server.status",
+        "status": "ok"
+      },
+      {
+        "category": "auth",
+        "id": "auth.credentials",
+        "status": "ok"
+      },
+      {
+        "category": "config",
+        "id": "config.load",
+        "status": "ok"
+      },
+      {
+        "category": "git",
+        "id": "git.environment",
+        "status": "ok"
+      },
+      {
+        "category": "install",
+        "id": "installation",
+        "status": "ok"
+      },
+      {
+        "category": "mcp",
+        "id": "mcp.config",
+        "status": "ok"
+      },
+      {
+        "category": "network",
+        "id": "network.env",
+        "status": "ok"
+      },
+      {
+        "category": "reachability",
+        "id": "network.provider_reachability",
+        "status": "ok"
+      },
+      {
+        "category": "websocket",
+        "id": "network.websocket_reachability",
+        "status": "ok"
+      },
+      {
+        "category": "runtime",
+        "id": "runtime.provenance",
+        "status": "ok"
+      },
+      {
+        "category": "search",
+        "id": "runtime.search",
+        "status": "ok"
+      },
+      {
+        "category": "sandbox",
+        "id": "sandbox.helpers",
+        "status": "ok"
+      },
+      {
+        "category": "state",
+        "id": "state.paths",
+        "status": "ok"
+      },
+      {
+        "category": "threads",
+        "id": "state.rollout_db_parity",
+        "status": "ok"
+      },
+      {
+        "category": "system",
+        "id": "system.environment",
+        "status": "ok"
+      },
+      {
+        "category": "terminal",
+        "id": "terminal.env",
+        "status": "ok"
+      },
+      {
+        "category": "title",
+        "id": "terminal.title",
+        "status": "ok"
+      },
+      {
+        "category": "updates",
+        "id": "updates.status",
+        "status": "ok"
+      }
+    ],
+    "doctor_overall_status": "ok",
+    "doctor_schema_version": 1,
+    "features": {
+      "hooks": {
+        "enabled": true,
+        "maturity": "stable"
+      },
+      "multi_agent": {
+        "enabled": true,
+        "maturity": "stable"
+      },
+      "plugins": {
+        "enabled": true,
+        "maturity": "stable"
+      },
+      "unified_exec": {
+        "enabled": true,
+        "maturity": "stable"
+      }
+    },
+    "plugin_command": true,
+    "status": "observed",
+    "strict_config_flag": true
+  },
+  "runtime": "codex",
+  "schema_version": 1
+}

@@ -16,7 +16,37 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
     steps:
+      # fetch-depth: 0 is load-bearing, not hygiene. run-tests.sh's verify-row lint scopes
+      # itself to SUMMARY/PLAN files changed vs a base ref; under the default shallow
+      # checkout no base ref exists, so the lint skipped on every run since it shipped.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # Materialise origin/<base> explicitly rather than relying on what checkout's refspec
+      # happens to leave behind — same two-step the strict-gate job below already uses and
+      # which is proven to work in this repo's CI. Skipped on push builds, where there is no
+      # base ref; resolve-base-ref.sh then reports "no base ref declared" and the lint skips
+      # with a named reason instead of silently.
+      - name: Fetch base ref (pull requests only)
+        if: github.event_name == 'pull_request'
+        # Via env, not inline `${{ }}`: expressions are substituted into the script text
+        # before bash parses it, so quotes do not contain a branch name with shell
+        # metacharacters. Low reachability (needs push access to the base repo) but free to close.
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: git fetch --no-tags origin "$BASE_REF"
+      # scripts/lint-skill-bash.sh degrades to syntax-only when shellcheck is missing, so the
+      # suite passes either way — but CI is where the shellcheck pass must actually run, or the
+      # gate is only as strong as whatever each contributor happens to have installed.
+      # ubuntu-latest ships it; macos-latest does not.
+      - name: Install shellcheck (macOS)
+        if: runner.os == 'macOS'
+        run: brew install shellcheck
+      # This is intentionally explicit even though run-tests.sh discovers the same shell
+      # contract. It makes the Codex alpha boundary a named macOS/Linux CI result; WSL is
+      # not represented by GitHub-hosted CI and therefore remains advisory by contract.
+      - name: Run Codex advisory-alpha contract
+        run: bash tests/scripts/codex-alpha-contract.test.sh
       - name: Run harness test suite
         run: bash scripts/run-tests.sh
 
@@ -33,6 +63,21 @@ jobs:
         with:
           fetch-depth: 0
       - name: Fetch base ref
-        run: git fetch --no-tags origin "${{ github.base_ref }}"
+        # Via env, not inline `${{ }}`: expressions are substituted into the script text
+        # before bash parses it, so quotes do not contain a branch name with shell
+        # metacharacters. Low reachability (needs push access to the base repo) but free to close.
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: git fetch --no-tags origin "$BASE_REF"
+      # ci-strict-gate.sh re-runs each changed high-risk SUMMARY's `### Verify`
+      # rows for machine-verified proof. Those commands can be the project's test
+      # runner (e.g. `python3 -m pytest ...` for an SC-coverage row), so the gate
+      # job must have pytest on the same `python3` — the `test` job relies on
+      # ambient pytest, which is not guaranteed here. Provision it deterministically.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install proof runner (pytest)
+        run: python -m pip install --quiet pytest
       - name: Strict gate (hard-gate paths require high-risk SUMMARY + verified proof)
         run: bash scripts/ci-strict-gate.sh "origin/${{ github.base_ref }}"

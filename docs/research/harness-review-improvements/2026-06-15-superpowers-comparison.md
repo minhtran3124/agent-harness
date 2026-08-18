@@ -1,109 +1,109 @@
-# Nghiên cứu: So sánh `superpowers` với skill `brainstorming` của chúng ta
+# Research: Comparing `superpowers` with our `brainstorming` skill
 
-> Ngày: 2026-06-15
-> Nguồn: `obra/superpowers` (GitHub, nhánh main) — skill `skills/brainstorming/SKILL.md` và README plugin
-> Phạm vi: Phân tích đối chiếu để rút ra bài học cho `skills/brainstorming/SKILL.md`
-> Phương pháp: Lấy nội dung qua WebFetch (model nhỏ tóm tắt, không phải raw 100%) rồi đối chiếu với skill đang có trong repo. Một số sắc thái câu chữ có thể mất; các kết luận cấu trúc đã được kiểm chứng bằng so trùng văn bản.
+> Date: 2026-06-15
+> Source: `obra/superpowers` (GitHub, main branch) — the `skills/brainstorming/SKILL.md` skill and the plugin README
+> Scope: Side-by-side analysis to extract lessons for `skills/brainstorming/SKILL.md`
+> Method: Content retrieved via WebFetch (summarized by a small model, not 100% raw) and then compared against the skill currently in the repo. Some wording nuances may be lost; the structural conclusions were verified by text matching.
 
 ---
 
-## 0. Phát hiện quan trọng nhất: đây là QUAN HỆ HUYẾT THỐNG, không phải đối thủ
+## 0. The most important finding: this is a BLOODLINE relationship, not a rivalry
 
-Khác với `ce-brainstorm` (một sản phẩm song song có kỹ thuật mới để vay mượn), **`superpowers` là TỔ TIÊN của skill brainstorming — và của gần như toàn bộ workflow — trong repo này.** Bằng chứng: các skill cùng tên xuất hiện ở cả hai bên:
+Unlike `ce-brainstorm` (a parallel product with new techniques to borrow), **`superpowers` is the ANCESTOR of the brainstorming skill — and of nearly the entire workflow — in this repo.** Evidence: identically named skills appear on both sides:
 
 `brainstorming`, `writing-plans`, `executing-plans`, `subagent-driven-development`, `using-git-worktrees`, `finishing-a-development-branch`, `systematic-debugging`, `requesting-code-review`, `verification-before-completion`.
 
-Riêng skill `brainstorming`: bản của ta **gần như giống hệt** superpowers, và ta đã chủ động **nâng cấp** nó ở vài điểm. Nói cách khác: ta không "học cái mới" từ superpowers brainstorming — ta đã là **superset** của nó. Điều đáng làm là (a) xác nhận dòng dõi để biết phải đồng bộ gì với upstream, và (b) nhặt vài thứ nhỏ ta đã bỏ qua khi fork.
+For the `brainstorming` skill specifically: our version is **almost identical** to superpowers, and we have deliberately **upgraded** it in a few places. In other words: we are not "learning something new" from superpowers brainstorming — we already are a **superset** of it. What is worth doing is (a) confirming the lineage so we know what to sync with upstream, and (b) picking up a few small things we skipped when forking.
 
-Thứ hạng độ tinh vi của 3 skill brainstorm: **ce-brainstorm (cao nhất) > của ta (superpowers + subagent review + xia2 + lane) > superpowers brainstorming (gốc/baseline).**
+Sophistication ranking of the 3 brainstorm skills: **ce-brainstorm (highest) > ours (superpowers + subagent review + xia2 + lane) > superpowers brainstorming (original/baseline).**
 
 ---
 
-## 1. `superpowers` là gì
+## 1. What `superpowers` is
 
-Một plugin đóng gói nguyên một **phương pháp luận phát triển phần mềm**, không phải các gợi ý code rời rạc. Triết lý lõi (theo README):
+A plugin that packages an entire **software development methodology**, not a scattering of coding tips. Core philosophy (per the README):
 
-1. **Test-Driven Development** — test luôn đi trước code.
-2. **Systematic over ad-hoc** — quy trình thắng phỏng đoán.
-3. **Complexity reduction** — đơn giản là mục tiêu hàng đầu.
-4. **Evidence over claims** — kiểm chứng trước khi tuyên bố thành công.
+1. **Test-Driven Development** — tests always come before code.
+2. **Systematic over ad-hoc** — process beats guesswork.
+3. **Complexity reduction** — simplicity is the top-priority goal.
+4. **Evidence over claims** — verify before declaring success.
 
-Điểm đặc trưng: nó **"lùi lại và hỏi bạn thực sự đang cố làm gì"** trước khi thiết kế, và **bắt buộc** một pipeline tuần tự (không phải gợi ý tùy chọn):
+Distinctive point: it **"steps back and asks what you are actually trying to do"** before designing, and it **mandates** a sequential pipeline (not an optional suggestion):
 
 > brainstorming → design validation → planning → subagent-driven development → testing → code review → branch completion
 
-Skill `subagent-driven-development` của nó dispatch agent mới cho mỗi task với **review hai tầng** (tuân thủ spec → chất lượng code) — đây chính là mô hình mà `rules/orchestration.md` và `wave-parallelism.md` của ta đang dùng.
+Its `subagent-driven-development` skill dispatches a fresh agent for each task with **two-tier review** (spec compliance → code quality) — this is exactly the model our `rules/orchestration.md` and `wave-parallelism.md` use.
 
 ---
 
-## 2. Skill `brainstorming`: cái gì GIỐNG HỆT (ta thừa hưởng)
+## 2. The `brainstorming` skill: what is IDENTICAL (we inherited it)
 
-- Quy trình **9 bước** (explore context → offer visual companion → ask Qs → 2-3 approaches → present design → write doc → review → user review → writing-plans).
-- **HARD-GATE** câu chữ y hệt: *"Do NOT invoke any implementation skill, write any code, scaffold any project, or take any implementation action until you have presented a design and the user has approved it."*
-- Anti-pattern **"This Is Too Simple To Need A Design"** — y hệt.
-- **Key Principles** y hệt: one-question-at-a-time, multiple-choice preferred, YAGNI ruthlessly, explore alternatives, incremental validation, be flexible.
-- **Visual companion** (mockup trình duyệt).
-- Bước 4: **dẫn bằng phương án khuyến nghị** (giống ta — và đây chính là điểm `ce-brainstorm` làm ngược lại = present-then-recommend; xem doc ce-brainstorm).
-- Design chia section theo độ phức tạp, duyệt từng section.
-- Trạng thái kết thúc = `writing-plans`.
+- The **9-step** process (explore context → offer visual companion → ask Qs → 2-3 approaches → present design → write doc → review → user review → writing-plans).
+- **HARD-GATE** with identical wording: *"Do NOT invoke any implementation skill, write any code, scaffold any project, or take any implementation action until you have presented a design and the user has approved it."*
+- The **"This Is Too Simple To Need A Design"** anti-pattern — identical.
+- Identical **Key Principles**: one-question-at-a-time, multiple-choice preferred, YAGNI ruthlessly, explore alternatives, incremental validation, be flexible.
+- **Visual companion** (browser mockup).
+- Step 4: **lead with the recommended approach** (same as us — and this is exactly the point where `ce-brainstorm` does the opposite = present-then-recommend; see the ce-brainstorm doc).
+- Design split into sections by complexity, reviewed section by section.
+- Terminal state = `writing-plans`.
 
 ---
 
-## 3. Cái gì ta ĐÃ THAY ĐỔI so với superpowers gốc
+## 3. What we HAVE CHANGED relative to the original superpowers
 
-| Khía cạnh | superpowers (gốc) | của ta (đã sửa) | Đánh giá |
+| Aspect | superpowers (original) | ours (modified) | Assessment |
 |---|---|---|---|
-| Bước 6 — đường dẫn doc | `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md` (phẳng, theo ngày) | `specs/<slug>/design.md` (theo thư mục slug, track trong git) | Của ta hợp với cấu trúc spec→plan→implement per-slug |
-| Bước 7 — review spec | **Self-review** (tự quét: placeholder/TBD, mâu thuẫn nội tại, đúng phạm vi, mơ hồ) | **Vòng lặp subagent `spec-document-reviewer`** (độc lập, tối đa 5 vòng) | **Ta nâng cấp** — review độc lập > tự review |
-| Bước nghiên cứu code cũ | Không có (đi thẳng brainstorm → writing-plans) | Chèn **`xia2`** trước writing-plans | Ta thêm khâu "khám phá cái đã tồn tại" |
-| Đọc quyết định cũ | Không có | Đọc `docs/solutions/` decision-track (tránh đề xuất lại phương án đã bác) | Ta thêm |
-| Phân loại rủi ro | Không có | Tích hợp `feature-intake` (lane tiny/normal/high-risk) | Ta thêm (dù skill brainstorming chưa tận dụng — xem doc ce-brainstorm) |
+| Step 6 — doc path | `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md` (flat, by date) | `specs/<slug>/design.md` (by slug directory, tracked in git) | Ours fits the per-slug spec→plan→implement structure |
+| Step 7 — spec review | **Self-review** (self-scan: placeholder/TBD, internal contradictions, correct scope, ambiguity) | **`spec-document-reviewer` subagent loop** (independent, up to 5 rounds) | **We upgraded it** — independent review > self-review |
+| Existing-code research step | Absent (goes straight from brainstorm → writing-plans) | Inserts **`xia2`** before writing-plans | We added a "discover what already exists" step |
+| Reading past decisions | Absent | Reads the `docs/solutions/` decision track (avoids re-proposing a rejected approach) | We added it |
+| Risk classification | Absent | Integrates `feature-intake` (lane tiny/normal/high-risk) | We added it (though the brainstorming skill does not yet exploit it — see the ce-brainstorm doc) |
 
 ---
 
-## 4. Vậy còn HỌC được gì từ superpowers?
+## 4. So what CAN we still learn from superpowers?
 
-Vì ta đã là superset, bài học ít hơn ce-brainstorm — nhưng vẫn có thật:
+Since we are already a superset, there is less to learn than from ce-brainstorm — but it is real:
 
-### 1. Self-review bước 7 như một cổng "luôn-bật, chi phí thấp"
-Đây là điểm vay được giá trị nhất. Vòng subagent `spec-document-reviewer` của ta **mạnh nhưng nặng** — quá mức cho công việc nhỏ (tiny/Lightweight). Checklist self-review của superpowers (quét TBD/placeholder, nhất quán nội tại, đúng phạm vi, khử mơ hồ) là cổng **nhẹ, chạy luôn**.
+### 1. The step-7 self-review as an "always-on, low-cost" gate
+This is the most valuable borrowable point. Our `spec-document-reviewer` subagent loop is **strong but heavy** — overkill for small work (tiny/Lightweight). The superpowers self-review checklist (scan for TBD/placeholder, internal consistency, correct scope, ambiguity removal) is a **light, always-running** gate.
 
-→ **Ghép với khuyến nghị lane-awareness** từ doc `ce-brainstorm`: dùng **self-review của superpowers làm tầng nhẹ** (cho tiny/Lightweight) và **giữ vòng subagent cho normal/high-risk**. Tức là superpowers cấp cho ta đúng "cơ chế review tầng rẻ" mà phần co-giãn-nghi-thức đang cần.
+→ **Combine with the lane-awareness recommendation** from the `ce-brainstorm` doc: use the **superpowers self-review as the light tier** (for tiny/Lightweight) and **keep the subagent loop for normal/high-risk**. That is, superpowers gives us exactly the "cheap-tier review mechanism" that the ceremony-scaling piece needs.
 
-### 2. Nhận thức dòng dõi & đồng bộ với upstream
-Vì 9 skill của ta fork từ superpowers, mỗi lần upstream sửa HARD-GATE, Key Principles, hay quy trình brainstorm, ta nên biết để quyết định đồng bộ hay cố tình rẽ nhánh. Nên ghi rõ "đây là fork của superpowers, các điểm rẽ nhánh có chủ đích là: subagent review, xia2, lane, docs/solutions, specs/<slug>".
+### 2. Lineage awareness & syncing with upstream
+Since 9 of our skills are forked from superpowers, every time upstream changes the HARD-GATE, the Key Principles, or the brainstorm process, we should know about it so we can decide whether to sync or deliberately diverge. We should state explicitly: "this is a fork of superpowers; the intentional divergence points are: subagent review, xia2, lane, docs/solutions, specs/<slug>".
 
-### 3. Triết lý xác nhận hướng đi của ta
-Bốn nguyên tắc lõi của superpowers (TDD, systematic-over-ad-hoc, complexity-reduction, evidence-over-claims) đã nằm sẵn trong `rules/behavior.md` và `rules/orchestration.md` (mục "evidence over assertion"). Không có gì mới phải thêm — chỉ xác nhận ta đang đi đúng.
+### 3. The philosophy confirms our direction
+The four core superpowers principles (TDD, systematic-over-ad-hoc, complexity-reduction, evidence-over-claims) are already present in `rules/behavior.md` and `rules/orchestration.md` (the "evidence over assertion" section). Nothing new to add — just confirmation that we are on the right track.
 
-### 4. Các meta-skill đáng tham khảo (ngoài brainstorming)
-- `writing-skills` — skill để viết skill (ta đang tham chiếu `/skill-creator` ở ngoài).
-- `dispatching-parallel-agents` — mô hình fan-out agent (ta đã có trong orchestration/wave-parallelism).
-Không trực tiếp về brainstorming nhưng là nguồn tham khảo khi tinh chỉnh hệ thống.
+### 4. Meta-skills worth referencing (beyond brainstorming)
+- `writing-skills` — a skill for writing skills (we currently reference `/skill-creator` externally).
+- `dispatching-parallel-agents` — the agent fan-out model (we already have it in orchestration/wave-parallelism).
+Not directly about brainstorming, but a useful reference when tuning the system.
 
 ---
 
-## 5. So sánh chéo: superpowers vs ce-brainstorm (cho brainstorming)
+## 5. Cross-comparison: superpowers vs ce-brainstorm (for brainstorming)
 
-| Kỹ thuật | superpowers | của ta | ce-brainstorm |
+| Technique | superpowers | ours | ce-brainstorm |
 |---|---|---|---|
-| Co giãn nghi thức theo scope | ❌ (cố định) | ⚠️ (có lane nhưng skill chưa dùng) | ✅ (Lightweight/Standard/Deep) |
+| Ceremony scaling by scope | ❌ (fixed) | ⚠️ (has lane, but the skill does not use it) | ✅ (Lightweight/Standard/Deep) |
 | Product Pressure Test (gap lenses) | ❌ | ❌ | ✅ |
-| Synthesis checkpoint trước khi viết | ❌ | ❌ | ✅ |
-| Anti-anchoring (present-then-recommend) | ❌ (dẫn bằng khuyến nghị) | ❌ (dẫn bằng khuyến nghị) | ✅ |
-| Review spec | Self-review (nhẹ) | Subagent loop (nặng, độc lập) ✅ | Skill riêng ce-doc-review |
-| Visual companion tương tác | ✅ | ✅ | ❌ (chỉ diagram tĩnh) |
-| Khám phá code cũ trước plan | ❌ | ✅ (xia2) | ⚠️ (Phase 1.1 scan) |
-| Phát hiện resume brainstorm | ❌ | ❌ | ✅ |
+| Synthesis checkpoint before writing | ❌ | ❌ | ✅ |
+| Anti-anchoring (present-then-recommend) | ❌ (leads with the recommendation) | ❌ (leads with the recommendation) | ✅ |
+| Spec review | Self-review (light) | Subagent loop (heavy, independent) ✅ | Separate ce-doc-review skill |
+| Interactive visual companion | ✅ | ✅ | ❌ (static diagrams only) |
+| Existing-code discovery before plan | ❌ | ✅ (xia2) | ⚠️ (Phase 1.1 scan) |
+| Brainstorm resume detection | ❌ | ❌ | ✅ |
 
 ---
 
-## 6. Khuyến nghị tổng hợp (gộp cả hai nghiên cứu)
+## 6. Consolidated recommendations (merging both research efforts)
 
-1. **Làm brainstorming nhận biết lane** + **dùng self-review của superpowers cho tầng nhẹ**, giữ subagent loop cho normal/high-risk. (Giải quyết mâu thuẫn với `orchestration.md`, đồng thời tận dụng cơ chế rẻ của superpowers.)
-2. **Thêm Product Pressure Test** (5 gap lenses) — học từ ce-brainstorm; tính mới cao nhất.
-3. **Thêm synthesis/scope-confirmation checkpoint** trước khi viết `design.md` — học từ ce-brainstorm.
-4. **Quyết định vấn đề mỏ neo** (present-then-recommend vs lead-with-recommendation) — superpowers VÀ ta đều dẫn bằng khuyến nghị; ce-brainstorm phản biện điều này. Cần con người quyết.
-5. **Ghi chú dòng dõi**: đánh dấu rõ skill là fork của superpowers + danh sách điểm rẽ nhánh có chủ đích, để đồng bộ upstream về sau.
+1. **Make brainstorming lane-aware** + **use the superpowers self-review for the light tier**, keeping the subagent loop for normal/high-risk. (Resolves the conflict with `orchestration.md` while taking advantage of the cheap superpowers mechanism.)
+2. **Add the Product Pressure Test** (5 gap lenses) — learned from ce-brainstorm; highest novelty.
+3. **Add a synthesis/scope-confirmation checkpoint** before writing `design.md` — learned from ce-brainstorm.
+4. **Decide the anchoring question** (present-then-recommend vs lead-with-recommendation) — superpowers AND we both lead with the recommendation; ce-brainstorm argues against this. Needs a human decision.
+5. **Lineage note**: clearly mark the skill as a fork of superpowers + list the intentional divergence points, for future upstream syncing.
 
-Tất cả đều đụng tới core skill (`skills/brainstorming/SKILL.md`) — loại edit rủi ro cao hơn theo rules của ta, nên dừng ở mức phân tích.
+All of these touch the core skill (`skills/brainstorming/SKILL.md`) — a higher-risk class of edit under our rules, so we stop at the analysis level.

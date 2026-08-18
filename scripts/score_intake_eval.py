@@ -2,7 +2,7 @@
 """Score feature-intake classifier eval runs against labeled fixtures.
 
 Auto-score / manual-run: the classification itself is produced by a subagent running
-`/feature-intake` blind to `truth.md` (integrity — see evals/workflow/intake-classifier/README.md).
+the feature-intake skill blind to `truth.md` (integrity — see evals/workflow/intake-classifier/README.md).
 This script is the deterministic scorer over those produced classifications.
 
 Usage:
@@ -246,7 +246,7 @@ def cmd_run(run_dir, fixtures_dir, strict):
         + (f"  ·  {missing} not run" if missing else "")
     )
     print(
-        "\n> Scope (claim discipline): this measures ONLY `/feature-intake` against these "
+        "\n> Scope (claim discipline): this measures ONLY the feature-intake skill against these "
         f"{n} fixtures — not other skills, not the full chain, not real-world rate "
         "(`not_observed != absent`)."
     )

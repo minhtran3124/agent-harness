@@ -7,9 +7,11 @@
 # declared Lane in specs/<slug>/SUMMARY.md is below `high-risk`, the commit is
 # BLOCKED (exit 2) — the agent under-classified its own work.
 #
-# CANONICAL GATE LIST: harness-manifest.json (hard_gates.detectable). The add_cat +
-# category_mode categories below MUST match it exactly — scripts/check_manifest.py fails
-# CI on any drift. Edit the manifest, then mirror it here.
+# CANONICAL GATE LIST + MODES: harness-manifest.json (hard_gates.detectable). The
+# manifest is the mode authority — category_mode() reads each slug's `mode` (block|warn)
+# from it at runtime. Only the add_cat detector set is mirrored here;
+# scripts/check_manifest.py fails CI if that set drifts from the manifest.
+# To loosen or re-tighten a gate, edit its manifest `mode` field — not this file.
 #
 # Safety for a docs/framework repo:
 #   - Keyword categories scan only ADDED CODE lines, excluding prose
@@ -18,8 +20,14 @@
 #   - When a signal is present but NO Lane is declared, this WARNS (exit 0)
 #     rather than blocking — there is nothing to corroborate against.
 #     Set RISK_CORROBORATION_STRICT=1 to make the no-Lane case fail-closed.
-#   - Per-category mode (block|warn) is configured in category_mode() below
-#     (Phase 7 loosening). Default: every category blocks.
+#   - Per-category mode (block|warn) comes from EXACTLY TWO index-safe sources: the
+#     git INDEX copy of harness-manifest.json (`git show :path`), else the embedded
+#     defaults in hooks/lib/gate-modes.default.sh (2 warn / 7 block parity). A worktree
+#     or .claude/ policy file is NEVER read (invariant #2, SC-8). Unknown slug / missing
+#     mode within a present index manifest still => block (fail-safe). Consumer repos
+#     with no tracked manifest get the embedded parity, not block-all.
+#     (Assumes `jq`, which stdin parsing already requires — without jq this hook
+#     never gates anything at all; that is pre-existing behavior, not mode fallback.)
 #
 # Exits 0 to allow, 2 to block. No set -e (flow is controlled explicitly).
 
@@ -35,33 +43,58 @@ command -v hook_cmd_is_git_commit >/dev/null 2>&1 || {
 }
 hook_cmd_is_git_commit "$COMMAND" || exit 0
 
+source "$(cd "$(dirname "$0")" && pwd)/lib/lane.sh" 2>/dev/null
+# Fail closed: same convention as the git-command lib above — a missing Lane-resolution
+# lib must not silently let corroboration run against no Lane at all.
+command -v hook_lib_resolve_lane >/dev/null 2>&1 || {
+  echo "[RISK] lane lib missing — redeploy harness (blocking to fail safe)." >&2
+  exit 2
+}
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null)"
 [ -z "$REPO_DIR" ] && REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$REPO_DIR" || exit 0
 
-# ── Per-category mode (Phase 7): echo "block" or "warn" ──────────────────
-# Loosen a category WITHOUT editing this file by listing it in RISK_WARN_CATEGORIES
-# (comma/space separated), e.g. RISK_WARN_CATEGORIES="data-loss/migration".
+# ── Per-category mode: harness-manifest.json is the authority ────────────
+# Durable loosening: set the category's "mode" to "warn" in harness-manifest.json.
+# Session-scoped loosening: list categories in RISK_WARN_CATEGORIES (comma/space
+# separated), e.g. RISK_WARN_CATEGORIES="data-loss/migration". The variable must be
+# in the HOOK'S OWN process environment — .claude/settings.local.json -> "env", or a
+# var exported in the session. An inline `VAR=x git commit` prefix does NOT work:
+# a PreToolUse hook runs before the command, so the prefix never reaches it.
 # Loosen one at a time; never auth/external-provider first; revert on any incident.
+# Read the manifest from the INDEX (`git show :path`), not the worktree — the risk
+# signals and the Lane are both index-side, so the mode must be too. Otherwise an
+# UNSTAGED "mode": "warn" edit would loosen a gate for a commit whose tree still
+# ships block-mode (Codex review, PR #160). INVARIANT #2 (SC-8): mode policy comes
+# from EXACTLY TWO index-safe sources — the git INDEX here, else the embedded defaults
+# below. NEVER a worktree file and NEVER .claude/harness-manifest.json.
+GATE_MODES=$(git show :harness-manifest.json 2>/dev/null | jq -r \
+  '.hard_gates.detectable[]? | "\(.slug)=\(.mode // "block")"' 2>/dev/null || true)
+# Index copy absent/unreadable/invalid => fall back to the embedded defaults shipped
+# beside this hook (2 warn / 7 block parity), NOT block-all. The defaults are compile-
+# time constants inside the harness's own trust boundary — an unstaged edit cannot
+# touch them — so a consumer repo that does not track the manifest still gets the
+# intended modes. (Missing default file => "" => every category blocks, still fail-safe.)
+if [ -z "$GATE_MODES" ]; then
+  source "$SCRIPT_DIR/lib/gate-modes.default.sh" 2>/dev/null
+  GATE_MODES="$GATE_MODES_DEFAULT"
+fi
+
 category_mode() {
   local _wl
   _wl=$(echo " ${RISK_WARN_CATEGORIES:-} " | tr ',' ' ')
   case "$_wl" in
     *" $1 "*) echo "warn"; return ;;
   esac
-  case "$1" in
-    auth)               echo "block" ;;
-    authorization)      echo "block" ;;
-    data-loss/migration) echo "block" ;;
-    audit/security)     echo "block" ;;
-    external-provider)  echo "block" ;;
-    public-contract)    echo "block" ;;
-    weakening-validation) echo "block" ;;
-    high-blast)         echo "block" ;;
-    workflow-engine)    echo "block" ;;
-    *)                  echo "block" ;;
-  esac
+  # Manifest lookup — anything but an explicit "warn" blocks (fail-safe: absent
+  # slug, missing mode, missing/unreadable/invalid manifest all fall through).
+  if printf '%s\n' "$GATE_MODES" | grep -qxF "$1=warn"; then
+    echo "warn"
+  else
+    echo "block"
+  fi
 }
 
 # ── Gather the staged diff ───────────────────────────────────────────────
@@ -79,6 +112,43 @@ CODE_ADDED=$(git diff --cached -U0 -- . ':!*.md' ':!docs/' ':!specs/' ':!skills/
 # Removed lines (for weakening-validation), same exclusions + comment strip
 CODE_REMOVED=$(git diff --cached -U0 -- . ':!*.md' ':!docs/' ':!specs/' ':!skills/' ':!hooks/' ':!.claude/' 2>/dev/null \
   | grep -E '^-[^-]' | grep -vE '^-[[:space:]]*#' || true)
+
+# ── Resolve the declared Lane ────────────────────────────────────────────
+# Moved ahead of category scanning so the diff-size signal below (which needs
+# LANE_VAL) still runs even when no hard-gate category trips (that path exits
+# early, before the original Lane-resolution block further down).
+# Shared with blast-radius-check.sh via hooks/lib/lane.sh: prefer a staged SUMMARY.md,
+# else the status:active plan's sibling SUMMARY.md — never a bare "most recently
+# modified on disk" guess, which could borrow an unrelated spec's Lane for a commit
+# that never touched specs/ at all.
+LANE=$(hook_lib_resolve_lane "$REPO_DIR" "$STAGED_PATHS")
+# Normalize: extract tiny|normal|high-risk
+LANE_VAL=$(echo "$LANE" | tr 'A-Z' 'a-z' | grep -oE 'tiny|normal|high-risk' | head -1)
+
+# ── Diff-size sanity signal (warn-only — never affects exit code) ────────
+# Large diffs for a lightweight declared lane are a simplicity smell.
+# tiny=150, normal=600 changed (added+removed) lines; high-risk / no lane:
+# no threshold (ceremony is already expected, or there is nothing to compare
+# against) — skip the numstat scan entirely for those, it's the common case.
+SIZE_THRESHOLD=""
+case "$LANE_VAL" in
+  tiny)   SIZE_THRESHOLD=150 ;;
+  normal) SIZE_THRESHOLD=600 ;;
+esac
+if [ -n "$SIZE_THRESHOLD" ]; then
+  # Deliberately UNFILTERED (no pathspec exclusions) — unlike $CODE_ADDED/$CODE_REMOVED
+  # above, this signal must see the full diff (skills/, hooks/, docs/, etc. included)
+  # or a large diff confined to those excluded paths would compute near-zero and never
+  # warn. --numstat gives "<added>\t<removed>\t<path>" per file; binary files report
+  # "-\t-\t<path>" and are skipped (treated as 0, not an arithmetic error).
+  CHANGED_LINES=$(git diff --cached --numstat 2>/dev/null | awk '
+    { a=$1; r=$2; if (a ~ /^[0-9]+$/) sum+=a; if (r ~ /^[0-9]+$/) sum+=r }
+    END { print sum+0 }
+  ')
+  if [ "$CHANGED_LINES" -gt "$SIZE_THRESHOLD" ]; then
+    echo "[RISK CORROBORATION] note: $CHANGED_LINES changed lines for a Lane: $LANE_VAL task — consider running the simplify pass before commit." >&2
+  fi
+fi
 
 TRIPPED=""
 add_cat() { TRIPPED="$TRIPPED $1"; }
@@ -113,21 +183,6 @@ for cat in $TRIPPED; do
   fi
 done
 
-# ── Resolve the declared Lane ────────────────────────────────────────────
-LANE=""
-# Prefer a SUMMARY.md staged in this commit
-for f in $(echo "$STAGED_PATHS" | grep -E '(^|/)SUMMARY\.md$' || true); do
-  L=$(git show ":$f" 2>/dev/null | grep -iE '^Lane:' | head -1)
-  [ -n "$L" ] && LANE="$L" && break
-done
-# Else the most recently modified specs/*/SUMMARY.md on disk
-if [ -z "$LANE" ]; then
-  RECENT=$(ls -t specs/*/SUMMARY.md 2>/dev/null | head -1)
-  [ -n "$RECENT" ] && LANE=$(grep -iE '^Lane:' "$RECENT" | head -1)
-fi
-# Normalize: extract tiny|normal|high-risk
-LANE_VAL=$(echo "$LANE" | tr 'A-Z' 'a-z' | grep -oE 'tiny|normal|high-risk' | head -1)
-
 # ── Decision ─────────────────────────────────────────────────────────────
 if [ -n "$WARNING" ]; then
   echo "[RISK CORROBORATION] note: warn-mode categories present:$WARNING" >&2
@@ -146,7 +201,9 @@ if [ -n "$LANE_VAL" ]; then
   echo "[RISK CORROBORATION] BLOCKED (exit 2)." >&2
   echo "  Staged diff trips hard-gate categories:$BLOCKING" >&2
   echo "  But specs SUMMARY declares  Lane: $LANE_VAL  (below high-risk)." >&2
-  echo "  Re-classify via /feature-intake (set Lane: high-risk), or have a human narrow scope." >&2
+  echo "  Re-classify with the feature-intake skill (set Lane: high-risk), or have a human narrow scope." >&2
+  echo "  Loosen: set the category's \"mode\" to \"warn\" in harness-manifest.json (durable), or put" >&2
+  echo "  RISK_WARN_CATEGORIES in .claude/settings.local.json -> env (an inline VAR=x prefix never reaches a PreToolUse hook)." >&2
   exit 2
 fi
 
@@ -154,11 +211,11 @@ fi
 if [ "${RISK_CORROBORATION_STRICT:-0}" = "1" ]; then
   echo "[RISK CORROBORATION] BLOCKED (strict, no Lane declared)." >&2
   echo "  Staged diff trips hard-gate categories:$BLOCKING" >&2
-  echo "  Declare a Lane in specs/<slug>/SUMMARY.md (run /feature-intake) before committing." >&2
+  echo "  Declare a Lane in specs/<slug>/SUMMARY.md (run the feature-intake skill) before committing." >&2
   exit 2
 fi
 
 echo "[RISK CORROBORATION] WARNING — hard-gate signals with no declared Lane:$BLOCKING" >&2
-echo "  Nothing to corroborate against. If this is real change work, run /feature-intake" >&2
+echo "  Nothing to corroborate against. If this is real change work, run the feature-intake skill" >&2
 echo "  and record a Lane in specs/<slug>/SUMMARY.md. (Set RISK_CORROBORATION_STRICT=1 to enforce.)" >&2
 exit 0

@@ -24,6 +24,27 @@ Source of truth for the currently-active spec. Updated by skills and by the `sta
 - `/session-tracker` reads this file to resume work across sessions
 - If the Active Spec block is stale (>7 days without update), treat as idle
 
+## RUN/Event State vs. This File
+
+This file and `specs/<slug>/RUN.json` + `events.jsonl` (added in GitHub issue #129, "Durable
+Run State Contract") track different things at different granularities — they are
+complementary, not competing:
+
+| | `specs/STATE.md` (this file) | `specs/<slug>/RUN.json` + `events.jsonl` |
+|---|---|---|
+| Scope | One session's current focus | One spec's entire lifecycle |
+| Granularity | Session-level: "what am I working on right now" | Per-spec-slug: durable FSM state (`queued` → ... → `shipped`) |
+| Written by | `hooks/state-breadcrumb.sh` (SessionEnd), manually by skills | `runtime/run_state.py` (`init`/`transition`), called from `feature-intake`, `subagent-driven-development`, `finishing-a-development-branch`, and (meta-repo-only) `post-merge-maintenance.yml` |
+| Lifetime | Overwritten each session; "Active Spec" always names the most recent | Append-only event log per slug; every spec that ever ran `feature-intake` keeps its own record indefinitely |
+| Discoverable via | Read directly, or `/session-tracker` | `runtime/run_state.py list --active[--json]`, surfaced at SessionStart (`hooks/session-knowledge.sh`) and on-demand (`scripts/harness-status.sh`, meta-repo-only) |
+| Answers | "What was I doing when the session ended?" | "Where is spec X in its lifecycle, across every session that ever touched it?" |
+
+**Compatibility boundary.** A spec created before GitHub issue #129 (no `RUN.json`) is
+unaffected: every run-state checkpoint call is unconditionally non-fatal (`|| true`), so an
+older spec with no `RUN.json` simply never gets tracked by the new system — it remains fully
+usable via `STATE.md`/`/session-tracker` exactly as before. The two mechanisms never write to
+or read from each other's files.
+
 ## Session End Log
 
 ### 2026-06-11T15:24:59Z
@@ -723,5 +744,333 @@ Source of truth for the currently-active spec. Updated by skills and by the `sta
 - session_id: 56a8da5a-6fe9-4aa5-9442-b57745f48098
 - exit: 
 - last_commit: 8b32e50 Merge pull request #145 from minhtran3124/chore/bookkeeping-144
+- user_turns: 0
+
+
+### 2026-07-22T07:36:44Z
+- session_id: 39913528-a40e-4df5-971b-7898da9074bb
+- exit: 
+- last_commit: 1704155 Merge pull request #151 from minhtran3124/chore/bookkeeping-150
+- user_turns: 0
+
+
+### 2026-07-22T07:53:29Z
+- session_id: 8edb85fb-172c-40d7-b6cf-34e44922e8bb
+- exit: 
+- last_commit: aa92c22 fix(correctness-review): lower scorer threshold to 75 to match discrete anchors
+- user_turns: 0
+
+
+### 2026-07-22T14:47:17Z
+- session_id: 8add192c-9ca5-4f54-b8b8-7c505e0a539e
+- exit: 
+- last_commit: 05c7636 chore(acceptance-contract-loop-budget): intake + design + research + plan bookkeeping
+- user_turns: 0
+
+
+### 2026-07-22T14:47:26Z
+- session_id: 16b8976c-a0dd-43ac-b48c-187fe68bec2a
+- exit: 
+- last_commit: 3d1ba4d Merge pull request #156 from minhtran3124/chore/bookkeeping-155
+- user_turns: 0
+
+
+### 2026-07-23T01:02:58Z
+- session_id: 295ffb29-39a4-4f23-9223-23bc7941351b
+- exit: 
+- last_commit: 28e752b ci(acceptance-contract): provision pytest in strict-gate job so it can re-run Verify proof
+- user_turns: 0
+
+
+### 2026-07-23T01:02:58Z
+- session_id: f54f5c3a-e74f-4958-9f47-151b804af192
+- exit: 
+- last_commit: 28e752b ci(acceptance-contract): provision pytest in strict-gate job so it can re-run Verify proof
+- user_turns: 0
+
+
+### 2026-07-23T02:30:09Z
+- session_id: 9adebc40-ba46-4813-acee-a3205e2fed65
+- exit: 
+- last_commit: 28e752b ci(acceptance-contract): provision pytest in strict-gate job so it can re-run Verify proof
+- user_turns: 0
+
+
+### 2026-07-23T03:25:04Z
+- session_id: e394dae8-4f18-4795-b1dd-2d74ddbf6b24
+- exit: 
+- last_commit: f97764e Merge pull request #157 from minhtran3124/feature/acceptance-contract-loop-budget
+- user_turns: 0
+
+
+### 2026-07-23T03:35:39Z
+- session_id: d7873e55-04eb-492d-8b0d-4d138c298eb1
+- exit: 
+- last_commit: f97764e Merge pull request #157 from minhtran3124/feature/acceptance-contract-loop-budget
+- user_turns: 0
+
+
+### 2026-07-23T09:52:09Z
+- session_id: bc0f5738-d34c-4a06-8e69-953cbf47ad2a
+- exit: 
+- last_commit: efac573 Merge pull request #158 from minhtran3124/refactor/slim-skill-surface
+- user_turns: 0
+
+
+### 2026-07-23T09:52:12Z
+- session_id: df0dce31-0281-46c0-bd40-a032157c23e9
+- exit: 
+- last_commit: efac573 Merge pull request #158 from minhtran3124/refactor/slim-skill-surface
+- user_turns: 0
+
+
+### 2026-07-23T09:52:12Z
+- session_id: a8eb2416-b011-4f6f-a72b-180096cdb804
+- exit: 
+- last_commit: efac573 Merge pull request #158 from minhtran3124/refactor/slim-skill-surface
+- user_turns: 0
+
+
+### 2026-07-23T09:52:12Z
+- session_id: 76740f6b-8f31-4818-91a6-a8c4308b2329
+- exit: 
+- last_commit: efac573 Merge pull request #158 from minhtran3124/refactor/slim-skill-surface
+- user_turns: 0
+
+
+### 2026-07-23T09:52:12Z
+- session_id: e8d0ddbc-f761-4725-a22d-87a51f422ae5
+- exit: 
+- last_commit: efac573 Merge pull request #158 from minhtran3124/refactor/slim-skill-surface
+- user_turns: 0
+
+
+### 2026-07-23T09:52:12Z
+- session_id: 0920f3aa-a3d2-4d72-955c-050153833fb3
+- exit: 
+- last_commit: efac573 Merge pull request #158 from minhtran3124/refactor/slim-skill-surface
+- user_turns: 0
+
+
+### 2026-07-23T09:52:12Z
+- session_id: 9ad4ae68-8349-4171-9baa-8c3686dfa7a7
+- exit: 
+- last_commit: efac573 Merge pull request #158 from minhtran3124/refactor/slim-skill-surface
+- user_turns: 0
+
+
+### 2026-07-23T11:02:34Z
+- session_id: e2bfd461-5bea-485b-bceb-fefd9fde05fa
+- exit: 
+- last_commit: 7257938 docs(solutions): compound session learnings — 4 entries + ratchet rows
+- user_turns: 0
+
+
+### 2026-07-23T11:07:00Z
+- session_id: 02ef2e85-082c-4d57-b7f5-1428faeb422f
+- exit: 
+- last_commit: 971ebcc fix(spec): untag the pytest Verify row — SC-2 expects exit 1, not 0
+- user_turns: 0
+
+
+### 2026-07-23T13:07:07Z
+- session_id: fc64ab0c-6c5a-4fc0-8fb9-921af3a80c1f
+- exit: 
+- last_commit: adac941 Merge pull request #160 from minhtran3124/feat/simplify-gate-surface
+- user_turns: 0
+
+
+### 2026-07-23T14:04:20Z
+- session_id: cc724d6c-b17a-4e8d-a228-c7044bde1e2a
+- exit: 
+- last_commit: 905c3cc chore(specs): append session-end breadcrumbs to STATE.md
+- user_turns: 0
+
+
+### 2026-07-23T15:21:25Z
+- session_id: 147fb794-fcd3-40b9-b01f-db8c2355d02a
+- exit: 
+- last_commit: d6d4f4c chore(specs): record PR #163 in gh-159-simplicity-enforcement status log
+- user_turns: 0
+
+
+### 2026-07-24T02:33:19Z
+- session_id: 9f373f86-8b80-459d-95e8-ff5f1bc41812
+- exit: 
+- last_commit: 905c3cc chore(specs): append session-end breadcrumbs to STATE.md
+- user_turns: 0
+
+
+### 2026-07-24T02:38:41Z
+- session_id: 1389ba62-ebc5-4042-8389-812bc3d4c5d5
+- exit: 
+- last_commit: d762600 refactor: skip diff-size numstat scan outside tiny/normal lanes; dedup test assertion
+- user_turns: 0
+
+
+### 2026-07-24T02:38:54Z
+- session_id: b78827bb-71ec-4503-beac-3255a57f626c
+- exit: 
+- last_commit: 0783b2d Merge pull request #163 from minhtran3124/feat/gh-159-simplicity-enforcement
+- user_turns: 0
+
+
+### 2026-07-24T02:40:03Z
+- session_id: f5012c0c-efc3-41a1-8aa4-1b401100e042
+- exit: 
+- last_commit: d762600 refactor: skip diff-size numstat scan outside tiny/normal lanes; dedup test assertion
+- user_turns: 0
+
+
+### 2026-07-24T02:41:08Z
+- session_id: 4399a518-a554-430a-a185-a5835bcb6ecf
+- exit: 
+- last_commit: eea8a00 chore(specs): append session-end breadcrumbs to STATE.md
+- user_turns: 0
+
+
+### 2026-07-24T03:39:15Z
+- session_id: 4a9d9aa0-6094-4b4f-acf3-6c62ced7fec8
+- exit: 
+- last_commit: 6404158 docs(specs): fix plan.md -> PLAN.md casing in specs/README.md
+- user_turns: 0
+
+
+### 2026-07-26T10:06:40Z
+- session_id: ca798742-8152-4ce4-a334-3b605e1ff566
+- exit: 
+- last_commit: 6cc968b Merge pull request #172 from minhtran3124/chore/refresh-durable-run-state-at-a-glance
+- user_turns: 0
+
+
+### 2026-07-26T10:27:27Z
+- session_id: 8960eac8-874b-4d33-a7e3-f4611457a7c6
+- exit: 
+- last_commit: 6cc968b Merge pull request #172 from minhtran3124/chore/refresh-durable-run-state-at-a-glance
+- user_turns: 0
+
+
+### 2026-07-27T14:10:27Z
+- session_id: d2da0551-5898-4a74-a490-5d6108452edf
+- exit: 
+- last_commit: 6e42296 fix(ci): stage the run-state transition, or the bookkeeping PR discards it
+- user_turns: 0
+
+
+### 2026-07-27T14:10:30Z
+- session_id: fbb47ae7-ee8c-4e76-9437-3b0087b8ec8b
+- exit: 
+- last_commit: 6e42296 fix(ci): stage the run-state transition, or the bookkeeping PR discards it
+- user_turns: 0
+
+
+### 2026-07-27T14:10:35Z
+- session_id: b2697248-3d51-4f38-a9aa-a5263715ebdb
+- exit: 
+- last_commit: 6e42296 fix(ci): stage the run-state transition, or the bookkeeping PR discards it
+- user_turns: 0
+
+
+### 2026-07-27T14:10:38Z
+- session_id: 7c9fa8e2-b3a9-4f71-9281-07082f076ce2
+- exit: 
+- last_commit: 6e42296 fix(ci): stage the run-state transition, or the bookkeeping PR discards it
+- user_turns: 0
+
+
+### 2026-07-27T14:40:44Z
+- session_id: c0e1f0d5-30b0-44b7-93f7-5dc3fe6e7fe8
+- exit: 
+- last_commit: 7747657 Merge pull request #177 from minhtran3124/fix/post-merge-runstate-staging
+- user_turns: 0
+
+
+### 2026-07-29T02:20:43Z
+- session_id: cb0b7a6e-19c6-4aaa-8cbd-32eb3f6f1b1e
+- exit: 
+- last_commit: 623e617 docs(audit): record the context-propagation audit and correct a probe claim
+- user_turns: 0
+
+
+### 2026-07-29T02:27:26Z
+- session_id: 4bad506c-86ca-4b25-b13b-324db3b5bdc2
+- exit: 
+- last_commit: 67adeb8 Merge pull request #179 from minhtran3124/refactor/skill-prompt-surface
+- user_turns: 0
+
+
+### 2026-07-29T02:47:20Z
+- session_id: 388834d6-47a4-46c8-a461-f18cb21e84b9
+- exit: 
+- last_commit: 67adeb8 Merge pull request #179 from minhtran3124/refactor/skill-prompt-surface
+- user_turns: 0
+
+
+### 2026-07-29T02:47:20Z
+- session_id: fbd8f8ef-113b-4929-a72e-b684c09e41bf
+- exit: 
+- last_commit: 67adeb8 Merge pull request #179 from minhtran3124/refactor/skill-prompt-surface
+- user_turns: 0
+
+### 2026-08-06T08:39:49Z
+- session_id: 96e90065-dbad-4ee3-a5bc-766f6692b424
+- exit: 
+- last_commit: fe3ce16 docs(specs): pin review receipt at c780fe6
+- user_turns: 0
+
+
+### 2026-08-06T08:39:51Z
+- session_id: c5206b70-6d3f-494e-8910-2d7a84e7b38c
+- exit: 
+- last_commit: fe3ce16 docs(specs): pin review receipt at c780fe6
+- user_turns: 0
+
+
+### 2026-08-06T14:13:40Z
+- session_id: 9eab878a-5a89-4d13-abd5-5f0d7e97e37f
+- exit: 
+- last_commit: 774501a Merge pull request #186 from minhtran3124/feat/hook-surface-slim-b3
+- user_turns: 0
+
+
+### 2026-08-06T14:41:04Z
+- session_id: cd92870f-946a-4e4b-8e6c-86df41100681
+- exit: 
+- last_commit: 9d61471 docs(specs): append session-end breadcrumbs to STATE.md
+- user_turns: 0
+
+
+### 2026-08-07T03:46:27Z
+- session_id: 6eea0470-edb0-410e-8ef7-4053247f6d06
+- exit: 
+- last_commit: 9d61471 docs(specs): append session-end breadcrumbs to STATE.md
+- user_turns: 0
+
+
+### 2026-08-10T07:01:48Z
+- session_id: ab92da13-b1d7-41d9-bf38-7bb95303c0cb
+- exit: 
+- last_commit: 0a01c7f docs(specs): plan Codex support phases 1 through 4
+- user_turns: 0
+
+
+### 2026-08-10T07:17:13Z
+- session_id: 546b58e8-4348-4969-8ded-8213d3cb27dd
+- exit: 
+- last_commit: 0a01c7f docs(specs): plan Codex support phases 1 through 4
+- user_turns: 0
+
+
+### 2026-08-10T07:48:20Z
+- session_id: 56dd9ca2-56e8-44ef-a85e-01c150f7cf9a
+- exit: 
+- last_commit: 265eb53 docs(specs): record Codex phase one completion
+- user_turns: 0
+
+
+### 2026-08-11T04:09:53Z
+- session_id: 93be9efd-a9e4-43e8-b322-05acb4642437
+- exit: 
+- last_commit: f07664f feat(codex): runtime-neutral hook input seam, fail-closed gates (Phase 4)
 - user_turns: 0
 

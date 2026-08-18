@@ -31,12 +31,15 @@ At `<40%` mid-feature: commit/push current wave first (if executing), update STA
 
 ## Intake fields (orchestrator writes these)
 
-At intake — before dispatching any task — the orchestrator runs `/feature-intake` and writes the result to `specs/<slug>/SUMMARY.md` (shape: `templates/SUMMARY.template.md`):
+At intake — before dispatching any task — the orchestrator runs `feature-intake` and writes the result to `specs/<slug>/SUMMARY.md` (shape: `templates/SUMMARY.template.md`):
 
 - **Lane** — `tiny | normal | high-risk` (drives ceremony / how much proof).
 - **Confidence** — `high | medium | low` (drives interruption / whether a human is asked).
 
-These two fields are load-bearing: `hooks/risk-corroboration.sh` reads `Lane:` to corroborate it against the staged diff, and the trust-metrics ledger reads both. The orchestrator MUST write a `Lane:` line: a declared lane below `high-risk` is **blocked** when the diff trips a hard-gate signal, but a *missing* lane only **warns** (fail-open) unless `RISK_CORROBORATION_STRICT=1` is set.
+The classification algorithm that assigns these values lives in `skills/feature-intake/SKILL.md`
+Step 3–4 — that is the canonical source; this section only names the fields and their consumers.
+
+These two fields are load-bearing: `hooks/risk-corroboration.sh` reads `Lane:` to corroborate it against the staged diff, and the trust-metrics ledger reads both. The orchestrator MUST write a `Lane:` line: a declared lane below `high-risk` is **blocked** when the diff trips a **block-mode** hard-gate signal (per-gate mode lives in `harness-manifest.json`; warn-mode gates — `workflow-engine`, `weakening-validation` — print a note and allow), and a *missing* lane only **warns** (fail-open) unless `RISK_CORROBORATION_STRICT=1` is set.
 
 ## Subagent contract
 
@@ -48,7 +51,7 @@ Every subagent returning to main thread MUST include in its summary:
 - **Deviations** — Rule 1–3 auto-fixes per `auto-correct-scope.md`, labeled by rule
 - **Blockers** — anything requiring main thread decision or user input
 - **Verify status** — pass/fail of task's `<verify>` command (with command output excerpt on fail)
-- **Harness-Delta** — friction this task revealed about the workflow itself: `fix-direct`, `backlog` (→ `/compound`), or `none`
+- **Harness-Delta** — friction this task revealed about the workflow itself: `fix-direct`, `backlog` (→ `compound`), or `none`
 
 Target length: 150–300 words. No raw file dumps. Main thread must be able to act on the summary alone without re-reading the subagent's work product.
 
@@ -68,7 +71,7 @@ Two kinds of artifact, sized differently:
 - **The record** — `SUMMARY.md` is written for **every** lane, tiny included. It is the always-on audit trail; its `Rationale` + `Alternatives` make an autonomous decision reconstructable without re-reading the diff. "No human" never means "no record."
 - **Plan-ahead scaffolding** — `design.md` / `research-brief.md` / `PLAN.md` exist to reduce *uncertainty*, so they are triggered by **signal**, not by lane alone: `PLAN.md` at >3 steps or >2 files (`rules/plan-format.md`); `research-brief.md` for unfamiliar code or high-risk; `design.md` only on a real design fork (≥2 viable approaches) or high-risk.
 
-For autonomous work the substitute for the human gate is **verification, not more documents**: a re-runnable `### Verify` row + independent two-stage review. Over-documenting reversible work manufactures unread artifacts that are harder to audit than the diff and erode the record's value.
+For autonomous work the substitute for the human gate is **verification, not more documents**: a re-runnable `### Verify` row + independent task review with separate spec and quality verdicts. Over-documenting reversible work manufactures unread artifacts that are harder to audit than the diff and erode the record's value.
 
 `FULL_ARTIFACTS=1` (opt-in) forces the complete artifact set regardless of lane — for audit-heavy changes or while calibrating trust. Default is signal-scaled.
 

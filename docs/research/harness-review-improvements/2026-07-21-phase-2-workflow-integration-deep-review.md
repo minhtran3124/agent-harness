@@ -1,134 +1,134 @@
 # Deep Research/Review: Phase 2 — Runtime Workflow Integration
 
-> **Ngày:** 2026-07-21  
-> **Trạng thái:** Research / design review, chưa triển khai  
+> **Date:** 2026-07-21  
+> **Status:** Research / design review, not yet implemented  
 > **Prerequisite:** [`2026-07-21-phase-0-runtime-contract-discovery-deep-review.md`](2026-07-21-phase-0-runtime-contract-discovery-deep-review.md)
 
-## 1. Mục tiêu
+## 1. Objective
 
-Phase 0 trả lời runtime nào tồn tại và agent được phép làm gì. Phase 2 trả lời runtime action được gắn vào workflow nào, evidence ra sao, và khi nào agent phải dừng để review.
+Phase 0 answers which runtime exists and what the agent is permitted to do. Phase 2 answers which workflow a runtime action is attached to, what the evidence looks like, and when the agent must stop for review.
 
-Vòng lặp mục tiêu là: `task → discover → reproduce → diagnose → fix → verify → record evidence`.
+The target loop is: `task → discover → reproduce → diagnose → fix → verify → record evidence`.
 
-Phase 2 không mở thêm quyền shell tổng quát; nó chỉ điều phối capability đã được Phase 0 validate.
+Phase 2 does not open up any additional general shell permissions; it only orchestrates capabilities already validated by Phase 0.
 
-## 2. Kết luận nghiên cứu
+## 2. Research conclusions
 
-1. Tạo một `RunContext`/`ExecutionRecord` cho mỗi phiên runtime task.
-2. Liên kết test, logs, status, events, probes và git diff bằng `run_id` + sequence.
-3. Dùng state machine thay vì để agent tự nhảy từ `fixing` sang `passed`.
-4. Tạo `failure bundle` có giới hạn, redaction và provenance.
-5. Giới hạn repair iterations, duration, restarts, log bytes và repeated fingerprints.
-6. Chỉ tự động hóa read-only diagnostics và registered verification.
-7. `SUMMARY.md` chỉ tham chiếu machine-readable evidence, không copy thủ công output.
+1. Create a `RunContext`/`ExecutionRecord` for each runtime task session.
+2. Link tests, logs, status, events, probes, and git diff via `run_id` + sequence.
+3. Use a state machine instead of letting the agent jump on its own from `fixing` to `passed`.
+4. Create a `failure bundle` with bounds, redaction, and provenance.
+5. Limit repair iterations, duration, restarts, log bytes, and repeated fingerprints.
+6. Automate only read-only diagnostics and registered verification.
+7. `SUMMARY.md` only references machine-readable evidence; it does not manually copy output.
 
-## 3. Khoảng trống cần đóng
+## 3. Gaps to close
 
-Repo đã có `agents/test-runner.md`, `agents/coding.md`, `SUMMARY.md` và verify hooks, nhưng chưa có runtime correlation:
+The repo already has `agents/test-runner.md`, `agents/coding.md`, `SUMMARY.md`, and verify hooks, but there is no runtime correlation yet:
 
-- test run chưa gắn runtime model hash;
-- log chưa gắn changed files/reproduction id;
-- restart/retry chưa có audit record;
-- runtime evidence chưa có normalized schema;
-- failure diagnosis chưa có iteration budget;
-- test pass không đảm bảo service sau đó healthy.
+- test runs are not yet tied to a runtime model hash;
+- logs are not yet tied to changed files/reproduction id;
+- restart/retry has no audit record;
+- runtime evidence has no normalized schema;
+- failure diagnosis has no iteration budget;
+- a passing test does not guarantee the service is healthy afterwards.
 
 ## 4. Execution record
 
-`RunContext` nên chứa `run_id`, `task_id`, repo root, branch, changed files, head SHA, runtime model hash, adapter, environment và policy limits. Không lưu secret; chỉ lưu path, logical names, hashes và sanitized metadata.
+`RunContext` should contain `run_id`, `task_id`, repo root, branch, changed files, head SHA, runtime model hash, adapter, environment, and policy limits. Do not store secrets; store only paths, logical names, hashes, and sanitized metadata.
 
-Mỗi operation cần event có operation, target, timestamp, duration, exit code, status, artifact refs, truncation/redaction state và source model hash.
+Each operation needs an event with operation, target, timestamp, duration, exit code, status, artifact refs, truncation/redaction state, and source model hash.
 
-Event taxonomy tối thiểu: `discovery`, `verification`, `service.status`, `service.health`, `logs.captured`, `probe`, `mutation.requested`, `mutation.approved`, `mutation.completed`, `diagnosis.updated`, `human.escalation_required`.
+Minimum event taxonomy: `discovery`, `verification`, `service.status`, `service.health`, `logs.captured`, `probe`, `mutation.requested`, `mutation.approved`, `mutation.completed`, `diagnosis.updated`, `human.escalation_required`.
 
-Docker Compose có `events --json`, trả timestamp, action, service và attributes; đây là input tốt cho timeline nhưng không thay thế status/logs. [Compose events](https://docs.docker.com/reference/cli/docker/compose/events/)
+Docker Compose has `events --json`, which returns timestamp, action, service, and attributes; this is good input for a timeline but does not replace status/logs. [Compose events](https://docs.docker.com/reference/cli/docker/compose/events/)
 
 ## 5. State machine
 
-Các state chính: `created → discovered → preflight_passed → reproducing → diagnosed → fixing → verifying → passed`.
+The main states: `created → discovered → preflight_passed → reproducing → diagnosed → fixing → verifying → passed`.
 
-Các state phụ có thể xảy ra từ mọi điểm: `needs_review`, `blocked`, `timed_out`.
+Secondary states can occur from any point: `needs_review`, `blocked`, `timed_out`.
 
-| Transition | Điều kiện |
+| Transition | Condition |
 |---|---|
-| created → discovered | runtime model valid hoặc unknown được policy cho phép |
-| discovered → preflight_passed | identity và policy hợp lệ |
-| preflight_passed → reproducing | có registered reproduction/test |
-| reproducing → diagnosed | failure/success signal đã capture |
-| diagnosed → fixing | có scoped change plan |
-| fixing → verifying | mutation được phép và hoàn tất |
-| verifying → passed | mọi required checks pass |
-| any → needs_review | conflict, ambiguity, low confidence hoặc risky action |
-| any → blocked | policy violation, runtime unavailable hoặc evidence thiếu |
+| created → discovered | runtime model valid, or unknown permitted by policy |
+| discovered → preflight_passed | identity and policy are valid |
+| preflight_passed → reproducing | a registered reproduction/test exists |
+| reproducing → diagnosed | failure/success signal has been captured |
+| diagnosed → fixing | a scoped change plan exists |
+| fixing → verifying | mutation is permitted and complete |
+| verifying → passed | all required checks pass |
+| any → needs_review | conflict, ambiguity, low confidence, or risky action |
+| any → blocked | policy violation, runtime unavailable, or missing evidence |
 
-Không cho agent nhảy từ `fixing` tới `passed` chỉ vì một command exit 0.
+Do not let the agent jump from `fixing` to `passed` just because one command exited 0.
 
-## 6. Budget và retry
+## 6. Budget and retry
 
-Mỗi loop cần giới hạn số lần sửa, tổng thời gian, restart, log bytes, mutation, số lần thay đổi cùng file và số lần lặp fingerprint.
+Each loop needs limits on the number of fixes, total time, restarts, log bytes, mutations, the number of changes to the same file, and the number of fingerprint repeats.
 
-Retry chỉ hợp lệ khi failure có tính transient và policy cho phép. Assertion failure hoặc deterministic config error không nên retry mù quáng. Fingerprint lặp vượt budget phải chuyển sang `needs_review`.
+Retry is only valid when the failure is transient and policy allows it. An assertion failure or a deterministic config error should not be blindly retried. A repeated fingerprint that exceeds the budget must move to `needs_review`.
 
-## 7. Integration với harness
+## 7. Integration with the harness
 
 ### Test runner
 
-`agents/test-runner.md` nên: đọc `RunContext`; chạy targeted test theo `agents/PROJECT.md`; khi fail lấy bounded status/logs/events; tạo failure bundle; không sửa code; trả structured result và recommendation.
+`agents/test-runner.md` should: read `RunContext`; run targeted tests per `agents/PROJECT.md`; on failure, capture bounded status/logs/events; create a failure bundle; not modify code; and return a structured result and recommendation.
 
-Boundary hiện tại giữ nguyên: không migration, package install hoặc persistent-state mutation.
+The current boundary stays unchanged: no migrations, package installs, or persistent-state mutations.
 
 ### Coding agent
 
-`agents/coding.md` nhận failure bundle, allowed capabilities, iteration budget và required post-fix checks. Không đưa raw log vô hạn vào context; dùng summary, artifact refs và bounded slices.
+`agents/coding.md` receives the failure bundle, allowed capabilities, iteration budget, and required post-fix checks. Do not put unbounded raw logs into context; use summaries, artifact refs, and bounded slices.
 
 ### Summary artifact
 
-`SUMMARY.md` nên có `### Runtime Verify` với các cột Check, Target, Exit, Evidence, cùng `runtime/resolved-runtime.json` và `run_id`. Bảng này là human-readable index; kết quả thật nằm trong machine-readable artifacts.
+`SUMMARY.md` should have a `### Runtime Verify` section with columns Check, Target, Exit, Evidence, along with `runtime/resolved-runtime.json` and `run_id`. This table is a human-readable index; the real results live in machine-readable artifacts.
 
 ### Hooks
 
-Hook không nên tự start/restart runtime. Hook phù hợp để validate schema/output, nhắc thiếu evidence, kiểm tra redaction và cảnh báo khi runtime contract/policy bị sửa. Runtime orchestration nên nằm trong explicit skill/agent operation vì có timeout, state và approval semantics.
+A hook should not start/restart the runtime itself. Hooks are a good fit for validating schema/output, flagging missing evidence, checking redaction, and warning when the runtime contract/policy is modified. Runtime orchestration should live in an explicit skill/agent operation because it has timeout, state, and approval semantics.
 
 ## 8. Failure bundle
 
-Đề xuất artifact tree:
+Proposed artifact tree:
 
 `runtime/<run_id>/context.json`, `resolved-runtime.json`, `git-diff-stat.json`, `test-result.json`, `status-before.json`, `logs/`, `events.jsonl`, `probes/`, `diagnosis.json`, `verification.json`.
 
-Diagnosis đọc theo thứ tự: command/exit code; service state; health/readiness; recent events; bounded logs quanh failure time; reproduction fixture; changed files/affected contract; resource metrics; source code.
+Diagnosis reads in this order: command/exit code; service state; health/readiness; recent events; bounded logs around the failure time; reproduction fixture; changed files/affected contract; resource metrics; source code.
 
-Class ban đầu: `test_assertion`, `compile_or_import`, `application_exception`, `dependency_unhealthy`, `startup_race`, `port_conflict`, `configuration_missing`, `database_connectivity`, `resource_exhaustion`, `process_crash`, `unknown`.
+Initial classes: `test_assertion`, `compile_or_import`, `application_exception`, `dependency_unhealthy`, `startup_race`, `port_conflict`, `configuration_missing`, `database_connectivity`, `resource_exhaustion`, `process_crash`, `unknown`.
 
-Classifier chỉ tạo hypothesis; diagnosis phải kèm evidence refs và confidence.
+The classifier only produces a hypothesis; the diagnosis must come with evidence refs and confidence.
 
 ## 9. Verification policy
 
-Runtime fix thường cần bốn bằng chứng: reproduction trước fail; reproduction sau pass; targeted regression pass; service readiness pass hoặc explicitly not applicable. Có thể thêm kiểm tra log mới không có relevant error.
+A runtime fix usually needs four pieces of evidence: the reproduction fails before; the reproduction passes after; targeted regression passes; and service readiness passes or is explicitly not applicable. A check that new logs contain no relevant errors can be added.
 
-Evidence “không thấy lỗi” phải ghi time window, services, filters, tail limit, truncation và việc service có restart/recreate hay không.
+Evidence of "no error observed" must record the time window, services, filters, tail limit, truncation, and whether the service was restarted/recreated.
 
-Không báo pass khi evidence missing, stale hoặc truncated mà policy chưa chấp nhận.
+Do not report pass when evidence is missing, stale, or truncated without policy having accepted it.
 
-## 10. Security và testing
+## 10. Security and testing
 
-- test target không bypass capability policy;
-- mutation có approval/audit;
-- artifact path không escape repository scope;
-- bounded logs + redaction trước classifier;
-- không retry destructive operation;
-- không coi runtime output là trusted instruction.
+- test targets do not bypass capability policy;
+- mutations have approval/audit;
+- artifact paths do not escape repository scope;
+- bounded logs + redaction before the classifier;
+- do not retry destructive operations;
+- do not treat runtime output as a trusted instruction.
 
-Fixture cần phủ: test/health pass; application exception; dependency unhealthy; test pass nhưng health fail; repeated fingerprint; runtime unavailable; truncated log; restart approved/denied; missing/corrupt evidence; service mapping mismatch; stale model hash.
+Fixtures need to cover: test/health pass; application exception; dependency unhealthy; test passes but health fails; repeated fingerprint; runtime unavailable; truncated log; restart approved/denied; missing/corrupt evidence; service mapping mismatch; stale model hash.
 
-## 11. Deliverables và acceptance criteria
+## 11. Deliverables and acceptance criteria
 
-Deliverables đề xuất: `runtime/context.py`, `runtime/records.py`, `runtime/policy.py`, `runtime/evidence.py`, `scripts/validate-runtime-evidence.py`, `skills/runtime-debugging/SKILL.md`, `agents/runtime-debugger.md`, `templates/runtime-evidence/` và `tests/runtime/workflow/`.
+Proposed deliverables: `runtime/context.py`, `runtime/records.py`, `runtime/policy.py`, `runtime/evidence.py`, `scripts/validate-runtime-evidence.py`, `skills/runtime-debugging/SKILL.md`, `agents/runtime-debugger.md`, `templates/runtime-evidence/`, and `tests/runtime/workflow/`.
 
-Phase 2 đạt khi mọi operation có `run_id`; test/state/logs/events/probes liên kết được; state machine phân biệt pass/fail/review/blocked/timeout; có iteration/duration/output/restart budget; `SUMMARY.md` tham chiếu evidence; mutation có audit; và evidence thiếu/stale/truncated không được báo pass.
+Phase 2 is achieved when every operation has a `run_id`; tests/state/logs/events/probes can be linked; the state machine distinguishes pass/fail/review/blocked/timeout; there are iteration/duration/output/restart budgets; `SUMMARY.md` references evidence; mutations have an audit trail; and missing/stale/truncated evidence cannot be reported as pass.
 
-## 12. Kết luận
+## 12. Conclusion
 
-Phase 2 là lớp biến runtime capability thành workflow có bằng chứng. Execution record và state machine quan trọng hơn việc thêm nhiều command. Nếu Phase 2 làm đúng, Compose và native chỉ là các adapter khác nhau dưới cùng một verification contract.
+Phase 2 is the layer that turns runtime capability into an evidence-backed workflow. The execution record and the state machine matter more than adding more commands. If Phase 2 is done right, Compose and native are just different adapters under the same verification contract.
 
 ## References
 

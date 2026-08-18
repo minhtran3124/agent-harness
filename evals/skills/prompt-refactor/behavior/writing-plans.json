@@ -1,0 +1,25 @@
+{
+  "cases": [
+    {
+      "id": "writing-plans-golden",
+      "skill": "writing-plans",
+      "kind": "golden",
+      "expectation": "write a plan from required inputs",
+      "prompt": "write a plan from required inputs"
+    },
+    {
+      "id": "writing-plans-boundary",
+      "skill": "writing-plans",
+      "kind": "boundary",
+      "expectation": "stop when research brief is missing",
+      "prompt": "stop when research brief is missing"
+    },
+    {
+      "id": "writing-plans-handoff",
+      "skill": "writing-plans",
+      "kind": "handoff",
+      "expectation": "handoff isolated execution",
+      "prompt": "handoff isolated execution"
+    }
+  ]
+}

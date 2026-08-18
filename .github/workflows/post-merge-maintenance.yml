@@ -11,21 +11,27 @@ name: post-merge-maintenance
 on:
   pull_request_target:
     types: [closed]
-    # THIS FILE MUST BE SYNCED ON `main`: pull_request_target always loads the workflow
-    # definition from the repo's real DEFAULT branch (main), regardless of the PR's base.
-    # Editing this list only on an integration branch has NO effect (observed 2026-07-04,
-    # docs/harness-v03-plan-overview.md; same pattern as PRs #36/#44/#45 — sync to main
-    # in its own small PR).
+    # THE INTEGRATION-BRANCH ALLOWLIST. Fire only on merges into a mainline/integration
+    # branch — NOT on feature→feature merges. Scoping here (rather than removing the filter)
+    # is deliberate: `pull_request_target` grants a write token and checks out the base
+    # branch, so an unbounded trigger would run every merged branch tip's code with that
+    # token AND could terminalize a run on an intermediate feature-branch merge (stamping
+    # the wrong SHA and starving the real ship). See issue #196 review.
     #
-    # Keep the list to the branch(es) PRs are actually merged into. IT ROTS SILENTLY: a PR
-    # merged into a branch missing here fires nothing — no run, no log, no error.
-    # History: [v2] while v2 was the working branch (main then lacked
-    # scripts/bookkeeping.sh — PR #44 crashed on that gap; PR #36 added it to main only to
-    # register pull_request_target). After the v2 → main promotion the stale [v2] silently
-    # skipped PRs #66/#68/#69/#70 (2026-07-16 over-engineering review, C3). Then [main, v3]
-    # outlived v3 — no longer on the remote — and silently skipped PRs #158 and #160,
-    # merged into `loop` (2026-07-23).
-    branches: [main, loop]  # loop = integration/staging branch (2026-07-23); PRs merge here first
+    # THIS LIST ROTS SILENTLY: a PR merged into a branch missing here fires nothing — no
+    # run, no log, no error. It is the one authoritative place for the policy; keep it to the
+    # branch(es) PRs are actually merged into and update it when integration moves. History:
+    # [v2] outlived v2 (skipped PRs #66/#68/#69/#70); [main, v3] outlived v3; [main, loop]
+    # then excluded `simplify` and skipped every PR merged there after 2026-07-27, leaving
+    # `gate-verifiability-principle` (PR #189) stuck at `ready_to_merge` (issue #196).
+    # `simplify` added 2026-08-08. tests/scripts/post-merge-runstate-staging.test.sh asserts
+    # the active integration branch (`simplify`) is present so the list cannot silently rot.
+    #
+    # MUST BE SYNCED ON `main`: pull_request_target always loads this definition (and this
+    # list) from the repo's real DEFAULT branch (main), regardless of the PR's base. Editing
+    # the list only on an integration branch has NO effect until it lands on `main` (sync in
+    # its own small PR, as with #36/#44/#45).
+    branches: [main, loop, simplify]
 
 permissions:
   contents: write
@@ -65,19 +71,30 @@ jobs:
       - name: Run-state checkpoint — mark shipped (non-fatal, Phase C)
         id: runstate
         run: |
-          slug=$(grep -oE 'specs/[^/]+/SUMMARY\.md' /tmp/changed-files.txt | head -1 | cut -d/ -f2 || true)
-          if [ -z "$slug" ]; then
-            echo "no specs/<slug>/SUMMARY.md in this PR — skipping run-state transition"
-          elif [ ! -f "specs/$slug/RUN.json" ]; then
-            echo "no RUN.json for $slug — skipping run-state transition"
-          elif python3 runtime/run_state.py transition --slug "$slug" --to shipped \
+          # A PR can touch several specs/<slug>/SUMMARY.md. Try each tracked candidate (one with a
+          # RUN.json) and stop at the FIRST whose `shipped` transition succeeds — don't `head -1`
+          # and give up, or a PR silently skips the tracked run behind an untracked OR
+          # already-terminal first slug (the exact silent-skip class of #196; PR #189 carried a
+          # tracked + an untracked slug and only escaped by sort order). Letting the FSM decide
+          # (shipped is legal only from ready_to_merge) means a terminal/non-ready candidate is
+          # skipped, not the whole PR. No transitionable run → skip (non-run PRs stay non-fatal).
+          shipped=""
+          for cand in $(grep -oE 'specs/[^/]+/SUMMARY\.md' /tmp/changed-files.txt | cut -d/ -f2); do
+            [ -f "specs/$cand/RUN.json" ] || continue
+            if python3 runtime/run_state.py transition --slug "$cand" --to shipped \
                  --event ci.merged --sha "$MERGE_SHA"; then
-            # Publish the slug ONLY on success. The PR step stages this slug's two
-            # run-state files; staging them after a failed transition would commit
-            # nothing, and staging a slug that was never transitioned would be a lie.
-            echo "slug=$slug" >> "$GITHUB_OUTPUT"
-          else
-            echo "::warning::run-state transition to shipped failed/skipped for $slug"
+              # Publish the slug ONLY on success. The PR step stages this slug's two run-state
+              # files; staging them after a failed transition would commit nothing, and staging a
+              # slug that was never transitioned would be a lie.
+              echo "slug=$cand" >> "$GITHUB_OUTPUT"
+              shipped="$cand"
+              break
+            else
+              echo "::warning::run-state transition to shipped failed/skipped for $cand"
+            fi
+          done
+          if [ -z "$shipped" ]; then
+            echo "no transitionable tracked run in this PR — skipping run-state transition"
           fi
 
       - name: Run bookkeeping

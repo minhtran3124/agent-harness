@@ -1,0 +1,24 @@
+{
+  "candidate": "hybrid",
+  "capture": "isolated-live-packaging-probe",
+  "captured_at": "2026-08-11",
+  "cli_version": "0.147.0",
+  "config_hash": "not-applicable",
+  "platform": "macos-arm64",
+  "result": {
+    "checks": {
+      "installed_plugin_skill_invoked": true,
+      "plugin_hook_executed": true,
+      "project_agent_dispatched": true
+    },
+    "does_not_verify": "Persisted user hook trust, interactive desktop behavior, network marketplace installation, or the direct-project fallback.",
+    "hook_trust_mode": "automation-vetted-bypass",
+    "passed": true,
+    "payload_values_redacted": true,
+    "runtime_execution_observed": true,
+    "status": "observed",
+    "verifies": "Installed plugin skill invocation, automation-vetted plugin hook execution, and project-agent dispatch in one disposable session."
+  },
+  "runtime": "codex",
+  "schema_version": 1
+}

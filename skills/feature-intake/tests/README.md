@@ -1,6 +1,6 @@
 # feature-intake — behavioral test cases
 
-`/feature-intake` is a prompt skill: its classification is produced by the model, so it
+The feature-intake skill is prompt-driven: its classification is produced by the model, so it
 cannot be asserted by a deterministic shell test the way the hooks are. These canaries are
 the analogue of `skills/xia2/tests/` — input prompts paired with the lane / confidence /
 escalation the skill **must** produce. They are run by a human or a meta-eval session, not
@@ -16,11 +16,14 @@ in per-commit CI (an LLM call per case costs money and is non-deterministic).
 
 ## How to run
 
-Manual, or batched through a headless session:
+Manual, or batched through a headless session. Render the command for the runtime under test from
+the checked binding, then execute the emitted command:
 
 ```bash
-# one case at a time, against the real skill
-claude -p "/feature-intake <case prompt>" --output-format text
+# Claude Code
+python3 scripts/render_runtime_entry.py --runtime claude --skill feature-intake --prompt '<case prompt>'
+# Codex
+python3 scripts/render_runtime_entry.py --runtime codex --skill feature-intake --prompt '<case prompt>'
 # then check the emitted Lane / Confidence / Escalate against the Expected row
 ```
 

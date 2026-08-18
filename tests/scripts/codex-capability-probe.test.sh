@@ -1,0 +1,260 @@
+#!/usr/bin/env bash
+# Contract tests for scripts/capture_codex_capabilities.sh.
+
+set -u
+
+ROOT=$(cd "$(dirname "$0")/../.." && pwd)
+SCRIPT="$ROOT/scripts/capture_codex_capabilities.sh"
+TMP=$(mktemp -d)
+trap 'rm -rf "$TMP"' EXIT
+PASS=0
+FAIL=0
+
+ok() {
+  PASS=$((PASS + 1))
+  printf '  ok    %s\n' "$1"
+}
+
+not_ok() {
+  FAIL=$((FAIL + 1))
+  printf '  FAIL  %s\n' "$1"
+}
+
+assert() {
+  _label=$1
+  shift
+  if "$@"; then ok "$_label"; else not_ok "$_label"; fi
+}
+
+FAKE="$TMP/fake-codex"
+FAKE_LOG="$TMP/fake.log"
+export FAKE_LOG
+
+cat > "$FAKE" <<'FAKE'
+#!/usr/bin/env bash
+set -u
+printf '%s\n' "$*" >> "$FAKE_LOG"
+
+case "${1:-}" in
+  --version)
+    printf 'codex-cli %s\n' "${FAKE_VERSION:-0.147.0}"
+    ;;
+  features)
+    printf '%-36s %-18s %s\n' hooks stable "${FAKE_HOOKS_ENABLED:-true}"
+    printf '%-36s %-18s %s\n' multi_agent stable true
+    printf '%-36s %-18s %s\n' plugins stable true
+    printf '%-36s %-18s %s\n' unified_exec stable true
+    ;;
+  doctor)
+    if [ "${FAKE_DOCTOR_FAIL:-0}" = 1 ]; then
+      exit 9
+    fi
+    if [ "${FAKE_DOCTOR_LEAKS_ID:-0}" = 1 ]; then
+      # A retained field (not a dropped `details` blob) carrying a private path.
+      printf '%s\n' '{"schemaVersion":1,"overallStatus":"ok","checks":{"config.load":{"id":"/Users/private/repo/config.load","category":"config","status":"ok"}}}'
+      exit 0
+    fi
+    printf '%s\n' '{"schemaVersion":1,"overallStatus":"ok","codexVersion":"0.147.0","checks":{"config.load":{"id":"config.load","category":"config","status":"ok","details":{"cwd":"/Users/private/repo","auth file":"/Users/private/.codex/auth.json"}}}}'
+    ;;
+  --strict-config)
+    printf '%s\n' 'Codex CLI --strict-config'
+    ;;
+  plugin)
+    printf '%s\n' 'Manage Codex plugins'
+    ;;
+  exec)
+    _previous=""
+    _repo=""
+    for _arg in "$@"; do
+      if [ "$_previous" = "-C" ]; then _repo=$_arg; fi
+      _previous=$_arg
+    done
+    printf 'PROBE_REPO=%s\n' "$_repo" >> "$FAKE_LOG"
+    if [ -n "${HARNESS_PROBE_EVENT_LOG:-}" ]; then
+      cat > "$HARNESS_PROBE_EVENT_LOG" <<'EVENTS'
+{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"printf redacted"}}
+{"hook_event_name":"PostToolUse","tool_name":"Bash","tool_input":{"command":"printf redacted"}}
+{"hook_event_name":"PreToolUse","tool_name":"apply_patch","tool_input":{"command":"*** Begin Patch\n*** End Patch"}}
+{"hook_event_name":"PostToolUse","tool_name":"apply_patch","tool_input":{"command":"*** Begin Patch\n*** End Patch"}}
+EVENTS
+      if [ "${FAKE_OMIT_USER_PROMPT:-0}" != 1 ]; then
+        printf '%s\n' '{"hook_event_name":"UserPromptSubmit","prompt":"redacted probe prompt","session_id":"probe-session"}' >> "$HARNESS_PROBE_EVENT_LOG"
+      fi
+    fi
+    printf '%s\n' '{"type":"harness_agent_probe","fresh_bounded":true,"full_history_override_rejected":true}'
+    ;;
+  *)
+    exit 2
+    ;;
+esac
+FAKE
+chmod +x "$FAKE"
+
+if "$SCRIPT" --codex-bin "$FAKE" >/dev/null 2>&1; then
+  not_ok "--output is mandatory"
+else
+  ok "--output is mandatory"
+fi
+
+OUT="$TMP/evidence"
+: > "$FAKE_LOG"
+if CODEX_CAPTURE_DATE=2026-08-10 "$SCRIPT" \
+  --output "$OUT" --codex-bin "$FAKE" --platform-label macos-arm64 >/dev/null; then
+  ok "default deterministic capture succeeds"
+else
+  not_ok "default deterministic capture succeeds"
+fi
+
+EXPECTED="doctor.json hooks-shell.json hooks-apply-patch.json hooks-unified-exec.json hooks-user-prompt-submit.json agents-fresh-bounded.json agents-full-history-rejection.json session-end-timing.json platform.json trust-config.json"
+for _name in $EXPECTED; do
+  assert "writes $_name" test -s "$OUT/$_name"
+done
+
+assert "default capture never invokes a model" sh -c "! grep -q '^exec ' '$FAKE_LOG'"
+assert "checker unit tests are registered in the CI-equivalent suite" grep -q \
+  'scripts/test_check_codex_capabilities.py' "$ROOT/scripts/run-tests.sh"
+assert "doctor output is sanitized" sh -c "! grep -R -q '/Users/private' '$OUT'"
+assert "default shell result is explicit unknown" python3 -c \
+  'import json,sys; assert json.load(open(sys.argv[1]))["result"]["status"] == "unknown"' \
+  "$OUT/hooks-shell.json"
+assert "default unified-exec envelope is explicit unknown" python3 -c \
+  'import json,sys; assert json.load(open(sys.argv[1]))["result"]["status"] == "unknown"' \
+  "$OUT/hooks-unified-exec.json"
+assert "default UserPromptSubmit envelope is explicit unknown" python3 -c \
+  'import json,sys; assert json.load(open(sys.argv[1]))["result"]["status"] == "unknown"' \
+  "$OUT/hooks-user-prompt-submit.json"
+assert "SessionEnd benchmark uses at least 20 samples" python3 -c \
+  'import json,sys; d=json.load(open(sys.argv[1]))["result"]; assert d["samples"] >= 20 and d["max_ms"] < d["support_threshold_ms"]' \
+  "$OUT/session-end-timing.json"
+
+LIVE="$TMP/live-evidence"
+: > "$FAKE_LOG"
+if CODEX_CAPTURE_DATE=2026-08-10 "$SCRIPT" \
+  --output "$LIVE" --codex-bin "$FAKE" --platform-label macos-arm64 \
+  --allow-live-model-probe >/dev/null; then
+  ok "paid/model-backed probe requires and accepts explicit opt-in"
+else
+  not_ok "paid/model-backed probe requires and accepts explicit opt-in"
+fi
+assert "opted-in capture invokes exec" grep -q '^exec ' "$FAKE_LOG"
+assert "live invocation is ephemeral and uses automation hook-trust bypass" grep -q \
+  '^exec --json --approve-for-me --dangerously-bypass-hook-trust --ephemeral ' "$FAKE_LOG"
+assert "live hook result is observed when all events arrive" python3 -c \
+  'import json,sys; assert json.load(open(sys.argv[1]))["result"]["status"] == "observed"' \
+  "$LIVE/hooks-apply-patch.json"
+assert "live unified-exec envelope records observed keys without values" python3 -c \
+  'import json,sys; r=json.load(open(sys.argv[1]))["result"]; assert r["status"] == "observed" and r["hook_tool_name"] == "Bash" and r["tool_input_keys"] == ["command"] and r["payload_values_redacted"]' \
+  "$LIVE/hooks-unified-exec.json"
+assert "live UserPromptSubmit envelope is observed and prompt stays redacted" python3 -c \
+  'import json,sys; r=json.load(open(sys.argv[1]))["result"]; assert r["status"] == "observed" and r["event"] == "UserPromptSubmit" and r["envelope_keys"] == ["hook_event_name", "prompt", "session_id"] and r["prompt_redacted"]' \
+  "$LIVE/hooks-user-prompt-submit.json"
+assert "live evidence does not retain submitted prompt" sh -c \
+  "! grep -R -q 'redacted probe prompt' '$LIVE'"
+
+PROBE_REPO=$(sed -n 's/^PROBE_REPO=//p' "$FAKE_LOG" | tail -1)
+assert "temporary live-probe repository is cleaned up" test ! -e "$PROBE_REPO"
+
+NO_PROMPT="$TMP/no-prompt-evidence"
+if FAKE_OMIT_USER_PROMPT=1 CODEX_CAPTURE_DATE=2026-08-10 "$SCRIPT" \
+  --output "$NO_PROMPT" --codex-bin "$FAKE" --platform-label macos-arm64 \
+  --allow-live-model-probe >/dev/null; then
+  assert "missing UserPromptSubmit stays explicit unknown while other hooks remain observed" python3 -c \
+    'import json,sys; prompt=json.load(open(sys.argv[1]))["result"]; shell=json.load(open(sys.argv[2]))["result"]; assert prompt["status"] == "unknown" and prompt["exit_condition"] and shell["status"] == "observed"' \
+    "$NO_PROMPT/hooks-user-prompt-submit.json" "$NO_PROMPT/hooks-shell.json"
+else
+  not_ok "missing UserPromptSubmit is captured without aborting other evidence"
+fi
+
+if FAKE_VERSION=0.148.0 CODEX_CAPTURE_DATE=2026-08-10 "$SCRIPT" \
+  --output "$OUT" --codex-bin "$FAKE" --platform-label macos-arm64 >/dev/null 2>&1; then
+  not_ok "refuses to overwrite evidence from another CLI version"
+else
+  ok "refuses to overwrite evidence from another CLI version"
+fi
+
+if CODEX_CAPTURE_DATE=2026-08-10 "$SCRIPT" \
+  --output "$OUT" --codex-bin "$FAKE" --platform-label linux-x86_64 >/dev/null 2>&1; then
+  not_ok "refuses to overwrite evidence from another platform"
+else
+  ok "refuses to overwrite evidence from another platform"
+fi
+
+if CODEX_CAPTURE_DATE=2026-08-10 "$SCRIPT" \
+  --output "$TMP/unsafe" --codex-bin "$FAKE" --platform-label /Users/private >/dev/null 2>&1; then
+  not_ok "rejects unsafe platform labels before writing"
+else
+  ok "rejects unsafe platform labels before writing"
+fi
+
+TOOL_PATH="$TMP/tool-path"
+mkdir -p "$TOOL_PATH"
+for _tool in bash basename cat cp date dirname git grep mkdir mktemp mv python3 rm sed sh tail uname; do
+  _tool_path=$(command -v "$_tool")
+  ln -s "$_tool_path" "$TOOL_PATH/$_tool"
+done
+MISSING_TOOLS="$TMP/missing-tools"
+if PATH="$TOOL_PATH" CODEX_CAPTURE_DATE=2026-08-10 "$SCRIPT" \
+  --output "$MISSING_TOOLS" --codex-bin "$FAKE" --platform-label macos-arm64 >/dev/null; then
+  assert "missing jq is recorded without touching real config" python3 -c \
+    'import json,sys; d=json.load(open(sys.argv[1]))["result"]; assert d["dependencies"]["jq"] is False' \
+    "$MISSING_TOOLS/platform.json"
+  assert "missing benchmark dependency stays explicit unknown" python3 -c \
+    'import json,sys; assert json.load(open(sys.argv[1]))["result"]["status"] == "unknown"' \
+    "$MISSING_TOOLS/session-end-timing.json"
+else
+  not_ok "missing tools degrade to explicit unknown"
+fi
+
+DISABLED="$TMP/hooks-disabled"
+if FAKE_HOOKS_ENABLED=false CODEX_CAPTURE_DATE=2026-08-10 "$SCRIPT" \
+  --output "$DISABLED" --codex-bin "$FAKE" --platform-label macos-arm64 \
+  --allow-live-model-probe >/dev/null; then
+  assert "disabled/untrusted hooks keep hook evidence unknown" python3 -c \
+    'import json,sys; d=json.load(open(sys.argv[1]))["result"]; assert d["status"] == "unknown" and "trust" in d["exit_condition"].lower()' \
+    "$DISABLED/hooks-shell.json"
+  assert "disabled hooks feature is recorded, not silently dropped" python3 -c \
+    'import json,sys; assert json.load(open(sys.argv[1]))["result"]["hooks_feature"] == "stable-disabled"' \
+    "$DISABLED/trust-config.json"
+else
+  not_ok "disabled/untrusted hooks keep hook evidence unknown"
+fi
+
+# A checkout without hooks/state-breadcrumb.sh must publish an explicit unknown rather
+# than aborting the whole capture (the benchmark is one row, not the whole contract).
+NOHOOK="$TMP/no-hook-checkout"
+mkdir -p "$NOHOOK/scripts"
+cp "$SCRIPT" "$NOHOOK/scripts/"
+if CODEX_CAPTURE_DATE=2026-08-10 "$NOHOOK/scripts/capture_codex_capabilities.sh" \
+  --output "$NOHOOK/out" --codex-bin "$FAKE" --platform-label macos-arm64 >/dev/null; then
+  assert "absent breadcrumb hook degrades to explicit unknown" python3 -c \
+    'import json,sys; d=json.load(open(sys.argv[1]))["result"]; assert d["status"] == "unknown" and d["samples"] == 0 and "state-breadcrumb.sh" in d["exit_condition"]' \
+    "$NOHOOK/out/session-end-timing.json"
+else
+  not_ok "absent breadcrumb hook degrades to explicit unknown"
+fi
+
+LEAK="$TMP/sanitizer-rejection"
+if FAKE_DOCTOR_LEAKS_ID=1 CODEX_CAPTURE_DATE=2026-08-10 "$SCRIPT" \
+  --output "$LEAK" --codex-bin "$FAKE" --platform-label macos-arm64 >/dev/null 2>&1; then
+  not_ok "sanitizer rejects a private path that survived normalization"
+else
+  ok "sanitizer rejects a private path that survived normalization"
+fi
+assert "rejected capture publishes no evidence" test ! -e "$LEAK/doctor.json"
+
+FALLBACK="$TMP/doctor-fallback"
+if FAKE_DOCTOR_FAIL=1 CODEX_CAPTURE_DATE=2026-08-10 "$SCRIPT" \
+  --output "$FALLBACK" --codex-bin "$FAKE" --platform-label macos-arm64 >/dev/null; then
+  assert "doctor failure becomes explicit unknown" python3 -c \
+    'import json,sys; assert json.load(open(sys.argv[1]))["result"]["doctor_overall_status"] == "unknown"' \
+    "$FALLBACK/doctor.json"
+else
+  not_ok "doctor failure becomes explicit unknown"
+fi
+
+printf '\n  codex-capability-probe.test.sh: %d passed' "$PASS"
+if [ "$FAIL" -ne 0 ]; then
+  printf ', %d failed\n' "$FAIL"
+  exit 1
+fi
+printf '\n'

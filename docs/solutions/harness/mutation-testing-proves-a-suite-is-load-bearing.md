@@ -1,14 +1,15 @@
 ---
 problem_type: knowledge
 module: harness
-tags: mutation-testing, vacuous-assertions, test-quality, review-oracle, regression-guard, harness-scripts
+tags: mutation-testing, vacuous-assertions, test-quality, review-oracle, regression-guard, harness-scripts, text-anchored-guards
 severity: standard
 applicable_when: Use this when a test suite is green and you are about to treat that as evidence — ask which assertions would actually fail if the guard they target were deleted.
 affects:
   - tests/scripts/resync-conflict.test.sh
+  - runtime/test_run_state.py
 supersedes: null
 confidence: high
-confirmed_at: 2026-07-10
+confirmed_at: 2026-07-27
 ---
 ## Applicable When
 
@@ -45,6 +46,8 @@ Mutate by editing the file in place, running the suite, then `git checkout -- <f
 - **Label non-load-bearing assertions explicitly.** Baseline sanity checks (e.g. "a first install writes no sidecar") cannot fail even with the feature deleted. Leave a comment saying so, or a future reader counts "22 passed" as 22 guarded behaviors. This suite marks case 1 and case 9 as baselines in-file.
 - **A regression test can pin the wrong thing.** The `[ -r /dev/tty ]` bug was caught only because an assertion checked the *warning text*, not just "rc 0 and the file survived". Outcome assertions pass under a safe-by-accident code path; message assertions do not.
 - **Some contracts are structurally untestable today** and should say so rather than pretend. The stdin-sentinel assertion here cannot fail while `have_tty()` returns false, because deploy never reaches `read` at all — its comment now states precisely what it pins (a future bare-`read` regression) and what it does not prove.
+- **A text-anchored assertion goes vacuous the moment you widen its slice** (2026-07-27, `runtime/test_run_state.py`). A guard that read a table out of `skills/subagent-driven-development/SKILL.md` was anchored between a heading and a *sentence*; a later edit reworded that sentence, so the test errored. The obvious repair — widen the slice to the whole section — made it **pass while asserting nothing**, because the surrounding prose also mentions every state it was checking. Only re-running the mutation caught it. Fixes that generalize: anchor on structure (parse the table's `|` rows) rather than on prose, assert a minimum row count so a parse-to-zero fails loudly instead of trivially passing, and re-run the mutation after *every* edit to either side — the guard or the text it reads.
+- **Membership is not executability.** In the same file, a guard asserted the documented successor states were *named* correctly; a documented route that the engine would reject with exit 2 still passed. Upgrading it to actually run each documented transition (and to assert the rejection case, so it cannot pass vacuously) turned a naming check into a behavior check — and a deliberately unreachable row then failed with `documented successor blocked -> shipped is not takeable`.
 
 ## Related
 

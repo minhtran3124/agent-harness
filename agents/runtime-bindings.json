@@ -1,0 +1,132 @@
+{
+  "schema_version": 1,
+  "runtimes": {
+    "claude": {
+      "format": "markdown-frontmatter",
+      "roles": {
+        "coding": {
+          "model": "claude-opus-4-8",
+          "tools": null,
+          "capabilities": {
+            "filesystem": "runtime-default",
+            "shell": "runtime-default",
+            "network": "runtime-default",
+            "mcp": "runtime-default",
+            "nested_delegation": "runtime-default",
+            "context_policy": "fresh-or-bounded-dispatch-required",
+            "model_class": "claude-opus-4-8",
+            "output_contract": "role-body-enforced"
+          }
+        },
+        "reviewer": {
+          "model": "claude-opus-5",
+          "tools": ["Glob", "Grep", "Read", "Bash"],
+          "capabilities": {
+            "filesystem": "Write/Edit omitted; Bash mutation prohibited by role contract",
+            "shell": "Bash limited by role contract to read-only inspection",
+            "network": "no dedicated network tool; Bash network prohibited by role contract",
+            "mcp": "no MCP tools allowed",
+            "nested_delegation": "Agent omitted",
+            "context_policy": "fresh-or-bounded-dispatch-required",
+            "model_class": "claude-opus-5 distinct from implementation binding",
+            "output_contract": "role-body-enforced"
+          }
+        },
+        "task-reviewer": {
+          "model": "claude-opus-5",
+          "tools": ["Glob", "Grep", "Read"],
+          "capabilities": {
+            "filesystem": "read-only tools only",
+            "shell": "Bash omitted",
+            "network": "network tools omitted",
+            "mcp": "MCP tools omitted",
+            "nested_delegation": "Agent omitted",
+            "context_policy": "fresh-or-bounded-dispatch-required",
+            "model_class": "claude-opus-5",
+            "output_contract": "role-body-enforced"
+          }
+        },
+        "test-runner": {
+          "model": "claude-haiku-4-5-20251001",
+          "tools": ["Glob", "Grep", "Read", "WebFetch", "WebSearch", "Bash", "mcp__context7__resolve-library-id", "mcp__context7__query-docs"],
+          "capabilities": {
+            "filesystem": "direct write/edit tools omitted; test artifacts may be produced by Bash",
+            "shell": "Bash for test execution",
+            "network": "WebFetch/WebSearch for documentation only",
+            "mcp": "context7 read-only tools only",
+            "nested_delegation": "Agent omitted",
+            "context_policy": "fresh-or-bounded-dispatch-required",
+            "model_class": "claude-haiku-4-5-20251001",
+            "output_contract": "role-body-enforced"
+          }
+        }
+      }
+    },
+    "codex": {
+      "format": "toml-custom-agent",
+      "emission": "scripts/render_agent_definitions.py",
+      "roles": {
+        "coding": {
+          "model": "gpt-5.6-sol",
+          "model_reasoning_effort": "high",
+          "sandbox_mode": "workspace-write",
+          "capabilities": {
+            "filesystem": "workspace-write sandbox",
+            "shell": "controlled execution tools",
+            "network": "runtime-controlled",
+            "mcp": "runtime-controlled",
+            "nested_delegation": "allowed",
+            "context_policy": "fresh-bounded fork",
+            "model_class": "inherit compatible implementation model",
+            "output_contract": "role-body-enforced"
+          }
+        },
+        "reviewer": {
+          "model": "gpt-5.6-terra",
+          "model_reasoning_effort": "high",
+          "sandbox_mode": "read-only",
+          "capabilities": {
+            "filesystem": "read-only sandbox",
+            "shell": "read-only inspection policy",
+            "network": "disabled",
+            "mcp": "disabled",
+            "nested_delegation": "disabled",
+            "context_policy": "fresh-bounded fork",
+            "model_class": "distinct high-capability review profile",
+            "output_contract": "role-body-enforced"
+          }
+        },
+        "task-reviewer": {
+          "model": "gpt-5.6-terra",
+          "model_reasoning_effort": "high",
+          "sandbox_mode": "read-only",
+          "capabilities": {
+            "filesystem": "read-only sandbox",
+            "shell": "disabled",
+            "network": "disabled",
+            "mcp": "disabled",
+            "nested_delegation": "disabled",
+            "context_policy": "fresh-bounded fork",
+            "model_class": "high-capability review profile",
+            "output_contract": "role-body-enforced"
+          }
+        },
+        "test-runner": {
+          "model": "gpt-5.6-luna",
+          "model_reasoning_effort": "medium",
+          "sandbox_mode": "workspace-write",
+          "capabilities": {
+            "filesystem": "read-only sandbox with test-artifact exception",
+            "shell": "test execution tools",
+            "network": "documentation-only policy",
+            "mcp": "inherit configured context7 server; enable context7 only",
+            "nested_delegation": "disabled",
+            "context_policy": "fresh-bounded fork",
+            "model_class": "fast test-execution profile",
+            "output_contract": "role-body-enforced"
+          }
+        }
+      }
+    }
+  }
+}

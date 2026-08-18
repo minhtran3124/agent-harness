@@ -1,0 +1,116 @@
+{
+  "cases": [
+    {
+      "id": "finishing-a-development-branch-trigger-1",
+      "skill": "finishing-a-development-branch",
+      "query": "Tests passed; push this branch and open a pull request without merging it.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "finishing-a-development-branch-trigger-2",
+      "skill": "finishing-a-development-branch",
+      "query": "Before we touch code, tests passed; push this branch and open a pull request without merging it.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "finishing-a-development-branch-trigger-3",
+      "skill": "finishing-a-development-branch",
+      "query": "I am unsure of the safest workflow; tests passed; push this branch and open a pull request without merging it.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "finishing-a-development-branch-trigger-4",
+      "skill": "finishing-a-development-branch",
+      "query": "Please do this in the repository: tests passed; push this branch and open a pull request without merging it.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "finishing-a-development-branch-trigger-5",
+      "skill": "finishing-a-development-branch",
+      "query": "This is time-sensitive, but tests passed; push this branch and open a pull request without merging it.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "finishing-a-development-branch-trigger-6",
+      "skill": "finishing-a-development-branch",
+      "query": "Use the project workflow to tests passed; push this branch and open a pull request without merging it.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "finishing-a-development-branch-trigger-7",
+      "skill": "finishing-a-development-branch",
+      "query": "Can you take ownership of this request? Tests passed; push this branch and open a pull request without merging it.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "finishing-a-development-branch-trigger-8",
+      "skill": "finishing-a-development-branch",
+      "query": "Do not implement anything else; tests passed; push this branch and open a pull request without merging it.",
+      "should_trigger": true,
+      "split": "holdout"
+    },
+    {
+      "id": "finishing-a-development-branch-near-miss-1",
+      "skill": "finishing-a-development-branch",
+      "query": "Review the uncommitted diff for likely runtime defects.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "finishing-a-development-branch-near-miss-2",
+      "skill": "finishing-a-development-branch",
+      "query": "Do only this instead: review the uncommitted diff for likely runtime defects.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "finishing-a-development-branch-near-miss-3",
+      "skill": "finishing-a-development-branch",
+      "query": "The user asked us to review the uncommitted diff for likely runtime defects.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "finishing-a-development-branch-near-miss-4",
+      "skill": "finishing-a-development-branch",
+      "query": "This request is adjacent but distinct: review the uncommitted diff for likely runtime defects.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "finishing-a-development-branch-near-miss-5",
+      "skill": "finishing-a-development-branch",
+      "query": "Do not route to the wrong specialist; review the uncommitted diff for likely runtime defects.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "finishing-a-development-branch-near-miss-6",
+      "skill": "finishing-a-development-branch",
+      "query": "For this branch, review the uncommitted diff for likely runtime defects.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "finishing-a-development-branch-near-miss-7",
+      "skill": "finishing-a-development-branch",
+      "query": "Handle the direct request: review the uncommitted diff for likely runtime defects.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "finishing-a-development-branch-near-miss-8",
+      "skill": "finishing-a-development-branch",
+      "query": "The next action should be: review the uncommitted diff for likely runtime defects.",
+      "should_trigger": false,
+      "split": "holdout"
+    }
+  ]
+}

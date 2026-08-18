@@ -1,0 +1,37 @@
+{
+  "outputs": [
+    "**spec_verdict: fail**\n**quality_verdict: needs_fixes**\n\n## Findings\n\n1. **Critical \u2014 spec violation: blank input accepted.** The task requires rejecting blank input; the fixture states the validator \"accepts blank strings.\" This directly contradicts an explicit requirement, so the spec verdict is fail (not cannot_verify \u2014 the fixture asserts the behavior outright).\n\n2. **Important \u2014 maintainability: 400-line nested conditional.** A single deeply nested conditional of that size for email validation is far beyond the minimum needed; it should be decomposed (or replaced with a small set of guard clauses / a standard validation approach).\n\n3. **Important \u2014 duplicated branches.** The fixture states branches are duplicated, meaning the same logic exists in multiple places; fixes to validation rules would have to be applied in several spots, inviting divergence.\n\n## Evidence\n\n- Spec fail: fixture statement \"The validator accepts blank strings\" vs. task requirement \"reject blank input.\"\n- Quality: fixture statement \"one 400-line nested conditional with duplicated branches.\"\n\nNo cannot_verify labels apply: the fixture's statements are the complete evidence and cover both the spec behavior and the structural quality claims; no external contract is declared unavailable."
+  ],
+  "usage": [
+    {
+      "input_tokens": 2,
+      "cache_creation_input_tokens": 31875,
+      "cache_read_input_tokens": 20043,
+      "output_tokens": 626,
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 31875,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "not_available",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 626,
+          "cache_read_input_tokens": 20043,
+          "cache_creation_input_tokens": 31875,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 31875
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard"
+    }
+  ]
+}

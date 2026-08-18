@@ -38,6 +38,9 @@ new_repo() {
   [ -d "$ROOT/hooks/lib" ] && cp -R "$ROOT/hooks/lib" "$d/hooks/"
   local h
   for h in "$@"; do cp "$ROOT/hooks/$h" "$d/hooks/"; done
+  # Copied harness fixtures are test infrastructure, not repository state under test.
+  # Keep Python hook libraries from triggering check-untracked-py's fixture repos.
+  printf '/hooks/\n' >> "$d/.git/info/exclude"
   echo "$d"
 }
 
@@ -66,6 +69,10 @@ assert_rc() {
 assert_rc_contains() { # assert_rc_contains <rc> <substring>
   if [ "$RC" -eq "$1" ] && echo "$OUT" | grep -qF "$2"; then pass
   else fail "rc=$RC (want $1), grep '$2' — out: $(echo "$OUT" | head -4 | tr '\n' ' ')"; fi
+}
+assert_rc_not_contains() { # assert_rc_not_contains <rc> <substring>
+  if [ "$RC" -eq "$1" ] && ! echo "$OUT" | grep -qF "$2"; then pass
+  else fail "want rc=$1 and no '$2' — rc=$RC out: $(echo "$OUT" | head -4 | tr '\n' ' ')"; fi
 }
 assert_silent_ok() {
   if [ "$RC" -eq 0 ] && [ -z "$OUT" ]; then pass; else fail "want silent rc=0; rc=$RC out:[$(echo "$OUT" | head -2 | tr '\n' ' ')]"; fi

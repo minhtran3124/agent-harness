@@ -2,11 +2,11 @@
 # Contract tests for the correctness-review scorer threshold (gh #152, PR #153).
 #
 # The scorer emits DISCRETE anchor scores (0|25|50|75|100) while the fix-loop
-# threshold is prose duplicated across several skill files. With threshold 80,
+# threshold may be referenced by skill prose. With threshold 80,
 # the "75 — Highly confident" anchor could never enter the fix-loop — and CI
 # stayed green because nothing asserted the anchors and the threshold stay
 # compatible. These tests are that assertion: they parse the live skill files,
-# so a later isolated edit that bumps one copy (or re-breaks the anchor/threshold
+# so a later isolated edit that bumps a live reference (or re-breaks the anchor/threshold
 # fit) fails the suite instead of shipping silently.
 source "$(dirname "$0")/../lib.sh"
 
@@ -59,8 +59,8 @@ t "mutation check: a single drifted copy is detected"
 m=$(mktemp -d); _CLEANUP_DIRS+=("$m")
 cp -R "$ROOT/skills" "$m/skills"
 # Bump exactly one consumer's copy, as a careless future edit would.
-sed -i.bak "s/THRESHOLD($DEFAULT)/THRESHOLD(95)/" "$m/skills/subagent-driven-development/SKILL.md"
-rm -f "$m/skills/subagent-driven-development/SKILL.md.bak"
+sed -i.bak "s/default \*\*$DEFAULT\*\*/default **95**/" "$m/$SCORER"
+rm -f "$m/$SCORER.bak"
 MUT_DRIFT=$(refs_of "$m" | grep -vx "$DEFAULT" | sort -u)
 if [ -n "$MUT_DRIFT" ]; then pass
 else fail "mutated copy (95) was not detected — refs_of patterns have gone stale"; fi

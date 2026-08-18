@@ -5,7 +5,8 @@ Checks (all mechanical, stdlib-only so CI needs no pyyaml):
   A. inventory presence scan (register-vs-scan): every manifest hook/skill/agent exists on disk
      and every disk component is in the manifest; each hook's `wired` flag matches settings.json.
   B. gate <-> enforcer: hard_gates.detectable slugs == risk-corroboration.sh's `add_cat` set
-     == its category_mode branches (bidirectional).
+     (bidirectional — a detector must exist for every manifest gate and vice versa).
+     Gate modes (block|warn) are manifest-owned and read by the hook at runtime — not mirrored.
 
 Exit 0 = consistent. Exit 1 = drift (one "manifest: ... drift: ..." line per problem).
 Run: python3 scripts/check_manifest.py [--root DIR]
@@ -78,13 +79,62 @@ def check(root: Path) -> int:
     for name in disk_agents - man_agents:
         problem("agents", f"{name} on disk but missing from manifest")
 
-    # ── B. detectable gates <-> risk-corroboration.sh (add_cat + category_mode) ─
+    # ── A2. neutral agent contracts <-> runtime bindings ─────────────────────
+    agent_binding_spec = m.get("agent_bindings")
+    if not isinstance(agent_binding_spec, dict):
+        problem("agent_bindings", "missing agent_bindings object")
+    else:
+        declared_runtimes = set(agent_binding_spec.get("runtimes", []))
+        if declared_runtimes != {"claude", "codex"}:
+            problem("agent_bindings", "runtimes must be exactly claude and codex")
+        try:
+            contracts = json.loads(
+                (root / agent_binding_spec["contracts"]).read_text()
+            )
+            bindings = json.loads((root / agent_binding_spec["bindings"]).read_text())
+        except (KeyError, OSError, json.JSONDecodeError) as exc:
+            problem("agent_bindings", f"cannot load contracts/bindings: {exc}")
+        else:
+            contract_roles = set(contracts.get("roles", {}))
+            required = set(contracts.get("required_capabilities", []))
+            if contract_roles != man_agents:
+                problem("agent_bindings", "contract roles must match manifest agents")
+            if not required:
+                problem("agent_bindings", "required_capabilities must not be empty")
+            runtime_map = bindings.get("runtimes", {})
+            if set(runtime_map) != declared_runtimes:
+                problem("agent_bindings", "binding runtimes must match declared runtimes")
+            for runtime, runtime_spec in runtime_map.items():
+                roles = runtime_spec.get("roles", {})
+                if set(roles) != contract_roles:
+                    problem("agent_bindings", f"{runtime} roles must match contracts")
+                    continue
+                for role, binding in roles.items():
+                    capabilities = binding.get("capabilities", {})
+                    if set(capabilities) != required:
+                        problem(
+                            "agent_bindings",
+                            f"{runtime}/{role} capability mapping is incomplete",
+                        )
+            for role in contract_roles:
+                source = root / "agents" / f"{role}.md"
+                parts = source.read_text().split("---", 2)
+                if len(parts) < 3:
+                    problem("agent_bindings", f"agents/{role}.md lacks frontmatter")
+                    continue
+                frontmatter = parts[1]
+                if re.search(r"^(model|tools|memory):", frontmatter, re.MULTILINE):
+                    problem(
+                        "agent_bindings",
+                        f"agents/{role}.md retains a runtime policy field",
+                    )
+        renderer = agent_binding_spec.get("renderer")
+        if not isinstance(renderer, str) or not (root / renderer).is_file():
+            problem("agent_bindings", "renderer path is missing or invalid")
+
+    # ── B. detectable gates <-> risk-corroboration.sh (add_cat set) ────────────
     rc = (root / "hooks" / "risk-corroboration.sh").read_text()
     hook_added = set(re.findall(r'add_cat\s+"([^"]+)"', rc))
-    # category_mode branches look like:  auth) ... ;;   or  data-loss/migration) ... ;;
-    hook_modes = set(
-        re.findall(r"^\s*([a-z][a-z/-]*)\)\s*echo\s+\"(?:block|warn)\"", rc, re.M)
-    )
     man_detect = {g["slug"] for g in m.get("hard_gates", {}).get("detectable", [])}
 
     for slug in man_detect - hook_added:
@@ -96,11 +146,6 @@ def check(root: Path) -> int:
         problem(
             "hard_gates",
             f"add_cat '{slug}' in risk-corroboration.sh but not in manifest detectable",
-        )
-    for slug in man_detect - hook_modes:
-        problem(
-            "hard_gates",
-            f"detectable '{slug}' has no category_mode branch in risk-corroboration.sh",
         )
 
     # ── C. contracts <-> disk ──────────────────────────────────────────────────

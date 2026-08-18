@@ -7,7 +7,7 @@ paths:
 
 Applies when writing `specs/<slug>/PLAN.md` for multi-step work.
 Path-scoped (not auto-loaded): injected when a `specs/**/PLAN.md` file is read; authoring
-flows load it via the explicit Read step in `writing-plans` / `executing-plans`.
+flows load it via the explicit Read step in `writing-plans` / `subagent-driven-development`.
 
 Related: `auto-correct-scope.md`. See also `CLAUDE.local.md` → Development Workflow → Planning Layer.
 
@@ -39,6 +39,19 @@ and populated `Files / Action / Verify / Done`:
 - **Done:** Measurable acceptance state
 ```
 
+### Context contract for new plans
+
+New markdown plans add a non-empty `## Global Constraints` section. Each task also carries:
+
+- **Criteria:** one or more mapped `SC-n` rows;
+- **Interfaces:** a concise statement of what the task consumes and produces. The
+  `Produces` clause must name at least one artifact in backticks (e.g. `` `foo.py` ``)
+  so producers are machine-trackable; `Consumes` may stay prose for external inputs.
+
+Run `python3 scripts/check_plan_contract.py <PLAN.md>` before execution. The checker applies this
+contract only to plans that declare `Global Constraints`, so legacy markdown/XML plans continue to
+parse and execute unchanged.
+
 Rules:
 
 - Real tasks are plain markdown — never wrap them in code fences (fenced task sections are
@@ -53,11 +66,57 @@ Conventions:
 - `wave`: the `(wave K)` suffix on the task heading. Same-wave tasks MAY run in parallel; waves execute sequentially. Omit for single-wave plans.
 - Files: comma-separated paths. Used by the wave-parallelism rule to check overlap and by `hooks/blast-radius-check.sh` as the in-scope set.
 
+## Success Criteria schema (the acceptance contract)
+
+The `## 3. Success Criteria` section is the plan's **acceptance contract**: the observable
+behaviors the finished work must exhibit, each paired with a re-runnable check. For every new
+markdown plan it MUST be a markdown table with exactly these columns:
+
+| ID | Behavior (observable) | Check (re-runnable) | Expected |
+
+Column rules:
+
+- **ID** — `SC-<n>`, sequential and unique within the plan (`SC-1`, `SC-2`, …). No gaps, no reuse.
+- **Behavior (observable)** — the externally-visible outcome, phrased so a reader can tell it
+  happened without reading the diff. Not an implementation note.
+- **Check (re-runnable)** — a command that inherits the same guardrails as a task `Verify` (see
+  `docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md`): a **single** command,
+  **pipe-free** (no `|`), finishes in **<60s**, and never a whole-suite row. Split anything larger
+  into more SC rows.
+- **Expected** — grammar is a leading machine-read token `exit <n>` (a non-zero code is allowed
+  when the check asserts failure), optionally followed by free text describing the expectation.
+  Examples: `exit 0`, `exit 1 — rejects the unsigned request`.
+
+Same fencing rule as tasks: a Success Criteria table written **inside a code fence** is an
+illustration and is ignored; the live contract is the non-fenced table. Example (fenced, so
+illustrative only):
+
+```markdown
+## 3. Success Criteria
+
+| ID | Behavior (observable) | Check (re-runnable) | Expected |
+|------|-------------------------|-----------------------|------------|
+| SC-1 | New markdown plan without an SC table is rejected | `python scripts/verify_summary.py --lint specs/<slug>` | exit 1 — missing SC table |
+| SC-2 | A well-formed SC table passes the lint | `python scripts/verify_summary.py --lint specs/<slug>` | exit 0 |
+```
+
+Exemptions: legacy XML plans (see "Legacy XML plans" below) and pre-existing specs authored
+before this rule are exempt — the SC table is required only for **new** markdown plans.
+
+### SUMMARY side — the `Criterion` column
+
+When a plan declares an SC table, its sibling `SUMMARY.md` closes the loop from the other end: the
+`### Verify` table accepts an optional trailing **`Criterion`** column naming the `SC-<n>` id that
+each row satisfies (`Check | Command | Exit | Notes | Criterion`). `scripts/verify_summary.py`
+enforces this coupling — when the sibling `PLAN.md` declares an SC table, the referenced ids must
+resolve to real `SC-<n>` rows in that plan. The column is optional when no SC table exists.
+
 ## Guardrails
 
 1. **Zero file overlap** across same-wave tasks — prevents merge conflicts when executed in parallel.
 2. **Verify must be automated** — your test runner, HTTP probe, linter, type-checker, migration command. Reject "open browser and check" at task level (that belongs in phase-level user-acceptance testing).
 3. **Verify <60s** — if longer, split into sub-tasks.
+4. **Layer ladder** — run your linter and type-checker first (when the stack defines them — see `techstacks/`), then the smallest test that touches the change. Add an integration test only when the behavior spans modules. Never put the whole suite in a task `Verify`, an SC row, or a SUMMARY `### Verify` row — cite it in prose; the suite runs at `finishing-a-development-branch` (targeted, or full when no safe subset is known) and in the CI `tests` job.
 
 ## Examples
 
@@ -110,7 +169,7 @@ created: YYYY-MM-DD
 
 ## 1. Motivation
 ## 2. Non-goals
-## 3. Success Criteria
+## 3. Success Criteria  (the acceptance-contract table — see "Success Criteria schema" above)
 ## 4. Tasks (one `### Task` section per task)
 ## 5. Risks
 ## 6. Status Log
@@ -120,7 +179,7 @@ The examples above show the full task shape; `specs/` is tracked in git, so plan
 
 ## Legacy XML plans (read-only support)
 
-Plans written before 2026-07-16 use fenced `<task id="N.M" wave="K"><files><action><verify><done>` XML blocks. The renderer, the executing-plans Step-0 gate, and `hooks/blast-radius-check.sh` still parse that syntax, so existing plans keep rendering and executing unchanged — but it is **not** an authoring format: never write new plans in XML. One exception: when adding a task to an existing XML plan, keep that plan's XML syntax — in a mixed file the parser reads only the XML tasks, so a markdown task added to an XML plan would be invisible.
+Plans written before 2026-07-16 use fenced `<task id="N.M" wave="K"><files><action><verify><done>` XML blocks. The renderer, the `subagent-driven-development` Step-0 gate, and `hooks/blast-radius-check.sh` still parse that syntax, so existing plans keep rendering and executing unchanged — but it is **not** an authoring format: never write new plans in XML. One exception: when adding a task to an existing XML plan, keep that plan's XML syntax — in a mixed file the parser reads only the XML tasks, so a markdown task added to an XML plan would be invisible.
 
 ## Auto-generated "At a glance" block
 

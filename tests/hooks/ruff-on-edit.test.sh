@@ -26,4 +26,9 @@ else
   t "ruff reformat case"; skip "ruff not installed"
 fi
 
+t "malformed edit payload warns but never blocks"
+repo=$(new_repo $H)
+run_hook "$repo" $H '{not-json'
+assert_rc_contains 0 'formatting coverage is incomplete'
+
 finish

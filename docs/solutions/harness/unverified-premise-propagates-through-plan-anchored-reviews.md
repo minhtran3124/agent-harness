@@ -10,7 +10,7 @@ affects:
   - .gitignore
 supersedes: null
 confidence: high
-confirmed_at: 2026-07-10
+confirmed_at: 2026-08-17
 ---
 ## Applicable When
 
@@ -56,6 +56,16 @@ git ls-files skills/xia2/ | grep proposed
 This is a direct instance of `rules/behavior.md` §1 — **`not_observed != absent`**. A missing search result, an unread file, or an unrun `ls` means *unknown*, not *absent*. Before writing "X does not exist" into a design, state where you looked; if you did not look, do not write it.
 
 Fixed at `cfff07c`: delete both `.proposed` files, gitignore `*.proposed`, and add a repo-wide load-bearing assertion so the premise is enforced rather than assumed.
+
+**Second confirmed case (2026-08-17, test-layer-ladder) — the positive-coverage variant.** The
+premise was not an absence claim but a *coverage* claim: intake-time analysis asserted the line
+"Test behavior your application actually owns" was "already covered" by the task-reviewer
+checklist ("tests actually verify behavior, not mock behavior") — nearest-sounding prose, not the
+same concept (mock-fidelity ≠ test ownership). The claim propagated into `SUMMARY.md ### Rationale`
+and survived spec review, plan review, and four per-task reviews; only the plan-blind intent
+oracle grepped for an ownership mechanism (`grep -rn -iE "actually own|don't test (the )?(library|framework)" rules/ skills/ techstacks/ templates/`)
+and found none. Same rule, positive form: before writing "X is already covered by Y", quote the
+line of Y that covers it — a coverage claim without a cited line is `unknown`, not covered.
 
 ## Guardrail
 

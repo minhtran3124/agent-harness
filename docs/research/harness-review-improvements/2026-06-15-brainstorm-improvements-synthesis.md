@@ -1,138 +1,138 @@
-# Tổng hợp chuyên sâu: Nên cải thiện skill `brainstorming` thế nào — và bằng chứng
+# In-depth synthesis: how should the `brainstorming` skill be improved — and the evidence
 
-> Ngày: 2026-06-15
-> Đầu vào: `docs/research/harness-review-improvements/2026-06-15-ce-brainstorm-comparison.md` + `docs/research/harness-review-improvements/2026-06-15-superpowers-comparison.md`
-> Mục tiêu: Lọc ra những thay đổi mang lại **hiệu quả thực sự**, kèm bằng chứng ngoài (academic + industry) để biện minh CÓ nên update và update NHƯ THẾ NÀO.
-> Phương pháp bằng chứng: 4 truy vấn web có chủ đích cho 4 tuyên bố chịu lực nhất (anchoring, LLM self-correction, product discovery, cost-of-change). Nguồn liệt kê ở cuối. Mọi tuyên bố cấu trúc về 2 skill đã đối chiếu trực tiếp với văn bản trong context.
-
----
-
-## 0. Khung đánh giá
-
-Mỗi đề xuất được chấm trên 3 trục: **giá trị thực** × **sức mạnh bằng chứng** × **chi phí/rủi ro triển khai**. Chỉ những mục thắng cả ba mới đưa vào Tier 1. Đặc biệt chú ý: bằng chứng dưới đây **đảo ngược một khuyến nghị cũ** (xem mục 5).
-
-Hai sự thật nền (đã xác lập ở 2 doc trước):
-- Skill `brainstorming` của ta là **fork của superpowers**, đã được nâng cấp (subagent review thay self-review, +xia2, +lane, +docs/solutions). → Ta là **superset** của superpowers nhưng **kém tinh vi hơn ce-brainstorm**.
-- `rules/orchestration.md` của ta nói `design.md` co giãn theo tín hiệu và lane `tiny` đi thẳng tới sửa trực tiếp — **mâu thuẫn** với câu "mọi dự án, không ngoại lệ" trong SKILL.md hiện tại.
+> Date: 2026-06-15
+> Inputs: `docs/research/harness-review-improvements/2026-06-15-ce-brainstorm-comparison.md` + `docs/research/harness-review-improvements/2026-06-15-superpowers-comparison.md`
+> Goal: Filter out the changes that deliver **real effectiveness**, with external evidence (academic + industry) to justify WHETHER we should update and HOW to update.
+> Evidence method: 4 purposeful web queries for the 4 most load-bearing claims (anchoring, LLM self-correction, product discovery, cost-of-change). Sources listed at the end. Every structural claim about the 2 skills was checked directly against the text in context.
 
 ---
 
-## TIER 1 — Bằng chứng mạnh, giá trị cao, NÊN LÀM
+## 0. Evaluation framework
 
-### 1.1 Đưa Product Pressure Test vào (4 gap lenses) — *tính mới + bằng chứng mạnh nhất*
+Each proposal is scored on 3 axes: **real value** × **strength of evidence** × **implementation cost/risk**. Only items that win on all three go into Tier 1. Note in particular: the evidence below **reverses an earlier recommendation** (see section 5).
 
-**Hiện trạng:** skill ta chỉ "ask clarifying questions" chung chung. Không có cơ chế phát hiện khoảng trống lập luận sản phẩm.
-
-**Đề xuất:** thêm một bước **phân tích nội bộ (agent tự quét)** trước khi đề xuất phương án, theo 4 lăng kính của ce-brainstorm: evidence / specificity / counterfactual / attachment. Chỉ nêu khoảng trống **có thật** thành câu hỏi mở, lồng vào dòng đối thoại — không bắn ra như checklist.
-
-**Bằng chứng ngoài (mạnh):** đây không phải sáng chế của ce-brainstorm — nó là **The Mom Test** (Rob Fitzpatrick) được tự động hóa. Nguyên tắc lõi của The Mom Test trùng khớp gần như 1:1 với các gap lenses:
-- *"Ask about past behavior, not hypotheticals"* → **evidence gap** ("điều cụ thể nhất ai đó đã làm — trả tiền, dựng workaround?").
-- *"How do they currently address the problem? What alternatives have they investigated?"* → **counterfactual gap** ("hôm nay họ làm gì khi gặp vấn đề?").
-- *"Past behavior is real; hypothetical answers are mostly unreliable."* → chính là lý do các probe phải hỏi việc đã xảy ra, không phải ý kiến tương lai.
-
-→ Đây là một thực hành sản phẩm **đã được kiểm chứng trong ngành suốt >10 năm**, không phải mốt. Rủi ro adoption thấp (chỉ là kỷ luật hỏi), giá trị cao (ngăn xây nhầm thứ — lỗi đắt nhất). **Verdict: LÀM.**
-
-**Cách update (cụ thể):** thêm một mục con dưới "Ask clarifying questions" trong `SKILL.md`:
-- Trước khi sang "Propose approaches", quét opening của user qua 4 lăng kính (kèm 1 câu hỏi mẫu mỗi lăng kính).
-- Chỉ probe lăng kính nào thực sự khuyết. Probe để mở (không menu) — vì menu sẽ mách user "loại bằng chứng nào được tính".
-- Ghi chú nguồn: "dựa trên The Mom Test — hỏi hành vi quá khứ, không hỏi giả định."
-
-### 1.2 Làm brainstorming nhận biết lane — *sửa lỗi nhất quán + bằng chứng tỉ lệ*
-
-**Hiện trạng:** câu "Every project goes through this process... regardless of perceived simplicity" mâu thuẫn trực tiếp với `orchestration.md` (lane tiny → sửa thẳng) và với artifact policy (design.md theo tín hiệu).
-
-**Phân giải mâu thuẫn (quan trọng — không phải chỉ nới lỏng):** HARD-GATE ("trình design + được duyệt trước khi implement") là luật **bên trong** skill brainstorming. `feature-intake` mới là cái quyết định **có bước vào** brainstorming hay không. Với lane `tiny`, ta **không gọi brainstorming** → không có xung đột. Vấn đề nằm ở câu chữ "mọi dự án regardless of simplicity" — nên sửa thành **"mọi dự án *đáng* brainstorm"**, và để độ sâu artifact + review co giãn theo lane.
-
-**Bằng chứng ngoài:** nguyên lý cân xứng nỗ lực-rủi ro được chống lưng bởi dữ liệu **cost-of-change của Boehm** — lỗi yêu cầu (requirements) phát hiện muộn đắt hơn 50–200× so với sửa sớm. Hệ quả hai chiều:
-- Với việc **đáng kể**: đầu tư brainstorm + review sớm là rẻ so với hậu quả → giữ full ceremony.
-- Với việc **tiny**: chi phí hậu quả thấp, nên ceremony nặng là lãng phí thuần → cắt.
-
-*Lưu ý trung thực về bằng chứng:* con số "100×/200×" của Boehm lấy từ dự án waterfall TRW/IBM thập niên 1970 và **bị tranh luận** với agile hiện đại (xem Slashdot debate). **Hướng** (sớm = rẻ hơn) vững; **độ lớn** thì không nên trích tuyệt đối. Dùng nó để biện minh *sự cân xứng*, không phải để dọa bằng con số.
-
-**Verdict: LÀM** (đây vừa là cải tiến vừa là sửa lỗi đúng-đắn nội bộ).
-
-**Cách update (cụ thể):**
-- Đầu `SKILL.md`: đọc `specs/<slug>/SUMMARY.md` → `Lane:` nếu feature-intake đã chạy.
-- Sửa anti-pattern "This Is Too Simple": HARD-GATE vẫn áp **khi đã ở trong brainstorming**; nhưng brainstorming không nên được gọi cho lane tiny.
-- Bảng co giãn: `tiny` → không vào skill này / căn chỉnh ngắn, có thể bỏ `design.md`; `normal` → flow hiện tại + subagent review 1 vòng; `high-risk` → full chain + subagent loop tới 5 vòng.
+Two foundational facts (established in the 2 prior docs):
+- Our `brainstorming` skill is a **fork of superpowers**, already upgraded (subagent review instead of self-review, +xia2, +lane, +docs/solutions). → We are a **superset** of superpowers but **less sophisticated than ce-brainstorm**.
+- Our `rules/orchestration.md` says `design.md` scales with signal and the `tiny` lane goes straight to direct edits — **contradicting** the sentence "every project, no exceptions" in the current SKILL.md.
 
 ---
 
-## TIER 2 — Bằng chứng mạnh, công cố vừa phải
+## TIER 1 — Strong evidence, high value, SHOULD DO
 
-### 2.1 Đảo thứ tự: trình bày hết phương án RỒI mới khuyến nghị (anti-anchoring)
+### 1.1 Bring in the Product Pressure Test (4 gap lenses) — *most novel + strongest evidence*
 
-**Hiện trạng:** SKILL.md ta ghi *"Lead with your recommended option and explain why"* (kế thừa từ superpowers). ce-brainstorm làm ngược: present-all-then-recommend.
+**Current state:** our skill only says "ask clarifying questions" in a generic way. There is no mechanism for detecting gaps in the product argument.
 
-**Bằng chứng ngoài (mạnh, và đặc biệt khớp bối cảnh AI):** **anchoring bias** là một trong những thiên kiến nhận thức được xác lập chắc nhất — thông tin đầu tiên trở thành "mỏ neo" bóp méo phán đoán sau đó. Quan trọng hơn: một nghiên cứu 2025 trên *AI-assisted decision making* (ScienceDirect) cho thấy **khuyến nghị của AI trực tiếp neo phán đoán của con người** — đúng kịch bản của ta (agent đưa khuyến nghị cho user). Dẫn bằng khuyến nghị = đặt mỏ neo trước khi user kịp cân nhắc các phương án.
+**Proposal:** add an **internal analysis step (agent self-scan)** before proposing approaches, following ce-brainstorm's 4 lenses: evidence / specificity / counterfactual / attachment. Raise only **real** gaps as open questions, woven into the conversational flow — don't fire them off as a checklist.
 
-**Verdict: LÀM** — thay đổi rẻ nhất (sửa câu chữ), bằng chứng mạnh, khớp bối cảnh AI-đưa-khuyến-nghị. Đây là điểm hiếm hoi ce-brainstorm vượt cả ta lẫn superpowers gốc.
+**External evidence (strong):** this is not ce-brainstorm's invention — it is **The Mom Test** (Rob Fitzpatrick) automated. The core principles of The Mom Test map almost 1:1 onto the gap lenses:
+- *"Ask about past behavior, not hypotheticals"* → **evidence gap** ("the most concrete thing someone has done — paid money, built a workaround?").
+- *"How do they currently address the problem? What alternatives have they investigated?"* → **counterfactual gap** ("what do they do today when they hit the problem?").
+- *"Past behavior is real; hypothetical answers are mostly unreliable."* → exactly why the probes must ask about what has already happened, not about future opinions.
 
-**Cách update:** đổi 2 chỗ trong `SKILL.md`:
+→ This is a product practice **proven in industry for >10 years**, not a fad. Adoption risk is low (it is just discipline in asking), value is high (it prevents building the wrong thing — the most expensive error). **Verdict: DO IT.**
+
+**How to update (concretely):** add a sub-section under "Ask clarifying questions" in `SKILL.md`:
+- Before moving to "Propose approaches", scan the user's opening through the 4 lenses (with 1 sample question per lens).
+- Probe only the lenses that are genuinely missing. Probe open-ended (no menu) — because a menu tells the user "which kind of evidence counts".
+- Note the source: "based on The Mom Test — ask about past behavior, not hypotheticals."
+
+### 1.2 Make brainstorming lane-aware — *consistency fix + proportionality evidence*
+
+**Current state:** the sentence "Every project goes through this process... regardless of perceived simplicity" directly contradicts `orchestration.md` (tiny lane → direct edit) and the artifact policy (design.md by signal).
+
+**Resolving the contradiction (important — this is not just loosening):** the HARD-GATE ("present the design + get approval before implementing") is a rule **inside** the brainstorming skill. It is `feature-intake` that decides **whether we enter** brainstorming at all. For the `tiny` lane we **do not call brainstorming** → there is no conflict. The problem is the wording "every project regardless of simplicity" — it should become **"every project *worth* brainstorming"**, letting artifact depth + review scale with the lane.
+
+**External evidence:** the effort-risk proportionality principle is backed by **Boehm's cost-of-change** data — requirements defects found late cost 50–200× more than fixing them early. Two-way consequence:
+- For **substantial** work: investing in early brainstorm + review is cheap relative to the consequences → keep full ceremony.
+- For **tiny** work: consequence cost is low, so heavy ceremony is pure waste → cut it.
+
+*Honest note on the evidence:* Boehm's "100×/200×" figures come from 1970s TRW/IBM waterfall projects and are **disputed** for modern agile (see the Slashdot debate). The **direction** (earlier = cheaper) holds; the **magnitude** should not be quoted as absolute. Use it to justify *proportionality*, not to scare people with a number.
+
+**Verdict: DO IT** (this is both an improvement and a correctness fix to internal consistency).
+
+**How to update (concretely):**
+- Top of `SKILL.md`: read `specs/<slug>/SUMMARY.md` → `Lane:` if feature-intake has run.
+- Fix the "This Is Too Simple" anti-pattern: the HARD-GATE still applies **once we are inside brainstorming**; but brainstorming should not be invoked for the tiny lane.
+- Scaling table: `tiny` → don't enter this skill / short alignment, `design.md` may be dropped; `normal` → current flow + 1 round of subagent review; `high-risk` → full chain + subagent loop up to 5 rounds.
+
+---
+
+## TIER 2 — Strong evidence, moderate effort
+
+### 2.1 Reverse the order: present all approaches FIRST, then recommend (anti-anchoring)
+
+**Current state:** our SKILL.md says *"Lead with your recommended option and explain why"* (inherited from superpowers). ce-brainstorm does the opposite: present-all-then-recommend.
+
+**External evidence (strong, and especially fitting for the AI context):** **anchoring bias** is one of the most firmly established cognitive biases — the first piece of information becomes an "anchor" that distorts subsequent judgment. More importantly: a 2025 study on *AI-assisted decision making* (ScienceDirect) shows that **an AI's recommendation directly anchors human judgment** — exactly our scenario (an agent giving a recommendation to a user). Leading with the recommendation = setting the anchor before the user has had a chance to weigh the options.
+
+**Verdict: DO IT** — the cheapest change (a wording fix), strong evidence, matching the AI-gives-recommendation context. This is one of the rare points where ce-brainstorm beats both us and the original superpowers.
+
+**How to update:** change 2 places in `SKILL.md`:
 - "Exploring approaches": *"Present all approaches and their trade-offs first; give your recommendation only after the user has seen the full set."*
-- Key Principles: bỏ "Lead with your recommended option", thêm "Present-then-recommend (avoid anchoring)".
+- Key Principles: drop "Lead with your recommended option", add "Present-then-recommend (avoid anchoring)".
 
-### 2.2 Checkpoint tổng hợp phạm vi trước khi viết `design.md`
+### 2.2 A scope-synthesis checkpoint before writing `design.md`
 
-**Hiện trạng:** ta duyệt design theo **từng section** (step 5) rồi viết doc. Không có bước "thu nhỏ — xác nhận toàn cảnh".
+**Current state:** we approve the design **section by section** (step 5) and then write the doc. There is no "zoom out — confirm the whole picture" step.
 
-**Insight của ce-brainstorm:** *duyệt từng mảnh ≠ duyệt tổng thể*. Sau đối thoại one-question-at-a-time, user đã đồng ý nhiều thứ rời rạc nhưng chưa bao giờ thấy bức tranh ghép lại — nơi các **hệ quả không hiển nhiên** của việc kết hợp câu trả lời lộ ra.
+**ce-brainstorm's insight:** *approving each piece ≠ approving the whole*. After a one-question-at-a-time dialogue, the user has agreed to many disconnected things but has never seen the assembled picture — where the **non-obvious consequences** of combining the answers surface.
 
-**Bằng chứng ngoài:** Boehm cost-of-change lần nữa — checkpoint này bắt lỗi *phạm vi/yêu cầu* **trước khi** doc rơi xuống `writing-plans`/implementation, tức ở điểm rẻ nhất trong đường cong chi phí.
+**External evidence:** Boehm cost-of-change again — this checkpoint catches *scope/requirements* errors **before** the doc drops into `writing-plans`/implementation, i.e. at the cheapest point on the cost curve.
 
-**Đánh giá thực tế:** vì ta **đã có** duyệt từng section, giá trị gia tăng tập trung ở 2 phần ce-brainstorm có mà ta thiếu: (a) **integration check** — chủ động ghép câu trả lời để lộ hệ quả; (b) **call-outs** — nêu các "đặt cược phạm vi" để user xác nhận/điều hướng. Phần "tóm tắt lại toàn bộ" thì trùng một phần với section-approval.
+**Realistic assessment:** since we **already have** section-by-section approval, the incremental value concentrates in the 2 parts ce-brainstorm has and we lack: (a) **integration check** — actively combining the answers to expose consequences; (b) **call-outs** — naming the "scope bets" for the user to confirm or redirect. The "restate everything" part partially overlaps with section approval.
 
-**Verdict: LÀM PHIÊN BẢN GỌN** — thêm một bước xác nhận-toàn-cảnh ngắn (không phải bê nguyên cỗ máy 2-stage/Path A/B/soft-cut của ce-brainstorm vào — quá nặng cho ta). Trọng tâm: integration check + 1–3 call-out trước khi viết doc.
+**Verdict: DO A TRIMMED VERSION** — add a short whole-picture confirmation step (not lifting ce-brainstorm's entire 2-stage/Path A/B/soft-cut machinery — too heavy for us). Focus: integration check + 1–3 call-outs before writing the doc.
 
-**Cách update:** thêm bước 5.5 giữa "Present design" và "Write design doc": *"Trước khi viết, ghép các quyết định lại và nêu (1) hình dạng tổng thể 1–3 câu, (2) 0–3 call-out là hệ quả/đặt cược phạm vi không hiển nhiên. Chờ xác nhận rồi mới viết."*
-
----
-
-## TIER 3 — Bằng chứng ĐẢO NGƯỢC khuyến nghị cũ
-
-### 3.1 ⚠️ KHÔNG dùng self-review của superpowers cho tầng nhẹ — bằng chứng phản bác
-
-**Khuyến nghị CŨ (trong doc superpowers):** "dùng self-review nhẹ của superpowers cho tiny/Lightweight, giữ subagent loop cho normal/high-risk."
-
-**Bằng chứng làm tôi RÚT LẠI một phần khuyến nghị này:** Huang et al., *"Large Language Models Cannot Self-Correct Reasoning Yet"* (ICLR 2024) — LLM **tự sửa mình mà không có phản hồi ngoài** thường không cải thiện, và **có lúc còn tệ đi** sau khi tự sửa. Self-review (agent tự đọc lại spec mình vừa viết) chính là kịch bản intrinsic self-correction mà paper này cảnh báo.
-
-→ Hệ quả: **review độc lập bằng subagent của ta là lựa chọn ĐÚNG đã được kiểm chứng** (subagent = "phản hồi ngoài"). Không nên hạ cấp xuống self-review chỉ để tiết kiệm, kể cả với việc nhỏ — vì self-review là đúng cái setting yếu nhất.
-
-**Sắc thái cân bằng (không tuyệt đối hóa):**
-- Paper mới hơn (*Self-Correct with Key Condition Verification*, EMNLP 2024) cho thấy self-correction **CÓ** thể hoạt động với phương pháp prompting đúng. Nên đây không phải "self-review luôn vô dụng".
-- Quan trọng: self-review **kiểu checklist xác minh** (quét TBD/placeholder, mâu thuẫn, đúng phạm vi) gần với *verification* hơn là *reasoning self-correction* — rủi ro thấp hơn nhiều. Quét placeholder không phải "tự sửa lập luận".
-
-**Verdict (đã hiệu chỉnh):** Với lane nhẹ, **không** bỏ review độc lập để thay bằng agent tự phê bình lập luận. Nếu cần tầng rẻ, hãy (a) dùng **checklist self-verification cơ học** (TBD/placeholder/mâu thuẫn — an toàn) HOẶC (b) dùng **subagent độc lập 1 vòng** (rẻ hơn full loop nhưng vẫn là phản hồi ngoài). Giữ subagent loop đầy đủ cho high-risk. → Đây là ví dụ bằng chứng ngoài trực tiếp chỉnh lại thiết kế.
+**How to update:** add a step 5.5 between "Present design" and "Write design doc": *"Before writing, assemble the decisions and state (1) the overall shape in 1–3 sentences, (2) 0–3 call-outs that are non-obvious consequences/scope bets. Wait for confirmation, then write."*
 
 ---
 
-## KHÔNG ưu tiên (giá trị thấp cho bối cảnh của ta)
+## TIER 3 — Evidence that REVERSES an earlier recommendation
 
-- **HTML output / non-software routing / CONCEPTS.md vocab capture** (từ ce-brainstorm): ta là repo FastAPI nội bộ; các tính năng này tốn công bảo trì, ít giá trị.
-- **Resume detection brainstorm** (Phase 0.1): hữu ích nhưng biên; để sau.
-- **Section catalog prose-economy đầy đủ của ce-brainstorm:** đáng tham khảo cho `spec-document-reviewer-prompt.md`, không cần bê nguyên.
+### 3.1 ⚠️ Do NOT use superpowers' self-review for the lightweight tier — counter-evidence
+
+**OLD recommendation (in the superpowers doc):** "use superpowers' lightweight self-review for tiny/Lightweight, keep the subagent loop for normal/high-risk."
+
+**Evidence that makes me PARTIALLY RETRACT this recommendation:** Huang et al., *"Large Language Models Cannot Self-Correct Reasoning Yet"* (ICLR 2024) — an LLM **correcting itself without external feedback** usually does not improve, and **sometimes gets worse** after self-correction. Self-review (an agent re-reading the spec it just wrote) is precisely the intrinsic self-correction scenario this paper warns about.
+
+→ Consequence: **our independent subagent review is the CORRECT, evidence-backed choice** (subagent = "external feedback"). We should not downgrade to self-review just to save cost, even for small work — because self-review is exactly the weakest setting.
+
+**Balanced nuance (don't absolutize):**
+- A more recent paper (*Self-Correct with Key Condition Verification*, EMNLP 2024) shows self-correction **CAN** work with the right prompting method. So this is not "self-review is always useless".
+- Importantly: self-review in a **verification-checklist style** (scanning for TBD/placeholders, contradictions, correct scope) is closer to *verification* than to *reasoning self-correction* — far lower risk. Scanning for placeholders is not "self-correcting reasoning".
+
+**Verdict (recalibrated):** For light lanes, do **not** drop independent review in favor of an agent self-critiquing its own reasoning. If a cheap tier is needed, either (a) use a **mechanical self-verification checklist** (TBD/placeholder/contradiction — safe) OR (b) use an **independent subagent for 1 round** (cheaper than the full loop but still external feedback). Keep the full subagent loop for high-risk. → This is an example of external evidence directly correcting the design.
 
 ---
 
-## Lộ trình đề xuất (xếp theo ROI)
+## NOT prioritized (low value for our context)
 
-| # | Thay đổi | Bằng chứng | Chi phí | Rủi ro |
+- **HTML output / non-software routing / CONCEPTS.md vocab capture** (from ce-brainstorm): we are an internal FastAPI repo; these features cost maintenance effort and deliver little value.
+- **Resume detection for brainstorm** (Phase 0.1): useful but marginal; defer.
+- **ce-brainstorm's full section-catalog prose economy:** worth referencing for `spec-document-reviewer-prompt.md`, no need to lift it wholesale.
+
+---
+
+## Proposed roadmap (ordered by ROI)
+
+| # | Change | Evidence | Cost | Risk |
 |---|---|---|---|---|
-| 1 | Anti-anchoring: present-then-recommend | Anchoring bias + AI-anchoring study (mạnh) | Rất thấp (sửa câu) | Rất thấp |
-| 2 | Lane-aware + sửa mâu thuẫn "every project" | Boehm proportionality + nhất quán nội bộ | Thấp | Thấp |
-| 3 | Product Pressure Test (4 gap lenses) | The Mom Test (industry-proven) | Vừa | Thấp |
-| 4 | Synthesis checkpoint gọn (integration check + call-outs) | Boehm cost-of-change | Vừa | Thấp |
-| 5 | Giữ review độc lập; KHÔNG hạ xuống self-review | LLM-cannot-self-correct (ICLR'24) | 0 (đã đúng) | — |
+| 1 | Anti-anchoring: present-then-recommend | Anchoring bias + AI-anchoring study (strong) | Very low (wording fix) | Very low |
+| 2 | Lane-aware + fix the "every project" contradiction | Boehm proportionality + internal consistency | Low | Low |
+| 3 | Product Pressure Test (4 gap lenses) | The Mom Test (industry-proven) | Medium | Low |
+| 4 | Trimmed synthesis checkpoint (integration check + call-outs) | Boehm cost-of-change | Medium | Low |
+| 5 | Keep independent review; do NOT downgrade to self-review | LLM-cannot-self-correct (ICLR'24) | 0 (already correct) | — |
 
-**Khuyến nghị tổng:** làm #1 và #2 trước (rẻ, một phần là sửa lỗi đúng-đắn), rồi #3 (giá trị cao nhất), rồi #4. #5 là xác nhận giữ nguyên thiết kế hiện tại (đừng "tối ưu" nhầm hướng).
+**Overall recommendation:** do #1 and #2 first (cheap, partly a correctness fix), then #3 (highest value), then #4. #5 is a confirmation to keep the current design as-is (don't "optimize" in the wrong direction).
 
-Mọi thay đổi đụng `skills/brainstorming/SKILL.md` (core skill, rủi ro cao theo rules) → cần đi qua feature-intake + plan trước khi sửa.
+Any change touching `skills/brainstorming/SKILL.md` (core skill, high risk per the rules) → must go through feature-intake + a plan before editing.
 
 ---
 
-## Nguồn
+## Sources
 
-- Anchoring bias (tổng quan + AI context): [The Decision Lab](https://thedecisionlab.com/biases/anchoring-bias), [EBSCO Research Starters](https://www.ebsco.com/research-starters/social-sciences-and-humanities/anchoring-cognitive-bias), [ScienceDirect — anchoring in AI-assisted decision making (2025)](https://www.sciencedirect.com/science/article/pii/S0268401225000076)
-- LLM tự sửa: [Huang et al., "LLMs Cannot Self-Correct Reasoning Yet", ICLR 2024 (arXiv:2310.01798)](https://arxiv.org/abs/2310.01798); phản đề có điều kiện: [Self-Correct with Key Condition Verification, EMNLP 2024 (arXiv:2405.14092)](https://arxiv.org/pdf/2405.14092)
-- Product discovery / hỏi hành vi quá khứ: [The Mom Test — mtlynch.io review](https://mtlynch.io/book-reports/the-mom-test/), [UXtweak — What Is the Mom Test](https://blog.uxtweak.com/the-mom-test/), [3 Rules to Customer Interviews](https://www.atlantaventures.com/blog/the-3-rules-to-customer-interviews-from-the-mom-test)
-- Cost-of-change (Boehm) + tranh luận độ lớn: [Steve McConnell — An Ounce of Prevention](https://stevemcconnell.com/articles/an-ounce-of-prevention/), [DZone — Real Cost of Change](https://dzone.com/articles/real-cost-change-software), [Slashdot — Do Late Bugs Really Cost More?](https://developers.slashdot.org/story/03/10/21/0141215/software-defects---do-late-bugs-really-cost-more)
+- Anchoring bias (overview + AI context): [The Decision Lab](https://thedecisionlab.com/biases/anchoring-bias), [EBSCO Research Starters](https://www.ebsco.com/research-starters/social-sciences-and-humanities/anchoring-cognitive-bias), [ScienceDirect — anchoring in AI-assisted decision making (2025)](https://www.sciencedirect.com/science/article/pii/S0268401225000076)
+- LLM self-correction: [Huang et al., "LLMs Cannot Self-Correct Reasoning Yet", ICLR 2024 (arXiv:2310.01798)](https://arxiv.org/abs/2310.01798); conditional counterpoint: [Self-Correct with Key Condition Verification, EMNLP 2024 (arXiv:2405.14092)](https://arxiv.org/pdf/2405.14092)
+- Product discovery / asking about past behavior: [The Mom Test — mtlynch.io review](https://mtlynch.io/book-reports/the-mom-test/), [UXtweak — What Is the Mom Test](https://blog.uxtweak.com/the-mom-test/), [3 Rules to Customer Interviews](https://www.atlantaventures.com/blog/the-3-rules-to-customer-interviews-from-the-mom-test)
+- Cost-of-change (Boehm) + the debate over magnitude: [Steve McConnell — An Ounce of Prevention](https://stevemcconnell.com/articles/an-ounce-of-prevention/), [DZone — Real Cost of Change](https://dzone.com/articles/real-cost-change-software), [Slashdot — Do Late Bugs Really Cost More?](https://developers.slashdot.org/story/03/10/21/0141215/software-defects---do-late-bugs-really-cost-more)

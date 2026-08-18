@@ -8,9 +8,13 @@ Task tool (general-purpose):
   prompt: |
     You are implementing Task N: [task name]
 
+    **Simplicity First — read before you start.** Minimum code that solves the problem. No
+    abstractions for single-use code. Every changed line must trace to the request.
+
     ## Task Description
 
-    [FULL TEXT of task from plan - paste it here, don't make subagent read file]
+    Read the complete task-local contract at `[TASK_BRIEF_PATH]`. It includes the exact task,
+    mapped Success Criteria, Global Constraints, and interfaces. Do not depend on parent history.
 
     ## Context
 
@@ -31,7 +35,9 @@ Task tool (general-purpose):
     Once you're clear on requirements:
     1. Implement exactly what the task specifies
     2. Write tests (following TDD if task says to)
-    3. Verify implementation works
+    3. Verify the implementation: run your linter and type-checker first (when the stack
+       defines them), then the task's `<verify>` command. Do not substitute the whole
+       suite — it runs at branch finish and in CI.
     4. Self-review (see below)
     5. Report back
 
@@ -98,12 +104,12 @@ Task tool (general-purpose):
 
     ## Auto-Correction Scope
 
-    FIRST: Read `.claude/rules/auto-correct-scope.md` now. It is path-scoped (not
+    FIRST: Read `rules/auto-correct-scope.md` now. It is path-scoped (not
     auto-loaded), and this prompt pastes your task text instead of having you read the
     plan — so nothing else puts the rule in your context. You need its full Rule 1–4
     definitions (especially the Rule 4 STOP list) before applying any self-fix.
 
-    Classify every self-fix you apply against `.claude/rules/auto-correct-scope.md`:
+    Classify every self-fix you apply against `rules/auto-correct-scope.md`:
 
     - Rule 1 — auto-fix obvious bugs
     - Rule 2 — auto-add missing functionality required by project standards
@@ -115,7 +121,8 @@ Task tool (general-purpose):
 
     ## Report Format
 
-    When done, return this structured contract:
+    Write the detailed structured contract below to `[IMPLEMENTER_REPORT_PATH]`, then return only
+    `status`, commit SHAs, Verify result, and that report path to the controller:
 
     - **status:** DONE | DONE_WITH_CONCERNS | BLOCKED | NEEDS_CONTEXT
     - **commits:** list of `{sha, subject}` for commits you authored during this task
@@ -123,7 +130,7 @@ Task tool (general-purpose):
     - **verify:** pass | fail — result of the task's `<verify>` command (include output
       excerpt on fail)
     - **blockers:** anything needing controller or user decision (empty list if none)
-    - **deviations:** list of Rule 1–3 auto-fixes per `.claude/rules/auto-correct-scope.md`.
+    - **deviations:** list of Rule 1–3 auto-fixes per `rules/auto-correct-scope.md`.
       Each entry: `{rule: 1|2|3, description, file, commit_sha}`. Empty list if none.
     - What you implemented (or what you attempted, if blocked)
     - What you tested and test results

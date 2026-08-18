@@ -1,46 +1,46 @@
 # Deep Research/Review: Phase 4 — Advanced Observability
 
-> **Ngày:** 2026-07-21  
-> **Trạng thái:** Research / design review, chưa triển khai  
-> **Prerequisites:** Phase 0 contract/discovery, Phase 2 workflow integration và Phase 3 native diagnostics
+> **Date:** 2026-07-21  
+> **Status:** Research / design review, not yet implemented  
+> **Prerequisites:** Phase 0 contract/discovery, Phase 2 workflow integration, and Phase 3 native diagnostics
 
 ## 1. Scope
 
-Phase 4 là lớp nâng cao sau khi runtime contract, bounded workflow, native lifecycle và basic probes đã ổn định.
+Phase 4 is the advanced layer that comes after the runtime contract, bounded workflow, native lifecycle, and basic probes have stabilized.
 
-Phạm vi gồm traces/context propagation, metrics, profiles, browser/e2e traces, cross-signal correlation, advanced failure fingerprints và automatic reproduction. Đây không phải là việc xây production observability platform đầy đủ trong harness.
+Its scope covers traces/context propagation, metrics, profiles, browser/e2e traces, cross-signal correlation, advanced failure fingerprints, and automatic reproduction. This is not about building a full production observability platform inside the harness.
 
 ## 2. Executive summary
 
-1. Bắt đầu từ correlation/evidence model, không bắt đầu từ Collector/backend.
-2. Dùng OpenTelemetry-compatible resource, trace, span, log và metric fields.
-3. Traces chỉ có giá trị khi context propagation được duy trì qua process/network boundaries. [Context propagation](https://opentelemetry.io/docs/concepts/context-propagation/)
-4. Metrics phải có cardinality và retention budget; không group mặc định theo raw URL, user ID hoặc request ID.
-5. Profiles hiện là signal Alpha; chỉ bật theo opt-in cho performance/resource investigation. [OpenTelemetry profiles](https://opentelemetry.io/docs/concepts/signals/profiles/)
-6. Browser tracing dùng failure-only hoặc first-retry; không trace mọi test mặc định. [Playwright Trace Viewer](https://playwright.dev/docs/trace-viewer)
-7. Automatic reproduction phải bounded, redacted, replayable và approval-aware.
-8. Collector là optional infrastructure; Phase 4A không cần persistent backend.
+1. Start from the correlation/evidence model, not from the Collector/backend.
+2. Use OpenTelemetry-compatible resource, trace, span, log, and metric fields.
+3. Traces are only valuable when context propagation is preserved across process/network boundaries. [Context propagation](https://opentelemetry.io/docs/concepts/context-propagation/)
+4. Metrics must have a cardinality and retention budget; do not group by raw URL, user ID, or request ID by default.
+5. Profiles are currently an Alpha signal; enable them opt-in only for performance/resource investigation. [OpenTelemetry profiles](https://opentelemetry.io/docs/concepts/signals/profiles/)
+6. Browser tracing should use failure-only or first-retry; do not trace every test by default. [Playwright Trace Viewer](https://playwright.dev/docs/trace-viewer)
+7. Automatic reproduction must be bounded, redacted, replayable, and approval-aware.
+8. The Collector is optional infrastructure; Phase 4A needs no persistent backend.
 
-## 3. Câu hỏi Phase 4 giải quyết
+## 3. Questions Phase 4 answers
 
-| Câu hỏi | Signal phù hợp |
+| Question | Matching signal |
 |---|---|
-| Request đi qua service nào? | trace/span |
-| Chậm ở dependency nào? | trace + metrics |
-| Function nào tiêu thụ CPU/memory? | profile |
-| Browser test fail tại action nào? | browser trace |
-| Failure có giống lỗi cũ không? | fingerprint + correlated evidence |
-| Có replay được không? | sanitized reproduction artifact |
+| Which services does the request pass through? | trace/span |
+| Which dependency is slow? | trace + metrics |
+| Which function consumes CPU/memory? | profile |
+| At which action did the browser test fail? | browser trace |
+| Does this failure resemble a previous one? | fingerprint + correlated evidence |
+| Can it be replayed? | sanitized reproduction artifact |
 
-OpenTelemetry phân biệt traces, metrics, logs, baggage và profiles theo vai trò; profiles hiện vẫn Alpha. [OpenTelemetry signals](https://opentelemetry.io/docs/concepts/signals/)
+OpenTelemetry distinguishes traces, metrics, logs, baggage, and profiles by role; profiles are still Alpha. [OpenTelemetry signals](https://opentelemetry.io/docs/concepts/signals/)
 
 ## 4. Unified observability record
 
-Phase 4 phải mở rộng `RunContext`/`ExecutionRecord` của Phase 2, không tạo schema song song.
+Phase 4 must extend Phase 2's `RunContext`/`ExecutionRecord`, not create a parallel schema.
 
-Mỗi artifact cần chung run ID, task/spec ID, runtime model hash, service/resource identity, test/reproduction ID, time window, git SHA, sampling policy và redaction status.
+Every artifact needs a shared run ID, task/spec ID, runtime model hash, service/resource identity, test/reproduction ID, time window, git SHA, sampling policy, and redaction status.
 
-Artifact tree đề xuất:
+Proposed artifact tree:
 
 ```text
 runtime/<run-id>/observability/
@@ -53,100 +53,100 @@ runtime/<run-id>/observability/
   reproduction/
 ```
 
-Generated artifacts phải bounded, có content hash và không chứa raw secrets.
+Generated artifacts must be bounded, carry a content hash, and contain no raw secrets.
 
-## 5. Traces và context propagation
+## 5. Traces and context propagation
 
-Trace nối một request qua frontend, API, worker và database. Context propagation truyền trace/span context qua process/network boundaries; W3C Trace Context là propagator phổ biến trong OpenTelemetry. [Context propagation](https://opentelemetry.io/docs/concepts/context-propagation/)
+A trace links one request across the frontend, API, worker, and database. Context propagation carries trace/span context across process/network boundaries; W3C Trace Context is the common propagator in OpenTelemetry. [Context propagation](https://opentelemetry.io/docs/concepts/context-propagation/)
 
-Contract nên có trace ID, span ID, parent span, resource identity, operation, timing, status/error, bounded attributes, links tới log/probe/test step và propagation source.
+The contract should carry trace ID, span ID, parent span, resource identity, operation, timing, status/error, bounded attributes, links to log/probe/test step, and propagation source.
 
-Nếu app chưa instrument, trả `trace_unavailable`; không dựng distributed trace giả chỉ từ timestamp logs. Có thể tạo synthetic root span cho controlled reproduction nhưng phải đánh dấu `synthetic=true`.
+If the app is not instrumented, return `trace_unavailable`; do not fabricate a distributed trace from timestamp logs alone. A synthetic root span may be created for controlled reproduction, but it must be marked `synthetic=true`.
 
-Trace context từ external input phải sanitize hoặc ignore. Baggage không nên chứa credential, PII hay secrets vì nó đi qua service boundaries. [OpenTelemetry security guidance](https://opentelemetry.io/docs/concepts/context-propagation/)
+Trace context from external input must be sanitized or ignored. Baggage should not contain credentials, PII, or secrets, because it crosses service boundaries. [OpenTelemetry security guidance](https://opentelemetry.io/docs/concepts/context-propagation/)
 
-## 6. Metrics và cardinality
+## 6. Metrics and cardinality
 
-Use cases gồm request rate/error/latency, queue depth, retry count, database pool, CPU/memory, test duration và readiness transitions.
+Use cases include request rate/error/latency, queue depth, retry count, database pool, CPU/memory, test duration, and readiness transitions.
 
 Default policy:
 
 - allowlist metric names/attributes;
-- giới hạn distinct values mỗi attribute;
-- normalize route template thay vì raw path;
-- bucket hoặc drop high-cardinality values;
-- ghi metric overflow/drop count;
-- giới hạn sample window và storage size.
+- limit distinct values per attribute;
+- normalize to a route template instead of a raw path;
+- bucket or drop high-cardinality values;
+- record metric overflow/drop counts;
+- limit sample window and storage size.
 
-OpenTelemetry cảnh báo cardinality cao làm tăng memory cost và có thể tạo overflow behavior. [OpenTelemetry metrics](https://opentelemetry.io/docs/concepts/signals/metrics/)
+OpenTelemetry warns that high cardinality raises memory cost and can trigger overflow behavior. [OpenTelemetry metrics](https://opentelemetry.io/docs/concepts/signals/metrics/)
 
-Metric biểu diễn aggregate/trend; nó không chứng minh request cụ thể gây latency. Causal path cần trace hoặc reproduction.
+A metric represents an aggregate/trend; it does not prove that a specific request caused latency. The causal path requires a trace or a reproduction.
 
 ## 7. Profiles
 
-Profiles cho biết code paths tiêu thụ resource và có thể link sample với trace/span/resource context. Profiles specification hiện Alpha. [Profiles specification](https://opentelemetry.io/docs/specs/otel/profiles/)
+Profiles show which code paths consume resources and can link samples to trace/span/resource context. The profiles specification is currently Alpha. [Profiles specification](https://opentelemetry.io/docs/specs/otel/profiles/)
 
-Use cases: CPU hotspot, heap/allocation investigation, slow endpoint correlated với span và regression giữa hai commit.
+Use cases: CPU hotspots, heap/allocation investigation, a slow endpoint correlated with a span, and regressions between two commits.
 
 Policy:
 
-- opt-in theo task/lane;
-- failure/performance investigation trước, continuous profile sau;
-- duration và sampling rate bounded;
-- không profile process ngoài scope;
-- artifact có build/runtime identity;
-- redaction code paths, command args và labels nếu cần.
+- opt-in per task/lane;
+- failure/performance investigation first, continuous profiling later;
+- bounded duration and sampling rate;
+- do not profile processes outside scope;
+- artifacts carry build/runtime identity;
+- redact code paths, command args, and labels when needed.
 
-Không dùng profile như default test evidence vì tooling và semantics còn evolving.
+Do not use profiles as default test evidence, since tooling and semantics are still evolving.
 
 ## 8. Browser/e2e observability
 
-Playwright Trace Viewer có timeline, DOM snapshots, screenshots, network requests, console và source context. Playwright khuyến nghị `on-first-retry` hoặc `retain-on-failure` thay vì trace mọi test vì chi phí cao. [Trace Viewer](https://playwright.dev/docs/trace-viewer), [best practices](https://playwright.dev/docs/best-practices)
+The Playwright Trace Viewer provides a timeline, DOM snapshots, screenshots, network requests, console output, and source context. Playwright recommends `on-first-retry` or `retain-on-failure` rather than tracing every test, because the cost is high. [Trace Viewer](https://playwright.dev/docs/trace-viewer), [best practices](https://playwright.dev/docs/best-practices)
 
-Browser artifact phải gắn test ID, browser/project, run ID, base URL, trace hash, screenshot/video policy, network policy và redaction status.
+A browser artifact must carry the test ID, browser/project, run ID, base URL, trace hash, screenshot/video policy, network policy, and redaction status.
 
-Trace có thể chứa DOM, cookies, headers, request bodies, tokens, screenshots và PII. Default nên là local-only, không upload tự động, redact auth/cookies, allowlist base URL, không record credential/payment flows nếu chưa opt-in và retention ngắn.
+A trace can contain DOM, cookies, headers, request bodies, tokens, screenshots, and PII. The default should be local-only, no automatic upload, redacted auth/cookies, an allowlisted base URL, no recording of credential/payment flows unless opted in, and short retention.
 
 ## 9. Automatic reproduction
 
-Reproduction sources: failing test, sanitized HTTP request, browser action sequence, trace attributes, structured event chain hoặc user scenario.
+Reproduction sources: a failing test, a sanitized HTTP request, a browser action sequence, trace attributes, a structured event chain, or a user scenario.
 
-Mỗi reproduction cần source artifact, preconditions, steps, expected failure, side-effect classification, timeout, environment assumptions, cleanup, redaction status và replay budget.
+Each reproduction needs a source artifact, preconditions, steps, expected failure, side-effect classification, timeout, environment assumptions, cleanup, redaction status, and a replay budget.
 
-Không tự replay POST/PUT/DELETE, payment, email, webhook hoặc database mutation. Read-only GET, deterministic fixture, isolated transaction, mocked provider và disposable browser scenario có thể được replay theo policy.
+Do not auto-replay POST/PUT/DELETE, payments, email, webhooks, or database mutations. Read-only GETs, deterministic fixtures, isolated transactions, mocked providers, and disposable browser scenarios may be replayed under policy.
 
-Replay cần idempotency key hoặc approval nếu không tránh được side effect.
+Replay requires an idempotency key or approval when side effects are unavoidable.
 
 ## 10. Correlation model
 
-Graph correlation nên nối:
+Graph correlation should link:
 
 ```text
 task → run → git change → test → browser action → trace/span
                          → log → metric → profile → reproduction
 ```
 
-Không correlate chỉ bằng timestamp nếu đã có identity. Timestamp chỉ là fallback và phải có confidence thấp.
+Do not correlate by timestamp alone when an identity is already available. Timestamps are only a fallback and must carry low confidence.
 
-`correlations.json` ghi source, target, method, confidence và time window cho mỗi edge.
+`correlations.json` records source, target, method, confidence, and time window for each edge.
 
 ## 11. Collector/backend options
 
-OpenTelemetry Collector có receivers, processors, exporters, connectors và extensions. [Collector components](https://opentelemetry.io/docs/collector/components/)
+The OpenTelemetry Collector has receivers, processors, exporters, connectors, and extensions. [Collector components](https://opentelemetry.io/docs/collector/components/)
 
-- **No Collector:** agent đọc local artifacts; đơn giản và local-only.
-- **Ephemeral Collector:** chạy trong fixture/task, export local rồi cleanup; gần production protocol hơn nhưng thêm failure surface.
-- **Persistent backend:** UX investigation tốt nhưng stateful, tốn tài nguyên và dễ vượt scope harness.
+- **No Collector:** the agent reads local artifacts; simple and local-only.
+- **Ephemeral Collector:** runs inside a fixture/task, exports locally, then cleans up; closer to the production protocol but adds failure surface.
+- **Persistent backend:** best investigation UX but stateful, resource-hungry, and easily beyond harness scope.
 
-Khuyến nghị: Phase 4A không Collector; Phase 4B thử ephemeral Collector; chưa standardize persistent backend. Collector pipeline cần memory bound, queue/retry policy và drop diagnostics vì misconfiguration/exporter failure có thể làm mất data. [Collector troubleshooting](https://opentelemetry.io/docs/collector/troubleshooting/)
+Recommendation: no Collector in Phase 4A; try an ephemeral Collector in Phase 4B; do not standardize a persistent backend yet. A Collector pipeline needs memory bounds, a queue/retry policy, and drop diagnostics, because misconfiguration/exporter failure can lose data. [Collector troubleshooting](https://opentelemetry.io/docs/collector/troubleshooting/)
 
-## 12. Advanced fingerprinting và diagnosis
+## 12. Advanced fingerprinting and diagnosis
 
-Fingerprint v2 có thể kết hợp error type, stable stack frames, route template, dependency span path, log template, metric anomaly window, profile top frames, browser action và runtime state.
+Fingerprint v2 can combine error type, stable stack frames, route template, dependency span path, log template, metric anomaly window, profile top frames, browser action, and runtime state.
 
-Không chứa raw request body, token, PII, random IDs hoặc full secret-bearing stack.
+It must not contain raw request bodies, tokens, PII, random IDs, or a full secret-bearing stack.
 
-Mỗi fingerprint có evidence refs, confidence và `ambiguous` state khi signals conflict. AI có thể dùng graph để chọn bước quan sát tiếp theo, nhưng không tự patch chỉ vì classifier/metric anomaly.
+Each fingerprint has evidence refs, confidence, and an `ambiguous` state when signals conflict. The AI may use the graph to choose the next observation step, but must not patch on its own merely because of a classifier/metric anomaly.
 
 ## 13. Testing strategy
 
@@ -172,61 +172,61 @@ Safe GET; rejected mutation; idempotency required; cleanup failure; stale artifa
 
 ## 14. Implementation boundary
 
-Đề xuất `runtime/observability/correlation.py`, `sampling.py`, `metrics_policy.py`, `trace_policy.py`, `profile_policy.py`, `replay.py`, `fingerprint_v2.py` và `retention.py`.
+Proposed: `runtime/observability/correlation.py`, `sampling.py`, `metrics_policy.py`, `trace_policy.py`, `profile_policy.py`, `replay.py`, `fingerprint_v2.py`, and `retention.py`.
 
-Adapter-specific integrations nằm dưới `adapters/` hoặc optional plugin. Core harness không require mọi telemetry backend.
+Adapter-specific integrations live under `adapters/` or an optional plugin. The core harness must not require every telemetry backend.
 
 ## 15. Rollout roadmap
 
-### Phase 4A — Correlation và artifacts
+### Phase 4A — Correlation and artifacts
 
-Unify run/test/resource identities; lưu signal references; bounded sampling/retention; fingerprint schema; không persistent backend.
+Unify run/test/resource identities; store signal references; bounded sampling/retention; fingerprint schema; no persistent backend.
 
-### Phase 4B — Browser và replay
+### Phase 4B — Browser and replay
 
 Failure-only browser traces; artifact redaction; safe read-only replay; disposable environment fixtures.
 
-### Phase 4C — Profiles và ephemeral Collector
+### Phase 4C — Profiles and ephemeral Collector
 
 Opt-in CPU/heap profiles; trace/profile links; ephemeral Collector fixture; queue/memory/drop diagnostics.
 
 ### Phase 4D — Investigation UX
 
-Evidence graph, timeline, root-cause hypotheses with confidence, human review surface và optional persistent local backend.
+Evidence graph, timeline, root-cause hypotheses with confidence, human review surface, and an optional persistent local backend.
 
 ## 16. Open decisions
 
-1. OpenTelemetry SDK/Collector là core hay optional?
-2. Browser trace artifacts commit hay local/ignored?
-3. Profile support bắt đầu với Python, Go hay generic external profiler?
-4. Retention/size limits khác nhau theo lane ra sao?
-5. Có cho synthetic trace root cho reproduction không?
-6. Replay chạy trong process/container nào?
-7. Có cần evidence viewer hay JSON/CLI đủ cho v1?
-8. Khi fingerprint conflict, escalation threshold là gì?
+1. Is the OpenTelemetry SDK/Collector core or optional?
+2. Are browser trace artifacts committed or local/ignored?
+3. Should profile support start with Python, Go, or a generic external profiler?
+4. How should retention/size limits differ by lane?
+5. Do we allow a synthetic trace root for reproduction?
+6. In which process/container does replay run?
+7. Do we need an evidence viewer, or is JSON/CLI enough for v1?
+8. When fingerprints conflict, what is the escalation threshold?
 
-Khuyến nghị: no persistent backend, failure-only browser tracing, opt-in profiles, read-only replay và hard approval cho side effects.
+Recommendation: no persistent backend, failure-only browser tracing, opt-in profiles, read-only replay, and hard approval for side effects.
 
 ## 17. Acceptance criteria
 
-1. Traces/logs/metrics/profiles/browser artifacts có chung run/resource/test identity.
-2. Context propagation và missing instrumentation được phân biệt.
-3. Metrics có cardinality, size và retention limits.
-4. Profiles opt-in và có signal status/limitations.
-5. Browser traces failure-only/first-retry mặc định và có redaction policy.
-6. Replay artifact có preconditions, side-effect classification, timeout và cleanup.
-7. Unsafe replay bị reject hoặc yêu cầu approval.
-8. Fingerprint v2 có evidence refs, confidence và ambiguous state.
-9. Optional Collector không thành hard dependency của core.
-10. Artifacts bounded, hashed, redacted và có retention policy.
-11. Fixtures phủ trace, metric, profile, browser, replay và collector failure.
-12. Harness tests pass trên macOS và Ubuntu; unsupported platform behavior được khai báo.
+1. Trace/log/metric/profile/browser artifacts share a common run/resource/test identity.
+2. Context propagation and missing instrumentation are distinguished.
+3. Metrics have cardinality, size, and retention limits.
+4. Profiles are opt-in and carry signal status/limitations.
+5. Browser traces are failure-only/first-retry by default and have a redaction policy.
+6. Replay artifacts have preconditions, side-effect classification, timeout, and cleanup.
+7. Unsafe replay is rejected or requires approval.
+8. Fingerprint v2 has evidence refs, confidence, and an ambiguous state.
+9. An optional Collector does not become a hard dependency of the core.
+10. Artifacts are bounded, hashed, redacted, and have a retention policy.
+11. Fixtures cover trace, metric, profile, browser, replay, and collector failure.
+12. Harness tests pass on macOS and Ubuntu; unsupported platform behavior is declared.
 
-## 18. Kết luận
+## 18. Conclusion
 
-Phase 4 nên là **correlation and investigation layer**, không phải một hệ thống monitoring khác. Giá trị lớn nhất là nối test step → request → trace → log → metric/profile → reproduction trong cùng run context.
+Phase 4 should be a **correlation and investigation layer**, not yet another monitoring system. Its greatest value is linking test step → request → trace → log → metric/profile → reproduction within the same run context.
 
-Thứ tự an toàn là artifact correlation trước, browser/replay sau, profiles/Collector tiếp theo, rồi mới cân nhắc persistent local backend.
+The safe order is artifact correlation first, browser/replay next, profiles/Collector after that, and only then consider a persistent local backend.
 
 ## References
 

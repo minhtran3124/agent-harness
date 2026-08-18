@@ -1,0 +1,26 @@
+{
+  "reviewed_head_sha": "f2494ac8098887ad198a85d7af5fd3d18bc19d3c",
+  "reviews": [
+    {
+      "type": "context-propagation-audit",
+      "result": "pass",
+      "blocking_open": 0,
+      "method": "independent-subagent",
+      "evidence": "Independent audit at 60f4965 of the new rules/plan-format.md backtick-Produces rule (workflow-engine surface). Rule and check_plan_contract.py enforcement agree exactly; the path-scoped rule is explicitly Read by writing-plans and SDD skills; check_task_review_adoption runs the checker on the updated real PLAN (exit 0); task_brief passes Interfaces prose through unchanged; harness-manifest artifact-schema-plan registers the consumers. The later hardening delta (f2494ac) is scripts-only and changes no delivery path. PASS, 0 blocking."
+    },
+    {
+      "type": "correctness",
+      "result": "pass",
+      "blocking_open": 0,
+      "method": "independent-subagent",
+      "evidence": "Independent adversarial review at 60f4965 of the scorer + plan-contract logic (regex, gates, fence masking) plus a follow-up re-verification at f2494ac of the three prescribed hardenings (per-occurrence Minor detection, whole-word match, null-safe token sum). Self-test, 15+9 unit tests, and both A/B gates on committed data all pass. PASS, 0 blocking."
+    },
+    {
+      "type": "intent",
+      "result": "pass",
+      "blocking_open": 0,
+      "method": "independent-subagent",
+      "evidence": "Independent intent review at 60f4965 against the agreed Codex-findings scope: findings 2, 3, 4, and 5-minimal implemented with no drift (finding 2 did not tighten plan_mandated; finding 5 does not enforce Consumes backticks) and no excess; finding 1 (legacy XML) correctly skipped per the dogfooding decision. run-tests wiring judged in-scope hygiene. The f2494ac hardening stays within the finding-2 scope. PASS, 0 blocking."
+    }
+  ]
+}

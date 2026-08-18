@@ -89,24 +89,44 @@ if [ -n "$EV_SLUGS" ]; then
     EV_FAILED=0
     for slug_dir in $EV_SLUGS; do
       summary="${slug_dir}SUMMARY.md"
+      plan="${slug_dir}PLAN.md"
+      # Materialize the INDEXED spec pair into one temp dir: the gate must judge the
+      # tree that is actually being committed, not the working copy. Staging a PLAN
+      # with an SC contract and then editing/removing it before `git commit` must not
+      # let the commit through against different (or absent) criteria.
+      ev_dir=$(mktemp -d 2>/dev/null) || continue
+      ev_tmp="$ev_dir/SUMMARY.md"
       # Prefer the staged copy; fall back to on-disk (slug touched but SUMMARY unstaged)
-      ev_tmp=$(mktemp 2>/dev/null) || continue
       if ! git show ":$summary" >"$ev_tmp" 2>/dev/null; then
         if [ -f "$summary" ]; then
-          cp "$summary" "$ev_tmp" 2>/dev/null || { rm -f "$ev_tmp"; continue; }
+          cp "$summary" "$ev_tmp" 2>/dev/null || { rm -rf "$ev_dir"; continue; }
         else
           # No SUMMARY at all for this slug — not this check's business
           # (a slug dir can hold only PLAN.md/design.md).
-          rm -f "$ev_tmp"; continue
+          rm -rf "$ev_dir"; continue
         fi
+      fi
+      # Same rule for the PLAN that supplies the SC table. `git show :PLAN.md` covers
+      # both "staged edit" and "tracked, unmodified"; the on-disk fallback only fires
+      # for an untracked PLAN (which the commit is not recording anyway).
+      if ! git show ":$plan" >"$ev_dir/PLAN.md" 2>/dev/null; then
+        rm -f "$ev_dir/PLAN.md"
+        [ -f "$plan" ] && cp "$plan" "$ev_dir/PLAN.md" 2>/dev/null || true
       fi
       # Capture rather than stream: the script names the temp path, which would
       # be meaningless to the committer. Re-label it as the real SUMMARY.
-      if ! ev_out=$(python3 scripts/verify_summary.py --lane "$ev_tmp" 2>&1); then
+      # --plan-dir points SC-coverage at the materialized index copy — the sibling
+      # lookup would otherwise resolve against the working tree.
+      # Warn-first advisories (e.g. the `### Not auto-verified` rollout) are printed
+      # by --lane on a PASSING run too, so the output is relayed on both paths. A
+      # warning only echoed on failure is a warning nobody ever reads.
+      if ! ev_out=$(python3 scripts/verify_summary.py --lane "$ev_tmp" --plan-dir "$ev_dir" 2>&1); then
         echo "${ev_out//$ev_tmp/$summary}" >&2
         EV_FAILED=1
+      else
+        echo "${ev_out//$ev_tmp/$summary}" | grep '^[[:space:]]*!' >&2 || true
       fi
-      rm -f "$ev_tmp"
+      rm -rf "$ev_dir"
     done
     if [ "$EV_FAILED" = "1" ]; then
       echo "[COMMIT GATE] Lane evidence... FAILED" >&2
@@ -119,6 +139,18 @@ if [ -n "$EV_SLUGS" ]; then
   else
     echo "[COMMIT GATE] Lane evidence skipped: python3 or scripts/verify_summary.py unavailable." >&2
   fi
+fi
+
+# ─────────────────────────────────────────────
+# App gates (Checks 2, 2.5, 3) — opt-in via REQUIRE_APP_GATES=1
+# ─────────────────────────────────────────────
+# The harness core ships no app/ code; the debug-artifact scan, ### Verify
+# evidence gate, and targeted-pytest run all target app/**/*.py. They stay OFF
+# by default and are enabled per-repo by exporting REQUIRE_APP_GATES=1. Checks
+# 1/1.5/1.6 above run unconditionally regardless of this flag.
+if [ "${REQUIRE_APP_GATES:-}" != "1" ]; then
+  echo "[COMMIT GATE] App checks (debug artifacts / evidence / targeted tests) skipped: set REQUIRE_APP_GATES=1 to enable." >&2
+  exit 0
 fi
 
 # ─────────────────────────────────────────────
@@ -249,7 +281,7 @@ STAGED_APP_COUNT=$(git diff --cached --name-only -- 'app/**/*.py' 2>/dev/null | 
 if [[ "$STAGED_APP_COUNT" -ge 5 ]]; then
   echo "" >&2
   echo "  ★ Large session detected ($STAGED_APP_COUNT app/ files)." >&2
-  echo "    Consider running /compound to crystallize learnings." >&2
+  echo "    Consider running the compound skill to crystallize learnings." >&2
   echo "" >&2
 fi
 

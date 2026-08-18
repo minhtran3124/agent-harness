@@ -1,0 +1,1 @@
+{"hook_event_name":"PreToolUse","turn_id":"turn-redacted","tool_name":"Bash","tool_input":{"command":"git commit -m test"}}

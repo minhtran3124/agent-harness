@@ -7,17 +7,11 @@ from pathlib import Path
 
 CHECKER = Path(__file__).resolve().parent / "check_manifest.py"
 
-# A minimal risk-corroboration.sh stub exposing add_cat + category_mode for two gates.
+# A minimal risk-corroboration.sh stub exposing add_cat for two gates.
+# Gate modes are manifest-owned (read by the hook at runtime) — not mirrored here.
 RC_STUB = """#!/bin/bash
 add_cat "auth"
 add_cat "high-blast"
-category_mode() {
-  case "$1" in
-    auth)       echo "block" ;;
-    high-blast) echo "block" ;;
-    *)          echo "block" ;;
-  esac
-}
 """
 
 MANIFEST_OK = {
@@ -34,6 +28,12 @@ MANIFEST_OK = {
     ],
     "skills": ["alpha"],
     "agents": ["reviewer"],
+    "agent_bindings": {
+        "contracts": "agents/agent-contracts.json",
+        "bindings": "agents/runtime-bindings.json",
+        "renderer": "scripts/render_agent_definitions.py",
+        "runtimes": ["claude", "codex"],
+    },
     "contracts": {
         "c1": {"surface": ["settings.json"], "consumers": ["CLAUDE.md"]},
     },
@@ -48,7 +48,43 @@ def build(root: Path, manifest: dict) -> None:
     (root / "skills" / "alpha").mkdir(parents=True, exist_ok=True)
     (root / "skills" / "alpha" / "SKILL.md").write_text("# alpha\n")
     (root / "agents").mkdir(parents=True, exist_ok=True)
-    (root / "agents" / "reviewer.md").write_text("# reviewer\n")
+    (root / "agents" / "reviewer.md").write_text("---\nname: reviewer\n---\n# reviewer\n")
+    required = [
+        "filesystem",
+        "shell",
+        "network",
+        "mcp",
+        "nested_delegation",
+        "context_policy",
+        "model_class",
+        "output_contract",
+    ]
+    (root / "agents" / "agent-contracts.json").write_text(
+        json.dumps(
+            {
+                "required_capabilities": required,
+                "roles": {
+                    "reviewer": {
+                        "source": "agents/reviewer.md",
+                        **{key: "mapped" for key in required},
+                    }
+                },
+            }
+        )
+    )
+    capabilities = {key: "mapped" for key in required}
+    (root / "agents" / "runtime-bindings.json").write_text(
+        json.dumps(
+            {
+                "runtimes": {
+                    "claude": {"roles": {"reviewer": {"capabilities": capabilities}}},
+                    "codex": {"roles": {"reviewer": {"capabilities": capabilities}}},
+                }
+            }
+        )
+    )
+    (root / "scripts").mkdir(parents=True, exist_ok=True)
+    (root / "scripts" / "render_agent_definitions.py").write_text("# fixture\n")
     (root / "agents" / "README.md").write_text("# readme (excluded)\n")
     (root / "CLAUDE.md").write_text("# claude\n")
     # settings.json wires only risk-corroboration.sh (dormant.sh is unwired).
@@ -170,6 +206,17 @@ def test_skill_missing_from_disk(tmp_path):
     r = run(tmp_path)
     assert r.returncode == 1
     assert "ghost" in r.stderr
+
+
+def test_agent_runtime_capability_mapping_must_be_total(tmp_path):
+    build(tmp_path, MANIFEST_OK)
+    path = tmp_path / "agents/runtime-bindings.json"
+    data = json.loads(path.read_text())
+    del data["runtimes"]["codex"]["roles"]["reviewer"]["capabilities"]["mcp"]
+    path.write_text(json.dumps(data))
+    r = run(tmp_path)
+    assert r.returncode == 1
+    assert "capability mapping is incomplete" in r.stderr
 
 
 if __name__ == "__main__":

@@ -2,6 +2,9 @@
 
 Use this template when dispatching a plan document reviewer subagent.
 
+Before reviewing any plan chunk, **Read `rules/plan-format.md`** and **Read `rules/terminology.md`**.
+This isolated reviewer does not inherit the controller's path-scoped rules.
+
 **Purpose:** Verify the plan chunk is complete, matches the spec, and has proper task decomposition.
 
 **Dispatch after:** Each plan chunk is written
@@ -22,10 +25,12 @@ Task tool (general-purpose):
     | Completeness | TODOs, placeholders, incomplete tasks, missing steps |
     | Spec Alignment | Chunk covers relevant spec requirements, no scope creep |
     | Task Decomposition | Tasks atomic, clear boundaries, steps actionable |
-| Readability | Each task has a concise heading; tasks are plain markdown, never fenced; no `<task>` XML blocks in newly written plans (XML is legacy read-only per `.claude/rules/plan-format.md`) |
+| Readability | Each task has a concise heading; tasks are plain markdown, never fenced; no `<task>` XML blocks in newly written plans (XML is legacy read-only per `rules/plan-format.md`) |
     | File Structure | Files have clear single responsibilities, split by responsibility not layer |
     | File Size | Would any new or modified file likely grow large enough to be hard to reason about as a whole? |
-| Task Syntax | Every task is a `### Task <id> [— title] [(wave K)]` heading with `- **Files/Action/Verify/Done:**` field bullets, all four fields populated, per `.claude/rules/plan-format.md` |
+| Task Syntax | Every task is a `### Task <id> [— title] [(wave K)]` heading with `- **Files/Action/Verify/Done:**` field bullets, all four fields populated, per `rules/plan-format.md` |
+    | Success Criteria | `## 3. Success Criteria` table present; `SC-<n>` ids unique; Check cells pipe-free and <60s; Expected cells start `exit <n>`; per `rules/plan-format.md` |
+| Decidable Criteria | Every `Verify:` and `Done:` field states something a machine can decide by running it. Flag any field resting on `correctly`, `properly`, `as expected`, `works`, `is correct`, or `looks right` — per `rules/terminology.md` §3 |
     | Chunk Size | Each chunk under 1000 lines |
 
     ## CRITICAL

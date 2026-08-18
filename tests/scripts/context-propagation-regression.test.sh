@@ -1,24 +1,26 @@
 #!/bin/bash
-# Regression guard for the two context-propagation fixes that escaped PR #141
-# (gh #143). Both defects were "the path-scoped auto-correct-scope rule never
-# reaches the subagent that classifies self-fixes against it":
+# Regression guard for contextual-rule delivery to every isolated workflow context.
+# It retains the two fixes that escaped PR #141 and delegates the complete consumer
+# matrix (main, implementer, task reviewer, plan reviewer, correctness reviewer,
+# scorer, intent controller, and resume) to render_skill_prompt.py --check-all.
 #
 #   P1 (commit d61e155) — skills/subagent-driven-development/implementer-prompt.md
-#      gained an explicit "FIRST: Read `.claude/rules/auto-correct-scope.md`" so an
+#      gained an explicit "FIRST: Read `rules/auto-correct-scope.md`" so an
 #      isolated implementer actually loads the rule (its task text is pasted, so
 #      nothing else puts the path-scoped rule in context).
-#   P2 (commit 1c0f01d) — skills/correctness-review/correctness-reviewer-prompt.md
+#   P2 (commit 1c0f01d) — the correctness FIND shared fragment
 #      completed the inline Rule-4 STOP list to all 8 cases AND added an explicit
-#      "**Read `.claude/rules/auto-correct-scope.md`**" before Rule-4 classification
+#      "**Read `rules/auto-correct-scope.md`**" before Rule-4 classification
 #      (the review is plan-blind, so the `paths: specs/**` rule never auto-loads).
 #
-# Like scorer-threshold-contract.test.sh, this parses the LIVE skill files (not a
+# Like scorer-threshold-contract.test.sh, this parses the LIVE composed sources (not a
 # snapshot): a future edit that drops either explicit Read, or drops a STOP case
 # from the reviewer prompt's inline list, fails the suite instead of shipping.
 source "$(dirname "$0")/../lib.sh"
 
 IMPL="skills/subagent-driven-development/implementer-prompt.md"
-REVIEWER="skills/correctness-review/correctness-reviewer-prompt.md"
+REVIEWER="skills/correctness-review/prompts/shared.md"
+COMPOSER="scripts/render_skill_prompt.py"
 
 # The 8 Rule-4 STOP cases, as one stable keyword token each. Registry wording
 # (rules/auto-correct-scope.md Rule 4) and the prompt's inline copy have legitimately
@@ -40,7 +42,7 @@ implementer_read_ok() {
   grep -qE 'FIRST: Read .*auto-correct-scope\.md' "$1/$IMPL"
 }
 
-# reviewer_read_ok <dir> → 0 iff the reviewer prompt still has the explicit bolded
+# reviewer_read_ok <dir> → 0 iff the shared child prompt still has the explicit bolded
 # Read of auto-correct-scope.md before Rule-4 classification (the 1c0f01d fix).
 reviewer_read_ok() {
   grep -qE '\*\*Read .*auto-correct-scope\.md' "$1/$REVIEWER"
@@ -66,7 +68,7 @@ t "implementer prompt has the FIRST: Read of auto-correct-scope.md (d61e155)"
 if implementer_read_ok "$ROOT"; then pass
 else fail "no 'FIRST: Read ... auto-correct-scope.md' line in $IMPL"; fi
 
-t "reviewer prompt has an explicit Read of auto-correct-scope.md before Rule-4 (1c0f01d)"
+t "reviewer shared fragment has an explicit Read of auto-correct-scope.md before Rule-4 (1c0f01d)"
 if reviewer_read_ok "$ROOT"; then pass
 else fail "no explicit '**Read ... auto-correct-scope.md' in $REVIEWER"; fi
 
@@ -78,6 +80,31 @@ else
   fail "missing STOP token(s):$missing — region: $region"
 fi
 
+# The rule is path-scoped, and `paths:` fires on read, never on write — so the plan AUTHOR
+# (writing-plans) and the isolated plan REVIEWER each need their own Read or §3 silently stops
+# reaching the context that decides acceptance criteria. The canonical CONTEXT_MATRIX owns this
+# contract; the mutation cases below prove both entries are enforced.
+PLAN_AUTHOR="skills/writing-plans/SKILL.md"
+PLAN_REVIEWER="skills/writing-plans/plan-document-reviewer-prompt.md"
+
+t "complete contextual-rule consumer matrix is checked"
+if python3 "$ROOT/$COMPOSER" --root "$ROOT" --check-all >/dev/null; then pass
+else fail "render_skill_prompt.py rejected the live consumer matrix"; fi
+
+t "mutation: canonical matrix detects a missing plan-author terminology.md Read"
+m3=$(mktemp -d); _CLEANUP_DIRS+=("$m3")
+cp -R "$ROOT/skills" "$m3/skills"
+sed -i.bak 's/\*\*Read `rules\/terminology\.md`\*\*//' "$m3/$PLAN_AUTHOR" && rm -f "$m3/$PLAN_AUTHOR.bak"
+if ! python3 "$ROOT/$COMPOSER" --root "$m3" --check-all >/dev/null 2>&1; then pass
+else fail "deleting the plan author's terminology.md Read was NOT detected"; fi
+
+t "mutation: canonical matrix detects a missing plan-reviewer terminology.md Read"
+m4=$(mktemp -d); _CLEANUP_DIRS+=("$m4")
+cp -R "$ROOT/skills" "$m4/skills"
+sed -i.bak 's/\*\*Read `rules\/terminology\.md`\*\*//' "$m4/$PLAN_REVIEWER" && rm -f "$m4/$PLAN_REVIEWER.bak"
+if ! python3 "$ROOT/$COMPOSER" --root "$m4" --check-all >/dev/null 2>&1; then pass
+else fail "deleting the plan reviewer's terminology.md Read was NOT detected"; fi
+
 t "mutation: deleting either explicit Read is detected"
 m=$(mktemp -d); _CLEANUP_DIRS+=("$m")
 cp -R "$ROOT/skills" "$m/skills"
@@ -86,7 +113,7 @@ sed -i.bak '/\*\*Read .*auto-correct-scope/d'    "$m/$REVIEWER" && rm -f "$m/$RE
 if ! implementer_read_ok "$m" && ! reviewer_read_ok "$m"; then pass
 else fail "deleting the Read line was NOT detected — impl_ok=$(implementer_read_ok "$m"; echo $?) rev_ok=$(reviewer_read_ok "$m"; echo $?)"; fi
 
-t "mutation: removing one STOP case from the reviewer prompt is detected"
+t "mutation: removing one STOP case from the reviewer shared fragment is detected"
 m2=$(mktemp -d); _CLEANUP_DIRS+=("$m2")
 cp -R "$ROOT/skills" "$m2/skills"
 # Drop the 'high-blast' case (unique to line 175 of the STOP region).

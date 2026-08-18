@@ -1,0 +1,7 @@
+{
+  "description": "Agent Harness skills and lifecycle hooks for Codex",
+  "hooks": "./hooks/hooks.json",
+  "name": "agent-harness",
+  "skills": "./skills/",
+  "version": "0.1.0-alpha.1"
+}

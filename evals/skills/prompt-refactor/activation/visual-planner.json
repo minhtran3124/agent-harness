@@ -1,0 +1,116 @@
+{
+  "cases": [
+    {
+      "id": "visual-planner-trigger-1",
+      "skill": "visual-planner",
+      "query": "Render this PLAN.md as HTML so I can inspect the execution waves.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "visual-planner-trigger-2",
+      "skill": "visual-planner",
+      "query": "Before we touch code, render this plan.md as html so i can inspect the execution waves.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "visual-planner-trigger-3",
+      "skill": "visual-planner",
+      "query": "I am unsure of the safest workflow; render this plan.md as html so i can inspect the execution waves.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "visual-planner-trigger-4",
+      "skill": "visual-planner",
+      "query": "Please do this in the repository: render this plan.md as html so i can inspect the execution waves.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "visual-planner-trigger-5",
+      "skill": "visual-planner",
+      "query": "This is time-sensitive, but render this plan.md as html so i can inspect the execution waves.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "visual-planner-trigger-6",
+      "skill": "visual-planner",
+      "query": "Use the project workflow to render this plan.md as html so i can inspect the execution waves.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "visual-planner-trigger-7",
+      "skill": "visual-planner",
+      "query": "Can you take ownership of this request? Render this PLAN.md as HTML so I can inspect the execution waves.",
+      "should_trigger": true,
+      "split": "train"
+    },
+    {
+      "id": "visual-planner-trigger-8",
+      "skill": "visual-planner",
+      "query": "Do not implement anything else; render this plan.md as html so i can inspect the execution waves.",
+      "should_trigger": true,
+      "split": "holdout"
+    },
+    {
+      "id": "visual-planner-near-miss-1",
+      "skill": "visual-planner",
+      "query": "Write an implementation plan from the design and research brief.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "visual-planner-near-miss-2",
+      "skill": "visual-planner",
+      "query": "Do only this instead: write an implementation plan from the design and research brief.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "visual-planner-near-miss-3",
+      "skill": "visual-planner",
+      "query": "The user asked us to write an implementation plan from the design and research brief.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "visual-planner-near-miss-4",
+      "skill": "visual-planner",
+      "query": "This request is adjacent but distinct: write an implementation plan from the design and research brief.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "visual-planner-near-miss-5",
+      "skill": "visual-planner",
+      "query": "Do not route to the wrong specialist; write an implementation plan from the design and research brief.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "visual-planner-near-miss-6",
+      "skill": "visual-planner",
+      "query": "For this branch, write an implementation plan from the design and research brief.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "visual-planner-near-miss-7",
+      "skill": "visual-planner",
+      "query": "Handle the direct request: write an implementation plan from the design and research brief.",
+      "should_trigger": false,
+      "split": "train"
+    },
+    {
+      "id": "visual-planner-near-miss-8",
+      "skill": "visual-planner",
+      "query": "The next action should be: write an implementation plan from the design and research brief.",
+      "should_trigger": false,
+      "split": "holdout"
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "command": [
+    "claude",
+    "--dangerously-skip-permissions",
+    "-p",
+    "--output-format",
+    "json",
+    "--no-session-persistence",
+    "--tools",
+    "",
+    "--max-budget-usd",
+    "0.25",
+    "--model",
+    "sonnet",
+    "--effort",
+    "low"
+  ],
+  "cwd": "/Users/minhtran/Documents/minhtran3124/developer/harness-skills",
+  "returncode": 0,
+  "result": "Required action: run `python3 runtime/resume_decision.py --slug <slug>` before any edits, and follow its returned action exactly (`execute-plan`, `resume-repair`, `resume-review-chain`, `wait`, `stop`, or `rebuild`) \u2014 never reconstruct the FSM from prose or reinitialize a missing durable run mid-execution.\n\nKey safety gate: if the resume state is invalid or blocked (e.g., action is `stop`, or a durable run is missing/inconsistent), stop and do not proceed to task execution or editing. No changes made, per the probe's no-op requirement.",
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 20986,
+    "cache_read_input_tokens": 3304,
+    "output_tokens": 203,
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 20986,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 203,
+        "cache_read_input_tokens": 3304,
+        "cache_creation_input_tokens": 20986,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 20986
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "stderr": ""
+}
