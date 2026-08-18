@@ -9,8 +9,11 @@ This repository is a Claude Code skills framework and workflow harness. The main
 - `hooks/` — Bash hooks that enforce workflow and commit checks; `hooks/lib/` contains shared helpers.
 - `rules/` and `templates/` — governance rules and generated-artifact templates.
 - `scripts/` — deployment, installation, linting, and validation utilities.
+- `runtime/` — Python run-state engine (FSM, storage primitives, CLI); synced into `.claude/runtime/` by the deploy script.
+- `adapters/` — generated Codex advisory-alpha adapter inputs and runtime-entry bindings; not a Claude runtime path.
+- `techstacks/` — project-owned stack profile read by `rules/architecture.md` and `rules/guidelines.md`; intentionally near-empty in this meta-repo.
 - `tests/hooks/` and `tests/scripts/` — shell contract and integration tests.
-- `scripts/test_*.py` and selected tests under `skills/` — Python unit tests.
+- `scripts/test_*.py`, `runtime/test_*.py`, and selected tests under `skills/` — Python unit tests.
 - `docs/`, `specs/`, and `evals/` — knowledge, change artifacts, and evaluation fixtures.
 
 The root `CLAUDE.md`, `HARNESS.md`, `skills/README.md`, and `harness-manifest.json` describe the supported workflow and component inventory. Treat them as contracts when changing hooks, skills, or schemas.
@@ -18,9 +21,9 @@ The root `CLAUDE.md`, `HARNESS.md`, `skills/README.md`, and `harness-manifest.js
 ## Build, Test, and Development Commands
 
 - `bash scripts/run-tests.sh` — run the CI-equivalent suite: Bash syntax checks, documentation/manifest linting, shell tests, and Python tests when `pytest` is available.
-- `bash scripts/deploy-harness.sh` — rebuild the local derived `.claude/` installation after editing source skills, agents, hooks, rules, templates, or settings.
+- `bash scripts/deploy-harness.sh` — rebuild the local derived `.claude/` installation after editing source skills, agents, hooks, rules, templates, runtime, or settings.
 - `bash scripts/lint-doc-truth.sh` — verify documented paths and hook registrations independently.
-- `python3 -m pytest scripts/test_*.py skills/visual-planner/test_render_plan.py -q` — run the Python unit tests directly.
+- `python3 -m pytest scripts/test_*.py runtime/test_*.py skills/visual-planner/test_render_plan.py skills/subagent-driven-development/scripts/test_task_brief.py -q` — run the Python unit tests directly. `scripts/run-tests.sh` enumerates the authoritative list in `PYTESTS`.
 
 Before changing `hooks/` or `scripts/`, run the full test command. Keep generated `PLAN.html` artifacts local; they are rebuildable and should not be committed.
 
