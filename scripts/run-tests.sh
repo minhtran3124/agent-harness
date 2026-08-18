@@ -49,6 +49,7 @@ echo "== L1: verify-row lint (changed SUMMARY/PLAN only) =="
 # `test` job is the other half of that fix. Every skip below names its reason —
 # distinguishing "no base to compare against" from "compared and found nothing" is the
 # whole point, since that ambiguity is what let the original bug report green.
+TMP_POST_CUTOFF="$(mktemp)"; trap 'rm -f "$TMP_POST_CUTOFF"' EXIT
 BASE_OUT="$(bash scripts/resolve-base-ref.sh 2>&1)"; BASE_RC=$?
 if [ "$BASE_RC" -ne 0 ]; then
   echo "  skip — $BASE_OUT"
@@ -64,7 +65,30 @@ else
     echo "  ✗ git diff against '$BASE_OUT' failed (rc=$diff_rc) — scope unknown, not treating as clean"
     FAILED=1
   elif [ -n "$changed" ]; then
-    printf '%s\n' "$changed" | python3 scripts/check_verify_rows.py || FAILED=1
+    # GRANDFATHER CUTOFF. The changed-file set is the ONLY thing that keeps this lint off
+    # already-shipped specs (check_verify_rows.py: "does not retroactively police
+    # already-shipped specs"). That holds while the base ref is the integration branch —
+    # each PR then changes only its own spec. It BREAKS on a release PR (simplify → main),
+    # where the base is `main` and every spec accumulated since the fork looks new: 56 files,
+    # including specs written while this lint was dead (wired 2026-07-17 at 7034d30, not
+    # actually comparing anything until it was revived 2026-08-08 at $CUTOFF). Those never
+    # had a chance to comply, so intersect with "changed since the lint went live" and the
+    # grandfathering survives a change of base ref.
+    CUTOFF=af869a9
+    if git rev-parse -q --verify "$CUTOFF^{commit}" >/dev/null 2>&1; then
+      git diff --name-only "$CUTOFF"...HEAD -- 'specs/*/SUMMARY.md' 'specs/*/PLAN.md' \
+        > "$TMP_POST_CUTOFF"
+      # -x -F: whole-line literal match. No match → grep exits 1 with empty output, which is
+      # the correct answer (nothing changed since the cutoff), not an error.
+      changed="$(printf '%s\n' "$changed" | grep -xF -f "$TMP_POST_CUTOFF" || true)"
+    else
+      echo "  note — grandfather cutoff $CUTOFF absent (shallow clone?); linting the full changed set"
+    fi
+    if [ -n "$changed" ]; then
+      printf '%s\n' "$changed" | python3 scripts/check_verify_rows.py || FAILED=1
+    else
+      echo "  skip — no SUMMARY.md/PLAN.md changed since the grandfather cutoff"
+    fi
   else
     echo "  skip — no changed SUMMARY.md/PLAN.md vs $BASE_OUT"
   fi
