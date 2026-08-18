@@ -19,9 +19,12 @@ few execution facts no other doc reliably contains.
 
 ## Test execution (agent-specific — usually not in the docs above)
 
-- **Test command:** `bash scripts/run-tests.sh` (runs L1 syntax + doc-truth lint, L2 hook contract tests, L3 script integration tests — same suite as CI `harness-ci` on ubuntu + macos)
+> This section describes the **harness repo itself** and is the default a fresh install ships.
+> A consuming repo owns `agents/PROJECT.md` — replace these with your own stack's commands.
+
+- **Test command (harness repo):** `bash scripts/run-tests.sh` (runs L1 syntax + doc-truth lint, L2 hook contract tests, L3 script integration tests — same suite as CI `harness-ci` on ubuntu + macos)
 - **Targeted-run flags:** no flags; run a single suite directly, e.g. `bash tests/hooks/commit-quality-gate.test.sh`
-- **Source → test mapping:** `hooks/<name>.sh` → `tests/hooks/<name>.test.sh`; `scripts/install-harness.sh` → `tests/scripts/install-harness.test.sh`; `settings.json` wiring → `tests/scripts/settings-wiring.test.sh`; `skills/visual-planner/render_plan.py` → `skills/visual-planner/test_render_plan.py` (pytest)
+- **Source → test mapping (harness repo):** `hooks/<name>.sh` → `tests/hooks/<name>.test.sh`; `scripts/install-harness.sh` → `tests/scripts/install-harness.test.sh`; `settings.json` wiring → `tests/scripts/settings-wiring.test.sh`; `skills/visual-planner/render_plan.py` → `skills/visual-planner/test_render_plan.py` (pytest)
 - **Markers / coverage:** none — bash test suites assert via `tests/lib.sh` helpers; no coverage gate
 
 ---

@@ -80,7 +80,7 @@ Column rules:
 - **Behavior (observable)** — the externally-visible outcome, phrased so a reader can tell it
   happened without reading the diff. Not an implementation note.
 - **Check (re-runnable)** — a command that inherits the same guardrails as a task `Verify` (see
-  `docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md`): a **single** command,
+  the harness repo's `docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md`): a **single** command,
   **pipe-free** (no `|`), finishes in **<60s**, and never a whole-suite row. Split anything larger
   into more SC rows.
 - **Expected** — grammar is a leading machine-read token `exit <n>` (a non-zero code is allowed

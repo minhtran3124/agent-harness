@@ -40,7 +40,7 @@ do not report it.
 **Why this angle exists.** This repository shipped the same bug three times. Two rounds of
 per-line review each widened an `except` clause; neither noticed that `open()` ran before the
 loop, outside every `try`, so an unreadable file still terminated the script
-(`docs/solutions/scripts/bash-empty-array-and-jsonl-parsing-gotchas.md`). No list of defect
+(harness repo, `docs/solutions/scripts/bash-empty-array-and-jsonl-parsing-gotchas.md`). No list of defect
 classes reaches that bug. Only this question does.
 ````
 

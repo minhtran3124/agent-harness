@@ -75,7 +75,7 @@ Issues preventing the task from completing:
 
 ## Rule 4 — STOP + ask user
 
-> **Canonical gate list:** the hard-gate vocabulary lives in `harness-manifest.json` — the diff-detectable gates under `hard_gates.detectable` (enforced by `risk-corroboration.sh`) and the judgment-only STOP items below under `hard_gates.judgment` (removing functionality, session/scope, replacing a service). Keep this list in sync with the manifest; `scripts/check_manifest.py` guards the detectable half.
+> **Canonical gate list:** the hard-gate vocabulary lives in `harness-manifest.json` — the diff-detectable gates under `hard_gates.detectable` (enforced by `risk-corroboration.sh`) and the judgment-only STOP items below under `hard_gates.judgment` (removing functionality, session/scope, replacing a service). Keep this list in sync with the manifest; the harness repo's `scripts/check_manifest.py` guards the detectable half in harness CI (it does not deploy into a consuming repo).
 
 Changes requiring architectural judgment — NEVER auto-apply:
 

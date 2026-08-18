@@ -91,8 +91,74 @@ while IFS= read -r cmd; do
   [ -f "$cmd" ] || err "settings.json registers a command that does not exist: $cmd"
 done < <(jq -r '.hooks[]?[]?.hooks[]?.command // empty' settings.json)
 
+# ---- 4: consumer-side truth — lint the DERIVED tree, not just the source ----
+# Checks 1-2 normalize `.claude/x` back to the root source it derives from, so they are blind to
+# the failure that actually bites: a doc naming a helper that never deploys. Every `scripts/*`
+# gate reference was dangling in every consuming repo for months while this lint reported exit 0,
+# because it runs where scripts/ exists. A gate is only true when it runs in the environment it
+# protects — so deploy into a scratch target and re-check the paths from there.
+#
+# Convention this enforces: a doc MAY cite a harness-repo-only path, but the citation must say so
+# on the same line ("the harness repo's `scripts/check_manifest.py`"). Anything else must resolve
+# in the consumer.
+if [ "${SKIP_DERIVED_LINT:-0}" != "1" ] && command -v python3 >/dev/null 2>&1; then
+  DERIVED_TGT=$(mktemp -d)
+  trap 'rm -rf "$DERIVED_TGT"' EXIT
+  if bash scripts/deploy-harness.sh --target "$DERIVED_TGT" --yes </dev/null >/dev/null 2>&1; then
+    derived_out=$(python3 - "$DERIVED_TGT" <<'PYEOF'
+import os, re, sys
+tgt = sys.argv[1]; claude = os.path.join(tgt, ".claude")
+ROOTS = ("skills/", "rules/", "hooks/", "agents/", "templates/", "runtime/", "scripts/", ".claude/")
+# Paths a consumer legitimately does not have: illustrative examples, and artifacts made at run time.
+SKIP = {"foo.py", "plan.md", "kb-embedding/voyage.md", "techstacks/conventions.md"}
+SKIP_SUFFIX = (".plan-review.json", "break-glass-log.md", "review-receipt.json")
+# Scan INSIDE each backtick span rather than only spans that are exactly a path: the highest-risk
+# form is a command (python3 scripts/verify_summary.py --lane <slug>) inside a code span, which
+# would miss entirely -- and an unshipped helper invoked that way is precisely the bug this checks.
+BT = chr(96)   # literal backtick, built at runtime (see note above)
+SPAN = re.compile(BT + "([^" + BT + "]+)" + BT)
+PATH = re.compile(r"(?<![A-Za-z0-9_./-])([A-Za-z0-9_.][A-Za-z0-9_./-]*\.(?:md|py|sh|json|ini|yml))")
+bad = []
+for dp, _, fs in os.walk(claude):
+    for fn in fs:
+        if not fn.endswith(".md") or ".harness-incoming" in fn or ".proposed" in fn:
+            continue
+        full = os.path.join(dp, fn)
+        rel = os.path.relpath(full, claude)
+        lines = open(full, encoding="utf-8", errors="ignore").read().split("\n")
+        for i, line in enumerate(lines, 1):
+            # A doc MAY cite a harness-only path if it says so -- but prose wraps, so the marker
+            # is looked for across the neighbouring lines, not just this one.
+            window = " ".join(lines[max(0, i - 2):i + 1])
+            if "harness repo" in window or "harness checkout" in window:
+                continue
+            for span in SPAN.findall(line):
+                for m in PATH.finditer(span):
+                    path = m.group(1)
+                    if not path.startswith(ROOTS) or "<" in path:
+                        continue
+                    if path in SKIP or path.endswith(SKIP_SUFFIX):
+                        continue
+                    cand = (os.path.join(tgt, path) if path.startswith(".claude/")
+                            else os.path.join(claude, path))
+                    if not os.path.exists(cand):
+                        bad.append(f"{rel}:{i} -> {path}")
+for b in sorted(set(bad)):
+    print(b)
+PYEOF
+    )
+    if [ -n "$derived_out" ]; then
+      while IFS= read -r line; do
+        err "derived tree: $line does not exist in a consuming repo (ship it via CONSUMER_SCRIPTS, or say 'harness repo' nearby)"
+      done <<< "$derived_out"
+    fi
+  else
+    echo "  ⚠ doc-truth: derived-tree check skipped — deploy-harness.sh failed on a scratch target" >&2
+  fi
+fi
+
 if [ "$FAILED" -eq 0 ]; then
-  echo "  ✓ doc-truth lint: all referenced paths exist; hook table matches settings.json"
+  echo "  ✓ doc-truth lint: source + derived paths exist; hook table matches settings.json"
   exit 0
 fi
 exit 1
