@@ -9,45 +9,7 @@ failure information. You do **not** fix code or tests.
 
 ## Project Specifics
 
-The test command, targeted-run flags, and source→test mapping live in `agents/PROJECT.md` → *Test execution*. Read it first and use that command — do not assume a stack. If that section is unfilled, fall back to **Common Test Runners** below.
-
-## Common Test Runners (reference)
-
-`agents/PROJECT.md` is authoritative — always prefer its test command and flags. Use this section only to (a) fill gaps when PROJECT.md is incomplete, or (b) pick the correct flags for a known runner. First **detect the stack**, then match the row.
-
-**Detect the stack from repo manifests:**
-
-- `pyproject.toml` / `requirements.txt` / `setup.py` → Python
-- `package.json` (inspect `devDependencies` for the actual runner) → JS/TS
-- `go.mod` → Go · `Cargo.toml` → Rust · `pom.xml` / `build.gradle` → Java/JVM
-- `Gemfile` → Ruby · `*.csproj` / `*.sln` → .NET · `composer.json` → PHP · `mix.exs` → Elixir
-
-| Runner | Run all | Targeted run (file / single test) | Stop at first failure |
-|---|---|---|---|
-| **pytest** (Python) | `python -m pytest` | `pytest tests/test_<module>.py::test_<name>` · filter `-k "name"` | `-x` |
-| **unittest** (Python) | `python -m unittest` | `python -m unittest mod.TestClass.test_y` | `--failfast` |
-| **vitest** (JS/TS) | `npx vitest run` | `npx vitest run path -t "name"` | `--bail=1` |
-| **jest** (JS/TS) | `npx jest` | `npx jest path -t "name"` | `--bail` |
-| **node:test** (JS/TS) | `node --test` | `node --test --test-name-pattern="name"` | n/a — run targeted |
-| **go test** (Go) | `go test ./...` | `go test ./pkg -run TestName` | `-failfast` |
-| **cargo / nextest** (Rust) | `cargo test` | `cargo test test_name` | `cargo nextest run` (fail-fast by default) |
-| **Maven + JUnit** (JVM) | `mvn test` | `mvn test -Dtest=ClassName#method` | `-ff` |
-| **Gradle** (JVM) | `./gradlew test` | `./gradlew test --tests "Class.method"` | `--fail-fast` |
-| **RSpec** (Ruby) | `bundle exec rspec` | `bundle exec rspec spec/x_spec.rb:42` | `--fail-fast` |
-| **dotnet test** (.NET) | `dotnet test` | `dotnet test --filter "FullyQualifiedName~Class.Method"` | n/a — use `--filter` |
-| **PHPUnit** (PHP) | `./vendor/bin/phpunit` | `./vendor/bin/phpunit --filter testName` | `--stop-on-failure` |
-| **ExUnit** (Elixir) | `mix test` | `mix test test/x_test.exs:12` | `--max-failures 1` |
-
-**Common source → test conventions** (use PROJECT.md's mapping when given):
-
-- Python: `<pkg>/<module>.py` → `tests/test_<module>.py` (or mirrored under `tests/`)
-- JS/TS: `src/x.ts` → `src/x.test.ts` / `x.spec.ts`, or `__tests__/x.test.ts`
-- Go: `pkg/x.go` → `pkg/x_test.go` (same package dir)
-- Rust: unit tests in-file under `#[cfg(test)]`; integration tests in `tests/`
-- JVM: `src/main/.../X.java` → `src/test/.../XTest.java`
-
-> Add `npx`/`bundle exec`/`./vendor/bin` only when the runner is a project-local dependency;
-> drop the prefix if it is installed globally or exposed via a workspace script.
+The test command, targeted-run flags, and source→test mapping live in `agents/PROJECT.md` → *Test execution*. Read it first and use that command — do not assume a stack. If that section is unfilled, detect the runner from the repo's manifests and lockfiles before running anything.
 
 ## Core Responsibilities
 

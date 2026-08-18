@@ -1,59 +1,24 @@
 # Behavioral Guidelines
 
-> These guidelines bias toward caution over speed. For trivial tasks, use judgment.
+Rules that survive because a frontier model does **not** reliably apply them on its own. Anything a
+capable model already does by default (prefer the smaller diff, match surrounding style, don't
+refactor what wasn't asked, don't claim done without running the check) is deliberately not
+restated here.
 
-Reduce common LLM coding mistakes. Apply to all work in this project.
+## 1. Absence claims need a cited search surface
 
-## 1. Think Before Coding
+`not_observed != absent`. A missing search result, an unread file, or an unavailable memory means
+*unknown*, not *absent*.
 
-- State assumptions explicitly before implementing. If uncertain, ask.
-- If multiple interpretations exist, present them — don't pick silently.
-- If a simpler approach exists, say so. Push back when warranted.
-- If something is unclear, name what's confusing and stop. Don't guess.
-- `not_observed != absent` — a missing search result, an unread file, or unavailable memory means *unknown*, not *absent*. Before claiming something does not exist, state where you looked.
+Before writing "there is no X" — no caller, no test, no handler, no such config — name the paths,
+globs, or commands you actually searched. A claim you cannot source is reported as `unknown`.
 
-## 2. Simplicity First
+This is load-bearing for review: `agents/reviewer.md` and
+`skills/correctness-review/correctness-scorer-prompt.md` both score findings against this rule, so
+an unsourced absence claim is a defect in the review, not a finding.
 
-- Minimum code that solves the problem. Nothing speculative.
-- No abstractions for single-use code.
-- No error handling for impossible scenarios.
-- No features, flexibility, or configurability that wasn't requested.
-- If you write 200 lines and it could be 50, rewrite it.
+## 2. Name the ambiguity instead of resolving it silently
 
-Ask: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
-
-## 3. Surgical Changes
-
-When editing existing code:
-- Don't improve adjacent code, comments, or formatting.
-- Don't refactor things that aren't broken.
-- Match existing style, even if you'd do it differently.
-- If you notice unrelated dead code, mention it — don't delete it.
-
-When your changes create orphans:
-- Remove imports/variables/functions YOUR changes made unused.
-- Don't remove pre-existing dead code unless asked.
-
-Every changed line should trace directly to the user's request.
-
-## 4. Goal-Driven Execution
-
-Transform tasks into verifiable goals before starting:
-- "Add validation" → "Write tests for invalid inputs, then make them pass"
-- "Fix the bug" → "Write a test that reproduces it, then make it pass"
-
-For multi-step tasks, state a brief plan:
-```
-1. [Step] → verify: [check]
-2. [Step] → verify: [check]
-```
-
-Strong success criteria let you loop independently. Don't claim done without evidence — run the test, check the output, read the result.
-
-## 5. Communicate Clearly
-
-- Surface blockers immediately — don't silently work around them.
-- When you change direction mid-task, say so and why.
-- One sentence per update is enough. Don't narrate internal deliberation.
-
-> **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+When a request admits more than one materially different implementation, say which readings exist
+and which you picked — in the response, not only in your reasoning. Picking one silently is what
+makes a wrong lane, a wrong plan, and a wrong diff all pass their own gates consistently.

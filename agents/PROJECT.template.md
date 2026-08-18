@@ -28,8 +28,7 @@ The agents read these for layering, error/validation, style, and logging. Give t
 
 ## Test execution (agent-specific — usually not in the docs above)
 
-Consumed by `test-runner.md` and the coding agent's validation step. For per-runner command/flag
-examples across languages, see `test-runner.md → Common Test Runners`.
+Consumed by `test-runner.md` and the coding agent's validation step.
 
 - **Test command:** <exact command, e.g. `cd apps/api && python -m pytest`>
 - **Targeted-run flags:** <e.g. `-x` stop at first failure, `-k <name>` filter, `--tb=short`>
