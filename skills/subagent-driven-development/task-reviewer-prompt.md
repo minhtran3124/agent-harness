@@ -3,9 +3,10 @@
 Use this local prompt for every per-task review. It replaces the former sequential spec and
 quality prompts; it is not dependent on an external plugin.
 
-`model_stage` is not a Task-tool parameter: resolve it first with
-`python3 scripts/render_runtime_entry.py --runtime <runtime> --model-stage task_reviewer`
-and pass the printed label as the Task tool's `model:` value.
+`model_stage` is not a Task-tool parameter. Use the `model:` already declared in this stage's
+rendered `agents/` definition as the Task tool's `model:` value — the harness repo resolves that
+value at render time (`scripts/render_runtime_entry.py --model-stage task_reviewer`), so a consuming
+repo reads it off the agent file rather than re-deriving it.
 
 ```
 Task tool (task-reviewer):

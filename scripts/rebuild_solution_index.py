@@ -48,8 +48,14 @@ def build(root: Path) -> str:
         out.append("")
     return "\n".join(out).rstrip() + "\n"
 
+def _default_root() -> Path:
+    """Repo root. A deployed copy sits at <repo>/.claude/scripts/, one level in."""
+    here = Path(__file__).resolve().parents[1]
+    return here.parent if here.name == ".claude" else here
+
+
 def main() -> int:
-    p = argparse.ArgumentParser(); p.add_argument("--root", type=Path, default=Path(__file__).resolve().parent.parent); p.add_argument("--check", action="store_true"); p.add_argument("--dry-run", action="store_true"); args=p.parse_args()
+    p = argparse.ArgumentParser(); p.add_argument("--root", type=Path, default=_default_root()); p.add_argument("--check", action="store_true"); p.add_argument("--dry-run", action="store_true"); args=p.parse_args()
     output = build(args.root.resolve()); path=args.root.resolve()/"docs/solutions/INDEX.md"
     if args.check:
         if not path.is_file() or path.read_text(encoding="utf-8") != output:

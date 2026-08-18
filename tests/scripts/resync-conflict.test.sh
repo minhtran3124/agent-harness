@@ -214,7 +214,12 @@ printf 'LOCAL HACK — should NOT survive\n' > "$T7/.claude/skills/compound/SKIL
 run_deploy "$T7"
 
 t "case 7: non-protected file is silently overwritten by re-sync"
-if [ "$RC" -eq 0 ] && cmp -s "$T7/.claude/skills/compound/SKILL.md" "$ROOT/skills/compound/SKILL.md"; then pass
+# The derived copy is NOT byte-identical to source by design: rewrite_derived_paths repoints
+# allow-listed helpers (scripts/X -> .claude/scripts/X) so a consumer runs the copy that exists.
+# Undo just that rewrite before comparing, so this still asserts "local edit did not survive"
+# rather than accidentally asserting "no derive-time transform runs".
+t7_normalized=$(sed 's#\.claude/scripts/#scripts/#g' "$T7/.claude/skills/compound/SKILL.md")
+if [ "$RC" -eq 0 ] && [ "$t7_normalized" = "$(cat "$ROOT/skills/compound/SKILL.md")" ]; then pass
 else fail "rc=$RC — non-protected local edit survived a re-sync (over-protection)"; fi
 
 # ---------------------------------------------------------------------------

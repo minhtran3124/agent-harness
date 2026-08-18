@@ -52,4 +52,3 @@ standard, or deep, but a requested depth that conflicts with a Deep signal must 
 - `rules/research-depth.md` — canonical depth policy
 - `references/depth-classifier.md` — portable signals and decision details
 - `references/research-brief-template.md` — required output shape
-- `tests/structural/depth-modes-test-cases.md` — regression cases

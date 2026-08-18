@@ -34,7 +34,7 @@ tests, risk (`high|medium|low`), note, and optional flows. New/missing graph nod
 do not invent risk or coverage. Review output defaults to untracked `PLAN.review.html`.
 
 Both XML and canonical markdown task forms are supported. Keep parsing and rendering behavior in
-the tested code; use `test_render_plan.py` after changes.
+the tested code; re-run the renderer's unit tests in the harness repo after changes.
 
 ## References
 

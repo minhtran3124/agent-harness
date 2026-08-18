@@ -2,7 +2,7 @@
 
 Skills are reusable prompt programs invoked by name through the active runtime. Each skill has a defined scope, hard gates, and a handoff to the next skill.
 
-This file is the single source of truth for overview, workflow, and cross-skill concerns — consult the `SKILL.md` of each skill for runtime behavior. Two skills keep deeper standalone docs: `skills/compound/README.md` and `skills/xia2/README.md`; the other per-skill `README.md` files have been removed (their rationale notes live at the bottom of this file).
+This file is the single source of truth for overview, workflow, and cross-skill concerns — consult the `SKILL.md` of each skill for runtime behavior.
 
 ## Runtime entry syntax
 
@@ -11,7 +11,7 @@ binding renders `/skill-name` for Claude Code and `$skill-name` for the **Codex 
 Shared skills must not hard-code either form. Codex support is not GA or peer enforcement: the
 outside-hook doctor may report `enforced` only for a complete, current, trusted, observed local
 combination; Linux and WSL remain advisory while their platform evidence is unobserved. Installation
-and lifecycle details live in `docs/codex-alpha-install.md`.
+and lifecycle details live in the harness repo's `docs/codex-alpha-install.md`.
 
 ---
 
@@ -20,7 +20,7 @@ and lifecycle details live in `docs/codex-alpha-install.md`.
 ### Full Cycle (3+ layers, migration, or spans multiple services)
 
 ```
-scripts/init-structure.sh  (first-time repo setup only)
+init-structure.sh --root <project>   (first-time setup; run from the harness repo)
   → scaffolds specs/, docs/solutions/ (create-if-missing)
       ↓
 feature-intake  (routing entry point — run first on every change request)
@@ -95,7 +95,8 @@ compound  (always — root cause is worth preserving)
 
 ### Setup
 
-No skill covers first-time setup — it is a script: `bash scripts/init-structure.sh` scaffolds
+No skill covers first-time setup — it is a harness-repo script (never deployed into a project):
+from the harness checkout run `bash scripts/init-structure.sh --root <project>`, which scaffolds
 `specs/` and `docs/solutions/` (create-if-missing). Run it once per repo.
 
 ### Discovery & Design
@@ -147,34 +148,6 @@ If one of these isn't available in your environment, the workflows degrade grace
 
 ---
 
-## Integration Evidence Tiers
-
-Every integration this repo *claims* to use — external skills, MCP servers, and the cross-skill
-handoff edges — carries an honest evidence tier. The tiers:
-
-- **ci-proven** — a CI job in this repo actually runs the integration.
-- **manually-verified (date)** — a recorded run exists in this repo (commit / results file).
-- **documented-only** — referenced in docs/workflows but never observed running here.
-
-| Integration | Kind | Tier | Evidence |
-|---|---|---|---|
-| `systematic-debugging` | external skill | documented-only | referenced in Bug Fix Path; no recorded run in this repo |
-| `test-driven-development` | external skill | documented-only | named as implementer protocol; no recorded run here |
-| `requesting-code-review` | external skill | documented-only | referenced template; no recorded run here |
-| `session-tracker` | external skill | documented-only | referenced for resumption; no recorded run here |
-| `skill-creator` | external skill | documented-only | referenced for authoring; no recorded run here |
-| `code-review-graph` | MCP server (`.mcp.json`) | documented-only | mandated by CLAUDE.md; no recorded review run pinned in-repo |
-| `context7` | MCP server (user-level) | documented-only | user-level docs lookup; no recorded run pinned in-repo |
-| `subagent-driven-development` → `correctness-review` → `intent-review` | handoff edge | manually-verified (2026-06-12) | intent-review dogfood on its own diff — commit `a2a4349` |
-
-**Graduation rule** (from the research report): an edge only moves **up** a tier when a
-recorded run exists *in this repo* — support claims are never inherited from upstream or from
-another project (`not_observed != absent`). Most external-skill rows start at documented-only
-and that is the honest state; promote a row only when you can cite the commit or results file
-that proves the run.
-
----
-
 ## Skill Handoff Map
 
 ```
@@ -211,7 +184,7 @@ reads  ◄── brainstorming  (decision track only — avoid re-proposing reje
        ◄── xia2           (all tracks — module, affects, confidence filtering)
 ```
 
-Schema reference: `docs/solutions/README.md` (scaffolded by `scripts/init-structure.sh`).
+Schema reference: `docs/solutions/README.md` (scaffolded by the harness repo's `scripts/init-structure.sh`).
 
 ---
 
@@ -248,7 +221,14 @@ When ≥5 `app/` files are staged, the hook hints: `★ Consider running compoun
 
 This is one of several wired hooks — see the full table in the root `CLAUDE.md`.
 
+
+<!-- harness-only:begin -->
 ---
+
+> **Maintainer notes.** Everything below explains how the harness is built and how to fork it.
+> A deployed `.claude/` copy drops this region (deploy-harness.sh → strip_maintenance_docs),
+> along with `skills/xia2/README.md`, `skills/compound/README.md`, and `agents/README.md`,
+> which hold the same kind of content in full.
 
 ## Per-skill Design Rationales
 
@@ -344,7 +324,7 @@ graph LR
 - **Zero-config.** xia2 classifies from its built-in Common signals; nothing to bootstrap.
 - **Fork to another project:**
   1. Copy `skills/xia2/`.
-  2. Run `bash scripts/init-structure.sh` in the new repo to scaffold `specs/` and `docs/solutions/`.
+  2. From the harness checkout run `bash scripts/init-structure.sh --root <new repo>` to scaffold `specs/` and `docs/solutions/`.
   3. `tests/structural/depth-modes-test-cases.md` is a portable regression set against the common signals — keep or extend it.
   4. Keep `tests/behavioural/pressure-scenarios.md` — most scenarios are universal.
 - **Maintenance discipline:**
@@ -359,3 +339,5 @@ graph LR
 | TC-19, TC-21 | **Deep** |
 | TC-20 | **Standard** (initial classification) |
 | TC-29 | Surface a **risk warning** when HARD-GATE is waived |
+
+<!-- harness-only:end -->
