@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.19.2] — 2026-08-18
+
+- release(v3): evidence tiers, durable run state, and a runtime-neutral core (PR #207)
+
 ## [2.19.1] — 2026-07-27
 
 - ci(sync): put the corrected post-merge trigger on main, where it is read (PR #176)
