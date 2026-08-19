@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.20.0] — 2026-08-19
+
+- fix(deploy,docs): make consumer-facing gates and references actually true downstream (PR #206)
+
 ## [2.19.3] — 2026-08-18
 
 - docs: align AGENTS.md and README.md with the v3 tree (PR #209)
