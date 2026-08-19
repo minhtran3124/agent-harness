@@ -22,6 +22,15 @@ REPO_DIR="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null)"
 [ -z "$REPO_DIR" ] && REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$REPO_DIR"
 
+# Resolve the lane/evidence helper once. The harness repo keeps it at scripts/; a CONSUMER repo
+# receives the deployed copy at .claude/scripts/ (deploy-harness.sh -> CONSUMER_SCRIPTS). Before
+# this resolution the consumer path was never tried, so Checks 1.6 and 2.5 silently fail-open in
+# every consuming repo. Empty when neither exists — both checks stay fail-open on that, unchanged.
+VERIFY_SUMMARY=""
+for _vs_cand in scripts/verify_summary.py .claude/scripts/verify_summary.py; do
+  if [ -f "$_vs_cand" ]; then VERIFY_SUMMARY="$_vs_cand"; break; fi
+done
+
 # ─────────────────────────────────────────────
 # Check 1: Secrets scan
 # ─────────────────────────────────────────────
@@ -85,7 +94,7 @@ echo "[COMMIT GATE] Escalations... PASSED" >&2
 EV_SLUGS=$(git diff --cached --name-only 2>/dev/null \
   | grep -oE '^specs/[^/]+/' | sort -u || true)
 if [ -n "$EV_SLUGS" ]; then
-  if command -v python3 >/dev/null 2>&1 && [ -f scripts/verify_summary.py ]; then
+  if command -v python3 >/dev/null 2>&1 && [ -n "$VERIFY_SUMMARY" ]; then
     EV_FAILED=0
     for slug_dir in $EV_SLUGS; do
       summary="${slug_dir}SUMMARY.md"
@@ -120,7 +129,7 @@ if [ -n "$EV_SLUGS" ]; then
       # Warn-first advisories (e.g. the `### Not auto-verified` rollout) are printed
       # by --lane on a PASSING run too, so the output is relayed on both paths. A
       # warning only echoed on failure is a warning nobody ever reads.
-      if ! ev_out=$(python3 scripts/verify_summary.py --lane "$ev_tmp" --plan-dir "$ev_dir" 2>&1); then
+      if ! ev_out=$(python3 "$VERIFY_SUMMARY" --lane "$ev_tmp" --plan-dir "$ev_dir" 2>&1); then
         echo "${ev_out//$ev_tmp/$summary}" >&2
         EV_FAILED=1
       else
@@ -137,7 +146,7 @@ if [ -n "$EV_SLUGS" ]; then
     fi
     echo "[COMMIT GATE] Lane evidence... PASSED" >&2
   else
-    echo "[COMMIT GATE] Lane evidence skipped: python3 or scripts/verify_summary.py unavailable." >&2
+    echo "[COMMIT GATE] Lane evidence skipped: python3 or verify_summary.py unavailable (looked in scripts/ and .claude/scripts/)." >&2
   fi
 fi
 
@@ -199,8 +208,8 @@ if [[ "${REQUIRE_VERIFY:-0}" == "1" ]]; then
     # a missing interpreter must not gate commits (fail-open, like the `|| true`
     # convention elsewhere in this hook).
     SLUG=$(basename "$(dirname "$SUMMARY")")
-    if command -v python3 >/dev/null 2>&1 && [[ -f scripts/verify_summary.py ]]; then
-      if ! python3 scripts/verify_summary.py --check "$SLUG" >&2; then
+    if command -v python3 >/dev/null 2>&1 && [[ -n "$VERIFY_SUMMARY" ]]; then
+      if ! python3 "$VERIFY_SUMMARY" --check "$SLUG" >&2; then
         echo "[COMMIT GATE] Evidence (### Verify re-run)... FAILED" >&2
         echo "  BLOCKED: claimed Exit codes in $SUMMARY do not match a fresh run (see mismatch above)." >&2
         echo "  Fix the commands/exit codes in the ### Verify table, or unset REQUIRE_VERIFY." >&2
@@ -208,7 +217,7 @@ if [[ "${REQUIRE_VERIFY:-0}" == "1" ]]; then
       fi
       echo "[COMMIT GATE] Evidence (### Verify re-run)... PASSED" >&2
     else
-      echo "[COMMIT GATE] Evidence re-run skipped: python3 or scripts/verify_summary.py unavailable — presence check only." >&2
+      echo "[COMMIT GATE] Evidence re-run skipped: python3 or verify_summary.py unavailable (scripts/, .claude/scripts/) — presence check only." >&2
     fi
   fi
 fi

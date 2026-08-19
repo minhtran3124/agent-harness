@@ -17,9 +17,9 @@ user; if no plan exists, use the tiny/no-plan path instead of guessing.
 
 ## Verify and gate
 
-1. Run the repository’s targeted suite, or the full suite if no safe subset is known. In this
-   repository run `bash scripts/run-tests.sh`. Fix failures and retry at most twice; never push a
-   failing change.
+1. Run the repository’s targeted suite, or the full suite if no safe subset is known. The exact
+   command comes from `agents/PROJECT.md` → *Test execution*; never assume a stack or a script
+   name. Fix failures and retry at most twice; never push a failing change.
 2. For non-tiny work with a resolved plan, pin reviews at the resolved base:
 
    ```bash

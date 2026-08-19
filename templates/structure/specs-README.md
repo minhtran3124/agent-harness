@@ -26,16 +26,22 @@ this line if you change it.
 
 | File | Produced by | Purpose |
 |---|---|---|
+| `SUMMARY.md` | `feature-intake` | **Always written, every lane** — Lane/Confidence/Reason, the
+  user's request verbatim under `### Intent`, plus `### Verify` / `### Rollback` / `### Deviations`.
+  `commit-quality-gate.sh` gates commits on it and `intent-review` reads `### Intent` as its oracle. |
+| `ESCALATIONS.md` | any skill that escalates | Only when a hard gate or ambiguity stops the work.
+  Deny-on-no-response: a commit touching the slug is blocked while a `decision: pending` block stands. |
 | `design.md` | `brainstorming` | Approved design — the WHAT and WHY |
 | `research-brief.md` | `xia2` | What already exists, alternatives, lightest path |
-| `plan.md` | `writing-plans` | Task-by-task plan (XML tasks per `rules/plan-format.md`) |
+| `PLAN.md` | `writing-plans` | Task-by-task plan (markdown `### Task` sections per `rules/plan-format.md`; the uppercase name is what the hooks and renderer match) |
 
 ## Lifecycle
 
 ```
-brainstorming → design.md
-xia2          → research-brief.md
-writing-plans → plan.md
+feature-intake → SUMMARY.md (lane + confidence + verbatim intent)
+brainstorming  → design.md
+xia2           → research-brief.md
+writing-plans  → PLAN.md
 using-git-worktrees → worktree + branch
 subagent-driven-development → implementation
 compound → crystallize learnings into docs/solutions/

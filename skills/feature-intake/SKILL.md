@@ -72,5 +72,3 @@ when evidence reveals a deeper signal.
 - `harness-manifest.json` — hard gates and modes (authority)
 - `rules/orchestration.md` — artifact and escalation policy
 - `rules/auto-correct-scope.md` — branch and autonomy boundaries
-- `skills/feature-intake/tests/lane-classification-cases.md` — lane canaries
-- `skills/feature-intake/tests/confidence-escalation-cases.md` — ambiguity canaries

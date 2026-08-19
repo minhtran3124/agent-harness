@@ -27,9 +27,10 @@ scorer.
 **Score with a different model than the finders.** Scoring is a fresh, code-only judgment.
 Resolve the `correctness_scorer` model stage through the runtime entry binding; it is checked to
 remain distinct from `correctness_finder`, preserving ensemble diversity without embedding a
-vendor model label in this semantic prompt. `model_stage` is not a Task-tool parameter: run
-`python3 scripts/render_runtime_entry.py --runtime <runtime> --model-stage correctness_scorer`
-and pass the printed label as the Task tool's `model:` value.
+vendor model label in this semantic prompt. `model_stage` is not a Task-tool parameter. Use the `model:` already declared in this stage's
+rendered `agents/` definition as the Task tool's `model:` value — the harness repo resolves that
+value at render time (`scripts/render_runtime_entry.py --model-stage correctness_scorer`), so a consuming
+repo reads it off the agent file rather than re-deriving it.
 
 ```
 Task tool (reviewer):
@@ -93,7 +94,7 @@ Task tool (reviewer):
     Score it 0 and move on. Do not argue in your justification that it deserves more; say what
     the bug is, so the human reading the advisory list can act on it.
 
-    **Case (2026-07-13, PR #51):** 3 real, reproducible aborts found in `harness-status.sh` on
+    **Case (2026-07-13, PR #51):** 3 real, reproducible aborts found in the harness repo's `scripts/harness-status.sh` on
     lines the diff never touched. **Verdict:** all scored 0, kept out of the fix loop, reported
     to the author — who fixed them separately. Rule working as intended, not a false negative.
 

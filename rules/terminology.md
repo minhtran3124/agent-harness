@@ -13,7 +13,7 @@ would forbid this project's own vocabulary (`worktree`, `lane`, `gate`, `blast r
 
 Every rule below is labelled with the evidence that justifies it. A rule with no measured
 effect is advisory and **must not** be mechanised into a gate: see
-`specs/ste-terminology-evidence/DECISION.md` for the 75-trial A/B record.
+the harness repo's `specs/ste-terminology-evidence/DECISION.md` for the 75-trial A/B record.
 
 <!-- lint:scope -->
 | Target | §1 Terms | §2 Modality | §3 Acceptance | Enforcement |
@@ -88,6 +88,6 @@ Keep this section for human readability. Do not build a linter on it.
 ## Delivery
 
 `paths:` injection fires on **read**, not on write — write-flows do not trigger it
-(verified empirically, see `CHANGELOG.md` for v2.1.216). A skill that *writes* a `PLAN.md`
+(verified empirically; see v2.1.216 in the harness repo's `CHANGELOG.md`). A skill that *writes* a `PLAN.md`
 therefore never receives this file from the frontmatter above. Any write-flow that must
 apply §3 needs an **explicit Read step**; the frontmatter only covers the reviewer side.

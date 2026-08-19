@@ -29,7 +29,10 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-_REPO_ROOT = Path(__file__).resolve().parents[1]
+_SELF_ROOT = Path(__file__).resolve().parents[1]
+# A deployed copy lives at <repo>/.claude/scripts/; the sources it reads (specs/) live at the
+# repo root, one level further out. In the harness repo _SELF_ROOT is already the repo root.
+_REPO_ROOT = _SELF_ROOT.parent if _SELF_ROOT.name == ".claude" else _SELF_ROOT
 
 # Matches a markdown table row: | cell | cell | ... |
 _ROW_RE = re.compile(r"^\|(.+)\|$")

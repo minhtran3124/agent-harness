@@ -1075,6 +1075,104 @@ or read from each other's files.
 - user_turns: 0
 
 
+### 2026-08-13T02:29:22Z
+- session_id: 7e1f60f3-0311-4b63-bfd9-74437ef61e36
+- exit: 
+- last_commit: e970c57 Merge pull request #203 from minhtran3124/docs/compound-base-ref-lint-skip
+- user_turns: 0
+
+
+### 2026-08-13T05:45:26Z
+- session_id: 0ccc4c85-8202-4f80-8de2-c879ffe9ae84
+- exit: 
+- last_commit: 6815f6d fix(specs): make the Verify rows re-runnable under the strict-gate cap
+- user_turns: 0
+
+
+### 2026-08-13T05:45:26Z
+- session_id: f0af5374-01b0-40b9-bfa8-bf22ec458676
+- exit: 
+- last_commit: 6815f6d fix(specs): make the Verify rows re-runnable under the strict-gate cap
+- user_turns: 0
+
+
+### 2026-08-13T05:45:26Z
+- session_id: 45856e6e-8e85-4287-9811-9a960b33bb98
+- exit: 
+- last_commit: 6815f6d fix(specs): make the Verify rows re-runnable under the strict-gate cap
+- user_turns: 0
+
+
+### 2026-08-13T05:45:26Z
+- session_id: 7b0921e7-1e4e-4276-b0e0-5f5cb2ed6518
+- exit: 
+- last_commit: 6815f6d fix(specs): make the Verify rows re-runnable under the strict-gate cap
+- user_turns: 0
+
+
+### 2026-08-13T05:45:27Z
+- session_id: 859b60f8-6daf-49c8-9c0d-a63ba6e9f42e
+- exit: 
+- last_commit: 6815f6d fix(specs): make the Verify rows re-runnable under the strict-gate cap
+- user_turns: 0
+
+
+### 2026-08-13T07:21:27Z
+- session_id: 010f2b42-96b1-49c8-ac3d-0cee7131c6b8
+- exit: 
+- last_commit: 6815f6d fix(specs): make the Verify rows re-runnable under the strict-gate cap
+- user_turns: 0
+
+
+### 2026-08-13T09:36:05Z
+- session_id: 1a77711f-7496-42c2-9a1e-1e2e8b828771
+- exit: 
+- last_commit: 4e4a171 Merge pull request #204 from minhtran3124/research/ste-terminology-evidence
+- user_turns: 0
+
+
+### 2026-08-14T07:04:15Z
+- session_id: 823a98be-5da0-46cd-9779-c94b3a0cb24c
+- exit: 
+- last_commit: cc02217 specs: record A' decision, and escalate a second gate bypass (E002)
+- user_turns: 0
+
+
+### 2026-08-14T07:41:10Z
+- session_id: a0b57a5a-c20f-4080-9607-8ce325fb3aa4
+- exit: 
+- last_commit: e970c57 Merge pull request #203 from minhtran3124/docs/compound-base-ref-lint-skip
+- user_turns: 0
+
+
+### 2026-08-17T07:00:12Z
+- session_id: 9bc4f56a-782c-4839-9399-fdb6d4d5619c
+- exit: 
+- last_commit: adf388c Merge pull request #205 from minhtran3124/feat/test-layer-ladder
+- user_turns: 0
+
+
+### 2026-08-17T07:00:18Z
+- session_id: c6c2452f-15f9-4f12-b8e8-daa82a428bd5
+- exit: 
+- last_commit: adf388c Merge pull request #205 from minhtran3124/feat/test-layer-ladder
+- user_turns: 0
+
+
+### 2026-08-17T07:08:06Z
+- session_id: 7b62a9b6-fb60-4d26-9047-fecfe9042ab3
+- exit: 
+- last_commit: adf388c Merge pull request #205 from minhtran3124/feat/test-layer-ladder
+- user_turns: 0
+
+
+### 2026-08-18T06:48:05Z
+- session_id: d7910cdb-df6b-4672-b8b3-fa0a8cf5c42c
+- exit: 
+- last_commit: aeb86ad Update STATE.md with new session records and events for the test-layer-ladder, including session IDs, last commits, and user turns. Modify events.jsonl to add a new 'pr.opened' event indicating the transition to 'ready_to_merge'. Update RUN.json to reflect the latest event ID and state change to 'ready_to_merge'.
+- user_turns: 0
+
+
 ### 2026-08-18T07:07:57Z
 - session_id: 76b209aa-ac11-4477-8efa-d56aac148f0b
 - exit: 

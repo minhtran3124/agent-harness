@@ -23,9 +23,10 @@ Symmetric with correctness-review's plan-blindness; here it exists to catch inte
 **Use a different model than the implementer** (ensemble diversity — a different model notices
 different drift). Resolve the `intent_reviewer` model stage through the runtime entry binding; it
 is checked to remain distinct from `implementer`, preserving the diversity this pass depends on.
-`model_stage` is not a Task-tool parameter: run
-`python3 scripts/render_runtime_entry.py --runtime <runtime> --model-stage intent_reviewer`
-and pass the printed label as the Task tool's `model:` value.
+`model_stage` is not a Task-tool parameter. Use the `model:` already declared in this stage's
+rendered `agents/` definition as the Task tool's `model:` value — the harness repo resolves that
+value at render time (`scripts/render_runtime_entry.py --model-stage intent_reviewer`), so a consuming
+repo reads it off the agent file rather than re-deriving it.
 
 ```
 Task tool (reviewer):

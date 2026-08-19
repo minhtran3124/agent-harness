@@ -6,29 +6,6 @@ Applies when: task spans >3 steps, codebase research needed, or a `specs/<slug>/
 
 Related: `plan-format.md`, `wave-parallelism.md`, `auto-correct-scope.md`, `guidelines.md`.
 
-## Decision table
-
-| Situation | Tool | Notes |
-|-----------|------|-------|
-| Research spans >3 queries | `Agent(Explore, thoroughness=medium\|very thorough)` | Request summary ≤400 words |
-| Multi-step implementation (wave with ≥2 independent tasks) | `Agent(general-purpose)` per task in the wave | Parallel tool calls in ONE message |
-| Codebase impact / callers / tests / flows | `code-review-graph` MCP tools | FIRST choice per root CLAUDE.md |
-| Architecture planning / PLAN.md drafting | `Agent(Plan)` | Returns plan; main thread reviews before executing |
-| PLAN.md finalized → visual review HTML | none — `hooks/render-plan-on-write.sh` renders on every save | Plain render is automatic; spawn `Agent(general-purpose)` running `visual-planner` only for the `--review` overlay |
-| Known file, single read | `Read` directly | No agent overhead |
-| Specific symbol / string lookup | `Grep` directly | No agent overhead |
-| Small edit (<3 steps, one file) | Direct `Edit` | No agent overhead |
-
-## Main thread budget
-
-| Context remaining | Behavior |
-|-------------------|----------|
-| ≥60% | Normal ops |
-| 40–60% | Prefer subagent for next heavy op; avoid `Read` on files >500 lines directly |
-| <40% | Snapshot STATE.md Session Handoff; wrap session; stop taking new heavy tasks |
-
-At `<40%` mid-feature: commit/push current wave first (if executing), update STATE.md with cursor, then stop. Do NOT start a new wave when budget is tight — it will get truncated mid-execution.
-
 ## Intake fields (orchestrator writes these)
 
 At intake — before dispatching any task — the orchestrator runs `feature-intake` and writes the result to `specs/<slug>/SUMMARY.md` (shape: `templates/SUMMARY.template.md`):
@@ -106,19 +83,3 @@ Re-check continuously while executing each wave; any of these escalates mid-flig
 - **Recurring deviation** — the same Rule-1–3 deviation repeats across tasks (a PLAN.md gap).
 - **Subagent BLOCKED with "the plan itself is wrong"** — the only blocker class that escalates;
   others self-recover (more context → re-dispatch, bigger model, split the task).
-
-## Concrete example — ENG-315 dogfood ran like this
-
-Main thread: coordinated; spawned one `Agent(Explore, medium)` for codebase research (returned ~350-word summary); called Linear MCP tools directly (small responses); composed PLAN.md in main thread (iterative with user). Final main-thread context: >50% remaining.
-
-Subagent: used its own fresh window for heavy `code-review-graph` traversal + targeted `Grep`. Returned structured report (auth surface, user model, quota infra, relevant file paths, architectural recommendations).
-
-No wave execution in that dogfood — it was plan-only. But the same pattern applies for execution: main thread spawns 1 subagent per wave-N task, all in one message, collects summaries, advances.
-
-## Anti-patterns
-
-- ❌ Main thread reading a 2000-line file to "get context" — spawn `Agent(Explore)` with a focused question instead
-- ❌ Spawning wave-N subagents one at a time across multiple assistant messages — defeats parallelism
-- ❌ Subagent returning "here is the full content of files X, Y, Z" — violates summary contract
-- ❌ Subagent running open-ended grep/find and dumping results — must synthesize into actionable findings
-- ❌ Main thread ignoring <40% budget warning and starting a new wave — almost always gets truncated

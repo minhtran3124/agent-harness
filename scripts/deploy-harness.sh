@@ -33,6 +33,37 @@ BOOTSTRAP_OWNED_FILES=(
   "agents/PROJECT.md"
 )
 
+# The deterministic helpers a CONSUMER repo's skills/rules actually instruct an agent to run,
+# plus the data files those helpers read. `scripts/` as a whole is a harness-development surface
+# (70+ files incl. its own tests) and is deliberately NOT synced; this allow-list is the subset
+# that must travel or the gates it backs are prose only. Add a row only when a consumer-facing
+# skill/rule references it.
+CONSUMER_SCRIPTS=(
+  "verify_summary.py"
+  "check_plan_contract.py"
+  "check_review_receipt.py"
+  "resolve_finish_context.py"
+  "rebuild_solution_index.py"
+  "render_skill_prompt.py"
+)
+# Data read by the above. NOTE: agents/*.json and adapters/ are source-time adapter inputs and must
+# NEVER deploy — tests/scripts/{deploy-prune,install-harness,codex-alpha-contract}.test.sh pin that
+# boundary. Anything needing them (render_runtime_entry.py) stays a harness-repo tool; the resolved
+# model already ships baked into each rendered agents/*.md frontmatter.
+CONSUMER_DATA=(
+  "harness-manifest.json"
+)
+
+# Docs that exist to explain the harness to whoever MAINTAINS it — design rationale, portability
+# notes, "how to fork this into another project". A consuming repo never acts on them, and they
+# reference harness-only paths (tests/, scripts/) that deliberately do not deploy. Dropped from the
+# derived tree only; sources are untouched.
+HARNESS_ONLY_DOCS=(
+  "skills/xia2/README.md"
+  "skills/compound/README.md"
+  "agents/README.md"
+)
+
 OUT_BASE="$ROOT"
 YES=0
 OVERWRITE_CONFLICTS=0
@@ -103,7 +134,7 @@ BACKUP_TS=""
 # Safe by construction: only paths in the PREVIOUS harness manifest are ever eligible to prune,
 # so a consumer's own additions (never in the manifest) are never touched. See
 # specs/deploy-prune-orphans/.
-SYNCED_DIRS_RE='^(skills|agents|hooks|rules|templates|runtime)/[^/]+$'
+SYNCED_DIRS_RE='^(skills|agents|hooks|rules|templates|runtime|scripts)/[^/]+$'
 DEPLOYED_LIST="$(mktemp)"        # accumulates `<dir>/<entry>` written this run
 record_deployed() { printf '%s\n' "$1" >> "$DEPLOYED_LIST"; }
 
@@ -320,7 +351,76 @@ copy_dir()        {
     cp -R "$entry" "$OUT/$1/"
   done
 }
+copy_consumer_subset() {
+  local f
+  mkdir -p "$OUT/scripts"
+  for f in "${CONSUMER_SCRIPTS[@]}"; do
+    [ -f "scripts/$f" ] || { printf '  %s⚠ allow-listed script missing from source: scripts/%s%s\n' "$Y" "$f" "$R" >&2; continue; }
+    rm -f "$OUT/scripts/$f"; cp "scripts/$f" "$OUT/scripts/$f"
+    record_deployed "scripts/$f"
+  done
+  for f in "${CONSUMER_DATA[@]}"; do
+    [ -f "$f" ] || { printf '  %s⚠ allow-listed data file missing from source: %s%s\n' "$Y" "$f" "$R" >&2; continue; }
+    mkdir -p "$OUT/$(dirname "$f")"
+    rm -f "$OUT/$f"; cp "$f" "$OUT/$f"
+  done
+}
+
+# Rewrite root-relative helper paths in the DERIVED Markdown so a consumer agent runs the copy that
+# exists. Same principle as derive_settings' hook-path rewrite: .claude/ is a derived tree, and a
+# path that is correct in the harness repo is wrong once deployed one level in. Markdown ONLY —
+# hooks/*.sh keep their own resolution (risk-corroboration.sh must read the git INDEX manifest, never
+# a derived .claude/ copy). Idempotent: an already-prefixed path is skipped.
+rewrite_derived_paths() {
+  python3 - "$OUT" "${CONSUMER_SCRIPTS[@]}" <<'PYEOF'
+import re, sys, pathlib
+out = pathlib.Path(sys.argv[1]); names = sys.argv[2:]
+pats = [re.compile(r'(?<![\w./-])scripts/' + re.escape(n)) for n in names]
+pats.append(re.compile(r'(?<![\w./-])harness-manifest\.json'))
+subs = ['.claude/scripts/' + n for n in names] + ['.claude/harness-manifest.json']
+changed = 0
+for f in out.rglob('*.md'):
+    if any(s in f.name for s in ('.harness-incoming', '.proposed')): continue
+    txt = orig = f.read_text(encoding='utf-8')
+    for pat, rep in zip(pats, subs):
+        txt = pat.sub(rep, txt)
+    if txt != orig:
+        f.write_text(txt, encoding='utf-8'); changed += 1
+print(f"     rewrote helper paths in {changed} derived doc(s)")
+PYEOF
+}
+
 strip_archive()   { rm -rf "$OUT/skills/_archive"; }   # archived skills must not register as live
+# Regression corpora and unit tests under skills/ belong to the harness's own CI
+# (scripts/run-tests.sh runs the .py ones). A consumer never executes them and an agent should
+# never be pointed at a 2.3k-word fixture at runtime, so the derived tree drops them. Sources are
+# untouched — this only trims the copy.
+# Drop maintenance-only material from the derived tree: whole files listed in HARNESS_ONLY_DOCS,
+# plus any region a source doc fenced with <!-- harness-only:begin --> / <!-- harness-only:end -->.
+# The sentinel lets a MIXED doc (skills/README.md is workflow overview + maintenance rationale)
+# keep one source copy instead of forking into two.
+strip_maintenance_docs() {
+  local f
+  for f in "${HARNESS_ONLY_DOCS[@]}"; do rm -f "$OUT/$f"; done
+  python3 - "$OUT" <<'PYEOF'
+import re, sys, pathlib
+out = pathlib.Path(sys.argv[1])
+fence = re.compile(r'\n?<!--\s*harness-only:begin\s*-->.*?<!--\s*harness-only:end\s*-->\n?', re.S)
+n = 0
+for f in out.rglob('*.md'):
+    if any(s in f.name for s in ('.harness-incoming', '.proposed')): continue
+    txt = f.read_text(encoding='utf-8')
+    new = fence.sub('\n', txt)
+    if new != txt:
+        f.write_text(re.sub(r'\n{3,}', '\n\n', new).rstrip() + '\n', encoding='utf-8'); n += 1
+print(f"     stripped harness-only regions from {n} derived doc(s)")
+PYEOF
+}
+
+strip_skill_tests() {
+  rm -rf "$OUT"/skills/*/tests
+  find "$OUT/skills" -name 'test_*.py' -delete 2>/dev/null || true
+}
 render_agents()   {
   python3 scripts/render_agent_definitions.py \
     --root "$ROOT" --runtime claude --output-dir "$OUT/agents"
@@ -402,6 +502,10 @@ for d in skills agents hooks rules templates runtime; do
 done
 step "Rendering ${B}Claude agent bindings${R}" render_agents
 step "Stripping archived skills"             strip_archive
+step "Stripping harness-only skill tests"    strip_skill_tests
+step "Stripping maintenance-only docs"       strip_maintenance_docs
+step "Syncing ${B}consumer script subset${R}" copy_consumer_subset
+step "Rewriting derived helper paths"        rewrite_derived_paths
 step "Deriving ${B}settings.json${R} ${D}(hook paths)${R}" derive_settings
 
 # ---------- prune orphans (entries the harness shipped last time, gone from source now) ----------
