@@ -339,8 +339,8 @@ HROWS
 
 # Parser guard: a moved or renamed rows table yields zero pairs. That must fail loudly -- a
 # silent zero-row pass would report all pairs green while checking nothing.
-t "heading parity: rows table in init-structure.sh parsed to a non-zero pair count"
-if [ "$_nrows" -gt 0 ]; then pass; else fail "zero rows parsed -- rows table moved or was renamed in init-structure.sh"; fi
+t "heading parity: rows table in init-structure.sh parsed at least the expected 6 pairs"
+if [ "$_nrows" -ge 6 ]; then pass; else fail "parsed $_nrows rows, below the expected floor of 6 -- rows table truncated, moved, or renamed in init-structure.sh"; fi
 
 # Self-check: prove assert_headings actually detects a template heading gone missing from an
 # instance, so a checker that has quietly gone stale (always-passing) fails the suite instead of
