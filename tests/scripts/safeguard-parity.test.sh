@@ -140,7 +140,11 @@ fi
 assert_absent() {
   local root="$1" phrase="$2"; shift 2
   local hits= f rel content d dirs=() n=0
-  for d in "$@"; do [ -d "$root/$d" ] && dirs+=("$root/$d"); done
+  # A requested scan dir that does not exist is a fail-closed hit ($d(missing-dir)),
+  # mirroring assert_marker's (missing-file); (no-scan-dirs) is kept for the all-missing case.
+  for d in "$@"; do
+    if [ -d "$root/$d" ]; then dirs+=("$root/$d"); else hits="$hits $d(missing-dir)"; fi
+  done
   if [ ${#dirs[@]} -eq 0 ]; then printf "(no-scan-dirs)"; return 1; fi
   # NUL-safe enumeration: .md content may contain any byte, so word-splitting an unquoted
   # $(find) is unsafe; iterate -print0 records instead. A failed norm_file is recorded as
@@ -289,28 +293,68 @@ parse_rows() {
   awk 'BEGIN{inb=0} /^rows=/{inb=1;next} inb&&index($0,"|"){print;next} inb{inb=0}' "$f"
 }
 
-# assert_headings ROOT TEMPLATE INSTANCE is a checker (same root-dir idiom as the others). For
-# every heading line of templates/structure/TEMPLATE, it verifies the whitespace-normalized
-# heading text appears as a fixed string in the whitespace-normalized INSTANCE. Prints the
-# space-separated list of INSTANCE:heading misses and returns nonzero; prints nothing and
-# returns 0 when all are present. A missing template or instance file is reported, never a pass.
+# extract_headings FILE prints each markdown heading line (leading hash) whitespace-normalized,
+# one per line, skipping any heading inside a fenced code block or an HTML comment (single or
+# multi line). Fence state toggles on lines starting with a triple backtick; comment state spans
+# from an opening marker to its closing marker. The final unterminated line is still read.
+extract_headings() {
+  local file="$1"
+  local line in_fence=0 in_comment=0 fence copen cclose
+  fence=$(printf '\140\140\140')
+  copen=$(printf '\74\41\55\55')
+  cclose=$(printf '\55\55\76')
+  while IFS= read -r line || [ -n "$line" ]; do
+    if [ "$in_comment" -eq 1 ]; then
+      case "$line" in
+        *"$cclose"*) in_comment=0 ;;
+      esac
+      continue
+    fi
+    case "$line" in
+      *"$copen"*)
+        case "$line" in
+          *"$cclose"*) ;;
+          *) in_comment=1 ;;
+        esac
+        continue ;;
+    esac
+    case "$line" in
+      "$fence"*) in_fence=$((1 - in_fence)); continue ;;
+    esac
+    if [ "$in_fence" -eq 1 ]; then continue; fi
+    case "$line" in
+      '#'*) printf '%s' "$line" | awk '{gsub(/[[:space:]]+/,OFS);print}' ;;
+    esac
+  done < "$file"
+}
+
+# assert_headings ROOT TEMPLATE INSTANCE is a checker (same root-dir idiom as the others). It
+# extracts the comment/fence-aware heading lines of both templates/structure/TEMPLATE and the
+# INSTANCE, whitespace-normalizes each, and requires every template heading to appear as an EXACT
+# instance heading line (not a substring of the flattened file, so a level demotion or a heading
+# moved into prose or a fence fails). Prints the space-separated INSTANCE:heading misses and
+# returns nonzero; a template with zero extracted headings is a fail-closed (no-headings). A
+# missing template or instance file is reported.
 assert_headings() {
   local root="$1" tmpl="$2" inst="$3"
   local tpath="$root/templates/structure/$tmpl"
-  local missing= line hnorm inst_content
-  if [ ! -f "$tpath" ]; then printf "%s(template-missing)" "$tmpl"; return 1; fi
-  if ! inst_content=$(norm_file "$root" "$inst"); then printf "%s(instance-missing)" "$inst"; return 1; fi
-  while IFS= read -r line; do
-    case "$line" in
-      '#'*) ;;
-      *) continue ;;
+  local ipath="$root/$inst"
+  local missing= th theads iheads nl
+  if [ ! -f "$tpath" ]; then printf '%s(template-missing)' "$tmpl"; return 1; fi
+  if [ ! -f "$ipath" ]; then printf '%s(instance-missing)' "$inst"; return 1; fi
+  theads=$(extract_headings "$tpath")
+  iheads=$(extract_headings "$ipath")
+  if [ -z "$theads" ]; then printf '%s(no-headings)' "$tmpl"; return 1; fi
+  nl=$(printf '\nx'); nl="${nl%x}"
+  while IFS= read -r th || [ -n "$th" ]; do
+    [ -z "$th" ] && continue
+    case "$nl$iheads$nl" in
+      *"$nl$th$nl"*) ;;
+      *) missing="$missing $inst:$th" ;;
     esac
-    hnorm=$(printf '%s' "$line" | awk '{gsub(/[[:space:]]+/,OFS);print}')
-    case "$inst_content" in
-      *"$hnorm"*) ;;
-      *) missing="$missing $inst:$hnorm" ;;
-    esac
-  done < "$tpath"
+  done <<THEND
+$theads
+THEND
   [ -z "$missing" ] && return 0
   printf '%s' "${missing# }"
   return 1
