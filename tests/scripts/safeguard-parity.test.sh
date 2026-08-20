@@ -104,13 +104,31 @@ mkdir -p "$m/rules" "$m/agents" "$m/skills/correctness-review"
 cp "$ROOT/rules/behavior.md" "$m/rules/behavior.md"
 cp "$ROOT/agents/reviewer.md" "$m/agents/reviewer.md"
 cp "$ROOT/skills/correctness-review/correctness-scorer-prompt.md" "$m/skills/correctness-review/correctness-scorer-prompt.md"
-# Strip the marker from exactly one copy, as a careless future edit would.
-sed -i.bak '/not_observed != absent/d' "$m/rules/behavior.md"
-rm -f "$m/rules/behavior.md.bak"
-mut=$(assert_marker "$m" 'not_observed != absent' \
-  rules/behavior.md \
-  agents/reviewer.md \
-  skills/correctness-review/correctness-scorer-prompt.md)
-if [ -n "$mut" ]; then pass; else fail "mutated copy (marker stripped from behavior.md) not detected -- assert_marker has gone stale"; fi
+# Fixture guard: a failed mktemp/mkdir/cp must never masquerade as detection.
+if [ -n "$m" ] && [ -d "$m" ] && [ -f "$m/rules/behavior.md" ]; then
+  # Negative control: every copy carries the marker before we mutate it.
+  pre=$(assert_marker "$m" 'not_observed != absent' \
+    rules/behavior.md \
+    agents/reviewer.md \
+    skills/correctness-review/correctness-scorer-prompt.md)
+  if [ -n "$pre" ]; then
+    fail "negative control failed: unmutated copies already report a miss: $pre"
+  else
+    # Strip the marker from exactly one copy, as a careless future edit would.
+    sed -i.bak '/not_observed != absent/d' "$m/rules/behavior.md"
+    rm -f "$m/rules/behavior.md.bak"
+    mut=$(assert_marker "$m" 'not_observed != absent' \
+      rules/behavior.md \
+      agents/reviewer.md \
+      skills/correctness-review/correctness-scorer-prompt.md)
+    # Detection must name the mutated file, not merely be non-empty.
+    case "$mut" in
+      *rules/behavior.md*) pass ;;
+      *) fail "mutation not localized to behavior.md (got: '$mut') -- assert_marker has gone stale" ;;
+    esac
+  fi
+else
+  fail "fixture setup failed (m='$m') -- cannot trust the mutation result"
+fi
 
 finish
