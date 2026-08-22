@@ -17,7 +17,7 @@ unverified premise (`docs/solutions/harness/unverified-premise-propagates-throug
 |---|---|---|---|
 | 1 | correctness-review: six FIND angles → dedupe → score → threshold → classify → fix → re-review | TRUE | `skills/correctness-review/SKILL.md:18-29`, `review-config.json:3-10`, prompt files per angle |
 | 2 | Durable run state / resume exists | TRUE (stronger than described) | FSM in `runtime/run_state.py:233-304,465-474`; `runtime/resume_decision.py` (structured action/reason_code); `hooks/state-breadcrumb.sh` |
-| 3 | Review receipts exist; post-review commit invalidates them | TRUE | `scripts/check_review_receipt.py:135-157` pins 40-hex `reviewed_head_sha`; `stale-sha` on HEAD advance (specs/-only bookkeeping carve-out) |
+| 3 | Review receipts exist; a post-review **code** commit invalidates them (`specs/`-only bookkeeping commits are exempt by design) | TRUE | `scripts/check_review_receipt.py:135-157` pins 40-hex `reviewed_head_sha`; `stale-sha` on HEAD advance (specs/-only bookkeeping carve-out) |
 | 4 | Iteration/time/cost/retry budgets MISSING | **FALSE** for iteration/retry, TRUE only for run-level time+cost | `review-config.json:14` `maximum_fix_rounds: 3`; SDD one-retry rule `SKILL.md:58-59`; `orchestration.md:78`; shipped spec `specs/acceptance-contract-loop-budget/` |
 | 5 | Convergence / progress detection MISSING | **FALSE** | `skills/correctness-review/SKILL.md:28-29` (findings-not-decreasing + diff-hash-unchanged → escalate); `rules/orchestration.md:74-85`; `hooks/blast-radius-check.sh` (wired) |
 | 6 | Evaluator feedback into next action MISSING | **FALSE** | fix rounds + re-review (`correctness-review/SKILL.md:26-29`); verdict-routed re-dispatch (`subagent-driven-development/SKILL.md:59-63`); intent-review routing (`intent-review/SKILL.md:29-41`) |
@@ -48,8 +48,9 @@ Resolved, not a contradiction:
 
 - **In-loop tier** — cheap deterministic evaluators only (pytest, SC/Verify rows, lint,
   benchmarks). These are not oracles; running them every iteration pollutes nothing.
-- **Final-gate tier** — the three LLM oracles (correctness-review, intent-review,
-  context-propagation-audit) stay plan-blind final gates exactly as today.
+- **Final-gate tier** — the LLM oracles stay plan-blind final gates as today:
+  correctness-review and intent-review universal; context-propagation-audit keeps its
+  conditional trigger (workflow-engine diffs only, `references/review-chain.md:3`).
 - Proposal §8 is correct; proposal §4 (correctness-review inside every iteration) is
   rejected: expensive, and it turns "review of the final result" into "review of drafts",
   voiding receipt semantics.

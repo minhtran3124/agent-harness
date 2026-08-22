@@ -463,8 +463,12 @@ evaluation must not erode that independence. The resolved split:
 - **In-loop tier**: cheap deterministic evaluators only — pytest, SC/Verify rows via
   `verify_summary.py`, lint, benchmarks. These are not oracles; running them every
   iteration pollutes nothing.
-- **Final-gate tier**: the three LLM oracles stay exactly where they are, blind exactly as
-  they are, and the final receipt stays SHA-pinned.
+- **Final-gate tier**: the LLM oracles stay exactly where they are, blind exactly as they
+  are, and the final receipt stays SHA-pinned. Correctness-review and intent-review are
+  universal; context-propagation-audit keeps its existing **conditional** trigger — it runs
+  only when the cumulative diff touches workflow-engine paths
+  (`skills/subagent-driven-development/references/review-chain.md:3`) and must not become
+  mandatory for unrelated changes.
 
 The variant sketched in section 4 — running correctness-review inside every iteration as
 a feedback signal — is **rejected**: it is expensive, and it turns "review of the final
