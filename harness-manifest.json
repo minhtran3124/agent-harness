@@ -208,6 +208,21 @@
         "tests/scripts/runtime-sync.test.sh"
       ],
       "desc": "issue #175 executable resume decision schema (action/reason_code + task cursor)"
+    },
+    "evaluator-protocol": {
+      "surface": [
+        "runtime/evaluator-result.schema.json",
+        "runtime/evaluators.json",
+        "runtime/evaluators.py",
+        "runtime/evaluator_result.py",
+        "runtime/testdata/evaluator-pass/SUMMARY.md"
+      ],
+      "consumers": [
+        "runtime/test_evaluators.py",
+        "runtime/test_evaluator_result.py",
+        "scripts/run-tests.sh"
+      ],
+      "desc": "Phase 2 loop-engineering: one result schema + registry over the deterministic checkers; wrapped exit codes unchanged"
     }
   },
 
