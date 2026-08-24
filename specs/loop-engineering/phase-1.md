@@ -29,7 +29,7 @@ Done: header present; names the evidence brief.
 ### T2 — Rewrite "Core Finding / Main missing abstractions"
 Files: `research-loop.md` §Core Finding
 Action: replace the 7-item missing list with the verified 4-gap list
-(evaluator protocol, run-level time budget, goal envelope w/ priority, per-iteration
+(evaluator protocol, run-level time budget, goal envelope w/ priority/deadline, per-iteration
 receipts) + a "previously claimed missing, actually shipped" table citing file:line
 (fix-round caps, non-progress detector, feedback routing, SC acceptance contract).
 Done: no claim in the section contradicts the verdict table in research-brief.md §2.

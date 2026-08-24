@@ -38,7 +38,8 @@ Root cause of the false negatives: the proposal audited by keyword ("goal", "bud
 2. **Run-level budgets** — `max_iterations` / `max_time` per run (fix-round caps exist; run-level
    wall-clock and cost/token budgets do not). Token cost is unmeasurable today → defer cost budget.
 3. **Goal envelope** — a named, machine-readable bundle of SC table + Global Constraints +
-   lane/confidence with an id; lifecycle mapped onto the *existing* `run_state.py` FSM, not a new one.
+   lane/confidence + priority/deadline with an id; lifecycle mapped onto the *existing*
+   `run_state.py` FSM, not a new one.
 4. **Per-iteration evaluation receipts** — generalize the review receipt; final SHA-pinned
    receipt semantics unchanged.
 

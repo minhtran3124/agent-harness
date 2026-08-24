@@ -805,9 +805,9 @@ evaluators; `templates/REVIEW-RECEIPT.template.json` seeds the schema.
 
 ## Phase 3 — Goal envelope (M)
 
-Machine-readable goal block (id, SC refs, constraints, lane/confidence) in the spec
-sidecar; lifecycle mapped onto existing `run_state.py` states. Index-safe reads only.
-Can run in parallel with Phase 2.
+Machine-readable goal block (id, SC refs, constraints, lane/confidence,
+priority/deadline) in the spec sidecar; lifecycle mapped onto existing `run_state.py`
+states. Index-safe reads only. Can run in parallel with Phase 2.
 
 ## Phase 4 — Run-level budgets (M)
 
