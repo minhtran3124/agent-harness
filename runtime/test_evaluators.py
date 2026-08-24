@@ -166,8 +166,10 @@ def test_registry_has_exactly_four_entries_with_required_keys():
             "argv_prefix",
             "argv_suffix",
             "description",
+            "requires_args",
         }
         assert entry["tier"] == "deterministic"
+        assert entry["requires_args"] is True
         assert os.path.isfile(os.path.join(REPO_ROOT, entry["script"]))
 
 
@@ -216,7 +218,6 @@ def test_parity_verify_summary_lane(specs):
     )
     assert_parity("verify-summary-lane", [good], REPO_ROOT, 0)
     assert_parity("verify-summary-lane", [bad], REPO_ROOT, 1)
-    assert_parity("verify-summary-lane", [], REPO_ROOT, 2)
 
 
 def test_parity_verify_summary_check(check_root):
@@ -239,7 +240,6 @@ def test_parity_check_review_receipt(receipt_repo, specs):
     ok, missing = str(receipt_repo / "specs/ok"), str(specs / "specs/no-receipt")
     assert_parity("check-review-receipt", [ok], REPO_ROOT, 0)
     assert_parity("check-review-receipt", [missing], REPO_ROOT, 1)
-    assert_parity("check-review-receipt", [], REPO_ROOT, 2)
 
 
 def test_parity_tracked_pass_fixture_is_schema_valid_json_on_stdout():
@@ -285,8 +285,8 @@ def test_status_mapping_fail_captures_stdout_lines(specs):
     assert all(e["message"].strip() for e in result["evidence"])
 
 
-def test_status_mapping_bad_invocation_is_error():
-    result = ev.run("verify-summary-lane", [], repo_root=REPO_ROOT)
+def test_status_mapping_bad_invocation_is_error(check_root):
+    result = ev.run("verify-summary-check", ["absent-slug"], repo_root=str(check_root))
     assert result["status"] == "error"
     assert result["exit"] == 2
 
@@ -295,7 +295,7 @@ def test_status_mapping_missing_script_is_error(monkeypatch):
     reg = ev.load_registry()
     reg["check-verify-rows"]["script"] = "scripts/does-not-exist.py"
     monkeypatch.setattr(ev, "load_registry", lambda: reg)
-    result = ev.run("check-verify-rows", [], repo_root=REPO_ROOT)
+    result = ev.run("check-verify-rows", ["x"], repo_root=REPO_ROOT)
     assert result["status"] == "error"
     assert result["exit"] == 2  # python3 itself exits 2 on a missing script
     assert er.validate(result) == []
@@ -303,7 +303,7 @@ def test_status_mapping_missing_script_is_error(monkeypatch):
 
 def test_status_mapping_unspawnable_interpreter_is_error(monkeypatch):
     monkeypatch.setattr(ev, "PYTHON", "/nonexistent/python3")
-    result = ev.run("check-verify-rows", [], repo_root=REPO_ROOT)
+    result = ev.run("check-verify-rows", ["x"], repo_root=REPO_ROOT)
     assert result["status"] == "error"
     assert result["exit"] == 127
     assert result["evidence"][0]["source"] == "stderr"
@@ -311,7 +311,8 @@ def test_status_mapping_unspawnable_interpreter_is_error(monkeypatch):
 
 
 def test_status_mapping_zero_arg_check_verify_rows_returns_instead_of_blocking():
-    # check_verify_rows.py reads stdin when given no args; a closed stdin makes it return.
+    # check_verify_rows.py reads stdin when given no args; the adapter never spawns a
+    # requires_args evaluator with no targets, so nothing can block on stdin.
     proc = subprocess.run(
         [sys.executable, SCRIPT, "run", "check-verify-rows", "--"],
         cwd=REPO_ROOT,
@@ -320,9 +321,14 @@ def test_status_mapping_zero_arg_check_verify_rows_returns_instead_of_blocking()
         timeout=10,
     )
     assert proc.returncode == 0
-    assert json.loads(proc.stdout)["status"] == "pass"
+    assert json.loads(proc.stdout)["status"] == "skipped"
     result = ev.run("check-verify-rows", [], repo_root=REPO_ROOT)
-    assert result["status"] == "pass"
+    assert result["status"] == "skipped"
+    assert result["exit"] == 0
+    assert result["evidence"] == [
+        {"source": "adapter", "message": "no targets given; nothing evaluated"}
+    ]
+    assert er.validate(result) == []
 
 
 def test_status_mapping_adapter_leaves_the_worktree_untouched(specs):
@@ -330,3 +336,107 @@ def test_status_mapping_adapter_leaves_the_worktree_untouched(specs):
     before = sorted(os.listdir(REPO_ROOT))
     ev.run("verify-summary-lane", [good], repo_root=REPO_ROOT)
     assert sorted(os.listdir(REPO_ROOT)) == before
+
+
+# --- correctness-review fixes ---------------------------------------------------
+
+
+def fake_checker(monkeypatch, tmp_path, body: str, *, requires_args=False) -> str:
+    """Register a single temp checker script under tmp_path as evaluator 'fake'."""
+    (tmp_path / "check.py").write_text(body, encoding="utf-8")
+    reg = {
+        "fake": {
+            "script": "check.py",
+            "tier": "deterministic",
+            "argv_prefix": [],
+            "argv_suffix": [],
+            "description": "temp checker",
+            "requires_args": requires_args,
+        }
+    }
+    monkeypatch.setattr(ev, "load_registry", lambda: reg)
+    return str(tmp_path)
+
+
+def test_relative_repo_root_runs_the_checker(monkeypatch):
+    # F1: a relative root must not be prefixed onto argv AND used as cwd.
+    monkeypatch.chdir(os.path.dirname(REPO_ROOT))
+    rel_root = os.path.basename(REPO_ROOT)
+    rel_fixture = os.path.relpath(PASS_FIXTURE, REPO_ROOT)
+    result = ev.run("verify-summary-lane", [rel_fixture], repo_root=rel_root)
+    assert result["status"] == "pass", result["evidence"]
+    assert os.path.isabs(result["argv"][1])
+
+
+def test_default_repo_root_strips_a_deployed_dot_claude(monkeypatch, tmp_path):
+    # F2: a deployed copy lives at <repo>/.claude/runtime/evaluators.py.
+    deployed = tmp_path / ".claude" / "runtime" / "evaluators.py"
+    monkeypatch.setattr(ev, "__file__", str(deployed))
+    assert ev.default_repo_root() == tmp_path.resolve()
+    source = tmp_path / "harness" / "runtime" / "evaluators.py"
+    monkeypatch.setattr(ev, "__file__", str(source))
+    assert ev.default_repo_root() == (tmp_path / "harness").resolve()
+
+
+def test_list_check_honours_repo_root(tmp_path):
+    assert ev.main(["list", "--check", "--repo-root", str(tmp_path)]) == 1
+    assert ev.main(["list", "--check", "--repo-root", REPO_ROOT]) == 0
+
+
+def test_crashed_checker_is_error_not_fail(monkeypatch, tmp_path):
+    # F4a: an uncaught exception exits 1 but is not a verdict.
+    root = fake_checker(monkeypatch, tmp_path, "raise RuntimeError('boom')\n")
+    result = ev.run("fake", ["x"], repo_root=root)
+    assert result["exit"] == 1
+    assert result["status"] == "error"
+    assert any("Traceback" in e["message"] for e in result["evidence"])
+    assert er.validate(result) == []
+
+
+def test_requires_args_evaluator_with_no_args_is_skipped_without_spawning(
+    monkeypatch, tmp_path
+):
+    # F4b: the checker would write a marker file if it ran.
+    body = "open('ran.txt', 'w').close()\n"
+    root = fake_checker(monkeypatch, tmp_path, body, requires_args=True)
+    result = ev.run("fake", [], repo_root=root)
+    assert result["status"] == "skipped"
+    assert result["exit"] == 0
+    assert not (tmp_path / "ran.txt").exists()
+    result = ev.run("fake", ["x"], repo_root=root)
+    assert result["status"] == "pass"
+    assert (tmp_path / "ran.txt").exists()
+
+
+def test_missing_registry_file_exits_2(monkeypatch, tmp_path, capsys):
+    # F5: a broken registry is a bad invocation, not a traceback.
+    monkeypatch.setattr(ev, "REGISTRY_PATH", tmp_path / "absent.json")
+    assert ev.main(["list"]) == 2
+    assert "evaluators:" in capsys.readouterr().err
+    (tmp_path / "bad.json").write_text("{", encoding="utf-8")
+    monkeypatch.setattr(ev, "REGISTRY_PATH", tmp_path / "bad.json")
+    assert ev.main(["run", "x", "--", "y"]) == 2
+
+
+def test_registry_entry_missing_a_key_exits_2(monkeypatch, capsys):
+    monkeypatch.setattr(ev, "load_registry", lambda: {"x": {"tier": "deterministic"}})
+    assert ev.main(["list", "--check"]) == 2
+    assert ev.main(["run", "x", "--", "y"]) == 2
+    assert "script" in capsys.readouterr().err
+
+
+def test_timeout_is_error_exit_124(monkeypatch, tmp_path):
+    # F6: a hung checker is killed and reported, not awaited forever.
+    root = fake_checker(monkeypatch, tmp_path, "import time; time.sleep(30)\n")
+    result = ev.run("fake", ["x"], repo_root=root, timeout_s=1)
+    assert result["exit"] == 124
+    assert result["status"] == "error"
+    assert any("timed out" in e["message"] for e in result["evidence"])
+    assert result["duration_ms"] < 10_000
+    assert er.validate(result) == []
+
+
+def test_run_cli_accepts_timeout(monkeypatch, tmp_path):
+    root = fake_checker(monkeypatch, tmp_path, "import time; time.sleep(30)\n")
+    argv = ["run", "--repo-root", root, "--timeout", "1", "fake", "--", "x"]
+    assert ev.main(argv) == 124

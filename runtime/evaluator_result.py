@@ -92,13 +92,14 @@ def main(argv=None) -> int:
 
     if args.self_check:
         try:
-            required = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))["required"]
+            schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+            required = list(schema["required"])  # non-iterable -> TypeError -> exit 2
         except (OSError, ValueError, KeyError, TypeError) as exc:
             print(
                 f"evaluator_result: cannot load {SCHEMA_PATH}: {exc}", file=sys.stderr
             )
             return 2
-        if list(required) != list(REQUIRED_KEYS):
+        if required != list(REQUIRED_KEYS):
             print(
                 f"evaluator_result: schema required {required} != REQUIRED_KEYS",
                 file=sys.stderr,

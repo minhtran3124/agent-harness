@@ -42,6 +42,7 @@ CONSUMER_SCRIPTS=(
   "verify_summary.py"
   "check_plan_contract.py"
   "check_review_receipt.py"
+  "check_verify_rows.py"
   "resolve_finish_context.py"
   "rebuild_solution_index.py"
   "render_skill_prompt.py"

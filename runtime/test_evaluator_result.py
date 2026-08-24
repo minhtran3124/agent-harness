@@ -145,3 +145,11 @@ def test_no_flag_is_bad_invocation():
     with pytest.raises(SystemExit) as exc_info:
         er.main([])
     assert exc_info.value.code == 2
+
+
+def test_self_check_non_iterable_required_is_bad_invocation(monkeypatch, tmp_path):
+    # F7: a schema whose "required" is not a list is unreadable (exit 2), not a crash.
+    schema = tmp_path / "schema.json"
+    schema.write_text(json.dumps({"required": 5}), encoding="utf-8")
+    monkeypatch.setattr(er, "SCHEMA_PATH", schema)
+    assert er.main(["--self-check"]) == 2
