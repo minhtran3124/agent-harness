@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.20.1] — 2026-08-24
+
+- docs(research-loop): ground-truth the current-state diagnosis (Phase 1) (PR #216)
+
 ## [2.20.0] — 2026-08-19
 
 - fix(deploy,docs): make consumer-facing gates and references actually true downstream (PR #206)
