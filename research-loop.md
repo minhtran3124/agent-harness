@@ -4,6 +4,12 @@
 
 Research / architecture proposal. This document does **not** prescribe an immediate implementation. It captures how the existing harness could evolve toward a Loop Engineering model while preserving its current governance and review strengths.
 
+> **Provenance note (2026-08-22).** The current-state diagnosis in the original draft was
+> written before disk verification and over-claimed several gaps. The claims below have been
+> corrected against the shipped code at `38e7103` — see
+> `specs/loop-engineering/research-brief.md` for the per-claim evidence table (11 claims,
+> each with `file:line` sources). The target architecture (sections 11–18) is unchanged.
+
 ## Context
 
 The harness already provides a strong workflow-oriented control system:
@@ -80,15 +86,32 @@ The repository already has most of the primitives required for Loop Engineering,
 - Knowledge compounding
 - Distinct agent roles and capability contracts
 
-### Main missing abstractions
+### Previously claimed missing — actually shipped
 
-1. **Goal as a first-class object**
-2. **Evaluator as a reusable interface**
-3. **Loop Controller as a first-class control plane**
-4. **Explicit convergence / progress detection**
-5. **Iteration, time, cost, and retry budgets**
-6. **Feedback from evaluators into the next action**
-7. **A unified goal lifecycle / state machine**
+The original draft listed seven missing abstractions. Disk verification shows most exist
+under different names (*acceptance contract*, *Success Criteria*, *fix rounds*,
+*in-flight escalation checks*):
+
+| Claimed missing | Shipped as | Evidence |
+|---|---|---|
+| Iteration / retry budgets | `maximum_fix_rounds: 3`; one-retry rule for `cannot_verify`; fail-≥2 escalation | `skills/correctness-review/review-config.json:14`; `skills/subagent-driven-development/SKILL.md:58-59`; `rules/orchestration.md:78` |
+| Convergence / progress detection | findings-not-decreasing + diff-hash-unchanged → escalate; in-flight escalation checks; blast-radius hook | `skills/correctness-review/SKILL.md:28-29`; `rules/orchestration.md:74-85`; `hooks/blast-radius-check.sh` |
+| Evaluator feedback → next action | fix rounds + re-review; verdict-routed re-dispatch; intent-review routing | `skills/correctness-review/SKILL.md:26-29`; `skills/subagent-driven-development/SKILL.md:59-63` |
+| Goal as first-class object (~70%) | SC table = acceptance contract + Global Constraints, SC coverage enforced | `rules/plan-format.md:69-108`; `scripts/verify_summary.py:372-411` |
+| Goal lifecycle / state machine | run-state FSM + executable resume-decision authority | `runtime/run_state.py:233-304`; `runtime/resume_decision.py` |
+| Loop controller | SDD wave controller + 6-action decision function | `skills/subagent-driven-development/SKILL.md`; `runtime/resume_decision.py` |
+
+### Verified remaining gaps
+
+1. **Unified evaluator protocol** — one result schema (`status/score/evidence/exit`) +
+   thin adapters over the existing bespoke checkers (`verify_summary.py`,
+   `check_verify_rows.py`, `check_review_receipt.py`); no shared registry today.
+2. **Run-level budgets** — `max_iterations` / `max_time` per run (round-level caps exist;
+   run-level wall-clock does not; cost/token budgets deferred — not measurable today).
+3. **Goal envelope** — a named, machine-readable bundle (id, SC refs, constraints,
+   lane/confidence, priority/deadline) mapped onto the *existing* `run_state.py` FSM.
+4. **Per-iteration evaluation receipts** — generalize the review receipt; final
+   SHA-pinned receipt semantics unchanged.
 
 ---
 
@@ -301,6 +324,12 @@ while goal_not_satisfied:
 
 The distinction matters because the next iteration may legitimately change the implementation approach rather than merely apply a small fix.
 
+Note that the micro-loop is already bounded and progress-guarded: fix rounds are capped at
+three per finding, and a round with non-decreasing findings on an unchanged diff hash
+escalates immediately (`skills/correctness-review/SKILL.md:28-29`). The genuine delta a
+Loop Engine adds is **run-level** control (whole-goal iteration and time budgets, strategy
+changes between iterations), not round-level control, which ships today.
+
 ---
 
 # 6. Introduce a unified Goal state machine
@@ -386,15 +415,20 @@ The agent should primarily **act**. The evaluator should **measure**. The contro
 
 # 8. Evaluation must happen inside the loop
 
-Current workflow:
+Current workflow (corrected — the original draft understated it):
 
 ```text
-implement
+per task:  implement → verify → two per-task reviews   ← inside the wave loop
   ↓
-review near the end
+final gates: correctness review → intent review → receipt
   ↓
 ship
 ```
+
+Per-task review already runs *inside* the wave loop — "a task may advance only after its
+Verify command and both per-task reviews are green"
+(`skills/subagent-driven-development/SKILL.md:8-9`). The final chain is an additional
+gate, not the only evaluation point.
 
 Loop-oriented workflow:
 
@@ -417,6 +451,29 @@ evaluate again
 This changes reviews from being only **gates** into **feedback signals**.
 
 The existing final review chain should still exist. The difference is that cheap, deterministic evaluators can run during the loop, while expensive or high-risk reviews can remain final gates.
+
+---
+
+# 8b. Oracle reconciliation (resolved design decision)
+
+The harness deliberately keeps three independent oracles — correctness-review
+(plan-blind), intent-review (plan-prose-blind), and context-propagation-audit. In-loop
+evaluation must not erode that independence. The resolved split:
+
+- **In-loop tier**: cheap deterministic evaluators only — pytest, SC/Verify rows via
+  `verify_summary.py`, lint, benchmarks. These are not oracles; running them every
+  iteration pollutes nothing.
+- **Final-gate tier**: the LLM oracles stay exactly where they are, blind exactly as they
+  are, and the final receipt stays SHA-pinned. Correctness-review and intent-review are
+  universal; context-propagation-audit keeps its existing **conditional** trigger — it runs
+  only when the cumulative diff touches workflow-engine paths
+  (`skills/subagent-driven-development/references/review-chain.md:3`) and must not become
+  mandatory for unrelated changes.
+
+The variant sketched in section 4 — running correctness-review inside every iteration as
+a feedback signal — is **rejected**: it is expensive, and it turns "review of the final
+result" into "review of drafts", voiding receipt semantics. Section 4 remains as an
+illustration of evaluator-shaped output only; see this section for the binding decision.
 
 ---
 
@@ -711,71 +768,63 @@ These are governance mechanisms, not loop execution primitives.
 
 ---
 
+# 16b. Binding constraints (from shipped decisions)
+
+Any implementation of this proposal must clear constraints already recorded in the repo:
+
+- **No change to correctness-review's plan-blind FIND stage**, and **no LLM-as-judge
+  acceptance checks** — contract checks are re-runnable shell commands only
+  (`specs/acceptance-contract-loop-budget/design.md`, non-goals).
+- **No new hooks / standing automation** without clearing the recorded bar
+  (`docs/solutions/harness/hooks-addition-is-high-risk-even-dormant.md`,
+  `docs/solutions/harness/automation-readiness.md`).
+- **Index-safe state**: any goal/budget state a gate reads must come from the git index,
+  never worktree-only files (`docs/solutions/harness/gate-config-must-read-index.md`).
+- Design against the recorded loop-control bug:
+  `docs/solutions/harness/review-round-skipped-when-two-arrive-together.md`.
+
+---
+
 # 17. Recommended implementation order
 
-## P0 — Goal schema + lifecycle
+The guiding principle — corrected after disk verification — is **name and connect what
+exists; build only the verified gaps**. The goal contract and state machine are *not*
+greenfield work: the SC table is the goal contract, `runtime/run_state.py` is the state
+machine, and `runtime/resume_decision.py` is the controller's decision function. Full
+phase plan: `specs/loop-engineering/roadmap.md`.
 
-Define a minimal Goal contract:
+## Phase 1 — Ground-truth this document (S)
 
-```text
-Goal
-├── objective
-├── success_criteria
-├── constraints
-├── evaluators
-├── budget
-├── escalation_policy
-└── state
-```
+Correct the current-state claims against shipped code (this revision).
 
-Define the goal state machine and persistence format.
+## Phase 2 — Evaluator protocol v1 (M)
 
-## P0 — Evaluator interface
+One result schema (`status/score/evidence/exit`) + thin adapters wrapping
+`verify_summary.py`, `check_verify_rows.py`, `check_review_receipt.py`. No new
+evaluators; `templates/REVIEW-RECEIPT.template.json` seeds the schema.
 
-Define a common result contract:
+## Phase 3 — Goal envelope (M)
 
-```text
-evaluate(goal, state, evidence) → EvaluationResult
-```
+Machine-readable goal block (id, SC refs, constraints, lane/confidence,
+priority/deadline) in the spec sidecar; lifecycle mapped onto existing `run_state.py`
+states. Index-safe reads only. Can run in parallel with Phase 2.
 
-Adapt existing pytest / correctness / intent mechanisms incrementally.
+## Phase 4 — Run-level budgets (M)
 
-## P1 — Loop Controller
+`max_iterations` / `max_time` per run beside `maximum_fix_rounds`;
+`resume_decision.py` gains a `budget-exceeded` reason_code. Implemented inside existing
+scripts — no new hooks. Cost/token budgets deferred until measurable.
 
-Implement:
+## Phase 5 — In-loop deterministic evaluation (L)
 
-```text
-execute
-→ collect evidence
-→ evaluate
-→ decide
-→ retry / done / wait / escalate
-```
+Controller runs the cheap tier after each iteration and records per-iteration evaluation
+receipts; the three LLM oracles remain final gates; the final receipt stays SHA-pinned.
+Only after Phases 2–4 are stable.
 
-The controller should be deterministic infrastructure, not a prompt-only agent.
+## Deferred
 
-## P1 — Budget and convergence
-
-Add:
-
-- max iterations
-- max time
-- optional cost/token budget
-- repeated-failure detection
-- no-progress detection
-- escalation thresholds
-
-## P2 — Evaluation receipts
-
-Generalize review receipts into per-iteration evidence while retaining final review invalidation semantics.
-
-## P2 — Recurring loops
-
-Add an outer scheduler/event mechanism only after the Goal Loop is reliable.
-
-## P3 — Multi-agent optimization
-
-Use the controller to dynamically select and coordinate planner, researcher, implementer, reviewer, and test-runner roles.
+Recurring `/loop` outer scheduler and multi-agent optimization (sections 14–15) come
+after the Goal Loop is reliable — unchanged conclusion.
 
 ---
 
