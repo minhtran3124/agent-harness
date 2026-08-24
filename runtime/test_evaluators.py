@@ -34,14 +34,6 @@ def read_fixture() -> str:
         return f.read()
 
 
-def install_root(repo_root) -> str:
-    """Where registry ``script`` paths resolve: ``<root>/.claude`` for a deployed tree."""
-    deployed = os.path.join(repo_root, ".claude")
-    if os.path.isfile(os.path.join(deployed, "runtime", "evaluators.py")):
-        return deployed
-    return repo_root
-
-
 def deploy_tree(tmp_path, scripts=()):
     """Build ``<tmp>/.claude/{runtime,scripts}/`` the way deploy-harness.sh lays it out."""
     install = tmp_path / ".claude"
@@ -59,12 +51,18 @@ def deploy_tree(tmp_path, scripts=()):
     return install
 
 
-def direct(evaluator_id, args, repo_root) -> subprocess.CompletedProcess:
-    """Run the wrapped checker itself, bypassing the adapter — the parity oracle."""
+def direct(
+    evaluator_id, args, repo_root, install=REPO_ROOT
+) -> subprocess.CompletedProcess:
+    """Run the wrapped checker itself, bypassing the adapter — the parity oracle.
+
+    Pinned to the source tree by default; a deployed layout passes ``install``
+    explicitly — helpers never probe the filesystem for a deployed copy.
+    """
     entry = ev.load_registry()[evaluator_id]
     argv = [
         "python3",
-        os.path.join(install_root(repo_root), entry["script"]),
+        os.path.join(install, entry["script"]),
         *entry["argv_prefix"],
         *args,
         *entry["argv_suffix"],
@@ -79,11 +77,11 @@ def direct(evaluator_id, args, repo_root) -> subprocess.CompletedProcess:
     )
 
 
-def cli(evaluator_id, args, repo_root) -> subprocess.CompletedProcess:
+def cli(evaluator_id, args, repo_root, script=SCRIPT) -> subprocess.CompletedProcess:
     return subprocess.run(
         [
             sys.executable,
-            os.path.join(install_root(repo_root), "runtime", "evaluators.py"),
+            script,
             "run",
             "--repo-root",
             repo_root,
@@ -99,15 +97,17 @@ def cli(evaluator_id, args, repo_root) -> subprocess.CompletedProcess:
     )
 
 
-def assert_parity(evaluator_id, args, repo_root, expected_exit):
-    oracle = direct(evaluator_id, args, repo_root)
+def assert_parity(
+    evaluator_id, args, repo_root, expected_exit, *, install=REPO_ROOT, script=SCRIPT
+):
+    oracle = direct(evaluator_id, args, repo_root, install=install)
     assert oracle.returncode == expected_exit, (
         "fixture does not exercise the intended exit path: "
         f"{oracle.stdout}{oracle.stderr}"
     )
     result = ev.run(evaluator_id, args, repo_root=repo_root)
     assert result["exit"] == oracle.returncode
-    proc = cli(evaluator_id, args, repo_root)
+    proc = cli(evaluator_id, args, repo_root, script=script)
     assert proc.returncode == oracle.returncode, proc.stderr
     assert json.loads(proc.stdout)["exit"] == oracle.returncode
 
@@ -247,10 +247,14 @@ def test_parity_verify_summary_lane(specs):
 
 
 def test_parity_verify_summary_check(check_root):
+    # Deployed layout: the deployed install and adapter paths are passed explicitly.
     root = str(check_root)
-    assert_parity("verify-summary-check", ["good"], root, 0)
-    assert_parity("verify-summary-check", ["bad"], root, 1)
-    assert_parity("verify-summary-check", ["absent-slug"], root, 2)
+    install = str(check_root / ".claude")
+    script = os.path.join(install, "runtime", "evaluators.py")
+    deployed = dict(install=install, script=script)
+    assert_parity("verify-summary-check", ["good"], root, 0, **deployed)
+    assert_parity("verify-summary-check", ["bad"], root, 1, **deployed)
+    assert_parity("verify-summary-check", ["absent-slug"], root, 2, **deployed)
 
 
 def test_parity_check_verify_rows(specs):
@@ -333,7 +337,10 @@ def test_status_mapping_unspawnable_interpreter_is_error(monkeypatch):
     result = ev.run("check-verify-rows", ["x"], repo_root=REPO_ROOT)
     assert result["status"] == "error"
     assert result["exit"] == 127
-    assert result["evidence"][0]["source"] == "stderr"
+    assert result["evidence"] == [
+        {"source": "adapter", "message": result["evidence"][0]["message"]}
+    ]
+    assert "spawn failed" in result["evidence"][0]["message"]
     assert er.validate(result) == []
 
 
@@ -543,7 +550,8 @@ def test_timeout_is_error_exit_124(monkeypatch, tmp_path):
     result = ev.run("fake", ["x"], repo_root=root, timeout_s=1)
     assert result["exit"] == 124
     assert result["status"] == "error"
-    assert any("timed out" in e["message"] for e in result["evidence"])
+    assert result["evidence"][-1]["source"] == "adapter"
+    assert "timed out" in result["evidence"][-1]["message"]
     assert result["duration_ms"] < 10_000
     assert er.validate(result) == []
 
@@ -552,3 +560,63 @@ def test_run_cli_accepts_timeout(monkeypatch, tmp_path):
     root = fake_checker(monkeypatch, tmp_path, "import time; time.sleep(30)\n")
     argv = ["run", "--repo-root", root, "--timeout", "1", "fake", "--", "x"]
     assert ev.main(argv) == 124
+
+
+# --- round-3 fixes: malformed registry values + reserved-exit collisions ---------
+
+
+def test_registry_null_argv_prefix_exits_2_via_cli(tmp_path):
+    # B1: a malformed value (not just a missing key) is a registry error — exit 2,
+    # one stderr line, no traceback — for run and for list --check alike.
+    install = deploy_tree(tmp_path)
+    registry_path = install / "runtime" / "evaluators.json"
+    registry = json.loads(registry_path.read_text(encoding="utf-8"))
+    registry["check-verify-rows"]["argv_prefix"] = None
+    registry_path.write_text(json.dumps(registry), encoding="utf-8")
+    adapter = str(install / "runtime" / "evaluators.py")
+    for argv in (
+        [sys.executable, adapter, "run", "check-verify-rows", "--", "x"],
+        [sys.executable, adapter, "list", "--check"],
+    ):
+        proc = subprocess.run(argv, capture_output=True, text=True, timeout=60)
+        assert proc.returncode == 2, proc.stderr
+        assert proc.stderr.count("\n") == 1 and "argv_prefix" in proc.stderr
+        assert "Traceback" not in proc.stderr
+
+
+@pytest.mark.parametrize(
+    ("key", "value"),
+    [
+        ("script", None),
+        ("argv_prefix", "x"),
+        ("argv_suffix", [1]),
+        ("requires_args", 1),
+    ],
+)
+def test_registry_entry_with_malformed_value_exits_2(monkeypatch, capsys, key, value):
+    reg = ev.load_registry()
+    reg["check-verify-rows"][key] = value
+    monkeypatch.setattr(ev, "load_registry", lambda: reg)
+    assert ev.main(["run", "check-verify-rows", "--", "x"]) == 2
+    assert ev.main(["list", "--check"]) == 2
+    assert key in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("reserved", [3, 124, 125, 127])
+def test_wrapped_reserved_exit_is_reported_as_error_exit_2(
+    monkeypatch, tmp_path, reserved
+):
+    # B2: a wrapped checker exit colliding with an adapter-reserved code is ambiguous
+    # and therefore not a verdict: error / exit 2, with an adapter evidence item.
+    body = f"import sys; sys.exit({reserved})\n"
+    root = fake_checker(monkeypatch, tmp_path, body)
+    result = ev.run("fake", ["x"], repo_root=root)
+    assert result["status"] == "error"
+    assert result["exit"] == 2
+    assert result["evidence"][-1] == {
+        "source": "adapter",
+        "message": (
+            f"wrapped checker exited with reserved code {reserved}; reported as error"
+        ),
+    }
+    assert er.validate(result) == []

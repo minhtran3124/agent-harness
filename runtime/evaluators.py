@@ -10,8 +10,9 @@ spawns ``python3 <INSTALL_ROOT/script> <argv_prefix> <args> <argv_suffix>`` with
 and shapes the outcome as a ``runtime/evaluator_result.py`` result.
 
 Exit codes.  The JSON ``exit`` (and the process exit) equals the wrapped exit code when
-the checker delivered a verdict: 0 -> pass, 1 -> fail, 2 -> error, any other checker
-exit -> error.  Adapter-classified outcomes use reserved codes instead:
+the checker delivered a verdict: 0 -> pass, 1 -> fail, 2 -> error, any other
+non-reserved checker exit -> error.  Adapter-classified outcomes use reserved codes
+instead:
 
     3    skipped  (``requires_args`` and no args; nothing spawned)
     124  error    (killed after ``timeout_s``)
@@ -19,7 +20,10 @@ exit -> error.  Adapter-classified outcomes use reserved codes instead:
     127  error    (spawn failure)
 
 ``score`` is always null; every non-empty stderr line, then stdout line, becomes an
-``evidence`` item, followed by an ``adapter`` item for adapter-classified outcomes.  The
+``evidence`` item.  Adapter-classified outcomes always carry a ``source: adapter``
+evidence item appended last; a wrapped checker exit that collides with a reserved code
+is not a verdict and is reported as exit 2 / ``error`` with an ``adapter`` item saying
+so.  The
 adapter itself never writes to disk; a wrapped checker may (``verify-summary-check``
 re-executes the SUMMARY's Verify commands).
 
@@ -70,6 +74,7 @@ SKIPPED_EXIT = 3
 TIMEOUT_EXIT = 124
 CRASH_EXIT = 125
 SPAWN_FAILURE_EXIT = 127
+RESERVED_EXITS = frozenset({SKIPPED_EXIT, TIMEOUT_EXIT, CRASH_EXIT, SPAWN_FAILURE_EXIT})
 DEFAULT_TIMEOUT_S = 300
 TRACEBACK_MARKER = "Traceback (most recent call last)"
 REGISTRY_ERRORS = (OSError, ValueError, KeyError, TypeError)
@@ -81,6 +86,22 @@ def load_registry() -> dict:
 
 def _valid_timeout(timeout_s) -> bool:
     return timeout_s > 0 and not math.isinf(timeout_s)  # nan > 0 is False
+
+
+def _validate_entry(evaluator_id: str, entry: dict) -> None:
+    """Raise KeyError/TypeError (both REGISTRY_ERRORS) for a malformed entry."""
+    for key in ("script", "argv_prefix", "argv_suffix"):
+        if key not in entry:
+            raise KeyError(key)
+    if not isinstance(entry["script"], str):
+        raise TypeError(f"entry {evaluator_id!r}: script must be a string")
+    for key in ("argv_prefix", "argv_suffix"):
+        if not isinstance(entry[key], list) or not all(
+            isinstance(item, str) for item in entry[key]
+        ):
+            raise TypeError(f"entry {evaluator_id!r}: {key} must be a list of strings")
+    if not isinstance(entry.get("requires_args", False), bool):
+        raise TypeError(f"entry {evaluator_id!r}: requires_args must be a boolean")
 
 
 def _result(evaluator_id, status, exit_code, evidence, argv, duration_ms) -> dict:
@@ -124,6 +145,7 @@ def run(
         return _result(evaluator_id, "skipped", SKIPPED_EXIT, evidence, argv, 0)
 
     start = time.monotonic()
+    adapter_message = None
     try:
         proc = subprocess.run(
             argv,
@@ -135,9 +157,11 @@ def run(
         )
         exit_code, stdout, stderr = proc.returncode, proc.stdout, proc.stderr
     except subprocess.TimeoutExpired:
-        exit_code, stdout, stderr = TIMEOUT_EXIT, "", f"timed out after {timeout_s}s"
+        exit_code, stdout, stderr = TIMEOUT_EXIT, "", ""
+        adapter_message = f"timed out after {timeout_s}s"
     except OSError as exc:
-        exit_code, stdout, stderr = SPAWN_FAILURE_EXIT, "", f"spawn failed: {exc}"
+        exit_code, stdout, stderr = SPAWN_FAILURE_EXIT, "", ""
+        adapter_message = f"spawn failed: {exc}"
     duration_ms = int((time.monotonic() - start) * 1000)
 
     evidence = [
@@ -148,9 +172,15 @@ def run(
     ]
     if exit_code == 1 and TRACEBACK_MARKER in stderr:
         exit_code = CRASH_EXIT  # a crashed checker is not a verdict
-        evidence.append(
-            {"source": "adapter", "message": "wrapped checker crashed (raw exit 1)"}
+        adapter_message = "wrapped checker crashed (raw exit 1)"
+    elif adapter_message is None and exit_code in RESERVED_EXITS:
+        # A wrapped exit colliding with a reserved code is ambiguous, not a verdict.
+        adapter_message = (
+            f"wrapped checker exited with reserved code {exit_code}; reported as error"
         )
+        exit_code = 2
+    if adapter_message is not None:
+        evidence.append({"source": "adapter", "message": adapter_message})
     status = STATUS_BY_EXIT.get(exit_code, "error")
     return _result(evaluator_id, status, exit_code, evidence, argv, duration_ms)
 
@@ -192,12 +222,7 @@ def main(argv=None) -> int:
                 file=sys.stderr,
             )
             return 2
-        entry = registry[args.evaluator_id]
-        missing = [
-            k for k in ("script", "argv_prefix", "argv_suffix") if k not in entry
-        ]
-        if missing:
-            raise KeyError(missing[0])
+        _validate_entry(args.evaluator_id, registry[args.evaluator_id])
     except REGISTRY_ERRORS as exc:
         print(
             f"evaluators: cannot use registry {REGISTRY_PATH}: {exc!r}", file=sys.stderr
@@ -219,11 +244,11 @@ def _list(registry: dict, check: bool) -> int:
         print(evaluator_id)
     if not check:
         return 0
-    problems = [
-        f"{k}: {v['script']} not found"
-        for k, v in registry.items()
-        if not (INSTALL_ROOT / v["script"]).is_file()
-    ]
+    problems = []
+    for evaluator_id, entry in registry.items():
+        _validate_entry(evaluator_id, entry)  # KeyError/TypeError -> registry exit 2
+        if not (INSTALL_ROOT / entry["script"]).is_file():
+            problems.append(f"{evaluator_id}: {entry['script']} not found")
     if len(registry) != EXPECTED_COUNT:
         problems.append(f"expected {EXPECTED_COUNT} entries, found {len(registry)}")
     for message in problems:

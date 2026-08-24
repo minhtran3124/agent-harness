@@ -31,7 +31,7 @@
     },
     "exit": {
       "type": "integer",
-      "description": "The wrapped checker exit code, unchanged, when it delivered a verdict (0 pass / 1 fail / 2 error); otherwise an adapter-reserved code: 3 skipped, 124 timeout, 125 crash, 127 spawn failure."
+      "description": "The wrapped checker exit code, unchanged, when it delivered a verdict (0 pass / 1 fail / 2 error); otherwise an adapter-reserved code: 3 skipped, 124 timeout, 125 crash, 127 spawn failure. Adapter-classified outcomes always carry a source:adapter evidence item; a wrapped checker exit that collides with a reserved code is not a verdict and is reported as exit 2 / error."
     },
     "argv": {
       "type": "array",
