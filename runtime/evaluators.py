@@ -42,6 +42,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import signal
 import subprocess
 import sys
 import time
@@ -170,7 +171,17 @@ def run(
         for line in text.splitlines()
         if line.strip()
     ]
-    if exit_code == 1 and TRACEBACK_MARKER in stderr:
+    if exit_code < 0:
+        signal_number = -exit_code
+        try:
+            signal_name = signal.Signals(signal_number).name
+        except ValueError:
+            signal_name = "unknown signal"
+        exit_code = CRASH_EXIT
+        adapter_message = (
+            f"wrapped checker terminated by signal {signal_number} ({signal_name})"
+        )
+    elif exit_code == 1 and TRACEBACK_MARKER in stderr:
         exit_code = CRASH_EXIT  # a crashed checker is not a verdict
         adapter_message = "wrapped checker crashed (raw exit 1)"
     elif adapter_message is None and exit_code in RESERVED_EXITS:

@@ -50,6 +50,13 @@ def test_score_null_passes_and_number_passes():
     assert er.validate(scored) == []
 
 
+@pytest.mark.parametrize("score", [float("nan"), float("inf"), float("-inf")])
+def test_non_finite_score_fails(score):
+    result = valid_result()
+    result["score"] = score
+    assert er.validate(result) == ["score: expected a number or null"]
+
+
 def test_optional_keys_pass_when_well_typed():
     obj = valid_result()
     obj["argv"] = ["--lane", "demo"]
@@ -139,6 +146,16 @@ def test_validate_cli_exit_codes(tmp_path, capsys):
     not_json.write_text("{")
     assert er.main(["--validate", str(not_json)]) == 2
     assert er.main(["--validate", str(tmp_path / "absent.json")]) == 2
+
+
+@pytest.mark.parametrize("constant", ["NaN", "Infinity", "-Infinity"])
+def test_validate_cli_rejects_non_standard_json_constants(tmp_path, capsys, constant):
+    artifact = tmp_path / "non-standard.json"
+    artifact.write_text(
+        json.dumps(valid_result()).replace("null", constant, 1), encoding="utf-8"
+    )
+    assert er.main(["--validate", str(artifact)]) == 2
+    assert "invalid JSON constant" in capsys.readouterr().err
 
 
 def test_no_flag_is_bad_invocation():

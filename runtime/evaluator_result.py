@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -33,7 +34,16 @@ def _is_int(v) -> bool:
 
 
 def _is_number_or_null(v) -> bool:
-    return v is None or (isinstance(v, (int, float)) and not isinstance(v, bool))
+    return (
+        v is None
+        or (isinstance(v, int) and not isinstance(v, bool))
+        or (isinstance(v, float) and math.isfinite(v))
+    )
+
+
+def _reject_json_constant(value: str):
+    """Reject Python's non-standard NaN and Infinity JSON extensions."""
+    raise ValueError(f"invalid JSON constant: {value}")
 
 
 def _is_str_list(v) -> bool:
@@ -109,7 +119,10 @@ def main(argv=None) -> int:
         return 0
 
     try:
-        obj = json.loads(Path(args.validate).read_text(encoding="utf-8"))
+        obj = json.loads(
+            Path(args.validate).read_text(encoding="utf-8"),
+            parse_constant=_reject_json_constant,
+        )
     except (OSError, ValueError) as exc:
         print(f"evaluator_result: cannot read {args.validate}: {exc}", file=sys.stderr)
         return 2

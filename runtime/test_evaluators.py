@@ -486,6 +486,23 @@ def test_crashed_checker_is_error_not_fail(monkeypatch, tmp_path):
     assert ev.main(["run", "--repo-root", root, "fake", "--", "x"]) == 125
 
 
+def test_signal_terminated_checker_is_adapter_crash(monkeypatch, tmp_path):
+    root = fake_checker(
+        monkeypatch,
+        tmp_path,
+        "import os, signal; os.kill(os.getpid(), signal.SIGTERM)\n",
+    )
+    result = ev.run("fake", ["x"], repo_root=root)
+    assert result["exit"] == 125
+    assert result["status"] == "error"
+    assert result["evidence"][-1] == {
+        "source": "adapter",
+        "message": "wrapped checker terminated by signal 15 (SIGTERM)",
+    }
+    assert er.validate(result) == []
+    assert ev.main(["run", "--repo-root", root, "fake", "--", "x"]) == 125
+
+
 def test_requires_args_evaluator_with_no_args_is_skipped_without_spawning(
     monkeypatch, tmp_path
 ):
