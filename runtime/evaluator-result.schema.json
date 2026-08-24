@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "harness-skills/runtime/evaluator-result.schema.json",
+  "title": "Evaluator result (Evaluator Protocol v1)",
+  "description": "The outcome of one evaluator invocation. Informational: draft-07 keywords describe the shape, but validation is the hand-written check in runtime/evaluator_result.py, not a JSON-Schema library. Field naming is seeded from templates/REVIEW-RECEIPT.template.json (its `result` is `status` here).",
+  "type": "object",
+  "required": ["evaluator", "status", "score", "evidence", "exit"],
+  "properties": {
+    "evaluator": {
+      "type": "string",
+      "description": "Registry name of the evaluator that produced this result."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pass", "fail", "error", "skipped"]
+    },
+    "score": {
+      "type": ["number", "null"],
+      "description": "null for pass/fail checkers."
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source", "message"],
+        "properties": {
+          "source": { "type": "string" },
+          "message": { "type": "string" }
+        }
+      }
+    },
+    "exit": {
+      "type": "integer",
+      "description": "The wrapped checker exit code, unchanged."
+    },
+    "argv": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "duration_ms": {
+      "type": "integer"
+    }
+  }
+}
