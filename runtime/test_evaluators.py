@@ -34,12 +34,37 @@ def read_fixture() -> str:
         return f.read()
 
 
+def install_root(repo_root) -> str:
+    """Where registry ``script`` paths resolve: ``<root>/.claude`` for a deployed tree."""
+    deployed = os.path.join(repo_root, ".claude")
+    if os.path.isfile(os.path.join(deployed, "runtime", "evaluators.py")):
+        return deployed
+    return repo_root
+
+
+def deploy_tree(tmp_path, scripts=()):
+    """Build ``<tmp>/.claude/{runtime,scripts}/`` the way deploy-harness.sh lays it out."""
+    install = tmp_path / ".claude"
+    (install / "runtime").mkdir(parents=True)
+    (install / "scripts").mkdir()
+    for name in (
+        "evaluators.py",
+        "evaluator_result.py",
+        "evaluator-result.schema.json",
+        "evaluators.json",
+    ):
+        shutil.copy(os.path.join(RUNTIME_DIR, name), install / "runtime")
+    for name in scripts:
+        shutil.copy(os.path.join(REPO_ROOT, "scripts", name), install / "scripts")
+    return install
+
+
 def direct(evaluator_id, args, repo_root) -> subprocess.CompletedProcess:
     """Run the wrapped checker itself, bypassing the adapter — the parity oracle."""
     entry = ev.load_registry()[evaluator_id]
     argv = [
         "python3",
-        os.path.join(repo_root, entry["script"]),
+        os.path.join(install_root(repo_root), entry["script"]),
         *entry["argv_prefix"],
         *args,
         *entry["argv_suffix"],
@@ -58,7 +83,7 @@ def cli(evaluator_id, args, repo_root) -> subprocess.CompletedProcess:
     return subprocess.run(
         [
             sys.executable,
-            SCRIPT,
+            os.path.join(install_root(repo_root), "runtime", "evaluators.py"),
             "run",
             "--repo-root",
             repo_root,
@@ -109,13 +134,13 @@ def specs(tmp_path):
 
 
 @pytest.fixture
-def check_root(tmp_path):
+def check_root(tmp_path, monkeypatch):
     """verify_summary.py resolves specs/ from ITS OWN location, not cwd — so
-    `<slug> --check` can only see a temp spec when a copy of the script lives in a
-    temp repo root beside it."""
-    scripts = tmp_path / "scripts"
-    scripts.mkdir()
-    shutil.copy(os.path.join(REPO_ROOT, "scripts", "verify_summary.py"), scripts)
+    `<slug> --check` can only see a temp spec when a deployed copy of the script lives
+    under a temp project's `.claude/scripts/` (the adapter resolves scripts against its
+    install root, so the in-process runs need that root pointed at the temp tree)."""
+    install = deploy_tree(tmp_path, scripts=["verify_summary.py"])
+    monkeypatch.setattr(ev, "INSTALL_ROOT", install)
     for slug, cmd in (("good", "test -d specs"), ("bad", "test -d nope")):
         d = tmp_path / "specs" / slug
         d.mkdir(parents=True)
@@ -218,6 +243,7 @@ def test_parity_verify_summary_lane(specs):
     )
     assert_parity("verify-summary-lane", [good], REPO_ROOT, 0)
     assert_parity("verify-summary-lane", [bad], REPO_ROOT, 1)
+    assert_parity("verify-summary-lane", ["--no-such-flag"], REPO_ROOT, 2)
 
 
 def test_parity_verify_summary_check(check_root):
@@ -240,6 +266,7 @@ def test_parity_check_review_receipt(receipt_repo, specs):
     ok, missing = str(receipt_repo / "specs/ok"), str(specs / "specs/no-receipt")
     assert_parity("check-review-receipt", [ok], REPO_ROOT, 0)
     assert_parity("check-review-receipt", [missing], REPO_ROOT, 1)
+    assert_parity("check-review-receipt", ["--no-such-flag"], REPO_ROOT, 2)
 
 
 def test_parity_tracked_pass_fixture_is_schema_valid_json_on_stdout():
@@ -310,9 +337,9 @@ def test_status_mapping_unspawnable_interpreter_is_error(monkeypatch):
     assert er.validate(result) == []
 
 
-def test_status_mapping_zero_arg_check_verify_rows_returns_instead_of_blocking():
+def test_status_mapping_zero_arg_check_verify_rows_is_skipped_exit_3():
     # check_verify_rows.py reads stdin when given no args; the adapter never spawns a
-    # requires_args evaluator with no targets, so nothing can block on stdin.
+    # requires_args evaluator with no targets, and "skipped" is not a pass (exit 3).
     proc = subprocess.run(
         [sys.executable, SCRIPT, "run", "check-verify-rows", "--"],
         cwd=REPO_ROOT,
@@ -320,15 +347,26 @@ def test_status_mapping_zero_arg_check_verify_rows_returns_instead_of_blocking()
         text=True,
         timeout=10,
     )
-    assert proc.returncode == 0
+    assert proc.returncode == 3
     assert json.loads(proc.stdout)["status"] == "skipped"
     result = ev.run("check-verify-rows", [], repo_root=REPO_ROOT)
     assert result["status"] == "skipped"
-    assert result["exit"] == 0
+    assert result["exit"] == 3
     assert result["evidence"] == [
         {"source": "adapter", "message": "no targets given; nothing evaluated"}
     ]
     assert er.validate(result) == []
+
+
+def test_status_mapping_zero_arg_spawn_does_not_block_on_stdin(monkeypatch):
+    # With requires_args off the checker really is spawned with no targets, so it
+    # reads stdin; stdin=DEVNULL is what makes it return (exit 0 on no targets).
+    reg = ev.load_registry()
+    reg["check-verify-rows"]["requires_args"] = False
+    monkeypatch.setattr(ev, "load_registry", lambda: reg)
+    result = ev.run("check-verify-rows", [], repo_root=REPO_ROOT, timeout_s=10)
+    assert result["status"] == "pass", result["evidence"]
+    assert result["exit"] == 0
 
 
 def test_status_mapping_adapter_leaves_the_worktree_untouched(specs):
@@ -355,6 +393,7 @@ def fake_checker(monkeypatch, tmp_path, body: str, *, requires_args=False) -> st
         }
     }
     monkeypatch.setattr(ev, "load_registry", lambda: reg)
+    monkeypatch.setattr(ev, "INSTALL_ROOT", tmp_path)
     return str(tmp_path)
 
 
@@ -369,28 +408,75 @@ def test_relative_repo_root_runs_the_checker(monkeypatch):
 
 
 def test_default_repo_root_strips_a_deployed_dot_claude(monkeypatch, tmp_path):
-    # F2: a deployed copy lives at <repo>/.claude/runtime/evaluators.py.
-    deployed = tmp_path / ".claude" / "runtime" / "evaluators.py"
-    monkeypatch.setattr(ev, "__file__", str(deployed))
-    assert ev.default_repo_root() == tmp_path.resolve()
-    source = tmp_path / "harness" / "runtime" / "evaluators.py"
-    monkeypatch.setattr(ev, "__file__", str(source))
-    assert ev.default_repo_root() == (tmp_path / "harness").resolve()
+    # F2/R1: a deployed copy lives at <project>/.claude/runtime/evaluators.py, so the
+    # install root is <project>/.claude and the project root one level further out.
+    monkeypatch.setattr(ev, "INSTALL_ROOT", tmp_path / ".claude")
+    assert ev.default_repo_root() == tmp_path
+    monkeypatch.setattr(ev, "INSTALL_ROOT", tmp_path / "harness")
+    assert ev.default_repo_root() == tmp_path / "harness"
 
 
-def test_list_check_honours_repo_root(tmp_path):
-    assert ev.main(["list", "--check", "--repo-root", str(tmp_path)]) == 1
-    assert ev.main(["list", "--check", "--repo-root", REPO_ROOT]) == 0
+def test_list_check_resolves_scripts_under_install_root(monkeypatch, tmp_path):
+    monkeypatch.setattr(ev, "INSTALL_ROOT", tmp_path)
+    assert ev.main(["list", "--check"]) == 1
+    monkeypatch.setattr(ev, "INSTALL_ROOT", ev.Path(REPO_ROOT))
+    assert ev.main(["list", "--check"]) == 0
+
+
+def test_deployed_adapter_uses_dot_claude_scripts_and_project_cwd(tmp_path):
+    # R1: deployed, the registry's scripts live under <project>/.claude/scripts/ while
+    # the checker must run with cwd=<project> so relative targets resolve there.
+    install = deploy_tree(tmp_path)
+    fake = install / "scripts" / "fake.py"
+    fake.write_text(
+        "import os, sys\n"
+        "print(os.getcwd())\n"
+        "print(os.path.abspath(__file__))\n"
+        "print(sys.argv[1])\n",
+        encoding="utf-8",
+    )
+    registry = {
+        "fake": {
+            "script": "scripts/fake.py",
+            "tier": "deterministic",
+            "argv_prefix": [],
+            "argv_suffix": [],
+            "description": "records cwd + own path",
+            "requires_args": True,
+        }
+    }
+    (install / "runtime" / "evaluators.json").write_text(
+        json.dumps(registry), encoding="utf-8"
+    )
+    proc = subprocess.run(
+        [sys.executable, str(install / "runtime" / "evaluators.py"), "run", "fake"]
+        + ["--", "specs/x"],
+        cwd=REPO_ROOT,  # somewhere else entirely: the adapter must not use its caller's cwd
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert proc.returncode == 0, proc.stderr
+    result = json.loads(proc.stdout)
+    project, script = str(tmp_path.resolve()), str(fake.resolve())
+    seen = [e["message"] for e in result["evidence"] if e["source"] == "stdout"]
+    assert seen == [project, script, "specs/x"]
+    assert result["argv"][1] == script
 
 
 def test_crashed_checker_is_error_not_fail(monkeypatch, tmp_path):
     # F4a: an uncaught exception exits 1 but is not a verdict.
     root = fake_checker(monkeypatch, tmp_path, "raise RuntimeError('boom')\n")
     result = ev.run("fake", ["x"], repo_root=root)
-    assert result["exit"] == 1
+    assert result["exit"] == 125
     assert result["status"] == "error"
     assert any("Traceback" in e["message"] for e in result["evidence"])
+    assert result["evidence"][-1] == {
+        "source": "adapter",
+        "message": "wrapped checker crashed (raw exit 1)",
+    }
     assert er.validate(result) == []
+    assert ev.main(["run", "--repo-root", root, "fake", "--", "x"]) == 125
 
 
 def test_requires_args_evaluator_with_no_args_is_skipped_without_spawning(
@@ -401,7 +487,7 @@ def test_requires_args_evaluator_with_no_args_is_skipped_without_spawning(
     root = fake_checker(monkeypatch, tmp_path, body, requires_args=True)
     result = ev.run("fake", [], repo_root=root)
     assert result["status"] == "skipped"
-    assert result["exit"] == 0
+    assert result["exit"] == 3
     assert not (tmp_path / "ran.txt").exists()
     result = ev.run("fake", ["x"], repo_root=root)
     assert result["status"] == "pass"
@@ -423,6 +509,32 @@ def test_registry_entry_missing_a_key_exits_2(monkeypatch, capsys):
     assert ev.main(["list", "--check"]) == 2
     assert ev.main(["run", "x", "--", "y"]) == 2
     assert "script" in capsys.readouterr().err
+
+
+def test_run_failures_are_not_reported_as_registry_errors(monkeypatch, capsys):
+    # R4: only registry loading/lookup is guarded; a failure inside run() propagates.
+    def boom(*_args, **_kwargs):
+        raise BrokenPipeError("stdout closed")
+
+    monkeypatch.setattr(ev, "run", boom)
+    with pytest.raises(BrokenPipeError):
+        ev.main(["run", "check-verify-rows", "--", "x"])
+    assert "cannot use registry" not in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("bad", ["0", "nan", "inf", "-1"])
+def test_run_cli_rejects_non_positive_or_non_finite_timeout(bad, capsys):
+    # R5: one stderr line, exit 2, nothing spawned.
+    assert ev.main(["run", "--timeout", bad, "check-verify-rows", "--", "x"]) == 2
+    out, err = capsys.readouterr()
+    assert out == ""
+    assert err.count("\n") == 1 and "--timeout" in err
+
+
+@pytest.mark.parametrize("bad", [0, float("nan"), float("inf")])
+def test_run_rejects_non_positive_or_non_finite_timeout_s(bad):
+    with pytest.raises(ValueError):
+        ev.run("check-verify-rows", ["x"], repo_root=REPO_ROOT, timeout_s=bad)
 
 
 def test_timeout_is_error_exit_124(monkeypatch, tmp_path):

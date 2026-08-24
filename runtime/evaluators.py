@@ -2,32 +2,42 @@
 """Evaluator Protocol v1 registry + subprocess adapters.
 
 ``runtime/evaluators.json`` maps an evaluator id to a wrapped checker: ``script``
-(repo-relative), ``tier``, ``argv_prefix``, ``argv_suffix``, ``description``,
-``requires_args`` (true: an empty ``args`` list is reported as ``skipped`` without
-spawning).  ``run`` spawns ``python3 <script> <argv_prefix> <args> <argv_suffix>`` with
-``cwd=repo_root`` and a closed stdin, and shapes the outcome as a
-``runtime/evaluator_result.py`` result: exit 0 -> pass, 1 -> fail, 2 -> error, anything
-else (or a spawn failure, reported as exit 127) -> error.  Two refinements: an exit 1
-whose stderr carries a Python traceback is a crashed checker, not a verdict, so it is
-``error``; a checker that outlives ``timeout_s`` is killed and reported as ``error`` with
-exit 124.  ``score`` is always null; every non-empty stderr line, then stdout line,
-becomes an ``evidence`` item.  The adapter itself never writes to disk; a wrapped checker
-may (``verify-summary-check`` re-executes the SUMMARY's Verify commands).
+(relative to ``INSTALL_ROOT`` -- the harness checkout here, ``<project>/.claude`` when
+deployed), ``tier``, ``argv_prefix``, ``argv_suffix``, ``description``, ``requires_args``
+(true: an empty ``args`` list is reported as ``skipped`` without spawning).  ``run``
+spawns ``python3 <INSTALL_ROOT/script> <argv_prefix> <args> <argv_suffix>`` with
+``cwd=repo_root`` (the project root, where relative targets resolve) and a closed stdin,
+and shapes the outcome as a ``runtime/evaluator_result.py`` result.
+
+Exit codes.  The JSON ``exit`` (and the process exit) equals the wrapped exit code when
+the checker delivered a verdict: 0 -> pass, 1 -> fail, 2 -> error, any other checker
+exit -> error.  Adapter-classified outcomes use reserved codes instead:
+
+    3    skipped  (``requires_args`` and no args; nothing spawned)
+    124  error    (killed after ``timeout_s``)
+    125  error    (crashed: raw exit 1 with a Python traceback on stderr is not a verdict)
+    127  error    (spawn failure)
+
+``score`` is always null; every non-empty stderr line, then stdout line, becomes an
+``evidence`` item, followed by an ``adapter`` item for adapter-classified outcomes.  The
+adapter itself never writes to disk; a wrapped checker may (``verify-summary-check``
+re-executes the SUMMARY's Verify commands).
 
 CLI:
-    list [--check] [--repo-root DIR]
-                            print ids; with --check exit 1 unless exactly 4 entries
-                            each name an existing script under DIR
+    list [--check]          print ids; with --check exit 1 unless exactly 4 entries
+                            each name an existing script under INSTALL_ROOT
     run [--repo-root DIR] [--timeout SECONDS] <id> -- <args...>
-                            print the JSON result; exit with the wrapped exit code
-                            (unknown id -> exit 2; DIR defaults to the repo root)
-    A missing or malformed registry exits 2 with one line on stderr.
+                            print the JSON result; exit with the result's ``exit``
+                            (unknown id -> exit 2; DIR is the project root, defaulting
+                            to ``default_repo_root()``; SECONDS must be > 0 and finite)
+    A missing or malformed registry, or a bad --timeout, exits 2 with one stderr line.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import math
 import subprocess
 import sys
 import time
@@ -36,25 +46,30 @@ from pathlib import Path
 from evaluator_result import validate
 
 REGISTRY_PATH = Path(__file__).with_name("evaluators.json")
+# Where the registry's ``script`` paths resolve: the directory holding this ``runtime/``
+# and the harness ``scripts/`` -- the checkout here, ``<project>/.claude`` when deployed.
+INSTALL_ROOT = Path(__file__).resolve().parents[1]
 
 
 def default_repo_root() -> Path:
-    """The repo root the registry's ``script`` paths are relative to.
+    """The project root: ``cwd`` for wrapped checkers, where relative targets resolve.
 
-    A deployed copy lives at ``<repo>/.claude/runtime/``; the repo root is one level
-    further out (mirrors ``scripts/verify_summary.py``). In the harness repo
-    ``parents[1]`` is already the root.
+    In the harness repo it is ``INSTALL_ROOT``; a deployed copy lives at
+    ``<project>/.claude/runtime/`` so the project root is one level further out
+    (mirrors ``scripts/verify_summary.py``).
     """
-    self_root = Path(__file__).resolve().parents[1]
-    return self_root.parent if self_root.name == ".claude" else self_root
+    return INSTALL_ROOT.parent if INSTALL_ROOT.name == ".claude" else INSTALL_ROOT
 
 
 DEFAULT_REPO_ROOT = default_repo_root()
 PYTHON = "python3"
 EXPECTED_COUNT = 4
 STATUS_BY_EXIT = {0: "pass", 1: "fail", 2: "error"}
-SPAWN_FAILURE_EXIT = 127
+# Reserved adapter exit codes (see the module docstring); never a wrapped verdict.
+SKIPPED_EXIT = 3
 TIMEOUT_EXIT = 124
+CRASH_EXIT = 125
+SPAWN_FAILURE_EXIT = 127
 DEFAULT_TIMEOUT_S = 300
 TRACEBACK_MARKER = "Traceback (most recent call last)"
 REGISTRY_ERRORS = (OSError, ValueError, KeyError, TypeError)
@@ -62,6 +77,10 @@ REGISTRY_ERRORS = (OSError, ValueError, KeyError, TypeError)
 
 def load_registry() -> dict:
     return json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
+
+
+def _valid_timeout(timeout_s) -> bool:
+    return timeout_s > 0 and not math.isinf(timeout_s)  # nan > 0 is False
 
 
 def _result(evaluator_id, status, exit_code, evidence, argv, duration_ms) -> dict:
@@ -87,11 +106,13 @@ def run(
     timeout_s: float = DEFAULT_TIMEOUT_S,
 ) -> dict:
     """Run one registered evaluator; raises KeyError for an unknown id."""
+    if not _valid_timeout(timeout_s):
+        raise ValueError(f"timeout_s must be > 0 and finite, got {timeout_s!r}")
     entry = load_registry()[evaluator_id]
     repo_root = Path(repo_root).resolve()  # a relative root must not also prefix argv
     argv = [
         PYTHON,
-        str(repo_root / entry["script"]),
+        str(INSTALL_ROOT / entry["script"]),
         *entry["argv_prefix"],
         *args,
         *entry["argv_suffix"],
@@ -100,7 +121,7 @@ def run(
         evidence = [
             {"source": "adapter", "message": "no targets given; nothing evaluated"}
         ]
-        return _result(evaluator_id, "skipped", 0, evidence, argv, 0)
+        return _result(evaluator_id, "skipped", SKIPPED_EXIT, evidence, argv, 0)
 
     start = time.monotonic()
     try:
@@ -125,9 +146,12 @@ def run(
         for line in text.splitlines()
         if line.strip()
     ]
-    status = STATUS_BY_EXIT.get(exit_code, "error")
     if exit_code == 1 and TRACEBACK_MARKER in stderr:
-        status = "error"  # a crashed checker is not a verdict
+        exit_code = CRASH_EXIT  # a crashed checker is not a verdict
+        evidence.append(
+            {"source": "adapter", "message": "wrapped checker crashed (raw exit 1)"}
+        )
+    status = STATUS_BY_EXIT.get(exit_code, "error")
     return _result(evaluator_id, status, exit_code, evidence, argv, duration_ms)
 
 
@@ -142,7 +166,6 @@ def main(argv=None) -> int:
     sub = parser.add_subparsers(dest="command", required=True)
     list_parser = sub.add_parser("list", help="print evaluator ids")
     list_parser.add_argument("--check", action="store_true")
-    list_parser.add_argument("--repo-root", default=DEFAULT_REPO_ROOT, metavar="DIR")
     run_parser = sub.add_parser("run", help="run <id> -- <args...>")
     run_parser.add_argument("--repo-root", default=DEFAULT_REPO_ROOT, metavar="DIR")
     run_parser.add_argument(
@@ -150,45 +173,62 @@ def main(argv=None) -> int:
     )
     run_parser.add_argument("evaluator_id")
     args = parser.parse_args(argv)  # argparse exits 2 on CLI misuse
+    if args.command == "run" and not _valid_timeout(args.timeout):
+        print(
+            f"evaluators: --timeout must be > 0 and finite, got {args.timeout!r}",
+            file=sys.stderr,
+        )
+        return 2
 
+    # Only registry loading and entry lookup are guarded: a failure inside run() or
+    # while printing the result is not a registry error and must not be reported as one.
     try:
-        return _dispatch(args, passthrough)
+        registry = load_registry()
+        if args.command == "list":
+            return _list(registry, args.check)
+        if args.evaluator_id not in registry:
+            print(
+                f"evaluators: unknown evaluator id {args.evaluator_id!r}",
+                file=sys.stderr,
+            )
+            return 2
+        entry = registry[args.evaluator_id]
+        missing = [
+            k for k in ("script", "argv_prefix", "argv_suffix") if k not in entry
+        ]
+        if missing:
+            raise KeyError(missing[0])
     except REGISTRY_ERRORS as exc:
         print(
             f"evaluators: cannot use registry {REGISTRY_PATH}: {exc!r}", file=sys.stderr
         )
         return 2
 
-
-def _dispatch(args, passthrough: list[str]) -> int:
-    registry = load_registry()
-    repo_root = Path(args.repo_root)
-    if args.command == "list":
-        for evaluator_id in registry:
-            print(evaluator_id)
-        if not args.check:
-            return 0
-        problems = [
-            f"{k}: {v['script']} not found"
-            for k, v in registry.items()
-            if not (repo_root / v["script"]).is_file()
-        ]
-        if len(registry) != EXPECTED_COUNT:
-            problems.append(f"expected {EXPECTED_COUNT} entries, found {len(registry)}")
-        for message in problems:
-            print(f"evaluators: {message}", file=sys.stderr)
-        return 1 if problems else 0
-
-    if args.evaluator_id not in registry:
-        print(
-            f"evaluators: unknown evaluator id {args.evaluator_id!r}", file=sys.stderr
-        )
-        return 2
     result = run(
-        args.evaluator_id, passthrough, repo_root=repo_root, timeout_s=args.timeout
+        args.evaluator_id,
+        passthrough,
+        repo_root=Path(args.repo_root),
+        timeout_s=args.timeout,
     )
     print(json.dumps(result))
     return result["exit"]
+
+
+def _list(registry: dict, check: bool) -> int:
+    for evaluator_id in registry:
+        print(evaluator_id)
+    if not check:
+        return 0
+    problems = [
+        f"{k}: {v['script']} not found"
+        for k, v in registry.items()
+        if not (INSTALL_ROOT / v["script"]).is_file()
+    ]
+    if len(registry) != EXPECTED_COUNT:
+        problems.append(f"expected {EXPECTED_COUNT} entries, found {len(registry)}")
+    for message in problems:
+        print(f"evaluators: {message}", file=sys.stderr)
+    return 1 if problems else 0
 
 
 if __name__ == "__main__":

@@ -31,7 +31,7 @@
     },
     "exit": {
       "type": "integer",
-      "description": "The wrapped checker exit code, unchanged."
+      "description": "The wrapped checker exit code, unchanged, when it delivered a verdict (0 pass / 1 fail / 2 error); otherwise an adapter-reserved code: 3 skipped, 124 timeout, 125 crash, 127 spawn failure."
     },
     "argv": {
       "type": "array",
