@@ -1,0 +1,24 @@
+{
+  "slug": "gh-213-safeguard-parity-test",
+  "reviewed_head_sha": "2c726ba713bc6f60a82baa3aea5215c0c1185f75",
+  "reviews": [
+    {
+      "type": "task-review",
+      "result": "pass",
+      "blocking_open": 0,
+      "notes": "tasks 1.1/1.2/1.3 each spec_verdict pass + quality_verdict approved (1.1 after one fix round); Minor findings rolled up in SUMMARY"
+    },
+    {
+      "type": "correctness",
+      "result": "pass",
+      "blocking_open": 0,
+      "notes": "6-angle FIND, 14 scored locations; 3 blocking (75) fixed in 2c726ba, re-review confirmed FIXED; 11 advisories + 3 re-review notes recorded in SUMMARY"
+    },
+    {
+      "type": "intent",
+      "result": "pass",
+      "blocking_open": 0,
+      "notes": "5 findings, all durably recorded in SUMMARY Intent Findings; post-deploy parity gap deferred pending human direction"
+    }
+  ]
+}
