@@ -36,8 +36,12 @@ done
 # ─────────────────────────────────────────────
 echo "[COMMIT GATE] Secrets scan..." >&2
 
-# Get staged diff, exclude test files, examples, and docs
-STAGED_DIFF=$(git diff --cached -U0 -- ':!tests/' ':!*.example' ':!*.md' ':!docs/' 2>/dev/null || true)
+# Get staged diff, exclude test files, examples, and docs.
+# Test exclusions are DEPTH-INDEPENDENT and cover both layouts: a bare ':!tests/' pathspec only
+# matches a repo-root `tests/`, so in a monorepo (`apps/api/tests/`) or a JS tree (`__tests__/`)
+# every placeholder credential in a test file reached the matcher below. `'x'.repeat(32)` assigned
+# to a const named SECRET is what that looks like: a hard block on content with no secret in it.
+STAGED_DIFF=$(git diff --cached -U0 -- ':!*tests/*' ':!*__tests__/*' ':!*.example' ':!*.md' ':!docs/' 2>/dev/null || true)
 
 if echo "$STAGED_DIFF" | grep -qEi '(sk-[a-zA-Z0-9]{20,}|AKIA[0-9A-Z]{16}|password\s*=\s*["'"'"'][^"'"'"']+|passwd\s*=|api_key\s*=\s*["'"'"'][^"'"'"']+|apikey\s*=\s*["'"'"'][^"'"'"']+|client_secret\s*=\s*["'"'"'][^"'"'"']+|\bsecret\s*=\s*["'"'"'][^"'"'"']+)'; then
   echo "[COMMIT GATE] Secrets scan... FAILED" >&2

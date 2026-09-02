@@ -36,6 +36,29 @@ stage "$repo" "tests/fixtures.py" 'api_key = "fakefakefake12345"'
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc 0
 
+# The exemption is depth-independent: a bare ':!tests/' pathspec matches only a repo-root
+# `tests/`, so a monorepo's own test tree was never exempt and blocked its placeholders.
+t "secret-looking string in a NESTED tests/ dir is exempt"
+repo=$(new_repo $H)
+stage "$repo" "apps/api/tests/fixtures.py" 'api_key = "fakefakefake12345"'
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc 0
+
+# `__tests__` does not end in `tests`, so it needs its own pathspec — the JS convention was the
+# other half of the same hole.
+t "secret-looking string in a __tests__/ dir is exempt"
+repo=$(new_repo $H)
+stage "$repo" "apps/web/workers/__tests__/config.test.ts" "const SECRET = 'x'.repeat(32)"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc 0
+
+# The exemption must not become a blanket pass: a path merely CONTAINING the word stays scanned.
+t "secret-looking string in a non-test path containing 'tests' still BLOCKS"
+repo=$(new_repo $H)
+stage "$repo" "app/testsuite_config.py" 'api_key = "supersecret12345"'
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "Potential secrets"
+
 # ── Task 1.3: app gates (Checks 2/2.5/3) are opt-in via REQUIRE_APP_GATES=1 ──
 t "REQUIRE_APP_GATES unset (default): breakpoint() in staged app/ does NOT block"
 repo=$(new_repo $H)
