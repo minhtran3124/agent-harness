@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.21.0] — 2026-09-02
+
+- fix(hooks): make secrets-scan test exemption depth-independent (PR #219)
+
 ## [2.20.0] — 2026-08-19
 
 - fix(deploy,docs): make consumer-facing gates and references actually true downstream (PR #206)
