@@ -42,10 +42,10 @@ Chênh lệch kích thước là hệ quả của khác biệt đó, và nó l�
 | Số file (không tính `.git`) | 36 | ~1.100 |
 | Dòng code + docs | 1.744 | ~102.000 |
 | Skills | 8 (6 portal + 2 shunt) | 12 |
-| Hooks | 2 | 11 đang đăng ký |
+| Hooks | 2 | 12 (8 đăng ký trực tiếp + 4 qua dispatch) |
 | Scripts | 3 | 76 |
 | Commits | 6 | 868 |
-| Bộ test | 51 case, **~5 giây**, không cần credential | 200+ shell case + 582 pytest, **3 phút 25** |
+| Bộ test | 51 case, **~5 giây**, không cần credential | 677 shell assertion + 582 pytest, **3 phút 25** |
 
 *(Số file và dòng lấy bằng `find`/`wc` trên cả hai cây thư mục; số commit bằng
 `git rev-list --count HEAD`. Cả hai bộ test đều được đo bằng cách chạy thật: của họ
@@ -114,7 +114,7 @@ Lần đọc đầu tôi kết luận skill của họ có skeleton chung còn c
 khác biệt nhỏ hơn — và thú vị hơn.
 
 **Không repo nào dùng lại tên heading cả.** Sáu skill của Spotify sinh ra 14 heading H2 với
-**không cái nào lặp**. Mình sinh 29 heading trên 12 skill, chỉ `## References` (4 lần) và
+**không cái nào lặp**. Mình sinh 30 heading khác nhau trên 12 skill, chỉ `## References` (4 lần) và
 `## Arguments` (2 lần) là lặp. Xét trên tiêu chí chữ nghĩa, họ không chuẩn hóa hơn mình.
 
 Thứ họ thực sự có là skeleton **theo vị trí, không theo tên** — bốn thứ luôn nằm đúng chỗ, dù
@@ -146,7 +146,7 @@ claude plugin install portal@portal
 ```
 
 Của mình là `scripts/install-harness.sh`: một script `curl … | bash` clone repo vào thư mục
-tạm, merge-sync chín mục top-level vào `.claude/` của project đích, merge một entry vào
+tạm, merge-sync mười một mục top-level vào `.claude/` của project đích, merge một entry vào
 `.mcp.json`, dựng `specs/` và `docs/solutions/`, và mang theo cả một giao thức xử lý xung đột
 (file `.harness-incoming`) — vì nó đang tự làm bằng tay đúng việc của một package manager.
 
@@ -173,16 +173,25 @@ repo test có index và worktree cố tình khác nhau. Ba đáp án:
 Hai biến cùng có mặt — đúng thứ hook của mình cần: lib của plugin cộng git state của project. Giả
 định ban đầu đứng vững.
 
-**Nhưng rào cản thật nằm chỗ khác, và nó nguy hiểm.** Tám trong mười một hook của mình suy ra
+**Nhưng rào cản thật nằm chỗ khác, và nó nguy hiểm.** Tám trong mười hai hook script của mình suy ra
 repo-root **từ vị trí của chính chúng**:
 
 ```bash
 REPO_DIR="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)"
 ```
 
-(`blast-radius-check`, `branch-guard`, `commit-quality-gate`, `render-plan-on-write`,
-`risk-corroboration`, `ruff-on-edit`, `scope-gate`, và `check-untracked-py` qua lib của nó). Chỉ
-`branch-isolation-guard.sh:27` và `pre-bash-dispatch.sh:21` dùng `CLAUDE_PROJECT_DIR`.
+(bảy hook qua `SCRIPT_DIR` — `blast-radius-check`, `branch-guard`, `commit-quality-gate`,
+`render-plan-on-write`, `risk-corroboration`, `ruff-on-edit`, `scope-gate` — và `session-knowledge`
+dùng đúng pattern đó dưới tên biến `HOOK_DIR`, tại `session-knowledge.sh:22`). Ba hook dùng
+`CLAUDE_PROJECT_DIR` làm nguồn root **chính**: `branch-isolation-guard.sh:27`,
+`pre-bash-dispatch.sh:21`, và `state-breadcrumb.sh:39`. `check-untracked-py` không suy root nào cả —
+nó chạy `git ls-files` theo CWD, có chủ đích. Tám cộng ba cộng một bằng mười hai.
+
+> **Đính chính sau review (2026-09-09).** Bản đầu của mục này liệt kê `check-untracked-py` vào
+> danh sách bị ảnh hưởng và bỏ sót `session-knowledge`. PR #221 được cắt từ danh sách đó và sửa
+> **bảy** hook; `session-knowledge.sh` vẫn còn lỗi, và ratchet `scripts/check-hook-root-source.sh`
+> grep theo đúng tên `SCRIPT_DIR` nên không bắt được cách viết `HOOK_DIR`. Cả hai cần follow-up.
+> Do code review của chính tài liệu này tìm ra.
 
 Dưới dạng plugin, `$SCRIPT_DIR` nằm ngoài project. Tôi đo hai kịch bản:
 
@@ -246,7 +255,7 @@ Ba việc cụ thể, đều thấy được trong repo của họ:
 
 Điều này lộ ra một điểm yếu trong chính corpus eval của mình.
 `evals/skills/prompt-refactor/activation/` yêu cầu tám case trigger mỗi skill, nghe rất chặt —
-nhưng đọc `feature-intake.json` thì case 1–6 là **cùng một câu** gắn thêm tiền tố khác nhau
+nhưng đọc `feature-intake.json` thì cả 8 case trigger đều là **cùng một câu** gắn thêm tiền tố khác nhau
 ("Please do this in the repository: classify this change request into a risk lane…" / "This is
 time-sensitive, but classify this change request into a risk lane…"). Cái đó đo độ bền với tiền
 tố, không đo activation. Case activation thật phải được viết theo cách người dùng thực sự mở
@@ -292,9 +301,14 @@ always-on. Đó là thay đổi **hành vi**, không phải thay đổi định 
 Công thức ước lượng rất thô — số ký tự ÷ 4, token đầu ra nhân hệ số 5 — và `run.sh:290` in
 đúng cái công thức đó ngay dưới bảng. **Thô mà nói rõ vẫn hơn chính xác mà giấu.**
 
-Mình không đo gì tương tự. Tôi đã grep `evals/`, `docs/` và `scripts/` tìm bất kỳ hạch toán
-token hay chi phí nào — không có. Eval của mình đo catch-rate, độ chính xác phân loại lane, và
-việc chỉ thị có đến nơi không — toàn về tính đúng. Trong khi lời phàn nàn thực tế phổ biến nhất
+Mình chỉ đo chi phí bên trong eval harness, chưa bao giờ đo cho việc thật.
+`evals/skills/review-chain/README.md:40` ghi "token cost per pass" theo từng fixture, và
+`evals/skills/prompt-refactor/schema.json:33-35` có sẵn các trường `tokens`, `tool_calls`,
+`elapsed_ms` cho mỗi bản ghi kết quả. (Bản nháp đầu của đoạn này nói không có hạch toán chi phí
+nào cả; lệnh grep mà nó trích dẫn thực ra đã trả về đúng file README đó, và tôi đọc lướt qua.)
+Thứ còn thiếu là con số theo lane, theo từng thay đổi: eval đo catch-rate, độ chính xác phân loại
+lane, và việc chỉ thị có đến nơi không — toàn về tính đúng — và các trường chi phí chúng mang
+mô tả một lần chạy fixture, không phải một thay đổi lane normal đi qua cả chuỗi. Trong khi lời phàn nàn thực tế phổ biến nhất
 về harness gần như chắc chắn là **chi phí nghi thức**: chuỗi đầy đủ cộng thêm bao nhiêu lượt,
 bao nhiêu token, bao nhiêu thời gian cho một thay đổi lane normal? Hôm nay không ai trả lời
 được — nghĩa là không ai tranh luận được một gate cụ thể có đáng giá hay không.
@@ -402,7 +416,7 @@ ship đều là gate, nhưng nên nói rõ ra trước khi có ngày thêm một
 
 | # | Việc | File | Chi phí | Vì sao lúc này |
 |---|---|---|---|---|
-| **0** | **Chuyển 8 hook `git -C "$SCRIPT_DIR"` sang `CLAUDE_PROJECT_DIR`, + guard fail-closed khi hai root lệch nhau** | `hooks/*.sh` (8 file), `tests/hooks/*.test.sh` | ~nửa ngày | **Do spike tìm ra (mục 3.1).** Là điểm yếu của *hôm nay*, không phải tương lai; gate soi nhầm repo mà vẫn exit 0. Độc lập với việc có ship plugin hay không |
+| **0** | **Chuyển 8 hook suy root từ vị trí của chính nó (7 `SCRIPT_DIR` + `HOOK_DIR` của `session-knowledge`) sang `CLAUDE_PROJECT_DIR`, + guard fail-closed khi hai root lệch nhau; PR #221 đã phủ 7, còn `session-knowledge` và mở rộng regex ratchet** | `hooks/*.sh` (8 file), `tests/hooks/*.test.sh` | ~nửa ngày | **Do spike tìm ra (mục 3.1).** Là điểm yếu của *hôm nay*, không phải tương lai; gate soi nhầm repo mà vẫn exit 0. Độc lập với việc có ship plugin hay không |
 | 1 | Sửa `claude plugin validate --strict .` và thêm vào CI | 3 file trong `agents/`, một step trong `.github/workflows/harness-ci.yml` | ~30 phút | Tín hiệu đúng đắn miễn phí mà mình đang trượt; tiền đề cho #3 |
 | 2 | Viết lại `description:` của cả 12 skill bằng ngôn ngữ người dùng | `skills/*/SKILL.md` | ~2 giờ | Cải thiện activation trực tiếp, không đổi cơ chế |
 | 3 | Thêm `.claude-plugin/marketplace.json` + `plugin.json` ở gốc; chuyển hook path sang `${CLAUDE_PLUGIN_ROOT}` | `settings.json`, `.claude-plugin/` mới, `scripts/install-harness.sh` | ~1 ngày + spike chứng minh gate đọc index vẫn chạy | Bỏ được installer và giao thức xung đột của nó |
@@ -437,7 +451,7 @@ Nói thẳng để không ai suy diễn quá những gì báo cáo này chứng 
   Hãy coi các phần trăm đó là *tuyên bố của họ*, chưa được kiểm chứng.
 - ~~Chưa kiểm hook cài qua plugin có đọc được git index của project không.~~
   **Đã giải quyết 2026-09-09 bằng spike — xem mục 3.1.** Đọc được. Nhưng spike tìm ra một vấn đề
-  khác và nghiêm trọng hơn: 8/11 hook suy repo-root từ vị trí của chính chúng, và dưới dạng plugin
+  khác và nghiêm trọng hơn: 8/12 hook suy repo-root từ vị trí của chính chúng, và dưới dạng plugin
   nó âm thầm phân giải sang repo của *plugin* với exit 0. Giờ là khuyến nghị #0.
   Vẫn chưa kiểm: hành vi này có giống nhau trên Linux không, và `CLAUDE_PROJECT_DIR` có được set
   ở **mọi** loại hook event không (tôi chỉ quan sát được với PreToolUse/Bash).
@@ -459,3 +473,7 @@ Nói thẳng để không ai suy diễn quá những gì báo cáo này chứng 
 - **Một tuyên bố của chính tôi cũng vậy.** Bản nháp đầu viết skill của Spotify có skeleton
   chung còn của mình thì không. Kiểm lại: heading của họ **cũng** không cái nào lặp. Khác biệt
   thật nằm ở *vị trí*, không phải *tên* — mục 2 đã sửa lại cho đúng.
+- **Bảng liệt kê hook ở mục 3.1 sai trong bản đầu**, và PR #221 được cắt từ bảng đó. Code review
+  của chính tài liệu này phát hiện `check-untracked-py` bị liệt kê dù không suy root, `session-knowledge`
+  bị bỏ sót dù có (dưới tên `HOOK_DIR`), và tổng ghi là 11 trong khi có 12. Đã sửa tại chỗ; follow-up
+  cho `session-knowledge.sh` và regex ratchet được ghi ở mục 3.1 và khuyến nghị #0.

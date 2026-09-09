@@ -71,10 +71,10 @@ The size gap follows from that, and it is large:
 | Files (excluding `.git`) | 36 | ~1,100 |
 | Lines of code + docs | 1,744 | ~102,000 |
 | Skills | 8 (6 portal + 2 shunt) | 12 |
-| Hooks | 2 | 11 registered |
+| Hooks | 2 | 12 (8 registered + 4 dispatched) |
 | Scripts | 3 | 76 |
 | Commits | 6 | 868 |
-| Test suite | 51 cases, **~5 s**, no credentials | 200+ shell cases + 582 pytest, **3 m 25 s** |
+| Test suite | 51 cases, **~5 s**, no credentials | 677 shell assertions + 582 pytest, **3 m 25 s** |
 
 *(File and line counts from `find`/`wc` on both trees; commits from `git rev-list --count HEAD`.
 Both suites measured by running them: theirs `bash plugins/shunt/evals/run.sh` → 51 passed, 0
@@ -199,7 +199,7 @@ My first read of their skills was that they share a common skeleton and ours do 
 properly, the difference is smaller and more interesting than it looked.
 
 Neither repo reuses heading *text*. Spotify's six skills produce 14 H2 headings with **zero
-repeats**. Ours produce 29 across 12 skills, with only `## References` (4×) and `## Arguments` (2×)
+repeats**. Ours produce 30 distinct across 12 skills, with only `## References` (4×) and `## Arguments` (2×)
 appearing more than once. On the literal measure, they are no more standardised than we are.
 
 What they do have is a skeleton that is **positional, not nominal** — four things in the same place
@@ -324,7 +324,7 @@ claude plugin install portal@portal
 ```
 
 Ours is `scripts/install-harness.sh`: a `curl … | bash` script that clones the repo to a temp dir,
-merge-syncs a payload of nine top-level items into the target's `.claude/`, merges an entry into
+merge-syncs a payload of eleven top-level items into the target's `.claude/`, merges an entry into
 `.mcp.json`, scaffolds `specs/` and `docs/solutions/`, and carries a conflict-resolution protocol
 (`.harness-incoming` sidecar files) because it is hand-rolling what a package manager does.
 
@@ -351,16 +351,25 @@ test repo whose index and worktree deliberately disagreed. Three answers:
 Both variables are available at once, which is exactly what our hooks need: the plugin's own libs
 plus the project's git state. So the assumption held.
 
-**But the real blocker is elsewhere, and it is dangerous.** Eight of our eleven hooks derive the
+**But the real blocker is elsewhere, and it is dangerous.** Eight of our twelve hook scripts derive the
 repository root *from the hook's own location*:
 
 ```bash
 REPO_DIR="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)"
 ```
 
-(`blast-radius-check`, `branch-guard`, `commit-quality-gate`, `render-plan-on-write`,
-`risk-corroboration`, `ruff-on-edit`, `scope-gate`, and `check-untracked-py` via its lib). Only
-`branch-isolation-guard.sh:27` and `pre-bash-dispatch.sh:21` use `CLAUDE_PROJECT_DIR`.
+(seven via `SCRIPT_DIR` — `blast-radius-check`, `branch-guard`, `commit-quality-gate`,
+`render-plan-on-write`, `risk-corroboration`, `ruff-on-edit`, `scope-gate` — and `session-knowledge`
+via the same pattern under the name `HOOK_DIR`, at `session-knowledge.sh:22`). Three hooks use
+`CLAUDE_PROJECT_DIR` as their *primary* root source: `branch-isolation-guard.sh:27`,
+`pre-bash-dispatch.sh:21`, and `state-breadcrumb.sh:39`. `check-untracked-py` derives no root at
+all — it runs `git ls-files` relative to CWD by design. Eight plus three plus one is twelve.
+
+> **Correction after review (2026-09-09).** The first published version of this section named
+> `check-untracked-py` in the affected list and omitted `session-knowledge`. PR #221 was cut from
+> that list and fixed **seven** hooks; `session-knowledge.sh` still carries the defect, and the
+> ratchet `scripts/check-hook-root-source.sh` greps for `SCRIPT_DIR` by name, so it does not catch
+> the `HOOK_DIR` spelling. Both need a follow-up. Found by the code review of this document.
 
 Under plugin packaging `$SCRIPT_DIR` lives outside the project, and I measured two outcomes:
 
@@ -448,7 +457,7 @@ activating on something the user was not explicitly asking for.
 
 This connects to a weakness in our own eval corpus. `evals/skills/prompt-refactor/activation/`
 requires eight trigger cases per skill, which sounds rigorous — but reading `feature-intake.json`,
-cases 1–6 are the same sentence with different prefixes bolted on ("Please do this in the
+all eight trigger cases are the same sentence with different prefixes bolted on ("Please do this in the
 repository: classify this change request into a risk lane and confidence" / "This is
 time-sensitive, but classify this change request into a risk lane and confidence"). That measures
 robustness to prefixes, not activation. Real activation cases would be phrased the way a user
@@ -490,9 +499,13 @@ a real review.
 The estimator is crude — chars ÷ 4, output tokens weighted 5× — and `run.sh:290` prints that method
 directly under the table. Crude and stated beats precise and hidden.
 
-We measure nothing like this. I grepped `evals/`, `docs/`, and `scripts/` for token or cost
-accounting and found none. Our evals measure catch-rate, lane-classification accuracy, and
-instruction delivery — all correctness. Yet the harness's most common real-world complaint is
+We measure cost only inside the eval harness, never for real work. `evals/skills/review-chain/README.md:40`
+records "approximate token cost per pass" per fixture, and `evals/skills/prompt-refactor/schema.json:33-35`
+carries `tokens`, `tool_calls`, and `elapsed_ms` per result record. (An earlier draft of this
+paragraph said no cost accounting existed anywhere; the grep it cited had returned that README,
+and I read past it.) What is absent is the per-lane, per-change figure: the evals measure
+catch-rate, lane-classification accuracy, and instruction delivery — all correctness — and the
+cost fields they carry describe a fixture run, not a normal-lane change moving through the chain. Yet the harness's most common real-world complaint is
 almost certainly *ceremony cost*: how many turns, how many tokens, how much wall-clock does the
 full chain add to a normal-lane change? Nobody can answer that today, which means nobody can argue
 about whether a given gate is worth its price.
@@ -531,7 +544,7 @@ denied by `hooks/branch-isolation-guard.sh`, because I was on `main` and had not
 gate fired on the person writing the document about the gate. That is the behaviour working.
 
 **But the claim needs a boundary drawn around it, and this is the most important correction in this
-report.** What is mechanically enforced is the *commit and edit boundary* — the eleven hooks. The
+report.** What is mechanically enforced is the *commit and edit boundary* — the twelve hooks. The
 *skill chain itself* is prose-linked, exactly like Spotify's. Our whole pipeline —
 `feature-intake → brainstorming → xia2 → writing-plans → using-git-worktrees →
 subagent-driven-development → correctness-review → intent-review → finishing-a-development-branch` —
@@ -627,7 +640,7 @@ Ordered by value ÷ cost. Each names the file that would change.
 
 | # | Change | Files | Cost | Why now |
 |---|---|---|---|---|
-| **0** | **Move the 8 `git -C "$SCRIPT_DIR"` hooks to `CLAUDE_PROJECT_DIR`, + a fail-closed guard when the two roots disagree** | `hooks/*.sh` (8 files), `tests/hooks/*.test.sh` | ~half day | **Found by spike (§4.1).** Today's fragility, not a future one; a gate that resolves the wrong repo exits 0. Independent of whether we ever ship a plugin |
+| **0** | **Move the 8 own-location hooks (7 `SCRIPT_DIR` + `session-knowledge`'s `HOOK_DIR`) to `CLAUDE_PROJECT_DIR`, + a fail-closed guard when the two roots disagree; PR #221 covers 7, `session-knowledge` and a wider ratchet regex remain** | `hooks/*.sh` (8 files), `tests/hooks/*.test.sh` | ~half day | **Found by spike (§4.1).** Today's fragility, not a future one; a gate that resolves the wrong repo exits 0. Independent of whether we ever ship a plugin |
 | 1 | Fix `claude plugin validate --strict .` and add it to CI | 3 files in `agents/`, one step in `.github/workflows/harness-ci.yml` | ~30 min | Free correctness signal we currently fail; prerequisite for #3 |
 | 2 | Rewrite all 12 skill `description:` fields in user vocabulary | `skills/*/SKILL.md` | ~2 h | Directly improves activation; no mechanism change |
 | 3 | Ship a root `.claude-plugin/marketplace.json` + `plugin.json`; move hook paths to `${CLAUDE_PLUGIN_ROOT}` | `settings.json`, new `.claude-plugin/`, `scripts/install-harness.sh` | ~1 day + a spike to prove index-reading gates still work | Removes the installer and its conflict protocol |
@@ -663,7 +676,7 @@ Stated plainly so nobody reads more into this than it supports.
   percentages as their claim, not as verified.
 - ~~I did not test whether a plugin-installed hook can read the project's git index.~~
   **Resolved 2026-09-09 by spike — see §4.1.** It can. But the spike found a different and more
-  serious problem: 8 of 11 hooks derive the repo root from their own location, which under plugin
+  serious problem: 8 of 12 hooks derive the repo root from their own location, which under plugin
   packaging silently resolves to the *plugin's* repo with exit 0. Now recommendation #0.
   Still untested: whether a plugin-installed hook behaves the same on Linux, and whether
   `CLAUDE_PROJECT_DIR` is guaranteed set in every hook event (I observed it only for PreToolUse/Bash).
@@ -682,3 +695,12 @@ Stated plainly so nobody reads more into this than it supports.
   verifier scripts, not one. The corrected claim in §5.1 is narrower and true: three scripts check
   artifact *shape*; nothing checks chain *order*. Flagged here because the original wording was the
   more flattering version of the finding, and it was wrong.
+- **One of my own claims did not survive checking either.** The first draft said Spotify's skills
+  share a common skeleton and ours do not. Checking properly, their headings are *also* all unique
+  (14 across 6 skills, zero repeats). The real difference is positional, not nominal — §2 was
+  rewritten to say so, and the recommendation narrowed to a canonical section *order*.
+- **The hook enumeration in §4.1 was wrong in the first published version**, and PR #221 was cut
+  from it. Code review of this document found `check-untracked-py` listed though it derives no
+  root, `session-knowledge` omitted though it does (under `HOOK_DIR`), and the total stated as 11
+  when there are 12. Corrected in place; the follow-up for `session-knowledge.sh` and the ratchet
+  regex is recorded in §4.1 and recommendation #0.
