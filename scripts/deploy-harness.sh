@@ -37,11 +37,12 @@ BOOTSTRAP_OWNED_FILES=(
 # plus the data files those helpers read. `scripts/` as a whole is a harness-development surface
 # (70+ files incl. its own tests) and is deliberately NOT synced; this allow-list is the subset
 # that must travel or the gates it backs are prose only. Add a row only when a consumer-facing
-# skill/rule references it.
+# skill/rule references it, or when the deployed `runtime/evaluators.json` registry references it.
 CONSUMER_SCRIPTS=(
   "verify_summary.py"
   "check_plan_contract.py"
   "check_review_receipt.py"
+  "check_verify_rows.py"
   "resolve_finish_context.py"
   "rebuild_solution_index.py"
   "render_skill_prompt.py"

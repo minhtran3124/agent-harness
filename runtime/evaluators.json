@@ -1,0 +1,34 @@
+{
+  "verify-summary-lane": {
+    "script": "scripts/verify_summary.py",
+    "tier": "deterministic",
+    "argv_prefix": ["--lane"],
+    "argv_suffix": [],
+    "requires_args": true,
+    "description": "Lane-required evidence check on one or more SUMMARY.md targets (slug or path); never runs Verify commands."
+  },
+  "verify-summary-check": {
+    "script": "scripts/verify_summary.py",
+    "tier": "deterministic",
+    "argv_prefix": [],
+    "argv_suffix": ["--check"],
+    "requires_args": true,
+    "description": "Re-run the Verify table of specs/<slug>/SUMMARY.md and compare claimed vs actual exits without rewriting the file."
+  },
+  "check-verify-rows": {
+    "script": "scripts/check_verify_rows.py",
+    "tier": "deterministic",
+    "argv_prefix": [],
+    "argv_suffix": [],
+    "requires_args": true,
+    "description": "Lint SUMMARY/PLAN Verify and SC rows: pipe-free and under the 60 s strict-gate cap. No exit-2 path."
+  },
+  "check-review-receipt": {
+    "script": "scripts/check_review_receipt.py",
+    "tier": "deterministic",
+    "argv_prefix": [],
+    "argv_suffix": [],
+    "requires_args": true,
+    "description": "Validate specs/<slug>/.review-receipt.json against the current git HEAD (optionally --require t1,t2)."
+  }
+}
