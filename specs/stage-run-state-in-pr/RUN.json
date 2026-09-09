@@ -1,12 +1,12 @@
 {
   "created_at": "2026-09-09T07:04:24Z",
-  "last_event_id": "d9700cd2-26b3-4dd7-90b6-cd7f868f455a",
+  "last_event_id": "0a1f6ac7-b6c2-4ed1-91bb-1cb45040fa5f",
   "resume_event": null,
   "run_id": "d74670bd-488a-4380-8b34-6bf51d2572b5",
-  "seq": 5,
+  "seq": 6,
   "sha": null,
   "slug": "stage-run-state-in-pr",
-  "state": "verifying",
-  "updated_at": "2026-09-09T07:05:06Z",
+  "state": "ready_to_merge",
+  "updated_at": "2026-09-09T07:05:39Z",
   "waiting_on": null
 }
