@@ -16,11 +16,18 @@ set +u
 set +o pipefail
 exec 2>/dev/null
 
-# Resolve the repo root the same way every sibling hook does (git worktree root), so it
-# works from both hooks/ (source) and .claude/hooks/ (deployed).
+# Repo root: runtime answer first, git-from-CWD second. NEVER from HOOK_DIR — a hook installed
+# outside the project whose own dir sits inside ANY git repo resolves to THAT repo with exit 0
+# (specs/fix-hook-project-root-resolution). This hook spelled the banned pattern `git -C "$HOOK_DIR"`
+# rather than `$SCRIPT_DIR`, so the first version of the ratchet — which grepped for SCRIPT_DIR by
+# name — did not catch it; found by the code review of PR #222. HOOK_DIR stays for locating files
+# that ship beside this hook, never for the project root.
 HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(git -C "$HOOK_DIR" rev-parse --show-toplevel 2>/dev/null)"
-[ -z "$REPO_ROOT" ] && REPO_ROOT="$(cd "$HOOK_DIR/.." && pwd)"
+REPO_ROOT="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)}"
+# Unresolvable root: exit silently. This hook is documented "never blocks / silent when empty"
+# and runs with stderr closed (exec 2>/dev/null above), so there is nowhere to report to — a
+# missing KB is exactly the case it already treats as a silent no-op.
+[ -z "$REPO_ROOT" ] && [ -z "$SESSION_KNOWLEDGE_DIR" ] && [ -z "$RUN_STATE_REPO_ROOT" ] && exit 0
 KB_DIR="${SESSION_KNOWLEDGE_DIR:-$REPO_ROOT/docs/solutions}"
 RUN_STATE_ROOT="${RUN_STATE_REPO_ROOT:-$REPO_ROOT}"
 

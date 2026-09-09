@@ -94,6 +94,27 @@ host=$(foreign_host ruff-on-edit.sh); outside=$(mktemp -d); _CLEANUP_DIRS+=("$ou
 run_from "$outside" "$host" ruff-on-edit.sh "$(json_file "$outside/app/x.py")"
 assert_rc 0
 
+# session-knowledge spells the same defect as `git -C "$HOOK_DIR"`, so the first version of the
+# ratchet (which grepped for SCRIPT_DIR by name) missed it and PR #221 left it unfixed. Found by
+# the code review of PR #222. It runs with stderr closed and must stay silent in every branch.
+t "session-knowledge: no resolvable project root -> silent exit 0, never blocks"
+host=$(foreign_host session-knowledge.sh); outside=$(mktemp -d); _CLEANUP_DIRS+=("$outside")
+run_from "$outside" "$host" session-knowledge.sh '{}'
+if [ "$RC" -ne 0 ]; then fail "rc=$RC, want 0 — out: $OUT"; else pass; fi
+
+# The host repo carries a docs/solutions KB; the project does not. A hook that resolved to its own
+# location would load the host's KB into the session. It must load nothing.
+t "session-knowledge: hook hosted in a foreign git repo does NOT load that repo's knowledge base"
+proj=$(new_repo); host=$(foreign_host session-knowledge.sh)
+mkdir -p "$host/docs/solutions"
+printf '# Index\n| [decoy](decoy.md) | knowledge |\n' > "$host/docs/solutions/INDEX.md"
+printf '# Critical\n- DECOY-FROM-HOST-REPO\n' > "$host/docs/solutions/critical-patterns.md"
+run_from "$proj" "$host" session-knowledge.sh '{}'
+case "$OUT" in
+  *DECOY-FROM-HOST-REPO*) fail "loaded the host repo's KB — resolved its own location, not the project" ;;
+  *)                      pass ;;
+esac
+
 t "branch-guard: no resolvable project root -> stays non-blocking (exit 0)"
 host=$(foreign_host branch-guard.sh); outside=$(mktemp -d); _CLEANUP_DIRS+=("$outside")
 run_from "$outside" "$host" branch-guard.sh "$(json_cmd 'git commit -m x')"

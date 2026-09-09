@@ -81,12 +81,23 @@ REPO_DIR="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)}"
 - **Done:** Suite passes against the fixed hooks and FAILS against `HEAD` hooks — a suite that passes
   both ways proves nothing.
 
+### Task 1.3 — session-knowledge.sh: the same defect under a different variable name (wave 1)
+
+- **Files:** hooks/session-knowledge.sh
+- **Action:** Same ordered resolution. This hook spells the banned pattern `git -C "$HOOK_DIR"`,
+  not `$SCRIPT_DIR`, so the first ratchet regex did not catch it and Task 1.1/1.2 missed it —
+  found by the code review of PR #222. Guard is a silent `exit 0`: the hook runs with
+  `exec 2>/dev/null` and is documented "never blocks / silent when empty".
+- **Verify:** `bash tests/hooks/session-knowledge.test.sh`
+- **Done:** 16 existing cases pass; the widened ratchet reports clean.
+
 ### Task 2.2 — Ratchet so the pattern cannot return (wave 2)
 
 - **Files:** scripts/check-hook-root-source.sh, scripts/run-tests.sh
-- **Action:** Grep `hooks/` for a `SCRIPT_DIR`-derived root on non-comment lines; wire into
+- **Action:** Grep `hooks/` for an own-location-derived root on non-comment lines; wire into
   `run-tests.sh` L1. Added mid-task: SC-1 named a checker that did not exist (Rule 2 deviation,
-  recorded in SUMMARY).
+  recorded in SUMMARY). Regex widened after review to match **any** `*_DIR` variable, not the
+  literal name `SCRIPT_DIR` — the narrow version passed while `session-knowledge.sh` was broken.
 - **Verify:** `bash scripts/check-hook-root-source.sh`
 - **Done:** Exits 0 on the fixed tree and 1 when the old line is re-introduced.
 
@@ -94,7 +105,7 @@ REPO_DIR="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)}"
 
 | ID | Behavior (observable) | Check (re-runnable) | Expected |
 | --- | --- | --- | --- |
-| SC-1 | No non-comment line in `hooks/` derives a repo root from `$SCRIPT_DIR` or `$0` | `bash scripts/check-hook-root-source.sh` | exit 0 |
+| SC-1 | No non-comment line in `hooks/` derives a repo root from its own location, under **any** variable name | `bash scripts/check-hook-root-source.sh` | exit 0 |
 | SC-2 | The changed hooks keep their existing contracts — no regression in their own suites | `bash tests/hooks/risk-corroboration.test.sh` | exit 0 |
 | SC-3 | A hook hosted inside a foreign git repo acts on the project, not on its host; and blocking gates refuse when no root resolves | `bash tests/hooks/repo-root-resolution.test.sh` | exit 0 |
 

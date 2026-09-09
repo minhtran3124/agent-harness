@@ -32,7 +32,7 @@ Estimated half a day, high-risk lane, on its own branch.
 
 ## What changed
 
-Seven hooks stopped deriving the repository root from their own file location and now take it from
+Eight hooks stopped deriving the repository root from their own file location and now take it from
 `CLAUDE_PROJECT_DIR`, falling back to git-from-CWD. Two blocking gates
 (`commit-quality-gate`, `risk-corroboration`) block with a named reason when no root can be
 determined; the five non-blocking hooks note it and exit 0, preserving the posture `CLAUDE.md`
@@ -41,8 +41,11 @@ documents for each. `SCRIPT_DIR` is retained everywhere, but only to locate each
 A ratchet (`scripts/check-hook-root-source.sh`, wired into `run-tests.sh` L1) prevents the pattern
 from returning, and `tests/hooks/repo-root-resolution.test.sh` re-runs the original failure.
 
-Scope note: `check-untracked-py.sh` is **not** part of this change. My first count said 8 hooks;
-re-reading showed it uses CWD-relative `git ls-files` by design and was never affected. Seven.
+Scope note: `check-untracked-py.sh` is **not** part of this change — it uses CWD-relative
+`git ls-files` by design. The affected set is eight: seven that spell the pattern with `$SCRIPT_DIR`,
+plus `session-knowledge.sh`, which spells it `git -C "$HOOK_DIR"` and was therefore missed both by
+my first enumeration and by the ratchet's original `SCRIPT_DIR`-by-name regex. Twelve hook scripts
+exist: 8 affected + 3 already using `CLAUDE_PROJECT_DIR` as primary + 1 CWD-relative.
 
 ### Rationale
 
@@ -73,9 +76,13 @@ spike; two hooks already use it.
   wired it into `run-tests.sh` L1, then added task 2.2 to `PLAN.md` to cover the two files. Caught
   by `hooks/blast-radius-check.sh`, which flagged `scripts/run-tests.sh` as outside the plan's
   `<files>` set — the hook did its job on this change's own author.
-- **Corrected scope before implementing:** the research report and this SUMMARY's first draft said
-  8 hooks. `check-untracked-py.sh` resolves nothing from `SCRIPT_DIR` except its lib path, so the
-  real count is 7. No code was written against the wrong number.
+- **Scope corrected twice, the second time by review.** The first draft said 8 hooks including
+  `check-untracked-py.sh`; re-reading showed that hook resolves nothing from `SCRIPT_DIR`, so the
+  set became 7 and this branch shipped against that number. The code review of PR #222 then found
+  the enumeration was still wrong in the other direction: `session-knowledge.sh:22` carries the
+  same defect under the name `HOOK_DIR`, and the ratchet's `SCRIPT_DIR`-by-name regex could not see
+  it. The real set is 8. Fixed in this branch (task 1.3); the ratchet regex now matches any
+  `*_DIR` variable. The lesson is recorded under Harness-Delta.
 
 ### Verify
 
@@ -86,7 +93,8 @@ spike; two hooks already use it.
 | Check | Command | Exit | Notes | Criterion |
 | --- | --- | --- | --- | --- |
 | No hook derives its root from SCRIPT_DIR | `bash scripts/check-hook-root-source.sh` | 0 | Ratchet proven to bite: re-introducing the old line in `scope-gate.sh` made it exit 1 | SC-1 |
-| Scenario-B regression suite | `bash tests/hooks/repo-root-resolution.test.sh` | 0 | 11 passed | SC-3 |
+| Scenario-B regression suite | `bash tests/hooks/repo-root-resolution.test.sh` | 0 | 13 passed (incl. 2 session-knowledge cases) | SC-3 |
+| session-knowledge contract suite | `bash tests/hooks/session-knowledge.test.sh` | 0 | 16 passed; hook unchanged in behaviour | SC-2 |
 | risk-corroboration contract suite | `bash tests/hooks/risk-corroboration.test.sh` | 0 | 38 passed; largest suite over a changed blocking gate | SC-2 |
 | commit-quality-gate contract suite | `bash tests/hooks/commit-quality-gate.test.sh` | 0 | 34 passed; the other changed blocking gate | SC-2 |
 | blast-radius contract suite | `bash tests/hooks/blast-radius-check.test.sh` | 0 | 17 passed; representative non-blocking hook | SC-2 |
@@ -95,6 +103,11 @@ Full suite, cited not tabled: `bash scripts/run-tests.sh` printed `ALL GREEN` an
 677 shell assertions plus 582 pytest cases (14.47s for the python half). It is deliberately not a
 row: at ~3.5 minutes it would TIMEOUT the strict gate's 60s per-command cap, and CI's `tests` job
 already runs it on ubuntu and macos.
+
+Second one-time discriminating observation: the two new `session-knowledge` cases were run against
+the pre-fix hook (`git show HEAD:hooks/session-knowledge.sh` into a temp tree) — the KB-leak case
+**FAILED** (it loaded the foreign host repo's `docs/solutions/` into the session), the silent-exit-0
+case passed either way. Only the first of the two discriminates; the second is a posture guard.
 
 One-time discriminating observation, not re-runnable as a row: the SC-3 suite was also executed
 against the **pre-fix** hooks (`git show HEAD:hooks/<h>.sh` into a temp tree). It reported
@@ -121,6 +134,12 @@ exists after the commit.
   `Does not verify:` that the replacement resolution is correct, or that a hook uses `REPO_DIR` at
   all. A hook could pass the ratchet and still resolve wrongly by some other means; only
   `tests/hooks/repo-root-resolution.test.sh` re-runs behaviour.
+- **The ratchet's own coverage was the defect, and its replacement is still a regex.** The first
+  version matched `SCRIPT_DIR` by name and reported clean while `session-knowledge.sh` was broken.
+  The widened version matches any `*_DIR` variable plus two `dirname $0` spellings — better, but it
+  is still an enumeration of spellings, not a semantic check. A hook that derived its root some
+  third way (`$0`-relative via `realpath`, say) would pass. Reached **traceability**; the semantic
+  claim is not verified by anything.
 - **`render-plan-on-write.sh` has no case in the new regression test.** The other six changed hooks
   each have one. Its own suite (9 cases) passes and the hook was additionally observed working in
   the live runtime during this task — it auto-rendered `PLAN.html` on each edit to `PLAN.md`.
@@ -141,3 +160,9 @@ exists after the commit.
 - **backlog (-> compound):** the deeper pattern is worth a `docs/solutions/` entry — *a hook must
   never infer the thing it audits from its own install location*. This defect was invisible for the
   life of the repo because the deployed layout made the wrong inference produce the right answer.
+- **backlog (-> compound), second and sharper:** *a ratchet that greps for a variable NAME enforces
+  a spelling, not a property.* This one shipped green while the very defect it existed to prevent
+  sat one file away, because that file called the variable `HOOK_DIR`. The failure is doubly
+  instructive: the ratchet was written from the same wrong enumeration as the fix, so both had the
+  identical blind spot and neither could catch the other. A checker derived from the same list as
+  the change it guards adds confidence without adding coverage.

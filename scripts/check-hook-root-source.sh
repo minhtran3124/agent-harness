@@ -13,9 +13,13 @@ set -u
 cd "$(dirname "$0")/.." || exit 1
 
 # Non-comment lines only: this change deliberately documents the banned pattern in prose.
+# Match ANY own-location variable, not the literal name SCRIPT_DIR. The first version of this
+# ratchet grepped for SCRIPT_DIR by name and therefore missed hooks/session-knowledge.sh, which
+# spells the same defect `git -C "$HOOK_DIR" ...` — found by the code review of PR #222. The
+# banned thing is deriving the root from the hook's own location, whatever the variable is called.
 HITS=$(grep -rnE 'rev-parse --show-toplevel' hooks/ 2>/dev/null \
   | grep -vE ':[0-9]+:[[:space:]]*#' \
-  | grep -E 'git -C "\$(SCRIPT_DIR|\{SCRIPT_DIR\})"|git -C "\$\(dirname "\$0"\)"')
+  | grep -E 'git -C "\$\{?[A-Za-z_][A-Za-z0-9_]*_DIR\}?"|git -C "\$\(dirname "\$0"\)"|git -C "\$\(cd "\$\(dirname')
 
 if [ -n "$HITS" ]; then
   echo "  ✗ hook resolves its repo root from its own location:" >&2
