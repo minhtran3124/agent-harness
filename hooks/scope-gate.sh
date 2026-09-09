@@ -4,8 +4,10 @@
 
 INPUT=$(cat)
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_DIR="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null)"
-[ -z "$REPO_DIR" ] && REPO_DIR="${CLAUDE_PROJECT_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}"
+# Repo root: runtime answer FIRST. The old order consulted CLAUDE_PROJECT_DIR only after the
+# SCRIPT_DIR probe had already returned a wrong-but-successful answer — see
+# specs/fix-hook-project-root-resolution. SCRIPT_DIR stays, but only to locate this hook's libs.
+REPO_DIR="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)}"
 NORMALIZER="$SCRIPT_DIR/lib/normalize-tool-input.py"
 if command -v python3 >/dev/null 2>&1 && [ -f "$NORMALIZER" ]; then
   NORMALIZED=$(printf '%s' "$INPUT" | python3 "$NORMALIZER" --root "$REPO_DIR" 2>/dev/null)

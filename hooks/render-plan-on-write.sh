@@ -10,8 +10,13 @@ command -v python3 >/dev/null 2>&1 || exit 0
 
 INPUT=$(cat /dev/stdin)
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_DIR="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null)"
-[ -z "$REPO_DIR" ] && REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+# Repo root: runtime answer first, git-from-CWD second. NEVER from SCRIPT_DIR — see
+# specs/fix-hook-project-root-resolution (silent wrong-repo resolution with exit 0).
+REPO_DIR="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)}"
+if [ -z "$REPO_DIR" ]; then
+  echo "[render-plan] project root unknown — PLAN.html render skipped." >&2
+  exit 0
+fi
 NORMALIZER="$SCRIPT_DIR/lib/normalize-tool-input.py"
 if [ -f "$NORMALIZER" ]; then
   NORMALIZED=$(printf '%s' "$INPUT" | python3 "$NORMALIZER" --root "$REPO_DIR" 2>/dev/null)

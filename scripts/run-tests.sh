@@ -20,6 +20,9 @@ bash scripts/lint-doc-truth.sh || FAILED=1
 echo "== L1: skill-bash lint =="
 bash scripts/lint-skill-bash.sh || FAILED=1
 
+echo "== L1: hook repo-root source =="
+bash scripts/check-hook-root-source.sh || FAILED=1
+
 echo "== L1: manifest consistency =="
 if command -v python3 >/dev/null 2>&1; then
   python3 scripts/check_manifest.py || FAILED=1

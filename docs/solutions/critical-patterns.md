@@ -157,3 +157,25 @@ On gh-175 every per-task review passed and 145 tests were green, yet the plan-bl
 
 **Full doc:** docs/solutions/harness/plan-anchored-task-review-misses-fixture-fitted-bugs.md
 ---
+
+## [2026-09-09] hook-root-must-not-come-from-install-location
+**Type:** bug
+**Module:** hooks/repo-root-resolution
+**Tags:** hook-root-resolution, plugin-install-safety, silent-wrong-repo, claude-project-dir, fail-closed-posture, deployment-topology-assumption
+**Applicable when:** Writing or reviewing any hook or script that needs "the project root" and could ever run from a location decoupled from the target repo — plugin/marketplace packaging, a vendored install, a global `~/.claude/` copy, or any distribution path other than an in-tree copy.
+
+Eight of twelve hooks derived the repo root from the hook's own file location (`git -C "$SCRIPT_DIR" rev-parse --show-toplevel`), encoding a deployment topology as an identity. When the hook lives outside the project and its own directory sits inside any other git repo — the ordinary `claude plugin marketplace add` path, since it clones — that command exits **0** returning the wrong repo, so gates audit the wrong tree and report success: the pre-fix commit gate prints `Secrets scan... PASSED / Escalations... PASSED` against a foreign repo. Latent for the life of the repo because the deployed layout made the wrong inference produce the right answer. Fix: `${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel)}` with no `SCRIPT_DIR` fallback at any position, and a guard that matches each hook's already-documented blocking posture. Generalisation: never infer the identity of the thing you act on from where your own code lives — ask the runtime, and fail rather than return a plausible wrong answer.
+
+**Full doc:** docs/solutions/harness/hook-root-must-not-come-from-install-location.md
+---
+
+## [2026-09-09] ratchet-matches-spelling-not-property
+**Type:** failure
+**Module:** hooks/repo-root-resolution
+**Tags:** ratchet-blind-spot, spelling-vs-property, variable-name-enumeration, shared-blind-spot, text-anchored-guards, code-review-catch
+**Applicable when:** Watch for this when the same change that fixes a defect also writes the ratchet meant to prevent it, and the ratchet matches an identifier by name — a checker sourced from the same enumeration as the fix inherits that enumeration's blind spot and reports clean over the instances both missed.
+
+A manual `grep` for `git -C "$SCRIPT_DIR"` found seven hooks; seven were fixed, and the ratchet written to stop the pattern returning matched that same literal string. It reported clean, `run-tests.sh` printed ALL GREEN, and CI passed — while `hooks/session-knowledge.sh:22` still carried the identical defect spelled `git -C "$HOOK_DIR"`. The checker and the fix came from one enumeration pass, so they shared a single blind spot and neither could catch the other: a ratchet built from the same list as the change it guards is not an independent oracle, it is the same judgement written twice, and it converts a gap in that judgement into evidence of correctness. `SCRIPT_DIR` is a spelling; the defect is a property. Caught only by an independent review of a sibling PR whose reviewers re-derived the list from source. Correct path: match the defect's shape, and run the new ratchet against the pre-fix tree to watch it fail before trusting its green.
+
+**Full doc:** docs/solutions/harness/ratchet-matches-spelling-not-property.md
+---

@@ -16,11 +16,21 @@ command -v hook_cmd_is_git_commit >/dev/null 2>&1 || {
 }
 hook_cmd_is_git_commit "$COMMAND" || exit 0
 
-# Resolve the repo root (layout-independent; this repo is flat, hooks/ at top level)
+# Resolve the repo root. Order matters and is load-bearing (specs/fix-hook-project-root-resolution):
+# NEVER derive it from SCRIPT_DIR. A hook installed outside the project (plugin packaging) whose own
+# directory sits inside ANY git repo makes `git -C "$SCRIPT_DIR" rev-parse --show-toplevel` exit 0
+# and return THAT repo — this gate would then audit the wrong repository and report success. The
+# runtime's own answer comes first; git-from-CWD is second so tests/lib.sh (which cds into a temp
+# repo and sets no CLAUDE_PROJECT_DIR) still resolves. SCRIPT_DIR remains only for locating libs.
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_DIR="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null)"
-[ -z "$REPO_DIR" ] && REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-cd "$REPO_DIR"
+REPO_DIR="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)}"
+if [ -z "$REPO_DIR" ] || [ ! -d "$REPO_DIR" ]; then
+  echo "[COMMIT QUALITY] BLOCKED — cannot determine the project root." >&2
+  echo "  CLAUDE_PROJECT_DIR is unset and CWD is not inside a git work tree." >&2
+  echo "  Refusing to guess: a gate that resolves the wrong repo passes silently." >&2
+  exit 2
+fi
+cd "$REPO_DIR" || exit 2
 
 # Resolve the lane/evidence helper once. The harness repo keeps it at scripts/; a CONSUMER repo
 # receives the deployed copy at .claude/scripts/ (deploy-harness.sh -> CONSUMER_SCRIPTS). Before

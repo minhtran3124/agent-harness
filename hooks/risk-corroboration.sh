@@ -51,10 +51,20 @@ command -v hook_lib_resolve_lane >/dev/null 2>&1 || {
   exit 2
 }
 
+# Repo-root resolution order is load-bearing (specs/fix-hook-project-root-resolution): NEVER derive
+# it from SCRIPT_DIR. A hook installed outside the project whose own directory sits inside ANY git
+# repo makes `git -C "$SCRIPT_DIR" rev-parse --show-toplevel` exit 0 and return THAT repo, so this
+# gate would corroborate the lane against the wrong diff and allow the commit. Runtime answer first;
+# git-from-CWD second (tests/lib.sh cds into a temp repo and sets no CLAUDE_PROJECT_DIR).
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_DIR="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null)"
-[ -z "$REPO_DIR" ] && REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-cd "$REPO_DIR" || exit 0
+REPO_DIR="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)}"
+if [ -z "$REPO_DIR" ] || [ ! -d "$REPO_DIR" ]; then
+  echo "[RISK CORROBORATION] BLOCKED — cannot determine the project root." >&2
+  echo "  CLAUDE_PROJECT_DIR is unset and CWD is not inside a git work tree." >&2
+  echo "  Refusing to guess: corroborating a lane against the wrong repo passes silently." >&2
+  exit 2
+fi
+cd "$REPO_DIR" || exit 2
 
 # ── Per-category mode: harness-manifest.json is the authority ────────────
 # Durable loosening: set the category's "mode" to "warn" in harness-manifest.json.
