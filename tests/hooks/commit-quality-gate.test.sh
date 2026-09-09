@@ -177,6 +177,53 @@ stage "$repo" "specs/demo/SUMMARY.md" "Lane: normal"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_contains 2 "deny-on-no-response"
 
+# ── Check 1.7: run-state artifacts (RUN.json / events.jsonl) must travel with the spec ──
+t "untracked RUN.json beside a staged spec file → BLOCKED (exit 2)"
+repo=$(new_repo $H)
+stage "$repo" "specs/demo/SUMMARY.md" "Lane: tiny"
+printf '{"state":"planning"}\n' > "$repo/specs/demo/RUN.json"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "specs/demo/RUN.json exists but is UNTRACKED"
+
+t "untracked events.jsonl beside a staged spec file → BLOCKED (exit 2)"
+repo=$(new_repo $H)
+stage "$repo" "specs/demo/PLAN.md" "status: draft"
+printf '{"event":"intake"}\n' > "$repo/specs/demo/events.jsonl"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "specs/demo/events.jsonl exists but is UNTRACKED"
+
+t "staging RUN.json + events.jsonl in the same commit passes"
+repo=$(new_repo $H)
+stage "$repo" "specs/demo/SUMMARY.md" "Lane: tiny"
+stage "$repo" "specs/demo/RUN.json" '{"state":"planning"}'
+stage "$repo" "specs/demo/events.jsonl" '{"event":"intake"}'
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 0 "Run-state artifacts... PASSED"
+
+t "tracked RUN.json with unstaged edits → warns, does not block"
+repo=$(new_repo $H)
+stage "$repo" "specs/demo/RUN.json" '{"state":"planning"}'
+git -C "$repo" commit -qm seed
+printf '{"state":"implementing"}\n' > "$repo/specs/demo/RUN.json"
+stage "$repo" "specs/demo/SUMMARY.md" "Lane: tiny"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 0 "has unstaged changes"
+
+t "untracked RUN.json does NOT block a commit that leaves the slug untouched"
+repo=$(new_repo $H)
+mkdir -p "$repo/specs/other"
+printf '{"state":"planning"}\n' > "$repo/specs/other/RUN.json"
+stage "$repo" "README.md" "docs change"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_not_contains 0 "Run-state artifacts"
+
+t "REQUIRE_RUN_STATE_STAGED=0 downgrades the untracked block to a warning"
+repo=$(new_repo $H)
+stage "$repo" "specs/demo/SUMMARY.md" "Lane: tiny"
+printf '{"state":"planning"}\n' > "$repo/specs/demo/RUN.json"
+run_hook "$repo" $H "$COMMIT_JSON" REQUIRE_RUN_STATE_STAGED=0
+assert_rc_contains 0 "UNTRACKED"
+
 # ── Check 1.6: lane evidence (mechanizes rules/auto-correct-scope.md) ──
 # Wired in response to the PR #119 review: lane evidence was proven by
 # unit tests but never invoked against a real SUMMARY.

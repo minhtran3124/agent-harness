@@ -165,6 +165,49 @@ if [ -n "$EV_SLUGS" ]; then
 fi
 
 # ─────────────────────────────────────────────
+# Check 1.7: Run-state artifacts travel with the spec (RUN.json + events.jsonl)
+# ─────────────────────────────────────────────
+# `.gitignore` says "RUN.json + events.jsonl stay tracked", but nothing enforced it:
+# feature-intake creates RUN.json best-effort and no skill ever named it in a
+# `git add`, so whether the run record reached the PR depended on whether the
+# agent happened to stage the whole slug directory (observed: two merged consumer
+# PRs whose RUN.json/events.jsonl were still untracked on disk afterwards).
+# Scope mirrors Check 1.5: only commits touching specs/<slug>/. Two tiers:
+#   - UNTRACKED on disk and not staged  -> BLOCK (the file would never reach git)
+#   - tracked but with UNSTAGED changes -> warn (an appended event left behind)
+# Verifies: the artifact's git state (untracked / unstaged / staged).
+# Does not verify: the artifact's content or that its state matches the PLAN.
+# Break-glass: REQUIRE_RUN_STATE_STAGED=0 downgrades the block to a warning.
+RS_SLUGS=$(git diff --cached --name-only 2>/dev/null \
+  | grep -oE '^specs/[^/]+/' | sort -u || true)
+RS_BLOCKED=0
+for slug_dir in $RS_SLUGS; do
+  for rs_name in RUN.json events.jsonl; do
+    rs="${slug_dir}${rs_name}"
+    [ -f "$rs" ] || continue
+    # Staged (added or modified) in this commit — fine either way.
+    if git diff --cached --name-only 2>/dev/null | grep -qxF "$rs"; then continue; fi
+    if ! git ls-files --error-unmatch "$rs" >/dev/null 2>&1; then
+      if [ "${REQUIRE_RUN_STATE_STAGED:-1}" = "0" ]; then
+        echo "  ! $rs exists but is UNTRACKED — it will not reach the PR. Run: git add $rs" >&2
+      else
+        echo "  BLOCKED: $rs exists but is UNTRACKED — it will not reach the PR." >&2
+        RS_BLOCKED=1
+      fi
+    elif ! git diff --quiet -- "$rs" 2>/dev/null; then
+      echo "  ! $rs has unstaged changes that this commit leaves behind. Run: git add $rs" >&2
+    fi
+  done
+done
+if [ "$RS_BLOCKED" = "1" ]; then
+  echo "[COMMIT GATE] Run-state artifacts... FAILED" >&2
+  echo "  RUN.json / events.jsonl are tracked artifacts (.gitignore only excludes the .lock)." >&2
+  echo "  Stage them by name in this commit (REQUIRE_RUN_STATE_STAGED=0 downgrades to a warning)." >&2
+  exit 2
+fi
+[ -n "$RS_SLUGS" ] && echo "[COMMIT GATE] Run-state artifacts... PASSED" >&2
+
+# ─────────────────────────────────────────────
 # App gates (Checks 2, 2.5, 3) — opt-in via REQUIRE_APP_GATES=1
 # ─────────────────────────────────────────────
 # The harness core ships no app/ code; the debug-artifact scan, ### Verify
