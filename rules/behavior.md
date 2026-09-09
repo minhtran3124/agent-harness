@@ -22,3 +22,18 @@ an unsourced absence claim is a defect in the review, not a finding.
 When a request admits more than one materially different implementation, say which readings exist
 and which you picked — in the response, not only in your reasoning. Picking one silently is what
 makes a wrong lane, a wrong plan, and a wrong diff all pass their own gates consistently.
+
+## 3. Confirm a command's interface before depending on it
+
+Before relying on a flag, subcommand, or file path you have not seen in this session, check it —
+`--help`, `ls`, or the file itself. Recall of an interface is not observation of it.
+
+This is not the generic "don't hallucinate": it is specific to the failure where a plausible
+invocation is wrong in *this* environment. Observed in one session in this repo: `timeout` is not
+installed on macOS; `render_plan.py` lives under `skills/visual-planner/`, not `scripts/`; `md5 -q`
+replaces `md5sum`. Each cost a turn, and each would have been free to check.
+
+The cost is asymmetric — one cheap probe against a failed command, a wrong path silently written
+into a doc, or a `2>/dev/null` that turns the mistake into a silent no-op. Adapted from the
+external repo `spotify/portal-ai-plugins`, whose setup workflow states it as a rule: "Run
+`--help` before relying on a Portal CLI or host command or flag."

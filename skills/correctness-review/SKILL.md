@@ -1,6 +1,7 @@
 ---
 name: correctness-review
-description: Run an adversarial runtime-correctness review over a diff. Independently find, score, route, and close concrete bugs before a PR; use standalone or as subagent-driven-development’s final pre-ship gate.
+description: "Hunt for bugs in a finished change before anyone else sees it. Use when the user asks whether a change is correct, wants a review before opening a PR, or says something feels wrong but the tests pass. Reads the diff adversarially, scores each finding, and closes or routes it."
+allowed-tools: Read, Grep, Glob, Agent, Task, Bash(git diff *), Bash(git show *), Bash(git log *)
 ---
 
 # Adversarial Correctness Review

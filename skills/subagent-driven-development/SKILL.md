@@ -1,6 +1,7 @@
 ---
 name: subagent-driven-development
 description: Use to execute an approved multi-task PLAN.md: waves of isolated implementer subagents with per-task review, separate-session resume, and final delivery/correctness/intent gates before shipping.
+allowed-tools: Read, Write, Grep, Glob, Agent, Task, Bash
 ---
 
 # Subagent-Driven Development

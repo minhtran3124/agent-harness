@@ -1,6 +1,7 @@
 ---
 name: using-git-worktrees
 description: Set up or verify an isolated worktree before implementation-plan execution. Detect existing isolation first, prefer the harness-native worktree tool, and use a safe git fallback only when needed.
+allowed-tools: Read, Bash(git *), Bash(ls *)
 ---
 
 # Using Git Worktrees

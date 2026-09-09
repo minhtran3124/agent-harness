@@ -1,6 +1,7 @@
 ---
 name: writing-plans
 description: Use after an approved design and research brief to create a detailed, executable multi-step implementation plan before code changes.
+allowed-tools: Read, Write, Grep, Glob
 ---
 
 # Writing Plans
