@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.23.1] — 2026-09-09
+
+- chore(specs): mark the hook-root plan shipped and record its Status Log (PR #225)
+
 ## [2.23.0] — 2026-09-09
 
 - fix(finishing,hooks): make RUN.json + events.jsonl travel with the PR (PR #226)
