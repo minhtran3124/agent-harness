@@ -1,5 +1,5 @@
 ---
-status: active
+status: shipped
 ---
 
 # PLAN — hook project-root resolution
@@ -9,30 +9,36 @@ Design: `design.md`. Lane: high-risk (hard gate `high-blast`, `hooks/*`).
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**4 tasks · 1 waves · 10 files · 0/4 done**
+**5 tasks · 2 waves · 11 files · 5/5 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
-| — | 1.1 | 1.1 | hooks/commit-quality-gate.sh, hooks/risk-corroboration.sh |  |
-| — | 1.2 | 1.2 | hooks/blast-radius-check.sh, hooks/branch-guard.sh, hooks/render-plan-on-write.sh, hooks/ruff-on-edit.sh, hooks/scope-gate.sh |  |
-| — | 2.1 | 2.1 | tests/hooks/repo-root-resolution.test.sh |  |
-| — | 2.2 | 2.2 | scripts/check-hook-root-source.sh, scripts/run-tests.sh |  |
+| 1 | 1.1 | Blocking gates: ordered resolution + fail-closed guard (wave 1) | hooks/commit-quality-gate.sh, hooks/risk-corroboration.sh | Both suites pass; neither hook references `$SCRIPT_DIR` for a repo root. |
+| 1 | 1.2 | Non-blocking hooks: ordered resolution, posture preserved (wave 1) | hooks/blast-radius-check.sh, hooks/branch-guard.sh, hooks/render-plan-on-write.sh, hooks/ruff-on-edit.sh, hooks/scope-gate.sh | All five suites pass; no hook changed its blocking posture. |
+| 1 | 1.3 | session-knowledge.sh: the same defect under a different variable name (wave 1) | hooks/session-knowledge.sh | 16 existing cases pass; the widened ratchet reports clean. |
+| 2 | 2.1 | Regression test for the spike's scenario B (wave 2) | tests/hooks/repo-root-resolution.test.sh | Suite passes against the fixed hooks and FAILS against `HEAD` hooks — a suite th… |
+| 2 | 2.2 | Ratchet so the pattern cannot return (wave 2) | scripts/check-hook-root-source.sh, scripts/run-tests.sh | Exits 0 on the fixed tree and 1 when the old line is re-introduced. |
 
 ```mermaid
 flowchart LR
-  subgraph W0[Wave —]
-    T1_1["1.1 1.1"]
-    T1_2["1.2 1.2"]
-    T2_1["2.1 2.1"]
-    T2_2["2.2 2.2"]
+  subgraph W0[Wave 1]
+    T1_1["1.1 Blocking gates: ordered resolution + fail-closed guard (wave 1)"]
+    T1_2["1.2 Non-blocking hooks: ordered resolution, posture preserved (wave 1)"]
+    T1_3["1.3 session-knowledge.sh: the same defect under a different variable name (wave 1)"]
   end
+  subgraph W1[Wave 2]
+    T2_1["2.1 Regression test for the spike's scenario B (wave 2)"]
+    T2_2["2.2 Ratchet so the pattern cannot return (wave 2)"]
+  end
+  W0 --> W1
 ```
 
 ### Progress
-- [ ] 1.1 — 1.1
-- [ ] 1.2 — 1.2
-- [ ] 2.1 — 2.1
-- [ ] 2.2 — 2.2
+- [x] 1.1 — Blocking gates: ordered resolution + fail-closed guard (wave 1)
+- [x] 1.2 — Non-blocking hooks: ordered resolution, posture preserved (wave 1)
+- [x] 1.3 — session-knowledge.sh: the same defect under a different variable name (wave 1)
+- [x] 2.1 — Regression test for the spike's scenario B (wave 2)
+- [x] 2.2 — Ratchet so the pattern cannot return (wave 2)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Approach
@@ -122,3 +128,10 @@ re-runs each cell under a 60s cap and bans whole-suite invocations
 - Fork 3 (SCRIPT_DIR/PROJECT_DIR mismatch diagnostics) — deferred, see design.md.
 - Any marketplace/plugin manifest work — separate change, separate escalation.
 - `check-untracked-py.sh` — CWD-based by design, not affected.
+
+## Status Log
+
+- 2026-09-09 — tasks 1.1, 1.2, 2.1, 2.2 complete; commit `6df5533`
+- 2026-09-09 — task 1.3 complete (session-knowledge.sh, found by the code review of PR #222); commit `3a7e471`
+- 2026-09-09 — compound records written; commit `4635c8b`
+- 2026-09-09 — shipped as PR #221, merged `afdebdd`; released 2.22.0 (PR #224)
