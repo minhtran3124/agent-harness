@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.23.0] — 2026-09-09
+
+- fix(finishing,hooks): make RUN.json + events.jsonl travel with the PR (PR #226)
+
 ## [2.22.0] — 2026-09-09
 
 - fix(hooks): resolve the project root from CLAUDE_PROJECT_DIR, never from SCRIPT_DIR (PR #221)
