@@ -17,8 +17,13 @@ command -v hook_cmd_is_git_commit >/dev/null 2>&1 || exit 0
 hook_cmd_is_git_commit "$COMMAND" || exit 0
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_DIR="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null)"
-[ -z "$REPO_DIR" ] && REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+# Repo root: runtime answer first, git-from-CWD second. NEVER from SCRIPT_DIR — see
+# specs/fix-hook-project-root-resolution (silent wrong-repo resolution with exit 0).
+REPO_DIR="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)}"
+if [ -z "$REPO_DIR" ]; then
+  echo "[branch-guard] project root unknown — branch check skipped." >&2
+  exit 0
+fi
 cd "$REPO_DIR" || exit 0
 
 BR=$(git symbolic-ref --short HEAD 2>/dev/null)

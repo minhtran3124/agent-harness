@@ -11,8 +11,14 @@
 
 INPUT=$(cat /dev/stdin)
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_DIR="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null)"
-[ -z "$REPO_DIR" ] && REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+# Repo root: runtime answer first, git-from-CWD second. NEVER from SCRIPT_DIR — a hook installed
+# outside the project whose own dir sits inside ANY git repo resolves to THAT repo with exit 0
+# (specs/fix-hook-project-root-resolution). SCRIPT_DIR stays, but only to locate this hook's libs.
+REPO_DIR="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)}"
+if [ -z "$REPO_DIR" ]; then
+  echo "[blast-radius] project root unknown (CLAUDE_PROJECT_DIR unset, CWD not a git work tree) — plan-scope check skipped." >&2
+  exit 0
+fi
 source "$SCRIPT_DIR/lib/lane.sh" 2>/dev/null
 REPO_DIR="$(cd "$REPO_DIR" 2>/dev/null && pwd -P)"
 NORMALIZER="$SCRIPT_DIR/lib/normalize-tool-input.py"
