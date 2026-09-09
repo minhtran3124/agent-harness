@@ -84,3 +84,4 @@ diff tripped), tighten; if escalations keep resolving as "proceed unchanged", lo
 | 2026-08-24 | pr-216 | - | - | - | - | - | shipped (PR #216, `215a8a390a17a8cb6979666be0f3ed658930c137`) | docs(research-loop): ground-truth the current-state diagnosis (Phase 1) |
 | 2026-09-02 | pr-219 | - | - | - | - | - | shipped (PR #219, `e61fc5197674c3e400cb411587709f6f3efa6fcf`) | fix(hooks): make secrets-scan test exemption depth-independent |
 | 2026-09-09 | pr-222 | - | - | - | - | - | shipped (PR #222, `ce6f539903d3758b413ee8d7215a393c55b0b3bd`) | docs(research): compare this harness with spotify/portal-ai-plugins |
+| 2026-09-09 | fix-hook-project-root-resolution | high-risk | hook repo-root resolution contract (every git-reading gate) | high | high-blast, existing-behavior | - | shipped (PR #221, `afdebdd5ac463901ab5c4b1b8c5c0dec68a6f455`) | fix(hooks): resolve the project root from CLAUDE_PROJECT_DIR, never from SCRIPT_DIR |
