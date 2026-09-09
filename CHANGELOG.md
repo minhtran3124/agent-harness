@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.21.1] — 2026-09-09
+
+- docs(research): compare this harness with spotify/portal-ai-plugins (PR #222)
+
 ## [2.21.0] — 2026-09-02
 
 - fix(hooks): make secrets-scan test exemption depth-independent (PR #219)
