@@ -1,6 +1,7 @@
 ---
 name: brainstorming
-description: "Use to turn an unclear or high-risk feature/design idea into an approved specs/<slug>/design.md: clarify intent, compare viable approaches, and obtain approval before research or implementation. Typically entered via feature-intake routing."
+description: "Decide what to build when the goal is clear but the approach is not. Use when the user is weighing two or more ways to do something, says they are unsure how to approach it, or asks for a design or a recommendation — and NOT when the approach is already settled and what is missing is knowledge of the codebase or a library, which is xia2. Produces an approved specs/<slug>/design.md."
+allowed-tools: Read, Write, Grep, Glob, Agent, Task
 ---
 
 # Brainstorming Ideas Into Designs

@@ -1,6 +1,7 @@
 ---
 name: finishing-a-development-branch
 description: Verify a completed branch, pin required review receipts, push it, and open a pull request. Creates a PR only: never merges, force-pushes, discards work, or amends commits.
+allowed-tools: Read, Write, Grep, Glob, Bash
 ---
 
 # Finishing a Development Branch
