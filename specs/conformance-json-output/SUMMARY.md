@@ -47,6 +47,29 @@ never the *verdict*.
 Full suite, cited not tabled: `bash scripts/run-tests.sh` -> `ALL GREEN`, 619 tests (613 before
 this task). At ~3.5 minutes it exceeds the strict gate's 60s per-command cap.
 
+### Correctness review
+
+Four independent FIND angles ran over `3d72f12..HEAD`. Every angle reproduced its findings by
+execution rather than inspection, and three of four converged on the same top defect — in code
+written earlier in this same session.
+
+| # | Finding | Angles | Fixed |
+|---|---|---|---|
+| 1 | `--json` emitted NOTHING on stdout on all four fail-closed paths, contradicting its own "one object in BOTH outcomes" comment. A wrapper treating unparseable stdout as "no findings" turns fail-closed into fail-open — the `green can mean skipped` shape | enclosing-function, guard-completeness, call-site-impact, stack-defects | Single exit point via `emit()`; payload written on every path |
+| 2 | `records` was never deduped while `problems` is `sorted(set(...))`, so the same run reported two different finding counts | enclosing-function, guard-completeness, call-site-impact | `dedupe()` mirrors the human collapse |
+| 3 | `json.loads` on the manifest was unguarded — a malformed or non-object manifest raised a traceback and blocked only incidentally | guard-completeness, enclosing-function | Caught, with a named `kind` per failure |
+| 4 | The docstring claimed `*prompt*.md` was out of scope; the `references/` glob did not implement it. Charging a parent skill for a subagent's command forces OVER-granting — an under-grant checker causing over-grants | guard-completeness | Glob filters `prompt` |
+| 5 | No `schema_version`, against 13 other payload producers in this repo; `audit_skill_prompts.py` even validates its own | stack-defects (prior-art) | Added, `SCHEMA_VERSION = 1` |
+| 6 | Exit 1 conflated "found gaps" with "could not run", while `check_skill_eval_readiness.py` and `codex_harness_doctor.py` reserve exit 2 for the latter | stack-defects (prior-art) | Setup failures now exit 2 |
+
+All six are Rule 1 (localized auto-fix) under `rules/auto-correct-scope.md` — own new code, no design
+fork. Each is pinned by a regression test; the suite went 619 -> 627.
+
+**What the review says about the run itself:** the gate I built to catch under-grants was itself
+shipped with a fail-open hole, and no gate in the repo would have caught it. Four reviewers reading
+the same 168-line diff found it independently. That is the argument for the review step, not for
+the gate.
+
 ### Not auto-verified
 
 - **No caller consumes the JSON yet.** `run-tests.sh` still reads the human lines, so the new
@@ -69,9 +92,9 @@ Scored against the predictions recorded at intake, before implementation:
 
 | # | Predicted | Actual |
 |---|---|---|
-| 1 | `risk-corroboration.sh` will not block at `Lane: normal` | see commit result below |
+| 1 | `risk-corroboration.sh` will not block at `Lane: normal` | **Correct** — commit 3ec8244 passed the gate; staged set was `scripts/*.py` + `specs/`, no block-mode category |
 | 2 | The conformance gate stays green on itself | **Correct** — 25 commands, 0 findings |
-| 3 | The `authorization` lexical trap fires if a line containing "permission" is added | see commit result below |
+| 3 | The `authorization` lexical trap fires if a line containing "permission" is added | **Correct, vacuously** — the diff added 0 lines matching `permission\|authorize\|role\|...`, so it did not fire. The trap is real (it fired on commit 3d72f12 over one docstring word) but this diff did not trigger it |
 
 ### Prediction (recorded BEFORE implementation, to be checked after)
 

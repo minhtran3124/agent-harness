@@ -205,9 +205,10 @@ def test_reported_line_numbers_are_absolute(tmp_path):
 
 
 def test_empty_register_fails_closed(tmp_path):
+    """Exit 2, not 1: checking nothing is "could not run", not "ran and found gaps"."""
     (tmp_path / "harness-manifest.json").write_text(json.dumps({"skills": []}))
     result = run(tmp_path)
-    assert result.returncode == 1
+    assert result.returncode == 2
     assert "refusing to report clean" in result.stderr
 
 
@@ -274,3 +275,82 @@ def test_default_output_is_unchanged_by_the_flag(tmp_path):
     assert human.stdout == ""
     assert "✗ skill tool conformance:" in human.stderr
     assert "{" not in human.stderr
+
+
+# ── correctness-review fixes: every finding below was reproduced by a review angle ───────
+
+
+def test_json_is_emitted_on_missing_manifest(tmp_path):
+    """Fail-closed paths are exactly where a machine consumer must not read empty stdout."""
+    result = run_json(tmp_path)
+    assert result.returncode == 2
+    payload = json.loads(result.stdout)
+    assert payload["ok"] is False
+    assert payload["findings"][0]["kind"] == "manifest-missing"
+
+
+def test_json_is_emitted_on_unparseable_manifest(tmp_path):
+    """Previously an uncaught JSONDecodeError traceback with empty stdout."""
+    (tmp_path / "harness-manifest.json").write_text("{oops")
+    result = run_json(tmp_path)
+    assert result.returncode == 2
+    assert json.loads(result.stdout)["findings"][0]["kind"] == "manifest-unparseable"
+
+
+def test_json_is_emitted_on_non_object_manifest(tmp_path):
+    """Previously an uncaught AttributeError: 'list' object has no attribute 'get'."""
+    (tmp_path / "harness-manifest.json").write_text('["alpha"]')
+    result = run_json(tmp_path)
+    assert result.returncode == 2
+    assert json.loads(result.stdout)["findings"][0]["kind"] == "manifest-not-object"
+
+
+def test_json_is_emitted_on_empty_register(tmp_path):
+    (tmp_path / "harness-manifest.json").write_text(json.dumps({"skills": []}))
+    result = run_json(tmp_path)
+    assert result.returncode == 2
+    assert json.loads(result.stdout)["findings"][0]["kind"] == "empty-register"
+
+
+def test_could_not_run_uses_exit_2_not_1(tmp_path):
+    """Exit 1 means 'ran and found gaps'; exit 2 means 'could not run'. A consumer that
+    cannot tell them apart reads a broken checker as a clean one."""
+    ran_and_failed = run_json(_with(tmp_path, skill("Read", "Run `python3 x.py`.")))
+    assert ran_and_failed.returncode == 1
+    could_not_run = run_json(tmp_path / "nonexistent")
+    assert could_not_run.returncode == 2
+
+
+def _with(root: Path, skill_md: str) -> Path:
+    sub = root / "tree"
+    build(sub, skill_md)
+    return sub
+
+
+def test_findings_are_deduped_like_the_human_path(tmp_path):
+    """`sorted(set(problems))` collapses the human lines; findings must collapse identically
+    or the same run reports two different counts."""
+    build(tmp_path, skill("Read", "Run `python3 x.py` then re-run `python3 x.py`."))
+    human_lines = [
+        line for line in run(tmp_path).stderr.splitlines() if "instructs" in line
+    ]
+    findings = json.loads(run_json(tmp_path).stdout)["findings"]
+    assert len(human_lines) == 1
+    assert len(findings) == len(human_lines)
+
+
+def test_payload_carries_schema_version(tmp_path):
+    """13 other payload producers in this repo carry it; audit_skill_prompts.py validates it."""
+    build(tmp_path, skill("Read", "No commands."))
+    assert json.loads(run_json(tmp_path).stdout)["schema_version"] == 1
+
+
+def test_prompt_payload_under_references_is_excluded(tmp_path):
+    """The docstring claimed *prompt*.md was out of scope; the glob did not implement it.
+    Charging a parent skill for a subagent's command forces OVER-granting."""
+    build(
+        tmp_path,
+        skill("Read", "Body."),
+        references={"reviewer-prompt.md": "Run `python3 subagent-only.py`.\n"},
+    )
+    assert run(tmp_path).returncode == 0

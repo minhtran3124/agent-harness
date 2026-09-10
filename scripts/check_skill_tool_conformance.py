@@ -26,8 +26,10 @@ Path note: deploy-harness.sh rewrites helper paths in derived docs (`scripts/x.p
 `.claude/scripts/x.py`), so a pattern is matched against both the literal command and its
 `.claude/`-stripped form. A source-tree grant therefore stays correct after deployment.
 
-Stdlib only. Exit 0 = every instructed command is permitted. Exit 1 = one line per gap.
-Run: python3 scripts/check_skill_tool_conformance.py [--root DIR]
+Stdlib only. Exit 0 = every instructed command is permitted; exit 1 = ran and found gaps;
+exit 2 = could not run (missing, unparseable or empty register). Under --json the payload is
+written on every one of those paths.
+Run: python3 scripts/check_skill_tool_conformance.py [--root DIR] [--json]
 """
 
 import argparse
@@ -184,21 +186,80 @@ def permitted(
     return False
 
 
+SCHEMA_VERSION = 1
+
+
+def dedupe(records: list) -> list:
+    """Collapse identical records, mirroring the human path's `sorted(set(problems))`.
+
+    Without this the two branches disagree on the finding COUNT for the same tree — the
+    structured twin drifting from its original on day one.
+    """
+    seen, unique = set(), []
+    for r in records:
+        key = (r["file"], r["line"], r["kind"], r["skill"], r["command"])
+        if key not in seen:
+            seen.add(key)
+            unique.append(r)
+    return sorted(unique, key=lambda r: (r["file"], r["line"], r["kind"]))
+
+
+def emit(
+    as_json: bool, ok: bool, skills: int, commands: int, records: list, msg: str, rc: int = 1
+) -> int:
+    """Single exit point. Under --json the payload is written on EVERY path, including the
+    fail-closed ones — those are exactly the states a machine consumer must not mistake for
+    clean, and an empty stdout is what a defensive wrapper reads as "no findings"."""
+    if as_json:
+        print(
+            json.dumps(
+                {
+                    "schema_version": SCHEMA_VERSION,
+                    "ok": ok,
+                    "checked_skills": skills,
+                    "checked_commands": commands,
+                    "findings": dedupe(records),
+                },
+                indent=2,
+                sort_keys=True,
+            )
+        )
+        return 0 if ok else rc
+    if ok:
+        print(msg)
+        return 0
+    print(msg, file=sys.stderr)
+    return rc
+
+
+def setup_failure(as_json: bool, kind: str, detail: str) -> int:
+    record = {"file": "harness-manifest.json", "line": 0, "kind": kind, "skill": None, "command": None}
+    # exit 2 = "could not run", distinct from exit 1 = "ran and found gaps". A consumer that
+    # cannot tell those apart reads a broken checker as a clean one.
+    return emit(as_json, False, 0, 0, [record], f"conformance: {detail}", rc=2)
+
+
 def check(root: Path, as_json: bool = False) -> int:
     manifest_path = root / "harness-manifest.json"
     if not manifest_path.is_file():
-        print(
-            f"conformance: harness-manifest.json not found at {root}", file=sys.stderr
+        return setup_failure(
+            as_json, "manifest-missing", f"harness-manifest.json not found at {root}"
         )
-        return 1
-    manifest = json.loads(manifest_path.read_text())
-    names = manifest.get("skills", [])
-    if not names:
-        print(
-            "conformance: no skills registered — refusing to report clean",
-            file=sys.stderr,
+    try:
+        manifest = json.loads(manifest_path.read_text())
+    except json.JSONDecodeError as e:
+        # Previously an uncaught traceback: the gate blocked only incidentally, and the
+        # operator saw a crash instead of a diagnosis.
+        return setup_failure(as_json, "manifest-unparseable", f"harness-manifest.json is invalid JSON: {e}")
+    if not isinstance(manifest, dict):
+        return setup_failure(
+            as_json, "manifest-not-object", "harness-manifest.json is not a JSON object"
         )
-        return 1
+    names = manifest.get("skills")
+    if not isinstance(names, list) or not names:
+        return setup_failure(
+            as_json, "empty-register", "no skills registered — refusing to report clean"
+        )
 
     problems: list[str] = []
     # Structured twin of `problems`, for --json. Built alongside rather than parsed back out
@@ -220,7 +281,11 @@ def check(root: Path, as_json: bool = False) -> int:
             continue
         checked_skills += 1
 
-        docs = [skill_md] + sorted((skill_dir / "references").glob("*.md"))
+        docs = [skill_md] + sorted(
+            d
+            for d in (skill_dir / "references").glob("*.md")
+            if "prompt" not in d.name.lower()
+        )
         for doc in docs:
             raw = doc.read_text()
             # Blank the frontmatter rather than slicing it off: slicing shifts every reported
@@ -271,41 +336,32 @@ def check(root: Path, as_json: bool = False) -> int:
                     f"but {name} declares neither Agent nor Task"
                 )
 
-    if as_json:
-        # One object on stdout in BOTH outcomes, so a caller reads one stream rather than
-        # having to merge stdout and stderr to learn what happened.
-        print(
-            json.dumps(
-                {
-                    "ok": not problems,
-                    "checked_skills": checked_skills,
-                    "checked_commands": checked_commands,
-                    "findings": sorted(
-                        records, key=lambda r: (r["file"], r["line"], r["kind"])
-                    ),
-                },
-                indent=2,
-                sort_keys=True,
-            )
-        )
-        return 1 if problems else 0
-
     if problems:
-        print("  ✗ skill tool conformance:", file=sys.stderr)
-        for line in sorted(set(problems)):
-            print(f"      {line}", file=sys.stderr)
-        print(
+        # The human renderer keeps its exact prior shape; only the routing moved into emit(),
+        # so there is one JSON envelope in the program rather than two that can drift.
+        if not as_json:
+            print("  ✗ skill tool conformance:", file=sys.stderr)
+            for line in sorted(set(problems)):
+                print(f"      {line}", file=sys.stderr)
+        return emit(
+            as_json,
+            False,
+            checked_skills,
+            checked_commands,
+            records,
             "      Widen the skill's allowed-tools, or stop instructing the command. "
             "An under-granted skill breaks mid-task at runtime.",
-            file=sys.stderr,
         )
-        return 1
 
-    print(
+    return emit(
+        as_json,
+        True,
+        checked_skills,
+        checked_commands,
+        records,
         f"  ✓ skill tool conformance: {checked_commands} instructed command(s) "
-        f"across {checked_skills} skill(s) are all permitted"
+        f"across {checked_skills} skill(s) are all permitted",
     )
-    return 0
 
 
 def main() -> int:
