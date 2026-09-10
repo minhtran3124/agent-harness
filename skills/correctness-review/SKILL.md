@@ -1,7 +1,7 @@
 ---
 name: correctness-review
 description: "Hunt for bugs in a finished change before anyone else sees it. Use when the user asks whether a change is correct, wants a review before opening a PR, or says something feels wrong but the tests pass. Reads the diff adversarially, scores each finding, and closes or routes it."
-allowed-tools: Read, Grep, Glob, Agent, Task, Bash(git diff *), Bash(git show *), Bash(git log *)
+allowed-tools: Read, Grep, Glob, Agent, Task, Bash(git diff *), Bash(git show *), Bash(git log *), Bash(python3 scripts/render_skill_prompt.py *)
 ---
 
 # Adversarial Correctness Review

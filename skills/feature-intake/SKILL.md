@@ -1,7 +1,7 @@
 ---
 name: feature-intake
 description: First gate for a change request: classify its risk lane and confidence, record the decision in `specs/<slug>/SUMMARY.md`, then route to the appropriate workflow. Use before research, planning, or edits.
-allowed-tools: Read, Write, Grep, Glob, Bash(git log *), Bash(git diff *), Bash(ls *)
+allowed-tools: Read, Write, Grep, Glob, Bash(git log *), Bash(git diff *), Bash(ls *), Bash(python3 scripts/verify_summary.py *), Bash(python3 runtime/run_state.py *)
 ---
 
 # Feature Intake — classify and route
@@ -41,7 +41,7 @@ classify risk; ask only to resolve a material ambiguity or narrow a hard-gated s
 
 6. Initialize `runtime/run_state.py` as `investigating` on a best-effort basis. For normal and
    high-risk lanes, transition to `planning`; failures are observability failures, never an intake
-   blocker. Run `python scripts/verify_summary.py --lane <slug>` before handoff.
+   blocker. Run `python3 scripts/verify_summary.py --lane <slug>` before handoff.
 
 ## Routes
 

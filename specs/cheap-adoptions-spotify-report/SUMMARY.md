@@ -1,8 +1,8 @@
 # cheap-adoptions-spotify-report — Summary
 
-Lane: normal
+Lane: high-risk
 Confidence: high
-Reason: 3 flags (existing-behavior, multi-domain, weak-proof); no block-mode hard gate. `workflow-engine` fires but is **warn-mode** — the manifest records it firing on 34/40 recent commits (85%), so it does not force high-risk
+Reason: **Corrected from `normal` during review.** The original reasoning conflated two different things: a gate's block/warn mode governs commit-time blocking, not lane assignment. `harness-manifest.json`'s own `workflow-engine` entry says "intake still classifies it high-risk", and feature-intake Step 3 assigns high-risk for ANY manifest hard gate. Independently corroborated: `risk-corroboration.sh` blocked the review-fix commit with "Staged diff trips hard-gate categories: authorization ... But specs SUMMARY declares Lane: normal" — changing a skill's `allowed-tools` IS an authorization surface
 Flags: existing-behavior, multi-domain, weak-proof
 Affects: skill frontmatter contract (`allowed-tools`, `description`), agents/ validation surface, rules/behavior.md
 Input-type: harness improvement
