@@ -184,7 +184,7 @@ def permitted(
     return False
 
 
-def check(root: Path) -> int:
+def check(root: Path, as_json: bool = False) -> int:
     manifest_path = root / "harness-manifest.json"
     if not manifest_path.is_file():
         print(
@@ -201,6 +201,9 @@ def check(root: Path) -> int:
         return 1
 
     problems: list[str] = []
+    # Structured twin of `problems`, for --json. Built alongside rather than parsed back out
+    # of the human strings: re-parsing your own output is how the two drift apart.
+    records: list[dict[str, object]] = []
     checked_skills = checked_commands = 0
 
     for name in names:
@@ -236,6 +239,15 @@ def check(root: Path) -> int:
                         f"conformance: {rel}:{number} instructs `{head(command)}` "
                         f"but {name} declares no matching Bash(...) pattern"
                     )
+                    records.append(
+                        {
+                            "file": str(rel),
+                            "line": number,
+                            "kind": "ungranted-command",
+                            "skill": name,
+                            "command": head(command),
+                        }
+                    )
             if DISPATCH.search(text) and not (bare & set(DISPATCH_TOOLS)):
                 line = next(
                     (
@@ -245,10 +257,38 @@ def check(root: Path) -> int:
                     ),
                     1,
                 )
+                records.append(
+                    {
+                        "file": str(rel),
+                        "line": line,
+                        "kind": "ungranted-dispatch",
+                        "skill": name,
+                        "command": None,
+                    }
+                )
                 problems.append(
                     f"conformance: {rel}:{line} mandates a subagent dispatch "
                     f"but {name} declares neither Agent nor Task"
                 )
+
+    if as_json:
+        # One object on stdout in BOTH outcomes, so a caller reads one stream rather than
+        # having to merge stdout and stderr to learn what happened.
+        print(
+            json.dumps(
+                {
+                    "ok": not problems,
+                    "checked_skills": checked_skills,
+                    "checked_commands": checked_commands,
+                    "findings": sorted(
+                        records, key=lambda r: (r["file"], r["line"], r["kind"])
+                    ),
+                },
+                indent=2,
+                sort_keys=True,
+            )
+        )
+        return 1 if problems else 0
 
     if problems:
         print("  ✗ skill tool conformance:", file=sys.stderr)
@@ -273,8 +313,14 @@ def main() -> int:
     parser.add_argument(
         "--root", default=Path(__file__).resolve().parent.parent, type=Path
     )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="emit one JSON object on stdout instead of the human lines; "
+        "exit codes are unchanged",
+    )
     args = parser.parse_args()
-    return check(args.root)
+    return check(args.root, as_json=args.json)
 
 
 if __name__ == "__main__":

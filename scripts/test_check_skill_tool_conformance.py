@@ -209,3 +209,68 @@ def test_empty_register_fails_closed(tmp_path):
     result = run(tmp_path)
     assert result.returncode == 1
     assert "refusing to report clean" in result.stderr
+
+
+# ── --json contract (Task 1.2) ───────────────────────────────────────────────────────────
+
+
+def run_json(root: Path) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        [sys.executable, str(CHECKER), "--root", str(root), "--json"],
+        capture_output=True,
+        text=True,
+    )
+
+
+def test_json_is_parseable_when_clean(tmp_path):
+    build(tmp_path, skill("Read", "No commands here."))
+    result = run_json(tmp_path)
+    assert result.returncode == 0
+    payload = json.loads(result.stdout)
+    assert payload["ok"] is True
+    assert payload["findings"] == []
+
+
+def test_json_is_parseable_when_findings_exist(tmp_path):
+    """The object goes to stdout on FAILURE too — one stream, not two."""
+    build(tmp_path, skill("Read", "Run `python3 scripts/thing.py`."))
+    result = run_json(tmp_path)
+    assert result.returncode == 1
+    payload = json.loads(result.stdout)
+    assert payload["ok"] is False
+    assert len(payload["findings"]) == 1
+
+
+def test_json_finding_carries_file_line_and_kind(tmp_path):
+    build(tmp_path, skill("Read", "Run `python3 scripts/thing.py`."))
+    finding = json.loads(run_json(tmp_path).stdout)["findings"][0]
+    assert finding["file"] == "skills/alpha/SKILL.md"
+    assert finding["line"] == 7
+    assert finding["kind"] == "ungranted-command"
+    assert finding["skill"] == "alpha"
+    assert "thing.py" in finding["command"]
+
+
+def test_json_reports_dispatch_findings_with_their_own_kind(tmp_path):
+    build(
+        tmp_path,
+        skill("Read", "See `references/loop.md`."),
+        references={"loop.md": "Dispatch `a-prompt.md` now.\n"},
+    )
+    kinds = {f["kind"] for f in json.loads(run_json(tmp_path).stdout)["findings"]}
+    assert kinds == {"ungranted-dispatch"}
+
+
+def test_json_ok_field_tracks_the_exit_code(tmp_path):
+    build(tmp_path, skill("Read, Bash", "Run `python3 anything.py`."))
+    result = run_json(tmp_path)
+    assert json.loads(result.stdout)["ok"] is (result.returncode == 0)
+
+
+def test_default_output_is_unchanged_by_the_flag(tmp_path):
+    """The load-bearing guard: run-tests.sh greps the human lines."""
+    build(tmp_path, skill("Read", "Run `python3 scripts/thing.py`."))
+    human = run(tmp_path)
+    assert human.stdout == ""
+    assert "✗ skill tool conformance:" in human.stderr
+    assert "{" not in human.stderr
