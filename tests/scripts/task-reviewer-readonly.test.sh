@@ -9,12 +9,12 @@ python3 "$root/scripts/render_agent_definitions.py" \
 rendered="$out/task-reviewer.md"
 
 # Semantic source is runtime-neutral; the Claude renderer owns the structural whitelist.
-if rg -n '^(tools|model):' "$agent"; then
+if grep -nE '^(tools|model|effort):' "$agent"; then
   echo "semantic task reviewer retains runtime policy" >&2
   exit 1
 fi
 grep -q '^tools: Glob, Grep, Read$' "$rendered"
-if rg -n '^tools:.*(Write|Edit|Agent|Bash)' "$rendered"; then
+if grep -nE '^tools:.*(Write|Edit|Agent|Bash)' "$rendered"; then
   echo "rendered task reviewer exposes mutation-capable tool" >&2
   exit 1
 fi

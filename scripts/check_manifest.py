@@ -123,7 +123,7 @@ def check(root: Path) -> int:
                     problem("agent_bindings", f"agents/{role}.md lacks frontmatter")
                     continue
                 frontmatter = parts[1]
-                if re.search(r"^(model|tools|memory):", frontmatter, re.MULTILINE):
+                if re.search(r"^(model|effort|tools|memory):", frontmatter, re.MULTILINE):
                     problem(
                         "agent_bindings",
                         f"agents/{role}.md retains a runtime policy field",

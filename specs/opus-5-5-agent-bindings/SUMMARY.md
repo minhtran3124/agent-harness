@@ -58,6 +58,8 @@ case the guidance reserves higher effort for.
 | --- | --- | --- | --- | --- |
 | renderer + entry unit tests | `python3 -m pytest -q scripts/test_render_agent_definitions.py scripts/test_render_runtime_entry.py scripts/test_check_runtime_neutral_sources.py` | 0 | 31 passed | |
 | rendered frontmatter | `python3 scripts/render_agent_definitions.py --runtime claude --output-dir /tmp/opus55-agents-render` | 0 | coding opus-5-5/medium, reviewer opus-5/high, task-reviewer opus-5/medium, test-runner haiku/no effort | |
+| mirror gates reject `effort` in agent sources | `python3 -m pytest -q scripts/test_check_manifest.py scripts/test_check_runtime_neutral_sources.py -k effort` | 0 | 2 passed; both fail with the gate change reverted | |
+| task-reviewer read-only guard (grep, not rg) | `bash tests/scripts/task-reviewer-readonly.test.sh` | 0 | passed; the old `rg` calls were exit-127 no-ops under bash | |
 | model-stage distinctness | `python3 scripts/render_runtime_entry.py --runtime claude --model-stage correctness_scorer` | 0 | claude-opus-5-5 (finder: claude-opus-5) | |
 
 The full suite (`scripts/run-tests.sh`, the CI `tests` job) is cited here in prose rather than
@@ -78,10 +80,11 @@ findings below scored under 75 and are recorded, not fixed:
   No current binding triggers it.
 - `scripts/render_agent_definitions.py:121` (50): a list or dict `effort` raises `TypeError`,
   which escapes `except ContractError`. It still fails closed, but prints a raw traceback.
-- `scripts/check_manifest.py:126`, `scripts/check_runtime_neutral_sources.py:22`,
-  `tests/scripts/task-reviewer-readonly.test.sh:12` (0, unmodified-line): these mirrors of
-  `FORBIDDEN_SOURCE_FIELDS` did not gain `effort`. Only the renderer rejects `effort:` in
-  `agents/*.md`.
+- **Fixed (user-approved follow-up):** `scripts/check_manifest.py:126`,
+  `scripts/check_runtime_neutral_sources.py:22`, and `tests/scripts/task-reviewer-readonly.test.sh:12`
+  now treat `effort` as a runtime policy field. Each gate has a test. The shell guard also
+  switched from `rg` to `grep -E`. Under bash, `rg` was not on PATH (exit 127 inside `if`),
+  so both negative checks silently passed.
 - `scripts/test_render_agent_definitions.py:104` (0, unmodified-line): the `model:` assertion
   is an unanchored substring check. `model: claude-opus-5` also matches `claude-opus-5-5`.
 - `scripts/render_runtime_entry.py:131` (0, unmodified-line): `--model-stage` returns only the
