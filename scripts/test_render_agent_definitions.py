@@ -12,13 +12,15 @@ SPEC.loader.exec_module(renderer)
 ROOT = SCRIPT.parents[1]
 
 LEGACY_CLAUDE = {
-    "coding": {"model": "claude-opus-4-8", "tools": None},
+    "coding": {"model": "claude-opus-5-5", "effort": "medium", "tools": None},
     "reviewer": {
         "model": "claude-opus-5",
+        "effort": "high",
         "tools": ["Glob", "Grep", "Read", "Bash"],
     },
     "task-reviewer": {
         "model": "claude-opus-5",
+        "effort": "medium",
         "tools": ["Glob", "Grep", "Read"],
     },
     "test-runner": {
@@ -100,6 +102,10 @@ def test_claude_render_preserves_legacy_model_tools_and_role_body(tmp_path):
         )
         assert rendered_body == source_body
         assert f"model: {expected['model']}" in text
+        if "effort" in expected:
+            assert f"\neffort: {expected['effort']}\n" in text
+        else:
+            assert "\neffort:" not in text
         if expected["tools"] is None:
             assert "\ntools:" not in text
         else:
@@ -209,6 +215,24 @@ def test_vendor_field_in_semantic_source_is_rejected(tmp_path):
     root = clone_root(tmp_path)
     path = root / "agents/reviewer.md"
     path.write_text(path.read_text().replace("---\n", "---\nmodel: vendor-x\n", 1))
+    with pytest.raises(renderer.ContractError, match="runtime policy field"):
+        renderer.validate(root)
+
+
+def test_unsupported_claude_effort_is_rejected(tmp_path):
+    root = clone_root(tmp_path)
+    path = root / "agents/runtime-bindings.json"
+    data = json.loads(path.read_text())
+    data["runtimes"]["claude"]["roles"]["reviewer"]["effort"] = "ultra"
+    path.write_text(json.dumps(data))
+    with pytest.raises(renderer.ContractError, match="unsupported effort"):
+        renderer.validate(root)
+
+
+def test_effort_in_semantic_source_is_rejected(tmp_path):
+    root = clone_root(tmp_path)
+    path = root / "agents/reviewer.md"
+    path.write_text(path.read_text().replace("---\n", "---\neffort: high\n", 1))
     with pytest.raises(renderer.ContractError, match="runtime policy field"):
         renderer.validate(root)
 

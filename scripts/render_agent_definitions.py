@@ -9,11 +9,12 @@ import re
 import sys
 from pathlib import Path
 
-FORBIDDEN_SOURCE_FIELDS = {"model", "tools", "memory"}
+FORBIDDEN_SOURCE_FIELDS = {"model", "effort", "tools", "memory"}
 REVIEW_ROLES = {"reviewer", "task-reviewer"}
 CODEX_REQUIRED_FIELDS = {"model", "model_reasoning_effort", "sandbox_mode"}
 CODEX_MODELS = {"gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"}
 CODEX_EFFORTS = {"low", "medium", "high", "xhigh", "max", "ultra"}
+CLAUDE_EFFORTS = {"low", "medium", "high", "xhigh", "max"}
 CODEX_SANDBOXES = {"read-only", "workspace-write", "danger-full-access"}
 CODEX_MCP_POLICIES = {"none", "context7-read-only", "runtime-controlled"}
 
@@ -116,6 +117,10 @@ def validate(root: Path) -> tuple[dict, dict]:
                         f"{runtime}/{role}/{capability}: mapping must be explicit"
                     )
 
+            if runtime == "claude" and "effort" in binding:
+                if binding["effort"] not in CLAUDE_EFFORTS:
+                    raise ContractError(f"claude/{role}: unsupported effort")
+
             if runtime == "codex":
                 missing_fields = CODEX_REQUIRED_FIELDS - set(binding)
                 if missing_fields:
@@ -159,6 +164,8 @@ def render_claude(root: Path, output_dir: Path) -> list[Path]:
         if tools is not None:
             policy.append(f"tools: {', '.join(tools)}")
         policy.append(f"model: {binding['model']}")
+        if "effort" in binding:
+            policy.append(f"effort: {binding['effort']}")
         # Insert runtime policy where it was authored — directly after `description` —
         # so a rendered definition stays byte-stable against the pre-binding files and a
         # re-sync does not rewrite every consumer's agent for a key reordering.

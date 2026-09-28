@@ -53,7 +53,7 @@ def test_paired_model_label_golden_output():
     ) == "gpt-5.6-terra"
     assert entry.model_label(
         binding, agents, "claude", "correctness_scorer"
-    ) == "claude-opus-4-8"
+    ) == "claude-opus-5-5"
     assert entry.model_label(
         binding, agents, "codex", "correctness_scorer"
     ) == "gpt-5.6-sol"
