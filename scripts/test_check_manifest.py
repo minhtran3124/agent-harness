@@ -219,5 +219,15 @@ def test_agent_runtime_capability_mapping_must_be_total(tmp_path):
     assert "capability mapping is incomplete" in r.stderr
 
 
+
+def test_effort_in_agent_source_is_a_runtime_policy_field(tmp_path):
+    build(tmp_path, MANIFEST_OK)
+    (tmp_path / "agents/reviewer.md").write_text(
+        "---\nname: reviewer\neffort: high\n---\n# reviewer\n"
+    )
+    r = run(tmp_path)
+    assert r.returncode == 1
+    assert "retains a runtime policy field" in r.stderr
+
 if __name__ == "__main__":
     sys.exit(subprocess.call([sys.executable, "-m", "pytest", __file__, "-q"]))

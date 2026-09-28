@@ -121,6 +121,35 @@ def test_vendor_policy_is_only_frontmatter_in_agents(tmp_path):
     assert validate(tmp_path) == []
 
 
+
+def test_effort_frontmatter_is_vendor_agent_policy(tmp_path):
+    (tmp_path / "agents").mkdir()
+    (tmp_path / "agents/reviewer.md").write_text(
+        "---\nname: reviewer\neffort: high\n---\nPick an effort: in prose.\n"
+    )
+    (tmp_path / "specs/codex-support").mkdir(parents=True)
+    findings = [
+        {
+            "path": "agents/reviewer.md",
+            "category": "vendor-agent-policy",
+            "classification": "shared-source-violation",
+            "count": 1,
+            "owner": "phase-3",
+            "exit_condition": "Move fields to runtime bindings.",
+        }
+    ]
+    (tmp_path / MODULE.INVENTORY).write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "scan_roots": ["agents"],
+                "skill_names": ["demo"],
+                "findings": findings,
+            }
+        )
+    )
+    assert validate(tmp_path) == []
+
 def test_vendor_model_label_in_shared_prose_is_detected(tmp_path):
     finding = {
         "path": "skills/demo/SKILL.md",

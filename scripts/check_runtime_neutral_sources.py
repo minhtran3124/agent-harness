@@ -19,7 +19,7 @@ ALLOWED_CLASSIFICATIONS = {
     "test-fixture",
     "false-positive",
 }
-VENDOR_FIELDS = {"model", "tools", "disallowedTools"}
+VENDOR_FIELDS = {"model", "effort", "tools", "disallowedTools"}
 VENDOR_MODEL_RE = re.compile(
     r"\b(?:claude-(?:opus|sonnet|haiku)-[A-Za-z0-9-]+|gpt-[0-9][A-Za-z0-9.-]*)\b"
 )
