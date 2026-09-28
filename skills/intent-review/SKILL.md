@@ -1,6 +1,7 @@
 ---
 name: intent-review
 description: Independently review a finished diff against the user's verbatim original request. Use after correctness review to detect missing requested behavior, intent drift, and unapproved excess scope.
+allowed-tools: Read, Grep, Glob, Agent, Task, Bash(git diff *), Bash(git log *)
 ---
 
 # Intent Review

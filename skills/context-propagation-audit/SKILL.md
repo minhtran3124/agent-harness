@@ -1,6 +1,7 @@
 ---
 name: context-propagation-audit
 description: Audit workflow-as-code changes to prove each authoritative instruction reaches every isolated consumer context. Use for changed skills, dispatch prompts, agents, or rules; assumed delivery is a failure.
+allowed-tools: Read, Write, Grep, Glob
 ---
 
 # Context-Propagation Audit

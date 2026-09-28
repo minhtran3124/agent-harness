@@ -1,6 +1,7 @@
 ---
 name: compound
 description: Preserve durable bugs, patterns, decisions, and failed approaches as discoverable `docs/solutions/` records. Use only after a session produced a reusable learning or a proposed harness ratchet.
+allowed-tools: Read, Write, Grep, Glob, Agent, Task, Bash(python3 *)
 ---
 
 # Compound — durable session knowledge
