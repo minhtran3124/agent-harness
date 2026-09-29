@@ -4,7 +4,7 @@
 #
 # The gap this closes: branch creation in this harness is prompt-only. writing-plans
 # does not invoke using-git-worktrees, and the execution skills' "Step 0" branch check
-# is a soft instruction the model may skip. branch-guard.sh only WARNS, and only at
+# is a soft instruction the model may skip. commit-gate.sh only WARNS, and only at
 # commit time — after the work is already on the shared branch. This hook makes the
 # "branch before implementing" rule STRUCTURAL at write time.
 #
@@ -78,14 +78,44 @@ LOG_ROOT="$LAUNCH_ROOT"
 git -C "$LAUNCH_ROOT" rev-parse --show-toplevel >/dev/null 2>&1 || LOG_ROOT="$ROOT"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 NORMALIZER="$SCRIPT_DIR/lib/normalize-tool-input.py"
-if command -v python3 >/dev/null 2>&1 && [ -f "$NORMALIZER" ]; then
-  NORMALIZED=$(printf '%s' "$INPUT" | python3 "$NORMALIZER" --root "$ROOT" 2>/dev/null)
+
+# Fast path (no python3): a Claude Write/Edit with a plain file_path is relativized here with
+# the normalizer's _safe_relative rules. Anything it cannot settle — a path outside ROOT, ROOT
+# itself, a symlinked or `.`/`..` segment it would have to resolve lexically, surrounding
+# whitespace, a NUL or newline — returns 1 and falls through to the normalizer unchanged.
+fast_rel() {
+  local p="$1" d tail="" rroot rd full b
+  case "$p" in [A-Za-z]:[\\/]*) return 1 ;; /*) ;; *) p="$ROOT/$p" ;; esac
+  rroot=$(CDPATH= cd -P "$ROOT" 2>/dev/null && pwd -P) || return 1
+  d="$p"
+  while [ ! -d "$d" ]; do
+    [ -L "$d" ] && return 1
+    b=$(basename "$d")
+    case "$b" in .|..|/) return 1 ;; esac
+    tail="$b${tail:+/$tail}"; d=$(dirname "$d")
+  done
+  rd=$(CDPATH= cd -P "$d" 2>/dev/null && pwd -P) || return 1
+  full="${rd%/}${tail:+/$tail}"
+  case "$full" in "$rroot"/?*) printf '%s' "${full#"$rroot"/}" ;; *) return 1 ;; esac
+}
+FAST_ARG=$(printf '%s' "$INPUT" | jq -r '(.tool_input.file_path) as $p
+  | if (.tool_name == "Write" or .tool_name == "Edit") and ($p | type) == "string"
+       and ($p | test("^\\S(.*\\S)?$")) and ($p | explode | any(. == 0 or . == 10 or . == 13) | not)
+    then $p else empty end' 2>/dev/null)
+REL_FAST=""
+[ -n "$FAST_ARG" ] && REL_FAST=$(fast_rel "$FAST_ARG")
+if [ -n "$REL_FAST" ]; then
+  STATUS=known; TOOL_CLASS=edit; PATHS="$REL_FAST"
 else
-  NORMALIZED='{"status":"unknown","paths":[],"diagnostics":["normalizer-unavailable"]}'
+  if command -v python3 >/dev/null 2>&1 && [ -f "$NORMALIZER" ]; then
+    NORMALIZED=$(printf '%s' "$INPUT" | python3 "$NORMALIZER" --root "$ROOT" 2>/dev/null)
+  else
+    NORMALIZED='{"status":"unknown","paths":[],"diagnostics":["normalizer-unavailable"]}'
+  fi
+  STATUS=$(printf '%s' "$NORMALIZED" | jq -r '.status // "unknown"' 2>/dev/null)
+  TOOL_CLASS=$(printf '%s' "$NORMALIZED" | jq -r '.tool_class // "unknown"' 2>/dev/null)
+  PATHS=$(printf '%s' "$NORMALIZED" | jq -r '.paths[]?' 2>/dev/null)
 fi
-STATUS=$(printf '%s' "$NORMALIZED" | jq -r '.status // "unknown"' 2>/dev/null)
-TOOL_CLASS=$(printf '%s' "$NORMALIZED" | jq -r '.tool_class // "unknown"' 2>/dev/null)
-PATHS=$(printf '%s' "$NORMALIZED" | jq -r '.paths[]?' 2>/dev/null)
 
 # (1) only act on a shared/protected branch.
 BR=$(git -C "$ROOT" symbolic-ref --short HEAD 2>/dev/null)
