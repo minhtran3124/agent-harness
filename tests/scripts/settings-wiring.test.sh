@@ -19,6 +19,10 @@ while IFS= read -r cmd; do
   # Registered as a bare command (no `bash` prefix): without the execute bit the runtime gets
   # exit 126, which is not a block, so every gate in the hook is silently skipped.
   [ -x "$cmd" ] || { ok=0; echo "        not executable: $cmd"; }
+  # The tracked mode is what deploy propagates (no chmod anywhere), so check the index too:
+  # a local chmod +x must not mask a committed 100644.
+  mode=$(git ls-files -s -- "$cmd" | awk '{print $1}')
+  [ -z "$mode" ] || [ "$mode" = "100755" ] || { ok=0; echo "        tracked mode $mode (want 100755): $cmd"; }
 done < <(jq -r '.hooks[]?[]?.hooks[]?.command // empty' settings.json)
 [ "$ok" -eq 1 ] && pass || fail "one or more commands unresolved / not a shell script"
 
