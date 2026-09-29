@@ -87,7 +87,7 @@ done
 # Hook profiles come from the SOURCE manifest (hook_profiles; "default" names the fallback).
 # Validate an explicit --profile before the first write (the mkdir below).
 PROFILE_NAMES="$(jq -r '.hook_profiles | keys[] | select(. != "default")' "$ROOT/harness-manifest.json")"
-valid_profile() { [ -n "$1" ] && printf '%s\n' "$PROFILE_NAMES" | grep -qxF "$1"; }
+valid_profile() { [ -n "$1" ] && printf '%s\n' "$PROFILE_NAMES" | grep -qxF -- "$1"; }
 if [ -n "$PROFILE" ] && ! valid_profile "$PROFILE"; then
   printf 'Unknown --profile: %s (expected one of: %s)\n' "$PROFILE" "$(printf '%s' "$PROFILE_NAMES" | tr '\n' ' ')" >&2
   exit 1

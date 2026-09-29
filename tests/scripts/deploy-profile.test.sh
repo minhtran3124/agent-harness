@@ -148,4 +148,16 @@ t "re-sync keeps the foreign Stop hook"
 if [ "$(jq -r '.hooks.Stop[0].hooks[0].command' "$T/.claude/settings.json")" = "my-stop.sh" ]; then pass
 else fail "Stop: $(jq -c '.hooks.Stop' "$T/.claude/settings.json")"; fi
 
+t "--profile -eminimal (option-shaped value) is rejected, not parsed as a grep flag"
+T2=$(mktemp -d); _CLEANUP_DIRS+=("$T2")
+if bash "$DEPLOY" --target "$T2" --yes --profile -eminimal >/dev/null 2>&1; then fail "deploy accepted -eminimal"
+elif [ -e "$T2/.claude" ]; then fail "deploy wrote .claude before rejecting"
+else pass; fi
+
+t "install's accepted profile names equal the manifest hook_profiles keys"
+want=$(jq -r '.hook_profiles | keys[] | select(. != "default")' "$ROOT/harness-manifest.json" | sort | tr '\n' ' ')
+got=$(grep -oE '^  ""\|[a-z|]+\) ;;' "$INSTALL" | sed -E 's/^  ""\|//; s/\) ;;$//' | tr '|' '\n' | sort | tr '\n' ' ')
+if [ -n "$got" ] && [ "$got" = "$want" ]; then pass
+else fail "install accepts [$got], manifest has [$want]"; fi
+
 finish

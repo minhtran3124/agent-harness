@@ -230,7 +230,7 @@ if CODEX_CAPTURE_DATE=2026-08-10 "$NOHOOK/scripts/capture_codex_capabilities.sh"
     'import json,sys; assert json.load(open(sys.argv[1]))["result"]["samples"] >= 20' \
     "$NOHOOK/out/session-end-timing.json"
   assert "SessionEnd timing names no removed harness hook" sh -c \
-    "! grep -q 'state-breadcrumb' '$NOHOOK/out/session-end-timing.json'"
+    "test -f '$NOHOOK/out/session-end-timing.json' && ! grep -q 'state-breadcrumb' '$NOHOOK/out/session-end-timing.json'"
 else
   not_ok "fixture SessionEnd hook yields at least 20 samples without hooks/"
 fi
