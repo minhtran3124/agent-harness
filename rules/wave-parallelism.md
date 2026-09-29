@@ -53,10 +53,12 @@ After a wave completes:
    checklist — the cursor a session resuming this plan reads first
    (`skills/subagent-driven-development/SKILL.md` → New-session / resume mode, Step -1). An entry
    like "all 9 tasks executed" yields zero ids and leaves a resuming session with no cursor.
-3. Append Rule 1–3 deviations to `specs/<slug>/SUMMARY.md` `### Deviations`
-4. If any blocker → pause wave chain, update STATE.md with cursor, surface to user. The Status Log
+3. Run `python3 .claude/skills/visual-planner/render_plan.py specs/<slug>/PLAN.md --summarize` so
+   the `### Progress` checklist reflects the step-2 entry
+4. Append Rule 1–3 deviations to `specs/<slug>/SUMMARY.md` `### Deviations`
+5. If any blocker → pause wave chain, update STATE.md with cursor, surface to user. The Status Log
    entry from step 2 is what makes that pause resumable from another session
-5. Only then spawn next wave
+6. Only then spawn next wave
 
 ## When to skip this overhead
 

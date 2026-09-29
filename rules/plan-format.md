@@ -64,7 +64,7 @@ Conventions:
 
 - `id`: `<phase>.<task>` — e.g. `2.1`, `2.2`. Sub-tasks: `N.M.x` (e.g. `2.1.1`).
 - `wave`: the `(wave K)` suffix on the task heading. Same-wave tasks MAY run in parallel; waves execute sequentially. Omit for single-wave plans.
-- Files: comma-separated paths. Used by the wave-parallelism rule to check overlap and by `hooks/blast-radius-check.sh` as the in-scope set.
+- Files: comma-separated paths. Used by the wave-parallelism rule to check overlap and by `hooks/commit-gate.sh` as the in-scope set at commit time (warn; `BLAST_RADIUS_STRICT=1` blocks).
 
 ## Success Criteria schema (the acceptance contract)
 
@@ -179,16 +179,16 @@ The examples above show the full task shape; `specs/` is tracked in git, so plan
 
 ## Legacy XML plans (read-only support)
 
-Plans written before 2026-07-16 use fenced `<task id="N.M" wave="K"><files><action><verify><done>` XML blocks. The renderer, the `subagent-driven-development` Step-0 gate, and `hooks/blast-radius-check.sh` still parse that syntax, so existing plans keep rendering and executing unchanged — but it is **not** an authoring format: never write new plans in XML. One exception: when adding a task to an existing XML plan, keep that plan's XML syntax — in a mixed file the parser reads only the XML tasks, so a markdown task added to an XML plan would be invisible.
+Plans written before 2026-07-16 use fenced `<task id="N.M" wave="K"><files><action><verify><done>` XML blocks. The renderer, the `subagent-driven-development` Step-0 gate, and `hooks/commit-gate.sh` still parse that syntax, so existing plans keep rendering and executing unchanged — but it is **not** an authoring format: never write new plans in XML. One exception: when adding a task to an existing XML plan, keep that plan's XML syntax — in a mixed file the parser reads only the XML tasks, so a markdown task added to an XML plan would be invisible.
 
 ## Auto-generated "At a glance" block
 
-`render_plan.py --summarize` (invoked by the `render-plan-on-write.sh` hook on every `PLAN.md` save)
+`render_plan.py --summarize` (invoked by `writing-plans` after saving the plan and at each wave boundary)
 injects an additive, script-owned "At a glance" block — a count line, a wave×task table, a
 `flowchart LR` Mermaid diagram, and a `### Progress` checklist — immediately before the first `## `
 heading, between `<!-- AT-A-GLANCE:BEGIN -->` / `<!-- AT-A-GLANCE:END -->` sentinels.
 
 It is derived entirely from the task sections (markdown, or legacy XML) and the `## Status Log`
-(which stays the source of truth); the block regenerates idempotently on every save and must NOT be
+(which stays the source of truth); the block regenerates idempotently on every run and must NOT be
 hand-edited. Authors and agents still read and write only the task schema above — the At-a-glance
 block is a rendering convenience, not a planning input.
