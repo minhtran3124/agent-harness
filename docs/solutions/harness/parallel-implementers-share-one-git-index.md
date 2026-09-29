@@ -21,7 +21,7 @@ git index and `HEAD` are shared state, not per-file state.
 In wave 6 of `simplify-hook-surface`, four implementers shared one worktree:
 
 - **Swept commit.** Task 6.1 ran a plain `git commit`. It committed Task 6.3's already-staged
-  files (13 `docs/solutions/**` files and four scripts) into `5484c69`, a commit whose message
+  files (14 `docs/solutions/**` files — 13 stamped docs plus the rebuilt `INDEX.md` — and four scripts) into `5484c69`, a commit whose message
   describes only 6.1.
 - **Orphaned commit.** To undo that, 6.1 ran `git reset --soft HEAD~1`. By then Task 6.2 had
   committed `1df1891` on top, so the reset moved `HEAD` off 6.2's commit instead of 6.1's. The
