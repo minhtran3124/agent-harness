@@ -43,7 +43,7 @@ snc 'echo "step 1; git commit later" && ls'
 sc 'git commit -m "msg; more"'
 sc 'git commit -m "wip" && echo done'
 
-# ── commit-or-push (check-untracked-py) ─────────────────────────────
+# ── commit-or-push (check_untracked_py) ─────────────────────────────
 scp 'git push'
 scp 'cd x && git push origin main'
 scp 'git commit -m x'
