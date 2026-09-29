@@ -1,11 +1,10 @@
 # Task Reviewer Prompt Template
 
-Use this local prompt for every per-task review. It replaces the former sequential spec and
-quality prompts; it is not dependent on an external plugin.
+Use this local prompt for every per-task review.
 
 `model_stage` is not a Task-tool parameter. Use the `model:` already declared in this stage's
 rendered `agents/` definition as the Task tool's `model:` value — the harness repo resolves that
-value at render time (`scripts/render_runtime_entry.py --model-stage task_reviewer`), so a consuming
+value at render time (`scripts/render_runtime_entry.py --runtime claude --model-stage task_reviewer`), so a consuming
 repo reads it off the agent file rather than re-deriving it.
 
 ```
@@ -39,5 +38,5 @@ Task tool (task-reviewer):
     search_surface: paths/commands actually inspected
 
     `Critical` and `Important` block. `Minor` does not block but must be recorded by the
-    controller and forwarded to final review. Limit findings to six, strongest first.
+    controller and forwarded to final review. Report every finding with its severity, strongest first.
 ```

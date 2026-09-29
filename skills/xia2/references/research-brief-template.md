@@ -100,7 +100,7 @@ surface, say so here in one line rather than deleting the section.)_
 - **Technical risks:**
 - **Evidence gaps:**
 - **Version uncertainties:**
-- **Follow-up questions for the user:** _(max 2 targeted questions — not open-ended)_
+- **Follow-up questions for the user:** _(only questions whose answer would change the recommendation)_
 
 ---
 

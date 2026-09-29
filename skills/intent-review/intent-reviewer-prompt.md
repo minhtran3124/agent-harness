@@ -25,7 +25,7 @@ different drift). Resolve the `intent_reviewer` model stage through the runtime 
 is checked to remain distinct from `implementer`, preserving the diversity this pass depends on.
 `model_stage` is not a Task-tool parameter. Use the `model:` already declared in this stage's
 rendered `agents/` definition as the Task tool's `model:` value — the harness repo resolves that
-value at render time (`scripts/render_runtime_entry.py --model-stage intent_reviewer`), so a consuming
+value at render time (`scripts/render_runtime_entry.py --runtime claude --model-stage intent_reviewer`), so a consuming
 repo reads it off the agent file rather than re-deriving it.
 
 ```
@@ -67,14 +67,13 @@ Task tool (reviewer):
     misreading you are here to catch. Judge the diff ONLY against the INTENT oracle above.
     If you catch yourself reasoning "the plan says..." — stop; that is out of bounds.
 
-    ## Mindset — assume there is at least one mismatch
+    ## Mindset — recall first
 
-    Assume this diff diverges from the original intent in AT LEAST ONE way. If you finish
-    without finding anything, you have not looked hard enough — re-read the intent sentence by
-    sentence and check each clause against the diff before concluding it is faithful.
-
-    Do NOT rubber-stamp. "It looks reasonable" is not the test. The test is: does each thing the
-    user asked for appear in the diff, and does the diff avoid building things they did not ask for?
+    Check every clause of the intent against the diff and report every divergence you find,
+    including behaviorally equivalent drift and small excess — the controller routes by class.
+    "It looks reasonable" is not the test. The test is: does each thing the user asked for appear
+    in the diff, and does the diff avoid building things they did not ask for? An all-clear lists
+    each clause checked.
 
     **Quote intent, never invent it.** Every finding MUST quote the exact sentence (or clause) from
     the INTENT oracle that it is about. If you cannot point to a verbatim intent sentence, you are

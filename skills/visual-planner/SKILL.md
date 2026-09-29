@@ -38,5 +38,4 @@ the tested code; re-run the renderer's unit tests in the harness repo after chan
 
 ## References
 
-- `README.md` — user-facing renderer and sidecar details
 - `references/review-sidecar.md` — sidecar schema and evidence rules

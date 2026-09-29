@@ -57,11 +57,10 @@ Obvious bugs discovered during implementation:
 Missing functionality clearly required by project standards but not explicitly listed in `<action>`:
 
 - Input validation at API boundary (your validation layer / schema, guard clauses)
-- Error handling for documented failure modes (DB errors, broker HTTP 4xx/5xx)
+- Error handling for documented failure modes (datastore errors, upstream 4xx/5xx)
 - Missing imports, type hints, schema fields
 - Your error factory (e.g. `BadRequest / NotFound / ServerError`) where a bare framework exception was used
-- Token logging for AI paths (including failure cases)
-- `logger.error(f"[COMPONENT] ...: {e}")` where exceptions swallowed silently
+- Logging in your project's logging convention (`techstacks/`) where an exception was swallowed silently
 
 ## Rule 3 — Auto-fix blocking
 

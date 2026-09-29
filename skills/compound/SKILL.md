@@ -12,9 +12,11 @@ session ended.
 
 ## Extract and select
 
-Dispatch the context analyzer, solution extractor, and decision extractor in parallel. Then give
-the context analyzer’s module/tags to the related-docs finder (or disclose a best-effort parallel
-guess). Use the prompt files in `subagents/`; they return text only.
+You hold the session, so run the context-analyzer, solution-extractor, and decision-extractor
+passes yourself, using the prompt files in `subagents/` as their output schemas. Then run the
+related-docs pass with the context analyzer's module/tags. Dispatch a subagent only for a
+`docs/solutions/` tree too large to screen from `INDEX.md`, and paste in its inputs — a fresh
+context cannot see this session.
 
 Emit only complete tracks:
 
@@ -38,7 +40,7 @@ For a critical context, append an entry per emitted track to `critical-patterns.
 templates. For a failure with `proposed:` guardrail, append one open row to
 `docs/harness-experimental/improvement-backlog.md`; do not duplicate an `existing:` guardrail.
 
-Run the authority after every write:
+Run the authority at the end of every run, even when nothing was written:
 
 ```bash
 python3 scripts/rebuild_solution_index.py

@@ -16,7 +16,7 @@ python3 scripts/render_skill_prompt.py \
   --fragment skills/correctness-review/prompts/angles/<angle>.md
 ```
 
-Each angle returns at most six candidates. Pool and deduplicate by `(file, line)`; angle agreement
+Each angle returns every candidate it can name a trigger for. Pool and deduplicate by `(file, line)`; angle agreement
 is provenance, not evidence, and is never shown to the independent scorer. Score each remaining
 location with `correctness-scorer-prompt.md`, then route it under `review-config.json` and the
 auto-correct-scope policy. The controller owns fix-loop, escalation, and residual recording; every

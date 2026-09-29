@@ -1,10 +1,8 @@
 # xia2 — Research-First Feature Discovery (Portable)
 
-A portable version of `xia`. All logic — including the risk-classification signals — is built into `SKILL.md` as common cross-project vocabulary. The same skill works across projects with no per-project config file.
+A portable research skill. Depth policy lives in `rules/research-depth.md` and the portable risk signals in `references/depth-classifier.md`; the same skill works across projects with no per-project config file.
 
 `xia2` enforces *research before code* via a HARD-GATE and classifies each feature into **Quick / Standard / Deep** depth modes based on concrete signals (not gut feel).
-
-> **Difference from `xia`:** `xia` is project-specific (Edgeful API only). `xia2` is portable and zero-config — copy the folder and it classifies from its built-in Common signals.
 
 ---
 
@@ -16,7 +14,7 @@ A portable version of `xia`. All logic — including the risk-classification sig
 | Modifying behaviour with possible local precedent | **Yes** |
 | Bumping a dependency, changing schema, touching shared infrastructure | **Yes** |
 | One-line typo fix, doc-only edit, comment cleanup | No — overkill |
-| Bug fix where root cause is already known | No — use `systematic-debugging` |
+| Bug fix where root cause is already known | No — use `systematic-debugging` (external, optional) |
 
 When in doubt, invoke. The HARD-GATE prevents code being written, so the cost of a false positive is low (one research brief).
 
@@ -25,11 +23,10 @@ When in doubt, invoke. The HARD-GATE prevents code being written, so the cost of
 ## How to invoke
 
 ```
-xia2 <feature description>                 # default: Standard depth
-xia2 <feature> --depth=quick|standard|deep # explicit override
+xia2 <feature description>   # a caller may name quick, standard, or deep
 ```
 
-Skill auto-classifies depth from the built-in **Common signals** in `SKILL.md` (no config file). Override with `--depth=` if you have stronger context than the prompt conveys.
+Depth comes from the intake lane when one exists, else from the portable classifier in `references/depth-classifier.md`. A requested depth that conflicts with a Deep signal is surfaced, not silently applied.
 
 To bypass the research step entirely (rare): start the prompt with *"skip research"* or *"just implement it"*. The skill notes the waiver but still surfaces any Deep-signal risks per the HARD-GATE rule.
 
@@ -41,16 +38,17 @@ To bypass the research step entirely (rare): start the prompt with *"skip resear
 
 | Path | Purpose | Loaded at runtime? |
 |---|---|---|
-| `SKILL.md` | Universal skill definition: HARD-GATE, Decision Procedure, Depth Modes, workflow steps | **Yes** — entry point |
-| `references/research-brief-template.md` | Output template the skill renders in Step 7 | **Yes** — Step 7 |
-| `tests/structural/depth-modes-test-cases.md` | Decision Procedure regression tests (against the common signals) | No — validation only |
+| `SKILL.md` | Universal skill definition: HARD-GATE, depth decision, workflow steps | **Yes** — entry point |
+| `references/depth-classifier.md` | Portable risk signals and Quick/Standard/Deep decision details | **Yes** — depth decision |
+| `references/research-brief-template.md` | Output template the skill renders in workflow step 6 | **Yes** — step 6 |
+| `tests/structural/depth-modes-test-cases.md` | Depth-classifier regression tests (against the portable signals) | No — validation only |
 | `tests/behavioural/pressure-scenarios.md` | RED/GREEN scenarios verifying HARD-GATE adherence | No — validation only |
 | `README.md` | This file | No |
 
 **Runtime vs validation:** anything under `references/` may be loaded by the skill mid-execution. Anything under `tests/` exists only for humans (or future agents) maintaining the skill.
 
 **Two test artifacts, two purposes:**
-- `tests/structural/` — **classification correctness.** 30 prompts walked through the Decision Procedure to verify the rule outputs the right depth.
+- `tests/structural/` — **classification correctness.** 30 prompts walked through the depth classifier to verify the rule outputs the right depth.
 - `tests/behavioural/` — **HARD-GATE adherence.** 7 RED/GREEN scenarios verifying the agent holds the gate under pressure (doesn't skip research, doesn't guess stack from folder names).
 
 Use both when validating major skill changes.
@@ -63,11 +61,11 @@ To use `xia2` in a different project:
 
 1. **Copy the entire `skills/xia2/` source folder** into the target runtime's skill directory as `xia2/`. No auto-scan skill needed — xia2 is zero-config.
 2. **Scaffold structure** — from the harness checkout run `bash scripts/init-structure.sh --root <new repo>` to create `specs/` and `docs/solutions/`.
-3. **Keep `tests/structural/depth-modes-test-cases.md`** — it is a portable regression set against the common signals; extend it with project-specific prompts if useful.
+3. **Keep `tests/structural/depth-modes-test-cases.md`** — it is a portable regression set against the portable signals; extend it with project-specific prompts if useful.
 4. **Keep `tests/behavioural/pressure-scenarios.md`** — most scenarios are universal (project-specific examples are easy to swap).
 
 What's universal (don't customize):
-- `SKILL.md` — Decision Procedure, Tiebreakers, Workflow steps, Guardrails
+- `SKILL.md` — depth decision and workflow steps; `references/depth-classifier.md` — signals
 - `references/research-brief-template.md` — output format
 - `tests/behavioural/pressure-scenarios.md` — most scenarios
 
@@ -84,18 +82,15 @@ What's project-specific (optional to extend):
 If you edit any of these surfaces, you **must** re-run the structural test suite:
 
 - HARD-GATE wording or rules
-- Decision Procedure (the Quick/Standard/Deep classifier)
-- Depth Modes table (signals, conditions, examples)
-- Tiebreakers
-- Re-evaluation gate (the upgrade rules triggered after reading knowledge base docs)
-- Step 1 waiver clause
+- `## Decide depth`, or `references/depth-classifier.md` (signals, conditions, decision details)
+- Workflow step 1 (waiver) or step 5 (re-classify with evidence)
 
-Edits that **do not** require a re-run: `Tool Routing` table, `Guardrails` list (unless they change classification), wording polish in non-classifier sections, Sub-step 2b knowledge base lookup mechanism (INDEX-first vs grep — changes *how* files are found, not *when depth upgrades trigger*).
+Edits that **do not** require a re-run: wording polish in non-classifier sections, and the workflow step 2 knowledge-base lookup mechanism (changes *how* files are found, not *when depth upgrades trigger*).
 
 ### Re-run procedure
 
 1. Open `tests/structural/depth-modes-test-cases.md`.
-2. For each test case, mentally walk the prompt through the **updated** `SKILL.md` Decision Procedure against the Common signals.
+2. For each test case, mentally walk the prompt through the **updated** depth classifier (`SKILL.md` + `references/depth-classifier.md`).
 3. Record the result in a new column (e.g., `Run 4 result`).
 4. Compare to the most recent passing run.
 5. Fill the Δ column:
@@ -112,8 +107,8 @@ These are the canary tests — if any one flips when it shouldn't, you've broken
 | Check | Triggered when |
 |---|---|
 | TC-01 to TC-04 must remain Quick | Any time you tighten Quick conditions |
-| TC-19, TC-21 must remain Deep | Any time you loosen Deep signals or narrow the high-blast definition in the Common signals |
-| TC-20 must remain Standard *(initial)* | Any time you change Tiebreaker #1 or the Re-evaluation gate |
+| TC-19, TC-21 must remain Deep | Any time you loosen Deep signals or narrow the high-blast definition in `references/depth-classifier.md` |
+| TC-20 must remain Standard *(initial)* | Any time you change the "uncertain → Standard" default or the re-classify-with-evidence step |
 | TC-29 must surface a risk warning | Any time you edit the HARD-GATE waiver clause |
 
 ### When you add new test cases
@@ -121,7 +116,7 @@ These are the canary tests — if any one flips when it shouldn't, you've broken
 1. Decide: **structural** (signal coverage / boundary case) or **behavioural** (HARD-GATE pressure)?
 2. Pick `TC-NN` above the current max (structural) or `S-NN` (behavioural).
 3. Define: *Prompt*, *Expected*, *Triggering signal/rule*. For pressure cases also add *Pressure type*.
-4. Walk the prompt through the Decision Procedure to fill *Result*.
+4. Walk the prompt through the depth classifier to fill *Result*.
 5. Update the `Summary` table totals.
 6. If a new gap surfaces, document as a new `F`-numbered Finding with priority and proposed fix.
 
@@ -151,7 +146,7 @@ See `tests/structural/depth-modes-test-cases.md#findings` for full descriptions.
 
 Without the test suite, every change to `SKILL.md` is blind — there's no way to know if a tweak fixes a real bug, breaks correct cases, or both. The test files convert `SKILL.md` from prose into a **verifiable contract**:
 
-- *Decision Procedure* defines the rule, keyed off the built-in Common signals.
+- *The depth classifier* (`references/depth-classifier.md`) defines the rule.
 - *Test cases* exercise the rule across realistic prompts and pressure patterns.
 - *Run-by-Run columns* prove the combined behaviour didn't drift across edits.
 - *Findings* convert "this feels off" into "TC-NN flipped because rule X is too literal".
@@ -162,5 +157,4 @@ Treat the test suites as the canonical regression check. If a future maintainer 
 
 ## See also
 
-- `xia` — the original Edgeful-specific version. Kept for backwards compatibility; `xia2` is the recommended portable replacement.
 - `init-structure.sh` (harness repo, not deployed) — scaffolds the structural dirs (`specs/`, `docs/solutions/`) into a bare repo via `--root`.

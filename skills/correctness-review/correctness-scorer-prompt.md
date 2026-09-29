@@ -29,7 +29,7 @@ Resolve the `correctness_scorer` model stage through the runtime entry binding; 
 remain distinct from `correctness_finder`, preserving ensemble diversity without embedding a
 vendor model label in this semantic prompt. `model_stage` is not a Task-tool parameter. Use the `model:` already declared in this stage's
 rendered `agents/` definition as the Task tool's `model:` value — the harness repo resolves that
-value at render time (`scripts/render_runtime_entry.py --model-stage correctness_scorer`), so a consuming
+value at render time (`scripts/render_runtime_entry.py --runtime claude --model-stage correctness_scorer`), so a consuming
 repo reads it off the agent file rather than re-deriving it.
 
 ```
@@ -69,10 +69,12 @@ Task tool (reviewer):
 
     ## Score 0 automatically when ANY of these apply
 
-    - A linter or typechecker (`ruff`, `mypy`) would catch this before merge.
-    - An existing CI check or project hook already catches it:
-      `ruff-on-edit` (fires on every Edit/Write), `commit-quality-gate` (runs ruff +
-      pytest on commit), or `risk-corroboration` (checks lane vs staged diff).
+    - A linter would catch this before merge (`ruff-on-edit` runs `ruff check --fix` +
+      `ruff format` on every existing edited `.py` path). No typechecker is wired in this
+      repo — do not score 0 for a type-level defect on that basis.
+    - An existing CI check or hook already catches it, e.g. `risk-corroboration` (lane vs
+      staged diff). `commit-quality-gate` runs targeted pytest only under
+      `REQUIRE_APP_GATES=1`; do not assume it caught a test-detectable bug.
     - **The flagged line was NOT modified by the diff.** This includes any finding marked
       `unmodified-line` — code inside a function the diff changed, but on a line it did not
       change. Score it 0 even when the bug is unmistakably real.
@@ -160,13 +162,14 @@ exists because it could not be read.
 1. The controller collects the candidate findings from all six FIND angles and **deduplicates
    them by `(file, line)`** — one candidate per location, with the reporting angles recorded as
    provenance.
-2. For each deduplicated location, dispatch one scorer agent (cheap model, independent context).
+2. For each deduplicated location, dispatch one scorer agent (the `correctness_scorer` model stage, independent context).
    Pass the claim, the location, and the files to read. **Do not pass the provenance** — the
    scorer must not know how many angles agreed.
-3. Scorer agents MAY run in parallel — dispatch in ONE assistant message.
+3. Dispatch scorers in parallel in one assistant message, at most 20 at a time; send any
+   remainder as a following batch.
 4. Collect scores; split findings into `≥ threshold` (proceed) and `< threshold` (advisory).
 5. Proceed with only the surviving findings into the severity × Rule-class classification and
-   fix-loop (`./correctness-reviewer-prompt.md` → Fix loop).
+   fix-loop (`SKILL.md` → Pipeline, steps 5–6).
 6. Record every below-threshold finding in `specs/<slug>/SUMMARY.md` under
    `### Advisory Findings`. This includes all `unmodified-line` findings, which score 0 by rule
    and are therefore always advisory. Nothing is silently dropped.

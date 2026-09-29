@@ -1,8 +1,14 @@
 # Orchestration Rule
 
-Main thread = thin coordinator. Heavy work delegated to fresh-context agents.
+The main thread coordinates. Each subagent costs a fresh context: it re-establishes context and
+re-explores, and you then re-read its report. Delegate where isolation or parallelism is the point:
+one implementer per `PLAN.md` task (`wave-parallelism.md`), each review pass in its own isolated
+reviewer (independence is the design, not extra verification), and wide multi-file investigations.
+Do everything else in the main loop — a few reads, a handful of edits, a targeted search, checking
+your own output. Prefer one subagent over several for a modest job, brief it fully the first time,
+and don't redo its work once it reports.
 
-Applies when: task spans >3 steps, codebase research needed, or a `specs/<slug>/PLAN.md` is active.
+Applies when: a task spans >3 steps or a `specs/<slug>/PLAN.md` is active.
 
 Related: `plan-format.md`, `wave-parallelism.md`, `auto-correct-scope.md`, `guidelines.md`.
 
@@ -16,7 +22,7 @@ At intake — before dispatching any task — the orchestrator runs `feature-int
 The classification algorithm that assigns these values lives in `skills/feature-intake/SKILL.md`
 Step 3–4 — that is the canonical source; this section only names the fields and their consumers.
 
-These two fields are load-bearing: `hooks/risk-corroboration.sh` reads `Lane:` to corroborate it against the staged diff, and the trust-metrics ledger reads both. The orchestrator MUST write a `Lane:` line: a declared lane below `high-risk` is **blocked** when the diff trips a **block-mode** hard-gate signal (per-gate mode lives in `harness-manifest.json`; warn-mode gates — `workflow-engine`, `weakening-validation` — print a note and allow), and a *missing* lane only **warns** (fail-open) unless `RISK_CORROBORATION_STRICT=1` is set.
+These two fields are load-bearing: `hooks/risk-corroboration.sh` reads `Lane:` to corroborate it against the staged diff, and the trust-metrics ledger reads both. The orchestrator MUST write a `Lane:` line: a declared lane below `high-risk` is **blocked** when the diff trips a **block-mode** hard-gate signal (per-gate mode is the manifest's `hard_gates.detectable[].mode`, which the hook reads from the git index only — never from a `.claude/` copy; warn-mode gates — `workflow-engine`, `weakening-validation` — print a note and allow), and a *missing* lane only **warns** (fail-open) unless `RISK_CORROBORATION_STRICT=1` is set.
 
 ## Subagent contract
 
@@ -30,13 +36,13 @@ Every subagent returning to main thread MUST include in its summary:
 - **Verify status** — pass/fail of task's `<verify>` command (with command output excerpt on fail)
 - **Harness-Delta** — friction this task revealed about the workflow itself: `fix-direct`, `backlog` (→ `compound`), or `none`
 
-Target length: 150–300 words. No raw file dumps. Main thread must be able to act on the summary alone without re-reading the subagent's work product.
+Include only what the main thread needs to act without re-reading the subagent's work product; no raw file dumps.
 
 ## Evidence in SUMMARY.md (evidence over assertion)
 
 A claim of "done" is only valid with a re-runnable artifact. The subagent records, in `specs/<slug>/SUMMARY.md` (shape: `templates/SUMMARY.template.md`):
 
-- **`### Verify`** — a table row per check actually RUN: `Check | Command | Exit | Notes`. Never list a command that was not run. `commit-quality-gate.sh` can require this block for `app/` changes when `REQUIRE_VERIFY=1`.
+- **`### Verify`** — a table row per check actually RUN: `Check | Command | Exit | Notes`. Never list a command that was not run. `commit-quality-gate.sh` can require this block for `app/` changes when both `REQUIRE_APP_GATES=1` and `REQUIRE_VERIFY=1` are set.
 - **`### Rollback`** — the exact undo command(s); required for any high-risk / Rule-4 action (`rules/auto-correct-scope.md`). For reversible work, `git revert <sha>` suffices.
 
 Behavior-to-proof status lives in the SUMMARY `### Verify` table: one row per check actually run, re-runnable command + exit code.

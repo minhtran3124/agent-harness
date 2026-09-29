@@ -35,14 +35,14 @@ brainstorming
       ↓
 xia2
   → reads: CLAUDE.md, rules/, techstacks/, docs/, docs/solutions/, specs/
-  → classifies depth from built-in Common signals (zero-config — no PROJECT.md)
+  → depth from the intake lane, else rules/research-depth.md + references/depth-classifier.md
   → depth re-evaluated after reading docs
   → output: specs/<slug>/research-brief.md (no code)
       ↓
 writing-plans
   → input: design.md + research-brief.md
   → output: specs/<slug>/PLAN.md
-  → PLAN.html auto-rendered by hooks/render-plan-on-write.sh on every save; writing-plans opens it
+  → PLAN.html auto-rendered by hooks/render-plan-on-write.sh on every save (not auto-opened)
       ↓
 using-git-worktrees
   → creates isolated worktree + branch
@@ -63,7 +63,7 @@ finishing-a-development-branch
 ### Minimum Viable Path (intent clear, in-place edit, <1 day)
 
 ```
-feature-intake → xia2 → writing-plans → implement → compound (if pattern found)
+feature-intake → (tiny: branch + direct edit | normal: subagent-driven-development, with using-git-worktrees only when the change is not in-place; PLAN.md only when >3 steps or >2 files) → compound (if pattern found)
 
 feature-intake confirms the lane; a tiny lane branches (`git checkout -b`) then edits directly.
 Skip brainstorming when intent is clear.
@@ -104,7 +104,7 @@ from the harness checkout run `bash scripts/init-structure.sh --root <project>`,
 | Skill | Trigger | Output |
 |---|---|---|
 | `brainstorming` | Before any new feature, component, or behavior change | `specs/<slug>/design.md` |
-| `xia2` | Before implementing anything — research what already exists (portable; zero-config, classifies from built-in Common signals) | `specs/<slug>/research-brief.md` |
+| `xia2` | Before implementing anything — research what already exists (portable; zero-config, depth policy in `rules/research-depth.md`) | `specs/<slug>/research-brief.md` |
 
 ### Planning
 
@@ -201,6 +201,10 @@ Schema reference: `docs/solutions/README.md` (scaffolded by the harness repo's `
    is missing (tiny → filled header; normal → + a real `### Verify` row; high-risk → + a
    non-empty `### Rollback`). The **staged** copy is checked, so a commit that adds the evidence
    self-unblocks. Fail-open when `python3` is unavailable
+1.7. Run-state gate — an untracked `RUN.json`/`events.jsonl` beside a staged `specs/<slug>/`
+   file blocks (`REQUIRE_RUN_STATE_STAGED=0` downgrades it to a warning)
+
+   Checks 2–3 below are app gates, skipped unless `REQUIRE_APP_GATES=1`.
 2. Debug artifact check (`breakpoint()`, bare `print()`)
 2.5. Evidence gate (opt-in via `REQUIRE_VERIFY=1`) — for `app/` changes, requires a
    `### Verify` **heading** in the SUMMARY, then re-runs each *real* row and blocks when a
@@ -209,7 +213,7 @@ Schema reference: `docs/solutions/README.md` (scaffolded by the harness repo's `
    re-run degrades to presence-only if `python3` is unavailable
 3. Targeted pytest for changed `app/` files
 
-When ≥5 `app/` files are staged, the hook hints: `★ Consider running compound`.
+Under `REQUIRE_APP_GATES=1`, once at least one staged file maps to a test and the targeted pytest run passes, a commit with ≥5 staged `app/**/*.py` files prints `★ Large session detected (N app/ files).` and suggests the compound skill.
 
 > **Two different evidence gates — do not conflate them.** Check **1.6** is the row-presence
 > gate: `scripts/verify_summary.py --lane`, always on, asserts the SUMMARY carries what its `Lane:`
@@ -237,11 +241,11 @@ The diagrams below render natively in the GitHub README — no clone needed.
 
 ### `compound`
 
-> **One-liner:** an orchestrator fans out read-only subagents to mine the session transcript, then writes every knowledge doc itself.
+> **One-liner:** the orchestrator runs four read-only passes over the session it holds, then writes every knowledge doc itself.
 
 ```mermaid
 graph LR
-    subgraph W1["① Parallel — read transcript, return text only"]
+    subgraph W1["① In-session passes — return text only"]
         CA["Context Analyzer"]
         SE["Solution Extractor"]
         DE["Decision Extractor"]
@@ -252,8 +256,8 @@ graph LR
     RDF --> ORCH["③ Orchestrator<br/>writes ALL files + rebuilds INDEX"]
 ```
 
-- **Orchestrator + 4 subagents.** `SKILL.md` orchestrates; subagents read the session transcript and return **text only** — the orchestrator writes all files.
-- **Dispatch order (Option A, recommended):** the 3 extractors run in parallel; wait for Context Analyzer → extract `module`+`tags`; then Related Docs Finder with those exact values. Option B (all 4 in parallel with best-guess tags) is faster but slightly less accurate.
+- **Orchestrator + 4 in-session passes.** `SKILL.md` runs each pass in the main session (a fresh subagent cannot see the transcript); `subagents/*.md` define the output schemas, and passes return **text only** — the orchestrator writes all files.
+- **Order:** the 3 extractors first; then Related Docs Finder with the Context Analyzer's exact `module`+`tags`. Dispatch a subagent only for a solutions tree too large to screen from `INDEX.md`, pasting in its inputs.
 - **`applicable_when` is the primary discovery field.** Knowledge: "Use this pattern when…". Decision: "Make this decision when…". Bug: inherited from `CONTEXT_ANALYSIS`. Appears as an INDEX.md column so future agents scan one sentence per doc.
 - **Four track types: `bug`, `knowledge`, `decision`, `failure`.** The `failure` track records a tried-and-abandoned approach to prevent recurrence: sections are Symptom → Wrong Approach → Why It Failed → Correct Approach → Guardrail (the check/hook/rule that now prevents a repeat). Emitted only when all four required sections (Symptom, Wrong_Approach, Why_It_Failed, Correct_Approach) are non-empty. `Harness-Delta: backlog` friction signals from subagent summaries are also mined into failure records.
 - **Every `bug` doc requires `## Regression Test`.** Names the pinned test that catches a recurrence, or `[none] — <reason>` if none exists. This field is not optional.
@@ -295,7 +299,7 @@ graph LR
 
 - **Deterministic script, not LLM transcription.** The skill only runs the script and relays its report — never emits HTML token-by-token. Transcribing a ~340-line template every run is expensive and the least reproducible part of the pipeline; a script makes the fill free and stable.
 - **Local-only output.** `PLAN.html` is untracked — it lives beside `PLAN.md` in `specs/` (which is tracked), but `PLAN.html` itself is gitignored as a derived artifact.
-- **Auto-rendered by a hook, not a sub-agent.** `hooks/render-plan-on-write.sh` (PostToolUse on `specs/*/PLAN.md`) runs `render_plan.py --summarize` on **every** save, so `PLAN.html` and the in-file "At a glance" block stay current without any skill dispatch. `writing-plans` only *opens* the rendered file at the execution handoff. Run `visual-planner <slug>` standalone when you want `--review` mode.
+- **Auto-rendered by a hook, not a sub-agent.** `hooks/render-plan-on-write.sh` (PostToolUse on `specs/*/PLAN.md`) runs `render_plan.py --summarize` on **every** save, so `PLAN.html` and the in-file "At a glance" block stay current without any skill dispatch. Nothing auto-opens it; `view_plan.py` opens it on request. Run `visual-planner <slug>` standalone when you want `--review` mode.
 - **Why serve instead of `file://`?** Localhost is a browser *secure context*, so per-task "copy `<verify>`" buttons use `navigator.clipboard`; `--file` (`file://`) is faster but falls back to `execCommand`. Auto-view is environment-dependent (no display on headless/remote), so it stays an explicit step.
 - **Self-check before claiming success.** The script asserts non-empty output, no surviving `{{PLACEHOLDER}}`, the `slug` present, and one `<section data-wave>` per distinct wave. On non-zero exit, surface the `SELF-CHECK FAILED:` lines verbatim — do not claim success.
 
@@ -310,25 +314,25 @@ graph LR
 
 ### `xia2`
 
-> **One-liner:** one portable, zero-config skill — the risk signals are built into `SKILL.md` as common cross-project vocabulary, so there is nothing to configure per repo.
+> **One-liner:** one portable, zero-config skill — depth policy lives in `rules/research-depth.md` and the portable risk signals in `references/depth-classifier.md`, so there is nothing to configure per repo.
 
 ```mermaid
 graph LR
-    SKILL["SKILL.md<br/>universal classifier logic<br/>+ built-in Common signals"]
+    SKILL["SKILL.md<br/>+ references/depth-classifier.md<br/>portable signals"]
     SKILL -.->|"copy the folder — no config"| NEW["Reusable in any project"]
 ```
 
-> **Historical note (2026-07-17):** xia2 previously carried a per-project `PROJECT.md` sibling holding the signal lists. That file was removed when xia2 went config-free; the `PROJECT.md >` references still visible in `tests/structural/depth-modes-test-cases.md` are that era's provenance and the classifications hold unchanged under the equivalent Common signals.
+> **Historical note (2026-07-17):** xia2 previously carried a per-project `PROJECT.md` sibling holding the signal lists. That file was removed when xia2 went config-free; the `PROJECT.md >` references still visible in `tests/structural/depth-modes-test-cases.md` are that era's provenance and the classifications hold unchanged under the portable signals in `references/depth-classifier.md`.
 
-- **Portable by design.** All logic — including the risk-classification signals — is built into `SKILL.md` as common cross-project vocabulary. No per-project config file.
-- **Zero-config.** xia2 classifies from its built-in Common signals; nothing to bootstrap.
+- **Portable by design.** The risk-classification signals live in `references/depth-classifier.md` and `rules/research-depth.md` as common cross-project vocabulary. No per-project config file.
+- **Zero-config.** xia2 classifies from those portable signals; nothing to bootstrap.
 - **Fork to another project:**
   1. Copy `skills/xia2/`.
   2. From the harness checkout run `bash scripts/init-structure.sh --root <new repo>` to scaffold `specs/` and `docs/solutions/`.
   3. `tests/structural/depth-modes-test-cases.md` is a portable regression set against the common signals — keep or extend it.
   4. Keep `tests/behavioural/pressure-scenarios.md` — most scenarios are universal.
 - **Maintenance discipline:**
-  - Editing HARD-GATE, the Common signals, Decision Procedure, Depth Modes, Tiebreakers, Re-evaluation gate, or Step 1 waiver → **must** re-run `tests/structural/` suite.
+  - Editing HARD-GATE, `references/depth-classifier.md`, `rules/research-depth.md`, or the depth / re-evaluation steps in `SKILL.md` → **must** re-run `tests/structural/` suite.
   - Wording polish in non-classifier sections does not require a re-run.
 
 **Critical regression canaries** (see `tests/structural/depth-modes-test-cases.md`):
