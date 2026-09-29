@@ -26,32 +26,49 @@ set -u
 INPUT=$(cat)
 ROOT="${CLAUDE_PROJECT_DIR:-$PWD}"
 LAUNCH_ROOT="$ROOT"
-# An absolute edit path is judged by the checkout that owns it, not by the session's launch
-# directory: a session launched from the main checkout that edits inside a linked worktree
-# (.worktrees/<branch>) is on that worktree's branch, and a session launched from a task
-# worktree that edits the main checkout is on main. Only checkouts sharing the launch repo's
-# object store (its linked worktrees) may re-home the check — a nested or foreign repo must
-# not let the target path pick its own judge. A path inside the git dir itself (.git/hooks,
-# .git/config) is judged by the main checkout. Walk up to the nearest existing directory so a
-# Write that creates new directories still resolves; a path with a newline stays unresolved.
+# An absolute edit path is judged by where the file lives, never by the session's launch
+# directory: the owning checkout first (so an edit inside a linked worktree on a task branch
+# is allowed even from a session launched on main), then every enclosing checkout of a
+# DIFFERENT repository (so a nested `git init` or submodule cannot make a shared checkout's
+# files judge themselves). A linked worktree nested in its own main checkout (.worktrees/) is
+# the same repository and does not inherit that checkout's branch. A path inside a git dir
+# (.git/hooks, a separate or bare git dir) is judged by the HEAD stored in that git dir. Walk up
+# to the nearest existing directory so a Write that creates directories still resolves; a
+# path with a newline is left unresolved (launch-root judgement, as before).
 common_dir() { git -C "$1" rev-parse --path-format=absolute --git-common-dir 2>/dev/null; }
+is_shared() {
+  local b s
+  b=$(git -C "$1" symbolic-ref --short HEAD 2>/dev/null) || return 1
+  for s in ${HARNESS_SHARED_BRANCHES:-main master}; do [ "$b" = "$s" ] && return 0; done
+  return 1
+}
 FILE_ARG=$(printf '%s' "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)
 case "$FILE_ARG" in
   *$'\n'*) ;;
   /*)
     d=$(dirname "$FILE_ARG")
     while [ ! -d "$d" ] && [ "$d" != "/" ]; do d=$(dirname "$d"); done
-    FILE_COMMON=$(common_dir "$d")
-    if [ -n "$FILE_COMMON" ] && [ "$FILE_COMMON" = "$(common_dir "$LAUNCH_ROOT")" ]; then
-      if [ "$(git -C "$d" rev-parse --is-inside-git-dir 2>/dev/null)" = "true" ]; then
-        ROOT=$(dirname "$FILE_COMMON")
-      else
-        OWNER=$(git -C "$d" rev-parse --show-toplevel 2>/dev/null)
-        [ -n "$OWNER" ] && ROOT="$OWNER"
+    if [ "$(git -C "$d" rev-parse --is-inside-git-dir 2>/dev/null)" = "true" ]; then
+      OWNER=$(common_dir "$d")
+    else
+      OWNER=$(git -C "$d" rev-parse --show-toplevel 2>/dev/null)
+    fi
+    if [ -n "$OWNER" ]; then
+      ROOT="$OWNER"
+      if ! is_shared "$OWNER"; then
+        oc=$(common_dir "$OWNER"); e="$OWNER"
+        while :; do
+          p=$(dirname "$e"); [ "$p" = "$e" ] && break
+          e=$(git -C "$p" rev-parse --show-toplevel 2>/dev/null); [ -n "$e" ] || break
+          if [ "$(common_dir "$e")" != "$oc" ] && is_shared "$e"; then ROOT="$e"; break; fi
+        done
       fi
     fi
     ;;
 esac
+# The break-glass audit trail stays with the session's repository when it has one.
+LOG_ROOT="$LAUNCH_ROOT"
+git -C "$LAUNCH_ROOT" rev-parse --show-toplevel >/dev/null 2>&1 || LOG_ROOT="$ROOT"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 NORMALIZER="$SCRIPT_DIR/lib/normalize-tool-input.py"
 if command -v python3 >/dev/null 2>&1 && [ -f "$NORMALIZER" ]; then
@@ -75,7 +92,7 @@ REL=$(printf '%s\n' "$PATHS" | paste -sd ',' -)
 [ -n "$REL" ] || REL="unparsed-edit-payload"
 REASON="${BRANCH_ISOLATION_REASON:-}"
 if [ -n "$REASON" ]; then
-  LOG="$LAUNCH_ROOT/docs/harness-experimental/break-glass-log.md"
+  LOG="$LOG_ROOT/docs/harness-experimental/break-glass-log.md"
   mkdir -p "$(dirname "$LOG")" 2>/dev/null
   printf -- '- %s — branch-isolation `%s` on `%s` — %s\n' \
     "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$REL" "$BR${ROOT:+ @ $ROOT}" "$REASON" >> "$LOG" 2>/dev/null || true

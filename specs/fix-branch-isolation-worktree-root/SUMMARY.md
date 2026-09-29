@@ -38,14 +38,14 @@ The branch that matters is the one the edited file will be committed on, which i
 
 | Check | Command | Exit | Notes | Criterion |
 | --- | --- | --- | --- | --- |
-| guard contract incl. 6 worktree/bypass regressions | `bash tests/hooks/branch-isolation-guard.test.sh` | 0 | 24 passed; each new case failed on the commit before its fix | |
+| guard contract incl. 10 worktree/bypass regressions | `bash tests/hooks/branch-isolation-guard.test.sh` | 0 | 28 passed; each new case failed before its fix, and removing any one guard arm fails ≥1 case | |
 | normalizer contract unchanged | `bash tests/hooks/normalize-tool-input.test.sh` | 0 | 19 passed | |
 | prefixed-spec compatibility | `bash tests/hooks/spec-prefix-compat.test.sh` | 0 | 11 passed | |
 | hook table matches settings | `bash scripts/lint-doc-truth.sh` | 0 | | |
 
 The full suite (`bash scripts/run-tests.sh`) is cited in prose per the verify-row rule.
 
-Verifies: the guard reads the branch of the checkout that owns an absolute `tool_input.file_path` when that checkout shares the launch repo's git common dir; `.git/` paths resolve to the main checkout; the break-glass log stays in the launch repo.
+Verifies: for an absolute `tool_input.file_path`, the guard judges the owning checkout's branch plus every enclosing checkout of a different repository, and git-dir paths by that git dir's HEAD — independent of the launch directory; the break-glass log stays in the launch repo when it is one.
 Does not verify: relative paths (Codex `apply_patch`) — those still resolve against `CLAUDE_PROJECT_DIR`/`$PWD`, unchanged.
 
 ### Review Findings
@@ -55,12 +55,13 @@ Adversarial review of the first fix commit found 3 Important and 3 Minor; fixed 
 - `.git/**` of the main checkout editable from a task-worktree session (pre-existing hole) — git-dir paths now resolve to the main checkout.
 - Break-glass log followed the payload-chosen root — pinned to the launch root, owner recorded in the log line.
 - `file_path` with an embedded newline — left unresolved.
+A second re-review found that the common-dir check skipped judgement whenever the launch directory was not this repository (a regression against the first fix), and that `dirname(common dir)` is not a checkout under separate-git-dir or bare layouts. Fixed in the third commit: the launch directory no longer decides anything for absolute paths; git-dir paths are judged by the HEAD stored in the git dir; the newline arm gained a test.
 Recorded, not changed: detached HEAD in the owning checkout allows (pre-existing, now reachable only via this repo's own worktrees); sibling hooks still use `CLAUDE_PROJECT_DIR` (below).
 
 ### Not auto-verified
 
 - Codex `apply_patch` sessions editing a different checkout than their cwd — reached traceability only; relative patch paths keep the old root resolution by design.
-- `--path-format=absolute` needs git ≥ 2.31; on older git the common-dir lookup is empty, so no re-homing happens and the old launch-root behavior applies (fail-safe, not re-tested).
+- `--path-format=absolute` needs git ≥ 2.31; on older git `common_dir` is empty, so git-dir paths fall back to launch-root judgement and every enclosing checkout counts as a different repository (stricter for nested worktrees). Not re-tested on old git.
 - `hooks/blast-radius-check.sh` and `hooks/ruff-on-edit.sh` still resolve their root from `CLAUDE_PROJECT_DIR`; worktree edits may show as out-of-plan there (non-blocking). Not changed here.
 
 ### Rollback

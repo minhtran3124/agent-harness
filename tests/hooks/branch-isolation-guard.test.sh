@@ -163,4 +163,32 @@ run_hook "$repo" $H "$(json_file "$repo/app/x.py")" CLAUDE_PROJECT_DIR="$wt" BRA
 if [ -f "$wt/docs/harness-experimental/break-glass-log.md" ] && [ ! -e "$repo/docs/harness-experimental" ]; then pass
 else fail "log not pinned to launch root: out=$OUT"; fi
 
+t "session launched outside any repo, edit in a checkout on main → DENY"
+repo=$(new_repo $H); outside=$(mktemp -d); _CLEANUP_DIRS+=("$outside")
+run_hook "$repo" $H "$(json_file "$repo/app/x.py")" CLAUDE_PROJECT_DIR="$outside"
+assert_rc_contains 0 '"permissionDecision":"deny"'
+
+t "separate git dir: editing its hooks from a checkout on main → DENY"
+base=$(mktemp -d); _CLEANUP_DIRS+=("$base")
+git -C "$base" init -q -b main --separate-git-dir="$base/gd" wt
+mkdir -p "$base/wt/hooks" && cp -R "$ROOT/hooks/lib" "$base/wt/hooks/" && cp "$ROOT/hooks/$H" "$base/wt/hooks/"
+run_hook "$base/wt" $H "$(json_file "$base/gd/hooks/pre-commit")" CLAUDE_PROJECT_DIR="$base/wt"
+assert_rc_contains 0 '"permissionDecision":"deny"'
+
+t "bare git dir on main: editing its hooks from its task worktree → DENY"
+repo=$(new_repo $H); git -C "$repo" commit -q --allow-empty -m init
+base=$(mktemp -d); _CLEANUP_DIRS+=("$base")
+git clone -q --bare "$repo" "$base/bare.git"
+git -C "$base/bare.git" worktree add -q "$base/bwt" -b feature/b
+mkdir -p "$base/bwt/hooks" && cp -R "$ROOT/hooks/lib" "$base/bwt/hooks/" && cp "$ROOT/hooks/$H" "$base/bwt/hooks/"
+run_hook "$base/bwt" $H "$(json_file "$base/bare.git/hooks/post-receive")" CLAUDE_PROJECT_DIR="$base/bwt"
+assert_rc_contains 0 '"permissionDecision":"deny"'
+
+t "file_path with an embedded newline is not resolved through the worktree → DENY"
+repo=$(new_repo $H); wt=$(linked_worktree "$repo" feature/wt)
+payload=$(jq -cn --arg f "$wt/x
+$repo/app/a.py" '{tool_input:{file_path:$f}}')
+run_hook "$repo" $H "$payload" CLAUDE_PROJECT_DIR="$repo"
+assert_rc_contains 0 '"permissionDecision":"deny"'
+
 finish
