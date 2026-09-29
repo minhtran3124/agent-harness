@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.24.1] — 2026-09-28
+
+- feat(agents): bind the coding role to Opus 5.5 and pin per-role effort (PR #230)
+
 ## [2.24.0] — 2026-09-28
 
 - feat(harness): four adoptions from the Spotify comparison (PR #229)
