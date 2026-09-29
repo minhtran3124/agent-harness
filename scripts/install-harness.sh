@@ -24,6 +24,7 @@ FORCE=0
 OVERWRITE_CONFLICTS=0
 DRY_RUN=0
 KEEP_SOURCES=0
+PROFILE=""
 
 # Harness source-of-truth items. Deployed into .claude/ straight from the fetched source;
 # copied into the target only with --keep-sources (under .harness-source/), never to the
@@ -75,6 +76,9 @@ Options:
                           for inspection or offline re-sync (default: no copy)
       --dry-run           Show what would happen, including any protected-file conflicts;
                           write nothing
+      --profile <name>    Hook profile: minimal | standard | strict (default: the profile
+                          recorded in .claude/.harness-profile, else standard). minimal
+                          registers only the branch-isolation guard and the commit gate.
   -h, --help              Show this help
 
 Examples:
@@ -95,10 +99,18 @@ while [ $# -gt 0 ]; do
     --overwrite-conflicts) OVERWRITE_CONFLICTS=1; shift ;;
     --keep-sources) KEEP_SOURCES=1; shift ;;
     --dry-run)      DRY_RUN=1; shift ;;
+    --profile)      PROFILE="${2:?--profile needs a name}"; shift 2 ;;
+    --profile=*)    PROFILE="${1#--profile=}"; shift ;;
     -h|--help)      usage; exit 0 ;;
     *)              fail "Unknown option: $1  (see --help)" ;;
   esac
 done
+# Validate before any write: .mcp.json is written before deploy runs (deploy re-validates against
+# the source manifest's hook_profiles).
+case "$PROFILE" in
+  ""|minimal|standard|strict) ;;
+  *) fail "Unknown --profile: $PROFILE  (expected minimal, standard, or strict)" ;;
+esac
 
 mkdir -p "$TARGET_DIR"
 TARGET_DIR="$(cd "$TARGET_DIR" && pwd -P)"
@@ -215,6 +227,7 @@ fi
 DEPLOY_ARGS=(--target "$TARGET_DIR")
 [ "$ASSUME_YES" -eq 1 ] && DEPLOY_ARGS+=(--yes)
 [ "$OVERWRITE_CONFLICTS" -eq 1 ] && DEPLOY_ARGS+=(--overwrite-conflicts)
+[ -n "$PROFILE" ] && DEPLOY_ARGS+=(--profile "$PROFILE")
 if [ "$DRY_RUN" -eq 1 ]; then
   DEPLOY_ARGS+=(--dry-run)
 else
