@@ -2,7 +2,7 @@
   Canonical SUMMARY.md shape. Copy to specs/<slug>/SUMMARY.md at intake.
 
   The header block is machine-read:
-    - hooks/risk-corroboration.sh greps the `Lane:` line to corroborate it
+    - hooks/commit-gate.sh greps the `Lane:` line to corroborate it
       against the staged diff (a hard-gate signal in the diff + a Lane below
       high-risk = blocked).
     - the trust-metrics ledger reads Lane / Confidence / Flags per task.

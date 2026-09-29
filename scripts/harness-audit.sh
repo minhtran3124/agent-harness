@@ -4,7 +4,7 @@
 # Surfaces drift that the existing nets do NOT already cover. Out of scope here
 # (already mechanized elsewhere):
 #   - phantom path references + hook-table ↔ settings.json  →  scripts/lint-doc-truth.sh
-#   - orphan untracked .py                                  →  hooks/check-untracked-py.sh
+#   - orphan untracked .py                                  →  hooks/commit-gate.sh (check_untracked_py)
 #
 # In scope (the "verify the docs" gap, OpenAI harness engineering #4):
 #   1. specs/*/SUMMARY.md missing a `### Verify` section (proof was never recorded)

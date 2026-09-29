@@ -53,3 +53,5 @@ proposed: a "merged-but-active" check — fail (or warn) when a `specs/*/PLAN.md
 ## Related
 
 - docs/solutions/harness/manual-version-bump-collides-with-event-sourced-bookkeeping.md — same class: post-merge bookkeeping that decays when manual
+
+> Superseded by specs/simplify-hook-surface (2026-09-29): blast-radius-check.sh merged into hooks/commit-gate.sh

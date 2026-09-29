@@ -65,3 +65,5 @@ back to the worktree SUMMARY/PLAN when `git show :$path` fails, including on sta
 
 - docs/solutions/harness/pretooluse-hook-denies-combined-git-add-commit.md — adjacent hook-sees-wrong-state pattern, different mechanism
 - docs/solutions/harness/risk-corroboration-scans-test-comments-for-auth-words.md — same hook family
+
+> Superseded by specs/simplify-hook-surface (2026-09-29): commit-quality-gate.sh, risk-corroboration.sh merged into hooks/commit-gate.sh

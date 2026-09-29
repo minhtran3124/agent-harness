@@ -354,7 +354,7 @@ def _sc_map_for_summary(
     """Parse the SC table of the sibling PLAN.md, or {} when none applies.
 
     `plan_dir` overrides where PLAN.md is looked up. It is required when the SUMMARY
-    content is read from a staged/temp copy (e.g. `commit-quality-gate.sh` stages the
+    content is read from a staged/temp copy (e.g. `commit-gate.sh` check_lane_evidence stages the
     SUMMARY into a mktemp file) whose parent is NOT the real spec dir — without it,
     `parent / PLAN.md` never resolves and SC coverage silently fail-opens.
     """

@@ -102,3 +102,5 @@ A manifest staged for deletion or unreadable from the index blocks rather than a
 - docs/solutions/harness/gate-config-must-read-index.md
 - docs/solutions/harness/hooks-addition-is-high-risk-even-dormant.md
 - docs/solutions/harness/resync-protected-files-decisions.md
+
+> Superseded by specs/simplify-hook-surface (2026-09-29): risk-corroboration.sh merged into hooks/commit-gate.sh

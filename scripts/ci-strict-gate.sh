@@ -54,10 +54,10 @@ else
   exit 0
 fi
 
-# Hard-gate path regex — reuse risk-corroboration.sh's fix-precision pattern. The
+# Hard-gate path regex — reuse commit-gate.sh check_risk's fix-precision pattern. The
 # `^hooks/` anchor deliberately EXCLUDES tests/hooks/ (the documented
 # false-positive class), EXTENDED here with `^templates/`: the SUMMARY schema is
-# machine-read by the ledger + risk-corroboration, so a template change is a
+# machine-read by the ledger + check_risk, so a template change is a
 # contract change. The `^templates/` arm is an intentional CI-only extension and
 # is NOT present in the local hook's pattern.
 HARD_GATE_RE='(^|/)settings\.json$|^hooks/|(^|/)\.claude/hooks/|render_plan\.py$|^templates/'
@@ -74,7 +74,7 @@ HARD_GATE_RE='(^|/)settings\.json$|^hooks/|(^|/)\.claude/hooks/|render_plan\.py$
 #
 # `rules/` was surveyed and deliberately REJECTED: all 8 files are prose (no command's
 # re-run proves a sentence correct), AND rules/*.md is already gated by the
-# `workflow-engine` signal in risk-corroboration.sh + check_review_receipt.py, which
+# `workflow-engine` signal in commit-gate.sh check_risk + check_review_receipt.py, which
 # demands a context-propagation audit — the right evidence shape for prose.
 WARN_GATE_RE='^scripts/'
 WARN_GATE_EXCLUDE_RE='^scripts/test_'

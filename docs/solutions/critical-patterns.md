@@ -125,6 +125,8 @@ Eval a prompt skill with **auto-score / manual-run**: labeled fixtures (`request
 **Tags:** commit-time-hooks, index-vs-worktree, gate-integrity, fail-closed, policy-toctou, external-review
 **Applicable when:** A PreToolUse commit hook reads any config/policy file that influences allow/deny — it must read the INDEX-side copy (`git show :<path>`, fail-closed on absence) so unstaged edits cannot loosen the decision for the committed tree.
 
+> Superseded by specs/simplify-hook-surface (2026-09-29): risk-corroboration.sh merged into hooks/commit-gate.sh
+
 ## [2026-07-27] no-report-reviewer-dispatch-is-not-a-pass
 **Type:** failure
 **Module:** harness (review chain + review receipt)

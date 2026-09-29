@@ -61,3 +61,5 @@ This was **not fixed in-session**: `hooks/*` is a high-blast path, so touching i
 
 - `docs/solutions/harness/hooks-addition-is-high-risk-even-dormant.md` — why any `hooks/` edit, including this fix, is high-blast regardless of wiring.
 - `docs/solutions/harness/pretooluse-hook-denies-combined-git-add-commit.md` — the other recorded instance of a hook's string-scanning being coarser than the developer expects.
+
+> Superseded by specs/simplify-hook-surface (2026-09-29): risk-corroboration.sh merged into hooks/commit-gate.sh

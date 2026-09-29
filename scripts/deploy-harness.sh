@@ -390,7 +390,7 @@ copy_consumer_subset() {
 # Rewrite root-relative helper paths in the DERIVED Markdown so a consumer agent runs the copy that
 # exists. Same principle as derive_settings' hook-path rewrite: .claude/ is a derived tree, and a
 # path that is correct in the harness repo is wrong once deployed one level in. Markdown ONLY —
-# hooks/*.sh keep their own resolution (risk-corroboration.sh must read the git INDEX manifest, never
+# hooks/*.sh keep their own resolution (commit-gate.sh check_risk must read the git INDEX manifest, never
 # a derived .claude/ copy). Idempotent: an already-prefixed path is skipped.
 rewrite_derived_paths() {
   python3 - "$OUT" "${CONSUMER_SCRIPTS[@]}" <<'PYEOF'

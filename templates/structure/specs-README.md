@@ -28,7 +28,7 @@ this line if you change it.
 |---|---|---|
 | `SUMMARY.md` | `feature-intake` | **Always written, every lane** — Lane/Confidence/Reason, the
   user's request verbatim under `### Intent`, plus `### Verify` / `### Rollback` / `### Deviations`.
-  `commit-quality-gate.sh` gates commits on it and `intent-review` reads `### Intent` as its oracle. |
+  `commit-gate.sh` gates commits on it and `intent-review` reads `### Intent` as its oracle. |
 | `ESCALATIONS.md` | any skill that escalates | Only when a hard gate or ambiguity stops the work.
   Deny-on-no-response: a commit touching the slug is blocked while a `decision: pending` block stands. |
 | `design.md` | `brainstorming` | Approved design — the WHAT and WHY |
@@ -52,4 +52,4 @@ See [../skills/README.md](../skills/README.md) for the full workflow map.
 
 ## State File
 
-`STATE.md` at this level tracks the currently-active spec and last action. It is updated by skills as work progresses and by the `state-breadcrumb.sh` hook at session end.
+`STATE.md` at this level tracks the currently-active spec and last action. It is updated by skills as work progresses.

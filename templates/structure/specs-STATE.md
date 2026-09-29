@@ -1,6 +1,6 @@
 # Workflow State
 
-Source of truth for the currently-active spec. Updated by skills and by the `state-breadcrumb.sh` hook.
+Source of truth for the currently-active spec. Updated by skills.
 
 ## Active Spec
 
@@ -20,6 +20,5 @@ Source of truth for the currently-active spec. Updated by skills and by the `sta
 ## Notes
 
 - Skills update the "Active Spec" block when they start/finish
-- `state-breadcrumb.sh` (SessionEnd hook) writes a snapshot here for resumption
 - `session-tracker` reads this file to resume work across sessions
 - If the Active Spec block is stale (>7 days without update), treat as idle

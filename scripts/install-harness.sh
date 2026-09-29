@@ -248,9 +248,10 @@ fi
 
 # ---------- ensure .claude/ is gitignored (append-only; never rewrites the file) ----------
 # .claude/ is a derived artifact — it is rebuilt from source on every deploy, so committing it
-# is wrong. It also carries .py files (visual-planner), and an untracked .py denies every commit
-# via hooks/check-untracked-py.sh. Without this line a fresh consumer installs the harness and
-# then cannot commit at all. Append only when the pattern is absent; never touch existing lines.
+# is wrong. It also carries .py files (visual-planner), and under --profile strict an untracked
+# .py denies every commit via the hooks/commit-gate.sh untracked-.py check. Without this line a
+# fresh strict consumer installs the harness and then cannot commit at all. Append only when
+# the pattern is absent; never touch existing lines.
 #
 # Three things this must NOT do, each found by review:
 #   1. Ignore a .claude/ the consumer already TRACKS. Some projects deliberately commit
