@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.25.1] — 2026-09-29
+
+- fix(hooks): judge branch isolation by where the edited file lives (PR #234)
+
 ## [2.25.0] — 2026-09-29
 
 - refactor(prompts): align the prompt surface with Claude Opus 5.5 guidance (PR #233)
