@@ -281,8 +281,15 @@ fi
 
 export CAPTURE_DATE CLI_VERSION PLATFORM_LABEL CONFIG_HASH AGENT_NONCE
 export RAW STAGED WORK FEATURES_RC DOCTOR_RC STRICT_RC PLUGIN_RC LIVE_RC
-STATE_BREADCRUMB_HOOK=$(cd "$(dirname "$0")/.." && pwd)/hooks/state-breadcrumb.sh
-export STATE_BREADCRUMB_HOOK
+# SessionEnd timing is benchmarked against a self-contained no-op fixture hook,
+# so the probe does not depend on any harness hook body.
+SESSION_END_FIXTURE_HOOK="$WORK/session-end-fixture.sh"
+cat > "$SESSION_END_FIXTURE_HOOK" <<'SH'
+#!/usr/bin/env bash
+cat >/dev/null
+exit 0
+SH
+export SESSION_END_FIXTURE_HOOK
 python3 - <<'PY' || die "failed to normalize captured evidence"
 import hashlib
 import json
@@ -583,12 +590,8 @@ benchmark_ok = dependencies.get("jq", False)
 benchmark_root = work / "session-end-benchmark"
 (benchmark_root / "specs").mkdir(parents=True, exist_ok=True)
 (benchmark_root / "specs/STATE.md").write_text("# State\n\n## Session End Log\n")
-# The capture script is run from any directory, so use the exported repository hook path.
-hook = pathlib.Path(
-    os.environ.get(
-        "STATE_BREADCRUMB_HOOK", str(pathlib.Path.cwd() / "hooks/state-breadcrumb.sh")
-    )
-)
+# The no-op fixture hook is written under the capture work directory.
+hook = pathlib.Path(os.environ.get("SESSION_END_FIXTURE_HOOK", str(work / "session-end-fixture.sh")))
 hook_present = hook.is_file()
 if not hook_present:
     benchmark_ok = False
@@ -628,7 +631,7 @@ write(
         "isolated-local-benchmark",
         {
             "status": "observed" if within else "unknown",
-            "hook": "hooks/state-breadcrumb.sh",
+            "hook": "fixture:session-end-noop",
             "samples": len(samples),
             "min_ms": round(minimum, 3) if minimum is not None else None,
             "p95_ms": round(p95, 3) if p95 is not None else None,
@@ -640,7 +643,7 @@ write(
             "exit_condition": None
             if within
             else (
-                f"Run the capture from a checkout that contains {hook.name}."
+                "Write the SessionEnd no-op fixture hook under the capture work directory."
                 if not hook_present
                 else "Install dependencies and keep max runtime below 800 ms."
             ),

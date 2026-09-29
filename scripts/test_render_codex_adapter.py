@@ -197,11 +197,66 @@ def test_unknown_settings_hook_event_blocks_render(tmp_path):
     settings = root / "settings.json"
     payload = json.loads(settings.read_text())
     payload["hooks"]["PreCompact"] = [
-        {"hooks": [{"type": "command", "command": "hooks/state-breadcrumb.sh"}]}
+        {"hooks": [{"type": "command", "command": "hooks/session-knowledge.sh"}]}
     ]
     settings.write_text(json.dumps(payload))
     with pytest.raises(renderer.AdapterError, match="unmapped hook events"):
         renderer.render(root, tmp_path / "output")
+
+
+def _session_start_group():
+    return {
+        "hooks": [{"type": "command", "command": "hooks/session-knowledge.sh"}]
+    }
+
+
+def _pre_tool_use_groups():
+    return [
+        {
+            "matcher": "Bash",
+            "hooks": [{"type": "command", "command": "hooks/commit-gate.sh"}],
+        },
+        {
+            "matcher": "Write|Edit",
+            "hooks": [
+                {"type": "command", "command": "hooks/branch-isolation-guard.sh"}
+            ],
+        },
+    ]
+
+
+def test_settings_with_only_pre_tool_use_and_session_start_render():
+    rendered = renderer.expected_codex_hooks(
+        {
+            "hooks": {
+                "PreToolUse": _pre_tool_use_groups(),
+                "SessionStart": [_session_start_group()],
+            }
+        }
+    )
+    assert set(rendered["hooks"]) == {"PreToolUse", "SessionStart"}
+    assert rendered["hooks"]["PreToolUse"][1]["matcher"] == "apply_patch|Edit|Write"
+    session = rendered["hooks"]["SessionStart"][0]["hooks"][0]
+    assert session["additionalContextLimit"] == 2500
+
+
+def test_settings_missing_pre_tool_use_blocks_render():
+    with pytest.raises(renderer.AdapterError, match="PreToolUse"):
+        renderer.expected_codex_hooks(
+            {"hooks": {"SessionStart": [_session_start_group()]}}
+        )
+
+
+def test_unknown_settings_hook_event_blocks_expected_hooks():
+    with pytest.raises(renderer.AdapterError, match="unmapped hook events"):
+        renderer.expected_codex_hooks(
+            {
+                "hooks": {
+                    "PreToolUse": _pre_tool_use_groups(),
+                    "PreCompact": [_session_start_group()],
+                }
+            }
+        )
 
 
 def test_manifest_inventory_drift_blocks_render(tmp_path):

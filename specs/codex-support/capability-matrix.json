@@ -99,8 +99,8 @@
     {
       "id": "hooks.post_tool_use.shell",
       "area": "hooks",
-      "support_target": "required",
-      "load_bearing": true,
+      "support_target": "advisory",
+      "load_bearing": false,
       "status": "supported",
       "evidence_level": "observed",
       "platforms": ["macos-arm64"],
@@ -143,8 +143,8 @@
     {
       "id": "hooks.post_tool_use.apply_patch",
       "area": "hooks",
-      "support_target": "required",
-      "load_bearing": true,
+      "support_target": "advisory",
+      "load_bearing": false,
       "status": "supported",
       "evidence_level": "observed",
       "platforms": ["macos-arm64"],
@@ -206,8 +206,8 @@
     {
       "id": "hooks.session_end",
       "area": "hooks",
-      "support_target": "required",
-      "load_bearing": true,
+      "support_target": "advisory",
+      "load_bearing": false,
       "status": "supported",
       "evidence_level": "observed",
       "platforms": ["macos-arm64"],
