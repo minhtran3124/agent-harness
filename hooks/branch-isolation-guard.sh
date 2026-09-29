@@ -25,18 +25,31 @@ set -u
 
 INPUT=$(cat)
 ROOT="${CLAUDE_PROJECT_DIR:-$PWD}"
+LAUNCH_ROOT="$ROOT"
 # An absolute edit path is judged by the checkout that owns it, not by the session's launch
 # directory: a session launched from the main checkout that edits inside a linked worktree
 # (.worktrees/<branch>) is on that worktree's branch, and a session launched from a task
-# worktree that edits the main checkout is on main. Walk up to the nearest existing directory
-# so a Write that creates new directories still resolves.
+# worktree that edits the main checkout is on main. Only checkouts sharing the launch repo's
+# object store (its linked worktrees) may re-home the check — a nested or foreign repo must
+# not let the target path pick its own judge. A path inside the git dir itself (.git/hooks,
+# .git/config) is judged by the main checkout. Walk up to the nearest existing directory so a
+# Write that creates new directories still resolves; a path with a newline stays unresolved.
+common_dir() { git -C "$1" rev-parse --path-format=absolute --git-common-dir 2>/dev/null; }
 FILE_ARG=$(printf '%s' "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)
 case "$FILE_ARG" in
+  *$'\n'*) ;;
   /*)
     d=$(dirname "$FILE_ARG")
     while [ ! -d "$d" ] && [ "$d" != "/" ]; do d=$(dirname "$d"); done
-    OWNER=$(git -C "$d" rev-parse --show-toplevel 2>/dev/null)
-    [ -n "$OWNER" ] && ROOT="$OWNER"
+    FILE_COMMON=$(common_dir "$d")
+    if [ -n "$FILE_COMMON" ] && [ "$FILE_COMMON" = "$(common_dir "$LAUNCH_ROOT")" ]; then
+      if [ "$(git -C "$d" rev-parse --is-inside-git-dir 2>/dev/null)" = "true" ]; then
+        ROOT=$(dirname "$FILE_COMMON")
+      else
+        OWNER=$(git -C "$d" rev-parse --show-toplevel 2>/dev/null)
+        [ -n "$OWNER" ] && ROOT="$OWNER"
+      fi
+    fi
     ;;
 esac
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -62,10 +75,10 @@ REL=$(printf '%s\n' "$PATHS" | paste -sd ',' -)
 [ -n "$REL" ] || REL="unparsed-edit-payload"
 REASON="${BRANCH_ISOLATION_REASON:-}"
 if [ -n "$REASON" ]; then
-  LOG="$ROOT/docs/harness-experimental/break-glass-log.md"
+  LOG="$LAUNCH_ROOT/docs/harness-experimental/break-glass-log.md"
   mkdir -p "$(dirname "$LOG")" 2>/dev/null
   printf -- '- %s — branch-isolation `%s` on `%s` — %s\n' \
-    "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$REL" "$BR" "$REASON" >> "$LOG" 2>/dev/null || true
+    "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$REL" "$BR${ROOT:+ @ $ROOT}" "$REASON" >> "$LOG" 2>/dev/null || true
   echo "[BRANCH-ISOLATION] break-glass override for $REL on '$BR' (recorded to break-glass-log.md)" >&2
   exit 0
 fi

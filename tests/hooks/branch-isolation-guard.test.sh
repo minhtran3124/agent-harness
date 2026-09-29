@@ -145,4 +145,22 @@ repo=$(new_repo $H); wt=$(linked_worktree "$repo" feature/wt)
 run_hook "$repo" $H "$(json_file "$repo/app/x.py")" CLAUDE_PROJECT_DIR="$wt"
 assert_rc_contains 0 '"permissionDecision":"deny"'
 
+t "nested repo on a task branch inside a main checkout cannot re-home the check → DENY"
+# A path must not pick its own judge: only the launch repo's linked worktrees re-home.
+repo=$(new_repo $H); mkdir -p "$repo/hooks/inner"
+git -C "$repo/hooks/inner" init -q -b tmpbr
+run_hook "$repo" $H "$(json_file "$repo/hooks/inner/x.sh")" CLAUDE_PROJECT_DIR="$repo"
+assert_rc_contains 0 '"permissionDecision":"deny"'
+
+t "session root in a task worktree, edit under the main checkout's .git/ → DENY"
+repo=$(new_repo $H); wt=$(linked_worktree "$repo" feature/wt)
+run_hook "$repo" $H "$(json_file "$repo/.git/hooks/pre-commit")" CLAUDE_PROJECT_DIR="$wt"
+assert_rc_contains 0 '"permissionDecision":"deny"'
+
+t "break-glass log stays in the launch repo when the edit targets a worktree checkout"
+repo=$(new_repo $H); wt=$(linked_worktree "$repo" feature/wt)
+run_hook "$repo" $H "$(json_file "$repo/app/x.py")" CLAUDE_PROJECT_DIR="$wt" BRANCH_ISOLATION_REASON="why"
+if [ -f "$wt/docs/harness-experimental/break-glass-log.md" ] && [ ! -e "$repo/docs/harness-experimental" ]; then pass
+else fail "log not pinned to launch root: out=$OUT"; fi
+
 finish
