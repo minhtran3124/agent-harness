@@ -4,7 +4,9 @@
 Checks (all mechanical, stdlib-only so CI needs no pyyaml):
   A. inventory presence scan (register-vs-scan): every manifest hook/skill/agent exists on disk
      and every disk component is in the manifest; each hook's `wired` flag matches settings.json.
-  B. gate <-> enforcer: hard_gates.detectable slugs == risk-corroboration.sh's `add_cat` set
+  A3. hook_profiles: exactly default/minimal/standard/strict; default names a profile; every
+     listed hook is in the manifest hooks inventory.
+  B. gate <-> enforcer: hard_gates.detectable slugs == commit-gate.sh's `add_cat` set
      (bidirectional — a detector must exist for every manifest gate and vice versa).
      Gate modes (block|warn) are manifest-owned and read by the hook at runtime — not mirrored.
 
@@ -58,6 +60,35 @@ def check(root: Path) -> int:
                 "hooks.wired",
                 f"{name} manifest wired={wired_flag} but settings.json registered={actually_wired}",
             )
+
+    # ── A3. hook_profiles: exact profile set; every hook in the inventory ─────
+    profile_names = {"minimal", "standard", "strict"}
+    profiles = m.get("hook_profiles")
+    if not isinstance(profiles, dict):
+        problem("hook_profiles", "missing hook_profiles object")
+    else:
+        if set(profiles) != profile_names | {"default"}:
+            problem(
+                "hook_profiles",
+                f"keys must be exactly default/minimal/standard/strict, got {sorted(profiles)}",
+            )
+        if profiles.get("default") not in profile_names:
+            problem(
+                "hook_profiles",
+                f"default {profiles.get('default')!r} is not one of minimal/standard/strict",
+            )
+        for pname in sorted(profile_names & set(profiles)):
+            spec = profiles[pname]
+            listed = spec.get("hooks") if isinstance(spec, dict) else None
+            if not isinstance(listed, list):
+                problem("hook_profiles", f"{pname} must be an object with a hooks list")
+                continue
+            for name in listed:
+                if name not in man_hooks:
+                    problem(
+                        "hook_profiles",
+                        f"{pname} lists {name!r}, which is not in the hooks inventory",
+                    )
 
     # ── A. skills: manifest <-> disk (skills/<name>/SKILL.md) ─────────────────
     disk_skills = {p.parent.name for p in (root / "skills").glob("*/SKILL.md")}
@@ -132,20 +163,20 @@ def check(root: Path) -> int:
         if not isinstance(renderer, str) or not (root / renderer).is_file():
             problem("agent_bindings", "renderer path is missing or invalid")
 
-    # ── B. detectable gates <-> risk-corroboration.sh (add_cat set) ────────────
-    rc = (root / "hooks" / "risk-corroboration.sh").read_text()
+    # ── B. detectable gates <-> commit-gate.sh (add_cat set) ───────────────────
+    rc = (root / "hooks" / "commit-gate.sh").read_text()
     hook_added = set(re.findall(r'add_cat\s+"([^"]+)"', rc))
     man_detect = {g["slug"] for g in m.get("hard_gates", {}).get("detectable", [])}
 
     for slug in man_detect - hook_added:
         problem(
             "hard_gates",
-            f"detectable '{slug}' in manifest but no add_cat in risk-corroboration.sh",
+            f"detectable '{slug}' in manifest but no add_cat in commit-gate.sh",
         )
     for slug in hook_added - man_detect:
         problem(
             "hard_gates",
-            f"add_cat '{slug}' in risk-corroboration.sh but not in manifest detectable",
+            f"add_cat '{slug}' in commit-gate.sh but not in manifest detectable",
         )
 
     # ── C. contracts <-> disk ──────────────────────────────────────────────────
@@ -180,7 +211,7 @@ def check(root: Path) -> int:
         print(f"\n{len(problems)} manifest drift problem(s).", file=sys.stderr)
         return 1
     print(
-        "manifest: consistent — inventory ↔ disk ↔ settings.json ↔ risk-corroboration.sh all agree"
+        "manifest: consistent — inventory ↔ disk ↔ settings.json ↔ hook_profiles ↔ commit-gate.sh all agree"
     )
     return 0
 

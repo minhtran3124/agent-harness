@@ -74,15 +74,14 @@ run_deploy "$T"
 dbl=$(grep -rl '\.claude/\.claude/' "$C" --include='*.md' 2>/dev/null)
 if [ "$RC" -eq 0 ] && [ -z "$dbl" ]; then pass; else fail "rc=$RC double-prefixed: $dbl"; fi
 
-t "hooks are NOT rewritten — risk-corroboration must keep reading the manifest from the git index"
-# Invariant #2 in hooks/risk-corroboration.sh: modes come from `git show :harness-manifest.json`
+t "hooks are NOT rewritten — commit-gate must keep reading the manifest from the git index"
+# Invariant #2 in hooks/commit-gate.sh (check_risk): modes come from `git show :harness-manifest.json`
 # (the index) or the embedded defaults — never a worktree or derived .claude/ policy file, which an
 # unstaged edit could loosen. rewrite_derived_paths is Markdown-only; assert that literally, so a
 # future widening to *.sh trips here. (Byte-identity, not a grep: the hook's own prose contains the
 # forbidden path inside the comment that forbids it.)
-if cmp -s "$C/hooks/risk-corroboration.sh" "$ROOT/hooks/risk-corroboration.sh" \
-   && cmp -s "$C/hooks/commit-quality-gate.sh" "$ROOT/hooks/commit-quality-gate.sh" \
-   && grep -q 'git show :harness-manifest.json' "$C/hooks/risk-corroboration.sh"; then pass
+if cmp -s "$C/hooks/commit-gate.sh" "$ROOT/hooks/commit-gate.sh" \
+   && grep -q 'git show :harness-manifest.json' "$C/hooks/commit-gate.sh"; then pass
 else fail "a derived hook diverged from source — path rewriting must stay Markdown-only"; fi
 
 # ---------------------------------------------------------------------------

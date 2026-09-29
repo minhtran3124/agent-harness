@@ -25,7 +25,9 @@ if [ -f .claude/settings.json ]; then
 
   t "deploy derivation holds: each root command maps to \$CLAUDE_PROJECT_DIR/.claude/<path>"
   root_cmds=$(jq -r '.hooks[]?[]?.hooks[]?.command // empty' settings.json | sort)
-  drv_cmds=$(jq -r '.hooks[]?[]?.hooks[]?.command // empty' .claude/settings.json | sort)
+  # derive_settings may append one ` --profile <p>` to a command; compare without it.
+  drv_cmds=$(jq -r '.hooks[]?[]?.hooks[]?.command // empty' .claude/settings.json \
+    | sed -E 's/ --profile [A-Za-z0-9_-]+$//' | sort)
   expected=$(echo "$root_cmds" | while IFS= read -r c; do
     # absolute paths and $-vars are left unchanged by deploy; relative paths are prefixed
     if [ "${c#/}" != "$c" ] || [ "${c#\$}" != "$c" ]; then
