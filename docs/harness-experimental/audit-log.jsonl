@@ -51,4 +51,5 @@
 {"date": "2026-09-09", "findings": 32, "band": "needs attention", "checks": {"verify_missing": 0, "plan_stale": 0, "backlog_stale": 7, "manifest_degraded": 0, "solutions_stale": 25, "contract_impact": 0}, "pr": 225}
 {"date": "2026-09-28", "findings": 40, "band": "needs attention", "checks": {"verify_missing": 0, "plan_stale": 1, "backlog_stale": 8, "manifest_degraded": 0, "solutions_stale": 31, "contract_impact": 0}, "pr": 229}
 {"date": "2026-09-28", "findings": 40, "band": "needs attention", "checks": {"verify_missing": 0, "plan_stale": 1, "backlog_stale": 8, "manifest_degraded": 0, "solutions_stale": 31, "contract_impact": 0}, "pr": 230}
+{"date": "2026-09-29", "findings": 40, "band": "needs attention", "checks": {"verify_missing": 0, "plan_stale": 1, "backlog_stale": 8, "manifest_degraded": 0, "solutions_stale": 31, "contract_impact": 0}, "pr": 233}
 {"date": "2026-09-29", "findings": 40, "band": "needs attention", "checks": {"verify_missing": 0, "plan_stale": 1, "backlog_stale": 8, "manifest_degraded": 0, "solutions_stale": 31, "contract_impact": 0}, "pr": 234}
