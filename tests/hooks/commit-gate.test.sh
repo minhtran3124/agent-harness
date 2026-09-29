@@ -108,6 +108,12 @@ rm -f "$norepo/hooks/lib/git-command.sh"
 run_hook "$norepo" $H "$(json_cmd 'git commit')"
 assert_rc_contains 2 'matcher lib missing'
 
+t "fails closed (exit 2) when the matcher lib defines only the commit-or-push matcher"
+norepo=$(new_repo $H)
+printf '%s\n' 'hook_cmd_is_git_commit_or_push() { return 0; }' > "$norepo/hooks/lib/git-command.sh"
+run_hook "$norepo" $H "$(json_cmd 'git commit')"
+assert_rc_contains 2 'matcher lib missing'
+
 t "fails closed (exit 2) on commit when the lane lib is missing"
 norepo=$(new_repo $H)
 rm -f "$norepo/hooks/lib/lane.sh"

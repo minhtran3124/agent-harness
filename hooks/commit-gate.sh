@@ -64,7 +64,8 @@ fi
 # ── 2. Filter: git commit / push only (tokenizing matcher — resists cd/&&/-C/-c bypass) ──
 source "$SCRIPT_DIR/lib/git-command.sh" 2>/dev/null
 # Fail closed: if the matcher lib is missing, block rather than skip every gate below.
-command -v hook_cmd_is_git_commit_or_push >/dev/null 2>&1 || {
+command -v hook_cmd_is_git_commit_or_push >/dev/null 2>&1 \
+  && command -v hook_cmd_is_git_commit >/dev/null 2>&1 || {
   echo "[COMMIT GATE] git-command matcher lib missing — redeploy harness (blocking to fail safe)." >&2
   exit 2
 }
