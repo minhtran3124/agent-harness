@@ -83,6 +83,8 @@ NORMALIZER="$SCRIPT_DIR/lib/normalize-tool-input.py"
 # the normalizer's _safe_relative rules. Anything it cannot settle — a path outside ROOT, ROOT
 # itself, a symlinked or `.`/`..` segment it would have to resolve lexically, surrounding
 # whitespace, a NUL or newline — returns 1 and falls through to the normalizer unchanged.
+# Keep in sync with hooks/lib/normalize-tool-input.py (_safe_relative, and normalize()'s prompt
+# classification): a payload carrying `prompt` or a non-PreToolUse event is left to the normalizer.
 fast_rel() {
   local p="$1" d tail="" rroot rd full b
   case "$p" in [A-Za-z]:[\\/]*) return 1 ;; /*) ;; *) p="$ROOT/$p" ;; esac
@@ -100,6 +102,7 @@ fast_rel() {
 }
 FAST_ARG=$(printf '%s' "$INPUT" | jq -r '(.tool_input.file_path) as $p
   | if (.tool_name == "Write" or .tool_name == "Edit") and ($p | type) == "string"
+       and (has("prompt") | not) and ((.hook_event_name // "PreToolUse") == "PreToolUse")
        and ($p | test("^\\S(.*\\S)?$")) and ($p | explode | any(. == 0 or . == 10 or . == 13) | not)
     then $p else empty end' 2>/dev/null)
 REL_FAST=""

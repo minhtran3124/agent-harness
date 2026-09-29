@@ -246,6 +246,11 @@ repo=$(new_repo $H)
 run_hook "$repo" $H "$(claude_edit Write "$repo")" PATH="$NOPY"
 assert_rc_contains 0 'could not safely classify'
 
+t "no python3: Write payload carrying a prompt key is not fast-pathed → fails closed"
+repo=$(new_repo $H)
+run_hook "$repo" $H "$(jq -cn --arg f "$repo/specs/x/SUMMARY.md" '{hook_event_name:"PreToolUse",tool_name:"Write",prompt:"x",tool_input:{file_path:$f}}')" PATH="$NOPY"
+assert_rc_contains 0 'could not safely classify'
+
 t "no python3: codex apply_patch on main still fails closed"
 repo=$(new_repo $H)
 run_hook "$repo" $H "$(codex_patch $'*** Begin Patch\n*** Update File: specs/demo/PLAN.md\n*** End Patch')" PATH="$NOPY"
