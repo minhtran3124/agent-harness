@@ -3,7 +3,7 @@
 Rules that survive because a frontier model does **not** reliably apply them on its own. Anything a
 capable model already does by default (prefer the smaller diff, match surrounding style) is
 deliberately not restated here. §4 and §5 cover behaviors the Claude Opus 5.x guidance documents
-as departing from that default: scope drift, premature "done" claims, and correction narration.
+as departing from that default: scope drift, stopping at the easy part, and correction narration.
 
 ## 1. Absence claims need a cited search surface
 

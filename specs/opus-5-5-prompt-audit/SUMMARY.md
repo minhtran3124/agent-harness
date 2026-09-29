@@ -64,7 +64,7 @@ The full suite (`bash scripts/run-tests.sh`) is cited in prose per the verify-ro
 ### Not auto-verified
 
 - That Opus 5.5 / Opus 5 behave better under the new wording (recall, scope, narration) — reached traceability only; no behavioral eval was run on these prompts.
-- The deployed `.claude/` copies are stale (traceability only). `rules/behavior.md` is in `BOOTSTRAP_OWNED_FILES` (`scripts/deploy-harness.sh:29`), so a plain or `--yes` re-deploy KEEPS the local §1–3 copy and parks §4/§5 in `.claude/rules/behavior.md.harness-incoming`. §4/§5 reach no agent until `deploy-harness.sh --overwrite-conflicts` runs or the sidecar is merged by hand.
+- The deployed `.claude/` copies are stale (traceability only). `rules/behavior.md` is in `BOOTSTRAP_OWNED_FILES` (`scripts/deploy-harness.sh:29`), so a `--yes` or no-TTY re-deploy KEEPS the local §1–3 copy (keep is also the interactive default) and parks §4/§5 in `.claude/rules/behavior.md.harness-incoming`. §4/§5 reach no agent until `deploy-harness.sh --overwrite-conflicts` runs or the sidecar is merged by hand.
 - `evals/context-boundaries/probes/{scorer-agent,implementer-subagent}.md` still describe the old dispatch — recorded runs, not re-run.
 
 ### Context-Propagation Audit
@@ -82,7 +82,7 @@ Result: **PASS after repair** (initial run FAIL on 1 row).
 
 ### Review Findings
 
-Correctness review (14 findings, 2 Important): all fixed in the follow-up commit — incomplete `render_runtime_entry.py` invocation (also in two pre-existing templates), compound pass prompts addressing the orchestrator, fabricated hook-hint quote and missing preconditions (`skills/README.md`, `CLAUDE.md`), worktree step contradiction in the minimum path, `systematic-debugging` wrongly treated as absent, leftover "Common signals" terms, compound failure-track output/`applicable_when` gaps, self-contradictory INDEX rule, `behavior.md` preamble vs §4/§5, unindented reviewer-table rows, "ruff --fix"/typechecker claim, `verifying`-only stall claim, split ordered list.
+Correctness review (14 findings, 2 Important): all fixed across the two follow-up commits (the re-review of the first fix commit found 8 residuals — a fourth `--runtime`-less invocation in the intent template, a leftover "Common signals" line, the compound backlog output, SKILL/README INDEX wording, a missing test-mapping precondition, a preamble overclaim, and two SUMMARY accuracy items — all fixed) — incomplete `render_runtime_entry.py` invocation (also in three pre-existing templates), compound pass prompts addressing the orchestrator, fabricated hook-hint quote and missing preconditions (`skills/README.md`, `CLAUDE.md`), worktree step contradiction in the minimum path, `systematic-debugging` wrongly treated as absent, leftover "Common signals" terms, compound failure-track output/`applicable_when` gaps, self-contradictory INDEX rule, `behavior.md` preamble vs §4/§5, unindented reviewer-table rows, "ruff --fix"/typechecker claim, `verifying`-only stall claim, split ordered list.
 
 Intent review (6): fixed — no fan-out cap in `rules/wave-parallelism.md` (now ≤20 per message). Recorded, not changed: `agents/coding.md` "Be concise…" (a style line, not a numeric cap or suppressor); `behavior.md` §5 correction clause (approved Opus 5.5 guidance group, from the guide's self-correction snippet); deleted "Token logging for AI paths" (approved stale-fact hunk: app-stack specific, contradicts `rules/guidelines.md`); remaining `MUST`/`FORBIDDEN` (hook- or test-backed); xia2 "at most three solution files" (search bound, not an output cap).
 

@@ -213,7 +213,7 @@ Schema reference: `docs/solutions/README.md` (scaffolded by the harness repo's `
    re-run degrades to presence-only if `python3` is unavailable
 3. Targeted pytest for changed `app/` files
 
-Under `REQUIRE_APP_GATES=1`, once the targeted pytest run passes, a commit with ≥5 staged `app/**/*.py` files prints `★ Large session detected (N app/ files).` and suggests the compound skill.
+Under `REQUIRE_APP_GATES=1`, once at least one staged file maps to a test and the targeted pytest run passes, a commit with ≥5 staged `app/**/*.py` files prints `★ Large session detected (N app/ files).` and suggests the compound skill.
 
 > **Two different evidence gates — do not conflate them.** Check **1.6** is the row-presence
 > gate: `scripts/verify_summary.py --lane`, always on, asserts the SUMMARY carries what its `Lane:`

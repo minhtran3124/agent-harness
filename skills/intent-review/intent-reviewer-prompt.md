@@ -25,7 +25,7 @@ different drift). Resolve the `intent_reviewer` model stage through the runtime 
 is checked to remain distinct from `implementer`, preserving the diversity this pass depends on.
 `model_stage` is not a Task-tool parameter. Use the `model:` already declared in this stage's
 rendered `agents/` definition as the Task tool's `model:` value — the harness repo resolves that
-value at render time (`scripts/render_runtime_entry.py --model-stage intent_reviewer`), so a consuming
+value at render time (`scripts/render_runtime_entry.py --runtime claude --model-stage intent_reviewer`), so a consuming
 repo reads it off the agent file rather than re-deriving it.
 
 ```

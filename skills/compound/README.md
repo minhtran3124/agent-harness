@@ -28,13 +28,14 @@ Dispatch a subagent only for a `docs/solutions/` tree too large to screen from `
 
 ## Output Overview
 
-Each run can produce up to 5 files:
+Each run can produce up to 6 files:
 
 | File | When produced |
 |---|---|
 | `docs/solutions/[category]/[slug].md` | Bug, knowledge, or failure track (one file each) |
 | `docs/solutions/[category]/[slug]-decisions.md` | Decision track (all decisions for this session) |
 | `docs/solutions/critical-patterns.md` | Appended to when `severity = critical` |
+| `docs/harness-experimental/improvement-backlog.md` | One open row appended per failure with a `proposed:` guardrail |
 | `docs/solutions/INDEX.md` | Always rebuilt from scratch after every run |
 
 ---

@@ -40,7 +40,7 @@ For a critical context, append an entry per emitted track to `critical-patterns.
 templates. For a failure with `proposed:` guardrail, append one open row to
 `docs/harness-experimental/improvement-backlog.md`; do not duplicate an `existing:` guardrail.
 
-Run the authority after every write:
+Run the authority at the end of every run, even when nothing was written:
 
 ```bash
 python3 scripts/rebuild_solution_index.py
