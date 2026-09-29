@@ -98,12 +98,8 @@ assert_json '.outcome == {"exit_code":0,"present":true} and (tostring | contains
 t "every declared Phase 4 hook consumer uses the shared normalizer"
 MISSING_CONSUMERS=""
 for HOOK in \
-  blast-radius-check.sh \
   branch-isolation-guard.sh \
-  pre-bash-dispatch.sh \
-  render-plan-on-write.sh \
-  ruff-on-edit.sh \
-  scope-gate.sh; do
+  commit-gate.sh; do
   if ! grep -q 'normalize-tool-input.py' "$ROOT/hooks/$HOOK"; then
     MISSING_CONSUMERS="${MISSING_CONSUMERS}${MISSING_CONSUMERS:+,}$HOOK"
   fi

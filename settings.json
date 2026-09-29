@@ -6,8 +6,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "hooks/pre-bash-dispatch.sh",
-            "statusMessage": "Git commit/push gates (untracked-py, quality, risk, branch)…"
+            "command": "hooks/commit-gate.sh",
+            "statusMessage": "Commit gate (secrets, escalations, lane evidence, risk)…"
           }
         ]
       },
@@ -22,39 +22,6 @@
         ]
       }
     ],
-    "PostToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "hooks/ruff-on-edit.sh",
-            "statusMessage": "ruff --fix on edited .py…"
-          },
-          {
-            "type": "command",
-            "command": "hooks/blast-radius-check.sh",
-            "statusMessage": "Blast-radius check (edit vs active plan)…"
-          },
-          {
-            "type": "command",
-            "command": "hooks/render-plan-on-write.sh",
-            "statusMessage": "Auto-render PLAN.html…"
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "hooks/scope-gate.sh",
-            "statusMessage": "Scope-gate check…"
-          }
-        ]
-      }
-    ],
     "SessionStart": [
       {
         "hooks": [
@@ -62,17 +29,6 @@
             "type": "command",
             "command": "hooks/session-knowledge.sh",
             "statusMessage": "Loading knowledge base (INDEX + critical-patterns)…"
-          }
-        ]
-      }
-    ],
-    "SessionEnd": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "hooks/state-breadcrumb.sh",
-            "statusMessage": "Writing session breadcrumb to specs/STATE.md…"
           }
         ]
       }

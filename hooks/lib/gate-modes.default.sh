@@ -2,10 +2,10 @@
 # Embedded gate-mode defaults — the block/warn policy for the nine detectable hard
 # gates, mirroring harness-manifest.json hard_gates.detectable (7 block + 2 warn).
 #
-# WHY THIS FILE EXISTS: risk-corroboration.sh resolves gate modes from EXACTLY TWO
+# WHY THIS FILE EXISTS: hooks/commit-gate.sh resolves gate modes from EXACTLY TWO
 # index-safe sources — (a) `git show :harness-manifest.json` (the git INDEX) when it
 # resolves, else (b) this file. It NEVER reads a worktree or `.claude/` policy file
-# (invariant #2, asserted by tests/hooks/risk-corroboration.test.sh SC-8). A consumer
+# (invariant #2, asserted by tests/hooks/commit-gate-risk.test.sh SC-8). A consumer
 # repo that does not track the manifest gets this 2-warn/7-block parity instead of the
 # old block-all fallback. These are compile-time constants inside the harness's own
 # trust boundary — an unstaged edit cannot loosen them.
