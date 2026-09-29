@@ -9,13 +9,16 @@ cd "$ROOT" || exit 1
 t "settings.json is valid JSON"
 if jq -e . settings.json >/dev/null 2>&1; then pass; else fail "settings.json does not parse"; fi
 
-t "every settings.json hook command resolves to a file with a bash shebang"
+t "every settings.json hook command resolves to an executable file with a bash shebang"
 ok=1
 while IFS= read -r cmd; do
   [ -z "$cmd" ] && continue
   case "$cmd" in '$CLAUDE_PROJECT_DIR/'*) cmd="${cmd#\$CLAUDE_PROJECT_DIR/}"; cmd="${cmd#.claude/}" ;; esac
   if [ ! -f "$cmd" ]; then ok=0; echo "        missing: $cmd"; continue; fi
   head -1 "$cmd" | grep -q '^#!.*sh' || { ok=0; echo "        no shebang: $cmd"; }
+  # Registered as a bare command (no `bash` prefix): without the execute bit the runtime gets
+  # exit 126, which is not a block, so every gate in the hook is silently skipped.
+  [ -x "$cmd" ] || { ok=0; echo "        not executable: $cmd"; }
 done < <(jq -r '.hooks[]?[]?.hooks[]?.command // empty' settings.json)
 [ "$ok" -eq 1 ] && pass || fail "one or more commands unresolved / not a shell script"
 
