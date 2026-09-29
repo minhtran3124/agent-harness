@@ -120,4 +120,92 @@ run_hook "$repo" $H '{not-json' BRANCH_ISOLATION_REASON="emergency payload recov
 if [ "$RC" -eq 0 ] && printf '%s' "$OUT" | grep -q 'break-glass override' && grep -q 'unparsed-edit-payload' "$repo/docs/harness-experimental/break-glass-log.md"; then pass
 else fail "override/audit missing: rc=$RC out=$OUT"; fi
 
+# linked_worktree <repo> <branch> — commit once, then add <repo>/.worktrees/<branch> on <branch>
+linked_worktree() {
+  git -C "$1" commit -q --allow-empty -m init
+  git -C "$1" worktree add -q "$1/.worktrees/$2" -b "$2"
+  echo "$1/.worktrees/$2"
+}
+
+t "session root on main, edit inside a linked worktree on a task branch → allow"
+# Regression: ROOT came from CLAUDE_PROJECT_DIR (the main checkout), so the guard read
+# `main` and denied every Edit/Write made inside a .worktrees/ checkout.
+repo=$(new_repo $H); wt=$(linked_worktree "$repo" feature/wt)
+run_hook "$repo" $H "$(json_file "$wt/app/x.py")" CLAUDE_PROJECT_DIR="$repo"
+assert_silent_ok
+
+t "new file in a not-yet-created dir inside the worktree → allow (walks up to an existing dir)"
+repo=$(new_repo $H); wt=$(linked_worktree "$repo" feature/wt)
+run_hook "$repo" $H "$(json_file "$wt/new/deep/dir/y.py")" CLAUDE_PROJECT_DIR="$repo"
+assert_silent_ok
+
+t "session root in a task worktree, edit in the main checkout on main → DENY"
+# The reverse direction: launching from a feature worktree must not whitelist main.
+repo=$(new_repo $H); wt=$(linked_worktree "$repo" feature/wt)
+run_hook "$repo" $H "$(json_file "$repo/app/x.py")" CLAUDE_PROJECT_DIR="$wt"
+assert_rc_contains 0 '"permissionDecision":"deny"'
+
+t "nested repo on a task branch inside a main checkout cannot re-home the check → DENY"
+# A path must not pick its own judge: only the launch repo's linked worktrees re-home.
+repo=$(new_repo $H); mkdir -p "$repo/hooks/inner"
+git -C "$repo/hooks/inner" init -q -b tmpbr
+run_hook "$repo" $H "$(json_file "$repo/hooks/inner/x.sh")" CLAUDE_PROJECT_DIR="$repo"
+assert_rc_contains 0 '"permissionDecision":"deny"'
+
+t "session root in a task worktree, edit under the main checkout's .git/ → DENY"
+repo=$(new_repo $H); wt=$(linked_worktree "$repo" feature/wt)
+run_hook "$repo" $H "$(json_file "$repo/.git/hooks/pre-commit")" CLAUDE_PROJECT_DIR="$wt"
+assert_rc_contains 0 '"permissionDecision":"deny"'
+
+t "break-glass log stays in the launch repo when the edit targets a worktree checkout"
+repo=$(new_repo $H); wt=$(linked_worktree "$repo" feature/wt)
+run_hook "$repo" $H "$(json_file "$repo/app/x.py")" CLAUDE_PROJECT_DIR="$wt" BRANCH_ISOLATION_REASON="why"
+if [ -f "$wt/docs/harness-experimental/break-glass-log.md" ] && [ ! -e "$repo/docs/harness-experimental" ]; then pass
+else fail "log not pinned to launch root: out=$OUT"; fi
+
+t "session launched outside any repo, edit in a checkout on main → DENY"
+repo=$(new_repo $H); outside=$(mktemp -d); _CLEANUP_DIRS+=("$outside")
+run_hook "$repo" $H "$(json_file "$repo/app/x.py")" CLAUDE_PROJECT_DIR="$outside"
+assert_rc_contains 0 '"permissionDecision":"deny"'
+
+t "separate git dir: editing its hooks from a checkout on main → DENY"
+base=$(mktemp -d); _CLEANUP_DIRS+=("$base")
+git -C "$base" init -q -b main --separate-git-dir="$base/gd" wt
+mkdir -p "$base/wt/hooks" && cp -R "$ROOT/hooks/lib" "$base/wt/hooks/" && cp "$ROOT/hooks/$H" "$base/wt/hooks/"
+run_hook "$base/wt" $H "$(json_file "$base/gd/hooks/pre-commit")" CLAUDE_PROJECT_DIR="$base/wt"
+assert_rc_contains 0 '"permissionDecision":"deny"'
+
+t "bare git dir on main: editing its hooks from its task worktree → DENY"
+repo=$(new_repo $H); git -C "$repo" commit -q --allow-empty -m init
+base=$(mktemp -d); _CLEANUP_DIRS+=("$base")
+git clone -q --bare "$repo" "$base/bare.git"
+git -C "$base/bare.git" worktree add -q "$base/bwt" -b feature/b
+mkdir -p "$base/bwt/hooks" && cp -R "$ROOT/hooks/lib" "$base/bwt/hooks/" && cp "$ROOT/hooks/$H" "$base/bwt/hooks/"
+run_hook "$base/bwt" $H "$(json_file "$base/bare.git/hooks/post-receive")" CLAUDE_PROJECT_DIR="$base/bwt"
+assert_rc_contains 0 '"permissionDecision":"deny"'
+
+t "file_path with an embedded newline is not resolved through the worktree → DENY"
+repo=$(new_repo $H); wt=$(linked_worktree "$repo" feature/wt)
+payload=$(jq -cn --arg f "$wt/x
+$repo/app/a.py" '{tool_input:{file_path:$f}}')
+run_hook "$repo" $H "$payload" CLAUDE_PROJECT_DIR="$repo"
+assert_rc_contains 0 '"permissionDecision":"deny"'
+
+t "gitfile/core.worktree loop terminates instead of hanging the hook"
+base=$(mktemp -d); _CLEANUP_DIRS+=("$base")
+mkdir -p "$base/outer/inner/hooks"; git -C "$base/outer/inner" init -q -b feature/x
+git -C "$base/outer/inner" commit -q --allow-empty -m i
+printf 'gitdir: %s\n' "$base/outer/inner/.git" > "$base/outer/.git"
+git -C "$base/outer/inner" config core.worktree "$base/outer/inner"
+cp -R "$ROOT/hooks/lib" "$base/outer/inner/hooks/" && cp "$ROOT/hooks/$H" "$base/outer/inner/hooks/"
+OUT=$(cd "$base/outer/inner" && printf '%s' "$(json_file "$base/outer/inner/app/x.py")" \
+  | env CLAUDE_PROJECT_DIR="$base" perl -e 'alarm 10; exec @ARGV' bash "hooks/$H" 2>&1); RC=$?
+assert_silent_ok
+
+t "nested repo on a task branch inside a task worktree nested in main → allow"
+repo=$(new_repo $H); wt=$(linked_worktree "$repo" feature/wt)
+mkdir -p "$wt/vendor/nested"; git -C "$wt/vendor/nested" init -q -b feature/n
+run_hook "$repo" $H "$(json_file "$wt/vendor/nested/app/x.py")" CLAUDE_PROJECT_DIR="$repo"
+assert_silent_ok
+
 finish
