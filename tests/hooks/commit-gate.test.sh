@@ -153,19 +153,19 @@ run_hook_args "$repo" $H "$(json_cmd 'git commit -m x')" --profile strict
 assert_rc_not_contains 0 'permissionDecision'
 
 # Regression: the deployed harness lives at the repo ROOT, so `git ls-files` reports
-# `.claude/skills/...` with NO leading slash. A `/\.claude/` pattern misses it and denies
+# `.claude/<dir>/...` with NO leading slash. A `/\.claude/` pattern misses it and denies
 # every commit in a fresh consumer whose .gitignore does not yet list .claude/.
 t "strict: untracked .py under a ROOT-level .claude/ is also excluded (fresh-consumer install)"
 repo=$(new_repo $H)
-mkdir -p "$repo/.claude/skills/visual-planner"
-printf 'x\n' > "$repo/.claude/skills/visual-planner/render_plan.py"
+mkdir -p "$repo/.claude/scripts"
+printf 'x\n' > "$repo/.claude/scripts/deployed_helper.py"
 run_hook_args "$repo" $H "$(json_cmd 'git commit -m x')" --profile strict
 assert_rc_not_contains 0 'permissionDecision'
 
 t "strict: a real untracked .py still denies even when a root .claude/ is present"
 repo=$(new_repo $H)
-mkdir -p "$repo/.claude/skills/visual-planner"
-printf 'x\n' > "$repo/.claude/skills/visual-planner/render_plan.py"
+mkdir -p "$repo/.claude/scripts"
+printf 'x\n' > "$repo/.claude/scripts/deployed_helper.py"
 printf 'x\n' > "$repo/loose.py"
 run_hook_args "$repo" $H "$(json_cmd 'git commit -m x')" --profile strict
 assert_rc_contains 0 'loose.py'

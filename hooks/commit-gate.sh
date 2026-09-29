@@ -105,7 +105,7 @@ profile_allows() {
 # Runs from CWD, before the commit context is resolved (push has no commit context).
 check_untracked_py() {
   # Exclude the deployed harness itself. The anchor matters: `git ls-files` returns
-  # repo-relative paths, so a root-level deployment is `.claude/skills/...` with NO leading
+  # repo-relative paths, so a root-level deployment is `.claude/<dir>/...` with NO leading
   # slash — a bare `/\.claude/` pattern misses it and denies every commit in a fresh consumer
   # whose .gitignore does not yet list .claude/. Match both `.claude/…` and `app/.claude/…`.
   FILES=$(git ls-files --others --exclude-standard 2>/dev/null | grep -E '\.py$' | grep -vE '(^|/)\.claude/')

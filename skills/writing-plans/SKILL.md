@@ -29,7 +29,7 @@ required brief is missing. If the scope contains independent subsystems, propose
 4. Ensure same-wave tasks have no file overlap and no unresolved dependency. Use waves only for
    genuinely independent work.
 5. Run `python3 scripts/check_plan_contract.py specs/<slug>/PLAN.md`, read `references/review-loop.md`, review the plan, and save it. Then run
-   `python3 .claude/skills/visual-planner/render_plan.py specs/<slug>/PLAN.md --summarize`, which
+   `python3 skills/visual-planner/render_plan.py specs/<slug>/PLAN.md --summarize`, which
    refreshes the At-a-glance block and writes the plain `PLAN.html`; use `visual-planner` only when
    the user asks for its graph-derived overlay.
 
