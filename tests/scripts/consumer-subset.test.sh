@@ -69,6 +69,17 @@ unresolved=$(grep -rhoE '\.claude/scripts/[A-Za-z0-9_.-]+' "$C" --include='*.md'
   | while read -r p; do [ -e "$T/$p" ] || echo "$p"; done)
 if [ -z "$unresolved" ]; then pass; else fail "named but not shipped: $(echo "$unresolved" | tr '\n' ' ')"; fi
 
+t "derived docs invoke render_plan.py at the deployed path, and it resolves"
+# writing-plans (body + allowed-tools grant), the wave-boundary rule, and the ship step all run
+# render_plan.py --summarize; in a consumer it lives under .claude/skills/, one level in.
+rp_bad=""
+for f in skills/writing-plans/SKILL.md rules/wave-parallelism.md skills/finishing-a-development-branch/SKILL.md; do
+  grep -q '\.claude/skills/visual-planner/render_plan\.py' "$C/$f" || rp_bad="$rp_bad $f(missing)"
+  grep -qE '(^|[^./])skills/visual-planner/render_plan\.py' "$C/$f" && rp_bad="$rp_bad $f(unrewritten)"
+done
+[ -e "$T/.claude/skills/visual-planner/render_plan.py" ] || rp_bad="$rp_bad render_plan.py(not-shipped)"
+if [ -z "$rp_bad" ]; then pass; else fail "$rp_bad"; fi
+
 t "rewrite is idempotent — a second deploy never produces .claude/.claude/"
 run_deploy "$T"
 dbl=$(grep -rl '\.claude/\.claude/' "$C" --include='*.md' 2>/dev/null)

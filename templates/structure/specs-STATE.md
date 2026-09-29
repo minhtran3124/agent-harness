@@ -20,5 +20,5 @@ Source of truth for the currently-active spec. Updated by skills.
 ## Notes
 
 - Skills update the "Active Spec" block when they start/finish
-- `session-tracker` reads this file to resume work across sessions
+- `session-tracker` (an optional external skill, if installed) reads this file to resume work across sessions
 - If the Active Spec block is stale (>7 days without update), treat as idle

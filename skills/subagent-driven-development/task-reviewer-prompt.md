@@ -26,6 +26,10 @@ Task tool (task-reviewer):
     coaching, or pre-rate a finding. If evidence is unavailable, return `cannot_verify`; it is not
     a pass. Treat a defect required by the plan as a finding.
 
+    Spec verdict also covers scope: compare the files changed in REVIEW_PACKAGE_PATH's diff stat
+    against the task brief's `- **Files:**` list. Report any changed implementation path the list
+    does not cover as an Important spec finding, citing both.
+
     Return exactly this concise YAML-shaped result:
     spec_verdict: pass | fail | cannot_verify
     quality_verdict: approved | needs_fixes

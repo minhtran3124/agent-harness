@@ -83,8 +83,9 @@ Re-check continuously while executing each wave; any of these escalates mid-flig
 
 - **Repeated `<verify>` failure** — the same check fails ≥2 times after a fix attempt.
 - **Blast radius beyond plan** — a subagent touched files outside its task's declared Files set
-  (detected at each wave commit by `hooks/commit-gate.sh` (`check_plan_scope`) and by the task
-  reviewer's spec verdict).
+  (the task reviewer's spec verdict compares the task's diff to its Files list; at each wave
+  commit `hooks/commit-gate.sh` `check_plan_scope` also warns on paths outside the active plan's
+  Files set — a union across tasks, so per-task attribution is the reviewer's job).
 - **Hard gate discovered mid-implementation** — not seen at intake; re-run the corroboration
   check on the wave diff.
 - **Recurring deviation** — the same Rule-1–3 deviation repeats across tasks (a PLAN.md gap).

@@ -87,6 +87,26 @@ fi
 PLAN_AUTHOR="skills/writing-plans/SKILL.md"
 PLAN_REVIEWER="skills/writing-plans/plan-document-reviewer-prompt.md"
 
+# rules/orchestration.md names the task reviewer's spec verdict as the per-task blast-radius
+# detector (the retired edit-time hook no longer exists). That claim holds only while the
+# reviewer prompt actually asks for the diff-vs-Files comparison.
+TASK_REVIEWER="skills/subagent-driven-development/task-reviewer-prompt.md"
+task_reviewer_scope_ok() {
+  grep -q 'Spec verdict also covers scope' "$1/$TASK_REVIEWER" \
+    && grep -q '\*\*Files:\*\*' "$1/$TASK_REVIEWER"
+}
+
+t "task reviewer prompt checks the task diff against its Files list (orchestration.md blast-radius anchor)"
+if task_reviewer_scope_ok "$ROOT"; then pass
+else fail "no scope comparison instruction in $TASK_REVIEWER"; fi
+
+t "mutation: deleting the reviewer scope instruction is detected"
+m4=$(mktemp -d); _CLEANUP_DIRS+=("$m4")
+mkdir -p "$m4/$(dirname "$TASK_REVIEWER")"
+sed '/Spec verdict also covers scope/d' "$ROOT/$TASK_REVIEWER" > "$m4/$TASK_REVIEWER"
+if ! task_reviewer_scope_ok "$m4"; then pass
+else fail "removing the scope instruction was NOT detected"; fi
+
 t "complete contextual-rule consumer matrix is checked"
 if python3 "$ROOT/$COMPOSER" --root "$ROOT" --check-all >/dev/null; then pass
 else fail "render_skill_prompt.py rejected the live consumer matrix"; fi

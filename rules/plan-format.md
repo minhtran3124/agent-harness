@@ -183,7 +183,7 @@ Plans written before 2026-07-16 use fenced `<task id="N.M" wave="K"><files><acti
 
 ## Auto-generated "At a glance" block
 
-`render_plan.py --summarize` (invoked by `writing-plans` after saving the plan and at each wave boundary)
+`render_plan.py --summarize` (invoked by `writing-plans` after saving the plan, at each wave boundary, and by `finishing-a-development-branch` before the shipped commit)
 injects an additive, script-owned "At a glance" block — a count line, a wave×task table, a
 `flowchart LR` Mermaid diagram, and a `### Progress` checklist — immediately before the first `## `
 heading, between `<!-- AT-A-GLANCE:BEGIN -->` / `<!-- AT-A-GLANCE:END -->` sentinels.

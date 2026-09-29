@@ -398,7 +398,11 @@ import re, sys, pathlib
 out = pathlib.Path(sys.argv[1]); names = sys.argv[2:]
 pats = [re.compile(r'(?<![\w./-])scripts/' + re.escape(n)) for n in names]
 pats.append(re.compile(r'(?<![\w./-])harness-manifest\.json'))
-subs = ['.claude/scripts/' + n for n in names] + ['.claude/harness-manifest.json']
+# render_plan.py is invoked by path from writing-plans and the wave-boundary rule; it ships
+# under .claude/skills/, one level in, like every other deployed skill file.
+pats.append(re.compile(r'(?<![\w./-])skills/visual-planner/render_plan\.py'))
+subs = ['.claude/scripts/' + n for n in names] + ['.claude/harness-manifest.json',
+        '.claude/skills/visual-planner/render_plan.py']
 changed = 0
 for f in out.rglob('*.md'):
     if any(s in f.name for s in ('.harness-incoming', '.proposed')): continue
