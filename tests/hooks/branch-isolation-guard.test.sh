@@ -120,4 +120,29 @@ run_hook "$repo" $H '{not-json' BRANCH_ISOLATION_REASON="emergency payload recov
 if [ "$RC" -eq 0 ] && printf '%s' "$OUT" | grep -q 'break-glass override' && grep -q 'unparsed-edit-payload' "$repo/docs/harness-experimental/break-glass-log.md"; then pass
 else fail "override/audit missing: rc=$RC out=$OUT"; fi
 
+# linked_worktree <repo> <branch> — commit once, then add <repo>/.worktrees/<branch> on <branch>
+linked_worktree() {
+  git -C "$1" commit -q --allow-empty -m init
+  git -C "$1" worktree add -q "$1/.worktrees/$2" -b "$2"
+  echo "$1/.worktrees/$2"
+}
+
+t "session root on main, edit inside a linked worktree on a task branch → allow"
+# Regression: ROOT came from CLAUDE_PROJECT_DIR (the main checkout), so the guard read
+# `main` and denied every Edit/Write made inside a .worktrees/ checkout.
+repo=$(new_repo $H); wt=$(linked_worktree "$repo" feature/wt)
+run_hook "$repo" $H "$(json_file "$wt/app/x.py")" CLAUDE_PROJECT_DIR="$repo"
+assert_silent_ok
+
+t "new file in a not-yet-created dir inside the worktree → allow (walks up to an existing dir)"
+repo=$(new_repo $H); wt=$(linked_worktree "$repo" feature/wt)
+run_hook "$repo" $H "$(json_file "$wt/new/deep/dir/y.py")" CLAUDE_PROJECT_DIR="$repo"
+assert_silent_ok
+
+t "session root in a task worktree, edit in the main checkout on main → DENY"
+# The reverse direction: launching from a feature worktree must not whitelist main.
+repo=$(new_repo $H); wt=$(linked_worktree "$repo" feature/wt)
+run_hook "$repo" $H "$(json_file "$repo/app/x.py")" CLAUDE_PROJECT_DIR="$wt"
+assert_rc_contains 0 '"permissionDecision":"deny"'
+
 finish

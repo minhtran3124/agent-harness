@@ -25,6 +25,20 @@ set -u
 
 INPUT=$(cat)
 ROOT="${CLAUDE_PROJECT_DIR:-$PWD}"
+# An absolute edit path is judged by the checkout that owns it, not by the session's launch
+# directory: a session launched from the main checkout that edits inside a linked worktree
+# (.worktrees/<branch>) is on that worktree's branch, and a session launched from a task
+# worktree that edits the main checkout is on main. Walk up to the nearest existing directory
+# so a Write that creates new directories still resolves.
+FILE_ARG=$(printf '%s' "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)
+case "$FILE_ARG" in
+  /*)
+    d=$(dirname "$FILE_ARG")
+    while [ ! -d "$d" ] && [ "$d" != "/" ]; do d=$(dirname "$d"); done
+    OWNER=$(git -C "$d" rev-parse --show-toplevel 2>/dev/null)
+    [ -n "$OWNER" ] && ROOT="$OWNER"
+    ;;
+esac
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 NORMALIZER="$SCRIPT_DIR/lib/normalize-tool-input.py"
 if command -v python3 >/dev/null 2>&1 && [ -f "$NORMALIZER" ]; then
