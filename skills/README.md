@@ -118,7 +118,7 @@ from the harness checkout run `bash scripts/init-structure.sh --root <project>`,
 | Skill | Trigger | Output |
 |---|---|---|
 | `using-git-worktrees` | Before starting feature work needing isolation | Isolated worktree + branch |
-| `subagent-driven-development` | Executing a plan — fresh subagent per task in this session, or `resume <slug>` from a new session (New-session / resume mode: reconstruct the cursor at Step -1, then batch + checkpoint). Same gates either way | Implemented tasks, one task reviewer with two verdicts and durable Minor handoff; workflow-engine context audit when triggered; final correctness and intent review |
+| `subagent-driven-development` | Executing a plan — fresh subagent per task in this session, or `resume <slug>` from a new session (`Resume first`: `runtime/resume_decision.py` returns the action and cursor, then batch + checkpoint). Same gates either way | Implemented tasks, one task reviewer with two verdicts and durable Minor handoff; workflow-engine context audit when triggered; final correctness and intent review |
 
 ### Review & Shipping
 

@@ -53,7 +53,9 @@ Ensure branch isolation, set the plan `status: active`, and transition the durab
   `skills/subagent-driven-development/scripts/task_brief.py`; pass its path to the implementer.
   The implementer writes its detailed report to a path in `.harness-state/sdd/` and returns only a
   short status, commits, and report path. Do not paste task history or report contents.
-- Generate one explicit `BASE..HEAD` package with `review_package.py`; pass brief/report/package
+- Generate one explicit `BASE..HEAD` package with `review_package.py`, where BASE is the commit
+  immediately before this task's first commit (never the branch base — the reviewer's scope
+  comparison is only correct on a task-local range); pass brief/report/package
   paths to `task-reviewer`, whose model is selected by the runtime entry binding. One reviewer returns both
   `spec_verdict` and `quality_verdict` using `task-reviewer-prompt.md`.
 - `cannot_verify` gets one focused context or test-runner retry. If still unknown, escalate; never

@@ -398,11 +398,12 @@ import re, sys, pathlib
 out = pathlib.Path(sys.argv[1]); names = sys.argv[2:]
 pats = [re.compile(r'(?<![\w./-])scripts/' + re.escape(n)) for n in names]
 pats.append(re.compile(r'(?<![\w./-])harness-manifest\.json'))
-# render_plan.py is invoked by path from writing-plans and the wave-boundary rule; it ships
-# under .claude/skills/, one level in, like every other deployed skill file.
-pats.append(re.compile(r'(?<![\w./-])skills/visual-planner/render_plan\.py'))
+# render_plan.py is invoked by path from writing-plans, the wave-boundary rule and the ship step;
+# it ships under .claude/skills/. Anchored to the `python3 ` command form so prose mentions
+# (Rule-4 examples, the harness-repo test map) are left alone.
+pats.append(re.compile(r'python3 skills/visual-planner/render_plan\.py'))
 subs = ['.claude/scripts/' + n for n in names] + ['.claude/harness-manifest.json',
-        '.claude/skills/visual-planner/render_plan.py']
+        'python3 .claude/skills/visual-planner/render_plan.py']
 changed = 0
 for f in out.rglob('*.md'):
     if any(s in f.name for s in ('.harness-incoming', '.proposed')): continue

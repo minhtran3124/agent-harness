@@ -93,7 +93,8 @@ PLAN_REVIEWER="skills/writing-plans/plan-document-reviewer-prompt.md"
 TASK_REVIEWER="skills/subagent-driven-development/task-reviewer-prompt.md"
 task_reviewer_scope_ok() {
   grep -q 'Spec verdict also covers scope' "$1/$TASK_REVIEWER" \
-    && grep -q '\*\*Files:\*\*' "$1/$TASK_REVIEWER"
+    && grep -q '\*\*Files:\*\*' "$1/$TASK_REVIEWER" \
+    && grep -q 'Ignore bookkeeping paths' "$1/$TASK_REVIEWER"
 }
 
 t "task reviewer prompt checks the task diff against its Files list (orchestration.md blast-radius anchor)"

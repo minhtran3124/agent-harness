@@ -28,7 +28,8 @@ Task tool (task-reviewer):
 
     Spec verdict also covers scope: compare the files changed in REVIEW_PACKAGE_PATH's diff stat
     against the task brief's `- **Files:**` list. Report any changed implementation path the list
-    does not cover as an Important spec finding, citing both.
+    does not cover as an Important spec finding, citing both. Ignore bookkeeping paths
+    (`specs/**`, `docs/**`, and any `*.md`), matching `hooks/commit-gate.sh`'s `check_plan_scope`.
 
     Return exactly this concise YAML-shaped result:
     spec_verdict: pass | fail | cannot_verify
