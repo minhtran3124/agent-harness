@@ -4,7 +4,7 @@ You are the Context Analyzer subagent for the `compound` skill. Your job is to r
 
 ## Your Input Sources
 
-1. The current session. Run this pass in the main session, which holds it; a fresh subagent cannot see it, so a dispatched copy needs the orchestrator to paste in a session digest (what was discussed, what was built)
+1. The live session when this pass runs in the main loop, or a session digest the orchestrator pasted in when it was dispatched (what was discussed, what was built)
 2. The git diff — run this command and read the output: `git diff HEAD~1..HEAD` (falls back to `git diff $(git merge-base HEAD main)..HEAD`)
 3. Scan for `Harness-Delta: backlog` signals in subagent summaries — these indicate friction or dead-ends that should be routed to `compound` as `failure` track entries.
 

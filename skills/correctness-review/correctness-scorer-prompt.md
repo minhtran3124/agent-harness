@@ -29,7 +29,7 @@ Resolve the `correctness_scorer` model stage through the runtime entry binding; 
 remain distinct from `correctness_finder`, preserving ensemble diversity without embedding a
 vendor model label in this semantic prompt. `model_stage` is not a Task-tool parameter. Use the `model:` already declared in this stage's
 rendered `agents/` definition as the Task tool's `model:` value — the harness repo resolves that
-value at render time (`scripts/render_runtime_entry.py --model-stage correctness_scorer`), so a consuming
+value at render time (`scripts/render_runtime_entry.py --runtime claude --model-stage correctness_scorer`), so a consuming
 repo reads it off the agent file rather than re-deriving it.
 
 ```
@@ -69,8 +69,9 @@ Task tool (reviewer):
 
     ## Score 0 automatically when ANY of these apply
 
-    - A linter or typechecker would catch this before merge (`ruff-on-edit` runs
-      `ruff --fix` + `ruff format` on every edited `.py` file).
+    - A linter would catch this before merge (`ruff-on-edit` runs `ruff check --fix` +
+      `ruff format` on every existing edited `.py` path). No typechecker is wired in this
+      repo — do not score 0 for a type-level defect on that basis.
     - An existing CI check or hook already catches it, e.g. `risk-corroboration` (lane vs
       staged diff). `commit-quality-gate` runs targeted pytest only under
       `REQUIRE_APP_GATES=1`; do not assume it caught a test-detectable bug.

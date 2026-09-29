@@ -45,7 +45,7 @@ assert prompt strings.
 
 - Rule 3 — `hooks/branch-isolation-guard.sh` denies Edit/Write inside this worktree (it reads the branch from `CLAUDE_PROJECT_DIR`, the main checkout on `main`), so tasks were applied by the controller via exact-match scripted replacements instead of implementer subagents; independent reviews still run.
 - Dropped approved hunk M7 (finish clause in `agents/coding.md`) — duplicates `rules/behavior.md` §4.
-- Extra stale-fact fixes found while applying: `xia2/README.md` reference to a non-existent `systematic-debugging` skill and remaining "Decision Procedure / Tiebreaker / Common signals" terms.
+- Extra stale-fact fixes found while applying: remaining "Decision Procedure / Tiebreaker / Common signals" terms in `skills/xia2/README.md`, `skills/README.md`, and `skills/xia2/tests/structural/depth-modes-test-cases.md`. (`systematic-debugging` was briefly removed as non-existent; it is an external, optional skill per `skills/README.md` → External Skills, and the pointer was restored with that qualifier.)
 
 ### Verify
 
@@ -64,8 +64,32 @@ The full suite (`bash scripts/run-tests.sh`) is cited in prose per the verify-ro
 ### Not auto-verified
 
 - That Opus 5.5 / Opus 5 behave better under the new wording (recall, scope, narration) — reached traceability only; no behavioral eval was run on these prompts.
-- That the deployed `.claude/` copies match — not redeployed; stale until the user runs `deploy-harness.sh`.
+- The deployed `.claude/` copies are stale (traceability only). `rules/behavior.md` is in `BOOTSTRAP_OWNED_FILES` (`scripts/deploy-harness.sh:29`), so a plain or `--yes` re-deploy KEEPS the local §1–3 copy and parks §4/§5 in `.claude/rules/behavior.md.harness-incoming`. §4/§5 reach no agent until `deploy-harness.sh --overwrite-conflicts` runs or the sidecar is merged by hand.
 - `evals/context-boundaries/probes/{scorer-agent,implementer-subagent}.md` still describe the old dispatch — recorded runs, not re-run.
+
+### Context-Propagation Audit
+
+Result: **PASS after repair** (initial run FAIL on 1 row).
+
+| Source | Consumer | Context | Delivery | Proof |
+| --- | --- | --- | --- | --- |
+| `rules/behavior.md` §4/§5 | coding, reviewer, task-reviewer, test-runner | fresh child | always-loaded (no `paths:`) | auditor child received `.claude/rules/behavior.md`; `tests/scripts/rule-loading-tiers.test.sh` |
+| `rules/behavior.md` deployed copy | every role | all | always-loaded, conflict-guarded | FAILED as claimed — repaired by correcting `### Not auto-verified` (needs `--overwrite-conflicts`) |
+| implementer `subagent_type: coding` + `model_stage: implementer` | SDD controller → implementer | main → child | pasted dispatch + render-time `model:` | `render_runtime_entry.py --runtime claude --model-stage implementer` → `claude-opus-5-5`; `runtime-entry-bindings.test.sh` |
+| compound in-session passes | compound SKILL/README, skills/README, tests | main | consistent | `compound-contract.test.sh`; grep of manifests |
+| removed finding caps | review-config, angles, scorer, evals | finder/scorer children | consistent | grep `six|Limit findings|max_findings` — remaining hits are the six angles |
+| `rules/orchestration.md` manifest wording | deployed `.claude/rules/orchestration.md` | children | deploy rewrite | deploy regex (`scripts/deploy-harness.sh:379`) yields 0 matches on the new sentence |
+
+### Review Findings
+
+Correctness review (14 findings, 2 Important): all fixed in the follow-up commit — incomplete `render_runtime_entry.py` invocation (also in two pre-existing templates), compound pass prompts addressing the orchestrator, fabricated hook-hint quote and missing preconditions (`skills/README.md`, `CLAUDE.md`), worktree step contradiction in the minimum path, `systematic-debugging` wrongly treated as absent, leftover "Common signals" terms, compound failure-track output/`applicable_when` gaps, self-contradictory INDEX rule, `behavior.md` preamble vs §4/§5, unindented reviewer-table rows, "ruff --fix"/typechecker claim, `verifying`-only stall claim, split ordered list.
+
+Intent review (6): fixed — no fan-out cap in `rules/wave-parallelism.md` (now ≤20 per message). Recorded, not changed: `agents/coding.md` "Be concise…" (a style line, not a numeric cap or suppressor); `behavior.md` §5 correction clause (approved Opus 5.5 guidance group, from the guide's self-correction snippet); deleted "Token logging for AI paths" (approved stale-fact hunk: app-stack specific, contradicts `rules/guidelines.md`); remaining `MUST`/`FORBIDDEN` (hook- or test-backed); xia2 "at most three solution files" (search bound, not an output cap).
+
+### Advisory Findings
+
+- `skills/compound/subagents/*.md:3` still open "You are the … subagent" while SKILL.md treats them as pass schemas — drift, not contradiction.
+- `scripts/check_skill_tool_conformance.py` does not validate `subagent_type` against `agents/`; `coding` verified by read only.
 
 ### Rollback
 

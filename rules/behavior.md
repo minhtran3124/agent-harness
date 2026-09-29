@@ -1,9 +1,9 @@
 # Behavioral Guidelines
 
 Rules that survive because a frontier model does **not** reliably apply them on its own. Anything a
-capable model already does by default (prefer the smaller diff, match surrounding style, don't
-refactor what wasn't asked, don't claim done without running the check) is deliberately not
-restated here.
+capable model already does by default (prefer the smaller diff, match surrounding style) is
+deliberately not restated here. §4 and §5 cover behaviors the Claude Opus 5.x guidance documents
+as departing from that default: scope drift, premature "done" claims, and correction narration.
 
 ## 1. Absence claims need a cited search surface
 

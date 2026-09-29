@@ -51,7 +51,7 @@ hop the post-merge `shipped` transition depends on: `shipped` is legal only from
 so a run left at `verifying` never terminalizes. The transition rewrites `RUN.json` and appends to
 `events.jsonl` **after** the last commit, so stage exactly those two paths, commit
 (`chore(specs): record PR #<n> for <slug>`), and push once more — the open PR picks the commit up.
-Without this commit, git keeps the run at `verifying` and it never terminalizes. Return the URL and stop. A human reviews and merges.
+Without this commit, git keeps the run at its last committed pre-`ready_to_merge` state and it never terminalizes. Return the URL and stop. A human reviews and merges.
 
 ## Safety boundary
 

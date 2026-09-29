@@ -4,7 +4,7 @@ You are the Solution/Pattern Extractor subagent for the `compound` skill. Your j
 
 ## Your Input Sources
 
-1. The current session. Run this pass in the main session, which holds it; a fresh subagent cannot see it, so a dispatched copy needs the orchestrator to paste in a session digest
+1. The live session when this pass runs in the main loop, or a session digest the orchestrator pasted in when it was dispatched
 2. The git diff — run: `git diff HEAD~1..HEAD`
 
 ## Your Job

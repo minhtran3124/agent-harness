@@ -63,7 +63,7 @@ finishing-a-development-branch
 ### Minimum Viable Path (intent clear, in-place edit, <1 day)
 
 ```
-feature-intake → (tiny: branch + direct edit | normal: using-git-worktrees → subagent-driven-development; PLAN.md only when >3 steps or >2 files) → compound (if pattern found)
+feature-intake → (tiny: branch + direct edit | normal: subagent-driven-development, with using-git-worktrees only when the change is not in-place; PLAN.md only when >3 steps or >2 files) → compound (if pattern found)
 
 feature-intake confirms the lane; a tiny lane branches (`git checkout -b`) then edits directly.
 Skip brainstorming when intent is clear.
@@ -204,8 +204,7 @@ Schema reference: `docs/solutions/README.md` (scaffolded by the harness repo's `
 1.7. Run-state gate — an untracked `RUN.json`/`events.jsonl` beside a staged `specs/<slug>/`
    file blocks (`REQUIRE_RUN_STATE_STAGED=0` downgrades it to a warning)
 
-Checks 2–3 are app gates, skipped unless `REQUIRE_APP_GATES=1`:
-
+   Checks 2–3 below are app gates, skipped unless `REQUIRE_APP_GATES=1`.
 2. Debug artifact check (`breakpoint()`, bare `print()`)
 2.5. Evidence gate (opt-in via `REQUIRE_VERIFY=1`) — for `app/` changes, requires a
    `### Verify` **heading** in the SUMMARY, then re-runs each *real* row and blocks when a
@@ -214,7 +213,7 @@ Checks 2–3 are app gates, skipped unless `REQUIRE_APP_GATES=1`:
    re-run degrades to presence-only if `python3` is unavailable
 3. Targeted pytest for changed `app/` files
 
-Under `REQUIRE_APP_GATES=1`, when ≥5 `app/` files are staged, the hook hints: `★ Consider running compound`.
+Under `REQUIRE_APP_GATES=1`, once the targeted pytest run passes, a commit with ≥5 staged `app/**/*.py` files prints `★ Large session detected (N app/ files).` and suggests the compound skill.
 
 > **Two different evidence gates — do not conflate them.** Check **1.6** is the row-presence
 > gate: `scripts/verify_summary.py --lane`, always on, asserts the SUMMARY carries what its `Lane:`
@@ -323,7 +322,7 @@ graph LR
     SKILL -.->|"copy the folder — no config"| NEW["Reusable in any project"]
 ```
 
-> **Historical note (2026-07-17):** xia2 previously carried a per-project `PROJECT.md` sibling holding the signal lists. That file was removed when xia2 went config-free; the `PROJECT.md >` references still visible in `tests/structural/depth-modes-test-cases.md` are that era's provenance and the classifications hold unchanged under the equivalent Common signals.
+> **Historical note (2026-07-17):** xia2 previously carried a per-project `PROJECT.md` sibling holding the signal lists. That file was removed when xia2 went config-free; the `PROJECT.md >` references still visible in `tests/structural/depth-modes-test-cases.md` are that era's provenance and the classifications hold unchanged under the portable signals in `references/depth-classifier.md`.
 
 - **Portable by design.** The risk-classification signals live in `references/depth-classifier.md` and `rules/research-depth.md` as common cross-project vocabulary. No per-project config file.
 - **Zero-config.** xia2 classifies from those portable signals; nothing to bootstrap.

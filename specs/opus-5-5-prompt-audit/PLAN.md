@@ -60,7 +60,7 @@ low-confidence items.
 
 ### Task 1.3 — Rules and root docs (wave 1)
 
-- **Files:** rules/behavior.md, rules/orchestration.md, rules/plan-format.md, rules/auto-correct-scope.md, CLAUDE.md, HARNESS.md
+- **Files:** rules/behavior.md, rules/orchestration.md, rules/plan-format.md, rules/auto-correct-scope.md, rules/wave-parallelism.md, CLAUDE.md, HARNESS.md
 - **Action:** Add behavior §4/§5; calibrate delegation; fix manifest-path, app-gate and stale
   references; drop numeric summary cap and history narrative.
 - **Verify:** `bash tests/scripts/rule-loading-tiers.test.sh && bash tests/scripts/inline-policy-drift.test.sh`
@@ -70,7 +70,7 @@ low-confidence items.
 
 ### Task 1.4 — Workflow skills and READMEs (wave 1)
 
-- **Files:** skills/README.md, skills/visual-planner/SKILL.md, skills/xia2/README.md, skills/xia2/references/research-brief-template.md, skills/compound/SKILL.md, skills/compound/README.md, skills/compound/subagents/context-analyzer-prompt.md, skills/compound/subagents/solution-extractor-prompt.md, skills/compound/subagents/decision-extractor-prompt.md, skills/finishing-a-development-branch/SKILL.md, skills/finishing-a-development-branch/references/pr-body.md, skills/brainstorming/spec-document-reviewer-prompt.md, skills/writing-plans/plan-document-reviewer-prompt.md, skills/feature-intake/SKILL.md
+- **Files:** skills/README.md, skills/visual-planner/SKILL.md, skills/xia2/README.md, skills/xia2/references/research-brief-template.md, skills/compound/SKILL.md, skills/compound/README.md, skills/compound/subagents/context-analyzer-prompt.md, skills/compound/subagents/solution-extractor-prompt.md, skills/compound/subagents/decision-extractor-prompt.md, skills/finishing-a-development-branch/SKILL.md, skills/finishing-a-development-branch/references/pr-body.md, skills/brainstorming/spec-document-reviewer-prompt.md, skills/writing-plans/plan-document-reviewer-prompt.md, skills/feature-intake/SKILL.md, skills/xia2/tests/structural/depth-modes-test-cases.md
 - **Action:** Fix stale facts and contradictions; run compound passes in-session; replace numeric
   caps and shouting; add the tiny-lane done criterion.
 - **Verify:** `bash tests/scripts/compound-contract.test.sh && bash tests/scripts/finishing-branch-contract.test.sh && bash scripts/lint-doc-truth.sh`
@@ -89,3 +89,5 @@ low-confidence items.
   resolves the branch from `CLAUDE_PROJECT_DIR` (main checkout, on `main`), so Edit/Write — and
   therefore implementer subagents — are denied inside this worktree. Edits applied via exact-match
   scripted replacements; independent review passes still run.
+- 2026-09-29 — Review chain: context-propagation audit (1 row repaired), correctness review
+  (14 fixed), intent review (1 fixed, 5 recorded). Follow-up commit applies the fixes.

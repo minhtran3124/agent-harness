@@ -28,11 +28,11 @@ Dispatch a subagent only for a `docs/solutions/` tree too large to screen from `
 
 ## Output Overview
 
-Each run can produce up to 4 files:
+Each run can produce up to 5 files:
 
 | File | When produced |
 |---|---|
-| `docs/solutions/[category]/[slug].md` | Bug or knowledge track (one file each) |
+| `docs/solutions/[category]/[slug].md` | Bug, knowledge, or failure track (one file each) |
 | `docs/solutions/[category]/[slug]-decisions.md` | Decision track (all decisions for this session) |
 | `docs/solutions/critical-patterns.md` | Appended to when `severity = critical` |
 | `docs/solutions/INDEX.md` | Always rebuilt from scratch after every run |
@@ -113,6 +113,7 @@ confirmed_at: YYYY-MM-DD
 **`applicable_when` is the primary discovery field.** It completes a specific sentence form:
 - Knowledge: "Use this pattern when…"
 - Decision: "Make this decision when…"
+- Failure: "Watch for this when…"
 - Bug: inherited from `CONTEXT_ANALYSIS` (same sentence as the session-level trigger)
 
 This field appears as a column in `INDEX.md`, letting a future agent scan one sentence per doc to decide whether to open the full file.
@@ -175,7 +176,7 @@ Critical learnings (read at planning time): `docs/solutions/critical-patterns.md
 2. **Passes return text only** — the orchestrator writes all files.
 3. **Never auto-write to CLAUDE.md** — always propose and wait for approval.
 4. **Track emission is conservative** — skip any track with a single empty required section.
-5. **INDEX rebuild (`scripts/rebuild_solution_index.py`) runs after every write** — runs even if no new files were written this run. The `~` line always appears in the completion report (except if `docs/solutions/` doesn't exist).
+5. **INDEX rebuild (`scripts/rebuild_solution_index.py`) is unconditional** — it runs at the end of every compound run, even when no new files were written. The `~` line always appears in the completion report (except if `docs/solutions/` doesn't exist).
 6. **Old files without new frontmatter fields** — write `—` in INDEX.md cells for missing `severity` / `applicable_when`. Do not backfill old files.
 
 ---
