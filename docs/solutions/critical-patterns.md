@@ -181,3 +181,13 @@ A manual `grep` for `git -C "$SCRIPT_DIR"` found seven hooks; seven were fixed, 
 
 **Full doc:** docs/solutions/harness/ratchet-matches-spelling-not-property.md
 ---
+
+## [2026-09-29] bare-command-hook-must-be-executable-in-index
+**Type:** bug
+**Module:** hooks/registration
+**Tags:** hook-registration, file-mode, exit-126, fail-open, bash-invoked-tests, settings-json, deploy-propagation, correctness-review-catch
+**Applicable when:** Adding or replacing a hook that settings.json registers as a bare command path (no `bash` prefix), including any file created by an agent Write tool (defaults to 100644).
+
+A new `hooks/commit-gate.sh` was committed `100644` while registered as a bare command, so the runtime got exit 126 — not a block — and every commit gate silently failed open, in this repo and in every consumer deploy. It passed 200+ assertions because every hook test runs `bash hooks/x.sh`, which ignores the execute bit; `tests/scripts/settings-wiring.test.sh` now asserts `-x` and index mode `100755` for every registered command.
+
+**Full doc:** docs/solutions/harness/bare-command-hook-must-be-executable-in-index.md
