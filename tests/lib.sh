@@ -6,10 +6,10 @@
 #   assert_rc 2
 #   finish
 #
-# Design: hooks have a pure contract (stdin JSON → exit code + stderr). Hooks that need
-# git state resolve the repo root FROM THEIR OWN LOCATION (git -C "$(dirname $0)" ...),
-# so tests copy the hook under test into a throwaway mktemp git repo and run it there —
-# fully hermetic, nothing in the real repo is touched.
+# Design: hooks have a pure contract (stdin JSON [+ args] → exit code + stderr/stdout). Hooks
+# that need git state resolve the repo root from CLAUDE_PROJECT_DIR, else git-from-CWD —
+# never from their own location. Tests copy the hook under test into a throwaway mktemp git
+# repo and run it with CWD = that repo — fully hermetic, nothing in the real repo is touched.
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PASS=0; FAIL=0; SKIP=0; XFAIL=0
@@ -39,7 +39,7 @@ new_repo() {
   local h
   for h in "$@"; do cp "$ROOT/hooks/$h" "$d/hooks/"; done
   # Copied harness fixtures are test infrastructure, not repository state under test.
-  # Keep Python hook libraries from triggering check-untracked-py's fixture repos.
+  # Keep Python hook libraries from tripping the untracked-.py check (check_untracked_py).
   printf '/hooks/\n' >> "$d/.git/info/exclude"
   echo "$d"
 }
@@ -52,11 +52,22 @@ stage() {
 }
 
 # run_hook <repo> <hook.sh> <json-stdin> [VAR=val ...] — sets OUT (stdout+stderr) and RC.
-# Runs with CWD = repo (as the real harness does): SCRIPT_DIR-based hooks resolve the same
-# root either way, and CWD-based hooks (check-untracked-py) need it.
+# Runs with CWD = repo (as the real harness does): hooks resolve the repo root from CWD when
+# CLAUDE_PROJECT_DIR is unset.
 run_hook() {
   local repo="$1" hook="$2" json="$3"; shift 3
   OUT=$(cd "$repo" && printf '%s' "$json" | env "$@" bash "hooks/$hook" 2>&1); RC=$?
+}
+
+# run_hook_args <repo> <hook.sh> <json-stdin> <arg>... -- [VAR=val ...]
+# Same CWD and merged-stream semantics as run_hook, but passes <arg>... to the hook
+# (e.g. `--profile strict`). Everything after `--` is the environment.
+run_hook_args() {
+  local repo="$1" hook="$2" json="$3"; shift 3
+  local -a args=()
+  while [ $# -gt 0 ] && [ "$1" != "--" ]; do args+=("$1"); shift; done
+  [ $# -gt 0 ] && shift
+  OUT=$(cd "$repo" && printf '%s' "$json" | env "$@" bash "hooks/$hook" "${args[@]}" 2>&1); RC=$?
 }
 
 json_cmd()    { printf '{"tool_input":{"command":"%s"}}' "$1"; }
