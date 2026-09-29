@@ -4,8 +4,8 @@
 #
 # The gap this closes: branch creation in this harness is prompt-only. writing-plans
 # does not invoke using-git-worktrees, and the execution skills' "Step 0" branch check
-# is a soft instruction the model may skip. commit-gate.sh only WARNS, and only at
-# commit time — after the work is already on the shared branch. This hook makes the
+# is a soft instruction the model may skip, and nothing at commit time checks the branch
+# (commit-gate.sh does not) — by then the work is already on the shared branch. This hook makes the
 # "branch before implementing" rule STRUCTURAL at write time.
 #
 # Fires (DENY) when BOTH hold:
