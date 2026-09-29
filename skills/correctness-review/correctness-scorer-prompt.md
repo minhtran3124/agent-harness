@@ -69,8 +69,9 @@ Task tool (reviewer):
 
     ## Score 0 automatically when ANY of these apply
 
-    - A linter would catch this before merge. No linter or typechecker is wired as a hook
-      or CI gate in this repo — do not score 0 for a lint- or type-level defect on that basis.
+    - A wired linter would catch this before merge. Only `shellcheck -S error` runs in CI, over
+      bash blocks in skill docs (harness repo only); no Python linter or typechecker is
+      wired, so do not score 0 for a Python lint- or type-level defect on that basis.
     - An existing CI check or hook already catches it, e.g. `hooks/commit-gate.sh`'s risk
       corroboration (lane vs staged diff). `hooks/commit-gate.sh` runs targeted pytest only
       under the `strict` profile or `REQUIRE_APP_GATES=1`; do not assume it caught a
