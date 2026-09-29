@@ -191,4 +191,21 @@ $repo/app/a.py" '{tool_input:{file_path:$f}}')
 run_hook "$repo" $H "$payload" CLAUDE_PROJECT_DIR="$repo"
 assert_rc_contains 0 '"permissionDecision":"deny"'
 
+t "gitfile/core.worktree loop terminates instead of hanging the hook"
+base=$(mktemp -d); _CLEANUP_DIRS+=("$base")
+mkdir -p "$base/outer/inner/hooks"; git -C "$base/outer/inner" init -q -b feature/x
+git -C "$base/outer/inner" commit -q --allow-empty -m i
+printf 'gitdir: %s\n' "$base/outer/inner/.git" > "$base/outer/.git"
+git -C "$base/outer/inner" config core.worktree "$base/outer/inner"
+cp -R "$ROOT/hooks/lib" "$base/outer/inner/hooks/" && cp "$ROOT/hooks/$H" "$base/outer/inner/hooks/"
+OUT=$(cd "$base/outer/inner" && printf '%s' "$(json_file "$base/outer/inner/app/x.py")" \
+  | env CLAUDE_PROJECT_DIR="$base" perl -e 'alarm 10; exec @ARGV' bash "hooks/$H" 2>&1); RC=$?
+assert_silent_ok
+
+t "nested repo on a task branch inside a task worktree nested in main → allow"
+repo=$(new_repo $H); wt=$(linked_worktree "$repo" feature/wt)
+mkdir -p "$wt/vendor/nested"; git -C "$wt/vendor/nested" init -q -b feature/n
+run_hook "$repo" $H "$(json_file "$wt/vendor/nested/app/x.py")" CLAUDE_PROJECT_DIR="$repo"
+assert_silent_ok
+
 finish

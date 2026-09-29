@@ -38,7 +38,7 @@ The branch that matters is the one the edited file will be committed on, which i
 
 | Check | Command | Exit | Notes | Criterion |
 | --- | --- | --- | --- | --- |
-| guard contract incl. 10 worktree/bypass regressions | `bash tests/hooks/branch-isolation-guard.test.sh` | 0 | 28 passed; each new case failed before its fix, and removing any one guard arm fails ≥1 case | |
+| guard contract incl. 12 worktree/bypass regressions | `bash tests/hooks/branch-isolation-guard.test.sh` | 0 | 30 passed; each new case failed before its fix, and removing any one guard arm fails ≥1 case | |
 | normalizer contract unchanged | `bash tests/hooks/normalize-tool-input.test.sh` | 0 | 19 passed | |
 | prefixed-spec compatibility | `bash tests/hooks/spec-prefix-compat.test.sh` | 0 | 11 passed | |
 | hook table matches settings | `bash scripts/lint-doc-truth.sh` | 0 | | |
@@ -56,6 +56,14 @@ Adversarial review of the first fix commit found 3 Important and 3 Minor; fixed 
 - Break-glass log followed the payload-chosen root — pinned to the launch root, owner recorded in the log line.
 - `file_path` with an embedded newline — left unresolved.
 A second re-review found that the common-dir check skipped judgement whenever the launch directory was not this repository (a regression against the first fix), and that `dirname(common dir)` is not a checkout under separate-git-dir or bare layouts. Fixed in the third commit: the launch directory no longer decides anything for absolute paths; git-dir paths are judged by the HEAD stored in the git dir; the newline arm gained a test.
+A third re-review found the enclosing-checkout walk could hang on a gitfile/`core.worktree` loop (a PreToolUse hang blocks every edit), and that a nested repo inside a task worktree was falsely denied via the main checkout. Fixed in the fourth commit: each step must reach a strict ancestor, and every repository already seen lower in the chain is skipped.
+
+Deferred (recorded, not fixed here — each pre-dates this branch or needs a design of its own):
+- Codex `apply_patch` with an **absolute** path is still judged by the launch directory (only `tool_input.file_path` is read). This matches the pre-branch behavior for all edits; closing it means judging each patch path separately.
+- Submodule git dirs under `.git/modules/` are judged by the submodule's HEAD, not the superproject's.
+- A submodule on a task branch inside a checkout on `main` is denied (conservative; break-glass clears it).
+- Fail-open when `git` is missing and glob expansion of `HARNESS_SHARED_BRANCHES='*'` are in the pre-existing branch loop.
+
 Recorded, not changed: detached HEAD in the owning checkout allows (pre-existing, now reachable only via this repo's own worktrees); sibling hooks still use `CLAUDE_PROJECT_DIR` (below).
 
 ### Not auto-verified

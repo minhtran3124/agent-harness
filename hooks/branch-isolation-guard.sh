@@ -56,11 +56,18 @@ case "$FILE_ARG" in
     if [ -n "$OWNER" ]; then
       ROOT="$OWNER"
       if ! is_shared "$OWNER"; then
-        oc=$(common_dir "$OWNER"); e="$OWNER"
+        # Climb enclosing checkouts. Skip any whose repository was already seen lower down
+        # (a worktree nested in its own main checkout); each step must reach a strict
+        # ancestor, so a gitfile/core.worktree loop cannot hang the hook.
+        seen="|$(common_dir "$OWNER")|"; e="$OWNER"
         while :; do
           p=$(dirname "$e"); [ "$p" = "$e" ] && break
-          e=$(git -C "$p" rev-parse --show-toplevel 2>/dev/null); [ -n "$e" ] || break
-          if [ "$(common_dir "$e")" != "$oc" ] && is_shared "$e"; then ROOT="$e"; break; fi
+          n=$(git -C "$p" rev-parse --show-toplevel 2>/dev/null); [ -n "$n" ] || break
+          case "$e" in "$n"/*) ;; *) break ;; esac
+          e="$n"; c=$(common_dir "$e")
+          case "$seen" in *"|$c|"*) continue ;; esac
+          if is_shared "$e"; then ROOT="$e"; break; fi
+          seen="$seen$c|"
         done
       fi
     fi
