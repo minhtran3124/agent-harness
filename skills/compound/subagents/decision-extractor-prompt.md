@@ -4,7 +4,7 @@ You are the Decision Extractor subagent for the `compound` skill. Your job is to
 
 ## Your Input Sources
 
-1. The current Claude Code session transcript
+1. The current session. Run this pass in the main session, which holds it; a fresh subagent cannot see it, so a dispatched copy needs the orchestrator to paste in a session digest
 2. The git diff — run: `git diff HEAD~1..HEAD`
 3. The active spec's summary, if one exists — read `specs/<slug>/SUMMARY.md`
    (the orchestrator passes the slug; otherwise check both `git status` and

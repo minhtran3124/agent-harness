@@ -47,7 +47,7 @@ classify risk; ask only to resolve a material ambiguity or narrow a hard-gated s
 
 | Lane | Route |
 | --- | --- |
-| tiny | Create a branch, make the direct patch, and retain quick-check proof. |
+| tiny | Create a branch, make the direct patch, and retain quick-check proof; report done only when that check passes, else state what is missing. |
 | normal | `using-git-worktrees` → `subagent-driven-development`. |
 | high-risk | `brainstorming` → `xia2` → `writing-plans` → `using-git-worktrees` → `subagent-driven-development`; use `compound` for durable decisions. |
 

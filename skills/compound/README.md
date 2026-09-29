@@ -8,7 +8,7 @@ Transforms session learnings into persistent, discoverable documentation under `
 
 ## Architecture
 
-The skill uses an **orchestrator + 4 subagents** model. The orchestrator (`SKILL.md`) coordinates everything — subagents only read and return text, the orchestrator writes all files.
+The skill runs **four passes** from one orchestrator (`SKILL.md`). The passes run in the main session, which holds the transcript; the files under `subagents/` define each pass's output schema. Passes return text only — the orchestrator writes all files.
 
 ```
 compound (orchestrator — SKILL.md)
@@ -18,12 +18,11 @@ compound (orchestrator — SKILL.md)
 └── subagents/related-docs-finder-prompt.md  → finds overlapping existing docs
 ```
 
-**Dispatch order (Option A — recommended):**
-1. Context Analyzer + Solution Extractor + Decision Extractor in parallel
-2. Wait for Context Analyzer → extract `module` + `tags`
-3. Dispatch Related Docs Finder with those values (more accurate overlap detection)
+**Order:**
+1. Context Analyzer, Solution Extractor, Decision Extractor
+2. Related Docs Finder with the Context Analyzer's `module` + `tags`
 
-**Option B (faster, slightly less accurate):** dispatch all 4 in parallel with a best-guess `module` and `tags` for the Related Docs Finder.
+Dispatch a subagent only for a `docs/solutions/` tree too large to screen from `INDEX.md`, and paste in its inputs — a fresh context cannot see the session.
 
 ---
 
@@ -56,6 +55,11 @@ Captures a reusable pattern, API behavior, or technique discovered during the se
 Captures an architectural decision in lightweight ADR format — what was decided, what alternatives were considered, and why.
 
 **Required sections (all must be non-empty):** Context, Options_Considered, Decision_and_Rationale
+
+### Failure track
+Captures an approach that was tried and failed — including `Harness-Delta: backlog` friction — so a future session does not repeat it.
+
+**Required sections (all must be non-empty):** Symptom, Wrong_Approach, Why_It_Failed, Correct_Approach
 
 > **Emission gate:** if any required section is `[none]` or empty, the track is skipped entirely. Never emit a partial track.
 
@@ -93,7 +97,7 @@ Every emitted file carries this frontmatter:
 
 ```yaml
 ---
-problem_type: [bug | knowledge | decision]
+problem_type: [bug | knowledge | decision | failure]
 module: [primary module, e.g. kb/embedding, services/ai, skills/compound]
 tags: [3-6 kebab-case tags, comma-separated]
 severity: [critical | standard]
@@ -168,10 +172,10 @@ Critical learnings (read at planning time): `docs/solutions/critical-patterns.md
 ## Key Rules
 
 1. **Never run automatically** — only on explicit `compound` trigger.
-2. **Subagents return text only** — the orchestrator writes all files.
+2. **Passes return text only** — the orchestrator writes all files.
 3. **Never auto-write to CLAUDE.md** — always propose and wait for approval.
 4. **Track emission is conservative** — skip any track with a single empty required section.
-5. **Step 5.75 (INDEX rebuild) is unconditional** — runs even if no new files were written this run. The `~` line always appears in the completion report (except if `docs/solutions/` doesn't exist).
+5. **INDEX rebuild (`scripts/rebuild_solution_index.py`) runs after every write** — runs even if no new files were written this run. The `~` line always appears in the completion report (except if `docs/solutions/` doesn't exist).
 6. **Old files without new frontmatter fields** — write `—` in INDEX.md cells for missing `severity` / `applicable_when`. Do not backfill old files.
 
 ---
@@ -184,7 +188,7 @@ Critical learnings (read at planning time): `docs/solutions/critical-patterns.md
   → docs/solutions/[category]/[slug]-decisions.md     [decision — N tracks consolidated]
   ↑ docs/solutions/critical-patterns.md               [promoted — critical]
   ~ docs/solutions/INDEX.md                           [rebuilt — N entries]
-  CLAUDE.local.md surfaces docs/solutions/ ✓
+  CLAUDE.md surfaces docs/solutions/ ✓
 ```
 
 If no tracks emitted:

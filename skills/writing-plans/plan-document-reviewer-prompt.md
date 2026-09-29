@@ -33,7 +33,7 @@ Task tool (general-purpose):
 | Decidable Criteria | Every `Verify:` and `Done:` field states something a machine can decide by running it. Flag any field resting on `correctly`, `properly`, `as expected`, `works`, `is correct`, or `looks right` — per `rules/terminology.md` §3 |
     | Chunk Size | Each chunk under 1000 lines |
 
-    ## CRITICAL
+    ## Commonly missed
 
     Look especially hard for:
     - Any TODO markers or placeholder text

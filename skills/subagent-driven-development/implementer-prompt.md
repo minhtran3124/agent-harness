@@ -2,9 +2,16 @@
 
 Use this template when dispatching an implementer subagent.
 
+`model_stage` is not a Task-tool parameter. Use the `model:` already declared in this stage's
+rendered `agents/` definition as the Task tool's `model:` value — the harness repo resolves that
+value at render time (`scripts/render_runtime_entry.py --model-stage implementer`), so a consuming
+repo reads it off the agent file rather than re-deriving it.
+
 ```
-Task tool (general-purpose):
+Task tool (coding):
   description: "Implement Task N: [task name]"
+  subagent_type: coding
+  model_stage: implementer
   prompt: |
     You are implementing Task N: [task name]
 
@@ -22,13 +29,9 @@ Task tool (general-purpose):
 
     ## Before You Begin
 
-    If you have questions about:
-    - The requirements or acceptance criteria
-    - The approach or implementation strategy
-    - Dependencies or assumptions
-    - Anything unclear in the task description
-
-    **Ask them now.** Raise any concerns before starting work.
+    You cannot ask questions mid-task; you can only return. Make routine judgment calls
+    yourself and note them in your report. If the brief lacks something that would lead to
+    materially different work, return NEEDS_CONTEXT before editing.
 
     ## Your Job
 
@@ -38,13 +41,12 @@ Task tool (general-purpose):
     3. Verify the implementation: run your linter and type-checker first (when the stack
        defines them), then the task's `<verify>` command. Do not substitute the whole
        suite — it runs at branch finish and in CI.
-    4. Self-review (see below)
-    5. Report back
+    4. Report back
 
     Work from: [directory]
 
-    **While you work:** If you encounter something unexpected or unclear, **ask questions**.
-    It's always OK to pause and clarify. Don't guess or make assumptions.
+    **While you work:** if something unexpected changes what the task should be, return
+    NEEDS_CONTEXT or BLOCKED (below) rather than guessing.
 
     ## Code Organization
 
@@ -61,13 +63,12 @@ Task tool (general-purpose):
 
     ## When You're in Over Your Head
 
-    It is always OK to stop and say "this is too hard for me." Bad work is worse than
-    no work. You will not be penalized for escalating.
+    Escalating is an expected outcome: unreliable work costs more downstream than a clear
+    BLOCKED.
 
     **STOP and escalate when:**
     - The task requires architectural decisions with multiple valid approaches
     - You need to understand code beyond what was provided and can't find clarity
-    - You feel uncertain about whether your approach is correct
     - The task involves restructuring existing code in ways the plan didn't anticipate
     - You've been reading file after file trying to understand the system without progress
 
@@ -76,31 +77,12 @@ Task tool (general-purpose):
     The controller can provide more context, re-dispatch with a more capable model,
     or break the task into smaller pieces.
 
-    ## Before Reporting Back: Self-Review
+    ## Completion bar
 
-    Review your work with fresh eyes. Ask yourself:
-
-    **Completeness:**
-    - Did I fully implement everything in the spec?
-    - Did I miss any requirements?
-    - Are there edge cases I didn't handle?
-
-    **Quality:**
-    - Is this my best work?
-    - Are names clear and accurate (match what things do, not how they work)?
-    - Is the code clean and maintainable?
-
-    **Discipline:**
-    - Did I avoid overbuilding (YAGNI)?
-    - Did I only build what was requested?
-    - Did I follow existing patterns in the codebase?
-
-    **Testing:**
-    - Do tests actually verify behavior (not just mock behavior)?
-    - Did I follow TDD if required?
-    - Are tests comprehensive?
-
-    If you find issues during self-review, fix them now before reporting.
+    Report DONE only when every requirement and mapped Success Criterion in the brief is
+    implemented and `<verify>` passes. If part of the task genuinely cannot be finished, do
+    the rest and state plainly what is missing and why. Build only what the brief asks; if
+    you think the ask is mistaken, say so in one sentence and still deliver it as specified.
 
     ## Auto-Correction Scope
 
@@ -134,7 +116,6 @@ Task tool (general-purpose):
       Each entry: `{rule: 1|2|3, description, file, commit_sha}`. Empty list if none.
     - What you implemented (or what you attempted, if blocked)
     - What you tested and test results
-    - Self-review findings (if any)
     - Any issues or concerns
 
     Use DONE_WITH_CONCERNS if you completed the work but have doubts about correctness.

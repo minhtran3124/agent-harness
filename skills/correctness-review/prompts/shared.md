@@ -112,8 +112,8 @@ For each finding:
 - **Fix**: one line — the direction, not a patch.
 - **Flags**: `unmodified-line` if the cited line was not changed by the diff. Otherwise omit.
 
-Report at most **6 findings**, most severe first. If you found more than 6, report the 6 most
-severe and state how many you dropped.
+Report every finding that meets the trigger requirement, most severe first. The SCORE stage
+filters for precision; do not filter here.
 
 End with exactly one of:
 

@@ -62,7 +62,8 @@ Ensure branch isolation, set the plan `status: active`, and transition the durab
   final review chain.
 - `NEEDS_CONTEXT` receives missing context; `BLOCKED` is re-dispatched with changed context/model,
   split, or escalated when the plan itself is wrong. Repeated verification failure or blast-radius
-  escape is an escalation signal. Keep controller narration to one short status line between calls.
+  escape is an escalation signal. Between dispatches, tell the user in a sentence which task is
+  starting and what came back (verdicts, blockers); keep detail in SUMMARY and the ledger.
 
 After all tasks pass, transition to `verifying` when tracked and read
 `references/review-chain.md` for the final sequence.
