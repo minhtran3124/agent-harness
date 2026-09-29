@@ -42,7 +42,7 @@ xia2
 writing-plans
   → input: design.md + research-brief.md
   → output: specs/<slug>/PLAN.md
-  → PLAN.html auto-rendered by hooks/render-plan-on-write.sh on every save (not auto-opened)
+  → runs render_plan.py --summarize after saving (At-a-glance block + PLAN.html; not auto-opened)
       ↓
 using-git-worktrees
   → creates isolated worktree + branch
@@ -69,7 +69,7 @@ feature-intake confirms the lane; a tiny lane branches (`git checkout -b`) then 
 Skip brainstorming when intent is clear.
 Skip using-git-worktrees for in-place edits — but NOT the branch: a plain
 `git checkout -b <type>/<slug>` is still required. No lane implements on a shared branch.
-PLAN.html still auto-renders on every PLAN.md save (`hooks/render-plan-on-write.sh`).
+PLAN.html is not auto-rendered; `render_plan.py --summarize` refreshes it (writing-plans, wave boundaries).
 ```
 
 ### Bug Fix Path
@@ -110,8 +110,8 @@ from the harness checkout run `bash scripts/init-structure.sh --root <project>`,
 
 | Skill | Trigger | Output |
 |---|---|---|
-| `writing-plans` | After design is approved and xia2 brief is ready | `specs/<slug>/PLAN.md` (`PLAN.html` auto-rendered by the render-plan hook) |
-| `visual-planner` | Standalone render of a `PLAN.md` — mainly for `--review` mode (blast-radius/risk overlay). Plain renders happen automatically via `hooks/render-plan-on-write.sh` | `specs/<slug>/PLAN.html` (untracked, local-only) |
+| `writing-plans` | After design is approved and xia2 brief is ready | `specs/<slug>/PLAN.md` (`PLAN.html` via `render_plan.py --summarize` after saving) |
+| `visual-planner` | Standalone render of a `PLAN.md` — mainly for `--review` mode (blast-radius/risk overlay). Plain renders come from `render_plan.py --summarize` (run by writing-plans and at each wave boundary) | `specs/<slug>/PLAN.html` (untracked, local-only) |
 
 ### Execution
 
@@ -155,7 +155,7 @@ feature-intake             ──► tiny: git checkout -b → direct edit · no
                                 high-risk: brainstorming (full chain) · low confidence: escalate
 brainstorming              ──► xia2 → writing-plans (the only valid next skills)
 xia2                       ──► research brief → user/skill decides next step
-writing-plans              ──► (PLAN.html auto-rendered by hook) → using-git-worktrees
+writing-plans              ──► (render_plan.py --summarize) → using-git-worktrees
                                 → subagent-driven-development
 visual-planner             ──► PLAN.html (terminal — visual artifact; back to writing-plans handoff)
 subagent-driven-development ──► workflow-engine diff: context-propagation-audit → correctness-review → intent-review → compound → finishing-a-development-branch
@@ -192,7 +192,8 @@ Schema reference: `docs/solutions/README.md` (scaffolded by the harness repo's `
 
 ## Commit Hook
 
-`hooks/commit-quality-gate.sh` gates every commit:
+`hooks/commit-gate.sh` gates every commit (default `standard` profile; `minimal` runs only the
+secrets scan, `strict` adds the untracked-`.py` deny and the app gates):
 1. Secrets scan (+ staged `.env` check)
 1.5. Pending-escalation gate — denies a commit touching `specs/<slug>/` while that slug's
    `ESCALATIONS.md` has `decision: pending` (deny-on-no-response)
@@ -204,7 +205,7 @@ Schema reference: `docs/solutions/README.md` (scaffolded by the harness repo's `
 1.7. Run-state gate — an untracked `RUN.json`/`events.jsonl` beside a staged `specs/<slug>/`
    file blocks (`REQUIRE_RUN_STATE_STAGED=0` downgrades it to a warning)
 
-   Checks 2–3 below are app gates, skipped unless `REQUIRE_APP_GATES=1`.
+   Checks 2–3 below are app gates, skipped unless the `strict` profile or `REQUIRE_APP_GATES=1`.
 2. Debug artifact check (`breakpoint()`, bare `print()`)
 2.5. Evidence gate (opt-in via `REQUIRE_VERIFY=1`) — for `app/` changes, requires a
    `### Verify` **heading** in the SUMMARY, then re-runs each *real* row and blocks when a
@@ -299,7 +300,7 @@ graph LR
 
 - **Deterministic script, not LLM transcription.** The skill only runs the script and relays its report — never emits HTML token-by-token. Transcribing a ~340-line template every run is expensive and the least reproducible part of the pipeline; a script makes the fill free and stable.
 - **Local-only output.** `PLAN.html` is untracked — it lives beside `PLAN.md` in `specs/` (which is tracked), but `PLAN.html` itself is gitignored as a derived artifact.
-- **Auto-rendered by a hook, not a sub-agent.** `hooks/render-plan-on-write.sh` (PostToolUse on `specs/*/PLAN.md`) runs `render_plan.py --summarize` on **every** save, so `PLAN.html` and the in-file "At a glance" block stay current without any skill dispatch. Nothing auto-opens it; `view_plan.py` opens it on request. Run `visual-planner <slug>` standalone when you want `--review` mode.
+- **Rendered by a script run, not a hook or sub-agent.** `writing-plans` runs `render_plan.py --summarize` after saving `PLAN.md`, and `rules/wave-parallelism.md` runs it at each wave boundary, so `PLAN.html` and the in-file "At a glance" block stay current without any skill dispatch. Nothing auto-opens it; `view_plan.py` opens it on request. Run `visual-planner <slug>` standalone when you want `--review` mode.
 - **Why serve instead of `file://`?** Localhost is a browser *secure context*, so per-task "copy `<verify>`" buttons use `navigator.clipboard`; `--file` (`file://`) is faster but falls back to `execCommand`. Auto-view is environment-dependent (no display on headless/remote), so it stays an explicit step.
 - **Self-check before claiming success.** The script asserts non-empty output, no surviving `{{PLACEHOLDER}}`, the `slug` present, and one `<section data-wave>` per distinct wave. On non-zero exit, surface the `SELF-CHECK FAILED:` lines verbatim — do not claim success.
 

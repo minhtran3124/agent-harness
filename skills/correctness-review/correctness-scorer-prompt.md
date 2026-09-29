@@ -69,12 +69,12 @@ Task tool (reviewer):
 
     ## Score 0 automatically when ANY of these apply
 
-    - A linter would catch this before merge (`ruff-on-edit` runs `ruff check --fix` +
-      `ruff format` on every existing edited `.py` path). No typechecker is wired in this
-      repo — do not score 0 for a type-level defect on that basis.
-    - An existing CI check or hook already catches it, e.g. `risk-corroboration` (lane vs
-      staged diff). `commit-quality-gate` runs targeted pytest only under
-      `REQUIRE_APP_GATES=1`; do not assume it caught a test-detectable bug.
+    - A linter would catch this before merge. No linter or typechecker is wired as a hook
+      or CI gate in this repo — do not score 0 for a lint- or type-level defect on that basis.
+    - An existing CI check or hook already catches it, e.g. `hooks/commit-gate.sh`'s risk
+      corroboration (lane vs staged diff). `hooks/commit-gate.sh` runs targeted pytest only
+      under the `strict` profile or `REQUIRE_APP_GATES=1`; do not assume it caught a
+      test-detectable bug.
     - **The flagged line was NOT modified by the diff.** This includes any finding marked
       `unmodified-line` — code inside a function the diff changed, but on a line it did not
       change. Score it 0 even when the bug is unmistakably real.

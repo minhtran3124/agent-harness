@@ -20,7 +20,7 @@ The intake lane (`specs/<slug>/SUMMARY.md`, set by `feature-intake`) decides how
 
 | Lane | Autonomy | Plan | Human confirm |
 |---|---|---|---|
-| **tiny** | Full auto — direct patch on a fresh branch | none | none (machine gates are the safety net: `ruff-on-edit`, `commit-quality-gate`, `risk-corroboration`) |
+| **tiny** | Full auto — direct patch on a fresh branch | none | none (machine gates are the safety net: `commit-gate.sh`, `branch-isolation-guard.sh`) |
 | **normal** | Auto with proof gates (one task reviewer, two verdicts) | yes | only if confidence low / ambiguous |
 | **high-risk** | Auto-plan, gated-execute | yes (full chain) | only on ambiguity or a hard gate (Rule 4) |
 
@@ -35,7 +35,7 @@ ceremony: tiny uses `git checkout -b <type>/<slug>`; normal and high-risk use
 can record `SUMMARY.md` first. Break glass with `BRANCH_ISOLATION_REASON=<why>`; the hook records
 the override in `docs/harness-experimental/break-glass-log.md`.
 
-> **Evidence the lane requires (single source of truth):** `scripts/verify_summary.py --lane` mechanizes the lane → evidence mapping so this table, `skills/feature-intake/SKILL.md` (Step 7), and the `SUMMARY.md` checks do not drift. It reads `specs/<slug>/SUMMARY.md` and asserts: **tiny** → filled `Lane`/`Confidence`/`Reason`; **normal** → + a non-placeholder `### Verify` row; **high-risk** → + a non-empty `### Rollback`, and a `### Not auto-verified` section (**advisory by default** — prints a warning and still exits 0; set `REQUIRE_NOT_AUTO_VERIFIED=1` to make it blocking, which is the intended end state once the back catalogue has drained). Run `python scripts/verify_summary.py --lane <slug>` (exit 1 = missing evidence). Edit the mapping there, not only in prose. **Enforced** at commit time by `hooks/commit-quality-gate.sh` Check 1.6 on every staged `specs/<slug>/SUMMARY.md` — the staged copy is what is checked, so a commit that adds the missing evidence self-unblocks.
+> **Evidence the lane requires (single source of truth):** `scripts/verify_summary.py --lane` mechanizes the lane → evidence mapping so this table, `skills/feature-intake/SKILL.md` (Step 7), and the `SUMMARY.md` checks do not drift. It reads `specs/<slug>/SUMMARY.md` and asserts: **tiny** → filled `Lane`/`Confidence`/`Reason`; **normal** → + a non-placeholder `### Verify` row; **high-risk** → + a non-empty `### Rollback`, and a `### Not auto-verified` section (**advisory by default** — prints a warning and still exits 0; set `REQUIRE_NOT_AUTO_VERIFIED=1` to make it blocking, which is the intended end state once the back catalogue has drained). Run `python scripts/verify_summary.py --lane <slug>` (exit 1 = missing evidence). Edit the mapping there, not only in prose. **Enforced** at commit time by `hooks/commit-gate.sh` (`check_lane_evidence`; `standard` and `strict` profiles) on every staged `specs/<slug>/SUMMARY.md` — the staged copy is what is checked, so a commit that adds the missing evidence self-unblocks.
 
 Rule 4 (STOP) still fires inside **every** lane — a hard gate discovered mid-task escalates regardless of how the work was classified. Ceremony scales with risk; the human gate scales with ambiguity, not risk.
 
@@ -74,7 +74,7 @@ Issues preventing the task from completing:
 
 ## Rule 4 — STOP + ask user
 
-> **Canonical gate list:** the hard-gate vocabulary lives in `harness-manifest.json` — the diff-detectable gates under `hard_gates.detectable` (enforced by `risk-corroboration.sh`) and the judgment-only STOP items below under `hard_gates.judgment` (removing functionality, session/scope, replacing a service). Keep this list in sync with the manifest; the harness repo's `scripts/check_manifest.py` guards the detectable half in harness CI (it does not deploy into a consuming repo).
+> **Canonical gate list:** the hard-gate vocabulary lives in `harness-manifest.json` — the diff-detectable gates under `hard_gates.detectable` (enforced by `hooks/commit-gate.sh`'s `check_risk`) and the judgment-only STOP items below under `hard_gates.judgment` (removing functionality, session/scope, replacing a service). Keep this list in sync with the manifest; the harness repo's `scripts/check_manifest.py` guards the detectable half in harness CI (it does not deploy into a consuming repo).
 
 Changes requiring architectural judgment — NEVER auto-apply:
 

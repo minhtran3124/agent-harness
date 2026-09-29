@@ -18,7 +18,7 @@ Mirrors the decision table in `../SKILL.md` Step 3.
 | LC-10 ★ | "swap the payments provider from X to Y across the subscription flow" | external-systems, public-contract, multi-domain | **high-risk** |
 | LC-11 ★ | "remove the `required=True` validators on the signup schema" | weakening-validation | **high-risk** |
 | LC-12 ★ | "register a new PostToolUse hook in settings.json" | high-blast file | **high-risk** |
-| LC-13 ★ | "edit hooks/commit-quality-gate.sh to add a check" | high-blast file | **high-risk** |
+| LC-13 ★ | "edit hooks/commit-gate.sh to add a check" | high-blast file | **high-risk** |
 | LC-14 | "add request-id logging middleware touching main.py and a util" | existing-behavior | **normal** |
 | LC-15 ★ | "tweak CORS allowed origins in the auth middleware" | auth, public-contract | **high-risk** |
 
@@ -26,7 +26,7 @@ Mirrors the decision table in `../SKILL.md` Step 3.
 
 - LC-03 is the boundary case: a single additive, backward-compatible contract field is
   `normal`, not `high-risk` — it trips the public-contract flag but no hard gate.
-- LC-12/LC-13 are the canaries that matter most for this repo: the corroboration hook
-  (`hooks/risk-corroboration.sh`) only protects what intake first classifies correctly.
+- LC-12/LC-13 are the canaries that matter most for this repo: the corroboration check
+  (`hooks/commit-gate.sh`'s `check_risk`) only protects what intake first classifies correctly.
 - A prompt that trips a hard gate **and** reads as ambiguous escalates (see
   `confidence-escalation-cases.md`) — lane and the human gate are independent axes.

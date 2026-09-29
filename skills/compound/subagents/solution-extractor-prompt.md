@@ -66,7 +66,7 @@ FAILURE_TRACK:
     [The concrete mechanical guardrail that prevents this wrong approach from recurring.
     Name a specific, buildable artifact rather than prose like "be careful" or "remember to".
     Use one of two forms:
-      existing: <file/hook/rule that ALREADY enforces this> — e.g. "hooks/risk-corroboration.sh"
+      existing: <file/hook/rule that ALREADY enforces this> — e.g. "hooks/commit-gate.sh"
       proposed: <artifact to BUILD + its target path> — e.g. "a check in scripts/harness-audit.sh
                 that flags SUMMARY.md missing a ### Verify table"
     The ratchet principle: every repeated mistake must become a
