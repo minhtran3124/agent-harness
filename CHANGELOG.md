@@ -7,8 +7,12 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 ## [Unreleased]
 
-- **BREAKING** refactor(hooks): collapse the hook surface to three hooks with install profiles
-  - Removed ten hooks. `pre-bash-dispatch.sh`, `check-untracked-py.sh`, `commit-quality-gate.sh`,
+_Nothing yet._
+
+## [2.26.0] — 2026-09-30
+
+- feat(hooks)!: simplify the hook surface to 3 hooks with install profiles (PR #237)
+  - **BREAKING.** Removed ten hooks. `pre-bash-dispatch.sh`, `check-untracked-py.sh`, `commit-quality-gate.sh`,
     `risk-corroboration.sh`, and `branch-guard.sh` are merged into one PreToolUse Bash hook,
     `hooks/commit-gate.sh`; `blast-radius-check.sh` becomes its commit-time plan-scope check.
     `ruff-on-edit.sh`, `render-plan-on-write.sh`, `scope-gate.sh`, and `state-breadcrumb.sh` are

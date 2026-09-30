@@ -1,12 +1,12 @@
 {
   "created_at": "2026-09-29T08:58:58Z",
-  "last_event_id": "00251c59-2e3d-45fa-bb06-20160901b52b",
+  "last_event_id": "7dd95a98-73c3-4cbc-af43-80e8a5516136",
   "resume_event": null,
   "run_id": "c6d4eb86-f861-4444-8069-fa5a6ad0ea7e",
-  "seq": 6,
-  "sha": null,
+  "seq": 7,
+  "sha": "3a32f98c9cd7d5d1c46b6687cc01932c8f476d5f",
   "slug": "simplify-hook-surface",
-  "state": "ready_to_merge",
-  "updated_at": "2026-09-29T13:22:01Z",
+  "state": "shipped",
+  "updated_at": "2026-09-30T08:49:36Z",
   "waiting_on": null
 }
