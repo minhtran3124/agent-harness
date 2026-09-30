@@ -26,6 +26,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
   - Re-sync prunes the removed harness hooks from a consumer's `.claude/settings.json`, drops event
     keys left empty, and preserves the consumer's own hooks.
 
+## [2.26.0] — 2026-09-30
+
+- feat(hooks)!: simplify the hook surface to 3 hooks with install profiles (PR #237)
+
 ## [2.25.1] — 2026-09-29
 
 - fix(hooks): judge branch isolation by where the edited file lives (PR #234)
