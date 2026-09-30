@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.26.1] — 2026-09-30
+
+- chore(specs): close specs left open after merge (PR #239)
+
 ## [2.26.0] — 2026-09-30
 
 - feat(hooks)!: simplify the hook surface to 3 hooks with install profiles (PR #237)
