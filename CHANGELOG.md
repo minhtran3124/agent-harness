@@ -7,7 +7,24 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 ## [Unreleased]
 
-_Nothing yet._
+- **BREAKING** refactor(hooks): collapse the hook surface to three hooks with install profiles
+  - Removed ten hooks. `pre-bash-dispatch.sh`, `check-untracked-py.sh`, `commit-quality-gate.sh`,
+    `risk-corroboration.sh`, and `branch-guard.sh` are merged into one PreToolUse Bash hook,
+    `hooks/commit-gate.sh`; `blast-radius-check.sh` becomes its commit-time plan-scope check.
+    `ruff-on-edit.sh`, `render-plan-on-write.sh`, `scope-gate.sh`, and `state-breadcrumb.sh` are
+    retired. The registered set is now `commit-gate.sh`, `branch-isolation-guard.sh`, and
+    `session-knowledge.sh`.
+  - Behavior changes: the untracked-`.py` deny runs only under `--profile strict`; blast radius is
+    a commit-time warning instead of a per-edit one (`BLAST_RADIUS_STRICT=1` still blocks); the
+    branch-guard warning on commits to `main` is retired; the `specs/STATE.md` Session End Log is
+    no longer appended (existing logs stay as history; resume via `RUN.json`/`events.jsonl`);
+    the scope-gate prompt nudge is retired; ruff-on-edit auto-formatting is retired; PLAN.html and
+    the At-a-glance block render on demand via `render_plan.py --summarize` from the skills.
+  - `scripts/install-harness.sh` and `scripts/deploy-harness.sh` take
+    `--profile minimal|standard|strict` (default `standard`), stored in `.claude/.harness-profile`
+    and reused by a re-sync without the flag.
+  - Re-sync prunes the removed harness hooks from a consumer's `.claude/settings.json`, drops event
+    keys left empty, and preserves the consumer's own hooks.
 
 ## [2.25.1] — 2026-09-29
 

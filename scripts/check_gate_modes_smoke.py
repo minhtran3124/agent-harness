@@ -7,7 +7,7 @@ Any drift (silent re-tightening, or a new gate quietly shipped as warn) fails.
 This is SC-4's re-runnable check; wired into scripts/run-tests.sh so CI runs it.
 
 SC-9: also asserts hooks/lib/gate-modes.default.sh (the embedded fallback used by
-risk-corroboration.sh when no manifest is in the git index) is byte-consistent with
+commit-gate.sh check_risk when no manifest is in the git index) is byte-consistent with
 harness-manifest.json hard_gates.detectable — any drift fails.
 
 Exit 0 = modes match the decision. Exit 1 = drift (one line per problem).
@@ -26,7 +26,7 @@ EXPECTED_WARN = {"workflow-engine", "weakening-validation"}
 def load_default_modes(root: Path) -> dict:
     """Source hooks/lib/gate-modes.default.sh and parse its slug=mode map.
 
-    Sourcing via bash is ground truth — the same value risk-corroboration.sh gets —
+    Sourcing via bash is ground truth — the same value commit-gate.sh gets —
     rather than regex-parsing the shell file. The path is passed as $1 (not
     interpolated into the script) so a path with spaces cannot break parsing.
     """

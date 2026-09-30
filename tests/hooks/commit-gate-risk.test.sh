@@ -1,13 +1,21 @@
 #!/bin/bash
-# Contract tests for hooks/risk-corroboration.sh — the lane-vs-diff corroboration gate.
+# Contract tests for check_risk in hooks/commit-gate.sh — lane-vs-diff corroboration of the
+# hard-gate categories: lane vs diff, strict, RISK_WARN_CATEGORIES, regex precision,
+# workflow-engine warn, index-only gate modes (SC-8), the diff-size note, the active-plan
+# Lane fallback, the shipped-manifest warn-mode smoke, repo-root resolution, ticket-prefixed
+# spec slugs, and the --profile minimal/strict behavior of check_risk.
 source "$(dirname "$0")/../lib.sh"
 
-H=risk-corroboration.sh
-COMMIT_JSON=$(json_cmd 'git commit -m x')
+H=commit-gate.sh
+# Real Claude Bash payload shape (tool_name present): takes the one-jq fast path, so no case
+# here depends on python3.
+json_bash() { jq -cn --arg c "$1" '{tool_name:"Bash",tool_input:{command:$c}}'; }
+COMMIT_JSON=$(json_bash 'git commit -m x')
+
 
 t "non-commit command is ignored (silent, exit 0)"
 repo=$(new_repo $H)
-run_hook "$repo" $H "$(json_cmd 'git status')"
+run_hook "$repo" $H "$(json_bash 'git status')"
 assert_silent_ok
 
 t "commit with nothing staged passes"
@@ -83,7 +91,7 @@ stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc 0
 
-# Documented FP (docs/solutions/harness/risk-corroboration-scans-test-comments-for-auth-words.md):
+# Documented false positive (docs/solutions/harness/, auth words in test comments):
 # ordinary English in a shell comment under tests/ must not read as auth surface,
 # while a live code line with the same word must still trip the gate.
 t "auth word in a tests/ shell COMMENT does not trip the gate (comment-strip fix)"
@@ -307,7 +315,7 @@ assert_rc_not_contains 0 "simplify pass"
 
 # ── Lane resolution fallback (hooks/lib/lane.sh) — F1 regression coverage ──
 # The commit under test touches NO specs/ path, so there is no staged SUMMARY.md to
-# read. Before the fix, risk-corroboration.sh fell back to "most recently modified
+# read. Before the fix, the gate fell back to "most recently modified
 # specs/*/SUMMARY.md on disk" — an unrelated, merely-recently-touched spec could
 # corroborate (or wrongly block) a commit it has nothing to do with. The fix requires
 # an explicit `status: active` PLAN.md instead of a bare mtime guess.
@@ -353,5 +361,152 @@ git -C "$repo" commit -qm "seed active task" >/dev/null 2>&1
 stage "$repo" "alembic/versions/abc_add_table.py" "def upgrade(): pass"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_contains 2 "BLOCKED"
+
+# ── Shipped-manifest warn-mode smoke ──────────────────────────────────────
+# Runs against a COPY OF THE REAL harness-manifest.json — proving the shipped manifest, not a
+# fixture, produces the intended behavior:
+#   1. A Lane: normal commit whose diff trips only weakening-validation (a removed `raise`
+#      line) is allowed with a note.
+#   2. The loosening is scoped: the same commit ALSO touching hooks/ trips high-blast
+#      (block-mode) and is still denied.
+
+t "real manifest: removed raise + Lane: normal → warn-mode note, allowed (exit 0)"
+repo=$(new_repo $H)
+cp "$ROOT/harness-manifest.json" "$repo/"
+git -C "$repo" add -f harness-manifest.json
+stage "$repo" "app/svc.py" 'def f(x):
+    if not x:
+        raise ValueError("x")
+    return x'
+git -C "$repo" commit -qm base
+printf '%s\n' 'def f(x):' '    return x' > "$repo/app/svc.py"
+git -C "$repo" add app/svc.py
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 0 "warn-mode"
+
+t "real manifest: same diff + hooks/ file → high-blast still blocks (exit 2)"
+repo=$(new_repo $H)
+cp "$ROOT/harness-manifest.json" "$repo/"
+git -C "$repo" add -f harness-manifest.json
+stage "$repo" "app/svc.py" 'def f(x):
+    if not x:
+        raise ValueError("x")
+    return x'
+git -C "$repo" commit -qm base
+printf '%s\n' 'def f(x):' '    return x' > "$repo/app/svc.py"
+git -C "$repo" add app/svc.py
+stage "$repo" "hooks/new-gate.sh" '#!/bin/bash'
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "BLOCKED"
+
+# ── Embedded defaults (SC-7): NO manifest anywhere in the index ──────────────
+# new_repo copies hooks/lib (incl. gate-modes.default.sh) but stages no manifest, so
+# `git show :harness-manifest.json` misses and check_risk sources the embedded defaults —
+# the same 2-warn/7-block parity as the shipped manifest, NOT block-all.
+
+t "embedded defaults: workflow-engine surface + Lane: normal → warn note, allowed (exit 0)"
+repo=$(new_repo $H)
+stage "$repo" "skills/x/SKILL.md" '# Skill x'
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 0 "workflow-engine"
+
+t "embedded defaults: auth code + Lane: tiny → block (exit 2)"
+repo=$(new_repo $H)
+stage "$repo" "app/auth.py" 'def login(password): return password'
+stage "$repo" "specs/x/SUMMARY.md" "Lane: tiny"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "BLOCKED"
+
+t "embedded defaults: hooks/ file (high-blast) + Lane: normal → block (exit 2)"
+repo=$(new_repo $H)
+stage "$repo" "hooks/new-gate.sh" '#!/bin/bash'
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "high-blast"
+
+# ── Repo-root resolution (specs/fix-hook-project-root-resolution) ─────────
+# The hook is placed inside a FOREIGN git repo whose staged hooks/* trips high-blast; the
+# project is CWD / CLAUDE_PROJECT_DIR. check_risk must inspect the project, never the repo
+# that happens to contain the hook file. Under RISK_CORROBORATION_STRICT=1 a signal with no
+# declared Lane exits 2, which makes the wrong-repo outcome observable.
+
+# foreign_host → echoes a git repo that HOSTS commit-gate.sh but is NOT the project.
+foreign_host() {
+  local d; d=$(mktemp -d)
+  _CLEANUP_DIRS+=("$d")
+  git -C "$d" init -q -b main 2>/dev/null || git -C "$d" init -q
+  git -C "$d" config user.email test@test
+  git -C "$d" config user.name test
+  mkdir -p "$d/hooks"
+  [ -d "$ROOT/hooks/lib" ] && cp -R "$ROOT/hooks/lib" "$d/hooks/"
+  cp "$ROOT/hooks/$H" "$d/hooks/"
+  printf 'decoy\n' > "$d/hooks/decoy-gate-tripper.sh"
+  git -C "$d" add -f hooks/decoy-gate-tripper.sh
+  echo "$d"
+}
+
+# run_from <project> <host> <json> [VAR=val ...] — hook lives in <host>; CWD is <project>.
+run_from() {
+  local proj="$1" host="$2" json="$3"; shift 3
+  OUT=$(cd "$proj" && printf '%s' "$json" | env "$@" bash "$host/hooks/$H" 2>&1); RC=$?
+}
+
+t "repo root: hook hosted in a foreign git repo does NOT inspect that repo (CWD wins)"
+proj=$(new_repo); host=$(foreign_host)
+stage "$proj" "README.md" "harmless"
+run_from "$proj" "$host" "$COMMIT_JSON" RISK_CORROBORATION_STRICT=1
+assert_rc 0
+
+t "repo root: CLAUDE_PROJECT_DIR wins over the foreign host repo"
+proj=$(new_repo); host=$(foreign_host)
+stage "$proj" "README.md" "harmless"
+run_from "/" "$host" "$COMMIT_JSON" RISK_CORROBORATION_STRICT=1 CLAUDE_PROJECT_DIR="$proj"
+assert_rc 0
+
+t "repo root: still BLOCKS on a real signal in the PROJECT (resolution did not disable check_risk)"
+proj=$(new_repo); host=$(foreign_host)
+mkdir -p "$proj/hooks"; stage "$proj" "hooks/real.sh" "echo real"
+run_from "$proj" "$host" "$COMMIT_JSON" RISK_CORROBORATION_STRICT=1
+assert_rc 2
+
+t "repo root: no resolvable project root → BLOCKS rather than guessing"
+host=$(foreign_host); outside=$(mktemp -d); _CLEANUP_DIRS+=("$outside")
+run_from "$outside" "$host" "$COMMIT_JSON"
+assert_rc_contains 2 "cannot determine the project root"
+
+# ── Ticket-prefixed spec slugs (issue #121) ───────────────────────────────
+# Lane is resolved from specs/<anything>/SUMMARY.md, not from slug shape.
+GH="gh-999-fixture"
+
+t "reads Lane: high-risk from a gh-prefixed SUMMARY → corroborated"
+repo=$(new_repo $H)
+stage "$repo" "alembic/versions/abc_add_table.py" "def upgrade(): pass"
+stage "$repo" "specs/$GH/SUMMARY.md" "Lane: high-risk"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 0 "corroborated"
+
+t "still blocks a low lane declared in a gh-prefixed SUMMARY"
+repo=$(new_repo $H)
+stage "$repo" "alembic/versions/abc_add_table.py" "def upgrade(): pass"
+stage "$repo" "specs/$GH/SUMMARY.md" "Lane: normal"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "BLOCKED"
+
+# ── Profiles ──────────────────────────────────────────────────────────────
+t "--profile minimal skips check_risk: tripped block-mode category + Lane: normal → allowed (exit 0)"
+repo=$(new_repo $H)
+stage "$repo" "alembic/versions/abc_add_table.py" "def upgrade(): pass"
+stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
+run_hook_args "$repo" $H "$COMMIT_JSON" --profile minimal
+assert_rc_not_contains 0 "RISK CORROBORATION"
+
+t "--profile strict blocks a tripped category with no declared Lane (exit 2, no env var)"
+repo=$(new_repo $H)
+stage "$repo" "alembic/versions/abc_add_table.py" "def upgrade(): pass"
+run_hook_args "$repo" $H "$COMMIT_JSON" --profile strict
+assert_rc_contains 2 "strict, no Lane declared"
 
 finish

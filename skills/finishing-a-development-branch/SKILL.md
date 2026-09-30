@@ -29,8 +29,10 @@ user; if no plan exists, use the tiny/no-plan path instead of guessing.
 
    A missing, stale, failing, or blocking receipt stops the flow. Re-run the affected review; never
    edit the receipt to pass. Re-run this gate immediately before push. Tiny/no-plan work skips it.
-3. Mark the resolved plan `status: shipped`, append a dated status-log entry, then stage the
-   spec record **by name** and commit it:
+3. Mark the resolved plan `status: shipped`, append a dated status-log entry, run
+   `python3 skills/visual-planner/render_plan.py specs/<slug>/PLAN.md --summarize` so the tracked
+   At-a-glance block matches the shipped Status Log, then stage the spec record **by name** and
+   commit it:
 
    ```bash
    git add specs/<slug>/PLAN.md specs/<slug>/SUMMARY.md specs/<slug>/RUN.json specs/<slug>/events.jsonl

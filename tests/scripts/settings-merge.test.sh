@@ -17,9 +17,9 @@ t "first install produces valid .claude/settings.json"
 if jq -e . "$S" >/dev/null 2>&1; then pass; else fail "not valid JSON / missing"; fi
 
 # Simulate a consuming project: add foreign top-level keys + a foreign hook under an event the
-# harness also uses (PostToolUse) + a foreign event the harness does not use (Stop).
+# harness also uses (PreToolUse) + a foreign event the harness does not use (Stop).
 jq '. + {permissions:{allow:["Bash(npm *)"]}, statusLine:{type:"command",command:"my-line"}}
-    | .hooks.PostToolUse += [{"matcher":"Write","hooks":[{"type":"command","command":"my-own-hook.sh"}]}]
+    | .hooks.PreToolUse += [{"matcher":"Write","hooks":[{"type":"command","command":"my-own-hook.sh"}]}]
     | .hooks.Stop = [{"hooks":[{"type":"command","command":"my-stop.sh"}]}]' \
   "$S" > "$S.tmp" && mv "$S.tmp" "$S"
 
@@ -32,7 +32,7 @@ if [ "$(jq -r '.permissions.allow[0]' "$S")" = "Bash(npm *)" ] \
    && [ "$(jq -r '.statusLine.command' "$S")" = "my-line" ]; then pass
 else fail "foreign top-level keys lost: $(jq -c 'keys' "$S")"; fi
 
-t "re-sync keeps a foreign hook under a harness-shared event (PostToolUse)"
+t "re-sync keeps a foreign hook under a harness-shared event (PreToolUse)"
 n=$(jq '[.hooks[][].hooks[] | select((.command//"")=="my-own-hook.sh")] | length' "$S")
 if [ "$n" = "1" ]; then pass; else fail "my-own-hook.sh count=$n, want 1"; fi
 
@@ -41,8 +41,8 @@ n=$(jq '[.hooks[][].hooks[] | select((.command//"")=="my-stop.sh")] | length' "$
 if [ "$n" = "1" ]; then pass; else fail "my-stop.sh count=$n, want 1"; fi
 
 t "re-sync does not double-register a harness hook (idempotent)"
-n=$(jq '[.hooks[][].hooks[] | select((.command//"")|test("ruff-on-edit"))] | length' "$S")
-if [ "$n" = "1" ]; then pass; else fail "ruff-on-edit count=$n after 2 re-syncs, want 1"; fi
+n=$(jq '[.hooks[][].hooks[] | select((.command//"")|test("/hooks/commit-gate\\.sh"))] | length' "$S")
+if [ "$n" = "1" ]; then pass; else fail "commit-gate.sh count=$n after 2 re-syncs, want 1"; fi
 
 t "harness hook commands are derived to \$CLAUDE_PROJECT_DIR/.claude/ on re-sync"
 if jq -e '[.hooks[][].hooks[].command] | any(startswith("$CLAUDE_PROJECT_DIR/.claude/hooks/"))' "$S" >/dev/null; then pass
@@ -68,8 +68,8 @@ if jq -e '[.hooks[][].hooks[].command] | any(startswith("$CLAUDE_PROJECT_DIR/.cl
 else fail "replacement settings.json is not valid / missing harness hooks"; fi
 
 # Source-removed harness hooks: a consumer's settings.json holding OLD harness hook
-# registrations (harness hooks that no longer exist in source — e.g. the four Bash sub-hooks
-# retired by the pre-bash-dispatch change) must be pruned on in-place re-deploy, NOT preserved
+# registrations (harness hooks that no longer exist in source — the hooks retired by the
+# three-hook surface) must be pruned on in-place re-deploy, NOT preserved
 # as "foreign". Any command under $CLAUDE_PROJECT_DIR/.claude/hooks/ is harness-owned; the
 # consumer's own foreign hooks (elsewhere) must survive.
 T3=$(mktemp -d); _CLEANUP_DIRS+=("$T3")
@@ -79,12 +79,26 @@ cat > "$T3/.claude/settings.json" <<'EOF'
   "hooks": {
     "PreToolUse": [
       { "matcher": "Bash", "hooks": [
+        { "type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/pre-bash-dispatch.sh" },
         { "type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/check-untracked-py.sh" },
         { "type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/commit-quality-gate.sh" },
         { "type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/risk-corroboration.sh" },
         { "type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/branch-guard.sh" },
         { "type": "command", "command": "$CLAUDE_PROJECT_DIR/scripts/my-own-hook.sh" }
       ] }
+    ],
+    "PostToolUse": [
+      { "matcher": "Write|Edit", "hooks": [
+        { "type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/ruff-on-edit.sh" },
+        { "type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/blast-radius-check.sh" },
+        { "type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/render-plan-on-write.sh" }
+      ] }
+    ],
+    "UserPromptSubmit": [
+      { "hooks": [ { "type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/scope-gate.sh" } ] }
+    ],
+    "SessionEnd": [
+      { "hooks": [ { "type": "command", "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/state-breadcrumb.sh" } ] }
     ]
   }
 }
@@ -93,12 +107,12 @@ bash "$DEPLOY" --target "$T3" >/dev/null 2>&1
 S3="$T3/.claude/settings.json"
 
 t "in-place re-deploy prunes source-removed harness hooks (no double-registration)"
-n=$(jq '[.hooks[][].hooks[] | select((.command//"")|test("/hooks/(check-untracked-py|commit-quality-gate|risk-corroboration|branch-guard)\\.sh$"))] | length' "$S3")
+n=$(jq '[.hooks[][].hooks[] | select((.command//"")|test("/hooks/(pre-bash-dispatch|check-untracked-py|commit-quality-gate|risk-corroboration|branch-guard|ruff-on-edit|blast-radius-check|render-plan-on-write|scope-gate|state-breadcrumb)\\.sh$"))] | length' "$S3")
 if [ "$n" = "0" ]; then pass; else fail "old harness hooks still registered: count=$n, want 0"; fi
 
-t "in-place re-deploy registers the current dispatcher exactly once"
-n=$(jq '[.hooks[][].hooks[] | select((.command//"")|test("/hooks/pre-bash-dispatch\\.sh$"))] | length' "$S3")
-if [ "$n" = "1" ]; then pass; else fail "pre-bash-dispatch.sh count=$n, want 1"; fi
+t "in-place re-deploy registers the commit gate exactly once"
+n=$(jq '[.hooks[][].hooks[] | select((.command//"")|test("/hooks/commit-gate\\.sh"))] | length' "$S3")
+if [ "$n" = "1" ]; then pass; else fail "commit-gate.sh count=$n, want 1"; fi
 
 t "in-place re-deploy keeps the consumer's own foreign hook"
 n=$(jq '[.hooks[][].hooks[] | select((.command//"")=="$CLAUDE_PROJECT_DIR/scripts/my-own-hook.sh")] | length' "$S3")

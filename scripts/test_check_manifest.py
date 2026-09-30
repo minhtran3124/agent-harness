@@ -7,7 +7,7 @@ from pathlib import Path
 
 CHECKER = Path(__file__).resolve().parent / "check_manifest.py"
 
-# A minimal risk-corroboration.sh stub exposing add_cat for two gates.
+# A minimal commit-gate.sh stub exposing add_cat for two gates.
 # Gate modes are manifest-owned (read by the hook at runtime) — not mirrored here.
 RC_STUB = """#!/bin/bash
 add_cat "auth"
@@ -23,9 +23,15 @@ MANIFEST_OK = {
         "judgment": [{"slug": "remove-functionality", "desc": "z"}],
     },
     "hooks": [
-        {"name": "risk-corroboration.sh", "wired": True},
+        {"name": "commit-gate.sh", "wired": True},
         {"name": "dormant.sh", "wired": False},
     ],
+    "hook_profiles": {
+        "default": "standard",
+        "minimal": {"hooks": ["commit-gate.sh"]},
+        "standard": {"hooks": ["commit-gate.sh"]},
+        "strict": {"hooks": ["commit-gate.sh", "dormant.sh"]},
+    },
     "skills": ["alpha"],
     "agents": ["reviewer"],
     "agent_bindings": {
@@ -43,7 +49,7 @@ MANIFEST_OK = {
 def build(root: Path, manifest: dict) -> None:
     """Write a minimal but self-consistent harness layout under root."""
     (root / "hooks").mkdir(parents=True, exist_ok=True)
-    (root / "hooks" / "risk-corroboration.sh").write_text(RC_STUB)
+    (root / "hooks" / "commit-gate.sh").write_text(RC_STUB)
     (root / "hooks" / "dormant.sh").write_text("#!/bin/bash\n")
     (root / "skills" / "alpha").mkdir(parents=True, exist_ok=True)
     (root / "skills" / "alpha" / "SKILL.md").write_text("# alpha\n")
@@ -87,13 +93,13 @@ def build(root: Path, manifest: dict) -> None:
     (root / "scripts" / "render_agent_definitions.py").write_text("# fixture\n")
     (root / "agents" / "README.md").write_text("# readme (excluded)\n")
     (root / "CLAUDE.md").write_text("# claude\n")
-    # settings.json wires only risk-corroboration.sh (dormant.sh is unwired).
+    # settings.json wires only commit-gate.sh (dormant.sh is unwired).
     (root / "settings.json").write_text(
         json.dumps(
             {
                 "hooks": {
                     "PreToolUse": [
-                        {"hooks": [{"command": "hooks/risk-corroboration.sh"}]}
+                        {"hooks": [{"command": "hooks/commit-gate.sh"}]}
                     ]
                 }
             }
@@ -154,7 +160,7 @@ def test_detectable_gate_absent_from_hook(tmp_path):
 def test_hook_add_cat_absent_from_manifest(tmp_path):
     build(tmp_path, MANIFEST_OK)
     # Add a gate the hook detects but the manifest doesn't declare.
-    rc = tmp_path / "hooks" / "risk-corroboration.sh"
+    rc = tmp_path / "hooks" / "commit-gate.sh"
     rc.write_text(rc.read_text() + '\nadd_cat "public-contract"\n')
     r = run(tmp_path)
     assert r.returncode == 1
@@ -218,6 +224,41 @@ def test_agent_runtime_capability_mapping_must_be_total(tmp_path):
     assert r.returncode == 1
     assert "capability mapping is incomplete" in r.stderr
 
+
+def test_hook_profiles_missing_key_fails(tmp_path):
+    m = json.loads(json.dumps(MANIFEST_OK))
+    del m["hook_profiles"]["strict"]
+    build(tmp_path, m)
+    r = run(tmp_path)
+    assert r.returncode == 1
+    assert "hook_profiles" in r.stderr and "exactly" in r.stderr
+
+
+def test_hook_profiles_unknown_hook_fails(tmp_path):
+    m = json.loads(json.dumps(MANIFEST_OK))
+    m["hook_profiles"]["minimal"]["hooks"].append("ghost-hook.sh")
+    build(tmp_path, m)
+    r = run(tmp_path)
+    assert r.returncode == 1
+    assert "ghost-hook.sh" in r.stderr and "not in the hooks inventory" in r.stderr
+
+
+def test_hook_profiles_bad_default_fails(tmp_path):
+    m = json.loads(json.dumps(MANIFEST_OK))
+    m["hook_profiles"]["default"] = "lenient"
+    build(tmp_path, m)
+    r = run(tmp_path)
+    assert r.returncode == 1
+    assert "lenient" in r.stderr
+
+
+def test_hook_profiles_absent_fails(tmp_path):
+    m = json.loads(json.dumps(MANIFEST_OK))
+    del m["hook_profiles"]
+    build(tmp_path, m)
+    r = run(tmp_path)
+    assert r.returncode == 1
+    assert "missing hook_profiles" in r.stderr
 
 
 def test_effort_in_agent_source_is_a_runtime_policy_field(tmp_path):

@@ -60,9 +60,13 @@ def expected_codex_hooks(settings: dict[str, Any]) -> dict[str, Any]:
         raise AdapterError(
             f"settings.json contains unmapped hook events: {unknown_events}"
         )
+    if "PreToolUse" not in hooks:
+        raise AdapterError("settings.json missing canonical PreToolUse bindings")
     expected: dict[str, list[dict[str, Any]]] = {}
     for event in known_events:
-        groups = hooks.get(event)
+        if event not in hooks:
+            continue
+        groups = hooks[event]
         if not isinstance(groups, list) or not groups:
             raise AdapterError(f"settings.json missing canonical {event} bindings")
         rendered_groups = []

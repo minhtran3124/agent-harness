@@ -76,3 +76,5 @@ so there is no agent-writable, un-index-checkable vector at all.
 
 - docs/solutions/harness/gate-config-must-read-index.md — the critical policy-TOCTOU this decision refuses to reopen
 - docs/solutions/harness/gate-mode-as-data-decisions.md — gate mode is data; where the loosening knob lives; index-side policy read
+
+> Superseded by specs/simplify-hook-surface (2026-09-29): risk-corroboration.sh merged into hooks/commit-gate.sh

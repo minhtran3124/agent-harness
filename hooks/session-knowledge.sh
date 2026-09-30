@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# SessionStart hook: load knowledge base (INDEX + critical-patterns) into session context,
-# AND report bounded active-run summaries from runtime/run_state.py (Phase C, GitHub issue
-# #129). Emits hookSpecificOutput.additionalContext when either source has content; silent
-# exit 0 when both are empty/missing. NEVER blocks: every branch exits 0 — follows the
-# defensive pattern of state-breadcrumb.sh.
-# JSON shape follows scope-gate.sh's additionalContext convention, encoded here via python3
-# (no jq dependency).
+# SessionStart hook: load knowledge base (an INDEX pointer line + critical-patterns) into
+# session context, AND report bounded active-run summaries from runtime/run_state.py (Phase C,
+# GitHub issue #129). Emits hookSpecificOutput.additionalContext when either source has content;
+# silent exit 0 when both are empty/missing. NEVER blocks: every branch exits 0 (set +e, stderr
+# closed, every failure path is a silent no-op).
+# Output is {"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":<str>}},
+# with the string encoded via python3 (no jq dependency).
 #
 # Overridable for tests:
 #   SESSION_KNOWLEDGE_DIR=/path/to/fixture/docs/solutions  bash hooks/session-knowledge.sh
@@ -70,7 +70,7 @@ if [ -f "$INDEX" ]; then
     fi
 
     if [ "$_kb_has_data" = "1" ]; then
-        _index_section=$(head -n 30 "$INDEX" 2>/dev/null)
+        _index_section="docs/solutions/INDEX.md — $(printf '%s\n' "$_data_rows" | wc -l | tr -d ' ') entries"
         _critical_section=""
         if [ -f "$CRITICAL" ]; then
             _line_count=$(wc -l < "$CRITICAL" 2>/dev/null | tr -d ' ')

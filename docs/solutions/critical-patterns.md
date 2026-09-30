@@ -125,6 +125,8 @@ Eval a prompt skill with **auto-score / manual-run**: labeled fixtures (`request
 **Tags:** commit-time-hooks, index-vs-worktree, gate-integrity, fail-closed, policy-toctou, external-review
 **Applicable when:** A PreToolUse commit hook reads any config/policy file that influences allow/deny — it must read the INDEX-side copy (`git show :<path>`, fail-closed on absence) so unstaged edits cannot loosen the decision for the committed tree.
 
+> Superseded by specs/simplify-hook-surface (2026-09-29): risk-corroboration.sh merged into hooks/commit-gate.sh
+
 ## [2026-07-27] no-report-reviewer-dispatch-is-not-a-pass
 **Type:** failure
 **Module:** harness (review chain + review receipt)
@@ -178,4 +180,16 @@ Eight of twelve hooks derived the repo root from the hook's own file location (`
 A manual `grep` for `git -C "$SCRIPT_DIR"` found seven hooks; seven were fixed, and the ratchet written to stop the pattern returning matched that same literal string. It reported clean, `run-tests.sh` printed ALL GREEN, and CI passed — while `hooks/session-knowledge.sh:22` still carried the identical defect spelled `git -C "$HOOK_DIR"`. The checker and the fix came from one enumeration pass, so they shared a single blind spot and neither could catch the other: a ratchet built from the same list as the change it guards is not an independent oracle, it is the same judgement written twice, and it converts a gap in that judgement into evidence of correctness. `SCRIPT_DIR` is a spelling; the defect is a property. Caught only by an independent review of a sibling PR whose reviewers re-derived the list from source. Correct path: match the defect's shape, and run the new ratchet against the pre-fix tree to watch it fail before trusting its green.
 
 **Full doc:** docs/solutions/harness/ratchet-matches-spelling-not-property.md
+---
+
+## [2026-09-29] bare-command-hook-must-be-executable-in-index
+**Type:** bug
+**Module:** hooks/registration
+**Tags:** hook-registration, file-mode, exit-126, fail-open, bash-invoked-tests, settings-json, deploy-propagation, correctness-review-catch
+**Applicable when:** Adding or replacing a hook that settings.json registers as a bare command path (no `bash` prefix), including any file created by an agent Write tool (defaults to 100644).
+
+A new `hooks/commit-gate.sh` was committed `100644` while registered as a bare command, so the runtime got exit 126 — not a block — and every commit gate silently failed open, and every consumer deploy would have inherited the dead gate (caught before merge). It passed 200+ assertions because every hook test runs `bash hooks/x.sh`, which ignores the execute bit; `tests/scripts/settings-wiring.test.sh` now asserts `-x` and index mode `100755` for every registered command.
+
+**Full doc:** docs/solutions/harness/bare-command-hook-must-be-executable-in-index.md
+
 ---

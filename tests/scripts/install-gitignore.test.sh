@@ -1,11 +1,11 @@
 #!/bin/bash
 # Regression tests: install-harness.sh must gitignore the derived .claude/ tree.
 #
-# Why this exists: .claude/ ships four visual-planner .py files. Left untracked, they trip
-# hooks/check-untracked-py.sh, which DENIES every `git commit` and `git push` — so a fresh
-# consumer installs the harness and is then unable to commit anything. Found by the 2026-07-23
-# sandbox walk (specs/slim-skill-surface, Task 5.1). The paired hook fix lives in
-# tests/hooks/check-untracked-py.test.sh.
+# Why this exists: .claude/ ships four visual-planner .py files. Left untracked, they would trip
+# the commit gate's untracked-.py check (strict profile), which denies `git commit` and `git push`
+# — so a fresh consumer could install the harness and then be unable to commit anything. Found by
+# the 2026-07-23 sandbox walk (specs/slim-skill-surface, Task 5.1). This file asserts only the
+# .gitignore append.
 #
 # Append-only contract: add the pattern when absent, never rewrite or duplicate existing lines.
 source "$(dirname "$0")/../lib.sh"

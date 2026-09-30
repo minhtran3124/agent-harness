@@ -1,17 +1,14 @@
 #!/bin/bash
-# Shared active-plan / Lane resolution for the edit-time and commit-time gates.
+# Shared active-plan / Lane resolution for hooks/commit-gate.sh.
 #
-# Three hooks each independently needed to answer "what is the task currently in
-# flight?": blast-radius-check.sh (to know which <files> set is in scope),
-# risk-corroboration.sh (to know what Lane to corroborate a tripped risk category
-# against), and scope-gate.sh (to know whether intake has already run, so it can stop
-# re-nudging). The only supported signal is a specs/*/PLAN.md carrying `status:
-# active` — deliberately NOT "most recently modified on disk": a stale-but-recently-
-# touched spec would misattribute its scope/Lane to unrelated work. This is not
-# hypothetical — blast-radius-check.sh used to have exactly that mtime fallback and
-# it was removed for this reason (docs/solutions/harness/stale-active-plan-misaims-blast-radius.md).
-# risk-corroboration.sh independently grew the same kind of mtime fallback later;
-# this file is the fix, unifying both hooks on the one correct signal.
+# commit-gate.sh needs to answer "what is the task currently in flight?" twice: check_plan_scope
+# (which <files> set is in scope) and check_risk (what Lane to corroborate a tripped risk
+# category against). The only supported signal is a specs/*/PLAN.md carrying `status: active`
+# — deliberately NOT "most recently modified on disk": a stale-but-recently-touched spec would
+# misattribute its scope/Lane to unrelated work. This is not hypothetical — the plan-scope check
+# once had exactly that mtime fallback and it was removed for this reason
+# (docs/solutions/harness/stale-active-plan-misaims-blast-radius.md). The Lane lookup later
+# grew the same kind of mtime fallback; this file is the fix, unifying both on the one signal.
 #
 # bash 3.2 compatible (macOS default), no GNU-only flags — mirrors hooks/lib/git-command.sh.
 #
@@ -19,7 +16,6 @@
 #   source "$(cd "$(dirname "$0")" && pwd)/lib/lane.sh"
 #   plan=$(hook_lib_find_active_plan "$REPO_DIR") || plan=""
 #   lane=$(hook_lib_resolve_lane "$REPO_DIR" "$STAGED_PATHS")
-#   hook_lib_intake_in_progress "$REPO_DIR" && echo "intake already ran / is in flight"
 
 # hook_lib_find_active_plan <repo_dir>
 # Echoes the path to the specs/*/PLAN.md carrying `status: active` and exits 0. Exits 1
@@ -58,18 +54,4 @@ hook_lib_resolve_lane() {
   summary="$(dirname "$plan")/SUMMARY.md"
   [ -f "$summary" ] || return 1
   grep -iE '^Lane:' "$summary" | head -1
-}
-
-# hook_lib_intake_in_progress <repo_dir>
-# True (exit 0) when there is live, unfinished intake work for some task: an active
-# PLAN.md, or an uncommitted change under specs/ (a just-written SUMMARY.md before its
-# first commit — the tiny-lane case, which never gets a PLAN.md at all). Git-native
-# only (git status), not find/stat — this hook suite targets both GNU and BSD
-# userlands, and relative-date find predicates (`-newermt "-N minutes"`) are not
-# portable across them (confirmed directly: this repo's dev machine ships `find` as
-# `bfs`, which rejects that syntax outright).
-hook_lib_intake_in_progress() {
-  local repo_dir="$1"
-  hook_lib_find_active_plan "$repo_dir" >/dev/null 2>&1 && return 0
-  git -C "$repo_dir" status --porcelain -- specs 2>/dev/null | grep -q .
 }

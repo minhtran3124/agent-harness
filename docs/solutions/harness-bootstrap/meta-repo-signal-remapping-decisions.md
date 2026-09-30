@@ -58,3 +58,5 @@ Enables: the Deep-review override stays meaningful on the harness — fail-open/
 
 ## Related
 - docs/solutions/harness-bootstrap/meta-repo-signal-remapping.md
+
+> Superseded by specs/simplify-hook-surface (2026-09-29): commit-quality-gate.sh merged into hooks/commit-gate.sh

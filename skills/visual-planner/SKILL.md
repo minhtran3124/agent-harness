@@ -17,6 +17,12 @@ The renderer resolves a PLAN path or unambiguous slug, writes a sibling untracke
 and performs self-checks. Relay its stdout; on failure report its `SELF-CHECK FAILED:` output
 without claiming success. `template.html` controls layout and `render_plan.py` owns parsing.
 
+`--summarize` first injects or refreshes the tracked At-a-glance block in `PLAN.md` (between
+the generated `AT-A-GLANCE:BEGIN`/`END` sentinel lines; its `### Progress` checklist is derived from
+`## Status Log`), writing only on change, then renders as usual. `writing-plans` runs it after
+saving a plan, `rules/wave-parallelism.md` runs it at each wave boundary, and
+`finishing-a-development-branch` runs it before the shipped commit.
+
 Use `view_plan.py <slug> --file|--no-open|--port N|--render` only when visual viewing is requested;
 its serving mode blocks. Do not auto-open from writing-plans or a headless environment.
 

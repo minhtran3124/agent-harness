@@ -22,7 +22,7 @@ At intake — before dispatching any task — the orchestrator runs `feature-int
 The classification algorithm that assigns these values lives in `skills/feature-intake/SKILL.md`
 Step 3–4 — that is the canonical source; this section only names the fields and their consumers.
 
-These two fields are load-bearing: `hooks/risk-corroboration.sh` reads `Lane:` to corroborate it against the staged diff, and the trust-metrics ledger reads both. The orchestrator MUST write a `Lane:` line: a declared lane below `high-risk` is **blocked** when the diff trips a **block-mode** hard-gate signal (per-gate mode is the manifest's `hard_gates.detectable[].mode`, which the hook reads from the git index only — never from a `.claude/` copy; warn-mode gates — `workflow-engine`, `weakening-validation` — print a note and allow), and a *missing* lane only **warns** (fail-open) unless `RISK_CORROBORATION_STRICT=1` is set.
+These two fields are load-bearing: the risk-corroboration check in `hooks/commit-gate.sh` (`check_risk`; `standard` and `strict` profiles) reads `Lane:` to corroborate it against the staged diff, and the trust-metrics ledger reads both. The orchestrator MUST write a `Lane:` line: a declared lane below `high-risk` is **blocked** when the diff trips a **block-mode** hard-gate signal (per-gate mode is the manifest's `hard_gates.detectable[].mode`, which the hook reads from the git index only — never from a `.claude/` copy; warn-mode gates — `workflow-engine`, `weakening-validation` — print a note and allow), and a *missing* lane only **warns** (fail-open) unless `RISK_CORROBORATION_STRICT=1` is set.
 
 ## Subagent contract
 
@@ -42,7 +42,7 @@ Include only what the main thread needs to act without re-reading the subagent's
 
 A claim of "done" is only valid with a re-runnable artifact. The subagent records, in `specs/<slug>/SUMMARY.md` (shape: `templates/SUMMARY.template.md`):
 
-- **`### Verify`** — a table row per check actually RUN: `Check | Command | Exit | Notes`. Never list a command that was not run. `commit-quality-gate.sh` can require this block for `app/` changes when both `REQUIRE_APP_GATES=1` and `REQUIRE_VERIFY=1` are set.
+- **`### Verify`** — a table row per check actually RUN: `Check | Command | Exit | Notes`. Never list a command that was not run. `hooks/commit-gate.sh` can require this block for `app/` changes when `REQUIRE_VERIFY=1` is set and its app gates run (`strict` profile, or `REQUIRE_APP_GATES=1`).
 - **`### Rollback`** — the exact undo command(s); required for any high-risk / Rule-4 action (`rules/auto-correct-scope.md`). For reversible work, `git revert <sha>` suffices.
 
 Behavior-to-proof status lives in the SUMMARY `### Verify` table: one row per check actually run, re-runnable command + exit code.
@@ -75,7 +75,7 @@ Otherwise **PROCEED autonomously** in the lane. For high-confidence **normal**-l
 the `PLAN.md` and a short notice (**notify-and-proceed**) instead of blocking on approval — the
 human may interrupt but is not a gate. Per-task agent reviews stay always-on regardless of lane.
 
-`ESCALATIONS.md` is **deny-on-no-response**: with no recorded decision the work stays blocked. Mechanized by `hooks/commit-quality-gate.sh` (Check 1.5): a commit touching `specs/<slug>/` is denied while that slug's `ESCALATIONS.md` has `decision: pending`; recording the decision in the same commit unblocks.
+`ESCALATIONS.md` is **deny-on-no-response**: with no recorded decision the work stays blocked. Mechanized by `hooks/commit-gate.sh` (`check_escalations`; `standard` and `strict` profiles): a commit touching `specs/<slug>/` is denied while that slug's `ESCALATIONS.md` has `decision: pending`; recording the decision in the same commit unblocks.
 
 ## In-flight escalation checks (during waves)
 
@@ -83,7 +83,9 @@ Re-check continuously while executing each wave; any of these escalates mid-flig
 
 - **Repeated `<verify>` failure** — the same check fails ≥2 times after a fix attempt.
 - **Blast radius beyond plan** — a subagent touched files outside its task's declared Files set
-  (corroborated by `hooks/blast-radius-check.sh`).
+  (the task reviewer's spec verdict compares the task's diff to its Files list; at each wave
+  commit `hooks/commit-gate.sh` `check_plan_scope` also warns on paths outside the active plan's
+  Files set — a union across tasks, so per-task attribution is the reviewer's job).
 - **Hard gate discovered mid-implementation** — not seen at intake; re-run the corroboration
   check on the wave diff.
 - **Recurring deviation** — the same Rule-1–3 deviation repeats across tasks (a PLAN.md gap).

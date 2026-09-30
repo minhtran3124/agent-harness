@@ -51,3 +51,5 @@ dir must already carry lane evidence: for normal/high-risk, at least one non-pla
 
 - docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md
 - docs/solutions/harness/deploy-harness-does-not-prune-deleted-orphans.md — same source-vs-deployed divergence root
+
+> Superseded by specs/simplify-hook-surface (2026-09-29): commit-quality-gate.sh merged into hooks/commit-gate.sh

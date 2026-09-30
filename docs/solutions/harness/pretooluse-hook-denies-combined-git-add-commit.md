@@ -32,3 +32,5 @@ Triaged 2026-07-04 (Wave 5 gate condition, `docs/harness-v03-plan-overview.md`):
 
 ## Related
 - docs/solutions/harness/hooks-addition-is-high-risk-even-dormant.md
+
+> Superseded by specs/simplify-hook-surface (2026-09-29): check-untracked-py.sh merged into hooks/commit-gate.sh

@@ -75,3 +75,5 @@ test exists.
 - docs/solutions/harness/mutation-testing-proves-a-suite-is-load-bearing.md
 - docs/solutions/harness/unverified-premise-propagates-through-plan-anchored-reviews.md
 - docs/solutions/harness/no-report-reviewer-dispatch-is-not-a-pass.md
+
+> Superseded by specs/simplify-hook-surface (2026-09-29): risk-corroboration.sh merged into hooks/commit-gate.sh

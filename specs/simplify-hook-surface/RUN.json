@@ -1,0 +1,12 @@
+{
+  "created_at": "2026-09-29T08:58:58Z",
+  "last_event_id": "00251c59-2e3d-45fa-bb06-20160901b52b",
+  "resume_event": null,
+  "run_id": "c6d4eb86-f861-4444-8069-fa5a6ad0ea7e",
+  "seq": 6,
+  "sha": null,
+  "slug": "simplify-hook-surface",
+  "state": "ready_to_merge",
+  "updated_at": "2026-09-29T13:22:01Z",
+  "waiting_on": null
+}

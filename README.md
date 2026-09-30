@@ -64,7 +64,7 @@ human. Each engineering question maps to an enforced mechanism, not a convention
 |---|---|
 | What should I read first? | `session-knowledge` hook loads `docs/solutions/` index + critical patterns at session start; `/xia2` researches what already exists. |
 | What type of work, how risky? | `/feature-intake` runs first — a 10-flag checklist + hard gates assign a **lane** (`tiny\|normal\|high-risk`) and a **confidence** to `specs/<slug>/SUMMARY.md`. |
-| Which contract does it touch? | Hard gates (auth · migration · public contract · high-blast file) force `high-risk`; `blast-radius` hook flags edits outside the plan. |
+| Which contract does it touch? | Hard gates (auth · migration · public contract · high-blast file) force `high-risk`; `commit-gate` hook flags staged files outside the plan. |
 | What proof shows it's done? | A re-runnable `### Verify` artifact in `SUMMARY.md` backs every "done" — machine-recheckable via `verify_summary.py`. |
 | What should future agents inherit? | `/compound` crystallizes non-obvious learnings into `docs/solutions/`, the harness's sole committed knowledge path. |
 

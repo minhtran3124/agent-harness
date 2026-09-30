@@ -219,18 +219,20 @@ else
   not_ok "disabled/untrusted hooks keep hook evidence unknown"
 fi
 
-# A checkout without hooks/state-breadcrumb.sh must publish an explicit unknown rather
-# than aborting the whole capture (the benchmark is one row, not the whole contract).
+# The SessionEnd benchmark runs a self-contained fixture hook, so a checkout that
+# holds only the capture script (no hooks/ directory) still yields a full sample set.
 NOHOOK="$TMP/no-hook-checkout"
 mkdir -p "$NOHOOK/scripts"
 cp "$SCRIPT" "$NOHOOK/scripts/"
 if CODEX_CAPTURE_DATE=2026-08-10 "$NOHOOK/scripts/capture_codex_capabilities.sh" \
   --output "$NOHOOK/out" --codex-bin "$FAKE" --platform-label macos-arm64 >/dev/null; then
-  assert "absent breadcrumb hook degrades to explicit unknown" python3 -c \
-    'import json,sys; d=json.load(open(sys.argv[1]))["result"]; assert d["status"] == "unknown" and d["samples"] == 0 and "state-breadcrumb.sh" in d["exit_condition"]' \
+  assert "fixture SessionEnd hook yields at least 20 samples without hooks/" python3 -c \
+    'import json,sys; assert json.load(open(sys.argv[1]))["result"]["samples"] >= 20' \
     "$NOHOOK/out/session-end-timing.json"
+  assert "SessionEnd timing names no removed harness hook" sh -c \
+    "test -f '$NOHOOK/out/session-end-timing.json' && ! grep -q 'state-breadcrumb' '$NOHOOK/out/session-end-timing.json'"
 else
-  not_ok "absent breadcrumb hook degrades to explicit unknown"
+  not_ok "fixture SessionEnd hook yields at least 20 samples without hooks/"
 fi
 
 LEAK="$TMP/sanitizer-rejection"

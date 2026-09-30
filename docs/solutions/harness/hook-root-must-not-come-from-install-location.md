@@ -162,3 +162,5 @@ reported clean while one of these eight hooks was still broken.
   gate resolves: read policy from the git index, not the worktree
 - docs/solutions/harness/hooks-addition-is-high-risk-even-dormant.md — why any `hooks/*` change
   carries the `high-blast` hard gate
+
+> Superseded by specs/simplify-hook-surface (2026-09-29): pre-bash-dispatch.sh, check-untracked-py.sh, commit-quality-gate.sh, risk-corroboration.sh, branch-guard.sh, blast-radius-check.sh merged into hooks/commit-gate.sh; ruff-on-edit.sh, render-plan-on-write.sh, scope-gate.sh, state-breadcrumb.sh removed

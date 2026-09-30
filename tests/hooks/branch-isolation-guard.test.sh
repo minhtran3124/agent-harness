@@ -208,4 +208,52 @@ mkdir -p "$wt/vendor/nested"; git -C "$wt/vendor/nested" init -q -b feature/n
 run_hook "$repo" $H "$(json_file "$wt/vendor/nested/app/x.py")" CLAUDE_PROJECT_DIR="$repo"
 assert_silent_ok
 
+# Fast path: a Claude Write/Edit payload is decided in bash+jq alone. NOPY is a PATH holding
+# only the binaries the hook needs — python3 is deliberately absent, so the normalizer is
+# unavailable and any fall-through to it fails closed.
+NOPY=$(mktemp -d); _CLEANUP_DIRS+=("$NOPY")
+for b in bash git jq dirname basename cat paste date mkdir; do ln -s "$(command -v "$b")" "$NOPY/$b"; done
+claude_edit() { jq -cn --arg t "$1" --arg f "$2" '{hook_event_name:"PreToolUse",tool_name:$t,tool_input:{file_path:$f}}'; }
+
+t "no python3: Claude Write to a code path on main → DENY"
+repo=$(new_repo $H)
+run_hook "$repo" $H "$(claude_edit Write "$repo/app/x.py")" PATH="$NOPY"
+assert_rc_contains 0 'You are on shared branch main'
+
+t "no python3: Claude Edit to a relative code path on main → DENY"
+repo=$(new_repo $H)
+run_hook "$repo" $H "$(claude_edit Edit app/x.py)" PATH="$NOPY"
+assert_rc_contains 0 'You are on shared branch main'
+
+t "no python3: Claude Write to specs/x/SUMMARY.md on main → allow"
+repo=$(new_repo $H)
+run_hook "$repo" $H "$(claude_edit Write "$repo/specs/x/SUMMARY.md")" PATH="$NOPY"
+assert_silent_ok
+
+t "no python3: specs path reached through a symlinked root still resolves → allow"
+# macOS /var → /private/var: ROOT and the edit path must be compared after resolution.
+repo=$(new_repo $H); link=$(mktemp -d); _CLEANUP_DIRS+=("$link"); ln -s "$repo" "$link/r"
+run_hook "$repo" $H "$(claude_edit Write "$link/r/specs/x/SUMMARY.md")" PATH="$NOPY" CLAUDE_PROJECT_DIR="$link/r"
+assert_silent_ok
+
+t "no python3: Claude Write outside the repo on main → fails closed (not fast-pathed)"
+repo=$(new_repo $H)
+run_hook "$repo" $H "$(claude_edit Write "specs/../../escape.py")" PATH="$NOPY"
+assert_rc_contains 0 'could not safely classify'
+
+t "no python3: Claude Write to the repository root on main → fails closed"
+repo=$(new_repo $H)
+run_hook "$repo" $H "$(claude_edit Write "$repo")" PATH="$NOPY"
+assert_rc_contains 0 'could not safely classify'
+
+t "no python3: Write payload carrying a prompt key is not fast-pathed → fails closed"
+repo=$(new_repo $H)
+run_hook "$repo" $H "$(jq -cn --arg f "$repo/specs/x/SUMMARY.md" '{hook_event_name:"PreToolUse",tool_name:"Write",prompt:"x",tool_input:{file_path:$f}}')" PATH="$NOPY"
+assert_rc_contains 0 'could not safely classify'
+
+t "no python3: codex apply_patch on main still fails closed"
+repo=$(new_repo $H)
+run_hook "$repo" $H "$(codex_patch $'*** Begin Patch\n*** Update File: specs/demo/PLAN.md\n*** End Patch')" PATH="$NOPY"
+assert_rc_contains 0 'could not safely classify'
+
 finish
