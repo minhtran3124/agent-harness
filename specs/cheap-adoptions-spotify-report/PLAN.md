@@ -1,5 +1,5 @@
 ---
-status: active
+status: shipped
 ---
 
 # PLAN — cheap adoptions from the Spotify comparison
@@ -76,3 +76,7 @@ works with its narrowed tool list — that is stated in `### Not auto-verified`,
 
 - The remaining 9 `description:` rewrites — blocked on re-baselining the 192-case activation corpus.
 - Report item #3 (marketplace packaging) — an escalation, tracked separately.
+
+## Status Log
+
+- 2026-09-30 — status set to shipped: delivered by PR #229 (merged); the plan had been left `status: active` after merge.

@@ -1,12 +1,12 @@
 {
   "created_at": "2026-08-17T03:23:09Z",
-  "last_event_id": "0ed3da03-6b7e-4c55-865f-371b55df04f0",
+  "last_event_id": "946bb57d-ef2c-4bde-a2d3-4f3a5f699956",
   "resume_event": null,
   "run_id": "721ea38d-4720-45ac-84ef-d70a5552b496",
-  "seq": 6,
-  "sha": null,
+  "seq": 7,
+  "sha": "adf388cb6ca9ea39bb51056b1887717d19f895dd",
   "slug": "test-layer-ladder",
-  "state": "ready_to_merge",
-  "updated_at": "2026-08-17T06:49:03Z",
+  "state": "shipped",
+  "updated_at": "2026-09-30T09:26:03Z",
   "waiting_on": null
 }

@@ -1,6 +1,6 @@
 ---
 slug: opus-5-5-prompt-audit
-status: active
+status: shipped
 owner: minhtran3124
 created: 2026-09-29
 ---
@@ -91,3 +91,4 @@ low-confidence items.
   scripted replacements; independent review passes still run.
 - 2026-09-29 — Review chain: context-propagation audit (1 row repaired), correctness review
   (14 fixed), intent review (1 fixed, 5 recorded). Follow-up commit applies the fixes.
+- 2026-09-30 — status set to shipped: delivered by PR #233 (merged); the plan had been left `status: active` after merge.

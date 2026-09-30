@@ -1,5 +1,5 @@
 ---
-status: active
+status: shipped
 ---
 
 # PLAN — machine-readable output for the skill-tool conformance gate
@@ -65,3 +65,7 @@ exceeds the 60s per-command cap
 - `--json` for `check_frontmatter_contract.py` and `check-allowed-tools.sh` — same argument
   applies, but one gate at a time keeps the output-contract change reviewable.
 - Changing `run-tests.sh` to consume JSON — that is a separate decision about suite reporting.
+
+## Status Log
+
+- 2026-09-30 — status set to shipped: delivered by PR #229 (merged); the plan had been left `status: active` after merge.
