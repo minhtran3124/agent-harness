@@ -46,6 +46,7 @@ The audit already fixed the replacement text, so each change was applied as writ
 ### Deviations
 
 - Process: the three implementers ran in parallel in one worktree without committing; the controller committed each task (`585e5be`, `2f09a8e`, `05bc692`) to avoid a shared git index (`docs/solutions/harness/parallel-implementers-share-one-git-index.md`).
+- Task 2.1 (`3f8da2a`, `e7efa3d`), on the user's request to finish C5: implemented by the controller, not an implementer subagent. Rule 3 — trimmed the new SKILL.md sentence to fit the 600-word ceiling (dropped "task" from "task history").
 - Rule 2 — `2b82ffc`: after task review, added a returned `Harness-Delta:` line to the implementer prompt (completes C5's intent) and reworded `rules/wave-parallelism.md:43`; made by the controller, outside the audit's hunk text.
 - `design.md` and `research-brief.md` stand in for brainstorming and xia2: the audit was the research and the user's request approved its diffs.
 
@@ -66,10 +67,15 @@ The audit already fixed the replacement text, so each change was applied as writ
 | SC-11 check | `grep -qF "Opus 5.x" rules/behavior.md` | 1 | expected exit 1 | SC-11 |
 | SC-12 check | `grep -qF "MCP server is connected" CLAUDE.md` | 0 | expected exit 0 | SC-12 |
 | SC-13 check | `grep -qF "modes from the index" skills/README.md` | 1 | expected exit 1 | SC-13 |
-| SC-14 check | `grep -qF "harness_delta" skills/subagent-driven-development/implementer-prompt.md` | 0 | expected exit 0 | SC-14 |
+| SC-14 check | `grep -qF "**Harness-Delta:**" skills/subagent-driven-development/implementer-prompt.md` | 0 | expected exit 0 | SC-14 |
 | SC-15 check | `grep -qF "You reason best" skills/subagent-driven-development/implementer-prompt.md` | 1 | expected exit 1 | SC-15 |
 | SC-16 check | `grep -qF "BY DEFAULT" skills/intent-review/intent-reviewer-prompt.md` | 1 | expected exit 1 | SC-16 |
 | SC-17 check | `bash scripts/lint-doc-truth.sh` | 0 | expected exit 0 | SC-17 |
+| SC-18 check | `grep -qF "harness_delta" skills/subagent-driven-development/implementer-prompt.md` | 1 | expected exit 1 | SC-18 |
+| SC-19 check | `grep -qF "Intake lane: [LANE]" skills/subagent-driven-development/implementer-prompt.md` | 0 | expected exit 0 | SC-19 |
+| SC-20 check | `grep -qF "Harness-Delta:" skills/subagent-driven-development/SKILL.md` | 0 | expected exit 0 | SC-20 |
+| SC-21 check | `grep -qF "Under a file handoff" rules/orchestration.md` | 0 | expected exit 0 | SC-21 |
+| skill word ceiling | `python3 -m pytest scripts/test_audit_skill_prompts.py -q` | 0 | 8 passed; SDD SKILL.md at exactly 600 words | |
 | context-propagation regression | `bash tests/scripts/context-propagation-regression.test.sh` | 0 | 10 passed | |
 | agent definition renderer | `python3 -m pytest scripts/test_render_agent_definitions.py -q` | 0 | 12 passed (Task 1.1) | |
 
@@ -77,6 +83,7 @@ The audit already fixed the replacement text, so each change was applied as writ
 
 - The edits change agent behavior as intended — reached traceability (grep checks that text changed); no agent run was re-observed.
 - C5 approval — the audit marked it as needing confirmation; applied on the reading recorded under Intent. The PR calls it out as droppable.
+- Run state stays at `ready_to_merge`: the run FSM allows only `shipped` from there, so task 2.1 is not reflected in `RUN.json`.
 - Delivery to this repo's sessions and to consumers — reached traceability; the derived `.claude/` copy was not redeployed, and two edited files are bootstrap-owned (see Advisory Findings).
 
 ### Context-Propagation Audit
@@ -97,6 +104,8 @@ Diff `b10ca31..2b82ffc`. Result: **PASS**.
 | `implementer-prompt.md` (S2, C5, C8, Harness-Delta return line) | implementer; controller; `compound` | implementer, main | pasted dispatch template (registered fragment) | `render_skill_prompt.py:27-29`; `Harness-Delta: backlog` literal matched by `compound/subagents/solution-extractor-prompt.md:89` and `context-analyzer-prompt.md:9`; `tests/scripts/context-propagation-regression.test.sh` 10 passed |
 | `intent-reviewer-prompt.md` (S3) | intent reviewer | reviewer | pasted dispatch template | `intent-review/SKILL.md:27` |
 | `skills/README.md` (C2, C7) | readers via `CLAUDE.md:57` pointer | main | on-demand Read (deployed copy) | deploy rewrite regex from `scripts/deploy-harness.sh:399-406` applied to the new lines: check 1.8 no longer gains a `.claude/harness-manifest.json` path; line 229 becomes `python3 .claude/scripts/verify_summary.py` |
+
+Round 2 (`69a0256..e7efa3d`, task 2.1): same consumers and delivery as the rows for `rules/orchestration.md` and `implementer-prompt.md` above; `skills/subagent-driven-development/SKILL.md` reaches the controller as the invoked skill, with its required reads still registered (`python3 scripts/render_skill_prompt.py --check-all` exit 0). Result: **PASS**.
 
 Not a failure, recorded: every authority above reaches this repo's sessions through the derived
 `.claude/` copy, which stays stale until `bash scripts/deploy-harness.sh` runs. That deploy was not
@@ -119,6 +128,18 @@ loop. Recorded here for the human.
 | `rules/plan-format.md:99-100` | 0 (pre-existing) | Example rows call `verify_summary.py --lint`, a flag that does not exist (exit 2) | Point the rows at `python3 scripts/check_plan_contract.py specs/<slug>/PLAN.md` |
 | `skills/README.md:208` | 0 (pre-existing) | Check 1.8 omits the hook's embedded-defaults fallback | "…the manifest in the git index, else the embedded defaults; never a `.claude/` copy" |
 | `skills/README.md:308` | 0 (unmodified line) | Still says "copy `<verify>`" for the visual-planner button | Rename to "copy `Verify`" |
+
+Round 2 — correctness review over `69a0256..e7efa3d` (task 2.1, the C5 follow-up): six finder
+angles, three deduplicated locations, none at or above 75. Two bookkeeping defects the finders
+reported (SC-14 Verify row and Task 1.3 Verify still grepped `harness_delta`; no rows for SC-18–SC-21)
+were fixed in the spec record before commit.
+
+| Location | Score | Finding | Suggested follow-up |
+| --- | --- | --- | --- |
+| `rules/orchestration.md:40` | 0 (pre-existing) | Under the file handoff, Deviations and Blockers live only in the report file and no SDD step tells the controller to read it; `agents/coding.md:31` says the orchestrator acts on the inline summary alone | Add a controller step to read the report on non-DONE status and to transcribe deviations into SUMMARY, or return `blockers`/`deviations` inline |
+| `skills/subagent-driven-development/SKILL.md:55` | 25 | "record non-`none` deltas in SUMMARY" no longer names `### Harness-Delta` | Name the section when the file has word headroom |
+| `skills/subagent-driven-development/SKILL.md:54` | 0 | `[LANE]` relies on the controller filling it, like every other placeholder; strictly better than the unsourced field before | none |
+| `skills/subagent-driven-development/SKILL.md` | not scored | File is exactly at the 600-word ceiling; the next added word fails `scripts/test_audit_skill_prompts.py` | Trim prose to restore headroom |
 
 Also reported, outside the scored set (Rule 4, needs a decision): `rules/behavior.md` and
 `agents/PROJECT.md` are `BOOTSTRAP_OWNED_FILES` in `scripts/deploy-harness.sh`, so on an existing
@@ -146,6 +167,15 @@ recorded here:
   (compound mines the returned summary).
 - **drift, advisory, equivalent — `rules/wave-parallelism.md:43`** says "confirm every task's
   `Verify` passed" rather than a bare tag swap.
+
+Round 2 — intent review over `69a0256..e7efa3d` (oracle: "ok, fix C5 luôn rồi tạo PR"). All three
+open C5 advisories are closed and nothing extra ships. Recorded:
+
+- **drift, advisory — "tạo PR" met by updating PR #241**, the open PR on this branch, not a second PR.
+  Stated to the user.
+- **gap, resolved at finish — unpushed commits.** Closed by the push that updates #241.
+- **drift, advisory, equivalent — SKILL.md wording** lost `specs/<slug>/` and `### Harness-Delta` to the
+  word ceiling; "SUMMARY" is the file's established shorthand and the template section is unchanged.
 
 ### Rollback
 

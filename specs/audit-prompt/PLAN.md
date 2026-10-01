@@ -10,13 +10,14 @@ created: 2026-10-01
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**3 tasks · 1 waves · 12 files · 3/3 done**
+**4 tasks · 2 waves · 13 files · 4/4 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
 | 1 | 1.1 | Agent definitions and index (wave 1) | agents/PROJECT.md, agents/PROJECT.template.md, agents/test-runner.md | SC-1 through SC-6 return their expected exit codes. |
 | 1 | 1.2 | Rules and CLAUDE.md (wave 1) | rules/behavior.md, rules/orchestration.md, rules/wave-parallelism.md, rules/auto-correct-scope.md, rules/plan-format.md, CLAUDE.md | SC-7, SC-9, SC-11, SC-12 and SC-17 return their expected exit codes. |
 | 1 | 1.3 | Skill prompts and skills README (wave 1) | skills/subagent-driven-development/implementer-prompt.md, skills/intent-review/intent-reviewer-prompt.md, skills/README.md | SC-8, SC-10, SC-13, SC-14, SC-15 and SC-16 return their expected exit codes. |
+| 2 | 2.1 | Complete C5: lane input, one field spelling, matching return lists (wave 2) | skills/subagent-driven-development/implementer-prompt.md, skills/subagent-driven-development/SKILL.md, rules/orchestration.md | SC-14 and SC-18 through SC-21 return their expected exit codes. |
 
 ```mermaid
 flowchart LR
@@ -25,12 +26,17 @@ flowchart LR
     T1_2["1.2 Rules and CLAUDE.md (wave 1)"]
     T1_3["1.3 Skill prompts and skills README (wave 1)"]
   end
+  subgraph W1[Wave 2]
+    T2_1["2.1 Complete C5: lane input, one field spelling, matching return lists (wave 2)"]
+  end
+  W0 --> W1
 ```
 
 ### Progress
 - [x] 1.1 — Agent definitions and index (wave 1)
 - [x] 1.2 — Rules and CLAUDE.md (wave 1)
 - [x] 1.3 — Skill prompts and skills README (wave 1)
+- [x] 2.1 — Complete C5: lane input, one field spelling, matching return lists (wave 2)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -68,10 +74,14 @@ replacement text; this plan applies them.
 | SC-11 | behavior.md no longer pins a model name | `grep -qF "Opus 5.x" rules/behavior.md` | exit 1 |
 | SC-12 | CLAUDE.md graph instruction is conditional on a connected server | `grep -qF "MCP server is connected" CLAUDE.md` | exit 0 |
 | SC-13 | README check 1.8 no longer names the manifest file | `grep -qF "modes from the index" skills/README.md` | exit 1 |
-| SC-14 | Implementer report format carries the harness-delta field | `grep -qF "harness_delta" skills/subagent-driven-development/implementer-prompt.md` | exit 0 |
+| SC-14 | Implementer report format carries the Harness-Delta field | `grep -qF "**Harness-Delta:**" skills/subagent-driven-development/implementer-prompt.md` | exit 0 |
 | SC-15 | Implementer prompt drops the trait claim | `grep -qF "You reason best" skills/subagent-driven-development/implementer-prompt.md` | exit 1 |
 | SC-16 | Intent reviewer prompt drops the pressure phrase | `grep -qF "BY DEFAULT" skills/intent-review/intent-reviewer-prompt.md` | exit 1 |
 | SC-17 | Documented paths and the hook table still resolve | `bash scripts/lint-doc-truth.sh` | exit 0 |
+| SC-18 | The implementer prompt spells the field one way | `grep -qF "harness_delta" skills/subagent-driven-development/implementer-prompt.md` | exit 1 |
+| SC-19 | The dispatch template carries the intake lane as an input | `grep -qF "Intake lane: [LANE]" skills/subagent-driven-development/implementer-prompt.md` | exit 0 |
+| SC-20 | The SDD skill lists Harness-Delta in the implementer return | `grep -qF "Harness-Delta:" skills/subagent-driven-development/SKILL.md` | exit 0 |
+| SC-21 | The subagent contract states the file-handoff split | `grep -qF "Under a file handoff" rules/orchestration.md` | exit 0 |
 
 ## 4. Tasks
 
@@ -97,10 +107,19 @@ replacement text; this plan applies them.
 
 - **Files:** skills/subagent-driven-development/implementer-prompt.md, skills/intent-review/intent-reviewer-prompt.md, skills/README.md
 - **Action:** Apply S2 (H1), S3 (H2), H4 (C2), H6 (C5), the README line of H7 (C7) and the implementer-prompt lines of H8 (C8) from `research-brief.md`.
-- **Verify:** `grep -qF "harness_delta" skills/subagent-driven-development/implementer-prompt.md`
+- **Verify:** `grep -qF "**Harness-Delta:**" skills/subagent-driven-development/implementer-prompt.md`
 - **Done:** SC-8, SC-10, SC-13, SC-14, SC-15 and SC-16 return their expected exit codes.
 - **Criteria:** SC-8, SC-10, SC-13, SC-14, SC-15, SC-16
 - **Interfaces:** Consumes `research-brief.md`; produces edited `skills/subagent-driven-development/implementer-prompt.md`, `skills/intent-review/intent-reviewer-prompt.md`, `skills/README.md`.
+
+### Task 2.1 — Complete C5: lane input, one field spelling, matching return lists (wave 2)
+
+- **Files:** skills/subagent-driven-development/implementer-prompt.md, skills/subagent-driven-development/SKILL.md, rules/orchestration.md
+- **Action:** Add an `Intake lane: [LANE]` input to the dispatch Context and have the `lane` bullet echo it; rename the `harness_delta` bullet to `Harness-Delta`; make SKILL.md list the same return set and record Harness-Delta in SUMMARY; state the file-handoff split in the subagent contract.
+- **Verify:** `grep -qF "Intake lane: [LANE]" skills/subagent-driven-development/implementer-prompt.md`
+- **Done:** SC-14 and SC-18 through SC-21 return their expected exit codes.
+- **Criteria:** SC-14, SC-18, SC-19, SC-20, SC-21
+- **Interfaces:** Consumes the correctness-review advisories on the implementer prompt (lines 106, 117, 118); produces edited `skills/subagent-driven-development/implementer-prompt.md`, `skills/subagent-driven-development/SKILL.md`, `rules/orchestration.md`.
 
 ## 5. Risks
 
@@ -115,3 +134,5 @@ replacement text; this plan applies them.
 - 2026-10-01 — plan review: split SC-5/SC-6 per task, added SC-2 and SC-5 checks, added the installer risk.
 - 2026-10-01 — tasks 1.1, 1.2, 1.3 complete; commits 585e5be, 2f09a8e, 05bc692; task reviews pass/approved (Minor only); follow-up 2b82ffc for two Minor findings.
 - 2026-10-01 — shipped: context-propagation audit PASS, correctness review 0 blocking (9 advisory), intent review 0 blocking (4 recorded); PR into audit-prompt.
+- 2026-10-01 — user asked to finish C5; added task 2.1 for the three C5 advisories (lane input, field spelling, return lists).
+- 2026-10-01 — task 2.1 complete; commits 3f8da2a, e7efa3d; task review pass/approved; correctness round 2: 0 blocking (3 advisory); intent round 2: 0 blocking.
