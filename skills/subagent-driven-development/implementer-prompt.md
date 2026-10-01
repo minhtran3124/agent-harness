@@ -103,7 +103,8 @@ Task tool (coding):
     ## Report Format
 
     Write the detailed structured contract below to `[IMPLEMENTER_REPORT_PATH]`, then return only
-    `status`, commit SHAs, Verify result, and that report path to the controller:
+    `status`, commit SHAs, Verify result, a `Harness-Delta: <value>` line, and that report path
+    to the controller:
 
     - **status:** DONE | DONE_WITH_CONCERNS | BLOCKED | NEEDS_CONTEXT
     - **commits:** list of `{sha, subject}` for commits you authored during this task

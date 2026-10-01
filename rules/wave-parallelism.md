@@ -40,7 +40,7 @@ Same-wave files are disjoint:
 
 After a wave completes:
 
-1. Read each subagent summary; verify every `Verify` passed
+1. Read each subagent summary; confirm every task's `Verify` passed
 2. Append one entry to PLAN.md `## Status Log` naming the **task ids**, their commit shas, and a
    completion marker (`complete` or `✓`) — all three in the same entry:
 
