@@ -39,7 +39,7 @@ Task tool (coding):
     1. Implement exactly what the task specifies
     2. Write tests (following TDD if task says to)
     3. Verify the implementation: run your linter and type-checker first (when the stack
-       defines them), then the task's `<verify>` command. Do not substitute the whole
+       defines them), then the task's `Verify` command. Do not substitute the whole
        suite — it runs at branch finish and in CI.
     4. Report back
 
@@ -50,8 +50,7 @@ Task tool (coding):
 
     ## Code Organization
 
-    You reason best about code you can hold in context at once, and your edits are more
-    reliable when files are focused. Keep this in mind:
+    Keep files focused so edits stay reliable:
     - Follow the file structure defined in the plan
     - Each file should have one clear responsibility with a well-defined interface
     - If a file you're creating is growing beyond the plan's intent, stop and report
@@ -80,7 +79,7 @@ Task tool (coding):
     ## Completion bar
 
     Report DONE only when every requirement and mapped Success Criterion in the brief is
-    implemented and `<verify>` passes. If part of the task genuinely cannot be finished, do
+    implemented and `Verify` passes. If part of the task genuinely cannot be finished, do
     the rest and state plainly what is missing and why. Build only what the brief asks; if
     you think the ask is mistaken, say so in one sentence and still deliver it as specified.
 
@@ -109,11 +108,13 @@ Task tool (coding):
     - **status:** DONE | DONE_WITH_CONCERNS | BLOCKED | NEEDS_CONTEXT
     - **commits:** list of `{sha, subject}` for commits you authored during this task
     - **files:** list of files touched (paths)
-    - **verify:** pass | fail — result of the task's `<verify>` command (include output
+    - **verify:** pass | fail — result of the task's `Verify` command (include output
       excerpt on fail)
     - **blockers:** anything needing controller or user decision (empty list if none)
     - **deviations:** list of Rule 1–3 auto-fixes per `rules/auto-correct-scope.md`.
       Each entry: `{rule: 1|2|3, description, file, commit_sha}`. Empty list if none.
+    - **lane:** the intake lane this task ran under (`tiny | normal | high-risk`)
+    - **harness_delta:** workflow friction this task revealed — `fix-direct`, `backlog`, or `none`
     - What you implemented (or what you attempted, if blocked)
     - What you tested and test results
     - Any issues or concerns

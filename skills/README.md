@@ -205,7 +205,7 @@ secrets scan, `strict` adds the untracked-`.py` deny — which runs before every
 1.7. Run-state gate — an untracked `RUN.json`/`events.jsonl` beside a staged `specs/<slug>/`
    file blocks (`REQUIRE_RUN_STATE_STAGED=0` downgrades it to a warning)
 1.8. Risk corroboration — the declared `Lane:` against the staged diff; a block-mode hard-gate
-   signal with a lane below `high-risk` blocks (modes from the index `harness-manifest.json`)
+   signal with a lane below `high-risk` blocks (modes from the manifest in the git index, never a `.claude/` copy)
 1.9. Plan scope — staged paths outside the active `PLAN.md` Files set warn
    (`BLAST_RADIUS_STRICT=1` blocks)
 
@@ -226,7 +226,7 @@ Under `REQUIRE_APP_GATES=1`, once at least one staged file maps to a test and th
 > real rows and blocks on a claimed-vs-actual exit mismatch — but a table of only placeholders
 > passes it with a `no checks ran` warning. Evidence *exists* because of 1.6; evidence is
 > *honest* because of 2.5. You can still run the former by hand:
-> `python scripts/verify_summary.py --lane <slug>`.
+> `python3 scripts/verify_summary.py --lane <slug>`.
 
 This is one of several wired hooks — see the full table in the root `CLAUDE.md`.
 
