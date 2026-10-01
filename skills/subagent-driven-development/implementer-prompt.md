@@ -27,6 +27,8 @@ Task tool (coding):
 
     [Scene-setting: where this fits, dependencies, architectural context]
 
+    Intake lane: [LANE]
+
     ## Before You Begin
 
     You cannot ask questions mid-task; you can only return. Make routine judgment calls
@@ -114,8 +116,8 @@ Task tool (coding):
     - **blockers:** anything needing controller or user decision (empty list if none)
     - **deviations:** list of Rule 1–3 auto-fixes per `rules/auto-correct-scope.md`.
       Each entry: `{rule: 1|2|3, description, file, commit_sha}`. Empty list if none.
-    - **lane:** the intake lane this task ran under (`tiny | normal | high-risk`)
-    - **harness_delta:** workflow friction this task revealed — `fix-direct`, `backlog`, or `none`
+    - **lane:** the intake lane given in Context above (`tiny | normal | high-risk`)
+    - **Harness-Delta:** workflow friction this task revealed — `fix-direct`, `backlog`, or `none`
     - What you implemented (or what you attempted, if blocked)
     - What you tested and test results
     - Any issues or concerns
