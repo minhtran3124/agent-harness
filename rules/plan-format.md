@@ -96,8 +96,8 @@ illustrative only):
 
 | ID | Behavior (observable) | Check (re-runnable) | Expected |
 |------|-------------------------|-----------------------|------------|
-| SC-1 | New markdown plan without an SC table is rejected | `python scripts/verify_summary.py --lint specs/<slug>` | exit 1 — missing SC table |
-| SC-2 | A well-formed SC table passes the lint | `python scripts/verify_summary.py --lint specs/<slug>` | exit 0 |
+| SC-1 | New markdown plan without an SC table is rejected | `python3 scripts/verify_summary.py --lint specs/<slug>` | exit 1 — missing SC table |
+| SC-2 | A well-formed SC table passes the lint | `python3 scripts/verify_summary.py --lint specs/<slug>` | exit 0 |
 ```
 
 Exemptions: legacy XML plans (see "Legacy XML plans" below) and pre-existing specs authored

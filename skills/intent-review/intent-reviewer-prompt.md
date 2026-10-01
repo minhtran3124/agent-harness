@@ -91,8 +91,7 @@ Task tool (reviewer):
       different surface) or *behaviorally different* (a different outcome).
     - **excess** — the diff ships something NOBODY asked for — scope beyond the intent. (Extra
       features, options, endpoints, abstractions, config knobs, or new public surface not
-      traceable to any intent clause. Flag findings of this class BY DEFAULT, not just when
-      convenient.) This `excess` verdict is a post-hoc check on the FINAL diff — distinct from
+      traceable to any intent clause. Report every finding of this class.) This `excess` verdict is a post-hoc check on the FINAL diff — distinct from
       the separate simplify pass, which edits an unmerged pre-ship diff where deletion is
       allowed.
 
