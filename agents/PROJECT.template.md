@@ -8,8 +8,8 @@ few execution facts no other doc reliably contains. Fill it in per project.
 > somewhere. Re-describing that here creates a second source of truth that drifts. Point to the
 > real doc; only inline a convention when the repo has no doc for it.
 >
-> Risk-classification signals are **not** here — `skills/xia2/` is zero-config and carries them
-> inside its own `SKILL.md`. This file covers implementation + test execution only.
+> Risk-classification signals are **not** here — they live in `rules/research-depth.md` and
+> `skills/xia2/references/depth-classifier.md`. This file covers implementation + test execution only.
 
 ---
 
@@ -63,4 +63,4 @@ with no architecture/style docs. Describe the minimum the implementer needs.
 
 - The index **points**, it does not duplicate. If you catch yourself copying a doc's content here, link the doc instead.
 - Update the convention-source paths when docs move; re-review the two agents after a layer or test-runner change.
-- Kept separate from xia2's risk signals (which live in `skills/xia2/SKILL.md`). The agents must also work in a repo that does not use `xia2`.
+- Kept separate from xia2's risk signals (which live in `rules/research-depth.md`). The agents must also work in a repo that does not use `xia2`.
