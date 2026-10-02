@@ -1,0 +1,40 @@
+{
+    "schema_version": 1,
+    "expected_oracle": "correctness",
+    "core": true,
+    "correctness_clean": false,
+    "planted": {
+        "file": "app/services/subscription_service.py",
+        "match_any": [
+            "await",
+            "coroutine"
+        ],
+        "and_any": []
+    },
+    "false_positives": [
+        {
+            "file": "app/services/subscription_service.py",
+            "match_any": [
+                "count < 0",
+                "negative",
+                "dead code",
+                "unnecessary",
+                "redundant",
+                "unreachable"
+            ],
+            "and_any": []
+        },
+        {
+            "file": "app/services/subscription_service.py",
+            "match_any": [
+                "should not be async",
+                "need not be async",
+                "does not need to be async",
+                "remove async",
+                "make it sync",
+                "synchronous"
+            ],
+            "and_any": []
+        }
+    ]
+}

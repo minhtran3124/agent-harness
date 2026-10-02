@@ -1,8 +1,9 @@
-# Review-Chain Micro-Benchmark (manual v1)
+# Review-Chain Micro-Benchmark
 
-The repo's first empirical measurement of what the review chain actually catches. v1 is a
-**manual protocol** — there is no automated runner, and adding one is explicitly out of scope
-for this version (automate later only if the manual loop proves valuable).
+The repo's first empirical measurement of what the review chain actually catches. It started as
+a **manual protocol** (v1), which is still supported. A **scripted path** now runs one blind
+reviewer over every fixture and scores its structured findings deterministically against each
+fixture's `truth.json`, so counting no longer depends on an LLM grader.
 
 ## Claim discipline (read first)
 
@@ -23,8 +24,18 @@ Each fixture lives under `fixtures/<name>/` and contains exactly three files:
 - **`truth.md`** — the ground truth: the defect class, its exact location, which oracle should
   catch it (`/correctness-review` or `/intent-review`), and what a false-positive would look
   like for this fixture.
+- **`truth.json`** — the machine-readable answer key the scripted scorer reads: the expected
+  oracle, whether the fixture is core, whether it is correctness-clean, the planted defect as a
+  file plus `match_any`/`and_any` terms, and the matchable false positives. Keep it in step with
+  `truth.md`; `python3 scripts/score_review_chain_eval.py --check-truth
+  evals/skills/review-chain/fixtures` validates it.
 
 ## Running a fixture
+
+There are two ways to run the benchmark. Their numbers are not interchangeable — say which path
+produced a result.
+
+### Manual protocol
 
 A **run** is:
 
@@ -39,11 +50,30 @@ A **run** is:
    - **false-positive** — the pass reported a defect that is not the planted one and is not real.
 4. Record the approximate **token cost per pass** (from session usage).
 
+### Scripted path
+
+1. `python3 scripts/run_review_chain_eval.py --model <model> --effort <effort> --output <results.json>`
+   runs one blind two-oracle reviewer per fixture (from an empty temp directory, with
+   `intent.md` and `diff.patch` inlined) and writes every raw result to `<results.json>`. It
+   refuses to overwrite an existing output.
+2. `python3 scripts/score_review_chain_eval.py --score <results.json>` reads the reviewer's
+   JSON findings and classifies each one as `planted`, `false_positive` or `other` against the
+   fixture's `truth.json`. A fixture is caught when any finding is `planted`; `oracle_match`
+   says whether that finding came from the expected oracle. It prints per-fixture verdicts and
+   totals (core catches, bonus catches, false positives, false positives at or above
+   `--threshold`, default 75).
+
+The scripted prompt asks the reviewer for structured JSON findings, unlike the free-form output
+of the 2026-10-02 Opus 5 vs 5.5 A/B (PR #246), so scripted numbers are **not comparable** with
+that A/B.
+
 ## Results
 
 Results land in `results/<date>-<label>.md`, built from `results/template.md`. Columns:
 `fixture | defect class | expected oracle | caught-by | verdict | tokens`. The headline numbers
 are the **catch rate (n/5)**, the **false-positive count**, and approximate token cost per pass.
+For a scripted run, keep the runner's `<results.json>` beside the result file and copy the
+scorer's totals into it, stating that it came from the scripted path.
 
 ## Fixture revisions
 
@@ -52,6 +82,21 @@ the *expected* oracle. When a fixture is found to carry an unintended defect for
 oracle, it is revised — the planted defect is preserved, the unintended one removed — and the
 revision is recorded here. Past result files state which fixture version they measured.
 
+- **v4 (2026-10-02)** — two fixtures made answerable from their own files, surfaced by the
+  2026-10-02 Opus 5 vs 5.5 A/B. Earlier results on `intent-gap` and `soft-delete-filter` are
+  **not comparable across this revision** — re-baseline before trending against older result
+  files. Every fixture also gained a `truth.json` answer key for the scripted scorer.
+  - **`intent-gap`** — `intent.md` never mentioned the owner-scoping and 404 on
+    `update_watchlist` that the answer key treats as intended, so every run flagged them as
+    excess with high confidence. `intent.md` now says only the owner may update a watchlist and
+    that a missing or foreign watchlist returns 404; `truth.md` lists flagging either as excess
+    as a false positive. The planted gap (no empty-name check on `update_watchlist`) is unchanged.
+  - **`soft-delete-filter`** — `truth.md` justified the defect by citing a stack profile that no
+    longer exists in this repo, so the soft-delete convention was not knowable from the fixture.
+    `intent.md` now states that `Watchlist` rows are soft-deleted by setting `deleted_at` and that
+    repository reads exclude them, and `truth.md` cites `intent.md` instead. Because the request
+    now states the convention, `/intent-review` can also catch the missing filter; the scorer
+    counts that as caught with `oracle_match` false. The planted defect is unchanged.
 - **v3 (2026-07-15)** — two answer-key corrections surfaced by the 2026-07-13/07-14 runs and
   adjudicated by the fixture owner (issues #58, #59). Prior runs' numbers on `intent-gap` and
   `none-deref` are **not comparable across this revision** — re-baseline before trending against

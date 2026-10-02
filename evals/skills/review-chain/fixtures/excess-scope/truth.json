@@ -1,0 +1,46 @@
+{
+    "schema_version": 1,
+    "expected_oracle": "intent",
+    "core": true,
+    "correctness_clean": true,
+    "planted": {
+        "file": "app/routers/profile.py",
+        "match_any": [
+            "get_profile",
+            "profileservice",
+            "profile_service",
+            "with_stats",
+            "stats"
+        ],
+        "and_any": [
+            "excess",
+            "scope",
+            "not requested",
+            "unrequested",
+            "not asked",
+            "beyond",
+            "unrelated",
+            "refactor",
+            "request"
+        ]
+    },
+    "false_positives": [
+        {
+            "file": "app/routers/profile.py",
+            "match_any": [
+                "get_settings",
+                "/settings",
+                "settingsresponse"
+            ],
+            "and_any": [
+                "excess",
+                "scope",
+                "not requested",
+                "unrequested",
+                "not asked",
+                "beyond",
+                "unrelated"
+            ]
+        }
+    ]
+}
