@@ -6,15 +6,30 @@
     "planted": {
         "file": "app/routers/user_email.py",
         "match_any": [
+            "get_by_id",
+            "user.email",
             "none",
             "optional",
-            "null",
             "attributeerror",
             "unguarded",
             "not found",
             "notfound"
         ],
-        "and_any": []
+        "and_any": [
+            "attributeerror",
+            "nonetype",
+            "dereference",
+            "deref",
+            "unguarded",
+            "unchecked",
+            "is none",
+            "none check",
+            "not found",
+            "notfound",
+            "404",
+            "500",
+            "crash"
+        ]
     },
     "false_positives": [
         {

@@ -6,10 +6,21 @@
     "planted": {
         "file": "app/services/subscription_service.py",
         "match_any": [
-            "await",
-            "coroutine"
+            "count_active",
+            "get_active_count",
+            "coroutine",
+            "await"
         ],
-        "and_any": []
+        "and_any": [
+            "not awaited",
+            "never awaited",
+            "missing await",
+            "without await",
+            "without an await",
+            "unawaited",
+            "coroutine",
+            "typeerror"
+        ]
     },
     "false_positives": [
         {
