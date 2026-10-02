@@ -1,0 +1,309 @@
+{
+  "arm": "old",
+  "model": "claude-opus-5",
+  "effort": "high",
+  "client": "2.1.287 (Claude Code)",
+  "cases": {
+    "context-rule-unread": {
+      "rc": 0,
+      "elapsed": 117.0,
+      "result": "I don't have filesystem or shell tools in this session (only MCP doc/browser/Vercel tools), so this review is from the diff and intent text alone. Several findings below hinge on repo facts I could not verify; confidences reflect that.\n\nThe change is one new markdown file \u2014 a prompt template. It has no executable code, so I read the \"correctness\" oracle as: does this prompt, when rendered and run, give the subagent a contradictory or unsatisfiable contract (the prompt-level analogue of a wrong result)?\n\n## Correctness\n\n- **oracle:** correctness \u00b7 **class:** unbound variable \u00b7 `skills/demo-dispatch/worker-prompt.md:4` \u00b7 `<slug>` in `specs/<slug>/PLAN.md` is never bound and is not the `{{...}}` template syntax, so whatever renders `{{TASK_BODY}}` will not substitute it \u2014 an isolated-context subagent with more than one `specs/*` directory has to guess and can read the wrong PLAN.md. \u00b7 **confidence: 62**\n\n- **oracle:** correctness \u00b7 **class:** contract gap \u00b7 `skills/demo-dispatch/worker-prompt.md:15,17-22` \u00b7 Line 15 orders \"STOP and escalate\" on a Rule 4 gate, but the return contract has no blocked/escalation field, so a worker that correctly stops returns the same shape as one that finished; the orchestrator cannot distinguish them. \u00b7 **confidence: 58**\n\n- **oracle:** correctness \u00b7 **class:** self-inconsistency \u00b7 `skills/demo-dispatch/worker-prompt.md:19` \u00b7 The contract requires \"Commits made (sha + subject)\" but nothing in the prompt instructs or authorizes the worker to commit, so the field is either empty or fabricated on a normal run. \u00b7 **confidence: 55**\n\n- **oracle:** correctness \u00b7 **class:** ambiguous sink \u00b7 `skills/demo-dispatch/worker-prompt.md:14` \u00b7 \"record each under `### Deviations`\" never says *where* that heading lives (returned summary vs. `specs/<slug>/PLAN.md`); if workers resolve it to PLAN.md, parallel dispatches write the same section concurrently. \u00b7 **confidence: 48**\n\n- **oracle:** correctness \u00b7 **class:** brittle coupling \u00b7 `skills/demo-dispatch/worker-prompt.md:14` \u00b7 The rule numbering (\"Rule 1\u20133 vs Rule 4\") is hardcoded here as well as in `.claude/rules/auto-correct-scope.md`; if that file's numbering or count changes, this prompt silently misclassifies. I could not confirm the rule file exists at that path or that Rule 4 is its hard gate. \u00b7 **confidence: 45**\n\n- **oracle:** correctness \u00b7 **class:** malformed patch \u00b7 `diff.patch` hunk header \u00b7 `@@ -0,0 +1,21 @@` declares 21 added lines but 22 `+` lines follow; taken literally `git apply` rejects it as corrupt. Possibly an artifact of hand-trimming the diff for review rather than the real commit. \u00b7 **confidence: 42**\n\n- **oracle:** correctness \u00b7 **class:** redundant source of truth \u00b7 `skills/demo-dispatch/worker-prompt.md:4,8` \u00b7 Line 4 tells the worker to pull its task from PLAN.md while line 8 injects the task body inline; a worker that re-reads PLAN.md may execute a different task than the one dispatched. \u00b7 **confidence: 38**\n\n## Intent\n\n- **oracle:** intent \u00b7 **class:** gap \u00b7 `skills/demo-dispatch/worker-prompt.md` (whole file) \u00b7 The request's purpose clause is \"so implementer subagents classify their self-fixes\" \u2014 the diff adds the prompt text but nothing dispatches with it (no SKILL.md reference, no change to any existing dispatcher), so no subagent reaches this instruction yet. \u00b7 **confidence: 52**\n\n- **oracle:** intent \u00b7 **class:** gap \u00b7 `skills/demo-dispatch/worker-prompt.md:13` \u00b7 The rule the prompt classifies against, `.claude/rules/auto-correct-scope.md`, is neither added nor shown to exist in this change; if absent, the classification step is unrunnable. \u00b7 **confidence: 40**\n\n- **oracle:** intent \u00b7 **class:** excess \u00b7 `skills/demo-dispatch/worker-prompt.md:19,22` \u00b7 \"Commits made (sha + subject)\" and \"Verify status\" extend the worker's reporting duties into commit and verification territory that the request never mentions. A task slot and some return shape are inherent to a dispatch prompt; these two items are not. \u00b7 **confidence: 37**\n\n- **oracle:** intent \u00b7 **class:** drift \u00b7 `skills/demo-dispatch/worker-prompt.md:14-15` \u00b7 Asked for *classification*; the diff also mandates behavior (apply 1\u20133, STOP on 4, record each). Defensible as natural completion of the ask, but it is a policy decision the request did not make. \u00b7 **confidence: 25**\n\n## Checked\n\nCovered: template placeholder binding and substitution (`{{TASK_BODY}}`, `<slug>`); internal consistency between the instruction body and the return contract; escalation path completeness; referenced-path validity as far as the text allows; hunk header vs. line count; request-to-diff mapping for gap/drift/excess.\n\nNot verified (no filesystem access): existence and content of `.claude/rules/auto-correct-scope.md`, including whether it has four rules with Rule 4 as the hard gate; existence of `skills/demo-dispatch/SKILL.md` or any caller that renders this template; whether `specs/*/PLAN.md` contains a `### Deviations` section; whether `demo-dispatch` is a throwaway demo directory, which would change my read of the wiring gap. If you can run this in a session with file tools, those four checks would move the top findings' confidence substantially in either direction.",
+      "usage": {
+        "input_tokens": 4,
+        "cache_creation_input_tokens": 18552,
+        "cache_read_input_tokens": 468799,
+        "output_tokens": 6677,
+        "output_tokens_details": {
+          "thinking_tokens": 4639
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 18552,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 6396,
+            "cache_read_input_tokens": 237478,
+            "cache_creation_input_tokens": 12395,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 12395
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      },
+      "model_usage": [
+        "claude-opus-5"
+      ],
+      "stderr": ""
+    },
+    "excess-scope": {
+      "rc": 0,
+      "elapsed": 106.3,
+      "result": "Bash and the file tools aren't available in this session, so I reviewed from the pasted `diff.patch` and `intent.md` text alone. No access to the repo means I could not verify that referenced symbols exist; those findings are marked conditional.\n\n## Correctness\n\n| # | class | file:line | reason | conf |\n|---|---|---|---|---|\n| C1 | missing symbol / import error | `app/routers/profile.py:7-8` | `SettingsResponse` and `ProfileService` are newly imported but no diff hunk adds them; if the patch is complete, the module raises `ImportError` at app startup and **every** route 500s, not just the new one. | 55 |\n| C2 | missing method | `app/routers/profile.py:20` | `repo.get_settings(...)` is new on `ProfileRepository` and not added in any hunk; trigger = any `GET /profile/settings` request \u2192 `AttributeError` \u2192 500 instead of the settings payload. | 55 |\n| C3 | schema/shape mismatch | `app/routers/profile.py:32` | `get_profile` now feeds `ProfileResponse` the output of `get_profile_with_stats` (a different, stats-bearing shape) while `ProfileResponse` is unchanged in this diff; trigger = any `GET /profile/` \u2192 `ValidationError` \u2192 500, or silently dropped stats fields. | 45 |\n| C4 | ORM validation config | `app/routers/profile.py:23` | `SettingsResponse.model_validate(settings)` on an ORM row fails with `ValidationError` unless the new model sets `from_attributes=True`; the established `ProfileResponse` pattern suggests the convention exists, which lowers this. | 30 |\n| C5 | raise of non-exception | `app/routers/profile.py:22,31` | If `AppException.NotFound` is a factory returning a non-`BaseException`, `raise` yields `TypeError` \u2192 500 instead of 404; trigger = a user with no settings row. Unverifiable blind. | 20 |\n| C6 | duplicate dependency resolution | `app/routers/profile.py:16,18` | `get_current_user` is declared both in `dependencies=[...]` and as a parameter. FastAPI's dependency cache makes this a single call in the default case, so it is redundant rather than broken \u2014 it only double-executes (double DB hit / double token decode) if that dependency is declared `use_cache=False`. | 10 |\n\n## Intent\n\n| # | class | file:line | reason | conf |\n|---|---|---|---|---|\n| I1 | excess | `app/routers/profile.py:28-29` | `get_profile` was rewritten from `ProfileRepository.get_by_user` to `ProfileService.get_profile_with_stats` \u2014 an unrequested refactor of an existing endpoint that changes what it returns; the request was only to add a new endpoint. | 90 |\n| I2 | excess | `app/routers/profile.py:30-31` | Added a `None` \u2192 404 branch to the pre-existing `get_profile`, changing its failure behavior; not asked for. | 80 |\n| I3 | excess | `app/routers/profile.py:16` | The redundant second `get_current_user` declaration on `/settings` is scope beyond the ask (C6 is the runtime view of the same line). | 60 |\n| I4 | gap (coverage) | `diff.patch` | Hunk header is `@@ -1,18 +1,38 @@` but the pasted body accounts for ~15 old / ~32 new lines \u2014 roughly 3 added lines plus trailing context are missing from the diff text. Something at the tail of the file is unreviewed. | 70 |\n| I5 | gap | \u2014 | No test for `GET /profile/settings` appears in the diff. Whether this is a real gap depends on repo convention, which I cannot see. | 40 |\n\nC1/C2/C3 and I4 are plausibly the same underlying fact: **this looks like a partial diff**. If the schema, repository, and service changes exist in hunks that weren't included, C1\u2013C3 collapse to nothing and only C3's shape question survives. That is the one thing worth confirming before acting on this review.\n\n## What I checked and found clean\n\n- **Route path** \u2014 `prefix=\"/profile\"` + `\"/settings\"` resolves to `GET /profile/settings`, exactly as requested.\n- **Route ordering** \u2014 `/settings` is registered before `/`; no path-parameter route exists that could shadow it.\n- **Auth** \u2014 the new endpoint is authenticated and scopes the lookup to `current_user.id`, so no cross-user leak (no user ID is accepted from the request).\n- **Import hygiene** \u2014 `ProfileRepository` is still used (by `get_settings`), so the `get_profile` rewrite didn't orphan it.\n- **Async consistency** \u2014 `await` is applied to both new repository and service calls; handlers are `async def`.\n- **Declared vs. actual return type** \u2014 `response_model` and the return annotation agree on both handlers.\n- **Trailing-slash behavior on `/profile/`** \u2014 unchanged by this diff (pre-existing).",
+      "usage": {
+        "input_tokens": 4,
+        "cache_creation_input_tokens": 17396,
+        "cache_read_input_tokens": 469020,
+        "output_tokens": 6696,
+        "output_tokens_details": {
+          "thinking_tokens": 4890
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 17396,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 3698,
+            "cache_read_input_tokens": 237699,
+            "cache_creation_input_tokens": 11018,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 11018
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      },
+      "model_usage": [
+        "claude-opus-5"
+      ],
+      "stderr": ""
+    },
+    "intent-gap": {
+      "rc": 0,
+      "elapsed": 87.3,
+      "result": "# Blind review: watchlist name validation\n\nReviewed from `intent.md` + `diff.patch` only (working dir is empty \u2014 no repo, schemas, or `WatchlistRepository` source available to verify against). Line numbers are new-file positions inferred from the hunk start.\n\n## Oracle 1 \u2014 CORRECTNESS\n\n| # | Class | Location | Reason | Conf |\n|---|---|---|---|---|\n| C1 | Unverified call signature \u2192 500 | `app/routers/watchlists.py:35` | `repo.update()` gains a `user_id=` kwarg but no repository change ships in this diff; if `WatchlistRepository.update` is still `(watchlist_id, name)`, **every** `PUT /watchlists/{id}` raises `TypeError: update() got an unexpected keyword argument 'user_id'` \u2192 500. | 50 |\n| C2 | Null passthrough \u2192 wrong result | `app/routers/watchlists.py:35` | `payload.name` is forwarded raw. If `WatchlistUpdate.name` is the usual partial-update `str \\| None = None`, a body omitting `name` sends `name=None` into the repo and can blank the stored name (or blow up in the DB layer) instead of being a no-op. Pre-existing, but this is the exact path the change was meant to harden. | 40 |\n| C3 | Possible `NameError` \u2192 500 on the 400 path | `app/routers/watchlists.py:21,37` | `AppException` is used but the diff adds no import and the import block isn't in the hunk. If it isn't already imported, the empty-name request raises `NameError` and returns 500 \u2014 the opposite of the requested 400. Also unverified that `AppException.BadRequest` actually maps to HTTP 400 in this app's handler. | 30 |\n| C4 | `AttributeError` \u2192 500 instead of 400 | `app/routers/watchlists.py:19` | `payload.name.strip()` assumes a non-`None` str. If `WatchlistCreate.name` is optional, `POST` with `{\"name\": null}` crashes with 500 rather than returning 400. Low odds \u2014 create-name is usually required. | 20 |\n\n## Oracle 2 \u2014 INTENT\n\n| # | Class | Location | Reason | Conf |\n|---|---|---|---|---|\n| I1 | **Gap** | `app/routers/watchlists.py:34-38` | The request names *both* endpoints; `update_watchlist` got **no** empty-name check. `PUT /watchlists/{id}` with `{\"name\": \"   \"}` (or `\"\"`) returns 200 and persists the blank name. Half the feature is missing. | 97 |\n| I2 | **Gap** | `app/routers/watchlists.py:35` | Update also skips the `.strip()` normalization applied on create, so the two endpoints now disagree on what gets stored for `\"  My List  \"` \u2014 trimmed on create, untrimmed on update. | 88 |\n| I3 | **Excess** | `app/routers/watchlists.py:35` | `user_id=current_user.id` adds ownership scoping to update. Not requested. It's a real authorization improvement (previously any user could update any watchlist by id), but it silently changes behavior for cross-user requests from 200 \u2192 404 and should ship as its own reviewed change. | 90 |\n| I4 | **Excess** | `app/routers/watchlists.py:36-37` | The `None` \u2192 404 branch is unrequested. It is the necessary companion to I3 (and fixes a latent `model_validate(None)` crash), so it's defensible \u2014 but it's scope the user didn't ask for and isn't mentioned anywhere in `intent.md`. | 85 |\n| I5 | **Drift** (minor) | `app/routers/watchlists.py:19,23` | The ask was *reject* empty names; the diff additionally changes what gets persisted on create (stripped, not raw). Sensible and probably wanted, but it's a storage-behavior change beyond the stated contract. | 55 |\n\n## Headline\n\nThe change implements the requested validation on **one** of the two endpoints it was asked to cover (I1), and spends its remaining edits on an unrelated authorization fix (I3/I4). The PUT path is strictly riskier after this diff than before: it still accepts empty names, and it now calls the repository with a kwarg the diff never introduces (C1).\n\n### Minimum fix for I1/I2\n```python\nname = payload.name.strip() if payload.name is not None else None\nif name is not None and not name:\n    raise AppException.BadRequest(\"name must not be empty\")\nupdated = await repo.update(watchlist_id, user_id=current_user.id, name=name)\n```\n(Decide explicitly whether `name=None` means \"leave unchanged\" or is itself a 400 \u2014 that's C2.)\n\n### To close out C1/C3\nConfirm `WatchlistRepository.update` accepts `user_id`, and that `AppException` is imported in this module and its handler maps `BadRequest` \u2192 400. Neither is checkable from the diff alone; a test asserting `POST /watchlists {\"name\":\"   \"}` returns **400** (not 500) would cover both.",
+      "usage": {
+        "input_tokens": 2,
+        "cache_creation_input_tokens": 6367,
+        "cache_read_input_tokens": 231321,
+        "output_tokens": 5420,
+        "output_tokens_details": {
+          "thinking_tokens": 3717
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 6367,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 5420,
+            "cache_read_input_tokens": 231321,
+            "cache_creation_input_tokens": 6367,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 6367
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      },
+      "model_usage": [
+        "claude-opus-5"
+      ],
+      "stderr": ""
+    },
+    "missing-await": {
+      "rc": 0,
+      "elapsed": 71.2,
+      "result": "Both oracles run on the 11-line hunk. One root cause drives three findings; one is independent.\n\n## Findings\n\n| # | Oracle | Class | Location | Reason | Confidence |\n|---|---|---|---|---|---|\n| 1 | correctness | missing `await` \u2192 TypeError | `app/services/subscription_service.py:18` | `count` is a coroutine, not an int, so `count < 0` raises `TypeError: '<' not supported between instances of 'coroutine' and 'int'`. | 95 |\n| 2 | correctness | unawaited coroutine \u2192 query never runs | `app/services/subscription_service.py:17` | `self.repo.count_active(user_id)` is called without `await`, so the `session.execute(...)` inside it never runs and the declared `-> int` is never satisfied. | 95 |\n| 3 | intent | gap | `app/services/subscription_service.py:14-20` | The method never returns a count, so the one thing asked for (\"returns how many active subscriptions\") is not delivered. | 95 |\n| 4 | intent | excess | `app/services/subscription_service.py:18-19` | The negative-clamp guard was not requested, and a SQL `COUNT` cannot be negative \u2014 so it is dead code that additionally swallows the type error into a silent `0` if the operand ever became comparable. | 70 |\n\n### Detail\n\n**#1 \u2014 the crash.** Trigger: any call, e.g. `await service.get_active_count(\"u_1\")`. Line 17 binds `count` to a coroutine object because the `await` is missing (the diff's own comment confirms `count_active` is `async def`). Line 18 then compares that coroutine to `0`. Wrong outcome: `TypeError` on every invocation \u2014 the method never returns. Fix is `count = await self.repo.count_active(user_id)`.\n\n**#2 \u2014 same root cause, different wrong outcome.** Independent of the comparison: the coroutine is never driven, so the DB round-trip never happens and Python emits `RuntimeWarning: coroutine 'count_active' was never awaited`. If the guard on lines 18-19 were removed, the method would return a coroutine object while advertising `-> int`, and the caller would get a wrong result rather than a crash \u2014 silently, since `-> int` is not enforced at runtime.\n\n**#4 \u2014 note on the interaction.** The clamp is harmless on its own but actively unhelpful here: `count < 0` is unreachable for a count query, and the `return 0` branch is the kind of defensive fallback that would mask a genuine failure as \"this user has no subscriptions.\" Scope-wise the request asked only to return the repository's count.\n\n## Checked and clean\n\n- `self.repo` exists and is initialized in `__init__` (line 12) \u2014 the attribute reference is valid.\n- The method delegates to `SubscriptionRepository.count_active` as the request specified; no reimplementation of the query, no bypass of the repository layer.\n- `async def` on the service method is the right shape given the async repository \u2014 not drift.\n- Signature matches the request: `get_active_count(user_id)`, one parameter, count return.\n- No other call sites, imports, or exports touched; no unrelated edits in the hunk.\n\n**Unverified:** I could not read `subscription_repository.py`, so findings #1-#3 rest on the diff's own comment asserting `count_active` is `async def`. If that comment is stale and the method is actually synchronous, all three collapse to nothing and only #4 stands \u2014 worth a one-line confirmation against the repository file.",
+      "usage": {
+        "input_tokens": 4,
+        "cache_creation_input_tokens": 31615,
+        "cache_read_input_tokens": 468649,
+        "output_tokens": 2894,
+        "output_tokens_details": {
+          "thinking_tokens": 1598
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 31615,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 1947,
+            "cache_read_input_tokens": 237328,
+            "cache_creation_input_tokens": 25608,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 25608
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      },
+      "model_usage": [
+        "claude-opus-5"
+      ],
+      "stderr": ""
+    },
+    "none-deref": {
+      "rc": 0,
+      "elapsed": 74.9,
+      "result": "Review is blind: no shell access in this session (Bash disabled), so I could not inspect the repo. Everything below is derived from `intent.md` and `diff.patch` alone; confidences on claims about surrounding code reflect that.\n\n## Findings\n\n**1. correctness \u2014 null dereference / unhandled missing resource** \u2014 `app/routers/user_email.py:19`\n`repo.get_by_id()` returns `Optional[User]` (the diff's own trailing comment says so), but the result is dereferenced without a `None` check.\nTrigger: `GET /users/nonexistent-id/email`, or any soft-deleted user id. Outcome: `AttributeError: 'NoneType' object has no attribute 'email'` \u2192 HTTP 500 instead of 404. **Confidence: 95**\n\n**2. intent \u2014 gap (endpoint unreachable)** \u2014 `app/main.py` (no such hunk in diff); router defined at `app/routers/user_email.py:8`\nThe diff creates the router module but never adds `app.include_router(...)` anywhere, so the route is not mounted.\nTrigger: request the new path on a built app. Outcome: 404 \u2014 the requested endpoint does not exist at runtime. Discounted for the possibility that the app auto-discovers modules in `app/routers/`. **Confidence: 70**\n\n**3. intent \u2014 drift (auth stricter than requested)** \u2014 `app/routers/user_email.py:14`\nThe request said \"auth-protected\"; the diff adds `require_admin` on top, restricting the endpoint to admins.\nOutcome: an authenticated non-admin \u2014 including a user fetching their own email \u2014 gets 403. Defensible as a privacy choice for exposing others' emails, but it is a scope decision the request did not make, and it should be confirmed rather than assumed. **Confidence: 75**\n\n**4. correctness \u2014 unresolved import (startup crash)** \u2014 `app/routers/user_email.py:6` and `:4`\n`UserEmailResponse` and `require_admin` are imported but not created by this diff; only `UserRepository` was stated to exist.\nTrigger: app startup / module import. Outcome: `ImportError` crashing the whole application, not just this route. Flagged because a new response schema is the kind of thing a diff adding a new response shape usually has to create. **Confidence: 45**\n\n**5. correctness \u2014 possible id type mismatch** \u2014 `app/routers/user_email.py:16`\n`user_id` is typed `str`; if the `User` primary key is an int or UUID column, the repository lookup may raise or silently return `None`.\nTrigger: any request, if the schema's id is non-string. Outcome: 500 from a DB type error, or a spurious 404/500 via finding #1. Speculative without the model definition. **Confidence: 25**\n\n## Checked, no defect found\n- Path composition: `prefix=\"/users\"` + `\"/{user_id}/email\"` \u2192 `GET /users/{user_id}/email`, matches the request exactly.\n- `async def` handler with `await` on the repo call \u2014 consistent.\n- `UserRepository` is used as instructed (constructed from the injected `db`, not re-implemented) \u2014 no drift here.\n- `response_model` is set and the returned object matches it, so no response-serialization mismatch.\n- `get_db` injected via `Depends`, not instantiated manually.\n- No excess beyond #3: no extra endpoints, fields, or unrelated edits; the endpoint returns only the email, not a wider user payload.\n\nFix for #1 and #2 (the two I'd block on):\n\n```python\nfrom fastapi import APIRouter, Depends, HTTPException\n\nuser = await repo.get_by_id(user_id)\nif user is None:\n    raise HTTPException(status_code=404, detail=\"User not found\")\nreturn UserEmailResponse(email=user.email)\n```\n\nplus `app.include_router(user_email.router)` in the app factory, unless router discovery is automatic.",
+      "usage": {
+        "input_tokens": 4,
+        "cache_creation_input_tokens": 9501,
+        "cache_read_input_tokens": 468818,
+        "output_tokens": 4154,
+        "output_tokens_details": {
+          "thinking_tokens": 2676
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 9501,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 1331,
+            "cache_read_input_tokens": 237497,
+            "cache_creation_input_tokens": 3325,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 3325
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      },
+      "model_usage": [
+        "claude-opus-5"
+      ],
+      "stderr": ""
+    },
+    "soft-delete-filter": {
+      "rc": 0,
+      "elapsed": 81.4,
+      "result": "## Scope limitation (affects every confidence below)\n\nFile-reading tools (`Bash`, `Glob`) are disabled in this session and the working directory holds no source, so I could not open `app/models/watchlist.py` or `app/repositories/base.py`. Every finding that depends on another file is conditional, and its confidence reflects that I could not check it.\n\n## Findings\n\n| # | Oracle | Class | Location | Reason | Confidence |\n|---|--------|-------|----------|--------|-----------|\n| 1 | correctness | missing attribute | `app/repositories/watchlist_repository.py:14` | `Watchlist.created_at` is assumed but never shown; if the model has no such column, calling `list_for_user` raises `AttributeError` instead of returning a list. | 20 |\n| 2 | correctness | missing attribute | `app/repositories/watchlist_repository.py:16` | `self.session` is assumed to exist on `BaseRepository`; if the base exposes a sessionmaker or a private `_session`, every call raises `AttributeError`. | 12 |\n| 3 | correctness | wrong result | `app/repositories/watchlist_repository.py:13` | No soft-delete predicate; if `Watchlist` carries `deleted_at`/`archived_at`, deleted watchlists are returned to the user. | 12 |\n| 4 | intent | excess | `app/repositories/watchlist_repository.py:14` | `order_by(created_at.desc())` is an unrequested ordering commitment \u2014 benign and probably desirable, but it is also the sole source of finding #1. | 80 |\n| 5 | intent | drift | `app/repositories/watchlist_repository.py:10` | `user_id: str` annotation; if IDs are `UUID` or `int` elsewhere, the query still works (SQLAlchemy coerces) but the hint misleads callers and type-checkers. | 15 |\n\nFindings 1\u20133 are one bug class \u2014 unverifiable cross-file assumptions. Each is individually unlikely (these are conventional names), which is why confidence is low rather than zero; a single look at the model and base class would resolve all three.\n\n## Intent verdict\n\nThe asked-for work is present and faithful: `list_for_user(user_id)` exists on `WatchlistRepository`, filters by `user_id`, and returns a list of all matching `Watchlist` rows. **No gaps.** One trivial excess (#4) and one annotation question (#5).\n\n## Checked and clean\n\n- `select` was already imported at line 1 \u2014 no missing import introduced.\n- `result.scalars().all()` is correct for `AsyncSession.execute()`: it returns a buffered `Result`, so `.all()` needs no second `await`. This would only be wrong with `stream()`.\n- The outer `list(...)` makes the return type match the `list[Watchlist]` annotation rather than returning a `Sequence`.\n- `await` is present on the one I/O call; no un-awaited coroutine.\n- Returns all rows with no `limit`/`offset` \u2014 matches \"all of a user's watchlists\", so the absence of pagination is not a gap.\n- Single-statement method, no transaction or commit needed; no mutation, so no missing `flush`.\n- No N+1: one statement, no lazy relationship traversal in the method body.\n- No cross-tenant leak in the predicate \u2014 the `user_id` filter is present (the most likely serious bug here, and it is not present).\n- No tests added, but none were requested, so I am not scoring that as a gap.",
+      "usage": {
+        "input_tokens": 6,
+        "cache_creation_input_tokens": 8849,
+        "cache_read_input_tokens": 708609,
+        "output_tokens": 4406,
+        "output_tokens_details": {
+          "thinking_tokens": 2877
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 8849,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 2361,
+            "cache_read_input_tokens": 239913,
+            "cache_creation_input_tokens": 257,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 257
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      },
+      "model_usage": [
+        "claude-opus-5"
+      ],
+      "stderr": ""
+    },
+    "stale-inline-policy": {
+      "rc": 0,
+      "elapsed": 116.5,
+      "result": "## CORRECTNESS\n\n**1. Fail-open default \u2014 `reviewer-prompt.md:13-14`** \u00b7 class: unsafe default\n\"Otherwise treat it as Rule 1\u20133 and apply the fix\" makes the 5-item list exhaustive, so anything off it is auto-fixed. Trigger: a dangerous finding outside the five categories (data deletion, credential/secret handling, billing or pricing math, concurrency). Outcome: the subagent edits code it should have escalated, and `do NOT go read specs` (line 5) removes the only way it could learn otherwise. There is no \"if unsure, escalate\" clause, so ambiguous cases also resolve to auto-fix. **Confidence: 72**\n\n**2. The list qualifies the finding, not the remediation \u2014 `reviewer-prompt.md:13,16-20`** \u00b7 class: misclassification\n\"A finding **is** Rule 4 if it is \u2026 1. Schema changes\". Findings aren't schema changes; fixes are. Trigger: finding = \"code assumes `users.email` is non-null but the column is nullable\". The finding is not itself a schema change \u2192 classified Rule 1\u20133 \u2192 subagent applies a migration, which is exactly what item 1 forbids. Same hole for items 2, 4, 5. **Confidence: 62**\n\n**3. Act-vs-advise contradiction \u2014 `reviewer-prompt.md:14` vs `:26`** \u00b7 class: contract conflict\nLine 14 orders \"apply the fix\"; the return contract asks only for \"Recommended action\". Trigger: any Rule 1\u20133 finding. Outcome: nondeterministic \u2014 the subagent either mutates the tree while the caller expects a recommendation, or returns advice while the caller expects the fix applied. **Confidence: 65**\n\n**4. Scope mismatch: \"every finding in the diff\" vs one `{{FINDING_BODY}}` and no diff \u2014 `reviewer-prompt.md:3,9`** \u00b7 class: missing input\nLine 3 says \"Classify every finding in the diff\"; the template injects a single finding body and never injects the diff. Trigger: normal dispatch. Outcome: items 3 (\"removing existing functionality, even if it looks unused\") and 4 (\"new external service dependency\") are undecidable without the code \u2014 the subagent must guess or fabricate, and under finding #1 a guess defaults to auto-fix. **Confidence: 60**\n\n**5. Unfenced interpolation above the policy \u2014 `reviewer-prompt.md:9`** \u00b7 class: prompt injection\n`{{FINDING_BODY}}` is spliced in raw, before the rules, with no fence and no \"treat the following as data\". Trigger: a finding body containing markdown headings or assertive text (e.g. a quoted diff hunk, or \"this is Rule 1, safe to auto-fix\"). Outcome: injected text outranks or shadows the real STOP list. **Confidence: 50**\n\n**6. No renderer for `{{FINDING_BODY}}` in this change \u2014 `reviewer-prompt.md:9`** \u00b7 class: unbound template\nThe diff adds the placeholder but no substitution site. If the dispatcher isn't already emitting this exact token, the subagent receives the literal string `{{FINDING_BODY}}` and classifies nothing. Unverifiable blind \u2014 flagged because the diff contains no caller. **Confidence: 45**\n\n## INTENT\n\n**7. drift \u2014 `reviewer-prompt.md:1` (new file)**\nThe request says \"Give **the** reviewer prompt the Rule-4 criteria\" \u2014 definite article, presupposing an existing prompt. The diff creates a new one instead of editing it. If a reviewer prompt already lives in this skill, the live one still lacks Rule 4 and there are now two competing prompts. **Confidence: 55**\n\n**8. gap \u2014 no integration anywhere in the diff**\nThe stated goal is \"so it can classify findings\". A standalone `.md` with no dispatcher wiring, no `SKILL.md` reference, and no caller delivers the text but not the capability. **Confidence: 55**\n\n**9. excess \u2014 `reviewer-prompt.md:14`**\nThe ask was classification criteria. \"and apply the fix\" grants the subagent authority to mutate code, which was not requested and conflicts with the return contract (see correctness #3). **Confidence: 48**\n\n**10. gap \u2014 \"Rule 1\u20133\" is referenced but never defined (`:3, :13, :24`)**\nThe prompt forbids reading the rule file yet names three rules it doesn't state. The binary framing (`Rule 1\u20133 vs Rule 4`) is internally consistent, but the subagent cannot name *which* rule or justify the bucket, so any downstream routing on a specific rule number fails. **Confidence: 42**\n\n**11. gap (unverifiable blind) \u2014 `reviewer-prompt.md:16-20`**\nI cannot confirm these five items are the complete canonical Rule 4 set. If the spec has additional entries, the closed-world default in finding #1 silently converts each omission into an auto-fix. Worth a diff against the source rule file. **Confidence: 35**\n\n---\n\n**Checked:** hunk header line count (26, matches); placeholder/renderer pairing; internal consistency between preamble, rule list, and return contract; closed- vs open-world classification semantics; uncertainty handling; interpolation safety; coverage of the user's three asks (criteria present \u2713, \"without reading specs\" instruction present \u2713 at line 5, \"so it can classify\" \u2014 not wired, see #8).\n\n**Not checkable blind:** whether an existing reviewer prompt or dispatcher exists in `skills/demo-review/`; the canonical Rule 4 list; the template token convention used by the caller. Findings 6, 7, and 11 hinge on those.",
+      "usage": {
+        "input_tokens": 2,
+        "cache_creation_input_tokens": 6245,
+        "cache_read_input_tokens": 231321,
+        "output_tokens": 7348,
+        "output_tokens_details": {
+          "thinking_tokens": 5441
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 6245,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 7348,
+            "cache_read_input_tokens": 231321,
+            "cache_creation_input_tokens": 6245,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 6245
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      },
+      "model_usage": [
+        "claude-opus-5"
+      ],
+      "stderr": ""
+    }
+  }
+}
