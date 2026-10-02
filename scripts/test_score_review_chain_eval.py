@@ -319,7 +319,10 @@ def test_runner_reports_skipped_fixture(tmp_path):
     assert proc.returncode == 0, proc.stderr
     notices = [line for line in proc.stdout.splitlines() if "skipping" in line]
     assert len(notices) == 1 and "no-diff" in notices[0] and "diff.patch" in notices[0]
-    assert sorted(json.loads(out.read_text())["cases"]) == ["one"]
+    cases = json.loads(out.read_text())["cases"]
+    assert sorted(cases) == ["no-diff", "one"]
+    assert cases["no-diff"]["rc"] == "skipped" and cases["no-diff"]["result"] == ""
+    assert "diff.patch" in cases["no-diff"]["reason"]
 
 
 # --- follow-ups: unknown buckets, confidence coercion, fences, warnings, truth checks, tokens ---
@@ -362,6 +365,8 @@ def test_unknown_buckets_in_totals_and_labels(tmp_path):
     (80, 80, True), (80.5, 80.5, True), ("90", 90, True), (" 70 ", 70, True), ("62.5", 62.5, True),
     (150, 100, True), (-5, 0, True), (True, 0, False), (False, 0, False), ("high", 0, False),
     (None, 0, False), ([90], 0, False), (float("nan"), 0, False),
+    (float("inf"), 0, False), (float("-inf"), 0, False), ("inf", 0, False), ("Infinity", 0, False),
+    ("1_0", 0, False), ("1e2", 0, False), ("+80", 80, True), ("nan", 0, False),
 ])
 def test_confidence_coercion(value, expected, ok):
     from score_review_chain_eval import coerce_confidence
@@ -435,7 +440,8 @@ def test_warns_on_fixture_without_truth_and_case_without_fixture(tmp_path):
     (dict(TRUTH, schema_version=True), "schema_version"),
     (dict(TRUTH, schema_version=1.0), "schema_version"),
     (dict(TRUTH, schema_version="1"), "schema_version"),
-    (dict(TRUTH, planted={"file": "app/other.py", "match_any": ["count_active"], "and_any": []}), "diff.patch"),
+    (dict(TRUTH, planted={"file": "app/other.py", "match_any": ["count_active"], "and_any": ["filter"]}), "diff.patch"),
+    (dict(TRUTH, planted={"file": "app/stats.py", "match_any": ["count_active"], "and_any": []}), "planted.and_any"),
 ])
 def test_check_truth_stricter_rules(tmp_path, bad, needle):
     write_fixture(tmp_path, "bad", bad)
@@ -520,7 +526,13 @@ def test_runner_skips_unreadable_fixture(tmp_path):
     assert proc.returncode == 0, proc.stderr
     notices = [line for line in proc.stdout.splitlines() if "skipping" in line]
     assert len(notices) == 1 and "binary" in notices[0] and "cannot read" in notices[0]
-    assert sorted(json.loads(out.read_text())["cases"]) == ["one"]
+    cases = json.loads(out.read_text())["cases"]
+    assert sorted(cases) == ["binary", "one"]
+    assert cases["binary"]["rc"] == "skipped" and cases["binary"]["result"] == "" and "cannot read" in cases["binary"]["reason"]
+    scored = run_score(out, fixtures)
+    assert scored.returncode == 0, scored.stderr
+    assert "binary [core]: ERROR (skipped: cannot read" in scored.stdout and "binary [core]: MISSED" not in scored.stdout
+    assert "core catches: 0/1 (1 errored)" in scored.stdout
 
 
 def test_runner_timeout_is_recorded_and_scored_as_errored(tmp_path):
@@ -533,7 +545,7 @@ def test_runner_timeout_is_recorded_and_scored_as_errored(tmp_path):
     case = json.loads(out.read_text())["cases"]["slow"]
     assert case["rc"] == "timeout" and case["result"] == ""
     scored = run_score(out, fixtures)
-    assert scored.returncode == 0 and "slow [core]: ERROR (rc=timeout)" in scored.stdout
+    assert scored.returncode == 1 and "slow [core]: ERROR (rc=timeout)" in scored.stdout  # nothing scorable
 
 
 def test_runner_interrupted_keeps_completed_cases_in_partial(tmp_path):
@@ -545,8 +557,9 @@ def test_runner_interrupted_keeps_completed_cases_in_partial(tmp_path):
     proc = run_runner(stub, out, fixtures)
     assert proc.returncode != 0
     assert not out.exists()
-    partial = json.loads((tmp_path / "out.json.partial").read_text())
-    assert sorted(partial["cases"]) == ["a-first"]
+    partials = list(tmp_path.glob("out.json.*.partial"))
+    assert len(partials) == 1
+    assert sorted(json.loads(partials[0].read_text())["cases"]) == ["a-first"]
 
 
 def test_runner_success_removes_partial(tmp_path):
@@ -555,16 +568,36 @@ def test_runner_success_removes_partial(tmp_path):
     out = tmp_path / "out.json"
     proc = run_runner(custom_stub(tmp_path, OK_BODY), out, fixtures)
     assert proc.returncode == 0, proc.stderr
-    assert out.is_file() and not (tmp_path / "out.json.partial").exists()
+    assert out.is_file() and not list(tmp_path.glob("*.partial"))
 
 
-def test_runner_refuses_existing_partial(tmp_path):
-    stub, log, _ = make_stub(tmp_path)
+def test_runner_leaves_partials_it_did_not_create(tmp_path):
+    fixtures = tmp_path / "fixtures"
+    write_fixture(fixtures, "one", TRUTH)
     out = tmp_path / "out.json"
-    (tmp_path / "out.json.partial").write_text("{}")
-    proc = run_runner(stub, out, tmp_path)
-    assert proc.returncode == 1 and "out.json.partial" in proc.stderr
-    assert not log.exists() and (tmp_path / "out.json.partial").read_text() == "{}"
+    foreign = [tmp_path / "out.json.partial", tmp_path / "out.json.12345.partial"]
+    for path in foreign:
+        path.write_text("{}")
+    proc = run_runner(custom_stub(tmp_path, OK_BODY), out, fixtures)
+    assert proc.returncode == 0, proc.stderr
+    assert out.is_file() and all(path.read_text() == "{}" for path in foreign)
+    assert sorted(tmp_path.glob("*.partial")) == sorted(foreign)
+
+
+def test_runner_refuses_when_its_own_partial_name_exists(tmp_path, monkeypatch, capsys):
+    import run_review_chain_eval as runner
+    fixtures = tmp_path / "fixtures"
+    write_fixture(fixtures, "one", TRUTH)
+    out = tmp_path / "out.json"
+    taken = tmp_path / "out.json.4242.partial"
+    taken.write_text("{}")
+    stub = custom_stub(tmp_path, OK_BODY)
+    monkeypatch.setattr(runner.os, "getpid", lambda: 4242)
+    monkeypatch.setattr(sys, "argv", ["run", "--claude", str(stub), "--model", "m", "--effort", "low",
+                                      "--output", str(out), "--fixtures", str(fixtures)])
+    assert runner.main() == 1
+    assert taken.read_text() == "{}" and not out.exists()
+    assert "out.json.4242.partial" in capsys.readouterr().err
 
 
 def test_runner_does_not_overwrite_output_that_appeared_during_run(tmp_path):
@@ -575,8 +608,9 @@ def test_runner_does_not_overwrite_output_that_appeared_during_run(tmp_path):
     proc = run_runner(stub, out, fixtures)
     assert proc.returncode == 1
     assert out.read_text() == "intruder\n"
-    assert sorted(json.loads((tmp_path / "out.json.partial").read_text())["cases"]) == ["one"]
-    assert "review-chain-eval:" in proc.stderr and "out.json.partial" in proc.stderr
+    partials = list(tmp_path.glob("out.json.*.partial"))
+    assert len(partials) == 1 and sorted(json.loads(partials[0].read_text())["cases"]) == ["one"]
+    assert "review-chain-eval:" in proc.stderr and partials[0].name in proc.stderr
 
 
 def test_runner_fatal_errors_go_to_stderr(tmp_path):
@@ -585,3 +619,116 @@ def test_runner_fatal_errors_go_to_stderr(tmp_path):
     out.write_text("{}")
     proc = run_runner(stub, out, tmp_path)
     assert proc.returncode == 1 and proc.stderr.startswith("review-chain-eval: refusing to overwrite")
+
+
+# --- fix-loop round 2 ---
+
+def test_concurrent_run_on_same_output_keeps_each_runs_results(tmp_path):
+    """A second runner on the same --output starts and finishes while the first is mid-run (after it has
+    already saved a partial); both keep their results and neither touches the other's partial."""
+    fixtures_a, fixtures_b = tmp_path / "fa", tmp_path / "fb"
+    write_fixture(fixtures_a, "a-one", TRUTH)
+    write_fixture(fixtures_a, "a-two", TRUTH)
+    write_fixture(fixtures_b, "b-one", TRUTH)
+    out = tmp_path / "out.json"
+    ok_stub = custom_stub(tmp_path, OK_BODY, name="claude-ok")
+    calls = tmp_path / "a-calls"
+    other_run = (f"[ \"$1\" = \"--version\" ] || echo x >> \"{calls}\"\n"
+                 f"if [ \"$1\" != \"--version\" ] && [ \"$(wc -l < \"{calls}\")\" -eq 2 ]; then "
+                 f"\"{sys.executable}\" \"{RUNNER}\" --claude \"{ok_stub}\" --model m --effort low "
+                 f"--output \"{out}\" --fixtures \"{fixtures_b}\" > \"{tmp_path / 'b.log'}\" 2>&1; fi\n")
+    proc = run_runner(custom_stub(tmp_path, other_run + OK_BODY, name="claude-a"), out, fixtures_a)
+    assert proc.returncode == 1, proc.stderr
+    assert sorted(json.loads(out.read_text())["cases"]) == ["b-one"]
+    partials = list(tmp_path.glob("out.json*.partial"))
+    assert len(partials) == 1 and partials[0].name in proc.stderr
+    assert sorted(json.loads(partials[0].read_text())["cases"]) == ["a-one", "a-two"]
+
+
+def test_relative_claude_path_works_from_temp_cwd(tmp_path):
+    fixtures = tmp_path / "fixtures"
+    write_fixture(fixtures, "one", TRUTH)
+    custom_stub(tmp_path, OK_BODY, name="claude-rel")
+    out = tmp_path / "out.json"
+    proc = subprocess.run([sys.executable, RUNNER, "--claude", "./claude-rel", "--model", "m", "--effort", "low",
+                           "--output", str(out), "--fixtures", str(fixtures)], capture_output=True, text=True, cwd=tmp_path)
+    assert proc.returncode == 0, proc.stderr
+    assert json.loads(out.read_text())["cases"]["one"]["rc"] == 0
+
+
+def test_review_call_oserror_is_recorded_as_errored(tmp_path):
+    fixtures = tmp_path / "fixtures"
+    write_fixture(fixtures, "one", TRUTH)
+    stub = custom_stub(tmp_path, "if [ \"$1\" = \"--version\" ]; then rm -f \"$0\"; echo 1.0; exit 0; fi\n" + OK_BODY)
+    out = tmp_path / "out.json"
+    proc = run_runner(stub, out, fixtures)
+    assert proc.returncode == 0, proc.stderr
+    assert "Traceback" not in proc.stderr
+    case = json.loads(out.read_text())["cases"]["one"]
+    assert case["rc"] == "error" and case["result"] == "" and case["reason"]
+    scored = run_score(out, fixtures)
+    assert "one [core]: ERROR (rc=error)" in scored.stdout
+
+
+def test_inline_fence_mention_does_not_swallow_the_real_block():
+    text = ("I'll return the findings in a ```json block below.\n\n```json\n"
+            + json.dumps([finding(summary="kept")]) + "\n```\n")
+    findings, blocks = parse_findings(text)
+    assert blocks == 1 and [f["summary"] for f in findings] == ["kept"]
+
+
+def test_indented_fence_is_accepted():
+    text = "  ```json\n" + json.dumps([finding(summary="kept")]) + "\n  ```\n"
+    findings, blocks = parse_findings(text)
+    assert blocks == 1 and len(findings) == 1
+
+
+def test_score_exits_1_when_no_fixture_could_be_scored(tmp_path):
+    fixtures = tmp_path / "fixtures"
+    write_fixture(fixtures, "a", TRUTH)
+    write_fixture(fixtures, "b", TRUTH)
+    path = tmp_path / "results.json"
+    path.write_text(json.dumps({"cases": {"a": {"rc": 2, "result": ""}, "b": {"rc": 0, "result": "```json\n{x\n```\n"}}}))
+    proc = run_score(path, fixtures)
+    assert proc.returncode == 1
+    assert "review-chain-eval: no fixture could be scored (1 errored, 1 unparseable of 2)" in proc.stderr
+
+
+def test_check_truth_names_missing_truth_and_ignores_non_fixture_dirs(tmp_path):
+    write_fixture(tmp_path, "good", TRUTH)
+    (write_fixture(tmp_path, "keyless", TRUTH) / "truth.json").unlink()
+    (tmp_path / "notes").mkdir()
+    (tmp_path / "notes" / "README.md").write_text("x")
+    assert check_truth(tmp_path) == ["keyless: missing truth.json (every fixture needs an answer key)"]
+    proc = subprocess.run([sys.executable, SCORER, "--check-truth", str(tmp_path)], capture_output=True, text=True)
+    assert proc.returncode == 1
+    assert proc.stderr.strip() == "review-chain-eval: keyless: missing truth.json (every fixture needs an answer key)"
+
+
+def test_diff_paths_reads_headers_only():
+    from score_review_chain_eval import diff_paths
+    diff = ("diff --git a/app/x.py b/app/x.py\n--- a/app/x.py\n+++ b/app/x.py\n@@ -1,3 +1,3 @@\n"
+            "--- body/removed.py\n context\n+++ body/added.py\n+++ also/added.py\n"
+            "--- a/app/y.py\n+++ b/app/y.py\n")
+    assert diff_paths(diff) == {"app/x.py", "app/y.py"}
+
+
+FIXTURES = SCRIPTS.parent / "evals" / "skills" / "review-chain" / "fixtures"
+
+
+@pytest.mark.parametrize("fixture, expected, summary", [
+    ("none-deref", "false_positive", "Any authenticated caller can read another user's address by accessing `user.email` "
+                                     "for an arbitrary `user_id`; there is no ownership check."),
+    ("none-deref", "false_positive", "`response_model` is missing so the raw `user.email` is returned; accessing it "
+                                     "directly leaks fields."),
+    ("none-deref", "planted", "The handler reads .email on a null value when the id is unknown, causing a server error."),
+    ("none-deref", "planted", "user may be None for an unknown id; accessing user.email fails."),
+    ("missing-await", "false_positive", "`count_active` does not await anything, so it should not be async; make it synchronous."),
+    ("missing-await", "planted", "The call to count_active isn't awaited, so count is a coroutine."),
+    ("missing-await", "planted", "count_active is not awaited; comparing count < 0 raises TypeError."),
+])
+def test_real_answer_keys_classify_known_phrasings(fixture, expected, summary):
+    from score_review_chain_eval import load_truth
+    truth = load_truth(FIXTURES / fixture)
+    f = finding(file=truth["planted"]["file"], summary=summary)
+    assert classify(f, truth) == expected

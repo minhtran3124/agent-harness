@@ -55,23 +55,33 @@ A **run** is:
 1. `python3 scripts/run_review_chain_eval.py --model <model> --effort <effort> --output <results.json>`
    runs one blind two-oracle reviewer per fixture (from an empty temp directory, with
    `intent.md` and `diff.patch` inlined) and writes every raw result to `<results.json>`.
-   - It refuses to overwrite an existing output, or an existing `<results.json>.partial`.
-   - After each fixture it rewrites `<results.json>.partial`, so an interrupted run keeps its
-     completed cases there. At the end it creates `<results.json>` exclusively and removes the
-     `.partial`; if `<results.json>` appeared during the run it is left alone, the run exits 1,
-     and the results stay in the `.partial`.
+   - It refuses to overwrite an existing output.
+   - Each run keeps its own partial file, `<results.json>.<pid>.partial` (the runner's process
+     id), created exclusively at the start and rewritten after each fixture, so an interrupted
+     run keeps its completed cases there. Two runs given the same `--output` therefore never
+     share a partial. At the end the run creates `<results.json>` exclusively and removes only
+     its own partial; if `<results.json>` appeared during the run (for example another run
+     finished first) it is left alone, the run exits 1, and its results stay in the partial the
+     error names. A partial the run did not create is never touched.
    - Each review call is limited by `--timeout` (seconds, default 600); a call that runs out
      is recorded with `rc: "timeout"`, which the scorer treats as errored.
    - A fixture whose `intent.md` or `diff.patch` is missing or unreadable is skipped with a
-     one-line notice. If `<claude> --version` fails or prints nothing, the client is recorded
-     as `unknown` with a warning.
+     one-line notice and recorded as a case with `rc: "skipped"`, an empty `result` and the
+     `reason`, so the scorer excludes it as errored instead of scoring it as a miss. A directory
+     holding neither file is not a fixture and is not recorded. If the client cannot be started
+     for a review call, that case is recorded with `rc: "error"` and the `reason`.
+   - `--claude` is resolved on `PATH` (or as a path) to an absolute path before any call, so a
+     relative path still works from the review's temp directory. If `<claude> --version` fails
+     or prints nothing, the client is recorded as `unknown` with a warning.
 2. `python3 scripts/score_review_chain_eval.py --score <results.json>` reads the reviewer's
-   JSON findings (the last fenced `json` block that parses as a JSON array; the fence tag is
+   JSON findings (the last fenced `json` block that parses as a JSON array; fences must start a
+   line, so an inline mention of a json fence in prose is not a block; the fence tag is
    case-insensitive and may carry a suffix such as `json5`) and classifies each one as
    `planted`, `false_positive` or `other` against the fixture's `truth.json`. A fixture is
    caught when any finding is `planted`; `oracle_match` says whether that finding came from the
-   expected oracle. A non-numeric `confidence` is warned about and treated as 0; numeric values
-   are clamped to 0–100.
+   expected oracle. A non-numeric `confidence` (including infinity, and any string that is not a
+   plain decimal such as `80` or `62.5`) is warned about and treated as 0; numeric values are
+   clamped to 0–100.
 
 The scorer prints, per fixture, a verdict (`CAUGHT`, `MISSED`, `ERROR` or `UNPARSEABLE`), the
 catch confidence, `oracle_match`, and every finding's classification label. It then prints these
@@ -89,11 +99,18 @@ totals:
   recorded case in the run (errored cases included, since they were paid for), with the four
   parts listed. This is the scripted path's **approximate token cost per pass**.
 
-A fixture whose run errored (non-zero `rc`, `rc: "timeout"`, or no output) or whose reply has
+A fixture whose run errored (non-zero `rc`, `rc: "timeout"`, `rc: "skipped"`, `rc: "error"`, or
+no output) or whose reply has
 `json` blocks but none that parses as a JSON array is **excluded from the totals**, flagged on
 stderr, and counted in the `(n errored, n unparseable)` note beside the catch totals. The scorer
 also warns about a fixture directory with `intent.md`/`diff.patch` but no `truth.json`, and
-about a result case with no matching fixture.
+about a result case with no matching fixture. When every scored fixture is errored or
+unparseable, `--score` prints the totals and then exits 1 with a one-line message, since the run
+measured nothing.
+
+`--check-truth` treats a directory holding `intent.md` or `diff.patch` as a fixture and requires
+a `truth.json` in it (`<name>: missing truth.json`); other directories are ignored. The planted
+pattern needs a non-empty `and_any`; a false-positive entry may leave `and_any` empty.
 
 The scripted runner does **not** isolate user-level MCP servers or settings: the reviewer starts
 with whatever the invoking user's client configuration loads. Per-case token usage can therefore

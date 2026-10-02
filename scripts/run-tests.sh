@@ -51,10 +51,12 @@ else
 fi
 
 echo "== L1: review-chain eval answer keys =="
-if command -v python3 >/dev/null 2>&1; then
-  python3 scripts/score_review_chain_eval.py --check-truth evals/skills/review-chain/fixtures || FAILED=1
-else
+if ! command -v python3 >/dev/null 2>&1; then
   echo "  skip — no python3"
+elif [ ! -d evals/skills/review-chain/fixtures ]; then
+  echo "  skip — no evals/skills/review-chain/fixtures directory"
+else
+  python3 scripts/score_review_chain_eval.py --check-truth evals/skills/review-chain/fixtures || FAILED=1
 fi
 
 echo "== L1: verify-row lint (changed SUMMARY/PLAN only) =="

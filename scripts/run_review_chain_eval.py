@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -59,7 +61,8 @@ def client_version(claude: str) -> str:
     return version
 
 
-def review(args, call: str) -> tuple[int | str, float, str, dict]:
+def review(args, call: str) -> dict:
+    """One review call's record; a timeout or a failure to start the client is recorded, not raised."""
     with tempfile.TemporaryDirectory() as empty:
         start = time.monotonic()
         try:
@@ -67,10 +70,30 @@ def review(args, call: str) -> tuple[int | str, float, str, dict]:
                                    "--output-format", "json"], cwd=empty, text=True, capture_output=True, check=False,
                                   timeout=args.timeout)
         except subprocess.TimeoutExpired:
-            return "timeout", round(time.monotonic() - start, 3), "", {}
+            return {"rc": "timeout", "elapsed": round(time.monotonic() - start, 3), "result": "", "usage": {}}
+        except OSError as exc:
+            return {"rc": "error", "elapsed": round(time.monotonic() - start, 3), "result": "", "usage": {},
+                    "reason": f"cannot run {args.claude}: {exc.strerror or exc}"}
         elapsed = round(time.monotonic() - start, 3)
     result, usage = extract(proc.stdout)
-    return proc.returncode, elapsed, result, usage
+    return {"rc": proc.returncode, "elapsed": elapsed, "result": result, "usage": usage}
+
+
+def resolve_client(claude: str) -> str | None:
+    """Absolute path of the client (so it still resolves from the review's temp cwd), or None if not found."""
+    found = shutil.which(claude)
+    return os.path.abspath(found) if found else None
+
+
+def skip_reason(fixture: Path) -> tuple[str | None, str | None]:
+    """(reason the fixture cannot be run, its prompt); a reason of None means the prompt was built."""
+    absent = [n for n in ("intent.md", "diff.patch") if not (fixture / n).is_file()]
+    if absent:
+        return f"missing {', '.join(absent)}", None
+    try:
+        return None, build_prompt((fixture / "intent.md").read_text(), (fixture / "diff.patch").read_text())
+    except (OSError, UnicodeDecodeError) as exc:
+        return f"cannot read fixture ({exc})", None
 
 
 def main() -> int:
@@ -82,40 +105,45 @@ def main() -> int:
     parser.add_argument("--claude", default="claude")
     parser.add_argument("--timeout", type=float, default=600.0, help="seconds per review call (default 600)")
     args = parser.parse_args()
-    partial = args.output.with_name(args.output.name + ".partial")
     if args.output.exists():
         return fail(f"refusing to overwrite existing result: {args.output}")
-    if partial.exists():
-        return fail(f"refusing to overwrite partial result of an earlier run: {partial}")
     if not args.fixtures.is_dir():
         return fail(f"fixtures directory not found: {args.fixtures}")
     fixtures = args.fixtures.resolve()
+    claude = resolve_client(args.claude)
+    if claude is None:
+        return fail(f"cannot run {args.claude}: not found or not executable")
+    args.claude = claude
     try:
         client = client_version(args.claude)
     except OSError as exc:
         return fail(f"cannot run {args.claude}: {exc.strerror or exc}")
     record = {"model": args.model, "effort": args.effort, "client": client, "cases": {}}
     args.output.parent.mkdir(parents=True, exist_ok=True)
+    # Per-run partial, created exclusively: concurrent runs on one --output never share or remove each other's.
+    partial = args.output.with_name(f"{args.output.name}.{os.getpid()}.partial")
+    try:
+        with partial.open("x") as handle:
+            handle.write(json.dumps(record, indent=2) + "\n")
+    except FileExistsError:
+        return fail(f"refusing to overwrite partial result of an earlier run: {partial}")
     for fixture in sorted(p for p in fixtures.iterdir() if p.is_dir()):
-        absent = [n for n in ("intent.md", "diff.patch") if not (fixture / n).is_file()]
-        if absent:
-            print(f"review-chain-eval: skipping {fixture.name}: missing {', '.join(absent)}")
-            continue
-        try:
-            call = build_prompt((fixture / "intent.md").read_text(), (fixture / "diff.patch").read_text())
-        except (OSError, UnicodeDecodeError) as exc:
-            print(f"review-chain-eval: skipping {fixture.name}: cannot read fixture ({exc})")
-            continue
-        rc, elapsed, result, usage = review(args, call)
-        record["cases"][fixture.name] = {"rc": rc, "elapsed": elapsed, "result": result, "usage": usage}
+        reason, call = skip_reason(fixture)
+        if reason:
+            print(f"review-chain-eval: skipping {fixture.name}: {reason}")
+            if not any((fixture / n).exists() for n in ("intent.md", "diff.patch")):
+                continue  # neither file: not a fixture directory, so nothing to record
+            case = {"rc": "skipped", "elapsed": 0.0, "result": "", "usage": {}, "reason": reason}
+        else:
+            case = review(args, call)
+        record["cases"][fixture.name] = case
         partial.write_text(json.dumps(record, indent=2) + "\n")
-        print(f"{fixture.name}: rc={rc} elapsed={elapsed}s")
+        if not reason:
+            print(f"{fixture.name}: rc={case['rc']} elapsed={case['elapsed']}s")
     try:
         with args.output.open("x") as out:
             out.write(json.dumps(record, indent=2) + "\n")
     except FileExistsError:
-        if not partial.exists():
-            partial.write_text(json.dumps(record, indent=2) + "\n")
         return fail(f"{args.output} appeared during the run; not overwritten, results kept in {partial}")
     partial.unlink(missing_ok=True)
     print(args.output)

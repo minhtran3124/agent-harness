@@ -10,13 +10,18 @@ import sys
 from pathlib import Path
 
 ORACLES = ("correctness", "intent", "context-propagation-audit")
-JSON_BLOCK = re.compile(r"```json[^\n]*\n(.*?)```", re.DOTALL | re.IGNORECASE)
-DIFF_PATH = re.compile(r"^(?:\+\+\+|---) (?:[ab]/)?(\S+)|^diff --git a/(\S+) b/(\S+)", re.MULTILINE)
+# Fences are anchored to line starts so an inline mention of "```json" in prose does not open a block.
+JSON_BLOCK = re.compile(r"^[ \t]*```json[^\n]*\n(.*?)^[ \t]*```", re.MULTILINE | re.DOTALL | re.IGNORECASE)
+DIFF_GIT = re.compile(r"^diff --git a/(\S+) b/(\S+)")
+DIFF_OLD = re.compile(r"^--- (?:a/)?(\S+)")
+DIFF_NEW = re.compile(r"^\+\+\+ (?:b/)?(\S+)")
+NUMBER = re.compile(r"[+-]?\d+(?:\.\d+)?")
 TOKEN_KEYS = (("input", "input_tokens"), ("output", "output_tokens"),
               ("cache creation", "cache_creation_input_tokens"), ("cache read", "cache_read_input_tokens"))
 
 
 def _check_pattern(pattern, where: str, need_file: bool) -> list[str]:
+    """need_file marks the planted pattern: it needs a file and at least one and_any term."""
     if not isinstance(pattern, dict):
         return [f"{where} must be an object"]
     errors = []
@@ -30,6 +35,8 @@ def _check_pattern(pattern, where: str, need_file: bool) -> list[str]:
             errors.append(f"{where}.{key} must be a list of non-empty strings")
     if isinstance(pattern.get("match_any"), list) and not pattern["match_any"]:
         errors.append(f"{where}.match_any must not be empty")
+    if need_file and isinstance(pattern.get("and_any"), list) and not pattern["and_any"]:
+        errors.append(f"{where}.and_any must not be empty")
     return errors
 
 
@@ -82,8 +89,23 @@ def load_truth(fixture: Path) -> dict:
 
 
 def diff_paths(diff: str) -> set[str]:
-    """Every file path named in a unified diff's headers (a/ and b/ prefixes stripped)."""
-    return {p for m in DIFF_PATH.finditer(diff) for p in m.groups() if p and p != "/dev/null"}
+    """Every file path named in a unified diff's headers (a/ and b/ prefixes stripped).
+
+    Only `diff --git` lines and adjacent `---`/`+++` header pairs count, so hunk body lines that
+    happen to start with `---` or `+++` are not mistaken for headers.
+    """
+    paths: set[str] = set()
+    lines = diff.splitlines()
+    for i, line in enumerate(lines):
+        git = DIFF_GIT.match(line)
+        if git:
+            paths.update(git.groups())
+            continue
+        old = DIFF_OLD.match(line)
+        new = DIFF_NEW.match(lines[i + 1]) if old and i + 1 < len(lines) else None
+        if old and new:
+            paths.update((old.group(1), new.group(1)))
+    return {p for p in paths if p != "/dev/null"}
 
 
 def _path_matches(path: str, want: str) -> bool:
@@ -101,9 +123,16 @@ def _planted_in_diff(fixture: Path, truth: dict) -> list[str]:
     return []
 
 
+def _is_fixture(path: Path) -> bool:
+    return (path / "intent.md").exists() or (path / "diff.patch").exists()
+
+
 def check_truth(fixtures: Path) -> list[str]:
     errors = []
-    for fixture in _fixture_dirs(fixtures):
+    for fixture in filter(_is_fixture, _fixture_dirs(fixtures)):
+        if not (fixture / "truth.json").exists():
+            errors.append(f"{fixture.name}: missing truth.json (every fixture needs an answer key)")
+            continue
         truth, problems = _truth_problems(fixture / "truth.json")
         if truth is not None:
             problems = _planted_in_diff(fixture, truth)
@@ -164,14 +193,16 @@ def parse_findings(text: str) -> tuple[list[dict] | None, int]:
 
 
 def coerce_confidence(value) -> tuple[int | float, bool]:
-    """(confidence clamped to 0-100, ok); a bool or non-numeric value is (0, False)."""
+    """(confidence clamped to 0-100, ok); a bool, non-finite or non-numeric value is (0, False).
+
+    A string counts only as a plain decimal (`[+-]?digits[.digits]`), so "inf", "1e2" or "1_0" are rejected.
+    """
     if isinstance(value, bool) or not isinstance(value, (int, float, str)):
         return 0, False
-    try:
-        number = float(value)
-    except ValueError:
+    if isinstance(value, str) and not NUMBER.fullmatch(value.strip()):
         return 0, False
-    if math.isnan(number):
+    number = float(value)
+    if not math.isfinite(number):
         return 0, False
     number = min(100.0, max(0.0, number))
     return (int(number) if number.is_integer() else number), True
@@ -204,6 +235,8 @@ def case_error(entry) -> str | None:
     if not isinstance(entry, dict):
         return "no output"
     rc = entry.get("rc")
+    if rc == "skipped":
+        return f"skipped: {entry.get('reason') or 'no reason recorded'}"
     if rc is not None and rc != 0:
         return f"rc={rc}"
     text = entry.get("result")
@@ -345,6 +378,10 @@ def main() -> int:
     sums = token_totals(results["cases"])
     print(f"tokens: {totals['tokens']} ({', '.join(f'{k} {v}' for k, v in sums.items())}) "
           f"over {len(results['cases'])} cases")
+    if excluded == len(lines):
+        print(f"review-chain-eval: no fixture could be scored ({totals['errored']} errored, "
+              f"{totals['unparseable']} unparseable of {len(lines)})", file=sys.stderr)
+        return 1
     return 0
 
 
