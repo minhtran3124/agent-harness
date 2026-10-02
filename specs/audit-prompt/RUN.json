@@ -1,12 +1,12 @@
 {
   "created_at": "2026-10-01T02:14:44Z",
-  "last_event_id": "7e452bde-407a-499f-a374-7b42781afb79",
+  "last_event_id": "34325aa8-8d56-4c3a-bfda-844fdbd6ee0b",
   "resume_event": null,
   "run_id": "4db0b465-0adf-40b0-8397-92be523f3005",
-  "seq": 6,
-  "sha": null,
+  "seq": 7,
+  "sha": "8284ec06ed0b3fc3c9c28a0376de7fbfddc644fd",
   "slug": "audit-prompt",
-  "state": "ready_to_merge",
-  "updated_at": "2026-10-01T02:43:45Z",
+  "state": "shipped",
+  "updated_at": "2026-10-02T04:41:05Z",
   "waiting_on": null
 }
