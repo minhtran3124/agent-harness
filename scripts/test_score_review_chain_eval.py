@@ -191,3 +191,91 @@ def test_runner_refuses_existing_output(tmp_path):
     assert proc.returncode == 1
     assert not log.exists()
     assert out.read_text() == "{}"
+
+
+SCORER = str(SCRIPTS / "score_review_chain_eval.py")
+RUNNER = str(SCRIPTS / "run_review_chain_eval.py")
+
+
+def run_score(results_path: Path, fixtures: Path):
+    return subprocess.run([sys.executable, SCORER, "--score", str(results_path), "--fixtures", str(fixtures)],
+                          capture_output=True, text=True)
+
+
+def test_score_counts_fixture_absent_from_results_as_missed(tmp_path):
+    fixtures = tmp_path / "fixtures"
+    write_fixture(fixtures, "ran", TRUTH)
+    write_fixture(fixtures, "never-ran", TRUTH)
+    hit = finding(summary="count_active does not filter deleted rows", confidence=90)
+    results = {"cases": {"ran": {"result": block([hit])}}}
+    totals, lines = score(results, fixtures, threshold=75)
+    assert totals["core"] == 2 and totals["core_caught"] == 1
+    assert any("never-ran" in line and "MISSED" in line and "not run" in line for line in lines)
+    path = tmp_path / "results.json"
+    path.write_text(json.dumps(results))
+    proc = run_score(path, fixtures)
+    assert proc.returncode == 0, proc.stderr
+    assert "core catches: 1/2" in proc.stdout
+    assert "all catches: 1/2" in proc.stdout
+    assert "warning" in proc.stderr and "never-ran" in proc.stderr
+
+
+@pytest.mark.parametrize("bad", [
+    {k: v for k, v in TRUTH.items() if k != "planted"},
+    dict(TRUTH, planted={"file": "app/stats.py", "match_any": ["x"]}),
+    "{not json",
+])
+def test_score_rejects_invalid_truth_without_traceback(tmp_path, bad):
+    fixtures = tmp_path / "fixtures"
+    write_fixture(fixtures, "bad", bad)
+    path = tmp_path / "results.json"
+    path.write_text(json.dumps({"cases": {"bad": {"result": ""}}}))
+    proc = run_score(path, fixtures)
+    assert proc.returncode == 1
+    assert "Traceback" not in proc.stderr
+    assert proc.stderr.startswith("review-chain-eval: bad/truth.json: ")
+
+
+@pytest.mark.parametrize("content", [json.dumps({"model": "m"}), json.dumps([1]), "{not json"])
+def test_score_rejects_results_without_cases(tmp_path, content):
+    fixtures = tmp_path / "fixtures"
+    write_fixture(fixtures, "one", TRUTH)
+    path = tmp_path / "results.json"
+    path.write_text(content)
+    proc = run_score(path, fixtures)
+    assert proc.returncode == 1
+    assert "Traceback" not in proc.stderr
+    assert proc.stderr.startswith("review-chain-eval: ") and len(proc.stderr.strip().splitlines()) == 1
+
+
+def test_check_truth_missing_path_is_one_line_error(tmp_path):
+    proc = subprocess.run([sys.executable, SCORER, "--check-truth", str(tmp_path / "nope")], capture_output=True, text=True)
+    assert proc.returncode == 1
+    assert "Traceback" not in proc.stderr
+    assert proc.stderr.startswith("review-chain-eval: ") and len(proc.stderr.strip().splitlines()) == 1
+
+
+def test_runner_missing_binary_is_one_line_error(tmp_path):
+    fixtures = tmp_path / "fixtures"
+    write_fixture(fixtures, "one", TRUTH)
+    out = tmp_path / "results.json"
+    proc = subprocess.run([sys.executable, RUNNER, "--claude", str(tmp_path / "no-such-claude"), "--model", "m",
+                           "--effort", "low", "--output", str(out), "--fixtures", str(fixtures)], capture_output=True, text=True)
+    assert proc.returncode == 1
+    assert "Traceback" not in proc.stderr
+    assert "review-chain-eval: " in proc.stdout + proc.stderr
+    assert not out.exists()
+
+
+def test_runner_reports_skipped_fixture(tmp_path):
+    fixtures = tmp_path / "fixtures"
+    write_fixture(fixtures, "one", TRUTH)
+    (write_fixture(fixtures, "no-diff", TRUTH) / "diff.patch").unlink()
+    stub, _, _ = make_stub(tmp_path)
+    out = tmp_path / "out.json"
+    proc = subprocess.run([sys.executable, RUNNER, "--claude", str(stub), "--model", "m", "--effort", "low",
+                           "--output", str(out), "--fixtures", str(fixtures)], capture_output=True, text=True)
+    assert proc.returncode == 0, proc.stderr
+    notices = [line for line in proc.stdout.splitlines() if "skipping" in line]
+    assert len(notices) == 1 and "no-diff" in notices[0] and "diff.patch" in notices[0]
+    assert sorted(json.loads(out.read_text())["cases"]) == ["one"]

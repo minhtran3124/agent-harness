@@ -48,14 +48,36 @@ def validate_truth(truth) -> list[str]:
     return errors
 
 
+class EvalError(Exception):
+    """A one-line, user-facing input problem; main() prints it and exits 1."""
+
+
+def _fixture_dirs(fixtures: Path) -> list[Path]:
+    if not fixtures.is_dir():
+        raise EvalError(f"fixtures directory not found: {fixtures}")
+    return sorted(p for p in fixtures.iterdir() if p.is_dir())
+
+
+def _truth_problems(path: Path) -> tuple[dict | None, list[str]]:
+    try:
+        truth = json.loads(path.read_text())
+    except (OSError, ValueError) as exc:
+        return None, [str(exc)]
+    problems = validate_truth(truth)
+    return (None if problems else truth), problems
+
+
+def load_truth(fixture: Path) -> dict:
+    truth, problems = _truth_problems(fixture / "truth.json")
+    if problems:
+        raise EvalError(f"{fixture.name}/truth.json: {problems[0]}")
+    return truth
+
+
 def check_truth(fixtures: Path) -> list[str]:
     errors = []
-    for fixture in sorted(p for p in fixtures.iterdir() if p.is_dir()):
-        path = fixture / "truth.json"
-        try:
-            problems = validate_truth(json.loads(path.read_text()))
-        except (OSError, ValueError) as exc:
-            problems = [str(exc)]
+    for fixture in _fixture_dirs(fixtures):
+        _, problems = _truth_problems(fixture / "truth.json")
         errors += [f"{fixture.name}/truth.json: {p}" for p in problems]
     return errors
 
@@ -123,9 +145,16 @@ def score_case(text: str, truth: dict) -> dict:
 def score(results: dict, fixtures: Path, threshold: int) -> tuple[dict, list[str]]:
     totals = dict.fromkeys(("core", "core_caught", "core_oracle_match", "bonus_caught", "all_caught", "fp", "fp_at_threshold", "other"), 0)
     lines = []
-    for name in sorted(results["cases"]):
-        truth = json.loads((fixtures / name / "truth.json").read_text())
-        case = score_case(results["cases"][name].get("result", ""), truth)
+    cases = results.get("cases") if isinstance(results, dict) else None
+    if not isinstance(cases, dict):
+        raise EvalError("results file has no \"cases\" object")
+    for fixture in (p for p in _fixture_dirs(fixtures) if (p / "truth.json").is_file()):
+        name = fixture.name
+        truth = load_truth(fixture)
+        ran = name in cases
+        entry = cases.get(name)
+        text = entry.get("result", "") if isinstance(entry, dict) else ""
+        case = score_case(text if isinstance(text, str) else "", truth)
         totals["core"] += truth["core"]
         if case["caught"]:
             totals["all_caught"] += 1
@@ -140,11 +169,15 @@ def score(results: dict, fixtures: Path, threshold: int) -> tuple[dict, list[str
                 totals["fp_at_threshold"] += _confidence(f) >= threshold
             elif c == "other":
                 totals["other"] += 1
-        verdict = "CAUGHT" if case["caught"] else "MISSED"
+        verdict = "CAUGHT" if case["caught"] else "MISSED" if ran else "MISSED (not run)"
         per = ", ".join(f"{f.get('oracle')}/{f.get('class')}@{_confidence(f)}={c}" for f, c in zip(case["findings"], case["classes"]))
         lines.append(f"{name} [{'core' if truth['core'] else 'bonus'}]: {verdict} confidence={case['confidence']} "
                      f"oracle_match={case['oracle_match']} blocks={case['blocks']} findings=[{per}]")
     return totals, lines
+
+
+def _scored_fixture_names(fixtures: Path) -> list[str]:
+    return [p.name for p in _fixture_dirs(fixtures) if (p / "truth.json").is_file()]
 
 
 def main() -> int:
@@ -155,15 +188,25 @@ def main() -> int:
     parser.add_argument("--fixtures", type=Path, default=Path("evals/skills/review-chain/fixtures"))
     parser.add_argument("--threshold", type=int, default=75)
     args = parser.parse_args()
-    if args.check_truth:
-        errors = check_truth(args.check_truth)
-        for error in errors:
-            print(f"review-chain-eval: {error}", file=sys.stderr)
-        if errors:
-            return 1
-        print("review-chain-eval: truth.json OK")
-        return 0
-    totals, lines = score(json.loads(args.score.read_text()), args.fixtures, args.threshold)
+    try:
+        if args.check_truth:
+            errors = check_truth(args.check_truth)
+            for error in errors:
+                print(f"review-chain-eval: {error}", file=sys.stderr)
+            if errors:
+                return 1
+            print("review-chain-eval: truth.json OK")
+            return 0
+        try:
+            results = json.loads(args.score.read_text())
+        except (OSError, ValueError) as exc:
+            raise EvalError(f"{args.score}: {exc}") from None
+        totals, lines = score(results, args.fixtures, args.threshold)
+    except EvalError as exc:
+        print(f"review-chain-eval: {exc}", file=sys.stderr)
+        return 1
+    for name in sorted(set(_scored_fixture_names(args.fixtures)) - set(results["cases"])):
+        print(f"review-chain-eval: warning: fixture {name} has no result (not run); scored as MISSED", file=sys.stderr)
     for line in lines:
         print(line)
     print(f"core catches: {totals['core_caught']}/{totals['core']} "

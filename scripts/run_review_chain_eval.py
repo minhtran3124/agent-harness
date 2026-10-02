@@ -54,9 +54,17 @@ def main() -> int:
         print(f"review-chain-eval: refusing to overwrite existing result: {args.output}")
         return 1
     fixtures = args.fixtures.resolve()
-    client = subprocess.run([args.claude, "--version"], text=True, capture_output=True, check=False).stdout.strip()
+    try:
+        client = subprocess.run([args.claude, "--version"], text=True, capture_output=True, check=False).stdout.strip()
+    except OSError as exc:
+        print(f"review-chain-eval: cannot run {args.claude}: {exc.strerror or exc}")
+        return 1
     cases = {}
-    for fixture in sorted(p for p in fixtures.iterdir() if (p / "intent.md").is_file() and (p / "diff.patch").is_file()):
+    for fixture in sorted(p for p in fixtures.iterdir() if p.is_dir()):
+        absent = [n for n in ("intent.md", "diff.patch") if not (fixture / n).is_file()]
+        if absent:
+            print(f"review-chain-eval: skipping {fixture.name}: missing {', '.join(absent)}")
+            continue
         call = build_prompt((fixture / "intent.md").read_text(), (fixture / "diff.patch").read_text())
         with tempfile.TemporaryDirectory() as empty:
             start = time.monotonic()
