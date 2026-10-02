@@ -109,6 +109,13 @@ Plan-blind intent review (`reviewer` agent) of 796f310..d41b78a: no excess; clau
 
 Full suite: `bash scripts/run-tests.sh` exit 0, ALL GREEN (638 python tests), run by the controller after wave 1 and independently by the intent reviewer at d41b78a (cited here in prose; whole-suite rows are not Verify rows).
 
+### Docs Re-review (d41b78a..7ebf9a8)
+
+The compound commit touched `docs/`, so the receipt was re-earned by a read-only reviewer over that delta: **pass, 0 blocking**. Advisory minors, not applied (cosmetic; left for a follow-up):
+- `docs/solutions/harness/no-report-reviewer-dispatch-is-not-a-pass.md:22` still says "model different from the implementer" (historically true; add a "true at the time" note).
+- `sdd-report-file-handoff-refused-for-subagents.md`: `report-<task>.md` is practice, not tracked prose; `affects:` should add `rules/orchestration.md`; two live instructions coexist until the backlog row lands.
+- `review-model-diversity-dropped-decisions.md` `affects:` could add `adapters/runtime-entry-bindings.json` and `skills/intent-review/SKILL.md`; the Anthropic claim and the refusal message are session observations, not repo-derivable.
+
 ### Rollback
 
 - Revert the branch's code commits: `git revert d41b78a adc4bdb` (restores the pins, the validator loop, the prose and the tests).

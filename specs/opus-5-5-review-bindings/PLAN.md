@@ -1,6 +1,6 @@
 ---
 slug: opus-5-5-review-bindings
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-10-02
 ---
@@ -117,3 +117,4 @@ passes now share the implementer's model, and to drop the ensemble-diversity rul
 
 - 2026-10-02 — plan written; design and research brief approved.
 - 2026-10-02 — tasks 1.1, 1.2 complete; commits d41b78a, adc4bdb; both task reviews spec pass / quality approved (Minor only); SC-1..SC-11 re-run by controller, all match; run-tests.sh ALL GREEN (638 passed).
+- 2026-10-02 — shipped: final review chain passed (context-propagation PASS, correctness 0 blocking, intent no excess; docs delta re-reviewed); run-tests.sh ALL GREEN; PR opened for human review.
