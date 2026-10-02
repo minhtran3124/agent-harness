@@ -134,7 +134,8 @@ def test_summary_totals(tmp_path):
     totals, lines = score(results, tmp_path, threshold=75)
     assert totals == {"core": 2, "core_caught": 1, "core_oracle_match": 1, "bonus_caught": 1, "all_caught": 2,
                       "fp": 2, "fp_at_threshold": 1, "other": 1, "unknown_planted": 0, "unknown_clean_correctness": 0,
-                      "errored": 0, "core_errored": 0, "unparseable": 0, "core_unparseable": 0, "tokens": 0}
+                      "errored": 0, "core_errored": 0, "unparseable": 0, "core_unparseable": 0,
+                      "not_run": 0, "core_not_run": 0, "tokens": 0}
     assert any("core-miss" in line and "blocks=0" in line for line in lines)
     path = tmp_path / "results.json"
     path.write_text(json.dumps(results))
@@ -203,22 +204,45 @@ def run_score(results_path: Path, fixtures: Path):
                           capture_output=True, text=True)
 
 
-def test_score_counts_fixture_absent_from_results_as_missed(tmp_path):
+def test_score_excludes_fixture_absent_from_results_as_not_run(tmp_path):
     fixtures = tmp_path / "fixtures"
     write_fixture(fixtures, "ran", TRUTH)
     write_fixture(fixtures, "never-ran", TRUTH)
     hit = finding(summary="count_active does not filter deleted rows", confidence=90)
     results = {"cases": {"ran": {"result": block([hit])}}}
     totals, lines = score(results, fixtures, threshold=75)
-    assert totals["core"] == 2 and totals["core_caught"] == 1
-    assert any("never-ran" in line and "MISSED" in line and "not run" in line for line in lines)
+    assert totals["core"] == 1 and totals["core_caught"] == 1
+    assert totals["not_run"] == 1 and totals["core_not_run"] == 1
+    assert any(line.startswith("never-ran [core]: MISSED (not run)") and "excluded" in line for line in lines)
     path = tmp_path / "results.json"
     path.write_text(json.dumps(results))
     proc = run_score(path, fixtures)
     assert proc.returncode == 0, proc.stderr
-    assert "core catches: 1/2" in proc.stdout
-    assert "all catches: 1/2" in proc.stdout
+    assert "core catches: 1/1 (1 not run)" in proc.stdout
+    assert "all catches: 1/1 (1 not run)" in proc.stdout
     assert "warning" in proc.stderr and "never-ran" in proc.stderr
+
+
+def test_score_exits_1_when_no_fixture_was_run(tmp_path):
+    fixtures = tmp_path / "fixtures"
+    write_fixture(fixtures, "a", TRUTH)
+    write_fixture(fixtures, "b", TRUTH)
+    path = tmp_path / "results.json"
+    path.write_text(json.dumps({"cases": {}}))
+    proc = run_score(path, fixtures)
+    assert proc.returncode == 1
+    assert "core catches: 0/0 (2 not run)" in proc.stdout
+    assert "review-chain-eval: no fixture could be scored (0 errored, 0 unparseable, 2 not run of 2)" in proc.stderr
+
+
+def test_score_with_empty_fixtures_dir_fails(tmp_path):
+    fixtures = tmp_path / "fixtures"
+    fixtures.mkdir()
+    path = tmp_path / "results.json"
+    path.write_text(json.dumps({"cases": {}}))
+    proc = run_score(path, fixtures)
+    assert proc.returncode == 1
+    assert proc.stderr.strip() == f"review-chain-eval: no fixtures found under {fixtures}"
 
 
 def test_errored_cases_are_flagged_and_excluded_from_totals(tmp_path):
@@ -430,7 +454,7 @@ def test_warns_on_fixture_without_truth_and_case_without_fixture(tmp_path):
     path.write_text(json.dumps({"cases": {"one": {"rc": 0, "result": "no json"}, "stray": {"rc": 0, "result": "x"}}}))
     proc = run_score(path, fixtures)
     assert proc.returncode == 0, proc.stderr
-    assert "warning: fixture untruthed has intent.md/diff.patch but no truth.json; not scored" in proc.stderr
+    assert "warning: fixture untruthed is incomplete (missing truth.json); not scored" in proc.stderr
     assert "warning: result case stray has no matching fixture; ignored" in proc.stderr
 
 
@@ -691,7 +715,7 @@ def test_score_exits_1_when_no_fixture_could_be_scored(tmp_path):
     path.write_text(json.dumps({"cases": {"a": {"rc": 2, "result": ""}, "b": {"rc": 0, "result": "```json\n{x\n```\n"}}}))
     proc = run_score(path, fixtures)
     assert proc.returncode == 1
-    assert "review-chain-eval: no fixture could be scored (1 errored, 1 unparseable of 2)" in proc.stderr
+    assert "review-chain-eval: no fixture could be scored (1 errored, 1 unparseable, 0 not run of 2)" in proc.stderr
 
 
 def test_check_truth_names_missing_truth_and_ignores_non_fixture_dirs(tmp_path):
@@ -707,7 +731,7 @@ def test_check_truth_names_missing_truth_and_ignores_non_fixture_dirs(tmp_path):
 
 def test_diff_paths_reads_headers_only():
     from score_review_chain_eval import diff_paths
-    diff = ("diff --git a/app/x.py b/app/x.py\n--- a/app/x.py\n+++ b/app/x.py\n@@ -1,3 +1,3 @@\n"
+    diff = ("diff --git a/app/x.py b/app/x.py\n--- a/app/x.py\n+++ b/app/x.py\n@@ -1,2 +1,3 @@\n"
             "--- body/removed.py\n context\n+++ body/added.py\n+++ also/added.py\n"
             "--- a/app/y.py\n+++ b/app/y.py\n")
     assert diff_paths(diff) == {"app/x.py", "app/y.py"}
@@ -723,12 +747,71 @@ FIXTURES = SCRIPTS.parent / "evals" / "skills" / "review-chain" / "fixtures"
                                      "directly leaks fields."),
     ("none-deref", "planted", "The handler reads .email on a null value when the id is unknown, causing a server error."),
     ("none-deref", "planted", "user may be None for an unknown id; accessing user.email fails."),
+    ("none-deref", "planted", "accessing user.email on the Optional[User] returned by get_by_id"),
+    ("none-deref", "planted", "the handler is accessing user.email directly on the get_by_id result"),
+    ("none-deref", "planted", "get_by_id returns Optional[User]; accessing user.email will blow up for an unknown id"),
+    ("none-deref", "planted", "user can be None here, so user.email fails"),
+    ("none-deref", "planted", "user could be None after get_by_id"),
+    ("none-deref", "false_positive", "the response should be nonempty; response_model is missing for user.email"),
     ("missing-await", "false_positive", "`count_active` does not await anything, so it should not be async; make it synchronous."),
     ("missing-await", "planted", "The call to count_active isn't awaited, so count is a coroutine."),
     ("missing-await", "planted", "count_active is not awaited; comparing count < 0 raises TypeError."),
+    ("missing-await", "planted", "get_active_count does not await count_active"),
+    ("missing-await", "planted", "the service does not await the repository call, so the comparison is always truthy"),
+    ("missing-await", "planted", "get_active_count returns count_active(...) but does not await it"),
 ])
 def test_real_answer_keys_classify_known_phrasings(fixture, expected, summary):
     from score_review_chain_eval import load_truth
     truth = load_truth(FIXTURES / fixture)
     f = finding(file=truth["planted"]["file"], summary=summary)
     assert classify(f, truth) == expected
+
+
+def test_check_truth_and_score_agree_on_incomplete_fixtures(tmp_path):
+    fixtures = tmp_path / "fixtures"
+    write_fixture(fixtures, "good", TRUTH)
+    (write_fixture(fixtures, "truth-only", TRUTH) / "intent.md").unlink()
+    (fixtures / "truth-only" / "diff.patch").unlink()
+    (write_fixture(fixtures, "no-intent", TRUTH) / "intent.md").unlink()
+    assert check_truth(fixtures) == ["no-intent: missing intent.md", "truth-only: missing intent.md, diff.patch"]
+    path = tmp_path / "results.json"
+    path.write_text(json.dumps({"cases": {"good": {"rc": 0, "result": "no json"}}}))
+    proc = run_score(path, fixtures)
+    assert proc.returncode == 0, proc.stderr
+    assert "warning: fixture truth-only is incomplete (missing intent.md, diff.patch); not scored" in proc.stderr
+    assert "warning: fixture no-intent is incomplete (missing intent.md); not scored" in proc.stderr
+    assert "truth-only [" not in proc.stdout and "no-intent [" not in proc.stdout
+
+
+@pytest.mark.parametrize("text", [
+    "```json\n[{\"summary\": \"kept\"}]```",
+    "````json\n[{\"summary\": \"kept\"}]\n````\n",
+    "````json\n[{\"summary\": \"has ``` inside\"}]\n````\n",
+    "> ```json\n> [{\"summary\": \"kept\"}]\n> ```\n",
+    "Findings:\n>  ```JSON\n> [\n>   {\"summary\": \"kept\"}\n> ]\n> ```\n",
+])
+def test_fence_variants_are_parsed(text):
+    findings, blocks = parse_findings(text)
+    assert blocks == 1 and len(findings) == 1, (findings, blocks)
+
+
+def test_json_fence_without_a_parseable_block_is_unparseable():
+    findings, blocks = parse_findings("Here are the findings: ```json [{\"summary\": \"x\"}] ```")
+    assert findings is None and blocks == 0
+    assert parse_findings("No findings; nothing to report.") == ([], 0)
+
+
+def test_diff_paths_ignores_header_pairs_inside_a_hunk():
+    from score_review_chain_eval import diff_paths
+    diff = ("diff --git a/app/x.py b/app/x.py\n--- a/app/x.py\n+++ b/app/x.py\n@@ -1,4 +1,4 @@\n"
+            " context\n--- a/body/z.py\n+++ b/body/z.py\n context\n"
+            "diff --git a/app/y.py b/app/y.py\nindex 1..2 100644\n--- a/app/y.py\n+++ b/app/y.py\n@@ -1 +1 @@\n-a\n+b\n")
+    assert diff_paths(diff) == {"app/x.py", "app/y.py"}
+    plain = ("--- a/app/x.py\n+++ b/app/x.py\n@@ -1 +1 @@\n--- a/in/hunk.py\n+++ b/in/hunk.py\n"
+             "--- a/app/y.py\n+++ b/app/y.py\n@@ -1 +1 @@\n-a\n+b\n")
+    assert diff_paths(plain) == {"app/x.py", "app/y.py"}
+
+
+def test_huge_integer_confidence_is_invalid():
+    from score_review_chain_eval import coerce_confidence
+    assert coerce_confidence(10 ** 400) == (0, False)

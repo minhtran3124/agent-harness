@@ -22,7 +22,10 @@
             "typeerror",
             "missing an await",
             "isn't awaited",
-            "is not awaited"
+            "is not awaited",
+            "does not await count_active",
+            "does not await the",
+            "but does not await it"
         ]
     },
     "false_positives": [

@@ -31,7 +31,12 @@
             "500",
             "crash",
             "server error",
-            "be none"
+            "may be none",
+            "can be none",
+            "could be none",
+            "optional[user]",
+            "on the get_by_id result",
+            "unknown id"
         ]
     },
     "false_positives": [

@@ -74,16 +74,19 @@ A **run** is:
      relative path still works from the review's temp directory. If `<claude> --version` fails
      or prints nothing, the client is recorded as `unknown` with a warning.
 2. `python3 scripts/score_review_chain_eval.py --score <results.json>` reads the reviewer's
-   JSON findings (the last fenced `json` block that parses as a JSON array; fences must start a
-   line, so an inline mention of a json fence in prose is not a block; the fence tag is
-   case-insensitive and may carry a suffix such as `json5`) and classifies each one as
+   JSON findings (the last fenced `json` block that parses as a JSON array; the opening fence
+   must start a line, optionally inside a `>` blockquote, so an inline mention of a json fence in
+   prose does not open a block; it may use three or more backticks, and the closing fence is the
+   first run of at least as many backticks after the content, even on the content's last line;
+   the fence tag is case-insensitive and may carry a suffix such as `json5`) and classifies each one as
    `planted`, `false_positive` or `other` against the fixture's `truth.json`. A fixture is
    caught when any finding is `planted`; `oracle_match` says whether that finding came from the
    expected oracle. A non-numeric `confidence` (including infinity, and any string that is not a
    plain decimal such as `80` or `62.5`) is warned about and treated as 0; numeric values are
    clamped to 0–100.
 
-The scorer prints, per fixture, a verdict (`CAUGHT`, `MISSED`, `ERROR` or `UNPARSEABLE`), the
+The scorer prints, per fixture, a verdict (`CAUGHT`, `MISSED`, `MISSED (not run)`, `ERROR` or
+`UNPARSEABLE`), the
 catch confidence, `oracle_match`, and every finding's classification label. It then prints these
 totals:
 
@@ -100,16 +103,19 @@ totals:
   parts listed. This is the scripted path's **approximate token cost per pass**.
 
 A fixture whose run errored (non-zero `rc`, `rc: "timeout"`, `rc: "skipped"`, `rc: "error"`, or
-no output) or whose reply has
-`json` blocks but none that parses as a JSON array is **excluded from the totals**, flagged on
-stderr, and counted in the `(n errored, n unparseable)` note beside the catch totals. The scorer
-also warns about a fixture directory with `intent.md`/`diff.patch` but no `truth.json`, and
-about a result case with no matching fixture. When every scored fixture is errored or
-unparseable, `--score` prints the totals and then exits 1 with a one-line message, since the run
-measured nothing.
+no output), whose reply mentions a `json` fence but has no block that parses as a JSON array,
+or that has no result at all (`MISSED (not run)`, e.g. the runner's initial partial) is
+**excluded from the totals**, flagged on stderr, and counted in the
+`(n errored, n unparseable, n not run)` note beside the catch totals. The scorer also warns about
+an incomplete fixture directory (one missing any of `truth.json`, `intent.md`, `diff.patch`),
+which it does not score, and about a result case with no matching fixture. When every fixture is
+excluded for any of these reasons, `--score` prints the totals and then exits 1 with a one-line
+message, since the run measured nothing; a fixtures directory with no fixture in it exits 1 with
+`no fixtures found under <dir>`.
 
-`--check-truth` treats a directory holding `intent.md` or `diff.patch` as a fixture and requires
-a `truth.json` in it (`<name>: missing truth.json`); other directories are ignored. The planted
+Both modes treat a directory holding any of `truth.json`, `intent.md` or `diff.patch` as a
+fixture; other directories are ignored. `--check-truth` names each fixture missing `truth.json`
+(`<name>: missing truth.json`) or `intent.md`/`diff.patch` (`<name>: missing <files>`). The planted
 pattern needs a non-empty `and_any`; a false-positive entry may leave `and_any` empty.
 
 The scripted runner does **not** isolate user-level MCP servers or settings: the reviewer starts
