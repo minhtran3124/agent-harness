@@ -4,15 +4,15 @@ Thin **index** consumed by the execution sub-agents (`coding.md`, `test-runner.m
 **not** restate conventions — it points to the docs that already hold them, and carries only the
 few execution facts no other doc reliably contains.
 
-> Risk-classification signals are **not** here — they are built into `skills/xia2/SKILL.md` as
-> common cross-project vocabulary (xia2 is zero-config; it has no `PROJECT.md` sibling).
+> Risk-classification signals are **not** here — they live in `rules/research-depth.md` and
+> `skills/xia2/references/depth-classifier.md` (xia2 is zero-config; it has no `PROJECT.md` sibling).
 
 ---
 
 ## Convention sources (point, don't restate)
 
 - **Architecture / layering:** `skills/README.md` (skill inventory + workflow/handoff map) and `CLAUDE.md` (stack, hooks table, gotchas)
-- **Code style / error handling / validation / logging:** `rules/behavior.md` (single source of truth per CLAUDE.md)
+- **Code style / naming / testing conventions:** `AGENTS.md` → *Coding Style & Naming Conventions* and *Testing Guidelines*. Agent behavior rules: `rules/behavior.md`
 - **Project identity (name / stack / repo root):** `CLAUDE.md` (the meta-repo has no application stack; `techstacks/` is empty by design).
 
 ---
@@ -23,9 +23,9 @@ few execution facts no other doc reliably contains.
 > A consuming repo owns `agents/PROJECT.md` — replace these with your own stack's commands.
 
 - **Test command (harness repo):** `bash scripts/run-tests.sh` (runs L1 syntax + doc-truth lint, L2 hook contract tests, L3 script integration tests — same suite as CI `harness-ci` on ubuntu + macos)
-- **Targeted-run flags:** no flags; run a single suite directly, e.g. `bash tests/hooks/commit-gate.test.sh`
+- **Targeted-run flags:** shell: run one suite directly, e.g. `bash tests/hooks/commit-gate.test.sh`; Python: `python3 -m pytest <test file> -q`
 - **Source → test mapping (harness repo):** `hooks/<name>.sh` → `tests/hooks/<name>.test.sh`; `scripts/install-harness.sh` → `tests/scripts/install-harness.test.sh`; `settings.json` wiring → `tests/scripts/settings-wiring.test.sh`; `skills/visual-planner/render_plan.py` → `skills/visual-planner/test_render_plan.py` (pytest)
-- **Markers / coverage:** none — bash test suites assert via `tests/lib.sh` helpers; no coverage gate
+- **Markers / coverage:** none — bash suites assert via `tests/lib.sh` helpers; Python tests are plain pytest (the list is `PYTESTS` in `scripts/run-tests.sh`); no coverage gate
 
 ---
 

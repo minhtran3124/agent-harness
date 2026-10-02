@@ -15,7 +15,7 @@ Related: `plan-format.md`, `orchestration.md`.
 ## Invariants
 
 1. **Zero file overlap** in same-wave tasks. Enforced at plan-write time per `plan-format.md` Guardrail 1.
-2. **Synchronization at wave boundary** — all wave-N tasks must be green (`<verify>` exit 0) before wave N+1 starts.
+2. **Synchronization at wave boundary** — all wave-N tasks must be green (`Verify` exit 0) before wave N+1 starts.
 3. **Fresh context per task** — each task in a wave spawns its own subagent with full token budget.
 4. **Single parallel spawn** — orchestrator sends all wave-N subagent calls in ONE assistant message (parallel tool calls), at most 20 per message; a wider wave goes out in batches. Sequential spawning defeats the purpose.
 5. **Collection before advance** — orchestrator aggregates summaries, updates PLAN task status, commits metadata, THEN starts wave N+1.
@@ -40,7 +40,7 @@ Same-wave files are disjoint:
 
 After a wave completes:
 
-1. Read each subagent summary; verify every `<verify>` passed
+1. Read each subagent summary; confirm every task's `Verify` passed
 2. Append one entry to PLAN.md `## Status Log` naming the **task ids**, their commit shas, and a
    completion marker (`complete` or `✓`) — all three in the same entry:
 

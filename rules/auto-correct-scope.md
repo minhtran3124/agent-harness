@@ -35,7 +35,7 @@ ceremony: tiny uses `git checkout -b <type>/<slug>`; normal and high-risk use
 can record `SUMMARY.md` first. Break glass with `BRANCH_ISOLATION_REASON=<why>`; the hook records
 the override in `docs/harness-experimental/break-glass-log.md`.
 
-> **Evidence the lane requires (single source of truth):** `scripts/verify_summary.py --lane` mechanizes the lane → evidence mapping so this table, `skills/feature-intake/SKILL.md` (Step 7), and the `SUMMARY.md` checks do not drift. It reads `specs/<slug>/SUMMARY.md` and asserts: **tiny** → filled `Lane`/`Confidence`/`Reason`; **normal** → + a non-placeholder `### Verify` row; **high-risk** → + a non-empty `### Rollback`, and a `### Not auto-verified` section (**advisory by default** — prints a warning and still exits 0; set `REQUIRE_NOT_AUTO_VERIFIED=1` to make it blocking, which is the intended end state once the back catalogue has drained). Run `python scripts/verify_summary.py --lane <slug>` (exit 1 = missing evidence). Edit the mapping there, not only in prose. **Enforced** at commit time by `hooks/commit-gate.sh` (`check_lane_evidence`; `standard` and `strict` profiles) on every staged `specs/<slug>/SUMMARY.md` — the staged copy is what is checked, so a commit that adds the missing evidence self-unblocks.
+> **Evidence the lane requires (single source of truth):** `scripts/verify_summary.py --lane` mechanizes the lane → evidence mapping so this table, `skills/feature-intake/SKILL.md` (Step 7), and the `SUMMARY.md` checks do not drift. It reads `specs/<slug>/SUMMARY.md` and asserts: **tiny** → filled `Lane`/`Confidence`/`Reason`; **normal** → + a non-placeholder `### Verify` row; **high-risk** → + a non-empty `### Rollback`, and a `### Not auto-verified` section (**advisory by default** — prints a warning and still exits 0; set `REQUIRE_NOT_AUTO_VERIFIED=1` to make it blocking, which is the intended end state once the back catalogue has drained). Run `python3 scripts/verify_summary.py --lane <slug>` (exit 1 = missing evidence). Edit the mapping there, not only in prose. **Enforced** at commit time by `hooks/commit-gate.sh` (`check_lane_evidence`; `standard` and `strict` profiles) on every staged `specs/<slug>/SUMMARY.md` — the staged copy is what is checked, so a commit that adds the missing evidence self-unblocks.
 
 Rule 4 (STOP) still fires inside **every** lane — a hard gate discovered mid-task escalates regardless of how the work was classified. Ceremony scales with risk; the human gate scales with ambiguity, not risk.
 
@@ -47,14 +47,14 @@ Obvious bugs discovered during implementation:
 
 - Wrong ORM/data-access query (missing join, incorrect filter, soft-delete not respected)
 - Off-by-one, null-check miss, wrong comparison operator
-- Logic contradicting the `<action>` spec
+- Logic contradicting the task's `Action`
 - Test failures caused by the implementation mistake (not test design)
 - Missing `await` on async call; sync call in async context
 - Typos in identifiers
 
 ## Rule 2 — Auto-add (no ask)
 
-Missing functionality clearly required by project standards but not explicitly listed in `<action>`:
+Missing functionality clearly required by project standards but not explicitly listed in the task's `Action`:
 
 - Input validation at API boundary (your validation layer / schema, guard clauses)
 - Error handling for documented failure modes (datastore errors, upstream 4xx/5xx)
@@ -78,7 +78,7 @@ Issues preventing the task from completing:
 
 Changes requiring architectural judgment — NEVER auto-apply:
 
-- Schema changes (add/remove/rename DB table or column) not in the `<action>` spec
+- Schema changes (add/remove/rename DB table or column) not in the task's `Action`
 - API contract changes (route path, method, request/response shape) not in spec
 - Removing existing functionality, even if seemingly unused
 - Introducing a new external service dependency (new broker, AI provider, webhook target)

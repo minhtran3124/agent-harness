@@ -33,10 +33,12 @@ Every subagent returning to main thread MUST include in its summary:
 - **Lane** — the intake lane this task ran under (`tiny | normal | high-risk`)
 - **Deviations** — Rule 1–3 auto-fixes per `auto-correct-scope.md`, labeled by rule
 - **Blockers** — anything requiring main thread decision or user input
-- **Verify status** — pass/fail of task's `<verify>` command (with command output excerpt on fail)
+- **Verify status** — pass/fail of the task's `Verify` command (with command output excerpt on fail)
 - **Harness-Delta** — friction this task revealed about the workflow itself: `fix-direct`, `backlog` (→ `compound`), or `none`
 
 Include only what the main thread needs to act without re-reading the subagent's work product; no raw file dumps.
+Under a file handoff (`subagent-driven-development`), the full contract goes in the report file and
+the inline return carries status, commits, Verify status, `Harness-Delta`, and the report path.
 
 ## Evidence in SUMMARY.md (evidence over assertion)
 
@@ -81,7 +83,7 @@ human may interrupt but is not a gate. Per-task agent reviews stay always-on reg
 
 Re-check continuously while executing each wave; any of these escalates mid-flight:
 
-- **Repeated `<verify>` failure** — the same check fails ≥2 times after a fix attempt.
+- **Repeated `Verify` failure** — the same check fails ≥2 times after a fix attempt.
 - **Blast radius beyond plan** — a subagent touched files outside its task's declared Files set
   (the task reviewer's spec verdict compares the task's diff to its Files list; at each wave
   commit `hooks/commit-gate.sh` `check_plan_scope` also warns on paths outside the active plan's

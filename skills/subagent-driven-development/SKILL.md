@@ -51,8 +51,9 @@ Ensure branch isolation, set the plan `status: active`, and transition the durab
 
 - Before dispatch, generate a deterministic brief using
   `skills/subagent-driven-development/scripts/task_brief.py`; pass its path to the implementer.
-  The implementer writes its detailed report to a path in `.harness-state/sdd/` and returns only a
-  short status, commits, and report path. Do not paste task history or report contents.
+  Fill `[LANE]` from SUMMARY. The implementer reports under `.harness-state/sdd/`, returning
+  status, commits, Verify, a `Harness-Delta:` line, and the path; record non-`none` deltas in
+  SUMMARY. Never paste history or report contents.
 - Generate one explicit `BASE..HEAD` package with `review_package.py` (BASE = the commit
   before this task's first commit, never the branch base); pass brief/report/package
   paths to `task-reviewer`, whose model is selected by the runtime entry binding. One reviewer returns both
