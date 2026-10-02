@@ -20,9 +20,8 @@ the user asked for.* This is the **third oracle** — it compares the finished c
 reviewer that sees the plan anchors on it and re-confirms the plan's possible misreading of intent.
 Symmetric with correctness-review's plan-blindness; here it exists to catch intent drift.
 
-**Use a different model than the implementer** (ensemble diversity — a different model notices
-different drift). Resolve the `intent_reviewer` model stage through the runtime entry binding; it
-is checked to remain distinct from `implementer`, preserving the diversity this pass depends on.
+**Review in fresh context.** Resolve the `intent_reviewer` model stage through the runtime entry
+binding, without embedding a vendor model label in this semantic prompt.
 `model_stage` is not a Task-tool parameter. Use the `model:` already declared in this stage's
 rendered `agents/` definition as the Task tool's `model:` value — the harness repo resolves that
 value at render time (`scripts/render_runtime_entry.py --runtime claude --model-stage intent_reviewer`), so a consuming

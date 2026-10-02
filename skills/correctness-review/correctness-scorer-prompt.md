@@ -24,9 +24,8 @@ readily as six angles sharing an insight — that is precisely what a fresh, cod
 here to catch. Record which angles reported it in the finding's provenance; never feed it to the
 scorer.
 
-**Score with a different model than the finders.** Scoring is a fresh, code-only judgment.
-Resolve the `correctness_scorer` model stage through the runtime entry binding; it is checked to
-remain distinct from `correctness_finder`, preserving ensemble diversity without embedding a
+**Score in fresh context.** Scoring is a fresh, code-only judgment.
+Resolve the `correctness_scorer` model stage through the runtime entry binding, without embedding a
 vendor model label in this semantic prompt. `model_stage` is not a Task-tool parameter. Use the `model:` already declared in this stage's
 rendered `agents/` definition as the Task tool's `model:` value — the harness repo resolves that
 value at render time (`scripts/render_runtime_entry.py --runtime claude --model-stage correctness_scorer`), so a consuming
