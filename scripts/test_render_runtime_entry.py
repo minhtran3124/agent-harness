@@ -22,15 +22,11 @@ def clone_inputs(tmp_path: Path) -> Path:
     return root
 
 
-def test_live_binding_is_total_and_preserves_model_diversity():
+def test_live_binding_is_total():
     binding, agents = entry.validate(ROOT)
     for runtime in entry.RUNTIMES:
-        assert entry.model_label(
-            binding, agents, runtime, "correctness_finder"
-        ) != entry.model_label(binding, agents, runtime, "correctness_scorer")
-        assert entry.model_label(
-            binding, agents, runtime, "implementer"
-        ) != entry.model_label(binding, agents, runtime, "intent_reviewer")
+        for stage in binding["model_stages"]:
+            assert entry.model_label(binding, agents, runtime, stage)
 
 
 def test_paired_skill_cli_golden_output():
@@ -47,7 +43,13 @@ def test_paired_model_label_golden_output():
     binding, agents = entry.validate(ROOT)
     assert entry.model_label(
         binding, agents, "claude", "task_reviewer"
-    ) == "claude-opus-5"
+    ) == "claude-opus-5-5"
+    assert entry.model_label(
+        binding, agents, "claude", "intent_reviewer"
+    ) == "claude-opus-5-5"
+    assert entry.model_label(
+        binding, agents, "claude", "correctness_finder"
+    ) == "claude-opus-5-5"
     assert entry.model_label(
         binding, agents, "codex", "task_reviewer"
     ) == "gpt-5.6-terra"
@@ -77,13 +79,16 @@ def test_missing_runtime_or_model_stage_is_rejected(tmp_path):
         entry.validate(root)
 
 
-def test_collapsed_model_diversity_is_rejected(tmp_path):
-    root = clone_inputs(tmp_path)
-    path = root / "adapters/runtime-entry-bindings.json"
-    value = json.loads(path.read_text())
-    value["model_stages"]["correctness_scorer"] = "reviewer"
-    path.write_text(json.dumps(value))
-    with pytest.raises(entry.BindingError, match="scorer must differ"):
+def test_collapsed_review_models_validate(tmp_path):
+    for stage, role in (
+        ("correctness_scorer", "reviewer"),
+        ("intent_reviewer", "coding"),
+    ):
+        root = clone_inputs(tmp_path / stage)
+        path = root / "adapters/runtime-entry-bindings.json"
+        value = json.loads(path.read_text())
+        value["model_stages"][stage] = role
+        path.write_text(json.dumps(value))
         entry.validate(root)
 
 

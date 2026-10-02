@@ -29,7 +29,7 @@ else fail "consumer's custom skill was destroyed — blind prune hazard"; fi
 
 t "Claude agents are rendered while source-time binding JSON stays undeployed"
 T=$(new_target); deploy "$T"
-if grep -q '^model: claude-opus-5$' "$T/.claude/agents/reviewer.md" \
+if grep -q '^model: claude-opus-5-5$' "$T/.claude/agents/reviewer.md" \
    && grep -q '^tools: Glob, Grep, Read, Bash$' "$T/.claude/agents/reviewer.md" \
    && [ ! -e "$T/.claude/agents/agent-contracts.json" ] \
    && [ ! -e "$T/.claude/agents/runtime-bindings.json" ]; then pass

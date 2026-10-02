@@ -14,12 +14,12 @@ ROOT = SCRIPT.parents[1]
 LEGACY_CLAUDE = {
     "coding": {"model": "claude-opus-5-5", "effort": "medium", "tools": None},
     "reviewer": {
-        "model": "claude-opus-5",
-        "effort": "high",
+        "model": "claude-opus-5-5",
+        "effort": "medium",
         "tools": ["Glob", "Grep", "Read", "Bash"],
     },
     "task-reviewer": {
-        "model": "claude-opus-5",
+        "model": "claude-opus-5-5",
         "effort": "medium",
         "tools": ["Glob", "Grep", "Read"],
     },
@@ -48,9 +48,6 @@ LOAD_BEARING_SUBSTANCE = {
             # Independence is enforced by the harness, not by asking the model nicely.
             "structurally read-only",
             "not by instruction",
-            # Model-class isolation, including the scorer's distinct model.
-            "distinct",
-            "ensemble-diversity",
         ],
         "body": [
             # The negative scope: the shell channel is NOT structurally guarded.

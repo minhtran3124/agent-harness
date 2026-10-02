@@ -30,7 +30,7 @@
       "mcp": "none",
       "nested_delegation": false,
       "context_policy": "fresh-bounded",
-      "model_class": "review-high-capability-distinct-from-implementer",
+      "model_class": "review-high-capability",
       "output_contract": "self-contained-findings-only"
     },
     "task-reviewer": {

@@ -20,8 +20,8 @@
           }
         },
         "reviewer": {
-          "model": "claude-opus-5",
-          "effort": "high",
+          "model": "claude-opus-5-5",
+          "effort": "medium",
           "tools": ["Glob", "Grep", "Read", "Bash"],
           "capabilities": {
             "filesystem": "Write/Edit omitted; Bash mutation prohibited by role contract",
@@ -30,12 +30,12 @@
             "mcp": "no MCP tools allowed",
             "nested_delegation": "Agent omitted",
             "context_policy": "fresh-or-bounded-dispatch-required",
-            "model_class": "claude-opus-5 distinct from implementation binding",
+            "model_class": "claude-opus-5-5",
             "output_contract": "role-body-enforced"
           }
         },
         "task-reviewer": {
-          "model": "claude-opus-5",
+          "model": "claude-opus-5-5",
           "effort": "medium",
           "tools": ["Glob", "Grep", "Read"],
           "capabilities": {
@@ -45,7 +45,7 @@
             "mcp": "MCP tools omitted",
             "nested_delegation": "Agent omitted",
             "context_policy": "fresh-or-bounded-dispatch-required",
-            "model_class": "claude-opus-5",
+            "model_class": "claude-opus-5-5",
             "output_contract": "role-body-enforced"
           }
         },
