@@ -133,7 +133,7 @@ def test_summary_totals(tmp_path):
     }}
     totals, lines = score(results, tmp_path, threshold=75)
     assert totals == {"core": 2, "core_caught": 1, "core_oracle_match": 1, "bonus_caught": 1, "all_caught": 2,
-                      "fp": 2, "fp_at_threshold": 1, "other": 1}
+                      "fp": 2, "fp_at_threshold": 1, "other": 1, "errored": 0, "core_errored": 0}
     assert any("core-miss" in line and "blocks=0" in line for line in lines)
     path = tmp_path / "results.json"
     path.write_text(json.dumps(results))
@@ -218,6 +218,46 @@ def test_score_counts_fixture_absent_from_results_as_missed(tmp_path):
     assert "core catches: 1/2" in proc.stdout
     assert "all catches: 1/2" in proc.stdout
     assert "warning" in proc.stderr and "never-ran" in proc.stderr
+
+
+def test_errored_cases_are_flagged_and_excluded_from_totals(tmp_path):
+    fixtures = tmp_path / "fixtures"
+    for name in ("ok", "rc-fail", "empty", "absent", "not-dict"):
+        write_fixture(fixtures, name, TRUTH)
+    hit = finding(summary="count_active does not filter deleted rows", confidence=90)
+    results = {"cases": {
+        "ok": {"rc": 0, "result": block([hit])},
+        "rc-fail": {"rc": 2, "result": block([hit, finding(file="app/cache.py", summary="ttl")])},
+        "empty": {"rc": 0, "result": "  "},
+        "absent": {"rc": 0},
+        "not-dict": None,
+    }}
+    totals, lines = score(results, fixtures, threshold=75)
+    assert totals["core"] == 1 and totals["core_caught"] == 1 and totals["all_caught"] == 1
+    assert totals["errored"] == 4 and totals["core_errored"] == 4
+    assert totals["fp"] == 0 and totals["other"] == 0
+    assert any(line.startswith("rc-fail [core]: ERROR (rc=2)") for line in lines)
+    for name in ("empty", "absent", "not-dict"):
+        assert any(line.startswith(f"{name} [core]: ERROR (no output)") for line in lines)
+    path = tmp_path / "results.json"
+    path.write_text(json.dumps(results))
+    proc = run_score(path, fixtures)
+    assert proc.returncode == 0, proc.stderr
+    assert "core catches: 1/1 (4 errored)" in proc.stdout
+    assert "all catches: 1/1 (4 errored)" in proc.stdout
+    assert "review-chain-eval: warning: fixture rc-fail errored (rc=2); excluded from totals" in proc.stderr
+    assert "review-chain-eval: warning: fixture empty errored (no output); excluded from totals" in proc.stderr
+
+
+def test_totals_without_errors_have_no_errored_suffix(tmp_path):
+    fixtures = tmp_path / "fixtures"
+    write_fixture(fixtures, "ok", TRUTH)
+    path = tmp_path / "results.json"
+    path.write_text(json.dumps({"cases": {"ok": {"rc": 0, "result": "no json"}}}))
+    proc = run_score(path, fixtures)
+    assert proc.returncode == 0, proc.stderr
+    assert "errored" not in proc.stdout + proc.stderr
+    assert "core catches: 0/1" in proc.stdout and "MISSED" in proc.stdout
 
 
 @pytest.mark.parametrize("bad", [

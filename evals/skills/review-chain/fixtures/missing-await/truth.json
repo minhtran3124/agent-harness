@@ -19,7 +19,11 @@
             "without an await",
             "unawaited",
             "coroutine",
-            "typeerror"
+            "typeerror",
+            "missing an await",
+            "not await",
+            "isn't awaited",
+            "is not awaited"
         ]
     },
     "false_positives": [

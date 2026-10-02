@@ -13,7 +13,8 @@
             "attributeerror",
             "unguarded",
             "not found",
-            "notfound"
+            "notfound",
+            "null"
         ],
         "and_any": [
             "attributeerror",
@@ -28,7 +29,9 @@
             "notfound",
             "404",
             "500",
-            "crash"
+            "crash",
+            "server error",
+            "accessing"
         ]
     },
     "false_positives": [

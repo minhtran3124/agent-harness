@@ -142,8 +142,22 @@ def score_case(text: str, truth: dict) -> dict:
     }
 
 
+def case_error(entry) -> str | None:
+    """Why a run's record cannot be scored (non-zero rc, or no output), else None."""
+    if not isinstance(entry, dict):
+        return "no output"
+    rc = entry.get("rc")
+    if rc is not None and rc != 0:
+        return f"rc={rc}"
+    text = entry.get("result")
+    if not isinstance(text, str) or not text.strip():
+        return "no output"
+    return None
+
+
 def score(results: dict, fixtures: Path, threshold: int) -> tuple[dict, list[str]]:
-    totals = dict.fromkeys(("core", "core_caught", "core_oracle_match", "bonus_caught", "all_caught", "fp", "fp_at_threshold", "other"), 0)
+    totals = dict.fromkeys(("core", "core_caught", "core_oracle_match", "bonus_caught", "all_caught", "fp", "fp_at_threshold",
+                            "other", "errored", "core_errored"), 0)
     lines = []
     cases = results.get("cases") if isinstance(results, dict) else None
     if not isinstance(cases, dict):
@@ -153,6 +167,12 @@ def score(results: dict, fixtures: Path, threshold: int) -> tuple[dict, list[str
         truth = load_truth(fixture)
         ran = name in cases
         entry = cases.get(name)
+        error = case_error(entry) if ran else None
+        if error:
+            totals["errored"] += 1
+            totals["core_errored"] += truth["core"]
+            lines.append(f"{name} [{'core' if truth['core'] else 'bonus'}]: ERROR ({error}) excluded from totals")
+            continue
         text = entry.get("result", "") if isinstance(entry, dict) else ""
         case = score_case(text if isinstance(text, str) else "", truth)
         totals["core"] += truth["core"]
@@ -174,6 +194,10 @@ def score(results: dict, fixtures: Path, threshold: int) -> tuple[dict, list[str
         lines.append(f"{name} [{'core' if truth['core'] else 'bonus'}]: {verdict} confidence={case['confidence']} "
                      f"oracle_match={case['oracle_match']} blocks={case['blocks']} findings=[{per}]")
     return totals, lines
+
+
+def _errored_suffix(count: int) -> str:
+    return f" ({count} errored)" if count else ""
 
 
 def _scored_fixture_names(fixtures: Path) -> list[str]:
@@ -207,12 +231,16 @@ def main() -> int:
         return 1
     for name in sorted(set(_scored_fixture_names(args.fixtures)) - set(results["cases"])):
         print(f"review-chain-eval: warning: fixture {name} has no result (not run); scored as MISSED", file=sys.stderr)
+    for name in _scored_fixture_names(args.fixtures):
+        error = case_error(results["cases"][name]) if name in results["cases"] else None
+        if error:
+            print(f"review-chain-eval: warning: fixture {name} errored ({error}); excluded from totals", file=sys.stderr)
     for line in lines:
         print(line)
-    print(f"core catches: {totals['core_caught']}/{totals['core']} "
+    print(f"core catches: {totals['core_caught']}/{totals['core']}{_errored_suffix(totals['core_errored'])} "
           f"(oracle match {totals['core_oracle_match']}/{totals['core']})")
     print(f"bonus catches (non-core, incl. context-propagation-audit): {totals['bonus_caught']}")
-    print(f"all catches: {totals['all_caught']}/{len(lines)}")
+    print(f"all catches: {totals['all_caught']}/{len(lines) - totals['errored']}{_errored_suffix(totals['errored'])}")
     print(f"false positives: {totals['fp']} (at or above {args.threshold}: {totals['fp_at_threshold']})")
     print(f"other findings: {totals['other']}")
     return 0

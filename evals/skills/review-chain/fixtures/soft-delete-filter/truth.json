@@ -12,7 +12,23 @@
             "soft_delete",
             "is_(none)"
         ],
-        "and_any": []
+        "and_any": [
+            "missing",
+            "no filter",
+            "not filter",
+            "no `deleted_at`",
+            "no deleted_at",
+            "without",
+            "never",
+            "omit",
+            "returns soft-deleted",
+            "returns deleted",
+            "still returns",
+            "include",
+            "is_(none)",
+            "is null",
+            "exclude"
+        ]
     },
     "false_positives": [
         {
