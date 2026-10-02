@@ -9,7 +9,7 @@ pointed to from — `PROJECT.md`.
 | Agent | Role | Model class | Dispatched by |
 |---|---|---|---|
 | `coding` | Implement/refactor/fix code, end-to-end | implementation high-capability | `subagent-driven-development`, ad-hoc |
-| `reviewer` | Structurally read-only review passes (correctness-review, intent-review) | review high-capability, distinct from implementer | review skills |
+| `reviewer` | Structurally read-only review passes (correctness-review, intent-review) | review high-capability | review skills |
 | `task-reviewer` | Read-only per-task spec + quality review | review high-capability | `subagent-driven-development` |
 | `test-runner` | Run the minimal relevant tests and report/diagnose results | test-execution fast | after implementation |
 

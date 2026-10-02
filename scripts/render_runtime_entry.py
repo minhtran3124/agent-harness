@@ -96,15 +96,6 @@ def validate(root: Path) -> tuple[dict[str, Any], dict[str, Any]]:
                 role_binding.get("model"), str
             ) or not role_binding["model"]:
                 raise BindingError(f"{runtime}/{stage}: model role {role!r} is unresolved")
-    for runtime in sorted(RUNTIMES):
-        if model_label(binding, agents, runtime, "correctness_finder") == model_label(
-            binding, agents, runtime, "correctness_scorer"
-        ):
-            raise BindingError(f"{runtime}: correctness scorer must differ from finders")
-        if model_label(binding, agents, runtime, "implementer") == model_label(
-            binding, agents, runtime, "intent_reviewer"
-        ):
-            raise BindingError(f"{runtime}: intent reviewer must differ from implementer")
     return binding, agents
 
 

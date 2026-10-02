@@ -24,8 +24,7 @@ first instead of rebuilding the same diff. The package carries no intent oracle;
 read PLAN prose or research material. Standalone calls without a package retain explicit-range
 construction.
 
-Dispatch `intent-reviewer-prompt.md` in fresh context, preferably with a model different from the
-implementer. Every finding must quote the intent sentence it evaluates.
+Dispatch `intent-reviewer-prompt.md` in fresh context. Every finding must quote the intent sentence it evaluates.
 
 ## Route findings
 

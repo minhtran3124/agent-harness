@@ -34,7 +34,7 @@ fi
 t "Claude and Codex model stages resolve through their agent bindings"
 claude_model=$(python3 "$ROOT/$RENDERER" --root "$ROOT" --runtime claude --model-stage task_reviewer)
 codex_model=$(python3 "$ROOT/$RENDERER" --root "$ROOT" --runtime codex --model-stage task_reviewer)
-if [ "$claude_model" = "claude-opus-5" ] && [ "$codex_model" = "gpt-5.6-terra" ]; then
+if [ "$claude_model" = "claude-opus-5-5" ] && [ "$codex_model" = "gpt-5.6-terra" ]; then
   pass
 else
   fail "unexpected task-reviewer models — claude=[$claude_model] codex=[$codex_model]"

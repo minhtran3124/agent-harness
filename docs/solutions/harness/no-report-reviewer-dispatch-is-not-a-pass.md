@@ -40,7 +40,9 @@ Two tempting readings, both wrong:
 `skills/subagent-driven-development/SKILL.md` specifies dispatch and the fix-loop but never the
 no-report case, so the controller is left choosing silently between blocking forever and degrading the
 gate. And because the receipt cannot express "reviewed, but not independently", the degradation leaves
-no trace: the ensemble-diversity requirement the chain depends on disappears without a record.
+no trace: the reviewer independence (a fresh, separately dispatched context) the chain depends on
+disappears without a record. (Model diversity was dropped as a requirement on 2026-10-02 — see
+`review-model-diversity-dropped-decisions.md`; independence of context is what remains.)
 
 The practical proof that independence matters: in this session the inline correctness pass verified that
 `run_state.py init` was idempotent on an existing run and stopped there — it never tested
@@ -55,7 +57,7 @@ different one.
 - **Record the degradation in the artifact, not just the chat.** Until the schema has a field, write it
   into the `reviewer` string verbatim (`"main-session … (dispatched subagents returned no report; NOT
   independent)"`) and into `SUMMARY.md` `### Review`. A reader must be able to tell from the receipt
-  alone that ensemble diversity was absent.
+  alone that independent review was absent.
 - **Get independence from outside the harness when the local chain cannot supply it.** On a
   workflow-engine diff, `finishing-a-development-branch` already recommends an external pass. In this
   session that external reviewer produced 19 findings across 15 rounds, of which 17 were real — none of
