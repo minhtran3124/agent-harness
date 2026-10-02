@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.27.0] — 2026-10-02
+
+- fix: apply prompt-audit findings to skills, rules, agents and CLAUDE.md (PR #242)
+
 ## [2.26.1] — 2026-09-30
 
 - chore(specs): close specs left open after merge (PR #239)
