@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.28.0] — 2026-10-02
+
+- feat(agents): run review roles on Opus 5.5 at medium effort and drop model-diversity rule (PR #244)
+
 ## [2.27.0] — 2026-10-02
 
 - fix: apply prompt-audit findings to skills, rules, agents and CLAUDE.md (PR #242)

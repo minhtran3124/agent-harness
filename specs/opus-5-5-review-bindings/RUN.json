@@ -1,12 +1,12 @@
 {
   "created_at": "2026-10-02T06:16:25Z",
-  "last_event_id": "f5a29e42-0879-4570-b419-fd779ad7af8a",
+  "last_event_id": "835b26d0-436b-45e2-a8b6-89153e230951",
   "resume_event": null,
   "run_id": "fc8d7ff4-85e6-4cb6-94e2-ddefc5183790",
-  "seq": 6,
-  "sha": null,
+  "seq": 7,
+  "sha": "7fda631746fad4ac1ea9316398569d5a37088157",
   "slug": "opus-5-5-review-bindings",
-  "state": "ready_to_merge",
-  "updated_at": "2026-10-02T07:15:45Z",
+  "state": "shipped",
+  "updated_at": "2026-10-02T08:25:54Z",
   "waiting_on": null
 }
