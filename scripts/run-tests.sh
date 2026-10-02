@@ -50,6 +50,13 @@ else
   echo "  skip — no python3 or checker not present"
 fi
 
+echo "== L1: review-chain eval answer keys =="
+if command -v python3 >/dev/null 2>&1; then
+  python3 scripts/score_review_chain_eval.py --check-truth evals/skills/review-chain/fixtures || FAILED=1
+else
+  echo "  skip — no python3"
+fi
+
 echo "== L1: verify-row lint (changed SUMMARY/PLAN only) =="
 # Lint only SUMMARY.md + PLAN.md files changed vs the base ref — new/edited Verify
 # rows and SC-table Check cells must be pipe-free + <60s; shipped specs are

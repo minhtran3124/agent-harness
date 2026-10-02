@@ -4,25 +4,31 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 import sys
 from pathlib import Path
 
 ORACLES = ("correctness", "intent", "context-propagation-audit")
-JSON_BLOCK = re.compile(r"```json[ \t]*\n(.*?)```", re.DOTALL)
+JSON_BLOCK = re.compile(r"```json[^\n]*\n(.*?)```", re.DOTALL | re.IGNORECASE)
+DIFF_PATH = re.compile(r"^(?:\+\+\+|---) (?:[ab]/)?(\S+)|^diff --git a/(\S+) b/(\S+)", re.MULTILINE)
+TOKEN_KEYS = (("input", "input_tokens"), ("output", "output_tokens"),
+              ("cache creation", "cache_creation_input_tokens"), ("cache read", "cache_read_input_tokens"))
 
 
-def _check_pattern(pattern, where: str, need_terms: bool) -> list[str]:
+def _check_pattern(pattern, where: str, need_file: bool) -> list[str]:
     if not isinstance(pattern, dict):
         return [f"{where} must be an object"]
     errors = []
     if not isinstance(pattern.get("file"), str):
         errors.append(f"{where}.file must be a string")
+    elif need_file and not pattern["file"]:
+        errors.append(f"{where}.file must not be empty")
     for key in ("match_any", "and_any"):
         terms = pattern.get(key)
         if not isinstance(terms, list) or not all(isinstance(t, str) and t for t in terms):
             errors.append(f"{where}.{key} must be a list of non-empty strings")
-    if need_terms and not pattern.get("match_any"):
+    if isinstance(pattern.get("match_any"), list) and not pattern["match_any"]:
         errors.append(f"{where}.match_any must not be empty")
     return errors
 
@@ -31,20 +37,21 @@ def validate_truth(truth) -> list[str]:
     if not isinstance(truth, dict):
         return ["not an object"]
     errors = []
-    if truth.get("schema_version") != 1:
-        errors.append("schema_version must be 1")
+    version = truth.get("schema_version")
+    if type(version) is not int or version != 1:
+        errors.append("schema_version must be the integer 1")
     if truth.get("expected_oracle") not in ORACLES:
         errors.append(f"expected_oracle must be one of {', '.join(ORACLES)}")
     for key in ("core", "correctness_clean"):
         if not isinstance(truth.get(key), bool):
             errors.append(f"{key} must be a boolean")
-    errors += _check_pattern(truth.get("planted"), "planted", need_terms=True)
+    errors += _check_pattern(truth.get("planted"), "planted", need_file=True)
     fps = truth.get("false_positives")
     if not isinstance(fps, list):
         errors.append("false_positives must be a list")
     else:
         for i, fp in enumerate(fps):
-            errors += _check_pattern(fp, f"false_positives[{i}]", need_terms=False)
+            errors += _check_pattern(fp, f"false_positives[{i}]", need_file=False)
     return errors
 
 
@@ -74,10 +81,32 @@ def load_truth(fixture: Path) -> dict:
     return truth
 
 
+def diff_paths(diff: str) -> set[str]:
+    """Every file path named in a unified diff's headers (a/ and b/ prefixes stripped)."""
+    return {p for m in DIFF_PATH.finditer(diff) for p in m.groups() if p and p != "/dev/null"}
+
+
+def _path_matches(path: str, want: str) -> bool:
+    return path == want or path.endswith("/" + want)
+
+
+def _planted_in_diff(fixture: Path, truth: dict) -> list[str]:
+    want = truth["planted"]["file"]
+    try:
+        paths = diff_paths((fixture / "diff.patch").read_text())
+    except (OSError, UnicodeDecodeError) as exc:
+        return [f"planted.file cannot be checked: diff.patch unreadable ({exc})"]
+    if not any(_path_matches(p, want) for p in paths):
+        return [f"planted.file {want} does not appear in diff.patch"]
+    return []
+
+
 def check_truth(fixtures: Path) -> list[str]:
     errors = []
     for fixture in _fixture_dirs(fixtures):
-        _, problems = _truth_problems(fixture / "truth.json")
+        truth, problems = _truth_problems(fixture / "truth.json")
+        if truth is not None:
+            problems = _planted_in_diff(fixture, truth)
         errors += [f"{fixture.name}/truth.json: {p}" for p in problems]
     return errors
 
@@ -90,7 +119,7 @@ def normalise_file(name: str) -> str:
 def matches(finding: dict, pattern: dict) -> bool:
     file = normalise_file(str(finding.get("file") or ""))
     want = pattern["file"]
-    if want and file != want and not file.endswith("/" + want):
+    if want and not _path_matches(file, want):
         return False
     text = (str(finding.get("class", "")) + " " + str(finding.get("summary", ""))).lower()
     if not any(t.lower() in text for t in pattern["match_any"]):
@@ -110,32 +139,60 @@ def classify(finding: dict, truth: dict) -> str:
     return "other"
 
 
-def parse_findings(text: str) -> tuple[list[dict], int]:
+def unknown_bucket(finding: dict, truth: dict) -> str | None:
+    """Reporting-only sub-bucket of an `unknown` finding (it stays `other` for catch and FP counts)."""
+    if str(finding.get("class", "")).lower() != "unknown":
+        return None
+    if matches(finding, truth["planted"]):
+        return "unknown_planted"
+    if truth["correctness_clean"] and finding.get("oracle") == "correctness":
+        return "unknown_clean_correctness"
+    return None
+
+
+def parse_findings(text: str) -> tuple[list[dict] | None, int]:
+    """Findings from the last fenced json block that parses as a list; None when blocks exist but none parses."""
     blocks = JSON_BLOCK.findall(text or "")
-    if not blocks:
-        return [], 0
+    for raw in reversed(blocks):
+        try:
+            data = json.loads(raw)
+        except ValueError:
+            continue
+        if isinstance(data, list):
+            return [f for f in data if isinstance(f, dict)], len(blocks)
+    return (None if blocks else []), len(blocks)
+
+
+def coerce_confidence(value) -> tuple[int | float, bool]:
+    """(confidence clamped to 0-100, ok); a bool or non-numeric value is (0, False)."""
+    if isinstance(value, bool) or not isinstance(value, (int, float, str)):
+        return 0, False
     try:
-        data = json.loads(blocks[-1])
+        number = float(value)
     except ValueError:
-        return [], len(blocks)
-    if not isinstance(data, list):
-        return [], len(blocks)
-    return [f for f in data if isinstance(f, dict)], len(blocks)
+        return 0, False
+    if math.isnan(number):
+        return 0, False
+    number = min(100.0, max(0.0, number))
+    return (int(number) if number.is_integer() else number), True
 
 
-def _confidence(finding: dict) -> int:
-    value = finding.get("confidence")
-    return value if isinstance(value, int) else 0
+def _confidence(finding: dict) -> int | float:
+    return coerce_confidence(finding.get("confidence"))[0]
 
 
 def score_case(text: str, truth: dict) -> dict:
     findings, blocks = parse_findings(text)
+    unparseable = findings is None
+    findings = findings or []
     classes = [classify(f, truth) for f in findings]
     planted = [f for f, c in zip(findings, classes) if c == "planted"]
     return {
         "blocks": blocks,
+        "unparseable": unparseable,
         "findings": findings,
         "classes": classes,
+        "buckets": [unknown_bucket(f, truth) for f in findings],
         "caught": bool(planted),
         "confidence": max((_confidence(f) for f in planted), default=None),
         "oracle_match": any(f.get("oracle") == truth["expected_oracle"] for f in planted),
@@ -155,26 +212,62 @@ def case_error(entry) -> str | None:
     return None
 
 
-def score(results: dict, fixtures: Path, threshold: int) -> tuple[dict, list[str]]:
+def _int_tokens(value) -> int:
+    return value if isinstance(value, int) and not isinstance(value, bool) else 0
+
+
+def token_totals(cases: dict) -> dict:
+    """Per-arm token sums over every recorded case (errored ones included: they were paid for)."""
+    sums = dict.fromkeys((label for label, _ in TOKEN_KEYS), 0)
+    for entry in cases.values():
+        usage = entry.get("usage") if isinstance(entry, dict) else None
+        if isinstance(usage, dict):
+            for label, key in TOKEN_KEYS:
+                sums[label] += _int_tokens(usage.get(key))
+    return sums
+
+
+def score(results: dict, fixtures: Path, threshold: int, warnings: list[str] | None = None) -> tuple[dict, list[str]]:
+    warnings = [] if warnings is None else warnings
     totals = dict.fromkeys(("core", "core_caught", "core_oracle_match", "bonus_caught", "all_caught", "fp", "fp_at_threshold",
-                            "other", "errored", "core_errored"), 0)
+                            "other", "unknown_planted", "unknown_clean_correctness", "errored", "core_errored",
+                            "unparseable", "core_unparseable", "tokens"), 0)
     lines = []
     cases = results.get("cases") if isinstance(results, dict) else None
     if not isinstance(cases, dict):
         raise EvalError("results file has no \"cases\" object")
-    for fixture in (p for p in _fixture_dirs(fixtures) if (p / "truth.json").is_file()):
+    dirs = _fixture_dirs(fixtures)
+    scored = [p for p in dirs if (p / "truth.json").is_file()]
+    for p in dirs:
+        if p not in scored and ((p / "intent.md").is_file() or (p / "diff.patch").is_file()):
+            warnings.append(f"fixture {p.name} has intent.md/diff.patch but no truth.json; not scored")
+    names = {p.name for p in scored}
+    for name in sorted(set(cases) - names):
+        warnings.append(f"result case {name} has no matching fixture; ignored")
+    for fixture in scored:
         name = fixture.name
         truth = load_truth(fixture)
+        kind = "core" if truth["core"] else "bonus"
         ran = name in cases
         entry = cases.get(name)
+        if not ran:
+            warnings.append(f"fixture {name} has no result (not run); scored as MISSED")
         error = case_error(entry) if ran else None
         if error:
             totals["errored"] += 1
             totals["core_errored"] += truth["core"]
-            lines.append(f"{name} [{'core' if truth['core'] else 'bonus'}]: ERROR ({error}) excluded from totals")
+            warnings.append(f"fixture {name} errored ({error}); excluded from totals")
+            lines.append(f"{name} [{kind}]: ERROR ({error}) excluded from totals")
             continue
         text = entry.get("result", "") if isinstance(entry, dict) else ""
         case = score_case(text if isinstance(text, str) else "", truth)
+        if case["unparseable"]:
+            totals["unparseable"] += 1
+            totals["core_unparseable"] += truth["core"]
+            warnings.append(f"fixture {name} is unparseable ({case['blocks']} json block(s), none a JSON array); "
+                            "excluded from totals")
+            lines.append(f"{name} [{kind}]: UNPARSEABLE blocks={case['blocks']} excluded from totals")
+            continue
         totals["core"] += truth["core"]
         if case["caught"]:
             totals["all_caught"] += 1
@@ -183,25 +276,29 @@ def score(results: dict, fixtures: Path, threshold: int) -> tuple[dict, list[str
                 totals["core_oracle_match"] += case["oracle_match"]
             else:
                 totals["bonus_caught"] += 1
-        for f, c in zip(case["findings"], case["classes"]):
+        labels = []
+        for f, c, bucket in zip(case["findings"], case["classes"], case["buckets"]):
+            value, ok = coerce_confidence(f.get("confidence"))
+            if not ok:
+                warnings.append(f"fixture {name}: confidence {f.get('confidence')!r} is not a number; treated as 0")
             if c == "false_positive":
                 totals["fp"] += 1
-                totals["fp_at_threshold"] += _confidence(f) >= threshold
+                totals["fp_at_threshold"] += value >= threshold
             elif c == "other":
                 totals["other"] += 1
+            if bucket:
+                totals[bucket] += 1
+            labels.append(f"{f.get('oracle')}/{f.get('class')}@{value}={c}" + (f"({bucket})" if bucket else ""))
         verdict = "CAUGHT" if case["caught"] else "MISSED" if ran else "MISSED (not run)"
-        per = ", ".join(f"{f.get('oracle')}/{f.get('class')}@{_confidence(f)}={c}" for f, c in zip(case["findings"], case["classes"]))
-        lines.append(f"{name} [{'core' if truth['core'] else 'bonus'}]: {verdict} confidence={case['confidence']} "
-                     f"oracle_match={case['oracle_match']} blocks={case['blocks']} findings=[{per}]")
+        lines.append(f"{name} [{kind}]: {verdict} confidence={case['confidence']} "
+                     f"oracle_match={case['oracle_match']} blocks={case['blocks']} findings=[{', '.join(labels)}]")
+    totals["tokens"] = sum(token_totals(cases).values())
     return totals, lines
 
 
-def _errored_suffix(count: int) -> str:
-    return f" ({count} errored)" if count else ""
-
-
-def _scored_fixture_names(fixtures: Path) -> list[str]:
-    return [p.name for p in _fixture_dirs(fixtures) if (p / "truth.json").is_file()]
+def _excluded_suffix(errored: int, unparseable: int) -> str:
+    parts = [f"{errored} errored"] * bool(errored) + [f"{unparseable} unparseable"] * bool(unparseable)
+    return f" ({', '.join(parts)})" if parts else ""
 
 
 def main() -> int:
@@ -225,24 +322,29 @@ def main() -> int:
             results = json.loads(args.score.read_text())
         except (OSError, ValueError) as exc:
             raise EvalError(f"{args.score}: {exc}") from None
-        totals, lines = score(results, args.fixtures, args.threshold)
+        warnings: list[str] = []
+        totals, lines = score(results, args.fixtures, args.threshold, warnings)
     except EvalError as exc:
         print(f"review-chain-eval: {exc}", file=sys.stderr)
         return 1
-    for name in sorted(set(_scored_fixture_names(args.fixtures)) - set(results["cases"])):
-        print(f"review-chain-eval: warning: fixture {name} has no result (not run); scored as MISSED", file=sys.stderr)
-    for name in _scored_fixture_names(args.fixtures):
-        error = case_error(results["cases"][name]) if name in results["cases"] else None
-        if error:
-            print(f"review-chain-eval: warning: fixture {name} errored ({error}); excluded from totals", file=sys.stderr)
+    for warning in warnings:
+        print(f"review-chain-eval: warning: {warning}", file=sys.stderr)
     for line in lines:
         print(line)
-    print(f"core catches: {totals['core_caught']}/{totals['core']}{_errored_suffix(totals['core_errored'])} "
+    excluded = totals["errored"] + totals["unparseable"]
+    print(f"core catches: {totals['core_caught']}/{totals['core']}"
+          f"{_excluded_suffix(totals['core_errored'], totals['core_unparseable'])} "
           f"(oracle match {totals['core_oracle_match']}/{totals['core']})")
     print(f"bonus catches (non-core, incl. context-propagation-audit): {totals['bonus_caught']}")
-    print(f"all catches: {totals['all_caught']}/{len(lines) - totals['errored']}{_errored_suffix(totals['errored'])}")
+    print(f"all catches: {totals['all_caught']}/{len(lines) - excluded}"
+          f"{_excluded_suffix(totals['errored'], totals['unparseable'])}")
     print(f"false positives: {totals['fp']} (at or above {args.threshold}: {totals['fp_at_threshold']})")
     print(f"other findings: {totals['other']}")
+    print(f"unknown findings (counted in other): unknown_planted={totals['unknown_planted']}, "
+          f"unknown_clean_correctness={totals['unknown_clean_correctness']}")
+    sums = token_totals(results["cases"])
+    print(f"tokens: {totals['tokens']} ({', '.join(f'{k} {v}' for k, v in sums.items())}) "
+          f"over {len(results['cases'])} cases")
     return 0
 
 

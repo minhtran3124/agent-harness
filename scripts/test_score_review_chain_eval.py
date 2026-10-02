@@ -133,7 +133,8 @@ def test_summary_totals(tmp_path):
     }}
     totals, lines = score(results, tmp_path, threshold=75)
     assert totals == {"core": 2, "core_caught": 1, "core_oracle_match": 1, "bonus_caught": 1, "all_caught": 2,
-                      "fp": 2, "fp_at_threshold": 1, "other": 1, "errored": 0, "core_errored": 0}
+                      "fp": 2, "fp_at_threshold": 1, "other": 1, "unknown_planted": 0, "unknown_clean_correctness": 0,
+                      "errored": 0, "core_errored": 0, "unparseable": 0, "core_unparseable": 0, "tokens": 0}
     assert any("core-miss" in line and "blocks=0" in line for line in lines)
     path = tmp_path / "results.json"
     path.write_text(json.dumps(results))
@@ -319,3 +320,268 @@ def test_runner_reports_skipped_fixture(tmp_path):
     notices = [line for line in proc.stdout.splitlines() if "skipping" in line]
     assert len(notices) == 1 and "no-diff" in notices[0] and "diff.patch" in notices[0]
     assert sorted(json.loads(out.read_text())["cases"]) == ["one"]
+
+
+# --- follow-ups: unknown buckets, confidence coercion, fences, warnings, truth checks, tokens ---
+
+CLEAN = dict(TRUTH, correctness_clean=True, expected_oracle="intent")
+
+
+def test_unknown_buckets_keep_classification_other():
+    from score_review_chain_eval import unknown_bucket
+    hit = finding(**{"class": "unknown", "summary": "count_active may not filter deleted rows"})
+    assert classify(hit, TRUTH) == "other" and unknown_bucket(hit, TRUTH) == "unknown_planted"
+    crash = finding(**{"class": "UNKNOWN", "file": "z.py", "summary": "may crash"})
+    assert classify(crash, CLEAN) == "other" and unknown_bucket(crash, CLEAN) == "unknown_clean_correctness"
+    assert unknown_bucket(dict(crash, oracle="intent"), CLEAN) is None
+    assert unknown_bucket(crash, TRUTH) is None
+    assert unknown_bucket(finding(summary="count_active does not filter deleted rows"), TRUTH) is None
+
+
+def test_unknown_buckets_in_totals_and_labels(tmp_path):
+    fixtures = tmp_path / "fixtures"
+    write_fixture(fixtures, "core", TRUTH)
+    write_fixture(fixtures, "clean", CLEAN)
+    unk_hit = finding(**{"class": "unknown", "summary": "count_active may not filter deleted rows"})
+    unk_crash = finding(**{"class": "unknown", "file": "z.py", "summary": "may crash"})
+    results = {"cases": {"core": {"rc": 0, "result": block([unk_hit])},
+                         "clean": {"rc": 0, "result": block([unk_crash])}}}
+    totals, lines = score(results, fixtures, threshold=75)
+    assert totals["core_caught"] == 0 and totals["fp"] == 0 and totals["other"] == 2
+    assert totals["unknown_planted"] == 1 and totals["unknown_clean_correctness"] == 1
+    assert any(line.startswith("core [core]") and "=other(unknown_planted)" in line for line in lines)
+    assert any(line.startswith("clean [core]") and "=other(unknown_clean_correctness)" in line for line in lines)
+    path = tmp_path / "results.json"
+    path.write_text(json.dumps(results))
+    proc = run_score(path, fixtures)
+    assert proc.returncode == 0, proc.stderr
+    assert "unknown findings (counted in other): unknown_planted=1, unknown_clean_correctness=1" in proc.stdout
+
+
+@pytest.mark.parametrize("value, expected, ok", [
+    (80, 80, True), (80.5, 80.5, True), ("90", 90, True), (" 70 ", 70, True), ("62.5", 62.5, True),
+    (150, 100, True), (-5, 0, True), (True, 0, False), (False, 0, False), ("high", 0, False),
+    (None, 0, False), ([90], 0, False), (float("nan"), 0, False),
+])
+def test_confidence_coercion(value, expected, ok):
+    from score_review_chain_eval import coerce_confidence
+    assert coerce_confidence(value) == (expected, ok)
+
+
+def test_string_confidence_counts_at_threshold_and_bad_value_warns(tmp_path):
+    fixtures = tmp_path / "fixtures"
+    write_fixture(fixtures, "one", TRUTH)
+    fps = [finding(file="app/cache.py", summary="ttl", confidence="90"),
+           finding(file="app/cache.py", summary="ttl again", confidence="high")]
+    path = tmp_path / "results.json"
+    path.write_text(json.dumps({"cases": {"one": {"rc": 0, "result": block(fps)}}}))
+    proc = run_score(path, fixtures)
+    assert proc.returncode == 0, proc.stderr
+    assert "false positives: 2 (at or above 75: 1)" in proc.stdout
+    assert "review-chain-eval: warning: fixture one: confidence 'high' is not a number; treated as 0" in proc.stderr
+
+
+@pytest.mark.parametrize("fence", ["```JSON", "```json5", "```Json  ", "```json title=findings"])
+def test_fence_is_case_insensitive_and_tolerates_tag_suffix(fence):
+    text = f"{fence}\n" + json.dumps([finding(summary="x")]) + "\n```\n"
+    findings, blocks = parse_findings(text)
+    assert blocks == 1 and len(findings) == 1
+
+
+def test_last_block_that_parses_as_a_list_is_used():
+    good = block([finding(summary="kept")])
+    text = good + "```json\n{not json\n```\n" + "```json\n{\"a\": 1}\n```\n"
+    findings, blocks = parse_findings(text)
+    assert blocks == 3 and [f["summary"] for f in findings] == ["kept"]
+
+
+def test_unparseable_blocks_mark_fixture_excluded(tmp_path):
+    findings, blocks = parse_findings("```json\n{broken\n```\n")
+    assert findings is None and blocks == 1
+    fixtures = tmp_path / "fixtures"
+    write_fixture(fixtures, "ok", TRUTH)
+    write_fixture(fixtures, "garbled", TRUTH)
+    hit = finding(summary="count_active does not filter deleted rows", confidence=90)
+    results = {"cases": {"ok": {"rc": 0, "result": block([hit])},
+                         "garbled": {"rc": 0, "result": "```json\n[{\"oracle\": \n```\n"}}}
+    totals, lines = score(results, fixtures, threshold=75)
+    assert totals["unparseable"] == 1 and totals["core_unparseable"] == 1
+    assert totals["core"] == 1 and totals["core_caught"] == 1 and totals["errored"] == 0
+    assert any(line.startswith("garbled [core]: UNPARSEABLE") for line in lines)
+    path = tmp_path / "results.json"
+    path.write_text(json.dumps(results))
+    proc = run_score(path, fixtures)
+    assert proc.returncode == 0, proc.stderr
+    assert "core catches: 1/1 (1 unparseable)" in proc.stdout
+    assert "all catches: 1/1 (1 unparseable)" in proc.stdout
+    assert "warning: fixture garbled" in proc.stderr and "unparseable" in proc.stderr
+
+
+def test_warns_on_fixture_without_truth_and_case_without_fixture(tmp_path):
+    fixtures = tmp_path / "fixtures"
+    write_fixture(fixtures, "one", TRUTH)
+    (write_fixture(fixtures, "untruthed", TRUTH) / "truth.json").unlink()
+    path = tmp_path / "results.json"
+    path.write_text(json.dumps({"cases": {"one": {"rc": 0, "result": "no json"}, "stray": {"rc": 0, "result": "x"}}}))
+    proc = run_score(path, fixtures)
+    assert proc.returncode == 0, proc.stderr
+    assert "warning: fixture untruthed has intent.md/diff.patch but no truth.json; not scored" in proc.stderr
+    assert "warning: result case stray has no matching fixture; ignored" in proc.stderr
+
+
+@pytest.mark.parametrize("bad, needle", [
+    (dict(TRUTH, planted={"file": "", "match_any": ["count_active"], "and_any": []}), "planted.file"),
+    (dict(TRUTH, false_positives=[{"file": "app/cache.py", "match_any": [], "and_any": []}]), "false_positives[0].match_any"),
+    (dict(TRUTH, schema_version=True), "schema_version"),
+    (dict(TRUTH, schema_version=1.0), "schema_version"),
+    (dict(TRUTH, schema_version="1"), "schema_version"),
+    (dict(TRUTH, planted={"file": "app/other.py", "match_any": ["count_active"], "and_any": []}), "diff.patch"),
+])
+def test_check_truth_stricter_rules(tmp_path, bad, needle):
+    write_fixture(tmp_path, "bad", bad)
+    errors = check_truth(tmp_path)
+    assert errors and any(needle in e for e in errors), errors
+
+
+def test_check_truth_accepts_planted_file_as_path_suffix(tmp_path):
+    d = write_fixture(tmp_path, "one", TRUTH)
+    (d / "diff.patch").write_text("diff --git a/src/app/stats.py b/src/app/stats.py\n--- a/src/app/stats.py\n+++ b/src/app/stats.py\n")
+    assert check_truth(tmp_path) == []
+
+
+def test_token_totals_per_arm(tmp_path):
+    fixtures = tmp_path / "fixtures"
+    write_fixture(fixtures, "a", TRUTH)
+    write_fixture(fixtures, "b", TRUTH)
+    usage_a = {"input_tokens": 1, "output_tokens": 2, "cache_creation_input_tokens": 3, "cache_read_input_tokens": 4,
+               "output_tokens_details": {"thinking_tokens": 99}}
+    usage_b = {"input_tokens": 10, "output_tokens": 20, "cache_read_input_tokens": True}
+    results = {"cases": {"a": {"rc": 0, "result": "x", "usage": usage_a}, "b": {"rc": 2, "result": "", "usage": usage_b}}}
+    totals, _ = score(results, fixtures, threshold=75)
+    assert totals["tokens"] == 40
+    path = tmp_path / "results.json"
+    path.write_text(json.dumps(results))
+    proc = run_score(path, fixtures)
+    assert proc.returncode == 0, proc.stderr
+    assert "tokens: 40 (input 11, output 22, cache creation 3, cache read 4) over 2 cases" in proc.stdout
+
+
+def test_timeout_rc_is_errored():
+    from score_review_chain_eval import case_error
+    assert case_error({"rc": "timeout", "result": block([])}) == "rc=timeout"
+
+
+# --- runner robustness ---
+
+def custom_stub(tmp_path: Path, body: str, name: str = "claude-custom") -> Path:
+    stub = tmp_path / name
+    stub.write_text("#!/bin/sh\n" + body)
+    stub.chmod(0o755)
+    return stub
+
+
+def run_runner(stub, out, fixtures, *extra):
+    return subprocess.run([sys.executable, RUNNER, "--claude", str(stub), "--model", "m", "--effort", "low",
+                           "--output", str(out), "--fixtures", str(fixtures), *extra], capture_output=True, text=True)
+
+
+OK_BODY = ("if [ \"$1\" = \"--version\" ]; then echo \"1.0 (stub)\"; exit 0; fi\n"
+           "printf '[{\"type\":\"result\",\"result\":\"```json\\\\n[]\\\\n```\",\"usage\":{\"input_tokens\":1}}]'\n")
+
+
+def test_runner_missing_fixtures_dir_fails_before_version(tmp_path):
+    stub, log, _ = make_stub(tmp_path)
+    out = tmp_path / "out.json"
+    proc = run_runner(stub, out, tmp_path / "nope")
+    assert proc.returncode == 1
+    assert proc.stderr.strip() == f"review-chain-eval: fixtures directory not found: {tmp_path / 'nope'}"
+    assert not log.exists() and not out.exists()
+
+
+@pytest.mark.parametrize("version_body", ["echo '1.0'; exit 3", "exit 0"])
+def test_runner_unknown_client_on_bad_version(tmp_path, version_body):
+    fixtures = tmp_path / "fixtures"
+    write_fixture(fixtures, "one", TRUTH)
+    stub = custom_stub(tmp_path, f"if [ \"$1\" = \"--version\" ]; then {version_body}; fi\n" + OK_BODY)
+    out = tmp_path / "out.json"
+    proc = run_runner(stub, out, fixtures)
+    assert proc.returncode == 0, proc.stderr
+    assert json.loads(out.read_text())["client"] == "unknown"
+    assert "review-chain-eval: warning:" in proc.stderr and "--version" in proc.stderr
+
+
+def test_runner_skips_unreadable_fixture(tmp_path):
+    fixtures = tmp_path / "fixtures"
+    write_fixture(fixtures, "one", TRUTH)
+    (write_fixture(fixtures, "binary", TRUTH) / "intent.md").write_bytes(b"\xff\xfe\x00bad")
+    stub = custom_stub(tmp_path, OK_BODY)
+    out = tmp_path / "out.json"
+    proc = run_runner(stub, out, fixtures)
+    assert proc.returncode == 0, proc.stderr
+    notices = [line for line in proc.stdout.splitlines() if "skipping" in line]
+    assert len(notices) == 1 and "binary" in notices[0] and "cannot read" in notices[0]
+    assert sorted(json.loads(out.read_text())["cases"]) == ["one"]
+
+
+def test_runner_timeout_is_recorded_and_scored_as_errored(tmp_path):
+    fixtures = tmp_path / "fixtures"
+    write_fixture(fixtures, "slow", TRUTH)
+    stub = custom_stub(tmp_path, "if [ \"$1\" = \"--version\" ]; then echo 1.0; exit 0; fi\nexec sleep 30\n")
+    out = tmp_path / "out.json"
+    proc = run_runner(stub, out, fixtures, "--timeout", "0.5")
+    assert proc.returncode == 0, proc.stderr
+    case = json.loads(out.read_text())["cases"]["slow"]
+    assert case["rc"] == "timeout" and case["result"] == ""
+    scored = run_score(out, fixtures)
+    assert scored.returncode == 0 and "slow [core]: ERROR (rc=timeout)" in scored.stdout
+
+
+def test_runner_interrupted_keeps_completed_cases_in_partial(tmp_path):
+    fixtures = tmp_path / "fixtures"
+    write_fixture(fixtures, "a-first", TRUTH)
+    (write_fixture(fixtures, "b-second", TRUTH) / "intent.md").write_text("STOP-HERE\n")
+    stub = custom_stub(tmp_path, "case \"$*\" in *STOP-HERE*) kill -9 $PPID; exit 1;; esac\n" + OK_BODY)
+    out = tmp_path / "out.json"
+    proc = run_runner(stub, out, fixtures)
+    assert proc.returncode != 0
+    assert not out.exists()
+    partial = json.loads((tmp_path / "out.json.partial").read_text())
+    assert sorted(partial["cases"]) == ["a-first"]
+
+
+def test_runner_success_removes_partial(tmp_path):
+    fixtures = tmp_path / "fixtures"
+    write_fixture(fixtures, "one", TRUTH)
+    out = tmp_path / "out.json"
+    proc = run_runner(custom_stub(tmp_path, OK_BODY), out, fixtures)
+    assert proc.returncode == 0, proc.stderr
+    assert out.is_file() and not (tmp_path / "out.json.partial").exists()
+
+
+def test_runner_refuses_existing_partial(tmp_path):
+    stub, log, _ = make_stub(tmp_path)
+    out = tmp_path / "out.json"
+    (tmp_path / "out.json.partial").write_text("{}")
+    proc = run_runner(stub, out, tmp_path)
+    assert proc.returncode == 1 and "out.json.partial" in proc.stderr
+    assert not log.exists() and (tmp_path / "out.json.partial").read_text() == "{}"
+
+
+def test_runner_does_not_overwrite_output_that_appeared_during_run(tmp_path):
+    fixtures = tmp_path / "fixtures"
+    write_fixture(fixtures, "one", TRUTH)
+    out = tmp_path / "out.json"
+    stub = custom_stub(tmp_path, f"[ \"$1\" = \"--version\" ] || echo intruder > \"{out}\"\n" + OK_BODY)
+    proc = run_runner(stub, out, fixtures)
+    assert proc.returncode == 1
+    assert out.read_text() == "intruder\n"
+    assert sorted(json.loads((tmp_path / "out.json.partial").read_text())["cases"]) == ["one"]
+    assert "review-chain-eval:" in proc.stderr and "out.json.partial" in proc.stderr
+
+
+def test_runner_fatal_errors_go_to_stderr(tmp_path):
+    stub, _, _ = make_stub(tmp_path)
+    out = tmp_path / "exists.json"
+    out.write_text("{}")
+    proc = run_runner(stub, out, tmp_path)
+    assert proc.returncode == 1 and proc.stderr.startswith("review-chain-eval: refusing to overwrite")
