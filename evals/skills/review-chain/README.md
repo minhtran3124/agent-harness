@@ -16,7 +16,7 @@ fixtures and these two skills*, nothing more. State that scope wherever the numb
 
 ## Fixture layout
 
-Each fixture lives under `fixtures/<name>/` and contains exactly three files:
+Each fixture lives under `fixtures/<name>/` and contains exactly four files:
 
 - **`intent.md`** — a verbatim-style user request (what the user asked for).
 - **`diff.patch`** — a small, self-contained diff that implements `intent.md` with **exactly
@@ -54,14 +54,51 @@ A **run** is:
 
 1. `python3 scripts/run_review_chain_eval.py --model <model> --effort <effort> --output <results.json>`
    runs one blind two-oracle reviewer per fixture (from an empty temp directory, with
-   `intent.md` and `diff.patch` inlined) and writes every raw result to `<results.json>`. It
-   refuses to overwrite an existing output.
+   `intent.md` and `diff.patch` inlined) and writes every raw result to `<results.json>`.
+   - It refuses to overwrite an existing output, or an existing `<results.json>.partial`.
+   - After each fixture it rewrites `<results.json>.partial`, so an interrupted run keeps its
+     completed cases there. At the end it creates `<results.json>` exclusively and removes the
+     `.partial`; if `<results.json>` appeared during the run it is left alone, the run exits 1,
+     and the results stay in the `.partial`.
+   - Each review call is limited by `--timeout` (seconds, default 600); a call that runs out
+     is recorded with `rc: "timeout"`, which the scorer treats as errored.
+   - A fixture whose `intent.md` or `diff.patch` is missing or unreadable is skipped with a
+     one-line notice. If `<claude> --version` fails or prints nothing, the client is recorded
+     as `unknown` with a warning.
 2. `python3 scripts/score_review_chain_eval.py --score <results.json>` reads the reviewer's
-   JSON findings and classifies each one as `planted`, `false_positive` or `other` against the
-   fixture's `truth.json`. A fixture is caught when any finding is `planted`; `oracle_match`
-   says whether that finding came from the expected oracle. It prints per-fixture verdicts and
-   totals (core catches, bonus catches, false positives, false positives at or above
-   `--threshold`, default 75).
+   JSON findings (the last fenced `json` block that parses as a JSON array; the fence tag is
+   case-insensitive and may carry a suffix such as `json5`) and classifies each one as
+   `planted`, `false_positive` or `other` against the fixture's `truth.json`. A fixture is
+   caught when any finding is `planted`; `oracle_match` says whether that finding came from the
+   expected oracle. A non-numeric `confidence` is warned about and treated as 0; numeric values
+   are clamped to 0–100.
+
+The scorer prints, per fixture, a verdict (`CAUGHT`, `MISSED`, `ERROR` or `UNPARSEABLE`), the
+catch confidence, `oracle_match`, and every finding's classification label. It then prints these
+totals:
+
+- **core catches** `n/core` with the oracle-match count, **bonus catches** (non-core fixtures,
+  including the two context-propagation-audit ones), and **all catches**;
+- **false positives**, and how many are at or above `--threshold` (default 75);
+- **other findings**;
+- **unknown findings**, split into `unknown_planted` (a `class: unknown` finding that would have
+  matched the planted defect) and `unknown_clean_correctness` (a `class: unknown` correctness
+  finding on a correctness-clean fixture). These stay counted in *other* and never change catch
+  or false-positive counts; they are printed so the share hidden behind `unknown` is visible;
+- **tokens** — the sum of input, output, cache-creation and cache-read tokens over every
+  recorded case in the run (errored cases included, since they were paid for), with the four
+  parts listed. This is the scripted path's **approximate token cost per pass**.
+
+A fixture whose run errored (non-zero `rc`, `rc: "timeout"`, or no output) or whose reply has
+`json` blocks but none that parses as a JSON array is **excluded from the totals**, flagged on
+stderr, and counted in the `(n errored, n unparseable)` note beside the catch totals. The scorer
+also warns about a fixture directory with `intent.md`/`diff.patch` but no `truth.json`, and
+about a result case with no matching fixture.
+
+The scripted runner does **not** isolate user-level MCP servers or settings: the reviewer starts
+with whatever the invoking user's client configuration loads. Per-case token usage can therefore
+include ambient context unrelated to the fixture, so compare token totals only between runs made
+under the same client configuration.
 
 The scripted prompt asks the reviewer for structured JSON findings, unlike the free-form output
 of the 2026-10-02 Opus 5 vs 5.5 A/B (PR #246), so scripted numbers are **not comparable** with
@@ -78,9 +115,10 @@ scorer's totals into it, stating that it came from the scripted path.
 ## Fixture revisions
 
 Fixtures are versioned by the honesty rule that each carries **exactly one planted defect** for
-the *expected* oracle. When a fixture is found to carry an unintended defect for the *other*
-oracle, it is revised — the planted defect is preserved, the unintended one removed — and the
-revision is recorded here. Past result files state which fixture version they measured.
+the *expected* oracle, and that its answer key is answerable from the fixture's own files. When
+a fixture is found to carry an unintended defect for the *other* oracle, or an answer key that
+depends on something outside the fixture, it is revised — the planted defect is preserved, the
+unintended defect or outside dependency removed — and the revision is recorded here. Past result files state which fixture version they measured.
 
 - **v4 (2026-10-02)** — two fixtures made answerable from their own files, surfaced by the
   2026-10-02 Opus 5 vs 5.5 A/B. Earlier results on `intent-gap` and `soft-delete-filter` are
@@ -97,6 +135,10 @@ revision is recorded here. Past result files state which fixture version they me
     repository reads exclude them, and `truth.md` cites `intent.md` instead. Because the request
     now states the convention, `/intent-review` can also catch the missing filter; the scorer
     counts that as caught with `oracle_match` false. The planted defect is unchanged.
+    Consequence: the defect class this fixture used to probe — **inferring a repo convention
+    that neither the request nor the diff states** — is no longer measured by any fixture in
+    this set. That is unmeasured, not handled (`not_observed != absent`); it is a candidate for
+    a separate future fixture whose convention is stated in a file shipped with the fixture.
 - **v3 (2026-07-15)** — two answer-key corrections surfaced by the 2026-07-13/07-14 runs and
   adjudicated by the fixture owner (issues #58, #59). Prior runs' numbers on `intent-gap` and
   `none-deref` are **not comparable across this revision** — re-baseline before trending against
