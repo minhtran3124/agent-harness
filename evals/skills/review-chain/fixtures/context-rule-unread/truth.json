@@ -1,0 +1,29 @@
+{
+    "schema_version": 1,
+    "expected_oracle": "context-propagation-audit",
+    "core": false,
+    "correctness_clean": true,
+    "planted": {
+        "file": "skills/demo-dispatch/worker-prompt.md",
+        "match_any": [
+            "auto-correct-scope",
+            "rule file",
+            "rule text",
+            "rule 1",
+            "rule 4"
+        ],
+        "and_any": [
+            "read",
+            "load",
+            "deliver",
+            "path-scoped",
+            "paths:",
+            "isolated",
+            "not available",
+            "cannot see",
+            "never see",
+            "inline"
+        ]
+    },
+    "false_positives": []
+}

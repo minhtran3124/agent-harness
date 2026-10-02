@@ -1,0 +1,47 @@
+{
+    "schema_version": 1,
+    "expected_oracle": "correctness",
+    "core": true,
+    "correctness_clean": false,
+    "planted": {
+        "file": "app/repositories/watchlist_repository.py",
+        "match_any": [
+            "deleted_at",
+            "soft-delete",
+            "soft delete",
+            "soft_delete",
+            "is_(none)"
+        ],
+        "and_any": [
+            "missing",
+            "no filter",
+            "not filter",
+            "no `deleted_at`",
+            "no deleted_at",
+            "without",
+            "never",
+            "omit",
+            "returns soft-deleted",
+            "returns deleted",
+            "still returns",
+            "include",
+            "is_(none)",
+            "is null",
+            "exclude"
+        ]
+    },
+    "false_positives": [
+        {
+            "file": "app/repositories/watchlist_repository.py",
+            "match_any": [
+                "order_by",
+                "ordering",
+                "created_at",
+                "n+1",
+                "unbounded",
+                "paginat"
+            ],
+            "and_any": []
+        }
+    ]
+}

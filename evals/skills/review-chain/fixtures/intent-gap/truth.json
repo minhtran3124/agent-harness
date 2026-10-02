@@ -1,0 +1,68 @@
+{
+    "schema_version": 1,
+    "expected_oracle": "intent",
+    "core": true,
+    "correctness_clean": true,
+    "planted": {
+        "file": "app/routers/watchlists.py",
+        "match_any": [
+            "update_watchlist",
+            "put /watchlists",
+            "update endpoint",
+            "update-watchlist",
+            "update path",
+            "update handler",
+            "watchlistupdate"
+        ],
+        "and_any": [
+            "empty",
+            "blank",
+            "whitespace",
+            "strip",
+            "validat",
+            "400",
+            "badrequest"
+        ]
+    },
+    "false_positives": [
+        {
+            "file": "app/routers/watchlists.py",
+            "match_any": [
+                "user_id=current_user.id",
+                "owner",
+                "404",
+                "notfound",
+                "not found"
+            ],
+            "and_any": [
+                "excess",
+                "scope",
+                "not requested",
+                "unrequested",
+                "not asked",
+                "beyond",
+                "unrelated"
+            ]
+        },
+        {
+            "file": "app/routers/watchlists.py",
+            "match_any": [
+                "create_watchlist",
+                "post /watchlists",
+                "create endpoint",
+                "create path"
+            ],
+            "and_any": [
+                "excess",
+                "scope",
+                "not requested",
+                "unrequested",
+                "not asked",
+                "beyond",
+                "unrelated",
+                "wrong",
+                "incorrect"
+            ]
+        }
+    ]
+}

@@ -1,0 +1,66 @@
+{
+    "schema_version": 1,
+    "expected_oracle": "correctness",
+    "core": true,
+    "correctness_clean": false,
+    "planted": {
+        "file": "app/routers/user_email.py",
+        "match_any": [
+            "get_by_id",
+            "user.email",
+            "none",
+            "optional",
+            "attributeerror",
+            "unguarded",
+            "not found",
+            "notfound",
+            "null"
+        ],
+        "and_any": [
+            "attributeerror",
+            "nonetype",
+            "dereference",
+            "deref",
+            "unguarded",
+            "unchecked",
+            "is none",
+            "none check",
+            "not found",
+            "notfound",
+            "404",
+            "500",
+            "crash",
+            "server error",
+            "may be none",
+            "can be none",
+            "could be none",
+            "optional[user]",
+            "on the get_by_id result",
+            "unknown id"
+        ]
+    },
+    "false_positives": [
+        {
+            "file": "app/routers/user_email.py",
+            "match_any": [
+                "idor",
+                "bola",
+                "cross-user",
+                "another user",
+                "any user",
+                "require_admin",
+                "admin"
+            ],
+            "and_any": []
+        },
+        {
+            "file": "app/routers/user_email.py",
+            "match_any": [
+                "response schema",
+                "response_model",
+                "useremailresponse"
+            ],
+            "and_any": []
+        }
+    ]
+}
