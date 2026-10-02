@@ -39,20 +39,22 @@ The n = 3 Opus 5 vs 5.5 A/B showed that two fixtures, not the models, produced a
 
 ### Deviations
 
-- none
+- Rule 2 — runner refuses to start when its own per-run partial name is taken; a missing `confidence` is warned and treated as 0 (round 1–2 fixes).
+- Rule 2 — skipped/incomplete fixtures recorded as `rc: "skipped"` and excluded from totals (round 2).
+- Rule 1 — existing tests updated where they encoded the replaced behaviour (rounds 1–3).
 
 ### Verify
 
 | Check | Command | Exit | Notes | Criterion |
 | --- | --- | --- | --- | --- |
-| `intent-gap` request states that only the owner may update a watchlist | `grep -q "Only the owner of a watchlist may update it" evals/skills/review-chain/fixtures/intent-gap/intent.md` | 0 | re-run by controller at 57b12e3 | SC-1 |
-| `intent-gap` request states the not-found case | `grep -q "returns 404" evals/skills/review-chain/fixtures/intent-gap/intent.md` | 0 | re-run by controller at 57b12e3 | SC-2 |
-| `soft-delete-filter` request states the soft-delete convention | `grep -q "deleted_at" evals/skills/review-chain/fixtures/soft-delete-filter/intent.md` | 0 | re-run by controller at 57b12e3 | SC-3 |
-| `soft-delete-filter` answer key no longer cites the removed stack profile | `grep -q "templates/stacks" evals/skills/review-chain/fixtures/soft-delete-filter/truth.md` | 1 | re-run by controller at 57b12e3 | SC-4 |
-| Every fixture has a schema-valid `truth.json` | `python3 scripts/score_review_chain_eval.py --check-truth evals/skills/review-chain/fixtures` | 0 | re-run by controller at 57b12e3 | SC-5 |
-| Scorer and runner unit tests pass (classification, normalisation, oracle match, missing JSON block, malformed truth, runner with a stub `claude`) | `python3 -m pytest scripts/test_score_review_chain_eval.py -q` | 0 | re-run by controller at 57b12e3 | SC-6 |
-| Runner refuses to overwrite an existing output before calling any model | `python3 scripts/run_review_chain_eval.py --claude false --model x --effort low --output scripts/run-tests.sh` | 1 | re-run by controller at 57b12e3 | SC-7 |
-| README records fixture revision v4 | `grep -q "v4 (2026-10-02)" evals/skills/review-chain/README.md` | 0 | re-run by controller at 57b12e3 | SC-8 |
+| `intent-gap` request states that only the owner may update a watchlist | `grep -q "Only the owner of a watchlist may update it" evals/skills/review-chain/fixtures/intent-gap/intent.md` | 0 | re-run by controller at 8f4d368 | SC-1 |
+| `intent-gap` request states the not-found case | `grep -q "returns 404" evals/skills/review-chain/fixtures/intent-gap/intent.md` | 0 | re-run by controller at 8f4d368 | SC-2 |
+| `soft-delete-filter` request states the soft-delete convention | `grep -q "deleted_at" evals/skills/review-chain/fixtures/soft-delete-filter/intent.md` | 0 | re-run by controller at 8f4d368 | SC-3 |
+| `soft-delete-filter` answer key no longer cites the removed stack profile | `grep -q "templates/stacks" evals/skills/review-chain/fixtures/soft-delete-filter/truth.md` | 1 | re-run by controller at 8f4d368 | SC-4 |
+| Every fixture has a schema-valid `truth.json` | `python3 scripts/score_review_chain_eval.py --check-truth evals/skills/review-chain/fixtures` | 0 | re-run by controller at 8f4d368 | SC-5 |
+| Scorer and runner unit tests pass (classification, normalisation, oracle match, missing JSON block, malformed truth, runner with a stub `claude`) | `python3 -m pytest scripts/test_score_review_chain_eval.py -q` | 0 | re-run by controller at 8f4d368 | SC-6 |
+| Runner refuses to overwrite an existing output before calling any model | `python3 scripts/run_review_chain_eval.py --claude false --model x --effort low --output scripts/run-tests.sh` | 1 | re-run by controller at 8f4d368 | SC-7 |
+| README records fixture revision v4 | `grep -q "v4 (2026-10-02)" evals/skills/review-chain/README.md` | 0 | re-run by controller at 8f4d368 | SC-8 |
 
 ### Not auto-verified
 
@@ -63,6 +65,23 @@ The n = 3 Opus 5 vs 5.5 A/B showed that two fixtures, not the models, produced a
 
 - Task 1.2: runner `--fixtures` on a missing directory raises a traceback; a result with no matching fixture is ignored silently; the not-run warning loop re-derives the fixture list; runner fatal errors print to stdout.
 - Task 1.1: `none-deref` planted keeps generic terms (`none`, `optional`) and outcome words that a schema FP mentioning a 500 could still satisfy; `missing-await` has `coroutine` in both gates; phrase-shaped `and_any` may miss terse correct catches ("await is missing").
+
+### Correctness Review
+
+Six plan-blind finder angles over 8ee2609..a1f55b0; 11 deduplicated locations scored by independent Opus scorers (threshold 75).
+
+- **Fixed (score 75):** errored reviewer calls scored as plain misses; answer-key precision (soft-delete-filter empty `and_any`, excess-scope `request`, none-deref / missing-await recall). Commit `807876e`.
+- **Human decisions (Rule 4):** `unknown` findings → separate reported bucket, catch/FP counts unchanged; soft-delete-filter v4 → README records the unstated-convention class as not measured. Commit `5e4f167`, `8c15f17`.
+- **Advisory (score 50), fixed by human choice:** runner robustness, scorer hardening (confidence coercion, fence parsing, drop warnings, stricter `--check-truth` wired into `run-tests.sh`, token totals), README. Commits `5e4f167`, `8c15f17`.
+- **Advisory (score 50), not fixed by human choice:** runner does not isolate user-level MCP/settings context (~96% of tokens are cache tokens); documented in README.
+- **Fix-loop re-reviews:** round 1 re-review (a1f55b0..660739d) found 11 issues incl. 3 regressions → fixed in `c092491`; round 2 re-review (660739d..9e32f2c) confirmed all 11, found 8 smaller issues (3 P2, 5 P3) → fixed in `8f4d368` (round 3, the cap). Round 3 was verified by the controller (117 scorer tests, full suite, targeted probes for each of the 8 findings), not by a further independent re-review.
+
+### Intent Findings
+
+Plan-blind intent review of 8ee2609..660739d: no gap; clauses 1, 2, 4 and the three human decisions satisfied.
+- drift, equivalent — advisory: answer keys live in `truth.json`, not `truth.md` as the request phrased it; the two are kept in step by hand.
+- excess — not excess on inspection: the `--check-truth` step in `run-tests.sh` was explicitly part of the "Scorer hardening" option the user selected.
+- drift, equivalent — advisory: `results/2026-10-02-v4-scripted.md` references `2026-10-02-opus-5-5-ab.md`, which ships in PR #246 — merge #246 first.
 
 ### Rollback
 

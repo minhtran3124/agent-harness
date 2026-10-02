@@ -1,6 +1,6 @@
 ---
 slug: eval-review-chain-scoring
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-10-02
 ---
@@ -119,3 +119,4 @@ fixtures and replaces LLM grading with a deterministic scorer over structured re
 - 2026-10-02 — plan written.
 - 2026-10-02 — tasks 1.1, 1.2 complete; commits 3f22ce8, dbabaf8 (1.1 + fix), a50b05f, 57b12e3 (1.2 + fix); task reviews pass/approved after one fix round each (Minor findings recorded).
 - 2026-10-02 — task 2.1 complete; --check-truth on the final scorer exits 0 with no truth.json change needed; no commit.
+- 2026-10-02 — shipped: correctness review (2 fixed at 75, human decisions applied, 3 fix-loop rounds), intent review no gap; run-tests.sh ALL GREEN; PR opened for human review.
