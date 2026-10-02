@@ -1,0 +1,12 @@
+{
+  "created_at": "2026-10-02T06:16:25Z",
+  "last_event_id": "07a1e321-268b-451f-8b98-49b70ae95b33",
+  "resume_event": null,
+  "run_id": "fc8d7ff4-85e6-4cb6-94e2-ddefc5183790",
+  "seq": 5,
+  "sha": null,
+  "slug": "opus-5-5-review-bindings",
+  "state": "verifying",
+  "updated_at": "2026-10-02T06:42:48Z",
+  "waiting_on": null
+}
