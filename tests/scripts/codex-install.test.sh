@@ -111,10 +111,14 @@ if [ "$(shasum -a 256 "$TARGET/.codex/config.toml")" = "$CONFIG_BEFORE" ] \
    && grep -q user-marketplace "$TARGET/.agents/plugins/marketplace.json"; then pass
 else fail "one or more user-owned canaries changed"; fi
 
+RENDERED=$(new_dir)
+python3 "$ROOT/scripts/render_codex_adapter.py" --root "$ROOT" --output "$RENDERED/out" >/dev/null
 t "deployment manifest lists exact project ownership and no user canaries"
-if python3 - "$TARGET/.codex/.agent-harness/deployment-manifest.json" <<'PY'
+if python3 - "$TARGET/.codex/.agent-harness/deployment-manifest.json" "$RENDERED/out/render-manifest.json" <<'PY'
 import json, pathlib, sys
 data = json.loads(pathlib.Path(sys.argv[1]).read_text())
+payload = json.loads(pathlib.Path(sys.argv[2]).read_text())["payload"]
+assert payload
 paths = set(data["project_files"])
 assert paths == {
     ".codex/agents/coding.toml",
@@ -122,10 +126,16 @@ assert paths == {
     ".codex/agents/task-reviewer.toml",
     ".codex/agents/test-runner.toml",
     ".codex/harness-instructions.md",
-}
+} | {".codex/.agent-harness/payload/" + item for item in payload}
 assert ".codex/config.toml" not in paths
 PY
 then pass; else fail "manifest inventory is not exact"; fi
+
+t "install writes the payload and records it in project_files"
+if [ -f "$TARGET/.codex/.agent-harness/payload/scripts/verify_summary.py" ] \
+   && grep -qF '".codex/.agent-harness/payload/scripts/verify_summary.py"' \
+     "$TARGET/.codex/.agent-harness/deployment-manifest.json"; then pass
+else fail "payload helper missing or not manifest-owned"; fi
 
 FIRST_SNAPSHOT=$(snapshot "$TARGET")
 run_install "$TARGET" "$FAKE" --yes
@@ -307,6 +317,11 @@ if [ "$RC" -eq 0 ] \
    && ! grep -q 'agent-harness:' "$TARGET/AGENTS.md"; then pass
 else fail "managed cleanup incomplete: $OUT"; fi
 
+t "removal leaves no empty directory under .codex"
+EMPTY_DIRS=$(find "$TARGET/.codex" -type d -empty)
+if [ -z "$EMPTY_DIRS" ]; then pass
+else fail "empty directories remain: $EMPTY_DIRS"; fi
+
 t "removal preserves every user-owned canary and original AGENTS.md prose"
 if [ "$(shasum -a 256 "$TARGET/.codex/config.toml")" = "$CONFIG_BEFORE" ] \
    && [ -f "$TARGET/.codex/agents/custom.toml" ] \
@@ -319,5 +334,44 @@ t "removal invokes only the harness plugin and marketplace removal commands"
 if grep -qF 'plugin remove agent-harness@agent-harness-local --json' "$FAKE/codex.log" \
    && grep -qF 'plugin marketplace remove agent-harness-local --json' "$FAKE/codex.log"; then pass
 else fail "removal lifecycle missing from CLI log"; fi
+
+PAYLOAD_TARGET=$(new_dir)
+PAYLOAD_FAKE=$(new_dir)
+make_fake_codex "$PAYLOAD_FAKE"
+PAYLOAD="$PAYLOAD_TARGET/.codex/.agent-harness/payload"
+run_install "$PAYLOAD_TARGET" "$PAYLOAD_FAKE" --yes
+printf 'LOCAL PAYLOAD EDIT\n' > "$PAYLOAD/rules/behavior.md"
+run_install "$PAYLOAD_TARGET" "$PAYLOAD_FAKE" --yes
+t "edited payload file is preserved with a reviewable incoming sidecar"
+if [ "$RC" -eq 0 ] \
+   && grep -qF 'LOCAL PAYLOAD EDIT' "$PAYLOAD/rules/behavior.md" \
+   && [ -s "$PAYLOAD/rules/behavior.md.harness-incoming" ] \
+   && ! grep -qF 'LOCAL PAYLOAD EDIT' "$PAYLOAD/rules/behavior.md.harness-incoming"; then pass
+else fail "payload conflict policy failed: $OUT"; fi
+
+RETIRED_SOURCE=$(new_dir)
+cp -R "$ROOT/." "$RETIRED_SOURCE/"
+rm "$RETIRED_SOURCE/skills/using-git-worktrees/scripts/detect-isolation.sh"
+OUT=$(FAKE_CODEX_LOG="$PAYLOAD_FAKE/codex.log" \
+  FAKE_CODEX_FAIL_MARKER="$PAYLOAD_FAKE/fail-once" \
+  PATH="$PAYLOAD_FAKE/bin:$PATH" \
+  bash "$INSTALL" --source "$RETIRED_SOURCE" --directory "$PAYLOAD_TARGET" \
+    --codex-bin "$PAYLOAD_FAKE/bin/codex" --codex-home "$PAYLOAD_FAKE/home" --yes 2>&1)
+RC=$?
+t "retired payload file is pruned along with its empty directory"
+if [ "$RC" -eq 0 ] \
+   && [ ! -e "$PAYLOAD/skills/using-git-worktrees" ] \
+   && [ -f "$PAYLOAD/scripts/verify_summary.py" ] \
+   && ! grep -qF 'detect-isolation.sh' "$PAYLOAD_TARGET/.codex/.agent-harness/deployment-manifest.json"; then pass
+else fail "retired payload path survived: $OUT"; fi
+
+run_install "$PAYLOAD_TARGET" "$PAYLOAD_FAKE" --remove --yes
+t "removal keeps an edited payload file and deletes unchanged payload files"
+if [ "$RC" -eq 0 ] \
+   && grep -qF 'LOCAL PAYLOAD EDIT' "$PAYLOAD/rules/behavior.md" \
+   && [ ! -e "$PAYLOAD/rules/behavior.md.harness-incoming" ] \
+   && [ ! -e "$PAYLOAD/scripts" ] \
+   && [ -z "$(find "$PAYLOAD_TARGET/.codex" -type d -empty)" ]; then pass
+else fail "edited payload removal policy failed: $OUT"; fi
 
 finish
