@@ -161,10 +161,11 @@ LANE=$(hook_lib_resolve_lane "$REPO_DIR" "$STAGED_PATHS")
 LANE_VAL=$(echo "$LANE" | tr 'A-Z' 'a-z' | grep -oE 'tiny|normal|high-risk' | head -1)
 
 # The lane/evidence helper. The harness repo keeps it at scripts/; a CONSUMER repo receives the
-# deployed copy at .claude/scripts/. Empty when neither exists — lane evidence and the Verify
+# deployed copy at .claude/scripts/; a Codex install ships it in the payload at
+# .codex/.agent-harness/payload/scripts/. Empty when none exists — lane evidence and the Verify
 # re-run stay fail-open on that.
 VERIFY_SUMMARY=""
-for _vs_cand in scripts/verify_summary.py .claude/scripts/verify_summary.py; do
+for _vs_cand in scripts/verify_summary.py .claude/scripts/verify_summary.py .codex/.agent-harness/payload/scripts/verify_summary.py; do
   if [ -f "$_vs_cand" ]; then VERIFY_SUMMARY="$_vs_cand"; break; fi
 done
 
@@ -288,7 +289,7 @@ check_lane_evidence() {
     fi
     echo "[COMMIT GATE] Lane evidence... PASSED" >&2
   else
-    echo "[COMMIT GATE] Lane evidence skipped: python3 or verify_summary.py unavailable (looked in scripts/ and .claude/scripts/)." >&2
+    echo "[COMMIT GATE] Lane evidence skipped: python3 or verify_summary.py unavailable (looked in scripts/, .claude/scripts/ and .codex/.agent-harness/payload/scripts/)." >&2
   fi
 }
 
@@ -630,7 +631,7 @@ check_app_gates() {
         fi
         echo "[COMMIT GATE] Evidence (### Verify re-run)... PASSED" >&2
       else
-        echo "[COMMIT GATE] Evidence re-run skipped: python3 or verify_summary.py unavailable (scripts/, .claude/scripts/) — presence check only." >&2
+        echo "[COMMIT GATE] Evidence re-run skipped: python3 or verify_summary.py unavailable (scripts/, .claude/scripts/, .codex/.agent-harness/payload/scripts/) — presence check only." >&2
       fi
     fi
   fi

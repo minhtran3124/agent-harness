@@ -251,15 +251,16 @@ else fail "expected <=5 distinct slugs in output, got $_count — out: $(echo "$
 
 # --- Cached Codex runtime diagnosis (Phase 5.4) -------------------------------
 
+# make_runtime_record <repo> [runtime-dir] — runtime-dir is repo-relative (default runtime).
 make_runtime_record() {
-    local repo="$1"
-    mkdir -p "$repo/runtime"
-    cp "$ROOT/runtime/runtime_mode.py" "$repo/runtime/"
-    python3 - "$repo" <<'PY'
+    local repo="$1" rdir="${2:-runtime}"
+    mkdir -p "$repo/$rdir"
+    cp "$ROOT/runtime/runtime_mode.py" "$repo/$rdir/"
+    python3 - "$repo" "$rdir" <<'PY'
 import sys
 from pathlib import Path
 root = Path(sys.argv[1])
-sys.path.insert(0, str(root / "runtime"))
+sys.path.insert(0, str(root / sys.argv[2]))
 import runtime_mode
 fingerprint = runtime_mode.make_fingerprint(
     root, cli_version="0.147.0", trust={"hooks": "unknown"}
@@ -284,6 +285,15 @@ if [ "$RC" -ne 0 ]; then fail "rc=$RC (want 0)"
 elif ! printf '%s' "$OUT" | jq -e . >/dev/null 2>&1; then fail "output is not valid JSON"
 elif ! echo "$OUT" | grep -q 'mode=advisory'; then fail "runtime mode missing"
 elif ! echo "$OUT" | grep -q 'codex-mode-'; then fail "runtime evidence id missing"
+else pass; fi
+
+t "runtime mode renders from the Codex payload copy when it is the only one"
+repo=$(new_repo $H)
+make_runtime_record "$repo" ".codex/.agent-harness/payload/runtime"
+run_hook "$repo" $H "" RUN_STATE_REPO_ROOT="$repo" SESSION_KNOWLEDGE_DIR="$repo/missing-kb"
+if [ "$RC" -ne 0 ]; then fail "rc=$RC (want 0)"
+elif [ -e "$repo/runtime/runtime_mode.py" ] || [ -e "$repo/.claude/runtime/runtime_mode.py" ]; then fail "fixture leaked a non-Codex runtime_mode.py"
+elif ! echo "$OUT" | grep -q 'mode=advisory'; then fail "runtime mode missing — out: $(echo "$OUT" | head -3)"
 else pass; fi
 
 t "changed local config invalidates cached enforcement to advisory context"

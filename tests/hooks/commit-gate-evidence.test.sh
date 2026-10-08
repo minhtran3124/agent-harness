@@ -136,6 +136,20 @@ assert_rc_contains 2 "Lane evidence... FAILED"
 t "the block names the real SUMMARY path, not the temp file"
 assert_rc_contains 2 "specs/demo/SUMMARY.md"
 
+# codex_lane_repo → a repo whose ONLY verify_summary.py is the Codex payload copy
+codex_lane_repo() {
+  local r; r=$(new_repo $H)
+  mkdir -p "$r/.codex/.agent-harness/payload/scripts"
+  cp "$LANE_PY" "$r/.codex/.agent-harness/payload/scripts/"
+  echo "$r"
+}
+
+t "Codex payload verify_summary.py runs lane evidence (placeholder-only normal lane → BLOCKED)"
+repo=$(codex_lane_repo)
+stage "$repo" "specs/demo/SUMMARY.md" "$LANE_NORMAL_BAD"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 2 "Lane evidence... FAILED"
+
 t "normal lane with a real ### Verify row → PASSES"
 repo=$(lane_repo)
 stage "$repo" "specs/demo/SUMMARY.md" "$LANE_NORMAL_OK"
