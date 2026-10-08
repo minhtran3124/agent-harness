@@ -107,7 +107,7 @@ Seven findings scored below threshold. The user chose (2026-10-08) to fix the ch
 
 Intent review (plan-blind) over `b0d2a92..cd40d91`: no gaps; SC-1..SC-6 each have a passing Criterion row. Six findings, routed:
 
-- **#3 excess → fixed (`95fc3c4`).** The template header said "do not leave a required section empty", which read as making all twelve sections mandatory. Design §5 keeps the base sections free-form and requires only the four new ones; the header now says exactly that.
+- **#3 excess → fixed (`95fc3c4`).** The template header said "do not leave a required section empty", which read as making all twelve sections mandatory. Design §5 keeps the base sections free-form and requires only the four new ones; the header now says exactly that. A re-check of `95fc3c4` found the header said four required sections while `Decision changes` is omitted while empty; `bbba32d` names the three required ones.
 - **#1 drift (minor), recorded.** *Evidence now* uses `none yet` where #258 item 1 wrote "or prediction". Deliberate: design D6 (the user approved the design; `prediction` stays a number label only, and §5.1 states the departure from #258).
 - **#2 drift (stricter), recorded.** Reopening a settled decision *after approval* is a Rule 4 STOP before the `DC<n>`. The user chose this explicitly: the "Pointer in every design" option (2026-10-08) named "Rule 4 STOP, then add DC<n> + new D<n>…"; design D10. Before approval, rows are drafts and edit freely.
 - **#4 excess (partly traceable), report-only.** `### Assumption coverage` in PLAN Risks + plan-reviewer row. The user chose it at brainstorming ("Yes, in writing-plans", 2026-10-08) to make item 1's "Proven by" checkable; design D7.
