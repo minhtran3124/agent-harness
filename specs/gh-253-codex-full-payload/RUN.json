@@ -1,0 +1,12 @@
+{
+  "created_at": "2026-10-08T07:29:42Z",
+  "last_event_id": "f840d3b6-5306-4712-bff1-17024147089e",
+  "resume_event": null,
+  "run_id": "258007e2-e8b5-433e-bb42-a29a0796b879",
+  "seq": 3,
+  "sha": null,
+  "slug": "gh-253-codex-full-payload",
+  "state": "planning",
+  "updated_at": "2026-10-08T07:29:48Z",
+  "waiting_on": null
+}
