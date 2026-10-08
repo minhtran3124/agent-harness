@@ -30,7 +30,7 @@ required brief is missing. If the scope contains independent subsystems, propose
    genuinely independent work.
 5. When `design.md` has a `## What must be true` section, first write `### Assumption coverage` in
    `## 5. Risks`, after the risk bullets with a blank line (start Risks with `- none` when there
-   are no risks): `render_plan.py` cards only the first bullet list. Give each design `A<n>` one
+   are no risks): the plan renderer cards only the first bullet list. Give each design `A<n>` one
    line: `- A<n> → SC-n`, `- A<n> → Task x.y`, `- A<n> → accepted risk: <reason>`, or
    `- A<n> → retired by DC<n>` when the design retired it; write
    `- none (design has no assumptions)` when that section is `- none — <reason>`. Check that every
