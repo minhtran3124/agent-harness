@@ -7,35 +7,40 @@
 set -u
 cd "$(dirname "$0")/.." || exit 1
 FAILED=0
+# Every failure is also recorded here and reprinted at the end, so a red run names what
+# failed instead of leaving it to be found in ~1000 lines of output.
+FAILED_STEPS=()
+fail() { FAILED=1; FAILED_STEPS+=("$1"); }
+STEP_LOG="$(mktemp)"
 
 echo "== L1: syntax =="
 for f in hooks/*.sh scripts/*.sh tests/lib.sh tests/*/*.test.sh; do
-  bash -n "$f" || { echo "  ✗ syntax: $f"; FAILED=1; }
+  bash -n "$f" || { echo "  ✗ syntax: $f"; fail "syntax: $f"; }
 done
 echo "  ✓ bash -n clean"
 
 echo "== L1: doc-truth lint =="
-bash scripts/lint-doc-truth.sh || FAILED=1
+bash scripts/lint-doc-truth.sh || fail "scripts/lint-doc-truth.sh"
 
 echo "== L1: skill-bash lint =="
-bash scripts/lint-skill-bash.sh || FAILED=1
+bash scripts/lint-skill-bash.sh || fail "scripts/lint-skill-bash.sh"
 
 echo "== L1: hook repo-root source =="
-bash scripts/check-hook-root-source.sh || FAILED=1
+bash scripts/check-hook-root-source.sh || fail "scripts/check-hook-root-source.sh"
 
 echo "== L1: plugin validate (skills + agents frontmatter) =="
-bash scripts/check-plugin-validate.sh || FAILED=1
+bash scripts/check-plugin-validate.sh || fail "scripts/check-plugin-validate.sh"
 
 echo "== L1: skill allowed-tools =="
-bash scripts/check-allowed-tools.sh || FAILED=1
+bash scripts/check-allowed-tools.sh || fail "scripts/check-allowed-tools.sh"
 
 echo "== L1: manifest consistency =="
 if command -v python3 >/dev/null 2>&1; then
-  python3 scripts/check_manifest.py || FAILED=1
-  python3 scripts/check_frontmatter_contract.py || FAILED=1
-  python3 scripts/check_skill_tool_conformance.py || FAILED=1
-  python3 scripts/check_gate_modes_smoke.py || FAILED=1
-  python3 scripts/check_slim_surface.py || FAILED=1
+  python3 scripts/check_manifest.py || fail "scripts/check_manifest.py"
+  python3 scripts/check_frontmatter_contract.py || fail "scripts/check_frontmatter_contract.py"
+  python3 scripts/check_skill_tool_conformance.py || fail "scripts/check_skill_tool_conformance.py"
+  python3 scripts/check_gate_modes_smoke.py || fail "scripts/check_gate_modes_smoke.py"
+  python3 scripts/check_slim_surface.py || fail "scripts/check_slim_surface.py"
 else
   echo "  skip — no python3"
 fi
@@ -45,7 +50,7 @@ echo "== L1: runtime-neutral sources =="
 # if something re-runs it on every change. A hook-test edit in one phase silently broke
 # another phase's SC when this ran nowhere in CI (found in the phases-1-4 branch review).
 if command -v python3 >/dev/null 2>&1 && [ -f scripts/check_runtime_neutral_sources.py ]; then
-  python3 scripts/check_runtime_neutral_sources.py --root . || FAILED=1
+  python3 scripts/check_runtime_neutral_sources.py --root . || fail "scripts/check_runtime_neutral_sources.py"
 else
   echo "  skip — no python3 or checker not present"
 fi
@@ -60,7 +65,7 @@ echo "== L1: verify-row lint (changed SUMMARY/PLAN only) =="
 # `test` job is the other half of that fix. Every skip below names its reason —
 # distinguishing "no base to compare against" from "compared and found nothing" is the
 # whole point, since that ambiguity is what let the original bug report green.
-TMP_POST_CUTOFF="$(mktemp)"; trap 'rm -f "$TMP_POST_CUTOFF"' EXIT
+TMP_POST_CUTOFF="$(mktemp)"; trap 'rm -f "$TMP_POST_CUTOFF" "$STEP_LOG"' EXIT
 BASE_OUT="$(bash scripts/resolve-base-ref.sh 2>&1)"; BASE_RC=$?
 if [ "$BASE_RC" -ne 0 ]; then
   echo "  skip — $BASE_OUT"
@@ -74,7 +79,7 @@ else
   changed="$(git diff --name-only "$BASE_OUT"...HEAD -- 'specs/*/SUMMARY.md' 'specs/*/PLAN.md')"; diff_rc=$?
   if [ "$diff_rc" -ne 0 ]; then
     echo "  ✗ git diff against '$BASE_OUT' failed (rc=$diff_rc) — scope unknown, not treating as clean"
-    FAILED=1
+    fail "verify-row lint: git diff against $BASE_OUT failed"
   elif [ -n "$changed" ]; then
     # GRANDFATHER CUTOFF. The changed-file set is the ONLY thing that keeps this lint off
     # already-shipped specs (check_verify_rows.py: "does not retroactively police
@@ -96,7 +101,7 @@ else
       echo "  note — grandfather cutoff $CUTOFF absent (shallow clone?); linting the full changed set"
     fi
     if [ -n "$changed" ]; then
-      printf '%s\n' "$changed" | python3 scripts/check_verify_rows.py || FAILED=1
+      printf '%s\n' "$changed" | python3 scripts/check_verify_rows.py || fail "scripts/check_verify_rows.py"
     else
       echo "  skip — no SUMMARY.md/PLAN.md changed since the grandfather cutoff"
     fi
@@ -108,7 +113,12 @@ fi
 for suite in tests/hooks/*.test.sh tests/scripts/*.test.sh; do
   echo ""
   echo "== $suite =="
-  bash "$suite" || FAILED=1
+  bash "$suite" 2>&1 | tee "$STEP_LOG"
+  if [ "${PIPESTATUS[0]}" -ne 0 ]; then
+    fail "$suite"
+    while IFS= read -r line; do FAILED_STEPS+=("    ${line#  FAIL  }"); done \
+      < <(grep '^  FAIL  ' "$STEP_LOG")
+  fi
 done
 
 echo ""
@@ -120,7 +130,12 @@ if [ -n "$PYBIN" ] && "$PYBIN" -c 'import pytest' >/dev/null 2>&1; then
   # Engine unit tests that ship with the repo but nothing else runs.
   PYTESTS="scripts/test_check_manifest.py scripts/test_check_frontmatter_contract.py scripts/test_check_skill_tool_conformance.py scripts/test_check_codex_capabilities.py scripts/test_check_codex_packaging.py scripts/test_codex_harness_doctor.py scripts/test_check_runtime_neutral_sources.py scripts/test_verify_summary.py scripts/test_check_verify_rows.py scripts/test_check_review_receipt.py scripts/test_audit_skill_prompts.py scripts/test_score_skill_eval.py scripts/test_generate_skill_eval_corpus.py scripts/test_record_skill_eval.py scripts/test_capture_skill_eval.py scripts/test_run_skill_eval_batch.py scripts/test_check_skill_eval_readiness.py scripts/test_invalidate_skill_eval_collection.py scripts/test_rebuild_solution_index.py scripts/test_resolve_finish_context.py scripts/test_render_skill_prompt.py scripts/test_render_agent_definitions.py scripts/test_render_codex_adapter.py scripts/test_render_runtime_entry.py scripts/test_check_plan_contract.py scripts/test_score_task_review_eval.py scripts/test_ste_terminology_experiment.py skills/subagent-driven-development/scripts/test_task_brief.py skills/visual-planner/test_render_plan.py runtime/test_runtime_mode.py runtime/test_run_state.py runtime/test_chain_guards_are_load_bearing.py runtime/test_resume_decision.py"
   # shellcheck disable=SC2086
-  "$PYBIN" -m pytest $PYTESTS -q --no-header --no-cov -p no:cacheprovider || FAILED=1
+  "$PYBIN" -m pytest $PYTESTS -q --no-header --no-cov -p no:cacheprovider 2>&1 | tee "$STEP_LOG"
+  if [ "${PIPESTATUS[0]}" -ne 0 ]; then
+    fail "pytest"
+    while IFS= read -r line; do FAILED_STEPS+=("    ${line#FAILED }"); done \
+      < <(grep '^FAILED ' "$STEP_LOG")
+  fi
 else
   echo "  skip — no python3 with pytest available"
 fi
@@ -129,6 +144,7 @@ echo ""
 if [ "$FAILED" -eq 0 ]; then
   echo "ALL GREEN"
 else
-  echo "FAILURES — see above"
+  echo "FAILURES:"
+  printf '  %s\n' "${FAILED_STEPS[@]}"
 fi
 exit "$FAILED"
