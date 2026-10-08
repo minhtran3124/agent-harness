@@ -86,6 +86,7 @@ fi
 # contract; the mutation cases below prove both entries are enforced.
 PLAN_AUTHOR="skills/writing-plans/SKILL.md"
 PLAN_REVIEWER="skills/writing-plans/plan-document-reviewer-prompt.md"
+DESIGN_REVIEWER="skills/brainstorming/spec-document-reviewer-prompt.md"
 
 # rules/orchestration.md names the task reviewer's spec verdict as the per-task blast-radius
 # detector (the retired edit-time hook no longer exists). That claim holds only while the
@@ -125,6 +126,13 @@ cp -R "$ROOT/skills" "$m4/skills"
 sed -i.bak 's/\*\*Read `rules\/terminology\.md`\*\*//' "$m4/$PLAN_REVIEWER" && rm -f "$m4/$PLAN_REVIEWER.bak"
 if ! python3 "$ROOT/$COMPOSER" --root "$m4" --check-all >/dev/null 2>&1; then pass
 else fail "deleting the plan reviewer's terminology.md Read was NOT detected"; fi
+
+t "mutation: canonical matrix detects a missing design-reviewer template Read"
+m5=$(mktemp -d); _CLEANUP_DIRS+=("$m5")
+cp -R "$ROOT/skills" "$m5/skills"
+sed -i.bak '/Read `design-template\.md`/d' "$m5/$DESIGN_REVIEWER" && rm -f "$m5/$DESIGN_REVIEWER.bak"
+if ! python3 "$ROOT/$COMPOSER" --root "$m5" --check-all >/dev/null 2>&1; then pass
+else fail "deleting the design reviewer's design-template.md Read was NOT detected"; fi
 
 t "mutation: deleting either explicit Read is detected"
 m=$(mktemp -d); _CLEANUP_DIRS+=("$m")
