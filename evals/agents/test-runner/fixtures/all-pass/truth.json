@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "verdict": "PASSED",
+  "failing": [],
+  "passing": [
+    "test_add",
+    "test_add_negative",
+    "test_subtract",
+    "test_subtract_to_negative"
+  ],
+  "failed_plus_errors": [
+    0
+  ],
+  "required": [],
+  "diagnosis": []
+}

@@ -8,6 +8,7 @@ here measure *skill judgment*, which is non-deterministic and scored against lab
 | Split | What it evals | Contents |
 |---|---|---|
 | `skills/` | A single skill's output quality | `review-chain/` — `/correctness-review` + `/intent-review` catch-rate on planted defects |
+| `agents/` | A sub-agent role's output | `test-runner/` — report accuracy and no-edit discipline of the `test-runner` role |
 | `workflow/` | A workflow stage's decision | `intake-classifier/` — `/feature-intake` lane/confidence/hard-gate accuracy |
 
 ## Shared model
