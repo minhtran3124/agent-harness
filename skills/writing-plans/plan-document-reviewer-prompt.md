@@ -31,6 +31,7 @@ Task tool (general-purpose):
     | Task Syntax | Every task is a `### Task <id> [— title] [(wave K)]` heading with `- **Files/Action/Verify/Done:**` field bullets, all four fields populated, per `rules/plan-format.md` |
     | Success Criteria | `## 3. Success Criteria` table present; `SC-<n>` ids unique; Check cells pipe-free and <60s; Expected cells start `exit <n>`; per `rules/plan-format.md` |
     | Decidable Criteria | Every `Verify:` and `Done:` field states something a machine can decide by running it. Flag any field resting on `correctly`, `properly`, `as expected`, `works`, `is correct`, or `looks right` — per `rules/terminology.md` §3 |
+    | Assumption coverage | Only for the chunk holding `## 5. Risks`, and only when the spec has `## What must be true`. Report an `A<n>` from the spec missing from `### Assumption coverage` or listed twice, and a subsection placed before the risk bullets or with no blank line after them (it folds into the last risk card). If the subsection is missing, report one issue naming every `A<n>`. Accept `- none (design has no assumptions)` when the spec's section is `- none — <reason>` |
     | Chunk Size | Each chunk under 1000 lines |
 
     ## Commonly missed

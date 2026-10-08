@@ -28,7 +28,12 @@ required brief is missing. If the scope contains independent subsystems, propose
    test-first where applicable.
 4. Ensure same-wave tasks have no file overlap and no unresolved dependency. Use waves only for
    genuinely independent work.
-5. Run `python3 scripts/check_plan_contract.py specs/<slug>/PLAN.md`, read `references/review-loop.md`, review the plan, and save it. Then run
+5. When `design.md` has a `## What must be true` section, first write `### Assumption coverage` in
+   `## 5. Risks`, after the risk bullets with a blank line (start Risks with `- none` when there
+   are no risks): `render_plan.py` cards only the first bullet list. Give each design `A<n>` one
+   line: `- A<n> → SC-n`, `- A<n> → Task x.y`, or `- A<n> → accepted risk: <reason>`; write
+   `- none (design has no assumptions)` when that section is `- none — <reason>`. Check that every
+   named `SC-n` and task exists in the plan. Then run `python3 scripts/check_plan_contract.py specs/<slug>/PLAN.md`, read `references/review-loop.md`, review the plan, and save it. Then run
    `python3 skills/visual-planner/render_plan.py specs/<slug>/PLAN.md --summarize`, which
    refreshes the At-a-glance block and writes the plain `PLAN.html`; use `visual-planner` only when
    the user asks for its graph-derived overlay.
