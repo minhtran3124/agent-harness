@@ -16,7 +16,8 @@ PASS=0; FAIL=0; SKIP=0; XFAIL=0
 CURRENT=""
 _CLEANUP_DIRS=()
 
-if [ -t 1 ]; then _G=$'\033[32m'; _R=$'\033[31m'; _Y=$'\033[33m'; _D=$'\033[2m'; _X=$'\033[0m'; else _G=; _R=; _Y=; _D=; _X=; fi
+# HARNESS_TEST_COLOR=1 keeps colour when stdout is a pipe (scripts/run-tests.sh tees each suite).
+if [ -t 1 ] || [ "${HARNESS_TEST_COLOR:-}" = 1 ]; then _G=$'\033[32m'; _R=$'\033[31m'; _Y=$'\033[33m'; _D=$'\033[2m'; _X=$'\033[0m'; else _G=; _R=; _Y=; _D=; _X=; fi
 
 t()     { CURRENT="$1"; }
 pass()  { PASS=$((PASS+1)); printf '  %sok%s    %s\n' "$_G" "$_X" "$CURRENT"; }

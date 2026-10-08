@@ -190,6 +190,9 @@ TOOL_PATH="$TMP/tool-path"
 mkdir -p "$TOOL_PATH"
 for _tool in bash basename cat cp date dirname git grep mkdir mktemp mv python3 rm sed sh tail uname; do
   _tool_path=$(command -v "$_tool")
+  # A version-manager shim (pyenv) is a script needing tools outside this PATH; link the
+  # interpreter it resolves to, or python3 fails here for reasons unrelated to the test.
+  [ "$_tool" = python3 ] && _tool_path=$(python3 -c 'import sys; print(sys.executable)')
   ln -s "$_tool_path" "$TOOL_PATH/$_tool"
 done
 MISSING_TOOLS="$TMP/missing-tools"
