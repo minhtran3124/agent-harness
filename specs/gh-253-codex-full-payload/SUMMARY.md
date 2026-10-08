@@ -48,6 +48,8 @@ payload location has one interpretation that respects the existing ownership bou
 Minor review findings, carried to the final review:
 - Task 1.2: the `codex_lane_repo` case in `tests/hooks/commit-gate-evidence.test.sh` does not assert that the source and `.claude/` copies of `verify_summary.py` are absent, so a future `new_repo` change could let it pass for the wrong reason.
 - Task 1.1: until Task 2.1 lands, wave 1 leaves `codex-install.test.sh` red by plan ordering (closed by Task 2.1's Verify).
+- Task 2.2: the `.gitignore` paragraph in `docs/codex-alpha-install.md` describes Task 1.3's behaviour before that code exists. The Task 1.3 implementer builds to that paragraph, and the Task 1.3 reviewer checks the two against each other. The controller accepted placing the `.gitignore` line in its own paragraph instead of the "adapter owns" list, because that list names only manifest-recorded paths.
+- Task 2.1 (pre-existing): `deploy-codex-adapter.sh` runs its fixed rmdirs in the order `.codex/agents`, `.codex`, `.codex/.agent-harness`. An unedited `--remove` on a project that had no `.codex/` before install therefore leaves an empty `.codex/`. Forwarded to the final review.
 
 ### Verify
 
