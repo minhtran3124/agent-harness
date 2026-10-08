@@ -51,11 +51,12 @@ its own text._
 - **IDs** are `A1, A2, …`. Before approval, renumber them to stay sequential when a row is
   deleted. After approval an ID is never reused or renumbered, and a row is never deleted: a
   `DC<n>` that drops an assumption sets its *Proven by* to `retired by DC<n>`.
-- **Evidence now** has two parts. The **tier** says how strong the evidence is: `traceability`,
-  `provenance` or `truth` (the vocabulary of `CLAUDE.md` "Gate verifiability"), or `none yet`
-  when no check has confirmed the assumption. `none yet` may still carry an `Inference` source
-  that says what the belief rests on. The **source** uses the research-brief Evidence Ledger
-  labels `Local`, `Upstream`, `Docs` or `Inference`, followed by the date it was read and its
+- **Evidence now** has two parts. The **tier** says how strong the evidence is: `traceability`
+  (the structure matches: an ID exists, a reference resolves), `provenance` (re-derived from the
+  source of truth: a file read, a value rebuilt), `truth` (the behavior was re-run and its result
+  compared), or `none yet` when no check has confirmed the assumption. A bare `none yet` is valid;
+  it may also carry an `Inference` source that says what the belief rests on. The **source** uses
+  the research-brief Evidence Ledger labels `Local`, `Upstream`, `Docs` or `Inference`, followed by the date it was read and its
   location. Example: `provenance: Local, 2026-10-08, review-loop.md`.
 - **Proven by** is never empty. It is the intended `SC-n`, task or check, or
   `accepted risk: <reason>`. `writing-plans` binds it to a concrete `SC-n` or task.
@@ -98,7 +99,9 @@ _Copy the pointer line above into every design that has a decisions table. Write
 - **Revision pass.** A later brainstorming run on a spec whose design was already approved is a
   revision pass. Its settled rows are not drafts: each change to one is a `DC<n>`, and the design
   reviewer applies the decision-change checks. A `DC<n>` written during planning or implementation
-  is reviewed at the next revision pass, if one happens.
+  is reviewed at the next revision pass, if one happens. The reviewer sees only the current design,
+  not the approved one, so it checks that `DC<n>` entries are consistent; it cannot detect a
+  settled row edited in place without one.
 - **After approval** (during planning or implementation), reversing a settled decision changes the
   approved design, so it is a Rule 4 STOP under `rules/auto-correct-scope.md`: ask the user before
   writing the `DC<n>`. The design reviewer loop is not re-run. The record is the `DC<n>` entry plus
@@ -129,5 +132,5 @@ Each value of a load-bearing number carries exactly one label:
 - `measured <YYYY-MM-DD> <source>` — a value observed, with its date and where it came from.
 
 When a measurement replaces a prediction, keep the prediction with its label and append the
-measurement beside it with its own: `80 ms (prediction) → 92 ms (measured 2026-11-02, <run>)`.
+measurement beside it with its own: `80 ms (prediction) → 92 ms (measured 2026-11-02 <run>)`.
 Illustrative numbers stay unlabelled.

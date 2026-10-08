@@ -29,12 +29,12 @@ Task tool (general-purpose):
     | Scope | Focused enough for a single plan — not covering multiple independent subsystems |
     | Architecture | Units with clear boundaries, well-defined interfaces, independently understandable and testable |
     | Template sections | `What must be true`, `What we do not claim` or `Decisions` missing or holding placeholder text (a `- none — <reason>` line is valid in each) |
-    | Assumptions | An `A<n>` row with an empty *Proven by* or *If false*, or an *Evidence now* outside the template's tier (`traceability` / `provenance` / `truth` / `none yet`) plus source (`Local` / `Upstream` / `Docs` / `Inference`, date, location) vocabulary |
+    | Assumptions | An `A<n>` row with an empty *Proven by* or *If false*, or an *Evidence now* outside the template's tier (`traceability` / `provenance` / `truth` / `none yet`) plus source (`Local` / `Upstream` / `Docs` / `Inference`, date, location) vocabulary; a bare `none yet` with no source is valid |
     | IDs | `A<n>`, `D<n>` or `DC<n>` IDs not sequential, or one reused |
-    | Number labels | A load-bearing number (a decision, target, threshold or Success Criterion depends on it) without exactly one of `prediction`, `budget`, `measured <YYYY-MM-DD> <source>` |
+    | Number labels | A value of a load-bearing number (a decision, target, threshold or Success Criterion depends on it) without exactly one of `prediction`, `budget`, `measured <YYYY-MM-DD> <source>`; a kept `prediction → measured` pair is two values, each with its own label |
     | Decision status | A decision status other than `settled` or `superseded by DC<n>` |
     | Superseded rows | A `superseded by DC<n>` decision with no matching `DC<n>` entry under `## Decision changes` |
-    | Decision changes | A `DC<n>` entry citing no evidence; a `DC<n>` whose `new decision: D<n>` is not a `settled` row, or whose reopened decision is not marked `superseded by DC<n>` |
+    | Decision changes | A `DC<n>` entry citing no evidence; a `DC<n>` whose `new decision: D<n>` is neither `settled` nor `superseded by` a later `DC<m>` (a chain of reopenings), or whose reopened decision is not marked `superseded by DC<n>` |
     | Reopen pointer | A `## Decisions` table without the pointer line `To reopen a settled decision after approval …` above it |
 
     The `Superseded rows` and `Decision changes` checks fire only in a revision pass (a later run on
