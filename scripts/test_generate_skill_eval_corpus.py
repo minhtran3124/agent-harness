@@ -14,7 +14,7 @@ def test_generator_emits_complete_balanced_catalog(tmp_path):
     subprocess.run([sys.executable, str(SCRIPT), "--root", str(tmp_path)], check=True)
     root = tmp_path / "evals/skills/prompt-refactor"
     manifest = json.loads((root / "corpus-manifest.json").read_text())
-    assert len(manifest["skills"]) == 12
+    assert len(manifest["skills"]) == 13
     for entry in manifest["skills"]:
         activation = json.loads((tmp_path / entry["activation"]).read_text())["cases"]
         behavior = json.loads((tmp_path / entry["behavior"]).read_text())["cases"]

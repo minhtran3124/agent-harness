@@ -37,6 +37,11 @@
       "behavior": "evals/skills/prompt-refactor/behavior/intent-review.json"
     },
     {
+      "name": "session-retro",
+      "activation": "evals/skills/prompt-refactor/activation/session-retro.json",
+      "behavior": "evals/skills/prompt-refactor/behavior/session-retro.json"
+    },
+    {
       "name": "subagent-driven-development",
       "activation": "evals/skills/prompt-refactor/activation/subagent-driven-development.json",
       "behavior": "evals/skills/prompt-refactor/behavior/subagent-driven-development.json"

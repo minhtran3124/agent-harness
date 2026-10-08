@@ -62,6 +62,13 @@ SPECS = {
         "stop when no intent oracle exists",
         "record gap excess or drift",
     ),
+    "session-retro": (
+        "Run a retro on this session: what in the repo made the agent struggle, and what should we change?",
+        "Capture the non-obvious bug fix from this session as reusable knowledge.",
+        "trace each struggle to an environment lever",
+        "report a clean session without inventing rules",
+        "route approved candidates to the backlog or compound",
+    ),
     "subagent-driven-development": (
         "Execute the active implementation plan in waves with isolated implementers and reviews.",
         "Create an implementation plan from this approved design.",
@@ -111,6 +118,9 @@ BEHAVIOR_PROMPTS = {
     },
     "intent-review": {
         "handoff": "Verbatim intent: 'Show a warning before deleting a project; do not delete until confirmation.' Diff behavior: the UI deletes immediately after the first click. Perform the intent-review handoff and record the applicable gap, excess, or drift finding.",
+    },
+    "session-retro": {
+        "golden": "Session record: the agent ran the full test suite five times because the runner printed only 'FAILURES — see above' over a 970-line log, and twice grep failed on an unquoted glob under zsh. No backlog row or docs/solutions entry covers either. Run the session retro and propose ranked environment fixes.",
     },
 }
 

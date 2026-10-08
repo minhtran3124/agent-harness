@@ -281,7 +281,10 @@ else fail "rc=$RC — stale sidecar still present: $([ -e "$T10/.claude/$OWNED_T
 T11=$(new_target)
 run_deploy "$T11"
 printf 'PROJECT-SPECIFIC BEHAVIOR RULE — case 11\n' > "$T11/.claude/rules/behavior.md"
-run_deploy "$T11"
+# --yes: the prompt is not under test here (case 4 covers the no-ctty path). Without it, a
+# runner with a controlling terminal blocks on deploy's `read < /dev/tty`. Keep-local is the
+# same branch either way, so a dropped protection still fails both assertions.
+run_deploy "$T11" --yes
 
 t "case 11: a customized rules/behavior.md survives a re-sync"
 if [ "$RC" -eq 0 ] && [ "$(cat "$T11/.claude/rules/behavior.md")" = "PROJECT-SPECIFIC BEHAVIOR RULE — case 11" ]; then pass

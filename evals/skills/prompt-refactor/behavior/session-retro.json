@@ -1,0 +1,25 @@
+{
+  "cases": [
+    {
+      "id": "session-retro-golden",
+      "skill": "session-retro",
+      "kind": "golden",
+      "expectation": "trace each struggle to an environment lever",
+      "prompt": "Session record: the agent ran the full test suite five times because the runner printed only 'FAILURES \u2014 see above' over a 970-line log, and twice grep failed on an unquoted glob under zsh. No backlog row or docs/solutions entry covers either. Run the session retro and propose ranked environment fixes."
+    },
+    {
+      "id": "session-retro-boundary",
+      "skill": "session-retro",
+      "kind": "boundary",
+      "expectation": "report a clean session without inventing rules",
+      "prompt": "report a clean session without inventing rules"
+    },
+    {
+      "id": "session-retro-handoff",
+      "skill": "session-retro",
+      "kind": "handoff",
+      "expectation": "route approved candidates to the backlog or compound",
+      "prompt": "route approved candidates to the backlog or compound"
+    }
+  ]
+}
