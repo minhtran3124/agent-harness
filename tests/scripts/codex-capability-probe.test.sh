@@ -111,8 +111,8 @@ for _name in $EXPECTED; do
 done
 
 assert "default capture never invokes a model" sh -c "! grep -q '^exec ' '$FAKE_LOG'"
-assert "checker unit tests are registered in the CI-equivalent suite" grep -q \
-  'scripts/test_check_codex_capabilities.py' "$ROOT/scripts/run-tests.sh"
+assert "checker unit tests are collected by the CI-equivalent suite" sh -c \
+  "test -f '$ROOT/scripts/test_check_codex_capabilities.py' && grep -qF \"find scripts runtime skills -name 'test_*.py'\" '$ROOT/scripts/run-tests.sh'"
 assert "doctor output is sanitized" sh -c "! grep -R -q '/Users/private' '$OUT'"
 assert "default shell result is explicit unknown" python3 -c \
   'import json,sys; assert json.load(open(sys.argv[1]))["result"]["status"] == "unknown"' \
