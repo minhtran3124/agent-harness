@@ -60,6 +60,28 @@ the default applies it to load-bearing numbers only, not every number in prose.
 
 - Decision change after approval — DC1 in `design.md` reopens D1 (no `scripts/` change) for D12 (register the design reviewer in `CONTEXT_MATRIX`). Raised by research brief F1; the user chose it on 2026-10-08. This pointer line is the design-template convention for a post-approval decision change, not a Rule 1–3 auto-fix.
 
+### Context-Propagation Audit
+
+**Result: PASS** (after one repair, `7aba506`). Search surface: `grep -rn` over `skills/ scripts/ tests/ agents/ rules/` for `design-template`, `Assumption coverage`, `research-brief-template`, `design.md`; the code-review-graph MCP server was not connected (`uvx` missing), so no graph query was used.
+
+| Source | Consumer | Context | Delivery | Proof |
+| --- | --- | --- | --- | --- |
+| `design-template.md` (§5.1–§5.4 rules, sections, labels) | brainstorming | main | explicit Read (`SKILL.md` step 5) | `brainstorming-contract.test.sh` "design template exists and brainstorming reads it" |
+| `design-template.md` | design reviewer | reviewer subagent (isolated) | path passed by `spec-review-loop.md` step 1 + explicit one-line Read in `spec-document-reviewer-prompt.md` | `CONTEXT_MATRIX` `spec-document-reviewer` (`render_skill_prompt.py --check-all`) + mutation case in `context-propagation-regression.test.sh` |
+| §6.1 design checks | design reviewer | reviewer subagent | pasted (rows inside the dispatched prompt) | `brainstorming-contract.test.sh` "design reviewer gets the template and its checks" |
+| Reopen pointer (change rule) | writing-plans | main, post-approval | pasted into every `design.md`; writing-plans Reads `design.md` (required input) | `writing-plans-contract.test.sh` "requires design and research brief"; template anchor in check 2 |
+| Reopen pointer (change rule) | SDD controller / implementer | main + implementer, post-approval | **not delivered** — neither reads `design.md`; Rule 4 STOP (explicit Read of `auto-correct-scope.md`) is the only guard | Accepted, declared gap: design D10 + `What we do not claim` row; not a load-bearing claim of this change |
+| Assumption coverage instruction (§5.5) | writing-plans | main | in `SKILL.md` step 5 (loaded with the skill) | `writing-plans-contract.test.sh` check 4 |
+| Assumption coverage check (§6.2) | plan reviewer | reviewer subagent (isolated) | pasted (row inside the dispatched prompt); design reachable via existing `[SPEC_FILE_PATH]` | `writing-plans-contract.test.sh` check 4; `[SPEC_FILE_PATH]` pre-existing in prompt |
+| Number-label rule | xia2 | main | inline copy in `research-brief-template.md`, which xia2 step 6 fills | **Repaired:** check 5 now anchors the full set (`measured <YYYY-MM-DD> <source>`, `prediction`, `budget`, `load-bearing`); mutation (strip `` `budget` ``) shown to break the anchor set |
+| Number-label rule | design reviewer | reviewer subagent | via the template Read above | as row 2 |
+| prediction → measured source | compound | main | in `SKILL.md` | `compound-contract.test.sh` check 6 |
+| All of the above | Codex advisory alpha | Codex sessions | same skill files via the Agent Harness plugin; relative `references/` paths unchanged | Not separately exercised (advisory runtime, `CLAUDE.md` "Runtime support boundary"); recorded, not claimed |
+
+Failed row and repair: the research-brief inline copy of the label rule was complete but anchored by one label only (an unanchored inline subset) → check 5 extended, commit `7aba506`.
+
+Recorded per design §7: the `### Deviations` pointer line for a post-approval decision change extends `rules/auto-correct-scope.md` "Reporting" (Rule 1–3 only) without editing that rule; the template states the extension explicitly.
+
 ### Minor review findings
 
 <!-- Non-blocking per-task reviewer findings, forwarded to the final review chain. -->
