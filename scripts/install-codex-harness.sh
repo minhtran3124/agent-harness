@@ -70,8 +70,8 @@ bash "$SOURCE_DIR/scripts/deploy-codex-adapter.sh" \
 # The payload and plugin copies under .codex/.agent-harness/ carry .py files; untracked, they
 # deny every commit under the strict commit-gate untracked-.py check. Mirrors the .claude/ step
 # in install-harness.sh: runs only after a successful deploy (set -e exits above otherwise),
-# never under --dry-run or --remove, skips a tracked directory or an existing directory-scoped
-# rule, and is never fatal. The line is not recorded in the deployment manifest.
+# never under --dry-run or --remove, skips a tracked directory, a directory git already ignores,
+# or an explicit !.codex/.agent-harness rule, and is never fatal. The line is not recorded in the deployment manifest.
 GI_RUN=1
 for arg in ${FORWARD_ARGS[@]+"${FORWARD_ARGS[@]}"}; do
   case "$arg" in --dry-run|--remove) GI_RUN=0 ;; esac
@@ -81,14 +81,26 @@ if [ "$GI_RUN" -eq 1 ]; then
   gi_skip=""
   if git -C "$TARGET_DIR" ls-files --error-unmatch -- .codex/.agent-harness >/dev/null 2>&1; then
     gi_skip="tracked"
-  elif [ -f "$GI" ] && gi_line=$(grep -nE '^[[:space:]]*(/?\.codex(/\*?|/\.agent-harness/?)?|!/?\.codex/\.agent-harness/?)[[:space:]]*$' "$GI" 2>/dev/null | head -1) \
-       && [ -n "$gi_line" ]; then
-    gi_skip="declared"
+  else
+    # Ask git, not a regex: the last matching rule wins, and a re-include under an excluded
+    # parent is impossible. A probe path need not exist for check-ignore.
+    # 0 = ignored, 1 = not ignored, 128 = not a git repo (then only our own line can say so).
+    gi_rc=0
+    git -C "$TARGET_DIR" check-ignore -q -- .codex/.agent-harness/probe.py 2>/dev/null || gi_rc=$?
+    if [ "$gi_rc" -eq 0 ] || { [ "$gi_rc" -ne 1 ] && [ -f "$GI" ] \
+         && grep -qxE '[[:space:]]*/?\.codex/\.agent-harness/?[[:space:]]*' "$GI" 2>/dev/null; }; then
+      gi_skip="ignored"
+    fi
+  fi
+  if [ -z "$gi_skip" ] && [ -f "$GI" ] && grep -qE '^!/?\.codex/\.agent-harness/?$' "$GI" 2>/dev/null; then
+    gi_skip="negated"
   fi
   if [ "$gi_skip" = "tracked" ]; then
     printf 'codex-install: warning: .codex/.agent-harness/ is tracked in this repo — leaving .gitignore alone.\n' >&2
-  elif [ "$gi_skip" = "declared" ]; then
-    printf 'codex-install: .gitignore already scopes .codex (line %s: %s) — left as is.\n' "${gi_line%%:*}" "${gi_line#*:}"
+  elif [ "$gi_skip" = "ignored" ]; then
+    printf 'codex-install: .gitignore already ignores .codex/.agent-harness/ — left as is.\n'
+  elif [ "$gi_skip" = "negated" ]; then
+    printf 'codex-install: .gitignore explicitly keeps .codex/.agent-harness/ (a ! rule) — left as is.\n'
   elif ! {
         { [ ! -s "$GI" ] || [ -z "$(tail -c 1 "$GI" 2>/dev/null)" ] || printf '\n' >> "$GI"; } &&
         printf '# Harness: .codex/.agent-harness/ is derived — rebuilt by install-codex-harness.sh\n.codex/.agent-harness/\n' >> "$GI"

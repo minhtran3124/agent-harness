@@ -127,6 +127,16 @@ Also fixed although advisory, because each was a one-line change in code this br
   `.agent-harness`. Only an explicit `!.codex/.agent-harness` negation is respected now.
 - G (50) — `rewrite_payload_paths` with an empty target list corrupted text. It now returns early.
 
+Fix re-review (`5305d13..8d669c5`): A, B, C, D, E, G confirmed closed by reproduction; no
+P0–P2 regression. Three of its four P3 findings were then fixed:
+- The `.gitignore` decision now asks `git check-ignore` (the last matching rule wins), so
+  `.codex/` then `!.codex/` is no longer mistaken for "declared". An explicit
+  `!.codex/.agent-harness` rule is still respected.
+- `render_skill_prompt.py` records a relative provenance path for `--root`-resolved fragments,
+  so no absolute machine path enters composed prompts.
+- The renderer and the doctor both read and write rewritten Markdown as UTF-8, so a non-UTF-8
+  locale cannot make them disagree.
+
 ### Advisory Findings
 
 - F (25) — rendered skills name `.codex/.agent-harness/payload/harness-manifest.json` as the
@@ -142,9 +152,27 @@ Also fixed although advisory, because each was a one-line change in code this br
 - I (25) — the `verify_summary.py` that commit-gate runs is an agent-writable, gitignored copy.
   This is the same trust model as the existing `.claude/scripts/` candidate (Gate verifiability
   negative scope: `Does not verify: verifier integrity`).
+- Re-review P3 — the correctness-review compose command resolves fragments only when run from
+  the consumer root. Run from a subdirectory, the cwd-relative script path fails, as it already
+  did before this change. In a repo that has its own `skills/correctness-review/prompts/`, a cwd
+  copy shadows the payload copy.
 - J (0, refuted) — the reported leftover empty `.codex/` after `--remove` does not occur. The
   shell `--remove` path runs `rmdir "$STATE_DIR" "$TARGET_DIR/.codex"` in the right order after
   the Python cleanup.
+
+### Intent Findings
+
+Intent review (blind to the plan) checked every intent clause. No blocking gap:
+- gap (deferred, approved at design): `init-structure.sh` is not run by the Codex installer;
+  moved to #255.
+- drift (equivalent): skills reach the payload through a render-time path rewrite, not a runtime
+  fallback like commit-gate's. Guarded by the closure tests.
+- drift (equivalent): `verify_summary.py`, `rebuild_solution_index.py`, and
+  `render_skill_prompt.py` also deploy to Claude consumers, so their bytes changed there too. The
+  root-resolution branches fire only under the payload path. The `--root` fragment fallback
+  applies in every runtime, but turns only a former "missing fragment" error into a success.
+- excess (necessary): `codex_harness_doctor.py` is outside #253's listed scope. Without the
+  change, every clean install reports `INSTALL_HASH_MISMATCH`. Trust logic is untouched.
 
 ### Rollback
 

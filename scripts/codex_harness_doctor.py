@@ -66,10 +66,10 @@ def _rendered_skill_inventory(repo_root: Path, skills: list[str]) -> dict[str, s
         for relative, digest in _tree_inventory(repo_root / "skills" / skill).items():
             path = repo_root / "skills" / skill / relative
             if path.suffix == ".md":
-                text = path.read_text()
+                text = path.read_text(encoding="utf-8")
                 rewritten = render_codex_adapter.rewrite_payload_paths(text, targets)
                 if rewritten != text:
-                    digest = hashlib.sha256(rewritten.encode()).hexdigest()
+                    digest = hashlib.sha256(rewritten.encode("utf-8")).hexdigest()
             expected[f"{skill}/{relative}"] = digest
     return expected
 

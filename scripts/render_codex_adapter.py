@@ -313,10 +313,10 @@ def rewrite_payload_paths(text: str, targets: set[str] | list[str]) -> str:
 
 def _rewrite_markdown(base: Path, targets: list[str]) -> None:
     for path in sorted(base.rglob("*.md")):
-        text = path.read_text()
+        text = path.read_text(encoding="utf-8")
         rewritten = rewrite_payload_paths(text, targets)
         if rewritten != text:
-            path.write_text(rewritten)
+            path.write_text(rewritten, encoding="utf-8")
 
 
 def render(root: Path, output: Path) -> dict[str, Any]:

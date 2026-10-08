@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -145,8 +146,9 @@ def main() -> int:
         # A relative fragment resolves against the working directory first, then against
         # --root: an installed copy (e.g. the Codex payload) ships the fragments beside itself.
         root = args.root.resolve()
+        # Keep the provenance path relative so composed prompts stay machine-independent.
         fragments = [
-            root / fragment
+            Path(os.path.relpath(root / fragment))
             if not fragment.is_absolute() and not fragment.is_file() and (root / fragment).is_file()
             else fragment
             for fragment in args.fragment

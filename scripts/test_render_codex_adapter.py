@@ -572,6 +572,7 @@ def test_payload_closure_helpers_resolve_the_consumer_root_not_the_payload(tmp_p
     )
     assert prompt.returncode == 0, prompt.stderr
     assert "correctness reviewer" in prompt.stdout
+    assert "<!-- source: /" not in prompt.stdout  # provenance stays relative
 
 
 def test_rewrite_with_no_targets_returns_text_unchanged():
