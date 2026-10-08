@@ -43,7 +43,8 @@ payload location has one interpretation that respects the existing ownership bou
 
 ### Deviations
 
-- none
+- Rule 1 — The controller fixed Task 1.3's review findings directly. The docs claimed `--remove` behaves "as the Claude installer does", but the Claude installers have no `--remove` path (`grep -c -- --remove` is 0 in both). The wording came from `design.md`, so it was corrected there too. The docs now also name the `.codex/*` and negated `!` skip forms the installer honours. Two pinned skip forms were added to `tests/scripts/codex-install-gitignore.test.sh`. Files: `docs/codex-alpha-install.md`, `tests/scripts/codex-install-gitignore.test.sh`, `specs/gh-253-codex-full-payload/design.md`.
+- Process — Implementers left changes uncommitted; the controller committed each task separately so two parallel implementers in one worktree could not collide on git's index lock.
 
 Minor review findings, carried to the final review:
 - Task 1.2: the `codex_lane_repo` case in `tests/hooks/commit-gate-evidence.test.sh` does not assert that the source and `.claude/` copies of `verify_summary.py` are absent, so a future `new_repo` change could let it pass for the wrong reason.

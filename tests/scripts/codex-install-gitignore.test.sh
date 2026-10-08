@@ -63,7 +63,7 @@ if [ "$RC" -eq 0 ] && [ "$(line_count "$TARGET/.gitignore" "$LINE")" = "1" ]; th
 else fail "rc=$RC count=$(line_count "$TARGET/.gitignore" "$LINE"): $OUT"; fi
 
 # 2. An existing scoping line is left as is.
-for existing in '.codex/' '/.codex/.agent-harness'; do
+for existing in '.codex/' '/.codex/.agent-harness' '.codex/.agent-harness/' '.codex'; do
   TARGET=$(new_git_target)
   printf 'node_modules/\n%s\n' "$existing" > "$TARGET/.gitignore"
   BEFORE=$(cat "$TARGET/.gitignore")

@@ -10,7 +10,7 @@ created: 2026-10-08
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**5 tasks · 3 waves · 12 files · 4/5 done**
+**5 tasks · 3 waves · 12 files · 5/5 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -42,7 +42,7 @@ flowchart LR
 - [x] 1.2 — Third helper candidate in both hooks (wave 1)
 - [x] 2.1 — Payload lifecycle in the deployer (wave 2)
 - [x] 2.2 — Document the payload and gitignore entry (wave 2)
-- [ ] 1.3 — Append-only `.gitignore` entry in the Codex installer (wave 3)
+- [x] 1.3 — Append-only `.gitignore` entry in the Codex installer (wave 3)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -202,3 +202,4 @@ warning line. Design: `specs/gh-253-codex-full-payload/design.md` (payload under
 - 2026-10-08 — The user chose the payload location (`.codex/.agent-harness/payload/`). `design.md` passed the spec review on iteration 2, and the plan was written and reviewed. Implementation waits for the user to approve `design.md` and this plan. Baseline `bash scripts/run-tests.sh` passed before any `hooks/` or `scripts/` edit: all green, 799 pytest passed.
 - 2026-10-08 — tasks 1.1, 1.2 complete; commits 826f422, a46a5cf. Both task reviews passed (spec pass, quality approved), with one Minor finding each. Implementers left changes uncommitted, and the controller committed each task separately to avoid index-lock collisions in the shared worktree. At this wave boundary, `bash scripts/run-tests.sh` is red only in `tests/scripts/codex-install.test.sh` (exact-inventory and removal cases; `codex-alpha-contract.test.sh` runs that suite too), which the wave-2 deployer task owns by plan.
 - 2026-10-08 — tasks 2.1, 2.2 complete; commits cb6a915, 2200b7e. Both task reviews passed (spec pass, quality approved), with Minor findings recorded in SUMMARY. With wave 2 in, `bash tests/scripts/codex-install.test.sh` passes 29 and `codex-alpha-contract.test.sh` passes 7.
+- 2026-10-08 — task 1.3 complete; commit 9096548. Review passed (spec pass, quality approved), with three Minor findings that the controller fixed directly in the follow-up commit. All plan tasks are done.

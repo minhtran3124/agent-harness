@@ -117,7 +117,7 @@ User-selected 2026-10-08 (alternatives below).
    rewrite the file. Without it, `commit-gate.sh`'s strict-profile untracked-`.py` deny
    (`:111`, excludes only `.claude/`) blocks every commit in a Codex consumer. That is already
    true for the plugin's own `.py` files under `marketplace/`, and the payload adds more. Skipped
-   under `--dry-run`. Not undone by `--remove`, matching the Claude installer.
+   under `--dry-run`. Not undone by `--remove`; the harness never deletes a `.gitignore` line.
 5. **Docs** — add the payload and the `.gitignore` entry to the "adapter owns" list in
    `docs/codex-alpha-install.md`, and state that `--remove` leaves the `.gitignore` line in place.
 
