@@ -50,7 +50,7 @@
           }
         },
         "test-runner": {
-          "model": "claude-haiku-4-5-20251001",
+          "model": "claude-haiku-5-5",
           "tools": ["Glob", "Grep", "Read", "WebFetch", "WebSearch", "Bash", "mcp__context7__resolve-library-id", "mcp__context7__query-docs"],
           "capabilities": {
             "filesystem": "direct write/edit tools omitted; test artifacts may be produced by Bash",
@@ -59,7 +59,7 @@
             "mcp": "context7 read-only tools only",
             "nested_delegation": "Agent omitted",
             "context_policy": "fresh-or-bounded-dispatch-required",
-            "model_class": "claude-haiku-4-5-20251001",
+            "model_class": "claude-haiku-5-5",
             "output_contract": "role-body-enforced"
           }
         }

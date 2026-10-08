@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "verdict": "PASSED",
+  "failing": [],
+  "passing": [
+    "test_leap_2024",
+    "test_not_leap_1900",
+    "test_leap_2000",
+    "test_not_leap_2023",
+    "test_python2_calendar",
+    "test_julian_year_1500"
+  ],
+  "failed_plus_errors": [
+    0
+  ],
+  "required": [],
+  "diagnosis": []
+}

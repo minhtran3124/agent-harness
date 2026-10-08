@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "verdict": "FAILED",
+  "failing": [
+    "test_simple_title",
+    "test_punctuation"
+  ],
+  "passing": [
+    "test_empty"
+  ],
+  "failed_plus_errors": [
+    2
+  ],
+  "required": [],
+  "diagnosis": [
+    [
+      "upper",
+      "lower"
+    ]
+  ]
+}
