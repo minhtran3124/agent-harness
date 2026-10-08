@@ -1,7 +1,8 @@
 # Design Template
 
-Use this template as the output contract for every `specs/<slug>/design.md`. Keep each section
-proportionate to the change; do not leave a required section empty.
+Use this template as the output contract for every `specs/<slug>/design.md`. The sections up to
+Non-goals are the usual free-form design sections: keep, merge or drop them in proportion to the
+change. The four after Non-goals are required; each holds content or a `- none — <reason>` line.
 
 ---
 
