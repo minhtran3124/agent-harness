@@ -49,8 +49,9 @@ edit it in place.
 The installer also appends `.codex/.agent-harness/` to the project's `.gitignore`, so the
 payload's and plugin's untracked `.py` files do not trip the strict-profile commit gate. The step
 only appends and never rewrites the file. It skips when a line already decides the directory
-(`.codex`, `.codex/`, `/.codex/`, `.codex/*`, or a `.codex/.agent-harness` form, including a
-negated `!` form, which is taken as a deliberate choice to keep it tracked), warns and skips when the
+(`.codex`, `.codex/`, `/.codex/`, `.codex/*`, or a `.codex/.agent-harness` form; a negated
+`!.codex/.agent-harness` line is taken as a deliberate choice to keep it tracked, but a negated
+parent such as `!.codex/` is not, and the line is still appended), warns and skips when the
 directory is already tracked, and does not run under `--dry-run`. This line is not recorded in the
 deployment manifest.
 

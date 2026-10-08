@@ -63,7 +63,7 @@ if [ "$RC" -eq 0 ] && [ "$(line_count "$TARGET/.gitignore" "$LINE")" = "1" ]; th
 else fail "rc=$RC count=$(line_count "$TARGET/.gitignore" "$LINE"): $OUT"; fi
 
 # 2. An existing scoping line is left as is.
-for existing in '.codex/' '/.codex/.agent-harness' '.codex/.agent-harness/' '.codex'; do
+for existing in '.codex/' '/.codex/.agent-harness' '.codex/.agent-harness/' '.codex' '!.codex/.agent-harness/'; do
   TARGET=$(new_git_target)
   printf 'node_modules/\n%s\n' "$existing" > "$TARGET/.gitignore"
   BEFORE=$(cat "$TARGET/.gitignore")
@@ -72,6 +72,18 @@ for existing in '.codex/' '/.codex/.agent-harness' '.codex/.agent-harness/' '.co
   if [ "$RC" -eq 0 ] && [ "$(cat "$TARGET/.gitignore")" = "$BEFORE" ]; then pass
   else fail "rc=$RC .gitignore now: $(cat "$TARGET/.gitignore"): $OUT"; fi
 done
+
+# 2b. A negated PARENT (`!/.codex/`, used to keep .codex/config.toml tracked) is not a decision
+# about .agent-harness: the line is still appended, so payload .py files end up ignored.
+TARGET=$(new_git_target)
+printf '/.*\n!/.codex/\n' > "$TARGET/.gitignore"
+run_install "$TARGET" "$FAKE" --yes
+t "negated parent '!/.codex/' still gets .codex/.agent-harness/ appended and ignored"
+mkdir -p "$TARGET/.codex/.agent-harness/payload/scripts"
+: > "$TARGET/.codex/.agent-harness/payload/scripts/probe.py"
+if [ "$RC" -eq 0 ] && [ "$(line_count "$TARGET/.gitignore" "$LINE")" = "1" ] \
+   && [ -z "$(git -C "$TARGET" ls-files --others --exclude-standard -- .codex/.agent-harness)" ]; then pass
+else fail "rc=$RC .gitignore now: $(cat "$TARGET/.gitignore"): $OUT"; fi
 
 # 3. --dry-run writes no .gitignore.
 TARGET=$(new_git_target)

@@ -283,8 +283,12 @@ def _payload_sources(root: Path, skills: list[str]) -> dict[str, Path]:
             if keep(path):
                 sources[path.relative_to(root).as_posix()] = path
     for skill in skills:
-        for path in (root / "skills" / skill).rglob("*"):
-            if keep(path) and path.suffix != ".md":
+        skill_dir = root / "skills" / skill
+        for path in skill_dir.rglob("*"):
+            # Helpers, plus prompts/ fragments that render_skill_prompt.py composes by path.
+            if keep(path) and (
+                path.suffix != ".md" or path.relative_to(skill_dir).parts[0] == "prompts"
+            ):
                 sources[path.relative_to(root).as_posix()] = path
     sources.update(consumer_subset(root))
     for path in sources.values():
@@ -293,8 +297,15 @@ def _payload_sources(root: Path, skills: list[str]) -> dict[str, Path]:
     return sources
 
 
+def payload_targets(root: Path, skills: list[str]) -> list[str]:
+    """Payload-relative paths that rendered Markdown references are rewritten to."""
+    return sorted(_payload_sources(root, skills))
+
+
 def rewrite_payload_paths(text: str, targets: set[str] | list[str]) -> str:
     """Prefix bare references to payload files; token-anchored, so idempotent."""
+    if not targets:
+        return text
     alternation = "|".join(re.escape(t) for t in sorted(targets, key=len, reverse=True))
     pattern = re.compile(rf"(?<![\w./-])(?:{alternation})(?![\w-])")
     return pattern.sub(lambda match: f"{PAYLOAD_DIR}/{match.group(0)}", text)
@@ -353,6 +364,7 @@ def render(root: Path, output: Path) -> dict[str, Any]:
     _rewrite_markdown(plugin / "skills", targets)
     _rewrite_markdown(payload / "rules", targets)
     _rewrite_markdown(payload / "templates", targets)
+    _rewrite_markdown(payload / "skills", targets)
 
     result = {
         "schema_version": 1,

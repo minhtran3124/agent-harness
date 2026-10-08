@@ -81,7 +81,7 @@ if [ "$GI_RUN" -eq 1 ]; then
   gi_skip=""
   if git -C "$TARGET_DIR" ls-files --error-unmatch -- .codex/.agent-harness >/dev/null 2>&1; then
     gi_skip="tracked"
-  elif [ -f "$GI" ] && gi_line=$(grep -nE '^[[:space:]]*!?/?\.codex(/\*?|/\.agent-harness/?)?[[:space:]]*$' "$GI" 2>/dev/null | head -1) \
+  elif [ -f "$GI" ] && gi_line=$(grep -nE '^[[:space:]]*(/?\.codex(/\*?|/\.agent-harness/?)?|!/?\.codex/\.agent-harness/?)[[:space:]]*$' "$GI" 2>/dev/null | head -1) \
        && [ -n "$gi_line" ]; then
     gi_skip="declared"
   fi

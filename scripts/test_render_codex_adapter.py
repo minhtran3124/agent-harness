@@ -324,7 +324,10 @@ def _payload_eligible_in_source(root: Path) -> set[str]:
         for p in (root / "skills" / skill).rglob("*"):
             if (
                 p.is_file()
-                and p.suffix != ".md"
+                and (
+                    p.suffix != ".md"
+                    or p.relative_to(root / "skills" / skill).parts[0] == "prompts"
+                )
                 and not p.name.startswith("test_")
                 and "__pycache__" not in p.parts
             ):
@@ -529,3 +532,49 @@ def test_payload_inventory_missing_from_schema_fails_closed():
     schema["required"].remove("payload")
     with pytest.raises(renderer.AdapterError, match="required inventory"):
         renderer._validate_schema(schema)
+
+
+def test_payload_closure_helpers_resolve_the_consumer_root_not_the_payload(tmp_path):
+    import subprocess
+
+    renderer.render(ROOT, tmp_path / "codex")
+    consumer = tmp_path / "consumer"
+    payload = consumer / renderer.PAYLOAD_DIR
+    shutil.copytree(tmp_path / "codex/project" / renderer.PAYLOAD_DIR, payload)
+    (consumer / "specs/demo").mkdir(parents=True)
+    (consumer / "specs/demo/SUMMARY.md").write_text(
+        "# demo\n\nLane: tiny\nConfidence: high\nReason: a real filled reason\n"
+    )
+    (consumer / "docs/solutions").mkdir(parents=True)
+
+    def run(*args):
+        return subprocess.run(
+            [sys.executable, *args], cwd=consumer, capture_output=True, text=True
+        )
+
+    # verify_summary.py: the slug resolves to <consumer>/specs, as rewritten skills invoke it.
+    lane = run(f"{renderer.PAYLOAD_DIR}/scripts/verify_summary.py", "--lane", "demo")
+    assert lane.returncode == 0, lane.stdout + lane.stderr
+
+    # rebuild_solution_index.py: writes the consumer's INDEX, never one inside the payload.
+    index = run(f"{renderer.PAYLOAD_DIR}/scripts/rebuild_solution_index.py")
+    assert index.returncode == 0, index.stdout + index.stderr
+    assert (consumer / "docs/solutions/INDEX.md").is_file()
+    assert not (payload / "docs").exists()
+
+    # render_skill_prompt.py: the bare angle-fragment template resolves against the payload.
+    prompt = run(
+        f"{renderer.PAYLOAD_DIR}/scripts/render_skill_prompt.py",
+        "--fragment",
+        f"{renderer.PAYLOAD_DIR}/skills/correctness-review/prompts/shared.md",
+        "--fragment",
+        "skills/correctness-review/prompts/angles/prior-art.md",
+    )
+    assert prompt.returncode == 0, prompt.stderr
+    assert "correctness reviewer" in prompt.stdout
+
+
+def test_rewrite_with_no_targets_returns_text_unchanged():
+    text = "Hello  world\n\n# Title (x) `rules/a.md`\n"
+    assert renderer.rewrite_payload_paths(text, []) == text
+    assert renderer.rewrite_payload_paths(text, set()) == text

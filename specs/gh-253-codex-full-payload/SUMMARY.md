@@ -62,6 +62,58 @@ Minor review findings, carried to the final review:
 
 - none
 
+### Context-Propagation Audit
+
+Not run. The diff does not trip the `workflow-engine` gate: `git diff --name-only e28e917..HEAD`
+touches no `skills/*/SKILL.md`, skill prompt, `agents/*.md`, or `rules/*.md` source, and the skill
+runs "only when the changed diff trips" that gate. The delivery question it would ask, whether
+every rewritten reference in Codex-delivered skill and rule text reaches a real file, is instead
+checked mechanically by `test_payload_closure_every_helper_reference_resolves` and
+`test_payload_closure_helpers_resolve_the_consumer_root_not_the_payload`.
+
+### Correctness Review
+
+Six FIND angles ran over `e28e917..5305d13`. 10 locations were deduplicated and scored
+independently (threshold 75).
+
+Fixed (score >= 75; all Rule 1, no Rule 4 item touched):
+- A (75) — `scripts/verify_summary.py` took `.codex/.agent-harness/payload` as the repo root, so
+  skill-invoked `--lane/--check <slug>` failed, and commit-gate's `REQUIRE_VERIFY` re-run blocked
+  valid commits. Root resolution now also unwraps the payload location.
+- B (100) — `scripts/rebuild_solution_index.py` wrote `INDEX.md` inside the payload. Same root
+  fix in `_default_root`.
+- C (75) — correctness-review's prompt composer could not find its fragments under Codex. The
+  payload now ships each skill's `prompts/` fragments, and `scripts/render_skill_prompt.py`
+  resolves a relative fragment against `--root` when it is not found from the working directory.
+- D (100) — the doctor hashed raw source skills, so every clean install reported
+  `INSTALL_HASH_MISMATCH`. `codex_harness_doctor.py` now hashes skills as the renderer ships
+  them (`render_codex_adapter.payload_targets` + `rewrite_payload_paths`), and the doctor fixture
+  installs rendered skills.
+
+Also fixed although advisory, because each was a one-line change in code this branch wrote:
+- E (50) — the installer treated a negated parent (`!/.codex/`) as already deciding
+  `.agent-harness`. Only an explicit `!.codex/.agent-harness` negation is respected now.
+- G (50) — `rewrite_payload_paths` with an empty target list corrupted text. It now returns early.
+
+### Advisory Findings
+
+- F (25) — rendered skills name `.codex/.agent-harness/payload/harness-manifest.json` as the
+  authority, while commit-gate reads modes from the indexed root manifest or embedded defaults.
+  This matches the Claude deploy's existing rewrite to `.claude/harness-manifest.json`, so it is
+  pre-existing design, not a regression. Relevant only to consumers that track a root manifest
+  with non-default modes.
+- H (0, unmodified line) — `skills/visual-planner/render_plan.py:1424`: the
+  `TEMPLATE_PATH.parents[3]` fallback assumes the `.claude/skills/` depth. Run from a payload copy
+  in a subdirectory without `specs/`, it searches `.codex/.agent-harness/specs`. Running from the
+  repo root (the documented use) works. `render_plan.py` is a Rule-4 core engine, so this goes
+  to a follow-up.
+- I (25) — the `verify_summary.py` that commit-gate runs is an agent-writable, gitignored copy.
+  This is the same trust model as the existing `.claude/scripts/` candidate (Gate verifiability
+  negative scope: `Does not verify: verifier integrity`).
+- J (0, refuted) — the reported leftover empty `.codex/` after `--remove` does not occur. The
+  shell `--remove` path runs `rmdir "$STATE_DIR" "$TARGET_DIR/.codex"` in the right order after
+  the Python cleanup.
+
 ### Rollback
 
 - Revert the merge commit of this branch: `git revert -m 1 <merge-sha>`; no data migration is involved.

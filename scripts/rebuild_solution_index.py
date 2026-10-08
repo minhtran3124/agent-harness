@@ -49,9 +49,14 @@ def build(root: Path) -> str:
     return "\n".join(out).rstrip() + "\n"
 
 def _default_root() -> Path:
-    """Repo root. A deployed copy sits at <repo>/.claude/scripts/, one level in."""
+    """Repo root. A deployed copy sits at <repo>/.claude/scripts/ (one level in) or at
+    <repo>/.codex/.agent-harness/payload/scripts/ (three levels in)."""
     here = Path(__file__).resolve().parents[1]
-    return here.parent if here.name == ".claude" else here
+    if here.name == ".claude":
+        return here.parent
+    if here.parts[-3:] == (".codex", ".agent-harness", "payload"):
+        return here.parents[2]
+    return here
 
 
 def main() -> int:
