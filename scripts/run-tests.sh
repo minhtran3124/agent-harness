@@ -132,11 +132,39 @@ else
   fi
 fi
 
+# Build the shared pytest venv once, before anything runs concurrently: on a fresh machine
+# (every CI run) parallel suites calling ensure_pyenv would race on venv creation + pip.
+# pytest-xdist is best-effort — the pytest step below uses it only when it imports.
+PYENV_BIN="$(bash -c 'source tests/lib.sh; ensure_pyenv && rm -rf "$PYSHIM" && echo "$PYENV_DIR/bin"' 2>/dev/null)"
+if [ -n "$PYENV_BIN" ] && ! "$PYENV_BIN/python" -c 'import xdist' 2>/dev/null; then
+  "$PYENV_BIN/pip" install -q pytest-xdist >/dev/null 2>&1 || true
+fi
+
+# Suites are hermetic (each works in its own mktemp repo — see tests/lib.sh), so they run
+# in parallel. Each writes its own log, replayed below in glob order so output reads as if
+# serial. HARNESS_TEST_JOBS=1 restores a serial run; HARNESS_SKIP_SUITES (space-separated
+# paths) skips suites the caller already ran — CI runs the Codex contract as its own step.
+SUITE_JOBS="${HARNESS_TEST_JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)}"
+SUITE_OUT="$(mktemp -d)"; trap 'rm -rf "$TMP_POST_CUTOFF" "$STEP_LOG" "$SUITE_OUT"' EXIT
+SUITES=()
 for suite in tests/hooks/*.test.sh tests/scripts/*.test.sh; do
+  case " ${HARNESS_SKIP_SUITES:-} " in
+    *" $suite "*) echo ""; echo "== $suite =="; echo "  skip — listed in HARNESS_SKIP_SUITES" ;;
+    *) SUITES+=("$suite") ;;
+  esac
+done
+echo ""
+echo "== L2/L3: ${#SUITES[@]} suites, $SUITE_JOBS parallel jobs =="
+# shellcheck disable=SC2016
+printf '%s\n' "${SUITES[@]}" | xargs -P "$SUITE_JOBS" -I{} bash -c \
+  'key=$(printf %s "$1" | tr / _); bash "$1" >"$2/$key.log" 2>&1; echo $? >"$2/$key.rc"' _ {} "$SUITE_OUT"
+for suite in "${SUITES[@]}"; do
+  key="$(printf %s "$suite" | tr / _)"
   echo ""
   echo "== $suite =="
-  bash "$suite" 2>&1 | tee "$STEP_LOG"
-  if [ "${PIPESTATUS[0]}" -ne 0 ]; then
+  cat "$SUITE_OUT/$key.log" 2>/dev/null
+  cp "$SUITE_OUT/$key.log" "$STEP_LOG" 2>/dev/null || : > "$STEP_LOG"
+  if [ "$(cat "$SUITE_OUT/$key.rc" 2>/dev/null)" != 0 ]; then
     fail "$suite"
     record_details '^  (FAIL  |not ok )'
   fi
@@ -150,8 +178,10 @@ PYBIN="${TMPDIR:-/tmp}/harness-tests-venv/bin/python"
 if [ -n "$PYBIN" ] && "$PYBIN" -c 'import pytest' >/dev/null 2>&1; then
   # Engine unit tests that ship with the repo but nothing else runs.
   PYTESTS="scripts/test_check_manifest.py scripts/test_check_frontmatter_contract.py scripts/test_check_skill_tool_conformance.py scripts/test_check_codex_capabilities.py scripts/test_check_codex_packaging.py scripts/test_codex_harness_doctor.py scripts/test_check_runtime_neutral_sources.py scripts/test_verify_summary.py scripts/test_check_verify_rows.py scripts/test_check_review_receipt.py scripts/test_audit_skill_prompts.py scripts/test_score_skill_eval.py scripts/test_generate_skill_eval_corpus.py scripts/test_record_skill_eval.py scripts/test_capture_skill_eval.py scripts/test_run_skill_eval_batch.py scripts/test_check_skill_eval_readiness.py scripts/test_invalidate_skill_eval_collection.py scripts/test_rebuild_solution_index.py scripts/test_resolve_finish_context.py scripts/test_render_skill_prompt.py scripts/test_render_agent_definitions.py scripts/test_render_codex_adapter.py scripts/test_render_runtime_entry.py scripts/test_check_plan_contract.py scripts/test_score_task_review_eval.py scripts/test_score_review_chain_eval.py scripts/test_score_test_runner_eval.py scripts/test_ste_terminology_experiment.py skills/subagent-driven-development/scripts/test_task_brief.py skills/visual-planner/test_render_plan.py runtime/test_runtime_mode.py runtime/test_run_state.py runtime/test_chain_guards_are_load_bearing.py runtime/test_resume_decision.py"
+  XDIST=""
+  "$PYBIN" -c 'import xdist' >/dev/null 2>&1 && XDIST="-n $SUITE_JOBS"
   # shellcheck disable=SC2086
-  "$PYBIN" -m pytest $PYTESTS -q --no-header --no-cov -p no:cacheprovider "$PYTEST_COLOR" 2>&1 | tee "$STEP_LOG"
+  "$PYBIN" -m pytest $PYTESTS $XDIST -q --no-header --no-cov -p no:cacheprovider "$PYTEST_COLOR" 2>&1 | tee "$STEP_LOG"
   if [ "${PIPESTATUS[0]}" -ne 0 ]; then
     fail "pytest"
     record_details '^(FAILED|ERROR) '
