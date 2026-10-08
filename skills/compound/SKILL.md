@@ -28,7 +28,9 @@ Emit only complete tracks:
 | failure | symptom, wrong approach, why it failed, correct approach |
 
 Skip incomplete or `[none]` tracks. Preserve a relevant active spec’s alternatives as decision
-inputs.
+inputs. A spec number labelled `prediction → measured` (a `prediction` kept beside its
+`measured <YYYY-MM-DD> <source>` value) is a learning source: the gap between the two is evidence
+about how the team estimates.
 
 ## Write canonical records
 
