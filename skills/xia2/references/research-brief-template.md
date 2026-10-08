@@ -41,6 +41,14 @@ Use this template as the output contract for every xia research session. Fill ev
 
 _Highest-signal evidence only. Label every item._
 
+_Number labels complement these source labels: the source label says where a fact came from, the
+number label says whether a number was observed. A number is **load-bearing** when a decision,
+target, threshold or Success Criterion depends on it; each value of one carries exactly one label —
+`prediction` (an estimate not yet measured), `budget` (a limit we chose) or
+`measured <YYYY-MM-DD> <source>` (a value observed). When a measurement replaces a prediction, keep
+the prediction with its label and append the measurement beside it. Illustrative numbers stay
+unlabelled._
+
 | Label | Evidence |
 |---|---|
 | `Local` | |
