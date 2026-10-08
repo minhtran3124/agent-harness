@@ -45,6 +45,10 @@ payload location has one interpretation that respects the existing ownership bou
 
 - none
 
+Minor review findings, carried to the final review:
+- Task 1.2: the `codex_lane_repo` case in `tests/hooks/commit-gate-evidence.test.sh` does not assert that the source and `.claude/` copies of `verify_summary.py` are absent, so a future `new_repo` change could let it pass for the wrong reason.
+- Task 1.1: until Task 2.1 lands, wave 1 leaves `codex-install.test.sh` red by plan ordering (closed by Task 2.1's Verify).
+
 ### Verify
 
 | Check | Command | Exit | Notes | Criterion |
