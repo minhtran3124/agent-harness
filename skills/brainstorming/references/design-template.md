@@ -58,8 +58,8 @@ its own text._
   it may also carry an `Inference` source that says what the belief rests on. The **source** uses
   the research-brief Evidence Ledger labels `Local`, `Upstream`, `Docs` or `Inference`, followed by the date it was read and its
   location. Example: `provenance: Local, 2026-10-08, review-loop.md`.
-- **Proven by** is never empty. It is the intended `SC-n`, task or check, or
-  `accepted risk: <reason>`. `writing-plans` binds it to a concrete `SC-n` or task.
+- **Proven by** is never empty. It is the intended `SC-n`, task or check, `accepted risk: <reason>`,
+  or `retired by DC<n>`. Unless retired, `writing-plans` binds it to a concrete `SC-n` or task.
 - **If false** is never empty: say what breaks and the fallback.
 - A number inside an assumption still carries its number label (see "Number labels" below).
 
