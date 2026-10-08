@@ -1,0 +1,57 @@
+{
+    "schema_version": 1,
+    "expected_oracle": "correctness",
+    "core": true,
+    "correctness_clean": false,
+    "planted": {
+        "file": "app/services/subscription_service.py",
+        "match_any": [
+            "count_active",
+            "get_active_count",
+            "coroutine",
+            "await"
+        ],
+        "and_any": [
+            "not awaited",
+            "never awaited",
+            "missing await",
+            "without await",
+            "without an await",
+            "unawaited",
+            "coroutine",
+            "typeerror",
+            "missing an await",
+            "isn't awaited",
+            "is not awaited",
+            "does not await count_active",
+            "does not await the",
+            "but does not await it"
+        ]
+    },
+    "false_positives": [
+        {
+            "file": "app/services/subscription_service.py",
+            "match_any": [
+                "count < 0",
+                "negative",
+                "dead code",
+                "unnecessary",
+                "redundant",
+                "unreachable"
+            ],
+            "and_any": []
+        },
+        {
+            "file": "app/services/subscription_service.py",
+            "match_any": [
+                "should not be async",
+                "need not be async",
+                "does not need to be async",
+                "remove async",
+                "make it sync",
+                "synchronous"
+            ],
+            "and_any": []
+        }
+    ]
+}
