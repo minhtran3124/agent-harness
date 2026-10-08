@@ -13,6 +13,11 @@
       "uniqueItems": true
     },
     "packaging_decision": {"const": "hybrid"},
+    "payload": {
+      "items": {"pattern": "^[A-Za-z0-9_][A-Za-z0-9_./-]*$", "type": "string"},
+      "type": "array",
+      "uniqueItems": true
+    },
     "runtime": {"const": "codex"},
     "schema_version": {"const": 1},
     "skills": {
@@ -21,7 +26,7 @@
       "uniqueItems": true
     }
   },
-  "required": ["schema_version", "runtime", "packaging_decision", "skills", "hooks", "agents"],
+  "required": ["schema_version", "runtime", "packaging_decision", "skills", "hooks", "agents", "payload"],
   "title": "Rendered Codex adapter inventory",
   "type": "object"
 }
