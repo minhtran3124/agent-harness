@@ -27,7 +27,18 @@ install"), tracked under #257. Its Target checklist is the scope of this slug.
 
 ## What changed
 
-<pending — intake only>
+A Codex install now ships a derived harness payload at `.codex/.agent-harness/payload/`
+(36 render-time files: rules, non-test runtime, templates, the six consumer scripts,
+`harness-manifest.json`, each shipped skill's helpers, and the correctness-review prompt
+fragments). In the installed plugin skills and the payload's own Markdown, helper paths are
+rewritten to point there. The payload helpers resolve the consumer repo root. Both hooks probe
+the payload as a last candidate. The deployer sweeps empty payload directories on prune and
+remove, the installer appends `.codex/.agent-harness/` to `.gitignore`, and the doctor hashes
+skills as rendered. Claude install output is unchanged.
+
+The full `bash scripts/run-tests.sh` ran all green before the first edit (799 pytest), at each
+wave boundary except the expected wave-1 red noted in the Status Log, and after the review fixes
+(818 pytest, every shell suite passed).
 
 ### Rationale
 
@@ -57,10 +68,31 @@ Minor review findings, carried to the final review:
 | Check | Command | Exit | Notes | Criterion |
 | --- | --- | --- | --- | --- |
 | intake lane record | `python3 scripts/verify_summary.py --lane specs/gh-253-codex-full-payload/SUMMARY.md` | 0 | intake | |
+| payload reference closure + helpers resolve the consumer root | `python3 -m pytest scripts/test_render_codex_adapter.py -q -k closure` | 0 | 3 tests, incl. running payload helpers from a scratch consumer | SC-1 |
+| consumer subset single-sourced from deploy-harness.sh | `python3 -m pytest scripts/test_render_codex_adapter.py -q -k consumer_subset` | 0 | parity, removal, bogus, unparseable | SC-2 |
+| rewrite idempotent, non-targets untouched, empty targets no-op | `python3 -m pytest scripts/test_render_codex_adapter.py -q -k rewrite` | 0 | incl. frontmatter `allowed-tools` | SC-3 |
+| required `payload` inventory accepted by schema | `python3 -m pytest scripts/test_render_codex_adapter.py -q -k payload_inventory` | 0 | | SC-4 |
+| commit-gate runs lane evidence from the Codex payload | `bash tests/hooks/commit-gate-evidence.test.sh` | 0 | `Lane evidence... FAILED` asserted for a placeholder lane | SC-5 |
+| session-knowledge renders runtime mode from the payload | `bash tests/hooks/session-knowledge.test.sh` | 0 | | SC-6 |
+| payload install / conflict / prune / remove lifecycle | `bash tests/scripts/codex-install.test.sh` | 0 | 29 cases | SC-7 |
+| append-only .gitignore entry | `bash tests/scripts/codex-install-gitignore.test.sh` | 0 | 11 cases, incl. negated parent | SC-8 |
+| Claude rendering unchanged by a Codex render | `python3 -m pytest scripts/test_render_codex_adapter.py -q -k claude_rendering_is_unchanged` | 0 | | SC-9 |
+| docs list payload + .gitignore; doc-truth lint | `bash scripts/lint-doc-truth.sh` | 0 | | SC-10 |
+| doctor hashes rendered skills (clean install not flagged) | `python3 -m pytest scripts/test_codex_harness_doctor.py -q` | 0 | review finding D | |
 
 ### Not auto-verified
 
-- none
+- Live Codex CLI behaviour is unobserved for this change: no Codex binary ran. Plugin skill
+  discovery of the rewritten text, an agent following the rewritten paths, and hook execution
+  under real trust were exercised only by the fake-Codex harness and direct script runs
+  (traceability + truth for the scripts themselves; the runtime path is unverified).
+- Linux/WSL and Codex versions newer than 0.147.0 remain outside the evidence boundary
+  (traceability).
+- That the 36-file payload is the complete set every future skill needs is guarded only by the
+  closure test over today's rendered text (truth for today's tree; future references are covered
+  only if they use a payload-backed path form).
+- The Task 1.2 mutation check (removing the third hook candidate fails the new cases) was run
+  once by the implementer and not re-run by a gate (truth, one-time).
 
 ### Context-Propagation Audit
 
