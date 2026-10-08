@@ -31,7 +31,7 @@ def main() -> int:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--fixtures", type=Path, default=Path("evals/skills/task-review/fixtures"))
     parser.add_argument("--claude", default="claude")
-    parser.add_argument("--model", default="claude-fable-5")
+    parser.add_argument("--model", default="claude-opus-5-5")
     parser.add_argument("--reasoning", default="standard")
     args = parser.parse_args()
     if args.output.exists():

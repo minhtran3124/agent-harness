@@ -1,0 +1,309 @@
+{
+  "arm": "new",
+  "model": "claude-opus-5-5",
+  "effort": "medium",
+  "client": "2.1.287 (Claude Code)",
+  "cases": {
+    "context-rule-unread": {
+      "rc": 0,
+      "elapsed": 35.7,
+      "result": "# Review: `skills/demo-dispatch/worker-prompt.md`\n\nThis change adds only a Markdown prompt template. There's no executable code, so \"correctness\" here means places where the prompt would make a subagent do the wrong thing or leave it unable to proceed.\n\n| # | Oracle | Class | Location | Reason | Conf. |\n|---|---|---|---|---|---|\n| 1 | correctness | broken-control-flow | `worker-prompt.md:15` vs `:17-21` | The worker is told to \"STOP and escalate\" on a Rule 4 gate, but the return contract has no blocked/escalated field. When a worker halts, the dispatcher can't tell that apart from a partial success. \"Verify status\" alone is ambiguous. | 60 |\n| 2 | correctness | unresolved-reference | `worker-prompt.md:4` | `specs/<slug>/PLAN.md` is a literal placeholder and is not templated like `{{TASK_BODY}}`. If several specs exist, the worker has to guess which plan is \"active\" and may read the wrong one. | 50 |\n| 3 | correctness | inconsistent-instruction | `worker-prompt.md:14` vs `:20` | Line 14 says to record fixes \"under `### Deviations`\", which implies a Markdown heading in some file. The return contract (line 20) has a \"Deviations\" bullet in the summary instead. The worker could write to the wrong place or skip one of them. | 45 |\n| 4 | correctness | unverified-dependency | `worker-prompt.md:13-14` | The prompt relies on `.claude/rules/auto-correct-scope.md` existing and using Rule 1\u20133 / Rule 4 numbering. I can't confirm either from the diff. If the file is missing or numbered differently, the worker can't classify anything, and in an isolated context it may not be able to read the file at all. | 35 |\n| 5 | correctness | contradictory-wording | `worker-prompt.md:13-15` | \"Classify every self-fix you apply\" treats Rule 4 items as fixes that get applied, but Rule 4 means do not apply and STOP. A worker reading it literally might apply the fix first and only then flag it. | 35 |\n| 6 | intent | gap | `skills/demo-dispatch/` | The request was a dispatch prompt, but nothing wires it in. There's no SKILL.md, no dispatcher that fills in `{{TASK_BODY}}`, and nothing that consumes the labeled deviations. As shipped, nothing would load this prompt. | 40 |\n| 7 | intent | excess (minor) | `worker-prompt.md:17-21` | The general return contract (commits, files, verify status) goes beyond the request, which was only about self-fix classification. It's reasonable scaffolding, but it wasn't asked for. | 20 |\n\n**Intent summary:** The core ask is met: lines 10-15 classify self-fixes against auto-correct-scope, with the Rule 1\u20133 / Rule 4 split. There's no drift from the request. The gaps are #1 (an escalation path the dispatcher can see) and #6 (wiring).\n\n**Checked with no finding:** placeholder syntax is consistent, there's no conflicting guidance elsewhere in the file, and the deviation labeling matches the rule taxonomy the prompt cites.\n\nThe Google Drive, Linear and context7 MCP servers need to be authorized before you can use them. For the claude.ai connectors, do it in your claude.ai connector settings. For context7, use `/mcp` in an interactive session. None of them were needed for this review.",
+      "usage": {
+        "input_tokens": 2,
+        "cache_creation_input_tokens": 6162,
+        "cache_read_input_tokens": 230316,
+        "output_tokens": 1917,
+        "output_tokens_details": {
+          "thinking_tokens": 720
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 6162,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 1917,
+            "cache_read_input_tokens": 230316,
+            "cache_creation_input_tokens": 6162,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 6162
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      },
+      "model_usage": [
+        "claude-opus-5-5"
+      ],
+      "stderr": ""
+    },
+    "excess-scope": {
+      "rc": 0,
+      "elapsed": 37.4,
+      "result": "# Review: `GET /profile/settings`\n\nI reviewed only the diff and the stated intent. None of the referenced modules were available to check.\n\n## Findings\n\n| # | Oracle | Class | Location | Reason | Conf. |\n|---|---|---|---|---|---|\n| 1 | intent | excess / drift | `app/routers/profile.py:31-35` | `get_profile` was rewritten even though only the settings endpoint was requested. It now goes through `ProfileService.get_profile_with_stats` instead of `ProfileRepository.get_by_user`. That changes the data source and possibly the response contents of an existing endpoint. | 95 |\n| 2 | intent | excess (behavior change) | `app/routers/profile.py:33-34` | `GET /profile/` used to fail with a 500 (a validation error on `None`) when no profile existed. It now returns a 404. This changes the API contract of an endpoint the request didn't mention. | 85 |\n| 3 | correctness | import error / crash at load | `app/routers/profile.py:5,8,9` | `SettingsResponse`, `ProfileService` and `AppException` are imported but none of them is added in this diff. If any is missing, the import fails when the module loads and takes down every `/profile` route, including the existing one. | 50 |\n| 4 | correctness | missing method \u2192 AttributeError | `app/routers/profile.py:21` | `ProfileRepository.get_settings` isn't added in this diff. If it doesn't already exist, every call to `GET /profile/settings` fails with a 500. | 45 |\n| 5 | correctness | missing method \u2192 AttributeError | `app/routers/profile.py:32` | `ProfileService.get_profile_with_stats` isn't added in this diff. If it doesn't exist, the previously working `GET /profile/` now fails with a 500, which is a regression. | 45 |\n| 6 | correctness | wrong API \u2192 AttributeError | `app/routers/profile.py:23,34` | `AppException.NotFound(...)` assumes a nested class or attribute on `AppException`. If the project's convention is something else (a separate `NotFoundException`, or `AppException(status_code=404)`), the \"not found\" path raises an AttributeError and returns a 500 instead of a 404. | 35 |\n| 7 | correctness | validation error | `app/routers/profile.py:24` | `SettingsResponse.model_validate(settings)` needs `from_attributes=True` if the repository returns an ORM object. The schema isn't in the diff, so this can't be confirmed. If the config is missing, every successful lookup returns a 500. | 30 |\n| 8 | intent | gap (possible) | `app/routers/profile.py:22-23` | Users who don't have a settings row yet get a 404 instead of their effective (default) settings. The request was to \"return the current user's settings\", which arguably includes defaults. | 30 |\n| 9 | intent | excess (minor) | `app/routers/profile.py:17` | `dependencies=[Depends(get_current_user)]` repeats the `current_user=Depends(get_current_user)` parameter. FastAPI caches the dependency per request, so it is harmless, but it is redundant. | 60 |\n\n## What I checked with no issue found\n- **Route order:** `/settings` is registered before `/`, and there are no path parameters, so the two routes can't shadow each other.\n- **Auth:** the settings endpoint requires `get_current_user` and looks up data by `current_user.id`, so one user can't read another user's settings.\n- **Async usage:** the repository call is awaited.\n- **`response_model`:** it matches the declared return type.\n\nThe main issue is #1/#2: the change modifies the existing profile endpoint, which the request didn't ask for. The correctness findings (#3\u2013#7) depend on code outside the diff, so their confidence is limited.",
+      "usage": {
+        "input_tokens": 2,
+        "cache_creation_input_tokens": 6383,
+        "cache_read_input_tokens": 230316,
+        "output_tokens": 1828,
+        "output_tokens_details": {
+          "thinking_tokens": 553
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 6383,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 1828,
+            "cache_read_input_tokens": 230316,
+            "cache_creation_input_tokens": 6383,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 6383
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      },
+      "model_usage": [
+        "claude-opus-5-5"
+      ],
+      "stderr": ""
+    },
+    "intent-gap": {
+      "rc": 0,
+      "elapsed": 35.7,
+      "result": "Line numbers below refer to the new file, `app/routers/watchlists.py`.\n\n## Intent findings\n\n| # | class | file:line | reason | confidence |\n|---|---|---|---|---|\n| I1 | **gap** | `app/routers/watchlists.py:35` | The request asked for the empty-name check on both create and update. `update_watchlist` has no strip-and-check, so `PUT /watchlists/{id}` with `name: \"   \"` still saves a blank name and returns 200 instead of 400. | 97 |\n| I2 | **excess** | `app/routers/watchlists.py:35` | The diff adds `user_id=current_user.id` to `repo.update(...)`, which scopes updates to the owner. This was not asked for. | 92 |\n| I3 | **excess** | `app/routers/watchlists.py:36-37` | The diff adds `if updated is None: raise NotFound`, a new 404 path that was not asked for. | 90 |\n| I4 | **drift** | `app/routers/watchlists.py:19,23` | Create now stores the stripped name, not just rejects blanks. So `\"  Tech  \"` is saved as `\"Tech\"`. The request was to reject empty names, not to trim them. | 60 |\n\n## Correctness findings\n\n| # | class | file:line | reason | confidence |\n|---|---|---|---|---|\n| C1 | crash (signature mismatch) | `app/routers/watchlists.py:35` | **Trigger:** any `PUT` call. **Wrong outcome:** if `WatchlistRepository.update` doesn't accept a `user_id` keyword, it raises `TypeError`, so every update returns 500. The repository isn't changed in this diff, so the new argument is unverified. | 55 |\n| C2 | crash (None handling) | `app/routers/watchlists.py:19` | **Trigger:** `WatchlistCreate.name` is typed `Optional[str]` and the client omits it or sends `null`. **Wrong outcome:** `None.strip()` raises `AttributeError` and the client gets 500, not 400. | 20 |\n| C3 | wrong result (behaviour change) | `app/routers/watchlists.py:35-37` | **Trigger:** a user updates a watchlist they don't own, if `update` now filters by owner. **Wrong outcome:** a request that used to succeed now returns 404. That's arguably a security fix, but it changes behaviour and wasn't requested. | 45 |\n| C4 | wrong status (unverified helper) | `app/routers/watchlists.py:21` | **Trigger:** an empty name on create. **Wrong outcome:** if `AppException.BadRequest` doesn't exist or doesn't map to 400, the client gets 500 or the wrong code. | 15 |\n\n## What I checked\n- Both endpoints, against the request to reject empty names on both.\n- Whether `.strip()` is safe given the payload types.\n- Changed calls into the repository (new keyword arguments).\n- New error paths and their status codes.\n- Behaviour changes beyond what was asked: trimming, owner scoping, the 404.\n\nThe main finding is I1: the update endpoint, which was explicitly requested, has no empty-name check. Instead the diff makes owner-scoping and 404 changes to that endpoint that nobody asked for.",
+      "usage": {
+        "input_tokens": 2,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 236688,
+        "output_tokens": 1619,
+        "output_tokens_details": {
+          "thinking_tokens": 519
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 1619,
+            "cache_read_input_tokens": 236688,
+            "cache_creation_input_tokens": 0,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 0
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      },
+      "model_usage": [
+        "claude-opus-5-5"
+      ],
+      "stderr": ""
+    },
+    "missing-await": {
+      "rc": 0,
+      "elapsed": 32.1,
+      "result": "I found one correctness defect and one intent excess.\n\n**Findings**\n\n| # | Oracle | Class | Location | Reason | Confidence |\n|---|---|---|---|---|---|\n| 1 | correctness | missing-await / type-error | `app/services/subscription_service.py:17` (`count = self.repo.count_active(user_id)`) | **Trigger:** any call to `await service.get_active_count(\"u1\")`. `count_active` is `async def`, so without `await` the call returns a coroutine, not an int. **Wrong outcome:** line 18 (`count < 0`) raises `TypeError: '<' not supported between instances of 'coroutine' and 'int'`, and Python also logs \"coroutine was never awaited\". The method can never return a count. Fix: `count = await self.repo.count_active(user_id)`. | 97 |\n| 2 | intent | excess | `app/services/subscription_service.py:18-19` (`if count < 0: return 0`) | The request asked for a method that returns the repository's count. Nothing asked for clamping negative values to 0. This logic hides repository bugs instead of passing the value through. It's minor, but it wasn't requested. | 60 |\n\n**What I checked with no problems found**\n- Intent gap: the method exists on `SubscriptionService`, is named `get_active_count`, takes `user_id`, and uses `SubscriptionRepository.count_active` through `self.repo`. Nothing requested is missing.\n- Intent drift: making the method `async` is the right choice, because it wraps an async repository call. The return type `int` matches the request.\n- `self.repo` is set in `__init__`, so it can't raise an AttributeError.\n- Only the comment in the diff says `count_active` is async. I relied on that and didn't check the repository source. If the comment is wrong and `count_active` is sync, finding #1 goes away, but the comment is explicit.",
+      "usage": {
+        "input_tokens": 2,
+        "cache_creation_input_tokens": 6012,
+        "cache_read_input_tokens": 230316,
+        "output_tokens": 701,
+        "output_tokens_details": {
+          "thinking_tokens": 78
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 6012,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 701,
+            "cache_read_input_tokens": 230316,
+            "cache_creation_input_tokens": 6012,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 6012
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      },
+      "model_usage": [
+        "claude-opus-5-5"
+      ],
+      "stderr": ""
+    },
+    "none-deref": {
+      "rc": 0,
+      "elapsed": 35.6,
+      "result": "I found three likely defects and two low-confidence risks. The most serious is a crash when the user doesn't exist.\n\n| # | Oracle | Class | Location | Reason | Confidence |\n|---|---|---|---|---|---|\n| 1 | correctness | unhandled None / crash | `app/routers/user_email.py:19` | Trigger: a request for a `user_id` that doesn't exist or is soft-deleted. `get_by_id` returns `None` (the diff's own comment at lines 22\u201323 says so), so `user.email` raises `AttributeError` and the client gets a 500 instead of a 404. | 92 |\n| 2 | intent | drift (stricter auth than asked) | `app/routers/user_email.py:14` | The request says \"auth-protected\", which means any logged-in user. The diff adds `Depends(require_admin)`, which also blocks non-admins, including a user asking for their own email. | 70 |\n| 3 | intent | gap (endpoint not wired up) | `app/routers/user_email.py:8` | The diff only creates a new router. Nothing calls `app.include_router(...)` in `main.py` or elsewhere, so the route won't be reachable unless routers are discovered automatically, and I can't see whether they are. | 55 |\n| 4 | correctness | type mismatch (possible) | `app/routers/user_email.py:16` | `user_id: str` might not match the type the repository expects, such as `int` or `UUID`. If it doesn't, the lookup could fail or never find a match. I can't confirm this because the repository's signature isn't in the diff. | 20 |\n| 5 | correctness | async/sync mismatch (possible) | `app/routers/user_email.py:18` | The code assumes `get_by_id` is async. If it's actually a regular function, `await` on its result raises `TypeError` and every request returns a 500. I can't confirm this without the repository source. | 15 |\n\n**Also checked, no defects found:**\n- Imports are used, and `UserRepository` is used as the request asked.\n- Route path, HTTP method and `response_model` match the request.\n- Listing both `get_current_user` and `require_admin` doesn't cause a double lookup, because FastAPI caches dependencies within a request.\n- The `db` dependency injection and the async handler are written correctly.",
+      "usage": {
+        "input_tokens": 2,
+        "cache_creation_input_tokens": 6181,
+        "cache_read_input_tokens": 230316,
+        "output_tokens": 1269,
+        "output_tokens_details": {
+          "thinking_tokens": 509
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 6181,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 1269,
+            "cache_read_input_tokens": 230316,
+            "cache_creation_input_tokens": 6181,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 6181
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      },
+      "model_usage": [
+        "claude-opus-5-5"
+      ],
+      "stderr": ""
+    },
+    "soft-delete-filter": {
+      "rc": 0,
+      "elapsed": 34.3,
+      "result": "I reviewed only the diff and the request. I couldn't see `BaseRepository`, the `Watchlist` model or the callers, so some findings depend on things I can't confirm.\n\n## Findings\n\n| # | Oracle | Class | File:line | Reason | Conf. |\n|---|---|---|---|---|---|\n| 1 | intent | excess | `app/repositories/watchlist_repository.py:14` | The request didn't ask for any ordering. `.order_by(Watchlist.created_at.desc())` adds newest-first sorting, which callers may come to rely on. | 70 |\n| 2 | correctness | crash (conditional) | `app/repositories/watchlist_repository.py:14` | If `Watchlist` has no `created_at` column, building the query raises `AttributeError`, so every call fails. The model isn't in the diff, so I can't confirm the column exists. | 25 |\n| 3 | correctness | wrong result (conditional) | `app/repositories/watchlist_repository.py:10` | `user_id` is typed `str`. If `Watchlist.user_id` is really an int or UUID column and a caller passes a string, some database drivers will raise or return no rows instead of the user's watchlists. | 20 |\n| 4 | intent | gap (conditional) | `app/repositories/watchlist_repository.py:11-15` | There's no filter for soft-deleted or archived rows. If the model has a flag like `deleted_at` or `is_archived`, deleted watchlists will be returned as if they were still active. | 15 |\n\n## Checked with no defect found\n- **Return type:** `list(result.scalars().all())` correctly returns `list[Watchlist]`, and an empty list when the user has no watchlists.\n- **Async use:** `execute` is awaited, and `scalars().all()` runs synchronously on the buffered result, which is correct.\n- **Filter:** `where(Watchlist.user_id == user_id)` covers \"all of a user's watchlists\". There's no limit or paging that would cut results off.\n- **Name and signature:** `list_for_user(user_id)` matches the request exactly.\n- **Imports:** `select` and `Watchlist` were already imported, so nothing is missing.\n- **Session access:** `self.session` should come from `BaseRepository`, but I couldn't see that class to confirm.\n\n**Verdict:** no definite bugs. The one sure intent finding is the ordering nobody asked for (#1). The other findings matter only if the model or schema is set up the way I described.\n\nAlso, the Google Drive, Linear and context7 servers need authorizing before they can be used (in your claude.ai connector settings, or `/mcp` in an interactive session). This review didn't need them.",
+      "usage": {
+        "input_tokens": 2,
+        "cache_creation_input_tokens": 6059,
+        "cache_read_input_tokens": 230316,
+        "output_tokens": 1106,
+        "output_tokens_details": {
+          "thinking_tokens": 214
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 6059,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 1106,
+            "cache_read_input_tokens": 230316,
+            "cache_creation_input_tokens": 6059,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 6059
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      },
+      "model_usage": [
+        "claude-opus-5-5"
+      ],
+      "stderr": "SessionEnd hook [node \"${CLAUDE_PLUGIN_ROOT}/hooks/session-end-cleanup.mjs\"] failed: Hook cancelled\n"
+    },
+    "stale-inline-policy": {
+      "rc": 0,
+      "elapsed": 45.3,
+      "result": "The new file is a prompt template, not executable code, so \"correctness\" below means the prompt telling the subagent to do the wrong thing. The request is mostly met: there is a Rule-4 STOP list and an explicit \"do NOT go read specs\" instruction. Four problems stand out: two about what the prompt makes the subagent do, two about the STOP criteria themselves.\n\n## Findings\n\n| # | Oracle | Class | Location | Reason | Conf |\n|---|---|---|---|---|---|\n| 1 | intent | excess | `skills/demo-review/reviewer-prompt.md:13-14` | \"Otherwise treat it as Rule 1\u20133 **and apply the fix**\" makes a classifier also make edits. The request was only about classifying, and the return contract (lines 22-26) asks for a *recommended* action, so the prompt contradicts itself. Trigger: any finding not on the STOP list. Wrong outcome: the subagent changes code when it should only report. | 80 |\n| 2 | correctness | input/contract mismatch | `skills/demo-review/reviewer-prompt.md:3-4` vs `:9` | Line 3 says \"Classify every finding in the diff\", but the only input slot is `{{FINDING_BODY}}`, which holds one finding. There is no diff placeholder. Trigger: a normal dispatch with one finding. Wrong outcome: the subagent has no diff to work from, so it either makes findings up or reports nothing, and the return contract only has room for one classification. | 70 |\n| 3 | correctness | fail-open default | `skills/demo-review/reviewer-prompt.md:13-14` | Anything not clearly on the list defaults to auto-fix. There is no \"when unsure, escalate\" rule. Trigger: a borderline finding, such as a data migration, a config/env change, or a rate-limit change. Wrong outcome: a change that should have stopped gets auto-applied. | 65 |\n| 4 | intent | gap (possibly incomplete criteria) | `skills/demo-review/reviewer-prompt.md:16-20` | Item 4 only covers new *external service* dependencies. STOP lists like this usually also cover swapping libraries or frameworks, broader architectural changes and destructive data operations. Since the prompt now replaces reading the spec, anything left out here gets auto-fixed. I can't see the canonical Rule-4 spec, so I can't confirm this. | 40 |\n| 5 | intent | gap | `skills/demo-review/reviewer-prompt.md:4, 13` | It says \"STOP + escalate\" but never says how: what to output and who to send it to. The return contract has no escalation field. | 35 |\n\n## What I checked that was fine\n- The prompt tells the subagent explicitly not to read specs or rule files, which matches the request.\n- The STOP criteria are written into the prompt itself, so no outside lookup is needed.\n- The five listed items are clear and don't overlap with each other.\n- The return contract covers classification, rationale and recommended action.",
+      "usage": {
+        "input_tokens": 2,
+        "cache_creation_input_tokens": 6250,
+        "cache_read_input_tokens": 230316,
+        "output_tokens": 1699,
+        "output_tokens_details": {
+          "thinking_tokens": 699
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 6250,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 1699,
+            "cache_read_input_tokens": 230316,
+            "cache_creation_input_tokens": 6250,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 6250
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      },
+      "model_usage": [
+        "claude-opus-5-5"
+      ],
+      "stderr": ""
+    }
+  }
+}

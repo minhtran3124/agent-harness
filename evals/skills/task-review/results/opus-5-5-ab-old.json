@@ -1,0 +1,348 @@
+{
+  "schema_version": 1,
+  "commit_sha": "8ee2609063d0777cf6d43d44ed393f04ee09008d",
+  "environment": {
+    "model": "claude-opus-5",
+    "client_version": "2.1.287 (Claude Code)",
+    "reasoning": "effort medium"
+  },
+  "mode": "candidate",
+  "records": [
+    {
+      "case_id": "cannot-verify",
+      "first_run": true,
+      "dispatches": 1,
+      "outputs": [
+        "**spec_verdict: cannot_verify** \u2014 the fixture states the signing protocol and external contract are unavailable, so compatibility with the webhook signature cannot be checked against anything.\n\n**quality_verdict: needs_fixes**\n\nFindings:\n\n| Severity | Finding |\n|---|---|\n| Important | Compatibility claim is unverifiable: only a caller name is provided; no signing implementation, payload canonicalization, header format, or algorithm is in evidence. No judgment on correctness is possible. |\n| Minor | No verification artifact accompanies the change \u2014 with the external contract unavailable, a contract/golden-vector test (fixed payload + secret \u2192 expected signature) is the only way to make this gate meaningful. |\n\nEvidence: the fixture's two statements \u2014 task \"Keep an external webhook signature compatible\" and implementation \"Only a caller name is shown. The signing protocol and external contract are unavailable.\" No other evidence was provided or claimed, and no absence beyond that is asserted (`not_observed != absent`)."
+      ],
+      "usage": [
+        {
+          "input_tokens": 2,
+          "cache_creation_input_tokens": 47558,
+          "cache_read_input_tokens": 0,
+          "output_tokens": 335,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 47558,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 335,
+              "cache_read_input_tokens": 0,
+              "cache_creation_input_tokens": 47558,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 47558
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard",
+          "fallback_credit": null
+        }
+      ],
+      "elapsed_seconds": [
+        17.503
+      ],
+      "transcript": "/private/tmp/claude-501/-Users-minhtran-Documents-minhtran3124-developer-harness-skills/46d700db-ea19-4811-9c97-38758c2383d6/scratchpad/eval/tr/transcripts/candidate-cannot-verify.json"
+    },
+    {
+      "case_id": "combined",
+      "first_run": true,
+      "dispatches": 1,
+      "outputs": [
+        "**spec_verdict: fail** \u00b7 **quality_verdict: needs_fixes**\n\n| # | Severity | Finding | Evidence |\n|---|---|---|---|\n| 1 | Critical | Blank input is accepted, directly contradicting the stated requirement \"reject blank input\" | Fixture: \"The validator accepts blank strings\" |\n| 2 | Important | Single 400-line nested conditional \u2014 unmaintainable control flow for a validation routine | Fixture: \"one 400-line nested conditional\" |\n| 3 | Important | Duplicated branches invite divergent fixes; a rule corrected in one branch stays wrong in the others | Fixture: \"duplicated branches\" |\n\nFinding 1 alone fails the spec: the task names two requirements and the implementation violates one outright. Not `cannot_verify` \u2014 the fixture states the behavior itself, so no external contract is missing. The email-validation half of the spec is unaddressed by the fixture statements (no claim either way about correctness of accepted/rejected email forms), so it is unverified rather than passing \u2014 I did not score it as a finding."
+      ],
+      "usage": [
+        {
+          "input_tokens": 2,
+          "cache_creation_input_tokens": 35965,
+          "cache_read_input_tokens": 13123,
+          "output_tokens": 358,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 35965,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 358,
+              "cache_read_input_tokens": 13123,
+              "cache_creation_input_tokens": 35965,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 35965
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard",
+          "fallback_credit": null
+        }
+      ],
+      "elapsed_seconds": [
+        10.966
+      ],
+      "transcript": "/private/tmp/claude-501/-Users-minhtran-Documents-minhtran3124-developer-harness-skills/46d700db-ea19-4811-9c97-38758c2383d6/scratchpad/eval/tr/transcripts/candidate-combined.json"
+    },
+    {
+      "case_id": "minor-only",
+      "first_run": true,
+      "dispatches": 1,
+      "outputs": [
+        "**spec_verdict: pass** \u2014 fixture states names sort correctly and tests are complete.\n**quality_verdict: approved**\n\nFindings:\n- **Minor** \u2014 vague helper name. Evidence: fixture says \"A helper name is slightly vague\"; behavior and tests are stated complete, so this is cosmetic only and doesn't block."
+      ],
+      "usage": [
+        {
+          "input_tokens": 2,
+          "cache_creation_input_tokens": 35963,
+          "cache_read_input_tokens": 13123,
+          "output_tokens": 112,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 35963,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 112,
+              "cache_read_input_tokens": 13123,
+              "cache_creation_input_tokens": 35963,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 35963
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard",
+          "fallback_credit": null
+        }
+      ],
+      "elapsed_seconds": [
+        7.23
+      ],
+      "transcript": "/private/tmp/claude-501/-Users-minhtran-Documents-minhtran3124-developer-harness-skills/46d700db-ea19-4811-9c97-38758c2383d6/scratchpad/eval/tr/transcripts/candidate-minor-only.json"
+    },
+    {
+      "case_id": "missing-global-constraint",
+      "first_run": true,
+      "dispatches": 1,
+      "outputs": [
+        "**spec_verdict: fail \u00b7 quality_verdict: needs_fixes**\n\nFindings:\n\n| Severity | Finding | Evidence |\n|---|---|---|\n| Critical | Secret logging violates the stated global constraint | Constraint: \"Never log secret values.\" Implementation: \"The failure handler logs the complete request including `Authorization`.\" An `Authorization` header carries a credential, so logging the complete request writes a secret value to logs. Direct contradiction, no redaction claimed by the fixture. |\n\nBoth statements are provided in the fixture, so the conflict is decidable without external contracts \u2014 no `cannot_verify`."
+      ],
+      "usage": [
+        {
+          "input_tokens": 2,
+          "cache_creation_input_tokens": 35951,
+          "cache_read_input_tokens": 13123,
+          "output_tokens": 206,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 35951,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 206,
+              "cache_read_input_tokens": 13123,
+              "cache_creation_input_tokens": 35951,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 35951
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard",
+          "fallback_credit": null
+        }
+      ],
+      "elapsed_seconds": [
+        8.48
+      ],
+      "transcript": "/private/tmp/claude-501/-Users-minhtran-Documents-minhtran3124-developer-harness-skills/46d700db-ea19-4811-9c97-38758c2383d6/scratchpad/eval/tr/transcripts/candidate-missing-global-constraint.json"
+    },
+    {
+      "case_id": "plan-mandated",
+      "first_run": true,
+      "dispatches": 1,
+      "outputs": [
+        "**spec_verdict: fail** \u00b7 **quality_verdict: needs_fixes**\n\nThe task spec requires every task to add a passing Criterion row to SUMMARY; the fixture states no verification row or Criterion mapping exists. That is a direct, stated violation of the sole requirement \u2014 not unknown evidence, since the fixture supplies the complete state of both sides.\n\n| Severity | Finding | Evidence |\n|---|---|---|\n| Critical | No Criterion row in SUMMARY \u2014 the task's only stated requirement is unmet | Fixture: \"no verification row or Criterion mapping exists\" vs. spec \"must add a passing Criterion row\" |\n| Important | Behavior ships with zero re-runnable proof; \"implemented\" is assertion-only | Fixture states behavior is implemented but no verification row exists, so no exit code or command backs the claim |\n\nNot `cannot_verify`: the fixture does not declare any external contract unavailable, and the missing artifact is itself the asserted fact rather than an unexamined gap."
+      ],
+      "usage": [
+        {
+          "input_tokens": 2,
+          "cache_creation_input_tokens": 35967,
+          "cache_read_input_tokens": 13123,
+          "output_tokens": 338,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 35967,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 338,
+              "cache_read_input_tokens": 13123,
+              "cache_creation_input_tokens": 35967,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 35967
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard",
+          "fallback_credit": null
+        }
+      ],
+      "elapsed_seconds": [
+        10.016
+      ],
+      "transcript": "/private/tmp/claude-501/-Users-minhtran-Documents-minhtran3124-developer-harness-skills/46d700db-ea19-4811-9c97-38758c2383d6/scratchpad/eval/tr/transcripts/candidate-plan-mandated.json"
+    },
+    {
+      "case_id": "quality-only",
+      "first_run": true,
+      "dispatches": 1,
+      "outputs": [
+        "**spec_verdict: pass** \u2014 the stated task (parse a single JSON config file) is implemented by `config.py` opening and parsing the input.\n\n**quality_verdict: needs_fixes**\n\n| Severity | Finding | Evidence |\n|---|---|---|\n| Important | No error handling: malformed JSON surfaces a raw traceback instead of an actionable error | Fixture: \"malformed JSON raises a raw traceback\" |\n| Important | Zero test coverage for the parser, including the malformed-input path | Fixture: \"no test exists\" |\n\nNo cannot_verify items \u2014 the fixture does not claim any external contract is unavailable."
+      ],
+      "usage": [
+        {
+          "input_tokens": 2,
+          "cache_creation_input_tokens": 35969,
+          "cache_read_input_tokens": 13123,
+          "output_tokens": 210,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 35969,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 210,
+              "cache_read_input_tokens": 13123,
+              "cache_creation_input_tokens": 35969,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 35969
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard",
+          "fallback_credit": null
+        }
+      ],
+      "elapsed_seconds": [
+        7.947
+      ],
+      "transcript": "/private/tmp/claude-501/-Users-minhtran-Documents-minhtran3124-developer-harness-skills/46d700db-ea19-4811-9c97-38758c2383d6/scratchpad/eval/tr/transcripts/candidate-quality-only.json"
+    },
+    {
+      "case_id": "spec-only",
+      "first_run": true,
+      "dispatches": 1,
+      "outputs": [
+        "**spec_verdict: fail**\n**quality_verdict: needs_fixes**\n\n### Findings\n\n**Critical \u2014 `--dry-run` has no effect**\nThe task's defining requirement is that the flag prevent writes. The fixture states `run.py` parses `--dry-run` but always calls `write_output()` \u2014 so the flag is accepted and silently ignored. Files are written under `--dry-run`, which is the exact failure the task was meant to prevent.\n\nFix shape: guard the `write_output()` call on the parsed flag (and surface the intended write target instead, if a preview is wanted).\n\n**Important \u2014 no evidence of a test covering the no-write behavior**\nPer \u00a71, this is reported as a gap in the provided evidence, not an absence claim about the repo: the fixture describes parsing and the unconditional call only, and provides no verification that a `--dry-run` invocation leaves the filesystem untouched. A behavior whose entire value is a negative (\"does not write\") needs an explicit assertion, otherwise the same bug recurs.\n\nSpec verdict is `fail` rather than `cannot_verify` because the fixture's own statement is sufficient to decide it \u2014 the stated behavior contradicts the stated requirement."
+      ],
+      "usage": [
+        {
+          "input_tokens": 2,
+          "cache_creation_input_tokens": 35969,
+          "cache_read_input_tokens": 13123,
+          "output_tokens": 395,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "server_tool_use": {
+            "web_search_requests": 0,
+            "web_fetch_requests": 0
+          },
+          "service_tier": "standard",
+          "cache_creation": {
+            "ephemeral_1h_input_tokens": 35969,
+            "ephemeral_5m_input_tokens": 0
+          },
+          "inference_geo": "not_available",
+          "iterations": [
+            {
+              "input_tokens": 2,
+              "output_tokens": 395,
+              "cache_read_input_tokens": 13123,
+              "cache_creation_input_tokens": 35969,
+              "cache_creation": {
+                "ephemeral_5m_input_tokens": 0,
+                "ephemeral_1h_input_tokens": 35969
+              },
+              "type": "message"
+            }
+          ],
+          "speed": "standard",
+          "fallback_credit": null
+        }
+      ],
+      "elapsed_seconds": [
+        11.85
+      ],
+      "transcript": "/private/tmp/claude-501/-Users-minhtran-Documents-minhtran3124-developer-harness-skills/46d700db-ea19-4811-9c97-38758c2383d6/scratchpad/eval/tr/transcripts/candidate-spec-only.json"
+    }
+  ]
+}

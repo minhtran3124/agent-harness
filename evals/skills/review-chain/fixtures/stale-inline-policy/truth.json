@@ -1,0 +1,35 @@
+{
+    "schema_version": 1,
+    "expected_oracle": "context-propagation-audit",
+    "core": false,
+    "correctness_clean": true,
+    "planted": {
+        "file": "skills/demo-review/reviewer-prompt.md",
+        "match_any": [
+            "stop list",
+            "rule 4",
+            "rule-4",
+            "stop case",
+            "stop criteria",
+            "auto-correct-scope"
+        ],
+        "and_any": [
+            "incomplete",
+            "missing",
+            "omit",
+            "subset",
+            "drift",
+            "stale",
+            "transaction",
+            "high-blast",
+            "blast radius",
+            "replacing",
+            "out of sync",
+            "diverge",
+            "only five",
+            "5 of 8",
+            "three"
+        ]
+    },
+    "false_positives": []
+}

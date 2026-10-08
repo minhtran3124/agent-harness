@@ -10,13 +10,17 @@
 - **Expected verdict if caught:** flags the missing validation on `update_watchlist`; the
   create-side validation is correct and in-scope.
 - **What a false-positive would look like:** flagging the create-side guard as wrong/excess,
-  or reporting a correctness bug in the create path (the guard is correct). Those are not the
-  planted defect.
+  or reporting a correctness bug in the create path (the guard is correct); or flagging the
+  owner-scoping (`user_id=current_user.id`) or the `None` → `AppException.NotFound` (404) on
+  `update_watchlist` as excess — `intent.md` requests both (fixture v4, 2026-10-02). Those are
+  not the planted defect.
 - **Correctness-clean (fixture v2, 2026-06-14):** `update_watchlist` now scopes the mutation by
   owner (`repo.update(watchlist_id, user_id=current_user.id, ...)`) and guards the `Optional`
   result (`if updated is None: raise AppException.NotFound(...)`), removing the v1 BOLA/IDOR and
-  None-deref. **Create-path normalized (2026-07-15):** `create_watchlist` now strips once and
-  **stores the stripped value** (`name = payload.name.strip(); ... repo.create(..., name=name)`),
+  None-deref. **Owner-scoping and 404 requested (fixture v4, 2026-10-02):** `intent.md` now
+  says only the owner may update a watchlist and that a missing or foreign watchlist returns
+  404, so both repairs are requested behavior, not excess scope. **Create-path normalized
+  (2026-07-15):** `create_watchlist` now strips once and **stores the stripped value** (`name = payload.name.strip(); ... repo.create(..., name=name)`),
   closing an unintended validate-stripped/store-unstripped defect the off-oracle correctly caught
   (issue #59). The empty-name validation is **still intentionally absent** on the update path —
   that is the planted intent gap and MUST remain. So the off-oracle `/correctness-review` pass

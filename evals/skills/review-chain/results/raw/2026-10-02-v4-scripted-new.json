@@ -1,0 +1,280 @@
+{
+  "model": "claude-opus-5-5",
+  "effort": "medium",
+  "client": "2.1.287 (Claude Code)",
+  "cases": {
+    "context-rule-unread": {
+      "rc": 0,
+      "elapsed": 19.763,
+      "result": "I found no runtime bugs: the change only adds a Markdown prompt file, so there is no executable code. The intent is mostly met. The prompt tells subagents to classify every self-fix against `.claude/rules/auto-correct-scope.md` and to label each one by rule under Deviations. I found one real gap and a few things I can't check from the diff alone.\n\n- **Gap:** the prompt tells the subagent to stop and escalate on a Rule 4 hard gate, but the return section has no field for reporting that it stopped.\n- **Can't confirm:** whether the rule file, the `{{TASK_BODY}}` placeholder and the `specs/<slug>/PLAN.md` path exist or are filled in elsewhere.\n- **Minor:** the `demo-dispatch` folder name and some return fields that weren't asked for.\n\n```json\n[\n  {\n    \"oracle\": \"intent\",\n    \"class\": \"gap\",\n    \"file\": \"skills/demo-dispatch/worker-prompt.md\",\n    \"line\": 17,\n    \"confidence\": 60,\n    \"summary\": \"The prompt tells the subagent to 'STOP and escalate on any Rule 4 hard gate', but the Return contract (lines 17-21) has no field for a STOP/escalation status or the Rule 4 reason. If a subagent stops on Rule 4, it has no defined way to report it, so the stop can come back looking like a normal summary and the escalation is lost.\"\n  },\n  {\n    \"oracle\": \"correctness\",\n    \"class\": \"unknown\",\n    \"file\": \"skills/demo-dispatch/worker-prompt.md\",\n    \"line\": 13,\n    \"confidence\": 40,\n    \"summary\": \"The prompt points to `.claude/rules/auto-correct-scope.md` and its 'Rule 1\u20133 vs Rule 4' numbering, but neither appears in the diff. If the file is missing or numbered differently, subagents can't classify their fixes reliably and may mislabel deviations.\"\n  },\n  {\n    \"oracle\": \"correctness\",\n    \"class\": \"unknown\",\n    \"file\": \"skills/demo-dispatch/worker-prompt.md\",\n    \"line\": 8,\n    \"confidence\": 35,\n    \"summary\": \"Nothing in the diff fills in the `{{TASK_BODY}}` placeholder. If the dispatcher doesn't replace it, the subagent receives the literal placeholder and has no task to run.\"\n  },\n  {\n    \"oracle\": \"intent\",\n    \"class\": \"drift\",\n    \"file\": \"skills/demo-dispatch/worker-prompt.md\",\n    \"line\": 1,\n    \"confidence\": 25,\n    \"summary\": \"The prompt sits under a new `skills/demo-dispatch/` folder. The 'demo' name suggests it may not be the dispatch path that real implementer subagents use, so they might never get the classification instruction. No dispatcher is changed to load this file.\"\n  },\n  {\n    \"oracle\": \"intent\",\n    \"class\": \"excess\",\n    \"file\": \"skills/demo-dispatch/worker-prompt.md\",\n    \"line\": 18,\n    \"confidence\": 20,\n    \"summary\": \"The Return contract also asks for commits, files touched and verify status, which go beyond the requested self-fix classification. This is minor scaffolding but wasn't asked for.\"\n  },\n  {\n    \"oracle\": \"correctness\",\n    \"class\": \"unknown\",\n    \"file\": \"skills/demo-dispatch/worker-prompt.md\",\n    \"line\": 4,\n    \"confidence\": 20,\n    \"summary\": \"The prompt assumes there is one active `specs/<slug>/PLAN.md` but doesn't say how the subagent finds `<slug>`. If there are several spec folders, the subagent may pick the wrong plan.\"\n  }\n]\n```",
+      "usage": {
+        "input_tokens": 2,
+        "cache_creation_input_tokens": 26137,
+        "cache_read_input_tokens": 0,
+        "output_tokens": 1692,
+        "output_tokens_details": {
+          "thinking_tokens": 458
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 26137,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 1692,
+            "cache_read_input_tokens": 0,
+            "cache_creation_input_tokens": 26137,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 26137
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      }
+    },
+    "excess-scope": {
+      "rc": 0,
+      "elapsed": 20.911,
+      "result": "Two findings matter here. Nothing in the diff confirms a crash or wrong result. The unconfirmed risks are logged under class `unknown`:\n\n- **Intent, unrequested change:** the diff also rewrites the existing `GET /profile/` handler. The change wasn't asked for, and it changes behaviour: a missing profile used to give a 500 and now gives a 404.\n- **Correctness:** several pieces the new code depends on are defined outside the diff, so I couldn't confirm they exist or behave as assumed.\n\n```json\n[\n  {\n    \"oracle\": \"intent\",\n    \"class\": \"excess\",\n    \"file\": \"app/routers/profile.py\",\n    \"line\": 32,\n    \"confidence\": 90,\n    \"summary\": \"The request only asked for GET /profile/settings, but the diff also rewrites the existing GET /profile/ handler. It swaps ProfileRepository.get_by_user for ProfileService.get_profile_with_stats, an unrequested refactor that may change what the response contains.\"\n  },\n  {\n    \"oracle\": \"intent\",\n    \"class\": \"excess\",\n    \"file\": \"app/routers/profile.py\",\n    \"line\": 34,\n    \"confidence\": 75,\n    \"summary\": \"A new 404 check was added to the existing get_profile endpoint, which the request did not ask for. Previously a missing profile reached ProfileResponse.model_validate(None) and failed with a 500; now it returns a 404 'profile not found'. The behaviour change is outside the requested scope.\"\n  },\n  {\n    \"oracle\": \"correctness\",\n    \"class\": \"unknown\",\n    \"file\": \"app/routers/profile.py\",\n    \"line\": 33,\n    \"confidence\": 45,\n    \"summary\": \"ProfileService.get_profile_with_stats is defined outside the diff. If it returns a different shape than repo.get_by_user did (for example a tuple, a dict with extra stats, or an object with renamed fields), ProfileResponse.model_validate fails at runtime and the existing GET /profile/ endpoint starts returning 500s.\"\n  },\n  {\n    \"oracle\": \"correctness\",\n    \"class\": \"unknown\",\n    \"file\": \"app/routers/profile.py\",\n    \"line\": 21,\n    \"confidence\": 35,\n    \"summary\": \"ProfileRepository.get_settings is not shown in the diff. If the method does not exist, every GET /profile/settings request raises AttributeError and returns 500.\"\n  },\n  {\n    \"oracle\": \"correctness\",\n    \"class\": \"unknown\",\n    \"file\": \"app/routers/profile.py\",\n    \"line\": 24,\n    \"confidence\": 35,\n    \"summary\": \"If get_settings returns an ORM object and SettingsResponse does not set model_config from_attributes=True, model_validate raises a ValidationError and the endpoint returns 500 instead of the user's settings. SettingsResponse is not defined in the diff.\"\n  },\n  {\n    \"oracle\": \"correctness\",\n    \"class\": \"unknown\",\n    \"file\": \"app/routers/profile.py\",\n    \"line\": 23,\n    \"confidence\": 30,\n    \"summary\": \"The code calls AppException.NotFound(...) as a nested attribute of app.exceptions.AppException. If NotFound is not defined that way, or is not an exception, the not-found path raises AttributeError or TypeError and returns 500 instead of 404.\"\n  },\n  {\n    \"oracle\": \"intent\",\n    \"class\": \"drift\",\n    \"file\": \"app/routers/profile.py\",\n    \"line\": 15,\n    \"confidence\": 20,\n    \"summary\": \"get_current_user is declared twice, once in the route's dependencies= list and again as a parameter. FastAPI caches dependencies per request, so the result is correct, but the duplicate declaration is redundant.\"\n  }\n]\n```",
+      "usage": {
+        "input_tokens": 2,
+        "cache_creation_input_tokens": 251843,
+        "cache_read_input_tokens": 0,
+        "output_tokens": 1635,
+        "output_tokens_details": {
+          "thinking_tokens": 404
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 251843,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 1635,
+            "cache_read_input_tokens": 0,
+            "cache_creation_input_tokens": 251843,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 251843
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      }
+    },
+    "intent-gap": {
+      "rc": 0,
+      "elapsed": 16.48,
+      "result": "I reviewed the diff against the request. The create endpoint now rejects empty names correctly. The update endpoint got the owner check but **not** the empty-name check, which is half of what was asked. Three findings depend on code that isn't in the diff, so I marked them `unknown`.\n\n```json\n[\n  {\n    \"oracle\": \"intent\",\n    \"class\": \"gap\",\n    \"file\": \"app/routers/watchlists.py\",\n    \"line\": 33,\n    \"confidence\": 95,\n    \"summary\": \"The request asks for empty or whitespace-only names to be rejected on BOTH endpoints, but update_watchlist has no such check. It passes payload.name straight to repo.update, so PUT /watchlists/{id} with name \\\"   \\\" or \\\"\\\" saves a blank name and returns 200 instead of 400.\"\n  },\n  {\n    \"oracle\": \"correctness\",\n    \"class\": \"missing_validation\",\n    \"file\": \"app/routers/watchlists.py\",\n    \"line\": 33,\n    \"confidence\": 85,\n    \"summary\": \"Trigger: PUT /watchlists/{id} with body {\\\"name\\\": \\\"  \\\"}. Result: the watchlist is renamed to whitespace and the call returns 200. Create trims the name and rejects blanks; update does neither, so the same bad input gets different results on the two endpoints.\"\n  },\n  {\n    \"oracle\": \"correctness\",\n    \"class\": \"unknown\",\n    \"file\": \"app/routers/watchlists.py\",\n    \"line\": 33,\n    \"confidence\": 50,\n    \"summary\": \"repo.update is now called with a new user_id keyword argument, and the 404 depends on it returning None when the watchlist is missing or owned by someone else. The diff doesn't change or show WatchlistRepository.update. If it doesn't accept user_id, every update fails with a TypeError (500). If it ignores user_id, or raises instead of returning None, the owner check and the 404 don't happen.\"\n  },\n  {\n    \"oracle\": \"correctness\",\n    \"class\": \"unknown\",\n    \"file\": \"app/routers/watchlists.py\",\n    \"line\": 20,\n    \"confidence\": 30,\n    \"summary\": \"payload.name.strip() assumes name is always a string. If WatchlistCreate declares name as Optional (the schema isn't in the diff), a request with name null raises AttributeError and returns 500 instead of 400.\"\n  },\n  {\n    \"oracle\": \"correctness\",\n    \"class\": \"unknown\",\n    \"file\": \"app/routers/watchlists.py\",\n    \"line\": 22,\n    \"confidence\": 25,\n    \"summary\": \"The code relies on AppException.BadRequest and AppException.NotFound existing and mapping to HTTP 400 and 404. Neither is defined in the diff. If they don't exist, or map to other status codes, the error paths either crash or return the wrong status.\"\n  },\n  {\n    \"oracle\": \"intent\",\n    \"class\": \"excess\",\n    \"file\": \"app/routers/watchlists.py\",\n    \"line\": 23,\n    \"confidence\": 40,\n    \"summary\": \"Create now saves the trimmed name (payload.name.strip()) instead of what the client sent. The request only asked for empty names to be rejected, not for valid names to be changed before saving, so a name like \\\" Tech \\\" is stored as \\\"Tech\\\". This is a small behaviour change nobody asked for.\"\n  }\n]\n```",
+      "usage": {
+        "input_tokens": 2,
+        "cache_creation_input_tokens": 7625,
+        "cache_read_input_tokens": 18759,
+        "output_tokens": 1221,
+        "output_tokens_details": {
+          "thinking_tokens": 130
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 7625,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 1221,
+            "cache_read_input_tokens": 18759,
+            "cache_creation_input_tokens": 7625,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 7625
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      }
+    },
+    "missing-await": {
+      "rc": 0,
+      "elapsed": 9.016,
+      "result": "```json\n[\n  {\n    \"oracle\": \"correctness\",\n    \"class\": \"missing-await\",\n    \"file\": \"app/services/subscription_service.py\",\n    \"line\": 17,\n    \"confidence\": 92,\n    \"summary\": \"The comment in the diff says count_active is `async def`, but the call isn't awaited, so `count` is a coroutine object and not an int. Trigger: any call to get_active_count. Wrong outcome: `count < 0` raises TypeError ('<' not supported between instances of 'coroutine' and 'int'), and Python also warns that the coroutine was never awaited. The query never runs. Fix: `count = await self.repo.count_active(user_id)`.\"\n  },\n  {\n    \"oracle\": \"intent\",\n    \"class\": \"excess\",\n    \"file\": \"app/services/subscription_service.py\",\n    \"line\": 18,\n    \"confidence\": 45,\n    \"summary\": \"The request only asked to return the count from count_active. The diff also changes negative values to 0, which nobody asked for. Behavior is unchanged as long as the repository never returns a negative number.\"\n  },\n  {\n    \"oracle\": \"intent\",\n    \"class\": \"unknown\",\n    \"file\": \"app/services/subscription_service.py\",\n    \"line\": 15,\n    \"confidence\": 25,\n    \"summary\": \"The diff assumes count_active takes a single user_id argument and returns an int. Its definition is outside the diff, so this can't be confirmed here. The `user_id: str` type hint is also an assumption.\"\n  }\n]\n```",
+      "usage": {
+        "input_tokens": 2,
+        "cache_creation_input_tokens": 7225,
+        "cache_read_input_tokens": 18759,
+        "output_tokens": 491,
+        "output_tokens_details": {
+          "thinking_tokens": 0
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 7225,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 491,
+            "cache_read_input_tokens": 18759,
+            "cache_creation_input_tokens": 7225,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 7225
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      }
+    },
+    "none-deref": {
+      "rc": 0,
+      "elapsed": 15.664,
+      "result": "Two problems stand out. The main correctness bug is that a missing user causes a 500 error instead of a 404. The main intent drift is that the endpoint is limited to admins, but the request only asked for it to require login.\n\n```json\n[\n  {\n    \"oracle\": \"correctness\",\n    \"class\": \"null-dereference\",\n    \"file\": \"app/routers/user_email.py\",\n    \"line\": 19,\n    \"confidence\": 92,\n    \"summary\": \"Trigger: GET /users/{id}/email with an id that doesn't exist or is soft-deleted. `repo.get_by_id` returns None (the diff's own comment says it returns Optional[User]), so `user.email` raises AttributeError and the client gets a 500 instead of a 404. There is no None check and no HTTPException(404).\"\n  },\n  {\n    \"oracle\": \"intent\",\n    \"class\": \"drift\",\n    \"file\": \"app/routers/user_email.py\",\n    \"line\": 14,\n    \"confidence\": 80,\n    \"summary\": \"The request says 'Auth-protected', meaning any logged-in user. The diff also adds `Depends(require_admin)`, so only admins can call the endpoint. Logged-in non-admins will be refused, which the request didn't ask for.\"\n  },\n  {\n    \"oracle\": \"intent\",\n    \"class\": \"gap\",\n    \"file\": \"app/routers/user_email.py\",\n    \"line\": 8,\n    \"confidence\": 55,\n    \"summary\": \"A new APIRouter is created, but nothing in the diff adds it to the FastAPI app (`app.include_router`). Unless routers are discovered automatically somewhere outside the diff, GET /users/{user_id}/email is never mounted and returns 404.\"\n  },\n  {\n    \"oracle\": \"intent\",\n    \"class\": \"unknown\",\n    \"file\": \"app/routers/user_email.py\",\n    \"line\": 6,\n    \"confidence\": 40,\n    \"summary\": \"`UserEmailResponse` is imported from app.schemas.user, but the diff doesn't add it. If the schema doesn't already exist, the import fails when the module loads (ImportError).\"\n  },\n  {\n    \"oracle\": \"correctness\",\n    \"class\": \"unknown\",\n    \"file\": \"app/routers/user_email.py\",\n    \"line\": 18,\n    \"confidence\": 30,\n    \"summary\": \"The code awaits `repo.get_by_id`. If UserRepository/BaseRepository is synchronous, awaiting a plain User or None raises TypeError. This can't be checked from the diff.\"\n  },\n  {\n    \"oracle\": \"correctness\",\n    \"class\": \"unknown\",\n    \"file\": \"app/routers/user_email.py\",\n    \"line\": 16,\n    \"confidence\": 25,\n    \"summary\": \"`user_id` is typed as `str`. If user ids are integers or UUIDs in the database and get_by_id doesn't convert the value, the lookup may never match and always return None, which then hits the 500 above. This can't be checked from the diff.\"\n  }\n]\n```",
+      "usage": {
+        "input_tokens": 2,
+        "cache_creation_input_tokens": 7388,
+        "cache_read_input_tokens": 18759,
+        "output_tokens": 1248,
+        "output_tokens_details": {
+          "thinking_tokens": 282
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 7388,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 1248,
+            "cache_read_input_tokens": 18759,
+            "cache_creation_input_tokens": 7388,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 7388
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      }
+    },
+    "soft-delete-filter": {
+      "rc": 0,
+      "elapsed": 15.248,
+      "result": "```json\n[\n  {\n    \"oracle\": \"correctness\",\n    \"class\": \"missing-filter\",\n    \"file\": \"app/repositories/watchlist_repository.py\",\n    \"line\": 13,\n    \"confidence\": 85,\n    \"summary\": \"The query only filters on `Watchlist.user_id == user_id` and never adds `Watchlist.deleted_at.is_(None)`. Trigger: a user has a watchlist with `deleted_at` set. Wrong outcome: `list_for_user` still returns that soft-deleted watchlist.\"\n  },\n  {\n    \"oracle\": \"intent\",\n    \"class\": \"gap\",\n    \"file\": \"app/repositories/watchlist_repository.py\",\n    \"line\": 10,\n    \"confidence\": 85,\n    \"summary\": \"The request says repository reads exclude soft-deleted rows, but `list_for_user` builds its own `select(Watchlist)` with no `deleted_at` condition. Nothing in the diff shows a base-class or global filter that would cover it.\"\n  },\n  {\n    \"oracle\": \"intent\",\n    \"class\": \"unknown\",\n    \"file\": \"app/repositories/base.py\",\n    \"line\": null,\n    \"confidence\": 30,\n    \"summary\": \"I can't see `BaseRepository` or the session setup. If they apply a global soft-delete filter (for example a `do_orm_execute` hook or a `with_loader_criteria` option), the missing filter would be covered. If they offer a helper for soft-delete-aware queries, this method bypasses it.\"\n  },\n  {\n    \"oracle\": \"intent\",\n    \"class\": \"excess\",\n    \"file\": \"app/repositories/watchlist_repository.py\",\n    \"line\": 14,\n    \"confidence\": 40,\n    \"summary\": \"The method sorts results by `created_at` descending. The request didn't ask for any ordering.\"\n  },\n  {\n    \"oracle\": \"correctness\",\n    \"class\": \"unknown\",\n    \"file\": \"app/repositories/watchlist_repository.py\",\n    \"line\": 14,\n    \"confidence\": 20,\n    \"summary\": \"The method uses `Watchlist.created_at` and `self.session`, but neither is defined in the diff. If `Watchlist` has no `created_at` column, or `BaseRepository` doesn't expose `session`, the call raises an AttributeError.\"\n  }\n]\n```\n\nSeparately, the claude.ai Google Drive, claude.ai Linear and plugin:context7 MCP servers need authorization before they can be used. Authorize the claude.ai connectors in your claude.ai connector settings, and context7 through `/mcp` in an interactive session. This review didn't need any of them.",
+      "usage": {
+        "input_tokens": 2,
+        "cache_creation_input_tokens": 7755,
+        "cache_read_input_tokens": 244250,
+        "output_tokens": 987,
+        "output_tokens_details": {
+          "thinking_tokens": 131
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 7755,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 987,
+            "cache_read_input_tokens": 244250,
+            "cache_creation_input_tokens": 7755,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 7755
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      }
+    },
+    "stale-inline-policy": {
+      "rc": 0,
+      "elapsed": 20.039,
+      "result": "I found 5 issues in the new `skills/demo-review/reviewer-prompt.md`. Two are correctness problems where the prompt contradicts itself, and three are intent questions I couldn't settle from the diff alone.\n\n- **Fixes it was never asked to make:** Line 14 says \"Otherwise treat it as Rule 1\u20133 and apply the fix\", but the return contract only asks for a classification, a rationale and a recommended action.\n- **Diff it never receives:** The prompt says \"every finding in the diff\", but its only input is one `{{FINDING_BODY}}`.\n- **Possibly incomplete STOP list:** I can't check it against the real Rule-4 spec. Common Rule-4 items like switching libraries/frameworks or adding a new service layer are missing.\n- **Defaults to auto-fix:** Anything not clearly on the list is auto-fixed, which works against the escalation the request asked for.\n- **Possibly the wrong file:** The request reads like editing an existing reviewer prompt, but the diff creates a new one.\n\n```json\n[\n  {\n    \"oracle\": \"correctness\",\n    \"class\": \"contradictory-instruction\",\n    \"file\": \"skills/demo-review/reviewer-prompt.md\",\n    \"line\": 14,\n    \"confidence\": 70,\n    \"summary\": \"Trigger: any finding not on the STOP list. Line 14 says 'treat it as Rule 1\u20133 and apply the fix', but the subagent's job and the return contract (lines 22-26) only cover classification, rationale and a recommended action. The reviewer may make code edits instead of just returning a classification.\"\n  },\n  {\n    \"oracle\": \"correctness\",\n    \"class\": \"missing-input\",\n    \"file\": \"skills/demo-review/reviewer-prompt.md\",\n    \"line\": 3,\n    \"confidence\": 60,\n    \"summary\": \"Trigger: dispatching this prompt. It says 'Classify every finding in the diff', but the only placeholder is a single {{FINDING_BODY}} and no diff is passed in. The reviewer has no diff to read and gets one finding instead of several, so it may make up context or misclassify.\"\n  },\n  {\n    \"oracle\": \"intent\",\n    \"class\": \"unknown\",\n    \"file\": \"skills/demo-review/reviewer-prompt.md\",\n    \"line\": 17,\n    \"confidence\": 45,\n    \"summary\": \"The five STOP items can't be checked against the real Rule-4 spec from this diff alone. Common Rule-4 items like switching libraries/frameworks, adding a new service or architectural layer, or new infrastructure are missing. Since the request is to classify 'without reading specs', any gap here makes the reviewer auto-fix things that should be escalated.\"\n  },\n  {\n    \"oracle\": \"intent\",\n    \"class\": \"drift\",\n    \"file\": \"skills/demo-review/reviewer-prompt.md\",\n    \"line\": 13,\n    \"confidence\": 40,\n    \"summary\": \"The list is closed and fails open: anything not clearly matching it defaults to Rule 1\u20133 and gets auto-fixed. There is no 'when unsure, escalate' rule, which weakens the STOP behavior the request asked for.\"\n  },\n  {\n    \"oracle\": \"intent\",\n    \"class\": \"unknown\",\n    \"file\": \"skills/demo-review/reviewer-prompt.md\",\n    \"line\": 1,\n    \"confidence\": 30,\n    \"summary\": \"The request says to give 'the reviewer prompt' the criteria, which suggests editing an existing prompt, but the diff creates a new file. If a reviewer prompt already exists elsewhere, it still doesn't have the criteria, and this new file may never be dispatched.\"\n  }\n]\n```",
+      "usage": {
+        "input_tokens": 2,
+        "cache_creation_input_tokens": 7469,
+        "cache_read_input_tokens": 18759,
+        "output_tokens": 1760,
+        "output_tokens_details": {
+          "thinking_tokens": 546
+        },
+        "server_tool_use": {
+          "web_search_requests": 0,
+          "web_fetch_requests": 0
+        },
+        "service_tier": "standard",
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 7469,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "inference_geo": "not_available",
+        "iterations": [
+          {
+            "input_tokens": 2,
+            "output_tokens": 1760,
+            "cache_read_input_tokens": 18759,
+            "cache_creation_input_tokens": 7469,
+            "cache_creation": {
+              "ephemeral_5m_input_tokens": 0,
+              "ephemeral_1h_input_tokens": 7469
+            },
+            "type": "message"
+          }
+        ],
+        "speed": "standard",
+        "fallback_credit": null
+      }
+    }
+  }
+}
