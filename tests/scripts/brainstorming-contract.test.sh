@@ -23,5 +23,8 @@ has_all "$REVIEWER" 'What must be true' 'Proven by' 'load-bearing' 'superseded b
   'Decision changes' 'To reopen a settled decision' '[TEMPLATE_FILE_PATH]' \
   && grep -qF 'design-template.md' "$ROOT/$REF" && pass || fail "reviewer template checks or loop path missing"
 t "research-brief template carries the number-label rule"
-grep -qF '`measured <YYYY-MM-DD> <source>`' "$ROOT/$BRIEF" && pass || fail "research-brief number label missing"
+# The brief template carries an inline copy of the design template's label rule; anchor the whole
+# label set and the load-bearing definition so the copy cannot drift to a subset unnoticed.
+has_all "$BRIEF" '`measured <YYYY-MM-DD> <source>`' '`prediction`' '`budget`' 'load-bearing' \
+  && pass || fail "research-brief number-label rule incomplete"
 finish
