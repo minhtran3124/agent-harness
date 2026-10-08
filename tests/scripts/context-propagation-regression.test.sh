@@ -130,7 +130,8 @@ else fail "deleting the plan reviewer's terminology.md Read was NOT detected"; f
 t "mutation: canonical matrix detects a missing design-reviewer template Read"
 m5=$(mktemp -d); _CLEANUP_DIRS+=("$m5")
 cp -R "$ROOT/skills" "$m5/skills"
-sed -i.bak '/Read `design-template\.md`/d' "$m5/$DESIGN_REVIEWER" && rm -f "$m5/$DESIGN_REVIEWER.bak"
+# Strip only the Read verb, keeping the `design-template.md` token, so only `required_reads` can fail.
+sed -i.bak 's/\*\*Read `design-template\.md`\*\*/`design-template.md`/' "$m5/$DESIGN_REVIEWER" && rm -f "$m5/$DESIGN_REVIEWER.bak"
 if ! python3 "$ROOT/$COMPOSER" --root "$m5" --check-all >/dev/null 2>&1; then pass
 else fail "deleting the design reviewer's design-template.md Read was NOT detected"; fi
 
