@@ -65,6 +65,8 @@ red local test trains people to ignore red.
 ### Not auto-verified
 
 - `run-tests.sh` end-of-run failure summary lists the failing suite and case — reached truth by one manual run (it printed `tests/scripts/codex-capability-probe.test.sh` / `missing tools degrade to explicit unknown` before the probe fix); no Verify row, because the behavior only shows on a full-suite run, which exceeds the Verify time budget.
+- The failure-detail extraction (`record_details` in `scripts/run-tests.sh`) handles coloured `FAIL`, `not ok`, unnamed cases, unmarked failures, pytest `ERROR`, and colour-forced pytest `FAILED`. Reached truth on Linux bash 5 via a scratch harness over synthetic logs; that harness is not checked in. CI exercises the function only when a test fails, so macOS bash 3.2 and BSD `sed` were not run against it.
+- Colour on a terminal: reached truth under `script` (a pseudo-terminal); the suite output carried `\033[32m` codes through `tee`.
 - Full suite all green — reached truth locally (`bash scripts/run-tests.sh` → ALL GREEN, 638 pytest passed); not a Verify row for the same reason.
 - `disable-model-invocation: true` stops Claude from auto-invoking the skill. Reached provenance: the Claude Code skills docs (`code.claude.com/docs/en/skills.md`) list it as a frontmatter field ("prevent Claude from automatically loading this skill… trigger manually with `/name`"; it also keeps the description out of context). It was not behavior-tested in a session. Under the Codex adapter it is unconfirmed: the skill is copied verbatim, and nothing in the repo shows that Codex honors the field.
 - The skill prompt follows the Opus 5.5 guidance — reached traceability (manual review against the claude-api `prompt-audit.md` guide); no eval of the skill's behavior was run.
@@ -91,9 +93,9 @@ Result: **PASS**, with one advisory row (Codex auto-invocation unconfirmed).
 Six FIND angles and an independent scorer per deduplicated location; threshold 75.
 
 - `harness-manifest.json:236`: corpus entry missing, so `--validate-corpus` failed. Score 100, fixed (Rule 3, see Deviations).
-- `scripts/run-tests.sh:136`: advisory, score 50. The pytest detail grep matches only `^FAILED `, so collection/import/fixture `ERROR` lines leave the summary saying just `pytest`. The step is still named and the exit code is correct.
-- `scripts/run-tests.sh:119`: advisory, score 50. The suite detail grep matches only `  FAIL  ` lines, so the 7 suites that don't use `tests/lib.sh` are named without their failing case, and a nameless `fail` adds a blank entry.
-- `scripts/run-tests.sh:116`: advisory, score 50. Piping suites through `tee` drops `tests/lib.sh`'s `[ -t 1 ]`-gated colour on interactive runs. The pipe-hang concern has no trigger: no suite backgrounds a process.
+- `scripts/run-tests.sh:136`: advisory, score 50, fixed in `7275f8d`. The pytest detail grep matched only `^FAILED `, so collection/import/fixture `ERROR` lines left the summary saying just `pytest`. It now matches `FAILED` and `ERROR`.
+- `scripts/run-tests.sh:119`: advisory, score 50, fixed in `7275f8d`. The suite detail grep matched only `  FAIL  ` lines. It now also matches `  not ok `, shows `(unnamed case)` for a nameless `fail`, and says `(no case names found; see the log above)` when a failing suite prints no marker.
+- `scripts/run-tests.sh:116`: advisory, score 50, fixed in `7275f8d`. Piping suites through `tee` dropped `tests/lib.sh`'s `[ -t 1 ]`-gated colour. On a terminal, `run-tests.sh` now exports `HARNESS_TEST_COLOR=1` (honoured by `tests/lib.sh`) and passes `--color=yes` to pytest. Colour codes are stripped before matching. The pipe-hang concern has no trigger: no suite backgrounds a process.
 
 ### Intent Findings
 
@@ -103,3 +105,4 @@ Six FIND angles and an independent scorer per deduplicated location; threshold 7
 
 - backlog: adding a skill requires six coordinated edits, each found only through a failure: the manifest register, the `skills/README.md` row, the generator `SPECS` entry plus regenerated corpus, two hard-coded skill counts (`scripts/test_audit_skill_prompts.py`, `scripts/test_generate_skill_eval_corpus.py`), and the 600-word ceiling. Candidate: an "Adding a skill" checklist in `skills/README.md`, with counts derived from the manifest.
 - backlog (missing guardrail): `scripts/run-tests.sh` never runs `score_skill_eval.py --validate-corpus`, which is why CI stayed green while the corpus was broken. Candidate: add it to the L1 manifest-consistency block.
+- backlog (pre-existing, found while verifying colour): `bash scripts/run-tests.sh` hangs under a pseudo-terminal at `tests/scripts/resync-conflict.test.sh` case 11, which runs `deploy-harness.sh` without `--yes`; with a controlling terminal, deploy waits on `read < /dev/tty`. Reproduced on `main` (timeout, exit 124), so this branch did not cause it. Candidate: run case 11 under the same `start_new_session` no-ctty wrapper case 4 uses, or pass `--yes` where the prompt is not under test.
