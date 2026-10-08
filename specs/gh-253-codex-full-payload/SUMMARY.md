@@ -148,6 +148,8 @@ check-ignore change, plus four P3 refinements, all fixed:
 - Provenance shows each fragment as given, so it is the same from any working directory.
 - A non-UTF-8 skill file now fails the render with a `codex-adapter:` error, not a traceback.
 
+Final fix re-review (`40c4f64..9c08a12`): all four targeted defects closed, no new findings.
+
 ### Advisory Findings
 
 - F (25) — rendered skills name `.codex/.agent-harness/payload/harness-manifest.json` as the

@@ -1,6 +1,6 @@
 ---
 slug: gh-253-codex-full-payload
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-10-08
 ---
@@ -203,3 +203,4 @@ warning line. Design: `specs/gh-253-codex-full-payload/design.md` (payload under
 - 2026-10-08 — tasks 1.1, 1.2 complete; commits 826f422, a46a5cf. Both task reviews passed (spec pass, quality approved), with one Minor finding each. Implementers left changes uncommitted, and the controller committed each task separately to avoid index-lock collisions in the shared worktree. At this wave boundary, `bash scripts/run-tests.sh` is red only in `tests/scripts/codex-install.test.sh` (exact-inventory and removal cases; `codex-alpha-contract.test.sh` runs that suite too), which the wave-2 deployer task owns by plan.
 - 2026-10-08 — tasks 2.1, 2.2 complete; commits cb6a915, 2200b7e. Both task reviews passed (spec pass, quality approved), with Minor findings recorded in SUMMARY. With wave 2 in, `bash tests/scripts/codex-install.test.sh` passes 29 and `codex-alpha-contract.test.sh` passes 7.
 - 2026-10-08 — task 1.3 complete; commit 9096548. Review passed (spec pass, quality approved), with three Minor findings that the controller fixed directly in the follow-up commit. All plan tasks are done.
+- 2026-10-08 — Final review chain passed: correctness (six angles, independent scoring, three fix re-reviews) and intent review. Receipt pinned at 9c08a12. `run-tests.sh` ALL GREEN and `ci-strict-gate.sh` OK against github/codex. Shipped to a PR against the `codex` branch.
