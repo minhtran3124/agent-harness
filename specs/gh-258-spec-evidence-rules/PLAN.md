@@ -1,6 +1,6 @@
 ---
 slug: gh-258-spec-evidence-rules
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-10-08
 ---
@@ -218,3 +218,4 @@ the isolated design reviewer receives the template. Research: `research-brief.md
 - 2026-10-08 — plan written.
 - 2026-10-08 — tasks 1.1, 1.2, 1.3 complete; commits 50d1343, 8fe2736, 908f750; task reviews spec pass / quality approved (Minor findings recorded in SUMMARY); controller re-ran each Verify, exit 0.
 - 2026-10-08 — task 2.1 complete; commit 66aafbf; task review spec pass / quality approved, no findings; controller re-ran Verify, exit 0.
+- 2026-10-08 — shipped: context-propagation audit PASS (repair 7aba506); correctness review (fixes 61179e7, 0f82b9e, 22da980, 0ee5d87; advisories recorded); intent review no gaps (fixes 95fc3c4, bbba32d; findings recorded); run-tests.sh ALL GREEN at 0ee5d87; ci-strict-gate.sh main OK; receipt pinned at 0ee5d87; PR opened for human review.

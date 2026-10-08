@@ -46,18 +46,38 @@ the default applies it to load-bearing numbers only, not every number in prose.
 
 ## What changed
 
-<filled at finishing-a-development-branch>
+A design written through brainstorming now follows a new template, `skills/brainstorming/references/design-template.md`. It adds four sections after the usual ones:
+- **What must be true:** assumptions `A<n>`, each with an evidence tier plus source, how it will be proven, and what breaks if it is false.
+- **What we do not claim:** guarantees a reader may expect that the design does not give.
+- **Decisions:** `D<n>` rows with `settled` / `superseded by DC<n>`, plus a pointer line stating the reopen rule.
+- **Decision changes:** dated `DC<n>` entries that cite evidence.
+
+Load-bearing numbers carry `prediction` / `budget` / `measured <YYYY-MM-DD> <source>`. A replaced prediction stays beside its measurement.
+
+Enforcement:
+- The isolated design reviewer receives the template path and Reads it. Its new check rows cover the sections, IDs, labels and decision changes.
+- `CONTEXT_MATRIX` registers that Read, and a mutation test proves the registration catches a missing Read.
+- writing-plans binds each `A<n>` in `### Assumption coverage` under `## 5. Risks`, and the plan reviewer checks the list.
+- The research-brief template carries the label rule, and compound treats `prediction → measured` pairs as a learning source.
 
 ### Rationale
 
-<filled at finishing-a-development-branch>
+Enforcement goes through the two reviewer loops that already run, not through a new lint. `rules/terminology.md` and the STE decision show that wording alone does not force a step. Regex lints of number labels match spelling, not property (`ratchet-matches-spelling-not-property`). The one `scripts/` change, a `CONTEXT_MATRIX` entry, was the user's choice at research (F1 → DC1/D12). It makes delivery of the template to the isolated reviewer mechanically checked.
 
 ### Alternatives considered
 
-- none
+- Template only, as prose: rejected. Terminology evidence shows the sections would be skipped under pressure.
+- Template plus a script lint: rejected for this batch. It would touch `scripts/` (CI warn tier), and number-label regexes match spelling, not property.
+- Design-only assumption mapping, with no plan link: rejected by the user in favour of the writing-plans coverage list.
+- Change rule delivered by editing writing-plans and SDD: rejected by the user in favour of a pointer line inside every design (D10).
 
 ### Deviations
 
+- Rule 1: the context-propagation audit found the research-brief inline label copy anchored by one label only, so check 5 now anchors the full set (`tests/scripts/brainstorming-contract.test.sh`). Commit `7aba506`.
+- Rule 1: correctness review found the design-reviewer mutation case was vacuous for `required_reads`. Fixed in `tests/scripts/context-propagation-regression.test.sh`, commit `61179e7`.
+- Rule 3: the `CONTEXT_MATRIX` key-set test in `scripts/test_render_skill_prompt.py` needed the new context; pytest would have failed. Commit `61179e7`.
+- Rule 1: user-approved correctness advisory fixes to reviewer and template wording (`0f82b9e`, `22da980`). Intent-review template header fixes (`95fc3c4`, `bbba32d`).
+- Rule 3: the full suite found a skill-tool-conformance break (a prose mention of `render_plan.py` in writing-plans step 5). Commit `0ee5d87`.
 - Decision change after approval — DC1 in `design.md` reopens D1 (no `scripts/` change) for D12 (register the design reviewer in `CONTEXT_MATRIX`). Raised by research brief F1; the user chose it on 2026-10-08. This pointer line is the design-template convention for a post-approval decision change, not a Rule 1–3 auto-fix.
 
 ### Context-Propagation Audit
@@ -138,7 +158,10 @@ Intent review (plan-blind) over `b0d2a92..cd40d91`: no gaps; SC-1..SC-6 each hav
 
 ### Not auto-verified
 
-- none
+- A design written through brainstorming has the three required sections (design §8 criterion 3). Tier reached: traceability only. The contract tests show the template and instructions exist; no run of brainstorming was observed producing one.
+- The design reviewer flags a design that omits the sections, or a load-bearing number without a label (criterion 4). Not re-run. The planned dry run against a stripped design was not performed, so A2 (the reviewer can tell load-bearing from illustrative numbers) remains judgment-tier.
+- A plan written from such a design carries a complete `### Assumption coverage` (criterion 5). Tier reached: traceability. This plan's own coverage list was written by hand, not by the edited writing-plans skill.
+- The isolated design reviewer actually Reads the template at dispatch. Tier reached: traceability. `CONTEXT_MATRIX` and its mutation case prove the instruction is present and load-bearing, not that the dispatch ran.
 
 ### Rollback
 
