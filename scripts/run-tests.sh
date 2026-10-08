@@ -12,6 +12,19 @@ FAILED=0
 FAILED_STEPS=()
 fail() { FAILED=1; FAILED_STEPS+=("$1"); }
 STEP_LOG="$(mktemp)"
+# Suites and pytest run through tee, so their stdout is a pipe; keep colour on a terminal.
+if [ -t 1 ]; then export HARNESS_TEST_COLOR=1; PYTEST_COLOR=--color=yes; else PYTEST_COLOR=--color=no; fi
+ESC="$(printf '\033')"
+# record_details <ERE>: add each STEP_LOG line matching the marker <ERE>, minus the marker, to
+# the summary. Colour codes are removed first so they cannot hide a marker.
+record_details() {
+  local line found=0
+  while IFS= read -r line; do
+    found=1
+    FAILED_STEPS+=("    ${line:-(unnamed case)}")
+  done < <(sed "s/${ESC}\[[0-9;]*m//g" "$STEP_LOG" | grep -E "$1" | sed -E "s/$1//")
+  [ "$found" -eq 1 ] || FAILED_STEPS+=("    (no case names found; see the log above)")
+}
 
 echo "== L1: syntax =="
 for f in hooks/*.sh scripts/*.sh tests/lib.sh tests/*/*.test.sh; do
@@ -116,8 +129,7 @@ for suite in tests/hooks/*.test.sh tests/scripts/*.test.sh; do
   bash "$suite" 2>&1 | tee "$STEP_LOG"
   if [ "${PIPESTATUS[0]}" -ne 0 ]; then
     fail "$suite"
-    while IFS= read -r line; do FAILED_STEPS+=("    ${line#  FAIL  }"); done \
-      < <(grep '^  FAIL  ' "$STEP_LOG")
+    record_details '^  (FAIL  |not ok )'
   fi
 done
 
@@ -130,11 +142,10 @@ if [ -n "$PYBIN" ] && "$PYBIN" -c 'import pytest' >/dev/null 2>&1; then
   # Engine unit tests that ship with the repo but nothing else runs.
   PYTESTS="scripts/test_check_manifest.py scripts/test_check_frontmatter_contract.py scripts/test_check_skill_tool_conformance.py scripts/test_check_codex_capabilities.py scripts/test_check_codex_packaging.py scripts/test_codex_harness_doctor.py scripts/test_check_runtime_neutral_sources.py scripts/test_verify_summary.py scripts/test_check_verify_rows.py scripts/test_check_review_receipt.py scripts/test_audit_skill_prompts.py scripts/test_score_skill_eval.py scripts/test_generate_skill_eval_corpus.py scripts/test_record_skill_eval.py scripts/test_capture_skill_eval.py scripts/test_run_skill_eval_batch.py scripts/test_check_skill_eval_readiness.py scripts/test_invalidate_skill_eval_collection.py scripts/test_rebuild_solution_index.py scripts/test_resolve_finish_context.py scripts/test_render_skill_prompt.py scripts/test_render_agent_definitions.py scripts/test_render_codex_adapter.py scripts/test_render_runtime_entry.py scripts/test_check_plan_contract.py scripts/test_score_task_review_eval.py scripts/test_ste_terminology_experiment.py skills/subagent-driven-development/scripts/test_task_brief.py skills/visual-planner/test_render_plan.py runtime/test_runtime_mode.py runtime/test_run_state.py runtime/test_chain_guards_are_load_bearing.py runtime/test_resume_decision.py"
   # shellcheck disable=SC2086
-  "$PYBIN" -m pytest $PYTESTS -q --no-header --no-cov -p no:cacheprovider 2>&1 | tee "$STEP_LOG"
+  "$PYBIN" -m pytest $PYTESTS -q --no-header --no-cov -p no:cacheprovider "$PYTEST_COLOR" 2>&1 | tee "$STEP_LOG"
   if [ "${PIPESTATUS[0]}" -ne 0 ]; then
     fail "pytest"
-    while IFS= read -r line; do FAILED_STEPS+=("    ${line#FAILED }"); done \
-      < <(grep '^FAILED ' "$STEP_LOG")
+    record_details '^(FAILED|ERROR) '
   fi
 else
   echo "  skip — no python3 with pytest available"
