@@ -60,6 +60,16 @@ the default applies it to load-bearing numbers only, not every number in prose.
 
 - Decision change after approval — DC1 in `design.md` reopens D1 (no `scripts/` change) for D12 (register the design reviewer in `CONTEXT_MATRIX`). Raised by research brief F1; the user chose it on 2026-10-08. This pointer line is the design-template convention for a post-approval decision change, not a Rule 1–3 auto-fix.
 
+### Minor review findings
+
+<!-- Non-blocking per-task reviewer findings, forwarded to the final review chain. -->
+
+- Task 1.1 (`50d1343`) — `design-template.md` Decisions example shows only a `settled` row; design §5.3 also shows a `superseded by DC1` row and a DC naming the new decision. Optional second example row.
+- Task 1.1 (`50d1343`) — `skills/brainstorming/SKILL.md:40` runs ~101 columns and "write `design.md` to that template. Write the approved result…" overlaps slightly; optional merge into one sentence.
+- Task 1.3 (`908f750`) — `skills/compound/SKILL.md` grew 54 → 56 lines, past the 45–54 range the plan cited, to keep label anchors on one line.
+- Task 1.2 (`8fe2736`) — `skills/writing-plans/SKILL.md` step 5 tail line is ~200 columns (new self-check sentence joined onto the pre-existing long line); optional rewrap at ~100 columns.
+- Task 1.2 (`8fe2736`) — step 5 addition is ~4 sentences vs the plan's "two or three"; all content is required by design §5.5.
+
 ### Verify
 
 | Check | Command | Exit | Notes | Criterion |
@@ -80,3 +90,4 @@ the default applies it to load-bearing numbers only, not every number in prose.
 
 - `feature-intake` was not deployed under `.claude/skills/` in this repo, so `/feature-intake` was not invocable as a skill; intake was run by following `skills/feature-intake/SKILL.md` directly. fix-direct: ran `bash scripts/deploy-harness.sh --yes` (standard profile) on 2026-10-08; the deployed `SKILL.md` differs from the source only in rewritten helper paths. The skills load after a Claude Code restart.
 - `rules/plan-format.md` "Success Criteria schema" example uses `verify_summary.py --lint specs/<slug>`, but `verify_summary.py` has no `--lint` flag (exit 2, 2026-10-08). The example is fenced/illustrative, so nothing breaks, but it teaches a command that does not exist — backlog.
+- Subagent tool policy refuses implementer writes to `.harness-state/sdd/report-*.md` (both Write and a Bash heredoc were denied for Tasks 1.1–1.3), so the SDD report-file handoff in `implementer-prompt.md` cannot work as written; the controller transcribed each returned report to the path — backlog.
