@@ -82,6 +82,27 @@ Failed row and repair: the research-brief inline copy of the label rule was comp
 
 Recorded per design §7: the `### Deviations` pointer line for a post-approval decision change extends `rules/auto-correct-scope.md` "Reporting" (Rule 1–3 only) without editing that rule; the template states the extension explicitly.
 
+### Correctness Review
+
+Range `b0d2a92..HEAD` via `.harness-state/sdd/package-branch.md`. Six FIND angles (enclosing-function, removed-behavior, call-site-impact, stack-defects, guard-completeness, prior-art); 9 locations after dedup; one independent scorer each; threshold 75.
+
+**Fixed (commit `61179e7`):**
+- `tests/scripts/context-propagation-regression.test.sh:133` — score 75, Rule 1. The design-reviewer mutation deleted the prompt's only `design-template.md` line, so the plain `required` check failed on its own and the case stayed green with `required_reads` removed. Now strips only the bold Read verb. Re-verified (truth tier): mutated copy → `--check-all` exit 1 ("missing required policy Read"); same copy with `required_reads` removed from the matrix → exit 0.
+- `scripts/test_render_skill_prompt.py:43` — score 0 (`unmodified-line`), but a blocking Rule 3 break: the hard-coded `CONTEXT_MATRIX` key set lacked `spec-document-reviewer`, so the pytest step would fail. Added. Re-verified: `/tmp/harness-tests-venv/bin/python -m pytest scripts/test_render_skill_prompt.py` → 7 passed.
+
+### Advisory Findings
+
+Seven findings scored below threshold. The user chose (2026-10-08) to fix the cheap ones in this PR: commit `0f82b9e`, plus `22da980` for a re-review P3. A focused re-review of `0f82b9e` returned `pass` with findings 1–6 closed.
+
+- **Fixed** `spec-document-reviewer-prompt.md:37` (50) — DC check now accepts a new decision later superseded in a chain of reopenings.
+- **Fixed** `spec-document-reviewer-prompt.md:34` (50) — number-label check counts values; a kept `prediction → measured` pair is two.
+- **Fixed** `design-template.md:132` (50) — worked example uses the canonical `measured <YYYY-MM-DD> <source>`.
+- **Fixed** `design-template.md:55` (50) — tier definitions inlined (consumer installs do not ship `CLAUDE.md`).
+- **Fixed** `spec-document-reviewer-prompt.md:32` (25) — a bare `none yet` is valid in both the template and the reviewer row.
+- **Fixed** `skills/writing-plans/SKILL.md:31` (50) — `- A<n> → retired by DC<n>` coverage form, accepted by the plan reviewer; the template's *Proven by* rule lists it too (re-review P3).
+- **Stated limit, not fixed** `spec-review-loop.md:5` (50) — a revision-pass reviewer sees only the current design, so it cannot detect a settled row edited in place without a `DC<n>`. The template now says so; giving the reviewer the approved baseline would change its input contract.
+- **Open, P3 (re-review)** — `plan-document-reviewer-prompt.md:34` accepts `- A<n> → retired by DC<m>` without checking `DC<m>` against the spec's row, and `spec-document-reviewer-prompt.md:37` accepts `superseded by DC<m>` without checking that `DC<m>` reopens that row. Cross-reference gaps in a traceability-tier check.
+
 ### Minor review findings
 
 <!-- Non-blocking per-task reviewer findings, forwarded to the final review chain. -->
@@ -113,3 +134,4 @@ Recorded per design §7: the `### Deviations` pointer line for a post-approval d
 - `feature-intake` was not deployed under `.claude/skills/` in this repo, so `/feature-intake` was not invocable as a skill; intake was run by following `skills/feature-intake/SKILL.md` directly. fix-direct: ran `bash scripts/deploy-harness.sh --yes` (standard profile) on 2026-10-08; the deployed `SKILL.md` differs from the source only in rewritten helper paths. The skills load after a Claude Code restart.
 - `rules/plan-format.md` "Success Criteria schema" example uses `verify_summary.py --lint specs/<slug>`, but `verify_summary.py` has no `--lint` flag (exit 2, 2026-10-08). The example is fenced/illustrative, so nothing breaks, but it teaches a command that does not exist — backlog.
 - Subagent tool policy refuses implementer writes to `.harness-state/sdd/report-*.md` (both Write and a Bash heredoc were denied for Tasks 1.1–1.3), so the SDD report-file handoff in `implementer-prompt.md` cannot work as written; the controller transcribed each returned report to the path — backlog.
+- `hooks/branch-isolation-guard.sh` refused a Write to the session scratchpad root (`unsafe-path:outside-root`, judged against the launch checkout on `main`) while the session was isolated in a worktree; the same file under a non-shared-branch clone inside the scratchpad was accepted. Paths outside every checkout fail closed even when they are the harness-designated scratchpad (2026-10-08, side task: herdr-sidekick PR #3) — backlog.
