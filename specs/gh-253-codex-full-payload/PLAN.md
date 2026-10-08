@@ -1,6 +1,6 @@
 ---
 slug: gh-253-codex-full-payload
-status: proposed
+status: active
 owner: Minh Tran
 created: 2026-10-08
 ---
