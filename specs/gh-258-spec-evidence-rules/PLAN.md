@@ -1,6 +1,6 @@
 ---
 slug: gh-258-spec-evidence-rules
-status: proposed
+status: active
 owner: Minh Tran
 created: 2026-10-08
 ---
