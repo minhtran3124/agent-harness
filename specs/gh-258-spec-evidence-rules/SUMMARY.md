@@ -118,6 +118,12 @@ Seven findings scored below threshold. The user chose (2026-10-08) to fix the ch
 | Check | Command | Exit | Notes | Criterion |
 | --- | --- | --- | --- | --- |
 | intake lane record | `python3 scripts/verify_summary.py --lane gh-258-spec-evidence-rules` | 0 | intake-time check only | |
+| design template, brainstorming Read, reviewer checks, brief labels | `bash tests/scripts/brainstorming-contract.test.sh` | 0 | 7 passed | SC-1 |
+| writing-plans Assumption coverage + plan reviewer row | `bash tests/scripts/writing-plans-contract.test.sh` | 0 | 4 passed | SC-2 |
+| compound prediction → measured source; pinned anchors kept | `bash tests/scripts/compound-contract.test.sh` | 0 | 4 passed | SC-3 |
+| research-depth drift guard still holds | `bash tests/scripts/research-depth-drift.test.sh` | 0 | 11 passed | SC-4 |
+| CONTEXT_MATRIX registers the design reviewer | `python3 scripts/render_skill_prompt.py --check-all` | 0 | all contracts present | SC-5 |
+| design-reviewer template Read mutation detected | `bash tests/scripts/context-propagation-regression.test.sh` | 0 | 11 passed | SC-6 |
 
 ### Not auto-verified
 
