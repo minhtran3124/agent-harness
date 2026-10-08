@@ -2,7 +2,9 @@
 
 Use this template as the output contract for every `specs/<slug>/design.md`. The sections up to
 Non-goals are the usual free-form design sections: keep, merge or drop them in proportion to the
-change. The four after Non-goals are required; each holds content or a `- none — <reason>` line.
+change. Three after Non-goals are required — What must be true, What we do not claim and
+Decisions — each with content or a `- none — <reason>` line. Decision changes appears only once a
+`DC<n>` exists.
 
 ---
 
