@@ -95,6 +95,24 @@ if [ "$RC" -eq 0 ] && [ "$(line_count "$TARGET/.gitignore" "$LINE")" = "1" ] \
    && git -C "$TARGET" check-ignore -q .codex/.agent-harness/payload/scripts/probe.py; then pass
 else fail "rc=$RC .gitignore now: $(cat "$TARGET/.gitignore"): $OUT"; fi
 
+# 2d. A file-only rule (`*.py`) does not ignore the directory: the line is still appended,
+# so the payload's non-.py files do not show up untracked.
+TARGET=$(new_git_target)
+printf '*.py\n' > "$TARGET/.gitignore"
+run_install "$TARGET" "$FAKE" --yes
+t "file-only '*.py' rule still gets .codex/.agent-harness/ appended"
+if [ "$RC" -eq 0 ] && [ "$(line_count "$TARGET/.gitignore" "$LINE")" = "1" ]; then pass
+else fail "rc=$RC .gitignore now: $(cat "$TARGET/.gitignore"): $OUT"; fi
+
+# 2e. An explicit keep-tracked rule with trailing whitespace is still respected.
+TARGET=$(new_git_target)
+printf '.codex/*\n!.codex/.agent-harness/  \n' > "$TARGET/.gitignore"
+BEFORE=$(cat "$TARGET/.gitignore")
+run_install "$TARGET" "$FAKE" --yes
+t "explicit '!.codex/.agent-harness/' with trailing spaces is left as is"
+if [ "$RC" -eq 0 ] && [ "$(cat "$TARGET/.gitignore")" = "$BEFORE" ]; then pass
+else fail "rc=$RC .gitignore now: $(cat "$TARGET/.gitignore"): $OUT"; fi
+
 # 3. --dry-run writes no .gitignore.
 TARGET=$(new_git_target)
 run_install "$TARGET" "$FAKE" --dry-run

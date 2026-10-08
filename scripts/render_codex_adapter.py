@@ -313,7 +313,10 @@ def rewrite_payload_paths(text: str, targets: set[str] | list[str]) -> str:
 
 def _rewrite_markdown(base: Path, targets: list[str]) -> None:
     for path in sorted(base.rglob("*.md")):
-        text = path.read_text(encoding="utf-8")
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError as exc:
+            raise AdapterError(f"{path}: not UTF-8") from exc
         rewritten = rewrite_payload_paths(text, targets)
         if rewritten != text:
             path.write_text(rewritten, encoding="utf-8")

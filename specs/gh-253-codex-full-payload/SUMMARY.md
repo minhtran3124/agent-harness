@@ -137,6 +137,17 @@ P0–P2 regression. Three of its four P3 findings were then fixed:
 - The renderer and the doctor both read and write rewritten Markdown as UTF-8, so a non-UTF-8
   locale cannot make them disagree.
 
+Second fix re-review (`5cc1d59..40c4f64`): no P0–P2. It caught one regression introduced by the
+check-ignore change, plus four P3 refinements, all fixed:
+- The probe is now the directory `.codex/.agent-harness/`, not a `.py` path. A file-only rule
+  such as `*.py` no longer counts as "already ignored" (that would have left 97 non-`.py` payload
+  files untracked).
+- The explicit `!.codex/.agent-harness` rule tolerates trailing whitespace and `\r`. The skip
+  message says "git already ignores", and the docs scope the check-ignore behaviour to git
+  repositories.
+- Provenance shows each fragment as given, so it is the same from any working directory.
+- A non-UTF-8 skill file now fails the render with a `codex-adapter:` error, not a traceback.
+
 ### Advisory Findings
 
 - F (25) — rendered skills name `.codex/.agent-harness/payload/harness-manifest.json` as the

@@ -48,9 +48,11 @@ edit it in place.
 
 The installer also appends `.codex/.agent-harness/` to the project's `.gitignore`, so the
 payload's and plugin's untracked `.py` files do not trip the strict-profile commit gate. The step
-only appends and never rewrites the file. It asks git (`git check-ignore`) whether the directory
-is already ignored, so any existing rule such as `.codex/` or `.codex/*` counts, and a later
-`!.codex/` that re-includes the parent does not. It also skips when an explicit
+only appends and never rewrites the file. In a git repository it asks git (`git check-ignore`)
+whether the directory is already ignored, so any existing rule such as `.codex/` or `.codex/*`
+counts (including `.git/info/exclude` or a global excludes file), while a later `!.codex/` that
+re-includes the parent, or a file-only rule such as `*.py`, does not. Outside a git repository,
+only an existing `.codex/.agent-harness/` line counts. It also skips when an explicit
 `!.codex/.agent-harness` line shows a deliberate choice to keep the directory tracked. It warns and skips when the
 directory is already tracked, and does not run under `--dry-run`. This line is not recorded in the
 deployment manifest.

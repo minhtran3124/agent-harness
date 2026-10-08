@@ -83,22 +83,23 @@ if [ "$GI_RUN" -eq 1 ]; then
     gi_skip="tracked"
   else
     # Ask git, not a regex: the last matching rule wins, and a re-include under an excluded
-    # parent is impossible. A probe path need not exist for check-ignore.
+    # parent is impossible. Probe the directory itself (trailing /), so a file-only rule such as
+    # `*.py` does not count; the path need not exist.
     # 0 = ignored, 1 = not ignored, 128 = not a git repo (then only our own line can say so).
     gi_rc=0
-    git -C "$TARGET_DIR" check-ignore -q -- .codex/.agent-harness/probe.py 2>/dev/null || gi_rc=$?
+    git -C "$TARGET_DIR" check-ignore -q -- .codex/.agent-harness/ 2>/dev/null || gi_rc=$?
     if [ "$gi_rc" -eq 0 ] || { [ "$gi_rc" -ne 1 ] && [ -f "$GI" ] \
          && grep -qxE '[[:space:]]*/?\.codex/\.agent-harness/?[[:space:]]*' "$GI" 2>/dev/null; }; then
       gi_skip="ignored"
     fi
   fi
-  if [ -z "$gi_skip" ] && [ -f "$GI" ] && grep -qE '^!/?\.codex/\.agent-harness/?$' "$GI" 2>/dev/null; then
+  if [ -z "$gi_skip" ] && [ -f "$GI" ] && grep -qE '^!/?\.codex/\.agent-harness/?[[:space:]]*$' "$GI" 2>/dev/null; then
     gi_skip="negated"
   fi
   if [ "$gi_skip" = "tracked" ]; then
     printf 'codex-install: warning: .codex/.agent-harness/ is tracked in this repo — leaving .gitignore alone.\n' >&2
   elif [ "$gi_skip" = "ignored" ]; then
-    printf 'codex-install: .gitignore already ignores .codex/.agent-harness/ — left as is.\n'
+    printf 'codex-install: git already ignores .codex/.agent-harness/ — .gitignore left as is.\n'
   elif [ "$gi_skip" = "negated" ]; then
     printf 'codex-install: .gitignore explicitly keeps .codex/.agent-harness/ (a ! rule) — left as is.\n'
   elif ! {
