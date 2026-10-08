@@ -10,7 +10,7 @@ created: 2026-10-08
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**4 tasks · 2 waves · 13 files · 3/4 done**
+**4 tasks · 2 waves · 13 files · 4/4 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -36,7 +36,7 @@ flowchart LR
 - [x] 1.1 — Design template, brainstorming wiring, design reviewer checks, research-brief labels (wave 1)
 - [x] 1.2 — writing-plans Assumption coverage and plan reviewer check (wave 1)
 - [x] 1.3 — compound learns from prediction → measured pairs (wave 1)
-- [ ] 2.1 — Register the design reviewer in CONTEXT_MATRIX with a mutation test (wave 2)
+- [x] 2.1 — Register the design reviewer in CONTEXT_MATRIX with a mutation test (wave 2)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -217,3 +217,4 @@ the isolated design reviewer receives the template. Research: `research-brief.md
 
 - 2026-10-08 — plan written.
 - 2026-10-08 — tasks 1.1, 1.2, 1.3 complete; commits 50d1343, 8fe2736, 908f750; task reviews spec pass / quality approved (Minor findings recorded in SUMMARY); controller re-ran each Verify, exit 0.
+- 2026-10-08 — task 2.1 complete; commit 66aafbf; task review spec pass / quality approved, no findings; controller re-ran Verify, exit 0.
