@@ -103,6 +103,17 @@ Seven findings scored below threshold. The user chose (2026-10-08) to fix the ch
 - **Stated limit, not fixed** `spec-review-loop.md:5` (50) — a revision-pass reviewer sees only the current design, so it cannot detect a settled row edited in place without a `DC<n>`. The template now says so; giving the reviewer the approved baseline would change its input contract.
 - **Open, P3 (re-review)** — `plan-document-reviewer-prompt.md:34` accepts `- A<n> → retired by DC<m>` without checking `DC<m>` against the spec's row, and `spec-document-reviewer-prompt.md:37` accepts `superseded by DC<m>` without checking that `DC<m>` reopens that row. Cross-reference gaps in a traceability-tier check.
 
+### Intent Findings
+
+Intent review (plan-blind) over `b0d2a92..cd40d91`: no gaps; SC-1..SC-6 each have a passing Criterion row. Six findings, routed:
+
+- **#3 excess → fixed (`95fc3c4`).** The template header said "do not leave a required section empty", which read as making all twelve sections mandatory. Design §5 keeps the base sections free-form and requires only the four new ones; the header now says exactly that.
+- **#1 drift (minor), recorded.** *Evidence now* uses `none yet` where #258 item 1 wrote "or prediction". Deliberate: design D6 (the user approved the design; `prediction` stays a number label only, and §5.1 states the departure from #258).
+- **#2 drift (stricter), recorded.** Reopening a settled decision *after approval* is a Rule 4 STOP before the `DC<n>`. The user chose this explicitly: the "Pointer in every design" option (2026-10-08) named "Rule 4 STOP, then add DC<n> + new D<n>…"; design D10. Before approval, rows are drafts and edit freely.
+- **#4 excess (partly traceable), report-only.** `### Assumption coverage` in PLAN Risks + plan-reviewer row. The user chose it at brainstorming ("Yes, in writing-plans", 2026-10-08) to make item 1's "Proven by" checkable; design D7.
+- **#5 excess (small), report-only.** `CONTEXT_MATRIX` entry + mutation test in `scripts/`/`tests/`. The user chose it as research F1 (2026-10-08), recorded as DC1 → D12, superseding D1's "no scripts" choice.
+- **#6 drift (equivalent), advisory.** Item 4's guidance lives in the two templates, not in `skills/xia2/SKILL.md`; xia2 fills `research-brief-template.md` as its required output shape (design §4 Research brief row).
+
 ### Minor review findings
 
 <!-- Non-blocking per-task reviewer findings, forwarded to the final review chain. -->
