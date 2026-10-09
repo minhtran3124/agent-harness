@@ -143,6 +143,22 @@ threshold 75.
 - An exported `CODEX_HOME` (no `--codex-home`) is not echoed into the printed command; the
   follow-up relies on the shell still exporting it (unchanged behaviour).
 
+### Intent Findings
+
+Plan-blind intent review over `5382f3a..8ccaa9f`: 0 gaps; #269 confirmed open.
+
+- Drift (advisory): the "no trust field" finding is recorded in the `config.project_trust`
+  reference and the research brief, not as a file under `evidence/` — the evidence validator's
+  closed capture vocabulary rejects a hand-authored fixture, and the finding came from source,
+  not a run. A captured `doctor --json` at 0.162.0 would need a host with Codex (see #269).
+- Drift (advisory): `runtime/run_state.py` (session-knowledge active-runs, informational) is not
+  in `HOOK_DEPENDENCIES`; it is root-only and so always absent under Codex; disclosed in the docs.
+- Drift (equivalent): in clone mode the printed doctor command clones first, because the
+  temporary clone is deleted; the issue's literal `python3 scripts/codex_harness_doctor.py`
+  path would not exist.
+- Excess (report-only): the printed command carries `--codex-bin`/`--codex-home` and is
+  shell-quoted (correctness-review fixes B/F).
+
 ### Not auto-verified
 
 - Codex's untrusted-hook UX (the "Hooks need review" prompt, `/hooks`, `t`) as documented —
