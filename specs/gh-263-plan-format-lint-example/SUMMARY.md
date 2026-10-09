@@ -30,19 +30,21 @@ Confidence is `high`: observed at intake, `python3 scripts/check_plan_contract.p
 
 ## What changed
 
-<filled at finishing-a-development-branch>
+The fenced Success Criteria example in `rules/plan-format.md` now uses a command that exists: `python3 scripts/check_plan_contract.py specs/<slug>/PLAN.md`. The two rows read "A contract plan (one with a Global Constraints section) without SC rows is rejected" → `exit 1 — no SC rows`, and "A well-formed SC table passes the contract check" → `exit 0`. The old rows called `verify_summary.py --lint`, a flag that never existed, and exited 2.
 
 ### Rationale
 
-<filled at finishing-a-development-branch>
+`check_plan_contract.py` is the authority that rejects a contract plan without SC rows (exit 1, "Success Criteria table has no SC rows") and passes a well-formed one (exit 0). Both exit codes were measured, so the Expected cells hold. Deploy already rewrites its path to `.claude/scripts/` in consumer repos.
 
 ### Alternatives considered
 
-- none
+- Add a `--lint` flag to `verify_summary.py`: rejected, because it would invent an interface to match a wrong doc.
+- Add a test pinning this example: declined by the user (scope: fix the example only).
+- Add a general lint of fenced `scripts/*.py` flags against `--help`: declined by the user; #263 marks it optional.
 
 ### Deviations
 
-- none
+- Rule 1 — Correctness review found that the first SC-1 Behavior wording contained the literal `## Global Constraints`. `check_plan_contract.py` opts a plan into the contract on that raw substring before masking fences, so a legacy plan that copied the row exited 1. Reworded in `rules/plan-format.md` (and the design §4 / plan Action text to match). The same plan now exits 0. Commit `ff8ead1`.
 
 ### Verify
 
@@ -55,11 +57,27 @@ Confidence is `high`: observed at intake, `python3 scripts/check_plan_contract.p
 
 ### Not auto-verified
 
-- none
+- An author who copies the example gets a working SC row. Tier reached: provenance only. The command and both exit codes were re-run on fixtures (SC-3), and a legacy plan containing the copied row was shown to stay legacy. No real plan authored from the example was observed.
 
 ### Context-Propagation Audit
 
 **Result: PASS.** The change edits content inside one fenced example of `rules/plan-format.md`, not how the rule is delivered. Its consumers, all with explicit Reads registered in `scripts/render_skill_prompt.py` `CONTEXT_MATRIX`, are: writing-plans (`main.plan-author`), the plan document reviewer (`plan-document-reviewer`), the SDD controller (`main.plan-executor`) and resume (`references/resume.md`). Every consumer gets the whole file, so the corrected example reaches all of them. The rule's `paths: specs/**/PLAN.md` frontmatter is unchanged. Proof: `python3 scripts/render_skill_prompt.py --check-all` → "all contracts present" at `1c29222`. Search surface: `grep -rn 'rules/plan-format.md'` over `scripts/render_skill_prompt.py`, `skills/writing-plans/`, `skills/subagent-driven-development/`.
+
+### Correctness Review
+
+Range `b0d2a92..HEAD` via `.harness-state/sdd/package-branch.md`. Six FIND angles; 4 locations after dedup; one independent scorer each; threshold 75. No finding reached 75.
+
+- `rules/plan-format.md:99` — score 50. The new Behavior cell carried the `## Global Constraints` opt-in sentinel (5 of 6 angles; reproduced). **Fixed anyway at `ff8ead1`**: this diff introduced it, the fix is a one-cell reword on a line the PR already owns, and the user chose to fix cheap advisories on #258. Re-verified: a legacy plan containing the new row exits 0.
+
+### Advisory Findings
+
+- `scripts/check_plan_contract.py:51` — score 0 (`unmodified-line`). The opt-in test `"## Global Constraints" not in text` runs on raw text, before `mask_fences`, as a substring. Any mention of the string (prose, inline code or a fence) opts a legacy plan in; this is the gh-175 "mention flips the parse mode" pattern. Fix: `re.search(r"(?m)^## Global Constraints\s*$", mask_fences(text))`. Follow-up issue candidate.
+- `scripts/check_plan_contract.py:112` — score 0 (`unmodified-line`). `args.plan.read_text()` does not catch `OSError`. A missing or mistyped path raises `FileNotFoundError` and exits 1, the same code as a real rejection, so an `exit 1` SC row passes vacuously. Fix: catch `OSError` and return 2. Follow-up issue candidate.
+- `rules/plan-format.md:100` — score 25. "A well-formed SC table passes" understates what exit 0 means: the whole contract must hold, and a legacy plan with no SC table also exits 0. Both rows also share one command and path. This illustration shape existed before the diff; left as is.
+
+### Intent Findings
+
+- Intent review (plan-blind) over `b0d2a92..HEAD`: ✅ no gap, drift or excess. Clauses checked: fix #263 with a working command whose Expected cells hold; the `--lint` call removed (repo-wide grep); scope limited to #263. SC-1..SC-3 each have a passing Criterion row.
 
 ### Minor review findings
 
