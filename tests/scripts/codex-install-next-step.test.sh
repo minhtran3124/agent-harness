@@ -65,6 +65,34 @@ if has_line "$NEXT_LINE $TARGET, choose \"Review hooks\"" \
    && has_line "codex-install: then run: python3 $ROOT_P/scripts/codex_harness_doctor.py --root $TARGET"; then pass
 else fail "next-step lines missing: $OUT"; fi
 
+t "fresh install creates agents/PROJECT.md from the template"
+if [ "$RC" -eq 0 ] && cmp -s "$ROOT/agents/PROJECT.template.md" "$TARGET/agents/PROJECT.md" \
+   && has_line 'codex-install: created agents/PROJECT.md from the template; fill in its Test execution section.'; then pass
+else fail "rc=$RC: $OUT"; fi
+
+# 1b. A target with a Claude copy gets a root copy seeded from it.
+TARGET=$(new_dir)
+mkdir -p "$TARGET/.claude/agents"
+printf 'claude-side project notes\n' > "$TARGET/.claude/agents/PROJECT.md"
+run_install "$ROOT" "$TARGET" "$FAKE" --yes
+t "install seeds agents/PROJECT.md from .claude/agents/PROJECT.md"
+if [ "$RC" -eq 0 ] && cmp -s "$TARGET/.claude/agents/PROJECT.md" "$TARGET/agents/PROJECT.md" \
+   && has_line 'codex-install: created agents/PROJECT.md from .claude/agents/PROJECT.md; Codex agents read the root copy, so keep the two in step.'; then pass
+else fail "rc=$RC: $OUT"; fi
+
+# 1c. An existing agents/PROJECT.md is left byte-identical.
+TARGET=$(new_dir)
+mkdir -p "$TARGET/agents" "$TARGET/.claude/agents"
+printf 'my filled-in project index\n' > "$TARGET/agents/PROJECT.md"
+printf 'a different claude copy\n' > "$TARGET/.claude/agents/PROJECT.md"
+PROJECT_BEFORE=$(shasum -a 256 "$TARGET/agents/PROJECT.md")
+run_install "$ROOT" "$TARGET" "$FAKE" --yes
+t "install leaves an existing agents/PROJECT.md byte-identical"
+if [ "$RC" -eq 0 ] && [ "$(shasum -a 256 "$TARGET/agents/PROJECT.md")" = "$PROJECT_BEFORE" ] \
+   && has_line 'codex-install: agents/PROJECT.md exists; left as is.' \
+   && ! has_line 'codex-install: created agents/PROJECT.md'; then pass
+else fail "rc=$RC: $OUT"; fi
+
 # 2. Stub source: a doctor that exits 2 and no init-structure.sh — install still succeeds.
 STUB_SOURCE=$(new_dir)
 mkdir -p "$STUB_SOURCE/scripts"
@@ -84,8 +112,13 @@ if [ "$RC" -eq 0 ] && has_line 'codex-install: doctor could not run (exit 2)' \
 else fail "rc=$RC: $OUT"; fi
 
 t "a source without init-structure.sh prints a skip line and still exits 0"
-if [ "$RC" -eq 0 ] && has_line 'init-structure.sh' && has_line 'skipp' \
+if [ "$RC" -eq 0 ] && has_line 'codex-install: init-structure.sh not in this source checkout; skipping the workflow structure.' \
    && [ ! -e "$TARGET/specs" ]; then pass
+else fail "rc=$RC: $OUT"; fi
+
+t "a source without agents/PROJECT.template.md prints a skip line and creates no agents/"
+if [ "$RC" -eq 0 ] && has_line 'codex-install: agents/PROJECT.template.md not in this source checkout; skipping agents/PROJECT.md.' \
+   && [ ! -e "$TARGET/agents" ]; then pass
 else fail "rc=$RC: $OUT"; fi
 
 printf 'print("{}")\n' > "$STUB_SOURCE/scripts/codex_harness_doctor.py"
@@ -104,10 +137,20 @@ if [ "$RC" -eq 0 ] && [ ! -e "$TARGET/specs" ] && ! has_line 'doctor mode:' \
    && ! has_line "$NEXT_LINE"; then pass
 else fail "rc=$RC: $OUT"; fi
 
+t "--dry-run creates no agents/PROJECT.md"
+if [ ! -e "$TARGET/agents/PROJECT.md" ] && ! has_line 'agents/PROJECT.md'; then pass
+else fail "rc=$RC: $OUT"; fi
+
 run_install "$ROOT" "$TARGET" "$FAKE" --yes
+PROJECT_BEFORE=$(shasum -a 256 "$TARGET/agents/PROJECT.md" 2>/dev/null)
 run_install "$ROOT" "$TARGET" "$FAKE" --remove --yes
 t "--remove prints no doctor mode"
 if [ "$RC" -eq 0 ] && ! has_line 'doctor mode:' && ! has_line "$NEXT_LINE"; then pass
+else fail "rc=$RC: $OUT"; fi
+
+t "--remove leaves agents/PROJECT.md in place"
+if [ -n "$PROJECT_BEFORE" ] && [ "$(shasum -a 256 "$TARGET/agents/PROJECT.md")" = "$PROJECT_BEFORE" ] \
+   && ! has_line 'agents/PROJECT.md'; then pass
 else fail "rc=$RC: $OUT"; fi
 
 # 4. Clone mode prints a clone-then-doctor command (the clone is deleted on exit).

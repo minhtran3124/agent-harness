@@ -127,6 +127,20 @@ if [ "$GI_RUN" -eq 1 ]; then
   else
     printf 'codex-install: init-structure.sh not in this source checkout; skipping the workflow structure.\n'
   fi
+  # Codex agent profiles read agents/PROJECT.md at the target root; never overwrite an existing one.
+  if [ -e "$TARGET_DIR/agents/PROJECT.md" ]; then
+    printf 'codex-install: agents/PROJECT.md exists; left as is.\n'
+  elif [ -f "$TARGET_DIR/.claude/agents/PROJECT.md" ]; then
+    if mkdir -p "$TARGET_DIR/agents" && cp "$TARGET_DIR/.claude/agents/PROJECT.md" "$TARGET_DIR/agents/PROJECT.md"; then
+      printf 'codex-install: created agents/PROJECT.md from .claude/agents/PROJECT.md; Codex agents read the root copy, so keep the two in step.\n'
+    fi
+  elif [ -f "$SOURCE_DIR/agents/PROJECT.template.md" ]; then
+    if mkdir -p "$TARGET_DIR/agents" && cp "$SOURCE_DIR/agents/PROJECT.template.md" "$TARGET_DIR/agents/PROJECT.md"; then
+      printf 'codex-install: created agents/PROJECT.md from the template; fill in its Test execution section.\n'
+    fi
+  else
+    printf 'codex-install: agents/PROJECT.template.md not in this source checkout; skipping agents/PROJECT.md.\n'
+  fi
   DOCTOR_ARGS=(--root "$TARGET_DIR" --repo-root "$SOURCE_DIR" --no-persist)
   # The doctor runs Codex with cwd=<target>, so make relative paths absolute first.
   case "$CODEX_BIN_ARG" in */*) case "$CODEX_BIN_ARG" in /*) ;; *) CODEX_BIN_ARG="$PWD/$CODEX_BIN_ARG" ;; esac ;; esac
