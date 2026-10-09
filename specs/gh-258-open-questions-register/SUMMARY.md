@@ -59,6 +59,12 @@ called by the finishing flow and CI, warn-first, not a new `hooks/commit-gate.sh
 | --- | --- | --- | --- |
 | intake lane record | `python3 .claude/scripts/verify_summary.py --lane gh-258-open-questions-register` | 0 | |
 
+### Minor review findings
+
+- Task 1.1 (`1dd461d`): a `--root` that is not a directory finds no register and exits 0 silently, the same as "no register anywhere" (`scripts/check_open_questions.py:132`).
+- Task 1.1 (`1dd461d`): the test file's `str | bytes` / `Path | None` signatures need Python 3.10+ without `from __future__ import annotations`, the repo convention (`scripts/test_check_open_questions.py:190`).
+- Task 1.1 (`1dd461d`): any `#` line ends an OQ block, so a subheading inside a block drops later fields, and an `## OQ-n` inside a code fence is parsed (`scripts/check_open_questions.py:71`); the template's bullet-only shape avoids both.
+
 ### Rollback
 
 - `git revert -m 1 <merge-sha>` of the PR into `spec-format`.

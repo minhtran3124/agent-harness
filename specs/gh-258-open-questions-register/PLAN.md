@@ -1,6 +1,6 @@
 ---
 slug: gh-258-open-questions-register
-status: proposed
+status: active
 owner: Minh Tran
 created: 2026-10-09
 ---
@@ -10,7 +10,7 @@ created: 2026-10-09
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**4 tasks · 2 waves · 12 files · 0/4 done**
+**4 tasks · 2 waves · 12 files · 1/4 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -33,7 +33,7 @@ flowchart LR
 ```
 
 ### Progress
-- [ ] 1.1 — Register template, check script and its unit tests (wave 1)
+- [x] 1.1 — Register template, check script and its unit tests (wave 1)
 - [ ] 2.1 — Shipping section in ci-strict-gate with fixture tests (wave 2)
 - [ ] 2.2 — Consumer deploy and finish-skill wiring (wave 2)
 - [ ] 2.3 — Writer guidance and template contract (wave 2)
@@ -203,3 +203,4 @@ Research: `research-brief.md` (Deep, local-only).
 ## 6. Status Log
 
 - 2026-10-09 — plan written from the approved design and the Deep research brief.
+- 2026-10-09 — task 1.1 complete; commit 1dd461d (spec pass, quality approved, 3 Minor recorded in SUMMARY).
