@@ -45,9 +45,12 @@ Issue #276 — "deploy-harness in the main checkout rewrites tracked files in ha
 `scripts/deploy-harness.sh`'s two derive-time Markdown transforms (`rewrite_derived_paths`,
 `strip_maintenance_docs`) now walk `.claude/` through one shared `derived_md()` helper
 (`DERIVED_MD_PY`) instead of `rglob('*.md')`. The walk prunes the top-level `.claude/worktrees/`
-and any directory with its own `.git` entry (file or dir), and keeps the existing
-`.harness-incoming` / `.proposed` sidecar skip. New regression suite
-`tests/scripts/deploy-worktree-isolation.test.sh` (4 cases).
+and any directory with its own `.git` entry (file or dir), except a synced top-level dir
+(`skills/`, `rules/`, …) that the consumer keeps under git, since harness entries are merged into
+it. It keeps the existing `.harness-incoming` / `.proposed` sidecar skip. New regression suite
+`tests/scripts/deploy-worktree-isolation.test.sh` (5 cases). The full suite
+(`bash scripts/run-tests.sh`) ran ALL GREEN locally; it is cited here, not as a Verify row,
+because it exceeds the 60s Verify-row cap.
 
 ### Rationale
 
@@ -64,16 +67,20 @@ new scripts produce a byte-identical derived tree (`diff -r` of two fresh deploy
 
 ### Deviations
 
-- none
+- Rule 1 — correctness-review advisory (score 50) at `scripts/deploy-harness.sh:82`: the first cut's `.git` prune also skipped a synced dir the consumer keeps under git (e.g. `.claude/skills/.git`), leaving harness docs inside it untransformed — a regression vs the old `rglob`. Fixed by exempting synced top-level dirs from the `.git` prune; test case 5 added.
+
+### Advisory Findings
+
+- `scripts/deploy-harness.sh:77` (score 0, pre-existing) — the walk still transforms consumer-owned Markdown under `.claude/` that the deploy did not produce: `.claude/.harness-backup-<TS>/` (so a `backup`-policy copy is no longer verbatim), `.claude/CLAUDE.md`, `.claude/commands/*.md`. Same class as #276 but present at base via `rglob`; narrowing the walk to deployed entries would stop transforming consumer-added skills too, which is removing behavior (Rule 4). Recommend a follow-up issue. The `derived_md` comment was corrected to stop claiming it yields only derived files.
+- `scripts/deploy-harness.sh:82` (score 50) — fixed; see Deviations.
 
 ### Verify
 
 | Check | Command | Exit | Notes | Criterion |
 | --- | --- | --- | --- | --- |
-| regression: worktree, nested checkout and nested repo docs byte-identical after deploy; derived docs still rewritten | `bash tests/scripts/deploy-worktree-isolation.test.sh` | 0 | 4 passed; before the fix 3 FAILED and the control case passed | |
+| regression: worktree, nested checkout and nested repo docs byte-identical after deploy; derived docs still rewritten, including inside a git-managed `.claude/skills/` | `bash tests/scripts/deploy-worktree-isolation.test.sh` | 0 | 5 passed; before the fix cases 1–3 FAILED | |
 | deploy prune contract unchanged | `bash tests/scripts/deploy-prune.test.sh` | 0 | 8 passed | |
 | deploy profile contract unchanged | `bash tests/scripts/deploy-profile.test.sh` | 0 | 23 passed | |
-| full harness suite | `bash scripts/run-tests.sh` | 0 | ALL GREEN; 880 pytest passed | |
 
 ### Not auto-verified
 
@@ -87,4 +94,5 @@ new scripts produce a byte-identical derived tree (`diff -r` of two fresh deploy
 
 ### Harness-Delta
 
+- backlog: restrict the derive-time transforms to deployed entries so consumer-owned `.claude/` Markdown and `.harness-backup-*` copies are never rewritten (advisory at `:77`).
 - backlog: optional SDD pre-dispatch `git status --short` check for unexpected modifications (issue #276, third fix-direction bullet) — needs its own high-risk intake.

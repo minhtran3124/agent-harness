@@ -69,18 +69,24 @@ HARNESS_ONLY_DOCS=(
   "agents/README.md"
 )
 
-# Python prelude shared by the derive-time Markdown transforms: derived_md(out) yields the derived
-# *.md files under .claude/. It never descends into another checkout: harness worktrees live at
-# .claude/worktrees/<name> (EnterWorktree only accepts that root), and any directory carrying its
-# own .git entry is a nested worktree or repository. Their files are SOURCE, not derived — a
-# recursive walk rewrote 173 tracked docs in a worktree (issue #276). Sidecars are skipped too.
+# Python prelude shared by the derive-time Markdown transforms: derived_md(out) yields the *.md
+# files under .claude/ that the transforms may rewrite. It never descends into another checkout:
+# harness worktrees live at .claude/worktrees/<name> (EnterWorktree only accepts that root), and
+# any directory carrying its own .git entry is a nested worktree or repository. Their files are
+# SOURCE, not derived — a recursive walk rewrote 173 tracked docs in a worktree (issue #276).
+# Exception: a synced top-level dir (skills/, rules/, ...) is walked even if the consumer keeps it
+# under git, because copy_dir merges harness entries into it. Sidecars are skipped too. Other
+# consumer Markdown under .claude/ (CLAUDE.md, commands/, .harness-backup-*/) is still walked, as
+# before this guard existed.
 DERIVED_MD_PY='
 import os, pathlib
+SYNCED = {"skills", "agents", "hooks", "rules", "templates", "runtime", "scripts"}  # = SYNCED_DIRS_RE
 def derived_md(out):
     for d, dirs, files in os.walk(out):
+        top = d == str(out)
         dirs[:] = [n for n in dirs
-                   if not (d == str(out) and n == "worktrees")
-                   and not os.path.lexists(os.path.join(d, n, ".git"))]
+                   if not (top and n == "worktrees")
+                   and (top and n in SYNCED or not os.path.lexists(os.path.join(d, n, ".git")))]
         for n in files:
             if n.endswith(".md") and ".harness-incoming" not in n and ".proposed" not in n:
                 yield pathlib.Path(d, n)
