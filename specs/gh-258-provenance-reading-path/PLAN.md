@@ -1,6 +1,6 @@
 ---
 slug: gh-258-provenance-reading-path
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-10-09
 ---
@@ -10,7 +10,7 @@ created: 2026-10-09
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**1 tasks · 1 waves · 4 files · 0/1 done**
+**1 tasks · 1 waves · 4 files · 1/1 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -24,7 +24,7 @@ flowchart LR
 ```
 
 ### Progress
-- [ ] 1.1 — Templates, reviewer rows and contract anchors
+- [x] 1.1 — Templates, reviewer rows and contract anchors
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -149,3 +149,4 @@ Research: `research-brief.md` (Deep, local-only).
 ## 6. Status Log
 
 - 2026-10-09 — plan written from the approved design and the Deep research brief.
+- 2026-10-09 — task 1.1 complete; commits 406b867, 3d092e1. Shipped: correctness fix round `3d092e1` (four 50s, re-checked); audit PASS, intent no gap; suite ALL GREEN; receipt pinned at `99cde5a`. PR targets `spec-format`.
