@@ -1,6 +1,6 @@
 ---
 slug: gh-277-strict-gate-no-merge-base
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-10-09
 ---
@@ -102,3 +102,4 @@ cannot compute must be an error, not an empty diff.
 
 - 2026-10-09 — plan written (normal lane, one task).
 - 2026-10-09 — task 1.1 complete; commit fa6162f (task review: spec pass, quality approved, 1 Minor).
+- 2026-10-09 — shipped: correctness review (no finding at threshold; two pre-existing bypasses split to #281) and intent review (no findings) passed; full suite green.
