@@ -48,10 +48,11 @@ Issue #276 — "deploy-harness in the main checkout rewrites tracked files in ha
 and any directory with its own `.git` entry (file or dir), except a synced top-level dir
 (`skills/`, `rules/`, …) that the consumer keeps under git, since harness entries are merged into
 it. It keeps the existing `.harness-incoming` / `.proposed` sidecar skip. New regression suite
-`tests/scripts/deploy-worktree-isolation.test.sh` (8 cases). `strip_skill_tests` is now a Python
-`os.walk` with the same `lexists(.git)` prune, so a consumer's nested checkout anywhere below
-`skills/` (including a `tests/` dir that is itself a checkout, or one whose `.git` is a dangling
-symlink) keeps its `tests/` and `test_*.py`. The full suite
+`tests/scripts/deploy-worktree-isolation.test.sh` (10 cases). `strip_skill_tests` is now a Python
+`os.walk` with the same `lexists(.git)` prune that deletes files one by one and then only emptied
+dirs (never a whole tree), so a consumer's nested checkout anywhere below `skills/` — including
+inside a `tests/` dir, or one whose `.git` is a dangling symlink — is left intact. It stays
+best-effort like the old `find … || true`: an undeletable file warns instead of aborting. The full suite
 (`bash scripts/run-tests.sh`) ran ALL GREEN locally; it is cited here, not as a Verify row,
 because it exceeds the 60s Verify-row cap.
 
@@ -74,6 +75,7 @@ new scripts produce a byte-identical derived tree (`diff -r` of two fresh deploy
 
 - Rule 1 — intent-review gap against "A deploy in one checkout never modifies another worktree's files.": `strip_skill_tests` (`rm -rf skills/*/tests`, `find … -delete`) was not nested-checkout aware and would delete a consumer nested checkout's tests. Fixed with a `.git` skip; test case 6 added.
 - Rule 1 — correctness re-review of that fix (`1b819bf`): its bash/find version (a) `rm -rf`'d a `skills/<x>/tests` that was itself a nested checkout, (b) used `[ -e ]`, so a dangling `.git` symlink did not count (disagreeing with `derived_md`'s `lexists`), (c) narrowed `test_*.py` removal to regular files, dropping symlinks. Rewrote `strip_skill_tests` as an `os.walk` with the shared `lexists` probe; test cases 7–8 added.
+- Rule 1 — correctness re-review of that rewrite (`63a7ff5`, fix round 3 = cap): (a) an uncaught `PermissionError` aborted the deploy mid-pipeline where the old `find … || true` was best-effort, (b) `rmtree` of `skills/<x>/tests` still deleted a nested checkout deeper inside it, (c) dot-named entries under `skills/` were treated as skills, unlike the old glob. Now file-by-file deletes with warn-on-error, empty-dir-only `rmdir`, root dot-entries skipped; test cases 9–10 added. Round cap reached — any further finding here escalates rather than re-looping.
 
 ### Intent Findings
 
@@ -91,7 +93,7 @@ new scripts produce a byte-identical derived tree (`diff -r` of two fresh deploy
 
 | Check | Command | Exit | Notes | Criterion |
 | --- | --- | --- | --- | --- |
-| regression: worktree, nested checkout and nested repo docs byte-identical after deploy; derived docs still rewritten, including inside a git-managed `.claude/skills/`; nested skill checkouts keep their tests; symlinked test files still stripped | `bash tests/scripts/deploy-worktree-isolation.test.sh` | 0 | 8 passed; before the fix cases 1–3 FAILED | |
+| regression: worktree, nested checkout and nested repo docs byte-identical after deploy; derived docs still rewritten, including inside a git-managed `.claude/skills/`; nested skill checkouts keep their tests; symlinked test files still stripped; undeletable file does not abort | `bash tests/scripts/deploy-worktree-isolation.test.sh` | 0 | 10 passed; before the fix cases 1–3 FAILED | |
 | harness skill tests still stripped from the derived tree | `bash tests/scripts/consumer-subset.test.sh` | 0 | 17 passed | |
 | deploy prune contract unchanged | `bash tests/scripts/deploy-prune.test.sh` | 0 | 8 passed | |
 | deploy profile contract unchanged | `bash tests/scripts/deploy-profile.test.sh` | 0 | 23 passed | |
@@ -99,7 +101,8 @@ new scripts produce a byte-identical derived tree (`diff -r` of two fresh deploy
 ### Not auto-verified
 
 - Old vs new derived tree is byte-identical without nested checkouts — reached truth once, by hand (`diff -r` of two scratch deploys); not a Verify row because it needs the pre-fix script extracted from `HEAD`.
-- Test cases 5–8 failing on the code they guard against — reached traceability only (reasoned from the code and the reviewers' reports; a reviewer reproduced case 5 in scratch); not re-run against the earlier scripts.
+- Test case 10 (undeletable file) is skipped when the suite runs as root, since permission bits are not enforced there.
+- Test cases 5–10 failing on the code they guard against — reached traceability only (reasoned from the code and the reviewers' reports; a reviewer reproduced case 5 in scratch); not re-run against the earlier scripts.
 - macOS behavior — not run locally (Linux only); the helper is stdlib `os.walk` / `os.path.lexists`, and CI runs the suite on macos.
 - Repair of worktrees already damaged by an earlier deploy — out of scope; the fix prevents new damage only.
 

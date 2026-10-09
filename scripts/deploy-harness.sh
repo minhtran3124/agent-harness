@@ -466,24 +466,39 @@ PYEOF
 }
 
 # Drops skills/<x>/tests/ and every test_*.py, but never descends into a dir carrying its own .git
-# (a consumer's nested checkout — source, not derived; #276). Same lexists probe as derived_md, so
-# a dangling .git symlink counts. Harness-owned skill dirs are rm+cp'd fresh by copy_dir, so they
-# never carry one.
+# (a consumer's nested checkout — source, not derived; #276), so it deletes files one by one and
+# then only dirs left empty, never a whole tree. Same lexists probe as derived_md, so a dangling
+# .git symlink counts. Dot-named entries under skills/ are skipped, as the old skills/*/ glob did.
+# Best-effort like the old `find … || true`: an undeletable file warns instead of aborting.
 strip_skill_tests() {
   python3 - "$OUT/skills" <<'PYEOF'
-import os, shutil, sys
+import os, sys
 root = sys.argv[1]
+def rm(p):
+    try: os.remove(p)
+    except OSError as e: print(f"     ! could not strip {p}: {e}", file=sys.stderr)
+nested = lambda p: os.path.lexists(os.path.join(p, ".git"))
+emptied = []
 for d, dirs, files in os.walk(root):
+    rel = os.path.relpath(d, root).split(os.sep)
+    in_tests = len(rel) >= 2 and rel[1] == "tests"
     keep = []
     for n in dirs:
         p = os.path.join(d, n)
-        if os.path.lexists(os.path.join(p, ".git")): continue
-        if n == "tests" and os.path.dirname(d) == root:
-            os.remove(p) if os.path.islink(p) else shutil.rmtree(p); continue
+        if d == root and n.startswith("."): continue
+        is_tests = in_tests or (len(rel) == 1 and rel[0] != "." and n == "tests")
+        if os.path.islink(p):
+            if is_tests: rm(p)
+            continue
+        if nested(p): continue
+        if is_tests: emptied.append(p)
         keep.append(n)
     dirs[:] = keep
     for n in files:
-        if n.startswith("test_") and n.endswith(".py"): os.remove(os.path.join(d, n))
+        if in_tests or (n.startswith("test_") and n.endswith(".py")): rm(os.path.join(d, n))
+for p in reversed(emptied):
+    try: os.rmdir(p)
+    except OSError: pass
 PYEOF
 }
 render_agents()   {

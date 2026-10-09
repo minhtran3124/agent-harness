@@ -88,4 +88,23 @@ deploy "$T"
 if [ ! -L "$T/.claude/skills/plain/test_link.py" ]; then pass
 else fail "symlinked test_*.py survived the strip (regression vs find -delete)"; fi
 
+t "strip_skill_tests: a nested checkout deeper inside a plain skill's tests/ survives; the rest of tests/ goes"
+T=$(new_target)
+S="$T/.claude/skills/deep"
+mkdir -p "$S/tests/fix" "$S/tests/other"
+printf 'gitdir: /nonexistent/.git/modules/fix\n' > "$S/tests/fix/.git"; echo k > "$S/tests/fix/keep.py"
+echo o > "$S/tests/other/conftest.py"; echo t > "$S/tests/helper.py"
+deploy "$T"
+if [ -f "$S/tests/fix/keep.py" ] && [ ! -e "$S/tests/other" ] && [ ! -e "$S/tests/helper.py" ]; then pass
+else fail "nested checkout under tests/ was deleted, or the plain tests/ content was not stripped"; fi
+
+t "strip_skill_tests: an undeletable test file warns instead of aborting the deploy"
+T=$(new_target)
+mkdir -p "$T/.claude/skills/ro"; echo r > "$T/.claude/skills/ro/test_r.py"; chmod a-w "$T/.claude/skills/ro"
+deploy "$T"; rc=$?
+chmod u+w "$T/.claude/skills/ro"
+if [ "$(id -u)" = 0 ]; then skip "running as root — permission bits are not enforced"
+elif [ "$rc" = 0 ] && [ -f "$T/.claude/.harness-deployed" ] && [ -f "$T/.claude/skills/ro/test_r.py" ]; then pass
+else fail "deploy rc=$rc or it stopped before writing .harness-deployed"; fi
+
 finish
