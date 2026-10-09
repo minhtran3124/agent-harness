@@ -139,6 +139,22 @@ threshold 75. No location reached the threshold.
   the user to decide.
 - R has no direct test (a `cp` shim that fails mid-write would cover it).
 
+### Intent Findings
+
+Plan-blind intent review over `3b47767..887e0fd`: 0 blocking gaps.
+
+- Drift (behaviourally different, narrow — flagged to the user): an *untouched* Claude
+  `agents/PROJECT.md` (identical to the harness's, or carrying its "harness repo itself" marker)
+  is not used as the seed; the template is used instead. Came from correctness finding P; the
+  approved "seed from `.claude` when Claude is installed" was about a filled-in copy.
+- Drift (equivalent): the closure check for agent TOML is new `test_agent_profile_*` tests that
+  reuse the `test_payload_closure_*` helpers, rather than an edit of those tests.
+- Gap (optional, deferred): live evidence of Codex child-context `AGENTS.md` loading → #269.
+- Excess (report-only): mktemp + `mv` copy, the failed-copy line, the symlink rule (robustness
+  from review findings); a reworded payload sentence in the docs.
+- Consequence for the user (advisory U): committing the root `agents/PROJECT.md` in a consumer
+  trips the warn-mode `workflow-engine` signal in `hooks/commit-gate.sh`.
+
 ### Not auto-verified
 
 - That a live Codex subagent follows the rewritten Read paths — reached traceability (the
