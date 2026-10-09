@@ -67,8 +67,8 @@ deployment manifest, and left in place by `--remove`.
    nothing. Exactly one line is printed:
    - `$TARGET_DIR/agents/PROJECT.md` exists (tested with `[ -e ]`, so a directory or symlink of
      that name is also left alone): `codex-install: agents/PROJECT.md exists; left as is.`
-   - else, `$TARGET_DIR/.claude/agents/PROJECT.md` is a file (a Claude install that may already be
-     filled in): copy it and print
+   - else, `$TARGET_DIR/.claude/agents/PROJECT.md` is a file that differs from the harness's own
+     `$SOURCE_DIR/agents/PROJECT.md` (a Claude install the project customized): copy it and print
      `codex-install: created agents/PROJECT.md from .claude/agents/PROJECT.md; Codex agents read the root copy, so keep the two in step.`
    - else, `$SOURCE_DIR/agents/PROJECT.template.md` is a file: copy it and print
      `codex-install: created agents/PROJECT.md from the template; fill in its Test execution section.`

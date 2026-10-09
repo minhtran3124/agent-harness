@@ -207,6 +207,26 @@ if [ "$RC" -eq 0 ] && has_line 'codex-install: could not create agents/PROJECT.m
    && [ -f "$TARGET/agents" ]; then pass
 else fail "rc=$RC: $OUT"; fi
 
+# An untouched Claude copy (the harness's own PROJECT.md) is not used as the seed.
+TARGET=$(new_dir)
+mkdir -p "$TARGET/.claude/agents"
+cp "$ROOT/agents/PROJECT.md" "$TARGET/.claude/agents/PROJECT.md"
+run_install "$ROOT" "$TARGET" "$FAKE" --yes
+t "an uncustomized .claude/agents/PROJECT.md falls back to the template"
+if [ "$RC" -eq 0 ] && cmp -s "$ROOT/agents/PROJECT.template.md" "$TARGET/agents/PROJECT.md" \
+   && has_line 'codex-install: created agents/PROJECT.md from the template; fill in its Test execution section.'; then pass
+else fail "rc=$RC: $OUT"; fi
+
+# A dangling agents/PROJECT.md symlink counts as existing; nothing is written through it.
+TARGET=$(new_dir)
+mkdir -p "$TARGET/agents"
+ln -s ../missing-project.md "$TARGET/agents/PROJECT.md"
+run_install "$ROOT" "$TARGET" "$FAKE" --yes
+t "a dangling agents/PROJECT.md symlink is left alone and not written through"
+if [ "$RC" -eq 0 ] && [ -L "$TARGET/agents/PROJECT.md" ] && [ ! -e "$TARGET/missing-project.md" ] \
+   && has_line 'codex-install: agents/PROJECT.md exists; left as is.'; then pass
+else fail "rc=$RC: $OUT"; fi
+
 # Checked last, so every install above (stub, dry-run, remove, clone) is covered.
 t "the installer makes no trust-changing Codex call and writes no Codex config"
 if ! grep -qE '(^| )(trust|--trust[^ ]*)( |$)|trust_level' "$FAKE/codex.log" \

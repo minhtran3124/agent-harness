@@ -127,23 +127,32 @@ if [ "$GI_RUN" -eq 1 ]; then
   else
     printf 'codex-install: init-structure.sh not in this source checkout; skipping the workflow structure.\n'
   fi
-  # Codex agent profiles read agents/PROJECT.md at the target root; never overwrite an existing one.
-  if [ -e "$TARGET_DIR/agents/PROJECT.md" ]; then
+  # Codex agent profiles read agents/PROJECT.md at the target root; never overwrite an existing
+  # entry (a dangling symlink counts as existing). Seed from .claude/agents/PROJECT.md only when the
+  # project customized it: an untouched copy is the harness's own PROJECT.md, whose commands are
+  # wrong for this project. Copy through a temporary file so a failed copy leaves nothing behind.
+  PROJECT_FILE="$TARGET_DIR/agents/PROJECT.md"
+  CLAUDE_PROJECT="$TARGET_DIR/.claude/agents/PROJECT.md"
+  PROJECT_SRC=""
+  if [ -e "$PROJECT_FILE" ] || [ -L "$PROJECT_FILE" ]; then
     printf 'codex-install: agents/PROJECT.md exists; left as is.\n'
-  elif [ -f "$TARGET_DIR/.claude/agents/PROJECT.md" ]; then
-    if mkdir -p "$TARGET_DIR/agents" && cp "$TARGET_DIR/.claude/agents/PROJECT.md" "$TARGET_DIR/agents/PROJECT.md"; then
-      printf 'codex-install: created agents/PROJECT.md from .claude/agents/PROJECT.md; Codex agents read the root copy, so keep the two in step.\n'
-    else
-      printf 'codex-install: could not create agents/PROJECT.md (see the error above); create it from agents/PROJECT.template.md yourself.\n'
-    fi
+  elif [ -f "$CLAUDE_PROJECT" ] && ! cmp -s "$CLAUDE_PROJECT" "$SOURCE_DIR/agents/PROJECT.md"; then
+    PROJECT_SRC="$CLAUDE_PROJECT"
+    PROJECT_MSG='created agents/PROJECT.md from .claude/agents/PROJECT.md; Codex agents read the root copy, so keep the two in step.'
   elif [ -f "$SOURCE_DIR/agents/PROJECT.template.md" ]; then
-    if mkdir -p "$TARGET_DIR/agents" && cp "$SOURCE_DIR/agents/PROJECT.template.md" "$TARGET_DIR/agents/PROJECT.md"; then
-      printf 'codex-install: created agents/PROJECT.md from the template; fill in its Test execution section.\n'
-    else
-      printf 'codex-install: could not create agents/PROJECT.md (see the error above); create it from agents/PROJECT.template.md yourself.\n'
-    fi
+    PROJECT_SRC="$SOURCE_DIR/agents/PROJECT.template.md"
+    PROJECT_MSG='created agents/PROJECT.md from the template; fill in its Test execution section.'
   else
     printf 'codex-install: agents/PROJECT.template.md not in this source checkout; skipping agents/PROJECT.md.\n'
+  fi
+  if [ -n "$PROJECT_SRC" ]; then
+    PROJECT_TMP="$PROJECT_FILE.tmp.$$"
+    if mkdir -p "$TARGET_DIR/agents" && cp "$PROJECT_SRC" "$PROJECT_TMP" && mv "$PROJECT_TMP" "$PROJECT_FILE"; then
+      printf 'codex-install: %s\n' "$PROJECT_MSG"
+    else
+      rm -f "$PROJECT_TMP" 2>/dev/null || true
+      printf 'codex-install: could not create agents/PROJECT.md (see the error above); create it from agents/PROJECT.template.md yourself.\n'
+    fi
   fi
   DOCTOR_ARGS=(--root "$TARGET_DIR" --repo-root "$SOURCE_DIR" --no-persist)
   # The doctor runs Codex with cwd=<target>, so make relative paths absolute first.

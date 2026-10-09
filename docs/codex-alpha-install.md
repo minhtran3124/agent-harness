@@ -106,14 +106,17 @@ or `--remove`, and none of them can make the install fail.
    and how source files map to their tests. The installer creates that file only when it is
    missing and prints exactly one of these lines.
 
-   When `agents/PROJECT.md` already exists, the installer does not touch it:
+   When `agents/PROJECT.md` already exists (a symlink counts, even one whose target is missing),
+   the installer does not touch it:
 
    ```text
    codex-install: agents/PROJECT.md exists; left as is.
    ```
 
-   When it is missing and the project has `.claude/agents/PROJECT.md` (from a Claude Code install),
-   the installer copies that file:
+   When it is missing and the project has a customized `.claude/agents/PROJECT.md` (from a Claude
+   Code install), the installer copies that file. An untouched copy is skipped: a Claude install
+   starts from the harness repository's own `PROJECT.md`, whose test commands are wrong for your
+   project, so the template is used instead:
 
    ```text
    codex-install: created agents/PROJECT.md from .claude/agents/PROJECT.md; Codex agents read the root copy, so keep the two in step.
@@ -135,6 +138,7 @@ or `--remove`, and none of them can make the install fail.
    codex-install: agents/PROJECT.template.md not in this source checkout; skipping agents/PROJECT.md.
    ```
 
+   The copy goes through a temporary file, so a failed copy leaves no partial `agents/PROJECT.md`.
    If a copy fails, the installer prints the copy error followed by this line, and the install
    still succeeds:
 
