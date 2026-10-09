@@ -334,7 +334,12 @@ def _rewrite_agent_profiles(agents_dir: Path, targets: list[str]) -> None:
         if len(matches) != 1:
             raise AdapterError(f"{path}: expected one developer_instructions line")
         index = matches[0]
-        value = json.loads(lines[index][len(key):])
+        try:
+            value = json.loads(lines[index][len(key):])
+        except json.JSONDecodeError as exc:
+            raise AdapterError(f"{path}: developer_instructions is not a JSON string") from exc
+        if not isinstance(value, str):
+            raise AdapterError(f"{path}: developer_instructions is not a JSON string")
         lines[index] = key + json.dumps(
             rewrite_payload_paths(value, targets), ensure_ascii=False
         )

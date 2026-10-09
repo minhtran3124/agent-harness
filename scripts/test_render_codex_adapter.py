@@ -823,3 +823,17 @@ def test_agents_block_output_stale_block_is_removed(tmp_path):
     with pytest.raises(renderer.AdapterError, match="always-on"):
         renderer.render(root, output)
     assert not stale.exists()
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        'name = "x"\n',
+        'developer_instructions = "a"\ndeveloper_instructions = "b"\n',
+        "developer_instructions = not-json\n",
+    ],
+)
+def test_agent_profile_rewrite_fails_closed_on_a_malformed_profile(tmp_path, text):
+    (tmp_path / "x.toml").write_text(text, encoding="utf-8")
+    with pytest.raises(renderer.AdapterError, match="developer_instructions"):
+        renderer._rewrite_agent_profiles(tmp_path, ["rules/behavior.md"])
