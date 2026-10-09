@@ -1,11 +1,43 @@
 ---
 slug: gh-254-codex-agents-md-rules
-status: proposed
+status: active
 owner: Minh Tran
 created: 2026-10-09
 ---
 
 # Deliver the always-on rules via a shared, runtime-neutral AGENTS.md
+
+<!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
+## At a glance
+
+**4 tasks · 2 waves · 7 files · 0/4 done**
+
+| Wave | Task | Title | Files | Done (acceptance) |
+|---|---|---|---|---|
+| 1 | 1.1 | Render the managed AGENTS.md block (wave 1) | scripts/render_codex_adapter.py, adapters/codex/project/harness-instructions.md, scripts/test_render_codex_adapter.py | All tests in the file pass, including the four new groups and the existing byte-… |
+| 2 | 2.1 | Deploy the rendered block (wave 2) | scripts/deploy-codex-adapter.sh, tests/scripts/codex-install.test.sh | The suite exits 0 with the new cases; `bash -n scripts/deploy-codex-adapter.sh` … |
+| 2 | 2.2 | Codex path in the rule-tier inventory test (wave 2) | tests/scripts/rule-loading-tiers.test.sh | The suite exits 0 with the new case. |
+| 2 | 2.3 | Document the block and the AGENTS.md / CLAUDE.md interplay (wave 2) | docs/codex-alpha-install.md | That check exits 0, `bash scripts/lint-doc-truth.sh` exits 0, and `grep -c "sent… |
+
+```mermaid
+flowchart LR
+  subgraph W0[Wave 1]
+    T1_1["1.1 Render the managed AGENTS.md block (wave 1)"]
+  end
+  subgraph W1[Wave 2]
+    T2_1["2.1 Deploy the rendered block (wave 2)"]
+    T2_2["2.2 Codex path in the rule-tier inventory test (wave 2)"]
+    T2_3["2.3 Document the block and the AGENTS.md / CLAUDE.md interplay (wave 2)"]
+  end
+  W0 --> W1
+```
+
+### Progress
+- [ ] 1.1 — Render the managed AGENTS.md block (wave 1)
+- [ ] 2.1 — Deploy the rendered block (wave 2)
+- [ ] 2.2 — Codex path in the rule-tier inventory test (wave 2)
+- [ ] 2.3 — Document the block and the AGENTS.md / CLAUDE.md interplay (wave 2)
+<!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
 
@@ -35,6 +67,12 @@ chain at the byte once 32 KiB is reached; a root `AGENTS.override.md` hides `AGE
 - The managed-block lifecycle (insert / hash-gated replace / sidecar / remove) is reused, not
   rewritten. Root `AGENTS.md` outside the markers is never modified.
 - Text is read and written as UTF-8 everywhere the block is handled; the budget is UTF-8 bytes.
+- `agents-block.md` byte contract (shared by Tasks 1.1 and 2.1): the file is exactly the block,
+  from `<!-- agent-harness:begin -->` through `<!-- agent-harness:end -->`, followed by exactly
+  one `\n`. `render_agents_block()` returns the block **without** the trailing newline; `render()`
+  appends the single `\n` when writing. Deploy removes exactly one trailing `\n` before
+  validating and before any hash or `current == block` comparison, so the stored
+  `agents_block_hash` covers the same begin-to-end span as today.
 - Bash stays macOS 3.2 compatible; Python 3 stdlib only. Tests use the fake-Codex harness and
   never touch the real `~/.codex` or the network.
 - Verify commands are pipe-free, a single command, and finish in under 60 s.
@@ -49,7 +87,7 @@ chain at the byte once 32 KiB is reached; a root `AGENTS.override.md` hides `AGE
 | SC-4 | Render writes `<output>/agents-block.md`, removes a stale one, and no longer emits `project/.codex/harness-instructions.md` | `python3 -m pytest scripts/test_render_codex_adapter.py -q -k agents_block_output` | exit 0 |
 | SC-5 | Install puts every always-on rule's text inside the markers; an install from the one-line block upgrades in place; an edited block gets an `AGENTS.md.harness-incoming`; an unchanged retired `.codex/harness-instructions.md` is pruned and an edited one kept; a missing block file fails before `AGENTS.md` changes; root `AGENTS.override.md` and an over-32-KiB `AGENTS.md` each print a warning; `--remove` strips the section | `bash tests/scripts/codex-install.test.sh` | exit 0 |
 | SC-6 | The rendered block's inlined-rule inventory equals the shell-derived always-on tier, compared in both directions | `bash tests/scripts/rule-loading-tiers.test.sh` | exit 0 |
-| SC-7 | Docs describe the block, the budget and truncation, the `AGENTS.override.md` caveat, and the `AGENTS.md`/`CLAUDE.md` interplay; the doc-truth lint passes | `bash scripts/lint-doc-truth.sh` | exit 0 |
+| SC-7 | Docs describe the block, the budget and truncation, the `AGENTS.override.md` caveat, and the `AGENTS.md`/`CLAUDE.md` interplay | `python3 -c "import pathlib,sys; t=pathlib.Path('docs/codex-alpha-install.md').read_text(encoding='utf-8'); sys.exit(0 if all(k in t for k in ('AGENTS.override.md', '32 KiB', '20 KiB', '@AGENTS.md', 'claude-md-and-agents-md', 'CLAUDE.local.md')) else 1)"` | exit 0 |
 | SC-8 | Claude rendering is unchanged by a Codex render | `python3 -m pytest scripts/test_render_codex_adapter.py -q -k claude_rendering_is_unchanged` | exit 0 |
 
 ## 4. Tasks
@@ -64,7 +102,8 @@ chain at the byte once 32 KiB is reached; a root `AGENTS.override.md` hides `AGE
   implement per `design.md` §Components 1–2:
   - `always_on_rules(rules_dir)` / `path_scoped_rules(rules_dir)` using the `has_paths_frontmatter`
     test (line 1 is `---`, a `paths:` line before the closing `---`); path-scoped returns the
-    `paths:` globs;
+    `paths:` globs, parsed stdlib-only as the `  - "<glob>"` list items after `paths:` up to the
+    next unindented key or the closing `---`, surrounding quotes stripped;
   - `render_agents_block(preamble, payload_rules_dir)` → text with both markers: preamble; per
     always-on rule sorted by name, `Source: .codex/.agent-harness/payload/rules/<name>` then the
     rule text verbatim with leading frontmatter stripped and only trailing whitespace at file end
@@ -74,6 +113,8 @@ chain at the byte once 32 KiB is reached; a root `AGENTS.override.md` hides `AGE
   - `render()`: delete a stale `<output>/agents-block.md` with the other owned outputs, write the
     new block (UTF-8) from the payload rules after the rewrite, and stop copying
     `harness-instructions.md` into `project/`.
+  The SC-3 neutrality test scans only the block's own text: render with stub rule files in a
+  cloned root (or slice out the preamble and the on-demand section) so rule bodies are excluded.
   Edit `adapters/codex/project/harness-instructions.md` in place to be runtime-neutral: title
   "Agent Harness", no "for Codex", `agents/PROJECT.md` named as "if present", and a sentence that
   the rules below are always-on.
@@ -93,12 +134,19 @@ chain at the byte once 32 KiB is reached; a root `AGENTS.override.md` hides `AGE
   inside the markers after a fresh install; upgrade from a seeded pre-#254 state (one-line block
   with its hash in the deployment manifest, plus a manifest-owned unchanged
   `.codex/harness-instructions.md`) replaces the block and prunes the file; the same with an
-  edited file keeps it; a source whose render emits no block file fails with `AGENTS.md`
-  byte-identical; root `AGENTS.override.md` prints `AGENTS.override.md`; a large user `AGENTS.md`
+  edited file keeps it; a missing block file fails closed — build a stub source directory
+  holding only `scripts/deploy-codex-adapter.sh` (copied from `$ROOT`) and a stub
+  `scripts/render_codex_adapter.py` that ignores the `--root` deploy passes it, runs the real
+  renderer with the test's `$ROOT` (baked in when the test writes the stub) and the given
+  `--output`, then deletes `<output>/agents-block.md`; install from it into a target that
+  already has a custom `AGENTS.md` and an existing install, and assert a non-zero rc, the
+  target `snapshot` unchanged, and `AGENTS.md` byte-identical (a broken rule would make the real
+  renderer exit before `sync_project`, so it does not exercise this path); root `AGENTS.override.md` prints `AGENTS.override.md`; a large user `AGENTS.md`
   pushing the result over 32768 bytes prints `32 KiB`. Then implement per `design.md`
   §Components 3: `sync_project` takes the block path as a third argument
   (`sync_project install "$WORK/rendered/project" "$WORK/rendered/agents-block.md"`), reads and
-  validates it (exists, non-empty, starts with the begin marker, ends with the end marker) before
+  validates it per the byte contract in Global Constraints (exists; after removing one trailing
+  `\n`, starts with the begin marker, ends with the end marker, each marker exactly once) before
   the first write, reads `AGENTS.md` with `encoding="utf-8"`, and prints both non-fatal
   warnings after the write. Remove mode is unchanged.
 - **Verify:** `bash tests/scripts/codex-install.test.sh`
@@ -112,7 +160,8 @@ chain at the byte once 32 KiB is reached; a root `AGENTS.override.md` hides `AGE
 - **Files:** tests/scripts/rule-loading-tiers.test.sh
 - **Action:** Add a case that renders the adapter into a temp directory
   (`python3 "$ROOT/scripts/render_codex_adapter.py" --root "$ROOT" --output <tmp>`), extracts the
-  `Source: .codex/.agent-harness/payload/rules/<name>` lines from `agents-block.md`, and asserts
+  lines matching `^Source: \.codex/\.agent-harness/payload/rules/` (anchored at line start)
+  from `agents-block.md`, and asserts
   the set equals the existing `$always` set in both directions (no extra, none missing). Write it
   to fail first by asserting against a deliberately wrong expected set, then correct it.
 - **Verify:** `bash tests/scripts/rule-loading-tiers.test.sh`
@@ -124,16 +173,20 @@ chain at the byte once 32 KiB is reached; a root `AGENTS.override.md` hides `AGE
 
 - **Files:** docs/codex-alpha-install.md
 - **Action:** Replace `.codex/harness-instructions.md` in the installed-file list (`:39`) with the
-  managed block. Add a section: what the block contains (five always-on rules inline, on-demand
+  managed block, and rewrite the "sentinel-delimited pointer" prose (`:60-62`), which becomes
+  false. A single note that `.codex/harness-instructions.md` is retired (and what the
+  `preserved edited retired file` message means) is allowed. Add a section: what the block contains (five always-on rules inline, on-demand
   list), why inline (no include mechanism in Codex), the 32 KiB default budget and byte
   truncation of the root→cwd chain with the 20 KiB block cap, the `AGENTS.override.md` caveat,
   and for users running both tools: Claude reads `AGENTS.md` only without a
   `CLAUDE.md`/`.claude/CLAUDE.md`/`CLAUDE.local.md` (v2.1.277+), the `@AGENTS.md` bridge, the
-  `claude-md-and-agents-md` setting (user/managed settings only), and the ~14 KB double load
-  when both `.claude/rules/` and the block are read.
-- **Verify:** `bash scripts/lint-doc-truth.sh`
-- **Done:** The lint exits 0; `grep -c "AGENTS.override.md" docs/codex-alpha-install.md` ≥ 1 and
-  `grep -c "harness-instructions" docs/codex-alpha-install.md` = 0.
+  `claude-md-and-agents-md` setting (user/managed settings only), `CLAUDE.local.md` also
+  suppressing `AGENTS.md`, and the ~14 KB double load when both `.claude/rules/` and the block
+  are read.
+- **Verify:** `python3 -c "import pathlib,sys; t=pathlib.Path('docs/codex-alpha-install.md').read_text(encoding='utf-8'); sys.exit(0 if all(k in t for k in ('AGENTS.override.md', '32 KiB', '20 KiB', '@AGENTS.md', 'claude-md-and-agents-md', 'CLAUDE.local.md')) else 1)"`
+- **Done:** That check exits 0, `bash scripts/lint-doc-truth.sh` exits 0, and
+  `grep -c "sentinel-delimited pointer" docs/codex-alpha-install.md` prints 0, and `grep -c -F -- "- \`.codex/harness-instructions.md\`; and" docs/codex-alpha-install.md`
+  prints 0.
 - **Criteria:** SC-7
 - **Interfaces:** Consumes the design and research facts; produces the updated `docs/codex-alpha-install.md`.
 
