@@ -42,17 +42,44 @@ Confidence is `medium`: the goal is clear, but (a) and (b) are materially differ
 
 ### Deviations
 
-- none
+- Rule 3: the full suite failed `scripts/test_audit_skill_prompts.py`. The SDD `SKILL.md` was already at the 600-word progressive-disclosure ceiling on `main`, and the new bullet took it to 646. The SKILL bullet now keeps only the core rule. The header, rewrite-after-fix and no-file-on-`BLOCKED`/`NEEDS_CONTEXT` details moved to the always-on `rules/orchestration.md` Subagent contract, departing from design §4.2's placement (behavior unchanged). Commit `974e686`.
+- Rule 1: the task re-review noted that the moved details live only in `rules/orchestration.md`, which the Codex adapter does not load through `agents/PROJECT.md`. The SKILL bullet now names `rules/orchestration.md` by path (598 words). Commit `cf0567d`.
 
 ### Verify
 
 | Check | Command | Exit | Notes | Criterion |
 | --- | --- | --- | --- | --- |
 | intake lane record | `python3 scripts/verify_summary.py --lane gh-261-sdd-report-handoff` | 0 | intake-time check only | |
+| handoff presence/absence checks | `bash tests/scripts/sdd-artifact-handoffs.test.sh` | 0 | sdd-artifact-handoffs: passed | SC-1 |
+| task-reviewer contract unchanged | `python3 scripts/check_task_review_contract.py` | 0 | task-review-contract: passed | SC-2 |
+| isolated-prompt deliveries hold | `python3 scripts/render_skill_prompt.py --check-all` | 0 | all contracts present | SC-3 |
+| backlog closed, guardrail existing, affects orchestration | `python3 -c "import sys;b=open('docs/harness-experimental/improvement-backlog.md').read();s=open('docs/solutions/harness/sdd-report-file-handoff-refused-for-subagents.md').read();sys.exit(0 if 'done (2026-10-09, gh-261)' in b and 'existing:' in s and 'proposed:' not in s and 'rules/orchestration.md' in s else 1)"` | 0 |  | SC-4 |
+| INDEX matches a fresh rebuild (date line ignored) | `python3 -c "import subprocess,sys;n=subprocess.run([sys.executable,'scripts/rebuild_solution_index.py','--dry-run'],capture_output=True,text=True).stdout;f=open('docs/solutions/INDEX.md').read();k=lambda t:[l for l in t.splitlines() if not l.startswith('> Last updated')];sys.exit(0 if k(n)==k(f) else 1)"` | 0 |  | SC-5 |
+| SKILL.md word ceiling | `python3 scripts/audit_skill_prompts.py --json` | 0 | SDD SKILL.md 598 words (ceiling 600) |  |
+
+### Context-Propagation Audit
+
+**Result: PASS**, with one advisory. Search surface: `grep -rnI` for `IMPLEMENTER_REPORT_PATH`, `report-<task>`, `report file`, `harness-state/sdd`, `orchestration.md` over `skills/`, `rules/`, `agents/`, `adapters/`, `scripts/`, `tests/`, plus `adapters/codex/project/harness-instructions.md` and `agents/PROJECT.md`.
+
+| Source | Consumer | Context | Delivery | Proof |
+| --- | --- | --- | --- | --- |
+| `implementer-prompt.md` Report Format ("do not write a report file") | implementer | subagent (isolated) | pasted (the dispatched prompt text) | `sdd-artifact-handoffs.test.sh` presence check |
+| SDD `SKILL.md` bullet ("the controller writes it verbatim to `report-<task>.md`") | SDD controller | main | the skill body, loaded on invocation | `sdd-artifact-handoffs.test.sh` presence checks |
+| `rules/orchestration.md` Subagent contract (header, rewrite after fix, no file on BLOCKED/NEEDS_CONTEXT) | SDD controller (Claude) | main | always-on rule (no `paths:` frontmatter) | `tests/scripts/rule-loading-tiers.test.sh` exit 0 |
+| same | SDD controller (Codex advisory) | main | explicit path in the SKILL bullet (`per rules/orchestration.md`, `cf0567d`); Codex rules otherwise come from `agents/PROJECT.md`, which does not name `orchestration.md` | **Advisory:** the pointer is present, but Codex Reading it is not proven (traceability only) |
+| `IMPLEMENTER_REPORT_PATH` input | task reviewer | subagent (isolated) | unchanged; the controller now fills the path | `check_task_review_contract.py` exit 0 |
+| solution entry Guardrail `existing:` | planning / compound sessions | main | `docs/solutions/INDEX.md` plus the `session-knowledge.sh` pointer | SC-5 (INDEX matches rebuild) |
 
 ### Not auto-verified
 
-- none
+- The controller copies the report verbatim. Judgment-tier: the "transcribed by controller" header marks where the file came from; nothing compares it to the implementer's return.
+- A Codex controller reads `rules/orchestration.md` through the SKILL pointer. Traceability only: the pointer is present, and no Codex run was observed.
+
+### Minor review findings
+
+- Task 1.1 (`7523f0c`): an overlong SKILL.md line. Resolved by the fix-round rewrite (`974e686`, `cf0567d`).
+- Task 1.2 (`6a36b3c`): the closed backlog row's Proposal cell still says "plus a context-propagation regression presence case". Left as the historical proposal; the solution entry's Guardrail says where the checks actually live.
+- Task 1.1 fix round: the details split across SKILL.md and orchestration.md. Addressed by the explicit path pointer (`cf0567d`).
 
 ### Rollback
 
