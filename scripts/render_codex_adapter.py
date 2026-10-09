@@ -325,6 +325,24 @@ def _rewrite_markdown(base: Path, targets: list[str]) -> None:
             path.write_text(rewritten, encoding="utf-8")
 
 
+def _rewrite_agent_profiles(agents_dir: Path, targets: list[str]) -> None:
+    """Rewrite the decoded developer_instructions; on encoded text a path after `\\n` is missed."""
+    key = "developer_instructions = "
+    for path in sorted(agents_dir.glob("*.toml")):
+        lines = path.read_text(encoding="utf-8").split("\n")
+        matches = [i for i, line in enumerate(lines) if line.startswith(key)]
+        if len(matches) != 1:
+            raise AdapterError(f"{path}: expected one developer_instructions line")
+        index = matches[0]
+        value = json.loads(lines[index][len(key):])
+        lines[index] = key + json.dumps(
+            rewrite_payload_paths(value, targets), ensure_ascii=False
+        )
+        text = "\n".join(lines)
+        render_agent_definitions.parse_codex_profile(text)
+        path.write_text(text, encoding="utf-8")
+
+
 def _frontmatter(text: str) -> list[str] | None:
     """Lines between a leading `---` and its closing `---`; None when absent."""
     lines = text.splitlines()
@@ -477,6 +495,7 @@ def render(root: Path, output: Path) -> dict[str, Any]:
     _rewrite_markdown(payload / "rules", targets)
     _rewrite_markdown(payload / "templates", targets)
     _rewrite_markdown(payload / "skills", targets)
+    _rewrite_agent_profiles(agents_dir, targets)
     preamble = _read_rule(root / "adapters/codex/project/harness-instructions.md")
     agents_block.write_text(
         render_agents_block(preamble, payload / "rules") + "\n", encoding="utf-8"

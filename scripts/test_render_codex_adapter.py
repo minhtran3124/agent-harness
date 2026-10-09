@@ -368,6 +368,61 @@ def test_payload_closure_every_helper_reference_resolves(tmp_path):
     } <= prefixed
 
 
+def _agent_profiles(output: Path) -> dict[str, str]:
+    """Decoded developer_instructions per rendered Codex agent profile."""
+    agents = output / "project/.codex/agents"
+    return {
+        path.name: renderer.render_agent_definitions.parse_codex_profile(
+            path.read_text(encoding="utf-8")
+        )["developer_instructions"]
+        for path in sorted(agents.glob("*.toml"))
+    }
+
+
+def test_agent_profile_cites_payload_copies_of_rules(tmp_path):
+    output = tmp_path / "rendered"
+    renderer.render(ROOT, output)
+    profiles = _agent_profiles(output)
+    assert f"{PREFIX}rules/auto-correct-scope.md" in profiles["coding.toml"]
+    assert f"{PREFIX}rules/orchestration.md" in profiles["coding.toml"]
+    assert f"{PREFIX}rules/behavior.md" in profiles["reviewer.toml"]
+
+
+def test_agent_profile_closure_no_bare_eligible_path_and_prefixed_resolve(tmp_path):
+    output = tmp_path / "rendered"
+    renderer.render(ROOT, output)
+    payload = _payload(output)
+    eligible = _payload_eligible_in_source(ROOT)
+    prefixed, bare_left = set(), set()
+    for name, text in _agent_profiles(output).items():
+        for match in PREFIXED_TOKEN.finditer(text):
+            prefixed.add(match.group(1).rstrip("."))
+        for match in BARE_TOKEN.finditer(text):
+            if match.group(1).rstrip(".") in eligible:
+                bare_left.add((name, match.group(1)))
+    assert not bare_left
+    assert prefixed
+    missing = sorted(ref for ref in prefixed if not (payload / ref).is_file())
+    assert not missing
+
+
+def test_agent_profile_keeps_agents_paths_bare(tmp_path):
+    output = tmp_path / "rendered"
+    renderer.render(ROOT, output)
+    joined = "\n".join(_agent_profiles(output).values())
+    assert "agents/PROJECT.md" in joined
+    assert "agents/runtime-bindings.json" in joined
+    assert f"{PREFIX}agents/" not in joined
+
+
+def test_agent_profile_render_is_byte_identical(tmp_path):
+    first, second = tmp_path / "first", tmp_path / "second"
+    renderer.render(ROOT, first)
+    renderer.render(ROOT, second)
+    agents = "project/.codex/agents"
+    assert tree_digest(first / agents) == tree_digest(second / agents)
+
+
 def test_payload_closure_payload_equals_source_eligible_set(tmp_path):
     output = tmp_path / "rendered"
     renderer.render(ROOT, output)
