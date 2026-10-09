@@ -10,7 +10,7 @@ created: 2026-10-09
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**4 tasks · 3 waves · 6 files · 0/4 done**
+**4 tasks · 3 waves · 6 files · 4/4 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -36,10 +36,10 @@ flowchart LR
 ```
 
 ### Progress
-- [ ] 1.1 — Doctor reason for a missing hook helper (wave 1)
-- [ ] 1.3 — Record the trust-surface finding in the capability matrix (wave 1)
-- [ ] 1.2 — Installer tail: structure, doctor, next step (wave 2)
-- [ ] 2.1 — Document untrusted hooks and the installer's new output (wave 3)
+- [x] 1.1 — Doctor reason for a missing hook helper (wave 1)
+- [x] 1.3 — Record the trust-surface finding in the capability matrix (wave 1)
+- [x] 1.2 — Installer tail: structure, doctor, next step (wave 2)
+- [x] 2.1 — Document untrusted hooks and the installer's new output (wave 3)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -197,3 +197,4 @@ field at 0.147.0 or 0.162.0; app-server `hooks/list` has per-hook `trustStatus`)
 
 - 2026-10-09 — plan written from the approved design and research brief.
 - 2026-10-09 — revised after plan review: SC-1 selector, SC-8, Task 1.2 test details, waves 1/2/3. Plan review approved on iteration 2.
+- 2026-10-09 — tasks 1.1, 1.3 complete (d5ba42b, 6795c61); task 1.2 complete (50f947f, Minor fixes 774e595); task 2.1 complete (ca0a2b2). All reviews passed (spec pass, quality approved). `bash scripts/run-tests.sh` ALL GREEN (836 pytest passed). All plan tasks are done.

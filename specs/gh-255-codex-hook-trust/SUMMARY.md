@@ -37,15 +37,36 @@ profile check was done separately and filed as #268. The branch stacks on
 
 ## What changed
 
-<pending>
+A Codex install now ends by telling the user where trust stands and what to do. After a
+successful deploy (never under `--dry-run`/`--remove`, never failing the install), the installer
+runs `init-structure.sh`, runs the harness doctor once with `--no-persist` and prints
+`codex-install: doctor mode: <mode> (<reasons>)`, then prints the next step: start Codex, choose
+"Review hooks" (or `/hooks`, `t`), and re-run the doctor (with a paste-safe `git clone` line in
+the default clone mode). The doctor names a missing hook helper as the advisory reason
+`HOOK_DEPENDENCY_MISSING` and lists the hooks in `diagnostic_summary`. The capability matrix
+records that `codex doctor --json` has no trust field at 0.147.0 or 0.162.0 and that app-server
+`hooks/list` exposes per-hook `trustStatus` (follow-up #269). `docs/codex-alpha-install.md`
+explains the untrusted-hook prompt, `/hooks`, each trust and dependency reason with its fix, and
+the installer's new output.
 
 ### Rationale
 
-<pending>
+The user chose visibility now and `hooks/list` later: no Codex input available to the doctor
+carries observed hook trust, and `hooks/list` reports approval rather than an observed run and
+could not be captured live here. Making the state visible and naming the fix removes the silent
+failure without claiming enforcement. A missing helper is `advisory` (user choice) because the
+adapter still works with one guarantee gone.
 
 ### Alternatives considered
 
-- none
+- Wire app-server `hooks/list` into the doctor now — deferred by the user to #269 (needs a live
+  macOS capture; trust approval is not an observed run).
+- Install Codex on this host to capture `hooks/list` first — not chosen; Linux results cannot
+  unlock `enforced` anyway (`PLATFORM_UNVERIFIED`).
+- Missing helper as `unsupported` — rejected by the user; a damaged payload would read as an
+  unusable install.
+- A new evidence fixture for the source reading — rejected: the validator's closed capture
+  vocabulary exists to stop hand-authored fixtures; the finding lives in the matrix row text.
 
 ### Deviations
 
@@ -61,16 +82,39 @@ profile check was done separately and filed as #268. The branch stacks on
 - Task 1.2 (`50f947f`): spec pass, quality approved. Minor M3: clone-mode next step printed a
   literal `<dir>` (not paste-safe); M4: the no-trust-call assertion ran before the later
   installs; M5: the could-not-run line hid the doctor's exit. All three fixed in `774e595`.
+- Task 2.1 (`ca0a2b2`): spec pass, quality approved. Minor M6 (doc says the mode line can read
+  `unsupported`, but a non-zero doctor exit prints "could not run"): refuted — the doctor exits 0
+  for `unsupported` too and returns 2 only on input errors (`codex_harness_doctor.py` `main`).
+  M7: the reason-table meanings were not checked by the task reviewer; forwarded to the final
+  correctness review.
+
+Full suite: `bash scripts/run-tests.sh` was ALL GREEN before the first `scripts/` edit and after
+all four tasks (836 pytest passed); cited here, not as a Verify row.
 
 ### Verify
 
 | Check | Command | Exit | Notes | Criterion |
 | --- | --- | --- | --- | --- |
 | intake lane record | `python3 scripts/verify_summary.py --lane gh-255-codex-hook-trust` | 0 | intake |  |
+| missing hook helper reason | `python3 -m pytest scripts/test_codex_harness_doctor.py -q -k hook_dependency_missing` | 0 | 3 tests: one or both helpers missing named; full and `.claude/`-only installs clean; missing install not evaluated | SC-1 |
+| helper table drift | `python3 -m pytest scripts/test_codex_harness_doctor.py -q -k hook_dependency_table` | 0 | drift test parses both hooks; order-sensitive | SC-2 |
+| doctor suite | `python3 -m pytest scripts/test_codex_harness_doctor.py -q` | 0 | 19 doctor tests, fixture ships payload helpers | SC-3 |
+| installer tail | `bash tests/scripts/codex-install-next-step.test.sh` | 0 | 10 cases incl. stub doctor exit 2, missing init-structure, dry-run, remove, clone mode, no trust call | SC-4 |
+| capability matrix valid | `python3 scripts/check_codex_capabilities.py specs/codex-support/capability-matrix.json` | 0 | matrix validates | SC-5 |
+| docs content | `python3 -c "import pathlib,sys; t=pathlib.Path('docs/codex-alpha-install.md').read_text(encoding='utf-8'); sys.exit(0 if all(k in t for k in ('Hooks need review', '/hooks', 'HOOK_DEPENDENCY_MISSING', 'TRUST_UNKNOWN', 'HOOKS_UNTRUSTED', 'TRUST_CONFIG_ONLY', 'init-structure.sh', 'doctor mode:')) else 1)"` | 0 | required facts present | SC-6 |
+| codex install suite | `bash tests/scripts/codex-install.test.sh` | 0 | 38 cases | SC-7 |
+| trust row recorded | `python3 -c "import json,sys; r=[c for c in json.load(open('specs/codex-support/capability-matrix.json'))['capabilities'] if c['id']=='config.project_trust'][0]; s=r['source']; sys.exit(0 if (s['checked_at']=='2026-10-09' and 'hooks/list' in s['reference'] and 'hooks/list' in r['exit_condition'] and r['status']=='unknown' and s['kind']=='unavailable') else 1)"` | 0 | trust row content | SC-8 |
+| .gitignore suite unchanged | `bash tests/scripts/codex-install-gitignore.test.sh` | 0 | 14 cases |  |
 
 ### Not auto-verified
 
-- none yet — filled at the end of the run.
+- Codex's untrusted-hook UX (the "Hooks need review" prompt, `/hooks`, `t`) as documented —
+  reached provenance (read from `codex-rs/tui` source and snapshots at `rust-v0.147.0`); not
+  observed in a live session (no `codex` on this host).
+- `doctor --json` has no trust field at 0.162.0, and `hooks/list` exposes `trustStatus` — reached
+  provenance (source at both tags); not run.
+- The installer's doctor line against a real Codex — reached traceability (the fake Codex answers
+  `{"ok":true}`, so tests assert only the line's shape).
 
 ### Rollback
 
@@ -79,4 +123,8 @@ profile check was done separately and filed as #268. The branch stacks on
 
 ### Harness-Delta
 
-- none
+- backlog — plan Verify commands use bare `python3 -m pytest`, which fails where system python3
+  lacks pytest (here; the suite uses `/tmp/harness-tests-venv`). Plans should name the
+  interpreter, or `run-tests.sh` should expose a targeted entry point.
+- backlog — `scripts/lint-doc-truth.sh` does not scan `docs/codex-alpha-install.md`, so a stale
+  path in the user-facing install doc would not fail CI.
