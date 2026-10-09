@@ -82,7 +82,7 @@ Options:
                           registers only the branch-isolation guard and the commit gate.
       --no-uv             Do not install uv (from astral.sh) when uvx is missing, and do not
                           pre-fetch code-review-graph (same as CS_NO_UV=1)
-  -h, --help             Show this help
+  -h, --help              Show this help
 
 Examples:
   curl -fsSL https://raw.githubusercontent.com/minhtran3124/harness-skills/${BRANCH}/scripts/install-harness.sh | bash -s -- --yes
@@ -103,7 +103,7 @@ while [ $# -gt 0 ]; do
     --keep-sources) KEEP_SOURCES=1; shift ;;
     --dry-run)      DRY_RUN=1; shift ;;
     --no-uv)        NO_UV=1; shift ;;
-    --profile)     PROFILE="${2:?--profile needs a name}"; shift 2 ;;
+    --profile)      PROFILE="${2:?--profile needs a name}"; shift 2 ;;
     --profile=*)    PROFILE="${1#--profile=}"; shift ;;
     -h|--help)      usage; exit 0 ;;
     *)              fail "Unknown option: $1  (see --help)" ;;

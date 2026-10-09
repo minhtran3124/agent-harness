@@ -89,7 +89,7 @@ warning line, pre-fetch the package in the background, and offer an opt-out. Res
   using the PATH contract `env -u CS_NO_UV -u XDG_BIN_HOME -u XDG_DATA_HOME -u UV_INSTALL_DIR
   -u CARGO_DIST_FORCE_INSTALL_DIR -u UV_UNMANAGED_INSTALL HOME=$tmphome PATH=$fakebin:/usr/bin:/bin`,
   a fake `curl` that appends to `$tmphome/curl.log`, no-op `uvx` stubs that append to a log inside
-  `$tmphome`, a single `POLL_TRIES=20` variable for the 0.1 s polling, `ln -sf` for the no-curl bin
+  `$tmphome`, a single `POLL_TRIES=20` variable for the 0.1 s polling, `ln -sfn` for the no-curl bin
   dir, and a skip when `env PATH=/usr/bin:/bin sh -c 'command -v uvx'` finds a system `uvx`.
   In the "auto-install success" row add a comment that the detached pre-fetch stub may still
   append to its log after cleanup and that this is harmless. Confirm the new rows fail. (3) In `scripts/install-harness.sh`: add `NO_UV="${CS_NO_UV:-0}"` to
