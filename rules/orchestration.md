@@ -44,7 +44,8 @@ for the task reviewer. On a `DONE` or `DONE_WITH_CONCERNS` return it writes
 before the task review. A fix dispatch also returns that structured report; the controller appends
 it verbatim under a `## Fix round <n>` heading rather than replacing the first report. A `BLOCKED`
 or `NEEDS_CONTEXT` return writes no file and removes any existing `report-<task>.md`, so a stale
-report is never reviewed; a return with no recognisable status is treated as `NEEDS_CONTEXT`.
+report is never reviewed, and the next `DONE` after such a removal starts a fresh `report-<task>.md`;
+a return with no recognisable status is treated as `NEEDS_CONTEXT`.
 That full structured report is what the main thread needs, so it is not a
 raw file dump.
 
