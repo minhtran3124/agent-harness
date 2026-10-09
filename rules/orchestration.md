@@ -37,8 +37,10 @@ Every subagent returning to main thread MUST include in its summary:
 - **Harness-Delta** — friction this task revealed about the workflow itself: `fix-direct`, `backlog` (→ `compound`), or `none`
 
 Include only what the main thread needs to act without re-reading the subagent's work product; no raw file dumps.
-Under a file handoff (`subagent-driven-development`), the full contract goes in the report file and
-the inline return carries status, commits, Verify status, `Harness-Delta`, and the report path.
+Under `subagent-driven-development`, the implementer returns the full contract inline, because the
+runtime refuses subagent report-file writes; the controller persists it to `.harness-state/sdd/`
+for the task reviewer. That full structured report is what the main thread needs, so it is not a
+raw file dump.
 
 ## Evidence in SUMMARY.md (evidence over assertion)
 
