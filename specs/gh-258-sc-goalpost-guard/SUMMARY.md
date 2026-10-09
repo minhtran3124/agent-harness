@@ -66,6 +66,8 @@ default is a `verify_summary.py` mode that needs a base ref, called where `--che
 - Task 1.1 (`2a47380`): `_run_sc_history` reports any later git failure (`rev-list`, `rev-parse --short`) as "not inside a git repository, or git cannot run". The exit code (2) is correct, but the message names the wrong cause, and `_git` drops git's stderr.
 - Task 1.1 (`2a47380`): `test_base_without_sc_history_is_a_usage_error` calls `subprocess.run` directly instead of the env-scrubbing `run()` helper.
 - Task 1.1 (`2a47380`): `REQUIRE_SC_STABLE` blocks only on exactly `"1"`, while `REQUIRE_NOT_AUTO_VERIFIED` accepts any truthy value (implementer note).
+- Task 2.2 (`565494f`): the finish-step clause says what an exit 1 under REQUIRE does, but not what to do on an exit 2 (usage or git error); line 34 is about 165 characters. The review returned `cannot_verify` for SC-5 until the controller ran `audit_skill_prompts.py` (exit 0, finish skill 560 words), so the spec verdict is pass.
+- Task 2.1 (`50f7897`): the section's `Verifies:` comment had a muddled exit clause. Fixed in the comment only.
 
 ### Rollback
 

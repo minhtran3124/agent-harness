@@ -10,7 +10,7 @@ created: 2026-10-09
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**3 tasks · 2 waves · 6 files · 1/3 done**
+**3 tasks · 2 waves · 6 files · 3/3 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -32,8 +32,8 @@ flowchart LR
 
 ### Progress
 - [x] 1.1 — `--sc-history` mode in verify_summary.py with history tests (wave 1)
-- [ ] 2.1 — SC-history section in ci-strict-gate with fixture tests (wave 2)
-- [ ] 2.2 — Finish step 3 runs the history check (wave 2)
+- [x] 2.1 — SC-history section in ci-strict-gate with fixture tests (wave 2)
+- [x] 2.2 — Finish step 3 runs the history check (wave 2)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -221,3 +221,4 @@ makes it block. Research: `research-brief.md` (Deep, local-only).
 
 - 2026-10-09 — plan written from the approved design and the Deep research brief.
 - 2026-10-09 — task 1.1 complete; commit 2a47380 (spec pass after the brief was regenerated from the restored PLAN; quality approved; 2 Minor recorded in SUMMARY).
+- 2026-10-09 — tasks 2.1, 2.2 complete; commits 50f7897, 565494f (each spec pass, quality approved; Minors recorded in SUMMARY; the 2.1 comment Minor was fixed directly).
