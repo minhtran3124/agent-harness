@@ -146,5 +146,6 @@ warning line, pre-fetch the package in the background, and offer an opt-out. Res
 ## 6. Status Log
 
 - 2026-10-09 — plan written from approved design + research brief.
+- 2026-10-09 — tasks 1.1, 1.2 done (b9db48d, 42cbfd5); review fixes 9118704, 3b9621e, 3b99e4d; correctness + intent passed; receipt at 3b99e4d.
 - 2026-10-09 — plan review round 1: SC-5 narrowed to README, SC-9 and SC-10 added, Task 1.1 Done
   rewritten without a hand count. Round 2 approved. Baseline `bash scripts/run-tests.sh`: ALL GREEN.
