@@ -213,15 +213,6 @@ if [ ! -f "$TARGET_DIR/scripts/install-harness.sh" ]; then
   fi
 fi
 
-# ---------- ensure uv (after every abort gate, so a declined run installs nothing) ----------
-ensure_uv
-# Warm the uvx cache so the first MCP launch is fast. Detached and never awaited; all three
-# redirects matter (no stdin from a `curl | bash` pipe, no held stdout/stderr for a `$(…)` caller).
-if [ "$UVX_MISSING" -eq 0 ] && [ "$DRY_RUN" -eq 0 ] && [ "$NO_UV" != 1 ]; then
-  info "Pre-fetching code-review-graph from PyPI in the background (skip with --no-uv)"
-  uvx code-review-graph --version </dev/null >/dev/null 2>&1 &
-fi
-
 # ---------- wire MCP config (.mcp.json at target root; merge, never overwrite) ----------
 # Runs BEFORE the deploy step so its .mcp.json canary passes. Claude Code reads .mcp.json at
 # the project ROOT (not inside .claude/). An existing file may carry the project's own
@@ -275,6 +266,16 @@ else
   printf '\n'
 fi
 bash "$SRC/scripts/deploy-harness.sh" "${DEPLOY_ARGS[@]}"
+
+# ---------- ensure uv (after every abort gate — ours and deploy's conflict prompt — so an
+# aborted run installs nothing) ----------
+ensure_uv
+# Warm the uvx cache so the first MCP launch is fast. Detached and never awaited; all three
+# redirects matter (no stdin from a `curl | bash` pipe, no held stdout/stderr for a `$(…)` caller).
+if [ "$UVX_MISSING" -eq 0 ] && [ "$DRY_RUN" -eq 0 ] && [ "$NO_UV" != 1 ]; then
+  info "Pre-fetching code-review-graph from PyPI in the background (skip with --no-uv)"
+  uvx code-review-graph --version </dev/null >/dev/null 2>&1 &
+fi
 
 # ---------- scaffold structural dirs (create-if-missing; never deletes/overwrites) ----------
 # Folds the standalone scripts/init-structure.sh into install so users run one command.
