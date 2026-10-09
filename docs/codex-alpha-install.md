@@ -116,7 +116,10 @@ or `--remove`, and none of them can make the install fail.
    When it is missing and the project has a customized `.claude/agents/PROJECT.md` (from a Claude
    Code install), the installer copies that file. An untouched copy is skipped: a Claude install
    starts from the harness repository's own `PROJECT.md`, whose test commands are wrong for your
-   project, so the template is used instead:
+   project, so the template is used instead. "Untouched" means identical to the source's
+   `agents/PROJECT.md`, or still containing its line "This section describes the **harness repo
+   itself**" (which every shipped version since 2026-08-18 carries) — delete that line when you
+   customize the file:
 
    ```text
    codex-install: created agents/PROJECT.md from .claude/agents/PROJECT.md; Codex agents read the root copy, so keep the two in step.

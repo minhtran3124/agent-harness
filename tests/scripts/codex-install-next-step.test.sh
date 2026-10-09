@@ -217,6 +217,16 @@ if [ "$RC" -eq 0 ] && cmp -s "$ROOT/agents/PROJECT.template.md" "$TARGET/agents/
    && has_line 'codex-install: created agents/PROJECT.md from the template; fill in its Test execution section.'; then pass
 else fail "rc=$RC: $OUT"; fi
 
+# An untouched copy from an older harness version (differs, but keeps the marker line) is not used.
+TARGET=$(new_dir)
+mkdir -p "$TARGET/.claude/agents"
+{ cat "$ROOT/agents/PROJECT.md"; printf '\nolder-version line\n'; } > "$TARGET/.claude/agents/PROJECT.md"
+run_install "$ROOT" "$TARGET" "$FAKE" --yes
+t "an untouched older-version .claude/agents/PROJECT.md falls back to the template"
+if [ "$RC" -eq 0 ] && cmp -s "$ROOT/agents/PROJECT.template.md" "$TARGET/agents/PROJECT.md" \
+   && [ -z "$(find "$TARGET/agents" -name 'PROJECT.md.*')" ]; then pass
+else fail "rc=$RC: $OUT"; fi
+
 # A dangling agents/PROJECT.md symlink counts as existing; nothing is written through it.
 TARGET=$(new_dir)
 mkdir -p "$TARGET/agents"

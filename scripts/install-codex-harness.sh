@@ -129,14 +129,16 @@ if [ "$GI_RUN" -eq 1 ]; then
   fi
   # Codex agent profiles read agents/PROJECT.md at the target root; never overwrite an existing
   # entry (a dangling symlink counts as existing). Seed from .claude/agents/PROJECT.md only when the
-  # project customized it: an untouched copy is the harness's own PROJECT.md, whose commands are
-  # wrong for this project. Copy through a temporary file so a failed copy leaves nothing behind.
+  # project customized it: an untouched copy is the harness's own PROJECT.md (identical to this
+  # source's, or still carrying its "harness repo itself" marker line from an older version), whose
+  # commands are wrong for this project. Copy through a mktemp file so a failed copy leaves nothing.
   PROJECT_FILE="$TARGET_DIR/agents/PROJECT.md"
   CLAUDE_PROJECT="$TARGET_DIR/.claude/agents/PROJECT.md"
   PROJECT_SRC=""
   if [ -e "$PROJECT_FILE" ] || [ -L "$PROJECT_FILE" ]; then
     printf 'codex-install: agents/PROJECT.md exists; left as is.\n'
-  elif [ -f "$CLAUDE_PROJECT" ] && ! cmp -s "$CLAUDE_PROJECT" "$SOURCE_DIR/agents/PROJECT.md"; then
+  elif [ -f "$CLAUDE_PROJECT" ] && ! cmp -s "$CLAUDE_PROJECT" "$SOURCE_DIR/agents/PROJECT.md" \
+       && ! grep -qF 'describes the **harness repo itself**' "$CLAUDE_PROJECT"; then
     PROJECT_SRC="$CLAUDE_PROJECT"
     PROJECT_MSG='created agents/PROJECT.md from .claude/agents/PROJECT.md; Codex agents read the root copy, so keep the two in step.'
   elif [ -f "$SOURCE_DIR/agents/PROJECT.template.md" ]; then
@@ -146,11 +148,12 @@ if [ "$GI_RUN" -eq 1 ]; then
     printf 'codex-install: agents/PROJECT.template.md not in this source checkout; skipping agents/PROJECT.md.\n'
   fi
   if [ -n "$PROJECT_SRC" ]; then
-    PROJECT_TMP="$PROJECT_FILE.tmp.$$"
-    if mkdir -p "$TARGET_DIR/agents" && cp "$PROJECT_SRC" "$PROJECT_TMP" && mv "$PROJECT_TMP" "$PROJECT_FILE"; then
+    PROJECT_TMP=""
+    if mkdir -p "$TARGET_DIR/agents" && PROJECT_TMP=$(mktemp "$TARGET_DIR/agents/PROJECT.md.XXXXXX") \
+       && cp "$PROJECT_SRC" "$PROJECT_TMP" && mv "$PROJECT_TMP" "$PROJECT_FILE"; then
       printf 'codex-install: %s\n' "$PROJECT_MSG"
     else
-      rm -f "$PROJECT_TMP" 2>/dev/null || true
+      [ -z "$PROJECT_TMP" ] || rm -f "$PROJECT_TMP" 2>/dev/null || true
       printf 'codex-install: could not create agents/PROJECT.md (see the error above); create it from agents/PROJECT.template.md yourself.\n'
     fi
   fi
