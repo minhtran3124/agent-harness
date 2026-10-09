@@ -96,10 +96,10 @@ passed) and after all four tasks (828 pytest passed); it is cited here, not as a
 | --- | --- | --- | --- | --- |
 | plan contract | `python3 scripts/check_plan_contract.py specs/gh-254-codex-agents-md-rules/PLAN.md` | 0 | plan passes the context contract |  |
 | block inventory | `python3 -m pytest scripts/test_render_codex_adapter.py -q -k agents_block_inventory` | 0 | always-on set = frontmatter-derived; on-demand list = path-scoped set | SC-1 |
-| block budget and fail-closed | `python3 -m pytest scripts/test_render_codex_adapter.py -q -k agents_block_budget` | 0 | >20 KiB, marker in rule or preamble, empty set, unclosed frontmatter fail; current block ≤18 KiB (15,866 bytes) | SC-2 |
+| block budget and fail-closed | `python3 -m pytest scripts/test_render_codex_adapter.py -q -k agents_block_budget` | 0 | >20 KiB, marker in rule or preamble, empty set, unclosed frontmatter, `paths:` with no parsed globs fail; current block ≤18 KiB (15,866 bytes) | SC-2 |
 | block neutrality and determinism | `python3 -m pytest scripts/test_render_codex_adapter.py -q -k agents_block_neutral` | 0 | no `@` import, `/skill`, `$skill`, "for Codex" in the block's own text; byte-identical renders | SC-3 |
 | block output file | `python3 -m pytest scripts/test_render_codex_adapter.py -q -k agents_block_output` | 0 | `agents-block.md` beside the manifest; stale one removed; no `project/.codex/harness-instructions.md` | SC-4 |
-| install lifecycle | `bash tests/scripts/codex-install.test.sh` | 0 | 36 cases: rules inside markers, pre-#254 upgrade, edited block sidecar, retired file prune/keep, missing block fails closed, override and 32 KiB warnings | SC-5 |
+| install lifecycle | `bash tests/scripts/codex-install.test.sh` | 0 | 38 cases: rules inside markers, pre-#254 upgrade, edited block sidecar, retired file prune/keep (and kept while an edited old block stays), missing block fails closed, override and 32 KiB warnings | SC-5 |
 | rule tier parity | `bash tests/scripts/rule-loading-tiers.test.sh` | 0 | rendered block's `Source:` set = shell always-on tier, both directions | SC-6 |
 | docs content | `python3 -c "import pathlib,sys; t=pathlib.Path('docs/codex-alpha-install.md').read_text(encoding='utf-8'); sys.exit(0 if all(k in t for k in ('AGENTS.override.md', '32 KiB', '20 KiB', '@AGENTS.md', 'claude-md-and-agents-md', 'CLAUDE.local.md')) else 1)"` | 0 | required facts present | SC-7 |
 | doc-truth lint | `bash scripts/lint-doc-truth.sh` | 0 | does not scan `docs/codex-alpha-install.md`; run as a no-regression check |  |
@@ -126,6 +126,45 @@ Result: **PASS** for every consumer this change claims. The inline copy is compl
 drift-tested, which the audit's inline-copy rule requires. The child-context row is pre-existing
 and not load-bearing for #254. Recorded as backlog: the `.codex/agents/*.toml` profiles cite bare
 `rules/…` paths that are not rewritten to payload paths.
+
+### Correctness Review
+
+Six FIND angles over `e36f806..e164421` (branch package), 10 deduplicated locations, one
+independent scorer per location, threshold 75. No location reached the threshold.
+
+- **L1 — fixed in `ae49a2f` despite scoring 0.** Upgrading a pre-#254 install whose managed block
+  the user had edited deleted `.codex/harness-instructions.md` while the kept block still pointed
+  at it; the new rules went only to the sidecar. Four of six angles found it independently. The
+  scorer gave 0 solely under the unmodified-line rule (the retire loop itself was unchanged) and
+  confirmed the bug is real and introduced by this diff's retirement of the file. Fix: retiring
+  runs after the AGENTS.md decision and keeps retired files until the new block lands. Two new
+  install cases; the first fails against the pre-fix deploy script.
+- **L3 — fixed in `ae49a2f` (scored 50).** A `paths:` key in a form the parser does not read
+  (inline list, bare value, unindented items) yielded no globs, and the rule was listed with no
+  trigger. Render now fails closed.
+
+### Advisory Findings
+
+Recorded, not fixed (below threshold):
+
+- L2 (25) — a non-UTF-8 or unreadable root `AGENTS.md` raises after project files are written;
+  the ordering predates this diff.
+- L4 (50) — a trailing YAML comment on a glob item is kept in the glob; no rule uses one.
+- L5 (50) — `_strip_frontmatter` splits on `str.splitlines()` separators (form feed, U+2028, …);
+  no rule contains them.
+- L6 (25) — a rule whose first line is a Markdown `---` rule is parsed as frontmatter; Claude
+  Code's loader reads it the same way.
+- L7 (25) — a directory named `<x>.md` under `rules/` raises `IsADirectoryError`; the unchanged
+  `_rewrite_markdown` already fails first.
+- L8 (0, unmodified line) — `--remove` with reversed markers raises `ValueError`; pre-existing.
+- L9 (0, pre-existing) — CRLF line endings outside the managed block are converted to LF.
+- Fix re-review of `ae49a2f`: `fix_verdict: closed` for all four AGENTS.md branches. Two P3
+  notes: (a) while an edited or malformed block stays, *every* retired file is kept, not only
+  the one the old block names (deliberate: the old block's references are not parsed); (b) the
+  retire loop now runs after `AGENTS.md` is written, so a `target_path` symlink-escape exit there
+  leaves `agents_block_hash` stale until the next run, which recovers (`current == block`).
+- L10 (0, unmodified line) — an edited, preserved retired `.codex/harness-instructions.md` keeps
+  the doctor at `INSTALL_HASH_MISMATCH` until the user deletes it (the doc tells them to).
 
 ### Not auto-verified
 
