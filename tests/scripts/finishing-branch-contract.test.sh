@@ -17,4 +17,7 @@ t "finishing emits the concrete ready_to_merge run-state producer (non-fatal)"
 # future prompt-slim pass cannot silently drop it again (issue #196).
 grep -q -- '--to ready_to_merge --event pr.opened || true' "$ROOT/$SKILL" && pass || fail "concrete ready_to_merge transition (with || true) missing — a run would stall at verifying and never terminalize"
 
+t "finishing runs the open-questions check before marking the plan shipped"
+grep -qF 'python3 scripts/check_open_questions.py --slug <slug>' "$ROOT/$SKILL" && grep -qF 'Open questions closing here' "$ROOT/$SKILL" && pass || fail "open-questions check or PR-body list missing"
+
 finish

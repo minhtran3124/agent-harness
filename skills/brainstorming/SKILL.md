@@ -32,7 +32,9 @@ presented design. If scope becomes smaller, ask for re-routing; do not silently 
    sentences, checked against the actual answers from steps 2–4 rather than recalled from memory,
    and confirm it with the user so drift surfaces before it's committed. Read
    `references/design-template.md` and write `design.md` to that template. Write the approved result
-   to `specs/<slug>/design.md`. Then read `references/spec-review-loop.md` and complete its
+   to `specs/<slug>/design.md`.
+   In a multi-phase spec, record non-blocking unknowns in specs/<slug>/QUESTIONS.md from templates/QUESTIONS.template.md.
+   Then read `references/spec-review-loop.md` and complete its
    review/user-review gates.
 6. Invoke only `xia2`, passing the spec directory, then `writing-plans`. This is the terminal
    handoff sequence; do not substitute another implementation or design skill.
