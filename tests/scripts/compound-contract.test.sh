@@ -12,4 +12,7 @@ grep -q 'scripts/rebuild_solution_index.py' "$ROOT/$SKILL" && grep -q 'Do not ma
 t "compound keeps promotion and proposed-ratchet handling"
 grep -q 'critical-patterns.md' "$ROOT/$SKILL" && grep -q 'proposed:' "$ROOT/$SKILL" && pass || fail "promotion or ratchet missing"
 
+t "compound treats a prediction → measured pair as a learning source"
+grep -qF 'prediction → measured' "$ROOT/$SKILL" && pass || fail "prediction → measured source missing"
+
 finish

@@ -8,15 +8,22 @@ fact.
 Usage:
     python3 scripts/verify_summary.py <slug> [--check] [--timeout <seconds>]
     python3 scripts/verify_summary.py --lane <slug|path-to-SUMMARY.md> [more ...]
+    python3 scripts/verify_summary.py --sc-history <slug> --base <ref>
 
     <slug>        Spec slug -- reads specs/<slug>/SUMMARY.md
     --check       Compare only; do NOT overwrite the file (for hooks/CI)
     --lane        Check lane-required evidence; never execute Verify commands
     --timeout N   Per-command timeout in seconds (default: 60)
+    --sc-history  Warn when a Success Criterion recorded as failing on this branch
+                  (merge-base(<ref>, HEAD)..HEAD) later had its Check/Expected
+                  changed or its row removed, unless HEAD `### Deviations` names it.
+                  Reads git objects from the repository containing the cwd.
 
 Exit codes:
     0  Verification passed, or every target satisfies its declared lane.
+       (--sc-history: always 0 unless REQUIRE_SC_STABLE=1 and a finding exists.)
     1  Verification failed, or any target lacks lane-required evidence.
+       (--sc-history: a finding under REQUIRE_SC_STABLE=1.)
     2  Bad invocation.
 """
 
@@ -146,6 +153,31 @@ def parse_sc_table(plan_text: str) -> dict[str, str]:
     return result
 
 
+def parse_sc_checks(plan_text: str) -> dict[str, tuple[str, str]]:
+    """Map each well-formed `SC-<n>` id to (whitespace-collapsed Check cell, exit token).
+
+    Rows that `parse_sc_table` maps to `ERROR: ...` are left out. Fenced blocks are
+    skipped the same way.
+    """
+    exits = parse_sc_table(plan_text)
+    result: dict[str, tuple[str, str]] = {}
+    in_fence = False
+    for line in plan_text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("```"):
+            in_fence = not in_fence
+            continue
+        m = None if in_fence else _ROW_RE.match(stripped)
+        if not m:
+            continue
+        cells = [c.strip() for c in m.group(1).split("|")]
+        token = exits.get(cells[0], "")
+        if _SC_ID_RE.match(cells[0]) and token and not token.startswith("ERROR:"):
+            check = " ".join(cells[2].split()) if len(cells) > 2 else ""
+            result[cells[0]] = (check, token)
+    return result
+
+
 def _parse_verify_rows(section: str) -> list[dict]:
     """Parse Verify table rows from an already-resolved section body."""
     rows: list[dict] = []
@@ -257,6 +289,25 @@ def _section(text: str, heading: str) -> str | None:
     rest = text[match.end() :]
     next_heading = re.search(r"^#{1,3}\s+\S", rest, re.MULTILINE)
     return rest[: next_heading.start()] if next_heading else rest
+
+
+def _all_sections(text: str, heading: str) -> str | None:
+    """Join the bodies of EVERY level 1-3 heading starting with the word `heading`.
+
+    Unlike `_section` (first exact match only), this also matches a heading with
+    trailing words, such as `### Deviations (task 2)`. None when no heading matches.
+    """
+    starts = list(
+        re.finditer(rf"^#{{1,3}}\s+{re.escape(heading)}\b.*$", text, re.MULTILINE)
+    )
+    if not starts:
+        return None
+    bodies = []
+    for match in starts:
+        rest = text[match.end() :]
+        next_heading = re.search(r"^#{1,3}\s+\S", rest, re.MULTILINE)
+        bodies.append(rest[: next_heading.start()] if next_heading else rest)
+    return "\n".join(bodies)
 
 
 def _has_real_rollback(section: str) -> bool:
@@ -646,6 +697,167 @@ def _rewrite_table(text: str, results: list[dict], stamp_verified: bool = True) 
     return text[:section_start] + "".join(new_lines)
 
 
+_SC_HISTORY_USAGE = "usage: verify_summary.py --sc-history <slug> --base <ref>"
+_SC_STABLE_ENV = "REQUIRE_SC_STABLE"
+
+
+class ScHistoryUsageError(Exception):
+    """A --sc-history invocation that cannot be evaluated (exit 2)."""
+
+
+def _git(root: Path, *args: str) -> str:
+    return subprocess.check_output(
+        ["git", *args], cwd=root, text=True, stderr=subprocess.DEVNULL
+    ).strip()
+
+
+def _git_show(root: Path, commit: str, path: str) -> str | None:
+    """Return `path` at `commit`, or None when the file does not exist there."""
+    try:
+        return _git(root, "show", f"{commit}:{path}")
+    except subprocess.CalledProcessError:
+        return None
+
+
+def _verify_rows_of(summary: str | None) -> list[dict]:
+    """Verify rows of a SUMMARY text; [] when the file or its Verify section is absent."""
+    if summary is None:
+        return []
+    verify = _section(summary, "Verify")
+    return _parse_verify_rows(verify) if verify else []
+
+
+def _verify_row_key(row: dict) -> tuple[str, str, str, str]:
+    """Identity of a Verify row for D9: its Criterion plus the cells it asserts."""
+    return (row["criterion"], row["check"], row["command"], row["claimed_exit"])
+
+
+def _verify_row_keys(summary: str | None) -> set[tuple[str, str, str, str]]:
+    return {_verify_row_key(row) for row in _verify_rows_of(summary)}
+
+
+def sc_history(repo_root: Path, slug: str, base: str) -> tuple[list[str], str]:
+    """Return (finding lines, summary line) for SC goalpost moves on this branch.
+
+    Evidence tier: PROVENANCE (re-derived from git history, not re-run).
+
+    Verifies: no SC that a commit in merge-base(base, HEAD)..HEAD recorded as failing
+        (a Verify row with `Criterion: SC-n` whose integer Exit differs from SC-n's
+        expected exit in that commit's PLAN, judged only at a commit where that row
+        (Criterion, Check, Command, Exit) is new or changed compared with the
+        previous SUMMARY in the walk -- design D9) has had its Check or Expected exit token
+        changed, or its row removed, at HEAD without HEAD `### Deviations` naming SC-n.
+    Does not verify: that a Deviations entry justifies the change, failures never
+        committed, or weakening inside the command's own test content.
+
+    Raises ScHistoryUsageError when `base` does not resolve or has no merge base.
+    """
+    try:
+        _git(repo_root, "rev-parse", "--verify", "--quiet", f"{base}^{{commit}}")
+    except subprocess.CalledProcessError:
+        raise ScHistoryUsageError(f"--base {base!r} does not resolve to a commit")
+    try:
+        mb = _git(repo_root, "merge-base", base, "HEAD")
+    except subprocess.CalledProcessError:
+        raise ScHistoryUsageError(f"no merge base between {base!r} and HEAD")
+
+    summary_path = f"specs/{slug}/SUMMARY.md"
+    plan_path = f"specs/{slug}/PLAN.md"
+    commits = _git(
+        repo_root, "rev-list", "--reverse", f"{mb}..HEAD", "--", summary_path, plan_path
+    ).split()
+    if not commits:
+        return [], f"sc-history {slug}: no SUMMARY.md or PLAN.md change on this branch"
+
+    head_summary = _git_show(repo_root, "HEAD", summary_path)
+    head_plan = _git_show(repo_root, "HEAD", plan_path)
+    if head_summary is None and head_plan is None:
+        return [], f"sc-history {slug}: skipped -- specs/{slug}/ is gone at HEAD"
+
+    # SC id -> (commit, Check cell, exit token) of its FIRST failure record.
+    failures: dict[str, tuple[str, str, str]] = {}
+    # The first commit in the walk is compared with the merge base, so a branch that
+    # opens with a PLAN-only commit does not judge a SUMMARY inherited from the base.
+    previous_keys = _verify_row_keys(_git_show(repo_root, mb, summary_path))
+    for commit in commits:
+        summary = _git_show(repo_root, commit, summary_path)
+        # D9: a Verify row is judged only where THAT row is new or changed compared
+        # with the previous SUMMARY in the walk. A PLAN-only commit, or an unrelated
+        # SUMMARY edit, leaves a stale row unjudged.
+        rows = _verify_rows_of(summary)
+        keys = {_verify_row_key(row) for row in rows}
+        new_rows = [row for row in rows if _verify_row_key(row) not in previous_keys]
+        previous_keys = keys
+        if not new_rows:
+            continue
+        plan = _git_show(repo_root, commit, plan_path)
+        if plan is None:
+            continue
+        sc_checks = parse_sc_checks(plan)
+        for row in new_rows:
+            sc_id = row["criterion"]
+            if sc_id in failures or sc_id not in sc_checks:
+                continue
+            if not re.fullmatch(r"\d+", row["claimed_exit"]):
+                continue
+            check, token = sc_checks[sc_id]
+            if int(row["claimed_exit"]) != int(token):
+                failures[sc_id] = (commit, check, token)
+
+    head_exits = parse_sc_table(head_plan) if head_plan is not None else {}
+    head_checks = parse_sc_checks(head_plan) if head_plan is not None else {}
+    deviations = _all_sections(head_summary, "Deviations") if head_summary else None
+
+    findings: list[str] = []
+    for sc_id, (commit, check, token) in failures.items():
+        if sc_id not in head_exits:
+            kind = "removed"
+        elif head_checks.get(sc_id) != (check, token):
+            kind = "changed"
+        else:
+            continue
+        if deviations and re.search(
+            rf"(?<![\w-]){re.escape(sc_id)}(?!\w)", deviations
+        ):
+            continue
+        sha = _git(repo_root, "rev-parse", "--short", commit)
+        findings.append(
+            f"SC-GOALPOST [{sc_id}] {kind} after it failed at {sha}; "
+            f"name {sc_id} in ### Deviations to acknowledge"
+        )
+    return findings, (
+        f"sc-history {slug}: no failed SC was changed "
+        f"({len(failures)} failure record(s) checked)"
+    )
+
+
+def _run_sc_history(slug: str, base: str) -> int:
+    try:
+        root = Path(_git(Path.cwd(), "rev-parse", "--show-toplevel"))
+        findings, summary = sc_history(root, slug, base)
+    except ScHistoryUsageError as exc:
+        print(f"error: {exc}\n{_SC_HISTORY_USAGE}", file=sys.stderr)
+        return 2
+    except (OSError, subprocess.CalledProcessError):
+        print(
+            f"error: not inside a git repository, or git cannot run\n{_SC_HISTORY_USAGE}",
+            file=sys.stderr,
+        )
+        return 2
+    except Exception as exc:  # noqa: BLE001 — exit 1 must only ever mean a finding
+        print(
+            f"sc-history: unexpected error: {type(exc).__name__}: {exc}", file=sys.stderr
+        )
+        return 2
+    for line in findings:
+        print(line)
+    if not findings:
+        print(summary)
+    if findings and os.environ.get(_SC_STABLE_ENV, "").strip() == "1":
+        return 1
+    return 0
+
+
 def main(argv: list[str], specs_root: Path | None = None) -> int:
     if not argv:
         print(__doc__, file=sys.stderr)
@@ -658,7 +870,9 @@ def main(argv: list[str], specs_root: Path | None = None) -> int:
     parser.add_argument("--check", action="store_true")
     parser.add_argument("--lane", action="store_true")
     parser.add_argument("--plan-dir", default=None)
-    parser.add_argument("--timeout", type=int, default=60)
+    parser.add_argument("--timeout", type=int, default=None)
+    parser.add_argument("--sc-history", default=None)
+    parser.add_argument("--base", default=None)
     parser.add_argument("-h", "--help", action="store_true")
 
     args = parser.parse_args(argv)
@@ -666,6 +880,24 @@ def main(argv: list[str], specs_root: Path | None = None) -> int:
     if args.help:
         print(__doc__, file=sys.stderr)
         return 2
+
+    if args.sc_history is not None:
+        if (
+            args.base is None
+            or args.check
+            or args.lane
+            or args.plan_dir is not None
+            or args.timeout is not None
+            or args.targets
+        ):
+            print(_SC_HISTORY_USAGE, file=sys.stderr)
+            return 2
+        return _run_sc_history(args.sc_history, args.base)
+
+    if args.base is not None:
+        print(__doc__, file=sys.stderr)
+        return 2
+    timeout = 60 if args.timeout is None else args.timeout
 
     if specs_root is None:
         specs_root = _REPO_ROOT / "specs"
@@ -709,7 +941,7 @@ def main(argv: list[str], specs_root: Path | None = None) -> int:
         return 1 if coverage_errors else 0
 
     repo_root = _REPO_ROOT
-    results = run_checks(rows, repo_root=repo_root, timeout=args.timeout)
+    results = run_checks(rows, repo_root=repo_root, timeout=timeout)
 
     # SC expected exits from the sibling PLAN.md (empty when none) — a
     # Criterion-mapped row is also validated against its SC's expected exit.
@@ -728,7 +960,7 @@ def main(argv: list[str], specs_root: Path | None = None) -> int:
         if r["timed_out"]:
             print(
                 f"TIMEOUT  [{r['check']}]  command: {r['command']}  "
-                f"(limit: {args.timeout}s)"
+                f"(limit: {timeout}s)"
             )
             failed = True
             continue

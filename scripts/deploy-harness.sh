@@ -49,6 +49,7 @@ CONSUMER_SCRIPTS=(
   "resolve_finish_context.py"
   "rebuild_solution_index.py"
   "render_skill_prompt.py"
+  "check_open_questions.py"
 )
 # Data read by the above. NOTE: agents/*.json and adapters/ are source-time adapter inputs and must
 # NEVER deploy — tests/scripts/{deploy-prune,install-harness,codex-alpha-contract}.test.sh pin that

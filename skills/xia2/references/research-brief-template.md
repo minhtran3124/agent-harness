@@ -4,6 +4,26 @@ Use this template as the output contract for every xia research session. Fill ev
 
 ---
 
+The output document starts with this skeleton, the title and then the provenance header:
+
+```text
+# <slug> — Research Brief
+
+Written <YYYY-MM-DD>. Pins: <repo short sha the claims were checked against; tool or dependency versions they depend on, if any>
+```
+
+- The `Written` line is the first non-blank line after the title. `Written` is the date the
+  document was first written.
+- `Pins` names at least the repository short sha the claims were read at. For claims read from
+  uncommitted work, pin the short sha of `HEAD` and append `+ uncommitted`. Add tool or dependency versions only
+  when a claim depends on them.
+- `Pins` names what the claims rest on. It does not replace the `Repo Snapshot` table, which stays
+  the inventory of detected versions.
+- A revision keeps every earlier line and appends `Revised <YYYY-MM-DD>. Pins: <…>` directly after
+  the last header line, so the lines read oldest first. Earlier lines are never edited.
+- Examples: `Written 2026-10-09. Pins: repo 8af66dd; Codex CLI 0.147.0` and
+  `Revised 2026-10-12. Pins: repo 3c4d5e6 + uncommitted`.
+
 ## Bottom Line
 
 | Field | Value |
@@ -40,6 +60,14 @@ Use this template as the output contract for every xia research session. Fill ev
 ## Evidence Ledger
 
 _Highest-signal evidence only. Label every item._
+
+_Number labels complement these source labels: the source label says where a fact came from, the
+number label says whether a number was observed. A number is **load-bearing** when a decision,
+target, threshold or Success Criterion depends on it; each value of one carries exactly one label —
+`prediction` (an estimate not yet measured), `budget` (a limit we chose) or
+`measured <YYYY-MM-DD> <source>` (a value observed). When a measurement replaces a prediction, keep
+the prediction with its label and append the measurement beside it. Illustrative numbers stay
+unlabelled._
 
 | Label | Evidence |
 |---|---|

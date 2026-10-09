@@ -31,6 +31,8 @@ this line if you change it.
   `commit-gate.sh` gates commits on it and `intent-review` reads `### Intent` as its oracle. |
 | `ESCALATIONS.md` | any skill that escalates | Only when a hard gate or ambiguity stops the work.
   Deny-on-no-response: a commit touching the slug is blocked while a `decision: pending` block stands. |
+| `QUESTIONS.md` | `brainstorming` (multi-phase specs) | Non-blocking unknowns, each with a `closes-at` phase.
+  Checked at ship by `scripts/check_open_questions.py`; blocking questions stay in `ESCALATIONS.md`. |
 | `design.md` | `brainstorming` | Approved design — the WHAT and WHY |
 | `research-brief.md` | `xia2` | What already exists, alternatives, lightest path |
 | `PLAN.md` | `writing-plans` | Task-by-task plan (markdown `### Task` sections per `rules/plan-format.md`; the uppercase name is what the hooks and renderer match) |
