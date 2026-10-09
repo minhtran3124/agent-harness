@@ -133,10 +133,14 @@ if [ "$GI_RUN" -eq 1 ]; then
   elif [ -f "$TARGET_DIR/.claude/agents/PROJECT.md" ]; then
     if mkdir -p "$TARGET_DIR/agents" && cp "$TARGET_DIR/.claude/agents/PROJECT.md" "$TARGET_DIR/agents/PROJECT.md"; then
       printf 'codex-install: created agents/PROJECT.md from .claude/agents/PROJECT.md; Codex agents read the root copy, so keep the two in step.\n'
+    else
+      printf 'codex-install: could not create agents/PROJECT.md (see the error above); create it from agents/PROJECT.template.md yourself.\n'
     fi
   elif [ -f "$SOURCE_DIR/agents/PROJECT.template.md" ]; then
     if mkdir -p "$TARGET_DIR/agents" && cp "$SOURCE_DIR/agents/PROJECT.template.md" "$TARGET_DIR/agents/PROJECT.md"; then
       printf 'codex-install: created agents/PROJECT.md from the template; fill in its Test execution section.\n'
+    else
+      printf 'codex-install: could not create agents/PROJECT.md (see the error above); create it from agents/PROJECT.template.md yourself.\n'
     fi
   else
     printf 'codex-install: agents/PROJECT.template.md not in this source checkout; skipping agents/PROJECT.md.\n'

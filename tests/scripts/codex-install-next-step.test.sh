@@ -198,6 +198,15 @@ t "a relative --codex-bin is made absolute for the doctor"
 if [ "$RC" -eq 0 ] && grep -qF 'doctor --json' "$FAKE/codex.log"; then pass
 else fail "rc=$RC log=$(cat "$FAKE/codex.log"): $OUT"; fi
 
+# agents exists as a regular file: the copy fails, the install still exits 0 and says so.
+TARGET=$(new_dir)
+: > "$TARGET/agents"
+run_install "$ROOT" "$TARGET" "$FAKE" --yes
+t "a failed agents/PROJECT.md copy is reported and does not fail the install"
+if [ "$RC" -eq 0 ] && has_line 'codex-install: could not create agents/PROJECT.md' \
+   && [ -f "$TARGET/agents" ]; then pass
+else fail "rc=$RC: $OUT"; fi
+
 # Checked last, so every install above (stub, dry-run, remove, clone) is covered.
 t "the installer makes no trust-changing Codex call and writes no Codex config"
 if ! grep -qE '(^| )(trust|--trust[^ ]*)( |$)|trust_level' "$FAKE/codex.log" \
