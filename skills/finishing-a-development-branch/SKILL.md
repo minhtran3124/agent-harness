@@ -31,6 +31,8 @@ user; if no plan exists, use the tiny/no-plan path instead of guessing.
    edit the receipt to pass. Re-run this gate immediately before push. Tiny/no-plan work skips it.
 3. Run `python3 scripts/check_open_questions.py --slug <slug>`; on findings, tell the user and add an
    `Open questions closing here` list to the PR body (warn mode by default: continue).
+   Run `python3 scripts/verify_summary.py --sc-history <slug> --base <base>` with the resolved base; relay any finding to the user and the PR body and continue, but an
+   exit 1 under `REQUIRE_SC_STABLE=1` stops the flow.
    Mark the resolved plan `status: shipped`, append a dated status-log entry, run
    `python3 skills/visual-planner/render_plan.py specs/<slug>/PLAN.md --summarize` so the tracked
    At-a-glance block matches the shipped Status Log, then stage the spec record **by name** and
