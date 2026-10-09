@@ -82,6 +82,45 @@ WARN_GATE_EXCLUDE_RE='^scripts/test_'
 DIFF=$(git diff --name-only "$BASE"...HEAD 2>/dev/null || true)
 [ -z "$DIFF" ] && exit 0
 
+# SHIPPING SECTION — open-question check for every phase that ships in this PR. It sits
+# BEFORE the tier selection because a specs-only PR flipping a PLAN.md to `shipped`
+# touches no gated path and would take the early exit 0 below. It never exits 0 itself,
+# so a PR that touches hooks/ and also ships a phase still needs high-risk proof.
+# A slug ships when specs/<slug>/PLAN.md is in the diff and its frontmatter reads
+# `status: shipped` at HEAD but not at the merge base (a missing file is not shipped),
+# so an edit to an already-shipped plan, such as a status-log append, runs no check.
+#
+# Verifies:        a PR that ships a phase runs scripts/check_open_questions.py for it,
+#                  and fails when that check exits 1 (only under REQUIRE_QUESTIONS_CLOSED=1).
+# Does not verify: a `status: shipped` committed outside a PR, or that a closed question
+#                  was answered correctly (the check itself is traceability-tier).
+plan_shipped() {  # stdin = PLAN.md; exit 0 when the frontmatter reads `status: shipped`
+  awk '{ sub(/\r$/, ""); sub(/[ \t]+$/, "") }
+       $0 == "---" { n++; if (n == 2) exit; next }
+       n == 1 && /^status:[ \t]*shipped$/ { found = 1 }
+       END { exit !found }'
+}
+MERGE_BASE=$(git merge-base "$BASE" HEAD 2>/dev/null || true)
+OQ_FAILED=0
+while IFS= read -r plan; do
+  [ -z "$plan" ] && continue
+  git show "HEAD:$plan" 2>/dev/null | plan_shipped || continue
+  [ -n "$MERGE_BASE" ] && git show "$MERGE_BASE:$plan" 2>/dev/null | plan_shipped && continue
+  slug=$(basename "$(dirname "$plan")")
+  if [ ! -f scripts/check_open_questions.py ]; then
+    echo "open-question check skipped: scripts/check_open_questions.py not found" >&2
+    [ "${REQUIRE_QUESTIONS_CLOSED:-0}" = "1" ] && OQ_FAILED=1
+    continue
+  fi
+  echo "[ci-strict-gate] $slug ships in this diff — checking open questions" >&2
+  python3 scripts/check_open_questions.py --slug "$slug"
+  [ $? -eq 1 ] && OQ_FAILED=1
+done <<< "$(echo "$DIFF" | grep -E '^specs/[^/]+/PLAN\.md$' || true)"
+if [ "$OQ_FAILED" = "1" ]; then
+  echo "[ci-strict-gate] BLOCKED — open questions close at a shipping phase (REQUIRE_QUESTIONS_CLOSED=1)" >&2
+  exit 1
+fi
+
 # MODE: block = a failure exits 1; warn = a failure is reported and exits 0.
 if echo "$DIFF" | grep -qE "$HARD_GATE_RE"; then
   MODE=block

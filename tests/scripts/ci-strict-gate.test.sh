@@ -8,13 +8,15 @@ source "$(dirname "$0")/../lib.sh"
 
 GATE="$ROOT/scripts/ci-strict-gate.sh"
 VERIFY_PY="$ROOT/scripts/verify_summary.py"
+OQ_PY="$ROOT/scripts/check_open_questions.py"
 
-# mkrepo → echoes a fresh repo dir with verify_summary.py available and one base commit
+# mkrepo → echoes a fresh repo dir with verify_summary.py and check_open_questions.py
+# available and one base commit
 mkrepo() {
   local d; d=$(mktemp -d); _CLEANUP_DIRS+=("$d")
   git -C "$d" init -q -b main 2>/dev/null || git -C "$d" init -q
   git -C "$d" config user.email t@t; git -C "$d" config user.name t
-  mkdir -p "$d/scripts"; cp "$VERIFY_PY" "$d/scripts/"
+  mkdir -p "$d/scripts"; cp "$VERIFY_PY" "$OQ_PY" "$d/scripts/"
   echo "seed" > "$d/README.md"
   git -C "$d" add -A >/dev/null 2>&1; git -C "$d" commit -qm base
   echo "$d"
@@ -36,13 +38,13 @@ write_summary() {
   } > "$1/specs/$slug/SUMMARY.md"
 }
 
-# commit_run <repo> — commit working changes and run the gate vs the base commit
+# commit_run <repo> [VAR=val ...] — commit working changes and run the gate vs the base commit
 commit_run() {
   local r="$1" base
   base=$(git -C "$r" rev-parse HEAD~0)  # base is still HEAD before this commit…
   git -C "$r" add -A >/dev/null 2>&1
   git -C "$r" commit -qm change
-  OUT=$(cd "$r" && bash "$GATE" "$base" 2>&1); RC=$?
+  OUT=$(cd "$r" && env "${@:2}" bash "$GATE" "$base" 2>&1); RC=$?
 }
 
 t "clean diff (no hard-gate paths) → pass silently (exit 0)"
@@ -153,5 +155,64 @@ git -C "$r" add -A >/dev/null 2>&1; git -C "$r" commit -qm change
 blob=$(git -C "$r" rev-parse HEAD:README.md)
 OUT=$(cd "$r" && bash "$GATE" "$blob" 2>&1); RC=$?
 assert_rc_contains 1 "does not resolve to a commit"
+
+# ── Shipping section: open-question check on a phase that ships in this PR ────
+# A specs-only PR that flips a PLAN.md to `status: shipped` never reaches the tier
+# logic (it takes the early exit 0), so the open-question check runs before it. The
+# register sits in a parent spec and closes at the child phase's slug.
+
+# write_register <repo> — specs/p/QUESTIONS.md with open OQ-1 closing at p-phase-1
+write_register() {
+  mkdir -p "$1/specs/p"
+  printf '%s\n' '# Open questions' '## OQ-1' '- raised-by: p' '- closes-at: p-phase-1' \
+    '- decided-by: owner' '- default-until-closed: keep current behaviour' '- status: open' \
+    > "$1/specs/p/QUESTIONS.md"
+}
+
+# write_plan <repo> <status> — specs/p-phase-1/PLAN.md. The status line carries a trailing
+# space and every line a CRLF ending, which the frontmatter read must tolerate.
+write_plan() {
+  mkdir -p "$1/specs/p-phase-1"
+  printf -- '---\r\ntitle: p phase 1\r\nstatus: %s \r\n---\r\n# Plan\r\n' "$2" \
+    > "$1/specs/p-phase-1/PLAN.md"
+}
+
+# base_commit <repo> — commit the working tree, which becomes the base commit_run diffs against
+base_commit() { git -C "$1" add -A >/dev/null 2>&1; git -C "$1" commit -qm base2; }
+
+t "(a) specs-only branch ships a phase with an open question → finding printed, exit 0"
+r=$(mkrepo); write_register "$r"; base_commit "$r"
+write_plan "$r" shipped; commit_run "$r"
+assert_rc_contains 0 "OQ-1"
+
+t "(b) case (a) under REQUIRE_QUESTIONS_CLOSED=1 → exit 1"
+r=$(mkrepo); write_register "$r"; base_commit "$r"
+write_plan "$r" shipped; commit_run "$r" REQUIRE_QUESTIONS_CLOSED=1
+assert_rc_contains 1 "OQ-1"
+
+t "(c) plan already shipped at the base, branch only appends a Status Log line → no check, exit 0"
+r=$(mkrepo); write_register "$r"; write_plan "$r" shipped; base_commit "$r"
+printf -- '- 2026-10-09 status log append\r\n' >> "$r/specs/p-phase-1/PLAN.md"; commit_run "$r"
+assert_rc_not_contains 0 "OQ-1"
+
+t "(c2) plan moves from in-progress at the base to shipped on the branch → checked"
+r=$(mkrepo); write_register "$r"; write_plan "$r" in-progress; base_commit "$r"
+write_plan "$r" shipped; commit_run "$r"
+assert_rc_contains 0 "OQ-1"
+
+t "(d) branch touches hooks/ and ships a phase with no open question and no SUMMARY → BLOCK (exit 1)"
+r=$(mkrepo); mkdir -p "$r/hooks"; echo '#!/bin/bash' > "$r/hooks/foo.sh"
+write_plan "$r" shipped; commit_run "$r"
+assert_rc 1
+
+t "(e) case (a) with the check script absent → skip message, exit 0"
+r=$(mkrepo); write_register "$r"; rm "$r/scripts/check_open_questions.py"; base_commit "$r"
+write_plan "$r" shipped; commit_run "$r"
+assert_rc_contains 0 "open-question check skipped: scripts/check_open_questions.py not found"
+
+t "(e) case (a) with the check script absent, under REQUIRE_QUESTIONS_CLOSED=1 → exit 1"
+r=$(mkrepo); write_register "$r"; rm "$r/scripts/check_open_questions.py"; base_commit "$r"
+write_plan "$r" shipped; commit_run "$r" REQUIRE_QUESTIONS_CLOSED=1
+assert_rc_contains 1 "open-question check skipped"
 
 finish
