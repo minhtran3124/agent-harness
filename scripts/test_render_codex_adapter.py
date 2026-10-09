@@ -683,6 +683,14 @@ def test_agents_block_budget_unclosed_rule_frontmatter_fails_render(tmp_path):
         renderer.render(root, tmp_path / "rendered")
 
 
+@pytest.mark.parametrize("paths", ['paths: ["specs/**"]', 'paths:\n- "specs/**"'])
+def test_agents_block_budget_paths_without_parsed_globs_fails_render(tmp_path, paths):
+    root = clone_render_root(tmp_path)
+    (root / "rules/zz-inline.md").write_text(f"---\n{paths}\n---\n\n# Inline\n", encoding="utf-8")
+    with pytest.raises(renderer.AdapterError, match="zz-inline.md.*no globs"):
+        renderer.render(root, tmp_path / "rendered")
+
+
 def test_agents_block_budget_empty_always_on_set_fails_render(tmp_path):
     root = clone_render_root(tmp_path)
     for path in (root / "rules").glob("*.md"):

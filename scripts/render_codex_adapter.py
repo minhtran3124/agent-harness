@@ -350,6 +350,8 @@ def _paths_globs(text: str) -> list[str] | None:
                 match = re.fullmatch(r"\s+-\s+(.*?)\s*", item)
                 if match:
                     globs.append(match.group(1).strip("\"'"))
+            if not globs:
+                raise AdapterError("`paths:` lists no globs; use indented `  - \"<glob>\"` items")
             return globs
     return None
 

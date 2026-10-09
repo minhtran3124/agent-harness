@@ -488,6 +488,37 @@ if [ "$RC" -eq 0 ] \
    && agents_block "$EDITED_TARGET/AGENTS.md" | grep -qxF '# Behavioral Guidelines'; then pass
 else fail "edited retired file policy failed: $OUT"; fi
 
+KEPT_TARGET=$(new_dir)
+KEPT_FAKE=$(new_dir)
+make_fake_codex "$KEPT_FAKE"
+run_install "$KEPT_TARGET" "$KEPT_FAKE" --yes
+seed_pre_254 "$KEPT_TARGET" "$PRE_254_TEXT
+"
+python3 - "$KEPT_TARGET/AGENTS.md" <<'PY'
+import pathlib, sys
+path = pathlib.Path(sys.argv[1])
+path.write_text(path.read_text(encoding="utf-8").replace(
+    "before using the Agent Harness.", "before using the Agent Harness. LOCAL POINTER EDIT"
+), encoding="utf-8")
+PY
+run_install "$KEPT_TARGET" "$KEPT_FAKE" --yes
+t "an edited pre-#254 block keeps the retired file it still points at"
+if [ "$RC" -eq 0 ] \
+   && grep -qF 'LOCAL POINTER EDIT' "$KEPT_TARGET/AGENTS.md" \
+   && [ -f "$KEPT_TARGET/AGENTS.md.harness-incoming" ] \
+   && [ -f "$KEPT_TARGET/.codex/harness-instructions.md" ] \
+   && printf '%s\n' "$OUT" | grep -qF 'kept retired file .codex/harness-instructions.md' \
+   && grep -qF 'harness-instructions.md' "$KEPT_TARGET/.codex/.agent-harness/deployment-manifest.json"; then pass
+else fail "retired file was pruned under a kept block: $OUT"; fi
+
+run_install "$KEPT_TARGET" "$KEPT_FAKE" --yes --overwrite-conflicts
+t "once the new block lands, the kept retired file is pruned"
+if [ "$RC" -eq 0 ] \
+   && ! grep -qF 'LOCAL POINTER EDIT' "$KEPT_TARGET/AGENTS.md" \
+   && [ ! -e "$KEPT_TARGET/.codex/harness-instructions.md" ] \
+   && ! grep -qF 'harness-instructions.md' "$KEPT_TARGET/.codex/.agent-harness/deployment-manifest.json"; then pass
+else fail "kept retired file survived the landed block: $OUT"; fi
+
 OVERRIDE_TARGET=$(new_dir)
 OVERRIDE_FAKE=$(new_dir)
 make_fake_codex "$OVERRIDE_FAKE"

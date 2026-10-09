@@ -262,18 +262,13 @@ else:
                 new_files[relative] = previous_hash
             print(f"codex-deploy: kept local {relative}; wrote {sidecar_relative}")
 
-    for relative, expected in old_files.items():
-        if relative in desired:
-            continue
-        if not remove_if_unchanged(relative, expected):
-            new_files[relative] = expected
-            print(f"codex-deploy: preserved edited retired file {relative}")
 
 agents = target / "AGENTS.md"
 agents_sidecar_relative = "AGENTS.md.harness-incoming"
 agents_sidecar = target / agents_sidecar_relative
 old_block_hash = old.get("agents_block_hash")
 new_block_hash = None
+block_landed = False
 if agents.exists():
     original = agents.read_text(encoding="utf-8")
 else:
@@ -303,6 +298,7 @@ elif begin_count == end_count == 0:
     candidate += block + "\n"
     atomic_write(agents, candidate.encode())
     new_block_hash = digest_bytes(block.encode())
+    block_landed = True
 elif begin_count == end_count == 1 and original.index(begin) < original.index(end):
     start = original.index(begin)
     finish = original.index(end, start) + len(end)
@@ -312,6 +308,7 @@ elif begin_count == end_count == 1 and original.index(begin) < original.index(en
         candidate = original[:start] + block + original[finish:]
         atomic_write(agents, candidate.encode())
         new_block_hash = digest_bytes(block.encode())
+        block_landed = True
     else:
         candidate = original[:start] + block + original[finish:]
         atomic_write(agents_sidecar, candidate.encode())
@@ -325,6 +322,22 @@ else:
     print("codex-deploy: malformed AGENTS.md markers; wrote AGENTS.md.harness-incoming")
 
 if mode == "install":
+    # Retire files only after the AGENTS.md decision: while the previous block stays in place
+    # (edited or malformed markers), it may still point at a retired file, so keep that file.
+    for relative, expected in old_files.items():
+        if relative in desired:
+            continue
+        if not block_landed and target_path(relative).is_file():
+            new_files[relative] = expected
+            print(
+                f"codex-deploy: kept retired file {relative}; AGENTS.md still holds the previous "
+                "managed block"
+            )
+            continue
+        if not remove_if_unchanged(relative, expected):
+            new_files[relative] = expected
+            print(f"codex-deploy: preserved edited retired file {relative}")
+
     if (target / "AGENTS.override.md").exists():
         print(
             "codex-deploy: warning: root AGENTS.override.md exists; Codex loads it instead of "
