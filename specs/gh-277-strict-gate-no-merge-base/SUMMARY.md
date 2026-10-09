@@ -63,6 +63,23 @@ The full suite (`bash scripts/run-tests.sh`) was green at baseline before the ch
 
 - Minor (task 1.1 review, quality) — `scripts/ci-strict-gate.sh:91-94`: the generic branch (merge base exists but `git diff` still fails) is untested, and it re-runs `git diff` to print git's stderr, so the shown text comes from a second run. The exit is 1 either way, so the gate still fails closed. Forwarded to final review.
 
+### Advisory Findings
+
+Correctness review over `920c289..f280c27` (six finders, four deduplicated candidates, each scored independently; threshold 75). None reached the threshold, so none entered the fix loop.
+
+- Score 0 (pre-existing; reproduced) — `scripts/ci-strict-gate.sh:86`: the main diff omits `-c core.quotePath=false`, so a non-ASCII gated path such as `hooks/café.sh` is listed as `"hooks/caf\303\251.sh"`, misses the anchored tier regex, and the gate exits 0 with no proof. Probe: non-ASCII `hooks/` path exit 0; ASCII control exit 1. Lines 130 and 206 already pass the flag.
+- Score 0 (pre-existing; reproduced) — `scripts/ci-strict-gate.sh:86`: default rename detection lists only the destination of a rename, so `git mv hooks/foo.sh lib/foo.sh` shows `lib/foo.sh` alone and the gate exits 0. Probe: move-out exit 0; plain delete control exit 1. Fix direction: `--no-renames`.
+- Score 0 (unmodified lines) — `scripts/ci-strict-gate.sh:130,206`: the OQ_PLANS and SC_SLUGS diffs re-run `"$BASE"...HEAD` with `2>/dev/null ... || true`; a failure after the guarded main diff succeeded would empty them and skip those checks. Only a transient failure reaches it.
+- Score 50 — `scripts/ci-strict-gate.sh:93`: the generic-failure branch re-runs `git diff` to print git's stderr instead of keeping the first run's, so a non-repeating failure prints a header with no cause. Exit stays 1. (Same as the task-review Minor.)
+
+The two reproduced bypasses were moved to their own issue, #281 (user decision: keep this PR matched to #277).
+
+Also checked and clean: a criss-cross history with two merge bases gives `git diff A...B` exit 0, so it does not newly fail.
+
+### Intent Findings
+
+Intent review (plan-blind) over `920c289..fa6162f`: no gap, drift, or excess. All six intent clauses are met. The extra `REQUIRE_SC_STABLE=1` case and the generic-failure branch trace to the issue text. SC-1 and SC-2 are each proven by a mapped Verify row.
+
 ### Not auto-verified
 
 - The generic `git diff` failure branch (merge base present, diff fails) — traceability only (read in review); no fixture triggers it.
