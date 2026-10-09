@@ -30,15 +30,22 @@ Confidence is `medium`: the goal is clear, but (a) and (b) are materially differ
 
 ## What changed
 
-<filled at finishing-a-development-branch>
+The SDD implementer no longer tries to write its own report file, which the runtime refuses. `implementer-prompt.md` tells it to return the full structured report inline and not write a report file. The SDD `SKILL.md` makes the controller write it verbatim to `.harness-state/sdd/report-<task>.md` before each task review. The always-on `rules/orchestration.md` Subagent contract carries the details:
+- a "transcribed by controller" header;
+- fix-round reports appended under `## Fix round <n>`;
+- `BLOCKED`/`NEEDS_CONTEXT` writes no file and removes a stale one;
+- no recognisable status is treated as `NEEDS_CONTEXT`.
+
+The task reviewer still receives `IMPLEMENTER_REPORT_PATH`. `tests/scripts/sdd-artifact-handoffs.test.sh` pins the contract with presence and absence checks. The backlog row is closed and the solution entry's guardrail is now `existing:`.
 
 ### Rationale
 
-<filled at finishing-a-development-branch>
+The refusal comes from the runtime ("Subagents should return findings as text"), so subagents cannot own the file. Having the controller own it keeps the reviewer contract, the artifact for re-review and `resume`, and the audit trail, and it is the guardrail already recorded in `docs/solutions/` after two prior occurrences (approach A, chosen by the user after a comparison).
 
 ### Alternatives considered
 
-- none
+- B — drop the report file and paste the report into the reviewer prompt: rejected. It changes the reviewer contract and `check_task_review_contract.py`, breaks "never paste report contents into prompts", and loses the artifact for re-review and resume.
+- Let subagents write the file: not viable, because the refusal is runtime policy.
 
 ### Deviations
 
@@ -56,6 +63,24 @@ Confidence is `medium`: the goal is clear, but (a) and (b) are materially differ
 | backlog closed, guardrail existing, affects orchestration | `python3 -c "import sys;b=open('docs/harness-experimental/improvement-backlog.md').read();s=open('docs/solutions/harness/sdd-report-file-handoff-refused-for-subagents.md').read();sys.exit(0 if 'done (2026-10-09, gh-261)' in b and 'existing:' in s and 'proposed:' not in s and 'rules/orchestration.md' in s else 1)"` | 0 |  | SC-4 |
 | INDEX matches a fresh rebuild (date line ignored) | `python3 -c "import subprocess,sys;n=subprocess.run([sys.executable,'scripts/rebuild_solution_index.py','--dry-run'],capture_output=True,text=True).stdout;f=open('docs/solutions/INDEX.md').read();k=lambda t:[l for l in t.splitlines() if not l.startswith('> Last updated')];sys.exit(0 if k(n)==k(f) else 1)"` | 0 |  | SC-5 |
 | SKILL.md word ceiling | `python3 scripts/audit_skill_prompts.py --json` | 0 | SDD SKILL.md 598 words (ceiling 600) |  |
+
+### Correctness Review
+
+Range `b0d2a92..HEAD` (`.harness-state/sdd/package-branch.md`). Six FIND angles; 3 locations after dedup; one independent scorer each; threshold 75. No finding reached 75. All three scored 50. The user chose to fix all three, at `f7663b1`, and a focused re-check passed:
+- `rules/orchestration.md:42` — fix-round handling. The report is now appended under `## Fix round <n>`; BLOCKED/NEEDS_CONTEXT removes a stale report; no status is treated as NEEDS_CONTEXT.
+- `skills/subagent-driven-development/SKILL.md:56` — "Never paste … report contents" is now scoped "into prompts".
+- `tests/scripts/sdd-artifact-handoffs.test.sh:15` — presence checks on `orchestration.md` for `report-<task>.md`, `transcribed by controller` and `## Fix round`. A mutation run proved they fail when the paragraph is deleted, and all three fail on `main`'s text.
+
+### Advisory Findings
+
+From the `f7663b1` re-check, Minor, not fixed:
+- The test does not pin the BLOCKED/NEEDS_CONTEXT removal clause or the no-status clause. Changing "removes" to "keeps" still passes. Suggested additions: `grep -qF 'removes any existing'` and `grep -qF 'no recognisable status'` on `rules/orchestration.md`.
+- `task-reviewer-prompt.md` does not say a report may hold several `## Fix round` sections, or that the latest round's status is the current one.
+- After a BLOCKED fix removes the report, the next `DONE` starts a fresh file. That is the natural reading, but it is not stated.
+
+### Intent Findings
+
+- Intent review (plan-blind) over `b0d2a92..ed7bade`: ✅ no gap, drift or excess. Clauses checked: option (a) chosen with no hybrid left; prompts, SKILL and rule all say so; the contract is pinned by a test; the original "mình phải tự chép report" complaint is addressed. SC-1..SC-5 are proven by Criterion rows.
 
 ### Context-Propagation Audit
 
