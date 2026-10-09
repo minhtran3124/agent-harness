@@ -16,4 +16,8 @@ if grep -qF '[IMPLEMENTER_REPORT_PATH]' "$sdd/implementer-prompt.md"; then exit 
 grep -qF 'the controller writes it verbatim to' "$sdd/SKILL.md"
 grep -qF 'report-<task>.md' "$sdd/SKILL.md"
 if grep -qF 'the full contract goes in the report file' "$root/rules/orchestration.md"; then exit 1; fi
+# SKILL.md delegates the handoff details to orchestration.md: pin that the rule is actually there.
+grep -qF 'report-<task>.md' "$root/rules/orchestration.md"
+grep -qF 'transcribed by controller' "$root/rules/orchestration.md"
+grep -qF '## Fix round' "$root/rules/orchestration.md"
 echo 'sdd-artifact-handoffs: passed'

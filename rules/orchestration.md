@@ -41,8 +41,11 @@ Under `subagent-driven-development`, the implementer returns the full contract i
 runtime refuses subagent report-file writes; the controller persists it to `.harness-state/sdd/`
 for the task reviewer. On a `DONE` or `DONE_WITH_CONCERNS` return it writes
 `.harness-state/sdd/report-<task>.md` verbatim under a one-line "transcribed by controller" header
-before the task review, rewrites it after each fix dispatch, and writes no file for `BLOCKED` or
-`NEEDS_CONTEXT`. That full structured report is what the main thread needs, so it is not a
+before the task review. A fix dispatch also returns that structured report; the controller appends
+it verbatim under a `## Fix round <n>` heading rather than replacing the first report. A `BLOCKED`
+or `NEEDS_CONTEXT` return writes no file and removes any existing `report-<task>.md`, so a stale
+report is never reviewed; a return with no recognisable status is treated as `NEEDS_CONTEXT`.
+That full structured report is what the main thread needs, so it is not a
 raw file dump.
 
 ## Evidence in SUMMARY.md (evidence over assertion)
