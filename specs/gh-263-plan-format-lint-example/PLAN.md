@@ -1,6 +1,6 @@
 ---
 slug: gh-263-plan-format-lint-example
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-10-09
 ---
@@ -79,3 +79,4 @@ Issue #263. The fenced Success Criteria example in `rules/plan-format.md` calls
 
 - 2026-10-09 — plan written.
 - 2026-10-09 — task 1.1 complete; commit 1c29222; task review spec pass / quality approved (Minor: reviewer could not run checks; controller re-ran SC-1..SC-3 and the full suite, green).
+- 2026-10-09 — shipped: audit PASS; correctness review (no finding ≥75; sentinel reword fixed at ff8ead1, re-check pass; advisories recorded); intent review no divergence; run-tests.sh ALL GREEN at ff8ead1; receipt pinned at ff8ead1; PR opened for human review.
