@@ -41,7 +41,7 @@ has_all "$REVIEWER" 'Provenance header' 'Optional sections' '+ uncommitted' \
 # cannot satisfy it.
 skeleton_written_first() {
   awk -v title="$2" '
-    /^```/ { infence = !infence; next }
+    /^```/ { infence = !infence; if (!infence) seen = 0; next }
     infence && seen && NF { ok = (index($0, "Written <YYYY-MM-DD>. Pins:") == 1); exit }
     infence && index($0, title) == 1 { seen = 1 }
     END { exit !ok }

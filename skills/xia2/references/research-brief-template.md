@@ -15,7 +15,7 @@ Written <YYYY-MM-DD>. Pins: <repo short sha the claims were checked against; too
 - The `Written` line is the first non-blank line after the title. `Written` is the date the
   document was first written.
 - `Pins` names at least the repository short sha the claims were read at. For claims read from
-  uncommitted work, pin `HEAD` and append `+ uncommitted`. Add tool or dependency versions only
+  uncommitted work, pin the short sha of `HEAD` and append `+ uncommitted`. Add tool or dependency versions only
   when a claim depends on them.
 - `Pins` names what the claims rest on. It does not replace the `Repo Snapshot` table, which stays
   the inventory of detected versions.

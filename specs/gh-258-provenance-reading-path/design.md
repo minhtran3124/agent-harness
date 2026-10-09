@@ -59,7 +59,7 @@ Written <YYYY-MM-DD>. Pins: <repo short sha the claims were checked against; too
 - The header is the **first non-blank line after the H1 title**.
 - `Written` is the date the document was first written.
 - `Pins` names at least the repository commit (short sha) the claims were read at. If they were
-  read from uncommitted work, pin `HEAD` and append `+ uncommitted`. Add tool or dependency
+  read from uncommitted work, pin the short sha of `HEAD` and append `+ uncommitted`. Add tool or dependency
   versions only when a claim depends on them, for example `Codex CLI 0.147.0`. In a research
   brief, `Pins` names what the claims rest on. The `Repo Snapshot` table stays the inventory of
   detected versions, and the two are not merged.
@@ -91,8 +91,8 @@ Two rows in `skills/brainstorming/spec-document-reviewer-prompt.md`:
 
 | Category | What to look for |
 |---|---|
-| Provenance header | The first non-blank line after the H1 title is not a `Written <YYYY-MM-DD>. Pins: <…>` line, the date is not `YYYY-MM-DD`, or `Pins:` is empty or a placeholder. A `Revised` line with any of the same defects, or `Revised` dates not in ascending order. `+ uncommitted` after the sha is valid. |
-| Optional sections | `## Reading path` or `## Worked trace` present but holding placeholder text. An absent optional section is not an issue. |
+| Provenance header | The first non-blank line after the H1 title is not a `Written <YYYY-MM-DD>. Pins: <…>` line, the date is not `YYYY-MM-DD`, or `Pins:` is empty, a placeholder, or names no repository short sha (a ref name such as `HEAD` is not a sha). A `Revised` line with any of the same defects, or `Revised` dates not in ascending order. `+ uncommitted` after the sha is valid. |
+| Optional sections | `## Reading path` or `## Worked trace` present but holding placeholder text or a `- none` line (an unused optional section is left out). An absent optional section is not an issue. |
 
 The reviewer reads the template already, so its delivery needs no change.
 
