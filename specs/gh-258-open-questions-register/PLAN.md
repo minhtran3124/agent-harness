@@ -10,7 +10,7 @@ created: 2026-10-09
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**4 tasks · 2 waves · 12 files · 1/4 done**
+**4 tasks · 2 waves · 12 files · 4/4 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -34,9 +34,9 @@ flowchart LR
 
 ### Progress
 - [x] 1.1 — Register template, check script and its unit tests (wave 1)
-- [ ] 2.1 — Shipping section in ci-strict-gate with fixture tests (wave 2)
-- [ ] 2.2 — Consumer deploy and finish-skill wiring (wave 2)
-- [ ] 2.3 — Writer guidance and template contract (wave 2)
+- [x] 2.1 — Shipping section in ci-strict-gate with fixture tests (wave 2)
+- [x] 2.2 — Consumer deploy and finish-skill wiring (wave 2)
+- [x] 2.3 — Writer guidance and template contract (wave 2)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -204,3 +204,4 @@ Research: `research-brief.md` (Deep, local-only).
 
 - 2026-10-09 — plan written from the approved design and the Deep research brief.
 - 2026-10-09 — task 1.1 complete; commit 1dd461d (spec pass, quality approved, 3 Minor recorded in SUMMARY).
+- 2026-10-09 — tasks 2.1, 2.2, 2.3 complete; commits 2e8b098, 97b8a2c, a6e01d0 (each spec pass, quality approved; 3 Minor recorded in SUMMARY). Wave-boundary SC-6 (`lint-doc-truth.sh`) and SC-7 (`audit_skill_prompts.py`) exit 0.

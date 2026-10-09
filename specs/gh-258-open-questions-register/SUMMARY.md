@@ -64,6 +64,9 @@ called by the finishing flow and CI, warn-first, not a new `hooks/commit-gate.sh
 - Task 1.1 (`1dd461d`): a `--root` that is not a directory finds no register and exits 0 silently, the same as "no register anywhere" (`scripts/check_open_questions.py:132`).
 - Task 1.1 (`1dd461d`): the test file's `str | bytes` / `Path | None` signatures need Python 3.10+ without `from __future__ import annotations`, the repo convention (`scripts/test_check_open_questions.py:190`).
 - Task 1.1 (`1dd461d`): any `#` line ends an OQ block, so a subheading inside a block drops later fields, and an `## OQ-n` inside a code fence is parsed (`scripts/check_open_questions.py:71`); the template's bullet-only shape avoids both.
+- Task 2.1 (`2e8b098`): under `REQUIRE_QUESTIONS_CLOSED=1` with the script missing, the combined BLOCKED line still says "open questions close at a shipping phase"; the preceding skip line names the real cause (`scripts/ci-strict-gate.sh`, new section).
+- Task 2.2 (`97b8a2c`): finishing step 3 says what to do in warn mode but not that an exit 1 under `REQUIRE_QUESTIONS_CLOSED=1` stops the flow (`skills/finishing-a-development-branch/SKILL.md:63-64`).
+- Task 2.3 (`a6e01d0`): the template field-key anchors in `brainstorming-contract.test.sh` are bare fixed strings, so they prove each key appears somewhere in the template, not inside an `## OQ-<n>` block.
 
 ### Rollback
 
