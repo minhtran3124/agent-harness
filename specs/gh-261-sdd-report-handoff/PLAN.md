@@ -1,6 +1,6 @@
 ---
 slug: gh-261-sdd-report-handoff
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-10-09
 ---
@@ -142,3 +142,4 @@ the full report inline, and the controller persists it. Design:
 
 - 2026-10-09 — plan written.
 - 2026-10-09 — tasks 1.1, 1.2 complete; commits 7523f0c, 6a36b3c, fix rounds 974e686, cf0567d; task reviews spec pass / quality approved (Minor findings in SUMMARY); controller re-ran SC-1..SC-5 and the full suite, green.
+- 2026-10-09 — shipped: audit PASS; correctness (3 advisories at 50 fixed at f7663b1 by user choice, re-check pass); intent review no divergence; run-tests.sh ALL GREEN at f7663b1; ci-strict-gate OK; receipt pinned at f7663b1; PR opened for human review.
