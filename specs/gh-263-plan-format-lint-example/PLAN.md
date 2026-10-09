@@ -10,7 +10,7 @@ created: 2026-10-09
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**1 tasks · 1 waves · 1 files · 0/1 done**
+**1 tasks · 1 waves · 1 files · 1/1 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -24,7 +24,7 @@ flowchart LR
 ```
 
 ### Progress
-- [ ] 1.1 — Point the fenced SC example at check_plan_contract.py
+- [x] 1.1 — Point the fenced SC example at check_plan_contract.py
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -78,3 +78,4 @@ Issue #263. The fenced Success Criteria example in `rules/plan-format.md` calls
 ## 6. Status Log
 
 - 2026-10-09 — plan written.
+- 2026-10-09 — task 1.1 complete; commit 1c29222; task review spec pass / quality approved (Minor: reviewer could not run checks; controller re-ran SC-1..SC-3 and the full suite, green).
