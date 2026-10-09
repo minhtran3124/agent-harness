@@ -42,7 +42,10 @@ The adapter owns only paths recorded in
 The payload is a derived copy of `rules/`, non-test `runtime/`, `templates/`, the consumer helper
 scripts, `harness-manifest.json`, and each shipped skill's helper files. Installed plugin skills
 point their helper paths at it, and `commit-gate.sh` and `session-knowledge.sh` look there for
-`verify_summary.py` and `runtime_mode.py`. Because the manifest lists it, a reinstall refreshes it
+`verify_summary.py` and `runtime_mode.py`. The rendered `.codex/agents/*.toml` profiles point at
+the payload copies of the rules they cite (for example
+`.codex/.agent-harness/payload/rules/orchestration.md`), while their reference to
+`agents/PROJECT.md` stays a path in the project itself. Because the manifest lists it, a reinstall refreshes it
 and it follows the same conflict, prune, and `--remove` rules as the other managed files. Do not
 edit it in place.
 
@@ -66,15 +69,15 @@ official [AGENTS.md instruction hierarchy](https://learn.chatgpt.com/docs/agent-
 The installer does not directly edit `.codex/config.toml`, project trust, hook trust, project
 hooks, unrelated marketplaces/plugins, custom agents, or content outside its `AGENTS.md` markers.
 Marketplace and plugin registration go through the Codex CLI so Codex can merge its own state.
-Outside `.codex/`, it writes three things: the managed section of the root `AGENTS.md` (and,
-on a conflict, `AGENTS.md.harness-incoming`), the `.gitignore` line described above, and the
-workflow files that `init-structure.sh` creates when they are missing (see "What the installer
-prints after an install" below). The `.gitignore` and `init-structure.sh` steps never overwrite
-an existing file; the `AGENTS.md` section follows the conflict rules described above.
+Outside `.codex/`, it writes four things: the managed section of the root `AGENTS.md` (and,
+on a conflict, `AGENTS.md.harness-incoming`), the `.gitignore` line described above, the
+workflow files that `init-structure.sh` creates when they are missing, and `agents/PROJECT.md`
+when it is missing (see "What the installer prints after an install" below). The `.gitignore`,
+`init-structure.sh`, and `agents/PROJECT.md` steps never overwrite an existing file; the `AGENTS.md` section follows the conflict rules described above.
 
 ### What the installer prints after an install
 
-After a successful install, the installer runs three more steps. They never run under `--dry-run`
+After a successful install, the installer runs four more steps. They never run under `--dry-run`
 or `--remove`, and none of them can make the install fail.
 
 1. **Workflow structure.** It runs `scripts/init-structure.sh` from the harness source against the
@@ -97,7 +100,51 @@ or `--remove`, and none of them can make the install fail.
    codex-install: init-structure.sh not in this source checkout; skipping the workflow structure.
    ```
 
-2. **Doctor mode.** It runs the harness doctor once with `--no-persist`, so the install writes no
+2. **Project profile.** The Codex coding and test-runner agents read `agents/PROJECT.md` at the
+   project root for its *Test execution* section: the test command, how to run a targeted subset,
+   and how source files map to their tests. The installer creates that file only when it is
+   missing and prints exactly one of these lines.
+
+   When `agents/PROJECT.md` already exists, the installer does not touch it:
+
+   ```text
+   codex-install: agents/PROJECT.md exists; left as is.
+   ```
+
+   When it is missing and the project has `.claude/agents/PROJECT.md` (from a Claude Code install),
+   the installer copies that file:
+
+   ```text
+   codex-install: created agents/PROJECT.md from .claude/agents/PROJECT.md; Codex agents read the root copy, so keep the two in step.
+   ```
+
+   After that first copy the two are separate files: an edit to one does not reach the other, so
+   update both when your test setup changes.
+
+   Otherwise the installer copies `agents/PROJECT.template.md` from the harness source. Open the
+   new file and fill in its *Test execution* section:
+
+   ```text
+   codex-install: created agents/PROJECT.md from the template; fill in its Test execution section.
+   ```
+
+   When the source checkout has no template, the installer skips the step:
+
+   ```text
+   codex-install: agents/PROJECT.template.md not in this source checkout; skipping agents/PROJECT.md.
+   ```
+
+   If a copy fails, the installer prints the copy error followed by this line, and the install
+   still succeeds:
+
+   ```text
+   codex-install: could not create agents/PROJECT.md (see the error above); create it from agents/PROJECT.template.md yourself.
+   ```
+
+   The file is yours: commit it with your project. It is not recorded in the deployment manifest,
+   a reinstall never overwrites it, and `--remove` leaves it in place.
+
+3. **Doctor mode.** It runs the harness doctor once with `--no-persist`, so the install writes no
    runtime-mode record, and prints the mode with its reasons (or `(none)` when there are none):
 
    ```text
@@ -115,7 +162,7 @@ or `--remove`, and none of them can make the install fail.
    If the doctor exits 0 but prints something other than a mode record, the line reads
    `codex-install: doctor output was not a mode record; run it yourself (below)`.
 
-3. **Next step.** It tells you to trust the hooks and then re-run the doctor yourself:
+4. **Next step.** It tells you to trust the hooks and then re-run the doctor yourself:
 
    ```text
    codex-install: next: start Codex in <target>, choose "Review hooks" (or run /hooks and press t on each Agent Harness hook); hooks do not run until trusted.
@@ -330,8 +377,8 @@ generated state. User-owned configuration and custom agents remain untouched. `-
 the `.codex/.agent-harness/` line in `.gitignore` in place; the harness never deletes a
 `.gitignore` line, so delete it by hand if you no longer want it. The workflow files created by
 `init-structure.sh` (`specs/`, `docs/solutions/`, and `techstacks/` files listed under "What the
-installer prints after an install") are also left in place, because they are yours and are not in
-the deployment manifest.
+installer prints after an install") and `agents/PROJECT.md` are also left in place, because they
+are yours and are not in the deployment manifest.
 
 The deployer stages a complete render before changing target state. If marketplace or plugin
 registration fails, it removes the partial registration and restores the previous persistent
