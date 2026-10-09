@@ -96,15 +96,52 @@ all four tasks (836 pytest passed); cited here, not as a Verify row.
 | Check | Command | Exit | Notes | Criterion |
 | --- | --- | --- | --- | --- |
 | intake lane record | `python3 scripts/verify_summary.py --lane gh-255-codex-hook-trust` | 0 | intake |  |
-| missing hook helper reason | `python3 -m pytest scripts/test_codex_harness_doctor.py -q -k hook_dependency_missing` | 0 | 3 tests: one or both helpers missing named; full and `.claude/`-only installs clean; missing install not evaluated | SC-1 |
+| missing hook helper reason | `python3 -m pytest scripts/test_codex_harness_doctor.py -q -k hook_dependency_missing` | 0 | 5 tests: one or both helpers missing named; full and `.claude/`-only installs clean; unreadable directory counts as absent; missing install and invalid manifest not evaluated | SC-1 |
 | helper table drift | `python3 -m pytest scripts/test_codex_harness_doctor.py -q -k hook_dependency_table` | 0 | drift test parses both hooks; order-sensitive | SC-2 |
-| doctor suite | `python3 -m pytest scripts/test_codex_harness_doctor.py -q` | 0 | 19 doctor tests, fixture ships payload helpers | SC-3 |
-| installer tail | `bash tests/scripts/codex-install-next-step.test.sh` | 0 | 10 cases incl. stub doctor exit 2, missing init-structure, dry-run, remove, clone mode, no trust call | SC-4 |
+| doctor suite | `python3 -m pytest scripts/test_codex_harness_doctor.py -q` | 0 | 21 doctor tests, fixture ships payload helpers | SC-3 |
+| installer tail | `bash tests/scripts/codex-install-next-step.test.sh` | 0 | 14 cases incl. stub doctor exit 2 and exit-0-unparseable, missing init-structure, dry-run, remove, clone mode, exported CODEX_BIN, quoted path with flags, relative --codex-bin, no trust call | SC-4 |
 | capability matrix valid | `python3 scripts/check_codex_capabilities.py specs/codex-support/capability-matrix.json` | 0 | matrix validates | SC-5 |
 | docs content | `python3 -c "import pathlib,sys; t=pathlib.Path('docs/codex-alpha-install.md').read_text(encoding='utf-8'); sys.exit(0 if all(k in t for k in ('Hooks need review', '/hooks', 'HOOK_DEPENDENCY_MISSING', 'TRUST_UNKNOWN', 'HOOKS_UNTRUSTED', 'TRUST_CONFIG_ONLY', 'init-structure.sh', 'doctor mode:')) else 1)"` | 0 | required facts present | SC-6 |
 | codex install suite | `bash tests/scripts/codex-install.test.sh` | 0 | 38 cases | SC-7 |
 | trust row recorded | `python3 -c "import json,sys; r=[c for c in json.load(open('specs/codex-support/capability-matrix.json'))['capabilities'] if c['id']=='config.project_trust'][0]; s=r['source']; sys.exit(0 if (s['checked_at']=='2026-10-09' and 'hooks/list' in s['reference'] and 'hooks/list' in r['exit_condition'] and r['status']=='unknown' and s['kind']=='unavailable') else 1)"` | 0 | trust row content | SC-8 |
 | .gitignore suite unchanged | `bash tests/scripts/codex-install-gitignore.test.sh` | 0 | 14 cases |  |
+
+### Context-Propagation Audit
+
+Not run: the diff touches no workflow-engine surface (`skills/*/SKILL.md`, dispatch prompts,
+`agents/*.md`, `rules/*.md`; `resolve_finish_context.py` reports
+`context_propagation_audit_required: false`), and #255 does not request one.
+
+### Correctness Review
+
+Six FIND angles over `5382f3a..22f6d78`, 8 deduplicated locations, one independent scorer each,
+threshold 75.
+
+- **H (75) — fixed in `b2d874c`.** The docs said the installer writes "only two things" outside
+  `.codex/`; the root `AGENTS.md` managed section is a third.
+- **Fixed anyway in `b2d874c` (scored 50; introduced by this diff, one-line fixes):**
+  A — the installer's new `CODEX_BIN=""` blanked an exported `CODEX_BIN` before the deploy read
+  it (reproduced; renamed `CODEX_BIN_ARG`); B — the printed doctor command was unquoted and
+  dropped `--codex-bin`/`--codex-home`; C — `Path.is_file()` raised `PermissionError` on an
+  unreadable directory and crashed the doctor (now `os.path.isfile`, like the hooks' `[ -f ]`);
+  F — a relative `--codex-bin` broke the doctor's `cwd=<target>` call (made absolute); G — an
+  exit-0 unparseable doctor output printed "could not run (exit 0)"; I — the `TRUST_UNKNOWN` doc
+  row omitted the declined-to-parse case. New regression tests fail on the pre-fix code.
+- Fix re-review of `b2d874c`: `fix_verdict: closed`; two P3 notes (no test for G; a doc phrase on
+  bare `--codex-bin` names) fixed in the next commit.
+
+### Advisory Findings
+
+- C, first half (50) — the doctor probes helpers under `--root`, while the hooks resolve
+  `CLAUDE_PROJECT_DIR` or the git top level; a project in a subdirectory of a repo can read clean
+  while the hooks find nothing. Documented as a known limit in the design and the docs.
+- J (0, unmodified line) — `runtime_mode.context_line` cuts reason codes at 6 without a marker;
+  `HOOK_DEPENDENCY_MISSING` takes a slot and can push a `TRUST_*` reason off the session line.
+- A persisted runtime-mode record does not notice a later deletion of a helper that lives outside
+  the payload (`.claude/`), because `install_hash` covers only manifest-owned files; the cached
+  mode shows until the doctor is re-run.
+- An exported `CODEX_HOME` (no `--codex-home`) is not echoed into the printed command; the
+  follow-up relies on the shell still exporting it (unchanged behaviour).
 
 ### Not auto-verified
 
