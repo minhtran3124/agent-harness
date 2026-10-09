@@ -61,6 +61,12 @@ default is a `verify_summary.py` mode that needs a base ref, called where `--che
 | --- | --- | --- | --- |
 | intake lane record | `python3 .claude/scripts/verify_summary.py --lane gh-258-sc-goalpost-guard` | 0 | |
 
+### Minor review findings
+
+- Task 1.1 (`2a47380`): `_run_sc_history` reports any later git failure (`rev-list`, `rev-parse --short`) as "not inside a git repository, or git cannot run". The exit code (2) is correct, but the message names the wrong cause, and `_git` drops git's stderr.
+- Task 1.1 (`2a47380`): `test_base_without_sc_history_is_a_usage_error` calls `subprocess.run` directly instead of the env-scrubbing `run()` helper.
+- Task 1.1 (`2a47380`): `REQUIRE_SC_STABLE` blocks only on exactly `"1"`, while `REQUIRE_NOT_AUTO_VERIFIED` accepts any truthy value (implementer note).
+
 ### Rollback
 
 - `git revert -m 1 <merge-sha>` of the PR into `spec-format`.
@@ -71,4 +77,4 @@ default is a `verify_summary.py` mode that needs a base ref, called where `--che
 
 ### Harness-Delta
 
-- none
+- backlog (high impact): a `deploy-harness.sh` run in the **main checkout** at 21:02:08 on 2026-10-09 (the `.claude/.harness-profile` mtime) rewrote 173 tracked Markdown files in this worktree. It replaced `scripts/` with `.claude/scripts/` and stripped harness-only regions; `skills/README.md` lost 127 lines. This worktree lives at `<repo>/.claude/worktrees/<name>`, inside the parent's derived `.claude/` tree, and the parent's derive-time transforms (`rewrite_derived_paths`, `strip_maintenance_docs`) walk that tree recursively. The rewrite reached this spec's `### Intent` block, which is the verbatim intent-review oracle. No code, test or run-state file was touched, and every commit made before 21:02 was clean. The controller saved the diff to `.harness-state/parent-deploy-clobber-2026-10-09.patch` and restored the files with `git restore --worktree -- .`. Fix direction: the deploy transforms must skip `.claude/worktrees/`. Also, `EnterWorktree` only accepts `.claude/worktrees/`, so every harness-native worktree is exposed to this.
