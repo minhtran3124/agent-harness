@@ -1,6 +1,6 @@
 ---
 slug: install-uv-autoinstall
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-10-09
 ---
@@ -10,7 +10,7 @@ created: 2026-10-09
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**2 tasks · 1 waves · 4 files · 0/2 done**
+**2 tasks · 1 waves · 4 files · 2/2 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -26,8 +26,8 @@ flowchart LR
 ```
 
 ### Progress
-- [ ] 1.1 — Auto-install uv in install-harness.sh, test-first (wave 1)
-- [ ] 1.2 — Document auto-install and the opt-out in README (wave 1)
+- [x] 1.1 — Auto-install uv in install-harness.sh, test-first (wave 1)
+- [x] 1.2 — Document auto-install and the opt-out in README (wave 1)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -149,3 +149,4 @@ warning line, pre-fetch the package in the background, and offer an opt-out. Res
 - 2026-10-09 — tasks 1.1, 1.2 done (b9db48d, 42cbfd5); review fixes 9118704, 3b9621e, 3b99e4d; correctness + intent passed; receipt at 3b99e4d.
 - 2026-10-09 — plan review round 1: SC-5 narrowed to README, SC-9 and SC-10 added, Task 1.1 Done
   rewritten without a hand count. Round 2 approved. Baseline `bash scripts/run-tests.sh`: ALL GREEN.
+- 2026-10-09 — shipped: full suite ALL GREEN, receipt at f6e7161, ci-strict-gate OK; PR opened against main.
