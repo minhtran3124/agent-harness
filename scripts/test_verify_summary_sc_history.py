@@ -342,6 +342,21 @@ def test_plan_only_commit_records_no_failure(repo):
     assert_clean(repo)
 
 
+def test_unchanged_row_is_not_judged_after_unrelated_summary_edit(repo):
+    # D9 / DC2: a row left stale by a PLAN-only commit is judged only when that row
+    # itself is new or changed; an unrelated prose edit to SUMMARY does not count.
+    commit(repo, plan=PLAN0, summary=PASSED)                                # A
+    commit(repo, plan=plan_text(("SC-1", "`pytest a`", "exit 1")))          # B: PLAN only
+    commit(
+        repo,
+        summary=summary_text(
+            ("tests", "pytest a", "0", "SC-1"), extra="### Notes\n\nProse edit only."
+        ),
+    )                                                                       # C: prose only
+    commit(repo, plan=plan_text(("SC-1", "`pytest b`", "exit 1")))          # D: Check edited
+    assert_clean(repo)
+
+
 def test_plan_only_first_commit_does_not_judge_inherited_summary(repo):
     # The SUMMARY at the merge base is the "previous" content for the first commit.
     base = commit(repo, plan=PLAN0, summary=PASSED)

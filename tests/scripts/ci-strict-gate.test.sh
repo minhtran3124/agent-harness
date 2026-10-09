@@ -359,4 +359,25 @@ rename_spec_run "$r" REQUIRE_SC_STABLE=1
 assert_rc_contains 1 "BLOCKED — the sc-history check errored"
 case "$OUT" in *"$RENAME_LINE"*) pass ;; *) fail "rename line missing under REQUIRE: $OUT" ;; esac
 
+# create_then_rename_run <repo> [VAR=val ...] — on the branch, create specs/s (PLAN + SUMMARY)
+# in one commit and rename it to specs/t in a later one. The net base...HEAD diff shows only
+# additions under specs/t, so the rename is visible only per commit.
+create_then_rename_run() {
+  local r="$1" base
+  base=$(git -C "$r" rev-parse HEAD)
+  write_sc_plan "$r" "exit 0"; write_sc_summary "$r" 1
+  git -C "$r" add -A >/dev/null 2>&1; git -C "$r" commit -qm create
+  git -C "$r" mv specs/s specs/t; git -C "$r" commit -qm rename
+  OUT=$(cd "$r" && env "${@:2}" bash "$GATE" "$base" 2>&1); RC=$?
+}
+
+t "(p) a branch that creates specs/s and later renames it to specs/t → rename named, exit 0 in warn mode"
+r=$(mkrepo); create_then_rename_run "$r"
+assert_rc_contains 0 "$RENAME_LINE"
+
+t "(p) the create-then-rename under REQUIRE_SC_STABLE=1 → exit 1, BLOCKED names the error"
+r=$(mkrepo); create_then_rename_run "$r" REQUIRE_SC_STABLE=1
+assert_rc_contains 1 "BLOCKED — the sc-history check errored"
+case "$OUT" in *"$RENAME_LINE"*) pass ;; *) fail "rename line missing under REQUIRE: $OUT" ;; esac
+
 finish

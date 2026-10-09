@@ -175,7 +175,11 @@ SC_REQUIRE="${SC_REQUIRE#"${SC_REQUIRE%%[![:space:]]*}"}"
 SC_REQUIRE="${SC_REQUIRE%"${SC_REQUIRE##*[![:space:]]}"}"
 # A spec directory renamed on the branch starts a new history under the new slug, so a
 # failure recorded under the old slug is not followed. Name it and count it as an error.
-SC_RENAMES=$(git -c core.quotePath=false diff --name-status -M "$BASE"...HEAD 2>/dev/null \
+# Renames are read per commit, not from the net diff: a directory created and then renamed
+# on the branch shows in the net diff only as additions under the new slug.
+SC_RENAMES=""
+[ -n "$MERGE_BASE" ] && SC_RENAMES=$(git -c core.quotePath=false log --format= --name-status -M \
+  "$MERGE_BASE"..HEAD -- specs/ 2>/dev/null \
   | awk -F'\t' '$1 ~ /^R/ && $2 ~ /^specs\/[^\/]+\/(PLAN|SUMMARY)\.md$/ \
                  && $3 ~ /^specs\/[^\/]+\/(PLAN|SUMMARY)\.md$/ {
                   split($2, a, "/"); split($3, b, "/")
@@ -191,8 +195,8 @@ while IFS= read -r slug; do
   [ -z "$slug" ] && continue
   python3 scripts/verify_summary.py --sc-history "$slug" --base "$BASE"
   rc=$?
-  # Exit 1 is a finding only under REQUIRE; a crash also exits 1, so an exit 1 without
-  # REQUIRE, or any other non-zero exit, is an error in the check, not a finding.
+  # Exit 1 is a finding, and only under REQUIRE; a crash or usage error exits 2. So an
+  # exit 1 without REQUIRE, or any other non-zero exit, is an error in the check.
   if [ "$rc" -eq 1 ] && [ "$SC_REQUIRE" = "1" ]; then
     SC_FAILED=1
   elif [ "$rc" -ne 0 ]; then

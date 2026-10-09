@@ -719,6 +719,23 @@ def _git_show(root: Path, commit: str, path: str) -> str | None:
         return None
 
 
+def _verify_rows_of(summary: str | None) -> list[dict]:
+    """Verify rows of a SUMMARY text; [] when the file or its Verify section is absent."""
+    if summary is None:
+        return []
+    verify = _section(summary, "Verify")
+    return _parse_verify_rows(verify) if verify else []
+
+
+def _verify_row_key(row: dict) -> tuple[str, str, str, str]:
+    """Identity of a Verify row for D9: its Criterion plus the cells it asserts."""
+    return (row["criterion"], row["check"], row["command"], row["claimed_exit"])
+
+
+def _verify_row_keys(summary: str | None) -> set[tuple[str, str, str, str]]:
+    return {_verify_row_key(row) for row in _verify_rows_of(summary)}
+
+
 def sc_history(repo_root: Path, slug: str, base: str) -> tuple[list[str], str]:
     """Return (finding lines, summary line) for SC goalpost moves on this branch.
 
@@ -726,8 +743,9 @@ def sc_history(repo_root: Path, slug: str, base: str) -> tuple[list[str], str]:
 
     Verifies: no SC that a commit in merge-base(base, HEAD)..HEAD recorded as failing
         (a Verify row with `Criterion: SC-n` whose integer Exit differs from SC-n's
-        expected exit in that commit's PLAN, judged only at a commit where SUMMARY.md
-        itself changed -- design D8) has had its Check or Expected exit token
+        expected exit in that commit's PLAN, judged only at a commit where that row
+        (Criterion, Check, Command, Exit) is new or changed compared with the
+        previous SUMMARY in the walk -- design D9) has had its Check or Expected exit token
         changed, or its row removed, at HEAD without HEAD `### Deviations` naming SC-n.
     Does not verify: that a Deviations entry justifies the change, failures never
         committed, or weakening inside the command's own test content.
@@ -760,21 +778,23 @@ def sc_history(repo_root: Path, slug: str, base: str) -> tuple[list[str], str]:
     failures: dict[str, tuple[str, str, str]] = {}
     # The first commit in the walk is compared with the merge base, so a branch that
     # opens with a PLAN-only commit does not judge a SUMMARY inherited from the base.
-    previous_summary = _git_show(repo_root, mb, summary_path)
+    previous_keys = _verify_row_keys(_git_show(repo_root, mb, summary_path))
     for commit in commits:
         summary = _git_show(repo_root, commit, summary_path)
-        # D8: Verify rows are judged only where SUMMARY.md itself changed (or is new);
-        # a PLAN-only commit leaves the SUMMARY stale and records nothing.
-        summary_changed = summary is not None and summary != previous_summary
-        previous_summary = summary
-        if not summary_changed:
+        # D9: a Verify row is judged only where THAT row is new or changed compared
+        # with the previous SUMMARY in the walk. A PLAN-only commit, or an unrelated
+        # SUMMARY edit, leaves a stale row unjudged.
+        rows = _verify_rows_of(summary)
+        keys = {_verify_row_key(row) for row in rows}
+        new_rows = [row for row in rows if _verify_row_key(row) not in previous_keys]
+        previous_keys = keys
+        if not new_rows:
             continue
         plan = _git_show(repo_root, commit, plan_path)
         if plan is None:
             continue
         sc_checks = parse_sc_checks(plan)
-        verify = _section(summary, "Verify")
-        for row in _parse_verify_rows(verify) if verify else []:
+        for row in new_rows:
             sc_id = row["criterion"]
             if sc_id in failures or sc_id not in sc_checks:
                 continue
