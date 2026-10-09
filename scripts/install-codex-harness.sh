@@ -6,6 +6,8 @@ REPO_URL="${CS_REPO_URL:-https://github.com/minhtran3124/agent-harness}"
 BRANCH="${CS_BRANCH:-simplify}"
 TARGET_DIR="$PWD"
 SOURCE_DIR=""
+CODEX_BIN=""
+CODEX_HOME_ARG=""
 FORWARD_ARGS=()
 
 usage() {
@@ -31,7 +33,8 @@ while [ "$#" -gt 0 ]; do
     -d|--directory) TARGET_DIR="${2:?--directory needs a path}"; shift 2 ;;
     -b|--branch) BRANCH="${2:?--branch needs a name}"; shift 2 ;;
     --source) SOURCE_DIR="${2:?--source needs a path}"; shift 2 ;;
-    --codex-bin|--codex-home) FORWARD_ARGS+=("$1" "${2:?$1 needs a path}"); shift 2 ;;
+    --codex-bin) CODEX_BIN="${2:?$1 needs a path}"; FORWARD_ARGS+=("$1" "$2"); shift 2 ;;
+    --codex-home) CODEX_HOME_ARG="${2:?$1 needs a path}"; FORWARD_ARGS+=("$1" "$2"); shift 2 ;;
     --yes|--overwrite-conflicts|--dry-run|--remove) FORWARD_ARGS+=("$1"); shift ;;
     -h|--help) usage; exit 0 ;;
     *) printf 'codex-install: unknown option: %s\n' "$1" >&2; exit 2 ;;
@@ -109,5 +112,45 @@ if [ "$GI_RUN" -eq 1 ]; then
     printf 'codex-install: warning: could not update .gitignore — add .codex/.agent-harness/ to it manually.\n' >&2
   else
     printf 'codex-install: .gitignore now lists .codex/.agent-harness/\n'
+  fi
+fi
+
+# ---------- workflow structure, doctor mode, and the hook-trust next step ----------
+# Same condition as the .gitignore step: only after a successful deploy, never under --dry-run
+# or --remove. Every call is guarded so nothing here can end the install non-zero. The doctor
+# runs with --no-persist (no runtime-mode record before the user has reviewed trust) and is
+# read-only toward Codex: it never edits trust configuration.
+if [ "$GI_RUN" -eq 1 ]; then
+  if [ -f "$SOURCE_DIR/scripts/init-structure.sh" ]; then
+    bash "$SOURCE_DIR/scripts/init-structure.sh" --root "$TARGET_DIR" || true
+  else
+    printf 'codex-install: init-structure.sh not in this source checkout; skipping the workflow structure.\n'
+  fi
+  DOCTOR_ARGS=(--root "$TARGET_DIR" --repo-root "$SOURCE_DIR" --no-persist)
+  [ -z "$CODEX_BIN" ] || DOCTOR_ARGS+=(--codex-bin "$CODEX_BIN")
+  [ -z "$CODEX_HOME_ARG" ] || DOCTOR_ARGS+=(--codex-home "$CODEX_HOME_ARG")
+  doctor_out=$(python3 "$SOURCE_DIR/scripts/codex_harness_doctor.py" "${DOCTOR_ARGS[@]}" 2>/dev/null) || doctor_out=""
+  doctor_line=$(printf '%s' "$doctor_out" | python3 -c '
+import json, sys
+try:
+    record = json.load(sys.stdin)
+    mode = record["mode"]
+    reasons = record.get("reason_codes") or []
+except Exception:
+    sys.exit(1)
+if not isinstance(mode, str) or not mode:
+    sys.exit(1)
+print("%s (%s)" % (mode, ", ".join(str(r) for r in reasons) or "none"))
+' 2>/dev/null) || doctor_line=""
+  if [ -n "$doctor_line" ]; then
+    printf 'codex-install: doctor mode: %s\n' "$doctor_line"
+  else
+    printf 'codex-install: doctor could not run; run it yourself (below)\n'
+  fi
+  printf 'codex-install: next: start Codex in %s, choose "Review hooks" (or run /hooks and press t on each Agent Harness hook); hooks do not run until trusted.\n' "$TARGET_DIR"
+  if [ -n "$WORK" ]; then
+    printf 'codex-install: then run: git clone --depth 1 --branch %s %s <dir> && python3 <dir>/scripts/codex_harness_doctor.py --root %s\n' "$BRANCH" "$REPO_URL" "$TARGET_DIR"
+  else
+    printf 'codex-install: then run: python3 %s/scripts/codex_harness_doctor.py --root %s\n' "$SOURCE_DIR" "$TARGET_DIR"
   fi
 fi
