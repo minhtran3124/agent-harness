@@ -1,6 +1,6 @@
 ---
 slug: gh-255-codex-hook-trust
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-10-09
 ---
@@ -198,3 +198,4 @@ field at 0.147.0 or 0.162.0; app-server `hooks/list` has per-hook `trustStatus`)
 - 2026-10-09 — plan written from the approved design and research brief.
 - 2026-10-09 — revised after plan review: SC-1 selector, SC-8, Task 1.2 test details, waves 1/2/3. Plan review approved on iteration 2.
 - 2026-10-09 — tasks 1.1, 1.3 complete (d5ba42b, 6795c61); task 1.2 complete (50f947f, Minor fixes 774e595); task 2.1 complete (ca0a2b2). All reviews passed (spec pass, quality approved). `bash scripts/run-tests.sh` ALL GREEN (836 pytest passed). All plan tasks are done.
+- 2026-10-09 — Final review chain passed: correctness review (six angles, 8 locations scored independently; H at threshold and six 50-scored defects introduced by this diff fixed in b2d874c, fix re-review closed, P3 notes fixed in 203b6c7) and plan-blind intent review (0 gaps). Context-propagation audit not required (no workflow-engine surface). `run-tests.sh` ALL GREEN (838 pytest passed) and `ci-strict-gate.sh` OK against github/codex. Shipped to a PR against the `codex` branch, stacked on PR #267.
