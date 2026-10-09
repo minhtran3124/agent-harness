@@ -10,7 +10,7 @@ created: 2026-10-09
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**4 tasks · 2 waves · 7 files · 0/4 done**
+**4 tasks · 2 waves · 7 files · 4/4 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -33,10 +33,10 @@ flowchart LR
 ```
 
 ### Progress
-- [ ] 1.1 — Render the managed AGENTS.md block (wave 1)
-- [ ] 2.1 — Deploy the rendered block (wave 2)
-- [ ] 2.2 — Codex path in the rule-tier inventory test (wave 2)
-- [ ] 2.3 — Document the block and the AGENTS.md / CLAUDE.md interplay (wave 2)
+- [x] 1.1 — Render the managed AGENTS.md block (wave 1)
+- [x] 2.1 — Deploy the rendered block (wave 2)
+- [x] 2.2 — Codex path in the rule-tier inventory test (wave 2)
+- [x] 2.3 — Document the block and the AGENTS.md / CLAUDE.md interplay (wave 2)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -200,3 +200,5 @@ chain at the byte once 32 KiB is reached; a root `AGENTS.override.md` hides `AGE
 ## 6. Status Log
 
 - 2026-10-09 — plan written from the approved design and research brief.
+- 2026-10-09 — task 1.1 complete; commit 8048501. Review passed (spec pass, quality approved), five Minor findings recorded in SUMMARY.
+- 2026-10-09 — tasks 2.1, 2.2, 2.3 complete; commits 58d9a7e, 55bd643, 789e2b9 (path-limited commits in the shared worktree). All three reviews passed (spec pass, quality approved). The controller fixed the actionable Minor findings in 4ade695. `bash scripts/run-tests.sh` ALL GREEN (828 pytest passed). All plan tasks are done.
