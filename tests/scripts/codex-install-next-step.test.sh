@@ -116,6 +116,37 @@ t "clone mode prints the git clone && doctor command"
 if [ "$RC" -eq 0 ] && has_line "codex-install: then run: git clone --depth 1 --branch next-step-test file://$BARE agent-harness && python3 agent-harness/scripts/codex_harness_doctor.py --root $TARGET"; then pass
 else fail "rc=$RC: $OUT"; fi
 
+# 5. An exported CODEX_BIN (no --codex-bin) still reaches the deploy and the doctor.
+TARGET=$(new_dir)
+: > "$FAKE/codex.log"
+OUT=$(FAKE_CODEX_LOG="$FAKE/codex.log" CODEX_BIN="$FAKE/bin/codex" \
+  bash "$INSTALL" --source "$ROOT" --directory "$TARGET" --codex-home "$FAKE/home" --yes 2>&1)
+RC=$?
+t "an exported CODEX_BIN is honoured when --codex-bin is not given"
+if [ "$RC" -eq 0 ] && grep -qF 'doctor --json' "$FAKE/codex.log" && has_line 'codex-install: doctor mode: '; then pass
+else fail "rc=$RC: $OUT"; fi
+
+# 6. A target with a space: the printed command is shell-quoted and carries the Codex flags.
+SPACED=$(new_dir)/"my project"
+mkdir -p "$SPACED"
+run_install "$ROOT" "$SPACED" "$FAKE" --yes
+SPACED_P=$(cd "$SPACED" && pwd -P)
+t "the printed doctor command is shell-quoted and keeps --codex-bin/--codex-home"
+if [ "$RC" -eq 0 ] \
+   && has_line "--root $(printf '%q' "$SPACED_P") --codex-bin $(printf '%q' "$FAKE/bin/codex") --codex-home $(printf '%q' "$FAKE/home")"; then pass
+else fail "rc=$RC: $OUT"; fi
+
+# 7. A relative --codex-bin still reaches Codex from the doctor (which runs with cwd=<target>).
+TARGET=$(new_dir)
+: > "$FAKE/codex.log"
+OUT=$(cd "$FAKE" && FAKE_CODEX_LOG="$FAKE/codex.log" \
+  bash "$INSTALL" --source "$ROOT" --directory "$TARGET" \
+    --codex-bin ./bin/codex --codex-home "$FAKE/home" --yes 2>&1)
+RC=$?
+t "a relative --codex-bin is made absolute for the doctor"
+if [ "$RC" -eq 0 ] && grep -qF 'doctor --json' "$FAKE/codex.log"; then pass
+else fail "rc=$RC log=$(cat "$FAKE/codex.log"): $OUT"; fi
+
 # Checked last, so every install above (stub, dry-run, remove, clone) is covered.
 t "the installer makes no trust-changing Codex call and writes no Codex config"
 if ! grep -qE '(^| )(trust|--trust[^ ]*)( |$)|trust_level' "$FAKE/codex.log" \

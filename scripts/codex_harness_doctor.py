@@ -476,7 +476,8 @@ def diagnose(
         missing_hooks = sorted(
             hook
             for hook, candidates in HOOK_DEPENDENCIES.items()
-            if not any((root / path).is_file() for path in candidates)
+            # os.path.isfile never raises (an unreadable directory counts as absent), like [ -f ].
+            if not any(os.path.isfile(root / path) for path in candidates)
         )
         if missing_hooks:
             advisory.append("HOOK_DEPENDENCY_MISSING")

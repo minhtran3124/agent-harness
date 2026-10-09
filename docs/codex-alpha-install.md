@@ -66,9 +66,11 @@ official [AGENTS.md instruction hierarchy](https://learn.chatgpt.com/docs/agent-
 The installer does not directly edit `.codex/config.toml`, project trust, hook trust, project
 hooks, unrelated marketplaces/plugins, custom agents, or content outside its `AGENTS.md` markers.
 Marketplace and plugin registration go through the Codex CLI so Codex can merge its own state.
-Outside `.codex/`, it writes only two things: the `.gitignore` line described above, and the
+Outside `.codex/`, it writes three things: the managed section of the root `AGENTS.md` (and,
+on a conflict, `AGENTS.md.harness-incoming`), the `.gitignore` line described above, and the
 workflow files that `init-structure.sh` creates when they are missing (see "What the installer
-prints after an install" below). It never overwrites an existing file in either case.
+prints after an install" below). The `.gitignore` and `init-structure.sh` steps never overwrite
+an existing file; the `AGENTS.md` section follows the conflict rules described above.
 
 ### What the installer prints after an install
 
@@ -110,6 +112,9 @@ or `--remove`, and none of them can make the install fail.
    codex-install: doctor could not run (exit <n>); run it yourself (below)
    ```
 
+   If the doctor exits 0 but prints something other than a mode record, the line reads
+   `codex-install: doctor output was not a mode record; run it yourself (below)`.
+
 3. **Next step.** It tells you to trust the hooks and then re-run the doctor yourself:
 
    ```text
@@ -130,7 +135,10 @@ or `--remove`, and none of them can make the install fail.
    ```
 
    `<branch>` and `<repo-url>` are the values the install used (`CS_BRANCH`/`--branch` and
-   `CS_REPO_URL`).
+   `CS_REPO_URL`). In both forms every path is shell-quoted, so the line can be pasted even when a
+   path contains spaces, and the command ends with the same `--codex-bin` and `--codex-home` the
+   install was given (made absolute), so the follow-up checks the same Codex. An exported
+   `CODEX_BIN` is honoured when `--codex-bin` is not given.
 
 ## Always-on rules in `AGENTS.md`
 
@@ -273,7 +281,7 @@ status from the Codex app-server `hooks/list` request, which carries it in both 
 
 | Reason | What it means | How to clear it |
 |---|---|---|
-| `TRUST_UNKNOWN` | The doctor has no trust signal at all: `codex doctor --json` carries none, and the user-level Codex `config.toml` has no `trust_level` for this project. It is also reported whenever the doctor cannot get a `codex doctor --json` report. | Trust the hooks in Codex (see "Trust the hooks"). This reason cannot be cleared by the doctor today; it stays until the `hooks/list` follow-up lands. |
+| `TRUST_UNKNOWN` | The doctor has no trust signal at all: `codex doctor --json` carries none, and the doctor found no `trust_level` it could read safely for this project in the user-level Codex `config.toml`. That includes a config that does set `trust_level`, when the doctor declines to parse the file (a multi-line array or triple-quoted string anywhere in it) or the `[projects."…"]` key is not exactly the resolved project path (for example a symlinked path). It is also reported whenever the doctor cannot get a `codex doctor --json` report. | Trust the hooks in Codex (see "Trust the hooks"). This reason cannot be cleared by the doctor today; it stays until the `hooks/list` follow-up lands. |
 | `TRUST_CONFIG_ONLY` | The user-level Codex `config.toml` sets `trust_level = "trusted"` for this project. That is project approval, not proof that the hooks run, so the result stays `advisory`. | Make sure the hooks themselves are trusted in `/hooks`. The reason itself stays until the doctor can read per-hook trust. |
 | `HOOKS_UNTRUSTED` | The trust signal says untrusted: the config `trust_level` for this project is set to something other than `trusted`. | Review the project's trust in Codex itself, then trust the hooks. Do not edit or copy trust entries to make the doctor pass. |
 | `HOOK_DEPENDENCY_MISSING` | A hook cannot find the Python helper it needs. `commit-gate.sh` needs `verify_summary.py` in `scripts/`, `.claude/scripts/`, or `.codex/.agent-harness/payload/scripts/`; `session-knowledge.sh` needs `runtime_mode.py` in `runtime/`, `.claude/runtime/`, or `.codex/.agent-harness/payload/runtime/`. The record's `diagnostic_summary.hook_dependencies_missing` names the affected hooks, separated by commas. It is not checked when the install is missing or its manifest is invalid, because those already make the result `unsupported`. | Reinstall; that restores the payload under `.codex/.agent-harness/payload/`. |

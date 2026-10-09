@@ -1,8 +1,11 @@
 import json
+import os
 import re
 import shutil
 from datetime import date
 from pathlib import Path
+
+import pytest
 
 import codex_harness_doctor as doctor
 import render_codex_adapter
@@ -482,6 +485,31 @@ def test_hook_dependency_missing_is_not_reported_on_a_missing_install(tmp_path):
     missing.mkdir()
     result = _diagnose_root(missing)
     assert result["reason_codes"] == ["INSTALL_MISSING"]
+    assert "hook_dependencies_missing" not in result["diagnostic_summary"]
+
+
+@pytest.mark.skipif(os.geteuid() == 0, reason="root ignores directory permissions")
+def test_hook_dependency_missing_treats_an_unreadable_directory_as_absent(tmp_path):
+    target = installed_project(tmp_path)
+    (target / PAYLOAD / "scripts/verify_summary.py").unlink()
+    locked = target / ".claude"
+    locked.mkdir()
+    locked.chmod(0)
+    try:
+        result = _diagnose_root(target)
+    finally:
+        locked.chmod(0o755)
+    assert result["reason_codes"] == ["HOOK_DEPENDENCY_MISSING"]
+    assert result["diagnostic_summary"]["hook_dependencies_missing"] == "commit-gate.sh"
+
+
+def test_hook_dependency_missing_is_not_reported_on_an_invalid_manifest(tmp_path):
+    target = installed_project(tmp_path)
+    (target / PAYLOAD / "scripts/verify_summary.py").unlink()
+    (target / ".codex/.agent-harness/deployment-manifest.json").write_text("{not json")
+    result = _diagnose_root(target)
+    assert "MANIFEST_INVALID" in result["reason_codes"]
+    assert "HOOK_DEPENDENCY_MISSING" not in result["reason_codes"]
     assert "hook_dependencies_missing" not in result["diagnostic_summary"]
 
 
