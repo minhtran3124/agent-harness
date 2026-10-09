@@ -33,7 +33,8 @@ Claude Code loads it.
 
 - Codex builds its instruction chain once per run from `AGENTS.override.md` / `AGENTS.md` /
   fallback names, one file per directory, root → current directory, and **stops adding files once
-  the combined size reaches `project_doc_max_bytes` (32 KiB default)**. It has no import or
+  the combined size reaches `project_doc_max_bytes` (32 KiB default)**; the 0.147.0 source
+  truncates the file that crosses the budget at the byte (`research-brief.md`). It has no import or
   include mechanism ([Codex AGENTS.md docs](https://learn.chatgpt.com/docs/agent-configuration/agents-md),
   read 2026-10-09). Not yet observed against the pinned CLI 0.147.0 — recorded as unverified.
 - Claude Code reads `AGENTS.md` only when no `CLAUDE.md` exists (default); `@AGENTS.md` inside
@@ -87,7 +88,7 @@ deploy-codex-adapter.sh sync_project reads it ──► root AGENTS.md managed s
 
 ### Components
 
-1. **`render_agents_block(root, payload_rules)`** in `scripts/render_codex_adapter.py`. Deterministic
+1. **`render_agents_block(preamble, payload_rules_dir)`** in `scripts/render_codex_adapter.py`. Deterministic
    function returning the block text including both markers:
    - preamble: the source file `adapters/codex/project/harness-instructions.md` is **edited in
      place** to be runtime-neutral (title "Agent Harness"; no "for Codex"; `agents/PROJECT.md`

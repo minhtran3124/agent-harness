@@ -332,8 +332,8 @@ def _frontmatter(text: str) -> list[str] | None:
         return None
     try:
         return lines[1 : lines.index("---", 1)]
-    except ValueError:
-        return lines[1:]
+    except ValueError as exc:
+        raise AdapterError("frontmatter opened with `---` is never closed") from exc
 
 
 def _paths_globs(text: str) -> list[str] | None:
@@ -361,18 +361,25 @@ def _read_rule(path: Path) -> str:
         raise AdapterError(f"{path}: not UTF-8") from exc
 
 
+def _rule_globs(path: Path) -> list[str] | None:
+    try:
+        return _paths_globs(_read_rule(path))
+    except AdapterError as exc:
+        raise AdapterError(f"{path}: {exc}") from exc
+
+
 def always_on_rules(rules_dir: Path) -> list[str]:
     return [
         path.name
         for path in sorted(rules_dir.glob("*.md"))
-        if _paths_globs(_read_rule(path)) is None
+        if _rule_globs(path) is None
     ]
 
 
 def path_scoped_rules(rules_dir: Path) -> dict[str, list[str]]:
     scoped = {}
     for path in sorted(rules_dir.glob("*.md")):
-        globs = _paths_globs(_read_rule(path))
+        globs = _rule_globs(path)
         if globs is not None:
             scoped[path.name] = globs
     return scoped
@@ -387,6 +394,8 @@ def _strip_frontmatter(text: str) -> str:
 
 def render_agents_block(preamble: str, payload_rules_dir: Path) -> str:
     """The managed AGENTS.md block, both markers included, without a trailing newline."""
+    if AGENTS_BEGIN in preamble or AGENTS_END in preamble:
+        raise AdapterError("AGENTS.md preamble contains an AGENTS.md block marker")
     names = always_on_rules(payload_rules_dir)
     if not names:
         raise AdapterError("always-on rule set is empty; refusing to render AGENTS.md block")
@@ -466,9 +475,7 @@ def render(root: Path, output: Path) -> dict[str, Any]:
     _rewrite_markdown(payload / "rules", targets)
     _rewrite_markdown(payload / "templates", targets)
     _rewrite_markdown(payload / "skills", targets)
-    preamble = (root / "adapters/codex/project/harness-instructions.md").read_text(
-        encoding="utf-8"
-    )
+    preamble = _read_rule(root / "adapters/codex/project/harness-instructions.md")
     agents_block.write_text(
         render_agents_block(preamble, payload / "rules") + "\n", encoding="utf-8"
     )

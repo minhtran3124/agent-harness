@@ -196,10 +196,10 @@ printf 'LOCAL REVIEWER CUSTOMIZATION\n' > "$TARGET/.codex/agents/reviewer.toml"
 python3 - "$TARGET/AGENTS.md" <<'PY'
 import pathlib, sys
 path = pathlib.Path(sys.argv[1])
-path.write_text(path.read_text().replace(
+path.write_text(path.read_text(encoding="utf-8").replace(
     "# Behavioral Guidelines",
     "LOCAL MANAGED BLOCK EDIT",
-))
+), encoding="utf-8")
 PY
 run_install "$TARGET" "$FAKE" --yes
 t "edited generated agent is preserved with a reviewable incoming sidecar"
@@ -459,6 +459,7 @@ OUT=$(FAKE_CODEX_LOG="$UPGRADE_FAKE/codex.log" \
 RC=$?
 t "a missing rendered block file fails closed before any project write"
 if [ "$RC" -ne 0 ] \
+   && printf '%s\n' "$OUT" | grep -qF 'rendered AGENTS.md block is missing' \
    && [ "$(snapshot "$UPGRADE_TARGET")" = "$BEFORE_STUB" ] \
    && [ "$(shasum -a 256 "$UPGRADE_TARGET/AGENTS.md")" = "$AGENTS_BEFORE_STUB" ]; then pass
 else fail "rc=$RC or target changed: $OUT"; fi

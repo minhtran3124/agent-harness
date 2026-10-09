@@ -667,6 +667,22 @@ def test_agents_block_budget_marker_inside_rule_fails_render(tmp_path, marker):
         renderer.render(root, tmp_path / "rendered")
 
 
+def test_agents_block_budget_marker_inside_preamble_fails_render(tmp_path):
+    root = clone_render_root(tmp_path)
+    preamble = root / "adapters/codex/project/harness-instructions.md"
+    with preamble.open("a", encoding="utf-8") as handle:
+        handle.write(f"\n{END_MARKER}\n")
+    with pytest.raises(renderer.AdapterError, match="preamble"):
+        renderer.render(root, tmp_path / "rendered")
+
+
+def test_agents_block_budget_unclosed_rule_frontmatter_fails_render(tmp_path):
+    root = clone_render_root(tmp_path)
+    (root / "rules/zz-unclosed.md").write_text("---\n# Unclosed\n\nBody.\n", encoding="utf-8")
+    with pytest.raises(renderer.AdapterError, match="zz-unclosed.md.*never closed"):
+        renderer.render(root, tmp_path / "rendered")
+
+
 def test_agents_block_budget_empty_always_on_set_fails_render(tmp_path):
     root = clone_render_root(tmp_path)
     for path in (root / "rules").glob("*.md"):
@@ -741,6 +757,6 @@ def test_agents_block_output_stale_block_is_removed(tmp_path):
     root = clone_render_root(tmp_path)
     for path in (root / "rules").glob("*.md"):
         path.unlink()
-    with pytest.raises(renderer.AdapterError):
+    with pytest.raises(renderer.AdapterError, match="always-on"):
         renderer.render(root, output)
     assert not stale.exists()
