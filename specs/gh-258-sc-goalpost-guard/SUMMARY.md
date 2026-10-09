@@ -53,13 +53,31 @@ default is a `verify_summary.py` mode that needs a base ref, called where `--che
 
 ### Deviations
 
-- none
+- Decision change: design `DC1` reopens D1. A failure record now counts only at a commit where `SUMMARY.md` changed (new D8). Approved by the user in the correctness fix round.
 
 ### Verify
 
-| Check | Command | Exit | Notes |
-| --- | --- | --- | --- |
-| intake lane record | `python3 .claude/scripts/verify_summary.py --lane gh-258-sc-goalpost-guard` | 0 | |
+| Check | Command | Exit | Notes | Criterion |
+| --- | --- | --- | --- | --- |
+| intake lane record | `python3 .claude/scripts/verify_summary.py --lane gh-258-sc-goalpost-guard` | 0 | | |
+| --sc-history output and exits match the error-behavior table | `python3 -m pytest scripts/test_verify_summary_sc_history.py -q` | 0 | 36 passed (shared venv first on PATH locally; CI installs pytest on python3) | SC-1 |
+| ci-strict-gate SC-history section, old and new cases | `bash tests/scripts/ci-strict-gate.test.sh` | 0 | 40 passed: 35 existing + (j), (k), (l), (m) ×2 | SC-2 |
+| finish skill runs the history check | `bash tests/scripts/finishing-branch-contract.test.sh` | 0 | 6 passed | SC-3 |
+| existing verify_summary modes unchanged | `python3 -m pytest scripts/test_verify_summary.py -q` | 0 | 72 passed | SC-4 |
+| finish skill within the 600-word ceiling | `python3 scripts/audit_skill_prompts.py` | 0 | finish skill 560 words | SC-5 |
+
+### Context-Propagation Audit
+
+**Result: PASS.** Range `51eb4e0..HEAD`. Search surface: `grep -rln "sc-history\|SC_STABLE"` over `adapters/`, `agents/`, `skills/`, `scripts/render_skill_prompt.py` and `scripts/render_codex_adapter.py`. The only hit is `skills/finishing-a-development-branch/SKILL.md`. No isolated prompt or agent definition carries the new instruction.
+
+| Source | Consumer | Context | Delivery | Proof |
+| --- | --- | --- | --- | --- |
+| `finishing-a-development-branch/SKILL.md` step 3 (`--sc-history` clause) | finish controller | main | the skill body, loaded on invocation | `finishing-branch-contract.test.sh` (6 passed) |
+| same | consumer repo finish controller | main | deployed skill, with `scripts/` rewritten to `.claude/scripts/`; `verify_summary.py` already in `CONSUMER_SCRIPTS` | `consumer-subset.test.sh` (17 passed); `lint-doc-truth.sh` exit 0 |
+| `scripts/ci-strict-gate.sh` SC-history section | CI `strict-gate` job | CI (harness repo only) | runs on every PR | `ci-strict-gate.test.sh` (40 passed) |
+| isolated prompt contracts (unchanged) | reviewers, scorers | subagent | `CONTEXT_MATRIX` | `render_skill_prompt.py --check-all`: "all contracts present" |
+
+**Advisory:** the Codex plugin ships the skill text whole, so the `scripts/` call in the finish step depends on how the Codex alpha provides helpers. The other finish helpers already have this dependency, and it is unchanged here. Traceability only.
 
 ### Minor review findings
 

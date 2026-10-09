@@ -206,10 +206,15 @@ committed, or that the command's own content (a test file) was not weakened. Tie
 
 | ID | Decision | Consequence | Status |
 |---|---|---|---|
-| D1 | A failure record is a committed Verify row whose `Exit` differs from its SC's `Expected` at that commit, within `merge-base..HEAD` | no new artifact; failures never committed are not seen | settled |
+| D1 | A failure record is a committed Verify row whose `Exit` differs from its SC's `Expected` at that commit, within `merge-base..HEAD` | no new artifact; failures never committed are not seen | superseded by DC1 |
 | D2 | The check is a new `verify_summary.py --sc-history` mode, warn by default, `REQUIRE_SC_STABLE=1` blocks | no `hooks/` or manifest change | settled |
 | D3 | Removing a failed SC row counts as a goalpost move | the strongest weakening is not a loophole | settled |
 | D4 | A finding is acknowledged only by `SC-n` appearing as a whole token in HEAD `### Deviations` | the existing deviation record is the acknowledgement; no new field | settled |
 | D5 | The CI section runs for any slug whose PLAN or SUMMARY changed, before the early exit, and never exits 0 itself; rc 1 blocks only under `REQUIRE_SC_STABLE=1`, as in the item-3 section | specs-only PRs are checked; existing tiers are never bypassed; a crash never blocks in warn mode | settled |
 | D6 | `Expected` is compared by its `exit <n>` token only; `Check` by its whitespace-collapsed text | rewording the free text after the exit token is not a goalpost move | settled |
 | D7 | Git runs in the repository root resolved from the current directory, passed into the history function | tests reach a temporary repository; the deployed copy works from a consumer root | settled |
+| D8 | A failure record is a committed Verify row whose `Exit` differs from its SC's `Expected`, judged only at a commit where `SUMMARY.md` itself changed, against the PLAN at that commit, within `merge-base..HEAD` | a SUMMARY row left stale by a PLAN-only commit is not a failure; failures never committed are still not seen | settled |
+
+## Decision changes
+
+- DC1 — 2026-10-09 — reopens D1 — evidence: correctness review of `51eb4e0..dcdce4d` (enclosing-function finder; scorer 50, confirmed by reading `sc_history`). Under D1, a PLAN-only commit that changes `Expected` while an older SUMMARY row still names that SC records a "failure" no one committed. A later `Check` edit then produces a false `SC-GOALPOST`, which blocks under `REQUIRE_SC_STABLE=1`. This contradicts the error-table row "SC-n changed but never recorded as failing → none". The user chose to fix it ("Sửa #1–#6"). — new decision: D8
