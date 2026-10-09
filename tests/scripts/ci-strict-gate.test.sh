@@ -334,4 +334,29 @@ r=$(mkrepo); write_sc_plan "$r" "exit 0"; broken_verify "$r"; base_commit "$r"
 write_sc_plan "$r" "exit 1"; commit_run "$r" REQUIRE_SC_STABLE=1
 assert_rc_contains 1 "BLOCKED — the sc-history check errored"
 
+t "(n) REQUIRE_SC_STABLE=' 1' (surrounding whitespace) is read as 1, as verify_summary.py reads it"
+r=$(mkrepo); write_sc_plan "$r" "exit 0"; base_commit "$r"
+sc_goalpost_run "$r" "REQUIRE_SC_STABLE= 1"
+assert_rc_contains 1 "a failed Success Criterion was changed"
+
+# rename_spec_run <repo> [VAR=val ...] — on the branch, move specs/s to specs/t and run the gate
+rename_spec_run() {
+  local r="$1" base
+  base=$(git -C "$r" rev-parse HEAD)
+  git -C "$r" mv specs/s specs/t; git -C "$r" commit -qm rename
+  OUT=$(cd "$r" && env "${@:2}" bash "$GATE" "$base" 2>&1); RC=$?
+}
+RENAME_LINE="sc-history: spec directory renamed s -> t; failure history before the rename is not followed"
+
+t "(o) a branch renaming specs/s to specs/t → rename named, exit 0 in warn mode"
+r=$(mkrepo); write_sc_plan "$r" "exit 0"; write_sc_summary "$r" 1; base_commit "$r"
+rename_spec_run "$r"
+assert_rc_contains 0 "$RENAME_LINE"
+
+t "(o) the rename under REQUIRE_SC_STABLE=1 → exit 1, BLOCKED names the error"
+r=$(mkrepo); write_sc_plan "$r" "exit 0"; write_sc_summary "$r" 1; base_commit "$r"
+rename_spec_run "$r" REQUIRE_SC_STABLE=1
+assert_rc_contains 1 "BLOCKED — the sc-history check errored"
+case "$OUT" in *"$RENAME_LINE"*) pass ;; *) fail "rename line missing under REQUIRE: $OUT" ;; esac
+
 finish

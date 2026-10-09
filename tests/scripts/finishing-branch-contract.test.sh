@@ -23,4 +23,7 @@ grep -qF 'python3 scripts/check_open_questions.py --slug <slug>' "$ROOT/$SKILL" 
 t "finishing runs the SC history check at step 3"
 grep -qF 'python3 scripts/verify_summary.py --sc-history <slug> --base <base>' "$ROOT/$SKILL" && pass || fail "SC history check missing"
 
+t "finishing says the SC history check reads committed state only, and reports other exits"
+grep -qF 'reads committed state only' "$ROOT/$SKILL" && grep -qF 'any exit other than 0 or 1' "$ROOT/$SKILL" && pass || fail "committed-state or other-exit wording missing"
+
 finish

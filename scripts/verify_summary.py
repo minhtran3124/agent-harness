@@ -291,6 +291,25 @@ def _section(text: str, heading: str) -> str | None:
     return rest[: next_heading.start()] if next_heading else rest
 
 
+def _all_sections(text: str, heading: str) -> str | None:
+    """Join the bodies of EVERY level 1-3 heading starting with the word `heading`.
+
+    Unlike `_section` (first exact match only), this also matches a heading with
+    trailing words, such as `### Deviations (task 2)`. None when no heading matches.
+    """
+    starts = list(
+        re.finditer(rf"^#{{1,3}}\s+{re.escape(heading)}\b.*$", text, re.MULTILINE)
+    )
+    if not starts:
+        return None
+    bodies = []
+    for match in starts:
+        rest = text[match.end() :]
+        next_heading = re.search(r"^#{1,3}\s+\S", rest, re.MULTILINE)
+        bodies.append(rest[: next_heading.start()] if next_heading else rest)
+    return "\n".join(bodies)
+
+
 def _has_real_rollback(section: str) -> bool:
     """Return whether Rollback contains content beyond comments/template text."""
     in_comment = False
@@ -707,7 +726,8 @@ def sc_history(repo_root: Path, slug: str, base: str) -> tuple[list[str], str]:
 
     Verifies: no SC that a commit in merge-base(base, HEAD)..HEAD recorded as failing
         (a Verify row with `Criterion: SC-n` whose integer Exit differs from SC-n's
-        expected exit in that commit's PLAN) has had its Check or Expected exit token
+        expected exit in that commit's PLAN, judged only at a commit where SUMMARY.md
+        itself changed -- design D8) has had its Check or Expected exit token
         changed, or its row removed, at HEAD without HEAD `### Deviations` naming SC-n.
     Does not verify: that a Deviations entry justifies the change, failures never
         committed, or weakening inside the command's own test content.
@@ -738,10 +758,19 @@ def sc_history(repo_root: Path, slug: str, base: str) -> tuple[list[str], str]:
 
     # SC id -> (commit, Check cell, exit token) of its FIRST failure record.
     failures: dict[str, tuple[str, str, str]] = {}
+    # The first commit in the walk is compared with the merge base, so a branch that
+    # opens with a PLAN-only commit does not judge a SUMMARY inherited from the base.
+    previous_summary = _git_show(repo_root, mb, summary_path)
     for commit in commits:
         summary = _git_show(repo_root, commit, summary_path)
+        # D8: Verify rows are judged only where SUMMARY.md itself changed (or is new);
+        # a PLAN-only commit leaves the SUMMARY stale and records nothing.
+        summary_changed = summary is not None and summary != previous_summary
+        previous_summary = summary
+        if not summary_changed:
+            continue
         plan = _git_show(repo_root, commit, plan_path)
-        if summary is None or plan is None:
+        if plan is None:
             continue
         sc_checks = parse_sc_checks(plan)
         verify = _section(summary, "Verify")
@@ -757,7 +786,7 @@ def sc_history(repo_root: Path, slug: str, base: str) -> tuple[list[str], str]:
 
     head_exits = parse_sc_table(head_plan) if head_plan is not None else {}
     head_checks = parse_sc_checks(head_plan) if head_plan is not None else {}
-    deviations = _section(head_summary, "Deviations") if head_summary else None
+    deviations = _all_sections(head_summary, "Deviations") if head_summary else None
 
     findings: list[str] = []
     for sc_id, (commit, check, token) in failures.items():
@@ -793,6 +822,11 @@ def _run_sc_history(slug: str, base: str) -> int:
         print(
             f"error: not inside a git repository, or git cannot run\n{_SC_HISTORY_USAGE}",
             file=sys.stderr,
+        )
+        return 2
+    except Exception as exc:  # noqa: BLE001 — exit 1 must only ever mean a finding
+        print(
+            f"sc-history: unexpected error: {type(exc).__name__}: {exc}", file=sys.stderr
         )
         return 2
     for line in findings:

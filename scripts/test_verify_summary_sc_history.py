@@ -333,6 +333,52 @@ def test_sc1_not_matched_inside_sc12(repo):
     assert_finding(repo, sha, "changed")
 
 
+def test_plan_only_commit_records_no_failure(repo):
+    # D8 / DC1: a SUMMARY row left stale by a PLAN-only commit is not a failure.
+    commit(repo, plan=PLAN0, summary=PASSED)                                # A
+    commit(repo, plan=plan_text(("SC-1", "`pytest a`", "exit 1")))          # B: PLAN only
+    commit(repo, summary=summary_text(("tests", "pytest a", "1", "SC-1")))  # C
+    commit(repo, plan=plan_text(("SC-1", "`pytest b`", "exit 1")))          # D: Check edited
+    assert_clean(repo)
+
+
+def test_plan_only_first_commit_does_not_judge_inherited_summary(repo):
+    # The SUMMARY at the merge base is the "previous" content for the first commit.
+    base = commit(repo, plan=PLAN0, summary=PASSED)
+    commit(repo, plan=plan_text(("SC-1", "`pytest a`", "exit 1")))  # PLAN only
+    commit(repo, plan=plan_text(("SC-1", "`pytest b`", "exit 1")))  # Check edited
+    for proc in both(repo, base=base):
+        assert proc.returncode == 0, proc.stdout + proc.stderr
+        assert "SC-GOALPOST" not in proc.stdout
+
+
+def test_every_deviations_section_can_suppress(repo):
+    record_failure(repo)
+    commit(
+        repo,
+        plan=plan_text(("SC-1", "`pytest b`", "exit 0")),
+        summary=summary_text(
+            ("tests", "pytest a", "1", "SC-1"),
+            deviations="- Rule 3 — an unrelated import fix.",
+            extra="### Notes\n\nnone\n\n### Deviations\n\n- Rule 1 — SC-1 relaxed.",
+        ),
+    )
+    assert_clean(repo)
+
+
+def test_non_utf8_spec_file_exits_2_without_traceback(repo):
+    path = repo / SUMMARY
+    path.parent.mkdir(parents=True, exist_ok=True)
+    (repo / PLAN).write_text(PLAN0, encoding="utf-8")
+    path.write_bytes(FAILED.encode("utf-8") + b"\xff\n")
+    _git(repo, "add", "-A", ".")
+    _git(repo, "commit", "-q", "--no-verify", "-m", "bad bytes")
+    for proc in both(repo):
+        assert proc.returncode == 2, proc.stdout + proc.stderr
+        assert "Traceback" not in proc.stderr
+        assert "sc-history: unexpected error: UnicodeDecodeError" in proc.stderr
+
+
 # ---------------------------------------------------------------------------
 # Usage errors: exit 2 in both modes
 # ---------------------------------------------------------------------------

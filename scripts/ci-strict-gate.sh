@@ -162,12 +162,29 @@ fi
 # Verifies:        a PR touching a slug's PLAN.md or SUMMARY.md runs
 #                  `verify_summary.py --sc-history` for it, and, under REQUIRE_SC_STABLE=1,
 #                  fails when that check reports findings (exit 1) or errors (any other
-#                  non-zero exit).
+#                  non-zero exit), or when a spec directory was renamed on the branch
+#                  (its failure history is not followed across the rename).
 # Does not verify: that a Deviations entry justifies a change, failures never committed,
 #                  or weakening inside a command's own test content (provenance-tier).
 SC_FAILED=0   # the check reported goalpost findings under REQUIRE_SC_STABLE=1
 SC_ERRORED=0  # the check itself failed (crash, usage error, missing script)
 SC_REQUIRE="${REQUIRE_SC_STABLE:-0}"
+# Strip surrounding whitespace, as verify_summary.py does (`.strip() == "1"`); otherwise
+# ' 1' makes the script exit 1 for a finding while this gate reads it as warn mode.
+SC_REQUIRE="${SC_REQUIRE#"${SC_REQUIRE%%[![:space:]]*}"}"
+SC_REQUIRE="${SC_REQUIRE%"${SC_REQUIRE##*[![:space:]]}"}"
+# A spec directory renamed on the branch starts a new history under the new slug, so a
+# failure recorded under the old slug is not followed. Name it and count it as an error.
+SC_RENAMES=$(git -c core.quotePath=false diff --name-status -M "$BASE"...HEAD 2>/dev/null \
+  | awk -F'\t' '$1 ~ /^R/ && $2 ~ /^specs\/[^\/]+\/(PLAN|SUMMARY)\.md$/ \
+                 && $3 ~ /^specs\/[^\/]+\/(PLAN|SUMMARY)\.md$/ {
+                  split($2, a, "/"); split($3, b, "/")
+                  if (a[2] != b[2]) print a[2] " -> " b[2] }' | sort -u || true)
+while IFS= read -r rename; do
+  [ -z "$rename" ] && continue
+  echo "sc-history: spec directory renamed $rename; failure history before the rename is not followed" >&2
+  SC_ERRORED=1
+done <<< "$SC_RENAMES"
 SC_SLUGS=$(git -c core.quotePath=false diff --name-only "$BASE"...HEAD 2>/dev/null \
   | grep -E '^specs/[^/]+/(PLAN|SUMMARY)\.md$' | cut -d/ -f2 | sort -u || true)
 while IFS= read -r slug; do
