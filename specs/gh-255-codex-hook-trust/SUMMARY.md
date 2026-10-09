@@ -58,6 +58,9 @@ profile check was done separately and filed as #268. The branch stacks on
   the helper check is untested (only `INSTALL_MISSING` is); M2: the drift test compares
   candidate tuples, so a pure reorder in a hook fails it (order decides which helper a hook
   picks, so strictness is defensible).
+- Task 1.2 (`50f947f`): spec pass, quality approved. Minor M3: clone-mode next step printed a
+  literal `<dir>` (not paste-safe); M4: the no-trust-call assertion ran before the later
+  installs; M5: the could-not-run line hid the doctor's exit. All three fixed in `774e595`.
 
 ### Verify
 
