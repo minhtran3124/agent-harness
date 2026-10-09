@@ -60,4 +60,15 @@ deploy "$T"
 if grep -qF 'python3 .claude/scripts/verify_summary.py' "$T/.claude/skills/feature-intake/SKILL.md"; then pass
 else fail "harness doc inside a git-managed .claude/skills/ was skipped by the nested-checkout guard"; fi
 
+t "a consumer's nested checkout under .claude/skills/ keeps its tests (strip_skill_tests)"
+T=$(new_target)
+S="$T/.claude/skills/consumer-sub"
+mkdir -p "$S/tests" "$S/lib"
+printf 'gitdir: /nonexistent/.git/modules/consumer-sub\n' > "$S/.git"
+echo a > "$S/tests/test_a.py"; echo b > "$S/lib/test_b.py"
+deploy "$T"
+if [ -f "$S/tests/test_a.py" ] && [ -f "$S/lib/test_b.py" ] \
+   && [ ! -e "$T/.claude/skills/xia2/tests" ] && [ ! -e "$T/.claude/skills/visual-planner/test_render_plan.py" ]; then pass
+else fail "nested checkout lost its tests, or harness skill tests were not stripped"; fi
+
 finish

@@ -465,9 +465,15 @@ print(f"     stripped harness-only regions from {n} derived doc(s)")
 PYEOF
 }
 
+# A skill dir carrying its own .git is a consumer's nested checkout — source, not derived (#276);
+# harness-owned skill dirs are rm+cp'd fresh by copy_dir, so they never carry one.
 strip_skill_tests() {
-  rm -rf "$OUT"/skills/*/tests
-  find "$OUT/skills" -name 'test_*.py' -delete 2>/dev/null || true
+  local d
+  for d in "$OUT"/skills/*/; do
+    [ -e "${d}.git" ] || rm -rf "${d}tests"
+  done
+  find "$OUT/skills" -mindepth 1 -type d -exec sh -c '[ -e "$1/.git" ]' _ {} \; -prune \
+    -o -type f -name 'test_*.py' -exec rm -f {} + 2>/dev/null || true
 }
 render_agents()   {
   python3 scripts/render_agent_definitions.py \
