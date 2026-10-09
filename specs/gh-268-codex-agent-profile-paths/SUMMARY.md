@@ -47,6 +47,11 @@ is the scope. The branch stacks on `feat/gh-255-codex-hook-trust` (PR #271); the
 
 - none
 
+### Task review log
+
+- Task 1.1 (`b81095a`): spec pass, quality approved. Minor M1 (non-JSON `developer_instructions`
+  raised a bare `JSONDecodeError`) and M2 (the one-line guard was untested) fixed in `1608b6a`.
+
 ### Verify
 
 | Check | Command | Exit | Notes | Criterion |
