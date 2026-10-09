@@ -1,11 +1,43 @@
 ---
 slug: gh-268-codex-agent-profile-paths
-status: proposed
+status: active
 owner: Minh Tran
 created: 2026-10-09
 ---
 
 # Codex agent profiles cite paths a Codex install has
+
+<!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
+## At a glance
+
+**3 tasks · 3 waves · 5 files · 0/3 done**
+
+| Wave | Task | Title | Files | Done (acceptance) |
+|---|---|---|---|---|
+| 1 | 1.1 | Rewrite payload paths in rendered Codex profiles (wave 1) | scripts/render_codex_adapter.py, scripts/test_render_codex_adapter.py | The file's tests pass, including the new `agent_profile` group. |
+| 2 | 1.2 | Create agents/PROJECT.md on install (wave 2) | scripts/install-codex-harness.sh, tests/scripts/codex-install-next-step.test.sh | The suite exits 0; `bash -n scripts/install-codex-harness.sh` exits 0; `bash tes… |
+| 3 | 2.1 | Document agents/PROJECT.md and the profile paths (wave 3) | docs/codex-alpha-install.md | That check exits 0 and `bash scripts/lint-doc-truth.sh` exits 0. |
+
+```mermaid
+flowchart LR
+  subgraph W0[Wave 1]
+    T1_1["1.1 Rewrite payload paths in rendered Codex profiles (wave 1)"]
+  end
+  subgraph W1[Wave 2]
+    T1_2["1.2 Create agents/PROJECT.md on install (wave 2)"]
+  end
+  subgraph W2[Wave 3]
+    T2_1["2.1 Document agents/PROJECT.md and the profile paths (wave 3)"]
+  end
+  W0 --> W1
+  W1 --> W2
+```
+
+### Progress
+- [ ] 1.1 — Rewrite payload paths in rendered Codex profiles (wave 1)
+- [ ] 1.2 — Create agents/PROJECT.md on install (wave 2)
+- [ ] 2.1 — Document agents/PROJECT.md and the profile paths (wave 3)
+<!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
 
@@ -44,8 +76,8 @@ with #253's `rewrite_payload_paths`; the Codex installer creates `agents/PROJECT
 | SC-1 | Rendered `coding.toml` and `reviewer.toml` cite `.codex/.agent-harness/payload/rules/…` and no bare payload-eligible path remains in any profile's decoded instructions; `agents/PROJECT.md` and `agents/runtime-bindings.json` stay bare; every profile parses and two renders are byte-identical | `python3 -m pytest scripts/test_render_codex_adapter.py -q -k agent_profile` | exit 0 |
 | SC-2 | Existing renderer behaviour holds, including Claude rendering unchanged and the payload closure | `python3 -m pytest scripts/test_render_codex_adapter.py -q` | exit 0 |
 | SC-3 | Install creates `agents/PROJECT.md` from the template (its line printed), seeds it from `.claude/agents/PROJECT.md` when that exists (its line printed), leaves an existing one byte-identical (its line printed), prints the skip line for a source without the template, creates none under `--dry-run`, and `--remove` leaves it | `bash tests/scripts/codex-install-next-step.test.sh` | exit 0 |
-| SC-4 | Existing Codex install suites still pass | `bash tests/scripts/codex-install.test.sh` | exit 0 |
-| SC-5 | Docs list `agents/PROJECT.md` among the files written outside `.codex/` and quote its installer lines | `python3 -c "import pathlib,sys; t=pathlib.Path('docs/codex-alpha-install.md').read_text(encoding='utf-8'); sys.exit(0 if all(k in t for k in ('agents/PROJECT.md', 'four things', 'created agents/PROJECT.md from the template', 'created agents/PROJECT.md from .claude/agents/PROJECT.md', 'agents/PROJECT.md exists; left as is')) else 1)"` | exit 0 |
+| SC-4 | Existing Codex install suite still passes (the `.gitignore` suite is checked in Task 1.2's Done) | `bash tests/scripts/codex-install.test.sh` | exit 0 |
+| SC-5 | Docs list `agents/PROJECT.md` among the files written outside `.codex/` and quote its installer lines | `python3 -c "import pathlib,sys; t=pathlib.Path('docs/codex-alpha-install.md').read_text(encoding='utf-8'); sys.exit(0 if all(k in t for k in ('agents/PROJECT.md', 'four things', 'created agents/PROJECT.md from the template', 'created agents/PROJECT.md from .claude/agents/PROJECT.md', 'agents/PROJECT.md exists; left as is', 'four more steps', 'skipping agents/PROJECT.md')) else 1)"` | exit 0 |
 
 ## 4. Tasks
 
@@ -57,7 +89,9 @@ with #253's `rewrite_payload_paths`; the Codex installer creates `agents/PROJECT
   `.codex/.agent-harness/payload/rules/auto-correct-scope.md` and
   `.codex/.agent-harness/payload/rules/orchestration.md`; `reviewer.toml` contains
   `.codex/.agent-harness/payload/rules/behavior.md`; no profile's decoded instructions has a bare
-  payload-eligible path (reuse the closure test's eligible-set helper); `agents/PROJECT.md` and
+  payload-eligible path (reuse the closure test's eligible-set helper), and every
+  `PREFIXED_TOKEN` match in decoded instructions is a file under the payload (mirroring
+  `test_payload_closure_every_helper_reference_resolves`); `agents/PROJECT.md` and
   `agents/runtime-bindings.json` stay bare; every profile passes `parse_codex_profile`; two renders
   are byte-identical. Then implement per `design.md` §Components 1: in `render()`, once the
   payload targets are known, for each `agents_dir/*.toml` find the single
@@ -80,8 +114,8 @@ with #253's `rewrite_payload_paths`; the Codex installer creates `agents/PROJECT
   a target with an existing `agents/PROJECT.md` keeps it byte-identical and prints
   `codex-install: agents/PROJECT.md exists; left as is.`; the existing stub `--source` (no
   template) prints `codex-install: agents/PROJECT.template.md not in this source checkout; skipping agents/PROJECT.md.`
-  and creates no `agents/` directory; `--dry-run` creates no `agents/PROJECT.md`; `--remove`
-  leaves it. Tighten the existing init-structure skip assertion to its full line
+  and creates no `agents/` directory; `--dry-run` creates no `agents/PROJECT.md` (assert it before the install that follows on the
+  same target); `--remove` leaves it. Tighten the existing init-structure skip assertion to its full line
   (`codex-install: init-structure.sh not in this source checkout; skipping the workflow structure.`).
   Then implement per `design.md` §Components 2 inside the `GI_RUN` tail, after the
   `init-structure.sh` call and before the doctor: `[ -e ]` test on the target file;
@@ -96,7 +130,9 @@ with #253's `rewrite_payload_paths`; the Codex installer creates `agents/PROJECT
 ### Task 2.1 — Document agents/PROJECT.md and the profile paths (wave 3)
 
 - **Files:** docs/codex-alpha-install.md
-- **Action:** Change "Outside `.codex/`, it writes three things" to four, adding
+- **Action:** Change "After a successful install, the installer runs three more steps" to four
+  and insert the new step as step 2 (after workflow structure, before the doctor), renumbering
+  the rest. Change "Outside `.codex/`, it writes three things" to four, adding
   `agents/PROJECT.md` (created only when missing; seeded from `.claude/agents/PROJECT.md` when
   present, else from the template; user-owned, meant to be committed, left by `--remove`). In the
   installer-output section, quote the four `agents/PROJECT.md` lines exactly as implemented in
@@ -104,7 +140,7 @@ with #253's `rewrite_payload_paths`; the Codex installer creates `agents/PROJECT
   and test-runner agents read), and note that after the first seed the root copy and
   `.claude/agents/PROJECT.md` are separate files. Add one sentence that the rendered
   `.codex/agents/*.toml` profiles point at the payload copies of the rules they cite.
-- **Verify:** `python3 -c "import pathlib,sys; t=pathlib.Path('docs/codex-alpha-install.md').read_text(encoding='utf-8'); sys.exit(0 if all(k in t for k in ('agents/PROJECT.md', 'four things', 'created agents/PROJECT.md from the template', 'created agents/PROJECT.md from .claude/agents/PROJECT.md', 'agents/PROJECT.md exists; left as is')) else 1)"`
+- **Verify:** `python3 -c "import pathlib,sys; t=pathlib.Path('docs/codex-alpha-install.md').read_text(encoding='utf-8'); sys.exit(0 if all(k in t for k in ('agents/PROJECT.md', 'four things', 'created agents/PROJECT.md from the template', 'created agents/PROJECT.md from .claude/agents/PROJECT.md', 'agents/PROJECT.md exists; left as is', 'four more steps', 'skipping agents/PROJECT.md')) else 1)"`
 - **Done:** That check exits 0 and `bash scripts/lint-doc-truth.sh` exits 0.
 - **Criteria:** SC-5
 - **Interfaces:** Consumes the installer lines from Task 1.2; produces the updated `docs/codex-alpha-install.md`.
@@ -118,3 +154,4 @@ with #253's `rewrite_payload_paths`; the Codex installer creates `agents/PROJECT
 ## 6. Status Log
 
 - 2026-10-09 — plan written from the approved design and research brief.
+- 2026-10-09 — revised after plan review (doc step count, payload-existence half of the closure test, SC-5 tokens); plan review approved.
