@@ -1,6 +1,6 @@
 ---
 slug: gh-254-codex-agents-md-rules
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-10-09
 ---
@@ -202,3 +202,4 @@ chain at the byte once 32 KiB is reached; a root `AGENTS.override.md` hides `AGE
 - 2026-10-09 — plan written from the approved design and research brief.
 - 2026-10-09 — task 1.1 complete; commit 8048501. Review passed (spec pass, quality approved), five Minor findings recorded in SUMMARY.
 - 2026-10-09 — tasks 2.1, 2.2, 2.3 complete; commits 58d9a7e, 55bd643, 789e2b9 (path-limited commits in the shared worktree). All three reviews passed (spec pass, quality approved). The controller fixed the actionable Minor findings in 4ade695. `bash scripts/run-tests.sh` ALL GREEN (828 pytest passed). All plan tasks are done.
+- 2026-10-09 — Final review chain passed: context-propagation audit (PASS), correctness review (six angles, 10 locations scored independently, none at threshold; L1 and L3 fixed anyway in ae49a2f, fix re-review closed), and plan-blind intent review (0 gaps). `run-tests.sh` ALL GREEN and `ci-strict-gate.sh` OK against github/codex. Shipped to a PR against the `codex` branch, stacked on PR #259.
