@@ -156,6 +156,21 @@ def test_near_miss_heading_is_reported(tmp_path, heading):
     assert run(tmp_path, "--slug", "phase-6", strict=True).returncode == 1
 
 
+def test_prose_heading_mentioning_an_id_is_not_a_block(tmp_path):
+    text = "## Notes on OQ-1\n\nPlain prose.\n\n" + block(**{"closes-at": "phase-9"})
+    write(tmp_path, text)
+    result = run(tmp_path, "--slug", "phase-6", strict=True)
+    assert result.returncode == 0
+    assert result.stderr == ""
+
+
+def test_non_ascii_closes_at_is_well_formed(tmp_path):
+    write(tmp_path, block(**{"closes-at": "café-phase#2.1"}))
+    result = run(tmp_path, "--slug", "café-phase")
+    assert "malformed" not in result.stderr
+    assert "OQ-1: open question closes at café-phase" in result.stderr
+
+
 def test_register_with_byte_order_mark_is_read(tmp_path):
     write(tmp_path, b"\xef\xbb\xbf" + block().encode("utf-8"))
     result = run(tmp_path, "--slug", "phase-6")

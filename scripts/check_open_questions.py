@@ -33,10 +33,10 @@ from pathlib import Path
 
 # Any heading naming an OQ, at any depth or case, so a near miss (`### OQ-1`, `##OQ-1`,
 # `## oq-1`) is reported as malformed instead of silently dropping its block.
-HEADING = re.compile(r"^#+.*OQ-", re.IGNORECASE)
+HEADING = re.compile(r"^#+\s*OQ-", re.IGNORECASE)
 VALID_HEADING = re.compile(r"^##\s+OQ-([1-9][0-9]*)\s*$")
 FIELD = re.compile(r"^-\s+([a-z-]+):(.*)$")
-CLOSES_AT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*(#[A-Za-z0-9._-]+)?$")
+CLOSES_AT = re.compile(r"^[^\s#/]+(#[^\s#/]+)?$")
 REQUIRED = ("raised-by", "closes-at", "decided-by", "default-until-closed", "status")
 FIELDS = REQUIRED + ("closed-by",)
 DECIDED_BY = ("measurement", "owner")
