@@ -27,4 +27,14 @@ t "research-brief template carries the number-label rule"
 # label set and the load-bearing definition so the copy cannot drift to a subset unnoticed.
 has_all "$BRIEF" '`measured <YYYY-MM-DD> <source>`' '`prediction`' '`budget`' 'load-bearing' \
   && pass || fail "research-brief number-label rule incomplete"
+QTPL="templates/QUESTIONS.template.md"
+t "brainstorming points multi-phase specs at the open-questions register"
+has_all "$SKILL" 'In a multi-phase spec, record non-blocking unknowns in specs/<slug>/QUESTIONS.md from templates/QUESTIONS.template.md.' \
+  && pass || fail "brainstorming QUESTIONS.md sentence missing"
+t "questions template carries the blocking-question sentence and its six field keys"
+[ -f "$ROOT/$QTPL" ] && has_all "$QTPL" 'A question that blocks work does not belong here: write it in ESCALATIONS.md.' \
+  '## OQ-1' 'raised-by:' 'closes-at:' 'decided-by:' 'default-until-closed:' 'status:' 'closed-by:' \
+  && pass || fail "questions template anchor missing"
+t "specs README lists QUESTIONS.md"
+has_all "templates/structure/specs-README.md" '| `QUESTIONS.md` |' && pass || fail "specs README QUESTIONS.md row missing"
 finish
