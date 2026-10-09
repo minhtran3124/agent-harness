@@ -63,9 +63,74 @@ working directory. The adapter therefore writes its managed block, delimited by
 it does not create `.codex/AGENTS.md` or change project prose outside those markers. See the
 official [AGENTS.md instruction hierarchy](https://learn.chatgpt.com/docs/agent-configuration/agents-md).
 
-The installer does not directly edit `.codex/config.toml`, project trust, project hooks, unrelated
-marketplaces/plugins, custom agents, or content outside its `AGENTS.md` markers. Marketplace and
-plugin registration go through the Codex CLI so Codex can merge its own state.
+The installer does not directly edit `.codex/config.toml`, project trust, hook trust, project
+hooks, unrelated marketplaces/plugins, custom agents, or content outside its `AGENTS.md` markers.
+Marketplace and plugin registration go through the Codex CLI so Codex can merge its own state.
+Outside `.codex/`, it writes only two things: the `.gitignore` line described above, and the
+workflow files that `init-structure.sh` creates when they are missing (see "What the installer
+prints after an install" below). It never overwrites an existing file in either case.
+
+### What the installer prints after an install
+
+After a successful install, the installer runs three more steps. They never run under `--dry-run`
+or `--remove`, and none of them can make the install fail.
+
+1. **Workflow structure.** It runs `scripts/init-structure.sh` from the harness source against the
+   project. That script creates each of these files only if it is missing, and prints a `created`
+   or `exists` line for each one:
+
+   - `specs/README.md` and `specs/STATE.md`;
+   - `docs/solutions/README.md`, `docs/solutions/INDEX.md`, and
+     `docs/solutions/critical-patterns.md`; and
+   - `techstacks/README.md`.
+
+   The session-start hook loads `docs/solutions/critical-patterns.md` and a pointer to
+   `docs/solutions/INDEX.md`, and the workflow skills write their records under `specs/<slug>/`,
+   so these files give them somewhere to start. The files are yours: they are not recorded in the
+   deployment manifest, a reinstall never overwrites them, and `--remove` leaves them in place.
+   When the source checkout has no `init-structure.sh`, the installer prints this line and moves
+   on:
+
+   ```text
+   codex-install: init-structure.sh not in this source checkout; skipping the workflow structure.
+   ```
+
+2. **Doctor mode.** It runs the harness doctor once with `--no-persist`, so the install writes no
+   runtime-mode record, and prints the mode with its reasons (or `(none)` when there are none):
+
+   ```text
+   codex-install: doctor mode: <mode> (<reason>, <reason>, …)
+   ```
+
+   Expect `advisory` (or `unsupported` if a precondition is missing), never `enforced`: no Codex
+   release checked so far (0.147.0 and 0.162.0) reports hook trust to the doctor, so one of
+   `TRUST_UNKNOWN`, `TRUST_CONFIG_ONLY`, or `HOOKS_UNTRUSTED` is among the reasons (see "Trust the hooks" below). If the doctor cannot run, the installer prints this instead:
+
+   ```text
+   codex-install: doctor could not run (exit <n>); run it yourself (below)
+   ```
+
+3. **Next step.** It tells you to trust the hooks and then re-run the doctor yourself:
+
+   ```text
+   codex-install: next: start Codex in <target>, choose "Review hooks" (or run /hooks and press t on each Agent Harness hook); hooks do not run until trusted.
+   ```
+
+   With `--source`, the follow-up command uses that checkout:
+
+   ```text
+   codex-install: then run: python3 <source>/scripts/codex_harness_doctor.py --root <target>
+   ```
+
+   Without `--source`, the installer worked from a temporary clone that it deletes afterwards, so
+   the follow-up command clones the same repository and branch again:
+
+   ```text
+   codex-install: then run: git clone --depth 1 --branch <branch> <repo-url> agent-harness && python3 agent-harness/scripts/codex_harness_doctor.py --root <target>
+   ```
+
+   `<branch>` and `<repo-url>` are the values the install used (`CS_BRANCH`/`--branch` and
+   `CS_REPO_URL`).
 
 ## Always-on rules in `AGENTS.md`
 
@@ -146,6 +211,33 @@ When Claude Code loads both `.claude/rules/` (installed by the Claude harness) a
 block, the five always-on rules arrive twice, adding about 14 KB of duplicated context to each
 Claude session. This is documented rather than prevented.
 
+## Trust the hooks
+
+The plugin registers three hooks (`adapters/codex/plugin/hooks/hooks.json`): `commit-gate.sh` and
+`branch-isolation-guard.sh` before tool calls, and `session-knowledge.sh` at session start. Codex
+runs a hook only after you trust it. Until then, the commit gate and the branch-isolation guard do
+not block anything, and the session-start knowledge is not loaded. Installing the plugin does not
+trust its hooks, and the harness never edits trust configuration for you.
+
+The Codex 0.147.0 behaviour below was read from the Codex terminal UI source and its test
+snapshots (`codex-rs/tui/src` at `rust-v0.147.0`), not yet observed in a running session.
+
+When you start Codex in the project with new or changed hooks, it shows a "Hooks need review"
+prompt: "N hooks are new or changed. Hooks can run outside the sandbox after you trust them." It
+offers three choices:
+
+1. **Review hooks** — review each hook and trust it.
+2. **Trust all and continue** — trust every new or changed hook at once.
+3. **Continue without trusting (hooks won't run)** — start the session with the hooks inactive.
+
+If you skipped the prompt, or want to check later, run the `/hooks` command ("view and manage
+lifecycle hooks"). It lists each hook; an untrusted one shows "Trust: New hook - review required"
+and "Press t to trust". Select each Agent Harness hook and press `t`. A hook whose definition
+changes (for example after a reinstall that changes it) needs review again.
+
+After trusting the hooks, re-run the harness doctor (the command the installer printed, or the one
+in the next section).
+
 ## Review trust and runtime mode
 
 Review the project and user trust configuration in Codex itself; do not copy or delete trust entries
@@ -156,7 +248,8 @@ python3 scripts/codex_harness_doctor.py --root /path/to/project
 ```
 
 The wrapper consumes the redacted machine-readable `codex doctor --json` report and persists only a
-sanitized record under `.harness-state/codex-runtime.json`:
+sanitized record under `.harness-state/codex-runtime.json` (the installer's own run passes
+`--no-persist` and writes none):
 
 - `enforced` — every required feature, dependency, installed hash, matcher, discovery, trust, CLI,
   platform, and fresh evidence check passed for this local combination;
@@ -169,6 +262,31 @@ Re-run the doctor after an install/update, Codex CLI change, config/trust change
 conflict. A cached record is invalidated when its install, config, CLI, or trust fingerprint changes.
 The official [Codex CLI reference](https://developers.openai.com/codex/cli/reference) documents the
 underlying diagnostic command; the harness mode is a repository-owned conservative overlay.
+
+### Hook trust and hook dependency reasons
+
+`codex doctor --json` has no hook-trust field, in the pinned 0.147.0 evidence or in the Codex
+0.162.0 source. The harness doctor therefore cannot see whether you trusted the hooks, and it keeps
+the result at `advisory` even after you do. Trusting the hooks is still required for them to run;
+it just does not change the doctor's answer yet. A follow-up (#269) will read each hook's trust
+status from the Codex app-server `hooks/list` request, which carries it in both versions.
+
+| Reason | What it means | How to clear it |
+|---|---|---|
+| `TRUST_UNKNOWN` | The doctor has no trust signal at all: `codex doctor --json` carries none, and the user-level Codex `config.toml` has no `trust_level` for this project. It is also reported whenever the doctor cannot get a `codex doctor --json` report. | Trust the hooks in Codex (see "Trust the hooks"). This reason cannot be cleared by the doctor today; it stays until the `hooks/list` follow-up lands. |
+| `TRUST_CONFIG_ONLY` | The user-level Codex `config.toml` sets `trust_level = "trusted"` for this project. That is project approval, not proof that the hooks run, so the result stays `advisory`. | Make sure the hooks themselves are trusted in `/hooks`. The reason itself stays until the doctor can read per-hook trust. |
+| `HOOKS_UNTRUSTED` | The trust signal says untrusted: the config `trust_level` for this project is set to something other than `trusted`. | Review the project's trust in Codex itself, then trust the hooks. Do not edit or copy trust entries to make the doctor pass. |
+| `HOOK_DEPENDENCY_MISSING` | A hook cannot find the Python helper it needs. `commit-gate.sh` needs `verify_summary.py` in `scripts/`, `.claude/scripts/`, or `.codex/.agent-harness/payload/scripts/`; `session-knowledge.sh` needs `runtime_mode.py` in `runtime/`, `.claude/runtime/`, or `.codex/.agent-harness/payload/runtime/`. The record's `diagnostic_summary.hook_dependencies_missing` names the affected hooks, separated by commas. It is not checked when the install is missing or its manifest is invalid, because those already make the result `unsupported`. | Reinstall; that restores the payload under `.codex/.agent-harness/payload/`. |
+
+Two limits of the `HOOK_DEPENDENCY_MISSING` check:
+
+- The hooks look for their helpers in the directory Codex runs them in (`CLAUDE_PROJECT_DIR`, or
+  else the git top level), while the doctor looks under `--root`. When the project is a
+  subdirectory of a larger git repository, the two can differ, and the doctor can report the
+  helpers as present while the hooks cannot find them, or the other way round.
+- `session-knowledge.sh` also looks for `runtime/run_state.py`, but only at the repository root,
+  not in the payload. In a Codex install its active-runs section is therefore empty. The doctor
+  does not report this.
 
 ## Conflicts
 
@@ -201,7 +319,10 @@ bash scripts/install-codex-harness.sh --source . --directory /path/to/project --
 Edited managed files are preserved during removal because their current bytes are no longer purely
 generated state. User-owned configuration and custom agents remain untouched. `--remove` leaves
 the `.codex/.agent-harness/` line in `.gitignore` in place; the harness never deletes a
-`.gitignore` line, so delete it by hand if you no longer want it.
+`.gitignore` line, so delete it by hand if you no longer want it. The workflow files created by
+`init-structure.sh` (`specs/`, `docs/solutions/`, and `techstacks/` files listed under "What the
+installer prints after an install") are also left in place, because they are yours and are not in
+the deployment manifest.
 
 The deployer stages a complete render before changing target state. If marketplace or plugin
 registration fails, it removes the partial registration and restores the previous persistent
