@@ -36,7 +36,7 @@ from pathlib import Path
 HEADING = re.compile(r"^#+\s*OQ-", re.IGNORECASE)
 VALID_HEADING = re.compile(r"^##\s+OQ-([1-9][0-9]*)\s*$")
 FIELD = re.compile(r"^-\s+([a-z-]+):(.*)$")
-CLOSES_AT = re.compile(r"^[^\W_](?:[\w.-]*[^\W_])?(?:#[\w.-]*[^\W_])?$")
+CLOSES_AT = re.compile(r"^[^\W_](?:[\w.-]*[^\W_])?(?:#[^\W_](?:[\w.-]*[^\W_])?)?$")
 REQUIRED = ("raised-by", "closes-at", "decided-by", "default-until-closed", "status")
 FIELDS = REQUIRED + ("closed-by",)
 DECIDED_BY = ("measurement", "owner")

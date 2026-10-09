@@ -171,7 +171,9 @@ def test_non_ascii_closes_at_is_well_formed(tmp_path):
     assert "OQ-1: open question closes at café-phase" in result.stderr
 
 
-@pytest.mark.parametrize("value", ["`phase-6`", '"phase-6"', "phase-6.", "<slug>"])
+@pytest.mark.parametrize(
+    "value", ["`phase-6`", '"phase-6"', "phase-6.", "<slug>", "phase-6#.1", "phase 6", "a/b"]
+)
 def test_decorated_closes_at_is_malformed(tmp_path, value):
     write(tmp_path, block(**{"closes-at": value}))
     result = run(tmp_path, "--slug", "phase-6", strict=True)
