@@ -1,6 +1,6 @@
 ---
 slug: gh-268-codex-agent-profile-paths
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-10-09
 ---
@@ -156,3 +156,4 @@ with #253's `rewrite_payload_paths`; the Codex installer creates `agents/PROJECT
 - 2026-10-09 — plan written from the approved design and research brief.
 - 2026-10-09 — revised after plan review (doc step count, payload-existence half of the closure test, SC-5 tokens); plan review approved.
 - 2026-10-09 — tasks 1.1 (b81095a, Minor fixes 1608b6a), 1.2 (d925da2, Minor fix 126c794), 2.1 (43ec345, Minor fix 10903f6) complete; all reviews passed (spec pass, quality approved). `bash scripts/run-tests.sh` ALL GREEN (845 pytest passed). Context-propagation audit PASS. All plan tasks are done.
+- 2026-10-09 — Final review chain passed: context-propagation audit (PASS), correctness review (six angles, 6 locations scored independently, none at threshold; P/Q/R fixed in e7444b1, re-review follow-on fixed in 4e48452) and plan-blind intent review (0 blocking gaps). `run-tests.sh` ALL GREEN (845 pytest passed) and `ci-strict-gate.sh` OK against github/codex. Shipped to a PR against the `codex` branch, stacked on PR #271.
