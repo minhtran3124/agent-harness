@@ -10,7 +10,7 @@ created: 2026-10-09
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**3 tasks · 3 waves · 5 files · 0/3 done**
+**3 tasks · 3 waves · 5 files · 3/3 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -34,9 +34,9 @@ flowchart LR
 ```
 
 ### Progress
-- [ ] 1.1 — Rewrite payload paths in rendered Codex profiles (wave 1)
-- [ ] 1.2 — Create agents/PROJECT.md on install (wave 2)
-- [ ] 2.1 — Document agents/PROJECT.md and the profile paths (wave 3)
+- [x] 1.1 — Rewrite payload paths in rendered Codex profiles (wave 1)
+- [x] 1.2 — Create agents/PROJECT.md on install (wave 2)
+- [x] 2.1 — Document agents/PROJECT.md and the profile paths (wave 3)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -155,3 +155,4 @@ with #253's `rewrite_payload_paths`; the Codex installer creates `agents/PROJECT
 
 - 2026-10-09 — plan written from the approved design and research brief.
 - 2026-10-09 — revised after plan review (doc step count, payload-existence half of the closure test, SC-5 tokens); plan review approved.
+- 2026-10-09 — tasks 1.1 (b81095a, Minor fixes 1608b6a), 1.2 (d925da2, Minor fix 126c794), 2.1 (43ec345, Minor fix 10903f6) complete; all reviews passed (spec pass, quality approved). `bash scripts/run-tests.sh` ALL GREEN (845 pytest passed). Context-propagation audit PASS. All plan tasks are done.
