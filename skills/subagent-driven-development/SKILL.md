@@ -51,8 +51,8 @@ Ensure branch isolation, set the plan `status: active`, and transition the durab
 
 - Before dispatch, generate a deterministic brief using
   `skills/subagent-driven-development/scripts/task_brief.py`; pass its path to the implementer.
-  Fill `[LANE]` from SUMMARY. The implementer reports inline; before each task review
-  the controller writes it verbatim to `.harness-state/sdd/report-<task>.md`.
+  Fill `[LANE]` from SUMMARY. The implementer reports inline;
+  the controller writes it verbatim to `.harness-state/sdd/report-<task>.md` per `rules/orchestration.md`.
   Record non-`none` deltas in SUMMARY. Never paste history or report contents.
 - Generate one explicit `BASE..HEAD` package with `review_package.py` (BASE = the commit
   before this task's first commit, never the branch base); pass brief/report/package
