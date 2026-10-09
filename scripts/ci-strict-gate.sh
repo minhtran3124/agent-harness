@@ -29,9 +29,10 @@
 #   named reason on stderr) when no base is declared. It never falls back to a guess.
 set -uo pipefail
 
-# The base must RESOLVE, whoever supplied it. `git diff <bad-ref>...HEAD 2>/dev/null || true`
-# below swallows git's fatal, leaving DIFF empty, and an empty DIFF exits 0 — so an
-# unresolvable base makes this STRICT gate report success having inspected nothing.
+# The base must RESOLVE, whoever supplied it. The `git diff <base>...HEAD` below once ran
+# as `2>/dev/null || true`, swallowing git's fatal and leaving DIFF empty, and an empty
+# DIFF exits 0 — so an unresolvable base made this STRICT gate report success having
+# inspected nothing. The diff now fails closed on any git error; this check names the cause.
 #
 # Validating only the fallback is not enough, and was the bug an earlier draft of this
 # block shipped: CI always passes the base explicitly (harness-ci.yml:
@@ -79,7 +80,20 @@ HARD_GATE_RE='(^|/)settings\.json$|^hooks/|(^|/)\.claude/hooks/|render_plan\.py$
 WARN_GATE_RE='^scripts/'
 WARN_GATE_EXCLUDE_RE='^scripts/test_'
 
-DIFF=$(git diff --name-only "$BASE"...HEAD 2>/dev/null || true)
+# A failing diff must fail closed, not read as empty (#277): `"$BASE"...HEAD` needs a
+# merge base, so a base sharing no history with HEAD (an orphan branch, a shallow fetch)
+# makes git exit 128 — and an empty DIFF would pass having checked nothing.
+DIFF=$(git diff --name-only "$BASE"...HEAD 2>/dev/null); DIFF_RC=$?
+if [ "$DIFF_RC" -ne 0 ]; then
+  if ! git merge-base "$BASE" HEAD >/dev/null 2>&1; then
+    echo "ci-strict-gate: no merge base between '$BASE' and HEAD — refusing to report a" >&2
+    echo "  result. The PR diff cannot be computed, so nothing would be checked." >&2
+  else
+    echo "ci-strict-gate: git diff '$BASE'...HEAD failed (exit $DIFF_RC) — refusing to report a result:" >&2
+    git diff --name-only "$BASE"...HEAD 2>&1 >/dev/null | sed 's/^/  /' >&2
+  fi
+  exit 1
+fi
 [ -z "$DIFF" ] && exit 0
 
 # SHIPPING SECTION — open-question check for every phase that ships in this PR. It sits
