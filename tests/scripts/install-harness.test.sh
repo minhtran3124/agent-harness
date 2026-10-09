@@ -128,6 +128,7 @@ POLL_TRIES=20   # 0.1 s each — the 2 s budget for observing the detached pre-f
 SYS_UVX=$(env PATH=/usr/bin:/bin sh -c 'command -v uvx' || true)
 UV_LINE="uvx not found — installing uv from astral.sh for the code-review-graph MCP server (skip with --no-uv)"
 POST_WARN="Install uv before that restart"
+PREFETCH_LINE="Pre-fetching code-review-graph from PyPI in the background (skip with --no-uv)"
 
 # uv_home → fresh tmphome + fakebin (fakebin empty; rows add fakes)
 uv_home() { tmphome=$(target); fakebin=$(target); }
@@ -179,7 +180,7 @@ uv_home; fake_curl "exit 0"; stub_uvx "$fakebin"
 run_uv "$fakebin:/usr/bin:/bin"
 poll_log "$tmphome/uvx.log"
 if [ "$RC" -eq 0 ] && grep -qF "code-review-graph --version" "$tmphome/uvx.log" 2>/dev/null \
-   && [ ! -e "$tmphome/curl.log" ]; then pass
+   && echo "$OUT" | grep -qF "$PREFETCH_LINE" && [ ! -e "$tmphome/curl.log" ]; then pass
 else fail "rc=$RC uvx.log=[$(cat "$tmphome/uvx.log" 2>&1)] curl.log exists: $([ -e "$tmphome/curl.log" ] && echo yes || echo no)"; fi
 
 t "auto-install failure"
@@ -234,6 +235,31 @@ run_uv "$fakebin:/usr/bin:/bin" CS_NO_UV=1
 i=0; while [ "$i" -lt "$POLL_TRIES" ]; do sleep 0.1; i=$((i+1)); done   # full window
 if [ "$RC" -eq 0 ] && [ ! -s "$tmphome/uvx.log" ] && [ ! -e "$tmphome/curl.log" ]; then pass
 else fail "rc=$RC uvx.log=[$(cat "$tmphome/uvx.log" 2>&1)]"; fi
+
+t "declined re-sync installs nothing"
+if [ -n "$SYS_UVX" ]; then skip "system uvx at $SYS_UVX"
+elif ! command -v python3 >/dev/null 2>&1; then skip "python3 needed to sever the controlling terminal"
+else
+  uv_home; fake_curl "exit 0"; tgt=$(target)
+  bash "$INSTALL" --source "$ROOT" --yes -d "$tgt" </dev/null >/dev/null 2>&1   # existing harness (CS_NO_UV=1)
+  # Re-run without --yes and with no controlling terminal (as install-tty-gate.test.sh does),
+  # so the existing-harness gate aborts; uv must not have been installed by then.
+  OUT=$(python3 - "$tmphome" "$fakebin:/usr/bin:/bin" "$INSTALL" "$ROOT" "$tgt" <<'PYEOF'
+import subprocess, sys
+home, path, install, root, tgt = sys.argv[1:]
+p = subprocess.run(["env", "-u", "CS_NO_UV", "HOME=" + home, "PATH=" + path,
+                    "bash", install, "--source", root, "-d", tgt],
+                   start_new_session=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                   stderr=subprocess.STDOUT, timeout=120, text=True)
+print(p.stdout, end="")
+print("INSTALL_RC=%d" % p.returncode)
+PYEOF
+)
+  RC=$(printf '%s\n' "$OUT" | sed -n 's/^INSTALL_RC=\([0-9]*\)$/\1/p' | tail -1)
+  if [ "${RC:-0}" -ne 0 ] && echo "$OUT" | grep -qF "Re-run with --yes" \
+     && [ ! -e "$tmphome/curl.log" ]; then pass
+  else fail "rc=$RC curl.log exists: $([ -e "$tmphome/curl.log" ] && echo yes || echo no)"; fi
+fi
 
 t "--help documents --no-uv"
 OUT=$(bash "$INSTALL" --help 2>&1); RC=$?

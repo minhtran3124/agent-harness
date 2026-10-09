@@ -162,14 +162,6 @@ ensure_uv() {
   fi
   warn "uv install failed — install manually: $UV_CMD"
 }
-ensure_uv
-# Warm the uvx cache so the first MCP launch is fast. Detached and never awaited; all three
-# redirects matter (no stdin from a `curl | bash` pipe, no held stdout/stderr for a `$(…)` caller).
-if [ "$UVX_MISSING" -eq 0 ] && [ "$DRY_RUN" -eq 0 ] && [ "$NO_UV" != 1 ]; then
-  uvx code-review-graph --version </dev/null >/dev/null 2>&1 &
-  info "Pre-fetching code-review-graph in the background"
-fi
-
 # ---------- resolve source ----------
 CLEANUP=""
 if [ -n "$SOURCE_DIR" ]; then
@@ -219,6 +211,15 @@ if [ ! -f "$TARGET_DIR/scripts/install-harness.sh" ]; then
     warn "Found root-level harness files from an older install layout: ${LEGACY[*]}"
     info "They are no longer used (the harness lives in .claude/) and were left untouched — remove them manually if they are not your project's own files."
   fi
+fi
+
+# ---------- ensure uv (after every abort gate, so a declined run installs nothing) ----------
+ensure_uv
+# Warm the uvx cache so the first MCP launch is fast. Detached and never awaited; all three
+# redirects matter (no stdin from a `curl | bash` pipe, no held stdout/stderr for a `$(…)` caller).
+if [ "$UVX_MISSING" -eq 0 ] && [ "$DRY_RUN" -eq 0 ] && [ "$NO_UV" != 1 ]; then
+  info "Pre-fetching code-review-graph from PyPI in the background (skip with --no-uv)"
+  uvx code-review-graph --version </dev/null >/dev/null 2>&1 &
 fi
 
 # ---------- wire MCP config (.mcp.json at target root; merge, never overwrite) ----------
