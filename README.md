@@ -86,8 +86,8 @@ curl -fsSL "https://raw.githubusercontent.com/minhtran3124/agent-harness/main/sc
 
 Everything the harness needs lives in a gitignored `.claude/` (skills, agents, hooks, rules, templates, runtime, settings). At the project root it touches only two things: `.mcp.json` (wires the code-review-graph MCP server — merged into your existing one if present; Claude Code only reads this file at the root), and the workflow's structural dirs (`specs/`, `docs/solutions/`), scaffolded **create-if-missing**. The installer never overwrites or deletes anything at your root — it only adds structural files that are absent. **To update, just re-run the one-liner** (idempotent; `.claude/` is merge-synced, non-harness entries and locally-generated files kept; a protected file that differs from incoming is reported via a `<file>.harness-incoming` sidecar rather than overwritten).
 
-Needs `git` + [jq](https://jqlang.github.io/jq/); [uv](https://docs.astral.sh/uv/) is strongly recommended — the code-review-graph MCP server launches through `uvx`, and the installer warns when it's missing.
-Flags: `--directory <path>` · `--branch <name>` · `--source <local checkout>` · `--keep-sources` · `--dry-run` · `--overwrite-conflicts` (replace protected files with the incoming copy; `--force`/`--yes` keep local files instead of overwriting them).
+Needs `git` + [jq](https://jqlang.github.io/jq/); the code-review-graph MCP server launches through [uv](https://docs.astral.sh/uv/)'s `uvx`. When `uvx` is missing, the installer prints one warning line, installs uv from astral.sh, and pre-fetches code-review-graph in the background; skip both with `--no-uv` or `CS_NO_UV=1` (a failed uv install never fails the installer). uv's installer adds its bin dir to your shell profiles, so open a new shell before restarting Claude Code.
+Flags: `--directory <path>` · `--branch <name>` · `--source <local checkout>` · `--keep-sources` · `--dry-run` · `--no-uv` · `--overwrite-conflicts` (replace protected files with the incoming copy; `--force`/`--yes` keep local files instead of overwriting them).
 
 Then **restart Claude Code** so it loads the skills, agents, and hooks.
 
@@ -108,7 +108,7 @@ First run installs; any later run updates (idempotent). Re-run after editing any
 ### MCP servers
 
 This repo wires the [code-review-graph](https://pypi.org/project/code-review-graph/) MCP server in [.mcp.json](.mcp.json) — and `install-harness.sh` wires the same server into a consuming project's root `.mcp.json` automatically (creating it, or merging the entry into an existing one). It launches through [uv](https://docs.astral.sh/uv/)'s `uvx` runner, so there's **no manual `pip install`** — `uvx` fetches and runs it on demand.
-You just need `uv` (which provides `uvx`):
+`install-harness.sh` installs `uv` (which provides `uvx`) automatically when it's missing. If you skipped that with `--no-uv` / `CS_NO_UV=1`, install it by hand:
 
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh   # installs uv + uvx
