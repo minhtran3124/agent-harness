@@ -42,12 +42,12 @@ The adapter owns only paths recorded in
 The payload is a derived copy of `rules/`, non-test `runtime/`, `templates/`, the consumer helper
 scripts, `harness-manifest.json`, and each shipped skill's helper files. Installed plugin skills
 point their helper paths at it, and `commit-gate.sh` and `session-knowledge.sh` look there for
-`verify_summary.py` and `runtime_mode.py`. The rendered `.codex/agents/*.toml` profiles point at
-the payload copies of the rules they cite (for example
-`.codex/.agent-harness/payload/rules/orchestration.md`), while their reference to
-`agents/PROJECT.md` stays a path in the project itself. Because the manifest lists it, a reinstall refreshes it
-and it follows the same conflict, prune, and `--remove` rules as the other managed files. Do not
-edit it in place.
+`verify_summary.py` and `runtime_mode.py`. Because the manifest lists the payload, a reinstall
+refreshes it and it follows the same conflict, prune, and `--remove` rules as the other managed
+files. Do not edit it in place. The rendered `.codex/agents/*.toml` profiles point at the payload
+copies of the rules they cite (for example `.codex/.agent-harness/payload/rules/orchestration.md`),
+while their reference to `agents/PROJECT.md` stays a path in the project itself (see "Project
+profile" below).
 
 The installer also appends `.codex/.agent-harness/` to the project's `.gitignore`, so the
 payload's and plugin's untracked `.py` files do not trip the strict-profile commit gate. The step
@@ -73,7 +73,8 @@ Outside `.codex/`, it writes four things: the managed section of the root `AGENT
 on a conflict, `AGENTS.md.harness-incoming`), the `.gitignore` line described above, the
 workflow files that `init-structure.sh` creates when they are missing, and `agents/PROJECT.md`
 when it is missing (see "What the installer prints after an install" below). The `.gitignore`,
-`init-structure.sh`, and `agents/PROJECT.md` steps never overwrite an existing file; the `AGENTS.md` section follows the conflict rules described above.
+`init-structure.sh`, and `agents/PROJECT.md` steps never overwrite an existing file; the
+`AGENTS.md` section follows the conflict rules described above.
 
 ### What the installer prints after an install
 
