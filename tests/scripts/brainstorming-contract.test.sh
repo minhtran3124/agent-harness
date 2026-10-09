@@ -27,6 +27,30 @@ t "research-brief template carries the number-label rule"
 # label set and the load-bearing definition so the copy cannot drift to a subset unnoticed.
 has_all "$BRIEF" '`measured <YYYY-MM-DD> <source>`' '`prediction`' '`budget`' 'load-bearing' \
   && pass || fail "research-brief number-label rule incomplete"
+t "design template carries the provenance skeleton and optional sections"
+has_all "$TPL" '# <slug> — Design' 'Written <YYYY-MM-DD>. Pins:' 'Revised <YYYY-MM-DD>. Pins:' \
+  '+ uncommitted' '## Reading path' '## Worked trace' && pass || fail "design template provenance anchor missing"
+t "research-brief template carries the provenance skeleton"
+has_all "$BRIEF" '# <slug> — Research Brief' 'Written <YYYY-MM-DD>. Pins:' 'Revised <YYYY-MM-DD>. Pins:' \
+  '+ uncommitted' && pass || fail "research-brief template provenance anchor missing"
+t "design reviewer checks the provenance header and optional sections"
+has_all "$REVIEWER" 'Provenance header' 'Optional sections' '+ uncommitted' \
+  && pass || fail "reviewer provenance rows missing"
+# skeleton_written_first <file> <title>: inside a fenced block, the first non-blank line after
+# the skeleton title line must start with the Written header. Header text outside the fence
+# cannot satisfy it.
+skeleton_written_first() {
+  awk -v title="$2" '
+    /^```/ { infence = !infence; if (!infence) seen = 0; next }
+    infence && seen && NF { ok = (index($0, "Written <YYYY-MM-DD>. Pins:") == 1); exit }
+    infence && index($0, title) == 1 { seen = 1 }
+    END { exit !ok }
+  ' "$ROOT/$1"
+}
+t "design template skeleton: Written line is the first non-blank line after the title"
+skeleton_written_first "$TPL" '# <slug> — Design' && pass || fail "design skeleton header out of position"
+t "research-brief template skeleton: Written line is the first non-blank line after the title"
+skeleton_written_first "$BRIEF" '# <slug> — Research Brief' && pass || fail "research-brief skeleton header out of position"
 QTPL="templates/QUESTIONS.template.md"
 t "brainstorming points multi-phase specs at the open-questions register"
 has_all "$SKILL" 'In a multi-phase spec, record non-blocking unknowns in specs/<slug>/QUESTIONS.md from templates/QUESTIONS.template.md.' \
