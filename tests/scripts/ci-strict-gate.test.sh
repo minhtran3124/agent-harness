@@ -277,4 +277,107 @@ base_commit "$r"
 printf -- '---\nstatus: shipped\n---\n# Plan\n' > "$r/specs/café-phase/PLAN.md"; commit_run "$r"
 assert_rc_contains 0 "café-phase ships in this diff"
 
+# ── SC-history section: a failed Success Criterion whose goalpost moved ──────
+# The base carries specs/s/PLAN.md with SC-1 expecting exit 0. A specs-only branch
+# never reaches the tier logic, so the section runs before it, like the shipping one.
+
+# write_sc_plan <repo> <expected> — specs/s/PLAN.md with one SC row
+write_sc_plan() {
+  mkdir -p "$1/specs/s"
+  printf '%s\n' '# Plan' '' '| ID | Criterion | Check | Expected |' '| --- | --- | --- | --- |' \
+    "| SC-1 | it works | \`test 1 = 1\` | $2 |" > "$1/specs/s/PLAN.md"
+}
+
+# write_sc_summary <repo> <exit> — specs/s/SUMMARY.md with one Verify row mapped to SC-1
+write_sc_summary() {
+  mkdir -p "$1/specs/s"
+  printf '%s\n' '# s' 'Lane: high-risk' '' '### Verify' '' \
+    '| Check | Command | Exit | Notes | Criterion |' '| --- | --- | --- | --- | --- |' \
+    "| ok | test 1 = 1 | $2 | n | SC-1 |" > "$1/specs/s/SUMMARY.md"
+}
+
+# sc_goalpost_run <repo> [VAR=val ...] — on the branch, record SC-1 failing (exit 1), then
+# move SC-1's Expected to exit 1 in a second commit, and run the gate vs the base
+sc_goalpost_run() {
+  local r="$1" base
+  base=$(git -C "$r" rev-parse HEAD)
+  write_sc_summary "$r" 1; git -C "$r" add -A >/dev/null 2>&1; git -C "$r" commit -qm fail
+  write_sc_plan "$r" "exit 1"; git -C "$r" add -A >/dev/null 2>&1; git -C "$r" commit -qm move
+  OUT=$(cd "$r" && env "${@:2}" bash "$GATE" "$base" 2>&1); RC=$?
+}
+
+t "(j) specs-only branch moves a failed SC's Expected → SC-GOALPOST printed, exit 0"
+r=$(mkrepo); write_sc_plan "$r" "exit 0"; base_commit "$r"
+sc_goalpost_run "$r"
+assert_rc_contains 0 "SC-GOALPOST [SC-1]"
+
+t "(k) case (j) under REQUIRE_SC_STABLE=1 → exit 1, BLOCKED names the changed SC"
+r=$(mkrepo); write_sc_plan "$r" "exit 0"; base_commit "$r"
+sc_goalpost_run "$r" REQUIRE_SC_STABLE=1
+assert_rc_contains 1 "a failed Success Criterion was changed"
+
+t "(l) SC-1's Expected changes with no failing row → no finding, exit 0"
+r=$(mkrepo); write_sc_plan "$r" "exit 0"; base_commit "$r"
+write_sc_plan "$r" "exit 1"; commit_run "$r" REQUIRE_SC_STABLE=1
+assert_rc_not_contains 0 "SC-GOALPOST"
+
+# broken_verify <repo> — replace the copied verify_summary.py with a stub that exits 2
+broken_verify() { printf '%s\n' 'raise SystemExit(2)' > "$1/scripts/verify_summary.py"; }
+
+t "(m) the sc-history check exits 2 → error named, exit 0 in warn mode"
+r=$(mkrepo); write_sc_plan "$r" "exit 0"; broken_verify "$r"; base_commit "$r"
+write_sc_plan "$r" "exit 1"; commit_run "$r"
+assert_rc_contains 0 "sc-history check errored for s (exit 2)"
+
+t "(m) the sc-history check exits 2 under REQUIRE_SC_STABLE=1 → exit 1, BLOCKED names the error"
+r=$(mkrepo); write_sc_plan "$r" "exit 0"; broken_verify "$r"; base_commit "$r"
+write_sc_plan "$r" "exit 1"; commit_run "$r" REQUIRE_SC_STABLE=1
+assert_rc_contains 1 "BLOCKED — the sc-history check errored"
+
+t "(n) REQUIRE_SC_STABLE=' 1' (surrounding whitespace) is read as 1, as verify_summary.py reads it"
+r=$(mkrepo); write_sc_plan "$r" "exit 0"; base_commit "$r"
+sc_goalpost_run "$r" "REQUIRE_SC_STABLE= 1"
+assert_rc_contains 1 "a failed Success Criterion was changed"
+
+# rename_spec_run <repo> [VAR=val ...] — on the branch, move specs/s to specs/t and run the gate
+rename_spec_run() {
+  local r="$1" base
+  base=$(git -C "$r" rev-parse HEAD)
+  git -C "$r" mv specs/s specs/t; git -C "$r" commit -qm rename
+  OUT=$(cd "$r" && env "${@:2}" bash "$GATE" "$base" 2>&1); RC=$?
+}
+RENAME_LINE="sc-history: spec directory renamed s -> t; failure history before the rename is not followed"
+
+t "(o) a branch renaming specs/s to specs/t → rename named, exit 0 in warn mode"
+r=$(mkrepo); write_sc_plan "$r" "exit 0"; write_sc_summary "$r" 1; base_commit "$r"
+rename_spec_run "$r"
+assert_rc_contains 0 "$RENAME_LINE"
+
+t "(o) the rename under REQUIRE_SC_STABLE=1 → exit 1, BLOCKED names the error"
+r=$(mkrepo); write_sc_plan "$r" "exit 0"; write_sc_summary "$r" 1; base_commit "$r"
+rename_spec_run "$r" REQUIRE_SC_STABLE=1
+assert_rc_contains 1 "BLOCKED — the sc-history check errored"
+case "$OUT" in *"$RENAME_LINE"*) pass ;; *) fail "rename line missing under REQUIRE: $OUT" ;; esac
+
+# create_then_rename_run <repo> [VAR=val ...] — on the branch, create specs/s (PLAN + SUMMARY)
+# in one commit and rename it to specs/t in a later one. The net base...HEAD diff shows only
+# additions under specs/t, so the rename is visible only per commit.
+create_then_rename_run() {
+  local r="$1" base
+  base=$(git -C "$r" rev-parse HEAD)
+  write_sc_plan "$r" "exit 0"; write_sc_summary "$r" 1
+  git -C "$r" add -A >/dev/null 2>&1; git -C "$r" commit -qm create
+  git -C "$r" mv specs/s specs/t; git -C "$r" commit -qm rename
+  OUT=$(cd "$r" && env "${@:2}" bash "$GATE" "$base" 2>&1); RC=$?
+}
+
+t "(p) a branch that creates specs/s and later renames it to specs/t → rename named, exit 0 in warn mode"
+r=$(mkrepo); create_then_rename_run "$r"
+assert_rc_contains 0 "$RENAME_LINE"
+
+t "(p) the create-then-rename under REQUIRE_SC_STABLE=1 → exit 1, BLOCKED names the error"
+r=$(mkrepo); create_then_rename_run "$r" REQUIRE_SC_STABLE=1
+assert_rc_contains 1 "BLOCKED — the sc-history check errored"
+case "$OUT" in *"$RENAME_LINE"*) pass ;; *) fail "rename line missing under REQUIRE: $OUT" ;; esac
+
 finish

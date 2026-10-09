@@ -154,6 +154,69 @@ if [ "$OQ_REQUIRE" = "1" ]; then
   [ "$OQ_BLOCK" = "1" ] && exit 1
 fi
 
+# SC-HISTORY SECTION — goalpost check for every slug whose PLAN.md or SUMMARY.md is in
+# the diff. Like the shipping section, it sits BEFORE the tier selection so a specs-only
+# PR is still checked, and it never exits 0 itself. A slug whose spec directory is gone
+# at HEAD is skipped by verify_summary.py itself (exit 0, skip note).
+#
+# Verifies:        a PR touching a slug's PLAN.md or SUMMARY.md runs
+#                  `verify_summary.py --sc-history` for it, and, under REQUIRE_SC_STABLE=1,
+#                  fails when that check reports findings (exit 1) or errors (any other
+#                  non-zero exit), or when a spec directory was renamed on the branch
+#                  (its failure history is not followed across the rename).
+# Does not verify: that a Deviations entry justifies a change, failures never committed,
+#                  or weakening inside a command's own test content (provenance-tier).
+SC_FAILED=0   # the check reported goalpost findings under REQUIRE_SC_STABLE=1
+SC_ERRORED=0  # the check itself failed (crash, usage error, missing script)
+SC_REQUIRE="${REQUIRE_SC_STABLE:-0}"
+# Strip surrounding whitespace, as verify_summary.py does (`.strip() == "1"`); otherwise
+# ' 1' makes the script exit 1 for a finding while this gate reads it as warn mode.
+SC_REQUIRE="${SC_REQUIRE#"${SC_REQUIRE%%[![:space:]]*}"}"
+SC_REQUIRE="${SC_REQUIRE%"${SC_REQUIRE##*[![:space:]]}"}"
+# A spec directory renamed on the branch starts a new history under the new slug, so a
+# failure recorded under the old slug is not followed. Name it and count it as an error.
+# Renames are read per commit, not from the net diff: a directory created and then renamed
+# on the branch shows in the net diff only as additions under the new slug.
+SC_RENAMES=""
+[ -n "$MERGE_BASE" ] && SC_RENAMES=$(git -c core.quotePath=false log --format= --name-status -M \
+  "$MERGE_BASE"..HEAD -- specs/ 2>/dev/null \
+  | awk -F'\t' '$1 ~ /^R/ && $2 ~ /^specs\/[^\/]+\/(PLAN|SUMMARY)\.md$/ \
+                 && $3 ~ /^specs\/[^\/]+\/(PLAN|SUMMARY)\.md$/ {
+                  split($2, a, "/"); split($3, b, "/")
+                  if (a[2] != b[2]) print a[2] " -> " b[2] }' | sort -u || true)
+while IFS= read -r rename; do
+  [ -z "$rename" ] && continue
+  echo "sc-history: spec directory renamed $rename; failure history before the rename is not followed" >&2
+  SC_ERRORED=1
+done <<< "$SC_RENAMES"
+SC_SLUGS=$(git -c core.quotePath=false diff --name-only "$BASE"...HEAD 2>/dev/null \
+  | grep -E '^specs/[^/]+/(PLAN|SUMMARY)\.md$' | cut -d/ -f2 | sort -u || true)
+while IFS= read -r slug; do
+  [ -z "$slug" ] && continue
+  python3 scripts/verify_summary.py --sc-history "$slug" --base "$BASE"
+  rc=$?
+  # Exit 1 is a finding, and only under REQUIRE; a crash or usage error exits 2. So an
+  # exit 1 without REQUIRE, or any other non-zero exit, is an error in the check.
+  if [ "$rc" -eq 1 ] && [ "$SC_REQUIRE" = "1" ]; then
+    SC_FAILED=1
+  elif [ "$rc" -ne 0 ]; then
+    echo "sc-history check errored for $slug (exit $rc)" >&2
+    SC_ERRORED=1
+  fi
+done <<< "$SC_SLUGS"
+if [ "$SC_REQUIRE" = "1" ]; then
+  SC_BLOCK=0
+  if [ "$SC_FAILED" = "1" ]; then
+    echo "[ci-strict-gate] BLOCKED — a failed Success Criterion was changed (REQUIRE_SC_STABLE=1)" >&2
+    SC_BLOCK=1
+  fi
+  if [ "$SC_ERRORED" = "1" ]; then
+    echo "[ci-strict-gate] BLOCKED — the sc-history check errored (REQUIRE_SC_STABLE=1)" >&2
+    SC_BLOCK=1
+  fi
+  [ "$SC_BLOCK" = "1" ] && exit 1
+fi
+
 # MODE: block = a failure exits 1; warn = a failure is reported and exits 0.
 if echo "$DIFF" | grep -qE "$HARD_GATE_RE"; then
   MODE=block

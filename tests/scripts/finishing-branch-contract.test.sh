@@ -20,4 +20,10 @@ grep -q -- '--to ready_to_merge --event pr.opened || true' "$ROOT/$SKILL" && pas
 t "finishing runs the open-questions check before marking the plan shipped"
 grep -qF 'python3 scripts/check_open_questions.py --slug <slug>' "$ROOT/$SKILL" && grep -qF 'Open questions closing here' "$ROOT/$SKILL" && pass || fail "open-questions check or PR-body list missing"
 
+t "finishing runs the SC history check at step 3"
+grep -qF 'python3 scripts/verify_summary.py --sc-history <slug> --base <base>' "$ROOT/$SKILL" && pass || fail "SC history check missing"
+
+t "finishing says the SC history check reads committed state only, and reports other exits"
+grep -qF 'reads committed state only' "$ROOT/$SKILL" && grep -qF 'any exit other than 0 or 1' "$ROOT/$SKILL" && pass || fail "committed-state or other-exit wording missing"
+
 finish
