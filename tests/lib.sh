@@ -12,6 +12,8 @@
 # repo and run it with CWD = that repo — fully hermetic, nothing in the real repo is touched.
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# Installer tests must never reach the network (astral.sh uv install, PyPI pre-fetch).
+export CS_NO_UV=1
 PASS=0; FAIL=0; SKIP=0; XFAIL=0
 CURRENT=""
 _CLEANUP_DIRS=()

@@ -123,4 +123,120 @@ if [ "$RC" -eq 0 ] && echo "$OUT" | grep -qF "uvx not found"; then pass; else
   command -v uvx >/dev/null 2>&1 && [ "$RC" -eq 0 ] && skip "uvx reachable even at /usr/bin:/bin" || fail "rc=$RC"
 fi
 
+# ---------- uv auto-install (no network: fake curl, stub uvx, temp HOME, restricted PATH) ----------
+POLL_TRIES=20   # 0.1 s each — the 2 s budget for observing the detached pre-fetch
+SYS_UVX=$(env PATH=/usr/bin:/bin sh -c 'command -v uvx' || true)
+UV_LINE="uvx not found — installing uv from astral.sh for the code-review-graph MCP server (skip with --no-uv)"
+POST_WARN="Install uv before that restart"
+
+# uv_home → fresh tmphome + fakebin (fakebin empty; rows add fakes)
+uv_home() { tmphome=$(target); fakebin=$(target); }
+# fake_curl <body> — a curl that logs each call to $HOME/curl.log, then runs <body>
+fake_curl() {
+  printf '#!/bin/sh\necho "$*" >> "$HOME/curl.log"\n%s\n' "$1" > "$fakebin/curl"
+  chmod +x "$fakebin/curl"
+}
+# stub_uvx <dir> — a no-op uvx that logs its args to $HOME/uvx.log
+stub_uvx() {
+  mkdir -p "$1"
+  printf '#!/bin/sh\necho "$*" >> "$HOME/uvx.log"\n' > "$1/uvx"
+  chmod +x "$1/uvx"
+}
+# run_uv <PATH> [VAR=val | --flag]... — install into a fresh target with uv env scrubbed
+run_uv() {
+  local p="$1"; shift
+  local tgt a; tgt=$(target)
+  local -a envs=() args=()
+  for a in "$@"; do case "$a" in -*) args+=("$a") ;; *) envs+=("$a") ;; esac; done
+  OUT=$(env -u CS_NO_UV -u XDG_BIN_HOME -u XDG_DATA_HOME -u UV_INSTALL_DIR \
+          -u CARGO_DIST_FORCE_INSTALL_DIR -u UV_UNMANAGED_INSTALL \
+          HOME="$tmphome" PATH="$p" ${envs[@]+"${envs[@]}"} \
+          bash "$INSTALL" --source "$ROOT" --yes -d "$tgt" ${args[@]+"${args[@]}"} 2>&1); RC=$?
+}
+# poll_log <file> — wait up to POLL_TRIES × 0.1 s for <file> to be non-empty
+poll_log() { local i=0; while [ "$i" -lt "$POLL_TRIES" ] && [ ! -s "$1" ]; do sleep 0.1; i=$((i+1)); done; }
+
+t "auto-install success"
+if [ -n "$SYS_UVX" ]; then skip "system uvx at $SYS_UVX"; else
+  uv_home
+  # The detached pre-fetch stub may still append to $tmphome/uvx.log after cleanup removes
+  # tmphome; that write fails silently and is harmless.
+  fake_curl "cat <<'EOS'
+mkdir -p \"\$HOME/.local/bin\"
+printf '#!/bin/sh\necho \"\$*\" >> \"\$HOME/uvx.log\"\n' > \"\$HOME/.local/bin/uvx\"
+chmod +x \"\$HOME/.local/bin/uvx\"
+EOS"
+  run_uv "$fakebin:/usr/bin:/bin"
+  n=$(printf '%s\n' "$OUT" | grep -c "uvx not found" || true)
+  if [ "$RC" -eq 0 ] && [ "$n" -eq 1 ] && echo "$OUT" | grep -qF "$UV_LINE" \
+     && echo "$OUT" | grep -qF "Installed uv" && [ -s "$tmphome/curl.log" ] \
+     && ! echo "$OUT" | grep -qF "$POST_WARN"; then pass
+  else fail "rc=$RC uvx-not-found lines=$n — out: $(echo "$OUT" | grep -iE 'uv|curl' | tr '\n' ' ')"; fi
+fi
+
+t "pre-fetch runs by default"
+uv_home; fake_curl "exit 0"; stub_uvx "$fakebin"
+run_uv "$fakebin:/usr/bin:/bin"
+poll_log "$tmphome/uvx.log"
+if [ "$RC" -eq 0 ] && grep -qF "code-review-graph --version" "$tmphome/uvx.log" 2>/dev/null \
+   && [ ! -e "$tmphome/curl.log" ]; then pass
+else fail "rc=$RC uvx.log=[$(cat "$tmphome/uvx.log" 2>&1)] curl.log exists: $([ -e "$tmphome/curl.log" ] && echo yes || echo no)"; fi
+
+t "auto-install failure"
+if [ -n "$SYS_UVX" ]; then skip "system uvx at $SYS_UVX"; else
+  uv_home; fake_curl "exit 22"
+  run_uv "$fakebin:/usr/bin:/bin"
+  if [ "$RC" -eq 0 ] && [ -s "$tmphome/curl.log" ] && echo "$OUT" | grep -qF "uv install failed" \
+     && echo "$OUT" | grep -qF "$POST_WARN"; then pass
+  else fail "rc=$RC — out: $(echo "$OUT" | grep -iE 'uv|curl' | tr '\n' ' ')"; fi
+fi
+
+t "no curl"
+if [ -n "$SYS_UVX" ]; then skip "system uvx at $SYS_UVX"; else
+  uv_home; nocurlbin=$(target)
+  for f in /usr/bin/* /bin/*; do
+    case "${f##*/}" in curl|uvx) continue ;; esac
+    ln -sfn "$f" "$nocurlbin/${f##*/}"   # -n: never descend into an earlier dir symlink (X11)
+  done
+  run_uv "$nocurlbin"
+  if [ "$RC" -eq 0 ] && echo "$OUT" | grep -qF "curl not found"; then pass
+  else fail "rc=$RC — out: $(echo "$OUT" | grep -iE 'uv|curl' | tr '\n' ' ')"; fi
+fi
+
+t "--no-uv"
+if [ -n "$SYS_UVX" ]; then skip "system uvx at $SYS_UVX"; else
+  uv_home; fake_curl "exit 0"
+  run_uv "$fakebin:/usr/bin:/bin" --no-uv
+  if [ "$RC" -eq 0 ] && [ ! -e "$tmphome/curl.log" ] \
+     && echo "$OUT" | grep -qF "uvx not found — the code-review-graph MCP server launches through it."; then pass
+  else fail "rc=$RC curl.log exists: $([ -e "$tmphome/curl.log" ] && echo yes || echo no)"; fi
+fi
+
+t "CS_NO_UV=1"
+if [ -n "$SYS_UVX" ]; then skip "system uvx at $SYS_UVX"; else
+  uv_home; fake_curl "exit 0"
+  run_uv "$fakebin:/usr/bin:/bin" CS_NO_UV=1
+  if [ "$RC" -eq 0 ] && [ ! -e "$tmphome/curl.log" ]; then pass
+  else fail "rc=$RC curl.log exists: $([ -e "$tmphome/curl.log" ] && echo yes || echo no)"; fi
+fi
+
+t "--dry-run"
+if [ -n "$SYS_UVX" ]; then skip "system uvx at $SYS_UVX"; else
+  uv_home; fake_curl "exit 0"
+  run_uv "$fakebin:/usr/bin:/bin" --dry-run
+  if [ "$RC" -eq 0 ] && [ ! -e "$tmphome/curl.log" ] && echo "$OUT" | grep -qF "would install uv"; then pass
+  else fail "rc=$RC curl.log exists: $([ -e "$tmphome/curl.log" ] && echo yes || echo no)"; fi
+fi
+
+t "pre-fetch opt-out"
+uv_home; fake_curl "exit 0"; stub_uvx "$fakebin"
+run_uv "$fakebin:/usr/bin:/bin" CS_NO_UV=1
+i=0; while [ "$i" -lt "$POLL_TRIES" ]; do sleep 0.1; i=$((i+1)); done   # full window
+if [ "$RC" -eq 0 ] && [ ! -s "$tmphome/uvx.log" ] && [ ! -e "$tmphome/curl.log" ]; then pass
+else fail "rc=$RC uvx.log=[$(cat "$tmphome/uvx.log" 2>&1)]"; fi
+
+t "--help documents --no-uv"
+OUT=$(bash "$INSTALL" --help 2>&1); RC=$?
+if [ "$RC" -eq 0 ] && echo "$OUT" | grep -qF -- "--no-uv"; then pass; else fail "rc=$RC — --no-uv missing from --help"; fi
+
 finish

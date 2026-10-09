@@ -25,6 +25,7 @@ OVERWRITE_CONFLICTS=0
 DRY_RUN=0
 KEEP_SOURCES=0
 PROFILE=""
+NO_UV="${CS_NO_UV:-0}"
 
 # Harness source-of-truth items. Deployed into .claude/ straight from the fetched source;
 # copied into the target only with --keep-sources (under .harness-source/), never to the
@@ -79,7 +80,9 @@ Options:
       --profile <name>    Hook profile: minimal | standard | strict (default: the profile
                           recorded in .claude/.harness-profile, else standard). minimal
                           registers only the branch-isolation guard and the commit gate.
-  -h, --help              Show this help
+      --no-uv             Do not install uv (from astral.sh) when uvx is missing, and do not
+                          pre-fetch code-review-graph (same as CS_NO_UV=1)
+  -h, --help             Show this help
 
 Examples:
   curl -fsSL https://raw.githubusercontent.com/minhtran3124/harness-skills/${BRANCH}/scripts/install-harness.sh | bash -s -- --yes
@@ -99,7 +102,8 @@ while [ $# -gt 0 ]; do
     --overwrite-conflicts) OVERWRITE_CONFLICTS=1; shift ;;
     --keep-sources) KEEP_SOURCES=1; shift ;;
     --dry-run)      DRY_RUN=1; shift ;;
-    --profile)      PROFILE="${2:?--profile needs a name}"; shift 2 ;;
+    --no-uv)        NO_UV=1; shift ;;
+    --profile)     PROFILE="${2:?--profile needs a name}"; shift 2 ;;
     --profile=*)    PROFILE="${1#--profile=}"; shift ;;
     -h|--help)      usage; exit 0 ;;
     *)              fail "Unknown option: $1  (see --help)" ;;
@@ -123,11 +127,47 @@ command -v jq  >/dev/null 2>&1 || fail "jq is required (deploy step needs it). I
 if [ -z "$SOURCE_DIR" ]; then
   command -v git >/dev/null 2>&1 || fail "git is required to clone (or pass --source <local checkout>)."
 fi
-UVX_MISSING=0
-if ! command -v uvx >/dev/null 2>&1; then
+# uvx launches the code-review-graph MCP server. When it is missing, install uv (first match
+# wins: dry-run → opt-out → no curl → install). Every failure is non-fatal: UVX_MISSING=1 makes
+# the closing banner repeat the warning.
+UV_CMD="curl -LsSf https://astral.sh/uv/install.sh | sh"
+ensure_uv() {
+  UVX_MISSING=0
+  command -v uvx >/dev/null 2>&1 && return 0
   UVX_MISSING=1
-  warn "uvx not found — the code-review-graph MCP server launches through it."
-  printf '  %s  Install uv:  curl -LsSf https://astral.sh/uv/install.sh | sh%s\n' "$D" "$R"
+  if [ "$DRY_RUN" -eq 1 ] || [ "$NO_UV" = 1 ]; then
+    warn "uvx not found — the code-review-graph MCP server launches through it."
+    printf '  %s  Install uv:  %s%s\n' "$D" "$UV_CMD" "$R"
+    [ "$DRY_RUN" -eq 1 ] && log "would install uv from astral.sh (skip with --no-uv)"
+    return 0
+  fi
+  if ! command -v curl >/dev/null 2>&1; then
+    warn "curl not found — install uv manually: $UV_CMD"
+    return 0
+  fi
+  warn "uvx not found — installing uv from astral.sh for the code-review-graph MCP server (skip with --no-uv)"
+  if curl -LsSf https://astral.sh/uv/install.sh | env UV_PRINT_QUIET=1 sh >/dev/null 2>&1; then
+    # The installer's bin dir, in its own resolution order; prepended so this run sees uvx.
+    local d pre=""
+    for d in "${UV_INSTALL_DIR:-}" "${CARGO_DIST_FORCE_INSTALL_DIR:-}" "${UV_UNMANAGED_INSTALL:-}" \
+             "${XDG_BIN_HOME:-}" "${XDG_DATA_HOME:+$XDG_DATA_HOME/../bin}" "${HOME:+$HOME/.local/bin}"; do
+      [ -n "$d" ] && pre="$pre$d:"
+    done
+    PATH="$pre$PATH"
+    if command -v uvx >/dev/null 2>&1; then
+      UVX_MISSING=0
+      ok "Installed uv — open a new shell before restarting Claude Code"
+      return 0
+    fi
+  fi
+  warn "uv install failed — install manually: $UV_CMD"
+}
+ensure_uv
+# Warm the uvx cache so the first MCP launch is fast. Detached and never awaited; all three
+# redirects matter (no stdin from a `curl | bash` pipe, no held stdout/stderr for a `$(…)` caller).
+if [ "$UVX_MISSING" -eq 0 ] && [ "$DRY_RUN" -eq 0 ] && [ "$NO_UV" != 1 ]; then
+  uvx code-review-graph --version </dev/null >/dev/null 2>&1 &
+  info "Pre-fetching code-review-graph in the background"
 fi
 
 # ---------- resolve source ----------
