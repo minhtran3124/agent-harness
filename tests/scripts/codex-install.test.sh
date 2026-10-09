@@ -12,6 +12,24 @@ new_dir() {
   printf '%s\n' "$directory"
 }
 
+# The managed AGENTS.md section, begin marker through end marker.
+agents_block() {
+  sed -n '/<!-- agent-harness:begin -->/,/<!-- agent-harness:end -->/p' "$1"
+}
+
+# Same test as rule-loading-tiers.test.sh: always-on unless line 1 is --- and a
+# paths: line appears before the closing ---.
+always_on_rules() {
+  local rule
+  for rule in "$ROOT"/rules/*.md; do
+    if [ "$(head -n 1 "$rule")" = "---" ] \
+       && sed -n '2,/^---$/p' "$rule" | grep -q '^paths:'; then
+      continue
+    fi
+    printf '%s\n' "$rule"
+  done
+}
+
 make_fake_codex() {
   local directory=$1
   mkdir -p "$directory/bin" "$directory/home"
@@ -79,10 +97,24 @@ run_install "$TARGET" "$FAKE" --yes
 t "fresh install succeeds through the isolated Codex CLI"
 assert_rc 0
 
-t "fresh install creates all four project agents and the instruction fragment"
+t "fresh install creates all four project agents and no retired instruction fragment"
 count=$(find "$TARGET/.codex/agents" -name '*.toml' | wc -l | tr -d ' ')
-if [ "$count" = "5" ] && [ -f "$TARGET/.codex/harness-instructions.md" ]; then pass
-else fail "agent count=$count or instructions missing"; fi
+if [ "$count" = "5" ] && [ ! -e "$TARGET/.codex/harness-instructions.md" ]; then pass
+else fail "agent count=$count or retired instructions file written"; fi
+
+t "fresh install puts every always-on rule's first heading inside the AGENTS.md markers"
+BLOCK=$(agents_block "$TARGET/AGENTS.md")
+missing=""
+for rule in $(always_on_rules); do
+  heading=$(grep -m 1 '^#' "$rule")
+  printf '%s\n' "$BLOCK" | grep -qxF "$heading" || missing="$missing $(basename "$rule")"
+done
+if [ -n "$(always_on_rules)" ] && [ -z "$missing" ]; then pass
+else fail "always-on rules missing from the block:$missing"; fi
+
+t "a plain fresh install prints neither AGENTS.md warning"
+if ! printf '%s\n' "$OUT" | grep -qE 'AGENTS\.override\.md|32 KiB'; then pass
+else fail "unexpected warning: $OUT"; fi
 
 t "plugin source and marketplace are materialized under the owned state root"
 if [ -f "$TARGET/.codex/.agent-harness/marketplace/.agents/plugins/marketplace.json" ] \
@@ -125,7 +157,6 @@ assert paths == {
     ".codex/agents/reviewer.toml",
     ".codex/agents/task-reviewer.toml",
     ".codex/agents/test-runner.toml",
-    ".codex/harness-instructions.md",
 } | {".codex/.agent-harness/payload/" + item for item in payload}
 assert ".codex/config.toml" not in paths
 PY
@@ -145,7 +176,7 @@ else fail "reinstall changed the target tree: $OUT"; fi
 
 UPDATED_SOURCE=$(new_dir)
 cp -R "$ROOT/." "$UPDATED_SOURCE/"
-printf '\nSuccessful update marker.\n' >> "$UPDATED_SOURCE/adapters/codex/project/harness-instructions.md"
+printf '\nSuccessful update marker.\n' >> "$UPDATED_SOURCE/rules/behavior.md"
 OUT=$(FAKE_CODEX_LOG="$FAKE/codex.log" \
   FAKE_CODEX_FAIL_MARKER="$FAKE/fail-once" \
   PATH="$FAKE/bin:$PATH" \
@@ -154,7 +185,7 @@ OUT=$(FAKE_CODEX_LOG="$FAKE/codex.log" \
 RC=$?
 t "source update refreshes owned artifacts without changing user configuration"
 if [ "$RC" -eq 0 ] \
-   && grep -qF 'Successful update marker.' "$TARGET/.codex/harness-instructions.md" \
+   && agents_block "$TARGET/AGENTS.md" | grep -qF 'Successful update marker.' \
    && [ "$(shasum -a 256 "$TARGET/.codex/config.toml")" = "$CONFIG_BEFORE" ]; then pass
 else fail "source update failed: $OUT"; fi
 
@@ -166,7 +197,7 @@ python3 - "$TARGET/AGENTS.md" <<'PY'
 import pathlib, sys
 path = pathlib.Path(sys.argv[1])
 path.write_text(path.read_text().replace(
-    "Read `.codex/harness-instructions.md` before using the Agent Harness.",
+    "# Behavioral Guidelines",
     "LOCAL MANAGED BLOCK EDIT",
 ))
 PY
@@ -179,14 +210,15 @@ else fail "agent conflict policy failed: $OUT"; fi
 
 t "edited AGENTS.md block is preserved with a full incoming sidecar"
 if grep -qF 'LOCAL MANAGED BLOCK EDIT' "$TARGET/AGENTS.md" \
-   && grep -qF 'Read `.codex/harness-instructions.md`' "$TARGET/AGENTS.md.harness-incoming"; then pass
+   && grep -qxF '# Behavioral Guidelines' "$TARGET/AGENTS.md.harness-incoming"; then pass
 else fail "AGENTS.md conflict policy failed"; fi
 
 run_install "$TARGET" "$FAKE" --overwrite-conflicts
 t "explicit overwrite resolves managed conflicts and removes sidecars"
 if [ "$RC" -eq 0 ] \
    && grep -qF 'sandbox_mode = "read-only"' "$TARGET/.codex/agents/reviewer.toml" \
-   && grep -qF 'Read `.codex/harness-instructions.md`' "$TARGET/AGENTS.md" \
+   && grep -qxF '# Behavioral Guidelines' "$TARGET/AGENTS.md" \
+   && ! grep -qF 'LOCAL MANAGED BLOCK EDIT' "$TARGET/AGENTS.md" \
    && [ ! -e "$TARGET/.codex/agents/reviewer.toml.harness-incoming" ] \
    && [ ! -e "$TARGET/AGENTS.md.harness-incoming" ]; then pass
 else fail "overwrite did not resolve conflicts: $OUT"; fi
@@ -373,5 +405,109 @@ if [ "$RC" -eq 0 ] \
    && [ ! -e "$PAYLOAD/scripts" ] \
    && [ -z "$(find "$PAYLOAD_TARGET/.codex" -type d -empty)" ]; then pass
 else fail "edited payload removal policy failed: $OUT"; fi
+
+# Seed the pre-#254 deployed state into an installed target: the one-line pointer block
+# (hash recorded as agents_block_hash) and a manifest-owned .codex/harness-instructions.md.
+# $2 is the content written; the manifest records the hash of the pre-#254 original.
+seed_pre_254() {
+  python3 - "$1" "$2" <<'PY'
+import hashlib, json, pathlib, sys
+target = pathlib.Path(sys.argv[1])
+written = sys.argv[2]
+begin, end = "<!-- agent-harness:begin -->", "<!-- agent-harness:end -->"
+old_block = begin + "\nRead `.codex/harness-instructions.md` before using the Agent Harness.\n" + end
+agents = target / "AGENTS.md"
+text = agents.read_text(encoding="utf-8")
+start, finish = text.index(begin), text.index(end) + len(end)
+agents.write_text(text[:start] + old_block + text[finish:], encoding="utf-8")
+original = "# Agent Harness for Codex\n\nPre-#254 instruction fragment.\n"
+(target / ".codex/harness-instructions.md").write_text(written, encoding="utf-8")
+manifest = target / ".codex/.agent-harness/deployment-manifest.json"
+data = json.loads(manifest.read_text())
+data["agents_block_hash"] = hashlib.sha256(old_block.encode()).hexdigest()
+data["project_files"][".codex/harness-instructions.md"] = hashlib.sha256(original.encode()).hexdigest()
+manifest.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n")
+PY
+}
+PRE_254_TEXT=$(printf '# Agent Harness for Codex\n\nPre-#254 instruction fragment.\n')
+
+UPGRADE_TARGET=$(new_dir)
+UPGRADE_FAKE=$(new_dir)
+make_fake_codex "$UPGRADE_FAKE"
+cp "$FIXTURES/custom-AGENTS.md" "$UPGRADE_TARGET/AGENTS.md"
+run_install "$UPGRADE_TARGET" "$UPGRADE_FAKE" --yes
+seed_pre_254 "$UPGRADE_TARGET" "$PRE_254_TEXT
+"
+
+STUB_SOURCE=$(new_dir)
+mkdir -p "$STUB_SOURCE/scripts"
+cp "$ROOT/scripts/deploy-codex-adapter.sh" "$STUB_SOURCE/scripts/"
+cat > "$STUB_SOURCE/scripts/render_codex_adapter.py" <<EOF
+import pathlib, subprocess, sys
+output = sys.argv[sys.argv.index("--output") + 1]
+subprocess.run([sys.executable, "$ROOT/scripts/render_codex_adapter.py",
+                "--root", "$ROOT", "--output", output], check=True)
+pathlib.Path(output, "agents-block.md").unlink()
+EOF
+BEFORE_STUB=$(snapshot "$UPGRADE_TARGET")
+AGENTS_BEFORE_STUB=$(shasum -a 256 "$UPGRADE_TARGET/AGENTS.md")
+OUT=$(FAKE_CODEX_LOG="$UPGRADE_FAKE/codex.log" \
+  FAKE_CODEX_FAIL_MARKER="$UPGRADE_FAKE/fail-once" \
+  PATH="$UPGRADE_FAKE/bin:$PATH" \
+  bash "$INSTALL" --source "$STUB_SOURCE" --directory "$UPGRADE_TARGET" \
+    --codex-bin "$UPGRADE_FAKE/bin/codex" --codex-home "$UPGRADE_FAKE/home" --yes 2>&1)
+RC=$?
+t "a missing rendered block file fails closed before any project write"
+if [ "$RC" -ne 0 ] \
+   && [ "$(snapshot "$UPGRADE_TARGET")" = "$BEFORE_STUB" ] \
+   && [ "$(shasum -a 256 "$UPGRADE_TARGET/AGENTS.md")" = "$AGENTS_BEFORE_STUB" ]; then pass
+else fail "rc=$RC or target changed: $OUT"; fi
+
+run_install "$UPGRADE_TARGET" "$UPGRADE_FAKE" --yes
+t "upgrade from the pre-#254 one-line block replaces it and prunes the unchanged retired file"
+if [ "$RC" -eq 0 ] \
+   && ! grep -qF 'Read `.codex/harness-instructions.md`' "$UPGRADE_TARGET/AGENTS.md" \
+   && agents_block "$UPGRADE_TARGET/AGENTS.md" | grep -qxF '# Behavioral Guidelines' \
+   && [ ! -e "$UPGRADE_TARGET/AGENTS.md.harness-incoming" ] \
+   && [ ! -e "$UPGRADE_TARGET/.codex/harness-instructions.md" ] \
+   && ! grep -qF 'harness-instructions.md' "$UPGRADE_TARGET/.codex/.agent-harness/deployment-manifest.json"; then pass
+else fail "pre-#254 upgrade failed: $OUT"; fi
+
+EDITED_TARGET=$(new_dir)
+EDITED_FAKE=$(new_dir)
+make_fake_codex "$EDITED_FAKE"
+run_install "$EDITED_TARGET" "$EDITED_FAKE" --yes
+seed_pre_254 "$EDITED_TARGET" "LOCAL RETIRED EDIT
+"
+run_install "$EDITED_TARGET" "$EDITED_FAKE" --yes
+t "upgrade keeps an edited retired harness-instructions.md and still replaces the block"
+if [ "$RC" -eq 0 ] \
+   && grep -qF 'LOCAL RETIRED EDIT' "$EDITED_TARGET/.codex/harness-instructions.md" \
+   && printf '%s\n' "$OUT" | grep -qF 'preserved edited retired file .codex/harness-instructions.md' \
+   && agents_block "$EDITED_TARGET/AGENTS.md" | grep -qxF '# Behavioral Guidelines'; then pass
+else fail "edited retired file policy failed: $OUT"; fi
+
+OVERRIDE_TARGET=$(new_dir)
+OVERRIDE_FAKE=$(new_dir)
+make_fake_codex "$OVERRIDE_FAKE"
+printf '# Local override\n' > "$OVERRIDE_TARGET/AGENTS.override.md"
+run_install "$OVERRIDE_TARGET" "$OVERRIDE_FAKE" --yes
+t "a root AGENTS.override.md prints a non-fatal warning and the block is still written"
+if [ "$RC" -eq 0 ] \
+   && printf '%s\n' "$OUT" | grep -qF 'AGENTS.override.md' \
+   && grep -qF '<!-- agent-harness:begin -->' "$OVERRIDE_TARGET/AGENTS.md"; then pass
+else fail "override warning missing: $OUT"; fi
+
+LARGE_TARGET=$(new_dir)
+LARGE_FAKE=$(new_dir)
+make_fake_codex "$LARGE_FAKE"
+python3 -c 'import sys; open(sys.argv[1], "w").write("# Large\n" + "x" * 79 + "\n" + ("y" * 79 + "\n") * 400)' \
+  "$LARGE_TARGET/AGENTS.md"
+run_install "$LARGE_TARGET" "$LARGE_FAKE" --yes
+t "an AGENTS.md over 32 KiB after the write prints a non-fatal warning"
+if [ "$RC" -eq 0 ] \
+   && printf '%s\n' "$OUT" | grep -qF '32 KiB' \
+   && grep -qF '<!-- agent-harness:end -->' "$LARGE_TARGET/AGENTS.md"; then pass
+else fail "size warning missing: $OUT"; fi
 
 finish

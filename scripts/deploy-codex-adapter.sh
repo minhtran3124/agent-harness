@@ -125,7 +125,8 @@ restore_previous_market() {
 sync_project() {
   _mode=$1
   _project=${2:-}
-  python3 - "$TARGET_DIR" "$STATE_FILE" "$_project" "$OVERWRITE" "$_mode" <<'PY'
+  _block_file=${3:-}
+  python3 - "$TARGET_DIR" "$STATE_FILE" "$_project" "$OVERWRITE" "$_mode" "$_block_file" <<'PY'
 import hashlib
 import json
 import os
@@ -139,11 +140,22 @@ overwrite = sys.argv[4] == "1"
 mode = sys.argv[5]
 begin = "<!-- agent-harness:begin -->"
 end = "<!-- agent-harness:end -->"
-block = (
-    begin
-    + "\nRead `.codex/harness-instructions.md` before using the Agent Harness.\n"
-    + end
-)
+block = None
+if mode == "install":
+    # Byte contract: the rendered file is the block plus exactly one trailing newline.
+    # Validate it before the first write so a bad render leaves the target untouched.
+    try:
+        raw = pathlib.Path(sys.argv[6]).read_text(encoding="utf-8")
+    except (IndexError, OSError, UnicodeDecodeError) as exc:
+        raise SystemExit(f"codex-deploy: rendered AGENTS.md block is missing or unreadable: {exc}")
+    block = raw[:-1] if raw.endswith("\n") else ""
+    if not (
+        block.startswith(begin)
+        and block.endswith(end)
+        and block.count(begin) == 1
+        and block.count(end) == 1
+    ):
+        raise SystemExit("codex-deploy: rendered AGENTS.md block is malformed")
 
 
 def digest_bytes(value):
@@ -263,7 +275,7 @@ agents_sidecar = target / agents_sidecar_relative
 old_block_hash = old.get("agents_block_hash")
 new_block_hash = None
 if agents.exists():
-    original = agents.read_text()
+    original = agents.read_text(encoding="utf-8")
 else:
     original = ""
 begin_count = original.count(begin)
@@ -311,6 +323,18 @@ else:
     atomic_write(agents_sidecar, candidate.encode())
     new_sidecars[agents_sidecar_relative] = digest_bytes(candidate.encode())
     print("codex-deploy: malformed AGENTS.md markers; wrote AGENTS.md.harness-incoming")
+
+if mode == "install":
+    if (target / "AGENTS.override.md").exists():
+        print(
+            "codex-deploy: warning: root AGENTS.override.md exists; Codex loads it instead of "
+            "AGENTS.md, so the harness rules will not reach the session"
+        )
+    if agents.is_file() and agents.stat().st_size > 32768:
+        print(
+            "codex-deploy: warning: AGENTS.md exceeds 32 KiB; Codex truncates it at the 32 KiB "
+            "default, cutting the harness rules at the end of the file"
+        )
 
 for relative, expected in old_sidecars.items():
     if relative in new_sidecars:
@@ -438,7 +462,7 @@ if ! run_codex add "$PLUGIN_REF" --json >/dev/null; then
   exit 1
 fi
 
-if ! sync_project install "$WORK/rendered/project"; then
+if ! sync_project install "$WORK/rendered/project" "$WORK/rendered/agents-block.md"; then
   restore_previous_market
   printf 'codex-deploy: project sync failed; plugin state restored\n' >&2
   exit 1
