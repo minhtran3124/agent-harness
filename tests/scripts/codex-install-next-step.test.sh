@@ -65,11 +65,6 @@ if has_line "$NEXT_LINE $TARGET, choose \"Review hooks\"" \
    && has_line "codex-install: then run: python3 $ROOT_P/scripts/codex_harness_doctor.py --root $TARGET"; then pass
 else fail "next-step lines missing: $OUT"; fi
 
-t "the installer makes no trust-changing Codex call and writes no Codex config"
-if ! grep -qE '(^| )(trust|--trust[^ ]*)( |$)|trust_level' "$FAKE/codex.log" \
-   && [ ! -e "$FAKE/home/config.toml" ]; then pass
-else fail "codex log: $(cat "$FAKE/codex.log"); home: $(ls -A "$FAKE/home")"; fi
-
 # 2. Stub source: a doctor that exits 2 and no init-structure.sh — install still succeeds.
 STUB_SOURCE=$(new_dir)
 mkdir -p "$STUB_SOURCE/scripts"
@@ -84,7 +79,7 @@ printf 'import sys\nsys.exit(2)\n' > "$STUB_SOURCE/scripts/codex_harness_doctor.
 TARGET=$(new_dir)
 run_install "$STUB_SOURCE" "$TARGET" "$FAKE" --yes
 t "a failing doctor still installs with rc 0 and says it could not run"
-if [ "$RC" -eq 0 ] && has_line 'codex-install: doctor could not run' \
+if [ "$RC" -eq 0 ] && has_line 'codex-install: doctor could not run (exit 2)' \
    && ! has_line 'doctor mode:'; then pass
 else fail "rc=$RC: $OUT"; fi
 
@@ -118,7 +113,13 @@ OUT=$(FAKE_CODEX_LOG="$FAKE/codex.log" PATH="$FAKE/bin:$PATH" \
     --codex-bin "$FAKE/bin/codex" --codex-home "$FAKE/home" --yes 2>&1)
 RC=$?
 t "clone mode prints the git clone && doctor command"
-if [ "$RC" -eq 0 ] && has_line "codex-install: then run: git clone --depth 1 --branch next-step-test file://$BARE <dir> && python3 <dir>/scripts/codex_harness_doctor.py --root $TARGET"; then pass
+if [ "$RC" -eq 0 ] && has_line "codex-install: then run: git clone --depth 1 --branch next-step-test file://$BARE agent-harness && python3 agent-harness/scripts/codex_harness_doctor.py --root $TARGET"; then pass
 else fail "rc=$RC: $OUT"; fi
+
+# Checked last, so every install above (stub, dry-run, remove, clone) is covered.
+t "the installer makes no trust-changing Codex call and writes no Codex config"
+if ! grep -qE '(^| )(trust|--trust[^ ]*)( |$)|trust_level' "$FAKE/codex.log" \
+   && [ ! -e "$FAKE/home/config.toml" ]; then pass
+else fail "codex log: $(cat "$FAKE/codex.log"); home: $(ls -A "$FAKE/home")"; fi
 
 finish

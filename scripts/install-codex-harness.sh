@@ -129,7 +129,9 @@ if [ "$GI_RUN" -eq 1 ]; then
   DOCTOR_ARGS=(--root "$TARGET_DIR" --repo-root "$SOURCE_DIR" --no-persist)
   [ -z "$CODEX_BIN" ] || DOCTOR_ARGS+=(--codex-bin "$CODEX_BIN")
   [ -z "$CODEX_HOME_ARG" ] || DOCTOR_ARGS+=(--codex-home "$CODEX_HOME_ARG")
-  doctor_out=$(python3 "$SOURCE_DIR/scripts/codex_harness_doctor.py" "${DOCTOR_ARGS[@]}" 2>/dev/null) || doctor_out=""
+  doctor_rc=0
+  doctor_out=$(python3 "$SOURCE_DIR/scripts/codex_harness_doctor.py" "${DOCTOR_ARGS[@]}" 2>/dev/null) || doctor_rc=$?
+  [ "$doctor_rc" -eq 0 ] || doctor_out=""
   doctor_line=$(printf '%s' "$doctor_out" | python3 -c '
 import json, sys
 try:
@@ -145,11 +147,11 @@ print("%s (%s)" % (mode, ", ".join(str(r) for r in reasons) or "none"))
   if [ -n "$doctor_line" ]; then
     printf 'codex-install: doctor mode: %s\n' "$doctor_line"
   else
-    printf 'codex-install: doctor could not run; run it yourself (below)\n'
+    printf 'codex-install: doctor could not run (exit %s); run it yourself (below)\n' "$doctor_rc"
   fi
   printf 'codex-install: next: start Codex in %s, choose "Review hooks" (or run /hooks and press t on each Agent Harness hook); hooks do not run until trusted.\n' "$TARGET_DIR"
   if [ -n "$WORK" ]; then
-    printf 'codex-install: then run: git clone --depth 1 --branch %s %s <dir> && python3 <dir>/scripts/codex_harness_doctor.py --root %s\n' "$BRANCH" "$REPO_URL" "$TARGET_DIR"
+    printf 'codex-install: then run: git clone --depth 1 --branch %s %s agent-harness && python3 agent-harness/scripts/codex_harness_doctor.py --root %s\n' "$BRANCH" "$REPO_URL" "$TARGET_DIR"
   else
     printf 'codex-install: then run: python3 %s/scripts/codex_harness_doctor.py --root %s\n' "$SOURCE_DIR" "$TARGET_DIR"
   fi
