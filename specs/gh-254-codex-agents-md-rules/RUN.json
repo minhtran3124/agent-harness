@@ -1,0 +1,12 @@
+{
+  "created_at": "2026-10-09T03:31:12Z",
+  "last_event_id": "4099c65c-2eea-4d16-95d7-5fdce99b8b86",
+  "resume_event": null,
+  "run_id": "15f0855e-5654-40f0-b978-bbb8b22c94f2",
+  "seq": 3,
+  "sha": null,
+  "slug": "gh-254-codex-agents-md-rules",
+  "state": "planning",
+  "updated_at": "2026-10-09T03:31:15Z",
+  "waiting_on": null
+}
