@@ -69,6 +69,23 @@ HARNESS_ONLY_DOCS=(
   "agents/README.md"
 )
 
+# Python prelude shared by the derive-time Markdown transforms: derived_md(out) yields the derived
+# *.md files under .claude/. It never descends into another checkout: harness worktrees live at
+# .claude/worktrees/<name> (EnterWorktree only accepts that root), and any directory carrying its
+# own .git entry is a nested worktree or repository. Their files are SOURCE, not derived — a
+# recursive walk rewrote 173 tracked docs in a worktree (issue #276). Sidecars are skipped too.
+DERIVED_MD_PY='
+import os, pathlib
+def derived_md(out):
+    for d, dirs, files in os.walk(out):
+        dirs[:] = [n for n in dirs
+                   if not (d == str(out) and n == "worktrees")
+                   and not os.path.lexists(os.path.join(d, n, ".git"))]
+        for n in files:
+            if n.endswith(".md") and ".harness-incoming" not in n and ".proposed" not in n:
+                yield pathlib.Path(d, n)
+'
+
 OUT_BASE="$ROOT"
 YES=0
 OVERWRITE_CONFLICTS=0
@@ -394,7 +411,7 @@ copy_consumer_subset() {
 # hooks/*.sh keep their own resolution (commit-gate.sh check_risk must read the git INDEX manifest, never
 # a derived .claude/ copy). Idempotent: an already-prefixed path is skipped.
 rewrite_derived_paths() {
-  python3 - "$OUT" "${CONSUMER_SCRIPTS[@]}" <<'PYEOF'
+  { printf '%s\n' "$DERIVED_MD_PY"; cat <<'PYEOF'; } | python3 - "$OUT" "${CONSUMER_SCRIPTS[@]}"
 import re, sys, pathlib
 out = pathlib.Path(sys.argv[1]); names = sys.argv[2:]
 pats = [re.compile(r'(?<![\w./-])scripts/' + re.escape(n)) for n in names]
@@ -406,8 +423,7 @@ pats.append(re.compile(r'python3 skills/visual-planner/render_plan\.py'))
 subs = ['.claude/scripts/' + n for n in names] + ['.claude/harness-manifest.json',
         'python3 .claude/skills/visual-planner/render_plan.py']
 changed = 0
-for f in out.rglob('*.md'):
-    if any(s in f.name for s in ('.harness-incoming', '.proposed')): continue
+for f in derived_md(out):
     txt = orig = f.read_text(encoding='utf-8')
     for pat, rep in zip(pats, subs):
         txt = pat.sub(rep, txt)
@@ -429,13 +445,12 @@ strip_archive()   { rm -rf "$OUT/skills/_archive"; }   # archived skills must no
 strip_maintenance_docs() {
   local f
   for f in "${HARNESS_ONLY_DOCS[@]}"; do rm -f "$OUT/$f"; done
-  python3 - "$OUT" <<'PYEOF'
+  { printf '%s\n' "$DERIVED_MD_PY"; cat <<'PYEOF'; } | python3 - "$OUT"
 import re, sys, pathlib
 out = pathlib.Path(sys.argv[1])
 fence = re.compile(r'\n?<!--\s*harness-only:begin\s*-->.*?<!--\s*harness-only:end\s*-->\n?', re.S)
 n = 0
-for f in out.rglob('*.md'):
-    if any(s in f.name for s in ('.harness-incoming', '.proposed')): continue
+for f in derived_md(out):
     txt = f.read_text(encoding='utf-8')
     new = fence.sub('\n', txt)
     if new != txt:
