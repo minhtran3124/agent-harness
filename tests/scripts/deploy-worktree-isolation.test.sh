@@ -71,4 +71,21 @@ if [ -f "$S/tests/test_a.py" ] && [ -f "$S/lib/test_b.py" ] \
    && [ ! -e "$T/.claude/skills/xia2/tests" ] && [ ! -e "$T/.claude/skills/visual-planner/test_render_plan.py" ]; then pass
 else fail "nested checkout lost its tests, or harness skill tests were not stripped"; fi
 
+t "strip_skill_tests: a nested-checkout tests/ dir and a dangling .git symlink are both left alone"
+T=$(new_target)
+A="$T/.claude/skills/fixtures-sub"; B="$T/.claude/skills/moved-gitdir"
+mkdir -p "$A/tests" "$B/tests"
+printf 'gitdir: /nonexistent/.git/modules/fixtures\n' > "$A/tests/.git"; echo a > "$A/tests/test_a.py"
+ln -s /nonexistent/gitdir "$B/.git"; echo b > "$B/tests/test_b.py"
+deploy "$T"
+if [ -f "$A/tests/test_a.py" ] && [ -f "$A/tests/.git" ] && [ -f "$B/tests/test_b.py" ]; then pass
+else fail "a nested checkout's tests were deleted (tests/.git or dangling .git symlink not honoured)"; fi
+
+t "strip_skill_tests: a symlinked test_*.py in a plain consumer skill is still stripped"
+T=$(new_target)
+mkdir -p "$T/.claude/skills/plain"; ln -s /nonexistent/x.py "$T/.claude/skills/plain/test_link.py"
+deploy "$T"
+if [ ! -L "$T/.claude/skills/plain/test_link.py" ]; then pass
+else fail "symlinked test_*.py survived the strip (regression vs find -delete)"; fi
+
 finish

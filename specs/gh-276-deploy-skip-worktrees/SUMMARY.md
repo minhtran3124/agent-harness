@@ -48,9 +48,10 @@ Issue #276 — "deploy-harness in the main checkout rewrites tracked files in ha
 and any directory with its own `.git` entry (file or dir), except a synced top-level dir
 (`skills/`, `rules/`, …) that the consumer keeps under git, since harness entries are merged into
 it. It keeps the existing `.harness-incoming` / `.proposed` sidecar skip. New regression suite
-`tests/scripts/deploy-worktree-isolation.test.sh` (6 cases). `strip_skill_tests` likewise skips
-a skill dir (or any dir below `skills/`) carrying its own `.git`, so a consumer's nested checkout
-keeps its `tests/` and `test_*.py`. The full suite
+`tests/scripts/deploy-worktree-isolation.test.sh` (8 cases). `strip_skill_tests` is now a Python
+`os.walk` with the same `lexists(.git)` prune, so a consumer's nested checkout anywhere below
+`skills/` (including a `tests/` dir that is itself a checkout, or one whose `.git` is a dangling
+symlink) keeps its `tests/` and `test_*.py`. The full suite
 (`bash scripts/run-tests.sh`) ran ALL GREEN locally; it is cited here, not as a Verify row,
 because it exceeds the 60s Verify-row cap.
 
@@ -72,6 +73,7 @@ new scripts produce a byte-identical derived tree (`diff -r` of two fresh deploy
 - Rule 1 — correctness-review advisory (score 50) at `scripts/deploy-harness.sh:82`: the first cut's `.git` prune also skipped a synced dir the consumer keeps under git (e.g. `.claude/skills/.git`), leaving harness docs inside it untransformed — a regression vs the old `rglob`. Fixed by exempting synced top-level dirs from the `.git` prune; test case 5 added.
 
 - Rule 1 — intent-review gap against "A deploy in one checkout never modifies another worktree's files.": `strip_skill_tests` (`rm -rf skills/*/tests`, `find … -delete`) was not nested-checkout aware and would delete a consumer nested checkout's tests. Fixed with a `.git` skip; test case 6 added.
+- Rule 1 — correctness re-review of that fix (`1b819bf`): its bash/find version (a) `rm -rf`'d a `skills/<x>/tests` that was itself a nested checkout, (b) used `[ -e ]`, so a dangling `.git` symlink did not count (disagreeing with `derived_md`'s `lexists`), (c) narrowed `test_*.py` removal to regular files, dropping symlinks. Rewrote `strip_skill_tests` as an `os.walk` with the shared `lexists` probe; test cases 7–8 added.
 
 ### Intent Findings
 
@@ -83,12 +85,13 @@ new scripts produce a byte-identical derived tree (`diff -r` of two fresh deploy
 - `scripts/deploy-harness.sh:77` (score 0, pre-existing) — the walk still transforms consumer-owned Markdown under `.claude/` that the deploy did not produce: `.claude/.harness-backup-<TS>/` (so a `backup`-policy copy is no longer verbatim), `.claude/CLAUDE.md`, `.claude/commands/*.md`. Same class as #276 but present at base via `rglob`; narrowing the walk to deployed entries would stop transforming consumer-added skills too, which is removing behavior (Rule 4). Recommend a follow-up issue. The `derived_md` comment was corrected to stop claiming it yields only derived files.
 - `scripts/deploy-harness.sh:82` (score 50) — fixed; see Deviations.
 - `scripts/deploy-harness.sh:89` (re-review of the `:82` fix, P3, Rule 4) — the synced-dir exemption covers the whole git-managed synced dir, so a consumer-authored doc tracked there (e.g. `.claude/rules/mine/a.md`) is still transformed. Matches base (`rglob`) behavior; the precise fix (walk only `DEPLOYED_LIST` entries inside it) is the same Rule-4 narrowing as the `:77` item — folded into that backlog item.
+- `scripts/deploy-harness.sh` `strip_skill_tests` (re-review, P2, Rule 4, pre-existing) — a consumer-authored skill with no `.git` of its own still loses its `tests/` and `test_*.py` on every deploy (`.claude/` is gitignored in consumers, so unrecoverable). Fix is to strip only `DEPLOYED_LIST` entries — the same Rule-4 narrowing as `:77`; folded into that backlog item.
 
 ### Verify
 
 | Check | Command | Exit | Notes | Criterion |
 | --- | --- | --- | --- | --- |
-| regression: worktree, nested checkout and nested repo docs byte-identical after deploy; derived docs still rewritten, including inside a git-managed `.claude/skills/`; nested skill checkout keeps its tests | `bash tests/scripts/deploy-worktree-isolation.test.sh` | 0 | 6 passed; before the fix cases 1–3 FAILED | |
+| regression: worktree, nested checkout and nested repo docs byte-identical after deploy; derived docs still rewritten, including inside a git-managed `.claude/skills/`; nested skill checkouts keep their tests; symlinked test files still stripped | `bash tests/scripts/deploy-worktree-isolation.test.sh` | 0 | 8 passed; before the fix cases 1–3 FAILED | |
 | harness skill tests still stripped from the derived tree | `bash tests/scripts/consumer-subset.test.sh` | 0 | 17 passed | |
 | deploy prune contract unchanged | `bash tests/scripts/deploy-prune.test.sh` | 0 | 8 passed | |
 | deploy profile contract unchanged | `bash tests/scripts/deploy-profile.test.sh` | 0 | 23 passed | |
@@ -96,8 +99,8 @@ new scripts produce a byte-identical derived tree (`diff -r` of two fresh deploy
 ### Not auto-verified
 
 - Old vs new derived tree is byte-identical without nested checkouts — reached truth once, by hand (`diff -r` of two scratch deploys); not a Verify row because it needs the pre-fix script extracted from `HEAD`.
-- Test cases 5 and 6 failing on the pre-fix code — reached traceability only (reasoned from the code and the reviewers' scratch reproduction of case 5); not re-run against the old script.
-- macOS behavior (incl. `find -exec sh -c … -prune` and `-exec rm -f {} +` in `strip_skill_tests`) — not run locally (Linux only); the helper is stdlib `os.walk` / `os.path.lexists`, and CI runs the suite on macos.
+- Test cases 5–8 failing on the code they guard against — reached traceability only (reasoned from the code and the reviewers' reports; a reviewer reproduced case 5 in scratch); not re-run against the earlier scripts.
+- macOS behavior — not run locally (Linux only); the helper is stdlib `os.walk` / `os.path.lexists`, and CI runs the suite on macos.
 - Repair of worktrees already damaged by an earlier deploy — out of scope; the fix prevents new damage only.
 
 ### Rollback
@@ -106,5 +109,5 @@ new scripts produce a byte-identical derived tree (`diff -r` of two fresh deploy
 
 ### Harness-Delta
 
-- backlog: restrict the derive-time transforms to deployed entries so consumer-owned `.claude/` Markdown and `.harness-backup-*` copies are never rewritten (advisory at `:77`).
+- backlog: restrict the derive-time transforms and `strip_skill_tests` to deployed entries (`DEPLOYED_LIST`) so consumer-owned `.claude/` Markdown, `.harness-backup-*` copies, and consumer skills' tests are never rewritten or deleted (advisories above; Rule 4 — needs its own intake).
 - backlog: optional SDD pre-dispatch `git status --short` check for unexpected modifications (issue #276, third fix-direction bullet) — needs its own high-risk intake.

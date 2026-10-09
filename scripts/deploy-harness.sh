@@ -465,15 +465,26 @@ print(f"     stripped harness-only regions from {n} derived doc(s)")
 PYEOF
 }
 
-# A skill dir carrying its own .git is a consumer's nested checkout — source, not derived (#276);
-# harness-owned skill dirs are rm+cp'd fresh by copy_dir, so they never carry one.
+# Drops skills/<x>/tests/ and every test_*.py, but never descends into a dir carrying its own .git
+# (a consumer's nested checkout — source, not derived; #276). Same lexists probe as derived_md, so
+# a dangling .git symlink counts. Harness-owned skill dirs are rm+cp'd fresh by copy_dir, so they
+# never carry one.
 strip_skill_tests() {
-  local d
-  for d in "$OUT"/skills/*/; do
-    [ -e "${d}.git" ] || rm -rf "${d}tests"
-  done
-  find "$OUT/skills" -mindepth 1 -type d -exec sh -c '[ -e "$1/.git" ]' _ {} \; -prune \
-    -o -type f -name 'test_*.py' -exec rm -f {} + 2>/dev/null || true
+  python3 - "$OUT/skills" <<'PYEOF'
+import os, shutil, sys
+root = sys.argv[1]
+for d, dirs, files in os.walk(root):
+    keep = []
+    for n in dirs:
+        p = os.path.join(d, n)
+        if os.path.lexists(os.path.join(p, ".git")): continue
+        if n == "tests" and os.path.dirname(d) == root:
+            os.remove(p) if os.path.islink(p) else shutil.rmtree(p); continue
+        keep.append(n)
+    dirs[:] = keep
+    for n in files:
+        if n.startswith("test_") and n.endswith(".py"): os.remove(os.path.join(d, n))
+PYEOF
 }
 render_agents()   {
   python3 scripts/render_agent_definitions.py \
