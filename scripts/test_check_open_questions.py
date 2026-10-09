@@ -5,6 +5,8 @@ One case per row of the design's error-behavior table
 ID, an ignored progress note, and an undecodable register that must not crash the script.
 """
 
+from __future__ import annotations
+
 import os
 import subprocess
 import sys
@@ -141,6 +143,46 @@ def test_undecodable_register_is_reported_without_traceback(tmp_path):
     strict = run(tmp_path, "--slug", "phase-6", strict=True)
     assert strict.returncode == 1
     assert "Traceback" not in strict.stderr
+
+
+@pytest.mark.parametrize("heading", ["### OQ-1", "##OQ-1", "# OQ-1", "## oq-1"])
+def test_near_miss_heading_is_reported(tmp_path, heading):
+    text = block(**{"closes-at": "phase-9"}).replace("## OQ-1", heading, 1)
+    write(tmp_path, text)
+    result = run(tmp_path, "--slug", "phase-6")
+    assert result.returncode == 0
+    assert "heading is not '## OQ-<n>'" in result.stderr
+    assert heading in result.stderr
+    assert run(tmp_path, "--slug", "phase-6", strict=True).returncode == 1
+
+
+def test_register_with_byte_order_mark_is_read(tmp_path):
+    write(tmp_path, b"\xef\xbb\xbf" + block().encode("utf-8"))
+    result = run(tmp_path, "--slug", "phase-6")
+    assert result.returncode == 0
+    assert "OQ-1: open question closes at phase-6" in result.stderr
+
+
+def test_duplicate_field_is_reported(tmp_path):
+    text = block(**{"closes-at": "phase-9"}) + "- status: closed\n- closed-by: PR #1\n"
+    write(tmp_path, text)
+    result = run(tmp_path, "--slug", "phase-6")
+    assert result.returncode == 0
+    assert "OQ-1: malformed: duplicate field status" in result.stderr
+    assert run(tmp_path, "--slug", "phase-6", strict=True).returncode == 1
+
+
+def test_duplicate_field_keeps_first_value_for_matching(tmp_path):
+    write(tmp_path, block() + "- status: closed\n- closed-by: PR #1\n")
+    result = run(tmp_path, "--slug", "phase-6")
+    assert "OQ-1: open question closes at phase-6" in result.stderr
+
+
+@pytest.mark.parametrize("name", ["check_open_questions.py", "test_check_open_questions.py"])
+def test_postponed_annotations_for_python_3_8(name):
+    # `str | None` and `tuple[...]` annotations need this import below Python 3.10.
+    source = (CHECKER.parent / name).read_text(encoding="utf-8")
+    assert "\nfrom __future__ import annotations\n" in source
 
 
 def test_missing_slug_is_usage_error(tmp_path):

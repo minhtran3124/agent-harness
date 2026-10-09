@@ -9,7 +9,9 @@ Verifies:        when slug X ships, no block with `status: open` names X in `clo
                  (`X` or `X#<task>`; `X-other` does not match), and every block in every
                  register is well-formed (required fields present and non-empty, `status` and
                  `decided-by` in their value sets, a `closes-at` of `<slug>` or `<slug>#<task>`,
-                 `closed-by` on a closed block, no duplicate `OQ-<n>` in one file).
+                 `closed-by` on a closed block, no duplicate `OQ-<n>` in one file, no
+                 repeated field in one block, and no heading naming `OQ-` that is not
+                 exactly `## OQ-<n>`).
 Does not verify: that a closed question was answered correctly, or that its `closed-by`
                  evidence is true. Tier: traceability.
 
@@ -21,13 +23,17 @@ mode; exit 1 = findings and REQUIRE_QUESTIONS_CLOSED=1; exit 2 = usage error (no
 Run: python3 scripts/check_open_questions.py --slug <slug> [--root DIR]
 """
 
+from __future__ import annotations
+
 import argparse
 import os
 import re
 import sys
 from pathlib import Path
 
-HEADING = re.compile(r"^##\s+OQ-")
+# Any heading naming an OQ, at any depth or case, so a near miss (`### OQ-1`, `##OQ-1`,
+# `## oq-1`) is reported as malformed instead of silently dropping its block.
+HEADING = re.compile(r"^#+.*OQ-", re.IGNORECASE)
 VALID_HEADING = re.compile(r"^##\s+OQ-([1-9][0-9]*)\s*$")
 FIELD = re.compile(r"^-\s+([a-z-]+):(.*)$")
 CLOSES_AT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*(#[A-Za-z0-9._-]+)?$")
@@ -37,11 +43,16 @@ DECIDED_BY = ("measurement", "owner")
 STATUS = ("open", "closed")
 
 
-def parse(text: str) -> tuple[list[tuple[str, dict[str, str]]], list[str]]:
-    """Return (blocks as (id, fields), defects found while splitting the file)."""
-    blocks: list[tuple[str, dict[str, str]]] = []
+def parse(text: str) -> tuple[list[tuple[str, dict[str, str], list[str]]], list[str]]:
+    """Return (blocks as (id, fields, duplicated field names), defects found while splitting).
+
+    A repeated field keeps its first value for matching; the repeat is returned so the
+    caller reports it rather than one value silently winning.
+    """
+    blocks: list[tuple[str, dict[str, str], list[str]]] = []
     defects: list[str] = []
     current: dict[str, str] | None = None
+    repeats: list[str] = []
     for number, line in enumerate(text.splitlines(), start=1):
         if line.startswith("#"):
             current = None
@@ -50,29 +61,36 @@ def parse(text: str) -> tuple[list[tuple[str, dict[str, str]]], list[str]]:
                 if match is None:
                     defects.append(f"line {number}: heading is not '## OQ-<n>': {line.strip()}")
                 else:
-                    current = {}
-                    blocks.append((f"OQ-{match.group(1)}", current))
+                    current, repeats = {}, []
+                    blocks.append((f"OQ-{match.group(1)}", current, repeats))
             continue
         field = FIELD.match(line.strip())
         if current is not None and field and field.group(1) in FIELDS:
-            current.setdefault(field.group(1), field.group(2).strip())
+            name = field.group(1)
+            if name in current:
+                repeats.append(name)
+            else:
+                current[name] = field.group(2).strip()
     return blocks, defects
 
 
 def check(register: Path, rel: str, slug: str) -> list[str]:
     try:
-        text = register.read_text(encoding="utf-8")
+        # utf-8-sig drops a leading byte-order mark, which would otherwise hide a `## OQ-1`
+        # on line 1 from the heading match.
+        text = register.read_text(encoding="utf-8-sig")
     except (OSError, UnicodeDecodeError) as error:
         return [f"{rel}: unreadable register: {error}"]
 
     blocks, defects = parse(text)
     findings = [f"{rel}: {defect}" for defect in defects]
     seen: set[str] = set()
-    for oq, fields in blocks:
+    for oq, fields, repeats in blocks:
         problems = []
         if oq in seen:
             problems.append(f"duplicate {oq} in this file")
         seen.add(oq)
+        problems += [f"duplicate field {name}" for name in repeats]
         problems += [f"missing or empty {key}" for key in REQUIRED if not fields.get(key)]
         decided_by, status = fields.get("decided-by"), fields.get("status")
         closes_at = fields.get("closes-at", "")

@@ -91,17 +91,30 @@ DIFF=$(git diff --name-only "$BASE"...HEAD 2>/dev/null || true)
 # so an edit to an already-shipped plan, such as a status-log append, runs no check.
 #
 # Verifies:        a PR that ships a phase runs scripts/check_open_questions.py for it,
-#                  and fails when that check exits 1 (only under REQUIRE_QUESTIONS_CLOSED=1).
+#                  and, under REQUIRE_QUESTIONS_CLOSED=1, fails when that check reports
+#                  findings, errors (any exit other than 0 and 1), or is missing.
 # Does not verify: a `status: shipped` committed outside a PR, or that a closed question
 #                  was answered correctly (the check itself is traceability-tier).
 plan_shipped() {  # stdin = PLAN.md; exit 0 when the frontmatter reads `status: shipped`
+  # Reads ALL input: exiting at the closing `---` would SIGPIPE the `git show` feeding it,
+  # and under pipefail a large plan would then read as not shipped. The status match
+  # lowercases and drops leading whitespace, as render_plan.py does; a quoted value stays
+  # unmatched there too.
   awk '{ sub(/\r$/, ""); sub(/[ \t]+$/, "") }
-       $0 == "---" { n++; if (n == 2) exit; next }
-       n == 1 && /^status:[ \t]*shipped$/ { found = 1 }
+       done { next }
+       $0 == "---" { n++; if (n == 2) done = 1; next }
+       n == 1 { line = tolower($0); sub(/^[ \t]+/, "", line)
+                if (line ~ /^status:[ \t]*shipped$/) found = 1 }
        END { exit !found }'
 }
 MERGE_BASE=$(git merge-base "$BASE" HEAD 2>/dev/null || true)
-OQ_FAILED=0
+OQ_FAILED=0   # the check reported findings under REQUIRE_QUESTIONS_CLOSED=1
+OQ_ERRORED=0  # the check itself failed (crash, usage error, missing interpreter)
+OQ_MISSING=0  # scripts/check_open_questions.py is absent
+OQ_REQUIRE="${REQUIRE_QUESTIONS_CLOSED:-0}"
+# Quoting off for this list only: git quotes a non-ASCII path, which would miss the regex.
+OQ_PLANS=$(git -c core.quotePath=false diff --name-only "$BASE"...HEAD 2>/dev/null \
+  | grep -E '^specs/[^/]+/PLAN\.md$' || true)
 while IFS= read -r plan; do
   [ -z "$plan" ] && continue
   git show "HEAD:$plan" 2>/dev/null | plan_shipped || continue
@@ -109,16 +122,36 @@ while IFS= read -r plan; do
   slug=$(basename "$(dirname "$plan")")
   if [ ! -f scripts/check_open_questions.py ]; then
     echo "open-question check skipped: scripts/check_open_questions.py not found" >&2
-    [ "${REQUIRE_QUESTIONS_CLOSED:-0}" = "1" ] && OQ_FAILED=1
+    OQ_MISSING=1
     continue
   fi
   echo "[ci-strict-gate] $slug ships in this diff — checking open questions" >&2
   python3 scripts/check_open_questions.py --slug "$slug"
-  [ $? -eq 1 ] && OQ_FAILED=1
-done <<< "$(echo "$DIFF" | grep -E '^specs/[^/]+/PLAN\.md$' || true)"
-if [ "$OQ_FAILED" = "1" ]; then
-  echo "[ci-strict-gate] BLOCKED — open questions close at a shipping phase (REQUIRE_QUESTIONS_CLOSED=1)" >&2
-  exit 1
+  rc=$?
+  # The script exits 1 only for findings under REQUIRE; a crash also exits 1, so an exit 1
+  # without REQUIRE, or any other non-zero exit, is an error in the check, not a finding.
+  if [ "$rc" -eq 1 ] && [ "$OQ_REQUIRE" = "1" ]; then
+    OQ_FAILED=1
+  elif [ "$rc" -ne 0 ]; then
+    echo "open-question check errored for $slug (exit $rc)" >&2
+    OQ_ERRORED=1
+  fi
+done <<< "$OQ_PLANS"
+if [ "$OQ_REQUIRE" = "1" ]; then
+  OQ_BLOCK=0
+  if [ "$OQ_FAILED" = "1" ]; then
+    echo "[ci-strict-gate] BLOCKED — open questions close at a shipping phase (REQUIRE_QUESTIONS_CLOSED=1)" >&2
+    OQ_BLOCK=1
+  fi
+  if [ "$OQ_ERRORED" = "1" ]; then
+    echo "[ci-strict-gate] BLOCKED — the open-question check errored (REQUIRE_QUESTIONS_CLOSED=1)" >&2
+    OQ_BLOCK=1
+  fi
+  if [ "$OQ_MISSING" = "1" ]; then
+    echo "[ci-strict-gate] BLOCKED — scripts/check_open_questions.py not found (REQUIRE_QUESTIONS_CLOSED=1)" >&2
+    OQ_BLOCK=1
+  fi
+  [ "$OQ_BLOCK" = "1" ] && exit 1
 fi
 
 # MODE: block = a failure exits 1; warn = a failure is reported and exits 0.

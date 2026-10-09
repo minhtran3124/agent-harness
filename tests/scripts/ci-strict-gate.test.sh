@@ -215,4 +215,66 @@ r=$(mkrepo); write_register "$r"; rm "$r/scripts/check_open_questions.py"; base_
 write_plan "$r" shipped; commit_run "$r" REQUIRE_QUESTIONS_CLOSED=1
 assert_rc_contains 1 "open-question check skipped"
 
+# big_body <repo> — append ~1 MB of plan body after the frontmatter. The frontmatter read
+# must consume all of its input: an awk that exits at the closing `---` leaves `git show`
+# writing into a closed pipe, and under pipefail the SIGPIPE (141) reads as "not shipped".
+big_body() {
+  local line="filler body line of a long plan, kept long to grow the blob quickly........"
+  local i chunk=""
+  for i in $(seq 1 100); do chunk="$chunk$line"$'\n'; done
+  for i in $(seq 1 130); do printf '%s' "$chunk"; done >> "$1/specs/p-phase-1/PLAN.md"
+}
+
+t "(f) shipping a ~1 MB PLAN.md with an open question → finding printed (no SIGPIPE skip)"
+r=$(mkrepo); write_register "$r"; base_commit "$r"
+write_plan "$r" shipped; big_body "$r"; commit_run "$r"
+assert_rc_contains 0 "OQ-1"
+
+t "(f) the ~1 MB shipping PLAN.md under REQUIRE_QUESTIONS_CLOSED=1 → exit 1"
+r=$(mkrepo); write_register "$r"; base_commit "$r"
+write_plan "$r" shipped; big_body "$r"; commit_run "$r" REQUIRE_QUESTIONS_CLOSED=1
+assert_rc_contains 1 "OQ-1"
+
+t "(f) a ~1 MB PLAN.md already shipped at the base, appended on the branch → no check"
+r=$(mkrepo); write_register "$r"; write_plan "$r" shipped; big_body "$r"; base_commit "$r"
+printf -- '- 2026-10-09 status log append\r\n' >> "$r/specs/p-phase-1/PLAN.md"; commit_run "$r"
+assert_rc_not_contains 0 "OQ-1"
+
+# broken_check <repo> <python-body> — replace the copied check script with one that fails
+broken_check() { printf '%s\n' "$2" > "$1/scripts/check_open_questions.py"; }
+
+t "(g) the check script exits 3 → error named on stderr, exit 0 in warn mode"
+r=$(mkrepo); write_register "$r"; broken_check "$r" 'raise SystemExit(3)'; base_commit "$r"
+write_plan "$r" shipped; commit_run "$r"
+assert_rc_contains 0 "open-question check errored for p-phase-1 (exit 3)"
+
+t "(g) the check script exits 3 under REQUIRE_QUESTIONS_CLOSED=1 → exit 1, BLOCKED names the error"
+r=$(mkrepo); write_register "$r"; broken_check "$r" 'raise SystemExit(3)'; base_commit "$r"
+write_plan "$r" shipped; commit_run "$r" REQUIRE_QUESTIONS_CLOSED=1
+assert_rc_contains 1 "BLOCKED — the open-question check errored"
+
+t "(g) the check script crashes (exit 1) in warn mode → reported as an error, exit 0"
+r=$(mkrepo); write_register "$r"; broken_check "$r" 'raise RuntimeError("boom")'; base_commit "$r"
+write_plan "$r" shipped; commit_run "$r"
+assert_rc_contains 0 "open-question check errored for p-phase-1 (exit 1)"
+
+t "(g) the missing-script block names the missing script, not open questions"
+r=$(mkrepo); write_register "$r"; rm "$r/scripts/check_open_questions.py"; base_commit "$r"
+write_plan "$r" shipped; commit_run "$r" REQUIRE_QUESTIONS_CLOSED=1
+assert_rc_contains 1 "BLOCKED — scripts/check_open_questions.py not found"
+
+t "(h) status: Shipped (capitalised) counts as shipped → checked"
+r=$(mkrepo); write_register "$r"; base_commit "$r"
+write_plan "$r" Shipped; commit_run "$r"
+assert_rc_contains 0 "OQ-1"
+
+t "(i) a non-ASCII slug directory shipping with an open question → finding printed"
+r=$(mkrepo); mkdir -p "$r/specs/p" "$r/specs/café-phase"
+printf '%s\n' '# Open questions' '## OQ-1' '- raised-by: p' '- closes-at: café-phase' \
+  '- decided-by: owner' '- default-until-closed: keep current behaviour' '- status: open' \
+  > "$r/specs/p/QUESTIONS.md"
+base_commit "$r"
+printf -- '---\nstatus: shipped\n---\n# Plan\n' > "$r/specs/café-phase/PLAN.md"; commit_run "$r"
+assert_rc_contains 0 "café-phase ships in this diff"
+
 finish
