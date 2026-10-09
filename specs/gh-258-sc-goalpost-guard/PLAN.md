@@ -1,6 +1,6 @@
 ---
 slug: gh-258-sc-goalpost-guard
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-10-09
 ---
@@ -222,3 +222,4 @@ makes it block. Research: `research-brief.md` (Deep, local-only).
 - 2026-10-09 — plan written from the approved design and the Deep research brief.
 - 2026-10-09 — task 1.1 complete; commit 2a47380 (spec pass after the brief was regenerated from the restored PLAN; quality approved; 2 Minor recorded in SUMMARY).
 - 2026-10-09 — tasks 2.1, 2.2 complete; commits 50f7897, 565494f (each spec pass, quality approved; Minors recorded in SUMMARY; the 2.1 comment Minor was fixed directly).
+- 2026-10-09 — shipped: review chain complete. Audit PASS. Correctness #1–#6 were fixed at fb0657f, and residuals R1 and R2 at 2d2525e (DC1/DC2), all re-checked. Intent ✅. Full suite 877 passed; receipt pinned at ead7d37. PR to `spec-format`.
