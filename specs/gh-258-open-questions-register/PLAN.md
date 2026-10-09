@@ -1,6 +1,6 @@
 ---
 slug: gh-258-open-questions-register
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-10-09
 ---
@@ -205,3 +205,4 @@ Research: `research-brief.md` (Deep, local-only).
 - 2026-10-09 — plan written from the approved design and the Deep research brief.
 - 2026-10-09 — task 1.1 complete; commit 1dd461d (spec pass, quality approved, 3 Minor recorded in SUMMARY).
 - 2026-10-09 — tasks 2.1, 2.2, 2.3 complete; commits 2e8b098, 97b8a2c, a6e01d0 (each spec pass, quality approved; 3 Minor recorded in SUMMARY). Wave-boundary SC-6 (`lint-doc-truth.sh`) and SC-7 (`audit_skill_prompts.py`) exit 0.
+- 2026-10-09 — shipped: review chain complete (audit PASS; correctness 8 advisories fixed at 3aa6b94, 0328cfb, 142c29e, f24e6e1 and re-checked; intent ✅). Full suite 836 passed; receipt pinned at 042ede2. PR to `spec-format`.
