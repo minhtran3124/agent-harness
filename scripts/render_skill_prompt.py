@@ -38,6 +38,11 @@ CONTEXT_MATRIX = {
         "required": ["rules/plan-format.md", "rules/terminology.md"],
         "required_reads": ["rules/terminology.md"],
     },
+    "spec-document-reviewer": {
+        "path": "skills/brainstorming/spec-document-reviewer-prompt.md",
+        "required": ["design-template.md"],
+        "required_reads": ["design-template.md"],
+    },
     "correctness-controller": {
         "path": "skills/correctness-review/SKILL.md",
         "required": ["rules/auto-correct-scope.md"],

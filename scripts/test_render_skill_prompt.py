@@ -47,6 +47,7 @@ def test_context_matrix_enumerates_every_isolated_context():
         "implementer",
         "task-reviewer",
         "plan-document-reviewer",
+        "spec-document-reviewer",
         "correctness-controller",
         "correctness-reviewer",
         "correctness-scorer",
