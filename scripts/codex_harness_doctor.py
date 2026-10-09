@@ -26,6 +26,20 @@ REQUIRED_DEPENDENCIES = ("bash", "git", "jq", "python3")
 REQUIRED_FEATURES = ("hooks", "multi_agent", "plugins", "unified_exec")
 SUPPORTED_PLATFORMS = {"macos-arm64"}
 EXPECTED_PLUGIN_REFERENCE = "agent-harness@agent-harness-local"
+# Helper candidates each hook probes, in its own order (hooks/commit-gate.sh `for _vs_cand`,
+# hooks/session-knowledge.sh `_RUNTIME_MODE=`). A hook with none present runs fail-open.
+HOOK_DEPENDENCIES = {
+    "commit-gate.sh": (
+        "scripts/verify_summary.py",
+        ".claude/scripts/verify_summary.py",
+        ".codex/.agent-harness/payload/scripts/verify_summary.py",
+    ),
+    "session-knowledge.sh": (
+        "runtime/runtime_mode.py",
+        ".claude/runtime/runtime_mode.py",
+        ".codex/.agent-harness/payload/runtime/runtime_mode.py",
+    ),
+}
 
 
 class DoctorInputError(ValueError):
@@ -457,6 +471,15 @@ def diagnose(
             if reason in {"INSTALL_MISSING", "MANIFEST_INVALID"}
             else advisory
         ).append(reason)
+    missing_hooks: list[str] = []
+    if not {"INSTALL_MISSING", "MANIFEST_INVALID"} & set(install):
+        missing_hooks = sorted(
+            hook
+            for hook, candidates in HOOK_DEPENDENCIES.items()
+            if not any((root / path).is_file() for path in candidates)
+        )
+        if missing_hooks:
+            advisory.append("HOOK_DEPENDENCY_MISSING")
     decision = _front_matter(repo_root / "specs/codex-support/packaging-decision.md")
     if (
         decision.get("decision") != "hybrid"
@@ -497,22 +520,25 @@ def diagnose(
     fingerprint = runtime_mode.make_fingerprint(
         root, cli_version=cli_version, trust=trust
     )
+    summary = {
+        "doctor": "ok"
+        if not any(r.startswith("DOCTOR_") for r in reasons)
+        else "degraded",
+        "package": decision.get("decision", "unknown"),
+        "platform": platform_id,
+        "trust": str(trust.get("hooks", "unknown"))
+        if isinstance(trust, dict)
+        else "unknown",
+    }
+    if missing_hooks:
+        summary["hook_dependencies_missing"] = ",".join(missing_hooks)
     return runtime_mode.make_record(
         mode=mode,
         reason_codes=reasons,
         fingerprint=fingerprint,
         observed_at=(today or date.today()).isoformat(),
         evidence_expires_at=expires_at,
-        diagnostic_summary={
-            "doctor": "ok"
-            if not any(r.startswith("DOCTOR_") for r in reasons)
-            else "degraded",
-            "package": decision.get("decision", "unknown"),
-            "platform": platform_id,
-            "trust": str(trust.get("hooks", "unknown"))
-            if isinstance(trust, dict)
-            else "unknown",
-        },
+        diagnostic_summary=summary,
     )
 
 
