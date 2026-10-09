@@ -23,5 +23,6 @@ grep -qF '## Fix round' "$root/rules/orchestration.md"
 grep -qF 'removes any existing' "$root/rules/orchestration.md"
 grep -qF 'no recognisable status' "$root/rules/orchestration.md"
 grep -qF 'starts a fresh' "$root/rules/orchestration.md"
+grep -qF 'written as a first report' "$root/rules/orchestration.md"
 grep -qF 'Fix round' "$sdd/task-reviewer-prompt.md"
 echo 'sdd-artifact-handoffs: passed'
