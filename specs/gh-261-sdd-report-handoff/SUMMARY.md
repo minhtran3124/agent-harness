@@ -74,6 +74,10 @@ Range `b0d2a92..HEAD` (`.harness-state/sdd/package-branch.md`). Six FIND angles;
 - `skills/subagent-driven-development/SKILL.md:56` — "Never paste … report contents" is now scoped "into prompts".
 - `tests/scripts/sdd-artifact-handoffs.test.sh:15` — presence checks on `orchestration.md` for `report-<task>.md`, `transcribed by controller` and `## Fix round`. A mutation run proved they fail when the paragraph is deleted, and all three fail on `main`'s text.
 
+Wave 2 (`1fce665..a2e533e`, `.harness-state/sdd/package-wave2.md`): the same six FIND angles; 2 locations after dedup; one independent scorer each; threshold 75. Neither reached 75, so neither was fixed:
+- `rules/orchestration.md:47` scored 25. After a fix dispatch returns BLOCKED and a later one returns DONE, the rule does not say whether the fresh file is a first report or a `## Fix round <n>` section. No wrong status follows from it: either shape leaves one current status for the reviewer. Optional clarification: "written as a first report (controller header, no fix-round heading)".
+- `scripts/rebuild_solution_index.py:62` scored 5. An INDEX.md that is not UTF-8 or cannot be read makes `--check` crash with a traceback (still exit 1) instead of printing "stale". The same unguarded `read_text` was already there at `1fce665`.
+
 ### Advisory Findings
 
 Wave 2 (`1fce665..a2e533e`, at the user's request) closed the three Minors below. The removal and no-status clauses are now pinned; `task-reviewer-prompt.md` names `## Fix round <n>` sections, with the latest round current; a fresh `report-<task>.md` follows any file-writing return after a removal (`93900ee`, `a2e533e`). The backlog Proposal cell now names where the guard landed.
@@ -90,6 +94,7 @@ Original list (now closed):
 ### Intent Findings
 
 - Intent review (plan-blind) over `b0d2a92..ed7bade`: ✅ no gap, drift or excess. Clauses checked: option (a) chosen with no hybrid left; prompts, SKILL and rule all say so; the contract is pinned by a test; the original "mình phải tự chép report" complaint is addressed. SC-1..SC-5 are proven by Criterion rows.
+- Wave 2 intent review (plan-blind) over `1fce665..a2e533e`: ✅ no divergence. Item 1 is covered: `--check` masks only the date, the count is still compared, and three tests cover it. Minors (a)–(d) are closed as asked.
 
 ### Context-Propagation Audit
 
@@ -103,6 +108,14 @@ Original list (now closed):
 | same | SDD controller (Codex advisory) | main | explicit path in the SKILL bullet (`per rules/orchestration.md`, `cf0567d`); Codex rules otherwise come from `agents/PROJECT.md`, which does not name `orchestration.md` | **Advisory:** the pointer is present, but Codex Reading it is not proven (traceability only) |
 | `IMPLEMENTER_REPORT_PATH` input | task reviewer | subagent (isolated) | unchanged; the controller now fills the path | `check_task_review_contract.py` exit 0 |
 | solution entry Guardrail `existing:` | planning / compound sessions | main | `docs/solutions/INDEX.md` plus the `session-knowledge.sh` pointer | SC-5 (INDEX matches rebuild) |
+
+Wave 2 (`1fce665..a2e533e`): **PASS**. Search surface: `grep -rn` for `Fix round`, `starts a fresh`, `rebuild_solution_index` over `skills/`, `rules/`, `scripts/`, `tests/`, `hooks/`, `.github/`.
+
+| Source | Consumer | Context | Delivery | Proof |
+| --- | --- | --- | --- | --- |
+| `task-reviewer-prompt.md` "latest round's status is the current one" | task reviewer | subagent (isolated) | pasted (the sentence is inside the dispatched fence) | `sdd-artifact-handoffs.test.sh` `Fix round` presence check |
+| `rules/orchestration.md` removal / fresh-file / no-status clauses | SDD controller | main | always-on rule | `sdd-artifact-handoffs.test.sh` presence checks; `rule-loading-tiers.test.sh` exit 0 |
+| `rebuild_solution_index.py --check` date mask | compound skill and consumer repos | main | `skills/compound/SKILL.md` runs the script; `deploy-harness.sh:50` lists it among the consumer scripts, so re-sync ships the fix | `test_rebuild_solution_index.py` (7 passed); SC-6 |
 
 ### Not auto-verified
 
