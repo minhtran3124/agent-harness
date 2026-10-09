@@ -90,7 +90,7 @@ all tasks (845 pytest passed); cited here, not as a Verify row.
 | intake lane record | `python3 scripts/verify_summary.py --lane gh-268-codex-agent-profile-paths` | 0 | intake |  |
 | profiles cite payload rules | `python3 -m pytest scripts/test_render_codex_adapter.py -q -k agent_profile` | 0 | 4 agent_profile tests + 3 fail-closed cases | SC-1 |
 | renderer suite | `python3 -m pytest scripts/test_render_codex_adapter.py -q` | 0 | 52 tests incl. Claude rendering unchanged and payload closure | SC-2 |
-| installer agents/PROJECT.md step | `bash tests/scripts/codex-install-next-step.test.sh` | 0 | 21 cases: template, .claude seed, exists, skip, failed copy, dry-run, remove | SC-3 |
+| installer agents/PROJECT.md step | `bash tests/scripts/codex-install-next-step.test.sh` | 0 | 24 cases: template, customized .claude seed, untouched current and older-version .claude copies fall back to the template, exists, dangling symlink left alone, skip, failed copy, dry-run, remove | SC-3 |
 | codex install suite | `bash tests/scripts/codex-install.test.sh` | 0 | 38 cases | SC-4 |
 | docs content | `python3 -c "import pathlib,sys; t=pathlib.Path('docs/codex-alpha-install.md').read_text(encoding='utf-8'); sys.exit(0 if all(k in t for k in ('agents/PROJECT.md', 'four things', 'created agents/PROJECT.md from the template', 'created agents/PROJECT.md from .claude/agents/PROJECT.md', 'agents/PROJECT.md exists; left as is', 'four more steps', 'skipping agents/PROJECT.md')) else 1)"` | 0 | required lines present | SC-5 |
 | .gitignore suite unchanged | `bash tests/scripts/codex-install-gitignore.test.sh` | 0 | 14 cases |  |
@@ -111,6 +111,33 @@ Requested by #268 (it changes what isolated Codex subagent contexts are told). S
 
 Result: **PASS** — every file a rendered Codex profile tells an agent to read exists after a Codex
 install. Not observed: whether a Codex child session also loads root `AGENTS.md` (#269).
+
+### Correctness Review
+
+Six FIND angles over `3b47767..04038a1`, 6 deduplicated locations, one independent scorer each,
+threshold 75. No location reached the threshold.
+
+- **Fixed anyway in `e7444b1` (scored 50; introduced by this diff):** P — an untouched
+  `.claude/agents/PROJECT.md` is the harness repo's own file, so seeding from it gave Codex
+  agents harness test commands (two angles); Q — a dangling `agents/PROJECT.md` symlink failed
+  `[ -e ]` and `cp` wrote through it (five angles); R — a partly failed copy left a truncated
+  file. New tests for P and Q fail on the pre-fix installer.
+- Fix re-review of `e7444b1`: `fix_verdict: closed`; follow-on P2 (an untouched copy from an
+  older harness version differs byte-wise) and P3 (PID-suffixed temp name) fixed in the next
+  commit with the "harness repo itself" marker check, `mktemp`, and a test.
+
+### Advisory Findings
+
+- S (25) — the copied `agents/PROJECT.md` keeps bare "lives in `rules/…`" pointers; user-owned,
+  deliberately not rewritten (design Out of scope).
+- T (0, refuted) — the claimed locale encoding mismatch cannot occur (single-byte locales
+  round-trip the UTF-8 bytes; multibyte non-UTF-8 locales fail earlier).
+- U (0, unmodified hook line) — committing the new root `agents/PROJECT.md` in a consumer
+  matches `hooks/commit-gate.sh`'s `workflow-engine` pattern `^agents/[^/]+\.md$` (warn-mode
+  by default: a note, not a block; denied only under `RISK_CORROBORATION_STRICT=1` or a
+  block-mode manifest). Excluding it means editing a hook — a Rule-4 high-blast change left for
+  the user to decide.
+- R has no direct test (a `cp` shim that fails mid-write would cover it).
 
 ### Not auto-verified
 
