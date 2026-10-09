@@ -166,6 +166,20 @@ Recorded, not fixed (below threshold):
 - L10 (0, unmodified line) — an edited, preserved retired `.codex/harness-instructions.md` keeps
   the doctor at `INSTALL_HASH_MISMATCH` until the user deletes it (the doc tells them to).
 
+### Intent Findings
+
+Plan-blind intent review over `e36f806..d144c15`: 0 gaps, 0 behaviourally different drift.
+
+- Drift (equivalent, advisory): the Codex 32 KiB cap and truncation were verified against the
+  pinned CLI's source, not a running CLI; the docs say so, and the test pins the harness's own
+  20 KiB block cap.
+- Drift (equivalent, advisory): the installed `.codex/harness-instructions.md` is retired, a
+  consequence of inlining its text as the block preamble; the upgrade path is tested.
+- Excess (report-only): the `AGENTS.override.md` deploy warning and its docs/test.
+- Excess (report-only): the post-write warning when root `AGENTS.md` exceeds 32 KiB.
+  Both warnings came from the research finding that either condition silently stops the rules
+  from reaching a Codex session; kept, not removed without human approval.
+
 ### Not auto-verified
 
 - Codex 0.147.0 truncates the root→cwd `AGENTS.md` chain at the byte once 32 KiB is reached — reached provenance (read from `codex-rs/core/src/agents_md.rs` at tag `rust-v0.147.0`); not observed in a live run because no `codex` binary is available on this host.
