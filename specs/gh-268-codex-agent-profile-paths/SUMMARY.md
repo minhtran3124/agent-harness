@@ -51,6 +51,9 @@ is the scope. The branch stacks on `feat/gh-255-codex-hook-trust` (PR #271); the
 
 - Task 1.1 (`b81095a`): spec pass, quality approved. Minor M1 (non-JSON `developer_instructions`
   raised a bare `JSONDecodeError`) and M2 (the one-line guard was untested) fixed in `1608b6a`.
+- Task 1.2 (`d925da2`): spec pass, quality approved. Minor M3 (a failed `mkdir`/`cp` printed
+  no installer line) fixed in `126c794` with a fifth line and a test (`agents` pre-created as a
+  file).
 
 ### Verify
 
