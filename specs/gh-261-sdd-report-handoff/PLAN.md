@@ -10,7 +10,7 @@ created: 2026-10-09
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**4 tasks · 2 waves · 10 files · 2/4 done**
+**4 tasks · 2 waves · 10 files · 4/4 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -35,8 +35,8 @@ flowchart LR
 ### Progress
 - [x] 1.1 — Return the report inline; controller persists it (wave 1)
 - [x] 1.2 — Close the knowledge loop (wave 1)
-- [ ] 2.1 — `--check` ignores the Last-updated date (wave 2)
-- [ ] 2.2 — Close the remaining handoff Minors (wave 2)
+- [x] 2.1 — `--check` ignores the Last-updated date (wave 2)
+- [x] 2.2 — Close the remaining handoff Minors (wave 2)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -200,3 +200,4 @@ the full report inline, and the controller persists it. Design:
 - 2026-10-09 — shipped: audit PASS; correctness (3 advisories at 50 fixed at f7663b1 by user choice, re-check pass); intent review no divergence; run-tests.sh ALL GREEN at f7663b1; ci-strict-gate OK; receipt pinned at f7663b1; PR opened for human review.
 - 2026-10-09 — follow-up requested on PR #270: fix the `--check` date sensitivity and the remaining Minors on this branch; plan reopened with a second wave (its two tasks are pending). The run stays at `ready_to_merge` (the FSM allows only `shipped` from there).
 - 2026-10-09 — note: Task 1.1's "overwrites the file with the latest report" was superseded at `f7663b1` (correctness advisory): fix-round reports are appended under `## Fix round <n>`; see `rules/orchestration.md`.
+- 2026-10-09 — tasks 2.1, 2.2 complete; commits 547a493, 93900ee, a2e533e (Minor wording fix); task reviews spec pass / quality approved (Minor findings in SUMMARY); controller re-ran SC-1..SC-7 and the full suite, green.

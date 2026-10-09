@@ -62,7 +62,10 @@ The refusal comes from the runtime ("Subagents should return findings as text"),
 | isolated-prompt deliveries hold | `python3 scripts/render_skill_prompt.py --check-all` | 0 | all contracts present | SC-3 |
 | backlog closed, guardrail existing, affects orchestration | `python3 -c "import sys;b=open('docs/harness-experimental/improvement-backlog.md').read();s=open('docs/solutions/harness/sdd-report-file-handoff-refused-for-subagents.md').read();sys.exit(0 if 'done (2026-10-09, gh-261)' in b and 'existing:' in s and 'proposed:' not in s and 'rules/orchestration.md' in s else 1)"` | 0 |  | SC-4 |
 | INDEX matches a fresh rebuild (date line ignored) | `python3 -c "import subprocess,sys;n=subprocess.run([sys.executable,'scripts/rebuild_solution_index.py','--dry-run'],capture_output=True,text=True).stdout;f=open('docs/solutions/INDEX.md').read();k=lambda t:[l for l in t.splitlines() if not l.startswith('> Last updated')];sys.exit(0 if k(n)==k(f) else 1)"` | 0 |  | SC-5 |
-| SKILL.md word ceiling | `python3 scripts/audit_skill_prompts.py --json` | 0 | SDD SKILL.md 598 words (ceiling 600) |  |
+| SKILL.md word ceiling | `python3 scripts/audit_skill_prompts.py --json` | 0 | SDD SKILL.md 600 words (ceiling 600) |  |
+| `--check` ignores only the date; a real change still fails | `python3 -c "import subprocess,sys,tempfile,pathlib,re;r=pathlib.Path(tempfile.mkdtemp());d=r/'docs/solutions/a';d.mkdir(parents=True);(d/'x.md').write_text('---\nproblem_type: bug\nconfirmed_at: 2026-01-01\n---\n');s=['scripts/rebuild_solution_index.py','--root',str(r)];run=lambda *a:subprocess.run([sys.executable,*s,*a],capture_output=True).returncode;run();i=r/'docs/solutions/INDEX.md';i.write_text(re.sub(r'Last updated: \S+','Last updated: 2000-01-01',i.read_text()));a=run('--check');(d/'y.md').write_text('---\nproblem_type: bug\nconfirmed_at: 2026-02-01\n---\n');b=run('--check');sys.exit(0 if a==0 and b==1 else 1)"` | 0 | temp INDEX; date-only diff exit 0, added entry exit 1 | SC-6 |
+| backlog row names where the guard landed | `python3 -c "import sys;b=[l for l in open('docs/harness-experimental/improvement-backlog.md') if 'sdd-report-file-handoff-refused-for-subagents' in l];sys.exit(0 if len(b)==1 and 'sdd-artifact-handoffs.test.sh' in b[0] else 1)"` | 0 | | SC-7 |
+| solution INDEX current via plain `--check` | `python3 scripts/rebuild_solution_index.py --check` | 0 | INDEX.md is current | |
 
 ### Correctness Review
 
@@ -73,7 +76,13 @@ Range `b0d2a92..HEAD` (`.harness-state/sdd/package-branch.md`). Six FIND angles;
 
 ### Advisory Findings
 
-From the `f7663b1` re-check, Minor, not fixed:
+Wave 2 (`1fce665..a2e533e`, at the user's request) closed the three Minors below. The removal and no-status clauses are now pinned; `task-reviewer-prompt.md` names `## Fix round <n>` sections, with the latest round current; a fresh `report-<task>.md` follows any file-writing return after a removal (`93900ee`, `a2e533e`). The backlog Proposal cell now names where the guard landed.
+
+Remaining Minors from the wave-2 task reviews, not fixed:
+- `grep -qF 'Fix round'` on `task-reviewer-prompt.md` proves the text exists somewhere in the file, not that it sits inside the fenced dispatched prompt.
+- `scripts/test_rebuild_solution_index.py` has a duplicate `import sys` that predates this branch.
+
+Original list (now closed):
 - The test does not pin the BLOCKED/NEEDS_CONTEXT removal clause or the no-status clause. Changing "removes" to "keeps" still passes. Suggested additions: `grep -qF 'removes any existing'` and `grep -qF 'no recognisable status'` on `rules/orchestration.md`.
 - `task-reviewer-prompt.md` does not say a report may hold several `## Fix round` sections, or that the latest round's status is the current one.
 - After a BLOCKED fix removes the report, the next `DONE` starts a fresh file. That is the natural reading, but it is not stated.
@@ -113,4 +122,4 @@ From the `f7663b1` re-check, Minor, not fixed:
 
 ### Harness-Delta
 
-- `scripts/rebuild_solution_index.py --check` also compares the `> Last updated:` date, so on `main` it reports "INDEX.md is stale" any day after the last rebuild, even when every entry is current (observed 2026-10-09: the only diff was the date). This PR's SC-5 compares everything except that line. backlog: make `--check` ignore the date line.
+- fix-direct (wave 2, `547a493`, at the user's request): `scripts/rebuild_solution_index.py --check` also compared the `> Last updated:` date, so on `main` it reports "INDEX.md is stale" any day after the last rebuild, even when every entry is current (observed 2026-10-09: the only diff was the date). This PR's SC-5 compares everything except that line. `--check` now masks only that date and still compares the entry count; three pytest cases pin it.
