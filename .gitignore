@@ -53,3 +53,6 @@ docs/harness-engineering-review.en.md
 
 # generated PR description (finishing-a-development-branch Step 3), not committed
 .pr-body.md
+
+# vscode
+.vscode
