@@ -70,7 +70,11 @@ script is deployed at `.claude/scripts/`, because both callers run from the repo
    `git rev-list --reverse <mb>..HEAD -- <summary> <plan>`. Merge commits are included as they
    come; no `--first-parent`.
 3. For each commit `c`, read both files at `c` with `git show c:<path>`. If either is missing
-   at `c`, there is nothing to record at `c`. For each Verify row whose `Criterion` is `SC-n`
+   at `c`, there is nothing to record at `c`. Per D8 (DC1), Verify rows are judged only at a
+   commit where `SUMMARY.md` itself changed, meaning its content differs from the previous commit
+   in the walk (for the first commit in the walk, from the merge base) or it is new. A
+   PLAN-only commit records nothing, so a row that a plan edit left stale is never a failure
+   record. At a qualifying commit, for each Verify row whose `Criterion` is `SC-n`
    and whose `Exit` cell is an integer, compare it with SC-n's expected exit in the PLAN at
    `c`. A mismatch is a **failure record**. This includes `124`, which the rewriter writes for
    a timeout. A non-integer `Exit`, such as an empty cell, a trivial row or a placeholder, is
@@ -85,13 +89,15 @@ script is deployed at `.claude/scripts/`, because both callers run from the repo
      **changed after failing**. Free text after `exit <n>` in `Expected` is not compared, so
      rewording the prose does not count;
    - otherwise nothing.
-5. A finding is suppressed when the HEAD `SUMMARY.md` has a `### Deviations` section containing
-   `SC-n` as a whole token, so `SC-1` does not match inside `SC-12`. If SUMMARY.md or its
+5. A finding is suppressed when any `Deviations` heading in the HEAD `SUMMARY.md` (every match of
+   `^#{1,3}\s+Deviations\b`, not only the first) has `SC-n` as a whole token in its body, so
+   `SC-1` does not match inside `SC-12`. If SUMMARY.md or its
    Deviations section is missing at HEAD, nothing is suppressed.
 6. Output goes to stdout, one line per finding:
    `SC-GOALPOST [SC-n] <changed|removed> after it failed at <short-sha>; name SC-n in ### Deviations to acknowledge`.
    Exit 0 by default, or 1 when there is a finding and `REQUIRE_SC_STABLE=1`. No findings:
-   exit 0 with a one-line summary.
+   exit 0 with a one-line summary. Any unexpected exception, such as a non-UTF-8 spec file,
+   prints `sc-history: unexpected error: …` and exits 2, so exit 1 only ever means a finding.
 7. A new helper reads each SC id's `Check` cell and expected-exit token. `parse_sc_table` keeps
    its current return shape, so existing callers do not change.
 
@@ -113,10 +119,14 @@ committed, or that the command's own content (a test file) was not weakened. Tie
     naming SC goalposts.
   - rc 1 without `REQUIRE_SC_STABLE=1`, or any other non-zero rc: print
     `sc-history check errored for <slug> (exit <rc>)`. This blocks only under
-    `REQUIRE_SC_STABLE=1`. A Python crash also exits 1, so in warn mode it never blocks.
+    `REQUIRE_SC_STABLE=1`. A crash exits 2 (step 6), so in warn mode it never blocks.
 
-  The section never exits 0 on its own. It skips slugs whose spec directory no longer exists at
-  HEAD.
+  `REQUIRE_SC_STABLE` has its surrounding whitespace stripped before the comparison, as the
+  script does. If a spec directory is renamed to a different slug within `$BASE...HEAD`
+  (`git diff --name-status -M`, an R entry), the section prints
+  `sc-history: spec directory renamed <old> -> <new>; failure history before the rename is not followed`
+  and counts it as an error, which blocks only under `REQUIRE_SC_STABLE=1`. The section never
+  exits 0 on its own. It skips slugs whose spec directory no longer exists at HEAD.
 - **`skills/finishing-a-development-branch/SKILL.md` step 3.** One clause: run
   `python3 scripts/verify_summary.py --sc-history <slug> --base <base>`, where `<base>` is the
   base already reported by `resolve_finish_context.py`. Relay any finding to the user and the PR
@@ -142,6 +152,8 @@ committed, or that the command's own content (a test file) was not weakened. Tie
 | `Exit` cell not an integer (empty, trivial, placeholder) | row ignored | 0 | 0 |
 | `Exit` `124` (timeout written by the rewriter) | counts as a failure record | as rows above | as rows above |
 | `--base` missing or unresolved, no merge base, not a git repository, or `git` unavailable | usage message | 2 | 2 |
+| Any unexpected exception (for example a non-UTF-8 spec file) | `sc-history: unexpected error: …`, no traceback | 2 | 2 |
+| PLAN-only commit leaves a SUMMARY row stale (D8) | no failure record | 0 | 0 |
 | Slug has no SUMMARY or PLAN in any commit | summary line | 0 | 0 |
 
 ## Tests
@@ -196,7 +208,7 @@ committed, or that the command's own content (a test file) was not weakened. Tie
 | A Deviations entry justifies the change | The check only looks for the `SC-n` token; whether the reason is good is a reviewer's call. |
 | Weakening of the tested code or test file is caught | The check compares SC `Check`/`Expected` cells, not what the command runs. |
 | The check blocks by default | Warn-first; `REQUIRE_SC_STABLE=1` blocks. |
-| A BLOCKED line under `REQUIRE_SC_STABLE=1` always names the true cause | A Python crash also exits 1, so under the flag a crash prints the goalpost BLOCKED line; it fails safe (still blocks), the same trade-off as the item-3 section. |
+| A renamed spec directory keeps its failure history | The walk is per slug path. A rename is detected and reported as an error, which blocks under the flag, but history before the rename is not followed. A rename with a heavy rewrite, which git pairs as a delete plus an add, is not detected. |
 
 ## Decisions
 
@@ -213,8 +225,10 @@ committed, or that the command's own content (a test file) was not weakened. Tie
 | D5 | The CI section runs for any slug whose PLAN or SUMMARY changed, before the early exit, and never exits 0 itself; rc 1 blocks only under `REQUIRE_SC_STABLE=1`, as in the item-3 section | specs-only PRs are checked; existing tiers are never bypassed; a crash never blocks in warn mode | settled |
 | D6 | `Expected` is compared by its `exit <n>` token only; `Check` by its whitespace-collapsed text | rewording the free text after the exit token is not a goalpost move | settled |
 | D7 | Git runs in the repository root resolved from the current directory, passed into the history function | tests reach a temporary repository; the deployed copy works from a consumer root | settled |
-| D8 | A failure record is a committed Verify row whose `Exit` differs from its SC's `Expected`, judged only at a commit where `SUMMARY.md` itself changed, against the PLAN at that commit, within `merge-base..HEAD` | a SUMMARY row left stale by a PLAN-only commit is not a failure; failures never committed are still not seen | settled |
+| D8 | A failure record is a committed Verify row whose `Exit` differs from its SC's `Expected`, judged only at a commit where `SUMMARY.md` itself changed, against the PLAN at that commit, within `merge-base..HEAD` | a SUMMARY row left stale by a PLAN-only commit is not a failure; failures never committed are still not seen | superseded by DC2 |
+| D9 | A failure record is a committed Verify row whose `Exit` differs from its SC's `Expected`, judged only at a commit where **that row** (same `Criterion`, same cells) is new or changed compared with the previous SUMMARY in the walk (the merge-base SUMMARY for the first commit), against the PLAN at that commit, within `merge-base..HEAD` | a row left stale by a PLAN-only commit stays not-a-failure even when unrelated SUMMARY text is edited later; failures never committed are still not seen | settled |
 
 ## Decision changes
 
 - DC1 — 2026-10-09 — reopens D1 — evidence: correctness review of `51eb4e0..dcdce4d` (enclosing-function finder; scorer 50, confirmed by reading `sc_history`). Under D1, a PLAN-only commit that changes `Expected` while an older SUMMARY row still names that SC records a "failure" no one committed. A later `Check` edit then produces a false `SC-GOALPOST`, which blocks under `REQUIRE_SC_STABLE=1`. This contradicts the error-table row "SC-n changed but never recorded as failing → none". The user chose to fix it ("Sửa #1–#6"). — new decision: D8
+- DC2 — 2026-10-09 — reopens D8 — evidence: a re-check of the fix round `dcdce4d..fb0657f` reproduced the same false positive with confidence 75. A scratch probe printed `SC-GOALPOST [SC-1] changed after it failed at <prose-edit sha>`. D8 compares the whole SUMMARY file, so an unrelated prose edit still makes a stale row count as a failure. The fix completes the user-approved fix for finding #1 ("Sửa #1–#6"). — new decision: D9
