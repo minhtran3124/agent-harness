@@ -1,12 +1,12 @@
 {
   "created_at": "2026-10-09T15:10:56Z",
-  "last_event_id": "424b3d12-7f0d-4a6a-87ed-02880cd3c243",
+  "last_event_id": "428d75d9-4f66-475c-aff4-8d4ae09b0498",
   "resume_event": null,
   "run_id": "488fe9b3-4645-49ed-b712-9d2d9cd7e617",
-  "seq": 5,
+  "seq": 6,
   "sha": "fa6162f",
   "slug": "gh-277-strict-gate-no-merge-base",
-  "state": "verifying",
-  "updated_at": "2026-10-09T15:25:18Z",
+  "state": "ready_to_merge",
+  "updated_at": "2026-10-09T15:34:45Z",
   "waiting_on": null
 }
