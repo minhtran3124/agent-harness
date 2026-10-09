@@ -154,6 +154,48 @@ if [ "$OQ_REQUIRE" = "1" ]; then
   [ "$OQ_BLOCK" = "1" ] && exit 1
 fi
 
+# SC-HISTORY SECTION — goalpost check for every slug whose PLAN.md or SUMMARY.md is in
+# the diff. Like the shipping section, it sits BEFORE the tier selection so a specs-only
+# PR is still checked, and it never exits 0 itself. A slug whose spec directory is gone
+# at HEAD is skipped by verify_summary.py itself (exit 0, skip note).
+#
+# Verifies:        a PR touching a slug's PLAN.md or SUMMARY.md runs
+#                  `verify_summary.py --sc-history` for it, and, under REQUIRE_SC_STABLE=1,
+#                  fails when that check reports findings or errors (any exit other than
+#                  0, or exit 1 without REQUIRE).
+# Does not verify: that a Deviations entry justifies a change, failures never committed,
+#                  or weakening inside a command's own test content (provenance-tier).
+SC_FAILED=0   # the check reported goalpost findings under REQUIRE_SC_STABLE=1
+SC_ERRORED=0  # the check itself failed (crash, usage error, missing script)
+SC_REQUIRE="${REQUIRE_SC_STABLE:-0}"
+SC_SLUGS=$(git -c core.quotePath=false diff --name-only "$BASE"...HEAD 2>/dev/null \
+  | grep -E '^specs/[^/]+/(PLAN|SUMMARY)\.md$' | cut -d/ -f2 | sort -u || true)
+while IFS= read -r slug; do
+  [ -z "$slug" ] && continue
+  python3 scripts/verify_summary.py --sc-history "$slug" --base "$BASE"
+  rc=$?
+  # Exit 1 is a finding only under REQUIRE; a crash also exits 1, so an exit 1 without
+  # REQUIRE, or any other non-zero exit, is an error in the check, not a finding.
+  if [ "$rc" -eq 1 ] && [ "$SC_REQUIRE" = "1" ]; then
+    SC_FAILED=1
+  elif [ "$rc" -ne 0 ]; then
+    echo "sc-history check errored for $slug (exit $rc)" >&2
+    SC_ERRORED=1
+  fi
+done <<< "$SC_SLUGS"
+if [ "$SC_REQUIRE" = "1" ]; then
+  SC_BLOCK=0
+  if [ "$SC_FAILED" = "1" ]; then
+    echo "[ci-strict-gate] BLOCKED — a failed Success Criterion was changed (REQUIRE_SC_STABLE=1)" >&2
+    SC_BLOCK=1
+  fi
+  if [ "$SC_ERRORED" = "1" ]; then
+    echo "[ci-strict-gate] BLOCKED — the sc-history check errored (REQUIRE_SC_STABLE=1)" >&2
+    SC_BLOCK=1
+  fi
+  [ "$SC_BLOCK" = "1" ] && exit 1
+fi
+
 # MODE: block = a failure exits 1; warn = a failure is reported and exits 0.
 if echo "$DIFF" | grep -qE "$HARD_GATE_RE"; then
   MODE=block
