@@ -60,7 +60,7 @@ Issue #263. The fenced Success Criteria example in `rules/plan-format.md` calls
 - **Files:** rules/plan-format.md
 - **Action:** Run SC-1 first and confirm it exits 0 (the bad flag is present). Then replace the
   two fenced example rows at `rules/plan-format.md:99-100` with the design §4 rows:
-  SC-1 "A contract plan (declares `## Global Constraints`) without SC rows is rejected" with
+  SC-1 "A contract plan (one with a Global Constraints section) without SC rows is rejected" with
   `python3 scripts/check_plan_contract.py specs/<slug>/PLAN.md` and Expected
   `exit 1 — no SC rows`; SC-2 "A well-formed SC table passes the contract check" with the same
   command and Expected `exit 0`. Leave the fence and every other line unchanged.

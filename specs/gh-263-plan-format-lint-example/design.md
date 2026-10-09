@@ -40,7 +40,7 @@ no SC rows"); a well-formed SC table → exit 0 ("plan-contract: … passed").
 Replace the two rows with:
 
 ```
-| SC-1 | A contract plan (declares `## Global Constraints`) without SC rows is rejected | `python3 scripts/check_plan_contract.py specs/<slug>/PLAN.md` | exit 1 — no SC rows |
+| SC-1 | A contract plan (one with a Global Constraints section) without SC rows is rejected | `python3 scripts/check_plan_contract.py specs/<slug>/PLAN.md` | exit 1 — no SC rows |
 | SC-2 | A well-formed SC table passes the contract check | `python3 scripts/check_plan_contract.py specs/<slug>/PLAN.md` | exit 0 |
 ```
 
