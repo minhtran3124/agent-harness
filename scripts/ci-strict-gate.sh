@@ -161,8 +161,8 @@ fi
 #
 # Verifies:        a PR touching a slug's PLAN.md or SUMMARY.md runs
 #                  `verify_summary.py --sc-history` for it, and, under REQUIRE_SC_STABLE=1,
-#                  fails when that check reports findings or errors (any exit other than
-#                  0, or exit 1 without REQUIRE).
+#                  fails when that check reports findings (exit 1) or errors (any other
+#                  non-zero exit).
 # Does not verify: that a Deviations entry justifies a change, failures never committed,
 #                  or weakening inside a command's own test content (provenance-tier).
 SC_FAILED=0   # the check reported goalpost findings under REQUIRE_SC_STABLE=1
