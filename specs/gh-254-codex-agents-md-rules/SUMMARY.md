@@ -48,6 +48,14 @@ checklist is the scope of this slug. "Continue based on it" is read as: branch f
 
 - none
 
+### Task review log
+
+- Task 1.1 (`8048501`): spec pass, quality approved. Minor findings (forwarded to final review):
+  M1 install suite and deployed pointer are inconsistent until Task 2.1 lands (by plan);
+  M2 the marker check does not cover the preamble; M3 unclosed rule frontmatter inlines an empty
+  body silently, and an inline `paths: [..]` yields no globs; M4 the preamble read is not wrapped
+  in `AdapterError`; M5 the stale-block test's `pytest.raises` has no `match=`.
+
 ### Verify
 
 | Check | Command | Exit | Notes | Criterion |
