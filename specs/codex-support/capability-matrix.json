@@ -276,14 +276,14 @@
       "platforms": ["macos-arm64", "linux-x86_64", "wsl-x86_64"],
       "source": {
         "kind": "unavailable",
-        "reference": "effective trust cannot be reproduced from deterministic public CLI output",
-        "checked_at": "2026-08-10",
+        "reference": "codex doctor --json has no hook-trust field at 0.147.0 or 0.162.0, and app-server hooks/list exposes per-hook trustStatus at both versions, read from upstream source, not observed",
+        "checked_at": "2026-10-09",
         "expires_at": "2026-11-08"
       },
       "config": {"scope": "unknown", "sha256": null},
       "evidence_path": null,
       "owner": "codex-support",
-      "exit_condition": "Phase 2 must capture trusted hook visibility in a disposable Codex account."
+      "exit_condition": "Wire app-server hooks/list into the doctor after a live macOS capture of the Agent Harness hooks' trustStatus."
     },
     {
       "id": "config.hook_config_hash",
