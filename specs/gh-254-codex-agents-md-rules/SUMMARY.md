@@ -105,6 +105,28 @@ passed) and after all four tasks (828 pytest passed); it is cited here, not as a
 | doc-truth lint | `bash scripts/lint-doc-truth.sh` | 0 | does not scan `docs/codex-alpha-install.md`; run as a no-regression check |  |
 | Claude rendering unchanged | `python3 -m pytest scripts/test_render_codex_adapter.py -q -k claude_rendering_is_unchanged` | 0 |  | SC-8 |
 
+### Context-Propagation Audit
+
+Run by request of #254 ("Needs a context-propagation audit"). The diff does not touch the
+path-based `workflow-engine` trigger (`skills/*/SKILL.md`, prompts, `agents/*.md`, `rules/*.md`);
+it changes the channel that carries `rules/` into a Codex session. Search surface: `rules/*.md`,
+`agents/*.md`, `skills/*/*.md`, `scripts/render_codex_adapter.py`,
+`scripts/render_agent_definitions.py`, `specs/codex-support/evidence/codex-0.147.0/`.
+
+| Source | Consumer | Context | Delivery | Proof |
+| --- | --- | --- | --- | --- |
+| five always-on `rules/*.md` | Codex session in the project | main | always-loaded: inlined in root `AGENTS.md` managed block (complete copy, rendered at install) | `codex-install.test.sh` (each rule's heading inside the markers); `test_agents_block_inventory_*` (body = payload text); drift: `rule-loading-tiers.test.sh` Codex case; loading: `codex-rs/core/src/agents_md.rs` @ `rust-v0.147.0` (provenance, not observed in a run) |
+| same | Codex session when root `AGENTS.override.md` exists or `AGENTS.md` > 32 KiB | main | not delivered (override hides it / byte truncation) | deploy warning cases in `codex-install.test.sh`; documented in `docs/codex-alpha-install.md` |
+| four path-scoped `rules/*.md` | Codex session | main | on-demand list in the block + explicit Read steps in skills, rewritten to payload paths by #253 | `test_agents_block_inventory_*` (paths exist); #253 `test_payload_closure_*` |
+| five always-on rules | Claude session, `.claude/` install | main | always-loaded from `.claude/rules/` (unchanged) | `test_claude_rendering_is_unchanged_by_codex_render`; Claude deploy untouched |
+| same | Claude session reading `AGENTS.md` (no `CLAUDE.md`) | main | always-loaded via `AGENTS.md`; same text | Claude memory docs (v2.1.277+); block's own text has no runtime-specific syntax (`test_agents_block_neutral_*`) |
+| `rules/behavior.md` §1, `rules/auto-correct-scope.md`, `rules/orchestration.md` | Codex subagent profiles (`.codex/agents/*.toml`) | reviewer, implementer | explicit references in `developer_instructions` and skill dispatch prompts — **unchanged by this diff**; whether a Codex child also loads `AGENTS.md` is unconfirmed (evidence `agents-fresh-bounded.json` shows a fresh, bounded context, not its instruction set) | not claimed by this change; see Harness-Delta |
+
+Result: **PASS** for every consumer this change claims. The inline copy is complete and
+drift-tested, which the audit's inline-copy rule requires. The child-context row is pre-existing
+and not load-bearing for #254. Recorded as backlog: the `.codex/agents/*.toml` profiles cite bare
+`rules/…` paths that are not rewritten to payload paths.
+
 ### Not auto-verified
 
 - Codex 0.147.0 truncates the root→cwd `AGENTS.md` chain at the byte once 32 KiB is reached — reached provenance (read from `codex-rs/core/src/agents_md.rs` at tag `rust-v0.147.0`); not observed in a live run because no `codex` binary is available on this host.
@@ -121,4 +143,6 @@ passed) and after all four tasks (828 pytest passed); it is cited here, not as a
 - backlog — `branch-isolation-guard.sh` denied an implementer's Write to the session scratchpad
   from a task-branch worktree (`unsafe-path:outside-root`, "shared branch main"); worked around
   with a Bash heredoc (open issue #262).
-- none new beyond those two.
+- backlog — Codex agent profiles (`.codex/agents/*.toml`, rendered by
+  `scripts/render_agent_definitions.py`) cite bare `rules/…` paths the #253 rewrite does not
+  cover, and Codex child-context loading of `AGENTS.md` is unobserved (context-propagation audit).
