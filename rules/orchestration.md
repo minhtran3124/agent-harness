@@ -39,7 +39,10 @@ Every subagent returning to main thread MUST include in its summary:
 Include only what the main thread needs to act without re-reading the subagent's work product; no raw file dumps.
 Under `subagent-driven-development`, the implementer returns the full contract inline, because the
 runtime refuses subagent report-file writes; the controller persists it to `.harness-state/sdd/`
-for the task reviewer. That full structured report is what the main thread needs, so it is not a
+for the task reviewer. On a `DONE` or `DONE_WITH_CONCERNS` return it writes
+`.harness-state/sdd/report-<task>.md` verbatim under a one-line "transcribed by controller" header
+before the task review, rewrites it after each fix dispatch, and writes no file for `BLOCKED` or
+`NEEDS_CONTEXT`. That full structured report is what the main thread needs, so it is not a
 raw file dump.
 
 ## Evidence in SUMMARY.md (evidence over assertion)
