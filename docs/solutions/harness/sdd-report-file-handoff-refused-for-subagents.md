@@ -7,9 +7,10 @@ applicable_when: Dispatching an SDD implementer (or any subagent) whose contract
 affects:
   - skills/subagent-driven-development/implementer-prompt.md
   - skills/subagent-driven-development/SKILL.md
+  - rules/orchestration.md
 supersedes: null
 confidence: high
-confirmed_at: 2026-10-02
+confirmed_at: 2026-10-09
 ---
 ## Applicable When
 
@@ -44,10 +45,13 @@ and states in the file header that it was transcribed. Long term, make the contr
 
 ## Guardrail
 
-proposed: amend `skills/subagent-driven-development/implementer-prompt.md` Report Format and the
-matching SKILL.md bullet so the implementer returns the full structured report inline and the
-controller persists it to `.harness-state/sdd/`; add a presence case to the context-propagation
-regression test.
+existing: `skills/subagent-driven-development/implementer-prompt.md` Report Format tells the
+implementer to return the full structured report inline and not write a report file; the SDD
+`SKILL.md` Execute-waves bullet has the controller write that report verbatim to
+`.harness-state/sdd/report-<task>.md`; and `rules/orchestration.md` Subagent contract no longer
+puts the full contract in an implementer-written report file (gh-261). Presence and absence checks
+for these phrases live in the handoff's own suite, `tests/scripts/sdd-artifact-handoffs.test.sh`,
+rather than in the context-propagation regression test the original proposal named.
 
 ## Related
 

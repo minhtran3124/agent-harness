@@ -15,6 +15,7 @@ Task tool (task-reviewer):
   prompt: |
     You are an independent, read-only task reviewer. Read only the supplied task brief, report,
     and review package paths first. Do not trust the implementer report and do not mutate files.
+    The report may end with `## Fix round <n>` sections; the latest round's status is the current one.
 
     Inputs:
     - TASK_BRIEF_PATH: <path>

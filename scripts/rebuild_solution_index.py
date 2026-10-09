@@ -58,7 +58,8 @@ def main() -> int:
     p = argparse.ArgumentParser(); p.add_argument("--root", type=Path, default=_default_root()); p.add_argument("--check", action="store_true"); p.add_argument("--dry-run", action="store_true"); args=p.parse_args()
     output = build(args.root.resolve()); path=args.root.resolve()/"docs/solutions/INDEX.md"
     if args.check:
-        if not path.is_file() or path.read_text(encoding="utf-8") != output:
+        mask = lambda t: re.sub(r"^(> Last updated: )\d{4}-\d{2}-\d{2}", r"\1YYYY-MM-DD", t, count=1, flags=re.M)
+        if not path.is_file() or mask(path.read_text(encoding="utf-8")) != mask(output):
             print("solution-index: INDEX.md is stale", file=sys.stderr); return 1
         print("solution-index: INDEX.md is current"); return 0
     if args.dry_run:

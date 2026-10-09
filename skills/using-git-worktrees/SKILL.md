@@ -16,10 +16,20 @@ Announce that you are setting up an isolated workspace. Run
 
 ## Create isolation
 
-Use a native worktree tool if the harness provides one; do not create untracked state the harness
-cannot manage. Otherwise choose an existing `.worktrees/` (preferred) or `worktrees/` location,
-or the location documented in `CLAUDE.md`; if none exists, ask before choosing a root. Ensure the
-chosen parent is ignored before running:
+Use the native worktree tool if the harness provides one; do not create untracked state the
+harness cannot manage. In Claude Code, call `EnterWorktree` with `name: "<type>/<kebab-slug>"` so
+the tool itself creates the worktree under `.claude/worktrees/`. Do not create a checkout by hand
+and enter it with `path`: a path outside `.claude/worktrees/` raises a "permission-root relocation"
+confirmation on every entry.
+
+The tool names the branch `worktree-<name>` (with `/` written as `+`), not `<type>/<slug>`. Rename
+it with `git branch -m <type>/<slug>`. Immediately after entering, before any edit, compare
+`git rev-parse HEAD` with `git rev-parse <base>` (the branch the PR will target); if they differ,
+run `git reset --keep <base>`, which stops instead of discarding local changes.
+
+Only when no native tool exists, choose an existing `.worktrees/` (preferred) or `worktrees/`
+location, or the location documented in `CLAUDE.md`; if none exists, ask before choosing a root.
+Ensure the chosen parent is ignored before running:
 
 ```bash
 git worktree add <parent>/<branch> -b <branch>
