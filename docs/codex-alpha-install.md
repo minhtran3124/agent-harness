@@ -137,7 +137,8 @@ or `--remove`, and none of them can make the install fail.
    `<branch>` and `<repo-url>` are the values the install used (`CS_BRANCH`/`--branch` and
    `CS_REPO_URL`). In both forms every path is shell-quoted, so the line can be pasted even when a
    path contains spaces, and the command ends with the same `--codex-bin` and `--codex-home` the
-   install was given (made absolute), so the follow-up checks the same Codex. An exported
+   install was given (a relative path is made absolute; a bare command name such as `codex` is kept
+   for the `PATH` lookup), so the follow-up checks the same Codex. An exported
    `CODEX_BIN` is honoured when `--codex-bin` is not given.
 
 ## Always-on rules in `AGENTS.md`

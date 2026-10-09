@@ -88,6 +88,14 @@ if [ "$RC" -eq 0 ] && has_line 'init-structure.sh' && has_line 'skipp' \
    && [ ! -e "$TARGET/specs" ]; then pass
 else fail "rc=$RC: $OUT"; fi
 
+printf 'print("{}")\n' > "$STUB_SOURCE/scripts/codex_harness_doctor.py"
+TARGET=$(new_dir)
+run_install "$STUB_SOURCE" "$TARGET" "$FAKE" --yes
+t "a doctor that exits 0 without a mode record gets its own message"
+if [ "$RC" -eq 0 ] && has_line 'codex-install: doctor output was not a mode record' \
+   && ! has_line 'could not run (exit 0)'; then pass
+else fail "rc=$RC: $OUT"; fi
+
 # 3. --dry-run and --remove run neither step.
 TARGET=$(new_dir)
 run_install "$ROOT" "$TARGET" "$FAKE" --dry-run
