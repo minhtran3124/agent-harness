@@ -4,13 +4,37 @@ Use this template as the output contract for every `specs/<slug>/design.md`. The
 Non-goals are the usual free-form design sections: keep, merge or drop them in proportion to the
 change. Three after Non-goals are required — What must be true, What we do not claim and
 Decisions — each with content or a `- none — <reason>` line. Decision changes appears only once a
-`DC<n>` exists.
+`DC<n>` exists. Reading path and Worked trace are optional: include them only when they apply, and
+leave them out (no `- none` line) when unused.
 
 ---
+
+The output document starts with this skeleton, the title and then the provenance header:
+
+```text
+# <slug> — Design
+
+Written <YYYY-MM-DD>. Pins: <repo short sha the claims were checked against; tool or dependency versions they depend on, if any>
+```
+
+- The `Written` line is the first non-blank line after the title. `Written` is the date the
+  document was first written.
+- `Pins` names at least the repository short sha the claims were read at. For claims read from
+  uncommitted work, pin `HEAD` and append `+ uncommitted`. Add tool or dependency versions only
+  when a claim depends on them.
+- A revision keeps every earlier line and appends `Revised <YYYY-MM-DD>. Pins: <…>` directly after
+  the last header line, so the lines read oldest first. Earlier lines are never edited.
+- Examples: `Written 2026-10-09. Pins: repo 8af66dd; Codex CLI 0.147.0` and
+  `Revised 2026-10-12. Pins: repo 3c4d5e6 + uncommitted`.
 
 ## Goal
 
 _What the change achieves, in one or two sentences._
+
+## Reading path
+
+_Optional; only for a spec with more than two documents (`budget`, from #258). List the documents
+in reading order, each with one line on why it comes at that point and what the reader can skip._
 
 ## Current state
 
@@ -23,6 +47,11 @@ _The 2–3 approaches from brainstorming step 3, their trade-offs, and the chose
 ## Architecture
 
 _Components, data flow, and interfaces of the chosen approach._
+
+## Worked trace
+
+_Optional. Follow one concrete request through the components the design names, from start to
+end, showing the hand-offs between layers._
 
 ## Error behavior
 

@@ -35,6 +35,8 @@ Task tool (general-purpose):
     | Decision status | A decision status other than `settled` or `superseded by DC<n>` |
     | Superseded rows | A `superseded by DC<n>` decision with no matching `DC<n>` entry under `## Decision changes` |
     | Decision changes | A `DC<n>` entry citing no evidence; a `DC<n>` whose `new decision: D<n>` is neither `settled` nor `superseded by` a later `DC<m>` (a chain of reopenings), or whose reopened decision is not marked `superseded by DC<n>` |
+    | Provenance header | The first non-blank line after the H1 title is not a `Written <YYYY-MM-DD>. Pins: <…>` line, the date is not `YYYY-MM-DD`, or `Pins:` is empty or a placeholder. A `Revised` line with any of the same defects, or `Revised` dates not in ascending order. `+ uncommitted` after the sha is valid |
+    | Optional sections | `## Reading path` or `## Worked trace` present but holding placeholder text. An absent optional section is not an issue |
     | Reopen pointer | A `## Decisions` table without the pointer line `To reopen a settled decision after approval …` above it |
 
     The `Superseded rows` and `Decision changes` checks fire only in a revision pass (a later run on
