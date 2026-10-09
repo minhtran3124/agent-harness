@@ -1,11 +1,46 @@
 ---
 slug: gh-255-codex-hook-trust
-status: proposed
+status: active
 owner: Minh Tran
 created: 2026-10-09
 ---
 
 # Make Codex hook trust visible and actionable
+
+<!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
+## At a glance
+
+**4 tasks · 3 waves · 6 files · 0/4 done**
+
+| Wave | Task | Title | Files | Done (acceptance) |
+|---|---|---|---|---|
+| 1 | 1.1 | Doctor reason for a missing hook helper (wave 1) | scripts/codex_harness_doctor.py, scripts/test_codex_harness_doctor.py | The file's tests pass, including the new `hook_dependency` cases and the drift t… |
+| 1 | 1.3 | Record the trust-surface finding in the capability matrix (wave 1) | specs/codex-support/capability-matrix.json | The validator exits 0, the SC-8 check exits 0, and `python3 -m pytest scripts/te… |
+| 2 | 1.2 | Installer tail: structure, doctor, next step (wave 2) | scripts/install-codex-harness.sh, tests/scripts/codex-install-next-step.test.sh | The new suite exits 0; `bash -n scripts/install-codex-harness.sh` exits 0; `bash… |
+| 3 | 2.1 | Document untrusted hooks and the installer's new output (wave 3) | docs/codex-alpha-install.md | That check exits 0 and `bash scripts/lint-doc-truth.sh` exits 0. |
+
+```mermaid
+flowchart LR
+  subgraph W0[Wave 1]
+    T1_1["1.1 Doctor reason for a missing hook helper (wave 1)"]
+    T1_3["1.3 Record the trust-surface finding in the capability matrix (wave 1)"]
+  end
+  subgraph W1[Wave 2]
+    T1_2["1.2 Installer tail: structure, doctor, next step (wave 2)"]
+  end
+  subgraph W2[Wave 3]
+    T2_1["2.1 Document untrusted hooks and the installer's new output (wave 3)"]
+  end
+  W0 --> W1
+  W1 --> W2
+```
+
+### Progress
+- [ ] 1.1 — Doctor reason for a missing hook helper (wave 1)
+- [ ] 1.3 — Record the trust-surface finding in the capability matrix (wave 1)
+- [ ] 1.2 — Installer tail: structure, doctor, next step (wave 2)
+- [ ] 2.1 — Document untrusted hooks and the installer's new output (wave 3)
+<!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
 
@@ -39,21 +74,24 @@ field at 0.147.0 or 0.162.0; app-server `hooks/list` has per-hook `trustStatus`)
 
 | ID | Behavior (observable) | Check (re-runnable) | Expected |
 | --- | --- | --- | --- |
-| SC-1 | A Codex install whose project has no `verify_summary.py` (or no `runtime_mode.py`) at any hook candidate reports `HOOK_DEPENDENCY_MISSING`, mode `advisory`, and names the hook in `diagnostic_summary.hook_dependencies_missing`; a full install and a `.claude/`-only helper copy do not | `python3 -m pytest scripts/test_codex_harness_doctor.py -q -k hook_dependency` | exit 0 |
+| SC-1 | A Codex install whose project has no `verify_summary.py` (or no `runtime_mode.py`) at any hook candidate reports `HOOK_DEPENDENCY_MISSING`, mode `advisory`, and names the hook in `diagnostic_summary.hook_dependencies_missing`; a full install and a `.claude/`-only helper copy do not | `python3 -m pytest scripts/test_codex_harness_doctor.py -q -k hook_dependency_missing` | exit 0 |
 | SC-2 | The doctor's helper table equals the candidates parsed from `commit-gate.sh` and `session-knowledge.sh`, in both directions | `python3 -m pytest scripts/test_codex_harness_doctor.py -q -k hook_dependency_table` | exit 0 |
 | SC-3 | Existing doctor behaviour is unchanged for a complete install (enforced fixture, exact reasons, persistence) | `python3 -m pytest scripts/test_codex_harness_doctor.py -q` | exit 0 |
 | SC-4 | A fresh install runs `init-structure.sh` (creates the structure files, keeps an existing one), prints `doctor mode: <word>`, and prints the trust next step with the right doctor command for `--source` mode; a failing doctor still exits 0; `--dry-run` and `--remove` run neither; the fake Codex sees no trust-changing call and `CODEX_HOME` gains no config | `bash tests/scripts/codex-install-next-step.test.sh` | exit 0 |
-| SC-5 | The capability matrix still validates, and `config.project_trust` records the source reading and the `hooks/list` exit condition | `python3 scripts/check_codex_capabilities.py specs/codex-support/capability-matrix.json` | exit 0 |
+| SC-5 | The capability matrix still validates | `python3 scripts/check_codex_capabilities.py specs/codex-support/capability-matrix.json` | exit 0 |
 | SC-6 | Docs describe the untrusted-hook prompt and `/hooks`, the installer's new output, the files it creates, and each trust/dependency reason with its fix | `python3 -c "import pathlib,sys; t=pathlib.Path('docs/codex-alpha-install.md').read_text(encoding='utf-8'); sys.exit(0 if all(k in t for k in ('Hooks need review', '/hooks', 'HOOK_DEPENDENCY_MISSING', 'TRUST_UNKNOWN', 'HOOKS_UNTRUSTED', 'TRUST_CONFIG_ONLY', 'init-structure.sh', 'doctor mode:')) else 1)"` | exit 0 |
 | SC-7 | The existing Codex install suite still passes | `bash tests/scripts/codex-install.test.sh` | exit 0 |
+| SC-8 | `config.project_trust` keeps `status: unknown` and `source.kind: unavailable`, is checked 2026-10-09, and names `hooks/list` in its reference and exit condition | `python3 -c "import json,sys; r=[c for c in json.load(open('specs/codex-support/capability-matrix.json'))['capabilities'] if c['id']=='config.project_trust'][0]; s=r['source']; sys.exit(0 if (s['checked_at']=='2026-10-09' and 'hooks/list' in s['reference'] and 'hooks/list' in r['exit_condition'] and r['status']=='unknown' and s['kind']=='unavailable') else 1)"` | exit 0 |
 
 ## 4. Tasks
 
 ### Task 1.1 — Doctor reason for a missing hook helper (wave 1)
 
 - **Files:** scripts/codex_harness_doctor.py, scripts/test_codex_harness_doctor.py
-- **Action:** Write the failing tests first, named so `-k hook_dependency` selects them and
-  `-k hook_dependency_table` selects the drift test. Extend the shared `installed_project()`
+- **Action:** Write the failing tests first: the missing-helper cases named
+  `test_hook_dependency_missing_*` (selected by `-k hook_dependency_missing`) and the drift test
+  named `test_hook_dependency_table_*` (selected by `-k hook_dependency_table`); the two filters
+  select disjoint sets. Extend the shared `installed_project()`
   fixture with `.codex/.agent-harness/payload/scripts/verify_summary.py` and
   `.codex/.agent-harness/payload/runtime/runtime_mode.py` so existing assertions keep their
   meaning. Then add a module table `HOOK_DEPENDENCIES` mapping `commit-gate.sh` to its three
@@ -72,7 +110,7 @@ field at 0.147.0 or 0.162.0; app-server `hooks/list` has per-hook `trustStatus`)
 - **Criteria:** SC-1, SC-2, SC-3
 - **Interfaces:** Consumes the hook scripts' candidate lists; produces `HOOK_DEPENDENCY_MISSING` and `diagnostic_summary.hook_dependencies_missing` in `scripts/codex_harness_doctor.py`.
 
-### Task 1.2 — Installer tail: structure, doctor, next step (wave 1)
+### Task 1.2 — Installer tail: structure, doctor, next step (wave 2)
 
 - **Files:** scripts/install-codex-harness.sh, tests/scripts/codex-install-next-step.test.sh
 - **Action:** Write the new suite first, modelled on `tests/scripts/codex-install-gitignore.test.sh`
@@ -83,8 +121,19 @@ field at 0.147.0 or 0.162.0; app-server `hooks/list` has per-hook `trustStatus`)
   <target>`; a stub `--source` whose doctor exits 2 still installs with rc 0 and prints
   `doctor could not run`; a stub `--source` without `scripts/init-structure.sh` prints a skip
   line and rc 0; `--dry-run` creates no `specs/` and prints no `doctor mode`; `--remove` prints no
-  `doctor mode`; the fake Codex log has no line containing `trust` and `<codex-home>` holds no
-  `config.toml`. Then implement per `design.md` §Components 1: capture `--codex-bin`/
+  `doctor mode`; the fake Codex log has no trust-changing argument
+  (`grep -qE '(^| )(trust|--trust[^ ]*)( |$)|trust_level'` finds nothing) and `<codex-home>` holds no
+  `config.toml`; clone mode (`git init --bare "$BARE"`, then
+  `git -C "$ROOT" push -q "$BARE" HEAD:refs/heads/next-step-test`, `CS_REPO_URL=file://$BARE`,
+  `CS_BRANCH=next-step-test`)
+  prints the `git clone --depth 1 --branch … && python3 <dir>/scripts/codex_harness_doctor.py
+  --root <target>` line. Compare paths against `pwd -P`-resolved `ROOT` and target (macOS
+  `/var` → `/private/var`). Build the stub `--source` as the existing pattern at
+  `tests/scripts/codex-install.test.sh:442-450` does: copy the real `deploy-codex-adapter.sh`, add
+  a `render_codex_adapter.py` wrapper that runs `$ROOT/scripts/render_codex_adapter.py --root
+  $ROOT` with the given `--output`, add a `codex_harness_doctor.py` that exits 2, and omit
+  `init-structure.sh`; one stub covers both the failing-doctor and missing-init cases. Then
+  implement per `design.md` §Components 1: capture `--codex-bin`/
   `--codex-home` in their own variables too; after the `.gitignore` step and under the same
   `GI_RUN` condition, run `init-structure.sh` (guarded, skip line when absent), run the doctor
   with `--root "$TARGET_DIR" --repo-root "$SOURCE_DIR" --no-persist` plus forwarded codex flags
@@ -109,11 +158,11 @@ field at 0.147.0 or 0.162.0; app-server `hooks/list` has per-hook `trustStatus`)
   observed; replace `exit_condition` with: wire app-server `hooks/list` into the doctor after a
   live macOS capture of the Agent Harness hooks' `trustStatus`.
 - **Verify:** `python3 scripts/check_codex_capabilities.py specs/codex-support/capability-matrix.json`
-- **Done:** The validator exits 0 and `python3 -m pytest scripts/test_check_codex_capabilities.py -q` exits 0.
-- **Criteria:** SC-5
+- **Done:** The validator exits 0, the SC-8 check exits 0, and `python3 -m pytest scripts/test_check_codex_capabilities.py -q` exits 0.
+- **Criteria:** SC-5, SC-8
 - **Interfaces:** Consumes the research brief's upstream findings; produces the updated `config.project_trust` row in `specs/codex-support/capability-matrix.json`.
 
-### Task 2.1 — Document untrusted hooks and the installer's new output (wave 2)
+### Task 2.1 — Document untrusted hooks and the installer's new output (wave 3)
 
 - **Files:** docs/codex-alpha-install.md
 - **Action:** Add a section on hook trust: Codex runs a hook only after it is trusted; the startup
@@ -139,7 +188,12 @@ field at 0.147.0 or 0.162.0; app-server `hooks/list` has per-hook `trustStatus`)
 - The drift test parses Bash text; a restructured hook loop needs the parser updated (the test
   fails loudly rather than passing silently).
 - Trust UX is read from 0.147.0 TUI snapshots, not observed.
+- Pre-existing: the matrix source `expires_at` is 2026-11-08; from 2026-11-09 the validator (SC-5)
+  and the doctor's evidence checks fail until the evidence is refreshed. Not introduced here.
+- Task 1.2's suites execute the doctor that Task 1.1 edits, so 1.2 runs in wave 2, after 1.1
+  commits.
 
 ## 6. Status Log
 
 - 2026-10-09 — plan written from the approved design and research brief.
+- 2026-10-09 — revised after plan review: SC-1 selector, SC-8, Task 1.2 test details, waves 1/2/3. Plan review approved on iteration 2.
