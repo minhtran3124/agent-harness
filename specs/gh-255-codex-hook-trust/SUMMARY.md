@@ -51,6 +51,14 @@ profile check was done separately and filed as #268. The branch stacks on
 
 - none
 
+### Task review log
+
+- Task 1.3 (`6795c61`): spec pass, quality approved, no findings.
+- Task 1.1 (`d5ba42b`): spec pass, quality approved. Minor M1: the `MANIFEST_INVALID` skip of
+  the helper check is untested (only `INSTALL_MISSING` is); M2: the drift test compares
+  candidate tuples, so a pure reorder in a hook fails it (order decides which helper a hook
+  picks, so strictness is defensible).
+
 ### Verify
 
 | Check | Command | Exit | Notes | Criterion |
