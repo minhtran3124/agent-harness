@@ -1,9 +1,10 @@
-<!-- Copy to specs/<slug>/intent.md (from .claude/templates/ in a consumer repo). Setting `Status: approved` and committing the file is the approval; no SUMMARY.md is needed to create it. -->
+<!-- Copy to specs/<slug>/intent.md (from .claude/templates/ in a consumer repo) before running intake. Setting the Status header to approved and committing the file is the approval; no SUMMARY.md is needed to create it. -->
 
 # Intent: <title>
 
 Author: <name>
-Status: draft | approved
+<!-- Set Status to approved or draft. Intake proceeds only on approved. -->
+Status:
 
 ## Problem
 

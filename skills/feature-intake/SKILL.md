@@ -16,6 +16,12 @@ classify risk; ask only to resolve a material ambiguity or narrow a hard-gated s
 
 1. Read `harness-manifest.json` for canonical hard-gate vocabulary and modes. Read
    `rules/orchestration.md` and `rules/auto-correct-scope.md` for routing and branch policy.
+   If `specs/<slug>/intent.md` exists (a person writes it before intake; shape:
+   `templates/INTENT.template.md`), read it now, before classifying. Stop unless the value on its
+   `Status:` header line is exactly `approved`. Pin with
+   `git log -1 --format=%H --diff-filter=AM -- specs/<slug>/intent.md`; stop if the pin is empty.
+   Run `git diff --exit-code <pin> -- specs/<slug>/intent.md`; if it exits non-zero, stop and ask
+   for the intent to be committed. Steps 2–4 classify from intent.md plus the chat request.
 2. Classify the input: new spec, spec slice, change request, initiative, maintenance, or harness
    improvement. Mark applicable risk flags: auth, authorization, data model, audit/security,
    external systems, public contracts, cross-platform, existing behavior, weak proof, and
@@ -25,20 +31,16 @@ classify risk; ask only to resolve a material ambiguity or narrow a hard-gated s
    A human may lower a hard-gated lane only by narrowing scope.
 4. Assign confidence: `high` for one clear interpretation, `medium` for a safe documented
    default, and `low` for materially different plausible interpretations. Low confidence stops
-   for human confirmation regardless of lane.
-5. If `specs/<slug>/intent.md` exists (shape: `templates/INTENT.template.md`), pin it before
-   writing SUMMARY. Stop unless its `Status:` header line says `approved`. Pin with
-   `git log -1 --format=%H --diff-filter=AM -- specs/<slug>/intent.md`; stop if the pin is empty.
-   Run `git diff --exit-code <pin> -- specs/<slug>/intent.md`; if it exits non-zero, stop and ask
-   for the intent to be committed. In `### Intent`, write
+   for human confirmation regardless of lane. A chat request that conflicts with intent.md is
+   ambiguous direction: `low`.
+5. If intent.md was pinned, record it. New SUMMARY: in `### Intent`, write
    `Intent-source: specs/<slug>/intent.md @ <sha>` (the pin) above the chat request, verbatim and
-   in full. If the chat request conflicts with intent.md, escalate as ambiguous direction (Step 4).
-   Re-pin — the slug already has an `Intent-source:` line, or a chat-started slug gains intent.md:
-   replace or add only that line, add a dated `### Intake notes` line with the old → new SHA, keep
-   every other SUMMARY section, and re-check the lane (up freely; down only when a human narrows
-   scope).
-6. Write `SUMMARY.md` using `templates/SUMMARY.template.md`, including the user intent verbatim
-   in `### Intent`; put agent notes in `### Intake notes`, never in `### Intent` or intent.md:
+   in full. Re-pin — the slug already has an `Intent-source:` line, or a chat-started slug gains
+   intent.md: replace or add only that line, add a dated `### Intake notes` line with the old →
+   new SHA, and re-check the lane (raise `Lane:` freely; lower it only when a human narrows
+   scope). A re-pin changes nothing else in SUMMARY.
+6. For a new SUMMARY, write `SUMMARY.md` using `templates/SUMMARY.template.md`, including the
+   user intent verbatim in `### Intent`; put agent notes in `### Intake notes`, never in `### Intent` or intent.md:
 
    ```text
    Lane: <tiny | normal | high-risk>
@@ -51,9 +53,10 @@ classify risk; ask only to resolve a material ambiguity or narrow a hard-gated s
    Escalate: <yes (reason) | no>
    ```
 
-7. Initialize `runtime/run_state.py` as `investigating` on a best-effort basis. For normal and
-   high-risk lanes, transition to `planning`; failures are observability failures, never an intake
-   blocker. Run `python3 scripts/verify_summary.py --lane <slug>` before handoff.
+7. For a new SUMMARY, initialize `runtime/run_state.py` as `investigating` on a best-effort basis.
+   For normal and high-risk lanes, transition to `planning`; failures are observability failures,
+   never an intake blocker. Always run `python3 scripts/verify_summary.py --lane <slug>` before
+   handoff.
 
 ## Routes
 
