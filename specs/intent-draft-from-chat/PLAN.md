@@ -1,6 +1,6 @@
 ---
 slug: intent-draft-from-chat
-status: draft
+status: active
 owner: Minh Tran
 created: 2026-10-10
 ---
@@ -10,7 +10,7 @@ created: 2026-10-10
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**3 tasks · 1 waves · 6 files · 0/3 done**
+**3 tasks · 1 waves · 6 files · 3/3 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -28,9 +28,9 @@ flowchart LR
 ```
 
 ### Progress
-- [ ] 1.1 — Template comment and oracle wording (wave 1)
-- [ ] 1.2 — feature-intake drafts intent.md (wave 1)
-- [ ] 1.3 — Canaries for the draft procedure (wave 1)
+- [x] 1.1 — Template comment and oracle wording (wave 1)
+- [x] 1.2 — feature-intake drafts intent.md (wave 1)
+- [x] 1.3 — Canaries for the draft procedure (wave 1)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -55,7 +55,7 @@ chat or edit the file. Research: `research-brief.md`.
   `<placeholder>` (`scripts/lint-skill-bash.sh`).
 - **Exact strings** (character for character):
   - new reference path: `skills/feature-intake/references/draft-intent.md`;
-  - allowed-tools line: `allowed-tools: Read, Write, Grep, Glob, Bash(git log *), Bash(git diff *), Bash(git add *), Bash(git commit *), Bash(git config user.name), Bash(ls *), Bash(python3 scripts/verify_summary.py *), Bash(python3 runtime/run_state.py *)`;
+  - allowed-tools line: `allowed-tools: Read, Write, Edit, Grep, Glob, Bash(git log *), Bash(git diff *), Bash(git branch --show-current), Bash(git switch -c *), Bash(git add -- specs/*), Bash(git commit -m *), Bash(git config user.name), Bash(ls *), Bash(python3 scripts/verify_summary.py *), Bash(python3 runtime/run_state.py *)`;
   - draft section: `## Original request`;
   - assumption marker: `(assumed)`;
   - add command: `git add -- specs/<slug>/intent.md`;
@@ -89,7 +89,7 @@ chat or edit the file. Research: `research-brief.md`.
 | ID | Behavior (observable) | Check (re-runnable) | Expected |
 |---|---|---|---|
 | SC-1 | feature-intake stays within the skill word budget | `python3 scripts/audit_skill_prompts.py` | exit 0 |
-| SC-2 | feature-intake may run git add and git commit | `grep -qxF -- "allowed-tools: Read, Write, Grep, Glob, Bash(git log *), Bash(git diff *), Bash(git add *), Bash(git commit *), Bash(git config user.name), Bash(ls *), Bash(python3 scripts/verify_summary.py *), Bash(python3 runtime/run_state.py *)" skills/feature-intake/SKILL.md` | exit 0 |
+| SC-2 | feature-intake may run git add and git commit | `grep -qxF -- "allowed-tools: Read, Write, Edit, Grep, Glob, Bash(git log *), Bash(git diff *), Bash(git branch --show-current), Bash(git switch -c *), Bash(git add -- specs/*), Bash(git commit -m *), Bash(git config user.name), Bash(ls *), Bash(python3 scripts/verify_summary.py *), Bash(python3 runtime/run_state.py *)" skills/feature-intake/SKILL.md` | exit 0 |
 | SC-3 | Every command the skill and its references instruct is granted | `python3 scripts/check_skill_tool_conformance.py` | exit 0 |
 | SC-4 | SKILL.md points to the draft procedure | `grep -qF -- "references/draft-intent.md" skills/feature-intake/SKILL.md` | exit 0 |
 | SC-5 | The draft procedure keeps the request verbatim and commits only the intent | `python3 -c "import sys;t=open('skills/feature-intake/references/draft-intent.md').read();sys.exit(0 if all(s in t for s in ['## Original request','(assumed)','git add -- specs/<slug>/intent.md','git commit -m \"docs(specs): intent for <slug>\" -- specs/<slug>/intent.md','auto-approved: tiny/high']) else 1)"` | exit 0 |
@@ -172,3 +172,4 @@ finishing and is cited in SUMMARY prose, not as an SC row.
 ## 6. Status Log
 
 - 2026-10-10 — draft written from approved design and Deep research brief.
+- 2026-10-10 — tasks 1.1, 1.2, 1.3 complete; commits faaec1b, 4fffd03, 7b36684 (task reviews pass/approved; Minor fixes in 1380d38)

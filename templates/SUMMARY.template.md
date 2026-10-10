@@ -27,8 +27,9 @@ Input-type: new spec | spec slice | change request | new initiative | maintenanc
 ### Intent
 
 <!-- The user's request VERBATIM at intake — do NOT paraphrase or summarize. Either form:
-     the chat request verbatim, or the line
-     `Intent-source: specs/<slug>/intent.md @ <sha>` followed by the chat request verbatim.
+     the chat request verbatim (legacy slugs), or the line
+     `Intent-source: specs/<slug>/intent.md @ <sha>` followed by the request verbatim: the
+     intent's `## Original request`, else the chat request, else `none — intent.md is the request`.
      This is the oracle for intent-review (the final stage of subagent-driven-development):
      the third reviewer is blind to PLAN.md and checks the finished diff against this text
      (plus the pinned intent.md, when present). If the request came over several
