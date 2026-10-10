@@ -1,12 +1,12 @@
 {
   "created_at": "2026-10-10T10:08:35Z",
-  "last_event_id": "dc2ea57d-8d34-45d8-84f6-8834693b44b2",
+  "last_event_id": "97d2b806-89e9-49b8-abb6-8db7c905a4a7",
   "resume_event": null,
   "run_id": "af86c18c-6759-48a5-9aaf-b1f2fcf58c93",
-  "seq": 3,
+  "seq": 5,
   "sha": null,
   "slug": "intent-draft-from-chat",
-  "state": "planning",
-  "updated_at": "2026-10-10T10:08:49Z",
+  "state": "verifying",
+  "updated_at": "2026-10-10T10:35:44Z",
   "waiting_on": null
 }

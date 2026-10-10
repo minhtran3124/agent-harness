@@ -90,12 +90,13 @@ reviewer (f679638, bb923dc, 8b994e2). Final round: 0 blocking.
 
 ### Intent Findings
 
-Plan-blind intent review at f39accb: no gap, no material drift.
+Plan-blind intent review at f39accb, re-run over the full range 5fbd67c..8b994e2 (including the user's branch decision): no gap, no material drift.
 
 1. drift (equivalent, advisory) — SKILL.md changed beyond one pointer sentence (Steps 1/5/6, allowed-tools) — needed for consistency.
 2. excess (report-only) — SKILL.md wording compressed (Routes table → list) to stay within 600 words.
 3. excess (report-only) — chat change requests are appended to `## Original request` and the approved body wins; needed once the AI edits drafts (trial 7).
 4. drift (equivalent, advisory) — `## Original request` added to the drafted file beyond the template.
+5. excess (report-only, needs a human look) — `skills/intent-review/SKILL.md:19-20` and `intent-reviewer-prompt.md:45-46` now let an approved intent.md body win over the request text. It changes how every intent review weighs its oracle; it follows from 3 (AI-applied changes make the body diverge from the first request).
 - Note: the `Criterion` column uses PLAN §3 numbering (SC-1..SC-14), not design.md's SC-1..SC-4.
 
 ### Verify
@@ -112,7 +113,7 @@ Plan-blind intent review at f39accb: no gap, no material drift.
 | runtime-neutral | `python3 scripts/check_runtime_neutral_sources.py` | 0 | | SC-8 |
 | skill bash lint | `bash scripts/lint-skill-bash.sh` | 0 | | SC-9 |
 | doc truth | `bash scripts/lint-doc-truth.sh` | 0 | | SC-10 |
-| canaries | `grep -qF -- "DI-08" skills/feature-intake/tests/intent-file-cases.md` | 0 | DI-01..DI-09 | SC-11 |
+| canaries | `grep -qF -- "DI-08" skills/feature-intake/tests/intent-file-cases.md` | 0 | DI-01..DI-15, IF-21..IF-23 | SC-11 |
 | old wording removed | `grep -qF -- "human-written intent" rules/terminology.md` | 1 | expected exit 1 | SC-12 |
 | template header | `grep -qx -- "Author: <name>" templates/INTENT.template.md` | 0 | | SC-13 |
 | legacy scoping | `grep -qF -- "legacy" skills/feature-intake/SKILL.md` | 0 | | SC-14 |
@@ -136,7 +137,7 @@ PASS (controller, main session, at f39accb). Search surface: `grep -rn -e "draft
 ### Not auto-verified
 
 - Classification (lane/confidence) is a judgment at intake — traceability only.
-- Full suite `bash scripts/run-tests.sh` ended ALL GREEN after wave 1 — re-run, cited in prose (whole-suite rows are not allowed in `### Verify`).
+- Full suite `bash scripts/run-tests.sh` ended ALL GREEN after wave 1 and again after each correctness fix round (last at 8b994e2) — re-run, cited in prose (whole-suite rows are not allowed in `### Verify`).
 - **Real install, 2026-10-10 — truth, one trial each.** `install-harness.sh --profile standard` from this branch into a fresh repo, then `claude -p "/feature-intake <slug> …"` (Claude Code 2.1.296, acceptEdits, scoped allowlist): (1) tiny/high README title → intent committed `(auto-approved: tiny/high)`, `Status: approved`, `## Original request`, SUMMARY pinned to the `git log` SHA, Intake notes `auto-approved: tiny/high`; (2) normal CSV export → draft, no SUMMARY, no commit; (3) then `approve` in a new run → intent committed, `### Intent` holds the original request (not "approve"); (4) high-risk rate-limit draft, then "change: 10 not 5" → draft edited, no commit; (5) legacy slug (SUMMARY, no intent) → no intent.md written; (6) a person's `Status: draft` intent on a tiny change → not auto-approved, unchanged, no commit; (7) user set `Status: approved` (uncommitted) and said `done` → committed, SUMMARY written; (8) a person's approved-but-uncommitted intent with an ordinary request → file byte-identical, no commit. 7/8 matched; (7) exposed a defect: the change in (4) left `## Original request` saying 5, so approval was read as a chat conflict (`low`, escalated). Fixed in f39accb (change replies append to `## Original request`; an approved intent wins over it); re-run of draft → change → approve on a normal slug: no escalation, `## Original request` holds both messages, lane `normal`. Not re-runnable from this repo (headless model runs).
 - **Final real install on `main`, after fix round 3 — truth, one trial each:** (a) tiny/high → intake cut `docs/readme-title`, committed `(auto-approved: tiny/high)`, SUMMARY `tiny`/`high` pinned to that commit, `main` still 2 commits; (b) normal → draft, stop; (c) a new run with only `approve` → resolved to `csv-export` (no `specs/approve/`), cut `feat/csv-export`, committed and pinned, `normal`/`high`. The worktree handoff (`switch <base>` + `reset --keep` + `branch -M`) was probed with plain git only, not through `using-git-worktrees` in a model run.
 - Canaries `skills/feature-intake/tests/intent-file-cases.md` are prose — traceability. Error-behavior rows without a canary or trial: `Author: unknown` when `user.name` is unset, commit skipped when nothing changed, other staged files excluded from the commit (git behavior probed separately: pathspec commit leaves other staged files staged), hook refusal → stop.

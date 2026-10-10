@@ -1,6 +1,6 @@
 ---
 slug: intent-draft-from-chat
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-10-10
 ---
@@ -174,3 +174,4 @@ finishing and is cited in SUMMARY prose, not as an SC row.
 - 2026-10-10 — draft written from approved design and Deep research brief.
 - 2026-10-10 — tasks 1.1, 1.2, 1.3 complete; commits faaec1b, 4fffd03, 7b36684 (task reviews pass/approved; Minor fixes in 1380d38)
 - 2026-10-10 — final review chain: trial fix f39accb; correctness fix rounds f679638, bb923dc, 8b994e2 (0 blocking); intent review no gap or material drift; context audit PASS
+- 2026-10-10 — shipped: intent review re-run over 5fbd67c..8b994e2 (no gap); PR into sdlc
