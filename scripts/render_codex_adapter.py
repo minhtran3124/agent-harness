@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import shutil
 import sys
 from pathlib import Path, PurePosixPath
@@ -12,6 +13,9 @@ from typing import Any
 
 import check_codex_packaging
 import render_agent_definitions
+
+
+PAYLOAD_DIR = ".codex/.agent-harness/payload"
 
 
 class AdapterError(ValueError):
@@ -119,6 +123,7 @@ def _validate_schema(schema: dict[str, Any]) -> None:
         "skills",
         "hooks",
         "agents",
+        "payload",
     }
     if not isinstance(required, list) or set(required) != expected:
         raise AdapterError("adapter schema required inventory is incomplete")
@@ -223,6 +228,100 @@ def _file_inventory(base: Path, relative_root: Path) -> list[str]:
     )
 
 
+def parse_bash_array(text: str, name: str) -> list[str]:
+    """Entries of a `NAME=(` array with one double-quoted entry per line; comments skipped."""
+    lines = text.splitlines()
+    try:
+        start = lines.index(f"{name}=(")
+    except ValueError:
+        raise AdapterError(f"cannot parse {name}: array header is absent") from None
+    entries = []
+    for line in lines[start + 1 :]:
+        stripped = line.strip()
+        if stripped == ")":
+            if not entries:
+                raise AdapterError(f"cannot parse {name}: array has no entries")
+            return entries
+        if not stripped or stripped.startswith("#"):
+            continue
+        match = re.fullmatch(r'"([^"]+)"', stripped)
+        if not match:
+            raise AdapterError(f"cannot parse {name}: unexpected line {line!r}")
+        entries.append(_safe_relative(match.group(1), f"{name} entry"))
+    raise AdapterError(f"cannot parse {name}: closing ) is absent")
+
+
+def consumer_subset(root: Path) -> dict[str, Path]:
+    """Payload path -> source for deploy-harness.sh CONSUMER_SCRIPTS + CONSUMER_DATA."""
+    text = (root / "scripts/deploy-harness.sh").read_text()
+    subset = {
+        f"scripts/{name}": root / "scripts" / name
+        for name in parse_bash_array(text, "CONSUMER_SCRIPTS")
+    }
+    subset.update(
+        {name: root / name for name in parse_bash_array(text, "CONSUMER_DATA")}
+    )
+    for target, source in subset.items():
+        if not source.is_file():
+            raise AdapterError(f"consumer subset names a missing file: {target}")
+    return subset
+
+
+def _payload_sources(root: Path, skills: list[str]) -> dict[str, Path]:
+    def keep(path: Path) -> bool:
+        return (
+            path.is_file()
+            and not path.name.startswith("test_")
+            and path.suffix != ".pyc"
+            and path.name != ".DS_Store"
+            and "__pycache__" not in path.parts
+        )
+
+    sources: dict[str, Path] = {}
+    for directory in ("rules", "runtime", "templates"):
+        for path in (root / directory).rglob("*"):
+            if keep(path):
+                sources[path.relative_to(root).as_posix()] = path
+    for skill in skills:
+        skill_dir = root / "skills" / skill
+        for path in skill_dir.rglob("*"):
+            # Helpers, plus prompts/ fragments that render_skill_prompt.py composes by path.
+            if keep(path) and (
+                path.suffix != ".md" or path.relative_to(skill_dir).parts[0] == "prompts"
+            ):
+                sources[path.relative_to(root).as_posix()] = path
+    sources.update(consumer_subset(root))
+    for path in sources.values():
+        if path.is_symlink():
+            raise AdapterError(f"source symlink is not allowed: {path}")
+    return sources
+
+
+def payload_targets(root: Path, skills: list[str]) -> list[str]:
+    """Payload-relative paths that rendered Markdown references are rewritten to."""
+    return sorted(_payload_sources(root, skills))
+
+
+def rewrite_payload_paths(text: str, targets: set[str] | list[str]) -> str:
+    """Prefix bare references to payload files; token-anchored, so idempotent."""
+    if not targets:
+        return text
+    alternation = "|".join(re.escape(t) for t in sorted(targets, key=len, reverse=True))
+    pattern = re.compile(rf"(?<![\w./-])(?:{alternation})(?![\w-])")
+    return pattern.sub(lambda match: f"{PAYLOAD_DIR}/{match.group(0)}", text)
+
+
+def _rewrite_markdown(base: Path, targets: list[str]) -> None:
+    for path in sorted(base.rglob("*.md")):
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError as exc:
+            raise AdapterError(f"{path}: not UTF-8") from exc
+        rewritten = rewrite_payload_paths(text, targets)
+        if rewritten != text:
+            path.write_text(rewritten, encoding="utf-8")
+
+
 def render(root: Path, output: Path) -> dict[str, Any]:
     root = root.resolve()
     output = _assert_output_root(root, output)
@@ -258,6 +357,18 @@ def render(root: Path, output: Path) -> dict[str, Any]:
     instructions.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(root / "adapters/codex/project/harness-instructions.md", instructions)
 
+    payload = project / PAYLOAD_DIR
+    sources = _payload_sources(root, sorted(manifest["skills"]))
+    for relative, source in sorted(sources.items()):
+        destination = payload / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, destination)
+    targets = sorted(sources)
+    _rewrite_markdown(plugin / "skills", targets)
+    _rewrite_markdown(payload / "rules", targets)
+    _rewrite_markdown(payload / "templates", targets)
+    _rewrite_markdown(payload / "skills", targets)
+
     result = {
         "schema_version": 1,
         "runtime": "codex",
@@ -265,6 +376,7 @@ def render(root: Path, output: Path) -> dict[str, Any]:
         "skills": sorted(manifest["skills"]),
         "hooks": _file_inventory(plugin / "hooks", plugin),
         "agents": sorted(path.name for path in agents_dir.glob("*.toml")),
+        "payload": _file_inventory(payload, payload),
     }
     rendered_manifest.write_text(
         json.dumps(result, indent=2, sort_keys=True, ensure_ascii=False) + "\n"

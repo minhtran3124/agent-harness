@@ -1,6 +1,7 @@
 import hashlib
 import importlib.util
 import json
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -15,6 +16,8 @@ assert SPEC and SPEC.loader
 renderer = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(renderer)
 ROOT = SCRIPT.parents[1]
+DEPLOY = "scripts/deploy-harness.sh"
+PREFIX = ".codex/.agent-harness/payload/"
 
 
 def tree_digest(root: Path) -> str:
@@ -51,6 +54,17 @@ def clone_render_root(tmp_path: Path) -> Path:
         )
     for name in ("settings.json", "harness-manifest.json"):
         shutil.copy2(ROOT / name, root / name)
+    for directory in ("rules", "runtime", "templates"):
+        shutil.copytree(
+            ROOT / directory,
+            root / directory,
+            ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+        )
+    (root / "scripts").mkdir()
+    shutil.copy2(ROOT / DEPLOY, root / DEPLOY)
+    deploy_text = (ROOT / DEPLOY).read_text()
+    for name in renderer.parse_bash_array(deploy_text, "CONSUMER_SCRIPTS"):
+        shutil.copy2(ROOT / "scripts" / name, root / "scripts" / name)
     return root
 
 
@@ -267,3 +281,301 @@ def test_manifest_inventory_drift_blocks_render(tmp_path):
     manifest.write_text(json.dumps(payload))
     with pytest.raises(renderer.AdapterError, match="skills do not exactly match"):
         renderer.render(root, tmp_path / "output")
+
+
+# --- payload: closure, consumer subset, rewrite, inventory (gh-253) ---
+
+
+def _payload(output: Path) -> Path:
+    return output / "project/.codex/.agent-harness/payload"
+
+
+def _rendered_markdown(output: Path) -> list[Path]:
+    payload = _payload(output)
+    return sorted(
+        [*(output / "plugin/skills").rglob("*.md")]
+        + [*(payload / "rules").rglob("*.md")]
+        + [*(payload / "templates").rglob("*.md")]
+    )
+
+
+def _array_entries(text: str, name: str) -> list[str]:
+    body = text.split(f"{name}=(\n", 1)[1].split("\n)", 1)[0]
+    return re.findall(r'^\s*"([^"]+)"\s*$', body, re.MULTILINE)
+
+
+def _payload_eligible_in_source(root: Path) -> set[str]:
+    """Payload-backed targets derived from the source tree, independent of the renderer."""
+    deploy = (root / DEPLOY).read_text()
+    eligible = {f"rules/{p.name}" for p in (root / "rules").glob("*.md")}
+    eligible |= {
+        f"runtime/{p.name}"
+        for p in (root / "runtime").glob("*.py")
+        if not p.name.startswith("test_")
+    }
+    eligible |= {
+        p.relative_to(root).as_posix()
+        for p in (root / "templates").rglob("*")
+        if p.is_file()
+    }
+    eligible |= {f"scripts/{n}" for n in _array_entries(deploy, "CONSUMER_SCRIPTS")}
+    eligible |= set(_array_entries(deploy, "CONSUMER_DATA"))
+    for skill in json.loads((root / "harness-manifest.json").read_text())["skills"]:
+        for p in (root / "skills" / skill).rglob("*"):
+            if (
+                p.is_file()
+                and (
+                    p.suffix != ".md"
+                    or p.relative_to(root / "skills" / skill).parts[0] == "prompts"
+                )
+                and not p.name.startswith("test_")
+                and "__pycache__" not in p.parts
+            ):
+                eligible.add(p.relative_to(root).as_posix())
+    return eligible
+
+
+BARE_TOKEN = re.compile(
+    r"(?<![\w./-])((?:rules|runtime|templates|scripts|skills)/[\w./-]+|harness-manifest\.json)"
+)
+PREFIXED_TOKEN = re.compile(re.escape(PREFIX) + r"([\w./-]+)")
+
+
+def test_payload_closure_every_helper_reference_resolves(tmp_path):
+    output = tmp_path / "rendered"
+    renderer.render(ROOT, output)
+    payload = _payload(output)
+    eligible = _payload_eligible_in_source(ROOT)
+    prefixed, bare_left = set(), set()
+    for path in _rendered_markdown(output):
+        text = path.read_text()
+        for match in PREFIXED_TOKEN.finditer(text):
+            prefixed.add(match.group(1).rstrip("."))
+        for match in BARE_TOKEN.finditer(text):
+            if match.group(1).rstrip(".") in eligible:
+                bare_left.add((path.relative_to(output).as_posix(), match.group(1)))
+    assert not bare_left
+    missing = sorted(ref for ref in prefixed if not (payload / ref).is_file())
+    assert not missing
+    assert {
+        "skills/visual-planner/render_plan.py",
+        "skills/subagent-driven-development/scripts/task_brief.py",
+        "skills/using-git-worktrees/scripts/detect-isolation.sh",
+        "runtime/resume_decision.py",
+        "scripts/verify_summary.py",
+        "rules/research-depth.md",
+        "templates/SUMMARY.template.md",
+    } <= prefixed
+
+
+def test_payload_closure_payload_equals_source_eligible_set(tmp_path):
+    output = tmp_path / "rendered"
+    renderer.render(ROOT, output)
+    payload = _payload(output)
+    copied = {p.relative_to(payload).as_posix() for p in payload.rglob("*") if p.is_file()}
+    assert copied == _payload_eligible_in_source(ROOT)
+    assert {
+        "skills/visual-planner/template.html",
+        "skills/visual-planner/view_plan.py",
+        "skills/visual-planner/build_roadmap.py",
+        "skills/correctness-review/review-config.json",
+        "skills/subagent-driven-development/scripts/review_package.py",
+    } <= copied
+
+
+def test_consumer_subset_matches_deploy_harness_arrays(tmp_path):
+    output = tmp_path / "rendered"
+    renderer.render(ROOT, output)
+    payload = _payload(output)
+    deploy = (ROOT / DEPLOY).read_text()
+    scripts = {p.name for p in (payload / "scripts").iterdir()}
+    assert scripts == set(_array_entries(deploy, "CONSUMER_SCRIPTS"))
+    top_level = {p.name for p in payload.iterdir() if p.is_file()}
+    assert top_level == set(_array_entries(deploy, "CONSUMER_DATA"))
+
+
+def test_consumer_subset_removal_removes_payload_file(tmp_path):
+    root = clone_render_root(tmp_path)
+    deploy = root / DEPLOY
+    text = deploy.read_text()
+    assert '  "render_skill_prompt.py"\n' in text
+    deploy.write_text(text.replace('  "render_skill_prompt.py"\n', "", 1))
+    output = tmp_path / "rendered"
+    renderer.render(root, output)
+    scripts = _payload(output) / "scripts"
+    assert not (scripts / "render_skill_prompt.py").exists()
+    assert (scripts / "verify_summary.py").is_file()
+
+
+@pytest.mark.parametrize("array", ["CONSUMER_SCRIPTS", "CONSUMER_DATA"])
+def test_consumer_subset_bogus_entry_fails_render(tmp_path, array):
+    root = clone_render_root(tmp_path)
+    deploy = root / DEPLOY
+    text = deploy.read_text()
+    deploy.write_text(
+        text.replace(f"{array}=(\n", f'{array}=(\n  "no_such_helper.py"\n', 1)
+    )
+    with pytest.raises(renderer.AdapterError, match="no_such_helper.py"):
+        renderer.render(root, tmp_path / "output")
+
+
+@pytest.mark.parametrize("case", ["no_header", "no_close", "no_entries"])
+def test_consumer_subset_unparseable_array_fails_render(tmp_path, case):
+    root = clone_render_root(tmp_path)
+    deploy = root / DEPLOY
+    text = deploy.read_text()
+    head, rest = text.split("CONSUMER_SCRIPTS=(\n", 1)
+    body, tail = rest.split("\n)", 1)
+    if case == "no_header":
+        text = head + "CONSUMER_SCRIPTZ=(\n" + rest
+    elif case == "no_close":
+        text = head + "CONSUMER_SCRIPTS=(\n" + body + tail
+    else:
+        text = head + "CONSUMER_SCRIPTS=(\n  # nothing left\n)" + tail
+    deploy.write_text(text)
+    with pytest.raises(renderer.AdapterError, match="CONSUMER_SCRIPTS"):
+        renderer.render(root, tmp_path / "output")
+
+
+def test_consumer_subset_parser_skips_comment_lines():
+    text = 'X=(\n  # a comment\n  "a.py"\n\n  "b.py"\n)\n'
+    assert renderer.parse_bash_array(text, "X") == ["a.py", "b.py"]
+
+
+REWRITE_TARGETS = {
+    "rules/x.md",
+    "runtime/resume_decision.py",
+    "scripts/verify_summary.py",
+    "skills/visual-planner/render_plan.py",
+    "harness-manifest.json",
+}
+
+
+def test_rewrite_prefixes_bare_payload_paths_and_is_idempotent():
+    text = (
+        "See rules/x.md and `scripts/verify_summary.py --lane s`.\n"
+        "Read harness-manifest.json, run python3 skills/visual-planner/render_plan.py.\n"
+    )
+    once = renderer.rewrite_payload_paths(text, REWRITE_TARGETS)
+    assert once == (
+        f"See {PREFIX}rules/x.md and `{PREFIX}scripts/verify_summary.py --lane s`.\n"
+        f"Read {PREFIX}harness-manifest.json, run python3 "
+        f"{PREFIX}skills/visual-planner/render_plan.py.\n"
+    )
+    assert renderer.rewrite_payload_paths(once, REWRITE_TARGETS) == once
+
+
+def test_rewrite_leaves_claude_prefixed_and_non_payload_paths_unchanged():
+    text = (
+        ".claude/rules/x.md\n"
+        f"{PREFIX}rules/x.md\n"
+        "scripts/test_x.py and scripts/deploy-harness.sh\n"
+        "rules/x.mdx and src/rules/x.md\n"
+    )
+    assert renderer.rewrite_payload_paths(text, REWRITE_TARGETS) == text
+
+
+def test_rewrite_dual_candidate_snippet_rewrites_only_bare_branch():
+    text = (
+        "if [ -f runtime/resume_decision.py ]; then python3 runtime/resume_decision.py; "
+        "else python3 .claude/runtime/resume_decision.py; fi"
+    )
+    assert renderer.rewrite_payload_paths(text, REWRITE_TARGETS) == (
+        f"if [ -f {PREFIX}runtime/resume_decision.py ]; then python3 "
+        f"{PREFIX}runtime/resume_decision.py; "
+        "else python3 .claude/runtime/resume_decision.py; fi"
+    )
+
+
+def test_rewrite_applies_to_rendered_frontmatter_and_payload_rules(tmp_path):
+    before = tree_digest(ROOT / "skills"), tree_digest(ROOT / "rules")
+    output = tmp_path / "rendered"
+    renderer.render(ROOT, output)
+    assert (tree_digest(ROOT / "skills"), tree_digest(ROOT / "rules")) == before
+    skill = (output / "plugin/skills/writing-plans/SKILL.md").read_text()
+    frontmatter = skill.split("---", 2)[1]
+    assert f"Bash(python3 {PREFIX}skills/visual-planner/render_plan.py *)" in frontmatter
+    assert f"Bash(python3 {PREFIX}scripts/check_plan_contract.py *)" in frontmatter
+    worktrees = (output / "plugin/skills/using-git-worktrees/SKILL.md").read_text()
+    assert (
+        f"Bash(bash {PREFIX}skills/using-git-worktrees/scripts/detect-isolation.sh*)"
+        in worktrees.split("---", 2)[1]
+    )
+    rule = (_payload(output) / "rules/auto-correct-scope.md").read_text()
+    assert f"`{PREFIX}skills/visual-planner/render_plan.py`" in rule
+    resume = (output / "plugin/skills/subagent-driven-development/SKILL.md").read_text()
+    assert "python3 .claude/runtime/resume_decision.py" in resume
+
+
+def test_payload_inventory_is_required_by_schema_and_matches_tree(tmp_path):
+    output = tmp_path / "rendered"
+    result = renderer.render(ROOT, output)
+    schema = json.loads((ROOT / "adapters/codex/schema.json").read_text())
+    inventory = json.loads((output / "render-manifest.json").read_text())
+    assert inventory == result
+    assert "payload" in schema["required"]
+    assert set(inventory) == set(schema["required"]) == set(schema["properties"])
+    payload_schema = schema["properties"]["payload"]
+    assert payload_schema["type"] == "array" and payload_schema["uniqueItems"] is True
+    pattern = re.compile(payload_schema["items"]["pattern"])
+    assert inventory["payload"] == sorted(set(inventory["payload"]))
+    assert all(pattern.fullmatch(item) for item in inventory["payload"])
+    payload = _payload(output)
+    assert inventory["payload"] == sorted(
+        p.relative_to(payload).as_posix() for p in payload.rglob("*") if p.is_file()
+    )
+
+
+def test_payload_inventory_missing_from_schema_fails_closed():
+    schema = json.loads((ROOT / "adapters/codex/schema.json").read_text())
+    renderer._validate_schema(schema)
+    schema["required"].remove("payload")
+    with pytest.raises(renderer.AdapterError, match="required inventory"):
+        renderer._validate_schema(schema)
+
+
+def test_payload_closure_helpers_resolve_the_consumer_root_not_the_payload(tmp_path):
+    import subprocess
+
+    renderer.render(ROOT, tmp_path / "codex")
+    consumer = tmp_path / "consumer"
+    payload = consumer / renderer.PAYLOAD_DIR
+    shutil.copytree(tmp_path / "codex/project" / renderer.PAYLOAD_DIR, payload)
+    (consumer / "specs/demo").mkdir(parents=True)
+    (consumer / "specs/demo/SUMMARY.md").write_text(
+        "# demo\n\nLane: tiny\nConfidence: high\nReason: a real filled reason\n"
+    )
+    (consumer / "docs/solutions").mkdir(parents=True)
+
+    def run(*args):
+        return subprocess.run(
+            [sys.executable, *args], cwd=consumer, capture_output=True, text=True
+        )
+
+    # verify_summary.py: the slug resolves to <consumer>/specs, as rewritten skills invoke it.
+    lane = run(f"{renderer.PAYLOAD_DIR}/scripts/verify_summary.py", "--lane", "demo")
+    assert lane.returncode == 0, lane.stdout + lane.stderr
+
+    # rebuild_solution_index.py: writes the consumer's INDEX, never one inside the payload.
+    index = run(f"{renderer.PAYLOAD_DIR}/scripts/rebuild_solution_index.py")
+    assert index.returncode == 0, index.stdout + index.stderr
+    assert (consumer / "docs/solutions/INDEX.md").is_file()
+    assert not (payload / "docs").exists()
+
+    # render_skill_prompt.py: the bare angle-fragment template resolves against the payload.
+    prompt = run(
+        f"{renderer.PAYLOAD_DIR}/scripts/render_skill_prompt.py",
+        "--fragment",
+        f"{renderer.PAYLOAD_DIR}/skills/correctness-review/prompts/shared.md",
+        "--fragment",
+        "skills/correctness-review/prompts/angles/prior-art.md",
+    )
+    assert prompt.returncode == 0, prompt.stderr
+    assert "correctness reviewer" in prompt.stdout
+    assert "<!-- source: /" not in prompt.stdout  # provenance stays relative
+
+
+def test_rewrite_with_no_targets_returns_text_unchanged():
+    text = "Hello  world\n\n# Title (x) `rules/a.md`\n"
+    assert renderer.rewrite_payload_paths(text, []) == text
+    assert renderer.rewrite_payload_paths(text, set()) == text

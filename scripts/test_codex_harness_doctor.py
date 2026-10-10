@@ -4,6 +4,7 @@ from datetime import date
 from pathlib import Path
 
 import codex_harness_doctor as doctor
+import render_codex_adapter
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -14,8 +15,12 @@ def installed_project(tmp_path: Path) -> Path:
     plugin = target / ".codex/.agent-harness/marketplace/plugins/agent-harness"
     shutil.copytree(ROOT / "adapters/codex/plugin", plugin)
     inventory = json.loads((ROOT / "harness-manifest.json").read_text())
-    for skill in inventory["skills"]:
-        shutil.copytree(ROOT / "skills" / skill, plugin / "skills" / skill)
+    # Install the skills exactly as the renderer ships them (Markdown path rewrite applied).
+    rendered = render_codex_adapter.render(ROOT, tmp_path / "render")
+    for skill in rendered["skills"]:
+        shutil.copytree(
+            tmp_path / "render/plugin/skills" / skill, plugin / "skills" / skill
+        )
     shutil.copytree(ROOT / "hooks", plugin / "hooks", dirs_exist_ok=True)
     shutil.copy2(
         ROOT / "adapters/codex/plugin/hooks/hooks.json", plugin / "hooks/hooks.json"
@@ -310,6 +315,24 @@ def test_missing_install_is_unsupported_and_hash_drift_is_advisory(tmp_path):
     )
     assert result["mode"] == "advisory"
     assert "INSTALL_HASH_MISMATCH" in result["reason_codes"]
+
+
+def test_rendered_skills_are_clean_and_raw_source_skills_are_drift(tmp_path):
+    kwargs = dict(
+        repo_root=ROOT,
+        doctor_value=good_report(),
+        platform_override="macos-arm64",
+        dependencies={name: True for name in doctor.REQUIRED_DEPENDENCIES},
+        today=date(2026, 8, 11),
+    )
+    clean = installed_project(tmp_path / "clean")
+    assert "INSTALL_HASH_MISMATCH" not in doctor.diagnose(root=clean, **kwargs)["reason_codes"]
+
+    # A skill installed from raw source (no payload path rewrite) is not what the renderer ships.
+    raw = installed_project(tmp_path / "raw")
+    skills = raw / ".codex/.agent-harness/marketplace/plugins/agent-harness/skills"
+    shutil.copy2(ROOT / "skills/compound/SKILL.md", skills / "compound/SKILL.md")
+    assert "INSTALL_HASH_MISMATCH" in doctor.diagnose(root=raw, **kwargs)["reason_codes"]
 
 
 def test_discovery_matcher_and_doctor_failures_are_advisory(tmp_path):

@@ -34,9 +34,28 @@ The adapter owns only paths recorded in
 `.codex/.agent-harness/deployment-manifest.json`:
 
 - the persistent local marketplace/plugin source under `.codex/.agent-harness/marketplace/`;
+- the harness payload under `.codex/.agent-harness/payload/`;
 - the generated `.codex/agents/*.toml` files named by the manifest;
 - `.codex/harness-instructions.md`; and
 - one bounded section in the repository-root `AGENTS.md`.
+
+The payload is a derived copy of `rules/`, non-test `runtime/`, `templates/`, the consumer helper
+scripts, `harness-manifest.json`, and each shipped skill's helper files. Installed plugin skills
+point their helper paths at it, and `commit-gate.sh` and `session-knowledge.sh` look there for
+`verify_summary.py` and `runtime_mode.py`. Because the manifest lists it, a reinstall refreshes it
+and it follows the same conflict, prune, and `--remove` rules as the other managed files. Do not
+edit it in place.
+
+The installer also appends `.codex/.agent-harness/` to the project's `.gitignore`, so the
+payload's and plugin's untracked `.py` files do not trip the strict-profile commit gate. The step
+only appends and never rewrites the file. In a git repository it asks git (`git check-ignore`)
+whether the directory is already ignored, so any existing rule such as `.codex/` or `.codex/*`
+counts (including `.git/info/exclude` or a global excludes file), while a later `!.codex/` that
+re-includes the parent, or a file-only rule such as `*.py`, does not. Outside a git repository,
+only an existing `.codex/.agent-harness/` line counts. It also skips when an explicit
+`!.codex/.agent-harness` line shows a deliberate choice to keep the directory tracked. It warns and skips when the
+directory is already tracked, and does not run under `--dry-run`. This line is not recorded in the
+deployment manifest.
 
 Codex reads project instructions from the repository hierarchy, from the project root toward the
 working directory. The adapter therefore adds a sentinel-delimited pointer to the existing root
@@ -100,7 +119,9 @@ bash scripts/install-codex-harness.sh --source . --directory /path/to/project --
 ```
 
 Edited managed files are preserved during removal because their current bytes are no longer purely
-generated state. User-owned configuration and custom agents remain untouched.
+generated state. User-owned configuration and custom agents remain untouched. `--remove` leaves
+the `.codex/.agent-harness/` line in `.gitignore` in place; the harness never deletes a
+`.gitignore` line, so delete it by hand if you no longer want it.
 
 The deployer stages a complete render before changing target state. If marketplace or plugin
 registration fails, it removes the partial registration and restores the previous persistent

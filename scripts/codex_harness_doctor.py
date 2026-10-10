@@ -18,6 +18,8 @@ from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "runtime"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import render_codex_adapter  # noqa: E402
 import runtime_mode  # noqa: E402
 
 REQUIRED_DEPENDENCIES = ("bash", "git", "jq", "python3")
@@ -53,6 +55,23 @@ def _tree_inventory(root: Path) -> dict[str, str]:
         and path.suffix != ".pyc"
         and path.name != ".DS_Store"
     }
+
+
+def _rendered_skill_inventory(repo_root: Path, skills: list[str]) -> dict[str, str]:
+    """Digests of the plugin skills as render_codex_adapter ships them: Markdown files carry
+    the payload path rewrite, so hashing raw sources would flag every clean install."""
+    targets = render_codex_adapter.payload_targets(repo_root, skills)
+    expected: dict[str, str] = {}
+    for skill in skills:
+        for relative, digest in _tree_inventory(repo_root / "skills" / skill).items():
+            path = repo_root / "skills" / skill / relative
+            if path.suffix == ".md":
+                text = path.read_text(encoding="utf-8")
+                rewritten = render_codex_adapter.rewrite_payload_paths(text, targets)
+                if rewritten != text:
+                    digest = hashlib.sha256(rewritten.encode("utf-8")).hexdigest()
+            expected[f"{skill}/{relative}"] = digest
+    return expected
 
 
 def _safe_relative(value: Any) -> str | None:
@@ -310,17 +329,14 @@ def _install_reasons(root: Path, repo_root: Path) -> list[str]:
     except DoctorInputError:
         return reasons + ["MANIFEST_INVALID"]
     expected_skills = set(inventory.get("skills", []))
-    expected_skill_files: dict[str, str] = {}
-    for skill in expected_skills:
-        expected_skill_files.update(
-            {
-                f"{skill}/{relative}": digest
-                for relative, digest in _tree_inventory(
-                    repo_root / "skills" / skill
-                ).items()
-            }
-        )
-    if _tree_inventory(marketplace / "skills") != expected_skill_files:
+    try:
+        expected_skill_files = _rendered_skill_inventory(repo_root, sorted(expected_skills))
+    except (render_codex_adapter.AdapterError, OSError, UnicodeDecodeError):
+        expected_skill_files = None
+    if (
+        expected_skill_files is None
+        or _tree_inventory(marketplace / "skills") != expected_skill_files
+    ):
         reasons.append("INSTALL_HASH_MISMATCH")
     installed_skills = (
         {path.name for path in (marketplace / "skills").iterdir() if path.is_dir()}

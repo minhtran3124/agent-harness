@@ -30,9 +30,15 @@ from datetime import datetime
 from pathlib import Path
 
 _SELF_ROOT = Path(__file__).resolve().parents[1]
-# A deployed copy lives at <repo>/.claude/scripts/; the sources it reads (specs/) live at the
-# repo root, one level further out. In the harness repo _SELF_ROOT is already the repo root.
-_REPO_ROOT = _SELF_ROOT.parent if _SELF_ROOT.name == ".claude" else _SELF_ROOT
+# A deployed copy lives at <repo>/.claude/scripts/ (Claude) or
+# <repo>/.codex/.agent-harness/payload/scripts/ (Codex); the sources it reads (specs/) live at
+# the repo root, outside either install dir. In the harness repo _SELF_ROOT is the repo root.
+if _SELF_ROOT.name == ".claude":
+    _REPO_ROOT = _SELF_ROOT.parent
+elif _SELF_ROOT.parts[-3:] == (".codex", ".agent-harness", "payload"):
+    _REPO_ROOT = _SELF_ROOT.parents[2]
+else:
+    _REPO_ROOT = _SELF_ROOT
 
 # Matches a markdown table row: | cell | cell | ... |
 _ROW_RE = re.compile(r"^\|(.+)\|$")

@@ -68,15 +68,18 @@ def read(path: Path) -> str:
     return path.read_text(encoding="utf-8").strip()
 
 
-def render(fragments: list[Path], values: dict[str, str]) -> str:
+def render(
+    fragments: list[Path], values: dict[str, str], labels: list[Path] | None = None
+) -> str:
     parts = []
-    for path in fragments:
+    for index, path in enumerate(fragments):
+        label = labels[index] if labels is not None else path
         text = read(path)
         for key, value in values.items():
             text = text.replace("{{" + key + "}}", value)
         if "{{" in text or "}}" in text:
             raise ValueError(f"unresolved placeholder in {path}")
-        parts.append(f"<!-- source: {path.as_posix()} -->\n{text}")
+        parts.append(f"<!-- source: {label.as_posix()} -->\n{text}")
     return "\n\n".join(parts) + "\n"
 
 
@@ -142,7 +145,17 @@ def main() -> int:
             for key, value in values.items()
         ):
             raise ValueError("--values must be a JSON object of strings")
-        print(render(args.fragment, values), end="")
+        # A relative fragment resolves against the working directory first, then against
+        # --root: an installed copy (e.g. the Codex payload) ships the fragments beside itself.
+        root = args.root.resolve()
+        fragments = [
+            root / fragment
+            if not fragment.is_absolute() and not fragment.is_file() and (root / fragment).is_file()
+            else fragment
+            for fragment in args.fragment
+        ]
+        # Provenance shows each fragment as given, so composed prompts never carry a machine path.
+        print(render(fragments, values, labels=args.fragment), end="")
         return 0
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         print(f"prompt-compose: {exc}", file=sys.stderr)

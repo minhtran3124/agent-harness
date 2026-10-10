@@ -344,6 +344,16 @@ else:
     }
     atomic_write(state_path, (json.dumps(updated, indent=2, sort_keys=True) + "\n").encode())
 
+# Deepest-first sweep of empty payload directories; rmdir never removes a
+# non-empty directory, and os.walk does not descend into symlinks.
+payload_root = target / ".codex/.agent-harness/payload"
+if payload_root.is_dir() and not payload_root.is_symlink():
+    for current, _dirs, _files in os.walk(payload_root, topdown=False):
+        try:
+            os.rmdir(current)
+        except OSError:
+            pass
+
 for directory in (target / ".codex/agents", target / ".codex", state_path.parent):
     try:
         directory.rmdir()
