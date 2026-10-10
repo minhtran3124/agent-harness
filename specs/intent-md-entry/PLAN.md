@@ -1,6 +1,6 @@
 ---
 slug: intent-md-entry
-status: proposed
+status: active
 owner: Minh Tran
 created: 2026-10-10
 ---
@@ -10,7 +10,7 @@ created: 2026-10-10
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**4 tasks · 1 waves · 11 files · 0/4 done**
+**4 tasks · 1 waves · 11 files · 4/4 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -30,10 +30,10 @@ flowchart LR
 ```
 
 ### Progress
-- [ ] 1.1 — Intent template, SUMMARY template, and docs (wave 1)
-- [ ] 1.2 — feature-intake reads and pins intent.md (wave 1)
-- [ ] 1.3 — intent-review checks drift before using intent.md (wave 1)
-- [ ] 1.4 — Hook test: intent-only commit passes commit-gate (wave 1)
+- [x] 1.1 — Intent template, SUMMARY template, and docs (wave 1)
+- [x] 1.2 — feature-intake reads and pins intent.md (wave 1)
+- [x] 1.3 — intent-review checks drift before using intent.md (wave 1)
+- [x] 1.4 — Hook test: intent-only commit passes commit-gate (wave 1)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -205,3 +205,4 @@ stops if the file changed after the pin. Chat-only requests keep working as toda
 ## 6. Status Log
 
 - 2026-10-10 — proposed; design approved, research brief written.
+- 2026-10-10 — tasks 1.1, 1.2, 1.3, 1.4 complete; commits 3640df0, 21be426, 40f4014, 05232e1; all four task reviews spec pass / quality approved; SC-1..SC-13 exit 0.

@@ -61,6 +61,20 @@ Scope-deciding sentences, in chronological order:
 | Check | Command | Exit | Notes | Criterion |
 | --- | --- | --- | --- | --- |
 | plan contract | `python3 scripts/check_plan_contract.py specs/intent-md-entry/PLAN.md` | 0 | plan-contract passed (pre-execution) | |
+| intent template fields | `python3 -c "import sys;t=open('templates/INTENT.template.md').read();sys.exit(0 if all(s in t for s in ['Author: <name>','Status: draft ','## Problem','## Proposed outcome','## Affected users and systems','## Constraints','## Out of scope','## Open questions','## What success looks like']) else 1)"` | 0 | wave 1, re-run by controller | SC-1 |
+| intent-only commit passes gate | `bash tests/hooks/commit-gate-evidence.test.sh` | 0 | wave 1, re-run by controller | SC-2 |
+| SUMMARY template form | `python3 -c "import sys;t=open('templates/SUMMARY.template.md').read();sys.exit(0 if 'Intent-source: specs/<slug>/intent.md @ <sha>' in t and '### Intake notes' in t and t.index('### Intent')<t.index('### Intake notes') else 1)"` | 0 | wave 1, re-run by controller | SC-3 |
+| intake pin command | `grep -qF -- "git log -1 --format=%H --diff-filter=AM -- specs/<slug>/intent.md" skills/feature-intake/SKILL.md` | 0 | wave 1, re-run by controller | SC-4 |
+| intent-review drift command | `grep -qF -- "git diff --exit-code <pin> -- specs/<slug>/intent.md" skills/intent-review/SKILL.md` | 0 | wave 1, re-run by controller | SC-5 |
+| reviewer prompt intent source | `grep -qF -- "specs/<slug>/intent.md" skills/intent-review/intent-reviewer-prompt.md` | 0 | wave 1, re-run by controller | SC-6 |
+| intake allowed-tools unchanged | `grep -qxF -- "allowed-tools: Read, Write, Grep, Glob, Bash(git log *), Bash(git diff *), Bash(ls *), Bash(python3 scripts/verify_summary.py *), Bash(python3 runtime/run_state.py *)" skills/feature-intake/SKILL.md` | 0 | wave 1, re-run by controller | SC-7 |
+| intent-review allowed-tools unchanged | `grep -qxF -- "allowed-tools: Read, Grep, Glob, Agent, Task, Bash(git diff *), Bash(git log *)" skills/intent-review/SKILL.md` | 0 | wave 1, re-run by controller | SC-8 |
+| terminology exclusion | `grep -qF -- "specs/<slug>/intent.md" rules/terminology.md` | 0 | wave 1, re-run by controller | SC-9 |
+| skill bash lint | `bash scripts/lint-skill-bash.sh` | 0 | wave 1, re-run by controller | SC-10 |
+| doc-truth lint | `bash scripts/lint-doc-truth.sh` | 0 | wave 1, re-run by controller | SC-11 |
+| intent-only cases present | `grep -qF -- "specs/demo/intent.md" tests/hooks/commit-gate-evidence.test.sh` | 0 | wave 1, re-run by controller | SC-12 |
+| intent-review contract strings | `bash tests/scripts/intent-prompt-contract.test.sh` | 0 | wave 1, re-run by controller | SC-13 |
+| review package contract | `bash tests/scripts/final-review-package-contract.test.sh` | 0 | wave 1, re-run by controller | |
 
 ### Not auto-verified
 
@@ -70,6 +84,13 @@ Scope-deciding sentences, in chronological order:
 
 - `git revert <sha>` for each wave commit; no data or runtime state to migrate.
 
+### Task review findings (Minor, forwarded to final review)
+
+- 1.1 — `rules/terminology.md` hard exclusion 1: one re-wrapped line is much longer than its neighbours (cosmetic).
+- 1.2 — `skills/feature-intake/SKILL.md` Step 5: the intent.md text is not named as input to Steps 2–4 classification on the first pin; only the re-pin path re-checks the lane (plan-mandated placement).
+- 1.3 — `intent-reviewer-prompt.md`: the no-`Intent-source:` path no longer says "paste the whole `### Intent` block" explicitly.
+- 1.3 — `skills/intent-review/SKILL.md` step 1: two oracle statements in a row; one ~120-char line.
+
 ### Harness-Delta
 
-- none
+- backlog — parallel implementers share one worktree git index, so one task's commit swept another task's staged files (commit 8f27359). The controller split it into 21be426 (task 1.2) and 05232e1 (task 1.4) before review. Fix candidates: serialize commits through the controller, or have implementers commit with `git commit -- <paths>` only.
