@@ -32,11 +32,12 @@ else.
 | DI-01 | new slug; tiny + high chat request; no intent.md | intent.md written with `Status: approved` and `## Original request`, committed alone (subject ends `(auto-approved: tiny/high)`); SUMMARY pinned (`Intent-source:`); `### Intake notes` says `auto-approved: tiny/high` |
 | DI-02 | new slug; normal-lane chat request; no intent.md | draft intent.md with `Status: draft`, `(assumed)` on proposed lines; **stops**; no SUMMARY, no commit |
 | DI-03 | after DI-02, a new run with the reply `approve` | `Status: approved`, intent.md committed alone; SUMMARY pinned; `### Intent` holds the `## Original request` text, never "approve" |
-| DI-04 | after DI-02, a reply asking for a change (even with "approve") | draft edited; **stops**; still `Status: draft`, no SUMMARY, no commit |
+| DI-04 | after DI-02, a reply asking for a change (even with "approve") | draft edited and the reply appended verbatim to `## Original request`; **stops**; still `Status: draft`, no SUMMARY, no commit |
 | DI-05 | legacy slug: SUMMARY exists, no intent.md | no intent.md written; behavior unchanged (no draft) |
 | DI-06 | new slug; a person's `Status: draft` intent.md; tiny + high request | **shown** for approval, **stops**; never auto-approved, not rewritten, no SUMMARY, no commit |
 | DI-07 | after DI-02, the user sets `Status: approved` in the file (uncommitted) and replies `done` | intent.md committed alone; SUMMARY written and pinned; `### Intent` holds `## Original request` |
 | DI-08 | new slug; a person's `Status: approved` but uncommitted intent.md; ordinary request | file unchanged; **shown**, **stops**; no SUMMARY, no commit |
+| DI-09 | after DI-04 (a change made the draft differ from the first request), the user replies `approve` | committed and pinned; the approved file wins over `## Original request` — **not** a chat conflict, confidence not lowered for it |
 
 ## Notes
 

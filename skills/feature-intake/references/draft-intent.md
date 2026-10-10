@@ -15,10 +15,14 @@ and committed. Every "ask and stop" below writes no SUMMARY and makes no commit.
    current message:
    - it approves (`approve`, or "edited, done", even if `Status: approved` is already set): set
      `Status: approved` if needed, commit (step 3), continue at Step 1 of `../SKILL.md`;
-   - it asks for changes (even together with "approve"): edit the file, then ask and stop;
+   - it asks for changes (even together with "approve"): edit the file, append the message
+     verbatim to `## Original request` (if present) below the earlier text, then ask and stop;
    - anything else: ask and stop — show the file and the proposed lane and confidence; ask the
      user to reply `approve`, request changes, or edit the file and say done.
 3. **Commit** only intent.md, on the current branch: `git add -- specs/<slug>/intent.md`, then
    `git commit -m "docs(specs): intent for <slug>" -- specs/<slug>/intent.md`, with the subject
    suffix `(auto-approved: tiny/high)` when step 1 approved it. Skip the commit when the file
    already matches HEAD. If a hook refuses the commit, stop and report its output; never bypass.
+
+Where an approved intent.md differs from its own `## Original request`, the approved file wins:
+the user approved it, so this is not a chat conflict under Step 4 of `../SKILL.md`.
