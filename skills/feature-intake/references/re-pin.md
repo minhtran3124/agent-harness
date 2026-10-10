@@ -11,7 +11,8 @@ Use this when the slug already has a SUMMARY and either it has an `Intent-source
 3. If the new pin equals the SHA already on the `Intent-source:` line, change nothing, run
    `python3 scripts/verify_summary.py --lane <slug>`, and stop.
 4. Re-classify (Steps 2–4 of `../SKILL.md`) from intent.md plus the original chat request in
-   `### Intent`. If the lane differs from SUMMARY's `Lane:`, or confidence is `low`, stop and show
+   `### Intent`. If the lane differs from SUMMARY's `Lane:`, confidence is `low`, or a manifest hard
+   gate is now in scope that SUMMARY's `Reason:`/`Flags:` do not name, stop and show
    the user the old and new `Lane:`, `Confidence:`, `Reason:`, `Flags:`, `Route:`, and
    `Escalate:` lines. The user updates those lines in SUMMARY (or edits the intent) and runs
    intake again.

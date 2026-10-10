@@ -26,6 +26,7 @@ else.
 | IF-16 | after an IF-11 stop (which showed the new `Lane:`, `Confidence:`, `Reason:`, `Flags:`, `Route:`, `Escalate:` lines), the user updates those lines in SUMMARY and runs intake again | **re-pins** as IF-06 — the re-check now matches |
 | IF-17 | slug started from chat; an unapproved (`Status: draft`) or uncommitted intent.md is added; intake runs again | **stops** at re-pin step 2 (not approved / not committed); writes nothing |
 | IF-19 | after an IF-12 stop, the user removes the `Intent-source:` line, updates the classification lines to match the chat request, and runs intake again | no re-pin (no `Intent-source:`, no intent.md); the existing SUMMARY is left as the user set it |
+| IF-20 | re-pin; SUMMARY is `high-risk` from 4+ flags with no hard gate; the re-committed intent.md adds a schema migration (a manifest hard gate) | **stops** and shows the user the old and new lines, as IF-11, even though the lane is unchanged |
 | IF-18 | re-pin (as IF-06) where `### Intake notes` holds only `- none` | the `- none` line is replaced by the dated re-pin note, not kept beside it |
 
 ## Notes
