@@ -16,10 +16,11 @@ classify risk; ask only to resolve a material ambiguity or narrow a hard-gated s
 
 1. Read `harness-manifest.json` (hard gates), `rules/orchestration.md` and
    `rules/auto-correct-scope.md` (routing, branches). If `specs/<slug>/intent.md` exists (shape:
-   `templates/INTENT.template.md`), read it first: stop unless its `Status:` value is exactly
-   `approved`; pin with `git log -1 --format=%H --diff-filter=AM -- specs/<slug>/intent.md`
-   (empty: stop); stop if `git diff --exit-code <pin> -- specs/<slug>/intent.md` is non-zero
-   (uncommitted). Classify from intent.md plus the chat request.
+   `templates/INTENT.template.md`), read it first: stop unless the value on its `Status:` header
+   line is exactly `approved`; pin with
+   `git log -1 --format=%H --diff-filter=AM -- specs/<slug>/intent.md` (empty: stop); if
+   `git diff --exit-code <pin> -- specs/<slug>/intent.md` is non-zero, stop and ask for the
+   intent to be committed. Classify from intent.md plus the chat request.
 2. Classify the input: new spec, spec slice, change request, initiative, maintenance, or harness
    improvement. Mark applicable risk flags: auth, authorization, data model, audit/security,
    external systems, public contracts, cross-platform, existing behavior, weak proof, and
@@ -31,13 +32,13 @@ classify risk; ask only to resolve a material ambiguity or narrow a hard-gated s
    default, and `low` for materially different plausible interpretations (including a chat
    request that conflicts with intent.md). Low confidence stops for human confirmation
    regardless of lane.
-5. Record a pin as `Intent-source: specs/<slug>/intent.md @ <sha>` atop `### Intent`, above the
-   chat request. Re-pin (existing `Intent-source:` line, or a chat-started slug gaining
-   intent.md): change only that line, add a dated `### Intake notes` line (old → new SHA), and
-   re-check the lane (raise freely; lower only when a human narrows scope; if it changes, update
-   `Reason:`, `Flags:`, `Route:`, `Escalate:`).
-6. For a new SUMMARY, write it from `templates/SUMMARY.template.md` with the user intent verbatim
-   in `### Intent` and agent notes in `### Intake notes`:
+5. With intent.md, put its pin atop `### Intent` as
+   `Intent-source: specs/<slug>/intent.md @ <sha>`; chat-only intake writes none. If the
+   slug already has an `Intent-source:` line, or a chat-started slug gains intent.md, follow
+   `references/re-pin.md` instead of Steps 6–7.
+6. For a new SUMMARY, write it from `templates/SUMMARY.template.md`. `### Intent` holds any pin
+   line, then the chat request verbatim and in full; agent notes go in
+   `### Intake notes`, never in `### Intent` or intent.md:
 
    ```text
    Lane: <tiny | normal | high-risk>
