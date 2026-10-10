@@ -156,6 +156,29 @@ blob=$(git -C "$r" rev-parse HEAD:README.md)
 OUT=$(cd "$r" && bash "$GATE" "$blob" 2>&1); RC=$?
 assert_rc_contains 1 "does not resolve to a commit"
 
+# ── A base that shares no merge base with HEAD must fail closed (#277) ────────
+# The base resolves, but `"$BASE"...HEAD` needs a merge base; with none, git exits 128.
+# The old `2>/dev/null || true` discarded that, DIFF was empty, and the gate exited 0
+# having checked nothing. The orphan HEAD commits hooks/foo.sh, so a computed diff
+# would be gated. Assert on the script-owned phrase: git's own fatal already says
+# "no merge base", which a fix that only dropped `|| true` would still print.
+# orphan_run [VAR=val ...] — run the gate on an orphan HEAD against the original base sha
+orphan_run() {
+  local r base; r=$(mkrepo); base=$(git -C "$r" rev-parse HEAD)
+  git -C "$r" checkout -q --orphan orphan; git -C "$r" rm -rqf .
+  mkdir -p "$r/hooks"; echo '#!/bin/bash' > "$r/hooks/foo.sh"
+  git -C "$r" add -A >/dev/null 2>&1; git -C "$r" commit -qm orphan
+  OUT=$(cd "$r" && env "$@" bash "$GATE" "$base" 2>&1); RC=$?
+}
+
+t "an orphan HEAD with no merge base against the base fails closed (exit 1)"
+orphan_run
+assert_rc_contains 1 "no merge base between"
+
+t "an orphan HEAD fails closed under REQUIRE_SC_STABLE=1 too"
+orphan_run REQUIRE_SC_STABLE=1
+assert_rc_contains 1 "no merge base between"
+
 # ── Shipping section: open-question check on a phase that ships in this PR ────
 # A specs-only PR that flips a PLAN.md to `status: shipped` never reaches the tier
 # logic (it takes the early exit 0), so the open-question check runs before it. The
