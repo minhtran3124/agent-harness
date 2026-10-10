@@ -110,6 +110,7 @@ Result: **PASS** after one repair. Range `883593f..HEAD`. Consumer search surfac
 | Oracle = pinned intent.md text + chat request | intent reviewer | fresh `reviewer` subagent (blind) | pasted by controller per prompt INTENT input | `skills/intent-review/intent-reviewer-prompt.md:42-45` — **repaired** (see below) |
 | terminology hard exclusion 1 covers intent.md | any agent applying terminology rules to spec prose | main / implementer | paths-triggered (`specs/**/PLAN.md`, `research-brief.md`, `SUMMARY.md`) and explicit Read in `writing-plans` | `rules/terminology.md:1-6`; the one writer near intent.md (feature-intake) carries the complete "never in intent.md" instruction inline |
 | Same skill text for Codex | Codex plugin | Codex session | plugin manifest points at `./skills/` (same source, no copy) | `scripts/render_codex_adapter.py:149` |
+| Re-pin rules (added after the first audit, re-audited at 4f86475) | feature-intake run on an existing SUMMARY | main session | explicit Read: Step 1 says "follow `references/re-pin.md`"; the only consumer (`grep -rn "re-pin.md" skills agents rules templates`) | `skills/feature-intake/SKILL.md:18`; deployed copy present at `.claude/skills/feature-intake/references/re-pin.md` after `scripts/deploy-harness.sh` (checked 2026-10-10) |
 
 Repair: the reviewer-prompt INTENT input left the no-`Intent-source:` path implicit ("plus the chat
 request from the `### Intent` block"), so a controller could paste a partial block on the chat-only
@@ -120,6 +121,7 @@ present, otherwise the whole `### Intent` block. Closes task-review Minor 1.3 (f
 
 Range `883593f..99254b3`; six FIND angles, 8 deduplicated locations, each scored by an independent
 Re-review passes after each fix round (enclosing-function angle, independent reviewer): fix 1 (2 findings → fixed), fix 2 trim (6 → fixed in round 3), round 3 (4 → round 4), round 4 (6, mostly from the ESCALATIONS state machine → design simplified by the user), simplified re-pin (6 → 5 fixed in 4f86475, 1 kept as residual R1 per the user's decision).
+Final pass at 4f86475 (guard-completeness angle, full diff 883593f..4f86475): 3 findings — P1 fixed in 42383b9 (re-pin stops on a newly in-scope hard gate), P2/P3 recorded as R4/R5. Final intent review at 4f86475: 1 drift (R3, kept as the global low-confidence rule). The 42383b9 delta (one stop condition + IF-20) was reviewed by a targeted correctness pass only (score 25, R6); intent review did not see it. Receipt pinned at 42383b9.
 scorer (threshold 75). **No finding reached the threshold — 0 blocking.** All are recorded below
 as advisory.
 
@@ -137,6 +139,10 @@ as advisory.
 | S7 | `skills/intent-review/SKILL.md:14-18` | Rebase/squash + fresh clone → pin unreachable (128) → stop; deliberate fail-closed (design A7) | 25 |
 | S8 | `skills/feature-intake/tests/confidence-escalation-cases.md:4` | "Step 4–5" reference now points at the pin step (should be Steps 4 and 6) — `unmodified-line`, scored 0 by rule | 0 |
 | R1 | `skills/feature-intake/references/re-pin.md` step 4 | A re-pin on a `high-risk` lane whose confidence drops to `medium` re-pins with a note and leaves `Confidence:`/`Escalate:` as recorded; `rules/orchestration.md` escalates "`medium` on a high-risk task". Left as is: the user chose to stop only on a lane change. | residual (user decision) |
+| R3 | `skills/feature-intake/references/re-pin.md` step 4 | Final intent review: a re-pin with an unchanged lane but `low` confidence stops, which is narrower than the user's "stop only when the lane changes". Kept: it is intake's global rule ("Low confidence stops for human confirmation regardless of lane"), so a re-pin is not an exception to it. A newly in-scope hard gate also stops (final correctness pass, P1, fixed) for the same reason — `rules/orchestration.md` escalates on a hard gate. | residual (global rule) |
+| R4 | `skills/intent-review/SKILL.md:14-19` | Final correctness pass (P2): an approved intent.md committed on a chat-started slug without re-running intake is not read by intent-review. Same as S5a (scored 50). | advisory |
+| R5 | `skills/feature-intake/SKILL.md` Step 1 | Final correctness pass (P3): an intent.md written without any `##` heading makes "the `Status:` line above the first `##`" ambiguous if it has two `Status:` lines. The template always has headings. | advisory |
+| R6 | `skills/feature-intake/references/re-pin.md` step 4 | Targeted review of 42383b9 (score 25): `Reason:` is free text and intake's flag names differ from manifest slugs, so the new hard-gate check may stop once on a gate the SUMMARY names in other words; it clears after the user copies the shown lines. The Notes in `intent-file-cases.md` still list only "changed lane (or low confidence)" as stop triggers. | advisory |
 | R2 | `skills/feature-intake/SKILL.md` Step 4/6 | Whether a first-intake `low`-confidence stop writes SUMMARY before stopping is unstated (pre-existing); a SUMMARY left behind would later route to re-pin. | residual |
 
 ### Intent Findings
