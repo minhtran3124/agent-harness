@@ -26,14 +26,24 @@ Input-type: new spec | spec slice | change request | new initiative | maintenanc
 
 ### Intent
 
-<!-- The user's request VERBATIM at intake — do NOT paraphrase or summarize. This is the
-     oracle for intent-review (the final stage of subagent-driven-development): the third
-     reviewer is blind to PLAN.md and checks the finished diff against this text. If the
-     request came over several conversational turns, quote the scope-deciding sentences in
-     chronological order. Capturing intent here, not in the plan, is what keeps the intent
-     oracle independent of the plan oracle. -->
+<!-- The user's request VERBATIM at intake — do NOT paraphrase or summarize. Either form:
+     the chat request verbatim, or the line
+     `Intent-source: specs/<slug>/intent.md @ <sha>` followed by the chat request verbatim.
+     This is the oracle for intent-review (the final stage of subagent-driven-development):
+     the third reviewer is blind to PLAN.md and checks the finished diff against this text
+     (plus the pinned intent.md, when present). If the request came over several
+     conversational turns, quote the scope-deciding sentences in chronological order.
+     Capturing intent here, not in the plan, is what keeps the intent oracle independent of
+     the plan oracle. -->
 
 <paste the original request, verbatim>
+
+### Intake notes
+
+<!-- Agent-written intake notes (confidence reasoning, assumed defaults, re-pin lines).
+     Not part of the intent oracle. `- none` when empty. -->
+
+- none
 
 ## What changed
 
