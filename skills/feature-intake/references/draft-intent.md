@@ -10,7 +10,7 @@ and committed. Every "ask and stop" below writes no SUMMARY and makes no commit.
    Append `## Original request` holding the chat request verbatim and in full. Classify the
    draft plus the chat (Steps 2–4 of `../SKILL.md`) without writing SUMMARY. If tiny + high: set
    `Status: approved`, commit (step 3), continue at Step 1 of `../SKILL.md`, and add
-   `auto-approved: tiny/high` to `### Intake notes`. Otherwise ask and stop as in step 2.
+   `auto-approved: tiny/high` to `### Intake notes`. Otherwise ask and stop as in step 2's last bullet.
 2. **intent.md exists → never rewrite it from the template and never auto-approve it.** By the
    current message:
    - it approves (`approve`, or "edited, done", even if `Status: approved` is already set): set

@@ -11,17 +11,17 @@ else.
 | IF-00 | new slug; chat request only (not tiny + high); no intent.md | **drafts** intent.md (`Status: draft`, `## Original request` holds the chat verbatim), shows it, **stops**; no SUMMARY, no commit |
 | IF-01 | intent.md has `Status: approved` and is committed | writes `Intent-source: specs/<slug>/intent.md @ <sha>` (the pin) plus the chat request verbatim in `### Intent` |
 | IF-02 | new slug; intent.md has `Status: draft`; ordinary request | **shows** the file and proposed lane/confidence, **stops**; file not rewritten, no SUMMARY, no commit |
-| IF-03 | new slug; intent.md is untracked (never committed); ordinary request | **shows** the file, **stops**; not rewritten, not auto-approved, no SUMMARY, no commit |
-| IF-04 | new slug; intent.md is committed, then edited and not committed; ordinary request | **shows** the file, **stops**; edit kept as-is, no SUMMARY, no commit |
-| IF-05 | new slug; intent.md is deleted, then re-created and not committed; ordinary request | **shows** the file, **stops**; not rewritten, no SUMMARY, no commit |
+| IF-03 | new slug; intent.md is untracked (never committed); ordinary request | **shows** the file and the proposed lane/confidence, **stops**; not rewritten, not auto-approved, no SUMMARY, no commit |
+| IF-04 | new slug; intent.md is committed, then edited and not committed; ordinary request | **shows** the file and the proposed lane/confidence, **stops**; edit kept as-is, no SUMMARY, no commit |
+| IF-05 | new slug; intent.md is deleted, then re-created and not committed; ordinary request | **shows** the file and the proposed lane/confidence, **stops**; not rewritten, no SUMMARY, no commit |
 | IF-06 | SUMMARY already has `Intent-source:`; intent.md re-committed; re-checked lane matches SUMMARY | **re-pin** — only the `Intent-source:` line changes and one dated `### Intake notes` line records old → new SHA; nothing else in SUMMARY changes; run state is not re-initialized |
 | IF-07 | slug started from chat (no `Intent-source:`); intent.md now added, approved and committed; re-checked lane matches SUMMARY | **re-pin** — adds only the `Intent-source:` line and one dated `### Intake notes` line (old `none`); nothing else in SUMMARY changes; run state is not re-initialized |
 | IF-08 | chat request conflicts with intent.md | **escalates** — ambiguous direction, confidence `low` (`../SKILL.md` Step 4) |
-| IF-09 | new slug; intent.md is the unedited template (empty `Status:`) and is committed; ordinary request | **shows** the file, **stops**; not filled from the chat, not auto-approved, no SUMMARY, no commit |
+| IF-09 | new slug; intent.md is the unedited template (empty `Status:`) and is committed; ordinary request | **shows** the file and the proposed lane/confidence, **stops**; not filled from the chat, not auto-approved, no SUMMARY, no commit |
 | IF-10 | terse chat request ("do the intent"); approved, committed intent.md describes a hard-gated change (e.g. a schema migration) | lane `high-risk` — classified from intent.md, not the chat request |
 | IF-11 | re-pin (as IF-06 or IF-07), but the re-checked lane differs from SUMMARY, or confidence is `low` | **stops** and shows the user the old and new values; writes nothing (SUMMARY unchanged, no `ESCALATIONS.md` block) |
 | IF-12 | SUMMARY has `Intent-source:`, but intent.md was deleted | **stops before classifying** (routed by Step 1 to re-pin step 1) and tells the user to restore intent.md or remove the `Intent-source:` line; writes nothing |
-| IF-13 | intent.md header line has `Status: draft`; body text contains `Status: approved` | **stops** — not approved |
+| IF-13 | new slug; intent.md header line has `Status: draft`; body text contains `Status: approved`; ordinary request | **shows** the file and the proposed lane/confidence, **stops** — not approved; not rewritten, no SUMMARY, no commit |
 | IF-14 | SUMMARY has `Intent-source:` with the same SHA intake now pins (re-run, intent.md unchanged) | **no-op** — nothing in SUMMARY changes, no Intake notes line; `verify_summary.py --lane` still runs |
 | IF-15 | re-pin; re-checked lane matches SUMMARY but confidence (not `low`) or flags differ | **re-pins** as IF-06; the dated Intake notes line also records the confidence or flags change; `Confidence:` and `Flags:` lines are not edited |
 | IF-16 | after an IF-11 stop (which showed the new `Lane:`, `Confidence:`, `Reason:`, `Flags:`, `Route:`, `Escalate:` lines), the user updates those lines in SUMMARY and runs intake again | **re-pins** as IF-06 — the re-check now matches |

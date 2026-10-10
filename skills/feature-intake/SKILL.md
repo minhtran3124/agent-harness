@@ -22,8 +22,8 @@ classify risk; ask only to resolve a material ambiguity or narrow a hard-gated s
    `templates/INTENT.template.md`): stop unless its header line (`Status:` above
    the first `##`) is exactly `approved`; pin with
    `git log -1 --format=%H --diff-filter=AM -- specs/<slug>/intent.md` (empty: stop); if
-   `git diff --exit-code <pin> -- specs/<slug>/intent.md` is non-zero, stop and ask to
-   commit the intent. Classify from intent.md plus the chat request.
+   `git diff --exit-code <pin> -- specs/<slug>/intent.md` is non-zero, stop and ask the
+   user to commit it. Classify from intent.md plus the chat request.
 2. Input type: new spec, spec slice, change request, initiative, maintenance, or harness
    improvement. Mark risk flags: auth, authorization, data model, audit/security,
    external systems, public contracts, cross-platform, existing behavior, weak proof, and
@@ -71,7 +71,7 @@ high-risk (`FULL_ARTIFACTS=1` forces all).
 
 ## Research-depth handoff
 
-When intake ran, xia2 starts `high-risk` at **Deep**, `normal` at **Standard**, and `tiny` at
+When an intake record exists, xia2 starts `high-risk` at **Deep**, `normal` at **Standard**, and `tiny` at
 **Quick** only if every Quick condition in `rules/research-depth.md` passes. It never re-scores
 risk; evidence of a deeper signal can only raise depth.
 
