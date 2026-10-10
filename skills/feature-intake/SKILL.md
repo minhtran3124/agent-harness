@@ -14,10 +14,12 @@ classify risk; ask only to resolve a material ambiguity or narrow a hard-gated s
 
 ## Procedure
 
-1. Read `harness-manifest.json` (hard gates), `rules/orchestration.md` and
-   `rules/auto-correct-scope.md` (routing, branches). If `specs/<slug>/intent.md` exists (shape:
-   `templates/INTENT.template.md`), read it first: stop unless the value on its `Status:` header
-   line is exactly `approved`; pin with
+1. If the slug's SUMMARY exists and has an `Intent-source:` line or `specs/<slug>/intent.md`
+   now exists, follow `references/re-pin.md` instead of this procedure. Read
+   `harness-manifest.json` (hard gates), `rules/orchestration.md` and
+   `rules/auto-correct-scope.md` (routing, branches). If intent.md exists (shape:
+   `templates/INTENT.template.md`), read it first: stop unless its header line (`Status:` above
+   the first `##`) is exactly `approved` (empty stops); pin with
    `git log -1 --format=%H --diff-filter=AM -- specs/<slug>/intent.md` (empty: stop); if
    `git diff --exit-code <pin> -- specs/<slug>/intent.md` is non-zero, stop and ask for the
    intent to be committed. Classify from intent.md plus the chat request.
@@ -32,12 +34,9 @@ classify risk; ask only to resolve a material ambiguity or narrow a hard-gated s
    default, and `low` for materially different plausible interpretations (including a chat
    request that conflicts with intent.md). Low confidence stops for human confirmation
    regardless of lane.
-5. With intent.md, put its pin atop `### Intent` as
-   `Intent-source: specs/<slug>/intent.md @ <sha>`; chat-only intake writes none. If the
-   slug already has an `Intent-source:` line, or a chat-started slug gains intent.md, follow
-   `references/re-pin.md` instead of Steps 6–7.
-6. For a new SUMMARY, write it from `templates/SUMMARY.template.md`. `### Intent` holds any pin
-   line, then the chat request verbatim and in full; agent notes go in
+5. The pin line is `Intent-source: specs/<slug>/intent.md @ <sha>`; chat-only intake writes none.
+6. For a new SUMMARY, write it from `templates/SUMMARY.template.md`. `### Intent` holds the pin
+   line when Step 1 pinned, then the chat request verbatim and in full; agent notes go in
    `### Intake notes`, never in `### Intent` or intent.md:
 
    ```text
