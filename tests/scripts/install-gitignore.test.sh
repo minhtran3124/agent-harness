@@ -140,4 +140,80 @@ printf '.claude/*\n!.claude/settings.json\n' > "$d/.gitignore"
 if ! grep -qE '^\.claude/$' "$d/.gitignore" && grep -q 'already scopes .claude' "$d/.log"; then pass
 else fail "skip was silent or the rule was overridden: $(grep -c . "$d/.log") log lines"; fi
 
+# ── run_state.py lock file: machine-local, never committed ───────────────────
+
+t "fresh install ignores specs/<slug>/events.jsonl.lock"
+d=$(new_target)
+install_into "$d"
+if git -C "$d" -c core.excludesFile=/dev/null check-ignore -q specs/demo/events.jsonl.lock \
+   && ! git -C "$d" -c core.excludesFile=/dev/null check-ignore -q specs/demo/events.jsonl; then pass
+else fail "lock not ignored, or events.jsonl ignored too: $(cat "$d/.gitignore")"; fi
+
+t "re-install does not duplicate the lock entry"
+d=$(new_target)
+install_into "$d"
+install_into "$d"
+n=$(grep -cF 'events.jsonl.lock' "$d/.gitignore")
+if [ "$n" = "1" ]; then pass; else fail "expected 1 lock line, got $n"; fi
+
+t "an existing events.jsonl.lock rule is respected, not re-appended"
+d=$(new_target)
+printf '**/events.jsonl.lock\n' > "$d/.gitignore"
+install_into "$d"
+n=$(grep -cF 'events.jsonl.lock' "$d/.gitignore")
+if [ "$n" = "1" ]; then pass; else fail "expected the pre-existing rule alone, got $n"; fi
+
+t "a COMMENT naming events.jsonl.lock does not suppress the lock append"
+d=$(new_target)
+printf '# events.jsonl.lock is written by run_state.py\n' > "$d/.gitignore"
+install_into "$d"
+if git -C "$d" -c core.excludesFile=/dev/null check-ignore -q specs/demo/events.jsonl.lock; then pass
+else fail "a comment line was read as a rule; lock left visible"; fi
+
+t "a narrow single-spec lock rule does not suppress the general rule"
+d=$(new_target)
+printf 'specs/demo/events.jsonl.lock\n' > "$d/.gitignore"
+install_into "$d"
+if git -C "$d" -c core.excludesFile=/dev/null check-ignore -q specs/other/events.jsonl.lock; then pass
+else fail "other specs' lock left visible: $(cat "$d/.gitignore")"; fi
+
+t "a broader rule (*.lock) already covering the lock is not duplicated, and the skip is reported"
+d=$(new_target)
+printf '*.lock\n' > "$d/.gitignore"
+( cd "$d" && bash "$INSTALL" --source "$ROOT" --yes ) >"$d/.log" 2>&1
+n=$(grep -cF 'events.jsonl.lock' "$d/.gitignore" || true)
+if [ "$n" = "0" ] && grep -q 'already ignores specs/<slug>/events.jsonl.lock' "$d/.log"; then pass
+else fail "lock lines=$n or skip not reported"; fi
+
+t "a negation (!specs/**/events.jsonl.lock) is not overridden"
+d=$(new_target)
+printf '*.lock\n!specs/**/events.jsonl.lock\n' > "$d/.gitignore"
+install_into "$d"
+if ! git -C "$d" -c core.excludesFile=/dev/null check-ignore -q specs/demo/events.jsonl.lock; then pass
+else fail "the consumer's negation was overridden"; fi
+
+t "a negation for an unrelated path does not suppress the lock rule"
+d=$(new_target)
+printf '!vendor/events.jsonl.lock\n' > "$d/.gitignore"
+install_into "$d"
+if git -C "$d" -c core.excludesFile=/dev/null check-ignore -q specs/demo/events.jsonl.lock; then pass
+else fail "unrelated negation suppressed the append: $(cat "$d/.gitignore")"; fi
+
+t "a rule only in .git/info/exclude (one clone) does not suppress the shared rule"
+d=$(new_target)
+printf 'specs/**/events.jsonl.lock\n' >> "$d/.git/info/exclude"
+install_into "$d"
+n=$(grep -cF 'events.jsonl.lock' "$d/.gitignore" || true)
+if [ "$n" = "1" ]; then pass; else fail "expected the rule in .gitignore, got $n lines"; fi
+
+t "a repo that tracks .claude/ still gets the lock entry"
+d=$(new_target)
+mkdir -p "$d/.claude"
+printf '{}\n' > "$d/.claude/settings.json"
+git -C "$d" add .claude/settings.json
+git -C "$d" -c user.email=t@t -c user.name=t commit -qm "track .claude" >/dev/null
+install_into "$d"
+if git -C "$d" -c core.excludesFile=/dev/null check-ignore -q specs/demo/events.jsonl.lock; then pass
+else fail "lock entry skipped because .claude/ is tracked"; fi
+
 finish
