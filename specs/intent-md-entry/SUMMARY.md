@@ -41,11 +41,11 @@ Scope-deciding sentences, in chronological order:
 
 ## What changed
 
-<filled at completion>
+A person can now write `specs/<slug>/intent.md` from the new `templates/INTENT.template.md` (playbook fields plus Out of scope and success; `Status:` left empty with a note), set `Status: approved`, commit it with no SUMMARY, and hand the slug over. `/feature-intake` reads it before classifying, pins it by commit SHA (`Intent-source:` line in `### Intent`), and classifies from it; a re-run follows `skills/feature-intake/references/re-pin.md` (stop and show on a lane change or a deleted intent, otherwise move only the pin). `/intent-review` stops if intent.md changed after the pin, otherwise judges against the intent text plus the chat request. A hook regression test locks that an intent-only commit passes commit-gate.
 
 ### Rationale
 
-<filled at completion>
+The playbook's intent.md is an approved, human-written input; the harness only had a verbatim chat line. A file in `specs/` (not a GitHub issue — user: "quá phiền phức") keeps the intent beside its spec, pinned by SHA so the review oracle cannot move mid-work, and keeps agent prose out of the oracle (`### Intake notes`). No script, gate, or tool permission was added (user: keep it simple); the existing log and diff commands carry the pin and drift checks.
 
 ### Alternatives considered
 
@@ -59,6 +59,9 @@ Scope-deciding sentences, in chronological order:
 - Rule 3 — `skills/intent-review/SKILL.md` step 1 used a slash invocation (`/feature-intake <slug>`), which `scripts/check_runtime_neutral_sources.py` rejects in shared skill text; reworded to "ask for feature-intake to re-pin the slug". Found by the full suite after fix round 1. Commit 600c854.
 - Rule 1 — re-pin that raises `Lane:` now also updates `Reason:`, `Flags:`, `Route:`, `Escalate:` so the header stays consistent (fix-round task review Minor). Commit 600c854.
 - Rule 3 — `skills/feature-intake/SKILL.md` exceeded the 600-word skill ceiling (706, `scripts/audit_skill_prompts.py` via pytest); procedure tightened to 599 words with no behavior change, and the redundant `## References` list (it repeated Step 1) removed. Commit 17603e6.
+- Regression from that trim, then repaired (fix round 3, 7041ff9): the trim had dropped the "intent.md exists" condition on the pin step, "header line", "ask for the intent to be committed", "in full", and "never in intent.md". Restored; the re-pin rules moved to `skills/feature-intake/references/re-pin.md` (not counted by the 600-word audit) to make room. Lesson recorded in Harness-Delta.
+- User-directed (2026-10-10, after intent re-review): re-pin with a different lane → "Dừng, hỏi người" (stop, ask a person). A first implementation of that as an `ESCALATIONS.md` state machine (2a0ce6f) kept producing new contradictions across review rounds; the user then chose "Dừng và báo, người tự sửa" (stop and report, the person fixes SUMMARY) and "Chỉ khi lane đổi" (stop only when the lane changes). Implemented in 3654cde and 4f86475: no `ESCALATIONS.md` state; a lane change or `low` confidence stops, shows the full old/new classification lines, writes nothing; confidence/flags changes on the same lane are noted in Intake notes.
+- Rule 1 — Step 1's re-pin route was ambiguous ("SUMMARY exists and has X or Y exists") and could send a first intake to re-pin; reworded with explicit grouping (a0a7221).
 
 ### Verify
 
@@ -83,6 +86,7 @@ Scope-deciding sentences, in chronological order:
 ### Not auto-verified
 
 - Model behavior of the new intake Step 1/5 and intent-review step 1 — reached **truth, one trial**: a fresh-context agent followed the skill text literally in a scratch repo (scripts kept in the session scratchpad, not re-runnable from this repo) and all six scenarios matched: (A) terse chat + approved auth intent → read before classifying, lane `high-risk`, pin equal to `git log -1 --format=%H --diff-filter=AM`; (B) empty `Status:` → stop, no SUMMARY; (C) uncommitted intent → empty pin → stop; (D) intent edited after pin → drift check exit 1 → stop; (E) re-pin → SUMMARY diff exactly the `Intent-source:` line + one Intake notes line; (F) clean → exit 0. One trial is not a compliance rate.
+- Second dogfood (fresh-context agent, scratch repo, after fix round 3): (G) chat-only → no `Intent-source:` line, request verbatim; (H) `Status: draft` → stop; (I) body-text `Status: approved` with an empty header → stop; (J) re-pin with a lane change → stop, SUMMARY byte-identical; (K) deleted intent → stop, SUMMARY unchanged; (L) re-pin, same lane → SUMMARY diff exactly the pin line + one note. All six matched — truth, one trial. Fix rounds 4–6 changed only the re-pin text after this trial (ESCALATIONS removed, same-pin stop, full classification shown); those were checked by an independent review pass, not re-run — traceability.
 - The full suite `bash scripts/run-tests.sh` ended `ALL GREEN` (880 pytest passed) at 17603e6 — re-run, cited in prose because whole-suite rows are not allowed in `### Verify`.
 - The feature-intake canaries (`skills/feature-intake/tests/intent-file-cases.md` IF-01..IF-10) are prose — traceability only; not run against a live intake beyond the dogfood trial above.
 - Codex runtime behavior — not exercised; only rendered text is covered by `run-tests.sh`.
@@ -115,6 +119,7 @@ present, otherwise the whole `### Intent` block. Closes task-review Minor 1.3 (f
 ### Correctness Review
 
 Range `883593f..99254b3`; six FIND angles, 8 deduplicated locations, each scored by an independent
+Re-review passes after each fix round (enclosing-function angle, independent reviewer): fix 1 (2 findings → fixed), fix 2 trim (6 → fixed in round 3), round 3 (4 → round 4), round 4 (6, mostly from the ESCALATIONS state machine → design simplified by the user), simplified re-pin (6 → 5 fixed in 4f86475, 1 kept as residual R1 per the user's decision).
 scorer (threshold 75). **No finding reached the threshold — 0 blocking.** All are recorded below
 as advisory.
 
@@ -131,6 +136,8 @@ as advisory.
 | S6 | `skills/intent-review/SKILL.md:16` | Drift check compares the pin with the working tree only; a differing staged copy passes | 50 |
 | S7 | `skills/intent-review/SKILL.md:14-18` | Rebase/squash + fresh clone → pin unreachable (128) → stop; deliberate fail-closed (design A7) | 25 |
 | S8 | `skills/feature-intake/tests/confidence-escalation-cases.md:4` | "Step 4–5" reference now points at the pin step (should be Steps 4 and 6) — `unmodified-line`, scored 0 by rule | 0 |
+| R1 | `skills/feature-intake/references/re-pin.md` step 4 | A re-pin on a `high-risk` lane whose confidence drops to `medium` re-pins with a note and leaves `Confidence:`/`Escalate:` as recorded; `rules/orchestration.md` escalates "`medium` on a high-risk task". Left as is: the user chose to stop only on a lane change. | residual (user decision) |
+| R2 | `skills/feature-intake/SKILL.md` Step 4/6 | Whether a first-intake `low`-confidence stop writes SUMMARY before stopping is unstated (pre-existing); a SUMMARY left behind would later route to re-pin. | residual |
 
 ### Intent Findings
 
@@ -154,6 +161,8 @@ Intent review (plan-blind, `883593f..29d6c7f`) reported 6 findings:
 
 ### Harness-Delta
 
+- backlog → compound — trimming a skill to fit the 600-word ceiling silently dropped five instructions (caught only by a re-review). A before/after check of required instruction strings, or moving detail to `references/` first, would prevent it.
+- backlog → compound — a prose-encoded escalation state machine (pending → decided → applied) accrued a new contradiction each review round; replacing it with "stop, show, let the person edit" ended the loop. Matches `docs/solutions/` "prose-encoded-state-logic-accrues-contradiction-chains".
 - backlog — dogfood ambiguities, pre-existing in intake: intake never says to write `ESCALATIONS.md` when a hard gate fires (only the `Escalate:` field), and whether an approved intent.md counts as "narrowed by a human" is unstated; Step 6 lists `Route:`/`Escalate:` but `templates/SUMMARY.template.md` says "five header fields".
 - backlog — a re-pin records no new chat request and cannot change `Confidence:`; harmless when the re-pin request only names the slug (dogfood E).
 - backlog — the worktree guard refuses any Bash command whose text contains "git" inside a heredoc, compound command or `$?` chain, so plan grep checks had to run from script files.
