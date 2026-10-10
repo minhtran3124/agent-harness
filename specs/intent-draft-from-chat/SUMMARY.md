@@ -42,6 +42,8 @@ sau đó yêu cầu user review và approve nếu đúng hoặc tự modify nế
 - Plan review — added `Bash(git config user.name)` to feature-intake `allowed-tools` (design named only `git add`/`git commit`); needed for the design's `Author:` = git `user.name`. Exact-pattern grant.
 - Task 1.2 — to fit the 600-word budget the implementer turned the Routes table into a list and tightened wording; task review confirmed no instruction lost.
 
+- Rule 4 (user decision 2026-10-10) — D8 reopened as DC1 → D9 in `design.md`: intake cuts `<type>/<slug>` before committing on `main`/`master`; `skills/using-git-worktrees/SKILL.md` builds on that branch. Also touched `skills/intent-review/` (approved body wins) — outside the design's Non-goals, required so the oracle matches intake's rule.
+
 ### Task review findings (Minor, rolled up)
 
 - 1.1: SC-10 not independently re-run by the reviewer (re-run in the full suite, ALL GREEN). Template comment's approval sentence did not mention auto-approval — fixed in 1380d38.
@@ -53,7 +55,7 @@ sau đó yêu cầu user review và approve nếu đúng hoặc tự modify nế
 | Check | Command | Exit | Notes | Criterion |
 | --- | --- | --- | --- | --- |
 | skill word budget | `python3 scripts/audit_skill_prompts.py` | 0 | feature-intake 599/600 words incl. frontmatter | SC-1 |
-| allowed-tools line | `grep -qxF -- "allowed-tools: Read, Write, Edit, Grep, Glob, Bash(git log *), Bash(git diff *), Bash(git branch --show-current), Bash(git switch -c *), Bash(git add -- specs/*), Bash(git commit -m *), Bash(git config user.name), Bash(ls *), Bash(python3 scripts/verify_summary.py *), Bash(python3 runtime/run_state.py *)" skills/feature-intake/SKILL.md` | 0 | | SC-2 |
+| allowed-tools line | `grep -qxF -- "allowed-tools: Read, Write, Edit, Grep, Glob, Bash(git log *), Bash(git diff *), Bash(git branch --show-current), Bash(git switch *), Bash(git add -- specs/*), Bash(git commit -m *), Bash(git config user.name), Bash(ls *), Bash(python3 scripts/verify_summary.py *), Bash(python3 runtime/run_state.py *)" skills/feature-intake/SKILL.md` | 0 | | SC-2 |
 | tool conformance | `python3 scripts/check_skill_tool_conformance.py` | 0 | all instructed commands permitted | SC-3 |
 | draft pointer | `grep -qF -- "references/draft-intent.md" skills/feature-intake/SKILL.md` | 0 | | SC-4 |
 | draft strings | `python3 -c "import sys;t=open('skills/feature-intake/references/draft-intent.md').read();sys.exit(0 if all(s in t for s in ['## Original request','(assumed)','git add -- specs/<slug>/intent.md','git commit -m \"docs(specs): intent for <slug>\" -- specs/<slug>/intent.md','auto-approved: tiny/high']) else 1)"` | 0 | | SC-5 |

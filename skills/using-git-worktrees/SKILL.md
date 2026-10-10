@@ -26,8 +26,9 @@ The tool names the branch `worktree-<name>` (with `/` written as `+`), not `<typ
 it with `git branch -m <type>/<slug>`. Immediately after entering, before any edit, compare
 `git rev-parse HEAD` with `git rev-parse <base>` (the branch the PR will target); if they differ,
 run `git reset --keep <base>`, which stops instead of discarding local changes. When feature-intake
-already cut `<type>/<slug>` for the intent commit, use that branch in place of `<base>` here, so
-the commit travels with the work; the PR still targets `<base>`.
+already cut `<type>/<slug>` for the intent commit, run `git reset --keep <type>/<slug>` instead
+and rename with `git branch -M <type>/<slug>`, so the commit travels with the work; the PR still
+targets `<base>`.
 
 Only when no native tool exists, choose an existing `.worktrees/` (preferred) or `worktrees/`
 location, or the location documented in `CLAUDE.md`; if none exists, ask before choosing a root.

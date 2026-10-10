@@ -39,10 +39,11 @@ else.
 | DI-08 | new slug; a person's `Status: approved` but uncommitted intent.md; ordinary request | file unchanged; **shown**, **stops**; no SUMMARY, no commit |
 | DI-09 | after DI-04 (a change made the draft differ from the first request), the user replies `approve` | committed and pinned; the approved file wins over `## Original request` — **not** a chat conflict, confidence not lowered for it |
 | DI-10 | after DI-02, a new run whose arguments are only `approve` (no slug) | resolves to the pending draft's slug (named, shown in this conversation, or the only slug with an intent.md and no SUMMARY); **no** new slug is derived from "approve"; several candidates → asks |
-| DI-11 | DI-01 or DI-03 while the current branch is `main` | intake runs `git switch -c <type>/<slug>` first; the intent commit is on that branch, not on `main` |
+| DI-11 | DI-01 or DI-03 while the current branch is `main` | `git switch -c <type>/<slug>`, intent commit there, then `git switch -` — `main` gets no commit and stays checked out; the tiny route switches to `<type>/<slug>`; `using-git-worktrees` resets to it and renames with `git branch -M` |
 | DI-12 | DI-01, but the post-commit Step 1 classification is not tiny + high | `Status: draft` set and committed again; **stops** for approval; no `auto-approved` note |
 | DI-13 | the intent commit is refused (a hook or git) | **stops**, reports the output, says intent.md is still staged; on the auto-approve path `Status: draft` is restored |
-| DI-14 | a person's draft (no `## Original request`) and a run whose message states a request | the request is appended under a new `## Original request`; shown, **stops** |
+| DI-14 | a person's draft (no `## Original request`) and a run that asks to change it | file edited; the change appended under a new `## Original request`; shown, **stops** |
+| DI-15 | one abandoned draft slug exists (intent.md, no SUMMARY); a new conversation brings an unrelated new request | a **new** slug is derived; the abandoned draft is not edited |
 | IF-21 | SUMMARY has `Intent-source:`; intent.md edited after its commit and not re-committed | **stops** at re-pin step 2 (drift); writes nothing |
 | IF-22 | SUMMARY has `Intent-source:`; intent.md `Status:` now empty or `draft` | **stops** at re-pin step 2 (not approved); writes nothing |
 | IF-23 | SUMMARY has `Intent-source:`; header `Status: draft`, body contains `Status: approved` | **stops** at re-pin step 2 (header only counts); writes nothing |

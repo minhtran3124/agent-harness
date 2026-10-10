@@ -1,6 +1,7 @@
 # intent-draft-from-chat — Design
 
 Written 2026-10-10. Pins: repo a2b148c
+Revised 2026-10-10. Pins: repo f679638
 
 ## Goal
 
@@ -185,4 +186,9 @@ draft and stops. Later, possibly in a new session, the user runs `/feature-intak
 | D5 | Procedure lives in `references/draft-intent.md`; SKILL.md gains one pointer | SKILL.md stays ≤600 words (budget) | settled |
 | D6 | Drafting applies only when the slug has no SUMMARY | Legacy chat-only slugs keep today's behavior | settled |
 | D7 | The drafted intent keeps the chat verbatim under `## Original request`; SUMMARY copies it | The oracle survives a cross-session approval | settled |
-| D8 | Intake commits intent.md alone (pathspec) on the current branch | Matches PR #284's human flow; may land on `main` | settled |
+| D8 | Intake commits intent.md alone (pathspec) on the current branch | Matches PR #284's human flow; may land on `main` | superseded by DC1 |
+| D9 | Intake commits intent.md alone (pathspec); on `main`/`master` it first cuts `<type>/<slug>`, and `using-git-worktrees` builds the worktree on that branch | The intent commit travels with the PR; shared branches get no intake commits | settled |
+
+## Decision changes
+
+- DC1 — 2026-10-10 — reopens D8 — evidence: correctness review (enclosing-function, removed-behavior, call-site-impact, stack-defects angles) traced that an intent commit on local `main` is dropped by `using-git-worktrees` `git reset --keep <base>` when the PR base is another branch, leaving intent-review's pin unreachable; the user chose to cut the branch first — new decision: D9
