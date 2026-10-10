@@ -1,7 +1,11 @@
 import json
+import os
+import re
 import shutil
 from datetime import date
 from pathlib import Path
+
+import pytest
 
 import codex_harness_doctor as doctor
 import render_codex_adapter
@@ -25,6 +29,10 @@ def installed_project(tmp_path: Path) -> Path:
     shutil.copy2(
         ROOT / "adapters/codex/plugin/hooks/hooks.json", plugin / "hooks/hooks.json"
     )
+    payload = target / ".codex/.agent-harness/payload"
+    for helper in ("scripts/verify_summary.py", "runtime/runtime_mode.py"):
+        (payload / helper).parent.mkdir(parents=True, exist_ok=True)
+        (payload / helper).write_text("# helper\n")
     agents = target / ".codex/agents"
     agents.mkdir(parents=True)
     for agent in inventory["agents"]:
@@ -423,3 +431,105 @@ def _dependency_fixture(tmp_path: Path) -> Path:
     path = tmp_path / "dependencies.json"
     path.write_text(json.dumps({name: True for name in doctor.REQUIRED_DEPENDENCIES}))
     return path
+
+
+PAYLOAD = ".codex/.agent-harness/payload"
+
+
+def _diagnose_root(target: Path):
+    return doctor.diagnose(
+        root=target,
+        repo_root=ROOT,
+        doctor_value=good_report(),
+        platform_override="macos-arm64",
+        dependencies={name: True for name in doctor.REQUIRED_DEPENDENCIES},
+        today=date(2026, 8, 11),
+    )
+
+
+def test_hook_dependency_missing_names_each_hook_without_a_helper(tmp_path):
+    target = installed_project(tmp_path)
+    (target / PAYLOAD / "scripts/verify_summary.py").unlink()
+    result = _diagnose_root(target)
+    assert result["mode"] == "advisory"
+    assert result["reason_codes"] == ["HOOK_DEPENDENCY_MISSING"]
+    assert result["diagnostic_summary"]["hook_dependencies_missing"] == "commit-gate.sh"
+
+    (target / PAYLOAD / "runtime/runtime_mode.py").unlink()
+    result = _diagnose_root(target)
+    assert result["mode"] == "advisory"
+    assert result["reason_codes"] == ["HOOK_DEPENDENCY_MISSING"]
+    assert (
+        result["diagnostic_summary"]["hook_dependencies_missing"]
+        == "commit-gate.sh,session-knowledge.sh"
+    )
+
+
+def test_hook_dependency_missing_is_absent_for_full_or_claude_only_helpers(tmp_path):
+    _, result = diagnose(tmp_path / "full")
+    assert "HOOK_DEPENDENCY_MISSING" not in result["reason_codes"]
+    assert "hook_dependencies_missing" not in result["diagnostic_summary"]
+
+    target = installed_project(tmp_path / "claude")
+    for helper in ("scripts/verify_summary.py", "runtime/runtime_mode.py"):
+        (target / PAYLOAD / helper).unlink()
+        (target / ".claude" / helper).parent.mkdir(parents=True, exist_ok=True)
+        (target / ".claude" / helper).write_text("# helper\n")
+    result = _diagnose_root(target)
+    assert result["mode"] == "enforced"
+    assert "hook_dependencies_missing" not in result["diagnostic_summary"]
+
+
+def test_hook_dependency_missing_is_not_reported_on_a_missing_install(tmp_path):
+    missing = tmp_path / "missing"
+    missing.mkdir()
+    result = _diagnose_root(missing)
+    assert result["reason_codes"] == ["INSTALL_MISSING"]
+    assert "hook_dependencies_missing" not in result["diagnostic_summary"]
+
+
+@pytest.mark.skipif(os.geteuid() == 0, reason="root ignores directory permissions")
+def test_hook_dependency_missing_treats_an_unreadable_directory_as_absent(tmp_path):
+    target = installed_project(tmp_path)
+    (target / PAYLOAD / "scripts/verify_summary.py").unlink()
+    locked = target / ".claude"
+    locked.mkdir()
+    locked.chmod(0)
+    try:
+        result = _diagnose_root(target)
+    finally:
+        locked.chmod(0o755)
+    assert result["reason_codes"] == ["HOOK_DEPENDENCY_MISSING"]
+    assert result["diagnostic_summary"]["hook_dependencies_missing"] == "commit-gate.sh"
+
+
+def test_hook_dependency_missing_is_not_reported_on_an_invalid_manifest(tmp_path):
+    target = installed_project(tmp_path)
+    (target / PAYLOAD / "scripts/verify_summary.py").unlink()
+    (target / ".codex/.agent-harness/deployment-manifest.json").write_text("{not json")
+    result = _diagnose_root(target)
+    assert "MANIFEST_INVALID" in result["reason_codes"]
+    assert "HOOK_DEPENDENCY_MISSING" not in result["reason_codes"]
+    assert "hook_dependencies_missing" not in result["diagnostic_summary"]
+
+
+def test_hook_dependency_table_matches_the_hook_candidate_lists():
+    commit_gate = (ROOT / "hooks/commit-gate.sh").read_text()
+    loop = re.search(r"^for _vs_cand in (.+); do$", commit_gate, re.MULTILINE)
+    assert loop is not None
+    session = (ROOT / "hooks/session-knowledge.sh").read_text()
+    runtime_mode = [
+        path
+        for path in re.findall(
+            r'_RUNTIME_MODE="\$RUN_STATE_ROOT/([^"]+)"', session
+        )
+        if path.endswith("/runtime_mode.py")
+    ]
+    parsed = {
+        "commit-gate.sh": tuple(loop.group(1).split()),
+        "session-knowledge.sh": tuple(runtime_mode),
+    }
+    assert len(parsed["commit-gate.sh"]) == 3
+    assert len(parsed["session-knowledge.sh"]) == 3
+    table = {hook: tuple(paths) for hook, paths in doctor.HOOK_DEPENDENCIES.items()}
+    assert table == parsed
