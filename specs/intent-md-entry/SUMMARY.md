@@ -54,14 +54,15 @@ Scope-deciding sentences, in chronological order:
 
 ### Deviations
 
-- none
+- User-directed (2026-10-10, after intent review), not Rule 1–3: (1) "intake sẽ đọc intent.md và sẽ quyết định đó là lane nào" — intake reads intent.md before Steps 2–4 and classifies from it; (2) "s2, ok update lại chỗ này ko cần bảo ghi nữa" — re-pin edits only the `Intent-source:` line and Intake notes, no SUMMARY rewrite or run_state init; (3) "s3: ko có chuyện đó" — merge-commit pin left unchanged; (4) "s4: template để trống status …" — template `Status:` left empty with a note, intake requires the exact value `approved`.
+- SC-1 check changed to match decision (4): it no longer looks for `Status: draft `; it requires a `Status:` header and rejects a pre-filled `Status: approved` / `Status: draft`. SC-1 had passed before the change (not a failed-SC edit).
 
 ### Verify
 
 | Check | Command | Exit | Notes | Criterion |
 | --- | --- | --- | --- | --- |
 | plan contract | `python3 scripts/check_plan_contract.py specs/intent-md-entry/PLAN.md` | 0 | plan-contract passed (pre-execution) | |
-| intent template fields | `python3 -c "import sys;t=open('templates/INTENT.template.md').read();sys.exit(0 if all(s in t for s in ['Author: <name>','Status: draft ','## Problem','## Proposed outcome','## Affected users and systems','## Constraints','## Out of scope','## Open questions','## What success looks like']) else 1)"` | 0 | wave 1, re-run by controller | SC-1 |
+| intent template fields | `python3 -c "import sys;t=open('templates/INTENT.template.md').read();sys.exit(0 if all(s in t for s in ['Author: <name>','Status:','## Problem','## Proposed outcome','## Affected users and systems','## Constraints','## Out of scope','## Open questions','## What success looks like']) and 'Status: approved' not in t and 'Status: draft' not in t else 1)"` | 0 | wave 1, re-run by controller | SC-1 |
 | intent-only commit passes gate | `bash tests/hooks/commit-gate-evidence.test.sh` | 0 | wave 1, re-run by controller | SC-2 |
 | SUMMARY template form | `python3 -c "import sys;t=open('templates/SUMMARY.template.md').read();sys.exit(0 if 'Intent-source: specs/<slug>/intent.md @ <sha>' in t and '### Intake notes' in t and t.index('### Intent')<t.index('### Intake notes') else 1)"` | 0 | wave 1, re-run by controller | SC-3 |
 | intake pin command | `grep -qF -- "git log -1 --format=%H --diff-filter=AM -- specs/<slug>/intent.md" skills/feature-intake/SKILL.md` | 0 | wave 1, re-run by controller | SC-4 |
@@ -124,6 +125,19 @@ as advisory.
 | S6 | `skills/intent-review/SKILL.md:16` | Drift check compares the pin with the working tree only; a differing staged copy passes | 50 |
 | S7 | `skills/intent-review/SKILL.md:14-18` | Rebase/squash + fresh clone → pin unreachable (128) → stop; deliberate fail-closed (design A7) | 25 |
 | S8 | `skills/feature-intake/tests/confidence-escalation-cases.md:4` | "Step 4–5" reference now points at the pin step (should be Steps 4 and 6) — `unmodified-line`, scored 0 by rule | 0 |
+
+### Intent Findings
+
+Intent review (plan-blind, `883593f..29d6c7f`) reported 6 findings:
+
+| # | Class | Finding | Disposition |
+| --- | --- | --- | --- |
+| 1 | drift (different) | intake decided the lane before reading intent.md | fixed in fix round 1 (user decision 1) |
+| 2 | drift | `Status: approved` is an approval step the playbook lacks | kept — user chose the Status field in brainstorming (design D2); template now leaves Status empty (decision 4) |
+| 3 | drift (additive) | template adds Author/Status, Out of scope, What success looks like | kept — approved design; all five playbook sections present |
+| 4 | gap | design SC-3–SC-5 (dogfood) and SC-7 (full suite) had no Verify row | closed before handoff by the dogfood run and `run-tests.sh` rows |
+| 5 | excess | re-pin procedure, `### Intake notes` | report-only — in the approved design (re-pin, D5) |
+| 6 | excess | drift STOP in intent-review, terminology exclusion widened to intent.md | report-only — in the approved design (D4, Architecture) |
 
 ### Task review findings (Minor, forwarded to final review)
 

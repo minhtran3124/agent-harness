@@ -61,7 +61,7 @@ stops if the file changed after the pin. Chat-only requests keep working as toda
   bash block is used, it must contain a `<placeholder>` so `scripts/lint-skill-bash.sh` treats it
   as illustrative.
 - **Exact strings** (copy character for character, each on one line):
-  - template header lines: `Author: <name>` and `Status: draft | approved`;
+  - template header lines: `Author: <name>` and `Status:` (value left empty, with a note to set `approved` or `draft`; changed 2026-10-10 by the user, see SUMMARY Deviations);
   - template sections: `## Problem`, `## Proposed outcome`, `## Affected users and systems`,
     `## Constraints`, `## Out of scope`, `## Open questions`, `## What success looks like`;
   - SUMMARY line: `Intent-source: specs/<slug>/intent.md @ <sha>`;
@@ -85,7 +85,7 @@ stops if the file changed after the pin. Chat-only requests keep working as toda
 
 | ID | Behavior (observable) | Check (re-runnable) | Expected |
 |---|---|---|---|
-| SC-1 | The intent template has both header lines and all seven sections | `python3 -c "import sys;t=open('templates/INTENT.template.md').read();sys.exit(0 if all(s in t for s in ['Author: <name>','Status: draft ','## Problem','## Proposed outcome','## Affected users and systems','## Constraints','## Out of scope','## Open questions','## What success looks like']) else 1)"` | exit 0 |
+| SC-1 | The intent template has both header lines (Status left empty for the author) and all seven sections | `python3 -c "import sys;t=open('templates/INTENT.template.md').read();sys.exit(0 if all(s in t for s in ['Author: <name>','Status:','## Problem','## Proposed outcome','## Affected users and systems','## Constraints','## Out of scope','## Open questions','## What success looks like']) and 'Status: approved' not in t and 'Status: draft' not in t else 1)"` | exit 0 |
 | SC-2 | A commit staging only `specs/<slug>/intent.md` passes commit-gate, and every existing evidence case still passes | `bash tests/hooks/commit-gate-evidence.test.sh` | exit 0 |
 | SC-3 | The SUMMARY template has the `Intent-source:` form and the `### Intake notes` section | `python3 -c "import sys;t=open('templates/SUMMARY.template.md').read();sys.exit(0 if 'Intent-source: specs/<slug>/intent.md @ <sha>' in t and '### Intake notes' in t and t.index('### Intent')<t.index('### Intake notes') else 1)"` | exit 0 |
 | SC-4 | feature-intake names the pin command | `grep -qF -- "git log -1 --format=%H --diff-filter=AM -- specs/<slug>/intent.md" skills/feature-intake/SKILL.md` | exit 0 |
@@ -206,3 +206,4 @@ stops if the file changed after the pin. Chat-only requests keep working as toda
 
 - 2026-10-10 — proposed; design approved, research brief written.
 - 2026-10-10 — tasks 1.1, 1.2, 1.3, 1.4 complete; commits 3640df0, 21be426, 40f4014, 05232e1; all four task reviews spec pass / quality approved; SC-1..SC-13 exit 0.
+- 2026-10-10 — user-directed fix round 1 after intent review: intake reads intent.md before classifying; re-pin no longer rewrites SUMMARY or run_state; template Status left empty; SC-1 check updated to match (SUMMARY Deviations).
