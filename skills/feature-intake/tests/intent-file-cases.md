@@ -23,14 +23,16 @@ else.
 | IF-13 | intent.md header line has `Status: draft`; body text contains `Status: approved` | **stops** — not approved |
 | IF-14 | SUMMARY has `Intent-source:` with the same SHA intake now pins (re-run, intent.md unchanged) | **no-op** — nothing in SUMMARY changes, no Intake notes line; `verify_summary.py --lane` still runs |
 | IF-15 | re-pin; re-checked lane matches SUMMARY but confidence (not `low`) or flags differ | **re-pins** as IF-06; the dated Intake notes line also records the confidence or flags change; `Confidence:` and `Flags:` lines are not edited |
-| IF-16 | after an IF-11 stop, the user edits SUMMARY's `Lane:` (and related lines) to the new lane and runs intake again | **re-pins** as IF-06 — the re-check now matches |
+| IF-16 | after an IF-11 stop (which showed the new `Lane:`, `Confidence:`, `Reason:`, `Flags:`, `Route:`, `Escalate:` lines), the user updates those lines in SUMMARY and runs intake again | **re-pins** as IF-06 — the re-check now matches |
 | IF-17 | slug started from chat; an unapproved (`Status: draft`) or uncommitted intent.md is added; intake runs again | **stops** at re-pin step 2 (not approved / not committed); writes nothing |
+| IF-19 | after an IF-12 stop, the user removes the `Intent-source:` line, updates the classification lines to match the chat request, and runs intake again | no re-pin (no `Intent-source:`, no intent.md); the existing SUMMARY is left as the user set it |
 | IF-18 | re-pin (as IF-06) where `### Intake notes` holds only `- none` | the `- none` line is replaced by the dated re-pin note, not kept beside it |
 
 ## Notes
 
 - Intake reads `Status` from the header line only; `approved` in body text does not count.
 - Agent notes go to `### Intake notes`, never `### Intent` or intent.md.
-- On re-pin, intake never edits classification lines. A changed lane (or `low` confidence)
+- On re-pin, intake re-classifies from intent.md plus the original chat request in `### Intent`,
+  never from the re-run's own arguments. It never edits classification lines. A changed lane (or `low` confidence)
   stops and is shown to the user, who updates SUMMARY and runs intake again; no `ESCALATIONS.md`
   block is written.
