@@ -38,6 +38,9 @@
   5. **Always-on context is large** — ~30 KB of always-on instructions (CLAUDE.md + 5 rules) vs.
      the playbook's "keep CLAUDE.md under a page".
 - **The ranked suggestion list is in §6** — 6 easy, 6 medium, 4 hard.
+- **Status (2026-10-10):** the intent.md entry artifact (§7, replacing E4) shipped in PR #284,
+  with a follow-up installer fix in PR #285. What shipped, how it differs from the sketch, and how
+  it was tested are in §8.
 
 ---
 
@@ -240,7 +243,7 @@ Effort: **S** ≈ hours · **M** ≈ 1–3 days · **L** ≈ a week or more. Lan
 | **E1** | **Write a review policy (`REVIEW.md`-style) for the review skills**: what counts as Important vs Nit, a nit cap, a do-not-report list (generated files, anything CI already enforces), and a mandatory "compliance vs PLAN.md SC-n + SUMMARY Intent" pass label on each finding | Play 9 | new `REVIEW.md` or a section in `skills/correctness-review/` | normal (workflow-engine → audit) |
 | **E2** | **Audit every deny message for "reason + route to approval"** and add the missing route lines (e.g. "set `BRANCH_ISOLATION_REASON=…`", "record decision in ESCALATIONS.md") | Play 10 | `hooks/commit-gate.sh`, `hooks/branch-isolation-guard.sh`, `hooks/lib/` | high-risk (hooks) |
 | **E3** | **Add the "mistake twice" rule to `/compound`**: a learning that recurs a second time is promoted to `critical-patterns.md` (or a path-scoped rule), and the promotion is the compound output | Play 4, Play 9 step 4 | `skills/compound/SKILL.md` | normal |
-| **E4** | **Structured intent view under the verbatim block**: optional `Problem / Outcome / Constraints (C1..) / Out of scope / Open questions (Q1..)` fields, explicitly marked *derived, non-oracle*; `/intent-review` keeps using only the verbatim text | Play 1 | `templates/SUMMARY.template.md`, `skills/feature-intake/SKILL.md` | high-risk (templates) |
+| **E4** | ✅ *Superseded by §7, shipped in PR #284 (see §8).* **Structured intent view under the verbatim block**: optional `Problem / Outcome / Constraints (C1..) / Out of scope / Open questions (Q1..)` fields, explicitly marked *derived, non-oracle*; `/intent-review` keeps using only the verbatim text | Play 1 | `templates/SUMMARY.template.md`, `skills/feature-intake/SKILL.md` | high-risk (templates) |
 | **E5** | **Failing-test-first protocol for bug fixes**: when `Input-type` is a bug fix, the `### Verify` table must contain a red row (test fails before fix, with commit sha) and a green row after | Play 7 | `skills/feature-intake`, `skills/subagent-driven-development`, `scripts/verify_summary.py` (advisory first) | normal → high-risk if verifier logic changes |
 | **E6** | **Define one leading + one lagging indicator per workflow stage** in `trust-metrics.md` (definitions only, no tooling yet) — e.g. intake→PLAN latency, task-review first-pass rate, plan drift, review-escape rate | All plays' "How to measure it" | `docs/harness-experimental/trust-metrics.md` | tiny |
 
@@ -308,7 +311,7 @@ someone writes specs/<slug>/intent.md   (template; optionally drafted with Claud
   → /intent-review judges the diff against intent.md at the pinned SHA
 ```
 
-### Design sketch (not implemented)
+### Design sketch (as decided; the shipped version differs — see §8)
 
 1. **Template** `templates/INTENT.template.md`, copied to `specs/<slug>/intent.md`:
    header `Author:` · `Status: draft | approved` · `Approved-by:`; sections *Problem · Proposed
@@ -357,6 +360,87 @@ regression test that keeps it true.
 Risks: an author without Git needs someone (or a connector) to commit the file; a free-form
 `intent.md` that ignores the template weakens the C-n/Q-n citations, so intake should warn on
 missing sections.
+
+---
+
+## 8. Implementation status (2026-10-10)
+
+### What shipped
+
+**PR #284** (`feat/intent-md-entry` → `sdlc`, merged as `8ee9826`; high-risk lane, full chain;
+spec record `specs/intent-md-entry/`):
+
+| Piece | File | Behaviour |
+|---|---|---|
+| Template | `templates/INTENT.template.md` | `Author:`, an empty `Status:` with a note to set `approved` or `draft`, and seven sections: Problem · Proposed outcome · Affected users and systems · Constraints · Out of scope · Open questions · What success looks like |
+| Intake reads the intent first | `skills/feature-intake/SKILL.md` Step 1 | Header `Status:` (above the first `##`) must be exactly `approved`; pins `git log -1 --format=%H --diff-filter=AM -- specs/<slug>/intent.md`; stops on an empty pin or uncommitted edits; classifies from intent.md **plus** the chat request |
+| Provenance in SUMMARY | `templates/SUMMARY.template.md` | `### Intent` starts with `Intent-source: specs/<slug>/intent.md @ <sha>`, then the chat request verbatim; agent reasoning goes to a new `### Intake notes` section, out of the oracle |
+| Re-running intake (re-pin) | `skills/feature-intake/references/re-pin.md` | Moves only the pin line and adds one dated note. Stops and shows the old/new classification when the lane changes, confidence is `low`, a hard gate comes into scope that `Reason:`/`Flags:` do not name, or intent.md was deleted. Same pin → no change. No `ESCALATIONS.md` state: the person edits SUMMARY and re-runs |
+| Drift check at review | `skills/intent-review/SKILL.md` step 1 | `git diff --exit-code <pin> -- specs/<slug>/intent.md`; non-zero → stop and ask for a re-pin |
+| Oracle exclusion | `rules/terminology.md`, `skills/README.md`, `templates/structure/specs-README.md` | Hard exclusion 1 now covers `intent.md` as well as `### Intent` |
+| Commit-gate regression | `tests/hooks/commit-gate-evidence.test.sh` | An intent-only commit (no SUMMARY) passes, standard and strict |
+
+**PR #285** (`fix/installer-ignore-run-lock` → `sdlc`, merged as `b6395aa`; normal lane): the
+real-install trial below showed `specs/<slug>/events.jsonl.lock` (the fcntl lock from
+`runtime/run_state.py`) as untracked in consumer repos. `scripts/install-harness.sh` now appends
+`specs/**/events.jsonl.lock` to the consumer `.gitignore`, deciding with
+`git check-ignore --no-index -v -n` whether a shared `.gitignore` rule already covers it, so a
+narrow rule, an unrelated negation, or a rule only in `.git/info/exclude` does not cause a false
+skip. 10 regression cases in `tests/scripts/install-gitignore.test.sh`.
+
+### Where the shipped version differs from the §7 sketch
+
+Simplified on purpose, following the "keep prompts lean, trust the model" direction:
+
+- **No `Approved-by:` field.** `Status: approved` plus the commit author is the approval record.
+- **No `C-n` / `Q-n` IDs.** The template sections are plain prose; plans and reviews do not cite
+  IDs. Open questions are not converted into `QUESTIONS.md` entries.
+- **Drift is `git diff --exit-code` against the pin, not `git show <sha>:…`.** intent-review
+  stops on any change after the pin instead of reading the old version, so no new `allowed-tools`
+  entry was needed (it already had `git diff` and `git log`).
+- **`verify_summary.py` does not validate the `Intent-source:` line**, and intake does not warn on
+  missing template sections. Both remain traceability gaps.
+- **Re-pin was added** (not in the sketch) because a committed intent can change after intake.
+- **No drafting mode** (sketch item 8): the template alone is the authoring path.
+- `skills/feature-intake/SKILL.md` sits at 599/600 words (the progressive-disclosure ceiling), which
+  is why the re-pin rules live in `references/re-pin.md`.
+
+### How it was tested
+
+| Evidence | Tier | Result |
+|---|---|---|
+| `bash scripts/run-tests.sh`, `bash scripts/ci-strict-gate.sh sdlc` | truth | ALL GREEN / OK |
+| Review chain: context-propagation audit, six-angle correctness review with scorers, plan-blind intent review | provenance (receipt pinned at `42383b9`) | 0 blocking; advisories recorded in the spec SUMMARY |
+| Two dogfood trials: a fresh-context agent followed the skill text in a scratch repo | truth, one trial each | 12/12 scenarios |
+| **Real install**: `install-harness.sh --profile standard` into an empty repo, then `claude -p "/feature-intake <slug>"` (Claude Code 2.1.296) with hooks live | truth, one trial each | 5/5 basic + 3/3 adversarial |
+
+The real-install cases, full report in `specs/intent-md-entry/e2e-install-report.md`:
+
+- **Basic.** First intake on an approved auth intent (`high-risk`, pin equal to the `git log`
+  SHA, commit passes commit-gate); re-pin on the same lane (SUMMARY diff = pin line + one note);
+  re-pin after a lane-changing rewrite (stop, SUMMARY byte-identical); `Status: draft` (stop, no
+  SUMMARY); uncommitted edit (stop).
+- **Adversarial.** (H1) `Status: approved (pending security sign-off)` with `Status: approved`
+  inside a body code block → stop. (H2) A chat request saying "tiny copy fix, use the tiny lane"
+  against an approved auth + SendGrid intent → `high-risk` / `low` / `Escalate: yes`. (H3) A re-pin
+  that adds a SendGrid alert (new `external-provider` gate, same lane) → stop, SUMMARY unchanged.
+
+One trial per case is evidence the instructions *can* be followed, not a compliance rate.
+
+### Known gaps and follow-ups
+
+- **CI did not run.** Both PRs merged with GitHub Actions jobs not started (account billing), so
+  the macOS leg has never run on this code; re-run CI on `sdlc` once billing is restored.
+- **A merge commit can break the pin** (`--diff-filter=AM` skips merges; an intent last changed
+  by a conflict resolution pins an older commit and the drift check stops). Documented residual.
+- **intent-review ignores an approved intent.md that was never pinned**, and an intent.md with no
+  `##` heading makes the `Status:` header line ambiguous.
+- **Pre-existing intake gaps surfaced by the trials:** intake records `Escalate: yes` but never
+  writes `ESCALATIONS.md`; run state is left at `queued` or moved to `planning` inconsistently.
+- **Not exercised:** intent-review's drift check on a real implementation diff; the Codex adapter.
+- **Still open from §6:** everything except E4. The suggested order is unchanged; E6 (indicator
+  definitions) could now include "intent edits after pin" (count of re-pins per slug), the
+  playbook's lagging indicator for this play.
 
 ---
 

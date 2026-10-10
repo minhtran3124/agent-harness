@@ -43,6 +43,9 @@
   5. **Ngữ cảnh luôn-nạp quá lớn** — khoảng 30 KB chỉ dẫn luôn-nạp (CLAUDE.md + 5 rule) so với
      khuyến nghị "giữ CLAUDE.md dưới một trang" của playbook.
 - **Danh sách đề xuất đã xếp hạng nằm ở §6** — 6 việc dễ, 6 việc trung bình, 4 việc khó.
+- **Trạng thái (2026-10-10):** artifact khởi đầu intent.md (§7, thay cho E4) đã ship ở PR #284,
+  kèm một bản sửa installer ở PR #285. Những gì đã ship, khác bản phác thảo ở đâu, và đã test thế
+  nào nằm ở §8.
 
 ---
 
@@ -261,7 +264,7 @@ của `feature-intake` theo các luật hard-gate hiện tại (sửa `hooks/`, 
 | **E1** | **Viết chính sách review (kiểu `REVIEW.md`) cho các skill review**: thế nào là Important vs Nit, giới hạn số nit, danh sách không báo cáo (file sinh tự động, thứ CI đã ép), và nhãn bắt buộc "tuân thủ PLAN.md SC-n + SUMMARY Intent" trên mỗi finding | Play 9 | `REVIEW.md` mới hoặc một mục trong `skills/correctness-review/` | normal (workflow-engine → audit) |
 | **E2** | **Rà mọi thông báo deny theo mẫu "lý do + đường phê duyệt"** và bổ sung dòng chỉ đường còn thiếu (vd "đặt `BRANCH_ISOLATION_REASON=…`", "ghi quyết định vào ESCALATIONS.md") | Play 10 | `hooks/commit-gate.sh`, `hooks/branch-isolation-guard.sh`, `hooks/lib/` | high-risk (hooks) |
 | **E3** | **Thêm luật "lỗi hai lần" vào `/compound`**: một bài học tái diễn lần thứ hai được nâng lên `critical-patterns.md` (hoặc một rule theo path), và việc nâng cấp đó là output của compound | Play 4, Play 9 bước 4 | `skills/compound/SKILL.md` | normal |
-| **E4** | **Góc nhìn intent có cấu trúc bên dưới khối nguyên văn**: các trường tùy chọn `Vấn đề / Kết quả / Ràng buộc (C1..) / Ngoài phạm vi / Câu hỏi mở (Q1..)`, ghi rõ là *dẫn xuất, không phải oracle*; `/intent-review` vẫn chỉ dùng văn bản nguyên văn | Play 1 | `templates/SUMMARY.template.md`, `skills/feature-intake/SKILL.md` | high-risk (templates) |
+| **E4** | ✅ *Được thay bằng §7, đã ship ở PR #284 (xem §8).* **Góc nhìn intent có cấu trúc bên dưới khối nguyên văn**: các trường tùy chọn `Vấn đề / Kết quả / Ràng buộc (C1..) / Ngoài phạm vi / Câu hỏi mở (Q1..)`, ghi rõ là *dẫn xuất, không phải oracle*; `/intent-review` vẫn chỉ dùng văn bản nguyên văn | Play 1 | `templates/SUMMARY.template.md`, `skills/feature-intake/SKILL.md` | high-risk (templates) |
 | **E5** | **Quy trình test-fail-trước cho bug fix**: khi `Input-type` là bug fix, bảng `### Verify` phải có một dòng đỏ (test fail trước khi sửa, kèm sha commit) và một dòng xanh sau khi sửa | Play 7 | `skills/feature-intake`, `skills/subagent-driven-development`, `scripts/verify_summary.py` (trước mắt chỉ cảnh báo) | normal → high-risk nếu đổi logic verifier |
 | **E6** | **Định nghĩa một chỉ số dẫn dắt + một chỉ số trễ cho mỗi giai đoạn workflow** trong `trust-metrics.md` (chỉ định nghĩa, chưa làm công cụ) — vd độ trễ intake→PLAN, tỉ lệ task-review pass lượt đầu, độ lệch plan, tỉ lệ review-escape | Mục "How to measure it" của mọi play | `docs/harness-experimental/trust-metrics.md` | tiny |
 
@@ -331,7 +334,7 @@ ai đó viết specs/<slug>/intent.md       (theo template; có thể nháp cùn
   → /intent-review chấm diff theo intent.md tại SHA đã ghim
 ```
 
-### Phác thảo thiết kế (chưa triển khai)
+### Phác thảo thiết kế (như đã chốt; bản ship khác vài chỗ — xem §8)
 
 1. **Template** `templates/INTENT.template.md`, chép thành `specs/<slug>/intent.md`:
    phần đầu `Author:` · `Status: draft | approved` · `Approved-by:`; các mục *Vấn đề · Kết quả mong
@@ -379,6 +382,88 @@ hành vi của hook hiện tại, nên khi triển khai cần thêm một regres
 
 Rủi ro: tác giả không dùng Git cần người khác (hoặc một connector) commit giúp; một `intent.md`
 viết tự do, bỏ qua template sẽ làm yếu việc trích C-n/Q-n, nên intake cần cảnh báo khi thiếu mục.
+
+---
+
+## 8. Trạng thái triển khai (2026-10-10)
+
+### Những gì đã ship
+
+**PR #284** (`feat/intent-md-entry` → `sdlc`, merge thành `8ee9826`; lane high-risk, chạy đủ
+chuỗi; hồ sơ spec ở `specs/intent-md-entry/`):
+
+| Phần | File | Hành vi |
+|---|---|---|
+| Template | `templates/INTENT.template.md` | `Author:`, dòng `Status:` để trống kèm ghi chú chọn `approved` hoặc `draft`, và bảy mục: Problem · Proposed outcome · Affected users and systems · Constraints · Out of scope · Open questions · What success looks like |
+| Intake đọc intent trước | `skills/feature-intake/SKILL.md` Step 1 | Dòng header `Status:` (phía trên `##` đầu tiên) phải đúng chữ `approved`; ghim SHA bằng `git log -1 --format=%H --diff-filter=AM -- specs/<slug>/intent.md`; dừng khi pin rỗng hoặc có sửa chưa commit; phân loại từ intent.md **cộng** chat request |
+| Nguồn gốc trong SUMMARY | `templates/SUMMARY.template.md` | `### Intent` mở đầu bằng `Intent-source: specs/<slug>/intent.md @ <sha>`, sau đó là chat request nguyên văn; lập luận của agent chuyển sang mục mới `### Intake notes`, nằm ngoài oracle |
+| Chạy lại intake (re-pin) | `skills/feature-intake/references/re-pin.md` | Chỉ dời dòng pin và thêm một dòng ghi chú có ngày. Dừng và hiện classification cũ/mới khi lane đổi, confidence là `low`, xuất hiện hard gate mà `Reason:`/`Flags:` chưa nêu, hoặc intent.md bị xóa. Pin không đổi → không sửa gì. Không có trạng thái `ESCALATIONS.md`: người tự sửa SUMMARY rồi chạy lại |
+| Kiểm tra drift khi review | `skills/intent-review/SKILL.md` bước 1 | `git diff --exit-code <pin> -- specs/<slug>/intent.md`; khác 0 → dừng, yêu cầu re-pin |
+| Loại trừ khỏi rule | `rules/terminology.md`, `skills/README.md`, `templates/structure/specs-README.md` | Hard exclusion 1 giờ bao cả `intent.md` lẫn `### Intent` |
+| Regression cho commit-gate | `tests/hooks/commit-gate-evidence.test.sh` | Commit chỉ có intent.md (không SUMMARY) đi qua, cả standard lẫn strict |
+
+**PR #285** (`fix/installer-ignore-run-lock` → `sdlc`, merge thành `b6395aa`; lane normal): lần
+thử cài thật bên dưới cho thấy `specs/<slug>/events.jsonl.lock` (file khóa fcntl của
+`runtime/run_state.py`) hiện là untracked ở repo consumer. `scripts/install-harness.sh` giờ thêm
+`specs/**/events.jsonl.lock` vào `.gitignore` của consumer, dùng
+`git check-ignore --no-index -v -n` để biết một rule trong `.gitignore` dùng chung đã phủ nó chưa.
+Nhờ vậy rule hẹp cho một spec, rule phủ định path không liên quan, hay rule chỉ nằm trong
+`.git/info/exclude` không làm installer bỏ qua sai. Thêm 10 case regression trong
+`tests/scripts/install-gitignore.test.sh`.
+
+### Bản ship khác phác thảo §7 ở đâu
+
+Cố ý làm gọn, theo hướng "prompt gọn, tin model":
+
+- **Không có trường `Approved-by:`.** `Status: approved` cộng tác giả commit là bản ghi phê duyệt.
+- **Không có ID `C-n` / `Q-n`.** Các mục template là văn xuôi; plan và review không trích ID.
+  Open questions không được chuyển thành mục `QUESTIONS.md`.
+- **Drift là `git diff --exit-code` so với pin, không phải `git show <sha>:…`.** intent-review
+  dừng khi có bất kỳ thay đổi nào sau pin thay vì đọc bản cũ, nên không cần thêm `allowed-tools`
+  (vốn đã có `git diff` và `git log`).
+- **`verify_summary.py` không kiểm tra dòng `Intent-source:`**, và intake không cảnh báo khi thiếu
+  mục template. Cả hai vẫn là khoảng trống ở mức traceability.
+- **Có thêm re-pin** (phác thảo không có), vì intent đã commit vẫn có thể đổi sau intake.
+- **Không có chế độ soạn nháp** (mục 8 của phác thảo): template là con đường viết duy nhất.
+- `skills/feature-intake/SKILL.md` đang ở 599/600 từ (trần progressive-disclosure), nên quy tắc
+  re-pin được tách ra `references/re-pin.md`.
+
+### Đã test thế nào
+
+| Bằng chứng | Mức | Kết quả |
+|---|---|---|
+| `bash scripts/run-tests.sh`, `bash scripts/ci-strict-gate.sh sdlc` | truth | ALL GREEN / OK |
+| Chuỗi review: context-propagation audit, correctness review 6 góc kèm scorer, intent review không đọc plan | provenance (receipt ghim ở `42383b9`) | 0 blocking; các advisory ghi trong SUMMARY của spec |
+| Hai lần dogfood: agent context mới làm theo nội dung skill trong scratch repo | truth, mỗi case một lần | 12/12 kịch bản |
+| **Cài thật**: `install-harness.sh --profile standard` vào repo trống, rồi `claude -p "/feature-intake <slug>"` (Claude Code 2.1.296) với hook bật | truth, mỗi case một lần | 5/5 cơ bản + 3/3 khó |
+
+Các case cài thật (report đầy đủ: `specs/intent-md-entry/e2e-install-report.md`):
+
+- **Cơ bản.** Intake lần đầu với intent auth đã approved (`high-risk`, pin khớp SHA của
+  `git log`, commit qua commit-gate); re-pin cùng lane (diff SUMMARY = dòng pin + một ghi chú);
+  re-pin sau khi viết lại làm đổi lane (dừng, SUMMARY giữ nguyên từng byte); `Status: draft`
+  (dừng, không SUMMARY); sửa chưa commit (dừng).
+- **Khó.** (H1) `Status: approved (pending security sign-off)` cùng một code block trong body chứa
+  `Status: approved` → dừng. (H2) Chat nói "chỉ sửa chữ, dùng lane tiny" trong khi intent đã
+  approved là auth + SendGrid → `high-risk` / `low` / `Escalate: yes`. (H3) Re-pin thêm cảnh báo
+  qua SendGrid (gate `external-provider` mới, lane không đổi) → dừng, SUMMARY không đổi.
+
+Mỗi case một lần là bằng chứng chỉ dẫn *có thể* được làm theo, không phải tỉ lệ tuân thủ.
+
+### Khoảng trống còn lại và việc tiếp theo
+
+- **CI chưa chạy.** Cả hai PR được merge khi job GitHub Actions không khởi động (vướng billing tài
+  khoản), nên nhánh macOS chưa từng chạy trên code này; chạy lại CI trên `sdlc` khi billing ổn.
+- **Merge commit có thể làm hỏng pin** (`--diff-filter=AM` bỏ qua merge; intent đổi lần cuối qua
+  giải conflict sẽ ghim commit cũ hơn, và kiểm tra drift sẽ dừng). Đã ghi là residual.
+- **intent-review bỏ qua intent.md đã approved nhưng chưa từng được ghim**, và intent.md không có
+  heading `##` làm dòng header `Status:` bị mơ hồ.
+- **Khoảng trống có sẵn của intake mà các lần thử lộ ra:** intake ghi `Escalate: yes` nhưng không
+  viết `ESCALATIONS.md`; run state lúc dừng ở `queued`, lúc lên `planning`, không thống nhất.
+- **Chưa thử:** kiểm tra drift của intent-review trên diff triển khai thật; Codex adapter.
+- **Vẫn mở từ §6:** mọi mục trừ E4. Thứ tự đề xuất không đổi; E6 (định nghĩa chỉ số) giờ có thể
+  thêm "số lần sửa intent sau khi ghim" (số lần re-pin mỗi slug), chỉ số lagging của playbook cho
+  play này.
 
 ---
 
