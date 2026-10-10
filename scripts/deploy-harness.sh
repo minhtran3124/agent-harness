@@ -69,6 +69,29 @@ HARNESS_ONLY_DOCS=(
   "agents/README.md"
 )
 
+# Python prelude shared by the derive-time Markdown transforms: derived_md(out) yields the *.md
+# files under .claude/ that the transforms may rewrite. It never descends into another checkout:
+# harness worktrees live at .claude/worktrees/<name> (EnterWorktree only accepts that root), and
+# any directory carrying its own .git entry is a nested worktree or repository. Their files are
+# SOURCE, not derived — a recursive walk rewrote 173 tracked docs in a worktree (issue #276).
+# Exception: a synced top-level dir (skills/, rules/, ...) is walked even if the consumer keeps it
+# under git, because copy_dir merges harness entries into it. Sidecars are skipped too. Other
+# consumer Markdown under .claude/ (CLAUDE.md, commands/, .harness-backup-*/) is still walked, as
+# before this guard existed.
+DERIVED_MD_PY='
+import os, pathlib
+SYNCED = {"skills", "agents", "hooks", "rules", "templates", "runtime", "scripts"}  # = SYNCED_DIRS_RE
+def derived_md(out):
+    for d, dirs, files in os.walk(out):
+        top = d == str(out)
+        dirs[:] = [n for n in dirs
+                   if not (top and n == "worktrees")
+                   and (top and n in SYNCED or not os.path.lexists(os.path.join(d, n, ".git")))]
+        for n in files:
+            if n.endswith(".md") and ".harness-incoming" not in n and ".proposed" not in n:
+                yield pathlib.Path(d, n)
+'
+
 OUT_BASE="$ROOT"
 YES=0
 OVERWRITE_CONFLICTS=0
@@ -394,7 +417,7 @@ copy_consumer_subset() {
 # hooks/*.sh keep their own resolution (commit-gate.sh check_risk must read the git INDEX manifest, never
 # a derived .claude/ copy). Idempotent: an already-prefixed path is skipped.
 rewrite_derived_paths() {
-  python3 - "$OUT" "${CONSUMER_SCRIPTS[@]}" <<'PYEOF'
+  { printf '%s\n' "$DERIVED_MD_PY"; cat <<'PYEOF'; } | python3 - "$OUT" "${CONSUMER_SCRIPTS[@]}"
 import re, sys, pathlib
 out = pathlib.Path(sys.argv[1]); names = sys.argv[2:]
 pats = [re.compile(r'(?<![\w./-])scripts/' + re.escape(n)) for n in names]
@@ -406,8 +429,7 @@ pats.append(re.compile(r'python3 skills/visual-planner/render_plan\.py'))
 subs = ['.claude/scripts/' + n for n in names] + ['.claude/harness-manifest.json',
         'python3 .claude/skills/visual-planner/render_plan.py']
 changed = 0
-for f in out.rglob('*.md'):
-    if any(s in f.name for s in ('.harness-incoming', '.proposed')): continue
+for f in derived_md(out):
     txt = orig = f.read_text(encoding='utf-8')
     for pat, rep in zip(pats, subs):
         txt = pat.sub(rep, txt)
@@ -429,13 +451,12 @@ strip_archive()   { rm -rf "$OUT/skills/_archive"; }   # archived skills must no
 strip_maintenance_docs() {
   local f
   for f in "${HARNESS_ONLY_DOCS[@]}"; do rm -f "$OUT/$f"; done
-  python3 - "$OUT" <<'PYEOF'
+  { printf '%s\n' "$DERIVED_MD_PY"; cat <<'PYEOF'; } | python3 - "$OUT"
 import re, sys, pathlib
 out = pathlib.Path(sys.argv[1])
 fence = re.compile(r'\n?<!--\s*harness-only:begin\s*-->.*?<!--\s*harness-only:end\s*-->\n?', re.S)
 n = 0
-for f in out.rglob('*.md'):
-    if any(s in f.name for s in ('.harness-incoming', '.proposed')): continue
+for f in derived_md(out):
     txt = f.read_text(encoding='utf-8')
     new = fence.sub('\n', txt)
     if new != txt:
@@ -444,9 +465,41 @@ print(f"     stripped harness-only regions from {n} derived doc(s)")
 PYEOF
 }
 
+# Drops skills/<x>/tests/ and every test_*.py, but never descends into a dir carrying its own .git
+# (a consumer's nested checkout — source, not derived; #276), so it deletes files one by one and
+# then only dirs left empty, never a whole tree. Same lexists probe as derived_md, so a dangling
+# .git symlink counts. Dot-named entries under skills/ are skipped, as the old skills/*/ glob did.
+# Best-effort like the old `find … || true`: an undeletable file warns instead of aborting.
 strip_skill_tests() {
-  rm -rf "$OUT"/skills/*/tests
-  find "$OUT/skills" -name 'test_*.py' -delete 2>/dev/null || true
+  python3 - "$OUT/skills" <<'PYEOF'
+import os, sys
+root = sys.argv[1]
+def rm(p):
+    try: os.remove(p)
+    except OSError as e: print(f"     ! could not strip {p}: {e}", file=sys.stderr)
+nested = lambda p: os.path.lexists(os.path.join(p, ".git"))
+emptied = []
+for d, dirs, files in os.walk(root):
+    rel = os.path.relpath(d, root).split(os.sep)
+    in_tests = len(rel) >= 2 and rel[1] == "tests"
+    keep = []
+    for n in dirs:
+        p = os.path.join(d, n)
+        if d == root and n.startswith("."): continue
+        is_tests = in_tests or (len(rel) == 1 and rel[0] != "." and n == "tests")
+        if os.path.islink(p):
+            if is_tests: rm(p)
+            continue
+        if nested(p): continue
+        if is_tests: emptied.append(p)
+        keep.append(n)
+    dirs[:] = keep
+    for n in files:
+        if in_tests or (n.startswith("test_") and n.endswith(".py")): rm(os.path.join(d, n))
+for p in reversed(emptied):
+    try: os.rmdir(p)
+    except OSError: pass
+PYEOF
 }
 render_agents()   {
   python3 scripts/render_agent_definitions.py \

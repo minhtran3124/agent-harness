@@ -1,0 +1,12 @@
+{
+  "created_at": "2026-10-09T15:10:31Z",
+  "last_event_id": "86aed023-164f-476d-b3eb-54a30407c468",
+  "resume_event": null,
+  "run_id": "e871b372-2462-4c81-a771-64dbc67d07c2",
+  "seq": 6,
+  "sha": "42dbb2d",
+  "slug": "gh-276-deploy-skip-worktrees",
+  "state": "ready_to_merge",
+  "updated_at": "2026-10-09T15:33:37Z",
+  "waiting_on": null
+}
