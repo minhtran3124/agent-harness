@@ -38,9 +38,11 @@ classify risk; ask only to resolve a material ambiguity or narrow a hard-gated s
    in full. Re-pin — the slug already has an `Intent-source:` line, or a chat-started slug gains
    intent.md: replace or add only that line, add a dated `### Intake notes` line with the old →
    new SHA, and re-check the lane (raise `Lane:` freely; lower it only when a human narrows
-   scope). A re-pin changes nothing else in SUMMARY.
+   scope; if it changes, update `Reason:`, `Flags:`, `Route:` and `Escalate:` to match). A
+   re-pin changes nothing else in SUMMARY.
 6. For a new SUMMARY, write `SUMMARY.md` using `templates/SUMMARY.template.md`, including the
-   user intent verbatim in `### Intent`; put agent notes in `### Intake notes`, never in `### Intent` or intent.md:
+   user intent verbatim in `### Intent`; put agent notes in `### Intake notes`, never in
+   `### Intent` or intent.md:
 
    ```text
    Lane: <tiny | normal | high-risk>

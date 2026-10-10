@@ -1,6 +1,7 @@
 # intent-md-entry — Design
 
 Written 2026-10-10. Pins: repo 49a1c93 + uncommitted
+Revised 2026-10-10. Pins: repo 600c854 + uncommitted
 
 ## Goal
 
@@ -40,7 +41,7 @@ Background and the playbook comparison: `docs/research/2026-10-10-ai-native-sdlc
 
 | File | Change |
 |---|---|
-| `templates/INTENT.template.md` (new) | `Author:`, `Status: draft \| approved`; sections Problem · Proposed outcome · Affected users and systems · Constraints · Out of scope · Open questions · What success looks like |
+| `templates/INTENT.template.md` (new) | `Author:`, `Status:` left empty with a note to set `approved` or `draft` (revised 2026-10-10 by the user after intent review); sections Problem · Proposed outcome · Affected users and systems · Constraints · Out of scope · Open questions · What success looks like |
 | `skills/feature-intake/SKILL.md` | One step: when `specs/<slug>/intent.md` exists, use it as the intent (checks below) |
 | `skills/intent-review/SKILL.md` | Step 1: when `### Intent` has an `Intent-source:` line, check drift, then use the file as the oracle |
 | `skills/intent-review/intent-reviewer-prompt.md` | The INTENT input line names both sources (the `### Intent` block, or the pinned intent.md text) |
@@ -107,7 +108,7 @@ directly after `### Intent`.
 
 | Situation | Behavior |
 |---|---|
-| The header line is not `Status: approved` | Intake stops and says the intent is not approved yet |
+| The `Status:` header value is not exactly `approved` (including empty) | Intake stops and says the intent is not approved yet |
 | No commit added or modified intent.md (empty pin), or `git diff --exit-code <pin>` is non-zero | Intake stops and asks for the current intent to be committed first |
 | Slug already pinned | Re-pin: replace `Intent-source:`, add an Intake notes line, keep the rest of SUMMARY |
 | No intent.md for the slug | Today's flow: the chat request is copied verbatim |

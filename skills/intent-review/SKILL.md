@@ -13,9 +13,10 @@ with a supplied intent, or after correctness review in SDD before finishing a br
 
 1. Read `### Intent` from `specs/<slug>/SUMMARY.md`; it is the verbatim primary oracle. If it has
    an `Intent-source: specs/<slug>/intent.md @ <sha>` line, first run
-   `git diff --exit-code <pin> -- specs/<slug>/intent.md` with that SHA as `<pin>`. Non-zero (including 128): STOP, report
-   that the intent changed or the pin is unreachable, and ask for `/feature-intake <slug>` to
-   re-pin. Zero: the oracle is the intent.md text plus the chat request in `### Intent`.
+   `git diff --exit-code <pin> -- specs/<slug>/intent.md` with that SHA as `<pin>`. Non-zero
+   (including 128): STOP, report that the intent changed or the pin is unreachable, and ask for
+   feature-intake to re-pin the slug. Zero: the oracle is the intent.md text plus the chat
+   request in `### Intent`.
 2. Optionally read design success criteria and PLAN §3 SC rows only as secondary checks. A missing
    `SUMMARY` intent and design intent is a STOP: ask the user instead of reconstructing intent.
 3. If a secondary oracle conflicts with verbatim intent, verbatim wins and the conflict is drift.
