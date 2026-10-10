@@ -221,4 +221,23 @@ stage "$repo" "specs/$LIN/SUMMARY.md" "$LANE_NORMAL_OK"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_contains 0 "Lane evidence... PASSED"
 
+# An intent.md committed alone, before intake writes SUMMARY.md, must pass. The copied
+# /scripts/ is excluded so strict's untracked-.py check does not fire on the fixture;
+# strict denies with exit 0 + JSON, so the PASSED line is what tells pass from deny.
+INTENT_MD=$'# Intent: demo\n\nAuthor: test\nStatus: approved\n\n## Problem\n\nx\n'
+
+t "intent-only commit (no SUMMARY.md) passes the standard gate"
+repo=$(lane_repo)
+printf '/scripts/\n' >> "$repo/.git/info/exclude"
+stage "$repo" "specs/demo/intent.md" "$INTENT_MD"
+run_hook "$repo" $H "$COMMIT_JSON"
+assert_rc_contains 0 "Lane evidence... PASSED"
+
+t "intent-only commit (no SUMMARY.md) passes the strict gate"
+repo=$(lane_repo)
+printf '/scripts/\n' >> "$repo/.git/info/exclude"
+stage "$repo" "specs/demo/intent.md" "$INTENT_MD"
+run_hook_args "$repo" $H "$COMMIT_JSON" --profile strict
+assert_rc_contains 0 "Lane evidence... PASSED"
+
 finish
