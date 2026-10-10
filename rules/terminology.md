@@ -23,7 +23,7 @@ the harness repo's `specs/ste-terminology-evidence/DECISION.md` for the 75-trial
 | `SUMMARY.md` `### Verify` rows | advisory | — | **required** | lintable |
 | `SUMMARY.md` Rationale / Alternatives | advisory | — | — | none |
 | `design.md`, `research-brief.md` | advisory | — | **excluded** | none |
-| `SUMMARY.md` `### Intent` | **excluded** | **excluded** | **excluded** | never |
+| `SUMMARY.md` `### Intent`, `specs/<slug>/intent.md` | **excluded** | **excluded** | **excluded** | never |
 <!-- /lint:scope -->
 
 ## §3 Acceptance criteria must be machine-decidable — REQUIRED
@@ -75,9 +75,9 @@ Keep this section for human readability. Do not build a linter on it.
 
 ## Hard exclusions
 
-1. **`SUMMARY.md` `### Intent` — never touched, by any rule, hardcoded.** It holds the
-   user's request verbatim and is the oracle for `intent-review`, the reviewer that is blind
-   to `PLAN.md`. Rewriting one word there corrupts an independent review layer. This must not
+1. **`SUMMARY.md` `### Intent` and `specs/<slug>/intent.md` — never touched, by any rule,
+   hardcoded.** They hold the user's request verbatim and the human-written intent, and are
+   the oracle for `intent-review`, the reviewer that is blind to `PLAN.md`. Rewriting one word there corrupts an independent review layer. This must not
    be exposed as configuration.
 2. **§3 does not apply to `design.md` or `research-brief.md`.** Hedging is the content there,
    and `rules/behavior.md` §1 (`not_observed != absent`) requires it. Forcing certainty into a

@@ -29,6 +29,8 @@ this line if you change it.
 | `SUMMARY.md` | `feature-intake` | **Always written, every lane** — Lane/Confidence/Reason, the
   user's request verbatim under `### Intent`, plus `### Verify` / `### Rollback` / `### Deviations`.
   `commit-gate.sh` gates commits on it and `intent-review` reads `### Intent` as its oracle. |
+| `intent.md` | a human (optional) | Written from `templates/INTENT.template.md`; approved by
+  `Status: approved` plus a commit. `feature-intake` pins it by commit SHA and `intent-review` reads it. |
 | `ESCALATIONS.md` | any skill that escalates | Only when a hard gate or ambiguity stops the work.
   Deny-on-no-response: a commit touching the slug is blocked while a `decision: pending` block stands. |
 | `QUESTIONS.md` | `brainstorming` (multi-phase specs) | Non-blocking unknowns, each with a `closes-at` phase.

@@ -24,6 +24,7 @@ init-structure.sh --root <project>   (first-time setup; run from the harness rep
   → scaffolds specs/, docs/solutions/ (create-if-missing)
       ↓
 feature-intake  (routing entry point — run first on every change request)
+  → reads specs/<slug>/intent.md when it exists (pins it by commit SHA)
   → classifies input type + 10-flag risk checklist + hard gates
   → output: lane (tiny|normal|high-risk) + confidence → specs/<slug>/SUMMARY.md
   → routes: tiny → branch + direct edit · normal → subagent-driven · high-risk → full chain below

@@ -1,8 +1,8 @@
 # Confidence & escalation canaries
 
 The interruption axis. Lane scales with risk; confidence/ambiguity decides whether a human
-is asked. These pin Step 4–5 of `../SKILL.md`. A case passes when both `Confidence` and
-`Escalate` match.
+is asked. These pin Step 4 (confidence) and Step 6 (the `Escalate:` field) of `../SKILL.md`.
+A case passes when both `Confidence` and `Escalate` match.
 
 | ID | Prompt (abbreviated) | Expected confidence | Escalate? |
 |----|----------------------|---------------------|-----------|

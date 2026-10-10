@@ -14,8 +14,15 @@ classify risk; ask only to resolve a material ambiguity or narrow a hard-gated s
 
 ## Procedure
 
-1. Read `harness-manifest.json` for canonical hard-gate vocabulary and modes. Read
-   `rules/orchestration.md` and `rules/auto-correct-scope.md` for routing and branch policy.
+1. If SUMMARY already exists and (it has an `Intent-source:` line or
+   `specs/<slug>/intent.md` exists), follow `references/re-pin.md` instead of this procedure. Read
+   `harness-manifest.json` (hard gates), `rules/orchestration.md` and
+   `rules/auto-correct-scope.md` (routing, branches). If intent.md exists (shape:
+   `templates/INTENT.template.md`), read it first: stop unless its header line (`Status:` above
+   the first `##`) is exactly `approved` (empty stops); pin with
+   `git log -1 --format=%H --diff-filter=AM -- specs/<slug>/intent.md` (empty: stop); if
+   `git diff --exit-code <pin> -- specs/<slug>/intent.md` is non-zero, stop and ask for the
+   intent to be committed. Classify from intent.md plus the chat request.
 2. Classify the input: new spec, spec slice, change request, initiative, maintenance, or harness
    improvement. Mark applicable risk flags: auth, authorization, data model, audit/security,
    external systems, public contracts, cross-platform, existing behavior, weak proof, and
@@ -24,9 +31,13 @@ classify risk; ask only to resolve a material ambiguity or narrow a hard-gated s
    one-file/no-new-public-callable work (else `normal`), 2–3 is `normal`, and 4+ is `high-risk`.
    A human may lower a hard-gated lane only by narrowing scope.
 4. Assign confidence: `high` for one clear interpretation, `medium` for a safe documented
-   default, and `low` for materially different plausible interpretations. Low confidence stops
-   for human confirmation regardless of lane.
-5. Write `SUMMARY.md` using `templates/SUMMARY.template.md`, including the user intent verbatim:
+   default, and `low` for materially different plausible interpretations (including a chat
+   request that conflicts with intent.md). Low confidence stops for human confirmation
+   regardless of lane.
+5. The pin line is `Intent-source: specs/<slug>/intent.md @ <sha>`; chat-only intake writes none.
+6. For a new SUMMARY, write it from `templates/SUMMARY.template.md`. `### Intent` holds the pin
+   line when Step 1 pinned, then the chat request verbatim and in full; agent notes go in
+   `### Intake notes`, never in `### Intent` or intent.md:
 
    ```text
    Lane: <tiny | normal | high-risk>
@@ -39,9 +50,9 @@ classify risk; ask only to resolve a material ambiguity or narrow a hard-gated s
    Escalate: <yes (reason) | no>
    ```
 
-6. Initialize `runtime/run_state.py` as `investigating` on a best-effort basis. For normal and
-   high-risk lanes, transition to `planning`; failures are observability failures, never an intake
-   blocker. Run `python3 scripts/verify_summary.py --lane <slug>` before handoff.
+7. For a new SUMMARY, initialize `runtime/run_state.py` as `investigating` (best effort); for
+   normal and high-risk, transition to `planning`. Failures never block intake. Always run
+   `python3 scripts/verify_summary.py --lane <slug>` before handoff.
 
 ## Routes
 
@@ -66,9 +77,3 @@ when evidence reveals a deeper signal.
 
 `$ARGUMENTS` is the requested change. Derive `<slug>` using the ticket-prefix convention in
 `templates/structure/specs-README.md`; never rename an existing spec directory.
-
-## References
-
-- `harness-manifest.json` — hard gates and modes (authority)
-- `rules/orchestration.md` — artifact and escalation policy
-- `rules/auto-correct-scope.md` — branch and autonomy boundaries

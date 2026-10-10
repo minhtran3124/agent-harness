@@ -40,7 +40,9 @@ Task tool (reviewer):
     ## Inputs
 
     - INTENT (the oracle — the user's original request, VERBATIM):
-      [paste the `### Intent` block from specs/<slug>/SUMMARY.md, verbatim]
+      [paste, verbatim: when the `### Intent` block of specs/<slug>/SUMMARY.md has an
+      `Intent-source:` line, the pinned specs/<slug>/intent.md text plus the chat request in
+      that block; otherwise the whole `### Intent` block]
     - SUCCESS CRITERIA (secondary oracle, only if specs/<slug>/design.md exists):
       [paste design.md Success Criteria, or "none"]
     - PLAN §3 SC TABLE (secondary oracle, only if specs/<slug>/PLAN.md declares one):

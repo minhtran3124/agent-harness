@@ -36,3 +36,4 @@ list in `SKILL.md`.
 
 - `lane-classification-cases.md` — lane + hard-gate canaries (the load-bearing safety net).
 - `confidence-escalation-cases.md` — the interruption axis: when a human must be asked.
+- `intent-file-cases.md` — reading and pinning `specs/<slug>/intent.md`.
