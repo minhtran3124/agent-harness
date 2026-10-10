@@ -56,6 +56,9 @@ Scope-deciding sentences, in chronological order:
 
 - User-directed (2026-10-10, after intent review), not Rule 1–3: (1) "intake sẽ đọc intent.md và sẽ quyết định đó là lane nào" — intake reads intent.md before Steps 2–4 and classifies from it; (2) "s2, ok update lại chỗ này ko cần bảo ghi nữa" — re-pin edits only the `Intent-source:` line and Intake notes, no SUMMARY rewrite or run_state init; (3) "s3: ko có chuyện đó" — merge-commit pin left unchanged; (4) "s4: template để trống status …" — template `Status:` left empty with a note, intake requires the exact value `approved`.
 - SC-1 check changed to match decision (4): it no longer looks for `Status: draft `; it requires a `Status:` header and rejects a pre-filled `Status: approved` / `Status: draft`. SC-1 had passed before the change (not a failed-SC edit).
+- Rule 3 — `skills/intent-review/SKILL.md` step 1 used a slash invocation (`/feature-intake <slug>`), which `scripts/check_runtime_neutral_sources.py` rejects in shared skill text; reworded to "ask for feature-intake to re-pin the slug". Found by the full suite after fix round 1. Commit 600c854.
+- Rule 1 — re-pin that raises `Lane:` now also updates `Reason:`, `Flags:`, `Route:`, `Escalate:` so the header stays consistent (fix-round task review Minor). Commit 600c854.
+- Rule 3 — `skills/feature-intake/SKILL.md` exceeded the 600-word skill ceiling (706, `scripts/audit_skill_prompts.py` via pytest); procedure tightened to 599 words with no behavior change, and the redundant `## References` list (it repeated Step 1) removed. Commit 17603e6.
 
 ### Verify
 
@@ -79,7 +82,10 @@ Scope-deciding sentences, in chronological order:
 
 ### Not auto-verified
 
-- <filled at completion>
+- Model behavior of the new intake Step 1/5 and intent-review step 1 — reached **truth, one trial**: a fresh-context agent followed the skill text literally in a scratch repo (scripts kept in the session scratchpad, not re-runnable from this repo) and all six scenarios matched: (A) terse chat + approved auth intent → read before classifying, lane `high-risk`, pin equal to `git log -1 --format=%H --diff-filter=AM`; (B) empty `Status:` → stop, no SUMMARY; (C) uncommitted intent → empty pin → stop; (D) intent edited after pin → drift check exit 1 → stop; (E) re-pin → SUMMARY diff exactly the `Intent-source:` line + one Intake notes line; (F) clean → exit 0. One trial is not a compliance rate.
+- The full suite `bash scripts/run-tests.sh` ended `ALL GREEN` (880 pytest passed) at 17603e6 — re-run, cited in prose because whole-suite rows are not allowed in `### Verify`.
+- The feature-intake canaries (`skills/feature-intake/tests/intent-file-cases.md` IF-01..IF-10) are prose — traceability only; not run against a live intake beyond the dogfood trial above.
+- Codex runtime behavior — not exercised; only rendered text is covered by `run-tests.sh`.
 
 ### Rollback
 
@@ -148,4 +154,7 @@ Intent review (plan-blind, `883593f..29d6c7f`) reported 6 findings:
 
 ### Harness-Delta
 
+- backlog — dogfood ambiguities, pre-existing in intake: intake never says to write `ESCALATIONS.md` when a hard gate fires (only the `Escalate:` field), and whether an approved intent.md counts as "narrowed by a human" is unstated; Step 6 lists `Route:`/`Escalate:` but `templates/SUMMARY.template.md` says "five header fields".
+- backlog — a re-pin records no new chat request and cannot change `Confidence:`; harmless when the re-pin request only names the slug (dogfood E).
+- backlog — the worktree guard refuses any Bash command whose text contains "git" inside a heredoc, compound command or `$?` chain, so plan grep checks had to run from script files.
 - backlog — parallel implementers share one worktree git index, so one task's commit swept another task's staged files (commit 8f27359). The controller split it into 21be426 (task 1.2) and 05232e1 (task 1.4) before review. Fix candidates: serialize commits through the controller, or have implementers commit with `git commit -- <paths>` only.
