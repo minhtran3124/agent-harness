@@ -27,15 +27,30 @@ sau đó yêu cầu user review và approve nếu đúng hoặc tự modify nế
 
 ## What changed
 
-<filled at completion>
+Every new slug now gets `specs/<slug>/intent.md`. With no SUMMARY and no approved, committed
+intent, feature-intake follows `skills/feature-intake/references/draft-intent.md`: it drafts the
+intent from the template and the chat (`(assumed)` for proposals, the chat verbatim under
+`## Original request`), classifies it, auto-approves and commits tiny + high, and otherwise shows
+the draft and stops for `approve`, a change request, or "edited, done". The intent commit is
+path-scoped; on `main`/`master` intake first cuts `<type>/<slug>` and stays on it, and
+`using-git-worktrees` takes that branch over. `### Intent` takes `## Original request` (never a
+bare approval or change reply); intent-review lets the approved body win over the request text.
+`allowed-tools` gains narrow `git branch --show-current`, `git switch`, `git add -- specs/*`,
+`git commit -m`, `git config user.name`, and `Edit`.
 
 ### Rationale
 
-<filled at completion>
+Same spec structure for every lane, with the human gate only where it adds value (user's
+decision: auto-approve tiny + high). The procedure lives in a `references/` file keyed on two file
+states, because each extra prose branch produced contradictions in review
+(`docs/solutions` critical pattern `prose-encoded-state-logic-accrues-contradiction-chains`).
 
 ### Alternatives considered
 
-- none
+- A separate `intent-draft` skill — rejected: more surface (deploy, audit, Codex render) for no gain.
+- Template-comment-only instructions — rejected: not a mandatory step.
+- Commit on the current branch including `main` (original D8) — superseded by DC1/D9 after review.
+- Switch back to `main` after the intent commit (fix round 2) — rejected in round 3: it removed intent.md from the checkout before intake could pin it.
 
 ### Deviations
 
@@ -49,6 +64,39 @@ sau đó yêu cầu user review và approve nếu đúng hoặc tự modify nế
 - 1.1: SC-10 not independently re-run by the reviewer (re-run in the full suite, ALL GREEN). Template comment's approval sentence did not mention auto-approval — fixed in 1380d38.
 - 1.2: "When intake ran" weaker than "intake record exists"; "as in step 2" imprecise; "ask to commit the intent" ambiguous — all fixed in 1380d38.
 - 1.3: IF-03/04/05/09 did not name the proposed lane/confidence; IF-13 not updated — fixed in 1380d38. Error-behavior rows without a canary (Author `unknown`, commit skip on no change, staged files excluded, hook refusal, `none — intent.md is the request` fallback) — not covered by canaries; see Not auto-verified.
+
+### Correctness Review
+
+Six FIND angles (enclosing-function, removed-behavior, call-site-impact, stack-defects,
+guard-completeness, prior-art) over 5fbd67c..f39accb, then three fix rounds re-reviewed by one
+reviewer (f679638, bb923dc, 8b994e2). Final round: 0 blocking.
+
+- Deviation from the pipeline: no per-location SCORE prompts were dispatched. Candidates were
+  clustered by location (most found by 2–4 angles independently) and every cluster was either
+  fixed (Rule 1–3) or decided by the user (Rule 4: D8 → DC1). Advisory items below were not scored.
+- Fixed: manifest read order before the draft classification; tiny+high re-check before SUMMARY;
+  bare-reply slug resolution; branch for the intent commit (DC1); `## Original request` vs Step 6
+  wording; requests recorded only from change replies; "identical to its last commit"; any failed
+  commit stops and reports (file still staged); narrowed `allowed-tools` + `Edit`; intent-review
+  approved-body rule (SKILL + child prompt); re-pin canaries IF-21..23; SUMMARY template comment;
+  worktree rename collision (round 2) and intent.md removal by `git switch -` (round 3).
+- Advisory (recorded, not fixed):
+  - A1 — SUMMARY and run state stay untracked in the main checkout and do not reach the worktree (pre-existing; intake never committed SUMMARY).
+  - A2 — after the handoff, a new intake run from the main checkout sees a pinned SUMMARY with no intent.md and stops with re-pin step 1's message; a switch with local edits to intent.md fails safely.
+  - A3 — custom `HARNESS_SHARED_BRANCHES` values are not honoured; only `main`/`master` trigger the branch cut.
+  - A4 — commit-gate judges the whole index, so unrelated staged files can block the intent commit (stop and report).
+  - A5 — `(assumed)` lines of an auto-approved tiny intent enter the oracle without a human read (user's choice, design "What we do not claim").
+  - A6 — re-pin is not told that an approved intent wins over its `## Original request` (re-pin out of scope).
+
+### Intent Findings
+
+Plan-blind intent review at f39accb: no gap, no material drift.
+
+1. drift (equivalent, advisory) — SKILL.md changed beyond one pointer sentence (Steps 1/5/6, allowed-tools) — needed for consistency.
+2. excess (report-only) — SKILL.md wording compressed (Routes table → list) to stay within 600 words.
+3. excess (report-only) — chat change requests are appended to `## Original request` and the approved body wins; needed once the AI edits drafts (trial 7).
+4. drift (equivalent, advisory) — `## Original request` added to the drafted file beyond the template.
+- Note: the `Criterion` column uses PLAN §3 numbering (SC-1..SC-14), not design.md's SC-1..SC-4.
 
 ### Verify
 
@@ -81,6 +129,8 @@ PASS (controller, main session, at f39accb). Search surface: `grep -rn -e "draft
 | `## Original request` inside intent.md | intent-review reviewer | fresh child | pasted: reviewer prompt INTENT input pastes the pinned intent.md text (which contains the section) | `skills/intent-review/intent-reviewer-prompt.md:44` |
 | `rules/terminology.md` hard exclusion 1 (approved or auto-approved; drafts editable) | any agent touching `specs/**` | main + children reading specs | paths-triggered (`specs/**`) | rule frontmatter `paths:` |
 | Template comment (two authoring paths) | drafting model | main session | explicit Read: draft-intent step 1 "from `templates/INTENT.template.md`" | `references/draft-intent.md:6` |
+| Intake-cut `<type>/<slug>` handoff (re-audited at 8b994e2) | `using-git-worktrees` run | main session | always loaded with that skill; condition placed before its rename step | `skills/using-git-worktrees/SKILL.md:25-28`; plain-git probe |
+| "approved intent.md body wins over the request text" (re-audited at 8b994e2) | intent-review controller and its child reviewer | main + fresh child | SKILL.md step 1 (always loaded) and pasted into the child prompt's INTENT input | `skills/intent-review/SKILL.md:18-20`, `intent-reviewer-prompt.md:45-46` |
 | "approved intent wins over `## Original request`" | re-pin (`references/re-pin.md` step 4) | main session | **not delivered** — re-pin re-classifies from intent.md plus the request in `### Intent` and is not told this rule | advisory: re-pin rules are out of scope (design Non-goals); a re-pin where the committed intent differs from the original request can still be read as a conflict, as in PR #284 today |
 
 ### Not auto-verified
@@ -88,6 +138,7 @@ PASS (controller, main session, at f39accb). Search surface: `grep -rn -e "draft
 - Classification (lane/confidence) is a judgment at intake — traceability only.
 - Full suite `bash scripts/run-tests.sh` ended ALL GREEN after wave 1 — re-run, cited in prose (whole-suite rows are not allowed in `### Verify`).
 - **Real install, 2026-10-10 — truth, one trial each.** `install-harness.sh --profile standard` from this branch into a fresh repo, then `claude -p "/feature-intake <slug> …"` (Claude Code 2.1.296, acceptEdits, scoped allowlist): (1) tiny/high README title → intent committed `(auto-approved: tiny/high)`, `Status: approved`, `## Original request`, SUMMARY pinned to the `git log` SHA, Intake notes `auto-approved: tiny/high`; (2) normal CSV export → draft, no SUMMARY, no commit; (3) then `approve` in a new run → intent committed, `### Intent` holds the original request (not "approve"); (4) high-risk rate-limit draft, then "change: 10 not 5" → draft edited, no commit; (5) legacy slug (SUMMARY, no intent) → no intent.md written; (6) a person's `Status: draft` intent on a tiny change → not auto-approved, unchanged, no commit; (7) user set `Status: approved` (uncommitted) and said `done` → committed, SUMMARY written; (8) a person's approved-but-uncommitted intent with an ordinary request → file byte-identical, no commit. 7/8 matched; (7) exposed a defect: the change in (4) left `## Original request` saying 5, so approval was read as a chat conflict (`low`, escalated). Fixed in f39accb (change replies append to `## Original request`; an approved intent wins over it); re-run of draft → change → approve on a normal slug: no escalation, `## Original request` holds both messages, lane `normal`. Not re-runnable from this repo (headless model runs).
+- **Final real install on `main`, after fix round 3 — truth, one trial each:** (a) tiny/high → intake cut `docs/readme-title`, committed `(auto-approved: tiny/high)`, SUMMARY `tiny`/`high` pinned to that commit, `main` still 2 commits; (b) normal → draft, stop; (c) a new run with only `approve` → resolved to `csv-export` (no `specs/approve/`), cut `feat/csv-export`, committed and pinned, `normal`/`high`. The worktree handoff (`switch <base>` + `reset --keep` + `branch -M`) was probed with plain git only, not through `using-git-worktrees` in a model run.
 - Canaries `skills/feature-intake/tests/intent-file-cases.md` are prose — traceability. Error-behavior rows without a canary or trial: `Author: unknown` when `user.name` is unset, commit skipped when nothing changed, other staged files excluded from the commit (git behavior probed separately: pathspec commit leaves other staged files staged), hook refusal → stop.
 
 ### Rollback
