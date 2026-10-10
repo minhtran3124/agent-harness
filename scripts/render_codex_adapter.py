@@ -16,6 +16,9 @@ import render_agent_definitions
 
 
 PAYLOAD_DIR = ".codex/.agent-harness/payload"
+AGENTS_BEGIN = "<!-- agent-harness:begin -->"
+AGENTS_END = "<!-- agent-harness:end -->"
+AGENTS_BLOCK_MAX_BYTES = 20 * 1024
 
 
 class AdapterError(ValueError):
@@ -322,6 +325,113 @@ def _rewrite_markdown(base: Path, targets: list[str]) -> None:
             path.write_text(rewritten, encoding="utf-8")
 
 
+def _frontmatter(text: str) -> list[str] | None:
+    """Lines between a leading `---` and its closing `---`; None when absent."""
+    lines = text.splitlines()
+    if not lines or lines[0] != "---":
+        return None
+    try:
+        return lines[1 : lines.index("---", 1)]
+    except ValueError as exc:
+        raise AdapterError("frontmatter opened with `---` is never closed") from exc
+
+
+def _paths_globs(text: str) -> list[str] | None:
+    """`paths:` globs (rule-loading-tiers.test.sh has_paths_frontmatter); None if always-on."""
+    frontmatter = _frontmatter(text)
+    if frontmatter is None:
+        return None
+    for index, line in enumerate(frontmatter):
+        if line.startswith("paths:"):
+            globs = []
+            for item in frontmatter[index + 1 :]:
+                if item and not item[0].isspace():
+                    break
+                match = re.fullmatch(r"\s+-\s+(.*?)\s*", item)
+                if match:
+                    globs.append(match.group(1).strip("\"'"))
+            if not globs:
+                raise AdapterError("`paths:` lists no globs; use indented `  - \"<glob>\"` items")
+            return globs
+    return None
+
+
+def _read_rule(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8")
+    except UnicodeDecodeError as exc:
+        raise AdapterError(f"{path}: not UTF-8") from exc
+
+
+def _rule_globs(path: Path) -> list[str] | None:
+    try:
+        return _paths_globs(_read_rule(path))
+    except AdapterError as exc:
+        raise AdapterError(f"{path}: {exc}") from exc
+
+
+def always_on_rules(rules_dir: Path) -> list[str]:
+    return [
+        path.name
+        for path in sorted(rules_dir.glob("*.md"))
+        if _rule_globs(path) is None
+    ]
+
+
+def path_scoped_rules(rules_dir: Path) -> dict[str, list[str]]:
+    scoped = {}
+    for path in sorted(rules_dir.glob("*.md")):
+        globs = _rule_globs(path)
+        if globs is not None:
+            scoped[path.name] = globs
+    return scoped
+
+
+def _strip_frontmatter(text: str) -> str:
+    frontmatter = _frontmatter(text)
+    if frontmatter is None:
+        return text
+    return "\n".join(text.splitlines()[len(frontmatter) + 2 :]).lstrip("\n")
+
+
+def render_agents_block(preamble: str, payload_rules_dir: Path) -> str:
+    """The managed AGENTS.md block, both markers included, without a trailing newline."""
+    if AGENTS_BEGIN in preamble or AGENTS_END in preamble:
+        raise AdapterError("AGENTS.md preamble contains an AGENTS.md block marker")
+    names = always_on_rules(payload_rules_dir)
+    if not names:
+        raise AdapterError("always-on rule set is empty; refusing to render AGENTS.md block")
+    sections = []
+    for name in names:
+        text = _read_rule(payload_rules_dir / name)
+        if AGENTS_BEGIN in text or AGENTS_END in text:
+            raise AdapterError(f"rules/{name} contains an AGENTS.md block marker")
+        body = _strip_frontmatter(text).rstrip()
+        sections.append(f"Source: {PAYLOAD_DIR}/rules/{name}\n\n{body}")
+    on_demand = [
+        "## On-demand rules",
+        "",
+        "Read each rule below before working on files that match its globs.",
+        "",
+    ]
+    for name, globs in path_scoped_rules(payload_rules_dir).items():
+        triggers = ", ".join(f"`{glob}`" for glob in globs)
+        on_demand.append(
+            f"- `{PAYLOAD_DIR}/rules/{name}` — read when working on: {triggers}"
+        )
+    block = "\n\n---\n\n".join(
+        [preamble.rstrip(), *sections, "\n".join(on_demand)]
+    )
+    block = f"{AGENTS_BEGIN}\n{block}\n{AGENTS_END}"
+    size = len(block.encode("utf-8"))
+    if size > AGENTS_BLOCK_MAX_BYTES:
+        raise AdapterError(
+            f"AGENTS.md block is {size} bytes, exceeds the "
+            f"{AGENTS_BLOCK_MAX_BYTES}-byte budget"
+        )
+    return block
+
+
 def render(root: Path, output: Path) -> dict[str, Any]:
     root = root.resolve()
     output = _assert_output_root(root, output)
@@ -335,8 +445,10 @@ def render(root: Path, output: Path) -> dict[str, Any]:
         if owned.exists():
             shutil.rmtree(owned)
     rendered_manifest = output / "render-manifest.json"
-    if rendered_manifest.exists():
-        rendered_manifest.unlink()
+    agents_block = output / "agents-block.md"
+    for owned_file in (rendered_manifest, agents_block):
+        if owned_file.exists():
+            owned_file.unlink()
 
     (plugin / ".codex-plugin").mkdir(parents=True)
     shutil.copy2(
@@ -353,9 +465,6 @@ def render(root: Path, output: Path) -> dict[str, Any]:
 
     agents_dir = project / ".codex/agents"
     render_agent_definitions.render_codex(root, agents_dir)
-    instructions = project / ".codex/harness-instructions.md"
-    instructions.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(root / "adapters/codex/project/harness-instructions.md", instructions)
 
     payload = project / PAYLOAD_DIR
     sources = _payload_sources(root, sorted(manifest["skills"]))
@@ -368,6 +477,10 @@ def render(root: Path, output: Path) -> dict[str, Any]:
     _rewrite_markdown(payload / "rules", targets)
     _rewrite_markdown(payload / "templates", targets)
     _rewrite_markdown(payload / "skills", targets)
+    preamble = _read_rule(root / "adapters/codex/project/harness-instructions.md")
+    agents_block.write_text(
+        render_agents_block(preamble, payload / "rules") + "\n", encoding="utf-8"
+    )
 
     result = {
         "schema_version": 1,

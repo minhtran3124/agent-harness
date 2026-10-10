@@ -579,3 +579,192 @@ def test_rewrite_with_no_targets_returns_text_unchanged():
     text = "Hello  world\n\n# Title (x) `rules/a.md`\n"
     assert renderer.rewrite_payload_paths(text, []) == text
     assert renderer.rewrite_payload_paths(text, set()) == text
+
+
+BEGIN_MARKER = "<!-- agent-harness:begin -->"
+END_MARKER = "<!-- agent-harness:end -->"
+
+
+def _has_paths_frontmatter(path: Path) -> bool:
+    """Mirror of tests/scripts/rule-loading-tiers.test.sh has_paths_frontmatter."""
+    lines = path.read_text(encoding="utf-8").splitlines()
+    if not lines or lines[0] != "---":
+        return False
+    for line in lines[1:]:
+        if line == "---":
+            return False
+        if line.startswith("paths:"):
+            return True
+    return False
+
+
+def _block(output: Path) -> str:
+    return (output / "agents-block.md").read_text(encoding="utf-8")
+
+
+def test_agents_block_inventory_inlines_always_on_and_lists_path_scoped(tmp_path):
+    output = tmp_path / "rendered"
+    renderer.render(ROOT, output)
+    block = _block(output)
+    rules = sorted((ROOT / "rules").glob("*.md"))
+    always_on = [p.name for p in rules if not _has_paths_frontmatter(p)]
+    path_scoped = [p.name for p in rules if _has_paths_frontmatter(p)]
+    assert always_on and path_scoped
+
+    sources = re.findall(r"^Source: (\S+)$", block, re.MULTILINE)
+    assert sources == [f"{PREFIX}rules/{name}" for name in always_on]
+    payload_rules = _payload(output) / "rules"
+    for name in always_on:
+        text = (payload_rules / name).read_text(encoding="utf-8").rstrip()
+        assert f"Source: {PREFIX}rules/{name}\n\n{text}" in block
+
+    listed = re.findall(r"^- `(\S+)` — read when working on: (.+)$", block, re.MULTILINE)
+    assert [path for path, _ in listed] == [
+        f"{PREFIX}rules/{name}" for name in path_scoped
+    ]
+    for path, globs in listed:
+        assert (output / "project" / path).is_file()
+        assert globs == ", ".join(
+            f"`{glob}`"
+            for glob in renderer.path_scoped_rules(payload_rules)[Path(path).name]
+        )
+    assert renderer.path_scoped_rules(payload_rules)["terminology.md"] == [
+        "specs/**/PLAN.md",
+        "specs/**/research-brief.md",
+        "specs/**/SUMMARY.md",
+    ]
+    assert renderer.always_on_rules(payload_rules) == always_on
+
+
+def test_agents_block_budget_current_block_is_at_most_18_kib(tmp_path):
+    output = tmp_path / "rendered"
+    renderer.render(ROOT, output)
+    block = renderer.render_agents_block(
+        (ROOT / "adapters/codex/project/harness-instructions.md").read_text(
+            encoding="utf-8"
+        ),
+        _payload(output) / "rules",
+    )
+    assert len(block.encode("utf-8")) <= 18 * 1024
+    assert renderer.AGENTS_BLOCK_MAX_BYTES == 20 * 1024
+
+
+def test_agents_block_budget_over_20_kib_fails_render(tmp_path):
+    root = clone_render_root(tmp_path)
+    (root / "rules/zz-oversized.md").write_text(
+        "# Oversized\n\n" + "é" * (11 * 1024) + "\n", encoding="utf-8"
+    )
+    with pytest.raises(renderer.AdapterError, match="exceeds"):
+        renderer.render(root, tmp_path / "rendered")
+
+
+@pytest.mark.parametrize("marker", [BEGIN_MARKER, END_MARKER])
+def test_agents_block_budget_marker_inside_rule_fails_render(tmp_path, marker):
+    root = clone_render_root(tmp_path)
+    with (root / "rules/behavior.md").open("a", encoding="utf-8") as handle:
+        handle.write(f"\n{marker}\n")
+    with pytest.raises(renderer.AdapterError, match="marker"):
+        renderer.render(root, tmp_path / "rendered")
+
+
+def test_agents_block_budget_marker_inside_preamble_fails_render(tmp_path):
+    root = clone_render_root(tmp_path)
+    preamble = root / "adapters/codex/project/harness-instructions.md"
+    with preamble.open("a", encoding="utf-8") as handle:
+        handle.write(f"\n{END_MARKER}\n")
+    with pytest.raises(renderer.AdapterError, match="preamble"):
+        renderer.render(root, tmp_path / "rendered")
+
+
+def test_agents_block_budget_unclosed_rule_frontmatter_fails_render(tmp_path):
+    root = clone_render_root(tmp_path)
+    (root / "rules/zz-unclosed.md").write_text("---\n# Unclosed\n\nBody.\n", encoding="utf-8")
+    with pytest.raises(renderer.AdapterError, match="zz-unclosed.md.*never closed"):
+        renderer.render(root, tmp_path / "rendered")
+
+
+@pytest.mark.parametrize("paths", ['paths: ["specs/**"]', 'paths:\n- "specs/**"'])
+def test_agents_block_budget_paths_without_parsed_globs_fails_render(tmp_path, paths):
+    root = clone_render_root(tmp_path)
+    (root / "rules/zz-inline.md").write_text(f"---\n{paths}\n---\n\n# Inline\n", encoding="utf-8")
+    with pytest.raises(renderer.AdapterError, match="zz-inline.md.*no globs"):
+        renderer.render(root, tmp_path / "rendered")
+
+
+def test_agents_block_budget_empty_always_on_set_fails_render(tmp_path):
+    root = clone_render_root(tmp_path)
+    for path in (root / "rules").glob("*.md"):
+        if not _has_paths_frontmatter(path):
+            text = path.read_text(encoding="utf-8")
+            path.write_text('---\npaths:\n  - "x/**"\n---\n\n' + text, encoding="utf-8")
+    with pytest.raises(renderer.AdapterError, match="always-on"):
+        renderer.render(root, tmp_path / "rendered")
+
+
+def test_agents_block_neutral_own_text_has_no_runtime_syntax(tmp_path):
+    root = clone_render_root(tmp_path)
+    for path in (root / "rules").glob("*.md"):
+        path.unlink()
+    (root / "rules/stub-always.md").write_text("# Stub\n\nPlain body.\n", encoding="utf-8")
+    (root / "rules/stub-scoped.md").write_text(
+        '---\npaths:\n  - "specs/**"\n---\n\n# Scoped\n', encoding="utf-8"
+    )
+    first = tmp_path / "first"
+    second = tmp_path / "second"
+    renderer.render(root, first)
+    renderer.render(root, second)
+    block = _block(first)
+    assert (first / "agents-block.md").read_bytes() == (
+        second / "agents-block.md"
+    ).read_bytes()
+    assert "Plain body." in block and "stub-scoped.md" in block
+    assert not re.search(r"^\s*@", block, re.MULTILINE)
+    assert not re.search(r"(?:^|\s)/[A-Za-z]", block, re.MULTILINE)
+    assert not re.search(r"\$[A-Za-z]", block)
+    assert "for codex" not in block.lower()
+
+
+def test_agents_block_neutral_real_render_is_byte_identical(tmp_path):
+    renderer.render(ROOT, tmp_path / "a")
+    renderer.render(ROOT, tmp_path / "b")
+    assert (tmp_path / "a/agents-block.md").read_bytes() == (
+        tmp_path / "b/agents-block.md"
+    ).read_bytes()
+
+
+def test_agents_block_output_written_beside_manifest_with_one_newline(tmp_path):
+    output = tmp_path / "rendered"
+    renderer.render(ROOT, output)
+    raw = (output / "agents-block.md").read_bytes()
+    assert (output / "render-manifest.json").is_file()
+    assert raw.startswith(BEGIN_MARKER.encode())
+    assert raw.endswith(END_MARKER.encode() + b"\n")
+    assert not raw.endswith(b"\n\n")
+    text = raw.decode("utf-8")
+    assert text.count(BEGIN_MARKER) == 1 and text.count(END_MARKER) == 1
+    assert not (output / "project/.codex/harness-instructions.md").exists()
+    assert not list((output / "project").rglob("agents-block.md"))
+    block = renderer.render_agents_block(
+        (ROOT / "adapters/codex/project/harness-instructions.md").read_text(
+            encoding="utf-8"
+        ),
+        _payload(output) / "rules",
+    )
+    assert block + "\n" == text
+
+
+def test_agents_block_output_stale_block_is_removed(tmp_path):
+    output = tmp_path / "rendered"
+    output.mkdir()
+    stale = output / "agents-block.md"
+    stale.write_text("stale\n", encoding="utf-8")
+    renderer.render(ROOT, output)
+    assert stale.read_text(encoding="utf-8").startswith(BEGIN_MARKER)
+
+    stale.write_text("stale\n", encoding="utf-8")
+    root = clone_render_root(tmp_path)
+    for path in (root / "rules").glob("*.md"):
+        path.unlink()
+    with pytest.raises(renderer.AdapterError, match="always-on"):
+        renderer.render(root, output)
+    assert not stale.exists()

@@ -35,9 +35,9 @@ The adapter owns only paths recorded in
 
 - the persistent local marketplace/plugin source under `.codex/.agent-harness/marketplace/`;
 - the harness payload under `.codex/.agent-harness/payload/`;
-- the generated `.codex/agents/*.toml` files named by the manifest;
-- `.codex/harness-instructions.md`; and
-- one bounded section in the repository-root `AGENTS.md`.
+- the generated `.codex/agents/*.toml` files named by the manifest; and
+- one bounded section in the repository-root `AGENTS.md`, the managed block that carries the
+  always-on rules (see "Always-on rules in `AGENTS.md`" below).
 
 The payload is a derived copy of `rules/`, non-test `runtime/`, `templates/`, the consumer helper
 scripts, `harness-manifest.json`, and each shipped skill's helper files. Installed plugin skills
@@ -58,13 +58,93 @@ directory is already tracked, and does not run under `--dry-run`. This line is n
 deployment manifest.
 
 Codex reads project instructions from the repository hierarchy, from the project root toward the
-working directory. The adapter therefore adds a sentinel-delimited pointer to the existing root
-file; it does not create `.codex/AGENTS.md` or replace project prose. See the official
-[AGENTS.md instruction hierarchy](https://learn.chatgpt.com/docs/agent-configuration/agents-md).
+working directory. The adapter therefore writes its managed block, delimited by
+`<!-- agent-harness:begin -->` and `<!-- agent-harness:end -->`, into the existing root `AGENTS.md`;
+it does not create `.codex/AGENTS.md` or change project prose outside those markers. See the
+official [AGENTS.md instruction hierarchy](https://learn.chatgpt.com/docs/agent-configuration/agents-md).
 
 The installer does not directly edit `.codex/config.toml`, project trust, project hooks, unrelated
 marketplaces/plugins, custom agents, or content outside its `AGENTS.md` markers. Marketplace and
 plugin registration go through the Codex CLI so Codex can merge its own state.
+
+## Always-on rules in `AGENTS.md`
+
+Claude Code loads the harness's five always-on rules (`architecture.md`, `behavior.md`,
+`guidelines.md`, `orchestration.md`, and `research-depth.md`) from `.claude/rules/` in every
+session. Codex has no equivalent, so the installer delivers them through the managed block in the
+root `AGENTS.md`.
+
+### What the block contains
+
+The block is rendered from the harness rules on every install, so it is a derived copy and the
+rule files stay the source of truth. Do not edit it by hand; a local edit is treated as a conflict
+(see "Conflicts" below). In order, it contains:
+
+1. a short preamble describing the harness and how to treat its generated files;
+2. the full text of each always-on rule, sorted by file name, each introduced by a line of the form
+   `Source: .codex/.agent-harness/payload/rules/<name>` and separated by a horizontal rule; and
+3. an "On-demand rules" list naming each path-scoped rule (`auto-correct-scope.md`,
+   `plan-format.md`, `terminology.md`, and `wave-parallelism.md`) by its payload path, together
+   with its `paths:` globs, which say when to read it.
+
+A rule is always-on when its file has no `paths:` frontmatter, the same test that decides which
+rules Claude Code loads every session, so the block's rule set is derived from the files rather
+than from a hand-maintained list.
+
+The rules are inlined rather than referenced because Codex has no import or include mechanism for
+`AGENTS.md`. A list of files to read would leave delivery to the model's choice to open them, and
+the session-start hook cannot be relied on while Codex hook trust is unknown.
+
+`.codex/harness-instructions.md` is no longer installed; its text became the block's preamble. On
+reinstall an unchanged copy left by an older install is removed. If you edited that file, it is kept
+and the installer prints `codex-deploy: preserved edited retired file
+.codex/harness-instructions.md`; move anything you still need from it into your own `AGENTS.md`
+prose, outside the markers, and delete the file.
+
+### Size budget and truncation
+
+Codex reads instruction files from the project root toward the working directory and stops at a
+combined budget, `project_doc_max_bytes`, which defaults to 32 KiB. In the pinned Codex 0.147.0
+source, the file that crosses the budget is truncated at the byte, with only a log-level warning.
+The harness block is written at the end of the root `AGENTS.md`, so your own prose in that file
+consumes the budget first and the rules at the end are what get cut. This was read in the Codex
+source, not yet observed in a running 0.147.0 session.
+
+Two limits guard against this:
+
+- The rendered block is capped at 20 KiB. Rendering fails, and the install stops before writing
+  anything, if the block would exceed it. The cap leaves at least 12 KiB of the 32 KiB default for
+  your own `AGENTS.md` text and for `AGENTS.md` files in nested directories.
+- After writing, the installer prints a non-fatal warning when the resulting root `AGENTS.md` is
+  larger than 32 KiB, because Codex would cut the rules at the end of the file. The warning assumes
+  the 32 KiB default and does not read a `project_doc_max_bytes` override from your configuration.
+
+### `AGENTS.override.md`
+
+In each directory Codex loads the first file it finds among `AGENTS.override.md`, `AGENTS.md`, and
+its fallback names. A root `AGENTS.override.md` therefore hides the root `AGENTS.md` entirely, and
+the rules in the block will not reach the session. The installer still writes the block and prints
+a non-fatal warning when a root `AGENTS.override.md` exists. To get the rules, remove or rename the
+override file, or move its content into `AGENTS.md`.
+
+### Running Claude Code and Codex in the same project
+
+The block's own text uses no runtime-specific syntax, so it reads correctly whichever tool loads
+it. How Claude Code treats `AGENTS.md` (Claude Code v2.1.277 or later):
+
+- By default, Claude Code reads `AGENTS.md` only when there is no `CLAUDE.md`, `.claude/CLAUDE.md`,
+  or `CLAUDE.local.md` at or above the working directory. A `CLAUDE.local.md` alone is enough to
+  stop `AGENTS.md` from loading.
+- To load it alongside `CLAUDE.md`, add an `@AGENTS.md` import line to `CLAUDE.md`. That is the
+  documented bridge.
+- Alternatively, set the `claude-md-and-agents-md` mode, which loads both files and skips an
+  `AGENTS.md` that `CLAUDE.md` already imports. It is configured under `pluginConfigs` for
+  `cc-plugin-agents-md@builtin` and is honored only in user or managed settings, not in project
+  settings.
+
+When Claude Code loads both `.claude/rules/` (installed by the Claude harness) and the `AGENTS.md`
+block, the five always-on rules arrive twice, adding about 14 KB of duplicated context to each
+Claude session. This is documented rather than prevented.
 
 ## Review trust and runtime mode
 
