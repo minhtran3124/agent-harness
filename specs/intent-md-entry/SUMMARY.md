@@ -105,6 +105,26 @@ request from the `### Intent` block"), so a controller could paste a partial blo
 path. Rewritten to name both paths: pinned intent.md text + chat request when `Intent-source:` is
 present, otherwise the whole `### Intent` block. Closes task-review Minor 1.3 (first bullet).
 
+### Correctness Review
+
+Range `883593f..99254b3`; six FIND angles, 8 deduplicated locations, each scored by an independent
+scorer (threshold 75). **No finding reached the threshold — 0 blocking.** All are recorded below
+as advisory.
+
+### Advisory Findings
+
+| ID | Location | Claim | Score |
+| --- | --- | --- | --- |
+| S1 | `skills/feature-intake/SKILL.md:20-35` | Steps 2–4 classify before Step 5 reads intent.md; on a first pin, hard-gate content only in intent.md can miss the lane decision (lane re-check only on re-pin) | 50 |
+| S2 | `skills/feature-intake/SKILL.md:29-41` | Re-pin says keep every SUMMARY section, but Steps 6–7 (template write, run_state init) are not exempted | 50 |
+| S3 | `skills/feature-intake/SKILL.md:31-33` | `--diff-filter=AM` skips merge commits; intent.md last set by a merge pins an older commit and the clean check fails on a committed file (reproduced by a finder in a scratch repo) | 50 |
+| S4 | `templates/INTENT.template.md:6` | Unedited placeholder `Status: draft \| approved` contains "approved"; the check says only "says `approved`" | 50 |
+| S5a | `skills/intent-review/SKILL.md:14-18` | An approved intent.md committed after a chat-only intake is ignored (no `Intent-source:` → no check) | 50 |
+| S5b | `skills/intent-review/SKILL.md:14-18` | A pinned intent.md deleted and committed → intent-review stops; intake Step 5 is gated on "exists", so nothing clears the stale line | 50 |
+| S6 | `skills/intent-review/SKILL.md:16` | Drift check compares the pin with the working tree only; a differing staged copy passes | 50 |
+| S7 | `skills/intent-review/SKILL.md:14-18` | Rebase/squash + fresh clone → pin unreachable (128) → stop; deliberate fail-closed (design A7) | 25 |
+| S8 | `skills/feature-intake/tests/confidence-escalation-cases.md:4` | "Step 4–5" reference now points at the pin step (should be Steps 4 and 6) — `unmodified-line`, scored 0 by rule | 0 |
+
 ### Task review findings (Minor, forwarded to final review)
 
 - 1.1 — `rules/terminology.md` hard exclusion 1: one re-wrapped line is much longer than its neighbours (cosmetic).
