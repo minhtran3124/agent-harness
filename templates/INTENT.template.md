@@ -1,4 +1,4 @@
-<!-- Copy to specs/<slug>/intent.md (from .claude/templates/ in a consumer repo) before running intake. Setting the Status header to approved and committing the file is the approval; no SUMMARY.md is needed to create it. -->
+<!-- A person copies this to specs/<slug>/intent.md (from .claude/templates/ in a consumer repo) before running intake, or intake drafts it from chat and appends `## Original request` with the verbatim request. Setting the Status header to approved and committing the file is the approval; no SUMMARY.md is needed to create it. -->
 
 # Intent: <title>
 
