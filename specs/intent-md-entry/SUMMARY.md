@@ -84,6 +84,27 @@ Scope-deciding sentences, in chronological order:
 
 - `git revert <sha>` for each wave commit; no data or runtime state to migrate.
 
+### Context-Propagation Audit
+
+Result: **PASS** after one repair. Range `883593f..HEAD`. Consumer search surface: grep of `skills/`,
+`agents/`, `scripts/`, `hooks/`, `rules/`, `templates/`, `adapters/` for `### Intent`,
+`Intent-source`, `Intake notes`, `intent.md`, `terminology.md`; `code-review-graph` unavailable
+(server not connected), so no graph evidence.
+
+| Source | Consumer | Context | Delivery | Proof |
+| --- | --- | --- | --- | --- |
+| feature-intake Step 5 (pin, Status, drift/clean, `Intent-source:`, re-pin) | feature-intake run | main session | skill body loaded on invocation | `skills/feature-intake/SKILL.md:29-40` |
+| Step 6 "agent notes → `### Intake notes`, never `### Intent` or intent.md" | feature-intake run (writer of SUMMARY) | main session | skill body + explicit template read (`templates/SUMMARY.template.md`) | `skills/feature-intake/SKILL.md:41-42`; template comment under `### Intake notes` |
+| intent-review step 1 drift check | intent-review controller | main session or SDD controller | skill body; SDD defers to the invoked skill ("do not copy it here") | `skills/intent-review/SKILL.md:14-18`; `skills/subagent-driven-development/references/review-chain.md:5-8` |
+| Oracle = pinned intent.md text + chat request | intent reviewer | fresh `reviewer` subagent (blind) | pasted by controller per prompt INTENT input | `skills/intent-review/intent-reviewer-prompt.md:42-45` — **repaired** (see below) |
+| terminology hard exclusion 1 covers intent.md | any agent applying terminology rules to spec prose | main / implementer | paths-triggered (`specs/**/PLAN.md`, `research-brief.md`, `SUMMARY.md`) and explicit Read in `writing-plans` | `rules/terminology.md:1-6`; the one writer near intent.md (feature-intake) carries the complete "never in intent.md" instruction inline |
+| Same skill text for Codex | Codex plugin | Codex session | plugin manifest points at `./skills/` (same source, no copy) | `scripts/render_codex_adapter.py:149` |
+
+Repair: the reviewer-prompt INTENT input left the no-`Intent-source:` path implicit ("plus the chat
+request from the `### Intent` block"), so a controller could paste a partial block on the chat-only
+path. Rewritten to name both paths: pinned intent.md text + chat request when `Intent-source:` is
+present, otherwise the whole `### Intent` block. Closes task-review Minor 1.3 (first bullet).
+
 ### Task review findings (Minor, forwarded to final review)
 
 - 1.1 — `rules/terminology.md` hard exclusion 1: one re-wrapped line is much longer than its neighbours (cosmetic).
