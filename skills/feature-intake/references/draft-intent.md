@@ -26,10 +26,10 @@ SUMMARY. If none or several match, ask. Any other request starts its own slug.
      verbatim to `## Original request` (add the section if missing), then ask and stop;
    - anything else: ask and stop — show the file and the proposed lane and confidence; ask the
      user to reply `approve`, request changes, or edit the file and say done.
-3. **Commit** only intent.md. If `git branch --show-current` prints `main` or `master`, run
-   `git switch -c <type>/<slug>` first and `git switch -` after the commit, so the shared branch
-   gets no commit and stays checked out; the tiny route then switches to `<type>/<slug>`, and
-   `using-git-worktrees` builds on it. Run `git add -- specs/<slug>/intent.md`, then
+3. **Commit** only intent.md. If `git branch --show-current` prints `main` or `master`, first run
+   `git switch -c <type>/<slug>` and stay on it: the shared branch gets no commit, the rest of
+   intake runs there, the tiny route keeps it as its branch, and `using-git-worktrees` takes it
+   over. Run `git add -- specs/<slug>/intent.md`, then
    `git commit -m "docs(specs): intent for <slug>" -- specs/<slug>/intent.md`; the auto-approve
    suffix appends ` (auto-approved: tiny/high)` to that subject. If git reports nothing to commit,
    continue. If the commit fails (a hook or git), stop and report its output, say that intent.md
