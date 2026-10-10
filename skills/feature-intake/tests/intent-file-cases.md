@@ -1,22 +1,23 @@
 # intent.md canaries
 
 When `specs/<slug>/intent.md` exists, intake reads and pins it before classifying, then records
-it in SUMMARY `### Intent`. These pin Steps 1, 4, 5, and 6 of `../SKILL.md` and the re-pin rules in
-`../references/re-pin.md`. A case passes when intake takes the expected action and writes nothing
+it in SUMMARY `### Intent`. A new slug (no SUMMARY) whose intent.md is not both approved and
+committed goes through `../references/draft-intent.md` first. These pin Steps 1, 4, 5, and 6 of
+`../SKILL.md`, the draft procedure, and the re-pin rules in `../references/re-pin.md`. A case passes when intake takes the expected action and writes nothing
 else.
 
 | ID | Setup | Expected |
 |----|-------|----------|
-| IF-00 | chat request only; no intent.md | `### Intent` holds the chat request verbatim and in full; **no** `Intent-source:` line |
+| IF-00 | new slug; chat request only (not tiny + high); no intent.md | **drafts** intent.md (`Status: draft`, `## Original request` holds the chat verbatim), shows it, **stops**; no SUMMARY, no commit |
 | IF-01 | intent.md has `Status: approved` and is committed | writes `Intent-source: specs/<slug>/intent.md @ <sha>` (the pin) plus the chat request verbatim in `### Intent` |
-| IF-02 | intent.md has `Status: draft` | **stops** — not approved |
-| IF-03 | intent.md is untracked (never committed) | **stops** — empty pin |
-| IF-04 | intent.md is committed, then edited and not committed | **stops and asks for the intent to be committed** — drift command exits non-zero |
-| IF-05 | intent.md is deleted, then re-created and not committed | **stops** — drift command exits non-zero |
+| IF-02 | new slug; intent.md has `Status: draft`; ordinary request | **shows** the file and proposed lane/confidence, **stops**; file not rewritten, no SUMMARY, no commit |
+| IF-03 | new slug; intent.md is untracked (never committed); ordinary request | **shows** the file, **stops**; not rewritten, not auto-approved, no SUMMARY, no commit |
+| IF-04 | new slug; intent.md is committed, then edited and not committed; ordinary request | **shows** the file, **stops**; edit kept as-is, no SUMMARY, no commit |
+| IF-05 | new slug; intent.md is deleted, then re-created and not committed; ordinary request | **shows** the file, **stops**; not rewritten, no SUMMARY, no commit |
 | IF-06 | SUMMARY already has `Intent-source:`; intent.md re-committed; re-checked lane matches SUMMARY | **re-pin** — only the `Intent-source:` line changes and one dated `### Intake notes` line records old → new SHA; nothing else in SUMMARY changes; run state is not re-initialized |
 | IF-07 | slug started from chat (no `Intent-source:`); intent.md now added, approved and committed; re-checked lane matches SUMMARY | **re-pin** — adds only the `Intent-source:` line and one dated `### Intake notes` line (old `none`); nothing else in SUMMARY changes; run state is not re-initialized |
 | IF-08 | chat request conflicts with intent.md | **escalates** — ambiguous direction, confidence `low` (`../SKILL.md` Step 4) |
-| IF-09 | intent.md is the unedited template (empty `Status:`) and is committed | **stops** — not approved |
+| IF-09 | new slug; intent.md is the unedited template (empty `Status:`) and is committed; ordinary request | **shows** the file, **stops**; not filled from the chat, not auto-approved, no SUMMARY, no commit |
 | IF-10 | terse chat request ("do the intent"); approved, committed intent.md describes a hard-gated change (e.g. a schema migration) | lane `high-risk` — classified from intent.md, not the chat request |
 | IF-11 | re-pin (as IF-06 or IF-07), but the re-checked lane differs from SUMMARY, or confidence is `low` | **stops** and shows the user the old and new values; writes nothing (SUMMARY unchanged, no `ESCALATIONS.md` block) |
 | IF-12 | SUMMARY has `Intent-source:`, but intent.md was deleted | **stops before classifying** (routed by Step 1 to re-pin step 1) and tells the user to restore intent.md or remove the `Intent-source:` line; writes nothing |
@@ -28,11 +29,22 @@ else.
 | IF-19 | after an IF-12 stop, the user removes the `Intent-source:` line, updates the classification lines to match the chat request, and runs intake again | no re-pin (no `Intent-source:`, no intent.md); the existing SUMMARY is left as the user set it |
 | IF-20 | re-pin; SUMMARY is `high-risk` from 4+ flags with no hard gate; the re-committed intent.md adds a schema migration (a manifest hard gate) | **stops** and shows the user the old and new lines, as IF-11, even though the lane is unchanged |
 | IF-18 | re-pin (as IF-06) where `### Intake notes` holds only `- none` | the `- none` line is replaced by the dated re-pin note, not kept beside it |
+| DI-01 | new slug; tiny + high chat request; no intent.md | intent.md written with `Status: approved` and `## Original request`, committed alone (subject ends `(auto-approved: tiny/high)`); SUMMARY pinned (`Intent-source:`); `### Intake notes` says `auto-approved: tiny/high` |
+| DI-02 | new slug; normal-lane chat request; no intent.md | draft intent.md with `Status: draft`, `(assumed)` on proposed lines; **stops**; no SUMMARY, no commit |
+| DI-03 | after DI-02, a new run with the reply `approve` | `Status: approved`, intent.md committed alone; SUMMARY pinned; `### Intent` holds the `## Original request` text, never "approve" |
+| DI-04 | after DI-02, a reply asking for a change (even with "approve") | draft edited; **stops**; still `Status: draft`, no SUMMARY, no commit |
+| DI-05 | legacy slug: SUMMARY exists, no intent.md | no intent.md written; behavior unchanged (no draft) |
+| DI-06 | new slug; a person's `Status: draft` intent.md; tiny + high request | **shown** for approval, **stops**; never auto-approved, not rewritten, no SUMMARY, no commit |
+| DI-07 | after DI-02, the user sets `Status: approved` in the file (uncommitted) and replies `done` | intent.md committed alone; SUMMARY written and pinned; `### Intent` holds `## Original request` |
+| DI-08 | new slug; a person's `Status: approved` but uncommitted intent.md; ordinary request | file unchanged; **shown**, **stops**; no SUMMARY, no commit |
 
 ## Notes
 
 - Intake reads `Status` from the header line only; `approved` in body text does not count.
-- Agent notes go to `### Intake notes`, never `### Intent` or intent.md.
+- Agent notes go to `### Intake notes`, never `### Intent`; intent.md content comes only from the
+  draft procedure (its `(assumed)` proposals) or the user.
+- An approval or change reply is never recorded as the request; with no `## Original request` and
+  no chat request, `### Intent` records `none — intent.md is the request`.
 - On re-pin, intake re-classifies from intent.md plus the original chat request in `### Intent`,
   never from the re-run's own arguments. It never edits classification lines. A changed lane (or `low` confidence)
   stops and is shown to the user, who updates SUMMARY and runs intake again; no `ESCALATIONS.md`
