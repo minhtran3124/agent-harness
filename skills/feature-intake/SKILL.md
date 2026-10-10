@@ -14,8 +14,8 @@ classify risk; ask only to resolve a material ambiguity or narrow a hard-gated s
 
 ## Procedure
 
-1. If the slug's SUMMARY exists and has an `Intent-source:` line or `specs/<slug>/intent.md`
-   now exists, follow `references/re-pin.md` instead of this procedure. Read
+1. If SUMMARY already exists and (it has an `Intent-source:` line or
+   `specs/<slug>/intent.md` exists), follow `references/re-pin.md` instead of this procedure. Read
    `harness-manifest.json` (hard gates), `rules/orchestration.md` and
    `rules/auto-correct-scope.md` (routing, branches). If intent.md exists (shape:
    `templates/INTENT.template.md`), read it first: stop unless its header line (`Status:` above
