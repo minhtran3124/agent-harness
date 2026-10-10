@@ -272,6 +272,94 @@ gap, and M5 is H1's prerequisite), then `M2 → M3` (protect the loop), then `M4
 
 ---
 
+## 7. Decision (2026-10-10): `specs/<slug>/intent.md` as the workflow's entry artifact
+
+E4 offered two shapes. **A** keeps the chat request as the only intent and adds a derived structured
+view under it. **B** makes a GitHub issue the intent. The user rejected the issue route as too much
+friction and chose a **file in the repo**: anyone writes `specs/<slug>/intent.md` to the playbook
+standard, hands it to the team, and the workflow starts from that file. This matches the playbook's
+own advice that "the simplest home is an intent/ folder in the product repo", with `specs/<slug>/`
+as the folder, so the intent sits beside the SUMMARY, PLAN, and design files it produces.
+
+### Why the current shape differs from the playbook
+
+| | Playbook `intent.md` | Harness `### Intent` today |
+|---|---|---|
+| Author | Originator + Claude, via brainstorm | User types in chat; intake copies it |
+| Form | Structured template | Verbatim prose |
+| When it is clarified | Before work, inside the intent | Later, in design/plan, only on signal |
+| Human approval | Product owner, always | Only on low confidence, ambiguity, or a hard gate |
+| Main role | Input to the spec | Oracle for `/intent-review` at the end |
+
+Observed side effect: `specs/gh-258-sc-goalpost-guard/SUMMARY.md` `### Intent` holds the user's
+chat lines, the quoted issue item, **and an agent-written confidence paragraph**. So the
+"verbatim" oracle already contains agent prose. An intent file fixes this by giving the oracle a
+human-owned source.
+
+### How it would work
+
+```
+someone writes specs/<slug>/intent.md   (template; optionally drafted with Claude)
+  → sets Status: approved, commits it    (allowed on main: specs/* is exempt from the branch guard)
+  → hands the slug to the team
+  → teammate runs /feature-intake <slug>
+      intake reads intent.md, pins it by commit SHA, classifies lane/confidence, routes
+  → brainstorming / xia2 / writing-plans cite C-n and Q-n IDs from the intent
+  → /intent-review judges the diff against intent.md at the pinned SHA
+```
+
+### Design sketch (not implemented)
+
+1. **Template** `templates/INTENT.template.md`, copied to `specs/<slug>/intent.md`:
+   header `Author:` · `Status: draft | approved` · `Approved-by:`; sections *Problem · Proposed
+   outcome · Affected users and systems · Constraints (C1..) · Out of scope · Open questions (Q1..)
+   · What success looks like*. The playbook example has no Out of scope or success section; both
+   are added because `/intent-review` checks excess scope and the plan needs success criteria.
+2. **Approval is a field, committed by a human.** Intake refuses `Status: draft` (asks or
+   escalates instead of starting work). The commit author + timestamp are the audit record, as in
+   the playbook.
+3. **Intake entry point.** `/feature-intake <slug>` (or a path) reads `specs/<slug>/intent.md`
+   instead of the chat. `### Intent` in `SUMMARY.md` then holds a provenance line
+   `Intent-source: specs/<slug>/intent.md @ <commit-sha>` plus any chat lines verbatim; it does not
+   re-copy the file (the file is already tracked, so the SHA pins it).
+4. **Pinned, not live.** `/intent-review` reads `git show <sha>:specs/<slug>/intent.md`, never the
+   working copy, so an edit made during implementation cannot move the goalposts. An edit after the
+   pinned SHA is reported as drift; the count of such edits is the playbook's "intent edits after
+   spec" lagging indicator. `intent-review` already has `Bash(git log *)` and `Bash(git diff *)`;
+   `git show` would need adding to its `allowed-tools`.
+5. **Agent notes leave the oracle.** Confidence reasoning and assumed defaults move to a new
+   `### Intake notes` section; `### Intent` and `intent.md` hold only human-authored text.
+6. **IDs carry forward.** `C-n` constraints are cited by PLAN tasks and intent-review findings;
+   `Q-n` open questions become `QUESTIONS.md` `OQ-n` entries, or `ESCALATIONS.md` if blocking.
+7. **Fallback.** No intent file → today's behaviour (chat verbatim). The tiny lane never needs one.
+8. **Optional authoring help (later).** The playbook's "brainstorm until concrete" step could be a
+   drafting mode that interviews the author and writes `intent.md` in `Status: draft`. Not needed
+   for the first version: the template alone lets anyone write one.
+
+### What it touches, and the lane
+
+`templates/INTENT.template.md` (new), `templates/SUMMARY.template.md` (provenance line,
+`### Intake notes`), `skills/feature-intake/SKILL.md` (read intent file, refuse draft),
+`skills/intent-review/SKILL.md` (pinned-SHA oracle, drift check, `git show` in `allowed-tools`),
+possibly `scripts/verify_summary.py` (validate the `Intent-source` line) and
+`scripts/install-harness.sh` (ship the template), plus the workflow diagram in `CLAUDE.md` /
+`skills/README.md`. `templates/` + workflow-engine prose → **high-risk** lane, full chain.
+No GitHub dependency.
+
+Checked (2026-10-10): a commit staging only `specs/<slug>/intent.md`, with no `SUMMARY.md`, passes
+`hooks/commit-gate.sh` under both the standard and strict profiles (exit 0, run in a scratch
+worktree). Each check that looks at `specs/<slug>/` skips the slug when its own file is absent:
+escalations need `ESCALATIONS.md`, lane evidence needs `SUMMARY.md`, run state needs
+`RUN.json`/`events.jsonl`; the secrets scan and risk corroboration exclude `*.md` and `specs/`; plan
+scope skips `specs/*`. This is a property of today's hook, so the implementation should add a
+regression test that keeps it true.
+
+Risks: an author without Git needs someone (or a connector) to commit the file; a free-form
+`intent.md` that ignores the template weakens the C-n/Q-n citations, so intake should warn on
+missing sections.
+
+---
+
 ## Appendix — lesson URLs
 
 Base `https://academy.claude.com/courses/ai-native-sdlc-playbook/`:

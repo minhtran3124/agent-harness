@@ -294,6 +294,94 @@ tiêu thụ.
 
 ---
 
+## 7. Quyết định (2026-10-10): `specs/<slug>/intent.md` là artifact khởi đầu workflow
+
+E4 đưa ra hai hướng. **A** giữ lời yêu cầu trong chat làm intent duy nhất và thêm một góc nhìn có
+cấu trúc dẫn xuất bên dưới. **B** dùng GitHub issue làm intent. Bạn thấy đi qua issue quá phiền,
+nên chọn **một file trong repo**: ai cũng có thể viết `specs/<slug>/intent.md` theo chuẩn playbook,
+chuyển cho team, và workflow bắt đầu từ chính file đó. Cách này khớp với chính lời khuyên của
+playbook là "the simplest home is an intent/ folder in the product repo" (chỗ đơn giản nhất là một
+thư mục intent/ trong repo sản phẩm). Ở đây thư mục đó là `specs/<slug>/`, nên intent nằm ngay cạnh
+SUMMARY, PLAN và design mà nó sinh ra.
+
+### Vì sao cách hiện tại khác playbook
+
+| | Playbook `intent.md` | Harness `### Intent` hiện tại |
+|---|---|---|
+| Ai viết | Người khởi xướng + Claude, qua brainstorm | User gõ chat; intake chép lại |
+| Hình thức | Template có cấu trúc | Văn xuôi nguyên văn |
+| Khi nào làm rõ | Trước khi làm, ngay trong intent | Sau đó, ở design/plan, chỉ khi có tín hiệu |
+| Cổng duyệt của người | Product owner, luôn luôn | Chỉ khi confidence thấp, mơ hồ, hoặc chạm hard gate |
+| Vai trò chính | Đầu vào cho spec | Thước đo cho `/intent-review` lúc cuối |
+
+Tác dụng phụ đã thấy: `### Intent` trong `specs/gh-258-sc-goalpost-guard/SUMMARY.md` chứa các câu
+chat của user, đoạn trích item trong issue, **và một đoạn agent tự viết về confidence**. Tức là
+thước đo "nguyên văn" đã lẫn văn của agent. Một file intent sửa được điều này vì thước đo có nguồn
+do con người sở hữu.
+
+### Luồng hoạt động
+
+```
+ai đó viết specs/<slug>/intent.md       (theo template; có thể nháp cùng Claude)
+  → đặt Status: approved, commit         (được phép trên main: specs/* được miễn branch guard)
+  → chuyển slug cho team
+  → thành viên team chạy /feature-intake <slug>
+      intake đọc intent.md, ghim theo commit SHA, phân loại lane/confidence, định tuyến
+  → brainstorming / xia2 / writing-plans trích các ID C-n và Q-n từ intent
+  → /intent-review chấm diff theo intent.md tại SHA đã ghim
+```
+
+### Phác thảo thiết kế (chưa triển khai)
+
+1. **Template** `templates/INTENT.template.md`, chép thành `specs/<slug>/intent.md`:
+   phần đầu `Author:` · `Status: draft | approved` · `Approved-by:`; các mục *Vấn đề · Kết quả mong
+   muốn · Người dùng và hệ thống bị ảnh hưởng · Ràng buộc (C1..) · Ngoài phạm vi · Câu hỏi mở (Q1..)
+   · Thế nào là thành công*. Ví dụ trong playbook không có mục Ngoài phạm vi và Thành công; thêm vào
+   vì `/intent-review` cần kiểm tra phần làm thừa và plan cần tiêu chí thành công.
+2. **Duyệt là một trường, do người commit.** Intake từ chối `Status: draft` (hỏi lại hoặc
+   escalate thay vì bắt đầu làm). Tác giả commit + thời gian commit là bản ghi kiểm toán, giống
+   playbook.
+3. **Điểm vào của intake.** `/feature-intake <slug>` (hoặc một đường dẫn) đọc
+   `specs/<slug>/intent.md` thay cho chat. Khi đó `### Intent` trong `SUMMARY.md` chứa dòng nguồn
+   gốc `Intent-source: specs/<slug>/intent.md @ <commit-sha>` cùng các câu chat (nếu có) nguyên
+   văn; không chép lại cả file (file đã được track, SHA là đủ để ghim).
+4. **Ghim, không đọc bản đang sống.** `/intent-review` đọc
+   `git show <sha>:specs/<slug>/intent.md`, không đọc bản trong working copy, nên sửa intent trong
+   lúc triển khai không thể "dời cột gôn". Sửa sau SHA đã ghim được báo là drift; số lần sửa như
+   vậy chính là chỉ số trễ "intent bị sửa sau spec" của playbook. `intent-review` đã có
+   `Bash(git log *)` và `Bash(git diff *)`; cần thêm `git show` vào `allowed-tools`.
+5. **Ghi chú của agent ra khỏi thước đo.** Lập luận về confidence và các giả định mặc định chuyển
+   sang mục mới `### Intake notes`; `### Intent` và `intent.md` chỉ chứa văn do người viết.
+6. **ID được mang theo.** Ràng buộc `C-n` được task trong PLAN và finding của intent-review trích
+   dẫn; câu hỏi mở `Q-n` thành mục `OQ-n` trong `QUESTIONS.md`, hoặc `ESCALATIONS.md` nếu chặn việc.
+7. **Đường dự phòng.** Không có file intent → giữ cách hiện tại (chép nguyên văn chat). Lane tiny
+   không bao giờ cần file này.
+8. **Hỗ trợ soạn thảo (để sau).** Bước "brainstorm đến khi cụ thể" của playbook có thể thành một
+   chế độ nháp: phỏng vấn tác giả rồi viết `intent.md` ở `Status: draft`. Bản đầu chưa cần: chỉ
+   riêng template đã đủ để ai cũng viết được.
+
+### Những gì bị đụng tới, và lane
+
+`templates/INTENT.template.md` (mới), `templates/SUMMARY.template.md` (dòng nguồn gốc,
+`### Intake notes`), `skills/feature-intake/SKILL.md` (đọc file intent, từ chối draft),
+`skills/intent-review/SKILL.md` (thước đo theo SHA đã ghim, check drift, thêm `git show` vào
+`allowed-tools`), có thể cả `scripts/verify_summary.py` (kiểm tra dòng `Intent-source`) và
+`scripts/install-harness.sh` (ship template), cộng sơ đồ workflow trong `CLAUDE.md` /
+`skills/README.md`. Đụng `templates/` + văn bản workflow-engine → lane **high-risk**, chạy đủ chuỗi.
+Không phụ thuộc GitHub.
+
+Đã kiểm tra (2026-10-10): một commit chỉ stage `specs/<slug>/intent.md`, chưa có `SUMMARY.md`, qua
+được `hooks/commit-gate.sh` ở cả profile standard lẫn strict (exit 0, chạy trong worktree tạm). Mỗi
+check xét `specs/<slug>/` đều bỏ qua slug khi file của riêng nó không tồn tại: escalation cần
+`ESCALATIONS.md`, lane evidence cần `SUMMARY.md`, run state cần `RUN.json`/`events.jsonl`; quét
+secrets và risk corroboration loại trừ `*.md` và `specs/`; plan scope bỏ qua `specs/*`. Đây là
+hành vi của hook hiện tại, nên khi triển khai cần thêm một regression test để giữ nó luôn đúng.
+
+Rủi ro: tác giả không dùng Git cần người khác (hoặc một connector) commit giúp; một `intent.md`
+viết tự do, bỏ qua template sẽ làm yếu việc trích C-n/Q-n, nên intake cần cảnh báo khi thiếu mục.
+
+---
+
 ## Phụ lục — URL các bài học
 
 Gốc `https://academy.claude.com/courses/ai-native-sdlc-playbook/`:
