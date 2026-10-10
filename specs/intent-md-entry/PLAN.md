@@ -1,6 +1,6 @@
 ---
 slug: intent-md-entry
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-10-10
 ---
@@ -207,3 +207,4 @@ stops if the file changed after the pin. Chat-only requests keep working as toda
 - 2026-10-10 — proposed; design approved, research brief written.
 - 2026-10-10 — tasks 1.1, 1.2, 1.3, 1.4 complete; commits 3640df0, 21be426, 40f4014, 05232e1; all four task reviews spec pass / quality approved; SC-1..SC-13 exit 0.
 - 2026-10-10 — user-directed fix round 1 after intent review: intake reads intent.md before classifying; re-pin no longer rewrites SUMMARY or run_state; template Status left empty; SC-1 check updated to match (SUMMARY Deviations).
+- 2026-10-10 — review chain complete (context-propagation audit, correctness, intent); fix rounds 2–6 per review and user decisions; receipt pinned at 42383b9; shipped (PR to sdlc).
