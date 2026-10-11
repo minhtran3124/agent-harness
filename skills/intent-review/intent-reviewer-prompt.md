@@ -84,8 +84,8 @@ Task tool (reviewer):
 
     Walk the intent clause by clause and classify every divergence:
 
-    - **gap**: the intent asked for something that is NOT in the diff, such as a missing
-      requested behavior, output, constraint, or surface.
+    - **gap**: the intent asked for something that is NOT in the diff: a requested
+      behavior, output, constraint, or surface that is missing.
     - **drift**: the intent was addressed, but in a way that DIFFERS from how the intent described
       it. Note whether the difference is *behaviorally equivalent* (the outcome the user wanted,
       through a different surface) or *behaviorally different* (a different outcome).

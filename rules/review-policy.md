@@ -30,8 +30,8 @@ SUMMARY. In correctness review the scorer threshold already does this routing.
   `*.lock` files.
 - Lint and format findings that the project's linters or formatters already check
   (`agents/PROJECT.md` → Test execution).
-- In correctness review and intent review only: style, naming and formatting. These belong to the
-  task reviewer's quality verdict.
+- In correctness review and intent review only: style, naming, formatting and maintainability. These
+  belong to the task reviewer's quality verdict.
 
 ## Finding labels
 

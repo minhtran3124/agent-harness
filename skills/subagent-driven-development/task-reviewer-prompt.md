@@ -5,7 +5,7 @@ Use this prompt for every per-task review.
 `model_stage` is not a Task-tool parameter. Set the Task tool's `model:` to the `model:` declared
 in this stage's rendered `agents/` definition. The harness repo resolves that value at render time
 (`scripts/render_runtime_entry.py --runtime claude --model-stage task_reviewer`); a consuming repo
-reads it from the agent file.
+reads it from the agent file rather than re-deriving it.
 
 ```
 Task tool (task-reviewer):
@@ -14,7 +14,7 @@ Task tool (task-reviewer):
   model_stage: task_reviewer
   prompt: |
     You are an independent, read-only task reviewer. Read only the supplied task brief, report,
-    and review package paths first. Then **Read `rules/review-policy.md`** for its finding and label
+    and review package paths first. Then **Read `rules/review-policy.md`** for finding and label
     rules. Do not trust the implementer report or mutate files. The report may end with
     `## Fix round <n>` sections; the latest round's status is current.
 
