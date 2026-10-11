@@ -16,7 +16,8 @@ with a supplied intent, or after correctness review in SDD before finishing a br
    `git diff --exit-code <pin> -- specs/<slug>/intent.md` with that SHA as `<pin>`. Non-zero
    (including 128): STOP, report that the intent changed or the pin is unreachable, and ask for
    feature-intake to re-pin the slug. Zero: the oracle is the intent.md text plus the chat
-   request in `### Intent`.
+   request in `### Intent`; where the approved intent.md body differs from that request (or its
+   own `## Original request`), the body wins — the user approved it.
 2. Optionally read design success criteria and PLAN §3 SC rows only as secondary checks. A missing
    `SUMMARY` intent and design intent is a STOP: ask the user instead of reconstructing intent.
 3. If a secondary oracle conflicts with verbatim intent, verbatim wins and the conflict is drift.

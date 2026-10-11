@@ -1,0 +1,12 @@
+{
+  "created_at": "2026-10-10T10:08:35Z",
+  "last_event_id": "2a22b2c3-adda-4fce-9472-01a64bc47147",
+  "resume_event": null,
+  "run_id": "af86c18c-6759-48a5-9aaf-b1f2fcf58c93",
+  "seq": 6,
+  "sha": null,
+  "slug": "intent-draft-from-chat",
+  "state": "ready_to_merge",
+  "updated_at": "2026-10-10T13:54:49Z",
+  "waiting_on": null
+}
