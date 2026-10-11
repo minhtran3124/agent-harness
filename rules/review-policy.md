@@ -29,7 +29,9 @@ SUMMARY. In correctness review the scorer threshold already does this routing.
 - Findings in generated files: `PLAN.html`, `.plan-review.json`, deployed harness copies, and
   `*.lock` files.
 - Lint and format findings that the project's linters or formatters already check
-  (`agents/PROJECT.md` → Test execution).
+  (`agents/PROJECT.md` → Test execution). A runtime bug with a concrete trigger is still a finding
+  even if a linter would also flag it; in correctness review the scorer decides whether a wired
+  linter makes it moot.
 - In correctness review and intent review only: style, naming, formatting and maintainability. These
   belong to the task reviewer's quality verdict.
 
