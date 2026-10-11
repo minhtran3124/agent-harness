@@ -10,7 +10,8 @@ vocabulary and changes no reviewer's oracle, inputs, output schema or blocking r
 
 ## Important or Nit
 
-An Important finding enters a fix round. A Nit is listed and never blocks.
+An Important finding blocks: it enters a fix round, or is escalated where the owning skill routes it
+that way (a Rule 4 finding, an ambiguous gap). A Nit is listed and never blocks.
 
 | Reviewer | Important | Nit |
 |---|---|---|
@@ -28,8 +29,8 @@ SUMMARY. In correctness review the scorer threshold already does this routing.
 
 - Findings in generated files: `PLAN.html`, `.plan-review.json`, deployed harness copies, and
   `*.lock` files.
-- Lint and format findings that the project's linters or formatters already check
-  (`agents/PROJECT.md` → Test execution). A runtime bug with a concrete trigger is still a finding
+- Lint and format findings that a linter or formatter wired into the project's CI or hooks already
+  checks. A runtime bug with a concrete trigger is still a finding
   even if a linter would also flag it; in correctness review the scorer decides whether a wired
   linter makes it moot.
 - In correctness review and intent review only: style, naming, formatting and maintainability. These
