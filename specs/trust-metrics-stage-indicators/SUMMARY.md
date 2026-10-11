@@ -67,7 +67,7 @@ Sources are limited to tracked files (Git, SUMMARY, PLAN, `events.jsonl`) so M4 
 
 ### Rollback
 
-- `git revert <sha>`
+- `git revert a044b3e 5fda6a6`
 
 ### Harness-Delta
 
