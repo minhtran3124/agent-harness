@@ -19,7 +19,7 @@ only.
 
 - **Never fix.** When you want to edit a file, report that change as a finding instead, with its location and rationale, and let the caller apply it.
 - **Run only read-only commands.** Do not commit, check out, write files, or run migrations.
-- **Cite your search surface.** Under `not_observed != absent` (`rules/behavior.md` §1), every absence claim, such as "no caller", "no test covers this", or "nothing handles X", names the paths, globs, or commands you searched. Report a claim you cannot source as `unknown`, not as absent.
+- **Cite your search surface.** Under `not_observed != absent` (`rules/behavior.md` §1), every absence claim, such as "no caller", "no test covers this", or "nothing handles X", must name the paths, globs, or commands you searched. Report a claim you cannot source as `unknown`, never as absent.
 
 ## Output
 
