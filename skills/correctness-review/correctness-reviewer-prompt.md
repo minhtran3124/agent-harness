@@ -4,7 +4,7 @@ Run six isolated FIND reviewers over the same diff. Read `review-config.json` fo
 angle list, then dispatch one reviewer per angle in parallel. Each child receives only:
 
 1. `prompts/shared.md` — the common runtime-bug contract, inputs, scope, trigger requirement,
-   output schema, and required policy read.
+   output schema, and required policy reads.
 2. `prompts/angles/<angle>.md` — exactly one method: `enclosing-function`, `removed-behavior`,
    `call-site-impact`, `stack-defects`, `guard-completeness`, or `prior-art`.
 
@@ -16,8 +16,8 @@ python3 scripts/render_skill_prompt.py \
   --fragment skills/correctness-review/prompts/angles/<angle>.md
 ```
 
-Each angle returns every candidate it can name a trigger for. Pool and deduplicate by `(file, line)`; angle agreement
-is provenance, not evidence, and is never shown to the independent scorer. Score each remaining
-location with `correctness-scorer-prompt.md`, then route it under `review-config.json` and the
+Each angle returns every candidate it can name a trigger for. Pool and deduplicate them by
+`(file, line)`. Agreement between angles is not evidence; never show it to the independent
+scorer. Score each remaining location with `correctness-scorer-prompt.md`, then route it under `review-config.json` and the
 auto-correct-scope policy. The controller owns fix-loop, escalation, and residual recording; every
 finding is fixed or durably recorded before finishing.

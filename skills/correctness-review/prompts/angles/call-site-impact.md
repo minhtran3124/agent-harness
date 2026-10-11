@@ -6,8 +6,7 @@
 For each function, method, or signature the diff changes, find the code that calls it and the
 code it calls.
 
-Use grep to find call sites — search for the symbol across the repository, not just the changed
-files. Then, for each call site, check whether the change breaks it:
+Use grep to find call sites across the whole repository, not only the changed files. Then, for each call site, check whether the change breaks it:
 
 - a new precondition the caller does not satisfy;
 - a changed return type, shape, or nullability the caller does not handle;
@@ -20,7 +19,7 @@ Also check in the other direction: does another change in this same diff make on
 unsafe?
 
 State the caller's file and line in the trigger. If you searched and found no callers, say what
-you searched (`grep -rn "<symbol>" <paths>`) — per the shared block, an uncited absence claim is
+you searched (`grep -rn "<symbol>" <paths>`); as the shared block says, an uncited absence claim is
 reported as unknown, not as absent.
 ````
 

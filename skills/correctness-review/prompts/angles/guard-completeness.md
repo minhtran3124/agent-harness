@@ -25,9 +25,8 @@ Look at what runs immediately **before** and **after** the guarded region: an `o
 `try`; setup performed outside the lock; teardown outside the `finally`; a variable assigned
 before the check that uses it. Name the input that reaches the unguarded part.
 
-**What this angle does NOT report.** This angle reports live failure paths, not opinions about
-how deep or elegant a fix is. The following are not findings for this stage, even if you believe
-them:
+**What this angle does not report.** Report live failure paths, not opinions about how deep or
+elegant a fix is. The following are not findings for this stage, even if you believe them:
 
 - "this bypasses the service layer" or "the architecture is inconsistent";
 - "this duplicates a dependency" when you also conclude it is harmless;
@@ -37,10 +36,10 @@ them:
 The shared block's rule applies here with no exception: name a trigger and a wrong outcome, or
 do not report it.
 
-**Why this angle exists.** This repository shipped the same bug three times. Two rounds of
-per-line review each widened an `except` clause; neither noticed that `open()` ran before the
-loop, outside every `try`, so an unreadable file still terminated the script
+**Example.** This repository shipped the same bug three times. Two rounds of per-line review
+each widened an `except` clause; neither noticed that `open()` ran before the loop, outside every
+`try`, so an unreadable file still terminated the script
 (harness repo, `docs/solutions/scripts/bash-empty-array-and-jsonl-parsing-gotchas.md`). No list of defect
-classes reaches that bug. Only this question does.
+classes reaches that bug; only the question above does.
 ````
 
