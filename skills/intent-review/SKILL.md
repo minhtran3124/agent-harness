@@ -15,10 +15,10 @@ supplied intent, or in SDD after correctness review and before finishing a branc
    an `Intent-source: specs/<slug>/intent.md @ <sha>` line, first run
    `git diff --exit-code <pin> -- specs/<slug>/intent.md` with that SHA as `<pin>`. On non-zero
    (including 128), STOP: report that the intent changed or the pin is unreachable, and ask
-   feature-intake to re-pin the slug. On zero, the oracle is the intent.md text plus the chat
+   for feature-intake to re-pin the slug. On zero, the oracle is the intent.md text plus the chat
    request in `### Intent`; where the approved intent.md body differs from that request (or its
    own `## Original request`), the body wins.
-2. Optionally read design success criteria and PLAN §3 SC rows, as secondary checks only. If both
+2. Optionally read design success criteria and PLAN §3 SC rows as secondary checks. If both
    the `SUMMARY` intent and the design intent are missing, STOP: ask the user instead of reconstructing intent.
 3. If a secondary check conflicts with verbatim intent, verbatim wins and the conflict is drift.
 4. Set `BASE..HEAD`: task start to HEAD in SDD, merge-base to HEAD for a branch, or an explicit
@@ -26,11 +26,11 @@ supplied intent, or in SDD after correctness review and before finishing a branc
    but never `PLAN.md` prose or `research-brief.md`.
 
 When SDD supplies `REVIEW_PACKAGE_PATH`, the reviewer reads that `BASE..HEAD` package first
-instead of rebuilding the same diff. The package holds no intent oracle; do not use it to read
+instead of rebuilding the diff. The package holds no intent oracle; do not use it to read
 PLAN prose or research material. Otherwise, build the explicit range.
 
-Dispatch `intent-reviewer-prompt.md` in a fresh context. Each finding quotes the intent sentence
-it evaluates.
+Dispatch `intent-reviewer-prompt.md` in a fresh context. Each finding must quote the intent
+sentence it evaluates.
 
 ## Route findings
 

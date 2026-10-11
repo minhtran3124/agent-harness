@@ -29,8 +29,8 @@ inferred from main-session behavior, or an inline policy subset is unanchored. P
 Read; allow an inline copy only when complete and protected by a drift test. Do not flag a
 complete pasted authority, an explicit Read, or a registry-linted copy.
 
-Write the matrix and PASS/FAIL to `SUMMARY.md` under `### Context-Propagation Audit`. List each
-failed row and its repair; route an unfixable Rule-4 issue to `ESCALATIONS.md`. A standalone audit
+Write the matrix and PASS/FAIL to `SUMMARY.md` under `### Context-Propagation Audit`. List and
+repair each failed row; route an unfixable Rule-4 issue to `ESCALATIONS.md`. A standalone audit
 returns the same matrix inline. Keep the known escape probes in
 `evals/skills/review-chain/fixtures/context-rule-unread/` and
 `evals/skills/review-chain/fixtures/stale-inline-policy/`.

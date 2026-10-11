@@ -11,8 +11,8 @@ branch, working-tree diff for uncommitted work, or the supplied range. In SDD, u
 before task 1 through HEAD.
 
 When SDD supplies `REVIEW_PACKAGE_PATH`, pass it to the FIND prompts, which say how to read it. It
-is runtime evidence, not an oracle: stay plan-blind, and read outside it only for a named,
-concrete runtime risk. Otherwise, build the range as above.
+is runtime evidence, not an oracle: stay plan-blind, and do a named, focused read outside it
+only for a concrete runtime risk. Otherwise, build the range as above.
 
 ## Pipeline
 
