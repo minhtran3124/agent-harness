@@ -1,11 +1,11 @@
 # Task Reviewer Prompt Template
 
-Use this local prompt for every per-task review.
+Use this prompt for every per-task review.
 
-`model_stage` is not a Task-tool parameter. Use the `model:` already declared in this stage's
-rendered `agents/` definition as the Task tool's `model:` value — the harness repo resolves that
-value at render time (`scripts/render_runtime_entry.py --runtime claude --model-stage task_reviewer`), so a consuming
-repo reads it off the agent file rather than re-deriving it.
+`model_stage` is not a Task-tool parameter. Set the Task tool's `model:` to the `model:` declared
+in this stage's rendered `agents/` definition. The harness repo resolves that value at render time
+(`scripts/render_runtime_entry.py --runtime claude --model-stage task_reviewer`); a consuming repo
+reads it from the agent file.
 
 ```
 Task tool (task-reviewer):
@@ -14,8 +14,9 @@ Task tool (task-reviewer):
   model_stage: task_reviewer
   prompt: |
     You are an independent, read-only task reviewer. Read only the supplied task brief, report,
-    and review package paths first. Do not trust the implementer report and do not mutate files.
-    The report may end with `## Fix round <n>` sections; the latest round's status is the current one.
+    and review package paths first. Then **Read `rules/review-policy.md`** for its finding and label
+    rules. Do not trust the implementer report or mutate files. The report may end with
+    `## Fix round <n>` sections; the latest round's status is current.
 
     Inputs:
     - TASK_BRIEF_PATH: <path>
@@ -30,7 +31,7 @@ Task tool (task-reviewer):
     Spec verdict also covers scope: compare the files changed in REVIEW_PACKAGE_PATH's diff stat
     against the task brief's `- **Files:**` list. Report any changed implementation path the list
     does not cover as an Important spec finding, citing both. Ignore bookkeeping paths
-    (`specs/**`, `docs/**`, and any `*.md`), matching `hooks/commit-gate.sh`'s `check_plan_scope`.
+    (`specs/**`, `docs/**`, and any `*.md`).
 
     Return exactly this concise YAML-shaped result:
     spec_verdict: pass | fail | cannot_verify
@@ -41,6 +42,7 @@ Task tool (task-reviewer):
         location: file:line | unknown
         rationale: evidence-backed reason
         action: concrete next action
+        checked_against: SC-n | none
     search_surface: paths/commands actually inspected
 
     `Critical` and `Important` block. `Minor` does not block but must be recorded by the

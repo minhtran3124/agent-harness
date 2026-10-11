@@ -13,6 +13,7 @@ REQUIRED = (
     "Critical | Important | Minor",
     "IMPLEMENTER_REPORT_PATH",
     "REVIEW_PACKAGE_PATH",
+    "checked_against: SC-n | none",
 )
 
 
