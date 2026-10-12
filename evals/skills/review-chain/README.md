@@ -192,8 +192,8 @@ Honesty rules the tool enforces:
   a failed call and excludes that fixture for that arm from the score instead of scoring a miss.
   `run` exits 1 only when a call hit an internal error (`rc: "error"`), a record could not be
   written, or a call never started (`not-run`: no record is written, so a rerun makes that call
-  again); a timeout or a non-zero exit with a result is recorded and counted as a failed call in
-  `report`, but does not change `run`'s exit code.
+  again); a timeout or a non-zero exit (with or without a result) is recorded and counted as a
+  failed call in `report` but does not change the exit code.
 
 Cost: in the first run a call cost about $0.05 to $0.11, and 116 calls cost about $10.9. A first
 smoke test showed what the fixed conditions prevent: one call from a normal project directory

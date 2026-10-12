@@ -569,8 +569,8 @@ def main() -> int:
                                      "--max-call-usd as an estimate. Exits 1 when a call hit an internal error "
                                      "(rc \"error\"), a record could not be written, or a call never started "
                                      "(not-run: no record is written, so a rerun makes that call again); a timeout "
-                                     "or a non-zero exit with a result is recorded and counted as a failed call in "
-                                     "`report` but does not change the exit code.")
+                                     "or a non-zero exit (with or without a result) is recorded and counted as a "
+                                     "failed call in `report` but does not change the exit code.")
     run.add_argument("--base-rev", required=True)
     run.add_argument("--head-rev", required=True)
     run.add_argument("--out", type=Path, required=True,
