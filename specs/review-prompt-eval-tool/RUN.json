@@ -1,12 +1,12 @@
 {
   "created_at": "2026-10-12T04:12:02Z",
-  "last_event_id": "e069178e-8168-4414-b770-1f8130db999f",
+  "last_event_id": "d660c1ce-c60a-4e61-96eb-c2dbeef2a964",
   "resume_event": null,
   "run_id": "87138f1e-6506-44cb-902c-b802da19586a",
-  "seq": 5,
+  "seq": 6,
   "sha": null,
   "slug": "review-prompt-eval-tool",
-  "state": "verifying",
-  "updated_at": "2026-10-12T04:42:31Z",
+  "state": "ready_to_merge",
+  "updated_at": "2026-10-12T04:57:01Z",
   "waiting_on": null
 }
