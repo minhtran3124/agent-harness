@@ -1,6 +1,6 @@
 ---
 slug: review-prompt-eval-tool
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-10-12
 ---
@@ -230,3 +230,4 @@ check with the new tool.
 - 2026-10-12 — tasks 1.1, 1.2 complete; commits 2f1e229, c9a8126, 339250c (tool and fix rounds), c7c34f6, a075cbd (fixtures and fix round)
 - 2026-10-12 — task 2.1 complete; commits de25429, 9a047b5 (README and fix round)
 - 2026-10-12 — task 3.1 complete (run by the controller, not dispatched: it spends model money); real run recorded in real-run.md and real-run-results.json, 38 calls, $2.95
+- 2026-10-12 — review chain passed (correctness with fixes d594b5f, 7a62aeb, 837df56, 8ad52dd, ad9ad72; intent, no gap); shipped
