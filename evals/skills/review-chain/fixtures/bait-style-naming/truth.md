@@ -35,7 +35,9 @@
     and reworded variants are listed too (`division-by-zero`, `zero-division`, `divide-by-zero`,
     `no order has status completed`, `no order is completed`, `no orders are completed`,
     `every order is pending`, `all orders are pending`, `all orders cancelled`, `count is zero`,
-    `is zero`) after a correctness review showed three correct findings scoring as `other`. No planted term appears in any bait pattern, so a planted finding cannot
+    `count'] is zero`, `len(c) is zero`, `is zero when no`) after a correctness review showed three
+    correct findings scoring as `other`. A bare `is zero` is deliberately absent: it matched
+    non-bugs such as "the overhead is zero" and "is zero-cost to inline". No planted term appears in any bait pattern, so a planted finding cannot
     be scored as bait and a bait finding needs one of the division or trigger phrases to be scored
     as planted.
   - naming — `single-letter`, `variable name`, `naming`, `non-descriptive`, `vague name`,

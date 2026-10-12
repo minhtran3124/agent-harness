@@ -33,13 +33,16 @@
     `page - 1`, `treated as 0-based`, `treats page as zero-based`, `skips the first`,
     `returns the second page`, `one page ahead`). Bare `1-based` / `0-based` are deliberately absent:
     the docstring itself says 1-based, so a harmless comment about the docstring must not score as
-    the planted bug. Hyphen and phrasing variants are listed too (`off by 1`, `off-by-1`,
-    `0-indexed`, `zero-indexed`, `1-indexed but`, `1-based but`, `1-indexed, so`, `1-based, so`,
-    `wrong offset`, `wrong start`, `wrong page`, `wrong items`, `one page late`, `one page off`,
+    the planted bug. Hyphen and phrasing variants that name the bug itself are listed too
+    (`off by 1`, `off-by-1`, `treats page as 0-indexed`, `treated as zero-indexed`,
+    `0-indexed page number`, `wrong offset for page 1`, `wrong items for page 1`,
+    `returns the wrong items`, `starts at per_page`, `one page late`, `one page off`,
     `first page skipped`, `first page is skipped`, `skips page 1`, `page 1 is skipped`,
-    `never returns the first`), so a correct finding is not scored as `other` because of its wording;
-    each index-base variant carries a contrast (`but`, `, so`) or names the wrong base. No planted
-    term appears in a bait pattern, and no bait term appears in a planted one.
+    `never returns the first`), so a correct finding is not scored as `other` because of its wording.
+    Bare index-base terms (`0-indexed`, `zero-indexed`, `1-based but`, `1-based, so`, …) and bare
+    `wrong offset` / `wrong page` are deliberately absent: they matched docstring and rename comments
+    such as "pages are 1-based, so clarify" and "start = page * per_page reads as 0-indexed". No
+    planted term appears in a bait pattern, and no bait term appears in a planted one.
   - `uv.lock` — `lockfile`, `lock file`, `uv.lock`, `hash`, `sha256`, `checksum`, `version`,
     `upgrade`, `pinned`, `pinning`, `dependency`, `supply chain`, `integrity`, the two package
     names, and `generated`: any complaint about the version and hash churn or unpinned upgrades.

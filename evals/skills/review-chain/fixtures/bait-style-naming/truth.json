@@ -46,7 +46,8 @@
             "all orders are pending",
             "all orders cancelled",
             "count is zero",
-            "is zero"
+            "count'] is zero",
+            "is zero when no"
         ]
     },
     "false_positives": [
