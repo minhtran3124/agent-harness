@@ -207,8 +207,8 @@ def call_claude(claude: str, flags: list[str], prompt: str, cwd: str, max_call_u
 
 
 def retryable(attempt: dict) -> bool:
-    """Only a call that did not start, or exited non-zero with no result event (so it reported no cost), is
-    retried. A timeout is never retried, nor is a call with a result event: it ran and was billed."""
+    """A call that did not start, or exited non-zero without a result event, is retried once; a timeout, or a
+    call that sent a result event (it ran and was billed), is never retried."""
     rc = attempt["rc"]
     return rc == "not-run" or (isinstance(rc, int) and rc != 0 and not attempt.get("result_event"))
 
@@ -345,7 +345,8 @@ def cmd_run(args) -> int:
                     with lock:
                         state["spent"] += results[-1]["cost"]
                     if not retryable(results[-1]):
-                        break  # only a call that did not start or produced no result event is retried, once
+                        break  # a call that did not start, or exited non-zero without a result event, is
+                        # retried once; a timeout, or a call that sent a result event, is never retried
             finally:
                 shutil.rmtree(cwd, ignore_errors=True)
 
@@ -561,10 +562,15 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     sub = parser.add_subparsers(dest="command", required=True)
     run = sub.add_parser("run", help="run the A/B calls (each call recorded once, never rerun)",
-                         description="Run the A/B calls. Each call is recorded once and never rerun; only a call that "
-                                     "did not start or produced no result event is retried, once. A call that "
+                         description="Run the A/B calls. Each call is recorded once and never rerun. A call that did "
+                                     "not start, or exited non-zero without a result event, is retried once; a "
+                                     "timeout, or a call that sent a result event, is never retried. A call that "
                                      "started but sent no result event (a timeout or a crash) is charged "
-                                     "--max-call-usd as an estimate.")
+                                     "--max-call-usd as an estimate. Exits 1 when a call hit an internal error "
+                                     "(rc \"error\"), a record could not be written, or a call never started "
+                                     "(not-run: no record is written, so a rerun makes that call again); a timeout "
+                                     "or a non-zero exit with a result is recorded and counted as a failed call in "
+                                     "`report` but does not change the exit code.")
     run.add_argument("--base-rev", required=True)
     run.add_argument("--head-rev", required=True)
     run.add_argument("--out", type=Path, required=True,

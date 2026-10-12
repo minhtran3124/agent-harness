@@ -179,8 +179,9 @@ Records and report:
 Honesty rules the tool enforces:
 
 - **First run only.** A call whose record exists is skipped with `already recorded; not rerun`; a
-  miss is never rerun. Only a call that did not start or produced no result event is retried,
-  once, inside the same record.
+  miss is never rerun. A call that did not start, or exited non-zero without a result event, is
+  retried once, inside the same record; a timeout, or a call that sent a result event, is never
+  retried.
 - **Records are published atomically and never overwritten.** Each record is written to a
   temporary file and published with a hard link that fails if the name exists, so a crash leaves no
   partial record and two concurrent runs cannot replace each other's result.
@@ -189,9 +190,10 @@ Honesty rules the tool enforces:
 - **Failed calls are counted apart from model outcomes.** A call that timed out, exited non-zero or
   hit an internal error is recorded with its `rc` and still counts toward cost; `report` lists it as
   a failed call and excludes that fixture for that arm from the score instead of scoring a miss.
-  `run` exits 1 only when a call hit an internal error (`rc: "error"`) or a record could not be
-  written; a timeout or a non-zero exit is recorded and counted as a failed call in `report`, but
-  does not change `run`'s exit code.
+  `run` exits 1 only when a call hit an internal error (`rc: "error"`), a record could not be
+  written, or a call never started (`not-run`: no record is written, so a rerun makes that call
+  again); a timeout or a non-zero exit with a result is recorded and counted as a failed call in
+  `report`, but does not change `run`'s exit code.
 
 Cost: in the first run a call cost about $0.05 to $0.11, and 116 calls cost about $10.9. A first
 smoke test showed what the fixed conditions prevent: one call from a normal project directory
