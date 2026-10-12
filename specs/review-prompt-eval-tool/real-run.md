@@ -21,6 +21,10 @@ The tool ran 38 calls in two sets of runs and recorded every result once: no cal
 
 Total cost $2.95.
 
+The bait answer keys were widened after this run, during the correctness review (see SUMMARY). The recorded bait
+results were scored again with the final keys: the same counts (planted bug caught 2/2 in both arms; scorer false
+positives 2 base, 0 head). The tool run is therefore not affected by the revision.
+
 ## Results
 
 ### Bait (attempt 1, one run per cell)
@@ -29,7 +33,7 @@ Total cost $2.95.
 |---|---|---|
 | Planted bug caught (2 fixtures) | 2/2 | 2/2 |
 | Calls that Read `rules/review-policy.md` | 0/14 (file absent at base) | 14/14 (finders 12/12, intent 2/2) |
-| Parseable JSON block | 14/14 | 14/14 |
+| Parseable JSON block (from the `report` output; the results file keeps only parsed findings) | 14/14 | 14/14 |
 | Findings reported against the generated file `specs/demo/PLAN.html` | 3 (2 scored false positives, 1 `other`) | 0 |
 | Findings reported against `uv.lock` | 0 | 0 |
 | Style, naming or formatting findings on `bait-style-naming` | 0 | 0 |
@@ -61,19 +65,28 @@ attempts both arms hold 3 of 5.
 - **Generated-file suppression.** With the policy, the finders reported nothing about a generated file that the
   base prompts criticised in 3 of the 6 finder calls on that fixture. That agrees with the policy's do-not-report list working in
   fresh contexts. It is one run per cell on one fixture: three findings against none is a count, not a rate.
-- **Style suppression: no signal.** Neither arm reported a style or naming finding on `bait-style-naming`. The base
-  finder prompts already exclude style, so this fixture cannot show a policy effect; the policy changed no
-  behavior there. This is a ceiling, not a failure.
+- **Style suppression: no difference observed.** Neither arm reported a style or naming finding on
+  `bait-style-naming`, in one run per cell. The base finder prompt (`skills/correctness-review/prompts/shared.md` at
+  `33d6ed4`, "Out of scope") already says "Style, naming, formatting, maintainability. That is the quality
+  reviewer's work.", so a ceiling is the likely reason this fixture shows nothing; the data do not show it.
 - **Planted bugs.** Both arms caught both planted bugs, through several finder angles and the intent reviewer each.
-- **The first run's `minor-only` difference is noise.** The fixture produces the forbidden `spec_fail` in about
-  half the runs in both arms (base 3 of 6, head 2 of 6). The earlier 6/7 against 7/7 should not be read as an
-  improvement.
-- **The tool.** It ran to completion on real calls with no failed call, the shared cap behaved as documented, and
-  `report` separated failed calls from outcomes (there were none to separate).
+- **More attempts do not support reading the first run's `minor-only` difference as an improvement.** The forbidden
+  `spec_fail` appeared in 3 of 6 base runs and 2 of 6 head runs, and in the five new attempts both arms hold 3 of 5.
+  The first run's totals (6 of 7 fixtures against 7 of 7) are from `runtime-eval.md` on PR #288
+  (`git show feat/review-policy:specs/review-policy/runtime-eval.md`, "Results against the criteria", C6). The counts
+  say nothing about the cause.
+- **The tool.** It ran to completion on real calls with no failed call. Each later invocation seeded the shared cap
+  from the money already recorded; no run came near a cap ($2.58 of $10, $0.37 of $3), so the cap never stopped a
+  call. `report` has a section for failed calls, with none to show.
 
 ## What it does not show
 
 - Variance of the bait results: attempt 1 only. A second attempt on the bait fixtures was not run.
+- A single harness. Attempt 1 of `minor-only` came from the earlier scratchpad driver and attempts 2 to 6 from this
+  tool, so the pooled 3/6 against 4/6 mixes two harnesses.
+- The scorer sends a finding of class `unknown` to `other` before it tries the bait patterns
+  (`score_review_chain_eval.py`, `classify`), so a bait finding a reviewer files as `unknown` is not counted as a
+  false positive. One of the three base `PLAN.html` findings was of that kind.
 - Anything beyond two fixtures. The patterns in each `truth.json` measure the bait they name; a generated-file finding
   worded without those terms would count as `other`.
 - Calls had only a diff and no repository: the call-site-impact angle reported `unknown` for callers in both arms.

@@ -38,7 +38,7 @@ Intent-source: specs/review-prompt-eval-tool/intent.md @ 0a5ac18b8f703c9e68c00f7
 
 ## What changed
 
-Added `scripts/run_review_prompt_eval.py`, a tested tool (`run` and `report`) that runs the real review prompts of two git revisions on the planted-defect fixtures under identical conditions: each arm's prompts are built from that revision's own files, calls run in a minimal Read-only environment with per-call and shared total budget caps, results are published atomically and never overwritten, and failed calls are kept apart from model outcomes. Added two `core: false` fixtures, `bait-style-naming` and `bait-generated-file`, that measure the review policy's do-not-report list. Documented both in the review-chain README (new section, fixture revision v5). Used the tool for a real run of 38 calls ($2.95): the bait fixtures and five more attempts on `minor-only`; see `real-run.md`.
+Added `scripts/run_review_prompt_eval.py`, a tested tool (`run` and `report`) that runs the real review prompts of two git revisions on the planted-defect fixtures under identical conditions: each arm's prompts are built from that revision's own files, calls run in a minimal Read-only environment with per-call and shared total budget caps, results are published atomically and never overwritten, and failed calls are kept apart from model outcomes. Added two `core: false` fixtures, `bait-style-naming` and `bait-generated-file`, that measure the review policy's do-not-report list. Documented both in the review-chain README (new section, fixture revision v5). The correctness review's fixes are in too (a resolved `--claude`, an estimated cost for a call that reports none, a narrower retry rule, wider and then narrowed answer-key wordings). Used the tool for a real run of 38 calls ($2.95): the bait fixtures and five more attempts on `minor-only`; see `real-run.md`.
 
 ### Rationale
 
@@ -53,7 +53,7 @@ The first runtime eval lived in a session scratchpad and could not be re-run whe
 ### Deviations
 
 - Task 3.1 (the real run) was executed by the controller in the main loop instead of being dispatched: it spends model money and records evidence, and `rules/orchestration.md` keeps such main-loop work with the controller. The run is covered by a task review of the report against the recorded data.
-- Rule 1, by implementers after task review: Task 1.1 atomic records, recorded job failures, shared budget cap, `--watch-path` in `meta.json`, billed cost kept on failures, failed calls reported apart (c9a8126, 339250c); Task 1.2 policy source cited in both `truth.md`, cancelled wording and narrower base-index terms in the answer keys (a075cbd); Task 2.1 README wording on files, exit codes, parse counts and the report link (9a047b5).
+- Rule 1, by implementers after task review: Task 1.1 atomic records, recorded job failures, shared budget cap, `--watch-path` in `meta.json`, billed cost kept on failures, failed calls reported apart (c9a8126, 339250c); Task 1.2 policy source cited in both `truth.md`, cancelled wording and narrower base-index terms in the answer keys (a075cbd); Task 2.1 README wording on files, exit codes, parse counts and the report link (9a047b5). After the correctness review: tool fixes for `--claude`, estimated cost on a call that reports none and the retry rule (d594b5f), wording of the retry rule and exit codes (8ad52dd, ad9ad72); answer-key wordings widened (7a62aeb) and then narrowed where the widening let non-bugs score as planted (837df56).
 
 ### Task review findings (Minor, rolled up)
 
@@ -85,11 +85,33 @@ The first runtime eval lived in a session scratchpad and could not be re-run whe
   ($10.61 full run plus $0.30 pilot). `lint-doc-truth.sh` does not scan `evals/`, so the link to
   `specs/review-policy/runtime-eval.md` (absent until PR #288 merges) is not lint-checked.
 
+- Task 3.1 (real-run report, task review): one Important and five Minor, all about wording stronger than the data
+  allows; every number the report states was recomputed from the 38 records and matched. Fixed in `real-run.md`:
+  the "difference is noise" heading became a count ("more attempts do not support reading it as an improvement"),
+  "about half in both arms" was dropped (base 3 of 6, head 2 of 6), "the policy changed no behavior" became "no
+  difference observed" with the base prompt's own style line cited, the first run's source (`runtime-eval.md`,
+  C6) and the two-harness mix were stated, the parseable-JSON row says it comes from the `report` output, and the
+  cap sentence now says the cap was seeded but never reached.
+
+### Intent Findings
+
+Plan-blind intent review over 0a5ac18..191b373; no gap and no fix loop.
+
+1. drift (behaviorally different, small) — the scorer sends a finding of class `unknown` to `other` before it tries
+   the bait patterns, so a bait finding a reviewer files as `unknown` is not counted as a false positive (one of
+   the three base `PLAN.html` findings). The intent keeps the scorer unchanged. Recorded in `real-run.md`.
+2. drift (equivalent) — the new attempts are recorded in this spec directory, with attempt 1 cited from the first
+   run's report on PR #288; the first run was not changed.
+3. excess (report-only) — "difference is noise" went beyond counts; reworded to counts only after the task review
+   of Task 3.1.
+4. excess (minor) — CLI options beyond the driver's own (`--repo`, `--kinds`, `--only-fixture`, `--workers`,
+   `--claude`, `--watch-path`, records and exports); all support the stated behavior.
+
 ### Verify
 
 | Check | Command | Exit | Notes | Criterion |
 | --- | --- | --- | --- | --- |
-| SC-1 check | `env PATH=/tmp/harness-tests-venv/bin:/usr/bin:/bin python3 -m pytest -q scripts/test_run_review_prompt_eval.py` | 0 | 19 passed, no model call | SC-1 |
+| SC-1 check | `env PATH=/tmp/harness-tests-venv/bin:/usr/bin:/bin python3 -m pytest -q scripts/test_run_review_prompt_eval.py` | 0 | 24 passed, no model call | SC-1 |
 | SC-2 check | `env PATH=/tmp/harness-tests-venv/bin:/usr/bin:/bin python3 -m pytest -q scripts/test_run_review_prompt_eval.py -k arms_are_isolated` | 0 | 1 test: the base arm never receives head-only text | SC-2 |
 | SC-3 check | `env PATH=/tmp/harness-tests-venv/bin:/usr/bin:/bin python3 -m pytest -q scripts/test_run_review_prompt_eval.py -k never_overwrites` | 0 | 1 test: a recorded result is never overwritten, a rerun makes no call | SC-3 |
 | SC-4 check | `env PATH=/tmp/harness-tests-venv/bin:/usr/bin:/bin python3 -m pytest -q scripts/test_run_review_prompt_eval.py -k budget_cap` | 0 | 1 test: the total cap stops new calls | SC-4 |
@@ -103,16 +125,59 @@ The first runtime eval lived in a session scratchpad and could not be re-run whe
 | SC-12 check | `test -s specs/review-prompt-eval-tool/real-run.md` | 0 | report exists | SC-12 |
 | SC-13 check | `python3 -c "import os,sys;d='evals/skills/review-chain/fixtures';sys.exit(0 if all(os.path.isfile(f'{d}/{n}/{f}') for n in ('bait-style-naming','bait-generated-file') for f in ('intent.md','diff.patch','truth.md','truth.json')) else 1)"` | 0 | four files in each bait directory | SC-13 |
 
+### Correctness Review
+
+Range 0a5ac18..9a047b5 (code only). Six FIND angles ran with this branch's finder prompts; `removed-behavior` found
+nothing (the range deletes no line). The others reported 3, 6, 4, 7 and 5 items; after merging by location there
+were 12 clusters, each scored by an independent scorer (threshold 75).
+
+Scored 75, fixed in the fix rounds below:
+
+- `scripts/run_review_prompt_eval.py:177-179`, `362-367`, `387-389` (score 75): `--claude` reached `call_claude`
+  unresolved while every call ran in a fresh temp cwd, so a relative or missing binary became a permanent
+  `rc: "not-run"` record with cost 0, `run` exited 0 and a rerun skipped every job as "already recorded".
+- `evals/skills/review-chain/fixtures/bait-style-naming/truth.json:14-37` (score 75): the planted `and_any` missed
+  common wordings of the real bug ("division-by-zero", "zero-division", "no order has status completed"); the scorer
+  ran `classify()` and confirmed three correct findings scored `other`.
+
+Fixes and re-review: both 75s were fixed (d594b5f; 7a62aeb, then 837df56) together with the two cost findings below, and
+each fixed cluster was scored again at `d594b5f` by a fresh scorer: `--claude` 0, timeout cost and retry 0, answer
+keys 0. The re-review also found that the widened answer keys let two non-bug wordings score `planted`; 837df56
+removed the over-broad terms and a 47-case classification check (no model call) passes. The recorded bait run,
+scored again with the final keys, gives the same counts.
+
+Scored 50, advisory (real but rare); the first two were also fixed because four finders raised them and the tool
+spends money:
+
+- `run_review_prompt_eval.py:174-176`: a timed-out call (or one with no `result` event) was recorded as cost 0.
+- `:331`: the retry rule re-ran a call that had run and been billed (timeout, error `result` event).
+- `:455-466`: a fixture with one unparseable call among parseable ones is scored from the parseable findings.
+- `:308-309`, `:520-525`: `meta.json` records no fixture directory or content digest, so editing a fixture and
+  resuming into the same `--out` reuses stale records.
+- `:258-272`: `os.link` unsupported on the `--out` filesystem discards paid calls (the help text warns about it).
+- `:325-332`, `:383-384`: Ctrl-C can start one more billed call per in-flight job (queued jobs are cancelled).
+- `:446`, `:461-462`: `report` prints nothing for an arm without attempt-1 records (README: attempt 1 only).
+- `:224-229`: `--kinds task` still reads the finder angles from both revisions.
+- `:194`, `:201`, `:330`, `:361`, `:416`, `:430`, `:437`, `:518`: malformed stream-json or records (non-string
+  `file_path`, non-dict `message`/`usage`, non-numeric cost, a stray `*.json` in `runs/`) crash the tool.
+- `:76-79`, `:226-234`, `:255`, `:316`, `:570`: unvalidated inputs (`--max-total-usd nan`, a non-UTF-8 fixture file,
+  a malformed `meta.json`, a non-list `finder_angles`).
+
+One premise correction: the correctness dispatch listed a guard ("refusal to run inside the repo or the output
+directory") that the code does not have; the implementer's Task 1.1 report named it and the controller copied it
+without checking the code. No document claims it.
+
 ### Not auto-verified
 
 - That the tool's numbers describe the real `reviewer` and `task-reviewer` subagents — reached truth for the conditions the tool fixes (safe-mode, Read-only, diff-only fixtures); not covered: the real agent environment, a repository to explore, the scorer stage, controller routing, Codex.
 - That each bait answer key catches every worded variant of a bait finding — reached traceability (a 21-case classification check without a model call); an unmatched bait finding counts as `other`.
+- That every correct wording of a planted bug scores as caught, and no non-bug wording scores as planted — reached traceability (47 classification cases, no model call); the term lists are finite, so an unforeseen wording scores `other`.
 - The real-run numbers in `real-run.md` are one run per cell and are not re-runnable from the tree without spending money — reached provenance (records kept, scored by the repo's own scorers); the variance check shows `minor-only` is noisy in both arms.
 - The README link to `specs/review-policy/runtime-eval.md` and the policy source cited in the bait `truth.md` files resolve only after PR #288 merges — reached none; `lint-doc-truth.sh` does not scan `evals/`.
 
 ### Rollback
 
-- `git revert --no-edit c7c34f6^..9a047b5` removes the tool, its tests, the two fixtures and the README changes; nothing else changes (no hook, rule, skill or agent was touched, `.claude/` is not redeployed). The spec record under `specs/review-prompt-eval-tool/` can stay as history.
+- `git revert --no-edit ad9ad72 837df56 8ad52dd d594b5f 7a62aeb 9a047b5 de25429 339250c c9a8126 a075cbd 2f1e229 c7c34f6` removes the tool, its tests, the two fixtures and the README changes; nothing else changes (no hook, rule, skill or agent was touched, `.claude/` is not redeployed). The spec record under `specs/review-prompt-eval-tool/` can stay as history.
 
 ### Harness-Delta
 
