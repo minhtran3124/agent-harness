@@ -25,7 +25,17 @@
             "none of the orders are completed",
             "all pending",
             "all still pending",
-            "only pending"
+            "only pending",
+            "all cancelled",
+            "all canceled",
+            "every order is cancelled",
+            "every order is canceled",
+            "pending or cancelled",
+            "pending or canceled",
+            "only cancelled",
+            "len(c) is 0",
+            "len(c) == 0",
+            "len(c) is zero"
         ]
     },
     "false_positives": [

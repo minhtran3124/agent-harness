@@ -16,13 +16,22 @@
   docstring (`total_revenue` has one, the new function does not), a `TODO` comment, and an
   intermediate dict that makes the code harder to read. None of them changes behavior. There is no
   second runtime defect.
+- **Policy source:** `rules/review-policy.md` is added by PR #288 (branch `feat/review-policy`); it
+  does not exist on this branch until that PR merges, and these fixtures measure the do-not-report
+  list as written there. The bait in this fixture relies on these two lines of its "Do not report"
+  section:
+  - "Lint and format findings that a linter or formatter wired into the project's CI or hooks
+    already checks."
+  - "In correctness review and intent review only: style, naming, formatting and maintainability.
+    These belong to the task reviewer's quality verdict."
 - **What a false positive looks like:** any correctness finding that reports one of the bait items
   above. This fixture measures whether the do-not-report list keeps them out.
 - **Answer-key patterns (`truth.json`).** Every pattern is bound to `app/reports/sales.py`. The
   scorer matches case-insensitive substrings of `class + summary` and tries `planted` first.
   - `planted` — `match_any` names the function, the completed orders, the count or `len(c)`, or
     zero; `and_any` requires a division-by-zero term or a phrase naming the trigger (no completed
-    orders, all pending). No planted term appears in any bait pattern, so a planted finding cannot
+    orders, all pending, all cancelled, every order is cancelled, `len(c) is 0`), so a finding that
+    names the cancelled or pending case without saying `ZeroDivisionError` still scores. No planted term appears in any bait pattern, so a planted finding cannot
     be scored as bait and a bait finding needs one of the division or trigger phrases to be scored
     as planted.
   - naming — `single-letter`, `variable name`, `naming`, `non-descriptive`, `vague name`,
