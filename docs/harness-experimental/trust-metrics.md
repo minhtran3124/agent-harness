@@ -8,6 +8,33 @@ line; the SUMMARY is the per-task record.
 Purpose: calibrate autonomy over time. If under-classification recurs (lane below what the
 diff tripped), tighten; if escalations keep resolving as "proceed unchanged", loosen.
 
+## Stage indicators
+
+One leading indicator (moves before the outcome, so it can steer the current run) and one
+lagging indicator (confirms the outcome after the fact) per workflow stage. These are
+definitions only: nothing computes them yet (that is M4 in
+`docs/research/2026-10-10-ai-native-sdlc-playbook-adoption.md` §6). Every source is tracked in
+Git, because `.harness-state/` is gitignored. Run-state timestamps are the `ts` field of
+`specs/<slug>/events.jsonl`, which exists only for runs started with durable run state.
+
+| Stage | Kind | Indicator | Definition and unit | Better | Source |
+|---|---|---|---|---|---|
+| Intake | leading | Ambiguity share | Share of new slugs whose `Confidence:` is `medium` or `low` (%) | lower | SUMMARY header |
+| Intake | lagging | Intent edits after pin | Re-pins per slug: dated old → new SHA lines in `### Intake notes` (count) | lower | SUMMARY `### Intake notes` |
+| Plan (design, research, plan) | leading | Intake → PLAN latency | Hours from the `run.init` event to the first commit that adds `specs/<slug>/PLAN.md` | lower | `events.jsonl`, `git log --diff-filter=A` |
+| Plan (design, research, plan) | lagging | Plan drift | Share of paths in the merged diff that are outside the union of the PLAN tasks' `Files` (%) | lower | merge diff, `PLAN.md` |
+| Implement | leading | Task-review first-pass rate | Share of tasks whose first task review returned pass on both the spec and quality verdicts (%) | higher | SUMMARY task-review record |
+| Implement | lagging | Deviations per task | Rule 1–3 lines in `### Deviations` divided by the number of PLAN tasks | lower | SUMMARY, `PLAN.md` |
+| Review chain | leading | First-pass blocking findings | Blocking findings from the first correctness-review pass, per slug (count) | lower | SUMMARY `### Correctness Review` |
+| Review chain | lagging | Review-escape rate | Share of shipped slugs whose changed files get a `fix` commit within 30 days of the merge (%) | lower | `git log` |
+| Ship | leading | Merge wait | Hours from the `ready_to_merge` event to the `shipped` event | lower | `events.jsonl` |
+| Ship | lagging | Revert rate | Share of merged PRs that a later `Revert` commit undoes (%) | lower | `git log` |
+
+Known data gaps: task-review fix rounds and first-pass verdicts are recorded in SUMMARY only
+when a run writes them there (the per-task reports under `.harness-state/sdd/` are not tracked),
+and a tiny-lane run has no PLAN, task review, or correctness review, so it contributes only to
+the Intake, Review-escape, and Ship indicators.
+
 ## Ledger
 
 <!-- machine-read: the `Affects` column is a contract — always populate with a module/contract name or `-`; do not leave blank -->
