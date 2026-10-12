@@ -127,6 +127,89 @@ The scripted prompt asks the reviewer for structured JSON findings, unlike the f
 of the 2026-10-02 Opus 5 vs 5.5 A/B (PR #246), so scripted numbers are **not comparable** with
 that A/B.
 
+### Runtime A/B of the real prompts
+
+`scripts/run_review_prompt_eval.py` compares the **real reviewer prompts** of two git revisions on
+these fixtures and on `evals/skills/task-review/fixtures`. The earlier runners cannot do this:
+`scripts/run_review_chain_eval.py` sends its own hardcoded prompt (`INSTRUCTIONS`), and
+`scripts/run_task_review_eval.py` builds its own two-line prompts, so neither runs the prompts the
+skills actually dispatch. This tool builds, for each fixture, the correctness finder prompt (one
+call per angle in `skills/correctness-review/review-config.json`), the intent-reviewer prompt, the
+context-propagation-audit prompt (only on fixtures whose expected oracle is the audit) and the
+task-reviewer prompt, from each revision's own files, and runs both arms under the same conditions.
+
+1. `python3 scripts/run_review_prompt_eval.py run --base-rev main --head-rev feat/my-prompt-change --out <dir>`
+   runs the calls and records each one under `<dir>/runs/`. `--kinds` selects a subset of
+   `finder,intent,audit,task` (default all), `--only-fixture NAME` (repeatable) narrows the
+   fixtures, and `--repo` names the repository holding both revisions (default: the current one).
+2. `python3 scripts/run_review_prompt_eval.py report --out <dir>` summarizes and scores the records.
+
+Conditions the tool fixes, identical in both arms:
+
+- **Model and effort** — `--model` (default `claude-opus-5-5`) and `--effort` (default `medium`).
+- **Client flags** — every call is `claude -p <prompt> --safe-mode --tools Read --allowedTools Read`
+  with `--output-format stream-json --verbose --no-session-persistence`: Read is the only tool.
+- **Budget** — `--max-call-usd` (default 1.5) is passed to each call as `--max-budget-usd`;
+  `--max-total-usd` (default 20) stops starting new calls once the calls already recorded in
+  `<dir>/runs/` plus this invocation have spent that much, so the cap also holds across resumed runs.
+- **Working directory** — each call runs in a fresh, empty temporary directory holding only a copy
+  of the arm's `rules/` and the fixture's `package.md` (the diff, or for a task fixture its brief,
+  implementer report and a package note). No `truth.*` file reaches a prompt or that directory.
+- **Prompts from each revision** — the tool extracts `rules`, `skills`, `agents` and
+  `scripts/render_skill_prompt.py` of each revision with `git archive` and runs that arm's own
+  renderer inside that arm's tree, so the base arm never sees head text. Finder, intent and audit
+  prompts get the same machine-readable JSON output request appended in both arms; task-reviewer
+  prompts get the same evidence note. Every prompt is built before the first call, so a prompt-shape
+  error costs nothing.
+
+Records and report:
+
+- `<dir>/meta.json` holds both resolved commit shas, model, effort, client flags and `--watch-path`
+  (default `rules/review-policy.md`). A later `run` with different settings against the same
+  `<dir>` is refused; use another directory.
+- `<dir>/runs/<arm>__<kind>__<fixture>__<angle>__a<attempt>.json` is one call's record: reply text,
+  the files it Read, permission denials, cost, token usage, elapsed time and every attempt made.
+- `report` prints, per arm, the call count, failed calls, how many finished calls ended with a
+  parseable JSON block, cost and output tokens, how often each kind of call Read `--watch-path`, and
+  any permission denials. It then writes `<dir>/result-<arm>.json` in the scripted runner's format
+  and scores attempt-1 review-chain records with `scripts/score_review_chain_eval.py`'s scorer
+  (core and bonus catches, false positives, other, errored, unparseable), and labels each task
+  fixture against its `truth.json` required and forbidden labels.
+
+Honesty rules the tool enforces:
+
+- **First run only.** A call whose record exists is skipped with `already recorded; not rerun`; a
+  miss is never rerun. Only a call that failed to run at all (non-zero exit and no text) is retried,
+  once, inside the same record.
+- **Records are published atomically and never overwritten.** Each record is written to a
+  temporary file and published with a hard link that fails if the name exists, so a crash leaves no
+  partial record and two concurrent runs cannot replace each other's result.
+- **Later attempts are recorded separately.** `--attempt N` (default 1) puts `aN` in the record
+  name; the review-chain score reads attempt 1 only.
+- **Failed calls are counted apart from model outcomes.** A call that timed out, exited non-zero or
+  hit an internal error is recorded with its `rc` and still counts toward cost; `report` lists it as
+  a failed call and excludes that fixture for that arm from the score instead of scoring a miss.
+  `run` exits 1 when any call failed with an error.
+
+Cost: in the first run a call cost about $0.05 to $0.11, and 116 calls cost about $10.9. A first
+smoke test showed what the fixed conditions prevent: one call from a normal project directory
+without `--safe-mode` cost $2.23.
+
+The tool is **manual and not part of CI**: it needs an authenticated `claude` client and costs
+money. Its tests (`scripts/test_run_review_prompt_eval.py`) use a stub client and make no model call.
+
+Coupling and limits:
+
+- It fills the Inputs of the current prompt files (the finder's shared prompt, the `  prompt: |`
+  dispatch blocks of the intent and task reviewer prompts, the audit skill body). A later change to
+  that shape makes `run` fail before any call with an error naming the file.
+- `--out` must be on a filesystem that supports hard links.
+- The total cap is checked before each call starts, so calls already in flight can exceed it by up
+  to `--workers` (default 4) x `--max-call-usd`.
+
+First use: `specs/review-policy/runtime-eval.md` (the review-policy A/B; the link resolves once
+PR #288 merges).
+
 ## Results
 
 Results land in `results/<date>-<label>.md`, built from `results/template.md`. Columns:
@@ -142,6 +225,20 @@ the *expected* oracle, and that its answer key is answerable from the fixture's 
 a fixture is found to carry an unintended defect for the *other* oracle, or an answer key that
 depends on something outside the fixture, it is revised — the planted defect is preserved, the
 unintended defect or outside dependency removed — and the revision is recorded here. Past result files state which fixture version they measured.
+
+- **v5 (2026-10-12)** — two bait fixtures added for the review-policy prompt eval. Both are
+  `core: false`, so the core counts are unchanged, but **bonus catches and false-positive totals
+  before v5 are not comparable** with later ones — re-baseline before trending against older
+  result files. Their answer keys cite `rules/review-policy.md`, added by PR #288; that file does
+  not exist on this branch until that PR merges.
+  - **`bait-style-naming`** — plants a `ZeroDivisionError` in `average_order_value` when no order
+    is completed. It baits correctness and intent review with style, naming, formatting and
+    maintainability issues only (single-letter names, an over-long line, mixed quotes, a missing
+    docstring, a `TODO`, a needless intermediate dict), which the policy says not to report.
+  - **`bait-generated-file`** — plants an off-by-one in `page_slice` (1-based pages treated as
+    0-based). It baits reviewers with changes to two generated files the request asks to
+    regenerate, `uv.lock` and `specs/demo/PLAN.html` (including an `innerHTML` write that looks like
+    an XSS sink); any finding in either is a false positive.
 
 - **v4 (2026-10-02)** — two fixtures made answerable from their own files, surfaced by the
   2026-10-02 Opus 5 vs 5.5 A/B. Earlier results on `intent-gap` and `soft-delete-filter` are
