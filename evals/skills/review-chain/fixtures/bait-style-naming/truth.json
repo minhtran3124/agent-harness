@@ -35,7 +35,18 @@
             "only cancelled",
             "len(c) is 0",
             "len(c) == 0",
-            "len(c) is zero"
+            "len(c) is zero",
+            "division-by-zero",
+            "zero-division",
+            "divide-by-zero",
+            "no order has status completed",
+            "no order is completed",
+            "no orders are completed",
+            "every order is pending",
+            "all orders are pending",
+            "all orders cancelled",
+            "count is zero",
+            "is zero"
         ]
     },
     "false_positives": [

@@ -31,7 +31,11 @@
   - `planted` — `match_any` names the function, the completed orders, the count or `len(c)`, or
     zero; `and_any` requires a division-by-zero term or a phrase naming the trigger (no completed
     orders, all pending, all cancelled, every order is cancelled, `len(c) is 0`), so a finding that
-    names the cancelled or pending case without saying `ZeroDivisionError` still scores. No planted term appears in any bait pattern, so a planted finding cannot
+    names the cancelled or pending case without saying `ZeroDivisionError` still scores. Hyphenated
+    and reworded variants are listed too (`division-by-zero`, `zero-division`, `divide-by-zero`,
+    `no order has status completed`, `no order is completed`, `no orders are completed`,
+    `every order is pending`, `all orders are pending`, `all orders cancelled`, `count is zero`,
+    `is zero`) after a correctness review showed three correct findings scoring as `other`. No planted term appears in any bait pattern, so a planted finding cannot
     be scored as bait and a bait finding needs one of the division or trigger phrases to be scored
     as planted.
   - naming — `single-letter`, `variable name`, `naming`, `non-descriptive`, `vague name`,
