@@ -153,8 +153,8 @@ Conditions the tool fixes, identical in both arms:
   `--max-total-usd` (default 20) stops starting new calls once the calls already recorded in
   `<dir>/runs/` plus this invocation have spent that much, so the cap also holds across resumed runs.
 - **Working directory** — each call runs in a fresh, empty temporary directory holding only a copy
-  of the arm's `rules/` and the fixture's `package.md` (the diff, or for a task fixture its brief,
-  implementer report and a package note). No `truth.*` file reaches a prompt or that directory.
+  of the arm's `rules/` and the fixture's `package.md` (the diff); for a task fixture, `brief.md`,
+  `report.md` and a `package.md` note. No `truth.*` file reaches a prompt or that directory.
 - **Prompts from each revision** — the tool extracts `rules`, `skills`, `agents` and
   `scripts/render_skill_prompt.py` of each revision with `git archive` and runs that arm's own
   renderer inside that arm's tree, so the base arm never sees head text. Finder, intent and audit
@@ -169,8 +169,8 @@ Records and report:
   `<dir>` is refused; use another directory.
 - `<dir>/runs/<arm>__<kind>__<fixture>__<angle>__a<attempt>.json` is one call's record: reply text,
   the files it Read, permission denials, cost, token usage, elapsed time and every attempt made.
-- `report` prints, per arm, the call count, failed calls, how many finished calls ended with a
-  parseable JSON block, cost and output tokens, how often each kind of call Read `--watch-path`, and
+- `report` prints, per arm, the call count, failed calls, how many finished calls (finder, intent and
+  audit calls) ended with a parseable JSON block, cost and output tokens, how often each kind of call Read `--watch-path`, and
   any permission denials. It then writes `<dir>/result-<arm>.json` in the scripted runner's format
   and scores attempt-1 review-chain records with `scripts/score_review_chain_eval.py`'s scorer
   (core and bonus catches, false positives, other, errored, unparseable), and labels each task
@@ -189,7 +189,9 @@ Honesty rules the tool enforces:
 - **Failed calls are counted apart from model outcomes.** A call that timed out, exited non-zero or
   hit an internal error is recorded with its `rc` and still counts toward cost; `report` lists it as
   a failed call and excludes that fixture for that arm from the score instead of scoring a miss.
-  `run` exits 1 when any call failed with an error.
+  `run` exits 1 only when a call hit an internal error (`rc: "error"`) or a record could not be
+  written; a timeout or a non-zero exit is recorded and counted as a failed call in `report`, but
+  does not change `run`'s exit code.
 
 Cost: in the first run a call cost about $0.05 to $0.11, and 116 calls cost about $10.9. A first
 smoke test showed what the fixed conditions prevent: one call from a normal project directory
@@ -207,7 +209,7 @@ Coupling and limits:
 - The total cap is checked before each call starts, so calls already in flight can exceed it by up
   to `--workers` (default 4) x `--max-call-usd`.
 
-First use: `specs/review-policy/runtime-eval.md` (the review-policy A/B; the link resolves once
+First use: [specs/review-policy/runtime-eval.md](../../../specs/review-policy/runtime-eval.md) (the review-policy A/B; the link resolves once
 PR #288 merges).
 
 ## Results
