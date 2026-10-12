@@ -191,9 +191,10 @@ def call_claude(claude: str, flags: list[str], prompt: str, cwd: str, timeout: f
                     reads.append((block.get("input") or {}).get("file_path", ""))
         elif event.get("type") == "result":
             result = event
+    denials = [d.get("tool_input") for d in result.get("permission_denials") or [] if isinstance(d, dict)]
     return {"rc": proc.returncode, "elapsed": round(time.monotonic() - start, 1),
             "text": result.get("result") or "", "reads": reads,
-            "denials": [(d.get("tool_input") or {}).get("file_path", "") for d in result.get("permission_denials") or []],
+            "denials": [t.get("file_path", "") if isinstance(t, dict) else "" for t in denials],
             "cost": result.get("total_cost_usd") or 0.0, "usage": result.get("usage") or {},
             "turns": result.get("num_turns"), "error": result.get("is_error"), "stderr": proc.stderr.strip()[-300:]}
 
@@ -251,6 +252,33 @@ def write_meta(out: Path, meta: dict) -> None:
     path.write_text(json.dumps(meta, indent=1) + "\n")
 
 
+def write_record(path: Path, record: dict) -> bool:
+    """Publish a record whole or not at all, never replacing one: False when `path` already exists.
+
+    The text goes to a temporary file beside it first and is published with os.link, which fails if the final
+    name exists, so a crash mid-write can leave only a `.tmp` file (ignored by readers) and never a partial record.
+    """
+    tmp = path.with_name(f".{path.stem}.{os.getpid()}.{threading.get_ident()}.tmp")
+    try:
+        tmp.write_text(json.dumps(record, indent=1), encoding="utf-8")
+        os.link(tmp, path)
+        return True
+    except FileExistsError:
+        return False
+    finally:
+        tmp.unlink(missing_ok=True)
+
+
+def recorded_cost(runs: Path) -> float:
+    total = 0.0
+    for path in runs.glob("*.json"):
+        try:
+            total += float(json.loads(path.read_text()).get("cost") or 0.0)
+        except (OSError, ValueError, TypeError, AttributeError):
+            continue
+    return total
+
+
 def cmd_run(args) -> int:
     repo = (args.repo or toplevel()).resolve()
     args.review_fixtures = args.review_fixtures or repo / "evals/skills/review-chain/fixtures"
@@ -275,9 +303,33 @@ def cmd_run(args) -> int:
                  for arm, kind, fixture, angle in jobs]
         runs.mkdir(parents=True, exist_ok=True)
         write_meta(out, {"base_rev": revs["base"], "head_rev": revs["head"], "model": args.model,
-                         "effort": args.effort, "claude_flags": flags})
+                         "effort": args.effort, "claude_flags": flags, "watch_path": args.watch_path})
         lock = threading.Lock()
-        state = {"spent": 0.0, "ran": 0, "recorded": 0, "capped": 0}
+        # One cap across resumed runs: what the recorded calls already cost counts against it.
+        state = {"spent": recorded_cost(runs), "ran": 0, "recorded": 0, "capped": 0, "failed": 0}
+
+        def capped() -> bool:
+            with lock:
+                return state["spent"] >= args.max_total_usd
+
+        def calls(arm, prompt, files) -> list[dict]:
+            cwd = tempfile.mkdtemp(prefix="review-prompt-eval-call-")
+            try:
+                shutil.copytree(trees[arm] / "rules", Path(cwd) / "rules")
+                for fname, content in files.items():
+                    (Path(cwd) / fname).write_text(content, encoding="utf-8")
+                results = []
+                for _ in range(2):
+                    if results and capped():
+                        break  # the cap is re-checked before a retry
+                    results.append(call_claude(args.claude, flags, prompt, cwd))
+                    with lock:
+                        state["spent"] += results[-1]["cost"]
+                    if results[-1]["text"] or results[-1]["rc"] == 0:
+                        break  # only a call that failed to run at all (rc != 0, no text) is retried, once
+                return results
+            finally:
+                shutil.rmtree(cwd, ignore_errors=True)
 
         def run_job(item):
             arm, kind, fixture, angle, prompt, files = item
@@ -288,47 +340,49 @@ def cmd_run(args) -> int:
                     state["recorded"] += 1
                 print(f"{name}: already recorded; not rerun", flush=True)
                 return
-            with lock:
-                if state["spent"] >= args.max_total_usd:
+            if capped():
+                with lock:
                     state["capped"] += 1
-                    print(f"{name}: budget cap reached (${state['spent']:.2f} of ${args.max_total_usd:.2f}); not run",
-                          flush=True)
-                    return
-            cwd = tempfile.mkdtemp(prefix="review-prompt-eval-call-")
+                print(f"{name}: budget cap reached (${state['spent']:.2f} of ${args.max_total_usd:.2f}); not run",
+                      flush=True)
+                return
             try:
-                shutil.copytree(trees[arm] / "rules", Path(cwd) / "rules")
-                for fname, content in files.items():
-                    (Path(cwd) / fname).write_text(content, encoding="utf-8")
-                attempts = []
-                for _ in range(2):
-                    result = call_claude(args.claude, flags, prompt, cwd)
-                    attempts.append({k: v for k, v in result.items() if k != "text"} | {"chars": len(result["text"])})
-                    with lock:
-                        state["spent"] += result["cost"]
-                    if result["text"] or result["rc"] == 0:
-                        break  # only a call that failed to run at all (rc != 0, no text) is retried, once
-            finally:
-                shutil.rmtree(cwd, ignore_errors=True)
+                results = calls(arm, prompt, files)
+            except Exception as exc:  # any other failure becomes a recorded failed call, never a traceback
+                results = [{"rc": "error", "reason": f"{type(exc).__name__}: {exc}"[:300], "elapsed": 0.0, "text": "",
+                            "reads": [], "denials": [], "cost": 0.0, "usage": {}}]
+            result = results[-1]
             record = {"job": {"arm": arm, "kind": kind, "fixture": fixture, "angle": angle, "attempt": args.attempt},
-                      "prompt_words": len(prompt.split()), "attempts": attempts,
-                      **result, "cost": sum(a["cost"] for a in attempts)}
-            try:
-                with open(path, "x", encoding="utf-8") as handle:
-                    json.dump(record, handle, indent=1)
-            except FileExistsError:
+                      "prompt_words": len(prompt.split()),
+                      "attempts": [{k: v for k, v in r.items() if k != "text"} | {"chars": len(r["text"])} for r in results],
+                      **result, "cost": sum(r["cost"] for r in results)}
+            if not write_record(path, record):
                 print(f"{name}: recorded concurrently by another run; this result discarded", flush=True)
                 return
             with lock:
                 state["ran"] += 1
+                state["failed"] += result["rc"] == "error"
                 spent = state["spent"]
             print(f"{name}: rc={result['rc']} {result['elapsed']}s ${record['cost']:.3f} reads={len(result['reads'])} "
-                  f"total=${spent:.2f}", flush=True)
+                  f"total=${spent:.2f}" + (f" ({result['reason']})" if result["rc"] == "error" else ""), flush=True)
 
-        print(f"{len(built)} calls planned, workers={args.workers}, cap=${args.max_total_usd:.2f}", flush=True)
+        def safe_job(item):
+            try:
+                run_job(item)
+            except Exception as exc:  # e.g. the record itself could not be written
+                with lock:
+                    state["failed"] += 1
+                print(f"{item[0]}__{item[1]}__{item[2]}__{item[3]}: not recorded ({type(exc).__name__}: {exc})",
+                      flush=True)
+
+        print(f"{len(built)} calls planned, workers={args.workers}, cap=${args.max_total_usd:.2f} "
+              f"(${state['spent']:.2f} already recorded)", flush=True)
         with ThreadPoolExecutor(args.workers) as pool:
-            list(pool.map(run_job, built))
+            list(pool.map(safe_job, built))
     print(f"done: {state['ran']} run, {state['recorded']} already recorded, {state['capped']} not run (budget cap); "
           f"spent ${state['spent']:.2f}", flush=True)
+    if state["failed"]:
+        raise EvalError(f"{state['failed']} call(s) failed with an error (rc \"error\" in their records under {runs})")
     return 0
 
 
@@ -372,7 +426,7 @@ def report_calls(by_arm: dict, watch: str) -> None:
             sub = [r for r in items if r["job"]["kind"] == kind]
             if sub:
                 print(f"  read {watch} - {kind}: {sum(watch_hit(r, watch) for r in sub)}/{len(sub)}")
-        paths = sorted({p for r in denied for p in r["denials"]})
+        paths = sorted({p for r in denied for p in r["denials"] if p})
         print(f"  permission denials: {len(denied)} call(s)" + (f" ({', '.join(paths)})" if paths else ""))
 
 
@@ -458,7 +512,7 @@ def cmd_report(args) -> int:
         root = toplevel()
         review_fixtures = review_fixtures or root / "evals/skills/review-chain/fixtures"
         task_fixtures = task_fixtures or root / "evals/skills/task-review/fixtures"
-    report_calls(by_arm, args.watch_path)
+    report_calls(by_arm, args.watch_path or meta.get("watch_path") or "rules/review-policy.md")
     if kinds - {"task"}:
         report_review_chain(out, by_arm, review_fixtures, meta)
     if "task" in kinds:
@@ -483,14 +537,16 @@ def main() -> int:
     run.add_argument("--workers", type=int, default=4)
     run.add_argument("--max-call-usd", type=float, default=1.5, help="--max-budget-usd passed to each call")
     run.add_argument("--max-total-usd", type=float, default=20.0,
-                     help="stop starting new calls once this invocation has spent this much")
+                     help="stop starting new calls once the calls recorded in OUT/runs plus this invocation have "
+                          "spent this much; calls already in flight can exceed it by up to workers x --max-call-usd")
+    run.add_argument("--watch-path", default="rules/review-policy.md",
+                     help="path whose Reads `report` counts; stored in meta.json (default: %(default)s)")
     rep = sub.add_parser("report", help="summarize and score the recorded calls")
     rep.add_argument("--out", type=Path, required=True)
+    rep.add_argument("--watch-path", help="count Reads of this path (default: the value stored in meta.json)")
     for p in (run, rep):
         p.add_argument("--review-fixtures", type=Path, help="default: evals/skills/review-chain/fixtures")
         p.add_argument("--task-fixtures", type=Path, help="default: evals/skills/task-review/fixtures")
-        p.add_argument("--watch-path", default="rules/review-policy.md",
-                       help="report the share of calls that Read this path (default: %(default)s)")
     args = parser.parse_args()
     try:
         if args.command == "run":

@@ -20,22 +20,29 @@ cfg = json.loads((here / "stub.json").read_text())
 files = {{str(p): p.read_text() for p in Path(".").rglob("*") if p.is_file()}}
 with open(here / "calls.jsonl", "a") as log:
     log.write(json.dumps({{"argv": sys.argv[1:], "cwd": os.getcwd(), "files": files}}) + "\\n")
+if cfg.get("bad_utf8"):
+    sys.stdout.buffer.write(b"\\xff\\xfe not utf-8\\n")
+    sys.exit(0)
+if cfg.get("fail_first") and not (here / "failed-once").exists():  # tests using it run with --workers 1
+    (here / "failed-once").write_text("")
+    print(json.dumps({{"type": "result", "result": "", "total_cost_usd": cfg["fail_cost"]}}))
+    sys.exit(1)
 print(json.dumps({{"type": "system"}}))
 print(json.dumps({{"type": "assistant", "message": {{"content": [
     {{"type": "tool_use", "name": "Read", "input": {{"file_path": os.path.join(os.getcwd(), cfg["read"])}}}}]}}}}))
 print(json.dumps({{"type": "result", "result": cfg["reply"], "total_cost_usd": cfg["cost"], "num_turns": 2,
     "is_error": False, "usage": {{"input_tokens": 10, "output_tokens": 7}},
-    "permission_denials": [{{"tool_input": {{"file_path": p}}}} for p in cfg.get("deny", [])]}}))
+    "permission_denials": cfg.get("raw_denials") or [{{"tool_input": {{"file_path": p}}}} for p in cfg.get("deny", [])]}}))
 """
 
 REPLY = ("Review done.\n```json\n" + json.dumps([{"oracle": "correctness", "class": "bug", "file": "app/stats.py",
          "line": 3, "confidence": 90, "summary": "count_active does not filter deleted rows"}]) + "\n```\nspec_verdict: pass\n")
 
 
-def make_stub(tmp_path: Path, reply=REPLY, cost=0.01, read="rules/review-policy.md", deny=()):
+def make_stub(tmp_path: Path, reply=REPLY, cost=0.01, read="rules/review-policy.md", deny=(), **extra):
     here = tmp_path / "stub"
     here.mkdir()
-    (here / "stub.json").write_text(json.dumps({"reply": reply, "cost": cost, "read": read, "deny": list(deny)}))
+    (here / "stub.json").write_text(json.dumps({"reply": reply, "cost": cost, "read": read, "deny": list(deny), **extra}))
     stub = here / "claude"
     stub.write_text(STUB.format(python=sys.executable, here=str(here)))
     stub.chmod(0o755)
@@ -187,6 +194,10 @@ def test_budget_cap_stops_new_calls(tmp_path):
     assert len(calls(log)) == 1
     assert len(list((tmp_path / "out" / "runs").iterdir())) == 1
     assert "budget cap reached" in proc.stdout
+    # a resumed run shares the cap: the recorded call's cost already exceeds it, so nothing new runs
+    proc = run(tmp_path, stub, "--kinds", "intent", "--workers", "1", "--max-total-usd", "1", **revs)
+    assert proc.returncode == 0, proc.stderr
+    assert len(calls(log)) == 1 and "budget cap reached" in proc.stdout
 
 
 def test_meta_mismatch_is_refused(tmp_path):
@@ -238,12 +249,97 @@ def test_unparseable_reply_does_not_stop_the_run(tmp_path):
 
 
 def test_permission_denial_is_reported(tmp_path):
-    revs, stub, _ = setup(tmp_path, deny=["/etc/passwd"])
-    assert run(tmp_path, stub, "--kinds", "task", **revs).returncode == 0
+    # malformed entries (not an object, or a tool_input that is not an object) are tolerated
+    revs, stub, _ = setup(tmp_path, raw_denials=["junk", {"tool_input": "junk"}, {"tool_input": {"file_path": "/etc/passwd"}}])
+    proc = run(tmp_path, stub, "--kinds", "task", **revs)
+    assert proc.returncode == 0, proc.stderr
     rep = report(tmp_path)
     assert rep.returncode == 0, rep.stderr
     assert "permission denials: 1 call(s)" in rep.stdout and "/etc/passwd" in rep.stdout
     assert "core catches" not in rep.stdout  # a task-only directory has no review-chain section
+
+
+class Crash(BaseException):
+    """Stands in for the process dying: not an Exception, so nothing in the tool converts it."""
+
+
+def test_crash_mid_write_leaves_no_partial_record(tmp_path, monkeypatch):
+    import run_review_prompt_eval as tool
+    revs, stub, log = setup(tmp_path)
+    real_link = tool.os.link
+
+    def crashing_link(src, dst):
+        if Path(dst).name.startswith("head__intent__fx"):
+            raise Crash()
+        return real_link(src, dst)
+
+    monkeypatch.setattr(tool.os, "link", crashing_link)
+    monkeypatch.setattr(sys, "argv", [TOOL, "run", "--repo", str(revs["repo"]), "--base-rev", revs["base"],
+                                      "--head-rev", revs["head"], "--out", str(tmp_path / "out"),
+                                      "--review-fixtures", str(tmp_path / "review-fixtures"), "--task-fixtures",
+                                      str(tmp_path / "task-fixtures"), "--claude", str(stub), "--kinds", "intent",
+                                      "--only-fixture", "fx", "--workers", "1"])
+    try:
+        tool.main()
+    except Crash:
+        pass
+    else:
+        raise AssertionError("the simulated crash did not happen")
+    monkeypatch.setattr(tool.os, "link", real_link)
+    runs = tmp_path / "out" / "runs"
+    assert sorted(p.name for p in runs.iterdir()) == ["base__intent__fx__-__a1.json"]
+    before = len(calls(log))
+    proc = run(tmp_path, stub, "--kinds", "intent", "--only-fixture", "fx", "--workers", "1", **revs)
+    assert proc.returncode == 0, proc.stderr
+    assert len(calls(log)) == before + 1
+    assert json.loads((runs / "head__intent__fx__-__a1.json").read_text())["rc"] == 0
+
+
+def test_job_exception_becomes_a_recorded_failed_call(tmp_path):
+    revs, stub, log = setup(tmp_path, bad_utf8=True)
+    proc = run(tmp_path, stub, "--kinds", "task", **revs)
+    assert proc.returncode == 1
+    assert proc.stderr.startswith("review-prompt-eval: 2 call(s) failed") and "Traceback" not in proc.stderr
+    assert len(calls(log)) == 2  # not retried
+    for arm in ("base", "head"):
+        record = json.loads((tmp_path / "out" / "runs" / f"{arm}__task__tk__-__a1.json").read_text())
+        assert record["rc"] == "error" and "UnicodeDecodeError" in record["reason"] and len(record["attempts"]) == 1
+
+
+def test_a_call_that_failed_to_run_is_retried_once(tmp_path):
+    revs, stub, log = setup(tmp_path, fail_first=True, fail_cost=0.02)
+    proc = run(tmp_path, stub, "--kinds", "task", "--workers", "1", **revs)
+    assert proc.returncode == 0, proc.stderr
+    assert len(calls(log)) == 3  # base: failed + one retry; head: first-call success, never retried
+    runs = tmp_path / "out" / "runs"
+    base = json.loads((runs / "base__task__tk__-__a1.json").read_text())
+    head = json.loads((runs / "head__task__tk__-__a1.json").read_text())
+    assert [a["rc"] for a in base["attempts"]] == [1, 0] and base["rc"] == 0 and base["text"] == REPLY
+    assert abs(base["cost"] - 0.03) < 1e-9
+    assert len(head["attempts"]) == 1 and head["cost"] == 0.01
+
+
+def test_retry_respects_the_total_cap(tmp_path):
+    revs, stub, log = setup(tmp_path, fail_first=True, fail_cost=0.02)
+    proc = run(tmp_path, stub, "--kinds", "task", "--workers", "1", "--max-total-usd", "0.02", **revs)
+    assert proc.returncode == 0, proc.stderr
+    assert len(calls(log)) == 1
+    base = json.loads((tmp_path / "out" / "runs" / "base__task__tk__-__a1.json").read_text())
+    assert len(base["attempts"]) == 1 and base["rc"] == 1
+
+
+def test_watch_path_is_stored_in_meta(tmp_path):
+    revs, stub, _ = setup(tmp_path)
+    assert run(tmp_path, stub, "--kinds", "task", "--watch-path", "rules/other.md", **revs).returncode == 0
+    assert json.loads((tmp_path / "out" / "meta.json").read_text())["watch_path"] == "rules/other.md"
+    assert run(tmp_path, stub, "--kinds", "task", "--watch-path", "rules/other.md", **revs).returncode == 0
+    refused = run(tmp_path, stub, "--kinds", "task", **revs)
+    assert refused.returncode == 1 and "watch_path" in refused.stderr
+    assert "read rules/other.md - task: 0/1" in report(tmp_path).stdout
+    override = subprocess.run([sys.executable, TOOL, "report", "--out", str(tmp_path / "out"), "--task-fixtures",
+                               str(tmp_path / "task-fixtures"), "--watch-path", "rules/review-policy.md"],
+                              capture_output=True, text=True, cwd=tmp_path)
+    assert "read rules/review-policy.md - task: 1/1" in override.stdout, override.stderr
 
 
 def test_real_prompts_build_from_this_repo(tmp_path):
