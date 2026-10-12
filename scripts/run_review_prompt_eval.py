@@ -169,7 +169,7 @@ def claude_flags(args) -> list[str]:
 def call_claude(claude: str, flags: list[str], prompt: str, cwd: str, timeout: float = 900.0) -> dict:
     start = time.monotonic()
     try:
-        proc = subprocess.run([claude, "-p", prompt, *flags], cwd=cwd, text=True, capture_output=True,
+        proc = subprocess.run([claude, "-p", prompt, *flags], cwd=cwd, capture_output=True,
                               timeout=timeout, check=False)
     except subprocess.TimeoutExpired:
         return {"rc": "timeout", "elapsed": round(time.monotonic() - start, 1), "text": "", "reads": [],
@@ -177,8 +177,11 @@ def call_claude(claude: str, flags: list[str], prompt: str, cwd: str, timeout: f
     except OSError as exc:
         return {"rc": "not-run", "elapsed": 0.0, "text": "", "reads": [], "denials": [], "cost": 0.0, "usage": {},
                 "stderr": str(exc)}
+    # Decoded leniently: the call already ran and was billed, so a stray invalid byte must not lose its cost.
+    stdout = proc.stdout.decode("utf-8", errors="replace")
+    stderr = proc.stderr.decode("utf-8", errors="replace")
     reads, result = [], {}
-    for line in proc.stdout.splitlines():
+    for line in stdout.splitlines():
         try:
             event = json.loads(line)
         except ValueError:
@@ -196,7 +199,7 @@ def call_claude(claude: str, flags: list[str], prompt: str, cwd: str, timeout: f
             "text": result.get("result") or "", "reads": reads,
             "denials": [t.get("file_path", "") if isinstance(t, dict) else "" for t in denials],
             "cost": result.get("total_cost_usd") or 0.0, "usage": result.get("usage") or {},
-            "turns": result.get("num_turns"), "error": result.get("is_error"), "stderr": proc.stderr.strip()[-300:]}
+            "turns": result.get("num_turns"), "error": result.get("is_error"), "stderr": stderr.strip()[-300:]}
 
 
 # ---- run ----
@@ -312,13 +315,13 @@ def cmd_run(args) -> int:
             with lock:
                 return state["spent"] >= args.max_total_usd
 
-        def calls(arm, prompt, files) -> list[dict]:
+        def calls(arm, prompt, files, results: list[dict]) -> None:
+            """Append each finished attempt to the caller's `results`, so an exception never loses a paid one."""
             cwd = tempfile.mkdtemp(prefix="review-prompt-eval-call-")
             try:
                 shutil.copytree(trees[arm] / "rules", Path(cwd) / "rules")
                 for fname, content in files.items():
                     (Path(cwd) / fname).write_text(content, encoding="utf-8")
-                results = []
                 for _ in range(2):
                     if results and capped():
                         break  # the cap is re-checked before a retry
@@ -327,7 +330,6 @@ def cmd_run(args) -> int:
                         state["spent"] += results[-1]["cost"]
                     if results[-1]["text"] or results[-1]["rc"] == 0:
                         break  # only a call that failed to run at all (rc != 0, no text) is retried, once
-                return results
             finally:
                 shutil.rmtree(cwd, ignore_errors=True)
 
@@ -346,11 +348,12 @@ def cmd_run(args) -> int:
                 print(f"{name}: budget cap reached (${state['spent']:.2f} of ${args.max_total_usd:.2f}); not run",
                       flush=True)
                 return
+            results: list[dict] = []
             try:
-                results = calls(arm, prompt, files)
+                calls(arm, prompt, files, results)
             except Exception as exc:  # any other failure becomes a recorded failed call, never a traceback
-                results = [{"rc": "error", "reason": f"{type(exc).__name__}: {exc}"[:300], "elapsed": 0.0, "text": "",
-                            "reads": [], "denials": [], "cost": 0.0, "usage": {}}]
+                results.append({"rc": "error", "reason": f"{type(exc).__name__}: {exc}"[:300], "elapsed": 0.0,
+                                "text": "", "reads": [], "denials": [], "cost": 0.0, "usage": {}})
             result = results[-1]
             record = {"job": {"arm": arm, "kind": kind, "fixture": fixture, "angle": angle, "attempt": args.attempt},
                       "prompt_words": len(prompt.split()),
@@ -413,15 +416,20 @@ def watch_hit(record: dict, watch: str) -> bool:
     return any(p == watch or p.endswith("/" + watch) for p in record.get("reads") or [])
 
 
+def failed(record: dict) -> bool:
+    """A call that did not finish cleanly: any rc other than 0 ("error", "timeout", a non-zero exit)."""
+    return record.get("rc") != 0
+
+
 def report_calls(by_arm: dict, watch: str) -> None:
     for arm, items in by_arm.items():
-        json_calls = [r for r in items if r["job"]["kind"] != "task"]
+        json_calls = [r for r in items if r["job"]["kind"] != "task" and not failed(r)]
         ok = sum(1 for r in json_calls if parseable(r.get("text") or "") is not None)
         denied = [r for r in items if r.get("denials")]
         cost = sum(r.get("cost") or 0.0 for r in items)
         tokens = sum(int((r.get("usage") or {}).get("output_tokens") or 0) for r in items)
-        print(f"== {arm}: calls {len(items)}; parseable JSON block: {ok}/{len(json_calls)}; cost ${cost:.2f}; "
-              f"output tokens {tokens}")
+        print(f"== {arm}: calls {len(items)}; failed calls {sum(map(failed, items))}; "
+              f"parseable JSON block (finished calls): {ok}/{len(json_calls)}; cost ${cost:.2f}; output tokens {tokens}")
         for kind in KINDS:
             sub = [r for r in items if r["job"]["kind"] == kind]
             if sub:
@@ -472,6 +480,8 @@ def report_review_chain(out: Path, by_arm: dict, fixtures: Path, meta: dict) -> 
         print(f"== {arm}: review-chain score (attempt 1, {path})")
         for line in lines + [f"warning: {w}" for w in warnings]:
             print(f"  {line}")
+        excluded = sorted(name for name, case in cases.items() if case["rc"] != 0)
+        print(f"  excluded because a call failed: {', '.join(excluded) or 'none'}")
         print(f"  core catches {totals['core_caught']}/{totals['core']}; bonus catches {totals['bonus_caught']}; "
               f"false positives {totals['fp']} (>=75: {totals['fp_at_threshold']}); other {totals['other']}; "
               f"errored {totals['errored']}; unparseable {totals['unparseable']}")
@@ -493,8 +503,9 @@ def report_tasks(by_arm: dict, fixtures: Path) -> None:
                             key=lambda r: r["job"]["attempt"]):
                 seen = task_scorer.labels([r.get("text") or ""])
                 holds = required <= seen and not forbidden & seen
+                verdict = f"error (rc={r.get('rc')})" if failed(r) else ("yes" if holds else "no")
                 print(f"  {name} {arm} a{r['job']['attempt']}: labels [{', '.join(sorted(seen))}]; "
-                      f"requirements hold: {'yes' if holds else 'no'}")
+                      f"requirements hold: {verdict}")
 
 
 def cmd_report(args) -> int:
@@ -526,7 +537,9 @@ def main() -> int:
     run = sub.add_parser("run", help="run the A/B calls (each call recorded once, never rerun)")
     run.add_argument("--base-rev", required=True)
     run.add_argument("--head-rev", required=True)
-    run.add_argument("--out", type=Path, required=True)
+    run.add_argument("--out", type=Path, required=True,
+                     help="results directory; must be on a filesystem that supports hard links "
+                          "(each record is published atomically with os.link)")
     run.add_argument("--repo", type=Path, help="git repository holding both revisions (default: current toplevel)")
     run.add_argument("--kinds", default="finder,intent,audit,task", help="comma-separated subset of %(default)s")
     run.add_argument("--only-fixture", action="append", default=[], metavar="NAME", help="repeatable")
@@ -541,7 +554,11 @@ def main() -> int:
                           "spent this much; calls already in flight can exceed it by up to workers x --max-call-usd")
     run.add_argument("--watch-path", default="rules/review-policy.md",
                      help="path whose Reads `report` counts; stored in meta.json (default: %(default)s)")
-    rep = sub.add_parser("report", help="summarize and score the recorded calls")
+    rep = sub.add_parser("report", help="summarize and score the recorded calls; a review-chain fixture with any "
+                                        "failed call is excluded for that arm by the scorer",
+                         description="Summarize and score the recorded calls. Failed calls (rc other than 0) are "
+                                     "counted separately; a review-chain fixture with any failed call is excluded "
+                                     "for that arm by the scorer.")
     rep.add_argument("--out", type=Path, required=True)
     rep.add_argument("--watch-path", help="count Reads of this path (default: the value stored in meta.json)")
     for p in (run, rep):

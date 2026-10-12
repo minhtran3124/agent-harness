@@ -20,9 +20,12 @@ cfg = json.loads((here / "stub.json").read_text())
 files = {{str(p): p.read_text() for p in Path(".").rglob("*") if p.is_file()}}
 with open(here / "calls.jsonl", "a") as log:
     log.write(json.dumps({{"argv": sys.argv[1:], "cwd": os.getcwd(), "files": files}}) + "\\n")
+prompt = sys.argv[sys.argv.index("-p") + 1]
+if any(all(s in prompt for s in group) for group in cfg.get("fail_when", [])):
+    sys.exit(1)  # failed to run: non-zero exit, no output
 if cfg.get("bad_utf8"):
     sys.stdout.buffer.write(b"\\xff\\xfe not utf-8\\n")
-    sys.exit(0)
+    sys.stdout.flush()
 if cfg.get("fail_first") and not (here / "failed-once").exists():  # tests using it run with --workers 1
     (here / "failed-once").write_text("")
     print(json.dumps({{"type": "result", "result": "", "total_cost_usd": cfg["fail_cost"]}}))
@@ -104,7 +107,7 @@ DIFF = ("diff --git a/app/stats.py b/app/stats.py\n--- a/app/stats.py\n+++ b/app
 def make_fixtures(tmp_path: Path):
     review, task = tmp_path / "review-fixtures", tmp_path / "task-fixtures"
     for name, oracle in (("fx", "correctness"), ("au", "context-propagation-audit")):
-        write(review / name / "intent.md", "Count active rows.\n")
+        write(review / name / "intent.md", f"Count active rows ({name}).\n")
         write(review / name / "diff.patch", DIFF)
         write(review / name / "truth.md", f"The planted defect: {SENTINEL}.\n")
         write(review / name / "truth.json", json.dumps({
@@ -221,7 +224,7 @@ def test_report_counts_watch_path_reads_and_writes_scorer_files(tmp_path):
     proc = report(tmp_path)
     assert proc.returncode == 0, proc.stderr
     assert "finder: 4/4" in proc.stdout and "task: 1/1" in proc.stdout
-    assert "parseable JSON block: 7/7" in proc.stdout
+    assert "parseable JSON block (finished calls): 7/7" in proc.stdout
     assert "fx [core]: CAUGHT" in proc.stdout
     assert "tk" in proc.stdout and "spec_pass" in proc.stdout and "requirements hold: yes" in proc.stdout
     for arm in ("base", "head"):
@@ -245,7 +248,7 @@ def test_unparseable_reply_does_not_stop_the_run(tmp_path):
     assert len(calls(log)) == 2 * (4 + 2)
     rep = report(tmp_path)
     assert rep.returncode == 0, rep.stderr
-    assert "parseable JSON block: 0/6" in rep.stdout and "UNPARSEABLE" in rep.stdout
+    assert "parseable JSON block (finished calls): 0/6" in rep.stdout and "UNPARSEABLE" in rep.stdout
 
 
 def test_permission_denial_is_reported(tmp_path):
@@ -295,15 +298,74 @@ def test_crash_mid_write_leaves_no_partial_record(tmp_path, monkeypatch):
     assert json.loads((runs / "head__intent__fx__-__a1.json").read_text())["rc"] == 0
 
 
-def test_job_exception_becomes_a_recorded_failed_call(tmp_path):
-    revs, stub, log = setup(tmp_path, bad_utf8=True)
-    proc = run(tmp_path, stub, "--kinds", "task", **revs)
-    assert proc.returncode == 1
-    assert proc.stderr.startswith("review-prompt-eval: 2 call(s) failed") and "Traceback" not in proc.stderr
-    assert len(calls(log)) == 2  # not retried
+def main_in_process(monkeypatch, tmp_path, revs, stub, *extra):
+    import run_review_prompt_eval as tool
+    monkeypatch.setattr(sys, "argv", [TOOL, "run", "--repo", str(revs["repo"]), "--base-rev", revs["base"],
+                                      "--head-rev", revs["head"], "--out", str(tmp_path / "out"),
+                                      "--review-fixtures", str(tmp_path / "review-fixtures"), "--task-fixtures",
+                                      str(tmp_path / "task-fixtures"), "--claude", str(stub), *extra])
+    return tool.main()
+
+
+def test_job_exception_becomes_a_recorded_failed_call(tmp_path, monkeypatch, capsys):
+    import run_review_prompt_eval as tool
+    revs, stub, log = setup(tmp_path)
+
+    def broken_copytree(*_args, **_kw):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(tool.shutil, "copytree", broken_copytree)
+    assert main_in_process(monkeypatch, tmp_path, revs, stub, "--kinds", "task") == 1
+    err = capsys.readouterr().err
+    assert err.startswith("review-prompt-eval: 2 call(s) failed") and "Traceback" not in err
+    assert not calls(log)
     for arm in ("base", "head"):
         record = json.loads((tmp_path / "out" / "runs" / f"{arm}__task__tk__-__a1.json").read_text())
-        assert record["rc"] == "error" and "UnicodeDecodeError" in record["reason"] and len(record["attempts"]) == 1
+        assert record["rc"] == "error" and "disk full" in record["reason"] and len(record["attempts"]) == 1
+
+
+def test_invalid_utf8_output_keeps_the_parsed_cost(tmp_path):
+    revs, stub, log = setup(tmp_path, bad_utf8=True, cost=0.07)
+    proc = run(tmp_path, stub, "--kinds", "task", **revs)
+    assert proc.returncode == 0, proc.stderr
+    assert len(calls(log)) == 2
+    record = json.loads((tmp_path / "out" / "runs" / "base__task__tk__-__a1.json").read_text())
+    assert record["rc"] == 0 and record["cost"] == 0.07 and record["text"] == REPLY
+
+
+def test_exception_during_retry_keeps_the_paid_first_attempt(tmp_path, monkeypatch, capsys):
+    import run_review_prompt_eval as tool
+    revs, stub, log = setup(tmp_path, fail_first=True, fail_cost=0.02)
+    real_call = tool.call_claude
+    seen = []
+
+    def call_then_break(*args, **kw):
+        seen.append(1)
+        if len(seen) == 2:
+            raise RuntimeError("retry broke")
+        return real_call(*args, **kw)
+
+    monkeypatch.setattr(tool, "call_claude", call_then_break)
+    assert main_in_process(monkeypatch, tmp_path, revs, stub, "--kinds", "task", "--workers", "1",
+                           "--only-fixture", "tk") == 1
+    capsys.readouterr()
+    base = json.loads((tmp_path / "out" / "runs" / "base__task__tk__-__a1.json").read_text())
+    assert base["rc"] == "error" and "retry broke" in base["reason"]
+    assert [a["rc"] for a in base["attempts"]] == [1, "error"] and abs(base["cost"] - 0.02) < 1e-9
+
+
+def test_report_separates_failed_calls(tmp_path):
+    # the intent call on fixture fx and the task call fail to run (both attempts) in both arms
+    revs, stub, _ = setup(tmp_path, fail_when=[["You are an intent reviewer", "Count active rows (fx)"],
+                                               ["Review the task."]])
+    assert run(tmp_path, stub, **revs).returncode == 0
+    rep = report(tmp_path)
+    assert rep.returncode == 0, rep.stderr
+    for arm in ("base", "head"):
+        assert f"== {arm}: calls 8; failed calls 2; parseable JSON block (finished calls): 6/6" in rep.stdout
+        assert f"tk {arm} a1: labels []; requirements hold: error (rc=1)" in rep.stdout
+    assert rep.stdout.count("excluded because a call failed: fx\n") == 2
+    assert "au [bonus]: CAUGHT" in rep.stdout
 
 
 def test_a_call_that_failed_to_run_is_retried_once(tmp_path):
