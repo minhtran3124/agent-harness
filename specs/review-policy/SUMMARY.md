@@ -241,10 +241,25 @@ found nothing. Six deduplicated locations; four scored independently (threshold 
   instead of the intended diagnostic (exit is still non-zero). `unmodified-line`, score 0,
   advisory.
 
+### Runtime Eval
+
+Added after the PR was opened, at the user's request. Method, criteria (written before the full run),
+results and limits: `specs/review-policy/runtime-eval.md`; per-call records:
+`specs/review-policy/runtime-eval-results.json`. A/B of the real prompts, base `33d6ed4` against head
+`f23e4ac`, `claude-opus-5-5` at medium effort, 116 first-run calls, about $10.9.
+
+All seven pre-registered criteria passed: core catches 5/5 in both arms; bonus 2/2 in both; false positives
+13 (base) against 12 (head), one at confidence ≥ 75 in each; parseable output 51/51 in both; the head arm Read
+the policy in 56 of 56 calls that were told to; task review 6/7 (base) against 7/7 (head) with `checked_against`
+present on 7/7 replies. Cost: +17% (one extra Read turn per call, replies about 11% longer). Correction: the
+design's claim that the task reviewer has no behavioral fixture was wrong (fixtures and scorer exist, only the
+runner ignores the real prompt); recorded in `runtime-eval.md`.
+
 ### Not auto-verified
 
-- That a fresh reviewer applies the policy it is told to Read — reached traceability (Read line and `CONTEXT_MATRIX` entry); not re-run because no behavioral eval runs the real review prompts (design D6).
-- That the rewrite keeps each reviewer's behavior — reached none (judgment): per-file meaning-equivalence review, not a re-run.
+- That a fresh reviewer applies the policy it is told to Read — reached truth for the covered contexts: in the runtime eval 56 of 56 head-arm finder, intent and task-reviewer calls Read `rules/review-policy.md` (`runtime-eval.md`). Not covered: the real `reviewer` / `task-reviewer` subagent environment and Codex contexts.
+- That the rewrite keeps each reviewer's behavior — reached truth for the fixtures the eval covers (5/5 core and 2/2 bonus catches, 6/7 → 7/7 task-review fixtures, one first run per cell) and none (judgment) elsewhere: per-file meaning-equivalence review. Not covered: variance, defect classes not seeded in the 7 + 7 fixtures, the scorer stage, controller routing, and the policy's own do-not-report effect (no bait fixture).
+- The runtime eval itself is not a repo Verify row: its driver lives in the session scratchpad (follow-up: promote it to `scripts/`), so its numbers are recorded in `runtime-eval.md` and `runtime-eval-results.json`, not re-runnable from the tree — reached provenance (answer-key scorers from the repo), not re-run.
 
 ### Rollback
 
