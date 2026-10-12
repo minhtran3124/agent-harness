@@ -179,7 +179,7 @@ Records and report:
 Honesty rules the tool enforces:
 
 - **First run only.** A call whose record exists is skipped with `already recorded; not rerun`; a
-  miss is never rerun. Only a call that failed to run at all (non-zero exit and no text) is retried,
+  miss is never rerun. Only a call that did not start or produced no result event is retried,
   once, inside the same record.
 - **Records are published atomically and never overwritten.** Each record is written to a
   temporary file and published with a hard link that fails if the name exists, so a crash leaves no

@@ -166,17 +166,20 @@ def claude_flags(args) -> list[str]:
             "--no-session-persistence"]
 
 
-def call_claude(claude: str, flags: list[str], prompt: str, cwd: str, timeout: float = 900.0) -> dict:
+def call_claude(claude: str, flags: list[str], prompt: str, cwd: str, max_call_usd: float,
+                timeout: float = 900.0) -> dict:
+    """One call. A call that started but sent no result event (a timeout or a crash) is assumed to have been
+    billed its per-call cap: `cost` is then --max-call-usd with `cost_estimated` true."""
     start = time.monotonic()
     try:
         proc = subprocess.run([claude, "-p", prompt, *flags], cwd=cwd, capture_output=True,
                               timeout=timeout, check=False)
     except subprocess.TimeoutExpired:
         return {"rc": "timeout", "elapsed": round(time.monotonic() - start, 1), "text": "", "reads": [],
-                "denials": [], "cost": 0.0, "usage": {}}
+                "denials": [], "cost": max_call_usd, "cost_estimated": True, "result_event": False, "usage": {}}
     except OSError as exc:
-        return {"rc": "not-run", "elapsed": 0.0, "text": "", "reads": [], "denials": [], "cost": 0.0, "usage": {},
-                "stderr": str(exc)}
+        return {"rc": "not-run", "elapsed": 0.0, "text": "", "reads": [], "denials": [], "cost": 0.0,
+                "result_event": False, "usage": {}, "stderr": str(exc)}
     # Decoded leniently: the call already ran and was billed, so a stray invalid byte must not lose its cost.
     stdout = proc.stdout.decode("utf-8", errors="replace")
     stderr = proc.stderr.decode("utf-8", errors="replace")
@@ -198,8 +201,16 @@ def call_claude(claude: str, flags: list[str], prompt: str, cwd: str, timeout: f
     return {"rc": proc.returncode, "elapsed": round(time.monotonic() - start, 1),
             "text": result.get("result") or "", "reads": reads,
             "denials": [t.get("file_path", "") if isinstance(t, dict) else "" for t in denials],
-            "cost": result.get("total_cost_usd") or 0.0, "usage": result.get("usage") or {},
+            "cost": (result.get("total_cost_usd") or 0.0) if result else max_call_usd,
+            "cost_estimated": not result, "result_event": bool(result), "usage": result.get("usage") or {},
             "turns": result.get("num_turns"), "error": result.get("is_error"), "stderr": stderr.strip()[-300:]}
+
+
+def retryable(attempt: dict) -> bool:
+    """Only a call that did not start, or exited non-zero with no result event (so it reported no cost), is
+    retried. A timeout is never retried, nor is a call with a result event: it ran and was billed."""
+    rc = attempt["rc"]
+    return rc == "not-run" or (isinstance(rc, int) and rc != 0 and not attempt.get("result_event"))
 
 
 # ---- run ----
@@ -292,6 +303,11 @@ def cmd_run(args) -> int:
         raise EvalError(f"--kinds must be a comma-separated subset of {','.join(KINDS)}")
     revs = {"base": git(repo, "rev-parse", "--verify", f"{args.base_rev}^{{commit}}").strip(),
             "head": git(repo, "rev-parse", "--verify", f"{args.head_rev}^{{commit}}").strip()}
+    # Calls run in a fresh temporary cwd, so a relative or missing --claude must be caught here, before any call.
+    found = shutil.which(args.claude)
+    if not found:
+        raise EvalError(f"--claude {args.claude}: not found or not executable")
+    args.claude = os.path.abspath(found)
     flags = claude_flags(args)
     out = args.out
     runs = out / "runs"
@@ -325,11 +341,11 @@ def cmd_run(args) -> int:
                 for _ in range(2):
                     if results and capped():
                         break  # the cap is re-checked before a retry
-                    results.append(call_claude(args.claude, flags, prompt, cwd))
+                    results.append(call_claude(args.claude, flags, prompt, cwd, max_call_usd=args.max_call_usd))
                     with lock:
                         state["spent"] += results[-1]["cost"]
-                    if results[-1]["text"] or results[-1]["rc"] == 0:
-                        break  # only a call that failed to run at all (rc != 0, no text) is retried, once
+                    if not retryable(results[-1]):
+                        break  # only a call that did not start or produced no result event is retried, once
             finally:
                 shutil.rmtree(cwd, ignore_errors=True)
 
@@ -354,11 +370,18 @@ def cmd_run(args) -> int:
             except Exception as exc:  # any other failure becomes a recorded failed call, never a traceback
                 results.append({"rc": "error", "reason": f"{type(exc).__name__}: {exc}"[:300], "elapsed": 0.0,
                                 "text": "", "reads": [], "denials": [], "cost": 0.0, "usage": {}})
+            if all(r["rc"] == "not-run" for r in results):
+                # Nothing started, so nothing was spent or learned: leave no record, so a rerun makes this call.
+                with lock:
+                    state["failed"] += 1
+                print(f"{name}: did not start ({results[-1].get('stderr', '')}); not recorded", flush=True)
+                return
             result = results[-1]
             record = {"job": {"arm": arm, "kind": kind, "fixture": fixture, "angle": angle, "attempt": args.attempt},
                       "prompt_words": len(prompt.split()),
                       "attempts": [{k: v for k, v in r.items() if k != "text"} | {"chars": len(r["text"])} for r in results],
-                      **result, "cost": sum(r["cost"] for r in results)}
+                      **result, "cost": sum(r["cost"] for r in results),
+                      "cost_estimated": any(r.get("cost_estimated") for r in results)}
             if not write_record(path, record):
                 print(f"{name}: recorded concurrently by another run; this result discarded", flush=True)
                 return
@@ -385,7 +408,8 @@ def cmd_run(args) -> int:
     print(f"done: {state['ran']} run, {state['recorded']} already recorded, {state['capped']} not run (budget cap); "
           f"spent ${state['spent']:.2f}", flush=True)
     if state["failed"]:
-        raise EvalError(f"{state['failed']} call(s) failed with an error (rc \"error\" in their records under {runs})")
+        raise EvalError(f"{state['failed']} call(s) failed (rc \"error\" records under {runs}, or calls that did "
+                        "not start and were left unrecorded)")
     return 0
 
 
@@ -427,9 +451,11 @@ def report_calls(by_arm: dict, watch: str) -> None:
         ok = sum(1 for r in json_calls if parseable(r.get("text") or "") is not None)
         denied = [r for r in items if r.get("denials")]
         cost = sum(r.get("cost") or 0.0 for r in items)
+        estimated = " (estimated)" if any(r.get("cost_estimated") for r in items) else ""
         tokens = sum(int((r.get("usage") or {}).get("output_tokens") or 0) for r in items)
         print(f"== {arm}: calls {len(items)}; failed calls {sum(map(failed, items))}; "
-              f"parseable JSON block (finished calls): {ok}/{len(json_calls)}; cost ${cost:.2f}; output tokens {tokens}")
+              f"parseable JSON block (finished calls): {ok}/{len(json_calls)}; cost ${cost:.2f}{estimated}; "
+              f"output tokens {tokens}")
         for kind in KINDS:
             sub = [r for r in items if r["job"]["kind"] == kind]
             if sub:
@@ -534,7 +560,11 @@ def cmd_report(args) -> int:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     sub = parser.add_subparsers(dest="command", required=True)
-    run = sub.add_parser("run", help="run the A/B calls (each call recorded once, never rerun)")
+    run = sub.add_parser("run", help="run the A/B calls (each call recorded once, never rerun)",
+                         description="Run the A/B calls. Each call is recorded once and never rerun; only a call that "
+                                     "did not start or produced no result event is retried, once. A call that "
+                                     "started but sent no result event (a timeout or a crash) is charged "
+                                     "--max-call-usd as an estimate.")
     run.add_argument("--base-rev", required=True)
     run.add_argument("--head-rev", required=True)
     run.add_argument("--out", type=Path, required=True,

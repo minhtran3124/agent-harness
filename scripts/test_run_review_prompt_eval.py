@@ -28,7 +28,12 @@ if cfg.get("bad_utf8"):
     sys.stdout.flush()
 if cfg.get("fail_first") and not (here / "failed-once").exists():  # tests using it run with --workers 1
     (here / "failed-once").write_text("")
-    print(json.dumps({{"type": "result", "result": "", "total_cost_usd": cfg["fail_cost"]}}))
+    sys.exit(1)  # non-zero exit, no result event
+if cfg.get("sleep"):
+    import time
+    time.sleep(cfg["sleep"])
+if cfg.get("error_result"):  # it ran and was billed, then stopped (for example its budget was exceeded)
+    print(json.dumps({{"type": "result", "result": "", "is_error": True, "total_cost_usd": cfg["error_result"]}}))
     sys.exit(1)
 print(json.dumps({{"type": "system"}}))
 print(json.dumps({{"type": "assistant", "message": {{"content": [
@@ -335,7 +340,7 @@ def test_invalid_utf8_output_keeps_the_parsed_cost(tmp_path):
 
 def test_exception_during_retry_keeps_the_paid_first_attempt(tmp_path, monkeypatch, capsys):
     import run_review_prompt_eval as tool
-    revs, stub, log = setup(tmp_path, fail_first=True, fail_cost=0.02)
+    revs, stub, log = setup(tmp_path, fail_first=True)
     real_call = tool.call_claude
     seen = []
 
@@ -347,7 +352,7 @@ def test_exception_during_retry_keeps_the_paid_first_attempt(tmp_path, monkeypat
 
     monkeypatch.setattr(tool, "call_claude", call_then_break)
     assert main_in_process(monkeypatch, tmp_path, revs, stub, "--kinds", "task", "--workers", "1",
-                           "--only-fixture", "tk") == 1
+                           "--max-call-usd", "0.02", "--only-fixture", "tk") == 1
     capsys.readouterr()
     base = json.loads((tmp_path / "out" / "runs" / "base__task__tk__-__a1.json").read_text())
     assert base["rc"] == "error" and "retry broke" in base["reason"]
@@ -369,8 +374,8 @@ def test_report_separates_failed_calls(tmp_path):
 
 
 def test_a_call_that_failed_to_run_is_retried_once(tmp_path):
-    revs, stub, log = setup(tmp_path, fail_first=True, fail_cost=0.02)
-    proc = run(tmp_path, stub, "--kinds", "task", "--workers", "1", **revs)
+    revs, stub, log = setup(tmp_path, fail_first=True)
+    proc = run(tmp_path, stub, "--kinds", "task", "--workers", "1", "--max-call-usd", "0.02", **revs)
     assert proc.returncode == 0, proc.stderr
     assert len(calls(log)) == 3  # base: failed + one retry; head: first-call success, never retried
     runs = tmp_path / "out" / "runs"
@@ -382,12 +387,65 @@ def test_a_call_that_failed_to_run_is_retried_once(tmp_path):
 
 
 def test_retry_respects_the_total_cap(tmp_path):
-    revs, stub, log = setup(tmp_path, fail_first=True, fail_cost=0.02)
-    proc = run(tmp_path, stub, "--kinds", "task", "--workers", "1", "--max-total-usd", "0.02", **revs)
+    revs, stub, log = setup(tmp_path, fail_first=True)
+    proc = run(tmp_path, stub, "--kinds", "task", "--workers", "1", "--max-call-usd", "0.02",
+               "--max-total-usd", "0.02", **revs)
     assert proc.returncode == 0, proc.stderr
     assert len(calls(log)) == 1
     base = json.loads((tmp_path / "out" / "runs" / "base__task__tk__-__a1.json").read_text())
     assert len(base["attempts"]) == 1 and base["rc"] == 1
+
+
+def test_timeout_is_charged_the_call_cap_and_not_retried(tmp_path, monkeypatch, capsys):
+    import functools
+    import run_review_prompt_eval as tool
+    revs, stub, log = setup(tmp_path, sleep=5)
+    monkeypatch.setattr(tool, "call_claude", functools.partial(tool.call_claude, timeout=0.5))
+    assert main_in_process(monkeypatch, tmp_path, revs, stub, "--kinds", "task", "--workers", "1",
+                           "--max-call-usd", "0.4", "--max-total-usd", "0.4") == 0
+    assert "budget cap reached" in capsys.readouterr().out
+    assert len(calls(log)) == 1  # not retried, and the estimated cost stops the head call
+    record = json.loads((tmp_path / "out" / "runs" / "base__task__tk__-__a1.json").read_text())
+    assert record["rc"] == "timeout" and record["cost"] == 0.4 and record["cost_estimated"] is True
+    assert [a["cost_estimated"] for a in record["attempts"]] == [True]
+    rep = report(tmp_path)
+    assert "cost $0.40 (estimated)" in rep.stdout, rep.stderr
+
+
+def test_a_billed_error_result_is_not_retried(tmp_path):
+    revs, stub, log = setup(tmp_path, error_result=0.3)
+    assert run(tmp_path, stub, "--kinds", "task", "--workers", "1", **revs).returncode == 0
+    assert len(calls(log)) == 2  # one per arm, no retry
+    record = json.loads((tmp_path / "out" / "runs" / "base__task__tk__-__a1.json").read_text())
+    assert record["rc"] == 1 and record["cost"] == 0.3 and len(record["attempts"]) == 1
+    assert record["cost_estimated"] is False
+
+
+def test_missing_claude_binary_fails_before_any_record(tmp_path):
+    revs, stub, log = setup(tmp_path)
+    proc = run(tmp_path, stub, "--claude", str(tmp_path / "no-such-claude"), **revs)
+    assert proc.returncode == 1 and proc.stderr.startswith("review-prompt-eval: --claude")
+    assert not (tmp_path / "out").exists() and not calls(log)
+
+
+def test_relative_claude_path_is_resolved(tmp_path):
+    revs, stub, log = setup(tmp_path)
+    proc = run(tmp_path, stub, "--kinds", "task", "--claude", "stub/claude", **revs)  # relative to cwd=tmp_path
+    assert proc.returncode == 0, proc.stderr
+    assert len(calls(log)) == 2
+
+
+def test_a_call_that_did_not_start_leaves_no_record_and_reruns(tmp_path):
+    revs, stub, log = setup(tmp_path)
+    good = stub.read_text()
+    stub.write_text("#!/nonexistent/interpreter\n")  # executable, but exec fails: the call does not start
+    proc = run(tmp_path, stub, "--kinds", "task", **revs)
+    assert proc.returncode == 1 and "2 call(s) failed" in proc.stderr
+    assert not list((tmp_path / "out" / "runs").iterdir())
+    stub.write_text(good)
+    proc = run(tmp_path, stub, "--kinds", "task", **revs)
+    assert proc.returncode == 0, proc.stderr
+    assert len(calls(log)) == 2 and len(list((tmp_path / "out" / "runs").iterdir())) == 2
 
 
 def test_watch_path_is_stored_in_meta(tmp_path):
