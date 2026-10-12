@@ -1,0 +1,92 @@
+{
+    "schema_version": 1,
+    "expected_oracle": "correctness",
+    "core": false,
+    "correctness_clean": false,
+    "planted": {
+        "file": "app/utils/pagination.py",
+        "match_any": [
+            "page_slice",
+            "start",
+            "page * per_page",
+            "offset",
+            "first page",
+            "page 1"
+        ],
+        "and_any": [
+            "off-by-one",
+            "off by one",
+            "page - 1",
+            "page-1",
+            "(page-1)",
+            "1-based",
+            "one-based",
+            "0-based",
+            "zero-based",
+            "skips the first",
+            "skip the first",
+            "skipping the first",
+            "first per_page items are never",
+            "returns the second page",
+            "returns page 2",
+            "one page ahead",
+            "one page too far",
+            "shifted by one page"
+        ]
+    },
+    "false_positives": [
+        {
+            "file": "uv.lock",
+            "match_any": [
+                "lockfile",
+                "lock file",
+                "uv.lock",
+                "hash",
+                "sha256",
+                "checksum",
+                "version",
+                "upgrade",
+                "upgraded",
+                "pinned",
+                "pinning",
+                "dependency",
+                "dependencies",
+                "supply chain",
+                "supply-chain",
+                "integrity",
+                "certifi",
+                "idna",
+                "generated"
+            ],
+            "and_any": []
+        },
+        {
+            "file": "specs/demo/PLAN.html",
+            "match_any": [
+                "xss",
+                "cross-site",
+                "innerhtml",
+                "inline script",
+                "<script",
+                "script tag",
+                "javascript",
+                "inline style",
+                "<style",
+                "content security policy",
+                "content-security-policy",
+                "sanitize",
+                "sanitise",
+                "sanitization",
+                "unescaped",
+                "escaping",
+                "escape",
+                "injection",
+                "timestamp",
+                "rendered",
+                "generated",
+                "html"
+            ],
+            "and_any": []
+        }
+    ]
+}

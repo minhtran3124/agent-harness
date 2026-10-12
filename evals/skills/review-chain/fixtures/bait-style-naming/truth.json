@@ -1,0 +1,120 @@
+{
+    "schema_version": 1,
+    "expected_oracle": "correctness",
+    "core": false,
+    "correctness_clean": false,
+    "planted": {
+        "file": "app/reports/sales.py",
+        "match_any": [
+            "average_order_value",
+            "completed",
+            "len(c)",
+            "count",
+            "zero"
+        ],
+        "and_any": [
+            "zerodivisionerror",
+            "zero division",
+            "division by zero",
+            "divide by zero",
+            "divides by zero",
+            "dividing by zero",
+            "divided by zero",
+            "no completed orders",
+            "none are completed",
+            "none of the orders are completed",
+            "all pending",
+            "all still pending",
+            "only pending"
+        ]
+    },
+    "false_positives": [
+        {
+            "file": "app/reports/sales.py",
+            "match_any": [
+                "single-letter",
+                "single letter",
+                "one-letter",
+                "variable name",
+                "naming",
+                "non-descriptive",
+                "nondescriptive",
+                "vague name",
+                "descriptive name",
+                "unclear name",
+                "rename"
+            ],
+            "and_any": []
+        },
+        {
+            "file": "app/reports/sales.py",
+            "match_any": [
+                "docstring"
+            ],
+            "and_any": []
+        },
+        {
+            "file": "app/reports/sales.py",
+            "match_any": [
+                "line length",
+                "long line",
+                "line too long",
+                "line is too long",
+                "over-long",
+                "overlong",
+                "e501",
+                "characters long",
+                "exceeds the line"
+            ],
+            "and_any": []
+        },
+        {
+            "file": "app/reports/sales.py",
+            "match_any": [
+                "quoting",
+                "quote style",
+                "inconsistent quotes",
+                "mixed quotes",
+                "single quotes",
+                "double quotes",
+                "single and double"
+            ],
+            "and_any": []
+        },
+        {
+            "file": "app/reports/sales.py",
+            "match_any": [
+                "formatting",
+                "formatter",
+                "pep 8",
+                "pep8",
+                "code style",
+                "style"
+            ],
+            "and_any": []
+        },
+        {
+            "file": "app/reports/sales.py",
+            "match_any": [
+                "todo"
+            ],
+            "and_any": []
+        },
+        {
+            "file": "app/reports/sales.py",
+            "match_any": [
+                "maintainability",
+                "maintainable",
+                "readability",
+                "readable",
+                "intermediate dict",
+                "unnecessary dict",
+                "dictionary",
+                "simplify",
+                "simplified",
+                "refactor"
+            ],
+            "and_any": []
+        }
+    ]
+}

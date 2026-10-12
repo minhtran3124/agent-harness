@@ -1,0 +1,21 @@
+diff --git a/app/reports/sales.py b/app/reports/sales.py
+index 1111111..6666666 100644
+--- a/app/reports/sales.py
++++ b/app/reports/sales.py
+@@ -1,6 +1,16 @@
+ from app.models.order import Order, OrderStatus
+ 
+ 
+ def total_revenue(orders: list[Order]) -> float:
+     """Sum of totals across all completed orders."""
+     return sum(o.total for o in orders if o.status == OrderStatus.COMPLETED)
++
++
++def average_order_value(orders: list[Order]) -> float:
++    # TODO: come back and clean up the names in here
++    if not orders:
++        return 0.0
++    c = [o for o in orders if o.status == OrderStatus.COMPLETED]  # only completed orders count, same as total_revenue above
++    t = sum(x.total for x in c)
++    data = {'count': len(c), "total": t}
++    return data["total"] / data['count']
