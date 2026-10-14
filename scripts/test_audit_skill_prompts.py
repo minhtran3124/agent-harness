@@ -62,6 +62,25 @@ def test_description_and_skill_surface_ceilings_fail_with_named_diagnostics(tmp_
     assert "progressive-disclosure ceiling" in result.stderr
 
 
+def test_vendored_skill_with_upstream_md_is_exempt_from_word_ceiling(tmp_path):
+    write_fixture(tmp_path)
+    (tmp_path / "skills/alpha/SKILL.md").write_text("# Alpha\n" + ("word " * 601))
+    (tmp_path / "skills/alpha/UPSTREAM.md").write_text("# Upstream\n")
+    result = run(tmp_path)
+    assert result.returncode == 0, result.stderr
+    assert "skills/alpha/SKILL.md (603): vendored, exempt" in result.stderr
+    assert "progressive-disclosure ceiling" not in result.stderr
+
+
+def test_skill_without_upstream_md_still_fails_word_ceiling(tmp_path):
+    write_fixture(tmp_path)
+    (tmp_path / "skills/alpha/SKILL.md").write_text("# Alpha\n" + ("word " * 601))
+    result = run(tmp_path)
+    assert result.returncode == 1
+    assert "progressive-disclosure ceiling" in result.stderr
+    assert "vendored, exempt" not in result.stderr
+
+
 def test_check_baseline_ignores_git_sha_but_detects_surface_drift(tmp_path):
     write_fixture(tmp_path)
     first = run(tmp_path, "--json")
@@ -110,5 +129,5 @@ def test_real_repository_matches_expected_surface_shape():
     result = run(root, "--json")
     assert result.returncode == 0, result.stderr
     data = json.loads(result.stdout)
-    assert data["totals"]["skills"] == 13
+    assert data["totals"]["skills"] == 14
     assert data["totals"]["companion_prompts"] == 11

@@ -82,6 +82,10 @@ def load_baseline(path: Path) -> dict[str, int]:
         raise Skip(f"cannot read {BASELINE}: {exc}") from exc
     if not isinstance(data, dict):
         raise Skip(f"{BASELINE} is not a JSON object")
+    for rel, value in data.items():
+        # A bool is an int subclass in Python. Reject it too.
+        if not isinstance(value, int) or isinstance(value, bool):
+            raise Skip(f"{BASELINE} entry {rel} is not an integer")
     return data
 
 

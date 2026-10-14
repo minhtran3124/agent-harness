@@ -112,6 +112,16 @@ def test_missing_baseline_file_skips_and_exits_0(tmp_path):
     assert "ste-baseline: skipped (" in result.stdout
 
 
+def test_non_int_baseline_value_skips_and_exits_0(tmp_path):
+    for bad in ("3", 2.5, None, True, [1]):
+        root = tmp_path / repr(bad)
+        make_tree(root, {"rules/a.md": 1}, {"rules/a.md": bad})
+        for args in ((), ("--strict",)):
+            result = run(root, *args)
+            assert result.returncode == 0, (bad, args, result.stderr)
+            assert "ste-baseline: skipped (" in result.stdout, (bad, result.stdout)
+
+
 def test_strict_exits_1_on_warn(tmp_path):
     make_tree(tmp_path, {"rules/a.md": 5}, {"rules/a.md": 3})
     result = run(tmp_path, "--strict")

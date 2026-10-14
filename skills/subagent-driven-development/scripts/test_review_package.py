@@ -96,3 +96,25 @@ def test_missing_linter_writes_unavailable_line(tmp_path, monkeypatch):
     monkeypatch.setattr(review_package, "STE_LINT", tmp_path / "absent.py")
     section = run_package(repo, base, head, monkeypatch, tmp_path).split("## STE lint\n", 1)[1].strip()
     assert section.startswith("ste-lint: unavailable (")
+    assert len(section.splitlines()) == 1
+
+
+def test_hanging_linter_writes_unavailable_line(tmp_path, monkeypatch):
+    repo, base, head = make_repo(tmp_path, {"skills/x/SKILL.md": GOOD}, {"skills/x/SKILL.md": BAD})
+    hang = tmp_path / "hang-lint.py"
+    hang.write_text("import time\ntime.sleep(30)\n", encoding="utf-8")
+    monkeypatch.setattr(review_package, "STE_LINT", hang)
+    monkeypatch.setattr(review_package, "LINT_TIMEOUT", 0.5)
+    section = run_package(repo, base, head, monkeypatch, tmp_path).split("## STE lint\n", 1)[1].strip()
+    assert section.startswith("ste-lint: unavailable (")
+    assert len(section.splitlines()) == 1
+
+
+def test_undecodable_linter_output_writes_unavailable_line(tmp_path, monkeypatch):
+    repo, base, head = make_repo(tmp_path, {"skills/x/SKILL.md": GOOD}, {"skills/x/SKILL.md": BAD})
+    raw = tmp_path / "raw-lint.py"
+    raw.write_text("import sys\nsys.stdout.buffer.write(b'\\xff\\xfe\\xfa')\n", encoding="utf-8")
+    monkeypatch.setattr(review_package, "STE_LINT", raw)
+    section = run_package(repo, base, head, monkeypatch, tmp_path).split("## STE lint\n", 1)[1].strip()
+    assert section.startswith("ste-lint: unavailable (")
+    assert len(section.splitlines()) == 1

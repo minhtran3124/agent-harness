@@ -57,8 +57,8 @@ Ensure branch isolation, set the plan `status: active`, and transition the durab
   before this task's first commit, never the branch base); pass brief/report/package
   paths to `task-reviewer`. One reviewer returns both
   `spec_verdict` and `quality_verdict` using `task-reviewer-prompt.md`.
-- If `## STE lint` counts for changed prose are missing or unavailable,
-  re-run `review_package.py` once. If they still fail, report the task as blocked.
+- If `## STE lint` counts are missing or unavailable, re-run `review_package.py` once.
+  If they are still missing or unavailable, report the task as blocked.
 - `cannot_verify` gets one focused context or test-runner retry. If still unknown, escalate; never
   treat it as a pass. Fix all Critical/Important findings in one dispatch, then re-review both
   verdicts. Record Minor findings in SUMMARY and the progress ledger; provide their roll-up to the

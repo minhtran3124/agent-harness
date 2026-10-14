@@ -80,7 +80,11 @@ def inventory(root: Path) -> dict[str, object]:
                 f"skill description exceeds {DESCRIPTION_CHARACTER_CEILING} characters: "
                 f"skills/{name}/SKILL.md ({desc_len})"
             )
-        if stats["words"] > SKILL_WORD_CEILING:
+        # A vendored skill keeps its upstream text. UPSTREAM.md marks it, so the ceiling does not apply.
+        if stats["words"] > SKILL_WORD_CEILING and (skill_path.parent / "UPSTREAM.md").is_file():
+            print(f"prompt-audit: skills/{name}/SKILL.md ({stats['words']}): vendored, exempt "
+                  f"from {SKILL_WORD_CEILING}-word ceiling", file=sys.stderr)
+        elif stats["words"] > SKILL_WORD_CEILING:
             problems.append(
                 f"skill exceeds {SKILL_WORD_CEILING}-word progressive-disclosure ceiling: "
                 f"skills/{name}/SKILL.md ({stats['words']})"

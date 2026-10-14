@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 
 STE_LINT = Path(__file__).resolve().parents[2] / "asd-ste100" / "scripts" / "ste-lint.py"
+LINT_TIMEOUT = 60
 PROSE_ROOTS = ("skills/", "rules/", "agents/")
 
 
@@ -20,7 +21,8 @@ def lint_hard_count(text: str) -> int:
     """Return the hard count for the text. Raise RuntimeError when the linter fails."""
     if not STE_LINT.is_file():
         raise RuntimeError(f"linter not found: {STE_LINT}")
-    run = subprocess.run([sys.executable, str(STE_LINT), "--json"], input=text, capture_output=True, text=True)
+    run = subprocess.run([sys.executable, str(STE_LINT), "--json"], input=text, capture_output=True, text=True,
+                         timeout=LINT_TIMEOUT)
     try:
         return int(json.loads(run.stdout)["hard_count"])
     except (ValueError, KeyError, TypeError):
@@ -39,7 +41,8 @@ def ste_section(base: str, head: str) -> str:
             at_base = subprocess.run(["git", "cat-file", "-e", f"{base}:{path}"], capture_output=True).returncode == 0
             base_count = lint_hard_count(git("show", f"{base}:{path}")) if at_base else "new"
             lines.append(f"- {path}: base: {base_count}, head: {lint_hard_count(git('show', f'{head}:{path}'))}")
-    except (RuntimeError, OSError) as exc:
+    # A hang, bad output bytes, or a failed git show is a linter failure. The package still exits 0.
+    except (RuntimeError, OSError, ValueError, subprocess.SubprocessError) as exc:
         lines = [f"ste-lint: unavailable ({exc})"]
     return "\n## STE lint\n\n" + "\n".join(lines) + "\n"
 
