@@ -128,7 +128,7 @@ still holds.
 <!-- Required for any high-risk / Rule-4 action: the exact command(s) to undo it.
      For reversible tiny/normal work, `git revert <sha>` is sufficient. -->
 
-- `git revert bd09585 ba38ba1 698cbdf` — restores both hooks' message text and drops the new
+- `git revert 331d71f bd09585 ba38ba1 698cbdf` — restores both hooks' message text and drops the new
   assertions; there is no state, config or data to undo (text-only change).
 
 ### Advisory Findings
