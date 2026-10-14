@@ -38,7 +38,7 @@ Read the selected `templates/` file before writing. Use the context category/slu
 `docs/solutions/<category>/`; on a high-overlap collision update the existing record, otherwise
 allocate the next numeric suffix. Multiple decisions use one `-decisions` consolidated template.
 
-Apply `skills/asd-ste100/SKILL.md` in STE-flavored mode to each new record. Do not change fenced
+Read and apply `skills/asd-ste100/SKILL.md` in STE-flavored mode to each new record. Do not change fenced
 code. Do not change a literal string that a test or hook matches.
 
 For a critical context, append an entry per emitted track to `critical-patterns.md` using its

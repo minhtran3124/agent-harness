@@ -64,7 +64,7 @@ Task tool (coding):
 
     ## Prose style
 
-    When you change prose under `skills/`, `rules/`, or `agents/`, apply `skills/asd-ste100/SKILL.md`.
+    When you change prose under `skills/`, `rules/`, or `agents/`, Read and apply `skills/asd-ste100/SKILL.md`.
     Use Strict mode for dispatch prompts. Use STE-flavored mode for all other prose.
     Do not change code or commands in fenced blocks.
     Do not change `### Intent` or `intent.md`.
