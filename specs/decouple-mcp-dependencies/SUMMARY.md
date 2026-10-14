@@ -35,6 +35,9 @@ mcp/plugins should be the external, not required.
   Executable not found in $PATH: uvx`.
 - The approach is already settled by the approved intent; brainstorming should be short (confirm
   no real design fork) before xia2 maps every reference.
+- 2026-10-14 (xia2): open PR #279 (base `main`) auto-installs uv and pre-fetches code-review-graph,
+  contradicting this change. User chose "keep it open, decide later": this change ignores #279 and
+  touches only what is on `sdlc`; the installer conflict surfaces when both reach `main`.
 
 ## What changed
 
