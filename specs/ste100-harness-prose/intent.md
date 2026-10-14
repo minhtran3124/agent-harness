@@ -13,8 +13,11 @@ misread an instruction. (assumed: the target is agent-executed prose, not specs 
 ## Proposed outcome
 
 The harness uses the vendored `asd-ste100` skill (`.agents/skills/asd-ste100/`) so that
-agent-executed text is simpler and easier for an agent to read. (assumed: which of these is
-meant is open — see Open questions)
+agent-executed text is simpler and easier for an agent to read. Scope is all three parts:
+
+- A. Rewrite existing harness prose (skills, rules, agents, dispatch prompts) into STE-flavored style.
+- B. Adopt `asd-ste100` as a harness skill and call it from the steps that write or edit that prose.
+- C. Add `ste-lint.py` as an advisory (warn-only) check in CI or tests.
 
 ## Affected users and systems
 
@@ -35,11 +38,6 @@ Humans who maintain that prose. (assumed)
 
 ## Open questions
 
-- Which reading is meant?
-  - A. Rewrite existing harness prose (skills, rules, agents; ~14.7k words) into STE-flavored style.
-  - B. Adopt `asd-ste100` as a harness skill and wire it into authoring steps (for example, used when writing or editing skills, rules, and dispatch prompts), without a bulk rewrite.
-  - C. Add `ste-lint.py` as an advisory (warn-only) check in CI or tests.
-  - Any combination of the above.
 - Should the result be measured (as `ste-terminology-evidence` did) before adoption, since prior trials found no effect from word-level consistency?
 - Is `.agents/skills/asd-ste100/` plus `skills-lock.json` to be committed as a vendored third-party skill, or moved under `skills/`?
 
@@ -53,3 +51,5 @@ agreed baseline, and every existing test in `bash scripts/run-tests.sh` still pa
 
 check the skill asd-ste100 in @.agents/skills/asd-ste100/
 /feature-intake thinking about apply it for our current harness workflow to help simplify text and help agent can read it with comfortable way.
+
+Scope answer (2026-10-14): A + B + C
