@@ -60,3 +60,13 @@ Reuses the `high`-overlap level the related-docs pass already emits and the exis
 ### Harness-Delta
 
 - none
+
+### Context-Propagation Audit
+
+| Source | Consumer | Context | Delivery | Proof |
+| --- | --- | --- | --- | --- |
+| `skills/compound/SKILL.md` `## Mistake twice` | the session running `/compound` | main | the Skill tool loads the whole SKILL.md body when `/compound` is invoked | the section is in the same file as the body it extends; `tests/scripts/compound-contract.test.sh` passes 4 of 4 |
+| `high` overlap level | related-docs pass the skill runs itself | main (the skill's own text says the main thread runs the pass; a subagent only for a tree too large to screen) | the finder prompt already emits `overlap_level: high`; the new text reads that value | `skills/compound/subagents/related-docs-finder-prompt.md:45` |
+| `**Recurred:**` line | readers of `critical-patterns.md` | every session start, via `hooks/session-knowledge.sh` | the file is loaded whole or by headings; the extra line is plain markdown | no parser of entry bodies under `scripts/`, `hooks/`, `tests/` (grep for "Full doc") |
+
+Consumers searched: `grep -rln -e "skills/compound" -e "/compound" skills agents rules templates` returned `skills/README.md` and `skills/compound/README.md` (descriptions only; neither restates the overlap rule). No isolated child context receives this section. Result: PASS.
