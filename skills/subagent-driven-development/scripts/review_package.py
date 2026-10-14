@@ -43,7 +43,7 @@ def ste_section(base: str, head: str) -> str:
             lines.append(f"- {path}: base: {base_count}, head: {lint_hard_count(git('show', f'{head}:{path}'))}")
     # A hang, bad output bytes, or a failed git show is a linter failure. The package still exits 0.
     except (RuntimeError, OSError, ValueError, subprocess.SubprocessError) as exc:
-        lines = [f"ste-lint: unavailable ({exc})"]
+        lines = [f"ste-lint: unavailable ({' '.join(str(exc).split())})"]
     return "\n## STE lint\n\n" + "\n".join(lines) + "\n"
 
 

@@ -72,6 +72,18 @@ def test_vendored_skill_with_upstream_md_is_exempt_from_word_ceiling(tmp_path):
     assert "progressive-disclosure ceiling" not in result.stderr
 
 
+def test_vendored_skill_still_fails_description_limit(tmp_path):
+    write_fixture(tmp_path)
+    (tmp_path / "skills/alpha/SKILL.md").write_text(
+        "---\nname: alpha\ndescription: " + "x" * 1025 + "\n---\n# Alpha\n" + ("word " * 601)
+    )
+    (tmp_path / "skills/alpha/UPSTREAM.md").write_text("# Upstream\n")
+    result = run(tmp_path)
+    assert result.returncode == 1
+    assert "description exceeds" in result.stderr
+    assert "progressive-disclosure ceiling" not in result.stderr
+
+
 def test_skill_without_upstream_md_still_fails_word_ceiling(tmp_path):
     write_fixture(tmp_path)
     (tmp_path / "skills/alpha/SKILL.md").write_text("# Alpha\n" + ("word " * 601))

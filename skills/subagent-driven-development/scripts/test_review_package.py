@@ -110,6 +110,17 @@ def test_hanging_linter_writes_unavailable_line(tmp_path, monkeypatch):
     assert len(section.splitlines()) == 1
 
 
+def test_multiline_error_text_stays_on_one_line(tmp_path, monkeypatch):
+    repo, base, head = make_repo(tmp_path, {"skills/x/SKILL.md": GOOD}, {"skills/x/SKILL.md": BAD})
+
+    def fail(text):
+        raise RuntimeError("first line\nsecond line\n")
+
+    monkeypatch.setattr(review_package, "lint_hard_count", fail)
+    section = run_package(repo, base, head, monkeypatch, tmp_path).split("## STE lint\n", 1)[1].strip()
+    assert section == "ste-lint: unavailable (first line second line)"
+
+
 def test_undecodable_linter_output_writes_unavailable_line(tmp_path, monkeypatch):
     repo, base, head = make_repo(tmp_path, {"skills/x/SKILL.md": GOOD}, {"skills/x/SKILL.md": BAD})
     raw = tmp_path / "raw-lint.py"
