@@ -57,6 +57,7 @@ repo=$(new_repo $H)
 stage "$repo" "config.py" 'password = "supersecretvalue123"'
 run_hook "$repo" $H "$(json_cmd 'git commit -m x')"
 assert_rc_contains 2 'Potential secrets'
+assert_rc_contains 2 'There is no override'
 
 t "strict: git push with untracked .py → check_untracked_py denies at exit 0"
 repo=$(new_repo $H)
@@ -78,6 +79,8 @@ t "malformed Bash payload fails closed instead of fast-pathing"
 repo=$(new_repo $H)
 run_hook "$repo" $H '{not-json'
 assert_rc_contains 2 'could not safely classify Bash payload'
+assert_rc_contains 2 ' --source <harness>'
+assert_rc_contains 2 'if the payload itself is malformed'
 
 t "missing command fails closed with an actionable diagnostic"
 repo=$(new_repo $H)
@@ -107,18 +110,21 @@ norepo=$(new_repo $H)
 rm -f "$norepo/hooks/lib/git-command.sh"
 run_hook "$norepo" $H "$(json_cmd 'git commit')"
 assert_rc_contains 2 'matcher lib missing'
+assert_rc_contains 2 ' --source <harness>'
 
 t "fails closed (exit 2) when the matcher lib defines only the commit-or-push matcher"
 norepo=$(new_repo $H)
 printf '%s\n' 'hook_cmd_is_git_commit_or_push() { return 0; }' > "$norepo/hooks/lib/git-command.sh"
 run_hook "$norepo" $H "$(json_cmd 'git commit')"
 assert_rc_contains 2 'matcher lib missing'
+assert_rc_contains 2 ' --source <harness>'
 
 t "fails closed (exit 2) on commit when the lane lib is missing"
 norepo=$(new_repo $H)
 rm -f "$norepo/hooks/lib/lane.sh"
 run_hook "$norepo" $H "$COMMIT_JSON"
 assert_rc_contains 2 'lane lib missing'
+assert_rc_contains 2 ' --source <harness>'
 
 # ── check_untracked_py (strict) ───────────────────────────────────────────
 t "strict: non-commit/push command is ignored (silent)"
@@ -132,6 +138,8 @@ repo=$(new_repo $H)
 printf 'x\n' > "$repo/loose.py"
 run_hook_args "$repo" $H "$(json_cmd 'git commit -m x')" --profile strict
 assert_rc_contains 0 '"permissionDecision":"deny"'
+assert_rc_contains 0 'git add <files>'
+assert_rc_contains 0 'separate Bash calls'
 
 t "strict: untracked .py + git push → deny JSON"
 repo=$(new_repo $H)
@@ -187,6 +195,8 @@ repo=$(new_repo $H)
 stage "$repo" ".env" "X=1"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_contains 2 ".env file staged"
+assert_rc_contains 2 'Route: unstage it (git restore --staged <file>)'
+assert_rc_contains 2 'this check also blocks'
 
 t "secret-looking string in tests/ is exempt"
 repo=$(new_repo $H)
@@ -239,18 +249,21 @@ repo=$(new_repo $H)
 stage "$repo" "app/services/calc.py" 'breakpoint()'
 run_hook "$repo" $H "$COMMIT_JSON" REQUIRE_APP_GATES=1
 assert_rc_contains 2 "breakpoint"
+assert_rc_contains 2 'remove the breakpoint()/pdb lines'
 
 t "REQUIRE_APP_GATES=1: bare print( added in app/ code → BLOCKED"
 repo=$(new_repo $H)
 stage "$repo" "app/services/calc.py" 'print("debug")'
 run_hook "$repo" $H "$COMMIT_JSON" REQUIRE_APP_GATES=1
 assert_rc_contains 2 "bare print()"
+assert_rc_contains 2 'Use logger instead'
 
 t "REQUIRE_APP_GATES=1 + REQUIRE_VERIFY=1: app/ staged without a ### Verify block → BLOCKED"
 repo=$(new_repo $H)
 stage "$repo" "app/services/calc.py" 'x = 1'
 run_hook "$repo" $H "$COMMIT_JSON" REQUIRE_APP_GATES=1 REQUIRE_VERIFY=1
 assert_rc_contains 2 "### Verify"
+assert_rc_contains 2 'Record the command(s) run'
 
 t "REQUIRE_APP_GATES=1 + REQUIRE_VERIFY=1: staged SUMMARY with ### Verify satisfies the gate"
 repo=$(new_repo $H)
@@ -280,6 +293,7 @@ stage "$repo" "app/services/calc.py" 'x = 1'
 stage "$repo" "specs/x/SUMMARY.md" "$VERIFY_TABLE_BAD"
 run_hook "$repo" $H "$COMMIT_JSON" REQUIRE_APP_GATES=1 REQUIRE_VERIFY=1
 assert_rc_contains 2 "Evidence (### Verify re-run)... FAILED"
+assert_rc_contains 2 'Fix the commands/exit codes'
 
 t "REQUIRE_VERIFY=1: python3 absent → degrade (warn, do not block) even with a mismatch"
 repo=$(new_repo $H)
@@ -318,6 +332,7 @@ if ensure_pyenv; then
   stage "$repo" "tests/services/test_calc.py" 'def test_add(): assert False'
   run_hook "$repo" $H "$COMMIT_JSON" REQUIRE_APP_GATES=1 PATH="$PYSHIM:$PATH"
   assert_rc_contains 2 "Tests... FAILED"
+  assert_rc_contains 2 'Route: reproduce with python -m pytest'
 else
   t "pytest-dependent cases"; skip "python3 venv with pytest unavailable"
 fi
@@ -348,6 +363,20 @@ t "no resolvable project root → BLOCKS rather than guessing"
 host=$(foreign_host); outside=$(mktemp -d); _CLEANUP_DIRS+=("$outside")
 run_from "$outside" "$host" "$COMMIT_JSON"
 assert_rc_contains 2 "cannot determine the project root"
+assert_rc_contains 2 'Route: run the commit from inside'
+
+t "project root that exists but cannot be entered → BLOCKS with a reason and route"
+if [ "$(id -u)" = "0" ]; then
+  skip "root can enter a 000 directory"
+else
+  repo=$(new_repo $H); g5dir=$(mktemp -d); _CLEANUP_DIRS+=("$g5dir")
+  trap "chmod 755 '$g5dir' 2>/dev/null" EXIT
+  chmod 000 "$g5dir"
+  run_hook "$repo" $H "$COMMIT_JSON" CLAUDE_PROJECT_DIR="$g5dir"
+  chmod 755 "$g5dir"
+  assert_rc_contains 2 'cannot enter project root'
+  assert_rc_contains 2 'Route: run the commit from inside'
+fi
 
 t "hook hosted in a foreign git repo still allows a clean project commit"
 proj=$(new_repo); host=$(foreign_host)
@@ -409,6 +438,7 @@ make_plan "$repo" active "app/foo.py"
 stage "$repo" "app/rogue.py" "x = 1"
 run_hook "$repo" $H "$COMMIT_JSON" BLAST_RADIUS_STRICT=1
 assert_rc_contains 2 "outside the active plan"
+assert_rc_contains 2 'active PLAN.md and re-stage'
 
 t "plan scope: bookkeeping file (.md) is never flagged"
 repo=$(new_repo $H)

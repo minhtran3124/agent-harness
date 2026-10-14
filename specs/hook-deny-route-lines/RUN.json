@@ -1,0 +1,12 @@
+{
+  "created_at": "2026-10-14T03:22:53Z",
+  "last_event_id": "4c3ac5a6-bb31-4343-a147-5293fb6c6560",
+  "resume_event": null,
+  "run_id": "e167d79a-6144-45f9-8adc-f6d3bb0eda50",
+  "seq": 6,
+  "sha": null,
+  "slug": "hook-deny-route-lines",
+  "state": "ready_to_merge",
+  "updated_at": "2026-10-14T04:46:05Z",
+  "waiting_on": null
+}

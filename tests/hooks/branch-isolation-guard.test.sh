@@ -90,6 +90,7 @@ repo=$(new_repo $H)
 payload=$(codex_patch $'*** Begin Patch\n*** Update File: specs/demo/PLAN.md\n*** Add File: ../escape.py\n*** End Patch')
 run_hook "$repo" $H "$payload"
 assert_rc_contains 0 'could not safely classify'
+assert_rc_contains 0 'source <harness>'
 
 t "tool_name-less edit payload cannot slip through as an empty shell command"
 # Regression (Phase-4 review F1): a leading newline before the patch marker used to
@@ -97,16 +98,19 @@ t "tool_name-less edit payload cannot slip through as an empty shell command"
 repo=$(new_repo $H)
 run_hook "$repo" $H '{"turn_id":"t","hook_event_name":"PreToolUse","tool_input":{"command":"\n*** Begin Patch\n*** Update File: src/app.py\n*** End Patch"}}'
 assert_rc_contains 0 'could not safely classify'
+assert_rc_contains 0 'source <harness>'
 
 t "shell-classified payload on the edit matcher is denied, not allowed empty"
 repo=$(new_repo $H)
 run_hook "$repo" $H '{"turn_id":"t","hook_event_name":"PreToolUse","tool_input":{"command":"echo hello"}}'
 assert_rc_contains 0 'could not safely classify'
+assert_rc_contains 0 'source <harness>'
 
 t "malformed payload fails closed on a shared branch"
 repo=$(new_repo $H)
 run_hook "$repo" $H '{not-json'
 assert_rc_contains 0 'could not safely classify'
+assert_rc_contains 0 'source <harness>'
 
 t "partial payload remains allowed on a task branch"
 repo=$(new_repo $H); git -C "$repo" checkout -q -b feature/safe
@@ -219,6 +223,7 @@ t "no python3: Claude Write to a code path on main → DENY"
 repo=$(new_repo $H)
 run_hook "$repo" $H "$(claude_edit Write "$repo/app/x.py")" PATH="$NOPY"
 assert_rc_contains 0 'You are on shared branch main'
+assert_rc_contains 0 'git checkout -b <type>/<slug>'
 
 t "no python3: Claude Edit to a relative code path on main → DENY"
 repo=$(new_repo $H)
@@ -240,20 +245,24 @@ t "no python3: Claude Write outside the repo on main → fails closed (not fast-
 repo=$(new_repo $H)
 run_hook "$repo" $H "$(claude_edit Write "specs/../../escape.py")" PATH="$NOPY"
 assert_rc_contains 0 'could not safely classify'
+assert_rc_contains 0 'source <harness>'
 
 t "no python3: Claude Write to the repository root on main → fails closed"
 repo=$(new_repo $H)
 run_hook "$repo" $H "$(claude_edit Write "$repo")" PATH="$NOPY"
 assert_rc_contains 0 'could not safely classify'
+assert_rc_contains 0 'source <harness>'
 
 t "no python3: Write payload carrying a prompt key is not fast-pathed → fails closed"
 repo=$(new_repo $H)
 run_hook "$repo" $H "$(jq -cn --arg f "$repo/specs/x/SUMMARY.md" '{hook_event_name:"PreToolUse",tool_name:"Write",prompt:"x",tool_input:{file_path:$f}}')" PATH="$NOPY"
 assert_rc_contains 0 'could not safely classify'
+assert_rc_contains 0 'source <harness>'
 
 t "no python3: codex apply_patch on main still fails closed"
 repo=$(new_repo $H)
 run_hook "$repo" $H "$(codex_patch $'*** Begin Patch\n*** Update File: specs/demo/PLAN.md\n*** End Patch')" PATH="$NOPY"
 assert_rc_contains 0 'could not safely classify'
+assert_rc_contains 0 'source <harness>'
 
 finish

@@ -29,6 +29,7 @@ stage "$repo" "alembic/versions/abc_add_table.py" "def upgrade(): pass"
 stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_contains 2 "BLOCKED"
+assert_rc_contains 2 'Re-classify with the feature-intake skill'
 
 t "migration path + Lane: high-risk → corroborated (exit 0)"
 repo=$(new_repo $H)
@@ -508,5 +509,6 @@ repo=$(new_repo $H)
 stage "$repo" "alembic/versions/abc_add_table.py" "def upgrade(): pass"
 run_hook_args "$repo" $H "$COMMIT_JSON" --profile strict
 assert_rc_contains 2 "strict, no Lane declared"
+assert_rc_contains 2 'Declare a Lane'
 
 finish

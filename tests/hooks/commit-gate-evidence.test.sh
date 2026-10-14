@@ -18,6 +18,7 @@ stage "$repo" "specs/demo/ESCALATIONS.md" '## E001
 - decision: pending'
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_contains 2 "deny-on-no-response"
+assert_rc_contains 2 'records the decision'
 
 t "same commit recording the decision self-unblocks (staged copy wins)"
 repo=$(new_repo $H)
@@ -45,6 +46,7 @@ printf -- '- decision: pending\n' > "$repo/specs/demo/ESCALATIONS.md"
 stage "$repo" "specs/demo/SUMMARY.md" "Lane: normal"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_contains 2 "deny-on-no-response"
+assert_rc_contains 2 'records the decision'
 
 GH="gh-999-fixture"
 LIN="lin-ENG-315-fixture"
@@ -56,6 +58,7 @@ stage "$repo" "specs/$GH/ESCALATIONS.md" '## E001
 - decision: pending'
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_contains 2 "deny-on-no-response"
+assert_rc_contains 2 'records the decision'
 
 t "recorded decision in the gh-prefixed slug self-unblocks"
 repo=$(new_repo $H)
@@ -72,6 +75,7 @@ stage "$repo" "specs/demo/SUMMARY.md" "Lane: tiny"
 printf '{"state":"planning"}\n' > "$repo/specs/demo/RUN.json"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_contains 2 "specs/demo/RUN.json exists but is UNTRACKED"
+assert_rc_contains 2 'Stage them by name'
 
 t "untracked events.jsonl beside a staged spec file → BLOCKED (exit 2)"
 repo=$(new_repo $H)
@@ -79,6 +83,7 @@ stage "$repo" "specs/demo/PLAN.md" "status: draft"
 printf '{"event":"intake"}\n' > "$repo/specs/demo/events.jsonl"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_contains 2 "specs/demo/events.jsonl exists but is UNTRACKED"
+assert_rc_contains 2 'Stage them by name'
 
 t "staging RUN.json + events.jsonl in the same commit passes"
 repo=$(new_repo $H)
@@ -132,6 +137,7 @@ repo=$(lane_repo)
 stage "$repo" "specs/demo/SUMMARY.md" "$LANE_NORMAL_BAD"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_contains 2 "Lane evidence... FAILED"
+assert_rc_contains 2 'See rules/auto-correct-scope.md'
 
 t "the block names the real SUMMARY path, not the temp file"
 assert_rc_contains 2 "specs/demo/SUMMARY.md"
