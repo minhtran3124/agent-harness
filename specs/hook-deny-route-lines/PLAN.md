@@ -1,6 +1,6 @@
 ---
 slug: hook-deny-route-lines
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-10-14
 ---
@@ -173,3 +173,4 @@ task Verify.
 
 - 2026-10-14 — plan written from design.md (D1, D3–D5, DC1) and research-brief.md.
 - 2026-10-14 — tasks 1.1, 1.2, 1.3 complete; commits bd09585, ba38ba1, 698cbdf (spec pass + quality approved each; Minors in SUMMARY)
+- 2026-10-14 — review chain passed (correctness with fix 331d71f, 5 advisory; intent pass, 2 advisory); shipped
