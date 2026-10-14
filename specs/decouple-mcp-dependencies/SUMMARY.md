@@ -44,15 +44,28 @@ mcp/plugins should be the external, not required.
 
 ## What changed
 
-<pending — filled at implementation>
+The harness no longer requires or wires any MCP server. `install-harness.sh` stops creating,
+merging or backing up `.mcp.json` and stops checking for `uvx`; `deploy-harness.sh` drops its
+`.mcp.json` warning; the repo's own `.mcp.json` and `.code-review-graph/` ignore lines are gone.
+`test-runner` loses its context7 tools (MCP policy `none`) and the Codex renderer drops the
+`context7-read-only` policy. `visual-planner --review` stays, with evidence gathered by Grep/Read
+or any graph tool the user installs. `CLAUDE.md` loses its code-review-graph instructions and keeps
+a server-neutral "Boundary of trust". README gains "Optional MCP servers (local setup)" showing how
+to add code-review-graph (local scope, worktree-safe exclude), context7, and personal instructions
+(`CLAUDE.local.md`, or a home-directory import for worktrees).
 
 ### Rationale
 
-<pending>
+Users without the servers got failed connections (`uvx` ENOENT) and instructions pointing at
+tools they never installed; Claude Code already provides private per-project MCP config (local
+scope) and private instructions (`CLAUDE.local.md`), so the harness only needs to document them.
+The installer leaves existing consumer `.mcp.json` files untouched, so nothing downstream breaks.
 
 ### Alternatives considered
 
-- none
+- Remove `visual-planner --review` entirely — rejected: only its data source was MCP-bound; the renderer is offline already (design D2).
+- `test-runner` MCP `runtime-controlled` (inherit the user's servers) — rejected: keeps agent capability machine-dependent (D3).
+- An installer opt-in flag for MCP wiring — rejected: keeps MCP knowledge inside the harness, the thing the request removes.
 
 ### Deviations
 
@@ -97,15 +110,41 @@ Range `2d211e6..0ddca5d` (package `.harness-state/sdd/package-branch.md`), six F
 - `scripts/render_agent_definitions.py:141-165` (score 0, unmodified-line) — `validate()` checks a contract `mcp == "none"` only for review roles and never against the Claude binding's `tools`, so re-adding an `mcp__*` tool to the `test-runner` binding (or deleting its `tools` key) would still render. Suggested: for every role with contract `mcp: none`, require a Claude `tools` list with no `mcp__` entries.
 - Existing checkouts that already hold a `.code-review-graph/` directory lose the tracked ignore rule (design D4); they must run the README exclude command once. Reported with the scored README finding; no separate score.
 
+### Intent Findings
+
+Intent review over `2d211e6..24aadd9`, blind to PLAN.md: every intent clause met, no behaviorally different drift.
+
+- **gap (proof only, accepted)** — design SC-6 / intent constraint "`bash scripts/run-tests.sh` … must pass" has no Verify row. Whole-suite rows are disallowed (`rules/plan-format.md` Guardrail 4); the suite runs at `finishing-a-development-branch`. The intent reviewer ran it independently: exit 0, 906 passed.
+- **gap (proof only, accepted)** — PLAN SC-9 names the deployed `.claude/agents/test-runner.md`; the Verify row checks its source `agents/runtime-bindings.json` because `.claude/` is gitignored and absent in CI. The deployed check passed locally (listed under Not auto-verified).
+- **drift (equivalent, advisory)** — README adds a `--scope user` fallback for worktree sessions and worktree guidance for personal notes (`@~/.claude/<file>.md`, `~/.claude/CLAUDE.md`); none touches tracked files. Sourced from official docs (research brief); see Intake notes.
+- **drift (equivalent, advisory)** — `skills/visual-planner/SKILL.md:4` omits `Grep` from `allowed-tools` while the body names Grep/Read (same as the correctness advisory).
+- **excess (report-only)** — `docs/solutions/critical-patterns.md` and `meta-repo-signal-remapping.md` current-state lines updated (planned in design, not named in intent).
+- **excess (report-only)** — `skills/writing-plans/SKILL.md:40` "graph-derived" → "review-derived" (context-propagation audit repair).
+- **excess (report-only)** — renderer test hardening: whole-line `tools:` assertion and a new former-policy-rejected test.
+- **excess (report-only)** — installer tests assert no invalid-JSON warning and no `uvx` mention (stricter negative assertions).
+
 ### Verify
 
 | Check | Command | Exit | Notes | Criterion |
 | --- | --- | --- | --- | --- |
-| Intent pin matches committed intent.md | `git diff --exit-code e32350e -- specs/decouple-mcp-dependencies/intent.md` | 0 | intake-time check; implementation rows added later | |
+| Intent pin matches committed intent.md | `git diff --exit-code e32350e -- specs/decouple-mcp-dependencies/intent.md` | 0 | intake-time check | |
+| Installer: fresh install writes no .mcp.json; dry/real output names neither .mcp.json nor uvx | `bash tests/scripts/install-harness.test.sh` | 0 | 12 passed | SC-1 |
+| Installer: existing .mcp.json (other servers, code-review-graph entry, invalid JSON) byte-identical, no backup | `bash tests/scripts/install-harness.test.sh` | 0 | cmp-based cases in the same suite | SC-2 |
+| Renderer: test-runner has no MCP server or mcp__ tool; former policy rejected | `python3 -m pytest scripts/test_render_agent_definitions.py scripts/test_render_codex_adapter.py -q` | 0 | 26 passed | SC-3 |
+| No live harness file names either server | `grep -rIn -e code-review-graph -e context7 skills agents rules hooks scripts templates CLAUDE.md` | 1 | no matches | SC-4 |
+| README has the local-setup section, command and CLAUDE.local.md guidance | `grep -q "Optional MCP servers (local setup)" README.md && grep -q "claude mcp add --scope local code-review-graph" README.md && grep -q "CLAUDE.local.md" README.md` | 0 | | SC-5 |
+| visual-planner renderer unchanged by rewording | `python3 -m pytest skills/visual-planner/test_render_plan.py -q` | 0 | 82 passed | SC-6 |
+| Doc-truth lint | `bash scripts/lint-doc-truth.sh` | 0 | | SC-7 |
+| Repo ships no root .mcp.json | `test ! -e .mcp.json` | 0 | | SC-8 |
+| test-runner binding (source of the deployed agent) lists no mcp__ tool | `grep -c mcp__ agents/runtime-bindings.json` | 1 | prints 0; the deployed `.claude/agents/test-runner.md` check is local-only (see Not auto-verified) | SC-9 |
+| No hook reads .mcp.json or an MCP tool name | `grep -rIn -e "\.mcp\.json" -e mcp__ hooks` | 1 | no matches | SC-10 |
 
 ### Not auto-verified
 
-- none
+- This repo's deployed `.claude/agents/test-runner.md` has no `mcp__` tool — reached truth locally (`grep -c mcp__ .claude/agents/test-runner.md` printed 0 after redeploy, Task 2.1); not a Verify row because `.claude/` is gitignored and absent in CI.
+- README local-setup commands (`claude mcp add --scope local …`, `uvx code-review-graph serve`) work end to end — reached traceability only: checked against `claude mcp add --help` (Claude Code 2.1.299) and official docs; not run because `uv` is not installed here.
+- `CLAUDE.local.md` loads in the user's Claude Code — reached provenance (official memory docs, 2026-10-14); not exercised locally.
+- Full suite `bash scripts/run-tests.sh` — runs at `finishing-a-development-branch`, not a Verify row (whole-suite rows are disallowed).
 
 ### Rollback
 
