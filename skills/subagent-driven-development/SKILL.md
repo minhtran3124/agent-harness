@@ -27,7 +27,7 @@ root `runtime/`. Treat ANY non-zero exit as `stop`, and require `schema_version 
 
 On `execute-plan`, first re-run every `cursor.checks_to_rerun` item (each claimed-complete task's
 exact Verify). Dispatch NO pending task until those claims verify. A failed re-run routes to the
-repair path. Apply `required_transition` ONLY after the session verifies the external condition it
+repair path. Apply `required_transition` ONLY after the session confirms the external condition it
 names. Do not reconstruct the FSM from prose or initialize a missing historical run during
 execution. Read `references/resume.md` only when the returned action requires a manual transition
 or repair.
@@ -65,7 +65,7 @@ Ensure branch isolation, set the plan `status: active`, and transition the durab
   final review chain.
 - `NEEDS_CONTEXT` receives missing context. `BLOCKED` is re-dispatched with changed context/model,
   split, or escalated when the plan itself is wrong. Repeated verification failure or blast-radius
-  escape is an escalation signal. Between dispatches, tell the user which task is
+  escape is an escalation signal. Between dispatches, tell the user in a sentence which task is
   starting and what came back (verdicts, blockers). Keep detail in SUMMARY and the ledger.
 
 After all tasks pass, transition to `verifying` when tracked and read

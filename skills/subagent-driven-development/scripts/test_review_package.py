@@ -73,6 +73,17 @@ def test_new_file_shows_base_new(tmp_path, monkeypatch):
     assert f"- agents/a.md: base: new, head: {hard(GOOD)}" in section
 
 
+def test_synonym_rotation_does_not_raise_head_count(tmp_path, monkeypatch):
+    rotated = "Check the config file. Then verify the output.\n"
+    repo, base, head = make_repo(
+        tmp_path,
+        {"skills/x/SKILL.md": "Check the config file. Then check the output.\n"},
+        {"skills/x/SKILL.md": rotated},
+    )
+    section = run_package(repo, base, head, monkeypatch, tmp_path).split("## STE lint\n", 1)[1]
+    assert "- skills/x/SKILL.md: base: 0, head: 0" in section
+
+
 def test_no_changed_prose_file_means_no_section(tmp_path, monkeypatch):
     repo, base, head = make_repo(
         tmp_path, {"skills/x/run.py": "a = 1\n"}, {"skills/x/run.py": "a = 2\n", "docs/d.md": BAD}

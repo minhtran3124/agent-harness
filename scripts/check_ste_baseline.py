@@ -34,7 +34,7 @@ GLOBS = ("skills/*/*.md", "skills/*/*/*.md", "rules/*.md", "agents/*.md")
 LINTER = "skills/asd-ste100/scripts/ste-lint.py"
 BASELINE = "scripts/ste-baseline.json"
 
-# Rules that the check and --update both silence. The list is empty.
+# Rules that the check and --update both silence.
 # Rule: disable a rule only when most sampled hard findings are false positives on tables or
 # inline code. On 2026-10-14 we sampled up to 5 hard findings per rule across the 72 files:
 #   long-sentence (171 hits): 5 of 5 true. One is a long table cell, which is still long.
@@ -43,8 +43,11 @@ BASELINE = "scripts/ste-baseline.json"
 #   phrasal-verb (5), nominalization (3), marketing-adjective (7): all hits are in
 #     skills/asd-ste100, which quotes the bad words as examples. These are mentions, not
 #     table or inline-code errors. The per-file baseline holds them, so the rules stay on.
-# No rule has mostly false findings on tables or inline code, so we disable none.
-DISABLED_RULES: tuple[str, ...] = ()
+# No rule has mostly false findings on tables or inline code, so that test disables none.
+# User decision of 2026-10-15: disable synonym-rotation for a different reason. Test H3
+# measured no effect for the one-word rule (specs/ste-terminology-evidence/DECISION.md).
+# A rule with a measured null must not block, so the counts do not include it.
+DISABLED_RULES: tuple[str, ...] = ("synonym-rotation",)
 
 
 class Skip(Exception):

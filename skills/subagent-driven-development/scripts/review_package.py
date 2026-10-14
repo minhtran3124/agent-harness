@@ -11,6 +11,8 @@ from pathlib import Path
 STE_LINT = Path(__file__).resolve().parents[2] / "asd-ste100" / "scripts" / "ste-lint.py"
 LINT_TIMEOUT = 60
 PROSE_ROOTS = ("skills/", "rules/", "agents/")
+# The counts ignore synonym-rotation. Test H3 measured no effect (specs/ste-terminology-evidence/DECISION.md).
+DISABLED_RULES = ("synonym-rotation",)
 
 
 def git(*args: str) -> str:
@@ -21,8 +23,8 @@ def lint_hard_count(text: str) -> int:
     """Return the hard count for the text. Raise RuntimeError when the linter fails."""
     if not STE_LINT.is_file():
         raise RuntimeError(f"linter not found: {STE_LINT}")
-    run = subprocess.run([sys.executable, str(STE_LINT), "--json"], input=text, capture_output=True, text=True,
-                         timeout=LINT_TIMEOUT)
+    run = subprocess.run([sys.executable, str(STE_LINT), "--json", "--disable", ",".join(DISABLED_RULES)],
+                         input=text, capture_output=True, text=True, timeout=LINT_TIMEOUT)
     try:
         return int(json.loads(run.stdout)["hard_count"])
     except (ValueError, KeyError, TypeError):
