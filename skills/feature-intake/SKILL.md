@@ -35,7 +35,7 @@ classify risk. Ask only to resolve a material ambiguity or narrow a hard-gated s
    conflicting with intent.md). Low confidence always stops for a human.
 5. The pin line is `Intent-source: specs/<slug>/intent.md @ <sha>`. Only legacy slugs (SUMMARY,
    no intent.md) have none.
-6. Write a new SUMMARY from `templates/SUMMARY.template.md`. `### Intent` holds the pin
+6. For a new SUMMARY, use `templates/SUMMARY.template.md`. `### Intent` holds the pin
    line, then the request verbatim and in full: intent.md's `## Original request`, else the
    chat request, else `none — intent.md is the request`. A bare approval or change reply is never
    the request. Agent notes go in `### Intake notes`, not `### Intent`. intent.md content comes
