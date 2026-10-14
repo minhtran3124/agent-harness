@@ -84,6 +84,19 @@ Diff `2d211e6..1c44b7c` plus the audit repair below. Consumer search surface:
 
 Result: **PASS** after one repair (writing-plans wording + template comment).
 
+### Correctness Review
+
+Range `2d211e6..0ddca5d` (package `.harness-state/sdd/package-branch.md`), six FIND angles, four deduplicated locations, one independent scorer each (threshold 75).
+
+- **Fixed** — `README.md:116` (score 75): the README exclude command `>> .git/info/exclude` failed in a linked worktree, where `.git` is a file. Now uses `"$(git rev-parse --git-common-dir)/info/exclude"` for both `.code-review-graph/` and `CLAUDE.local.md`. Commit `24aadd9`; re-scored in fix round 1.
+
+### Advisory Findings
+
+- `skills/visual-planner/SKILL.md:4` (score 50) — `allowed-tools` is `Bash, Read, Glob, Write` but the body tells the agent to gather evidence "with Grep/Read"; `Grep` is not pre-approved. Impact depends on how the runtime treats `allowed-tools`; Bash/Read can do the same search. Suggested: add `Grep`.
+- `tests/scripts/install-harness.test.sh:10` (score 0, pre-existing) — `target()` appends to `_CLEANUP_DIRS` inside `$(...)`, a subshell, so temp dirs from every `$(target)` call leak; this diff adds three call sites. Suggested: register in the parent shell.
+- `scripts/render_agent_definitions.py:141-165` (score 0, unmodified-line) — `validate()` checks a contract `mcp == "none"` only for review roles and never against the Claude binding's `tools`, so re-adding an `mcp__*` tool to the `test-runner` binding (or deleting its `tools` key) would still render. Suggested: for every role with contract `mcp: none`, require a Claude `tools` list with no `mcp__` entries.
+- Existing checkouts that already hold a `.code-review-graph/` directory lose the tracked ignore rule (design D4); they must run the README exclude command once. Reported with the scored README finding; no separate score.
+
 ### Verify
 
 | Check | Command | Exit | Notes | Criterion |
