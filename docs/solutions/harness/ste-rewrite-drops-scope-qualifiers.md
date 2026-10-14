@@ -52,7 +52,9 @@ lower the STE lint count. The proof of "no behavior change" was the test suite p
 
 - Give every rewritten file an independent meaning-equivalence review that compares each removed
   line with its replacement. Ask for dropped conditions, exceptions, hedges and scope qualifiers.
-  The task reviewer did this and caught both drops.
+  The task reviewer caught both drops, but only because the Task 2.2 brief asked for this review
+  (`specs/ste100-harness-prose/PLAN.md` Task 2.2). The task-reviewer prompt does not run it on its
+  own, so every rewrite plan must ask for it again.
 - When you split "X if present: A; B; C", repeat the scope on each part, or keep one lead sentence
   that names the scope for all parts. For example: "If intent.md exists, run these checks. Stop
   unless … Pin with … If `git diff …` is non-zero, stop and ask the user to commit it."
@@ -70,7 +72,7 @@ condition word (if, unless, only, when, never, except, for a new, without) that 
 and that no added line in the same hunk has. Add its output to the review package as an advisory
 section beside `## STE lint`, so the task reviewer sees each candidate drop.
 
-existing: the task-reviewer meaning-equivalence review (`skills/subagent-driven-development/task-reviewer-prompt.md`, spec verdict).
+proposed: add a meaning-equivalence instruction for changed prose files to `skills/subagent-driven-development/task-reviewer-prompt.md` (spec verdict), so the review runs on every prose task without a plan having to ask for it. Today it runs only when the task brief requests it.
 
 ## Related
 

@@ -37,9 +37,11 @@ original − 2 correct answers, with no probe drop from 10/10 to 7/10 or fewer.
 ### Applicable When
 You plan a bulk rewrite of agent-executed prose.
 ### Consequences
-The rollout of the other files (Phase 3) is a separate plan. It needs the same per-file
-meaning-equivalence review, because the pilot review caught two dropped conditions that the tests
-missed (`docs/solutions/harness/ste-rewrite-drops-scope-qualifiers.md`).
+The rollout of the other files (Phase 3) is a separate plan. Its task briefs must ask the task
+reviewer for a per-file meaning-equivalence review, because the task-reviewer prompt does not run
+one on its own. The pilot review ran only because the Task 2.2 brief asked for it, and it caught
+two dropped conditions that the tests missed
+(`docs/solutions/harness/ste-rewrite-drops-scope-qualifiers.md`).
 
 ## Decision 2
 ### Context

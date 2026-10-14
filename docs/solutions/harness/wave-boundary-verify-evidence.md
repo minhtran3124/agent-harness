@@ -48,10 +48,11 @@ dir must already carry lane evidence: for normal/high-risk, at least one non-pla
   takes effect.
 
 - SC coverage makes per-wave spec commits impossible (seen 2026-10-15, ste100-harness-prose). When
-  the plan has a `## 3. Success Criteria` table, `scripts/verify_summary.py` needs a passing Verify
-  row for every `SC-n` on any commit that touches `specs/<slug>/`. It reads an unstaged SUMMARY from
-  disk too. A mid-plan commit cannot cover SCs that later waves own, so per-wave rows do not unblock
-  it. The working route is to keep the spec folder uncommitted and commit it once at the end, when
+  PLAN.md has `SC-n` table rows, `scripts/verify_summary.py` needs, for every `SC-n`, a Verify row
+  whose Criterion names it and whose claimed exit matches the SC's Expected exit. `hooks/commit-gate.sh`
+  `check_lane_evidence` runs this on any commit that touches `specs/<slug>/`. When SUMMARY.md is not
+  staged, it falls back to the on-disk copy. A mid-plan commit cannot cover SCs that later waves own,
+  so per-wave rows do not unblock it. The working route is to keep the spec folder uncommitted and commit it once at the end, when
   the Verify table covers every SC.
 
 ## Related
