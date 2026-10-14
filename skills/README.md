@@ -130,6 +130,7 @@ from the harness checkout run `bash scripts/init-structure.sh --root <project>`,
 | `intent-review` | After correctness-review — checks the diff against the original request verbatim, blind to PLAN (the third oracle). **Standalone** on any diff that has an intent statement, or called by `subagent-driven-development` as its last pass | Findings classified `gap` / `excess` / `drift` → fix-loop · escalate · report-only |
 | `compound` | After session with non-obvious bug fix, pattern, or architectural decision | `docs/solutions/<category>/<slug>.md` |
 | `session-retro` | **User-invoked**, after a session with visible friction — traces struggles to missing environment levers (check > pointer > scoped rule) and proposes ranked fixes; never edits, waits for approval. Not `compound` (knowledge capture) or a bug hunt | Ranked candidate list → approved items go to `improvement-backlog.md` / `compound` |
+| `asd-ste100` | Use it when an agent or a tool must read English text with no human to help. Use it for instructions, tool descriptions, error messages, and status reports. Vendored from upstream. See `skills/asd-ste100/UPSTREAM.md`. | Text rewritten in ASD-STE100 style. `skills/asd-ste100/scripts/ste-lint.py` checks the structural rules. |
 | `finishing-a-development-branch` | Implementation complete, tests pass | Runs tests, pushes, opens a PR (never merges) |
 
 ---
