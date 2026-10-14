@@ -1,6 +1,6 @@
 ---
 slug: decouple-mcp-dependencies
-status: proposed
+status: active
 owner: Minh Tran
 created: 2026-10-14
 ---
