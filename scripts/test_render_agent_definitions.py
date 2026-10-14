@@ -217,6 +217,19 @@ def test_mcp_tool_on_mcp_none_role_is_rejected(tmp_path, role):
         renderer.validate(root)
 
 
+@pytest.mark.parametrize(
+    "tools", [[], ["Read", 5], ["Read", None], ["Read, mcp__docs__query"], [" Read"]]
+)
+def test_malformed_tools_list_on_mcp_none_role_is_rejected(tmp_path, tools):
+    root = clone_root(tmp_path)
+    path = root / "agents/runtime-bindings.json"
+    data = json.loads(path.read_text())
+    data["runtimes"]["claude"]["roles"]["test-runner"]["tools"] = tools
+    path.write_text(json.dumps(data))
+    with pytest.raises(renderer.ContractError, match="mcp none"):
+        renderer.validate(root)
+
+
 def test_missing_tools_list_on_mcp_none_role_is_rejected(tmp_path):
     root = clone_root(tmp_path)
     path = root / "agents/runtime-bindings.json"

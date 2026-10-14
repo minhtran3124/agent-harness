@@ -103,11 +103,19 @@ Range `2d211e6..0ddca5d` (package `.harness-state/sdd/package-branch.md`), six F
 
 - **Fixed** — `README.md:116` (score 75): the README exclude command `>> .git/info/exclude` failed in a linked worktree, where `.git` is a file. Now uses `"$(git rev-parse --git-common-dir)/info/exclude"` for both `.code-review-graph/` and `CLAUDE.local.md`. Commit `24aadd9`; re-scored in fix round 1.
 
+Re-review of the advisory fixes (`37f2c17..968b9a2`, six angles): one deduplicated location,
+`scripts/render_agent_definitions.py:157-160` (score 50) — the new guard accepted an empty list,
+non-string entries and a comma-joined entry (`"Read, mcp__x"`), which render as a bare `tools:`, a
+`TypeError`, or an MCP grant. Fixed anyway because it sat in the advisory fix itself: the guard now
+requires a non-empty list of plain tool names; 5 parametrized cases added.
+
 ### Advisory Findings
 
-- `skills/visual-planner/SKILL.md:4` (score 50) — `allowed-tools` is `Bash, Read, Glob, Write` but the body tells the agent to gather evidence "with Grep/Read"; `Grep` is not pre-approved. Impact depends on how the runtime treats `allowed-tools`; Bash/Read can do the same search. Suggested: add `Grep`.
-- `tests/scripts/install-harness.test.sh:10` (score 0, pre-existing) — `target()` appends to `_CLEANUP_DIRS` inside `$(...)`, a subshell, so temp dirs from every `$(target)` call leak; this diff adds three call sites. Suggested: register in the parent shell.
-- `scripts/render_agent_definitions.py:141-165` (score 0, unmodified-line) — `validate()` checks a contract `mcp == "none"` only for review roles and never against the Claude binding's `tools`, so re-adding an `mcp__*` tool to the `test-runner` binding (or deleting its `tools` key) would still render. Suggested: for every role with contract `mcp: none`, require a Claude `tools` list with no `mcp__` entries.
+The user asked on 2026-10-14 to fix the first three advisories ("fix the 3 advisory findings too"); all three are fixed in `968b9a2`.
+
+- **Fixed** — `skills/visual-planner/SKILL.md:4` (score 50) — `allowed-tools` omitted `Grep`, which the body names. Now `Bash, Read, Grep, Glob, Write`.
+- **Fixed** — `tests/scripts/install-harness.test.sh:10` (score 0, pre-existing) — `target()` appended to `_CLEANUP_DIRS` inside `$(...)`, a subshell, so every target dir leaked. `target()` now sets `TARGET` in the calling shell. Measured with a private `TMPDIR`: 16 dirs left after a run before the fix, 2 after. The remaining 2 are empty dirs created by the scripts under test, not by the helper; their source is not pinned (searched `mktemp` in `tests/lib.sh`, `scripts/install-harness.sh`, `scripts/deploy-harness.sh`).
+- **Fixed** — `scripts/render_agent_definitions.py` (score 0, unmodified-line) — `validate()` now rejects any role whose contract is `mcp: none` unless its Claude binding has an explicit `tools` list with no `mcp__` entry (a missing list inherits every tool). Tests: `test_mcp_tool_on_mcp_none_role_is_rejected[reviewer|task-reviewer|test-runner]` and `test_missing_tools_list_on_mcp_none_role_is_rejected`, which failed before the fix and pass after.
 - Existing checkouts that already hold a `.code-review-graph/` directory lose the tracked ignore rule (design D4); they must run the README exclude command once. Reported with the scored README finding; no separate score.
 
 ### Intent Findings
@@ -138,6 +146,8 @@ Intent review over `2d211e6..24aadd9`, blind to PLAN.md: every intent clause met
 | Repo ships no root .mcp.json | `test ! -e .mcp.json` | 0 | | SC-8 |
 | test-runner binding (source of the deployed agent) lists no mcp__ tool | `grep -c mcp__ agents/runtime-bindings.json` | 1 | prints 0; the deployed `.claude/agents/test-runner.md` check is local-only (see Not auto-verified) | SC-9 |
 | No hook reads .mcp.json or an MCP tool name | `grep -rIn -e "\.mcp\.json" -e mcp__ hooks` | 1 | no matches | SC-10 |
+| Renderer rejects mcp__ tools or a missing tools list on an mcp-none role (advisory fix) | `python3 -m pytest scripts/test_render_agent_definitions.py -q -k mcp_none` | 0 | 9 passed (incl. empty, non-string and comma-joined lists) | |
+| visual-planner pre-approves Grep (advisory fix) | `grep -q "^allowed-tools: .*Grep" skills/visual-planner/SKILL.md` | 0 | | |
 
 ### Not auto-verified
 

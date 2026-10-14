@@ -149,14 +149,21 @@ def validate(root: Path) -> tuple[dict, dict]:
         if contract["mcp"] != "none":
             raise ContractError(f"{role}: reviewer MCP policy must be none")
 
-    # A Claude role with no tools list inherits every tool, MCP included, so `mcp: none`
-    # needs an explicit list with no mcp__ entries.
+    # A Claude role with no (or an empty) tools list inherits every tool, MCP included,
+    # so `mcp: none` needs a non-empty list of plain tool names with no mcp__ entries.
+    # Plain names also keep a comma-joined entry from smuggling a tool into `tools:`.
     for role, contract in roles.items():
         if contract["mcp"] != "none":
             continue
         tools = runtimes["claude"]["roles"][role].get("tools")
-        if not isinstance(tools, list) or any(
-            str(tool).startswith("mcp__") for tool in tools
+        if (
+            not isinstance(tools, list)
+            or not tools
+            or not all(
+                isinstance(tool, str) and re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", tool)
+                for tool in tools
+            )
+            or any(tool.startswith("mcp__") for tool in tools)
         ):
             raise ContractError(
                 f"claude/{role}: mcp none requires an explicit tools list "
