@@ -64,6 +64,26 @@ mcp/plugins should be the external, not required.
 - 1.1 — `scripts/install-harness.sh`: the reworded header comment line is longer than its neighbours (cosmetic).
 - 1.4 — `README.md`: `echo ".code-review-graph/" >> .git/info/exclude` fails inside a linked worktree, where `.git` is a file; use `"$(git rev-parse --git-common-dir)/info/exclude"` or say "main checkout". checked_against SC-5.
 
+### Context-Propagation Audit
+
+Diff `2d211e6..1c44b7c` plus the audit repair below. Consumer search surface:
+`grep -rIn -i -e graph-derived -e graph-backed -e "graph overlay" -e "boundary of trust" -e "MCP Tools" -e "knowledge graph"` and
+`grep -rIln -e visual-planner -e review-sidecar` over `skills agents rules templates hooks scripts CLAUDE.md README.md HARNESS.md adapters`;
+`grep -rIn graph-derived tests evals/skills skills`. The code-review-graph MCP server was not connected (and is what this change removes), so consumers come from Grep only.
+
+| Source | Consumer | Context | Delivery | Proof |
+| --- | --- | --- | --- | --- |
+| `skills/visual-planner/SKILL.md` allowed-tools + overlay wording | main session running `visual-planner` | main | skill body loaded on invocation | inspected: SKILL.md frontmatter `Bash, Read, Glob, Write`; deployed copy refreshed by Task 2.1 redeploy |
+| `skills/visual-planner/references/review-sidecar.md` | `visual-planner` overlay step | main | explicit reference listed in SKILL.md `## References` | inspected SKILL.md references section |
+| visual-planner overlay concept ("review-derived") | `skills/writing-plans/SKILL.md:40` | main (planning) | skill body loaded on invocation | **FAIL → repaired**: said "graph-derived overlay"; now "review-derived overlay" |
+| visual-planner overlay concept | `skills/visual-planner/template.html:286` | none (CSS comment in rendered HTML) | n/a | repaired for consistency; `test_render_plan.py` 82 passed |
+| `agents/runtime-bindings.json` / `agent-contracts.json` test-runner `mcp` | rendered `test-runner` agent (Claude frontmatter, Codex TOML) | test-runner subagent | renderer at deploy/install | SC-3 pytest 26 passed; SC-9 `grep -c mcp__ .claude/agents/test-runner.md` → 0 |
+| test-runner tool set | `skills/subagent-driven-development/SKILL.md:61` (`test-runner retry`) | controller | skill body | inspected: references the role, not its MCP tools — unaffected |
+| `CLAUDE.md` MCP Tools section removed; Boundary of trust generalized | main session | main | always-loaded project CLAUDE.md | inspected CLAUDE.md:95; not deployed to consumers (installer ships `.claude/` only) |
+| `rules/behavior.md` §1 (cited by Boundary of trust) | reviewer agents | reviewer, scorer | `.claude/rules/` always-on | unchanged by this diff |
+
+Result: **PASS** after one repair (writing-plans wording + template comment).
+
 ### Verify
 
 | Check | Command | Exit | Notes | Criterion |

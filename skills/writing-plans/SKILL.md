@@ -37,7 +37,7 @@ required brief is missing. If the scope contains independent subsystems, propose
    named `SC-n` and task exists in the plan. Then run `python3 scripts/check_plan_contract.py specs/<slug>/PLAN.md`, read `references/review-loop.md`, review the plan, and save it. Then run
    `python3 skills/visual-planner/render_plan.py specs/<slug>/PLAN.md --summarize`, which
    refreshes the At-a-glance block and writes the plain `PLAN.html`; use `visual-planner` only when
-   the user asks for its graph-derived overlay.
+   the user asks for its review-derived overlay.
 
 ## Handoff
 
