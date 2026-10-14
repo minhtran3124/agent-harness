@@ -1,6 +1,6 @@
 ---
 slug: ste100-harness-prose
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-10-14
 ---
@@ -358,3 +358,4 @@ written only after `DECISION.md` records a pilot pass.
 - 2026-10-14 — task 2.3 complete; no commit (all three pilot files PASS, no revert; DECISION.md, QUESTIONS.md OQ-1 closed, runs/pilot-1, $2.91 total spend)
 - 2026-10-14 — task 2.4 complete; no commit (.claude/ re-synced, gitignored). User decision: ship Phases 1–2 in this PR; Phase 3 is a follow-up plan revision
 - 2026-10-15 — final review chain: context-propagation audit PASS after repair f7e5dfe; correctness review 0 findings at threshold (8 advisory); intent review 6 findings, fixed in a7081fb (user excluded synonym-rotation) or recorded (A-partial and tiny lane deferred to Phase 3)
+- 2026-10-15 — shipped (Phases 1–2): compound records 60c922a + 37122fd (docs delta reviewed, pass); receipt pinned at 37122fd; run-tests ALL GREEN (939 pytest) and ci-strict-gate OK against sdlc; PR to sdlc. Phase 3 is a follow-up plan revision
