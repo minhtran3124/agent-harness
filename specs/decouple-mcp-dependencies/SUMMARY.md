@@ -131,6 +131,10 @@ Intent review over `2d211e6..24aadd9`, blind to PLAN.md: every intent clause met
 - **excess (report-only)** — renderer test hardening: whole-line `tools:` assertion and a new former-policy-rejected test.
 - **excess (report-only)** — installer tests assert no invalid-JSON warning and no `uvx` mention (stricter negative assertions).
 
+Intent review of the advisory fixes (`37f2c17..e591f73`, oracle: "fix the 3 advisory findings too"): all three fixed, no gap or drift.
+
+- **excess (report-only, accepted)** — the `mcp: none` guard also requires a non-empty list of plain tool names (`[A-Za-z][A-Za-z0-9_-]*`), not only "no `mcp__` entry and no missing list". The empty-list and comma-joined cases close bypasses of the requested check; the plain-name rule is a new restriction on how tool names may be written for `mcp: none` roles. All current bindings satisfy it.
+
 ### Verify
 
 | Check | Command | Exit | Notes | Criterion |
