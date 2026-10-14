@@ -32,8 +32,6 @@ LEGACY_CLAUDE = {
             "WebFetch",
             "WebSearch",
             "Bash",
-            "mcp__context7__resolve-library-id",
-            "mcp__context7__query-docs",
         ],
     },
 }
@@ -106,7 +104,7 @@ def test_claude_render_preserves_legacy_model_tools_and_role_body(tmp_path):
         if expected["tools"] is None:
             assert "\ntools:" not in text
         else:
-            assert f"tools: {', '.join(expected['tools'])}" in text
+            assert f"\ntools: {', '.join(expected['tools'])}\n" in text
 
 
 def test_rendered_roles_retain_load_bearing_substance(tmp_path):
@@ -174,7 +172,7 @@ def test_codex_render_emits_strict_profiles_and_explicit_policy(tmp_path):
     test_runner = renderer.parse_codex_profile(
         (out / "test-runner.toml").read_text()
     )
-    assert test_runner["mcp_servers"]["context7"]["enabled"] is True
+    assert test_runner["mcp_servers"] == {}
     assert test_runner["agents"]["enabled"] is False
 
 

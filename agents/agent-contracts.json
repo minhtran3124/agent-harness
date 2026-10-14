@@ -49,7 +49,7 @@
       "filesystem": "read-only-with-test-artifacts",
       "shell": "test-execution",
       "network": "documentation-read-only",
-      "mcp": "context7-read-only",
+      "mcp": "none",
       "nested_delegation": false,
       "context_policy": "fresh-bounded",
       "model_class": "test-execution-fast",

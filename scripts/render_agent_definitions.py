@@ -16,7 +16,7 @@ CODEX_MODELS = {"gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"}
 CODEX_EFFORTS = {"low", "medium", "high", "xhigh", "max", "ultra"}
 CLAUDE_EFFORTS = {"low", "medium", "high", "xhigh", "max"}
 CODEX_SANDBOXES = {"read-only", "workspace-write", "danger-full-access"}
-CODEX_MCP_POLICIES = {"none", "context7-read-only", "runtime-controlled"}
+CODEX_MCP_POLICIES = {"none", "runtime-controlled"}
 
 
 class ContractError(ValueError):
@@ -326,8 +326,6 @@ def render_codex(root: Path, output_dir: Path) -> list[Path]:
         lines.append(f"developer_instructions = {_toml_string(instructions)}")
         if contract["nested_delegation"] is False:
             lines.extend(["", "[agents]", "enabled = false"])
-        if mcp_policy == "context7-read-only":
-            lines.extend(["", "[mcp_servers.context7]", "enabled = true"])
         destination = output_dir / f"{role}.toml"
         rendered = "\n".join(lines) + "\n"
         parse_codex_profile(rendered)
