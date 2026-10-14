@@ -18,16 +18,16 @@ second:
 if [ -f runtime/resume_decision.py ]; then python3 runtime/resume_decision.py --slug <slug>; else python3 .claude/runtime/resume_decision.py --slug <slug>; fi
 ```
 
-The fallback fires ONLY when the source file is absent — never on a non-zero exit — so a
-fail-closed exit 3 is not silently re-answered from the gitignored, possibly-stale deployed copy.
+The fallback fires ONLY when the source file is absent, never on a non-zero exit. So the
+gitignored, possibly-stale deployed copy does not silently re-answer a fail-closed exit 3.
 Do not discard stderr. A default consumer install owns `.claude/runtime/resume_decision.py`, not a
 root `runtime/`. Treat ANY non-zero exit as `stop`, and require `schema_version == 1` before acting on
 `action`. Branch only on the structured `action`/`reason_code`: `execute-plan`, `resume-repair`,
 `resume-review-chain`, `wait`, `stop`, or `rebuild`.
 
 On `execute-plan`, first re-run every `cursor.checks_to_rerun` item (each claimed-complete task's
-exact Verify) and dispatch NO pending task until those claims verify; a failed check routes to the
-repair path. Apply `required_transition` ONLY after the session confirms the external condition it
+exact Verify). Dispatch NO pending task until those claims verify. A failed re-run routes to the
+repair path. Apply `required_transition` ONLY after the session verifies the external condition it
 names. Do not reconstruct the FSM from prose or initialize a missing historical run during
 execution. Read `references/resume.md` only when the returned action requires a manual transition
 or repair.
@@ -49,24 +49,24 @@ Ensure branch isolation, set the plan `status: active`, and transition the durab
 ## Execute waves
 
 - Before dispatch, generate a deterministic brief using
-  `skills/subagent-driven-development/scripts/task_brief.py`; pass its path to the implementer.
-  Fill `[LANE]` from SUMMARY. The implementer reports inline;
+  `skills/subagent-driven-development/scripts/task_brief.py`. Pass its path to the implementer.
+  Fill `[LANE]` from SUMMARY. The implementer reports inline, and
   the controller writes it verbatim to `.harness-state/sdd/report-<task>.md` per `rules/orchestration.md`.
   Record non-`none` deltas in SUMMARY. Never paste history or report contents into prompts.
 - Generate one explicit `BASE..HEAD` package with `review_package.py` (BASE = the commit
-  before this task's first commit, never the branch base); pass brief/report/package
+  before this task's first commit, never the branch base). Pass brief/report/package
   paths to `task-reviewer`. One reviewer returns both
   `spec_verdict` and `quality_verdict` using `task-reviewer-prompt.md`.
 - If changed-prose `## STE lint` counts are missing or unavailable, re-run `review_package.py` once.
   If still missing or unavailable, report the task as blocked.
-- `cannot_verify` gets one focused context or test-runner retry. If still unknown, escalate; never
+- `cannot_verify` gets one focused context or test-runner retry. If still unknown, escalate. Never
   treat it as a pass. Fix all Critical/Important findings in one dispatch, then re-review both
-  verdicts. Record Minor findings in SUMMARY and the progress ledger; provide their roll-up to the
+  verdicts. Record Minor findings in SUMMARY and the progress ledger. Provide their roll-up to the
   final review chain.
-- `NEEDS_CONTEXT` receives missing context; `BLOCKED` is re-dispatched with changed context/model,
+- `NEEDS_CONTEXT` receives missing context. `BLOCKED` is re-dispatched with changed context/model,
   split, or escalated when the plan itself is wrong. Repeated verification failure or blast-radius
   escape is an escalation signal. Between dispatches, tell the user which task is
-  starting and what came back (verdicts, blockers); keep detail in SUMMARY and the ledger.
+  starting and what came back (verdicts, blockers). Keep detail in SUMMARY and the ledger.
 
 After all tasks pass, transition to `verifying` when tracked and read
 `references/review-chain.md` for the final sequence.
@@ -75,5 +75,5 @@ After all tasks pass, transition to `verifying` when tracked and read
 
 Write `.review-receipt.json` at the reviewed HEAD. Handoff requires both a passing
 `python3 scripts/verify_summary.py --check <slug>` (including Success Criteria coverage) and a
-passing receipt with zero blocking findings. Any post-review code commit invalidates the receipt:
-re-run the affected review; never hand-edit its SHA.
+passing receipt with zero blocking findings. Any post-review code commit invalidates the receipt.
+Re-run the affected review. Never hand-edit the receipt's SHA.

@@ -8,8 +8,8 @@ allowed-tools: Read, Write, Edit, Grep, Glob, Bash(git log *), Bash(git diff *),
 
 <HARD-GATE>
 Do not edit, scaffold, or dispatch implementation until intake records `Lane:` and `Confidence:`
-in `specs/<slug>/SUMMARY.md`. The lane is risk; confidence is ambiguity. Never ask the user to
-classify risk; ask only to resolve a material ambiguity or narrow a hard-gated scope.
+in `specs/<slug>/SUMMARY.md`. The lane is risk. Confidence is ambiguity. Never ask the user to
+classify risk. Ask only to resolve a material ambiguity or narrow a hard-gated scope.
 </HARD-GATE>
 
 ## Procedure
@@ -18,28 +18,28 @@ classify risk; ask only to resolve a material ambiguity or narrow a hard-gated s
    `rules/auto-correct-scope.md`. If SUMMARY exists and either has an
    `Intent-source:` line or `specs/<slug>/intent.md` exists, follow `references/re-pin.md`
    instead. With no SUMMARY, first follow `references/draft-intent.md` unless intent.md is
-   `Status: approved` and identical to its last commit. Read intent.md if present: stop unless its header line (`Status:` above
-   the first `##`) is exactly `approved`; pin with
-   `git log -1 --format=%H --diff-filter=AM -- specs/<slug>/intent.md` (empty: stop); if
-   `git diff --exit-code <pin> -- specs/<slug>/intent.md` is non-zero, stop; ask the
+   `Status: approved` and identical to its last commit. Read intent.md if present. Stop unless
+   its header line (`Status:` above the first `##`) is exactly `approved`. Pin with
+   `git log -1 --format=%H --diff-filter=AM -- specs/<slug>/intent.md` (empty: stop). If
+   `git diff --exit-code <pin> -- specs/<slug>/intent.md` is non-zero, stop. Ask the
    user to commit it. Classify from intent.md plus chat.
 2. Input type: new spec, spec slice, change request, initiative, maintenance, or harness
    improvement. Mark risk flags: auth, authorization, data model, audit/security,
    external systems, public contracts, cross-platform, existing behavior, weak proof, and
    multi-domain.
-3. Assign the lane: a manifest hard gate is `high-risk`; otherwise 0–1 flags is `tiny` only for
+3. Assign the lane. A manifest hard gate is `high-risk`. Otherwise, 0–1 flags is `tiny` only for
    one-file/no-new-public-callable work (else `normal`), 2–3 is `normal`, and 4+ is `high-risk`.
    A human may lower a hard-gated lane only by narrowing scope.
 4. Assign confidence: `high` for one clear interpretation, `medium` for a safe documented
    default, `low` for materially different plausible readings (including chat
    conflicting with intent.md). Low confidence always stops for a human.
-5. The pin line is `Intent-source: specs/<slug>/intent.md @ <sha>`; only legacy slugs (SUMMARY,
+5. The pin line is `Intent-source: specs/<slug>/intent.md @ <sha>`. Only legacy slugs (SUMMARY,
    no intent.md) have none.
 6. For a new SUMMARY, write it from `templates/SUMMARY.template.md`. `### Intent` holds the pin
-   line, then the request verbatim and in full: intent.md's `## Original request`, else the chat
-   request, else `none — intent.md is the request`; a bare approval or change reply is never the
-   request. Agent notes go in `### Intake notes`, not `### Intent`; intent.md content comes only from the draft
-   procedure or the user:
+   line, then the request verbatim and in full: intent.md's `## Original request`, else the
+   chat request, else `none — intent.md is the request`. A bare approval or change reply is never
+   the request. Agent notes go in `### Intake notes`, not `### Intent`. intent.md content comes
+   only from the draft procedure or the user:
 
    ```text
    Lane: <tiny | normal | high-risk>
@@ -53,28 +53,30 @@ classify risk; ask only to resolve a material ambiguity or narrow a hard-gated s
    ```
 
 7. For a new SUMMARY, initialize `runtime/run_state.py` as `investigating`, then `planning` for
-   normal and high-risk; failures never block intake. Always run
+   normal and high-risk. Failures never block intake. Always run
    `python3 scripts/verify_summary.py --lane <slug>` before handoff.
 
 ## Routes
 
-- tiny: branch, patch directly, keep quick-check proof; done only when it
-  passes, else state what is missing.
+- tiny: branch, patch directly, keep quick-check proof. Done only when it
+  passes. Else state what is missing.
 - normal: `using-git-worktrees` → `subagent-driven-development`.
 - high-risk: `brainstorming` → `xia2` → `writing-plans` → `using-git-worktrees` →
-  `subagent-driven-development`; use `compound` for durable decisions.
+  `subagent-driven-development`. Use `compound` for durable decisions.
 
-All lanes require branch isolation. Artifacts scale by signal: a plan for >3 steps or >2 files,
-research for unfamiliar code or high-risk, a design for a real fork or high-risk
-(`FULL_ARTIFACTS=1` forces all).
+All lanes require branch isolation. Artifacts scale by signal (`FULL_ARTIFACTS=1` forces all):
+
+- a plan for >3 steps or >2 files
+- research for unfamiliar code or high-risk
+- a design for a real fork or high-risk
 
 ## Research-depth handoff
 
 With an intake record, xia2 starts `high-risk` at **Deep**, `normal` at **Standard**, `tiny` at
-**Quick** only if every Quick condition in `rules/research-depth.md` passes; it never re-scores
+**Quick** only if every Quick condition in `rules/research-depth.md` passes. It never re-scores
 risk, only raises depth on evidence.
 
 ## Arguments
 
 `$ARGUMENTS` is the requested change. Derive `<slug>` using the ticket-prefix convention in
-`templates/structure/specs-README.md`; never rename an existing spec directory.
+`templates/structure/specs-README.md`. Never rename an existing spec directory.
