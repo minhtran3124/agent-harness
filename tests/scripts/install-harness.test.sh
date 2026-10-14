@@ -1,7 +1,7 @@
 #!/bin/bash
 # Integration tests for scripts/install-harness.sh — installs from this checkout
-# (--source) into throwaway target dirs. Frozen from the 6-case suite that shipped
-# the MCP wiring (commit ea3182f).
+# (--source) into throwaway target dirs. The installer never reads, writes or backs up
+# a consumer .mcp.json; the .mcp.json cases below assert it is left byte-identical.
 source "$(dirname "$0")/../lib.sh"
 
 INSTALL="$ROOT/scripts/install-harness.sh"
@@ -16,21 +16,21 @@ run_install() { # run_install <target> [extra args/env...]
 t "dry-run on a fresh target writes nothing"
 tgt=$(target)
 OUT=$(bash "$INSTALL" --source "$ROOT" --dry-run -d "$tgt" 2>&1); RC=$?
-if [ "$RC" -eq 0 ] && echo "$OUT" | grep -qF "would create  .mcp.json" && ! echo "$OUT" | grep -qiF "$MEMORY_DIR" && [ ! -e "$tgt/.claude" ] && [ ! -e "$tgt/.mcp.json" ] && [ -z "$(find "$tgt" -mindepth 1 -print -quit)" ]; then
+if [ "$RC" -eq 0 ] && ! echo "$OUT" | grep -qF ".mcp.json" && ! echo "$OUT" | grep -qiF "$MEMORY_DIR" && [ ! -e "$tgt/.claude" ] && [ ! -e "$tgt/.mcp.json" ] && [ -z "$(find "$tgt" -mindepth 1 -print -quit)" ]; then
   pass
 else
   fail "rc=$RC, .claude exists: $([ -e "$tgt/.claude" ] && echo yes || echo no)"
 fi
 
-t "fresh install creates valid .mcp.json, builds .claude/, prunes root sources"
+t "fresh install creates no .mcp.json, builds .claude/, prunes root sources"
 tgt=$(target)
 run_install "$tgt"
 if [ "$RC" -eq 0 ] \
-   && jq -e '.mcpServers["code-review-graph"]' "$tgt/.mcp.json" >/dev/null 2>&1 \
+   && [ ! -e "$tgt/.mcp.json" ] && ! echo "$OUT" | grep -qF ".mcp.json" \
    && [ -d "$tgt/.claude/skills" ] && [ ! -e "$tgt/skills" ]; then
   pass
 else
-  fail "rc=$RC — mcp/.claude/prune state wrong: $(ls -a "$tgt" | tr '\n' ' ')"
+  fail "rc=$RC — .mcp.json/.claude/prune state wrong: $(ls -a "$tgt" | tr '\n' ' ')"
 fi
 
 t "fresh install scaffolds six structural files and memory-free agents"
@@ -91,36 +91,46 @@ else
   fail "rc=$RC — pre-existing INDEX.md was clobbered: [$(cat "$tgt/docs/solutions/INDEX.md" 2>&1)]"
 fi
 
-t "existing .mcp.json with other servers is merged, not replaced (backup taken)"
+assert_mcp_untouched() { # assert_mcp_untouched <target> <copy taken before install>
+  if [ "$RC" -eq 0 ] && cmp -s "$2" "$1/.mcp.json" && ! ls "$1"/.harness-backup-*/.mcp.json >/dev/null 2>&1; then
+    pass
+  else
+    fail "rc=$RC content=[$(cat "$1/.mcp.json" 2>&1)] backup=$(ls "$1"/.harness-backup-* 2>/dev/null | head -1)"
+  fi
+}
+
+t "existing .mcp.json with other servers is left byte-identical (no backup)"
 tgt=$(target)
 echo '{"mcpServers":{"context7":{"type":"http","url":"https://example.com"}}}' > "$tgt/.mcp.json"
+before="$(target)/mcp.json"; cp "$tgt/.mcp.json" "$before"
 run_install "$tgt"
-keys=$(jq -r '.mcpServers | keys | join(",")' "$tgt/.mcp.json" 2>/dev/null)
-if [ "$RC" -eq 0 ] && [ "$keys" = "code-review-graph,context7" ] && ls "$tgt"/.harness-backup-*/.mcp.json >/dev/null 2>&1; then
-  pass
-else
-  fail "rc=$RC keys=[$keys] backup=$(ls "$tgt"/.harness-backup-* 2>/dev/null | head -1)"
-fi
+assert_mcp_untouched "$tgt" "$before"
 
-t "re-install on an already-wired target is idempotent"
+t "re-install on a target with .mcp.json leaves it unchanged"
 run_install "$tgt"
-assert_rc_contains 0 "already wires code-review-graph"
+assert_mcp_untouched "$tgt" "$before"
 
-t "invalid existing .mcp.json is left untouched with a warning"
+t "existing .mcp.json with a code-review-graph entry is left byte-identical (no backup)"
+tgt=$(target)
+echo '{"mcpServers":{"code-review-graph":{"command":"uvx","args":["code-review-graph","serve"]}}}' > "$tgt/.mcp.json"
+before="$(target)/mcp.json"; cp "$tgt/.mcp.json" "$before"
+run_install "$tgt"
+assert_mcp_untouched "$tgt" "$before"
+
+t "invalid existing .mcp.json is left untouched without a warning"
 tgt=$(target)
 printf 'NOT JSON {' > "$tgt/.mcp.json"
+before="$(target)/mcp.json"; cp "$tgt/.mcp.json" "$before"
 run_install "$tgt"
-if [ "$RC" -eq 0 ] && echo "$OUT" | grep -qF "not valid JSON" && [ "$(cat "$tgt/.mcp.json")" = "NOT JSON {" ]; then
-  pass
+if echo "$OUT" | grep -qF "not valid JSON"; then
+  fail "installer warned about .mcp.json"
 else
-  fail "rc=$RC content=[$(cat "$tgt/.mcp.json")]"
+  assert_mcp_untouched "$tgt" "$before"
 fi
 
-t "missing uvx warns at preflight but does not fail the install"
+t "missing uvx is not mentioned and does not fail the install"
 tgt=$(target)
 OUT=$(env PATH=/usr/bin:/bin bash "$INSTALL" --source "$ROOT" --dry-run -d "$tgt" 2>&1); RC=$?
-if [ "$RC" -eq 0 ] && echo "$OUT" | grep -qF "uvx not found"; then pass; else
-  command -v uvx >/dev/null 2>&1 && [ "$RC" -eq 0 ] && skip "uvx reachable even at /usr/bin:/bin" || fail "rc=$RC"
-fi
+assert_rc_not_contains 0 "uvx"
 
 finish

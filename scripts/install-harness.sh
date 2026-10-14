@@ -5,8 +5,7 @@
 # then builds the loadable .claude/ in the target via deploy-harness.sh --target, and scaffolds
 # the workflow's structural dirs (specs/, docs/solutions/) via
 # init-structure.sh — CREATE-IF-MISSING only. The installer never DELETES or OVERWRITES a
-# target file: it merge-syncs .claude/, merges one server entry into .mcp.json, and only ADDS
-# structural files that are absent. (The historical data-loss incident was a prior installer
+# target file: it merge-syncs .claude/ and only ADDS structural files that are absent. (The historical data-loss incident was a prior installer
 # staging payload at the root then *pruning* it — deletion, which create-if-missing never does.)
 # Designed to run piped:
 #   curl -fsSL https://raw.githubusercontent.com/minhtran3124/harness-skills/main/scripts/install-harness.sh | bash -s -- --yes
@@ -105,8 +104,8 @@ while [ $# -gt 0 ]; do
     *)              fail "Unknown option: $1  (see --help)" ;;
   esac
 done
-# Validate before any write: .mcp.json is written before deploy runs (deploy re-validates against
-# the source manifest's hook_profiles).
+# Validate before any write: the target dir is created before deploy runs (deploy re-validates
+# against the source manifest's hook_profiles).
 case "$PROFILE" in
   ""|minimal|standard|strict) ;;
   *) fail "Unknown --profile: $PROFILE  (expected minimal, standard, or strict)" ;;
@@ -122,12 +121,6 @@ printf '  %s→ %s%s\n\n' "$D" "$TARGET_DIR" "$R"
 command -v jq  >/dev/null 2>&1 || fail "jq is required (deploy step needs it). Install jq and re-run."
 if [ -z "$SOURCE_DIR" ]; then
   command -v git >/dev/null 2>&1 || fail "git is required to clone (or pass --source <local checkout>)."
-fi
-UVX_MISSING=0
-if ! command -v uvx >/dev/null 2>&1; then
-  UVX_MISSING=1
-  warn "uvx not found — the code-review-graph MCP server launches through it."
-  printf '  %s  Install uv:  curl -LsSf https://astral.sh/uv/install.sh | sh%s\n' "$D" "$R"
 fi
 
 # ---------- resolve source ----------
@@ -179,44 +172,6 @@ if [ ! -f "$TARGET_DIR/scripts/install-harness.sh" ]; then
     warn "Found root-level harness files from an older install layout: ${LEGACY[*]}"
     info "They are no longer used (the harness lives in .claude/) and were left untouched — remove them manually if they are not your project's own files."
   fi
-fi
-
-# ---------- wire MCP config (.mcp.json at target root; merge, never overwrite) ----------
-# Runs BEFORE the deploy step so its .mcp.json canary passes. Claude Code reads .mcp.json at
-# the project ROOT (not inside .claude/). An existing file may carry the project's own
-# servers — the code-review-graph entry is merged in, never replacing the file wholesale.
-MCP_SRV='{"command":"uvx","args":["code-review-graph","serve"]}'
-if [ -f "$SRC/.mcp.json" ]; then
-  s="$(jq -c '.mcpServers["code-review-graph"] // empty' "$SRC/.mcp.json" 2>/dev/null || true)"
-  [ -n "$s" ] && MCP_SRV="$s"
-fi
-MCP_DST="$TARGET_DIR/.mcp.json"
-BACKUP_DIR="$TARGET_DIR/.harness-backup-$(date +%Y%m%d-%H%M%S)"
-if [ "$DRY_RUN" -eq 1 ]; then
-  if [ ! -f "$MCP_DST" ]; then
-    log "would create  .mcp.json (code-review-graph via uvx)"
-  elif ! jq -e . "$MCP_DST" >/dev/null 2>&1; then
-    log "would skip  .mcp.json (existing file is not valid JSON)"
-  elif jq -e '.mcpServers["code-review-graph"]' "$MCP_DST" >/dev/null 2>&1; then
-    log "would leave  .mcp.json unchanged (code-review-graph already wired)"
-  else
-    log "would merge  code-review-graph into existing .mcp.json"
-  fi
-elif [ ! -f "$MCP_DST" ]; then
-  printf '{"mcpServers":{"code-review-graph":%s}}' "$MCP_SRV" | jq . > "$MCP_DST"
-  ok "Wired ${B}.mcp.json${R} (code-review-graph via uvx)"
-elif ! jq -e . "$MCP_DST" >/dev/null 2>&1; then
-  warn "Existing .mcp.json is not valid JSON — left untouched."
-  info "Add manually: ${D}\"code-review-graph\": $MCP_SRV  under  mcpServers${R}"
-elif jq -e '.mcpServers["code-review-graph"]' "$MCP_DST" >/dev/null 2>&1; then
-  ok ".mcp.json already wires code-review-graph — left unchanged"
-else
-  mkdir -p "$BACKUP_DIR"
-  cp "$MCP_DST" "$BACKUP_DIR/.mcp.json"
-  TMP_MCP="$(mktemp)"
-  jq --argjson srv "$MCP_SRV" '.mcpServers["code-review-graph"] = $srv' "$MCP_DST" > "$TMP_MCP"
-  mv "$TMP_MCP" "$MCP_DST"
-  ok "Merged code-review-graph into existing ${B}.mcp.json${R} ${D}(backup: ${BACKUP_DIR#$TARGET_DIR/}/.mcp.json)${R}"
 fi
 
 # ---------- build .claude/ via deploy-harness (straight from the fetched source) ----------
@@ -356,7 +311,4 @@ if [ "$DRY_RUN" -eq 1 ]; then
 fi
 printf '\n  %s%s✓ Harness installed%s %s(v%s)%s  %s→ %s%s\n' "$G" "$B" "$R" "$D" "$HARNESS_VERSION" "$R" "$D" "$TARGET_DIR" "$R"
 printf '  %s↻ Restart Claude Code in that project so it loads the harness.%s\n' "$Y" "$R"
-if [ "$UVX_MISSING" -eq 1 ]; then
-  warn "Install uv before that restart, or the code-review-graph MCP server cannot launch."
-fi
 printf '\n'
