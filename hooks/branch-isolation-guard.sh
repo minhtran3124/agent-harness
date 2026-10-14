@@ -154,7 +154,7 @@ if [ "$STATUS" != "known" ] || [ "$TOOL_CLASS" != "edit" ]; then
     hookSpecificOutput: {
       hookEventName: "PreToolUse",
       permissionDecision: "deny",
-      permissionDecisionReason: ("Branch isolation could not safely classify the edit payload on shared branch " + $b + " (" + $c + "; " + $d + "). Re-run the edit after updating/redeploying the harness normalizer, or use the audited BRANCH_ISOLATION_REASON override.")
+      permissionDecisionReason: ("Branch isolation could not safely classify the edit payload on shared branch " + $b + " (" + $c + "; " + $d + "). Re-run the edit after updating/redeploying the harness normalizer, or use the audited BRANCH_ISOLATION_REASON override." + "\nRoute: cut a task branch (git checkout -b <type>/<slug>, or the using-git-worktrees skill) and re-apply the edit; if the normalizer is stale, redeploy with bash <harness>/scripts/install-harness.sh --source <harness> -d <project> --yes or the installer one-liner from the harness README (in the harness repo itself: git restore hooks/lib/); break glass with BRANCH_ISOLATION_REASON=<why>.")
     }
   }'
   exit 0
