@@ -113,14 +113,14 @@ The harness needs no MCP server. If you want one, install it yourself — nothin
 
 ```bash
 claude mcp add --scope local code-review-graph -- uvx code-review-graph serve
-echo ".code-review-graph/" >> .git/info/exclude   # keep the graph data out of git
+echo ".code-review-graph/" >> "$(git rev-parse --git-common-dir)/info/exclude"   # keep the graph data out of git (works in worktrees too)
 ```
 
 Local scope is private to you: it is stored in `~/.claude.json` under this project's path, not in the repo. If `/mcp` does not show the server in a session started inside a git worktree, add it with `--scope user` instead.
 
 **context7** (library docs). Configure it at user scope or as a plugin in your own Claude Code config.
 
-**Personal instructions** (for example, when to use these servers). Put them in an untracked `CLAUDE.local.md` at the project root, excluded via `.git/info/exclude`; Claude Code loads it alongside `CLAUDE.md`. It exists only in the checkout or worktree where you created it, so for notes that must follow you into worktrees, import a home-directory file (`@~/.claude/<file>.md`) or use the user-level `~/.claude/CLAUDE.md`. Run `/memory` to confirm what loaded and `/mcp` to see connected servers.
+**Personal instructions** (for example, when to use these servers). Put them in an untracked `CLAUDE.local.md` at the project root, excluded the same way (`echo "CLAUDE.local.md" >> "$(git rev-parse --git-common-dir)/info/exclude"`); Claude Code loads it alongside `CLAUDE.md`. It exists only in the checkout or worktree where you created it, so for notes that must follow you into worktrees, import a home-directory file (`@~/.claude/<file>.md`) or use the user-level `~/.claude/CLAUDE.md`. Run `/memory` to confirm what loaded and `/mcp` to see connected servers.
 
 ## Further reading
 
