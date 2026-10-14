@@ -141,6 +141,20 @@ still holds.
 - `hooks/commit-gate.sh:120` (score 25) — the untracked-`.py` deny also fires on `git push`; the pre-existing "Run: git add <files>" advice clears the deny there without committing the file. The added sentence tells the agent to commit, so the diff did not make it worse.
 - `hooks/branch-isolation-guard.sh:153,172`, `hooks/commit-gate.sh:116` (score 0, unmodified-line, pre-existing) — with `jq` absent, the JSON deny paths print nothing and the hook exits 0, so the edit or commit is allowed (fail-open). Not introduced by this diff; worth a separate fix (fail closed when `jq -cn` fails).
 
+### Intent Findings
+
+<!-- intent-review over 7ef3579..2503411 (plan-blind; code diff + intent.md, SUMMARY, design.md). No excess. -->
+
+- gap (evidence only, deferred to finishing) — intent "`bash scripts/run-tests.sh` stays green
+  (assumed)": the behavior holds (intent reviewer ran it: 905 passed, ALL GREEN, worktree clean;
+  baseline before implementation also ALL GREEN), but there is no `### Verify` row for it. A
+  whole-suite Verify row is forbidden by `rules/plan-format.md` Guardrail 4; the suite re-runs at
+  `finishing-a-development-branch` and in CI, which is where this claim is proven.
+- drift, equivalent (advisory) — DC1 question "Should its route gain 'in a separate Bash call,
+  then commit'?" / reply "yes": the shipped sentence reads "Stage and commit in separate Bash
+  calls: this check reads the whole command, so git add <files> && git commit in one call is
+  denied again." Same instruction, different words.
+
 ### Task review Minors
 
 <!-- Non-blocking task-review findings, forwarded to the final review chain. -->
