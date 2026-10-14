@@ -17,11 +17,11 @@ classify risk. Ask only to resolve a material ambiguity or narrow a hard-gated s
 1. Read `harness-manifest.json` (hard gates), `rules/orchestration.md` and
    `rules/auto-correct-scope.md`. If SUMMARY exists and either has an
    `Intent-source:` line or `specs/<slug>/intent.md` exists, follow `references/re-pin.md`
-   instead. With no SUMMARY, first follow `references/draft-intent.md` unless intent.md is
-   `Status: approved` and identical to its last commit. Read intent.md if present. Stop unless
-   its header line (`Status:` above the first `##`) is exactly `approved`. Pin with
-   `git log -1 --format=%H --diff-filter=AM -- specs/<slug>/intent.md` (empty: stop). If
-   `git diff --exit-code <pin> -- specs/<slug>/intent.md` is non-zero, stop. Ask the
+   instead. Without SUMMARY, first follow `references/draft-intent.md` unless intent.md is
+   `Status: approved` and matches its last commit. If intent.md exists, run these
+   checks. Stop unless its header line (`Status:` above the first `##`) is exactly `approved`.
+   Pin with `git log -1 --format=%H --diff-filter=AM -- specs/<slug>/intent.md` (empty: stop).
+   If `git diff --exit-code <pin> -- specs/<slug>/intent.md` is non-zero, stop and ask the
    user to commit it. Classify from intent.md plus chat.
 2. Input type: new spec, spec slice, change request, initiative, maintenance, or harness
    improvement. Mark risk flags: auth, authorization, data model, audit/security,
@@ -35,7 +35,7 @@ classify risk. Ask only to resolve a material ambiguity or narrow a hard-gated s
    conflicting with intent.md). Low confidence always stops for a human.
 5. The pin line is `Intent-source: specs/<slug>/intent.md @ <sha>`. Only legacy slugs (SUMMARY,
    no intent.md) have none.
-6. For a new SUMMARY, write it from `templates/SUMMARY.template.md`. `### Intent` holds the pin
+6. Write a new SUMMARY from `templates/SUMMARY.template.md`. `### Intent` holds the pin
    line, then the request verbatim and in full: intent.md's `## Original request`, else the
    chat request, else `none — intent.md is the request`. A bare approval or change reply is never
    the request. Agent notes go in `### Intake notes`, not `### Intent`. intent.md content comes

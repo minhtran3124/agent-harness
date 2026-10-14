@@ -38,7 +38,7 @@ The orchestrator MUST write a `Lane:` line. The check gives these results:
 
 - A declared lane below `high-risk` is **blocked** when the diff trips a **block-mode** hard-gate
   signal.
-- A warn-mode gate (`workflow-engine`, `weakening-validation`) prints a note and allows the commit.
+- A warn-mode gate (`workflow-engine`, `weakening-validation`) prints a note and does not block.
 - A *missing* lane only **warns** (fail-open), unless `RISK_CORROBORATION_STRICT=1` is set.
 
 The per-gate mode is the manifest's `hard_gates.detectable[].mode`. The hook reads it from the git
@@ -63,17 +63,17 @@ Under `subagent-driven-development`, the implementer returns the full contract i
 runtime refuses subagent report-file writes. The controller persists the report to
 `.harness-state/sdd/` for the task reviewer:
 
-1. On a `DONE` or `DONE_WITH_CONCERNS` return, the controller writes
-   `.harness-state/sdd/report-<task>.md` verbatim under a one-line "transcribed by controller"
-   header. It does this before the task review.
-2. A fix dispatch also returns that structured report. The controller appends it verbatim under a
-   `## Fix round <n>` heading. It does not replace the first report.
-3. A `BLOCKED` or `NEEDS_CONTEXT` return writes no file and removes any existing
-   `report-<task>.md`, so no reviewer sees a stale report.
-4. After such a removal, the next file-writing return starts a fresh `report-<task>.md`. It is
-   written as a first report: the controller header, no `Fix round` heading, and round
-   numbering restarts.
-5. The controller treats a return with no recognisable status as `NEEDS_CONTEXT`.
+- On a `DONE` or `DONE_WITH_CONCERNS` return, the controller writes
+  `.harness-state/sdd/report-<task>.md` verbatim under a one-line "transcribed by controller"
+  header. It does this before the task review.
+- A fix dispatch also returns that structured report. The controller appends it verbatim under a
+  `## Fix round <n>` heading. It does not replace the first report.
+- A `BLOCKED` or `NEEDS_CONTEXT` return writes no file and removes any existing
+  `report-<task>.md`, so no reviewer sees a stale report.
+- After such a removal, the next file-writing return starts a fresh `report-<task>.md`. It is
+  written as a first report: the controller header, no `Fix round` heading, and round
+  numbering restarts.
+- The controller treats a return with no recognisable status as `NEEDS_CONTEXT`.
 
 That full structured report is what the main thread needs, so it is not a raw file dump.
 
@@ -119,11 +119,14 @@ intent or to authorize a dangerous boundary.
 ESCALATE — write a block to `specs/<slug>/ESCALATIONS.md` (shape: `templates/ESCALATIONS.template.md`)
 and stop — when any of these hold:
 
-- a **hard gate** is hit, and a human has not yet narrowed it. The hard gates are: auth · authorization · data-loss/migration · audit/security · external provider · public contract · weakening validation · high-blast file.
-- **confidence is `low`** (any lane), or `medium` on a high-risk task
-- the **direction is ambiguous** (>1 materially different interpretation)
-- an **in-flight trigger** fires (see "In-flight escalation checks" below)
-- the change would **redefine the system** (architecture direction, validation requirements, source-of-truth hierarchy, risk-classification rules, or the workflow itself)
+- a **hard gate** is hit, and a human has not yet narrowed it. Hard gates include: auth ·
+  authorization · data-loss/migration · audit/security · external provider · public contract ·
+  weakening validation · high-blast file.
+- **confidence is `low`** (any lane), or `medium` on a high-risk task.
+- the **direction is ambiguous** (>1 materially different interpretation).
+- an **in-flight trigger** fires (see "In-flight escalation checks" below).
+- the change would **redefine the system** (architecture direction, validation requirements,
+  source-of-truth hierarchy, risk-classification rules, or the workflow itself).
 
 Otherwise **PROCEED autonomously** in the lane. For high-confidence **normal**-lane work, post the
 `PLAN.md` and a short notice (**notify-and-proceed**) instead of blocking on approval. The human
@@ -132,7 +135,7 @@ may interrupt but is not a gate. Per-task agent reviews stay always-on regardles
 `ESCALATIONS.md` is **deny-on-no-response**: with no recorded decision, the work stays blocked.
 `hooks/commit-gate.sh` mechanizes this (`check_escalations`, in the `standard` and `strict`
 profiles). It denies a commit touching `specs/<slug>/` while that slug's `ESCALATIONS.md` has
-`decision: pending`. Record the decision in the same commit to unblock it.
+`decision: pending`. A commit that also records the decision is not denied.
 
 ## In-flight escalation checks (during waves)
 
