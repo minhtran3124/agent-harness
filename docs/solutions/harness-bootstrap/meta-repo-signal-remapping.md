@@ -26,7 +26,7 @@ Harness-native analogs for application-centric risk signals — when bootstrappi
 When filling PROJECT.md for this repo (or any skills/hooks harness), apply this mapping table:
 
 - High-blast files → `settings.json` (hook registration; 14 inbound refs — one line wires/unwires automation), `hooks/*.sh` (auto-run on every trigger in every session of every consuming repo), `tests/lib.sh` (sourced by all 12 `*.test.sh` suites), `skills/visual-planner/render_plan.py` (deterministic core engine).
-- Dependency manifest → `.mcp.json` is the only dep-like file (declares the `code-review-graph` MCP server via `uvx`); adding MCP servers is a Deep trigger.
+- Dependency manifest → none; the repo has no dependency-like file (MCP servers are installed locally by each user, not committed); adding a tracked MCP config is a Deep trigger.
 - Session/transaction primitive → hook fail-open vs fail-closed semantics (e.g. `RISK_CORROBORATION_STRICT=1`); flipping a hook between warn and block is the harness equivalent of changing DB session scoping.
 - Auth surface → the `commit-quality-gate.sh` secrets scan; weakening it is the security-relevant change.
 - Public API contract → skill invocation names in `skills/*/SKILL.md` frontmatter, the `settings.json` hook-registration shape, and template field names hooks parse programmatically (`Lane:`, `Confidence:`, `### Verify`, `### Rollback` — `risk-corroboration.sh` greps `Lane:`).

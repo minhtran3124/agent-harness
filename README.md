@@ -84,9 +84,9 @@ One-liner that clones the harness, builds `.claude/`, and leaves your project ro
 curl -fsSL "https://raw.githubusercontent.com/minhtran3124/agent-harness/main/scripts/install-harness.sh?$(date +%s)" | bash -s -- --yes
 ```
 
-Everything the harness needs lives in a gitignored `.claude/` (skills, agents, hooks, rules, templates, runtime, settings). At the project root it touches only two things: `.mcp.json` (wires the code-review-graph MCP server — merged into your existing one if present; Claude Code only reads this file at the root), and the workflow's structural dirs (`specs/`, `docs/solutions/`), scaffolded **create-if-missing**. The installer never overwrites or deletes anything at your root — it only adds structural files that are absent. **To update, just re-run the one-liner** (idempotent; `.claude/` is merge-synced, non-harness entries and locally-generated files kept; a protected file that differs from incoming is reported via a `<file>.harness-incoming` sidecar rather than overwritten).
+Everything the harness needs lives in a gitignored `.claude/` (skills, agents, hooks, rules, templates, runtime, settings). At the project root it touches only the workflow's structural dirs (`specs/`, `docs/solutions/`), scaffolded **create-if-missing**. The installer never overwrites or deletes anything at your root — it only adds structural files that are absent. **To update, just re-run the one-liner** (idempotent; `.claude/` is merge-synced, non-harness entries and locally-generated files kept; a protected file that differs from incoming is reported via a `<file>.harness-incoming` sidecar rather than overwritten).
 
-Needs `git` + [jq](https://jqlang.github.io/jq/); [uv](https://docs.astral.sh/uv/) is strongly recommended — the code-review-graph MCP server launches through `uvx`, and the installer warns when it's missing.
+Needs `git` + [jq](https://jqlang.github.io/jq/).
 Flags: `--directory <path>` · `--branch <name>` · `--source <local checkout>` · `--keep-sources` · `--dry-run` · `--overwrite-conflicts` (replace protected files with the incoming copy; `--force`/`--yes` keep local files instead of overwriting them).
 
 Then **restart Claude Code** so it loads the skills, agents, and hooks.
@@ -105,17 +105,22 @@ First run installs; any later run updates (idempotent). Re-run after editing any
 
 `bash scripts/run-tests.sh` runs what CI runs: syntax checks + a doc-truth lint (every path referenced in the core docs exists; the CLAUDE.md hook table matches `settings.json`), hermetic contract tests for the hooks (each runs in a throwaway git repo against its stdin-JSON contract), and installer integration tests. The `harness-ci` workflow runs the same suite on ubuntu + macos.
 
-### MCP servers
+### Optional MCP servers (local setup)
 
-This repo wires the [code-review-graph](https://pypi.org/project/code-review-graph/) MCP server in [.mcp.json](.mcp.json) — and `install-harness.sh` wires the same server into a consuming project's root `.mcp.json` automatically (creating it, or merging the entry into an existing one). It launches through [uv](https://docs.astral.sh/uv/)'s `uvx` runner, so there's **no manual `pip install`** — `uvx` fetches and runs it on demand.
-You just need `uv` (which provides `uvx`):
+The harness needs no MCP server. If you want one, install it yourself — nothing below is committed to the repo.
+
+**code-review-graph** (code graph for callers, dependents, blast radius). Install [uv](https://docs.astral.sh/uv/), then from the project root:
 
 ```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh   # installs uv + uvx
-uvx code-review-graph serve                        # exactly what .mcp.json invokes
+claude mcp add --scope local code-review-graph -- uvx code-review-graph serve
+echo ".code-review-graph/" >> .git/info/exclude   # keep the graph data out of git
 ```
 
-The graph data is written to `.code-review-graph/` (gitignored). The `context7` MCP server is configured at the Claude Code **user** level (HTTP, needs `CONTEXT7_API_KEY`) — it is *not* in this repo's `.mcp.json`, so each user wires it in their own global config.
+Local scope is private to you: it is stored in `~/.claude.json` under this project's path, not in the repo. If `/mcp` does not show the server in a session started inside a git worktree, add it with `--scope user` instead.
+
+**context7** (library docs). Configure it at user scope or as a plugin in your own Claude Code config.
+
+**Personal instructions** (for example, when to use these servers). Put them in an untracked `CLAUDE.local.md` at the project root, excluded via `.git/info/exclude`; Claude Code loads it alongside `CLAUDE.md`. It exists only in the checkout or worktree where you created it, so for notes that must follow you into worktrees, import a home-directory file (`@~/.claude/<file>.md`) or use the user-level `~/.claude/CLAUDE.md`. Run `/memory` to confirm what loaded and `/mcp` to see connected servers.
 
 ## Further reading
 
