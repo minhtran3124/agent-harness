@@ -206,6 +206,27 @@ def test_missing_capability_mapping_is_rejected(tmp_path):
         renderer.validate(root)
 
 
+@pytest.mark.parametrize("role", ["reviewer", "task-reviewer", "test-runner"])
+def test_mcp_tool_on_mcp_none_role_is_rejected(tmp_path, role):
+    root = clone_root(tmp_path)
+    path = root / "agents/runtime-bindings.json"
+    data = json.loads(path.read_text())
+    data["runtimes"]["claude"]["roles"][role]["tools"].append("mcp__docs__query")
+    path.write_text(json.dumps(data))
+    with pytest.raises(renderer.ContractError, match="mcp none"):
+        renderer.validate(root)
+
+
+def test_missing_tools_list_on_mcp_none_role_is_rejected(tmp_path):
+    root = clone_root(tmp_path)
+    path = root / "agents/runtime-bindings.json"
+    data = json.loads(path.read_text())
+    del data["runtimes"]["claude"]["roles"]["test-runner"]["tools"]
+    path.write_text(json.dumps(data))
+    with pytest.raises(renderer.ContractError, match="mcp none"):
+        renderer.validate(root)
+
+
 def test_vendor_field_in_semantic_source_is_rejected(tmp_path):
     root = clone_root(tmp_path)
     path = root / "agents/reviewer.md"

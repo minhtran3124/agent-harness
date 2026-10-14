@@ -1,7 +1,7 @@
 ---
 name: visual-planner
 description: Render a `PLAN.md` to a self-contained local HTML review page. Use after planning or standalone to inspect plan waves, tasks, scope, and optional review-derived risk.
-allowed-tools: Bash, Read, Glob, Write
+allowed-tools: Bash, Read, Grep, Glob, Write
 ---
 
 # Plan → HTML Renderer
