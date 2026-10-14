@@ -39,17 +39,17 @@ Read the selected `templates/` file before writing. Use the context category/slu
 allocate the next numeric suffix. Multiple decisions use one `-decisions` consolidated template.
 
 For a critical context, append an entry per emitted track to `critical-patterns.md` using its
-templates.
+templates. For a failure with `proposed:` guardrail, append one open row to
+`docs/harness-experimental/improvement-backlog.md`; do not duplicate an `existing:` guardrail.
 
 ## Mistake twice
 
-A learning that matches an existing record at `high` overlap is a second occurrence, so promote it:
-this run's output is the promotion, not another record. Update the matching `critical-patterns.md`
-entry, or add one if it has none; do not add a near-duplicate. Name the earlier record under the
-entry's **Full doc** line and say it recurred. When the learning applies only to certain paths,
-also propose a path-scoped rule in the report. Do not write it: adding `paths:` to `rules/`
-changes what loads, so a human decides. `moderate` overlap is not a recurrence. For a failure with `proposed:` guardrail, append one open row to
-`docs/harness-experimental/improvement-backlog.md`; do not duplicate an `existing:` guardrail.
+A learning that matches an existing record at `high` overlap is a second occurrence. Update that
+record as above, then promote it: the promotion is this run's output. Update the matching
+`critical-patterns.md` entry, or add one if it has none; do not add a near-duplicate. Add a
+`**Recurred:** <date>` line under its **Full doc** line. When the learning applies only to certain
+paths, also propose a path-scoped rule in the report. Do not write it: adding `paths:` to `rules/`
+changes what loads, so a human decides. `moderate` overlap is not a recurrence.
 
 Run the authority at the end of every run, even when nothing was written:
 
