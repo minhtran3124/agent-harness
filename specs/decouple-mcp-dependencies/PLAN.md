@@ -1,6 +1,6 @@
 ---
 slug: decouple-mcp-dependencies
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-10-14
 ---
@@ -211,3 +211,4 @@ documents how a user adds both back for local use only. Design: `specs/decouple-
 - 2026-10-14 — proposed (writing-plans)
 - 2026-10-14 — tasks 1.1, 1.2, 1.3, 1.4 complete; commits d0e60b9, 1ce515c, 8c72883, 2507404
 - 2026-10-14 — task 2.1 complete; no commit (redeployed gitignored .claude/; SC-9, SC-4, SC-10 greps exit 1)
+- 2026-10-14 — shipped: audit PASS, correctness (1 fix, 24aadd9), intent review recorded; PR opened against sdlc
