@@ -1295,8 +1295,8 @@ def build_sections(sections, status_entries_holder):
 
 
 # --------------------------------------------------------------------------- #
-# Plan Review (--review): renders an agent-supplied, graph-derived sidecar JSON.
-# The script never calls the code-review-graph MCP itself (offline/deterministic);
+# Plan Review (--review): renders an agent-supplied, review-derived sidecar JSON.
+# The script never queries any external tool itself (offline/deterministic);
 # the agent gathers impact/tests/existence and writes the JSON. Schema:
 #   {"files":[{"path","status":"new|existing|missing","dependents":int,
 #              "dependent_names":[...],"tests":[...],"risk":"high|medium|low",
@@ -1387,7 +1387,7 @@ def build_review(review: dict) -> str:
     if missing:
         missing_note = (
             f'<p class="review-warn">⚠ {missing} file(s) referenced by the plan were '
-            "not found in the graph — verify the path or treat as newly created.</p>"
+            "not found by the review evidence — verify the path or treat as newly created.</p>"
         )
 
     return (
@@ -1398,7 +1398,7 @@ def build_review(review: dict) -> str:
 
 def emit_files_json(plan_path: Path) -> str:
     """Emit the plan's per-task file list as JSON so the agent knows what to
-    query in the code-review-graph before building the --review sidecar."""
+    inspect (Grep/Read or an optional graph tool) before building the --review sidecar."""
     text = plan_path.read_text(encoding="utf-8").replace("\r\n", "\n")
     fm, body = parse_frontmatter(text)
     tasks, _ = extract_tasks(body)
