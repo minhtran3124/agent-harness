@@ -1,0 +1,1030 @@
+{
+ "revisions": {
+  "base": "33d6ed4ab1388a05c65397d70bac5ef5af649f53",
+  "head": "0bd1ae61a8168bfb2c8b9ae28d137f4bc64408d6"
+ },
+ "environment": {
+  "model": "claude-opus-5-5",
+  "effort": "medium",
+  "flags": "--safe-mode --tools Read --allowedTools Read --model claude-opus-5-5 --effort medium --max-budget-usd 1.5 --output-format stream-json --verbose --no-session-persistence"
+ },
+ "records": [
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "bait-generated-file",
+   "angle": "call-site-impact",
+   "attempt": 1,
+   "rc": 0,
+   "elapsed_s": 16.1,
+   "cost_usd": 0.0765,
+   "output_tokens": 1225,
+   "prompt_words": 1330,
+   "reads": [
+    "package.md",
+    "pagination.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "off-by-one",
+     "file": "app/utils/pagination.py",
+     "line": 35,
+     "confidence": 95,
+     "summary": "page_slice computes start = page * per_page for a 1-based page; page=1 returns the second page's items, the first page is unreachable and the last valid page returns []. Should be (page - 1) * per_page."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/utils/pagination.py",
+     "line": null,
+     "confidence": 20,
+     "summary": "Call sites of page_slice/page_count could not be searched (source tree not on disk, no grep available); any caller pairing page_slice with page_count iteration would skip page 1 and get an empty final page."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "bait-generated-file",
+   "angle": "enclosing-function",
+   "attempt": 1,
+   "rc": 0,
+   "elapsed_s": 21.1,
+   "cost_usd": 0.1125,
+   "output_tokens": 1644,
+   "prompt_words": 1343,
+   "reads": [
+    "package.md",
+    "pagination.py",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "off-by-one",
+     "file": "app/utils/pagination.py",
+     "line": 35,
+     "confidence": 95,
+     "summary": "page_slice computes start = page*per_page for a 1-based page; page 1 returns the second page's items, the first per_page items are unreachable, and the last real page is empty or short. Should be (page-1)*per_page."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unescaped-html",
+     "file": "specs/demo/PLAN.html",
+     "line": 92,
+     "confidence": 30,
+     "summary": "unmodified-line: plan title/task names go into innerHTML without escaping; names containing HTML characters render wrong or run as markup. Fix belongs in the render_plan.py generator."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "bait-generated-file",
+   "angle": "guard-completeness",
+   "attempt": 1,
+   "rc": 0,
+   "elapsed_s": 20.2,
+   "cost_usd": 0.1175,
+   "output_tokens": 1692,
+   "prompt_words": 1542,
+   "reads": [
+    "package.md",
+    "rules/auto-correct-scope.md",
+    "pagination.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "off-by-one",
+     "file": "app/utils/pagination.py",
+     "line": 35,
+     "confidence": 95,
+     "summary": "page_slice computes start = page * per_page for a 1-based page; page=1 skips the first per_page items and the last page returns empty. Should be (page - 1) * per_page."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "specs/demo/PLAN.html",
+     "line": 92,
+     "confidence": 25,
+     "summary": "unmodified-line: plan title/task names are interpolated into innerHTML without escaping; HTML in PLAN.md would be injected and run in the rendered page."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "bait-generated-file",
+   "angle": "prior-art",
+   "attempt": 1,
+   "rc": 0,
+   "elapsed_s": 14.7,
+   "cost_usd": 0.0787,
+   "output_tokens": 1151,
+   "prompt_words": 1376,
+   "reads": [
+    "package.md",
+    "INDEX.md",
+    "critical-patterns.md",
+    "solutions"
+   ],
+   "permission_denials": [],
+   "findings": []
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "bait-generated-file",
+   "angle": "removed-behavior",
+   "attempt": 1,
+   "rc": 0,
+   "elapsed_s": 21.7,
+   "cost_usd": 0.1174,
+   "output_tokens": 1811,
+   "prompt_words": 1339,
+   "reads": [
+    "package.md",
+    "rules/auto-correct-scope.md",
+    "pagination.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "off-by-one",
+     "file": "app/utils/pagination.py",
+     "line": 26,
+     "confidence": 95,
+     "summary": "page_slice computes start = page * per_page for a 1-based page, so page=1 returns the second page's items; the first per_page items are unreachable and the last page (page_count) returns [] when total is a multiple of per_page, otherwise a partial slice. Should be (page - 1) * per_page."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "bait-generated-file",
+   "angle": "stack-defects",
+   "attempt": 1,
+   "rc": 0,
+   "elapsed_s": 21.8,
+   "cost_usd": 0.1188,
+   "output_tokens": 1692,
+   "prompt_words": 1591,
+   "reads": [
+    "package.md",
+    "rules/auto-correct-scope.md",
+    "pagination.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "boundaries/off-by-one",
+     "file": "app/utils/pagination.py",
+     "line": 35,
+     "confidence": 97,
+     "summary": "page_slice computes start = page * per_page for a 1-based page; page 1 skips the first per_page items and the last page (page_count) returns []. Should be (page - 1) * per_page."
+    },
+    {
+     "oracle": "correctness",
+     "class": "input-validation/html-injection",
+     "file": "specs/demo/PLAN.html",
+     "line": 92,
+     "confidence": 25,
+     "summary": "unmodified-line: plan title and task names are inserted via innerHTML unescaped; a task name containing markup renders as HTML instead of text. Fix belongs in render_plan.py."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "bait-style-naming",
+   "angle": "call-site-impact",
+   "attempt": 1,
+   "rc": 0,
+   "elapsed_s": 15.2,
+   "cost_usd": 0.0605,
+   "output_tokens": 1148,
+   "prompt_words": 1328,
+   "reads": [
+    "package.md",
+    "sales.py",
+    "order.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "division-by-zero",
+     "file": "app/reports/sales.py",
+     "line": 16,
+     "confidence": 92,
+     "summary": "average_order_value guards on the unfiltered `orders` list, so a non-empty list with no COMPLETED orders leaves `c` empty and data['total']/data['count'] raises ZeroDivisionError instead of returning 0.0, crashing any caller."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/reports/sales.py",
+     "line": 9,
+     "confidence": 20,
+     "summary": "Callers of the new average_order_value could not be enumerated (repo files absent from the fixture, no search tool), so whether any caller handles the ZeroDivisionError is unknown."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "bait-style-naming",
+   "angle": "enclosing-function",
+   "attempt": 1,
+   "rc": 0,
+   "elapsed_s": 15.4,
+   "cost_usd": 0.0881,
+   "output_tokens": 1212,
+   "prompt_words": 1341,
+   "reads": [
+    "package.md",
+    "sales.py",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "division-by-zero",
+     "file": "app/reports/sales.py",
+     "line": 30,
+     "confidence": 92,
+     "summary": "average_order_value guards on `not orders` rather than on the filtered completed list `c`; a non-empty input with no COMPLETED orders makes count 0 and raises ZeroDivisionError instead of returning 0.0."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "bait-style-naming",
+   "angle": "guard-completeness",
+   "attempt": 1,
+   "rc": 0,
+   "elapsed_s": 16.3,
+   "cost_usd": 0.0941,
+   "output_tokens": 1302,
+   "prompt_words": 1540,
+   "reads": [
+    "package.md",
+    "sales.py",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "guard-completeness",
+     "file": "app/reports/sales.py",
+     "line": 30,
+     "confidence": 95,
+     "summary": "Guard `if not orders` checks the unfiltered list, but the divisor is len(c) of completed orders only. A non-empty list with no COMPLETED orders raises ZeroDivisionError instead of returning 0.0. Fix: guard on the filtered list."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/reports/sales.py",
+     "line": 28,
+     "confidence": 15,
+     "summary": "If Order.total can be None, sum() raises TypeError; couldn't check because the Order model isn't available (total_revenue already has the same exposure)."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "bait-style-naming",
+   "angle": "prior-art",
+   "attempt": 1,
+   "rc": 0,
+   "elapsed_s": 13.4,
+   "cost_usd": 0.0598,
+   "output_tokens": 995,
+   "prompt_words": 1374,
+   "reads": [
+    "package.md",
+    "INDEX.md",
+    "critical-patterns.md",
+    "sales.py"
+   ],
+   "permission_denials": [],
+   "findings": []
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "bait-style-naming",
+   "angle": "removed-behavior",
+   "attempt": 1,
+   "rc": 0,
+   "elapsed_s": 19.1,
+   "cost_usd": 0.0948,
+   "output_tokens": 1395,
+   "prompt_words": 1337,
+   "reads": [
+    "package.md",
+    "sales.py",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "guard-completeness",
+     "file": "app/reports/sales.py",
+     "line": 30,
+     "confidence": 92,
+     "summary": "average_order_value guards only on empty input list; a non-empty list with zero COMPLETED orders makes count 0 and raises ZeroDivisionError at line 30 instead of returning 0.0. Fix: guard on the filtered list c."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "bait-style-naming",
+   "angle": "stack-defects",
+   "attempt": 1,
+   "rc": 0,
+   "elapsed_s": 25.9,
+   "cost_usd": 0.0993,
+   "output_tokens": 1497,
+   "prompt_words": 1589,
+   "reads": [
+    "package.md",
+    "sales.py",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "boundary/division-by-zero",
+     "file": "app/reports/sales.py",
+     "line": 16,
+     "confidence": 95,
+     "summary": "average_order_value guards only on the unfiltered `orders` list; when orders is non-empty but contains no COMPLETED orders, `c` is empty and `data['total'] / data['count']` raises ZeroDivisionError instead of returning 0.0. Guard on the filtered list instead."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "intent",
+   "fixture": "bait-generated-file",
+   "angle": "-",
+   "attempt": 1,
+   "rc": 0,
+   "elapsed_s": 18.1,
+   "cost_usd": 0.0731,
+   "output_tokens": 1395,
+   "prompt_words": 1032,
+   "reads": [
+    "package.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "intent",
+     "class": "drift",
+     "file": "app/utils/pagination.py",
+     "line": 35,
+     "confidence": 95,
+     "summary": "page_slice computes start = page * per_page, so it treats pages as 0-based: page 1 returns the second block and the first per_page items can never be returned. The intent says 'page 1 returns the first per_page items'; should be (page - 1) * per_page."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "intent",
+   "fixture": "bait-style-naming",
+   "angle": "-",
+   "attempt": 1,
+   "rc": 0,
+   "elapsed_s": 13.8,
+   "cost_usd": 0.0525,
+   "output_tokens": 1167,
+   "prompt_words": 1006,
+   "reads": [
+    "package.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "intent",
+     "class": "gap",
+     "file": "app/reports/sales.py",
+     "line": 25,
+     "confidence": 95,
+     "summary": "Intent says return 0.0 when there are no completed orders, including a list whose orders are all pending or cancelled. The guard only checks `if not orders`, so a non-empty list with no completed orders reaches `data['total'] / data['count']` with count 0 and raises ZeroDivisionError instead of returning 0.0."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "bait-generated-file",
+   "angle": "call-site-impact",
+   "attempt": 1,
+   "rc": 0,
+   "elapsed_s": 17.1,
+   "cost_usd": 0.1134,
+   "output_tokens": 1407,
+   "prompt_words": 1222,
+   "reads": [
+    "package.md",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md",
+    "pagination.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "off-by-one",
+     "file": "app/utils/pagination.py",
+     "line": 35,
+     "confidence": 95,
+     "summary": "page_slice computes start = page * per_page for a documented 1-based page; page=1 skips the first per_page items and the last page (page == page_count) returns []. Should be (page - 1) * per_page."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/utils/pagination.py",
+     "line": 29,
+     "confidence": 30,
+     "summary": "Couldn't list callers of page_slice: the file isn't on disk and no search tool was available, so call sites using 1-based page numbers (e.g. alongside page_count) are unverified and would all get shifted results."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "bait-generated-file",
+   "angle": "enclosing-function",
+   "attempt": 1,
+   "rc": 0,
+   "elapsed_s": 16.8,
+   "cost_usd": 0.1136,
+   "output_tokens": 1438,
+   "prompt_words": 1199,
+   "reads": [
+    "package.md",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md",
+    "pagination.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "off-by-one",
+     "file": "app/utils/pagination.py",
+     "line": 19,
+     "confidence": 95,
+     "summary": "page_slice computes start = page * per_page for a 1-based page; page 1 skips the first per_page items, the first page is unreachable, and the last page counted by page_count comes back empty. Should be (page - 1) * per_page."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "bait-generated-file",
+   "angle": "guard-completeness",
+   "attempt": 1,
+   "rc": 0,
+   "elapsed_s": 23.6,
+   "cost_usd": 0.1148,
+   "output_tokens": 1268,
+   "prompt_words": 1434,
+   "reads": [
+    "package.md",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md",
+    "pagination.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "off-by-one",
+     "file": "app/utils/pagination.py",
+     "line": 35,
+     "confidence": 95,
+     "summary": "page_slice treats page as 0-based (start = page * per_page) while the page<1 guard and docstring treat it as 1-based; page=1 returns the second page, the real first page can't be reached, and the real last page returns []. Should be (page - 1) * per_page."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "bait-generated-file",
+   "angle": "prior-art",
+   "attempt": 1,
+   "rc": 0,
+   "elapsed_s": 15.6,
+   "cost_usd": 0.0859,
+   "output_tokens": 1250,
+   "prompt_words": 1266,
+   "reads": [
+    "package.md",
+    "INDEX.md",
+    "rules/review-policy.md",
+    "critical-patterns.md",
+    "solutions"
+   ],
+   "permission_denials": [],
+   "findings": []
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "bait-generated-file",
+   "angle": "removed-behavior",
+   "attempt": 1,
+   "rc": 0,
+   "elapsed_s": 17.2,
+   "cost_usd": 0.1165,
+   "output_tokens": 1477,
+   "prompt_words": 1235,
+   "reads": [
+    "package.md",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md",
+    "pagination.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "off-by-one",
+     "file": "app/utils/pagination.py",
+     "line": 30,
+     "confidence": 92,
+     "summary": "page_slice computes start = page * per_page for a 1-based page; page=1 returns the second page's items, page 1's items are unreachable, and the last valid page returns []. Should be (page - 1) * per_page. Found outside the removed-behavior method; the diff deletes no lines in non-generated files."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "bait-generated-file",
+   "angle": "stack-defects",
+   "attempt": 1,
+   "rc": 0,
+   "elapsed_s": 13.5,
+   "cost_usd": 0.111,
+   "output_tokens": 1222,
+   "prompt_words": 1483,
+   "reads": [
+    "package.md",
+    "pagination.py",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "boundaries/off-by-one",
+     "file": "app/utils/pagination.py",
+     "line": 30,
+     "confidence": 95,
+     "summary": "page_slice computes start = page * per_page for a 1-based page; page=1 returns the second page, the first per_page items are unreachable, and the last valid page returns []. Should be (page - 1) * per_page."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "bait-style-naming",
+   "angle": "call-site-impact",
+   "attempt": 1,
+   "rc": 0,
+   "elapsed_s": 16.3,
+   "cost_usd": 0.0974,
+   "output_tokens": 1332,
+   "prompt_words": 1220,
+   "reads": [
+    "package.md",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md",
+    "sales.py",
+    "order.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "division-by-zero",
+     "file": "app/reports/sales.py",
+     "line": 15,
+     "confidence": 92,
+     "summary": "average_order_value guards only the unfiltered list; a non-empty list with no COMPLETED orders gives count 0, so it raises ZeroDivisionError instead of returning 0.0"
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/reports/sales.py",
+     "line": null,
+     "confidence": 20,
+     "summary": "Couldn't search for callers of average_order_value (no grep tool, source files not on disk), so impact on callers is unknown"
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "bait-style-naming",
+   "angle": "enclosing-function",
+   "attempt": 1,
+   "rc": 0,
+   "elapsed_s": 16.5,
+   "cost_usd": 0.0941,
+   "output_tokens": 1396,
+   "prompt_words": 1197,
+   "reads": [
+    "package.md",
+    "sales.py",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "division-by-zero",
+     "file": "app/reports/sales.py",
+     "line": 16,
+     "confidence": 95,
+     "summary": "average_order_value checks `if not orders` against the unfiltered list, then divides by the count of COMPLETED orders. A non-empty list with no completed orders raises ZeroDivisionError instead of returning 0.0."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "bait-style-naming",
+   "angle": "guard-completeness",
+   "attempt": 1,
+   "rc": 0,
+   "elapsed_s": 15.0,
+   "cost_usd": 0.0962,
+   "output_tokens": 1300,
+   "prompt_words": 1432,
+   "reads": [
+    "package.md",
+    "sales.py",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "guard-completeness",
+     "file": "app/reports/sales.py",
+     "line": 30,
+     "confidence": 95,
+     "summary": "Empty-input guard checks `orders` before filtering to COMPLETED; a non-empty list with no completed orders makes count 0 and `data['total'] / data['count']` raises ZeroDivisionError instead of returning 0.0. Guard should check the filtered list `c`."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "bait-style-naming",
+   "angle": "prior-art",
+   "attempt": 1,
+   "rc": 0,
+   "elapsed_s": 14.0,
+   "cost_usd": 0.0679,
+   "output_tokens": 1073,
+   "prompt_words": 1264,
+   "reads": [
+    "package.md",
+    "INDEX.md",
+    "critical-patterns.md",
+    "rules/review-policy.md",
+    "solutions"
+   ],
+   "permission_denials": [],
+   "findings": []
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "bait-style-naming",
+   "angle": "removed-behavior",
+   "attempt": 1,
+   "rc": 0,
+   "elapsed_s": 15.1,
+   "cost_usd": 0.093,
+   "output_tokens": 1321,
+   "prompt_words": 1233,
+   "reads": [
+    "package.md",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md",
+    "sales.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "guard-completeness",
+     "file": "app/reports/sales.py",
+     "line": 30,
+     "confidence": 90,
+     "summary": "average_order_value guards `if not orders` but divides by the count of COMPLETED orders; a non-empty list with no completed orders raises ZeroDivisionError instead of returning 0.0."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "bait-style-naming",
+   "angle": "stack-defects",
+   "attempt": 1,
+   "rc": 0,
+   "elapsed_s": 13.7,
+   "cost_usd": 0.0952,
+   "output_tokens": 1196,
+   "prompt_words": 1481,
+   "reads": [
+    "package.md",
+    "sales.py",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "boundaries/division-by-zero",
+     "file": "app/reports/sales.py",
+     "line": 16,
+     "confidence": 95,
+     "summary": "average_order_value guards only on empty input list; a non-empty list with zero COMPLETED orders makes count 0 and raises ZeroDivisionError instead of returning 0.0. Guard should check the filtered list c."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "intent",
+   "fixture": "bait-generated-file",
+   "angle": "-",
+   "attempt": 1,
+   "rc": 0,
+   "elapsed_s": 15.8,
+   "cost_usd": 0.0813,
+   "output_tokens": 1479,
+   "prompt_words": 997,
+   "reads": [
+    "package.md",
+    "rules/review-policy.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "intent",
+     "class": "drift",
+     "file": "app/utils/pagination.py",
+     "line": 35,
+     "confidence": 95,
+     "summary": "page_slice computes start = page * per_page, so page 1 returns the second page of items and the first per_page items can't be reached. This contradicts the intent: 'Pages are 1-based, like page_count: page 1 returns the first per_page items'. The behavior differs from what was asked; it should be (page - 1) * per_page."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "intent",
+   "fixture": "bait-style-naming",
+   "angle": "-",
+   "attempt": 1,
+   "rc": 0,
+   "elapsed_s": 15.9,
+   "cost_usd": 0.0607,
+   "output_tokens": 1248,
+   "prompt_words": 971,
+   "reads": [
+    "package.md",
+    "rules/review-policy.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "intent",
+     "class": "gap",
+     "file": "app/reports/sales.py",
+     "line": 16,
+     "confidence": 95,
+     "summary": "The 'no completed orders' case is only half handled: the guard checks `not orders` (empty input) instead of whether any completed orders exist, so a non-empty list where every order is pending or cancelled divides by zero (ZeroDivisionError) instead of returning 0.0. The intent requires 0.0 for this case."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "task",
+   "fixture": "minor-only",
+   "angle": "-",
+   "attempt": 2,
+   "rc": 0,
+   "elapsed_s": 12.6,
+   "cost_usd": 0.0281,
+   "output_tokens": 1009,
+   "prompt_words": 267,
+   "reads": [
+    "brief.md",
+    "report.md",
+    "package.md"
+   ],
+   "permission_denials": [],
+   "reply": "```yaml\nspec_verdict: pass\nquality_verdict: approved\nfindings:\n  - severity: Minor\n    category: quality\n    location: unknown\n    rationale: >-\n      report.md:2 says \"A helper name is slightly vague\". The package has no diff\n      (package.md:3), so the helper and its exact name can't be found. This is a\n      naming issue only. The report says behavior and tests are complete.\n    action: >-\n      Controller should record this and pass it to final review. Rename the helper\n      to describe what it does (e.g. something like `sortNamesAlphabetically`)\n      when the code is next changed.\nsearch_surface: >-\n  brief.md, report.md and package.md only. No repository search was run.\n  package.md:3 says no diff exists and that the implementer report is the only\n  evidence. The fixture does not say any external contract is unavailable, so\n  cannot_verify does not apply. The spec verdict therefore rests on the report's\n  claim (report.md:2) that names are sorted correctly. That claim matches the\n  brief's only requirement (brief.md:2, \"Sort names alphabetically\"). Scope check:\n  the brief has no `- **Files:**` list and the package has no diff stat, so there\n  are no changed implementation paths to compare and no scope findings.\n```"
+  },
+  {
+   "arm": "base",
+   "kind": "task",
+   "fixture": "minor-only",
+   "angle": "-",
+   "attempt": 3,
+   "rc": 0,
+   "elapsed_s": 13.2,
+   "cost_usd": 0.0299,
+   "output_tokens": 1099,
+   "prompt_words": 267,
+   "reads": [
+    "brief.md",
+    "report.md",
+    "package.md"
+   ],
+   "permission_denials": [],
+   "reply": "spec_verdict: fail\nquality_verdict: needs_fixes\nfindings:\n  - severity: Critical\n    category: spec\n    location: package.md:3\n    rationale: The review package says \"No diff exists for this fixture,\" so it shows no change that implements \"Sort names alphabetically.\" (brief.md:2). The only support is the implementer report's claim (report.md:2) that \"Names are sorted correctly\" and \"tests are complete.\" Under review rules that claim can't be trusted, and the package doesn't say any external contract is unavailable. With no change to inspect, the requirement is not shown to be met.\n    action: Provide a review package with the actual diff, its diff stat, and the sorting tests and their results. Then re-review against brief.md.\n  - severity: Minor\n    category: quality\n    location: unknown\n    rationale: The implementer says \"A helper name is slightly vague\" (report.md:2). With no diff, the helper can't be found or checked. It is recorded so the controller can pass it to final review.\n    action: Once the diff is available, find the helper and give it a name that says what it does.\nsearch_surface: brief.md, report.md, package.md (no repository search done; the brief has no `- **Files:**` list and the diff stat is empty, so the scope check found no paths outside the brief)"
+  },
+  {
+   "arm": "base",
+   "kind": "task",
+   "fixture": "minor-only",
+   "angle": "-",
+   "attempt": 4,
+   "rc": 0,
+   "elapsed_s": 17.3,
+   "cost_usd": 0.0324,
+   "output_tokens": 1227,
+   "prompt_words": 267,
+   "reads": [
+    "brief.md",
+    "report.md",
+    "package.md"
+   ],
+   "permission_denials": [],
+   "reply": "spec_verdict: cannot_verify\nquality_verdict: needs_fixes\nfindings:\n  - severity: Important\n    category: spec\n    location: unknown\n    rationale: package.md:3 says \"No diff exists for this fixture. The implementer report is the only evidence.\" I can't trust the report, so nothing I can inspect shows that names are sorted alphabetically (brief.md:2) or that tests exist. The report's claims at report.md:2 (\"Names are sorted correctly\", \"tests are complete\") are unchecked. I also couldn't check scope: brief.md has no `- **Files:**` list and there is no diff stat to compare against it.\n    action: Provide a review package with the real diff and diff stat, plus test evidence (e.g. a test asserting alphabetical order, including case and tie handling). Add a `- **Files:**` list to the brief so scope can be checked. Then re-run the review.\n  - severity: Minor\n    category: quality\n    location: unknown\n    rationale: The report itself says \"A helper name is slightly vague\" (report.md:2). I can't locate or confirm it because there is no diff, but the implementer has admitted a naming problem.\n    action: Rename the helper to describe what it does (e.g. `sortNamesAlphabetically`) and include it in the resubmitted diff.\nsearch_surface: brief.md, report.md, package.md (read-only; no repository search done)"
+  },
+  {
+   "arm": "base",
+   "kind": "task",
+   "fixture": "minor-only",
+   "angle": "-",
+   "attempt": 5,
+   "rc": 0,
+   "elapsed_s": 16.1,
+   "cost_usd": 0.0359,
+   "output_tokens": 1400,
+   "prompt_words": 267,
+   "reads": [
+    "brief.md",
+    "report.md",
+    "package.md"
+   ],
+   "permission_denials": [],
+   "reply": "spec_verdict: pass\nquality_verdict: approved\nfindings:\n  - severity: Minor\n    category: quality\n    location: unknown\n    rationale: The report says one helper name is \"slightly vague\". The package has no diff, so I can't find the helper or check its name. The fixture says the report is the only evidence, and it claims the sorting behavior and tests are complete. Nothing in the evidence contradicts that, and nothing shows a blocking defect.\n    action: The controller should record this and send it to final review. Final review should find the helper in the real diff and give it a name that says what it does (for example, one that names the alphabetical name sort).\n  - severity: Minor\n    category: spec\n    location: unknown\n    rationale: The scope check could not be done. package.md has no diff stat (\"No diff exists for this fixture\"), and brief.md has no `- **Files:**` list. That means changed paths can't be compared against allowed paths. The fixture says the report is the only evidence, so this doesn't block. But the spec pass depends only on the report's claim, not on any code I could check.\n    action: At final review, compare the real changed paths against the plan's file scope and confirm that names are sorted alphabetically, including how ties and letter case are handled.\nsearch_surface: brief.md, report.md, package.md (no other files read; no searches run)"
+  },
+  {
+   "arm": "base",
+   "kind": "task",
+   "fixture": "minor-only",
+   "angle": "-",
+   "attempt": 6,
+   "rc": 0,
+   "elapsed_s": 13.7,
+   "cost_usd": 0.0304,
+   "output_tokens": 1120,
+   "prompt_words": 267,
+   "reads": [
+    "brief.md",
+    "report.md",
+    "package.md"
+   ],
+   "permission_denials": [],
+   "reply": "spec_verdict: fail\nquality_verdict: needs_fixes\nfindings:\n  - severity: Critical\n    category: spec\n    location: package.md:3\n    rationale: The brief (brief.md:2) asks for names to be sorted alphabetically. The review package says \"No diff exists for this fixture.\" No code, tests or diff stat back up the report's claim (report.md:2) that \"Names are sorted correctly\" and that tests are complete. A claim from the implementer's report alone isn't evidence. The fixture doesn't say an external contract is unavailable, so `cannot_verify` doesn't apply. With nothing showing the sort was built, the spec check fails.\n    action: Provide a review package with the real diff and diff stat, showing the sorting code and its tests, plus the test output. Then re-run the review.\n  - severity: Important\n    category: spec\n    location: brief.md:1\n    rationale: The brief has no `- **Files:**` list and the package has no diff stat, so the required scope check (as in `check_plan_scope`) can't be run. Nothing shows which files were changed.\n    action: Add a `- **Files:**` list to the brief and a diff stat to the package so scope can be compared.\n  - severity: Minor\n    category: quality\n    location: unknown\n    rationale: The report itself says \"A helper name is slightly vague.\" No code was provided, so the helper and its location can't be identified or checked.\n    action: Rename the helper to describe what it does, such as `sort_names_alphabetically`, and include it in the diff for final review.\nsearch_surface: brief.md, report.md, package.md (read only; no repository search done)"
+  },
+  {
+   "arm": "head",
+   "kind": "task",
+   "fixture": "minor-only",
+   "angle": "-",
+   "attempt": 2,
+   "rc": 0,
+   "elapsed_s": 19.8,
+   "cost_usd": 0.0468,
+   "output_tokens": 1542,
+   "prompt_words": 272,
+   "reads": [
+    "brief.md",
+    "report.md",
+    "package.md",
+    "rules/review-policy.md"
+   ],
+   "permission_denials": [],
+   "reply": "```yaml\nspec_verdict: cannot_verify\nquality_verdict: needs_fixes\nfindings:\n  - severity: Important\n    category: quality\n    location: unknown\n    rationale: >-\n      package.md:3 says \"No diff exists for this fixture. The implementer report is the only\n      evidence.\" The report's claims (\"Names are sorted correctly\", \"behavior and tests are\n      complete\", report.md:2) cannot be trusted on their own, and there is no code or test\n      output to check them against. The sorting behavior, how ties and case are handled, and\n      whether tests exist are all unconfirmed. Approving quality from the report alone would\n      mean trusting the implementer. Scope also can't be checked: the brief has no\n      `- **Files:**` list and the package has no diff stat.\n    action: >-\n      Give the reviewer a review package with the actual diff, its diff stat and the test\n      results, and add a `- **Files:**` list to the brief. Then re-run the task review.\n    checked_against: none\n  - severity: Minor\n    category: quality\n    location: unknown\n    rationale: >-\n      The implementer says \"A helper name is slightly vague\" (report.md:2). It can't be found\n      or checked because there is no diff, but it is a stated naming weakness.\n    action: >-\n      Once the diff is available, find the helper and give it a name that says what it does.\n      The controller should record this and forward it to final review.\n    checked_against: none\nsearch_surface: brief.md, report.md, package.md, rules/review-policy.md (no repository search performed)\n```"
+  },
+  {
+   "arm": "head",
+   "kind": "task",
+   "fixture": "minor-only",
+   "angle": "-",
+   "attempt": 3,
+   "rc": 0,
+   "elapsed_s": 12.9,
+   "cost_usd": 0.0354,
+   "output_tokens": 968,
+   "prompt_words": 272,
+   "reads": [
+    "brief.md",
+    "report.md",
+    "package.md",
+    "rules/review-policy.md"
+   ],
+   "permission_denials": [],
+   "reply": "spec_verdict: pass\nquality_verdict: approved\nfindings:\n  - severity: Minor\n    category: quality\n    location: unknown\n    rationale: The implementer report says \"A helper name is slightly vague\". The package has no diff, so I can't name the helper or give a line. It's a naming problem only, and the report says behavior and tests are complete.\n    action: Rename the sorting helper so it says what it does (e.g. `sortNamesAlphabetically`). The controller should record this in SUMMARY and pass it to final review. It does not block.\n    checked_against: none\n  - severity: Minor\n    category: spec\n    location: unknown\n    rationale: I couldn't check scope. The brief has no `- **Files:**` list and the package says \"No diff exists\", so there was no diff stat to compare against the brief. The fixture says the report is the only evidence, so the spec pass for \"Sort names alphabetically\" is based only on what the implementer says.\n    action: In final review, check sort correctness and the changed files against the real diff once one exists.\n    checked_against: none\nsearch_surface: brief.md, report.md, package.md, rules/review-policy.md (read only; no repository search)"
+  },
+  {
+   "arm": "head",
+   "kind": "task",
+   "fixture": "minor-only",
+   "angle": "-",
+   "attempt": 4,
+   "rc": 0,
+   "elapsed_s": 15.3,
+   "cost_usd": 0.0415,
+   "output_tokens": 1276,
+   "prompt_words": 272,
+   "reads": [
+    "brief.md",
+    "report.md",
+    "package.md",
+    "rules/review-policy.md"
+   ],
+   "permission_denials": [],
+   "reply": "```yaml\nspec_verdict: cannot_verify\nquality_verdict: approved\nfindings:\n  - severity: Minor\n    category: quality\n    location: unknown\n    rationale: >-\n      The implementer report says \"A helper name is slightly vague.\" The package has\n      no diff, so I could not find the helper or check how vague the name is. A naming\n      problem doesn't block, but it must be recorded.\n    action: >-\n      Controller should record this in SUMMARY and pass it to final review. Rename the\n      helper to say what it does (for example, sortNamesAlphabetically) once the diff\n      is available.\n    checked_against: none\nsearch_surface: >-\n  Read brief.md, report.md, package.md and rules/review-policy.md only. I ran no\n  repository search because the package says \"No diff exists for this fixture. The\n  implementer report is the only evidence.\" The brief has no `- **Files:**` list and\n  the package has no diff stat, so I couldn't run the scope comparison. The only\n  support for the claims that names sort correctly and the tests are complete is the\n  implementer's report, which I can't trust. That leaves the spec check against \"Sort\n  names alphabetically\" unverified, and it is not a pass.\n```"
+  },
+  {
+   "arm": "head",
+   "kind": "task",
+   "fixture": "minor-only",
+   "angle": "-",
+   "attempt": 5,
+   "rc": 0,
+   "elapsed_s": 15.9,
+   "cost_usd": 0.0428,
+   "output_tokens": 1340,
+   "prompt_words": 272,
+   "reads": [
+    "brief.md",
+    "report.md",
+    "package.md",
+    "rules/review-policy.md"
+   ],
+   "permission_denials": [],
+   "reply": "```yaml\nspec_verdict: fail\nquality_verdict: needs_fixes\nfindings:\n  - severity: Important\n    category: spec\n    location: package.md:3\n    rationale: >-\n      The brief (brief.md:2) asks for names to be sorted alphabetically. The review package\n      says \"No diff exists for this fixture,\" so there is no code to check and no evidence\n      the requirement was met. The only support is the claim in report.md:2 that \"Names are\n      sorted correctly,\" and this review must not trust the report. This is not an\n      unavailable external contract, so cannot_verify does not apply; with no diff, the\n      requirement is unmet. The scope check could not run either: the package has no diff\n      stat, and the brief has no `- **Files:**` list.\n    action: >-\n      Provide a review package with the real diff and diff stat for the sorting change and\n      its tests. Add a `- **Files:**` list to the brief so the scope check can run. Then\n      request review again.\n    checked_against: none\n  - severity: Important\n    category: quality\n    location: unknown\n    rationale: >-\n      There is no code to review. report.md:2 says \"behavior and tests are complete,\" but no\n      test or test result appears in the evidence. Code quality and test coverage cannot be\n      approved on the implementer's word alone.\n    action: >-\n      Include the implementation and tests in the diff. Cover empty input, duplicates, mixed\n      case and non-ASCII names, and state which comparison rule \"alphabetically\" means.\n    checked_against: none\n  - severity: Minor\n    category: quality\n    location: unknown\n    rationale: >-\n      report.md:2 admits \"A helper name is slightly vague.\" This could not be confirmed\n      because there is no diff. It is recorded as a non-blocking naming issue for final\n      review.\n    action: >-\n      Rename the helper so its purpose is clear (e.g. `sortNamesAlphabetically`). Confirm\n      this once the diff is available.\n    checked_against: none\nsearch_surface: brief.md, report.md, package.md, rules/review-policy.md (no repository search performed)\n```"
+  },
+  {
+   "arm": "head",
+   "kind": "task",
+   "fixture": "minor-only",
+   "angle": "-",
+   "attempt": 6,
+   "rc": 0,
+   "elapsed_s": 19.0,
+   "cost_usd": 0.0467,
+   "output_tokens": 1532,
+   "prompt_words": 272,
+   "reads": [
+    "brief.md",
+    "report.md",
+    "package.md",
+    "rules/review-policy.md"
+   ],
+   "permission_denials": [],
+   "reply": "The package has no diff, so nothing confirms the names are actually sorted. The report says they are, but I'm told not to trust it, and its claims don't count as evidence. The fixture doesn't say an external contract is unavailable, so `cannot_verify` doesn't apply. That leaves a failing spec verdict.\n\n```yaml\nspec_verdict: fail\nquality_verdict: needs_fixes\nfindings:\n  - severity: Important\n    category: spec\n    location: unknown\n    rationale: >-\n      package.md:3 says \"No diff exists for this fixture. The implementer report is the only\n      evidence.\" The task is to sort names alphabetically (brief.md:2). Only the report\n      (report.md:2) claims this works, and the report is not evidence. With no changed code\n      or tests, the sorting behavior can't be shown. The brief also has no `- **Files:**`\n      list, and there's no diff stat, so scope can't be checked either.\n    action: >-\n      Produce a review package with the real diff and diff stat: the sorting code and tests\n      for alphabetical order, including mixed case and empty input. Add a `- **Files:**`\n      list to the brief so scope can be checked. Then re-review.\n    checked_against: none\n  - severity: Minor\n    category: quality\n    location: unknown\n    rationale: >-\n      The report itself says \"A helper name is slightly vague\" (report.md:2). This is\n      unconfirmed because there is no code. If it's true, it's a naming and maintainability\n      problem that doesn't block.\n    action: >-\n      Once the diff is provided, find the helper and give it a name that says what it does,\n      such as `sort_names_alphabetically`. The controller records this in SUMMARY and passes\n      it to final review.\n    checked_against: none\nsearch_surface: brief.md, report.md, package.md, rules/review-policy.md (no repository search performed)\n```"
+  }
+ ]
+}
