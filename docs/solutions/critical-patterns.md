@@ -193,3 +193,15 @@ A new `hooks/commit-gate.sh` was committed `100644` while registered as a bare c
 **Full doc:** docs/solutions/harness/bare-command-hook-must-be-executable-in-index.md
 
 ---
+
+## [2026-10-15] ste-rewrite-drops-scope-qualifiers
+**Type:** failure
+**Module:** skills/*/SKILL.md, rules/*.md, agents/*.md (agent-executed prose under an STE rewrite)
+**Tags:** ste100, prose-rewrite, scope-qualifier, sentence-split, word-ceiling, meaning-equivalence, green-is-not-correct, review-oracle
+**Applicable when:** You rewrite agent-executed prose for style (for example with asd-ste100), and the rewrite splits long sentences or cuts words to fit the 600-word skill ceiling.
+
+An STE rewrite of `feature-intake` dropped two conditions in one task. A sentence split moved checks out from under "if intent.md is present", and a word-ceiling cut removed "For a new SUMMARY". Every test passed and the lint count went down both times. Only a per-file meaning-equivalence review caught them. Repeat the scope on each split part, never cut a condition word to meet the ceiling, and review every rewritten file line by line.
+
+**Full doc:** docs/solutions/harness/ste-rewrite-drops-scope-qualifiers.md
+
+---
