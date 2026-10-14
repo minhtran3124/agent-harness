@@ -54,6 +54,8 @@ $(printf '%s' "$NORMALIZED" | jq -r '
 EOF
   if [ "${STATUS:-unknown}" != "known" ] || [ "${TOOL_CLASS:-unknown}" != "shell" ]; then
     echo "[COMMIT GATE] could not safely classify Bash payload (${DIAG:-unparsed payload}) — redeploy/update the harness normalizer (blocking to fail safe)." >&2
+    echo "  Route: redeploy the harness: bash <harness>/scripts/install-harness.sh --source <harness> -d <project> --yes, or re-run the installer one-liner from the harness README (in the harness repo itself: git restore hooks/lib/)." >&2
+    echo "  Route: if the payload itself is malformed, re-issue the command." >&2
     exit 2
   fi
   # Command is extracted separately: it may be multi-line, which a line-oriented read
@@ -67,6 +69,7 @@ source "$SCRIPT_DIR/lib/git-command.sh" 2>/dev/null
 command -v hook_cmd_is_git_commit_or_push >/dev/null 2>&1 \
   && command -v hook_cmd_is_git_commit >/dev/null 2>&1 || {
   echo "[COMMIT GATE] git-command matcher lib missing — redeploy harness (blocking to fail safe)." >&2
+  echo "  Route: redeploy the harness: bash <harness>/scripts/install-harness.sh --source <harness> -d <project> --yes, or re-run the installer one-liner from the harness README (in the harness repo itself: git restore hooks/lib/)." >&2
   exit 2
 }
 hook_cmd_is_git_commit_or_push "$CMD" || exit 0
@@ -114,7 +117,7 @@ check_untracked_py() {
       hookSpecificOutput: {
         hookEventName: "PreToolUse",
         permissionDecision: "deny",
-        permissionDecisionReason: ("Untracked .py not staged (would break CI imports):\n" + $f + "\n\nRun: git add <files> — or gitignore if intentional.")
+        permissionDecisionReason: ("Untracked .py not staged (would break CI imports):\n" + $f + "\n\nRun: git add <files> — or gitignore if intentional." + "\n\nStage and commit in separate Bash calls: this check reads the whole command, so git add <files> && git commit in one call is denied again.")
       }
     }'
     # The deny above is the decision; nothing further needs to run.
@@ -133,6 +136,7 @@ source "$SCRIPT_DIR/lib/lane.sh" 2>/dev/null
 # against no Lane at all.
 command -v hook_lib_resolve_lane >/dev/null 2>&1 || {
   echo "[COMMIT GATE] lane lib missing — redeploy harness (blocking to fail safe)." >&2
+  echo "  Route: redeploy the harness: bash <harness>/scripts/install-harness.sh --source <harness> -d <project> --yes, or re-run the installer one-liner from the harness README (in the harness repo itself: git restore hooks/lib/)." >&2
   exit 2
 }
 
@@ -147,9 +151,14 @@ if [ -z "$REPO_DIR" ] || [ ! -d "$REPO_DIR" ]; then
   echo "[COMMIT GATE] BLOCKED — cannot determine the project root." >&2
   echo "  CLAUDE_PROJECT_DIR is unset and CWD is not inside a git work tree." >&2
   echo "  Refusing to guess: a gate that resolves the wrong repo passes silently." >&2
+  echo "  Route: run the commit from inside the project's git work tree, or set CLAUDE_PROJECT_DIR to the project root." >&2
   exit 2
 fi
-cd "$REPO_DIR" || exit 2
+cd "$REPO_DIR" || {
+  echo "[COMMIT GATE] BLOCKED — cannot enter project root $REPO_DIR." >&2
+  echo "  Route: run the commit from inside the project's git work tree, or set CLAUDE_PROJECT_DIR to the project root." >&2
+  exit 2
+}
 
 STAGED_PATHS=$(git diff --cached --name-only 2>/dev/null || true)
 SPEC_SLUGS=$(printf '%s\n' "$STAGED_PATHS" | grep -oE '^specs/[^/]+/' | sort -u || true)
@@ -185,6 +194,7 @@ check_secrets() {
     echo "[COMMIT GATE] Secrets scan... FAILED" >&2
     echo "  BLOCKED: Potential secrets detected in staged changes." >&2
     echo "  Run 'git diff --cached' to review." >&2
+    echo "  Route: remove the value from the staged change (read it from an env var instead), then re-stage. There is no override — if you believe it is a false positive or a fake test value, stop and ask a human." >&2
     exit 2
   fi
 
@@ -192,6 +202,7 @@ check_secrets() {
   if printf '%s\n' "$STAGED_PATHS" | grep -qE '\.env$'; then
     echo "[COMMIT GATE] Secrets scan... FAILED" >&2
     echo "  BLOCKED: .env file staged for commit." >&2
+    echo "  Route: unstage it (git restore --staged <file>; if it is already tracked, git rm --cached <file>), add it to .gitignore, and commit a .env.example instead." >&2
     exit 2
   fi
 
@@ -569,6 +580,7 @@ EOF
     echo "[BLAST RADIUS] Paths outside the active plan's <files> set (${PLAN#"$REPO_DIR"/}):" >&2
     printf '%s\n' "$OUTSIDE" >&2
     echo "  Scope creep — escalate, or add the files to the plan." >&2
+    echo "  Route: if the paths belong to this work, add them to the task's Files in the active PLAN.md and re-stage; otherwise unstage them. If the scope change needs a human, escalate in specs/<slug>/ESCALATIONS.md — the commit stays blocked until the plan is updated. This block is on because BLAST_RADIUS_STRICT=1." >&2
     exit 2
   fi
   OUTSIDE_DISPLAY=$(printf '%s\n' "$OUTSIDE" | paste -sd ',' -)
@@ -589,6 +601,7 @@ check_app_gates() {
   if echo "$ADDED_LINES" | grep -qE '(breakpoint\(\)|import pdb|from pdb)'; then
     echo "[COMMIT GATE] Debug artifacts... FAILED" >&2
     echo "  BLOCKED: Found breakpoint()/pdb in staged app/ code." >&2
+    echo "  Route: remove the breakpoint()/pdb lines, re-stage, and commit again." >&2
     exit 2
   fi
 
@@ -688,6 +701,7 @@ check_app_gates() {
   if [[ $RESULT -ne 0 ]]; then
     echo "[COMMIT GATE] Tests... FAILED" >&2
     echo "  BLOCKED: Fix test failures before committing." >&2
+    echo "  Route: reproduce with python -m pytest$TEST_FILES -x -q, fix the failure, re-stage." >&2
     exit 2
   fi
 
