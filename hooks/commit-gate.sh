@@ -202,7 +202,7 @@ check_secrets() {
   if printf '%s\n' "$STAGED_PATHS" | grep -qE '\.env$'; then
     echo "[COMMIT GATE] Secrets scan... FAILED" >&2
     echo "  BLOCKED: .env file staged for commit." >&2
-    echo "  Route: unstage it (git restore --staged <file>; if it is already tracked, git rm --cached <file>), add it to .gitignore, and commit a .env.example instead." >&2
+    echo "  Route: unstage it (git restore --staged <file>), add it to .gitignore, and commit a .env.example instead. Untracking an already-tracked .env (git rm --cached) stages a deletion that this check also blocks — a human decides that commit." >&2
     exit 2
   fi
 

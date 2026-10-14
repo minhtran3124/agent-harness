@@ -80,6 +80,7 @@ still holds.
 - Decision change DC1 (design.md): D2 superseded by D5 — the untracked-`.py` deny route gains "in a separate Bash call, then commit"; user-approved 2026-10-14.
 - Rule 3 — Task 1.1: the plan's `--source <harness>` assertion substring cannot be passed to `assert_rc_contains` (`tests/lib.sh` runs `grep -qF "$2"` with no `--`, so grep parses it as an option); asserted `' --source <harness>'` (leading space) instead. `tests/hooks/commit-gate.test.sh`. Commit `bd09585`.
 - Rule 1 — Task 1.2: same cause; asserted `'source <harness>'` instead (still unique to the G11 route). `tests/hooks/branch-isolation-guard.test.sh`. Commit `ba38ba1`.
+- Rule 1 — correctness review (score 75): the G7 `.env` route offered `git rm --cached` for an already-tracked `.env`, but `STAGED_PATHS` (`git diff --cached --name-only`, no `--diff-filter`) lists the staged deletion, so the check blocks it again — the route could never clear its block. Route text corrected to say a human decides that commit; test assertion updated. Gate behaviour unchanged (making the check skip deletions would change what it blocks, which the intent excludes). design.md G7 and PLAN.md Global Constraints updated to match. `hooks/commit-gate.sh`, `tests/hooks/commit-gate.test.sh`. Commit in the correctness-review fix round.
 - Recurring deviation (same cause in two tasks) = a PLAN.md gap in the pinned substrings, not a design problem: both tasks are done and no later task depends on it, so it is recorded here and in Harness-Delta rather than escalated. The two workarounds differ in spelling; both assert text unique to their route.
 
 ### Verify
@@ -93,7 +94,7 @@ still holds.
 
 | Check | Command | Exit | Notes | Criterion |
 | --- | --- | --- | --- | --- |
-| commit-gate route lines + G5 + D5 | `bash tests/hooks/commit-gate.test.sh` | 0 | 96 passed, 0 FAIL, 0 skip (G5 ran as non-root) | SC-1 |
+| commit-gate route lines + G5 + D5 | `bash tests/hooks/commit-gate.test.sh` | 0 | 97 passed, 0 FAIL, 0 skip (G5 ran as non-root; includes the correctness-review G7 fix) | SC-1 |
 | branch-isolation G11 + shared-branch routes | `bash tests/hooks/branch-isolation-guard.test.sh` | 0 | 47 passed | SC-2 |
 | escalation / run-state / lane-evidence routes | `bash tests/hooks/commit-gate-evidence.test.sh` | 0 | 32 passed | SC-3 |
 | risk-corroboration routes | `bash tests/hooks/commit-gate-risk.test.sh` | 0 | 53 passed | SC-4 |
@@ -129,6 +130,16 @@ still holds.
 
 - `git revert bd09585 ba38ba1 698cbdf` — restores both hooks' message text and drops the new
   assertions; there is no state, config or data to undo (text-only change).
+
+### Advisory Findings
+
+<!-- Correctness-review findings scored below the threshold (75). Not fixed; shown to the human. -->
+
+- `hooks/commit-gate.sh:154,159` (score 50) — the project-root routes say "run from inside the work tree, or set CLAUDE_PROJECT_DIR"; when the block fires because `CLAUDE_PROJECT_DIR` is set to a bad path, running from the work tree does not help (the variable wins); "unset it" is missing. The unmodified line `:152` also says "CLAUDE_PROJECT_DIR is unset", which is false in that case.
+- `hooks/commit-gate.sh:57-58`, `hooks/branch-isolation-guard.sh:157` (score 50) — when the normalizer is unavailable because `python3` is missing, the redeploy route does not restore `python3`; the route could branch on the `normalizer-unavailable` diagnostic.
+- `hooks/commit-gate.sh:704` (score 50, capped: depends on consumer pytest config) — the pytest "reproduce" command omits the gate's `--tb=short --no-cov -m "not integration" -p no:cacheprovider`, so it can run different tests or fail on a coverage threshold.
+- `hooks/commit-gate.sh:120` (score 25) — the untracked-`.py` deny also fires on `git push`; the pre-existing "Run: git add <files>" advice clears the deny there without committing the file. The added sentence tells the agent to commit, so the diff did not make it worse.
+- `hooks/branch-isolation-guard.sh:153,172`, `hooks/commit-gate.sh:116` (score 0, unmodified-line, pre-existing) — with `jq` absent, the JSON deny paths print nothing and the hook exits 0, so the edit or commit is allowed (fail-open). Not introduced by this diff; worth a separate fix (fail closed when `jq -cn` fails).
 
 ### Task review Minors
 

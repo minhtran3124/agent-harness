@@ -1,6 +1,7 @@
 # hook-deny-route-lines — Design
 
 Written 2026-10-14. Pins: repo 94682f9
+Revised 2026-10-14. Pins: repo cc93f17 + uncommitted
 
 ## Goal
 
@@ -80,8 +81,11 @@ text — every command, variable and file named exists in the deployed harness t
   it is a false positive or a fake test value, stop and ask a human.` The scan's path exclusions
   (including `*.example`) are deliberately not named: naming them tells an agent where to move a
   flagged string.
-- **G7 (`.env`):** `Route: unstage it (git restore --staged <file>; if it is already tracked,
-  git rm --cached <file>), add it to .gitignore, and commit a .env.example instead.`
+- **G7 (`.env`):** `Route: unstage it (git restore --staged <file>), add it to .gitignore, and
+  commit a .env.example instead. Untracking an already-tracked .env (git rm --cached) stages a
+  deletion that this check also blocks — a human decides that commit.` (Revised in correctness
+  review: the first wording offered `git rm --cached` as a route, but `git diff --cached
+  --name-only` lists the staged deletion, so the check blocks it again.)
 - **G8 (breakpoint/pdb):** `Route: remove the breakpoint()/pdb lines, re-stage, and commit again.`
 - **G9 (tests):** `Route: reproduce with python -m pytest <files> -x -q, fix, re-stage.` with the
   real `$TEST_FILES` substituted.

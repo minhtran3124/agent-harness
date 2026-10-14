@@ -195,7 +195,8 @@ repo=$(new_repo $H)
 stage "$repo" ".env" "X=1"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_contains 2 ".env file staged"
-assert_rc_contains 2 'git rm --cached'
+assert_rc_contains 2 'Route: unstage it (git restore --staged <file>)'
+assert_rc_contains 2 'this check also blocks'
 
 t "secret-looking string in tests/ is exempt"
 repo=$(new_repo $H)

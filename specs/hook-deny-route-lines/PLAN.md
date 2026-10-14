@@ -82,7 +82,7 @@ task Verify.
   - **G5 reason** (replaces the bare `cd "$REPO_DIR" || exit 2`): on `cd` failure print
     `[COMMIT GATE] BLOCKED — cannot enter project root $REPO_DIR.` then R-ROOT, then `exit 2`.
   - **G6**: `Route: remove the value from the staged change (read it from an env var instead), then re-stage. There is no override — if you believe it is a false positive or a fake test value, stop and ask a human.` Do not name the scan's path exclusions, including `*.example` (design D3).
-  - **G7**: `Route: unstage it (git restore --staged <file>; if it is already tracked, git rm --cached <file>), add it to .gitignore, and commit a .env.example instead.`
+  - **G7**: `Route: unstage it (git restore --staged <file>), add it to .gitignore, and commit a .env.example instead. Untracking an already-tracked .env (git rm --cached) stages a deletion that this check also blocks — a human decides that commit.` (revised in correctness review; see SUMMARY Deviations)
   - **G8**: `Route: remove the breakpoint()/pdb lines, re-stage, and commit again.`
   - **G9**: `Route: reproduce with python -m pytest$TEST_FILES -x -q, fix the failure, re-stage.` (`$TEST_FILES` already starts with a space.)
   - **G10**: `Route: if the paths belong to this work, add them to the task's Files in the active PLAN.md and re-stage; otherwise unstage them. If the scope change needs a human, escalate in specs/<slug>/ESCALATIONS.md — the commit stays blocked until the plan is updated. This block is on because BLAST_RADIUS_STRICT=1.`
@@ -92,7 +92,7 @@ task Verify.
   right after the existing assertion, reusing the same `OUT`. Gap substrings (each appears only in
   that path's route): G1, G2, G3 → `--source <harness>` (G1 also `if the payload itself is
   malformed`); G4, G5 → `Route: run the commit from inside`; G6 → `There is no override`;
-  G7 → `git rm --cached`; G8 → `remove the breakpoint()/pdb lines`; G9 → `Route: reproduce with
+  G7 → `this check also blocks`; G8 → `remove the breakpoint()/pdb lines`; G9 → `Route: reproduce with
   python -m pytest`; G10 → `active PLAN.md and re-stage`; G11 → `--source <harness>`. For the 10 complete messages, assert a fragment of their existing route:
   untracked `.py` → `git add <files>` and `separate Bash calls`; escalation → `records the decision`;
   lane evidence → `See rules/auto-correct-scope.md`; run-state → `Stage them by name`; risk below
