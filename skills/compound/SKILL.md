@@ -46,8 +46,8 @@ templates. For a failure with `proposed:` guardrail, append one open row to
 
 A learning that matches an existing record at `high` overlap is a second occurrence. Update that
 record as above, then promote it: the promotion is this run's output. Update the matching
-`critical-patterns.md` entry, or add one if it has none; do not add a near-duplicate. Add a
-`**Recurred:** <date>` line under its **Full doc** line. When the learning applies only to certain
+`critical-patterns.md` entry, or add one if it has none, instead of the append above; never add a
+near-duplicate. Add a `**Recurred:** <date>` line under its **Full doc** line. When the learning applies only to certain
 paths, also propose a path-scoped rule in the report. Do not write it: adding `paths:` to `rules/`
 changes what loads, so a human decides. `moderate` overlap is not a recurrence.
 
