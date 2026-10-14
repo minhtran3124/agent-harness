@@ -56,7 +56,13 @@ mcp/plugins should be the external, not required.
 
 ### Deviations
 
-- none
+- Rule 2 — `scripts/test_render_agent_definitions.py`: the Claude `test-runner` tools assertion was a substring check that still passed with the context7 tools present; anchored to the whole `tools:` line, which fails against the old bindings. Commit `1ce515c`.
+
+### Minor findings (task review, non-blocking)
+
+- 1.1 — `tests/scripts/install-harness.test.sh`: the real-run fresh-install case checks `$OUT` for `.mcp.json` but not for `uvx` (the dry-run case covers `uvx`). checked_against SC-1.
+- 1.1 — `scripts/install-harness.sh`: the reworded header comment line is longer than its neighbours (cosmetic).
+- 1.4 — `README.md`: `echo ".code-review-graph/" >> .git/info/exclude` fails inside a linked worktree, where `.git` is a file; use `"$(git rev-parse --git-common-dir)/info/exclude"` or say "main checkout". checked_against SC-5.
 
 ### Verify
 
@@ -74,4 +80,4 @@ mcp/plugins should be the external, not required.
 
 ### Harness-Delta
 
-- none
+- backlog — the worktree-isolation guard refuses Bash calls whose text names git in a form it cannot verify (a heredoc mentioning `.git/info/exclude`, a script chained with git commands, a python heredoc naming git); implementers and the controller had to split commands or use the Edit tool (Task 1.4, Task 1.1, controller).

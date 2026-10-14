@@ -10,7 +10,7 @@ created: 2026-10-14
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**5 tasks · 2 waves · 19 files · 0/5 done**
+**5 tasks · 2 waves · 19 files · 5/5 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -35,11 +35,11 @@ flowchart LR
 ```
 
 ### Progress
-- [ ] 1.1 — Installer and deploy stop wiring MCP (wave 1)
-- [ ] 1.2 — test-runner loses context7; renderer drops the context7 policy (wave 1)
-- [ ] 1.3 — visual-planner review overlay becomes source-agnostic (wave 1)
-- [ ] 1.4 — Repo config and docs: remove wiring, add local setup guide (wave 1)
-- [ ] 2.1 — Redeploy the harness into this repo and sweep (wave 2)
+- [x] 1.1 — Installer and deploy stop wiring MCP (wave 1)
+- [x] 1.2 — test-runner loses context7; renderer drops the context7 policy (wave 1)
+- [x] 1.3 — visual-planner review overlay becomes source-agnostic (wave 1)
+- [x] 1.4 — Repo config and docs: remove wiring, add local setup guide (wave 1)
+- [x] 2.1 — Redeploy the harness into this repo and sweep (wave 2)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -209,3 +209,5 @@ documents how a user adds both back for local use only. Design: `specs/decouple-
 ## 6. Status Log
 
 - 2026-10-14 — proposed (writing-plans)
+- 2026-10-14 — tasks 1.1, 1.2, 1.3, 1.4 complete; commits d0e60b9, 1ce515c, 8c72883, 2507404
+- 2026-10-14 — task 2.1 complete; no commit (redeployed gitignored .claude/; SC-9, SC-4, SC-10 greps exit 1)
