@@ -642,5 +642,4 @@ if [ "${#CONFLICTS[@]}" -gt 0 ]; then
     overwrite) printf "  ${D}  overwrote with incoming harness source${R}\n" ;;
   esac
 fi
-[ -f "$OUT_BASE/.mcp.json" ] || printf "  ${Y}⚠ No .mcp.json at project root — the code-review-graph MCP server is not wired (see README → MCP servers).${R}\n"
 printf "\n  ${Y}↻ Restart Claude Code in this repo so it loads them.${R}\n\n"

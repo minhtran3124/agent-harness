@@ -31,8 +31,6 @@ CLAUDE.local.md
 
 # Local-only research notes (kept out of the tracked tree by request)
 docs/memory/
-# Added by code-review-graph
-.code-review-graph/
 
 # Specifications — tracked, EXCEPT derived artifacts rebuildable from PLAN.md via render_plan.py
 specs/**/PLAN.html

@@ -123,7 +123,7 @@ def test_rendered_json_and_toml_are_strict_and_policy_complete(tmp_path):
     test_runner = renderer.render_agent_definitions.parse_codex_profile(
         (output / "project/.codex/agents/test-runner.toml").read_text()
     )
-    assert test_runner["mcp_servers"]["context7"]["enabled"] is True
+    assert test_runner["mcp_servers"] == {}
 
 
 def test_hook_adapter_contains_registrations_not_semantic_bodies():
@@ -184,6 +184,19 @@ def test_unmapped_mcp_policy_blocks_render(tmp_path):
     contracts = root / "agents/agent-contracts.json"
     payload = json.loads(contracts.read_text())
     payload["roles"]["coding"]["mcp"] = "everything"
+    contracts.write_text(json.dumps(payload))
+    with pytest.raises(
+        renderer.render_agent_definitions.ContractError,
+        match="unmapped mcp policy",
+    ):
+        renderer.render(root, tmp_path / "output")
+
+
+def test_former_test_runner_mcp_policy_is_unmapped(tmp_path):
+    root = clone_render_root(tmp_path)
+    contracts = root / "agents/agent-contracts.json"
+    payload = json.loads(contracts.read_text())
+    payload["roles"]["test-runner"]["mcp"] = "context" + "7-read-only"
     contracts.write_text(json.dumps(payload))
     with pytest.raises(
         renderer.render_agent_definitions.ContractError,

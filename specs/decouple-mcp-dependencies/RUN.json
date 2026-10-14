@@ -1,0 +1,12 @@
+{
+  "created_at": "2026-10-14T08:54:51Z",
+  "last_event_id": "013c3f27-b5f3-496f-b1a0-db76f70b56c2",
+  "resume_event": null,
+  "run_id": "ce07e61c-fe37-4757-a740-781b44417a2c",
+  "seq": 6,
+  "sha": null,
+  "slug": "decouple-mcp-dependencies",
+  "state": "ready_to_merge",
+  "updated_at": "2026-10-14T09:53:20Z",
+  "waiting_on": null
+}

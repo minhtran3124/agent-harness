@@ -310,11 +310,11 @@ graph LR
 - **Why serve instead of `file://`?** Localhost is a browser *secure context*, so per-task "copy `<verify>`" buttons use `navigator.clipboard`; `--file` (`file://`) is faster but falls back to `execCommand`. Auto-view is environment-dependent (no display on headless/remote), so it stays an explicit step.
 - **Self-check before claiming success.** The script asserts non-empty output, no surviving `{{PLACEHOLDER}}`, the `slug` present, and one `<section data-wave>` per distinct wave. On non-zero exit, surface the `SELF-CHECK FAILED:` lines verbatim — do not claim success.
 
-**`--review` mode is a 3-step dance** (the offline renderer can't call MCP itself):
+**`--review` mode is a 3-step dance** (the offline renderer never queries any tool itself):
 
 ```mermaid
 graph LR
-    A["1 · render_plan.py --emit-files"] --> B["2 · agent queries code-review-graph<br/>blast-radius + risk per file"]
+    A["1 · render_plan.py --emit-files"] --> B["2 · agent gathers blast-radius + risk per file<br/>(Grep/Read or an optional graph tool)"]
     B --> C["3 · write .plan-review.json sidecar"]
     C --> D["render_plan.py --review<br/>→ impact dashboard + blast-radius table + risk cards"]
 ```

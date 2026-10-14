@@ -1,7 +1,7 @@
 ---
 name: visual-planner
-description: Render a `PLAN.md` to a self-contained local HTML review page. Use after planning or standalone to inspect plan waves, tasks, scope, and optional graph-derived risk.
-allowed-tools: Bash, Read, Glob, Write, mcp__code-review-graph__list_graph_stats_tool, mcp__code-review-graph__query_graph_tool, mcp__code-review-graph__get_impact_radius_tool, mcp__code-review-graph__get_affected_flows_tool
+description: Render a `PLAN.md` to a self-contained local HTML review page. Use after planning or standalone to inspect plan waves, tasks, scope, and optional review-derived risk.
+allowed-tools: Bash, Read, Grep, Glob, Write
 ---
 
 # Plan → HTML Renderer
@@ -28,7 +28,8 @@ its serving mode blocks. Do not auto-open from writing-plans or a headless envir
 
 ## Optional review overlay
 
-For graph-backed plan review, first emit plan files, gather graph evidence, then render a sidecar:
+For evidence-backed plan review, first emit plan files, gather evidence per file with Grep/Read
+(and, optionally, any code-graph tool you have installed), then render a sidecar:
 
 ```bash
 python3 <visual-planner-dir>/render_plan.py <slug> --emit-files
@@ -36,7 +37,7 @@ python3 <visual-planner-dir>/render_plan.py <slug> --review specs/<slug>/.plan-r
 ```
 
 The sidecar records provenance plus per-file path, status (`new|existing|missing`), dependents,
-tests, risk (`high|medium|low`), note, and optional flows. New/missing graph nodes remain explicit;
+tests, risk (`high|medium|low`), note, and optional flows. New/missing files remain explicit;
 do not invent risk or coverage. Review output defaults to untracked `PLAN.review.html`.
 
 Both XML and canonical markdown task forms are supported. Keep parsing and rendering behavior in

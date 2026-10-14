@@ -14,7 +14,7 @@ Add an entry only when the pattern:
 **Tags:** meta-repo, signal-remapping, project-md, dual-audience-docs, bootstrap-update-mode, hook-friction
 **Applicable when:** Bootstrapping or updating xia2 PROJECT.md (or any risk-classification config) for a repo whose "application" is the tooling itself — skills, hooks, scripts.
 
-A meta/harness repo does have high-blast files, security surfaces, and public contracts — they live in `settings.json`, `hooks/*.sh`, `tests/lib.sh`, `.mcp.json`, and hook-parsed template fields (`Lane:`), not in app code layers. Map each app-centric xia2 signal category to its harness-native analog instead of leaving it empty, grounded in churn + inbound-reference evidence.
+A meta/harness repo does have high-blast files, security surfaces, and public contracts — they live in `settings.json`, `hooks/*.sh`, `tests/lib.sh`, and hook-parsed template fields (`Lane:`), not in app code layers. Map each app-centric xia2 signal category to its harness-native analog instead of leaving it empty, grounded in churn + inbound-reference evidence.
 
 **Full doc:** docs/solutions/harness-bootstrap/meta-repo-signal-remapping.md
 ---

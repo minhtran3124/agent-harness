@@ -32,8 +32,6 @@ LEGACY_CLAUDE = {
             "WebFetch",
             "WebSearch",
             "Bash",
-            "mcp__context7__resolve-library-id",
-            "mcp__context7__query-docs",
         ],
     },
 }
@@ -106,7 +104,7 @@ def test_claude_render_preserves_legacy_model_tools_and_role_body(tmp_path):
         if expected["tools"] is None:
             assert "\ntools:" not in text
         else:
-            assert f"tools: {', '.join(expected['tools'])}" in text
+            assert f"\ntools: {', '.join(expected['tools'])}\n" in text
 
 
 def test_rendered_roles_retain_load_bearing_substance(tmp_path):
@@ -174,7 +172,7 @@ def test_codex_render_emits_strict_profiles_and_explicit_policy(tmp_path):
     test_runner = renderer.parse_codex_profile(
         (out / "test-runner.toml").read_text()
     )
-    assert test_runner["mcp_servers"]["context7"]["enabled"] is True
+    assert test_runner["mcp_servers"] == {}
     assert test_runner["agents"]["enabled"] is False
 
 
@@ -205,6 +203,40 @@ def test_missing_capability_mapping_is_rejected(tmp_path):
     del data["runtimes"]["claude"]["roles"]["reviewer"]["capabilities"]["mcp"]
     path.write_text(json.dumps(data))
     with pytest.raises(renderer.ContractError, match="capability mapping"):
+        renderer.validate(root)
+
+
+@pytest.mark.parametrize("role", ["reviewer", "task-reviewer", "test-runner"])
+def test_mcp_tool_on_mcp_none_role_is_rejected(tmp_path, role):
+    root = clone_root(tmp_path)
+    path = root / "agents/runtime-bindings.json"
+    data = json.loads(path.read_text())
+    data["runtimes"]["claude"]["roles"][role]["tools"].append("mcp__docs__query")
+    path.write_text(json.dumps(data))
+    with pytest.raises(renderer.ContractError, match="mcp none"):
+        renderer.validate(root)
+
+
+@pytest.mark.parametrize(
+    "tools", [[], ["Read", 5], ["Read", None], ["Read, mcp__docs__query"], [" Read"]]
+)
+def test_malformed_tools_list_on_mcp_none_role_is_rejected(tmp_path, tools):
+    root = clone_root(tmp_path)
+    path = root / "agents/runtime-bindings.json"
+    data = json.loads(path.read_text())
+    data["runtimes"]["claude"]["roles"]["test-runner"]["tools"] = tools
+    path.write_text(json.dumps(data))
+    with pytest.raises(renderer.ContractError, match="mcp none"):
+        renderer.validate(root)
+
+
+def test_missing_tools_list_on_mcp_none_role_is_rejected(tmp_path):
+    root = clone_root(tmp_path)
+    path = root / "agents/runtime-bindings.json"
+    data = json.loads(path.read_text())
+    del data["runtimes"]["claude"]["roles"]["test-runner"]["tools"]
+    path.write_text(json.dumps(data))
+    with pytest.raises(renderer.ContractError, match="mcp none"):
         renderer.validate(root)
 
 

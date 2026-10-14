@@ -16,7 +16,7 @@ CODEX_MODELS = {"gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"}
 CODEX_EFFORTS = {"low", "medium", "high", "xhigh", "max", "ultra"}
 CLAUDE_EFFORTS = {"low", "medium", "high", "xhigh", "max"}
 CODEX_SANDBOXES = {"read-only", "workspace-write", "danger-full-access"}
-CODEX_MCP_POLICIES = {"none", "context7-read-only", "runtime-controlled"}
+CODEX_MCP_POLICIES = {"none", "runtime-controlled"}
 
 
 class ContractError(ValueError):
@@ -148,6 +148,27 @@ def validate(root: Path) -> tuple[dict, dict]:
             raise ContractError(f"{role}: reviewer context must be fresh-bounded")
         if contract["mcp"] != "none":
             raise ContractError(f"{role}: reviewer MCP policy must be none")
+
+    # A Claude role with no (or an empty) tools list inherits every tool, MCP included,
+    # so `mcp: none` needs a non-empty list of plain tool names with no mcp__ entries.
+    # Plain names also keep a comma-joined entry from smuggling a tool into `tools:`.
+    for role, contract in roles.items():
+        if contract["mcp"] != "none":
+            continue
+        tools = runtimes["claude"]["roles"][role].get("tools")
+        if (
+            not isinstance(tools, list)
+            or not tools
+            or not all(
+                isinstance(tool, str) and re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]*", tool)
+                for tool in tools
+            )
+            or any(tool.startswith("mcp__") for tool in tools)
+        ):
+            raise ContractError(
+                f"claude/{role}: mcp none requires an explicit tools list "
+                "with no mcp__ tools"
+            )
     return contracts, bindings
 
 
@@ -326,8 +347,6 @@ def render_codex(root: Path, output_dir: Path) -> list[Path]:
         lines.append(f"developer_instructions = {_toml_string(instructions)}")
         if contract["nested_delegation"] is False:
             lines.extend(["", "[agents]", "enabled = false"])
-        if mcp_policy == "context7-read-only":
-            lines.extend(["", "[mcp_servers.context7]", "enabled = true"])
         destination = output_dir / f"{role}.toml"
         rendered = "\n".join(lines) + "\n"
         parse_codex_profile(rendered)

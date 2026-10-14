@@ -51,12 +51,12 @@
         },
         "test-runner": {
           "model": "claude-haiku-5-5",
-          "tools": ["Glob", "Grep", "Read", "WebFetch", "WebSearch", "Bash", "mcp__context7__resolve-library-id", "mcp__context7__query-docs"],
+          "tools": ["Glob", "Grep", "Read", "WebFetch", "WebSearch", "Bash"],
           "capabilities": {
             "filesystem": "direct write/edit tools omitted; test artifacts may be produced by Bash",
             "shell": "Bash for test execution",
             "network": "WebFetch/WebSearch for documentation only",
-            "mcp": "context7 read-only tools only",
+            "mcp": "no MCP tools allowed",
             "nested_delegation": "Agent omitted",
             "context_policy": "fresh-or-bounded-dispatch-required",
             "model_class": "claude-haiku-5-5",
@@ -122,7 +122,7 @@
             "filesystem": "read-only sandbox with test-artifact exception",
             "shell": "test execution tools",
             "network": "documentation-only policy",
-            "mcp": "inherit configured context7 server; enable context7 only",
+            "mcp": "disabled",
             "nested_delegation": "disabled",
             "context_policy": "fresh-bounded fork",
             "model_class": "fast test-execution profile",
