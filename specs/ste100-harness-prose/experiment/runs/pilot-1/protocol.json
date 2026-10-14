@@ -1,0 +1,28 @@
+{
+  "claude_cli": "2.1.299 (Claude Code)",
+  "base": "0cc7ab7f4b9e99a604faea546c71b2dd1540acfe",
+  "model": "sonnet",
+  "smoke": false,
+  "launch_count": 80,
+  "trial_cap_usd": 0.5,
+  "pilot_cap_usd": 25.0,
+  "prior_spend_usd": 0.18341659999999999,
+  "command": [
+    "claude",
+    "-p",
+    "--model",
+    "sonnet",
+    "--safe-mode",
+    "--tools",
+    "Read,Write",
+    "--permission-mode",
+    "acceptEdits",
+    "--output-format",
+    "json",
+    "--max-budget-usd",
+    "0.50",
+    "--no-session-persistence",
+    "<prompt>"
+  ],
+  "isolation": "fresh temp directory per trial; safe-mode; no session persistence"
+}

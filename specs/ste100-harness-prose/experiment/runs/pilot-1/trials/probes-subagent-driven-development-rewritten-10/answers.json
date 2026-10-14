@@ -1,0 +1,1 @@
+{"S1": "runtime/resume_decision.py (source tree)", "S2": "Only when runtime/resume_decision.py is absent, never on a non-zero exit", "S3": "1", "S4": "As stop", "S5": "The commit before the task's first commit, not the branch base", "S6": "One", "S7": "spec_verdict and quality_verdict", "S8": "Any post-review code commit"}
