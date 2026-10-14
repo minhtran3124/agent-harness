@@ -42,6 +42,15 @@ For a critical context, append an entry per emitted track to `critical-patterns.
 templates. For a failure with `proposed:` guardrail, append one open row to
 `docs/harness-experimental/improvement-backlog.md`; do not duplicate an `existing:` guardrail.
 
+## Mistake twice
+
+A learning that matches an existing record at `high` overlap is a second occurrence. Update that
+record as above, then promote it: the promotion is this run's output. Update the matching
+`critical-patterns.md` entry, or add one if it has none, instead of the append above; never add a
+near-duplicate. Add a `**Recurred:** <date>` line under its **Full doc** line. When the learning applies only to certain
+paths, also propose a path-scoped rule in the report. Do not write it: adding `paths:` to `rules/`
+changes what loads, so a human decides. `moderate` overlap is not a recurrence.
+
 Run the authority at the end of every run, even when nothing was written:
 
 ```bash
@@ -53,4 +62,4 @@ frontmatter values, and offers `--check`/`--dry-run` for review.
 
 Finally verify knowledge-base discoverability in `CLAUDE.md` and rules. If missing, propose—not
 silently add—the documented knowledge-base section. Report tracks emitted, collisions, index result,
-critical promotion, and any proposed ratchet.
+promotions (critical or recurrence), and any proposed ratchet or path-scoped rule.
