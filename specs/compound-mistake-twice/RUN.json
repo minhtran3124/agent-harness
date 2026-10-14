@@ -1,0 +1,12 @@
+{
+  "created_at": "2026-10-14T03:33:29Z",
+  "last_event_id": "143322fe-2598-43fe-8e5e-bd7844b23d41",
+  "resume_event": null,
+  "run_id": "8ed2a4c0-8c9e-46f0-9e8e-11377d05098e",
+  "seq": 3,
+  "sha": null,
+  "slug": "compound-mistake-twice",
+  "state": "planning",
+  "updated_at": "2026-10-14T03:33:32Z",
+  "waiting_on": null
+}
