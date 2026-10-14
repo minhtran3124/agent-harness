@@ -21,8 +21,7 @@ if [ -f runtime/resume_decision.py ]; then python3 runtime/resume_decision.py --
 The fallback fires ONLY when the source file is absent — never on a non-zero exit — so a
 fail-closed exit 3 is not silently re-answered from the gitignored, possibly-stale deployed copy.
 Do not discard stderr. A default consumer install owns `.claude/runtime/resume_decision.py`, not a
-root `runtime/`; its sibling `run_state.py` resolves because Python puts the script's own directory
-on `sys.path`. Treat ANY non-zero exit as `stop`, and require `schema_version == 1` before acting on
+root `runtime/`. Treat ANY non-zero exit as `stop`, and require `schema_version == 1` before acting on
 `action`. Branch only on the structured `action`/`reason_code`: `execute-plan`, `resume-repair`,
 `resume-review-chain`, `wait`, `stop`, or `rebuild`.
 
@@ -56,15 +55,17 @@ Ensure branch isolation, set the plan `status: active`, and transition the durab
   Record non-`none` deltas in SUMMARY. Never paste history or report contents into prompts.
 - Generate one explicit `BASE..HEAD` package with `review_package.py` (BASE = the commit
   before this task's first commit, never the branch base); pass brief/report/package
-  paths to `task-reviewer`, whose model is selected by the runtime entry binding. One reviewer returns both
+  paths to `task-reviewer`. One reviewer returns both
   `spec_verdict` and `quality_verdict` using `task-reviewer-prompt.md`.
+- If `## STE lint` counts for changed prose are missing or unavailable,
+  re-run `review_package.py` once. If they still fail, report the task as blocked.
 - `cannot_verify` gets one focused context or test-runner retry. If still unknown, escalate; never
   treat it as a pass. Fix all Critical/Important findings in one dispatch, then re-review both
   verdicts. Record Minor findings in SUMMARY and the progress ledger; provide their roll-up to the
   final review chain.
 - `NEEDS_CONTEXT` receives missing context; `BLOCKED` is re-dispatched with changed context/model,
   split, or escalated when the plan itself is wrong. Repeated verification failure or blast-radius
-  escape is an escalation signal. Between dispatches, tell the user in a sentence which task is
+  escape is an escalation signal. Between dispatches, tell the user which task is
   starting and what came back (verdicts, blockers); keep detail in SUMMARY and the ledger.
 
 After all tasks pass, transition to `verifying` when tracked and read
