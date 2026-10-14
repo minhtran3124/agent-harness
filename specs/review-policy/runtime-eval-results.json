@@ -1,0 +1,3976 @@
+{
+ "revisions": {
+  "base": "33d6ed4",
+  "head": "f23e4ac540ab8f83aef25217f597160bada2e51b"
+ },
+ "environment": {
+  "model": "claude-opus-5-5",
+  "effort": "medium",
+  "flags": "--safe-mode --tools Read --allowedTools Read --output-format stream-json --verbose"
+ },
+ "records": [
+  {
+   "arm": "base",
+   "kind": "audit",
+   "fixture": "context-rule-unread",
+   "angle": "-",
+   "rc": 0,
+   "elapsed_s": 33.4,
+   "cost_usd": 0.0805,
+   "output_tokens": 2674,
+   "prompt_words": 376,
+   "reads": [
+    "package.md",
+    "rules/auto-correct-scope.md",
+    "harness-manifest.json"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "context-propagation-audit",
+     "class": "unread-rule-in-child-context",
+     "file": "skills/demo-dispatch/worker-prompt.md",
+     "line": 28,
+     "confidence": 92,
+     "summary": "Implementer subagent (isolated context) is told to classify self-fixes against .claude/rules/auto-correct-scope.md but is never instructed to Read it and it is not pasted; delivery is assumed. Repair: add explicit Read instruction or paste the complete authority."
+    },
+    {
+     "oracle": "context-propagation-audit",
+     "class": "unanchored-inline-policy-subset",
+     "file": "skills/demo-dispatch/worker-prompt.md",
+     "line": 29,
+     "confidence": 85,
+     "summary": "Inline paraphrase of Rule 1-3 vs Rule 4 STOP behavior is an incomplete subset (omits classification criteria) with no drift test or registry lint; will silently go stale. Repair: replace with explicit Read or full copy guarded by drift test."
+    },
+    {
+     "oracle": "context-propagation-audit",
+     "class": "unknown",
+     "file": "skills/demo-dispatch/worker-prompt.md",
+     "line": 23,
+     "confidence": 40,
+     "summary": "Dispatching call site that substitutes {{TASK_BODY}} and launches this prompt is outside the diff; delivery of the prompt and any pasted context to the child cannot be confirmed."
+    },
+    {
+     "oracle": "context-propagation-audit",
+     "class": "unknown",
+     "file": "skills/demo-dispatch/worker-prompt.md",
+     "line": 36,
+     "confidence": 30,
+     "summary": "Consumer of the rule-labeled Deviations return contract (controller/reviewer) is not visible in the diff; whether it has the rule in context to validate labels is unconfirmed."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "audit",
+   "fixture": "stale-inline-policy",
+   "angle": "-",
+   "rc": 0,
+   "elapsed_s": 24.0,
+   "cost_usd": 0.0673,
+   "output_tokens": 2318,
+   "prompt_words": 378,
+   "reads": [
+    "package.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "context-propagation-audit",
+     "class": "unanchored-inline-policy-subset",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 11,
+     "confidence": 90,
+     "summary": "Rule-4 STOP list is copied inline as a 5-item subset with no source anchor, no completeness proof and no drift test; it can silently go stale or be missing categories."
+    },
+    {
+     "oracle": "context-propagation-audit",
+     "class": "explicit-read-forbidden",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 5,
+     "confidence": 88,
+     "summary": "Prompt forbids the reviewer subagent from reading rule files, blocking explicit-Read delivery of the canonical Rule-4 authority to the isolated child context."
+    },
+    {
+     "oracle": "context-propagation-audit",
+     "class": "fail-open-default",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 13,
+     "confidence": 85,
+     "summary": "Anything not on the inline subset defaults to Rule 1-3 and is auto-fixed, so any Rule-4 category left out of the copy bypasses the STOP/escalate gate."
+    },
+    {
+     "oracle": "context-propagation-audit",
+     "class": "unconfirmed-child-delivery",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 18,
+     "confidence": 70,
+     "summary": "No test or inspected call site proves the reviewer subagent receives the complete Rule-4 policy; delivery to the fresh child context is assumed."
+    },
+    {
+     "oracle": "context-propagation-audit",
+     "class": "unknown",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": null,
+     "confidence": 40,
+     "summary": "Canonical Rule-4 authority file, its other consumers (implementer/scorer/main/new session) and any drift test are outside the diff; only package.md was searched, so the consumer set is unconfirmed."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "context-rule-unread",
+   "angle": "call-site-impact",
+   "rc": 0,
+   "elapsed_s": 29.0,
+   "cost_usd": 0.131,
+   "output_tokens": 2733,
+   "prompt_words": 1328,
+   "reads": [
+    "package.md",
+    "rules/auto-correct-scope.md",
+    "rules/auto-correct-scope.md",
+    "SKILL.md",
+    "worker-prompt.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "broken-reference",
+     "file": "skills/demo-dispatch/worker-prompt.md",
+     "line": 12,
+     "confidence": 60,
+     "summary": "Prompt points the subagent at .claude/rules/auto-correct-scope.md, but the rule lives at rules/auto-correct-scope.md and is path-scoped (not auto-loaded), so the worker cannot read the Rule 4 gate list and may misclassify Rule 4 fixes as Rule 1-3."
+    },
+    {
+     "oracle": "correctness",
+     "class": "contract-mismatch",
+     "file": "skills/demo-dispatch/worker-prompt.md",
+     "line": 14,
+     "confidence": 35,
+     "summary": "Instruction to record deviations under '### Deviations' omits the required file specs/<slug>/SUMMARY.md, so deviations may be returned in the summary only and never written to the record that the commit checks use."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "skills/demo-dispatch/worker-prompt.md",
+     "line": 8,
+     "confidence": 20,
+     "summary": "Could not find what sends this template or fills {{TASK_BODY}} (no grep available; skills/demo-dispatch/SKILL.md absent), so whether callers fill the placeholder is unknown."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "context-rule-unread",
+   "angle": "enclosing-function",
+   "rc": 0,
+   "elapsed_s": 32.3,
+   "cost_usd": 0.137,
+   "output_tokens": 3291,
+   "prompt_words": 1341,
+   "reads": [
+    "package.md",
+    "worker-prompt.md",
+    "rules/auto-correct-scope.md",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "missing-instruction",
+     "file": "skills/demo-dispatch/worker-prompt.md",
+     "line": 13,
+     "confidence": 65,
+     "summary": "Prompt says to classify self-fixes against auto-correct-scope.md but never instructs the worker to Read it; the rule is path-scoped to specs/** and not auto-loaded, so a worker given an inlined TASK_BODY who never reads specs/** classifies without the Rule 4 hard-gate list and may auto-apply Rule 4 changes."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "skills/demo-dispatch/worker-prompt.md",
+     "line": 13,
+     "confidence": 45,
+     "summary": "Referenced rule path .claude/rules/auto-correct-scope.md does not exist in this repo (rule lives at rules/auto-correct-scope.md); a worker's Read fails and classification proceeds without the rule, unless consuming-repo deploy layout places it under .claude/rules/."
+    },
+    {
+     "oracle": "correctness",
+     "class": "ambiguous-target",
+     "file": "skills/demo-dispatch/worker-prompt.md",
+     "line": 14,
+     "confidence": 30,
+     "summary": "Instruction to record Rule 1-3 fixes under ### Deviations omits the target file (specs/<slug>/SUMMARY.md per the rule), so deviations may be written elsewhere and the required audit record is missing."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "context-rule-unread",
+   "angle": "guard-completeness",
+   "rc": 0,
+   "elapsed_s": 26.6,
+   "cost_usd": 0.1157,
+   "output_tokens": 2197,
+   "prompt_words": 1540,
+   "reads": [
+    "package.md",
+    "rules/auto-correct-scope.md",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "guard-completeness",
+     "file": "skills/demo-dispatch/worker-prompt.md",
+     "line": 28,
+     "confidence": 70,
+     "summary": "The prompt tells the worker to classify self-fixes against auto-correct-scope.md but never tells it to Read the file. The rule is path-scoped to specs/** and doesn't auto-load, and the task arrives inline via {{TASK_BODY}}, so the worker may never see it and can miss the Rule 4 STOP."
+    },
+    {
+     "oracle": "correctness",
+     "class": "guard-completeness",
+     "file": "skills/demo-dispatch/worker-prompt.md",
+     "line": 28,
+     "confidence": 45,
+     "summary": "The rule path .claude/rules/auto-correct-scope.md doesn't exist in this repo (the file is at rules/auto-correct-scope.md). A worker that tries to read it gets file-not-found with no fallback and classifies without the rule."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "context-rule-unread",
+   "angle": "prior-art",
+   "rc": 0,
+   "elapsed_s": 22.5,
+   "cost_usd": 0.1124,
+   "output_tokens": 1721,
+   "prompt_words": 1374,
+   "reads": [
+    "package.md",
+    "INDEX.md",
+    "critical-patterns.md",
+    "solutions",
+    "rules/auto-correct-scope.md",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": []
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "context-rule-unread",
+   "angle": "removed-behavior",
+   "rc": 0,
+   "elapsed_s": 23.1,
+   "cost_usd": 0.1106,
+   "output_tokens": 2028,
+   "prompt_words": 1337,
+   "reads": [
+    "package.md",
+    "worker-prompt.md",
+    "rules/auto-correct-scope.md",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "skills/demo-dispatch/worker-prompt.md",
+     "line": 13,
+     "confidence": 30,
+     "summary": "Worker prompt points at .claude/rules/auto-correct-scope.md, but in this tree the rule exists only at rules/auto-correct-scope.md and is path-scoped (not auto-loaded), so a dispatched worker may classify Rule 1-3 vs Rule 4 STOP without the authoritative list; this depends on the deploy layout. Outside the removed-behavior angle; the diff deletes nothing."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "context-rule-unread",
+   "angle": "stack-defects",
+   "rc": 0,
+   "elapsed_s": 32.8,
+   "cost_usd": 0.1459,
+   "output_tokens": 3135,
+   "prompt_words": 1589,
+   "reads": [
+    "package.md",
+    "rules/auto-correct-scope.md",
+    "rules/auto-correct-scope.md",
+    "worker-prompt.md",
+    ".claude"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "missing-reference",
+     "file": "skills/demo-dispatch/worker-prompt.md",
+     "line": 12,
+     "confidence": 70,
+     "summary": "Prompt points the worker at .claude/rules/auto-correct-scope.md, but the rule lives at rules/auto-correct-scope.md (.claude/ does not exist in this repo). The worker can't load the Rule 1-4 classification and may auto-apply a Rule 4 hard gate."
+    },
+    {
+     "oracle": "correctness",
+     "class": "contract-mismatch",
+     "file": "skills/demo-dispatch/worker-prompt.md",
+     "line": 13,
+     "confidence": 50,
+     "summary": "Prompt says to record deviations 'under ### Deviations' without naming specs/<slug>/SUMMARY.md, which the rule requires. Deviations may land only in the returned summary, so the audit record never gets written."
+    },
+    {
+     "oracle": "correctness",
+     "class": "contract-mismatch",
+     "file": "skills/demo-dispatch/worker-prompt.md",
+     "line": 17,
+     "confidence": 45,
+     "summary": "Return contract has no STOPPED/escalated status or field for the gate that fired. A worker that stops on a Rule 4 gate returns what looks like a normal summary, and the controller may treat the task as complete."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "excess-scope",
+   "angle": "call-site-impact",
+   "rc": 0,
+   "elapsed_s": 30.1,
+   "cost_usd": 0.1117,
+   "output_tokens": 3078,
+   "prompt_words": 1328,
+   "reads": [
+    "package.md",
+    "profile.py",
+    "profile_service.py",
+    "exceptions.py",
+    "profile_repository.py",
+    "profile.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/profile.py",
+     "line": 37,
+     "confidence": 30,
+     "summary": "AppException.NotFound is assumed to be a callable attribute; if app/exceptions.py does not define it, the not-found branches of both routes raise AttributeError -> 500 instead of 404 (source not available to verify)."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/profile.py",
+     "line": 47,
+     "confidence": 30,
+     "summary": "get_profile now uses ProfileService(db).get_profile_with_stats instead of ProfileRepository.get_by_user; if the service constructor signature or return shape differs from what ProfileResponse.model_validate expects, every GET /profile/ fails with 500 (service source not available)."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/profile.py",
+     "line": 35,
+     "confidence": 25,
+     "summary": "New calls to ProfileRepository.get_settings and import of SettingsResponse are not defined in the diff; a missing name breaks module import (SettingsResponse) or every GET /profile/settings (get_settings) (sources not available)."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "excess-scope",
+   "angle": "enclosing-function",
+   "rc": 0,
+   "elapsed_s": 28.2,
+   "cost_usd": 0.1311,
+   "output_tokens": 2654,
+   "prompt_words": 1341,
+   "reads": [
+    "package.md",
+    "profile.py",
+    "exceptions.py",
+    "profile_service.py",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/profile.py",
+     "line": 36,
+     "confidence": 25,
+     "summary": "AppException.NotFound(...) is defined outside the diff (app/exceptions.py absent); if NotFound is not a callable that returns an exception, the not-found path raises AttributeError/TypeError and returns 500 instead of 404."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/profile.py",
+     "line": 33,
+     "confidence": 30,
+     "summary": "get_profile now uses ProfileService.get_profile_with_stats instead of ProfileRepository.get_by_user; if the new return shape (e.g. tuple/dict with stats) differs from what ProfileResponse.model_validate expects, every GET /profile/ fails validation."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/profile.py",
+     "line": 21,
+     "confidence": 20,
+     "summary": "ProfileRepository.get_settings and SettingsResponse are not visible; if get_settings is missing, sync, or returns an ORM object SettingsResponse cannot validate (no from_attributes), GET /profile/settings errors on every call."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "excess-scope",
+   "angle": "guard-completeness",
+   "rc": 0,
+   "elapsed_s": 20.4,
+   "cost_usd": 0.082,
+   "output_tokens": 1940,
+   "prompt_words": 1540,
+   "reads": [
+    "package.md",
+    "profile.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/profile.py",
+     "line": 37,
+     "confidence": 30,
+     "summary": "Not-found guard raises AppException.NotFound; if app.exceptions does not define NotFound as a callable attribute, the guard itself raises AttributeError and missing settings/profile returns 500 instead of 404 (app/exceptions.py not available to verify)."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/profile.py",
+     "line": 48,
+     "confidence": 25,
+     "summary": "get_profile guard only handles None from ProfileService.get_profile_with_stats; if the service raises (e.g. NoResultFound or a stats computation error) or returns a partial object for a user without a profile, the error escapes the guard and becomes a 500 (service source not available)."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "excess-scope",
+   "angle": "prior-art",
+   "rc": 0,
+   "elapsed_s": 15.4,
+   "cost_usd": 0.0712,
+   "output_tokens": 1122,
+   "prompt_words": 1374,
+   "reads": [
+    "package.md",
+    "INDEX.md",
+    "solutions",
+    "docs",
+    "profile.py"
+   ],
+   "permission_denials": [],
+   "findings": []
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "excess-scope",
+   "angle": "removed-behavior",
+   "rc": 0,
+   "elapsed_s": 19.9,
+   "cost_usd": 0.077,
+   "output_tokens": 1875,
+   "prompt_words": 1337,
+   "reads": [
+    "package.md",
+    "profile.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/profile.py",
+     "line": 47,
+     "confidence": 30,
+     "summary": "Replaced repo.get_by_user with ProfileService.get_profile_with_stats; the service isn't available to check that it still filters by current_user.id or returns a shape ProfileResponse.model_validate accepts (e.g. not a (profile, stats) tuple)."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/profile.py",
+     "line": 49,
+     "confidence": 20,
+     "summary": "AppException.NotFound is defined outside the diff; if it isn't a callable attribute, the missing-profile path crashes with AttributeError (500) instead of returning 404."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "excess-scope",
+   "angle": "stack-defects",
+   "rc": 0,
+   "elapsed_s": 18.3,
+   "cost_usd": 0.0805,
+   "output_tokens": 1813,
+   "prompt_words": 1589,
+   "reads": [
+    "package.md",
+    "profile.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/profile.py",
+     "line": 37,
+     "confidence": 20,
+     "summary": "AppException.NotFound is defined outside the diff; if it is not a valid callable exception factory, not-found paths raise AttributeError (500) instead of 404."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/profile.py",
+     "line": 47,
+     "confidence": 20,
+     "summary": "ProfileService.get_profile_with_stats is unseen; it may raise on missing profile instead of returning None, or return a shape incompatible with ProfileResponse, causing 500 on GET /profile/."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/profile.py",
+     "line": 38,
+     "confidence": 15,
+     "summary": "SettingsResponse.model_validate on a possibly-ORM object requires from_attributes=True; schema not visible, could fail with ValidationError (500)."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/profile.py",
+     "line": 35,
+     "confidence": 10,
+     "summary": "ProfileRepository.get_settings existence/async-ness/soft-delete filtering cannot be verified from the diff."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "intent-gap",
+   "angle": "call-site-impact",
+   "rc": 0,
+   "elapsed_s": 36.6,
+   "cost_usd": 0.1457,
+   "output_tokens": 3528,
+   "prompt_words": 1328,
+   "reads": [
+    "package.md",
+    "watchlists.py",
+    "watchlist_repository.py",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/watchlists.py",
+     "line": 40,
+     "confidence": 45,
+     "summary": "repo.update now called with new user_id kwarg; WatchlistRepository.update not available to verify it accepts user_id (TypeError -> 500 on every PUT) or that it filters rather than SETs user_id (ownership reassignment)."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/watchlists.py",
+     "line": 41,
+     "confidence": 35,
+     "summary": "New `if updated is None` 404 branch assumes repo.update returns None on no match; if it raises or returns another sentinel, not-found/foreign-owner PUT yields 500 instead of 404."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/watchlists.py",
+     "line": 22,
+     "confidence": 25,
+     "summary": "payload.name.strip() raises AttributeError (500) if WatchlistCreate.name is Optional and client sends null/omits name; schema not available to verify."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/watchlists.py",
+     "line": 24,
+     "confidence": 20,
+     "summary": "AppException.BadRequest / AppException.NotFound factories and import not verifiable; if absent, error paths become 500."
+    },
+    {
+     "oracle": "correctness",
+     "class": "validation-gap",
+     "file": "app/routers/watchlists.py",
+     "line": 40,
+     "confidence": 40,
+     "summary": "Update path does not strip/reject blank names, so PUT with '   ' persists a whitespace-only name that create now rejects."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/watchlists.py",
+     "line": 27,
+     "confidence": 15,
+     "summary": "Create now persists stripped name; callers matching on raw name or uniqueness checks against legacy untrimmed rows may behave differently."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "intent-gap",
+   "angle": "enclosing-function",
+   "rc": 0,
+   "elapsed_s": 21.7,
+   "cost_usd": 0.0814,
+   "output_tokens": 2115,
+   "prompt_words": 1341,
+   "reads": [
+    "package.md",
+    "watchlists.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "validation-inconsistency",
+     "file": "app/routers/watchlists.py",
+     "line": 31,
+     "confidence": 60,
+     "summary": "update_watchlist does not strip/reject blank names, so PUT with whitespace-only or padded name bypasses the new non-empty invariant enforced in create_watchlist"
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/watchlists.py",
+     "line": 31,
+     "confidence": 30,
+     "summary": "repo.update now called with user_id kwarg and expected to return None on miss; WatchlistRepository.update not visible \u2014 TypeError on every PUT or ineffective ownership/404 check if contract differs"
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/watchlists.py",
+     "line": 22,
+     "confidence": 15,
+     "summary": "payload.name.strip() crashes with AttributeError if WatchlistCreate.name is Optional; AppException.BadRequest/NotFound existence unverified"
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "intent-gap",
+   "angle": "guard-completeness",
+   "rc": 0,
+   "elapsed_s": 27.2,
+   "cost_usd": 0.0951,
+   "output_tokens": 2422,
+   "prompt_words": 1540,
+   "reads": [
+    "package.md",
+    "watchlists.py",
+    "watchlist_repository.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "incomplete-guard",
+     "file": "app/routers/watchlists.py",
+     "line": 40,
+     "confidence": 70,
+     "summary": "Empty/whitespace name validation added only to create_watchlist; update_watchlist passes payload.name unvalidated, so PUT with name='   ' persists a blank name."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/watchlists.py",
+     "line": 41,
+     "confidence": 40,
+     "summary": "The new 404 check assumes repo.update accepts user_id and returns None when no row matches; that can't be verified from the diff. If either assumption is wrong, the result is a TypeError (500) on every PUT, a skipped 404, or no ownership scoping."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/watchlists.py",
+     "line": 22,
+     "confidence": 25,
+     "summary": "payload.name.strip() raises AttributeError (500) before the emptiness guard if WatchlistCreate.name is Optional and null is sent."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "intent-gap",
+   "angle": "prior-art",
+   "rc": 0,
+   "elapsed_s": 18.5,
+   "cost_usd": 0.0691,
+   "output_tokens": 1031,
+   "prompt_words": 1374,
+   "reads": [
+    "package.md",
+    "INDEX.md",
+    "critical-patterns.md",
+    "solutions",
+    "docs"
+   ],
+   "permission_denials": [],
+   "findings": []
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "intent-gap",
+   "angle": "removed-behavior",
+   "rc": 0,
+   "elapsed_s": 27.1,
+   "cost_usd": 0.093,
+   "output_tokens": 2474,
+   "prompt_words": 1337,
+   "reads": [
+    "package.md",
+    "watchlists.py",
+    "watchlist_repository.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "missing-validation",
+     "file": "app/routers/watchlists.py",
+     "line": 40,
+     "confidence": 55,
+     "summary": "update_watchlist does not strip/reject whitespace-only names that create_watchlist now rejects; PUT with name='   ' stores a blank name"
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/watchlists.py",
+     "line": 40,
+     "confidence": 30,
+     "summary": "repo.update now called with user_id kwarg; if WatchlistRepository.update signature lacks user_id (not visible), every PUT raises TypeError -> 500"
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/watchlists.py",
+     "line": 22,
+     "confidence": 20,
+     "summary": "payload.name.strip() raises AttributeError if WatchlistCreate.name is Optional and null is sent; previously None passed through to repo"
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/watchlists.py",
+     "line": 41,
+     "confidence": 15,
+     "summary": "NotFound mapping relies on repo.update returning None for missing/foreign watchlist; if repo raises or returns another sentinel, the 404 path is not reached"
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "intent-gap",
+   "angle": "stack-defects",
+   "rc": 0,
+   "elapsed_s": 20.1,
+   "cost_usd": 0.0831,
+   "output_tokens": 1975,
+   "prompt_words": 1589,
+   "reads": [
+    "package.md",
+    "watchlists.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "input-validation",
+     "file": "app/routers/watchlists.py",
+     "line": 31,
+     "confidence": 55,
+     "summary": "update_watchlist doesn't strip or reject blank names, unlike the new check in create_watchlist; PUT with name '   ' saves a blank watchlist name"
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/watchlists.py",
+     "line": null,
+     "confidence": 30,
+     "summary": "Ownership check and 404 depend on WatchlistRepository.update accepting user_id, filtering on it and returning None when no row matches; not checkable, and could mean IDOR, TypeError or a 404 that never fires"
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/watchlists.py",
+     "line": 22,
+     "confidence": 15,
+     "summary": "payload.name.strip() raises AttributeError (500) if WatchlistCreate.name is Optional and null; schema not available"
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "missing-await",
+   "angle": "call-site-impact",
+   "rc": 0,
+   "elapsed_s": 21.7,
+   "cost_usd": 0.1099,
+   "output_tokens": 1914,
+   "prompt_words": 1328,
+   "reads": [
+    "package.md",
+    "subscription_service.py",
+    "subscription_repository.py",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/services/subscription_service.py",
+     "line": 16,
+     "confidence": 85,
+     "summary": "Missing await: get_active_count calls self.repo.count_active(user_id) without await, but count_active is async (the diff's own comment says so; the repository file was not available to confirm). count gets a coroutine, `count < 0` raises TypeError, and the query never runs. Fix: `count = await self.repo.count_active(user_id)`."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "missing-await",
+   "angle": "enclosing-function",
+   "rc": 0,
+   "elapsed_s": 17.8,
+   "cost_usd": 0.0677,
+   "output_tokens": 1581,
+   "prompt_words": 1341,
+   "reads": [
+    "package.md",
+    "subscription_service.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "missing-await",
+     "file": "app/services/subscription_service.py",
+     "line": 22,
+     "confidence": 90,
+     "summary": "count_active is async (per diff comment) but called without await; count is a coroutine, so `count < 0` raises TypeError on every call and the query never executes."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/services/subscription_service.py",
+     "line": 23,
+     "confidence": 25,
+     "summary": "If count_active can return None (e.g. scalar() with no rows), `count < 0` raises TypeError instead of returning 0; repository source not available to confirm."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "missing-await",
+   "angle": "guard-completeness",
+   "rc": 0,
+   "elapsed_s": 16.3,
+   "cost_usd": 0.0631,
+   "output_tokens": 1172,
+   "prompt_words": 1540,
+   "reads": [
+    "package.md",
+    "subscription_service.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "missing-await",
+     "file": "app/services/subscription_service.py",
+     "line": 15,
+     "confidence": 90,
+     "summary": "get_active_count calls async SubscriptionRepository.count_active without await; count is a coroutine, so the guard `count < 0` raises TypeError on every call and the query never runs. Fix: `count = await self.repo.count_active(user_id)`."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "missing-await",
+   "angle": "prior-art",
+   "rc": 0,
+   "elapsed_s": 15.8,
+   "cost_usd": 0.0695,
+   "output_tokens": 1316,
+   "prompt_words": 1374,
+   "reads": [
+    "package.md",
+    "INDEX.md",
+    "critical-patterns.md",
+    "subscription_service.py"
+   ],
+   "permission_denials": [],
+   "findings": []
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "missing-await",
+   "angle": "removed-behavior",
+   "rc": 0,
+   "elapsed_s": 16.8,
+   "cost_usd": 0.0653,
+   "output_tokens": 1469,
+   "prompt_words": 1337,
+   "reads": [
+    "package.md",
+    "subscription_service.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "missing-await",
+     "file": "app/services/subscription_service.py",
+     "line": 22,
+     "confidence": 85,
+     "summary": "get_active_count calls async repo.count_active without await; count is a coroutine, so `count < 0` raises TypeError on every call (out-of-angle observation; removed-behavior angle found nothing since diff is purely additive)"
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "missing-await",
+   "angle": "stack-defects",
+   "rc": 0,
+   "elapsed_s": 16.4,
+   "cost_usd": 0.0981,
+   "output_tokens": 1375,
+   "prompt_words": 1589,
+   "reads": [
+    "package.md",
+    "subscription_service.py",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "async-missing-await",
+     "file": "app/services/subscription_service.py",
+     "line": 16,
+     "confidence": 90,
+     "summary": "get_active_count calls async SubscriptionRepository.count_active without await; count is a coroutine, so `count < 0` raises TypeError on every call and the query never executes. Fix: `count = await self.repo.count_active(user_id)`."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "none-deref",
+   "angle": "call-site-impact",
+   "rc": 0,
+   "elapsed_s": 21.8,
+   "cost_usd": 0.1097,
+   "output_tokens": 1902,
+   "prompt_words": 1328,
+   "reads": [
+    "package.md",
+    "user_email.py",
+    "user_repository.py",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "null-dereference",
+     "file": "app/routers/user_email.py",
+     "line": 19,
+     "confidence": 90,
+     "summary": "UserRepository.get_by_id returns Optional[User] (None for missing or soft-deleted ids), but get_user_email reads user.email without checking. GET /users/{missing_id}/email raises AttributeError and returns a 500 instead of a 404."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/user_email.py",
+     "line": 18,
+     "confidence": 20,
+     "summary": "user_id is passed to get_by_id as a raw str. If the repository expects an int or UUID key, a malformed id may raise instead of returning None. Can't confirm because the repository source isn't available."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "none-deref",
+   "angle": "enclosing-function",
+   "rc": 0,
+   "elapsed_s": 20.3,
+   "cost_usd": 0.1047,
+   "output_tokens": 1860,
+   "prompt_words": 1341,
+   "reads": [
+    "package.md",
+    "user_email.py",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "null-dereference",
+     "file": "app/routers/user_email.py",
+     "line": 19,
+     "confidence": 90,
+     "summary": "get_by_id returns Optional[User]; missing/soft-deleted user_id makes user None and user.email raises AttributeError -> 500 instead of 404. Add None guard raising NotFound."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/user_email.py",
+     "line": 16,
+     "confidence": 20,
+     "summary": "user_id typed as str; if User PK is int/UUID, lookup may mismatch or error. Could not verify repository/model (not on disk)."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "none-deref",
+   "angle": "guard-completeness",
+   "rc": 0,
+   "elapsed_s": 16.8,
+   "cost_usd": 0.1013,
+   "output_tokens": 1482,
+   "prompt_words": 1540,
+   "reads": [
+    "package.md",
+    "user_email.py",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "null-check-miss",
+     "file": "app/routers/user_email.py",
+     "line": 19,
+     "confidence": 85,
+     "summary": "get_by_id returns Optional[User] (None for missing/soft-deleted ids) but result is dereferenced via user.email with no None guard; admin request for nonexistent or soft-deleted user_id raises AttributeError -> 500 instead of 404."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "none-deref",
+   "angle": "prior-art",
+   "rc": 0,
+   "elapsed_s": 17.0,
+   "cost_usd": 0.0773,
+   "output_tokens": 1513,
+   "prompt_words": 1374,
+   "reads": [
+    "package.md",
+    "INDEX.md",
+    "solutions",
+    "critical-patterns.md",
+    "user_email.py"
+   ],
+   "permission_denials": [],
+   "findings": []
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "none-deref",
+   "angle": "removed-behavior",
+   "rc": 0,
+   "elapsed_s": 20.4,
+   "cost_usd": 0.105,
+   "output_tokens": 1784,
+   "prompt_words": 1337,
+   "reads": [
+    "package.md",
+    "user_email.py",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "null-dereference",
+     "file": "app/routers/user_email.py",
+     "line": 19,
+     "confidence": 80,
+     "summary": "get_by_id returns Optional[User] (None for missing/soft-deleted id); user.email is accessed without a None check, so an unknown or soft-deleted user_id raises AttributeError and returns 500 instead of 404. Found outside the removed-behavior angle (new file, no deleted lines); Optional return type taken from the diff comment, repository source not on disk."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "none-deref",
+   "angle": "stack-defects",
+   "rc": 0,
+   "elapsed_s": 20.3,
+   "cost_usd": 0.1093,
+   "output_tokens": 1861,
+   "prompt_words": 1589,
+   "reads": [
+    "package.md",
+    "user_email.py",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "null-dereference",
+     "file": "app/routers/user_email.py",
+     "line": 19,
+     "confidence": 92,
+     "summary": "get_by_id returns Optional[User] (None for absent/soft-deleted id); handler dereferences user.email without a guard, causing AttributeError -> 500 instead of 404 NotFound."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/user_email.py",
+     "line": 16,
+     "confidence": 30,
+     "summary": "user_id typed as str with no format validation; if ids are UUIDs a malformed id may reach the DB and raise a 500 instead of 422. User id type not visible in the diff."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/user_email.py",
+     "line": 14,
+     "confidence": 15,
+     "summary": "Authorization relies on require_admin from app.dependencies, whose implementation isn't in the diff; can't confirm it actually rejects non-admins."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "soft-delete-filter",
+   "angle": "call-site-impact",
+   "rc": 0,
+   "elapsed_s": 23.5,
+   "cost_usd": 0.0898,
+   "output_tokens": 2372,
+   "prompt_words": 1328,
+   "reads": [
+    "package.md",
+    "watchlist_repository.py",
+    "watchlist.py",
+    "base.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/repositories/watchlist_repository.py",
+     "line": 28,
+     "confidence": 20,
+     "summary": "order_by(Watchlist.created_at) assumes the Watchlist model has a created_at column; app/models/watchlist.py was not available, so it is unverified. If the column is missing, every call raises AttributeError."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/repositories/watchlist_repository.py",
+     "line": 30,
+     "confidence": 15,
+     "summary": "await self.session.execute assumes BaseRepository exposes an AsyncSession as self.session; app/repositories/base.py was not available, so it is unverified."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/repositories/watchlist_repository.py",
+     "line": 24,
+     "confidence": 10,
+     "summary": "list_for_user might override a BaseRepository method with a different signature or behaviour (pagination, soft-delete filter). The base class was not available and no repo-wide search could be run."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/repositories/watchlist_repository.py",
+     "line": 27,
+     "confidence": 10,
+     "summary": "user_id is typed str; if the Watchlist.user_id column is a UUID or int, comparing it to a str may fail or match no rows depending on the driver. The model was not available."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "soft-delete-filter",
+   "angle": "enclosing-function",
+   "rc": 0,
+   "elapsed_s": 23.7,
+   "cost_usd": 0.0868,
+   "output_tokens": 2184,
+   "prompt_words": 1341,
+   "reads": [
+    "package.md",
+    "watchlist_repository.py",
+    "watchlist.py",
+    "base.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "nondeterministic-ordering",
+     "file": "app/repositories/watchlist_repository.py",
+     "line": 28,
+     "confidence": 20,
+     "summary": "order_by(created_at.desc()) has no tie-breaker; watchlists with identical created_at come back in an unstable order across calls. Add Watchlist.id as a secondary sort key."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/repositories/watchlist_repository.py",
+     "line": 30,
+     "confidence": 10,
+     "summary": "Couldn't verify that BaseRepository provides self.session as an AsyncSession (base.py not on disk); if it doesn't, this line crashes."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/repositories/watchlist_repository.py",
+     "line": 27,
+     "confidence": 10,
+     "summary": "Couldn't verify that Watchlist.user_id/created_at exist, that the user_id column is a string type (the method takes str), or that no soft-delete filter is required (model file not on disk)."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "soft-delete-filter",
+   "angle": "guard-completeness",
+   "rc": 0,
+   "elapsed_s": 17.3,
+   "cost_usd": 0.0771,
+   "output_tokens": 1492,
+   "prompt_words": 1540,
+   "reads": [
+    "package.md",
+    "watchlist_repository.py",
+    "base.py",
+    "watchlist.py"
+   ],
+   "permission_denials": [],
+   "findings": []
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "soft-delete-filter",
+   "angle": "prior-art",
+   "rc": 0,
+   "elapsed_s": 12.4,
+   "cost_usd": 0.064,
+   "output_tokens": 1009,
+   "prompt_words": 1374,
+   "reads": [
+    "package.md",
+    "INDEX.md",
+    "critical-patterns.md",
+    "solutions"
+   ],
+   "permission_denials": [],
+   "findings": []
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "soft-delete-filter",
+   "angle": "removed-behavior",
+   "rc": 0,
+   "elapsed_s": 14.9,
+   "cost_usd": 0.0648,
+   "output_tokens": 1189,
+   "prompt_words": 1337,
+   "reads": [
+    "package.md",
+    "watchlist_repository.py",
+    "base.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/repositories/watchlist_repository.py",
+     "line": 24,
+     "confidence": 10,
+     "summary": "Cannot verify whether new list_for_user overrides a BaseRepository method of the same name (base.py not available); if so, any filtering it enforced (e.g. soft-delete/tenant scope) would be silently dropped."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "soft-delete-filter",
+   "angle": "stack-defects",
+   "rc": 0,
+   "elapsed_s": 23.7,
+   "cost_usd": 0.1229,
+   "output_tokens": 2217,
+   "prompt_words": 1589,
+   "reads": [
+    "package.md",
+    "watchlist_repository.py",
+    "watchlist.py",
+    "base.py",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/repositories/watchlist_repository.py",
+     "line": 27,
+     "confidence": 40,
+     "summary": "list_for_user filters only on user_id; if Watchlist is soft-deleted (deleted_at), deleted watchlists are returned. Model not available on disk to confirm."
+    },
+    {
+     "oracle": "correctness",
+     "class": "database-query",
+     "file": "app/repositories/watchlist_repository.py",
+     "line": 30,
+     "confidence": 35,
+     "summary": "list_for_user returns an unbounded result set with no limit/offset; a user with many watchlists loads all rows into memory."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "stale-inline-policy",
+   "angle": "call-site-impact",
+   "rc": 0,
+   "elapsed_s": 29.1,
+   "cost_usd": 0.1244,
+   "output_tokens": 2791,
+   "prompt_words": 1328,
+   "reads": [
+    "package.md",
+    "rules/auto-correct-scope.md",
+    "reviewer-prompt.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "incomplete-guard",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 28,
+     "confidence": 85,
+     "summary": "Embedded Rule 4 STOP list omits session/transaction scope, high-blast-radius files (settings.json, hooks/*, core skill engines), and service/pattern replacement; the prompt forbids reading rules/auto-correct-scope.md and says to default to Rule 1\u20133 and apply the fix, so those findings get auto-fixed instead of escalated."
+    },
+    {
+     "oracle": "correctness",
+     "class": "contract-mismatch",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 29,
+     "confidence": 55,
+     "summary": "Prompt tells the classifier subagent to 'apply the fix' for Rule 1\u20133, but the return contract is only classification/rationale/recommendation; callers expecting a read-only classifier get unexpected file edits."
+    },
+    {
+     "oracle": "correctness",
+     "class": "contract-mismatch",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 3,
+     "confidence": 35,
+     "summary": "Instructions say classify 'every finding in the diff' but the template only provides a single {{FINDING_BODY}} and no diff input, inviting invented or out-of-scope classifications."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 9,
+     "confidence": 20,
+     "summary": "Callers/dispatchers that fill {{FINDING_BODY}} and consume the return contract could not be searched (no grep available); whether any caller breaks is unknown."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "stale-inline-policy",
+   "angle": "enclosing-function",
+   "rc": 0,
+   "elapsed_s": 26.5,
+   "cost_usd": 0.1191,
+   "output_tokens": 2513,
+   "prompt_words": 1341,
+   "reads": [
+    "package.md",
+    "rules/auto-correct-scope.md",
+    "reviewer-prompt.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "incomplete-guard",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 13,
+     "confidence": 85,
+     "summary": "Rule 4 STOP list omits session/transaction scope changes, high-blast-radius files (settings.json, hooks/*, core skill engine), and service/pattern replacement; default-to-Rule-1\u20133 plus the 'do NOT read rule files' ban means such findings are auto-fixed instead of escalated."
+    },
+    {
+     "oracle": "correctness",
+     "class": "over-broad-condition",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 16,
+     "confidence": 45,
+     "summary": "Schema/API contract STOP items drop the canonical 'not in task Action / not in spec' qualifiers, so planned schema/API changes are wrongly escalated as Rule 4."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "stale-inline-policy",
+   "angle": "guard-completeness",
+   "rc": 0,
+   "elapsed_s": 22.8,
+   "cost_usd": 0.1151,
+   "output_tokens": 2124,
+   "prompt_words": 1540,
+   "reads": [
+    "package.md",
+    "reviewer-prompt.md",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "incomplete-guard",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 28,
+     "confidence": 85,
+     "summary": "The Rule 4 STOP list leaves out 3 of the 8 authoritative categories in rules/auto-correct-scope.md: session/transaction scope changes, high-blast-radius files (settings.json, hooks/*, core skill engine), and replacing a service/pattern. The fallback 'Otherwise treat it as Rule 1\u20133 and apply the fix', together with the ban on reading rule files, means a finding that edits hooks/commit-gate.sh or changes session scope gets auto-applied when it should be escalated."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "stale-inline-policy",
+   "angle": "prior-art",
+   "rc": 0,
+   "elapsed_s": 22.1,
+   "cost_usd": 0.1113,
+   "output_tokens": 1902,
+   "prompt_words": 1374,
+   "reads": [
+    "package.md",
+    "INDEX.md",
+    "critical-patterns.md",
+    "solutions",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": []
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "stale-inline-policy",
+   "angle": "removed-behavior",
+   "rc": 0,
+   "elapsed_s": 18.5,
+   "cost_usd": 0.0985,
+   "output_tokens": 1605,
+   "prompt_words": 1337,
+   "reads": [
+    "package.md",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "narrowed-check",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 28,
+     "confidence": 80,
+     "summary": "The prompt lists only 5 of the 8 Rule 4 STOP categories in rules/auto-correct-scope.md: it leaves out session/transaction scope changes, high-blast-radius files (settings.json, hooks/*, core skill engines) and replacing a service or pattern. It says to treat everything else as Rule 1-3 and fix it, and line 5 forbids reading the rule file. Findings in those 3 categories therefore get fixed automatically instead of escalated."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "finder",
+   "fixture": "stale-inline-policy",
+   "angle": "stack-defects",
+   "rc": 0,
+   "elapsed_s": 21.5,
+   "cost_usd": 0.108,
+   "output_tokens": 1855,
+   "prompt_words": 1589,
+   "reads": [
+    "package.md",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "incomplete-gate-list",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 28,
+     "confidence": 85,
+     "summary": "Rule 4 STOP list omits session/transaction scope, high-blast-radius files (settings.json, hooks/*, core skill engine), and replacing a service/pattern; with 'otherwise treat as Rule 1\u20133 and apply the fix' and 'do NOT read rule files', these get auto-applied instead of escalated."
+    },
+    {
+     "oracle": "correctness",
+     "class": "over-broad-gate",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 31,
+     "confidence": 45,
+     "summary": "Schema/API contract items drop the canonical 'not in the task's Action / not in spec' condition, so changes the task already asked for get stopped and escalated anyway."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "intent",
+   "fixture": "context-rule-unread",
+   "angle": "-",
+   "rc": 0,
+   "elapsed_s": 16.5,
+   "cost_usd": 0.0608,
+   "output_tokens": 1521,
+   "prompt_words": 966,
+   "reads": [
+    "package.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "intent",
+     "class": "excess",
+     "file": "skills/demo-dispatch/worker-prompt.md",
+     "line": 16,
+     "confidence": 30,
+     "summary": "The Return contract section (commits sha+subject, files touched, verify status) and the 'execute exactly one task from PLAN.md' framing go beyond the stated purpose of self-fix classification. Arguably normal dispatch-prompt scaffolding; only 'Deviations (labeled by rule)' traces directly to the intent. Report-only."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "intent",
+   "fixture": "excess-scope",
+   "angle": "-",
+   "rc": 0,
+   "elapsed_s": 15.1,
+   "cost_usd": 0.0589,
+   "output_tokens": 1334,
+   "prompt_words": 963,
+   "reads": [
+    "package.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "intent",
+     "class": "excess",
+     "file": "app/routers/profile.py",
+     "line": null,
+     "confidence": 85,
+     "summary": "Existing GET /profile/ handler was rewritten (switched to ProfileService.get_profile_with_stats, added a 404 on a missing profile, new ProfileService/AppException imports); the intent only asked to add GET /profile/settings."
+    },
+    {
+     "oracle": "intent",
+     "class": "unknown",
+     "file": "app/routers/profile.py",
+     "line": null,
+     "confidence": 50,
+     "summary": "SettingsResponse schema and ProfileRepository.get_settings are used but not defined in the diff (only profile.py touched); cannot confirm the endpoint actually returns the current user's settings."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "intent",
+   "fixture": "intent-gap",
+   "angle": "-",
+   "rc": 0,
+   "elapsed_s": 21.2,
+   "cost_usd": 0.0799,
+   "output_tokens": 2022,
+   "prompt_words": 997,
+   "reads": [
+    "package.md",
+    "watchlists.py",
+    "watchlist_repository.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "intent",
+     "class": "gap",
+     "file": "app/routers/watchlists.py",
+     "line": null,
+     "confidence": 95,
+     "summary": "PUT /watchlists/{watchlist_id} has no empty/whitespace-only name check; intent requires 400 on BOTH create and update, only create is guarded."
+    },
+    {
+     "oracle": "intent",
+     "class": "unknown",
+     "file": "app/routers/watchlists.py",
+     "line": null,
+     "confidence": 60,
+     "summary": "Ownership enforcement on update depends on WatchlistRepository.update honoring the new user_id kwarg and returning None on owner mismatch; repository is outside the diff and could not be inspected."
+    },
+    {
+     "oracle": "intent",
+     "class": "drift",
+     "file": "app/routers/watchlists.py",
+     "line": null,
+     "confidence": 55,
+     "summary": "Create now persists the stripped name (name=name) rather than payload.name \u2014 whitespace normalization of stored names was not requested; intent only asked to reject empty names."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "intent",
+   "fixture": "missing-await",
+   "angle": "-",
+   "rc": 0,
+   "elapsed_s": 19.5,
+   "cost_usd": 0.069,
+   "output_tokens": 1721,
+   "prompt_words": 969,
+   "reads": [
+    "package.md",
+    "subscription_service.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "intent",
+     "class": "drift",
+     "file": "app/services/subscription_service.py",
+     "line": 22,
+     "confidence": 80,
+     "summary": "count_active is documented in-diff as async def but is called without await; count is a coroutine, so `count < 0` raises TypeError and the method never returns the user's active-subscription count as the intent requires ('returns how many active subscriptions the user has'). Repository source not available to confirm beyond the diff comment."
+    },
+    {
+     "oracle": "intent",
+     "class": "excess",
+     "file": "app/services/subscription_service.py",
+     "line": 23,
+     "confidence": 60,
+     "summary": "Unrequested clamping rule `if count < 0: return 0` added; the intent asks only to return the count from SubscriptionRepository.count_active."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "intent",
+   "fixture": "none-deref",
+   "angle": "-",
+   "rc": 0,
+   "elapsed_s": 29.0,
+   "cost_usd": 0.0774,
+   "output_tokens": 1988,
+   "prompt_words": 969,
+   "reads": [
+    "package.md",
+    "main.py",
+    "user.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "intent",
+     "class": "drift",
+     "file": "app/routers/user_email.py",
+     "line": 14,
+     "confidence": 85,
+     "summary": "Intent says only 'Auth-protected.' The endpoint also requires Depends(require_admin), so it is admin-only and logged-in non-admin users are rejected. This changes behaviour beyond plain authentication."
+    },
+    {
+     "oracle": "intent",
+     "class": "unknown",
+     "file": "app/routers/user_email.py",
+     "line": 8,
+     "confidence": 45,
+     "summary": "The new router is not registered anywhere in the diff (no include_router, only one file changed). The app's startup code is not available, so it can't be confirmed that GET /users/{user_id}/email can actually be reached."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "intent",
+   "fixture": "soft-delete-filter",
+   "angle": "-",
+   "rc": 0,
+   "elapsed_s": 18.6,
+   "cost_usd": 0.0703,
+   "output_tokens": 1708,
+   "prompt_words": 976,
+   "reads": [
+    "package.md",
+    "base.py",
+    "watchlist_repository.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "intent",
+     "class": "gap",
+     "file": "app/repositories/watchlist_repository.py",
+     "line": 25,
+     "confidence": 88,
+     "summary": "list_for_user builds a raw select(Watchlist) filtered only by user_id and executes it directly on self.session; it does not exclude soft-deleted rows (no deleted_at IS NULL), violating 'repository reads exclude soft-deleted rows'. Only a global session-level filter, which isn't visible in the workspace, would cover this."
+    },
+    {
+     "oracle": "intent",
+     "class": "excess",
+     "file": "app/repositories/watchlist_repository.py",
+     "line": 28,
+     "confidence": 60,
+     "summary": "Adds order_by(created_at desc), an ordering guarantee the intent never asked for ('returns all of a user's watchlists')."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "intent",
+   "fixture": "stale-inline-policy",
+   "angle": "-",
+   "rc": 0,
+   "elapsed_s": 22.4,
+   "cost_usd": 0.0782,
+   "output_tokens": 2024,
+   "prompt_words": 968,
+   "reads": [
+    "package.md",
+    "reviewer-prompt.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "intent",
+     "class": "excess",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 13,
+     "confidence": 70,
+     "summary": "Prompt instructs the reviewer to 'apply the fix' for non-Rule-4 findings; intent only asked to enable classification, not to grant auto-fix authority."
+    },
+    {
+     "oracle": "intent",
+     "class": "unknown",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 16,
+     "confidence": 40,
+     "summary": "Cannot verify the five inlined Rule-4 STOP criteria are the complete canonical set; no rule source available in workspace (only package.md)."
+    },
+    {
+     "oracle": "intent",
+     "class": "drift",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 1,
+     "confidence": 35,
+     "summary": "Intent refers to 'the reviewer prompt' (existing), but diff creates a new reviewer-prompt file; if an existing prompt lives elsewhere it remains without the criteria."
+    }
+   ]
+  },
+  {
+   "arm": "base",
+   "kind": "task",
+   "fixture": "cannot-verify",
+   "angle": "-",
+   "rc": 0,
+   "elapsed_s": 11.8,
+   "cost_usd": 0.0371,
+   "output_tokens": 995,
+   "prompt_words": 267,
+   "reads": [
+    "brief.md",
+    "report.md",
+    "package.md"
+   ],
+   "permission_denials": [],
+   "reply": "spec_verdict: cannot_verify\nquality_verdict: needs_fixes\nfindings:\n  - severity: Important\n    category: spec\n    location: unknown\n    rationale: The brief (brief.md:2) asks for the external webhook signature to stay compatible. The report (report.md:2) says \"The signing protocol and external contract are unavailable.\" Without that contract, nothing can show whether the signature is still compatible. This is the explicit external-contract-unavailable case, so the result is cannot_verify, not a pass.\n    action: Get the external webhook signing protocol or contract (algorithm, canonicalized payload, header format, key handling), then re-review the implementation against it. Add a compatibility test that uses a known-good signature from the external party.\n  - severity: Important\n    category: quality\n    location: unknown\n    rationale: package.md:3 says \"No diff exists for this fixture. The implementer report is the only evidence.\" The report only names a caller (report.md:2). There is no code, diff or test result to review, so quality can't be approved. The scope check also can't run: there is no diff stat, and the brief has no `- **Files:**` list.\n    action: Provide a review package with the real diff, a diff stat and test output. Add a `- **Files:**` list to the brief so the scope check against `check_plan_scope` can run.\nsearch_surface: brief.md, report.md, package.md (no repository search done)"
+  },
+  {
+   "arm": "base",
+   "kind": "task",
+   "fixture": "combined",
+   "angle": "-",
+   "rc": 0,
+   "elapsed_s": 13.0,
+   "cost_usd": 0.0325,
+   "output_tokens": 1128,
+   "prompt_words": 267,
+   "reads": [
+    "brief.md",
+    "report.md",
+    "package.md"
+   ],
+   "permission_denials": [],
+   "reply": "spec_verdict: fail\nquality_verdict: needs_fixes\nfindings:\n  - severity: Critical\n    category: spec\n    location: unknown\n    rationale: brief.md:2 says the validator must \"reject blank input\". The report (report.md:2) says \"The validator accepts blank strings\". package.md:3 says there is no diff and the report is the only evidence. I don't otherwise trust the report, but a self-reported failure is reliable evidence against the work. The core requirement is not met.\n    action: Change the validator so it rejects empty and whitespace-only input. Add a test that a blank string is rejected.\n  - severity: Important\n    category: quality\n    location: unknown\n    rationale: report.md:2 describes \"one 400-line nested conditional with duplicated branches\". Logic that size, deeply nested and repeated, is hard to read and test and easy to get wrong. The blank-input bug may come from it.\n    action: Break the validator into small, flat checks (blank check first, then format) and remove the duplicated branches. Cover each check with a focused test.\n  - severity: Minor\n    category: spec\n    location: unknown\n    rationale: I couldn't run the scope check. brief.md has no `- **Files:**` list and package.md has no diff stat (\"No diff exists for this fixture\"). I found no changed paths outside scope, but that's because there's nothing to compare, not because the scope checked out.\n    action: Add a `- **Files:**` list to the brief and a diff stat to the review package so scope can be checked in the next round.\nsearch_surface: brief.md, report.md, package.md (all read in full; no repository search done)"
+  },
+  {
+   "arm": "base",
+   "kind": "task",
+   "fixture": "minor-only",
+   "angle": "-",
+   "rc": 0,
+   "elapsed_s": 15.0,
+   "cost_usd": 0.0365,
+   "output_tokens": 1324,
+   "prompt_words": 267,
+   "reads": [
+    "brief.md",
+    "report.md",
+    "package.md"
+   ],
+   "permission_denials": [],
+   "reply": "```yaml\nspec_verdict: fail\nquality_verdict: needs_fixes\nfindings:\n  - severity: Important\n    category: spec\n    location: package.md:3\n    rationale: >-\n      The review package says \"No diff exists for this fixture. The implementer\n      report is the only evidence.\" The brief (brief.md:2, \"Sort names\n      alphabetically.\") needs a real behavior change. I can't treat the\n      report's claim that \"Names are sorted correctly... tests are complete\"\n      (report.md:2) as evidence. Without a diff, nothing shows sorting code or\n      tests were added. This isn't an unavailable external contract, so\n      cannot_verify doesn't apply: nothing has been delivered.\n    action: >-\n      Produce a review package with the actual diff and diff stat, showing the\n      sorting code and its tests (including alphabetical order and edge cases\n      like empty input, case, and ties). Then re-review.\n  - severity: Important\n    category: quality\n    location: unknown\n    rationale: >-\n      There is no code to review for quality. Approving would rest only on the\n      implementer's untrusted self-report, so I can't approve.\n    action: >-\n      Re-run the quality review after a diff is provided.\n  - severity: Minor\n    category: quality\n    location: unknown\n    rationale: >-\n      The report itself says \"A helper name is slightly vague.\" I can't confirm\n      it or find where it is without a diff. If it's real, it makes the code\n      harder to read but doesn't change behavior.\n    action: >-\n      Rename the helper to describe what it does (for example\n      sort_names_alphabetically). The controller should record this for\n      final review.\nsearch_surface: brief.md, report.md, package.md (I searched nothing else; the brief has no `- **Files:**` list and the package has no diff stat, so I couldn't compare scope)\n```"
+  },
+  {
+   "arm": "base",
+   "kind": "task",
+   "fixture": "missing-global-constraint",
+   "angle": "-",
+   "rc": 0,
+   "elapsed_s": 11.5,
+   "cost_usd": 0.0307,
+   "output_tokens": 1037,
+   "prompt_words": 267,
+   "reads": [
+    "brief.md",
+    "report.md",
+    "package.md"
+   ],
+   "permission_denials": [],
+   "reply": "spec_verdict: fail\nquality_verdict: needs_fixes\nfindings:\n  - severity: Critical\n    category: spec\n    location: unknown (failure handler; the package has no diff to give a file:line)\n    rationale: The brief's global constraint says \"Never log secret values\" (brief.md:2). The implementer's own report says \"The failure handler logs the complete request including `Authorization`\" (report.md:2). The `Authorization` header carries credentials, so logging it breaks the constraint. The package says the report is the only evidence (package.md:3). Since the report admits the violation, the result is a fail, not a pass and not cannot_verify.\n    action: Redact or drop `Authorization` and any other credential-bearing headers or fields before the failure handler logs the request, or log only fields from an allowlist. Add a test that checks failure logs never contain the Authorization value. Resubmit with a real diff.\n  - severity: Minor\n    category: spec\n    location: package.md:3\n    rationale: The package has no diff stat (package.md:3) and the brief has no `- **Files:**` list, so the scope check cannot be done. This is recorded as a gap in the evidence and does not hide the Critical finding above.\n    action: Include a diff stat in the next review package and a `- **Files:**` list in the brief, so changed paths can be checked against plan scope.\nsearch_surface: brief.md, report.md, package.md only (no repository search done)"
+  },
+  {
+   "arm": "base",
+   "kind": "task",
+   "fixture": "plan-mandated",
+   "angle": "-",
+   "rc": 0,
+   "elapsed_s": 13.4,
+   "cost_usd": 0.0332,
+   "output_tokens": 1162,
+   "prompt_words": 267,
+   "reads": [
+    "brief.md",
+    "report.md",
+    "package.md"
+   ],
+   "permission_denials": [],
+   "reply": "spec_verdict: fail\nquality_verdict: needs_fixes\nfindings:\n  - severity: Critical\n    category: spec\n    location: unknown (SUMMARY; brief.md:2)\n    rationale: brief.md:2 says \"Every task must add a passing Criterion row to SUMMARY.\" report.md:2 says \"no verification row or Criterion mapping exists.\" package.md:3 says \"No diff exists,\" so nothing shows a SUMMARY row being added. The task's one required deliverable is missing.\n    action: Add a Criterion row to SUMMARY that maps to this task. Back it with a verification that actually passes, and include the SUMMARY change and the passing output in the review package.\n  - severity: Important\n    category: quality\n    location: unknown\n    rationale: report.md:2 says \"The behavior is implemented,\" but package.md:3 shows there is no diff, and the report is the only evidence. Nothing shows that any implementation exists, and there is no verification to back the claim.\n    action: Regenerate the review package with the real diff and diff stat for the implementation, plus the output of a passing verification command.\n  - severity: Minor\n    category: spec\n    location: brief.md:1-2\n    rationale: The brief has no `- **Files:**` list and the package has no diff stat, so the scope check against check_plan_scope could not be done.\n    action: Add a `- **Files:**` list to the brief and a diff stat to the package so scope can be checked in the next round.\nsearch_surface: brief.md, report.md, package.md (no repository search done)"
+  },
+  {
+   "arm": "base",
+   "kind": "task",
+   "fixture": "quality-only",
+   "angle": "-",
+   "rc": 0,
+   "elapsed_s": 16.4,
+   "cost_usd": 0.0395,
+   "output_tokens": 1475,
+   "prompt_words": 267,
+   "reads": [
+    "brief.md",
+    "report.md",
+    "package.md"
+   ],
+   "permission_denials": [],
+   "reply": "spec_verdict: pass\nquality_verdict: needs_fixes\nfindings:\n  - severity: Important\n    category: quality\n    location: config.py (line unknown; no diff provided)\n    rationale: The implementer's own report (report.md:2) says malformed JSON \"raises a raw traceback\". A config parser should reject bad input with a clear, typed error. A raw `json.JSONDecodeError` traceback gives users no useful message and gives callers no stable exception to catch.\n    action: Catch `json.JSONDecodeError` (and `OSError` from opening the file) in `config.py`. Re-raise each as a documented config error that includes the file path and the line and column of the parse error.\n  - severity: Important\n    category: quality\n    location: config.py (line unknown; no tests exist)\n    rationale: report.md:2 says \"no test exists\". Nothing checks that valid JSON parses correctly or that malformed or missing files fail cleanly.\n    action: Add tests for these cases: a valid config parses to the expected value, malformed JSON raises the config error, and a missing file raises the config error.\n  - severity: Minor\n    category: spec\n    location: brief.md:1-2; package.md:3\n    rationale: The scope check could not be run. The brief has no `- **Files:**` list, and the package says \"No diff exists\", so there is no diff stat to compare. The spec pass rests only on report.md:2, which says `config.py` opens and parses the input. That matches brief.md:2 (\"Add a parser for a single JSON config file\"), but no diff confirms it.\n    action: Pass this to final review. Confirm against a real diff that `config.py` is the only changed implementation path, and add a `- **Files:**` list to the brief for future scope checks.\nsearch_surface: brief.md, report.md, package.md (all read in full; no repository search done)"
+  },
+  {
+   "arm": "base",
+   "kind": "task",
+   "fixture": "spec-only",
+   "angle": "-",
+   "rc": 0,
+   "elapsed_s": 13.4,
+   "cost_usd": 0.0334,
+   "output_tokens": 1166,
+   "prompt_words": 267,
+   "reads": [
+    "brief.md",
+    "report.md",
+    "package.md"
+   ],
+   "permission_denials": [],
+   "reply": "spec_verdict: fail\nquality_verdict: needs_fixes\nfindings:\n  - severity: Critical\n    category: spec\n    location: run.py (line unknown)\n    rationale: The brief (brief.md:2) requires that `--dry-run` \"does not write files\". The report is the only evidence the package provides (package.md:3), and it says `run.py` \"parses `--dry-run` but always calls `write_output()`\" (report.md:2). That admits the flag does not stop the write, so the main requirement is not met. I am not relying on the report to show a pass. I am using its own statement to show a fail.\n    action: In `run.py`, make the `write_output()` call depend on the dry-run flag (skip it when `--dry-run` is set). Add a test that runs with `--dry-run` and checks that no files are created or changed.\n  - severity: Important\n    category: quality\n    location: unknown\n    rationale: The package has no diff and no test evidence (package.md:3). Nothing shows that the flag is parsed correctly or that dry-run stops all writes, and nothing shows how a normal run (without the flag) is affected.\n    action: Send a review package with the actual diff and the test output for dry-run and normal-run cases.\n  - severity: Minor\n    category: spec\n    location: brief.md:1-2\n    rationale: I could not do the scope check. The brief has no `- **Files:**` list and the package has no diff stat, so there is nothing to compare changed paths against. The scope check is unverified, not passed.\n    action: Add a `- **Files:**` list to the brief (e.g. `run.py` and its tests) and include a diff stat in the package so `check_plan_scope` can check scope.\nsearch_surface: brief.md, report.md, package.md (no repository search performed)"
+  },
+  {
+   "arm": "head",
+   "kind": "audit",
+   "fixture": "context-rule-unread",
+   "angle": "-",
+   "rc": 0,
+   "elapsed_s": 22.5,
+   "cost_usd": 0.0608,
+   "output_tokens": 2035,
+   "prompt_words": 374,
+   "reads": [
+    "package.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "context-propagation-audit",
+     "class": "assumed-delivery",
+     "file": "skills/demo-dispatch/worker-prompt.md",
+     "line": 13,
+     "confidence": 90,
+     "summary": "Implementer subagent runs in an isolated fresh context but is only told to classify against .claude/rules/auto-correct-scope.md by path; no explicit Read or complete pasted copy, so delivery of the load-bearing rule to the child is assumed."
+    },
+    {
+     "oracle": "context-propagation-audit",
+     "class": "unanchored-inline-subset",
+     "file": "skills/demo-dispatch/worker-prompt.md",
+     "line": 14,
+     "confidence": 75,
+     "summary": "Inline paraphrase 'Rule 1\u20133 apply / Rule 4 STOP' is an incomplete subset of auto-correct-scope (omits Rule 4 hard-gate list and Rule 1\u20133 definitions) with no drift test or registry lint anchoring it."
+    },
+    {
+     "oracle": "context-propagation-audit",
+     "class": "unknown",
+     "file": "skills/demo-dispatch/worker-prompt.md",
+     "line": 13,
+     "confidence": 40,
+     "summary": "Existence, paths-trigger frontmatter, and dispatcher call site for .claude/rules/auto-correct-scope.md cannot be confirmed from the diff alone (search surface: package.md only)."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "audit",
+   "fixture": "stale-inline-policy",
+   "angle": "-",
+   "rc": 0,
+   "elapsed_s": 22.6,
+   "cost_usd": 0.0642,
+   "output_tokens": 2163,
+   "prompt_words": 376,
+   "reads": [
+    "package.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "context-propagation-audit",
+     "class": "unanchored-inline-policy",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 11,
+     "confidence": 90,
+     "summary": "Rule-4 STOP list is copied inline into an isolated reviewer prompt with no source citation, no drift test and no registry lint; completeness against the canonical rule is unconfirmed."
+    },
+    {
+     "oracle": "context-propagation-audit",
+     "class": "authority-read-forbidden",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 5,
+     "confidence": 85,
+     "summary": "Prompt tells the child reviewer not to read specs or rule files, which rules out the explicit Read and makes the unanchored inline copy the only delivery path."
+    },
+    {
+     "oracle": "context-propagation-audit",
+     "class": "fail-open-default",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 13,
+     "confidence": 80,
+     "summary": "'Otherwise treat it as Rule 1-3 and apply the fix' means any Rule-4 class missing from the inline subset gets auto-fixed instead of escalated."
+    },
+    {
+     "oracle": "context-propagation-audit",
+     "class": "unknown",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": null,
+     "confidence": 50,
+     "summary": "No dispatcher call site or test in the diff proves this template reaches the reviewer child context; delivery unconfirmed (search surface: package.md only)."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "context-rule-unread",
+   "angle": "call-site-impact",
+   "rc": 0,
+   "elapsed_s": 30.6,
+   "cost_usd": 0.1384,
+   "output_tokens": 3160,
+   "prompt_words": 1220,
+   "reads": [
+    "package.md",
+    "worker-prompt.md",
+    "rules/auto-correct-scope.md",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "missing-explicit-rule-load",
+     "file": "skills/demo-dispatch/worker-prompt.md",
+     "line": 13,
+     "confidence": 70,
+     "summary": "Dispatch prompt tells the worker to classify self-fixes against auto-correct-scope.md but never tells it to Read the file. The rule is path-scoped to specs/** and not auto-loaded, and the task body is inlined, so the isolated worker classifies Rule 1-3 vs Rule 4 without the rule text and may auto-apply Rule 4 hard-gate changes."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "skills/demo-dispatch/worker-prompt.md",
+     "line": 13,
+     "confidence": 35,
+     "summary": "Cited path .claude/rules/auto-correct-scope.md does not exist in this repo (the rule is at rules/auto-correct-scope.md). A worker that tries to read it fails unless the prompt runs only in deployed copies."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "skills/demo-dispatch/worker-prompt.md",
+     "line": 14,
+     "confidence": 30,
+     "summary": "'Record each under ### Deviations' does not name specs/<slug>/SUMMARY.md, so deviations may be written somewhere else and never reach the audit record that verify_summary and commit-gate check."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "context-rule-unread",
+   "angle": "enclosing-function",
+   "rc": 0,
+   "elapsed_s": 26.1,
+   "cost_usd": 0.1283,
+   "output_tokens": 2622,
+   "prompt_words": 1197,
+   "reads": [
+    "package.md",
+    "worker-prompt.md",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "missing-load-instruction",
+     "file": "skills/demo-dispatch/worker-prompt.md",
+     "line": 13,
+     "confidence": 70,
+     "summary": "Prompt tells worker to classify self-fixes against path-scoped auto-correct-scope.md (not auto-loaded) but never instructs an explicit Read; with TASK_BODY inlined the worker need not read specs/**, so the rule is never injected and Rule 4 STOP items can be misclassified as Rule 1-3 and auto-applied."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "skills/demo-dispatch/worker-prompt.md",
+     "line": 13,
+     "confidence": 35,
+     "summary": "Referenced path .claude/rules/auto-correct-scope.md does not exist in this tree (rule lives at rules/auto-correct-scope.md); worker cannot load the rule unless run in a deployed layout."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "context-rule-unread",
+   "angle": "guard-completeness",
+   "rc": 0,
+   "elapsed_s": 30.1,
+   "cost_usd": 0.1347,
+   "output_tokens": 2870,
+   "prompt_words": 1432,
+   "reads": [
+    "package.md",
+    "worker-prompt.md",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "guard-completeness",
+     "file": "skills/demo-dispatch/worker-prompt.md",
+     "line": 12,
+     "confidence": 60,
+     "summary": "Self-fix classification guard references path-scoped rule .claude/rules/auto-correct-scope.md (explicitly 'not auto-loaded') without instructing the worker to Read it; with TASK_BODY inlined the worker may never read specs/**, so Rule 4 hard gates (hooks/*, settings.json, API contract) are classified from memory/examples (all Rule 1-3) and may be auto-applied instead of STOPping."
+    },
+    {
+     "oracle": "correctness",
+     "class": "guard-completeness",
+     "file": "skills/demo-dispatch/worker-prompt.md",
+     "line": 32,
+     "confidence": 40,
+     "summary": "Return contract has no STOPPED/escalation status or reason field; a worker that halts on a Rule 4 gate returns only commits/files/deviations/verify, so the controller can misread a partial, escalated task as complete."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "context-rule-unread",
+   "angle": "prior-art",
+   "rc": 0,
+   "elapsed_s": 22.7,
+   "cost_usd": 0.0968,
+   "output_tokens": 1945,
+   "prompt_words": 1264,
+   "reads": [
+    "package.md",
+    "INDEX.md",
+    "critical-patterns.md",
+    "rules/review-policy.md",
+    "worker-prompt.md",
+    "solutions"
+   ],
+   "permission_denials": [],
+   "findings": []
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "context-rule-unread",
+   "angle": "removed-behavior",
+   "rc": 0,
+   "elapsed_s": 16.1,
+   "cost_usd": 0.0994,
+   "output_tokens": 1442,
+   "prompt_words": 1233,
+   "reads": [
+    "package.md",
+    "worker-prompt.md",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": []
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "context-rule-unread",
+   "angle": "stack-defects",
+   "rc": 0,
+   "elapsed_s": 27.6,
+   "cost_usd": 0.136,
+   "output_tokens": 2733,
+   "prompt_words": 1481,
+   "reads": [
+    "package.md",
+    "worker-prompt.md",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "missing-value",
+     "file": "skills/demo-dispatch/worker-prompt.md",
+     "line": 13,
+     "confidence": 70,
+     "summary": "Worker prompt tells the subagent to classify self-fixes against auto-correct-scope.md but never instructs it to Read the file. The rule is path-scoped and not auto-loaded, and a worker given an inline TASK_BODY never reads specs/**, so Rule 1-3 vs Rule 4 classification runs without the rule and Rule 4 hard gates can be applied without stopping."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "skills/demo-dispatch/worker-prompt.md",
+     "line": 13,
+     "confidence": 35,
+     "summary": "Hard-coded path .claude/rules/auto-correct-scope.md does not exist in this tree (rule is at rules/auto-correct-scope.md). The worker's lookup fails unless it runs only in a deployed layout."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "excess-scope",
+   "angle": "call-site-impact",
+   "rc": 0,
+   "elapsed_s": 36.2,
+   "cost_usd": 0.1649,
+   "output_tokens": 3564,
+   "prompt_words": 1220,
+   "reads": [
+    "package.md",
+    "profile.py",
+    "profile_service.py",
+    "exceptions.py",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md",
+    "profile.py",
+    "profile_repository.py",
+    "dependencies.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/profile.py",
+     "line": 49,
+     "confidence": 25,
+     "summary": "AppException.NotFound is not defined in the diff and app/exceptions.py is missing on disk; if AppException has no NotFound factory, a missing profile or settings row raises AttributeError (500) instead of 404"
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/profile.py",
+     "line": 47,
+     "confidence": 25,
+     "summary": "get_profile now validates the result of ProfileService.get_profile_with_stats instead of repo.get_by_user; if that returns a tuple or a dict with extra stats, ProfileResponse.model_validate fails (500) or drops data. The service source is missing on disk"
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/profile.py",
+     "line": 35,
+     "confidence": 20,
+     "summary": "ProfileRepository.get_settings is not visible; if it is missing or synchronous, GET /profile/settings fails with AttributeError or TypeError on await"
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/profile.py",
+     "line": 38,
+     "confidence": 15,
+     "summary": "SettingsResponse.model_validate on an ORM row requires from_attributes=True; the schema is not visible, so a missing config would raise ValidationError (500)"
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "excess-scope",
+   "angle": "enclosing-function",
+   "rc": 0,
+   "elapsed_s": 28.6,
+   "cost_usd": 0.145,
+   "output_tokens": 2938,
+   "prompt_words": 1197,
+   "reads": [
+    "package.md",
+    "profile.py",
+    "rules/review-policy.md",
+    "exceptions.py",
+    "profile_service.py",
+    "profile_repository.py",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/profile.py",
+     "line": 37,
+     "confidence": 25,
+     "summary": "AppException.NotFound is defined outside the diff; if AppException has no callable NotFound attribute, the not-found path raises AttributeError (500) instead of 404. Same for line 49."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/profile.py",
+     "line": 35,
+     "confidence": 20,
+     "summary": "ProfileRepository.get_settings is not shown in the diff; if it is missing or not async, GET /profile/settings returns 500 on every request."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/profile.py",
+     "line": 38,
+     "confidence": 15,
+     "summary": "SettingsResponse.model_validate on an ORM object needs from_attributes=True; the schema is outside the diff, so this can't be checked."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/profile.py",
+     "line": 47,
+     "confidence": 20,
+     "summary": "ProfileService.get_profile_with_stats replaces repo.get_by_user; if it returns a different shape (tuple or dict wrapping profile+stats), ProfileResponse.model_validate fails or returns a wrong response."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "excess-scope",
+   "angle": "guard-completeness",
+   "rc": 0,
+   "elapsed_s": 20.4,
+   "cost_usd": 0.0879,
+   "output_tokens": 1958,
+   "prompt_words": 1432,
+   "reads": [
+    "package.md",
+    "profile.py",
+    "rules/review-policy.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/profile.py",
+     "line": 37,
+     "confidence": 30,
+     "summary": "Not-found guards raise AppException.NotFound, which is defined outside the diff; if that attribute or its exception handler is missing, a missing settings/profile row returns a 500 (AttributeError or unhandled exception) instead of a 404."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/profile.py",
+     "line": 48,
+     "confidence": 20,
+     "summary": "The profile guard only checks `is None`; if ProfileService.get_profile_with_stats returns a non-None partial result for a missing profile, ProfileResponse.model_validate raises a ValidationError and the user gets a 500 instead of a 404."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "excess-scope",
+   "angle": "prior-art",
+   "rc": 0,
+   "elapsed_s": 14.9,
+   "cost_usd": 0.08,
+   "output_tokens": 1258,
+   "prompt_words": 1264,
+   "reads": [
+    "package.md",
+    "INDEX.md",
+    "rules/review-policy.md",
+    "critical-patterns.md",
+    "solutions",
+    "docs"
+   ],
+   "permission_denials": [],
+   "findings": []
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "excess-scope",
+   "angle": "removed-behavior",
+   "rc": 0,
+   "elapsed_s": 19.9,
+   "cost_usd": 0.1112,
+   "output_tokens": 1939,
+   "prompt_words": 1233,
+   "reads": [
+    "package.md",
+    "profile.py",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/profile.py",
+     "line": 47,
+     "confidence": 20,
+     "summary": "Replaced repo.get_by_user with ProfileService.get_profile_with_stats; cannot verify the service preserves the same lookup/filter semantics (e.g. soft-delete, user scoping) or returns a shape ProfileResponse.model_validate accepts \u2014 service source not available on disk."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/profile.py",
+     "line": 49,
+     "confidence": 15,
+     "summary": "New None-path raises AppException.NotFound(...); cannot verify AppException exposes a NotFound factory/subclass \u2014 if not, the missing-profile path raises AttributeError (500) instead of 404."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "excess-scope",
+   "angle": "stack-defects",
+   "rc": 0,
+   "elapsed_s": 29.4,
+   "cost_usd": 0.1508,
+   "output_tokens": 2999,
+   "prompt_words": 1481,
+   "reads": [
+    "package.md",
+    "profile.py",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md",
+    "profile_service.py",
+    "profile_repository.py",
+    "exceptions.py",
+    "profile.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/profile.py",
+     "line": 37,
+     "confidence": 20,
+     "summary": "AppException.NotFound is used on the new 404 paths (also line 49), but app/exceptions.py is not in the workspace; if that attribute does not exist, both not-found paths raise AttributeError and return a 500 instead of a 404."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/profile.py",
+     "line": 38,
+     "confidence": 20,
+     "summary": "SettingsResponse.model_validate(settings): if get_settings returns an ORM object and SettingsResponse lacks from_attributes=True, every successful settings request fails validation and returns a 500. Schema not available to verify."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/profile.py",
+     "line": 47,
+     "confidence": 15,
+     "summary": "ProfileService.get_profile_with_stats is new to this router and its source is absent; whether it is async, respects soft-delete, avoids N+1 stats queries, and returns a shape ProfileResponse.model_validate accepts cannot be confirmed."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/profile.py",
+     "line": 35,
+     "confidence": 10,
+     "summary": "ProfileRepository.get_settings is not defined in any available file; it is awaited, so if it is missing or synchronous the endpoint crashes."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "intent-gap",
+   "angle": "call-site-impact",
+   "rc": 0,
+   "elapsed_s": 32.4,
+   "cost_usd": 0.1144,
+   "output_tokens": 3277,
+   "prompt_words": 1220,
+   "reads": [
+    "package.md",
+    "watchlists.py",
+    "rules/review-policy.md",
+    "watchlist_repository.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/watchlists.py",
+     "line": 40,
+     "confidence": 45,
+     "summary": "repo.update now called with user_id kwarg; if WatchlistRepository.update signature lacks user_id, every PUT raises TypeError (500). Callee not available to verify."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/watchlists.py",
+     "line": 41,
+     "confidence": 35,
+     "summary": "New None-guard assumes repo.update returns None on miss/foreign owner; if it raises or ignores user_id, result is 500 or cross-user modification."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/watchlists.py",
+     "line": 22,
+     "confidence": 30,
+     "summary": "payload.name.strip() raises AttributeError if WatchlistCreate.name is Optional and null is sent; 500 instead of 400."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/watchlists.py",
+     "line": 24,
+     "confidence": 25,
+     "summary": "AppException.BadRequest / AppException.NotFound existence unverified; AttributeError would turn intended 400/404 into 500."
+    },
+    {
+     "oracle": "correctness",
+     "class": "validation-inconsistency",
+     "file": "app/routers/watchlists.py",
+     "line": 40,
+     "confidence": 50,
+     "summary": "update_watchlist does not strip/reject blank names, so PUT with '   ' stores a name create_watchlist rejects."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/watchlists.py",
+     "line": 40,
+     "confidence": 20,
+     "summary": "unmodified-line: name=payload.name passed even when omitted in a partial-update schema, possibly nulling the name."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "intent-gap",
+   "angle": "enclosing-function",
+   "rc": 0,
+   "elapsed_s": 32.3,
+   "cost_usd": 0.1408,
+   "output_tokens": 3299,
+   "prompt_words": 1197,
+   "reads": [
+    "package.md",
+    "watchlists.py",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "missing-validation",
+     "file": "app/routers/watchlists.py",
+     "line": 35,
+     "confidence": 70,
+     "summary": "update_watchlist does not strip/validate name like create now does; PUT with whitespace-only or untrimmed name persists a value create would reject"
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/watchlists.py",
+     "line": 19,
+     "confidence": 30,
+     "summary": "payload.name.strip() raises AttributeError (500) if WatchlistCreate.name is Optional and null/omitted; schema not visible"
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/watchlists.py",
+     "line": 35,
+     "confidence": 35,
+     "summary": "repo.update now called with user_id kwarg and result checked for None; repository not in diff \u2014 if signature lacks user_id (TypeError) or it doesn't return None on no-match, updates crash or 404/ownership check is ineffective"
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/watchlists.py",
+     "line": 21,
+     "confidence": 15,
+     "summary": "AppException.BadRequest/NotFound usage unverified; if not defined/imported, raises AttributeError -> 500 instead of 400/404"
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "intent-gap",
+   "angle": "guard-completeness",
+   "rc": 0,
+   "elapsed_s": 30.2,
+   "cost_usd": 0.141,
+   "output_tokens": 3066,
+   "prompt_words": 1432,
+   "reads": [
+    "package.md",
+    "watchlists.py",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "guard-completeness",
+     "file": "app/routers/watchlists.py",
+     "line": 35,
+     "confidence": 60,
+     "summary": "Empty/whitespace-name guard added only to create_watchlist; update_watchlist passes payload.name unstripped, so PUT with name '   ' stores a blank name that create rejects"
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/watchlists.py",
+     "line": 19,
+     "confidence": 25,
+     "summary": "payload.name.strip() runs before the emptiness check; if WatchlistCreate.name is nullable, a null name raises AttributeError (500) instead of BadRequest"
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/watchlists.py",
+     "line": 35,
+     "confidence": 30,
+     "summary": "repo.update now called with user_id kwarg and expected to return None when not found/not owned; repository not in diff, so a missing kwarg (TypeError) or raise-instead-of-None would bypass the new NotFound guard"
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/watchlists.py",
+     "line": 21,
+     "confidence": 15,
+     "summary": "AppException.BadRequest/NotFound newly used; import and factory existence not visible in diff, so a missing one would make the error paths 500 instead of 400/404"
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "intent-gap",
+   "angle": "prior-art",
+   "rc": 0,
+   "elapsed_s": 16.6,
+   "cost_usd": 0.0825,
+   "output_tokens": 1417,
+   "prompt_words": 1264,
+   "reads": [
+    "package.md",
+    "INDEX.md",
+    "rules/review-policy.md",
+    "critical-patterns.md",
+    "solutions",
+    "docs"
+   ],
+   "permission_denials": [],
+   "findings": []
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "intent-gap",
+   "angle": "removed-behavior",
+   "rc": 0,
+   "elapsed_s": 28.2,
+   "cost_usd": 0.1364,
+   "output_tokens": 2687,
+   "prompt_words": 1233,
+   "reads": [
+    "package.md",
+    "watchlists.py",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md",
+    "watchlist_repository.py",
+    "watchlist.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "missing-validation",
+     "file": "app/routers/watchlists.py",
+     "line": 40,
+     "confidence": 45,
+     "summary": "update_watchlist does not strip/reject empty names, so PUT with whitespace-only or padded name persists a value create_watchlist now rejects/normalizes"
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/watchlists.py",
+     "line": 40,
+     "confidence": 30,
+     "summary": "repo.update now called with user_id kwarg; WatchlistRepository.update signature not visible \u2014 if it lacks user_id, every PUT raises TypeError (500)"
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/watchlists.py",
+     "line": 22,
+     "confidence": 15,
+     "summary": "payload.name.strip() raises AttributeError if WatchlistCreate.name is Optional and None is sent; schema not visible"
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "intent-gap",
+   "angle": "stack-defects",
+   "rc": 0,
+   "elapsed_s": 28.9,
+   "cost_usd": 0.1396,
+   "output_tokens": 2855,
+   "prompt_words": 1481,
+   "reads": [
+    "package.md",
+    "watchlists.py",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md",
+    "watchlist_repository.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "input-validation",
+     "file": "app/routers/watchlists.py",
+     "line": 40,
+     "confidence": 60,
+     "summary": "update_watchlist does not strip/reject blank names like create_watchlist now does; PUT with name='   ' persists a whitespace-only name that create would reject"
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/watchlists.py",
+     "line": 40,
+     "confidence": 35,
+     "summary": "repo.update now receives user_id kwarg; repository not visible \u2014 if signature lacks it every PUT raises TypeError (500), and if it treats kwargs as columns the ownership check is not enforced and NotFound never fires"
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/watchlists.py",
+     "line": 22,
+     "confidence": 20,
+     "summary": "payload.name.strip() raises AttributeError (500) if WatchlistCreate.name is Optional and null is sent; schema not visible"
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "missing-await",
+   "angle": "call-site-impact",
+   "rc": 0,
+   "elapsed_s": 17.5,
+   "cost_usd": 0.1023,
+   "output_tokens": 1574,
+   "prompt_words": 1220,
+   "reads": [
+    "package.md",
+    "subscription_service.py",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "missing-await",
+     "file": "app/services/subscription_service.py",
+     "line": 16,
+     "confidence": 90,
+     "summary": "get_active_count calls async SubscriptionRepository.count_active without await; count is a coroutine, so `count < 0` raises TypeError on every call and the DB query never runs. Fix: `count = await self.repo.count_active(user_id)`."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "missing-await",
+   "angle": "enclosing-function",
+   "rc": 0,
+   "elapsed_s": 19.3,
+   "cost_usd": 0.1105,
+   "output_tokens": 1772,
+   "prompt_words": 1197,
+   "reads": [
+    "package.md",
+    "subscription_service.py",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md",
+    "subscription_repository.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "missing-await",
+     "file": "app/services/subscription_service.py",
+     "line": 17,
+     "confidence": 85,
+     "summary": "get_active_count calls the async SubscriptionRepository.count_active without await, so count is a coroutine; `count < 0` raises TypeError on every call (and the query never runs). Fix: `count = await self.repo.count_active(user_id)`."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "missing-await",
+   "angle": "guard-completeness",
+   "rc": 0,
+   "elapsed_s": 15.0,
+   "cost_usd": 0.1006,
+   "output_tokens": 1402,
+   "prompt_words": 1432,
+   "reads": [
+    "package.md",
+    "subscription_service.py",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "missing-await",
+     "file": "app/services/subscription_service.py",
+     "line": 16,
+     "confidence": 90,
+     "summary": "get_active_count calls async repo.count_active without await; count is a coroutine, so the guard `count < 0` raises TypeError on every call and the query never runs."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "missing-await",
+   "angle": "prior-art",
+   "rc": 0,
+   "elapsed_s": 24.9,
+   "cost_usd": 0.1174,
+   "output_tokens": 2067,
+   "prompt_words": 1264,
+   "reads": [
+    "package.md",
+    "INDEX.md",
+    "subscription_service.py",
+    "solutions",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "missing-await",
+     "file": "app/services/subscription_service.py",
+     "line": 15,
+     "confidence": 85,
+     "summary": "get_active_count calls async SubscriptionRepository.count_active without await. count is a coroutine, so `count < 0` raises TypeError on every call and the query never runs. Fix: `count = await self.repo.count_active(user_id)`. Found outside the prior-art method, since docs/solutions/ is absent and that angle was skipped. Whether count_active is async rests on the diff comment only; the repository source was not on disk."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "missing-await",
+   "angle": "removed-behavior",
+   "rc": 0,
+   "elapsed_s": 21.1,
+   "cost_usd": 0.1057,
+   "output_tokens": 1839,
+   "prompt_words": 1233,
+   "reads": [
+    "package.md",
+    "subscription_service.py",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "missing-await",
+     "file": "app/services/subscription_service.py",
+     "line": 15,
+     "confidence": 85,
+     "summary": "Out of angle (the diff removes nothing, so removed-behavior has no findings): get_active_count calls async SubscriptionRepository.count_active without await, so count is a coroutine and `count < 0` raises TypeError on every call. That count_active is async is stated only in the diff comment; the repository source is not on disk."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "missing-await",
+   "angle": "stack-defects",
+   "rc": 0,
+   "elapsed_s": 28.5,
+   "cost_usd": 0.1149,
+   "output_tokens": 1846,
+   "prompt_words": 1481,
+   "reads": [
+    "package.md",
+    "subscription_service.py",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md",
+    "subscription_repository.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "async-correctness",
+     "file": "app/services/subscription_service.py",
+     "line": 16,
+     "confidence": 88,
+     "summary": "Missing await on async SubscriptionRepository.count_active: count is a coroutine, so `count < 0` raises TypeError on every call and the query never runs. Async-ness of count_active is asserted by the diff's own comment; repository source not available to verify."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "none-deref",
+   "angle": "call-site-impact",
+   "rc": 0,
+   "elapsed_s": 23.6,
+   "cost_usd": 0.1198,
+   "output_tokens": 2264,
+   "prompt_words": 1220,
+   "reads": [
+    "package.md",
+    "user_email.py",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md",
+    "user_repository.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "null-dereference",
+     "file": "app/routers/user_email.py",
+     "line": 19,
+     "confidence": 88,
+     "summary": "get_by_id returns Optional[User] (None for missing or soft-deleted ids); the handler reads user.email without a None check, so a request for a missing or deleted user_id raises AttributeError and returns a 500 instead of a 404."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/user_email.py",
+     "line": 16,
+     "confidence": 20,
+     "summary": "user_id is typed str and passed straight to UserRepository.get_by_id; if the repository or column expects an int or UUID, the lookup may fail or always miss. Couldn't verify because the repository source isn't on disk."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "none-deref",
+   "angle": "enclosing-function",
+   "rc": 0,
+   "elapsed_s": 19.3,
+   "cost_usd": 0.1028,
+   "output_tokens": 1499,
+   "prompt_words": 1197,
+   "reads": [
+    "package.md",
+    "user_email.py",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "null-dereference",
+     "file": "app/routers/user_email.py",
+     "line": 34,
+     "confidence": 90,
+     "summary": "get_by_id returns Optional[User] (None for absent/soft-deleted ids); user.email is dereferenced without a None check, so a nonexistent or soft-deleted user_id produces an AttributeError/500 instead of a 404."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "none-deref",
+   "angle": "guard-completeness",
+   "rc": 0,
+   "elapsed_s": 20.6,
+   "cost_usd": 0.1148,
+   "output_tokens": 2038,
+   "prompt_words": 1432,
+   "reads": [
+    "package.md",
+    "user_email.py",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "null-dereference",
+     "file": "app/routers/user_email.py",
+     "line": 34,
+     "confidence": 90,
+     "summary": "get_by_id returns Optional[User]; a missing or soft-deleted user_id makes user.email raise AttributeError on None, so the client gets an unhandled 500 instead of a 404. No guard checks for None between lines 33 and 34."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/routers/user_email.py",
+     "line": 31,
+     "confidence": 30,
+     "summary": "user_id is typed str with no format validation; if the model id is int or UUID, a malformed id may cause a DB cast error and a 500 instead of a 422 or 404. Unconfirmed because the repository and model sources are not available."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "none-deref",
+   "angle": "prior-art",
+   "rc": 0,
+   "elapsed_s": 16.9,
+   "cost_usd": 0.0796,
+   "output_tokens": 1445,
+   "prompt_words": 1264,
+   "reads": [
+    "package.md",
+    "INDEX.md",
+    "rules/review-policy.md",
+    "critical-patterns.md",
+    "solutions"
+   ],
+   "permission_denials": [],
+   "findings": []
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "none-deref",
+   "angle": "removed-behavior",
+   "rc": 0,
+   "elapsed_s": 17.0,
+   "cost_usd": 0.1027,
+   "output_tokens": 1614,
+   "prompt_words": 1233,
+   "reads": [
+    "package.md",
+    "user_email.py",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "null-dereference",
+     "file": "app/routers/user_email.py",
+     "line": 34,
+     "confidence": 85,
+     "summary": "repo.get_by_id returns Optional[User] (None for missing or soft-deleted ids). The handler dereferences user.email without checking for None, so a request for a missing or soft-deleted user_id raises AttributeError and returns 500 instead of 404."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "none-deref",
+   "angle": "stack-defects",
+   "rc": 0,
+   "elapsed_s": 17.4,
+   "cost_usd": 0.108,
+   "output_tokens": 1539,
+   "prompt_words": 1481,
+   "reads": [
+    "package.md",
+    "user_email.py",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "null-dereference",
+     "file": "app/routers/user_email.py",
+     "line": 19,
+     "confidence": 92,
+     "summary": "repo.get_by_id returns Optional[User] (None for missing or soft-deleted ids); user.email is accessed without a guard, so an unknown or soft-deleted user_id raises AttributeError and returns a 500 instead of a 404 NotFound."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "soft-delete-filter",
+   "angle": "call-site-impact",
+   "rc": 0,
+   "elapsed_s": 22.9,
+   "cost_usd": 0.0868,
+   "output_tokens": 1913,
+   "prompt_words": 1220,
+   "reads": [
+    "package.md",
+    "watchlist_repository.py",
+    "base.py",
+    "watchlist.py",
+    "rules/review-policy.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/repositories/watchlist_repository.py",
+     "line": 24,
+     "confidence": 10,
+     "summary": "Couldn't check whether BaseRepository already defines list_for_user with a different signature or return shape (base.py not on disk); if it does, existing WatchlistRepository callers would silently get the new behavior."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/repositories/watchlist_repository.py",
+     "line": 28,
+     "confidence": 10,
+     "summary": "Couldn't confirm that Watchlist.user_id and Watchlist.created_at exist or that self.session is an AsyncSession (model and base files not on disk); if any is missing, the first call raises AttributeError."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "soft-delete-filter",
+   "angle": "enclosing-function",
+   "rc": 0,
+   "elapsed_s": 24.0,
+   "cost_usd": 0.0881,
+   "output_tokens": 1976,
+   "prompt_words": 1197,
+   "reads": [
+    "package.md",
+    "watchlist_repository.py",
+    "rules/review-policy.md",
+    "watchlist.py",
+    "base.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/repositories/watchlist_repository.py",
+     "line": 28,
+     "confidence": 15,
+     "summary": "Can't confirm Watchlist.user_id / Watchlist.created_at exist: app/models/watchlist.py is not on disk. If either is missing, building the query raises AttributeError."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/repositories/watchlist_repository.py",
+     "line": 30,
+     "confidence": 10,
+     "summary": "Can't confirm BaseRepository provides an async self.session: app/repositories/base.py is not on disk. If it is a sync Session, the await raises TypeError."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "soft-delete-filter",
+   "angle": "guard-completeness",
+   "rc": 0,
+   "elapsed_s": 23.2,
+   "cost_usd": 0.1264,
+   "output_tokens": 2264,
+   "prompt_words": 1432,
+   "reads": [
+    "package.md",
+    "watchlist_repository.py",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md",
+    "base.py",
+    "watchlist.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/repositories/watchlist_repository.py",
+     "line": 12,
+     "confidence": 25,
+     "summary": "list_for_user builds a raw select filtered only by user_id; if Watchlist uses soft-delete and BaseRepository applies that filter only in its own helpers, soft-deleted watchlists are returned. Model and base repository were not available on disk to confirm."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "soft-delete-filter",
+   "angle": "prior-art",
+   "rc": 0,
+   "elapsed_s": 15.2,
+   "cost_usd": 0.0796,
+   "output_tokens": 1280,
+   "prompt_words": 1264,
+   "reads": [
+    "package.md",
+    "INDEX.md",
+    "rules/review-policy.md",
+    "critical-patterns.md",
+    "solutions",
+    "docs"
+   ],
+   "permission_denials": [],
+   "findings": []
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "soft-delete-filter",
+   "angle": "removed-behavior",
+   "rc": 0,
+   "elapsed_s": 19.4,
+   "cost_usd": 0.084,
+   "output_tokens": 1750,
+   "prompt_words": 1233,
+   "reads": [
+    "package.md",
+    "watchlist_repository.py",
+    "base.py",
+    "watchlist.py",
+    "rules/review-policy.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/repositories/watchlist_repository.py",
+     "line": 11,
+     "confidence": 15,
+     "summary": "list_for_user builds a raw select(Watchlist) and bypasses BaseRepository; if the base class applies a default filter (soft-delete or tenant scoping), this method would return rows that should be excluded. Can't verify because app/repositories/base.py is not on disk. This is new code, not removed behavior."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "soft-delete-filter",
+   "angle": "stack-defects",
+   "rc": 0,
+   "elapsed_s": 22.8,
+   "cost_usd": 0.1278,
+   "output_tokens": 2301,
+   "prompt_words": 1481,
+   "reads": [
+    "package.md",
+    "watchlist_repository.py",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md",
+    "watchlist.py",
+    "base.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "app/repositories/watchlist_repository.py",
+     "line": 27,
+     "confidence": 45,
+     "summary": "list_for_user filters only on user_id; if Watchlist is soft-deletable (deleted_at) and BaseRepository does not auto-filter, soft-deleted watchlists are returned to the user. Model/base not present on disk to confirm."
+    },
+    {
+     "oracle": "correctness",
+     "class": "database-query-unbounded",
+     "file": "app/repositories/watchlist_repository.py",
+     "line": 31,
+     "confidence": 35,
+     "summary": "list_for_user has no limit/pagination; a user with very many watchlists causes the entire set to be loaded via scalars().all()."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "stale-inline-policy",
+   "angle": "call-site-impact",
+   "rc": 0,
+   "elapsed_s": 32.2,
+   "cost_usd": 0.1402,
+   "output_tokens": 3353,
+   "prompt_words": 1220,
+   "reads": [
+    "package.md",
+    "rules/auto-correct-scope.md",
+    "rules/review-policy.md",
+    "reviewer-prompt.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "incomplete-gate-list",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 13,
+     "confidence": 85,
+     "summary": "Rule 4 STOP list omits 3 canonical items from rules/auto-correct-scope.md (session/transaction scope, high-blast-radius files like hooks/* and settings.json, replacing a service/pattern), and the default 'Otherwise treat as Rule 1-3 and apply the fix' means findings touching hooks/settings get auto-applied when they should escalate."
+    },
+    {
+     "oracle": "correctness",
+     "class": "stale-source-of-truth",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 5,
+     "confidence": 65,
+     "summary": "Prompt forbids reading rule files, so the subagent can't consult the authoritative rules/auto-correct-scope.md and its classifications drift whenever the canonical list changes or the inlined copy has gaps."
+    },
+    {
+     "oracle": "correctness",
+     "class": "contract-mismatch",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 14,
+     "confidence": 45,
+     "summary": "A review subagent defined as a classifier (return contract: classification/rationale/recommended action) is told to 'apply the fix' for Rule 1-3, so it can edit code outside the controller's fix loop and the Deviations record."
+    },
+    {
+     "oracle": "correctness",
+     "class": "contract-mismatch",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 3,
+     "confidence": 30,
+     "summary": "Prompt says 'classify every finding in the diff' but the template carries a single {{FINDING_BODY}} and no diff, so the subagent may look for a missing diff or return several classifications."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 9,
+     "confidence": 20,
+     "summary": "Couldn't search for the code that fills {{FINDING_BODY}} and dispatches this prompt (no search tool available), so whether callers exist and match this contract is unknown."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "stale-inline-policy",
+   "angle": "enclosing-function",
+   "rc": 0,
+   "elapsed_s": 28.4,
+   "cost_usd": 0.1304,
+   "output_tokens": 2858,
+   "prompt_words": 1197,
+   "reads": [
+    "package.md",
+    "reviewer-prompt.md",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "incomplete-guard",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 13,
+     "confidence": 80,
+     "summary": "Inline Rule 4 STOP list omits session/transaction scope, high-blast-radius files (hooks/*, settings.json, core skill engines), and service/pattern replacement; combined with 'otherwise treat as Rule 1\u20133 and apply the fix' and the ban on reading rule files, a finding touching hooks/* gets auto-applied instead of escalated (fail-open)."
+    },
+    {
+     "oracle": "correctness",
+     "class": "contract-mismatch",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 14,
+     "confidence": 50,
+     "summary": "Prompt instructs the classifier subagent to 'apply the fix' for Rule 1\u20133, but the return contract only reports classification/rationale/recommendation, so edits happen without being reported to the controller."
+    },
+    {
+     "oracle": "correctness",
+     "class": "contract-mismatch",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 3,
+     "confidence": 25,
+     "summary": "Says 'classify every finding in the diff' but only a single {{FINDING_BODY}} is injected and no diff is supplied; ambiguous scope per dispatch."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "stale-inline-policy",
+   "angle": "guard-completeness",
+   "rc": 0,
+   "elapsed_s": 25.6,
+   "cost_usd": 0.1232,
+   "output_tokens": 2364,
+   "prompt_words": 1432,
+   "reads": [
+    "package.md",
+    "rules/auto-correct-scope.md",
+    "rules/review-policy.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "incomplete-guard",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 28,
+     "confidence": 85,
+     "summary": "The Rule 4 STOP list leaves out session/transaction scope changes, high-blast-radius files (settings.json, hooks/*, core skill engines) and replacing a service/pattern, which are all in rules/auto-correct-scope.md. With the default-allow line ('Otherwise treat it as Rule 1\u20133 and apply the fix') and the ban on reading rule files, those findings get auto-fixed instead of escalated."
+    },
+    {
+     "oracle": "correctness",
+     "class": "unknown",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 24,
+     "confidence": 30,
+     "summary": "The prompt asks to classify 'every finding in the diff', but there is a single {{FINDING_BODY}} slot and a single-classification return contract. If several findings go into the slot, one Rule 4 item can be hidden under one combined Rule 1\u20133 classification. How the caller fills the slot is unknown."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "stale-inline-policy",
+   "angle": "prior-art",
+   "rc": 0,
+   "elapsed_s": 19.1,
+   "cost_usd": 0.1139,
+   "output_tokens": 1754,
+   "prompt_words": 1264,
+   "reads": [
+    "package.md",
+    "INDEX.md",
+    "rules/review-policy.md",
+    "critical-patterns.md",
+    "solutions",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": []
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "stale-inline-policy",
+   "angle": "removed-behavior",
+   "rc": 0,
+   "elapsed_s": 25.1,
+   "cost_usd": 0.1186,
+   "output_tokens": 2360,
+   "prompt_words": 1233,
+   "reads": [
+    "package.md",
+    "reviewer-prompt.md",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "removed-behavior",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 31,
+     "confidence": 80,
+     "summary": "Inlined Rule 4 STOP list omits session/transaction scope, high-blast-radius files (settings.json, hooks/*, core skill engines), and replacing a service/pattern, while forbidding a read of rules/auto-correct-scope.md and defaulting everything else to Rule 1\u20133 'apply the fix'; e.g. a finding that edits hooks/commit-gate.sh is auto-fixed instead of escalated."
+    },
+    {
+     "oracle": "correctness",
+     "class": "removed-behavior",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 31,
+     "confidence": 40,
+     "summary": "Schema and API contract items drop the canonical 'not in the task's Action / not in spec' qualifiers, so planned schema/API changes are wrongly escalated as Rule 4."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "finder",
+   "fixture": "stale-inline-policy",
+   "angle": "stack-defects",
+   "rc": 0,
+   "elapsed_s": 42.9,
+   "cost_usd": 0.142,
+   "output_tokens": 3135,
+   "prompt_words": 1481,
+   "reads": [
+    "package.md",
+    "reviewer-prompt.md",
+    "rules/auto-correct-scope.md",
+    "rules/review-policy.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "correctness",
+     "class": "incomplete-gate-list",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 13,
+     "confidence": 85,
+     "summary": "Rule 4 STOP list omits session/transaction scope, high-blast-radius files (settings.json, hooks/*, core skill engine), and service/pattern replacement; with 'otherwise treat as Rule 1\u20133 and apply the fix' and a ban on reading rule files, such findings are auto-fixed instead of escalated."
+    },
+    {
+     "oracle": "correctness",
+     "class": "dropped-qualifier",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 16,
+     "confidence": 60,
+     "summary": "Schema/API contract items drop the canonical 'not in the task's Action' / 'not in spec' qualifiers, so planned schema/API changes are misclassified as Rule 4 and spuriously escalated."
+    },
+    {
+     "oracle": "correctness",
+     "class": "contract-mismatch",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 14,
+     "confidence": 50,
+     "summary": "Prompt instructs review subagent to 'apply the fix' for Rule 1\u20133, but the return contract is classification-only; subagent mutates files with no reporting of the change."
+    },
+    {
+     "oracle": "correctness",
+     "class": "contract-mismatch",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 3,
+     "confidence": 35,
+     "summary": "Prompt says classify every finding but template has a single {{FINDING_BODY}} slot and singular return contract; multiple findings cannot be mapped to per-finding classifications."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "intent",
+   "fixture": "context-rule-unread",
+   "angle": "-",
+   "rc": 0,
+   "elapsed_s": 22.0,
+   "cost_usd": 0.0876,
+   "output_tokens": 2194,
+   "prompt_words": 931,
+   "reads": [
+    "package.md",
+    "rules/review-policy.md",
+    "rules/auto-correct-scope.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "intent",
+     "class": "excess",
+     "file": "skills/demo-dispatch/worker-prompt.md",
+     "line": 17,
+     "confidence": 45,
+     "summary": "Return contract section (commits, files touched, verify status) goes beyond the requested self-fix classification; only the 'Deviations (labeled by rule)' item traces to intent."
+    },
+    {
+     "oracle": "intent",
+     "class": "excess",
+     "file": "skills/demo-dispatch/worker-prompt.md",
+     "line": 4,
+     "confidence": 30,
+     "summary": "Task-scoping instruction ('Execute exactly one task from PLAN.md') and {{TASK_BODY}} slot are general dispatch scaffolding not explicitly requested."
+    },
+    {
+     "oracle": "intent",
+     "class": "unknown",
+     "file": "skills/demo-dispatch/worker-prompt.md",
+     "line": 13,
+     "confidence": 30,
+     "summary": "Prompt points to .claude/rules/auto-correct-scope.md, which is absent from the review workspace; cannot confirm this is the location of 'the auto-correct-scope rule'."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "intent",
+   "fixture": "excess-scope",
+   "angle": "-",
+   "rc": 0,
+   "elapsed_s": 20.9,
+   "cost_usd": 0.0848,
+   "output_tokens": 2169,
+   "prompt_words": 928,
+   "reads": [
+    "package.md",
+    "rules/review-policy.md",
+    "profile.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "intent",
+     "class": "excess",
+     "file": "app/routers/profile.py",
+     "line": null,
+     "confidence": 90,
+     "summary": "Existing GET /profile/ handler rewritten to use ProfileService.get_profile_with_stats and to raise 404 when the profile is missing. This changes an endpoint the intent never mentioned ('Add a GET /profile/settings endpoint...')."
+    },
+    {
+     "oracle": "intent",
+     "class": "excess",
+     "file": "app/routers/profile.py",
+     "line": null,
+     "confidence": 70,
+     "summary": "New imports ProfileService and AppException; ProfileService is used only by the unrequested get_profile rewrite."
+    },
+    {
+     "oracle": "intent",
+     "class": "drift",
+     "file": "app/routers/profile.py",
+     "line": null,
+     "confidence": 40,
+     "summary": "GET /profile/settings returns 404 'settings not found' when the user has no settings; the intent doesn't specify missing-settings behavior (equivalent/advisory)."
+    },
+    {
+     "oracle": "intent",
+     "class": "unknown",
+     "file": "app/routers/profile.py",
+     "line": null,
+     "confidence": 50,
+     "summary": "SettingsResponse schema and ProfileRepository.get_settings are defined outside the diff; can't confirm the response actually contains the current user's settings."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "intent",
+   "fixture": "intent-gap",
+   "angle": "-",
+   "rc": 0,
+   "elapsed_s": 22.0,
+   "cost_usd": 0.0822,
+   "output_tokens": 1880,
+   "prompt_words": 962,
+   "reads": [
+    "package.md",
+    "rules/review-policy.md",
+    "watchlists.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "intent",
+     "class": "gap",
+     "file": "app/routers/watchlists.py",
+     "line": 38,
+     "confidence": 88,
+     "summary": "PUT /watchlists/{watchlist_id} has no empty/whitespace-only name check returning 400; intent requires it on BOTH create and update. Only create was fixed."
+    },
+    {
+     "oracle": "intent",
+     "class": "drift",
+     "file": "app/routers/watchlists.py",
+     "line": 27,
+     "confidence": 45,
+     "summary": "Create now saves the stripped name instead of the submitted one. The intent asked only to reject empty names, not to normalize them, and update doesn't trim, so the endpoints are inconsistent."
+    },
+    {
+     "oracle": "intent",
+     "class": "unknown",
+     "file": "app/routers/watchlists.py",
+     "line": 40,
+     "confidence": 40,
+     "summary": "The 404 for a missing or other-user watchlist depends on WatchlistRepository.update filtering by user_id and returning None; the repository is not in the diff, so this can't be confirmed."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "intent",
+   "fixture": "missing-await",
+   "angle": "-",
+   "rc": 0,
+   "elapsed_s": 20.4,
+   "cost_usd": 0.0776,
+   "output_tokens": 1775,
+   "prompt_words": 934,
+   "reads": [
+    "package.md",
+    "rules/review-policy.md",
+    "subscription_service.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "intent",
+     "class": "excess",
+     "file": "app/services/subscription_service.py",
+     "line": 23,
+     "confidence": 60,
+     "summary": "Unrequested clamp `if count < 0: return 0` adds behavior beyond 'returns how many active subscriptions the user has, using the existing SubscriptionRepository.count_active'; near-equivalent since counts shouldn't be negative."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "intent",
+   "fixture": "none-deref",
+   "angle": "-",
+   "rc": 0,
+   "elapsed_s": 19.0,
+   "cost_usd": 0.0771,
+   "output_tokens": 1722,
+   "prompt_words": 934,
+   "reads": [
+    "package.md",
+    "rules/review-policy.md",
+    "main.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "intent",
+     "class": "drift",
+     "file": "app/routers/user_email.py",
+     "line": 14,
+     "confidence": 85,
+     "summary": "Intent says only 'Auth-protected.' (authentication), but the endpoint also depends on require_admin, so authenticated non-admin users are denied. Access is narrower than requested; ask the user whether admin-only was intended."
+    },
+    {
+     "oracle": "intent",
+     "class": "unknown",
+     "file": "app/routers/user_email.py",
+     "line": 8,
+     "confidence": 50,
+     "summary": "New APIRouter is never registered (no include_router in the diff; app entry point not available to inspect). If routers aren't discovered automatically, the requested GET /users/{user_id}/email endpoint is never served (gap)."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "intent",
+   "fixture": "soft-delete-filter",
+   "angle": "-",
+   "rc": 0,
+   "elapsed_s": 18.6,
+   "cost_usd": 0.074,
+   "output_tokens": 1645,
+   "prompt_words": 941,
+   "reads": [
+    "package.md",
+    "rules/review-policy.md",
+    "base.py"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "intent",
+     "class": "gap",
+     "file": "app/repositories/watchlist_repository.py",
+     "line": 25,
+     "confidence": 88,
+     "summary": "list_for_user does not exclude soft-deleted rows: the query has no Watchlist.deleted_at IS NULL predicate, which goes against the intent 'repository reads exclude soft-deleted rows'. It runs a raw select through self.session.execute, so no BaseRepository helper applies (base.py was not available to rule out a session-level filter)."
+    },
+    {
+     "oracle": "intent",
+     "class": "excess",
+     "file": "app/repositories/watchlist_repository.py",
+     "line": 28,
+     "confidence": 60,
+     "summary": "Adds ordering by created_at DESC, which the intent did not ask for. It changes result order, not which rows come back."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "intent",
+   "fixture": "stale-inline-policy",
+   "angle": "-",
+   "rc": 0,
+   "elapsed_s": 32.2,
+   "cost_usd": 0.1047,
+   "output_tokens": 2687,
+   "prompt_words": 933,
+   "reads": [
+    "package.md",
+    "rules/review-policy.md",
+    "tmpiu1vjq34",
+    "reviewer-prompt.md",
+    "CLAUDE.md"
+   ],
+   "permission_denials": [],
+   "findings": [
+    {
+     "oracle": "intent",
+     "class": "excess",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 14,
+     "confidence": 70,
+     "summary": "The prompt tells the reviewer to 'apply the fix' for Rule 1-3 findings. The request was only for classification, so this lets the reviewer auto-fix, which was not asked for."
+    },
+    {
+     "oracle": "intent",
+     "class": "excess",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 22,
+     "confidence": 50,
+     "summary": "The diff creates a whole new reviewer prompt file with a {{FINDING_BODY}} placeholder and a Return contract section, instead of adding the STOP criteria to an existing 'reviewer prompt'."
+    },
+    {
+     "oracle": "intent",
+     "class": "unknown",
+     "file": "skills/demo-review/reviewer-prompt.md",
+     "line": 16,
+     "confidence": 40,
+     "summary": "There was no official Rule 4 list available to compare against, so I could not confirm the five STOP items are the complete, faithful Rule-4 criteria."
+    }
+   ]
+  },
+  {
+   "arm": "head",
+   "kind": "task",
+   "fixture": "cannot-verify",
+   "angle": "-",
+   "rc": 0,
+   "elapsed_s": 14.4,
+   "cost_usd": 0.0416,
+   "output_tokens": 1150,
+   "prompt_words": 272,
+   "reads": [
+    "brief.md",
+    "report.md",
+    "package.md",
+    "rules/review-policy.md"
+   ],
+   "permission_denials": [],
+   "reply": "```yaml\nspec_verdict: cannot_verify\nquality_verdict: needs_fixes\nfindings:\n  - severity: Important\n    category: spec\n    location: unknown\n    rationale: >-\n      brief.md:2 asks to \"Keep an external webhook signature compatible.\"\n      report.md:2 says \"The signing protocol and external contract are unavailable.\"\n      Without that contract there is nothing to compare the signature against,\n      so compatibility can't be shown to hold or to fail.\n    action: >-\n      Provide the external webhook signing contract (algorithm, canonical payload,\n      header format, secret handling) and the code that produces the signature,\n      then re-review against it.\n    checked_against: none\n  - severity: Important\n    category: quality\n    location: unknown\n    rationale: >-\n      package.md:3 says \"No diff exists for this fixture. The implementer report is\n      the only evidence.\" The report shows only a caller name (report.md:2). There\n      is no code to review and no diff stat for a scope check. The brief also has\n      no `- **Files:**` list, so scope can't be assessed either way. Under the\n      review rules, an unverified implementer report is not grounds for approval.\n    action: >-\n      Provide a review package with the actual diff and diff stat for the signing\n      change, plus the task brief's Files list, then re-run the task review.\n    checked_against: none\nsearch_surface: brief.md, report.md, package.md, rules/review-policy.md (no repository search performed)\n```"
+  },
+  {
+   "arm": "head",
+   "kind": "task",
+   "fixture": "combined",
+   "angle": "-",
+   "rc": 0,
+   "elapsed_s": 14.3,
+   "cost_usd": 0.0434,
+   "output_tokens": 1240,
+   "prompt_words": 272,
+   "reads": [
+    "brief.md",
+    "report.md",
+    "package.md",
+    "rules/review-policy.md"
+   ],
+   "permission_denials": [],
+   "reply": "spec_verdict: fail\nquality_verdict: needs_fixes\nfindings:\n  - severity: Critical\n    category: spec\n    location: unknown\n    rationale: The brief (brief.md:2) requires the validator to \"reject blank input\". The implementer's own report (report.md:2) says \"The validator accepts blank strings\". package.md:3 says the report is the only evidence, and on this point it directly contradicts the brief's one stated requirement.\n    action: Make the validator reject empty and whitespace-only strings, and add a test for blank input.\n    checked_against: none\n  - severity: Important\n    category: quality\n    location: unknown\n    rationale: The report (report.md:2) describes the validator as \"one 400-line nested conditional with duplicated branches\". Logic that large and repetitive for email validation is hard to maintain, and the copied branches can drift apart and behave inconsistently.\n    action: Restructure the validator into small, single-purpose checks (blank check, then format check) and remove the duplicated branches.\n    checked_against: none\n  - severity: Minor\n    category: spec\n    location: unknown\n    rationale: The scope check could not run. package.md:3 says \"No diff exists for this fixture\", so there is no diff stat, and the brief has no `- **Files:**` list to compare against. No scope violation can be shown either way.\n    action: Have the controller supply a diff stat and a Files list for the brief so scope can be checked in the final review.\n    checked_against: none\nsearch_surface: brief.md, report.md, package.md, rules/review-policy.md (no repository search performed)"
+  },
+  {
+   "arm": "head",
+   "kind": "task",
+   "fixture": "minor-only",
+   "angle": "-",
+   "rc": 0,
+   "elapsed_s": 13.9,
+   "cost_usd": 0.0415,
+   "output_tokens": 1148,
+   "prompt_words": 272,
+   "reads": [
+    "brief.md",
+    "report.md",
+    "package.md",
+    "rules/review-policy.md"
+   ],
+   "permission_denials": [],
+   "reply": "spec_verdict: pass\nquality_verdict: approved\nfindings:\n  - severity: Minor\n    category: quality\n    location: unknown\n    rationale: The report says a helper name is \"slightly vague\". The package has no diff, so the helper's identity and location can't be confirmed. This doesn't affect behaviour and doesn't block.\n    action: Controller should record this in SUMMARY and pass it to final review. The implementer can optionally rename the helper so the name describes what it does, for example `sortNamesAlphabetically`.\n    checked_against: none\nsearch_surface: brief.md, report.md, package.md, rules/review-policy.md (no repository search performed; the package states no diff exists)\n\nThe spec verdict rests only on the implementer report. The package says it is the only evidence and does not mark any external contract as unavailable, so `cannot_verify` doesn't apply. With no diff stat there are no changed paths to compare against a `- **Files:**` list (the brief has no such list), so there is no scope finding."
+  },
+  {
+   "arm": "head",
+   "kind": "task",
+   "fixture": "missing-global-constraint",
+   "angle": "-",
+   "rc": 0,
+   "elapsed_s": 15.2,
+   "cost_usd": 0.0439,
+   "output_tokens": 1273,
+   "prompt_words": 272,
+   "reads": [
+    "brief.md",
+    "report.md",
+    "package.md",
+    "rules/review-policy.md"
+   ],
+   "permission_denials": [],
+   "reply": "```yaml\nspec_verdict: fail\nquality_verdict: needs_fixes\nfindings:\n  - severity: Critical\n    category: spec\n    location: unknown\n    rationale: >-\n      brief.md:2 sets a global rule: \"Never log secret values.\" report.md:2 says\n      \"The failure handler logs the complete request including `Authorization`.\"\n      The Authorization header carries credentials, so this breaks the rule and\n      could expose secrets to anyone who can read the logs. package.md:3 says no\n      diff exists and the report is the only evidence. I am not trusting the\n      report as proof of a pass. It describes a violation, so I can't show the\n      code is compliant, and the evidence I do have points to a breach. No file\n      or line can be cited because there is no diff.\n    action: >-\n      Change the failure handler so it redacts or leaves out `Authorization`\n      and any other secret-bearing headers or fields before logging the request.\n      Add a test that runs the failure path and checks the secret value is not\n      in the log output. Provide a diff in the review package so the fix can be\n      checked.\n    checked_against: none\n  - severity: Important\n    category: quality\n    location: unknown\n    rationale: >-\n      package.md:3 contains no diff and no diff stat, so the changes can't be\n      inspected. The scope check (changed files compared against the brief's\n      `- **Files:**` list) also can't run, and brief.md has no `- **Files:**`\n      list anyway. Without a diff, nothing in the implementation can be checked\n      against the report.\n    action: >-\n      Regenerate the review package with the real diff and diff stat. Add a\n      `- **Files:**` list to the brief so scope can be checked.\n    checked_against: none\nsearch_surface: >-\n  Read brief.md, report.md, package.md and rules/review-policy.md. No search\n  was run, and there was no diff to inspect.\n```"
+  },
+  {
+   "arm": "head",
+   "kind": "task",
+   "fixture": "plan-mandated",
+   "angle": "-",
+   "rc": 0,
+   "elapsed_s": 15.9,
+   "cost_usd": 0.0452,
+   "output_tokens": 1332,
+   "prompt_words": 272,
+   "reads": [
+    "brief.md",
+    "report.md",
+    "package.md",
+    "rules/review-policy.md"
+   ],
+   "permission_denials": [],
+   "reply": "spec_verdict: fail\nquality_verdict: approved\nfindings:\n  - severity: Important\n    category: spec\n    location: report.md:2\n    rationale: brief.md:2 says \"Every task must add a passing Criterion row to SUMMARY.\" The implementer's own report, at report.md:2, says \"no verification row or Criterion mapping exists.\" The review package (package.md:3) says no diff exists, so nothing shows a SUMMARY Criterion row was added, passing or not. The required item is missing.\n    action: Add a Criterion row to SUMMARY that maps this task's behavior to a verification. Run that verification and record it as passing. Then resubmit with a diff that shows the SUMMARY change.\n    checked_against: none\nsearch_surface: brief.md, report.md, package.md, rules/review-policy.md. No repository search was done. Scope check: package.md has no diff stat and brief.md has no `- **Files:**` list, so there were no changed paths to compare and no scope finding. Quality: the fixture says no diff exists, so there is no implementation code to judge and no quality findings were raised."
+  },
+  {
+   "arm": "head",
+   "kind": "task",
+   "fixture": "quality-only",
+   "angle": "-",
+   "rc": 0,
+   "elapsed_s": 19.0,
+   "cost_usd": 0.0475,
+   "output_tokens": 1443,
+   "prompt_words": 272,
+   "reads": [
+    "brief.md",
+    "report.md",
+    "package.md",
+    "rules/review-policy.md"
+   ],
+   "permission_denials": [],
+   "reply": "spec_verdict: pass\nquality_verdict: needs_fixes\nfindings:\n  - severity: Important\n    category: quality\n    location: unknown\n    rationale: The report says `config.py` lets malformed JSON raise a raw traceback. A config parser should turn bad input into a clear error that names the file and what went wrong. There is no diff to show the line, and this is the report's own admission, not something I verified.\n    action: In `config.py`, catch `json.JSONDecodeError` (and file-open errors such as `FileNotFoundError`) and re-raise them as a clear config error with the file path and the position of the problem.\n    checked_against: none\n  - severity: Important\n    category: quality\n    location: unknown\n    rationale: The report says \"no test exists\" for the new parser. That means neither the valid-file case nor the malformed-file case is checked.\n    action: Add tests that parse a valid JSON config file, reject malformed JSON with the clear error described above, and handle a missing file.\n    checked_against: none\n  - severity: Minor\n    category: spec\n    location: unknown\n    rationale: I could not do the scope check. The brief has no `- **Files:**` list or SC-n criteria, and the package says \"No diff exists\". I also could not check spec compliance against the code. The only evidence is the report's claim that `config.py` opens and parses the input, which matches the brief's single requirement.\n    action: The controller should record that the scope comparison was skipped because there is no diff stat and no Files list. Future briefs should include a `- **Files:**` list and SC-n criteria.\n    checked_against: none\nsearch_surface: brief.md, report.md, package.md, rules/review-policy.md (no repository search done)"
+  },
+  {
+   "arm": "head",
+   "kind": "task",
+   "fixture": "spec-only",
+   "angle": "-",
+   "rc": 0,
+   "elapsed_s": 14.8,
+   "cost_usd": 0.0504,
+   "output_tokens": 1222,
+   "prompt_words": 272,
+   "reads": [
+    "brief.md",
+    "report.md",
+    "package.md",
+    "rules/review-policy.md"
+   ],
+   "permission_denials": [],
+   "reply": "```yaml\nspec_verdict: fail\nquality_verdict: needs_fixes\nfindings:\n  - severity: Critical\n    category: spec\n    location: run.py:unknown\n    rationale: >-\n      The brief requires that `--dry-run` \"does not write files\" (brief.md:2). The implementer\n      report says `run.py` \"parses `--dry-run` but always calls `write_output()`\" (report.md:2).\n      That means dry-run mode still writes files, which breaks the main requirement. The report\n      admits this against its own interest. The package (package.md:3) says the report is the\n      only evidence, and nothing contradicts it.\n    action: >-\n      Gate the `write_output()` call in `run.py` on the dry-run flag so nothing is written when\n      `--dry-run` is set. Add a test that runs with `--dry-run` and checks that no output file\n      is created or changed.\n    checked_against: none\n  - severity: Minor\n    category: spec\n    location: unknown\n    rationale: >-\n      The scope check could not be done. package.md:3 says \"No diff exists for this fixture,\" so\n      there is no diff stat. brief.md also has no `- **Files:**` list to compare against. No\n      out-of-scope path can be shown, but scope is also not confirmed.\n    action: >-\n      In the next fix round, include a diff stat in the review package and a `- **Files:**`\n      list in the brief so scope can be checked.\n    checked_against: none\nsearch_surface: brief.md, report.md, package.md, rules/review-policy.md (no repository search performed)\n```"
+  }
+ ]
+}

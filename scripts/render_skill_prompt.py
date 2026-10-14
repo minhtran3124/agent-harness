@@ -30,8 +30,8 @@ CONTEXT_MATRIX = {
     },
     "task-reviewer": {
         "path": "skills/subagent-driven-development/task-reviewer-prompt.md",
-        "required": [],
-        "rationale": "Consumes a normalized task brief and review package; it does not parse plan syntax or route fixes.",
+        "required": ["rules/review-policy.md"],
+        "required_reads": ["rules/review-policy.md"],
     },
     "plan-document-reviewer": {
         "path": "skills/writing-plans/plan-document-reviewer-prompt.md",
@@ -49,7 +49,8 @@ CONTEXT_MATRIX = {
     },
     "correctness-reviewer": {
         "path": "skills/correctness-review/prompts/shared.md",
-        "required": ["rules/auto-correct-scope.md"],
+        "required": ["rules/auto-correct-scope.md", "rules/review-policy.md"],
+        "required_reads": ["rules/review-policy.md"],
     },
     "correctness-scorer": {
         "path": "skills/correctness-review/correctness-scorer-prompt.md",
@@ -59,6 +60,11 @@ CONTEXT_MATRIX = {
     "intent-controller": {
         "path": "skills/intent-review/SKILL.md",
         "required": ["rules/auto-correct-scope.md"],
+    },
+    "intent-reviewer": {
+        "path": "skills/intent-review/intent-reviewer-prompt.md",
+        "required": ["rules/review-policy.md"],
+        "required_reads": ["rules/review-policy.md"],
     },
     "resume": {
         "path": "skills/subagent-driven-development/references/resume.md",

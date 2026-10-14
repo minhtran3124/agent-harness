@@ -7,9 +7,7 @@ Read every hunk in the diff, line by line. For each hunk, then read the **entire
 contains it**, including the lines the diff did not touch.
 
 Bugs on unmodified lines inside a changed function are **in scope**. Report them, marked
-`unmodified-line` (see the shared block for what happens to them). The reason they are in scope:
-the change draws attention to this function, and a bug sitting next to a change is a bug the
-author is in the best position to see and the worst position to notice.
+`unmodified-line` (the shared block says what happens to them).
 
 For every line, ask: what input, state, timing, or platform makes this line wrong?
 

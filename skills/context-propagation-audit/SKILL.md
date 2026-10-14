@@ -6,34 +6,34 @@ allowed-tools: Read, Write, Grep, Glob
 
 # Context-Propagation Audit
 
-Run only when the changed diff trips the `workflow-engine` hard gate in `harness-manifest.json`:
+Run only when the diff trips the `workflow-engine` hard gate in `harness-manifest.json`:
 skills, skill dispatch/reviewer/scorer prompts, `agents/`, or `rules/`. It is a delivery oracle,
 separate from runtime correctness and intent review.
 
 ## Audit matrix
 
-For each changed instruction or policy, enumerate every relying consumer and record:
+For each changed instruction or policy, list every relying consumer and record:
 
 | Source | Consumer | Context | Delivery | Proof |
 | --- | --- | --- | --- | --- |
 | authority | prompt/skill/agent | main, implementer, reviewer, scorer, new session | always-loaded, paths-triggered, pasted, explicit Read | test or inspected call site |
 
-Use graph tools to find consumers, then corroborate every load-bearing claim against source with
-grep/read. A no-consumer result is unknown unless it names the search surface. Main-session
-evidence never proves a fresh child context.
+Find consumers with graph tools, then confirm every load-bearing claim against source with Grep or
+Read. A no-consumer result is unknown unless it names the search surface. Main-session evidence never
+proves delivery to a fresh child context.
 
 ## Fail conditions and repair
 
-Fail the audit when a load-bearing instruction is `assumed`/`unconfirmed`, child delivery is
+Fail when a load-bearing instruction is `assumed`/`unconfirmed`, child delivery is
 inferred from main-session behavior, or an inline policy subset is unanchored. Prefer an explicit
-Read; an inline copy is allowed only when complete and protected by a drift test. Do not flag a
-complete pasted authority, explicit Read, or registry-linted copy.
+Read; allow an inline copy only when complete and protected by a drift test. Do not flag a
+complete pasted authority, an explicit Read, or a registry-linted copy.
 
-Write the matrix and PASS/FAIL to `SUMMARY.md` under `### Context-Propagation Audit`. List each
-failed row and repair; route an unfixable Rule-4 issue to `ESCALATIONS.md`. Standalone audits return
-the same matrix inline. Preserve the known escape probes in
+Write the matrix and PASS/FAIL to `SUMMARY.md` under `### Context-Propagation Audit`. List and
+repair each failed row; route an unfixable Rule-4 issue to `ESCALATIONS.md`. A standalone audit
+returns the same matrix inline. Keep the known escape probes in
 `evals/skills/review-chain/fixtures/context-rule-unread/` and
 `evals/skills/review-chain/fixtures/stale-inline-policy/`.
 
-The audit is invoked before correctness review by SDD only when the trigger fires. Workflow-engine
-changes are high-risk at intake; do not lower the lane to bypass this proof.
+`subagent-driven-development` runs it before correctness review only when the trigger fires.
+Workflow-engine changes are high-risk at intake; do not lower the lane to skip it.

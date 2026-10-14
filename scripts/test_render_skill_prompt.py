@@ -52,6 +52,7 @@ def test_context_matrix_enumerates_every_isolated_context():
         "correctness-reviewer",
         "correctness-scorer",
         "intent-controller",
+        "intent-reviewer",
         "resume",
     }
 

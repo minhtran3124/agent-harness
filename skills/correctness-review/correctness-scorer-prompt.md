@@ -1,45 +1,42 @@
 # Correctness Scorer Prompt Template
 
-Use this template for the **SCORE** stage — dispatched once per **deduplicated location**
-emitted by the FIND stage (`./correctness-reviewer-prompt.md`, six parallel angles), before
-any fix work begins.
+Use this template for the **SCORE** stage. Dispatch it once per **deduplicated location** that
+the FIND stage (`./correctness-reviewer-prompt.md`, six parallel angles) reports, before any fix
+work begins.
 
-**Purpose:** Filter the high-recall finding list for precision. The angles are tuned to report
-when uncertain; this stage assigns a 0–100 confidence score to each candidate so that the
-fix-loop only acts on findings that meet the threshold (default **75**).
+**Purpose:** The angles report a finding even when they are uncertain, so their list favors
+recall. This stage gives each candidate a confidence score from 0 to 100, and the fix loop acts
+only on findings that meet the threshold (default **75**).
 
 **One score per `(file, line)`, not one per angle.** The FIND stage deduplicates by location
-before this stage runs. When several angles reported the same location, it arrives here as a
-single candidate.
+before this stage runs, so a location that several angles reported arrives here as one candidate.
 
-**Independent context — critical.** Each scorer agent receives the finding claim and the
-relevant diff/files directly. It does NOT receive the finder's reasoning chain, transcript, or
-review output — **and it does not receive the list of which angles reported the finding.**
-Independence is the point: a scorer that re-reads the finder's logic merely confirms it rather
-than checking it.
+**Keep each scorer's context independent.** Give each scorer the finding claim and the relevant
+diff and files directly. Do not give it the finder's reasoning, transcript, or review output,
+**and do not give it the list of angles that reported the finding.** A scorer that re-reads the
+finder's logic confirms it instead of checking it.
 
 **Agreement between angles is provenance, not evidence.** Do not raise a score because more than
-one angle reported a location. Six angles sharing a blind spot agree with each other just as
-readily as six angles sharing an insight — that is precisely what a fresh, code-only judgment is
-here to catch. Record which angles reported it in the finding's provenance; never feed it to the
-scorer.
+one angle reported a location: six angles that share a blind spot agree as readily as six angles
+that share an insight, and a fresh judgment from the code is what catches that. Record the
+reporting angles in the finding's provenance, and never pass them to the scorer.
 
-**Score in fresh context.** Scoring is a fresh, code-only judgment.
-Resolve the `correctness_scorer` model stage through the runtime entry binding, without embedding a
-vendor model label in this semantic prompt. `model_stage` is not a Task-tool parameter. Use the `model:` already declared in this stage's
-rendered `agents/` definition as the Task tool's `model:` value — the harness repo resolves that
-value at render time (`scripts/render_runtime_entry.py --runtime claude --model-stage correctness_scorer`), so a consuming
-repo reads it off the agent file rather than re-deriving it.
+**Score in a fresh context, from the code alone.**
+Resolve the `correctness_scorer` model stage through the runtime entry binding, and do not write a
+vendor model label in this prompt. `model_stage` is not a Task-tool parameter. Pass the `model:`
+already declared in this stage's rendered `agents/` definition as the Task tool's `model:` value.
+The harness repo resolves that value at render time (`scripts/render_runtime_entry.py --runtime claude --model-stage correctness_scorer`),
+so a consuming repo reads it from the agent file instead of deriving it again.
 
 ```
 Task tool (reviewer):
   description: "Correctness score for finding: <short claim>"
   subagent_type: reviewer
-  # reviewer is a read-only agent (no Write/Edit/Agent) — review independence is enforced structurally, not by instruction.
+  # reviewer is a read-only agent (no Write/Edit/Agent): the harness enforces review independence, not this prompt.
   model_stage: correctness_scorer
   prompt: |
-    You are a correctness scorer. You receive ONE candidate bug finding and the changed
-    code. Your ONLY job is to assign it a confidence score 0–100.
+    You are a correctness scorer. You receive one candidate bug finding and the changed
+    code. Your only job is to give the finding a confidence score from 0 to 100.
 
     ## Inputs
 
@@ -49,84 +46,84 @@ Task tool (reviewer):
     - **HEAD_SHA**: [current commit after all tasks]
     - **Files to read**: [list the specific files mentioned in the finding]
 
-    Read the diff (`git diff BASE_SHA..HEAD_SHA -- <file>`) and the actual file at the
-    stated location. Do NOT read the finder's report or reasoning — form your own judgment
-    from the code alone.
+    Read the diff (`git diff BASE_SHA..HEAD_SHA -- <file>`) and the file itself at the stated
+    location. Do not read the finder's report or reasoning. Judge from the code alone.
 
-    ## Scoring rubric (use exactly these anchor points)
+    ## Scoring rubric (use only these anchor scores)
 
-    - **0** — False positive: the alleged bug does not exist, is pre-existing (not
-      introduced by this diff), or is on a line the diff did not modify.
-    - **25** — Maybe real: the concern is plausible but unverified; would need a concrete
-      triggering condition to confirm.
-    - **50** — Real but minor or rare: the bug exists but its impact is low or its trigger
+    - **0** — False positive: the alleged bug does not exist, existed before this diff, or is
+      on a line the diff did not modify.
+    - **25** — Maybe real: the concern is plausible but unverified; confirming it needs a
+      concrete triggering condition.
+    - **50** — Real but minor or rare: the bug exists, but its impact is low or its triggering
       condition is unlikely in practice.
-    - **75** — Highly confident: the bug is real and will be hit in normal usage; a
-      concrete triggering input is traceable.
-    - **100** — Certain: confirmed by reading the code; the incorrect behavior is
-      unambiguous and directly in the diff.
+    - **75** — Highly confident: the bug is real and normal usage will hit it; you can trace a
+      concrete triggering input.
+    - **100** — Certain: reading the code confirms it; the incorrect behavior is unambiguous
+      and directly in the diff.
 
-    ## Score 0 automatically when ANY of these apply
+    ## Score 0 when any of these apply
 
-    - A wired linter would catch this before merge. Only `shellcheck -S error` runs in CI, over
-      bash blocks in skill docs (harness repo only); no Python linter or typechecker is
-      wired, so do not score 0 for a Python lint- or type-level defect on that basis.
-    - An existing CI check or hook already catches it, e.g. `hooks/commit-gate.sh`'s risk
-      corroboration (lane vs staged diff). `hooks/commit-gate.sh` runs targeted pytest only
-      under the `strict` profile or `REQUIRE_APP_GATES=1`; do not assume it caught a
-      test-detectable bug.
-    - **The flagged line was NOT modified by the diff.** This includes any finding marked
-      `unmodified-line` — code inside a function the diff changed, but on a line it did not
-      change. Score it 0 even when the bug is unmistakably real.
+    - A wired linter would catch the bug before merge. CI runs only `shellcheck -S error`, over
+      bash blocks in skill docs (harness repo only). No Python linter or type checker is wired,
+      so do not score 0 on this basis for a Python lint-level or type-level defect.
+    - An existing CI check or hook already catches it, for example the risk corroboration in
+      `hooks/commit-gate.sh` (declared lane against the staged diff). That hook runs targeted
+      pytest only under the `strict` profile or `REQUIRE_APP_GATES=1`, so do not assume it
+      caught a bug that a test would detect.
+    - **The diff did not modify the flagged line.** This includes every finding marked
+      `unmodified-line`: code inside a function the diff changed, on a line the diff did not
+      change. Score it 0 even when the bug is clearly real.
 
-    ## What a score of 0 means — read this before scoring an `unmodified-line` finding
+    ## What a score of 0 means (read this before you score an `unmodified-line` finding)
 
-    A score of 0 does **not** mean the finding is false, and it does **not** mean the finding is
-    discarded. It means exactly one thing: **the finding does not enter the fix loop.**
+    A score of 0 does **not** mean the finding is false, and it does **not** discard the
+    finding. It means only one thing: **the finding does not enter the fix loop.**
 
-    Every finding scoring below the threshold is recorded as **advisory** in
-    `specs/<slug>/SUMMARY.md` (or reported inline in standalone use) and surfaced to the human.
+    Every finding that scores below the threshold is recorded as **advisory** in
+    `specs/<slug>/SUMMARY.md` (or reported inline in standalone use) and shown to the human.
     Nothing is dropped.
 
-    So when you score an `unmodified-line` finding 0, you are not judging it untrue. You are
-    routing it: report to the human, do not auto-fix. The reason is scope discipline —
-    automatically rewriting code the author did not touch, on their feature branch, is not this
-    pipeline's decision to make.
+    So a 0 for an `unmodified-line` finding does not judge it untrue. It routes the finding to
+    the human instead of to an automatic fix, because rewriting code the author did not touch,
+    on their feature branch, is not this pipeline's decision.
 
-    Score it 0 and move on. Do not argue in your justification that it deserves more; say what
-    the bug is, so the human reading the advisory list can act on it.
+    Score it 0 and move on. Do not argue in your justification that it deserves a higher
+    score. Describe the bug, so that the human who reads the advisory list can act on it.
 
-    **Case (2026-07-13, PR #51):** 3 real, reproducible aborts found in the harness repo's `scripts/harness-status.sh` on
-    lines the diff never touched. **Verdict:** all scored 0, kept out of the fix loop, reported
-    to the author — who fixed them separately. Rule working as intended, not a false negative.
+    **Case (2026-07-13, PR #51):** three real, reproducible aborts were found in the harness repo's `scripts/harness-status.sh`,
+    on lines the diff never touched. All three scored 0, stayed out of the fix loop, and went
+    to the author, who fixed them separately. The rule worked as intended; this was not a
+    false negative.
 
     ## Cap the score at 50 when the claim rests on code you cannot read
 
-    `not_observed != absent` (`rules/behavior.md` §1) applied to scoring. If the finding's
-    trigger depends on a file, symbol, or convention that is **not readable** from this tree
-    — the model, the base class, the auth dependency, the caller — then the bug is
-    **unknown, not confirmed**, and it scores **50 at most**, no matter how plausible the
-    mechanism sounds.
+    This applies `not_observed != absent` (`rules/behavior.md` §1) to scoring. If the
+    finding's trigger depends on a file, symbol, or convention that you **cannot read** in
+    this tree (the model, the base class, the auth dependency, the caller), the bug is
+    **unknown, not confirmed**, and it scores **50 at most**, however plausible the mechanism
+    sounds.
 
-    Score it `<= 50` when the finding's own text contains an admission like "cannot verify",
-    "not present in this tree", "UNKNOWN", "assuming X", "cannot rule out", or "a reviewer
-    with <file> should confirm" — a finding that argues from the *shape* of the code rather
-    than from a line you can quote is a hypothesis, and hypotheses do not enter the fix-loop.
+    Score it `<= 50` when the finding's own text admits uncertainty with a phrase such as
+    "cannot verify", "not present in this tree", "UNKNOWN", "assuming X", "cannot rule out",
+    or "a reviewer with <file> should confirm". A finding that argues from the *shape* of the
+    code instead of from a line you can quote is a hypothesis, and a hypothesis does not enter
+    the fix loop.
 
-    This rule is load-bearing: on `evals/skills/review-chain` (2026-07-13) an unfiltered
-    high-recall engine asserted three defects — an IDOR on correct auth wiring, an unstable
-    `ORDER BY`, an unbounded read — each resting on a file absent from the tree, and each was
-    a false positive the fixture had named in advance. The mechanism was real in every case;
-    the *trigger* was unverifiable. That is exactly a 50, not a 75.
+    **Case (2026-07-13, `evals/skills/review-chain`):** an unfiltered high-recall engine
+    asserted three defects: an IDOR on correct auth wiring, an unstable `ORDER BY`, and an
+    unbounded read. Each rested on a file absent from the tree, and each was a false positive
+    that the fixture had named in advance. The mechanism was real every time, but the
+    *trigger* could not be verified. That is a 50, not a 75.
 
-    ## Scoring is independent of severity
+    ## Score confidence, not severity
 
-    Score only how confident you are the bug is real and introduced by this diff.
-    Severity (P0–P3) is already on the finding; do not re-classify it here.
+    Score only how confident you are that the bug is real and that this diff introduced it.
+    The finding already carries a severity (P0–P3); do not reclassify it.
 
     ## Output format
 
-    Return one JSON object per finding (no prose outside the JSON):
+    Return one JSON object per finding, with no prose outside the JSON:
 
     ```json
     {
@@ -136,40 +133,39 @@ Task tool (reviewer):
     }
     ```
 
-    Do not return anything else. One JSON object. No markdown fences around the object
-    itself (the outer code block is for the template only).
+    Return nothing else: one JSON object, with no markdown fences around the object itself
+    (the outer code block belongs to the template only).
 ```
 
 ## Threshold and routing
 
-The default threshold is **75**. A finding with `score >= 75` proceeds to the fix-loop
-(severity × Rule-class classification → auto-fix or escalate). A finding with `score < 75`
-is recorded as `advisory` in `specs/<slug>/SUMMARY.md` and does not block shipping.
+The default threshold is **75**. A finding with `score >= 75` goes to the fix loop (severity ×
+Rule-class classification, then auto-fix or escalate). A finding with `score < 75` is recorded as
+`advisory` in `specs/<slug>/SUMMARY.md` and does not block shipping.
 
-The threshold is adjustable: set it higher (e.g. 90) when false-positive noise is a known
-problem — with the discrete anchors, anything above 75 admits only a perfect 100. Lowering it
-below 75 has no effect until it crosses 50 — and the floor of 60 below forbids going that low.
+The threshold is adjustable. Raise it (for example to 90) when false positives are a known
+problem; with the discrete anchors, any value above 75 admits only a 100. Lowering it below 75
+changes nothing until it crosses 50, and the floor of 60 below forbids going that low.
 
-**The threshold must never be set to 50 or below.** The unreadable-file rule above caps such
-findings at exactly 50. A threshold of 50 or lower therefore admits every capped finding into the
-fix-loop, which removes the rule entirely — the opposite of what lowering the threshold on a
-high-risk lane is meant to achieve. **The floor is 60.** If you want a high-risk lane to act on
-unverifiable findings, raise them by *reading the missing file*, not by lowering the gate that
-exists because it could not be read.
+**The threshold must never be 50 or below.** The unreadable-code rule above caps those findings
+at exactly 50, so a threshold of 50 or lower lets every capped finding into the fix loop and
+removes the rule. **The floor is 60.** To make a high-risk lane act on an unverifiable finding,
+raise its score by *reading the missing file*, not by lowering the threshold.
 
 ## Dispatcher protocol
 
 1. The controller collects the candidate findings from all six FIND angles and **deduplicates
-   them by `(file, line)`** — one candidate per location, with the reporting angles recorded as
+   them by `(file, line)`**: one candidate per location, with the reporting angles recorded as
    provenance.
-2. For each deduplicated location, dispatch one scorer agent (the `correctness_scorer` model stage, independent context).
-   Pass the claim, the location, and the files to read. **Do not pass the provenance** — the
-   scorer must not know how many angles agreed.
-3. Dispatch scorers in parallel in one assistant message, at most 20 at a time; send any
-   remainder as a following batch.
-4. Collect scores; split findings into `≥ threshold` (proceed) and `< threshold` (advisory).
-5. Proceed with only the surviving findings into the severity × Rule-class classification and
-   fix-loop (`SKILL.md` → Pipeline, steps 5–6).
+2. For each location, dispatch one scorer (the `correctness_scorer` model stage, in an
+   independent context). Pass the claim, the location, and the files to read. **Do not pass the
+   provenance**: the scorer must not know how many angles agreed.
+3. Dispatch scorers in parallel in one assistant message, at most 20 at a time, and send any
+   remainder in a following batch.
+4. Collect the scores and split the findings into `≥ threshold` (proceed) and `< threshold`
+   (advisory).
+5. Send only the findings at or above the threshold into the severity × Rule-class
+   classification and the fix loop (`SKILL.md` → Pipeline, steps 5–6).
 6. Record every below-threshold finding in `specs/<slug>/SUMMARY.md` under
-   `### Advisory Findings`. This includes all `unmodified-line` findings, which score 0 by rule
-   and are therefore always advisory. Nothing is silently dropped.
+   `### Advisory Findings`. This includes every `unmodified-line` finding, which scores 0 by rule
+   and so is always advisory. Nothing is silently dropped.

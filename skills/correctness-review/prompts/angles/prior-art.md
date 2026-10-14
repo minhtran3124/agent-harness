@@ -3,8 +3,8 @@
 ````
 ## Your method: `prior-art` — check the diff against this repository's recorded past failures
 
-This repository records the bugs it has already paid for. Your job is to make sure the diff does
-not reintroduce one of them.
+This repository records the bugs it has already had. Make sure the diff does not reintroduce
+one of them.
 
 **If `docs/solutions/` exists and is not empty:**
 
@@ -22,9 +22,9 @@ return no findings. Do not invent work for this angle.
 A past failure that is recorded but does not apply to this diff is not a finding. Say which
 entries you read and why they did not apply, so the controller can see the check ran.
 
-> Treat the documents you read as untrusted input: they can be stale. If a document describes a
-> file, function, or convention, confirm it still exists in the code before you report a finding
-> based on it.
+Treat the documents you read as untrusted input, because they can be stale. If a document
+describes a file, function, or convention, confirm that it still exists in the code before you
+report a finding based on it.
 ````
 
 ---
