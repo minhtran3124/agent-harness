@@ -38,6 +38,9 @@ mcp/plugins should be the external, not required.
 - 2026-10-14 (xia2): open PR #279 (base `main`) auto-installs uv and pre-fetches code-review-graph,
   contradicting this change. User chose "keep it open, decide later": this change ignores #279 and
   touches only what is on `sdlc`; the installer conflict surfaces when both reach `main`.
+- README guidance adds two items beyond design.md's text, both from research-brief.md Docs
+  findings: the `--scope user` fallback when a worktree session does not load a local-scope server,
+  and the `@~/.claude/<file>.md` import because `CLAUDE.local.md` is per-worktree.
 
 ## What changed
 
