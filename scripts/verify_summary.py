@@ -74,6 +74,8 @@ _RED_COMMAND_RE = re.compile(
     r"[0-9a-fA-F]{7,40}\s+--\s+(?P<test>\S.*)$"
 )
 _RED_EXEMPT_RE = re.compile(r"^\s*[-*]?\s*Red test exempt:(.*)$", re.MULTILINE)
+# A bug-fix Input-type: a leading `bug fix` / `bug-fix` / `bugfix` token, not `bug fixes`.
+_BUG_FIX_INPUT_RE = re.compile(r"bug[ -]?fix(?![\w-])")
 
 # A whole command that proves nothing: exit-0 of a no-op is not evidence.
 # `true`, `:`, `exit 0`, or a bare `echo …` (echo piped/chained into a real tool is
@@ -403,14 +405,16 @@ def _red_test_is_blocking() -> bool:
 def _red_green_issue(text: str) -> str | None:
     """Return the red/green complaint for a bug-fix SUMMARY, or None if satisfied.
 
-    Verifies: (traceability) when `Input-type` is `bug fix`, `### Verify` holds a
+    Verifies: (traceability) when `Input-type` starts with `bug fix`, `bug-fix` or
+    `bugfix` (any case, extra text allowed after it), `### Verify` holds a
     `red` row (run_at_commit.py <sha> -- <test>, claimed exit 1-123) and a `green`
     row (the same test command, claimed exit 0), or a `Red test exempt: <reason>`
     line with a non-empty reason.
     Does not verify: that the claimed exits are real (`--check` re-runs rows), that
     the test exercises the bug, or that an exemption reason is genuine.
     """
-    if (_header_value(text, "Input-type") or "").strip().lower() != "bug fix":
+    input_type = (_header_value(text, "Input-type") or "").strip().lower()
+    if not _BUG_FIX_INPUT_RE.match(input_type):
         return None
     verify = _section(text, "Verify") or ""
     rows = _parse_verify_rows(verify)

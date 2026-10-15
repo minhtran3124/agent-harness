@@ -1170,7 +1170,7 @@ class TestRedGreen:
             for path in paths:
                 text = path.read_text(encoding="utf-8")
                 input_type = (vs._header_value(text, "Input-type") or "").strip().lower()
-                if input_type == "bug fix":
+                if vs._BUG_FIX_INPUT_RE.match(input_type):
                     continue
                 assert _red_green_messages(text) == [], path
 
