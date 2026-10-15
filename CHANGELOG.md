@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.30.0] — 2026-10-15
+
+- docs(writing-plans): start SDD in this session without asking (PR #298)
+
 ## [2.29.0] — 2026-10-15
 
 - docs: STE rewrite of the remaining harness prose (Phase 3) (PR #294)
