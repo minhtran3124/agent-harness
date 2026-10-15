@@ -73,7 +73,7 @@ Then record the scorecard in `results/<date>-<label>.md` (from `results/template
 | Key | Meaning |
 |---|---|
 | `from` | 40-character lowercase commit sha the scratch worktree is checked out at; it must resolve to a commit |
-| `may_change` | list of glob patterns for files the agent may create, change or delete. Matching uses `fnmatch`, where `*` also matches `/` |
+| `may_change` | list of glob patterns for files the agent may create, change or delete. Matching uses `fnmatch`, where `*` also matches `/`. The snapshot ignores `.gitignore`, so list gitignored files intake leaves behind too, such as `specs/*/events.jsonl.lock` from `runtime/run_state.py`; `test_stray_real_fixtures_allow_every_intake_write` checks this against the real run-state script |
 
 ### Outputs (in `--output-dir`)
 

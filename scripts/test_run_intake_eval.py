@@ -178,3 +178,21 @@ def test_check_fixtures_exit_codes(env):
     assert run_intake_eval.main(["--check-fixtures"]) == 0
     add_fixture(env, "bad", meta={"from": "xyz", "may_change": []})
     assert run_intake_eval.main(["--check-fixtures"]) == 1
+
+
+def test_stray_real_fixtures_allow_every_intake_write(tmp_path, monkeypatch):
+    """Every file intake writes (SUMMARY, intent, and what the real run_state.py leaves) matches
+    each real fixture's may_change, so a correct intake run is never marked stray."""
+    repo = Path(__file__).resolve().parent.parent
+    monkeypatch.chdir(tmp_path)
+    for step in (["init", "--slug", "s"], ["transition", "--slug", "s", "--to", "investigating",
+                                            "--event", "intake.started"]):
+        subprocess.run([sys.executable, str(repo / "runtime" / "run_state.py"), *step], check=True,
+                       capture_output=True)
+    (tmp_path / "specs" / "s" / "SUMMARY.md").write_text("Lane: tiny\n")
+    (tmp_path / "specs" / "s" / "intent.md").write_text("Status: approved\n")
+    written = sorted(p.relative_to(tmp_path).as_posix() for p in tmp_path.rglob("*") if p.is_file())
+    assert "specs/s/events.jsonl.lock" in written
+    for meta_path in sorted((repo / FIXTURES).glob("*/eval.json")):
+        may_change = json.loads(meta_path.read_text())["may_change"]
+        assert run_intake_eval.stray_paths({}, {p: "x" for p in written}, {}, {}, may_change) == [], meta_path
