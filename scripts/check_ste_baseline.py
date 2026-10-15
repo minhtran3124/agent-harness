@@ -87,12 +87,13 @@ def read_baseline_text(root: Path, ref: str | None) -> str:
     if ref is None:
         try:
             return (root / BASELINE).read_text(encoding="utf-8")
-        except OSError as exc:
+        # ValueError includes UnicodeDecodeError (a file that is not UTF-8).
+        except (OSError, ValueError) as exc:
             raise Skip(f"cannot read {BASELINE}: {exc}") from exc
     cmd = ["git", "-C", str(root), "show", f"{ref}:{BASELINE}"]
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
-    except (OSError, subprocess.TimeoutExpired) as exc:
+        result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", timeout=60)
+    except (OSError, ValueError, subprocess.TimeoutExpired) as exc:
         raise Skip(f"git show did not run for {ref}: {exc}") from exc
     if result.returncode != 0:
         raise Skip(f"cannot read {BASELINE} at {ref}: {result.stderr.strip()[:200]}")
@@ -138,6 +139,9 @@ def main(argv: list[str]) -> int:
     args = parser.parse_args(argv)
     if args.update and args.against is not None:
         parser.error("--against cannot be used with --update")
+    # An empty ref makes `git show :path` read the staged copy, which is not a pinned ref.
+    if args.against is not None and not args.against.strip():
+        parser.error("--against needs a git ref, not an empty value")
     root = args.root.resolve()
     try:
         counts = {rel: hard_count(root, rel) for rel in prose_files(root)}

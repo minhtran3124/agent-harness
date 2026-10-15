@@ -224,3 +224,38 @@ def test_against_with_update_is_refused(tmp_path):
     assert result.returncode == 2
     data = json.loads((tmp_path / "scripts" / "ste-baseline.json").read_text())
     assert data == {"rules/a.md": 0}
+
+
+def test_non_utf8_baseline_file_skips_exits_0_default_and_1_strict(tmp_path):
+    make_tree(tmp_path, {"rules/a.md": 1}, {})
+    (tmp_path / "scripts" / "ste-baseline.json").write_bytes(b'{"a\xff": 1}')
+    result = run(tmp_path)
+    assert result.returncode == 0, result.stderr
+    assert "ste-baseline: skipped (" in result.stdout
+    result = run(tmp_path, "--strict")
+    assert result.returncode == 1, result.stderr
+    assert "ste-baseline: skipped (" in result.stdout
+    assert "Traceback" not in result.stderr
+
+
+def test_against_non_utf8_blob_skips_exits_0_default_and_1_strict(tmp_path):
+    make_tree(tmp_path, {"rules/a.md": 1}, {})
+    (tmp_path / "scripts" / "ste-baseline.json").write_bytes(b'{"a\xff": 1}')
+    ref = commit_tree(tmp_path)
+    (tmp_path / "scripts" / "ste-baseline.json").write_text(json.dumps({"rules/a.md": 1}))
+    result = run(tmp_path, "--against", ref)
+    assert result.returncode == 0, result.stderr
+    assert "ste-baseline: skipped (" in result.stdout
+    result = run(tmp_path, "--strict", "--against", ref)
+    assert result.returncode == 1, result.stderr
+    assert "ste-baseline: skipped (" in result.stdout
+    assert "Traceback" not in result.stderr
+
+
+def test_empty_against_is_refused(tmp_path):
+    make_tree(tmp_path, {"rules/a.md": 0}, {"rules/a.md": 0})
+    commit_tree(tmp_path)
+    for empty in ("", "   "):
+        result = run(tmp_path, "--strict", "--against", empty)
+        assert result.returncode == 2, (empty, result.stdout, result.stderr)
+        assert "--against" in result.stderr

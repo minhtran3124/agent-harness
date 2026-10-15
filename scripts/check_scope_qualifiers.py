@@ -23,6 +23,7 @@ from __future__ import annotations
 import argparse
 import re
 import subprocess
+import sys
 
 PROSE_ROOTS = ("skills/", "rules/", "agents/")
 WORDS = ("if", "unless", "only", "when", "never", "except", "for a new", "without")
@@ -30,8 +31,13 @@ PATTERNS = {word: re.compile(rf"\b{re.escape(word)}\b", re.IGNORECASE) for word 
 HUNK = re.compile(r"^@@ -(\d+)")
 
 
+# Fixed settings, so the user's git config (color, quoted paths, external diff) cannot change the output.
+GIT_CONFIG = ("-c", "core.quotepath=false", "-c", "color.ui=never")
+DIFF_FLAGS = ("--no-color", "--no-ext-diff", "--src-prefix=a/", "--dst-prefix=b/")
+
+
 def git(*args: str) -> str:
-    return subprocess.run(["git", *args], capture_output=True, text=True, check=True).stdout
+    return subprocess.run(["git", *GIT_CONFIG, *args], capture_output=True, text=True, check=True).stdout
 
 
 def hunks(diff: str):
@@ -41,9 +47,10 @@ def hunks(diff: str):
         if line.startswith("diff --git "):
             if start is not None:
                 yield path, start, removed, added
-            start, removed, added, in_header = None, [], [], True
+            path, start, removed, added, in_header = None, None, [], [], True
         elif in_header and line.startswith("+++ b/"):
-            path = line[len("+++ b/"):]
+            # Git adds a TAB after a path that has a space.
+            path = line[len("+++ b/"):].removesuffix("\t")
         elif HUNK.match(line):
             if start is not None:
                 yield path, start, removed, added
@@ -57,11 +64,11 @@ def hunks(diff: str):
 
 
 def report(base: str, head: str) -> list[str]:
-    names = git("diff", "--name-only", "--no-renames", "--diff-filter=d", f"{base}..{head}").splitlines()
+    names = git("diff", "--name-only", "-z", "--no-renames", "--diff-filter=d", f"{base}..{head}").split("\0")
     paths = [name for name in names if name.endswith(".md") and name.startswith(PROSE_ROOTS)]
     if not paths:
         return []
-    diff = git("diff", "-U0", "--no-renames", "--diff-filter=d", f"{base}..{head}", "--", *paths)
+    diff = git("diff", *DIFF_FLAGS, "-U0", "--no-renames", "--diff-filter=d", f"{base}..{head}", "--", *paths)
     lines = []
     for path, start, removed, added in hunks(diff):
         for word, pattern in PATTERNS.items():
@@ -78,6 +85,8 @@ def main() -> int:
     parser.add_argument("--base", required=True)
     parser.add_argument("--head", required=True)
     args = parser.parse_args()
+    # A stdout encoding that cannot hold a character must not make the script exit 1.
+    sys.stdout.reconfigure(errors="backslashreplace")
     try:
         lines = report(args.base, args.head)
     except (OSError, ValueError, subprocess.SubprocessError) as exc:

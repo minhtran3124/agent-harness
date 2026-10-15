@@ -1,3 +1,4 @@
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -112,6 +113,59 @@ STEP1_AFTER = (
     "   `git log -1 --format=%H --diff-filter=AM -- specs/<slug>/intent.md` (empty: stop). If\n"
     "   `git diff --exit-code <pin> -- specs/<slug>/intent.md` is non-zero, stop. Ask the\n"
 )
+
+
+DROP_BEFORE, DROP_AFTER = "a\nStop if the plan is wrong.\nb\n", "a\nStop the plan.\nb\n"
+
+
+def check_with_config(tmp_path, key, value, path="skills/x/SKILL.md"):
+    # The hostile setting goes in the temp repo's local config, never the user's config.
+    repo, base, head = make_repo(tmp_path, {path: DROP_BEFORE}, {path: DROP_AFTER})
+    git(repo, "config", key, value)
+    return run(repo, base, head)
+
+
+def test_color_ui_always_still_lists_drop(tmp_path):
+    out = check_with_config(tmp_path, "color.ui", "always")
+    assert out == '- skills/x/SKILL.md:2: dropped "if": Stop if the plan is wrong.\n'
+
+
+def test_external_diff_driver_is_ignored(tmp_path):
+    out = check_with_config(tmp_path, "diff.external", "true")
+    assert out == '- skills/x/SKILL.md:2: dropped "if": Stop if the plan is wrong.\n'
+
+
+def test_noprefix_still_names_each_file(tmp_path):
+    repo, base, head = make_repo(
+        tmp_path,
+        {"rules/a.md": DROP_BEFORE, "skills/x/SKILL.md": DROP_BEFORE},
+        {"rules/a.md": DROP_AFTER, "skills/x/SKILL.md": DROP_AFTER},
+    )
+    git(repo, "config", "diff.noprefix", "true")
+    assert run(repo, base, head) == (
+        '- rules/a.md:2: dropped "if": Stop if the plan is wrong.\n'
+        '- skills/x/SKILL.md:2: dropped "if": Stop if the plan is wrong.\n'
+    )
+
+
+def test_path_with_space_has_no_trailing_tab(tmp_path):
+    out = check(tmp_path, DROP_BEFORE, DROP_AFTER, path="skills/x/a b.md")
+    assert out == '- skills/x/a b.md:2: dropped "if": Stop if the plan is wrong.\n'
+
+
+def test_non_ascii_path_is_not_dropped(tmp_path):
+    out = check(tmp_path, DROP_BEFORE, DROP_AFTER, path="skills/x/café.md")
+    assert out == '- skills/x/café.md:2: dropped "if": Stop if the plan is wrong.\n'
+
+
+def test_ascii_stdout_encoding_still_exits_zero(tmp_path):
+    repo, base, head = make_repo(tmp_path, {"skills/x/SKILL.md": "a\nStop if café.\n"},
+                                 {"skills/x/SKILL.md": "a\nStop.\n"})
+    env = {**os.environ, "PYTHONIOENCODING": "ascii"}
+    proc = subprocess.run([sys.executable, str(SCRIPT), "--base", base, "--head", head],
+                          cwd=repo, capture_output=True, text=True, env=env)
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout.startswith('- skills/x/SKILL.md:2: dropped "if": Stop if caf')
 
 
 def test_pilot_step1_split_is_not_listed_known_limit(tmp_path):

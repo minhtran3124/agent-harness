@@ -160,6 +160,15 @@ def test_missing_scope_module_writes_unavailable_line(tmp_path, monkeypatch):
     assert len(section.splitlines()) == 1
 
 
+def test_non_ascii_prose_path_is_listed(tmp_path, monkeypatch):
+    path = "skills/x/café.md"
+    repo, base, head = make_repo(tmp_path, {path: "a\nStop if wrong.\n"}, {path: "a\nStop.\n"})
+    payload = run_package(repo, base, head, monkeypatch, tmp_path)
+    section = payload.split("## STE lint\n", 1)[1].split("\n## Scope qualifiers\n", 1)[0]
+    assert f"- {path}: base: " in section
+    assert payload.split("## Scope qualifiers\n", 1)[1].strip() == f'- {path}:2: dropped "if": Stop if wrong.'
+
+
 def test_no_changed_prose_means_no_scope_section(tmp_path, monkeypatch):
     repo, base, head = make_repo(
         tmp_path, {"skills/x/run.py": "a = 1\n"}, {"skills/x/run.py": "a = 2\n", "docs/d.md": BAD}
