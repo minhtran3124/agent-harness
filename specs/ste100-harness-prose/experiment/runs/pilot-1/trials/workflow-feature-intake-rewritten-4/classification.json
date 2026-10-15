@@ -1,0 +1,10 @@
+{
+  "R1": {"Lane": "tiny", "Confidence": "high", "Escalate": "no"},
+  "R2": {"Lane": "tiny", "Confidence": "high", "Escalate": "no"},
+  "R3": {"Lane": "normal", "Confidence": "high", "Escalate": "no"},
+  "R4": {"Lane": "high-risk", "Confidence": "high", "Escalate": "yes"},
+  "R5": {"Lane": "high-risk", "Confidence": "high", "Escalate": "yes"},
+  "R6": {"Lane": "tiny", "Confidence": "low", "Escalate": "yes"},
+  "R7": {"Lane": "high-risk", "Confidence": "medium", "Escalate": "yes"},
+  "R8": {"Lane": "high-risk", "Confidence": "high", "Escalate": "no"}
+}

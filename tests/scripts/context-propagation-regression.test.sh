@@ -151,4 +151,61 @@ sed -i.bak 's/high-blast-radius//' "$m2/$REVIEWER" && rm -f "$m2/$REVIEWER.bak"
 if ! stop_cases_ok "$m2"; then pass
 else fail "removing a STOP case (high-blast) was NOT detected by stop_cases_ok"; fi
 
+# asd-ste100 delivery (SC-8). Each isolated consumer must carry its own instruction: the
+# implementer and task reviewer see only their pasted prompt, compound writes records, and the
+# SDD controller owns the re-run when the review package lacks STE lint counts.
+COMPOUND="skills/compound/SKILL.md"
+SDD="skills/subagent-driven-development/SKILL.md"
+
+impl_ste_ok() {
+  grep -q 'apply `skills/asd-ste100/SKILL.md`' "$1/$IMPL" \
+    && grep -q 'Strict mode for dispatch prompts' "$1/$IMPL" \
+    && grep -q 'intent.md' "$1/$IMPL"
+}
+reviewer_ste_ok() {
+  grep -q '`## STE lint`' "$1/$TASK_REVIEWER" \
+    && grep -q 'HEAD hard count is above its BASE count' "$1/$TASK_REVIEWER" \
+    && grep -q '`base: new`' "$1/$TASK_REVIEWER" \
+    && grep -q '`ste-lint: unavailable`' "$1/$TASK_REVIEWER"
+}
+compound_ste_ok() {
+  sed -n '/^## Write canonical records/,/^## Mistake twice/p' "$1/$COMPOUND" \
+    | grep -q 'asd-ste100.*STE-flavored'
+}
+sdd_ste_ok() {
+  grep -q '`## STE lint`' "$1/$SDD" && grep -q 're-run `review_package.py` once' "$1/$SDD"
+}
+
+# ste_mutant <file> <sed-pattern> → temp root whose copy of <file> has matching lines deleted.
+ste_mutant() {
+  local d; d=$(mktemp -d); _CLEANUP_DIRS+=("$d")
+  mkdir -p "$d/$(dirname "$1")"
+  sed "/$2/d" "$ROOT/$1" > "$d/$1"
+  printf '%s' "$d"
+}
+
+t "implementer prompt applies asd-ste100 to changed prose (SC-8)"
+if impl_ste_ok "$ROOT"; then pass; else fail "no asd-ste100 instruction in $IMPL"; fi
+t "mutation: deleting the implementer asd-ste100 instruction is detected"
+mi=$(ste_mutant "$IMPL" 'asd-ste100')
+if ! impl_ste_ok "$mi"; then pass; else fail "removing the implementer instruction was NOT detected"; fi
+
+t "task reviewer prompt reads the STE lint section (SC-8)"
+if reviewer_ste_ok "$ROOT"; then pass; else fail "no STE lint instruction in $TASK_REVIEWER"; fi
+t "mutation: deleting the reviewer STE lint instruction is detected"
+mr=$(ste_mutant "$TASK_REVIEWER" 'STE lint')
+if ! reviewer_ste_ok "$mr"; then pass; else fail "removing the reviewer instruction was NOT detected"; fi
+
+t "compound applies asd-ste100 to new records (SC-8)"
+if compound_ste_ok "$ROOT"; then pass; else fail "no asd-ste100 instruction in $COMPOUND 'Write canonical records'"; fi
+t "mutation: deleting the compound asd-ste100 instruction is detected"
+mc=$(ste_mutant "$COMPOUND" 'asd-ste100')
+if ! compound_ste_ok "$mc"; then pass; else fail "removing the compound instruction was NOT detected"; fi
+
+t "SDD controller re-runs review_package.py once on missing STE lint (SC-8)"
+if sdd_ste_ok "$ROOT"; then pass; else fail "no STE lint re-run instruction in $SDD"; fi
+t "mutation: deleting the SDD STE lint instruction is detected"
+ms=$(ste_mutant "$SDD" 'STE lint')
+if ! sdd_ste_ok "$ms"; then pass; else fail "removing the controller instruction was NOT detected"; fi
+
 finish

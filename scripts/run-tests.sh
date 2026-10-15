@@ -77,6 +77,15 @@ else
   python3 scripts/score_review_chain_eval.py --check-truth evals/skills/review-chain/fixtures || fail "scripts/score_review_chain_eval.py --check-truth"
 fi
 
+echo "== L1: STE linter self-test and prose baseline =="
+# The self-test can fail the suite. The baseline check reports only and always exits 0.
+if command -v python3 >/dev/null 2>&1; then
+  python3 skills/asd-ste100/scripts/ste-lint.py --selftest || fail "skills/asd-ste100/scripts/ste-lint.py --selftest"
+  python3 scripts/check_ste_baseline.py
+else
+  echo "  skip — no python3"
+fi
+
 echo "== L1: verify-row lint (changed SUMMARY/PLAN only) =="
 # Lint only SUMMARY.md + PLAN.md files changed vs the base ref — new/edited Verify
 # rows and SC-table Check cells must be pipe-free + <60s; shipped specs are

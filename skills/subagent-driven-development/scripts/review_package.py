@@ -3,12 +3,50 @@
 from __future__ import annotations
 
 import argparse
+import json
 import subprocess
+import sys
 from pathlib import Path
+
+STE_LINT = Path(__file__).resolve().parents[2] / "asd-ste100" / "scripts" / "ste-lint.py"
+LINT_TIMEOUT = 60
+PROSE_ROOTS = ("skills/", "rules/", "agents/")
+# The counts ignore synonym-rotation. Test H3 measured no effect (specs/ste-terminology-evidence/DECISION.md).
+DISABLED_RULES = ("synonym-rotation",)
 
 
 def git(*args: str) -> str:
     return subprocess.check_output(["git", *args], text=True)
+
+
+def lint_hard_count(text: str) -> int:
+    """Return the hard count for the text. Raise RuntimeError when the linter fails."""
+    if not STE_LINT.is_file():
+        raise RuntimeError(f"linter not found: {STE_LINT}")
+    run = subprocess.run([sys.executable, str(STE_LINT), "--json", "--disable", ",".join(DISABLED_RULES)],
+                         input=text, capture_output=True, text=True, timeout=LINT_TIMEOUT)
+    try:
+        return int(json.loads(run.stdout)["hard_count"])
+    except (ValueError, KeyError, TypeError):
+        raise RuntimeError(f"linter exit {run.returncode}, no hard_count in JSON output")
+
+
+def ste_section(base: str, head: str) -> str:
+    """Return the STE lint section for changed prose files. Return an empty string when no prose file changed."""
+    names = git("diff", "--name-only", "--no-renames", "--diff-filter=d", f"{base}..{head}").splitlines()
+    paths = [name for name in names if name.endswith(".md") and name.startswith(PROSE_ROOTS)]
+    if not paths:
+        return ""
+    lines = []
+    try:
+        for path in paths:
+            at_base = subprocess.run(["git", "cat-file", "-e", f"{base}:{path}"], capture_output=True).returncode == 0
+            base_count = lint_hard_count(git("show", f"{base}:{path}")) if at_base else "new"
+            lines.append(f"- {path}: base: {base_count}, head: {lint_hard_count(git('show', f'{head}:{path}'))}")
+    # A hang, bad output bytes, or a failed git show is a linter failure. The package still exits 0.
+    except (RuntimeError, OSError, ValueError, subprocess.SubprocessError) as exc:
+        lines = [f"ste-lint: unavailable ({' '.join(str(exc).split())})"]
+    return "\n## STE lint\n\n" + "\n".join(lines) + "\n"
 
 
 def main() -> int:
@@ -24,6 +62,7 @@ def main() -> int:
         raise SystemExit("review-package: BASE must be an ancestor of HEAD")
     args.output.parent.mkdir(parents=True, exist_ok=True)
     payload = f"# Review package\n\nBASE_SHA: {base}\nHEAD_SHA: {head}\n\n## Commits\n\n{git('log', '--format=%H %s', f'{base}..{head}')}\n## Diff stat\n\n{git('diff', '--stat', f'{base}..{head}')}\n## Diff\n\n```diff\n{git('diff', '-U10', f'{base}..{head}')}\n```\n"
+    payload += ste_section(base, head)
     args.output.write_text(payload, encoding="utf-8")
     args.output.chmod(0o600)
     print(args.output)

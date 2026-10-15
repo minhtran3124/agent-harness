@@ -1,0 +1,12 @@
+{
+  "created_at": "2026-10-14T10:51:00Z",
+  "last_event_id": "c1b0ee2e-60f7-4502-a5f7-68126f7b76aa",
+  "resume_event": null,
+  "run_id": "adde1bf6-1096-4577-b672-940213087924",
+  "seq": 6,
+  "sha": null,
+  "slug": "ste100-harness-prose",
+  "state": "ready_to_merge",
+  "updated_at": "2026-10-14T23:47:38Z",
+  "waiting_on": null
+}

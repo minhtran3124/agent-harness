@@ -426,8 +426,11 @@ pats.append(re.compile(r'(?<![\w./-])harness-manifest\.json'))
 # it ships under .claude/skills/. Anchored to the `python3 ` command form so prose mentions
 # (Rule-4 examples, the harness-repo test map) are left alone.
 pats.append(re.compile(r'python3 skills/visual-planner/render_plan\.py'))
+# The asd-ste100 skill names its linter by path. In a consumer the linter is under .claude/skills/.
+pats.append(re.compile(r'(?<![\w./-])skills/asd-ste100/scripts/ste-lint\.py'))
 subs = ['.claude/scripts/' + n for n in names] + ['.claude/harness-manifest.json',
-        'python3 .claude/skills/visual-planner/render_plan.py']
+        'python3 .claude/skills/visual-planner/render_plan.py',
+        '.claude/skills/asd-ste100/scripts/ste-lint.py']
 changed = 0
 for f in derived_md(out):
     txt = orig = f.read_text(encoding='utf-8')

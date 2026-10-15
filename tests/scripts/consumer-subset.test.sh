@@ -80,6 +80,29 @@ done
 [ -e "$T/.claude/skills/visual-planner/render_plan.py" ] || rp_bad="$rp_bad render_plan.py(not-shipped)"
 if [ -z "$rp_bad" ]; then pass; else fail "$rp_bad"; fi
 
+t "vendored asd-ste100 skill ships with its linter and without the unvendored upstream files"
+# The consumer gets SKILL.md and ste-lint.py. Upstream README.md and the linter edge-case
+# examples are not vendored, so they must not appear in the consumer.
+ste_bad=""
+for f in SKILL.md scripts/ste-lint.py; do
+  [ -f "$C/skills/asd-ste100/$f" ] || ste_bad="$ste_bad $f(missing)"
+done
+for f in README.md examples/linter-edge-cases.md; do
+  [ -e "$C/skills/asd-ste100/$f" ] && ste_bad="$ste_bad $f(present)"
+done
+if [ -z "$ste_bad" ]; then pass; else fail "$ste_bad"; fi
+
+t "derived asd-ste100 SKILL.md names ste-lint.py at the deployed path, and it resolves"
+# In a consumer the linter lives under .claude/skills/. A bare skills/... path does not resolve
+# from the consumer root. This check uses the same idea as the render_plan.py check above.
+ste_bad=""
+grep -qE '(^|[^./])skills/asd-ste100/scripts/ste-lint\.py' "$C/skills/asd-ste100/SKILL.md" \
+  && ste_bad="$ste_bad SKILL.md(unrewritten)"
+grep -q '\.claude/skills/asd-ste100/scripts/ste-lint\.py' "$C/skills/asd-ste100/SKILL.md" \
+  || ste_bad="$ste_bad SKILL.md(missing)"
+[ -e "$T/.claude/skills/asd-ste100/scripts/ste-lint.py" ] || ste_bad="$ste_bad ste-lint.py(not-shipped)"
+if [ -z "$ste_bad" ]; then pass; else fail "$ste_bad"; fi
+
 t "rewrite is idempotent — a second deploy never produces .claude/.claude/"
 run_deploy "$T"
 dbl=$(grep -rl '\.claude/\.claude/' "$C" --include='*.md' 2>/dev/null)

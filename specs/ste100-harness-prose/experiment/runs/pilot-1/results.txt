@@ -1,0 +1,12 @@
+trials=80 cost_usd=2.7293
+rules/orchestration.md probes original: 78/80
+rules/orchestration.md probes rewritten: 80/80
+skills/feature-intake/SKILL.md probes original: 80/80
+skills/feature-intake/SKILL.md probes rewritten: 80/80
+skills/feature-intake/SKILL.md workflow original: 79/80
+skills/feature-intake/SKILL.md workflow rewritten: 80/80
+skills/subagent-driven-development/SKILL.md probes original: 80/80
+skills/subagent-driven-development/SKILL.md probes rewritten: 80/80
+rules/orchestration.md: PASS
+skills/feature-intake/SKILL.md: PASS
+skills/subagent-driven-development/SKILL.md: PASS

@@ -62,6 +62,15 @@ Task tool (coding):
     - In existing codebases, follow established patterns. Improve code you're touching
       the way a good developer would, but don't restructure things outside your task.
 
+    ## Prose style
+
+    When you change prose under `skills/`, `rules/`, or `agents/`, Read and apply `skills/asd-ste100/SKILL.md`.
+    Use Strict mode for dispatch prompts. Use STE-flavored mode for all other prose.
+    Do not change code or commands in fenced blocks.
+    Do not change `### Intent` or `intent.md`.
+    Do not change a literal string that a file under `tests/` or `hooks/` matches.
+    To find these strings, grep `tests/` and `hooks/` before you edit.
+
     ## When You're in Over Your Head
 
     Escalating is an expected outcome: unreliable work costs more downstream than a clear

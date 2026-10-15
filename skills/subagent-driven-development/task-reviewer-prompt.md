@@ -33,6 +33,14 @@ Task tool (task-reviewer):
     does not cover as an Important spec finding, citing both. Ignore bookkeeping paths
     (`specs/**`, `docs/**`, and any `*.md`).
 
+    Read the `## STE lint` section of REVIEW_PACKAGE_PATH. It gives a BASE and a HEAD hard count
+    for each changed `.md` file under `skills/`, `rules/`, or `agents/`.
+    A file fails when its HEAD hard count is above its BASE count.
+    Return an Important quality finding for each file that fails.
+    A `base: new` line is a warning. Do not return a finding for it.
+    Do not approve the quality verdict when a changed prose file has no line in the section.
+    Do not approve the quality verdict when the section has a `ste-lint: unavailable` line.
+
     Return exactly this concise YAML-shaped result:
     spec_verdict: pass | fail | cannot_verify
     quality_verdict: approved | needs_fixes
