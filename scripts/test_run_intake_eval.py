@@ -56,6 +56,7 @@ def env(tmp_path, monkeypatch):
     (repo / "scripts" / "deploy-harness.sh").write_text(DEPLOY)
     (repo / "README.md").write_text("original\n")
     (repo / FIXTURES).mkdir(parents=True)
+    (repo / "evals" / "pinned.txt").write_text("tracked at the pinned commit\n")
     git(repo, "init", "-q")
     git(repo, "add", "-A")
     git(repo, "commit", "-q", "-m", "older")
@@ -94,6 +95,7 @@ def cases(env):
 
 def test_scratch_worktree_starts_at_from_without_evals(env):
     add_fixture(env, "clean")
+    assert "evals/pinned.txt" in git(env.repo, "ls-tree", "-r", "--name-only", env.pinned).splitlines()
     assert run(env) == 0
     seen = [json.loads(line) for line in env.log.read_text().splitlines()]
     assert seen == [{"head": env.pinned, "only_in_head": False, "evals": False, "marker": True}]
