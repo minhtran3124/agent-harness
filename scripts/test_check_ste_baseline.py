@@ -1,8 +1,9 @@
 """Tests for scripts/check_ste_baseline.py. Run them with pytest.
 
 Each test builds a fake tree under tmp_path with a fake linter at the real linter path.
-The fake linter reads hard counts from `counts.json` next to it. Every case asserts exit 0,
-because the default run never blocks. The `--strict` cases assert exit 1 only on a WARN line.
+The fake linter reads hard counts from `counts.json` next to it. The default run never blocks,
+so every default case asserts exit 0. The `--strict` cases assert exit 1 on a WARN line or on a
+skipped run. The `--against` cases also make the tree a git repo and commit the baseline file.
 """
 
 from __future__ import annotations
@@ -91,35 +92,46 @@ def test_baseline_entry_for_deleted_file_warns(tmp_path):
     assert "WARN rules/gone.md" in result.stdout
 
 
-def test_linter_crash_skips_and_exits_0(tmp_path):
+def test_linter_crash_skips_exits_0_default_and_1_strict(tmp_path):
     make_tree(tmp_path, {"rules/a.md": 1}, {"rules/a.md": 0}, mode="crash")
+    assert run(tmp_path).returncode == 0
     result = run(tmp_path, "--strict")
-    assert result.returncode == 0
+    assert result.returncode == 1
     assert "ste-baseline: skipped (" in result.stdout
 
 
-def test_invalid_json_skips_and_exits_0(tmp_path):
+def test_invalid_json_skips_exits_0_default_and_1_strict(tmp_path):
     make_tree(tmp_path, {"rules/a.md": 1}, {"rules/a.md": 0}, mode="garbage")
+    assert run(tmp_path).returncode == 0
     result = run(tmp_path, "--strict")
-    assert result.returncode == 0
+    assert result.returncode == 1
     assert "ste-baseline: skipped (" in result.stdout
 
 
-def test_missing_baseline_file_skips_and_exits_0(tmp_path):
+def test_missing_baseline_file_skips_exits_0_default_and_1_strict(tmp_path):
     make_tree(tmp_path, {"rules/a.md": 1}, None)
+    assert run(tmp_path).returncode == 0
     result = run(tmp_path, "--strict")
-    assert result.returncode == 0
+    assert result.returncode == 1
     assert "ste-baseline: skipped (" in result.stdout
 
 
-def test_non_int_baseline_value_skips_and_exits_0(tmp_path):
+def test_non_int_baseline_value_skips_and_exits_0_by_default(tmp_path):
     for bad in ("3", 2.5, None, True, [1]):
         root = tmp_path / repr(bad)
         make_tree(root, {"rules/a.md": 1}, {"rules/a.md": bad})
-        for args in ((), ("--strict",)):
-            result = run(root, *args)
-            assert result.returncode == 0, (bad, args, result.stderr)
-            assert "ste-baseline: skipped (" in result.stdout, (bad, result.stdout)
+        result = run(root)
+        assert result.returncode == 0, (bad, result.stderr)
+        assert "ste-baseline: skipped (" in result.stdout, (bad, result.stdout)
+
+
+def test_non_int_baseline_value_skips_and_exits_1_strict(tmp_path):
+    for bad in ("3", 2.5, None, True, [1]):
+        root = tmp_path / repr(bad)
+        make_tree(root, {"rules/a.md": 1}, {"rules/a.md": bad})
+        result = run(root, "--strict")
+        assert result.returncode == 1, (bad, result.stderr)
+        assert "ste-baseline: skipped (" in result.stdout, (bad, result.stdout)
 
 
 def test_strict_exits_1_on_warn(tmp_path):
@@ -141,3 +153,74 @@ def test_update_rewrites_baseline(tmp_path):
     data = json.loads((tmp_path / "scripts" / "ste-baseline.json").read_text())
     assert data == {"agents/b.md": 0, "rules/a.md": 2}
     assert run(tmp_path, "--strict").returncode == 0
+
+
+def git(root: Path, *args: str) -> str:
+    result = subprocess.run(["git", "-C", str(root), "-c", "user.name=t", "-c", "user.email=t@t",
+                             "-c", "commit.gpgsign=false", *args],
+                            capture_output=True, text=True, check=True)
+    return result.stdout.strip()
+
+
+def commit_tree(root: Path) -> str:
+    git(root, "init", "-q")
+    git(root, "add", "-A")
+    git(root, "commit", "-q", "-m", "start")
+    return git(root, "rev-parse", "HEAD")
+
+
+def test_against_rise_above_ref_warns_and_strict_exits_1(tmp_path):
+    make_tree(tmp_path, {"rules/a.md": 5}, {"rules/a.md": 3})
+    ref = commit_tree(tmp_path)
+    # The working baseline allows the rise. The baseline at the ref does not.
+    (tmp_path / "scripts" / "ste-baseline.json").write_text(json.dumps({"rules/a.md": 5}))
+    assert "WARN" not in run(tmp_path).stdout
+    result = run(tmp_path, "--against", ref)
+    assert result.returncode == 0
+    assert "WARN rules/a.md: hard 5 > baseline 3" in result.stdout
+    result = run(tmp_path, "--strict", "--against", ref)
+    assert result.returncode == 1
+    assert "WARN rules/a.md" in result.stdout
+
+
+def test_against_at_or_below_ref_prints_no_warn(tmp_path):
+    make_tree(tmp_path, {"rules/a.md": 3, "agents/b.md": 1}, {"rules/a.md": 3, "agents/b.md": 2})
+    ref = commit_tree(tmp_path)
+    # The working baseline would warn on both files. The baseline at the ref does not.
+    (tmp_path / "scripts" / "ste-baseline.json").write_text(json.dumps({}))
+    result = run(tmp_path, "--strict", "--against", ref)
+    assert result.returncode == 0
+    assert "WARN" not in result.stdout
+
+
+def test_against_ref_that_does_not_resolve_skips(tmp_path):
+    make_tree(tmp_path, {"rules/a.md": 0}, {"rules/a.md": 0})
+    commit_tree(tmp_path)
+    result = run(tmp_path, "--against", "no-such-ref")
+    assert result.returncode == 0
+    assert "ste-baseline: skipped (" in result.stdout
+    result = run(tmp_path, "--strict", "--against", "no-such-ref")
+    assert result.returncode == 1
+    assert "ste-baseline: skipped (" in result.stdout
+
+
+def test_against_ref_without_baseline_file_skips(tmp_path):
+    make_tree(tmp_path, {"rules/a.md": 0}, None)
+    ref = commit_tree(tmp_path)
+    (tmp_path / "scripts").mkdir()
+    (tmp_path / "scripts" / "ste-baseline.json").write_text(json.dumps({"rules/a.md": 0}))
+    result = run(tmp_path, "--against", ref)
+    assert result.returncode == 0
+    assert "ste-baseline: skipped (" in result.stdout
+    result = run(tmp_path, "--strict", "--against", ref)
+    assert result.returncode == 1
+    assert "ste-baseline: skipped (" in result.stdout
+
+
+def test_against_with_update_is_refused(tmp_path):
+    make_tree(tmp_path, {"rules/a.md": 2}, {"rules/a.md": 0})
+    ref = commit_tree(tmp_path)
+    result = run(tmp_path, "--update", "--against", ref)
+    assert result.returncode == 2
+    data = json.loads((tmp_path / "scripts" / "ste-baseline.json").read_text())
+    assert data == {"rules/a.md": 0}
