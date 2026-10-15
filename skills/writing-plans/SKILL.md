@@ -43,5 +43,6 @@ required brief is missing. If the scope contains independent subsystems, propose
 ## Handoff
 
 State the saved plan path. Before any code change, use `using-git-worktrees` unless the work is
-already isolated. Then invoke `subagent-driven-development`. Ask which execution mode only when
-the user has not stated one. Both modes use the same gates.
+already isolated. Then invoke `subagent-driven-development` in this session. Do not ask the user
+to choose an execution mode or to confirm the start. Only an escalation trigger in
+`rules/orchestration.md` stops the start. A later session continues the run with `resume <slug>`.
