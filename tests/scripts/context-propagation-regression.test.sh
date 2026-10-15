@@ -196,6 +196,19 @@ t "mutation: deleting the reviewer STE lint instruction is detected"
 mr=$(ste_mutant "$TASK_REVIEWER" 'STE lint')
 if ! reviewer_ste_ok "$mr"; then pass; else fail "removing the reviewer instruction was NOT detected"; fi
 
+reviewer_meaning_ok() {
+  grep -q '`## Scope qualifiers`' "$1/$TASK_REVIEWER" \
+    && grep -q '^ *meaning:' "$1/$TASK_REVIEWER"
+}
+t "task reviewer prompt runs the meaning-equivalence check (SC-4)"
+if reviewer_meaning_ok "$ROOT"; then pass; else fail "no meaning instruction in $TASK_REVIEWER"; fi
+t "mutation: deleting the reviewer Scope qualifiers instruction is detected"
+mq=$(ste_mutant "$TASK_REVIEWER" 'Scope qualifiers')
+if ! reviewer_meaning_ok "$mq"; then pass; else fail "removing the Scope qualifiers line was NOT detected"; fi
+t "mutation: deleting the reviewer meaning: result key is detected"
+mk=$(ste_mutant "$TASK_REVIEWER" '^ *meaning:')
+if ! reviewer_meaning_ok "$mk"; then pass; else fail "removing the meaning: key was NOT detected"; fi
+
 t "compound applies asd-ste100 to new records (SC-8)"
 if compound_ste_ok "$ROOT"; then pass; else fail "no asd-ste100 instruction in $COMPOUND 'Write canonical records'"; fi
 t "mutation: deleting the compound asd-ste100 instruction is detected"

@@ -33,6 +33,18 @@ Task tool (task-reviewer):
     does not cover as an Important spec finding, citing both. Ignore bookkeeping paths
     (`specs/**`, `docs/**`, and any `*.md`).
 
+    Spec verdict also covers meaning. Do this check for each changed `.md` file under `skills/`,
+    `rules/`, or `agents/`. Compare each removed line with the lines that replace it.
+    A dropped condition, exception, hedge, or scope qualifier is an Important spec finding.
+    Read the `## Scope qualifiers` section of REVIEW_PACKAGE_PATH.
+    Resolve each line in that section as "kept" or as a finding.
+    For "kept", cite the HEAD line that keeps the word. List each citation in `search_surface`.
+    A `scope-qualifiers: unavailable` line does not block by itself.
+    When the section is unavailable, do the comparison without it.
+    In `meaning:`, write one entry for each changed prose file.
+    The entry is `fail` when the file has a meaning finding. Otherwise, the entry is `pass`.
+    When no prose file changed, write `meaning: []`.
+
     Read the `## STE lint` section of REVIEW_PACKAGE_PATH. It gives a BASE and a HEAD hard count
     for each changed `.md` file under `skills/`, `rules/`, or `agents/`.
     A file fails when its HEAD hard count is above its BASE count.
@@ -44,6 +56,8 @@ Task tool (task-reviewer):
     Return exactly this concise YAML-shaped result:
     spec_verdict: pass | fail | cannot_verify
     quality_verdict: approved | needs_fixes
+    meaning:
+      - <file>: pass | fail
     findings:
       - severity: Critical | Important | Minor
         category: spec | quality | plan-mandated
