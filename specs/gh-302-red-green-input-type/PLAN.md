@@ -1,6 +1,6 @@
 ---
 slug: gh-302-red-green-input-type
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-10-16
 ---
@@ -109,3 +109,4 @@ flowchart LR
 
 - 2026-10-16 — plan written at intake handoff (normal lane, confidence medium).
 - 2026-10-16 — task 1.1 complete; commits ee6da93, 36d809f (task review: spec pass, quality approved, 2 Minor).
+- 2026-10-16 — shipped: correctness review (4 advisory, none ≥75) and intent review (1 advisory drift) passed; receipt pinned at 87360bb; PR opened against sdlc.
