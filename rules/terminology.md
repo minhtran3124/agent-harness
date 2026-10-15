@@ -12,7 +12,7 @@ writing rules. The STE Dictionary is deliberately **not** adopted — its ~1,700
 would forbid this project's own vocabulary (`worktree`, `lane`, `gate`, `blast radius`).
 
 Every rule below is labelled with the evidence that justifies it. A rule with no measured
-effect is advisory and **must not** be mechanised into a gate: see
+effect is advisory and **must not** be mechanised into a gate. See
 the harness repo's `specs/ste-terminology-evidence/DECISION.md` for the 75-trial A/B record.
 
 <!-- lint:scope -->
@@ -42,43 +42,47 @@ GOOD  Verify: the id column reads 1,2,3,4 top to bottom and no field is empty.
 ```
 
 **Measured:** with `is it correct?` as the criterion, reviewers accepted a defective
-artifact in 7 of 8 runs and two of them asserted a property that was false in the file.
+artifact in 7 of 8 runs. Two of them asserted a property that was false in the file.
 With the observable stated, 8 of 8 rejected it. Two models, `p = 0.0014`.
 
 ## §2 Modality — advisory, and not a compliance lever
 
-`must` = required; skipping it is a defect. `should` = recommended; record the reason for
+`must` = required. Skipping it is a defect. `should` = recommended. Record the reason for
 skipping in the artifact. Define the pair once here and use it consistently.
 
 **Do not rely on `must` to force a step.** Measured: against a competing constraint,
-`should` produced compliance in 0 of 10 runs and `must` in only 4 of 10 (`p = 0.087`) — the
-other 6 stopped and escalated instead. Escalating on a real conflict is the behaviour this
-harness wants, so the finding is not a defect: it means **a step that is genuinely mandatory
-belongs in a gate, not in a word**. With no competing constraint both words scored 5 of 5,
-so the distinction carries no weight in the easy case either.
+`should` produced compliance in 0 of 10 runs. `must` produced it in only 4 of 10
+(`p = 0.087`). The other 6 stopped and escalated instead. Escalating on a real conflict is the
+behaviour this harness wants, so the finding is not a defect. It means that **a step that is
+genuinely mandatory belongs in a gate, not in a word**. With no competing constraint, both
+words scored 5 of 5. So the distinction carries no weight in the easy case either.
 
 ## §1 One concept, one word — advisory only
 
-Prefer one verb per concept so a reader is not invited to infer a rigor difference that does
-not exist: `verify` (produce re-runnable proof) vs `check` (read state); `block` (a hook
-denies) vs `stop` (an agent halts itself); `write` (a file) vs `create` (a branch or
-worktree); `subagent` (never `sub-agent`).
+Prefer one verb per concept. Then a reader is not invited to infer a rigor difference that
+does not exist:
 
-`run` and `session` are **two different concepts, not synonyms**: a *run* is one workflow
-pass from intake to merge; a *session* is one Claude Code process (`SessionStart` /
-`SessionEnd`, `session-knowledge.sh`). One run spans several sessions — that is what
+- `verify` (produce re-runnable proof) vs `check` (read state).
+- `block` (a hook denies) vs `stop` (an agent halts itself).
+- `write` (a file) vs `create` (a branch or worktree).
+- `subagent` (never `sub-agent`).
+
+`run` and `session` are **two different concepts, not synonyms**. A *run* is one workflow
+pass from intake to merge. A *session* is one Claude Code process (`SessionStart` /
+`SessionEnd`, `session-knowledge.sh`). One run spans several sessions. That is what
 `subagent-driven-development resume <slug>` exists for. Never normalise one into the other.
 
-**Measured: no effect.** Mixing `check` / `verify` / `confirm` / `validate` scored 40 of 40
-assertions correct; using `verify` for all four scored 36 of 36, across two difficulty levels.
+**Measured: no effect.** The measurement covered two difficulty levels. Mixing `check` /
+`verify` / `confirm` / `validate` scored 40 of 40 assertions correct. Using `verify` for all
+four scored 36 of 36.
 Keep this section for human readability. Do not build a linter on it.
 
 ## Hard exclusions
 
 1. **`SUMMARY.md` `### Intent` and `specs/<slug>/intent.md` — never touched, by any rule,
-   hardcoded.** They hold the user's request verbatim and the intent — approved by a human, or
-   auto-approved by intake for tiny/high; intent.md's `## Original request`, when present, is the
-   verbatim request. They are the oracle for `intent-review`, the reviewer that is blind to `PLAN.md`. Rewriting one word there corrupts an independent review layer. This must not
+   hardcoded.** They hold the user's request verbatim and the intent. The intent is approved by
+   a human, or auto-approved by intake for tiny/high. intent.md's `## Original request`, when
+   present, is the verbatim request. They are the oracle for `intent-review`, the reviewer that is blind to `PLAN.md`. Rewriting one word there corrupts an independent review layer. This must not
    be exposed as configuration. Editing an intent.md draft before approval is outside this
    exclusion.
 2. **§3 does not apply to `design.md` or `research-brief.md`.** Hedging is the content there,
@@ -89,7 +93,7 @@ Keep this section for human readability. Do not build a linter on it.
 
 ## Delivery
 
-`paths:` injection fires on **read**, not on write — write-flows do not trigger it
-(verified empirically; see v2.1.216 in the harness repo's `CHANGELOG.md`). A skill that *writes* a `PLAN.md`
-therefore never receives this file from the frontmatter above. Any write-flow that must
-apply §3 needs an **explicit Read step**; the frontmatter only covers the reviewer side.
+`paths:` injection fires on **read**, not on write. Write-flows do not trigger it
+(verified empirically: see v2.1.216 in the harness repo's `CHANGELOG.md`). So a skill that
+*writes* a `PLAN.md` never receives this file from the frontmatter above. Any write-flow that
+must apply §3 needs an **explicit Read step**. The frontmatter only covers the reviewer side.

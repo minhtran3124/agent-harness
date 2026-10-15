@@ -6,7 +6,7 @@ paths:
 # Plan Format Rule
 
 Applies when writing `specs/<slug>/PLAN.md` for multi-step work.
-Path-scoped (not auto-loaded): injected when a `specs/**/PLAN.md` file is read; authoring
+Path-scoped (not auto-loaded): injected when a `specs/**/PLAN.md` file is read. Authoring
 flows load it via the explicit Read step in `writing-plans` / `subagent-driven-development`.
 
 Related: `auto-correct-scope.md`.
@@ -22,7 +22,7 @@ Use the task format when ANY of:
 
 Skip for single-file fixes, typo corrections, config tweaks.
 
-> These thresholds are the **signal** that triggers a `PLAN.md` under the artifact policy (`rules/orchestration.md` → Artifact policy). A `SUMMARY.md` is still written for every lane regardless — plan-ahead scaffolding scales by signal; the record is always-on.
+> These thresholds are the **signal** that triggers a `PLAN.md` under the artifact policy (`rules/orchestration.md` → Artifact policy). A `SUMMARY.md` is still written for every lane regardless. Plan-ahead scaffolding scales by signal. The record is always-on.
 
 ## Task Schema
 
@@ -43,10 +43,10 @@ and populated `Files / Action / Verify / Done`:
 
 New markdown plans add a non-empty `## Global Constraints` section. Each task also carries:
 
-- **Criteria:** one or more mapped `SC-n` rows;
+- **Criteria:** one or more mapped `SC-n` rows.
 - **Interfaces:** a concise statement of what the task consumes and produces. The
   `Produces` clause must name at least one artifact in backticks (e.g. `` `foo.py` ``)
-  so producers are machine-trackable; `Consumes` may stay prose for external inputs.
+  so producers are machine-trackable. `Consumes` may stay prose for external inputs.
 
 Run `python3 scripts/check_plan_contract.py <PLAN.md>` before execution. The checker applies this
 contract only to plans that declare `Global Constraints`, so legacy markdown/XML plans continue to
@@ -54,8 +54,8 @@ parse and execute unchanged.
 
 Rules:
 
-- Real tasks are plain markdown — never wrap them in code fences (fenced task sections are
-  treated as illustrations and ignored, like the example above).
+- Real tasks are plain markdown. Never wrap them in code fences. Fenced task sections are
+  treated as illustrations and ignored, like the example above.
 - A `### Task <id>` heading with **no** field bullets is prose, not a task (the renderer
   and gates ignore it).
 - Keep the optional human title concise and outcome-focused.
@@ -63,8 +63,8 @@ Rules:
 Conventions:
 
 - `id`: `<phase>.<task>` — e.g. `2.1`, `2.2`. Sub-tasks: `N.M.x` (e.g. `2.1.1`).
-- `wave`: the `(wave K)` suffix on the task heading. Same-wave tasks MAY run in parallel; waves execute sequentially. Omit for single-wave plans.
-- Files: comma-separated paths. Used by the wave-parallelism rule to check overlap and by `hooks/commit-gate.sh` as the in-scope set at commit time (warn; `BLAST_RADIUS_STRICT=1` blocks).
+- `wave`: the `(wave K)` suffix on the task heading. Same-wave tasks MAY run in parallel. Waves execute sequentially. Omit for single-wave plans.
+- Files: comma-separated paths. The wave-parallelism rule uses them to check overlap. `hooks/commit-gate.sh` uses them as the in-scope set at commit time. It warns, and `BLAST_RADIUS_STRICT=1` makes it block.
 
 ## Success Criteria schema (the acceptance contract)
 
@@ -80,16 +80,16 @@ Column rules:
 - **Behavior (observable)** — the externally-visible outcome, phrased so a reader can tell it
   happened without reading the diff. Not an implementation note.
 - **Check (re-runnable)** — a command that inherits the same guardrails as a task `Verify` (see
-  the harness repo's `docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md`): a **single** command,
-  **pipe-free** (no `|`), finishes in **<60s**, and never a whole-suite row. Split anything larger
-  into more SC rows.
-- **Expected** — grammar is a leading machine-read token `exit <n>` (a non-zero code is allowed
-  when the check asserts failure), optionally followed by free text describing the expectation.
+  the harness repo's `docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md`).
+  It is a **single** command and **pipe-free** (no `|`). It finishes in **<60s**. It is never a
+  whole-suite row. Split anything larger into more SC rows.
+- **Expected** — grammar is a leading machine-read token `exit <n>`, optionally followed by free
+  text describing the expectation. A non-zero code is allowed when the check asserts failure.
   Examples: `exit 0`, `exit 1 — rejects the unsigned request`.
 
-Same fencing rule as tasks: a Success Criteria table written **inside a code fence** is an
-illustration and is ignored; the live contract is the non-fenced table. Example (fenced, so
-illustrative only):
+The fencing rule for tasks applies here too. A Success Criteria table written **inside a code
+fence** is an illustration and is ignored. The live contract is the non-fenced table. Example
+(fenced, so illustrative only):
 
 ```markdown
 ## 3. Success Criteria
@@ -101,22 +101,23 @@ illustrative only):
 ```
 
 Exemptions: legacy XML plans (see "Legacy XML plans" below) and pre-existing specs authored
-before this rule are exempt — the SC table is required only for **new** markdown plans.
+before this rule are exempt. The SC table is required only for **new** markdown plans.
 
 ### SUMMARY side — the `Criterion` column
 
-When a plan declares an SC table, its sibling `SUMMARY.md` closes the loop from the other end: the
-`### Verify` table accepts an optional trailing **`Criterion`** column naming the `SC-<n>` id that
-each row satisfies (`Check | Command | Exit | Notes | Criterion`). `scripts/verify_summary.py`
-enforces this coupling — when the sibling `PLAN.md` declares an SC table, the referenced ids must
-resolve to real `SC-<n>` rows in that plan. The column is optional when no SC table exists.
+When a plan declares an SC table, its sibling `SUMMARY.md` closes the loop from the other end.
+In that case, the `### Verify` table accepts an optional trailing **`Criterion`** column
+(`Check | Command | Exit | Notes | Criterion`). The column names the `SC-<n>` id that each row
+satisfies. `scripts/verify_summary.py` enforces this coupling. When the sibling `PLAN.md`
+declares an SC table, the referenced ids must resolve to real `SC-<n>` rows in that plan. The
+column is optional when no SC table exists.
 
 ## Guardrails
 
 1. **Zero file overlap** across same-wave tasks — prevents merge conflicts when executed in parallel.
 2. **Verify must be automated** — your test runner, HTTP probe, linter, type-checker, migration command. Reject "open browser and check" at task level (that belongs in phase-level user-acceptance testing).
 3. **Verify <60s** — if longer, split into sub-tasks.
-4. **Layer ladder** — run your linter and type-checker first (when the stack defines them — see `techstacks/`), then the smallest test that touches the change. Add an integration test only when the behavior spans modules. Never put the whole suite in a task `Verify`, an SC row, or a SUMMARY `### Verify` row — cite it in prose; the suite runs at `finishing-a-development-branch` (targeted, or full when no safe subset is known) and in the CI `tests` job.
+4. **Layer ladder** — run your linter and type-checker first (when the stack defines them — see `techstacks/`), then the smallest test that touches the change. Add an integration test only when the behavior spans modules. Never put the whole suite in a task `Verify`, an SC row, or a SUMMARY `### Verify` row. Cite it in prose. The suite runs at `finishing-a-development-branch` (targeted, or full when no safe subset is known) and in the CI `tests` job.
 
 ## Examples
 
@@ -175,20 +176,25 @@ created: YYYY-MM-DD
 ## 6. Status Log
 ```
 
-The examples above show the full task shape; `specs/` is tracked in git, so plans are browsable across machines. (`PLAN.html` and `.plan-review.json` are gitignored as derived artifacts.)
+The examples above show the full task shape. `specs/` is tracked in git, so plans are browsable across machines. (`PLAN.html` and `.plan-review.json` are gitignored as derived artifacts.)
 
 ## Legacy XML plans (read-only support)
 
-Plans written before 2026-07-16 use fenced `<task id="N.M" wave="K"><files><action><verify><done>` XML blocks. The renderer, the `subagent-driven-development` Step-0 gate, and `hooks/commit-gate.sh` still parse that syntax, so existing plans keep rendering and executing unchanged — but it is **not** an authoring format: never write new plans in XML. One exception: when adding a task to an existing XML plan, keep that plan's XML syntax — in a mixed file the parser reads only the XML tasks, so a markdown task added to an XML plan would be invisible.
+Plans written before 2026-07-16 use fenced `<task id="N.M" wave="K"><files><action><verify><done>` XML blocks. The renderer, the `subagent-driven-development` Step-0 gate, and `hooks/commit-gate.sh` still parse that syntax. So existing plans keep rendering and executing unchanged. But that syntax is **not** an authoring format. Never write new plans in XML. One exception: when you add a task to an existing XML plan, keep that plan's XML syntax. In a mixed file the parser reads only the XML tasks. So a markdown task added to an XML plan would be invisible.
 
 ## Auto-generated "At a glance" block
 
-`render_plan.py --summarize` (invoked by `writing-plans` after saving the plan, at each wave boundary, and by `finishing-a-development-branch` before the shipped commit)
-injects an additive, script-owned "At a glance" block — a count line, a wave×task table, a
-`flowchart LR` Mermaid diagram, and a `### Progress` checklist — immediately before the first `## `
-heading, between `<!-- AT-A-GLANCE:BEGIN -->` / `<!-- AT-A-GLANCE:END -->` sentinels.
+`render_plan.py --summarize` injects an additive, script-owned "At a glance" block. It is invoked:
 
-It is derived entirely from the task sections (markdown, or legacy XML) and the `## Status Log`
-(which stays the source of truth); the block regenerates idempotently on every run and must NOT be
-hand-edited. Authors and agents still read and write only the task schema above — the At-a-glance
-block is a rendering convenience, not a planning input.
+- by `writing-plans` after saving the plan,
+- at each wave boundary,
+- by `finishing-a-development-branch` before the shipped commit.
+
+The block holds a count line, a wave×task table, a `flowchart LR` Mermaid diagram, and a
+`### Progress` checklist. It goes immediately before the first `## ` heading, between
+`<!-- AT-A-GLANCE:BEGIN -->` / `<!-- AT-A-GLANCE:END -->` sentinels.
+
+It is derived entirely from the task sections (markdown, or legacy XML) and the `## Status Log`.
+The `## Status Log` stays the source of truth. The block regenerates idempotently on every run.
+It must NOT be hand-edited. Authors and agents still read and write only the task schema above.
+The At-a-glance block is a rendering convenience, not a planning input.
