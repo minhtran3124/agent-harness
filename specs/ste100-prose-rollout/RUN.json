@@ -1,0 +1,12 @@
+{
+  "created_at": "2026-10-15T03:22:08Z",
+  "last_event_id": "cf721461-653f-4198-a75a-ce1497aef9b7",
+  "resume_event": null,
+  "run_id": "b559445a-8d7d-48a2-b974-56fc00f1ab0c",
+  "seq": 5,
+  "sha": null,
+  "slug": "ste100-prose-rollout",
+  "state": "verifying",
+  "updated_at": "2026-10-15T05:46:32Z",
+  "waiting_on": null
+}
