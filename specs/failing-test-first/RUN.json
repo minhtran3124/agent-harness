@@ -1,0 +1,12 @@
+{
+  "created_at": "2026-10-15T15:23:26Z",
+  "last_event_id": "79a09293-fcf6-41a1-b960-10a3de218731",
+  "resume_event": null,
+  "run_id": "ecbef26e-02b7-4702-afcd-b3225236974a",
+  "seq": 5,
+  "sha": null,
+  "slug": "failing-test-first",
+  "state": "verifying",
+  "updated_at": "2026-10-15T16:11:05Z",
+  "waiting_on": null
+}
