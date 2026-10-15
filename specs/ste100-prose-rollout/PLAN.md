@@ -1,6 +1,6 @@
 ---
 slug: ste100-prose-rollout
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-10-15
 ---
@@ -454,3 +454,4 @@ scope qualifiers that only a requested meaning review caught
 - 2026-10-15 — task 2.8 complete; commit 635948c
 - 2026-10-15 — task 2.9 complete; commits 315f9f2, 44ee25d
 - 2026-10-15 — final review chain: context-propagation audit PASS (no failed rows); correctness review 8 locations scored, none ≥75 (7 advisory at 50, 1 at 0); intent review 7 findings — 3 fixed (5f408ff + record), 2 advisory, 3 report-only; re-review of 5f408ff: 0 bugs, intent R1 note fixed; compound 92b7aab + correction 2f82f61 (docs review PASS); run-tests ALL GREEN (958)
+- 2026-10-15 — shipped (Phase 3): receipt pinned at 2f82f61; run-tests ALL GREEN (958); PR to docs/ste100-harness-prose (stacked on #293; retarget to sdlc after #293 merges)
