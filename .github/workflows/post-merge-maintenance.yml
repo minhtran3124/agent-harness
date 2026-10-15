@@ -25,7 +25,7 @@ on:
     # then excluded `simplify` and skipped every PR merged there after 2026-07-27, leaving
     # `gate-verifiability-principle` (PR #189) stuck at `ready_to_merge` (issue #196).
     # `simplify` added 2026-08-08. tests/scripts/post-merge-runstate-staging.test.sh asserts
-    # the active integration branch (`simplify`) is present so the list cannot silently rot.
+    # the active integration branches (`simplify`, `sdlc`) are present so the list cannot silently rot.
     #
     # MUST BE SYNCED ON `main`: pull_request_target always loads this definition (and this
     # list) from the repo's real DEFAULT branch (main), regardless of the PR's base. Editing

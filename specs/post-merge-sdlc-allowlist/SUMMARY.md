@@ -58,3 +58,31 @@ The new assertion fails against `main`'s current workflow: the `branches:` line 
 ### Harness-Delta
 
 - none
+
+### Intent Findings
+
+Intent review (independent). No gap and no drift: the list is the old value `[main, loop, simplify]` plus `sdlc`, the PR is one commit based on `main`, and the "by design" consequence is stated in the workflow comment. Three excess items, all report-only:
+
+| # | Class | Finding | Route |
+| --- | --- | --- | --- |
+| 1 | excess | The guard-test assertion that requires `sdlc`. Removing `sdlc` later also needs a test edit. | report-only |
+| 2 | excess | The dated comment history (#292, #293, `ready_to_merge`) beyond the "by design" sentence. | report-only |
+| 3 | excess | This SUMMARY.md: harness bookkeeping that roughly doubles the PR's size. | report-only |
+
+### Correctness review
+
+Independent reviewer, range `github/main..08288ca`. **No correctness defects.** Paths traced:
+
+- the trigger allowlist;
+- the base-only checkout (the PR head is never run);
+- PR strings passed only through env;
+- the run-state slug loop (`ready_to_merge` → `shipped`);
+- `bookkeeping.sh`, which assumes no branch;
+- the bookkeeping PR (`--base "$BASE_REF"` = `sdlc`);
+- the loop guard (`chore/bookkeeping-<N>`);
+- the later `sdlc` → `main` merge, where terminal slugs are skipped.
+
+Every file the job stages exists on `sdlc`. Advisory, score 0:
+
+- Three comments still named only `simplify`. Fixed in a follow-up commit.
+- Inherited traits that now also apply to `sdlc`: a bookkeeping VERSION/CHANGELOG bump on `sdlc` can conflict or double-count when `sdlc` merges into `main`, and two `sdlc` merges close together each bump VERSION from the same value. This is not new in this diff.

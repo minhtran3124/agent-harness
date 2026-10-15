@@ -10,7 +10,7 @@
 #
 # It ALSO guards the trigger/base-branch policy (issue #196): the `branches:` allowlist is
 # the one authoritative place for the policy and rots silently. Section 0 pins the branches
-# that MUST be present — the active integration branch (`simplify`) and the default branch
+# that MUST be present — the active integration branches (`simplify`, `sdlc`) and the default branch
 # (`main`) — plus the main-sync caveat, so the specific rot that stranded a run at
 # `ready_to_merge` cannot silently return. It asserts required members, not an exact list.
 source "$(dirname "$0")/../lib.sh"
@@ -21,7 +21,7 @@ RS="$ROOT/runtime/run_state.py"
 # ---- 0. Trigger policy: the allowlist covers the active integration branch (issue #196) --
 # The `branches:` allowlist is the one authoritative place for the base-branch policy. It
 # rots silently — a PR merged into a branch missing here fires nothing. These assertions pin
-# the two branches that MUST be present (the active integration branch `simplify`, and the
+# the branches that MUST be present (the active integration branches `simplify` and `sdlc`, and the
 # default branch `main` that pull_request_target reads and that integration ships into) plus
 # the main-sync caveat, so the specific rot #196 fixed cannot silently return. This is a
 # policy assertion, not "the list equals exactly X" — extra integration branches are fine.
