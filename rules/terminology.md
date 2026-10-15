@@ -51,8 +51,8 @@ With the observable stated, 8 of 8 rejected it. Two models, `p = 0.0014`.
 skipping in the artifact. Define the pair once here and use it consistently.
 
 **Do not rely on `must` to force a step.** Measured: against a competing constraint,
-`should` produced compliance in 0 of 10 runs. `must` produced it in only 4 of 10
-(`p = 0.087`). The other 6 stopped and escalated instead. Escalating on a real conflict is the
+`should` produced compliance in 0 of 10 runs. `must` produced it in only 4 of 10.
+The difference between the two results has `p = 0.087`. The other 6 stopped and escalated instead. Escalating on a real conflict is the
 behaviour this harness wants, so the finding is not a defect. It means that **a step that is
 genuinely mandatory belongs in a gate, not in a word**. With no competing constraint, both
 words scored 5 of 5. So the distinction carries no weight in the easy case either.
