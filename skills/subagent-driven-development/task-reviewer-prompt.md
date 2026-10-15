@@ -44,7 +44,7 @@ Task tool (task-reviewer):
     For each changed prose file, use the `## Scope qualifiers` section of REVIEW_PACKAGE_PATH:
     1. Read each line in that section.
     2. Resolve the line as "kept" or as a finding.
-    3. For "kept", cite the HEAD line that keeps the qualifier word named on that line.
+    3. For "kept", cite the HEAD line that keeps the condition, in the same words or in other words.
     4. List each citation in `search_surface`.
     A `scope-qualifiers: unavailable` line does not block by itself.
     When the section is unavailable, compare without it.
