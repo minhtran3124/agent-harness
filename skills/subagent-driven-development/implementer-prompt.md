@@ -41,6 +41,16 @@ Task tool (coding):
     When you are clear on the requirements, do these steps:
     1. Implement exactly what the task specifies.
     2. Write tests. Follow TDD if the task says to.
+       For a bug-fix run (`Input-type: bug fix` in SUMMARY), do these steps:
+       - Commit the failing test before the fix.
+       - Record a `red` row in `### Verify`. Its command is
+         `python3 scripts/run_at_commit.py <red sha> -- <test command>`.
+         Its Exit is the non-zero exit of that command.
+       - Record a `green` row in `### Verify`. Its command is the same test command. Its Exit is 0.
+       - If the bug has no testable surface, write `Red test exempt: <reason>` in `### Verify`.
+         Do not write the two rows.
+       Write the test command as a plain argument list. Do not use `&&`, pipes, globs or env
+       prefixes. If the test needs untracked setup, use an absolute interpreter path.
     3. Verify the implementation. First, run your linter and type-checker, when the stack
        defines them. Then run the task's `Verify` command. Do not substitute the whole
        suite. The whole suite runs at branch finish and in CI.
