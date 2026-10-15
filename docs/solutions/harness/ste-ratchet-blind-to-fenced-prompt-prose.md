@@ -24,10 +24,11 @@ In the ste100-prose-rollout (Phase 3, 43 files), three checks gave a result that
 the prose. Each one surfaced mid-run.
 
 - The dispatch prompts (`implementer-prompt.md`, `task-reviewer-prompt.md`,
-  `intent-reviewer-prompt.md`, `correctness-scorer-prompt.md`) keep 54 to 94 lines of prompt
-  prose inside a fenced `Task tool (...)` block. `ste-lint.py` skips fenced blocks. A file showed
-  "hard 1 → 0" when about 30 fenced lines had changed, and that count came from one semicolon
-  outside the fence.
+  `intent-reviewer-prompt.md`, `correctness-scorer-prompt.md`) keep 61 to 100 non-blank lines of
+  prompt prose inside a fenced `Task tool (...)` block (measured 2026-10-15 at the rollout HEAD).
+  `ste-lint.py` skips fenced blocks. `implementer-prompt.md` showed "hard 1 → 0" when about 30
+  fenced lines had changed. That count came from one long sentence outside the fence.
+  `task-reviewer-prompt.md` likewise went 1 → 0 from a single semicolon outside its fence.
 - The plan's Global Constraints said "never edit fenced code". Read as written, that rule forbade
   the main text of every dispatch prompt in scope.
 - The review package lints every `.md` under `skills/`, eval fixtures included. The baseline
