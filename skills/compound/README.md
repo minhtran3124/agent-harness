@@ -2,13 +2,13 @@
 
 Transforms session learnings into persistent, discoverable documentation under `docs/solutions/`.
 
-**Trigger:** `compound` — never runs automatically. Only invoke after sessions where a bug was solved, a non-obvious pattern was discovered, or an architectural decision was made with considered alternatives.
+**Trigger:** `compound` — never runs automatically. Invoke it only after a session that solved a bug, discovered a non-obvious pattern, or made an architectural decision with considered alternatives.
 
 ---
 
 ## Architecture
 
-The skill runs **four passes** from one orchestrator (`SKILL.md`). The passes run in the main session, which holds the transcript; the files under `subagents/` define each pass's output schema. Passes return text only — the orchestrator writes all files.
+The skill runs **four passes** from one orchestrator (`SKILL.md`). The passes run in the main session, which holds the transcript. The files under `subagents/` define each pass's output schema. Passes return text only. The orchestrator writes all files.
 
 ```
 compound (orchestrator — SKILL.md)
@@ -22,7 +22,7 @@ compound (orchestrator — SKILL.md)
 1. Context Analyzer, Solution Extractor, Decision Extractor
 2. Related Docs Finder with the Context Analyzer's `module` + `tags`
 
-Dispatch a subagent only for a `docs/solutions/` tree too large to screen from `INDEX.md`, and paste in its inputs — a fresh context cannot see the session.
+Dispatch a subagent only for a `docs/solutions/` tree too large to screen from `INDEX.md`. When you dispatch one, paste in its inputs, because a fresh context cannot see the session.
 
 ---
 
@@ -143,13 +143,13 @@ Promoted summaries of `severity = critical` findings. Appended to after every ru
 
 **Read this at the start of every planning session.** Items here met all three criteria for critical severity — they affect multiple features and would waste ≥30 min if unknown.
 
-One entry per emitted track (bug / knowledge / decision). Entries are never truncated — always append at end.
+One entry per emitted track (bug / knowledge / decision). Never truncate entries. Always append at the end.
 
 ### `INDEX.md`
 
 Full-rebuild index of all `docs/solutions/**/*.md` files. Rebuilt from scratch after every `compound` run.
 
-**Why full rebuild (not append-only):** prevents orphaned rows when files are renamed, moved, or deleted. The docs/solutions/ directory grows to tens of files, not thousands — full scan is negligible.
+**Why full rebuild (not append-only):** prevents orphaned rows when files are renamed, moved, or deleted. The docs/solutions/ directory grows to tens of files, not thousands, so the cost of a full scan is negligible.
 
 Excludes `INDEX.md` itself and `critical-patterns.md` from the table rows.
 
