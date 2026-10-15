@@ -7,33 +7,42 @@ allowed-tools: Read, Bash(git *), Bash(ls *), Bash(skills/using-git-worktrees/sc
 # Using Git Worktrees
 
 Announce that you are setting up an isolated workspace. Run
-`skills/using-git-worktrees/scripts/detect-isolation.sh` before creating anything.
+`skills/using-git-worktrees/scripts/detect-isolation.sh` before you create anything. Act on its
+result:
 
-- `linked-worktree`: report the path and branch; use it (a detached head needs a branch before
-  finish).
-- `submodule`: do not misclassify it as an isolated worktree; follow its own repository policy.
+- `linked-worktree`: report the path and branch. Use this worktree. A detached head needs a branch
+  before finish.
+- `submodule`: do not misclassify it as an isolated worktree. Follow its own repository policy.
 - `main-worktree`: create isolation as below.
 
 ## Create isolation
 
-Use the native worktree tool if the harness provides one; do not create untracked state the
-harness cannot manage. In Claude Code, call `EnterWorktree` with `name: "<type>/<kebab-slug>"` so
-the tool itself creates the worktree under `.claude/worktrees/`. Do not create a checkout by hand
-and enter it with `path`: a path outside `.claude/worktrees/` raises a "permission-root relocation"
-confirmation on every entry.
+Use the native worktree tool if the harness provides one. Do not create untracked state that the
+harness cannot manage. In Claude Code, call `EnterWorktree` with `name: "<type>/<kebab-slug>"`, so
+that the tool itself creates the worktree under `.claude/worktrees/`. Do not create a checkout by
+hand and enter it with `path`. A path outside `.claude/worktrees/` raises a "permission-root
+relocation" confirmation on every entry.
 
-If feature-intake already cut `<type>/<slug>` (it holds the intent commit), first switch the main
-checkout off it with `git -C <main checkout> switch <base>` (untracked spec files stay), then
-inside the new worktree run `git reset --keep <type>/<slug>` and `git branch -M <type>/<slug>`; the
-PR still targets `<base>`. Otherwise: the tool names the branch `worktree-<name>` (with `/`
-written as `+`), not `<type>/<slug>`. Rename it with `git branch -m <type>/<slug>`. Immediately
-after entering, before any edit, compare `git rev-parse HEAD` with `git rev-parse <base>` (the
-branch the PR will target); if they differ, run `git reset --keep <base>`, which stops instead of
-discarding local changes.
+If feature-intake already cut `<type>/<slug>` (it holds the intent commit), do these steps:
 
-Only when no native tool exists, choose an existing `.worktrees/` (preferred) or `worktrees/`
-location, or the location documented in `CLAUDE.md`; if none exists, ask before choosing a root.
-Ensure the chosen parent is ignored before running:
+1. Switch the main checkout off `<type>/<slug>` with `git -C <main checkout> switch <base>`.
+   Untracked spec files stay.
+2. Then, inside the new worktree, run `git reset --keep <type>/<slug>` and
+   `git branch -M <type>/<slug>`.
+3. In this case, the PR still targets `<base>`.
+
+Otherwise, do these steps:
+
+1. The tool names the branch `worktree-<name>` (with `/` written as `+`), not `<type>/<slug>`.
+   Rename it with `git branch -m <type>/<slug>`.
+2. Immediately after entering, before any edit, compare `git rev-parse HEAD` with
+   `git rev-parse <base>` (the branch the PR will target).
+3. If they differ, run `git reset --keep <base>`. This command stops instead of discarding local
+   changes.
+
+Only when no native tool exists, use this fallback. Choose an existing `.worktrees/` (preferred) or
+`worktrees/` location, or the location documented in `CLAUDE.md`. If none exists, ask before you
+choose a root. Ensure the chosen parent is ignored before running:
 
 ```bash
 git worktree add <parent>/<branch> -b <branch>
@@ -52,4 +61,4 @@ bash scripts/deploy-harness.sh --target "$(git rev-parse --show-toplevel)"
 
 Then detect project setup from repository manifests and run its clean baseline. Report an existing
 failure before implementation. `writing-plans` and `subagent-driven-development` require this
-skill; `finishing-a-development-branch` owns the final PR flow.
+skill. `finishing-a-development-branch` owns the final PR flow.
