@@ -33,14 +33,18 @@ Task tool (task-reviewer):
     does not cover as an Important spec finding, citing both. Ignore bookkeeping paths
     (`specs/**`, `docs/**`, and any `*.md`).
 
-    Spec verdict also covers meaning. Do this check for each changed `.md` file under `skills/`,
-    `rules/`, or `agents/`. Compare each removed line with the lines that replace it.
+    Spec verdict also covers meaning. For each changed `.md` file under `skills/`, `rules/`, or
+    `agents/`, compare each removed line with the lines that replace it.
     A dropped condition, exception, hedge, or scope qualifier is an Important spec finding.
-    Read the `## Scope qualifiers` section of REVIEW_PACKAGE_PATH.
-    Resolve each line in that section as "kept" or as a finding.
-    For "kept", cite the HEAD line that keeps the word. List each citation in `search_surface`.
+
+    For each changed prose file, use the `## Scope qualifiers` section of REVIEW_PACKAGE_PATH:
+    1. Read each line in that section.
+    2. Resolve the line as "kept" or as a finding.
+    3. For "kept", cite the HEAD line that keeps the qualifier word named on that line.
+    4. List each citation in `search_surface`.
     A `scope-qualifiers: unavailable` line does not block by itself.
-    When the section is unavailable, do the comparison without it.
+    When the section is unavailable, compare without it.
+
     In `meaning:`, write one entry for each changed prose file.
     The entry is `fail` when the file has a meaning finding. Otherwise, the entry is `pass`.
     When no prose file changed, write `meaning: []`.
