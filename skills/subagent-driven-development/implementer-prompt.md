@@ -28,6 +28,7 @@ Task tool (coding):
     [Scene-setting: where this fits, dependencies, architectural context]
 
     Intake lane: [LANE]
+    Input type: [INPUT_TYPE]
 
     ## Before You Begin
 
@@ -41,11 +42,12 @@ Task tool (coding):
     When you are clear on the requirements, do these steps:
     1. Implement exactly what the task specifies.
     2. Write tests. Follow TDD if the task says to.
-       For a bug-fix run (`Input-type: bug fix` in SUMMARY), do these steps:
+       When the input type in Context is `bug fix`, do these steps:
        - Commit the failing test before the fix.
        - Record a `red` row in `### Verify`. Its command is
          `python3 scripts/run_at_commit.py <red sha> -- <test command>`.
-         Its Exit is the non-zero exit of that command.
+         Its Exit is the exit of that command, from 1 to 123. An exit of 124 or more is not a
+         failing test. Fix the command or the setup.
        - Record a `green` row in `### Verify`. Its command is the same test command. Its Exit is 0.
        - If the bug has no testable surface, write `Red test exempt: <reason>` in `### Verify`.
          Do not write the two rows.
