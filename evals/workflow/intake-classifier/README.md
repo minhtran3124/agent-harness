@@ -34,6 +34,8 @@ Each fixture is `fixtures/<name>/` with:
   | `expected_flags_include` | flags that MUST appear (comma-sep), or `none` |
   | `expected_escalate` | `yes` / `no` |
   | `must_not_downgrade` | `true` for hard-gate fixtures |
+- **`eval.json`** — the pinned `from` commit and the `may_change` globs the runner reads (see
+  `### eval.json` below). The runner refuses a fixture without it.
 
 ## Running (hardened runner)
 
@@ -44,7 +46,8 @@ Run it from the repo root of the branch under test:
 python3 scripts/run_intake_eval.py --model <model> --output-dir evals/workflow/intake-classifier/results/<run>
 ```
 
-Options: `--only <fixture>` runs one fixture; `--strict` passes `--strict` to the scorer;
+Options: `--fixtures <dir>` reads another fixture set (default
+`evals/workflow/intake-classifier/fixtures`); `--only <fixture>` runs one fixture; `--strict` passes `--strict` to the scorer;
 `--timeout <s>` is the per-fixture limit (default 600); `--claude <path>` and
 `--deploy-script <path>` replace the client and `scripts/deploy-harness.sh`. The runner refuses
 an existing `--output-dir`. Check the fixture metadata without running anything:
@@ -74,9 +77,10 @@ Then record the scorecard in `results/<date>-<label>.md` (from `results/template
 
 ### Outputs (in `--output-dir`)
 
-- **`run.json`** — `schema_version`, `model`, `client` (the `claude --version` output), `head` (the
-  commit under test), and per fixture: `from`, `may_change`, `rc` (exit code or `"timeout"`),
-  `elapsed` (seconds), `stray` (paths and `ref:` entries outside `may_change`) and `status`
+- **`run.json`** — `schema_version`, `model`, `client` (the `claude --version` output, or `unknown`),
+  `head` (the commit under test), and per fixture: `from`, `may_change`, `rc` (exit code or
+  `"timeout"`), `elapsed` (seconds), `stray` (paths outside `may_change`, plus a `ref:` entry for
+  every ref created, deleted or moved — refs cannot be allowed) and `status`
   (`ok`, `stray`, `timeout` or `client-error`).
 - **`<fixture>.md`** — the agent's reply, for an `ok` fixture.
 - **`<fixture>.raw.txt`** — the raw client output, for any other status.
