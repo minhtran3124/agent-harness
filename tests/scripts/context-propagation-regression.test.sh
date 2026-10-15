@@ -221,4 +221,43 @@ t "mutation: deleting the SDD STE lint instruction is detected"
 ms=$(ste_mutant "$SDD" 'STE lint')
 if ! sdd_ste_ok "$ms"; then pass; else fail "removing the controller instruction was NOT detected"; fi
 
+# The tiny lane has no implementer prompt, so feature-intake's tiny route is the only place
+# that delivers the asd-ste100 instruction to a tiny-lane agent.
+INTAKE="skills/feature-intake/SKILL.md"
+intake_tiny_ste_ok() {
+  sed -n '/^- tiny:/,/^- normal:/p' "$1/$INTAKE" \
+    | grep -qiF 'apply `skills/asd-ste100/SKILL.md` to agent prose'
+}
+t "feature-intake tiny route applies asd-ste100 to edited agent prose (SC-4)"
+if intake_tiny_ste_ok "$ROOT"; then pass; else fail "no asd-ste100 instruction in the $INTAKE tiny route"; fi
+t "mutation: deleting the feature-intake tiny-lane asd-ste100 line is detected"
+mt=$(ste_mutant "$INTAKE" 'asd-ste100')
+if ! intake_tiny_ste_ok "$mt"; then pass; else fail "removing the tiny-lane line was NOT detected"; fi
+
+# feature-intake points to rules/research-depth.md instead of repeating the lane-to-depth
+# mapping, so the rule file must hold each rule the removed section carried.
+DEPTH_RULE="rules/research-depth.md"
+DEPTH_ANCHORS=(
+  'map `high-risk` to **Deep**'
+  '`normal` to **Standard**'
+  'permit **Quick** only for a `tiny` lane that satisfies every Quick condition'
+  'move up on evidence but never down'
+)
+depth_rule_ok() {
+  local text a; text=$(tr -s '[:space:]' ' ' < "$1/$DEPTH_RULE")
+  for a in "${DEPTH_ANCHORS[@]}"; do
+    printf '%s' "$text" | grep -qF "$a" || return 1
+  done
+}
+t "rules/research-depth.md holds the four lane-to-depth rules (SC-4)"
+if depth_rule_ok "$ROOT"; then pass; else fail "a lane-to-depth rule is missing from $DEPTH_RULE"; fi
+for a in "${DEPTH_ANCHORS[@]}"; do
+  t "mutation: deleting '$a' from $DEPTH_RULE is detected"
+  md=$(mktemp -d); _CLEANUP_DIRS+=("$md"); mkdir -p "$md/rules"
+  tr -s '[:space:]' ' ' < "$ROOT/$DEPTH_RULE" \
+    | awk -v pat="$a" '{ i = index($0, pat); if (i) $0 = substr($0, 1, i-1) substr($0, i+length(pat)); print }' \
+    > "$md/$DEPTH_RULE"
+  if ! depth_rule_ok "$md"; then pass; else fail "deleting '$a' was NOT detected"; fi
+done
+
 finish
