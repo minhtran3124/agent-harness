@@ -40,6 +40,13 @@ else
   fail "simplify is not in the branches: allowlist — every PR merged into it silently skips shipped (the exact #196 gap). Add the active integration branch here and sync to main."
 fi
 
+t "the allowlist includes the active integration branch (sdlc)"
+if echo "$BRANCHES_LINE" | grep -qE '\bsdlc\b'; then
+  pass
+else
+  fail "sdlc is not in the branches: allowlist — every PR merged into it silently skips shipped (the #196 gap, seen again for #292/#293). Add it here and sync to main."
+fi
+
 t "the allowlist includes the default branch (main)"
 if echo "$BRANCHES_LINE" | grep -qE '\bmain\b'; then
   pass
