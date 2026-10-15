@@ -17,7 +17,7 @@ DISABLED_RULES = ("synonym-rotation",)
 
 
 def git(*args: str) -> str:
-    return subprocess.check_output(["git", *args], text=True)
+    return subprocess.check_output(["git", *args], text=True, errors="surrogateescape")
 
 
 def lint_hard_count(text: str) -> int:
@@ -35,7 +35,7 @@ def lint_hard_count(text: str) -> int:
 def prose_paths(base: str, head: str) -> list[str]:
     # -z and quotepath=false keep a non-ASCII path unquoted, so the prefix filter sees it.
     # surrogateescape: a file name that is not UTF-8 cannot crash the package.
-    names = subprocess.check_output(["git", "-c", "core.quotepath=false", "diff", "--name-only", "-z", "--no-renames", "--diff-filter=d", f"{base}..{head}"],
+    names = subprocess.check_output(["git", "-c", "core.quotepath=false", "-c", "diff.relative=false", "diff", "--name-only", "-z", "--no-renames", "--diff-filter=d", f"{base}..{head}"],
                                     text=True, errors="surrogateescape").split("\0")
     return [name for name in names if name.endswith(".md") and name.startswith(PROSE_ROOTS)]
 
@@ -90,7 +90,7 @@ def main() -> int:
     payload = f"# Review package\n\nBASE_SHA: {base}\nHEAD_SHA: {head}\n\n## Commits\n\n{git('log', '--format=%H %s', f'{base}..{head}')}\n## Diff stat\n\n{git('diff', '--stat', f'{base}..{head}')}\n## Diff\n\n```diff\n{git('diff', '-U10', f'{base}..{head}')}\n```\n"
     payload += ste_section(base, head)
     payload += scope_section(base, head)
-    args.output.write_text(payload, encoding="utf-8")
+    args.output.write_text(payload, encoding="utf-8", errors="backslashreplace")
     args.output.chmod(0o600)
     print(args.output)
     return 0

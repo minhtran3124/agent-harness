@@ -206,6 +206,16 @@ def test_subdirectory_cwd_lists_same_drops(tmp_path):
     assert run(repo, base, head, cwd=repo / "skills" / "x") == want
 
 
+def test_literal_pathspecs_env_still_lists_drop(tmp_path):
+    repo, base, head = make_repo(tmp_path, {"skills/x/SKILL.md": DROP_BEFORE},
+                                 {"skills/x/SKILL.md": DROP_AFTER})
+    env = {**os.environ, "GIT_LITERAL_PATHSPECS": "1"}
+    proc = subprocess.run([sys.executable, str(SCRIPT), "--base", base, "--head", head],
+                          cwd=repo / "skills", capture_output=True, text=True, env=env)
+    assert proc.returncode == 0, proc.stderr
+    assert proc.stdout == '- skills/x/SKILL.md:2: dropped "if": Stop if the plan is wrong.\n'
+
+
 def test_pilot_step1_split_is_not_listed_known_limit(tmp_path):
     # Known limit: the split moved sentences out of the condition's scope, but every
     # condition word survives in an added line of the same hunk, so nothing is listed.

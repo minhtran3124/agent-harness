@@ -31,17 +31,17 @@ PATTERNS = {word: re.compile(rf"\b{re.escape(word)}\b", re.IGNORECASE) for word 
 HUNK = re.compile(r"^@@ -(\d+)")
 
 
-# Fixed settings, so these user git config keys cannot change the output: color, quoted paths,
-# external diff, textconv, hunk merging, relative paths and prefixes.
-GIT_CONFIG = ("-c", "core.quotepath=false", "-c", "color.ui=never")
-DIFF_FLAGS = ("--no-color", "--no-ext-diff", "--no-textconv", "--inter-hunk-context=0", "--no-relative",
+# Pinned so the user's git config cannot change them: quoted paths, color, relative paths,
+# external diff, textconv, hunk merging and prefixes. Every git call runs at the top level.
+GIT_CONFIG = ("-c", "core.quotepath=false", "-c", "color.ui=never", "-c", "diff.relative=false")
+DIFF_FLAGS = ("--no-color", "--no-ext-diff", "--no-textconv", "--inter-hunk-context=0",
               "--src-prefix=a/", "--dst-prefix=b/")
 
 
-def git(*args: str) -> str:
+def git(*args: str, cwd: str | None = None) -> str:
     # surrogateescape: a file name that is not UTF-8 cannot stop the other files from being checked.
     return subprocess.run(["git", *GIT_CONFIG, *args], capture_output=True, text=True,
-                          errors="surrogateescape", check=True).stdout
+                          errors="surrogateescape", check=True, cwd=cwd).stdout
 
 
 def hunks(diff: str):
@@ -68,14 +68,15 @@ def hunks(diff: str):
 
 
 def report(base: str, head: str) -> list[str]:
-    names = git("diff", "--name-only", "-z", "--no-relative", "--no-renames", "--diff-filter=d",
-                f"{base}..{head}").split("\0")
+    # Root-relative names and pathspecs then agree from any working directory.
+    top = git("rev-parse", "--show-toplevel").rstrip("\n")
+    names = git("diff", "--name-only", "-z", "--no-renames", "--diff-filter=d",
+                f"{base}..{head}", cwd=top).split("\0")
     paths = [name for name in names if name.endswith(".md") and name.startswith(PROSE_ROOTS)]
     if not paths:
         return []
-    # :(top) makes each root-relative path match from any working directory.
     diff = git("diff", *DIFF_FLAGS, "-U0", "--no-renames", "--diff-filter=d", f"{base}..{head}", "--",
-               *(f":(top){path}" for path in paths))
+               *paths, cwd=top)
     lines = []
     for path, start, removed, added in hunks(diff):
         for word, pattern in PATTERNS.items():

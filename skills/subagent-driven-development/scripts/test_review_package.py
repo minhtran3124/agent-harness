@@ -183,6 +183,17 @@ def test_non_utf8_name_does_not_crash_package(tmp_path, monkeypatch):
     assert f"- skills/x/SKILL.md: base: {hard(GOOD)}, head: {hard(BAD)}" in section
 
 
+def test_non_utf8_prose_name_is_escaped_in_package(tmp_path, monkeypatch):
+    repo, base, _ = make_repo(tmp_path, {"skills/x/SKILL.md": GOOD}, {"README.txt": "x\n"})
+    try:
+        (repo / os.fsdecode(b"skills/x/bad\xff.md")).write_text(BAD, encoding="utf-8")
+    except (OSError, UnicodeError):
+        pytest.skip("filesystem rejects a non-UTF-8 file name")
+    head = commit(repo, {}, "head2")
+    section = run_package(repo, base, head, monkeypatch, tmp_path).split("## STE lint\n", 1)[1]
+    assert f"- skills/x/bad\\udcff.md: base: new, head: {hard(BAD)}" in section
+
+
 def test_no_changed_prose_means_no_scope_section(tmp_path, monkeypatch):
     repo, base, head = make_repo(
         tmp_path, {"skills/x/run.py": "a = 1\n"}, {"skills/x/run.py": "a = 2\n", "docs/d.md": BAD}
