@@ -7,4 +7,4 @@ The harness core ships **no** architecture assumptions — `techstacks/` is your
 `techstacks/README.md`). A repo with no application stack (docs-only, tooling) can leave it empty.
 
 > For this meta-repo specifically: harness-working agents use `skills/README.md` (skill inventory
-> + workflow) and `rules/behavior.md` (behavioral SoT); there is no application stack here.
+> + workflow) and `rules/behavior.md` (behavioral SoT). There is no application stack here.

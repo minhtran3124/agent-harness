@@ -6,10 +6,11 @@ allowed-tools: Read, Write, Grep, Glob, Agent, Task, Bash(python3 scripts/check_
 
 # Writing Plans
 
-Create `specs/<slug>/PLAN.md` for work that needs a plan. Announce this skill, then **Read `rules/plan-format.md`** and **Read `rules/terminology.md`** before authoring: both are path-scoped and a
-new plan does not load them automatically. From `terminology.md`, §3 is the load-bearing one —
-every `Verify:`, `Done:`, and Success Criterion must be decidable by running something, never by
-judging that output "is correct" or "looks right".
+Create `specs/<slug>/PLAN.md` for work that needs a plan. Announce this skill. Then, before
+authoring, **Read `rules/plan-format.md`** and **Read `rules/terminology.md`**. Both rules are
+path-scoped, and a new plan does not load them automatically. From `terminology.md`, §3 is the
+load-bearing section. Every `Verify:`, `Done:`, and Success Criterion must be decidable by running
+something. It must never depend on a judgment that output "is correct" or "looks right".
 
 ## Required inputs
 
@@ -19,7 +20,7 @@ required brief is missing. If the scope contains independent subsystems, propose
 ## Authoring flow
 
 1. Map created/changed files and their responsibilities. Follow existing patterns and give each
-   unit a clear boundary; do not introduce unrelated refactors.
+   unit a clear boundary. Do not introduce unrelated refactors.
 2. Write `## 3. Success Criteria` first. Each observable behavior needs a re-runnable, pipe-free,
    sub-60-second check and expected exit code, using the canonical schema from `plan-format.md`.
 3. For every new plan, add exact `## Global Constraints`. Decompose tasks in canonical `### Task`
@@ -29,18 +30,18 @@ required brief is missing. If the scope contains independent subsystems, propose
 4. Ensure same-wave tasks have no file overlap and no unresolved dependency. Use waves only for
    genuinely independent work.
 5. When `design.md` has a `## What must be true` section, first write `### Assumption coverage` in
-   `## 5. Risks`, after the risk bullets with a blank line (start Risks with `- none` when there
-   are no risks): the plan renderer cards only the first bullet list. Give each design `A<n>` one
-   line: `- A<n> → SC-n`, `- A<n> → Task x.y`, `- A<n> → accepted risk: <reason>`, or
-   `- A<n> → retired by DC<n>` when the design retired it; write
+   `## 5. Risks`, after the risk bullets with a blank line. In that case, start Risks with `- none`
+   when there are no risks. Reason: the plan renderer cards only the first bullet list. Give each design
+   `A<n>` one line: `- A<n> → SC-n`, `- A<n> → Task x.y`, `- A<n> → accepted risk: <reason>`, or
+   `- A<n> → retired by DC<n>` when the design retired it. Write
    `- none (design has no assumptions)` when that section is `- none — <reason>`. Check that every
-   named `SC-n` and task exists in the plan. Then run `python3 scripts/check_plan_contract.py specs/<slug>/PLAN.md`, read `references/review-loop.md`, review the plan, and save it. Then run
-   `python3 skills/visual-planner/render_plan.py specs/<slug>/PLAN.md --summarize`, which
-   refreshes the At-a-glance block and writes the plain `PLAN.html`; use `visual-planner` only when
-   the user asks for its review-derived overlay.
+   named `SC-n` and task exists in the plan. Then run `python3 scripts/check_plan_contract.py specs/<slug>/PLAN.md`. Read `references/review-loop.md`, review the plan, and save it. Then run
+   `python3 skills/visual-planner/render_plan.py specs/<slug>/PLAN.md --summarize`. This command
+   refreshes the At-a-glance block and writes the plain `PLAN.html`. Use `visual-planner` only
+   when the user asks for its review-derived overlay.
 
 ## Handoff
 
-State the saved plan path. Before any code change, use `using-git-worktrees` unless already
-isolated, then invoke `subagent-driven-development`. Ask which execution mode only when the user
-has not stated one; both modes use the same gates.
+State the saved plan path. Before any code change, use `using-git-worktrees` unless the work is
+already isolated. Then invoke `subagent-driven-development`. Ask which execution mode only when
+the user has not stated one. Both modes use the same gates.

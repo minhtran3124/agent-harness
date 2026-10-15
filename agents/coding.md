@@ -22,8 +22,8 @@ convention this repo has not stated.
 ## Scope
 
 Implement the task as specified and nothing else. When the task requires a change the spec did not
-authorise, classify it against `rules/auto-correct-scope.md` (Rules 1–3 auto-apply and are logged;
-Rule 4 stops and escalates) rather than deciding case by case.
+authorise, classify that change against `rules/auto-correct-scope.md` and do not decide case by case.
+Under that rule, Rules 1–3 auto-apply and are logged. Rule 4 stops and escalates.
 
 ## Handoff
 

@@ -8,18 +8,23 @@ findings do not count. It compares each count with `scripts/ste-baseline.json` a
   WARN <file>: hard <n> > baseline <b>     the file got worse (a missing entry has baseline 0)
   WARN <file>: in baseline, file is gone   remove the entry with --update
   NOTE <file>: hard <n> < baseline <b>     the file got better, lower the entry with --update
-  ste-baseline: skipped (<reason>)         the linter or the baseline file did not work
+  ste-baseline: skipped (<reason>)         the linter, git, or the baseline file did not work
 
 Verifies:        each prose file's hard count is not above its baseline entry, and each
-                 baseline entry names a file that exists. Tier: traceability.
+                 baseline entry names a file that exists. With --against, the baseline entry
+                 is the one in the baseline file at that git ref. Tier: traceability.
 Does not verify: that the prose is good STE. The linter checks structure only. It does not
-                 check advisory findings, meaning, or files outside the four globs.
+                 check advisory findings, meaning, or files outside the four globs. With
+                 --against, it does not verify that the ref is the correct start point.
 
 The default run always exits 0. It never blocks a build or a commit. `--strict` exits 1 when a
-WARN line prints. Only SC-6, task Done checks, and tests use `--strict`. `--update` rewrites
-the baseline file from the current tree. `--root` sets the tree to lint. The default is the
-parent of this script's directory, so the current directory has no effect.
-Run: python3 scripts/check_ste_baseline.py [--strict | --update] [--root DIR]
+WARN line prints, and exits 1 when the run is skipped. Only SC-6, task Done checks, and tests
+use `--strict`. `--against <git-ref>` reads the baseline file at that ref with
+`git -C <root> show <ref>:scripts/ste-baseline.json`, not from the tree. Use it with or
+without `--strict`. It cannot be used with `--update` (exit 2). `--update` rewrites the
+baseline file from the current tree. `--root` sets the tree to lint. The default is the parent
+of this script's directory, so the current directory has no effect.
+Run: python3 scripts/check_ste_baseline.py [--strict | --update] [--against REF] [--root DIR]
 """
 
 from __future__ import annotations
@@ -78,10 +83,28 @@ def hard_count(root: Path, rel: str) -> int:
     return count
 
 
-def load_baseline(path: Path) -> dict[str, int]:
+def read_baseline_text(root: Path, ref: str | None) -> str:
+    if ref is None:
+        try:
+            return (root / BASELINE).read_text(encoding="utf-8")
+        # ValueError includes UnicodeDecodeError (a file that is not UTF-8).
+        except (OSError, ValueError) as exc:
+            raise Skip(f"cannot read {BASELINE}: {exc}") from exc
+    cmd = ["git", "-C", str(root), "show", f"{ref}:{BASELINE}"]
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError) as exc:
+        result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", timeout=60)
+    except (OSError, ValueError, subprocess.TimeoutExpired) as exc:
+        raise Skip(f"git show did not run for {ref}: {exc}") from exc
+    if result.returncode != 0:
+        raise Skip(f"cannot read {BASELINE} at {ref}: {result.stderr.strip()[:200]}")
+    return result.stdout
+
+
+def load_baseline(root: Path, ref: str | None = None) -> dict[str, int]:
+    text = read_baseline_text(root, ref)
+    try:
+        data = json.loads(text)
+    except ValueError as exc:
         raise Skip(f"cannot read {BASELINE}: {exc}") from exc
     if not isinstance(data, dict):
         raise Skip(f"{BASELINE} is not a JSON object")
@@ -111,7 +134,14 @@ def main(argv: list[str]) -> int:
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--strict", action="store_true", help="exit 1 when a WARN line prints")
     mode.add_argument("--update", action="store_true", help="rewrite the baseline file")
+    parser.add_argument("--against", metavar="REF",
+                        help="compare with the baseline file at this git ref")
     args = parser.parse_args(argv)
+    if args.update and args.against is not None:
+        parser.error("--against cannot be used with --update")
+    # An empty ref makes `git show :path` read the staged copy, which is not a pinned ref.
+    if args.against is not None and not args.against.strip():
+        parser.error("--against needs a git ref, not an empty value")
     root = args.root.resolve()
     try:
         counts = {rel: hard_count(root, rel) for rel in prose_files(root)}
@@ -120,10 +150,10 @@ def main(argv: list[str]) -> int:
                                          encoding="utf-8")
             print(f"ste-baseline: wrote {len(counts)} entries to {BASELINE}")
             return 0
-        lines = compare(counts, load_baseline(root / BASELINE))
+        lines = compare(counts, load_baseline(root, args.against))
     except Skip as exc:
         print(f"ste-baseline: skipped ({exc})")
-        return 0
+        return 1 if args.strict else 0
     for line in lines:
         print(line)
     warnings = sum(line.startswith("WARN ") for line in lines)

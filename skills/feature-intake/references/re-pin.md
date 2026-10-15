@@ -11,14 +11,17 @@ Use this when the slug already has a SUMMARY and either it has an `Intent-source
 3. If the new pin equals the SHA already on the `Intent-source:` line, change nothing, run
    `python3 scripts/verify_summary.py --lane <slug>`, and stop.
 4. Re-classify (Steps 2–4 of `../SKILL.md`) from intent.md plus the original chat request in
-   `### Intent`. If the lane differs from SUMMARY's `Lane:`, confidence is `low`, or a manifest hard
-   gate is now in scope that SUMMARY's `Reason:`/`Flags:` do not name, stop and show
-   the user the old and new `Lane:`, `Confidence:`, `Reason:`, `Flags:`, `Route:`, and
-   `Escalate:` lines. The user updates those lines in SUMMARY (or edits the intent) and runs
-   intake again.
-5. Otherwise replace the `Intent-source:` line, or add it atop `### Intent` above the chat
-   request. Add one dated `### Intake notes` line with the old → new SHA (old is `none` when the
-   line was added) and any confidence or flags change; if `### Intake notes` holds only `- none`,
-   replace that line.
-6. Change nothing else in SUMMARY: do not rewrite it from the template or re-initialize run
+   `### Intent`. Then check these conditions:
+   - The lane differs from SUMMARY's `Lane:`.
+   - Confidence is `low`.
+   - A manifest hard gate is now in scope that SUMMARY's `Reason:`/`Flags:` do not name.
+
+   If any of them holds, stop and show the user the old and new `Lane:`, `Confidence:`,
+   `Reason:`, `Flags:`, `Route:`, and `Escalate:` lines. The user updates those lines in SUMMARY
+   (or edits the intent) and runs intake again.
+5. Otherwise, replace the `Intent-source:` line, or add it atop `### Intent` above the chat
+   request. Add one dated `### Intake notes` line with the old → new SHA and any confidence or
+   flags change. The old SHA is `none` when you add the `Intent-source:` line instead
+   of replacing it. If `### Intake notes` holds only `- none`, replace that line.
+6. Change nothing else in SUMMARY. Do not rewrite it from the template or re-initialize run
    state. Run `python3 scripts/verify_summary.py --lane <slug>`.

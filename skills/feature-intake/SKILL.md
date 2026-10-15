@@ -60,6 +60,7 @@ classify risk. Ask only to resolve a material ambiguity or narrow a hard-gated s
 
 - tiny: branch, patch directly, keep quick-check proof. Done only when it
   passes. Else state what is missing.
+  Apply `skills/asd-ste100/SKILL.md` to agent prose (`skills/`, `rules/`, `agents/`) that you edit.
 - normal: `using-git-worktrees` → `subagent-driven-development`.
 - high-risk: `brainstorming` → `xia2` → `writing-plans` → `using-git-worktrees` →
   `subagent-driven-development`. Use `compound` for durable decisions.
@@ -70,11 +71,7 @@ All lanes require branch isolation. Artifacts scale by signal (`FULL_ARTIFACTS=1
 - research for unfamiliar code or high-risk
 - a design for a real fork or high-risk
 
-## Research-depth handoff
-
-With an intake record, xia2 starts `high-risk` at **Deep**, `normal` at **Standard**, `tiny` at
-**Quick** only if every Quick condition in `rules/research-depth.md` passes. It never re-scores
-risk, only raises depth on evidence.
+For the lane-to-depth mapping that xia2 uses, see `rules/research-depth.md`.
 
 ## Arguments
 

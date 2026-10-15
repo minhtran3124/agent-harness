@@ -14,57 +14,59 @@ python3 scripts/resolve_finish_context.py
 
 The helper reports branch, base, merge base, plan directory, lane, ambiguity, changed files,
 receipt path, and whether a context-delivery audit is required. If it reports ambiguity, ask the
-user; if no plan exists, use the tiny/no-plan path instead of guessing.
+user. If no plan exists, use the tiny/no-plan path instead of guessing.
 
 ## Verify and gate
 
 1. Run the repository’s targeted suite, or the full suite if no safe subset is known. The exact
-   command comes from `agents/PROJECT.md` → *Test execution*; never assume a stack or a script
-   name. Fix failures and retry at most twice; never push a failing change.
+   command comes from `agents/PROJECT.md` → *Test execution*. Never assume a stack or a script
+   name. Fix failures and retry at most twice. Never push a failing change.
 2. For non-tiny work with a resolved plan, pin reviews at the resolved base:
 
    ```bash
    python3 scripts/check_review_receipt.py <plan_dir> --require correctness,intent --require-audit-if <base>
    ```
 
-   A missing, stale, failing, or blocking receipt stops the flow. Re-run the affected review; never
+   A missing, stale, failing, or blocking receipt stops the flow. Re-run the affected review. Never
    edit the receipt to pass. Re-run this gate immediately before push. Tiny/no-plan work skips it.
-3. Run `python3 scripts/check_open_questions.py --slug <slug>`; on findings, tell the user and add an
+3. Run `python3 scripts/check_open_questions.py --slug <slug>`. On findings, tell the user and add an
    `Open questions closing here` list to the PR body (warn mode by default: continue).
-   Run `python3 scripts/verify_summary.py --sc-history <slug> --base <base>` with the resolved base; relay any finding to the user and the PR body and continue, but an
-   exit 1 under `REQUIRE_SC_STABLE=1` stops the flow. It reads committed state only, so commit
-   `PLAN.md` and `### Deviations` edits first; report any exit other than 0 or 1 to the user.
-   Mark the resolved plan `status: shipped`, append a dated status-log entry, run
+   Run `python3 scripts/verify_summary.py --sc-history <slug> --base <base>` with the resolved base.
+   Relay any finding to the user and the PR body, and continue. But an exit 1 under
+   `REQUIRE_SC_STABLE=1` stops the flow. The SC history check reads committed state only, so
+   commit `PLAN.md` and `### Deviations` edits first. Report any exit other than 0 or 1 from it to
+   the user.
+   Mark the resolved plan `status: shipped` and append a dated status-log entry. Run
    `python3 skills/visual-planner/render_plan.py specs/<slug>/PLAN.md --summarize` so the tracked
-   At-a-glance block matches the shipped Status Log, then stage the spec record **by name** and
+   At-a-glance block matches the shipped Status Log. Then stage the spec record **by name** and
    commit it:
 
    ```bash
    git add specs/<slug>/PLAN.md specs/<slug>/SUMMARY.md specs/<slug>/RUN.json specs/<slug>/events.jsonl
    ```
 
-   (omit a path only if the file does not exist). `RUN.json` and `events.jsonl` are tracked
-   artifacts — `.gitignore` excludes only the `.lock` — and a fresh `RUN.json` stays untracked
-   unless named, which the commit gate (Check 1.7) blocks. The helper-selected plan—not a branch-name guess—is
+   Omit a path only if the file does not exist. `RUN.json` and `events.jsonl` are tracked
+   artifacts. `.gitignore` excludes only the `.lock`. A fresh `RUN.json` stays untracked
+   unless named, and the commit gate (Check 1.7) blocks that. The helper-selected plan—not a branch-name guess—is
    authoritative. Do not manually change version/changelog/trust ledger when post-merge
    automation exists.
 
 ## Push and PR
 
-Push without force. Create or update one PR against the resolved base, using a concise body with
-behavioral summary, tasks, and only a useful flow diagram. After creation, best-effort transition
-the run to `ready_to_merge` — run `python3 runtime/run_state.py transition --slug <slug> --to ready_to_merge --event pr.opened || true` (non-fatal). This is the
-hop the post-merge `shipped` transition depends on: `shipped` is legal only from `ready_to_merge`,
+Push without force. Create or update one PR against the resolved base. Use a concise body with
+behavioral summary, tasks, and only a useful flow diagram. After creation, transition the run to
+`ready_to_merge` as a best effort. Run `python3 runtime/run_state.py transition --slug <slug> --to ready_to_merge --event pr.opened || true` (non-fatal). The
+post-merge `shipped` transition depends on this hop. `shipped` is legal only from `ready_to_merge`,
 so a run left at `verifying` never terminalizes. The transition rewrites `RUN.json` and appends to
-`events.jsonl` **after** the last commit, so stage exactly those two paths, commit
-(`chore(specs): record PR #<n> for <slug>`), and push once more — the open PR picks the commit up.
+`events.jsonl` **after** the last commit. So stage exactly those two paths, commit them
+(`chore(specs): record PR #<n> for <slug>`), and push once more. The open PR gets the new commit.
 Without this commit, git keeps the run at its last committed pre-`ready_to_merge` state and it never terminalizes. Return the URL and stop. A human reviews and merges.
 
 ## Safety boundary
 
 Never merge, force-push, `git add -A`, `git clean`, discard work, or amend a commit. Stage named
-files only. An external reviewer is recommended for workflow-engine changes but is not a local push
-gate; the receipt and deterministic checks remain mandatory.
+files only. An external reviewer is recommended for workflow-engine changes, but it is not a local
+push gate. The receipt and deterministic checks remain mandatory.
 
 ## References
 

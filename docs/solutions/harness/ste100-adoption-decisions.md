@@ -104,6 +104,10 @@ You change how `run-tests.sh` or CI uses the STE linter.
 `--strict` exits 0 when the run is skipped (the linter or baseline is unusable). The plan required
 this, and correctness review recorded it as advisory (score 50).
 
+Update 2026-10-15 (`specs/ste100-prose-rollout/` design D7): `--strict` now exits 1 on a skipped
+run, so a skip is never read as a pass. The default run still exits 0. `--against <git-ref>`
+compares each file with its baseline entry at that ref.
+
 ## Related
 
 - docs/solutions/harness/ste-rewrite-drops-scope-qualifiers.md

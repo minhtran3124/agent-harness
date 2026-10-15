@@ -5,10 +5,10 @@ paths:
 
 # Wave Parallelism Rule
 
-Path-scoped (not auto-loaded): injected when a `specs/**/PLAN.md` file is read; wave
+Path-scoped (not auto-loaded): injected when a `specs/**/PLAN.md` file is read. Wave
 execution also loads it via the explicit Read step in `subagent-driven-development`.
 
-Tasks in `specs/<slug>/PLAN.md` group into waves. Same-wave tasks run in parallel; wave N+1 waits for wave N.
+Tasks in `specs/<slug>/PLAN.md` group into waves. Same-wave tasks run in parallel. Wave N+1 waits for wave N.
 
 Related: `plan-format.md`, `orchestration.md`.
 
@@ -17,7 +17,7 @@ Related: `plan-format.md`, `orchestration.md`.
 1. **Zero file overlap** in same-wave tasks. Enforced at plan-write time per `plan-format.md` Guardrail 1.
 2. **Synchronization at wave boundary** — all wave-N tasks must be green (`Verify` exit 0) before wave N+1 starts.
 3. **Fresh context per task** — each task in a wave spawns its own subagent with full token budget.
-4. **Single parallel spawn** — orchestrator sends all wave-N subagent calls in ONE assistant message (parallel tool calls), at most 20 per message; a wider wave goes out in batches. Sequential spawning defeats the purpose.
+4. **Single parallel spawn** — orchestrator sends all wave-N subagent calls in ONE assistant message (parallel tool calls). Each message holds at most 20 calls. Orchestrator sends a wider wave in batches. Sequential spawning defeats the purpose.
 5. **Collection before advance** — orchestrator aggregates summaries, updates PLAN task status, commits metadata, THEN starts wave N+1.
 
 ## Example (stack-neutral)
@@ -33,16 +33,16 @@ Related: `plan-format.md`, `orchestration.md`.
 | 5 | 5.1 integration e2e | single |
 
 Same-wave files are disjoint:
-- Wave 1: 1.1 touches `models/` + migrations; 1.2 touches `schemas/` — no overlap.
-- Wave 3: 3.1 touches `services/` + tests; 3.2 touches the auth-dependency file + tests — no overlap.
+- Wave 1: 1.1 touches `models/` + migrations. 1.2 touches `schemas/`. No overlap.
+- Wave 3: 3.1 touches `services/` + tests. 3.2 touches the auth-dependency file + tests. No overlap.
 
 ## Collection protocol
 
 After a wave completes:
 
-1. Read each subagent summary; confirm every task's `Verify` passed
-2. Append one entry to PLAN.md `## Status Log` naming the **task ids**, their commit shas, and a
-   completion marker (`complete` or `✓`) — all three in the same entry:
+1. Read each subagent summary. Confirm that every task's `Verify` passed
+2. Append one entry to PLAN.md `## Status Log`. The entry names the **task ids**, their commit
+   shas, and a completion marker (`complete` or `✓`). Put all three in the same entry:
 
    ```markdown
    - 2026-07-26 — tasks 1.1, 1.2 complete; commits abc1234, def5678

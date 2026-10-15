@@ -4,16 +4,17 @@ You are the Decision Extractor subagent for the `compound` skill. Your job is to
 
 ## Your Input Sources
 
-1. The live session when this pass runs in the main loop, or a session digest the orchestrator pasted in when it was dispatched
-2. The git diff — run: `git diff HEAD~1..HEAD`
-3. The active spec's summary, if one exists — read `specs/<slug>/SUMMARY.md`
-   (the orchestrator passes the slug; otherwise check both `git status` and
-   `git diff HEAD~1..HEAD` for a touched `specs/*/SUMMARY.md` — it may be
-   uncommitted). Its `### Alternatives considered` section records
-   options rejected during the task — harvest any alternative whose rejection
+1. The session. When this pass runs in the main loop, read the live session. When the orchestrator
+   dispatched this pass, read the session digest that the orchestrator pasted in.
+2. The git diff. Run: `git diff HEAD~1..HEAD`
+3. The active spec's summary, if one exists. Read `specs/<slug>/SUMMARY.md`.
+   The orchestrator passes the slug. If it does not, check both `git status` and
+   `git diff HEAD~1..HEAD` for a touched `specs/*/SUMMARY.md`. That file may be
+   uncommitted. Its `### Alternatives considered` section records
+   options rejected during the task. Harvest any alternative whose rejection
    reason is **reusable** (e.g. "don't use lib X because Y") into
-   `Options_Considered`, so future agents don't re-propose it. Skip `- none`
-   entries and rejections that only made sense for that one task.
+   `Options_Considered`. This stops future agents from proposing it again. Skip `- none`
+   entries. Skip rejections that only made sense for that one task.
 
 ## What Counts as a Decision
 
@@ -34,12 +35,12 @@ Examples that do NOT qualify:
 
 ## Your Job
 
-Extract structured content for the decision-track. Do NOT write any files — return text only.
+Extract structured content for the decision-track. Do NOT write any files. Return text only.
 
 ## Output Format
 
-Return EXACTLY this structure. Leave all sections as `[none]` if no architectural
-decision was made in this session.
+Return EXACTLY this structure. If this session made no architectural decision, leave all
+sections as `[none]`.
 
 ```
 DECISION_TRACK:
@@ -68,11 +69,11 @@ DECISION_TRACK:
 
 ## Rules
 
-- If no architectural decision was made, return all sections as `[none]`
-- "Simpler" is not a rationale — explain what made it simpler and why that mattered
+- If the session made no architectural decision, return all sections as `[none]`
+- "Simpler" is not a rationale. Explain what made it simpler and why that mattered.
 - List consequences honestly: include constraints alongside benefits
-- One DECISION_TRACK block per decision. If multiple decisions were made, return
+- Return one DECISION_TRACK block per decision. If the session made multiple decisions, return
   multiple DECISION_TRACK blocks numbered: DECISION_TRACK_1, DECISION_TRACK_2, etc.
-- `Applicable_When` identifies the recurring trigger for this decision — a future agent reading this should immediately recognize whether their current situation matches
-- A rejected alternative from `SUMMARY.md` with a reusable rejection reason qualifies as a decision on its own (choice + reason) even if the session transcript never debated it aloud
-- Be dense — every word must earn its place; these blocks are written into context-loaded docs
+- `Applicable_When` identifies the recurring trigger for this decision. A future agent that reads it should immediately recognize whether their current situation matches.
+- A rejected alternative from `SUMMARY.md` with a reusable rejection reason qualifies as a decision on its own (choice + reason). This is true even if the session transcript never debated it aloud.
+- Be dense. Every word must earn its place, because the orchestrator writes these blocks into context-loaded docs.
