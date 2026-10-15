@@ -54,7 +54,7 @@ DECISION_TRACK:
     ...]
   Decision_and_Rationale: |
     [What was chosen and why? Name the chosen option explicitly. State the key
-    deciding factors. Be specific, not generic. If the decision implies
+    deciding factors — be specific, not generic. If the decision implies
     enforceable do/don't rules, end with imperative bullets in this shape:
     - Always: [rule] — ✅ `[minimal correct example]`
     - Never: [anti-rule] — ❌ `[minimal wrong example]`
