@@ -10,7 +10,7 @@ created: 2026-10-15
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**14 tasks · 14 waves · 54 files · 14/14 done**
+**15 tasks · 15 waves · 54 files · 15/15 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -28,6 +28,7 @@ created: 2026-10-15
 | 12 | 2.7 | Rewrite B7: SDD prompts and references, worktrees (wave 12) | skills/subagent-driven-development/implementer-prompt.md, skills/subagent-driven-development/task-reviewer-prompt.md, skills/subagent-driven-development/references/resume.md, skills/subagent-driven-development/references/review-chain.md, skills/using-git-worktrees/SKILL.md, scripts/ste-baseline.json | Verify exits 0. `python3 specs/ste100-prose-rollout/check_rollout.py --task-scop… |
 | 13 | 2.8 | Rewrite B8: finishing, retro, visual planner (wave 13) | skills/finishing-a-development-branch/SKILL.md, skills/finishing-a-development-branch/references/pr-body.md, skills/session-retro/SKILL.md, skills/visual-planner/SKILL.md, skills/visual-planner/references/review-sidecar.md, scripts/ste-baseline.json | Verify exits 0. `python3 specs/ste100-prose-rollout/check_rollout.py --task-scop… |
 | 14 | 2.9 | Rewrite B9: compound (wave 14) | skills/compound/SKILL.md, skills/compound/README.md, skills/compound/subagents/context-analyzer-prompt.md, skills/compound/subagents/decision-extractor-prompt.md, skills/compound/subagents/related-docs-finder-prompt.md, scripts/ste-baseline.json | Verify exits 0. `python3 specs/ste100-prose-rollout/check_rollout.py --task-scop… |
+| 15 | 3.1 | Fix the correctness-review advisories (wave 15) | scripts/check_ste_baseline.py, scripts/test_check_ste_baseline.py, scripts/check_scope_qualifiers.py, scripts/test_check_scope_qualifiers.py, skills/subagent-driven-development/scripts/review_package.py, skills/subagent-driven-development/scripts/test_review_package.py, specs/ste100-prose-rollout/check_rollout.py | Verify exits 0. `python3 specs/ste100-prose-rollout/check_rollout.py --selftest`… |
 
 ```mermaid
 flowchart LR
@@ -73,6 +74,9 @@ flowchart LR
   subgraph W13[Wave 14]
     T2_9["2.9 Rewrite B9: compound (wave 14)"]
   end
+  subgraph W14[Wave 15]
+    T3_1["3.1 Fix the correctness-review advisories (wave 15)"]
+  end
   W0 --> W1
   W1 --> W2
   W2 --> W3
@@ -86,6 +90,7 @@ flowchart LR
   W10 --> W11
   W11 --> W12
   W12 --> W13
+  W13 --> W14
 ```
 
 ### Progress
@@ -103,6 +108,7 @@ flowchart LR
 - [x] 2.7 — Rewrite B7: SDD prompts and references, worktrees (wave 12)
 - [x] 2.8 — Rewrite B8: finishing, retro, visual planner (wave 13)
 - [x] 2.9 — Rewrite B9: compound (wave 14)
+- [x] 3.1 — Fix the correctness-review advisories (wave 15)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -194,6 +200,7 @@ scope qualifiers that only a requested meaning review caught
 | SC-10 | Contract and drift tests that read the rewritten prose pass | `bash -c 'for t in inline-policy-drift writing-plans-contract research-depth-drift brainstorming-contract correctness-prompt-composition final-review-package-contract intent-prompt-contract scorer-threshold-contract finishing-branch-contract compound-contract task-reviewer-readonly runtime-entry-bindings; do bash tests/scripts/$t.test.sh >/dev/null 2>&1 && continue; echo FAIL $t; exit 1; done'` | exit 0 |
 | SC-11 | Agent and frontmatter contract tests pass on the rewritten agents | `/tmp/harness-tests-venv/bin/python -m pytest scripts/test_check_frontmatter_contract.py scripts/test_render_agent_definitions.py scripts/test_check_task_review_contract.py scripts/test_check_runtime_neutral_sources.py -q` | exit 0 |
 | SC-12 | The rollout checker passes its self-test on synthetic inputs | `python3 specs/ste100-prose-rollout/check_rollout.py --selftest` | exit 0 |
+| SC-13 | The scope-qualifier module and the baseline checker hold their exit-0 / skip contracts under hostile git config, non-UTF-8 input, quoted paths and an empty ref (the correctness advisories from the final review) | `/tmp/harness-tests-venv/bin/python -m pytest scripts/test_check_scope_qualifiers.py scripts/test_check_ste_baseline.py skills/subagent-driven-development/scripts/test_review_package.py -q` | exit 0 |
 
 ## 4. Tasks
 
@@ -418,6 +425,23 @@ scope qualifiers that only a requested meaning review caught
 - **Criteria:** SC-5, SC-6, SC-7, SC-8, SC-9, SC-10
 - **Interfaces:** Consumes Tasks 1.1–1.5. Produces rewritten `skills/compound/SKILL.md`, `skills/compound/README.md`, `skills/compound/subagents/context-analyzer-prompt.md`, `skills/compound/subagents/decision-extractor-prompt.md`, `skills/compound/subagents/related-docs-finder-prompt.md`.
 
+### Task 3.1 — Fix the correctness-review advisories (wave 15)
+
+- **Files:** scripts/check_ste_baseline.py, scripts/test_check_ste_baseline.py, scripts/check_scope_qualifiers.py, scripts/test_check_scope_qualifiers.py, skills/subagent-driven-development/scripts/review_package.py, skills/subagent-driven-development/scripts/test_review_package.py, specs/ste100-prose-rollout/check_rollout.py
+- **Action:** Added 2026-10-15 by user decision ("Fix advisories in #294") after the final review chain. Fix the seven score-50 advisories in SUMMARY `### Correctness review`. Write each test first, and confirm that the test fails before the fix.
+  1. `check_ste_baseline.py` `read_baseline_text`: catch `ValueError` (which includes `UnicodeDecodeError`) in both branches and raise `Skip`. A non-UTF-8 baseline file, or a non-UTF-8 `--against` blob, then gives `ste-baseline: skipped (`. Exit 0 by default and 1 under `--strict`.
+  2. `check_ste_baseline.py`: reject an empty or whitespace-only `--against` value with `parser.error` (exit 2).
+  3. `check_scope_qualifiers.py`: run git with `-c core.quotepath=false -c color.ui=never` and the diff with `--no-color --no-ext-diff --src-prefix=a/ --dst-prefix=b/`. Read changed paths with `--name-only -z` and split on NUL. Reset `path` to `None` on each `diff --git` line. Strip a trailing tab from a `+++ b/` path.
+  4. `check_scope_qualifiers.py`: move the final `print` inside the guarded region, or write with `errors="backslashreplace"`, so the script always exits 0.
+  5. `review_package.py` `prose_paths`: use `--name-only -z` with `-c core.quotepath=false`, so a quoted non-ASCII prose path is not dropped from `## STE lint` or `## Scope qualifiers`.
+  6. `check_rollout.py` `unfenced()`: capture the full run of fence characters, and close only on a run of the same character that is at least as long. Add a selftest case for a 4-backtick fence with an inner 3-backtick line.
+
+  Tests: drive the hostile-git-config cases with a temporary repo's local config (`git -C <tmp> config color.ui always`, `diff.noprefix true`), not the user's config. Keep every existing assertion. Run `python3 scripts/check_ste_baseline.py --strict --against 48e7e05` and `bash tests/scripts/context-propagation-regression.test.sh`.
+- **Verify:** `/tmp/harness-tests-venv/bin/python -m pytest scripts/test_check_scope_qualifiers.py scripts/test_check_ste_baseline.py skills/subagent-driven-development/scripts/test_review_package.py -q`
+- **Done:** Verify exits 0. `python3 specs/ste100-prose-rollout/check_rollout.py --selftest` exits 0. `python3 scripts/check_ste_baseline.py --strict --against 48e7e05` exits 0. `python3 scripts/check_scope_qualifiers.py --base 48e7e05 --head HEAD` exits 0.
+- **Criteria:** SC-13, SC-1, SC-2, SC-3, SC-12
+- **Interfaces:** Consumes the advisory list in the SUMMARY correctness-review section. Produces hardened `scripts/check_ste_baseline.py`, `scripts/check_scope_qualifiers.py`, `skills/subagent-driven-development/scripts/review_package.py`, and `specs/ste100-prose-rollout/check_rollout.py`.
+
 ## 5. Risks
 
 - A rewrite drops a scope qualifier that no condition word marks. The pilot's Step 1 split is
@@ -455,3 +479,4 @@ scope qualifiers that only a requested meaning review caught
 - 2026-10-15 — task 2.9 complete; commits 315f9f2, 44ee25d
 - 2026-10-15 — final review chain: context-propagation audit PASS (no failed rows); correctness review 8 locations scored, none ≥75 (7 advisory at 50, 1 at 0); intent review 7 findings — 3 fixed (5f408ff + record), 2 advisory, 3 report-only; re-review of 5f408ff: 0 bugs, intent R1 note fixed; compound 92b7aab + correction 2f82f61 (docs review PASS); run-tests ALL GREEN (958)
 - 2026-10-15 — shipped (Phase 3): receipt pinned at 2f82f61; run-tests ALL GREEN (958); PR to docs/ste100-harness-prose (stacked on #293; retarget to sdlc after #293 merges)
+- 2026-10-15 — task 3.1 complete (user decision: fix advisories in #294); commits 6f54b99, 30e5683, 23438c1; check_rollout.py fix committed with spec record; task review pass/approved; correctness re-review of fixes: 2 rounds, regressions from round 0 fixed, final check resolved all 4, 1 new P3 advisory; plan re-shipped

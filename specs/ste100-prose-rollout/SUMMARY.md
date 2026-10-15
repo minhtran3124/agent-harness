@@ -51,6 +51,7 @@ The pilot (PR #293) showed that the method keeps comprehension. It also showed t
 
 - Plan gap (2026-10-15, found in Task 1.3): Global Constraints forbade editing fenced code, but the dispatch prompts in `*-prompt.md` keep their prompt prose inside a fence. Clarified in PLAN.md Global Constraints: the fenced dispatch block is prose (Strict mode), with commands, paths, placeholders and YAML keys kept unchanged. Phase 1 (Task 1.4 of `ste100-harness-prose`) and Task 1.3 already edited fenced prompt text this way.
 - Plan gap (Task 2.5): `skills/xia2/README.md` ("When you change `SKILL.md`") says a change to HARD-GATE wording, `## Decide depth`, or `references/depth-classifier.md` **must** re-run the structural suite in `skills/xia2/tests/structural/depth-modes-test-cases.md`. The B5 rewrite changed all three. A fresh agent ran Run 5. That file was added to Task 2.5's Files. Intent excluded eval fixtures from the *rewrite*; this is a validation record, not a rewrite.
+- Plan extension (2026-10-15, after the PR was opened): Task 3.1 and SC-13 were added by user decision to fix the correctness advisories inside PR #294. The run stays at `ready_to_merge`, because the FSM allows only `shipped` from there. This work is recorded in the plan's Status Log and here.
 - Task 1.5: `check_rollout.py --task-scope` also ignores `.harness-state/` (gitignored runtime state, `.gitignore:30`), beyond the brief's `specs/ste100-prose-rollout/` exclusion.
 
 ### Context-Propagation Audit
@@ -89,6 +90,26 @@ Range `48e7e05..44ee25d`, plus the uncommitted `specs/ste100-prose-rollout/check
 | 0 | `scripts/check_ste_baseline.py:125-126` | This line is unchanged by the PR, so it is advisory to a human. Under `--strict --against <ref>`, a prose file deleted or renamed since the ref gives a WARN that `--update` cannot clear. Workaround: re-pin the ref. |
 
 Non-runtime note: `docs/solutions/harness/ste100-adoption-decisions.md:104` still says `--strict` exits 0 on a skip. It is updated in the compound step.
+
+**Task 3.1 follow-up (user decision 2026-10-15, "Fix advisories in #294").** The seven score-50 rows above are fixed in `6f54b99`, `30e5683` and `23438c1`. Each fix has a test that failed before it (57 tests pass). The correctness re-review of those commits ran two angles and 10 scored locations, and none reached 75. Three regressions that the first fix commit introduced were then fixed:
+
+- a non-UTF-8 filename crashed the review package;
+- the same filename hid the whole scope section;
+- a closed stdout gave exit 1.
+
+The `DIFF_FLAGS` overclaim was narrowed: the comment now lists exactly what is pinned. `:(top)` pathspecs failed under `GIT_LITERAL_PATHSPECS=1`; they were replaced by running git at the repository top level, with `-c diff.relative=false`.
+
+These advisories remain (score ≤ 50):
+
+| Score | Location | Finding |
+| --- | --- | --- |
+| 50 | `scripts/check_scope_qualifiers.py` (hunk parser) | A path containing `"`, `\` or a control character is C-quoted in the header (`+++ "b/…"`), so the label reads `None`. Plain pathspecs read `*`, `?` and `[` as globs. Exit 0 holds. |
+| 50 | `scripts/check_ste_baseline.py:143` | `--against :0` (or `:1`–`:3`) reads an index stage. This existed before the PR. |
+| 0 | `specs/ste100-prose-rollout/check_rollout.py` `unfenced()` | A fence line with an info string (for example ```` ```bash ````) closes an open fence, and 4+ spaces of indent are accepted. This existed before the PR, and no such content exists today. |
+| 0 | `scripts/check_ste_baseline.py:125-126` | The gone/renamed-file WARN under `--against` (see above). |
+| — | `skills/subagent-driven-development/scripts/review_package.py:88` | This line is unchanged by the PR. The package's own `-U10` diff and `--stat` are not pinned against color or textconv config. |
+| — | tests | `--no-textconv` and the path reset on `diff --git` have no dedicated test. |
+| P3 | `scripts/check_scope_qualifiers.py:72` | With no work tree (a bare repo or `GIT_DIR` only), `rev-parse --show-toplevel` fails, so the section degrades to `unavailable` with exit 0, where the pre-fix script still reported. Medium certainty and not reproduced, because the sandbox blocks git outside the worktree. Fix: fall back to `cwd=None`. Recorded after the final fix round (cap reached). |
 
 ### Intent Findings
 
@@ -171,6 +192,7 @@ Note: the intent's Problem text says "290 … across 46 files". That figure came
 | Agent and frontmatter contracts | `/tmp/harness-tests-venv/bin/python -m pytest scripts/test_check_frontmatter_contract.py scripts/test_render_agent_definitions.py scripts/test_check_task_review_contract.py scripts/test_check_runtime_neutral_sources.py -q` | 0 | 50 passed | SC-11 |
 | Rollout checker self-test | `python3 specs/ste100-prose-rollout/check_rollout.py --selftest` | 0 | OK | SC-12 |
 | Ratchet vs current baseline (intent "What success looks like") | `python3 scripts/check_ste_baseline.py --strict` | 0 | 72 files checked, 0 above baseline or gone | |
+| Advisory fixes hold (Task 3.1) | `/tmp/harness-tests-venv/bin/python -m pytest scripts/test_check_scope_qualifiers.py scripts/test_check_ste_baseline.py skills/subagent-driven-development/scripts/test_review_package.py -q` | 0 | 57 passed (10 then 5 then 2 failed before each round's fix) | SC-13 |
 
 The full suite (`bash scripts/run-tests.sh`) is not a Verify row: `rules/plan-format.md` keeps it out of rows and runs it at `finishing-a-development-branch`. Each rewrite wave ran it as its Action. Results are in the per-task reports, and the controller re-ran it before the push.
 

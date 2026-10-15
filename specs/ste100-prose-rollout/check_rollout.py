@@ -51,13 +51,14 @@ def frontmatter(text: str) -> str | None:
 
 
 def unfenced(text: str) -> list[str]:
-    """The lines of text outside fenced code blocks (``` or ~~~)."""
+    """The lines of text outside fenced code blocks (``` or ~~~, 3 or more characters).
+    A fence closes only on a run of the same character that is at least as long."""
     out, fence = [], None
     for line in text.splitlines():
-        m = re.match(r"^\s*(```|~~~)", line)
+        m = re.match(r"^\s*(`{3,}|~{3,})", line)
         if fence is None and m:
             fence = m.group(1)
-        elif fence is not None and m and m.group(1) == fence:
+        elif fence is not None and m and m.group(1)[0] == fence[0] and len(m.group(1)) >= len(fence):
             fence = None
         elif fence is None:
             out.append(line)
@@ -251,6 +252,11 @@ def selftest() -> list[str]:
         "section stops at #### and skips fenced lines",
         section("### A\nx\n```\n### B\ny\n```\nz\n#### C\nw\n", "### A"),
         ["x", "z"],
+    )
+    expect(
+        "4-backtick fence is not closed by an inner 3-backtick line",
+        unfenced("a\n````\n```\n### B\n```\n````\nz\n"),
+        ["a", "z"],
     )
 
     porcelain = " M rules/a.md\0?? dir with space/new \"q\".md\0 D old.md\0"
