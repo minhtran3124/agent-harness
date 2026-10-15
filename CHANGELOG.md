@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.31.0] — 2026-10-15
+
+- feat(workflow): failing-test-first protocol for bug fixes (E5) (PR #301)
+
 ## [2.30.0] — 2026-10-15
 
 - docs(writing-plans): start SDD in this session without asking (PR #298)
