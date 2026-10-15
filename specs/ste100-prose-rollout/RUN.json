@@ -1,12 +1,12 @@
 {
   "created_at": "2026-10-15T03:22:08Z",
-  "last_event_id": "cf721461-653f-4198-a75a-ce1497aef9b7",
+  "last_event_id": "f0b42940-d66b-4dcf-86db-0936f4c0406a",
   "resume_event": null,
   "run_id": "b559445a-8d7d-48a2-b974-56fc00f1ab0c",
-  "seq": 5,
+  "seq": 6,
   "sha": null,
   "slug": "ste100-prose-rollout",
-  "state": "verifying",
-  "updated_at": "2026-10-15T05:46:32Z",
+  "state": "ready_to_merge",
+  "updated_at": "2026-10-15T06:04:58Z",
   "waiting_on": null
 }
