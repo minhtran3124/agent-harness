@@ -100,6 +100,22 @@ that starts with `bug`, so no current result changes.
 - Task 1.1 review — `scripts/verify_summary.py` `_red_green_issue` docstring says "extra text allowed after it", but the regex rejects a word character or `-` right after the token (`bug fixes`, `bug fix-up`). Wording only; forwarded to final review.
 - Task 1.1 review — `scripts/verify_summary.py:67` module comment still names only `Input-type: bug fix`. Out-of-date comment only; forwarded to final review.
 
+### Advisory Findings
+
+Correctness review (six finders, 1fe7018..36d809f, threshold 75). Every finding scored below the
+threshold and is recorded here, not fixed:
+
+- score 25 — `scripts/verify_summary.py:78`: `bug[ -]?fix` misses `bug  fix`, `bug<TAB>fix`, `bug_fix` and Unicode-dash spellings (silent skip), and the lookahead accepts `bug fix/feature`. Not a regression: the base exact match missed these too; the accepted spellings are the ones the intent names.
+- score 50 — `scripts/verify_summary.py:417`: no end anchor and no `|` guard, so a reordered option list such as `bug fix | maintenance` now counts as a bug fix (`_resolve_lane` rejects `|`). The unfilled template list starts with `new spec`, so it does not match. Backtick- or quote-wrapped values and `harness bug fix` still skip the check (not new).
+- score 0 (unmodified line, carry-over) — `scripts/verify_summary.py:276`: `_header_value` does not accept a leading list marker, so `- Input-type: bug fix` is never read. Real, but on a line this diff did not change.
+- score 0 (carry-over) — `scripts/test_verify_summary.py:1173`: the existing-SUMMARY scan now skips by `_BUG_FIX_INPUT_RE`, so it can no longer fail when a wider regex starts to flag an existing SUMMARY without red/green rows. The base test had the same self-reference with the exact literal.
+
+### Intent Findings
+
+Intent review (plan-blind, 1fe7018..36d809f): every named outcome met; SC-1 and SC-2 proven; no excess.
+
+- drift (equivalent, advisory) — `_BUG_FIX_INPUT_RE`'s `(?![\w-])` lookahead excludes `bug fix-up` and `bug-fix-something`, while the intent says "`bug fix` followed by extra text". The intent's constraint "Do not match `bug fixes` or other words that only start with `bug`" supports the exclusion; every spelling the intent names behaves as specified. Not changed.
+
 ### Verify
 
 | Check | Command | Exit | Notes | Criterion |
