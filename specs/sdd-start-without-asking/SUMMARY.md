@@ -36,7 +36,10 @@ The prompt cost a human round-trip on every plan and its answer was always "this
 
 | Check | Command | Exit | Notes | Criterion |
 | --- | --- | --- | --- | --- |
-| harness test suite | `bash scripts/run-tests.sh` | 0 | | |
+| handoff no longer asks | `grep -q "Do not ask the user" skills/writing-plans/SKILL.md` | 0 | | |
+| writing-plans contract | `bash tests/scripts/writing-plans-contract.test.sh` | 0 | 4 passed | |
+
+Full suite (`bash scripts/run-tests.sh`) also passed locally — 975 passed, ALL GREEN; CI `tests` job re-runs it.
 
 ### Not auto-verified
 
