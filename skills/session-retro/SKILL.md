@@ -9,10 +9,10 @@ allowed-tools: Read, Grep, Glob, Bash(git log *), Bash(git diff *)
 
 `compound` records what a session learned. This skill asks what in the repo let the agent
 stumble, and which lever would stop the next session stumbling the same way?
-It reads the session, not the code, and proposes rather than edits: each environment change
+It reads the session, not the code, and proposes rather than edits. Each environment change
 taxes every later session, so the user decides which are worth it.
 
-If nothing struggled, say so and stop; rules manufactured from a clean run make the harness worse.
+If nothing struggled, say so and stop. Rules manufactured from a clean run make the harness worse.
 
 ## The record
 
@@ -22,8 +22,9 @@ so: a summarized stretch cannot evidence a moment, so its lack of struggles is u
 
 ## From struggle to lever
 
-List the moments of friction — long searches, repeated mistakes, a reviewer catching what a tool
-could have caught, expensive tool calls — each with a pointer to where it happened. Every
+List the moments of friction, each with a pointer to where it happened. Friction includes long
+searches, repeated mistakes, a reviewer catching what a tool could have caught, and expensive tool
+calls. Every
 candidate traces to one. The class of each decides the lever:
 
 | Struggle | Lever |
@@ -31,7 +32,7 @@ candidate traces to one. The class of each decides the lever:
 | Slow to find a file or fact | Navigation pointer from a file the agent already reads |
 | Mistake a tool could catch | Deterministic check: test, lint, hook, or CI job |
 | Judgement-call mistake the reviewer missed | A rule in `rules/`, path-scoped where possible |
-| Always-on steering file large or noisy | Move content to a check or a scoped rule; delete no-op lines |
+| Always-on steering file large or noisy | Move content to a check or a scoped rule. Delete no-op lines |
 | Expensive or noisy tool call | Streamline or replace the tool or script |
 | Missing information | Widen access (log to a file, expose state) |
 
@@ -51,11 +52,11 @@ not fire?". A one-off with no prior record is reported as one.
 Rank by expected recurrence times the cost each recurrence carries. Per candidate give the
 struggle with its pointer, the class, the proposed lever, the target path, its ongoing cost, and
 the evidence tier it would reach (traceability, provenance, or truth). List steering lines that
-look dead separately, flagged for review. Name the limits that apply to this run (one session cannot
-show an older rule is obsolete; its topic may be overweighted).
+look dead separately, flagged for review. Name the limits that apply to this run. (One session cannot
+show an older rule is obsolete. Its topic may be overweighted.)
 
 Then stop. Nothing changes until the user picks candidates. Approved mechanical items become
-`improvement-backlog.md` rows or a `feature-intake` task; durable knowledge goes through
+`improvement-backlog.md` rows or a `feature-intake` task. Durable knowledge goes through
 `compound`.
 
 Verifies: each candidate cites a moment in the session record and a classified lever.
