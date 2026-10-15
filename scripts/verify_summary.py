@@ -64,6 +64,17 @@ _TEMPLATE_NOT_VERIFIED_RE = re.compile(r"^<claim>\b|^<.*>\s*$")
 # Same opt-in shape as REQUIRE_VERIFY / REQUIRE_APP_GATES / RISK_CORROBORATION_STRICT.
 _NOT_AUTO_VERIFIED_ENV = "REQUIRE_NOT_AUTO_VERIFIED"
 
+# Bug-fix runs (`Input-type: bug fix`) need a red/green Verify pair or an exemption.
+# Advisory by default; set REQUIRE_RED_TEST=1 to make it blocking (same opt-in shape).
+_RED_TEST_ENV = "REQUIRE_RED_TEST"
+
+# A red row: `[python3] <path>/scripts/run_at_commit.py <sha> -- <test command>`.
+_RED_COMMAND_RE = re.compile(
+    r"^(?:python3\s+)?(?:\S*/)?scripts/run_at_commit\.py\s+"
+    r"[0-9a-fA-F]{7,40}\s+--\s+(?P<test>\S.*)$"
+)
+_RED_EXEMPT_RE = re.compile(r"^\s*[-*]?\s*Red test exempt:(.*)$", re.MULTILINE)
+
 # A whole command that proves nothing: exit-0 of a no-op is not evidence.
 # `true`, `:`, `exit 0`, or a bare `echo …` (echo piped/chained into a real tool is
 # NOT trivial — `echo x | grep x` still asserts something).
@@ -384,19 +395,86 @@ def _not_auto_verified_issue(text: str) -> str | None:
     return None
 
 
-def check_lane_warnings(text: str) -> list[str]:
-    """Return non-blocking lane advisories.
+def _red_test_is_blocking() -> bool:
+    """Return whether a missing red/green pair should fail the lane gate."""
+    return os.environ.get(_RED_TEST_ENV, "").strip() not in ("", "0", "false")
 
-    Currently only the warn-first `### Not auto-verified` rollout. These are printed
-    but never change an exit code -- see `_NOT_AUTO_VERIFIED_ENV`.
+
+def _red_green_issue(text: str) -> str | None:
+    """Return the red/green complaint for a bug-fix SUMMARY, or None if satisfied.
+
+    Verifies: (traceability) when `Input-type` is `bug fix`, `### Verify` holds a
+    `red` row (run_at_commit.py <sha> -- <test>, claimed exit 1-123) and a `green`
+    row (the same test command, claimed exit 0), or a `Red test exempt: <reason>`
+    line with a non-empty reason.
+    Does not verify: that the claimed exits are real (`--check` re-runs rows), that
+    the test exercises the bug, or that an exemption reason is genuine.
     """
-    if _not_auto_verified_is_blocking():
-        return []  # it is an error instead; do not report it twice
-    lane = _resolve_lane(text)
-    if lane != "high-risk":
-        return []
-    issue = _not_auto_verified_issue(text)
-    return [f"lane `high-risk`: {issue}"] if issue else []
+    if (_header_value(text, "Input-type") or "").strip().lower() != "bug fix":
+        return None
+    verify = _section(text, "Verify") or ""
+    rows = _parse_verify_rows(verify)
+
+    red_tests = []
+    bad_red = None
+    for row in rows:
+        if row["check"].strip().lower() != "red":
+            continue
+        match = _RED_COMMAND_RE.match(row["command"])
+        if not match:
+            bad_red = (
+                "`red` row command is not `[python3] scripts/run_at_commit.py "
+                "<7-40 hex sha> -- <test command>`"
+            )
+        elif not (
+            re.fullmatch(r"\d+", row["claimed_exit"])
+            and 1 <= int(row["claimed_exit"]) <= 123
+        ):
+            bad_red = f"`red` row claims exit `{row['claimed_exit']}` (must be 1-123)"
+        else:
+            red_tests.append(" ".join(match.group("test").split()))
+
+    for row in rows:
+        if (
+            row["check"].strip().lower() == "green"
+            and row["claimed_exit"] == "0"
+            and " ".join(row["command"].split()) in red_tests
+        ):
+            return None
+
+    exempt = [m.group(1).strip() for m in _RED_EXEMPT_RE.finditer(verify)]
+    if any(exempt):
+        return None
+
+    if exempt:
+        missing = "`Red test exempt:` has an empty reason"
+    elif red_tests:
+        missing = "no `green` row with the red row's test command and claimed exit 0"
+    elif bad_red:
+        missing = bad_red
+    else:
+        missing = "no `red` row and no `Red test exempt: <reason>` line"
+    return f"bug fix: red/green evidence missing in `### Verify` -- {missing}"
+
+
+def check_lane_warnings(text: str) -> list[tuple[str, str]]:
+    """Return non-blocking lane advisories as (message, enforcing env var) pairs.
+
+    These are printed but never change an exit code. Each one stops being a warning
+    (and becomes an error in `check_lane_evidence`) when its own env var is set --
+    see `_NOT_AUTO_VERIFIED_ENV` and `_RED_TEST_ENV`.
+    """
+    warnings: list[tuple[str, str]] = []
+    # When blocking, each issue is an error instead; do not report it twice.
+    if not _not_auto_verified_is_blocking() and _resolve_lane(text) == "high-risk":
+        issue = _not_auto_verified_issue(text)
+        if issue:
+            warnings.append((f"lane `high-risk`: {issue}", _NOT_AUTO_VERIFIED_ENV))
+    if not _red_test_is_blocking():
+        issue = _red_green_issue(text)
+        if issue:
+            warnings.append((issue, _RED_TEST_ENV))
+    return warnings
 
 
 def _sc_map_for_summary(
@@ -506,6 +584,11 @@ def check_lane_evidence(
                 "template (`git revert <sha>`) -- write the real undo steps"
             )
 
+    if _red_test_is_blocking():
+        issue = _red_green_issue(text)
+        if issue:
+            errors.append(issue)
+
     errors += _check_sc_coverage(text, summary_path, plan_dir)
     errors += _check_runtime_metadata(text, summary_path)
 
@@ -526,7 +609,7 @@ def _check_lane_targets(
     failed = False
     for target in targets:
         path = _resolve_summary_path(target, specs_root)
-        warnings: list[str] = []
+        warnings: list[tuple[str, str]] = []
         if path.is_file():
             text = path.read_text(encoding="utf-8")
             errors = check_lane_evidence(text, summary_path=path, plan_dir=plan_dir)
@@ -542,10 +625,8 @@ def _check_lane_targets(
             print(f"✓ {path}")
         # Advisories print on BOTH paths and never set `failed`. They must survive a
         # passing run: a warning only emitted on failure is a warning nobody reads.
-        for warning in warnings:
-            print(
-                f"    ! {warning} (warn-only; set {_NOT_AUTO_VERIFIED_ENV}=1 to enforce)"
-            )
+        for warning, env_var in warnings:
+            print(f"    ! {warning} (warn-only; set {env_var}=1 to enforce)")
     return 1 if failed else 0
 
 

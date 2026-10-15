@@ -603,7 +603,10 @@ class TestLaneEvidence:
             rollback="- `alembic downgrade -1`",
         )
         assert vs.check_lane_evidence(missing) == []
-        assert any("Not auto-verified" in w for w in vs.check_lane_warnings(missing))
+        assert any(
+            "Not auto-verified" in w and var == "REQUIRE_NOT_AUTO_VERIFIED"
+            for w, var in vs.check_lane_warnings(missing)
+        )
 
     def test_missing_not_auto_verified_blocks_when_opted_in(self, monkeypatch):
         monkeypatch.setenv("REQUIRE_NOT_AUTO_VERIFIED", "1")
@@ -969,3 +972,178 @@ class TestScCoverage:
         assert "SC-1" in line  # trailing Criterion column preserved
         assert "| 0 |" in line  # actual exit written back
         assert "Verified:" in out
+
+
+# ---------------------------------------------------------------------------
+# Red/green check for bug-fix runs (Input-type: bug fix)
+# ---------------------------------------------------------------------------
+
+_RED_TEST = "pytest -q tests/test_bug.py"
+_RED_ROW = (
+    f"| red | `python3 scripts/run_at_commit.py abc1234 -- {_RED_TEST}` | 1 | fails |"
+)
+_GREEN_ROW = f"| green | `{_RED_TEST}` | 0 | passes |"
+
+
+def _bug_fix_summary(verify: str, input_type: str = "bug fix") -> str:
+    """A normal-lane SUMMARY with the given Input-type and Verify body."""
+    return _lane_summary(lane="normal", verify=verify).replace(
+        "Flags: none", f"Flags: none\nInput-type: {input_type}"
+    )
+
+
+def _red_green_messages(text: str) -> list[str]:
+    """Every red/green message from both lane functions."""
+    warnings = [message for message, _ in vs.check_lane_warnings(text)]
+    return [m for m in vs.check_lane_evidence(text) + warnings if "red/green" in m]
+
+
+class TestRedGreen:
+    def test_red_green_valid_pair_has_no_warning(self, monkeypatch, tmp_path, capsys):
+        monkeypatch.delenv("REQUIRE_RED_TEST", raising=False)
+        text = _bug_fix_summary(f"{REAL_LANE_VERIFY}\n{_RED_ROW}\n{_GREEN_ROW}")
+        assert vs._red_green_issue(text) is None
+        assert _red_green_messages(text) == []
+        write_summary(tmp_path, "bug", text)
+        assert vs.main(["--lane", "bug"], specs_root=tmp_path / "specs") == 0
+        assert "red/green" not in capsys.readouterr().out
+
+    def test_red_green_missing_red_row_warns(self, monkeypatch, tmp_path, capsys):
+        monkeypatch.delenv("REQUIRE_RED_TEST", raising=False)
+        text = _bug_fix_summary(f"{REAL_LANE_VERIFY}\n{_GREEN_ROW}")
+        assert vs.check_lane_evidence(text) == []
+        warnings = vs.check_lane_warnings(text)
+        assert len(warnings) == 1 and warnings[0][1] == "REQUIRE_RED_TEST"
+        write_summary(tmp_path, "bug", text)
+        assert vs.main(["--lane", "bug"], specs_root=tmp_path / "specs") == 0
+        lines = [ln for ln in capsys.readouterr().out.splitlines() if "red/green" in ln]
+        assert len(lines) == 1
+        assert lines[0].startswith("    ! ")
+        assert lines[0].endswith("(warn-only; set REQUIRE_RED_TEST=1 to enforce)")
+
+    def test_red_green_blocks_when_opted_in(self, monkeypatch, tmp_path, capsys):
+        monkeypatch.setenv("REQUIRE_RED_TEST", "1")
+        text = _bug_fix_summary(f"{REAL_LANE_VERIFY}\n{_GREEN_ROW}")
+        assert vs.check_lane_warnings(text) == []
+        write_summary(tmp_path, "bug", text)
+        assert vs.main(["--lane", "bug"], specs_root=tmp_path / "specs") == 1
+        out = capsys.readouterr().out
+        assert "    - bug fix: red/green" in out
+        assert "    ! bug fix: red/green" not in out
+
+    def test_red_green_opt_in_values_parsed_like_not_auto_verified(self, monkeypatch):
+        text = _bug_fix_summary(f"{REAL_LANE_VERIFY}\n{_GREEN_ROW}")
+        for value in ("0", "false", ""):
+            monkeypatch.setenv("REQUIRE_RED_TEST", value)
+            assert vs.check_lane_evidence(text) == []
+            assert len(vs.check_lane_warnings(text)) == 1
+
+    def test_red_green_warning_independent_of_not_auto_verified(self, monkeypatch):
+        monkeypatch.delenv("REQUIRE_RED_TEST", raising=False)
+        monkeypatch.setenv("REQUIRE_NOT_AUTO_VERIFIED", "1")
+        text = _bug_fix_summary(f"{REAL_LANE_VERIFY}\n{_GREEN_ROW}")
+        warnings = vs.check_lane_warnings(text)
+        assert [var for _, var in warnings] == ["REQUIRE_RED_TEST"]
+
+    def test_red_green_not_auto_verified_output_unchanged(
+        self, monkeypatch, tmp_path, capsys
+    ):
+        monkeypatch.delenv("REQUIRE_NOT_AUTO_VERIFIED", raising=False)
+        text = _lane_summary(
+            lane="high-risk", verify=REAL_LANE_VERIFY, rollback="- `alembic downgrade -1`"
+        )
+        write_summary(tmp_path, "nav", text)
+        assert vs.main(["--lane", "nav"], specs_root=tmp_path / "specs") == 0
+        out = capsys.readouterr().out
+        assert (
+            "    ! lane `high-risk`: `### Not auto-verified` section missing -- state "
+            "the negative scope (what this change claims that no gate checks), or "
+            "`- none` (warn-only; set REQUIRE_NOT_AUTO_VERIFIED=1 to enforce)\n"
+        ) in out
+
+    def test_red_green_exemption_with_reason_is_accepted(self):
+        text = _bug_fix_summary(
+            f"{REAL_LANE_VERIFY}\n\nRed test exempt: race only reproduces under load"
+        )
+        assert vs._red_green_issue(text) is None
+
+    def test_red_green_exemption_with_empty_reason_is_rejected(self):
+        for line in ("Red test exempt:", "Red test exempt:   "):
+            text = _bug_fix_summary(f"{REAL_LANE_VERIFY}\n\n{line}")
+            issue = vs._red_green_issue(text)
+            assert issue and "empty reason" in issue
+
+    def test_red_green_green_command_differs_is_rejected(self):
+        green = "| green | `pytest -q tests/test_other.py` | 0 | passes |"
+        issue = vs._red_green_issue(_bug_fix_summary(f"{_RED_ROW}\n{green}"))
+        assert issue and "green" in issue
+
+    def test_red_green_green_command_whitespace_is_normalized(self):
+        green = "| green | `pytest   -q  tests/test_bug.py` | 0 | passes |"
+        assert vs._red_green_issue(_bug_fix_summary(f"{_RED_ROW}\n{green}")) is None
+
+    def test_red_green_green_nonzero_exit_is_rejected(self):
+        green = f"| green | `{_RED_TEST}` | 1 | passes |"
+        assert vs._red_green_issue(_bug_fix_summary(f"{_RED_ROW}\n{green}"))
+
+    def test_red_green_red_exit_range(self):
+        for claimed, ok in (
+            ("0", False),
+            ("124", False),
+            ("125", False),
+            ("126", False),
+            ("127", False),
+            ("128", False),
+            ("139", False),
+            ("1", True),
+            ("123", True),
+        ):
+            red = _RED_ROW.replace("| 1 | fails |", f"| {claimed} | fails |")
+            issue = vs._red_green_issue(_bug_fix_summary(f"{red}\n{_GREEN_ROW}"))
+            assert (issue is None) is ok, claimed
+
+    def test_red_green_red_command_shape(self):
+        for command, ok in (
+            (f"scripts/run_at_commit.py abc1234 -- {_RED_TEST}", True),
+            (f".claude/scripts/run_at_commit.py {'a' * 40} -- {_RED_TEST}", True),
+            (f"python3 scripts/run_at_commit.py abc123 -- {_RED_TEST}", False),
+            (f"python3 scripts/run_at_commit.py {'a' * 41} -- {_RED_TEST}", False),
+            (f"python3 scripts/run_at_commit.py abc123z -- {_RED_TEST}", False),
+            (f"python3 scripts/run_at_commit.py abc1234 {_RED_TEST}", False),
+            ("python3 scripts/run_at_commit.py abc1234 --", False),
+            (f"python3 scripts/other.py abc1234 -- {_RED_TEST}", False),
+        ):
+            red = f"| red | `{command}` | 1 | fails |"
+            issue = vs._red_green_issue(_bug_fix_summary(f"{red}\n{_GREEN_ROW}"))
+            assert (issue is None) is ok, command
+
+    def test_red_green_check_cell_is_trimmed_and_case_folded(self):
+        red = _RED_ROW.replace("| red |", "|  RED  |")
+        green = _GREEN_ROW.replace("| green |", "| Green |")
+        assert vs._red_green_issue(_bug_fix_summary(f"{red}\n{green}")) is None
+
+    def test_red_green_mixed_case_input_type_applies(self):
+        text = _bug_fix_summary(REAL_LANE_VERIFY, input_type="  Bug Fix ")
+        assert vs._red_green_issue(text)
+
+    def test_red_green_other_input_type_has_no_message(self, monkeypatch):
+        monkeypatch.setenv("REQUIRE_RED_TEST", "1")
+        for input_type in ("maintenance", "bug fixes", "harness fix"):
+            text = _bug_fix_summary(REAL_LANE_VERIFY, input_type=input_type)
+            assert vs._red_green_issue(text) is None
+            assert _red_green_messages(text) == []
+        no_header = _lane_summary(lane="normal", verify=REAL_LANE_VERIFY)
+        assert vs._red_green_issue(no_header) is None
+
+    def test_red_green_no_message_for_existing_non_bug_fix_summaries(self, monkeypatch):
+        specs = Path(__file__).resolve().parent.parent / "specs"
+        paths = sorted(specs.glob("*/SUMMARY.md"))
+        assert paths, "no specs/*/SUMMARY.md found"
+        for value in ("", "1"):
+            monkeypatch.setenv("REQUIRE_RED_TEST", value)
+            for path in paths:
+                text = path.read_text(encoding="utf-8")
+                input_type = (vs._header_value(text, "Input-type") or "").strip().lower()
+                if input_type == "bug fix":
+                    continue
+                assert _red_green_messages(text) == [], path
