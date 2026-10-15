@@ -23,8 +23,9 @@ classify risk. Ask only to resolve a material ambiguity or narrow a hard-gated s
    Pin with `git log -1 --format=%H --diff-filter=AM -- specs/<slug>/intent.md` (empty: stop).
    If `git diff --exit-code <pin> -- specs/<slug>/intent.md` is non-zero, stop and ask the
    user to commit it. Classify from intent.md plus chat.
-2. Input type: new spec, spec slice, change request, initiative, maintenance, or harness
-   improvement. Mark risk flags: auth, authorization, data model, audit/security,
+2. Input type: new spec, spec slice, change request, initiative, maintenance, harness
+   improvement, or bug fix. Use `bug fix` for any fix of wrong behavior, harness bugs included.
+   Mark risk flags: auth, authorization, data model, audit/security,
    external systems, public contracts, cross-platform, existing behavior, weak proof, and
    multi-domain.
 3. Assign the lane. A manifest hard gate is `high-risk`. Otherwise, 0–1 flags is `tiny` only for

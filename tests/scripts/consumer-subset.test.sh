@@ -30,7 +30,8 @@ C="$T/.claude"
 t "allow-listed helpers land in .claude/scripts/ and are importable Python"
 missing=""
 for f in verify_summary.py check_plan_contract.py check_review_receipt.py \
-         resolve_finish_context.py rebuild_solution_index.py render_skill_prompt.py; do
+         resolve_finish_context.py rebuild_solution_index.py render_skill_prompt.py \
+         run_at_commit.py; do
   [ -f "$C/scripts/$f" ] || missing="$missing $f"
 done
 if [ "$RC" -eq 0 ] && [ -z "$missing" ] && python3 -m py_compile "$C"/scripts/*.py 2>/dev/null; then pass
