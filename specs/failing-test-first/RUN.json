@@ -1,12 +1,12 @@
 {
   "created_at": "2026-10-15T15:23:26Z",
-  "last_event_id": "6ca84837-1394-44c7-8668-a39b58ccd033",
+  "last_event_id": "849417f5-15da-4039-b639-5d2d4a55e569",
   "resume_event": null,
   "run_id": "ecbef26e-02b7-4702-afcd-b3225236974a",
-  "seq": 6,
-  "sha": null,
+  "seq": 7,
+  "sha": "732d484941b80b835de39bca1eb88c129d910dac",
   "slug": "failing-test-first",
-  "state": "ready_to_merge",
-  "updated_at": "2026-10-15T16:24:37Z",
+  "state": "shipped",
+  "updated_at": "2026-10-15T16:54:20Z",
   "waiting_on": null
 }
