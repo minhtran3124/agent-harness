@@ -7,6 +7,26 @@ created: 2026-10-16
 
 # Red/green check applies to every bug-fix Input-type spelling
 
+<!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
+## At a glance
+
+**1 tasks · 1 waves · 2 files · 1/1 done**
+
+| Wave | Task | Title | Files | Done (acceptance) |
+|---|---|---|---|---|
+| — | 1.1 | Match every bug-fix spelling in the red/green check | scripts/verify_summary.py, scripts/test_verify_summary.py | SC-1 and SC-2 exit 0; the commit that adds the tests exits 1 on the SC-1 command… |
+
+```mermaid
+flowchart LR
+  subgraph W0[Wave —]
+    T1_1["1.1 Match every bug-fix spelling in the red/green check"]
+  end
+```
+
+### Progress
+- [x] 1.1 — Match every bug-fix spelling in the red/green check
+<!-- AT-A-GLANCE:END -->
+
 ## 1. Motivation
 
 `scripts/verify_summary.py` `_red_green_issue` applies the red/green check only when
@@ -88,3 +108,4 @@ created: 2026-10-16
 ## 6. Status Log
 
 - 2026-10-16 — plan written at intake handoff (normal lane, confidence medium).
+- 2026-10-16 — task 1.1 complete; commits ee6da93, 36d809f (task review: spec pass, quality approved, 2 Minor).
