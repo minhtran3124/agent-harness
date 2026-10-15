@@ -34,7 +34,9 @@ def lint_hard_count(text: str) -> int:
 
 def prose_paths(base: str, head: str) -> list[str]:
     # -z and quotepath=false keep a non-ASCII path unquoted, so the prefix filter sees it.
-    names = git("-c", "core.quotepath=false", "diff", "--name-only", "-z", "--no-renames", "--diff-filter=d", f"{base}..{head}").split("\0")
+    # surrogateescape: a file name that is not UTF-8 cannot crash the package.
+    names = subprocess.check_output(["git", "-c", "core.quotepath=false", "diff", "--name-only", "-z", "--no-renames", "--diff-filter=d", f"{base}..{head}"],
+                                    text=True, errors="surrogateescape").split("\0")
     return [name for name in names if name.endswith(".md") and name.startswith(PROSE_ROOTS)]
 
 

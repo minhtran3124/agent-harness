@@ -3,6 +3,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 SCRIPT = Path(__file__).with_name("check_scope_qualifiers.py")
 
 
@@ -29,9 +31,9 @@ def make_repo(tmp_path, base_files, head_files):
     return repo, base, head
 
 
-def run(repo, base, head):
+def run(repo, base, head, cwd=None):
     proc = subprocess.run([sys.executable, str(SCRIPT), "--base", base, "--head", head],
-                          cwd=repo, capture_output=True, text=True)
+                          cwd=cwd or repo, capture_output=True, text=True)
     assert proc.returncode == 0, proc.stderr
     return proc.stdout
 
@@ -166,6 +168,42 @@ def test_ascii_stdout_encoding_still_exits_zero(tmp_path):
                           cwd=repo, capture_output=True, text=True, env=env)
     assert proc.returncode == 0, proc.stderr
     assert proc.stdout.startswith('- skills/x/SKILL.md:2: dropped "if": Stop if caf')
+
+
+def test_non_utf8_name_does_not_hide_other_prose(tmp_path):
+    repo, base, _ = make_repo(tmp_path, {"skills/x/SKILL.md": DROP_BEFORE}, {"README.txt": "x\n"})
+    try:
+        (repo / os.fsdecode(b"bad-\xff.txt")).write_text("x\n", encoding="utf-8")
+    except (OSError, UnicodeError):
+        pytest.skip("filesystem rejects a non-UTF-8 file name")
+    head = commit(repo, {"skills/x/SKILL.md": DROP_AFTER}, "head2")
+    assert run(repo, base, head) == '- skills/x/SKILL.md:2: dropped "if": Stop if the plan is wrong.\n'
+
+
+def test_closed_stdout_still_exits_zero(tmp_path):
+    repo, base, head = make_repo(tmp_path, {"skills/x/SKILL.md": DROP_BEFORE},
+                                 {"skills/x/SKILL.md": DROP_AFTER})
+    proc = subprocess.run([sys.executable, str(SCRIPT), "--base", base, "--head", head],
+                          cwd=repo, stderr=subprocess.PIPE, text=True, preexec_fn=lambda: os.close(1))
+    assert proc.returncode == 0, proc.stderr
+
+
+def test_inter_hunk_context_config_does_not_merge_hunks(tmp_path):
+    before = "Stop if wrong.\nx\ny\nz\nKeep this.\n"
+    after = "Stop.\nx\ny\nz\nKeep this if ok.\n"
+    repo, base, head = make_repo(tmp_path, {"skills/x/SKILL.md": before}, {"skills/x/SKILL.md": after})
+    git(repo, "config", "diff.interHunkContext", "5")
+    assert run(repo, base, head) == '- skills/x/SKILL.md:1: dropped "if": Stop if wrong.\n'
+
+
+def test_subdirectory_cwd_lists_same_drops(tmp_path):
+    repo, base, head = make_repo(tmp_path, {"skills/x/SKILL.md": DROP_BEFORE},
+                                 {"skills/x/SKILL.md": DROP_AFTER})
+    want = '- skills/x/SKILL.md:2: dropped "if": Stop if the plan is wrong.\n'
+    assert run(repo, base, head) == want
+    assert run(repo, base, head, cwd=repo / "skills" / "x") == want
+    git(repo, "config", "diff.relative", "true")
+    assert run(repo, base, head, cwd=repo / "skills" / "x") == want
 
 
 def test_pilot_step1_split_is_not_listed_known_limit(tmp_path):

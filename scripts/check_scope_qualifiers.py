@@ -31,13 +31,17 @@ PATTERNS = {word: re.compile(rf"\b{re.escape(word)}\b", re.IGNORECASE) for word 
 HUNK = re.compile(r"^@@ -(\d+)")
 
 
-# Fixed settings, so the user's git config (color, quoted paths, external diff) cannot change the output.
+# Fixed settings, so these user git config keys cannot change the output: color, quoted paths,
+# external diff, textconv, hunk merging, relative paths and prefixes.
 GIT_CONFIG = ("-c", "core.quotepath=false", "-c", "color.ui=never")
-DIFF_FLAGS = ("--no-color", "--no-ext-diff", "--src-prefix=a/", "--dst-prefix=b/")
+DIFF_FLAGS = ("--no-color", "--no-ext-diff", "--no-textconv", "--inter-hunk-context=0", "--no-relative",
+              "--src-prefix=a/", "--dst-prefix=b/")
 
 
 def git(*args: str) -> str:
-    return subprocess.run(["git", *GIT_CONFIG, *args], capture_output=True, text=True, check=True).stdout
+    # surrogateescape: a file name that is not UTF-8 cannot stop the other files from being checked.
+    return subprocess.run(["git", *GIT_CONFIG, *args], capture_output=True, text=True,
+                          errors="surrogateescape", check=True).stdout
 
 
 def hunks(diff: str):
@@ -64,11 +68,14 @@ def hunks(diff: str):
 
 
 def report(base: str, head: str) -> list[str]:
-    names = git("diff", "--name-only", "-z", "--no-renames", "--diff-filter=d", f"{base}..{head}").split("\0")
+    names = git("diff", "--name-only", "-z", "--no-relative", "--no-renames", "--diff-filter=d",
+                f"{base}..{head}").split("\0")
     paths = [name for name in names if name.endswith(".md") and name.startswith(PROSE_ROOTS)]
     if not paths:
         return []
-    diff = git("diff", *DIFF_FLAGS, "-U0", "--no-renames", "--diff-filter=d", f"{base}..{head}", "--", *paths)
+    # :(top) makes each root-relative path match from any working directory.
+    diff = git("diff", *DIFF_FLAGS, "-U0", "--no-renames", "--diff-filter=d", f"{base}..{head}", "--",
+               *(f":(top){path}" for path in paths))
     lines = []
     for path, start, removed, added in hunks(diff):
         for word, pattern in PATTERNS.items():
@@ -86,7 +93,10 @@ def main() -> int:
     parser.add_argument("--head", required=True)
     args = parser.parse_args()
     # A stdout encoding that cannot hold a character must not make the script exit 1.
-    sys.stdout.reconfigure(errors="backslashreplace")
+    # sys.stdout is None when stdout is closed.
+    reconfigure = getattr(sys.stdout, "reconfigure", None)
+    if reconfigure is not None:
+        reconfigure(errors="backslashreplace")
     try:
         lines = report(args.base, args.head)
     except (OSError, ValueError, subprocess.SubprocessError) as exc:

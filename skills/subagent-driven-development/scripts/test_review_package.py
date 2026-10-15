@@ -1,7 +1,10 @@
 import importlib.util
+import os
 import subprocess
 import sys
 from pathlib import Path
+
+import pytest
 
 
 SCRIPT = Path(__file__).with_name("review_package.py")
@@ -167,6 +170,17 @@ def test_non_ascii_prose_path_is_listed(tmp_path, monkeypatch):
     section = payload.split("## STE lint\n", 1)[1].split("\n## Scope qualifiers\n", 1)[0]
     assert f"- {path}: base: " in section
     assert payload.split("## Scope qualifiers\n", 1)[1].strip() == f'- {path}:2: dropped "if": Stop if wrong.'
+
+
+def test_non_utf8_name_does_not_crash_package(tmp_path, monkeypatch):
+    repo, base, _ = make_repo(tmp_path, {"skills/x/SKILL.md": GOOD}, {"README.txt": "x\n"})
+    try:
+        (repo / os.fsdecode(b"bad-\xff.txt")).write_text("x\n", encoding="utf-8")
+    except (OSError, UnicodeError):
+        pytest.skip("filesystem rejects a non-UTF-8 file name")
+    head = commit(repo, {"skills/x/SKILL.md": BAD}, "head2")
+    section = run_package(repo, base, head, monkeypatch, tmp_path).split("## STE lint\n", 1)[1]
+    assert f"- skills/x/SKILL.md: base: {hard(GOOD)}, head: {hard(BAD)}" in section
 
 
 def test_no_changed_prose_means_no_scope_section(tmp_path, monkeypatch):
