@@ -72,11 +72,11 @@ instead of needing an exemption from it (design D1, approved by the user 2026-10
 
 | Check | Command | Exit | Notes | Criterion |
 | --- | --- | --- | --- | --- |
-| helper tests | `env PATH=/tmp/harness-tests-venv/bin:/usr/bin:/bin python3 -m pytest -q scripts/test_run_at_commit.py` | 0 | 9 passed | SC-1 |
+| helper tests | `python3 -m pytest -q scripts/test_run_at_commit.py` | 0 | 9 passed | SC-1 |
 | helper unknown sha | `python3 scripts/run_at_commit.py 0000000 -- python3 -c pass` | 125 | prints `run_at_commit: unknown commit '0000000'` | SC-2 |
 | helper passes exit through | `python3 scripts/run_at_commit.py HEAD -- python3 -c "raise SystemExit(3)"` | 3 | runs in a temporary worktree at HEAD | SC-3 |
-| red/green cases | `env PATH=/tmp/harness-tests-venv/bin:/usr/bin:/bin python3 -m pytest -q scripts/test_verify_summary.py -k red_green` | 0 | 19 passed | SC-4 |
-| verify_summary tests | `env PATH=/tmp/harness-tests-venv/bin:/usr/bin:/bin python3 -m pytest -q scripts/test_verify_summary.py` | 0 | 91 passed (72 before + 19) | SC-5 |
+| red/green cases | `python3 -m pytest -q scripts/test_verify_summary.py -k red_green` | 0 | 19 passed | SC-4 |
+| verify_summary tests | `python3 -m pytest -q scripts/test_verify_summary.py` | 0 | 91 passed (72 before + 19) | SC-5 |
 | template input type | `grep -q 'bug fix' templates/SUMMARY.template.md` | 0 | | SC-6 |
 | intake input type | `grep -q 'bug fix' skills/feature-intake/SKILL.md` | 0 | | SC-7 |
 | implementer instruction | `grep -q run_at_commit.py skills/subagent-driven-development/implementer-prompt.md` | 0 | | SC-8 |

@@ -56,11 +56,11 @@ that runs a test at the pre-fix commit, and an advisory red/green check in `veri
 
 | ID | Behavior (observable) | Check (re-runnable) | Expected |
 |---|---|---|---|
-| SC-1 | The helper's own tests pass | `env PATH=/tmp/harness-tests-venv/bin:/usr/bin:/bin python3 -m pytest -q scripts/test_run_at_commit.py` | exit 0 |
+| SC-1 | The helper's own tests pass | `python3 -m pytest -q scripts/test_run_at_commit.py` | exit 0 |
 | SC-2 | The helper exits 125 for a sha that does not exist | `python3 scripts/run_at_commit.py 0000000 -- python3 -c pass` | exit 125 |
 | SC-3 | The helper returns the test command's own exit code | `python3 scripts/run_at_commit.py HEAD -- python3 -c "raise SystemExit(3)"` | exit 3 |
-| SC-4 | The red/green check cases pass | `env PATH=/tmp/harness-tests-venv/bin:/usr/bin:/bin python3 -m pytest -q scripts/test_verify_summary.py -k red_green` | exit 0 |
-| SC-5 | Every `verify_summary.py` test passes, old and new | `env PATH=/tmp/harness-tests-venv/bin:/usr/bin:/bin python3 -m pytest -q scripts/test_verify_summary.py` | exit 0 |
+| SC-4 | The red/green check cases pass | `python3 -m pytest -q scripts/test_verify_summary.py -k red_green` | exit 0 |
+| SC-5 | Every `verify_summary.py` test passes, old and new | `python3 -m pytest -q scripts/test_verify_summary.py` | exit 0 |
 | SC-6 | The SUMMARY template lists `bug fix` as an input type | `grep -q 'bug fix' templates/SUMMARY.template.md` | exit 0 |
 | SC-7 | Intake lists `bug fix` as an input type | `grep -q 'bug fix' skills/feature-intake/SKILL.md` | exit 0 |
 | SC-8 | The implementer prompt tells a bug-fix task to use the helper | `grep -q run_at_commit.py skills/subagent-driven-development/implementer-prompt.md` | exit 0 |
