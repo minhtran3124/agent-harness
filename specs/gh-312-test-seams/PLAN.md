@@ -1,6 +1,6 @@
 ---
 slug: gh-312-test-seams
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-10-16
 ---
@@ -277,3 +277,4 @@ SC-10, SC-11 and SC-12 are the targeted checks for the files this plan edits. Th
 ## 6. Status Log
 - 2026-10-16 — tasks 1.1, 1.2, 1.3, 1.4 complete; commits d60491e, 21799ef, f8019a6, bb99661, fixes a4cf8fa, 113a374
 - 2026-10-16 — task 2.1 complete; canary pass, gh-175 replay recorded in canary.md
+- 2026-10-16 — shipped: review chain complete (audit PASS, correctness 0 blocking, intent clean after E001-A); PR opened against sdlc
