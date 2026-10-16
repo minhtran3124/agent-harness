@@ -1,12 +1,12 @@
 {
   "created_at": "2026-10-16T03:08:40Z",
-  "last_event_id": "d380fdf1-d4f2-4b76-8dff-47a6f15b1a87",
+  "last_event_id": "9bb9dd27-9ed4-4f7d-9529-5a426c715022",
   "resume_event": null,
   "run_id": "cf9dd442-1162-4dd9-ac68-d5a99a669ccc",
-  "seq": 6,
-  "sha": null,
+  "seq": 7,
+  "sha": "c87351c0a4a8da535cf06bba292e38d6aaa69671",
   "slug": "gh-309-grilling-rounds",
-  "state": "ready_to_merge",
-  "updated_at": "2026-10-16T07:54:52Z",
+  "state": "shipped",
+  "updated_at": "2026-10-16T08:02:52Z",
   "waiting_on": null
 }

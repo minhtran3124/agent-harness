@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.33.0] — 2026-10-16
+
+- feat(brainstorming): grill the design frontier in numbered rounds (#309) (PR #322)
+
 ## [2.32.0] — 2026-10-16
 
 - feat(skills): deletion-test procedure for the 600-word skill ceiling (#308) (PR #319)
