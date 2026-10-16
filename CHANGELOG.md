@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.31.1] — 2026-10-16
+
+- feat(evals): hardened intake-classifier eval runner (M5) (PR #305)
+
 ## [2.31.0] — 2026-10-15
 
 - feat(workflow): failing-test-first protocol for bug fixes (E5) (PR #301)

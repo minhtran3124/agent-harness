@@ -1,12 +1,12 @@
 {
   "created_at": "2026-10-15T17:03:27Z",
-  "last_event_id": "1915647c-5d0e-40ee-8b43-2fdc82fd08db",
+  "last_event_id": "26113260-f30f-415d-88d1-833616248de2",
   "resume_event": null,
   "run_id": "2ab5554a-dd2c-4f5d-8b22-33aafb1fe7fa",
-  "seq": 6,
-  "sha": null,
+  "seq": 7,
+  "sha": "b763abd06ec5edbcfd5456f2f098143b33aac9f5",
   "slug": "eval-runner-hardening",
-  "state": "ready_to_merge",
-  "updated_at": "2026-10-15T17:30:34Z",
+  "state": "shipped",
+  "updated_at": "2026-10-16T01:19:19Z",
   "waiting_on": null
 }
