@@ -60,6 +60,7 @@ def test_description_and_skill_surface_ceilings_fail_with_named_diagnostics(tmp_
     assert result.returncode == 1
     assert "description exceeds" in result.stderr
     assert "progressive-disclosure ceiling" in result.stderr
+    assert "docs/solutions/harness/deletion-test-for-word-ceiling.md" in result.stderr
 
 
 def test_vendored_skill_with_upstream_md_is_exempt_from_word_ceiling(tmp_path):
