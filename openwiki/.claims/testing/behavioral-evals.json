@@ -1,0 +1,366 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:22a8717b54b1248e1ae90531b40452a69bbec24414776c0eab48755747d21a5e",
+  "claims": [
+    {
+      "id": "claim_449e9178adb04acd84be9c9bf0de4d45",
+      "statement": "Behavioral evals under evals/ score non-deterministic skill judgment against labeled ground truth, and their LLM runs are triggered manually rather than in CI while scoring is deterministic and scripted.",
+      "evidence": [
+        {
+          "resource": "repo://evals/README.md#L1-L29",
+          "version": "repo-lines-v1:sha256:dc105d517971d3673bd6cd0bd70c8154b05a16bdb768202f52f7774dcee323cf:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmMjVhNjRkNWMxNjRhMjc3NTdmOWFkODNiOWYwODBiNzRmNGNlZjc5MzI1ODFmMGFmNTA5MDY2ZDg3NzBlM2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmZjFhNzkyNDMzNDYzYTQxYzYwYzM4ZTM5M2ViNzliOWU4MTBkYzE2ZWY3OGVjMjE2MTE3MTM5YjNlODk2MmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5f517e8b485e48f199c111300faadb02",
+      "statement": "The review-chain benchmark measures only whether /correctness-review and /intent-review catch the planted defect classes in its fixtures; its numbers are not evidence about the full workflow chain or real-world catch rate (not_observed != absent).",
+      "evidence": [
+        {
+          "resource": "repo://evals/skills/review-chain/README.md#L8-L15",
+          "version": "repo-lines-v1:sha256:0dde8aa1cbe60e3929f0ecf36f1ce4ab298f29f6c91c6bfb866b19a44e46123e:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDYzMjUyM2NhZmRhYzliNDZjYzc3ZTUyNTkzYzNmYTdjYjJhMjk0MWJkODY2MTNhOTMzNjQ3NThhYzhkNDFmNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTQ5ZTM0NjJiOGE3OWZjNzJlOTA1MGJhMjRlYTJjY2FkOTY4YWZmZmY0YjdmY2JhYWMzNjY4MTJlZDI2MTMyOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDBhMDk5ODgwZmJlYWRmOTZmY2UxOTNiZjgwMjcwMzkwZWU5MzYxMzg5NjI1YmIzZTgwMTZlODRkMDg5NDA2MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDE5ZGY1Mzk3ZTQwMjlmNThiYWU4OTBjMDFmNmI5MGJhMmUxZDJlZWQyM2E0ZGVmMmUyMTVlMWY4ZWM4YTIyZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_4106fff488644ed5a08d6635399c5c60",
+      "statement": "Each review-chain fixture contains intent.md, a diff.patch with exactly one planted defect, truth.md, and a machine-readable truth.json naming the expected oracle, core and correctness_clean flags, a planted pattern, and false-positive patterns.",
+      "evidence": [
+        {
+          "resource": "repo://evals/skills/review-chain/README.md#L17-L31",
+          "version": "repo-lines-v1:sha256:56e692dfb1aa4abb289f97290bfbdd6f95b4a2e96990c9034dc24e0bf3f3afd3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5N2Y4OTlkYWJhMzcyNjBiNWM0NGMyODhhZjZkYTc2YjkwMWY5MGEyMzI2MDNlMTMzYjMxNjFmMmI2MTkwMTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzZDIyOThhNzgzNWRmMGUwZWFkOTVjZjY0MTYxODE2NjU2ZTc0YjlmMGM5YmRlOGExMzhiYzg4NDVmMjRlZmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlOGNjNmI5NjNlMTAyN2MyZTc5NTVkM2I5ZWQwZjFjZWYzYmRjZDljZTdmNzA1NTI5YzdjNjA0NmZmM2Y4ZjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1MWNlZTYwOGNiYzdiYWQyODE3OWM5ZWNmOTQ1ZGFmNDBmODEyM2I3YzlhYjlmNGZiZTNkZGZjNmM1ZGY1OTEifQ"
+        },
+        {
+          "resource": "repo://scripts/score_review_chain_eval.py#L48-L67",
+          "version": "repo-lines-v1:sha256:c5d5044f2fd0c9f36c3d74c37a9fcbc077558728a0b150b46ea182c91cccfd2c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyZjg2MjNiYjMwOTRlODI3ZTM5ZWVjZGNmYTQxNTM2NDMzNTM1NzA0YjEwZmJmMGQwZDEwNTA2NjI1ZWRmM2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2YWY3YzJhYzIyNzk2MGZjZDVjM2NjODgwZDViMDhjZmIzOTcxMTJkYTgxMGJmNzVjM2Y0ZWJhYTNhMzdlNWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJhNmNjZDliYjliZjMxOTJkNjNiYzM0NDQyYWY1NTI0NmNhY2UwMjEzZmRlOTZhNTQ4NDIzNmU2ZTBlOTBiM2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3ZDg4MzI5ZjAyODg2MTBkZWZkZjM4NzhlZTkzMDlkYmFmOGU1ZmZlNTVhMjA1M2Y1Nzc3MjBlZTljYjg5MmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_13091c19eaa14feaa9cb6e1a749d77be",
+      "statement": "run_review_chain_eval.py sends a fixed two-oracle prompt with intent.md and diff.patch inlined to claude -p with no tools from an empty temporary directory, so the reviewer never sees the answer key.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/run_review_chain_eval.py#L15-L79",
+          "version": "repo-lines-v1:sha256:d87d7fad1d3d8b5e03b139d045125f70a53e67c277a75db6f6e11b2dd4d2de6c:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwMzEyYjY4OTExY2FmNmRkZTE4M2E1NDM3ODI0ZDc1MmM4ZjBmMzg1NTUwOGUzZjc4YzE4ZGFlMTM1ZTRlZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlZDM1YTIwY2QyODg4MmIxYzMwN2VjNjI5MzhiODhiODQwYTFiYTM1NjIyZDNiY2I5ZGUwMjg2YzUwMjkwNjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIxZTlmZTZiMzRhYjA2ZWQ5Mjk5MGJiMjdmNzc2MDljZDFiYjJiYjVjMjkyZGZmMWY2NTJmYmRmN2Q3YzM4ZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmNjljYTQ0MjUzZjVkYTQ2ZTk4MzIzNWJiNzNjMDFjZWMxNjM3ODAyMWE3ZTY4MzkyNmZlMjQyMGY4MzY4NDUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2cfaf4ccf22e494ca7b013d94d2bd536",
+      "statement": "score_review_chain_eval.py reads findings from the last fenced json block that parses as a JSON array and marks a reply unparseable, rather than zero findings, when it mentions a json fence but no block parses as an array.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/score_review_chain_eval.py#L211-L228",
+          "version": "repo-lines-v1:sha256:69ce56b1ed05e3354dfcb9272fa22ce3a4cdef4a192198e0fa4e7fed69d18f47:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwODJjNzlhOWI3ZTFlZGQ4YjQwNDAzMDNiNjlhZTQ3ZjU4OTFkMjkwZjNlZmE1ZGU1MGIwMGM5MmYzOWJmMGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllNDkxMTJlMTI4OWYzY2Q5MmI2NDRmZjA5YmQ2NmFlYzgxNzEwOGM4MDkyNGVkOGZjZDZhNTdhYWFkZDgyOTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MDE0OWUwNjlhZDY3ZWNjZjQ3MzY0NmZmMWM3NTAwNTBkMzI5ZDExMDAxOGRjNTc2Njg3OGVhZmExZDYwN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjljZDkxYzRjYzE2ODliNzZkYThhNTA1NjAyNTMyYTkxMjgyNGE2M2RhMzFmMDQ3YTRhZTUwNzg2YjllZTIxMTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c1cf7c2725454e4d829157722f92e27d",
+      "statement": "The review-chain scorer classifies class-unknown findings as other, then planted (file plus match_any plus and_any match), then listed false positives, and treats any correctness finding on a correctness_clean fixture as a false positive; a fixture is caught when any finding is planted, with oracle_match recording whether it came from the expected oracle.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/score_review_chain_eval.py#L177-L269",
+          "version": "repo-lines-v1:sha256:2c3345506be7e872e08b0f7cdecbbf73726bc028f04647f9d4401831b8384604:eyJzZWxlY3RlZExpbmVDb3VudCI6OTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzNmUyYmE1NGE4NGU1ODJkNDM2MGRkOGU1ZjMxMTFiODNmMjA1MTZjM2YxMGJlMzVhMDE2NjEwNjcyODA3NjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkMzg1MmU1ODI5ZWMwYzQ3M2M5YTcyMjZkMjU0Mjc1YmY5YWZkODgxNWVhOTdhOWExODhkMzBjNWQxYjlkZjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg4OTBhMWI3MjFkM2JhYzUxMjZiODdhYjBkY2I3NzBlYzg0Y2MxZTEzNWI4MjZiNzlmYzY2YmQyNDE2MjEwMzYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_513cf5bd976e44f29300a35f683ab32c",
+      "statement": "Errored, unparseable, and not-run review-chain fixtures are excluded from the totals instead of scored as misses, token totals include errored cases, and --score exits 1 when no fixture could be scored.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/score_review_chain_eval.py#L291-L374",
+          "version": "repo-lines-v1:sha256:812355d695336bebd73e55a0a315e9c3a4facc13e8450bec3fcacc5a9640419f:eyJzZWxlY3RlZExpbmVDb3VudCI6ODQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyZjc1Y2ZkOTlmMTE3NDM3MDllYzUwNDIzYjg3ODEzYmIzNTMxMGU3NjlkNGMxZTFjZjRkNzMwNmFlM2Y4NjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwOTg5NjY1MDRjYWE2YjdiYWYwZjc0YzM0Mjk1OTMxZTViZDIyNmUzMzFlNzcwYzUzODNmMWQ1NzI3NTRiMmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU0NzVlZjc3YWJhYzMyNTMwYTBmYzVjYzhkNDQ0YjMxYTk0YzcxZjlmNGMyZWEyMGI3ZDBhZGFlZjBhMjdkNGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIxNWM5OGZlNzZmZDFhNDAzODc4MGI2NzYzZDZlOGI1OWQ0NWJmNDkxM2M4NWI4MmY0OGU1NTE4M2QzNjk4NWUifQ"
+        },
+        {
+          "resource": "repo://scripts/score_review_chain_eval.py#L412-L430",
+          "version": "repo-lines-v1:sha256:3a6565285398895b2296ae65a1b4c009a13b2c46ad6d742fcca224ac16864085:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOWJlNDM1YzEyODg0NGQxZjRlNTNlZWJhZDViMjdmMGE0ZTYwMzVkZjNiMzdkOTVlYjYzNGI4ODkxZjdhMmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2MjMzYjNmZmVhMzJhMjNkZjUzMDY1MzQzNDhmMmRlZTc3NmE1YTZmNzRmYjUzMzE3NWRkYzUzOWE4ZmU0NjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJjZDM2YmY4MjQyM2FhMzRiOGQzZDAxYjM1NWIwOWJiZGEzM2IwYzAwNDM0MTJjZGU2NmFhOGY4Y2Y0MGZhM2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkNDEzNDBjYzIzOWExNTljZTliNjAyMmU5ZjYzMjI4MzJlMmVhZDc2Y2FlOWU0NzU0ZDIxMGViOGZiNmQ1ZTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_04a29f60727b4f6b9c70c1ef03e75e82",
+      "statement": "Review-chain confidence values must be plain decimals; non-numeric or non-finite values are warned about and treated as 0, numeric values are clamped to 0-100, and false positives at or above --threshold (default 75) are counted separately.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/score_review_chain_eval.py#L231-L251",
+          "version": "repo-lines-v1:sha256:fe3ca9b3cb52f39e60317ca7b70c7b4aed52228a82c0ec2f9eedacbfeacfdbe1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiMjkyMzY2OTdlNzViMTM2OTgyOWQ4NDk0MzdmOTY5ZTVjNmRjM2RjMzFhYjNkZDk3YTRhNzg0ZGIzZTlkNzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxZDgxNWVkNWE3MjNmOTdjNzBiMTQ1OGQ1MmExMDJkNWNhYzFmNzg5MTExMjI5ZmMyNmVkYTc5YTU5NmIyMDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1ZDI2MmZiYjljMDM4MmQ2OTFiNWQwNThlZjJkZjJhZTczMDFiNmViZDk1YmJjYWI4Y2NhZjEwNjgwYjZjM2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZlZTlhOWVhOGFhNWI3YjI0ODk1Y2YxNzFhNDljNDc2YTE1NDA0NWZmZTQyNzhhYmJlZjU1YjM5ZGU5ZDg0YjMifQ"
+        },
+        {
+          "resource": "repo://scripts/score_review_chain_eval.py#L357-L366",
+          "version": "repo-lines-v1:sha256:248ccb485d5814f00fd7c58e6fad22c2ffbd36a89c2edd2f29bc07f1101d04f2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhNzgwZmFhMDc2MzUwY2NmOGNhNmE4OWE4NDJmMDM4ZGY4NjU0MDY2MzM3MGQzMjJmOTRiMzllMjVhYzkwYjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmODZjODNmZGEyYzQxNzNmM2RlY2EyMzQyZTYxNGExZmE3MmNlN2Q4MWJmYzFlYzA3ZjY2ZmY3MjA2MGFjNjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlmZTI3Y2NiMTgyMzNkMjUyNzczNzJlMzlkM2ZlZGU2ZDdjMzFlNDFhZTFkMGZmZTlmMGZiNDQ2NTBhNzQ0YzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlN2Q5YTFkZmNhMzljMmY3ZTFhY2Y0NDliNGNlNDgxMmRmNzA0ODBlMjBlMmMwYjVlM2ZlMWYzNDk0ODg2OWUifQ"
+        },
+        {
+          "resource": "repo://scripts/score_review_chain_eval.py#L388-L388",
+          "version": "repo-lines-v1:sha256:2f1512ce117689399580ce3aebd67329c5f6e8c0663678f131d3ce253ff06ee5:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmYxNTEyY2UxMTc2ODkzOTk1ODBjZTNhZWJkNjczMjljNWY2ZThjMDY2MzY3OGYxMzFkM2NlMjUzZmYwNmVlNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmYxNTEyY2UxMTc2ODkzOTk1ODBjZTNhZWJkNjczMjljNWY2ZThjMDY2MzY3OGYxMzFkM2NlMjUzZmYwNmVlNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjJjNzBmNTBlMTBkMzhlNjgyMzg4YTMzMzFhMWRiZjRmNTk5ZTNjNWY4NTY3Y2UxOTJjOTUyOGQzYWZiZWZjNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWMyYmI3N2MxMjk1MzRmOTFhNjZjZWQwNmY4ZDM4ZmJhNjRlZmJlNWNmNDc3YTUyZjZhNjRjZDAzMTkwY2FkOSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_96e5b32f5007426d8cebdfc611e14693",
+      "statement": "run_review_prompt_eval.py A/B-tests the real reviewer prompts of two git revisions under identical fixed conditions (safe mode, Read-only tool, clean temp directory without truth files, per-call and total budget caps), never reruns a recorded call, publishes records atomically, and is manual and not part of CI.",
+      "evidence": [
+        {
+          "resource": "repo://evals/skills/review-chain/README.md#L130-L203",
+          "version": "repo-lines-v1:sha256:bf63142b7113fc1512b4563dd0a58b6bef6539d319d52324a24747c64c0e27f5:eyJzZWxlY3RlZExpbmVDb3VudCI6NzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiZTY3ZWI4MDlhZWMyZjA2NDc1YWVjZDEzOWM2ZWUyY2FiNWU1M2FjNjBkMTkzNzkzYWEwYWVmNWU0YjkwYTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzNzc2MWQxNzQ5NmM4NGFiNjI4MWNmZTkyN2I4ZTFhODUyODk1N2RjNWZjYWU0NTU3OWNhN2M0YTU1ZWVhYzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJjYjE3OWFjNzliNTk2MzAxMzA1NDRmNWQzNmNjYjJiNzUxMDhlNjBlMDM1NDhlMDg2MjExYWQ0OWM4OWZkZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhjM2E0NDY4ZTM3ZjVlNGU0NDVkNmUxYjk0MGViMjRlOWNhNWNhZjY1MWM5YmI1Y2U1NjdjOTBmNGJiMzYwZWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_04bc6149f29f4d2ca4ec8e24d4925bbe",
+      "statement": "The test-runner eval runs the agent body as a system prompt via claude -p with only Bash, Read, Glob and Grep tools, project-only settings and strict MCP config, and records reports, Bash commands, usage, and a before/after hash of every repo file.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/run_test_runner_eval.py#L1-L97",
+          "version": "repo-lines-v1:sha256:05ba64a6289c957153c0fe80ba5238b94f81f29c602ec70b09e75e420ed0e858:eyJzZWxlY3RlZExpbmVDb3VudCI6OTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2ODJjYmRiNGM4YjA3NTE4YmY0ODZjNTg5OTBmYzM5MTc4M2FhMjBhOTE2YmZiMjdhZDIxMWViMWQ1YzM2NDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyNWZmNDZhNDk5OGVhNDlhNzJmNDc4OTYyNDc1OWE1ZjBhYzM0MWI1ZjJjNmQ5ZjBjZjQ1Yzg5MDJhN2RmOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0OGQ3NDgzZDA2MGYxNzIyZTI0NTM2ODg4MzM0MjU2YjU0OTBlOGJiZTg2OTgyMDY3NmNhOWVhZjM1MDljYzkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_34adcfe9d3bb483fb29ccc50b3d1c475",
+      "statement": "A test-runner eval case passes only if the verdict, failing-test recall, absence of false failures, Failed+Errors count, and required mentions all match, the agent ran pytest itself, and no repo file changed; diagnosis is scored separately.",
+      "evidence": [
+        {
+          "resource": "repo://evals/agents/test-runner/README.md#L38-L43",
+          "version": "repo-lines-v1:sha256:3716de0c05d8d35f87d717a97a48b8ede3920bb9491a1c49ab47730e955dce7e:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODY1NWU5N2ViMTAyNzZkYzgwY2E5ZTgzODc4OTRjZjZjZjE2NjVhYTI5OWFkMTkxMzQ2ZGFlNTEyYTgxN2I5YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzVmYWQ2MzVjMjJmMTg1YTM3MjEyNmY3NDk5NmNlNDA1OTkyMWM1MjBiMTcwZDdiZjEwOTY0MjU1MzEyMTljMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGVkOTRlMDFmODZmYjRmYjAzZmFiOTBhN2IwYTE0YTE0OTIxNjNkMzBmNjRmNWQ4ZmY4M2M2MjBkMTAwY2ZlNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzFmYjdmYjE1ZDhmMTJlZTNmNmZiNmVmYjA4MDhkYTNmOTYxMTJmYmQyNjc2MzFlNzhkNDJiY2JiYzU5NTkzNCJ9"
+        },
+        {
+          "resource": "repo://scripts/score_test_runner_eval.py#L48-L70",
+          "version": "repo-lines-v1:sha256:33c873a00c1aa70d4e02c762b129e1fc1fdd7f29fba3a5678389d61fe2b17320:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxYjhkMTdmNmM4OWY0MzM4N2ViMTEzYTYyNDBlNGFmODFkZDg1Zjg2NmY0NDI4M2E5MTBhZTk1YWM3YmEzM2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzYjM2ODA1YTIzNGMxYTljNTU5MWNlYTUzN2FkYjdkNWEwMDNhMDYzNzVmNjg5Y2MyNWE0NjU1MzNiOTM2YjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFhMzIyOWFkYTY0ZDk5MTA2OWI0YmQyY2ZmOWRiNTJhMDA2ZmE0NjRlMjU3MzA2OWJjYjlkMjNkMDhiNDVlOTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM2ZjBhYmMzOTRmNWI5Mjk0MTljZjI2NjA3MmI3ZjliMzk3NzkzMTdiMjZjYjJhZTY4ZDlhMzkxNGVjZTg4NmIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_13f1e200467c46f480a726808cb2ada9",
+      "statement": "Hard-gate respect is the non-negotiable intake metric: a fixture whose truth declares a hard gate must be classified high-risk, and score_intake_eval.py --strict exits 1 when any hard-gate fixture is downgraded.",
+      "evidence": [
+        {
+          "resource": "repo://evals/workflow/intake-classifier/README.md#L17-L20",
+          "version": "repo-lines-v1:sha256:5aca3f544b7b31638bf2c333fc1adc0ae5003d0b7be400cd40f4000318fdff85:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGFkZWVmY2ZlY2MyMzBjMzdiZGY4MzQ5ZTMwNDZkZTg2MzM3ZDM0NmRjZGRjY2VhOGZhNDk4NjZkMGRkNDUxNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDFjYmI3NjZmNzc3M2FiMWJhM2Y3ODc0NTU5OGJlYTRlYTM5M2ZmYWY1NDhmZmY3MDBkZTgzMzIwN2U1ZmQzYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjFiMTdjMzVkN2Y3ZGZjMTkyZGU1YWU0MWVmMDAxMWMyMDE5NTA3MzcyOTMwNjRlMzBkZDJkY2NlNGQ0NmVmZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDE5ZGY1Mzk3ZTQwMjlmNThiYWU4OTBjMDFmNmI5MGJhMmUxZDJlZWQyM2E0ZGVmMmUyMTVlMWY4ZWM4YTIyZSJ9"
+        },
+        {
+          "resource": "repo://scripts/score_intake_eval.py#L254-L260",
+          "version": "repo-lines-v1:sha256:6082e435f304d06dc07af70d976779eee8b002747ddd2146628c62efa4b2de45:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWMwMDMxMGZkZTljOTU5NGFmNjNkNzI5MGMxN2UzY2I0ZmIzYzg0ODA3MjE2ZjU4MTMzN2EwM2Y3MTFlNjhkMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTYyMzNiM2ZmZWEzMmEyM2RmNTMwNjUzNDM0OGYyZGVlNzc2YTVhNmY3NGZiNTMzMTc1ZGRjNTM5YThmZTQ2NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWNlNTRmMGY5NWJiYTliZWJlZmJlZGVhMjMwOTY1M2MxMTkzZWJiYTc4NjkyYTYwODg2ZjM5MThiYThiNDBlYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTAwYzEzMDgyZmE2NjE2N2E0NDg3YTRkMjlhNWNiNjhhN2FkNTBiNTQ3NTI3ZDczMDAwZTJhMzE0OWM1MmY1MyJ9"
+        },
+        {
+          "resource": "repo://scripts/score_intake_eval.py#L93-L101",
+          "version": "repo-lines-v1:sha256:c30c4ac2dd2faee583df81cda8891c5abcdd5cdd05107530b78f33b86b02a6ed:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGQ1NjI1NjljN2VmMDgxYzBhZDE5YjVmZGYzZTk1ZTJiZjI5MDkzYTUzNzUyM2E4ZDQ3MWRjMmFhMmYwOGZiNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzg4NjUwNTFmYTk5OTE1MTI1ZWUyZjVkNzg3YjNkNmFiODkzNjQ5ZWVkNDk2OGY2OGRkNThjZTY0NTFhMGU1YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDdiOGViNDNhYmZjMmJkMThiNzFkNjU3NzYyOGY1ZDgzYmE3Mzk1Zjc1MjgwMzZhOTMyOTAxOThmZTVkYjUzOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTFjMjlmMjk3MjY2NjA2NGI3ZWRhM2ZkNzMxNGI1YTVmM2EzZDk0MzMzYjNmZDY4ZmJmYTg0ZjJhMDhlZGQwNyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_b7b0f99d4c8d4f9593aae24665e1e221",
+      "statement": "run_intake_eval.py runs each fixture in a scratch git worktree at the eval.json pinned from commit, deletes evals/ from it, deploys the branch harness config into it, and refuses to pass --bare to the client.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/run_intake_eval.py#L110-L146",
+          "version": "repo-lines-v1:sha256:5b8230660d39d5648fe9ea05ee1bd40b4cb2f2fc4ec393181add87dd332d3462:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhNjQzNTA4YWM4ZTk0ZjIwMGVjNTlkOGQzNTIyMTIzNWIxY2Y4ZjMzYzI5NjhmZTRmZGQwNzAxNzRmMDc5MzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllNzA3MGI3MGE4MzcwMGJhYjFjYjRmYmU5MGQzYWNlMzA2OTZjZTVjZTIwN2I5MzEzMTVlZjI3ZDQ1NjA3ZDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFmNWI0YzQ3ZjdhYWI2ODE4YmY2ZDU1NDlkZTcyN2E0OTYyZThlMDEyNTQwZjM0MzAwYWQwNDdjYjE3YmFjZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFhYzc1MjcxNThiZGYwNTdhYmFhMTI5Y2M0OWQ1MzIxMjY2ZTQ4ZjcwZTQ2OGUxOGE1MmM1YWEwOTU2YWI1M2QifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_88ba9c6d32b1464290d139e4744759a9",
+      "statement": "run_intake_eval.py copies the scorer and fixtures out of the repo before any fixture runs and scores with that copy, so agent edits to the in-tree scorer or answer keys cannot change the score.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/run_intake_eval.py#L219-L235",
+          "version": "repo-lines-v1:sha256:d139404d715c1e75fc2cceb9959b93d96b480c4e5be7aaf40042772fabf76fb4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2MWQwNGY5Y2ViNzZhMzY1MjQwOGJlYTdmN2M3OTA1NzAyOGViZWZmN2VhMWE2OWQ4ZjAwYWE3ODE3MDE5YmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxNzM5YjNhYTk5MzNjZGFjZmY3Nzc5NmQxM2IyMzYzNjFlZWFlNzBkNTkxZjRhYjFjMDc2NWU3MGYwNmI2NTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViNjNiOGUzOTc5YTRkOWFkNzQ1MDFkMmNjNWQzNWM4OTI0ZWQ1NTA2ZGM4ZWMyZGE0ZTcyNTUxNzU1ZjRlNzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIyYmVlNDBhNTdmZWNjYzNiNTA3MzJmMDk3MTdjMTFhMTA2YmNiOGZlMmVjNmFhYmU4OTYyMzExZjk5MWRhM2UifQ"
+        },
+        {
+          "resource": "repo://scripts/run_intake_eval.py#L77-L82",
+          "version": "repo-lines-v1:sha256:bb39786b5816609caae64ccdcd824b6a7caddc80310fabc39a4d045b206bc91d:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDUyYWVkMTBjNGZhMjE4MDAzNzU5ZjRhZWIyZjEyNzE2YWUyMWM5N2E3N2E1ZTYwMmMxMTk4YmQwOGFhNTg2ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTgxOTEyZTA1YzM2ZGU2MjcxZjIzNDVkMzkxYmI5NTU3ZDNlNWY1ZmIzODdkOGQ1MWMwZGYyNzZhNzkwMWU5MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjAzNmQ3ZjJlNmE4MTg1M2Q2YzIxNGY0MjhkYWUwMTllNDFhMWFjMWRkNDc2MzRhOTMxYTE1NDM2ZjY1MTA5OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGY5OTIzMzcwN2VmZjM1MDEzYzFjOGI1ODQyMWEzMWE2YzNjM2RlYTRiYTNhNTE1ZDFlMTNmM2E5MWMyZTBkNyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_5f8277df922c4bfc9dcc5b9eae2c0af8",
+      "statement": "An intake fixture is marked stray when any file outside its may_change globs (fnmatch) changes or any repo ref is created, deleted or moved; the runner exits 1 when any fixture is not ok or the scorer fails, and refuses an existing output directory.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/run_intake_eval.py#L100-L107",
+          "version": "repo-lines-v1:sha256:1e9ea90c3162edffb7351f29ce35e98fed0d6d1f2b6e5e3baf4d5373ec140597:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTY0ZmRmNDNkMDUyZjZmN2ViODEzZjliNTIyYWUyN2YwZTY3ZmM4ZjJjNTFhMmFhNzY0Y2IwNjE4NmZiN2NkMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzhiMWJlZDQ0OWFkOWJiNGZjZmVkNjk4NGY1OGZjNGEwZGZjY2YyYmU2MGRmYmM1ZTJlZGVmMTdmZTRiZmRlYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzY2NTE5M2Q2NWU1NGIwNDlmMzFkNzA5NDUzN2YxZmRkNTBiNGViMGI0NGM4Y2RlY2I3ZmE0MzNjOGQ4M2Q1NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjg2NGY5ZDIzOWNlM2IwOWEyYTFlMjRkZDJiNmJmMmY1ZjVmYjM0YjJjMGEzOGE2ZWJhOTg0ZjBlNWU2MDhhZSJ9"
+        },
+        {
+          "resource": "repo://scripts/run_intake_eval.py#L148-L167",
+          "version": "repo-lines-v1:sha256:93d686b8095b9271e51c4b6c6704166acb39289b1728221cf2e3ece9d88837d4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzODk5YWE1YTJjZDBiZmY4NDdhZDNhYjVkZGUxYzc3NDBhNGVkMzliZDYxYTc0ODM1NWEyNDZmYzdjOWQzNTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwYTNkY2VhNTk4NzE5NmFjOGRmZGE2MzIzNzc2ZjA0MmE1MTgzNDU0MjVjNzFjYmNhMGM3NjQyMzMyYmFiNjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg3YmYwODUzMDM0ZWU2MzZiMWU0MzI2YmVlZjhlNTkzYThkZjM1OTNlOGIzNDA3NTM1OTM3YTRiM2NlMGZjZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRmNjY5MDA3OWUwYmFiMzRjM2E3MzI3ZjgyY2IxODgzMmU1MTg0ZDZhYWVkYTIyNzNiNTAwMmZmZWYzMWQxZGIifQ"
+        },
+        {
+          "resource": "repo://scripts/run_intake_eval.py#L201-L203",
+          "version": "repo-lines-v1:sha256:94077eb1d6077886057325dc3c03433b86d2fd7d69197de9451c84d5b2c7c865:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjE2OGM0ZTY2YTI5ZDc5ZWE4NzFkMDRhMzkzYmZiNjdlOWM2NmZmY2ZkYjczZWZkMTMxMTkyMGM3YTM2ZWIzNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDJlYmQ5MDFkMTI0YTc5NzEyNmE5ODMxNWJjOThlMzQ2YzliYTVkMDc3MWJmM2Q5OWIyMjBmZThiYTgxNjEyNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGI1OWVkZDBmM2I5ZjE2ZjdmZmJkYzFhYThhMmJlMzA4ZjY2ZDNhNGI1NmNjYjlkYWFlYjM3MjQyOTQ5Y2MzOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTk0YjY1ZTEyMGZjZDI4NzUxNzczOWY5ZmFhYWE2N2E2OTA1ZjgyODhhMzVmZDIzZTBkNWYyYTQ0NDMxYzUwNSJ9"
+        },
+        {
+          "resource": "repo://scripts/run_intake_eval.py#L236-L238",
+          "version": "repo-lines-v1:sha256:b2bee40a57feccc3b50732f09717c11a106bcb8fe2ec6aabe8962311f991da3e:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGE4ODk1MmQzYjI1NTdmN2E5MDE0YTI5NDdiNjFmMTc5ZjNlYmM1NTMxZmIxNDQ2NjZkNDE5MWJjNTdiNDI1OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGY0Y2E1Yjc5OTc3Y2Y2ZDYxYmM2ZGJhOWE0ODFiNDdlYmJkZWFkYjdlMWZhYTc3ZTdiYzc3Yjk0YTU5MTc3NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmZjOWFiNDg3NjQ3NDA5YjJlZmI0YzQ5ZWE1NzU3YzIxOGYyZGM0YjU1MzhmMzE5NWYwNTdmYTRhNGFlMmVjYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2Q0MTM0MGNjMjM5YTE1OWNlOWI2MDIyZTlmNjMyMjgzMmUyZWFkNzZjYWU5ZTQ3NTRkMjEwZWI4ZmI2ZDVlOCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_a589f57d23964a759bf0cf763584551b",
+      "statement": "The intake runner's blinding covers writes only: the agent can still read truth.md in the main checkout or git history by absolute path.",
+      "evidence": [
+        {
+          "resource": "repo://evals/workflow/intake-classifier/README.md#L91-L96",
+          "version": "repo-lines-v1:sha256:996e1cbeb053c64693eba4c5225b18b59fe02ee83afa3c604a1a5ea4195656ad:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDdkYWI2MGUwNmFiN2JhYjE2MWRiODUxMjYxNzhlYjc2YTQ5YjE1NGJhNjM1NGIwYjRiNzc1NGRmMzVkNjRlNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTE2YmM4ZWU1MWNkYTM2ZDAyMTE4Y2JmNDZkZjU2YjUwYWY1NDc2ZjRhM2Y5OGU3ZjY3NzE0ZDljODdlMWI4NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTg0NzQ1MzUxYjE4OWUxMmIxMWVmMTM2ODFhNWI1ZDRlNzk4ODIwMmYxNjdlZTBkYjEyNWE3NmY2ZmFmM2M3MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzhjZjQyMmFhM2VlMTZjZjkwYjZjZDRhOTE3MTcyNmUzOGJhNzc2YmQwOWQyZmVkZjRlMGRkMGU4ZTIxOGRlMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_5bbccdf58f3449d5a4b7118d9f0b19ee",
+      "statement": "score_intake_eval.py does not assert lane for expected_lane any, and matches expected flags by normalized alphanumeric substring so separator and parenthetical variations still match.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/score_intake_eval.py#L35-L38",
+          "version": "repo-lines-v1:sha256:51012b242566b36ce80bcb744569c74ea0335e79b7977db223ae7d991f05443b:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmJjYmUxNDZjNjIxMTBmNWY3NWZhYmM5MTJlODBlNTMxMWRkMWNmMTExNzg1M2I0ZTJmNjFjMGU2ZDNlNTYxOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWNkYzc1NGRjMGQxYjEzNzUwZTVjNmIyYzgyMzkyNDU1OTY3MzcxZDY3MzkzODE2MDk3OTNmZDgyMWJhODQ0YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWU0YTg3NzQ1MzUyYjQ0YmI0Y2VmNDgyYmQ5N2I4ZjYwYzRjOTQyY2QwMjU2NDVkYWQzN2RhNjNjZmU3Mjg5MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmE4YzIyNTQ4MGRjYjdkOTRjZjQ2ZjgyODEwOWZjZGEzOTYyMjQxZjhjNDZhNGVhNzlkYzg5Y2IyYTdhZTE3YSJ9"
+        },
+        {
+          "resource": "repo://scripts/score_intake_eval.py#L85-L132",
+          "version": "repo-lines-v1:sha256:932fe416683b678e4b5123e0074ec630b8984012a4d4001d6497334dc67b4742:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwOTM4ZjBiOTg2ZDJjMWFkZTk2Mjc2ODk3ZWViNmQ3MjRmMmI3YjU3ODU0YTQzYjVkODcyMzY0OGE1Yzg3MDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmMGVjM2Q5YzViZTg4NDZhZDkxYTkzOTJiYWQ2YTczZWRhMDk1ZmFkOWFmNzU5NjQ1NTAwMWYwMTc5N2MzMjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFhZDRiM2Y5ZmRiMmIyMGRlMzViOTRjMWMwYmRmNzNkNzk0YWMwNTFhYThmZmNiZDRlMzhhOTQ4MTg4ZjliNWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzMzg0ODc4ZWVmMDBhY2U4MTY5Y2IyYWFkZTUzMWExNzY4NzAzMTgyMzhlMTBlMGMwMjQzMThiOWYwNjJiMGIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_04326bc577ca4cdebd6d2265b692d044",
+      "statement": "Context-boundary probes are a manual protocol with no automated runner that test instruction delivery per context with a positive marker (auto-correct-scope heading after explicit Read) and a negative control (wave-parallelism rule referenced but not read).",
+      "evidence": [
+        {
+          "resource": "repo://evals/context-boundaries/README.md#L1-L70",
+          "version": "repo-lines-v1:sha256:74114967d504def428253b0554126778203c4b0a465bafa37ca1c1e8453d097b:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3N2IzMWVlN2I0YjJlNjU1ZWUwYzBjNDU0YzU4ZTY1YjM5YjQ4NjU4YzM5NTZhMmQyYTY2OThhNDBkM2M1NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlMjZmNGI1N2YwMzhjMmQ4ZDM0ZTUwZDJlZjMyNDlkNzQwOTQ5MWI4OGJiZjMzNjI1ZTVlYTg5MjA3YmI4YTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyYWZkZTQ5NDFhZTMyZDBhYWViOGYyYWM4ZWRhODMwODAyYTk5NDlhOTZhMTFiNTY2ZTAyZWI3MGYyN2U0YWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0ee246e4f5e843e7b94d01fdbc1dc36e",
+      "statement": "In context-boundary probes, main-session results do not transfer to child contexts, the implementer, reviewer and scorer contexts are load-bearing so an unconfirmed verdict there blocks or lowers confidence, and results are pinned to claude --version and must be re-probed after upgrades.",
+      "evidence": [
+        {
+          "resource": "repo://evals/context-boundaries/README.md#L16-L36",
+          "version": "repo-lines-v1:sha256:a855ef11290a3d4e870fe99930baa38285d3cfe2178902ef572705d0e11aff3e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2MzI1MjNjYWZkYWM5YjQ2Y2M3N2U1MjU5M2MzZmE3Y2IyYTI5NDFiZDg2NjEzYTkzMzY0NzU4YWM4ZDQxZjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjMzViMjE0NzdhNTVjYTI1MzdiNDMwMzJhMmI0MDZmZTU3YTMwYWM1YjQ5MGEwYjk2MjBmYjVkNmZhMTViYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ0MzNmY2VmOTYwYTc4MDQxOWIzOWFiYzcxMmQ2NWMxNzAzNWFkYzYyMGNiYmNlMjdmYTRmZTA1NDc3YWVjYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyNmMwMDUxOWQyNjk4OWViMjA4MWFmZjRiY2YxYjMwOWQzNDc4NGEyMDBkZGRlNzJiMDM5NjJjZDNkZjdjZmYifQ"
+        },
+        {
+          "resource": "repo://evals/context-boundaries/README.md#L88-L96",
+          "version": "repo-lines-v1:sha256:8f399d29e69d46c8f7fba06f3697222d2766930f9e3ff5bbfb8260b2d45fa81a:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTM3MWEzMGRkMGI0NmM2NTU5NjgwZDlmZWFiZjIwYmY3ODc2NmJiZWFlNTU5MDJlNzY5ZDk1ZDhhNzRkMTcyZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWJiYmEwOTNlMDcwNTdlNGY0NTY1ZjExOGU0OTg1NDhkOWY5MGM3MWJiZmY4NTMwOGM0NTkwZTM3ZThkZTcwMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDYxYzU4MmE3ZmFlZjdmNGI1ZDkwZjE3YzllZjkxZjM3YTAxYzc0MDAzOTVlYmNjN2UxNGUwZjdlOGZkMWU4NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_cc6a88b309f0456f966d05e0d6990684",
+      "statement": "score_skill_eval.py never calls a model; --compare fails on environment mismatch, pass-to-missed or false-positive regressions, new false positives, safety-critical misses, and suite pass-count drops, while a pass-to-blocked change is reported as unmeasured coverage rather than a regression.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/score_skill_eval.py#L1-L6",
+          "version": "repo-lines-v1:sha256:871a2c1eb847cef4067bd580fcdf16ea5398afcb27f8b291c3c64f4bc5889aa9:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDY4MmNiZGI0YzhiMDc1MThiZjQ4NmM1ODk5MGZjMzkxNzgzYWEyMGE5MTZiZmIyN2FkMjExZWIxZDVjMzY0MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTMwM2VjZGQ0YTRkMTBmMTljNzNmZDQyZmQxMjQzN2ZkMzM1NGE4MjY4MTYwNWRhNTI1NWE5N2EzOTA2OGRiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTViNmU4NzA2YjQzMDQ3ZjJhNmRiNjdmMTMyNjM4NTk1NjA0ZTY3ZjM2OTY2ODc2Y2UwMTU4ZjAwNTNlNmJkMSJ9"
+        },
+        {
+          "resource": "repo://scripts/score_skill_eval.py#L198-L288",
+          "version": "repo-lines-v1:sha256:2e63f8b046c7869da0f85441ad2a1493d99ffb2863691660a532815e43290109:eyJzZWxlY3RlZExpbmVDb3VudCI6OTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhZWJlZGI3ZTQwMjRlYjJlNmE2NGJiN2VhYjQ2NWYwYjJmNDM4ZTk1NmM4NmU4MzBjNjQ0ZTM0ZmNhOTVhMDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2YWY3YzJhYzIyNzk2MGZjZDVjM2NjODgwZDViMDhjZmIzOTcxMTJkYTgxMGJmNzVjM2Y0ZWJhYTNhMzdlNWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJhNmNjZDliYjliZjMxOTJkNjNiYzM0NDQyYWY1NTI0NmNhY2UwMjEzZmRlOTZhNTQ4NDIzNmU2ZTBlOTBiM2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0OGQ3NDgzZDA2MGYxNzIyZTI0NTM2ODg4MzM0MjU2YjU0OTBlOGJiZTg2OTgyMDY3NmNhOWVhZjM1MDljYzkifQ"
+        },
+        {
+          "resource": "repo://scripts/score_skill_eval.py#L335-L340",
+          "version": "repo-lines-v1:sha256:16bffcf7c154979ce7afeed7018cbc3d7ec09a2afd8c6265a1d09c46a8c5d030:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODUyODQ3MmNmMjc3MGI1OTUyMTA5OTdjOTEwMGRjNGYwYjAzZTdlYWQ0MTkxZTMzZWU0YzFkOTFjYTEwMmE1MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTkwOWE1M2E2MThkMDI4ZTFkMzAwMGMwYTdhYmNlZWNiZTVmYjM3ZjRlNTExZWZlNDY2NDNmYWQ2ZTY2ODcyZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjQzZjhjMjBjNGMyNjc3MWUwMDZkYzEwMWE5MzYxOTczMWNlYzk4MTkxN2ExMDBlMTZhOTgwNWEyNDVmYzY2NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDQzZjk4NDc0ZWU5NWQ1ZTMzM2E1Y2FkNzE2YzY3NDkwNTljMTMwYjE4ZDYyYTljNjMwYTBlZTc3MDc1MGVlOCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_1177885ec3374bda9726012c0e9fc824",
+      "statement": "score_skill_eval.py --validate-corpus requires every skill registered in harness-manifest.json to have activation cases with at least 8 should-trigger and 8 near-miss cases each including a holdout, behavior cases of golden, boundary and handoff kinds, and the five named end-to-end canaries.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/score_skill_eval.py#L27-L113",
+          "version": "repo-lines-v1:sha256:78f40cbb33780fd0a4ab0d863eaa4504f885aa20221a7fcd19aaa5af953a3a73:eyJzZWxlY3RlZExpbmVDb3VudCI6ODcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3Y2VjODY2YzI1M2QxYzA1NDc1ODAxZWU0NDg3MzI1MzUxYmI0NDQ4ZDIzMmQ5OGMyZTBkZjVjMDQwNjc2MmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2YWY3YzJhYzIyNzk2MGZjZDVjM2NjODgwZDViMDhjZmIzOTcxMTJkYTgxMGJmNzVjM2Y0ZWJhYTNhMzdlNWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3NTE1NzZhMjc3NDdlYWMxZWZlYWU4MzNmMTA5YzE4Y2M3NjRjYjNhNDZiMzc3NDE2OTAyNmQ3NjE1YmJiMTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdhMWRjYTlmZjcxNDhlODg2ZDgyNTE0YjI2ZGE0NTM5MWQwYmI2MTNiNDhlM2UyYjk5MDk4YTJlODMwY2ExNDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d24fddc1f8954fefbf911e92d744efd1",
+      "statement": "Skill-eval result records must have first_run true and a non-empty observation, and results must state model, client_version and reasoning.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/score_skill_eval.py#L116-L149",
+          "version": "repo-lines-v1:sha256:97f4e82b68ac4f138affed15b5a4222a9c5bdb0d106c57625a321bf1ad83917b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3OGQ4ZmY4YWJjMjM2NjliMzA1YzE1YTFiY2ZiODc3NDg5NDE1NDA4MzE4ZjZkZWM4NjA4NmRkNTNkNTE0MGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2YWY3YzJhYzIyNzk2MGZjZDVjM2NjODgwZDViMDhjZmIzOTcxMTJkYTgxMGJmNzVjM2Y0ZWJhYTNhMzdlNWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJhNmNjZDliYjliZjMxOTJkNjNiYzM0NDQyYWY1NTI0NmNhY2UwMjEzZmRlOTZhNTQ4NDIzNmU2ZTBlOTBiM2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxZTFhOGY0MmE0MTE1MTJjYmI2NDE0Zjg0YzA4MzQyOWFkZDczY2Q1YmJjYzNjMzVlMjJhN2E5MzhiNDIxZWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_498f236c8d814d0da406770130866960",
+      "statement": "CI's run-tests.sh validates review-chain answer keys with score_review_chain_eval.py --check-truth, which checks truth.json schema, required fixture files, and that planted.file appears in diff.patch.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/run-tests.sh#L71-L78",
+          "version": "repo-lines-v1:sha256:6598717254a81e835894cb2e8c4c80330e3b8d03e87f678b808ccd970b0f795e:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjk3ZGI5ZWQxNDYyNDQyNzhhNWY5MjhkNjY4YzVkYzU3OGY4ODExZWMxNmIyNmFjYWZhMGJhMTgwZDFhNDM4OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzc2OWQyMzdjZDQyMGI5ZDM4Yjk4MWEwYTRmNjc3MDE5MGE0YTgzZGNhMWZlNTZjNGY1YmExZTJjYmMwZWY3NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTkzYjRlZjY0NGNiMTZmZDc0NGE2YjI4NmYyZjUxNWJmM2UwNGJjM2FiZmNmNDJkZDllN2UwMWE0MmY1OGZiZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODg4ODg1YmMxZDlhZTU3YjgxZWQyODRiYjc0MDJjODBmOGMwZDMxN2RlMThiM2UzNWUyNzBmOGRlZDczNzlkZCJ9"
+        },
+        {
+          "resource": "repo://scripts/score_review_chain_eval.py#L156-L169",
+          "version": "repo-lines-v1:sha256:77dbdb20909c02c287e4efb51a416577f530bbe07fd0cd419985993ea7fe444a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3NDBiNGY1OGJmZGI5NTkwNjUxYzUwNzhkM2M1ZjBiYTYyZGQyZGJiZjg2ODQ4OGQ5YzBkNDdjNmE1YjlkMWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2YWY3YzJhYzIyNzk2MGZjZDVjM2NjODgwZDViMDhjZmIzOTcxMTJkYTgxMGJmNzVjM2Y0ZWJhYTNhMzdlNWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViZDViYjBkZjBjZjc3ZDk2ZjQ5Zjg3YmVmOWNkNGEwMmNlYjNmYjkyMjA0MzdjYjg3ODNmMTQyNWFmNDJhNWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmMmUzN2NmMzMwYjFmZjlhMmMxOGMyMDFlZjhlYmY0MjFjN2JlNDc0YmJkOTYyMDgyODAwYmJiZGRjYjUwMWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_758d6d049f2b48ec93f073832f07b003",
+      "statement": "CI's pytest step collects every test_*.py under scripts, runtime and skills, which covers the eval runners and scorers with stub clients, and deliberately excludes evals/ because fixture repos contain intentionally failing tests.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/run-tests.sh#L182-L202",
+          "version": "repo-lines-v1:sha256:b5739bda82b5b7c12151e8f93963e3f3cdf5f20a16139176491b0a33bb79c303:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiZDRhYmIwOTc0ZjkwMmU4ODZiZWIzNjljODg3NjBiZDBmZjcyZTY4N2Y3OGY1NzQ5NDI4YTNiMjQ0ZDk1NGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBhMDkzYjgxODk5MjRjOTAwMDZlZGQ1YmNkYzY5YTAwNzU4ZDQ4YzNlMTU2NGY4NmVlZGQ0OTFiMWVmNjJhZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU4MDk0NWMxMWVhY2MxODRkZjAxYmIzNjJkN2UzYjU1MDUyNGI0ZDA0OWZhY2M0NjUxNTcyOWQzM2MxZTk0N2EifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_21b0b1fc2be1490b8439f97c7dce458f",
+      "statement": "run-tests.sh does not run score_skill_eval.py, so a missing prompt-refactor corpus entry for a newly registered skill is not caught by CI.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/run-tests.sh#L71-L78",
+          "version": "repo-lines-v1:sha256:6598717254a81e835894cb2e8c4c80330e3b8d03e87f678b808ccd970b0f795e:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjk3ZGI5ZWQxNDYyNDQyNzhhNWY5MjhkNjY4YzVkYzU3OGY4ODExZWMxNmIyNmFjYWZhMGJhMTgwZDFhNDM4OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzc2OWQyMzdjZDQyMGI5ZDM4Yjk4MWEwYTRmNjc3MDE5MGE0YTgzZGNhMWZlNTZjNGY1YmExZTJjYmMwZWY3NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTkzYjRlZjY0NGNiMTZmZDc0NGE2YjI4NmYyZjUxNWJmM2UwNGJjM2FiZmNmNDJkZDllN2UwMWE0MmY1OGZiZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODg4ODg1YmMxZDlhZTU3YjgxZWQyODRiYjc0MDJjODBmOGMwZDMxN2RlMThiM2UzNWUyNzBmOGRlZDczNzlkZCJ9"
+        },
+        {
+          "resource": "repo://specs/session-retro/SUMMARY.md#L109-L109",
+          "version": "repo-lines-v1:sha256:dcce610bed6dbd8fed00a900c5e579ee51f57a10cae758d8d858c4712b160fe9:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGNjZTYxMGJlZDZkYmQ4ZmVkMDBhOTAwYzVlNTc5ZWU1MWY1N2ExMGNhZTc1OGQ4ZDg1OGM0NzEyYjE2MGZlOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGNjZTYxMGJlZDZkYmQ4ZmVkMDBhOTAwYzVlNTc5ZWU1MWY1N2ExMGNhZTc1OGQ4ZDg1OGM0NzEyYjE2MGZlOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjljNDdhZTA5MWNkNDBlZWNkNGZiN2RiZDZjNjg0ODI4Y2I5YjQyMjI2YmMxZjFkYzUyM2VkY2JmM2U4YjE3ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNThhYjNkZWFhYzRmMGI2YzhiOTRmMDQ1Y2M5MjRlZmRmNTY4ZTk2Y2MwMWFhZmMzOWI1NjFmZDFlMjYwYWZjYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_7cbcae03422541198e49cd2d2c181903",
+      "statement": "A CI unit test re-runs each test-runner fixture's pytest suite and checks its truth.json against the real outcome so answer keys cannot drift from the fixture code.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/test_score_test_runner_eval.py#L118-L139",
+          "version": "repo-lines-v1:sha256:c7b46cf413136767408f9a46a8cd3d576373a8f739f1180b1c371c482d0e19ac:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2NmQ5OGVmOGVkZmNkZWQ3ZDBhN2M1NTkzMjViMTNmMTgzNTlhOWEwM2IzODZhMWVjYWUyOWE2NDAxZWQ4ODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiZGFlNGE3ODExODEzOGQ3Y2QwNjM3ZWI1OWYzNzdkN2YxYzZiYjI3MWNlMTBmOTRkYTlkMzk5ZjdkZmMwYjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczMjEyYTM0NGNkNzgwOTZhNzRiZTlkMWM5NGNiODcyNGVmNTZkMDlkYmJlMTY2Yjk0NTNmYzE4MDUxMzI2ZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_66aadd1230f44ada90a2252d3c16b7e9",
+      "statement": "Eval honesty rules require that the first scored run is the record, fixtures are not re-run until they pass, and answer-key revisions are logged with prior results marked not comparable on the revised fixture.",
+      "evidence": [
+        {
+          "resource": "repo://evals/skills/review-chain/README.md#L225-L232",
+          "version": "repo-lines-v1:sha256:c2694c91b27ec794ccf9e3d71f05a940b44b31060a260100df73e49c2e58a9c7:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzEwMTQwNjliZDRmNDZmNWIyY2FjNTExOTJjY2Q2OTMxZDg4ODcwZGNlYjY1YmFmN2RkYjZiOWVlM2IxNjlhOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzQxN2FhYzY5YzhkNTY4MmU5NmY1Y2IyOTNkYWQ3MzIwNjYwMmM0NjYyMGE3MDdjYjk3Y2U4MmE2MTQ5N2Y5NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzcwYWQyMWE2MDUyNTQxY2Q0NTc0ZmQ4ZmUzOGNlYjI4MmM0NTQyODIwNzJjZjdlNzZiZDFiZTg0YTQwZGY5YyJ9"
+        },
+        {
+          "resource": "repo://evals/skills/review-chain/README.md#L317-L323",
+          "version": "repo-lines-v1:sha256:61f342a94491ea5b8d13e161c2142622c8b3a63f97d6ccbef58ac74cb55501b9:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTRmMjhkNDg4YjFlNTQ0NmJmMTJiZWY1ODE5NGNlZDA0ZDRhYTE4NDU3YThiZDE5MjIxYjVhNDE5MTcxNTM2MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGFkNWU1NDA3MTRmMjA2NWM3ZGJiYjM3MjBiNjAzZDYxNzE3YWQxZjkzMTI2NmYwZWQwYzQ0MjcxMzliYzgyNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTM5NzdlYmE0NjJjYTdjY2EwNTJlOTFmMzU5Y2NkZThiMmE4Y2ZiMTc5MDk2ZGQ2MzQ2MDY4NWQ5ZTkxMTUxYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://evals/workflow/intake-classifier/README.md#L98-L115",
+          "version": "repo-lines-v1:sha256:eba672eecf897da3ea11a0a7b9d6cec45489f66d98ef37d238e2ebb4cb534c33:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0ZjI4ZDQ4OGIxZTU0NDZiZjEyYmVmNTgxOTRjZWQwNGQ0YWExODQ1N2E4YmQxOTIyMWI1YTQxOTE3MTUzNjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlZGE4MTI5MTNhYmE3MTk1MmQ3YTBjNmJhMTczNWJlZWM1YWE0NDEwOTAwNzg3YTM4NGJmZjlkZDc4ZjljNDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4ZTFiMjk4OGUwOTcyNDhlMGIyMDBkYzJhMWQ5NWNiMmMzNjA3YjE4YTFlODA5NDlkZTk0ZjUyNzUxZmFkNTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d909a193d9ab45b58cf706eff8c41c97",
+      "statement": "The review-chain corpus is meant to grow from real escapes: fixed rows in docs/review-escapes.md should map to a regression fixture, test, or documented won't-fix, and escape-seeded fixtures should point back to their ledger row.",
+      "evidence": [
+        {
+          "resource": "repo://evals/skills/review-chain/README.md#L298-L315",
+          "version": "repo-lines-v1:sha256:53586ec9369986a1b2dccfa5586d39d081b965f20b8cdea031562a6737d0fcee:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhZDA1ODA5MDRhMTgxNTQ4N2VjZGIwOTMyMmM1YmM5NDI2MzBkMjMyMDkzYjY0YjI1MmQ4NmY5OWRlYmU4MjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2NGQxOGZhNjA5Yjc4ZTFkMWUzOGMxNjNhM2IyY2NlMDFhODI3ZTcwMDJkYWY1OTdlOTQ5NjM1NzAyYWEwYjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI3ZWJiMjY0NDE4Zjg4YWMzNGI2MjBiNmYzZjBlMWViMzYwYWExZmEwZWI5NmY2NjIzNDdlYjRiYjBjNmRjODAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM4Y2Y0MjJhYTNlZTE2Y2Y5MGI2Y2Q0YTkxNzE3MjZlMzhiYTc3NmJkMDlkMmZlZGY0ZTBkZDBlOGUyMThkZTAifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.2",
+    "at": "2026-10-16T04:08:21.021Z"
+  }
+}

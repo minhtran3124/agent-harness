@@ -1,0 +1,358 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:3127dbd831db49e90904e8ec17f773f53f179991d692ff51796bc1dd5a6e0a92",
+  "claims": [
+    {
+      "id": "claim_09af208075544cfdb5b60ac9836e6294",
+      "statement": "Each spec slug's run state is stored under specs/<slug>/ (resolved relative to the CWD) as an append-only events.jsonl log that is the source of truth, a RUN.json projection rebuildable from it, and an events.jsonl.lock fcntl lock file.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/run_state.py#L1-L34",
+          "version": "repo-lines-v1:sha256:9f0d7a172e653a9b6ff5177c0bdb32506667deca4ee63e721ccc5bccdc3fffeb:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2ODJjYmRiNGM4YjA3NTE4YmY0ODZjNTg5OTBmYzM5MTc4M2FhMjBhOTE2YmZiMjdhZDIxMWViMWQ1YzM2NDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMDNlY2RkNGE0ZDEwZjE5YzczZmQ0MmZkMTI0MzdmZDMzNTRhODI2ODE2MDVkYTUyNTVhOTdhMzkwNjhkYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFiZjQ5MjY2ZmYyZDhjMjAwZjFjZWQwOGM1ZmZlN2M2YTM1ZjNmMjE1NDUxN2U5NTgyOTc2N2EwMjkzYjlkNGIifQ"
+        },
+        {
+          "resource": "repo://runtime/run_state.py#L68-L81",
+          "version": "repo-lines-v1:sha256:592b50edfaeb19452f54691f0b4f35fa3580c226a79dd4ea9f8043e7fd208ac9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhN2Y4ZmYyMTVkNTFmMWJmNTZlNjE5NDcyMGYwMjk1ZDM4NTUwNDUyZTlkZjU3NDgzZGJjMmJjZGFhMTE1YjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Njk2YWY1YThjYjMxN2ZhNjU3MTNjMzg3ZTc1ZDcyMjc2YjRhYzEwZjkxN2NjZTY2OGYxYmU3NDk0ZWViZjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyYmJkNDlkYWI2ODYwODY4YWEyMTA3MzMyOTkxY2JkZTM4N2JmMDRhZDI5MzY4NTI0OWM1YmYzZTljZWVjZGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5YTEzNDIwNTJmYmI2NjIyNGIzYjE2OTA3Mjk5MWUzMGIxM2Y1MzQzM2FlYzE0NzJiNzU5ZWNiYmVhY2YwNGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c2ae3ae9b1db423abe6735f3484a7292",
+      "statement": "RUN.json is written atomically via a pid-suffixed temp file, fsync, and os.replace; events are appended as sorted-key JSON lines followed by fsync.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/run_state.py#L823-L844",
+          "version": "repo-lines-v1:sha256:08a47167254e06f8cddf56e6954136059b9fdcd358f19ab5d1a9233fd7ab6977:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiMzNiZTUwYTYwMjE0ZTljMThhZTExYjhlODVjMDAzYjcwZTQ0YmM0ZThjYzYwMGRkYjI0Yjg0MzI5Njc3ZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkMTIxNDhjZDBjOWZiZGIwY2EwYzQxMTgxMmFiOGIyMWIwNWZiMmM0Mzk4NGMzNzAxM2RlNTg4YTg3YTdiZWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE0MjViMDY1YWRiN2ZiMjY0ZGJjYTVlOWQ5MjU1ZjFhYzJmZWMxYjRiOGVlNmYwMTBkNTZmZWIxNDg0NjczZTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhmYmM0OTQ4MDRkOGQwOWI0NjNhNmQ3NWIwMDRiMjc0NDIwNzUyYjcxMDRiYjgxOWZlMWVmYTI1NThhNGFiZTIifQ"
+        },
+        {
+          "resource": "repo://runtime/run_state.py#L88-L95",
+          "version": "repo-lines-v1:sha256:b42fcd1a92e8a422f03523ef166b1c530468681622e9b0a03fb8979afd3681fb:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmU4MGVlYTY0YmIwZTgzYzZmM2U3MzU2MWRiYTU3ZWYwZTVmOWViNDBiNzQ0ZjNhOWNhYzIxZDI4NjE3ZWEzNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmNjODY0N2UwMzJjYzZkZDRmMzFmOTEyMjkyNzJkYzZjZTk5MWMxNWQwM2FjN2FmM2Q2OThmM2E4MGFmNzFkOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjFjZTA1MTAyZmQwODFkYTBkNzY3MmI3ODViYmJmYzQ2OTFmYjcwNDA3MDE5MThlMjk3MzM3NjA3OTA4ZjE0YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmUxNDBhYTQ3MDhlNTcxOWY3YWU4MzllZjhhNmNhZWMwY2UyY2ZkY2U4NzYzMjMxN2Y3ZDgyNDc4YTViNWI5NiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_b86ba69694f241cb8e5ef35915e0d3ce",
+      "statement": "The projection fold takes state, waiting_on and resume_event from the last event (so resuming from blocked without new metadata clears the blocker fields), carries sha forward from the most recent non-empty sha, and projects runtime_mode/runtime_evidence_id only when both are present.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/run_state.py#L308-L349",
+          "version": "repo-lines-v1:sha256:194db19316865a645d0e3fd5f53dedfcbc53a48a5748bdd6a74da7df285880fd:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4NzUwYTJlOGFlYzBjZmJjMzY4NGJmNWY1NTBlNDhlMjJmNmJjMzkwNDFiMDEzODc4ZTA0YzliN2M4ODY2OWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhMTFjMDU2N2QwYTVmOWU5YjEzNWY2NWNkMjUzNzJkZmQ2Mjg3NzVmN2MxZWQyNTNmOGJhZDQyZGQyZDY2NjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1ZmE0ZmFkM2NjNjRmNDQ5NWVmOWJhNDVlMjQxZjk1MDlhNGNjZTJhNjBjOWUyMWFhZjEzM2ZiYmY3ODk1MjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU2MzlmNDZkOTRkNjlmODNlOGMzYjRhMzJhNDYxYTI3ODRiMGViNTYyNzZiMDk3MDE2MTU0YTJhZWY5MTczZjUifQ"
+        },
+        {
+          "resource": "repo://runtime/test_run_state.py#L738-L773",
+          "version": "repo-lines-v1:sha256:ac0552cdf6a85e794fc71f5dc2980cdafdf48565a6530ae08b2dfc14b7ec8d8f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiMTZhYjkxYWRiODBiYWFmMzQ0MjhlYjkxZmIzOTUwZGYwMjY0OWRmMWY0YTY4ZTBjMWE0ZTZmNWQ4ZjFiMzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwNzcyZWNkMGNiMDI2MmMxZjAwMjhiY2I1ZTU3ZDRlYTdjZTA2YzU3N2FiODg5ZDlhZGIyY2I2NjI4YzJkNmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzNjRmMDc4ZTBhYzYzMjI5ZDA0YWI5NGU4YzdmODk5NzAwOTM3ODM2MGIwMDkyYTc5YWRiNGE1ZjE1ZTU4ZTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM5ZTAyM2U0MGY3ODAyOWI2NDU3NTdmYjU2ZmVlZDU3YzBkOThhNzVkMWM5NThjZjIzMzFhYzgzYzM2NjNlZWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_270600f97e1f456fa6543b610d03c01e",
+      "statement": "The FSM has 11 active states, 2 interrupt states (blocked, escalated) and 3 terminal states (shipped, cancelled, superseded); active states may follow FORWARD_TRANSITIONS or go to blocked/escalated/cancelled/superseded, interrupt states may go to any active state or cancelled, and terminal states have no targets.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/run_state.py#L233-L286",
+          "version": "repo-lines-v1:sha256:17c6327d1f66eb9d13a2f4f1e59bf6d5c8e5374668a49dac39d8e4fe14ea053c:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmMTljMTQzM2E2NDljMGQ0MTZkZjEzMWVhNDMwZTdhNzUyNGM3MDBlMmY4YmM0ZDY3MGI5MTYzYzlkYmQxMmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzOTFjMjhhOWQ0ODJiYTIwNTJkOTM0MWY0MzBlYTNlZjY0M2NhMmU0ZDM5MjIzNWUwZjA5MmEyZDcxNTllYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRlZDM3ZTA5YjExMWM1YmMyMmUyM2E1MTkxOGZlYzAzYjAwYmVkMzRkYmZmZjgxZGUzMzhkMzNkMjhmODIxZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmNjU2M2MzMzA5OGEwYjkxODQ4ZWIwMjI4NjM3ODJkOGIyYjc0OWI5YmE4MjFkMDU2YjFhNGQxZjZkODFhZDQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e9d6ddae41cb4765b47a04b7536bc051",
+      "statement": "shipped is reachable only from ready_to_merge, and the transition command requires a --sha matching a 7-40 hex-character git SHA for it.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/run_state.py#L260-L274",
+          "version": "repo-lines-v1:sha256:79373c8be4850020fdd4ec2230c89499b18670d2a40061f1970f753432df8c5d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjMGRmOTE0Y2QwMjEyYTJkYmFiYmRiMDdkZjZjNTU2MWYxN2FiMDZiMGMxMDI5YmZkNDc4ZWFiMTE2NGVmNjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkYTI2MWYyODQ5OTgyYzViNzNkYTM3NWJmYzNhNWFhZmVhOTc2NmU1OTJmMDg4ODdkOTJiYTM5N2YyZjAzNWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2YTNhYWE2ZDIyMTQxMmVlZDlhOWRjMDlhMzhjMDdkODYzZGYzNzQwNThlMjJkZGE5Y2IxYjY4YzNjYjlhMjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIxY2U3YWZmN2E2ZDQyNDlkMmFhYzE0ZjFkM2VjYWRjMzFmMGQ0MWYyZjZlN2ViNTM0ZmU3N2YyNmVmNjNhOTAifQ"
+        },
+        {
+          "resource": "repo://runtime/run_state.py#L817-L821",
+          "version": "repo-lines-v1:sha256:2f039d14d4bbb0899e3f7b7efd41edf00b291fe136e7a0d5dd4637ae92d5b42c:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTgzNzAxYzNiOGIzNzA1NTMzZDY2YzdkYmE0MjdhNmQ5ZTNiNTI0ZmI4YmY1Y2Y0MGQzNGM5M2VhM2M4M2E4MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTEwMzQ4MWM1N2QwZjBkYzBmNzZjZDJjYzhiMzYwNGM0ZTgyOTZkYTQxMjJhZGQxOWU4MTc0NWRjN2UzMzFhNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjdjYTcyYTQ2ZGFmMTQyNzQwMTUyMDcxN2UwNmMyYzBhZTczOTlmZmVkNDRjZDYzNGUxMjVjNzFiY2QxNjk4ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmIzNThmMjA5NWFjNzY0Mjk2OTg5NzEyMTVjZmRlZDZiZWE3YjJkNjM1MjI1MGM2NDE0OWYwOTQ2NDYxNTVkOCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_70a63909d98644e795df2cf5c3195376",
+      "statement": "Entering a waiting state (awaiting_confirmation, awaiting_ci, awaiting_review) requires --waiting-on, and entering blocked or escalated requires --resume-event.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/run_state.py#L241-L241",
+          "version": "repo-lines-v1:sha256:00a43702d9e9ac993c102fec10bf0f98d711acafd092647468e7ac3a0026a04e:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDBhNDM3MDJkOWU5YWM5OTNjMTAyZmVjMTBiZjBmOThkNzExYWNhZmQwOTI2NDc0NjhlN2FjM2EwMDI2YTA0ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDBhNDM3MDJkOWU5YWM5OTNjMTAyZmVjMTBiZjBmOThkNzExYWNhZmQwOTI2NDc0NjhlN2FjM2EwMDI2YTA0ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjIyMjM3YmNlMmU1MGZhOGY0Y2ZjN2FhYzlhMzEyMzI0MzQ2YTE1MDZjYmMyZTEzY2JkN2VhODQ0MmU3N2Q4ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTY2MjFjYmYzYmI0MDY1YTUxNTFlYWVkOTY5OTFiYTZlYjEyMjNjYjcxZmY4ZjI2YzA0ZGYzODdiMzhmYjRmZCJ9"
+        },
+        {
+          "resource": "repo://runtime/run_state.py#L289-L305",
+          "version": "repo-lines-v1:sha256:d7f208087d26187aebb0684673c7d88f53487dd012c1d41da264953d301671ce:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5ZTFjYjA1MTUwMjQ2ZjEwMzRlMmFlOGVlNTkwMmZlNTI3YzE1ZDE5YmRlN2Q3ODM5NmE0NmJlMmY1ZGVhOGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiOTMzNTBhNzY4ZDgxNzI2YWQ2Yzk5ZTNhNTY1ZDA0ZmUwMmEwM2FhNzUwOGZiYTM0MDY0ZTdiMmM5MGM5ZDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdjMWJiOTZhY2VmYWExMWMxMTZmYTlkN2U2YzQyMWU1ZTFmYjc3OTc1Mzc4NWMyOTU0MjdlYjEwZDgxNzViNDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExMjY2N2M0ODk3OWYwMzk4NDc5NmY0ZTA3MDE1MWMwN2JiYTAxZDZhNDdjYTUwNGU4NDAzYjVjYWM5MThkOTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_614d30a82c1145d1b8690781c4083b8d",
+      "statement": "Writers (init, transition, rebuild) hold an exclusive blocking fcntl lock across the whole read-validate-append-project sequence, so concurrent writers serialize and exactly one FSM-valid winner commits with contiguous seqs.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/run_state.py#L160-L182",
+          "version": "repo-lines-v1:sha256:fe9d1f33a30c94e095230f7e7f5571d1ec582cb4a17186a8e6b111f1db367b02:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjODEwZDkxMDgyZDBiMjFmNWMxMmFkNGViMjBiODY2YzQ1ZTA3MGUxNmViN2YzZTZlMjhjODhjY2M3MGM1NTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5N2M3MTI0N2FmM2NkMWVkZjU1NWE3ZDEwNzU5MzE1N2Y2ZGMyYTIyYWYwZGU4MmU3Nzc0YWJmMTBmOGFkZTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjljMmU0MDkzZWRmZDc1OTVkNjdjYTU5YzlhMjZiOGY5Y2Y3ZDY5M2NmYWNhNmU3NmU1ZGE4MmRiYmQzZWYzYjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFmMmI2MGQ1ZmI3NWRkMDY5ODIzMGJkYWIzYWYxZjQyNGMxYjI3Y2Q2MTUxYWIwODIzODI5YWZjOTdhN2M2OTAifQ"
+        },
+        {
+          "resource": "repo://runtime/test_run_state.py#L1207-L1252",
+          "version": "repo-lines-v1:sha256:262c7ad306fda049839cbac98b13da87eb1fc8ae33c3e51019059fa5ad7352c5:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkNDE5MjJhZGUzYTA2MTllYzRlZDk4ODVlYjgwMzVjMzhmMzRlODEwOThiNmU4ZWUwMjYxNDQ5YTUwYzlkNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzMzcyNGM0ODJjNTI4NmEwMjQ5OGFlMDQxZGZiMGYyYTBkZGUxOTAwMjUxYTM1ZWFlYmY5NTI4ZTBjNWE3MzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgyMGQyY2E4MjE3NmI0M2ZkNGI1OGJiZDkyMzA2ZmI0ODBjNTkzZmVkYjQ5NjQ1OTY4YmQ3MmQ2OTBlYzQwYzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRiMjk1OTkxY2E1Y2VlMjc1ZDA1YTlhMDQyMjZmYjVlNDA3NzA4NjYwMDNkNmNhODViMTZmZTEzNTQ4MjEzMGIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d892976f6e1c4d9fbaa7f3e93cfa2192",
+      "statement": "status/snapshot reads take a shared lock only when the spec directory already exists, so they never create storage for an uninitialized slug and cannot observe a fold newer than RUN.json during an in-flight transition.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/run_state.py#L185-L228",
+          "version": "repo-lines-v1:sha256:9afcfd6db18d54742085df9a8988b7fcc52e2ad76269ca027c58d419b1f31f6d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhOGU2OThiY2VmNWI1ZmU1NjQzOGE4MzU5YzMyMDYxYWJjOTNlMGIxZjhjM2M3YmI1M2ViMzZkZWY0YjRlOTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5N2M3MTI0N2FmM2NkMWVkZjU1NWE3ZDEwNzU5MzE1N2Y2ZGMyYTIyYWYwZGU4MmU3Nzc0YWJmMTBmOGFkZTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY5OWVmZWRmZDJkOTcwNmQ4OTFjN2JhOTgzZTdmODRlMDVhZDBlMDE5MWMxMzI3OThiZTVlM2MxY2M1MzA0MjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5MjQ1MjQyZmViOGY2M2ZlY2Y3YTRjZmM5ZTMwOWUyZGQxOTZiMDZkYWI3ODg5NDViNDNjMTI3MDI0YzcxMDAifQ"
+        },
+        {
+          "resource": "repo://runtime/run_state.py#L532-L578",
+          "version": "repo-lines-v1:sha256:06bc932be13d1bbf0d9395c1a2fd975454979f87e840804f27c735a55bf6605a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0OTFjZWQ3NTEyNWNjM2E1ZWJmOWE2MWU4NTkxYTdiODc3ZmZhOTE5OTUzNmVlODIwNjQ4ZTNkYmI1YWRiNWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0NjY4ZWJjNGUwODFkZjNkNWJhMTQ4NzE1NGE0ZDJlODA2OTBmZjgxZTQ3NjBhZDhhZTJjMDY1ZDAzOTJjY2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQyNDBlYmU0MWZiMzFmODg2ZTgxOTQ0MWZmNjc1NGIxMTFkMGFjMTE4NTM3ZWZlYmIzMjJmMzQ5YmFhNDhlYmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5NWFmY2Q3YTFjMDYwYjc1OWQxMmUxY2Q0OWViMGU1ODdiMGY4ZmQwZTM0ZTJiZmYwZTFhN2UxZGIyMTBmMGIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_99e087b8444e4d8bba6779eb2f81331c",
+      "statement": "A transition with an --event-id already in the log is an idempotent no-op only if its payload matches and it is the last event; a matching but older event or a differing payload raises ConflictError (exit 2).",
+      "evidence": [
+        {
+          "resource": "repo://runtime/run_state.py#L778-L813",
+          "version": "repo-lines-v1:sha256:b11411bdff018943e7ae8fc1f341ba4f37d7d4713ce16dfcb908ad62a513f172:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4MWIyZGJhYmE4ZDRiZTViZWYzZmMzNGQzNjQxMThkZTNmNWZjYTFlMzQ2ODMxYzgxNWI4YmM5MDJjNzE3NTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwMDEwNWUwYTY4NTIxYzNkMzMyNjE1MzkwZTg1OWUzOWNmMjQxMjc0YTdkNzgxZDE5NmEzYWRhMDdiMTBmZDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlmZDcxNmMwYzU4ZGM3OTIzYWYxMzgxNDllZWRhOTYxMjhlMTk3OWQ0NWY4MWFiZGQwMTNjZGYxYWIxYjFiZWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY3Y2E3MmE0NmRhZjE0Mjc0MDE1MjA3MTdlMDZjMmMwYWU3Mzk5ZmZlZDQ0Y2Q2MzRlMTI1YzcxYmNkMTY5OGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_02545e7a60ae4b09bc11650ec4078574",
+      "statement": "init is idempotent when the slug already has a log and --run-id is omitted or matches, and raises ConflictError when a different run_id is supplied.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/run_state.py#L584-L616",
+          "version": "repo-lines-v1:sha256:2d1c4cb6a2d8f10034f96380149e1c910779b4cdf62249e83700bd69e9e298c0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0MjZkMjk1OWRkNjgyNmUxZWM5NTk5YjdmYjRmZWMwYTgxNTE0ZjdkOTkyMzhmNmRjNmRjZmYxOWI2ODJlZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2MjMzYjNmZmVhMzJhMjNkZjUzMDY1MzQzNDhmMmRlZTc3NmE1YTZmNzRmYjUzMzE3NWRkYzUzOWE4ZmU0NjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzMWE3OTBhNDNhZTk4MTlhMjBjMWM5N2FiYjkzNzNjMTQ1MTdkNWQ0NmViMGRjYWIzOTcwZGUxNzM1OTlkZjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiN2I3ZWYxOTMxMTdlNjBkNGM5MDQ2MDFmN2IzNjJjZDFlNzM4N2JjYTBkMmFhNDdjMTE4ZTRjZDhhZDFmNjIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6814c92b0322453d960267f9d40ff805",
+      "statement": "All validation happens before the append, so a refused transition leaves events.jsonl byte-identical.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/run_state.py#L764-L846",
+          "version": "repo-lines-v1:sha256:8a38fde2c1eec21b5d5c179a2f4ad151fa0440e93c76db93831a91719df8ff58:eyJzZWxlY3RlZExpbmVDb3VudCI6ODMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwMmEzZGYxOGNiMGIyNWJjZDQ4YWNjNmYwYmJhY2E2NWZhZTRhNjcwYjY4ODY2MWQ4MWEzOWZmNWUyNDQyMDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2MjMzYjNmZmVhMzJhMjNkZjUzMDY1MzQzNDhmMmRlZTc3NmE1YTZmNzRmYjUzMzE3NWRkYzUzOWE4ZmU0NjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA1NzIyYjhjNGYyODMxYTA4YTZmZjE2OGQxNjUxMTRiNmZkYmFjZjk4NDIxNTM2NjI3NzY5M2JkY2IzYmQwMjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRmOGU0ZTkzNTQ2ZDI5ZjI1ODZiZjJjMjkxMTI3ZjkxZTdmYTM2YmFmOTI4ZDVlN2UzZGI3MjgwNmJlODU3NDQifQ"
+        },
+        {
+          "resource": "repo://tests/scripts/run-state-e2e.test.sh#L123-L144",
+          "version": "repo-lines-v1:sha256:8e2447ef235a074a8e3af3a02e9db5255f68bf3ccba1bf04ac472c1d957f00d6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3ZjhkZWZiNzQxZjFkYWYyMzY0MDY0MWQzZDdjMWRiY2JiOWQ0Mjk2ZGE0YmVmYTJjOTZkZWFmZWEwZTEwMGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyZWI3ZDVhMGI5MmE3ZjM5NzkzZjUxZjIzZTY3OGQ0NjZiNzNjZWY1YTBkMGRjOTkxOWVmNTFiMzU1ODE0Y2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRjOTE4NTEzZWY3ZGRmMjkzNTEwMTEyYWQxZGEwOWYzNDAyZDRlYWY1YWM2MTdmN2NlNGJlMmQ2NTBjMjY4ZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1MWU3MGQxYTU0YWQ2MjI0ZDkyYTA4OTA5OWMyYzRjZDY3NzlhNTk3OWY3ODg5YTE4MTcxYjA3NGEzNjM4YjIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_02a29cead726497b8b70fdc6f97d0692",
+      "statement": "validate_chain enforces nine invariants (int contiguous seq from 1, from_state chaining, constant slug/run_id matching the requested slug, genesis None->queued, legal hops via validate_transition, unique string event_id, string event, sha on shipped, and valid all-or-nothing runtime metadata) and raises StorageError on the first violation.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/run_state.py#L368-L492",
+          "version": "repo-lines-v1:sha256:43e8dcbcd0a584b9369771411b9b5dd406e07b542d5a84d7531cfcc989a20c6c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzZGNlYTc0ZGM3YzY2ZDEzNmU4OWFlZDNjZDA1ZWY4NjFmMDUyMDcxZGJlMjdjOTdlN2U2YzZlMWVjZjllMGUxIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyOTBlZjMxNjNlMTk5N2YwNWVkZGM2ZWVmMWUwNTQ0Y2YxNjBjMjM4YmZjZDBjZmYxYTg3NjUzNzIxNGE1MjIyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmZDExMmJiNzhhNjAwYzA2ODViZTc4YzIzZjBlZWY2MjQwN2VkN2RjMWQ4MGQ1ZjRlOWU4Y2UyY2YzYzJkN2MyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIyYWRjYjg3NDY5OWJlNWNmM2UwZjhiODc2N2U5NTcwZTFhMzVhYjNmNzU3ZTZjODRjZDVjM2JkZDg2Yjg1MGI1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_a324075c9c0c4d9b95bcf490311f5e3b",
+      "statement": "read_events converts missing, empty, corrupt, malformed, non-UTF-8, directory or unreadable logs into StorageError and validates the chain by default, so status, list, rebuild, transition and snapshot only fold legal histories.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/run_state.py#L116-L157",
+          "version": "repo-lines-v1:sha256:33af503bf63913ef575631c24a54385a63ecb408546131bff512df960421274a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjNjk4MzQzMGY3MGMyYWUxNDA1ZTRlZmMyZjhjMzRlM2Q5NDg3YmY2M2ZjNzhlODgzNzg4NzBiMzM2OTEwMWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxMzg3NjMxOTgxNWEwNzM4ZTU5NTk5MDYwMzk5NGVhNGFiYmM5ZTBjNTVmNmNhZTk4YWZhMjJmNmRlNDEwNjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjYzRiNTdkMTJlMGM1ZDFkNDFhZjc0ZjUxYmE3MWY3OWM3MTAwNDg4ZTI3YzliYjNmMWI5NTMyZTc0M2UzYTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUyMjhhNGEwZmVjNTBiNDhiODBjNWU2ZjM2MTNmM2ZjY2FmMGNhZjc3NjhmMWNmMTQ0NTc2NzllMjlmY2UzYTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_862de082bf0b423a89da83e08655d3e0",
+      "statement": "Exit codes are 0 for success or idempotent no-op, 2 for invalid input, invalid transitions and conflicts, and 3 for storage errors, illegal event chains and projection drift; main() catches RunStateError and returns its exit_code.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/run_state.py#L1041-L1060",
+          "version": "repo-lines-v1:sha256:b102406ade16d7559445e551c89303724f4e6362a1db46e2dcc054655de25ddb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5ODgwMmNhZDg2YWE5MzZkNGViY2Q2MmIzMTUzOGM2NmY1Y2Y3Nzc0ZjViMjY0OGY4ZTI3OGZmOTU2NDM4NzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU0N2M0MmE1YzYyYzQ5ZmM3MmUzMTA2NGNkYzRiOGQzNzg0MGMzOTc5NWIxMDA5YmMxNjI4NzA1YWYzNGM2ZmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzNzliMzY5ZGQ4ZjcwNzVjZDQxMmUzMWY3MTVjYWJjODhlNGEwNDRlNTMyNWYxYjM4MmZkN2FmYzYzZmJmNTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkNDEzNDBjYzIzOWExNTljZTliNjAyMmU5ZjYzMjI4MzJlMmVhZDc2Y2FlOWU0NzU0ZDIxMGViOGZiNmQ1ZTgifQ"
+        },
+        {
+          "resource": "repo://runtime/run_state.py#L32-L66",
+          "version": "repo-lines-v1:sha256:fcdae34f830246a56ef7854a9e8174ae5165b20023616cc572f4423a40358d7c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MDg4N2U0YzU5NWE1OGUwNzUzYWE5YzRlNDhkYmEyMDE0ZDBkZmEzZWU0ZDQxMzU1ZjEwYTk4NDIyZjdkYWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzZTYyZWQ4Mjc0M2QxYmNjODY1MTUxYTRkOTAzMjFkZDYxMmJiY2FkMjVmZTg5NTViMjM0OTJmOGFiOGExZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4NmQ4NTAxZWNiZjVhODBlNTI3M2EzNTI1NGZhYmFlMWMwNmIwMjk2NWFjZDczYmIwNzllODI2NmU4NzM1YjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_290422961a84425c826186fc931bb569",
+      "statement": "Over an invalid event chain, transition is hard-blocked (exit 3) except for targets cancelled or superseded, which append a closing event with a sentinel metadata marker, a best-effort seq, and an unvalidated RUN.json fold; repeat closes are idempotent no-ops, and shipped stays blocked.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/run_state.py#L619-L773",
+          "version": "repo-lines-v1:sha256:cfc2c71dafdf9a7583e09868c577b235e0fe0996b01dc9d9dec1f3b1ff42a0cc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTU1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlY2I4OGUzYWFlMWZlMTEwZmI2ZDU1MjdmNjM4OGFhZjlkMmE3NzkzNjU1ODhiODY3NjMzMmU0NWM2NjVlNWU1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI4NjdhZmQzZWIwNDQ3YmY4NDcyMDIyY2VhMzUyNTMyYzEzNDNkMmU3ZGRmNGIyYTFhZDM0ZDJhZTA2OTNlNjY4IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwNTcyMmI4YzRmMjgzMWEwOGE2ZmYxNjhkMTY1MTE0YjZmZGJhY2Y5ODQyMTUzNjYyNzc2OTNiZGNiM2JkMDIwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIyMmQ1NGI5YjQ1Yzc4ZTNhYzg0Y2EyYThmNDM3MDZkMDA4ZTFlODZmNjM0NDA0M2UwNjE2OWM1NmQ5YmIxNGE3In0"
+        },
+        {
+          "resource": "repo://tests/scripts/run-state-chain-validation.test.sh#L175-L199",
+          "version": "repo-lines-v1:sha256:f31b565b8f3305ca0032011d1a2b866dbfe70875cc5c8674fef5298ffca03924:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3ZjhkZWZiNzQxZjFkYWYyMzY0MDY0MWQzZDdjMWRiY2JiOWQ0Mjk2ZGE0YmVmYTJjOTZkZWFmZWEwZTEwMGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlNDg1OGRiNTBjMTcyZWY0ZjE3NDIxZmY1OWE2ZWMwNzA3ZTNlODA1YjMzOWFlNjBhYTdmZTU3YmUzNDU1ZGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ0NzRlOTJkZmMyMjNlNGY3MGU5YmQxOTg0ZjZiMDNiYzY3Yjg0YTU0OTBiNGJhMzViZjQwMzg5ZjZhYjdkYzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyMjE0NzViNTQxMjcyNTQzYjhkNGExMWY1NDdjNzhkMTFjOWQ1MjMwZDYzZTg5M2RhZDZkZTVjMDcyY2JiZWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_722d1d5d69e7435fa7436f0e374a93c7",
+      "statement": "Closing a run over an invalid chain does not repair it: status on the closed run still exits 3 with an invalid-chain error.",
+      "evidence": [
+        {
+          "resource": "repo://tests/scripts/run-state-chain-validation.test.sh#L191-L194",
+          "version": "repo-lines-v1:sha256:0affab6f7240ac3d70e17c9f9b02efa17335a0fb6d5e03aa13ef14faa694658f:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjY5OGQ3NTViM2M1NzhlMWM1OTg0NWE1ODI0Zjc2ODNjNzA5MjQ1N2I4OWYxZmU3NWY5Y2E5MGFkZjYzYjFkNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2U0ODU4ZGI1MGMxNzJlZjRmMTc0MjFmZjU5YTZlYzA3MDdlM2U4MDViMzM5YWU2MGFhN2ZlNTdiZTM0NTVkYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTE3NzYyNjFkNTZlNGVkZWY0YWIxZTI0MTk1MTc4MzE5MDY0ZDhlMzZhNjUzODkzOWIxNjRhMzA0NzEyOGYwNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmQ5OTgyOWU1NDdhMTQzOGI0ZGEzNWM3YjljMmQ3ZmNiMDViZjg2OWQzODljNmY4NDZmNjdlY2VmZjEzNDNmNyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_7f28d89cd87447a0bb848c501a3a3548",
+      "statement": "snapshot_run_state classifies storage as untracked, projection-only, events-only, drift, invalid or consistent; status exits 3 for untracked, events-only, invalid and drift and prints the projection with exit 0 for projection-only and consistent.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/run_state.py#L501-L578",
+          "version": "repo-lines-v1:sha256:3ea0de5fb49728cf9652d062fb9ac8dafee5a68fbb37969a95b50b621422481d:eyJzZWxlY3RlZExpbmVDb3VudCI6NzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzMWM1MGJkNmU5N2MxOTgxMTZlZmM2OGM0NDY2YzkxZmVhZDExNjQzNGVhMDI0M2E3YmUyMzdmMGI3YzJjNGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0NjY4ZWJjNGUwODFkZjNkNWJhMTQ4NzE1NGE0ZDJlODA2OTBmZjgxZTQ3NjBhZDhhZTJjMDY1ZDAzOTJjY2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg4OGU5MDcyOGZjZWQzZTk0MTU2MzNhYjJjMmMxNmE5NjlkNDIxZDQ4MjRlZjIzZjBlNzFkYTc1NmY0ZjJjZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5NWFmY2Q3YTFjMDYwYjc1OWQxMmUxY2Q0OWViMGU1ODdiMGY4ZmQwZTM0ZTJiZmYwZTFhN2UxZGIyMTBmMGIifQ"
+        },
+        {
+          "resource": "repo://runtime/run_state.py#L849-L900",
+          "version": "repo-lines-v1:sha256:4ddbb2070281e3bbc401d7fc4a93539b9d047a99eb422f566d3783ef2d5a5363:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlOGUwOTFkNTI1OWFjOGRkYTlhMjNlZTBjN2FmOGFmMWY0YThmZDM5Mjc4ZTNmZGU1YzE2NWUyOGJkNDBiYmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2MjMzYjNmZmVhMzJhMjNkZjUzMDY1MzQzNDhmMmRlZTc3NmE1YTZmNzRmYjUzMzE3NWRkYzUzOWE4ZmU0NjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA1NzIyYjhjNGYyODMxYTA4YTZmZjE2OGQxNjUxMTRiNmZkYmFjZjk4NDIxNTM2NjI3NzY5M2JkY2IzYmQwMjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ0ZmIxNGIwMzg5YjkzZTQyYTU2MjJhYWVjYTU4MDRmNDdhOGJhZjczZWYxYzk4ZjMzMjkwODYxZTQ2NDcxMjAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_50d6c8e50bf641c5bdecb391c5c42cb8",
+      "statement": "resume_decision consumes the same snapshot_run_state primitive and stops on invalid and projection-only storage, which status itself tolerates for projection-only.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/resume_decision.py#L907-L945",
+          "version": "repo-lines-v1:sha256:16304cfc892571330e013e0922cb07313727fe91273eefee847962f1788dfb88:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZjYyNDY2YjJlZjJlZDY0ZGM3YmY1M2E3NTJmNmQwNzRlYWQwYTNjZDA3ZWZiZmZhMzQxYWYxNmU1OTNjNjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MjJjNDJjZDE5YzZkMDNkODA4YzQ1MjcyMDU1MjgyNWI3ZWExYzViNDkxYjIxODUxMWNhYzc0MTVjZjlkOWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmYmQwMDkzMTRiYzI3MDg0MTY3MzRhMDJhZTVmZjM5YTFlNDhhMDUwYmU5MWY0M2IyZmFhOTIwMDJjNjJiZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNmMDcxOTdjZTZmZTg0ZWVhMzhmNjk4ODVkNTk5YzEyN2Y3OGFjNzlmOTk0MGM4MTZkNDMzMWY3NGU0OWIyZDkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_50982c117b944a99ac718c27b71680bb",
+      "statement": "list reports runs from RUN.json files, validates each existing event log, prints invalid runs as errors and excludes them, exits 3 if any are invalid, and with --active omits terminal states.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/run_state.py#L903-L945",
+          "version": "repo-lines-v1:sha256:8516924d0d25866804b7934c028ea4c6381fcfcdd4d15246dc7db6e5bd0a1d2a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0MjlhMWI5NDRlNjliZTYxMTM4NjA3ZGQ5YjhlYTBlYTI4OTAzZmU0ZjdhODU5Yzk0YmE3ZjhjNzMxMDg4N2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhNDk5MTg0ZDAxZjQyYTE3YmZmZTk2ZWFlM2ZiMmVkNTc4NzlmZTliZmI3ZDliZTBlMzQxYjA1NmY1YmNlYzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA1NzIyYjhjNGYyODMxYTA4YTZmZjE2OGQxNjUxMTRiNmZkYmFjZjk4NDIxNTM2NjI3NzY5M2JkY2IzYmQwMjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMyZTFkMTgxMTllZTAxMGJjZGI5NDM0MGE4NTI4ODFiN2Q5NmYzMmU4MDFkNGI2NmVlYWE2ZWIyZWUwZDRhNjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bb6342fd5b7040f793878e547b46c7bd",
+      "statement": "rebuild regenerates RUN.json from the validated log; --check compares instead and exits 3 on drift; --allow-invalid-chain skips validation with a warning and reports a distinct 'matches an UNVALIDATED fold' verdict.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/run_state.py#L948-L978",
+          "version": "repo-lines-v1:sha256:159b2cf8a52802936d16202907ec66db5c4763f994d054296f367a202f50aa22:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3NGNjYTljOGYzYWJjMjNlMGQyNTlmNjE1Yjg4N2RkNDEyZjcxNDJlZTAzOWU4MDUzNjIwZjJjYmE0Y2JkYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2MjMzYjNmZmVhMzJhMjNkZjUzMDY1MzQzNDhmMmRlZTc3NmE1YTZmNzRmYjUzMzE3NWRkYzUzOWE4ZmU0NjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM5NTY1OTdiOGQ1NjYwMDMzNzllNTAyMTI2ODJhNDhkZjliOTU5NDYzOWFhZTI3NWIzZGFjMDI1NzRlNGQ1MTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNjN2VlZmMyMjQ4NWMwOTAyMTZjMmE4MmVmMDU5NWJhYzc2NTgyNDZlMWFmMjMwNDBhZDMwNWI4ODlkNWMyYjgifQ"
+        },
+        {
+          "resource": "repo://tests/scripts/run-state-chain-validation.test.sh#L83-L115",
+          "version": "repo-lines-v1:sha256:2eb3c749ffbe5268cdb21c78488f8b0edc9f50317ef55965de9cd6d8631dc2ad:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxMDMxMmY5ZDJkMWVkOWE3ZmUxOWRlOTg5MDg5MDc5YTAxYWJmYTU3NGFlMTc2MmQwM2Q1MDVlYjA5ZDc2MDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlNDg1OGRiNTBjMTcyZWY0ZjE3NDIxZmY1OWE2ZWMwNzA3ZTNlODA1YjMzOWFlNjBhYTdmZTU3YmUzNDU1ZGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZjZjNmZDI0NTFiN2YwYjhjMWViOWZjZDY5ZjI1NDZjZWQxOTg4ZjUyNzkxZTlhOGQxNGUzNWMyMzljYzNhNzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlmOGIxNGQ4Njg5ZWM4OTIzYzk2Y2QwYzBmMDFmN2MwMDhmZWFlM2EzMTI2YjRlMzhlOWYwNGYzMTNjNWRjNTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a2a15e6ae7844c85bc083208ce681264",
+      "statement": "--meta cannot set the reserved runtime_mode/runtime_evidence_id keys; those must be supplied together via --runtime-mode (enforced/advisory/unsupported) and --runtime-evidence-id matching codex-mode-<16 hex>.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/run_state.py#L352-L365",
+          "version": "repo-lines-v1:sha256:e388ce7a5e306f601f54afce15f2a9f57795a34e3c187db2fa12fc5100ffb52d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2ZTc1Y2RkNWEwMjlkZTI5NGY4Mzg1OThkZWM4NDNlMjZhM2M4MWIxZjk3OTZmYTJjNzlkZmY3NDY4ZTljZTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzNjRkNjJmZDE4MzhkY2E3MTMxM2QzMTc1MzA3OWQwNGMyMTlhY2I4NWVlMGYzZTc3NGQ4NDkxYWUxZTg1OWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MjIzMTA2ZmQ4NzQyYjcwZWEyMzNmOWRjMzU5ZjRiMDJiYmIwNjliNzI4M2VlZjc2MjQ5OTUxNmJkN2I5YzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk4MWU2MzExZDRmYzRmNGIzODE3NzRlNWVhYjZjYjUxMzJkY2JlMTliZmVmMjA1ODcxY2FkZTJjMTBjZjU3OTAifQ"
+        },
+        {
+          "resource": "repo://runtime/run_state.py#L46-L47",
+          "version": "repo-lines-v1:sha256:1bc0e005aa4381d33e3232de726e45673dc38eb5a3c47ab33f4cd58dd8d23719:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzFlZTMwM2MzNDE1MDQ5MWFiMTE0N2I0ZmJhZDE2Y2I3MDhjYjRkZDg5MDM1NmY2ZTJiZTUxMmY5YmZiYTZkMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGYyNmVjN2Y5ZjViNGVkYTk5ZTg0NTdhMDkwMjEyYzRkNTBlNGI4N2FkN2U3OTQzMzZjMGQ1ZTA0Y2Q0ZmU5MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODkzMmZhNjM1YzI5NzNjZjcwYzMyNjQ3ZWRlMGY5N2Y4Y2ZhNjM0ZWY5YWUzZWFkNDdhMGM3ZmY4MDk2MzM0ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOThiM2RlOTM1ODM2OTg2YjQ4Yjg4NTlkOWEzZDgwYmEyNDg5MzgyMzlhOTQ2YmI3MWRiYjk3ZTEyMzk5MmUyMSJ9"
+        },
+        {
+          "resource": "repo://runtime/run_state.py#L981-L1000",
+          "version": "repo-lines-v1:sha256:128822f515b88c2c1fdfa1cbc2fd067c53406fcaf63e144d1e841a550731b8d9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0ODFjMjM0YzBkMDhiNWFlNzJmOGU0MzkxNzFiZDAyNDA3YTRmZDQ5ZjQ1ZGI4MWNiNTAzNmYyZWQzZjNhMTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlNzU2Y2MzMDM0MzBmYTI3NGI5YWY1YjM4MmExMDE2YjAyMWRiMzQ2Y2FjMDNkYzFkMmI0MmViMDY2ZjBhZmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA1NzIyYjhjNGYyODMxYTA4YTZmZjE2OGQxNjUxMTRiNmZkYmFjZjk4NDIxNTM2NjI3NzY5M2JkY2IzYmQwMjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE2NDhhNmU1YmVjNGJhZjIyYmEwOWVkMzA5NmM2YTBmZmE2N2EwMmE4YWJmMGI1YmI1YjJjODczYzFlNmNkMzgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_001a72b8acfd44eab8a6c89e04533099",
+      "statement": "A mutation gate copies run_state.py and test_run_state.py into a temp sandbox, applies each of 15 single-guard mutations to validate_chain, and asserts the named victim test fails, after first requiring a green unmutated baseline.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/test_chain_guards_are_load_bearing.py#L1-L130",
+          "version": "repo-lines-v1:sha256:6edf41181f656c8e17c046d6c517896d5783834e244895c9195a1e0d33a012b4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmMjU2NWNhMDQwZjUyMmNkNDcxNjJjOTE4NThhODliYzJmNWQ0ZDVkYTdiNjNiMWFkYTJhN2NjMzI2ZDAxZTA0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJiMDg4NDk3OTBjMTU5Mjc3NDA2M2RhMjgyMTU2YmM5ZDQ4ZTA2ZDMyNGQ0N2MwMGY4NTM5ZWQ3MjllYTczODNmIn0"
+        },
+        {
+          "resource": "repo://runtime/test_chain_guards_are_load_bearing.py#L167-L273",
+          "version": "repo-lines-v1:sha256:ecd998b77d4285202668ed087c72ad6d18c24c40f8bebc663347099e05f299c2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlNDEyYWFkYzI0OWViODAzZGJkZDI1Yzk2OGE4YjUzN2NlZGIxZWRjOGY2NWE4MjIxOTdlNGZkNWE4MmE5OGM0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0ZTU1MGM2NjdiOTUyYzY5MTU2YmVjZDAwYmVkMDc4Y2YwMDdiNmJmZWNmNjEzOGQxMTQwNWU1NjJlN2ZhYzIyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI4Y2M0YTdkMWNjNzk2YWJhM2U0NjcyMzMyN2Y1MTdlOWY4MTE5ODJkMjUwZjA3MDI5ODZlNGI1NzY0YWQ5NTg5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_2725e9366d4c462597dabde46a602fc7",
+      "statement": "Every events.jsonl committed under specs/ must pass validate_chain, enforced by test_real_repo_event_logs_all_validate.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/test_run_state.py#L1575-L1602",
+          "version": "repo-lines-v1:sha256:ae0569d43d87d91373d5311c98d44a777f91ae127e0730d8db6cdf100851342d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhYzM5ZGM2ZTNhZTdhNzUwNWI0NTlmMWQxYjg0NDEwMjU1YzkyY2NjNmE0YWFjNTNiOTM3ODVmYzBmZDdjZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxOTZhYWU0NzFkNzA0NjYwNGI2NTE1MzRiYTQ3MWNlOTgzNzVhYzliMDBkNmY3YTdhZjVmOWZmZmZiM2EwOWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU4ODgzMTgwMzExNDhmYTExY2I1MWY1YTc0NTU2YTJlYzk5ZWIzNDhiNjg2Nzk1ZGU4YTc1ZTg2NzBiODI1YzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjZTg1MzYwMTUzZmFkMmVjMGM1ZjI1YTg5ZDBlYjU1YzZlYWQwMDQwZmE3ZTg2YmJlNDBiN2JkN2JjNzZhYjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fa8f592944974f55a3c341e04141607a",
+      "statement": "The post-merge workflow transitions the first tracked slug among the merged PR's SUMMARY.md files to shipped with --event ci.merged and the merge SHA, non-fatally, before the bookkeeping dirty-tree check, and stages that slug's RUN.json and events.jsonl in the bookkeeping PR.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/post-merge-maintenance.yml#L67-L135",
+          "version": "repo-lines-v1:sha256:d01eb847baf060aba0cc1e3740ba600e4399ac60a0ea9c8cd2b06c560ee16d4d:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0MDVkMjdlZDA3YTNiYmUxOTI4NjYwZmU4ZjQxOTU2ZDJiNmRiOTg3ZGExZWQ5MTliN2JjZDY1ZWZmOGY2YTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmNTU5NzljZTczMDIwMzNlNmIyZmQ3ZDg4ZjUzN2EzYjhlMDkxZWEzMDVjODExZmZhMTI3NGJmNTc2NGVhNWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3YTQyMDNlZjY5NzhmOWFhZjAzOGJmMzE2YmQ3NDEwMWIzNjliYWMzOGFkOTBiMzMwMTM4NzI0ZDRhMThjOGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI5MmRhMDg1ZGQ5N2YwZTE4Njc0NjAwMzdjNWVmYjhiYTI4MjBkMzdiOTc0ZTFkMzUzN2Y2NjU4ODFjZjc0ODMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a9ac4b0bcfc74702b2397407ae75972f",
+      "statement": "The commit gate's check_run_state blocks (exit 2) commits touching specs/<slug>/ that leave RUN.json or events.jsonl untracked, warns on unstaged changes, and is downgraded to a warning by REQUIRE_RUN_STATE_STAGED=0.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/commit-gate.sh#L306-L348",
+          "version": "repo-lines-v1:sha256:d0ab5c85ad5d2416744dcf0f80bdb01d25d24327688c5eaebd2872181e545adf:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkZjFjMzkyMzg3YmU0OGYyMzNiNzA3NjlhOGIxYTgxN2Q5ZjA1MjNmOTJmMTY5NmIyYjNhNzZmY2JmM2VhODAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkNzJiZDkxNDQwMzA4ZTgzYjg1ZWE0MmRiMTEyYjNkNThkY2IyZjg1NGZhYTBjNDIwOGYyZDkwZWY5YjVmZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI1OTA2NjM0NTU0OTE1ZDI3NDcyYzE3NjQ4NmY0NmZlNzg0MDE4MzZhNmMwMmVlMmIzY2QxNzA0OGZmNjgxMjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_33adeb6e0d79470a91a2c3e7fa3d22fc",
+      "statement": "The session-knowledge hook and harness-status script surface active runs via run_state.py list --active, discarding stderr and treating an absent engine as no contribution.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/session-knowledge.sh#L90-L112",
+          "version": "repo-lines-v1:sha256:d3e421b543cf615c71e4408def92c4d223635786663f0e01478b061cbda25870:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3MDg3M2VhMWNkMmQzZWUwMWNkZjk4ZmZlY2QxYTk3OTYwZGE0NDRmOTI0OWEzOWZkOWQxMzg4M2YxODcxNzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkxNGIyNjE1NTkxMjE1ZTQ4ZTM1MzM1YWQ1NTA4ZTg2MzdiYmU2NGI5OWU0MmExZjc3MTExNTAzODUzMjIzZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ2ZTdlODBmMTc2NWIyMzhmYmFhZDgyZDQyYmM0MTE0ODNhM2I5NjM3Y2I3MDkwMDU1ZmE4NTgyN2JlNDQxODMifQ"
+        },
+        {
+          "resource": "repo://scripts/harness-status.sh#L99-L114",
+          "version": "repo-lines-v1:sha256:b0cae4ea07e80c35c756f9e5b7e39cd66733e8bbf19fa308c1d065040155543a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljMDRlNTY3Y2JiNjkyZWFhOTBiZDhmZjdiNWJlYTExNWM1MzYwZDAxODExYmNjOTJhZTJlMDVkZDQ2MmU4OTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFiMTczMGQ5ZDVkNWNlMzA3YTU3MDlkNWE5MzQzMjc0M2RkZDRlOTQyODBlZDFhOTc4MjRjZDNkNWU1NDE0OWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRlYjIyNmY1ZDYyNGM3YTIxNGE3ZGNlMjQ0ZTE5NDE5MmMxY2E3MmJjZDJhMWY3ZTk4NGE3YWQ2NTQ1NTIyYWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ccf67b786503476c8969f32970f9eb5f",
+      "statement": "The finishing-a-development-branch skill transitions runs to ready_to_merge with --event pr.opened as a best-effort `|| true` call, and feature-intake initializes runs and advances them to investigating then planning.",
+      "evidence": [
+        {
+          "resource": "repo://skills/feature-intake/SKILL.md#L56-L56",
+          "version": "repo-lines-v1:sha256:151520c5f73a07aa9c213cd61f1454c77e04307d336bbd05edf0c9687a2757cd:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTUxNTIwYzVmNzNhMDdhYTljMjEzY2Q2MWYxNDU0Yzc3ZTA0MzA3ZDMzNmJiZDA1ZWRmMGM5Njg3YTI3NTdjZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTUxNTIwYzVmNzNhMDdhYTljMjEzY2Q2MWYxNDU0Yzc3ZTA0MzA3ZDMzNmJiZDA1ZWRmMGM5Njg3YTI3NTdjZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGFkMDgyMTg3NzRkN2YyNzI2N2JiYzZjMjk5M2Q5NGE1MmQ3ZjM4NzI1MjlhOGM5MzM5OTdkYmE5M2NjZWVkMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzU4YTA2YzRjMWYxZjA0MjkyMGEzNWZkYWVkNTVmOGM3ZTFkNGM1ODlmMzZiZTIyNmI0NjdmNzljZjllODc0NiJ9"
+        },
+        {
+          "resource": "repo://skills/finishing-a-development-branch/SKILL.md#L57-L57",
+          "version": "repo-lines-v1:sha256:c7a2abbf100d385726cb5df8ef1da0b9435145af1e151db7ab24a4afec8d75e2:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzdhMmFiYmYxMDBkMzg1NzI2Y2I1ZGY4ZWYxZGEwYjk0MzUxNDVhZjFlMTUxZGI3YWIyNGE0YWZlYzhkNzVlMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzdhMmFiYmYxMDBkMzg1NzI2Y2I1ZGY4ZWYxZGEwYjk0MzUxNDVhZjFlMTUxZGI3YWIyNGE0YWZlYzhkNzVlMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjY4NDViNzI1MjU4M2VlYzgwYjdjMGJmMjllMGUzNzA3OWZjNDhhMmEyNDIzODc5NmZmMDVhNmVhYjIwZmFmOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzk2MzQwZjAxOWU5NmFhZWE1ZDExMWE3NGYzOTkwZjQxYzZjNGZkMzI4MDk2NGEwNDdjMmFjYzYxZmRlNTVlMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_615883cb54084fc186999cd9e1e881b5",
+      "statement": "install-harness ensures consumer repos ignore specs/<slug>/events.jsonl.lock while RUN.json and events.jsonl remain tracked.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/install-harness.sh#L255-L275",
+          "version": "repo-lines-v1:sha256:c2fc5ecb5551557ea1c7a71d7bde795157d2f5067e83962fada5e88eedbd2a4c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5MjFkZGM0MWEyMTI5YzE0NDU3ZDI5MDczMTI0ZTc0NTZjNTBiYjMyNzU1YjhjYjc3N2RkZTRlOWQ5ZDI3ZDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwYmU1ZDZhMzgxZTA3NzkxYzkwNDNjNGNkZGY1ZmU4ODE3NGY0NmNiYTk1MzY5Y2ZiNzhjMDEyN2I4MGQ1ZTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5YmMzN2UzOTRmODRhZTBkY2VlZTUzZGFhMzY1ZDRmMDI2OGUyNDU2MjA2NjBlNTI3MmM1MjAxMzVjYmVjMjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU5MWFiM2E3ODE3ZWNlMzcwMGQ2ODgxNGRjOGMxNGNmNjQwNmM1YmQyYmI3MDg5Y2NhNDk2YjBiYTE1M2UwYjcifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.2",
+    "at": "2026-10-16T04:08:21.021Z"
+  }
+}

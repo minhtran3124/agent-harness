@@ -1,0 +1,246 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:8c5e975262887f91efd1949838b7eb6338755b5b242b3345f00301a775b9067b",
+  "claims": [
+    {
+      "id": "claim_00d607d32c494ac8a9f813b6e20ebd3a",
+      "statement": "resume_decision.py is the single public, read-only resume authority: it returns a lifecycle route and a task cursor without transitioning state, rebuilding projections, or running plan-authored commands; contradictory evidence yields a structured stop.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/resume_decision.py#L1-L16",
+          "version": "repo-lines-v1:sha256:275e461f77248f95189f5f6a738de1bf4f39f6cda02cca6a053a59181fc7ec49:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2ODJjYmRiNGM4YjA3NTE4YmY0ODZjNTg5OTBmYzM5MTc4M2FhMjBhOTE2YmZiMjdhZDIxMWViMWQ1YzM2NDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMDNlY2RkNGE0ZDEwZjE5YzczZmQ0MmZkMTI0MzdmZDMzNTRhODI2ODE2MDVkYTUyNTVhOTdhMzkwNjhkYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1YjZlODcwNmI0MzA0N2YyYTZkYjY3ZjEzMjYzODU5NTYwNGU2N2YzNjk2Njg3NmNlMDE1OGYwMDUzZTZiZDEifQ"
+        },
+        {
+          "resource": "repo://runtime/test_resume_decision.py#L692-L732",
+          "version": "repo-lines-v1:sha256:8027725d206330fca5e7023722c197a90ae04a879407d7b6894b4ea98f095b85:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkM2ZlNGFhNjlkNjMzMTVjZDMyYzFiNjk4NGI1MjQwOWYzOGMxMTYwYjE0ZjdhZjJmMzAyNmRmNWMyODM4NDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcyZmEyNWViOWEzZmY0Mzk4NmU1NDJmNzIxZGU5OWZhNDU4NWFjYzBkN2ZhZjI5ODk1YmRjNDJkODUxNTBmOGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiNDY4YWQwYWJkNWRmODYyMGJiOTRiZGZmZTg1ZjQyMTEwZWNkYThhZjc2NGE0ZDVjM2JhMDZiYWE1Zjc3M2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZiYWE3MWJiODk1NWI0MjY3OTY5YTExNWM4ZWJiNDdkZGE1MGQ3NGE4OTBiYmY2MDgzNmQ2MjJhZTFmYjRkOTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0fb51874fc82474c8b4cada729ff262e",
+      "statement": "The CLI requires --slug, accepts an optional --base, prints sorted JSON and exits 0 for every valid decision (including stop/wait/rebuild), exits 2 on argparse misuse, and exits 3 with no partial JSON on an unexpected internal exception.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/resume_decision.py#L1021-L1034",
+          "version": "repo-lines-v1:sha256:46aca301765b30b36babdfaca07383c0d6b6fa34e9e5ae14bcba891111a490c5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2OWFkZTE1ZTc0NDY1ZDczODAyYjg2ZWI0MjViYTk4OTA4MzgzOTdhMjdjNTNiNDUyMmUzZTVkNDRmNmQxYjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2MjMzYjNmZmVhMzJhMjNkZjUzMDY1MzQzNDhmMmRlZTc3NmE1YTZmNzRmYjUzMzE3NWRkYzUzOWE4ZmU0NjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVjNjgzZTA4NWE2ZDUyMWM3NWIwZjYyZmIwNjViOWE2MmRhMzMyYmVlNWVlM2NlNTY3Y2YzYjc2MjIzOWIyOTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkNDEzNDBjYzIzOWExNTljZTliNjAyMmU5ZjYzMjI4MzJlMmVhZDc2Y2FlOWU0NzU0ZDIxMGViOGZiNmQ1ZTgifQ"
+        },
+        {
+          "resource": "repo://runtime/test_resume_decision.py#L738-L748",
+          "version": "repo-lines-v1:sha256:28ec56ad37a564f040b1c9c650a18f1671aeffd0599bf51ec0ceb2fad33ea17a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5MDFkMzQxMDc3ZmMzMDZkNWQ0MWEzNjg1NmI1NGZkMjJlMTE2ZGNjMzEyZWYyYmU1NDZkM2U3NmI0ZmM5ZjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ3MmMyOGRlOWEyN2EwYTkxY2Y2OTE1MWYxZmY2MTdiMzUwZjJhZDZiYjEwNTlkZDE0NzJiNDVhMTc4ZWNmYTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5Njc3NTBlZjc0YjkzYzhjMzA5MmI5YWEyNjk3ODA3NTRlY2ZiMjUyYjQzODcxY2YyNjk3M2YyNzcyYmE2ZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyZDE2N2Q2YWIyMTNhZDdjZTkwMjkzODBhM2Y2NmY4OGEyZmFhN2M3ZWU1NTgyZmNlNDNlZWU5YjAwYWM3Y2YifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_52ab403ba5c64a5f9e10b14784857fdc",
+      "statement": "Every decision carries a stable schema_version 1 top-level shape including action, reason_code, run, plan, cursor, git, interrupt, session_hint, deviations, required_transition, warnings and waiting_on.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/resume_decision.py#L887-L904",
+          "version": "repo-lines-v1:sha256:96fc11cb2bd546e475562ffa06c4f37f9de0c05aa0629331bd05d0459aee1b3d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzMTFlYmMyOTI2NGYyNDMyMzUyNjdlMTU1ZGVhYWM3MTgxNjkzOTEzYjkzMDkzZDQyMWY4MmVmMzNjZWNjYTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNlNWI2NWU3M2YwMmMwYmFhMWViOTE1YjZkNjc4ZWU1MjkwZjAyODdmZGZlMjlhOWJmYTEwNGU5M2UwMzk0MDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIxZWQwYTM5YzFiM2UwNjkyY2UyM2NiN2M5NGNiZjM4OGM0Y2EyNDc4NTcyYTAxMWM5YzFhZWUwMWQ5ODgyZDQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1337f38dffa7462e911474823ecfba50",
+      "statement": "Storage topology from run_state.snapshot_run_state takes precedence: invalid and projection-only storage stop, events-only and drift return rebuild, and untracked runs go to the execution lane with a run-untracked warning without initializing a run.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/resume_decision.py#L907-L964",
+          "version": "repo-lines-v1:sha256:2f445f188cf36734631712f01ccdafa35be9d46f11174a36261289f4d94b696c:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZjYyNDY2YjJlZjJlZDY0ZGM3YmY1M2E3NTJmNmQwNzRlYWQwYTNjZDA3ZWZiZmZhMzQxYWYxNmU1OTNjNjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZGQwMWE3MzZmZDg4ZThhMTk0ODAyNmZkZWY3MmVlYjllYmU2MDA5ZWExMjE2NDQ0MmUwMzNlYzBhM2RiZjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmYmQwMDkzMTRiYzI3MDg0MTY3MzRhMDJhZTVmZjM5YTFlNDhhMDUwYmU5MWY0M2IyZmFhOTIwMDJjNjJiZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdlZDQ2MGRjY2ZjMzBkOGJlZWIxNzg3MmQ3YWE0NTJhZjhmMThmM2YzOWJjYTk4ZTFhOWY3ZmFiZTkxNzEwMTYifQ"
+        },
+        {
+          "resource": "repo://runtime/run_state.py#L501-L578",
+          "version": "repo-lines-v1:sha256:3ea0de5fb49728cf9652d062fb9ac8dafee5a68fbb37969a95b50b621422481d:eyJzZWxlY3RlZExpbmVDb3VudCI6NzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzMWM1MGJkNmU5N2MxOTgxMTZlZmM2OGM0NDY2YzkxZmVhZDExNjQzNGVhMDI0M2E3YmUyMzdmMGI3YzJjNGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0NjY4ZWJjNGUwODFkZjNkNWJhMTQ4NzE1NGE0ZDJlODA2OTBmZjgxZTQ3NjBhZDhhZTJjMDY1ZDAzOTJjY2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg4OGU5MDcyOGZjZWQzZTk0MTU2MzNhYjJjMmMxNmE5NjlkNDIxZDQ4MjRlZjIzZjBlNzFkYTc1NmY0ZjJjZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5NWFmY2Q3YTFjMDYwYjc1OWQxMmUxY2Q0OWViMGU1ODdiMGY4ZmQwZTM0ZTJiZmYwZTFhN2UxZGIyMTBmMGIifQ"
+        },
+        {
+          "resource": "repo://runtime/test_resume_decision.py#L185-L226",
+          "version": "repo-lines-v1:sha256:bc83a5ab556f1becd838d0f0e5abf01f34e5dca5b446e8ab7e17869c24c5b841:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiZTQ2YjdkNjFjODU4ZjNjNGRjMzUxOGNhZWEyYjE1OWNmMzIyNjM3ZTY4ZTczM2IwNjc1NDEzMjU0NmMwNTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxZTIyY2Q4MjI3NmFkODY3MTZjN2I5Y2Q4OGZmNmU5NDkwODRkMjRkNzhjYTIxYjZmMTY2YWJlOTA1NmVhN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEyY2JhNThkOTQ1YTgyMGE0YTJmODBjYTQ0ZDllMjU3NWNkYjY0YzIxYTJjODhkYjM2ZTIwNzkxY2I4MjY4MTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwOTZiYTlkZjk0NTJiYmRkYTY5MmQ3NDFiY2M0YTNjZWFhZDQxMjZiNmMzNDBjNjQ5MGY1ZWJhZjMwMzkyM2YifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0ed25a762ee746d08ccb83d2655556c6",
+      "statement": "For consistent storage, terminal states stop, waiting states plus ready_to_merge wait, blocked/escalated wait with interrupt-blocked, fixing_ci/addressing_review return resume-repair, verifying returns resume-review-chain, and only queued/investigating/planning/implementing reach plan and task evidence, so cursor conflicts cannot reroute these states into execution.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/resume_decision.py#L966-L1018",
+          "version": "repo-lines-v1:sha256:bab3e8ec9ff2115c7766dd51b09b2042755810b141a90f5a3fab2ce83e354167:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiY2JkZGNiOTUyMmE2NzQ3YzZmZTc0ZGUyYTJmODUwY2Q2ZTEwYmM5NjI1YzVlMTY5NzFkZmYxODRlOGJhNTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhYjM2YTIzZTllOTZkMTI5MDI0ZWY2MjkzMmMyZGYzMjA1YTAyNGU3ZTQ1ZjJmNjAwMDFhYWQ2NmVjMGZjYmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzNzg5ZWJiZmQ0MDU4YTZlZmQ1YmZhMTU5ODU3MmExYzQ1NDFmNDM2MjFjODg5YjQwMjUyNTdmMWQwMjY4YTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkNjk0NjY5OWQ2ZmVhYWJhYTVlZDRkNWQ4ZTA5M2ZlNDRiYmJlZGUyNzllYjNhNjkzNDQyMGI0OGNhYTY0MGMifQ"
+        },
+        {
+          "resource": "repo://runtime/test_resume_decision.py#L142-L179",
+          "version": "repo-lines-v1:sha256:e703c7da5ff561caddb28c5cf97a81c4a18c0a114a264222ef68a1df15745699:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxYjk2NTg3M2U1ZmZjNDBlMWRlMzNhY2QzNzIxMzQ2OGU2Y2I3OGFiYjBkNDg3YWVkYmYwMzY3ZWM2NzQ4ZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2NDMzZWFkZDdkY2E4NTIzNzk3ODhmNTNhNGYwNmQ2ZTQ5YjNkNWY1MjU1NTUyOGZiNWU2ODY0ZjkzMjJmMmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwYTdhMWNhMzNiNWZhMjZkZWVhNWM2ZmQ1YTFkM2FhMTIwZTQ5YmEwZTgwOGRmNjFlYmIzODhhMjExMDk5NGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzZGYwMmU2NDdiYmFlZDk1OTNhMTFjODNiMGEyY2VjNmFkNzZhYWIwYTNkMDNmYmNlNTFjZjM4OTA2MzZhYTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8400bd6093784d0b8376b4843b1c5be0",
+      "statement": "The test state matrix must cover exactly run_state.ALL_STATES, so adding an unclassified FSM state fails the suite.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/test_resume_decision.py#L165-L169",
+          "version": "repo-lines-v1:sha256:d0122e0c2a515727f422e6a7621abd563bae3ae81434aad338b31104e12577a7:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODZjMGU0ZTc0Y2QwZWYxZjc1OGY3YzRhZGNkMGE1MzhmMWZjNmZiNDExMzAyMGQ0ZTYwYmQ0YzcwYTBhYTc0ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjg2YmQ3OTE5MjQ4NWMwNTNjNzYwY2VlMTNkMTFhMzFhNDhhZjEzZmExMDlhZjkwZWQ0MmRiOTY3YTFiM2YxYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzk5NTI1YjcyYTVlOTFkZjI4NDBhYTQ3ODc2MTZkYTgyNDgxY2E5NDBkYTZlMWUxY2ZkYWFjMzg2NDQ0MTNmZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTYyNDhmNWMyZWRmOTc3NDU5ZDFiNGM0Y2Q4NGUwOGYzNDI5OGJmYjI1YzMwZWQxN2Y3NzY0YjMyNjA5OTgyYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_0e3031702af44079b5f022a68d41cb63",
+      "statement": "Post-PR repair states route to resume-repair even when the plan is shipped, while an execution state with a shipped plan stops with plan-shipped.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/resume_decision.py#L712-L718",
+          "version": "repo-lines-v1:sha256:83830b56430026398d465d075b6d6e44153b0608b39b3e278e199c16a07223c6:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmYzMjczOWUxNWRjMDczNDU0NzQ4MmQ1MTZkZjRiZGIzYjg0Y2I0YjM4NTdmOWZhYmU4MGQ4MjAxZTAxMDQ1MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZiMDQ0OTE0Njk3MjJlODM2M2E5NGU0MDQ0NTM4ZTAxM2EyYTIxN2UzNmIxZTU2OGJhNjBhY2I3YjRjOGYyZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTFkYWFlOTQ1Y2JmYjI5NDgyZWY5MDJhMGE4YTI1ZmM4ZjhmZTQxNGFkODNlMjdiMTJlMGVkZDQ5YWQ3ZWMxZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTcwZWVjNjliNmI0OWNmMWY0NDFmNjlmZGUzNjFkNzQ0YzJlMmY4ZDA4ZTlhOWE3M2MzODQ2NDUzNWY3MDZmNCJ9"
+        },
+        {
+          "resource": "repo://runtime/resume_decision.py#L999-L1007",
+          "version": "repo-lines-v1:sha256:0120d91d091b62ecdbce45be48c75a8a0121e3809ea538233999d3922883433b:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTdiOGRmZDI1YjUyOGZjZTE5YWVlNGE3ZWZiMmMxYjgyZDA2NjZhYThiOTYwOWIwZWQ5NjIzNTFhYmQ0MDU5MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTkwOWE1M2E2MThkMDI4ZTFkMzAwMGMwYTdhYmNlZWNiZTVmYjM3ZjRlNTExZWZlNDY2NDNmYWQ2ZTY2ODcyZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzY0ZWE4OTNkNDNlZDZhNzAzMzY0NWZhYTQ1ZDQ4ZjQ3MzA4YWZmZGE5YmUwNGUxMmU3YTg4NTlmYzZhNjM0NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmYxNjZlODFiNDY0ZmNlZWU2YjU5NTUyYWUyODNkMzA3MmUzMTU2MWM2NzlkMWFkODZkNWI5OGNiMmE5ZmI1MiJ9"
+        },
+        {
+          "resource": "repo://runtime/test_resume_decision.py#L241-L263",
+          "version": "repo-lines-v1:sha256:0524714689fe9852bb15558f8676f164ef5005067b9a8adb9706ad8cd75341ef:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4OTE2YmY1NzQ2ZTdjY2UzNzdhYzdkZTI1NjgwNTFmY2E5MDU0NDcyMWIzYTlkYTRkY2E4OTY5ODA2YmIyNWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyMTc3ZDU4MjViZGQ3ZTQ1NDJjNmMxNjYzMmQ1YjMxYTUxYjBjNzFjNTllMDc1ZjM1YzJhZjViNDc4ZGFhZjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZlMWU0MDljODk5OTUxZDRlZGIwOGZlNTY3YTM1ZjI0YzE4M2QxMTVmNGRlZTFiYzY4NDk2NDgwYjkwM2M3YjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIxZmUwMWYwZjNjNjczOWE4ZWJmYTI2MDFhNDFhNzBmNGFmNTE1MWE5YjExNGRmMGNhYTBjZjlhOTU4YjE4ZjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5f8b273eff554e4c94d8893f6c837338",
+      "statement": "Interrupt recovery derives the origin state from the last event's from_state, lists its FORWARD_TRANSITIONS successors, recovers the original waiting_on for waiting origins from the latest earlier event entering that origin, and returns a return-to-origin required_transition with waiting_on surfaced at top level.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/resume_decision.py#L771-L809",
+          "version": "repo-lines-v1:sha256:6c6614086d13621a373b2ffdc925d8448e692e95b7ca433ba7bb12f9a8eabe6a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkM2U5Njg3MWM5YjQ1Njg2NTU5ODk4YzFiN2Y2MDZlNjZjYjkwZWY3YzUxNzAwMjRlY2ZjYmRmNzY1YzI5YTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmYmQwMDkzMTRiYzI3MDg0MTY3MzRhMDJhZTVmZjM5YTFlNDhhMDUwYmU5MWY0M2IyZmFhOTIwMDJjNjJiZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzOTNiM2VmYThiZjZlMmZiNzE1NmM2NTllOGUzODAxMzc2MjBjODM4MTIyNjlmNWZlNWQ4ZjVlMGExZjIwZmQifQ"
+        },
+        {
+          "resource": "repo://runtime/test_resume_decision.py#L269-L290",
+          "version": "repo-lines-v1:sha256:62ebf77ce33d41de5bad55a4f174f34831cec83bec9d52a4f91869949a7975ee:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlMjcxY2JlMTNiZmVlZTQ2MDY2NTFlOTI0YzEzNmJjOGEwOTJiZmJhNTM3Yzk5ZGU0ZGI3MGE1NzBiMGZhYTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlZmUxOTEyYmNiOGZkZDVlODk4MTEwNWVmZmQ5NmUyMTI2ZjFiMTIzYjgxMmEwZWU3YTZlYTA3NDdmMjUzYTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgzYWQ3NzQ4ZDYwZDEzNDkwMTU1Mjk2ZmMwZWFlYTZlNzFhNjEzZjFhZmJlM2JmODZlOWZjMjcwNzk3Mjg4ODMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMxNWFkMTc4N2I3ODk3NjdhYzg3YmRiMTQxMWQ1Y2EzMmU1N2ZlN2ZiNWJkNDE2MjUwMTE2NDhmNDkxOWVjYjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8b0ff1ea8d954308ba15b2b4194e7a18",
+      "statement": "The execution lane stops with plan-missing, plan-unreadable, plan-unknown-status or plan-shipped; queued/investigating runs get a catch-up advance transition, and proposed/paused plans return execute-plan with reason plan-activation-required and an activate-plan required_transition rather than editing the plan.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/resume_decision.py#L686-L768",
+          "version": "repo-lines-v1:sha256:9b8b4ebdd967675b9778ef09cf6bb3bc30817ad8a068938bea1d02357d7e912e:eyJzZWxlY3RlZExpbmVDb3VudCI6ODMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1ZmY4NDUzY2M0ZmUzNTI5ZjczYzAzN2E0YzQ2ODcyODEyYjQxYjBkMDlhYzVhMWEyYjQyYTJmM2QwN2ZmYjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQwZDExNjFkZGNhOTc5Mzg4YjE4MmRkMTljNjhjYWEwNjBkNjQ3M2EyOWNmZTU5YWMxMGY0NzQ2M2Q3OGE0MDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwYmMyYTVhMjYwZGNlNmFlOWQ0OWI0NGI5YWU4MjY5YjdhYTc5NjZlNTdjYjYzYzBhZTJjMTRkNzExYjAwYmYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_86b1188151cd49ed82995eb33a871f33",
+      "statement": "Task ids are parsed in parity with render_plan.extract_tasks (fence/inline-code masked, XML first with Markdown fallback), and a corpus test asserts identical ordered ids for every real specs/*/PLAN.md; duplicate ids become conflicts.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/resume_decision.py#L281-L294",
+          "version": "repo-lines-v1:sha256:a60e46987669149585d3f4bbb81bfc06b0520d48995f451c7eaff7cf7dd9e8fc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiZjM4NDE1ZGRkNjFmNDc5NmE5ZjYyYmU1MzUzZjljZWY5NDA4NzgzYmVjN2ZkNTQwY2U2M2ZkMjY2MzBhMGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkNTc5NzAwNTdhNTk5OTNlODczNjE1YTJhMmQxMTAwOTg3MDBlYmMwZDI5MzY5MDNiZjRjZTM4NTRmNDBjYzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM2NTAxYWU1MzJjYzRjMTA1ODZlNmEwYjA4MGM2YTkyNDkyNDQ5NmE2Njk0MGUzODkyZmM4NzRkNjVjNDM5ZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyNjY1ZWY2Y2U0NTg1ZGQxMTU4MzE5MzZjNjk0ZTM1YjA0ZGIzYmQxYTdkNTEwMWRmODUzODhlODQ1YzA5ODQifQ"
+        },
+        {
+          "resource": "repo://runtime/test_resume_decision.py#L793-L802",
+          "version": "repo-lines-v1:sha256:9386242526ea893d102dccad24475d911419112a5474aaee1527de39b67a7143:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkZjIzNDBkNmJkZTNmZWI1NDRkMTkzNGU0ZTVlZTgyMzdlNzk3NmY3ZTc4YmE2ZDA4YTMxN2M2Y2IxOWE2MzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmMzVmMDUyOWM2ZjY5OGMxMTljZTI5MDE3NDIxMDM2OWNiYjNhOThjNTY5MmJhOTA0MzdiM2FjNTM5MjM2YTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMyZGJlZDI2N2MxMDgyYzZmYzdmMzEyNTc3NTBjYWNjMDVhYmYwODg3OGE3YTc4YmIyZGFmMDQ2ODdkMzlmYjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFmZjBiOWU0ZDI2ZjVlY2I0YTMwZmYwMTgzMmZlMWMyMWJkMjc4YTQzNWMyMTFiYzE2NzkzYzMwNmU4ZDg0YTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9b18ea1722d040e9ab12ec6307bca099",
+      "statement": "Status Log completion is reconstructed per task mention: an entry must carry a completion marker or backticked sha, only task(s)-keyword-anchored ids (including lists and ranges) are claimable, non-completion and ungoverned future markers keep a mention pending, and anchored ids absent from the plan are reported unknown.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/resume_decision.py#L349-L447",
+          "version": "repo-lines-v1:sha256:96896066f3eac8c1603476fe8e2d0b97f17c32f69a11733ec78cd542587cf02d:eyJzZWxlY3RlZExpbmVDb3VudCI6OTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyOTgyYWY0YThiOGFiNjY4NmU2YWVmOWEzYzQ2OTU3ZGM5NmU4ODhmNDEwMjMwZWU3YWQ3NWFlMmJjNjk2ZGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0ODQ3NTFhNTA0N2UyNjcyOWU3Yjc4NDFkNzI5ZTA0YTczNjAyNmFmNTM1NzhjZDlmZGQxZmEyNzdlYzc0MzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjllZjQ0YzY3NTgwZjcwODY1ZjZiYjZlYmE5Y2I1ZjRkYzk3YTlhODY2ODJmZjFhNWNjYmVmYzE4M2VhZWEyOTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM4MzhmMjVkODM3NTBhNzczNmJlZTA1MDk1YTliM2FjYTY5NWY0NDAwZTA0ODhhYzJiZTMxOTk3NmZiNTMwZGYifQ"
+        },
+        {
+          "resource": "repo://runtime/test_resume_decision.py#L805-L836",
+          "version": "repo-lines-v1:sha256:d09c03ec1ed98e75a25cbcc17d6a426db3239ea9eef1bc107e82eef48d3b63ff:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjMTJlZGZkZGEzMjcyYTI4MjZjMDczZWQwYjRmMTliNDVkYzE1NjJkOWYzNjkwMjRkNjY0ZGVlZDAyNWJmZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjNWZlYmIzN2MwMTBmOTQ0ZDcxNDlkYmM0YWY5ZmM3MmQxZmU0OTZmMDFmZjM2NjE3MjM5MTUwMDQ1OWJkMTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmOTM1MGU1M2VkYjkyZjliMGY0MmEwMjY4MmU1YzI5NzA4NzU5NzUyMDBlODA4NTQ5Y2Q2YzRlNDk1ZWI5MDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjZWJjNjNjNjkwMmQ5NTFkYTliYTFmNDExM2QzODc0NzI0NzE4ZTg3NmY0NDg0MWZmMzgyMDE5NzgxZWU2YTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_71bca37cda584b46b4d08c3753b1d752",
+      "statement": "Each claimed-complete task appears in checks_to_rerun with its exact Verify command, next_task is the first pending task, and a claimed task without a Verify command produces a missing-verify conflict.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/resume_decision.py#L632-L663",
+          "version": "repo-lines-v1:sha256:51f6da5c0876e0c11090fea917fecf796f72a251841d3a104a2a4625f98a4af9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2MGFjMzU0NTczNGFkMmMzNDEyM2ZhYzg2OTBlMTljM2U1NzBmNzdkMDcyMzZjM2Q5ZDVkNDg2MzI3MTVhZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzOTllMmZjZjFlNDEzZDA1YjUxOTBkYTNkZTExNzdmM2JiYjVjZDk2ZDZhMzM1YjhmNTEzZWMwYjk2MTMzOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmYmQwMDkzMTRiYzI3MDg0MTY3MzRhMDJhZTVmZjM5YTFlNDhhMDUwYmU5MWY0M2IyZmFhOTIwMDJjNjJiZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNjOTM5YzhiN2U5Y2NjOTVjNWI3Mjk3Mjg5M2ZjMWViM2VhZmYxODJmNjhlNTEwOTE4ZTU0NWUzYjU2YzUyYjIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_11851a807dae44c0a364540cfaaed86f",
+      "statement": "Claimed commit shas are validated inside BASE..HEAD; BASE resolution follows explicit --base (must be an ancestor), then terminal VERIFY_ROWS_BASE/GITHUB_BASE_REF, then non-self upstream, then nearest ancestor ref, and declared bases are validated even with no claimed commits.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/resume_decision.py#L513-L629",
+          "version": "repo-lines-v1:sha256:2661766582fbd2b4cc3a65a4a833de378b4c400a1c1056d5d30daf7c8f3569d8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmOGQxODFhZDNmNmNiY2Y2MTgwNWQxMDExNjVmY2JhOGJjOGU5ODFhMDc0M2UyM2RhOTRkZjgzMjBiMzY1NWJhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0ODkzZjQwZTM3ODFlYjg5NmM4MmQwNDZhMDgwNjdhMTFlMzVjZGYyZjFkZmFmMjZmZWE5MGI4ZGI2Njc2NDEzIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2YjMyNzQyMTM4NTEwNGM5ODZjY2Y5YjkwZDFmNDQzZjQ4MDQ4ZGY5NTI0NGVhMzg3YjQ4OTlhNzVhNzRkYjcwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxMzM4MGZmNGQ3MDQ2ODJlNTdjYjY2OTk2NzcxYzRmMDc5OGJlNzM5ODRlMTI0ZTQzODI2NDcxNTBlNmE5NzIxIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_bab1f3384e1e46449d2da000e8e0bd10",
+      "statement": "Any cursor or git conflict turns execution into stop with a prioritized reason_code: base-unresolved, range-unavailable, missing-verify, git-evidence-conflict, then cursor-conflict.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/resume_decision.py#L666-L676",
+          "version": "repo-lines-v1:sha256:1a7a55a273cb36e088951042ca8ce5f327508665314ad7ff9e52cff1e4e51aac:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyZjQ0MzRlYWU2ZjlkMGY0YTM5OTVmNjE1OWMwZTFlMjlkN2ViODMyMmUwZmZhZTZjYmRhMDAyOTZhZDNjOTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1YjI4MjkwYWQ1MDMyZGJkYWRjMWQzYjhjOWUwNWZhNTlkYTJmNTYyMTU4Zjc1Yzk0YjI4ZWFiZDI5MWQ5NzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlNzE3YWM5NWU4NDRlZTBjNzNiZThjNWI5Mzk2NmVkNjE5OGYyZDFiMDRiN2RjZjFkOTQ4ZGJmMzFiNGU4ZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhmNzY1MGRiODAxNzhlNzZlNzM5MDdmYjNiYjM1MjFkNTVmOWNmM2RhYWNmZGJkZGViM2JiMzU4OTA2MGZmMTUifQ"
+        },
+        {
+          "resource": "repo://runtime/resume_decision.py#L719-L729",
+          "version": "repo-lines-v1:sha256:27a175abb294217af665a8f452105a24bc0d68c0cd990c6019f248c2a0243059:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmMDdkMzM5MzRhMjBmNmUyMzE5ZDEyM2IwNTJiOGZlYTM2ODBiOGI2MjQ4ZGY3Y2UyMGMxNDlhZTcwZWM3MTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY3NmFiNjQ1ZmFlYTljMTQwZGYxNWNjYmZmNGVhY2RkMTExY2U0NDRiODU4Y2VhMmFhNjE2M2JlNGMyYTVkMzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiMTFkNGZmOTljNzg1MTdjYzVlMjhjMmFmZGQxOTU2ZjgyMzFkNDU0MTgyNTJhZDcxMTY5OTg5NzlmNzhkMzYifQ"
+        },
+        {
+          "resource": "repo://tests/scripts/sdd-resume-cursor.test.sh#L137-L150",
+          "version": "repo-lines-v1:sha256:baa923bf1224a976861ea37c581b541b45859609d02343716e31eac46f2fbc5b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE1MjZhN2FmMGI3OTkwNjA4M2ExNjFmMTAyOGYwZTdkZjkzNDM0MGI5ZmNiMTIwZDZjNWJkNDE1ZWRjMTZjODMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmNDI5ZWUyZWM0NjdhZTAyMTRlOGEwZWNjMGQ5MGRlYTE3NWJjOWIzZGZjZjE4MDZiYjk0MWE4YjAwOGJlODUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJmNjhlNzAyM2RiMmU4NDAwY2QxMTdmNTM3MWVhNzc0ZDBhODY4NTlmODI1Y2VjMTliYjc0MzM2OTU5YTk0ZDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM2YTc5MzRjMWU4YmNjMzM2NTk2NzFhMTIxNDQzNmZiMGRmNzMwMTlkOWRmMDc0NDY3YWEwYmM0ZWExOGFhYWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_798984e6b7c24eb2b1fa3858d40c7826",
+      "statement": "SUMMARY.md deviations and a same-slug STATE.md Active Spec hint no older than 7 days are returned as advisory context without affecting routing; unreadable or mismatched advisory inputs degrade to warnings.",
+      "evidence": [
+        {
+          "resource": "repo://runtime/resume_decision.py#L815-L881",
+          "version": "repo-lines-v1:sha256:1fa0fa7513fe7a35cfa38da6bccf6124ec4a79882ac8a4d96c4d0f68a4f034a4:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwN2ZjNTRiOGM5MWMxN2IwNTk5YjJjZmQxNDI3NzZhYTY5MDUyODdiMzUyYTFjNjhiYzgwNDBiZTMyMTgwYTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjMDMzMjY4NzkzYTRhOWU1NDBiZTA4YjAxNGIxMzZjODhlZmVhMjdkMjgxMjE4NTIwMjVmNmVlNWY5NjBkMjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5M2JlNWViZmIzMTg3YmZjMjkwMzk1ZDkyNDI1OTRlZTVjZmVkZTdhZTZjYTQzMWMwNWU1M2VkM2EwMjI5ZDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFiZWNiYmZkMTdiZDBjMzZjYTZjOGUyMTcxY2NjNDE2MjZmNDAxYjMxMzg4YWYyNDIwYjdmNjI0MmY4MjRjZjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0b05a134146444c0b89a9d659492a997",
+      "statement": "subagent-driven-development's Resume first step runs the source-tree resume_decision.py and falls back to .claude/runtime only when the source file is absent, treats any non-zero exit as stop, requires schema_version 1, and branches only on action/reason_code.",
+      "evidence": [
+        {
+          "resource": "repo://skills/subagent-driven-development/SKILL.md#L12-L26",
+          "version": "repo-lines-v1:sha256:fabf7cd259e8e5b1578d17114476ed17dfa4283e594ae7290bcd3f20194c9f43:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkMWI1YmVhMTkzYmY5OTJlOTllNTE0MTJmODMyYjMwYjA2MmVmMTgyNGY5ODVhOWM2NmIxYTY4YmM5MTYwNWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxMTljNzk4OTUxMjlmMWVhNGY3ZDhiNWJkOTBmMTkxZTA1ZTg5NmQwNThhZDY1NzUwZDgxYzE2YzJlNDA1ZjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBhNzAxOWE2YTQ3ZDM4MzZiMzVjMDA3NzI2YjFlNTFmYzRlMmI4MDA2NGNiNTVmYWRlNzEwNDk0MDYxNGZlNmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVhZTIwYzIwYTQ3ZGRmYTcxNTA1ZTMyMWUwOTQxYTRmNzBkZThmNWNmNzRiZmFjMDc0ZmViNGNmNmQ1ODFhNTgifQ"
+        },
+        {
+          "resource": "repo://tests/scripts/sdd-resume-cursor.test.sh#L154-L176",
+          "version": "repo-lines-v1:sha256:c7669f52fd4dd76899c605baa47e2e760e5aa9751d045a95464f53ce29f04e64:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJkNzY4MzY5ZTQ1NGEzZGJkNGM5NWE1MWY5Zjk4MmUzYzVlYzAyNzA0ZjQ2OTk4M2MxNDA1ZWQ2MzkwMzMyMWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzOWM1MGRiZWNkMGQ0MWI0Zjk0ODQ5YjFjNDA1MDA0NGRkMzJhZWExNzMwODVhZmI0NWU5ZTVlYzc5YmNjNTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM2YTc5MzRjMWU4YmNjMzM2NTk2NzFhMTIxNDQzNmZiMGRmNzMwMTlkOWRmMDc0NDY3YWEwYmM0ZWExOGFhYWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyMjE0NzViNTQxMjcyNTQzYjhkNGExMWY1NDdjNzhkMTFjOWQ1MjMwZDYzZTg5M2RhZDZkZTVjMDcyY2JiZWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fb0af8f70a6d4f42b0cd492706fd6f28",
+      "statement": "On execute-plan the SDD controller must re-run every checks_to_rerun item before dispatching any pending task, route failures to repair, and apply required_transition only after confirming the named external condition.",
+      "evidence": [
+        {
+          "resource": "repo://skills/subagent-driven-development/SKILL.md#L28-L33",
+          "version": "repo-lines-v1:sha256:50fa75b7e746b7dc58999fecf6bd57f116737627c826682d59810b337458837c:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTEwZGQ4YmI0M2MxM2RiYmE3ZjZmNGU0MWU1MmQ2OTY4MWM4ZWRjYTBlNjRjNDVhNDFhZjQ2NGRlYWRmNDczNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzMxYjc0ZWE1Yjg5MThmZTQwN2M2Y2Q5NTA4NTRjZmQ0MjU0ZTQ5NzczMWIxZTcyNjVkNjg3NGY1OGM4OGRjMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTZiYjk5YTQyZDMzODVjZTVhZDg4MmQzOTkzMGJmZTI5OTVlYTIwOTU3M2UzMzgyNDJmNGRlMjhlNTViYjY1OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDFkMGFjMDMyYzBmM2Y0YjhhYjUxMmEwZDE3MzY0NGU3M2M5NDQ0N2I0YTg1NzA0OGJkZGE1ZjYyYWFkMGQzZSJ9"
+        },
+        {
+          "resource": "repo://skills/subagent-driven-development/references/resume.md#L15-L30",
+          "version": "repo-lines-v1:sha256:6b6a8fb1eb5778b124e20ec4e047760f9ac48763a720849a8ea550a56d6e88ea:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1MWNhN2Y1NDZmZmZjOGZmNjU1MjhmNDExYmEzYjY3MWZiNmZiMjYyN2RhNTQzNzJkZjk3NDVhOGJjZTZjOTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2ZmMwMzI0NTg1Nzk0ZGRmYTc5NWY5ZDdjODUyNGE5ZDI0ZWViYTRhYjEwYjA3ZTJhZTk3MzVkMjQxN2EyNTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwMTc2YzY4MTY4M2EzMWFjNTIwMTM0NTZlOWY0MTM3NzMyZDYzZjNkNDk2OGU0YWYyOWFhMGJiMzA3NGI1MzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_78c225e966f8490fbac349d933e2ba95",
+      "statement": "Status Log entries must name task ids, commit shas and a completion marker together because resume_decision.py reconstructs the resume cursor from those entries.",
+      "evidence": [
+        {
+          "resource": "repo://rules/wave-parallelism.md#L45-L55",
+          "version": "repo-lines-v1:sha256:210ba4d144c4467d79fb8f9986533d13abfac84747610d3b39fd2a27b6c89826:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5MmFjMzVkZTkwOWQxZjM2NmNkYWE2OWVmNTU5NzAyZmEwOGMwMzc2MGU2ZDg5ZThjOTVmMmQ3NjFkMTQ3ZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyYzU5MTZjN2I4MmU5MzE1YTgyYzU0YmRmNGQ1NjY4NWYwZGE3ZTc1N2Y1NDc3ZjQzNzUzODk1N2I3YjA5OGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJiMjllNjI3ZTA3YzRkZjRmZDk2N2Y0NzNhNTM5Yjc1MzA1NTMwY2YwMmI2NDcyMGRkMjhiOWFkZDYwZDhlYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRiYTIwMmQ4NmUwZTMyODQ4YmQ1YWRhMjMwN2Q5NWYyM2Q1ZmI0MjlhNTBhZjlhOTBlM2Q4N2M1ZmM4MDU0NzAifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.2",
+    "at": "2026-10-16T04:08:21.021Z"
+  }
+}
