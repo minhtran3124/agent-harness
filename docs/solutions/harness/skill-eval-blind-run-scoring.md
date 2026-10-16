@@ -9,7 +9,7 @@ affects:
   - scripts/score_intake_eval.py
 supersedes: null
 confidence: high
-confirmed_at: 2026-07-17
+confirmed_at: 2026-10-16
 ---
 ## Applicable When
 
@@ -57,6 +57,11 @@ the record (honesty rule — don't re-run a fixture until it passes).
   skill to a wrong key. (Contrast: a fixture that *leans* one way but the literal rule supports the
   key is a genuine skill finding, e.g. intake under-counting an added test file toward the `≤1 file`
   tiny bar — keep the key, record the finding.)
+- **Mark every decision the fixture text already settles before the first run.** (gh-309, 2026-10-16.)
+  The #309 blind runs used a GitHub issue as the fixture. The key left open some decisions that
+  the issue body states, so the simulated user asked for those decisions and each run took more
+  rounds. Key v2 still missed four of these decisions. Before the first run, read the fixture line
+  by line and mark each decision it states as `settled-by-fixture`. Score only the open rows.
 - **Claim discipline:** a number is a claim about *these fixtures and this skill only* — not the
   full chain, not real-world rate (`not_observed != absent`). State it wherever the number appears.
 
