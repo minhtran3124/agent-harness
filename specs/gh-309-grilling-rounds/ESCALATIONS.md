@@ -45,6 +45,6 @@ Default: **deny-on-no-response**. No recorded decision → work stays blocked.
   - B) Keep (b) as written. Allow a fourth blind run, beyond the plan budget, with the step-2 text tightened as in A and a key that marks every issue-stated row as settled and leaves at least 10 open rows (a different fixture, or #318 plus added open decisions). Score that run; ship only if (a)–(d) all pass.
   - C) Keep (b) as written and stop: SC-5 fails, the branch does not ship.
 - default_if_no_response: BLOCK
-- decision: A — narrow criterion (b) to its fact half by design DC1 (D9 superseded by D12); record the implementation-level question count per run as an advisory measure; open a follow-up issue to tighten the tier boundary with its own blind run; E001 decision A stands on the corrected premise. SC-5 is scored on run 3.
+- decision: A — narrow criterion (b) to its fact half by design DC1 (D9 superseded by D12); record the implementation-level question count per run as an advisory measure; open a follow-up issue to tighten the tier boundary with its own blind run (opened as #321, milestone Mattpocock Learning); E001 decision A stands on the corrected premise. SC-5 is scored on run 3.
 - decided_by: Minh Tran (chat reply "A")
 - decided_at: 2026-10-16

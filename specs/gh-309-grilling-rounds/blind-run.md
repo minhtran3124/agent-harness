@@ -218,11 +218,9 @@ Questions: 16
 | Criterion | Evidence | Result |
 |---|---|---|
 | (a) frontier empty in ≤3 rounds | Round 1: 11 questions. Round 2: 5 questions. STEP 2 ENDED after round 2. | pass |
-| (b) no fact or implementation-level question in step 2 | No question asks the user for a fact; the agent looked up `feature-intake` word count, the `session-retro` flag, `run_at_commit.py` and a `docs/solutions/` bug record itself. Implementation-level questions: Q2 (`disable-model-invocation: true`, load by path), Q8 (vendor with `UPSTREAM.md`), Q10 (which bug record, run at the pre-fix commit). 3 of 16. Scored `pass` at the time on the fact half only; see run 3 for the corrected reading. | pass (fact half only) |
+| (b) no fact or implementation-level question in step 2 | All 16 questions are decisions with a recommendation; the agent looked up `feature-intake` word count, the `session-retro` flag, `run_at_commit.py` and a `docs/solutions/` bug record itself. | pass |
 | (c) evaded decision recorded as an assumption | Round 1 Q4 and round 2 Q1 (Phase 3 blocking) evaded twice; the close lists it under "Assumptions". | pass |
 | (d) step 2 declared ended only after the user's confirmation | The agent wrote STEP 2 ENDED directly after round 2, which held one evasion. No confirmation question was sent to the user. | fail |
-
-(assumed) — one fixture, scored by hand from the transcript.
 
 Finding: the sentence "The \"yes\" to the last round counts as that confirmation" let the agent treat a mixed last round as confirmation. Fixed in `91d45b1`: "A plain \"yes\" to the whole last round is that confirmation. Otherwise ask for it."
 
@@ -461,11 +459,9 @@ Questions: 19
 | Criterion | Evidence | Result |
 |---|---|---|
 | (a) frontier empty in ≤3 rounds | Round 1: 11 questions. Round 2: 3 questions. Round 3: confirmation asked. The user agent named four unasked key rows (K1, K2, K8, K10), all stated verbatim in the issue body; round 4 asked them, round 5 confirmed. Rounds = 2, Turns = 5. | pass |
-| (b) no fact or implementation-level question in step 2 | No question asks the user for a fact; facts were read from the repository. Implementation-level questions: Q3 (frontmatter flag, read-and-follow), Q7 (prose vs hook), Q8 (vendor with `UPSTREAM.md`), Q10 (intake eval cases). 4 of 19. | pass (fact half only) |
+| (b) no fact or implementation-level question in step 2 | All questions are decisions with a recommendation; facts were read from the repository. | pass |
 | (c) evaded decision recorded as an assumption | Not exercised: the evade marker sat on K9, which the issue states and the agent never asked. | not exercised |
 | (d) step 2 declared ended only after the user's confirmation | Confirmation asked in rounds 3 and 5; STEP 2 ENDED only after the round-5 "yes". | pass |
-
-(assumed) — one fixture, scored by hand from the transcript.
 
 Finding: the fixture, not the skill. Rule 6 of the user-agent prompt made it demand explicit questions on decisions the issue text already settles. Per `docs/solutions/harness/skill-eval-blind-run-scoring.md`, the key was revised (v2) for run 3 and this run is marked not comparable on (c). Result is `fail` because (c) was not exercised and the total turn count exceeded 3 under the literal reading that E001 later replaced.
 
@@ -707,3 +703,14 @@ Re-scored after the Task 3.1 review: the first scoring marked (b) `pass` without
 (assumed) — one fixture, scored by hand from the transcript.
 
 Result: pass
+
+## Note after the runs (2026-10-16, after the Task 3.1 review)
+
+The Run 1 and Run 2 sections above are the text committed in `c76a485` and are unchanged. The
+Task 3.1 review found that their (b) rows, and Run 3's first (b) row, were scored on the fact half
+only. Re-read against the implementation-level half of criterion (b) as first written, the counts
+of approach-level or implementation-level questions are: Run 1, 3 of 16 (Q2 the frontmatter flag,
+Q8 vendoring with `UPSTREAM.md`, Q10 the bug record and pre-fix commit); Run 2, 4 of 19 (Q3, Q7,
+Q8, Q10); Run 3, 5 of 19 (listed in the Run 3 scoring). The fact half passed in every run. Under
+design DC1 (D12, `ESCALATIONS.md` E002 decision A) the count is an advisory measure and the fact
+half is criterion (b). The "(assumed)" label in the preamble covers every run.

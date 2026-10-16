@@ -100,6 +100,8 @@ A blind run proves the text before merge. It uses two subagents and the orchestr
 - Blind run takes more than three rounds (budget), or asks a fact or an implementation-level
   question in step 2: edit the text and rerun. At most two edit-and-rerun cycles (budget); then
   raise an `ESCALATIONS.md` entry.
+  Amended by DC1: an implementation-level question no longer triggers a rerun; its count is
+  recorded as advisory. A fact question still does.
 - A subagent cannot be continued or gives no reply to `SendMessage`
   (`docs/solutions/harness/no-report-reviewer-dispatch-is-not-a-pass.md`): start a fresh agent
   of the same role with the full transcript so far replayed in its prompt, and continue the round.
@@ -190,7 +192,7 @@ approach-level or implementation-level questions per run is recorded as an advis
 | D7 | Blind-run question is issue #318's body | Answer key is written on #318; the run binds nothing for #318 | settled |
 | D8 | User agent has a hidden answer key, answers only what is asked, evades one decision twice, refuses facts | Criteria (b) and (c) are testable | settled |
 | D9 | Scoring is manual on the transcript, four criteria, recorded in `blind-run.md` | One Verify row | superseded by DC1 |
-| D12 | Scoring is manual on the transcript, four criteria as amended: (a) rounds of new questions until the frontier is first declared empty, ≤3 (budget); (b) no step-2 question asks the user for a fact, with the approach- or implementation-level question count recorded as advisory; (c) and (d) unchanged | SC-5 is scored on the last run under these criteria; a follow-up issue owns the tier boundary | settled |
+| D12 | Scoring is manual on the transcript, four criteria as amended: (a) the answer key holds 10–13 rows (budget, unchanged; it counts key rows, and the number of rows left open after the fixture text settles some is recorded beside it) and the frontier is first declared empty within ≤3 rounds of new questions (budget); (b) no step-2 question asks the user for a fact, with the approach- or implementation-level question count recorded as advisory; (c) and (d) unchanged | SC-5 is scored on the last run under these criteria; a follow-up issue owns the tier boundary | settled |
 | D10 | Blind run is a plan task right after the rewrite task, before the review chain | Review sees the evidence | settled |
 | D11 | Approach A: inline prose in step 2 | Skill predicted at 547 words | settled |
 
