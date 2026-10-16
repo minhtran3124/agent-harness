@@ -27,6 +27,34 @@ INTERFACE_CLAUSE = re.compile(
     r"\b(Consumes?|Produces?)\b\s*:?\s*(.*?)(?=\s*\b(?:Consumes?|Produces?)\b\s*:?\s*|$)",
     re.I,
 )
+# gh-312: a plan opts into the seam rule with `- Plan-contract: 2` in Global Constraints.
+MARKER = re.compile(r"(?m)^- Plan-contract:[ \t]*(.*?)[ \t]*$")
+FIELD_BULLET = re.compile(r"(?m)^[-*] \*\*([^*\n]+?):\*\*")
+SEAMS = re.compile(r"(?m)^[-*] \*\*Seams:\*\*[ \t]*(.*)$")
+
+
+def seam_errors(body: str, prefix: str) -> list[str]:
+    """Check one task's `Seams:` bullet: count, place after Interfaces, and value shape."""
+    lines = SEAMS.findall(body)
+    if not lines:
+        return [f"{prefix} missing Seams"]
+    if len(lines) > 1:
+        return [f"{prefix} has {len(lines)} Seams bullets; use one line with ' | ' between seams"]
+    found = []
+    names = FIELD_BULLET.findall(body)
+    if "Interfaces" in names and names[names.index("Interfaces") + 1 :][:1] != ["Seams"]:
+        found.append(f"{prefix} Seams must be the next field after Interfaces")
+    value = lines[0].strip()
+    if re.match(r"none\b", value):
+        if not re.match(r"none\s*[\u2014-]\s*\S", value):
+            found.append(f"{prefix} Seams none needs a reason: 'none — <reason>'")
+        return found
+    for seam in value.split(" | "):
+        for clause in ("catches", "misses"):
+            match = re.search(rf"\b{clause}:(.*?)(?=;|\b(?:catches|misses):|$)", seam)
+            if not match or not match.group(1).strip():
+                found.append(f"{prefix} seam '{seam.strip()}' needs non-empty {clause}:")
+    return found
 
 
 def interface_values(interface: str, verb: str) -> list[str]:
@@ -55,6 +83,10 @@ def errors(text: str, name: str = "PLAN.md") -> list[str]:
     section = re.search(r"(?ms)^## Global Constraints\s*\n(.*?)(?=^## |\Z)", scan)
     if not section or not re.search(r"(?m)^[-*] .+", section.group(1)):
         found.append(f"{name}: Global Constraints must contain at least one bullet")
+    markers = MARKER.findall(section.group(1)) if section else []
+    for value in markers:
+        if value != "2":
+            found.append(f"{name}: unknown Plan-contract version: {value!r}")
     criteria = set(re.findall(r"(?m)^\|\s*(SC-\d+)\s*\|", scan))
     if not criteria:
         found.append(f"{name}: Success Criteria table has no SC rows")
@@ -66,6 +98,8 @@ def errors(text: str, name: str = "PLAN.md") -> list[str]:
     for task in tasks:
         task_id, body = task.group(1), task.group(2)
         fields = {k: v.strip() for k, v in FIELD.findall(body)}
+        if "2" in markers:
+            found.extend(seam_errors(body, f"{name}: Task {task_id}"))
         missing = {"Criteria", "Interfaces"} - set(fields)
         if missing:
             found.append(f"{name}: Task {task_id} missing {', '.join(sorted(missing))}")
@@ -101,7 +135,10 @@ def main() -> int:
     if args.self_test:
         valid = """## Global Constraints\n\n- Safe\n\n## 3. Success Criteria\n\n| ID | Behavior (observable) | Check (re-runnable) | Expected |\n| --- | --- | --- | --- |\n| SC-1 | works | `true` | exit 0 |\n\n## 4. Tasks\n\n### Task 1.1 — x\n\n- **Files:** x\n- **Action:** x\n- **Verify:** `true`\n- **Done:** x\n- **Criteria:** SC-1\n- **Interfaces:** Consumes: input. Produces: `output.py`.\n"""
         unbackticked = valid.replace("Produces: `output.py`.", "Produces: output.")
-        if errors(valid) or not errors("## Global Constraints\n\n## 4. Tasks\n") or not any(
+        marked = valid.replace("- Safe\n", "- Safe\n- Plan-contract: 2\n") + (
+            "- **Seams:** `errors()` list — catches: a wrong reject; misses: `main()`\n"
+        )
+        if errors(valid) or errors(marked) or not errors("## Global Constraints\n\n## 4. Tasks\n") or not any(
             "Produces must name a backticked artifact" in item for item in errors(unbackticked)
         ):
             return 1

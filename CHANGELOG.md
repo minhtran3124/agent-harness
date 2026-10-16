@@ -9,6 +9,18 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.34.0] — 2026-10-16
+
+- feat(sdd): agreed test seams from plan to implementer to reviewer (#312) (PR #325)
+
+## [2.33.0] — 2026-10-16
+
+- feat(brainstorming): grill the design frontier in numbered rounds (#309) (PR #322)
+
+## [2.32.0] — 2026-10-16
+
+- feat(skills): deletion-test procedure for the 600-word skill ceiling (#308) (PR #319)
+
 ## [2.31.2] — 2026-10-16
 
 - fix(verify_summary): apply red/green check to every bug-fix Input-type spelling (PR #304)

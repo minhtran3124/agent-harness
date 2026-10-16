@@ -26,7 +26,9 @@ required brief is missing. If the scope contains independent subsystems, propose
 3. For every new plan, add exact `## Global Constraints`. Decompose tasks in canonical `### Task`
    syntax. Give every task Files, imperative Action, automated Verify, measurable Done, mapped
    `Criteria` (`SC-n`), and an `Interfaces` line naming what it consumes/produces. Make actions
-   test-first where applicable.
+   test-first where applicable. Write the `- Plan-contract: 2` marker as a bullet in
+   `## Global Constraints`. Give every task a `Seams:` line directly after `Interfaces`, in the
+   form that `plan-format.md` defines.
 4. Ensure same-wave tasks have no file overlap and no unresolved dependency. Use waves only for
    genuinely independent work.
 5. When `design.md` has a `## What must be true` section, first write `### Assumption coverage` in
