@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.32.0] — 2026-10-16
+
+- feat(skills): deletion-test procedure for the 600-word skill ceiling (#308) (PR #319)
+
 ## [2.31.2] — 2026-10-16
 
 - fix(verify_summary): apply red/green check to every bug-fix Input-type spelling (PR #304)
