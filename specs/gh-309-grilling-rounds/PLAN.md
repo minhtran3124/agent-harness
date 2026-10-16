@@ -10,7 +10,7 @@ created: 2026-10-16
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**3 tasks · 3 waves · 5 files · 1/3 done**
+**3 tasks · 3 waves · 5 files · 2/3 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -35,7 +35,7 @@ flowchart LR
 
 ### Progress
 - [x] 1.1 — Spec-local check script (wave 1)
-- [ ] 2.1 — Rewrite step 2 (wave 2)
+- [x] 2.1 — Rewrite step 2 (wave 2)
 - [ ] 3.1 — Blind run on a fixture design question (wave 3)
 <!-- AT-A-GLANCE:END -->
 
@@ -262,3 +262,4 @@ at `finishing-a-development-branch` and in CI, and it is the check behind design
 
 - 2026-10-16 — plan written
 - 2026-10-16 — task 1.1 complete; commit ae0eba5
+- 2026-10-16 — task 2.1 complete; commits 4a64270, 84db611
