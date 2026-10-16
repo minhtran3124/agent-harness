@@ -122,6 +122,10 @@ B1–B8, approach A).
   `Plan-contract: 2` line, skip this rule only.", so bug fixes on unmarked plans do not stall
   (D11 skips the declared-seam rule without the marker). Task 1.3 review Minor finding. Commit
   `113a374`.
+- Decision change after approval: DC1 in `design.md` (new D17) narrows the reviewer seam check
+  to new tests only, per `ESCALATIONS.md` E001 (user chose A). Commit: see `### Intent Findings`.
+- Rule 1 — `task-reviewer-prompt.md`: the `Seams: none` check moved out of step 1 into its own
+  step 4, so it still runs on unmarked plans (B8). Intent review finding 2. Commit `f9d535f`.
 - Research brief addition (implements D1, no new decision): the checker rejects a `Seams:`
   bullet that is not the next field bullet after `Interfaces`, because both parsers fold a
   misplaced bullet into the field before it (after `Verify`, into the re-run command).` line if there were none. -->
@@ -203,6 +207,30 @@ B1–B8, approach A).
   occurrence. → compound.
 - backlog — the system `python3` here has no pytest; Verify rows that say `python3 -m pytest` ran
   through `${TMPDIR:-/tmp}/harness-tests-venv/bin/python`. Every implementer hit it.
+
+### Intent Findings
+
+Plan-blind intent review against `specs/gh-312-test-seams/intent.md @ 2cd6403` over
+`430192d..b6f0f19`. Six findings; all six intent outcomes are present in the diff.
+
+- gap (proof only) — "`bash scripts/run-tests.sh` passes." No Verify row, because
+  `rules/plan-format.md` guardrail 4 bans a whole-suite row. The reviewer ran it at `b6f0f19`:
+  exit 0, 1045 passed, ALL GREEN. `finishing-a-development-branch` re-runs it at the final HEAD.
+- drift, fixed — B8: the `Seams: none` check was skipped on unmarked plans. Fixed in `f9d535f`
+  (own step 4).
+- drift, escalated and fixed — outcome 3 names "a new test"; the prompt said "each new or changed
+  test". `ESCALATIONS.md` E001, decision A (only new tests); prompt and design (DC1/D17) updated in
+  the E001 commit.
+- drift, advisory — outcome 6 says "a `Plan-contract: 2` line"; the checker accepts only the
+  `- ` bullet form (D16), so a bare line is silently unmarked. Same root cause as correctness
+  advisory 1; follow-up issue.
+- drift, advisory — implementer step 2 keeps "Write tests." and "Follow TDD if the task says to."
+  around the new rules instead of replacing them; same outcome. The checker also accepts a hyphen
+  after `none`, a looser surface than "`none — <reason>`".
+- excess, report-only — the unknown-version rejection (D12), the one-bullet rule and ` | `
+  multi-seam syntax (D13), "prefer an existing seam; use the highest seam possible" (research
+  brief, upstream), and the reviewer's extra search allowance (D15). All trace to the approved
+  design or brief, not to the intent text. Kept.
 
 ### Correctness Review
 

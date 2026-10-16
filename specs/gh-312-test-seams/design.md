@@ -243,3 +243,11 @@ runs (budget), stop and escalate under `rules/orchestration.md` "Repeated `Verif
 | D14 | A bug-fix task with `Seams: none` is an unusable seam: the implementer returns `NEEDS_CONTEXT` | No conflict between the red-test rule and the `none` rule | settled |
 | D15 | The reviewer may run one more named, focused read-only search for each declared seam, or for each new or changed test file on a plan without the marker, for the real-input check | The real-input check does not break the prompt's search limit on either kind of plan | settled |
 | D16 | The marker is the bullet `- Plan-contract: 2` inside `## Global Constraints` | One exact form for the checker, the unit tests and the `plan-format.md` example | settled |
+| D17 | The reviewer's seam check covers each new test only; an edited old test is not checked (E001, option A) | No task is pushed to rewrite an old test it only touched | settled |
+
+## Decision changes
+
+- DC1 — 2026-10-16 — narrows the reviewer seam check in Architecture ("for each new or changed
+  test in the diff") to new tests only — evidence: intent review finding 4 showed the approved
+  intent names only "a new test" and keeps "Rewriting existing tests" out of scope; the user chose
+  option A in `ESCALATIONS.md` E001 — new decision: D17

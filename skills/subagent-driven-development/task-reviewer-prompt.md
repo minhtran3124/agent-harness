@@ -61,16 +61,16 @@ Task tool (task-reviewer):
     Do not approve the quality verdict when a changed prose file has no line in the section.
     Do not approve the quality verdict when the section has a `ste-lint: unavailable` line.
 
-    Quality verdict also covers test seams. Check each new or changed test in the diff.
+    Quality verdict also covers test seams. Check each new test in the diff.
     Each failure below is an Important quality finding:
     1. The test sits at no declared seam.
        Skip this step when the brief has no `Plan-contract: 2` line.
     2. An expected value is copied from the output of the implementation.
     3. The test uses only synthetic fixtures, and real inputs of the seam's shape exist.
-    4. The test is new, and the task's `Seams:` field is `none`.
+    4. The task's `Seams:` field is `none`.
     For step 3, you may perform one more named, focused read-only search for each declared seam.
-    When the brief has no `Plan-contract: 2` line, the allowance is one search for each new or
-    changed test file.
+    When the brief has no `Plan-contract: 2` line, the allowance is one search for each new
+    test file.
     These searches are in addition to the one search above.
     Cite each search in `search_surface`.
     Do not crawl the repository broadly for this check.
