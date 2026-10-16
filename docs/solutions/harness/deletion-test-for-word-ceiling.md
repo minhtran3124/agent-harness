@@ -28,8 +28,11 @@ cuts are how a trim drops a condition with all tests green: see
 The procedure:
 
 1. List each sentence of the skill.
-2. **Deletion test.** Delete a whole sentence when the model already does it by default, or when
-   it restates a file the skill already points to.
+2. **Deletion test.** Ask whether the model already does it by default. When yes, delete the
+   whole sentence. A sentence that restates a file the skill already makes the model read (a
+   required Read step, or an always-loaded rule) passes this test, because the model already
+   receives that instruction. A bare pointer does not count: it does not make the model read
+   the file.
 3. **Disclosure.** Move a whole block that only some branches reach into the skill's
    `references/` folder, and leave a one-line pointer in the skill. Inline what every branch
    needs; put behind a pointer what only some branches reach.

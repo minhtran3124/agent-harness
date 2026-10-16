@@ -88,7 +88,8 @@ def inventory(root: Path) -> dict[str, object]:
             problems.append(
                 f"skill exceeds {SKILL_WORD_CEILING}-word progressive-disclosure ceiling: "
                 f"skills/{name}/SKILL.md ({stats['words']})\n"
-                "  hint: delete whole sentences the model already follows or that restate a pointed-to file;\n"
+                "  hint: list each sentence; delete a whole sentence the model already does by default\n"
+                "  (one that restates a file the skill makes it read counts);\n"
                 "  move branch-only blocks to references/; never shorten a sentence with a condition word; "
                 "see docs/solutions/harness/deletion-test-for-word-ceiling.md"
             )
