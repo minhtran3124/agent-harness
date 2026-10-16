@@ -187,3 +187,22 @@ def test_status_no_wiki_exits_2(tmp_path):
     git(repo, "init", "-q")
     commit(repo, "one")
     assert run(repo, "--status") == (2, ["no-wiki"])
+
+
+# The tests above pin the script to these exit codes. SKILL.md copies them into its two exit
+# tables, so this drift test keeps that copy complete and in step with the script.
+STATUS_CODES = {"0": "current", "1": "behind", "2": "no-wiki", "3": "unknown-drift"}
+PAGE_CODES = {"0", "1", "2", "3", "4"}
+
+
+def table_rows(text, heading):
+    section = text.split(f"\n## {heading}\n", 1)[1].split("\n## ", 1)[0]
+    rows = [line.split("|")[1].strip() for line in section.splitlines() if line.startswith("| ")]
+    return [row for row in rows if row[:1].isdigit()]
+
+
+def test_skill_exit_tables_match_script_codes():
+    text = SCRIPT.parents[1].joinpath("SKILL.md").read_text()
+    status = {row.split()[0]: row.split()[1].strip("`") for row in table_rows(text, "Status")}
+    assert status == STATUS_CODES
+    assert {row.split()[0] for row in table_rows(text, "Each page")} == PAGE_CODES
