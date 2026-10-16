@@ -204,6 +204,36 @@ B1–B8, approach A).
 - backlog — the system `python3` here has no pytest; Verify rows that say `python3 -m pytest` ran
   through `${TMPDIR:-/tmp}/harness-tests-venv/bin/python`. Every implementer hit it.
 
+### Correctness Review
+
+Six plan-blind FIND angles over `430192d..6f7d7ed` (`specs/**` excluded), then one independent
+scorer per deduplicated location. Threshold 75 (config default). No location reached it, so no
+fix round ran. `removed-behavior` found nothing.
+
+Advisory findings (below threshold), recorded for a follow-up issue:
+
+- 50 — `scripts/check_plan_contract.py:31`: `MARKER` accepts only `- Plan-contract:`; a `*`
+  bullet, a bold `- **Plan-contract:** 2` or an indented marker is silently not a marker, so the
+  seam rule and the unknown-version check are skipped while the brief still carries the line and
+  the prompts apply the seam rules. Fix direction: widen `MARKER` or reject near-miss spellings.
+- 0 (unmodified line) — `skills/subagent-driven-development/scripts/task_brief.py:16`:
+  `section()` does not mask fences, so a fenced `- Plan-contract: 2` example in Global
+  Constraints reaches the brief while the checker treats the plan as unmarked. Same root cause as
+  the row above: the checker and the prompts do not share one marker definition.
+- 50 — `scripts/check_plan_contract.py:52`: `value.split(" | ")` splits inside a backticked
+  seam name (false reject), and a second seam after an unspaced `|` or after a `none — reason`
+  value is not checked (false accept).
+- 50 — `scripts/check_plan_contract.py:48`: the `none` branch accepts a seam named `none-…`
+  and rejects an en dash (`none – reason`).
+- 50 — `scripts/check_plan_contract.py:54`: one `re.search` per clause accepts a missing `;`
+  between the clauses and a second, empty `misses:`.
+- 50 — `scripts/check_task_review_contract.py:17`: the phrase pins do not cover the marker
+  qualifiers ("skip this rule only", "Skip this step when the brief has no `Plan-contract: 2`
+  line"), so a later edit that drops one still passes.
+- 0 (unmodified line) — `skills/visual-planner/render_plan.py:243`: `Seams` renders inside the
+  Interfaces cell with a literal `- **Seams:**` prefix. Accepted by design D1 (no high-blast
+  renderer change); a display-only follow-up.
+
 ### Context-Propagation Audit
 
 | Source | Consumer | Context | Delivery | Proof |
