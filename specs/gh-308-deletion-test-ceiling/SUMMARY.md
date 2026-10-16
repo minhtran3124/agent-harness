@@ -90,6 +90,27 @@ Third pass, range `cc366fd..4a3b4a1`: seven findings.
 - (6) excess, report-only — the `harness-manifest.json` consumer fix.
 - (7) excess, report-only — the KB entry adds an upstream attribution and two operating tips (grep tests and hooks before deleting; no `prompt` in new reference names).
 
+### Follow-up on PR #319
+
+Request, verbatim (chat, after PR #319 opened), quoting two of the recorded advisories:
+
+> """
+>   - Bước commit run-state trong finishing không có điều kiện, và nhãn "Check 1.7" đã cũ. Cả hai lỗi này có từ trước nhánh này.
+>   - Một comment trong test đã cũ.
+> """
+> fix both first, do on this PR
+
+Fixed in `b08da10`:
+
+- `skills/finishing-a-development-branch/SKILL.md` "Push and PR": the run-state commit now runs only if `git status --short` shows a change to `specs/<slug>/RUN.json` or `specs/<slug>/events.jsonl`, and names both with full paths (536 words, budget 540). Closes the score-0 correctness advisory at `SKILL.md:58`.
+- `skills/finishing-a-development-branch/references/run-state-handoff.md`: "Check 1.7" → "`check_run_state` in `hooks/commit-gate.sh`". Closes the score-0 advisory at `run-state-handoff.md:9`. Dated historical records that still say "Check 1.7" (`docs/harness-experimental/trust-metrics.md:115`, older `specs/*`) are left as written.
+- `tests/scripts/context-propagation-regression.test.sh:237-239`: comment only; it no longer says feature-intake points to `rules/research-depth.md`. Closes the Task 2.2 Minor.
+
+Reviews of `098c160..b08da10`: task review spec pass, quality approved (`meaning: pass` for both prose files, STE 0 → 0); focused correctness re-review 0 bugs (traced success, no run, a state that cannot move to `ready_to_merge`, and a re-run); intent review against the request above: no divergence.
+
+- Bookkeeping: the "unless" citation in `qualifiers-finishing-a-development-branch.md` quoted the old "(Check 1.7)" wording, so `check_gh308.py qualifiers` (SC-5) failed after `b08da10`; the citation now quotes text present at HEAD. The condition itself is unchanged. SC-5 and `verify_summary.py --check` exit 0 again.
+- Minor (task review, recorded): the new condition tests whether the files are dirty, not whether the transition changed them; uncommitted edits made before the transition would also be committed. Step 3 commits both files just before, so the window is small.
+
 ## What changed
 
 The 600-word skill ceiling now has a written procedure: `docs/solutions/harness/deletion-test-for-word-ceiling.md` (a knowledge entry, adapted from Pocock's `writing-for-agents` deletion test plus the local condition-word guard), and the over-ceiling message of `scripts/audit_skill_prompts.py` points to it. The procedure was applied once: `finishing-a-development-branch` 589 → 524 words (run-state rationale moved whole to `references/run-state-handoff.md`), `feature-intake` 598 → 539 (sentences that restate rules it already reads were deleted; Steps 1, 3, 6, 7 and the tiny route untouched), `session-retro` 600 → 525 (opening framing and a list that repeats the lever table deleted). The two 2026-10-15 `ste-rewrite-drops-scope-qualifiers` backlog rows are marked done, because their guardrails already shipped. A spec-local `check_gh308.py` makes the budget, qualifier, backlog and STE-ratchet criteria decidable. One registry entry in `harness-manifest.json` was corrected (Deviations).
@@ -172,6 +193,8 @@ Tasks 1.1, 1.2 and 3.1 changed no file under `skills/`, `rules/` or `agents/` (`
 | consumer verify_summary rewrite | `bash tests/scripts/deploy-worktree-isolation.test.sh` | 0 | | SC-12 |
 | prompt audit | `python3 scripts/audit_skill_prompts.py` | 0 | `problems: []` | SC-13 |
 | manifest consistency after the registry fix | `python3 scripts/check_manifest.py` | 0 | | |
+| follow-up: finishing budget after the conditional commit | `python3 specs/gh-308-deletion-test-ceiling/check_gh308.py budget finishing-a-development-branch` | 0 | 536 words at `b08da10` | SC-4 |
+| follow-up: doc-truth lint (new `hooks/commit-gate.sh` reference) | `bash scripts/lint-doc-truth.sh` | 0 | at `b08da10` | |
 
 All rows were first run at `8d7ca01` with only this SUMMARY untracked, then re-run at `4a3b4a1` (after the intent-alignment fix) with only `RUN.json` and `events.jsonl` modified (`git status --short`); every row exited 0 both times. The full suite (`bash scripts/run-tests.sh`) runs at finish.
 
