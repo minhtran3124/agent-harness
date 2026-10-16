@@ -28,9 +28,9 @@ presented design. If scope becomes smaller, ask for re-routing. Do not silently 
    Decisions are the user's. Put each decision to the user and wait. If a decision goes
    unanswered or evasive twice, name the gap, record the recommended answer as an assumption,
    and move on. Repeat with the new frontier. Step 2 ends when the frontier is empty and the
-   user confirms a shared understanding. The "yes" to the last round counts as that
-   confirmation. Act only after that. Use a visual artifact only when seeing the answer is
-   materially clearer than reading it.
+   user confirms a shared understanding. A plain "yes" to the whole last round is that
+   confirmation. Otherwise ask for it. Act only after that. Use a visual artifact only when
+   seeing the answer is materially clearer than reading it.
 3. Present 2–3 viable approaches, their trade-offs, and a recommendation. Remove unrequested
    scope (YAGNI) before asking for approval.
 4. Present the design in proportionate sections: architecture, components/data flow, error
