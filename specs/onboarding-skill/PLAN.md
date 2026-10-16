@@ -1,6 +1,6 @@
 ---
 slug: onboarding-skill
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-10-16
 ---
@@ -226,3 +226,4 @@ SC-6 to SC-10, because a whole-suite row is not allowed (`rules/plan-format.md` 
 - 2026-10-16 — proposed (writing-plans)
 - 2026-10-16 — tasks 1.1, 1.2 complete; commits e3be7db, 2bbff4a
 - 2026-10-16 — task 2.1 complete; commit 5bceaea
+- 2026-10-16 — shipped; review chain passed (audit repair beab618, intent fix b8e64e6); run-tests ALL GREEN at ab908dc

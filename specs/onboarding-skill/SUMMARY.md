@@ -155,7 +155,9 @@ Intent review over `996f50d..beab618` (blind to PLAN.md), 8 findings:
 - 3 (gap): the no-wiki fallback omitted `docs/solutions/INDEX.md`. Fixed in `b8e64e6`.
 - 4 (gap): design SC-7, `bash scripts/run-tests.sh` prints `ALL GREEN`, has no Verify row. A
   whole-suite row is not allowed (`rules/plan-format.md` Guardrail 4); the suite runs at
-  `finishing-a-development-branch`, which records its result.
+  `finishing-a-development-branch`, which records its result. Closed at finish: at `ab908dc`,
+  `bash scripts/run-tests.sh` exited 0 and printed `ALL GREEN` (1036 Python tests passed), and
+  `bash scripts/ci-strict-gate.sh sdlc` exited 0.
 - 5 (drift): the session list did not use each section's `index.md` page descriptions. Fix round 1.
 - 6 (drift): the drift status ran only in the empty and `status` modes. Fix round 1.
 - 7 (drift, ambiguous): focus "I will change a hook" also returns `testing/test-suite.md` from the
