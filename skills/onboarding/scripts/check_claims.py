@@ -67,30 +67,35 @@ def check_evidence(item: dict) -> tuple[str, str]:
     return ("ok" if hashlib.sha256(data).hexdigest() == parts[2] else "stale"), target
 
 
-def check_page(page: str) -> int:
+def page_rows(page: str) -> tuple[int, str, list[tuple[str, str, str]]]:
+    """Return (exit code, message, rows); rows are (result, target, statement) for codes 0 and 1."""
     if not WIKI.is_dir():
-        print(f"no-wiki {WIKI}/")
-        return 2
+        return 2, f"no-wiki {WIKI}/", []
     page_path = WIKI / page
     if not page_path.is_file():
-        print(f"page-missing {page_path}")
-        return 4
+        return 4, f"page-missing {page_path}", []
     claims_path = (WIKI / ".claims" / page).with_suffix(".json")
     if not claims_path.is_file():
-        print(f"no-claims {claims_path}")
-        return 3
+        return 3, f"no-claims {claims_path}", []
     try:
         claims = json.loads(claims_path.read_text(encoding="utf-8"))["claims"]
     except (ValueError, KeyError, TypeError):
-        print(f"no-claims {claims_path} (unparseable)")
-        return 3
-    all_ok = True
+        return 3, f"no-claims {claims_path} (unparseable)", []
+    rows = []
     for claim in claims:
         results = [check_evidence(item) for item in claim.get("evidence") or []]
         result, target = max(results, key=lambda r: RANK[r[0]]) if results else ("unknown", "-")
-        all_ok = all_ok and result == "ok"
-        print(f"{result} {target} {claim.get('statement', '')}")
-    return 0 if all_ok else 1
+        rows.append((result, target, claim.get("statement", "")))
+    return (0 if all(r[0] == "ok" for r in rows) else 1), "", rows
+
+
+def check_page(page: str) -> int:
+    code, message, rows = page_rows(page)
+    if message:
+        print(message)
+    for result, target, statement in rows:
+        print(f"{result} {target} {statement}")
+    return code
 
 
 def check_status() -> int:
