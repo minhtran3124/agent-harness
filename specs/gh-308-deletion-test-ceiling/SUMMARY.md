@@ -71,6 +71,25 @@ Intent review, plan-blind, oracle = `intent.md` @ `03e3555` plus the chat reques
 - Not checkable from the diff: "PR targets `sdlc`" (`unknown` until the PR exists).
 - Corrected after review: the SC-4 Verify note listed the counts unlabeled and in a different order; it now names each skill.
 
+Second pass, after E001 decision A and the re-pin to `0c403b7` (range `cc366fd..8d7ca01`): six findings.
+
+- (1) drift, fixed in `4a3b4a1` — the reference and the audit hint gave a second deletion criterion ("restates a file the skill already points to") that the amended intent does not state. Recast as an instance of the single default-behavior test, limited to files the skill makes the model read (a required Read step or an always-loaded rule); a bare pointer does not count. The hint now also says "list each sentence". Every `feature-intake` deletion relied on Step 1's required Read or an always-loaded rule, so the trims still meet the narrowed rule.
+- (2) advisory drift — the hint left out "list each sentence"; closed by the same fix.
+- (3) advisory drift — the finishing move covers "why" text that every PR path reaches, and one antecedent was reworded ("Then stage exactly `RUN.json` and `events.jsonl`"); the `feature-intake` artifact list became a new pointer sentence. No condition lost.
+- (4) advisory drift, not triggered — design SC-3 / plan SC-4 and reference step 5 allow a "kept long on purpose" shortfall the intent does not; all three skills met the budget, so it was not used.
+- (5) excess, report-only — the `harness-manifest.json` consumer fix.
+- (6) unknown — "PR targets `sdlc`"; checked at finish.
+
+Third pass, range `cc366fd..4a3b4a1`: seven findings.
+
+- (1) gap, fixed by recording — the per-file task-review meaning verdicts were not in the spec record; now in `### Task review meaning verdicts` above (all `pass`).
+- (2) advisory drift, not triggered — the KB entry keeps the "kept long on purpose" exit; the intent sets a fixed target. All three skills met the target.
+- (3) advisory drift — the finishing move covers main-path rationale, not a branch-only block; the instructions stay inline and all 4 condition words are kept whole.
+- (4) advisory drift — "So stage exactly those two paths" became "Then stage exactly `RUN.json` and `events.jsonl`"; no condition word involved.
+- (5) advisory drift — the hint merges "ask whether" into "delete a whole sentence the model already does by default"; the KB entry has the full procedure.
+- (6) excess, report-only — the `harness-manifest.json` consumer fix.
+- (7) excess, report-only — the KB entry adds an upstream attribution and two operating tips (grep tests and hooks before deleting; no `prompt` in new reference names).
+
 ## What changed
 
 The 600-word skill ceiling now has a written procedure: `docs/solutions/harness/deletion-test-for-word-ceiling.md` (a knowledge entry, adapted from Pocock's `writing-for-agents` deletion test plus the local condition-word guard), and the over-ceiling message of `scripts/audit_skill_prompts.py` points to it. The procedure was applied once: `finishing-a-development-branch` 589 → 524 words (run-state rationale moved whole to `references/run-state-handoff.md`), `feature-intake` 598 → 539 (sentences that restate rules it already reads were deleted; Steps 1, 3, 6, 7 and the tiny route untouched), `session-retro` 600 → 525 (opening framing and a list that repeats the lever table deleted). The two 2026-10-15 `ste-rewrite-drops-scope-qualifiers` backlog rows are marked done, because their guardrails already shipped. A spec-local `check_gh308.py` makes the budget, qualifier, backlog and STE-ratchet criteria decidable. One registry entry in `harness-manifest.json` was corrected (Deviations).
@@ -108,7 +127,22 @@ Trigger: the branch changes `skills/feature-intake/SKILL.md`, `skills/session-re
 
 Result: **PASS**, with one repaired row (the manifest registry) and one `unknown` row. The `$ARGUMENTS` row is not load-bearing for Claude Code: the same argument delivery already serves 12 of 14 skills that never had the placeholder. For Codex it is unknown, and it was unknown before this change for those 12 skills as well; recorded for intent and correctness review.
 
+### Task review meaning verdicts
+
+Per-file `meaning:` verdicts returned by the independent task reviewer (read-only `task-reviewer` agent, `skills/subagent-driven-development/task-reviewer-prompt.md`) for each changed skill file. Each review read its own `BASE..HEAD` package, including the `## Scope qualifiers` section, and resolved every listed condition word.
+
+| Task | Range reviewed | File | meaning | Scope-qualifier lines resolved |
+| --- | --- | --- | --- | --- |
+| 2.1 | `995c433..970a276` | `skills/finishing-a-development-branch/SKILL.md` | pass | 4 of 4 kept (unless, only, never, without), each cited at `references/run-state-handoff.md:9,13,14,16` |
+| 2.1 | `995c433..970a276` | `skills/finishing-a-development-branch/references/run-state-handoff.md` | pass | new file; holds the 4 moved sentences |
+| 2.2 | `44d7061..63f1ef1` | `skills/feature-intake/SKILL.md` | pass | section was `- none`; each removed line compared by hand to the rule file that keeps it |
+| 2.3 | `970a276..44d7061` | `skills/session-retro/SKILL.md` | pass | section was `- none`; each removed sentence compared by hand to the HEAD line that keeps it |
+
+Tasks 1.1, 1.2 and 3.1 changed no file under `skills/`, `rules/` or `agents/` (`meaning: []`). The intent-alignment fix `4a3b4a1` changed no skill file (`meaning: pass` for its two non-skill files).
+
 ### Task review minor findings
+
+- Fix `4a3b4a1` (Minor, quality): `scripts/audit_skill_prompts.py` — the hint names only "a file the skill makes it read"; the reference also counts an always-loaded rule. The hint points to the reference, which has both cases.
 
 - Task 1.1 (Minor, quality): `scripts/audit_skill_prompts.py:90` — the two indented `hint:` lines of the over-ceiling message carry no `prompt-audit:` prefix; only the first line does. No line-oriented consumer of that prefix found in `tests/**`, `scripts/*.sh`, `hooks/**`, `.github/**`. Cosmetic; forwarded to final review.
 - Task 1.2 (Minor, quality): `specs/gh-308-deletion-test-ceiling/check_gh308.py:58-60,170-174` — a failing helper process (`ste-lint.py` with no JSON, a failed `git show`) ends in a traceback instead of a one-line failure. The exit stays non-zero, so there is no false pass. Forwarded to final review.
@@ -139,13 +173,14 @@ Result: **PASS**, with one repaired row (the manifest registry) and one `unknown
 | prompt audit | `python3 scripts/audit_skill_prompts.py` | 0 | `problems: []` | SC-13 |
 | manifest consistency after the registry fix | `python3 scripts/check_manifest.py` | 0 | | |
 
-All rows were run at `8d7ca01` with only this SUMMARY untracked (`git status --short`). The full suite (`bash scripts/run-tests.sh`) runs at finish.
+All rows were first run at `8d7ca01` with only this SUMMARY untracked, then re-run at `4a3b4a1` (after the intent-alignment fix) with only `RUN.json` and `events.jsonl` modified (`git status --short`); every row exited 0 both times. The full suite (`bash scripts/run-tests.sh`) runs at finish.
 
 ### Not auto-verified
 
 - A trimmed skill makes its executing agent behave the same as before — reached provenance (qualifier list, per-file reviewer meaning verdicts, correctness review); not re-run because no behavioral eval of the three skills was run (design D2).
 - A scope split that keeps a condition word but narrows its reach is absent — reached provenance (reviewer meaning check only); `check_scope_qualifiers.py` cannot list it (documented known limit).
 - Codex sessions receive `feature-intake` arguments after the `$ARGUMENTS` sentence was deleted — unknown; not checked (Context-Propagation Audit row).
+- Each per-file task-review `meaning: pass` in `### Task review meaning verdicts` — reached traceability; the controller transcribed the verdicts from the reviewers' returned results, which are not stored in the repository. The final intent review confirmed the file and range coverage and the condition-word citations, not the verdict values.
 - The KB entry's procedure is followed by future trims — traceability only; the audit message points to it but nothing checks that it was followed.
 
 ### Rollback
