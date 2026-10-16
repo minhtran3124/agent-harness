@@ -41,8 +41,22 @@ Task tool (coding):
 
     When you are clear on the requirements, do these steps:
     1. Implement exactly what the task specifies.
-    2. Write tests. Follow TDD if the task says to.
+    2. Write tests. Obey these test rules:
+       - Write tests only at the seams in the task's `Seams:` field.
+         When the brief has no `Plan-contract: 2` line, skip this rule only.
+       - When `Seams:` is `none`, write no new test.
+       - If a declared seam cannot observe the behavior, return `NEEDS_CONTEXT` before any edit.
+         Do not choose another seam.
+       - Take each expected value from a source that is independent of the code.
+         Use a known-good literal, a worked example, or the spec.
+         Do not copy an expected value from the output of the code.
+       - When the repo holds real inputs of the seam's shape, also test the seam on those inputs.
+       - A test that fails after a refactor with no behavior change is implementation-coupled.
+         Rewrite that test.
+       Follow TDD if the task says to.
        When the input type in Context is `bug fix`, do these steps:
+       - Write the red test at a declared seam.
+         When `Seams:` is `none`, return `NEEDS_CONTEXT` before any edit.
        - Commit the failing test before the fix.
        - Record a `red` row in `### Verify`. Its command is
          `python3 scripts/run_at_commit.py <red sha> -- <test command>`.
