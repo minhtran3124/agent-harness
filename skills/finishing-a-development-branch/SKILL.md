@@ -45,9 +45,8 @@ user. If no plan exists, use the tiny/no-plan path instead of guessing.
    git add specs/<slug>/PLAN.md specs/<slug>/SUMMARY.md specs/<slug>/RUN.json specs/<slug>/events.jsonl
    ```
 
-   Omit a path only if the file does not exist. `RUN.json` and `events.jsonl` are tracked
-   artifacts. `.gitignore` excludes only the `.lock`. A fresh `RUN.json` stays untracked
-   unless named, and the commit gate (Check 1.7) blocks that. The helper-selected plan—not a branch-name guess—is
+   Omit a path only if the file does not exist. Why: `references/run-state-handoff.md`.
+   The helper-selected plan—not a branch-name guess—is
    authoritative. Do not manually change version/changelog/trust ledger when post-merge
    automation exists.
 
@@ -55,12 +54,10 @@ user. If no plan exists, use the tiny/no-plan path instead of guessing.
 
 Push without force. Create or update one PR against the resolved base. Use a concise body with
 behavioral summary, tasks, and only a useful flow diagram. After creation, transition the run to
-`ready_to_merge` as a best effort. Run `python3 runtime/run_state.py transition --slug <slug> --to ready_to_merge --event pr.opened || true` (non-fatal). The
-post-merge `shipped` transition depends on this hop. `shipped` is legal only from `ready_to_merge`,
-so a run left at `verifying` never terminalizes. The transition rewrites `RUN.json` and appends to
-`events.jsonl` **after** the last commit. So stage exactly those two paths, commit them
-(`chore(specs): record PR #<n> for <slug>`), and push once more. The open PR gets the new commit.
-Without this commit, git keeps the run at its last committed pre-`ready_to_merge` state and it never terminalizes. Return the URL and stop. A human reviews and merges.
+`ready_to_merge` as a best effort. Run `python3 runtime/run_state.py transition --slug <slug> --to ready_to_merge --event pr.opened || true` (non-fatal).
+Then stage exactly `RUN.json` and `events.jsonl`, commit them
+(`chore(specs): record PR #<n> for <slug>`), and push once more. Why this commit is required:
+`references/run-state-handoff.md`. Return the URL and stop. A human reviews and merges.
 
 ## Safety boundary
 
@@ -72,4 +69,5 @@ push gate. The receipt and deterministic checks remain mandatory.
 
 - `references/pr-body.md` — PR body shape
 - `references/workflow-engine-review.md` — independent-review guidance
+- `references/run-state-handoff.md` — why the run-state files are staged and committed
 - `scripts/resolve_finish_context.py` — context authority
