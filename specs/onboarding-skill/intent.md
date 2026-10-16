@@ -1,7 +1,7 @@
 # Intent: Onboarding skill for consumer codebases
 
 Author: Minh Tran
-Status: draft
+Status: approved
 
 ## Problem
 
