@@ -10,7 +10,7 @@ created: 2026-10-16
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**5 tasks · 2 waves · 11 files · 0/5 done**
+**5 tasks · 2 waves · 11 files · 5/5 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -35,11 +35,11 @@ flowchart LR
 ```
 
 ### Progress
-- [ ] 1.1 — Seam rule in the plan-contract checker (wave 1)
-- [ ] 1.2 — Seam field and marker in the plan rules (wave 1)
-- [ ] 1.3 — Test rules in the implementer and reviewer prompts, with phrase pins (wave 1)
-- [ ] 1.4 — Brief carries the marker and the seams (wave 1)
-- [ ] 2.1 — Canary and gh-175 replay (wave 2)
+- [x] 1.1 — Seam rule in the plan-contract checker (wave 1)
+- [x] 1.2 — Seam field and marker in the plan rules (wave 1)
+- [x] 1.3 — Test rules in the implementer and reviewer prompts, with phrase pins (wave 1)
+- [x] 1.4 — Brief carries the marker and the seams (wave 1)
+- [x] 2.1 — Canary and gh-175 replay (wave 2)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -275,3 +275,5 @@ SC-10, SC-11 and SC-12 are the targeted checks for the files this plan edits. Th
 - A6 → accepted risk: the gh-175 replay is evidence, not a gate (SC-6)
 
 ## 6. Status Log
+- 2026-10-16 — tasks 1.1, 1.2, 1.3, 1.4 complete; commits d60491e, 21799ef, f8019a6, bb99661, fixes a4cf8fa, 113a374
+- 2026-10-16 — task 2.1 complete; canary pass, gh-175 replay recorded in canary.md
