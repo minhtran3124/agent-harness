@@ -25,8 +25,9 @@ Step 2 of `skills/brainstorming/SKILL.md` makes the agent do this:
 5. Find each fact itself, or dispatch a subagent when the search is larger than a few reads;
    never ask the user for a fact.
 6. Give each decision to the user, then wait.
-7. Step 2 ends when the frontier is empty and the user confirms a shared understanding. The
-   confirmation may be the "yes" to the last round. Act only after it.
+7. Step 2 ends when the frontier is empty and the user confirms a shared understanding. A
+   plain "yes" to the whole last round is that confirmation; otherwise the agent asks for it.
+   Act only after it.
 
 The existing rule "if a question goes unanswered or evasive twice, name the gap and move on"
 stays, for decisions only: name the gap, record the recommended answer as an assumption, and
@@ -42,7 +43,8 @@ high-risk route and on a real design fork.
 
 - Only step 2 of `skills/brainstorming/SKILL.md` changes. Steps 3–5 (approaches, per-section
   confirmation, restatement), the HARD-GATE, the visual-artifact sentence, and
-  `references/design-template.md` stay as they are.
+  `references/design-template.md` stay as they are. A paraphrase of the old step-2 rhythm in
+  another file, found by the context-propagation audit, is updated to match.
 - Only the high-risk path and the design-fork path run brainstorming; the normal lane's
   notify-and-proceed flow does not change.
 - The skill stays under the 600-word ceiling, met by the deletion-test procedure in
@@ -56,14 +58,22 @@ high-risk route and on a real design fork.
 - Changes to `feature-intake`, `xia2`, `writing-plans`, or any hook.
 - A separate `grilling` skill.
 - A design-tree field in `design.md`; the tree lives in the conversation only.
-- A test that greps the step-2 wording.
+- A repo test (under `tests/` or wired into CI) that greps the step-2 wording. A spec-local
+  check script under `specs/gh-309-grilling-rounds/` is allowed.
+- Keeping step-2 questions at the requirements tier. Issue #321 owns that, with its own blind
+  run (`ESCALATIONS.md` E002).
 
 ## Proof
 
 - Before merge: one blind run of the new step-2 text by a subagent on a fixture design
-  question with about 10–13 decisions, with a second subagent answering as the user. The
-  transcript is recorded under `specs/gh-309-grilling-rounds/`, with the round count and the
-  question count, marked "(assumed)". A step-2 question at implementation level is a failure.
+  question with an answer key of about 10–13 rows, with a second subagent answering as the
+  user. The number of rows the fixture text leaves open is recorded beside it. The transcript
+  is recorded under `specs/gh-309-grilling-rounds/`, with the round count and the question
+  count, marked "(assumed)". A step-2 question that asks the user for a fact is a failure. The
+  count of approach-level or implementation-level questions is recorded as advisory
+  (`ESCALATIONS.md` E002).
+- Rounds are the rounds of new questions until the agent first declares the frontier empty;
+  the total turn count is recorded beside it (`ESCALATIONS.md` E001).
 - After merge: the first real brainstorming session on a design fork is the live evidence. Until
   it exists, the live count is listed under `### Not auto-verified`.
 - Static checks: `scripts/audit_skill_prompts.py` (ceiling 600 words), the STE lint,
@@ -80,8 +90,8 @@ high-risk route and on a real design fork.
   evasive-answer rule applies to decisions only.
 - No condition word is lost from the rest of the skill (`scripts/check_scope_qualifiers.py`
   resolution and the task reviewer's meaning verdict).
-- On the blind run, the frontier closes in three rounds or fewer, and no step-2 question is at
-  implementation level (assumed measure; see Proof).
+- On the blind run, the frontier closes in three rounds or fewer, and no step-2 question asks
+  the user for a fact (assumed measure; see Proof).
 
 ## Original request
 

@@ -714,3 +714,8 @@ Q8 vendoring with `UPSTREAM.md`, Q10 the bug record and pre-fix commit); Run 2, 
 Q8, Q10); Run 3, 5 of 19 (listed in the Run 3 scoring). The fact half passed in every run. Under
 design DC1 (D12, `ESCALATIONS.md` E002 decision A) the count is an advisory measure and the fact
 half is criterion (b). The "(assumed)" label in the preamble covers every run.
+
+Second note (2026-10-16, after the intent review): in Run 3 the first "frontier empty" claim was
+premature (K9-blocking was still open). Counted until the frontier was actually empty, the rounds
+of new questions are 3 (rounds 1, 2 and 4), which still meets "three rounds or fewer". `Rounds: 2`
+above follows the E001 definition. Key v2 has 12 rows, of which 8 were open decisions.
