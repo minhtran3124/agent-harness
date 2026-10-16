@@ -19,11 +19,18 @@ presented design. If scope becomes smaller, ask for re-routing. Do not silently 
 1. Inspect the current project, relevant docs, recent changes, and applicable decisions under
    `docs/solutions/`. If the request spans subsystems that share no files, data model, or
    user-facing flow, decompose it into separate specs before refining details.
-2. Ask one clarifying question per message until purpose, constraints, success criteria, and
-   boundaries are clear enough to act on. Do not over-probe: steps 3–4 still catch any gap
-   through approach trade-offs and per-section confirmation. If a question goes unanswered or
-   evasive twice, name the gap and move on. Use a visual artifact only when seeing the answer is
-   materially clearer than reading it.
+2. Map the open decisions as a design tree. The tree holds purpose, constraints, success
+   criteria, and boundaries. Approach choice belongs to step 3. Section detail belongs to step 4.
+   The frontier is each decision whose prerequisites the user already settled. Ask the whole
+   frontier in one numbered round. Give a recommended answer for each question, worded so that
+   "yes" accepts it. Then wait. Facts are your job. Find each fact yourself, or dispatch a
+   subagent when the search is larger than a few reads. Never ask the user for a fact.
+   Decisions are the user's. Put each decision to the user and wait. If a decision goes
+   unanswered or evasive twice, name the gap, record the recommended answer as an assumption,
+   and move on. Repeat with the new frontier. Step 2 ends when the frontier is empty and the
+   user confirms a shared understanding. A plain "yes" to the whole last round is that
+   confirmation. Otherwise ask for it. Act only after that. Use a visual artifact only when
+   seeing the answer is materially clearer than reading it.
 3. Present 2–3 viable approaches, their trade-offs, and a recommendation. Remove unrequested
    scope (YAGNI) before asking for approval.
 4. Present the design in proportionate sections: architecture, components/data flow, error
