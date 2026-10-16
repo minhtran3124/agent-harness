@@ -31,6 +31,11 @@ Intent-source: specs/onboarding-skill/intent.md @ 5e8513c2792b8e5be9f5c29428c078
 - `external systems` flag: the skill consumes LangChain OpenWiki 0.7.2 output (`openwiki/` layout observed in this repo at HEAD 996f50d). No SDK or dependency is added; the wiki is read as files.
 - `multi-domain` flag: new skill plus README inventory plus whatever registration the static checks demand (to be settled by xia2).
 - Branch `feat/onboarding-skill` cut from `sdlc`; the PR targets `sdlc`.
+- 2026-10-16, after research: asked how progress should be saved, given the branch-isolation guard
+  denies Write on `main` and consumers do not gitignore `.harness-state/`. The user answered
+  "No saved progress". Intent outcome 4 (resumable progress under `.harness-state/onboarding/`)
+  and design SC-6 are withdrawn by the user's decision, not omitted (design DC1).
+- Same exchange: the user chose "Deployed path, no deploy change" for naming the script (design DC2).
 
 ## What changed
 
@@ -46,7 +51,8 @@ Intent-source: specs/onboarding-skill/intent.md @ 5e8513c2792b8e5be9f5c29428c078
 
 ### Deviations
 
-- none
+- Design change DC1 (reopens D3; new D7: no saved progress) — see `specs/onboarding-skill/design.md` `## Decision changes`.
+- Design change DC2 (new D8: script named by deployed path) — see `specs/onboarding-skill/design.md` `## Decision changes`.
 
 ### Verify
 

@@ -1,6 +1,7 @@
 # onboarding-skill — Design
 
 Written 2026-10-16. Pins: repo 96380df; OpenWiki 0.7.2 (output format, `openwiki/` generated at 996f50d)
+Revised 2026-10-16. Pins: repo 03fb103
 
 ## Goal
 
@@ -32,7 +33,10 @@ does not, and never teaches a wiki claim that no longer matches the code.
   (`scripts/check_skill_tool_conformance.py`), and the SKILL.md word ceiling
   (`scripts/audit_skill_prompts.py`). Python tests under `skills/**/test_*.py` are collected
   automatically.
-- `.harness-state/` is gitignored (`.gitignore:30`), so per-person progress stays local.
+- `.harness-state/` is gitignored here (`.gitignore:30`) but not in consumers: the installer adds
+  no such line (`scripts/install-harness.sh:198-281`, read 2026-10-16). The branch-isolation guard
+  denies a Write outside `specs/` on a shared branch (`hooks/branch-isolation-guard.sh:74-82`).
+  Both facts led to DC1: the skill saves no progress.
 - `AGENTS.md` (OpenWiki block) tells agents not to preload the wiki at task start. A user-invoked
   tour is the explicit exception that block allows ("when the user asks for it").
 
@@ -50,10 +54,9 @@ does not, and never teaches a wiki claim that no longer matches the code.
 
 | Component | Role |
 |---|---|
-| `skills/onboarding/SKILL.md` | Tour procedure. Runtime-neutral. At most 600 words (budget, `SKILL_WORD_CEILING`). `allowed-tools`: `Read, Grep, Glob, Write, Bash(python3 *), Bash(git *)` — checked by `scripts/check_skill_tool_conformance.py`. |
+| `skills/onboarding/SKILL.md` | Tour procedure. Runtime-neutral. At most 600 words (budget, `SKILL_WORD_CEILING`). `allowed-tools`: `Read, Grep, Glob, Bash(python3 *), Bash(git *)`. It names the script by its deployed path, `.claude/skills/onboarding/scripts/check_claims.py` (D8) — checked by `scripts/check_skill_tool_conformance.py`. |
 | `skills/onboarding/scripts/check_claims.py` | Stdlib. `--status`: wiki `gitHead`, `HEAD`, commits behind. `<page>`: verify that page's claims. |
 | `skills/onboarding/scripts/test_check_claims.py` | Unit tests, collected by `run-tests.sh`. |
-| `.harness-state/onboarding/<key>.json` | Per-person progress (local, gitignored). |
 | `harness-manifest.json` `skills`, `skills/README.md` | Registration and inventory row. |
 
 **Claim check (`check_claims.py <page>`).** `<page>` is a path relative to `openwiki/`, such as
@@ -84,13 +87,11 @@ result, `path` or `path#La-Lb`, statement.
   `complete`, or `gitHead` is not an ancestor of `HEAD` (another branch, rewritten history, or a
   shallow clone).
 
-**Progress file.** `{person, started_at, wiki_head, pages: {"<page path relative to openwiki/>":
-"done" | "skipped"}}`. The key is a slug of `git config user.email`. A name passed in the
-arguments overrides it. A plain slug, not a hash, is acceptable because the file lives only in
-gitignored `.harness-state/`.
+**No saved progress (D7).** The skill writes no file. Each run starts fresh. Within one run the
+agent offers pages in wiki order, and the newcomer can name any page or section to jump to.
 
-**Modes, chosen by argument text.** Empty: status, then the next session. `status`: status and
-progress only. Any other text: a focus area or ticket. The agent, following SKILL.md prose,
+**Modes, chosen by argument text.** Empty: status, the section list, then the first page.
+`status`: status and the section list only. A page or section name: start there. Any other text: a focus area or ticket. The agent, following SKILL.md prose,
 matches it to the quickstart routing-table row (or rows) whose "I want to change…" cell fits
 best. Sessions are the pages linked in "Read first", then "Then also", in listed order. A cell
 that says "X or Y" yields both pages, in order. No script does this match.
@@ -109,8 +110,7 @@ A newcomer runs the skill with the argument "I will change a hook" in this repo.
    the hash rule is proven on all 772 line-range items, see A1).
 4. The agent reads the page and presents it for a person: why the hook exists, what breaks when it
    is touched, where its tests live, and `docs/solutions/` entries whose tags match.
-5. The newcomer says done. The agent writes `"enforcement/commit-gate.md": "done"` to the
-   progress file and names the next page.
+5. The newcomer says done. The agent names the next page in the focus list. Nothing is written.
 
 ## Error behavior
 
@@ -122,8 +122,6 @@ A newcomer runs the skill with the argument "I will change a hook" in this repo.
 | Claims file missing for a page (exit 3) | Present the page marked unverified. |
 | Page missing from the wiki (exit 4) | Say the page is not in the wiki; skip it; offer the next page or the section list. |
 | Claim `stale`, `missing`, or `unknown` | List it under "verify before relying"; never state it as fact. |
-| No git email and no name given | Ask once for a name. |
-| Progress file unreadable | Start fresh and say so. |
 | code-review-graph server not connected | Skip it without blocking. |
 | Focus text matches no routing row | Say so and offer the section list. |
 
@@ -144,7 +142,7 @@ overview when connected. No claim check applies; the skill says so.
 - **Static (traceability tier):** the existing frontmatter, allowed-tools conformance, word
   ceiling, and runtime-neutral checks in `bash scripts/run-tests.sh`.
 - **Behavioral run (truth tier for the recorded run only):** one run in this repo, recorded as `###
-  Verify` rows: status, the commit-gate page check, focus "change a hook", resume, and the deployed
+  Verify` rows: status, the commit-gate page check, focus "change a hook", and the deployed
   `.claude/skills/onboarding/scripts/check_claims.py` existing after `bash
   scripts/deploy-harness.sh`.
 
@@ -158,7 +156,7 @@ overview when connected. No claim check applies; the skill says so.
 - SC-4: Focus "I will change a hook" selects only the enforcement pages and their "Then also"
   pages from the routing table.
 - SC-5: With `openwiki/` absent, the skill names the checked path and produces the fallback tour.
-- SC-6: A second invocation reads the progress file and offers the next unfinished page.
+- SC-6: withdrawn by DC1 (no saved progress).
 - SC-7: `bash scripts/run-tests.sh` prints `ALL GREEN`.
 
 ## Non-goals
@@ -176,7 +174,7 @@ overview when connected. No claim check applies; the skill says so.
 |---|---|---|---|---|
 | A1 | The `repo-lines-v1` hash is `sha256` of the cited lines joined by `\n` with a trailing `\n` | truth: Local, 2026-10-16, all 772 `repo-lines-v1` items in `openwiki/.claims/**` recomputed and matched | SC-2, unit tests | Every claim reads `stale`; fall back to approach 3 for verification and report the format gap |
 | A2 | The quickstart routing table keeps its three-column `Read first / Then also` shape across OpenWiki runs | none yet — Inference: one sample, OpenWiki 0.7.2 | accepted risk: one generator version observed | Focus mode falls back to matching section index descriptions |
-| A3 | `.harness-state/` is gitignored in consumer repos | provenance: Local, 2026-10-16, `.gitignore:30` in this repo | xia2 checks the installer's ignore handling | Progress could be committed by accident; write it under `.claude/` instead |
+| A3 | `.harness-state/` is gitignored in consumer repos | provenance: Local, 2026-10-16, `.gitignore:30` in this repo | retired by DC1 | Progress could be committed by accident; write it under `.claude/` instead |
 | A4 | `deploy-harness.sh` ships `skills/<name>/scripts/` to consumers | provenance: Local, 2026-10-16, `scripts/deploy-harness.sh` syncs `skills` as a whole directory (`cp -R`) | a `### Verify` row: `.claude/skills/onboarding/scripts/check_claims.py` exists after `bash scripts/deploy-harness.sh` | Add the path to the deploy allow-list |
 | A5 | The `repo-file-v1` hash is `sha256` of the raw file bytes | truth: Local, 2026-10-16, all 23 `repo-file-v1` items in `openwiki/.claims/**` recomputed and matched | unit tests | Whole-file claims read `stale`; report the format gap |
 | A6 | OpenWiki emits only these two evidence formats | none yet — Inference: one generator version (0.7.2) observed | accepted risk: other prefixes report `unknown`, never `ok` | A newer format is never verified until the script learns it |
@@ -200,7 +198,20 @@ overview when connected. No claim check applies; the skill says so.
 |---|---|---|---|
 | D1 | Claim verification is a stdlib script recomputing the `repo-lines-v1` and `repo-file-v1` hashes; other formats report `unknown` | Deterministic, unit-testable; a moved block reads as stale | settled |
 | D2 | One session per wiki page, grouped by section | Progress is tracked per page | settled |
-| D3 | Progress keyed on a slug of `git config user.email`, overridable by a name argument | No prompt on the common path; ask once only when both are missing | settled |
+| D3 | Progress keyed on a slug of `git config user.email`, overridable by a name argument | No prompt on the common path; ask once only when both are missing | superseded by DC1 |
 | D4 | Fallback order: `CLAUDE.md`, `techstacks/`, critical patterns, `rules/`, most-changed directories, graph overview when connected | A tour exists without a wiki; no claim check applies | settled |
 | D5 | Mode is chosen by argument text: empty, `status`, or focus text | No subcommand syntax to learn | settled |
 | D6 | No new MCP server or dependency; the wiki is read as files | Works wherever the files exist | settled |
+| D7 | No saved progress; each run starts fresh and the skill writes no file | Fully read-only; no `Write` tool; no state to gitignore; no resume across sessions | settled |
+| D8 | SKILL.md names the script by its deployed path `.claude/skills/onboarding/scripts/check_claims.py`; no deploy-script change | Works in this repo after deploy and in consumers; Codex alpha path unverified | settled |
+
+## Decision changes
+
+- DC1 — 2026-10-16 — reopens D3 — evidence: `hooks/branch-isolation-guard.sh:74-82,166` denies a
+  Write outside `specs/` on `main`, and `scripts/install-harness.sh:198-281` adds no
+  `.harness-state/` ignore (research-brief.md); the user chose "No saved progress" — new
+  decision: D7
+- DC2 — 2026-10-16 — reopens D1 (adds where the script is named) — evidence:
+  `scripts/deploy-harness.sh:420-440` rewrites only named helper paths, so a new skill-script
+  path is not rewritten for consumers; deploy changes are out of scope; the user chose the
+  deployed path — new decision: D8
