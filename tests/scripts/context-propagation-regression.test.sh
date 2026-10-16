@@ -234,8 +234,9 @@ t "mutation: deleting the feature-intake tiny-lane asd-ste100 line is detected"
 mt=$(ste_mutant "$INTAKE" 'asd-ste100')
 if ! intake_tiny_ste_ok "$mt"; then pass; else fail "removing the tiny-lane line was NOT detected"; fi
 
-# feature-intake points to rules/research-depth.md instead of repeating the lane-to-depth
-# mapping, so the rule file must hold each rule the removed section carried.
+# rules/research-depth.md is the canonical lane-to-depth mapping (xia2 reads it; feature-intake
+# no longer repeats or points to it), so the rule file must hold each rule the removed
+# feature-intake section carried.
 DEPTH_RULE="rules/research-depth.md"
 DEPTH_ANCHORS=(
   'map `high-risk` to **Deep**'

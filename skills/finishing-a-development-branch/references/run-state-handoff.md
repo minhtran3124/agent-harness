@@ -6,7 +6,8 @@ the PR opens.
 ## Step 3: the spec record
 
 `RUN.json` and `events.jsonl` are tracked artifacts. `.gitignore` excludes only the `.lock`. A
-fresh `RUN.json` stays untracked unless named, and the commit gate (Check 1.7) blocks that.
+fresh `RUN.json` stays untracked unless named, and the commit gate (`check_run_state` in
+`hooks/commit-gate.sh`) blocks that.
 
 ## Push and PR: the `ready_to_merge` commit
 

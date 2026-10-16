@@ -55,7 +55,8 @@ user. If no plan exists, use the tiny/no-plan path instead of guessing.
 Push without force. Create or update one PR against the resolved base. Use a concise body with
 behavioral summary, tasks, and only a useful flow diagram. After creation, transition the run to
 `ready_to_merge` as a best effort. Run `python3 runtime/run_state.py transition --slug <slug> --to ready_to_merge --event pr.opened || true` (non-fatal).
-Then stage exactly `RUN.json` and `events.jsonl`, commit them
+Then, only if `git status --short` shows a change to `specs/<slug>/RUN.json` or
+`specs/<slug>/events.jsonl`, stage exactly those two paths, commit them
 (`chore(specs): record PR #<n> for <slug>`), and push once more. Why this commit is required:
 `references/run-state-handoff.md`. Return the URL and stop. A human reviews and merges.
 
