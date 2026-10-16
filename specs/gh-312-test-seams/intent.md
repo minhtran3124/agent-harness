@@ -32,9 +32,21 @@ fitted to synthetic fixtures that shared the implementation's blind spot
      example, or the spec.
    - If a test breaks on a refactor and the behavior did not change, the test is
      implementation-coupled. Rewrite it.
-3. **Reviewer.** The quality verdict in `task-reviewer-prompt.md` gets a seam-conformance check:
-   each new test sits at a declared seam, and the implementer copied no expected value from the
-   implementation.
+   - When the repo holds real inputs of the seam's shape (for example `specs/*/PLAN.md`), test
+     the seam on those real inputs too, not only on synthetic fixtures (brainstorming B2).
+   - The bug-fix red test also sits at a declared seam (B5).
+   - If the declared seam cannot observe the behavior, return `NEEDS_CONTEXT` before any edit;
+     do not choose another seam (B6).
+   - On a plan without the `Plan-contract: 2` marker, skip the "only at declared seams" rule;
+     the other rules still apply (B8).
+3. **Reviewer.** The quality verdict in `task-reviewer-prompt.md` gets a seam-conformance check.
+   Each of these is an Important finding that blocks the quality verdict (B4):
+   - a new test that does not sit at a declared seam;
+   - an expected value copied from the implementation;
+   - a test that uses only synthetic fixtures when real inputs of the seam's shape exist (B2);
+   - a new test in a task whose seam is `none` (B7).
+   On a plan without the marker, the reviewer skips the declared-seam check and still checks
+   the other three (B8).
 4. **Resume.** The seam list reaches the implementer and the reviewer after `resume <slug>` from
    a fresh session. `task_brief.py` rebuilds the brief from the plan. (observed: `task_brief.py`
    copies the whole task block into the brief, and `render_plan.py` appends an unknown bullet
@@ -44,7 +56,8 @@ fitted to synthetic fixtures that shared the implementation's blind spot
 5. **Check.** `scripts/check_plan_contract.py` rejects (exit 1, blocking, decided by the
    user) a new contract plan with a task that has no `- **Seams:**` field. A task with no
    behavior to test writes `- **Seams:** none — <reason>`, and the check accepts that form only
-   with a non-empty reason.
+   with a non-empty reason. A seam that is not `none` must contain both `catches:` and
+   `misses:` (B3).
 6. **Opt-in marker (Q3, option A, decided by the user).** `writing-plans` writes a
    `Plan-contract: 2` line inside `## Global Constraints`. `check_plan_contract.py` requires the
    `Seams:` field only on a plan that carries this marker. A contract plan without the marker
@@ -91,12 +104,23 @@ the change on their next harness re-sync.
 - Q3 (decided by the user): option A, the `Plan-contract: 2` marker. See Proposed outcome 6.
   Rejected: skip `status: shipped` plans, a git-date cutoff, backfilling the 36 plans, and
   blocking every contract plan after fixing the known callers.
+- Brainstorming round 1 (decided by the user, a plain "yes" to all eight): B1 proof = canary
+  gate plus gh-175 replay as evidence; B2 real-input rule; B3 `catches:`/`misses:` required;
+  B4 seam violations are Important; B5 red test at a seam; B6 unusable seam → `NEEDS_CONTEXT`;
+  B7 test in a `none` task is Important; B8 marker-less plans skip only the declared-seam
+  rule. B2 widens the issue's scope: it targets the root cause recorded in
+  `docs/solutions/harness/plan-anchored-task-review-misses-fixture-fitted-bugs.md`.
 
 ## What success looks like
 
-- The recorded gh-175 fixture-fitted case, replayed through the task reviewer with the seam
-  check, gets at least the implementation-coupled tests flagged that the correctness review
-  found later (the issue's proof).
+- Canary (pass criterion, B1): a synthetic task with one off-seam test and one test whose
+  expected value is copied from the implementation goes through the task reviewer, and the
+  reviewer flags both as Important.
+- gh-175 replay (evidence, not a gate, B1): the gh-175 task is replayed through the task
+  reviewer with seams written after the fact. The result is recorded as it is, whether or not
+  the reviewer flags the tests that use only the synthetic `_ACTIVE_MD_PLAN` fixture. Reason:
+  the gh-175 correctness review recorded 11 bugs, not a list of implementation-coupled tests,
+  so the issue's original proof has no target list.
 - The context-propagation audit shows the seam list reaches the implementer and the reviewer on
   both the same-session path and the `resume <slug>` path.
 - `check_plan_contract.py` exits 0 on each of the 36 committed contract plans, and exits 1 on a
