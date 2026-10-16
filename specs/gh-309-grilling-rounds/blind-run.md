@@ -707,8 +707,8 @@ Result: pass
 ## Note after the runs (2026-10-16, after the Task 3.1 review)
 
 The Run 1 and Run 2 sections above are the text committed in `c76a485` and are unchanged. The
-Task 3.1 review found that their (b) rows, and Run 3's first (b) row, were scored on the fact half
-only. Re-read against the implementation-level half of criterion (b) as first written, the counts
+Task 3.1 review found that their (b) rows, and Run 3's first (b) row, were scored `pass` without
+applying the implementation-level test. Re-read against the implementation-level half of criterion (b) as first written, the counts
 of approach-level or implementation-level questions are: Run 1, 3 of 16 (Q2 the frontmatter flag,
 Q8 vendoring with `UPSTREAM.md`, Q10 the bug record and pre-fix commit); Run 2, 4 of 19 (Q3, Q7,
 Q8, Q10); Run 3, 5 of 19 (listed in the Run 3 scoring). The fact half passed in every run. Under
