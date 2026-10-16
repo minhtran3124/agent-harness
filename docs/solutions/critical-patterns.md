@@ -117,6 +117,7 @@ The risk-lane gate forces `high-risk` for `hooks/*`/`settings.json` (how careful
 Eval a prompt skill with **auto-score / manual-run**: labeled fixtures (`request.md` + parseable `truth.md`, `any` for unasserted dims) → **blind** subagent runs (given only the request + skill, never `truth.md` — the orchestrator authored the key, so a non-blind run is meaningless) → a deterministic, unit-tested scorer (pure Python, no key/LLM). **Separate the safety-critical dimension** (hard-gate respect → `--strict` hard-fail) from wobbly judgment dims (lane/confidence). **Multi-run**: one run hides borderline non-determinism (a fixture flipped tiny↔normal 3/4 while hard-gate respect stayed 3/3 across all 4). Scorer must **normalize LLM free-text** (`Data model` vs `data-model` → compare alphanumerics-only) or a correct call scores as a false miss. When N blind runs consistently disagree with a fixture, **suspect the answer key, not the skill** — revise `truth.md`, mark prior runs non-comparable.
 
 **Full doc:** docs/solutions/harness/skill-eval-blind-run-scoring.md
+**Recurred:** 2026-10-16 (gh-309: the answer key left fixture-settled decisions open; mark every decision the fixture states as settled before the first run)
 ---
 
 ## [2026-07-23] gate-config-must-read-index
@@ -203,5 +204,22 @@ A new `hooks/commit-gate.sh` was committed `100644` while registered as a bare c
 An STE rewrite of `feature-intake` dropped two conditions in one task. A sentence split moved checks out from under "if intent.md is present", and a word-ceiling cut removed "For a new SUMMARY". Every test passed and the lint count went down both times. Only a per-file meaning-equivalence review caught them. Repeat the scope on each split part, never cut a condition word to meet the ceiling, and review every rewritten file line by line.
 
 **Full doc:** docs/solutions/harness/ste-rewrite-drops-scope-qualifiers.md
+
+---
+
+## [2026-10-16] ste-ratchet-blind-to-fenced-prompt-prose
+**Type:** failure
+**Module:** skills/asd-ste100/scripts/ste-lint.py + scripts/check_ste_baseline.py + skills/subagent-driven-development/scripts/review_package.py
+**Tags:** ste100, ste-lint, ratchet-blind-spot, fenced-dispatch-prompt, green-is-not-correct
+**Applicable when:** You change the prose of a `*-prompt.md` dispatch prompt and use the STE lint count (the baseline ratchet or the review package's `## STE lint` section) as evidence.
+
+`ste-lint.py` skips fenced blocks, and a dispatch prompt keeps its prompt text inside a fence. So
+the ratchet and the review package report `0 → 0` for the most load-bearing prose. This happened
+in the ste100 rollout and again in gh-312. Treat the lint count as no evidence for fenced prompt
+prose. Brief the task reviewer to check each fenced hunk by hand, and record the gap in
+`### Not auto-verified`.
+
+**Full doc:** docs/solutions/harness/ste-ratchet-blind-to-fenced-prompt-prose.md
+**Recurred:** 2026-10-16 (gh-312 Task 1.3: about 25 new fenced prompt lines, lint `0 → 0`)
 
 ---

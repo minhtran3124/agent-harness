@@ -2,14 +2,15 @@
 problem_type: failure
 module: skills/asd-ste100/scripts/ste-lint.py + scripts/check_ste_baseline.py + skills/subagent-driven-development/scripts/review_package.py
 tags: [ste100, ste-lint, ratchet-blind-spot, fenced-dispatch-prompt, eval-fixture-scope, advisory-section, green-is-not-correct]
-severity: standard
+severity: critical
 applicable_when: You rewrite agent prose for STE style and use the STE lint count (the baseline ratchet or the review package's `## STE lint` section) as evidence that the rewrite is done, or you plan a rewrite that touches `*-prompt.md` dispatch prompts or eval fixtures.
 affects:
   - specs/ste100-prose-rollout/PLAN.md
   - skills/subagent-driven-development/task-reviewer-prompt.md
+  - skills/subagent-driven-development/implementer-prompt.md
 supersedes: null
 confidence: high
-confirmed_at: 2026-10-15
+confirmed_at: 2026-10-16
 ---
 ## Applicable When
 
@@ -38,6 +39,12 @@ the prose. Each one surfaced mid-run.
 - The task-reviewer instruction said "kept" must cite "the HEAD line that keeps the qualifier
   word". Under that wording, an advisory `## Scope qualifiers` line could force a blocking finding
   when the rewrite kept a condition in other words.
+
+Second occurrence (gh-312-test-seams, 2026-10-16). Task 1.3 added about 25 lines of rules to
+the fenced blocks of `implementer-prompt.md` and `task-reviewer-prompt.md`. The review package
+showed `base: 0, head: 0` for both files, and SC-7 (`check_ste_baseline.py --strict`) passed.
+`ste-lint.py` counted only 57 and 53 words in the two files. The implementer and the task
+reviewer had to check sentence length and semicolons by hand.
 
 ## Wrong Approach
 
