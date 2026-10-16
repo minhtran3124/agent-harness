@@ -123,7 +123,7 @@ B1–B8, approach A).
   (D11 skips the declared-seam rule without the marker). Task 1.3 review Minor finding. Commit
   `113a374`.
 - Decision change after approval: DC1 in `design.md` (new D17) narrows the reviewer seam check
-  to new tests only, per `ESCALATIONS.md` E001 (user chose A). Commit: see `### Intent Findings`.
+  to new tests only, per `ESCALATIONS.md` E001 (user chose A). Commit `6c57d1b`.
 - Rule 1 — `task-reviewer-prompt.md`: the `Seams: none` check moved out of step 1 into its own
   step 4, so it still runs on unmarked plans (B8). Intent review finding 2. Commit `f9d535f`.
 - Research brief addition (implements D1, no new decision): the checker rejects a `Seams:`
@@ -220,7 +220,9 @@ Plan-blind intent review against `specs/gh-312-test-seams/intent.md @ 2cd6403` o
   (own step 4).
 - drift, escalated and fixed — outcome 3 names "a new test"; the prompt said "each new or changed
   test". `ESCALATIONS.md` E001, decision A (only new tests); prompt and design (DC1/D17) updated in
-  the E001 commit.
+  `6c57d1b`. The design's Architecture prose and the D15 row still say "new or changed"; DC1/D17
+  supersede that wording. Second intent pass at `6c57d1b`: no unresolved divergence, no new
+  finding; `run-tests.sh` exit 0, 1045 passed.
 - drift, advisory — outcome 6 says "a `Plan-contract: 2` line"; the checker accepts only the
   `- ` bullet form (D16), so a bare line is silently unmarked. Same root cause as correctness
   advisory 1; follow-up issue.
