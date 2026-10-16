@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.31.1] — 2026-10-16
+
+- fix(verify_summary): apply red/green check to every bug-fix Input-type spelling (PR #304)
+
 ## [2.31.0] — 2026-10-15
 
 - feat(workflow): failing-test-first protocol for bug fixes (E5) (PR #301)
