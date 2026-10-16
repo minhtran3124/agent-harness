@@ -10,7 +10,7 @@ created: 2026-10-16
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**6 tasks · 3 waves · 16 files · 0/6 done**
+**6 tasks · 3 waves · 16 files · 2/6 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -40,8 +40,8 @@ flowchart LR
 ```
 
 ### Progress
-- [ ] 1.1 — Reference entry, audit pointer and backlog rows (wave 1)
-- [ ] 1.2 — Spec-local verification script (wave 1)
+- [x] 1.1 — Reference entry, audit pointer and backlog rows (wave 1)
+- [x] 1.2 — Spec-local verification script (wave 1)
 - [ ] 2.1 — Trim `finishing-a-development-branch` (wave 2)
 - [ ] 2.2 — Trim `feature-intake` (wave 2)
 - [ ] 2.3 — Trim `session-retro` (wave 2)
@@ -288,3 +288,4 @@ Plan SC ids differ from the design's: design SC-1 → SC-1, SC-2 → SC-2/SC-3, 
 ## 6. Status Log
 
 - 2026-10-16 — plan written from the approved design and research brief.
+- 2026-10-16 — tasks 1.1, 1.2 complete; commits 77a27ef, 0cb0a06; both task reviews spec pass and quality approved, 3 Minor findings recorded in SUMMARY.
