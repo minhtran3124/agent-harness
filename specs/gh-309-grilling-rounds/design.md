@@ -1,6 +1,7 @@
 # gh-309-grilling-rounds — Design
 
 Written 2026-10-16. Pins: repo 2bc2cb2
+Revised 2026-10-16. Pins: repo c76a485 + uncommitted
 
 ## Goal
 
@@ -125,6 +126,10 @@ in three rounds or fewer (budget); (b) no step-2 question is a fact or an implem
 choice; (c) the evaded decision is recorded as an assumption; (d) the grilling agent declares
 step 2 ended only after the user agent's confirmation, and not before.
 
+Amended by DC1 (see Decision changes): (a) counts rounds of new questions until the agent first
+declares the frontier empty (`ESCALATIONS.md` E001); (b) is the fact half only, and the count of
+approach-level or implementation-level questions per run is recorded as an advisory measure.
+
 ## Success criteria
 
 - SC-1: step 2 states each of the seven behaviors; checked by the seven-sentence map above and
@@ -184,6 +189,11 @@ step 2 ended only after the user agent's confirmation, and not before.
 | D6 | Only step 2 changes; no design-template field; no wording test | One hunk in one skill file; spec files and a possible `ste-baseline.json` update are the only other changes | settled |
 | D7 | Blind-run question is issue #318's body | Answer key is written on #318; the run binds nothing for #318 | settled |
 | D8 | User agent has a hidden answer key, answers only what is asked, evades one decision twice, refuses facts | Criteria (b) and (c) are testable | settled |
-| D9 | Scoring is manual on the transcript, four criteria, recorded in `blind-run.md` | One Verify row | settled |
+| D9 | Scoring is manual on the transcript, four criteria, recorded in `blind-run.md` | One Verify row | superseded by DC1 |
+| D12 | Scoring is manual on the transcript, four criteria as amended: (a) rounds of new questions until the frontier is first declared empty, ≤3 (budget); (b) no step-2 question asks the user for a fact, with the approach- or implementation-level question count recorded as advisory; (c) and (d) unchanged | SC-5 is scored on the last run under these criteria; a follow-up issue owns the tier boundary | settled |
 | D10 | Blind run is a plan task right after the rewrite task, before the review chain | Review sees the evidence | settled |
 | D11 | Approach A: inline prose in step 2 | Skill predicted at 547 words | settled |
+
+## Decision changes
+
+- DC1 — 2026-10-16 — reopens D9 — evidence: three blind runs (`blind-run.md`) asked 3 of 16, 4 of 19 and 5 of 19 questions at approach or implementation level despite the tier-boundary sentence, while every run closed the question frontier in 2 rounds and asked no fact; `ESCALATIONS.md` E001 (round counting) and E002 (criterion (b)), both decided by the user — new decision: D12

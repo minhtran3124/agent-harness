@@ -218,9 +218,11 @@ Questions: 16
 | Criterion | Evidence | Result |
 |---|---|---|
 | (a) frontier empty in ≤3 rounds | Round 1: 11 questions. Round 2: 5 questions. STEP 2 ENDED after round 2. | pass |
-| (b) no fact or implementation-level question in step 2 | All 16 questions are decisions with a recommendation; the agent looked up `feature-intake` word count, the `session-retro` flag, `run_at_commit.py` and a `docs/solutions/` bug record itself. | pass |
+| (b) no fact or implementation-level question in step 2 | No question asks the user for a fact; the agent looked up `feature-intake` word count, the `session-retro` flag, `run_at_commit.py` and a `docs/solutions/` bug record itself. Implementation-level questions: Q2 (`disable-model-invocation: true`, load by path), Q8 (vendor with `UPSTREAM.md`), Q10 (which bug record, run at the pre-fix commit). 3 of 16. Scored `pass` at the time on the fact half only; see run 3 for the corrected reading. | pass (fact half only) |
 | (c) evaded decision recorded as an assumption | Round 1 Q4 and round 2 Q1 (Phase 3 blocking) evaded twice; the close lists it under "Assumptions". | pass |
 | (d) step 2 declared ended only after the user's confirmation | The agent wrote STEP 2 ENDED directly after round 2, which held one evasion. No confirmation question was sent to the user. | fail |
+
+(assumed) — one fixture, scored by hand from the transcript.
 
 Finding: the sentence "The \"yes\" to the last round counts as that confirmation" let the agent treat a mixed last round as confirmation. Fixed in `91d45b1`: "A plain \"yes\" to the whole last round is that confirmation. Otherwise ask for it."
 
@@ -459,9 +461,11 @@ Questions: 19
 | Criterion | Evidence | Result |
 |---|---|---|
 | (a) frontier empty in ≤3 rounds | Round 1: 11 questions. Round 2: 3 questions. Round 3: confirmation asked. The user agent named four unasked key rows (K1, K2, K8, K10), all stated verbatim in the issue body; round 4 asked them, round 5 confirmed. Rounds = 2, Turns = 5. | pass |
-| (b) no fact or implementation-level question in step 2 | All questions are decisions with a recommendation; facts were read from the repository. | pass |
+| (b) no fact or implementation-level question in step 2 | No question asks the user for a fact; facts were read from the repository. Implementation-level questions: Q3 (frontmatter flag, read-and-follow), Q7 (prose vs hook), Q8 (vendor with `UPSTREAM.md`), Q10 (intake eval cases). 4 of 19. | pass (fact half only) |
 | (c) evaded decision recorded as an assumption | Not exercised: the evade marker sat on K9, which the issue states and the agent never asked. | not exercised |
 | (d) step 2 declared ended only after the user's confirmation | Confirmation asked in rounds 3 and 5; STEP 2 ENDED only after the round-5 "yes". | pass |
+
+(assumed) — one fixture, scored by hand from the transcript.
 
 Finding: the fixture, not the skill. Rule 6 of the user-agent prompt made it demand explicit questions on decisions the issue text already settles. Per `docs/solutions/harness/skill-eval-blind-run-scoring.md`, the key was revised (v2) for run 3 and this run is marked not comparable on (c). Result is `fail` because (c) was not exercised and the total turn count exceeded 3 under the literal reading that E001 later replaced.
 
@@ -691,12 +695,14 @@ Questions: 19
 
 | Criterion | Evidence | Result |
 |---|---|---|
-| (a) frontier empty in ≤3 rounds | Round 1: 9 questions. Round 2: 4 questions. Round 3: confirmation asked. The user agent named four unasked rows (K3, K5, K6, K9-blocking), all stated in the issue body and missed by the key revision; round 4 asked them, round 5 confirmed. Rounds = 2 (E001 decision A), Turns = 5. | pass |
-| (b) no fact or implementation-level question in step 2 | All 19 questions are decisions with a recommendation; the agent read `feature-intake`, `compound`, `session-retro`, `verify_summary.py` and `docs/solutions/` itself and listed the facts in its close. | pass |
+| (a) frontier empty in ≤3 rounds | Round 1: 9 questions. Round 2: 4 questions. Round 3: the agent declared "No other decisions are open" and asked for confirmation. The user agent named four unasked rows: K3, K5 and K6 are stated in the issue body and were missed by the key revision, but K9-blocking (wait for the user on the ranked hypotheses, or not) is marked open in key v2, so the agent declared the frontier empty with one open decision left. Round 4 asked the four (the user overrode the K6 recommendation), round 5 confirmed. Rounds = 2 under E001 decision A, Turns = 5. Open decisions in key v2: 8 of 12 rows (below the 10–13 budget; see SUMMARY `### Not auto-verified`). Pass is under E001 decision A; the premature "frontier empty" claim is recorded in E002. | pass |
+| (b) no fact or implementation-level question in step 2 | No question asks the user for a fact: the agent read `feature-intake`, `compound`, `session-retro`, `verify_summary.py` and `docs/solutions/` itself and listed the facts in its close. Implementation-level or approach-level questions, which the design puts in steps 3–4: R1 Q3 (write in-house vs vendor, with `## Source` vs `UPSTREAM.md`), R1 Q4 (copy the script vs write our own), R1 Q8 (run the proof on a reverted branch, record as `### Verify` rows), R2 Q4 (bash lint, one red and one green test), R4 Q1 (the frontmatter field `disable-model-invocation: true`). 5 of 19. The same tier mix appears in run 1 (3 of 16: Q2, Q8, Q10) and run 2 (4 of 19: Q3, Q7, Q8, Q10). Under design DC1 (E002 decision A) criterion (b) is the fact half, which passes; the count 5 of 19 is the advisory measure. | pass |
 | (c) evaded decision recorded as an assumption | Round 1 Q2 and round 2 Q1 (tiny-lane gate, key K7) evaded twice; round 3 and the close record the recommended answer as an assumption. | pass |
 | (d) step 2 declared ended only after the user's confirmation | Confirmation asked in rounds 3 and 5; STEP 2 ENDED only after the round-5 "yes". | pass |
 
 Observation for the Task 2.1 Minor ("Put each decision to the user and wait" read as one per message): not observed in any run; every run asked the whole frontier per round.
+
+Re-scored after the Task 3.1 review: the first scoring marked (b) `pass` without applying the implementation-level test; under the criterion as first written, (b) is `fail`. The tier boundary in step 2 ("Approach choice belongs to step 3. Section detail belongs to step 4.") did not stop the agent from asking approach and test-detail questions in any of the three runs. Routed to `ESCALATIONS.md` E002; decision A narrowed (b) to the fact half (design DC1, D12) and records the implementation-level count as advisory. Under D12 this run passes (a)–(d).
 
 (assumed) — one fixture, scored by hand from the transcript.
 
