@@ -8,8 +8,8 @@ allowed-tools: Read, Write, Edit, Grep, Glob, Bash(git log *), Bash(git diff *),
 
 <HARD-GATE>
 Do not edit, scaffold, or dispatch implementation until intake records `Lane:` and `Confidence:`
-in `specs/<slug>/SUMMARY.md`. The lane is risk. Confidence is ambiguity. Never ask the user to
-classify risk. Ask only to resolve a material ambiguity or narrow a hard-gated scope.
+in `specs/<slug>/SUMMARY.md`. Never ask the user to classify risk. Ask only to resolve a material
+ambiguity or narrow a hard-gated scope.
 </HARD-GATE>
 
 ## Procedure
@@ -33,7 +33,7 @@ classify risk. Ask only to resolve a material ambiguity or narrow a hard-gated s
    A human may lower a hard-gated lane only by narrowing scope.
 4. Assign confidence: `high` for one clear interpretation, `medium` for a safe documented
    default, `low` for materially different plausible readings (including chat
-   conflicting with intent.md). Low confidence always stops for a human.
+   conflicting with intent.md).
 5. The pin line is `Intent-source: specs/<slug>/intent.md @ <sha>`. Only legacy slugs (SUMMARY,
    no intent.md) have none.
 6. For a new SUMMARY, use `templates/SUMMARY.template.md`. `### Intent` holds the pin
@@ -66,15 +66,9 @@ classify risk. Ask only to resolve a material ambiguity or narrow a hard-gated s
 - high-risk: `brainstorming` → `xia2` → `writing-plans` → `using-git-worktrees` →
   `subagent-driven-development`. Use `compound` for durable decisions.
 
-All lanes require branch isolation. Artifacts scale by signal (`FULL_ARTIFACTS=1` forces all):
-
-- a plan for >3 steps or >2 files
-- research for unfamiliar code or high-risk
-- a design for a real fork or high-risk
-
-For the lane-to-depth mapping that xia2 uses, see `rules/research-depth.md`.
+Artifacts scale by signal: see `rules/orchestration.md`.
 
 ## Arguments
 
-`$ARGUMENTS` is the requested change. Derive `<slug>` using the ticket-prefix convention in
-`templates/structure/specs-README.md`. Never rename an existing spec directory.
+Derive `<slug>` using the ticket-prefix convention in `templates/structure/specs-README.md`.
+Never rename an existing spec directory.
