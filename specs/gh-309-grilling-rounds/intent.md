@@ -16,16 +16,22 @@ measurement: the same 13 questions landed in about 3 rounds instead of 13.
 
 Step 2 of `skills/brainstorming/SKILL.md` makes the agent do this:
 
-1. Map the open decisions as a design tree.
+1. Map the open decisions as a design tree. The tree holds purpose, constraints, success
+   criteria and boundaries. Approach choice belongs to step 3; section detail belongs to step 4.
 2. Find the frontier: each decision whose prerequisites the user already settled.
 3. Ask the whole frontier in one numbered round.
-4. Give a recommended answer for each question, worded so that "yes" accepts it.
-5. Dispatch a subagent to find any fact; never ask the user for a fact.
+4. Give a recommended answer for each question, worded so that "yes" accepts it. No fixed
+   template or emoji is required.
+5. Find each fact itself, or dispatch a subagent when the search is larger than a few reads;
+   never ask the user for a fact.
 6. Give each decision to the user, then wait.
-7. Act only after the user confirms a shared understanding.
+7. Step 2 ends when the frontier is empty and the user confirms a shared understanding. The
+   confirmation may be the "yes" to the last round. Act only after it.
 
 The existing rule "if a question goes unanswered or evasive twice, name the gap and move on"
-stays, for decisions only.
+stays, for decisions only: name the gap, record the recommended answer as an assumption, and
+move on. The sentence "Do not over-probe: steps 3–4 still catch any gap ..." is replaced by the
+tier boundary in behavior 1 and the stop condition in behavior 7.
 
 ## Affected users and systems
 
@@ -35,7 +41,8 @@ high-risk route and on a real design fork.
 ## Constraints
 
 - Only step 2 of `skills/brainstorming/SKILL.md` changes. Steps 3–5 (approaches, per-section
-  confirmation, restatement) and the HARD-GATE stay as they are.
+  confirmation, restatement), the HARD-GATE, the visual-artifact sentence, and
+  `references/design-template.md` stay as they are.
 - Only the high-risk path and the design-fork path run brainstorming; the normal lane's
   notify-and-proceed flow does not change.
 - The skill stays under the 600-word ceiling, met by the deletion-test procedure in
@@ -48,13 +55,24 @@ high-risk route and on a real design fork.
 - A question cap or a fixed number of rounds.
 - Changes to `feature-intake`, `xia2`, `writing-plans`, or any hook.
 - A separate `grilling` skill.
+- A design-tree field in `design.md`; the tree lives in the conversation only.
+- A test that greps the step-2 wording.
+
+## Proof
+
+- Before merge: one blind run of the new step-2 text by a subagent on a fixture design
+  question with about 10–13 decisions, with a second subagent answering as the user. The
+  transcript is recorded under `specs/gh-309-grilling-rounds/`, with the round count and the
+  question count, marked "(assumed)". A step-2 question at implementation level is a failure.
+- After merge: the first real brainstorming session on a design fork is the live evidence. Until
+  it exists, the live count is listed under `### Not auto-verified`.
+- Static checks: `scripts/audit_skill_prompts.py` (ceiling 600 words), the STE lint,
+  `scripts/check_scope_qualifiers.py` with every removed condition word cited, and the
+  context-propagation audit.
 
 ## Open questions
 
-- The issue's proof is a recorded live brainstorming session on a real design fork, counted for
-  rounds. That needs a real fork and the user's time. Whether a scripted blind run of the skill
-  on a fixture design question is enough instead (assumed: research decides; if neither is
-  practical, the round count is reported as not auto-verified).
+- none
 
 ## What success looks like
 
@@ -62,8 +80,8 @@ high-risk route and on a real design fork.
   evasive-answer rule applies to decisions only.
 - No condition word is lost from the rest of the skill (`scripts/check_scope_qualifiers.py`
   resolution and the task reviewer's meaning verdict).
-- On one brainstorming run over a design fork, the frontier closes in three rounds or fewer
-  (assumed measure; see Open questions).
+- On the blind run, the frontier closes in three rounds or fewer, and no step-2 question is at
+  implementation level (assumed measure; see Proof).
 
 ## Original request
 
