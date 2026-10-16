@@ -7,11 +7,6 @@ allowed-tools: Read, Grep, Glob, Bash(git log *), Bash(git diff *)
 
 # Session Retro — change the environment, not the code
 
-`compound` records what a session learned. This skill asks what in the repo let the agent
-stumble, and which lever would stop the next session stumbling the same way?
-It reads the session, not the code, and proposes rather than edits. Each environment change
-taxes every later session, so the user decides which are worth it.
-
 If nothing struggled, say so and stop. Rules manufactured from a clean run make the harness worse.
 
 ## The record
@@ -22,10 +17,8 @@ so: a summarized stretch cannot evidence a moment, so its lack of struggles is u
 
 ## From struggle to lever
 
-List the moments of friction, each with a pointer to where it happened. Friction includes long
-searches, repeated mistakes, a reviewer catching what a tool could have caught, and expensive tool
-calls. Every
-candidate traces to one. The class of each decides the lever:
+List the moments of friction, each with a pointer to where it happened. Every candidate traces
+to one. The class of each decides the lever:
 
 | Struggle | Lever |
 | --- | --- |
