@@ -9,9 +9,13 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
-## [2.31.1] — 2026-10-16
+## [2.31.2] — 2026-10-16
 
 - fix(verify_summary): apply red/green check to every bug-fix Input-type spelling (PR #304)
+
+## [2.31.1] — 2026-10-16
+
+- feat(evals): hardened intake-classifier eval runner (M5) (PR #305)
 
 ## [2.31.0] — 2026-10-15
 
