@@ -169,6 +169,7 @@ intent-review              ──► (standalone — same pipeline; needs ### In
 systematic-debugging       ──► fix → compound
 compound                   ──► nothing (terminal — crystallization is end state)
 finishing-a-development-branch ──► nothing (terminal — shipped)
+onboarding                 ──► nothing (standalone — read-only guided tour; writes no file)
 ```
 
 ---
