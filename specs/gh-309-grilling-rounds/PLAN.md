@@ -1,6 +1,6 @@
 ---
 slug: gh-309-grilling-rounds
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-10-16
 ---
@@ -264,3 +264,4 @@ at `finishing-a-development-branch` and in CI, and it is the check behind design
 - 2026-10-16 — task 1.1 complete; commit ae0eba5
 - 2026-10-16 — task 2.1 complete; commits 4a64270, 84db611
 - 2026-10-16 — task 3.1 complete; commits 91d45b1, c76a485, e372f86, 119640d (three blind runs; E001 and E002 decided by the user; design DC1)
+- 2026-10-16 — shipped: review chain passed (propagation audit, correctness, intent second pass at 32400ac); receipt at 58084de; PR to sdlc
