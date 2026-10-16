@@ -1,12 +1,12 @@
 {
   "created_at": "2026-10-16T01:47:37Z",
-  "last_event_id": "20bb8038-c8b0-46c7-a09b-e339802f1400",
+  "last_event_id": "bce61c72-860d-403f-9ce8-979f026f7b9e",
   "resume_event": null,
   "run_id": "a7c87819-62b0-44e0-8273-8d211d069327",
-  "seq": 9,
+  "seq": 10,
   "sha": null,
   "slug": "gh-308-deletion-test-ceiling",
-  "state": "verifying",
-  "updated_at": "2026-10-16T02:36:43Z",
+  "state": "ready_to_merge",
+  "updated_at": "2026-10-16T02:45:47Z",
   "waiting_on": null
 }
