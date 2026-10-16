@@ -70,7 +70,7 @@ the derived `.claude/` path and the deploy script was out of scope.
 
 - Context-propagation audit repair: added the SKILL.md exit-table drift test (`beab618`).
 - Intent fix round 1 (`b8e64e6`): added `docs/solutions/INDEX.md` to the fallback, built the session list from the quickstart and section indexes, ran the status check in every mode, and added a Skill Handoff Map line.
-- After the PR opened, the user asked to commit the generated `openwiki/` (OpenWiki 0.7.2, generated at `996f50d`) and its `<!-- OPENWIKI:START -->` blocks in `AGENTS.md` and `CLAUDE.md`. These are generated docs, not skill or runtime code, and the review chain did not cover them. `.github/workflows/openwiki-update.yml` stays uncommitted, because the user did not name it and it adds a scheduled, paid Actions job.
+- After the PR opened, the user asked to commit the generated `openwiki/` (OpenWiki 0.7.2, generated at `996f50d`) and its `<!-- OPENWIKI:START -->` blocks in `AGENTS.md` and `CLAUDE.md`. These are generated docs, not skill or runtime code, and the review chain did not cover them. The user then asked to commit `.github/workflows/openwiki-update.yml` as well. It runs `openwiki code --update` daily and on manual dispatch, and opens a PR from branch `openwiki/update`.
 
 - Design change DC1 (reopens D3; new D7: no saved progress) — see `specs/onboarding-skill/design.md` `## Decision changes`.
 - Design change DC2 (new D8: script named by deployed path) — see `specs/onboarding-skill/design.md` `## Decision changes`.
