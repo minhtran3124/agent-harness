@@ -10,7 +10,7 @@ created: 2026-10-16
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**6 tasks · 3 waves · 16 files · 5/6 done**
+**6 tasks · 3 waves · 16 files · 6/6 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -45,7 +45,7 @@ flowchart LR
 - [x] 2.1 — Trim `finishing-a-development-branch` (wave 2)
 - [x] 2.2 — Trim `feature-intake` (wave 2)
 - [x] 2.3 — Trim `session-retro` (wave 2)
-- [ ] 3.1 — STE baseline for the trimmed skills (wave 3)
+- [x] 3.1 — STE baseline for the trimmed skills (wave 3)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -290,3 +290,4 @@ Plan SC ids differ from the design's: design SC-1 → SC-1, SC-2 → SC-2/SC-3, 
 - 2026-10-16 — plan written from the approved design and research brief.
 - 2026-10-16 — tasks 1.1, 1.2 complete; commits 77a27ef, 0cb0a06; both task reviews spec pass and quality approved, 3 Minor findings recorded in SUMMARY.
 - 2026-10-16 — tasks 2.1, 2.2, 2.3 complete; commits aad04a6, 970a276, c043969, 63f1ef1, cf36783, 44d7061; word counts 524, 539, 525; all three task reviews spec pass and quality approved (2.2 after one focused retry), 5 Minor findings recorded in SUMMARY.
+- 2026-10-16 — task 3.1 complete; commit 2b267f5; task review spec pass and quality approved after one focused test-runner retry, no findings.
