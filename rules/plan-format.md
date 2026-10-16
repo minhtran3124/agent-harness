@@ -47,6 +47,42 @@ New markdown plans add a non-empty `## Global Constraints` section. Each task al
 - **Interfaces:** a concise statement of what the task consumes and produces. The
   `Produces` clause must name at least one artifact in backticks (e.g. `` `foo.py` ``)
   so producers are machine-trackable. `Consumes` may stay prose for external inputs.
+- **Seams:** the point where the test observes the task's behavior. Write it only in a plan with
+  the marker below.
+
+#### Seam marker and field
+
+A plan opts into the seam rule with the `- Plan-contract: 2` marker. Write the marker as a bullet
+inside `## Global Constraints`. A bare line is not a marker.
+
+In a plan with the marker, each task has exactly one `- **Seams:**` bullet:
+
+- Put it as the next field bullet after `Interfaces`.
+- Write it on one line. The checker reads only the first line of the bullet.
+- Prefer an existing seam to a new seam.
+- Use the highest seam possible.
+- One seam is the ideal number.
+- Give each seam a `catches:` clause and a `misses:` clause. Separate the two clauses with `;`.
+- When a task needs more than one seam, separate the seams with ` | `.
+- Write `none — <reason>` when the task has no behavior to test. The reason must not be empty.
+- A bug-fix task never writes `none`. Its red test must sit at a declared seam.
+
+A task with one seam (fenced, so illustrative only):
+
+```markdown
+- **Interfaces:** Consumes: PLAN.md text. Produces: `resume_decision.py`.
+- **Seams:** `decide()` JSON output — catches: wrong next_task; misses: file I/O errors
+```
+
+A task with no behavior to test (fenced, so illustrative only):
+
+```markdown
+- **Interfaces:** Consumes: the design. Produces: `rules/plan-format.md`.
+- **Seams:** none — prose-only change, no behavior to test
+```
+
+The checker applies the seam rule only to a plan with the marker. A plan without the marker
+skips the seam rule.
 
 Run `python3 scripts/check_plan_contract.py <PLAN.md>` before execution. The checker applies this
 contract only to plans that declare `Global Constraints`, so legacy markdown/XML plans continue to
