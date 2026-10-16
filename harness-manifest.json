@@ -72,7 +72,7 @@
     "artifact-schema-summary": { "surface": ["templates/SUMMARY.template.md"],  "consumers": ["scripts/verify_summary.py", "hooks/commit-gate.sh"], "desc": "SUMMARY.md shape contract" },
     "artifact-schema-plan":    { "surface": ["rules/plan-format.md", "scripts/check_plan_contract.py"], "consumers": ["skills/visual-planner/render_plan.py", "skills/writing-plans/SKILL.md", "skills/subagent-driven-development/SKILL.md"], "desc": "PLAN.md task and context-contract schema" },
     "lane-evidence-mapping":   { "surface": ["scripts/verify_summary.py"],      "consumers": ["skills/feature-intake/SKILL.md", "rules/auto-correct-scope.md"],                               "desc": "lane -> required evidence mapping" },
-    "research-depth-policy":   { "surface": ["rules/research-depth.md"],       "consumers": ["skills/feature-intake/SKILL.md", "skills/xia2/SKILL.md"],                                          "desc": "intake lane -> xia2 research-depth mapping" },
+    "research-depth-policy":   { "surface": ["rules/research-depth.md"],       "consumers": ["skills/xia2/SKILL.md"],                                                                            "desc": "intake lane -> xia2 research-depth mapping" },
     "codex-capability-evidence": {
       "surface": [
         "specs/codex-support/capability-matrix.json",
