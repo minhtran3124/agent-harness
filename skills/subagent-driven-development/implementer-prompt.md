@@ -57,6 +57,7 @@ Task tool (coding):
        When the input type in Context is `bug fix`, do these steps:
        - Write the red test at a declared seam.
          When `Seams:` is `none`, return `NEEDS_CONTEXT` before any edit.
+         When the brief has no `Plan-contract: 2` line, skip this rule only.
        - Commit the failing test before the fix.
        - Record a `red` row in `### Verify`. Its command is
          `python3 scripts/run_at_commit.py <red sha> -- <test command>`.
