@@ -1,0 +1,12 @@
+{
+  "created_at": "2026-10-15T17:05:53Z",
+  "last_event_id": "66c538f3-7c08-4ab4-bcc2-0a23c45922d6",
+  "resume_event": null,
+  "run_id": "892f897d-8b53-41f1-9ac5-d57557fa0525",
+  "seq": 6,
+  "sha": "36d809f",
+  "slug": "gh-302-red-green-input-type",
+  "state": "ready_to_merge",
+  "updated_at": "2026-10-15T17:22:23Z",
+  "waiting_on": null
+}

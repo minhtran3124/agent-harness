@@ -1126,9 +1126,35 @@ class TestRedGreen:
         text = _bug_fix_summary(REAL_LANE_VERIFY, input_type="  Bug Fix ")
         assert vs._red_green_issue(text)
 
+    def test_red_green_bug_fix_input_type_spellings_warn(self, monkeypatch):
+        monkeypatch.delenv("REQUIRE_RED_TEST", raising=False)
+        for input_type in ("bug-fix", "bugfix", "bug fix (harness)", "Bug-Fix"):
+            text = _bug_fix_summary(f"{REAL_LANE_VERIFY}\n{_GREEN_ROW}", input_type=input_type)
+            assert vs._red_green_issue(text) is not None, input_type
+            warnings = [m for m, _ in vs.check_lane_warnings(text) if "red/green" in m]
+            assert len(warnings) == 1, input_type
+
+    def test_red_green_bug_fix_input_type_spellings_block_when_opted_in(
+        self, monkeypatch, tmp_path
+    ):
+        monkeypatch.setenv("REQUIRE_RED_TEST", "1")
+        spellings = ("bug-fix", "bugfix", "bug fix (harness)", "Bug-Fix")
+        for n, input_type in enumerate(spellings):
+            text = _bug_fix_summary(f"{REAL_LANE_VERIFY}\n{_GREEN_ROW}", input_type=input_type)
+            write_summary(tmp_path, f"bug{n}", text)
+            assert vs.main(["--lane", f"bug{n}"], specs_root=tmp_path / "specs") == 1, input_type
+
     def test_red_green_other_input_type_has_no_message(self, monkeypatch):
         monkeypatch.setenv("REQUIRE_RED_TEST", "1")
-        for input_type in ("maintenance", "bug fixes", "harness fix"):
+        for input_type in (
+            "maintenance",
+            "bug fixes",
+            "bugfixes",
+            "bug-fixes",
+            "bug fix-up",
+            "bugs fix",
+            "harness fix",
+        ):
             text = _bug_fix_summary(REAL_LANE_VERIFY, input_type=input_type)
             assert vs._red_green_issue(text) is None
             assert _red_green_messages(text) == []
@@ -1144,7 +1170,7 @@ class TestRedGreen:
             for path in paths:
                 text = path.read_text(encoding="utf-8")
                 input_type = (vs._header_value(text, "Input-type") or "").strip().lower()
-                if input_type == "bug fix":
+                if vs._BUG_FIX_INPUT_RE.match(input_type):
                     continue
                 assert _red_green_messages(text) == [], path
 
