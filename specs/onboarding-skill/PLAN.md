@@ -10,7 +10,7 @@ created: 2026-10-16
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**3 tasks · 2 waves · 7 files · 2/3 done**
+**3 tasks · 2 waves · 7 files · 3/3 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -33,7 +33,7 @@ flowchart LR
 ### Progress
 - [x] 1.1 — Claim and drift checker with tests (wave 1)
 - [x] 1.2 — Onboarding SKILL.md (wave 1)
-- [ ] 2.1 — Register the skill (wave 2)
+- [x] 2.1 — Register the skill (wave 2)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -225,3 +225,4 @@ SC-6 to SC-10, because a whole-suite row is not allowed (`rules/plan-format.md` 
 
 - 2026-10-16 — proposed (writing-plans)
 - 2026-10-16 — tasks 1.1, 1.2 complete; commits e3be7db, 2bbff4a
+- 2026-10-16 — task 2.1 complete; commit 5bceaea
