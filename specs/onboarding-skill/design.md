@@ -54,7 +54,7 @@ does not, and never teaches a wiki claim that no longer matches the code.
 
 | Component | Role |
 |---|---|
-| `skills/onboarding/SKILL.md` | Tour procedure. Runtime-neutral. At most 600 words (budget, `SKILL_WORD_CEILING`). `allowed-tools`: `Read, Grep, Glob, Bash(python3 *), Bash(git *)`. It names the script by its deployed path, `.claude/skills/onboarding/scripts/check_claims.py` (D8) — checked by `scripts/check_skill_tool_conformance.py`. |
+| `skills/onboarding/SKILL.md` | Tour procedure. Runtime-neutral. At most 600 words (budget, `SKILL_WORD_CEILING`). `allowed-tools`: `Read, Grep, Glob, Bash(python3 *), Bash(git *)`. It names the script relative to the skill's own directory, as `<skill directory>/scripts/check_claims.py` (D9) — checked by `scripts/check_skill_tool_conformance.py`. |
 | `skills/onboarding/scripts/check_claims.py` | Stdlib. `--status`: wiki `gitHead`, `HEAD`, commits behind. `<page>`: verify that page's claims. |
 | `skills/onboarding/scripts/test_check_claims.py` | Unit tests, collected by `run-tests.sh`. |
 | `harness-manifest.json` `skills`, `skills/README.md` | Registration and inventory row. |
@@ -122,6 +122,7 @@ A newcomer runs the skill with the argument "I will change a hook" in this repo.
 | Claims file missing for a page (exit 3) | Present the page marked unverified. |
 | Page missing from the wiki (exit 4) | Say the page is not in the wiki; skip it; offer the next page or the section list. |
 | Claim `stale`, `missing`, or `unknown` | List it under "verify before relying"; never state it as fact. |
+| Script not found in the skill directory | Search with Glob for `**/skills/onboarding/scripts/check_claims.py`; if absent, present pages as unverified and say so. |
 | code-review-graph server not connected | Skip it without blocking. |
 | Focus text matches no routing row | Say so and offer the section list. |
 
@@ -178,6 +179,7 @@ overview when connected. No claim check applies; the skill says so.
 | A4 | `deploy-harness.sh` ships `skills/<name>/scripts/` to consumers | provenance: Local, 2026-10-16, `scripts/deploy-harness.sh` syncs `skills` as a whole directory (`cp -R`) | a `### Verify` row: `.claude/skills/onboarding/scripts/check_claims.py` exists after `bash scripts/deploy-harness.sh` | Add the path to the deploy allow-list |
 | A5 | The `repo-file-v1` hash is `sha256` of the raw file bytes | truth: Local, 2026-10-16, all 23 `repo-file-v1` items in `openwiki/.claims/**` recomputed and matched | unit tests | Whole-file claims read `stale`; report the format gap |
 | A6 | OpenWiki emits only these two evidence formats | none yet — Inference: one generator version (0.7.2) observed | accepted risk: other prefixes report `unknown`, never `ok` | A newer format is never verified until the script learns it |
+| A7 | The runtime reports the skill's base directory when it loads the skill, so the agent can build `<skill directory>/scripts/check_claims.py` | provenance: Local, 2026-10-16, every skill load in the session that wrote DC3 began `Base directory for this skill: <repo>/.claude/skills/<name>` (Claude Code); Codex not observed | a SUMMARY `### Verify` row that runs the script from the reported directory | The agent searches with Glob for `**/skills/onboarding/scripts/check_claims.py`; if nothing is found, it presents pages as unverified and says so |
 
 ## What we do not claim
 
@@ -203,7 +205,8 @@ overview when connected. No claim check applies; the skill says so.
 | D5 | Mode is chosen by argument text: empty, `status`, or focus text | No subcommand syntax to learn | settled |
 | D6 | No new MCP server or dependency; the wiki is read as files | Works wherever the files exist | settled |
 | D7 | No saved progress; each run starts fresh and the skill writes no file | Fully read-only; no `Write` tool; no state to gitignore; no resume across sessions | settled |
-| D8 | SKILL.md names the script by its deployed path `.claude/skills/onboarding/scripts/check_claims.py`; no deploy-script change | Works in this repo after deploy and in consumers; Codex alpha path unverified | settled |
+| D8 | SKILL.md names the script by its deployed path under the derived skills tree; no deploy-script change | Works in this repo after deploy and in consumers; Codex alpha path unverified | superseded by DC3 |
+| D9 | SKILL.md names the script as `<skill directory>/scripts/check_claims.py`, where the skill directory is the base directory the runtime reports when it loads the skill; no deploy-script change | Passes the runtime-neutral scan; resolves wherever the runtime reports the skill's directory | settled |
 
 ## Decision changes
 
@@ -215,3 +218,8 @@ overview when connected. No claim check applies; the skill says so.
   `scripts/deploy-harness.sh:420-440` rewrites only named helper paths, so a new skill-script
   path is not rewritten for consumers; deploy changes are out of scope; the user chose the
   deployed path — new decision: D8
+- DC3 — 2026-10-16 — reopens D8 — evidence: `scripts/check_runtime_neutral_sources.py:93-94`
+  records every line containing the derived skills path as a `deployed-skill-path` finding, and
+  `tests/scripts/runtime-entry-bindings.test.sh:43-50` requires zero inventory exceptions (plan
+  review, verified 2026-10-16); the user chose "Relative to the skill's directory" — new
+  decision: D9. D9 adds assumption A7.
