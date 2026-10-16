@@ -51,7 +51,7 @@ def seam_errors(body: str, prefix: str) -> list[str]:
         return found
     for seam in value.split(" | "):
         for clause in ("catches", "misses"):
-            match = re.search(rf"\b{clause}:([^;]*)", seam)
+            match = re.search(rf"\b{clause}:(.*?)(?=;|\b(?:catches|misses):|$)", seam)
             if not match or not match.group(1).strip():
                 found.append(f"{prefix} seam '{seam.strip()}' needs non-empty {clause}:")
     return found

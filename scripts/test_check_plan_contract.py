@@ -268,6 +268,11 @@ def test_empty_catches_before_semicolon_is_rejected():
     assert len(problems) == 1 and "catches" in problems[0], problems
 
 
+def test_empty_catches_directly_before_misses_is_rejected():
+    problems = errors(marked_plan("- **Seams:** a — catches: misses: y"))
+    assert len(problems) == 1 and "catches" in problems[0], problems
+
+
 def test_empty_misses_before_next_seam_is_rejected():
     problems = errors(marked_plan("- **Seams:** a — catches: x; misses: | b — catches: z; misses: w"))
     assert len(problems) == 1 and "misses" in problems[0], problems
