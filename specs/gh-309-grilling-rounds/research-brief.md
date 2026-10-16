@@ -1,6 +1,7 @@
 # gh-309-grilling-rounds — Research Brief
 
 Written 2026-10-16. Pins: repo 2a5fc1d; mattpocock/skills 49dd158; Python 3.12.3
+Revised 2026-10-16. Pins: repo c7b9bcb + uncommitted
 
 Depth: **Deep** (intake lane high-risk → Deep; no waiver). Re-run with evidence: no signal lowers
 it, and none raises it further. External surface: none (a prose edit to one skill; the upstream
@@ -53,7 +54,7 @@ pattern is a source, not a dependency).
 | Label | Evidence |
 |---|---|
 | `Local` | `skills/brainstorming/SKILL.md` is 442 words (measured 2026-10-16 `wc -w`), step 2 lines 22–26 is 64 words. The 169-word draft spliced in makes 547 words (measured 2026-10-16 `wc -w` on a scratch copy), under the 600 budget. |
-| `Local` | STE linter on the base file: 3 violations, 2 hard (line 3 description 53 words, line 47 passive). On the scratch copy with the draft step 2: 7 violations, 6 hard. New ones: three `semicolon` (lines 23, 27, 31) and one `long-sentence` 28 words (line 26). `scripts/check_ste_baseline.py --strict --against 996f50d` would therefore exit 1 on the draft as written. (measured 2026-10-16, `python3 skills/asd-ste100/scripts/ste-lint.py`) |
+| `Local` | STE linter on the base file: 3 violations, 2 hard under plain `ste-lint.py` (line 3 description 53 words, line 32 synonym-rotation; line 47 passive is advisory). `check_ste_baseline.py` disables synonym-rotation and counts 1, the baseline value. On the scratch copy with the draft step 2: 7 violations, 6 hard. New ones: three `semicolon` (lines 23, 27, 31) and one `long-sentence` 28 words (line 26). `scripts/check_ste_baseline.py --strict --against 996f50d` would therefore exit 1 on the draft as written. (measured 2026-10-16, `python3 skills/asd-ste100/scripts/ste-lint.py`) |
 | `Local` | Grep for "clarifying question" and "evasive" over `skills/ rules/ hooks/ scripts/ tests/ evals/`: only `skills/brainstorming/SKILL.md` and an unrelated xia2 scenario (`skills/xia2/tests/behavioural/pressure-scenarios.md:104`). No test pins step 2. |
 | `Local` | Consumers of `brainstorming`: `skills/feature-intake/SKILL.md:66` (route), `skills/README.md:33,70,107,158,159,186` (inventory, handoff map), `harness-manifest.json:230` (skills list). None describes step 2's rhythm, so none needs an edit; the context-propagation audit confirms. |
 | `Local` | `docs/solutions/harness/skill-eval-blind-run-scoring.md` (confirmed 2026-07-17): blind runs need a labeled fixture, the key never shown to the run, the first scored run is the record, and one run hides non-determinism (multi-run advised). |
