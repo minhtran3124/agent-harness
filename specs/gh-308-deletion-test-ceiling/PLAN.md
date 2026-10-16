@@ -1,6 +1,6 @@
 ---
 slug: gh-308-deletion-test-ceiling
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-10-16
 ---
@@ -291,3 +291,4 @@ Plan SC ids differ from the design's: design SC-1 → SC-1, SC-2 → SC-2/SC-3, 
 - 2026-10-16 — tasks 1.1, 1.2 complete; commits 77a27ef, 0cb0a06; both task reviews spec pass and quality approved, 3 Minor findings recorded in SUMMARY.
 - 2026-10-16 — tasks 2.1, 2.2, 2.3 complete; commits aad04a6, 970a276, c043969, 63f1ef1, cf36783, 44d7061; word counts 524, 539, 525; all three task reviews spec pass and quality approved (2.2 after one focused retry), 5 Minor findings recorded in SUMMARY.
 - 2026-10-16 — task 3.1 complete; commit 2b267f5; task review spec pass and quality approved after one focused test-runner retry, no findings.
+- 2026-10-16 — shipped: context-propagation audit PASS, correctness review 0 blocking (3 advisory), intent review pass after E001 (intent re-pinned to 0c403b7) and fix 4a3b4a1; receipt at 4a3b4a1; full suite ALL GREEN; PR to sdlc.
