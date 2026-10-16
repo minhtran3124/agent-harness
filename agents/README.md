@@ -44,7 +44,7 @@ signals inside its own `SKILL.md`.
 This boundary decides whether a capability belongs in `skills/` or `agents/`:
 
 - **Interactive / human-in-the-loop → skill (runs in the main thread).** Work that asks the
-  user questions one at a time, presents options, and waits for approval between steps cannot
+  user questions in rounds, presents options, and waits for approval between steps cannot
   run as a subagent. Subagents execute autonomously and return a single summary. They have no
   channel for a live, multi-turn dialogue with the user.
 - **Autonomous / returnable → agent (runs as a subagent).** Work with a clear input and a
@@ -52,6 +52,6 @@ This boundary decides whether a capability belongs in `skills/` or `agents/`:
   Examples of this work are to implement code, run tests, or write a PR description.
 
 **This is why there is no `brainstorming` agent.** Brainstorming is inherently interactive
-(one question at a time, approval gates, "user reviews the spec"), so it lives only as the
+(numbered question rounds, approval gates, "user reviews the spec"), so it lives only as the
 `brainstorming` **skill**. A brainstorming subagent would be a category error. The old
 brainstorming agent was also a stale, drift-prone fork of the skill. Invoke `brainstorming` directly.
