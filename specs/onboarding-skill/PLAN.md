@@ -62,10 +62,11 @@ SC-6 to SC-10, because a whole-suite row is not allowed (`rules/plan-format.md` 
 
 ## Global Constraints
 
-- Work in the main checkout `/home/minhtran/Documents/minh.tran/projects/agent-harness` on branch
-  `feat/onboarding-skill`. `openwiki/` is untracked and exists only in this checkout, so a linked
-  worktree would not contain it. Edit only the files your task names. Never edit `.claude/` by
-  hand, `hooks/`, `openwiki/`, `AGENTS.md`, or `CLAUDE.md`.
+- Work in the worktree
+  `/home/minhtran/Documents/minh.tran/projects/agent-harness/.claude/worktrees/feat+onboarding-skill`
+  on branch `feat/onboarding-skill`. Its `openwiki/` is an untracked copy of the main checkout's
+  wiki. Read it, but never stage it, and never stage with `add -A`. Edit only the files your task
+  names. Never edit `.claude/` by hand, `hooks/`, `openwiki/`, `AGENTS.md`, or `CLAUDE.md`.
 - Read `specs/onboarding-skill/design.md` (Architecture, Error behavior, Decisions D1, D2, D4–D7, D9)
   and `specs/onboarding-skill/research-brief.md` (Evidence Ledger, Recommendation) before you
   edit. They are the spec. D3 and D8 are superseded: there is no progress file, and the script is named relative to the skill directory.
