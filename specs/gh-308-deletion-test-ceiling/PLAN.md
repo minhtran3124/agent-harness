@@ -1,6 +1,6 @@
 ---
 slug: gh-308-deletion-test-ceiling
-status: proposed
+status: active
 owner: Minh Tran
 created: 2026-10-16
 ---
