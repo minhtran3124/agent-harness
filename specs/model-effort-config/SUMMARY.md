@@ -59,6 +59,12 @@ Classified high-risk because the request requires a new SessionStart hook regist
 - Task 1.1: the frontmatter-value test uses only synthetic skills (no real skill declares `model`/`effort` today).
 - Task 1.2: an inserted line uses LF even in a CRLF file (`scripts/apply_model_config.py:205`).
 - Task 1.2: with duplicate `model:`/`effort:` keys, replace rewrites only the first; delete removes all.
+- Task 2.1: `consumer_repo` registers its temp dir inside a command substitution, so `finish` never removes it (inherited `tests/lib.sh` pattern).
+- Task 2.1: the agent fixture has no `effort:` line, so the hook test proves insert, not replace.
+- Task 2.2: `new_target` has the same command-substitution cleanup leak in `tests/scripts/model-config-deploy.test.sh`.
+- Task 2.2: the no-applier skip path is untested; its cleanup runs `rm -f "$DEPLOYED_LIST" ""` with an empty `MODELS_SNAPSHOT` under `set -e` (exit status unverified).
+- Task 2.2: if the apply step fails after the check passes, the `ERR` trap exits before cleanup and the temp snapshot is left behind.
+- Task 2.3: `bash scripts/lint-doc-truth.sh` fails until Task 3.1 adds `hooks/model-config.sh` to the CLAUDE.md hook table (the consumer-path failures cleared with Task 2.2).
 
 ### Verify
 
