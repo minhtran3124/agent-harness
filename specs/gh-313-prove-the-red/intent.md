@@ -59,6 +59,9 @@ red from green, so it cannot catch this either.
 
 Decided by the user on 2026-10-17 ("approve" on the draft): question 1 is option (a), and
 question 2 is the proposed advisory that blocks under `REQUIRE_RED_TEST=1`.
+Amended by the user on 2026-10-17 (`ESCALATIONS.md` E001 = A, after correctness review): in
+option (a), "the test files" are the paths that the red commit itself changed, not the paths in
+the red row's test command.
 
 1. **Which diff counts as the fix?** The issue says "in the files that the row names", but the
    `red` row names only a test command, not the fixed files. Options:

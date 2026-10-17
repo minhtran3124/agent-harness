@@ -1,6 +1,7 @@
 # gh-313-prove-the-red — Design
 
 Written 2026-10-17. Pins: repo 11ac08f
+Revised 2026-10-17. Pins: repo 8b05a26
 
 ## Goal
 
@@ -134,7 +135,7 @@ scripts/test_x.py::test_y | 1 |` and a matching green row.
 |---|---|
 | The changed code fixes the bug. | The check is provenance-tier: it proves that something changed, not what the change does. |
 | An old bug-fix SUMMARY is checked at its own fix time. | The diff runs to today's index. Later commits make an old SUMMARY pass. The check is meaningful at the commit that records the fix. |
-| Every test file is excluded. | Only paths that appear as tokens in the red test command are excluded. A helper file the test imports counts as a fix. A token written as an absolute path does not match a repo-relative diff path. |
+| Every test file is excluded. | Only paths that the red commit changed are excluded (D10). A test file added after the red commit counts as a fix. |
 
 ## Decisions
 
@@ -144,12 +145,17 @@ scripts/test_x.py::test_y | 1 |` and a matching green row.
 
 | ID | Decision | Consequence | Status |
 |---|---|---|---|
-| D1 | A fix is any path in the red-to-index diff outside `specs/` and outside the red row's test-file tokens (intent Q1 = a). | No SUMMARY format change. | settled |
+| D1 | A fix is any path in the red-to-index diff outside `specs/` and outside the red row's test-file tokens (intent Q1 = a). | No SUMMARY format change. | superseded by DC1 |
 | D2 | An unresolvable sha, no git, or no repo gives the cannot-check message, advisory by default and an error under `REQUIRE_RED_TEST=1` (intent Q2). | A shallow clone with the switch set blocks bug-fix commits. | settled |
 | D3 | Compare the red commit with the index (`git diff --cached`). | The gate judges the staged tree, per `docs/solutions/harness/gate-config-must-read-index.md`. | settled |
-| D4 | Only exact file-path tokens are excluded; a directory token excludes nothing (round 1, Q1). | `pytest scripts/` does not hide a fix in `scripts/`. | settled |
+| D4 | Only exact file-path tokens are excluded; a directory token excludes nothing (round 1, Q1). | `pytest scripts/` does not hide a fix in `scripts/`. | superseded by DC1 |
 | D5 | Each matched red/green pair needs its own non-empty diff (round 1, Q2). | One no-op pair is reported even if another pair has a fix. | settled |
 | D6 | The repo is the one that holds the process cwd (`git rev-parse --show-toplevel`) (round 1, Q3). | Works with the hook's temp copy; a manual run must start inside the repo. | settled |
 | D7 | Add one clause each to `rules/auto-correct-scope.md` and `implementer-prompt.md` (round 1, Q4). | A context-propagation audit runs. | settled |
 | D8 | The canary is a pytest case on a temp git repo that calls the real CLI; no canary spec is committed (round 1, Q5). | The proof re-runs in CI. | settled |
 | D9 | Approach A: `_red_pairs` (text) and `_red_fix_diff_issue` (git), wired into both existing callers. | `_red_green_issue` keeps its signature and tests; hook unchanged. | settled |
+| D10 | The red test files are the paths that the red commit itself changed (`git diff-tree --root --no-commit-id --name-only -r -z --no-renames <red sha>`). A fix is any path in the red-to-index diff outside `specs/` and outside those paths. The red command's tokens are not used. | No SUMMARY format change. A directory, absolute, quoted or relative test path no longer matters, and a command that runs the file under repair no longer hides the fix. If the red commit also edits source, a fix that touches only that source is reported as no code change. | settled |
+
+## Decision changes
+
+- DC1 — 2026-10-17 — reopens D1 and D4 — evidence: correctness review location `scripts/verify_summary.py:528-538` scored 75: exact token equality lets a test-only edit pass when the red command names a directory or an absolute, quoted or relative path, and excludes the real fix when the red command runs the file under repair; user decision `ESCALATIONS.md` E001 = A — new decision: D10
