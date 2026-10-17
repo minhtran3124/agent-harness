@@ -161,6 +161,11 @@ Run on `09a7985..f27c305`; blocking threshold 75.
 | N1 | (re-score) the agent cannot run the HITL copy; nothing said who runs it | 40 | fixed `a411aa9` |
 | D-b | (re-score) the deleted review-retry sentence did not survive the #308 test | 55 | fixed `a411aa9` |
 | N2 | (re-score) yes/no match is case-sensitive; `Yes` exits 2 (fails safe) | 15 | advisory, not fixed |
+| R1 | (re-score of `a411aa9`) Phase 6 and `review-chain.md:5` say "Run the Phase 1 loop again"; for a HITL loop the agent must ask the human, and neither place says so | 30 | advisory, follow-up (needs words at the 600 ceiling) |
+| R2 | (re-score of `a411aa9`) the template never prints its exit code, so a pasted HITL run shows red only by `SYMPTOM_SEEN=yes`; "run it" could mean the template, not the copy | 30 | advisory, not fixed |
+| R3 | (re-score of `a411aa9`, predates it) `review-chain.md:6` searches the "branch diff" and omits "untracked files included", which SKILL.md Phase 6 names | 15 | advisory, not fixed |
+
+Re-score of `a411aa9`: N1 30, D-b 10, Phase 6 deletion 15 (the rule holds via `review-chain.md:3-8` and the tiny lane's single session), Phase 1 wording 5. None blocking.
 
 ### Intent Findings
 
