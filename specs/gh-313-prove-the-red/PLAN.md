@@ -1,6 +1,6 @@
 ---
 slug: gh-313-prove-the-red
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-10-17
 ---
@@ -186,3 +186,4 @@ canary run).
 - 2026-10-17 — plan written from design e0836a9 and the research brief
 - 2026-10-17 — tasks 1.1, 1.2 complete; commits 6572584, 579eb28
 - 2026-10-17 — task 1.1 fix rounds complete (E001 = A, D10); commits 7b8aa31, 6232554; task review approved
+- 2026-10-17 — shipped: review chain complete (audit PASS, correctness 1 blocking fixed via E001-A, intent clean with 3 Nits); PR opened against sdlc
