@@ -116,7 +116,7 @@ questions that the user confirmed on 2026-10-17 ("yes for all").
 | SC-24 | Changed and new prose adds no hard STE finding | `python3 scripts/check_ste_baseline.py --strict --against 09a7985` | exit 0 |
 | SC-25 | This plan passes the plan contract with seams | `python3 scripts/check_plan_contract.py specs/gh-318-diagnosing-bugs/PLAN.md` | exit 0 |
 | SC-26 | The quick-question run reached `feature-intake` (a Skill call or a Read of its SKILL.md) | `grep -qE "^[A-Z][A-Za-z]+ .*feature-intake" specs/gh-318-diagnosing-bugs/proof/quick-question.md` | exit 0 |
-| SC-27 | The quick-question run did not read the diagnosing-bugs skill | `grep -qE "^Read .*diagnosing-bugs/SKILL\.md$" specs/gh-318-diagnosing-bugs/proof/quick-question.md` | exit 1 — no match |
+| SC-27 | The quick-question run did not read the diagnosing-bugs skill, by Read or by Bash (DC2) | `grep -qE "^[RB][a-z]+ .*diagnosing-bugs/SKILL\.md" specs/gh-318-diagnosing-bugs/proof/quick-question.md` | exit 1 — no match |
 | SC-28 | The bug-fix run read the skill file, by the Read tool or by Bash (DC2) | `grep -qE "^[RB][a-z]+ .*diagnosing-bugs/SKILL\.md" specs/gh-318-diagnosing-bugs/proof/bug-fix-routing.md` | exit 0 |
 | SC-29 | The bug-fix run made no Skill call for diagnosing-bugs | `grep -qx "Skill diagnosing-bugs" specs/gh-318-diagnosing-bugs/proof/bug-fix-routing.md` | exit 1 — no match |
 | SC-30 | In the replay transcript, the red loop precedes the first hypothesis, which precedes the first probe, which precedes the diagnosis review | `python3 specs/gh-318-diagnosing-bugs/proof/check_replay.py specs/gh-318-diagnosing-bugs/proof/replay.md` | exit 0 |
@@ -332,9 +332,9 @@ questions that the user confirmed on 2026-10-17 ("yes for all").
     each file with two header lines that begin `# ` (the prompt, and the output of
     `claude --version`), so the header cannot match SC-26 to SC-29.
   - If `claude -p` cannot authenticate, return BLOCKED with its error. If run 2 ends before a
-    Read of the diagnosis skill, raise the budget once to `--max-budget-usd 8`. If it still ends
+    read of the diagnosis skill file (Read or Bash, DC2), raise the budget once to `--max-budget-usd 8`. If it still ends
     early, return BLOCKED with the last tool line.
-- **Verify:** `grep -qE "^Read .*diagnosing-bugs/SKILL\.md$" specs/gh-318-diagnosing-bugs/proof/bug-fix-routing.md`
+- **Verify:** `grep -qE "^[RB][a-z]+ .*diagnosing-bugs/SKILL\.md" specs/gh-318-diagnosing-bugs/proof/bug-fix-routing.md`
 - **Done:** SC-26 and SC-28 exit 0; SC-27 and SC-29 exit 1.
 - **Criteria:** SC-26, SC-27, SC-28, SC-29
 - **Interfaces:** Consumes: the deployed harness built from Tasks 1.1–2.2. Produces: `specs/gh-318-diagnosing-bugs/proof/extract_tool_calls.py`, `specs/gh-318-diagnosing-bugs/proof/quick-question.md`, `specs/gh-318-diagnosing-bugs/proof/bug-fix-routing.md`.
