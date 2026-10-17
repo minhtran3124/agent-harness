@@ -17,7 +17,9 @@ Every lane runs all six phases. No "cause known" shortcut exists.
 
 ## Isolation
 
-Create the lane's isolation before Phase 1. On the tiny lane, run `git checkout -b fix/<slug>`.
+Create the lane's isolation before Phase 1.
+On the tiny lane, run `git checkout -b fix/<slug>` only from a shared branch.
+Otherwise keep the current branch.
 On the normal and high-risk lanes, run `using-git-worktrees`.
 Do every probe, harness and fix edit there, never on a shared branch.
 
@@ -39,8 +41,7 @@ Write `specs/<slug>/diagnosis.md` from `references/diagnosis-template.md`.
    into `Hypotheses:`. Commit diagnosis.md before the first probe.
    Then post the list to the user. Do not wait for a reply.
    Done when: `Hypotheses:` holds three to five ranked entries, each with a prediction.
-4. **Instrument.** Start no probe before that commit.
-   Change one variable in each probe.
+4. **Instrument.** Change one variable in each probe.
    Tag each debug log with a unique `[DEBUG-xxxx]` prefix. Do not commit a probe.
    When the probes refute every hypothesis, go back to Phase 3 with a new list.
    A second full refutation writes an `ESCALATIONS.md` block with `decision: pending` and stops.
@@ -53,7 +54,6 @@ Write `specs/<slug>/diagnosis.md` from `references/diagnosis-template.md`.
 Dispatch the `task-reviewer` to Read `skills/diagnosing-bugs/references/diagnosis-review-prompt.md` first and follow it.
 Give it the `diagnosis.md` and `SUMMARY.md` paths, not the prompt text.
 Start Phase 5 only after `spec_verdict: pass` and `quality_verdict: approved`.
-When the review fails, revise `diagnosis.md` and review again.
 A second failure writes an `ESCALATIONS.md` block with `decision: pending` and stops.
 
 ## Phases 5 and 6
@@ -62,9 +62,9 @@ A second failure writes an `ESCALATIONS.md` block with `decision: pending` and s
    Commit the red test. Then commit the fix.
    Record the `red` and `green` rows that `rules/auto-correct-scope.md` names.
    When `diagnosis.md` has `Seam: none — <reason>`, record a finding in `SUMMARY.md`.
-   Write `Red test exempt: <reason>` there too.
+   Write `Red test exempt: <reason>` in SUMMARY `### Verify`.
    On the normal and high-risk lanes, continue the lane route with `diagnosis.md` as an input.
-   Done when: the red test commit comes before the fix commit, or `SUMMARY.md` has `Red test exempt: <reason>`.
+   Done when: the red test commit comes before the fix commit, or SUMMARY `### Verify` has `Red test exempt: <reason>`.
 6. **Cleanup.** The session that completed the fix does this phase. Run the Phase 1 loop again.
    Search for `[DEBUG-` in the fix diff and in the working tree, untracked files included.
    Delete each tagged log or throwaway harness that you find.
