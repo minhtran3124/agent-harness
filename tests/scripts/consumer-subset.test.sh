@@ -115,6 +115,17 @@ grep -q '\.claude/skills/diagnosing-bugs/SKILL\.md' "$C/skills/feature-intake/SK
 [ -e "$T/.claude/skills/diagnosing-bugs/SKILL.md" ] || db_bad="$db_bad diagnosing-bugs(not-shipped)"
 if [ -z "$db_bad" ]; then pass; else fail "$db_bad"; fi
 
+t "derived diagnosing-bugs SKILL.md names hitl-loop.template.sh at the deployed path, and it resolves"
+# Phase 1 tells the agent to copy the loop template by path. The whole skills/diagnosing-bugs/
+# prefix is rewritten, so the template path must resolve from the consumer root too.
+db_bad=""
+grep -qE '(^|[^./])skills/diagnosing-bugs/scripts/hitl-loop\.template\.sh' "$C/skills/diagnosing-bugs/SKILL.md" \
+  && db_bad="$db_bad SKILL.md(unrewritten)"
+grep -q '\.claude/skills/diagnosing-bugs/scripts/hitl-loop\.template\.sh' "$C/skills/diagnosing-bugs/SKILL.md" \
+  || db_bad="$db_bad SKILL.md(missing)"
+[ -e "$T/.claude/skills/diagnosing-bugs/scripts/hitl-loop.template.sh" ] || db_bad="$db_bad hitl-loop.template.sh(not-shipped)"
+if [ -z "$db_bad" ]; then pass; else fail "$db_bad"; fi
+
 t "rewrite is idempotent — a second deploy never produces .claude/.claude/"
 run_deploy "$T"
 dbl=$(grep -rl '\.claude/\.claude/' "$C" --include='*.md' 2>/dev/null)
