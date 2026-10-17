@@ -24,6 +24,10 @@ runs `verify_summary.py --lane` on a staged SUMMARY.
 - Task 3.1 round 1 — the `(sub) ` prefix keeps subagent calls out of SC-26/SC-28, and also out of the negative SC-27/SC-29. Those two cover main-thread calls only. In the recorded logs the only subagent lines are two Reads of the run's own `diagnosis.md` and `SUMMARY.md`.
 - Task 3.1 round 1 — the ` … [paths: ...]` note marks a path named past the cut, read or not. SC-28 still matches on its own line 10 (a direct `sed` read).
 
+- Task 6.1 — "Continue on your own ranking" was dropped; nothing tells the agent to probe in rank order. D17 does not require it.
+- Task 6.1 — the template comment "One probe for each prediction." states coverage; the one-probe-to-one-hypothesis rule now lives in the `tests: H<n>` field shape.
+- Task 6.2 — the HYPOTHESIS rule cannot tell which file a heredoc writes, so an unrelated early `H1` line could make the SC-30 order pass falsely (never fail falsely). Task 7.1's first HYPOTHESIS line is checked by hand.
+
 ## Fix rounds
 
 - Task 1.2 — round 1 (`28b9aa2`): three Minors applied; re-review pass/approved, no findings.

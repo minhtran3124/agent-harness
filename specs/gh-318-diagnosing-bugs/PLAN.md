@@ -10,7 +10,7 @@ created: 2026-10-17
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**13 tasks · 7 waves · 28 files · 10/13 done**
+**13 tasks · 7 waves · 28 files · 12/13 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -76,8 +76,8 @@ flowchart LR
 - [x] 4.1 — Deploy rewrites the diagnosing-bugs skill path (wave 4)
 - [x] 4.2 — Skill states list-before-probe and names the review prompt (wave 4)
 - [x] 5.1 — Replay re-run on the tightened skill (wave 5)
-- [ ] 6.1 — Skill commits the hypotheses before any probe (wave 6)
-- [ ] 6.2 — HYPOTHESIS marker counts a Bash heredoc (wave 6)
+- [x] 6.1 — Skill commits the hypotheses before any probe (wave 6)
+- [x] 6.2 — HYPOTHESIS marker counts a Bash heredoc (wave 6)
 - [ ] 7.1 — Replay run on the committed-hypotheses skill (wave 7)
 <!-- AT-A-GLANCE:END -->
 
@@ -539,3 +539,4 @@ Not an SC row (Guardrail 4): `bash scripts/run-tests.sh` must exit 0 at branch f
 - 2026-10-17 — tasks 3.1, 3.2, 4.1, 4.2 complete; commits 5cc4b92, c7f128b, d7c60d8, 1f43418, 1078f3a, b722203, 5af53e6, d4d7507; task reviews approved (3.1, 4.1, 4.2 after one fix round each; 3.2 SC-30 carried to the wave-5 replay re-run)
 - 2026-10-17 — task 5.1 complete; commit 43b5b37; SC-30 failed again on the D16 skill (probe before the list; piped loop exited 0)
 - 2026-10-17 — user approved DC4 (structural gate); added tasks 6.1, 6.2 and 7.1; added SC-35, SC-36
+- 2026-10-17 — tasks 6.1, 6.2 complete; commits 1690a6d, 47d2397, 2059adb; task reviews approved (6.1 after one fix round)
