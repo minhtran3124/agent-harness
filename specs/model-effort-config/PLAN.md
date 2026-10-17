@@ -1,6 +1,6 @@
 ---
 slug: model-effort-config
-status: active
+status: shipped
 owner: Minh Tran
 created: 2026-10-17
 ---
@@ -341,3 +341,4 @@ effort stay the user's.
 - 2026-10-17 — tasks 2.1, 2.2, 2.3 complete; commits 0cafe3a, 57eb40d, 47bd4e4
 - 2026-10-17 — task 3.1 complete; commits 24d6c30, 0728ef5 (fix round on the Task 2.3 skill file)
 - 2026-10-17 — task 4.1 complete; commit a3effd0
+- 2026-10-17 — shipped: review chain passed (audit PASS, correctness 0 blocking / 7 advisory, intent finding #1 fixed in 6ff9bc5, E001 decided A); PR opened against sdlc
