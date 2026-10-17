@@ -6,6 +6,8 @@ Usage: transcript.py <stream.jsonl> <loop command>
 One line per main-thread assistant text block and per tool call, in stream order:
     <MARKER>\t<kind>\t<summary>
 Markers (first match wins, in this order): REVIEW, PROBE, HYPOTHESIS, LOOP-RED, else `-`.
+HYPOTHESIS marks a text block, a Write content or a Bash command (e.g. a heredoc) holding a line
+whose first word, after whitespace, list markers and `*`, is `H1`.
 Subagent events (parent_tool_use_id set) are left out: the markers describe the model under test.
 """
 import json
@@ -71,6 +73,8 @@ def marker(block, results, loop_cmd):
     if "[DEBUG-" in blob:
         return "PROBE"
     if name == "Write" and has_h1_line(str(inp.get("content", ""))):
+        return "HYPOTHESIS"
+    if name == "Bash" and has_h1_line(str(inp.get("command", ""))):
         return "HYPOTHESIS"
     if name == "Bash" and loop_cmd in str(inp.get("command", "")):
         res = results.get(block.get("id")) or {}
