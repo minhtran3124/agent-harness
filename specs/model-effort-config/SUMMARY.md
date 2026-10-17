@@ -32,6 +32,7 @@ Intent-source: specs/model-effort-config/intent.md @ 09bc03e9daf0892a15f96f284ec
 - Confidence is medium, not high: the direction is settled by the user's decisions (apply at install and SessionStart `startup|clear`; respect mid-session `/model` and `/effort`; option A scope split), but the intent holds `(assumed)` defaults and three open questions for brainstorming and xia2.
 - The hard gates are inherent to the request (a SessionStart hook is required by "apply at new session"), so the user approved the scope with the gates visible; no narrowing applies.
 - Branch `feat/model-effort-config` was cut from `sdlc`; the eventual PR targets `sdlc`.
+- 2026-10-17 xia2 go/no-go: A5 is false in print mode (research-brief.md probes 5, 6, 8, 9). The user chose option 1: accept that a hook-written agent change takes effect from the next session in headless runs. D9 and D11 are unchanged, so no `DC<n>` is needed; the `--apply` report and docs must state when each change takes effect.
 - Prior research in chat: Claude Code honours `model`/`effort` in agent and skill frontmatter and the Agent tool `model` parameter; SessionStart exposes `source` matchers and a `reloadSkills` output; agent reload order after SessionStart is undocumented.
 
 ## What changed
