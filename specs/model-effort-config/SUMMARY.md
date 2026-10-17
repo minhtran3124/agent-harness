@@ -70,6 +70,24 @@ Classified high-risk because the request requires a new SessionStart hook regist
 - Task 4.1: `run_proof.py` does not pin the main-session model, so on a host whose default model is Sonnet a rerun could pass without the subagent frontmatter taking effect (the recorded run had an Opus main session, so it is valid).
 - Task 4.1: `--prepare` reuses an existing proof directory without redeploying when `test-runner.md` contains `model: sonnet`, so a rerun after harness changes can test a stale deploy.
 
+### Correctness Review
+
+Range `34b0b10..84ebbfe`. Six FIND angles: enclosing-function, removed-behavior, call-site-impact, stack-defects,
+guard-completeness, prior-art (prior-art: 0 findings). Seven deduplicated locations, each scored once in a fresh
+context. Threshold 75 (`review-config.json`). No finding reached the threshold, so no fix round ran.
+
+### Advisory Findings
+
+| Location | Finding | Score |
+| --- | --- | --- |
+| `scripts/apply_model_config.py:20` | `MODEL_ID` with `$` and `.match` accepts a trailing newline (`"claude-x\n"`); `rewrite` then adds one blank frontmatter line per apply. Fix: `fullmatch` or `\Z`. | 50 |
+| `scripts/apply_model_config.py:172-175` | With duplicate `model:`/`effort:` keys, set rewrites only the first copy while delete removes all; a last-key-wins loader keeps the stale value. | 50 |
+| `scripts/apply_model_config.py:181` | An inserted line ends in `\n` in a CRLF file (replace keeps the file's ending). | 50 |
+| `scripts/deploy-harness.sh:538-541` | If `--apply` exits 1 after the check passed (write error), `set -e` aborts deploy before `derive_settings`, `.harness-profile`, `prune_orphans` and `.harness-deployed`; temp files leak. | 50 |
+| `skills/harness-models/SKILL.md:15-24` | The skill takes the root from `git rev-parse --show-toplevel`; the hook prefers `CLAUDE_PROJECT_DIR`. In a session rooted at the main checkout with its working directory in a deployed linked worktree, `apply` edits the worktree's `.claude/`. | 50 |
+| `harness-manifest.json:238` | `harness-models` ships into the Codex plugin, where the applier and snapshot do not exist, so the skill fails there (accepted under D3; PLAN Risks). | 50 |
+| `scripts/render_codex_adapter.py:102` | An event whose only groups contain `model-config.sh` would render as `[]`; not reachable with today's `settings.json`. | 25 |
+
 ### Context-Propagation Audit
 
 Result: **PASS** (no failed rows). Base `34b0b10`, head `0728437`. Consumer search surface:
