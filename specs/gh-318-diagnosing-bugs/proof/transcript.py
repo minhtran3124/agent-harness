@@ -65,7 +65,8 @@ def marker(block, results, loop_cmd):
         return "HYPOTHESIS" if has_h1_line(block.get("text", "")) else "-"
     name, inp = block.get("name", ""), block.get("input") or {}
     blob = json.dumps(inp, ensure_ascii=False)
-    if name in ("Agent", "Task") and "diagnosis-review-prompt.md" in blob:
+    if name in ("Agent", "Task") and ("diagnosis-review-prompt.md" in blob
+                                      or inp.get("subagent_type") == "task-reviewer"):
         return "REVIEW"
     if "[DEBUG-" in blob:
         return "PROBE"
@@ -92,6 +93,9 @@ def summary(block):
 
 
 def main(argv):
+    if argv[1:] in (["--help"], ["-h"]):
+        print(__doc__)
+        return 0
     if len(argv) != 3:
         print("usage: transcript.py <stream.jsonl> <loop command>", file=sys.stderr)
         return 2

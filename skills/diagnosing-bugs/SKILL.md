@@ -32,13 +32,14 @@ Write `specs/<slug>/diagnosis.md` from `references/diagnosis-template.md`.
    When no loop is possible, write an `ESCALATIONS.md` block with `decision: pending`.
    List what you tried and what you need. Then stop.
    Done when: `Loop:` holds the command and its redacted red output.
-2. **Reproduce and minimise.** Delete one input element at a time. Keep only the elements
-   that the symptom needs.
+2. **Reproduce and minimise.** Delete one input element at a time.
    Done when: the loop shows the symptom that the user described, and each element in `Repro:` is necessary.
-3. **Hypothesise.** Post three to five ranked hypotheses, `H1` to `H5`, to the user.
-   Give each hypothesis a prediction. Continue on your own ranking. Do not wait for a reply.
+3. **Hypothesise.** Post three to five ranked hypotheses, `H1` to `H5`, as reply text
+   before the first probe. Give each hypothesis a prediction.
+   Continue on your own ranking. Do not wait for a reply.
    Done when: `Hypotheses:` holds three to five ranked entries, each with a prediction.
-4. **Instrument.** Map each probe to one prediction. Change one variable in each probe.
+4. **Instrument.** Start no probe before you post the Phase 3 list.
+   Map each probe to one prediction. Change one variable in each probe.
    Tag each debug log with a unique `[DEBUG-xxxx]` prefix. Do not commit a probe.
    When the probes refute every hypothesis, go back to Phase 3 with a new list.
    A second full refutation writes an `ESCALATIONS.md` block with `decision: pending` and stops.
@@ -48,7 +49,7 @@ Write `specs/<slug>/diagnosis.md` from `references/diagnosis-template.md`.
 
 ## Diagnosis review
 
-Dispatch `references/diagnosis-review-prompt.md` to the `task-reviewer` agent.
+Dispatch the `task-reviewer` agent with the path of `references/diagnosis-review-prompt.md`, not its text.
 Give it the `diagnosis.md` path and the `SUMMARY.md` path.
 Start Phase 5 only after `spec_verdict: pass` and `quality_verdict: approved`.
 When the review fails, revise `diagnosis.md` and review again.
@@ -57,7 +58,6 @@ A second failure writes an `ESCALATIONS.md` block with `decision: pending` and s
 ## Phases 5 and 6
 
 5. **Fix.** On the tiny lane, write the red test at the `diagnosis.md` `Seam:`.
-   Commit the red test. Then commit the fix.
    Record the `red` and `green` rows that `rules/auto-correct-scope.md` names.
    When `diagnosis.md` has `Seam: none — <reason>`, record a finding in `SUMMARY.md`.
    Then write `Red test exempt: <reason>`.
