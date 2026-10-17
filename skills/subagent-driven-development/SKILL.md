@@ -18,8 +18,7 @@ second:
 if [ -f runtime/resume_decision.py ]; then python3 runtime/resume_decision.py --slug <slug>; else python3 .claude/runtime/resume_decision.py --slug <slug>; fi
 ```
 
-The fallback fires ONLY when the source file is absent, never on a non-zero exit. So the
-gitignored, possibly-stale deployed copy does not silently re-answer a fail-closed exit 3.
+The fallback fires ONLY when the source file is absent, never on a non-zero exit.
 Do not discard stderr. A default consumer install owns `.claude/runtime/resume_decision.py`, not a
 root `runtime/`. Treat ANY non-zero exit as `stop`, and require `schema_version == 1` before acting on
 `action`. Branch only on the structured `action`/`reason_code`: `execute-plan`, `resume-repair`,
@@ -48,6 +47,7 @@ Ensure branch isolation, set the plan `status: active`, and transition the durab
 
 ## Execute waves
 
+- For a diagnosed bug fix, read `references/bug-fix.md` before dispatch.
 - Before dispatch, generate a deterministic brief using
   `skills/subagent-driven-development/scripts/task_brief.py`. Pass its path to the implementer.
   Fill `[LANE]`/`[INPUT_TYPE]` from SUMMARY. The implementer reports inline, and
