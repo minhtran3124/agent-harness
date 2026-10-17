@@ -9,6 +9,7 @@ Replace each secret with `<REDACTED>`.
 Loop: <the command> — red output:
 <the redacted output that shows the bug>
 <!-- One command that goes red on this bug. Paste the output of one real run. -->
+<!-- Run the command with no pipe, so its exit code shows the red. -->
 
 Repro: <the minimised input>
 <!-- Each element that remains is necessary. Name the elements that you deleted. -->
@@ -18,6 +19,7 @@ Hypotheses:
 - H2: <cause> — prediction: <what a probe shows when H2 is true>
 - H3: <cause> — prediction: <what a probe shows when H3 is true>
 <!-- Three to five entries, H1 to H5, ranked from most likely to least likely. -->
+<!-- Commit this field before the first probe. -->
 
 Probes:
 - DEBUG-xxxx <probe> — tests: H<n> — result: <observed value> — <supports | refutes>
