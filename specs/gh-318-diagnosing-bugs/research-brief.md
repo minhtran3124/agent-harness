@@ -109,7 +109,9 @@ not change the depth.
   - A1: the Skill-tool block message (Docs row). The routing line must say "Read … with the Read tool; do not call the Skill tool".
 - **Evidence gaps:** upstream issue texts; Codex handling of `disable-model-invocation`.
 - **Version uncertainties:** the docs page has no version; behavior was not yet observed on CLI 2.1.302 (the proof run does that).
-- **Follow-up questions for the user** (each widens the approved file list or refines a settled decision):
+- **Follow-up questions for the user** (each widens the approved file list or refines a settled decision).
+  **Decision (2026-10-17):** the user answered "yes for all" — questions 1–4 are confirmed as
+  written, and `writing-plans` takes the widened file list from them.
   1. **D13 needs three more edits.** `Seam: none — <reason>` → `Red test exempt` conflicts with `rules/plan-format.md:68`, `task-reviewer-prompt.md:70`, and `implementer-prompt.md:58-59`. Edit all three so a bug-fix task whose `diagnosis.md` says `Seam: none — <reason>` may write `Seams: none — <reason>`, and the reviewer and implementer accept it. Keep the two pinned literal strings.
   2. **D12 refinement.** When `diagnosis.md` exists, the fix task's plan must carry `- Plan-contract: 2` and a `Seams:` line; a missing marker or line counts as a mismatch. When the fix task has more than one seam, the first seam's point is compared.
   3. **Extra edits:** register `diagnosing-bugs` in `harness-manifest.json` `skills[]`; update `scripts/test_audit_skill_prompts.py:145-146` to 15 and 12; remove `systematic-debugging` from `skills/xia2/README.md:17` too.
