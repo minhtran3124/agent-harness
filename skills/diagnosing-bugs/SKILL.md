@@ -31,9 +31,9 @@ Write `specs/<slug>/diagnosis.md` from `references/diagnosis-template.md`.
 1. **Feedback loop.** Make one fast, deterministic command that an agent can run and that goes
    red on this bug. Run it as written, with no pipe, so its exit code shows the red.
    When a human must act, copy
-   `skills/diagnosing-bugs/scripts/hitl-loop.template.sh` and run the copy with `bash`.
+   `skills/diagnosing-bugs/scripts/hitl-loop.template.sh`. Ask the human to run it and paste the output.
    When no loop is possible, write an `ESCALATIONS.md` block with `decision: pending`.
-   List what you tried and what you need. Then stop.
+   List what you tried and need. Then stop.
    Done when: `Loop:` holds the command and its redacted red output.
 2. **Reproduce and minimise.** Delete one input element at a time. Add no probe or debug log.
    Done when: the loop shows the symptom that the user described, and each element in `Repro:` is necessary.
@@ -54,6 +54,7 @@ Write `specs/<slug>/diagnosis.md` from `references/diagnosis-template.md`.
 Dispatch the `task-reviewer` to Read `skills/diagnosing-bugs/references/diagnosis-review-prompt.md` first and follow it.
 Give it the `diagnosis.md` and `SUMMARY.md` paths, not the prompt text.
 Start Phase 5 only after `spec_verdict: pass` and `quality_verdict: approved`.
+On any other verdict, revise `diagnosis.md` and review again.
 A second failure writes an `ESCALATIONS.md` block with `decision: pending` and stops.
 
 ## Phases 5 and 6
@@ -65,7 +66,7 @@ A second failure writes an `ESCALATIONS.md` block with `decision: pending` and s
    Write `Red test exempt: <reason>` in SUMMARY `### Verify`.
    On the normal and high-risk lanes, continue the lane route with `diagnosis.md` as an input.
    Done when: the red test commit comes before the fix commit, or SUMMARY `### Verify` has `Red test exempt: <reason>`.
-6. **Cleanup.** The session that completed the fix does this phase. Run the Phase 1 loop again.
+6. **Cleanup.** Run the Phase 1 loop again.
    Search for `[DEBUG-` in the fix diff and in the working tree, untracked files included.
    Delete each tagged log or throwaway harness that you find.
    Name the confirmed hypothesis in the commit message and in SUMMARY `Rationale`.
