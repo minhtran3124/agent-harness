@@ -70,6 +70,23 @@ Classified high-risk because the request requires a new SessionStart hook regist
 - Task 4.1: `run_proof.py` does not pin the main-session model, so on a host whose default model is Sonnet a rerun could pass without the subagent frontmatter taking effect (the recorded run had an Opus main session, so it is valid).
 - Task 4.1: `--prepare` reuses an existing proof directory without redeploying when `test-runner.md` contains `model: sonnet`, so a rerun after harness changes can test a stale deploy.
 
+### Context-Propagation Audit
+
+Result: **PASS** (no failed rows). Base `34b0b10`, head `0728437`. Consumer search surface:
+`grep -rln -e harness-models -e apply_model_config -e model-config.sh skills agents rules CLAUDE.md HARNESS.md AGENTS.md`
+found only `skills/harness-models/SKILL.md`, `skills/README.md` and `CLAUDE.md`. No dispatch prompt, agent or rule
+relies on the new skill, applier or hook. The diff changes no `agents/*.md` and no `rules/*.md`.
+
+| Source | Consumer | Context | Delivery | Proof |
+| --- | --- | --- | --- | --- |
+| `skills/harness-models/SKILL.md` (modes, literal `--project-root`, D9 "apply is the user's action", next-session note) | `/harness-models` invocation | main session | skill body loaded on invocation; deploy rewrites `scripts/` to `.claude/scripts/` | inspected `.claude/skills/harness-models/SKILL.md` lines 4, 23–25 name `.claude/scripts/apply_model_config.py`; `check_skill_tool_conformance.py` exit 0 (SC-21); `test_harness_models_skill.py` (SC-20) |
+| applier `--apply` report (skill vs agent timing, A5) | user via `/harness-models apply` | main session | script stdout relayed verbatim by the skill (step 5) | `test_apply_model_config.py` report tests; SKILL.md step 5 |
+| `harness-models.json` values → agent frontmatter `model`/`effort` | each dispatched subagent | fresh child context | Claude Code reads `.claude/agents/<role>.md` frontmatter at session start | SC-22 live proof: deployed `test-runner` ran on `claude-sonnet-5-5` in a new headless session (truth, one role); research-brief probe 1 (A1, A6) |
+| `harness-models.json` values → skill frontmatter `model`/`effort` | skill turn | main session (skill turn) | Claude Code reads `SKILL.md` frontmatter at invocation | research-brief probes 3 and 4 (A2, A4, truth); `skill_line` tests (SC-8) |
+| SessionStart re-apply (`startup`, `clear` only) | next session's subagents and skills | new session | `settings.json` SessionStart matcher `startup\|clear` → `hooks/model-config.sh` → `--hook` (repeats the source filter) | `tests/hooks/model-config.test.sh` (SC-11); `deploy-profile.test.sh` (SC-15); deployed `.claude/settings.json` registers `model-config.sh` (1 match); A5: agents apply from the next session in headless runs (accepted, Intake notes) |
+| `CLAUDE.md` hook-table row and "all four" profile wording | every session | main and subagent contexts (CLAUDE.md is always loaded) | always-loaded | `lint-doc-truth.sh` exit 0 (SC-19); `check_manifest.py` exit 0 (SC-18) |
+| `skills/README.md` inventory row | maintainers and agents reading the inventory | main session | explicit Read when consulted | `lint-doc-truth.sh` exit 0 (paths exist in source and consumer) |
+
 ### Verify
 
 | Check | Command | Exit | Notes | Criterion |
