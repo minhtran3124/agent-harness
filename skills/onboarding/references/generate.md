@@ -1,6 +1,6 @@
 # Generate the HTML tour
 
-`generate` builds one standalone HTML file, `.harness-state/onboarding/tour.html`, with a card for
+`generate` builds one standalone HTML file, `<skill directory>/rendered/tour.html`, with a card for
 every OpenWiki page. The wiki is the only source for its text. Source code is used only by the
 claim checks.
 
@@ -16,9 +16,10 @@ claim checks.
 4. If it prints `error:` lines, dispatch again only the sections those lines name. Add the
    error text to each new prompt under "Fix these". Run step 3 again. After two rounds, stop and
    report what still fails.
-5. Report the pages written, the claim count (ok of total), the wiki drift line, and the file
-   path. Do not paste the HTML.
-6. Publish with the Artifact tool only when the newcomer asks. Otherwise the file stays local.
+5. Report the pages written, the claim count (ok of total), and the file path. Do not paste the HTML.
+6. Serve: run `python3 <skill directory>/scripts/build_tour.py serve` in the background, and give
+   the newcomer the URL it prints. Stop it when they are done.
+7. Publish with the Artifact tool only when the newcomer asks. Otherwise the file stays local.
 
 ## Agent prompt
 

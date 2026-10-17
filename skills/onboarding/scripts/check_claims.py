@@ -1,22 +1,20 @@
 #!/usr/bin/env python3
-"""Check the grounded claims of one OpenWiki page, or the drift of the wiki from HEAD.
+"""Check the grounded claims of one OpenWiki page.
 
 Run from the repository root. Paths are relative to the current directory.
 
   check_claims.py <page>    <page> is relative to openwiki/, for example quickstart.md.
-  check_claims.py --status  Compare the wiki gitHead to HEAD.
 
 Verifies:
   - For each claim, each evidence item hash: repo-lines-v1 is sha256 of lines a..b joined with
     a newline plus a trailing newline; repo-file-v1 is sha256 of the raw file bytes.
-  - That the gitHead in openwiki/.last-update.json is HEAD or an ancestor of HEAD, and the count
-    of commits between them.
 
 Does not verify:
   - That a claim statement is true of the cited lines. A matching hash shows only that the cited
     source did not change since the wiki was written.
   - The base64 context metadata of repo-lines-v1. A moved block reads as stale.
   - Evidence in any other format (result unknown), or source outside the cited ranges.
+  - Whether the wiki is current. CI regenerates the wiki on a schedule.
 """
 from __future__ import annotations
 
@@ -24,17 +22,12 @@ import argparse
 import hashlib
 import json
 import re
-import subprocess
 import sys
 from pathlib import Path
 
 WIKI = Path("openwiki")
 RANK = {"ok": 0, "stale": 1, "unknown": 2, "missing": 3}
 LINES_RE = re.compile(r"^(?P<path>.+)#L(?P<a>\d+)-L(?P<b>\d+)$")
-
-
-def git(*args: str) -> subprocess.CompletedProcess:
-    return subprocess.run(["git", *args], capture_output=True, text=True)
 
 
 def check_evidence(item: dict) -> tuple[str, str]:
@@ -98,39 +91,11 @@ def check_page(page: str) -> int:
     return code
 
 
-def check_status() -> int:
-    if not WIKI.is_dir():
-        print("no-wiki")
-        return 2
-    try:
-        record = json.loads((WIKI / ".last-update.json").read_text(encoding="utf-8"))
-        wiki_head = str(record["gitHead"])
-        status = record.get("status")
-    except (OSError, ValueError, KeyError, TypeError, AttributeError):
-        print("unknown-drift .last-update.json absent or unparseable")
-        return 3
-    if status != "complete":
-        print(f"unknown-drift wiki status is {status}")
-        return 3
-    head = git("rev-parse", "HEAD").stdout.strip()
-    if wiki_head == head:
-        print("current")
-        return 0
-    if git("merge-base", "--is-ancestor", wiki_head, "HEAD").returncode != 0:
-        print(f"unknown-drift gitHead {wiki_head} is not an ancestor of HEAD")
-        return 3
-    count = git("rev-list", "--count", f"{wiki_head}..HEAD").stdout.strip()
-    print(f"behind {count}")
-    return 1
-
-
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("page", nargs="?", help="page path relative to openwiki/")
-    group.add_argument("--status", action="store_true", help="report wiki drift from HEAD")
+    parser.add_argument("page", help="page path relative to openwiki/")
     args = parser.parse_args()
-    return check_status() if args.status else check_page(args.page)
+    return check_page(args.page)
 
 
 if __name__ == "__main__":

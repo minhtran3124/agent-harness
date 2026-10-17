@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Plan, validate and assemble the onboarding tour from the OpenWiki pages.
+"""Plan, validate and assemble the onboarding tour from the OpenWiki pages, and serve it locally.
 
 Run from the repository root. Wiki paths are relative to openwiki/.
 
-  build_tour.py plan                 Print the wiki pages grouped by section, as JSON.
-  build_tour.py build [--out PATH]   Validate the page records in .harness-state/onboarding/pages/
-                                     against the wiki, then write one standalone HTML tour
-                                     (default .harness-state/onboarding/tour.html).
+  build_tour.py plan                       Print the wiki pages grouped by section, as JSON.
+  build_tour.py build [--out PATH]         Validate the page records in .harness-state/onboarding/pages/
+                                           against the wiki, then write one standalone HTML tour
+                                           (default: rendered/tour.html inside the skill directory).
+  build_tour.py serve [--port N]           Serve the rendered tour on 127.0.0.1 until Ctrl+C.
 
 Verifies:
   - Every wiki page has exactly one record, and each record has a why and at least one break.
@@ -15,20 +16,21 @@ Verifies:
   - Verify counts come from check_claims.page_rows: how many claims cite lines unchanged since
     the wiki was generated.
   - Goals come from the quickstart task-routing table. Each goal lists only pages in the tour.
-  - Wiki drift comes from openwiki/.last-update.json and git rev-list against HEAD.
 
 Does not verify:
   - That a why or break sentence is true of the code. The source heading shows where the
     sentence came from. check_claims shows only whether the cited lines changed.
   - That a lesson path exists in the repository. Lessons are the docs/solutions/ paths the page cites.
   - That a sentence keeps the wiki's meaning. Review the page before relying on its wording.
+  - That the wiki is current. CI regenerates it on a schedule.
 """
 from __future__ import annotations
 
 import argparse
+import functools
+import http.server
 import json
 import re
-import subprocess
 import sys
 from pathlib import Path
 
@@ -36,9 +38,12 @@ import check_claims
 
 WIKI = Path("openwiki")
 PAGES_DIR = Path(".harness-state/onboarding/pages")
-DEFAULT_OUT = Path(".harness-state/onboarding/tour.html")
-TEMPLATE = Path(__file__).resolve().parent.parent / "assets" / "tour.html"
+SKILL_DIR = Path(__file__).resolve().parent.parent
+RENDERED_DIR = SKILL_DIR / "rendered"
+DEFAULT_OUT = RENDERED_DIR / "tour.html"
+TEMPLATE = SKILL_DIR / "assets" / "tour.html"
 PLACEHOLDER = "/*__TOUR_DATA__*/null"
+DEFAULT_PORT = 8765
 LINK_RE = re.compile(r"\[[^\]]+\]\(([^)\s#]+\.md)(?:#[^)]*)?\)")
 ENTRY_RE = re.compile(r"^- \[([^\]]+)\]\(([^)\s]+)\)", re.M)
 HEADING_RE = re.compile(r"^#{1,6}\s+(.+?)\s*$", re.M)
@@ -151,15 +156,6 @@ def goals(in_tour: set[str]) -> list[dict]:
     return out
 
 
-def behind_count(head: str) -> int | None:
-    try:
-        proc = subprocess.run(["git", "rev-list", "--count", f"{head}..HEAD"],
-                              capture_output=True, text=True)
-        return int(proc.stdout.strip()) if proc.returncode == 0 else None
-    except (OSError, ValueError):
-        return None
-
-
 def cmd_plan() -> int:
     if not WIKI.is_dir():
         print(f"no-wiki {WIKI}/")
@@ -219,8 +215,6 @@ def cmd_build(out: Path) -> int:
         "wiki": {
             "generated": str(last.get("updatedAt", ""))[:10],
             "gitHead": last.get("gitHead"),
-            "status": last.get("status"),
-            "behind": behind_count(str(last.get("gitHead", ""))),
         },
         "sections": [{"id": s["id"], "title": s["title"]} for s in planned if s["pages"]],
         "goals": goals({p["src"] for p in pages}),
@@ -240,14 +234,41 @@ def cmd_build(out: Path) -> int:
     return 0
 
 
+def make_server(directory: Path, port: int) -> http.server.ThreadingHTTPServer:
+    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(directory))
+    return http.server.ThreadingHTTPServer(("127.0.0.1", port), handler)
+
+
+def cmd_serve(directory: Path, port: int) -> int:
+    if not (directory / "tour.html").is_file():
+        print(f"error: {directory / 'tour.html'} is missing. Run build first.")
+        return 1
+    server = make_server(directory, port)
+    print(f"serving {directory} at http://127.0.0.1:{server.server_port}/tour.html (Ctrl+C to stop)", flush=True)
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.server_close()
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("plan", help="list wiki pages by section")
     build = sub.add_parser("build", help="validate records and write the HTML tour")
     build.add_argument("--out", type=Path, default=DEFAULT_OUT, help="output HTML path")
+    serve = sub.add_parser("serve", help="serve the rendered tour on 127.0.0.1")
+    serve.add_argument("--dir", type=Path, default=RENDERED_DIR, help="directory holding tour.html")
+    serve.add_argument("--port", type=int, default=DEFAULT_PORT, help="port to listen on")
     args = parser.parse_args()
-    return cmd_plan() if args.command == "plan" else cmd_build(args.out)
+    if args.command == "plan":
+        return cmd_plan()
+    if args.command == "build":
+        return cmd_build(args.out)
+    return cmd_serve(args.dir, args.port)
 
 
 if __name__ == "__main__":

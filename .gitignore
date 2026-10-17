@@ -54,3 +54,6 @@ docs/harness-engineering-review.en.md
 
 # vscode
 .vscode
+
+# Onboarding tour rendered locally by build_tour.py; never pushed
+skills/onboarding/rendered/

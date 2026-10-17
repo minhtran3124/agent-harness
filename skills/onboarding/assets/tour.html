@@ -245,10 +245,8 @@ function pageIndexes() {
 function renderStatus() {
   const pill = document.getElementById("status");
   const w = TOUR.wiki;
-  pill.classList.toggle("ok", w.behind === 0);
-  if (w.behind === null) pill.textContent = "Wiki drift unknown. Re-check with openwiki code --update.";
-  else if (w.behind === 0) pill.textContent = "Wiki matches HEAD.";
-  else pill.textContent = "Wiki is " + w.behind + " commits behind the code. Refresh with openwiki code --update.";
+  pill.classList.add("ok");
+  pill.textContent = "Wiki generated " + w.generated + ". CI refreshes it on a schedule.";
   document.getElementById("colophon").textContent =
     "Generated from openwiki/ (generated " + w.generated + ", gitHead " + String(w.gitHead).slice(0, 7) + "). Source code is not used.";
 }

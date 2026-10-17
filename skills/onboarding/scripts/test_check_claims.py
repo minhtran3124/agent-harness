@@ -14,11 +14,6 @@ def git(repo, *args):
     return subprocess.check_output(["git", "-C", str(repo), *args], text=True).strip()
 
 
-def commit(repo, message):
-    git(repo, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "--allow-empty", "-m", message)
-    return git(repo, "rev-parse", "HEAD")
-
-
 def run(repo, *args):
     proc = subprocess.run([sys.executable, str(SCRIPT), *args], cwd=repo, capture_output=True, text=True)
     return proc.returncode, proc.stdout.strip().splitlines()
@@ -136,62 +131,8 @@ def test_missing_page_exits_4(tmp_path):
     assert run(repo, "enforcement/gate.md")[0] == 4
 
 
-def status_repo(tmp_path, record):
-    repo = tmp_path / "repo"
-    (repo / "openwiki").mkdir(parents=True)
-    git(repo, "init", "-q")
-    head = commit(repo, "one")
-    if record is not None:
-        (repo / "openwiki" / ".last-update.json").write_text(json.dumps(record(head)), encoding="utf-8")
-    return repo
-
-
-def test_status_current(tmp_path):
-    repo = status_repo(tmp_path, lambda head: {"gitHead": head, "status": "complete"})
-    assert run(repo, "--status") == (0, ["current"])
-
-
-def test_status_behind_two(tmp_path):
-    repo = status_repo(tmp_path, lambda head: {"gitHead": head, "status": "complete"})
-    commit(repo, "two")
-    commit(repo, "three")
-    assert run(repo, "--status") == (1, ["behind 2"])
-
-
-def test_status_missing_last_update(tmp_path):
-    repo = status_repo(tmp_path, None)
-    code, out = run(repo, "--status")
-    assert code == 3
-    assert out[0].startswith("unknown-drift ")
-
-
-def test_status_partial(tmp_path):
-    repo = status_repo(tmp_path, lambda head: {"gitHead": head, "status": "partial"})
-    code, out = run(repo, "--status")
-    assert code == 3
-    assert out[0].startswith("unknown-drift ")
-
-
-def test_status_non_ancestor_head(tmp_path):
-    repo = status_repo(tmp_path, lambda head: {"gitHead": head, "status": "complete"})
-    git(repo, "checkout", "-q", "--orphan", "other")
-    commit(repo, "orphan")
-    code, out = run(repo, "--status")
-    assert code == 3
-    assert out[0].startswith("unknown-drift ")
-
-
-def test_status_no_wiki_exits_2(tmp_path):
-    repo = tmp_path / "repo"
-    repo.mkdir()
-    git(repo, "init", "-q")
-    commit(repo, "one")
-    assert run(repo, "--status") == (2, ["no-wiki"])
-
-
-# The tests above pin the script to these exit codes. SKILL.md copies them into its two exit
-# tables, so this drift test keeps that copy complete and in step with the script.
-STATUS_CODES = {"0": "current", "1": "behind", "2": "no-wiki", "3": "unknown-drift"}
+# The page exit codes below are copied into the "Each page" table of SKILL.md. This drift test keeps
+# that copy complete and in step with the script.
 PAGE_CODES = {"0", "1", "2", "3", "4"}
 
 
@@ -203,6 +144,4 @@ def table_rows(text, heading):
 
 def test_skill_exit_tables_match_script_codes():
     text = SCRIPT.parents[1].joinpath("SKILL.md").read_text()
-    status = {row.split()[0]: row.split()[1].strip("`") for row in table_rows(text, "Status")}
-    assert status == STATUS_CODES
     assert {row.split()[0] for row in table_rows(text, "Each page")} == PAGE_CODES

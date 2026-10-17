@@ -7,37 +7,27 @@ allowed-tools: Read, Grep, Glob, Agent, Bash(python3 *), Bash(git *)
 # Onboarding — a guided codebase tour
 
 `<skill directory>` is the base directory the runtime reports. Scripts:
-`<skill directory>/scripts/check_claims.py` (claims and drift) and
-`<skill directory>/scripts/build_tour.py` (HTML tour). If one is missing, Glob for
-`**/skills/onboarding/scripts/<name>`. If none is found, present every page
-as unverified and say so.
+`<skill directory>/scripts/check_claims.py` (claims) and
+`<skill directory>/scripts/build_tour.py` (plan, build and serve the HTML tour). If one is missing,
+Glob for `**/skills/onboarding/scripts/<name>`. If none is found, present every page as unverified
+and say so.
 
-Chat tours write no file. `generate` writes only under `.harness-state/onboarding/`. Neither mode
-saves progress.
+Chat tours write no file. `generate` writes page records under `.harness-state/onboarding/` and
+the rendered tour under `<skill directory>/rendered/`. That folder is gitignored and never pushed.
+Neither mode saves progress. CI regenerates the wiki on a schedule, so do not check its age.
 
 ## Modes
 
-Every mode runs the status first. Choose the mode from the argument text:
+Choose the mode from the argument text:
 
-- Empty: the section list, then the first page.
-- `status`: the section list only.
-- `generate`: build the HTML tour for every page. Read `references/generate.md`.
+- Empty: the section list, then the first page as a card.
+- `generate`: build the HTML tour for every page, then serve it. Read `references/generate.md`.
+- `serve`: serve the rendered tour again, without rebuilding.
 - A page or section name: start there.
 - Any other text: use the focus list.
 
 Start at `openwiki/quickstart.md`, the entrypoint. Get the sections from `openwiki/index.md` and
 each section's pages from `openwiki/<section>/index.md`. Offer pages in wiki order.
-
-## Status
-
-Run `python3 <skill directory>/scripts/check_claims.py --status`:
-
-| Exit | Action |
-|---|---|
-| 0 `current` | Continue. |
-| 1 `behind <N>` | Warn that the wiki is N commits old. Suggest `openwiki code --update`. Continue. |
-| 2 `no-wiki` | Name the path you checked (`openwiki/`). Run the fallback tour. |
-| 3 `unknown-drift <reason>` | Give the reason. Treat every page as unverified unless its claim check passes. Continue. |
 
 ## Focus list
 

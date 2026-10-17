@@ -65,7 +65,8 @@ def write_start(root: Path) -> None:
 
 
 def build(root: Path) -> tuple[int, str]:
-    proc = subprocess.run([sys.executable, str(SCRIPT), "build"], cwd=root, capture_output=True, text=True)
+    proc = subprocess.run([sys.executable, str(SCRIPT), "build", "--out", str(root / "tour.html")],
+                          cwd=root, capture_output=True, text=True)
     return proc.returncode, proc.stdout + proc.stderr
 
 
@@ -82,7 +83,7 @@ def test_valid_records_write_tour_with_goals(tmp_path, monkeypatch):
     write_records(tmp_path, record())
     code, out = build(tmp_path)
     assert code == 0, out
-    html = (tmp_path / ".harness-state/onboarding/tour.html").read_text(encoding="utf-8")
+    html = (tmp_path / "tour.html").read_text(encoding="utf-8")
     assert "__TOUR_DATA__" not in html
     assert '"goal": "a hook"' in html
     assert "Commit Gate" in html
@@ -95,7 +96,7 @@ def test_source_that_is_not_a_heading_is_rejected(tmp_path):
     code, out = build(tmp_path)
     assert code == 1
     assert "src is not a heading" in out
-    assert not (tmp_path / ".harness-state/onboarding/tour.html").exists()
+    assert not (tmp_path / "tour.html").exists()
 
 
 def test_test_command_not_in_page_is_rejected(tmp_path):
@@ -121,7 +122,7 @@ def test_data_cannot_close_the_script_tag(tmp_path):
     write_records(tmp_path, record(why="Ends here </script><img src=x>."))
     code, out = build(tmp_path)
     assert code == 0, out
-    html = (tmp_path / ".harness-state/onboarding/tour.html").read_text(encoding="utf-8")
+    html = (tmp_path / "tour.html").read_text(encoding="utf-8")
     assert "</script><img" not in html
     assert "<\\/script>" in html
 
@@ -133,3 +134,28 @@ def test_verify_counts_come_from_claims(tmp_path):
     code, out = build(tmp_path)
     assert code == 0, out
     assert "0 of 1 claims ok" in out
+
+
+def test_serve_returns_rendered_tour(tmp_path):
+    import threading
+    import urllib.request
+
+    (tmp_path / "tour.html").write_text("<title>Tour</title>", encoding="utf-8")
+    server = build_tour.make_server(tmp_path, 0)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        url = f"http://127.0.0.1:{server.server_port}/tour.html"
+        with urllib.request.urlopen(url, timeout=5) as resp:
+            assert resp.status == 200
+            assert b"<title>Tour</title>" in resp.read()
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
+def test_serve_without_build_exits_1(tmp_path):
+    proc = subprocess.run([sys.executable, str(SCRIPT), "serve", "--dir", str(tmp_path)],
+                          capture_output=True, text=True)
+    assert proc.returncode == 1
+    assert "Run build first" in proc.stdout
