@@ -104,9 +104,9 @@ Design: `specs/gh-313-prove-the-red/design.md` (D1–D9). Research:
     the process cwd: `git rev-parse --show-toplevel`; then in that root
     `git rev-parse --verify --quiet <sha>^{commit}`; then
     `git diff --cached --name-only -z --no-renames <commit> --`. Split that output on `\0` and drop
-    empty entries. Split the test command on
-    whitespace. Strip a `::…` suffix and a leading `./` from each token. Drop each diff path under
-    `specs/` and each path equal to a token. If no path remains, return
+    empty entries. Per D10 (DC1, `ESCALATIONS.md` E001 = A), the red test files are the paths
+    the red commit itself changed: `git diff-tree --root --no-commit-id --name-only -r -z
+    --no-renames <commit>`. Drop each diff path under `specs/` and each red-commit path. If no path remains, return
     `bug fix: no code change after red commit <sha> outside specs/ and the red test files`.
     Map failures to `bug fix: cannot check the fix diff for red commit <sha> -- <cause>`, with
     cause `git is not available` (`OSError`), `the current directory is not in a git repository`
@@ -122,8 +122,8 @@ Design: `specs/gh-313-prove-the-red/design.md` (D1–D9). Research:
     Cases: `noop` (no change after red: `main(["--lane", path])` returns 1 with
     `REQUIRE_RED_TEST=1` and prints a line that starts with `!` and holds `no code change` without
     it); `real_fix` (source change committed: returns 0, no fix-diff text in output);
-    `test_only`; `specs_only`; `directory_token` (`pytest scripts/` does not drop
-    `scripts/x.py`); `staged_fix` (staged, not committed: no message); `unknown_sha`
+    `test_only`; `specs_only`; `directory_token` (`pytest scripts/`: a test-only change after red is reported, a
+    `scripts/x.py` change passes); `command_names_fixed_file`; `absolute_test_path`; `staged_fix` (staged, not committed: no message); `unknown_sha`
     (`the commit does not resolve here`); `not_a_repo` (cwd outside any repo:
     `not in a git repository`); `exempt_and_non_bug_fix` (no git call: patch
     `subprocess.check_output` to fail the test if called); `commit_gate_shape` (SUMMARY file in a
@@ -185,3 +185,4 @@ canary run).
 
 - 2026-10-17 — plan written from design e0836a9 and the research brief
 - 2026-10-17 — tasks 1.1, 1.2 complete; commits 6572584, 579eb28
+- 2026-10-17 — task 1.1 fix rounds complete (E001 = A, D10); commits 7b8aa31, 6232554; task review approved

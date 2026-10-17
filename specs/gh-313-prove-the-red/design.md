@@ -6,7 +6,7 @@ Revised 2026-10-17. Pins: repo 8b05a26
 ## Goal
 
 For a bug-fix SUMMARY, make `scripts/verify_summary.py --lane` prove that code changed after the
-red commit, outside `specs/` and outside the test files that the red row names. A "fix" that
+red commit, outside `specs/` and outside the paths that the red commit itself changed (D10). A "fix" that
 changes nothing then no longer passes the red/green check.
 
 ## Current state
@@ -136,6 +136,7 @@ scripts/test_x.py::test_y | 1 |` and a matching green row.
 | The changed code fixes the bug. | The check is provenance-tier: it proves that something changed, not what the change does. |
 | An old bug-fix SUMMARY is checked at its own fix time. | The diff runs to today's index. Later commits make an old SUMMARY pass. The check is meaningful at the commit that records the fix. |
 | Every test file is excluded. | Only paths that the red commit changed are excluded (D10). A test file added after the red commit counts as a fix. |
+| A merge commit works as the red commit. | `git diff-tree -r` prints no paths for a merge commit without `-m`, so nothing is excluded. Red commits are single-parent by the implementer prompt's step order. |
 
 ## Decisions
 
