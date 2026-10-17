@@ -1,23 +1,24 @@
-diff --git a/.gitignore b/.gitignore
-index 6b8793e..005d279 100644
---- a/.gitignore
-+++ b/.gitignore
-@@ -41,3 +41,5 @@ specs/**/.plan-review.json
- # Local-only harness-engineering review docs
- docs/harness-engineering-review.md
- docs/harness-engineering-review.en.md
-+# Harness: machine-local run-state lock (RUN.json + events.jsonl stay tracked)
-+specs/**/events.jsonl.lock
 diff --git a/scripts/deploy-harness.sh b/scripts/deploy-harness.sh
-index 7bf4b52..970f684 100755
+index 7bf4b52..9f20be5 100755
 --- a/scripts/deploy-harness.sh
 +++ b/scripts/deploy-harness.sh
-@@ -137,7 +137,7 @@ preflight_protected() {
+@@ -101,6 +101,10 @@ protected_under() {
+   return 1
+ }
+ 
++# True only when /dev/tty can actually be opened. `[ -r /dev/tty ]` is access(2) on the device
++# node and stays true with no controlling terminal, so it can't gate the interactive prompt.
++have_tty() { (exec < /dev/tty) 2>/dev/null; }
++
+ CONFLICTS=()
+ POLICY=""
+ BACKUP_TS=""
+@@ -137,7 +141,7 @@ preflight_protected() {
  
    if [ "$OVERWRITE_CONFLICTS" -eq 1 ]; then
      POLICY="overwrite"
 -  elif [ "$YES" -eq 1 ] || [ ! -r /dev/tty ]; then
-+  elif [ "$YES" -eq 1 ] || ! { : < /dev/tty; } 2>/dev/null; then
++  elif [ "$YES" -eq 1 ] || ! have_tty; then
      POLICY="keep"
      printf "  %s⚠ %d protected file(s) differ from the harness source — keeping your local copy;%s\n" "$Y" "${#CONFLICTS[@]}" "$R"
      printf "  %s  incoming saved as <file>.harness-incoming for review.%s\n" "$Y" "$R"
