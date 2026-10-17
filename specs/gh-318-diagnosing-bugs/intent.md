@@ -1,7 +1,7 @@
 # Intent: diagnosing-bugs skill with six gated phases
 
 Author: Claude
-Status: draft
+Status: approved
 
 ## Problem
 
