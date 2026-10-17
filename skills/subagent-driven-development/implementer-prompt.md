@@ -64,6 +64,7 @@ Task tool (coding):
          Its Exit is the exit of that command, from 1 to 123. An exit of 124 or more is not a
          failing test. Fix the command or the setup.
        - Record a `green` row in `### Verify`. Its command is the same test command. Its Exit is 0.
+       - After the red commit, change code outside `specs/` and the red test files.
        - If the bug has no testable surface, write `Red test exempt: <reason>` in `### Verify`.
          Do not write the two rows.
        Write the test command as a plain argument list. Do not use `&&`, pipes, globs or env

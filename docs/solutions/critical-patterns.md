@@ -41,6 +41,7 @@ Two crashes in advisory/non-blocking scripts. (1) `scripts/harness-audit.sh` cra
 **Lesson:** an exception-type allowlist cannot be proven complete, so it is the wrong tool for "never fail" semantics; bound the block instead. And the boundary defect was missed by every per-line bug hunt (including `/correctness-review`) — it surfaced only when a reviewer asked "is this fix deep enough, or a bandaid?" Ask that on purpose.
 
 **Full doc:** docs/solutions/scripts/bash-empty-array-and-jsonl-parsing-gotchas.md
+**Recurred:** 2026-10-17 — `scripts/verify_summary.py` `_red_fix_diff_issue` (gh-313): an advisory check guarded by `except OSError`/`CalledProcessError` lets `UnicodeDecodeError` from `text=True` decoding of `git diff -z` escape, so `--lane` exits 1 and the commit gate blocks.
 ---
 
 ## [2026-07-04] bash-empty-array-and-jsonl-parsing-gotchas-decisions

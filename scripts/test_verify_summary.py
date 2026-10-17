@@ -6,7 +6,10 @@ Run:
 """
 
 import importlib.util
+import subprocess
 from pathlib import Path
+
+import pytest
 
 
 _SPEC = importlib.util.spec_from_file_location(
@@ -995,13 +998,95 @@ def _bug_fix_summary(verify: str, input_type: str = "bug fix") -> str:
 def _red_green_messages(text: str) -> list[str]:
     """Every red/green message from both lane functions."""
     warnings = [message for message, _ in vs.check_lane_warnings(text)]
-    return [m for m in vs.check_lane_evidence(text) + warnings if "red/green" in m]
+    return [
+        m
+        for m in vs.check_lane_evidence(text) + warnings
+        if "red/green" in m or m.startswith("bug fix:")
+    ]
+
+
+def _git(repo: Path, *args: str) -> str:
+    return subprocess.run(
+        ["git", *args], cwd=repo, check=True, capture_output=True, text=True
+    ).stdout.strip()
+
+
+# A base commit holds the source file; the red commit adds only its test (D10: the red
+# test files are the paths the red commit changed).
+_FIX_SRC = "scripts/x.py"
+_FIX_TEST = "scripts/test_x.py"
+_FIX_TEST_CMD = f"python3 -m pytest -q {_FIX_TEST}::test_y"
+
+
+@pytest.fixture
+def fix_repo(tmp_path, monkeypatch):
+    """A throwaway git repo whose HEAD is the red commit; cwd is set to its root."""
+    monkeypatch.delenv("REQUIRE_RED_TEST", raising=False)
+    monkeypatch.delenv("REQUIRE_NOT_AUTO_VERIFIED", raising=False)
+    monkeypatch.setenv("GIT_CEILING_DIRECTORIES", str(tmp_path))
+    root = tmp_path / "repo"
+    (root / "scripts").mkdir(parents=True)
+    _git(root, "init", "-q")
+    _git(root, "config", "user.email", "t@example.com")
+    _git(root, "config", "user.name", "t")
+    (root / _FIX_SRC).write_text("def f():\n    return 1\n")
+    _git(root, "add", "--", _FIX_SRC)
+    _git(root, "commit", "-q", "-m", "base")
+    (root / _FIX_TEST).write_text("def test_y():\n    assert False\n")
+    _git(root, "add", "--", _FIX_TEST)
+    _git(root, "commit", "-q", "-m", "red")
+    monkeypatch.chdir(root)
+    return root
+
+
+def _red_sha(repo: Path) -> str:
+    return _git(repo, "rev-parse", "--short=12", "HEAD")
+
+
+def _fix_summary(sha: str, test: str = _FIX_TEST_CMD) -> str:
+    """A bug-fix SUMMARY with one red/green pair on `test`, red at `sha`."""
+    red = f"| red | `python3 scripts/run_at_commit.py {sha} -- {test}` | 1 | fails |"
+    green = f"| green | `{test}` | 0 | passes |"
+    return _bug_fix_summary(f"{REAL_LANE_VERIFY}\n{red}\n{green}")
+
+
+def _commit_change(repo: Path, rel: str, content: str = "changed\n") -> None:
+    path = repo / rel
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content)
+    _git(repo, "add", "--", rel)
+    _git(repo, "commit", "-q", "-m", f"change {rel}")
+
+
+def _lane_run(tmp_path: Path, text: str) -> int:
+    """Run `--lane` on a SUMMARY written outside the repo (by file path)."""
+    out_dir = tmp_path / "summary-copy"
+    out_dir.mkdir(exist_ok=True)
+    path = out_dir / "SUMMARY.md"
+    path.write_text(text, encoding="utf-8")
+    return vs.main(["--lane", str(path)])
+
+
+# Expected messages, from the design's Error behavior section.
+def _no_change_msg(sha: str) -> str:
+    return (
+        f"bug fix: no code change after red commit {sha} outside specs/ "
+        "and the red test files"
+    )
+
+
+def _cannot_check_msg(sha: str, cause: str) -> str:
+    return f"bug fix: cannot check the fix diff for red commit {sha} -- {cause}"
 
 
 class TestRedGreen:
-    def test_red_green_valid_pair_has_no_warning(self, monkeypatch, tmp_path, capsys):
+    def test_red_green_valid_pair_has_no_warning(
+        self, fix_repo, monkeypatch, tmp_path, capsys
+    ):
         monkeypatch.delenv("REQUIRE_RED_TEST", raising=False)
-        text = _bug_fix_summary(f"{REAL_LANE_VERIFY}\n{_RED_ROW}\n{_GREEN_ROW}")
+        sha = _red_sha(fix_repo)
+        _commit_change(fix_repo, _FIX_SRC)
+        text = _fix_summary(sha)
         assert vs._red_green_issue(text) is None
         assert _red_green_messages(text) == []
         write_summary(tmp_path, "bug", text)
@@ -1173,6 +1258,198 @@ class TestRedGreen:
                 if vs._BUG_FIX_INPUT_RE.match(input_type):
                     continue
                 assert _red_green_messages(text) == [], path
+
+
+# ---------------------------------------------------------------------------
+# Fix-diff check: a bug fix must change code after the red commit
+# ---------------------------------------------------------------------------
+
+
+def test_fix_diff_noop(fix_repo, tmp_path, monkeypatch, capsys):
+    sha = _red_sha(fix_repo)
+    text = _fix_summary(sha)
+
+    monkeypatch.setenv("REQUIRE_RED_TEST", "1")
+    assert _lane_run(tmp_path, text) == 1
+    assert f"    - {_no_change_msg(sha)}\n" in capsys.readouterr().out
+
+    monkeypatch.delenv("REQUIRE_RED_TEST")
+    assert _lane_run(tmp_path, text) == 0
+    lines = [ln.strip() for ln in capsys.readouterr().out.splitlines()]
+    advisories = [ln for ln in lines if ln.startswith("!") and "no code change" in ln]
+    assert advisories == [
+        f"! {_no_change_msg(sha)} (warn-only; set REQUIRE_RED_TEST=1 to enforce)"
+    ]
+
+
+def test_fix_diff_real_fix(fix_repo, tmp_path, monkeypatch, capsys):
+    sha = _red_sha(fix_repo)
+    _commit_change(fix_repo, _FIX_SRC, "def f():\n    return 2\n")
+    text = _fix_summary(sha)
+    for value in ("1", ""):
+        monkeypatch.setenv("REQUIRE_RED_TEST", value)
+        assert _lane_run(tmp_path, text) == 0, value
+        out = capsys.readouterr().out
+        assert "no code change" not in out and "cannot check" not in out, value
+
+
+def test_fix_diff_test_only(fix_repo, tmp_path, monkeypatch, capsys):
+    sha = _red_sha(fix_repo)
+    _commit_change(fix_repo, _FIX_TEST, "def test_y():\n    assert True\n")
+    monkeypatch.setenv("REQUIRE_RED_TEST", "1")
+    assert _lane_run(tmp_path, _fix_summary(sha)) == 1
+    assert f"    - {_no_change_msg(sha)}\n" in capsys.readouterr().out
+
+
+def test_fix_diff_specs_only(fix_repo, tmp_path, monkeypatch, capsys):
+    sha = _red_sha(fix_repo)
+    _commit_change(fix_repo, "specs/bug/SUMMARY.md")
+    monkeypatch.setenv("REQUIRE_RED_TEST", "1")
+    assert _lane_run(tmp_path, _fix_summary(sha)) == 1
+    assert f"    - {_no_change_msg(sha)}\n" in capsys.readouterr().out
+
+
+def test_fix_diff_red_commit_edits_source(fix_repo, tmp_path, monkeypatch, capsys):
+    """D10: a path the red commit changed is a red test file, even a source file."""
+    (fix_repo / _FIX_SRC).write_text("def f():\n    return 3\n")
+    (fix_repo / _FIX_TEST).write_text("def test_y():\n    assert f() == 2\n")
+    _git(fix_repo, "add", "--", _FIX_SRC, _FIX_TEST)
+    _git(fix_repo, "commit", "-q", "-m", "red edits source and test")
+    sha = _red_sha(fix_repo)
+    _commit_change(fix_repo, _FIX_SRC, "def f():\n    return 2\n")
+    monkeypatch.setenv("REQUIRE_RED_TEST", "1")
+    assert _lane_run(tmp_path, _fix_summary(sha)) == 1
+    assert f"    - {_no_change_msg(sha)}\n" in capsys.readouterr().out
+
+
+def test_fix_diff_directory_token(fix_repo, tmp_path, monkeypatch, capsys):
+    """A directory in the red command still excludes the red test file (D10)."""
+    sha = _red_sha(fix_repo)
+    monkeypatch.setenv("REQUIRE_RED_TEST", "1")
+    _commit_change(fix_repo, _FIX_TEST, "def test_y():\n    assert True\n")
+    text = _fix_summary(sha, "pytest scripts/")
+    assert _lane_run(tmp_path, text) == 1
+    assert f"    - {_no_change_msg(sha)}\n" in capsys.readouterr().out
+    # A source change in the same directory counts as the fix.
+    _commit_change(fix_repo, _FIX_SRC, "def f():\n    return 2\n")
+    assert _lane_run(tmp_path, text) == 0
+    assert "bug fix:" not in capsys.readouterr().out
+
+
+def test_fix_diff_command_names_fixed_file(fix_repo, tmp_path, monkeypatch, capsys):
+    """A red command that runs the file under repair does not hide the fix (D10)."""
+    sha = _red_sha(fix_repo)
+    monkeypatch.setenv("REQUIRE_RED_TEST", "1")
+    _commit_change(fix_repo, _FIX_SRC, "def f():\n    return 2\n")
+    text = _fix_summary(sha, f"python3 -m doctest {_FIX_SRC}")
+    assert _lane_run(tmp_path, text) == 0
+    assert "bug fix:" not in capsys.readouterr().out
+
+
+def test_fix_diff_absolute_test_path(fix_repo, tmp_path, monkeypatch, capsys):
+    """An absolute test path in the red command still excludes the red test file (D10)."""
+    sha = _red_sha(fix_repo)
+    monkeypatch.setenv("REQUIRE_RED_TEST", "1")
+    _commit_change(fix_repo, _FIX_TEST, "def test_y():\n    assert True\n")
+    text = _fix_summary(sha, f"python3 -m pytest -q {fix_repo / _FIX_TEST}")
+    assert _lane_run(tmp_path, text) == 1
+    assert f"    - {_no_change_msg(sha)}\n" in capsys.readouterr().out
+
+
+def test_fix_diff_staged_fix(fix_repo, tmp_path, monkeypatch, capsys):
+    sha = _red_sha(fix_repo)
+    text = _fix_summary(sha)
+    monkeypatch.setenv("REQUIRE_RED_TEST", "1")
+    # An unstaged fix is not in the index, so it does not count.
+    (fix_repo / _FIX_SRC).write_text("def f():\n    return 2\n")
+    assert _lane_run(tmp_path, text) == 1
+    assert f"    - {_no_change_msg(sha)}\n" in capsys.readouterr().out
+    # The same fix, staged but not committed, counts.
+    _git(fix_repo, "add", "--", _FIX_SRC)
+    assert _lane_run(tmp_path, text) == 0
+    assert "bug fix:" not in capsys.readouterr().out
+
+
+def test_fix_diff_unknown_sha(fix_repo, tmp_path, monkeypatch, capsys):
+    text = _fix_summary("deadbee")
+    expected = _cannot_check_msg("deadbee", "the commit does not resolve here")
+    assert vs._red_fix_diff_issue(text) == expected
+    monkeypatch.setenv("REQUIRE_RED_TEST", "1")
+    assert _lane_run(tmp_path, text) == 1
+    assert f"    - {expected}\n" in capsys.readouterr().out
+
+
+def test_fix_diff_not_a_repo(tmp_path, monkeypatch, capsys):
+    monkeypatch.delenv("REQUIRE_NOT_AUTO_VERIFIED", raising=False)
+    monkeypatch.setenv("GIT_CEILING_DIRECTORIES", str(tmp_path))
+    monkeypatch.setenv("REQUIRE_RED_TEST", "1")
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    monkeypatch.chdir(outside)
+    expected = _cannot_check_msg(
+        "abc1234", "the current directory is not in a git repository"
+    )
+    # `_lane_run` passes an absolute path, so the SUMMARY reads from any cwd.
+    assert _lane_run(tmp_path, _fix_summary("abc1234")) == 1
+    assert f"    - {expected}\n" in capsys.readouterr().out
+    assert vs._red_fix_diff_issue(_fix_summary("abc1234")) == expected
+
+
+def test_fix_diff_git_missing(fix_repo, tmp_path, monkeypatch, capsys):
+    monkeypatch.setenv("PATH", "")
+    monkeypatch.setenv("REQUIRE_RED_TEST", "1")
+    expected = _cannot_check_msg("abc1234", "git is not available")
+    # `_lane_run` passes an absolute path, so reading it needs no PATH lookup.
+    assert _lane_run(tmp_path, _fix_summary("abc1234")) == 1
+    assert f"    - {expected}\n" in capsys.readouterr().out
+    assert vs._red_fix_diff_issue(_fix_summary("abc1234")) == expected
+
+
+def test_fix_diff_exempt_and_non_bug_fix(fix_repo, tmp_path, monkeypatch):
+    def no_git(*args, **kwargs):
+        raise AssertionError(f"git was called: {args}")
+
+    monkeypatch.setattr(vs.subprocess, "check_output", no_git)
+    sha = _red_sha(fix_repo)  # the fixture's own git calls go through subprocess.run
+    exempt = _fix_summary(sha) + "\nRed test exempt: race only reproduces under load\n"
+    non_bug_fix = _fix_summary(sha).replace(
+        "Input-type: bug fix", "Input-type: maintenance"
+    )
+    for text in (exempt, non_bug_fix):
+        assert vs._red_pairs(text) == []
+        assert vs._red_fix_diff_issue(text) is None
+        for value in ("1", ""):
+            monkeypatch.setenv("REQUIRE_RED_TEST", value)
+            assert _lane_run(tmp_path, text) == 0
+
+
+def test_fix_diff_commit_gate_shape(fix_repo, tmp_path, monkeypatch, capsys):
+    """commit-gate.sh runs `--lane` on a temp copy outside the repo, cwd in the repo."""
+    sha = _red_sha(fix_repo)
+    _commit_change(fix_repo, _FIX_SRC, "def f():\n    return 2\n")
+    copy_dir = tmp_path / "gate-tmp"
+    copy_dir.mkdir()
+    copy = copy_dir / "SUMMARY.md"
+    copy.write_text(_fix_summary(sha), encoding="utf-8")
+    monkeypatch.setenv("REQUIRE_RED_TEST", "1")
+    assert vs.main(["--lane", str(copy)]) == 0
+    assert "bug fix:" not in capsys.readouterr().out
+
+
+def test_fix_diff_gh302(monkeypatch):
+    root = Path(__file__).resolve().parent.parent
+    resolved = subprocess.run(
+        ["git", "rev-parse", "--verify", "--quiet", "ee6da93^{commit}"],
+        cwd=root,
+        capture_output=True,
+    )
+    if resolved.returncode != 0:
+        pytest.skip("ee6da93 does not resolve here (shallow clone or tarball)")
+    monkeypatch.chdir(root)
+    monkeypatch.delenv("REQUIRE_NOT_AUTO_VERIFIED", raising=False)
+    monkeypatch.setenv("REQUIRE_RED_TEST", "1")
+    summary = root / "specs/gh-302-red-green-input-type/SUMMARY.md"
+    assert vs.main(["--lane", str(summary)]) == 0
 
 
 # The red row's command shape is copied into two prose files that tell agents how to write it.

@@ -1,0 +1,12 @@
+{
+  "created_at": "2026-10-16T23:38:07Z",
+  "last_event_id": "9794d658-273b-4031-9630-9257b6bed1a7",
+  "resume_event": null,
+  "run_id": "5b64e0ff-d4cb-480d-8883-7e1f2699960a",
+  "seq": 6,
+  "sha": null,
+  "slug": "gh-313-prove-the-red",
+  "state": "ready_to_merge",
+  "updated_at": "2026-10-17T01:10:19Z",
+  "waiting_on": null
+}
