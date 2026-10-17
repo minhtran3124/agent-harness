@@ -1011,7 +1011,8 @@ def _git(repo: Path, *args: str) -> str:
     ).stdout.strip()
 
 
-# The red commit holds a source file and its test; the red row names only the test.
+# A base commit holds the source file; the red commit adds only its test (D10: the red
+# test files are the paths the red commit changed).
 _FIX_SRC = "scripts/x.py"
 _FIX_TEST = "scripts/test_x.py"
 _FIX_TEST_CMD = f"python3 -m pytest -q {_FIX_TEST}::test_y"
@@ -1029,8 +1030,10 @@ def fix_repo(tmp_path, monkeypatch):
     _git(root, "config", "user.email", "t@example.com")
     _git(root, "config", "user.name", "t")
     (root / _FIX_SRC).write_text("def f():\n    return 1\n")
+    _git(root, "add", "--", _FIX_SRC)
+    _git(root, "commit", "-q", "-m", "base")
     (root / _FIX_TEST).write_text("def test_y():\n    assert False\n")
-    _git(root, "add", "--", _FIX_SRC, _FIX_TEST)
+    _git(root, "add", "--", _FIX_TEST)
     _git(root, "commit", "-q", "-m", "red")
     monkeypatch.chdir(root)
     return root
@@ -1305,10 +1308,38 @@ def test_fix_diff_specs_only(fix_repo):
     assert vs._red_fix_diff_issue(_fix_summary(sha)) == _no_change_msg(sha)
 
 
-def test_fix_diff_directory_token(fix_repo):
+def test_fix_diff_directory_token(fix_repo, tmp_path, monkeypatch, capsys):
+    """A directory in the red command still excludes the red test file (D10)."""
     sha = _red_sha(fix_repo)
+    monkeypatch.setenv("REQUIRE_RED_TEST", "1")
+    _commit_change(fix_repo, _FIX_TEST, "def test_y():\n    assert True\n")
+    text = _fix_summary(sha, "pytest scripts/")
+    assert _lane_run(tmp_path, text) == 1
+    assert f"    - {_no_change_msg(sha)}\n" in capsys.readouterr().out
+    # A source change in the same directory counts as the fix.
     _commit_change(fix_repo, _FIX_SRC, "def f():\n    return 2\n")
-    assert vs._red_fix_diff_issue(_fix_summary(sha, "pytest scripts/")) is None
+    assert _lane_run(tmp_path, text) == 0
+    assert "bug fix:" not in capsys.readouterr().out
+
+
+def test_fix_diff_command_names_fixed_file(fix_repo, tmp_path, monkeypatch, capsys):
+    """A red command that runs the file under repair does not hide the fix (D10)."""
+    sha = _red_sha(fix_repo)
+    monkeypatch.setenv("REQUIRE_RED_TEST", "1")
+    _commit_change(fix_repo, _FIX_SRC, "def f():\n    return 2\n")
+    text = _fix_summary(sha, f"python3 -m doctest {_FIX_SRC}")
+    assert _lane_run(tmp_path, text) == 0
+    assert "bug fix:" not in capsys.readouterr().out
+
+
+def test_fix_diff_absolute_test_path(fix_repo, tmp_path, monkeypatch, capsys):
+    """An absolute test path in the red command still excludes the red test file (D10)."""
+    sha = _red_sha(fix_repo)
+    monkeypatch.setenv("REQUIRE_RED_TEST", "1")
+    _commit_change(fix_repo, _FIX_TEST, "def test_y():\n    assert True\n")
+    text = _fix_summary(sha, f"python3 -m pytest -q {fix_repo / _FIX_TEST}")
+    assert _lane_run(tmp_path, text) == 1
+    assert f"    - {_no_change_msg(sha)}\n" in capsys.readouterr().out
 
 
 def test_fix_diff_staged_fix(fix_repo):

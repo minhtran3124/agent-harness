@@ -497,17 +497,17 @@ def _red_fix_diff_issue(text: str) -> str | None:
 
     For each red/green pair, list the paths that differ between the red commit and
     the index, in the repo that holds the process cwd. Drop paths under `specs/` and
-    paths equal to a token of the red test command (after a `::...` suffix and a
-    leading `./` are stripped). Report the pair when no path remains.
-    Verifies: (provenance) a path outside `specs/` and the red test files differs
-    between the red commit and the index.
+    the paths that the red commit itself changed (the red test files). The red test
+    command is not parsed. Report the pair when no path remains.
+    Verifies: (provenance) a path outside `specs/` and outside the paths the red
+    commit changed differs between the red commit and the index.
     Does not verify: that the change fixes the bug, or that the red exit was real.
     """
     pairs = _red_pairs(text)
     if not pairs:
         return None
     cwd = Path.cwd()
-    for sha, test in pairs:
+    for sha, _test in pairs:
         cannot = f"bug fix: cannot check the fix diff for red commit {sha} -- "
         try:
             root = Path(_git(cwd, "rev-parse", "--show-toplevel"))
@@ -521,18 +521,20 @@ def _red_fix_diff_issue(text: str) -> str | None:
                 root,
                 *("diff", "--cached", "--name-only", "-z", "--no-renames", commit, "--"),
             )
+            red_files = _git(
+                root,
+                *("diff-tree", "--root", "--no-commit-id", "--name-only", "-r"),
+                *("-z", "--no-renames", commit),
+            )
         except OSError:
             return cannot + "git is not available"
         except subprocess.CalledProcessError:
             return cannot + "the commit does not resolve here"
-        tokens = set()
-        for token in test.split():
-            token = token.split("::", 1)[0]
-            tokens.add(token[2:] if token.startswith("./") else token)
+        red_paths = {path for path in red_files.split("\0") if path}
         fix_paths = [
             path
             for path in diff.split("\0")
-            if path and not path.startswith("specs/") and path not in tokens
+            if path and not path.startswith("specs/") and path not in red_paths
         ]
         if not fix_paths:
             return (
