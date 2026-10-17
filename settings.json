@@ -31,6 +31,16 @@
             "statusMessage": "Loading knowledge base (INDEX + critical-patterns)…"
           }
         ]
+      },
+      {
+        "matcher": "startup|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "hooks/model-config.sh",
+            "statusMessage": "Applying harness-models.json (agent/skill model + effort)…"
+          }
+        ]
       }
     ]
   }

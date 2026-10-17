@@ -253,6 +253,41 @@ def test_settings_with_only_pre_tool_use_and_session_start_render():
     assert session["additionalContextLimit"] == 2500
 
 
+def test_model_config_registration_is_excluded_from_codex_hooks():
+    rendered = renderer.expected_codex_hooks(
+        {
+            "hooks": {
+                "PreToolUse": _pre_tool_use_groups(),
+                "SessionStart": [
+                    _session_start_group(),
+                    {
+                        "matcher": "startup|clear",
+                        "hooks": [
+                            {"type": "command", "command": "hooks/model-config.sh"}
+                        ],
+                    },
+                ],
+            }
+        }
+    )
+    session_groups = rendered["hooks"]["SessionStart"]
+    assert len(session_groups) == 1
+    assert session_groups[0]["hooks"][0]["command"] == (
+        'bash "$PLUGIN_ROOT/hooks/session-knowledge.sh"'
+    )
+
+
+def test_rendered_hooks_json_has_no_model_config_and_no_empty_group(tmp_path):
+    output = tmp_path / "rendered"
+    renderer.render(ROOT, output)
+    text = (output / "plugin/hooks/hooks.json").read_text()
+    assert "model-config.sh" not in text
+    for groups in json.loads(text)["hooks"].values():
+        assert groups
+        assert all(group["hooks"] for group in groups)
+    assert text == (ROOT / "adapters/codex/plugin/hooks/hooks.json").read_text()
+
+
 def test_settings_missing_pre_tool_use_blocks_render():
     with pytest.raises(renderer.AdapterError, match="PreToolUse"):
         renderer.expected_codex_hooks(

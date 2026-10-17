@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import sys
 from pathlib import Path
 
 import pytest
@@ -264,6 +265,91 @@ def test_effort_in_semantic_source_is_rejected(tmp_path):
     path.write_text(path.read_text().replace("---\n", "---\neffort: high\n", 1))
     with pytest.raises(renderer.ContractError, match="runtime policy field"):
         renderer.validate(root)
+
+
+def run_main(monkeypatch, *args: str) -> int:
+    monkeypatch.setattr(sys, "argv", ["render_agent_definitions.py", *map(str, args)])
+    return renderer.main()
+
+
+def write_skill(root: Path, name: str, extra: str = "") -> None:
+    path = root / "skills" / name / "SKILL.md"
+    path.parent.mkdir(parents=True)
+    path.write_text(f"---\nname: {name}\ndescription: x\n{extra}---\n\n# {name}\n")
+
+
+def test_defaults_out_snapshot_matches_claude_bindings_and_source_skills(
+    tmp_path, monkeypatch
+):
+    out = tmp_path / "defaults.json"
+    assert run_main(monkeypatch, "--root", ROOT, "--defaults-out", out) == 0
+    text = out.read_text()
+    snapshot = json.loads(text)
+    expected_agents = {
+        role: {k: v for k, v in spec.items() if k in ("model", "effort")}
+        for role, spec in LEGACY_CLAUDE.items()
+    }
+    assert snapshot["schema_version"] == 1
+    assert snapshot["agents"] == expected_agents
+    source_skills = {p.parent.name for p in (ROOT / "skills").glob("*/SKILL.md")}
+    assert {"xia2", "feature-intake", "correctness-review"} <= source_skills
+    assert snapshot["skills"] == {name: {} for name in source_skills}
+    assert set(snapshot) == {"schema_version", "agents", "skills"}
+    assert text == json.dumps(snapshot, indent=2, sort_keys=True) + "\n"
+
+
+def test_defaults_out_skills_skip_archive_and_carry_frontmatter_values(
+    tmp_path, monkeypatch
+):
+    root = clone_root(tmp_path)
+    write_skill(root, "plain")
+    write_skill(root, "tuned", "model: claude-sonnet-5-5\neffort: high\n")
+    write_skill(root, "_archive")
+    (root / "skills/_archive/old").mkdir()
+    (root / "skills/_archive/old/SKILL.md").write_text("---\nname: old\n---\n")
+    out = tmp_path / "defaults.json"
+    assert run_main(monkeypatch, "--root", root, "--defaults-out", out) == 0
+    assert json.loads(out.read_text())["skills"] == {
+        "plain": {},
+        "tuned": {"model": "claude-sonnet-5-5", "effort": "high"},
+    }
+
+
+def test_defaults_out_with_output_dir_keeps_render_bytes(tmp_path, monkeypatch):
+    baseline = tmp_path / "baseline"
+    assert run_main(monkeypatch, "--root", ROOT, "--output-dir", baseline) == 0
+    rendered = tmp_path / "rendered"
+    out = tmp_path / "defaults.json"
+    assert (
+        run_main(
+            monkeypatch,
+            "--root",
+            ROOT,
+            "--output-dir",
+            rendered,
+            "--defaults-out",
+            out,
+        )
+        == 0
+    )
+    names = sorted(path.name for path in baseline.iterdir())
+    assert names == sorted(path.name for path in rendered.iterdir())
+    for name in names:
+        assert (rendered / name).read_bytes() == (baseline / name).read_bytes()
+    assert json.loads(out.read_text())["agents"]["test-runner"] == {
+        "model": "claude-haiku-5-5"
+    }
+
+
+@pytest.mark.parametrize(
+    "extra", [["--check"], ["--runtime", "codex", "--output-dir", "codex-out"]]
+)
+def test_defaults_out_rejects_check_and_codex(tmp_path, monkeypatch, extra):
+    out = tmp_path / "defaults.json"
+    extra = [str(tmp_path / arg) if arg == "codex-out" else arg for arg in extra]
+    assert run_main(monkeypatch, "--root", ROOT, "--defaults-out", out, *extra) == 1
+    assert not out.exists()
+    assert not (tmp_path / "codex-out").exists()
 
 
 def test_incomplete_unsupported_exception_is_rejected(tmp_path):

@@ -65,7 +65,10 @@ In a plan with the marker, each task has exactly one `- **Seams:**` bullet:
 - Give each seam a `catches:` clause and a `misses:` clause. Separate the two clauses with `;`.
 - When a task needs more than one seam, separate the seams with ` | `.
 - Write `none — <reason>` when the task has no behavior to test. The reason must not be empty.
-- A bug-fix task never writes `none`. Its red test must sit at a declared seam.
+- A bug-fix task never writes `none`, with one exception. Otherwise, its red test must sit
+  at a declared seam.
+- Exception: when `specs/<slug>/diagnosis.md` says `Seam: none — <reason>`, the fix task writes
+  `Seams: none — <reason>` with the same reason.
 
 A task with one seam (fenced, so illustrative only):
 
