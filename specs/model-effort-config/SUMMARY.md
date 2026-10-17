@@ -50,6 +50,7 @@ Classified high-risk because the request requires a new SessionStart hook regist
 
 ### Deviations
 
+- Rule 3 — `scripts/test_audit_skill_prompts.py` pinned `totals.skills == 15`; the new `harness-models` skill makes it 16, which failed the full suite at branch finish. Changed the pin to 16 (outside the plan's Files). Commit `5f8f4ea`; correctness re-review of `a1496f5..5f8f4ea` found no defect.
 - Fix round (Task 2.3 file, found by Task 3.1's SC-21): `skills/harness-models/SKILL.md` mode words changed from code spans to quoted text, because `scripts/check_skill_tool_conformance.py` matches `COMMAND_HEADS` by prefix (`show` matched `sh`). Commit `0728ef5`. The checker was not changed.
 
 ### Review Minor findings (forwarded to final review)
