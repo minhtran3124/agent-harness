@@ -1,6 +1,6 @@
 ---
 slug: gh-313-prove-the-red
-status: proposed
+status: active
 owner: Minh Tran
 created: 2026-10-17
 ---
@@ -10,7 +10,7 @@ created: 2026-10-17
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**2 tasks · 1 waves · 4 files · 0/2 done**
+**2 tasks · 1 waves · 4 files · 2/2 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -26,8 +26,8 @@ flowchart LR
 ```
 
 ### Progress
-- [ ] 1.1 — Fix-diff check in the lane gate (wave 1)
-- [ ] 1.2 — State the requirement in the rule and the implementer prompt (wave 1)
+- [x] 1.1 — Fix-diff check in the lane gate (wave 1)
+- [x] 1.2 — State the requirement in the rule and the implementer prompt (wave 1)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -184,3 +184,4 @@ canary run).
 ## 6. Status Log
 
 - 2026-10-17 — plan written from design e0836a9 and the research brief
+- 2026-10-17 — tasks 1.1, 1.2 complete; commits 6572584, 579eb28
