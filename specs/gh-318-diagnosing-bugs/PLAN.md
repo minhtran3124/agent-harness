@@ -10,7 +10,7 @@ created: 2026-10-17
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**14 tasks · 8 waves · 30 files · 14/14 done**
+**15 tasks · 9 waves · 30 files · 14/15 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -28,6 +28,7 @@ created: 2026-10-17
 | 6 | 6.2 | HYPOTHESIS marker counts a Bash heredoc (wave 6) | specs/gh-318-diagnosing-bugs/proof/transcript.py | the two scratch checks give the stated marks; `transcript.py --help` exits 0. |
 | 7 | 7.1 | Replay run on the committed-hypotheses skill (wave 7) | specs/gh-318-diagnosing-bugs/proof/replay.md, specs/gh-318-diagnosing-bugs/proof/replay-diff.patch | SC-30 exits 0 and SC-31 exits 1; `grep -q "scripts/deploy-harness.sh" specs/gh-3… |
 | 8 | 8.1 | Clean replay without fix history or test hints (wave 8) | specs/gh-318-diagnosing-bugs/proof/replay-clean.md, specs/gh-318-diagnosing-bugs/proof/replay-clean-diff.patch | SC-37 exits 0; SC-38 and SC-39 exit 1. |
+| 9 | 9.1 | Deliver the review inputs to fresh reviewers (wave 9) | skills/diagnosing-bugs/SKILL.md, skills/diagnosing-bugs/references/diagnosis-review-prompt.md, skills/subagent-driven-development/references/bug-fix.md, skills/subagent-driven-development/task-reviewer-prompt.md | `grep -q "DIAGNOSIS_PATH" skills/subagent-driven-development/references/bug-fix.… |
 
 ```mermaid
 flowchart LR
@@ -61,6 +62,9 @@ flowchart LR
   subgraph W7[Wave 8]
     T8_1["8.1 Clean replay without fix history or test hints (wave 8)"]
   end
+  subgraph W8[Wave 9]
+    T9_1["9.1 Deliver the review inputs to fresh reviewers (wave 9)"]
+  end
   W0 --> W1
   W1 --> W2
   W2 --> W3
@@ -68,6 +72,7 @@ flowchart LR
   W4 --> W5
   W5 --> W6
   W6 --> W7
+  W7 --> W8
 ```
 
 ### Progress
@@ -85,6 +90,7 @@ flowchart LR
 - [x] 6.2 — HYPOTHESIS marker counts a Bash heredoc (wave 6)
 - [x] 7.1 — Replay run on the committed-hypotheses skill (wave 7)
 - [x] 8.1 — Clean replay without fix history or test hints (wave 8)
+- [ ] 9.1 — Deliver the review inputs to fresh reviewers (wave 9)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -533,6 +539,29 @@ questions that the user confirmed on 2026-10-17 ("yes for all").
 - **Interfaces:** Consumes: the branch harness at HEAD; the pre-fix commit 0048a16 and the test commit 8e72f7f. Produces: `specs/gh-318-diagnosing-bugs/proof/replay-clean.md`, `specs/gh-318-diagnosing-bugs/proof/replay-clean-diff.patch`.
 - **Seams:** `check_replay.py` exit on the clean marked transcript — catches: a hypothesis before a red loop, a probe before the ranked list, a first review before the first probe; misses: run-to-run variance (one sample), and leaks other than fix history and test comments
 
+### Task 9.1 — Deliver the review inputs to fresh reviewers (wave 9)
+
+- **Files:** skills/diagnosing-bugs/SKILL.md, skills/diagnosing-bugs/references/diagnosis-review-prompt.md, skills/subagent-driven-development/references/bug-fix.md, skills/subagent-driven-development/task-reviewer-prompt.md
+- **Action:** Repair the two FAIL rows of the context-propagation audit.
+  - F1. In `skills/diagnosing-bugs/SKILL.md`, the diagnosis-review dispatch must tell the
+    `task-reviewer` to Read `skills/diagnosing-bugs/references/diagnosis-review-prompt.md` first and
+    follow it, and must give it the `diagnosis.md` and `SUMMARY.md` paths. Use the full
+    `skills/diagnosing-bugs/...` path, which deploy rewrites for consumers. The file is at 599 of 600
+    words: the change must be word-neutral, or it must be paid for by a #308 deletion. In
+    `references/diagnosis-review-prompt.md`, change the "read only the two supplied paths" sentence
+    so the prompt file itself is also allowed.
+  - F2. In `skills/subagent-driven-development/references/bug-fix.md`, add a step: pass the
+    `diagnosis.md` path to the `task-reviewer` as `DIAGNOSIS_PATH`. In `task-reviewer-prompt.md`:
+    add the input `DIAGNOSIS_PATH: <path | none>`; allow that read where the prompt lists its
+    permitted reads; make the step-4 skip compare the task's `Seams:` reason with the `Seam:` in
+    `DIAGNOSIS_PATH`. With `none`, step 4 stays an Important finding.
+  - Keep every string that `scripts/check_task_review_contract.py` pins.
+- **Verify:** `grep -q "DIAGNOSIS_PATH" skills/subagent-driven-development/task-reviewer-prompt.md`
+- **Done:** `grep -q "DIAGNOSIS_PATH" skills/subagent-driven-development/references/bug-fix.md` exits 0; `grep -q "skills/diagnosing-bugs/references/diagnosis-review-prompt.md" skills/diagnosing-bugs/SKILL.md` exits 0; SC-2, SC-18, SC-24, SC-32 and SC-33 exit 0.
+- **Criteria:** SC-2, SC-18, SC-24, SC-32, SC-33
+- **Interfaces:** Consumes: the context-propagation audit (F1, F2). Produces: `skills/diagnosing-bugs/SKILL.md`, `skills/diagnosing-bugs/references/diagnosis-review-prompt.md`, `skills/subagent-driven-development/references/bug-fix.md`, `skills/subagent-driven-development/task-reviewer-prompt.md`.
+- **Seams:** none — prose delivery repair, checked by grep, phrase pins and a re-run of the context-propagation audit
+
 ## 5. Risks
 
 - A1: on CLI 2.1.302 the Skill-tool block message for a `disable-model-invocation` skill may make
@@ -576,3 +605,4 @@ Not an SC row (Guardrail 4): `bash scripts/run-tests.sh` must exit 0 at branch f
 - 2026-10-17 — task 7.1 complete; commit 61c1c53; SC-30 passed; task review approved with one Important plan-mandated finding (replay setup leaked the answer)
 - 2026-10-17 — user approved DC5 (clean replay); added task 8.1; added SC-37, SC-38, SC-39
 - 2026-10-17 — task 8.1 complete; commits c5e9d82, 017e017; SC-37 passed under the DC6 post-run loop rule (strict conversion kept, fails); task review approved with four Minors
+- 2026-10-17 — context-propagation audit FAIL (F1 review prompt not required to reach the diagnosis reviewer; F2 task reviewer cannot see diagnosis.md Seam); added task 9.1
