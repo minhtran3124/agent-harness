@@ -1293,19 +1293,33 @@ def test_fix_diff_real_fix(fix_repo, tmp_path, monkeypatch, capsys):
         assert "no code change" not in out and "cannot check" not in out, value
 
 
-def test_fix_diff_test_only(fix_repo):
+def test_fix_diff_test_only(fix_repo, tmp_path, monkeypatch, capsys):
     sha = _red_sha(fix_repo)
     _commit_change(fix_repo, _FIX_TEST, "def test_y():\n    assert True\n")
-    assert vs._red_fix_diff_issue(_fix_summary(sha)) == _no_change_msg(sha)
-    # A leading `./` on the test token names the same file.
-    dotted = f"python3 -m pytest -q ./{_FIX_TEST}::test_y"
-    assert vs._red_fix_diff_issue(_fix_summary(sha, dotted)) == _no_change_msg(sha)
+    monkeypatch.setenv("REQUIRE_RED_TEST", "1")
+    assert _lane_run(tmp_path, _fix_summary(sha)) == 1
+    assert f"    - {_no_change_msg(sha)}\n" in capsys.readouterr().out
 
 
-def test_fix_diff_specs_only(fix_repo):
+def test_fix_diff_specs_only(fix_repo, tmp_path, monkeypatch, capsys):
     sha = _red_sha(fix_repo)
     _commit_change(fix_repo, "specs/bug/SUMMARY.md")
-    assert vs._red_fix_diff_issue(_fix_summary(sha)) == _no_change_msg(sha)
+    monkeypatch.setenv("REQUIRE_RED_TEST", "1")
+    assert _lane_run(tmp_path, _fix_summary(sha)) == 1
+    assert f"    - {_no_change_msg(sha)}\n" in capsys.readouterr().out
+
+
+def test_fix_diff_red_commit_edits_source(fix_repo, tmp_path, monkeypatch, capsys):
+    """D10: a path the red commit changed is a red test file, even a source file."""
+    (fix_repo / _FIX_SRC).write_text("def f():\n    return 3\n")
+    (fix_repo / _FIX_TEST).write_text("def test_y():\n    assert f() == 2\n")
+    _git(fix_repo, "add", "--", _FIX_SRC, _FIX_TEST)
+    _git(fix_repo, "commit", "-q", "-m", "red edits source and test")
+    sha = _red_sha(fix_repo)
+    _commit_change(fix_repo, _FIX_SRC, "def f():\n    return 2\n")
+    monkeypatch.setenv("REQUIRE_RED_TEST", "1")
+    assert _lane_run(tmp_path, _fix_summary(sha)) == 1
+    assert f"    - {_no_change_msg(sha)}\n" in capsys.readouterr().out
 
 
 def test_fix_diff_directory_token(fix_repo, tmp_path, monkeypatch, capsys):
@@ -1342,12 +1356,18 @@ def test_fix_diff_absolute_test_path(fix_repo, tmp_path, monkeypatch, capsys):
     assert f"    - {_no_change_msg(sha)}\n" in capsys.readouterr().out
 
 
-def test_fix_diff_staged_fix(fix_repo):
+def test_fix_diff_staged_fix(fix_repo, tmp_path, monkeypatch, capsys):
     sha = _red_sha(fix_repo)
+    text = _fix_summary(sha)
+    monkeypatch.setenv("REQUIRE_RED_TEST", "1")
+    # An unstaged fix is not in the index, so it does not count.
     (fix_repo / _FIX_SRC).write_text("def f():\n    return 2\n")
-    assert vs._red_fix_diff_issue(_fix_summary(sha)) == _no_change_msg(sha)
+    assert _lane_run(tmp_path, text) == 1
+    assert f"    - {_no_change_msg(sha)}\n" in capsys.readouterr().out
+    # The same fix, staged but not committed, counts.
     _git(fix_repo, "add", "--", _FIX_SRC)
-    assert vs._red_fix_diff_issue(_fix_summary(sha)) is None
+    assert _lane_run(tmp_path, text) == 0
+    assert "bug fix:" not in capsys.readouterr().out
 
 
 def test_fix_diff_unknown_sha(fix_repo, tmp_path, monkeypatch, capsys):
@@ -1359,20 +1379,29 @@ def test_fix_diff_unknown_sha(fix_repo, tmp_path, monkeypatch, capsys):
     assert f"    - {expected}\n" in capsys.readouterr().out
 
 
-def test_fix_diff_not_a_repo(tmp_path, monkeypatch):
+def test_fix_diff_not_a_repo(tmp_path, monkeypatch, capsys):
+    monkeypatch.delenv("REQUIRE_NOT_AUTO_VERIFIED", raising=False)
     monkeypatch.setenv("GIT_CEILING_DIRECTORIES", str(tmp_path))
+    monkeypatch.setenv("REQUIRE_RED_TEST", "1")
     outside = tmp_path / "outside"
     outside.mkdir()
     monkeypatch.chdir(outside)
     expected = _cannot_check_msg(
         "abc1234", "the current directory is not in a git repository"
     )
+    # `_lane_run` passes an absolute path, so the SUMMARY reads from any cwd.
+    assert _lane_run(tmp_path, _fix_summary("abc1234")) == 1
+    assert f"    - {expected}\n" in capsys.readouterr().out
     assert vs._red_fix_diff_issue(_fix_summary("abc1234")) == expected
 
 
-def test_fix_diff_git_missing(fix_repo, monkeypatch):
+def test_fix_diff_git_missing(fix_repo, tmp_path, monkeypatch, capsys):
     monkeypatch.setenv("PATH", "")
+    monkeypatch.setenv("REQUIRE_RED_TEST", "1")
     expected = _cannot_check_msg("abc1234", "git is not available")
+    # `_lane_run` passes an absolute path, so reading it needs no PATH lookup.
+    assert _lane_run(tmp_path, _fix_summary("abc1234")) == 1
+    assert f"    - {expected}\n" in capsys.readouterr().out
     assert vs._red_fix_diff_issue(_fix_summary("abc1234")) == expected
 
 
