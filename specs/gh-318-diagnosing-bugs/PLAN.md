@@ -10,7 +10,7 @@ created: 2026-10-17
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**10 tasks · 5 waves · 28 files · 10/10 done**
+**10 tasks · 5 waves · 28 files · 9/10 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -63,7 +63,7 @@ flowchart LR
 - [x] 3.2 — Replay proof on a recorded bug (wave 3)
 - [x] 4.1 — Deploy rewrites the diagnosing-bugs skill path (wave 4)
 - [x] 4.2 — Skill states list-before-probe and names the review prompt (wave 4)
-- [x] 5.1 — Replay re-run on the tightened skill (wave 5)
+- [ ] 5.1 — Replay re-run on the tightened skill (wave 5)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -470,4 +470,4 @@ Not an SC row (Guardrail 4): `bash scripts/run-tests.sh` must exit 0 at branch f
 - 2026-10-17 — tasks 1.1, 1.2, 1.3 complete; commits 94473fd, 169ce1b, 28b9aa2, 0d02ee8, 52b3416; task reviews approved (1.2 and 1.3 after one fix round each)
 - 2026-10-17 — tasks 2.1, 2.2 complete; commits f276a8e, 725fd33, 6344da3, 1aeaa02; task reviews approved after one fix round each
 - 2026-10-17 — wave 3 first results: 3.1 SC-28 failed (Bash read, not Read); 3.2 SC-30 failed (probe before list; REVIEW marker missed). User approved DC1–DC3; tasks 4.1, 4.2, 5.1 added; SC-28 widened; SC-33, SC-34 added
-- 2026-10-17 — tasks 3.1, 3.2, 4.1, 4.2 complete; commits 5cc4b92, c7f128b, d7c60d8, 1f43418, 1078f3a, b722203, 5af53e6, d4d7507; task reviews approved (3.1, 4.1, 4.2 after one fix round each; 3.2 SC-30 carried to 5.1)
+- 2026-10-17 — tasks 3.1, 3.2, 4.1, 4.2 complete; commits 5cc4b92, c7f128b, d7c60d8, 1f43418, 1078f3a, b722203, 5af53e6, d4d7507; task reviews approved (3.1, 4.1, 4.2 after one fix round each; 3.2 SC-30 carried to the wave-5 replay re-run)
