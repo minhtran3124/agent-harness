@@ -60,10 +60,12 @@ Edited files:
 - `skills/feature-intake/SKILL.md` — one routing line: for `Input-type: bug fix`, Read and follow
   `skills/diagnosing-bugs/SKILL.md` before the lane route. This closes #313 step 2.
 - `skills/subagent-driven-development/SKILL.md` and `implementer-prompt.md` — the controller
-  passes the `diagnosis.md` path in the task Context; the red test targets the confirmed
+  passes the `diagnosis.md` path in the task Context; before it dispatches the fix task, the
+  controller checks that the task's `Seams:` matches `diagnosis.md` `Seam:` and stops on a
+  mismatch (this covers the normal lane, whose route has no `writing-plans` step); the red test targets the confirmed
   hypothesis; the controller runs Phase 6 after the last wave and before the final reviews.
 - `skills/writing-plans/SKILL.md` — when `specs/<slug>/diagnosis.md` exists, copy its `Seam:`
-  into the fix task's `Seams:`.
+  into the fix task's `Seams:` (high-risk route, where `writing-plans` runs).
 - `skills/compound/SKILL.md` — the bug track takes its root cause from `diagnosis.md` when it
   exists.
 - `skills/README.md` — Bug Fix Path, a Skills Reference row, the handoff map; remove the
@@ -90,8 +92,9 @@ The six phases, each ending in one completion criterion:
    committed under `specs/<slug>/` with the rest of the spec.
 5. **Fix.** After the diagnosis review passes, hand off to the lane: tiny writes the red test at the seam that `diagnosis.md` names in its `Seam:` line, commits
    it, then commits the fix, inside the skill; normal and high-risk follow their route with `diagnosis.md` as an
-   input; `writing-plans` copies its `Seam:` into the fix task's `Seams:`, so the two cannot
-   disagree. No valid seam: a finding in `SUMMARY.md` plus `Red test exempt: <reason>`.
+   input. Whoever writes the fix task's `Seams:` copies `diagnosis.md` `Seam:` (`writing-plans`
+   on high-risk), and the `subagent-driven-development` controller stops before dispatch on a
+   mismatch, in both lanes. No valid seam: a finding in `SUMMARY.md` plus `Red test exempt: <reason>`.
 6. **Cleanup.** The session that completed the fix re-runs the Phase 1 loop (now green), greps the
    tag in the fix diff and in the working tree, deletes any tagged log or throwaway harness that
    is left, and names the confirmed hypothesis in the commit message and in SUMMARY
@@ -107,8 +110,8 @@ The six phases, each ending in one completion criterion:
    and H2 confirmed. The skill deletes the tagged probes and commits `diagnosis.md`.
 3. `task-reviewer` gets `references/diagnosis-review-prompt.md` and `diagnosis.md`. It passes.
 4. Phase 5: the route continues; `using-git-worktrees` detects the existing worktree, then
-   `writing-plans` copies `diagnosis.md` `Seam:` into the fix task's `Seams:`, and
-   `subagent-driven-development` runs. The
+   `subagent-driven-development` runs. Its controller checks that the fix task's `Seams:` matches
+   `diagnosis.md` `Seam:` before dispatch. The
    implementer's Context names `diagnosis.md`; it commits the red test for H2, then the fix.
 5. Phase 6: the controller re-runs the loop (exit `1`), finds no `[DEBUG-7c1e]` in the diff or
    the working tree, and writes "H2 confirmed" into the commit message
@@ -119,6 +122,7 @@ The six phases, each ending in one completion criterion:
 | Failure | Response |
 |---|---|
 | No loop can be built | Write an `ESCALATIONS.md` block with `decision: pending`, listing what was tried and what is needed (environment, captured artifact, or permission to instrument). Stop. |
+| Fix task `Seams:` differs from `diagnosis.md` `Seam:` | The controller does not dispatch; it returns the task to the plan writer to correct `Seams:`. |
 | Diagnosis review fails | Revise `diagnosis.md` and review again. A second failure (budget: 2 reviews) writes an `ESCALATIONS.md` block with `decision: pending` and stops. |
 | Probes refute every hypothesis | Return to Phase 3 with a new list. A second full refutation (budget: 2 rounds) writes an `ESCALATIONS.md` block with `decision: pending` and stops. |
 | No valid seam for the red test (any lane, tiny included) | Record the finding in `SUMMARY.md` and write `Red test exempt: <reason>`. |
@@ -129,8 +133,9 @@ The six phases, each ending in one completion criterion:
 - `bash scripts/run-tests.sh`, which includes the skill-prompt word-ceiling audit — truth tier.
 - Case files: a quick question through intake does not fire the skill; a bug-fix input routes to it.
   The case files are run by hand (`skills/feature-intake/tests/README.md`), so the quick-question
-  case is also run once as a recorded proof: a fresh subagent gets the quick question and the
-  deployed `.claude/` harness, and its tool-call log goes to
+  case is also run once as a recorded proof: a fresh `claude -p --output-format stream-json` run gets the quick
+  question and the deployed `.claude/` harness. A script extracts the tool calls from that stream
+  (not a hand transcription), and the log goes to
   `specs/gh-318-diagnosing-bugs/proof/quick-question.md`. The log holds one line per tool call,
   `<Tool> <first argument>` (for example `Read skills/feature-intake/SKILL.md`), and no tool
   results, so file text that names the skill cannot match. A `### Verify` row greps it for a Read
