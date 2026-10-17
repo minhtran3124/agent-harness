@@ -15,6 +15,12 @@ runs `verify_summary.py --lane` on a staged SUMMARY.
 - Task 2.1 — `skills/writing-plans/SKILL.md:32`: after the split, "Keep the `- Plan-contract: 2` marker." no longer carries the "When `diagnosis.md` exists" condition. No behavior change, because step 3 already requires the marker on every new plan. Accepted.
 - Task 2.2 — the `Input-type: bug fix → diagnosing-bugs` handoff text sits on a third continuation line of the `feature-intake` entry, not the first line. Same meaning. Accepted.
 
+- Task 3.1 — SC-28 (DC2) is traceability tier: it shows a tool call named the skill path, not that the read succeeded. The extractor prints no tool results. The implementer checked `is_error=False` by hand for each read.
+- Task 3.2 — the loop-command input `loop.sh` was chosen after the run (labelled Rule 1; it is a judgment call). The outcome was the same either way. Task 5.1 now pins the input rule before its run.
+- Task 3.2 — the PROBE-before-HYPOTHESIS precedence can hide an `H1` line in a `diagnosis.md` Write that also holds `[DEBUG-` records. D16 moves the list into reply text, which avoids this.
+- Task 3.2 — the "can pass" path of `check_replay.py` rests on hand-made fixtures that were not committed. Task 5.1's real result is the evidence.
+- Task 3.2 — the run's `Loop:` field (`$SCRATCH`) differs from the command it ran (`$S`). This is a skill-side finding, recorded only.
+
 ## Fix rounds
 
 - Task 1.2 — round 1 (`28b9aa2`): three Minors applied; re-review pass/approved, no findings.

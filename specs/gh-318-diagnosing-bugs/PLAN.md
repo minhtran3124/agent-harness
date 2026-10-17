@@ -377,7 +377,7 @@ questions that the user confirmed on 2026-10-17 ("yes for all").
 - **Done:** SC-30 exits 0 and SC-31 exits 1; `grep -q "scripts/deploy-harness.sh" specs/gh-318-diagnosing-bugs/proof/replay-diff.patch` exits 0.
 - **Criteria:** SC-30, SC-31
 - **Interfaces:** Consumes: the harness from Tasks 1.1–2.2; the pre-fix commit 0048a16 and the test commit 8e72f7f. Produces: `specs/gh-318-diagnosing-bugs/proof/transcript.py`, `specs/gh-318-diagnosing-bugs/proof/check_replay.py`, `specs/gh-318-diagnosing-bugs/proof/replay.md`, `specs/gh-318-diagnosing-bugs/proof/replay-diff.patch`.
-- **Seams:** `check_replay.py` exit on the marked transcript — catches: a hypothesis before a red loop, a probe before the ranked list, a probe after the review; misses: whether a marker rule matches the model's intent, which is traceability tier only
+- **Seams:** `check_replay.py` exit on the marked transcript — catches: a hypothesis before a red loop, a probe before the ranked list, a first review before the first probe; misses: whether a marker rule matches the model's intent, which is traceability tier only
 
 ### Task 4.1 — Deploy rewrites the diagnosing-bugs skill path (wave 4)
 
@@ -422,14 +422,17 @@ questions that the user confirmed on 2026-10-17 ("yes for all").
   harness installed from this branch after Tasks 4.1 and 4.2. Reuse the Task 3.2 drivers in the
   scratch root. Add `':!.gitignore'` to the diff pathspec, because the install changes
   `.gitignore`. Overwrite `proof/replay.md` and `proof/replay-diff.patch` with this run. Do not run
-  more than once to look for a passing sample. Report the single result as it comes: the marker
+  more than once to look for a passing sample. The loop-command input to `proof/transcript.py` is
+  fixed before the run: the basename of the last whitespace-separated token of the run's
+  `diagnosis.md` `Loop:` value (for `bash $SCRATCH/loop.sh` that is `loop.sh`). Do not choose it
+  after seeing the run. Report the single result as it comes: the marker
   lines, the confirmed hypothesis, and whether it matches the known cause. If SC-30 fails, return
   DONE_WITH_CONCERNS with the failed pair.
 - **Verify:** `python3 specs/gh-318-diagnosing-bugs/proof/check_replay.py specs/gh-318-diagnosing-bugs/proof/replay.md`
 - **Done:** SC-30 exits 0 and SC-31 exits 1; `grep -q "scripts/deploy-harness.sh" specs/gh-318-diagnosing-bugs/proof/replay-diff.patch` exits 0.
 - **Criteria:** SC-30, SC-31
 - **Interfaces:** Consumes: `skills/diagnosing-bugs/SKILL.md` and `specs/gh-318-diagnosing-bugs/proof/transcript.py` from Task 4.2; `scripts/deploy-harness.sh` from Task 4.1. Produces: `specs/gh-318-diagnosing-bugs/proof/replay.md`, `specs/gh-318-diagnosing-bugs/proof/replay-diff.patch`.
-- **Seams:** `check_replay.py` exit on the marked transcript — catches: a hypothesis before a red loop, a probe before the ranked list, a probe after the review; misses: run-to-run variance (one sample)
+- **Seams:** `check_replay.py` exit on the marked transcript — catches: a hypothesis before a red loop, a probe before the ranked list, a first review before the first probe; misses: run-to-run variance (one sample)
 
 ## 5. Risks
 
