@@ -239,3 +239,10 @@ The six phases, each ending in one completion criterion:
   probe timing. The transcript stays the order evidence. `proof/transcript.py`'s HYPOTHESIS rule also
   counts a Bash call input that holds an `H1` line, fixed before the run. Plan Tasks 6.1, 6.2 and one
   replay run in Task 7.1.
+- **DC5 (2026-10-17, user approved):** the Task 7.1 run passed the order check, but its setup leaked
+  the answer. The overlaid 8e72f7f test names the cause and the `have_tty()` fix in comments, and the
+  model read it before writing hypotheses. The `git worktree` shares the object store, so the run
+  reached fix commit ac7f472 and copied it. This weakens A4. Plan Task 8.1 runs one clean replay: a
+  `git clone --no-local` that holds only 0048a16's history, and a test overlay with the explanatory
+  comments removed and the assertions unchanged. Its result goes to new proof files, and the 7.1
+  evidence stays.

@@ -10,7 +10,7 @@ created: 2026-10-17
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**13 tasks · 7 waves · 28 files · 12/13 done**
+**14 tasks · 8 waves · 30 files · 13/14 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -27,6 +27,7 @@ created: 2026-10-17
 | 6 | 6.1 | Skill commits the hypotheses before any probe (wave 6) | skills/diagnosing-bugs/SKILL.md, skills/diagnosing-bugs/references/diagnosis-template.md | SC-34, SC-35 and SC-36 exit 0; SC-2, SC-11, SC-24 and SC-33 exit 0. |
 | 6 | 6.2 | HYPOTHESIS marker counts a Bash heredoc (wave 6) | specs/gh-318-diagnosing-bugs/proof/transcript.py | the two scratch checks give the stated marks; `transcript.py --help` exits 0. |
 | 7 | 7.1 | Replay run on the committed-hypotheses skill (wave 7) | specs/gh-318-diagnosing-bugs/proof/replay.md, specs/gh-318-diagnosing-bugs/proof/replay-diff.patch | SC-30 exits 0 and SC-31 exits 1; `grep -q "scripts/deploy-harness.sh" specs/gh-3… |
+| 8 | 8.1 | Clean replay without fix history or test hints (wave 8) | specs/gh-318-diagnosing-bugs/proof/replay-clean.md, specs/gh-318-diagnosing-bugs/proof/replay-clean-diff.patch | SC-37 exits 0; SC-38 and SC-39 exit 1. |
 
 ```mermaid
 flowchart LR
@@ -57,12 +58,16 @@ flowchart LR
   subgraph W6[Wave 7]
     T7_1["7.1 Replay run on the committed-hypotheses skill (wave 7)"]
   end
+  subgraph W7[Wave 8]
+    T8_1["8.1 Clean replay without fix history or test hints (wave 8)"]
+  end
   W0 --> W1
   W1 --> W2
   W2 --> W3
   W3 --> W4
   W4 --> W5
   W5 --> W6
+  W6 --> W7
 ```
 
 ### Progress
@@ -78,7 +83,8 @@ flowchart LR
 - [x] 5.1 — Replay re-run on the tightened skill (wave 5)
 - [x] 6.1 — Skill commits the hypotheses before any probe (wave 6)
 - [x] 6.2 — HYPOTHESIS marker counts a Bash heredoc (wave 6)
-- [ ] 7.1 — Replay run on the committed-hypotheses skill (wave 7)
+- [x] 7.1 — Replay run on the committed-hypotheses skill (wave 7)
+- [ ] 8.1 — Clean replay without fix history or test hints (wave 8)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -141,6 +147,9 @@ questions that the user confirmed on 2026-10-17 ("yes for all").
 | SC-34 | The skill puts the ranked list before the first probe (DC3, DC4) | `grep -q "before the first probe" skills/diagnosing-bugs/SKILL.md` | exit 0 |
 | SC-35 | Phase 1 runs the loop with no pipe, so its exit code shows the red (DC4) | `grep -q "with no pipe" skills/diagnosing-bugs/SKILL.md` | exit 0 |
 | SC-36 | Phase 3 commits `diagnosis.md` with the hypotheses before the first probe (DC4) | `grep -q "Commit diagnosis.md before the first probe" skills/diagnosing-bugs/SKILL.md` | exit 0 |
+| SC-37 | In the clean replay (no fix history, no hint), the red loop precedes the first hypothesis, which precedes the first probe, which precedes the review (DC5) | `python3 specs/gh-318-diagnosing-bugs/proof/check_replay.py specs/gh-318-diagnosing-bugs/proof/replay-clean.md` | exit 0 |
+| SC-38 | The clean replay's fix diff has zero `[DEBUG-` tags (DC5) | `grep -qF "[DEBUG-" specs/gh-318-diagnosing-bugs/proof/replay-clean-diff.patch` | exit 1 — no match |
+| SC-39 | The clean replay never names the real fix commit (DC5) | `grep -q "ac7f472" specs/gh-318-diagnosing-bugs/proof/replay-clean.md` | exit 1 — no match |
 
 ## Global Constraints
 
@@ -500,6 +509,30 @@ questions that the user confirmed on 2026-10-17 ("yes for all").
 - **Interfaces:** Consumes: `skills/diagnosing-bugs/SKILL.md` from Task 6.1; `specs/gh-318-diagnosing-bugs/proof/transcript.py` from Task 6.2. Produces: `specs/gh-318-diagnosing-bugs/proof/replay.md`, `specs/gh-318-diagnosing-bugs/proof/replay-diff.patch`.
 - **Seams:** `check_replay.py` exit on the marked transcript — catches: a hypothesis before a red loop, a probe before the ranked list, a first review before the first probe; misses: run-to-run variance (one sample)
 
+### Task 8.1 — Clean replay without fix history or test hints (wave 8)
+
+- **Files:** specs/gh-318-diagnosing-bugs/proof/replay-clean.md, specs/gh-318-diagnosing-bugs/proof/replay-clean-diff.patch
+- **Action:** Apply DC5. Run the Task 7.1 replay once more, with the same prompt, flags,
+  loop-input rule and diff pathspec. Use the harness installed from this branch's HEAD. Change only
+  the setup:
+  - Make the replay checkout with `git clone --no-local --single-branch --no-tags` of this repo into
+    scratch. Reset it to 0048a16 on a new branch `replay`, and delete every other ref there. Expire
+    its reflog and run `git gc --prune=now`. Confirm `git cat-file -e ac7f472` fails there before the
+    run.
+  - Take `tests/scripts/resync-conflict.test.sh` from 8e72f7f. Delete only its comment lines, the
+    lines whose first non-blank character is `#` (keep the shebang). Leave every command and
+    assertion unchanged. Confirm that `grep -c have_tty` on the overlay prints 0, and that the overlay
+    is red at 0048a16 (`20 passed, 1 FAILED`, case 4). Commit it.
+  - Write the transcript to `proof/replay-clean.md` and the diff to `proof/replay-clean-diff.patch`.
+    Leave `proof/replay.md` and `proof/replay-diff.patch` (Task 7.1) unchanged.
+  Run exactly once. Report the single result as it comes: whether the confirmed hypothesis matches
+  the known cause, and whether the fix fixes the test. If SC-37 fails, return DONE_WITH_CONCERNS.
+- **Verify:** `python3 specs/gh-318-diagnosing-bugs/proof/check_replay.py specs/gh-318-diagnosing-bugs/proof/replay-clean.md`
+- **Done:** SC-37 exits 0; SC-38 and SC-39 exit 1.
+- **Criteria:** SC-37, SC-38, SC-39
+- **Interfaces:** Consumes: the branch harness at HEAD; the pre-fix commit 0048a16 and the test commit 8e72f7f. Produces: `specs/gh-318-diagnosing-bugs/proof/replay-clean.md`, `specs/gh-318-diagnosing-bugs/proof/replay-clean-diff.patch`.
+- **Seams:** `check_replay.py` exit on the clean marked transcript — catches: a hypothesis before a red loop, a probe before the ranked list, a first review before the first probe; misses: run-to-run variance (one sample), and leaks other than fix history and test comments
+
 ## 5. Risks
 
 - A1: on CLI 2.1.302 the Skill-tool block message for a `disable-model-invocation` skill may make
@@ -540,3 +573,5 @@ Not an SC row (Guardrail 4): `bash scripts/run-tests.sh` must exit 0 at branch f
 - 2026-10-17 — task 5.1 complete; commit 43b5b37; SC-30 failed again on the D16 skill (probe before the list; piped loop exited 0)
 - 2026-10-17 — user approved DC4 (structural gate); added tasks 6.1, 6.2 and 7.1; added SC-35, SC-36
 - 2026-10-17 — tasks 6.1, 6.2 complete; commits 1690a6d, 47d2397, 2059adb; task reviews approved (6.1 after one fix round)
+- 2026-10-17 — task 7.1 complete; commit 61c1c53; SC-30 passed; task review approved with one Important plan-mandated finding (replay setup leaked the answer)
+- 2026-10-17 — user approved DC5 (clean replay); added task 8.1; added SC-37, SC-38, SC-39
