@@ -10,7 +10,7 @@ created: 2026-10-17
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**10 tasks · 5 waves · 28 files · 9/10 done**
+**13 tasks · 7 waves · 28 files · 10/13 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -24,6 +24,9 @@ created: 2026-10-17
 | 4 | 4.1 | Deploy rewrites the diagnosing-bugs skill path (wave 4) | scripts/deploy-harness.sh, tests/scripts/consumer-subset.test.sh | SC-33 exits 0; `bash tests/scripts/deploy-prune.test.sh` and `bash tests/scripts… |
 | 4 | 4.2 | Skill states list-before-probe and names the review prompt (wave 4) | skills/diagnosing-bugs/SKILL.md, specs/gh-318-diagnosing-bugs/proof/transcript.py | SC-34 exits 0; SC-2, SC-11 and SC-24 exit 0; `python3 specs/gh-318-diagnosing-bu… |
 | 5 | 5.1 | Replay re-run on the tightened skill (wave 5) | specs/gh-318-diagnosing-bugs/proof/replay.md, specs/gh-318-diagnosing-bugs/proof/replay-diff.patch | SC-30 exits 0 and SC-31 exits 1; `grep -q "scripts/deploy-harness.sh" specs/gh-3… |
+| 6 | 6.1 | Skill commits the hypotheses before any probe (wave 6) | skills/diagnosing-bugs/SKILL.md, skills/diagnosing-bugs/references/diagnosis-template.md | SC-34, SC-35 and SC-36 exit 0; SC-2, SC-11, SC-24 and SC-33 exit 0. |
+| 6 | 6.2 | HYPOTHESIS marker counts a Bash heredoc (wave 6) | specs/gh-318-diagnosing-bugs/proof/transcript.py | the two scratch checks give the stated marks; `transcript.py --help` exits 0. |
+| 7 | 7.1 | Replay run on the committed-hypotheses skill (wave 7) | specs/gh-318-diagnosing-bugs/proof/replay.md, specs/gh-318-diagnosing-bugs/proof/replay-diff.patch | SC-30 exits 0 and SC-31 exits 1; `grep -q "scripts/deploy-harness.sh" specs/gh-3… |
 
 ```mermaid
 flowchart LR
@@ -47,10 +50,19 @@ flowchart LR
   subgraph W4[Wave 5]
     T5_1["5.1 Replay re-run on the tightened skill (wave 5)"]
   end
+  subgraph W5[Wave 6]
+    T6_1["6.1 Skill commits the hypotheses before any probe (wave 6)"]
+    T6_2["6.2 HYPOTHESIS marker counts a Bash heredoc (wave 6)"]
+  end
+  subgraph W6[Wave 7]
+    T7_1["7.1 Replay run on the committed-hypotheses skill (wave 7)"]
+  end
   W0 --> W1
   W1 --> W2
   W2 --> W3
   W3 --> W4
+  W4 --> W5
+  W5 --> W6
 ```
 
 ### Progress
@@ -63,7 +75,10 @@ flowchart LR
 - [x] 3.2 — Replay proof on a recorded bug (wave 3)
 - [x] 4.1 — Deploy rewrites the diagnosing-bugs skill path (wave 4)
 - [x] 4.2 — Skill states list-before-probe and names the review prompt (wave 4)
-- [ ] 5.1 — Replay re-run on the tightened skill (wave 5)
+- [x] 5.1 — Replay re-run on the tightened skill (wave 5)
+- [ ] 6.1 — Skill commits the hypotheses before any probe (wave 6)
+- [ ] 6.2 — HYPOTHESIS marker counts a Bash heredoc (wave 6)
+- [ ] 7.1 — Replay run on the committed-hypotheses skill (wave 7)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -123,7 +138,9 @@ questions that the user confirmed on 2026-10-17 ("yes for all").
 | SC-31 | The replay fix diff has zero `[DEBUG-` tags | `grep -qF "[DEBUG-" specs/gh-318-diagnosing-bugs/proof/replay-diff.patch` | exit 1 — no match |
 | SC-32 | The context-propagation pins on SDD and intake wording still pass | `bash tests/scripts/context-propagation-regression.test.sh` | exit 0 |
 | SC-33 | A deployed consumer copy names the diagnosing-bugs skill at `.claude/skills/diagnosing-bugs/SKILL.md`, and the file exists there (DC1) | `bash tests/scripts/consumer-subset.test.sh` | exit 0 |
-| SC-34 | The skill posts the ranked list as reply text before the first probe (DC3) | `grep -q "before the first probe" skills/diagnosing-bugs/SKILL.md` | exit 0 |
+| SC-34 | The skill puts the ranked list before the first probe (DC3, DC4) | `grep -q "before the first probe" skills/diagnosing-bugs/SKILL.md` | exit 0 |
+| SC-35 | Phase 1 runs the loop with no pipe, so its exit code shows the red (DC4) | `grep -q "with no pipe" skills/diagnosing-bugs/SKILL.md` | exit 0 |
+| SC-36 | Phase 3 commits `diagnosis.md` with the hypotheses before the first probe (DC4) | `grep -q "Commit diagnosis.md before the first probe" skills/diagnosing-bugs/SKILL.md` | exit 0 |
 
 ## Global Constraints
 
@@ -434,6 +451,55 @@ questions that the user confirmed on 2026-10-17 ("yes for all").
 - **Interfaces:** Consumes: `skills/diagnosing-bugs/SKILL.md` and `specs/gh-318-diagnosing-bugs/proof/transcript.py` from Task 4.2; `scripts/deploy-harness.sh` from Task 4.1. Produces: `specs/gh-318-diagnosing-bugs/proof/replay.md`, `specs/gh-318-diagnosing-bugs/proof/replay-diff.patch`.
 - **Seams:** `check_replay.py` exit on the marked transcript — catches: a hypothesis before a red loop, a probe before the ranked list, a first review before the first probe; misses: run-to-run variance (one sample)
 
+### Task 6.1 — Skill commits the hypotheses before any probe (wave 6)
+
+- **Files:** skills/diagnosing-bugs/SKILL.md, skills/diagnosing-bugs/references/diagnosis-template.md
+- **Action:** Apply DC4 and D17. In `skills/diagnosing-bugs/SKILL.md`: Phase 1, add that the loop
+  command runs as written, with no pipe, so its exit code shows the red (the phrase `with no pipe`
+  must appear). Phase 2, add that it adds no probe or debug log. Phase 3, replace the reply-text
+  sentence: write three to five ranked hypotheses, `H1` to `H5`, each with a prediction, into
+  `Hypotheses:`; then a sentence that holds the exact text `Commit diagnosis.md before the first
+  probe`; then post the list to the user and continue without waiting. Phase 4, replace its first
+  sentence with "Start no probe before that commit." Keep the `before the first probe`, `<REDACTED>`
+  and `skills/diagnosing-bugs/scripts/hitl-loop.template.sh` text, the red-then-fix sentence in
+  Phase 5, every `Done when:` line and every Error-behavior budget. The file is at 599 of 600 words:
+  pay for added words with #308 deletions in the same file and stay at or under 600. In
+  `references/diagnosis-template.md`, add one guidance line under `Loop:` that the command runs with
+  no pipe, and one under `Hypotheses:` that this field is committed before the first probe.
+- **Verify:** `grep -q "Commit diagnosis.md before the first probe" skills/diagnosing-bugs/SKILL.md`
+- **Done:** SC-34, SC-35 and SC-36 exit 0; SC-2, SC-11, SC-24 and SC-33 exit 0.
+- **Criteria:** SC-2, SC-11, SC-24, SC-33, SC-34, SC-35, SC-36
+- **Interfaces:** Consumes: design D17, DC4; `.harness-state/sdd/report-5.1.md`. Produces: `skills/diagnosing-bugs/SKILL.md`, `skills/diagnosing-bugs/references/diagnosis-template.md`.
+- **Seams:** `scripts/audit_skill_prompts.py --json` word count and the SC-35/SC-36 greps — catches: a ceiling breach, a missing gate sentence; misses: whether a model obeys the order (Task 7.1 shows one run)
+
+### Task 6.2 — HYPOTHESIS marker counts a Bash heredoc (wave 6)
+
+- **Files:** specs/gh-318-diagnosing-bugs/proof/transcript.py
+- **Action:** Apply DC4. Widen only the HYPOTHESIS rule: a text block, a Write input, or a Bash call
+  input that holds a line whose first word, after whitespace, list markers and `*`, is `H1`. Keep the
+  precedence REVIEW, PROBE, HYPOTHESIS, LOOP-RED and every other rule unchanged. Update the docstring.
+  Check on two scratch streams built from the shape of
+  `/tmp/claude-0/-home-user-agent-harness/e2aec56b-9fed-5e48-bc4a-4a3ce00b92d3/scratchpad/proof-3.2/stream-5.1.jsonl`:
+  a Bash heredoc with an `H1` line is marked HYPOTHESIS; a Bash call with no `H1` line is not.
+- **Verify:** `python3 specs/gh-318-diagnosing-bugs/proof/transcript.py --help`
+- **Done:** the two scratch checks give the stated marks; `transcript.py --help` exits 0.
+- **Criteria:** SC-30
+- **Interfaces:** Consumes: design DC4; the Task 5.1 stream shape. Produces: `specs/gh-318-diagnosing-bugs/proof/transcript.py`.
+- **Seams:** `transcript.py` output on a hand-made stream — catches: a Bash-written list left unmarked, an unrelated Bash call marked; misses: model behavior
+
+### Task 7.1 — Replay run on the committed-hypotheses skill (wave 7)
+
+- **Files:** specs/gh-318-diagnosing-bugs/proof/replay.md, specs/gh-318-diagnosing-bugs/proof/replay-diff.patch
+- **Action:** Run the Task 5.1 replay once more, with the same setup, prompt, flags, loop-input rule
+  and pathspec, against a harness installed from this branch after Tasks 6.1 and 6.2. Overwrite
+  `proof/replay.md` and `proof/replay-diff.patch` with this run. Do not run more than once. Report
+  the single result as it comes. If SC-30 fails, return DONE_WITH_CONCERNS with the failed pair.
+- **Verify:** `python3 specs/gh-318-diagnosing-bugs/proof/check_replay.py specs/gh-318-diagnosing-bugs/proof/replay.md`
+- **Done:** SC-30 exits 0 and SC-31 exits 1; `grep -q "scripts/deploy-harness.sh" specs/gh-318-diagnosing-bugs/proof/replay-diff.patch` exits 0.
+- **Criteria:** SC-30, SC-31
+- **Interfaces:** Consumes: `skills/diagnosing-bugs/SKILL.md` from Task 6.1; `specs/gh-318-diagnosing-bugs/proof/transcript.py` from Task 6.2. Produces: `specs/gh-318-diagnosing-bugs/proof/replay.md`, `specs/gh-318-diagnosing-bugs/proof/replay-diff.patch`.
+- **Seams:** `check_replay.py` exit on the marked transcript — catches: a hypothesis before a red loop, a probe before the ranked list, a first review before the first probe; misses: run-to-run variance (one sample)
+
 ## 5. Risks
 
 - A1: on CLI 2.1.302 the Skill-tool block message for a `disable-model-invocation` skill may make
@@ -471,3 +537,5 @@ Not an SC row (Guardrail 4): `bash scripts/run-tests.sh` must exit 0 at branch f
 - 2026-10-17 — tasks 2.1, 2.2 complete; commits f276a8e, 725fd33, 6344da3, 1aeaa02; task reviews approved after one fix round each
 - 2026-10-17 — wave 3 first results: 3.1 SC-28 failed (Bash read, not Read); 3.2 SC-30 failed (probe before list; REVIEW marker missed). User approved DC1–DC3; tasks 4.1, 4.2, 5.1 added; SC-28 widened; SC-33, SC-34 added
 - 2026-10-17 — tasks 3.1, 3.2, 4.1, 4.2 complete; commits 5cc4b92, c7f128b, d7c60d8, 1f43418, 1078f3a, b722203, 5af53e6, d4d7507; task reviews approved (3.1, 4.1, 4.2 after one fix round each; 3.2 SC-30 carried to the wave-5 replay re-run)
+- 2026-10-17 — task 5.1 complete; commit 43b5b37; SC-30 failed again on the D16 skill (probe before the list; piped loop exited 0)
+- 2026-10-17 — user approved DC4 (structural gate); added tasks 6.1, 6.2 and 7.1; added SC-35, SC-36

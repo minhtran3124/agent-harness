@@ -213,7 +213,8 @@ The six phases, each ending in one completion criterion:
 | D13 | `Seam: none — <reason>` in `diagnosis.md` sends the implementer to `Red test exempt`, not `NEEDS_CONTEXT`. | `implementer-prompt.md` states which path wins. | settled |
 | D14 | `scripts/deploy-harness.sh` rewrites `skills/diagnosing-bugs/SKILL.md` to `.claude/skills/diagnosing-bugs/SKILL.md` in derived Markdown, like the `asd-ste100` linter path. | The intake routing line names a file that exists in a consumer install. The diff touches `scripts/` (CI warn tier). | settled |
 | D15 | SC-28 accepts a read of the skill file by the Read tool or by Bash (`cat`/`sed`). SC-29 (no Skill call) is unchanged. | A1's load-bearing half (no Skill-tool call; the chain reaches the skill) is what the proof checks. The tool choice is recorded, not gated. | settled |
-| D16 | Phase 3 posts the ranked list as reply text before the first probe and continues without waiting. The diagnosis review dispatch names `references/diagnosis-review-prompt.md`. | The replay order (list before probe) is observable in the transcript. Replaces D6. | settled |
+| D16 | Phase 3 posts the ranked list as reply text before the first probe and continues without waiting. The diagnosis review dispatch names `references/diagnosis-review-prompt.md`. | The replay order (list before probe) is observable in the transcript. Replaces D6. | superseded by DC4 |
+| D17 | Phase 1 runs the loop command as written, with no pipe, so its exit code shows the red. Phase 2 adds no probe. Phase 3 writes `H1`–`H5` with predictions into `diagnosis.md` `Hypotheses:` and commits it before the first probe, then posts the list and continues without waiting. Phase 4 starts no probe before that commit. The diagnosis review dispatch still names `references/diagnosis-review-prompt.md`. | List-before-probe becomes a committed artifact, not a reply. The replay transcript shows it as a Bash or Write call holding `H1`. Replaces D16. | settled |
 
 ## Decision changes
 
@@ -230,3 +231,11 @@ The six phases, each ending in one completion criterion:
   first probe. The run also pasted the review prompt inline, so the REVIEW marker rule could not
   match. Supersedes D6 with D16. Plan Task 4.2 tightens SKILL.md and widens the REVIEW marker
   rule to a `task-reviewer` dispatch. Task 5.1 re-runs the replay once and reports that one result.
+- **DC4 (2026-10-17, user approved):** the Task 5.1 re-run on the D16 skill confirmed the true
+  cause again, but probed before it posted or wrote any hypothesis list (2 of 2 runs). Its red loop
+  ran through a pipe that exited 0, so the LOOP-RED marker missed it. The user chose a structural
+  gate over recording a limitation. Supersedes D16 with D17. The diagnosis reviewer cannot run git
+  (its tools are Glob, Grep, Read), and probes are never committed (D11), so history cannot show
+  probe timing. The transcript stays the order evidence. `proof/transcript.py`'s HYPOTHESIS rule also
+  counts a Bash call input that holds an `H1` line, fixed before the run. Plan Tasks 6.1, 6.2 and one
+  replay run in Task 7.1.
