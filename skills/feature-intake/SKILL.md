@@ -59,6 +59,8 @@ ambiguity or narrow a hard-gated scope.
 
 ## Routes
 
+- bug fix: before the lane route, use the Read tool on `skills/diagnosing-bugs/SKILL.md` and
+  follow it. Do not call the Skill tool for it.
 - tiny: branch, patch directly, keep quick-check proof. Done only when it
   passes. Else state what is missing.
   Apply `skills/asd-ste100/SKILL.md` to agent prose (`skills/`, `rules/`, `agents/`) that you edit.

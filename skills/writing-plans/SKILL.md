@@ -28,7 +28,8 @@ required brief is missing. If the scope contains independent subsystems, propose
    `Criteria` (`SC-n`), and an `Interfaces` line naming what it consumes/produces. Make actions
    test-first where applicable. Write the `- Plan-contract: 2` marker as a bullet in
    `## Global Constraints`. Give every task a `Seams:` line directly after `Interfaces`, in the
-   form that `plan-format.md` defines.
+   form that `plan-format.md` defines. When `specs/<slug>/diagnosis.md` exists, copy its `Seam:`
+   exactly into the fix task's `Seams:` and keep the `- Plan-contract: 2` marker.
 4. Ensure same-wave tasks have no file overlap and no unresolved dependency. Use waves only for
    genuinely independent work.
 5. When `design.md` has a `## What must be true` section, first write `### Assumption coverage` in
