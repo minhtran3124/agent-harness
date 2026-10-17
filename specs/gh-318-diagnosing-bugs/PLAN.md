@@ -10,7 +10,7 @@ created: 2026-10-17
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**7 tasks · 3 waves · 26 files · 5/7 done**
+**10 tasks · 5 waves · 28 files · 5/10 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -21,6 +21,9 @@ created: 2026-10-17
 | 2 | 2.2 | README bug-fix path, skills reference and handoff map (wave 2) | skills/README.md, skills/xia2/README.md | SC-8 and SC-14 exit 0; SC-13 exits 1. |
 | 3 | 3.1 | Routing proof runs through a deployed harness (wave 3) | specs/gh-318-diagnosing-bugs/proof/extract_tool_calls.py, specs/gh-318-diagnosing-bugs/proof/quick-question.md, specs/gh-318-diagnosing-bugs/proof/bug-fix-routing.md | SC-26 and SC-28 exit 0; SC-27 and SC-29 exit 1. |
 | 3 | 3.2 | Replay proof on a recorded bug (wave 3) | specs/gh-318-diagnosing-bugs/proof/transcript.py, specs/gh-318-diagnosing-bugs/proof/check_replay.py, specs/gh-318-diagnosing-bugs/proof/replay.md, specs/gh-318-diagnosing-bugs/proof/replay-diff.patch | SC-30 exits 0 and SC-31 exits 1; `grep -q "scripts/deploy-harness.sh" specs/gh-3… |
+| 4 | 4.1 | Deploy rewrites the diagnosing-bugs skill path (wave 4) | scripts/deploy-harness.sh, tests/scripts/consumer-subset.test.sh | SC-33 exits 0; `bash tests/scripts/deploy-prune.test.sh` and `bash tests/scripts… |
+| 4 | 4.2 | Skill states list-before-probe and names the review prompt (wave 4) | skills/diagnosing-bugs/SKILL.md, specs/gh-318-diagnosing-bugs/proof/transcript.py | SC-34 exits 0; SC-2, SC-11 and SC-24 exit 0; `python3 specs/gh-318-diagnosing-bu… |
+| 5 | 5.1 | Replay re-run on the tightened skill (wave 5) | specs/gh-318-diagnosing-bugs/proof/replay.md, specs/gh-318-diagnosing-bugs/proof/replay-diff.patch | SC-30 exits 0 and SC-31 exits 1; `grep -q "scripts/deploy-harness.sh" specs/gh-3… |
 
 ```mermaid
 flowchart LR
@@ -37,8 +40,17 @@ flowchart LR
     T3_1["3.1 Routing proof runs through a deployed harness (wave 3)"]
     T3_2["3.2 Replay proof on a recorded bug (wave 3)"]
   end
+  subgraph W3[Wave 4]
+    T4_1["4.1 Deploy rewrites the diagnosing-bugs skill path (wave 4)"]
+    T4_2["4.2 Skill states list-before-probe and names the review prompt (wave 4)"]
+  end
+  subgraph W4[Wave 5]
+    T5_1["5.1 Replay re-run on the tightened skill (wave 5)"]
+  end
   W0 --> W1
   W1 --> W2
+  W2 --> W3
+  W3 --> W4
 ```
 
 ### Progress
@@ -49,6 +61,9 @@ flowchart LR
 - [x] 2.2 — README bug-fix path, skills reference and handoff map (wave 2)
 - [ ] 3.1 — Routing proof runs through a deployed harness (wave 3)
 - [ ] 3.2 — Replay proof on a recorded bug (wave 3)
+- [ ] 4.1 — Deploy rewrites the diagnosing-bugs skill path (wave 4)
+- [ ] 4.2 — Skill states list-before-probe and names the review prompt (wave 4)
+- [ ] 5.1 — Replay re-run on the tightened skill (wave 5)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -102,11 +117,13 @@ questions that the user confirmed on 2026-10-17 ("yes for all").
 | SC-25 | This plan passes the plan contract with seams | `python3 scripts/check_plan_contract.py specs/gh-318-diagnosing-bugs/PLAN.md` | exit 0 |
 | SC-26 | The quick-question run reached `feature-intake` (a Skill call or a Read of its SKILL.md) | `grep -qE "^[A-Z][A-Za-z]+ .*feature-intake" specs/gh-318-diagnosing-bugs/proof/quick-question.md` | exit 0 |
 | SC-27 | The quick-question run did not read the diagnosing-bugs skill | `grep -qE "^Read .*diagnosing-bugs/SKILL\.md$" specs/gh-318-diagnosing-bugs/proof/quick-question.md` | exit 1 — no match |
-| SC-28 | The bug-fix run read the skill with the Read tool | `grep -qE "^Read .*diagnosing-bugs/SKILL\.md$" specs/gh-318-diagnosing-bugs/proof/bug-fix-routing.md` | exit 0 |
+| SC-28 | The bug-fix run read the skill file, by the Read tool or by Bash (DC2) | `grep -qE "^[RB][a-z]+ .*diagnosing-bugs/SKILL\.md" specs/gh-318-diagnosing-bugs/proof/bug-fix-routing.md` | exit 0 |
 | SC-29 | The bug-fix run made no Skill call for diagnosing-bugs | `grep -qx "Skill diagnosing-bugs" specs/gh-318-diagnosing-bugs/proof/bug-fix-routing.md` | exit 1 — no match |
 | SC-30 | In the replay transcript, the red loop precedes the first hypothesis, which precedes the first probe, which precedes the diagnosis review | `python3 specs/gh-318-diagnosing-bugs/proof/check_replay.py specs/gh-318-diagnosing-bugs/proof/replay.md` | exit 0 |
 | SC-31 | The replay fix diff has zero `[DEBUG-` tags | `grep -qF "[DEBUG-" specs/gh-318-diagnosing-bugs/proof/replay-diff.patch` | exit 1 — no match |
 | SC-32 | The context-propagation pins on SDD and intake wording still pass | `bash tests/scripts/context-propagation-regression.test.sh` | exit 0 |
+| SC-33 | A deployed consumer copy names the diagnosing-bugs skill at `.claude/skills/diagnosing-bugs/SKILL.md`, and the file exists there (DC1) | `bash tests/scripts/consumer-subset.test.sh` | exit 0 |
+| SC-34 | The skill posts the ranked list as reply text before the first probe (DC3) | `grep -q "before the first probe" skills/diagnosing-bugs/SKILL.md` | exit 0 |
 
 ## Global Constraints
 
@@ -362,6 +379,58 @@ questions that the user confirmed on 2026-10-17 ("yes for all").
 - **Interfaces:** Consumes: the harness from Tasks 1.1–2.2; the pre-fix commit 0048a16 and the test commit 8e72f7f. Produces: `specs/gh-318-diagnosing-bugs/proof/transcript.py`, `specs/gh-318-diagnosing-bugs/proof/check_replay.py`, `specs/gh-318-diagnosing-bugs/proof/replay.md`, `specs/gh-318-diagnosing-bugs/proof/replay-diff.patch`.
 - **Seams:** `check_replay.py` exit on the marked transcript — catches: a hypothesis before a red loop, a probe before the ranked list, a probe after the review; misses: whether a marker rule matches the model's intent, which is traceability tier only
 
+### Task 4.1 — Deploy rewrites the diagnosing-bugs skill path (wave 4)
+
+- **Files:** scripts/deploy-harness.sh, tests/scripts/consumer-subset.test.sh
+- **Action:** Apply DC1 and D14. Write the test first: in `tests/scripts/consumer-subset.test.sh`,
+  after the `asd-ste100` ste-lint check, add a case that copies its shape. The derived
+  `skills/feature-intake/SKILL.md` must not name a bare `skills/diagnosing-bugs/SKILL.md`, it must
+  name `.claude/skills/diagnosing-bugs/SKILL.md`, and that file must exist under the target. Run
+  the test and see the new case fail. Then, in `scripts/deploy-harness.sh` `rewrite_derived_paths`,
+  add one pattern and its substitute in the same style as the `asd-ste100` pair:
+  `(?<![\w./-])skills/diagnosing-bugs/SKILL\.md` → `.claude/skills/diagnosing-bugs/SKILL.md`. Extend
+  the comment above the `asd-ste100` pattern by one line naming the new path. Keep the rewrite
+  idempotent; the existing idempotency case in the same test must still pass.
+- **Verify:** `bash tests/scripts/consumer-subset.test.sh`
+- **Done:** SC-33 exits 0; `bash tests/scripts/deploy-prune.test.sh` and `bash tests/scripts/install-harness.test.sh` exit 0; SC-8 exits 0.
+- **Criteria:** SC-8, SC-33
+- **Interfaces:** Consumes: design D14, DC1. Produces: `scripts/deploy-harness.sh`, `tests/scripts/consumer-subset.test.sh`.
+- **Seams:** `tests/scripts/consumer-subset.test.sh` derived-tree grep after a real deploy — catches: a bare skill path left in the consumer copy, a double `.claude/.claude/` prefix; misses: whether a model reads the rewritten path
+
+### Task 4.2 — Skill states list-before-probe and names the review prompt (wave 4)
+
+- **Files:** skills/diagnosing-bugs/SKILL.md, specs/gh-318-diagnosing-bugs/proof/transcript.py
+- **Action:** Apply DC3 and D16. In `skills/diagnosing-bugs/SKILL.md`, Phase 3: post the ranked
+  list `H1`–`H5` as reply text before the first probe, then continue without waiting. The phrase
+  `before the first probe` must appear. Phase 4: start no probe before that list is posted. In the
+  diagnosis review step, tell the agent to name `references/diagnosis-review-prompt.md` by path in
+  the `task-reviewer` dispatch, not to paste its text. The file is at 594 of 600 words: pay for
+  every added word with #308 deletions in the same file and stay at or under 600. In
+  `proof/transcript.py`, widen only the REVIEW rule: an Agent or Task call whose input names
+  `diagnosis-review-prompt.md`, or whose `subagent_type` is `task-reviewer`. Keep every other
+  marker rule and the precedence order unchanged.
+- **Verify:** `grep -q "before the first probe" skills/diagnosing-bugs/SKILL.md`
+- **Done:** SC-34 exits 0; SC-2, SC-11 and SC-24 exit 0; `python3 specs/gh-318-diagnosing-bugs/proof/transcript.py --help` exits 0.
+- **Criteria:** SC-2, SC-11, SC-24, SC-34
+- **Interfaces:** Consumes: design D16, DC3; the Task 3.2 stream shapes. Produces: `skills/diagnosing-bugs/SKILL.md`, `specs/gh-318-diagnosing-bugs/proof/transcript.py`.
+- **Seams:** `scripts/audit_skill_prompts.py --json` word count for diagnosing-bugs and the SC-34 grep — catches: a ceiling breach, a missing order rule; misses: whether a model obeys the order (Task 5.1 shows one run)
+
+### Task 5.1 — Replay re-run on the tightened skill (wave 5)
+
+- **Files:** specs/gh-318-diagnosing-bugs/proof/replay.md, specs/gh-318-diagnosing-bugs/proof/replay-diff.patch
+- **Action:** Re-run Task 3.2's replay once, with the same setup, prompt and flags, against a
+  harness installed from this branch after Tasks 4.1 and 4.2. Reuse the Task 3.2 drivers in the
+  scratch root. Add `':!.gitignore'` to the diff pathspec, because the install changes
+  `.gitignore`. Overwrite `proof/replay.md` and `proof/replay-diff.patch` with this run. Do not run
+  more than once to look for a passing sample. Report the single result as it comes: the marker
+  lines, the confirmed hypothesis, and whether it matches the known cause. If SC-30 fails, return
+  DONE_WITH_CONCERNS with the failed pair.
+- **Verify:** `python3 specs/gh-318-diagnosing-bugs/proof/check_replay.py specs/gh-318-diagnosing-bugs/proof/replay.md`
+- **Done:** SC-30 exits 0 and SC-31 exits 1; `grep -q "scripts/deploy-harness.sh" specs/gh-318-diagnosing-bugs/proof/replay-diff.patch` exits 0.
+- **Criteria:** SC-30, SC-31
+- **Interfaces:** Consumes: `skills/diagnosing-bugs/SKILL.md` and `specs/gh-318-diagnosing-bugs/proof/transcript.py` from Task 4.2; `scripts/deploy-harness.sh` from Task 4.1. Produces: `specs/gh-318-diagnosing-bugs/proof/replay.md`, `specs/gh-318-diagnosing-bugs/proof/replay-diff.patch`.
+- **Seams:** `check_replay.py` exit on the marked transcript — catches: a hypothesis before a red loop, a probe before the ranked list, a probe after the review; misses: run-to-run variance (one sample)
+
 ## 5. Risks
 
 - A1: on CLI 2.1.302 the Skill-tool block message for a `disable-model-invocation` skill may make
@@ -397,3 +466,4 @@ Not an SC row (Guardrail 4): `bash scripts/run-tests.sh` must exit 0 at branch f
 - 2026-10-17 — plan review round 2: approved; advisories applied (marker precedence, H1 rule, A3 → SC-28)
 - 2026-10-17 — tasks 1.1, 1.2, 1.3 complete; commits 94473fd, 169ce1b, 28b9aa2, 0d02ee8, 52b3416; task reviews approved (1.2 and 1.3 after one fix round each)
 - 2026-10-17 — tasks 2.1, 2.2 complete; commits f276a8e, 725fd33, 6344da3, 1aeaa02; task reviews approved after one fix round each
+- 2026-10-17 — wave 3 first results: 3.1 SC-28 failed (Bash read, not Read); 3.2 SC-30 failed (probe before list; REVIEW marker missed). User approved DC1–DC3; tasks 4.1, 4.2, 5.1 added; SC-28 widened; SC-33, SC-34 added

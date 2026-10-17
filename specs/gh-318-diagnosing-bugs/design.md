@@ -203,7 +203,7 @@ The six phases, each ending in one completion criterion:
 | D3 | Diagnosis runs right after intake and before the rest of the lane route; the lane's branch or worktree is cut before Phase 1. | Planning starts from a confirmed cause; no probe touches a shared branch. | settled |
 | D4 | Every lane with `Input-type: bug fix` runs all six phases; three to five hypotheses; no "cause known" shortcut. | Tiny bug fixes carry the diagnosis cost. | settled |
 | D5 | A standalone `task-reviewer` dispatch on `diagnosis.md` gates Phase 5 in every lane. | The gate exists without a `PLAN.md`. | settled |
-| D6 | Phase 3 posts the list and continues without waiting. | The user may interrupt; no wait state. | settled |
+| D6 | Phase 3 posts the list and continues without waiting. | The user may interrupt; no wait state. | superseded by DC3 |
 | D7 | No loop possible → `ESCALATIONS.md` block with `decision: pending`. | Commits to the slug are blocked until a decision. | settled |
 | D8 | The `feature-intake` routing edit closes #313 step 2. | The PR names #313 step 2. | settled |
 | D9 | Proof is a replay of one `docs/solutions/` bug at its pre-fix commit, transcript under `proof/`. | Transcript claims are listed in `### Not auto-verified`. | settled |
@@ -211,3 +211,22 @@ The six phases, each ending in one completion criterion:
 | D11 | Phase 4 deletes its probes before handoff; Phase 6 re-checks and deletes any left. | No probe stays in the tree during planning or implementation. | settled |
 | D12 | Seam agreement is checked by the `subagent-driven-development` controller at dispatch (exact match of the seam point), not only copied by `writing-plans`. | The check covers the normal lane, which has no `writing-plans` step. | settled |
 | D13 | `Seam: none — <reason>` in `diagnosis.md` sends the implementer to `Red test exempt`, not `NEEDS_CONTEXT`. | `implementer-prompt.md` states which path wins. | settled |
+| D14 | `scripts/deploy-harness.sh` rewrites `skills/diagnosing-bugs/SKILL.md` to `.claude/skills/diagnosing-bugs/SKILL.md` in derived Markdown, like the `asd-ste100` linter path. | The intake routing line names a file that exists in a consumer install. The diff touches `scripts/` (CI warn tier). | settled |
+| D15 | SC-28 accepts a read of the skill file by the Read tool or by Bash (`cat`/`sed`). SC-29 (no Skill call) is unchanged. | A1's load-bearing half (no Skill-tool call; the chain reaches the skill) is what the proof checks. The tool choice is recorded, not gated. | settled |
+| D16 | Phase 3 posts the ranked list as reply text before the first probe and continues without waiting. The diagnosis review dispatch names `references/diagnosis-review-prompt.md`. | The replay order (list before probe) is observable in the transcript. Replaces D6. | settled |
+
+## Decision changes
+
+- **DC1 (2026-10-17, user approved):** the Task 3.1 setup showed that deploy does not rewrite
+  `skills/diagnosing-bugs/SKILL.md`, so in a consumer install the intake routing line named a
+  missing file. Adds D14 and plan Task 4.1 (`scripts/deploy-harness.sh`,
+  `tests/scripts/consumer-subset.test.sh`).
+- **DC2 (2026-10-17, user approved):** in 2 of 2 bug-fix routing runs the model reached the skill
+  through intake and followed all six phases, but read the file with Bash `sed`/`cat`, not the
+  Read tool. It never called the Skill tool. SC-28 as written failed (exit 1). Adds D15 and widens
+  SC-28. The failed Read-only result stays in the record.
+- **DC3 (2026-10-17, user approved):** the replay run confirmed the true cause, but it probed
+  before it wrote the ranked list. The list existed only in the `diagnosis.md` heredoc after the
+  first probe. The run also pasted the review prompt inline, so the REVIEW marker rule could not
+  match. Supersedes D6 with D16. Plan Task 4.2 tightens SKILL.md and widens the REVIEW marker
+  rule to a `task-reviewer` dispatch. Task 5.1 re-runs the replay once and reports that one result.
