@@ -73,10 +73,12 @@ Classified high-risk because the request requires a new SessionStart hook regist
 | Check | Command | Exit | Notes | Criterion |
 | --- | --- | --- | --- | --- |
 | intake lane evidence | `python3 .claude/scripts/verify_summary.py --lane model-effort-config` | 0 | intake-time check only | |
+| live proof prepare (consumer deploy) | `python3 specs/model-effort-config/proof/run_proof.py --prepare` | 0 | fresh git repo at `${TMPDIR:-/tmp}/harness-model-effort-proof`; harness-models.json sets test-runner to sonnet; deploy seconds 0.5; deployed test-runner.md has `model: sonnet` | SC-22 |
+| live proof (headless test-runner dispatch) | `python3 specs/model-effort-config/proof/run_proof.py` | 0 | Claude Code 2.1.302; modelUsage keys claude-opus-5-5, claude-sonnet-5-5; claude -p seconds 9.1 (deploy excluded, prepared before) | SC-22 |
 
 ### Not auto-verified
 
-- none
+- SC-22 makes one live, nondeterministic model call. It needs an authenticated `claude` and cannot run in CI. Tier: truth, for the `test-runner` role only (other roles and skill `effort` are not live-proven).
 
 ### Rollback
 
