@@ -94,8 +94,8 @@ def validate_user(data, snapshot: dict) -> list[str]:
     return errors
 
 
-def merge(snapshot: dict, user: dict) -> list[tuple[str, dict, bool]]:
-    """Return (target, effective values, from user file) per snapshot role and skill."""
+def merge(snapshot: dict, user: dict) -> list[tuple[str, dict, frozenset]]:
+    """Return (target, effective values, fields the user file sets) per role and skill."""
     rows = []
     for kind in ("agents", "skills"):
         overrides = user.get(kind, {})
@@ -106,11 +106,11 @@ def merge(snapshot: dict, user: dict) -> list[tuple[str, dict, bool]]:
             target = (
                 f"agents/{name}.md" if kind == "agents" else f"skills/{name}/SKILL.md"
             )
-            rows.append((target, values, bool(entry)))
+            rows.append((target, values, frozenset(f for f in FIELDS if f in entry)))
     return rows
 
 
-def floor_errors(rows: list[tuple[str, dict, bool]]) -> list[str]:
+def floor_errors(rows: list[tuple[str, dict, frozenset]]) -> list[str]:
     errors = []
     for target, values, _ in rows:
         role = (
@@ -226,14 +226,20 @@ def apply(claude_dir: Path, rows) -> dict:
 
 
 def show(rows) -> None:
-    print(f"{'target':<40} {'model':<20} {'effort':<8} source")
-    for target, values, from_user in rows:
+    print(
+        f"{'target':<40} {'model':<20} {'model-source':<20} {'effort':<8} effort-source"
+    )
+    for target, values, user_fields in rows:
         if not any(values.values()):
             continue
-        source = USER_FILE if from_user else "default"
+        model_source, effort_source = (
+            USER_FILE if f in user_fields else "default" for f in ("model", "effort")
+        )
         model = values.get("model") or "-"
         effort = values.get("effort") or "-"
-        print(f"{target:<40} {model:<20} {effort:<8} {source}")
+        print(
+            f"{target:<40} {model:<20} {model_source:<20} {effort:<8} {effort_source}"
+        )
     for name in ENV_OVERRIDES:
         if os.environ.get(name):
             print(f"warning: {name} is set; it overrides the configured values")

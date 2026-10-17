@@ -262,7 +262,10 @@ def test_show_rows_and_source(tree, capsys):
     user_file(
         tree,
         {
-            "agents": {"coding": {"effort": "high"}},
+            "agents": {
+                "coding": {"effort": "high"},
+                "test-runner": {"model": "sonnet"},
+            },
             "skills": {"xia2": {"effort": "max"}},
         },
     )
@@ -270,14 +273,23 @@ def test_show_rows_and_source(tree, capsys):
     assert run(tree) == 0  # --show is the default
     lines = capsys.readouterr().out.splitlines()
     rows = [line.split() for line in lines[1:]]
+    user, default = "harness-models.json", "default"
     assert rows == [
-        ["agents/coding.md", "claude-opus-5-5", "high", "harness-models.json"],
-        ["agents/reviewer.md", "claude-opus-5-5", "medium", "default"],
-        ["agents/task-reviewer.md", "claude-opus-5-5", "medium", "default"],
-        ["agents/test-runner.md", "claude-haiku-5-5", "-", "default"],
-        ["skills/xia2/SKILL.md", "-", "max", "harness-models.json"],
+        # effort only: the default model keeps source "default"
+        ["agents/coding.md", "claude-opus-5-5", default, "high", user],
+        ["agents/reviewer.md", "claude-opus-5-5", default, "medium", default],
+        ["agents/task-reviewer.md", "claude-opus-5-5", default, "medium", default],
+        # model only: the empty effort keeps "-" with source "default"
+        ["agents/test-runner.md", "sonnet", user, "-", default],
+        ["skills/xia2/SKILL.md", "-", default, "max", user],
     ]
-    assert lines[0].split() == ["target", "model", "effort", "source"]
+    assert lines[0].split() == [
+        "target",
+        "model",
+        "model-source",
+        "effort",
+        "effort-source",
+    ]
     assert digests(tree) == before
 
 
