@@ -10,7 +10,7 @@ created: 2026-10-17
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**7 tasks · 4 waves · 19 files · 5/7 done**
+**7 tasks · 4 waves · 19 files · 6/7 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -50,7 +50,7 @@ flowchart LR
 - [x] 2.1 — The SessionStart hook (wave 2)
 - [x] 2.2 — Deploy integration (wave 2)
 - [x] 2.3 — The /harness-models skill (wave 2)
-- [ ] 3.1 — Register the hook and skill; exclude from Codex (wave 3)
+- [x] 3.1 — Register the hook and skill; exclude from Codex (wave 3)
 - [ ] 4.1 — Redeploy and live proof (wave 4)
 <!-- AT-A-GLANCE:END -->
 
@@ -339,3 +339,4 @@ effort stay the user's.
 - 2026-10-17 — plan written; status proposed.
 - 2026-10-17 — tasks 1.1, 1.2 complete; commits c572f54, bcba268
 - 2026-10-17 — tasks 2.1, 2.2, 2.3 complete; commits 0cafe3a, 57eb40d, 47bd4e4
+- 2026-10-17 — task 3.1 complete; commits 24d6c30, 0728ef5 (fix round on the Task 2.3 skill file)

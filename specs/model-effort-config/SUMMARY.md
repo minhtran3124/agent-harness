@@ -50,7 +50,7 @@ Classified high-risk because the request requires a new SessionStart hook regist
 
 ### Deviations
 
-- none
+- Fix round (Task 2.3 file, found by Task 3.1's SC-21): `skills/harness-models/SKILL.md` mode words changed from code spans to quoted text, because `scripts/check_skill_tool_conformance.py` matches `COMMAND_HEADS` by prefix (`show` matched `sh`). Commit `0728ef5`. The checker was not changed.
 
 ### Review Minor findings (forwarded to final review)
 
@@ -64,7 +64,9 @@ Classified high-risk because the request requires a new SessionStart hook regist
 - Task 2.2: `new_target` has the same command-substitution cleanup leak in `tests/scripts/model-config-deploy.test.sh`.
 - Task 2.2: the no-applier skip path is untested; its cleanup runs `rm -f "$DEPLOYED_LIST" ""` with an empty `MODELS_SNAPSHOT` under `set -e` (exit status unverified).
 - Task 2.2: if the apply step fails after the check passes, the `ERR` trap exits before cleanup and the temp snapshot is left behind.
-- Task 2.3: `bash scripts/lint-doc-truth.sh` fails until Task 3.1 adds `hooks/model-config.sh` to the CLAUDE.md hook table (the consumer-path failures cleared with Task 2.2).
+- Task 2.3: `bash scripts/lint-doc-truth.sh` failed until Task 3.1 added `hooks/model-config.sh` to the CLAUDE.md hook table (now passes).
+- Task 3.1: the synthetic-settings Codex exclusion test duplicates the real-`settings.json` render test.
+- Task 3.1: the Codex exclusion matches the whole command basename, so a registration with arguments would leak; an event whose groups are all dropped would still emit `[]`.
 
 ### Verify
 
@@ -83,3 +85,4 @@ Classified high-risk because the request requires a new SessionStart hook regist
 ### Harness-Delta
 
 - backlog (Task 1.2): the worktree-isolation guard refuses compound shell commands (loops, `cd` then `git`), so implementers run each command alone.
+- backlog (Task 3.1): `scripts/check_skill_tool_conformance.py` matches `COMMAND_HEADS` with `startswith`, so any backticked word that starts with a head (`show`, `github`, `lsof`) is read as a command and fails conformance. Match the first word instead.
