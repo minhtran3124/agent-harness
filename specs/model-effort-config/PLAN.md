@@ -10,7 +10,7 @@ created: 2026-10-17
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**7 tasks · 4 waves · 19 files · 0/7 done**
+**7 tasks · 4 waves · 19 files · 2/7 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -45,8 +45,8 @@ flowchart LR
 ```
 
 ### Progress
-- [ ] 1.1 — Renderer writes the defaults snapshot (wave 1)
-- [ ] 1.2 — The applier script (wave 1)
+- [x] 1.1 — Renderer writes the defaults snapshot (wave 1)
+- [x] 1.2 — The applier script (wave 1)
 - [ ] 2.1 — The SessionStart hook (wave 2)
 - [ ] 2.2 — Deploy integration (wave 2)
 - [ ] 2.3 — The /harness-models skill (wave 2)
@@ -337,3 +337,4 @@ effort stay the user's.
 ## 6. Status Log
 
 - 2026-10-17 — plan written; status proposed.
+- 2026-10-17 — tasks 1.1, 1.2 complete; commits c572f54, bcba268

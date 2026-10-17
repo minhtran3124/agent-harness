@@ -52,6 +52,14 @@ Classified high-risk because the request requires a new SessionStart hook regist
 
 - none
 
+### Review Minor findings (forwarded to final review)
+
+- Task 1.1: `render_agent_definitions.py` writes agent files before the snapshot, so a skill with broken frontmatter leaves a partial render on exit 1.
+- Task 1.1: the `--defaults-out` write is not atomic, and an absent parent folder raises an uncaught `FileNotFoundError`.
+- Task 1.1: the frontmatter-value test uses only synthetic skills (no real skill declares `model`/`effort` today).
+- Task 1.2: an inserted line uses LF even in a CRLF file (`scripts/apply_model_config.py:205`).
+- Task 1.2: with duplicate `model:`/`effort:` keys, replace rewrites only the first; delete removes all.
+
 ### Verify
 
 | Check | Command | Exit | Notes | Criterion |
@@ -68,4 +76,4 @@ Classified high-risk because the request requires a new SessionStart hook regist
 
 ### Harness-Delta
 
-- none
+- backlog (Task 1.2): the worktree-isolation guard refuses compound shell commands (loops, `cd` then `git`), so implementers run each command alone.
