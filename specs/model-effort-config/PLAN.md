@@ -10,7 +10,7 @@ created: 2026-10-17
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**7 tasks · 4 waves · 19 files · 6/7 done**
+**7 tasks · 4 waves · 19 files · 7/7 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -51,7 +51,7 @@ flowchart LR
 - [x] 2.2 — Deploy integration (wave 2)
 - [x] 2.3 — The /harness-models skill (wave 2)
 - [x] 3.1 — Register the hook and skill; exclude from Codex (wave 3)
-- [ ] 4.1 — Redeploy and live proof (wave 4)
+- [x] 4.1 — Redeploy and live proof (wave 4)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -123,7 +123,7 @@ effort stay the user's.
 | SC-12 | No line under `hooks/` derives the repository root from the hook's own location | `bash scripts/check-hook-root-source.sh` | exit 0 |
 | SC-13 | A deploy with `{"agents":{"coding":{"effort":"high"}}}` yields `.claude/agents/coding.md` with `effort: high` and that one-line diff against a default deploy; the consumer tree holds `scripts/apply_model_config.py` and `harness-models.defaults.json` and no `agents/*.json`; a consumer skill with `model: sonnet` is byte-identical after the deploy | `bash tests/scripts/model-config-deploy.test.sh` | exit 0 |
 | SC-14 | A deploy with an invalid `harness-models.json` exits non-zero, prints the applier's errors, and creates or changes no file under the target's `.claude/`, also under `--dry-run` | `bash tests/scripts/model-config-deploy.test.sh` | exit 0 |
-| SC-15 | `standard` and `strict` deploys register `model-config.sh` under SessionStart with matcher `startup\|clear`; `minimal` does not | `bash tests/scripts/deploy-profile.test.sh` | exit 0 |
+| SC-15 | `standard` and `strict` deploys register `model-config.sh` under SessionStart with a matcher naming `startup` and `clear`; `minimal` does not | `bash tests/scripts/deploy-profile.test.sh` | exit 0 |
 | SC-16 | `settings.json` registers no `PreModelSwitch` hook | `python3 -c "import json,sys; sys.exit('PreModelSwitch' in json.load(open('settings.json'))['hooks'])"` | exit 0 |
 | SC-17 | The Codex adapter's `hooks.json` registers no `model-config.sh`, and the render still matches the committed adapter | `/tmp/harness-tests-venv/bin/python -m pytest scripts/test_render_codex_adapter.py -q` | exit 0 |
 | SC-18 | The manifest lists the new hook, profile membership and `harness-models` skill consistently with the files | `python3 scripts/check_manifest.py` | exit 0 |
@@ -340,3 +340,4 @@ effort stay the user's.
 - 2026-10-17 — tasks 1.1, 1.2 complete; commits c572f54, bcba268
 - 2026-10-17 — tasks 2.1, 2.2, 2.3 complete; commits 0cafe3a, 57eb40d, 47bd4e4
 - 2026-10-17 — task 3.1 complete; commits 24d6c30, 0728ef5 (fix round on the Task 2.3 skill file)
+- 2026-10-17 — task 4.1 complete; commit a3effd0
