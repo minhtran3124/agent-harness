@@ -10,7 +10,7 @@ created: 2026-10-17
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**14 tasks · 8 waves · 30 files · 13/14 done**
+**14 tasks · 8 waves · 30 files · 14/14 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -84,7 +84,7 @@ flowchart LR
 - [x] 6.1 — Skill commits the hypotheses before any probe (wave 6)
 - [x] 6.2 — HYPOTHESIS marker counts a Bash heredoc (wave 6)
 - [x] 7.1 — Replay run on the committed-hypotheses skill (wave 7)
-- [ ] 8.1 — Clean replay without fix history or test hints (wave 8)
+- [x] 8.1 — Clean replay without fix history or test hints (wave 8)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -575,3 +575,4 @@ Not an SC row (Guardrail 4): `bash scripts/run-tests.sh` must exit 0 at branch f
 - 2026-10-17 — tasks 6.1, 6.2 complete; commits 1690a6d, 47d2397, 2059adb; task reviews approved (6.1 after one fix round)
 - 2026-10-17 — task 7.1 complete; commit 61c1c53; SC-30 passed; task review approved with one Important plan-mandated finding (replay setup leaked the answer)
 - 2026-10-17 — user approved DC5 (clean replay); added task 8.1; added SC-37, SC-38, SC-39
+- 2026-10-17 — task 8.1 complete; commits c5e9d82, 017e017; SC-37 passed under the DC6 post-run loop rule (strict conversion kept, fails); task review approved with four Minors
