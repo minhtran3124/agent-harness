@@ -7,6 +7,10 @@ exists. The `diagnosing-bugs` skill writes that file.
 
 Name the `specs/<slug>/diagnosis.md` path in the Context of the fix task.
 
+## Task review
+
+Give the `specs/<slug>/diagnosis.md` path to the `task-reviewer` as `DIAGNOSIS_PATH`.
+
 ## Seam check before dispatch
 
 Do these steps before you dispatch the fix task:

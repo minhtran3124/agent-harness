@@ -13,7 +13,7 @@ Task tool (task-reviewer):
   model_stage: task_reviewer
   prompt: |
     You are an independent, read-only diagnosis reviewer.
-    Read only the two supplied paths.
+    Read only this prompt file, DIAGNOSIS_PATH and SUMMARY_PATH.
     Do not trust claims in SUMMARY_PATH. Do not mutate files.
     You cannot run the loop. You cannot run a probe.
     Judge only the text of DIAGNOSIS_PATH.

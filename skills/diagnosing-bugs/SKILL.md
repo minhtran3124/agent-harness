@@ -50,8 +50,8 @@ Write `specs/<slug>/diagnosis.md` from `references/diagnosis-template.md`.
 
 ## Diagnosis review
 
-Dispatch the `task-reviewer` agent with the path of `references/diagnosis-review-prompt.md`, not its text.
-Give it the `diagnosis.md` path and the `SUMMARY.md` path.
+Dispatch the `task-reviewer` to Read `skills/diagnosing-bugs/references/diagnosis-review-prompt.md` first and follow it.
+Give it the `diagnosis.md` and `SUMMARY.md` paths, not the prompt text.
 Start Phase 5 only after `spec_verdict: pass` and `quality_verdict: approved`.
 When the review fails, revise `diagnosis.md` and review again.
 A second failure writes an `ESCALATIONS.md` block with `decision: pending` and stops.
