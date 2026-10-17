@@ -61,9 +61,10 @@ Edited files:
   `skills/diagnosing-bugs/SKILL.md` before the lane route. This closes #313 step 2.
 - `skills/subagent-driven-development/SKILL.md` and `implementer-prompt.md` — the controller
   passes the `diagnosis.md` path in the task Context; before it dispatches the fix task, the
-  controller checks that the task's `Seams:` matches `diagnosis.md` `Seam:` and stops on a
-  mismatch (this covers the normal lane, whose route has no `writing-plans` step); the red test targets the confirmed
-  hypothesis; the controller runs Phase 6 after the last wave and before the final reviews.
+  controller checks that the seam point of the task's `Seams:` (the text before ` — catches:`,
+  per `rules/plan-format.md`) equals `diagnosis.md` `Seam:` exactly, and stops on a mismatch (this covers the normal lane, whose route has no `writing-plans` step); the red test targets the confirmed
+  hypothesis; when `diagnosis.md` says `Seam: none — <reason>`, the implementer takes the
+  `Red test exempt: <reason>` path instead of returning `NEEDS_CONTEXT`; the controller runs Phase 6 after the last wave and before the final reviews.
 - `skills/writing-plans/SKILL.md` — when `specs/<slug>/diagnosis.md` exists, copy its `Seam:`
   into the fix task's `Seams:` (high-risk route, where `writing-plans` runs).
 - `skills/compound/SKILL.md` — the bug track takes its root cause from `diagnosis.md` when it
@@ -122,7 +123,7 @@ The six phases, each ending in one completion criterion:
 | Failure | Response |
 |---|---|
 | No loop can be built | Write an `ESCALATIONS.md` block with `decision: pending`, listing what was tried and what is needed (environment, captured artifact, or permission to instrument). Stop. |
-| Fix task `Seams:` differs from `diagnosis.md` `Seam:` | The controller does not dispatch; it returns the task to the plan writer to correct `Seams:`. |
+| Fix task `Seams:` differs from `diagnosis.md` `Seam:` | The controller does not dispatch. It corrects `Seams:` itself (normal lane, where the controller wrote the plan) or returns the task to `writing-plans` (high-risk). A second mismatch (budget: 2 checks) writes an `ESCALATIONS.md` block with `decision: pending` and stops. |
 | Diagnosis review fails | Revise `diagnosis.md` and review again. A second failure (budget: 2 reviews) writes an `ESCALATIONS.md` block with `decision: pending` and stops. |
 | Probes refute every hypothesis | Return to Phase 3 with a new list. A second full refutation (budget: 2 rounds) writes an `ESCALATIONS.md` block with `decision: pending` and stops. |
 | No valid seam for the red test (any lane, tiny included) | Record the finding in `SUMMARY.md` and write `Red test exempt: <reason>`. |
@@ -208,3 +209,5 @@ The six phases, each ending in one completion criterion:
 | D9 | Proof is a replay of one `docs/solutions/` bug at its pre-fix commit, transcript under `proof/`. | Transcript claims are listed in `### Not auto-verified`. | settled |
 | D10 | Approach A: template and reviewer brief live in the skill, not in `templates/`. | The diff avoids the `ci-strict-gate.sh` block tier for `templates/`. | settled |
 | D11 | Phase 4 deletes its probes before handoff; Phase 6 re-checks and deletes any left. | No probe stays in the tree during planning or implementation. | settled |
+| D12 | Seam agreement is checked by the `subagent-driven-development` controller at dispatch (exact match of the seam point), not only copied by `writing-plans`. | The check covers the normal lane, which has no `writing-plans` step. | settled |
+| D13 | `Seam: none — <reason>` in `diagnosis.md` sends the implementer to `Red test exempt`, not `NEEDS_CONTEXT`. | `implementer-prompt.md` states which path wins. | settled |
