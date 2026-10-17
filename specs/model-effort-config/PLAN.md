@@ -1,6 +1,6 @@
 ---
 slug: model-effort-config
-status: proposed
+status: active
 owner: Minh Tran
 created: 2026-10-17
 ---
