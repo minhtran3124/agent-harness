@@ -27,6 +27,9 @@ Emit only complete tracks:
 | decision | context, options, rationale |
 | failure | symptom, wrong approach, why it failed, correct approach |
 
+For the bug track, when `specs/<slug>/diagnosis.md` exists, take the root cause from its
+`Confirmed:` hypothesis.
+
 Skip incomplete or `[none]` tracks. Preserve a relevant active spec’s alternatives as decision
 inputs. A spec number labelled `prediction → measured` (a `prediction` kept beside its
 `measured <YYYY-MM-DD> <source>` value) is a learning source. The gap between the two is evidence

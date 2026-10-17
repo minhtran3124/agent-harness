@@ -231,6 +231,7 @@
     "compound",
     "context-propagation-audit",
     "correctness-review",
+    "diagnosing-bugs",
     "feature-intake",
     "finishing-a-development-branch",
     "intent-review",
