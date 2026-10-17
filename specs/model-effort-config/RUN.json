@@ -1,12 +1,12 @@
 {
   "created_at": "2026-10-17T09:45:24Z",
-  "last_event_id": "84774a62-415e-4618-9451-6190eb959cb9",
+  "last_event_id": "2bfb07ea-dcb9-4d51-a534-b5b975ca1615",
   "resume_event": null,
   "run_id": "b104af39-5ebd-4c63-8e82-87bba7c19dd3",
-  "seq": 5,
+  "seq": 6,
   "sha": null,
   "slug": "model-effort-config",
-  "state": "verifying",
-  "updated_at": "2026-10-17T12:39:15Z",
+  "state": "ready_to_merge",
+  "updated_at": "2026-10-17T13:51:38Z",
   "waiting_on": null
 }
