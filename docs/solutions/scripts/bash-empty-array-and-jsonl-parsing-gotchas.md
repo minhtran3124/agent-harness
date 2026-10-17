@@ -162,3 +162,18 @@ PY
   key-access bugs and missed the boundary. The boundary defect was only found by a reviewer
   asking whether the fix was deep enough or a bandaid. That question is not implied by
   "find the bugs"; it has to be asked on purpose.
+
+## Recurrence (2026-10-17, gh-313-prove-the-red)
+
+The same pattern came back in Python. `_red_fix_diff_issue` in `scripts/verify_summary.py` is
+advisory by default, and it enforces that with `except OSError` and
+`except subprocess.CalledProcessError` around its git calls. `_git` decodes the output with
+`text=True`. With `git diff -z`, git prints raw path bytes, so a non-UTF-8 file name raises
+`UnicodeDecodeError`, which neither clause catches. `--lane` then exits 1 with a traceback, and
+`hooks/commit-gate.sh` blocks on any non-zero exit. Two correctness-review angles reproduced it;
+the prior-art angle found it through this record. The scorer gave it 50 (rare trigger), so it is
+recorded as an advisory in `specs/gh-313-prove-the-red/SUMMARY.md` and is not fixed yet. The
+correct fix is the same as round 3 above: bound the whole per-pair git block (catch any
+exception and map it to the "cannot check the fix diff" advisory), or decode with
+`errors="surrogateescape"`.
+
