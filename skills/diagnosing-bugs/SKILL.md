@@ -5,7 +5,7 @@ disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Grep, Glob, Agent, Task, Bash
 ---
 
-# Diagnosing Bugs — prove the cause before the fix
+# Diagnosing Bugs
 
 ## Redaction
 
@@ -58,6 +58,7 @@ A second failure writes an `ESCALATIONS.md` block with `decision: pending` and s
 ## Phases 5 and 6
 
 5. **Fix.** On the tiny lane, write the red test at the `diagnosis.md` `Seam:`.
+   Commit the red test. Then commit the fix.
    Record the `red` and `green` rows that `rules/auto-correct-scope.md` names.
    When `diagnosis.md` has `Seam: none — <reason>`, record a finding in `SUMMARY.md`.
    Then write `Red test exempt: <reason>`.
