@@ -28,6 +28,9 @@ runs `verify_summary.py --lane` on a staged SUMMARY.
 - Task 6.1 — the template comment "One probe for each prediction." states coverage; the one-probe-to-one-hypothesis rule now lives in the `tests: H<n>` field shape.
 - Task 6.2 — the HYPOTHESIS rule cannot tell which file a heredoc writes, so an unrelated early `H1` line could make the SC-30 order pass falsely (never fail falsely). Task 7.1's first HYPOTHESIS line is checked by hand.
 
+- Task 9.1 — the dispatch sentence "Dispatch the `task-reviewer` to Read <path> first and follow it." holds two actions. Not fenced, ste-lint 0. The file has 1 word of headroom.
+- Task 8.1 — four Minors folded into SUMMARY `### Not auto-verified` (DC6 post-run rule, `"$PWD"` input, PROBE false positive, implementer-reported green and clean-clone state). The strict conversion was confirmed byte-identical by the controller.
+
 ## Fix rounds
 
 - Task 1.2 — round 1 (`28b9aa2`): three Minors applied; re-review pass/approved, no findings.

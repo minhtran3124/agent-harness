@@ -141,6 +141,28 @@ The harness classified `Input-type: bug fix` but routed it to no diagnosis step,
 - Codex handling of `disable-model-invocation` — unknown.
 - `bash scripts/run-tests.sh` (whole suite) runs at branch finish, not here.
 
+### Context-Propagation Audit
+
+Result: **PASS** at `bdc0025` (first pass at `8a7ec89`: FAIL on F1 and F2, repaired by Task 9.1, then re-audited).
+
+| Source | Consumer | Context | Delivery | Proof | Result |
+| --- | --- | --- | --- | --- | --- |
+| feature-intake `## Routes` bug-fix line | feature-intake | main, new session | skill body | `proof/bug-fix-routing.md` (Skill feature-intake, then a read of the diagnosing-bugs SKILL.md, no Skill call) | PASS |
+| same line, consumer copy | consumer install | main | deploy rewrite | `deploy-harness.sh` rewrite; `consumer-subset.test.sh` | PASS |
+| diagnosing-bugs SKILL.md phases | session that ran intake | main | explicit Read | `proof/replay-clean.md` | PASS |
+| `diagnosis-review-prompt.md` | task-reviewer | fresh reviewer | explicit Read, required by SKILL.md (Task 9.1) | diagnosing-bugs SKILL.md Diagnosis review; `agents/runtime-bindings.json` (Read tool) | PASS (F1 repaired) |
+| SDD pointer to `references/bug-fix.md` | SDD controller | main, `resume <slug>` | skill body, then explicit Read | SDD SKILL.md "Execute waves" | PASS |
+| review-chain diagnosed Phase 6 | SDD controller | main, `resume-review-chain` | explicit Read | SDD SKILL.md, `references/resume.md` | PASS |
+| implementer `Seam: none` exemption, `Confirmed:` target | coding implementer | implementer | template pasted; diagnosis path in Context | `implementer-prompt.md`; `bug-fix.md` | PASS |
+| task-reviewer step-4 skip | task-reviewer | fresh reviewer | `DIAGNOSIS_PATH` input (Task 9.1); `none` fails closed | `task-reviewer-prompt.md`; `bug-fix.md` `## Task review` | PASS (F2 repaired) |
+| `rules/plan-format.md` exception | writing-plans, plan reviewer, SDD preflight | main, reviewer | explicit Read | writing-plans SKILL.md; plan-document-reviewer-prompt.md; SDD SKILL.md Preflight | PASS |
+| writing-plans seam copy | writing-plans | main | skill body; backstop: SDD seam check | writing-plans SKILL.md; `bug-fix.md` | PASS |
+| compound root cause from `Confirmed:` | compound passes | main | skill body (passes run in the main loop) | compound SKILL.md | PASS |
+| deploy rewrite of `skills/diagnosing-bugs/` | consumer Markdown | consumer | prefix regex over derived `.md` | `deploy-harness.sh`; `consumer-subset.test.sh` pins two paths | PASS |
+| READMEs | none at runtime | — | documentation; `skills/xia2/README.md` is harness-only | `deploy-harness.sh` `HARNESS_ONLY_DOCS` | PASS (not load-bearing) |
+
+Open notes (not FAIL): SDD SKILL.md "Pass brief/report/package paths" does not name `DIAGNOSIS_PATH` (the template carries it; a missing value fails closed); no test pins the rewrite of the review-prompt path; no drift test ties the three "same reason" rules together; nothing resumes an interrupted diagnosis (Phases 1–4) in a new session; a `Loop:` command in a session scratchpad may not exist for a resumed Phase 6.
+
 ### Rollback
 
 - `git revert <sha>` for each implementation commit; the new skill directory is additive, so reverting removes it.
