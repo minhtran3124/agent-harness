@@ -246,3 +246,10 @@ The six phases, each ending in one completion criterion:
   `git clone --no-local` that holds only 0048a16's history, and a test overlay with the explanatory
   comments removed and the assertions unchanged. Its result goes to new proof files, and the 7.1
   evidence stays.
+- **DC6 (2026-10-17, user approved, post-run):** in the clean replay the model found the cause
+  unaided and its fix turned the test green, but SC-37 failed. The pinned loop-input rule cut the
+  `Loop:` value only at the exact ` — red output:`, and the model wrote ` — red output (exit=1):`, so
+  the rule took `(exit=1):` as the loop command. The rule now cuts at ` — red output`, the template's
+  own separator. This change was made after the run and is stated as such. The saved stream is
+  converted again with no new model run. The failing strict conversion stays as
+  `proof/replay-clean-strict.md`.
