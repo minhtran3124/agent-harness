@@ -54,7 +54,7 @@ run feature-intake for https://github.com/minhtran3124/agent-harness/issues/318
 
 ## What changed
 
-- New `skills/diagnosing-bugs/` (599/600 words, `disable-model-invocation: true`): redaction rule first; isolation; six gated phases with `Done when:` lines; the loop runs with no pipe; `H1`–`H5` are written into `diagnosis.md` and committed before the first probe; `[DEBUG-xxxx]` probes; a `task-reviewer` diagnosis review that names `references/diagnosis-review-prompt.md`; Phase 5 red test then fix; Phase 6 cleanup. References: `phases.md`, `diagnosis-template.md`, `diagnosis-review-prompt.md`; `scripts/hitl-loop.template.sh` (original); `tests/routing-cases.md`. Registered in `harness-manifest.json`; audit test pins 15 skills / 12 prompts.
+- New `skills/diagnosing-bugs/` (600/600 words, `disable-model-invocation: true`): redaction rule first; isolation; six gated phases with `Done when:` lines; the loop runs with no pipe; `H1`–`H5` are written into `diagnosis.md` and committed before the first probe; `[DEBUG-xxxx]` probes; a `task-reviewer` diagnosis review that names `references/diagnosis-review-prompt.md`; Phase 5 red test then fix; Phase 6 cleanup. References: `phases.md`, `diagnosis-template.md`, `diagnosis-review-prompt.md`; `scripts/hitl-loop.template.sh` (original); `tests/routing-cases.md`. Registered in `harness-manifest.json`; audit test pins 15 skills / 12 prompts.
 - `skills/feature-intake/SKILL.md`: `Input-type: bug fix` routes to the skill by the Read tool, never the Skill tool (closes #313 step 2).
 - `skills/subagent-driven-development/`: `references/bug-fix.md` (diagnosis path in Context; seam-point check before dispatch; two-check budget), a pointer in `SKILL.md` (paid by a #308 deletion), Phase 6 in `references/review-chain.md`; `implementer-prompt.md` and `task-reviewer-prompt.md` accept a diagnosed `Seam: none — <reason>` with `Red test exempt`, and the red test targets `Confirmed:`.
 - `rules/plan-format.md`: the diagnosed no-seam exception. `skills/writing-plans/SKILL.md` copies `Seam:` into `Seams:`. `skills/compound/SKILL.md` takes the bug root cause from `Confirmed:`.
@@ -79,6 +79,8 @@ The harness classified `Input-type: bug fix` but routed it to no diagnosis step,
 - Task 4.2 (Rule 1): `proof/transcript.py --help` returned 2; a help branch was added.
 - Task 3.2 loop input `loop.sh` was a post-run judgment call (not Rule 1); Tasks 5.1 and 7.1 pinned the rule before the run.
 - Minor findings and fix rounds: `specs/gh-318-diagnosing-bugs/review-ledger.md`.
+- Correctness review round 1 (Rule 1, `168345c`): L1 the HITL template now has an exit contract (1 red on `SYMPTOM_SEEN=yes`, 0 green, 2 no terminal / end of input / bad answer); L2 internal names use a `__hitl_` prefix that `capture` rejects; L4 `Red test exempt:` goes in SUMMARY `### Verify`; L5 the tiny lane cuts `fix/<slug>` only from a shared branch. #308 deletions: Phase 4 "Start no probe before that commit." (kept in Phase 3 and `diagnosis-template.md`).
+- Re-score follow-up (Rule 1, `a411aa9`): N1 the human runs the HITL copy (an agent Bash call has no terminal, so the copy exits 2); D-b the retry after a failed diagnosis review is restored and defines failure. #308 deletion: Phase 6 "The session that completed the fix does this phase." (`references/review-chain.md` assigns Phase 6 to the SDD controller; the tiny lane has one session).
 
 ### Verify
 
@@ -139,7 +141,41 @@ The harness classified `Input-type: bug fix` but routed it to no diagnosis step,
 - SC-28 shows a tool call named the skill path, not that the read succeeded (`is_error=False` was checked by hand). SC-27 and SC-29 cover main-thread calls only.
 - The SC-30 HYPOTHESIS marker does not check which file a call writes. The first HYPOTHESIS line was checked by hand: it writes and commits `diagnosis.md`.
 - Codex handling of `disable-model-invocation` — unknown.
-- `bash scripts/run-tests.sh` (whole suite) runs at branch finish, not here.
+- Whole suite (cited in prose, not a Verify row, per `rules/plan-format.md` Guardrail 4): `bash scripts/run-tests.sh` exit 0 at `a411aa9`, "1059 passed, 1 skipped … ALL GREEN"; also exit 0 at `f27c305` (intent reviewer) and `168345c`. Truth tier at those commits only.
+- HITL template exit codes (L1) were exercised under a real terminal via `pty.fork()` by the fixer and the re-scorer (yes 1, no 0, other 2, end of input 2). No committed test pins them; the no-terminal case was run only by the fixer.
+
+### Correctness Review
+
+Run on `09a7985..f27c305`; blocking threshold 75.
+
+| Id | Finding | Score | Outcome |
+| --- | --- | --- | --- |
+| L1 | HITL template always exited 0, so a human-action loop could not go red | 75 | fixed `168345c`; re-score 10 |
+| L4 | `Red test exempt:` written outside `### Verify`, where `verify_summary.py` reads it | 75 | fixed `168345c`; re-score 15 |
+| L5 | tiny lane `git checkout -b` collided with the branch intake already cut | 75 | fixed `168345c`; re-score 20 ("shared branch" defined only in `rules/auto-correct-scope.md`) |
+| L2 | internal template names could collide with a `capture` name | 50 | fixed `168345c`; re-score 10 (a capture can still set `PATH`/`IFS`) |
+| L3 | the Phase 6 `[DEBUG-` search matches its own command text | 50 | advisory, not fixed |
+| L6 | an untagged throwaway harness survives the Phase 6 search; a harness-based loop deleted in Phase 4 leaves Phase 6 nothing to re-run | 50 | advisory, not fixed |
+| L7 | `run_review_prompt_eval.py` leaves the `DIAGNOSIS_PATH` placeholder unfilled (unmodified line) | 0 | advisory, one-line fix for a follow-up |
+| L8 | legacy seam exemption scope at `implementer-prompt.md:64` | 50 | advisory, not fixed |
+| N1 | (re-score) the agent cannot run the HITL copy; nothing said who runs it | 40 | fixed `a411aa9` |
+| D-b | (re-score) the deleted review-retry sentence did not survive the #308 test | 55 | fixed `a411aa9` |
+| N2 | (re-score) yes/no match is case-sensitive; `Yes` exits 2 (fails safe) | 15 | advisory, not fixed |
+
+### Intent Findings
+
+Intent review at `f27c305`, blind to PLAN tasks: no blocking gap.
+
+| # | Class | Finding | Outcome |
+| --- | --- | --- | --- |
+| 1 | drift (equivalent) | the gate before Phase 5 is a separate `task-reviewer` diagnosis review, not SDD's per-task review | user-approved D5; recorded |
+| 2 | drift | the skill never waits for the user's re-rank, even when present; adds commit-before-probe | user-approved D6 → D16 → D17; recorded |
+| 3 | drift (equivalent) | "chain-invoked" is a Read-and-follow, not a Skill call | user-approved D1/D15, DC2; recorded |
+| 4 | drift (behavior) | HITL loop cannot go red by exit code | same as L1; fixed `168345c` |
+| 5 | excess | seam-point check before dispatch, `rules/plan-format.md` exception, writing-plans copy, task-reviewer `DIAGNOSIS_PATH` | report-only (D12/D13) |
+| 6 | excess | `scripts/deploy-harness.sh` rewrite | report-only; user-approved DC1 |
+| 7 | excess | `tests/routing-cases.md` manual canary table | report-only |
+| 8 | gap (evidence) | no record of `bash scripts/run-tests.sh` | recorded in prose under `### Not auto-verified` |
 
 ### Context-Propagation Audit
 
@@ -175,3 +211,5 @@ Open notes (not FAIL): SDD SKILL.md "Pass brief/report/package paths" does not n
 - backlog: a prose order rule ("post the list before probing") did not hold in 2 of 2 runs; a committed artifact did hold in 1 of 1.
 - backlog: in a worktree-isolated session the sandbox refuses compound shell lines and text that names git; briefs should say so up front.
 - backlog: a Done line that names a command (`transcript.py --help`) was not run by the task that wrote the file.
+- backlog (→ compound): "no real terminal run is possible here" was false — `pty.fork()` gives a child a controlling terminal. A pty-driven test in `tests/scripts/` could pin the HITL exit contract (yes 1, no 0, other 2, end of input 2, no terminal 2).
+- backlog: at the 600-word ceiling every fix needs a #308 deletion; one deletion (the review-retry sentence) failed the test on re-score. A re-scorer should check each deletion, not only the fix.

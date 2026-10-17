@@ -42,6 +42,11 @@ runs `verify_summary.py --lane` on a staged SUMMARY.
 - Task 3.2 — reviewed pass/approved (Minors above). SC-30 carried to Task 5.1.
 - Task 4.1 — round 1 (`d4d7507`): rewrite widened to the whole `skills/diagnosing-bugs/` prefix (DC1). Re-review pass/approved, no findings.
 
+## Final review chain
+
+- Correctness review at `f27c305`: blocking L1, L4, L5 (75); L2 (50) fixed with them in `168345c`. Re-score: all four fixed; new N1 (40) and D-b (55, a #308 deletion that did not survive) fixed in `a411aa9`. Advisory, not fixed: L3, L6, L7, L8, N2. Full table: SUMMARY `### Correctness Review`.
+- Intent review at `f27c305`: 8 findings, none blocking. #4 = L1; #8 recorded in prose (whole suite is not a Verify row). Full table: SUMMARY `### Intent Findings`.
+
 ## Harness-Delta
 
 - backlog (Task 1.1): in a worktree-isolated session the sandbox refuses compound shell lines, `cd`-prefixed lines and `$?` chains, so each check runs as its own call. The implementer brief could say so up front.
