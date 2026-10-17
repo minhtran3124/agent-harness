@@ -36,7 +36,7 @@ Intent-source: specs/model-effort-config/intent.md @ 09bc03e9daf0892a15f96f284ec
 
 ## What changed
 
-Intake only: intent approved and committed; lane and confidence recorded. No implementation yet.
+Intake and brainstorming: intent approved; `design.md` approved by the user after five spec-review rounds (Approach 1, applier that rewrites deployed frontmatter; decisions D1–D13). No implementation yet.
 
 ### Rationale
 
@@ -44,7 +44,8 @@ Classified high-risk because the request requires a new SessionStart hook regist
 
 ### Alternatives considered
 
-- none
+- Dispatch-time injection of `model`/`effort` on Agent calls: rejected; misses user-dispatched agents and skill effort, and applies mid-session (design.md Approaches).
+- SessionStart re-running full deploy: rejected; slow and can stop on protected-file conflicts.
 
 ### Deviations
 
