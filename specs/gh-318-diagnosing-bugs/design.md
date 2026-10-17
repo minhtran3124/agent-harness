@@ -24,8 +24,8 @@ bug-fix lane, `subagent-driven-development`, `compound`, and `skills/README.md`.
   SKILL.md body is 461 words (measured 2026-10-17 `wc -w` on the non-frontmatter lines), against the 600-word ceiling (budget).
 - `skills/session-retro/SKILL.md` is the one existing skill with `disable-model-invocation: true`.
 - `agents/task-reviewer.md` is the reviewer that `subagent-driven-development` dispatches per
-  task. Its read-only tool set (Glob, Grep, Read) comes from deployment: it is in
-  `.claude/agents/task-reviewer.md:4`, not in the source frontmatter.
+  task. Its read-only tool set (Glob, Grep, Read) comes from deployment: the tracked source is
+  `agents/runtime-bindings.json:40`, not the agent's frontmatter.
 - `hooks/branch-isolation-guard.sh` denies implementation edits on a shared branch; only
   `specs/*` is exempt. `using-git-worktrees` detects existing isolation before it creates any.
 - `scripts/hitl-loop*` does not exist (`ls scripts/hitl-loop*`, 2026-10-17). The issue's file is
@@ -50,7 +50,7 @@ New files under `skills/diagnosing-bugs/`:
 |---|---|
 | `SKILL.md` | Frontmatter with `disable-model-invocation: true`. Redaction rule first. Six phases, each with one completion criterion. Under 600 words (budget). |
 | `references/phases.md` | Long lists: loop-building techniques, minimisation tactics, hypothesis and probe patterns. |
-| `references/diagnosis-template.md` | Shape of `specs/<slug>/diagnosis.md`. |
+| `references/diagnosis-template.md` | Shape of `specs/<slug>/diagnosis.md`. Required fields: `Loop:` (command and redacted red output), `Repro:` (minimised input), `Hypotheses:` (three to five, ranked, each with a prediction), `Probes:` (probe ↔ prediction ↔ result), `Confirmed:` (hypothesis ID), `Seam:` (where the red test goes, or `none — <reason>`). |
 | `references/diagnosis-review-prompt.md` | Brief for the `task-reviewer` dispatch on `diagnosis.md`. |
 | `scripts/hitl-loop.template.sh` | Original script for a loop in which a human must act. Not copied from Pocock. |
 | `tests/*.md` | Case files in the style of `skills/feature-intake/tests/`. |
@@ -62,6 +62,8 @@ Edited files:
 - `skills/subagent-driven-development/SKILL.md` and `implementer-prompt.md` — the controller
   passes the `diagnosis.md` path in the task Context; the red test targets the confirmed
   hypothesis; the controller runs Phase 6 after the last wave and before the final reviews.
+- `skills/writing-plans/SKILL.md` — when `specs/<slug>/diagnosis.md` exists, copy its `Seam:`
+  into the fix task's `Seams:`.
 - `skills/compound/SKILL.md` — the bug track takes its root cause from `diagnosis.md` when it
   exists.
 - `skills/README.md` — Bug Fix Path, a Skills Reference row, the handoff map; remove the
@@ -88,7 +90,8 @@ The six phases, each ending in one completion criterion:
    committed under `specs/<slug>/` with the rest of the spec.
 5. **Fix.** After the diagnosis review passes, hand off to the lane: tiny writes the red test at the seam that `diagnosis.md` names in its `Seam:` line, commits
    it, then commits the fix, inside the skill; normal and high-risk follow their route with `diagnosis.md` as an
-   input. No valid seam: a finding in `SUMMARY.md` plus `Red test exempt: <reason>`.
+   input; `writing-plans` copies its `Seam:` into the fix task's `Seams:`, so the two cannot
+   disagree. No valid seam: a finding in `SUMMARY.md` plus `Red test exempt: <reason>`.
 6. **Cleanup.** The session that completed the fix re-runs the Phase 1 loop (now green), greps the
    tag in the fix diff and in the working tree, deletes any tagged log or throwaway harness that
    is left, and names the confirmed hypothesis in the commit message and in SUMMARY
@@ -104,6 +107,7 @@ The six phases, each ending in one completion criterion:
    and H2 confirmed. The skill deletes the tagged probes and commits `diagnosis.md`.
 3. `task-reviewer` gets `references/diagnosis-review-prompt.md` and `diagnosis.md`. It passes.
 4. Phase 5: the route continues; `using-git-worktrees` detects the existing worktree, then
+   `writing-plans` copies `diagnosis.md` `Seam:` into the fix task's `Seams:`, and
    `subagent-driven-development` runs. The
    implementer's Context names `diagnosis.md`; it commits the red test for H2, then the fix.
 5. Phase 6: the controller re-runs the loop (exit `1`), finds no `[DEBUG-7c1e]` in the diff or
@@ -126,9 +130,11 @@ The six phases, each ending in one completion criterion:
 - Case files: a quick question through intake does not fire the skill; a bug-fix input routes to it.
   The case files are run by hand (`skills/feature-intake/tests/README.md`), so the quick-question
   case is also run once as a recorded proof: a fresh subagent gets the quick question and the
-  deployed `.claude/` harness, and its transcript goes to
-  `specs/gh-318-diagnosing-bugs/proof/quick-question.md`. A `### Verify` row greps that file for
-  `diagnosing-bugs/SKILL.md`. This is traceability tier for one run on one runtime.
+  deployed `.claude/` harness, and its tool-call log goes to
+  `specs/gh-318-diagnosing-bugs/proof/quick-question.md`. The log holds one line per tool call,
+  `<Tool> <first argument>` (for example `Read skills/feature-intake/SKILL.md`), and no tool
+  results, so file text that names the skill cannot match. A `### Verify` row greps it for a Read
+  call on the skill. This is traceability tier for one run on one runtime.
 - Replay proof: one bug from `docs/solutions/` with a known cause, run in a throwaway worktree at
   its pre-fix commit. The transcript goes to `specs/gh-318-diagnosing-bugs/proof/`. Rows in
   `### Verify` record the red loop before the hypotheses, the ranked list before the probes, and
@@ -146,7 +152,7 @@ The six phases, each ending in one completion criterion:
 - In the replay transcript, the first red loop output appears before the first hypothesis, the
   ranked list appears before the first probe, and `git diff <base>..HEAD | grep -c '\[DEBUG-'`
   prints `0` (budget: 0 tags).
-- `grep -c 'diagnosing-bugs/SKILL.md' specs/gh-318-diagnosing-bugs/proof/quick-question.md`
+- `grep -cE '^Read .*diagnosing-bugs/SKILL\.md$' specs/gh-318-diagnosing-bugs/proof/quick-question.md`
   prints `0` (budget: 0 matches).
 - `bash scripts/run-tests.sh` exits 0.
 
@@ -164,7 +170,7 @@ The six phases, each ending in one completion criterion:
 | ID | Assumption | Evidence now | Proven by | If false |
 |---|---|---|---|---|
 | A1 | `disable-model-invocation: true` stops the model from choosing the skill on its own, and still allows `/diagnosing-bugs` and a Read-and-follow instruction from `feature-intake`. | none yet — Inference: `skills/session-retro/SKILL.md` uses the flag as user-invoked | xia2 version-matched Docs check; SC `proof/quick-question.md` grep | The skill fires on quick questions or cannot chain. Fallback: leave it model-invocable with a narrow description. |
-| A2 | `agents/task-reviewer.md` can review a non-PLAN artifact when given a brief and paths. | none yet — Inference: its deployed tools are Glob, Grep, Read only (`.claude/agents/task-reviewer.md:4`) | xia2 read of `agents/task-reviewer.md` and its dispatch prompt | The diagnosis gate has no reviewer. Fallback: dispatch `agents/reviewer.md` with the same brief. |
+| A2 | `agents/task-reviewer.md` can review a non-PLAN artifact when given a brief and paths. | none yet — Inference: its deployed tools are Glob, Grep, Read only (`agents/runtime-bindings.json:40`) | xia2 read of `agents/task-reviewer.md` and its dispatch prompt | The diagnosis gate has no reviewer. Fallback: dispatch `agents/reviewer.md` with the same brief. |
 | A3 | The deploy script copies a new skill directory into `.claude/skills/` with no per-skill registration. | none yet | xia2 read of `scripts/deploy-harness.sh`; plan task | The deployed copy is missing. Fallback: add the registration the script needs. |
 | A4 | `docs/solutions/` holds a bug with a known cause, a findable pre-fix commit, and a deterministic repro. | none yet | xia2 selection; replay task | No replay proof. Fallback: escalate for the user to pick another proof bug. |
 | A5 | The `feature-intake` routing line keeps the body under the 600-word budget. | provenance: Local, 2026-10-17, `skills/feature-intake/SKILL.md` (body 461 words, measured 2026-10-17 wc -w) | SC audit row | The audit fails. Fallback: the #308 deletion test on `feature-intake`. |
