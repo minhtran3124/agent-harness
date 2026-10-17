@@ -1,0 +1,72 @@
+flowchart LR
+    A[Request or external event] --> B[Create run_id]
+    B --> C[(Append run.started)]
+    C --> D[Feature intake]
+
+    D --> E{Intent clear?}
+    E -- No --> F[awaiting_confirmation]
+    F --> F1[(Persist waiting_on: human)]
+    F1 --> F2{Human response}
+    F2 -- Confirm --> G
+    F2 -- Cancel --> X[cancelled]
+    E -- Yes --> G{Assign lane}
+
+    G -- Tiny --> H[Feature branch]
+    G -- Normal --> I[Isolated worktree]
+    G -- High-risk --> J[Brainstorm → Research → Plan]
+    J --> I
+    H --> K[implementing]
+    I --> K
+
+    K --> L[Implement]
+    L --> M[Spec review]
+    M --> N[Quality review]
+    N --> O[Correctness review]
+    O --> P[Intent review]
+    P --> Q[verifying]
+    Q --> R{Verification passes?}
+    R -- Yes --> S[Commit and push]
+    R -- No --> RF
+
+    S --> T[awaiting_ci]
+    T --> U{CI result}
+    U -- Pass --> V[awaiting_review]
+    U -- Fail --> RF
+
+    V --> W{Reviewer event}
+    W -- Approved --> Y[ready_to_merge]
+    W -- Changes requested --> RF
+    Y --> Z{Landed SHA confirmed?}
+    Z -- Yes --> SH[shipped]
+    Z -- No --> RF
+    SH --> BK[Post-merge bookkeeping]
+
+    subgraph RECOVERY[Bounded recovery]
+        RF[Operation failure] --> L1[L1 deterministic repair]
+        L1 --> V1{External validation passes?}
+        V1 -- Yes --> RES[Resume prior workflow state]
+        V1 -- No --> L2[L2 constrained agent repair]
+        L2 --> RB{Retry budget remains?}
+        RB -- Yes --> ATT[One bounded attempt]
+        ATT --> VAL[Re-run real operation]
+        VAL --> OK{Ground truth passes?}
+        OK -- Yes --> RES
+        OK -- No --> SIG{Repeated failure?}
+        SIG -- No --> L2
+        SIG -- Yes --> ESC[escalated]
+        RB -- No --> ESC
+        ESC --> TRAIL[(Persist attempt trail and resume event)]
+        TRAIL --> HUM[Operator decision]
+        HUM -- Retry --> L1
+        HUM -- Resume with changed scope --> RES
+        HUM -- Stop --> BLK[blocked or cancelled]
+    end
+
+    RES -. verification repaired .-> Q
+    RES -. CI repaired .-> T
+    RES -. review addressed .-> V
+    RES -. push repaired .-> Y
+
+    X --> END((Terminal))
+    BLK --> END
+    BK --> END

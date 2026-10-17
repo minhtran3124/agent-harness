@@ -1,0 +1,193 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1580" viewBox="0 0 1600 1580" role="img" aria-labelledby="title desc">
+  <title id="title">Harness workflow after Durable Run State and Bounded Recovery</title>
+  <desc id="desc">The main workflow moves from request through intake, implementation, verification, CI, review and merge. Every operation failure enters a bounded deterministic, agentic and human recovery loop.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
+    </marker>
+    <marker id="arrowBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"/>
+    </marker>
+    <style>
+      .title { font: 600 30px system-ui, sans-serif; fill: #0f172a; }
+      .subtitle { font: 400 17px system-ui, sans-serif; fill: #475569; }
+      .section { font: 600 20px system-ui, sans-serif; fill: #0f172a; }
+      .label { font: 500 15px system-ui, sans-serif; fill: #0f172a; text-anchor: middle; }
+      .small { font: 400 13px system-ui, sans-serif; fill: #475569; text-anchor: middle; }
+      .edgeLabel { font: 500 13px system-ui, sans-serif; fill: #334155; text-anchor: middle; }
+      .node { fill: #f8fafc; stroke: #94a3b8; stroke-width: 1.5; rx: 10; }
+      .state { fill: #eff6ff; stroke: #3b82f6; stroke-width: 1.8; rx: 10; }
+      .decision { fill: #fff7ed; stroke: #f97316; stroke-width: 1.8; }
+      .persist { fill: #f5f3ff; stroke: #8b5cf6; stroke-width: 1.8; rx: 20; }
+      .success { fill: #ecfdf5; stroke: #10b981; stroke-width: 1.8; rx: 10; }
+      .danger { fill: #fef2f2; stroke: #ef4444; stroke-width: 1.8; rx: 10; }
+      .recoveryBox { fill: #f8fafc; stroke: #64748b; stroke-width: 2; stroke-dasharray: 8 6; rx: 18; }
+      .edge { fill: none; stroke: #475569; stroke-width: 1.8; marker-end: url(#arrow); }
+      .return { fill: none; stroke: #2563eb; stroke-width: 2; stroke-dasharray: 7 5; marker-end: url(#arrowBlue); }
+    </style>
+  </defs>
+
+  <rect width="1600" height="1580" fill="#ffffff"/>
+  <text x="60" y="55" class="title">Workflow after Proposal 1 + 2</text>
+  <text x="60" y="85" class="subtitle">Durable run state records every transition; bounded recovery handles operation failures without infinite retry.</text>
+
+  <text x="60" y="130" class="section">Main run lifecycle</text>
+
+  <rect x="80" y="160" width="230" height="62" class="node"/>
+  <text x="195" y="187" class="label">Request / external event</text>
+  <text x="195" y="207" class="small">Create canonical run</text>
+
+  <rect x="380" y="160" width="220" height="62" class="state"/>
+  <text x="490" y="187" class="label">Create run_id</text>
+  <text x="490" y="207" class="small">state = queued</text>
+
+  <rect x="670" y="160" width="250" height="62" class="persist"/>
+  <text x="795" y="187" class="label">Append run.started</text>
+  <text x="795" y="207" class="small">events.jsonl + RUN.json</text>
+
+  <rect x="990" y="160" width="230" height="62" class="node"/>
+  <text x="1105" y="187" class="label">Feature intake</text>
+  <text x="1105" y="207" class="small">Lane + confidence + intent</text>
+
+  <path d="M310 191 H380" class="edge"/>
+  <path d="M600 191 H670" class="edge"/>
+  <path d="M920 191 H990" class="edge"/>
+
+  <polygon points="1105,270 1225,330 1105,390 985,330" class="decision"/>
+  <text x="1105" y="325" class="label">Intent clear?</text>
+  <text x="1105" y="346" class="small">single interpretation</text>
+  <path d="M1105 222 V270" class="edge"/>
+
+  <rect x="1290" y="300" width="230" height="62" class="state"/>
+  <text x="1405" y="327" class="label">awaiting_confirmation</text>
+  <text x="1405" y="347" class="small">waiting_on = human</text>
+  <path d="M1225 330 H1290" class="edge"/>
+  <text x="1257" y="317" class="edgeLabel">No</text>
+
+  <polygon points="1105,440 1225,500 1105,560 985,500" class="decision"/>
+  <text x="1105" y="495" class="label">Assign lane</text>
+  <text x="1105" y="516" class="small">tiny / normal / high-risk</text>
+  <path d="M1105 390 V440" class="edge"/>
+  <text x="1127" y="418" class="edgeLabel">Yes</text>
+  <path d="M1405 362 V410 H1210 V465" class="edge"/>
+  <text x="1330" y="399" class="edgeLabel">Human confirms</text>
+
+  <rect x="160" y="610" width="230" height="66" class="node"/>
+  <text x="275" y="638" class="label">Tiny</text>
+  <text x="275" y="659" class="small">Feature branch</text>
+
+  <rect x="485" y="610" width="230" height="66" class="node"/>
+  <text x="600" y="638" class="label">Normal</text>
+  <text x="600" y="659" class="small">Isolated worktree</text>
+
+  <rect x="810" y="610" width="270" height="66" class="node"/>
+  <text x="945" y="638" class="label">High-risk</text>
+  <text x="945" y="659" class="small">Brainstorm → research → plan</text>
+
+  <path d="M1035 545 C850 580 470 580 275 610" class="edge"/>
+  <path d="M1080 555 C900 590 730 590 600 610" class="edge"/>
+  <path d="M1130 560 C1090 585 1010 590 945 610" class="edge"/>
+
+  <rect x="485" y="730" width="230" height="64" class="state"/>
+  <text x="600" y="758" class="label">implementing</text>
+  <text x="600" y="779" class="small">persist transition</text>
+  <path d="M275 676 V705 H560 V730" class="edge"/>
+  <path d="M600 676 V730" class="edge"/>
+  <path d="M945 676 V705 H640 V730" class="edge"/>
+
+  <rect x="105" y="850" width="190" height="60" class="node"/>
+  <text x="200" y="885" class="label">Implement</text>
+  <rect x="345" y="850" width="190" height="60" class="node"/>
+  <text x="440" y="875" class="label">Spec + quality</text>
+  <text x="440" y="895" class="small">reviews</text>
+  <rect x="585" y="850" width="190" height="60" class="node"/>
+  <text x="680" y="875" class="label">Correctness + intent</text>
+  <text x="680" y="895" class="small">reviews</text>
+  <rect x="825" y="850" width="190" height="60" class="state"/>
+  <text x="920" y="885" class="label">verifying</text>
+  <polygon points="1180,825 1280,880 1180,935 1080,880" class="decision"/>
+  <text x="1180" y="875" class="label">Verify passes?</text>
+  <text x="1180" y="895" class="small">real command</text>
+
+  <path d="M600 794 V820 H200 V850" class="edge"/>
+  <path d="M295 880 H345" class="edge"/>
+  <path d="M535 880 H585" class="edge"/>
+  <path d="M775 880 H825" class="edge"/>
+  <path d="M1015 880 H1080" class="edge"/>
+
+  <rect x="1090" y="1000" width="180" height="58" class="node"/>
+  <text x="1180" y="1025" class="label">Commit + push</text>
+  <text x="1180" y="1045" class="small">record SHA</text>
+  <path d="M1180 935 V1000" class="edge"/>
+  <text x="1203" y="970" class="edgeLabel">Yes</text>
+
+  <rect x="860" y="1110" width="190" height="60" class="state"/>
+  <text x="955" y="1135" class="label">awaiting_ci</text>
+  <text x="955" y="1155" class="small">waiting_on = CI</text>
+  <polygon points="1180,1085 1280,1140 1180,1195 1080,1140" class="decision"/>
+  <text x="1180" y="1135" class="label">CI passes?</text>
+  <path d="M1180 1058 V1085" class="edge"/>
+  <path d="M1080 1140 H1050" class="edge"/>
+
+  <rect x="600" y="1110" width="190" height="60" class="state"/>
+  <text x="695" y="1135" class="label">awaiting_review</text>
+  <text x="695" y="1155" class="small">waiting_on = reviewer</text>
+  <path d="M1080 1165 C980 1225 850 1225 790 1160" class="edge"/>
+  <text x="930" y="1224" class="edgeLabel">Pass</text>
+
+  <polygon points="440,1085 540,1140 440,1195 340,1140" class="decision"/>
+  <text x="440" y="1135" class="label">Approved?</text>
+  <path d="M600 1140 H540" class="edge"/>
+
+  <rect x="130" y="1110" width="190" height="60" class="state"/>
+  <text x="225" y="1135" class="label">ready_to_merge</text>
+  <text x="225" y="1155" class="small">remote confirmation next</text>
+  <path d="M340 1140 H320" class="edge"/>
+  <text x="330" y="1127" class="edgeLabel">Yes</text>
+
+  <rect x="130" y="1270" width="190" height="60" class="success"/>
+  <text x="225" y="1295" class="label">shipped</text>
+  <text x="225" y="1315" class="small">landed SHA confirmed</text>
+  <path d="M225 1170 V1270" class="edge"/>
+
+  <rect x="130" y="1390" width="250" height="60" class="persist"/>
+  <text x="255" y="1415" class="label">Post-merge bookkeeping</text>
+  <text x="255" y="1435" class="small">trust metrics · changelog · version</text>
+  <path d="M225 1330 V1390" class="edge"/>
+
+  <rect x="850" y="1260" width="670" height="250" class="recoveryBox"/>
+  <text x="875" y="1295" class="section">Bounded recovery</text>
+
+  <rect x="875" y="1320" width="175" height="54" class="node"/>
+  <text x="962" y="1343" class="label">L1 deterministic</text>
+  <text x="962" y="1362" class="small">cheap, always-on</text>
+  <rect x="1090" y="1320" width="175" height="54" class="node"/>
+  <text x="1177" y="1343" class="label">L2 agent repair</text>
+  <text x="1177" y="1362" class="small">bounded attempts</text>
+  <rect x="1305" y="1320" width="175" height="54" class="danger"/>
+  <text x="1392" y="1343" class="label">L3 escalation</text>
+  <text x="1392" y="1362" class="small">operator decision</text>
+
+  <path d="M1050 1347 H1090" class="edge"/>
+  <text x="1070" y="1334" class="edgeLabel">fails</text>
+  <path d="M1265 1347 H1305" class="edge"/>
+  <text x="1285" y="1334" class="edgeLabel">budget / repeat</text>
+
+  <rect x="1050" y="1420" width="270" height="54" class="persist"/>
+  <text x="1185" y="1443" class="label">Validate real operation</text>
+  <text x="1185" y="1462" class="small">persist attempt trail + result</text>
+  <path d="M1177 1374 V1420" class="edge"/>
+  <path d="M1392 1374 V1447 H1320" class="edge"/>
+
+  <path d="M1080 900 C960 970 850 1070 900 1260" class="edge"/>
+  <text x="880" y="1080" class="edgeLabel">Verify failure</text>
+  <path d="M1280 1140 C1450 1140 1490 1190 1420 1260" class="edge"/>
+  <text x="1450" y="1175" class="edgeLabel">CI failure</text>
+  <path d="M440 1195 C500 1280 720 1300 850 1330" class="edge"/>
+  <text x="635" y="1282" class="edgeLabel">Changes requested</text>
+
+  <path d="M1050 1447 C760 1535 600 1410 600 794" class="return"/>
+  <text x="700" y="1515" class="edgeLabel">Validated recovery resumes the persisted prior state</text>
+
+  <text x="60" y="1545" class="subtitle">Invariant: agent claims never advance the run; only validated external outcomes create success transitions.</text>
+</svg>
