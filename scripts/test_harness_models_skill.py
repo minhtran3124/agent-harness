@@ -18,7 +18,7 @@ def body() -> str:
 
 def test_mode_table_maps_each_mode_to_the_same_named_flag():
     rows = re.findall(
-        r"^\|\s*`(\w+)`[^|]*\|\s*`python3 scripts/apply_model_config\.py --(\w+) ",
+        r"^\|\s*\"(\w+)\"[^|]*\|\s*`python3 scripts/apply_model_config\.py --(\w+) ",
         body(),
         re.MULTILINE,
     )
