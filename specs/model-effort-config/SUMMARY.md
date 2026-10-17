@@ -68,6 +68,9 @@ Classified high-risk because the request requires a new SessionStart hook regist
 - Task 3.1: the synthetic-settings Codex exclusion test duplicates the real-`settings.json` render test.
 - Task 3.1: the Codex exclusion matches the whole command basename, so a registration with arguments would leak; an event whose groups are all dropped would still emit `[]`.
 - Task 4.1: `run_proof.py` does not pin the main-session model, so on a host whose default model is Sonnet a rerun could pass without the subagent frontmatter taking effect (the recorded run had an Opus main session, so it is valid).
+- Fix round on Task 1.2 (`6ff9bc5`): SC-6 and design say "a source column"; `--show` now prints per-field `model-source` and `effort-source` columns (intent-review finding #1). SC-6's minimum still holds.
+- Fix round on Task 1.2 (`6ff9bc5`): no test sets both fields in one entry, or a field equal to its default.
+- Fix round on Task 1.2 (`6ff9bc5`): the `load()` return annotation at `scripts/apply_model_config.py:134` still says `bool` for the third element, which is now a `frozenset`. Correctness re-review of `79643b6..6ff9bc5` (enclosing-function, every `merge()` caller traced) found no defect.
 - Task 4.1: `--prepare` reuses an existing proof directory without redeploying when `test-runner.md` contains `model: sonnet`, so a rerun after harness changes can test a stale deploy.
 
 ### Correctness Review
@@ -87,6 +90,15 @@ context. Threshold 75 (`review-config.json`). No finding reached the threshold, 
 | `skills/harness-models/SKILL.md:15-24` | The skill takes the root from `git rev-parse --show-toplevel`; the hook prefers `CLAUDE_PROJECT_DIR`. In a session rooted at the main checkout with its working directory in a deployed linked worktree, `apply` edits the worktree's `.claude/`. | 50 |
 | `harness-manifest.json:238` | `harness-models` ships into the Codex plugin, where the applier and snapshot do not exist, so the skill fails there (accepted under D3; PLAN Risks). | 50 |
 | `scripts/render_codex_adapter.py:102` | An event whose only groups contain `model-config.sh` would render as `[]`; not reachable with today's `settings.json`. | 25 |
+
+### Intent Findings
+
+Intent review (plan-blind) over `34b0b10..84ebbfe`: every SC-1…SC-22 has a passing `Criterion` row.
+
+- Fixed — drift: `--show` gave one source per row, so a default `model` read `harness-models.json` when only `effort` was set ("where each value came from"). Now per field. Commit `6ff9bc5`.
+- Decided (E001, option A, 2026-10-17) — drift: only harness agents and skills are configurable; consumer-owned ones are rejected and never rewritten ("each agent and skill"). Kept as built (design D5); a later spec can widen it.
+- Advisory — drift: the user file is a separate root `harness-models.json` overlay, not an extension of `agents/runtime-bindings.json`; defaults still come from the bindings. Same outcome, different form.
+- Report only — excess: `--show` warns when `CLAUDE_CODE_EFFORT_LEVEL`, `CLAUDE_CODE_SUBAGENT_MODEL` or `CLAUDE_CODE_SUBAGENT_MODEL_FORCE` is set.
 
 ### Context-Propagation Audit
 
