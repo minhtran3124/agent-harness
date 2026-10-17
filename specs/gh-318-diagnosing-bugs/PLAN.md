@@ -7,6 +7,50 @@ created: 2026-10-17
 
 # diagnosing-bugs skill with six gated phases
 
+<!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
+## At a glance
+
+**7 tasks · 3 waves · 26 files · 0/7 done**
+
+| Wave | Task | Title | Files | Done (acceptance) |
+|---|---|---|---|---|
+| 1 | 1.1 | The diagnosing-bugs skill folder and its registration (wave 1) | skills/diagnosing-bugs/SKILL.md, skills/diagnosing-bugs/references/phases.md, skills/diagnosing-bugs/references/diagnosis-template.md, skills/diagnosing-bugs/references/diagnosis-review-prompt.md, skills/diagnosing-bugs/scripts/hitl-loop.template.sh, skills/diagnosing-bugs/tests/routing-cases.md, harness-manifest.json, scripts/test_audit_skill_prompts.py | SC-1 to SC-7, SC-9, SC-10 and SC-11 exit 0; `python3 scripts/check_ste_baseline.… |
+| 1 | 1.2 | Seam rule accepts a diagnosed no-seam bug fix (wave 1) | rules/plan-format.md, skills/subagent-driven-development/implementer-prompt.md, skills/subagent-driven-development/task-reviewer-prompt.md | SC-15, SC-16, SC-17 and SC-18 exit 0; `python3 scripts/check_ste_baseline.py --s… |
+| 1 | 1.3 | SDD controller: diagnosis context, seam check, Phase 6 (wave 1) | skills/subagent-driven-development/SKILL.md, skills/subagent-driven-development/references/bug-fix.md, skills/subagent-driven-development/references/review-chain.md | SC-19, SC-20, SC-21 exit 0; SC-2, SC-8, SC-18 and SC-32 exit 0; `bash tests/scri… |
+| 2 | 2.1 | Intake routing, writing-plans seam copy, compound input (wave 2) | skills/feature-intake/SKILL.md, skills/writing-plans/SKILL.md, skills/compound/SKILL.md | SC-12, SC-22, SC-23 exit 0; SC-2, SC-8 and SC-32 exit 0; `bash tests/scripts/wri… |
+| 2 | 2.2 | README bug-fix path, skills reference and handoff map (wave 2) | skills/README.md, skills/xia2/README.md | SC-8 and SC-14 exit 0; SC-13 exits 1. |
+| 3 | 3.1 | Routing proof runs through a deployed harness (wave 3) | specs/gh-318-diagnosing-bugs/proof/extract_tool_calls.py, specs/gh-318-diagnosing-bugs/proof/quick-question.md, specs/gh-318-diagnosing-bugs/proof/bug-fix-routing.md | SC-26 and SC-28 exit 0; SC-27 and SC-29 exit 1. |
+| 3 | 3.2 | Replay proof on a recorded bug (wave 3) | specs/gh-318-diagnosing-bugs/proof/transcript.py, specs/gh-318-diagnosing-bugs/proof/check_replay.py, specs/gh-318-diagnosing-bugs/proof/replay.md, specs/gh-318-diagnosing-bugs/proof/replay-diff.patch | SC-30 exits 0 and SC-31 exits 1; `grep -q "scripts/deploy-harness.sh" specs/gh-3… |
+
+```mermaid
+flowchart LR
+  subgraph W0[Wave 1]
+    T1_1["1.1 The diagnosing-bugs skill folder and its registration (wave 1)"]
+    T1_2["1.2 Seam rule accepts a diagnosed no-seam bug fix (wave 1)"]
+    T1_3["1.3 SDD controller: diagnosis context, seam check, Phase 6 (wave 1)"]
+  end
+  subgraph W1[Wave 2]
+    T2_1["2.1 Intake routing, writing-plans seam copy, compound input (wave 2)"]
+    T2_2["2.2 README bug-fix path, skills reference and handoff map (wave 2)"]
+  end
+  subgraph W2[Wave 3]
+    T3_1["3.1 Routing proof runs through a deployed harness (wave 3)"]
+    T3_2["3.2 Replay proof on a recorded bug (wave 3)"]
+  end
+  W0 --> W1
+  W1 --> W2
+```
+
+### Progress
+- [ ] 1.1 — The diagnosing-bugs skill folder and its registration (wave 1)
+- [ ] 1.2 — Seam rule accepts a diagnosed no-seam bug fix (wave 1)
+- [ ] 1.3 — SDD controller: diagnosis context, seam check, Phase 6 (wave 1)
+- [ ] 2.1 — Intake routing, writing-plans seam copy, compound input (wave 2)
+- [ ] 2.2 — README bug-fix path, skills reference and handoff map (wave 2)
+- [ ] 3.1 — Routing proof runs through a deployed harness (wave 3)
+- [ ] 3.2 — Replay proof on a recorded bug (wave 3)
+<!-- AT-A-GLANCE:END -->
+
 ## 1. Motivation
 
 `feature-intake` classifies `Input-type: bug fix` but routes it to no diagnosis step. The bug-fix
@@ -287,9 +331,11 @@ questions that the user confirmed on 2026-10-17 ("yes for all").
     line per assistant text block and per tool call, in stream order. It reads tool results to
     set markers by these fixed rules. `LOOP-RED`: a Bash call whose command contains the loop
     command and whose result has `is_error` true or reports a non-zero exit. `HYPOTHESIS`: a text
-    block or a Write input that holds a line starting `H1`. `PROBE`: a tool call whose input
-    contains `[DEBUG-`. `REVIEW`: an Agent or Task call whose input names
-    `diagnosis-review-prompt.md`. Any other line gets `-`.
+    block or a Write input that holds a line whose first word, after whitespace, list markers and
+    `*`, is `H1`. `PROBE`: a tool call whose input contains `[DEBUG-`. `REVIEW`: an Agent or Task
+    call whose input names `diagnosis-review-prompt.md`. When one line matches more than one rule,
+    the first match in the order REVIEW, PROBE, HYPOTHESIS, LOOP-RED wins. Any other line gets
+    `-`.
   - Write `proof/check_replay.py`. It exits 0 only when the first `LOOP-RED` line comes before
     the first `HYPOTHESIS`, the first `HYPOTHESIS` before the first `PROBE`, and the first
     `PROBE` before the first `REVIEW`. It exits 1 and names the first failed pair otherwise.
@@ -333,13 +379,13 @@ questions that the user confirmed on 2026-10-17 ("yes for all").
 
 - A1 → SC-28
 - A2 → SC-30
-- A3 → SC-26
+- A3 → SC-28
 - A4 → SC-30
 - A5 → SC-2
 
 A1 has two halves: SC-27 shows the skill does not fire on a quick question, and SC-28 with SC-29
-shows the Read-and-follow chain. A3 is covered by the scratch install in Task 3.1, whose run
-reaches the deployed `feature-intake`.
+shows the Read-and-follow chain. A3 is covered by SC-28: the run in a scratch install reads the
+deployed diagnosing-bugs SKILL.md, which exists only if the deploy copied the new skill.
 
 Not an SC row (Guardrail 4): `bash scripts/run-tests.sh` must exit 0 at branch finish. The
 `workflow-engine` signal fires, so the final review chain starts with `context-propagation-audit`.
@@ -348,3 +394,4 @@ Not an SC row (Guardrail 4): `bash scripts/run-tests.sh` must exit 0 at branch f
 
 - 2026-10-17 — plan written from design ff90b54, the research brief, and the user's confirmation of follow-ups 1–4 (09a7985)
 - 2026-10-17 — plan review round 1: 6 issues fixed (replay pathspec and reviewer, transcript markers, headless flags, deploy step, red-test target, fail-first Verify)
+- 2026-10-17 — plan review round 2: approved; advisories applied (marker precedence, H1 rule, A3 → SC-28)
