@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.35.0] — 2026-10-17
+
+- feat(scripts): prove the red — require a code change after the red commit (#313 step 1) (PR #328)
+
 ## [2.34.0] — 2026-10-16
 
 - feat(sdd): agreed test seams from plan to implementer to reviewer (#312) (PR #325)
