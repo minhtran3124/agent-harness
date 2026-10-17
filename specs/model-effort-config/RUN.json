@@ -1,0 +1,12 @@
+{
+  "created_at": "2026-10-17T09:45:24Z",
+  "last_event_id": "4ad9bcbb-0dcb-4ea1-b2ab-7cdc9f2ee6b0",
+  "resume_event": null,
+  "run_id": "b104af39-5ebd-4c63-8e82-87bba7c19dd3",
+  "seq": 3,
+  "sha": null,
+  "slug": "model-effort-config",
+  "state": "planning",
+  "updated_at": "2026-10-17T09:45:28Z",
+  "waiting_on": null
+}
