@@ -64,7 +64,7 @@ run feature-intake for https://github.com/minhtran3124/agent-harness/issues/318
 
 ### Rationale
 
-The harness classified `Input-type: bug fix` but routed it to no diagnosis step, and the README pointed at an optional external skill. The skill closes Pocock's #578 (not model-invoked; intake chains it by Read), #124 (a `task-reviewer` gate before the fix) and #674 (redaction first). Proof runs drove four user-approved decision changes: DC1 deploy path rewrite, DC2 SC-28 accepts a Bash read, DC3 and DC4 move the ranked list into a committed `diagnosis.md` before any probe after two runs probed first. The final replay held the order: red loop, committed list, probe, review.
+The harness classified `Input-type: bug fix` but routed it to no diagnosis step, and the README pointed at an optional external skill. The skill closes Pocock's #578 (not model-invoked; intake chains it by Read), #124 (a `task-reviewer` gate before the fix) and #674 (redaction first). Proof runs drove four user-approved decision changes: DC1 deploy path rewrite, DC2 SC-28 accepts a Bash read, DC3 and DC4 move the ranked list into a committed `diagnosis.md` before any probe after two runs probed first. The 7.1 replay held the order but its setup leaked the answer, so DC5 ran one clean replay: no fix history, no test hints. There the model found the true cause on its own, held the order (red loop, committed list, probe, review), and its fix turned the test green.
 
 ### Alternatives considered
 
@@ -74,7 +74,7 @@ The harness classified `Input-type: bug fix` but routed it to no diagnosis step,
 
 ### Deviations
 
-- Decision changes DC1–DC4 (user approved; `design.md` `## Decision changes`, D14–D17): deploy rewrite; SC-28 widened; D6 → D16 → D17 list-before-probe gate. Plan tasks 4.1, 4.2, 5.1, 6.1, 6.2, 7.1 added.
+- Decision changes DC1–DC6 (user approved; `design.md` `## Decision changes`, D14–D17): deploy rewrite; SC-28 widened; D6 → D16 → D17 list-before-probe gate; DC5 clean replay without fix history or test hints; DC6 post-run loop-input rule (stated as post-run). Plan tasks 4.1, 4.2, 5.1, 6.1, 6.2, 7.1, 8.1 added.
 - Controller fixture (Task 3.1): `scripts/x.sh` added as a fixture commit in the scratch project; without it intake rightly stopped at low confidence.
 - Task 4.2 (Rule 1): `proof/transcript.py --help` returned 2; a help branch was added.
 - Task 3.2 loop input `loop.sh` was a post-run judgment call (not Rule 1); Tasks 5.1 and 7.1 pinned the rule before the run.
@@ -121,11 +121,17 @@ The harness classified `Input-type: bug fix` but routed it to no diagnosis step,
 | list before probe | `grep -q "before the first probe" skills/diagnosing-bugs/SKILL.md` | 0 | | SC-34 |
 | loop with no pipe | `grep -q "with no pipe" skills/diagnosing-bugs/SKILL.md` | 0 | | SC-35 |
 | commit before probe | `grep -q "Commit diagnosis.md before the first probe" skills/diagnosing-bugs/SKILL.md` | 0 | | SC-36 |
+| clean replay order | `python3 specs/gh-318-diagnosing-bugs/proof/check_replay.py specs/gh-318-diagnosing-bugs/proof/replay-clean.md` | 0 | LOOP-RED@8 HYPOTHESIS@11 PROBE@12 REVIEW@24; DC6 post-run loop rule | SC-37 |
+| clean replay no debug tags | `grep -qF "[DEBUG-" specs/gh-318-diagnosing-bugs/proof/replay-clean-diff.patch` | 1 | no match | SC-38 |
+| clean replay no fix commit | `grep -q "ac7f472" specs/gh-318-diagnosing-bugs/proof/replay-clean.md` | 1 | no match | SC-39 |
 
 ### Not auto-verified
 
 - The lane and flags are correct for the final diff — reached traceability; commit-gate risk corroboration re-checks the lane at commit time.
-- The model diagnoses a bug unaided — not shown. All three replays overlaid `tests/scripts/resync-conflict.test.sh` from 8e72f7f, whose comments (lines 106–108) name the cause and the `have_tty()` fix. The final run also reached fix commit ac7f472 through the shared worktree object store and copied it. Its committed `H1` came before that read, and its probe evidence was its own. Tier: traceability of order only.
+- Unaided diagnosis — shown in one clean run only (DC5, `proof/replay-clean.md`): an ancestry-only clone where `git cat-file -e ac7f472` exited 128, and a comment-stripped test overlay with 0 `have_tty`. The model committed H1–H4, confirmed H1 (the true cause) by its own probe, and its one-line fix turned the test green (21 passed). Tier: traceability for order; the green test was re-run once by the implementer before cleanup and is not re-runnable from the repo. One sample, one model (claude-sonnet-5-5), CLI 2.1.302.
+- The earlier replays (3.2, 5.1, 7.1) were not blind. Their test overlay named the cause and fix in comments, and 7.1 also reached fix commit ac7f472 through the shared worktree object store and copied it. They count as order evidence only (`proof/replay.md`).
+- SC-37 passes only under the DC6 loop-input rule, which was changed after the run. The strict conversion fails, and it is kept as `proof/replay-clean-strict.md`. The rule as applied gives `"$PWD"`, not the script name; the conversion is byte-identical either way.
+- The PROBE marker also matches commands that only search for `[DEBUG-` (Phase 6 cleanup lines). It did not move the first PROBE in any run.
 - Phase order (red loop, committed list, probe, review) — traceability, one sample on one model (claude-sonnet-5-5) and CLI 2.1.302. Two earlier runs probed first (`review-ledger.md`).
 - SC-28 shows a tool call named the skill path, not that the read succeeded (`is_error=False` was checked by hand). SC-27 and SC-29 cover main-thread calls only.
 - The SC-30 HYPOTHESIS marker does not check which file a call writes. The first HYPOTHESIS line was checked by hand: it writes and commits `diagnosis.md`.
