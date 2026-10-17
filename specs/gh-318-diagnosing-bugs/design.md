@@ -252,4 +252,6 @@ The six phases, each ending in one completion criterion:
   the rule took `(exit=1):` as the loop command. The rule now cuts at ` — red output`, the template's
   own separator. This change was made after the run and is stated as such. The saved stream is
   converted again with no new model run. The failing strict conversion stays as
-  `proof/replay-clean-strict.md`.
+  `proof/replay-clean-strict.md`. Applied as written, the rule yields `"$PWD"` (the loop command's
+  last token, an argument), not the script `loop.sh`. The conversion with `"$PWD"` is byte-identical
+  to one with `loop.sh`, so the result does not depend on that choice. The rule was not changed again.
