@@ -71,7 +71,7 @@ _RED_TEST_ENV = "REQUIRE_RED_TEST"
 # A red row: `[python3] <path>/scripts/run_at_commit.py <sha> -- <test command>`.
 _RED_COMMAND_RE = re.compile(
     r"^(?:python3\s+)?(?:\S*/)?scripts/run_at_commit\.py\s+"
-    r"[0-9a-fA-F]{7,40}\s+--\s+(?P<test>\S.*)$"
+    r"(?P<sha>[0-9a-fA-F]{7,40})\s+--\s+(?P<test>\S.*)$"
 )
 _RED_EXEMPT_RE = re.compile(r"^\s*[-*]?\s*Red test exempt:(.*)$", re.MULTILINE)
 # A bug-fix Input-type: a leading `bug fix` / `bug-fix` / `bugfix` token, not `bug fixes`.
@@ -419,32 +419,10 @@ def _red_green_issue(text: str) -> str | None:
     verify = _section(text, "Verify") or ""
     rows = _parse_verify_rows(verify)
 
-    red_tests = []
-    bad_red = None
-    for row in rows:
-        if row["check"].strip().lower() != "red":
-            continue
-        match = _RED_COMMAND_RE.match(row["command"])
-        if not match:
-            bad_red = (
-                "`red` row command is not `[python3] scripts/run_at_commit.py "
-                "<7-40 hex sha> -- <test command>`"
-            )
-        elif not (
-            re.fullmatch(r"\d+", row["claimed_exit"])
-            and 1 <= int(row["claimed_exit"]) <= 123
-        ):
-            bad_red = f"`red` row claims exit `{row['claimed_exit']}` (must be 1-123)"
-        else:
-            red_tests.append(" ".join(match.group("test").split()))
-
-    for row in rows:
-        if (
-            row["check"].strip().lower() == "green"
-            and row["claimed_exit"] == "0"
-            and " ".join(row["command"].split()) in red_tests
-        ):
-            return None
+    reds, bad_red = _red_rows(rows)
+    red_tests = [test for _, test in reds]
+    if any(test in _green_tests(rows) for test in red_tests):
+        return None
 
     exempt = [m.group(1).strip() for m in _RED_EXEMPT_RE.finditer(verify)]
     if any(exempt):
@@ -461,6 +439,109 @@ def _red_green_issue(text: str) -> str | None:
     return f"bug fix: red/green evidence missing in `### Verify` -- {missing}"
 
 
+def _red_rows(rows: list[dict]) -> tuple[list[tuple[str, str]], str | None]:
+    """Return `(sha, test command)` per well-formed red row, and the last bad-row complaint.
+
+    The test command is whitespace-normalized, so it compares equal to a green command.
+    """
+    reds = []
+    bad_red = None
+    for row in rows:
+        if row["check"].strip().lower() != "red":
+            continue
+        match = _RED_COMMAND_RE.match(row["command"])
+        if not match:
+            bad_red = (
+                "`red` row command is not `[python3] scripts/run_at_commit.py "
+                "<7-40 hex sha> -- <test command>`"
+            )
+        elif not (
+            re.fullmatch(r"\d+", row["claimed_exit"])
+            and 1 <= int(row["claimed_exit"]) <= 123
+        ):
+            bad_red = f"`red` row claims exit `{row['claimed_exit']}` (must be 1-123)"
+        else:
+            reds.append((match.group("sha"), " ".join(match.group("test").split())))
+    return reds, bad_red
+
+
+def _green_tests(rows: list[dict]) -> set[str]:
+    """Return the whitespace-normalized command of each green row that claims exit 0."""
+    return {
+        " ".join(row["command"].split())
+        for row in rows
+        if row["check"].strip().lower() == "green" and row["claimed_exit"] == "0"
+    }
+
+
+def _red_pairs(text: str) -> list[tuple[str, str]]:
+    """Return `(red sha, test command)` for each red row that has a matching green row.
+
+    Returns [] for a non-bug-fix SUMMARY and when a `Red test exempt:` line has a
+    non-empty reason.
+    """
+    input_type = (_header_value(text, "Input-type") or "").strip().lower()
+    if not _BUG_FIX_INPUT_RE.match(input_type):
+        return []
+    verify = _section(text, "Verify") or ""
+    if any(m.group(1).strip() for m in _RED_EXEMPT_RE.finditer(verify)):
+        return []
+    rows = _parse_verify_rows(verify)
+    reds, _ = _red_rows(rows)
+    greens = _green_tests(rows)
+    return [(sha, test) for sha, test in reds if test in greens]
+
+
+def _red_fix_diff_issue(text: str) -> str | None:
+    """Return the fix-diff complaint for a bug-fix SUMMARY, or None if satisfied.
+
+    For each red/green pair, list the paths that differ between the red commit and
+    the index, in the repo that holds the process cwd. Drop paths under `specs/` and
+    paths equal to a token of the red test command (after a `::...` suffix and a
+    leading `./` are stripped). Report the pair when no path remains.
+    Verifies: (provenance) a path outside `specs/` and the red test files differs
+    between the red commit and the index.
+    Does not verify: that the change fixes the bug, or that the red exit was real.
+    """
+    pairs = _red_pairs(text)
+    if not pairs:
+        return None
+    cwd = Path.cwd()
+    for sha, test in pairs:
+        cannot = f"bug fix: cannot check the fix diff for red commit {sha} -- "
+        try:
+            root = Path(_git(cwd, "rev-parse", "--show-toplevel"))
+        except OSError:
+            return cannot + "git is not available"
+        except subprocess.CalledProcessError:
+            return cannot + "the current directory is not in a git repository"
+        try:
+            commit = _git(root, "rev-parse", "--verify", "--quiet", f"{sha}^{{commit}}")
+            diff = _git(
+                root,
+                *("diff", "--cached", "--name-only", "-z", "--no-renames", commit, "--"),
+            )
+        except OSError:
+            return cannot + "git is not available"
+        except subprocess.CalledProcessError:
+            return cannot + "the commit does not resolve here"
+        tokens = set()
+        for token in test.split():
+            token = token.split("::", 1)[0]
+            tokens.add(token[2:] if token.startswith("./") else token)
+        fix_paths = [
+            path
+            for path in diff.split("\0")
+            if path and not path.startswith("specs/") and path not in tokens
+        ]
+        if not fix_paths:
+            return (
+                f"bug fix: no code change after red commit {sha} outside specs/ "
+                "and the red test files"
+            )
+    return None
+
+
 def check_lane_warnings(text: str) -> list[tuple[str, str]]:
     """Return non-blocking lane advisories as (message, enforcing env var) pairs.
 
@@ -475,9 +556,9 @@ def check_lane_warnings(text: str) -> list[tuple[str, str]]:
         if issue:
             warnings.append((f"lane `high-risk`: {issue}", _NOT_AUTO_VERIFIED_ENV))
     if not _red_test_is_blocking():
-        issue = _red_green_issue(text)
-        if issue:
-            warnings.append((issue, _RED_TEST_ENV))
+        for issue in (_red_green_issue(text), _red_fix_diff_issue(text)):
+            if issue:
+                warnings.append((issue, _RED_TEST_ENV))
     return warnings
 
 
@@ -589,9 +670,9 @@ def check_lane_evidence(
             )
 
     if _red_test_is_blocking():
-        issue = _red_green_issue(text)
-        if issue:
-            errors.append(issue)
+        for issue in (_red_green_issue(text), _red_fix_diff_issue(text)):
+            if issue:
+                errors.append(issue)
 
     errors += _check_sc_coverage(text, summary_path, plan_dir)
     errors += _check_runtime_metadata(text, summary_path)
