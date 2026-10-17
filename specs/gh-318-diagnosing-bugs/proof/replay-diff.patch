@@ -1,19 +1,21 @@
 diff --git a/scripts/deploy-harness.sh b/scripts/deploy-harness.sh
-index 7bf4b52..9f20be5 100755
+index 7bf4b52..99ac137 100755
 --- a/scripts/deploy-harness.sh
 +++ b/scripts/deploy-harness.sh
-@@ -101,6 +101,10 @@ protected_under() {
-   return 1
- }
- 
-+# True only when /dev/tty can actually be opened. `[ -r /dev/tty ]` is access(2) on the device
-+# node and stays true with no controlling terminal, so it can't gate the interactive prompt.
-+have_tty() { (exec < /dev/tty) 2>/dev/null; }
-+
- CONFLICTS=()
+@@ -105,6 +105,12 @@ CONFLICTS=()
  POLICY=""
  BACKUP_TS=""
-@@ -137,7 +141,7 @@ preflight_protected() {
+ 
++# True only when this process can actually open its controlling terminal. `[ -r /dev/tty ]`
++# is NOT equivalent: access(2) sees the mode bits of the /dev/tty alias node and reports it
++# readable even after setsid(), so a tty-less CI run would fall into the prompt branch.
++# Opening it in a subshell is the only honest test.
++have_tty() { (exec < /dev/tty) 2>/dev/null; }
++
+ # Scan BOOTSTRAP_OWNED_FILES for local-vs-incoming conflicts and resolve ONE batch policy
+ # for all of them. Runs ONCE, before prep_dir and before the `for d in ...` copy loop —
+ # never inside copy_dir, which runs once per top-level dir and would prompt (and could
+@@ -137,7 +143,7 @@ preflight_protected() {
  
    if [ "$OVERWRITE_CONFLICTS" -eq 1 ]; then
      POLICY="overwrite"
