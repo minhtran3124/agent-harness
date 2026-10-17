@@ -10,7 +10,7 @@ created: 2026-10-17
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**7 tasks · 3 waves · 26 files · 3/7 done**
+**7 tasks · 3 waves · 26 files · 5/7 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -45,8 +45,8 @@ flowchart LR
 - [x] 1.1 — The diagnosing-bugs skill folder and its registration (wave 1)
 - [x] 1.2 — Seam rule accepts a diagnosed no-seam bug fix (wave 1)
 - [x] 1.3 — SDD controller: diagnosis context, seam check, Phase 6 (wave 1)
-- [ ] 2.1 — Intake routing, writing-plans seam copy, compound input (wave 2)
-- [ ] 2.2 — README bug-fix path, skills reference and handoff map (wave 2)
+- [x] 2.1 — Intake routing, writing-plans seam copy, compound input (wave 2)
+- [x] 2.2 — README bug-fix path, skills reference and handoff map (wave 2)
 - [ ] 3.1 — Routing proof runs through a deployed harness (wave 3)
 - [ ] 3.2 — Replay proof on a recorded bug (wave 3)
 <!-- AT-A-GLANCE:END -->
@@ -396,3 +396,4 @@ Not an SC row (Guardrail 4): `bash scripts/run-tests.sh` must exit 0 at branch f
 - 2026-10-17 — plan review round 1: 6 issues fixed (replay pathspec and reviewer, transcript markers, headless flags, deploy step, red-test target, fail-first Verify)
 - 2026-10-17 — plan review round 2: approved; advisories applied (marker precedence, H1 rule, A3 → SC-28)
 - 2026-10-17 — tasks 1.1, 1.2, 1.3 complete; commits 94473fd, 169ce1b, 28b9aa2, 0d02ee8, 52b3416; task reviews approved (1.2 and 1.3 after one fix round each)
+- 2026-10-17 — tasks 2.1, 2.2 complete; commits f276a8e, 725fd33, 6344da3, 1aeaa02; task reviews approved after one fix round each

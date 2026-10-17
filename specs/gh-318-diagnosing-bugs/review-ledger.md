@@ -12,10 +12,15 @@ runs `verify_summary.py --lane` on a staged SUMMARY.
 - Task 1.2 — `task-reviewer-prompt.md` step 4 skip depends on `diagnosis.md` `Seam:`, but the reviewer's inputs do not say where it reads that line.
 - Task 1.2 round 1 Minors 1–3 (exemption trigger, plan-format "Otherwise", named `NEEDS_CONTEXT` rule) were fixed in `28b9aa2` and re-reviewed clean.
 
+- Task 2.1 — `skills/writing-plans/SKILL.md:32`: after the split, "Keep the `- Plan-contract: 2` marker." no longer carries the "When `diagnosis.md` exists" condition. No behavior change, because step 3 already requires the marker on every new plan. Accepted.
+- Task 2.2 — the `Input-type: bug fix → diagnosing-bugs` handoff text sits on a third continuation line of the `feature-intake` entry, not the first line. Same meaning. Accepted.
+
 ## Fix rounds
 
 - Task 1.2 — round 1 (`28b9aa2`): three Minors applied; re-review pass/approved, no findings.
 - Task 1.3 — round 1 (`52b3416`): Important spec finding fixed (seam point compared with the whole `diagnosis.md` `Seam:` value); re-review pass/approved, no findings.
+- Task 2.1 — round 1 (`725fd33`): two Minors applied (route keyed on `Input-type: bug fix`; writing-plans sentence split); re-review pass/approved, one new Minor (above).
+- Task 2.2 — round 1 (`1aeaa02`): Important quality finding fixed (README STE hard count 36 → 38 → 36); re-review pass/approved, no findings.
 
 ## Harness-Delta
 
