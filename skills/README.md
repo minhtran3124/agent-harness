@@ -108,7 +108,7 @@ from the harness checkout run `bash scripts/init-structure.sh --root <project>`,
 |---|---|---|
 | `brainstorming` | Before any new feature, component, or behavior change | `specs/<slug>/design.md` |
 | `xia2` | Before implementing anything — research what already exists (portable; zero-config, depth policy in `rules/research-depth.md`) | `specs/<slug>/research-brief.md` |
-| `diagnosing-bugs` | **User- or intake-invoked** (`/diagnosing-bugs`, or `feature-intake` on `Input-type: bug fix`) — proves the root cause in six gated phases before any fix, on every lane; no "cause known" shortcut. `task-reviewer` reviews the diagnosis before the fix | `specs/<slug>/diagnosis.md` → red test + fix (tiny) or the lane route |
+| `diagnosing-bugs` | **User- or intake-invoked**. Run `/diagnosing-bugs`, or `feature-intake` routes an `Input-type: bug fix` here. It proves the root cause in six gated phases before any fix. Every lane runs all six phases. No "cause known" shortcut exists. `task-reviewer` reviews the diagnosis before the fix | `specs/<slug>/diagnosis.md` → red test + fix (tiny) or the lane route |
 
 ### Planning
 
