@@ -1,6 +1,6 @@
 ---
 slug: gh-318-diagnosing-bugs
-status: proposed
+status: active
 owner: Minh Tran
 created: 2026-10-17
 ---
