@@ -40,7 +40,7 @@ Write `specs/<slug>/diagnosis.md` from `references/diagnosis-template.md`.
    Then post the list to the user. Do not wait for a reply.
    Done when: `Hypotheses:` holds three to five ranked entries, each with a prediction.
 4. **Instrument.** Start no probe before that commit.
-   Map each probe to one prediction. Change one variable in each probe.
+   Change one variable in each probe.
    Tag each debug log with a unique `[DEBUG-xxxx]` prefix. Do not commit a probe.
    When the probes refute every hypothesis, go back to Phase 3 with a new list.
    A second full refutation writes an `ESCALATIONS.md` block with `decision: pending` and stops.
@@ -62,6 +62,7 @@ A second failure writes an `ESCALATIONS.md` block with `decision: pending` and s
    Commit the red test. Then commit the fix.
    Record the `red` and `green` rows that `rules/auto-correct-scope.md` names.
    When `diagnosis.md` has `Seam: none — <reason>`, record a finding in `SUMMARY.md`.
+   Write `Red test exempt: <reason>` there too.
    On the normal and high-risk lanes, continue the lane route with `diagnosis.md` as an input.
    Done when: the red test commit comes before the fix commit, or `SUMMARY.md` has `Red test exempt: <reason>`.
 6. **Cleanup.** The session that completed the fix does this phase. Run the Phase 1 loop again.
