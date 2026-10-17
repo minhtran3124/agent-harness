@@ -76,10 +76,12 @@ PLAN.html is not auto-rendered; `render_plan.py --summarize` refreshes it (writi
 ### Bug Fix Path
 
 ```
-systematic-debugging  (external — see below)
-  → root cause analysis before any fix
+feature-intake  (Input-type: bug fix)
       ↓
-fix (implement directly or via subagent-driven-development)
+diagnosing-bugs  (every lane — six gated phases)
+  → writes specs/<slug>/diagnosis.md; task-reviewer reviews it before any fix
+      ↓
+lane route (tiny: red test → fix on the branch | normal / high-risk: the lane's chain, diagnosis.md as input)
       ↓
 compound  (always — root cause is worth preserving)
 ```
@@ -106,6 +108,7 @@ from the harness checkout run `bash scripts/init-structure.sh --root <project>`,
 |---|---|---|
 | `brainstorming` | Before any new feature, component, or behavior change | `specs/<slug>/design.md` |
 | `xia2` | Before implementing anything — research what already exists (portable; zero-config, depth policy in `rules/research-depth.md`) | `specs/<slug>/research-brief.md` |
+| `diagnosing-bugs` | **User- or intake-invoked** (`/diagnosing-bugs`, or `feature-intake` on `Input-type: bug fix`) — proves the root cause in six gated phases before any fix, on every lane; no "cause known" shortcut. `task-reviewer` reviews the diagnosis before the fix | `specs/<slug>/diagnosis.md` → red test + fix (tiny) or the lane route |
 
 ### Planning
 
@@ -141,7 +144,6 @@ These skills appear in workflows above but are provided by the global `superpowe
 
 | Skill | Role |
 |---|---|
-| `systematic-debugging` | Root-cause analysis before a bug fix |
 | `test-driven-development` | Tests-first protocol used by implementer subagents |
 | `requesting-code-review` | Structured review template |
 | `session-tracker` | Session resumption across conversations |
@@ -156,6 +158,7 @@ If one of these isn't available in your environment, the workflows degrade grace
 ```
 feature-intake             ──► tiny: git checkout -b → direct edit · normal: subagent-driven-development
                                 high-risk: brainstorming (full chain) · low confidence: escalate
+                                Input-type: bug fix → diagnosing-bugs
 brainstorming              ──► xia2 → writing-plans (the only valid next skills)
 xia2                       ──► research brief → user/skill decides next step
 writing-plans              ──► (render_plan.py --summarize) → using-git-worktrees
@@ -165,7 +168,7 @@ subagent-driven-development ──► workflow-engine diff: context-propagation-
 correctness-review         ──► (standalone — runs the same pipeline ad-hoc on any diff; no gate)
 context-propagation-audit ──► (conditional workflow-engine delivery gate, then correctness-review)
 intent-review              ──► (standalone — same pipeline; needs ### Intent in SUMMARY or intent provided by the user)
-systematic-debugging       ──► fix → compound
+diagnosing-bugs            ──► diagnosis.md → tiny: red test → fix · normal / high-risk: lane route → compound
 compound                   ──► nothing (terminal — crystallization is end state)
 finishing-a-development-branch ──► nothing (terminal — shipped)
 ```

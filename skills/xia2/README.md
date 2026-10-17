@@ -14,7 +14,7 @@ A portable research skill. Depth policy lives in `rules/research-depth.md`. The 
 | Modifying behaviour with possible local precedent | **Yes** |
 | Bumping a dependency, changing schema, touching shared infrastructure | **Yes** |
 | One-line typo fix, doc-only edit, comment cleanup | No — overkill |
-| Bug fix where root cause is already known | No — use `systematic-debugging` (external, optional) |
+| Bug fix (any lane) | No — intake routes it to `diagnosing-bugs` |
 
 When in doubt, invoke. The HARD-GATE prevents the agent from writing code, so the cost of a false positive is low (one research brief).
 
