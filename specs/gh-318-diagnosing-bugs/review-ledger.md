@@ -21,12 +21,19 @@ runs `verify_summary.py --lane` on a staged SUMMARY.
 - Task 3.2 — the "can pass" path of `check_replay.py` rests on hand-made fixtures that were not committed. Task 5.1's real result is the evidence.
 - Task 3.2 — the run's `Loop:` field (`$SCRATCH`) differs from the command it ran (`$S`). This is a skill-side finding, recorded only.
 
+- Task 3.1 round 1 — the `(sub) ` prefix keeps subagent calls out of SC-26/SC-28, and also out of the negative SC-27/SC-29. Those two cover main-thread calls only. In the recorded logs the only subagent lines are two Reads of the run's own `diagnosis.md` and `SUMMARY.md`.
+- Task 3.1 round 1 — the ` … [paths: ...]` note marks a path named past the cut, read or not. SC-28 still matches on its own line 10 (a direct `sed` read).
+
 ## Fix rounds
 
 - Task 1.2 — round 1 (`28b9aa2`): three Minors applied; re-review pass/approved, no findings.
 - Task 1.3 — round 1 (`52b3416`): Important spec finding fixed (seam point compared with the whole `diagnosis.md` `Seam:` value); re-review pass/approved, no findings.
 - Task 2.1 — round 1 (`725fd33`): two Minors applied (route keyed on `Input-type: bug fix`; writing-plans sentence split); re-review pass/approved, one new Minor (above).
 - Task 2.2 — round 1 (`1aeaa02`): Important quality finding fixed (README STE hard count 36 → 38 → 36); re-review pass/approved, no findings.
+
+- Task 3.1 — round 1 (`d7c60d8`): plan Verify/SC-27 aligned to DC2 by the controller (`7970c19`); extractor shows paths past the cut, marks subagent calls, skips bad lines; logs re-extracted from saved streams. Re-review pass/approved, two Minors (above).
+- Task 3.2 — reviewed pass/approved (Minors above). SC-30 carried to Task 5.1.
+- Task 4.1 — round 1 (`d4d7507`): rewrite widened to the whole `skills/diagnosing-bugs/` prefix (DC1). Re-review pass/approved, no findings.
 
 ## Harness-Delta
 
