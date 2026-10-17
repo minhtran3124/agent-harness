@@ -89,13 +89,15 @@ Q1 = a, Q2, round-1 Q1–Q5, approach A).
 | fix-diff cases | `python3 -m pytest -q scripts/test_verify_summary.py -k fix_diff` | 0 | 15 passed (after fix rounds 1–2) | SC-3 |
 | commit-gate shape | `python3 -m pytest -q scripts/test_verify_summary.py -k fix_diff_commit_gate_shape` | 0 | 1 passed | SC-4 |
 | gh-302 regression | `python3 -m pytest -q -rs scripts/test_verify_summary.py -k fix_diff_gh302` | 0 | 1 passed, no skip | SC-5 |
-| full suite | `bash scripts/run-tests.sh` | 0 | 1060 passed, ALL GREEN (venv on PATH); cited per Guardrail 4, not an SC | |
 | existing red/green | `python3 -m pytest -q scripts/test_verify_summary.py -k RedGreen` | 0 | 19 passed | SC-6 |
 | rule clause | `grep -q "and the red test files" rules/auto-correct-scope.md` | 0 | | SC-7 |
 | prompt clause | `grep -q "and the red test files" skills/subagent-driven-development/implementer-prompt.md` | 0 | | SC-8 |
 | STE baseline | `python3 scripts/check_ste_baseline.py --strict --against ece206d` | 0 | 0 above baseline | SC-9 |
 | phrase pins | `python3 scripts/check_task_review_contract.py` | 0 | passed | SC-10 |
 | plan contract | `python3 scripts/check_plan_contract.py specs/gh-313-prove-the-red/PLAN.md` | 0 | passed | SC-11 |
+
+Full suite (cited, not a row, per plan-format Guardrail 4): `bash scripts/run-tests.sh` exited 0
+with 1060 passed, ALL GREEN, run with `/tmp/harness-tests-venv/bin` on `PATH`.
 
 ### Not auto-verified
 
@@ -163,6 +165,24 @@ Advisory findings (below threshold):
 - Forwarded from task review (Minor): six fix-diff tests call `_red_fix_diff_issue` directly, not
   the declared `main` seam (resolved in `6232554`); `_git` strips its output, so a path with a leading or trailing space
   would not match its token.
+
+### Intent Findings
+
+Intent review (plan-blind) over `ece206d..b508dfb` against intent.md @ `b263b44`: no gap, no
+behavior-changing drift, no excess. SC-1 to SC-11 each have a passing Verify row. Three
+equivalent-drift Nits, recorded and not fixed:
+
+- The canary is the pytest case `test_fix_diff_noop`, which calls `main(["--lane", ...])`
+  in-process in a temp repo, not a committed canary spec run through the CLI. The asserted outcome
+  is the same (exit 1 under `REQUIRE_RED_TEST=1`, a `!` advisory without it). This follows design
+  D8, approved by the user in brainstorming round 1 (Q5).
+- `test_red_green_valid_pair_has_no_warning` changed its input (fake sha → temp repo with a real
+  fix) while its expected result stayed the same. Intent Q2 makes an unresolvable sha warn, so the
+  old input could not keep its result.
+- The `_red_fix_diff_issue` docstring's `Does not verify:` line omits the pointer "(`--check`
+  re-runs rows)"; the neighbouring `_red_green_issue` docstring carries it. The prose clause
+  "outside `specs/` and the red test files" does not say that the red test files are every path
+  the red commit changed (E001 = A); the surrounding text implies it.
 
 ### Task review notes
 
