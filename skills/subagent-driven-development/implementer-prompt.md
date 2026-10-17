@@ -55,8 +55,11 @@ Task tool (coding):
          Rewrite that test.
        Follow TDD if the task says to.
        When the input type in Context is `bug fix`, do these steps:
+       - When Context names a `diagnosis.md`, make the red test target its `Confirmed:` hypothesis.
        - Write the red test at a declared seam.
-         When `Seams:` is `none`, return `NEEDS_CONTEXT` before any edit.
+         When `diagnosis.md` says `Seam: none — <reason>`, write `Red test exempt: <reason>`
+         in `### Verify`. Do not write the `red` and `green` rows.
+         When `Seams:` is `none` for another cause, return `NEEDS_CONTEXT` before any edit.
          When the brief has no `Plan-contract: 2` line, skip this rule only.
        - Commit the failing test before the fix.
        - Record a `red` row in `### Verify`. Its command is

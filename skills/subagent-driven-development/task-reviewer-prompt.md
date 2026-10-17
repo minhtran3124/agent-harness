@@ -68,6 +68,8 @@ Task tool (task-reviewer):
     2. An expected value is copied from the output of the implementation.
     3. The test uses only synthetic fixtures, and real inputs of the seam's shape exist.
     4. The task's `Seams:` field is `none`.
+       Skip this step for a bug-fix task whose `diagnosis.md` says `Seam: none — <reason>`.
+       Skip it only when the `Seams:` reason is the same as the `diagnosis.md` reason.
     For step 3, you may perform one more named, focused read-only search for each declared seam.
     When the brief has no `Plan-contract: 2` line, the allowance is one search for each new
     test file.
