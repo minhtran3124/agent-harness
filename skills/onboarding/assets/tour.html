@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Codebase Tour</title>
+<style>
+:root {
+  --bg: #f7f6f2;
+  --surface: #ffffff;
+  --surface-2: #f1efe8;
+  --ink: #1d1c19;
+  --muted: #6c6a62;
+  --line: #e4e1d7;
+  --accent: #b4532a;
+  --accent-soft: #f6e6dc;
+  --ok: #2d7a4c;
+  --ok-soft: #e2f1e7;
+  --warn: #8a5f00;
+  --warn-soft: #f8efd6;
+  --shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.06);
+  --radius: 16px;
+  --ease: cubic-bezier(.2,.7,.2,1);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14130f; --surface: #1d1c18; --surface-2: #26241f; --ink: #ecebe5; --muted: #9d9a90;
+    --line: #353229; --accent: #e27f55; --accent-soft: #3a2a20; --ok: #6cc08c; --ok-soft: #1f3327;
+    --warn: #e2b04e; --warn-soft: #3a3019; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14130f; --surface: #1d1c18; --surface-2: #26241f; --ink: #ecebe5; --muted: #9d9a90;
+  --line: #353229; --accent: #e27f55; --accent-soft: #3a2a20; --ok: #6cc08c; --ok-soft: #1f3327;
+  --warn: #e2b04e; --warn-soft: #3a3019; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 16px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+
+/* Layout */
+.app { min-height: 100vh; display: grid; grid-template-columns: 260px 1fr; }
+.side {
+  border-right: 1px solid var(--line); padding: 24px 16px; position: sticky; top: 0;
+  height: 100vh; overflow-y: auto; background: var(--bg);
+}
+.main { padding: 32px clamp(16px, 4vw, 48px) 64px; max-width: 920px; width: 100%; }
+
+/* Sidebar */
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 650; margin: 0 0 20px; }
+.mark { width: 28px; height: 28px; border-radius: 9px; background: var(--accent); display: grid; place-items: center; color: #fff; font-size: 14px; }
+.section-label { font-size: 11px; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); margin: 18px 8px 6px; }
+.nav-item {
+  width: 100%; display: flex; align-items: center; gap: 10px; text-align: left;
+  background: none; border: 0; padding: 8px 10px; border-radius: 10px; cursor: pointer; min-height: 40px;
+  color: var(--ink); font-size: 14px;
+}
+.nav-item:hover { background: var(--surface-2); }
+.nav-item[aria-current="page"] { background: var(--surface); box-shadow: var(--shadow); }
+.dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 9px; border: 1.5px solid var(--muted); }
+.dot.done { background: var(--ok); border-color: var(--ok); }
+.dot.current { border-color: var(--accent); background: var(--accent-soft); }
+
+/* Top bar */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+.ring-wrap { display: flex; align-items: center; gap: 12px; }
+.ring { width: 52px; height: 52px; }
+.ring text { font-size: 12px; fill: var(--ink); font-weight: 650; }
+.ring-meta { font-size: 13px; color: var(--muted); line-height: 1.3; }
+.ring-meta strong { color: var(--ink); display: block; font-size: 14px; }
+.status-pill {
+  font-size: 13px; padding: 6px 12px; border-radius: 99px; background: var(--warn-soft); color: var(--warn); max-width: 46ch;
+}
+.status-pill.ok { background: var(--ok-soft); color: var(--ok); }
+
+/* Goal finder */
+.goal { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); margin-bottom: 20px; }
+.goal h2 { font-size: 15px; margin: 0 0 4px; }
+.goal p { margin: 0 0 12px; color: var(--muted); font-size: 14px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  border: 1px solid var(--line); background: var(--surface-2); border-radius: 99px; padding: 6px 12px;
+  cursor: pointer; font-size: 14px; min-height: 36px; transition: border-color .2s var(--ease), background .2s var(--ease);
+}
+.chip:hover { border-color: var(--accent); }
+.chip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
+
+/* Stage card */
+.stage {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow); overflow: hidden; animation: rise .45s var(--ease);
+}
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.stage-head { padding: 28px 28px 8px; }
+.crumb { font-size: 12px; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); }
+.title { font-size: clamp(24px, 3.4vw, 32px); line-height: 1.15; margin: 8px 0 10px; letter-spacing: -.01em; }
+.lede { font-size: 17px; margin: 0; max-width: 62ch; }
+.stage-body { padding: 8px 28px 28px; }
+
+/* Progressive disclosure */
+.disc { border: 1px solid var(--line); border-radius: 12px; margin-top: 12px; overflow: hidden; }
+.disc > summary {
+  list-style: none; cursor: pointer; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  font-weight: 600; font-size: 15px; min-height: 48px;
+}
+.disc > summary::-webkit-details-marker { display: none; }
+.disc > summary::after { content: "+"; font-size: 18px; color: var(--muted); transition: transform .25s var(--ease); }
+.disc[open] > summary::after { transform: rotate(45deg); }
+.disc[open] > summary { border-bottom: 1px solid var(--line); }
+.disc .inner { padding: 14px 16px 16px; }
+.disc ul { margin: 0; padding-left: 18px; }
+.disc li { margin: 8px 0; }
+.src { display: block; font: 12px/1.4 ui-monospace, Menlo, Consolas, monospace; color: var(--muted); margin-top: 2px; }
+.empty { color: var(--muted); font-size: 14px; margin: 0; }
+
+.cmd {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  background: var(--surface-2); border-radius: 10px; padding: 8px 8px 8px 12px; margin: 6px 0;
+}
+.cmd .what { font-size: 13px; color: var(--muted); }
+.cmd code { font: 13px/1.4 ui-monospace, Menlo, Consolas, monospace; word-break: break-all; }
+.copy {
+  border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 13px; min-height: 32px;
+}
+.copy:hover { border-color: var(--accent); }
+
+.lessons { display: flex; flex-wrap: wrap; gap: 6px; }
+.lesson { font: 13px/1.4 ui-monospace, Menlo, Consolas, monospace; background: var(--accent-soft); border-radius: 8px; padding: 4px 9px; }
+
+/* Verify strip */
+.verify {
+  margin-top: 16px; display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; font-size: 14px;
+}
+.verify.ok { background: var(--ok-soft); color: var(--ok); }
+.verify.warn { background: var(--warn-soft); color: var(--warn); }
+.verify .glyph { font-size: 16px; }
+.verify .detail { color: var(--ink); }
+
+/* Footer nav */
+.foot {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  border-top: 1px solid var(--line); padding: 16px 28px; background: var(--surface-2);
+}
+.foot .right { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.btn {
+  border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 10px 16px;
+  cursor: pointer; min-height: 44px; font-size: 15px; transition: transform .15s var(--ease), border-color .2s;
+}
+.btn:hover:not(:disabled) { border-color: var(--accent); }
+.btn:active:not(:disabled) { transform: scale(.98); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+.btn.ghost { background: transparent; border-color: transparent; color: var(--muted); }
+.btn:disabled { opacity: .4; cursor: default; }
+.keys { font-size: 12px; color: var(--muted); }
+kbd { font: 12px ui-monospace, Menlo, monospace; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 0 5px; background: var(--surface); }
+
+/* Done */
+.done-card { padding: 48px 28px; text-align: center; }
+.check {
+  width: 64px; height: 64px; border-radius: 50%; background: var(--ok-soft); color: var(--ok);
+  display: grid; place-items: center; margin: 0 auto 16px; font-size: 28px;
+}
+.done-card p { color: var(--muted); max-width: 46ch; margin: 8px auto 0; }
+.colophon { margin-top: 24px; font-size: 12px; color: var(--muted); }
+
+/* Mobile */
+@media (max-width: 880px) {
+  .app { grid-template-columns: 1fr; }
+  .side { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--line); padding: 16px; }
+  .sections { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+  .section-label { display: none; }
+  .nav-item { width: auto; white-space: nowrap; background: var(--surface); border: 1px solid var(--line); }
+  .keys { display: none; }
+}
+@media (max-width: 420px) {
+  .main { padding: 20px 16px 48px; }
+  .stage-head, .stage-body, .foot { padding-left: 18px; padding-right: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="side" aria-label="Tour sections">
+    <div class="brand"><span class="mark" aria-hidden="true">&#9671;</span> Codebase tour</div>
+    <div class="sections" id="sections"></div>
+  </aside>
+
+  <main class="main" id="main">
+    <div class="top">
+      <div class="ring-wrap">
+        <svg class="ring" viewBox="0 0 52 52" aria-hidden="true">
+          <circle cx="26" cy="26" r="21" fill="none" stroke="var(--line)" stroke-width="5"></circle>
+          <circle id="ring-arc" cx="26" cy="26" r="21" fill="none" stroke="var(--accent)" stroke-width="5"
+                  stroke-linecap="round" transform="rotate(-90 26 26)" stroke-dasharray="131.9" stroke-dashoffset="131.9"
+                  style="transition: stroke-dashoffset .5s var(--ease)"></circle>
+          <text id="ring-text" x="26" y="30" text-anchor="middle">0/0</text>
+        </svg>
+        <div class="ring-meta"><strong id="ring-title">Start here</strong><span id="ring-sub"></span></div>
+      </div>
+      <span class="status-pill" id="status"></span>
+    </div>
+
+    <section class="goal" aria-labelledby="goal-h">
+      <h2 id="goal-h">What are you changing first?</h2>
+      <p>Pick a goal and the tour narrows to the wiki pages for it. Every line on these pages comes from the OpenWiki pages.</p>
+      <div class="chips" id="goals" role="group" aria-label="Goals"></div>
+    </section>
+
+    <div id="stage"></div>
+    <p class="colophon" id="colophon"></p>
+  </main>
+</div>
+
+<script>
+/* Data is written by scripts/build_tour.py from openwiki/ only. Nothing here is saved between visits. */
+const TOUR = /*__TOUR_DATA__*/null;
+
+let goal = null;
+let at = 0;
+const done = new Set();
+
+function el(tag, attrs, text) {
+  const e = document.createElement(tag);
+  if (attrs) for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (text != null) e.textContent = text;
+  return e;
+}
+
+function pageIndexes() {
+  if (!goal) return TOUR.pages.map((_, n) => n);
+  const pages = (TOUR.goals.find(g => g.goal === goal) || { pages: [] }).pages;
+  return TOUR.pages.map((p, n) => n).filter(n => pages.includes(TOUR.pages[n].src));
+}
+
+function renderStatus() {
+  const pill = document.getElementById("status");
+  const w = TOUR.wiki;
+  pill.classList.add("ok");
+  pill.textContent = "Wiki generated " + w.generated + ". CI refreshes it on a schedule.";
+  document.getElementById("colophon").textContent =
+    "Generated from openwiki/ (generated " + w.generated + ", gitHead " + String(w.gitHead).slice(0, 7) + "). Source code is not used.";
+}
+
+function renderGoals() {
+  const box = document.getElementById("goals");
+  box.innerHTML = "";
+  const all = el("button", { class: "chip", type: "button", "aria-pressed": String(goal === null) }, "all pages");
+  all.addEventListener("click", () => { goal = null; resetAt(); render(); });
+  box.appendChild(all);
+  TOUR.goals.forEach(g => {
+    const b = el("button", { class: "chip", type: "button", "aria-pressed": String(goal === g.goal) }, g.goal);
+    b.addEventListener("click", () => { goal = goal === g.goal ? null : g.goal; resetAt(); render(); });
+    box.appendChild(b);
+  });
+}
+
+function resetAt() {
+  const list = pageIndexes();
+  if (!list.includes(at)) at = list[0] ?? 0;
+}
+
+function renderSidebar() {
+  const box = document.getElementById("sections");
+  box.innerHTML = "";
+  TOUR.sections.forEach(s => {
+    box.appendChild(el("div", { class: "section-label" }, s.title));
+    TOUR.pages.forEach((p, n) => {
+      if (p.section !== s.id) return;
+      const cls = done.has(n) ? "done" : (n === at ? "current" : "");
+      const btn = el("button", { class: "nav-item", type: "button" });
+      if (n === at) btn.setAttribute("aria-current", "page");
+      btn.appendChild(el("span", { class: "dot " + cls, "aria-hidden": "true" }));
+      btn.appendChild(el("span", null, p.title));
+      btn.addEventListener("click", () => goTo(n));
+      box.appendChild(btn);
+    });
+  });
+}
+
+function renderRing() {
+  const total = TOUR.pages.length;
+  const C = 131.9;
+  document.getElementById("ring-arc").setAttribute("stroke-dashoffset", String(C - (C * done.size / total)));
+  document.getElementById("ring-text").textContent = done.size + "/" + total;
+  document.getElementById("ring-title").textContent = done.size === total ? "Tour complete" : (done.size ? "Keep going" : "Start here");
+  document.getElementById("ring-sub").textContent = done.size + " of " + total + " pages done this visit";
+}
+
+function render() {
+  renderStatus();
+  renderGoals();
+  renderSidebar();
+  renderRing();
+  const list = pageIndexes();
+  const box = document.getElementById("stage");
+  box.innerHTML = "";
+  if (!list.length) {
+    const none = el("section", { class: "stage" });
+    none.appendChild(el("div", { class: "stage-body" }, "No wiki page in this tour for that goal."));
+    box.appendChild(none);
+    return;
+  }
+  renderStage(box, list);
+}
+
+function renderStage(box, list) {
+  const n = at;
+  const p = TOUR.pages[n];
+  const pos = list.indexOf(n) + 1;
+  const stage = el("section", { class: "stage", "aria-labelledby": "t" });
+
+  const head = el("div", { class: "stage-head" });
+  const sectionTitle = (TOUR.sections.find(s => s.id === p.section) || { title: p.section }).title;
+  head.appendChild(el("div", { class: "crumb" }, sectionTitle + " · " + pos + " of " + list.length + (goal ? " for " + goal : "")));
+  head.appendChild(el("h2", { class: "title", id: "t" }, p.title));
+  head.appendChild(el("p", { class: "lede" }, p.why));
+  stage.appendChild(head);
+
+  const body = el("div", { class: "stage-body" });
+
+  const d1 = el("details", { class: "disc", open: "" });
+  d1.appendChild(el("summary", null, "What breaks if you change it"));
+  const in1 = el("div", { class: "inner" });
+  const ul = el("ul");
+  p.breaks.forEach(b => {
+    const li = el("li", null, b.t);
+    li.appendChild(el("span", { class: "src" }, "wiki: " + p.src + " · " + b.src));
+    ul.appendChild(li);
+  });
+  in1.appendChild(ul);
+  d1.appendChild(in1);
+  body.appendChild(d1);
+
+  const d2 = el("details", { class: "disc" });
+  d2.appendChild(el("summary", null, "Tests to run (" + p.tests.length + ")"));
+  const in2 = el("div", { class: "inner" });
+  if (p.tests.length) {
+    p.tests.forEach(t => {
+      const row = el("div", { class: "cmd" });
+      const left = el("div");
+      left.appendChild(el("code", null, t.cmd));
+      left.appendChild(el("div", { class: "what" }, t.what));
+      row.appendChild(left);
+      const c = el("button", { class: "copy", type: "button" }, "Copy");
+      c.addEventListener("click", () => copyText(t.cmd, c));
+      row.appendChild(c);
+      in2.appendChild(row);
+    });
+  } else {
+    in2.appendChild(el("p", { class: "empty" }, "This wiki page names no test command."));
+  }
+  d2.appendChild(in2);
+  body.appendChild(d2);
+
+  const d3 = el("details", { class: "disc" });
+  d3.appendChild(el("summary", null, "Related knowledge-base entries (" + p.lessons.length + ")"));
+  const in3 = el("div", { class: "inner" });
+  if (p.lessons.length) {
+    const lw = el("div", { class: "lessons" });
+    p.lessons.forEach(l => lw.appendChild(el("span", { class: "lesson" }, l)));
+    in3.appendChild(lw);
+  } else {
+    in3.appendChild(el("p", { class: "empty" }, "This wiki page cites no docs/solutions entry."));
+  }
+  d3.appendChild(in3);
+  body.appendChild(d3);
+
+  const ok = p.verify.total > 0 && p.verify.ok === p.verify.total;
+  const v = el("div", { class: "verify " + (ok ? "ok" : "warn"), role: "status" });
+  v.appendChild(el("span", { class: "glyph", "aria-hidden": "true" }, ok ? "✓" : "!"));
+  v.appendChild(el("span", { class: "detail" },
+    p.verify.ok + " of " + p.verify.total + " claims cite lines unchanged since the wiki was generated. That does not prove the claims are true."));
+  body.appendChild(v);
+  if (p.verify.unverified.length) {
+    const d4 = el("details", { class: "disc" });
+    d4.appendChild(el("summary", null, "Verify before relying (" + p.verify.unverified.length + ")"));
+    const in4 = el("div", { class: "inner" });
+    const u = el("ul");
+    p.verify.unverified.forEach(x => u.appendChild(el("li", null, x)));
+    in4.appendChild(u);
+    d4.appendChild(in4);
+    body.appendChild(d4);
+  }
+  stage.appendChild(body);
+
+  const foot = el("div", { class: "foot" });
+  const skip = el("button", { class: "btn ghost", type: "button" }, "Skip for now");
+  skip.addEventListener("click", () => step(1));
+  const right = el("div", { class: "right" });
+  const keys = el("span", { class: "keys" }, "Keys: ");
+  keys.appendChild(el("kbd", null, "←"));
+  keys.appendChild(document.createTextNode(" "));
+  keys.appendChild(el("kbd", null, "→"));
+  right.appendChild(keys);
+  const back = el("button", { class: "btn", type: "button" }, "Back");
+  back.disabled = pos === 1;
+  back.addEventListener("click", () => step(-1));
+  const isLast = pos === list.length;
+  const next = el("button", { class: "btn primary", type: "button" }, isLast ? "Mark done and finish" : "Mark done and next");
+  next.addEventListener("click", () => { done.add(n); if (isLast) finish(); else step(1); });
+  right.appendChild(back);
+  right.appendChild(next);
+  foot.appendChild(skip);
+  foot.appendChild(right);
+  stage.appendChild(foot);
+
+  box.appendChild(stage);
+}
+
+function step(delta) {
+  const list = pageIndexes();
+  const target = list[list.indexOf(at) + delta];
+  if (target === undefined) return;
+  goTo(target);
+}
+
+function goTo(n) {
+  at = n;
+  render();
+  document.getElementById("main").scrollIntoView({ block: "start" });
+}
+
+function finish() {
+  const box = document.getElementById("stage");
+  box.innerHTML = "";
+  const c = el("section", { class: "stage done-card", role: "status" });
+  c.appendChild(el("div", { class: "check", "aria-hidden": "true" }, "✓"));
+  c.appendChild(el("h2", { class: "title" }, "Tour complete"));
+  c.appendChild(el("p", null, "You covered " + pageIndexes().length + " wiki pages. Progress is not saved, so the sidebar resets on your next visit."));
+  box.appendChild(c);
+  renderRing();
+  renderSidebar();
+}
+
+function copyText(text, btn) {
+  const reset = () => { btn.textContent = "Copy"; };
+  try {
+    navigator.clipboard.writeText(text).then(
+      () => { btn.textContent = "Copied"; setTimeout(reset, 1400); },
+      () => { btn.textContent = "Select and copy"; }
+    );
+  } catch (e) {
+    btn.textContent = "Select and copy";
+  }
+}
+
+document.addEventListener("keydown", e => {
+  if (e.target.matches("input, textarea, button")) return;
+  if (e.key === "ArrowRight") step(1);
+  if (e.key === "ArrowLeft") step(-1);
+});
+
+if (TOUR) {
+  resetAt();
+  render();
+} else {
+  document.getElementById("stage").appendChild(el("p", null, "No tour data. Run scripts/build_tour.py build."));
+}
+</script>
+</body>
+</html>

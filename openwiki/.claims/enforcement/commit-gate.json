@@ -1,0 +1,324 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:e98bae9c1439d2ded35d9ede5b99ada1a64fa53b19348f0d7eee93f2f5796a18",
+  "claims": [
+    {
+      "id": "claim_69024307b49242d6b524a3a0028e7ce7",
+      "statement": "commit-gate.sh is registered as a PreToolUse hook on the Bash matcher; the harness root settings.json registers it bare (standard profile) and consumer deploys append ' --profile <p>' only to the commit-gate command.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L516-L527",
+          "version": "repo-lines-v1:sha256:a15ec82fcc39a2600e67ab3d568eb68a752bbec5bbda9e1d2f505c66fc27864e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmMWVlZjE1NmM0YjIyNTQyMmYxMDIxZjgyZjY4NDMzNGZjOWIzNjQ5NWE5ZTNiMDBlNzU3NzcyNjAxNWQ0ZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1Mjc2ODVmMmRhNmI2M2Y1NGEyNGU2MjA1MWE1Nzc3YWQyOWM4MjA2YTdhZjM0OTM3OTJmNWNlMWM3MmY2YTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAyN2EzMTQ3MWVjYzg1OTM1ZTI0YWM3Yzg4MDk5NGZhZmJlNzUwZGU1YzkxMzk1Yjc2YzIwOTVjY2YwNTAzZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0OTk5YTA4NDQyNmE4Njg4YzU4ZjcxMDAwMWZmZmYxMTkwM2U4YTE5NzUxYTlmYTdlMTY0NjQyZDJlNTA0NGYifQ"
+        },
+        {
+          "resource": "repo://settings.json#L3-L13",
+          "version": "repo-lines-v1:sha256:0510b54a3f413495057a85cb150f82b4d8766cc720d48b259a620159764d99e1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4MThlOTAyMDc0NDJkOGM5N2U0NTdiNTBiMjVjYzVkZDRjODA5MzY0N2UzYzg5ZTRiZTAxODg1ODQxNzYwZDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5NzhlMjUwM2I4Y2YzN2EwNmY3ZDZmMGEzYTZiNmZlMzU2OTFmYmNhYjUwYjg3NzVjYWI2ZmFiYzcxYzU5MmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjoyLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlhYTc2OTA5NDhlZjU0NGZhNWE3ZWQwMWE0ZTFlM2Q0MTE0OGJmMzk3ZGIyODczY2EzZDM0Mzk4ODAzZWQ4MTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0NTczNTI2ZDdiZGUzNjMyZWNmN2YyZDExNmUwYjBmZThlODcyYWFlNTkxODNiZTM3MGU4MzMyY2Q1MWZjYTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ca16c370e37c4735b75ae7ea1f215b43",
+      "statement": "The hook blocks with exit 2 and a stderr message, except the untracked-.py deny which prints a permissionDecision:\"deny\" JSON on stdout and exits 0; it never exits 1 because exit 1 is non-blocking.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/commit-gate.sh#L109-L126",
+          "version": "repo-lines-v1:sha256:446c8522613876931845176247148974d4b9ef4d9cf275ad21f578b492f228b5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhYmNlNGE1OTg4ZWI3MGFlMjc5MmMxZWQ4NjhhNzQyNWFkZjMzMjFlYjhiNjZmZDYyNDIwM2FhY2IxZDY0YjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZmOWNhZTNkZjhmNTkwOGI0NDA1NTBhMTVjNzgxYjljMWVjZWE2MTgwNDNhNDAwNjY0MGJjYTQ2MjVlMGZkZDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRkNGJjNThiMjM2M2QwYTAzYTJiODllNzJlNTU5OTFkYzE1ZTdjNGJlNzJkMTM3YmJhMTZjYzk4ODE3ODgzNDEifQ"
+        },
+        {
+          "resource": "repo://hooks/commit-gate.sh#L15-L17",
+          "version": "repo-lines-v1:sha256:eacce28f40e964abf08740bc6f244b07d4c6ec37d4bf3c34128727775c0db606:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjVmNzljMzcxNzRiNzRjOTc3NGRlYjkzNGQ2OTE3MjRmYzdiNzk5NTdlYWI3NTdkYmExNGNmZmIyODkxMmI4MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDZlYzMzYjM4Yjg3M2I3ZjEwNWVhNTc0MDUxY2Y3MGY2ODQyMjdmZWE1YWM0NGZkZTVjOWMwMzdlMTVmMzlkOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2UyOTJmNTg2NTMxOTMyY2I3NDk0OWUzYzlkMTk0N2YwOTkwZDY2N2Y0MGNlZWFhOWQ5Y2JkYmZlNGU3ODQxOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTMzNTM1MjJhZDM3MTQwOWMyMGU0Nzk1YjUwN2I0Y2U3NjczMzY1Y2U1NzU2MGQzNThhNzFlNDAxNWRkZWE3ZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_bd232cf9ca7f4915a7a57effb73e343a",
+      "statement": "A Bash payload with tool_name Bash and a non-empty string command is resolved with a single jq call without starting Python; every other payload goes through hooks/lib/normalize-tool-input.py and the gate blocks with exit 2 unless the normalizer reports status known and tool_class shell (a missing python3 or normalizer yields a normalizer-unavailable result that also blocks).",
+      "evidence": [
+        {
+          "resource": "repo://hooks/commit-gate.sh#L36-L64",
+          "version": "repo-lines-v1:sha256:d45932397e2f189b4afe097da861ffc9b43ef0fe880f5ad35abc04661305a31b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5YjljYzkxMDRiYTI1MDA0M2YyNTJlNDVkM2YwODUxNmNhNDgwZjFjNGVmOTQ1M2JhYTQyMzY3ZDllZTc4NDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJlMjM1MjliNTc3YTE3YzViNmE3ZjkyYWI4NDA2YzcxY2U1MzVlYzExMDc0MmI0YTk4ZTZiMWYwOGE2M2YwY2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRmYmQ4OWNjZTFkMDMyNzNmM2JmYzIzYjBmMzFjNDRjY2FkYmY2N2ZhMmQ4ZjlkM2Y1ODMwMzQ0MTgxNTMzMTcifQ"
+        },
+        {
+          "resource": "repo://hooks/lib/normalize-tool-input.py#L150-L159",
+          "version": "repo-lines-v1:sha256:3ca78acce749bdd688ed62747d7e0162c7ae72c0da521d12b3b13233c07fc4cb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmZTA1YWU3NDEzZjAzZThhNmY5NDY1MmVhNTkwNzZiMTMzMGE3ZWNkNDMyZjcwYmYzMjI1OTE3NWRiYTYzODUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3MmY5Njk1Yzc0NjdjNzQ3NzNjOWNlN2ZjNDI5YzVkMGQwZTQ4N2YzYzUxZDE1ZDY2NjhhM2QyNDA3MmJiOTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM0ODNmN2ViMzliZTg2M2QwYjg0MmIyYTc2ZWRiYzA3ZTk3NzRlZmRkM2ZhMjA0YWY0MmYzNDQ1ZTZlNzllOWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMyYjcyNjA3MWY1NzMxOTI0ZjRiMDBlN2UxZDMxZjAyMzE2NGRjY2M4MTZhNzlhZWY3OGI1ZmYzNzJjZDhiM2UifQ"
+        },
+        {
+          "resource": "repo://tests/hooks/commit-gate.test.sh#L44-L88",
+          "version": "repo-lines-v1:sha256:7c129f627fb48a0218c32e693f8491e1e87652ed318a5759ec5b4c3233661933:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmZTE4NDZiMGQ2ZTA3NWM5NmIwODMzYzVhNDNjODQ5M2E3OTlhZGU5M2RkMWQ4ZGNlZmMwNDc3ZTA2MDNjNmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5MzQxNGY4MThkYzg0NmViZjYzODBlNTg0MTY1ZTlmODRiNmNhZjQyNmUxYWNhYjlmYmM2ZTkxZTJjMGUzMTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxMThmM2NhMjI4ZWI1ZjM5YWUyNjdjMTU2N2RlNjQ3Y2VjNGVkMzEwMDkzNWMwYzNmYTk5MjJlMmU2ZjNkOWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0Y2M4ZWE1NTA2ZjlkOGFjZTA0OWNmYzMzYWIzNWQwMTljZTg3MGQwN2IyMTQwMzdkYTdhZGQzYzIxYWM3MTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_824534027e6b40c791ceef8192ed343c",
+      "statement": "The gate detects git commit/push via the shared git-command.sh tokenizing matcher, which strips quoted spans, splits on shell separators, skips cd/env-assignment/wrapper prefixes and git global options, and matches the subcommand exactly; if either matcher function is missing the gate blocks with exit 2, and non-commit/push commands exit 0.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/commit-gate.sh#L66-L75",
+          "version": "repo-lines-v1:sha256:b808d35a4ec4b1a37d85bb2e5ec2bb4c8c634eb02c2a49e7eea39e18daf7faa4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxMTM1ZDA4YjdhMDNjNjU1YWUzYTNjM2JlOGU0NjdkYWIxMmM0MjRjZmY1ZjcwYzY3OWI1ZWMxYmMxNzgxODkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwM2UxNjc4YWVjMTA2YWE3NDU4OWE0ZGYxMTljNGRlMjVmN2U2ZDQ1NjgyNWJhYTNmNTNmZjM0NmVlYTEwMTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyOGE4NDIzNjhkYjAyMWJiM2Y5ODE2ZGEyOGQxOGUzZWNjYTk4NjFkMDFjOGU2ZTRkNzQyZWYwY2IxYTU1N2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxNDNmZmIyYmQyMzM4ODYzMThjMzU4ZTQ5ZTcwZmY0ZGI3NjUyOWMxZTQ2MjU2NGY2YTIxZWRmZTZmMzQ0NTcifQ"
+        },
+        {
+          "resource": "repo://hooks/lib/git-command.sh#L38-L96",
+          "version": "repo-lines-v1:sha256:4cae81061b8519858c03c920ce3fe1f8a14b8cc206d90348adf5cb9b183fccbf:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5M2MwZjE0NjEyN2Y0NWM1MzI0MDVmZmE1NzVlNWQ4NjQ3OGQzMWY4ZWVlZmQ4M2Q3ZjZiODEyOTNhNzMwZTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4OGY5ZWRmNGNhODg1ZTRjMjRkMzE4ZjMxZmM2MzZiYmYxOTRkOTk0YzAyM2JiNmZiM2Q0YmI1ZjMwMDYwMGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwM2IzZWE2Y2FkYzdkOWJjMDkzMmI0OTg2YzZiZjY3NjA2ZTc4MTJkOWE0OTQ2MjcyYzg2YmExMGYzZGRmNzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://tests/hooks/commit-gate.test.sh#L90-L120",
+          "version": "repo-lines-v1:sha256:9d65feb8c20d3bbb7d41b0c8108d01cbe0a0503fa2754574f15af539853ade43:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwYTg5ZTQ1YTcxOTZhNDQ2NmYwMzRhZmZlYjU5ZTZhMzNlMjY3NTM5NmZkM2NmMDYyZTc1ZDYyNTFlOGQxMDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwMDhiMmE5MWM4MTFiNDc5MTkyMGRkMWQ1NTJmYTM5N2Q4MjQ2Yjg1MGJmMzI3OGViYzYxNzY3NWI4MzA4YjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhMGE0YTY1ZjlkYjc4NzBlOTI2ZGQ5MGU1OTVkMDIyMWExNDc1NjI2ZTU3YzY5NmIwNmE3MTkyNjQ0OTk3OGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFkZjVmMWYwYjBmNDA3MDMzYTM2MGM5MDg0ZmJjZjI2ODRhODUyNGEwMjIzYjI3MzhiZThhOGM4MTZmZjgxMDAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_874e3f5cdd30489fbac7ce32d7fec110",
+      "statement": "Profiles are minimal, standard (default) and strict, with unknown values warning and running standard; minimal runs only the secrets scan, standard adds escalations, lane evidence, run-state, risk and plan-scope checks, and strict adds the untracked-.py deny and app gates (app gates also run in any profile with REQUIRE_APP_GATES=1).",
+      "evidence": [
+        {
+          "resource": "repo://hooks/commit-gate.sh#L19-L25",
+          "version": "repo-lines-v1:sha256:93f3e571b6c26947c0e050e721b605f222e5cb25fd5a5bb29990da7f4e543cfb:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTJiMTJkZDViZTMxYWRhNWZkZjViZmQ0ZWUzNWJhNDlkZTY3MWRmNWE1MzQyZjY3YTgwYjVhYjYwZjA5NmQxNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGRhNWJkZDMwYmZmYmVhZWIyZGE5MjQ5ZjI2M2M3N2NiZmUzYWVhOWMyMzk2ZDkyMmZhOTE4OWVjNDZhYTZmYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGY0Zjg4MDI3YzgwMzFiMzlhZDg1ODU1MWE3ZGE4NzdjYTg5NjJlY2NkYzI1Yjk3NGNlNTJlODM3Y2Q0NmU2YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWQ3N2I4YWM1MjA4MmQyZDE3ODdlNWQ2ODI0NTY3NWIxMjdlODk1NTA5MTZiMmEwZjJiNGJjYjYyNzNhMjMzMSJ9"
+        },
+        {
+          "resource": "repo://hooks/commit-gate.sh#L720-L733",
+          "version": "repo-lines-v1:sha256:b8dd0ea48add5a420ddab912e8512de2046580cec839baa323e54a2d6a52ccaa:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwNmQzNTg2Zjk2N2YyZDJhMjczM2I0NjhmM2M0YTcyZDlhOGI5MTU2M2Q2YjMxYjczMGM3ZTExMDg0YzBiOWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4ZDNiOWU4ODBhNzc5NzU0OTNkYzdlMzU5MTQ0YzAyOTVhNGY2OTRjZmUwYWY0ZjkyOGMyMjMwN2JjNWMzMjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkNzJiZDkxNDQwMzA4ZTgzYjg1ZWE0MmRiMTEyYjNkNThkY2IyZjg1NGZhYTBjNDIwOGYyZDkwZWY5YjVmZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://hooks/commit-gate.sh#L78-L103",
+          "version": "repo-lines-v1:sha256:b800a39fd5e8e400dca72e4d48b3f1e085248c2a6f71d60169d6d08e204be826:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3YmEyNDNmYmY3YTdhNzdiZWFmMTZiZWUzYmUyZjNkNTI4ZjU2NWJlZTBiNDg1ODZmNzdmZmI3OWNhNDAyYzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY5OWM0YzY1MTI3OWY0ZjkxZmM0NmVjNmY3MGRjMzFmOWMxNWU0ZDMzNmY3Y2IxYzA5OTQ1NTBlM2FkOWMxMTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjljMzlhMjI0NmE1YjU0Yjg5ZjkyMTAwYjI0OGRkMjg3MzY4MGYwZGEzNmZlY2RjMWFjNzRhNGE2YzRlYzdjNWEifQ"
+        },
+        {
+          "resource": "repo://tests/hooks/commit-gate.test.sh#L562-L631",
+          "version": "repo-lines-v1:sha256:6d820a035214da139607ca0b276de97e0afd2091c5cd8b1f5f8a34a41b683baa:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjNzRlNGIwOGE1OGI1MTYyOWI5MzZkNWMzMWJhYTBmZmJjODVjMGMzZjNlYWM1ZGQwZjY3YTBhNjhiZDBiNzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2MzhhOWNlOWIwOWJjNmVmNGVjMmVhZTZhOTkxODJmMjg3OGRhNGY2Njg5ZWU4NmIzZTA1ZmI3YWE2NDFmZGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhMDdhYjc3OTNkMDJlMzk1M2I0ODFjNGZiYTgwZmFjYWEzNDY4NjNhMTc4N2Q0Zjk2YjVkNDA2ZTljZDcwNjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyMjE0NzViNTQxMjcyNTQzYjhkNGExMWY1NDdjNzhkMTFjOWQ1MjMwZDYzZTg5M2RhZDZkZTVjMDcyY2JiZWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4f4bd34f22d54b6b933b82a68cc7eca3",
+      "statement": "check_untracked_py (strict only) runs first, for both git commit and git push, and denies when untracked .py files exist outside any .claude/ directory (root-level or nested); after it, git push exits 0 without running commit checks.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/commit-gate.sh#L109-L131",
+          "version": "repo-lines-v1:sha256:810df0dc472c57acef29b8a54600467bbe2a798942b970cd4b7cfa0a74d1f65e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhYmNlNGE1OTg4ZWI3MGFlMjc5MmMxZWQ4NjhhNzQyNWFkZjMzMjFlYjhiNjZmZDYyNDIwM2FhY2IxZDY0YjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkYmQ2ZTNiMmYyMjUxYjI3NTg2MzdiMzU4OGM2NDA1ZWE1Mjc4MGJlNTI1OTBlYTdlYWI0NmZmZmUxYTEzNjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZmOWNhZTNkZjhmNTkwOGI0NDA1NTBhMTVjNzgxYjljMWVjZWE2MTgwNDNhNDAwNjY0MGJjYTQ2MjVlMGZkZDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmOGI0ZGZkMDI3ZDI4MWJlOTBmODJiMzU0ZjNhOGJlNTNkNTM5NGIwNTBmMDAxN2JjZGQ5OWFiYzZjZjM5NjcifQ"
+        },
+        {
+          "resource": "repo://tests/hooks/commit-gate.test.sh#L136-L179",
+          "version": "repo-lines-v1:sha256:44cf2fa7361f8934e786de8e81622f16c7da6c0dd193a16a243f9e73eb7fbddd:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhMDgyZmRkYmU2MDc4YmE0NjIwMGM1ZTVmN2FiM2FhNzQzYThkM2Q4NjBjYzQ3MWY0MGI0ZDI1OGVkZWRlZDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkZDlmMzY5MDRlNTE3ZGExOGI5ZDkxZDc2NTAzNTVkMzA5NzA2MWM2NmU2ZTNiZmM0NGNmOTE2OTE3MGQ2NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkYjVmMWZhOTcwMTYxZDUxODZiZDk3M2JjODQ5ZmEwMWY3Yjg4NjE0NDhmYTFmY2M1MThlODk2NTNlZmRmZjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyN2E3MjUzNWUyMmMzNmYwZWUwY2E0NDAwOGRmYWZjMWQ4OTdhZTc2Y2Y5M2VmNzk2ZWM0YWUyOTJkYWM0YWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_074c1b6ee2fd4725b66038d2b8758404",
+      "statement": "Under the strict profile, `git add x.py && git commit` in one Bash call is still denied because the PreToolUse hook runs before the command executes, so staging and committing must be done in separate Bash calls; the deny reason states this.",
+      "evidence": [
+        {
+          "resource": "repo://CLAUDE.md#L91-L91",
+          "version": "repo-lines-v1:sha256:ad0225b1021e251c2f1a2526f63a0a137f09ec053f09d99b24ea347c22d22a99:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQwMjI1YjEwMjFlMjUxYzJmMWEyNTI2ZjYzYTBhMTM3ZjA5ZWMwNTNmMDlkOTliMjRlYTM0N2MyMmQyMmE5OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQwMjI1YjEwMjFlMjUxYzJmMWEyNTI2ZjYzYTBhMTM3ZjA5ZWMwNTNmMDlkOTliMjRlYTM0N2MyMmQyMmE5OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGExOTI5NjNlMzc5YTEyNTllZTA1YjE2MGFiYjMzNTJiY2VkZjc2ZTY2ZjMzYjAwNjU4MjhmNGRiMmE4YzFhNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjYzMDQ3ZDk3YWJhZTg3MWMxZTk5MzRjN2I2ZGI0Nzk5NjRmZGExZDdmMmFmNjI3M2RiNjYxY2Y5OTM5NGZiNyJ9"
+        },
+        {
+          "resource": "repo://hooks/commit-gate.sh#L116-L122",
+          "version": "repo-lines-v1:sha256:2d07994761b3208c57bfc89d14b1e993f3bb1ded1aaf73919506897e6ae658d0:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmI5NjJlNTJjYzI5YmIwOWVlMzAwYmEyNzdhMzg2ZDExMzNjYzE2Y2Y1NzM1Y2FiOTZjZGRiMWFhMWFkYmMyZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDgzN2E5YjU0ZWY5MDdjMjUyNzcxNmIzODdhZjIxY2QxMWExYTZjNGNkODIwNmE5MWI1YTMwMTQ1NDEzZTVkZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODQ0YzEyOWRkZjk1NmI4ZDY0Y2NlMDNlNmVhNDczYWU0ZmM1NTEyMTA5Y2ZmOGEyZjIyMTZhMDdjY2Q0MDc3ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzkzZmQ4NGRhMjYxNTZlODE3ZTk0NjM3MTdhYmIxMzI0NzI5NjM4NWExZTQ3YjRlZjRlODY3OTdhOWE0ZmQ4ZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6ed384dcba1a42dfb6196d779f1b4955",
+      "statement": "For commits, the gate fails closed (exit 2) if hooks/lib/lane.sh is missing or the project root cannot be determined or entered; the root comes from CLAUDE_PROJECT_DIR else git rev-parse from CWD and is never derived from the hook's own directory.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/commit-gate.sh#L134-L161",
+          "version": "repo-lines-v1:sha256:d73be690dfd9e5e8173f2129680a1a2166d3a55793469ae4b9fa49b84d76021b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiNjk2NWQ1MzE1OGIzZmNlOWY1ZGRmZjY5NzdmYmY3ODI0MmVkYzBjNWM2ZWY1MWUwMjc4ZGUxZjFjYTlhNmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJjY2QyMGI2YmI2OGQyZWUyY2NlYzAzMzI3MmRiZjQ1MjVhZDE0ZmQ2ZTgyMWExZTc3ODIwMzFkYjBkNmYzMGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5ZDE5NmNkY2FmNTQ3Mzg1Yjc2MDRlOWRkMWQyNDNhM2ZiNWVmNGVjYTNhZjNjN2IzNTdiYWIzZTY1YzFkZTIifQ"
+        },
+        {
+          "resource": "repo://tests/hooks/commit-gate.test.sh#L362-L385",
+          "version": "repo-lines-v1:sha256:46dbc69ce8c2b58ffbf5041319e941b43052d319063f4c9e03614ea9c1adfd8a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmNzZhZGI2N2ZkNmZhMTAxMWU1NGViM2FhZmYzOTg0ZGQ3MzU5ZmNmYjM1MzMwOWE5MDNmZWQ3ZmExZTU3MTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiMGU5MWMzNGVhNDVmNjkxZTRlYjJiZjM2ZGYwYTlkZWY0MGJmMWMwZWViZTZlYzczMzI3NzY0MjFlNWY4OWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3OGMxNDIxNjY5MDY4ZDQ2YmEzMzFiNDY3NTZkM2IyN2Q4MTNkOWE2YTdmZGRiOGE3ZmQwYWMyYzgxOTBjOGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyMTI1MjE3ZDVhMWU5NzUyOTg5NDViMjJlMWVkODc1M2NmYzZmOTdmYzY2ODA1ZDY5YjA5Yzk1M2VkMmZmZjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e857ad45aa5a46b28ef4d3046ee9a13a",
+      "statement": "The declared Lane is resolved from a SUMMARY.md staged in the commit (read from the index), else from the sibling SUMMARY.md of the status:active PLAN.md, with no most-recently-modified fallback; the first active plan in glob order wins.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/commit-gate.sh#L163-L170",
+          "version": "repo-lines-v1:sha256:2cd315dc52a340e145f9832ce77d3e9544a276c14f74ffc7f6751720dc5144bd:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2Q2Y2QwYjEyNDI1YzdmMTQ0MGUwOWNlN2E1ZTdmYTU2NjU3ZGNmN2Q5Y2JiZTE3ZDQ5ODI2ZDIxMGFlMTZlMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTI2ZWZjZTRhNWRmMGJiNzc3MGVhZmEyNGFlZjYyMGQzZDJmMTU3MjhjZjgzMWU4ZWQ3ZDJlOTZkZDE4YTc3OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmU2MTk0MmRlNTAyMDhhYTJhZTBjMTNkMjg2NjViNGRlZTM0YTQxYzBmMDZlZGQ1NDRkMGU3YzBhZmU0ZjlhOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTdkOTg1NTIzYzVlOWU4OTc4MzFlNDBkNmNjOWRhMjBkYjMzNGYyMDY2OWEyMTdjYzhiZDc4OTNlN2U0MTg3MyJ9"
+        },
+        {
+          "resource": "repo://hooks/lib/lane.sh#L29-L57",
+          "version": "repo-lines-v1:sha256:5f398770180078b5dc9fe69ffe2643eb5cfe0c31fe4cc7abd3f9028daed49e2a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5Y2MyY2VkYmQxZjEwNDNmMjRlZDA3OWM0YTkzYWVmZTJmYTM0MDI5ZmJhMTEwYmYyOTE2MGU4M2Y1NTA1MzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIwNjMyMjUzY2Y3NTJkNzlmMGQ3YWFjOTUwMzk2NjhjYzEzYjEzNTk0ZDgyOWFjMWYxODA2ZjFjY2ZlYmFjNWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_326bd57bbeb041d28bcf628612aa4b76",
+      "statement": "check_secrets runs in every profile without python3, scanning the staged diff (excluding test trees at any depth, *.example, *.md, docs/) for key/password-style patterns and blocking any staged .env path with no override.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/commit-gate.sh#L183-L210",
+          "version": "repo-lines-v1:sha256:da07f29b85ee69c19ba53860bc7f56ce48b81aa4d2e0c4a15b47da8f792a1e20:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3NjllNzVlODU3ZDQ5NjNkNjk3NzNmNThkZDdmMWQ1NDIzNGQzOWU2NmJhYWE0ZWU4ODk5YWQwMWZlNzE5NzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5NGNlZjMxYmM2NGE4ZjVmMTBhNWFhNmI5NDMzNjBlZWI5YTExMWRmYjg1ZDNkOTczMDNmYjI3NmQxYTk0MjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVkYmZjZmIxNzNlY2NhNGVlN2I2ZWJkOTkwNDNmM2NmNWI2M2ZhOTAwMDE5NjhkMjZkMDJhMGNmY2YzMmViNDUifQ"
+        },
+        {
+          "resource": "repo://tests/hooks/commit-gate.test.sh#L187-L232",
+          "version": "repo-lines-v1:sha256:059c4f5830ad766fd93c9630fe1a4fbca24bc78c9bfc1a35c88c9bd4fefc121b:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4MGVhOGE4ZTgwMGUzYzIzNjE2NDdkMGJiNzQ0ZjY3YzU3OWE5MWI3N2Y4MDM0MjVkZTQzOWYxZWViMzAwN2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzMjQ1N2EzYTU0NzcxNmQ0MGM0OTY1MDlmMGMwOTAwZDBhNDIxYjJjYmI2ZmM4Y2M5NDNmMGU0MTExNmM1NmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU5NDBlYmJlOWVjMjI2NjgwNjg5NTkzMGFkZGU1NmU3OWZkMzE5YWEzYjcwMzQzOWI1MDJkYmNmOWY1MmJlODYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI0MTc2YTQxMTg5NjNjNGNmY2YxZTc1N2U3MDFiNjVjMDNjOTUwYTg4MzJjNWViYTZkZWVlZTc5ZjRiMjMzNjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3da89d76308a43c89628ab0c2b65789d",
+      "statement": "check_escalations blocks a commit touching specs/<slug>/ when that slug's ESCALATIONS.md (staged copy preferred over disk) contains decision: pending, so recording the decision in the same commit self-unblocks.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/commit-gate.sh#L220-L235",
+          "version": "repo-lines-v1:sha256:6c518049be0ada2f5727d690b30cfc464931de65950d02bcd507ccba8d9f4dfb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiOTFkNzYyMjhhZjYzZmFjMmIwOWNlYWM2NDk2YjZmMGY2YjcyNzc4ODIwZTdhNTNkNWIyYWZlM2JhMTkyNGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVhOWRjMzQ2NGI5MTViYzY2NzNkOWZmYjU1OGI3NWZlYmJjYzE5MDZlNTg3Njk2NzEyNzhjYjNlNjc3YjdkN2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjZWUxM2RiYTE0NDFjOTU1MjhiMjM4YTFmOWRjNjA2NmE1NTQ1ZWIwYmY5NGQyZjM2ODQ2YzIwNzI0YzMxM2QifQ"
+        },
+        {
+          "resource": "repo://tests/hooks/commit-gate-evidence.test.sh#L13-L45",
+          "version": "repo-lines-v1:sha256:02eeb98b18abcb2f8e0565dda6fd09dbf04b58d493129fa981c1957058690182:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkOGYyYTVhNzhiOTljZWM2Y2NjNWJmZGY2NTA3OWU5MGQ5ZGUwOTBiZDFjOTlkOTgyNGU4OGY4NThlNGZiYmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMjk2ZTYzZjljZTIxMjcyMWNjNTdmY2ViNDk4MDY2MGMxOTZmNWE1YjliNDhlZDJlNGM2NDJkNTNhZGRjOTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhkMWU4MWEzZWRhZTg0MDJjNDE4ODQzOTA3MjZhMTA2OWM5MTQ5YjMwMTQwNzRkMDRhZDJjY2U2NWQwMTg1ZDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEwZjdmMmEzNzk5NmUyNGEzODI2OTQ2ZDU1MzBjNDc4OTZkNjk3OGE4ZDJjZjQxN2E4NTU1OWJiYTNlYmEyNTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2e1a30a478824d989a16726f42bab760",
+      "statement": "check_lane_evidence materializes index copies of each touched slug's SUMMARY.md and PLAN.md into a temp dir and runs verify_summary.py --lane with --plan-dir, blocking on failure, relaying '!' advisories on pass, and skipping (fail-open) when python3 or verify_summary.py (scripts/ or .claude/scripts/) is unavailable.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/commit-gate.sh#L172-L178",
+          "version": "repo-lines-v1:sha256:023ad045b63df418eabcf75c955dc7b968b8a1c923a3eae76946e616fc071594:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjg3NGFjODhjNjViYmRmZjFlZTlhMDYyNDliMDIwMjZlNDFhZjA3MGYxMGM4YTI3OTc0ZDgzNmJmZGVlMzU1ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDExN2ZhMDA2YmE5MjA4NTAwYjI5MzBjZTY5Y2JkZTQzNmM2NDdhZmE5MTdjYjczOTZhOWJjOTExMWE0NmRkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTI2MjliNWI5N2ExNTJiOGMyMGZlYjgzMDViZmIzMjBjZjkxMWVlNmFiNzcyOTBmY2MzNDMxZDBlYWNlMGEwNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTM0ZDdjZDI2NjEzMWQ3OWQyNjIwZTBmZWYyNjYzMmE3YWRkYWRlYjZiYWRkZGIzYjdhNDRmZTliZGI2NmYwMCJ9"
+        },
+        {
+          "resource": "repo://hooks/commit-gate.sh#L248-L304",
+          "version": "repo-lines-v1:sha256:32c9d7b6a2d210ee6a1a0178aa9a1d25b9877dc81299a444cc4245e0ceb3b95d:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkYzQ5MTU5MzU2MmE4ZDhhODE2MzZjZDc1NDE2N2RmNDA1ZjJjNDMyZjc2YWY0MjFjZGUyNzU4NWZlOTM2MGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ2MWNlOWNkY2FlNjAzYTVjY2Y0MDNkMjk1YmEwNTFjMjNmNGMyODMzNjY2ZDI2NzNlYmZhZGFiNWEwMTk2YTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEzM2RmYzBkOGMxODVhZDY3YmZiZTg3MzIyYWY5NWE2NWM1Y2M5NTUyOGIxZmVjN2E1YjBmYzU1Yzc0YjgxMmEifQ"
+        },
+        {
+          "resource": "repo://tests/hooks/commit-gate-evidence.test.sh#L135-L210",
+          "version": "repo-lines-v1:sha256:9a5c21bd5e6de62f2124453c5c800a56ca3832a2369a7a496a0a6d3a1fc9fd61:eyJzZWxlY3RlZExpbmVDb3VudCI6NzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4Nzc2NDI3OGU4NWI4Y2Y4MjM0MGI4M2RkNDk3M2I3YWIzN2Y1YjcxMjYzODgxZjcwMjgwOGNiYmY0ZTNmNjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5ZTVhNzAwMDE0ZjJmMmVlZGQ4NmU3Zjk5Y2Q1YmQyODM4NjdhZTAyODMxM2VkMWNhZDNjZTM0NmVmZjkyYjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFjZTc5MTUyOTI0Yjk1ODU1OGEyNGEyYzBhNmQ3Y2UwYWVhYmE4NDk1YmViODk4NjNhODRmOTBlMTY3MWNjNDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyMjE3ZmMxZGM2ZGZlMzY5Y2JkZGJkYjNmZGRkZjU1NDM4YmIzZThiMzBiZmRkZDNkNWQzNmU4YWI2NGU3MWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_dd2078dffdb843eab80a490830d9edd2",
+      "statement": "check_run_state blocks when RUN.json or events.jsonl for a touched slug is untracked and unstaged, only warns when tracked with unstaged changes, and REQUIRE_RUN_STATE_STAGED=0 downgrades the block to a warning.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/commit-gate.sh#L320-L348",
+          "version": "repo-lines-v1:sha256:ffd055143beca292b8376cdad0f2bea5fa481a657f8dc550f9ffec0e7002fc5e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3YWFiMjgyYjgwYzhiMGM3OTRjMjllNWUwNzU1M2IwYWI0NjNlOWE3NTJhYzMzZmNiNmJlNjZiMWRlMzMyNTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5NzkwZjgxOTg4NTIxNTJhNjdmMDVlNDFhZWYxYzM3NzRkZjNjMjkxNzA2ZTJjZDNlODUzOTBjNjljN2Y4ZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI1OTA2NjM0NTU0OTE1ZDI3NDcyYzE3NjQ4NmY0NmZlNzg0MDE4MzZhNmMwMmVlMmIzY2QxNzA0OGZmNjgxMjYifQ"
+        },
+        {
+          "resource": "repo://tests/hooks/commit-gate-evidence.test.sh#L72-L120",
+          "version": "repo-lines-v1:sha256:4ec12f10bcc0a964b6a902c4781f16e591272803148c42b14048bda7aecc3f75:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmNjJkOWZkZGU2ZmY5NmRkYjkxZmM4Y2E4OGRkYzdkZjNiYjk2OTZjYjFmZDU5NGMzNWRiODFjZDVlY2UwNGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3YjFlZjBkOTYwNTNmOGFmYWExNmI5NWUzNWRlZWViZDI3NTYyOThjNzczMDU4MzAyY2Q5OTViN2ZmNTU1ZmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxZGY5YWE1ZWE5N2I4MGQyMzM0ZjI0ODgyNDZjNTEwMWI1ODA2ZDU3YWYyNmJhODlmZDYwMDk0NWMyYmNjZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg4NTFhYzRhYTdhMmU4NjJkMTdiOTMyZGEyZWZkMjA1OTFmNjkxNzVkMGIyMmYxMjc0NWU1MTgyMTRiMzI1ODIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a7d0fe3548be47acb21419ba8329796b",
+      "statement": "check_risk reads per-category block/warn modes only from the git index copy of harness-manifest.json, else from embedded defaults in hooks/lib/gate-modes.default.sh (7 block, weakening-validation and workflow-engine warn); worktree and .claude/ manifests are never read, and anything other than an explicit warn resolves to block.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/commit-gate.sh#L388-L420",
+          "version": "repo-lines-v1:sha256:ec3c0c9653e86e16a9cde84507318ea091df99e665e914f8c0a9eb7d65a5b89e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ3NzQwN2ExZGZlYjJhMTRlNGUxN2JlMTE1Njg0MTExZDYzN2U5Y2U3ZWJlODczOTRkOWQ3NzhjYzAwYTE4YmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1ZmM5MGZmOGE0NDE0YzU0NDFkMGY2NzdjNWNiZmRhMzhiNDc0ZTUxYmZkNTU5YTU1NTlkZTBmODc3MDU1MjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkYWE0MjFiZDFmZjk4YjhkZjQyNmE2Y2QzZWFhNTBiMjhiMThjNjc4YTBhNjExYzgyZjkyNzExYTFjZDQxYmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5ZmNhNmRiN2IzYmQ4YTllYjAyNTlhN2UzZTI0MTIyMGNiMzUwNGRlYzQ2ZDg0MjcyYzgzYjQ5MzM3MDRkMWEifQ"
+        },
+        {
+          "resource": "repo://hooks/lib/gate-modes.default.sh#L1-L27",
+          "version": "repo-lines-v1:sha256:71897a95df06ba0cd8e12aa4d48544ff962fd880ac486a4c1e74ecc43f17573c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4NzVmOTI4NTQ2YWVlNzg1NWNiMWRiOWFmYzhhYjNmMWE4YTM0ZDQzZGU1YmJkNjJmNzA3NmQ3YmE5ZjM5MTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0ZTE5ZDExMDQ4ZjY1OGY2NTNjYzIyYjZkMWFlNjFkMjdhZmEzMjk5YjA0ZTFhZjE1ZmY3OTAyMTZmOGQxZTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://tests/hooks/commit-gate-risk.test.sh#L181-L265",
+          "version": "repo-lines-v1:sha256:c8fd877c6a8df47702a77b86f442ed5d1b1bac4a2c194fb54c4c7a7ba59d5796:eyJzZWxlY3RlZExpbmVDb3VudCI6ODUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjMWJiZDQ5YzRhMjVmYjQ4NjU4MTg3ZWIxMzAxNWQ4MGYwMGI5MTg3Y2I4ZTk2NWMyN2JiYzg0N2ZmZjQwNjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwYzQxOWE3OGM3ZTBiMzNhZmQyNDdiMDVmZGQ4MWI4NmNlODgyNTEzZjlhMDFhNTRlZWIwNzkwYjQxZDA1ZGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU3YzZjMjBjYTM3MjBjMDkzOGU1ODg5YmIwNDIyZTFlYmVjZTQ4YWNkZTlhZjIwYzU2MWI5Y2RlYWFmMGViYTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiZjdiM2IxNmNjMGU0ZTBiODcwYWZiN2VkNmYxMDlkNDBmNzVjYWZjY2FjYjdlNzFhYWQ5MTBiYTQ2ZmM4M2QifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3dd57442980148548d40a1e40cc5564e",
+      "statement": "check_risk trips path categories from staged paths (high-blast, data-loss/migration, external-provider, workflow-engine) and keyword categories from added code lines excluding prose, specs/, skills/, hooks/ and .claude/ with full-line comments stripped, while weakening-validation scans removed lines.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/commit-gate.sh#L424-L477",
+          "version": "repo-lines-v1:sha256:4eb9cbaa47b0af747db9eb4e8b4d5469928a2d15d84d51eb4ddac29910b41f66:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4Y2NjOTdlMDE3YTg2YWJkNTgwOWNkOTUzNGZiYmNiZDFkMTA0YTEyYmE3ZDY0YzFiZDU3MDdlMGY3MDYxZGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzYzA4NzU2ZjRjZDg0MTk1YTQzN2JlZDI3ODBhZTU2ZmNhNTYyMjdlMjBmYzFlOTBmMTY0NThjZmI2OTg2OWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5ZmNhNmRiN2IzYmQ4YTllYjAyNTlhN2UzZTI0MTIyMGNiMzUwNGRlYzQ2ZDg0MjcyYzgzYjQ5MzM3MDRkMWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY5MTY3NWJlZGU0MTYzMTQ2NWU0ZTg5MTgzZmNmNGI3YjZhNjBjZDBjZTMxZDMwM2VjMTRjYTZmZmVlZjI0OGYifQ"
+        },
+        {
+          "resource": "repo://tests/hooks/commit-gate-risk.test.sh#L67-L175",
+          "version": "repo-lines-v1:sha256:192ef6ce227ea906f956b98ab53b60c04354d18eddb108cf3f7dcbbb445c8c7a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyZjE1ZmUwNWM2YWJkOGQ0MDVjNWFiZjYwZWJmM2ZlMWRlM2VhOTIzYzMxYWNmZjc5ZTFiNzEyZjQwMThkY2EzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJiMGFhZjZiOWI0MTQyNTdhY2E0YThhOWUxY2RjYzdiZDY2OTQ4YTA5NmNmNTdkOGRjNzI2MDI4YjQxZjQ3ZDZkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmZGIyNDMyOTYzYmQ5NDQ2OGFlZWE2MDMxZjg3ODllYmRhNThmM2JlZGEyY2U0YjViOGVmYjFjYWUyMGIyMzQ0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkZmI0YTMxY2Y4NGY3ZmFjNjVhMGIwZDQ2MWUxNzU3Yjk4ZmZkNmZmYzZlOWRiMThiZGMxYjBjYjcxZDI2OTU2In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_dc886c5ca2354961b5295ecb11d75f7e",
+      "statement": "When a block-mode risk category trips, Lane high-risk corroborates and passes, a lower Lane blocks with exit 2, and no Lane only warns unless RISK_CORROBORATION_STRICT=1 or the strict profile is active; warn-mode categories only print a note.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/commit-gate.sh#L483-L530",
+          "version": "repo-lines-v1:sha256:be947caa89ef99f812c14626e6f2f3c1d3ea0fc3a5157928964e47e78eeaa5d4:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0ZDQ4OGI0ZmI3NzNjMmFiMDhmMGNiOGJlNWYwY2UwOTg3NTU1Y2FhNjM4ZDc3NGJjNDUzYzVhOTg1MDA4YzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAxOTg5ZGFjOTRiYzlmODkwZjM1M2ZmYTExMjMzNmYxOTBiYjA0NzhiNWFkOGRlNDQ3MWVjNTcyM2I1NDYxMTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI0NDg4ODFjOTc0ZmVjNjgyZjU0ZDA0Yzk3NWJiOWRhNTUyYTA4NjA0ODcxMDU3MjU2M2ExNTc4M2RiMGViZDMifQ"
+        },
+        {
+          "resource": "repo://tests/hooks/commit-gate-risk.test.sh#L26-L65",
+          "version": "repo-lines-v1:sha256:02e7d452fa3255c287620e3ff518531306fc25b32bb76c9fb6ca1fcd5e5404c2:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM1MTU1OWNlZDY0NjExZTQ5MDllYmQ4ZjFmYjRjYTIxMzBhN2ZmZDc5ZjQxYzQ5YjBkMzhkMTYzNGZjNDFmNTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxZGE5NmY2ZGZlYjgxMzk4NjVjOWMyMWRmNjgxYmQ4ODI0YzY2YzI4MDdhMmVjOTUyYTY1ODMzZjFlMmQwY2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlNzA2OTg4Yjc0ZDI3NzU3NjNiMjJlOTg3Yzg0YzMyYjU2NjA1ZWRjNGQ1ZDljMzY0M2Y2OTZkMDU0MzUwNjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2ZDZkZTRmNzliYWJhYTUzY2M3Njg0YTIwN2JkMmRlOTgwZWFkNDAxZjY0MjUxODc5NDE0MThkMGNjMDQyNDUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_20907fc7c19247149bb4a66c4f222ca2",
+      "statement": "RISK_WARN_CATEGORIES downgrades listed risk categories to warn but must be in the hook process environment (e.g. settings.local.json env); an inline VAR=x prefix on the git command never reaches the PreToolUse hook.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/commit-gate.sh#L380-L393",
+          "version": "repo-lines-v1:sha256:8328940d518f8e09fc7e421c446cb7d1c1f0e2d70848a86306933a8474d778c1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3ZTg1ODdhZjQzYWQzODBkZDA3ZGIzMGY5OTY5M2UzODFkY2M2ZDA0YWFkN2YwMTdmNjljNmM1ZmQzNTk0OGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyMGRjOWViOTE4NmVlZGY4MjM0YTAzYmQxZjU2ZTM0MjJkNTg5MGY4ZTFiZDlhMGNiNjk1OTk5ZmY5Yzg3MjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZjZTVhNDkyMjZhZmE0YjU4NGZhNmVmYTBjZGUzNmM5NmI2YmQwZmI1MGRmMzY4N2FlZmFlOWE2OGYyNDRlNGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk1MDY2ZmVlNDM4NGQ2NmNjMGVmZmRkMzIyOTE0MDliODFmN2IwM2E2MmJkYmNmYzdlNDk1ODBhZGY5YzI0YzQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f365f096c7da4d98b20ee6e15bfc5567",
+      "statement": "check_risk prints a warn-only simplify-pass note when the unfiltered numstat diff exceeds 150 changed lines for Lane tiny or 600 for Lane normal.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/commit-gate.sh#L436-L459",
+          "version": "repo-lines-v1:sha256:cc55e7b26736916f9ae0e024346fe46f3a437fb1c0acfc92c37d6beaca23028e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmNDg1ZThhYTc0MjAzZDY3ZTdmMzVjOTUwYWVlZTNjMWUyYTUzNmE5MjRjNzVkMjkwNzk1MmRkOWVlZmZmZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1ZmM5MGZmOGE0NDE0YzU0NDFkMGY2NzdjNWNiZmRhMzhiNDc0ZTUxYmZkNTU5YTU1NTlkZTBmODc3MDU1MjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3YmEyZWNhMjg0NjQyNzA0MGJmYTBmNzc2OTNkZTk0OWZlYzNlZjAzMjJhYjgxNGZmZDRlZGYwODJmYTIxMTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4MjI2MzMzYzM0ZDA2ZmJmODYxMjMzNDIwMzE1ODI4N2Q4NDhlZjZmZWEwOWI1OWRiZDM2YWI2MDYxODc2YjAifQ"
+        },
+        {
+          "resource": "repo://tests/hooks/commit-gate-risk.test.sh#L271-L310",
+          "version": "repo-lines-v1:sha256:de499fdbd0622a0fe14e5da0de60879a84bfc9ddbe41b0b4af595bc23859c1d8:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTc3YWEyMzAzNjJlZTI3OTcyYzY4YzJiNGJhNDE4MWIzMTJhNzg4YTEwZDlhMTQ2ZWNkODcwOGZhODFkOTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExMDc1NDM5NmM0ODAxNWEzZTZiNmY3YTZlMzE3MGNhNzU5YzIxNDJjMWE2YzdkYzk3MWVkMjM3YzAzNjBmNjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUxMTQwMmZhNTVkNjdkOGY1NzcxM2MyYjk4YWU4ZTU2MWFlYmQ2MTk4M2Y0ODRhMDM1ZDM5YTQzNDUwZmNjZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJjM2FlZTA4NTk4NzY1NjE5OTYyYmJiNmRmMTQ5Y2QyN2UxYWU4NjI2YTVkMGM5MGE5MTU2N2EwNGU2ZjMyOTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d9f73aa85fcf4e1cbc51628ccc695c3b",
+      "statement": "check_plan_scope is armed only by a status:active PLAN.md, unions XML <files> tags and markdown '- **Files:**' bullets, treats exact, suffix or basename matches as in scope, ignores specs/, docs/ and *.md paths, warns on out-of-scope staged paths, and blocks only with BLAST_RADIUS_STRICT=1.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/commit-gate.sh#L541-L588",
+          "version": "repo-lines-v1:sha256:e1abaddc19eb9fe8dd4e4ea9b162d3d00bc7df5171cc2c73b2a9c39f5adc420f:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyNWRhNGFjZmUzNjEwNTg1NGQ5OWE4NWQ0Nzc1YmRmY2M0ZGZlY2RjZDgwOTYzYWM0ZTYwNzgyNWU3ODQ0MTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM0Y2I5YTQ2OGRkN2NjOWE2MDEwZGMwYWU4YTM1NTNhMDhiNDkzMjA4NWQwN2EyY2UyZTE0MWY1MjlmZjFhNDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2ODAyODY2YTBlMGU0ZGRmM2Y4ZGNlNjMxYTU1NDk3YWFmMDQxNTc0ODI1OTllYjVjZDE0M2U3YTkxMDJhMzUifQ"
+        },
+        {
+          "resource": "repo://tests/hooks/commit-gate.test.sh#L401-L560",
+          "version": "repo-lines-v1:sha256:9f868a842b43f249184f937126dd983d86615c8b16da76d95eb0d09559ad048e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyMWE5Yzc3NDRhN2M4YzYyMjM1YTUyMzQyYjZiZTJhYjI4Njg2ZmI1MGQ3NDA0ZTliYTJhM2E0MTBmNjYxMzUwIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI2OWM3ZGQ1NjUzODJhMDNlZTJkMDVjMDc5OWU5MzRhODQ2MmY0NjcyODcxNWFmMDMzYTllY2UwNWY3NzI5YjQwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI4Y2I5YTk5MTQ5Nzg3NDMxNzE0MzQwZmZlNDA0ODE2MjM5OGVlYTlkZmY1ZDY1OTI2MWJmODJjZDgzZjIxY2QyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxYjU1YzAyMmNiNzVjYzZhMGU3NDA2ZTBiNDg4NzdmODA2MjA1ZDRmYzM3ODg0ZTNiNDdhNmRiMzU5ZTZhMTNlIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_f20f4c9cdf634fa8affb2ac43881f35a",
+      "statement": "check_app_gates blocks added breakpoint()/pdb or line-leading print( in staged app/**/*.py, with REQUIRE_VERIFY=1 requires a ### Verify block and re-runs it via verify_summary.py --check (fail-open without python3), and runs mapped tests/…/test_<name>.py with pytest, blocking on failure.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/commit-gate.sh#L593-L718",
+          "version": "repo-lines-v1:sha256:d52fa2272ed5608b75c7837cf3d1f614da93b29cfce57103181b3da8d4618a8a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI2ODQzNmMzYjU1Y2UxODI0NjlhMmMzZjhiOWM2Mjc1NTQ5MDhmMWQ5ZjUxMTg0Y2EyYmExZjAyNzkyOTdjOGUxIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwYTEzNmNmMjM0ZWZmN2RhNzllMzI2MGU3ZjNmYWJmYjIzODY2ZDllZGE3ZDdkNTMyZDJkMTY3YzMxNzQ5MmYzIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI4ZTBlOTJmMzQ1MDViZmIwODIyMzc5YjJlZDZlOTg5NTkzZGJhOTdlMTNlMTJjNDY4YjJkZDA1ODBhMDIyNDY1In0"
+        },
+        {
+          "resource": "repo://tests/hooks/commit-gate.test.sh#L234-L338",
+          "version": "repo-lines-v1:sha256:1de933cf2a9fa90ca7a1c6db759c1b55467b14c8315d32c4c38457ad50c2769b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxYjNhMzFiMGZiMDRkMDhmZDc1NzAzOTdmNmRmYjBlZTY3NDM2MmNhMTkzOTVkYThmZjI5MGMwZWY5ZjlkOWYxIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIzNzY5ZDIzN2NkNDIwYjlkMzhiOTgxYTBhNGY2NzcwMTkwYTRhODNkY2ExZmU1NmM0ZjViYTFlMmNiYzBlZjc2IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwN2M3ZmI3MDBiNmYyYmY1ZDVlMWZiNmYyZWI3Zjk2NmM4OGIxODNhNzg5ZjNkOTQ1NDNlY2E2MGYwZTA3MDlhIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI0ODU1OGViZTUyNDBkNTRjYWE3MDE4MGZiYjNmOTVmMGQ1MzQ0YzVlMzk3Y2JjODBlYTdiNDExMWY3YjM4MjU5In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_bac10dd1b78f4cadbaf078e9194e497f",
+      "statement": "With jq absent, the untracked-.py deny JSON is never printed and the hook exits 0, a recorded pre-existing fail-open gap.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/commit-gate.sh#L116-L124",
+          "version": "repo-lines-v1:sha256:ac8705fe6fb46f1daa6052253bd63af9fc9efb7e193944b9e45995a29cb1fd10:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmI5NjJlNTJjYzI5YmIwOWVlMzAwYmEyNzdhMzg2ZDExMzNjYzE2Y2Y1NzM1Y2FiOTZjZGRiMWFhMWFkYmMyZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDdlMDBhYWU4NjAzMTBlODQ5ZjkzZDRkYTdlYzBhMzU2ZTU4ZGMxZTBlMDgxMDRkYWYyODJjNjJlZjQ5YjZlOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODQ0YzEyOWRkZjk1NmI4ZDY0Y2NlMDNlNmVhNDczYWU0ZmM1NTEyMTA5Y2ZmOGEyZjIyMTZhMDdjY2Q0MDc3ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmQ3MmJkOTE0NDAzMDhlODNiODVlYTQyZGIxMTJiM2Q1OGRjYjJmODU0ZmFhMGM0MjA4ZjJkOTBlZjliNWZkZSJ9"
+        },
+        {
+          "resource": "repo://specs/hook-deny-route-lines/SUMMARY.md#L142-L142",
+          "version": "repo-lines-v1:sha256:5488e6ec0c182e0db7fa77b4405bf8bfd1351fbf9b15d72981f8d0dd9e60861e:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTQ4OGU2ZWMwYzE4MmUwZGI3ZmE3N2I0NDA1YmY4YmZkMTM1MWZiZjliMTVkNzI5ODFmOGQwZGQ5ZTYwODYxZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTQ4OGU2ZWMwYzE4MmUwZGI3ZmE3N2I0NDA1YmY4YmZkMTM1MWZiZjliMTVkNzI5ODFmOGQwZGQ5ZTYwODYxZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGZlMWFkNzU3YmZmMThjYmI4NTQ0ODljNTEwMmMyMmY0NTZkOTlmMGQzNWZiOTEyMTY1MWYzYjAxMGIwMmEyMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjdlMjg4NTM4ZDk4MzY4ZDE4NDg5NDBiNjkxYWU2ZTdmMTlmMjUxZDhmNmRmNzE0OTdhNWI0N2JiYzY3MzUwZiJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.2",
+    "at": "2026-10-16T04:08:21.021Z"
+  }
+}

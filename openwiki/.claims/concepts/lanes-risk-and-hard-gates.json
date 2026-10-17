@@ -1,0 +1,282 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:0e02941f48604fae24549e8062b5ad6fed87a07a3bc17c048ae7272940465511",
+  "claims": [
+    {
+      "id": "claim_8f3b21b6773146f98ed2b9911f4a2aec",
+      "statement": "The harness separates two axes at intake: Lane (tiny | normal | high-risk) drives ceremony/proof, while Confidence (high | medium | low) drives interruption; ceremony scales with risk and the human gate scales with ambiguity, and agents never ask a human to classify risk.",
+      "evidence": [
+        {
+          "resource": "repo://rules/auto-correct-scope.md#L48-L48",
+          "version": "repo-lines-v1:sha256:016a83badf2be2929c84b10b6942cb670cf36f33cccd2b9ad9e73a65ab68674b:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDE2YTgzYmFkZjJiZTI5MjljODRiMTBiNjk0MmNiNjcwY2YzNmYzM2NjY2QyYjlhZDllNzNhNjVhYjY4Njc0YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDE2YTgzYmFkZjJiZTI5MjljODRiMTBiNjk0MmNiNjcwY2YzNmYzM2NjY2QyYjlhZDllNzNhNjVhYjY4Njc0YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODc2NjNmNzM5ZTQ1MDZkZWIzZDQ0YjhlMGUxMzNjMmNlN2UwZGRiNDg4NWE4YjlkMmVjMmUwOTA4M2RkYmQzNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODRlN2Y3ZTQwOGFjNmNlYmJhZTI2OWNjNzM5YmI0MzVhZjQyZGU0MTk1MjkzYzIwYTBlMjA3ODY3MzYyZTQ5NSJ9"
+        },
+        {
+          "resource": "repo://rules/orchestration.md#L113-L117",
+          "version": "repo-lines-v1:sha256:0b532d5323b94baba66e0b93f35e38742b16762f202ab1817184469ec7efc5ae:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjc3ZjY1ODEzYzMzMTI5YTRhNWMxYzllMTEyMTNmODA1YWM4NzcyZTc4MThhNDdhZGY1ZDE3NjdlNmRkNTNhNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWEyYjhiM2NkMzIyMTViMDUyYjIyYTAxOThiZmEzOGVjMTUzNTQxNGQ1YTQ0OTNjYjQ5MTkxMThlNDg0ODAyOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjAyNzg1ZDNjZTkzMGZjNGY2ZWY5MmI2ZTRjNjJiYjRkOTljYzMwNWQ2OTlhNmMzYTA2OGYyZDFlYmZlOWIxNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODM0OTk1OTViYWI0MjBmMTQyY2ExNTk4MTAwOGJhZTdjMTViNWE3YTRiYjc0M2VhN2NmZDJiYzRhODBiZjY0OSJ9"
+        },
+        {
+          "resource": "repo://rules/orchestration.md#L20-L31",
+          "version": "repo-lines-v1:sha256:d47157a57bcbf1b80a11c0efde0d43fc72ce8ff68d61aff80165ede56f93d782:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwMjdlMmQyNjA5OWMxZmQzMDQzZWFmZTAzMmIxNjQ1MmQ2NjBhOWEzZGExODJjYjA0NTlkOWQ3ZWE5YmM5ZjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyOThmMmYyMmFkOWFjZDRkNjJkNGRiZTJiNmRmZjM4MzMxY2VhNTU4MzU4OGUwYjcxNzZlMTBjYjk2N2EwOWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE0NWYwZWQyOWQzODg0NjEzNmE4YzM2ZmFhYzQ3OTFmYzEyMTVhMThlNDEyOGVkMDVlOTEwYmYwZDE4NTZiNzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZlYWQ1NTUwMjRiOTAwZjUzMzBjZTBmYjliNWI4MzZiOTc4MzRkNWM3N2M2MzRiNWI3YWFiZmU5ZDExZDVhM2UifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cb995faa615b4b0eb875cc93346a518f",
+      "statement": "feature-intake forbids editing, scaffolding, or dispatching implementation until Lane and Confidence are recorded in specs/<slug>/SUMMARY.md, and its Step 3–4 is the canonical classification algorithm referenced by the rules.",
+      "evidence": [
+        {
+          "resource": "repo://rules/auto-correct-scope.md#L20-L20",
+          "version": "repo-lines-v1:sha256:4dd5cef428a2575a53c1780e3875e44e2950ab9927ca637d61ce7efe03b65114:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGRkNWNlZjQyOGEyNTc1YTUzYzE3ODBlMzg3NWU0NGUyOTUwYWI5OTI3Y2E2MzdkNjFjZTdlZmUwM2I2NTExNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGRkNWNlZjQyOGEyNTc1YTUzYzE3ODBlMzg3NWU0NGUyOTUwYWI5OTI3Y2E2MzdkNjFjZTdlZmUwM2I2NTExNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTY2NzUyZGNjZWNkMjViYTVkZTllODhhNjdkYzBiZWI1YTU5ZTU3MThlMWRkNTMxNmE2MGVhNzdkZTM5OGE4NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmY4Yjc2ZTBiNjE1MGZhMzViOWE3Zjg5ZWYxNGJlNmE5Zjc3NzJlZmRkYjYzNDZkMWQ5OTg1ZWMzNGYxOTY0YSJ9"
+        },
+        {
+          "resource": "repo://rules/orchestration.md#L28-L29",
+          "version": "repo-lines-v1:sha256:073b02d9a1b6a2d008788ffb359ed1086655fd435a048b9940f4a0ad690b5ffc:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWY3YjRlNGRmM2M1OWJlOTg0NjJlY2IzMGYzYTA5NjFlOGM2YWU4NTMzNWFkMDZiYzljZDlkM2JjODBkOGE1MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjgzMTUyZDRiNTQ3N2U3N2M3ZjQ0MWExMzkxOGZkZmMxNDIxMzZiOTU4NWY5OWFiMjJjMDQ4OWJiYjJkODE4NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmE5ODIyNzhhYzcwZjFlZGYwOGFhN2I4ZDQxMzcyY2VjYmQ2MTNmMjVmNzNlNmVmYTliYzNjNzdlOTAyNDI0NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDhmZDgzNmY5YzEyMTFlOWUzMDE3NzhiN2E1YWFjYzRhNzg1MDU0MWI2M2ZlM2VlNDlhOGVjOTFmZDZlZDRiNyJ9"
+        },
+        {
+          "resource": "repo://skills/feature-intake/SKILL.md",
+          "version": "repo-file-v1:sha256:8bf629ad1d989079537541b3ab9e1891a7c995aeef29c4650744ff19b5b6ebaf"
+        }
+      ]
+    },
+    {
+      "id": "claim_40a7b539073b43c8ac52ac1c30fc098d",
+      "statement": "Lane assignment: any manifest hard gate yields high-risk; otherwise 0–1 risk flags is tiny only for one-file work with no new public callable (else normal), 2–3 flags is normal, and 4+ is high-risk; a human may lower a hard-gated lane only by narrowing scope.",
+      "evidence": [
+        {
+          "resource": "repo://skills/feature-intake/SKILL.md",
+          "version": "repo-file-v1:sha256:8bf629ad1d989079537541b3ab9e1891a7c995aeef29c4650744ff19b5b6ebaf"
+        }
+      ]
+    },
+    {
+      "id": "claim_80f9d00f27f44231a8e91fe5e55eb47b",
+      "statement": "Confidence is high for one clear interpretation, medium when a safe documented default exists, and low for materially different plausible readings including chat conflicting with intent.md.",
+      "evidence": [
+        {
+          "resource": "repo://skills/feature-intake/SKILL.md",
+          "version": "repo-file-v1:sha256:8bf629ad1d989079537541b3ab9e1891a7c995aeef29c4650744ff19b5b6ebaf"
+        }
+      ]
+    },
+    {
+      "id": "claim_3fb840a2440e43b19c8eaeef6a66e40c",
+      "statement": "Lane routes: tiny patches directly on a branch with quick-check proof; normal goes using-git-worktrees then subagent-driven-development; high-risk goes brainstorming, xia2, writing-plans, using-git-worktrees, subagent-driven-development.",
+      "evidence": [
+        {
+          "resource": "repo://skills/feature-intake/SKILL.md",
+          "version": "repo-file-v1:sha256:8bf629ad1d989079537541b3ab9e1891a7c995aeef29c4650744ff19b5b6ebaf"
+        }
+      ]
+    },
+    {
+      "id": "claim_20906587d46548ddaf96b45abeb160e0",
+      "statement": "Per-lane autonomy: tiny is full auto with no plan or human confirmation (machine gates are the safety net); normal requires a plan and proof gates with human confirm only on low confidence/ambiguity; high-risk auto-plans with gated execution and human confirm only on ambiguity or a Rule-4 hard gate.",
+      "evidence": [
+        {
+          "resource": "repo://rules/auto-correct-scope.md#L18-L26",
+          "version": "repo-lines-v1:sha256:f19d36cc2c3fcc48e466970dd0adaca1a89c6558622d11ff8829c5fbeaa1757c:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGE0NzFjNTlhMjE4ZjZmYjEwNmVlNDllOWQ2M2Y4YjUyYTNkMzU4Y2Q2ZmFhMGUzM2M3ZDczOWM1ZGM1NWMzMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGRlMWVhZTIyMTg1ZjFiY2M0ZmJkODkzYWZkMzBhM2NmNjI3NDU3M2U2M2EzYWViNGY5OTU3NTVlMjc0ODBjOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjdmMThhNTJlNjNiN2I1MmU0MTA0YjNjY2U1MzM5N2EwYmVkODU0OTk4ZTViOWMxMGEyOTVlM2I1ZWZkMDczZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2U5NzQwNGQxMGM2Y2U3ODUyNTMyYmFkN2Q0ZDE1ZDNiOWRiMDFhMTk0N2I4OTVhNWVjMTNjNmUwNGI2MDBhYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_73111c22158140f796bfcfbc7863576b",
+      "statement": "Branch isolation applies to every lane regardless of ceremony and is enforced by hooks/branch-isolation-guard.sh, and every lane writes SUMMARY.md; verification plus independent review, not extra planning docs, substitutes for the skipped human gate.",
+      "evidence": [
+        {
+          "resource": "repo://rules/auto-correct-scope.md#L28-L37",
+          "version": "repo-lines-v1:sha256:30d7891fd8d2fa3b9331e5abf352e589e63f8f5b839aac51aa521d5d992b68d4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwM2U4YTUwYjExZDJhOWJiOWY4ZTMwOTYyMTM1MjkyYWE4ZWRhZmI0ODZlOWYwZjZlNGRkODc5NjA2NjA3NjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjYjlhNDkxYjk1NWVkMTVhMTk5ZmYyZjNiZTY1YmEwZjliODZiYWEzMWY0MjliMGVlZWU0NTZlYjRkODgyZjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdlNjA5ZWVlYjM1MDg0ZmUyMmFkNTAzZDY1ZWUzNjc2OTNkZWRmODJjMTNkMGVmMzk3ZTVlM2Q4NjdiYWNkNzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFkNjQ1NWIwMGIzOTg0Njc1ZjYyNzRmY2JhNmQyZjQ4MzExNWE5YzU2NWU4YTVlNjhkODg1YzQ1NjNmZTk0NzEifQ"
+        },
+        {
+          "resource": "repo://rules/auto-correct-scope.md#L50-L50",
+          "version": "repo-lines-v1:sha256:eb088ed468eac2032faee2861cf275510d5292c197a20768bb3e7574852b0d5d:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWIwODhlZDQ2OGVhYzIwMzJmYWVlMjg2MWNmMjc1NTEwZDUyOTJjMTk3YTIwNzY4YmIzZTc1NzQ4NTJiMGQ1ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWIwODhlZDQ2OGVhYzIwMzJmYWVlMjg2MWNmMjc1NTEwZDUyOTJjMTk3YTIwNzY4YmIzZTc1NzQ4NTJiMGQ1ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTgzZjYxNDE4NzkxZWVkYzgyOTQ0YjI1OWQ5NDM0Y2NjMDhkMzIxNTNlNDY2MDE1M2VmMjliY2ZiNDk5NDRkMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGJjYjg0YTcwMjc4NmNhNTEwNjM2MWMyNDgyY2FhZjkyNDhkYTYzN2ViMjAxNWMzYTE3N2JhMmY4MjNhYmExYSJ9"
+        },
+        {
+          "resource": "repo://rules/orchestration.md#L93-L111",
+          "version": "repo-lines-v1:sha256:74ad4ed60ee025ed25e24bea1a8bedc37bbed10455d48e380c5796398128bdfe:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1NDAxNzUwMDQ5ZDBkODUzMTg3NWUzMzA5NTNjMjkxYzZjMTdmM2YyZTFiNjFlYTY4ZDBmYzEzN2FkZmIwZDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkYTRmNjk1N2RkMDgzNmZhZTI5NGY5NDc1ZWE0ZGU5Mzg0YjkzNTUzMmFjYmVlNjgyOGY1MDcyZmYyOTg4ZTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzYmU3MTVlYjg3MDliMzY3OTkwYzFlMmI0NzBhMTg0MTUwM2UxNzIxMmFlZWYxZTFkOTU5YTA4ZDI5OGVkYTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYzZmE4OGJlZTcyZjUyNmNkYWRmNTkxZDk5ODZkMzM5MGIxYzUzMWJjYjYwMGYwNjAxNzg0ZjgzNTdmYWUzYTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_04bf553c36574f60831264110c161f75",
+      "statement": "Rule 4 (STOP) fires inside every lane, and high-risk or Rule-4 work that proceeds must record exact undo commands under ### Rollback; actions that cannot be cleanly undone are not eligible for the autonomous path.",
+      "evidence": [
+        {
+          "resource": "repo://rules/auto-correct-scope.md#L113-L115",
+          "version": "repo-lines-v1:sha256:f1b5a2448106daa5c73cf4411cdc0c196686f60427872ccc6c360f631b479049:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmI5NmYyNmVlNDdiODZkZDliZTMzMTQ5ZmNkNjAxNGMzYjVlOTQ4MWNjOTdmNGRlNzQ3ZDMzMDJjMjBkY2UyMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDI4OGQ5YWQ4OThlZWIyN2FlZWQ2ODU5NWYzYWY4NjUwYzJjZWQ0MDg0NTIwY2I4MTBlNTJjZjcwZDBmYmFjZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmE3NjFjYzc4OWUwNTdiMzJkM2U0MzI2ZGY1NTczZmRkZjVhMWVmZmU1NmI2ZTI0MGZiNWEzMzkwOWRmMjMxZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjQ1MzAxZTE1ZTA5MTQwYWY3Mjk4MzQ0Y2RkYjkyZWRhY2Y0M2Q1MjRjNGM0N2MxZDlhZmY0MGJhMWFkZWI2YiJ9"
+        },
+        {
+          "resource": "repo://rules/auto-correct-scope.md#L48-L48",
+          "version": "repo-lines-v1:sha256:016a83badf2be2929c84b10b6942cb670cf36f33cccd2b9ad9e73a65ab68674b:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDE2YTgzYmFkZjJiZTI5MjljODRiMTBiNjk0MmNiNjcwY2YzNmYzM2NjY2QyYjlhZDllNzNhNjVhYjY4Njc0YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDE2YTgzYmFkZjJiZTI5MjljODRiMTBiNjk0MmNiNjcwY2YzNmYzM2NjY2QyYjlhZDllNzNhNjVhYjY4Njc0YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODc2NjNmNzM5ZTQ1MDZkZWIzZDQ0YjhlMGUxMzNjMmNlN2UwZGRiNDg4NWE4YjlkMmVjMmUwOTA4M2RkYmQzNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODRlN2Y3ZTQwOGFjNmNlYmJhZTI2OWNjNzM5YmI0MzVhZjQyZGU0MTk1MjkzYzIwYTBlMjA3ODY3MzYyZTQ5NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_2d88978a093d44a095c4cdee00103b5f",
+      "statement": "harness-manifest.json hard_gates is the single source of the hard-gate vocabulary: nine detectable slugs (auth, authorization, data-loss/migration, audit/security, external-provider, public-contract, weakening-validation, high-blast, workflow-engine) each with a block|warn mode, plus three judgment-only slugs (remove-functionality, session-scope, replace-service).",
+      "evidence": [
+        {
+          "resource": "repo://harness-manifest.json#L4-L67",
+          "version": "repo-lines-v1:sha256:556bf9dbbb368c21f749e401ce69162b45a7315de0984185efe365dd052de29c:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjN2NlN2YwN2U1OWE3MTY1NmNkODA0MzQwZWYzMjUxYTQ3MGQ5OTAyNDYyN2ViYmJiYzJmZTJlNjU0OWIyYTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2OWU0MTFhNmNkMjI0MjY0OGE3YTg5ZGU2OGFhYmYxNjgxYjQxYjQ5MjUyODNlODc1MzQxN2ZmZjFmZDAyZDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRkZmVmZWJlOGZkM2NlYTc3MTIyNjM2YTQ3YmUwMjZiODIwMDIyOWY0NmNkN2MwZTdkMmRlZjczMmM0MzFlOTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_78708e9164054549a32279120fb2ef7d",
+      "statement": "weakening-validation and workflow-engine are warn-mode (since 2026-07-23, based on measured low precision and an 85% firing rate respectively) while the other seven detectable gates block; intake still classifies both warn-mode categories as high-risk.",
+      "evidence": [
+        {
+          "resource": "repo://harness-manifest.json#L37-L51",
+          "version": "repo-lines-v1:sha256:6295d538644d6d90c1e9083d5dc40bdce6cb811dd5d369a99a59f44cf50c8ad4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5NWI4YzViZjg2Mzc0MzY3MWRlZjNmNjMwZWIyMzJkNTlhN2E2MzRhMDcwZmM0MzZlZWMzN2E4Njc0ZTZjMzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliNjJmNjBkODU5MGE1NzljZjQ2ZjhkNjczNzhjNGM1NzJiOTYyY2VjY2RiOTBjN2E1ZjdiNDJiOTYwNzgyYTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwZGIzZDg2NzkwYjIwOGE3Mzc3NzA0ZWI2OWRmZDUzMmQ1ZWQ1YWI1MTI5OTk1NjljN2Q3MDM2ODQyMzk1ODMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQyZDJmYTk4Yzg1MTFjZmUyOWU4MTM1OGQ4MmY4N2U5YThhYjYzYTA4MmI4ODU3YWY1Y2ZkNzJmYzliNWNiNDkifQ"
+        },
+        {
+          "resource": "repo://hooks/lib/gate-modes.default.sh#L19-L27",
+          "version": "repo-lines-v1:sha256:2f07e9e7110e9c12590940b8018ce0fb8bcb8355a6466e073b4d5ee968ee9d5f:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDNhN2U4NTI4YTgwY2ZhZDk0NzU4YTM2ZDRhNWJkNjBkNTBhZmE0MDUzOTFlZWE4ZDNkNjBjNTk2M2Y1MzM1OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDRlMTlkMTEwNDhmNjU4ZjY1M2NjMjJiNmQxYWU2MWQyN2FmYTMyOTliMDRlMWFmMTVmZjc5MDIxNmY4ZDFlNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmYxOWRmZGMxYTkxNDU5OGZjMTdkMDZhZTYyNzM4ODRmODVhOTFlZDA2YjdiOWMxZGU1MTAwOTExYjk1ZjhhZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_e1197c85fef3487eaf73d0126860db83",
+      "statement": "check_risk in commit-gate.sh detects path categories from staged paths and keyword categories from added code lines only (removed lines for weakening-validation), excluding *.md, docs/, specs/, skills/, hooks/, .claude/ and full-line comments, but not excluding tests/.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/commit-gate.sh#L424-L434",
+          "version": "repo-lines-v1:sha256:4629b12836c8334b4bd99b97024cc6ad27c400c6329e3ccd7f15f99b92d5e511:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU4Y2NjOTdlMDE3YTg2YWJkNTgwOWNkOTUzNGZiYmNiZDFkMTA0YTEyYmE3ZDY0YzFiZDU3MDdlMGY3MDYxZGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiM2M5MTQ5NWJjNzMxODdlZjBmYTQxNzQ3YjAyZmM3Mzg1NTRmYTRkNDA5ZTJkYmU2YTdlMWJiZmFkNDE5NzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5ZmNhNmRiN2IzYmQ4YTllYjAyNTlhN2UzZTI0MTIyMGNiMzUwNGRlYzQ2ZDg0MjcyYzgzYjQ5MzM3MDRkMWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZiMGU4ZWQwZGQ0MTJmMzkxYzJjMmMwNWI4ZDY0NjBlNTAwYjExZjI3N2Y4NjM0NWQzMGEyZjZmNGU0NTNiZmQifQ"
+        },
+        {
+          "resource": "repo://hooks/commit-gate.sh#L461-L477",
+          "version": "repo-lines-v1:sha256:61e8e1f2c98b1878b434c14e1564ed15f62ac6f28473943109461aef91c971d2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjOTU5NzJjNDM0YjQwYjQwNGVmYWE0NDQ2NjEwZWMzZTUxNTc0MWEyOTU3Y2JmYTBiOGQ3MmY5ZDM4ZGUyMmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzYzA4NzU2ZjRjZDg0MTk1YTQzN2JlZDI3ODBhZTU2ZmNhNTYyMjdlMjBmYzFlOTBmMTY0NThjZmI2OTg2OWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBjMTk1NDZjYmQxYTdhODM2NDk0ODI5YThmOWM4ZDhkNGJkYmYwZGY3ZjFiNTFhMWViNjRmMWVhODJhMDI5ZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY5MTY3NWJlZGU0MTYzMTQ2NWU0ZTg5MTgzZmNmNGI3YjZhNjBjZDBjZTMxZDMwM2VjMTRjYTZmZmVlZjI0OGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d493bda7d76a4d8b9efe757e14e546da",
+      "statement": "When a block-mode category trips, check_risk passes if the declared Lane is high-risk, blocks with exit 2 if the Lane is tiny or normal, and with no declared Lane only warns unless the strict profile or RISK_CORROBORATION_STRICT=1 makes it block; warn-mode categories only print a note.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/commit-gate.sh#L494-L530",
+          "version": "repo-lines-v1:sha256:41289827b9370f93f66f61176fa39e7c192ee59523318c691c3be6850e687c1a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4OWMxYmQyODVjMmIwYmM4NzZjMWQxYTY3Y2JkNTg3NDIxZWY3MTgxMTliYjRlYmNmMTc0OWY5ODA3N2FkYjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkNmYxZDA3ZGZiZjYxOTk1ODM0YTFiOTNiZmQ4NTI3NDhiZGFkYjI4OGJkZjAzODcyYTRmZjZiZDcwYmZiMGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI0NDg4ODFjOTc0ZmVjNjgyZjU0ZDA0Yzk3NWJiOWRhNTUyYTA4NjA0ODcxMDU3MjU2M2ExNTc4M2RiMGViZDMifQ"
+        },
+        {
+          "resource": "repo://rules/orchestration.md#L37-L45",
+          "version": "repo-lines-v1:sha256:d3d2b49a01da53a971b485a265a6c73e6f00f5e529f7fa7b86a80c3ed6e5ac17:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjcyNzU5ODhmODRkNDEwN2I3MWJlZjNjM2Y1ODM0ZDk0MzlkZmYxOTQ3ZmU1YjJhNTdjOGEwZGY4N2I5ODhmYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDA3MDU1NjM3Y2MxNTg0YzRmYWUxY2EwYmU2M2M2MDYzMDg4MjAxNjczNTI5MDhiNjhmZWU2MjIxNTZmN2I4NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmU3OTUwMmM1OWY0ZjNkNDJlNjFhOWE3NzdiNDlhNDBmZGFjM2IyMmY2ZjI4OWM2YWY2N2I2YjljOTJkYWE3MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTU4ZjZjYzk4ZmVhMDZjMzZjY2RkYWY0YTZhZGUzM2MyMTkzMWVmOTE0YzkzMzA4NTkxNjQ0YjU3MTlkN2FjYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_79e4694703df4641b3069be63e049a45",
+      "statement": "category_mode treats a slug listed in RISK_WARN_CATEGORIES as warn; otherwise anything other than an explicit slug=warn line from the git-index harness-manifest.json (or, if absent, the embedded hooks/lib/gate-modes.default.sh) blocks, and worktree or .claude/ manifest copies are never read.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/commit-gate.sh#L380-L420",
+          "version": "repo-lines-v1:sha256:f4e8567d4577e050a38c8f7bf554fe16e3fb3f615b5f18e2ad7c4af8b80efaac:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3ZTg1ODdhZjQzYWQzODBkZDA3ZGIzMGY5OTY5M2UzODFkY2M2ZDA0YWFkN2YwMTdmNjljNmM1ZmQzNTk0OGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1ZmM5MGZmOGE0NDE0YzU0NDFkMGY2NzdjNWNiZmRhMzhiNDc0ZTUxYmZkNTU5YTU1NTlkZTBmODc3MDU1MjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZjZTVhNDkyMjZhZmE0YjU4NGZhNmVmYTBjZGUzNmM5NmI2YmQwZmI1MGRmMzY4N2FlZmFlOWE2OGYyNDRlNGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5ZmNhNmRiN2IzYmQ4YTllYjAyNTlhN2UzZTI0MTIyMGNiMzUwNGRlYzQ2ZDg0MjcyYzgzYjQ5MzM3MDRkMWEifQ"
+        },
+        {
+          "resource": "repo://hooks/lib/gate-modes.default.sh#L1-L18",
+          "version": "repo-lines-v1:sha256:5b8aec9abb6214f165c59ed7b13baf8276f8e228f8aaa7a7030f7407aa5817b6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4NzVmOTI4NTQ2YWVlNzg1NWNiMWRiOWFmYzhhYjNmMWE4YTM0ZDQzZGU1YmJkNjJmNzA3NmQ3YmE5ZjM5MTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwMmUxZGU3MmZjNGRiMjM2MTRlYzJlYzEwM2FiOWVhOGU0M2M1YTQxYjZmMWJjN2M5ZGE4MzZjYjk2NjdkMTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQyMjE5OWM0NDVjY2Y2YmI0OWY0ZjY2YjgyZDNhNThjY2Q4OTA3NjA1NTFmZDg1NTYyYjcyMmQxNDA0YTI4OTQifQ"
+        },
+        {
+          "resource": "repo://tests/hooks/commit-gate-risk.test.sh#L215-L220",
+          "version": "repo-lines-v1:sha256:18094470520770d0213babbe8ae7e2243b7702038efcf0569ca2b4e2bc8de149:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmEzYjVjNzJhOWJhNDRlMGJjMTFhNmYzYjQ1NDA0Y2JkYzIyZWQyZmMyZTU1MTFlNGZjOWQ3N2MzNTgyMjZiNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjI4MWRkNmFlNDFhMjhiNjQxNjc3NTc4MWY3OWJkMzM1YjdhNWRmNGY2NGQ1ZjI4ZDU5M2E4YWVhY2ZkNTMzNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNlMTU0MTcxN2VkY2E5MjQyYzFlYTI2ZDczMjdjZDk5ZTU2M2JhMTE2ZjJkNzkyZDljMGUxNGQwMmQ3MzAxYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTZkNWM3ZmViNjY3YjBlMDJhNWYyZGYwMjI2ODE0NWE5MGIzNTg2ZTYyM2FhODAzODM0YjI1MmYxMjhkYTI1MyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_707242c06ccd4f0e8b0af4a78e891aa6",
+      "statement": "The Lane corroborated by commit-gate comes from a SUMMARY.md staged in the commit, else the sibling SUMMARY.md of the specs/*/PLAN.md with status: active; there is no most-recently-modified fallback.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/commit-gate.sh#L166-L170",
+          "version": "repo-lines-v1:sha256:1252d2a48d2944387aea0652b24e36d324b5a562fff50bfeac0ca8c7747bc081:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGFjMzU2MWEzOWY1N2IyNzc2YzQ5ZmQ5YzBkZmUxNjVlMGJhNmEwNTBmNmI4MTViY2ViNjZkZjM0NmE3ZDJjZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTI2ZWZjZTRhNWRmMGJiNzc3MGVhZmEyNGFlZjYyMGQzZDJmMTU3MjhjZjgzMWU4ZWQ3ZDJlOTZkZDE4YTc3OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjMwMTFlODAyNzE4YzM3Y2QzYjMxYzdhODUzZDkzOWNkZjE4NjVlZTZkNmE4YzQxODdiODhlNGFmY2ZiODBjNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTdkOTg1NTIzYzVlOWU4OTc4MzFlNDBkNmNjOWRhMjBkYjMzNGYyMDY2OWEyMTdjYzhiZDc4OTNlN2U0MTg3MyJ9"
+        },
+        {
+          "resource": "repo://hooks/lib/lane.sh#L1-L57",
+          "version": "repo-lines-v1:sha256:841e82cb94f158b453535fb2062ec1bd604f4229e946af54672299c2fd6a009b:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4NzVmOTI4NTQ2YWVlNzg1NWNiMWRiOWFmYzhhYjNmMWE4YTM0ZDQzZGU1YmJkNjJmNzA3NmQ3YmE5ZjM5MTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_28767cf83feb4f939f5016619ff125d0",
+      "statement": "check_risk emits a warn-only diff-size note when changed lines exceed 150 for a tiny lane or 600 for a normal lane; it never affects the exit code.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/commit-gate.sh#L436-L459",
+          "version": "repo-lines-v1:sha256:cc55e7b26736916f9ae0e024346fe46f3a437fb1c0acfc92c37d6beaca23028e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmNDg1ZThhYTc0MjAzZDY3ZTdmMzVjOTUwYWVlZTNjMWUyYTUzNmE5MjRjNzVkMjkwNzk1MmRkOWVlZmZmZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1ZmM5MGZmOGE0NDE0YzU0NDFkMGY2NzdjNWNiZmRhMzhiNDc0ZTUxYmZkNTU5YTU1NTlkZTBmODc3MDU1MjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3YmEyZWNhMjg0NjQyNzA0MGJmYTBmNzc2OTNkZTk0OWZlYzNlZjAzMjJhYjgxNGZmZDRlZGYwODJmYTIxMTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4MjI2MzMzYzM0ZDA2ZmJmODYxMjMzNDIwMzE1ODI4N2Q4NDhlZjZmZWEwOWI1OWRiZDM2YWI2MDYxODc2YjAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_656729baec3042cb99cd2a3fe0ec0a3b",
+      "statement": "scripts/check_manifest.py fails CI when the manifest's detectable slugs differ from commit-gate.sh's add_cat set in either direction, and scripts/check_gate_modes_smoke.py guards that the embedded gate-mode defaults match the manifest.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/lib/gate-modes.default.sh#L13-L15",
+          "version": "repo-lines-v1:sha256:b07e6d074867f4b348b777e022c8dc68d4f126080c7e53b55b586951e40a6f0d:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmM5Y2RkOWRiZGU5YzkyYTcwNTk3ZGE0ZGQ0NWUzZmQ2YzM0MmQ2NjMzMDg1OTg3N2UxOTllYWZhOTY3NGI5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjc3MGNmOTNhM2Y3YzdhYjE4YTg5NmJjZjRkMGY1YzYwODI4ZWI5MWJmOGVjNThlNzU0N2M0YWExYjBlNmIxMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWM5MDhjZDIxZjFjMjc4YTM3NDFmZjNhMGMzMjQyNWU4OWEyNzk1Yjk2MmJkY2M4MTEyOGRmZjNiZmVmOTc2ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmYxOWRmZGMxYTkxNDU5OGZjMTdkMDZhZTYyNzM4ODRmODVhOTFlZDA2YjdiOWMxZGU1MTAwOTExYjk1ZjhhZiJ9"
+        },
+        {
+          "resource": "repo://scripts/check_manifest.py#L166-L180",
+          "version": "repo-lines-v1:sha256:738a4ee8884a6110923f54a40c366a2193bc2c8e0264f04f5e2db50e91130182:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5NTJlYmM0ODc4Mzk0MTgyNmI3MTZlN2UwNTVmOWU5NTM3MDFlZjIzMWFmMTEyMTA1ZWJhMTlmNmZjZmMzZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBhZTJjNzcwYmQwY2EzNzgzMmM0YmQ3M2FiOGY0ODg4ZTViMDJlZDRjNThhMTY3OWViYjNlMTk3ZjkwNWJmODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUwM2FlMDAxMzUzM2Y0MDA2N2RjNzM1YTBiMmY1OGVkMjUzMDNjZGE3YzIxOTAwZmJkMmRhZTA3MzY5OTdiYmIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_962485c5c2734cf4b6abfaa46faff4ac",
+      "statement": "A dependency-manifest edit trips the block-mode external-provider gate even though Rule 3 authorizes auto-adding dependencies; the manifest resolves this by running a pure dependency bump in the high-risk lane or recording it as a Rule-3 deviation.",
+      "evidence": [
+        {
+          "resource": "repo://harness-manifest.json#L211-L213",
+          "version": "repo-lines-v1:sha256:88c0fb2632684305418561e2f994af73cb8a8c7b118c175b80af063502868aa7:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDQxZWU0MTE0YmJhZTYxNzM4N2YxMTE2OTczYjEzNjIzZTUzMDRjMzdiZTFhZDdjNTM3Y2VjMTg1OTRkNDM3YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmI4OWFkMDlkNDBjM2RlNDAxZjdiODdkY2Y2OTQ4NDc2NzQ5YTkyYzNiMjE2ZGEwMDY5NDAwMmZlY2Y0YTBkMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDljZWI3MmIwMjJjZmRlYjQ1YmI1NTg3MTU1NzA3YTdmNDg5NDY3NjUzNTNhNGIwZTU4YThlNTdjYWYzNmM1YyJ9"
+        },
+        {
+          "resource": "repo://rules/auto-correct-scope.md#L73-L81",
+          "version": "repo-lines-v1:sha256:38584eb27d383d2806f936d587d0d2be63007a782437395b792bbbe45ab798e3:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjUyYjQ4ZDQ2YzA2MGY2MWMxYTUzOWJiMGRkNDVmMzE1ZjJkZTNmNDI2OTY1Mjk0NTllZGFhN2Q2MDBjMTllNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTY0OGE4Yzc5OGM1NDVlNWZlYjZiNDhjOTg1MmUzMDQwYzI0ZDQ1YjBiZjAwOTMwZDU3YzNjM2NiYzIyY2Y3MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTRlNDczOWQwZmMyMzE4ZDA1Yzg3NTJkMjIxOTBlZjdhZmI3YWI5MzZjMjQyYmMwMDI0M2FlYjI0NjhiZGRlZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzQyMzRmMTNiODMwZDU0YWMwZjZhMzVmOGRiZTczMTVjNzc5NGJjOWVhZGY0NzFjMGYxOTBmMzgxYmYzMGNmMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_13dd1e9ed2684eeaa6f7f9eac63d52d9",
+      "statement": "Agents escalate by writing to specs/<slug>/ESCALATIONS.md and stopping when a hard gate is hit unnarrowed, confidence is low (any lane) or medium on high-risk, direction is ambiguous, an in-flight trigger fires, or the change would redefine the system; otherwise high-confidence normal work uses notify-and-proceed.",
+      "evidence": [
+        {
+          "resource": "repo://rules/orchestration.md#L113-L133",
+          "version": "repo-lines-v1:sha256:8f69fc9f523b534e9d19b45714e72666f58c835bdfa4281247c3a853b582b593:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3N2Y2NTgxM2MzMzEyOWE0YTVjMWM5ZTExMjEzZjgwNWFjODc3MmU3ODE4YTQ3YWRmNWQxNzY3ZTZkZDUzYTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3ODNkNGRjM2QwYTljZjAwYmE1ZDJhOGRiNzU3OTMwNTc1ZWMwYWRjNGUxYjlkYmVhZTkwMzQ3MDk4YzZmMGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYwMjc4NWQzY2U5MzBmYzRmNmVmOTJiNmU0YzYyYmI0ZDk5Y2MzMDVkNjk5YTZjM2EwNjhmMmQxZWJmZTliMTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwM2Y2MjViOGNkYTFiZmY3MzMwNDk2YmIyM2RhYzRkYzA2NjBmMjM1ZmQyZDMxNmU3MGVjMTJlZmQ4NDNiMWIifQ"
+        },
+        {
+          "resource": "repo://rules/orchestration.md#L140-L154",
+          "version": "repo-lines-v1:sha256:85f617fb5b2f32cbf8287ddf3a21f17ea80c740c719084c3c882c03952f34ef3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwN2QwNmZlZGYzMmYxMzEyYWZjMTQ2MjRhYmE5OWNiYzNlYzYwNDhhYzUxZjQwZTdkMzE3ZjYzZjYxNDY2M2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyNjhhOGFlNmVmN2VmNTQ3ZmM5MGFkMWMzNmIzOTczMmE4N2Q3ODFiOTk5YTE0OGVlMGM4OGZhNmEwZTM3MGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRjNTQwMWY5Nzg5YjhiNmM3MWYwNWFlZWIxM2E1NDQ1ZTc0ODQxNWJmNzIxYzkxNmY5MzBiNzAxOWVlOTEyN2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c33dc62359624b008c1a0b8a8640941e",
+      "statement": "ESCALATIONS.md is deny-on-no-response: check_escalations (standard and strict profiles) blocks commits touching specs/<slug>/ while that slug's ESCALATIONS.md has decision: pending, preferring the staged copy so a commit recording the decision self-unblocks.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/commit-gate.sh#L212-L235",
+          "version": "repo-lines-v1:sha256:263824638de864f5e55b33a8acfcc7edfbdf23089ab3975e5dc4fdf56f341bae:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkZjFjMzkyMzg3YmU0OGYyMzNiNzA3NjlhOGIxYTgxN2Q5ZjA1MjNmOTJmMTY5NmIyYjNhNzZmY2JmM2VhODAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMxNTVjMjBiZmVhZTg0ZDM5ZGRmMDA1MWM4NmIxMWI1MWVlYzhkYjU2NTM1MTQ1OGZiZWNkYmQ2OGI5MDE3MjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjZWUxM2RiYTE0NDFjOTU1MjhiMjM4YTFmOWRjNjA2NmE1NTQ1ZWIwYmY5NGQyZjM2ODQ2YzIwNzI0YzMxM2QifQ"
+        },
+        {
+          "resource": "repo://templates/ESCALATIONS.template.md#L1-L29",
+          "version": "repo-lines-v1:sha256:95506ea8655f53a986dc18c9dfb2a91e66751f03535a70c966a42e30779848a8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkMWY5MWE2ZjU4NzA0ZDU1NmM2NGEyMTBhNjY5Y2Y4ZDhlMGFmNDNjYTFiODgwZjcxMzlhMDU2NmU1ZmUxY2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmNDYxZjA4NmFlN2M3OTQ1NzA1NDM5MTgyNjViZDlkYjZmNTM4Y2Q1YzI5ZmQ3MzFkM2QyMGJkYWUyYzcxZGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_53484cd501aa40b2a6b26defb79fe795",
+      "statement": "Intake canaries require hard-gate prompts to classify as high-risk regardless of flag count, and show that high confidence does not skip escalation when a hard gate is crossed while low confidence escalates even tiny work.",
+      "evidence": [
+        {
+          "resource": "repo://skills/feature-intake/tests/confidence-escalation-cases.md",
+          "version": "repo-file-v1:sha256:351f1eb3cedd9d36abefd9bc5239ae3f8d3133140caed54d72f8f851b6953e59"
+        },
+        {
+          "resource": "repo://skills/feature-intake/tests/lane-classification-cases.md",
+          "version": "repo-file-v1:sha256:740646a813915a6357426a25022e010d39968256b9400d8876e273abb7af1599"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.2",
+    "at": "2026-10-16T04:08:21.021Z"
+  }
+}

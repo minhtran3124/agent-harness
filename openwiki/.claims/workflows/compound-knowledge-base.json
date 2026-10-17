@@ -1,0 +1,242 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:145c8f6108e409750c20b6ea60c965d48f19ca685d556625e9aac26389fa3ae0",
+  "claims": [
+    {
+      "id": "claim_cf79fb8b3b8944498a3703160f571e0f",
+      "statement": "docs/solutions/README.md defines records as <category>/<slug>.md files with front-matter fields problem_type (bug|knowledge|decision), module, tags, affects, optional supersedes, confidence, and confirmed_at, and maps each problem_type to required body sections.",
+      "evidence": [
+        {
+          "resource": "repo://docs/solutions/README.md#L8-L51",
+          "version": "repo-lines-v1:sha256:cec2e21904ac31874a80dd2893c6879ff0984854fb28f72eb3ba7f1f5574f159:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzZDc4ZjA2YzE0MDc0MzhmNTRkYjkzMzBjZjJmMWIwMDgyMjE0YzQwNDdkMDFmN2UyNzNmN2YzMTc3YjViMzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwZjM3Zjk3OGQxZjM1MjY2MDkzOWE3M2E1NmZjZmQxY2RkNDFiOWNkZTQ5YmQ2MTFhNzhhNzVkNDdhYWI2MGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM2NTQ4YmUzMjEzMWRkNTI3MzU5YzRkMTM5ZmEwMDEwOGMzNWFmNzNhNWQyYThkNGM3YjMyODM5ZWQxYmQ5MjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc2NmYyMDBlYTk1MzVjOGMyNTZlNDg5MzVlYjNlNTllMzdlMWE2NjY1NjkxNmEyZWRhY2M1ZjAwZTk5ODllMjkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_24ac78f21c1b4f998acd2fffa24914d0",
+      "statement": "The knowledge base's confidence-decay rule ties confidence to confirmed_at age (high <30 days, medium >1 month, low >3 months treated as hypothesis), and re-verification updates confirmed_at to today and bumps confidence; CLAUDE.md tells agents to treat entries older than 30 days as potentially stale.",
+      "evidence": [
+        {
+          "resource": "repo://CLAUDE.md#L87-L87",
+          "version": "repo-lines-v1:sha256:5d9200ba2e8b1309ee38be099a1ee0dbefec2cbc23d440d083c94dd85def9327:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWQ5MjAwYmEyZThiMTMwOWVlMzhiZTA5OWExZWUwZGJlZmVjMmNiYzIzZDQ0MGQwODNjOTRkZDg1ZGVmOTMyNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWQ5MjAwYmEyZThiMTMwOWVlMzhiZTA5OWExZWUwZGJlZmVjMmNiYzIzZDQ0MGQwODNjOTRkZDg1ZGVmOTMyNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGNiZjMyZmRiMzc4NTdiNjI5Njc4NDFjNzY4ZGNlMjkxNDQ1ZTAzNmY1OTVmYzYxOTdjMDNjZmM0OGRmZTEzOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGExOTI5NjNlMzc5YTEyNTllZTA1YjE2MGFiYjMzNTJiY2VkZjc2ZTY2ZjMzYjAwNjU4MjhmNGRiMmE4YzFhNyJ9"
+        },
+        {
+          "resource": "repo://docs/solutions/README.md#L53-L59",
+          "version": "repo-lines-v1:sha256:ac5ff6c07eb47e6762cf4899a803e32dd684ebc4b715796120e8548c7cf0fcec:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjVmNmYwMmJmYzQ1N2NhZTE2ZTQyNTg1MWExMmJmN2FlNjM5MjYzMzI5MTIyOWFiZjU3ZTgzM2VlZjBlYjEzYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTk4ODJiZWY0MzVmNzc0MDlhM2Q3YWM4YmU1ODhlNGM5M2U4YmUxMDQ0MWY0OWRmZTFlNGFiMGI1ZTE5NzI0YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzMyYTI2NDFjOWU1MmQ4ZjcyZWExZWNhOGIzNTAwY2JmMDNhZDg1MmQ5OWRlMzRlODkyNjM0NjMwOGEwMTA1MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODZmMDM4OWNiMDA0ZWFiNzlkNjJmYjk5MzZjMTY2NTYwZWM1MzMzYmYzZmYyMjBkYjM5NTg5NTQ2ZWY5NThmMyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c0db52ff85a54bc2b11b51ffab23bc39",
+      "statement": "scripts/harness-audit.sh reports any docs/solutions/**/*.md whose confirmed_at is older than HARNESS_AUDIT_CONFIRMED_DAYS (default 30) as an advisory 'solution stale' finding; the audit exits 0 unless --strict is passed.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/harness-audit.sh#L100-L111",
+          "version": "repo-lines-v1:sha256:931c6638c9d4fec6d98b13512f55ca2549671bd06bb0ae4100889d1bd4c686b9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmZTIyMTgwYzU4YTQ0N2NjNGYwMTcyMmFkMmI5YWUxYzJkM2UwMjY0NDc2OGNkZGM2NzFmNmU0ZTRmODE3MzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM4ZDA2ZTEyOGM0MjcwNjFlYmJmZjUyYjhkOThiMzFmYjQ0ZjE3M2M0Mzc1OWQ2N2RhMmYxZDJlMmEwNjA5NjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc1ODUyZDk1ZTY5ODViZTlhYWZhMjg0OWE2Y2U1YjMzYTJkZmQ0MDM3ZDU3MzEwNDM4NmIyNmZkYTEwZmMwMGQifQ"
+        },
+        {
+          "resource": "repo://scripts/harness-audit.sh#L18-L41",
+          "version": "repo-lines-v1:sha256:0e0a604889e132ae72dc80a46a5d6d03128f09e72030c33c3a10ef9ad36e5f09:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjZjA2ZWUyNzBkMTEwMGFiYWJlYTNkNGE0ZjIwOGE1YjUyNGNiMDdmMzQ0NjNjMzE4YTk5NmQ5ZTI4MTAwNTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3NjQzYWM0NmE3ZDYwMjMzMmU3YjI3YmMzYjJmZTBmOTk2ZjAzZTYwMDc3NDRjZmI2NzgzZGZiNWY3MzIzNmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIwOTUzMTlhZTY4YTYwMmI5ZTUzNjRmOWMwZTdkY2IwNmY3OTc0ZmViZjNjOTZjYmEzMDk0YjU2ZTI5YjVhNGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE5NDIyMGU4ODQzMTQxZjU5ZGYwZTBhNmRlZjhlZjQ1ZTBjM2ViYTFlNTQ1Mzk1MzBhZWI3M2ZkOTk1Njk4MmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0b2df1f535c940dba640887e62c1e3cb",
+      "statement": "rebuild_solution_index.py builds INDEX.md from every docs/solutions/**/*.md except INDEX.md and critical-patterns.md, grouping rows by first path segment (root-level files such as README.md go to a '—' group), listing categories alphabetically and rows newest confirmed_at first, rendering File/Type/Severity/Tags/Applicable When with '—' for missing values, and writing a 'Last updated: <date> | <N> total entries' header.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/rebuild_solution_index.py#L26-L49",
+          "version": "repo-lines-v1:sha256:6fd440cd1e54d9e39f23183e2d7fa13509975982def86f440cb11593375a626f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0ZWM0NWE1ZjQ1OWU3OTYyZmI1MzQ0ZDE5ODg3OWNhNGI0ZTc5NGU4Zjg2YTRhNWRlYmE0YzNjNzAwODI3NTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzOGMwMGJmNjIwZGEyY2UzOGMwNjE5YzI1OTJmOTA1MzU0NzRiMDBmYjQ3ODRkMTlmMTY4ZTlmZDhiODZkMzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0MTVmNGUwZWFiYzY1YTAxZjVmYjBjNTQ5NTkxNDA3OTNmNGQ4NmUyY2JkMTNiOGY1NGVhYzEyMTQxODI5OGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMxNDkwZDVmODJmZWVlNjA0ZWNiMTczNmM3ZjIyY2Y2NjhiN2FmNTJmY2QzYWMxMGE2YzdmZTMyMTk3YzM4OTYifQ"
+        },
+        {
+          "resource": "repo://scripts/test_rebuild_solution_index.py#L12-L25",
+          "version": "repo-lines-v1:sha256:bf620e1c42ee53d41c96a3c6ea4bc7a424194a4dc301d27bd6c73f1a16a2b904:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0NmZkYmI2ZjA0YTczNDExNWEyMGU3MGUxODZmM2U3MzhhMWY2OGMwZmMyNmI2ODY0ZTc4ODkyMmM3ZmFkMzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwMjMwMTkyM2I5OWFlZGNlNTY2ZjU3YThiZDA2MWNlZTRkMzhkMDc2YjEzN2Y0NjQ1ZTg1MTljYjZlMzAyMTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNkOWFlZjYxNWZlYjBiMTI5NTVmZjU0MjQyZGRkMDRlYWE5M2EzOTU2YWViZTUxMmYzMmM4NTk5NWRjNTc1OTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEwOWNlOGM2MjQ2YzUyMWRjMmQ0ZjdiNzI3ZTdkMWE3YTBkMzY2ZmYzOTgzNDM3YzBhOWVmMTdiODY0YTM2NWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_28dae095a93b408bbdc286f1d76bc3bc",
+      "statement": "rebuild_solution_index.py parses front-matter with a naive line splitter rather than YAML and renders problem_type, severity, tags, applicable_when; severity and applicable_when are not part of the README front-matter schema.",
+      "evidence": [
+        {
+          "resource": "repo://docs/solutions/README.md#L29-L43",
+          "version": "repo-lines-v1:sha256:eadf3adb1704766f89ba877d9f88ea1de03e2a963eda2b3f4c518a5e95b94151:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0Yjg4ZDQ3NGExOTc1YzljNTY5MTYzODQwYzBiOGVmNDhlZTc0ZWI4NzcxNTdmZGEyMjZmZGQzN2RjNTI4MDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFhNWY5NTY3Y2E4MDhhODExZDg3NjI5MzUzNTk4NWYzYTBjZWIzZWNkYTg4OTExYzU1MWJmYjEzNWZjZDE1N2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkYTk3ZTE1ZDNiY2YzZWU0YWIwN2Y2YTQ3NGFkZTU1MjIwMjQ1ZTE1MzUzNWUwMTYwMjcyYzZjM2M2ZDI0MjEifQ"
+        },
+        {
+          "resource": "repo://scripts/rebuild_solution_index.py#L10-L24",
+          "version": "repo-lines-v1:sha256:8e91a6fb316e2b573fa1141072dc475b8196e23b8e4ef0a83c29a6a391cbe33d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4MGY3ZTI0NTRkMzdmMGJlMmJlODliYTcxZTczOGNjMGU0ZDVmNGY0ZTFlMzU1MDkxYzk1MzhhNjlhODc5NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjZjYxNjViYjAzM2JlNTRhMjE1OGY4YjBlNTcyZDg2ZjJjNTU5ODQzNTRkYjI3NDNmZWNhOWNhMjIzYjVkMGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQwNDEwMGIzODgxMmQ1YzFkNjA1NzE3MDUwN2I4YmVkOWZhNWRlZDMyYTVkMTU2NTVjZjYzODMyNmNkOGNkMDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVjMTI2YjlhOTU1MWMzYTFiZGZhM2VlYTc1YjczNWYzOTk0NGIyY2VlMmY0MWY2YmMyMDVkNjQwNzZjNmJlYjUifQ"
+        },
+        {
+          "resource": "repo://scripts/rebuild_solution_index.py#L43-L47",
+          "version": "repo-lines-v1:sha256:ca98d3b95f0059799ded30e52e6fe6ee2df6ffda4c025fbd2ff33e748803213e:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjdhOGJlYTVkY2FjOGQ4NzBlYTM3ZjIwMTg0MzhiM2Q0YmIxODZkMGNjYjlhOWFkYWYwM2VjODczNWY2YzdjNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTdjZjIwNGU3YTg5NjNkNjhmNjkxZjkyM2M1NWNlMjlmMTFhNDkxM2E0NDczMzlkNDQxMTNlNDZjMTI2MDNlYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzBiNDNmMjdjOGRjMzk2NmRhYTU2NGQ1MWM1MmIyOTc1MmE1NzE0NGJiZWZiZjg2NTBiODI0M2UyNGJlNzRmNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWRmMjdlZWI2OTI4YWNjNzAwYWUyNjBhZjFiY2Q5NTE3YzFhNjMyM2ZhYzFkMjM1NzZmYTUyMjUzMzQ2NGZjMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_51d033bf9e914dc49bb8b35c0740b598",
+      "statement": "rebuild_solution_index.py --check compares the generated index to the existing INDEX.md with only the Last updated date masked and exits 1 with 'INDEX.md is stale' on any other difference (including an edited entry count); --dry-run prints without writing; the default mode writes the file. Its default root resolves to the repo containing .claude/ when run from a deployed .claude/scripts/ copy.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/rebuild_solution_index.py#L51-L67",
+          "version": "repo-lines-v1:sha256:b8d5e0e1688ce12364fe5ca96020a5a00a467211fe087a1564620482493f1731:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzZTQzNGRiMzE0NWMwNTE4ZGI5ZGNhMDk2NzYzMzBkNDYyMWJlOWE2NmFlOTA4OTNiOGRiYjI4NDE5ODEyYWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzMzk5N2IzNjZmOWEyMjA5YzM4NTk2NzlmZmI2Y2NjOGM2Y2NiOWZmZGI5NTVjNzAxZTYxMzAwMzUwOGQ4OTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkZjI3ZWViNjkyOGFjYzcwMGFlMjYwYWYxYmNkOTUxN2MxYTYzMjNmYWMxZDIzNTc2ZmE1MjI1MzM0NjRmYzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjljMDM5MWY3YzFhNDIwMDQ2OGI5NTk0YjAzYTVhYzIzNDNkNDYyNjcwZDg3ZmFmYmFlMWRmZjAzNjg4YTI3ZGYifQ"
+        },
+        {
+          "resource": "repo://scripts/test_rebuild_solution_index.py#L27-L58",
+          "version": "repo-lines-v1:sha256:a7bc5aa9927e49c26c70a44f977377b8e02701e6d8f67bfb7ef5a330c166b3ed:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyNTQ0M2QyMTg3YTRhM2JmY2MyYjFjOGJkNjg3ZGQ2YzNmZDZmNDA3Y2NiNzc3Nzc4MmJhN2JkZjJkN2U0NjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2YTE1ZjgyZGY4MzQ4MTY3MDMyZGNjNDdlMzE5Y2U3YTkwY2MwOWNkNjYwOWM3ZTIzMjY3MWVkYjFiMzliNTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0MGJjYzQ4ZWM2NzkxODM1OGY2MmMwMDA3MzkwMTc4YTExMzE4YmQwYzA1MWUyZjAxZWQ0OTE3NGIwZDI0NzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_487b8c9abce946d3b213c2d63d36b62d",
+      "statement": "The /compound skill emits only complete tracks — bug, knowledge, decision, and failure (symptom, wrong approach, why it failed, correct approach) — and skips incomplete or [none] tracks; it is meant only for sessions with a reusable learning, not merely because a session ended.",
+      "evidence": [
+        {
+          "resource": "repo://skills/compound/SKILL.md",
+          "version": "repo-file-v1:sha256:07d661b32117ccec38338fc99ab0c17aa6f1c10da9866e1548f0cf25dc23869a"
+        },
+        {
+          "resource": "repo://tests/scripts/compound-contract.test.sh#L5-L7",
+          "version": "repo-lines-v1:sha256:02a2b122aa4e71ab5430f300b805675da365b548246db543a74b59635df5ff92:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzM3NWEyYTU4ZTg3NmU1ZDhiOWI1NzkxYjBhODNmNmVkZWQ5MmZjMmNhY2I3ZjM1MWU0OThkMWM5NjVjM2Q5MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWY1NmU3NjFkNzliZmRiMzQzMDRhMDEyNTg2Y2IwNGQxNmI0MzVlZjYxMzAwOTFhOTc3MDJlNTU5MjYwYTJmMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjVjYTUxMmIyNmRkN2Q4MTQzODY3NWQxYTUxYzMzZmEzZTMyYzU3Y2RhZDI5MTQxZTQ2YWI5M2M2OWQ3NDQ0MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjczZDUwMjI1ZDNiMWU2M2I2MWZiZGU0MzlhMDAwNWJkNmU3Zjk5MzUwOWFiNDI4ZDhhOWI2NjQ1ZTVmN2UyYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_bf9d7b22cdd44832a6cf8dcc96d9b8ff",
+      "statement": "/compound writes records under docs/solutions/<category>/ from templates, updates an existing record on a high-overlap collision instead of duplicating, appends critical-patterns.md entries for critical contexts, and adds an improvement-backlog row for a failure carrying a proposed: guardrail.",
+      "evidence": [
+        {
+          "resource": "repo://skills/compound/SKILL.md",
+          "version": "repo-file-v1:sha256:07d661b32117ccec38338fc99ab0c17aa6f1c10da9866e1548f0cf25dc23869a"
+        },
+        {
+          "resource": "repo://tests/scripts/compound-contract.test.sh#L12-L13",
+          "version": "repo-lines-v1:sha256:f5c445316f953a4395ea53cba1989090af40b4cacc30ca45b292bd9f84480eff:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWZlZWJmMWRiNDJkYTZhZTU3YWY5ZDNjMzAwMDhlYjZlMzMxZmFjMWZhMTg4MjQ0ZTE2OWVkOTZhODdhMTZhNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTBhM2E5NWI2ZDAxYTA4Yjk2MGJmNDhmMWI2ZjM4OWNjODY0ZTk4ZDQ3MjFmMjQ3Zjg3MGM0MWI0OWQ1ZGRkYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRkMzhjNzg4YjBhNDhhYWM1NGEzYzhmYzgyMzQzYmY0MThjNDNiYjBmYTEwYjU4ZDA3MTgwYzlhZTg1ZWZiNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTA4N2U3NDBlZTVlMjI3MmZiMjAxZTU4ZTM3MjYxNmFiMTRkOWQ1ZDVmMGNiZWZmYzQ3MjU0ZGJhM2Q1YTY4OCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_e9e2ef7188db49e899bddb537fecbed4",
+      "statement": "Under /compound's mistake-twice rule, a high-overlap match is a recurrence: the existing record and its critical-patterns entry are updated and promoted with a Recurred line, near-duplicates are never added, path-scoped rules are only proposed for a human to decide, and moderate overlap does not count.",
+      "evidence": [
+        {
+          "resource": "repo://skills/compound/SKILL.md",
+          "version": "repo-file-v1:sha256:07d661b32117ccec38338fc99ab0c17aa6f1c10da9866e1548f0cf25dc23869a"
+        }
+      ]
+    },
+    {
+      "id": "claim_f2e3d1df5947407988185d2171117dfb",
+      "statement": "/compound must run rebuild_solution_index.py at the end of every run, even when nothing was written, and must not manually scan, sort, or render INDEX.md; a contract test asserts this delegation.",
+      "evidence": [
+        {
+          "resource": "repo://skills/compound/SKILL.md",
+          "version": "repo-file-v1:sha256:07d661b32117ccec38338fc99ab0c17aa6f1c10da9866e1548f0cf25dc23869a"
+        },
+        {
+          "resource": "repo://tests/scripts/compound-contract.test.sh#L9-L10",
+          "version": "repo-lines-v1:sha256:365abc00ca15a1220e31bfeda9472a07e584e40b05e736e8edb69ed8cd15508e:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDQzMDNhODkxN2Y1ZjQyOTU5NDAwOGVmZTg1ZjlhNmRjYjc1ZjAyOTRkYjAwODdlMzJlNDFjNDA0MWI2NmZmYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTU4ZWMzM2Y2ZmJjNmQ3MzM5ZjE5OGJhYzlmMjg0Y2YxZjIxYTNjMjYzNDYxMzg4NzFiMGMwMTM1NjNmZjQxMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTgxNzA2OGYwY2YzM2RlNWI3MGUwZGQ5MmQ0NTkwZTYwMTU1NTFmYWQ5MGFlZGNmZjYxZTUwNjg0YjEzZDJkYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTIyZjNkZjZjNjJiMTE0MTNiNDhmNzExZjA0MTBiMWMzMTkzMGU0MGE5MzU1OTVlNmRiYmJlODk3ZTlkYmVjNyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c47714d5528e43008845d9a5fb33d08e",
+      "statement": "The compound related-docs finder screens overlap from INDEX.md alone (falling back to reading front-matter when INDEX is absent) and rates overlap high for same module plus at least 2 matching tags, moderate for same category or at least 1 matching tag.",
+      "evidence": [
+        {
+          "resource": "repo://skills/compound/subagents/related-docs-finder-prompt.md#L17-L37",
+          "version": "repo-lines-v1:sha256:b565d6ae6b8072e4a7e68433fbf56f46765112f002358d759cd6d245fbaa3d87:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwYThkMDRjYWNkYWJiOTAxMTBmMWRmNDQwZWQ1ZGMzZTRiNTRkZjFiMTA0NzViYTI2ZDk5MWU3ZmMzYzIyZGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3NGQ4YmRjZjkzY2YxM2Y2MjJjMDQ2ZWU0OGU3M2YxN2UyNWZhMjc5NjljN2U2MTY2MTVmNjQzNmFmMzE0NjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkzNmZjZjViMjQwYjUwZjMzYjc3NmY2N2YzN2FkNDhmNzkwZTI4M2Q1YmQxZDFkZmJhNjhmYWMwMWM5MmViM2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRjZDhlZTEwNzA1ZTIzNDEwYzU5NDFkODU2OTIyODFjNzRlNmM4NThiM2QwNDdhZDA3NTM4NTU5N2E0MTcxYWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_adc29e29b583454db2aad45a364b4814",
+      "statement": "After a passing targeted test run, hooks/commit-gate.sh prints a hint to run the compound skill when 5 or more app/**/*.py files are staged.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/commit-gate.sh#L710-L717",
+          "version": "repo-lines-v1:sha256:cbf70513f7bd73a5e64ec0132be34ab6d5496654cb896570fd6acf6cbbea770a:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWE4NmRkMzU2MzhhM2JlYTczMmI3ZDU0MjcwNjA5NmMzYWMxNDdkZDhmZDNiMDkyNWU2YTM2MWU2NjMzN2M5NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzVmYzkwZmY4YTQ0MTRjNTQ0MWQwZjY3N2M1Y2JmZGEzOGI0NzRlNTFiZmQ1NTlhNTU1OWRlMGY4NzcwNTUyNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGY2MDU5OGNhYzY2N2IxM2YxZGQ5ZGQzMThlYjM3YmY1NWY0NTAyYmNkNmY0ZmQzNzM1ZDFhMzBlNzU4OGU0OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNThlM2Q2ZGJiM2QzYzZmNTM2ZWQyOWUxYTRiMmRiNjM2NmMxODcwNTE3YjVmYWQ0NDNkNmZmNjhkOTEzNTA5OCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_5ef577d5cc4842099b6719fd24e817c2",
+      "statement": "critical-patterns.md is always read regardless of query domain and admits only patterns that caused non-obvious bugs in multiple modules or encode non-negotiable rules a linter cannot express; consumers otherwise read INDEX.md first and at most 3 matching entries.",
+      "evidence": [
+        {
+          "resource": "repo://docs/solutions/README.md#L61-L63",
+          "version": "repo-lines-v1:sha256:095947e6fa3dbb1a8cc275982ad568a0b7004aa007451d6eea959461d1691911:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDY4NDZjYzcxNjU4MWZkMGQ1OWZlOGRiZDIzMjliN2RkYmY0ZDJjNGJjM2ZlZTI0MWJmY2QzMjBjMjIwMGJkMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTA3MmU4ZmE5NzAxOTI0MmYyODJmYmI2NDMyYjM5NDE3YjM4Y2QyM2NmNjJiOTk5ZThjMzNkYzE0ZWFkZmExNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODlmMGNlZWJkMjMxODAyN2U2NDRmYzBmZjQyZTk2Mjc4NGUyYmVlYmMyNmQ0ZjAyY2I4MmQwODI1MTE2YmJiZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://docs/solutions/critical-patterns.md#L1-L7",
+          "version": "repo-lines-v1:sha256:927b92a4b67339c637110fa73f1647299ac0a529ee9fd7dcfe3d7e10af08b91b:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzFkZDQyZGI5NGI4MjYxZDI2YmUxZWZjNzdiMjFkNWI0ZTZlMDNmZmIwMGI0ZTkwMmI0NDMxYjc1OWIxNmRmOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGFlMWIyMGMzMDVjODJlYmMwYzM5MjNiYzg5OWIwNDk2N2MyMzk2ZWY3MGQ3MjdkOTNmZmNjOGY3MmM1ZTA0NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWE2NDI4MTU5MGViNTk4MDE2NjQ4MzMzZTNjZmE1YjhjN2EyZWU0ODcwMDIwNDE3NTQxMjg3NzU0MzM3MTQxYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f70eea97b1814183bec395c4141dbbb2",
+      "statement": "hooks/session-knowledge.sh is registered as the SessionStart hook in settings.json and is omitted under the minimal deploy profile but registered under standard and strict profiles.",
+      "evidence": [
+        {
+          "resource": "repo://settings.json#L25-L35",
+          "version": "repo-lines-v1:sha256:42e5e0ba51aa931dabb1749e80f693e356e1354a18cccd8ee98354d80ae1ad2b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliYTkzOGUwODlhZTRhN2YzYzAyMmE3NzFmMGY4OGE5MDM4ZjU4NWViY2ZhYWQ4ZGUzNjU1YjdlYTU3ZTc1N2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkZDI0NDU4MmI2ZmIwM2QyM2I4NDE1YWJlY2QzNDZiMGM5ZjQ2NmI2Zjc1MmIwNjgxODljZTdlOWEyZGMzNTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI0N2ZlZTRhY2NhMzA5MDIxNzMwMTE1YzhhZmQwZDk4ZDBjNDEyOWQwNjc5Mzk4Zjk3ODVmYTNkN2MyZmM4NjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmNzM5YTA2YzFjYmIxMjQ0ZTMzNjNkMzhiY2Y5ZmE1MGNlODRmZWQzOTljMjE5M2EzYzdmMDhkNTk5MThiMmEifQ"
+        },
+        {
+          "resource": "repo://tests/scripts/deploy-profile.test.sh#L41-L69",
+          "version": "repo-lines-v1:sha256:c7b781edd8bb308d58d222ee7f8bc7209c911be8979c3d341defdb4ec2689206:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4MjliZTg5NTAwMjE0YmYwNGY1MzRmMTE5ZmExYzVmOTNmZjZiN2VjYmRlOTY1OWNjZGY0ZDkwOWI1YmU4NDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1NTJlMTUxOWNlNjQ3NDk4MWU5YzJjZGJlMTRmOGZmNmU3MDZiNjUyMGYyOWM1ZDM0YjA3YjkyMDIzZjczZmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA1MmM0MGU5OTNkNDljMzI3MmY3YWI0NTNmNDI4ZmQ0ODkwYzY1Y2M2NTY2ZWU2MzkzZDQwZWQ4NTg4YmNhZTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0YzUzNzdiODgwYTkzZGY5NThhNmZkNGE4MTVjMGVlMjUyNDE3YzE2YTdhZjM1NzZlNDU0YmRmOTg4ZDJlYjIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_032e44cc9d4f40b992537de14a94b60f",
+      "statement": "session-knowledge.sh never blocks: it disables errexit, closes stderr, exits 0 on every path, and exits silently when python3 is missing or no project root resolves.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/session-knowledge.sh#L1-L40",
+          "version": "repo-lines-v1:sha256:05d1930ceb4ce299ffe35f3a1c93d5d1c9a27038a9cdec114b118c3f9d6d889c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOTVmYzA0YTgwYzk1MmY0OWNlNDE4ODYyN2M1M2IwZmJlOGM0NDA0MWI5NTJkNTkyYWNkMWRlOTk4NjE0NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVlMzQyZTU4MDgxM2IxMThkZWJiNTI5NWFhNTA0OWUzYjRkYjk0N2U4MGY4NDRhODEyNTMyZWQ1ZWU1ZWI1ODkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a1d17d8d16c44a8cb528f991d29bbb58",
+      "statement": "session-knowledge.sh resolves the project root from CLAUDE_PROJECT_DIR, then git rev-parse from the working directory, never from the hook's own directory, so a hook hosted in a foreign repo does not load that repo's knowledge base.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/session-knowledge.sh#L19-L32",
+          "version": "repo-lines-v1:sha256:dc4efbedd5e4be60f935ec747943901f211484555de7a8c0a1fc92314c82146d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlZmZlZjFhZGNhNTgyZjZkMGU3YzJlZDQ2NTAwMTFjZWVmYWJlZjBjYjkxMTRlYzNlMDMyNThkOWFmYTUyMGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzOWNkZjY1Y2M1NTBlNjk2NDU2ZDkxMDgwYmY1NjBjOWNiMTI4NTM2MWVlNDUyYTUzZDc1NGM1MzIwNzlkNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkYzM5ZTVjNjM1NzcxOTBhYmRmOTZiZjkyN2QxMDYxY2Y3NzA1OGFkYTA4YmY4NjQ1NjIyZGU4NmNjM2Q2OWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2MGRhZjNjOGRlZWZlYmFhMTliNzc3YjUzYTc0MWJhNGRmZmZlMmE3ODkxNGExYjAzMGU5NTMyNDA2MDYzMWMifQ"
+        },
+        {
+          "resource": "repo://tests/hooks/repo-root-resolution.test.sh#L38-L53",
+          "version": "repo-lines-v1:sha256:df552b9a20150e3cd9604e67efcb2eb2a5d2e46d6f35ce9b117d45ee63c23fd8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkNjRiM2M0ZTA5Mjk4ODQ5NGVmNjk2NTFmYTNiZDk1MGMyYzkxNzQxZDY0MmQ2NDgzOTRjYzQ1NDJkMzU2NjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5YThkODRmN2RlOTIxMGRiZjRhZGU3YjM0NDllOTdhMTQyM2UzZTUzMzdhMTQyZjM5YWJiNjI5NDU2YTRlNzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQwZDNjNDY3NGE2NWYwMWM2NTliNmQzOTQ1OWU4NmY1MjYzOTg5NzM0NzQwYzhmNmU3NWI0YWVlNGU2ZWJiMmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFkZTFiMmY4N2ZiZDUyZTYzMWQxOTQ3MTlmYzViY2E1ZmQ4ODMwMGM5OTUyMDFjZDcwNWVjYzFhYzk0MjM3MTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_58be33c276684bd481586d808c589111",
+      "statement": "session-knowledge.sh treats INDEX.md as empty when it contains a boundary-anchored '0 total entries', has no table data rows, or only '_(' placeholder rows; otherwise it injects a 'docs/solutions/INDEX.md — <N> entries' pointer line (not the INDEX table), critical-patterns.md in full if at most 40 lines or only its heading lines otherwise, and a read-full-file reminder.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/session-knowledge.sh#L46-L88",
+          "version": "repo-lines-v1:sha256:a9c749e7e432321fc8d6e0c35eb0e9db849625297340558182461a5dd0305888:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyZmE1OTI3MjRiNDg3MjUzZmNlOTVlNGZjODNkYTQ0MDAyMDVlOGRjNzJjODgyMmRmOGMwNTk3NDg5YTYzOGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFmYWNiNGE3YmEzNTVlN2M4NjIxODg4YWJjOGNjYzQxNzg4OTA3OTkwYzE3ODA0NDllMTEyMjQ4ZTkyNzBmMmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMyODVmYzNiZGU4YmQxMjQ1MDkxN2Q4MmZkYjRjOWRkYTdjZGQ3YzI1MmE5M2U3MWIzMzRmMTcwMWYwZDBlYjIifQ"
+        },
+        {
+          "resource": "repo://tests/hooks/session-knowledge.test.sh#L48-L194",
+          "version": "repo-lines-v1:sha256:5abbae2b96617145a0bdaef38083c082cd345bdbea4f125b1ae7e4719cb800d2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQ3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiMGFkOWZjZjdkNjdjMGFmYWNiNTM1ZGE3ZDBkYWEwZWQyOWJiYTM1M2RkNDFjMzQ1ZTMyZGViMWUzZDYwZWU0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIzNzY5ZDIzN2NkNDIwYjlkMzhiOTgxYTBhNGY2NzcwMTkwYTRhODNkY2ExZmU1NmM0ZjViYTFlMmNiYzBlZjc2IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0Y2MxMmUwM2RmMDllMWE4OTQwYzcwODBiNTIzZmU3NjQxODA3ZTFiNzZlNDc5NTcwYTdjNDRjZWI5YjYyMjFjIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkNTNkZmVjOTRiMzFiYTBjYTdhY2IwMzZhOTM1N2Q2ZGQ0MzNmYWQyOGZkMDMzNzQ5M2U1NWQ0NTEyMDJmN2Q1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_07a66f7e5e404d6ba4b04040e6fe0fa2",
+      "statement": "session-knowledge.sh also appends up to 5 active runs from runtime/run_state.py and a cached runtime diagnosis from runtime_mode.py, joins non-empty sections with '---', and emits them as hookSpecificOutput.additionalContext for SessionStart, printing nothing when all sources are empty.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/session-knowledge.sh#L90-L150",
+          "version": "repo-lines-v1:sha256:4f3871db86d166c782c4c377e36937b996c99ea092998ffb14eb4799057c4257:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3MDg3M2VhMWNkMmQzZWUwMWNkZjk4ZmZlY2QxYTk3OTYwZGE0NDRmOTI0OWEzOWZkOWQxMzg4M2YxODcxNzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4ZDNiOWU4ODBhNzc5NzU0OTNkYzdlMzU5MTQ0YzAyOTVhNGY2OTRjZmUwYWY0ZjkyOGMyMjMwN2JjNWMzMjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkxNGIyNjE1NTkxMjE1ZTQ4ZTM1MzM1YWQ1NTA4ZTg2MzdiYmU2NGI5OWU0MmExZjc3MTExNTAzODUzMjIzZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.2",
+    "at": "2026-10-16T04:08:21.021Z"
+  }
+}

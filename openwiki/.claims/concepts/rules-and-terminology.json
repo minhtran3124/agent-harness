@@ -1,0 +1,268 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:2ba560222f7f1d64ef833ec26be45ab4b49ac0771494f102840b89c742cc5d1e",
+  "claims": [
+    {
+      "id": "claim_cde8ee7b9ff04b7b98fea0b7e7679244",
+      "statement": "A rule file's loading tier is decided by its own frontmatter: a rules/*.md file with a paths: frontmatter list is contextual and loads on demand, while one without it auto-loads every session; adding paths: to a rule removes it from the always-on set, which is a behavior change.",
+      "evidence": [
+        {
+          "resource": "repo://CLAUDE.md#L7-L7",
+          "version": "repo-lines-v1:sha256:59b58969960cde51b987565477af71d7c74299763325e8e35ee14c57f770d1d3:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTliNTg5Njk5NjBjZGU1MWI5ODc1NjU0NzdhZjcxZDdjNzQyOTk3NjMzMjVlOGUzNWVlMTRjNTdmNzcwZDFkMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTliNTg5Njk5NjBjZGU1MWI5ODc1NjU0NzdhZjcxZDdjNzQyOTk3NjMzMjVlOGUzNWVlMTRjNTdmNzcwZDFkMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDM3NzJmNWZkZWJjZDJmNmFmY2IwMzM4YTdjMzhlY2JlYTI0OWQwYjg0NjkwMGUzODc4OGVlNmQxMzNhYjljMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSJ9"
+        },
+        {
+          "resource": "repo://tests/scripts/rule-loading-tiers.test.sh#L4-L22",
+          "version": "repo-lines-v1:sha256:0ef4d61652cbeab2d7867b15b96dbac9d26c9de41403f7027d82baeb63001b8b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjMTAyYzZlMmVkNDkyZWY5NmU3NzVlNTY0YjUxOWM0NmNkZDI4YjZjOTdjOGRjODliNDQ4YzkyOTBlMjRkNmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMTdmYTAwNmJhOTIwODUwMGIyOTMwY2U2OWNiZGU0MzZjNjQ3YWZhOTE3Y2I3Mzk2YTliYzkxMTFhNDZkZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmMjlkMzg5ZmRiZjNiYzZlMjg3MTU2NWYwYWI0M2ZjOGIxZjMwYmU2Yjk5ZjY1MDY5YzhmZmJkMDMzNjlkMzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxMDVlYTgxNzIyMjE4MWQ1YTk2YTAzOTAxZGJhNGVhN2RhMjU2NTAyYThhMThlNzY0MWQ3NDI2OGJhZGNhNGQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_13dbb81e15004d5cbdec1615bc107676",
+      "statement": "The source tree has five always-on rules (architecture.md, behavior.md, guidelines.md, orchestration.md, research-depth.md) and five path-scoped rules (auto-correct-scope.md, plan-format.md, review-policy.md, terminology.md, wave-parallelism.md), and tests/scripts/rule-loading-tiers.test.sh asserts these exact inventories plus the matching 'five always-on files' / 'five path-scoped ones' wording in CLAUDE.md.",
+      "evidence": [
+        {
+          "resource": "repo://CLAUDE.md#L7-L7",
+          "version": "repo-lines-v1:sha256:59b58969960cde51b987565477af71d7c74299763325e8e35ee14c57f770d1d3:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTliNTg5Njk5NjBjZGU1MWI5ODc1NjU0NzdhZjcxZDdjNzQyOTk3NjMzMjVlOGUzNWVlMTRjNTdmNzcwZDFkMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTliNTg5Njk5NjBjZGU1MWI5ODc1NjU0NzdhZjcxZDdjNzQyOTk3NjMzMjVlOGUzNWVlMTRjNTdmNzcwZDFkMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDM3NzJmNWZkZWJjZDJmNmFmY2IwMzM4YTdjMzhlY2JlYTI0OWQwYjg0NjkwMGUzODc4OGVlNmQxMzNhYjljMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSJ9"
+        },
+        {
+          "resource": "repo://tests/scripts/rule-loading-tiers.test.sh#L24-L34",
+          "version": "repo-lines-v1:sha256:5b449b0979990a735063d433c4f6c242c28e9c3fb84702df03a2f8b7312451d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1OTEzOTY5YjMxOWQ3ZWQ2N2E4NThmN2QwMTFlOWYxYmZmMTg4MTc1NGM4NzZkNzEzNjQ1YzliNjljYTQ3YTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxMmEyOWU1NmUyYTM4YzA2NjczNjIyZDNkOTdhZWU0MGU0ZWRkMGI2MjMxMzNmMGFkMjNlNjU5YWJiNDhlMGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBhMDkzYjgxODk5MjRjOTAwMDZlZGQ1YmNkYzY5YTAwNzU4ZDQ4YzNlMTU2NGY4NmVlZGQ0OTFiMWVmNjJhZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyMjE0NzViNTQxMjcyNTQzYjhkNGExMWY1NDdjNzhkMTFjOWQ1MjMwZDYzZTg5M2RhZDZkZTVjMDcyY2JiZWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2e990561e4154078bf618c84748f941d",
+      "statement": "The contextual rules are scoped to specs files: auto-correct-scope.md to specs/**, plan-format.md and wave-parallelism.md to specs/**/PLAN.md, review-policy.md to specs/*/SUMMARY.md, and terminology.md to specs/**/PLAN.md, specs/**/research-brief.md and specs/**/SUMMARY.md.",
+      "evidence": [
+        {
+          "resource": "repo://rules/auto-correct-scope.md#L1-L4",
+          "version": "repo-lines-v1:sha256:9ba2dcd4ebbe96028df225410d087a9298f2f05a1dc08196fb4c435aa903efc0:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjUyZDcxMTEwM2Q1MGE0Mzc4MzBjNmZiY2QwNGZiNGJhYjQ5YTBmODJmNmQyNmQxYzc5MWM2ZTg0ODhkZDA5MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjUyZDcxMTEwM2Q1MGE0Mzc4MzBjNmZiY2QwNGZiNGJhYjQ5YTBmODJmNmQyNmQxYzc5MWM2ZTg0ODhkZDA5MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjg0YmYwZjRiMmU2NjE3MmQzMWIyNTg4YjI3NzJhYTFiNjE4N2JlYzA5NTEyMjAyYzg4OGU5MTI5ZjFiYTU4NSJ9"
+        },
+        {
+          "resource": "repo://rules/plan-format.md#L1-L4",
+          "version": "repo-lines-v1:sha256:91b1a4613697e21f83f975fa9a4e7bebb81d193695b4550a5ba71b7b68fc6f19:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjUyZDcxMTEwM2Q1MGE0Mzc4MzBjNmZiY2QwNGZiNGJhYjQ5YTBmODJmNmQyNmQxYzc5MWM2ZTg0ODhkZDA5MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjUyZDcxMTEwM2Q1MGE0Mzc4MzBjNmZiY2QwNGZiNGJhYjQ5YTBmODJmNmQyNmQxYzc5MWM2ZTg0ODhkZDA5MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWM0NTY2OWYwYWYyYzAyMzQyMDMxMWM2MGRlZTRkMDNiMzM4ODZiNjhlNDM5YTMwZWE4NzAxMzEwNTE4NzgzNyJ9"
+        },
+        {
+          "resource": "repo://rules/review-policy.md#L1-L4",
+          "version": "repo-lines-v1:sha256:c487d28c874fedf101368d04dd5f2c0c4dad4591e4ca34e2f37606307c8b7a8b:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjUyZDcxMTEwM2Q1MGE0Mzc4MzBjNmZiY2QwNGZiNGJhYjQ5YTBmODJmNmQyNmQxYzc5MWM2ZTg0ODhkZDA5MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjUyZDcxMTEwM2Q1MGE0Mzc4MzBjNmZiY2QwNGZiNGJhYjQ5YTBmODJmNmQyNmQxYzc5MWM2ZTg0ODhkZDA5MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2RmYTExYmJjZjRmNmZlM2VlMTIwOTJlZWNiMDhkYmRhMWYwY2M4MTRmMThlZDI2NDVjN2E4YjNkMThlMjI0MCJ9"
+        },
+        {
+          "resource": "repo://rules/terminology.md#L1-L6",
+          "version": "repo-lines-v1:sha256:86982a4c5eb28d28a32b4b404d6f474ce6a7fb80126eaab4ff21f247c151509a:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjUyZDcxMTEwM2Q1MGE0Mzc4MzBjNmZiY2QwNGZiNGJhYjQ5YTBmODJmNmQyNmQxYzc5MWM2ZTg0ODhkZDA5MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjUyZDcxMTEwM2Q1MGE0Mzc4MzBjNmZiY2QwNGZiNGJhYjQ5YTBmODJmNmQyNmQxYzc5MWM2ZTg0ODhkZDA5MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTE5MjRjNGM4YzcyZDI0YWMxYTkwZDQxZWQ5MzlhMjlhNjFlZDc0YjQ0NmVhZDdlNmRmOWRlOTAxN2ZmNmExZiJ9"
+        },
+        {
+          "resource": "repo://rules/wave-parallelism.md#L1-L4",
+          "version": "repo-lines-v1:sha256:91b1a4613697e21f83f975fa9a4e7bebb81d193695b4550a5ba71b7b68fc6f19:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjUyZDcxMTEwM2Q1MGE0Mzc4MzBjNmZiY2QwNGZiNGJhYjQ5YTBmODJmNmQyNmQxYzc5MWM2ZTg0ODhkZDA5MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjUyZDcxMTEwM2Q1MGE0Mzc4MzBjNmZiY2QwNGZiNGJhYjQ5YTBmODJmNmQyNmQxYzc5MWM2ZTg0ODhkZDA5MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWI3MmQ4NDczNjQ3ZTMyOTcxZWE3YjA2NDM3YmNmMDM3NDQyMjQwOWU0ZjMyNTI3M2JiOTU0N2Y3ZTI5OTEwZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_9222234129fc4026ab0910b5b659bdc4",
+      "statement": "paths: injection fires on read, not on write, so write-flows and subagents that need a contextual rule must carry an explicit Read step or rule path in their prompt; the original move to path-scoping cut roughly 55% of the always-on rule payload.",
+      "evidence": [
+        {
+          "resource": "repo://CHANGELOG.md#L147-L147",
+          "version": "repo-lines-v1:sha256:d10b25a17d2ed7918f8d51d9ca8805e72f08f36ff1d834dd1126fbfe0322d090:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDEwYjI1YTE3ZDJlZDc5MThmOGQ1MWQ5Y2E4ODA1ZTcyZjA4ZjM2ZmYxZDgzNGRkMTEyNmZiZmUwMzIyZDA5MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDEwYjI1YTE3ZDJlZDc5MThmOGQ1MWQ5Y2E4ODA1ZTcyZjA4ZjM2ZmYxZDgzNGRkMTEyNmZiZmUwMzIyZDA5MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGQ2NTdiZjhiNDk5YzQ3ZjMwZWQzOTU1YzMxOWY2Y2JjYzdjODkyMzJjN2JmMDE0MWYwNzA2ODA0MTk1YjIwOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODk0NzUzYTZjOWRmMDdiMTliMDFiMWM4NDNhMWU1OTg4ZTRmNzE3ZTMyZTgwZDYwZGMwY2RjMWI3MzE3YjE2YyJ9"
+        },
+        {
+          "resource": "repo://rules/terminology.md#L94-L99",
+          "version": "repo-lines-v1:sha256:dca4ba4123b61d086daf5bb533b2cd86891ebffaf0d1191b8ad2fe421a83e04b:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2UyMDY4N2I1ZTkxM2FkMmNmNjRmZjU5NDgxNjU1NTFkMDc5YjJhOTU4OTg3NTlmOGM3Y2Y2YTA5YWIzNzJhYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGNlNjJlNWZhMzI0Y2NhZDg2ZDJjZmVjZmU2MWIwNWNlZTliNTBjYzU4MjE1YmU0OTI3ODg5MzI1NWVmN2Q5NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzBkMzM4OTljZWMwMDRmNDMyNTkzZWUxMDlmYWNlZDc2ZGJiYjk0NDMwMGExN2UxNTEyNzI3MDg0NDNiNTJkYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://rules/wave-parallelism.md#L8-L9",
+          "version": "repo-lines-v1:sha256:09cd10758ac747654d437ab1a7b4efd95d6b5d4fab65ef8f7f8b852253e921e4:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2FkNmQwMmQ2YThhMDgzZTJhMDI4NTRjM2ZlNWJhYjRmZDdiMzE3MjFkZWZkNGVkMTY3ZGU0MGY2NzUxNDE0NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2IzZTg3YmQ1MDkzMGMxMzZmZTA5NDNmMWI2YmFhMDQ3OWIyNjhjOTczN2E2NmVjMDIzZTk5NzVkODRiNjY2OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWI3MmQ4NDczNjQ3ZTMyOTcxZWE3YjA2NDM3YmNmMDM3NDQyMjQwOWU0ZjMyNTI3M2JiOTU0N2Y3ZTI5OTEwZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDVkNDZiOGY1NDNlMDgzYjM5MmVhZDQ3N2FkOTFkMjI3MWExYmJkOTZlNDYwZTU4ZjBkMDFiMjU0NTgxZjAxNyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_8e9bb2af0f48454682404dc5b8c6b2f5",
+      "statement": "scripts/render_skill_prompt.py --check-all validates contextual policy delivery: its CONTEXT_MATRIX lists, per prompt context, rule files the source must mention and rule files it must explicitly Read (e.g. writing-plans must Read terminology.md, task/correctness/intent reviewers must Read review-policy.md), and any missing token makes it exit 1; contexts with no required rule need a rationale.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/render_skill_prompt.py#L13-L73",
+          "version": "repo-lines-v1:sha256:543f18990a1da51c3c70b5c709415cee8b9d17e649b7f0ff28885357d734012a:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiYTI0N2E2NGEzZGExNDU0ZWZiZWZiNzYzYjkzM2QxODJjNzU0YTI3YTdhMTU1ODE1ZDYwNTU3NTM1MWZjNzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5MWJmM2Q5NmYxYjExOTY4OGRlZWE5YTAwNGIyYjNmZWJiMTgwYmI4ZmIyMzQ0NjI1NjE0YWRjODU5NTYzYWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmYzQwMjIzM2I5NTQ0MjVmNjA2YzAyMTAxMDA1ZjZkNGIzODA1NzdhZTBhODNjZTYwYTc0OGI0YjBiOWRlMTYifQ"
+        },
+        {
+          "resource": "repo://scripts/render_skill_prompt.py#L94-L127",
+          "version": "repo-lines-v1:sha256:24d0454352d21616c60813848ca43c81a4bf3fd2761587949f0c4a9c93f2dcba:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhMDkxYmJjZDllYzBkMGI1MTYxMTQ1NGI4MTM5OGMwMTIzZjMwZWQzYTliNGNjOTdmNjk4YWM5ZDQ3NGI5M2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2YWY3YzJhYzIyNzk2MGZjZDVjM2NjODgwZDViMDhjZmIzOTcxMTJkYTgxMGJmNzVjM2Y0ZWJhYTNhMzdlNWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM4NzUwNDEzNWY3YzUxODZiNWUxOTZjMjM1NTgzNTlkZWE1OWZhYzU2N2NjMWNlZjBkZmYwOWU2M2I3NWI2NGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0OGQ3NDgzZDA2MGYxNzIyZTI0NTM2ODg4MzM0MjU2YjU0OTBlOGJiZTg2OTgyMDY3NmNhOWVhZjM1MDljYzkifQ"
+        },
+        {
+          "resource": "repo://tests/scripts/context-propagation-regression.test.sh",
+          "version": "repo-file-v1:sha256:25c4bfdb139be370182906f7b645771216a2d0e2f2e07ee0d4e9382e1832ac5f"
+        }
+      ]
+    },
+    {
+      "id": "claim_a449789c73e741a39cde8b699570a7b3",
+      "statement": "Changes to rules/*.md count as workflow-engine surface changes that require a passing context-propagation audit before push, using a regex kept byte-identical with hooks/commit-gate.sh; ci-strict-gate deliberately excludes rules/ from its re-run proof tier because prose cannot be proven by a command.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check_review_receipt.py#L45-L65",
+          "version": "repo-lines-v1:sha256:b55136c5abd864916d8838f129774563d8172a19a4000f315d0c268ec91c80ce:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3MDE5YjBjMjBkMzY0ODU4YjE3MzVhOWVkYjYwZDU5ZmE3NWYyNDAyY2I2ZDU2NzA4YzI1YTlmNTc0ZjIwYTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0NWViNWNlMjNlYzU2NDI2OGQ0Mjk5MWIxOTBjMDFhYWZjOTVhN2M0ZmJlOWY5ZDY1NTFlMTQ1N2FmMGUyMDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQyMzBlNmU3NmRhYTEzOTJkZWJmMzY1N2E0MGY3MWZjNGJiYzVkMTU0OTQxZDZiNWNmZmI1NDgyYTkyZjk3MTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY4OTc3YzlhNmE0NTA0N2MxYjE2MGMyOTU1YzFmZmFiYzZjOGE4MzMyYWQ5OWIzOTc4NDRhMmQ3MDZhZjcwOTUifQ"
+        },
+        {
+          "resource": "repo://scripts/ci-strict-gate.sh#L76-L79",
+          "version": "repo-lines-v1:sha256:d32551325e2e630f753042229d783e4651ce64cca7a443d08cb6af4d090f67aa:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGMxMjQwNTBlNTFkNmYyNDA4YjJhNDhiYjVmMzdkYzZmMTg1YjlhMmVkNGQ1NmQzYjU0NWY3MTU5YWU4NGU5ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjM4ZDRiNjk5YjNiMTIxMjIyNTdmNjY3M2MwOGUyYmFlMTMyZmNlNDI0YTFhMjM4N2QyMjkxN2UyMGQ2MTZlOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTc1NmUxYTVhYjQ4NjEyZDE5NmY5NDBhYjc2ZGVhZGVlMzIyZTRjNDA2M2JmZjI5Y2JhZTZiMzZjMGFkM2Y0NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWQ3OTkxZTIxN2I2NTZiY2Y5YTQzYjE1MWQ0YzdhYjA2YWIyMGE0YjZiMjhmYWVlYzkxNzVmNzNjMzY3OGMxNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_45835a2caaeb4b0dacce8260fb202bb7",
+      "statement": "scripts/lint-doc-truth.sh includes rules/*.md in its dangling-path lint scope because agents load those files directly.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/lint-doc-truth.sh#L24-L32",
+          "version": "repo-lines-v1:sha256:c00db781c33aa67cdf9c31a9288087600bdf23cc04ef89db8cd0877b434c9406:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGRkODc4NzQ2YzU0NzYzZDljOWI4ZTE4MGI5M2RmYTZhMGQ3OWYwNTU0MTBjYzg1YmQzYjg5MmVkYTFmYmFlZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGMzM2ZkNzZkNTBkYzE5YWU5YWUyMTQxNzJkNjU2Y2U1MGJkMTE5ZDRiNDM2NDJjYTQ0ZjQ4YzA4OWZkNmIyNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTI0YmUwOTlhYmQwYmExOGI1NTc4MDUzM2E1NWI0OGExZWU3Zjc1YWExNGUyYzQzM2U0YTI4NWE5MGU3MTY2YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDc5YjU1ZTY2NGFmOGYxOGIzZDFhNjBmMmZhNTM3N2M5NGQ4OTFkYmU4NDc2OGIwYWRhODhiOTY3ODM0YThjYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_954993583fc94602a56a786fbcf20209",
+      "statement": "deploy-harness.sh copies root rules/ into .claude/rules/ and treats rules/architecture.md, rules/guidelines.md and rules/behavior.md as bootstrap-owned files that a re-sync must not silently overwrite in a consuming project; architecture.md and guidelines.md are pointers to the project-owned techstacks/ folder.",
+      "evidence": [
+        {
+          "resource": "repo://rules/architecture.md",
+          "version": "repo-file-v1:sha256:593686998af57f302d6d1ef94c3d78727e5d287fb013f23132a6bb0340161345"
+        },
+        {
+          "resource": "repo://rules/guidelines.md",
+          "version": "repo-file-v1:sha256:99f36ebde4a744e63b8128dcd3ea7cda8c652a199acb75ca6e8d5822f23317a2"
+        },
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L1-L38",
+          "version": "repo-lines-v1:sha256:8b50309572c3807f8481c7f0b86846118e8f3e0fa3d5b02a14234ed1401260dc:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4NzVmOTI4NTQ2YWVlNzg1NWNiMWRiOWFmYzhhYjNmMWE4YTM0ZDQzZGU1YmJkNjJmNzA3NmQ3YmE5ZjM5MTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyOTc5YjdhZGUzM2U3MTFmNGVlNjY0NGYwMzcxMmJiMThjMTdmMDE3YTJjNzNlNmIxYjY0ZDliN2FkYzFjOGQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_865d33cc491e4dc1806186f0140b5846",
+      "statement": "research-depth.md maps intake high-risk to Deep and normal to Standard, permits Quick only for a tiny lane meeting all Quick conditions, never lowers depth, defaults to Standard on uncertain signals, and requires an explicit '- none (local-only; no external surface)' Source Pack entry when no external surface exists.",
+      "evidence": [
+        {
+          "resource": "repo://rules/research-depth.md#L1-L54",
+          "version": "repo-lines-v1:sha256:1a55651c3837476beacd07ab0e736682dd97af107974b27caef1f6a3f1a9ef00:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4N2M0OTI4NzliMGIwOTI4YzZjNDg0MWM1ZTllNjgzNjkzMmNiZTg2MmRlYjNmMDZhZTc1OTRiOGUwYmNkYWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwMDBjYzQ2ODZlOWFkZWM4MDZhMmFlNWQxY2ZmMGI1ZjRjOTUwYTQxZjg3Y2NjYTFhYmRlNGM1ODkxN2NlMzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f5f260e17972405fbcf8841e52d1e598",
+      "statement": "plan-format.md requires a PLAN.md when work exceeds 3 steps, 2 files, 30 minutes, or one layer; tasks are '### Task <id>' sections with Files/Action/Verify/Done and an optional (wave K) suffix; new plans need Global Constraints, per-task Criteria/Interfaces and an SC table whose checks are single pipe-free commands under 60s with 'exit <n>' expectations, enforced by scripts/check_plan_contract.py.",
+      "evidence": [
+        {
+          "resource": "repo://rules/plan-format.md#L14-L120",
+          "version": "repo-lines-v1:sha256:3b7e52cf6269aacc8f49417d5599b6de795ebd04d9cd874078463d0fe1f1a3aa:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmMWY0M2Y4MWM2MGQ1MTU3YWQyYTkxYzc4OWVkY2EwODU1MGQ5MzYzZTFmY2EyNmE4MTNlNzgwMWJiMTA1Y2Q4IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlNGVhNDkyMWFkYzM1YTkzYTRmZWJiMjJiZmJjMzYyNTg1MTYwYjAwNjFkMTk5YmI2ZmMwOTQ4YzNhODBkZGI0IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2NGQ1YmQwNGQ3ZWRhY2Y1MTE4OWE5OWEzYTExOGYyMzE1YzU5M2RlNWU0MjBlMGNmZGEyZmEzZmUxNjhkMzUyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5MDk4OWNhZWE1OGYyMzk4ODVmMWY5NDc5YmY3NDczZTE2YWNlMjI2ZjRjMGRmMGMyNGEyZjU1MzA4NTlmMTY0In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_7cd46cf66fe84b0eb965dd78ddf3b9ae",
+      "statement": "wave-parallelism.md requires zero file overlap among same-wave tasks, all wave-N Verify commands green before wave N+1, one fresh subagent per task spawned in a single message of at most 20 calls, and Status Log entries that name task ids with commit shas and a completion marker because render_plan.py and runtime/resume_decision.py derive done tasks and the resume cursor from task ids.",
+      "evidence": [
+        {
+          "resource": "repo://rules/wave-parallelism.md#L15-L61",
+          "version": "repo-lines-v1:sha256:a03190bd5cf03cae2bfbe5d233908c9e3cc077a56b8a6a80a75ccff728370b73:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4ZjY4MjQzMjZiMDUzYWY2NmZiYWJiNjE4ZTc2NzFhMjE0NTQ0MGVjMjM1NDNhMjMyNDllZDQ4YjJiNmQ3MjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2YzVkMmYwNTg1YjgyOWI5OGJkZWNmYjhiZWI2YmE2NGQwM2YzMjQ3ZmEzNzBjNmZiMzU3YzlhMDUwM2JmZTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzMDZiNGY2NzQ0ZTg5NDVmZDQ2ZjVjMDcwODA4YWZlNWU1MTJjYjBkMmZlNDU5ZjU3ZWE2YjdiMzFjMWZmNjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMwNGJmYmE0MTc0NWI5YTY1MWQ2NDNjODNhNGZlNTM2MzJkZDIyMDRiNGRkMTk0ZmY4YzM2NDM2OTZkZDUzMWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3150629c81cb4f9d9720fafe20911c69",
+      "statement": "review-policy.md gives task, correctness and intent reviewers one vocabulary without changing their oracles or blocking rules: Important findings block (fix round or escalation), Nits are always reported with no cap and never block, and findings on generated files or already-wired lint are not reported.",
+      "evidence": [
+        {
+          "resource": "repo://rules/review-policy.md#L6-L42",
+          "version": "repo-lines-v1:sha256:fe8ce5a8d4cf253c7562924f6d8fb2955957782a1cea892e99d743880d603963:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5MTk1NDg5NjU0YjA0YTgyNzRiYjdlYWQxYzU0ZjdlNGEzNTNkZGYxNDI3NjkyMGFjMTgxM2FiMGFlZjUwMWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjNDQ5ZjAyOTU0MzFiZDc2MmIzNTQyZTIwNmQyMWEzZDE5NmYyZjFlYzFhNWZhMjQyNDdkZTJiMjg0OGMyMmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYwYTE1NGEwMjEyZDBkMjBmYmIwMmViYjMxNGU0ZTYzYmRiOGVhOTEzZDdhNzI4MmZlMTM3MDYxMGFkOGJjOTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bf4f8a45bd844bc49bfc3acf06c134be",
+      "statement": "terminology.md adapts ASD-STE100 writing rules without the STE dictionary and makes only §3 (machine-decidable acceptance criteria in PLAN Verify/Done/Action and SUMMARY ### Verify rows) required, based on a measured effect; §2 modality and §1 one-concept-one-word are advisory, and a rule with no measured effect must not be mechanised into a gate.",
+      "evidence": [
+        {
+          "resource": "repo://rules/terminology.md#L8-L78",
+          "version": "repo-lines-v1:sha256:b0bc40b74edd1125b38ef652baeed3f2a116e06c3e19c5453c47c7c6d60f2db2:eyJzZWxlY3RlZExpbmVDb3VudCI6NzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyMmQzMzgxNDJlZjA5NzliM2EzOTczYjVmYjE0NTI2NDdlZWY0MjNhNGU1NTA4N2QzNWQ4NGY3MWFmNGM4NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxOGIxYTIwMjI1ZjEzZTRkMTBhMWFlNTE2YzQ1N2FjYjYwMzE0ZjBjN2Y0YTEyYTE2NTNhNDcxODRjNDBlYzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNmYmUyYmEyN2U1MjM4YmJmZDVmNTlhZDdjOTQxNWJlZTVkZTU1NDA3NDU4YjRjZDk3MWYxOTRmMGZmMTVmM2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlhOTExYjE0NjRiZjI4YWIxMTc4Mzg3NTUxNWYyOTYwNTQ3YWZmOThmMDA1OTkzYTMwNzdiOGY2NDgzY2I5NTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2e9d384a1d9e4022a873f8450f3ec15d",
+      "statement": "terminology.md hardcodes exclusions: SUMMARY.md ### Intent and specs/<slug>/intent.md are never rewritten by any rule because they are the oracle for intent-review, §3 does not apply to design.md or research-brief.md, and rule loading on read is no licence to rewrite closed specs.",
+      "evidence": [
+        {
+          "resource": "repo://rules/terminology.md#L80-L92",
+          "version": "repo-lines-v1:sha256:572230c91f2706dfa7b02f880a3a1120de04609858cdf7566298899f9a6601f6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzOWJlY2U1NzVhOWMyNTY1N2I1MjE0MWJjOWJkMWQ5ODgxYWU4OGM5ZWNlNjVkOTZiOWRmYjViYjI0MTNjYTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1ZWVlYzZkNzU5MmZjYmJhNmEzYWM3ODA5OGE0ZDMxOGI1ZDZmMzE2NTYyYzE2MTI5YmU2NWU1ZGRmMGNiNmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5ZTk2MmJlMTJmYzhlMzhjMmNiOTg2OGJhZTY5MTAzMWVkNTg3YjY1ODczZjQyMmZiODdiNDJiNWY5MTYyNGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIxYWVmYTVhNWIwNDgxZGY4MTIzNzgxYmUyMDQ2MmEzNDdlN2NkNDkzODRlOTJlNzliYTBkMzY4MDlhZDg2YmMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_774520d522864bb58ef7d9eec6231a6b",
+      "statement": "The asd-ste100 skill applies STE structural rules fully and lexical rules only as direction of travel (ASD's dictionary is not redistributable), never upgrades hedges to facts or drops scope qualifiers, and ships ste-lint.py, a linter that reports a hard_count, supports --baseline and --disable, and never flags hedges; run-tests.sh runs its --selftest as a suite-failing step.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/run-tests.sh#L80-L87",
+          "version": "repo-lines-v1:sha256:3b93f1594806669a03d3b92a05901b29605242aa598c94b5938071c889f2315b:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGZiZGNmYmVlMDJjOTIzODI0YjEzMGMxY2ZlOWZhNzJkMDM2OTM0OTE1N2VhZTFkY2M1OTMxZjk0MjBhYjZmYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzc2OWQyMzdjZDQyMGI5ZDM4Yjk4MWEwYTRmNjc3MDE5MGE0YTgzZGNhMWZlNTZjNGY1YmExZTJjYmMwZWY3NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWIyYWMxNmRkMDI5MTRkZTk0OGUzYTRjODJjY2M0ZTNhMWQ5YTY2ZjVmNjUyMmZkNGY5MWYzZTFjZjg1NjRlYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjUzMGUyMDdkYjRhYTM2ZWY1YTJiNmNlZWM2OGY2ZDIyYjU4NDMzNDZkNDk2MzY1NGZjNzZmNDViM2ZlZmExNiJ9"
+        },
+        {
+          "resource": "repo://skills/asd-ste100/SKILL.md",
+          "version": "repo-file-v1:sha256:1e0dcfaff09e09c3b1b7c4de6943a1f160c3a9d180932c62545754097fd0fcc2"
+        }
+      ]
+    },
+    {
+      "id": "claim_3691aa81ed6a42478625e8fec9a9bc8e",
+      "statement": "scripts/check_ste_baseline.py lints skills/*/*.md, skills/*/*/*.md, rules/*.md and agents/*.md with ste-lint.py and compares each hard_count to scripts/ste-baseline.json (missing entries count as 0), printing WARN for regressions or removed files and NOTE for improvements; the default run always exits 0, --strict exits 1 on WARN or skip, --update rewrites the baseline, and --against reads the baseline from a git ref and cannot combine with --update.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check_ste_baseline.py#L1-L161",
+          "version": "repo-lines-v1:sha256:ff44141982387495010edcea3fecab458beb480b190b311313f147ba397a27f2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkNjgyY2JkYjRjOGIwNzUxOGJmNDg2YzU4OTkwZmMzOTE3ODNhYTIwYTkxNmJmYjI3YWQyMTFlYjFkNWMzNjQyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmMGM3YTA4Mzg1MzE5NDUxODFkNGVkNjE3ZGI4MDY1ZDNhODQ4ZmMwMWYyYzMyMzkxYTA5ZTgyNjhkMzRkOWJiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzZDQxMzQwY2MyMzlhMTU5Y2U5YjYwMjJlOWY2MzIyODMyZTJlYWQ3NmNhZTllNDc1NGQyMTBlYjhmYjZkNWU4In0"
+        },
+        {
+          "resource": "repo://scripts/run-tests.sh#L80-L87",
+          "version": "repo-lines-v1:sha256:3b93f1594806669a03d3b92a05901b29605242aa598c94b5938071c889f2315b:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGZiZGNmYmVlMDJjOTIzODI0YjEzMGMxY2ZlOWZhNzJkMDM2OTM0OTE1N2VhZTFkY2M1OTMxZjk0MjBhYjZmYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzc2OWQyMzdjZDQyMGI5ZDM4Yjk4MWEwYTRmNjc3MDE5MGE0YTgzZGNhMWZlNTZjNGY1YmExZTJjYmMwZWY3NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWIyYWMxNmRkMDI5MTRkZTk0OGUzYTRjODJjY2M0ZTNhMWQ5YTY2ZjVmNjUyMmZkNGY5MWYzZTFjZjg1NjRlYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjUzMGUyMDdkYjRhYTM2ZWY1YTJiNmNlZWM2OGY2ZDIyYjU4NDMzNDZkNDk2MzY1NGZjNzZmNDViM2ZlZmExNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_a3e3c357d20e4edab3d6a3ce060ca041",
+      "statement": "check_ste_baseline.py and the review package both disable the synonym-rotation lint rule because test H3 measured no effect for the one-word rule, so a measured-null rule does not count toward blocking.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check_ste_baseline.py#L42-L55",
+          "version": "repo-lines-v1:sha256:b1c41e5eec84191a7e238c68a9f6367079087d2d75c7d98f00dd0744956640ff:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjN2NkYTYxZWFmNTNlZmMzNWNjZWRhYTRjNjI0MDE5MmE2YWY2YmE2Mjg4ZDFjZmVkYWRiNjlhMGI0M2I1ZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0N2FkNGIwNGFkMzJjYmEyNTFkYjhjYTNmYTE1ZGQzODk4ZWJiODk4NzYxNWNiZDQ1YjA1OGZlMzU0ZjJhODAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlZmE0YzM5YzE0NTE0N2ZiMGM3YTRjZDg1MWJlNmI5NjA0NWE1YWU5YzYwMWFiNDcxYzZlZDNiMTFiMmU1NTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyNmExN2Q1YjU1OWU0NzFjNTQ3NmM2NGZlODQ0MzhmN2Q3M2MxNGQwMTNkMzgzOTRmMjliNWJjMGVkYjQ2Y2MifQ"
+        },
+        {
+          "resource": "repo://skills/subagent-driven-development/scripts/review_package.py",
+          "version": "repo-file-v1:sha256:a520a68d2c74fc4908f44fd2af834405999480ac55d104cad068e34fec3b7c83"
+        }
+      ]
+    },
+    {
+      "id": "claim_56fb0bb2abe9452291e5165f2d246b44",
+      "statement": "scripts/check_scope_qualifiers.py reads git diff -U0 between --base and --head for changed .md files under skills/, rules/ and agents/, and for each hunk lists any condition word (if, unless, only, when, never, except, 'for a new', without) present in a removed line but absent from all added lines; it prints '- none' when nothing is listed, an 'unavailable' line on git failure, and always exits 0.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check_scope_qualifiers.py#L1-L112",
+          "version": "repo-lines-v1:sha256:47fd6346934e1595c51e49df6eda5642e3fe5189572915d8a3b4853a5aca59fe:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkNjgyY2JkYjRjOGIwNzUxOGJmNDg2YzU4OTkwZmMzOTE3ODNhYTIwYTkxNmJmYjI3YWQyMTFlYjFkNWMzNjQyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmYjY0ZTkyMDAwYTE5Y2EzODU5M2E0ZTZhMGJhYzc3MDk2ZDFlOTg2OTQ5YTNiNjI4MjZiN2NlYTRmNzNkOWU5IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_b266191cf89e4795a099bce706d96995",
+      "statement": "The subagent-driven-development review package appends advisory '## STE lint' (base vs head hard_count per changed prose file) and '## Scope qualifiers' (check_scope_qualifiers.py output) sections when prose under skills/, rules/ or agents/ changes, converting tool failures into 'unavailable' lines while still writing the package.",
+      "evidence": [
+        {
+          "resource": "repo://docs/harness-experimental/improvement-backlog.md#L25-L25",
+          "version": "repo-lines-v1:sha256:5cd505ce71a0bf77f1b913ed2ba400a275e3eee257fd042df0654b470fa6f795:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWNkNTA1Y2U3MWEwYmY3N2YxYjkxM2VkMmJhNDAwYTI3NWUzZWVlMjU3ZmQwNDJkZjA2NTRiNDcwZmE2Zjc5NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWNkNTA1Y2U3MWEwYmY3N2YxYjkxM2VkMmJhNDAwYTI3NWUzZWVlMjU3ZmQwNDJkZjA2NTRiNDcwZmE2Zjc5NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWQ5NTUxMTc0NTkxZGY5MGQ5ZGNiMmJkOWIwMDA1ZDM0MzRiZTE4NmM4ZWFhNmQ0YzQ3MDgwYjNmMDM4ZWU0NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjIsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmY4NTcyNjJjNWRjMzY4Mzg0N2EzMGM2Y2U3YjY4NTcxNjlhZjI4ZWQ1M2Y1ZTEzZjBkN2ZlY2JlMTY4MzZjYyJ9"
+        },
+        {
+          "resource": "repo://skills/subagent-driven-development/scripts/review_package.py",
+          "version": "repo-file-v1:sha256:a520a68d2c74fc4908f44fd2af834405999480ac55d104cad068e34fec3b7c83"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.2",
+    "at": "2026-10-16T04:08:21.021Z"
+  }
+}

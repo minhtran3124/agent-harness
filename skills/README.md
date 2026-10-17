@@ -106,6 +106,7 @@ from the harness checkout run `bash scripts/init-structure.sh --root <project>`,
 |---|---|---|
 | `brainstorming` | Before any new feature, component, or behavior change | `specs/<slug>/design.md` |
 | `xia2` | Before implementing anything — research what already exists (portable; zero-config, depth policy in `rules/research-depth.md`) | `specs/<slug>/research-brief.md` |
+| `onboarding` | A new team member asks for a tour of the codebase, or asks what to read before the first ticket. The tour reads the generated OpenWiki page by page and checks each cited claim against the current code | A guided tour in chat. Each page lists its `stale`, `missing`, or `unknown` claims under **verify before relying**. No file is written |
 
 ### Planning
 
@@ -168,6 +169,7 @@ intent-review              ──► (standalone — same pipeline; needs ### In
 systematic-debugging       ──► fix → compound
 compound                   ──► nothing (terminal — crystallization is end state)
 finishing-a-development-branch ──► nothing (terminal — shipped)
+onboarding                 ──► nothing (standalone — read-only guided tour; writes no file)
 ```
 
 ---

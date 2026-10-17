@@ -1,0 +1,180 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:40c3813264f323fc6085afe7906df0e530e11d09a169e574ab2078eef454f98a",
+  "claims": [
+    {
+      "id": "claim_0a466424ed7b48199a6e62bd6d8c1801",
+      "statement": "scripts/run-tests.sh does not stop at the first failure: each failing step is recorded via fail() into FAILED_STEPS, the run continues, and at the end it prints ALL GREEN or a FAILURES list (with per-case names extracted from FAIL/not ok or pytest FAILED/ERROR markers after stripping ANSI colour) and exits with the aggregate status.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/run-tests.sh#L170-L211",
+          "version": "repo-lines-v1:sha256:2629d1f9e0c74f3eddb8948e7b38914e2737065af3efe7be0f0a96afff483551:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhZWUyNGZkMTkwNjc0YzE5ZTU0YTg1NTcwMDZlNzgyOWEyZjRkMjliZDhiNGRhZjEzNWRhMTQxZWNhNmM4MmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmNjIwMzA3Y2VjMGE2ZDA0MDNiZTU3OGVjZGM2MzUxNWYxZGFkOWZjNWJhODRiNzQ0ZjhjOTg3MDAwNDg4NTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3YTJkMDUxNzY0ODcwMWUxYTQ2MTNkNjdkOWJlZjIzMWI1YzU1MGRhYmU4Njk0OGEyMjY5MjkzZDUwOGU4ZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://scripts/run-tests.sh#L7-L27",
+          "version": "repo-lines-v1:sha256:5820f711fb300668c91b08e97c89bf6c209b825add2af60d6386201d94c196c5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4Mjg4Zjc5NjEwYTNhYjRhODRlNmZmODA1OWE4MzUzYWI5Mjk2YzJiY2JmNjk1MWQ0MjkzNjZmOWY2YWIwNzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk1ZTVmMzdjN2IwZjI4N2JjZGY2ODlhYjJjZjdhMzE1ZjMwNmE3Y2Q5MzAxYjcyNGQzODJiOTE4YTM0MGJlY2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkNDIzMDY4OTRiMjdmMWUzODUxZDJlNTlkMjhhMzgxY2IzZWJiM2JkZGVlMDllMWIxM2NjMjBlOTAxZTU0YzgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_76de112ca1c644f888403fc3d1a85b14",
+      "statement": "The L1 layer runs bash -n over hooks/*.sh, scripts/*.sh, tests/lib.sh and tests/*/*.test.sh, followed by shell lints (doc-truth, skill-bash, hook repo-root source, plugin validate, allowed-tools) and python3-gated checkers (manifest, frontmatter contract, tool conformance, gate-modes smoke, slim surface, runtime-neutral sources, review-chain answer keys, STE self-test).",
+      "evidence": [
+        {
+          "resource": "repo://scripts/run-tests.sh#L29-L87",
+          "version": "repo-lines-v1:sha256:66290f11cbdbae78d6c65e19f2b53607c4d33314d4ca48a89c11c5e03c5c5d43:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1MWU1MDY0ZGUwOWIzNGY1OTNhYTNlZDYzMWEwMmQxODYwYzljZjFmYjJkMjg3Mjc0OTBhZjFiNWM1MGZhM2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU4MmM3YjI5MWUwMWUyZjc1N2IxOGI1YzJiYTkxZDkzYWMzMWUzNDU0N2I0NjcxNDBiOTI5NmI0MWU1ZjRkNDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI1MzBlMjA3ZGI0YWEzNmVmNWEyYjZjZWVjNjhmNmQyMmI1ODQzMzQ2ZDQ5NjM2NTRmYzc2ZjQ1YjNmZWZhMTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b9831eeb542d45fa8c8cace4690f0fc8",
+      "statement": "The verify-row lint only checks specs/*/SUMMARY.md and PLAN.md files changed versus the base ref from scripts/resolve-base-ref.sh (three-dot diff), intersected with files changed since grandfather cutoff commit af869a9; a failing git diff fails the step rather than being treated as no changes, and each skip names its reason.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/run-tests.sh#L89-L142",
+          "version": "repo-lines-v1:sha256:ed929414a0a13ade3a60e61d57cb7d396e38409b7795e3e0ad00526e5225fd83:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2YmI2MGJlYWJhOTdmYzFlMWIyNzk0MWIzOTA3ZmJlNjBhNDEzYzQ0NjRhZTQ3NzdhY2YwMmY5YzA5Yzk2MGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwMzQ4OGRkMzFiMTY3YjU0ZmNiNGJkNWM1YmUwZjg0OWM1MGM1N2NkZDdiZDhkNzhiOTQ2MDMxMTQ1Y2ZiY2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlmYjlkOTY0ZDM2MDAyYmVkNmQ1ZDllYTU3ZTQwZDU3M2NiNDQyYjQ3MWY4OGQ5ZmEyMGI1NzM2MzdkN2M5OGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5ecc8bbcd3e6490bbbb2482290152142",
+      "statement": "Hook and script suites (tests/hooks/*.test.sh and tests/scripts/*.test.sh) are discovered by glob and run in parallel via xargs -P with HARNESS_TEST_JOBS (default CPU count) jobs, each writing its own log and rc file that is replayed in glob order; HARNESS_SKIP_SUITES skips listed suites.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/run-tests.sh#L152-L180",
+          "version": "repo-lines-v1:sha256:f7809f33cdb4b80a6d66609c3b7177ff818d01cac4360b65418aa26a10f2eab9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1ZWIwNjIwNjBiN2ViOTljMWQwMGM3MjRkNDhlY2MwZGViYTk2Zjk4MDcxMTgxM2Q4ZjliNDczNjNiMTkwYzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMTdmYTAwNmJhOTIwODUwMGIyOTMwY2U2OWNiZGU0MzZjNjQ3YWZhOTE3Y2I3Mzk2YTliYzkxMTFhNDZkZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFlMDFjNTZhZjU4ZTc1ZGIyY2IwNDdmYzg5MTMxMTM1NWFiZDY2ZmY0ZWZhNjIyODlmNDg3OWU3OGYzMzE5NDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk0MzA5Y2Q0Zjk5Y2RkYTU1MTA4ZTRiMDRmMDJmZGU4N2Y4YzI1MzlkOWU1NDUyYTNkZTRhYzBlY2Y1ZDE3YzUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c68ecd10f0a14d68a9d3cb9e2de91e05",
+      "statement": "run-tests.sh builds the shared pytest venv once via ensure_pyenv before suites run concurrently, to avoid parallel suites racing on venv creation and pip, and best-effort installs pytest-xdist.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/run-tests.sh#L144-L150",
+          "version": "repo-lines-v1:sha256:58ac5ed5b0967c670bdcfcfac3c3971359a1957b829aefd8053373c9fb473c06:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjM1NzllNjM2OTUwMTgxNTIwMmUxYmIzMDM5ODJjN2Y1MzA0NTI3M2MyY2ZkZDAwYjk3YzU5ZDU2OGU4ZGMzMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzc2OWQyMzdjZDQyMGI5ZDM4Yjk4MWEwYTRmNjc3MDE5MGE0YTgzZGNhMWZlNTZjNGY1YmExZTJjYmMwZWY3NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDEzYmE5ZmIzODRiODg0MWM2ZTU5MDNkYTFhOGYyZjc4ZjA5ZWFmNzM0M2MwNTc2YWYzMTU3ZjUxODYwOWFmYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTFiYmRhM2FhNTg1MzE3Mzk3YmM4ODc0OTY5MDM2ZGUwMzJlZDE3ZTEyZjgzZTNhNzIxMDM3MGFkNTZhYmY1YSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_e8faa6c14a29469b9f81d4de319bc3d7",
+      "statement": "The pytest step collects every test_*.py under scripts, runtime and skills automatically (evals/ excluded because its fixtures contain intentionally failing tests), prefers the shared harness-tests-venv python, uses xdist when importable, and is skipped if no python with pytest is available.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/run-tests.sh#L182-L202",
+          "version": "repo-lines-v1:sha256:b5739bda82b5b7c12151e8f93963e3f3cdf5f20a16139176491b0a33bb79c303:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiZDRhYmIwOTc0ZjkwMmU4ODZiZWIzNjljODg3NjBiZDBmZjcyZTY4N2Y3OGY1NzQ5NDI4YTNiMjQ0ZDk1NGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBhMDkzYjgxODk5MjRjOTAwMDZlZGQ1YmNkYzY5YTAwNzU4ZDQ4YzNlMTU2NGY4NmVlZGQ0OTFiMWVmNjJhZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU4MDk0NWMxMWVhY2MxODRkZjAxYmIzNjJkN2UzYjU1MDUyNGI0ZDA0OWZhY2M0NjUxNTcyOWQzM2MxZTk0N2EifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cfd35f4087034128898aead42da10b8b",
+      "statement": "CI's test job runs on ubuntu-latest and macos-latest with fetch-depth 0 and an explicit base-ref fetch for PRs, runs the Codex advisory-alpha contract suite as its own step, and then runs scripts/run-tests.sh with HARNESS_SKIP_SUITES set to that suite.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/harness-ci.yml#L8-L55",
+          "version": "repo-lines-v1:sha256:8ead7500024eeaccf8b125447e2562fb82f8cafa86188a001e4e46e873ec9573:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5ZDgwMTU0ZWQ0MmZjNWM3NzliMTMzMTU3OGI1OGI4OWM4MDFlYWNlNzRmMjRjZDQ4ZWI0YTIzNTc5NDBhOTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3ZWUyMzc0NGJlYWExYTAzZjk5NzFiNDU5OTYwYmZmYmRlZmRjMTEyYzJhNDcyYzFjNDFlM2Q2MTI1N2I3OTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRjOWJkYTZmMzNiOGM3ZTIzZTE3OGMxNjhjN2NjMmU0M2YwNzU0MGRiMDVlNmEzM2NhNzEwMTc5Y2U4OGJhM2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3MTc4ZDVlZTk3MWUwNzU3OWQxZWE4YWE1N2YxMjU5ZDdiNmViYWE0ZGMxYzkzNjRkMzAyYWFiNmNjMWJlYzIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9af67e0460ef4d818989d0cfaeb6b5aa",
+      "statement": "tests/lib.sh new_repo creates a mktemp git repo on main with a test identity, copies hooks/lib and the named hooks into hooks/, excludes /hooks/ via .git/info/exclude, and registers the directory for cleanup by finish.",
+      "evidence": [
+        {
+          "resource": "repo://tests/lib.sh#L109-L119",
+          "version": "repo-lines-v1:sha256:a0955c5ec4d2c946e7d037165a628970b4a0acf00d75fa42c6de8fe8d1a8e918:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5NDE0YzViYTA3N2M4ZWEwZGM3YzMzMmQ5N2FmMjViODU3MzZlNzIxYjNmOGIyMTcyNzAxMWRjZWZmYzU1NWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkMGY4OGFhMGI5MjljYzg4YWY0ZTEwYmUyMDlkOWFiMjJhYWEyNzFkNzYzMjczNzNlYjU3NDkxN2VlOGMxZjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://tests/lib.sh#L30-L46",
+          "version": "repo-lines-v1:sha256:345e7ca6d21a4a836cc12c012cea38044c9d8fc674a71e6e4bcb7fa9a34709da:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkZjU0OTQ1NThhOWRiMDc0OTJmNGIwNmQwMTI1ODBlODVhNDZiYjRhMzYxOWFkM2I1MTk5YzIxNDdkMTU5NWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg3NDEzOTMzNjc0NzYxYTdlNzNjNmY0YTQwMjE4OTVlMzQ2YzM4OTg1MjA0YzM5OWY0MGYwODJmMTUwYjk5ZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk4MTAxNmJkZjVhMjY3YTBkYTEzNzc5MGI0NjBlMjFjMTU1Mzg0NzM3MWEyOTMxNTEyNjg1NGMwYmE1N2RlY2QifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4d3f93d0240743b5a20076d39672a575",
+      "statement": "run_hook and run_hook_args pipe JSON stdin into bash hooks/<hook> with CWD set to the throwaway repo and optional env assignments, capturing merged stdout+stderr in OUT and the exit code in RC; run_hook_args passes hook args before a -- separator.",
+      "evidence": [
+        {
+          "resource": "repo://tests/lib.sh#L55-L72",
+          "version": "repo-lines-v1:sha256:1429a33ba836685ba6416b8fbd2a8d3b6db7618b3353d9a75b2a1f257f2203c7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwOThiZWNiMmYzMmIyY2Y0NTcyNjFjMWQ5NzNjMTdlYWYyZDcwNzIwYWViZDQyN2UzZGZhN2M2ZjI3M2VkNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5NTdlMTYwYTdmMjUyMDA4Yjc0ODNiMjRhODk1YzZmMmU5OTRlODU1ZWNiZjI2MzNiYmViNzE5OTlmMGVlNjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEwNTJjMmVkYTU0MDcxNTk4NmMyMGZhMDE2ZjBiZDg5OTU2YjdmMjM3YTU4OTAwYTk5NDRhNDQwYzMxNThjNWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e5f9ad126e4d48c09c8701040f2a5fc8",
+      "statement": "tests/lib.sh provides pass/fail/skip/xfail case bookkeeping where xfail records a documented known bug without failing the suite, and finish exits 1 if any case failed after printing counts and removing registered temp dirs.",
+      "evidence": [
+        {
+          "resource": "repo://tests/lib.sh#L109-L119",
+          "version": "repo-lines-v1:sha256:a0955c5ec4d2c946e7d037165a628970b4a0acf00d75fa42c6de8fe8d1a8e918:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5NDE0YzViYTA3N2M4ZWEwZGM3YzMzMmQ5N2FmMjViODU3MzZlNzIxYjNmOGIyMTcyNzAxMWRjZWZmYzU1NWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkMGY4OGFhMGI5MjljYzg4YWY0ZTEwYmUyMDlkOWFiMjJhYWEyNzFkNzYzMjczNzNlYjU3NDkxN2VlOGMxZjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://tests/lib.sh#L15-L28",
+          "version": "repo-lines-v1:sha256:3d935a405f4e4e1f0029f34afd3fcc1ae9ae7b65cb067eccddbb36e9598b68ea:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwZDFiZDNmMWRhOTMzZDE1ZTFiMjI1ZmRmM2UxNjlmZDNiMzAwZmJmZGIyZTM3NDU3NDUzMjAzMzRlNjgyYzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0OWY5NWZiZTE2Mjc4YWFjNjIxZTQxNTNjMWJkMDcxNWY3MDFhMjU2ZTI0MDg0OWUzY2ZmMjcwYTIxODM1ZWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyZTVmZGIxZGI5NmY3MTA2Y2ExZDA3YWM3MzI3OTlhOTljY2FkYjllZmIyNzFlOWRhZGIxNGU4ODE3OTQ4M2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwYzJmZDcwOWU1ZGJjZjgwMzgxNTI0NWM0ODUyYzdkOWRiZGE4NGU2MGZjOWM4MGVlM2RkN2YwMTdhZTUzZjkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d789c950bb86449f993692c6a69baf44",
+      "statement": "ensure_pyenv creates or reuses ${TMPDIR:-/tmp}/harness-tests-venv with pytest and pytest-cov and creates a PYSHIM directory with a python wrapper, returning non-zero when unavailable; hook tests that need pytest guard cases with it and prepend PYSHIM to PATH.",
+      "evidence": [
+        {
+          "resource": "repo://tests/hooks/commit-gate.test.sh#L314-L335",
+          "version": "repo-lines-v1:sha256:922b3fb3fcc1392fb700e53529244c6dba5254dbdb90038c3603b8a5499d9f19:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0Y2FiZjM3MjA1MDRmYjFhMDUyNjg5ODljZjdiODEwZTA4ODc3ZjJkMDhiZmY2MzdlMjdmYWUzNDIwNWZlYmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2YzZiNzUzOTNjMmU0ZDUwZmE5MGFhZmQ0MjVmNjkzZDFhMzkzMGJmMjE1ZjdjY2FiMzc2Y2U4NGExYmYxZWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlNDU4NDcyNDQ0ODAzNmRmZDZhYTc2MDdjMDE0ZTZmOWNmNGY4NjM5NTgyODYzOGY3N2IzMmVmNjY2YjA2MWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkMmY3NDg0ZjUxMTVlMTIwN2ZiMTE2NzRlOTZhZmMwMjY4YjNhZjRkZDUyMjA5ZDAyNDQ0MzMzMDMwMWNkNWQifQ"
+        },
+        {
+          "resource": "repo://tests/lib.sh#L93-L107",
+          "version": "repo-lines-v1:sha256:1b8a2fa65b0354afa8fc1405ce77fff9b830c7f8993820c1332216cb93732a1c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmYmM3ODQxOGVjZTk1OTBkMjkwMGJlODFkMDU5N2RjMDExMmFjY2U2MjljNDYxYTEzZTQ4N2RmNjU3M2RlZWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJiNGQ1YWE3NGQ2ZWNlN2EzZjhjZmYwMGU1ZjBiOTg3MmNlMjI3YjgzN2FhMDhmNDE5ZjlmYWVmNWQwZWNkZWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgxZmM2ZmVlODY1MGMwM2Q4ZDAyMjVhZTU2NmZiYzY5OWRhOTI1OWFmZjA4ZjJiZDBiYzRjZWQ5NmIxMGU0YzQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_90c74ffa08df4621904a20980ef80a14",
+      "statement": "tests/hooks/repo-root-resolution.test.sh places hooks inside a foreign decoy git repo and runs them from a different project CWD to assert hooks act on the project rather than the repository containing the hook file.",
+      "evidence": [
+        {
+          "resource": "repo://tests/hooks/repo-root-resolution.test.sh#L1-L59",
+          "version": "repo-lines-v1:sha256:6b067a966da43a778afda163e40960609060f3ac79064d07676a05dccb077d39:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4NzVmOTI4NTQ2YWVlNzg1NWNiMWRiOWFmYzhhYjNmMWE4YTM0ZDQzZGU1YmJkNjJmNzA3NmQ3YmE5ZjM5MTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1Yzg3NzY4YjQ2Njk1ZTFlMjJkNWJlNWNmYjFlYjY5ZDA0ODIyMDAyMTkxNGE0ODI0YTAzMTVkYmE0YTU5YzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f4a3fef745874e2fa2ebccf3f67b6e0a",
+      "statement": "tests/fixtures/hook-input holds recorded Claude and Codex hook payloads (shell, write, apply_patch variants, unified exec, user prompt, malformed) used by normalize-tool-input.test.sh to assert both runtimes normalize to the same canonical contract and malformed input yields an explicit unknown status.",
+      "evidence": [
+        {
+          "resource": "repo://tests/hooks/normalize-tool-input.test.sh#L1-L60",
+          "version": "repo-lines-v1:sha256:4067ba199ab2d92e0d0db8afeabe7b02da2f9fad7e36a281e7d40e42913d1862:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOTVmYzA0YTgwYzk1MmY0OWNlNDE4ODYyN2M1M2IwZmJlOGM0NDA0MWI5NTJkNTkyYWNkMWRlOTk4NjE0NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkNmVkY2FhN2IyNTNmMDU0MDExODQwZWRiMTQ2MWE5ZDFmZWM5MjhkYmJjOTcxOTYxYjIwOGJiMzY0ZjZjMjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ5ZDc1MTRjZDk5NDU1OWZiMjQyOWE0ODEzYTE3ODIzMDVmMTgyNzVkM2UyYTc3OTc3YzcyMDFjMjhmODIwZDMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4a15b2973fe245728b6b6e06d0e5ccda",
+      "statement": "tests/fixtures/codex-install supplies user-customized AGENTS.md and config.toml for codex-install.test.sh, and tests/fixtures/codex-packaging supplies marketplace.json, plugin.json and agents.toml that scripts/probe_codex_packaging.sh requires, dying if any is missing.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/probe_codex_packaging.sh#L66-L70",
+          "version": "repo-lines-v1:sha256:1d24b6803b0fde11d1bd7ae8b7e142791122975485c8a17e2b2fa7bd64d406a2:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTQ3ZmE3OTZlMDRhY2IxNGVmOWRlYjE4OWU5OGZkMWQwYTBkYmRhMTg0MGFmM2Y1ZDkxYTFiODU2MWU4NDZiMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDExN2ZhMDA2YmE5MjA4NTAwYjI5MzBjZTY5Y2JkZTQzNmM2NDdhZmE5MTdjYjczOTZhOWJjOTExMWE0NmRkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjgzMjI2Njk5MGIxZWQxY2U0NWFjOTk4NDEzZWRiYTdiNjY0NDQ0ODllNzMwZjQ4NWJjNTdiZTNiNDlmODI1OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjBjOTc0ODU5NjI3N2Y1YjJhNWIwYTMxZTYzNGQyZDQwYjg1YWEwZDliZmNkMjIxODk2ZWNhYWM4NWExNzM0OCJ9"
+        },
+        {
+          "resource": "repo://tests/scripts/codex-install.test.sh#L1-L6",
+          "version": "repo-lines-v1:sha256:deeaf94127fac15ea948af2b94f4a4316fcda679cdbd762b5dd6f5f92d20b2c8:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWQ5NWZjMDRhODBjOTUyZjQ5Y2U0MTg4NjI3YzUzYjBmYmU4YzQ0MDQxYjk1MmQ1OTJhY2QxZGU5OTg2MTQ2NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDY4OTZhZmQxOTVjNGE4NmJlMDUxOTBlMzU5Yzc1M2RkMTNlMzk2Nzc3NmI4Yjc1YThlNjBkMTY0NzQyOWFmNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWE2MzUyMzU1YzM5ZWM0YmY0OTg3ZWFlMDY5NGYyOWZlY2Y3Yjc0OWZkMDdjOTcxNjQxNTZmZDEzZDVhODY5YiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6645d0ac912f4d6ebcd7ce273a021bc1",
+      "statement": "Script integration tests build minimal fake repos for the script under test; for example lint-doc-truth.test.sh constructs a repo with one wired hook, a CLAUDE.md hook table and settings.json, then mutates it to assert exit codes and messages.",
+      "evidence": [
+        {
+          "resource": "repo://tests/scripts/lint-doc-truth.test.sh#L10-L59",
+          "version": "repo-lines-v1:sha256:20b40e0bf03ed98cb7890c49fc2cd034cde83ca1ce02ae26e933b515e6695c6c:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwMmZmM2FkMGVmOGE1NTEyM2ViZjBkYzVhODM0ZWM4NWVhYjRkMzc5M2M1Zjg5ZTMyMjcyYzU2MWFiNTIyZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZiMGU5MWMzNGVhNDVmNjkxZTRlYjJiZjM2ZGYwYTlkZWY0MGJmMWMwZWViZTZlYzczMzI3NzY0MjFlNWY4OWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgxMmJmYzFjNjNhNzY5MGIwOGI4MzM1ZjdlZGNmYzM0ZGNlM2RmM2U5MTZmYjA3OGU2MTg3MjQ4ODc1OTdjNjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjliMjdlZWFlN2ZhMTJmZGVkYzAzOTVhZTA1MmNmOGZhZDQwMTE1YjFjYWMzZDY5NzFmMWRjOTZjYzA3MjRkMzcifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.2",
+    "at": "2026-10-16T04:08:21.021Z"
+  }
+}

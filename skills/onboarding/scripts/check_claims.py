@@ -1,0 +1,102 @@
+#!/usr/bin/env python3
+"""Check the grounded claims of one OpenWiki page.
+
+Run from the repository root. Paths are relative to the current directory.
+
+  check_claims.py <page>    <page> is relative to openwiki/, for example quickstart.md.
+
+Verifies:
+  - For each claim, each evidence item hash: repo-lines-v1 is sha256 of lines a..b joined with
+    a newline plus a trailing newline; repo-file-v1 is sha256 of the raw file bytes.
+
+Does not verify:
+  - That a claim statement is true of the cited lines. A matching hash shows only that the cited
+    source did not change since the wiki was written.
+  - The base64 context metadata of repo-lines-v1. A moved block reads as stale.
+  - Evidence in any other format (result unknown), or source outside the cited ranges.
+  - Whether the wiki is current. CI regenerates the wiki on a schedule.
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import re
+import sys
+from pathlib import Path
+
+WIKI = Path("openwiki")
+RANK = {"ok": 0, "stale": 1, "unknown": 2, "missing": 3}
+LINES_RE = re.compile(r"^(?P<path>.+)#L(?P<a>\d+)-L(?P<b>\d+)$")
+
+
+def check_evidence(item: dict) -> tuple[str, str]:
+    """Return (result, display path) for one evidence item."""
+    resource = str(item.get("resource", ""))
+    version = str(item.get("version", ""))
+    target = resource.removeprefix("repo://")
+    parts = version.split(":")
+    if not resource.startswith("repo://") or len(parts) < 3 or parts[1] != "sha256":
+        return "unknown", target
+    match = LINES_RE.match(target)
+    if parts[0] == "repo-lines-v1" and match:
+        path = Path(match["path"])
+        if not path.is_file():
+            return "missing", target
+        lines = path.read_bytes().split(b"\n")
+        if lines and lines[-1] == b"":
+            lines.pop()
+        a, b = int(match["a"]), int(match["b"])
+        if a < 1 or b < a or b > len(lines):
+            return "missing", target
+        data = b"\n".join(lines[a - 1:b]) + b"\n"
+    elif parts[0] == "repo-file-v1" and not match:
+        path = Path(target)
+        if not path.is_file():
+            return "missing", target
+        data = path.read_bytes()
+    else:
+        return "unknown", target
+    return ("ok" if hashlib.sha256(data).hexdigest() == parts[2] else "stale"), target
+
+
+def page_rows(page: str) -> tuple[int, str, list[tuple[str, str, str]]]:
+    """Return (exit code, message, rows); rows are (result, target, statement) for codes 0 and 1."""
+    if not WIKI.is_dir():
+        return 2, f"no-wiki {WIKI}/", []
+    page_path = WIKI / page
+    if not page_path.is_file():
+        return 4, f"page-missing {page_path}", []
+    claims_path = (WIKI / ".claims" / page).with_suffix(".json")
+    if not claims_path.is_file():
+        return 3, f"no-claims {claims_path}", []
+    try:
+        claims = json.loads(claims_path.read_text(encoding="utf-8"))["claims"]
+    except (ValueError, KeyError, TypeError):
+        return 3, f"no-claims {claims_path} (unparseable)", []
+    rows = []
+    for claim in claims:
+        results = [check_evidence(item) for item in claim.get("evidence") or []]
+        result, target = max(results, key=lambda r: RANK[r[0]]) if results else ("unknown", "-")
+        rows.append((result, target, claim.get("statement", "")))
+    return (0 if all(r[0] == "ok" for r in rows) else 1), "", rows
+
+
+def check_page(page: str) -> int:
+    code, message, rows = page_rows(page)
+    if message:
+        print(message)
+    for result, target, statement in rows:
+        print(f"{result} {target} {statement}")
+    return code
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("page", help="page path relative to openwiki/")
+    args = parser.parse_args()
+    return check_page(args.page)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

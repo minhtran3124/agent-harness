@@ -1,0 +1,286 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:6ed02a5c5e3935c795395dede550fbbd61936db5f345b7d9bcfa95c64b602d7b",
+  "claims": [
+    {
+      "id": "claim_f7ba2e7d686044009e2dca37f00a24cb",
+      "statement": "settings.json registers hooks/commit-gate.sh on PreToolUse matcher Bash, hooks/branch-isolation-guard.sh on PreToolUse matcher Write|Edit, and hooks/session-knowledge.sh on SessionStart.",
+      "evidence": [
+        {
+          "resource": "repo://settings.json#L1-L37",
+          "version": "repo-lines-v1:sha256:d79fea369192ea5a29122cdd72cad274ac40702ad6fae1af0ec00561c8de9d0c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_29aef4c59cc0435a9835b5b504d01430",
+      "statement": "The manifest's minimal hook profile wires only branch-isolation-guard.sh and commit-gate.sh, while standard (the default) and strict also wire session-knowledge.sh.",
+      "evidence": [
+        {
+          "resource": "repo://harness-manifest.json#L221-L226",
+          "version": "repo-lines-v1:sha256:cc1d9af38fe851739e03547f162812df426eece317a4e76793a20ba7bc7a91c1:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTdiZDA1NmQyNjUxMWRlMTFkNjliYWVjY2ViZWY5NGNlYzNhMTg4ODIyMmYxNzc3MzZmMmJjZmVlMDY0ZmY2NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODM0ZWQ3YzEwNmQxNGNmNzMyYTUzMzYyZTMzNDRjM2E1MDhlZTU3YmFkMDAzNWM5ZGUwZGZiYzBkZWEzZTUxMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjU3ZDlkY2IwZWY1MWJiODhkZGZkYjI2YmQ0YzQzYjdhYjVmMThiNTdhZDJkNTI2ZWU2ZWFkNDZiNWE5ZTI1ZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_e4cc8acaddd249e9a68f079b29b92659",
+      "statement": "The Codex adapter renderer derives hook registrations from settings.json, mapping the Write|Edit matcher to apply_patch|Edit|Write, rewriting commands to bash \"$PLUGIN_ROOT/hooks/...\" (rejecting commands outside hooks/), adding additionalContextLimit 2500 for SessionStart, and failing on unknown events or missing PreToolUse bindings.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/render_codex_adapter.py#L41-L105",
+          "version": "repo-lines-v1:sha256:b3755f46d5b07af85cd90f45e714517c0ea5d284af8914e0884957656b1c3b8d:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5NWZlOGY1NjdmZjMxMTBjNjgwNDFkY2Q0NjQ1NmQ1ZGY4MGM3ODJjOTUwOTkzNjZhNDAyOGZjMjY2OTkxNzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg1OWJiNWNkODVhOTQ2MzljNWM1MzIzZjAzZDI5NDc5MjYyYzk0Yzk4MTMxZDVkODQ1ZjExYmZmY2Q3MDkwMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiNTZhZmRlNGU2MjIzMGZhZjY1YjhlZGJjOTFjMzk5MmVkZjkxNmMzMTdmZWY3NzY1OTYxMTU4Yjg5YjAyYWMifQ"
+        },
+        {
+          "resource": "repo://scripts/test_render_codex_adapter.py#L241-L272",
+          "version": "repo-lines-v1:sha256:d1de29c0ec19d9cc16ba4ad29cab0254e5f9fc2c5e2c3170a243379e73a06db6:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmNjE0OTMyZDFiNGFiOTVlNzFlNmU5YzdiYjdmN2U2NjM5MWI1MjA2YjkxNjZhOTgzNmNkZTY1NTAyZGJhYTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlhODJlYmU5ZWQ0MDdjM2E2YmE0YjAwMzQyOTJiYWE1MmMxMWNlNWFlMjg2MTA3NDAyZGU0NzkyZWVlY2FjZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2ZTNiNzQ2Yjk2NmIxYzM4N2M5MDBkNmZiNmUwMzJjODEyODdiZTI5OWRkOTc1YTE3ZmYyMmMzODMxZjhmMmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2b89fa7c098d428194c6d26bd5b5d54e",
+      "statement": "normalize-tool-input.py always emits a fixed schema_version 1 object (runtime, event, tool_class, status, paths, command, prompt, outcome, diagnostics), detecting codex by a string turn_id and claude by a string session_id, and reports malformed JSON as status unknown with a malformed-json diagnostic.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/lib/normalize-tool-input.py#L196-L213",
+          "version": "repo-lines-v1:sha256:19da603e8e29ff4f199e1ab05c969e0c303a575a165eafd9bc6a169204c79f18:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiMzk3OTMzYTI0YTgwMWVlOTIzMzI3YmQ2OWEwMTA0OWMwNzc5MTUwMjFjZjJlYzM5ZGRhNGY4MWFhODM3ZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2MjMzYjNmZmVhMzJhMjNkZjUzMDY1MzQzNDhmMmRlZTc3NmE1YTZmNzRmYjUzMzE3NWRkYzUzOWE4ZmU0NjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MjIzMTA2ZmQ4NzQyYjcwZWEyMzNmOWRjMzU5ZjRiMDJiYmIwNjliNzI4M2VlZjc2MjQ5OTUxNmJkN2I5YzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkNDEzNDBjYzIzOWExNTljZTliNjAyMmU5ZjYzMjI4MzJlMmVhZDc2Y2FlOWU0NzU0ZDIxMGViOGZiNmQ1ZTgifQ"
+        },
+        {
+          "resource": "repo://hooks/lib/normalize-tool-input.py#L25-L45",
+          "version": "repo-lines-v1:sha256:6eea583dd23353e3402af19520d5ea95c2774ffb83f3db145deee8c5f0b9fc2c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjNmQzOTUzNDIyYzZhNDY2M2JkZjkwMDliNDAxODJkNTAyN2MwNTUzNjJkMDg1NTE5ZTQ2ZjA5MzhiNWIzYjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhZDYwMTk4ZGJlNzExMWY1MDcyMGZiNWUzYjdiZGI3Y2UzYmQyYzE1YWEwZDIxZTAxYWVhNGY4MDkzZjQwZGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk2NjgwZGY2Y2ZkMWNmMDg3MGZlNTk2NjIxYTViYmZjODc4ZmEzNDEwNzRlYjRhNzlmMzg2NDkwMDY5OWVlZmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4NGRmMTM4ZTBlMTcyNDc5ODJhNjVkNWQwOWE3OTQ2YzEwOWViNmZiM2M5NWZlMDNhM2FhNGJlNDJmZmExYWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9d2579a6c4da4c1595ccae0d9f5a3610",
+      "statement": "The normalizer classifies prompt payloads first, then Bash/exec_command or tool_name-less non-patch commands as shell, then apply_patch/Edit/Write, file_path-bearing, or tool_name-less patch payloads as edit; a patch is recognized by a *** Begin Patch line anywhere in the command so a leading newline cannot turn an edit into an empty shell command.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/lib/normalize-tool-input.py#L131-L193",
+          "version": "repo-lines-v1:sha256:541dfb67b8b81119cb8b6e7ad8b0f6660dd7cef906f0c75fd8f3e06d9867099a:eyJzZWxlY3RlZExpbmVDb3VudCI6NjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzYWNhNGIxYmE0MWU0ZGZlNmYwYjk2YmNlNWZhNjU5NzAxNTkyZmVhNDk5N2ExY2IwOGFmMWNhYjMzODc3MGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhMTFjMDU2N2QwYTVmOWU5YjEzNWY2NWNkMjUzNzJkZmQ2Mjg3NzVmN2MxZWQyNTNmOGJhZDQyZGQyZDY2NjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk1MmQ2ZWFkNTM4ZTVjMjg3NDBmOGUyZjIxY2M3NWUwMTcxZWQ0ZmEyZWJmNGQyOTBmNmRjNjJkZTQwMTRhN2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0OGQ3NDgzZDA2MGYxNzIyZTI0NTM2ODg4MzM0MjU2YjU0OTBlOGJiZTg2OTgyMDY3NmNhOWVhZjM1MDljYzkifQ"
+        },
+        {
+          "resource": "repo://hooks/lib/normalize-tool-input.py#L14-L21",
+          "version": "repo-lines-v1:sha256:be4c536ad80b32d593c458ecf786c02f14f9a8213b7206fc14df6de042449efd:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2Y2N2QxMjljZjU5MzFlMWNkNDkwZTZmOWJlOTk5NmMyYTlkMmMwZTVmMDBmYTI3ZDc0N2JjM2RhM2FlMThiNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWUxYTQxNzVjYzU5ODkwN2M5MGE2MjI2NWViNDU1ZTE5MjBjOTk3MmNjYWQyZTY3YzE4ODBhYzJmZmRhNWY2MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmM2NWQ5ZGQ3OTQyOTk0MjY0N2QxYzYwMWQ3MzA5OWRlMDc3MjZhMjM5M2VhYzc2NzE1MGJjNGVhNDFlNGIwZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTY2ODBkZjZjZmQxY2YwODcwZmU1OTY2MjFhNWJiZmM4NzhmYTM0MTA3NGViNGE3OWYzODY0OTAwNjk5ZWVmYiJ9"
+        },
+        {
+          "resource": "repo://tests/hooks/normalize-tool-input.test.sh#L75-L84",
+          "version": "repo-lines-v1:sha256:760ae280770a843d99abcedd1dfe1018bb08d3014dc962a4713036e0f6d0b4ab:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxNzM2MzdiYmNhMTQyYmIyYTAxOWNmZmQ3YTVjOTVlYzcyMTNmY2Y3ODJmN2M3MjdlNjBmZjZiOWQ3MDRkYjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhOWNjNjQ3NGU3ZDlkNzg5ODY1NGFlYmY1YmU1NDUwNWY5OTllN2FlMThlNDQxYTFlMWEyNzJiOTQ4NWNkYmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmODVlNjkzMDFhY2I1YTAwZWYxOWUzYmY0Y2NiOTFlMzM3YmI0OGE5ODA2M2NlNzNjMWZlYmI4ZjJjMWM2ZDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxZTViMmY5NjBiNzkwNzI1NGFjZTg2MTU0YjRjNTY4NzNhNTFmNjBmMzJhNTI0Y2I4ZjU2YmUzZjdiOTg0M2EifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8d744ff03fc74d2bbebbd4bb5ba0f02d",
+      "statement": "Patch paths are extracted from Add/Update/Delete File and Move to lines; missing begin/end markers, unrecognized control lines, or no paths add diagnostics, and unsafe paths (empty, NUL, Windows-absolute, outside root, repository root) are dropped with unsafe-path diagnostics, yielding status partial when valid paths remain and unknown when none do.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/lib/normalize-tool-input.py#L169-L189",
+          "version": "repo-lines-v1:sha256:f93965a1622489d11be9387bfd4f9d6a6735edea42a39869a8062a16781e5e08:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjMGIyZGJjYTA2MGQ2NjY0NmU5YzZiZjA2ZmExZWQ5NGZkY2Y0NmJmMjU5OTg2OTIyMDM3ZjI2N2Y3NTkzZDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3MmY5Njk1Yzc0NjdjNzQ3NzNjOWNlN2ZjNDI5YzVkMGQwZTQ4N2YzYzUxZDE1ZDY2NjhhM2QyNDA3MmJiOTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMyNjgxZWRmNGQ4NWVlYzEwMDNiYmE5ZjFlZjkwNmQ0NTgwNTRkNWE4MTE0ZWRiNWJmMzliMjgxMzZjYzY0NDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ0NWNjZmRmZWJlZmVmNTBlNTkzYmFmMDk2NTJjODUwZWJlYWVmOGY4ZDNjYmIzOGYzNDg3ZjJjNjNhMTkwOTAifQ"
+        },
+        {
+          "resource": "repo://hooks/lib/normalize-tool-input.py#L48-L101",
+          "version": "repo-lines-v1:sha256:57bce27de7f5d6f7bd6a189d09b7b599daf5d1fa970ee0f6d8d431b14eb63a3d:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzYzY1Nzk4MTAwMTYzMDljZmI3NjE4YmZhMmEwNWQ5YjUzZTczMzkxMGJiM2M5NzU3Y2E5ZDIzMDZkZDNmOWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmZDNhMDE1OTliOWEwNTFiNjA3ZGU4YmFiNjg1NGMyMGI5YTI2MjJhMTY4OGVkZjU1ZjQ0M2ZhNzAzNzkzY2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlMDhjOWRhNGJkMmZjNDRjZDQ2MzkyY2QwOTgwZGU0NjdmMTA5NjE0NmI4YmFhYWZmYzQyMTkzZGZkZjhiM2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMxOTU4NzUwMTk1ZDFlYTQ2OGIxMTFhYTEwNmI1MTVjMjNlZTQ3NDc4ZTA4OWNiZTBhYzgxNmZlY2M4YzRhYTkifQ"
+        },
+        {
+          "resource": "repo://tests/hooks/normalize-tool-input.test.sh#L63-L92",
+          "version": "repo-lines-v1:sha256:befcc44fa73bbee1502d3657a1f2f78ca73abecc2fc5af4e9a20dbd62477c477:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjYjQ0MDYyYTQxYzRkYmQxMzE0MTkzYTlmNjEyNWRlYzgxNzIyNzNlYzRjZjYzYjk1MzQ3NGViMzBlYmY0NGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxZTFiMjM4ODFjZTFmZjE1NTlkY2YyNzY3Yzc4MDZkMjUyZGU2M2I0NmVhMWJmY2IxMjQyMjdjZTgzNTBkOTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmZTQzZTY3N2JlOGI0ZDU4OGIwNWNmNWM4ZDU3YTMzNjhmOWQ4OGI5NzE1MjVkNzk0ZjQ5MjE2NGU4YmVjYTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE3MzBmYTE1ZTIxNTlkZGY4ODM0Y2U3YjEwOGViMGQ1MDU1Mjg1OTVhZjc0MThkZTJkODFjYzUxYzE5NDEwNjAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8dbc632876a045ca8bbf9c76b76c13bf",
+      "statement": "The normalizer reduces tool_response to bounded outcome metadata (present, exit_code, success, status) so large tool output is not passed through.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/lib/normalize-tool-input.py#L119-L129",
+          "version": "repo-lines-v1:sha256:d81f4651a1530fc7bf28b76d1a28a911ecb406fcff86c9557b4068f3a6c1848f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlNDU3MWM0ZjNhZjkzYzk0YmFkOWNjNTIwZTRjMjc3NWVkNmRmNWVlNDg1MDE2MjJlZThjZDdmZWZjMWNmODciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0ZjM0MDc5ZDhiNzYxNmYzYmZkOWY0NmQxNjQ3NDdlMzhkOGU1NDUyOWIzYTdlOTVhMzJlODNlZmRjZDkzYzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3OGUwYTIxZDdlYWI3NGNmMjBhMDMyODJjZTZlMWU1NzEwZjBhMzk4ODg5ZGE5ODVlMzUxMzU1NjVlNmRlYzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzZDQwNTM5YTBjNmEzOGMwOTE2NTZlMGQ0ZDQ4NDZjYjJiYTJhZjAyYzc1Y2UwOWE0ZGQwNDgwZTI1ODRmMDgifQ"
+        },
+        {
+          "resource": "repo://tests/hooks/normalize-tool-input.test.sh#L94-L96",
+          "version": "repo-lines-v1:sha256:ee8db2c24ea551d9b9587e71398430923fea7660e3e8015a8512d6072ce95259:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmY4NzIwMTM2MGRkNGMyZTRmMzVmNGM5YTg0YWMyMDM2ZWI4MWUyMTNhODU3NTgxZjViYmNkMGFmYzJlOWIxZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzU0OGQ4M2IyN2E2ZDU4MzY2Mzk3MWZlNzFiMmY5N2ZlNGM4NzI1MGZlODE5NmJmZDZlNjI0NGZiYWU2NGZiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWNmMzE5OTI4Y2IxOGU2YzlmZmVlMDFhYTg2ZDE4NGQ4YjRmNzgyNWI0MGM5NGViZTgzZmNlYmUyZDZlZWYzOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjVmNjc2YTFkNDQ3NGQ2YzY3YzU5ZjgxMDcyZDUzMTBjYzA4NDY3OWEzZmZjZGI2YzYwZDU0Zjg5OTVjNjc4YSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_1b9ccd6837b5404f80406bfae0cff361",
+      "statement": "branch-isolation-guard.sh denies code edits on a shared branch for every lane with no active-plan or lane exemption; shared branches come from HARNESS_SHARED_BRANCHES, defaulting to main master, and detached HEAD, non-repo, or non-shared branches exit silently.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/branch-isolation-guard.sh#L11-L21",
+          "version": "repo-lines-v1:sha256:15b229091b5d1b6bc44a9f478744eb69ffdcff157cc69455f5843b1ba990a49e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwZmE5ZDcwZmEzOWEzYzNjMmExOGM5MTI2ZjE1MTdhZWZjOWMyYzQxOTI5ZjU1Mzg3NmY4YThjZGRlODA4M2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyYzQ4NThlMjJjYzJjOTY3YjQyMTUwZmE1NTA1NjJhMmM4MzljMmNlYmNhYWI5MWNhYmRmNmY0ZGEwMjAwMjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkZDgwMjE0ZTY2NjNmNzA5NjlkZDE2NGRkYTFlNmVkMjRiMGI3M2MwZWYxNjQ5NWNhYjE1NzY3NWVjNzAyZTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU0NDQ0MjM2YmM2NDM4YjhlZTQyMDlhMmRjMzQ1YTE1NjdiODYyNDNlOThkMWEzNGI4YmU0NjA5NDc3NDQ5ZTIifQ"
+        },
+        {
+          "resource": "repo://hooks/branch-isolation-guard.sh#L123-L129",
+          "version": "repo-lines-v1:sha256:51e7b3f17c0d2cc4d2cc52615b0e110ad3ca45193cc4ca5a800b623a17b45f7d:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTg4OWQ2N2YwOTdmZmE3NTQwYWExNGRiNTRhZTVjMTRiY2RhY2JjYmRiZjM3ZTRlNWM3ODM0ZWYwY2Q2YTE4ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTdjYjBkMjJiNmEwZGNhMTRkZGM3MGJhMWNhOGI3ZTFjNDY4Y2FlOGRmODkxZDE2ZDljYmZhZTFjNjJkMTZlMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTVmNTM5ZGRmYjgzZjA4Nzk5YmE3ODg3NzljOTI0YTNjN2M0YjNjY2FjNjliNzk1ODM5NDQyZDU3NDdiYzBiZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGY5ZjAwYTczOWNlZTNkYzI2MWU2NDVmYzU4OWQ3MzA0ZDVlOTE5YTNhNTNlYjg5YjE4YmY4YmQwMTEwZmYyYiJ9"
+        },
+        {
+          "resource": "repo://tests/hooks/branch-isolation-guard.test.sh#L23-L68",
+          "version": "repo-lines-v1:sha256:a6af102485aed6ba6cf79f0a9c191aa3e01ab5c36122235fc4ed55a2e70c350a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1ODRhMjk5YTYzMzhiYWNmMzA1NThkM2UyZGQwM2M0Y2Q2M2I0OTU4MjNkOWQzNDFiYzkxMjgzM2NjYzFjOGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3MTcxYzE4YjA1MTFmZWQ2YWU3MjljMjliYTlhY2MxNTViOWQ3NjY5ZmRhN2Y1ZGFhYmY0NDU4NjFhY2I3NWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYxMTRhZDQ5YmZhMDQzYzM3ZjExNjRiYmU1NjA0NGVjNzllMDdmMDY5MmY2MzFlMzM1ZTBiZTNjODMxNGJiNmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyMjY3NmY2NTQyNzc4NjNhODYyM2FjOTU3Y2YzNjQ4YzA1YTZhMzNhN2I2MDg3YTA5NWU3NDc1YTM4ZDFiMGIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5e5dd00b30634afba1e8834a26ca0d21",
+      "statement": "For an absolute edit path the guard re-homes its judging root to the checkout (or git dir via git-common-dir) that owns the nearest existing directory, so edits in a linked worktree on a task branch are allowed from a session launched on main while edits to the main checkout or its .git from a task worktree are denied.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/branch-isolation-guard.sh#L27-L58",
+          "version": "repo-lines-v1:sha256:59951baaee21c1aadc99cf406d5f7e17459483613098ebc745e15f050cddb130:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzNjk0YzZiODdjOGVkNGUyMDEzODgwOTU3MzkxZWM4MTUwZWQxYWVmMDk2NGU5NWQ1NGY4OTY1ZTI1NDRkMzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjM2IzZjIxYmU1Mjk4OWI3Yjk3ZWYwYmQ1ZDg0NmEyODgyNWE0NDZkMWY1ODU0M2ZjZWVlMTYyNDM5Yzc3ZjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI4NzMyMjE3NzJmMjMyZmQ0Zjk2YTUyMTBmODQwYWZlMDczM2Y2NWNjOTE5MTBiZTFkY2E3N2JjM2ZkNWY2MjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzMDljN2U1ZTViZTcyZmJkNDFiNjQyNzYwMDgwMzcyODg2Mjc0OGFjZjc1YmQzYWMwMmI3YjcwZDBlZjRjYTMifQ"
+        },
+        {
+          "resource": "repo://tests/hooks/branch-isolation-guard.test.sh#L134-L162",
+          "version": "repo-lines-v1:sha256:b18fb7cddcd63a843821b6ef34880e844db370bcfee7368dfc92ec6846f5763c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0NGQxMTZlYTcyN2I5NGIwNTNlYTA2MzczNjdmMjkxNDhhNzk4MjAzYTI5ZmFmYmNjZWM4YjM2MmE0ZjE5MzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5ZGZhZDY4ZWE2MmJlMzc3YTZhZmUwNTY3ZDYyNzY0ZDNlZjA3NTZhYWZkMzNjMjJmMGZhZDY0YzEyNDBmOTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwODJiN2EzNjYxODQ1YzI3YTA3NGFiZjhkZGExMjg5ZTE4OTUzNmY5NWY1ZDg2ZTQwMjRjNTYyOGJkZDMzNjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyMDU1NmJmYjZhMTliYzJmYWMzODk0ZTg1OTViMWNkYmUyM2U3MmZkYjAxZThmZGYxNmQ1MmQzY2IzZmFjOWMifQ"
+        },
+        {
+          "resource": "repo://tests/hooks/branch-isolation-guard.test.sh#L175-L189",
+          "version": "repo-lines-v1:sha256:8ce221a2c40ddd4ddb23a4e4119cbd4b396dd1519493f45e653f31f2827e675a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiNjA4MDY2OWZiZWI2OGZkM2ExOGRkYjRlMWE0OWZmMjUyNmQxOWZiZTgxY2E4MzBmMDdlODM1NmNhZWRkYWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5ZGZhZDY4ZWE2MmJlMzc3YTZhZmUwNTY3ZDYyNzY0ZDNlZjA3NTZhYWZkMzNjMjJmMGZhZDY0YzEyNDBmOTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU4MDBiNDViZTBmZGU2ZWQ3YWNmNDczMmI4MjUyMDA1NGE1YzJiZTNmZmUzNDkzOTQ4MTUyOTYwZmMyOWM2NzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI2MzhkY2EzZmJjNWQ4MWNhOTA0NTI0MWVjYWE4N2I0Yjg3NmE3YWQ2NjlhMWEyZDUwZGRjMTBhNmYxZjg4NGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b44c903d8f2b4455971044ce936cc3f6",
+      "statement": "When the owning checkout is not shared, the guard climbs enclosing checkouts of different repositories and judges by the first one on a shared branch, skipping same-repository enclosing checkouts and requiring strict-ancestor steps so nested repos cannot whitelist a main checkout and gitfile loops terminate; paths containing a newline are not re-homed.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/branch-isolation-guard.sh#L45-L75",
+          "version": "repo-lines-v1:sha256:bd5c647426b436af09ef30a4fed57032e52ff267b562abafc89e7c1f1b4f5d4a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5YzUzNzdmOTA5YmI1NDkyMDBkMTM5NDMyODRkMmM4OGEwZjUxMmRhZTRkNzVjN2EzNWQxZmVhMmJmMjg4MTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0YTJiZWNmZjhhZmIzNGRiMjYwZGFiYzk2OTE1ZmZlY2ZkZTg0ODkyOTU0MWM2MTkzZGU2ZDE2NGMyMWU4ZGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA2MDcxMTYwMGM2MDhkOTdiNmQ1YTA0ZjcxMDAwZGQ2MWRlMDMwZDczZjY2NDNiMTNhODIzNTU4N2E4ZGQyZmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhlNDU0NDZkNjA3OTkyOWE1ZDZhMjI2Yzg1ZGNiMTFjMjVmZGY4NGZhNjYyMjNlM2E5ZGY0M2JiNGQ0ZmRhMDkifQ"
+        },
+        {
+          "resource": "repo://tests/hooks/branch-isolation-guard.test.sh#L152-L157",
+          "version": "repo-lines-v1:sha256:48b009e2b5116e3c69fc2a82838dba20b2071fbf271b60ce44e7900947932ea2:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDJhMWZhZmNkYjJlNDQxNjhkMGY3ZTI5OTA0MzdkZWZjYTkwN2FmM2U1NGFlMWI0YWNlNWYzNzkzM2M0MjgyNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjlkZmFkNjhlYTYyYmUzNzdhNmFmZTA1NjdkNjI3NjRkM2VmMDc1NmFhZmQzM2MyMmYwZmFkNjRjMTI0MGY5NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzA5N2I2NTc2MjBiOTBjYWZmNGYwZTY3ZTJjZGE3NDBhMGFiMmQyMTc3ZGI4Nzk4MjFjOGJjYTZjYzMzOWQ5MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTlkYWE3NjU0YTAyMjYyZDgxODY2MzNlZjU0ODZkMzQ1ZDdkMGY0OGQ4MTViZGIyZThmYzgyNzc4NTcxYmJjNCJ9"
+        },
+        {
+          "resource": "repo://tests/hooks/branch-isolation-guard.test.sh#L191-L213",
+          "version": "repo-lines-v1:sha256:f4734ca93ac22a9d2790829123707f6f247d7ab950c583bd375d96c0bee822c5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyNmI5MWVkMTBlYjdhN2ZhYWEwZTU3MjhjN2RlNzM5NTc3NDBlNmZjNTNmMjE5YzkwNTQzNmRhOTBiNmMxMTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3MTcxYzE4YjA1MTFmZWQ2YWU3MjljMjliYTlhY2MxNTViOWQ3NjY5ZmRhN2Y1ZGFhYmY0NDU4NjFhY2I3NWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyNzE5MmI4ZGVhNzNmOTY5N2MzMDY4YTRiYzg1MWZmYzYxMzc5ZDlhMmVjNjdhN2E0MzQ0ZmI2ZWEyYWEwYzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3N2VmZjAwMTQyZjRiZWI1NDc0ZTE0YjkyYzNmZTIxZGNkMjFiMGYzMjUxZjdjM2ZjMGE0NDA2YWQxMmRmYWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_650f2dcf6f844b0b8c0d8228449f2574",
+      "statement": "The guard has a bash/jq fast path for Claude Write/Edit payloads with a plain file_path (no prompt key, PreToolUse event, no surrounding whitespace/NUL/newline) that mirrors the normalizer's _safe_relative rules with symlink-resolved comparison; anything it cannot settle, and all other payloads such as Codex apply_patch, go to the Python normalizer, and a missing python3/normalizer yields status unknown (normalizer-unavailable).",
+      "evidence": [
+        {
+          "resource": "repo://hooks/branch-isolation-guard.sh#L82-L121",
+          "version": "repo-lines-v1:sha256:ce06b23364aec5e7ef7e0fa493a8baef020ed3233e8c28ddef523744b30183a5:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhMTI0YzA0OGUxNWE0OTUzYTM0NjllYzJlYjhjZTIzMTA2MDBiNjA2ZmJlMDI1MTg0MDE4MmY2ODE0ZTQzYWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkNjhiZTEyNjg4MzU2ZWY5MTE0OTY1MjY3ZDA2NzJkYTA0YjNhYjgwNGZiNTIxMzk3ZjhiNmY5YWY0NTU1NjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ1NzQ2NGJmNTE2ODFiYzM4ZGI4ZDRmOTk5ZDYyMjM3MjliNzViYWJiNjBmN2Y0YjM1ZDk4YTk1ZTEzMDQyNGEifQ"
+        },
+        {
+          "resource": "repo://tests/hooks/branch-isolation-guard.test.sh#L215-L266",
+          "version": "repo-lines-v1:sha256:0b30014951438ae03b2aae431205e450fd9919946541884680b5bf32702b3127:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxYThkMjg4MTNhZDU0YWEzZGY0Yjk4NmU3MTg1NDRkNGU2YzQyNDg4NmRkODE2YTdhNDg3ODk1ODQyMDY0NTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4YTYyYzAyNTRlMTdkYTY3YzNiMTU0NTA3MDY3MmU0ODgwZjBmNmNlMWU3OGM2OGRmNGEyMzg5YTI4YmNiZTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUyMTZiOGI5M2E3ZDE2YWNhNGI5YjMxMTdkNzZiZGQ4MWU4NWIzNzQxYzAzNjhjN2QyMTZiODNjMGY3YTY1YzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyMjE0NzViNTQxMjcyNTQzYjhkNGExMWY1NDdjNzhkMTFjOWQ1MjMwZDYzZTg5M2RhZDZkZTVjMDcyY2JiZWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_858f25e47a314bdcaa45c76511a0e956",
+      "statement": "On a shared branch, a non-empty BRANCH_ISOLATION_REASON allows the write even for unclassifiable payloads, appends a timestamped entry to docs/harness-experimental/break-glass-log.md in the launch repository (or the judged root if the launch dir is not a repo), and prints a [BRANCH-ISOLATION] note to stderr.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/branch-isolation-guard.sh#L131-L141",
+          "version": "repo-lines-v1:sha256:1b52bf5085acdea213cf14906f856fd0d3917a4ed72eb1dc32dac590041327b9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2ZjdiYmU2N2U0YjJiN2RiMzcwM2Y3Yjk1ZjE3Y2IzNWZiMmViOThhNTYyZWNjNmEyODk4YjY4MmNhMjU5YzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUwMTBlYWIwMGJlOTA5NDdlZmM2Y2FiMzIyNTRkY2RhZDE2NGUxMWE3NWViMmNiNjBkYTlmMmEzNWExNjA0YzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1YTM2NTgxMzNkMGQzY2U5N2RiY2RkMTVlZjM0NWYzMDY3OGJhYzFhNWEwNjY0NTA0MzE3NjJiMTlhZTgwZDIifQ"
+        },
+        {
+          "resource": "repo://hooks/branch-isolation-guard.sh#L76-L78",
+          "version": "repo-lines-v1:sha256:8e45446d6079929a5d6a226c85dcb11c25fdf84fa66223e3a9df43bb4d4fda09:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTM0YTVjMjllMTM0NWE1OWE5ZmVhZmJlYTQ1YjJiMzlhNmU3MDZiZmRiOGMxNTRhOTY5ZjRlYmU4ZWI5ZjNmOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzExM2Y3ZWFmYTY3NWU4NWFiNGVlZGI1MmFmYjE0OGM5ODg5MDU4ZTUzMDk1ZGJkNDIzZjA0Yjk5OGM1ZDQxOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGUxY2FkZjg1MmQ1MDUwNDgxMWVlMDUyNDZhY2Q3ZTBlOWI2N2M1ZjNhYWUzZTY0ZGU5NDNkNTI1Y2ZlMzhkMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmQ2OGJlMTI2ODgzNTZlZjkxMTQ5NjUyNjdkMDY3MmRhMDRiM2FiODA0ZmI1MjEzOTdmOGI2ZjlhZjQ1NTU2OSJ9"
+        },
+        {
+          "resource": "repo://tests/hooks/branch-isolation-guard.test.sh#L121-L125",
+          "version": "repo-lines-v1:sha256:54af6594c98f14a62931ce051756c02a41168dd4658849411a67b4f6fffad42d:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTgzYzllN2FkNjVhODFhOTY5ZDBiMjE4NWMyMWFhMWNlZGU3NjY3OWE1MjFjYjVkNTJiZDQwMDc5NTNhMTI4NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjc0NmM3MGVkOWQxYjY0YzdmMWYyYzhkOTE2Y2Y2N2Y3Yjc0Y2JjZWE0MDllOWVmMTQ0ZjI2ZThmNTFlN2ZlZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjBkZmY4OGExNzJiODE0M2NkMzFmY2Q4NWJjMWM1ODE1ZDcwODY2NmMwNzFjOTU1NGI3NTRjNDIyNTVlMDc1OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWI5Y2E4MDEyNTI0MTg0ZDI1MTBmNGY4ZDJiYjk2ZDU5YjMxNzYyMTg5ZjdiMmRhMTVkNzNmYmNiZDliY2ZjZiJ9"
+        },
+        {
+          "resource": "repo://tests/hooks/branch-isolation-guard.test.sh#L164-L168",
+          "version": "repo-lines-v1:sha256:0925524af7d6e39e4d77b21f22e02b85a701b3cfdd982f252cf154284d75c3eb:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWU4NzE5NWI3ZGNjZDNkMmY4YjU4ZmU0ZmUwOWEzMmMxYjI3NTVlMjE5MmQ4NDE4YjA4NWFhOWNjMGUwYmFjZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWM5ZjQyMDk1ZjUyYjdhM2M5OGM5YjY1YTY1OGYzOTZjM2M0ZTRkMDgwNzNlMjc2MmMyNDdmNGM3YjhhMzIyZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTUzZmZlYjVmMmM1ZjM4YjBmMWNhYTc1YWQzODEwYmMzNTRjNTE4NGFhYzI3MjE5OGY1ZWE0ZjEyNmE2ZTQ1MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjc0MDA0MDM2ZTQ4NmRkN2JlYWExNWU3MTFhMzBjMjY3MTY4NDk5N2Q2MzgzZDJmM2FiYzRkNWE3YzRiMzM5NiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_9334a0815f604aa589190265d4898800",
+      "statement": "On a shared branch the guard fails closed with a 'could not safely classify' deny whenever status is not known or tool_class is not edit, including partial, malformed, and shell-classified payloads, while partial payloads remain allowed on a task branch.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/branch-isolation-guard.sh#L143-L161",
+          "version": "repo-lines-v1:sha256:ab8c92e653b073556858535e35c337eba938019477e251777d249137eff200f3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjZGU0OTg0YmU3ZDM0OGM0YmY5ZjY3OTRiNzYwMjkyZjY3ODkyZjQ2Y2YzNmI5MGYxMmM1NmVlNmNiN2Y4YWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdkMmQxYjIwZDNjYjJiODMxMjViOWJjN2MyM2NkM2QzZWVjODk0ZWRiMGI2MWY2NjkyNDMxMGY4MDY0YjU0NTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImViMTNjZDJhNjRkOTVhN2IxNmI1MzEzN2Y3ZDkzNWEyNGY0Y2RhZGQ3YTcxNjgwNWM5YTY3NzY3MmU2ZGI1MzMifQ"
+        },
+        {
+          "resource": "repo://tests/hooks/branch-isolation-guard.test.sh#L88-L119",
+          "version": "repo-lines-v1:sha256:ff2d8936602e91a4a336ff530616f88e9494c76fbc961b17f955ddf4c54a790a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxMmUxZWVkNjUzMDE3ZWI3Yjc2Y2U0YWMzNDdlMjgxN2Y0ZWExMTk4MjU4ZjI4YTQxMGIwNTA2MThiYjBlNDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3MTcxYzE4YjA1MTFmZWQ2YWU3MjljMjliYTlhY2MxNTViOWQ3NjY5ZmRhN2Y1ZGFhYmY0NDU4NjFhY2I3NWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc2NzBmNWExOGU3YWJiYTZjMDFlMDNiYjhhZjBjMmQ3NDEzOTI0MWY2NzFlY2RkYThiMWViMmJjZjQ0MDBjZTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRmZWE2N2RiNTEwMjQxNGVlMDNkOGU5ZjEyNDY1ZWNjNmRlY2Q0OTIwOTA0MjAwNTNlNTRiMDVhNDdmZGM4NjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0a391ec91a3c4467a3c713c51b05c901",
+      "statement": "On a shared branch an edit is allowed only when every touched path is under specs/ (including ticket-prefixed spec folders), so mixed specs/code patches, including move and delete targets, are denied; denials are emitted as PreToolUse permissionDecision deny JSON with exit code 0.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/branch-isolation-guard.sh#L163-L178",
+          "version": "repo-lines-v1:sha256:343ab312acec57e1ebb228396ebc27bb1642d2d719c5f1d050b2ad994f84ea77:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmNTg3NmIyYWJiY2NkZWY5OWJkYjQ1NjU2MWVkZjE0NzliZDIzYzM4MDhkOTMxMTUyMjI4OWY3ZGI5M2VmYzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1MGE1ZjliYjI2N2VlYzAwMTdiZDQ1MDhlNTE4MWM0OGE1NDQzMjNhOTJkODFjNmMwODEwMjdlZmY3MTU5ZTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdkMmQxYjIwZDNjYjJiODMxMjViOWJjN2MyM2NkM2QzZWVjODk0ZWRiMGI2MWY2NjkyNDMxMGY4MDY0YjU0NTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://tests/hooks/branch-isolation-guard.test.sh#L70-L86",
+          "version": "repo-lines-v1:sha256:2c9c86654c0f70f9960726254a63113037f2fe5773790bcee82104e90958e044:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmYWE2Y2RhZTczMDE4ZjU5NTNhOTM1OGE3ZDZiNmUyZTZlMjUzZTJjMDM1NDNjMmZkNmQyNjVhMDExZWU2MTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxZjM5NThhMmU4YTdhZmJjNjI2MTc0NGYyZDk5MDJlMTNhYTY3ZjA3MWNkNjUzYTc0NzFhM2I5ZGUyZjY2MDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0MzkxMDAzOTAwYjM5MWMyMGE3N2E2NGEwMzFhNzAzMzBhZDA0ODNiMDVlNjBlMDlhOTYwNjMyZDBhNWY1OTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiODBhMWZmYjllOWJjMWVhYzFhYjI2ZDEzOGEwZWMyOWRjNzJmNTc5Y2E5MWQyZDZmNmRjMmJlY2ZjNDU0MWEifQ"
+        },
+        {
+          "resource": "repo://tests/hooks/spec-prefix-compat.test.sh#L13-L24",
+          "version": "repo-lines-v1:sha256:a7b1161d94c53bd9d23c7e4016ec73532a5fdfdf1e534678bbb82a1a8b0caf08:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwOTUxYmE1OWYxYTJiNmMzZmNiODYyMjk5MmQ4YTU0MjgyYTIzYTdlYzQ3NjAzZjlkMDU2ZmZhOTJjYWYxMDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5ZGZhZDY4ZWE2MmJlMzc3YTZhZmUwNTY3ZDYyNzY0ZDNlZjA3NTZhYWZkMzNjMjJmMGZhZDY0YzEyNDBmOTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhiNzQwN2MzMTdhZmVmMmUyZjM2YTZhZTRmZTJlZDMyNTZjMjhiOWE5YmQ2ODg5MzAxMmE4MTYwNDBhYTAwYTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJlOTY0M2QyMzM4ZjFmYWNmNjFlMjFkNDBlYTQ1MDExOGQ4YjQxMDg2Y2ExYzU4NjAyYzU5NWNkZmQ0YjQ0NjMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_353a346f1ac94a9786c4dce286580081",
+      "statement": "session-knowledge.sh never blocks: it disables errexit/nounset/pipefail, discards stderr, exits 0 silently when no root can be resolved, python3 is missing, or all sources are empty.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/session-knowledge.sh#L127-L150",
+          "version": "repo-lines-v1:sha256:c6036278e59ffb19f8ef7993371f2750f23a6433afdb73ea6c5cbae5b1f3c79c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3MDg3M2VhMWNkMmQzZWUwMWNkZjk4ZmZlY2QxYTk3OTYwZGE0NDRmOTI0OWEzOWZkOWQxMzg4M2YxODcxNzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4ZDNiOWU4ODBhNzc5NzU0OTNkYzdlMzU5MTQ0YzAyOTVhNGY2OTRjZmUwYWY0ZjkyOGMyMjMwN2JjNWMzMjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ1MmU3NTUwMjAxNjI1OWEzNWVkMjFkNzRiMGViZWQ2MWU4YmFhMWY5ZDgxNThlNjY4NzM4OGExMWVmZmI3MjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://hooks/session-knowledge.sh#L14-L40",
+          "version": "repo-lines-v1:sha256:45dfaaf6547a775d34fef17094203130bd9a01488a42da3102537cc50566290e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIxYzg0N2MzNzA5ZTZkOGUyOWI4MzA5MDRhZDg5MmVmOGZkZGM3YTkyMGRlMTQ2OTM0YmQ2NWY0MWViMTk3ZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE0ZTE2Y2YyNThiZGFhOWFiYzFlZjk1MDFmZmVhYTVkMTY0ZDI5Y2ZmODlhM2Y5YmQzZWNiOTMzYjAzY2ZlNTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVlMzQyZTU4MDgxM2IxMThkZWJiNTI5NWFhNTA0OWUzYjRkYjk0N2U4MGY4NDRhODEyNTMyZWQ1ZWU1ZWI1ODkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_26322e9c12b74a74b16f9a72d6882904",
+      "statement": "session-knowledge.sh resolves the repository root from CLAUDE_PROJECT_DIR or git rev-parse from the current directory, never from the hook's own directory, so the deployed .claude/hooks/ copy loads docs/solutions from the project root.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/session-knowledge.sh#L19-L32",
+          "version": "repo-lines-v1:sha256:dc4efbedd5e4be60f935ec747943901f211484555de7a8c0a1fc92314c82146d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlZmZlZjFhZGNhNTgyZjZkMGU3YzJlZDQ2NTAwMTFjZWVmYWJlZjBjYjkxMTRlYzNlMDMyNThkOWFmYTUyMGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzOWNkZjY1Y2M1NTBlNjk2NDU2ZDkxMDgwYmY1NjBjOWNiMTI4NTM2MWVlNDUyYTUzZDc1NGM1MzIwNzlkNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkYzM5ZTVjNjM1NzcxOTBhYmRmOTZiZjkyN2QxMDYxY2Y3NzA1OGFkYTA4YmY4NjQ1NjIyZGU4NmNjM2Q2OWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ2MGRhZjNjOGRlZWZlYmFhMTliNzc3YjUzYTc0MWJhNGRmZmZlMmE3ODkxNGExYjAzMGU5NTMyNDA2MDYzMWMifQ"
+        },
+        {
+          "resource": "repo://tests/hooks/session-knowledge.test.sh#L196-L207",
+          "version": "repo-lines-v1:sha256:f6a2e133894335d70385fa4889472cbbea520a9bedf3161f1de249999ccc35c3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2NzMwNzU4NmUyMWE0YjI1YjA1MTRiNmQ5Y2ZmMDc1NjNjZTA0MWY5MWE3ZTE3ZTMyOTAyNTQ3ZTA4MTJkNWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzN2M5NTVlYmY4YTY2OGNjOWQxYzM3ZjRkMGViNGYxOWY2YjQyNGUyNWJkNmVlYWYwODk3Nzc4MGI3YzY4MzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMwMzQzNWU3ZTA1MjM3YmU2YTM5N2IzZGFiZDBhNmQ4MDNkNGM0ODc2NjM4Yzc4N2RkZmQxYzE0MmE4NDBhNjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdkOWFkYTA2NjhkYzdmZjUzODdjOGNhMWM2YWVhMTM1YzZjMzM4NTNiMTA1NGY3ZDk3YTM1ODJmNjJkMTM4ZmMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ce1b45a377144163b206265d3663135d",
+      "statement": "The knowledge-base section injects only a 'docs/solutions/INDEX.md — N entries' pointer counting table data rows (never the INDEX body), treats the index as empty for a boundary-anchored '0 total entries', no data rows, or only placeholder rows, and includes critical-patterns.md in full up to 40 lines or only its heading lines beyond that.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/session-knowledge.sh#L42-L88",
+          "version": "repo-lines-v1:sha256:bebf94d863cdf64f90ad92af7ce897ea0ee6eda0f4f029f0dd176c6da63eccc8:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3MDg3M2VhMWNkMmQzZWUwMWNkZjk4ZmZlY2QxYTk3OTYwZGE0NDRmOTI0OWEzOWZkOWQxMzg4M2YxODcxNzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MGQxN2Q0OWI4NjEwNzdjYjc3MTQ3Yjc1MTYwODA3OGNjNWRiNzQ1NzI1MTE5MTg4YTZlOWExZDExOGVjNzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMyODVmYzNiZGU4YmQxMjQ1MDkxN2Q4MmZkYjRjOWRkYTdjZGQ3YzI1MmE5M2U3MWIzMzRmMTcwMWYwZDBlYjIifQ"
+        },
+        {
+          "resource": "repo://tests/hooks/session-knowledge.test.sh#L48-L194",
+          "version": "repo-lines-v1:sha256:5abbae2b96617145a0bdaef38083c082cd345bdbea4f125b1ae7e4719cb800d2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQ3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiMGFkOWZjZjdkNjdjMGFmYWNiNTM1ZGE3ZDBkYWEwZWQyOWJiYTM1M2RkNDFjMzQ1ZTMyZGViMWUzZDYwZWU0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIzNzY5ZDIzN2NkNDIwYjlkMzhiOTgxYTBhNGY2NzcwMTkwYTRhODNkY2ExZmU1NmM0ZjViYTFlMmNiYzBlZjc2IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0Y2MxMmUwM2RmMDllMWE4OTQwYzcwODBiNTIzZmU3NjQxODA3ZTFiNzZlNDc5NTcwYTdjNDRjZWI5YjYyMjFjIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkNTNkZmVjOTRiMzFiYTBjYTdhY2IwMzZhOTM1N2Q2ZGQ0MzNmYWQyOGZkMDMzNzQ5M2U1NWQ0NTEyMDJmN2Q1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_a7024c39c84d414486c88189ba06b488",
+      "statement": "session-knowledge.sh adds up to 5 active runs from runtime/run_state.py list --active --json and the cached runtime diagnosis from runtime_mode.py context (probing runtime/ then .claude/runtime/), without ever running the doctor, joining non-empty sections with --- into SessionStart additionalContext JSON encoded by python3.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/session-knowledge.sh#L90-L149",
+          "version": "repo-lines-v1:sha256:116160ff07b44d73793c2b158b5d860a451aae09b19a93a0452b9673e1bbe67a:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3MDg3M2VhMWNkMmQzZWUwMWNkZjk4ZmZlY2QxYTk3OTYwZGE0NDRmOTI0OWEzOWZkOWQxMzg4M2YxODcxNzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MzBjYjQ1MmM5NTJmOTJkMmZiNGY0MWQ4YWFkZmI0M2UyNGJiMDRiMzhlYTQzOGUwMDQxOGVmNGU4ZTUzNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkxNGIyNjE1NTkxMjE1ZTQ4ZTM1MzM1YWQ1NTA4ZTg2MzdiYmU2NGI5OWU0MmExZjc3MTExNTAzODUzMjIzZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI4ZDNiOWU4ODBhNzc5NzU0OTNkYzdlMzU5MTQ0YzAyOTVhNGY2OTRjZmUwYWY0ZjkyOGMyMjMwN2JjNWMzMjAifQ"
+        },
+        {
+          "resource": "repo://tests/hooks/session-knowledge.test.sh#L209-L296",
+          "version": "repo-lines-v1:sha256:4cac514cd960d6f8d1a7e8e96d5b120814ab702cc0e01699a806449c7b986224:eyJzZWxlY3RlZExpbmVDb3VudCI6ODgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5ZjFjMTg0ODI0MmI3ZTI5MjNjMGE3NWVjNGRiNzdmMWEzMWExYWZkOTVjYWMzNDVkMjMzYWI1ZWYyMTE2MDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4ZTVhYTY0NDEyNzQwM2I0MDUzNGI4NDEwMmY4MTY4ZmVjZTU4YzViNjgxNDYyODllMjczODliZmYyNTI0OTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNiODk3M2VlYTNiMTY3OWU0ZTI1ZTE2NDBjYWNmYWQwMDhhOThiZGViMzNmMDdjYzFjMjVmY2U2ZDM2MWQyOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFhYzRjNjRjZDc0ODAyZDBiNDc2NTEyZjJiYzQ4YTA0NzZhMDU2ZDA4MWZlNzI5YmUyNmJmNjNmZDI5ZDFmMDgifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.2",
+    "at": "2026-10-16T04:08:21.021Z"
+  }
+}
