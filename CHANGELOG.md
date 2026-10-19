@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.37.0] — 2026-10-19
+
+- docs: sync core and skill docs with current code (#290–#331) (PR #335)
+
 ## [2.36.0] — 2026-10-19
 
 - feat(harness): per-agent and per-skill model and effort config (PR #332)
