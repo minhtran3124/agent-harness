@@ -1,0 +1,230 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:6207d99aedb4d3e876af0ae2d90235793c10bee58063f8d6bce39e5e05eac0ce",
+  "claims": [
+    {
+      "id": "claim_3a4978c1a6d1411eac315afd9a6cd67f",
+      "statement": "post-merge-maintenance runs on pull_request_target closed events filtered to the base-branch allowlist [main, loop, simplify], and its job runs only for merged PRs whose head ref does not start with chore/bookkeeping- (loop guard).",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/post-merge-maintenance.yml#L11-L46",
+          "version": "repo-lines-v1:sha256:84e486a77d4130c38203fb302172d6c128919773b960b0a46bc4d040c1019ce7:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5NmRjNDgxNDlmNWE4M2QxZWQ2ZGJiMzliYmM3ZTJiOTAyYWEzZDM0ZDZiZDVhZTRiMjkxYjY4ZGYwY2E3OWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyMTdkYzZhMjlhOGNjZWQ5OWUzZWJkYzM1YmE2MmY1ZGUwYTFhNTRlZjZmYTMyOWE0ZGNjMGQ0MThiYzVmOWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkNjBkZTYwNDVlMjBlODU4NzcwZTQ3N2Q0NjgzMDk3NGVhZTk4YWNkMzNjYmE4NjBhZjE2MThjYTQyOGVkNjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIxYjgyMTNmNzkxOTQzMWI5ODk0OWYwZjI3NTA5ZWZlODZkOTA5YzUyNzZhYzhkMmU5MDI0YTgxOWY1NzdjNDYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_82a1ba868af146849e63bc7c1ebfbcca",
+      "statement": "Because pull_request_target loads the workflow definition and its branches allowlist from the default branch (main), edits to the allowlist on an integration branch have no effect until synced to main; a PR merged into an unlisted branch fires nothing silently.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/post-merge-maintenance.yml#L14-L34",
+          "version": "repo-lines-v1:sha256:75b020815ccb1e619addbee5ba65364228d6336e1ce9a3c7dce18bce55b99c24:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzMGI0MzZhZmY5ZTljYmZhMjE1N2IxYTUzOGM2MTJkZDA1M2YzOWRkMTk1MDAzZGQ1MDAxM2YwMzIzZGQ5MjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkYzY2MWRhYzhjNWU3YTk5ODYwNjYwNDI0ZGQyNjIyYzk3N2M3ZjQwNTkyYTUxNDJkMDY2YjU4OGY2YWU0ZTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZlZmFkMzkyOTIzMmY3ZjQ5NzNlYzMwZDJiMmJkZGIyNmQ4NjEyZmFiYTg2ZjU5M2FhNDZiNzFhNjE5OWJhMTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5NDYyZDVmMmMyMDdlNmI0ZjgyODQzZDkxNTRmZjBiYmFkMDM0MzkyNGIyYzNjNGJhYmQ5OWI4N2NjZDRiODIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9f1bc15815c74e8a9da189db2f2e5a04",
+      "statement": "The workflow checks out only the trusted base ref (never the PR head) and passes PR-controlled values such as the title via env vars rather than interpolating them into run scripts, to avoid expression injection while holding a write token.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/post-merge-maintenance.yml#L48-L64",
+          "version": "repo-lines-v1:sha256:e3c83e664c53687a79329cf19cbe3a493ab40489b2a7a5c6270f65f788769bf1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiNmY5ZTZjNWQ4ZTVmZmE3MmNmMGIwNGM5MWYxYjE0Nzc1OWM0ZWI0NDY0MzM2MzFhNDkwNzFjMmUzZWI5OWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzOWQ5NjMwMmNiZWY5MjJmMTVlN2M4OTkwMWQ1ZGI2MGU0MmZjOWM5NzdjYzlhYzQzYTdkODkzZjg3MTI3MTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjljZmQwN2ZkMjQxMzE5ZDQ4MDZjNDJkZDAxNjYxOWI0MzM4YTI3NGM1ZGIxMDg0OGRjNjk3Y2JmMmJhMDQyZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZjNDFiNDEyOTlhZjJkYzYwYzVhY2IzM2E2MGZlODcyODQwODcwY2MyODRlNzAxNTYzNDM0ZWM0M2M4MzIxNDMifQ"
+        },
+        {
+          "resource": "repo://.github/workflows/post-merge-maintenance.yml#L7-L9",
+          "version": "repo-lines-v1:sha256:6fcbffdf714fd9f40a32905b4ba51f613b7a7dcfe8dfbff59dca07725b561339:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjJmZGYwZDAwNzhlNGFiYjEwNzZkNzM0N2QzMGJjYTNiYWYyZmJmYjIxNWU4ZjZiYjc4ODQ4M2RiNjY1Y2NkMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTU0YTI2N2IwY2U3ZWYxMzY2NWQ1YTI0ZjMyY2ZkOTNhOGQ0YzU5YTIyMTk3NzdhNTU4YTNkNmVjMDA1NDMxMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTU1MzFlOTEwNDkxMmI4NzIxN2FiZjBjZjQyMTUxYzljN2MxMTYzOWVlZjQzOWJlZjRiZGQ1OTg1YmJmZTExYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjY5ODM2ODY3NzcyZmM3MDNlY2IwNTkxMDY0ZjUxOGNjOWIxMGZmNTE1NTZmMjM2ODk0ZGFjODkwZDgwZDAwMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_527479989d664d38bf403258ad1100db",
+      "statement": "The run-state step iterates every changed specs/<slug>/SUMMARY.md that has a RUN.json, attempts run_state.py transition --to shipped --event ci.merged with the merge SHA, stops at the first success, publishes the slug output only on success, and is non-fatal when no candidate transitions.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/post-merge-maintenance.yml#L71-L98",
+          "version": "repo-lines-v1:sha256:9a68be65a85aa195095e5d59f4d28395097d558a99aa6fef1e6ec1cede3bf919:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5ZDAyYWU3ODAyNDUxOWM1OTIyNDkwZTI2MzEwZjkwZjdhYThmZjUzZmU4NDM1MWQxZjQ3NjgxNmQ5YzAwOTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmNTU5NzljZTczMDIwMzNlNmIyZmQ3ZDg4ZjUzN2EzYjhlMDkxZWEzMDVjODExZmZhMTI3NGJmNTc2NGVhNWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI3YjczYWUyYWMwMGY1ZDQ2NDIwYTY5MjVkNjkxZDc4NGQxOWE5ZmY1ZDZkNDk3Zjg0MDMwZTMwMTZhZGM1NGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMwZjJhMWZmYjk1ZGQ4OTM1ZTViYTY2MDg3ZGQ3OGYxMzkzOWUzYWY5NDRjZTI3YzYzYzg5MjM4YWI4OWUxMDUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3f3e002dcb21408ca9c6784948fb0b4d",
+      "statement": "The run-state transition step must precede the bookkeeping step's git status dirty-tree check, because that check decides whether the bookkeeping PR is opened; otherwise a run-state-only change would be lost.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/post-merge-maintenance.yml#L100-L116",
+          "version": "repo-lines-v1:sha256:620c86ce8cca77dbfacd760c4b433dba8fe040dfda45763b86b0598f8e04b0c2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhYTkzNDdjOTk1ZjRlYTMyMWE1N2Q3ZTkzMjc4YmQ4NWVlYjQwY2RhY2U2NGJjZmQzYjkxOTU2YWRhYTY5MjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmNTU5NzljZTczMDIwMzNlNmIyZmQ3ZDg4ZjUzN2EzYjhlMDkxZWEzMDVjODExZmZhMTI3NGJmNTc2NGVhNWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVmN2FjMWY3NzRiMmE2Y2IxODgwZGIxNGYxNDIzMjc4M2NkOWY1NzE2ZTE1ZGQ2NmM1ZTk1MmYxYzIxYjEzM2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMzMTI0ZjAyZTU5YWUzYTkwYTcxZWM4OTY3Nzk2ZmJhMWJmYWM4NWU1NWRmMWMzNjExYjg0NjdmMjk0M2NmMTYifQ"
+        },
+        {
+          "resource": "repo://.github/workflows/post-merge-maintenance.yml#L67-L70",
+          "version": "repo-lines-v1:sha256:319df9077b9314f35f20064e4cecc2bdb186e0f80ba370e7587377a7d3fc8c02:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTQwNWQyN2VkMDdhM2JiZTE5Mjg2NjBmZThmNDE5NTZkMmI2ZGI5ODdkYTFlZDkxOWI3YmNkNjVlZmY4ZjZhOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDI2MDJhZWQ5YzkzMmE5OGM3ZGM2NmJjMTczOTllODJiMjdiNmYwNDI2MmFhMzg0YWRjMTJjNmRkMzY0YWMyYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDdhNDIwM2VmNjk3OGY5YWFmMDM4YmYzMTZiZDc0MTAxYjM2OWJhYzM4YWQ5MGIzMzAxMzg3MjRkNGExOGM4ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzUyMjAwZWI4MDZkNWQzNTlhY2JhZjAxZWEwNWZlZTNmYTg5N2YwMzlmNGM2OGNjYTdlYWI4ODA1MThiZWZkOSJ9"
+        },
+        {
+          "resource": "repo://tests/scripts/post-merge-runstate-staging.test.sh#L106-L116",
+          "version": "repo-lines-v1:sha256:a78a29021f5422e4f24bd006f99db0e813878465d0d0fe5cb8f987c2073a14c4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3NzFmZTYyNjkzNmU2OGZkODI5MDA0NGRiYTk2MDQzNTk3NDg2MzZkMGM2MmI4MGEzMzJkNjk5YTAwZTgwMTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlOGUwYjYyOTA5YjI1MDVlMDNhNjczZjc4NTZlNWQ0NDY4MGVmYmNjMzBmMGEwOGJmZGM1OTFjNWI2ZGYwMjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyYzI2NTU0MjM1YTVlMzkwODlmYTg5Y2Q2M2IzNTgxMGU4YjM5MDA1NGU3N2Y4ODc5MWJjZjlhMDBmODRjNmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7e313f4eb9714bfba7f4e023a4a0f483",
+      "statement": "The bookkeeping PR step creates branch chore/bookkeeping-<N>, explicitly stages VERSION, CHANGELOG.md, trust-metrics.md, audit-log.jsonl and (when a slug was shipped) specs/<slug>/RUN.json and events.jsonl, commits without -a, and opens a PR against the original base ref using GITHUB_TOKEN rather than pushing to a protected branch.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/post-merge-maintenance.yml#L118-L142",
+          "version": "repo-lines-v1:sha256:56a482cd840d2aeb723ca7663d5e537ab03572f87ee80866ed1215a83c3fdffb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkYjVmOTZhOTVhY2YyMWIzMmFhNjU0MGVkN2FlNTUyNTM5YmE5MWZmOTg4YTUzMDZlZThhY2ZjY2M0NzVmMGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhNDA0NjZlMTBhODUxYTcyYTg0NTRhNzYwOThhMmQ0ZmJkNjBkNTZlNmE0OGZhZWNhYjU0MDU2NWY1MDRlYzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4M2U4ZTAzOWQ1M2VkYmUxYTIxNmMyMmIzYmM3YjVhODU1ZjY4ZDU0NmE2OTg5NjliZjZkYmZhNmIyNWIwMjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4a0016598af241c9aa17d3feb4605729",
+      "statement": "bookkeeping.sh is idempotent: it exits as a no-op if the trust ledger already contains the outcome marker 'shipped (PR #N, ', anchoring on that marker rather than any free-text mention of the PR number.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/bookkeeping.sh#L42-L48",
+          "version": "repo-lines-v1:sha256:41857ec404ca2e9a7553830274775f9dc96bdd0916b13a97debaf664720c90de:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjkzNjEyNjkwYWVmYmJmNGUzNTVhNTI4YWYyYjIzMjIxZTZmZDgyODBmYTI3MDk3MjZlZWIwY2M4NDUxNTgzYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzc2OWQyMzdjZDQyMGI5ZDM4Yjk4MWEwYTRmNjc3MDE5MGE0YTgzZGNhMWZlNTZjNGY1YmExZTJjYmMwZWY3NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGMzYzE4ZGUxNmU1MmU0YzdkZDUzYjZhMGY3ZTgwOTg3NDI3MTAzNTk3MDg3ODdmNzNhNWVjMTIxZTY1ZGQ2ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDAwMTdjZWM3NTNhNDMzM2M3NDE1MDdiZjVlZTI2ZTZiYjM0MmYwOGJkNDExMzU0YThmOTM0MzY0MTBlODgwNiJ9"
+        },
+        {
+          "resource": "repo://tests/scripts/bookkeeping.test.sh#L100-L105",
+          "version": "repo-lines-v1:sha256:3fabaad47a502d12f05b4775cc616dbeda7ad40fb90e51df436cd70048602ac7:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWI5M2NmYTkyYzZmNDhiZDhjZmVlYjNkNDI4YzgwMmYyMDM2YThmODkwYzZlZjQzNGU5NjE1ZGQ1NzNlZTI5ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmE2YjAyNDVkOTgxNGUyNGRjZjYwMTAyNjVlMmRjNmEzOTc2ZmE1MTVjMzQ2ODhmMTkyNDZmMjU3MjQ1NTRhMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjk2ZjIxOWQxZjZiZDIwYmY0MTg2NTliMDBmZmJkZDVkYmJhMWUyYzhiMGE4OGY5NDcwMzg5N2U5YTQ1MGMyNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDgzOGNiYWEwNzk1ZGJlZjIwNWM2ZWRkODk5MjdhNTYwZDA1ZmUxZWE1MjQ3YjUwY2VlZjhiYWNlZWI5YmVjMCJ9"
+        },
+        {
+          "resource": "repo://tests/scripts/bookkeeping.test.sh#L56-L65",
+          "version": "repo-lines-v1:sha256:2a1aab15fef7bf0db1648f61118eb2b6bbf1a1e325b3a37f2cd0ccd6bdcf3c70:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3MDI4YzFmZGRiODIzMGY2MDIwZWMzZjAwY2Y2NzQ0NGFhNDVjYmM4OTg1ZTNjZWEzYmYxMjU1NmUwY2NjYjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllNTkzZDNmNGZhOGI0ZGQzZGJiNDcxZWY3Y2VhMDY5NmYxNWIxY2I3YjgyZDJjMmZhYmMyMTM4NmZhNmRhOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUwNTRhMGNhZWViM2Y1NDM5Yjk2ZjIyMWU4NDVhMmQ2NzI2ZWQwYmI2OWEzMTQwMjFiMWJmOTIwN2JhNmEzYTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIyYjA5MDY2OThhOWRhZDY5YTBjMTIyOTA4NzE2NzAyYzNhZGQ5OTU5NWY4ZWFmMThkZDQxZjBkNGRmMDliYzAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d5bfb054e2774ff3a15baebf075dc1b7",
+      "statement": "bookkeeping.sh bumps VERSION by minor (resetting patch) when any changed path matches hooks/, settings.json, or skills/, and by patch otherwise; it never performs a major bump.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/bookkeeping.sh#L74-L86",
+          "version": "repo-lines-v1:sha256:1fc312646caaa9eacfb3eb4d6bb7ed69e503b4feab3395d377c1b6d5b01c166a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkMzJlYTM0NmE1NzNhNzVhYTcwMDM5NDkzZWM0YzVhZTJmM2JiODFjNzdmNzI2ODBjMmRlM2RjMmI1ZDM1MjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwNjAwOWVhNzA4YWE1NGQ1YzdlN2I4ZjYwYzU0OTMxYzM4NjQ1NDgxODM3MWUzNTdkY2EzNTBhNzFhN2JmZTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwNWRkNDRmYmMzNTM3YTc1NzEyOGJlOGRhMTA5MmFmMTI4YTIzY2U5YjA4NDc4YTZlNzU2MDBmN2NiMjk4ZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkNmMzMjk1NjMwZDY4OGNiZDM3ODQwNDgxZTk0OTU4ZjFmNDBkYjE0ZGEwNmYxY2JiMDMzYzFlNmU3YWJlOTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_de58a4bd381649069aa325c049a7ac7c",
+      "statement": "bookkeeping.sh inserts a dated '## [version] — date' section with '- title (PR #N)' before the first non-[Unreleased] version heading in CHANGELOG.md, appending at the end if none exists, and passes the entry via awk ENVIRON to prevent heading injection from literal backslash-n.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/bookkeeping.sh#L88-L100",
+          "version": "repo-lines-v1:sha256:2f3eb071e4b090288be72921b76b9f5681b779754f9d301067d9d3537073694d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlYzgxM2JhMTU2MmZmNWU1MGYyMzY2NTQ4N2Y1M2Q2MTBkYjJjNjllOGFhN2FlMmRmZWRmNzQ5ODZmM2IwNjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyNmZhNmEzMmI3MzA2NDRiNmVmZmZjZmVhMzQ4OGNlNzliZTlkMDE1ZjYxZGU2MjA5M2Q2ZTc4YTYwOGE4OTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc4YmQ1ZWM4NWNmYWE1M2YyOTkyZTQyOWI4OTRiYmQxMzFiMGY4MmExNTE3MDZmZjdkY2NmNzQzMGUxNzA2OTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc2ZTljMzgxZmI4NmZlNzFmZjNlMTM2MWIzNmY1ODQzNTFkMTBlYzU1OTJiMDRiMzI0MjFhNGJkM2IxNjNiYzAifQ"
+        },
+        {
+          "resource": "repo://tests/scripts/bookkeeping.test.sh#L86-L98",
+          "version": "repo-lines-v1:sha256:6033b85effe9fe9f0238b262aa930716d749e884880be1959040ea6edab229c5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0NzkyZjVhMGRhNWViYzY3YWEwZjNlYWVhMmU4NGEwYzljYzQyNmVkZGY2MGNkMzY0MWMwZjZjMWUxZDJhYmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2OTA5YzMxZjVlODQ4MmQ0ZGRlYjYwOTJiM2U4MWY5MDNhYTljYjdjZTYxMzM2ZDIwM2ZiYTU5MmEyYTA1ODQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNmMGM0YjNmMjQyMjYyYjg4YWM0Njc1ODFkZjI1Yzg2ZmY1YmM5YjMwZjZmOTFmZWM3ZWEzY2RiYzQ5MWY5NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJjYzIyODk4MzIxMGNkZTFlYzIxNWUwMGY0YjVmZjFmM2JjMWUzYzJmNjYzM2YwYWY1MWQ1NzBiYzM5MGVhZjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_de49f62cfe0a4a209603161e3d460d49",
+      "statement": "bookkeeping.sh derives the ledger slug and Lane/Confidence/Flags/Affects from the first changed specs/<slug>/SUMMARY.md (falling back to slug pr-N and '-' fields), sanitizes the title to one line with pipes escaped, and appends a 9-column trust-metrics row with outcome 'shipped (PR #N, `SHA`)'.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/bookkeeping.sh#L102-L105",
+          "version": "repo-lines-v1:sha256:3009b57bf65e501ece4f91a84af298a2473527af196460f31fc97e0fc41d1fe6:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzNlMmFkZDI2MjAyOGZkNjI0OWRmYmVkNjYxOTZkZTdiMDdmZDBiYTllMTZhNDFkMjI0MzBkMGQ1YTE3ODEyZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTYxZDI5YzVhMTI1OTM5ZmMyZGMzNjkwNzgyYzU0MTc0NzAwMjRlOTA4ODY5NGRhZGZmMjEzZDZjNGU0ZjgzNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjA5MzJjZjc2YTc5NzJlMTViZWQ2MWJhOTFjNjY0ZDZmMmYyMTQwZDU5YzMzNTdjOGQ2YzU5ZmE1MGFiY2UzYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmQ4NDI1N2RkM2ZiM2NiOGRlZTczMGMzNGMyYmJkZTA3ZTAwMGUwYzI4MjJlZDlkOTUzNWJmMDliYTUzNmFkOCJ9"
+        },
+        {
+          "resource": "repo://scripts/bookkeeping.sh#L50-L72",
+          "version": "repo-lines-v1:sha256:57f33ff39d2a2f18e80a9ce00bdeb6f5790f96be523def0c3fb04cdef7f9e698:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlODkyNmU2YjNjNDA3NDU0M2IxZGEyMzU4MGFiZmMxYzk3MzZiZTc2NmRkOTBjYTEyMDRlNmUwN2M1OTkxZjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlMDc0ZjM1MzAzMzlhNmUyMDMwNTRkOGEyOGM0YjNjZmU2NjZlZTVhM2Y5M2ZmNWFiMzMxMGNlZGY0NjIxNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdkMmQxYjIwZDNjYjJiODMxMjViOWJjN2MyM2NkM2QzZWVjODk0ZWRiMGI2MWY2NjkyNDMxMGY4MDY0YjU0NTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc2NGU3NDgzYmIxODNjZDg5NjFkMDlhMjg5ZjlkMGUzM2VmNzhhNTU4Zjg3OGRkYWU0MjZmYTJlMWIxMDZlMjkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_34cef0ea7602400f92dc2f61daa2c180",
+      "statement": "bookkeeping.sh appends one JSONL line per recorded PR to docs/harness-experimental/audit-log.jsonl, consisting of harness-audit.sh --json output augmented with a pr field.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/bookkeeping.sh#L107-L117",
+          "version": "repo-lines-v1:sha256:9a01aa56c0ff632ea53442178ba2082f4c10baec081b34ba311fbc5b099a1472:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyNzRkNmJmYWRhNjNiOGRiMGIyZWJmYTkxZGE4YjBhMmI4ODE0M2MwNmY4ODIzOWQ5YzA5NTgyOTE0OGZlNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjOGE3ZTRhNTI4MzBiMjllYzMwNTI3NTZkMzUzNTMwYmU0Y2MyZDkyNjZjM2ZjYWEwYmEyMjNiM2UyYWJmYWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzMTY3NDUxZTNlMWIwMDMyMDM1NzNlOTEzMmQwMzk1NDg2MmY5NmVhZmQ5YmQ2MmM0ODBmYTAwMjc5ZjEzOWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiYjNjYTBlZTE4YjM4ZTIzN2I3MjZmM2E4NDVjYjQyMzkwYmMzOTYxYjAyZjIwNWE4OGM5OTk2ZDI5NGQ0NGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_415052ba80af46dc8069eafaae1daa13",
+      "statement": "The OpenWiki Update workflow runs daily at 08:00 UTC or on dispatch, uses a full-history checkout so openwiki code --update can diff against the last documented commit, runs OpenWiki with continue-on-error, opens a PR on branch openwiki/update preserving any completed pages (post-OpenWiki steps run unless cancelled), and then fails the job if OpenWiki failed.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/openwiki-update.yml#L1-L101",
+          "version": "repo-lines-v1:sha256:c0ea0157e9172a32490f82df309dc810bfad8876937abb98736c24c41bc51a6a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwNjAyNzg3YWY2ZGNjMDgzNGRlMTIxY2JiMWNiOTVmOTQ1OWI3MjFlYWIwMzQ5ZjEwNTAxYjk5NmMxYzc3ZmZmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIzNjcxOGYwNjdiNWU1YzFmMDk5MWE2ZTc0NzI2ZmUyYTIzZDI2NDM0NWUwOGU0ZWFkMDRmYWY3M2MyN2VkNDQzIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_e7b4af5efc4142cda0ef3504775a631b",
+      "statement": "harness-audit.sh is advisory: it counts drift findings across SUMMARY missing ### Verify, stale active PLANs, stale docs/solutions confirmed_at, stale open backlog rows, and degraded harness manifest; contract-impact reminders are reported but not counted; it exits 0 unless --strict is given and any finding exists.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/harness-audit.sh#L1-L48",
+          "version": "repo-lines-v1:sha256:b986922af67356efec33089ad844a1855fc0e846944088fe259615c33d25e9ae:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOTVmYzA0YTgwYzk1MmY0OWNlNDE4ODYyN2M1M2IwZmJlOGM0NDA0MWI5NTJkNTkyYWNkMWRlOTk4NjE0NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyYzcyMjBmYjhlYjk2MmFlMTJmODcxMTlhZDMyNGM0MDNmNzhkMTE4MjNmMzFlNzAxZjI0ZDRhYzI3MGQ3NTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVkNmFjZDIyMzE1MTU5NDA5YzIzMTljNWFjYjYwMzNkODU4OTAxNzIyMDJmMGYwMzJhNjkyNDNmYTNhOGFlNDcifQ"
+        },
+        {
+          "resource": "repo://scripts/harness-audit.sh#L141-L187",
+          "version": "repo-lines-v1:sha256:dca70d74a792071d04aaaa8a827c1dbd588f488e46b7882f18fa5293011a4bc9:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNjhkZDE4Mzk5OGYwY2VmMTZiYmJhOTg4MmY0YzgzNGRiNDY4YzNiZDljODk3NzQxZjc5ODZiNWIyZGJiYzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4ZDNiOWU4ODBhNzc5NzU0OTNkYzdlMzU5MTQ0YzAyOTVhNGY2OTRjZmUwYWY0ZjkyOGMyMjMwN2JjNWMzMjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQxM2JhOWZiMzg0Yjg4NDFjNmU1OTAzZGExYThmMmY3OGYwOWVhZjczNDNjMDU3NmFmMzE1N2Y1MTg2MDlhZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b846ddfa3bb84c85bea03744abc08258",
+      "statement": "harness-audit.sh bands findings as healthy (0), minor drift (1-3), or needs attention (>3), and --json emits a single line with date, findings, band, and per-check counts.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/harness-audit.sh#L150-L177",
+          "version": "repo-lines-v1:sha256:c8ca497dcb673d035116d09f0b21fd50b0c89b9b4b4119a96f183e319898738d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MzcxNzc5OGFhZGNkZGE5M2UyYWZkMzg5NzA4MzBhMmVkNDNhMDkwOWM5Yjk5M2FiMzg5YzljNjc4ZmM2YjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2MjFiMTRlYjI2YTk5MjZiOTViOGJlYWY0OTYwYWNiYWQ1MjI4YzU0NjQzYWY1Y2FjZjVlZDMzNWU3NDhkZGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI1MjNlNzJiYWNhY2IxM2IzNzgxYTExMGNmNDgxMmJlMzUzYjc4ZmIwNTdhODZkNDUyYTVhZTBkNjhjYzU1MjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNkOGFkM2QyMmE5ODA4MGVmODMzNmM0ZWMxZjU5YmMxOTE2NTQzMmRjMTlhMGRlMDAzYTc0NTZlMDExMmQ0NWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_98341db31e15437298884d556c569e53",
+      "statement": "harness-status.sh reports wired hooks, skills, the last 5 trust-ledger rows, the last 5 audit-trend entries, active runs via run_state.py list --active, and finally the harness-audit report; each section is bounded with || echo / || true so no input failure aborts the script under set -euo pipefail.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/harness-status.sh#L1-L120",
+          "version": "repo-lines-v1:sha256:b81a6cedfb89421e3c8ea6eb21139676000e8b87b02247d25b41de1c4dc7b56a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxZDk1ZmMwNGE4MGM5NTJmNDljZTQxODg2MjdjNTNiMGZiZThjNDQwNDFiOTUyZDU5MmFjZDFkZTk5ODYxNDY2IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIzNzY5ZDIzN2NkNDIwYjlkMzhiOTgxYTBhNGY2NzcwMTkwYTRhODNkY2ExZmU1NmM0ZjViYTFlMmNiYzBlZjc2IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        },
+        {
+          "resource": "repo://tests/scripts/harness-status.test.sh#L1-L13",
+          "version": "repo-lines-v1:sha256:506788d27327af25db98eadb09f2ca41608994dd3248d05ba00a7344497192ca:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4NzVmOTI4NTQ2YWVlNzg1NWNiMWRiOWFmYzhhYjNmMWE4YTM0ZDQzZGU1YmJkNjJmNzA3NmQ3YmE5ZjM5MTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmYzBiZTgwMjgyZDg1Nzk4MzAxMGFmYWJkN2RiMzE3NDIzYTAxZDlkNDRlN2M3MTM1ZmNlOWQxNGFhYjc3ZTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjczNWU0NjRjZjdiZDY2YmRmNzQ1NTFhOWVkMDk1YmRmN2FmMDY2NDJhNmE2Njk0MTU1YmVhYzYwYzNiMWIxZTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_84cf59f5ac3346beb93a1f4c8c25d4b0",
+      "statement": "post-merge-runstate-staging.test.sh asserts the allowlist contains simplify and main and documents the main-sync caveat, measures the files a real shipped transition writes (RUN.json and events.jsonl) and requires the workflow to stage each, and checks step ordering and success-only slug publication.",
+      "evidence": [
+        {
+          "resource": "repo://tests/scripts/post-merge-runstate-staging.test.sh#L21-L133",
+          "version": "repo-lines-v1:sha256:8ebde406a640b43f39be80a45920bfdad8d3d7a445144e080602454f70e52639:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI2YjNhZTIwMzJjNzdlMzNjZDRiNGFkNzBlYzY5YjI5Zjc0MjMzMDkxMjYxMzZhZjUxYzM5YjAzMmVkNGVkMjJlIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwNWM4Nzc2OGI0NjY5NWUxZTIyZDViZTVjZmIxZWI2OWQwNDgyMjAwMjE5MTRhNDgyNGEwMzE1ZGJhNGE1OWMxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5ODk0Njk4NzQ1YTAyZjkzNWU1M2VkNmM2MzZiNGNlNzA1ZDk3NWM5YjQ1ZmJiYWUzMDBhNzI3ZDdhMjMwZmNhIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_a00d543e6b9340569dfc33493fa8c916",
+      "statement": "harness-status.sh and post-merge-maintenance.yml are meta-repo-only tooling not shipped to consuming repos by the deploy/install scripts.",
+      "evidence": [
+        {
+          "resource": "repo://specs/durable-run-state/design.md#L38-L48",
+          "version": "repo-lines-v1:sha256:b219ac2612f83954869ba6ae7af5bca6babec9062b73092452c0ab3c2312271b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0YTM1ODFjMGZhMGIyNDAzN2MyZTQzMTY1MzNiYjZmNzgyZmZlNTM4NmE5M2ZmNDE2ZGMyMzA3OTMzMjQzNzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlNDNiZTE0NDZiMzBhMTg5Y2FmMGFkYjg4YmMxNDU0ODUxYzZjOGIzMmM5YjljMWVlM2FhYTdhNzNmODRkM2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5Y2ZmNDU5ZGFhMjY2NzcyOTdiMjBlZWEyYzY4NWQzMGJkYjA2MTI2NzNiNzAyZGEwZjI2OWY1OGQ2NWQ4M2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5MWExNjA2NjI2MmE5NzUwZjdmNTI0OGMyZjUyMWU4NjUyZGEyZjIwY2E0YjYzYWNlNzFmMDdhNGU5YmMyM2UifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b52584ce6a684ed59f2e0d77e8ee2f3c",
+      "statement": "The OpenWiki update PR is created with secrets.OPENWIKI_PR_TOKEN when set, falling back to github.token; because a PR opened with the default GITHUB_TOKEN triggers no pull_request workflows (so harness-ci would not run), the job emits a warning when the token is absent advising to close and reopen the PR.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/openwiki-update.yml#L15-L17",
+          "version": "repo-lines-v1:sha256:5046dd85d2752f77872923df6f73c909b4bc7365990a7805e9ad3a6b6b99151b:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGI2ZjllNmM1ZDhlNWZmYTcyY2YwYjA0YzkxZjFiMTQ3NzU5YzRlYjQ0NjQzMzYzMWE0OTA3MWMyZTNlYjk5ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmY5NjhhZjA1M2FmNDk2YmJiNTBmZGVjYzg0YjY5NDg2YzgxODA2MTdkOGU0NDk3ZDIzMjExOGRmMWMwMTM2MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjBiNjZjNTlkZjhhMDQzNDQ5NGFlNGYyNmYwYmNiZDY2YTM2ZjlkMDlhNTEwYTVkYTA2MTM0ZDljOTIxMDYxNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTAyNjA0NWMxNzkzOTAzMDU1YjNhZDVjZGFiNGE0ZjVmMDQ3OWExNjBlNzc1Y2JhZmY2ODlhNDc1YjVlZGY1NCJ9"
+        },
+        {
+          "resource": "repo://.github/workflows/openwiki-update.yml#L67-L97",
+          "version": "repo-lines-v1:sha256:75b16cbc93dac11d822fe6fbb7e67e7cbcbef1c6d50934d954d8ada118300f7e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxY2ZmNGFkMzNiYTkxYjE0OGUxYjFiODI5MGI4ZmZmMjdiMjAzZmFiZmVlNTg3MDI4MmRlMzY3MzgzYjFiZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJkMTMwZTIzMzliYzk5YjkyYjZmMjM1ZWRmMDhhMjRlMThmNDA2MDAyZmU3NDE0N2NlOGU1M2ZjZmEwNjY3ZjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiZTFhZGFkYTE3YWUyZjRmM2Q4ZDQ3OTdkYjM2ZDUyNjc1OGJmNDlhOGM0YTc0OTg5ODY0YTQzY2NiMThlMTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI0YTQ1ZDcyMzdkYmQ0NjVkYzc2Mjc0NTVmMzg1OWVhNjRmNzEwMjY1NDNkZDE3YmY2Nzc3ODkxOTQyZDVjYzMifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.2",
+    "at": "2026-10-19T07:24:11.736Z"
+  }
+}

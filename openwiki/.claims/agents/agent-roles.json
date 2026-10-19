@@ -1,0 +1,382 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:8284a69913409c7dec958253fdad934b9207b5e927ea83c7fdf139308a716e42",
+  "claims": [
+    {
+      "id": "claim_35333898186443a2805710275831d399",
+      "statement": "The harness defines four sub-agent roles — coding, reviewer, task-reviewer, test-runner — each with a neutral capability contract covering filesystem, shell, network, mcp, nested_delegation, context_policy, model_class and output_contract, and all four use fresh-bounded context.",
+      "evidence": [
+        {
+          "resource": "repo://agents/README.md#L7-L14",
+          "version": "repo-lines-v1:sha256:98d1be3639d88a94c05cf315e0ced95803911af6fdb8fcc2c7c6cc45a13fb2cf:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTAxOWQyOTRiMDY2ZTlhZDI1YTBlYTNlZjYyYTVlYjNlZmQ2ZDM0Mzc2MmJjNDE0MmI5NjViYTU5ZDJkMTIxMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDY2Njc4NDk4NmZiMjUyYjYyNjJmNmMyNzMxZTA1NDA3MWMyNDNmZDNiYTg2MWYzMGM5NjdiYzk5NGY4MTU3OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTQ5NThiZWU0MTNmYjI2OTNiMjdiZmRkYzA0Mjc0ZmVkZWFlMWUwOWRlMGE3YjFiMmE1OWUzODA4MDEyZjkwNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTE5MjQ3MTI5N2NjODBhNzI2ODg2MDBkZjExZGI2ODU1YWZjOWU2MjQ2OTM3YmNiZjNlMWIwMjhhNTBhNWYxNyJ9"
+        },
+        {
+          "resource": "repo://agents/agent-contracts.json#L1-L59",
+          "version": "repo-lines-v1:sha256:0263d1c9e0dca97a88a27d6396cd00354f699fa25c0c2273e212acdf7610da5d:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f1021f2d6036451daa6085f373f7d753",
+      "statement": "Interactive, human-in-the-loop work belongs in skills run in the main thread, while autonomous returnable work belongs in agents run as subagents; for this reason brainstorming exists only as a skill and has no agent.",
+      "evidence": [
+        {
+          "resource": "repo://agents/README.md",
+          "version": "repo-file-v1:sha256:dcaa49558842fc683fa14911c0c69194de7f9f88fc31f63c57a22839fefea4ab"
+        }
+      ]
+    },
+    {
+      "id": "claim_8796ebe8b3744956a3c4582771d077f6",
+      "statement": "agents/PROJECT.md is a thin index that points to the repo's convention docs instead of restating them and carries only execution facts (test command, source-to-test mapping, failure hints); reusing agents in another repo means copying agents/ and editing PROJECT.md while role files stay unchanged, and xia2's risk-classification signals live in skills/xia2/references/depth-classifier.md and rules/research-depth.md rather than PROJECT.md.",
+      "evidence": [
+        {
+          "resource": "repo://agents/PROJECT.md",
+          "version": "repo-file-v1:sha256:0e0a8b9844fa1fb57fb0b3d5e4fee0a0459b78407240eba6abe862af929208bf"
+        },
+        {
+          "resource": "repo://agents/README.md",
+          "version": "repo-file-v1:sha256:dcaa49558842fc683fa14911c0c69194de7f9f88fc31f63c57a22839fefea4ab"
+        }
+      ]
+    },
+    {
+      "id": "claim_6805f09efbca448f8bcec72cf4a06c16",
+      "statement": "The coding and test-runner roles defer stack-specific conventions and test commands to agents/PROJECT.md; test-runner falls back to detecting the runner from manifests and lockfiles when the Test execution section is unfilled, and never modifies tests or source.",
+      "evidence": [
+        {
+          "resource": "repo://agents/coding.md#L11-L31",
+          "version": "repo-lines-v1:sha256:b214010a5b70e3e56bc138f1abca5485303646235c99339ece264045ab63d75d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyZTMxYjNlYjkxNzJlZTQ1ZTA4ZTZmMjhlNGMwNWJjZTZjMGJlNmVlOWRkODY3Mzc2MDdkZTk4NmY3YWE2ZGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmZjJiZjM0ZDk2ZjdlZWRmMzM0MjdjNDUwYTdmMDEzYTg3NjNlZjlmZWFmYmVlY2ZhNWYyZjhjZTU0ZTMyZmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyNDU5ZGUyODRmMTk2NWZhZmQ0MjU4NzJhM2UwNjdmYWIzZTlmODg4NWNkNWFmMWE0Yzg2OWU1YTRhM2ZjNzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://agents/test-runner.md#L10-L73",
+          "version": "repo-lines-v1:sha256:dd550a9367488239041b3dc151ea10897452fcce31cb7355db7fc1cb90ef5ca0:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxZGQ0ZDk0OGFhOTAxNDNiNTE2ZGQyMDUzNTM2MWIwMmQ1ZWI1ODZlMjk2YjgyOWQ0NWU1NWZhM2NhNmI0MGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxNzI4ODY4MWE3NDVkMTk3ZDRkZGE3OWQxOTBmNTg2ZGI2ODI3MjUwYzhlMTFhNGE5NjI2OTcwODIyNTc1MTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzZDkyYjQ5OGQwYjE0ODVhYzM5NjM5OTE1NjVkNmQxZGFiNjZkZDA3YTc3ZjNjYWUxNTA3M2FjNGY4M2VkMTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5e97e5fe32fe43f4a3ab6498f11d0ce5",
+      "statement": "The coding role classifies unauthorised changes against rules/auto-correct-scope.md (Rules 1-3 auto-apply and are logged, Rule 4 escalates) and returns the rules/orchestration.md subagent-contract summary that the orchestrator acts on without re-reading.",
+      "evidence": [
+        {
+          "resource": "repo://agents/coding.md#L22-L31",
+          "version": "repo-lines-v1:sha256:028e68fcbe162f5ed1ec516a4ee67869e55b71986f44a1bd4ea494dabcf958ee:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmZWVjOGNiMzkzMTY1ZTk1MTgxMTk3ZWJlZmVjYTQ0YTQyNTZiZWY2ZjRjZmMxMGRlNjg4NDMxMzVkMWVjYjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmZjJiZjM0ZDk2ZjdlZWRmMzM0MjdjNDUwYTdmMDEzYTg3NjNlZjlmZWFmYmVlY2ZhNWYyZjhjZTU0ZTMyZmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc4NDFlZjJhOTZhZmUwMmZjZGZkMmFiZjM3ZGFkYjVhNDAwMzUzOGZkNjU0ZDM2MDE2NGQyZmNlMjc5NDI1ZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f17e38a00ab247f68fa135d3b7c230ff",
+      "statement": "The reviewer role is read-only by construction because its runtime binding omits write, edit and nested-delegation tools, but it retains an inspection Bash shell whose only guard against state changes is the never-fix instruction; absence claims must cite their search surface.",
+      "evidence": [
+        {
+          "resource": "repo://agents/reviewer.md#L1-L26",
+          "version": "repo-lines-v1:sha256:b54cd19b26b97a24bb365b02eef5583b5b8e565ea7cc5140906e43b2d02d053a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1MmQ3MTExMDNkNTBhNDM3ODMwYzZmYmNkMDRmYjRiYWI0OWEwZjgyZjZkMjZkMWM3OTFjNmU4NDg4ZGQwOTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0Y2U4OTI3YzIwOGQ2ZjIyNzZkMjBkOThiNDUxMzk2MDZhNjY3NGE2ZjBlMjU5NjU2ODgwOWQ4OTRiZDdkMTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://agents/runtime-bindings.json#L22-L36",
+          "version": "repo-lines-v1:sha256:a4ce36819abc381f62ebcd03622a230e46d2439049bdc6f734465d595faf01b7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmYjNjODI3ODg3M2NhOTQ1YjUwYzVmMDg0NzgyNDdiMjcyYmYyM2I0ODFmNDg1ZmFkNzkxMGYyMmQ1MzgxM2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlNjczYWJkNDU3YTk3ZWVhMTdhNjAwNjJlYjBmYWVhNmJkZjA5NDg2OGNjNmI4ZjhjMGViZGEyZjYxZWQ0MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1YWIzYTRkODM0NGNhN2NjM2E2MjZmZjRiNzMxZmFmNGJkOWFkYjMyMjk0MDM4NjczYWM1ODI4MDI3YjlkZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUwZmVmZDExZTcxYTUyYjJmYjNiOGVhY2Q5NzFjMTM0ZjJjMmMwZTM2NWI0YTU3ZDJhMTE5NjE3MmMyMjZhMWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_981fb58ef18443f4b3cec32594444900",
+      "statement": "The task-reviewer role has no shell at all (Claude tools Glob, Grep, Read; contract shell none) and must ask the controller to run focused tests via test-runner rather than running them itself.",
+      "evidence": [
+        {
+          "resource": "repo://agents/agent-contracts.json#L36-L46",
+          "version": "repo-lines-v1:sha256:ca2b38ba443b583b5ebb6084ce7094f225d1ab40535032207a12d6e957174635:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0N2Y5OTZiOTFlYzM5MmEzZjVkMDlhMTlmYTQyMzAwMDdiMTk2OTdjMGRjOGY1ZGFhMTZmYThkOWQ1NTJlZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5OTVlZTJmZGE5NWFiOTgzNTVmODViNmY5NDM3ZmFlOTBjNThmZWUwYTQ3ZjViNDI0NzllM2MyNGVhODcxNmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4Nzc5YzgwMjRkMTJmNWRjYjRjMjRhMjQzMzUwNGRmNDgxNjNjMzc4ZjY4NWRjMzM5ZDk3NTgzZDdmYzI3ZWQifQ"
+        },
+        {
+          "resource": "repo://agents/runtime-bindings.json#L37-L51",
+          "version": "repo-lines-v1:sha256:093704fd622da7e45df2cf5eb34d8ae00532ea458fdb9b647c6aa41f5a6ef4dd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc0NmI2MTA2Y2JhNjA2YmVkZmVkMjY5MjJiZTk5YjhlZGU0MTE1Y2MxYjk0YTRjMGQ4M2M1OGRiYTBkOTMyNjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlNjczYWJkNDU3YTk3ZWVhMTdhNjAwNjJlYjBmYWVhNmJkZjA5NDg2OGNjNmI4ZjhjMGViZGEyZjYxZWQ0MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1YWIzYTRkODM0NGNhN2NjM2E2MjZmZjRiNzMxZmFmNGJkOWFkYjMyMjk0MDM4NjczYWM1ODI4MDI3YjlkZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0OTE3YzZmM2FmNTQ0OTM4MWE2MGVmMDdjYjA5OGJjZjcwMWU1MzZhNDI0NzQyM2ViNTJlNjBiNWU4OTE3ODIifQ"
+        },
+        {
+          "resource": "repo://agents/task-reviewer.md#L1-L9",
+          "version": "repo-lines-v1:sha256:2ccd93f1036dd3840424422cedf605a24fda217091de614ec5fd3360a4d3a255:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjUyZDcxMTEwM2Q1MGE0Mzc4MzBjNmZiY2QwNGZiNGJhYjQ5YTBmODJmNmQyNmQxYzc5MWM2ZTg0ODhkZDA5MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGY1MDQzYTVlMGQ2MjI4ZGNmOTRiNmI0M2M1MDYzN2ExZTgzNmY2NmU4ODUwMTUyM2YyZTFjMTE5NWIxY2ExYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_9876fb5a5f55486993c9ec167ce508b1",
+      "statement": "runtime-bindings.json binds Claude coding, reviewer and task-reviewer to claude-opus-5-5 at medium effort and test-runner to claude-haiku-5-5, while Codex binds coding to gpt-5.6-sol, both review roles to gpt-5.6-terra with read-only sandboxes, and test-runner to gpt-5.6-luna.",
+      "evidence": [
+        {
+          "resource": "repo://agents/runtime-bindings.json#L1-L135",
+          "version": "repo-lines-v1:sha256:16fcfe7403b6faa52dfb8661cd8815e9dcb5822df8f3952bd3ce2e58593fa1c3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTM1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhNmZiMDhmZGExYWNiOTU3YjYxMTZiZDM3ODExYTFmZTQxYTAxNjExYzA2MzFlZGJmNzg2ZDY4ODlhMjdhNTVjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_7717fe751d0d490c897661106cd3a685",
+      "statement": "render_agent_definitions.validate rejects runtime policy fields (model, effort, tools, memory) in semantic agent source frontmatter, requires exactly claude and codex runtimes binding exactly the contract roles, and requires each capability map to match required_capabilities exactly, with any unsupported-exception carrying an owner and exit_condition.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/render_agent_definitions.py#L36-L118",
+          "version": "repo-lines-v1:sha256:a4f30ae66ce89fb35595c9359c062a81e040e02e3f92e2c0aedc160c942df4f4:eyJzZWxlY3RlZExpbmVDb3VudCI6ODMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzODRkMDViYTMxYzU1YjE3ZTAyMmQyODQ4MWQ5ODA0MGQ5MzY4ZjlhN2EzMWNlN2E0YzkxODljMjNmYmRjYjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwMDEwNWUwYTY4NTIxYzNkMzMyNjE1MzkwZTg1OWUzOWNmMjQxMjc0YTdkNzgxZDE5NmEzYWRhMDdiMTBmZDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5ZWUxOTMyODRlODJmYjc2YWY0ZjRmNTgzZTQzZjA1MDdiNWYxMzJiMTY0ZTZkMzUyM2JhZmI5NGMwYzdiMWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzYWMzZWU5MWFhOGI2NGExYjNlNTVhOWIyMDM3ZmZiZjBmNjAzOTg4NWM2MDJkNmMyZDM5Yzg5YzgxOTgxMGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_038715c9bf31479ab7318c36415666c7",
+      "statement": "Validation enforces that reviewer and task-reviewer contracts are read-only, have nested delegation disabled, fresh-bounded context and no MCP, and that Codex bindings use only allowed models, reasoning efforts and sandboxes with no unsupported exceptions remaining.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/render_agent_definitions.py#L120-L150",
+          "version": "repo-lines-v1:sha256:0a8681488aaa9cd555c08c014d41cf4baee2b3e91727eda14865f79a14f94d0e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzMTg4ZDI5ODU0MGQyYzBiNzExYzYwMmQyNTZhNGE1ODRjMTk3NGQwZWJiMzkxMThmOTNlOGMxODg5NDM2YjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyYTIzMjkyYWViYTA1OGY2YTgwNTYwZDc2ZTQ3N2M1NzE4YmMwODBmNmZkMmIwYjVmOGZmMTk4N2Y5YjAyMzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNmNmI5OTdjMzEyOGM4MmI4YTE5MWViYmY5ZjJkMGUwNWY3ZGQ2NjNmYzhjMWU1MTE1OTg4ZjJiN2Y4ZThmOWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEwZWNlMTBhMzQ3NTE2ZjcwYTdkMDYzYzBjYjZhZTFiNmVlNDRhOTQ5MTY4Nzg4ZWEzNGNkYmExZjUyNjc5NjIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_aebc47a044144c1eab14c8fc50c3b0ee",
+      "statement": "Any role with mcp none must have a non-empty explicit Claude tools list of plain tool names with no mcp__ entries, because a Claude role without a tools list inherits all tools including MCP.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/render_agent_definitions.py#L152-L172",
+          "version": "repo-lines-v1:sha256:0fb688461a184eb9665ed14681716696b106c4c98a91c4b9f7f021b51664beec:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0MDcxNzRhNDgxMmQ1M2I2NDdjZmJkMjI4YjNmNzEwN2M0ODFhMjhmOWVlM2VmNzQ0OGE4Yjc4NjMzMmRmNTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkZjJkM2E5MGQxNjk2YTYyODBjYzgyMjJkMTMzNTc1NjY5MDRhMTNmNzYzZjlmN2Y3OTlkYjhhNzUxODkyOWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY5NzAxOWRmZmZlMThjODI2NDA4ODFmNDg0NWQ0OTI2YmIzMTY1NDhjODk2YjExNjE2NjdiZTliY2UyYWZiODMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkNjU0NTZkNTY2M2JiYjZhMzY1MDA0ZmU1NDUwMjI3NDQzN2ZkMTE2ZDI4ZGEyZDU0MjAyMDFjNmIwNDZmN2UifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d4bae58bdacd418fbb03471e288022b3",
+      "statement": "render_claude inserts tools, model and effort lines directly after the description frontmatter line so rendered agent definitions stay byte-stable against pre-binding files.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/render_agent_definitions.py#L175-L213",
+          "version": "repo-lines-v1:sha256:bed505a8a475e8d43f1d18065c3467927120f0e418a5af0c0ff75176b4f7d899:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlNWUwYWJjMTQzM2IxOGNhMmUxMzc4YWFjNDUzOWY1YTE4NGMxZmNmYTRiMGJlNDdiZjZjYmUwY2Q5Mjk0ZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljZGM3ODI2MmNjMTE3OWMzYWRlZDlkN2VmZThlNTgwMzllZjBhNmI3MTliNGE1NGI2N2E4YjU0ZDFkNmNiNmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVkOWVkZjY4MzAwZGY5YTkwY2YwNGEwNWMyODY4Nzg2MTBjZjIxOTk5ZTkyNDMzNzAzNjAzMDBhZjczZjc1NGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFkZWJkZGZjMDU0ZTdiNWIwYTViZjMxYTQ1MzdjZTJkOGRmNjFlYmQyZTIzNjg1OWZlMmNiZTkzYjAxNmM1ZmYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_af67be429e2c457dafc0cece3f9f90d9",
+      "statement": "render_codex emits one TOML profile per role with underscore names, model/effort/sandbox settings, mcp_servers = {} for mcp none, [agents] enabled = false when nested delegation is disabled, and developer_instructions prefixed by a generated capability-policy block, and round-trips each profile through a strict TOML-subset parser before writing.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/render_agent_definitions.py#L254-L374",
+          "version": "repo-lines-v1:sha256:df943c8cf8ebf5471bec0e12b537b9253cc4fc01a70fe33dd5a60f399c298f57:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzN2ZlNjMzODc1ZDc4MzM5Y2QwNThmOGEyZjk4ZTc1OTAxNDhhMWM3MThkMmU3NmVjMDM0YjI1OWUzYTU3NGNmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5Y2RjNzgyNjJjYzExNzljM2FkZWQ5ZDdlZmU4ZTU4MDM5ZWYwYTZiNzE5YjRhNTRiNjdhOGI1NGQxZDZjYjZlIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiOWVlMTkzMjg0ZTgyZmI3NmFmNGY0ZjU4M2U0M2YwNTA3YjVmMTMyYjE2NGU2ZDM1MjNiYWZiOTRjMGM3YjFlIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1NDhkNzQ4M2QwNjBmMTcyMmUyNDUzNjg4ODMzNDI1NmI1NDkwZThiYmU4Njk4MjA2NzZjYTllYWYzNTA5Y2M5In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_c7ca1accc04c474ea7397c466a4267e9",
+      "statement": "deploy-harness.sh renders Claude agent definitions via render_agent_definitions.py into the deployed agents directory, and render_codex_adapter.py validates bindings, checks manifest agents exactly match role sources on disk, and renders Codex agent TOML into project/.codex/agents.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L513-L516",
+          "version": "repo-lines-v1:sha256:ce8fe939074f12dedc83a3c7f93e328b69da7d697c570003269c5e3ee52c478a:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWRmMTk4ZGRlYjBiNThkMTNiNjcxZWYxMzYwMDkyYmE4ZDM5MDNjZGEzYzUzYWVhZjg5MmYyZGI1MTIzMDAzYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjg5MDExMWRlMmJmZjdkM2NlOTMxMzY1ZGVmMGI0MWFjMmM1MzE0NzU3NDY4YWM4NmQ2MDdiZWI1MWJiMTMyMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzU0OTA4ZGEzNjZmNjU1NmE3NDYzOGIyNmI1N2UzODcxOWMzYmZlNjYzODE2OTliMGFmNzQ4Y2E0YTY2ZmUyOCJ9"
+        },
+        {
+          "resource": "repo://scripts/render_codex_adapter.py#L181-L195",
+          "version": "repo-lines-v1:sha256:b595a9fc835f7e89d7cf2b92a392bac13eee13a18fc507891fa7aecbd4a420dc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhZmQ2NmQ3OTc3Mzg1YzNhZTdkMjIxZjVlMDYyNTkzNGM3OWUwZWRjYTRlOGNhM2EyN2FlNWFmMTNlZjU5NzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4YTAzZWRjOTUyODNhYWY1Mzc5NzVlMTBmZDk1MTU1NjQyMjIwMmZlOWNkNjQzZGZhZTYzMWFjMmY5OTdkNjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxYTQyMjFhMWEyODE1Mzk4YzFmYzI0NzdhZjEwNTdmYzZhZmY1NWE0NGNlMWFkYzJkZTg3NTc4NjAwNzg4MzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY4NDRlNTUyMGJiNTMyODg1MWFkNjcyZDk5MWZmYjVlZjc4ODU5YzZlZmEwMWUxZWQ2MjFlZjViY2QzMDYwNjUifQ"
+        },
+        {
+          "resource": "repo://scripts/render_codex_adapter.py#L260-L261",
+          "version": "repo-lines-v1:sha256:b89f89864ec5212fbbf0a8906ae05e7ba91fd9bb050787f112cd2474580cddd0:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjQzMzUyNmY1OWU3ODcyODMwNmIxOWMzNjM3ZTQwODU0NWRkMGNkOTg0ZTkwZmRmYTZiMmJlY2RhY2Q5NjU2ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDcyNzI5NzY0MDYzYzAyMmYyZjdlZGMyMDY4YjhjNDg2OTJkNzJkOGQ1MmNkZDE1NjVjMGZhNjUzOTNjNjRiOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWFhZDU5MGZjOTFmMWY5NzAyOTBlM2Q0NDEzYWI4MzEzZmJhYTJlZjhkZjBiMWE5OTgwNDljNDEzYjJlNTExYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2I1NGZkZDUxMzI5Yjk4YWE3NjkwNWZlZDg4ZjkxNGUxMmMxODE0NGE1MzNhMGNiN2JlN2ZiZGQxYTkyNjZjNCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_5830d29e9b084d78b9f7578215d7a5ac",
+      "statement": "adapters/runtime-entry-bindings.json maps model stages to roles (implementer and correctness_scorer to coding, correctness_finder and intent_reviewer to reviewer, task_reviewer to task-reviewer) and defines per-runtime CLI entries with skill prefixes / for claude and $ for codex.",
+      "evidence": [
+        {
+          "resource": "repo://adapters/runtime-entry-bindings.json#L1-L26",
+          "version": "repo-lines-v1:sha256:bb5e1522126dc12917ebc4aef834c9eda8922942c5e53bc3d6768d7bdae2fe13:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_af2a3f828b5d4e66a810c9abf1886b19",
+      "statement": "render_runtime_entry.py validates that runtime-entry bindings have schema_version 1, no unknown fields, distinct skill prefixes, exactly one whole-argument {prompt} placeholder, the exact expected stage set, and that every stage resolves to a non-empty model in both runtimes' agent bindings.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/render_runtime_entry.py#L40-L99",
+          "version": "repo-lines-v1:sha256:19c062941a4afe7c5c1b5b930c9316b35a671de0403caeccb2d04e1bd98a6c1b:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwNjk4MmEwY2I2MzJhNmY2YmEwZmYxYmM5YTNiYjgzNDc1MTU3ZWM1ZDA0Nzk4NzkyMDAzNGVmNGQ3NDhiOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxNzQzYjJhY2Q0NjYwNzk3ZTNhODQxZWU5MmVkZWI2N2FiZWZmMjY3ZjdmZWE4YTRlMjY3YjMwM2QyMWFlMjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5ZWUxOTMyODRlODJmYjc2YWY0ZjRmNTgzZTQzZjA1MDdiNWYxMzJiMTY0ZTZkMzUyM2JhZmI5NGMwYzdiMWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMyODJhMTAxODk0NmViNDIzNzk3NWUzYzBmMDBkYWVkNmIwODc3ZThiZmQ0Njg0NDBkOGI5ZjIxYjc0ZTllMzAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4db8c911dd7f493fb1105de5f14cb4be",
+      "statement": "render_runtime_entry.py renders a shell-quoted CLI command for a kebab-case skill (e.g. claude -p '/feature-intake ...' --output-format text or codex exec '$feature-intake ...') and resolves a model label for a model stage through agents/runtime-bindings.json.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/render_runtime_entry.py#L102-L160",
+          "version": "repo-lines-v1:sha256:48649ac068641a374088a8a6007b36919dd758ccae7ef6a590033b8972b13309:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2ZDU1Y2EzOTIyZTQ1NTU0NjI5ZTY3ZTVmODg1YjZmMmYyYTBmYzYxMTM1ZjMxNTZlZDIwMDQ3YWE4MDFhYzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0NGY0YThmOGU2ZGMzZWIwZDczYTc4YzE0MDRjOTY3YzllMTFmNTMwNmQyZjdhNjYzZDYzZDFkMjA4OWRjNTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlNjc1YzI1M2Y4NzI1ODRiYjc0ZjVkMDU5YzFiZWQ4OWM2OGVlYjg4ZDUzYTNlMzdkMzBlNmQwMzZhYTdiNGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlOTBhZTg2MTQ0MTFjOTBiNDAwMzBlNzg1ZmI5YjI5OGU2ZWU3ODYxNTlhZjBlMzkyMWIwYjgyYjNlMWZjZTYifQ"
+        },
+        {
+          "resource": "repo://tests/scripts/runtime-entry-bindings.test.sh#L24-L41",
+          "version": "repo-lines-v1:sha256:318ed8a4e5b6ef5cdf4b262ee6a2350e9a881b30909c98b0057d9910161b3a53:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiYjc0NmE3OTczMjk5OGY3NzNlMzYzMWY4ZjlkN2NjMmRmOGQ1M2ZlNWZjMzFlYzkwOTY3ZmE2ZjVhMjc3NjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMxNDkwMTQyMTlkYzE3MzFlODE4MWZiMzEwZDJmODE5OGU2YWQxYzAyYTcxMTc0YjQ4MjNiNTFjYWUxNjhhMTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVkZDBmY2UwN2RjYzUxMTA4NjdkMWQ3ODJlMjcwZGQ2NGQzZjJjZWViM2MzYjcyMjFkZmRiMDc2Y2M3MTI0MDgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_02868ddf62f34abfa7ce0f294ae12993",
+      "statement": "Review roles are allowed to share a model: collapsed scorer/finder and intent-reviewer/implementer bindings validate.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/test_render_runtime_entry.py#L82-L94",
+          "version": "repo-lines-v1:sha256:e5516b65cab379272d31eeac238c949373266303d4b530584a4104e005da4b3a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyZjhkODI5OTZmYWYyNWM0ZTlhNWNmMGNiZTE4MTc1NGI2YTViMzkyZjM0NmU3ZGE3ZjhmMmIxOTc2NzM4MWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBjOTE1MzUxYzFkNTk1ZjhmNDgzMTQ4MGFhMzMyNGE2ZTY1ZTI4NDVjYmJmZGE3OTk1NjZlYWQxYTVlZmMyODIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA2OGZiZmRiNmM1NjYzYTVkN2VhYjgwNGZhZWUxOWI3MzM0NWM3M2IwZmM3YzdmZjk4ZGRmNjZiZDk3NzUzNTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7e365bc85f7b410992632ff4f6ccda5e",
+      "statement": "agents/*.json and adapters/ are source-time adapter inputs that must never deploy to consuming repos (CONSUMER_DATA ships only harness-manifest.json), so render_runtime_entry.py stays a harness-repo tool, while render_skill_prompt.py and apply_model_config.py are in the deployed CONSUMER_SCRIPTS allow-list.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L45-L62",
+          "version": "repo-lines-v1:sha256:d0548615c0d11e316f8bc383ef7f36c4e71166bbaf2466faa3691406b27ad9bf:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyNzg5NGNkMzFkNDczMjliMzQ0M2FkODEwNGE2MGQwNDZiOGU1ZmM2NzdmNDhmODY0YmZiNmZmMWY2N2E3ZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYwN2JlMGU1NTgyYmNlNzA0NWMzNDk0ZjcxYWIxMjg0MzQ5MmRmZjAwNmNmNWQyZmVlOWVjZWUyZWFjOWZiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5MTUxZjk5Yjg4NTlkMTM0MTc1ZThjNDcyZGVmMzZmNjg3MGNlYzViZDVlNjkzYTdmMzliYTdiZmFiMzVkNmMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_985dd5d99194401dbdf3668dc56cfcbc",
+      "statement": "render_skill_prompt.py composes isolated subagent prompts from fragments with source provenance comments and {{key}} substitution, failing on missing fragments or unresolved placeholders.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/render_skill_prompt.py#L76-L91",
+          "version": "repo-lines-v1:sha256:465c7fe5e1113aa8ac52d75a553f574da4f7b28328fddfeaafcae3d19c78a01a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyYWY3ZTM3MzQ5Y2Q5YzJhMTg2MTI3ODA1ZTE5NzM2NDI1NDAzNGZjYmY2YjdiODQxYzljNjU0NDI5MzUzZWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjOGJiMjE1ODRiMDhlZTVhNWFjMTlhNDYxMjAxOWM3YjczMTI4YmI5YTFiOTRhM2E2MjI0ODQyMGQ1NzY3YzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5ZjkzMDgzYzE5NzEyMWI5ODI3MDBiYThhZmFiZDE3MjJjZjFkM2U3NDA0NTA5ZTgwZWZhMjcyNDdmNjJmMDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU5MWNjMjNkNzEwMGI2ZjEzNjk1YzFiMWFjZWY3NjU1ZmJhNmE1NjRmNDJkNzVmNDE3OTM0Y2QxNDYxZWI2YWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_60d60d500af44be3aaeda1705f222587",
+      "statement": "render_skill_prompt.py --check-all verifies, via CONTEXT_MATRIX, that each isolated context's prompt file mentions its required rule files and contains explicit Read lines for required_reads, that empty deliveries carry a rationale, and that correctness-review config has six unique finder angles with thresholds 75 and 60.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/render_skill_prompt.py#L13-L127",
+          "version": "repo-lines-v1:sha256:bd6e67811f3a668f706da0692c1c2f5b1f649b013da86f57bde1cdf798434d89:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhYmEyNDdhNjRhM2RhMTQ1NGVmYmVmYjc2M2I5MzNkMTgyYzc1NGEyN2E3YTE1NTgxNWQ2MDU1NzUzNTFmYzcyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI3NmFmN2MyYWMyMjc5NjBmY2Q1YzNjYzg4MGQ1YjA4Y2ZiMzk3MTEyZGE4MTBiZjc1YzNmNGViYWEzYTM3ZTVkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhOTFiZjNkOTZmMWIxMTk2ODhkZWVhOWEwMDRiMmIzZmViYjE4MGJiOGZiMjM0NDYyNTYxNGFkYzg1OTU2M2FjIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1NDhkNzQ4M2QwNjBmMTcyMmUyNDUzNjg4ODMzNDI1NmI1NDkwZThiYmU4Njk4MjA2NzZjYTllYWYzNTA5Y2M5In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_4b8dcab0ae8f4d8eba0062bd59304bc2",
+      "statement": "harness-manifest.json registers the agent contracts, bindings and renderer under agent_bindings for claude and codex runtimes and lists the four agent role names.",
+      "evidence": [
+        {
+          "resource": "repo://harness-manifest.json#L101-L115",
+          "version": "repo-lines-v1:sha256:f489a793ac60b1b0e7475e078ef60805ef65928a12f953ac42f38c27f7355f46:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1YTcyZDMwYjcwYTg5NjRlNDg5NzNmNGNmNDc1NDYzZGFlNjZhM2Q5ZjdiYzY4ODVhYjMzODkxNTI3ZjBkODUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY1OGY0MWEyZDM3ZDQ2NmJlYjFlMmE0MWQ0YWIwMDU5NWJiMGQ2ODg4ZTY2ODgyYTczNWJjNzNkMzhjMmJlYjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE3NmEyMGZiZTNlZmI2NWQwMzhkZmZmMDhiMWRmYjRmYjc4MTUyMjFhYTZkYzE5OTkwZGRiYWRkNmFhNjRiNGIifQ"
+        },
+        {
+          "resource": "repo://harness-manifest.json#L247-L254",
+          "version": "repo-lines-v1:sha256:3c5a401049e91dbd192e823d481e00fc4fb3a4725cc6688b84a3ea876c29ae0f:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjc4YTM0M2M5YTNlMDdhZjkzNmQ3MDhiZTM1NDJlMTRlY2FkOTQ0YThmYjliYmFhYzA5YTZmYmI2YWZlOTc3MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDA4OGEwMzY2NWVlM2ZiZGI5YjM4NTg2MGY0NjkzOGY4OTYyOTc4Mjg2NzQ2MDI0MjVkZWYxOWZlOGIyNDJlZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_cdf852be64274811821262e2ff5f20c8",
+      "statement": "The harness repo's test command is bash scripts/run-tests.sh, running L1 syntax plus doc-truth lint, L2 hook contract tests and L3 script integration tests.",
+      "evidence": [
+        {
+          "resource": "repo://agents/PROJECT.md#L20-L28",
+          "version": "repo-lines-v1:sha256:6cb1ab8114920ded231413d15af25ef930eab51f322ca4cea6aac8bf13a29e6b:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzcxMTVjMWFiYWI4Zjk1NzJiZTU4N2MxMDI5NTMyOTJjNGFkNjQ5Yjc4ZWRlYTc2N2NlMDA5ODVhYWMwMzBkMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTRlNTJhZTQxYWVlNjIyNmEyYzQ4MWFiNDIzNDNjZDliYzBiZmY2NjIwMDBiZjk3YTY3MzUyODNiZWFmMjVhZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_4b5ac5c477fb448c9872a0bfa8461161",
+      "statement": "The agents README inventory records dispatchers: task-reviewer is dispatched by subagent-driven-development and by diagnosing-bugs for the diagnosis review, and test-runner runs after implementation and on the subagent-driven-development cannot_verify retry.",
+      "evidence": [
+        {
+          "resource": "repo://agents/README.md",
+          "version": "repo-file-v1:sha256:dcaa49558842fc683fa14911c0c69194de7f9f88fc31f63c57a22839fefea4ab"
+        }
+      ]
+    },
+    {
+      "id": "claim_cedb143b1cc94a92a458460e9165545e",
+      "statement": "deploy-harness.sh copies agents/ while skipping agents/*.json, then its 'Rendering Claude agent bindings' step runs render_agent_definitions.py --runtime claude --output-dir $OUT/agents to overwrite the copied semantic roles with rendered definitions.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L379-L383",
+          "version": "repo-lines-v1:sha256:9cd6219fcb25c4e5cd720fe99e7ebd4ef64c508de07f6f33e728c58d2ac26f5b:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzU4ZGViYjJkZDA0NjY0OWIxMmRlYzc0MDJiYjhkMzk2YmNmMDk0ZTQ0YjVmOTAzNjBlYjNjOWM2YWQ3OGUzYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODRlNzYwNDI2YThlM2E4NjBkZDE1MGU2YzExNzhiYWE2YmYxODI0YzU3ZmU4MjczYjAyYjRhNWNlNDUzYWE3MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2UyMGIzNjQyNDc2NDdhNDRhZmNlZDZlMjkxY2YzOGNkNTMxNDlkYzM0MTc5YjRkYWZlNjUzOTRlZjlhYWIyNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTdhYTk3ODFmZDNlNzUxNmI2ZWJmMDI5YjhhNWY2YmQwYjQzMzViNzFiZmVkMGM3YTJkMzQwNzExMDg4M2U3OSJ9"
+        },
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L513-L516",
+          "version": "repo-lines-v1:sha256:ce8fe939074f12dedc83a3c7f93e328b69da7d697c570003269c5e3ee52c478a:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWRmMTk4ZGRlYjBiNThkMTNiNjcxZWYxMzYwMDkyYmE4ZDM5MDNjZGEzYzUzYWVhZjg5MmYyZGI1MTIzMDAzYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjg5MDExMWRlMmJmZjdkM2NlOTMxMzY1ZGVmMGI0MWFjMmM1MzE0NzU3NDY4YWM4NmQ2MDdiZWI1MWJiMTMyMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTI0YmI1MTMyNzkyMWMzMzVmMTdjZGIxMDViMTIwYTJiZGMzZDYzN2RkZmZkN2Y3NzA3ZGI2ZmJjZGM1ODlmNyJ9"
+        },
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L625-L630",
+          "version": "repo-lines-v1:sha256:5e36286cb7d0d05040b9e3d00a28ea4b6208d4e2bbcaaf418cd85134d5dff945:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTQyNjc4YWI3MWE2YjgxZWQ2MGRlNzlhYzhjZTcwZjRlNzExOTRjYzEyODMzNTJhMmRjNDJlMzQ1MTAyOTYzZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmRmYTk3NDY2MGRiZTI0OGE0OWIwMDVjNGEyNzJjZmNlNmNhMTYzYzZkZDc2YmU2MzlhMTcxOWU4MjgyYmI2NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWUyNmQ0MDM4NTBlNDA5MGVjMmI1ZDI4YWViY2Q4MWU2YzFhMDM1OTczMDU4YzVjZGM5ZWZhOTk2NWRlNTc5OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTdhMWEzMWRkMjU0Y2Y1Y2QwNDg2NjYyYzBhODRjMGIyMWQ2OGE5ZTI1MTcyNWJmMmZmMjc0MDg0ZTMzZjM0ZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_7e1864b7a6134ca38b44ab95536a28f4",
+      "statement": "deploy-harness.sh protects agents/PROJECT.md as a bootstrap-owned file that a re-sync never silently clobbers, and strips agents/README.md from the deployed tree as a harness-only maintainer doc.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L33-L38",
+          "version": "repo-lines-v1:sha256:19c2b5649afd6d7e6880ff2f26072ba090b859a0fb9bce4da78bf1710e8ba272:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzA2Zjk3MTEzNWIxNGU3MzgxM2MyYTc1OWVhYjNjZDg1MGFiZWYxMDU3YTIyMzU5MzQ2YTc2MzU2ZjQ2OTUxNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmFmYmEwNTI3YzM5NTNjNGI2ZTBlNWI1NzM5YmE4MzYxMmY4MDUzYmNkYzk0NjY3MzAxOTNjZDFkNTkwYjQwOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzA0MDZhYmQxNDc0YWQ2YzNmMDI5MzEzZGU5ODQ3MjliZjk2MzEyODQzZDJjOWNkMGNjYjM3ODZhNjU0MmQ4MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTI5NzliN2FkZTMzZTcxMWY0ZWU2NjQ0ZjAzNzEyYmIxOGMxN2YwMTdhMmM3M2U2YjFiNjRkOWI3YWRjMWM4ZCJ9"
+        },
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L68-L72",
+          "version": "repo-lines-v1:sha256:67eb214f40b5e5eeb55e66f9cb9b43693d3fbf27970063590464f1fed106ee16:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWMyNTE5YTFmYmU5YWFhMzM1MGYwNjgwOTJhZGU1NmZiNGMxZTZmZGFjZGUzZjZiYjUxMmJhMTRmMTkxMGRhMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmFmYmEwNTI3YzM5NTNjNGI2ZTBlNWI1NzM5YmE4MzYxMmY4MDUzYmNkYzk0NjY3MzAxOTNjZDFkNTkwYjQwOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2E4N2I0Y2M4YmU0OWNkNmQyZDg0ZDU2MWU3MmI2Y2QxYjliOGIyNzRhN2E0YjMzM2ZmODg0ZDQ4ODcxODlhNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTkwMmRjNDhjZTllZGQyZGY1NGJlODE5MzFiNjgxMWRlM2U3M2MyNWFhZWY4ZDc1ZDNlM2E4MjZkMWVkOWM3OCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_cb1edc1147624aad8f034cd477638878",
+      "statement": "render_agent_definitions.py --defaults-out (only with --runtime claude and not with --check) writes a sorted schema_version 1 snapshot of each Claude role's bound model/effort plus model/effort frontmatter of non-archived skills/*/SKILL.md, without changing --output-dir render bytes.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/render_agent_definitions.py#L216-L232",
+          "version": "repo-lines-v1:sha256:85be22741b1e09a76eace2c6e9ad6077b6ad7d2748133d0f57f34f64003b4a03:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlMmNjMjkxZjUwNjVmYjU2ZjIxZTk5MjAxZDIyMDljNGMzZTAwMjEzYjExYzQ4MzRiNWQ5Njg0NmVkZmM5NjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyOTJiYWQ5OWFmMjY1MWRmZGQ0NmQwMzFkYjYwNzYxNmQzYzliMzE2ZmM5YWNkOTliOTYwYzFjZmE1MDA4OGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1MjAxOWNhZGEyNTI5ZjExNWE2NGIxYzQ4N2FmZTliODk1ZTBmZWFjNTY5NzcxOTMzY2Q4OTM4MmZhYTI5ZjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFkZWJkZGZjMDU0ZTdiNWIwYTViZjMxYTQ1MzdjZTJkOGRmNjFlYmQyZTIzNjg1OWZlMmNiZTkzYjAxNmM1ZmYifQ"
+        },
+        {
+          "resource": "repo://scripts/render_agent_definitions.py#L385-L405",
+          "version": "repo-lines-v1:sha256:e3b011c36d1c3f46e2deef6a100301218a95014deb1e5dc98cab9539f011789f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzNDM3NDZkMDlhMTgyYzhkNWE1YmMwNmNlNjk5ODJjZmQyNzczZDc2MWVkZWYwZDAwYzg0YTMzOTY5YTRjZjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxMDM0ODFjNTdkMGYwZGMwZjc2Y2QyY2M4YjM2MDRjNGU4Mjk2ZGE0MTIyYWRkMTllODE3NDVkYzdlMzMxYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg3Y2Q2Y2E2OGI4MzIyNjEyNmM5Y2JlZGM3ZDM3ZGM3ZGRjZDFjNzllZGUwY2FjYjM3MjRmZDdlZDAyZWI5MWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM4ODQwZDE0ZmUxODhiOWNkZWIzN2Y2N2RhOTg0Nzg5OTZjMmNlMDkxZTM3MTVlNjQ0YmM4NjZmYTE1NDRjMjYifQ"
+        },
+        {
+          "resource": "repo://scripts/test_render_agent_definitions.py#L281-L352",
+          "version": "repo-lines-v1:sha256:962b5777579eef86b0643429098f6f67b679acca71e118cb5c5e7ba3b0070347:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc0NmI0ZDhlYmFjODE2NDcwZTYwMmE4ZDZjODgwN2IyNDUyNjJhNTEwY2I3Y2UxOGJhMGIxZWUwMGQwMzljODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0Njc3YmQzZDRiYzFlZTczNTkwN2RlNGNiZDlkODUzOTFkNmNmMDQ3YjAzYjkyNTVmNDVjOWNjMTE0MmM4M2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYxZWJlMDk5YzUyZmI3ZjRhNTI1ZTRlN2QxM2FhM2I1Njc0OTg0ZWIzMzM2NTQzZDFiY2ZhODRhMThmMTBiZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM5OTlmYmYzMmJmNmJkMjEyODBjMGY3MmI2ZWYyNGNmMTU3MGEwNjBiNzdhNjU0MzFmZWQ3ZGI3ZWU0ZjJhYzUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_95507610bfee4a8baaaa6bff65c1a4b7",
+      "statement": "Before any write (including under --dry-run), deploy-harness.sh renders the defaults snapshot and runs apply_model_config.py --check against the target's harness-models.json, exiting 1 with nothing written under .claude/ on failure; after rewrite_derived_paths it copies the snapshot to .claude/harness-models.defaults.json and runs apply_model_config.py --apply.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L517-L541",
+          "version": "repo-lines-v1:sha256:fcf69197d2473a556a6c1ba3b547a36b8abb1b641d5456de78eb3d5606997762:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkYzI3MzQ3OWQ0NWRjZDU5Y2RkMzYyN2M5YWIyNjJiMzYwNTk5ZGE5NzdkYjAyZWFhYzlmNDdjMTY5MmZkMDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlODU0YjY2ODdjYmQ3YmM0OTBiNmIxYTM0OGJjNTczOTk4N2M4NWE4MDE0NDZlMzNhYTFhYWU4NDVlNWQ1YTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc1NDkwOGRhMzY2ZjY1NTZhNzQ2MzhiMjZiNTdlMzg3MTljM2JmZTY2MzgxNjk5YjBhZjc0OGNhNGE2NmZlMjgifQ"
+        },
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L621-L638",
+          "version": "repo-lines-v1:sha256:14487e52c9f3a23b170cc6179efe4d614ed503bfece185207ee7b0461293cdc1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3MjlkMjQ2MzZjYjgwOTVmZDY1ZmE1NDZjOWRkYmM3Y2E2MTUwNzczMWNlMzgxNDk2ZmYwYjYzYWIwNmM2YzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmNzlkNTY4NmQ5ZWZiYWY5ZGRlY2ExMzQwNWI3MmY4NDU2ZmNlMzdiODRjOGE1ZjdhNWFkYmRhNjViYmM3N2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyMzRhZjAwM2FkZTZlY2Q2ODNhYTk0MDAzNGRmNTMzNzhmMWExMjUxYzRhYTg0ZWQ3NGQ2YjViNDJkYTZlMzEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_49d5ef8a61ba4fb8a6572b384163fa97",
+      "statement": "apply_model_config.py validates harness-models.json (known roles/skills only, keys model and effort only, alias or claude- model IDs, efforts low..max), merges overrides over the snapshot defaults, enforces a medium effort floor for reviewer and task-reviewer, and atomically rewrites only the model/effort frontmatter lines of deployed agent and skill files.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/apply_model_config.py#L151-L225",
+          "version": "repo-lines-v1:sha256:ee7a292300b0a74a1d873d3d94b59cb0bb4fb585c1aa85d70072c1985a108f7f:eyJzZWxlY3RlZExpbmVDb3VudCI6NzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhYTkxNzI4MmJkNTI0ZjcwMzEwYmJlNmQzMGJlODI1ZGY5MzU3MzIyMDk3MTRmZWM5OTQ2MzA1ODc1NjQzMWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhMTFjMDU2N2QwYTVmOWU5YjEzNWY2NWNkMjUzNzJkZmQ2Mjg3NzVmN2MxZWQyNTNmOGJhZDQyZGQyZDY2NjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRlODEzYzQxYmFiOGE3OTIzOGMxOTU2ZGEzZDM2NmI3YzlkY2RiOTI2MTRjMWI1YThjZjRmMzZjNDhhNGU3NjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA0OTZkZTMzM2RjOTQxY2RjMjMxMDZlNDJlODRkYjcxNzdlMDgyZWQ4ZmI2Y2NiZTk0ZmZkMDYzODNlMTg3NGIifQ"
+        },
+        {
+          "resource": "repo://scripts/apply_model_config.py#L18-L31",
+          "version": "repo-lines-v1:sha256:0538ff632ccb21bd74394f006ccb376b214748a21d9e4abee0bcfed3cd58a575:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlM2E0N2QwMTI1ZjY4MDczZTIyNmYxOWE4ZWIyODNkMDYyYWRmZjZiYWQ0ZWNlZmI0OTBiMjFiYWNhMzdhNzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU4ZmQwY2Q0YjU5MzEwNDM3Yjg1YmJiMTViMmEwZjljNzM2YzUzOGY3MjBkZTNhNTEzZTY3MTMzYzJkODhmZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0ZDAwZjBjZTRkYzI2Y2M3YmZjNmVjYmM5NjdlZjY5ZDBiNmY1ZmI3MjZmYWY0ZDRiM2M5NTAzNDc4ODg5ZGEifQ"
+        },
+        {
+          "resource": "repo://scripts/apply_model_config.py#L53-L131",
+          "version": "repo-lines-v1:sha256:e3a513539ccef4f721b2a1edf43a90fc106fe88d9aebec8564be8840f8fcea51:eyJzZWxlY3RlZExpbmVDb3VudCI6NzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1OTE2MDVhNWZjNzYzNzc3MzBjM2EyNDRkOGNkYzQxODA5NGRhOGZlYzU5Y2FiODQ0ZDg0ZGMwYTg0YjU1YjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2YWY3YzJhYzIyNzk2MGZjZDVjM2NjODgwZDViMDhjZmIzOTcxMTJkYTgxMGJmNzVjM2Y0ZWJhYTNhMzdlNWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3NTE1NzZhMjc3NDdlYWMxZWZlYWU4MzNmMTA5YzE4Y2M3NjRjYjNhNDZiMzc3NDE2OTAyNmQ3NjE1YmJiMTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmMWZlNTBkMjA2MjgxN2EwNzg5YTk2ZGJkOWNhM2IyMWU2MmExMmE1YTA3MDM5MmUwYmZjMzVlNzg2ZWQyMTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7966342302ba490f801e47e2b53ded45",
+      "statement": "The harness repo's root harness-models.json overrides coding and task-reviewer to claude-sonnet-5-5/medium, keeps reviewer at claude-opus-5-5/medium, sets test-runner to claude-haiku-5-5 at high effort, and also configures the brainstorming and writing-plans skills.",
+      "evidence": [
+        {
+          "resource": "repo://harness-models.json",
+          "version": "repo-file-v1:sha256:90dbc45c11cdeda78adf4d153694fb1161596a3bb7c0d07f92e16378074ea64b"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.2",
+    "at": "2026-10-19T07:24:11.736Z"
+  }
+}

@@ -1,0 +1,300 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:8afefd69ed526bf5ac2a10dbfa96fd30b790d34349325535cac9252702bd3243",
+  "claims": [
+    {
+      "id": "claim_d8c2206982354fc48f294c99800109b1",
+      "statement": "feature-intake routes an `Input-type: bug fix` to diagnosing-bugs before the lane route by telling the agent to Read the skill's SKILL.md and follow it, not to call the Skill tool.",
+      "evidence": [
+        {
+          "resource": "repo://skills/feature-intake/SKILL.md",
+          "version": "repo-file-v1:sha256:09f7225c392264094d35f519d4536354596454dae7d11797aa04cbb9dbba300c"
+        },
+        {
+          "resource": "repo://specs/gh-318-diagnosing-bugs/design.md#L60-L61",
+          "version": "repo-lines-v1:sha256:6278187b4e6a0c97ddf5c03c62375f3ab518f019f834866092ca5462c99b5987:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjY3MzVhYWVlODVjNGJjNTRjODJjZDBjOGUzMGU1Njg5YzA4ODM1MjE0YzQ1ZDM2Y2EyMzNmMWUwNWFmYzZlZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDIyMzYzMTExMmI4NjRmMTQ2ZjVlYjM5NjZjNzkwMDRmZDJmYjIwNmU3NDUzYTNkYWQ5MDY5NjFkZGRiYjQxMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGE2NjMzYmMwM2RhNTYzMDBhMzRhZmM3NDg2MDMzZmM0ZjY3NTI5Y2E3NjVlNWY3MTkxZTg4Yzc1ZjIwNjViMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGU0ZmY1NWNjYjJiODA3ZTkzNGIyYTFhZTU4OWYzMDBhZWI0YWI5N2M4OWIzNjlhNzU5M2Q3NThmZTA3ZDg4MCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_645c3bab20d049e09c41ffda91652510",
+      "statement": "The diagnosing-bugs skill sets `disable-model-invocation: true`, so it runs only from feature-intake's bug-fix route or the `/diagnosing-bugs` command, never by the model choosing it.",
+      "evidence": [
+        {
+          "resource": "repo://skills/diagnosing-bugs/SKILL.md",
+          "version": "repo-file-v1:sha256:0b16a22e954aa323f327d8286509d21189eff5fcb47d3fb51ddfc39a129633a9"
+        },
+        {
+          "resource": "repo://specs/gh-318-diagnosing-bugs/design.md#L199-L201",
+          "version": "repo-lines-v1:sha256:901f5e98f361be9ef20f200a89b80ffbf8726c743f6a872f2c880066de6ba312:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWQxZGFkYTQzZDMzZmZjZmFjMTA3Y2ViODhlMTVjNWU5ZWQyNGNiYzI0M2JlMmIzZWM4YzI5ODUxYmU5NTI1YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2MyNTliMmQxMDAxMDdiODMwZWVmYzNiZGZjN2MzMWY5N2JmMGJjYTNjNGJlZmE1NWE5OTVkYmNhZDk1YWZkYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTMyNTJlMjk3MjIzYWIyOGJhN2RmYzdhMDU2ZWZjMjViM2M0Njg4Y2JiMDU5ZDVlY2FiZmRmMWMzNGRkYThkYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDY3YTMwNjhmYjgwNjcxY2Q2MGNjMjFmMDFhMjdkMmY4YTBkNDY5MDRhZTVhNTQ1NGFhZmUxODVlYTc1NjUzMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_fa3a023ca3e74f7d9e90145f2c0a6201",
+      "statement": "Every lane runs all six diagnosing-bugs phases for a bug fix, and the skill has no 'cause known' shortcut.",
+      "evidence": [
+        {
+          "resource": "repo://skills/diagnosing-bugs/SKILL.md",
+          "version": "repo-file-v1:sha256:0b16a22e954aa323f327d8286509d21189eff5fcb47d3fb51ddfc39a129633a9"
+        },
+        {
+          "resource": "repo://specs/gh-318-diagnosing-bugs/design.md#L204-L204",
+          "version": "repo-lines-v1:sha256:5befe569c30dde981a8ea74b08357b2560a4eb41d2a9fd97a97ac1b37ca6faed:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWJlZmU1NjljMzBkZGU5ODFhOGVhNzRiMDgzNTdiMjU2MGE0ZWI0MWQyYTlmZDk3YTk3YWMxYjM3Y2E2ZmFlZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWJlZmU1NjljMzBkZGU5ODFhOGVhNzRiMDgzNTdiMjU2MGE0ZWI0MWQyYTlmZDk3YTk3YWMxYjM3Y2E2ZmFlZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGI0MWNmOTQ0NzZkZGZiN2U3OGMwOWU1ZTgwOTZmOTU5ODJhNThlMTM2OGM0N2Y2MjQ3NTUyZTI5N2E4YTAwZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTJiNTM4MWE1Njg0NDhjYjg0YzZiZTQxYTI5NDE3MzVmMDM0ZGIzZjFjNGZjNmQ5OWUyMjBiZDg2NTU2NWFjMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_ba82c8a80c06492ea17e98a835f7407b",
+      "statement": "Before Phase 1 the skill creates lane isolation: the tiny lane runs `git checkout -b fix/<slug>` only from a shared branch, and normal and high-risk lanes run `using-git-worktrees`. All probes, harnesses, and fix edits happen there.",
+      "evidence": [
+        {
+          "resource": "repo://skills/diagnosing-bugs/SKILL.md",
+          "version": "repo-file-v1:sha256:0b16a22e954aa323f327d8286509d21189eff5fcb47d3fb51ddfc39a129633a9"
+        }
+      ]
+    },
+    {
+      "id": "claim_97a01ae7768048f99f57b6eebfa34983",
+      "statement": "Phase 1 requires one fast, deterministic, agent-runnable loop command that goes red on the bug, run without a pipe so its exit code shows the red. When no loop is possible the skill writes an ESCALATIONS.md block with `decision: pending` and stops.",
+      "evidence": [
+        {
+          "resource": "repo://skills/diagnosing-bugs/SKILL.md",
+          "version": "repo-file-v1:sha256:0b16a22e954aa323f327d8286509d21189eff5fcb47d3fb51ddfc39a129633a9"
+        },
+        {
+          "resource": "repo://specs/gh-318-diagnosing-bugs/design.md#L217-L217",
+          "version": "repo-lines-v1:sha256:a6a2a05853c13c0d6c6795d2f47a1534a3b5dca56d963cfcc9462eedb77fbb84:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTZhMmEwNTg1M2MxM2MwZDZjNjc5NWQyZjQ3YTE1MzRhM2I1ZGNhNTZkOTYzY2ZjYzk0NjJlZWRiNzdmYmI4NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTZhMmEwNTg1M2MxM2MwZDZjNjc5NWQyZjQ3YTE1MzRhM2I1ZGNhNTZkOTYzY2ZjYzk0NjJlZWRiNzdmYmI4NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTFiMjkwMmJkYjUxMGU3NDM4NDc5ZTM3YmU0MTJlZDA3NzE4YjYxYTY2M2QzMGE1M2JkNzBmMDZhZjNlZTNkNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGM5NGM4ZmZlYjM5NDNkYzBhM2RlYTdiOWY4OGRkODdjOGE0MTVhNDQwNWE1ZTZiNjU2NDFjMTdjYWNjYTg4MSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_27b7924dbd894d6aaaf2548667dbce01",
+      "statement": "Phase 3 writes three to five ranked hypotheses H1-H5 with predictions into diagnosis.md and commits it before the first probe, then posts the list without waiting for the user.",
+      "evidence": [
+        {
+          "resource": "repo://skills/diagnosing-bugs/SKILL.md",
+          "version": "repo-file-v1:sha256:0b16a22e954aa323f327d8286509d21189eff5fcb47d3fb51ddfc39a129633a9"
+        },
+        {
+          "resource": "repo://specs/gh-318-diagnosing-bugs/design.md#L217-L217",
+          "version": "repo-lines-v1:sha256:a6a2a05853c13c0d6c6795d2f47a1534a3b5dca56d963cfcc9462eedb77fbb84:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTZhMmEwNTg1M2MxM2MwZDZjNjc5NWQyZjQ3YTE1MzRhM2I1ZGNhNTZkOTYzY2ZjYzk0NjJlZWRiNzdmYmI4NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTZhMmEwNTg1M2MxM2MwZDZjNjc5NWQyZjQ3YTE1MzRhM2I1ZGNhNTZkOTYzY2ZjYzk0NjJlZWRiNzdmYmI4NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTFiMjkwMmJkYjUxMGU3NDM4NDc5ZTM3YmU0MTJlZDA3NzE4YjYxYTY2M2QzMGE1M2JkNzBmMDZhZjNlZTNkNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGM5NGM4ZmZlYjM5NDNkYzBhM2RlYTdiOWY4OGRkODdjOGE0MTVhNDQwNWE1ZTZiNjU2NDFjMTdjYWNjYTg4MSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f95354d767d34b009bf2533f9600eb72",
+      "statement": "Phase 4 probes change one variable each, carry a `[DEBUG-xxxx]` tag, and are never committed. A full refutation returns to Phase 3, a second full refutation escalates, and after confirmation all probes and throwaway harnesses are deleted before diagnosis.md is committed.",
+      "evidence": [
+        {
+          "resource": "repo://skills/diagnosing-bugs/SKILL.md",
+          "version": "repo-file-v1:sha256:0b16a22e954aa323f327d8286509d21189eff5fcb47d3fb51ddfc39a129633a9"
+        },
+        {
+          "resource": "repo://skills/diagnosing-bugs/references/phases.md",
+          "version": "repo-file-v1:sha256:7599e843efdc674dd41006aa7345eb2f167131201ebd23199bd00c53673827da"
+        }
+      ]
+    },
+    {
+      "id": "claim_91281717664c4334a0d1ba584fde2b94",
+      "statement": "Phase 5 starts only after a task-reviewer dispatch on diagnosis.md returns `spec_verdict: pass` and `quality_verdict: approved`. Any other verdict means revise and re-review, and a second failure escalates with `decision: pending`.",
+      "evidence": [
+        {
+          "resource": "repo://skills/diagnosing-bugs/SKILL.md",
+          "version": "repo-file-v1:sha256:0b16a22e954aa323f327d8286509d21189eff5fcb47d3fb51ddfc39a129633a9"
+        },
+        {
+          "resource": "repo://skills/diagnosing-bugs/references/diagnosis-review-prompt.md",
+          "version": "repo-file-v1:sha256:3560ce2eec9b9c90047973183b9ef77f39cafc9cc69723ca039412a58f44a76e"
+        }
+      ]
+    },
+    {
+      "id": "claim_7a6fe1f56ab944188ce8187e231d34e4",
+      "statement": "The diagnosis reviewer is read-only, judges only the text of diagnosis.md, cannot run the loop or probes, treats `cannot_verify` as not a pass, and fails the spec verdict for missing fields, no red output, a hypothesis count outside 3-5, unpredicted hypotheses or probes, an unlisted Confirmed hypothesis, or an empty or reasonless Seam.",
+      "evidence": [
+        {
+          "resource": "repo://skills/diagnosing-bugs/references/diagnosis-review-prompt.md",
+          "version": "repo-file-v1:sha256:3560ce2eec9b9c90047973183b9ef77f39cafc9cc69723ca039412a58f44a76e"
+        }
+      ]
+    },
+    {
+      "id": "claim_8695d1c8f3c147baa5050e2f9013b676",
+      "statement": "The diagnosis reviewer returns `quality_verdict: needs_fixes` when no probe supports the confirmed hypothesis, a probe changes more than one variable, the Seam point names no observable test place, or an apparent secret is not redacted.",
+      "evidence": [
+        {
+          "resource": "repo://skills/diagnosing-bugs/references/diagnosis-review-prompt.md",
+          "version": "repo-file-v1:sha256:3560ce2eec9b9c90047973183b9ef77f39cafc9cc69723ca039412a58f44a76e"
+        }
+      ]
+    },
+    {
+      "id": "claim_40519c18dec6452ca8e7acc92778a456",
+      "statement": "No hook or script enforces diagnosing-bugs phase order. Only the task reviewer checks diagnosis.md, and a passing review does not prove the confirmed hypothesis is the true cause.",
+      "evidence": [
+        {
+          "resource": "repo://specs/gh-318-diagnosing-bugs/design.md#L184-L191",
+          "version": "repo-lines-v1:sha256:0278d3f499daca13e8220f747388541daf944459f52b125c8f2815d208a11ebf:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzExYjhkNzE3MTMzYjY5NjZlZjc0YThiNDY2MTNiOTU5ZDdiNTgzMjNlYmJlYTM2Y2NkYmVlOTE0ZmU4ZjBiZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmI2YmI1NmM1YTA0MjgzOTI0YmIwZGMyNjMzM2ExNzBlN2U0NzM3NzMwZDY4ZDRkZWMyNTBmNzU3MjM4Y2FjZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOThhNzQ5YjJlZmI4ODJiZTc4M2ZkNjIzOGZiYzhmNGI0ZDExZTU1ZWFmNDg2MGYwNmVlZmFhMjEyZWQ3NGE2MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGM2MWNiMmNkNmMwZDIzNWMwZTQwODhjNjM2YzVmMTVlZjg0ZjkzMjhlMDhmODk3YTE2OWNjNzViMjIyNjNiNyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_31c20ed6f5fe4457a6d0a492f3890a4b",
+      "statement": "diagnosis.md has six ordered fields (Loop, Repro, Hypotheses, Probes, Confirmed, Seam). Probes write the DEBUG tag without brackets so the cleanup search does not match the file, and Seam uses the plan-format seam form or `Seam: none — <reason>`.",
+      "evidence": [
+        {
+          "resource": "repo://skills/diagnosing-bugs/references/diagnosis-template.md",
+          "version": "repo-file-v1:sha256:0c644bab254b3b45c0b04dfa99f00585b6783210b28857f99a8a1ded1ad375d3"
+        }
+      ]
+    },
+    {
+      "id": "claim_37eab35e8cf9447db6de3e3adc449b51",
+      "statement": "On the tiny lane Phase 5 commits the red test at the diagnosis Seam before the fix commit and records red/green rows. With `Seam: none — <reason>` it records a SUMMARY finding and `Red test exempt: <reason>`. Normal and high-risk lanes continue the lane route with diagnosis.md as input.",
+      "evidence": [
+        {
+          "resource": "repo://skills/diagnosing-bugs/SKILL.md",
+          "version": "repo-file-v1:sha256:0b16a22e954aa323f327d8286509d21189eff5fcb47d3fb51ddfc39a129633a9"
+        }
+      ]
+    },
+    {
+      "id": "claim_7dd2396c38244e28bd19183550e0d72a",
+      "statement": "Phase 6 reruns the loop until it is green, searches the fix diff and working tree (untracked files included) for `[DEBUG-` tags and deletes them, and names the confirmed hypothesis in the commit message and SUMMARY Rationale. On routed lanes the subagent-driven-development controller runs it before the final reviews.",
+      "evidence": [
+        {
+          "resource": "repo://skills/diagnosing-bugs/SKILL.md",
+          "version": "repo-file-v1:sha256:0b16a22e954aa323f327d8286509d21189eff5fcb47d3fb51ddfc39a129633a9"
+        },
+        {
+          "resource": "repo://skills/subagent-driven-development/references/review-chain.md",
+          "version": "repo-file-v1:sha256:317fc1c0816b56b104766c88e6b986492f1cbcaff96d54804fd168136387347e"
+        }
+      ]
+    },
+    {
+      "id": "claim_d6023617b5ae46dca0d953c617a28093",
+      "statement": "The HITL loop template reads answers from /dev/tty and exits 1 (red) for SYMPTOM_SEEN=yes, 0 (green) for no, and 2 for no terminal, end of input, an invalid capture name, or any other answer.",
+      "evidence": [
+        {
+          "resource": "repo://skills/diagnosing-bugs/scripts/hitl-loop.template.sh",
+          "version": "repo-file-v1:sha256:3b78f8446894b963aaee7082db04acb759b6efad9218b0031432395bebd5b1e7"
+        }
+      ]
+    },
+    {
+      "id": "claim_a075689ecd14444bbfcc4c2f403d9fae",
+      "statement": "Before dispatching a diagnosed bug-fix task, the subagent-driven-development controller requires `Plan-contract: 2` and a `Seams:` line, and the first seam's point must equal the diagnosis.md Seam point exactly. On a mismatch it does not dispatch: on normal it corrects Seams itself, on high-risk it returns the task to writing-plans, and a second mismatch escalates.",
+      "evidence": [
+        {
+          "resource": "repo://skills/subagent-driven-development/references/bug-fix.md",
+          "version": "repo-file-v1:sha256:e170433bfe0644e3c09e8b93b1b3a7892e432de2c7a71b81c277774206bb547c"
+        }
+      ]
+    },
+    {
+      "id": "claim_3ab93c17595a4fd98e992d2d67626f14",
+      "statement": "When Context names a diagnosis.md, the implementer targets the red test at its Confirmed hypothesis, and a matching `Seam: none` reason leads to `Red test exempt: <reason>` instead of NEEDS_CONTEXT.",
+      "evidence": [
+        {
+          "resource": "repo://skills/subagent-driven-development/implementer-prompt.md",
+          "version": "repo-file-v1:sha256:63f3313365663468b5336e7f93c3cdf91afad87e4786daa3abdcf7aaad0d98bf"
+        }
+      ]
+    },
+    {
+      "id": "claim_baec944710534fca8d4bdbfed8de1f64",
+      "statement": "For a bug-fix SUMMARY, `_red_green_issue` requires a `red` row running `scripts/run_at_commit.py <7-40 hex sha> -- <test>` with claimed exit 1-123 plus a `green` row with the same whitespace-normalised command and exit 0, or a `Red test exempt:` line with a non-empty reason. Input-type matches `bug[ -]?fix`.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/verify_summary.py#L405-L474",
+          "version": "repo-lines-v1:sha256:e9cc73534fbb134eb75aab5abc6bff50f09bd4185c5cea56db407ac21777bd2f:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1NTMwNDFiZTNlN2JhZmViOWI1NDE5NWQ5YzdiZTJlMTE4MDQyNDhkYjI4ZWIzNTU0MzgzZTVmOTM5YzA5YTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2ODJlZDNmNzA5NWQ1OTI1NTI4YWNlYjIzODE5MTE1MDU3ZjE5YjBmODZhMTA5OTViNDA5Y2RjNDUyYmU4NDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdhOWI3MDNjMmNlZjllNmEwYjg0NDA1NTk5MjFjYWM5YjBhZGY4ZTFhZjczMTM3MjcwMjBjNzQwNjM5NWI0N2MifQ"
+        },
+        {
+          "resource": "repo://scripts/verify_summary.py#L72-L78",
+          "version": "repo-lines-v1:sha256:2a037b24ead1b4cf61a3c6c2282c25cf1c55198e0b163e7c3092e7a73cef6d89:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjMxMmUwMzMyNDI4YzNiNWQ2ZGVkOTFjZTU2NmUyMzU3ODJhNzYyZGZlYWI4NDI2MmEzOGY5NmY1MGE1MDQ0OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWY1OTI0Y2Q3N2IyNzg3MTZhYzY2MjBiNDNlZDMzNzFiZDc2OTkxY2Q4MGQyZWZiZmVjNDk5OGM4MDFiZTM2NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzJlMjRiYzAwNmZiZDk2OTlmZjRiNGQwYjAxYzc2N2FlNWMxZGVmZDgwMjZkZjY2MmMzY2NkMTYyMGRhOTNjZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmZjYjI0NDNiMmY4N2U3N2VlM2E0YWEzNWViZTA0Y2Y3ZjYwZDcyODdjZWU5ZTYxNWMzMDY3N2ZhMGJhZjJhZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_9101262541704dd2a16bd48a5e805685",
+      "statement": "Prove-the-red: `_red_fix_diff_issue` diffs each matched red commit against the index in the cwd's repo, drops paths under specs/ and paths the red commit itself changed, and reports `no code change after red commit` when nothing remains. The red test command is not parsed.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/verify_summary.py#L495-L544",
+          "version": "repo-lines-v1:sha256:90992b3be0601fb7dc6baba98949c5ebe4faead7aff3ad069cdb688b4bcc2906:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0YmY3NTgwYzNmM2E0MDAwZDc0NmI4NDE4YWJkZGYwOTVjZTM4ZmE2YWYxMWRlMzg4NzExMzU5YWM5ZTIzMTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTYwMGE3M2QyZTAyZjM1MmI5MGZlZjFkOGQ2MzgxMWJhNGE4ZWUwYzFiZWFhN2FlNDY1OGYzNmFhMmUxOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY2Mjc5ZTkyN2MyYzU4MWU5ZTA0ZTNiOThhYjYxYzBlNzU4MDkzNTE3ZDY4MDQ5N2IxOWMzM2NhZWMyZGNhZGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjljZDNkYmFhMDQxNzY4MTM0MzJkNTQ2ZTkzZDAzNzFiNGQ1OTY1OTBlMDcyMjg4NTk1YTIzYzE4OWI4Yzk1MWUifQ"
+        },
+        {
+          "resource": "repo://specs/gh-313-prove-the-red/design.md#L158-L158",
+          "version": "repo-lines-v1:sha256:dc48bd53d6f886031059503ea7d986ad7beda296167708d9c82dd391dd4cc53b:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGM0OGJkNTNkNmY4ODYwMzEwNTk1MDNlYTdkOTg2YWQ3YmVkYTI5NjE2NzcwOGQ5YzgyZGQzOTFkZDRjYzUzYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGM0OGJkNTNkNmY4ODYwMzEwNTk1MDNlYTdkOTg2YWQ3YmVkYTI5NjE2NzcwOGQ5YzgyZGQzOTFkZDRjYzUzYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzQ1YmIzNzEwYWRjZTc0ODE4ZWZiMGI1ZjA1YmY0MDE4YmNkMmVhNmVjNjdjMzc5YTRhNTgzODdiYjU0MWRmNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGM5NGM4ZmZlYjM5NDNkYzBhM2RlYTdiOWY4OGRkODdjOGE0MTVhNDQwNWE1ZTZiNjU2NDFjMTdjYWNjYTg4MSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_3712b2fd1ba544d3a95c946ef1e2bdb4",
+      "statement": "The fix-diff check reports `cannot check the fix diff` when git is missing, the cwd is not in a repo, or the red sha does not resolve. It makes no git call for an exempt or non-bug-fix SUMMARY.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/test_verify_summary.py#L1373-L1423",
+          "version": "repo-lines-v1:sha256:f0e3df9042c3d76adc1b134780400af7688986afe2fc1d99f748ceaac3db2bd6:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4ODExNTVmZmNiMzE4MDA0NzNkZDc3MTE0NjVlMTQ2YjU0ZDUwZTk5ZGVjNTFkOTU0YTQ1ZDFiN2UwMGExZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmMTY0NTE3ODQ5ZjQ5YzQ0Yjg1MjIwYjMwZDJkYmE3ODNlNTljMDVmYzJhYzg5ZWY2MDMwNjgyOTg3ZDBmZmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiM2UyOTI3OWRlODVkZGI1ZTA2MGI3ZmVmMTJlMGU3YzhlOWVlOGJlMmM0NzA4M2UwNWU4NzlkMDRkOWE2YzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFmZjI5ODE0MjQyZDdmMDNkZTQ2YWEzZjBhMDdiNmQ5NmRiMDNkMmFlNDM1MTliMDQzZDg0MTkxZGUxODA4MzMifQ"
+        },
+        {
+          "resource": "repo://scripts/verify_summary.py#L477-L532",
+          "version": "repo-lines-v1:sha256:c218e3fc4ff386597a6cbc75afb50fa35153c54c31b7c324cd7581125aa2a27f:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwNWE4N2MyZjA1M2I2ZDQwMGVlYWRhOTlhYTFkOTM5ZTc2MWVlM2QwMzM4OGM4YzhhZGRjZTViNGNkOTNlNzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxOTA0MmU3NTNlYjQ5OThjNjZjOTkwNTRkOTYzODcwOGIxOWZkMjg1Yjg1NTBiZjM0YmNiMmEyOWRjYjYxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmYmQwMDkzMTRiYzI3MDg0MTY3MzRhMDJhZTVmZjM5YTFlNDhhMDUwYmU5MWY0M2IyZmFhOTIwMDJjNjJiZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3MjcxNWU0MWEzYTgxNmYxMzEzZWIzNDJhZjFmM2Q0NmQ3M2YxMjY0MjZlYTcyZDQyYTE4MWMxNjU4YzdhMjMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_aba3a9165d434f3aacdd7965c97b2527",
+      "statement": "Red/green and fix-diff issues are `!` advisories from check_lane_warnings unless REQUIRE_RED_TEST is set, and then check_lane_evidence reports them as errors that fail `--lane`.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/test_verify_summary.py#L1268-L1282",
+          "version": "repo-lines-v1:sha256:156685d5177cc740f9c03d479023c3006ee757587158d62277914d0a79a82203:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzYWEzOGMyZWMxOGRhMjlmMmEwZjAwYTMwOTg1MGNhZjg5ZjI4ODZhYzM1YzE0ZDc4OWU4YzI4MzM4MWJjM2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkZDI0NDU4MmI2ZmIwM2QyM2I4NDE1YWJlY2QzNDZiMGM5ZjQ2NmI2Zjc1MmIwNjgxODljZTdlOWEyZGMzNTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA4MjY3NmM4ODhjMWE0ZDlmYTc3MmZjZGMzMDJmNzczYmM3MjkwZWViZmY5ZGEzNmEzOWY0NGMzMjExOTgzODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFiNmUxZjZlZjAwOTYyOWI4NjhlODA4MmZlZGFmNzVhOTY0YjkzOTdhMmNmNTlkZGI4NWZiMzZkYmU3Y2Y4YjUifQ"
+        },
+        {
+          "resource": "repo://scripts/verify_summary.py#L400-L402",
+          "version": "repo-lines-v1:sha256:f16ddd2f1542217875f8a70f1977acf77e8cadc2e7f71faa4268e565b47a1d86:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2VkNTE4ZDQwNTk0NWYxNjlhM2FjMjM0MzM5MzJhNjNlMTViMmY5NzdlNWFkODRhNjk3Njg4ZWRiMzA1ZTNlOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmQ2YWRiODk3ZjE4YzUxZWI0OTE1ZjlkMzM5NjA4ZGRkNGQ4ZWE0MmRkYjc0NzAxMTZkNzM1ZWU1ZDJlZTkzNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDcwMTQ5ZTA2OWFkNjdlY2NmNDczNjQ2ZmYxYzc1MDA1MGQzMjlkMTEwMDE4ZGM1NzY2ODc4ZWFmYTFkNjA3ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTQyODFjMjhhZDM2MjM3NDhjN2E4ZGY3Y2VlYjFlN2ZkMTNjNTQ1OTM5MzY5MDk2N2E1ZGFlMmM2YzBmOWU5YiJ9"
+        },
+        {
+          "resource": "repo://scripts/verify_summary.py#L547-L564",
+          "version": "repo-lines-v1:sha256:c1e659cc69b798ef7c4d38742883ebedc642ee35d419dc5a6f443c68849c620f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4ZmI3ZGJkNWRhYTAwOWM1Y2RhZWI0MDI4YzViMDE5YTBkODljNGJkZjZiMWZhODcwZjA1MTI2NzJiNTM4YWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjMGM5MWViYmRlYzY1ODExZWZmMzRmNmZiZGVjNGYxNmMwOTNmNjI4NGU5ODU0ZDkwNGJhNTM5ZWE5N2QzMTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MDE0OWUwNjlhZDY3ZWNjZjQ3MzY0NmZmMWM3NTAwNTBkMzI5ZDExMDAxOGRjNTc2Njg3OGVhZmExZDYwN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlZTcxNWM5ZTQxZTk5NTMwODA0N2E1NzJjOGU4YmY5ZTkyZTg5Y2IwMDE2YTVhZDQ0OWFmMzBlZDdiYWJmZDEifQ"
+        },
+        {
+          "resource": "repo://scripts/verify_summary.py#L674-L677",
+          "version": "repo-lines-v1:sha256:94a6e5a1911749ea4cb8555e7b828b84dbe0ebe2055e1f962dbf10fed4a4bc4a:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzhmNjE4NzMwZmZkNDg2ZjdmZjRiYjM2Y2I3MTUxMzBiOWRlYjA0N2FkZTNmYjE0ZGQyZGZkMDA3ZTI2YjQxOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTQ2NzMzY2RlNmNiNzgyMzk5ZTU5ZTNlYjRiNWFmZThlOTBmYzJhMTUwZjJhMzJlZThlMzY3MTlkYTc3ZWVjZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmEyNDE3YWI2N2Q5Y2EwMTRiNzhiNmQxNWRlNTkzOGM0NmE1YzE0Y2E3NDAzMzRjZjQ2ZjZhNTJkYjg2ZmIxYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmU4OWE5NTVkMjkxOTEwOWRjOWUwYWQyMzUwMTA3OTUzODc4MDc2OGI5MmQzODI2ZjMyZjk2N2ZlODI0MmQ2ZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_e8db0464953f4b6d83ddc74165d7542c",
+      "statement": "Because the fix diff compares against the index, a staged but uncommitted fix counts and an unstaged fix does not. A run on the commit gate's temp SUMMARY copy works because the repo is taken from the cwd.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/test_verify_summary.py#L1359-L1370",
+          "version": "repo-lines-v1:sha256:027bd814024f21541d5e2da1b033f4f9facf6890c64537cf321518c9f6d06c2b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1ODlkMWM4NjY1MDYyMDYxYWU3MjkzYzRmZjdiZWM0MjgxMWI3MzQ0ZDFiMjUzNDhmMWVjYmFkOTBmYTgwYTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjMDViNmFlNjQ1YmQwYjQwMmI2ZDRkMzcyMWMxMjBmNGNhYmZkZGE0NmU2NWY0OGI1NTIyM2IwOTBmMzBhZmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNhM2JlODY3NTA0MDY1MzZiM2I3MWM5YjYwZDFkYmMyMDg0ZGJkNTMzOTIzMzNiZGQxNzBiM2FmMzQwOWZmMWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY3ZGM0ZGVjNWYzY2ExZWMxYTNiYzM3NzRlNDRmNjAyYjBhYTc5MDgxODQ2NjY2MDI1YTMyMzExNDA3MjZjYTIifQ"
+        },
+        {
+          "resource": "repo://scripts/test_verify_summary.py#L1426-L1436",
+          "version": "repo-lines-v1:sha256:7058c8a05a612924bf191e6fb8fdde63da2b277a306d28c930df24f6b6c15db6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1YmVhMjg2NTAzZjJhZWZjZDg1YmE3Mzk5MjNiMzY1MzY5OWEwZGM5OWEwNDJmZmEzYzgxMmZkMmI0NDkyMGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjMDViNmFlNjQ1YmQwYjQwMmI2ZDRkMzcyMWMxMjBmNGNhYmZkZGE0NmU2NWY0OGI1NTIyM2IwOTBmMzBhZmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNmZTI5ZTU0OTAxNjE2YjMyNmNhOTJlZTU5Yjc4YjhiYmVkZmU0ZDlkYzdlZDIyOTU4MWVhZjU1MDJhN2U3OGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU0YWJkYTdjMGVhNjQ1YTMwZDYxZWYzMTg0MDg4YmVmMGU1ODliODZlODc1ZTg5ZTdkZTVjMjc2YjFmN2MzZTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_76bfaa6f797c4ebe9af2c8a818f38133",
+      "statement": "rules/auto-correct-scope.md applies the red/green rule to any lane with Input-type bug fix and states that after the red commit a change must exist outside specs/ and the red test files, advisory unless REQUIRE_RED_TEST=1.",
+      "evidence": [
+        {
+          "resource": "repo://rules/auto-correct-scope.md#L44-L44",
+          "version": "repo-lines-v1:sha256:2ed8a5a1e70cc6f62210b7f12d21808abc785db18d5004afc0e687c213120b11:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmVkOGE1YTFlNzBjYzZmNjIyMTBiN2YxMmQyMTgwOGFiYzc4NWRiMThkNTAwNGFmYzBlNjg3YzIxMzEyMGIxMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmVkOGE1YTFlNzBjYzZmNjIyMTBiN2YxMmQyMTgwOGFiYzc4NWRiMThkNTAwNGFmYzBlNjg3YzIxMzEyMGIxMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGQyNWQyMmE3NDhjN2ZhZDI3OTA3NGY2ZjcwNDI1YjA0MThmYTFmODMzMDViMDA3ODE3YmU0NGYyNGM0N2VmZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODc2NjNmNzM5ZTQ1MDZkZWIzZDQ0YjhlMGUxMzNjMmNlN2UwZGRiNDg4NWE4YjlkMmVjMmUwOTA4M2RkYmQzNiJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.2",
+    "at": "2026-10-19T07:24:11.736Z"
+  }
+}

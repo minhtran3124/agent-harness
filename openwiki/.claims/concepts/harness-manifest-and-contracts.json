@@ -1,0 +1,274 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:9248e2e70556d28da26aa99b16944a95bfaf4c254fa1ae9f72e20398f1f02aac",
+  "claims": [
+    {
+      "id": "claim_083baf81f75b4b61a67bac5a33112f79",
+      "statement": "harness-manifest.json is declared the single source of truth for the hard-gate vocabulary and component inventory, holding hard_gates (detectable with slug/mode/desc, and judgment-only items), a contracts surface->consumers map, notes, hooks/skills/agents inventory, hook_profiles, and agent_bindings; it is JSON so checkers need only the Python stdlib.",
+      "evidence": [
+        {
+          "resource": "repo://harness-manifest.json#L1-L67",
+          "version": "repo-lines-v1:sha256:268c718bb4cef8a0dfb6fa838a3ee6e513c6bc881dc35a59cb32023798954ce8:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRkZmVmZWJlOGZkM2NlYTc3MTIyNjM2YTQ3YmUwMjZiODIwMDIyOWY0NmNkN2MwZTdkMmRlZjczMmM0MzFlOTIifQ"
+        },
+        {
+          "resource": "repo://harness-manifest.json#L211-L254",
+          "version": "repo-lines-v1:sha256:af8079e5edf64e90c1ddebcb929572b1de9d759a96eba98922b4ab713724e1a9:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0MWVlNDExNGJiYWU2MTczODdmMTExNjk3M2IxMzYyM2U1MzA0YzM3YmUxYWQ3YzUzN2NlYzE4NTk0ZDQzN2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZiODlhZDA5ZDQwYzNkZTQwMWY3Yjg3ZGNmNjk0ODQ3Njc0OWE5MmMzYjIxNmRhMDA2OTQwMDJmZWNmNGEwZDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_53e25b7c0a7c4a279638b79dab8da3b5",
+      "statement": "Of the nine detectable hard gates, seven are block-mode and two (weakening-validation and workflow-engine) are warn-mode, switched on 2026-07-23 because of measured noise; warn changes enforcement only and intake still classifies them high-risk.",
+      "evidence": [
+        {
+          "resource": "repo://docs/solutions/harness/gate-mode-as-data-decisions.md#L67-L82",
+          "version": "repo-lines-v1:sha256:0808f5977a9610728690e2293c8f3924b13d5f894b44036f089d23a219b96e4d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjNTY3Mjk4NGY4ZTY1MjFmZGU2NzdiMmVjODY2ODE2MzA4ZGEwNTIyMTljNGZhM2Q4MWM0NDBjZDA5MTRlNDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzZDYyNzQxMGMwYTMyOGQ3MDRmMjkwOTcwZWM2M2QwMTNmOTJiNDZkZjMzNzBkNGJhZDE3YmEwYmM3MDEwNmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxZjFmNmIxNWI3NTcwNWNmMDM3OTc3YWFjNmIyNmU3Yzc3ZDZlZWJmYjRkNGEyMjY0MDUzMDAyMTg3YjhhODEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYxODBmNGU0NTdmYjllNjI2OWM4MGFiZDAzZTgwN2Y4OTYzOTk2Mzc4YzQ1ZTg3NjQ1Mzc0OGJkYzBiZmE3MTIifQ"
+        },
+        {
+          "resource": "repo://harness-manifest.json#L6-L52",
+          "version": "repo-lines-v1:sha256:907a9260bd869da9d6e43bb91c3d7af7c424a839d9239aab665d807991cc8d32:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExZTI3NTRkNTlmYzFkMjk0MjgzM2RkYmVmZTY1ODljODYwNmJkNGZkYWQzNjdhYjBkNzIzMmNlN2RiYWM5YzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2M2Q1MzVjZTM4MDYzZDZiNGM1MWQ4YzM4NmE3ZjliM2U1ODBhMTRhMTBjMDdiMTk4ZGZhZjE5YzkzYTNiZmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImExMjZmZjQyY2VmNDRjYjVjMDM1ZTVlY2E3NGIyYzYyOTRjYTQ4NmVhMjQwM2FjZTIwOTA4YWJmY2QyNmExY2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM2ZGU3NzlmY2U5MzVhMjYyNTlmYzY4NTJmNDVkNzE3YTJkNWY3MmQ2NGQyZDc3MDVhMTdkNmM1OThlZmQ0NDMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_25f73279b875477b88fcb21d99981f89",
+      "statement": "commit-gate.sh check_risk resolves gate modes from exactly two sources: the git index copy via `git show :harness-manifest.json` parsed by jq into slug=mode lines (missing mode defaults to block), and, if that yields nothing, the embedded GATE_MODES_DEFAULT sourced from hooks/lib/gate-modes.default.sh; it never reads the worktree or .claude/ manifest.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/commit-gate.sh#L403-L420",
+          "version": "repo-lines-v1:sha256:a729997960ee110af4677418638c4055e1e49c8cef7749c2a49f083783c61266:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1NDFlZWZiZDFiMjhjOGE4YzI3ZWU3YjEwZjNjZmYxZmIxMjgxZmZmZWU3MmMzNTlmZGYzZWFiMWY2M2YzZjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1ZmM5MGZmOGE0NDE0YzU0NDFkMGY2NzdjNWNiZmRhMzhiNDc0ZTUxYmZkNTU5YTU1NTlkZTBmODc3MDU1MjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkNzJiZDkxNDQwMzA4ZTgzYjg1ZWE0MmRiMTEyYjNkNThkY2IyZjg1NGZhYTBjNDIwOGYyZDkwZWY5YjVmZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5ZmNhNmRiN2IzYmQ4YTllYjAyNTlhN2UzZTI0MTIyMGNiMzUwNGRlYzQ2ZDg0MjcyYzgzYjQ5MzM3MDRkMWEifQ"
+        },
+        {
+          "resource": "repo://hooks/lib/gate-modes.default.sh#L1-L27",
+          "version": "repo-lines-v1:sha256:71897a95df06ba0cd8e12aa4d48544ff962fd880ac486a4c1e74ecc43f17573c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4NzVmOTI4NTQ2YWVlNzg1NWNiMWRiOWFmYzhhYjNmMWE4YTM0ZDQzZGU1YmJkNjJmNzA3NmQ3YmE5ZjM5MTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0ZTE5ZDExMDQ4ZjY1OGY2NTNjYzIyYjZkMWFlNjFkMjdhZmEzMjk5YjA0ZTFhZjE1ZmY3OTAyMTZmOGQxZTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3f4f9c051f714d36bec2bdfac78f860a",
+      "statement": "category_mode returns warn only when the slug is listed in RISK_WARN_CATEGORIES or GATE_MODES contains an exact `slug=warn` line; every other case (unknown slug, missing mode, empty mode set) blocks, and RISK_WARN_CATEGORIES can only loosen.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/commit-gate.sh#L380-L401",
+          "version": "repo-lines-v1:sha256:28ba3bb577604ab18912e4e3f92a5d6ee27791e59e9f44986712c1a05656abb4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3ZTg1ODdhZjQzYWQzODBkZDA3ZGIzMGY5OTY5M2UzODFkY2M2ZDA0YWFkN2YwMTdmNjljNmM1ZmQzNTk0OGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZjZTVhNDkyMjZhZmE0YjU4NGZhNmVmYTBjZGUzNmM5NmI2YmQwZmI1MGRmMzY4N2FlZmFlOWE2OGYyNDRlNGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEwMThjMzAyYjcxZWUxNDBkYmIwNjFiMTlmMTU0ZWIxMTQ3NDcyOTEwMDg0MTQ3NGQ3MTVhN2JhYmM4MjY2ZWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_072bbc0e73684d2c8aa74f56bd865838",
+      "statement": "Tripped categories are partitioned by mode: warn-mode categories only print a stderr note, while block-mode categories exit 2 when the declared Lane is below high-risk.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/commit-gate.sh#L483-L515",
+          "version": "repo-lines-v1:sha256:21bb257716e9b31c08f09834db40720b84a100f354a480415804a86c23c82b11:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0ZDQ4OGI0ZmI3NzNjMmFiMDhmMGNiOGJlNWYwY2UwOTg3NTU1Y2FhNjM4ZDc3NGJjNDUzYzVhOTg1MDA4YzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyMzkwNGQyNTJlMjQwMjk5ZTlmNGIxZDU3OGM3M2ZlMTJkZmIwZTAyOWE4ODEwZWY0MDllZTI4MGM3YWIxMzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAxOTg5ZGFjOTRiYzlmODkwZjM1M2ZmYTExMjMzNmYxOTBiYjA0NzhiNWFkOGRlNDQ3MWVjNTcyM2I1NDYxMTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA2MTY3Y2M2NjYyNmQyNTMxNGFiYWRmNjBjYjk3OTIyM2QwZTc5OTMyNDhlZWQ2OTk0MDk0Yjg4NTNkNWUyZDUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_25f65b34d108440a9b8c2e2024b3507d",
+      "statement": "The policy read is index-side because reading the worktree manifest allowed an unstaged `mode: warn` edit to loosen the gate for a commit whose tree still shipped block-mode policy (a critical policy TOCTOU found in Codex review of PR #160, fixed in commit 880eb15).",
+      "evidence": [
+        {
+          "resource": "repo://docs/solutions/harness/gate-config-must-read-index.md#L14-L62",
+          "version": "repo-lines-v1:sha256:ed55d524c0f27ecd418ca37614b2ec191bfdf76484437811ef48ee0de08c765d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJkNzA4N2JjMmVmNjYyZTVjYTRlM2Y0ZjJjYmJiN2NmNGQzNTEzNzM3ZWQ5ZTMwNTA5OTA0NDFhODJiMjk4ZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4YzAzZmUzMmRlMmNkMGEyOWRiNjM3NzQyZGQwYjFiMjVhMWVjY2NiYmNiNzFjYjI2NWQ5MTJiNjQ4YTM3YWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjliYmEwYmYxNTU5ZjU2MjliYTAxZDZlYmE4Yzg5MzM4MTY1OGVlYmE5YzkxODlkYWVjNDg1NzViMzdiOWYyNDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZlMGVjYWUzODc0OGM2NWU0M2I5NDAyYjg1NmRkZjRkMTViODY2MDZjN2EwNTc0YTZlZjRkZWE5Mjc1YTQ2NGUifQ"
+        },
+        {
+          "resource": "repo://docs/solutions/harness/gate-mode-as-data-decisions.md#L84-L98",
+          "version": "repo-lines-v1:sha256:3cccff1ec48ee6f09588a56ff2b8f4873585e2a9c90c6bea62c2f282d38a2c6d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwZTI0YmI5NWIzYTUyMjNiMzkwMzIzZjhmMmIzZDMyZjFiNjkxNGFmMTA4NjYxMmQwZGEwMzgzZDgwN2Q2OTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmZjdiYmU5MGNiYWMwMjc1MDAxNTg5MTJhZjM0M2Q3ZmU4MjE4NWI1ZTBjMzk2NzhmZGRmMDViNjEwYzZkY2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjNjc0YzIyN2NiZDQ3OTc4MDNmNTMyNTg1MmU3NjI5NDVmZmJkNjIzYWQyNzhlYTM0NmZlMDAxNTRjMjNjNDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZlMGVjYWUzODc0OGM2NWU0M2I5NDAyYjg1NmRkZjRkMTViODY2MDZjN2EwNTc0YTZlZjRkZWE5Mjc1YTQ2NGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8bf996afcec64172a5e17bf57e2f3894",
+      "statement": "Consumer repos must not read gate policy from .claude/harness-manifest.json because .claude/ is gitignored in consumers, so the file can never be staged or index-checked and an agent could loosen the gate; instead consumers without a tracked manifest use embedded 2-warn/7-block defaults, replacing the earlier block-all fallback.",
+      "evidence": [
+        {
+          "resource": "repo://docs/solutions/harness/consumer-risk-modes-index-safe.md#L21-L73",
+          "version": "repo-lines-v1:sha256:09841b54f94b69db3b7f372371900b5d78138fbd0bceb87c16fddf5da4d90363:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJkNzA4N2JjMmVmNjYyZTVjYTRlM2Y0ZjJjYmJiN2NmNGQzNTEzNzM3ZWQ5ZTMwNTA5OTA0NDFhODJiMjk4ZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1ODA1MmQzOTQ5OTFlZjYyZGIwMmFjZmY0MTc5NDE2NzQ3NTA3YTZiZTZmNDQ0MWVlZWQzMmViMjk3NWM1ZjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3ZDVjY2Q0ZWNiYTc5OGQ5MjVkZDJjODIzZDE5YTMxMjU1ZGIxMDJmNWEyZTBlNmE5NmFiY2Q2NDgwODVhZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZlMGVjYWUzODc0OGM2NWU0M2I5NDAyYjg1NmRkZjRkMTViODY2MDZjN2EwNTc0YTZlZjRkZWE5Mjc1YTQ2NGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0d07958d0a7b46b48c02de6285586c57",
+      "statement": "Tests pin the index-safe rule: with no index manifest the embedded defaults block data-loss/migration, an all-warn .claude/harness-manifest.json does not loosen auth (SC-8), and a staged index manifest with auth=warn does loosen auth.",
+      "evidence": [
+        {
+          "resource": "repo://tests/hooks/commit-gate-risk.test.sh#L208-L250",
+          "version": "repo-lines-v1:sha256:428509ffac9821e2c4c10eb8c5d70bfbb95349d8b7585535b5f8af2e38877c6b:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIyMTU1OTBjNjY5ODEyZDdlZWUwY2YzMzE4NzI5YTkyOTEzNWYwM2FiZTVjNWIwNjYxNTUyYjk3YTAzNDM4OTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxZGE5NmY2ZGZlYjgxMzk4NjVjOWMyMWRmNjgxYmQ4ODI0YzY2YzI4MDdhMmVjOTUyYTY1ODMzZjFlMmQwY2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzZTE1NDE3MTdlZGNhOTI0MmMxZWEyNmQ3MzI3Y2Q5OWU1NjNiYTExNmYyZDc5MmQ5YzBlMTRkMDJkNzMwMWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY3ZDA5MGZjZjM2MGI2OTA5NmYwMWFlY2Q2MThkZmU5MjE1MzhhNzRjZmMxYzZhMDFlMTY3YWMwMzkyNWU2M2IifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0de40394271c4c88976808de1980bda1",
+      "statement": "Gate modes are runtime data in the manifest rather than a hook case statement that check_manifest.py regex-parsed; only the add_cat detector set remains mirrored in commit-gate.sh.",
+      "evidence": [
+        {
+          "resource": "repo://docs/solutions/harness/gate-mode-as-data-decisions.md#L22-L47",
+          "version": "repo-lines-v1:sha256:4bfa0bbaa66c08b6f9a726036f7e5b9f57d81e9527387f29341932dc7b1838b5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmOWU5ZmZiNDE3YWQ5ZWU2ZjRmOWUyZDAzZjUxMDVmOTYwZmYxZTIwZWUzM2E3NTFiNTMwMTllZWI0MGYyNDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzYWM0NDc5NzAzMDg2MGNlZmUwYWYwMzQwNDZjZDZmNmYzOGU1NzAyMDY2Y2UwN2NhNmY4NDU5MmRkZTcwYjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkwZDU5OWFlZTAyNjk3YWJmMTk0NjczNmExOTFmZTdkZmJkZjA3YzVhODc3NTk0ZmJlMmMxNWU2OTA4OTBmMmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFiNGU4NTI3NzQ4ZTZmYmVhZmJkMTdhYzEzNzBhYTU1NmY3ZGI0OWM1YjU5OTNjY2I5ZDVjMDMwZTY2N2I4ZjkifQ"
+        },
+        {
+          "resource": "repo://hooks/commit-gate.sh#L359-L363",
+          "version": "repo-lines-v1:sha256:70cf8875de1ce67fbee0ed47da29792be1b2bf839a12037e4eec2187e5b82a65:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzVlZWEwOTMzNjc3Y2YzMmVlN2UzYTdjYTM1YWJmNjBmZGZmYjNhMzljMWI4YWE2MTY0NjI2YTM0ZDYyYWFmYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmRjNDE2YzgxNmMzYTQ0ZDY1N2RiMDliYmI2NzcwNjA0MDM3YmNmZGJiYjJjYTE4NGE3ZDQzYmVjMmJjMDVjNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjhiNWZlMmEyM2I1MjA4NmM4MjBlMjU1YjZmNDE1MzE2NWUxNjVlY2FmNDgzNmM0M2I1M2NiOGU1NmE3YjBiZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDk5ZWQzN2RkZmQ3ODFjZDkzYzliMjlhODdjM2M0NTE0YzNjZDNiYTM1Njg4YmJhNmY3Mjk5OTZiYmE1YzkyZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_7cde744730784cdcb7e8df32d5f63ed8",
+      "statement": "check_manifest.py exits 1 on drift and checks inventory parity of hooks/skills/agents against disk in both directions, each hook's wired flag against settings.json registration, the exact hook_profiles key set and membership, and agent_bindings runtimes, roles, and capability completeness.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check_manifest.py#L1-L164",
+          "version": "repo-lines-v1:sha256:c4342ae36c14ddb1e5798fdef17d29642a5d3817c1405a19d28c93fedabf8ce2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTY0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkNjgyY2JkYjRjOGIwNzUxOGJmNDg2YzU4OTkwZmMzOTE3ODNhYTIwYTkxNmJmYjI3YWQyMTFlYjFkNWMzNjQyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0NGUzYWM1YmZhMzk3OGIyYjUwNDM0ZTczMmNmNDQ0NmVlNjY1ZDcxMzgzZDZiZTgwYWM5ZWRhNmRjM2M5ZTJlIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlNDMyOWFkMGE2NTQ0MWVlNWI2MjU2YmI0NGI1OGQxYjg3NGFlZDRmNjJhY2U3MzU4ZmU2NGFjN2E0OTExMTAyIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_7c78d22427e3494f91cc0955e43b18a4",
+      "statement": "check_manifest.py enforces bidirectional parity between hard_gates.detectable slugs and the `add_cat \"<slug>\"` set in hooks/commit-gate.sh, and does not compare modes.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check_manifest.py#L166-L180",
+          "version": "repo-lines-v1:sha256:738a4ee8884a6110923f54a40c366a2193bc2c8e0264f04f5e2db50e91130182:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5NTJlYmM0ODc4Mzk0MTgyNmI3MTZlN2UwNTVmOWU5NTM3MDFlZjIzMWFmMTEyMTA1ZWJhMTlmNmZjZmMzZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBhZTJjNzcwYmQwY2EzNzgzMmM0YmQ3M2FiOGY0ODg4ZTViMDJlZDRjNThhMTY3OWViYjNlMTk3ZjkwNWJmODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUwM2FlMDAxMzUzM2Y0MDA2N2RjNzM1YTBiMmY1OGVkMjUzMDNjZGE3YzIxOTAwZmJkMmRhZTA3MzY5OTdiYmIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_00f304930c9642bba199957fc38622d9",
+      "statement": "check_manifest.py validates each contract entry is an object with non-empty surface and consumers string lists whose paths all exist on disk.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check_manifest.py#L182-L206",
+          "version": "repo-lines-v1:sha256:c828a85e4e336fb6eb63101719b3aea7ec66911f22e5cc8bf2b643f6dd9659a6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2YWE1MmU5ODhlNjFhNjU4ZDQzYzM2YTAxMDUyNTYwNDRlNzMwMzQ2YzIyZGIxMzMxNTJiNWViZDE3ZWFmNjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2MTU1NTBhNTc1N2ZmYTFjOTgwMDdiODk1ZTM3M2U2NjI1YmZmZTUzYzYxNDdkNzcyYjY4YjVkOWIyZGQ5NzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1M2VlYzVhMTg4MGFjYTgyOWIxMjMzN2M5MDE4OTU3NmJhM2VkZDg2YmM5ZjI2M2NiNzVlOTcxNzM4ZTk0YjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3YzM5NjM1N2NjY2Y2OTVkYjY5NjU3Y2FmMTU0ODkwMDkzMTQ2YWM5NTkzNWVmY2E0OTY1YjM3NzUyYjhlZjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9da67ad41192440489b642f91384fc93",
+      "statement": "check_gate_modes_smoke.py pins exactly workflow-engine and weakening-validation as warn (failing on re-tightening, new warn gates, or invalid modes) and, as SC-9, sources gate-modes.default.sh via bash and requires its slug=mode map to equal the manifest's for every slug.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check_gate_modes_smoke.py#L1-L104",
+          "version": "repo-lines-v1:sha256:e5ccc15e559cbde336b3f1a26eb108ac7df0fdc17f0e6625a93a28ff2dde97ba:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkNjgyY2JkYjRjOGIwNzUxOGJmNDg2YzU4OTkwZmMzOTE3ODNhYTIwYTkxNmJmYjI3YWQyMTFlYjFkNWMzNjQyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIxNjIzM2IzZmZlYTMyYTIzZGY1MzA2NTM0MzQ4ZjJkZWU3NzZhNWE2Zjc0ZmI1MzMxNzVkZGM1MzlhOGZlNDY0IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1NDhkNzQ4M2QwNjBmMTcyMmUyNDUzNjg4ODMzNDI1NmI1NDkwZThiYmU4Njk4MjA2NzZjYTllYWYzNTA5Y2M5In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_2decf364296a4eb5a8c0b14e98384bca",
+      "statement": "scripts/run-tests.sh runs check_manifest.py and check_gate_modes_smoke.py as blocking L1 manifest-consistency checks, and harness-audit.sh reports manifest_degraded when check_manifest.py fails.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/harness-audit.sh#L133-L139",
+          "version": "repo-lines-v1:sha256:1ffb3ab0937d160f5b2dba2b8c358449cf115d3033cffc08c4a23d73abbc6f59:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjljZGJmNDBkZWUxMGY0ZTAwMzRhOGVkODA5MDhmOTBiNWJhNjI2NGEzODRhMzhhYWE3NmQ3YTdhNzEyZjU1OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzc2OWQyMzdjZDQyMGI5ZDM4Yjk4MWEwYTRmNjc3MDE5MGE0YTgzZGNhMWZlNTZjNGY1YmExZTJjYmMwZWY3NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGQyYTU3ZWMyNWIzNmJlODcyYjFhNDNhYWJjY2I5YjdkOGE4MmJhNmU2YThlNDg4YTFjNjg3ZGQ5ODdmNGQ4ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDQ0MDEzODkwZjIyMTM3NTAzMTkwMzc4MjZlZGI1NTQ0YmJkNzA2YmUxMjk2NTdjNzgwY2Y1MDUxNzI2YjJmOSJ9"
+        },
+        {
+          "resource": "repo://scripts/run-tests.sh#L50-L59",
+          "version": "repo-lines-v1:sha256:b4d6b65f64816dd6aca3aafb57f4275471d52b9b61fd389d8a00b56e99b00e88:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxNDgwMzE3M2E0NGY0NDYyNjVmMDdlZjNhMTcwYzAzNWI2YzhkZmFlYmVhY2IzMGMzZTIxYThkYzkyYzk1MTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk4ZmY4NDhiMzIyMDZiNDI1MDQyODUzODhkYjM4ZTUwYTAxNTIwM2Q5OGJjMTM0OTYyYjJhMGRiZTFmOGJlZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1NDkyYTRmMTkxYmFhNjNmMDVkYWQyYjQzMzc1YmFhMzkyZGI3YzNjMmZlNjJjOWY1MjRhZjlkODQ5NThjYTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f39f4d3953f74b00bdde03c75b28201a",
+      "statement": "check-contract-impact.sh is advisory: for explicit files or --changed (git diff HEAD plus untracked non-ignored files) it prints, for each changed file exactly matching a contract surface, the contract slug and consumers to re-verify, and always exits 0 even with a missing or invalid manifest.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check-contract-impact.sh#L1-L60",
+          "version": "repo-lines-v1:sha256:886c133a381052e9c9ae604da3241c9988d16419d970ce6a81f9eb7fe390e7a5:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOTVmYzA0YTgwYzk1MmY0OWNlNDE4ODYyN2M1M2IwZmJlOGM0NDA0MWI5NTJkNTkyYWNkMWRlOTk4NjE0NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4ZDNiOWU4ODBhNzc5NzU0OTNkYzdlMzU5MTQ0YzAyOTVhNGY2OTRjZmUwYWY0ZjkyOGMyMjMwN2JjNWMzMjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://tests/scripts/check-contract-impact.test.sh#L28-L51",
+          "version": "repo-lines-v1:sha256:c401cf09f3b0945ea26acf73c7aa7bc6c0e2b59bfe7bfa4bfb9ed74738756240:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5NTQ1MTFmMTJiNjEwNDJmYWJkMTExMDg4NzcxY2I5MzczOWEzYzQ2ZjI0ZmJhNDI4ZTQ0ZTJhYWU3NDczZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4Nzc3YWY3MDc4MTg0ZGJiODM4OTA0MDM2NzgyZTE4OTQ2OGNlZWJhOWI2YmFhMmU0ZGU1Y2E1YmMwOGFkOTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3OTdhMDQ3MmJkZGI4N2IzNzkxYjJjZWJmYTNjYmUwNzlkOGJhN2EzYzJjMTE2NjZiNDE3NTIzMTdkNDIxZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyMjE0NzViNTQxMjcyNTQzYjhkNGExMWY1NDdjNzhkMTFjOWQ1MjMwZDYzZTg5M2RhZDZkZTVjMDcyY2JiZWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ab2e8d48317140efb650bab9b832a2f7",
+      "statement": "harness-audit.sh runs check-contract-impact.sh --changed and counts its output lines as CONTRACT_IMPACT reminders rather than drift.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/harness-audit.sh#L141-L148",
+          "version": "repo-lines-v1:sha256:330df7aa7c78fdb9c6a9bb1362ae0e0c5aea91f86c88966ad0dee9998cbfd952:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ2OGRkMTgzOTk4ZjBjZWYxNmJiYmE5ODgyZjRjODM0ZGI0NjhjM2JkOWM4OTc3NDFmNzk4NmI1YjJkYmJjMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzc2OWQyMzdjZDQyMGI5ZDM4Yjk4MWEwYTRmNjc3MDE5MGE0YTgzZGNhMWZlNTZjNGY1YmExZTJjYmMwZWY3NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDEzYmE5ZmIzODRiODg0MWM2ZTU5MDNkYTFhOGYyZjc4ZjA5ZWFmNzM0M2MwNTc2YWYzMTU3ZjUxODYwOWFmYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDdhYmI4ZDlkYjQwODcwYmZiYTJjNWVhYjE1NmUyZGVkOWVjMGZiMzE5MjYxZTRhNzhhNzVkZmU4Mzg5MDI4MyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_8927f70361fb4f6e8b2b32fa8b0db3f8",
+      "statement": "deploy-harness.sh reads hook_profiles from the source manifest (default profile when none given) to filter which hooks are kept in the derived consumer settings.json.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L542-L558",
+          "version": "repo-lines-v1:sha256:4389efd727089b0eb798ee7d99fe900721c616428cb039b2777c723e3389924c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5YjNjOGY4ZDNiZDA0YTg5NDYyNDY1ZDA5ZmRjZDhhZmI3MDA5MDlhYzE4NTZhZmRmZmVmZDY3NDI2MmI1ZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5OWYyYmFkNjE2OTM3M2E0YWNhNDY5NmQwOTg2YzA0MjJhYzY0OTgzYmI0NjlmMmE2ODM5Mzg0N2Y5NjNmMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlODU0YjY2ODdjYmQ3YmM0OTBiNmIxYTM0OGJjNTczOTk4N2M4NWE4MDE0NDZlMzNhYTFhYWU4NDVlNWQ1YTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkN2UzZDM3OTM5NjBjMmQzNjU4ZjVkMzc5YTg1NGE0YzNiNDY2NWRhMDBlYmQ2YjliMDlhOWQ1Mzc5Yjg3MDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_97e1bf07b5274418848b19f90b37c36c",
+      "statement": "The manifest hook inventory lists four wired hooks (commit-gate.sh, branch-isolation-guard.sh, session-knowledge.sh, model-config.sh); the default hook profile is standard, minimal contains only branch-isolation-guard.sh and commit-gate.sh, and standard and strict both include all four hooks including model-config.sh.",
+      "evidence": [
+        {
+          "resource": "repo://harness-manifest.json#L215-L227",
+          "version": "repo-lines-v1:sha256:4b9ca3a4d9bcd2526f6140afc2d34a7ea133ff0f4ba6cad45dea9ca1935b04d5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5MGNmNjMxMDY1YjZlOTg2MzQ2MGQxYmJmMmY0YmM0NTEyNGQzYmYzNzFlYjVjMDk2ZDFlYzMwMDMyMWZiYTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzZWRkNjdmZjE4MzBlMjNhMWZlMDRlZmNjZTMwMTg0OTk5NjA3NDU3NDU5N2JjZDJlMDNkMWRhNGE5ZWRlNjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1N2Q5ZGNiMGVmNTFiYjg4ZGRmZGIyNmJkNGM0M2I3YWI1ZjE4YjU3YWQyZDUyNmVlNmVhZDQ2YjVhOWUyNWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b824abe62eae4bc18313d6686cf43167",
+      "statement": "model-config.sh is a SessionStart hook that applies the validated harness-models.json to deployed agent and skill frontmatter via scripts/apply_model_config.py and never blocks.",
+      "evidence": [
+        {
+          "resource": "repo://CLAUDE.md#L80-L80",
+          "version": "repo-lines-v1:sha256:9a1daf469f93a9a57f9844300be5e52a3f1a22c3fd00075bc35a44d4081588ff:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWExZGFmNDY5ZjkzYTlhNTdmOTg0NDMwMGJlNWU1MmEzZjFhMjJjM2ZkMDAwNzViYzM1YTQ0ZDQwODE1ODhmZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWExZGFmNDY5ZjkzYTlhNTdmOTg0NDMwMGJlNWU1MmEzZjFhMjJjM2ZkMDAwNzViYzM1YTQ0ZDQwODE1ODhmZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDMxOGQ0NjM3MmMwZWUxYmU1MmIxZDdkYjAwY2IyYmY0OWZjZTRiYjBhZDgyY2VkODQxYzU5YmI2YTJjNTM0MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzhhNjQ1MjE2OGQ3OGY1ZGYyMmVmMDVkZDcyM2ViMzE4ODFmNWMwMTFlMzRmYmY2MGVmOWJiZTU1YTI5YTU2ZSJ9"
+        },
+        {
+          "resource": "repo://hooks/model-config.sh",
+          "version": "repo-file-v1:sha256:f0cc30c196eec0c2cc2551e6e3451ca4154ee15bc5360ce62ba81f29fb7cb1b6"
+        },
+        {
+          "resource": "repo://settings.json#L36-L42",
+          "version": "repo-lines-v1:sha256:761d796d6c82f5b1438f7c03d5ed206b5ffc90d56a648304f7d77a7f0ba607e1:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2JkNzlmYTc3MTBiY2RmZTU1NzM0ODNhOWNmMTFmNjc4ZjZkOGI5NDM5MmNjMjE2OGQ2NTYzNjVmOTU4OTY0NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODgwMDVkNTcxMDZhMzYyZWIwMDBkYWYzZGE0Njc0YzgyYjUxOGZmNWEyZTJmNjdlZThlNzU3YTMzM2MyYWY2NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWNmYjhlMWUyM2NlMjI0MGQ0MzNkNWZlYjY2N2NlOTJjZmJlNjBlNjg1Yjk2ZjM4MWZmMDdhMTlmZDMyZmIwYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjg4YWJhZjVhNTA0MGFhM2U2YmUxYWFlZmFmYjMxOWJhNzEyOTkxZWI3NDdiYWM2M2MwMjBkMzgwYmQwODM1YiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c1f8bd171d024e65afc91b5bf2e2acca",
+      "statement": "The manifest skills list includes harness-models (16 skills total) and the agents list is coding, reviewer, task-reviewer, test-runner.",
+      "evidence": [
+        {
+          "resource": "repo://harness-manifest.json#L229-L247",
+          "version": "repo-lines-v1:sha256:f4a46da40d46a7c8b34b2021d42487605176c42940464ade2fe3ff91765a6348:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4YWFjOGNiMjQ4MzU0NWFiZjk2NGU4NTRjZDZkNzIyMjM2ZDU4MGY4YmMyZTM5ODczNjg5NzE0YWI3NzU1N2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3OGEzNDNjOWEzZTA3YWY5MzZkNzA4YmUzNTQyZTE0ZWNhZDk0NGE4ZmI5YmJhYWMwOWE2ZmJiNmFmZTk3NzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdhNDc0ZDQ0YmEwNzJiNDM5MjNlYzEwNjE3ODlkNjViN2I1NzFlNGY2YTRjZTIwNTM4NGEzYWFjNzZkZDE3ODQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZjNjk0MWM2MTZlNDY4MjY2M2Y1NWNkMzhhZjk3NzZhYjY4YzFlYmJmMTdjZWZmMTJkNGJkYWMyNmYwMmYyNDMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1c430c7d597844039ceb6710539c186b",
+      "statement": "harness-models.json is not part of harness-manifest.json or its contracts map; apply_model_config.py validates it (schema_version 1, agents/skills maps of model/effort) against a defaults snapshot that render_agent_definitions.py builds from the Claude runtime bindings and skills/*/SKILL.md frontmatter, rejecting unknown roles or skills.",
+      "evidence": [
+        {
+          "resource": "repo://harness-models.json",
+          "version": "repo-file-v1:sha256:90dbc45c11cdeda78adf4d153694fb1161596a3bb7c0d07f92e16378074ea64b"
+        },
+        {
+          "resource": "repo://scripts/apply_model_config.py#L53-L80",
+          "version": "repo-lines-v1:sha256:9f2f7e4284ddc31a976b6fc6b19ab295439d793f8df5d73beaddf93da0de0d4d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1OTE2MDVhNWZjNzYzNzc3MzBjM2EyNDRkOGNkYzQxODA5NGRhOGZlYzU5Y2FiODQ0ZDg0ZGMwYTg0YjU1YjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyNGU0NGE0YTVlOGZlMjQ0YmZhZjkwNGNiOGE0YmEwMDlkNzZkMTc0NTZjMTMzMDZjZTIxOGI1NzMyMDRjYmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3NTE1NzZhMjc3NDdlYWMxZWZlYWU4MzNmMTA5YzE4Y2M3NjRjYjNhNDZiMzc3NDE2OTAyNmQ3NjE1YmJiMTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ4ZTNhNTVhMGY2YmI5MGI5Y2EyNTE5ZmYwN2ZhOTk5ZmIyMjNkYzk0NmJhZTRlZWJmOWE5M2QxZWY4ZTQzODcifQ"
+        },
+        {
+          "resource": "repo://scripts/render_agent_definitions.py#L216-L232",
+          "version": "repo-lines-v1:sha256:85be22741b1e09a76eace2c6e9ad6077b6ad7d2748133d0f57f34f64003b4a03:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlMmNjMjkxZjUwNjVmYjU2ZjIxZTk5MjAxZDIyMDljNGMzZTAwMjEzYjExYzQ4MzRiNWQ5Njg0NmVkZmM5NjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyOTJiYWQ5OWFmMjY1MWRmZGQ0NmQwMzFkYjYwNzYxNmQzYzliMzE2ZmM5YWNkOTliOTYwYzFjZmE1MDA4OGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1MjAxOWNhZGEyNTI5ZjExNWE2NGIxYzQ4N2FmZTliODk1ZTBmZWFjNTY5NzcxOTMzY2Q4OTM4MmZhYTI5ZjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFkZWJkZGZjMDU0ZTdiNWIwYTViZjMxYTQ1MzdjZTJkOGRmNjFlYmQyZTIzNjg1OWZlMmNiZTkzYjAxNmM1ZmYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c2659bb9f6ad4e84a73d600c5733b468",
+      "statement": "deploy-harness.sh validates the target's harness-models.json against the rendered defaults snapshot before writing anything under .claude/, failing the deploy if invalid, then copies the snapshot to .claude/harness-models.defaults.json and applies the overrides.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L517-L541",
+          "version": "repo-lines-v1:sha256:fcf69197d2473a556a6c1ba3b547a36b8abb1b641d5456de78eb3d5606997762:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkYzI3MzQ3OWQ0NWRjZDU5Y2RkMzYyN2M5YWIyNjJiMzYwNTk5ZGE5NzdkYjAyZWFhYzlmNDdjMTY5MmZkMDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlODU0YjY2ODdjYmQ3YmM0OTBiNmIxYTM0OGJjNTczOTk4N2M4NWE4MDE0NDZlMzNhYTFhYWU4NDVlNWQ1YTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc1NDkwOGRhMzY2ZjY1NTZhNzQ2MzhiMjZiNTdlMzg3MTljM2JmZTY2MzgxNjk5YjBhZjc0OGNhNGE2NmZlMjgifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.2",
+    "at": "2026-10-19T07:24:11.736Z"
+  }
+}
