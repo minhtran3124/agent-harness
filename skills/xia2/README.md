@@ -95,7 +95,7 @@ These edits **do not** require a re-run:
 
 1. Open `tests/structural/depth-modes-test-cases.md`.
 2. For each test case, mentally walk the prompt through the **updated** depth classifier (`SKILL.md` + `references/depth-classifier.md`).
-3. Record the result in a new column (e.g., `Run 4 result`).
+3. Record the result in a new column (e.g., `Run 6 result`).
 4. Compare to the most recent passing run.
 5. Fill the Δ column:
    - **stable** — same result as prior run
@@ -141,6 +141,7 @@ These are the canary tests — if any one flips when it shouldn't, you've broken
 | F2 – F5 | Informational | No action. Observations only. |
 | F6 — bundled scope | Open *(cosmetic)* | OR-logic handles it. Explicit naming optional. |
 | F9 — familiarity bias | Open *(cosmetic)* | Deep signals fire correctly. Explicit naming optional. |
+| F10 — PROJECT-CONFIG-GATE untested | Open *(new in xia2)* | Test gap recorded in the structural suite. |
 
 See `tests/structural/depth-modes-test-cases.md#findings` for full descriptions.
 

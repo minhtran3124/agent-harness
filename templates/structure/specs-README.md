@@ -37,6 +37,7 @@ this line if you change it.
   Checked at ship by `scripts/check_open_questions.py`; blocking questions stay in `ESCALATIONS.md`. |
 | `design.md` | `brainstorming` | Approved design — the WHAT and WHY |
 | `research-brief.md` | `xia2` | What already exists, alternatives, lightest path |
+| `diagnosis.md` | `diagnosing-bugs` | Bug fixes only — ranked hypotheses committed before the first probe, the confirmed root cause, and the test seam |
 | `PLAN.md` | `writing-plans` | Task-by-task plan (markdown `### Task` sections per `rules/plan-format.md`; the uppercase name is what the hooks and renderer match) |
 
 ## Lifecycle

@@ -25,65 +25,82 @@ init-structure.sh --root <project>   (first-time setup; run from the harness rep
       ↓
 feature-intake  (routing entry point — run first on every change request)
   → reads specs/<slug>/intent.md when it exists (pins it by commit SHA)
+  → with no SUMMARY and no approved intent.md, drafts intent.md first (references/draft-intent.md)
   → classifies input type + 10-flag risk checklist + hard gates
   → output: lane (tiny|normal|high-risk) + confidence → specs/<slug>/SUMMARY.md
-  → routes: tiny → branch + direct edit · normal → subagent-driven · high-risk → full chain below
+  → routes: tiny → branch + direct edit · normal → using-git-worktrees → subagent-driven · high-risk → full chain below
+  → Input-type: bug fix → diagnosing-bugs before the lane route (see Bug Fix Path)
   → EVERY lane cuts a branch first (enforced by hooks/branch-isolation-guard.sh)
       ↓
 brainstorming
-  → reads: CLAUDE.md, docs/solutions/ (decision track only), recent commits
-  → output: specs/<slug>/design.md
+  → reads: the project, relevant docs, recent changes, decisions under docs/solutions/
+  → asks the open-decision frontier in numbered rounds, with a recommended answer per question
+  → finds facts itself; asks the user only for decisions
+  → output: specs/<slug>/design.md (after the spec-review loop and user approval)
       ↓
 xia2
-  → reads: CLAUDE.md, rules/, techstacks/, docs/, docs/solutions/, specs/
+  → reads: AGENTS.md, CLAUDE.md, README.md, docs/solutions/ (INDEX.md, critical-patterns.md, ≤3 records), recent specs/
   → depth from the intake lane, else rules/research-depth.md + references/depth-classifier.md
-  → depth re-evaluated after reading docs
+  → depth re-evaluated with evidence (may go up, never down)
   → output: specs/<slug>/research-brief.md (no code)
       ↓
 writing-plans
   → input: design.md + research-brief.md
-  → output: specs/<slug>/PLAN.md
-  → runs render_plan.py --summarize after saving (At-a-glance block + PLAN.html; not auto-opened)
+  → output: specs/<slug>/PLAN.md (every task has a Seams: line; a fix task copies diagnosis.md Seam: exactly)
+  → runs check_plan_contract.py, then render_plan.py --summarize after saving (At-a-glance block + PLAN.html; not auto-opened)
       ↓
 using-git-worktrees
-  → creates isolated worktree + branch
+  → detects existing isolation first (skills/using-git-worktrees/scripts/detect-isolation.sh)
+  → else creates an isolated worktree + branch; deploys the harness and runs the clean baseline
       ↓
 subagent-driven-development        ← same session, or `resume <slug>` from a new session
   → implements plan task-by-task
   → one read-only task reviewer per task (separate spec + quality verdicts; file handoffs)
+  → diagnosed bug fix: seam check before dispatch (references/bug-fix.md), diagnosing-bugs Phase 6 before the final reviews
   → workflow-engine diffs first pass context-propagation-audit, then final adversarial correctness review (correctness-review)
   → final intent review (intent-review) — diff vs the original request, blind to PLAN
+  → writes .review-receipt.json; handoff needs verify_summary.py --check and a passing receipt
       ↓
 compound  (if non-obvious pattern found)
   → output: docs/solutions/<category>/<slug>.md
+  → a high-overlap match is a second occurrence ("mistake twice"): update and promote that record
       ↓
 finishing-a-development-branch
-  → runs tests, pushes, opens a PR (never merges — a human reviews & merges)
+  → runs tests, pins review receipts (check_review_receipt.py), marks the plan shipped
+  → commits the spec record (PLAN.md, SUMMARY.md, RUN.json, events.jsonl) by name
+  → pushes, opens a PR, commits the ready_to_merge run state (never merges — a human reviews & merges)
 ```
 
 ### Minimum Viable Path (intent clear, in-place edit, <1 day)
 
 ```
-feature-intake → (tiny: branch + direct edit | normal: subagent-driven-development, with using-git-worktrees only when the change is not in-place; PLAN.md only when >3 steps or >2 files) → compound (if pattern found)
+feature-intake → (tiny: branch + direct edit | normal: using-git-worktrees → subagent-driven-development; PLAN.md only when >3 steps or >2 files) → compound (if pattern found)
 
 feature-intake confirms the lane; a tiny lane branches (`git checkout -b`) then edits directly.
+On the tiny lane, apply asd-ste100 to agent prose you edit under skills/, rules/, or agents/.
 Skip brainstorming when intent is clear.
-Skip using-git-worktrees for in-place edits — but NOT the branch: a plain
+Skip using-git-worktrees on the tiny lane — but NOT the branch: a plain
 `git checkout -b <type>/<slug>` is still required. No lane implements on a shared branch.
+On the normal lane, using-git-worktrees reuses an existing linked worktree when it finds one.
 PLAN.html is not auto-rendered; `render_plan.py --summarize` refreshes it (writing-plans, wave boundaries).
 ```
 
 ### Bug Fix Path
 
 ```
-feature-intake  (Input-type: bug fix)
+feature-intake  (Input-type: bug fix — any fix of wrong behavior, harness bugs included)
       ↓
-diagnosing-bugs  (every lane — six gated phases)
-  → writes specs/<slug>/diagnosis.md; task-reviewer reviews it before any fix
+diagnosing-bugs  (every lane — six gated phases; intake Reads its SKILL.md, not the Skill tool)
+  → isolation first: tiny → `git checkout -b fix/<slug>` from a shared branch · normal / high-risk → using-git-worktrees
+  → Phases 1–4 write specs/<slug>/diagnosis.md (Loop, Repro, Hypotheses, Probes, Confirmed, Seam)
+  → task-reviewer reviews it before any fix (spec_verdict: pass + quality_verdict: approved)
       ↓
-lane route (tiny: red test → fix on the branch | normal / high-risk: the lane's chain, diagnosis.md as input)
+Phase 5 fix
+  tiny: red test at the Seam: committed before the fix → Phase 6 cleanup (loop green, no [DEBUG- tag)
+  normal / high-risk: the lane's chain, diagnosis.md as input — writing-plans copies Seam:,
+    subagent-driven-development checks it (references/bug-fix.md) and runs Phase 6 before the final reviews
       ↓
-compound  (always — root cause is worth preserving)
+compound  (when the root cause is a reusable learning — the bug track takes it from diagnosis.md Confirmed:)
 ```
 
 ---
@@ -94,7 +111,7 @@ compound  (always — root cause is worth preserving)
 
 | Skill | Trigger | Output |
 |---|---|---|
-| `feature-intake` | First, on every change request — classify risk lane + confidence and route | `specs/<slug>/SUMMARY.md` (Lane/Confidence/Reason/Flags) + a route decision |
+| `feature-intake` | First, on every change request — classify risk lane + confidence and route, before research, planning, or edits | `specs/<slug>/SUMMARY.md` (Lane/Confidence/Reason/Flags/Affects/Input-type/Route/Escalate) + a route decision. With no SUMMARY, it first drafts `specs/<slug>/intent.md` for user approval (`skills/feature-intake/references/draft-intent.md`) |
 
 ### Setup
 
@@ -110,45 +127,45 @@ from the harness checkout run `bash scripts/init-structure.sh --root <project>`,
 
 | Skill | Trigger | Output |
 |---|---|---|
-| `brainstorming` | Before any new feature, component, or behavior change | `specs/<slug>/design.md` |
-| `xia2` | Before implementing anything — research what already exists (portable; zero-config, depth policy in `rules/research-depth.md`) | `specs/<slug>/research-brief.md` |
-| `diagnosing-bugs` | **User- or intake-invoked**. Run `/diagnosing-bugs`, or `feature-intake` routes an `Input-type: bug fix` here. It proves the root cause in six gated phases before any fix. Every lane runs all six phases. No "cause known" shortcut exists. `task-reviewer` reviews the diagnosis before the fix | `specs/<slug>/diagnosis.md` → red test + fix (tiny) or the lane route |
+| `brainstorming` | The goal is clear but the approach is not. The user weighs two or more ways, does not know how to start, or asks for a design or a recommendation. Not for a settled approach that only needs codebase or library knowledge (that is `xia2`). The high-risk lane routes here | Approved `specs/<slug>/design.md` (`QUESTIONS.md` for non-blocking unknowns in a multi-phase spec) |
+| `xia2` | Find out how something actually works here before building on it. Examples: a feature on unexplained code, a library or API that the repo does not use yet, or how an existing part works. Not for a choice between approaches (that is `brainstorming`). Portable and zero-config, depth policy in `rules/research-depth.md` | `specs/<slug>/research-brief.md` |
+| `diagnosing-bugs` | **User- or intake-invoked**. Run `/diagnosing-bugs`, or `feature-intake` routes an `Input-type: bug fix` here. The skill blocks model invocation, so intake uses the Read tool on its `SKILL.md`. It proves the root cause in six gated phases before any fix. Every lane runs all six phases. No "cause known" shortcut exists. `task-reviewer` reviews the diagnosis before the fix | `specs/<slug>/diagnosis.md` → red test + fix (tiny) or the lane route |
 
 ### Planning
 
 | Skill | Trigger | Output |
 |---|---|---|
-| `writing-plans` | After design is approved and xia2 brief is ready | `specs/<slug>/PLAN.md` (`PLAN.html` via `render_plan.py --summarize` after saving) |
-| `visual-planner` | Standalone render of a `PLAN.md` — mainly for `--review` mode (blast-radius/risk overlay). Plain renders come from `render_plan.py --summarize` (run by writing-plans and at each wave boundary) | `specs/<slug>/PLAN.html` (untracked, local-only) |
+| `writing-plans` | After design is approved and xia2 brief is ready | `specs/<slug>/PLAN.md` with `- Plan-contract: 2` and a `Seams:` line per task. `scripts/check_plan_contract.py` checks it. `render_plan.py --summarize` writes `PLAN.html` after saving |
+| `visual-planner` | Standalone render of a `PLAN.md` — mainly for `--review` mode (blast-radius/risk overlay). Plain renders come from `render_plan.py --summarize` (run by writing-plans, at each wave boundary, and by finishing-a-development-branch before the shipped commit) | `specs/<slug>/PLAN.html` (untracked, local-only). `--review` writes `PLAN.review.html` |
 
 ### Execution
 
 | Skill | Trigger | Output |
 |---|---|---|
-| `using-git-worktrees` | Before starting feature work needing isolation | Isolated worktree + branch |
-| `subagent-driven-development` | Executing a plan — fresh subagent per task in this session, or `resume <slug>` from a new session (`Resume first`: `runtime/resume_decision.py` returns the action and cursor, then batch + checkpoint). Same gates either way | Implemented tasks, one task reviewer with two verdicts and durable Minor handoff; workflow-engine context audit when triggered; final correctness and intent review |
+| `using-git-worktrees` | Before plan execution (normal and high-risk lanes, and before a non-tiny diagnosis). It detects existing isolation first | Isolated worktree + branch (it reuses an existing linked worktree). Derived harness deployed and clean baseline run |
+| `subagent-driven-development` | Executing a plan — fresh subagent per task in this session, or `resume <slug>` from a new session (`Resume first`: `runtime/resume_decision.py` returns the action and cursor, then batch + checkpoint). Same gates either way. A diagnosed bug fix also reads `references/bug-fix.md` (seam check before dispatch) | Implemented tasks, one task reviewer with two verdicts and durable Minor handoff; workflow-engine context audit when triggered; final correctness and intent review. Then `.review-receipt.json` at the reviewed HEAD |
 
 ### Review & Shipping
 
 | Skill | Trigger | Output |
 |---|---|---|
-| `correctness-review` | After implementation — adversarial runtime-bug search over a diff, run as **6 parallel angles**, each named for its method (`enclosing-function` · `removed-behavior` · `call-site-impact` · `stack-defects` · `guard-completeness` · `prior-art`). **Standalone** (any diff, no workflow gate) or called by `subagent-driven-development` as its final pass. Context-propagation defects (a load-bearing instruction never delivered to an isolated context) are **not** its province — they belong to `context-propagation-audit`, not this bug hunt | Candidates deduped by location → scored (0–100, threshold 75) → classified (Severity + Rule class) → fixes, escalations, or advisory |
+| `correctness-review` | After implementation, or when the user asks whether a change is correct, wants a review before a PR, or says something feels wrong but the tests pass — adversarial runtime-bug search over a diff, run as **6 parallel angles**, each named for its method (`enclosing-function` · `removed-behavior` · `call-site-impact` · `stack-defects` · `guard-completeness` · `prior-art`). **Standalone** (any diff, no workflow gate) or called by `subagent-driven-development` as its final pass. Context-propagation defects (a load-bearing instruction never delivered to an isolated context) are **not** its province — they belong to `context-propagation-audit`, not this bug hunt | Candidates deduped by location → scored (0–100, threshold 75) → classified (Severity + Rule class) → fixes, escalations, or advisory |
 | `context-propagation-audit` | **change-triggered** — Change-triggered consumer audit for workflow-as-code changes: enumerates every consumer + execution context (main / implementer / reviewer / scorer / new session) and proves how each receives the authoritative instruction; assumed/unconfirmed delivery on a load-bearing instruction FAILS. Runs only when the diff touches the workflow-engine inventory. Not a bug hunt (`correctness-review`) or intent check (`intent-review`) | PASS/FAIL per consumer → assumed delivery on a load-bearing instruction FAILS → fix (prove delivery) or escalate |
 | `intent-review` | After correctness-review — checks the diff against the original request verbatim, blind to PLAN (the third oracle). **Standalone** on any diff that has an intent statement, or called by `subagent-driven-development` as its last pass | Findings classified `gap` / `excess` / `drift` → fix-loop · escalate · report-only |
-| `compound` | After session with non-obvious bug fix, pattern, or architectural decision | `docs/solutions/<category>/<slug>.md` |
-| `session-retro` | **User-invoked**, after a session with visible friction — traces struggles to missing environment levers (check > pointer > scoped rule) and proposes ranked fixes; never edits, waits for approval. Not `compound` (knowledge capture) or a bug hunt | Ranked candidate list → approved items go to `improvement-backlog.md` / `compound` |
-| `asd-ste100` | Use it when an agent or a tool must read English text with no human to help. Use it for instructions, tool descriptions, error messages, and status reports. Vendored from upstream. See `skills/asd-ste100/UPSTREAM.md`. | Text rewritten in ASD-STE100 style. `skills/asd-ste100/scripts/ste-lint.py` checks the structural rules. |
-| `finishing-a-development-branch` | Implementation complete, tests pass | Runs tests, pushes, opens a PR (never merges) |
+| `compound` | Only after a session that produced a reusable learning (non-obvious bug fix, pattern, decision, useful failure) or a proposed harness ratchet | `docs/solutions/<category>/<slug>.md`, rebuilt `INDEX.md`, `critical-patterns.md` entries for critical or recurring learnings, `improvement-backlog.md` rows for proposed guardrails |
+| `session-retro` | **User-invoked**, after a session with visible friction — traces struggles to missing environment levers (check > pointer > scoped rule) and proposes ranked fixes; never edits, waits for approval. Not `compound` (knowledge capture) or a bug hunt | Ranked candidate list → approved items go to `improvement-backlog.md` rows or a `feature-intake` task. Durable knowledge goes to `compound` |
+| `asd-ste100` | Use it when an agent or a tool must read English text with no human to help. Use it for instructions, tool descriptions, error messages, and status reports. Do not use it for creative or marketing copy. Vendored from upstream. See `skills/asd-ste100/UPSTREAM.md`. Tiny-lane intake edits and implementers apply it to prose under `skills/`, `rules/`, and `agents/`. `compound` applies it to new records. | Text rewritten in ASD-STE100 style (Strict or STE-flavored mode). `skills/asd-ste100/scripts/ste-lint.py` checks the structural rules. |
+| `finishing-a-development-branch` | Implementation complete, tests pass | Runs tests, pins review receipts, marks the plan shipped, pushes, opens a PR, records `ready_to_merge` (never merges) |
 
 ---
 
 ## External Skills (referenced but live elsewhere)
 
-These skills appear in workflows above but are provided by the global `superpowers` plugin or the active runtime's user-level skill directory, not by this repo:
+The global `superpowers` plugin or the active runtime's user-level skill directory supplies these skills, not this repo. No skill, agent, or rule in this repo names them, so no workflow step depends on them:
 
 | Skill | Role |
 |---|---|
-| `test-driven-development` | Tests-first protocol used by implementer subagents |
+| `test-driven-development` | Tests-first protocol (the implementer prompt carries its own red-test rule) |
 | `requesting-code-review` | Structured review template |
 | `session-tracker` | Session resumption across conversations |
 | `skill-creator` | Authoring new skills |
@@ -160,19 +177,22 @@ If one of these isn't available in your environment, the workflows degrade grace
 ## Skill Handoff Map
 
 ```
-feature-intake             ──► tiny: git checkout -b → direct edit · normal: subagent-driven-development
+feature-intake             ──► tiny: git checkout -b → direct edit · normal: using-git-worktrees → subagent-driven-development
                                 high-risk: brainstorming (full chain) · low confidence: escalate
-                                Input-type: bug fix → diagnosing-bugs
+                                Input-type: bug fix → diagnosing-bugs (before the lane route)
 brainstorming              ──► xia2 → writing-plans (the only valid next skills)
 xia2                       ──► research brief → user/skill decides next step
-writing-plans              ──► (render_plan.py --summarize) → using-git-worktrees
+writing-plans              ──► (render_plan.py --summarize) → using-git-worktrees (unless already isolated)
                                 → subagent-driven-development
 visual-planner             ──► PLAN.html (terminal — visual artifact; back to writing-plans handoff)
 subagent-driven-development ──► workflow-engine diff: context-propagation-audit → correctness-review → intent-review → compound → finishing-a-development-branch
 correctness-review         ──► (standalone — runs the same pipeline ad-hoc on any diff; no gate)
 context-propagation-audit ──► (conditional workflow-engine delivery gate, then correctness-review)
 intent-review              ──► (standalone — same pipeline; needs ### Intent in SUMMARY or intent provided by the user)
-diagnosing-bugs            ──► diagnosis.md → tiny: red test → fix · normal / high-risk: lane route → compound
+diagnosing-bugs            ──► diagnosis.md → task-reviewer → tiny: red test → fix → cleanup
+                                normal / high-risk: lane route (seam check + Phase 6 in subagent-driven-development) → compound
+session-retro              ──► user approval → improvement-backlog.md row · feature-intake task · compound
+asd-ste100                 ──► nothing (terminal — returns the rewritten text to its caller)
 compound                   ──► nothing (terminal — crystallization is end state)
 finishing-a-development-branch ──► nothing (terminal — shipped)
 ```
@@ -185,13 +205,15 @@ Skills read from and write to `docs/solutions/`:
 
 ```
 writes ──► compound
-           docs/solutions/<category>/<slug>.md
+           docs/solutions/<category>/<slug>.md, critical-patterns.md,
+           INDEX.md (rebuilt by scripts/rebuild_solution_index.py)
            front-matter: problem_type (bug | knowledge | decision | failure),
                          module, tags, severity, applicable_when,
                          affects, supersedes, confidence, confirmed_at
 
-reads  ◄── brainstorming  (decision track only — avoid re-proposing rejected approaches)
-       ◄── xia2           (all tracks — module, affects, confidence filtering)
+reads  ◄── brainstorming  (applicable decisions — avoid re-proposing rejected approaches)
+       ◄── xia2           (INDEX.md + critical-patterns.md, then at most three relevant records)
+       ◄── compound       (related-docs pass — overlap by module + tags; high overlap is a recurrence)
 ```
 
 Schema reference: `docs/solutions/README.md` (scaffolded by the harness repo's `scripts/init-structure.sh`).
@@ -277,7 +299,10 @@ graph LR
 - **Four track types: `bug`, `knowledge`, `decision`, `failure`.** The `failure` track records a tried-and-abandoned approach to prevent recurrence: sections are Symptom → Wrong Approach → Why It Failed → Correct Approach → Guardrail (the check/hook/rule that now prevents a repeat). Emitted only when all four required sections (Symptom, Wrong_Approach, Why_It_Failed, Correct_Approach) are non-empty. `Harness-Delta: backlog` friction signals from subagent summaries are also mined into failure records.
 - **Every `bug` doc requires `## Regression Test`.** Names the pinned test that catches a recurrence, or `[none] — <reason>` if none exists. This field is not optional.
 - **Multi-decision consolidation.** ≥2 decisions in one session → single `[slug]-decisions.md` with `## Decision 1` / `## Decision 2` sections. Rationale: decisions from the same session are causally related; reading one without the other loses the constraints that drove it.
-- **INDEX full rebuild (not append-only).** After every run. Prevents orphaned rows when files are renamed/moved/deleted. `docs/solutions/` grows to tens of files, not thousands — full scan is negligible.
+- **INDEX full rebuild (not append-only).** `scripts/rebuild_solution_index.py` runs after every run, even a run that wrote nothing. Prevents orphaned rows when files are renamed/moved/deleted. `docs/solutions/` grows to tens of files, not thousands — full scan is negligible.
+- **Mistake twice.** A learning that matches an existing record at `high` overlap is a second occurrence. The run updates that record, adds a `**Recurred:** <date>` line, and updates or adds its `critical-patterns.md` entry instead of a new append. A path-specific learning also gets a proposed path-scoped rule in the report, never a written one: adding `paths:` to `rules/` changes what loads, so a human decides. `moderate` overlap is not a recurrence.
+- **Bug root cause from the diagnosis.** When `specs/<slug>/diagnosis.md` exists, the bug track takes its root cause from the `Confirmed:` hypothesis.
+- **STE-flavored records.** Each new record gets `skills/asd-ste100/SKILL.md` in STE-flavored mode. Fenced code and literal strings that a test or hook matches stay unchanged.
 - **Never auto-write to `CLAUDE.md`.** At end of run, if `CLAUDE.md` does not reference `docs/solutions/`, propose an addition — wait for developer approval.
 
 **Severity triage** — `critical` requires **all three**; anything else is `standard`:
@@ -314,7 +339,7 @@ graph LR
 
 - **Deterministic script, not LLM transcription.** The skill only runs the script and relays its report — never emits HTML token-by-token. Transcribing a ~340-line template every run is expensive and the least reproducible part of the pipeline; a script makes the fill free and stable.
 - **Local-only output.** `PLAN.html` is untracked — it lives beside `PLAN.md` in `specs/` (which is tracked), but `PLAN.html` itself is gitignored as a derived artifact.
-- **Rendered by a script run, not a hook or sub-agent.** `writing-plans` runs `render_plan.py --summarize` after saving `PLAN.md`, and `rules/wave-parallelism.md` runs it at each wave boundary, so `PLAN.html` and the in-file "At a glance" block stay current without any skill dispatch. Nothing auto-opens it; `view_plan.py` opens it on request. Run `visual-planner <slug>` standalone when you want `--review` mode.
+- **Rendered by a script run, not a hook or sub-agent.** `writing-plans` runs `render_plan.py --summarize` after saving `PLAN.md`, `rules/wave-parallelism.md` runs it at each wave boundary, and `finishing-a-development-branch` runs it before the shipped commit, so `PLAN.html` and the in-file "At a glance" block stay current without any skill dispatch. Nothing auto-opens it; `view_plan.py` opens it on request. Run `visual-planner <slug>` standalone when you want `--review` mode.
 - **Why serve instead of `file://`?** Localhost is a browser *secure context*, so per-task "copy `<verify>`" buttons use `navigator.clipboard`; `--file` (`file://`) is faster but falls back to `execCommand`. Auto-view is environment-dependent (no display on headless/remote), so it stays an explicit step.
 - **Self-check before claiming success.** The script asserts non-empty output, no surviving `{{PLACEHOLDER}}`, the `slug` present, and one `<section data-wave>` per distinct wave. On non-zero exit, surface the `SELF-CHECK FAILED:` lines verbatim — do not claim success.
 

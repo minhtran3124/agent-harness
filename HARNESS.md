@@ -46,7 +46,7 @@ request → /feature-intake → Lane + Confidence → route → build → hooks 
 ```
 
 1. **`/feature-intake` runs first.** It classifies the request with a 10-flag risk checklist +
-   hard gates, and writes `Lane:` and `confidence:` to `specs/<slug>/SUMMARY.md`.
+   hard gates, and writes `Lane:` and `Confidence:` to `specs/<slug>/SUMMARY.md`.
 2. **The lane picks the path:**
 
    | Lane | Path | Plan? | Human gate |
@@ -55,15 +55,18 @@ request → /feature-intake → Lane + Confidence → route → build → hooks 
    | **normal** | `/subagent-driven-development`, one task reviewer with spec + quality verdicts | yes | only if low confidence / ambiguous |
    | **high-risk** | full chain: `/brainstorming → /xia2 → /writing-plans → build` | yes | only on ambiguity or a hard gate |
 
+   An `Input-type: bug fix` first runs `diagnosing-bugs` (root cause proved in six gated phases
+   before any fix), then its lane route.
+
 3. **Confidence decides escalation.** Low confidence (any lane), or a hard gate, → stop and ask (recorded in `specs/<slug>/ESCALATIONS.md`, deny-on-no-response).
-4. **Hooks corroborate the claim.** At commit time the diff is checked against the declared lane — the agent can't classify a risky change as "tiny" and slip it through.
+4. **Hooks corroborate the claim.** At commit time the diff is checked against the declared lane — the agent can't classify a risky change as "tiny" and slip it through. Warn-mode gates (`workflow-engine`, `weakening-validation`) print a note instead of blocking.
 
 ## 4. How the harness impacts the workflow
 
 - **Less ceremony on small work.** Typo/copy/narrow edits skip planning entirely (tiny lane).
 - **More proof on risky work.** Auth, migrations, schema, public contracts, and high-blast files force `high-risk` — full plan + reviews + a recorded rollback.
 - **The human is asked less, but at the right moments.** Approval is gated on *ambiguity*, not on every step. Clear work proceeds with a notice; unclear work blocks.
-- **Claims must be backed by evidence.** "Done" needs a re-runnable `### Verify` artifact in `SUMMARY.md` — a row per check actually run, never a command that wasn't.
+- **Claims must be backed by evidence.** "Done" needs a re-runnable `### Verify` artifact in `SUMMARY.md` — a row per check actually run, never a command that wasn't. A bug fix also needs a red/green pair: a red row re-runs the test at the red commit via `scripts/run_at_commit.py`, a green row shows it passing, and a code change must follow the red commit (advisory by default; `REQUIRE_RED_TEST=1` blocks).
 - **Rules are enforced by code, not hope.** What can be mechanized is a hook (see `CLAUDE.md` Hooks table); convention is the residue, not the rule.
 
 ## 5. The "hard gates"
@@ -71,8 +74,13 @@ request → /feature-intake → Lane + Confidence → route → build → hooks 
 These categories always force `high-risk` and can only be lowered by a human narrowing scope:
 
 `auth · authorization · data-loss/migration · audit/security · external provider · public
-contract · weakening validation · high-blast file` (e.g. `settings.json`, any `hooks/*`, a core
-skill engine).
+contract · weakening validation · high-blast file · workflow engine` (high-blast: e.g. `settings.json`,
+any `hooks/*`, a core skill engine; workflow engine: `skills/*/SKILL.md`, skill dispatch prompts,
+`agents/*.md`, `rules/*.md`).
+
+At commit time `hooks/commit-gate.sh` blocks a declared lane below `high-risk` for each gate in
+**block** mode; `workflow-engine` and `weakening-validation` are **warn** mode (a note, no block).
+The per-gate mode is `hard_gates.detectable[].mode` in `harness-manifest.json`.
 
 A hard gate discovered *mid-task* escalates regardless of the original lane.
 

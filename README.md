@@ -62,14 +62,15 @@ human. Each engineering question maps to an enforced mechanism, not a convention
 
 | The question | Resolved by |
 |---|---|
-| What should I read first? | `session-knowledge` hook loads `docs/solutions/` index + critical patterns at session start; `/xia2` researches what already exists. |
+| What should I read first? | `session-knowledge` hook loads a `docs/solutions/` INDEX pointer + critical patterns (and active-run summaries) at session start; `/xia2` researches what already exists. |
 | What type of work, how risky? | `/feature-intake` runs first — a 10-flag checklist + hard gates assign a **lane** (`tiny\|normal\|high-risk`) and a **confidence** to `specs/<slug>/SUMMARY.md`. |
 | Which contract does it touch? | Hard gates (auth · migration · public contract · high-blast file) force `high-risk`; `commit-gate` hook flags staged files outside the plan. |
 | What proof shows it's done? | A re-runnable `### Verify` artifact in `SUMMARY.md` backs every "done" — machine-recheckable via `verify_summary.py`. |
 | What should future agents inherit? | `/compound` crystallizes non-obvious learnings into `docs/solutions/`, the harness's sole committed knowledge path. |
 
 And the claim is corroborated by code: at commit time, hooks check the staged diff against the
-declared lane — the agent can't label a risky change "tiny" and slip it through.
+declared lane — the agent can't label a risky change "tiny" and slip it through. (Two gates,
+`workflow-engine` and `weakening-validation`, are warn-mode: they print a note instead of blocking.)
 
 See **[HARNESS.md](HARNESS.md)** for the full model — lanes, hard gates, and how each hook
 enforces it.
@@ -84,10 +85,10 @@ One-liner that clones the harness, builds `.claude/`, and leaves your project ro
 curl -fsSL "https://raw.githubusercontent.com/minhtran3124/agent-harness/main/scripts/install-harness.sh?$(date +%s)" | bash -s -- --yes
 ```
 
-Everything the harness needs lives in a gitignored `.claude/` (skills, agents, hooks, rules, templates, runtime, settings). At the project root it touches only the workflow's structural dirs (`specs/`, `docs/solutions/`), scaffolded **create-if-missing**. The installer never overwrites or deletes anything at your root — it only adds structural files that are absent. **To update, just re-run the one-liner** (idempotent; `.claude/` is merge-synced, non-harness entries and locally-generated files kept; a protected file that differs from incoming is reported via a `<file>.harness-incoming` sidecar rather than overwritten).
+Everything the harness needs lives in a gitignored `.claude/` (skills, agents, hooks, rules, templates, runtime, a consumer subset of `scripts/`, settings). At the project root it touches only the workflow's structural dirs (`specs/`, `docs/solutions/`), scaffolded **create-if-missing**. The installer never overwrites or deletes anything at your root — it only adds structural files that are absent. **To update, just re-run the one-liner** (idempotent; `.claude/` is merge-synced, non-harness entries and locally-generated files kept; a protected file that differs from incoming is reported via a `<file>.harness-incoming` sidecar rather than overwritten).
 
-Needs `git` + [jq](https://jqlang.github.io/jq/).
-Flags: `--directory <path>` · `--branch <name>` · `--source <local checkout>` · `--keep-sources` · `--dry-run` · `--overwrite-conflicts` (replace protected files with the incoming copy; `--force`/`--yes` keep local files instead of overwriting them).
+Needs `git` + [jq](https://jqlang.github.io/jq/) + `python3`.
+Flags: `--directory <path>` · `--branch <name>` · `--source <local checkout>` · `--profile minimal|standard|strict` (hook profile; default: the recorded profile, else `standard`) · `--keep-sources` · `--dry-run` · `--overwrite-conflicts` (replace protected files with the incoming copy; `--force`/`--yes` keep local files instead of overwriting them).
 
 Then **restart Claude Code** so it loads the skills, agents, and hooks.
 
@@ -103,7 +104,7 @@ First run installs; any later run updates (idempotent). Re-run after editing any
 
 ### Testing
 
-`bash scripts/run-tests.sh` runs what CI runs: syntax checks + a doc-truth lint (every path referenced in the core docs exists; the CLAUDE.md hook table matches `settings.json`), hermetic contract tests for the hooks (each runs in a throwaway git repo against its stdin-JSON contract), and installer integration tests. The `harness-ci` workflow runs the same suite on ubuntu + macos.
+`bash scripts/run-tests.sh` runs what CI runs: syntax checks + a doc-truth lint (every path referenced in the core docs exists; the CLAUDE.md hook table matches `settings.json`), further static checks (skill-bash lint, manifest consistency, STE linter self-test), hermetic contract tests for the hooks (each runs in a throwaway git repo against its stdin-JSON contract), script and installer integration tests, and the Python unit tests under `scripts/`, `runtime/`, and `skills/` (when `pytest` is available). The `harness-ci` workflow runs the same suite on ubuntu + macos.
 
 ### Optional MCP servers (local setup)
 
