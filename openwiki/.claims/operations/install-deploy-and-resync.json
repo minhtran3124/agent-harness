@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:f0ca0e7e511d7f8109fc9612c8ccdd4c8176095336703b76a9de90c3ca00ca2f",
+  "pageVersion": "sha256:574bcefca1d8c2433ec56850687bcaa5b1e441210c6485a8042a7473c846bb62",
   "claims": [
     {
       "id": "claim_414bd258cbb64569ade0ab49a35245d0",
@@ -11,8 +11,12 @@
           "version": "repo-lines-v1:sha256:bc7cef073fe7a9a6a4fcdd9d3433dcd06dcce30b3d1720f54cb1f456fb62a24c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4NzVmOTI4NTQ2YWVlNzg1NWNiMWRiOWFmYzhhYjNmMWE4YTM0ZDQzZGU1YmJkNjJmNzA3NmQ3YmE5ZjM5MTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwMzBkMTExNTFmYTNlYzU4OTFkOTk5NjZhOGYyNTliMGJiNzQ2NDlhY2VmYzg0ODhjODRjODc2Y2VjYWQxOGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1ZTEzZGM5ZGY3Y2YyOTI5ZDdjNmZhY2NkOTQwNDk5YzczODNlMTU4ZThlYzM1ODg3ZTc2NDdmYTQ1ZDNhMzEifQ"
         },
         {
-          "resource": "repo://scripts/deploy-harness.sh#L579-L598",
-          "version": "repo-lines-v1:sha256:0b7adcaffdc6b798d73608df4c6fc33603d0cc13698b5324a3b111ed39f4e729:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyZjVhOWVlMzk0OGY1MmNhNjIyNzUyMmUxYjc5Mjg5YTQ0YzRhZTY4MDNiYmU1MGI3YTFhZGE0NGVkYjE5MzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMTdmYTAwNmJhOTIwODUwMGIyOTMwY2U2OWNiZGU0MzZjNjQ3YWZhOTE3Y2I3Mzk2YTliYzkxMTFhNDZkZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkNzJiZDkxNDQwMzA4ZTgzYjg1ZWE0MmRiMTEyYjNkNThkY2IyZjg1NGZhYTBjNDIwOGYyZDkwZWY5YjVmZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEzMzQ1YWVkYTRjMDkwYmU4OTdjOTE1MWRhMGRiOTBlYjg0NjcyYWZlNjFkZDkyMGVjYWRlN2MzZGZiZTc3M2QifQ"
+          "resource": "repo://scripts/deploy-harness.sh#L609-L614",
+          "version": "repo-lines-v1:sha256:3376c58a8f17be4a919d04031a14e46ad69b67f717f05456b7d528268c086a03:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDJmNWE5ZWUzOTQ4ZjUyY2E2MjI3NTIyZTFiNzkyODlhNDRjNGFlNjgwM2JiZTUwYjdhMWFkYTQ0ZWRiMTkzMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzc2OWQyMzdjZDQyMGI5ZDM4Yjk4MWEwYTRmNjc3MDE5MGE0YTgzZGNhMWZlNTZjNGY1YmExZTJjYmMwZWY3NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmQ3MmJkOTE0NDAzMDhlODNiODVlYTQyZGIxMTJiM2Q1OGRjYjJmODU0ZmFhMGM0MjA4ZjJkOTBlZjliNWZkZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGExODc5NWYxYjJlYzg5MDhkZjI0NTIxZTc5Yjg1MDQ4ZWFlYTkwYmY4YjJiZjhjMDdmODA0M2M2ZDlhNjdkNiJ9"
+        },
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L624-L642",
+          "version": "repo-lines-v1:sha256:f67dbb82fe79eace9387ceb6c82996857ea0bcbf60200f958b64728abc9bf037:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlNjQ4MTdmNmJiODgyZjUxNTVjMmZjZGYxOWI1MTYzNjkyYjIxOTIyNjhjYTdlMDljN2Y1NWU0YWM5ZWJkZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmMjUyNmU2Y2E0NThhNDIwZTg2NDU1OWRlMzc3NTdlMTllY2EyMmU3ODc0ZmEzMGNjYTkwMDI3Y2ZjODE4MDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY1MzQzYTFmMDMwNjFiYmQ1OWNhOWVkNmM2ZDY0NWRhOTBhOGM5NmUyNzFkNjlhOTExYmI1OGYxNjM3NTNmOWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjliZjRkNTg0NWRiN2JmMTA5YWM3MGZlYTEyNGQ2NzYxOTEzNGI3NTMxMWRhNzU4ZDU4NWE1ODJiOWYyMDk2OTUifQ"
         }
       ]
     },
@@ -49,7 +53,7 @@
       "statement": "copy_dir merge-syncs per top-level entry: only entries the harness ships are removed and recopied, consumer-added entries are left untouched, agents/*.json adapter inputs are never copied, and local edits to non-protected harness files are overwritten on re-sync.",
       "evidence": [
         {
-          "resource": "repo://scripts/deploy-harness.sh#L364-L399",
+          "resource": "repo://scripts/deploy-harness.sh#L365-L400",
           "version": "repo-lines-v1:sha256:f966eceb3e42d56d4becd3494a6f301b32698f8c60a541e73e5c5de187e82b9d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiNWFmMjU2NDEzZDU0NmEwMTNjNWJlNzFhMzkyMjcwMWM2Nzk3MDRlYWI4NzlhNzQxMDI0MzAzM2Q1YTYxMGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU4MGE3ZjE0ZjEzZjE0Y2MzZDQxYTQ2NDNjZDA5ODg3YjhjNzczZWYzZGVjZGUwY2E4NTZlMjYxOGI4YzgzMjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjllNTMwN2RhYmUxNDRjNGE2ZDA5ZDUzMjQ3MzlkOTI0ZmJjMDRiZjM0MzFlZTU4ZjMyMWM1OWIzOGQ0YjJmMjAifQ"
         },
         {
@@ -60,19 +64,19 @@
     },
     {
       "id": "claim_8e212776381a4d83aee2aa0140392ca8",
-      "statement": "Deploy ships only an allow-listed subset of scripts/ (CONSUMER_SCRIPTS) into .claude/scripts/ plus harness-manifest.json, and rewrites root-relative helper paths to .claude/ paths in derived Markdown only, idempotently, leaving hooks byte-identical to source.",
+      "statement": "Deploy ships only an allow-listed subset of scripts/ (CONSUMER_SCRIPTS, which includes apply_model_config.py) into .claude/scripts/ plus harness-manifest.json, and rewrites root-relative helper paths to .claude/ paths in derived Markdown only, idempotently, leaving hooks byte-identical to source.",
       "evidence": [
         {
-          "resource": "repo://scripts/deploy-harness.sh#L40-L61",
-          "version": "repo-lines-v1:sha256:84405d101eedfa816f955988cce83b4f83fdaf3d6490fdf7d0ce04ccc0e89fb2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5MDMzMWQxMGUwZjBmYzNmNjk0MDk0OTU3MDE1MDM3OGVhM2QxNTMxNzRlM2Q3NjI4MmNmMTIyMDU0YTIzNTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5ZjA4YjVmY2M0OTQ1MTFhMGRkZmIwNWRjYmEwYjZmNzhmODkwNDVlM2RmZjg1YjA2NThkMTUzZmQ5OGRkMGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5MTUxZjk5Yjg4NTlkMTM0MTc1ZThjNDcyZGVmMzZmNjg3MGNlYzViZDVlNjkzYTdmMzliYTdiZmFiMzVkNmMifQ"
+          "resource": "repo://scripts/deploy-harness.sh#L40-L62",
+          "version": "repo-lines-v1:sha256:fd91549ce89373758f309139bd20d5a5dc7f2c918e9c76000fe785063994b3b8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5MDMzMWQxMGUwZjBmYzNmNjk0MDk0OTU3MDE1MDM3OGVhM2QxNTMxNzRlM2Q3NjI4MmNmMTIyMDU0YTIzNTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5ZjA4YjVmY2M0OTQ1MTFhMGRkZmIwNWRjYmEwYjZmNzhmODkwNDVlM2RmZjg1YjA2NThkMTUzZmQ5OGRkMGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5MTUxZjk5Yjg4NTlkMTM0MTc1ZThjNDcyZGVmMzZmNjg3MGNlYzViZDVlNjkzYTdmMzliYTdiZmFiMzVkNmMifQ"
         },
         {
-          "resource": "repo://scripts/deploy-harness.sh#L400-L444",
-          "version": "repo-lines-v1:sha256:d6c75152d32847227264fcceb98be32ef75a9f1352148ab5a1325ef09efe619e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2NGJiN2FlMGU5ZTI5ZTUwMjFhOWU3MjlmZDg0NDNkN2FmYzc0ODAwNDZmYWFjMDY5M2U1YmJkMTg1YjA4ZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkNGY2MDAzNmNkNjRkNDcyMTYzZTZlYzhiOTc0MTEzNDFiMjhhOWRkOTZiZGYyZThlOTRlMWQ3MWExYzRkYjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM4NDI5ZjFkM2NhNDIwODcyMWMwMjM2OTdmYTkwNzhhMzcwZjVmMjAzMzIwNjE3ODMyNDQ5ODNjMWI2NjhmNWUifQ"
+          "resource": "repo://scripts/deploy-harness.sh#L401-L449",
+          "version": "repo-lines-v1:sha256:f8ec95af77d146623588457592cc812b331aea11bf0cf24635ce6a579b3b354b:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2NGJiN2FlMGU5ZTI5ZTUwMjFhOWU3MjlmZDg0NDNkN2FmYzc0ODAwNDZmYWFjMDY5M2U1YmJkMTg1YjA4ZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkNGY2MDAzNmNkNjRkNDcyMTYzZTZlYzhiOTc0MTEzNDFiMjhhOWRkOTZiZGYyZThlOTRlMWQ3MWExYzRkYjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM4NDI5ZjFkM2NhNDIwODcyMWMwMjM2OTdmYTkwNzhhMzcwZjVmMjAzMzIwNjE3ODMyNDQ5ODNjMWI2NjhmNWUifQ"
         },
         {
-          "resource": "repo://tests/scripts/consumer-subset.test.sh#L107-L120",
-          "version": "repo-lines-v1:sha256:fbcb63a05c7844de9734a74bf82fb511003251badcd75b9ca63b7a7f30894299:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzMTdhMGFiODA5YTczOWY5OWViYmQ4OTAzOWIyNGJkMjA2YTQ0YTliNTE0MDg4NGU0NGRmYjM5ZmZiZThiYzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwYWViMjA3OWVlZjJlODQ2MTc2MWMwNzk3NGRhNzM1NThmZTMzZDY1ZTlkYWJlMjk5OGMwNzMwMjhkZWVmMzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU0YjQ1NGIxNjU4ZTg1NTIwM2E4YzIwOWJlMjgzNDczZTM1NWYyYjJkNTgyYTk4MmNlNGJmZjVhODdjY2ZhM2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZlM2M4MDQzYWY1MWM3MmIyNWI3ZDNjZTExNGZlYzkyMDM1ZmY5NWZlN2QwZjgxOWRkMGY1ZjFkM2FlZTU3OTIifQ"
+          "resource": "repo://tests/scripts/consumer-subset.test.sh#L129-L142",
+          "version": "repo-lines-v1:sha256:fbcb63a05c7844de9734a74bf82fb511003251badcd75b9ca63b7a7f30894299:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzMTdhMGFiODA5YTczOWY5OWViYmQ4OTAzOWIyNGJkMjA2YTQ0YTliNTE0MDg4NGU0NGRmYjM5ZmZiZThiYzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwYWViMjA3OWVlZjJlODQ2MTc2MWMwNzk3NGRhNzM1NThmZTMzZDY1ZTlkYWJlMjk5OGMwNzMwMjhkZWVmMzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRiZGU4Mzc3ZWQ1ZWU4NWY0OTUzNjU1YTNjOGEzYjZhYjMxN2M3MGMzODQzODIyODlmYTZhMDEwMjg3ZDkzZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZlM2M4MDQzYWY1MWM3MmIyNWI3ZDNjZTExNGZlYzkyMDM1ZmY5NWZlN2QwZjgxOWRkMGY1ZjFkM2FlZTU3OTIifQ"
         }
       ]
     },
@@ -81,11 +85,11 @@
       "statement": "Deploy strips skills/_archive, skill tests (tests/ dirs and test_*.py), HARNESS_ONLY_DOCS, and harness-only fenced Markdown regions from the derived tree only, and its Markdown transforms never descend into .claude/worktrees or directories with their own .git entry.",
       "evidence": [
         {
-          "resource": "repo://scripts/deploy-harness.sh#L446-L507",
+          "resource": "repo://scripts/deploy-harness.sh#L451-L512",
           "version": "repo-lines-v1:sha256:ffdf22a75cecad1f93aef60e433dd6d49088c29d13ccda230714a631a610757b:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjN2UzNGM5OGJmM2NjMDlkNzY2NDgyZDI0NmFlZjJjZGYyNTk2MzdlNGNkMDhhNWNhYzczMTFiODZjNDRjYWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMwYjM3NjMxODNjZDA3OGUzYjhmOTBjZWRhMzJhNDE2M2VmZjQ4NzE5ZWZmZTllOTY2OTRlNWNhZjJjNzRkZjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5ZmNiMjk4MzU5OTU3NTExM2JkZDYwMTEwYTkyYjgyYjhiZmM4OWU5MDA5ZTY5ZWY1YzY1YTc0NTI3M2JhY2EifQ"
         },
         {
-          "resource": "repo://scripts/deploy-harness.sh#L63-L94",
+          "resource": "repo://scripts/deploy-harness.sh#L64-L95",
           "version": "repo-lines-v1:sha256:5caeae17db69d6f489b9bb8570c9aa90f7bf9b26a3791c9c603cb664d460ada3:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkMDlmMzQ2ODQ4Y2UxYTEyN2E2Mzg1ZTgwNmI5MzUxYTJmZWJiYjFkNGZkNGFkYzIwZDJiZTczY2ZiMjQ1MDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YWIyNTNjNWY5NjAxN2VhNmU1ODhkYjUxMWMyM2Q2MTAyNDhhZTdhNDExZDI1MzJiYWNiMjIwMGNiYTU3MjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE4YWMzOGE1NzE2MmIxNTQxOGM1YTc3NDcwOTk3OGIzNmNhNzNkMWIzNjc1NTY0N2EwMGFmZDA3OGEyMTA5MWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzYzM0NTRkZmYzZjQ2MDk1OTBjZWEyZjFhZjVjYjgzYWM0ODMzMTgyMGJiMjM3MzU0OTg2NDA1ZTkwMGFiNDAifQ"
         },
         {
@@ -99,12 +103,12 @@
       "statement": "Orphan pruning removes only entries listed in the previous .claude/.harness-deployed manifest that were not deployed this run, so consumer additions are never pruned and a first deploy prunes nothing.",
       "evidence": [
         {
-          "resource": "repo://scripts/deploy-harness.sh#L177-L185",
+          "resource": "repo://scripts/deploy-harness.sh#L178-L186",
           "version": "repo-lines-v1:sha256:2ca41a68d1febeabab7552f6a3ec023427795f14e82398cafdfa43605b7cfe0c:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjhmYzYyYTQxNWM5MDIzZDQ3NmVjODRjYzg1OGIwZWYwNDdhYWFkYWU3NGE0YzVhNjg3MmU0YTI5MTJmODk5NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzAxOThmMjcwZDdmMjgzYTllZWMzM2M5ZjE2YjY0YjliOTliY2NmOTRkZGVkYjA1NTYzYzg0MzhkNWZhOWMzZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTlhMDI5YzgyZmM3MDA1NjNlZTA0ZjZhOWQwODI4YmQyMjYyZTMxYjJiZTBkYTY3YzE2NDExMzViYWE5ZWNjMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTdiMWQ0YWM0NjRkOGFiYzE4ZmIzMjU5MTRiYWNjZjczN2JjMjEwNGYyYzk2NDBjNzNiZDAwNzA4OGFmZmM5OSJ9"
         },
         {
-          "resource": "repo://scripts/deploy-harness.sh#L610-L628",
-          "version": "repo-lines-v1:sha256:de0a12d3c5b9a14528a668b15ecc26fa43a4b8874ce640080a0ea83ce8e416c7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMjhhNmQ1MjJkMjc4ZmZlOWI5YmI2ZmRhYTFkM2VlMTNmYzI3YzExNDJiZjdjZWNmNjRmZDQwNjg5NmQ4Y2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5NmU3NTkyMWQwNDk4ODJmOTU1NmYzYzNmZmU5NGU5NjcyNjViNjVmNzIxZjI5NmRlNWQyYTM5YzM3NDg2NjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdlNmNkOTM3YTM0N2NkMTBkMmIwYjdiOWY3MWFlMDg0OTE2NmZhMTQxZjY4ZTE1ZDhlNTllZTJkYTUzYTVmYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVkMmE1ZjBkMDNhYTIwOTZkYWZlNTdlNmRhM2M2ZGJhYzk2YTBiOGVlOTZlMjdlZmZlZDA2ODA4MjYxYWYyZmMifQ"
+          "resource": "repo://scripts/deploy-harness.sh#L644-L662",
+          "version": "repo-lines-v1:sha256:31420a1128e1e06afd43c1cf2a1f376635c1268ea3a77bc7aa5bd45cace39aad:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMjhhNmQ1MjJkMjc4ZmZlOWI5YmI2ZmRhYTFkM2VlMTNmYzI3YzExNDJiZjdjZWNmNjRmZDQwNjg5NmQ4Y2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU0MTdmZmVmZmM4Zjc0Yjk0ZTA4NmMzYzc0YmQ4ODUwZWNkMjQzZDIzZDUyNTZhOWJkNWU0YjY2M2VkZmIzMTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdlNmNkOTM3YTM0N2NkMTBkMmIwYjdiOWY3MWFlMDg0OTE2NmZhMTQxZjY4ZTE1ZDhlNTllZTJkYTUzYTVmYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVkMmE1ZjBkMDNhYTIwOTZkYWZlNTdlNmRhM2M2ZGJhYzk2YTBiOGVlOTZlMjdlZmZlZDA2ODA4MjYxYWYyZmMifQ"
         },
         {
           "resource": "repo://tests/scripts/deploy-prune.test.sh#L10-L28",
@@ -114,11 +118,11 @@
     },
     {
       "id": "claim_cc1ec356cad448919e1958804cac7c3b",
-      "statement": "Hook profiles come from harness-manifest.json hook_profiles: minimal registers branch-isolation-guard.sh and commit-gate.sh, standard (the default) and strict register those plus session-knowledge.sh, and the profile is passed to commit-gate.sh as --profile <p> which selects its check set (minimal runs only the secrets scan; strict adds untracked-.py and app gates).",
+      "statement": "Hook profiles come from harness-manifest.json hook_profiles: minimal registers branch-isolation-guard.sh and commit-gate.sh, standard (the default) and strict register those plus session-knowledge.sh and model-config.sh, and the profile is passed to commit-gate.sh as --profile <p> which selects its check set (minimal runs only the secrets scan; strict adds untracked-.py and app gates).",
       "evidence": [
         {
-          "resource": "repo://harness-manifest.json#L221-L226",
-          "version": "repo-lines-v1:sha256:cc1d9af38fe851739e03547f162812df426eece317a4e76793a20ba7bc7a91c1:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTdiZDA1NmQyNjUxMWRlMTFkNjliYWVjY2ViZWY5NGNlYzNhMTg4ODIyMmYxNzc3MzZmMmJjZmVlMDY0ZmY2NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODM0ZWQ3YzEwNmQxNGNmNzMyYTUzMzYyZTMzNDRjM2E1MDhlZTU3YmFkMDAzNWM5ZGUwZGZiYzBkZWEzZTUxMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjU3ZDlkY2IwZWY1MWJiODhkZGZkYjI2YmQ0YzQzYjdhYjVmMThiNTdhZDJkNTI2ZWU2ZWFkNDZiNWE5ZTI1ZiJ9"
+          "resource": "repo://harness-manifest.json#L222-L227",
+          "version": "repo-lines-v1:sha256:bb79cc48345b06591bba282a88c59105210ee5d35cd9ee5c6e58c16c7f2722bb:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTdiZDA1NmQyNjUxMWRlMTFkNjliYWVjY2ViZWY5NGNlYzNhMTg4ODIyMmYxNzc3MzZmMmJjZmVlMDY0ZmY2NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2ZmODUzY2M5YmU1YjU1NjcwMWExNjI0NGI4OThjN2MxYzQ1ZmEwNzIyNzdkYzY5YTEyZjAwODUwM2ExYmM5NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjU3ZDlkY2IwZWY1MWJiODhkZGZkYjI2YmQ0YzQzYjdhYjVmMThiNTdhZDJkNTI2ZWU2ZWFkNDZiNWE5ZTI1ZiJ9"
         },
         {
           "resource": "repo://hooks/commit-gate.sh#L19-L25",
@@ -127,6 +131,14 @@
         {
           "resource": "repo://hooks/commit-gate.sh#L94-L103",
           "version": "repo-lines-v1:sha256:bd51887e8d511f6f1216231f209bc086f7c1c90d8639ef43d77314fd380f83d3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5ODdlNWY0ZjljZjM1NDc5NDllY2RlZGE0ZDQ5OGQ0ZTA1ZWM5MTU2ZDM0MjBjYzU4MzE3ODg1N2UyNWNhMzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI4MzIyNjY5OTBiMWVkMWNlNDVhYzk5ODQxM2VkYmE3YjY2NDQ0NDg5ZTczMGY0ODViYzU3YmUzYjQ5ZjgyNTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjljMzlhMjI0NmE1YjU0Yjg5ZjkyMTAwYjI0OGRkMjg3MzY4MGYwZGEzNmZlY2RjMWFjNzRhNGE2YzRlYzdjNWEifQ"
+        },
+        {
+          "resource": "repo://tests/scripts/deploy-profile.test.sh#L29-L35",
+          "version": "repo-lines-v1:sha256:e8fc038ac240bf3e8d5fe0e76eb692c99951ba3e77732959fe96cb06b7e1acb3:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTdjMjIwNWRhN2MxNzAzZTJlNmJhMWJlMDY3MzJiZmI3ZmFlY2E5ZDkxY2UzMmNlMTg4NWUzY2MyYTgzYjdjNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWZjNWQzMDY0ZjUwNWMzYjA5NzkzOGNhZmIzN2NlYmM1MmJiYmIyZDU1MTVhMWE2NjNlZTE2ZDkyYzg2ODMwZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2YxOGNmYzE5ZmQ2MzViY2E5Zjc0ODljODQzYTdlZDZlOGE4ZjNmMDJkZmI3Y2VkY2E1NzY0Y2QwOTMwNDZkNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTAyYzI5MjcyY2NiOTg2ZDBlZmNiNGU1MDIyYTI4YTU2YWE5YjhmODFlOGJlMWVhMWZlMzdiMGYyNDY2ZDIwNCJ9"
+        },
+        {
+          "resource": "repo://tests/scripts/deploy-profile.test.sh#L70-L100",
+          "version": "repo-lines-v1:sha256:687d66ef703b8b2af3b4c17b578c6d0cf8b1e726dc3ed303ec23fecbed158de3:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4ZjNmZGE3MTA4YjZjYTExZDFlYzNhZTI1ZjNhNGQ1MGQyYWFjODBmOWNhN2E2MWVhN2VmN2JiMzJkMzI5YWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMzQ4NTYxYTExZjVhNDFjMTYwMGE5ZmZmNTA0NzBlYWU2MWY0NmExNmRmNDg1NmFiODFhODQ5NDgyMGVjNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3MjQzZGVkNTdjOTAyOGU2ZGU2ZDYyNTY4OTEwMDk2MmIyOTE1M2ZkOGI5NzM4NjZhMzQ3NDYxMzk5MWQ2ZGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhZjUzYTgxNzc3OWU2Mzk5MTJlMWY1YWY3MmQ1ZDlhY2EzY2Y4Nzk0ODM2MjYxZTA4NGQ5MDk4YTFkMGFiYjUifQ"
         }
       ]
     },
@@ -135,19 +147,19 @@
       "statement": "Deploy resolves the profile from an explicit --profile, else a valid value in .claude/.harness-profile, else the manifest default; an unknown profile aborts before any write, and the resolved profile is written back to .claude/.harness-profile so flagless re-syncs reuse it.",
       "evidence": [
         {
-          "resource": "repo://scripts/deploy-harness.sh#L112-L128",
+          "resource": "repo://scripts/deploy-harness.sh#L113-L129",
           "version": "repo-lines-v1:sha256:4fda3aec5d3d5bcfbd780d22e52435c5149be2b3442417e4d8a9efc6f3f6131b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkY2NiN2EzZjlkZjBjMDdkOTY0ZGEzMGU0OTUxNzVjNTAxNDhiNTQwNDFmNzc3NDhlMThiMjNmMWY0YjU4YjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxZDJjMmY3ZDYzZGE5NmM2NGRmMjcwOTJiNjg5MmE0ZDk3NzJjNTkwNTE1OTBjMGFiNGQ1NjQ5YzBlNzZiNWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJiNjQzMDRkMjk4NDQ3YTAzODIyMGRkMThkNWFlNDJjMWM4NzQyYjAyOTQwYTE3MmMxZTA2OWY5YzNlZGI1NmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY2M2EwM2FkMDg5NGFiMGEwODYzZWU5OTczYTEyNmE3OTZkOGYxODQyYzk5MGU4NTFhMWI2NWIzMjIzZDU0NmMifQ"
         },
         {
-          "resource": "repo://scripts/deploy-harness.sh#L606-L608",
+          "resource": "repo://scripts/deploy-harness.sh#L640-L642",
           "version": "repo-lines-v1:sha256:9623aa87cb8a63275a5069e8651dada949ccd57adf47075de2041bac817e563e:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGI5MTE1NzRjMGZiZTJiNGYxNjUwYjI0MWI0YjI4YjRjNjRjZDkwY2EzM2JmNTcwMjNiNmQ4YzdkODJkMGE0MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWYyNTI2ZTZjYTQ1OGE0MjBlODY0NTU5ZGUzNzc1N2UxOWVjYTIyZTc4NzRmYTMwY2NhOTAwMjdjZmM4MTgwOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTI1Nzg3ODRkYzliMzFjNTZkZTk2ZjgyMzc4NmIwM2FlNDQzZTZlY2IwNDdkZWEzYWMzZjJiYWE4MGIxNTk1ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWJmNGQ1ODQ1ZGI3YmYxMDlhYzcwZmVhMTI0ZDY3NjE5MTM0Yjc1MzExZGE3NThkNTg1YTU4MmI5ZjIwOTY5NSJ9"
         },
         {
-          "resource": "repo://tests/scripts/deploy-profile.test.sh#L37-L56",
+          "resource": "repo://tests/scripts/deploy-profile.test.sh#L41-L60",
           "version": "repo-lines-v1:sha256:49b1d330977d1224f6b6a27db8e9c2844d90abd76f5d028d1f1686916f4c7407:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmYjhmMzBjZDFhNmRkZDUyYmQ2OGZlZDYzZWYwNjYzZTA5MTVkNTczMDZkNGVkNjMxNWIxMjE1M2QyYzk3YmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2ZjViYzU2NjcyNmZiNTFjMGNlMjQ5M2Q5NzQxMTlhNGY0YmUxY2NkY2I2N2ZlNzAwOWJjZGM4MDE2ZTU0MWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFjNjM1NWVlNjkwOGRjYjRmNjgyYzBkNTMwODE2ZTVlMjhkYmZlOGNkODI5MTk1M2I0OWRiYTQzYWEwYmE3ZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVkYzFiMjg2MjQ5OGRkMDJmODE4NGQ0YWM0NTY2NWQzYWE3MjMwYzU0ODg3NTEyNWRhMGNiZDI2YWY3YzU4NGMifQ"
         },
         {
-          "resource": "repo://tests/scripts/deploy-profile.test.sh#L90-L99",
+          "resource": "repo://tests/scripts/deploy-profile.test.sh#L102-L111",
           "version": "repo-lines-v1:sha256:90ec12c3f1dcd46484fb72fdb35def6338ffb0985695d722d508a83062f94670:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyN2E5ZWE1MDA5OGJjZmQ3NDY2YzMzZDU5NDRjYTBjOGVjZmM1M2Y5YTRlYTVlZGI2ZTJjYjU2Yjk2OTFiOWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxMGQ5MDMzMDEwODM1ODViNzc0ZjkwZTdiMzZlZWZmNjEwZjMwZDEwOGVlY2NiZWUxZTk5ZjZjMjhjMzg3ODEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI1NzNmM2E2MTYxZWRjNmMxN2NiZWIzZGNhYTU1NjI5NDM5NTMzYWI0N2U0YzQwM2UwMTI1MGYzYjI4ZjI2NmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQyYzJjYjA5MjBhYzFhNzQ3OWU4MjBiZjdjZThkMzA3NmJhOTgyNGNhMTE1NTlmMGQ4MzcyNzBmYmJkOGMyYjIifQ"
         }
       ]
@@ -157,12 +169,16 @@
       "statement": "derive_settings filters root settings.json hooks to the profile's hook list, drops emptied groups and events, prefixes relative commands with $CLAUDE_PROJECT_DIR/.claude/, and appends --profile <p> only to the commit-gate command.",
       "evidence": [
         {
-          "resource": "repo://scripts/deploy-harness.sh#L512-L528",
-          "version": "repo-lines-v1:sha256:4389efd727089b0eb798ee7d99fe900721c616428cb039b2777c723e3389924c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5YjNjOGY4ZDNiZDA0YTg5NDYyNDY1ZDA5ZmRjZDhhZmI3MDA5MDlhYzE4NTZhZmRmZmVmZDY3NDI2MmI1ZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5OWYyYmFkNjE2OTM3M2E0YWNhNDY5NmQwOTg2YzA0MjJhYzY0OTgzYmI0NjlmMmE2ODM5Mzg0N2Y5NjNmMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlODU0YjY2ODdjYmQ3YmM0OTBiNmIxYTM0OGJjNTczOTk4N2M4NWE4MDE0NDZlMzNhYTFhYWU4NDVlNWQ1YTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkN2UzZDM3OTM5NjBjMmQzNjU4ZjVkMzc5YTg1NGE0YzNiNDY2NWRhMDBlYmQ2YjliMDlhOWQ1Mzc5Yjg3MDIifQ"
+          "resource": "repo://scripts/deploy-harness.sh#L542-L558",
+          "version": "repo-lines-v1:sha256:4389efd727089b0eb798ee7d99fe900721c616428cb039b2777c723e3389924c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5YjNjOGY4ZDNiZDA0YTg5NDYyNDY1ZDA5ZmRjZDhhZmI3MDA5MDlhYzE4NTZhZmRmZmVmZDY3NDI2MmI1ZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5OWYyYmFkNjE2OTM3M2E0YWNhNDY5NmQwOTg2YzA0MjJhYzY0OTgzYmI0NjlmMmE2ODM5Mzg0N2Y5NjNmMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEzMWYzNjA3MDc5MGQzNzVlM2E1N2I3NWE3MDFjOTI5M2VjYmFhNDBlNzYxN2MzZTM0MzA0N2YyMjkwZWNlYjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkN2UzZDM3OTM5NjBjMmQzNjU4ZjVkMzc5YTg1NGE0YzNiNDY2NWRhMDBlYmQ2YjliMDlhOWQ1Mzc5Yjg3MDIifQ"
         },
         {
-          "resource": "repo://tests/scripts/deploy-profile.test.sh#L28-L35",
-          "version": "repo-lines-v1:sha256:04169457ce11291c7e3309431ac9c8b186f740426dd83738a0c6b2660632e1d5:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTdjMjIwNWRhN2MxNzAzZTJlNmJhMWJlMDY3MzJiZmI3ZmFlY2E5ZDkxY2UzMmNlMTg4NWUzY2MyYTgzYjdjNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2NmNjdhMGZlZTEzYWJmYjg5N2IwOWNjNTg3M2MxMzBmOTVkMDU1NGIzNzU2YWZjZmFkYmVkYzEwMDM5Yjg2NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2YxOGNmYzE5ZmQ2MzViY2E5Zjc0ODljODQzYTdlZDZlOGE4ZjNmMDJkZmI3Y2VkY2E1NzY0Y2QwOTMwNDZkNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTg3MzYyNmJlY2U3MzdlZjBiMDNlMjYzMTVlZmFiNjc0ODU3NTcyMTNhNDZhYjBiOGVhMzE5M2MxYTMwMjUwOCJ9"
+          "resource": "repo://tests/scripts/deploy-profile.test.sh#L29-L39",
+          "version": "repo-lines-v1:sha256:1d3efbeb4cfd173f0a12e2feaf845fdf28e77bbad8d94adbbd88da03f9038d0e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3YzIyMDVkYTdjMTcwM2UyZTZiYTFiZTA2NzMyYmZiN2ZhZWNhOWQ5MWNlMzJjZTE4ODVlM2NjMmE4M2I3YzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjZjY3YTBmZWUxM2FiZmI4OTdiMDljYzU4NzNjMTMwZjk1ZDA1NTRiMzc1NmFmY2ZhZGJlZGMxMDAzOWI4NjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmMThjZmMxOWZkNjM1YmNhOWY3NDg5Yzg0M2E3ZWQ2ZThhOGYzZjAyZGZiN2NlZGNhNTc2NGNkMDkzMDQ2ZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4NzM2MjZiZWNlNzM3ZWYwYjAzZTI2MzE1ZWZhYjY3NDg1NzU3MjEzYTQ2YWIwYjhlYTMxOTNjMWEzMDI1MDgifQ"
+        },
+        {
+          "resource": "repo://tests/scripts/deploy-profile.test.sh#L75-L81",
+          "version": "repo-lines-v1:sha256:aa94625b31925dab7f5009220396e1e2fb3443a9db6e2df3ee72f64de46aefd5:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2JmZmQyZjAzZDllY2M3N2JjNjg2MzNhOTVhN2MxZWQyM2NiNjdhZDVjNTNmODRiOTg1NWNhY2U1NjZkZDQ4YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWM1Yzc5ZTk3N2Q3Y2U5MWU5ZTQ3ZDg5MjJiMDJhM2I1NTI0M2UzYzFkN2QwZjk3OTNhMDJkZDE4MTBhNTgxYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzNlYjExY2IxODMzMTYzYzg0YWFiMmJkNTljMWY4YjQyYjA0MDNhOTRmYzRiN2VjMmIwOTlkZGFmZGI4Mzc0ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTU0YjllMjdhMGM1OGQ4Yzg3Y2E3ODE5N2NjZjdmOGRhYzRlM2UxNjEwNjc5YWY1OTdkNTU5NGU5ZTBlMWY2NSJ9"
         }
       ]
     },
@@ -171,7 +187,7 @@
       "statement": "derive_settings merges into an existing .claude/settings.json: foreign top-level keys and foreign hooks are preserved, any current harness command or command under $CLAUDE_PROJECT_DIR/.claude/hooks/ is stripped and the derived harness hooks re-added (no double registration, removed harness hooks pruned), and events left empty are removed.",
       "evidence": [
         {
-          "resource": "repo://scripts/deploy-harness.sh#L530-L564",
+          "resource": "repo://scripts/deploy-harness.sh#L560-L594",
           "version": "repo-lines-v1:sha256:506ed0c8a7ab433881c0641345e4ee8412bda67e8e0a425be304a60560be0083:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllYTEzZmM4MDgxOGQ3NTkxMDk3MzQ0YmFkYTg1NTQ5MTVkNmY2YWFjZjQ0MzkwZTQ1MzdiNTgzZjg1NWIxOTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyZTU0MzYxN2JkZTM0Y2NkMzAzM2ZmMWRmMmE2OWE0MmFiNWVmZWRmMmM5MzQ1OTdiOGIxZDhlNWJlOGEzNTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyMGIyM2E0NDM2ZWQ5Nzk4Y2QzOTg0YjEyNDU0OTQ2OWVmZjFlOTg2MDkyNmY3NGIyYWU5N2ZkMDQzNjQ3ZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUwMTc1YTEyZTBiODg1ZTQxNzE5NzgwZmUzYjQyZGQ3NjI1YmY4Y2ZjNjZkNWFmOTQyZmRjNDk3ZTEzYTYzNDUifQ"
         },
         {
@@ -189,7 +205,7 @@
       "statement": "An existing .claude/settings.json that is not valid JSON is backed up to settings.json.invalid-bak-<timestamp> with a warning before a fresh harness settings.json is written.",
       "evidence": [
         {
-          "resource": "repo://scripts/deploy-harness.sh#L565-L572",
+          "resource": "repo://scripts/deploy-harness.sh#L595-L602",
           "version": "repo-lines-v1:sha256:772bc5e9d3734f60b24455d6ce0d05d93ac4f857489e776c782db89ef91c937f:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzExYjZhZGQ5YzIwZTQxNjllZTYzZWFjOWQyYjU0MTAxNmNmNjcwNGYzYjI1ZjBiNTI4ZWFjYTk1ZjdiYjNhNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmNhMjFhYjg5MDdmYTZiNDI3NzJmODlhYWZmMjFkMTE2MTYyMDQ2YzA1Y2E1ZDBmNDUyYjk0OWFlZjg3Njg5NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTkwM2VkYjZjN2U5OWU1MTM2MTM4MjFmYTI2MTAwN2YyNzMwMDViMGFiYmFmMzdmY2U5ZGM5NmU3NDNiMDg2MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjM1NWY3ZTE5YjA3OWJkN2RmMzllNjM0ODkzMmQxOWZjYWE5MmNlZjQ2NmE5YzEyZTE5MWZhN2JmNDA1MDNmMCJ9"
         },
         {
@@ -203,7 +219,7 @@
       "statement": "BOOTSTRAP_OWNED_FILES (rules/architecture.md, rules/guidelines.md, rules/behavior.md, agents/PROJECT.md) are protected: a single preflight before any write detects local-vs-incoming differences and resolves one batch policy — overwrite with --overwrite-conflicts, keep with --yes or no controlling terminal, otherwise an interactive keep/overwrite/backup/abort prompt read from /dev/tty.",
       "evidence": [
         {
-          "resource": "repo://scripts/deploy-harness.sh#L187-L256",
+          "resource": "repo://scripts/deploy-harness.sh#L188-L257",
           "version": "repo-lines-v1:sha256:64f243bfa757d4a43bb4a60422b102062bd5b82ef4321d9d6b6e149b18d64719:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5MTYzZDhlZjJjZmNhNjE3OWUxMzBiZWExNjA2YmI0NWNlN2UwMzNmZTEyNzVlZTQ4ZDMwYjVlZTA2NmZmYzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgzNmU0YTM5MDE0ZWY0NmM5NzdlZDQ3MDg2ZWQ4MTQ3MjAxNmY0YWFiNTc5MjAzMWYyNWJmMzhhYWVkZjA4OTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmY2U1N2E5OTA5YWY5Mzg2Mzk1YjVjZDY2MDkxNmI1MjUzOGM5YzM5NzA3MDM1NjVjYjk5YTJkMmMyMWNhNzcifQ"
         },
         {
@@ -217,7 +233,7 @@
       "statement": "Under the keep policy the local protected file is retained and the incoming version is saved as <file>.harness-incoming; backup copies the local file into .claude/.harness-backup-<ts>/ before overwriting; an identical protected file triggers removal of any stale sidecar.",
       "evidence": [
         {
-          "resource": "repo://scripts/deploy-harness.sh#L261-L295",
+          "resource": "repo://scripts/deploy-harness.sh#L262-L296",
           "version": "repo-lines-v1:sha256:eaad91d472c0ec9d503d22371350914581e0c333274aa2a2ac06ff118de5f345:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlMTUxZDNhYzJmYzlkNjBjZjU4NjY2N2FiYzkyNjM1NzljOGZlZTQ2OTVlZWUwODlhNDUyNzNjYzlhYzRmMTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY5ZTczNTQ3MjUzNTJmMDViNTBiYWNkYjk3NTBmNmQ4YjNmMGZkNjJlYTk0ZGE2ZTZlNzMwOTc4YTZlYjUxYmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdhMGZmMGUxMWViNTIwYTZmNTYxZWM0MmUxOGY1MmQxMjRhMTJmNzQ2ZDAzMTVmZWEzYTI3Yjg3YzUyMTYwZWQifQ"
         },
         {
@@ -235,7 +251,7 @@
       "statement": "For a protected file nested inside a synced directory (agents/PROJECT.md), sync_protected_dir snapshots the local file and any .proposed draft, copies the directory wholesale, then reconciles per policy and always restores the local .proposed — sound only because the harness ships no .proposed files.",
       "evidence": [
         {
-          "resource": "repo://scripts/deploy-harness.sh#L297-L362",
+          "resource": "repo://scripts/deploy-harness.sh#L298-L363",
           "version": "repo-lines-v1:sha256:289c121143bb77fb2e4d5a2ac67b9c3c72b49530e6f9c2cf8250e69fed787f84:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmYjg4OGIzNmI5ODAyZjEwOGY4MTYyZTdkNWQwNTgyNTllNzIxMWY3MjAxMDQ4MWEwYTRiZjYyNzcxNTFjYjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBjMmRkMzYxMzAwNzc1Zjc3Y2RlNGU0NzViNGM1MzJhNWIzOGMyNTY1NjAxZDViMWE0Y2U2OTQ4YzA0ODYwYTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY5ZWE1ZTI4N2IxYTI0ZTRjZDYyMzg0NjY0NGVkOTlkODc1ZTk4ZjIzYTYzNzg3ZjNjY2U5ODAwYWJiZmMxMDMifQ"
         },
         {
@@ -253,7 +269,7 @@
       "statement": "deploy --dry-run reports protected-file conflicts and would-be prunes then exits 0 before anything under .claude/ is written, and the installer's --dry-run writes nothing to the target.",
       "evidence": [
         {
-          "resource": "repo://scripts/deploy-harness.sh#L208-L230",
+          "resource": "repo://scripts/deploy-harness.sh#L209-L231",
           "version": "repo-lines-v1:sha256:2074a0bd756766e068a34a20cd3a6ee11c021ae3279cfbe23d054c951eeb3a2f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmZDhlMjhjMDk4NWI5MTBmNmZjNzA5NDRiYWIzODQwZTI1MDU1YmRmYTA2Yzc1Y2U2Yzg4YmVhZmZkMGY3ZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1ZmM5MGZmOGE0NDE0YzU0NDFkMGY2NzdjNWNiZmRhMzhiNDc0ZTUxYmZkNTU5YTU1NTlkZTBmODc3MDU1MjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkNmYxZDA3ZGZiZjYxOTk1ODM0YTFiOTNiZmQ4NTI3NDhiZGFkYjI4OGJkZjAzODcyYTRmZjZiZDcwYmZiMGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU5N2M0NmJkYTcxMTQ2Mjc3YjkxYWU3ZmE3NDMxMWJiYWRiY2U5NGMzMmQ2NWY0ZWZmNGY3NDRjODM2YjA4ZjcifQ"
         },
         {
@@ -299,10 +315,64 @@
           "version": "repo-lines-v1:sha256:2b32e16e82e143a4c5b0967f01a057aef77aac2a699993a19cac616290f6b305:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5MjFkZGM0MWEyMTI5YzE0NDU3ZDI5MDczMTI0ZTc0NTZjNTBiYjMyNzU1YjhjYjc3N2RkZTRlOWQ5ZDI3ZDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1ZmM5MGZmOGE0NDE0YzU0NDFkMGY2NzdjNWNiZmRhMzhiNDc0ZTUxYmZkNTU5YTU1NTlkZTBmODc3MDU1MjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5YmMzN2UzOTRmODRhZTBkY2VlZTUzZGFhMzY1ZDRmMDI2OGUyNDU2MjA2NjBlNTI3MmM1MjAxMzVjYmVjMjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3YjE0NzIzYzkzNDlmMGExNDI3OTZiZjIwNDYzZTY0M2YzOGIwOWVmNmRjMzViMjViYjZiZmRiYzE2MmVlY2MifQ"
         }
       ]
+    },
+    {
+      "id": "claim_8475007a8ed641078922b7c1ef74c78f",
+      "statement": "Before any write under .claude/ (and also under --dry-run), check_model_config renders the model/effort defaults snapshot from source and validates the target's root harness-models.json with apply_model_config.py --check; on failure deploy exits 1 with nothing written, so a first deploy creates no .claude/ and a re-sync changes no file.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L517-L537",
+          "version": "repo-lines-v1:sha256:98d55ee36727e279213815bc72ed593a3d60947835f1753ae050d86ac4bae0d3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkYzI3MzQ3OWQ0NWRjZDU5Y2RkMzYyN2M5YWIyNjJiMzYwNTk5ZGE5NzdkYjAyZWFhYzlmNDdjMTY5MmZkMDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlODU0YjY2ODdjYmQ3YmM0OTBiNmIxYTM0OGJjNTczOTk4N2M4NWE4MDE0NDZlMzNhYTFhYWU4NDVlNWQ1YTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0ODdjZTg3YjMzYjM3MTI0NWYyMGFiMDg1MmE1MzdjMjM3NzkzODhjYmRhYTcyZTNiNmMwZmYxZDNhZjJmZGYifQ"
+        },
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L619-L622",
+          "version": "repo-lines-v1:sha256:9cd9154cbe3316dfdc874ae6e735e50d980986e2cf46429ec9fa367c5851c2e6:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzM5ZjgxM2U5YjgxYzU5NzVhMDZhNWQ4NjZlYTU3MmZmOTI3NTZmNTdhM2FjZDAxYmUyYjE0YWNiMDY1NDQ0MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjdlYmRlY2Q5NDFlNGIxYzBhYTVhOGM2MmI3OGQyMmJmOWI4NDc4YzViMDg3ZjkyNDYxYzhlOTA0ZTNlZTllZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTY5NjI2YjMwZTcyYzg3ZjQ4NWNiNGE1ZjczZjhkYWQ2ZTc0ZTNiZjM4ZGMwNjMwYzBjMDBlMDYxNDU2ODY3YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWE5OTRjZjM5ODdiZjA5MTMzN2Y1MTI0ZmVjOTM3ZmEzZmQ3N2Y4MmNkNTcxY2E1YjIxM2NjYTA2OTZiN2M3OSJ9"
+        },
+        {
+          "resource": "repo://tests/scripts/model-config-deploy.test.sh#L59-L93",
+          "version": "repo-lines-v1:sha256:416a2f653aa4003a2cf3d53cdfa1c640cbb8ec5f2da94d16fc8923b376e36b8c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyN2IzMjE5Y2NhYzlhNzdiNGQ2ZmNmM2ZlY2ZjZDVjMDk0ZmE3YzVkMTgwZTUzZjdiN2Y0MWM1ZDUxOWQzODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmYWIyNWI2NmQ0MzQwOWVhOTNhMGMwZDUwNzcwOTQ1NDgzZGE1YzMyOTg4NTU3ZTEwMGJmMTdjMWY1MjU2Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc5ZTRjY2YxYjYwNDhiYmY3Yzc2OTc1Y2FkY2ViOWE4OWExNjJlMjE3NGMwOWMyZTUxOTRhMTZhNzNmNjI0NzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyMjE0NzViNTQxMjcyNTQzYjhkNGExMWY1NDdjNzhkMTFjOWQ1MjMwZDYzZTg5M2RhZDZkZTVjMDcyY2JiZWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5bfceab834cb4193acbbc05c5bb26c7e",
+      "statement": "After rewrite_derived_paths, apply_model_config copies the defaults snapshot to .claude/harness-models.defaults.json and runs apply_model_config.py --apply, which rewrites only model/effort frontmatter lines of snapshot-named agents/<role>.md and skills/<name>/SKILL.md, never settings files, leaving consumer skills untouched and making repeat deploys idempotent.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/apply_model_config.py#L1-L6",
+          "version": "repo-lines-v1:sha256:dff898f14e410d75b7a5a804704e7e1d74e19c6393eef516d236dfff3984a45d:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDY4MmNiZGI0YzhiMDc1MThiZjQ4NmM1ODk5MGZjMzkxNzgzYWEyMGE5MTZiZmIyN2FkMjExZWIxZDVjMzY0MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTMwM2VjZGQ0YTRkMTBmMTljNzNmZDQyZmQxMjQzN2ZkMzM1NGE4MjY4MTYwNWRhNTI1NWE5N2EzOTA2OGRiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTViNmU4NzA2YjQzMDQ3ZjJhNmRiNjdmMTMyNjM4NTk1NjA0ZTY3ZjM2OTY2ODc2Y2UwMTU4ZjAwNTNlNmJkMSJ9"
+        },
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L538-L541",
+          "version": "repo-lines-v1:sha256:70306e886399c94134e2c1c8333070812936bc4a508571c8a1a3efaddc9b2240:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTRkM2I3OTU5NDA4ZGQ3ZDVkNmYwNjI3ZjEyMWEzM2FiODQwMjA0OWQzYzJhNDBhMGMzZWU0NjBmMGNiYTdmOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGQyYmRjNzcxYTc1MWRiMDdjN2NmOWIwYmZhZmU3YzNkOTUyNmRhMDYxZmQ2YTI1ODhkNjIxN2QxYjU4OTViYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzU0OTA4ZGEzNjZmNjU1NmE3NDYzOGIyNmI1N2UzODcxOWMzYmZlNjYzODE2OTliMGFmNzQ4Y2E0YTY2ZmUyOCJ9"
+        },
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L635-L638",
+          "version": "repo-lines-v1:sha256:eb5f5a50f071792fc211d2f163f748b76bff6c5dd29d7854f788c2da6f32d15c:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGM3YTJkOTAzMjY3NTFjMmU3MzNmOTdkYjM4ZGRhN2RjOTQyYTUwOGQxMzkzMjFlMGE2YzQxZWU5OWY3NDE3YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzc2OWQyMzdjZDQyMGI5ZDM4Yjk4MWEwYTRmNjc3MDE5MGE0YTgzZGNhMWZlNTZjNGY1YmExZTJjYmMwZWY3NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzU2MDI3OGM0MDM2YmMyZTczZWI0MjgwNDdhNDMxNGUzNWU2Y2I5YTEyMDNhMzE3NjNiOWM2NjI0YWZhNDI5MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODIzNGFmMDAzYWRlNmVjZDY4M2FhOTQwMDM0ZGY1MzM3OGYxYTEyNTFjNGFhODRlZDc0ZDZiNWI0MmRhNmUzMSJ9"
+        },
+        {
+          "resource": "repo://tests/scripts/model-config-deploy.test.sh#L12-L57",
+          "version": "repo-lines-v1:sha256:83a033124c2dac89224f6259be880f8db09aa9f9033097fb43e5265ff71e9507:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5MzQ5YzJlMmIxYmQxOGY4YTg2NmUyNmQwZDhjMjVlZTE0ZmE0NmVhYzdjOGMwOWJiMjcyODg3YjMzOWQwMWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5ZTUzYWM5YmNhMzYzOWYzMGNlMzg2ZjY0Njc2NjZiMTc1ZWMxOGFjODMxNGM4NGQ1N2Q1YzkzOWRiM2UyMjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRiMjI4MjA1MWZhMTE3MzRiYjUzMzRiNGMwZDNmYTM2NmZjMjZmZWYwMTEyNWVjODNiZDI5OWMzYWFkY2JmNGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjMGFmZTQxODJjNTk1YzE1NWEyOGUwYTBlOTI3OTkxMWQyNmExZTQyMTEwMGEzNjVkZTkwYjdmZTk0MjQwNGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_67a1d58b6e1643d8a054e7a42abf7b09",
+      "statement": "If scripts/apply_model_config.py is missing from the harness source, deploy warns and skips both the model-config check and the apply step rather than failing.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L522-L526",
+          "version": "repo-lines-v1:sha256:fed34b3e34504c7f8ac1f7b1ed1872eb10b0fd07be9bc5bc4d9174c056e7caf4:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZThmNjU0MGUwYmVmNGJhYTY4M2ZiMzE0MTIyM2QxNzA3ZWU4ZTc4NTQzMjYwNDc5MDU2MjY4ZWY1M2Q4YjAxMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzVmYzkwZmY4YTQ0MTRjNTQ0MWQwZjY3N2M1Y2JmZGEzOGI0NzRlNTFiZmQ1NTlhNTU1OWRlMGY4NzcwNTUyNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGM1ZmJhNDc3MjgzN2I1ODgyNTc0NWMwZTA1MmVkNjA1NDgwNjZiMzNmOTkzMTUwZGQ4MmNiOTJhMjlhZDg4ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDBhYWNmZmY4Y2IwM2JhNDQ4NmRhY2QzYWI3OThhZGFkMzNiNjllOGE1YjYxNGU5NTFmNjU3ZjdlM2MwYWU1OSJ9"
+        },
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L636-L638",
+          "version": "repo-lines-v1:sha256:31f343bcef233d897cdb354c0a4234c2ede71403f0a8603f4d781477da8bf1ad:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjIzNDRlN2Q0ZGRmYzA5YTU2Nzg2MTc2YThlM2JhZmEwNjQwMTI2MzJiMGNiMzI5M2RiOGVmY2Q1OWI1MjJhYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzc2OWQyMzdjZDQyMGI5ZDM4Yjk4MWEwYTRmNjc3MDE5MGE0YTgzZGNhMWZlNTZjNGY1YmExZTJjYmMwZWY3NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjZkOWI1NGYzNjczMzA3Y2ZiYzczNThkYjBhMTlhZTE4OWUxMzIzNzJkM2ZmZDg5NWI2OWU2M2NiMmQ1NmQzZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODIzNGFmMDAzYWRlNmVjZDY4M2FhOTQwMDM0ZGY1MzM3OGYxYTEyNTFjNGFhODRlZDc0ZDZiNWI0MmRhNmUzMSJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-16T04:08:21.021Z"
+    "at": "2026-10-19T07:24:11.736Z"
   }
 }

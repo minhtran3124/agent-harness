@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:22a8717b54b1248e1ae90531b40452a69bbec24414776c0eab48755747d21a5e",
+  "pageVersion": "sha256:59e4daaf379de74b72927f29a7ece19134e8ca1ab81401695e130c9aa2e5c906",
   "claims": [
     {
       "id": "claim_449e9178adb04acd84be9c9bf0de4d45",
       "statement": "Behavioral evals under evals/ score non-deterministic skill judgment against labeled ground truth, and their LLM runs are triggered manually rather than in CI while scoring is deterministic and scripted.",
       "evidence": [
         {
-          "resource": "repo://evals/README.md#L1-L29",
-          "version": "repo-lines-v1:sha256:dc105d517971d3673bd6cd0bd70c8154b05a16bdb768202f52f7774dcee323cf:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmMjVhNjRkNWMxNjRhMjc3NTdmOWFkODNiOWYwODBiNzRmNGNlZjc5MzI1ODFmMGFmNTA5MDY2ZDg3NzBlM2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmZjFhNzkyNDMzNDYzYTQxYzYwYzM4ZTM5M2ViNzliOWU4MTBkYzE2ZWY3OGVjMjE2MTE3MTM5YjNlODk2MmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://evals/README.md#L1-L30",
+          "version": "repo-lines-v1:sha256:87c1614b9a9ee2c94f59c75244355c41a5b7809679fad6b48d40481e6aec6b78:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmMjVhNjRkNWMxNjRhMjc3NTdmOWFkODNiOWYwODBiNzRmNGNlZjc5MzI1ODFmMGFmNTA5MDY2ZDg3NzBlM2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmZjFhNzkyNDMzNDYzYTQxYzYwYzM4ZTM5M2ViNzliOWU4MTBkYzE2ZWY3OGVjMjE2MTE3MTM5YjNlODk2MmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -357,10 +357,106 @@
           "version": "repo-lines-v1:sha256:53586ec9369986a1b2dccfa5586d39d081b965f20b8cdea031562a6737d0fcee:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhZDA1ODA5MDRhMTgxNTQ4N2VjZGIwOTMyMmM1YmM5NDI2MzBkMjMyMDkzYjY0YjI1MmQ4NmY5OWRlYmU4MjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2NGQxOGZhNjA5Yjc4ZTFkMWUzOGMxNjNhM2IyY2NlMDFhODI3ZTcwMDJkYWY1OTdlOTQ5NjM1NzAyYWEwYjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI3ZWJiMjY0NDE4Zjg4YWMzNGI2MjBiNmYzZjBlMWViMzYwYWExZmEwZWI5NmY2NjIzNDdlYjRiYjBjNmRjODAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM4Y2Y0MjJhYTNlZTE2Y2Y5MGI2Y2Q0YTkxNzE3MjZlMzhiYTc3NmJkMDlkMmZlZGY0ZTBkZDBlOGUyMThkZTAifQ"
         }
       ]
+    },
+    {
+      "id": "claim_27640ba5e3724653ac4a9a3c69262488",
+      "statement": "A reviewer prompt change that alters what a reviewer checks is proven by two runs of the real reviewer agent with the real prompt: a canary that acts as the gate, passing only when every planted defect gets the expected severity and no clean control gets a finding, and a historical replay of a previously approved case that is recorded as evidence and is not a gate.",
+      "evidence": [
+        {
+          "resource": "repo://docs/solutions/harness/reviewer-prompt-change-proven-by-canary-and-replay.md#L19-L31",
+          "version": "repo-lines-v1:sha256:ef5caf9360ce6ba475764e5ab4fc57689e58ae4b0157c87af5559355e197e44f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3MWFlM2NkYWQ4NTJjMWM2MTYyNDJkZjQwMDg1ZjhhM2I3NzU2MmRjZjkzN2Q5ZmZkY2M3NmVkNjUzMWMxNzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwMTQyNWJjZTU3MWQxNTU2ZTQwNGIwY2FiODcyYmI5NGZiOWMxODgxYzY4MTI5MTY0NWI0NWRkNWMwNWY3YmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViMjIzN2ZhOTI3OWNiODkwNTk5NTZhNDg4M2ZmMzUwMDdmZDExNGIyZGM5OTAxOTM1Y2ZkNTE0YWM0MDhmNDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjViN2M3YzUyNGI4MTdiOTNjMzQ1OGM0OGUwZDMzZmM4NDE1YmUxMWYzNjdiMzFjZjk3NDNlMjVlZWM1YzdiYjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5d02a6c77392441e9143f8f6ba7db9ec",
+      "statement": "Canary fixtures live under specs/<slug>/canary/ with the record in specs/<slug>/canary.md, are built with the same task_brief.py and review_package.py scripts that a real dispatch uses, and a plan can gate on the line `Canary result: pass` via grep.",
+      "evidence": [
+        {
+          "resource": "repo://docs/solutions/harness/reviewer-prompt-change-proven-by-canary-and-replay.md#L39-L49",
+          "version": "repo-lines-v1:sha256:e713f953fb3ae08018796f5ad7fa58d422f6bd2e0bb4734214f38e6b2745c246:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1YTIxNTUxNWU0ZmYyOTc4MTJjYmE0OTE0MTM1ZmE3ZWRmZTFiOGM5ZmI3ZGRmN2U2MDg2M2UxMDJiOGM5NDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmYmY5N2U3OTk3Y2RkZWRkZWNlODc1YTE4YTcyNzkyYWFiNmUyNTU0MzExYTI1YjM1OGEzYjY4YWYxNmUwZjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyOWNjODYyYmZlMGUzNjYzZTAxOWExNWRiZmY4OTVjZjQwNmExMmM1M2M0ZjgwNTdhZWMwNGNjZmRhOTNiMjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzM2JhODFjZjk1NDM3ZDc3MmJmZGU1NWQ0NGJhZmIwNmI3OGNjZTRmYWM4YzkxNjRjZTUzMDA1MDRjYjcwYTYifQ"
+        },
+        {
+          "resource": "repo://specs/gh-312-test-seams/canary.md#L1-L20",
+          "version": "repo-lines-v1:sha256:911f57b34fd404f1abfd37e0dadd5b5bc8e1256e40ee9fe501c539e5b48b9ab2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhlMGY3YjViODUxOGYwOWI3MjJkYWQ5NGFhNGJhNzZiNzM4NzRhMGE0ZDY1YzE5NTgxZGU3MmU5ODZjMmJjYWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjZmU0MjEwMzQzNDBkMWFkYmQ1ZGQ4OTM1MjhmYWU1YjUwZGFkYzBjZWUyZGJhZTY0OTgyZDk1YzE4NmQ1MTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFmYTg5YjkzM2RhZTE0OWNmYzljNjUzNTk3MmMwMmQ0MGMwYzEzMTM4NzMwZWY3NTYxMWEyNDRiN2ZmNDAwODYifQ"
+        },
+        {
+          "resource": "repo://specs/gh-312-test-seams/canary.md#L58-L58",
+          "version": "repo-lines-v1:sha256:6b8cdf301fdabdb90f380e7654cb52f67cf2e060d277dfbebd68cee3b324355c:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmI4Y2RmMzAxZmRhYmRiOTBmMzgwZTc2NTRjYjUyZjY3Y2YyZTA2MGQyNzdkZmJlYmQ2OGNlZTNiMzI0MzU1YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmI4Y2RmMzAxZmRhYmRiOTBmMzgwZTc2NTRjYjUyZjY3Y2YyZTA2MGQyNzdkZmJlYmQ2OGNlZTNiMzI0MzU1YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjJlYWM1OTIyY2Q1NDQ4MzkzNDUyMTFjM2I4Yjc5NTFmNWQwMGY3ODZkZDY3MmU1MjBlZDlmZDUzMWZjOGFkNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTIzYWM2MDA2ODczMDQ1MTQxZTI2OTAzMDUwZTcxNTJlZTMyOWQ0OWZhZDdjZjYyMDljMjIyYjk0ZjllZGQ2NCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_2b10ad44ba61480282e7c0fee4a5b83c",
+      "statement": "The gh-312 canary planted an off-seam test and a test whose expected value was computed by the code under test next to two clean controls; the task-reviewer flagged both planted tests as Important, flagged neither control, surfaced a hidden tab-splitting bug, and the record states Canary result: pass.",
+      "evidence": [
+        {
+          "resource": "repo://specs/gh-312-test-seams/canary.md#L6-L58",
+          "version": "repo-lines-v1:sha256:c721a8bcd93dc2fe9fda4c28567a75a6225b855deb1bfbe2b758889dad9a902e:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0ZWNjZTEzYTIwYWJjZTY4OTVlMDBiMWU2YTE5MzAzMDBjMWZkN2FmOWI2ZjIyNTU2ZjgxZmQ5MDQxN2JmNzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiOGNkZjMwMWZkYWJkYjkwZjM4MGU3NjU0Y2I1MmY2N2NmMmUwNjBkMjc3ZGZiZWJkNjhjZWUzYjMyNDM1NWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkNTA3Y2IwMWEzN2UyMWI4NWQ4YWMzMDEwMjZiOGNjZmY5YTc2YjcxNzQ4MjE1ZjY3MWQzMWI4NTdlNGM4ZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUyM2FjNjAwNjg3MzA0NTE0MWUyNjkwMzA1MGU3MTUyZWUzMjlkNDlmYWQ3Y2Y2MjA5YzIyMmI5NGY5ZWRkNjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_44f2eb9bf214437cbde3cdbeec144532",
+      "statement": "The gh-175 Task 2.1 replay with the seam check returned needs_fixes where the original per-task review approved, matching later gh-175 correctness findings [A/B] and [C] (synthetic-only fixtures, per-entry SHA association) but not the other nine code defects; it ran against today's tree, which holds more real runs than existed at the time.",
+      "evidence": [
+        {
+          "resource": "repo://specs/gh-312-test-seams/canary.md#L138-L153",
+          "version": "repo-lines-v1:sha256:79d0ec95f65869760ce61da54b0eaa8c434ca67999007514f700854f908e9c4b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhNGQ2ZmVhMjg4YzgzYjFiOGE2ZTBkZjdlMjBkOWNiMmMxZmYyMTA3MTM0NWMyZjNmNjMzZTc3MGQ5ODRmZjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1ZWVlZDg4NWQyYTU0N2JiNDA5ZDliYTY3MjIxYmYxNDQzM2EwY2RmZDY2NDE3YzUxY2Q1NTc1NzIyMGQwMTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxMzU4Yzg3ZDI1ODhkZTZlZTZjM2NlYjNkYmU3YjQwOWU2ZDhhZjdmMDFkYjFkMWJkZjIxYzJjNDM3ODY5ZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://specs/gh-312-test-seams/canary.md#L60-L73",
+          "version": "repo-lines-v1:sha256:3588edbb58643183b60a9f1f97ebd576160f005123c7340d23d315a0f262437f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1NTA3ZmUzYTZkY2M2NWJhNDczNTg4ZGYxMjkxNWI0NGY3Mjg2M2Q0ZDMxYzRlNWM4MjZkMzlkNjIyOWZhYzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0NWIwMzUzZGE0MjY2Mjk1YjQ3Njc0NmFmZDY4ZTc0ZDg0ZThkOTY5N2QxNzkzYzcwOTEwZTE4NmMxZmFmNTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyZTNmY2EzZTIxYWM0ZTNiNTFiMWUwOGJiYzExZGUwNjFiNTBjYmVjYTRhYzg1MDYwNWIyOWVjOTEyMWQ5NTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUxODg5MmJlNDQ2ZjRlNTgyMzYxNzEwZDVmODBlZDFhMDQ5YTIwNTIyNmE5ZjZmNTgxMTZkMWE5ZGY3N2FjZDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7fc9a1dd0bb44148aacaf85a5a4c47f5",
+      "statement": "Blind skill-eval runs are dispatched by the orchestrator as one subagent per fixture that never sees truth.md; a standalone or CI runner requiring ANTHROPIC_API_KEY is deliberately not built because an LLM in CI is costly and flaky.",
+      "evidence": [
+        {
+          "resource": "repo://docs/solutions/harness/skill-eval-blind-run-scoring.md#L21-L46",
+          "version": "repo-lines-v1:sha256:e4ad5544e7a2313ec690ac396eeb245d921cea2cf15a64277c75d3df02005948:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4MmY5MzMyOTlhNjJiYzRmYWRkNTNlY2RjMjczMzhlYTJlMjAyYzEwZTRmZjdkYjBlZjFjMTBkNzc3MzQ1YmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0ZWY0MmE0YTE1YmM0NzkxYWMwODkwMWI5MzZkOTQ2MzVmMzZiZmMyNWRjZjk2Njk1NjJkZDIxZWM4YmI2MGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkwMTAzNmZjOGE2Nzc0ZWUwODI5ZGU2OTczNTgyMzEwOWU1ODRjNWZhZGEzODBiZDJkYzA1YzBkNTY0ZWIwNTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzM2JhODFjZjk1NDM3ZDc3MmJmZGU1NWQ0NGJhZmIwNmI3OGNjZTRmYWM4YzkxNjRjZTUzMDA1MDRjYjcwYTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_146a6eb39fa6449bad203df2abef82af",
+      "statement": "The blind-run playbook requires multiple runs because one run hides non-determinism (four intake runs kept hard-gate respect at 3/3 while one lane-boundary fixture flipped tiny/normal), and requires marking decisions the fixture already states as settled-by-fixture before the first run so only open rows are scored.",
+      "evidence": [
+        {
+          "resource": "repo://docs/solutions/harness/skill-eval-blind-run-scoring.md#L32-L38",
+          "version": "repo-lines-v1:sha256:c5927d2c698a0e0dcf1cb485254eb308c13df5862dea3d8c6be42355a4085123:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDRiNTJjYzUxMzBmMTc5YjdjMjFjZWFjZDI2M2RlNjJiZWUyNzZiZGM3ZmUyMjU0M2NkZDQyOTc4Nzg2ODAwNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDE2YmYyZWFiYzZhZDZlN2VkMTU2Yzc3NThlOTIxZTQ2ZDIyMGMxZmNhMzFlMmViMjNmMTA0NDExNmQ2ZDQ3MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWUzNWJjODg0ZmQ1ZTRiODZmOWYyODk3NDVmMWMzM2U0YWY3MjczNWE2MjkwMGY2OTA2N2QwZWJhNTc1ZTkwOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTc1MmJmYzcxMmQ4NjcyZjgyMjBlNDNiNWQ4YmUwM2U0MjE5ZjY3NGY0NjZhYjZhZmNiNjUwNDkxYjA3ZjgzOCJ9"
+        },
+        {
+          "resource": "repo://docs/solutions/harness/skill-eval-blind-run-scoring.md#L60-L64",
+          "version": "repo-lines-v1:sha256:4eb8c7bbae76fe7eeb93cdc81da3977302ac5916915c39557a856def83a9fb8a:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzkyNGQxZjcyZmY1M2FhNDAwNmE2MWI2M2I4OWM2YjYzMjcyNmQyMWI3NzMwYmY3MTU3ZDEwZjUyNTlhMDY2MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTEzY2I1NTNlOGYyMGI5YjQ5NzAzMjAwYTFhNTc4MTRhYTdkM2I1OTQ0ZDQ0OGUyNTQ5MjkzN2ViNDQ5YTYzMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGFjYWM3ODY4YjA3MGViOTkwZGVjOGFiODVmY2UzZGVlYWQ0Mzg5M2ExNjU0MGRjODNhYzI2NDBkNTJlZDBlMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmYzOWEzOWRlZGYzMjU2YjgxNzYwMWRjOGViYmI3ZWZjYjRmMWVmYTMzYTY1YjJmNTliMzFkNGQ2MGJmYjAwYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_8e5fa02d0d724defafe43bd1826c0df5",
+      "statement": "skills/diagnosing-bugs/tests/routing-cases.md is a manual routing canary table run by a human or a meta-eval session, not per-commit CI; because the skill sets disable-model-invocation: true, feature-intake routes bug fixes by reading the SKILL.md, so a Skill call in the chaining case means the route failed.",
+      "evidence": [
+        {
+          "resource": "repo://skills/diagnosing-bugs/tests/routing-cases.md#L1-L20",
+          "version": "repo-lines-v1:sha256:4e8136872eaaaac3057987f617e4d7f0e0a09e4deb8f6de5908e35413540abe2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0NmM5YTg2NTQwYTdkZjQ5ZjFjM2VkMmY4NmI2ZmNhNjBmNWE3MzNhMTM3M2UwMmNiZGMwZGUwNjQ5NGY0MTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkN2E4MWEzMDYzMGZmNGE4ZTA3ZDEyNGQ4ZGM4NDMzY2ViZTNjODhjNWU1YjhlY2ZkYzgxMzY5NTg0MjkyMzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_26262657263f4784915b8e9949ee1fa7",
+      "statement": "The diagnosing-bugs routing canaries cover an over-firing case (a quick question starts no diagnosis), the feature-intake chaining case, direct /diagnosing-bugs invocation, and design decision D4 that a tiny-lane bug fix still runs all six phases with no cause-known shortcut.",
+      "evidence": [
+        {
+          "resource": "repo://skills/diagnosing-bugs/tests/routing-cases.md#L8-L20",
+          "version": "repo-lines-v1:sha256:baa5ee37486d72b4a4a49b2526e4e2c481f0d228c287717036b813f9e9ae0ade:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmYTVlNzdjNjVmMDM1YTVjNTBhM2Y1YWFlNDc5MmE5MWE0ZjMxYTUxOGRjNjJjZTQ4ODQ1MzIyYzRhZGU4NDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkN2E4MWEzMDYzMGZmNGE4ZTA3ZDEyNGQ4ZGM4NDMzY2ViZTNjODhjNWU1YjhlY2ZkYzgxMzY5NTg0MjkyMzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg1MGY2ZjBmNjlhZDA3MWI5YWUzYTZkMGUxMDlmNThlYTM1NGU3OGJiYmZhOWZhOWI0MjM3YjEwOTliNDVkOGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-16T04:08:21.021Z"
+    "at": "2026-10-19T07:24:11.736Z"
   }
 }

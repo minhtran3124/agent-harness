@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:0763f082b4d6a69e7e1cf2bbb2f4233c4ff091414889aa78d5f47b6af9323a78",
+  "pageVersion": "sha256:9248e2e70556d28da26aa99b16944a95bfaf4c254fa1ae9f72e20398f1f02aac",
   "claims": [
     {
       "id": "claim_083baf81f75b4b61a67bac5a33112f79",
@@ -11,8 +11,8 @@
           "version": "repo-lines-v1:sha256:268c718bb4cef8a0dfb6fa838a3ee6e513c6bc881dc35a59cb32023798954ce8:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRkZmVmZWJlOGZkM2NlYTc3MTIyNjM2YTQ3YmUwMjZiODIwMDIyOWY0NmNkN2MwZTdkMmRlZjczMmM0MzFlOTIifQ"
         },
         {
-          "resource": "repo://harness-manifest.json#L211-L251",
-          "version": "repo-lines-v1:sha256:08772a75c91aca4092dd4c2fc27eea670d439ced323756676ad50b06199ce2a0:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0MWVlNDExNGJiYWU2MTczODdmMTExNjk3M2IxMzYyM2U1MzA0YzM3YmUxYWQ3YzUzN2NlYzE4NTk0ZDQzN2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZiODlhZDA5ZDQwYzNkZTQwMWY3Yjg3ZGNmNjk0ODQ3Njc0OWE5MmMzYjIxNmRhMDA2OTQwMDJmZWNmNGEwZDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+          "resource": "repo://harness-manifest.json#L211-L254",
+          "version": "repo-lines-v1:sha256:af8079e5edf64e90c1ddebcb929572b1de9d759a96eba98922b4ab713724e1a9:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0MWVlNDExNGJiYWU2MTczODdmMTExNjk3M2IxMzYyM2U1MzA0YzM3YmUxYWQ3YzUzN2NlYzE4NTk0ZDQzN2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZiODlhZDA5ZDQwYzNkZTQwMWY3Yjg3ZGNmNjk0ODQ3Njc0OWE5MmMzYjIxNmRhMDA2OTQwMDJmZWNmNGEwZDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
         }
       ]
     },
@@ -195,14 +195,80 @@
       "statement": "deploy-harness.sh reads hook_profiles from the source manifest (default profile when none given) to filter which hooks are kept in the derived consumer settings.json.",
       "evidence": [
         {
-          "resource": "repo://scripts/deploy-harness.sh#L512-L528",
+          "resource": "repo://scripts/deploy-harness.sh#L542-L558",
           "version": "repo-lines-v1:sha256:4389efd727089b0eb798ee7d99fe900721c616428cb039b2777c723e3389924c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5YjNjOGY4ZDNiZDA0YTg5NDYyNDY1ZDA5ZmRjZDhhZmI3MDA5MDlhYzE4NTZhZmRmZmVmZDY3NDI2MmI1ZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5OWYyYmFkNjE2OTM3M2E0YWNhNDY5NmQwOTg2YzA0MjJhYzY0OTgzYmI0NjlmMmE2ODM5Mzg0N2Y5NjNmMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlODU0YjY2ODdjYmQ3YmM0OTBiNmIxYTM0OGJjNTczOTk4N2M4NWE4MDE0NDZlMzNhYTFhYWU4NDVlNWQ1YTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkN2UzZDM3OTM5NjBjMmQzNjU4ZjVkMzc5YTg1NGE0YzNiNDY2NWRhMDBlYmQ2YjliMDlhOWQ1Mzc5Yjg3MDIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_97e1bf07b5274418848b19f90b37c36c",
+      "statement": "The manifest hook inventory lists four wired hooks (commit-gate.sh, branch-isolation-guard.sh, session-knowledge.sh, model-config.sh); the default hook profile is standard, minimal contains only branch-isolation-guard.sh and commit-gate.sh, and standard and strict both include all four hooks including model-config.sh.",
+      "evidence": [
+        {
+          "resource": "repo://harness-manifest.json#L215-L227",
+          "version": "repo-lines-v1:sha256:4b9ca3a4d9bcd2526f6140afc2d34a7ea133ff0f4ba6cad45dea9ca1935b04d5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5MGNmNjMxMDY1YjZlOTg2MzQ2MGQxYmJmMmY0YmM0NTEyNGQzYmYzNzFlYjVjMDk2ZDFlYzMwMDMyMWZiYTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzZWRkNjdmZjE4MzBlMjNhMWZlMDRlZmNjZTMwMTg0OTk5NjA3NDU3NDU5N2JjZDJlMDNkMWRhNGE5ZWRlNjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1N2Q5ZGNiMGVmNTFiYjg4ZGRmZGIyNmJkNGM0M2I3YWI1ZjE4YjU3YWQyZDUyNmVlNmVhZDQ2YjVhOWUyNWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b824abe62eae4bc18313d6686cf43167",
+      "statement": "model-config.sh is a SessionStart hook that applies the validated harness-models.json to deployed agent and skill frontmatter via scripts/apply_model_config.py and never blocks.",
+      "evidence": [
+        {
+          "resource": "repo://CLAUDE.md#L80-L80",
+          "version": "repo-lines-v1:sha256:9a1daf469f93a9a57f9844300be5e52a3f1a22c3fd00075bc35a44d4081588ff:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWExZGFmNDY5ZjkzYTlhNTdmOTg0NDMwMGJlNWU1MmEzZjFhMjJjM2ZkMDAwNzViYzM1YTQ0ZDQwODE1ODhmZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWExZGFmNDY5ZjkzYTlhNTdmOTg0NDMwMGJlNWU1MmEzZjFhMjJjM2ZkMDAwNzViYzM1YTQ0ZDQwODE1ODhmZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDMxOGQ0NjM3MmMwZWUxYmU1MmIxZDdkYjAwY2IyYmY0OWZjZTRiYjBhZDgyY2VkODQxYzU5YmI2YTJjNTM0MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzhhNjQ1MjE2OGQ3OGY1ZGYyMmVmMDVkZDcyM2ViMzE4ODFmNWMwMTFlMzRmYmY2MGVmOWJiZTU1YTI5YTU2ZSJ9"
+        },
+        {
+          "resource": "repo://hooks/model-config.sh",
+          "version": "repo-file-v1:sha256:f0cc30c196eec0c2cc2551e6e3451ca4154ee15bc5360ce62ba81f29fb7cb1b6"
+        },
+        {
+          "resource": "repo://settings.json#L36-L42",
+          "version": "repo-lines-v1:sha256:761d796d6c82f5b1438f7c03d5ed206b5ffc90d56a648304f7d77a7f0ba607e1:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2JkNzlmYTc3MTBiY2RmZTU1NzM0ODNhOWNmMTFmNjc4ZjZkOGI5NDM5MmNjMjE2OGQ2NTYzNjVmOTU4OTY0NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODgwMDVkNTcxMDZhMzYyZWIwMDBkYWYzZGE0Njc0YzgyYjUxOGZmNWEyZTJmNjdlZThlNzU3YTMzM2MyYWY2NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWNmYjhlMWUyM2NlMjI0MGQ0MzNkNWZlYjY2N2NlOTJjZmJlNjBlNjg1Yjk2ZjM4MWZmMDdhMTlmZDMyZmIwYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjg4YWJhZjVhNTA0MGFhM2U2YmUxYWFlZmFmYjMxOWJhNzEyOTkxZWI3NDdiYWM2M2MwMjBkMzgwYmQwODM1YiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c1f8bd171d024e65afc91b5bf2e2acca",
+      "statement": "The manifest skills list includes harness-models (16 skills total) and the agents list is coding, reviewer, task-reviewer, test-runner.",
+      "evidence": [
+        {
+          "resource": "repo://harness-manifest.json#L229-L247",
+          "version": "repo-lines-v1:sha256:f4a46da40d46a7c8b34b2021d42487605176c42940464ade2fe3ff91765a6348:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4YWFjOGNiMjQ4MzU0NWFiZjk2NGU4NTRjZDZkNzIyMjM2ZDU4MGY4YmMyZTM5ODczNjg5NzE0YWI3NzU1N2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3OGEzNDNjOWEzZTA3YWY5MzZkNzA4YmUzNTQyZTE0ZWNhZDk0NGE4ZmI5YmJhYWMwOWE2ZmJiNmFmZTk3NzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdhNDc0ZDQ0YmEwNzJiNDM5MjNlYzEwNjE3ODlkNjViN2I1NzFlNGY2YTRjZTIwNTM4NGEzYWFjNzZkZDE3ODQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZjNjk0MWM2MTZlNDY4MjY2M2Y1NWNkMzhhZjk3NzZhYjY4YzFlYmJmMTdjZWZmMTJkNGJkYWMyNmYwMmYyNDMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1c430c7d597844039ceb6710539c186b",
+      "statement": "harness-models.json is not part of harness-manifest.json or its contracts map; apply_model_config.py validates it (schema_version 1, agents/skills maps of model/effort) against a defaults snapshot that render_agent_definitions.py builds from the Claude runtime bindings and skills/*/SKILL.md frontmatter, rejecting unknown roles or skills.",
+      "evidence": [
+        {
+          "resource": "repo://harness-models.json",
+          "version": "repo-file-v1:sha256:90dbc45c11cdeda78adf4d153694fb1161596a3bb7c0d07f92e16378074ea64b"
+        },
+        {
+          "resource": "repo://scripts/apply_model_config.py#L53-L80",
+          "version": "repo-lines-v1:sha256:9f2f7e4284ddc31a976b6fc6b19ab295439d793f8df5d73beaddf93da0de0d4d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1OTE2MDVhNWZjNzYzNzc3MzBjM2EyNDRkOGNkYzQxODA5NGRhOGZlYzU5Y2FiODQ0ZDg0ZGMwYTg0YjU1YjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyNGU0NGE0YTVlOGZlMjQ0YmZhZjkwNGNiOGE0YmEwMDlkNzZkMTc0NTZjMTMzMDZjZTIxOGI1NzMyMDRjYmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3NTE1NzZhMjc3NDdlYWMxZWZlYWU4MzNmMTA5YzE4Y2M3NjRjYjNhNDZiMzc3NDE2OTAyNmQ3NjE1YmJiMTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ4ZTNhNTVhMGY2YmI5MGI5Y2EyNTE5ZmYwN2ZhOTk5ZmIyMjNkYzk0NmJhZTRlZWJmOWE5M2QxZWY4ZTQzODcifQ"
+        },
+        {
+          "resource": "repo://scripts/render_agent_definitions.py#L216-L232",
+          "version": "repo-lines-v1:sha256:85be22741b1e09a76eace2c6e9ad6077b6ad7d2748133d0f57f34f64003b4a03:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlMmNjMjkxZjUwNjVmYjU2ZjIxZTk5MjAxZDIyMDljNGMzZTAwMjEzYjExYzQ4MzRiNWQ5Njg0NmVkZmM5NjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyOTJiYWQ5OWFmMjY1MWRmZGQ0NmQwMzFkYjYwNzYxNmQzYzliMzE2ZmM5YWNkOTliOTYwYzFjZmE1MDA4OGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1MjAxOWNhZGEyNTI5ZjExNWE2NGIxYzQ4N2FmZTliODk1ZTBmZWFjNTY5NzcxOTMzY2Q4OTM4MmZhYTI5ZjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFkZWJkZGZjMDU0ZTdiNWIwYTViZjMxYTQ1MzdjZTJkOGRmNjFlYmQyZTIzNjg1OWZlMmNiZTkzYjAxNmM1ZmYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c2659bb9f6ad4e84a73d600c5733b468",
+      "statement": "deploy-harness.sh validates the target's harness-models.json against the rendered defaults snapshot before writing anything under .claude/, failing the deploy if invalid, then copies the snapshot to .claude/harness-models.defaults.json and applies the overrides.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L517-L541",
+          "version": "repo-lines-v1:sha256:fcf69197d2473a556a6c1ba3b547a36b8abb1b641d5456de78eb3d5606997762:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkYzI3MzQ3OWQ0NWRjZDU5Y2RkMzYyN2M5YWIyNjJiMzYwNTk5ZGE5NzdkYjAyZWFhYzlmNDdjMTY5MmZkMDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlODU0YjY2ODdjYmQ3YmM0OTBiNmIxYTM0OGJjNTczOTk4N2M4NWE4MDE0NDZlMzNhYTFhYWU4NDVlNWQ1YTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc1NDkwOGRhMzY2ZjY1NTZhNzQ2MzhiMjZiNTdlMzg3MTljM2JmZTY2MzgxNjk5YjBhZjc0OGNhNGE2NmZlMjgifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-16T04:08:21.021Z"
+    "at": "2026-10-19T07:24:11.736Z"
   }
 }

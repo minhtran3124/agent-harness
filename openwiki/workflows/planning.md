@@ -1,11 +1,10 @@
 ---
-type: workflow
+type: "Reference"
 title: "Planning: Plans, Format, and Visual Planner"
-description: How the harness authors, validates, parallelizes, and renders specs/<slug>/PLAN.md — the writing-plans skill, the plan-format task and context-contract schema, wave parallelism, check_plan_contract.py, check_open_questions.py, and the visual-planner render_plan.py that produces PLAN.html and the At-a-glance block.
-tags: [planning, plan-format, waves, visual-planner, contracts, open-questions]
+openwiki_generated: true
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-16T04:08:21.021Z
+    at: 2026-10-19T07:24:11.736Z
 sources:
   - id: openwiki-source-991face7ae593d36af0365be
     resource: repo://harness-manifest.json
@@ -31,12 +30,15 @@ sources:
     resource: repo://skills/visual-planner/SKILL.md
   - id: openwiki-source-1a03a670246eef366359a05c
     resource: repo://skills/writing-plans/SKILL.md
-generated: { by: "openwiki/0.7.2", at: "2026-10-16T04:08:21.021Z" }
+  - id: openwiki-source-b48454466350b4756e055234
+    resource: repo://specs/gh-312-test-seams/design.md
+generated: { by: "openwiki/0.7.2", at: "2026-10-19T07:24:11.736Z" }
 ---
+
 
 # Planning: Plans, Format, and Visual Planner
 
-Planning turns an approved design and research brief into an executable `specs/<slug>/PLAN.md`. Five parts work together:
+Planning turns an approved design and research brief into an executable `specs/<slug>/PLAN.md`. Four parts work together:
 
 - **Authoring skill** — `skills/writing-plans/SKILL.md`.
 - **Schema rules** — `rules/plan-format.md` and `rules/wave-parallelism.md`.
@@ -69,7 +71,7 @@ flowchart TD
 
 1. Map the files to create or change, and their responsibilities.
 2. Write `## 3. Success Criteria` **first**. Each criterion needs a re-runnable, pipe-free check that finishes in under 60 seconds, plus an expected exit code.
-3. Add `## Global Constraints`. Decompose the work into `### Task` sections, each with Files, Action, Verify, Done, `Criteria` (`SC-n`), and `Interfaces`.
+3. Add `## Global Constraints`. Decompose the work into `### Task` sections, each with Files, Action, Verify, Done, `Criteria` (`SC-n`), and `Interfaces`. Write the `- Plan-contract: 2` marker as a bullet in `## Global Constraints`, and give every task a `Seams:` line directly after `Interfaces` (see [Test-seam rule](#test-seam-rule-plan-contract-2)). When `specs/<slug>/diagnosis.md` exists, copy its `Seam:` value exactly into the fix task's `Seams:`.
 4. Keep same-wave tasks free of file overlap and unresolved dependencies.
 5. If `design.md` has `## What must be true`, add an `### Assumption coverage` list under `## 5. Risks`. It maps each `A<n>` to an SC row, a task, an accepted risk, or a retiring `DC<n>`. The risk bullets must come first, because the renderer cards only the first bullet list. Then run `check_plan_contract.py`, review the plan, save it, and run `render_plan.py ... --summarize`.
 
@@ -94,6 +96,27 @@ Ids follow `<phase>.<task>`, and sub-tasks use `N.M.x`. The optional `(wave K)` 
 
 - `Criteria` — mapped `SC-n` ids.
 - `Interfaces` — a consumes/produces statement. The `Produces` clause must name at least one artifact in backticks. `Consumes` may stay prose for external inputs.
+- `Seams` — where the test observes the task's behavior. This field is written only in plans that carry the `Plan-contract: 2` marker (next subsection).
+
+### Test-seam rule (`Plan-contract: 2`)
+
+The seam rule (introduced by `specs/gh-312-test-seams/`) makes the plan, the implementer, and the task reviewer agree on where each test observes behavior. Its target failure was green per-task reviews over tests fitted to one synthetic fixture. The rule is **opt-in** per plan:
+
+- **Marker.** A plan opts in with the exact bullet `- Plan-contract: 2` inside `## Global Constraints`. A bare `Plan-contract: 2` line without the leading `- `, a marker in another section, or a marker inside a code fence is not a marker. Plans without the marker (including every plan committed before the rule) skip the seam rule entirely and keep only the context-contract checks.
+- **One bullet per task.** In a marker plan each task has exactly one `- **Seams:**` bullet, placed as the next field bullet after `Interfaces`, written on one line. The checker reads only the first line of the bullet, so a continuation line is ignored.
+- **Clauses.** Each seam names the observation point and carries a `catches:` clause and a `misses:` clause, separated by `;`. One seam is ideal; prefer an existing seam and the highest seam possible.
+- **Several seams.** When a task needs more than one seam, the same line lists them separated by ` | ` (space, pipe, space). Each seam needs its own non-empty `catches:` and `misses:`.
+- **No behavior.** A task with nothing to test writes `none — <reason>` (an ASCII `-` is also accepted); the reason must not be empty.
+- **Bug fixes.** A bug-fix task never writes `none`; its red test must sit at a declared seam. The one exception is when `specs/<slug>/diagnosis.md` says `Seam: none — <reason>`: the fix task then writes `Seams: none — <reason>` with the same reason. The checker cannot tell a bug-fix task from other tasks, so this part is enforced by the implementer and reviewer prompts, not by the script.
+
+```markdown
+- **Interfaces:** Consumes: PLAN.md text. Produces: `resume_decision.py`.
+- **Seams:** `decide()` JSON output — catches: wrong next_task; misses: file I/O errors | `parse_tasks()` list — catches: dropped tasks; misses: Status-Log parsing
+```
+
+*Illustration: one task with two seams on one line.*
+
+The checker verifies only the field's presence and shape, not whether the seam is the right one. Downstream, `task_brief.py` copies `## Global Constraints` (with the marker) and the whole task block (with `Seams:`) into each subagent brief. The implementer prompt then restricts new tests to declared seams, and the task reviewer flags off-seam tests as Important findings (see [Implementation and Review Chain](implementation-and-review-chain.md)).
 
 **Success Criteria table.** This is the plan's acceptance contract. It is a non-fenced table with exactly the columns `ID | Behavior (observable) | Check (re-runnable) | Expected`. Column rules:
 
@@ -150,7 +173,15 @@ The Status Log entry format is load-bearing. `render_plan.py`'s `_done_task_ids`
   - `Interfaces` does not name both a consume verb and a produce verb;
   - `Produces` names no backticked artifact.
 - **Producer tracking.** Every backticked `Consumes` artifact must be produced by some task's `Produces`. Artifacts ending in `.md` or `.json` are exempt. Verb detection masks backticked text, so an artifact named, for example, `produces.py` is not read as a clause separator.
-- `--self-test` runs built-in valid and invalid fixtures. The focused tests are in `scripts/test_check_plan_contract.py`. They cover legacy acceptance, fenced examples, dotted consumed artifacts that need a producer, and the verb-masking edge cases.
+- **Seam checks (marker plans only).** The script looks for `- Plan-contract: <value>` bullets only inside the fence-masked `## Global Constraints` section. Any value other than `2` fails closed with `unknown Plan-contract version`. When a `2` marker is present, every task is checked, even one that also lacks Criteria or Interfaces. A task fails when:
+  - it has no `Seams:` bullet (`missing Seams`), or has more than one;
+  - `Seams:` is not the next field bullet after `Interfaces`;
+  - a `none` value has no reason after the dash;
+  - any ` | `-separated seam lacks a `catches:` or `misses:` clause, or a clause has no text before the next `;`, the next clause keyword, or the end of the seam.
+  Without the marker, these checks are skipped and the result is unchanged.
+- `--self-test` runs built-in fixtures: a valid plan, a valid marker plan with a seam, a constraints-only plan that must fail, and an unbackticked `Produces` that must fail.
+
+**Focused tests.** `scripts/test_check_plan_contract.py` covers legacy acceptance, fenced example tasks, dotted consumed artifacts that need a producer, and the verb-masking edge cases. For the seam rule it has one test per row of the gh-312 error table: valid single and multi-seam lines, `*` bullets, missing or duplicate `Seams` bullets, empty `none` reasons, a seam named `nonempty` that is not the `none` form, missing or empty clauses, continuation lines being ignored, unknown versions, wrong field order, and markers that do not count (fenced, bare-line, or in another section). A corpus test runs the checker over every committed `specs/*/PLAN.md` and requires zero findings.
 
 The execution preflight in `subagent-driven-development` re-runs this script for contract plans. The same preflight also requires Files/Action/Verify/Done on every parsed task, disjoint same-wave file sets, automated Verify commands, and a plan that meets the threshold. `harness-manifest.json` registers `rules/plan-format.md` and `check_plan_contract.py` as the `artifact-schema-plan` contract surface. Its consumers are `render_plan.py`, `writing-plans`, and `subagent-driven-development`.
 

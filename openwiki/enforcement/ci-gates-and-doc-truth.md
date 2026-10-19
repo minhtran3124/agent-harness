@@ -1,24 +1,40 @@
 ---
 type: enforcement mechanism
 title: CI Gates and Doc-Truth Lint
-description: How the harness-ci GitHub workflow enforces the harness in pull requests — the ci-strict-gate.sh block/warn tiers that demand machine-verified high-risk proof, the lint-doc-truth.sh docs-vs-code lint, and the static conformance checkers (allowed-tools, frontmatter, skill tool conformance, runtime-neutral sources, slim surface) run by run-tests.sh.
-tags: [ci, enforcement, strict-gate, doc-truth, lint, conformance, github-actions]
+description: How the harness-ci GitHub workflow enforces the harness in pull requests — the ci-strict-gate.sh block/warn tiers that demand machine-verified high-risk proof, the lint-doc-truth.sh docs-vs-code lint, the static conformance checkers (allowed-tools, frontmatter, skill tool conformance, runtime-neutral sources, slim surface, gate modes) run by run-tests.sh, the skill prompt-surface audit with its pinned skill count, and the report-only STE prose ratchet.
+tags: [ci, enforcement, strict-gate, doc-truth, lint, conformance, github-actions, skill-audit, ste-ratchet]
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-16T04:08:21.021Z
+    at: 2026-10-19T07:24:11.736Z
 sources:
+  - id: openwiki-source-633423eb1b0995d2f1f891fd
+    resource: repo://.agents/skills/asd-ste100/scripts/ste-lint.py
   - id: openwiki-source-29256446a21f0f4f404cc1a5
     resource: repo://.github/workflows/harness-ci.yml
+  - id: openwiki-source-6d4b4e707b8d60b6ccfa3425
+    resource: repo://.github/workflows/openwiki-update.yml
+  - id: openwiki-source-993bde922338ac8a47aac520
+    resource: repo://.github/workflows/post-merge-maintenance.yml
+  - id: openwiki-source-991face7ae593d36af0365be
+    resource: repo://harness-manifest.json
+  - id: openwiki-source-f2a2a159a06a5f0448712dfb
+    resource: repo://scripts/audit_skill_prompts.py
   - id: openwiki-source-dbd57945d6b656adf292554c
     resource: repo://scripts/check_frontmatter_contract.py
+  - id: openwiki-source-14f3c12a95ccbb5234143f65
+    resource: repo://scripts/check_gate_modes_smoke.py
   - id: openwiki-source-65f6fb5e062b019f24e1d6bb
     resource: repo://scripts/check_runtime_neutral_sources.py
   - id: openwiki-source-32da97a5633beec3ba10de0c
     resource: repo://scripts/check_skill_tool_conformance.py
   - id: openwiki-source-f3e583efaa2f0c2f268a0715
     resource: repo://scripts/check_slim_surface.py
+  - id: openwiki-source-c1116bf9eaf7841fd5afafc3
+    resource: repo://scripts/check_ste_baseline.py
   - id: openwiki-source-48c2466ba505053390e67f4a
     resource: repo://scripts/check-allowed-tools.sh
+  - id: openwiki-source-f6029e8e0abe4e747763a2c8
+    resource: repo://scripts/check-plugin-validate.sh
   - id: openwiki-source-2add3f15fa7a7ab248c7035a
     resource: repo://scripts/ci-strict-gate.sh
   - id: openwiki-source-e76d83a45d52c4eac45c3166
@@ -27,13 +43,15 @@ sources:
     resource: repo://scripts/resolve-base-ref.sh
   - id: openwiki-source-139b698785417c0b4c884c72
     resource: repo://scripts/run-tests.sh
+  - id: openwiki-source-388207068993424e0e523749
+    resource: repo://scripts/test_audit_skill_prompts.py
   - id: openwiki-source-df9059f5a2d63e386ca9e035
     resource: repo://scripts/verify_summary.py
   - id: openwiki-source-319e2a818c1af514747744a9
     resource: repo://tests/scripts/ci-strict-gate.test.sh
   - id: openwiki-source-2aac57b8dea798a14edabd6c
     resource: repo://tests/scripts/lint-doc-truth.test.sh
-generated: { by: "openwiki/0.7.2", at: "2026-10-16T04:08:21.021Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-19T07:24:11.736Z" }
 ---
 
 # CI Gates and Doc-Truth Lint
@@ -41,7 +59,7 @@ generated: { by: "openwiki/0.7.2", at: "2026-10-16T04:08:21.021Z" }
 Local commit hooks warn by default. CI is where the harness enforces its rules strictly. The `harness-ci` workflow runs two kinds of checks:
 
 1. **The strict gate** (`scripts/ci-strict-gate.sh`). It runs on pull requests only. When the PR diff touches gated paths, the PR must include a high-risk `SUMMARY.md` whose `### Verify` rows re-run clean.
-2. **The test suite** (`scripts/run-tests.sh`). It runs on every push and PR, on Linux and macOS. Its L1 layer holds the static checks: doc-truth lint, `allowed-tools` presence, frontmatter contract, skill tool conformance, runtime-neutral sources, slim surface, and others.
+2. **The test suite** (`scripts/run-tests.sh`). It runs on every push and PR, on Linux and macOS. Its L1 layer holds the static checks: doc-truth lint, `allowed-tools` presence, frontmatter contract, skill tool conformance, runtime-neutral sources, slim surface, the STE linter self-test and prose baseline, and others. Its pytest layer also runs the skill prompt-surface audit tests, which pin the registered skill count.
 
 All of these checks share one design rule: **fail closed when the check cannot actually inspect anything.** If a check could not run, it must not report a pass. Many comments in these scripts describe earlier bugs where a check "passed" because its input was empty.
 
@@ -142,6 +160,26 @@ Checks:
 
 Known limitations, stated in the script: bare tokens without a slash (such as `.mcp.json`) are caught only when written as links, and code blocks are scanned like prose. The script exits 0 with a single ✓ line, or 1 after listing every ✗.
 
+## `run-tests.sh` layout
+
+[`scripts/run-tests.sh`](../../scripts/run-tests.sh) is the single entry point the `test` job calls. It does not stop at the first failure: each failing step calls `fail`, which records the step name, and the run ends with either `ALL GREEN` or a `FAILURES:` list (with failing case names extracted from suite and pytest logs). The exit code is 1 if any step failed.
+
+The L1 steps run serially, in this order:
+
+1. `bash -n` over `hooks/*.sh`, `scripts/*.sh`, `tests/lib.sh`, and `tests/*/*.test.sh`.
+2. Doc-truth lint (`lint-doc-truth.sh`).
+3. Skill-bash lint (`lint-skill-bash.sh`): unbound variables in skill bash blocks, then `bash -n` and `shellcheck -S error` per runnable block.
+4. Hook repo-root ratchet (`check-hook-root-source.sh`): no hook may derive the repo root from its own directory.
+5. Plugin validate (`check-plugin-validate.sh`). It skips with a named reason when the `claude` CLI is absent, which is the case on CI runners today.
+6. `check-allowed-tools.sh`.
+7. Python manifest checkers, only if `python3` exists: `check_manifest.py`, `check_frontmatter_contract.py`, `check_skill_tool_conformance.py`, `check_gate_modes_smoke.py` (exactly `workflow-engine` and `weakening-validation` are warn-mode, and `hooks/lib/gate-modes.default.sh` matches the manifest), and `check_slim_surface.py`.
+8. Runtime-neutral sources against the live tree.
+9. Review-chain eval answer keys (`score_review_chain_eval.py --check-truth`), if the fixtures directory exists.
+10. STE linter self-test (can fail the run) and STE prose baseline (report only). See [STE linter and prose ratchet](#ste-linter-and-prose-ratchet).
+11. Verify-row lint on `specs/*/SUMMARY.md` and `PLAN.md` changed since the base ref (three-dot diff, intersected with files changed since the grandfather cutoff commit `af869a9`). A failed `git diff` is a failure, not an empty scope.
+
+After L1, the script builds the shared pytest venv once (to avoid a venv-creation race), runs every `tests/hooks/*.test.sh` and `tests/scripts/*.test.sh` suite in parallel (`HARNESS_TEST_JOBS` sets the job count, `HARNESS_SKIP_SUITES` skips listed suites), and replays their logs in glob order. Finally it runs pytest over every `test_*.py` under `scripts/`, `runtime/`, and `skills/`, discovered with `find` rather than a hand list. `evals/` is excluded because its fixture repos contain tests that are meant to fail. The pytest step is skipped if no `python3` with pytest is available.
+
 ## Static conformance checkers
 
 All of these run in the L1 block of [`scripts/run-tests.sh`](../../scripts/run-tests.sh). The Python checkers run only when `python3` is present. Each checker documents what it verifies and what it does not, and each owns one concern so that two checkers never report the same drift.
@@ -178,6 +216,41 @@ This is a ratchet that keeps instruction sources independent of any single runti
 
 Every `(path, category)` pair must match the declared `count` **exactly**. Each inventory entry must also have a valid `classification` (`shared-source-violation`, `runtime-entry-binding`, `test-fixture`, `false-positive`), an `owner`, an `exit_condition`, and a path that still exists. A count that drifts in either direction fails and lists the offending lines. `run-tests.sh` runs it against the live tree on purpose, with `--root .`. When it ran nowhere in CI, a hook-test edit silently broke another phase's success criterion.
 
+## Skill prompt-surface audit and the skill count pin
+
+[`scripts/audit_skill_prompts.py`](../../scripts/audit_skill_prompts.py) measures the prompt text an agent can load: every skill registered in `harness-manifest.json` `skills[]`, plus every Markdown file under that skill's directory whose name contains `prompt` (a "companion prompt"). It counts lines, whitespace-delimited words, and characters. It measures repository files, not model output.
+
+It reports a problem, and exits 1, when:
+
+- a registered skill has no `skills/<name>/SKILL.md`;
+- a `description:` in the frontmatter is longer than 1024 characters;
+- a `SKILL.md` has more than 600 words (the progressive-disclosure ceiling). The message points to `docs/solutions/harness/deletion-test-for-word-ceiling.md`. A skill directory that contains `UPSTREAM.md` is vendored: it is exempt from the word ceiling (a note goes to stderr), but not from the description limit;
+- a `*prompt*.md` file under `skills/` belongs to no registered skill ("unowned companion prompt").
+
+Other modes: `--check-baseline` compares the inventory with a committed JSON and ignores the volatile `git_sha`; `--validate-inventory` checks the shape of a pinned inventory; `--compare BASELINE CANDIDATE` passes only when total words drop by at least 25%; `--write-json`/`--write-markdown` write baselines.
+
+The script is not an L1 step. CI runs it through the pytest layer, in [`scripts/test_audit_skill_prompts.py`](../../scripts/test_audit_skill_prompts.py). That file has fixture tests for each failure mode above and one test against the real repository, `test_real_repository_matches_expected_surface_shape`. That test requires the audit to pass and pins `totals.skills == 16` and `totals.companion_prompts == 12`. **When you add or remove a registered skill, or add or remove a `*prompt*.md` companion, update these numbers in the same change.** Otherwise the pytest step fails. The current 16 entries are the manifest's `skills[]` list (for example `asd-ste100`, `harness-models`, `xia2`).
+
+A new skill must also pass the other register-driven checkers: `check_manifest.py` (registered on disk), `check_frontmatter_contract.py` (`name:` equals the register key), `check-allowed-tools.sh`, and `check_skill_tool_conformance.py`.
+
+## STE linter and prose ratchet
+
+The `asd-ste100` skill ships a structural Simplified Technical English linter, `skills/asd-ste100/scripts/ste-lint.py`. It uses regex heuristics, not a dictionary. Its rules are `semicolon`, `phrasal-verb`, `marketing-adjective`, `nominalization`, `long-sentence`, `synonym-rotation`, and `dangling-conjunction` (all "hard", that is, `advisory-free`), plus `passive-voice` and `present-perfect` (advisory; they never fail a run). It never flags hedges such as may/might/could. It exits 1 when the hard count exceeds `--baseline` (default 0) and 2 on a usage error such as an unknown rule in `--disable`.
+
+`run-tests.sh` uses it in two ways:
+
+1. `ste-lint.py --selftest` runs the linter's built-in assertions. A failure fails the suite.
+2. [`scripts/check_ste_baseline.py`](../../scripts/check_ste_baseline.py) is a **report-only ratchet**. It lints every `skills/*/*.md`, `skills/*/*/*.md`, `rules/*.md`, and `agents/*.md` file with `--json`, reads each file's `hard_count`, and compares it with `scripts/ste-baseline.json`. It prints `WARN` when a file's count rose (a file missing from the baseline has baseline 0) or a baseline entry names a deleted file, and `NOTE` when a count fell. If the linter crashes, returns bad JSON, or the baseline is unreadable, it prints `ste-baseline: skipped (<reason>)`.
+
+The default run always exits 0, so the STE baseline never blocks CI. `--strict` exits 1 on any `WARN` or skip; only spec success criteria, task Done checks, and tests use it. `--against <ref>` reads the baseline from a git ref, and `--update` rewrites the baseline from the current tree (the two cannot be combined). The `synonym-rotation` rule is disabled in both the check and `--update`, because an experiment measured no effect for it, and a rule with a measured null must not count.
+
+## Other workflows and CI coverage
+
+Two other workflows exist; neither is a gate:
+
+- `post-merge-maintenance.yml` runs on `pull_request_target` `closed` for merges into `main`, `loop`, or `simplify`. It checks out only the trusted base branch, marks a tracked spec run `shipped`, runs `scripts/bookkeeping.sh`, and opens a `chore/bookkeeping-<PR>` PR.
+- `openwiki-update.yml` regenerates the wiki on a schedule and opens a PR. A PR opened with the default `GITHUB_TOKEN` triggers no `pull_request` workflow, so `harness-ci` runs on it only when `OPENWIKI_PR_TOKEN` is set. Otherwise the workflow prints a warning that the PR has no CI checks.
+
 ## Configuration summary
 
 | Variable | Effect |
@@ -188,9 +261,12 @@ Every `(path, category)` pair must match the declared `count` **exactly**. Each 
 | `VERIFY_ROWS_BASE` | first choice for the base ref in `resolve-base-ref.sh` |
 | `SKIP_DERIVED_LINT=1` | doc-truth lint: skip the deploy-and-rescan check |
 | `HARNESS_SKIP_SUITES` | `run-tests.sh`: space-separated suites to skip (CI uses it for the Codex contract) |
+| `HARNESS_TEST_JOBS` | `run-tests.sh`: parallel suite jobs (default: CPU count; `1` runs suites serially) |
 
 ## Tests
 
 - [`tests/scripts/ci-strict-gate.test.sh`](../../tests/scripts/ci-strict-gate.test.sh) builds throwaway git repos with a base commit and a diverging HEAD. It covers the tiers (hooks/templates block, scripts warn and its promotion, the per-file test exclusion, tiers staying separate), forgery (`true`) and mismatched rows, the "at least one passes" rule, bad or blob bases, orphan HEADs, every branch of the shipping and SC-history sections (CRLF, capitalised `Shipped`, a ~1 MB plan, non-ASCII slugs, renames, whitespace in `REQUIRE_SC_STABLE`).
 - [`tests/scripts/lint-doc-truth.test.sh`](../../tests/scripts/lint-doc-truth.test.sh) guards the doc scope (`rules/`, `agents/`), placeholder skipping, the nullglob case, and out-of-scope unknown roots.
 - The Python checkers have pytest companions in `scripts/test_check_*.py`. `run-tests.sh` discovers them automatically.
+- [`scripts/test_audit_skill_prompts.py`](../../scripts/test_audit_skill_prompts.py) covers unowned prompts, the description and word ceilings, the `UPSTREAM.md` exemption, baseline drift, the 25% reduction rule, and the live skill/companion count pin.
+- `scripts/test_check_ste_baseline.py` covers WARN/NOTE output, the always-exit-0 default, `--strict` on warnings and skips, `--against` refs, and `--update`.

@@ -3,9 +3,6 @@ type: governance concept
 title: Lanes, Risk, Confidence, and Hard Gates
 description: How the harness separates ceremony (the tiny / normal / high-risk lane, driven by risk) from interruption (escalation to a human, driven by confidence and ambiguity), which hard gates are diff-detectable versus judgment-only, and how each detectable gate's block or warn mode is chosen and enforced at commit time.
 tags: [lanes, risk, confidence, escalation, hard-gates, feature-intake, commit-gate, harness-manifest]
-verified:
-  - by: openwiki/0.7.2
-    at: 2026-10-16T04:08:21.021Z
 sources:
   - id: openwiki-source-991face7ae593d36af0365be
     resource: repo://harness-manifest.json
@@ -31,7 +28,10 @@ sources:
     resource: repo://templates/ESCALATIONS.template.md
   - id: openwiki-source-8e627bc7bc032e6fbc57219d
     resource: repo://tests/hooks/commit-gate-risk.test.sh
-generated: { by: "openwiki/0.7.2", at: "2026-10-16T04:08:21.021Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-19T07:24:11.736Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-19T07:24:11.736Z
 ---
 
 # Lanes, Risk, Confidence, and Hard Gates
@@ -52,7 +52,7 @@ The vocabulary of "dangerous boundaries" (the hard gates) lives in one machine-r
 The `feature-intake` skill ([`skills/feature-intake/SKILL.md`](../../skills/feature-intake/SKILL.md)) is the first gate for any change. Its own `<HARD-GATE>` forbids editing, scaffolding, or dispatching implementation until intake has recorded `Lane:` and `Confidence:` in `specs/<slug>/SUMMARY.md`. The procedure:
 
 1. Read the manifest's hard gates, `rules/orchestration.md`, and `rules/auto-correct-scope.md`. If an approved `specs/<slug>/intent.md` exists, classify from it (with pin and re-pin handling in `references/draft-intent.md` / `references/re-pin.md`).
-2. Determine the **input type** (new spec, spec slice, change request, initiative, maintenance, harness improvement, bug fix) and mark **risk flags**: auth, authorization, data model, audit/security, external systems, public contracts, cross-platform, existing behavior, weak proof, multi-domain.
+2. Determine the **input type** (new spec, spec slice, change request, initiative, maintenance, harness improvement, bug fix) and mark **risk flags**: auth, authorization, data model, audit/security, external systems, public contracts, cross-platform, existing behavior, weak proof, multi-domain. `bug fix` covers any fix of wrong behavior, and that includes harness bugs. The input type selects an extra pre-route step (see *Bug-fix routing* below). It does not change the lane.
 3. **Assign the lane** (Step 3, the canonical classification algorithm):
    - Any manifest hard gate → `high-risk`.
    - Otherwise 0–1 flags → `tiny`, but only for one-file work that adds no new public callable (else `normal`).
@@ -60,7 +60,7 @@ The `feature-intake` skill ([`skills/feature-intake/SKILL.md`](../../skills/feat
    - 4+ flags → `high-risk`.
    - A human may lower a hard-gated lane **only by narrowing scope**, never by re-labelling it.
 4. **Assign confidence** (Step 4): `high` = one clear interpretation; `medium` = a safe, documented default exists; `low` = materially different plausible readings (including chat that conflicts with `intent.md`).
-5. Write the intake block (`Lane`, `Confidence`, `Reason`, `Flags`, `Affects`, `Input-type`, `Route`, `Escalate`) into SUMMARY, and run `verify_summary.py --lane <slug>` before handoff.
+5. Write the intake block (`Lane`, `Confidence`, `Reason`, `Flags`, `Affects`, `Input-type`, `Route`, `Escalate`) into SUMMARY. A new SUMMARY also gets the `Intent-source: specs/<slug>/intent.md @ <sha>` pin line (legacy slugs without `intent.md` have none). For a new SUMMARY, intake initializes `runtime/run_state.py` as `investigating`, then `planning` for normal and high-risk work. Run-state failures never block intake. Intake always runs `python3 scripts/verify_summary.py --lane <slug>` before handoff.
 
 Both [`rules/orchestration.md`](../../rules/orchestration.md) and [`rules/auto-correct-scope.md`](../../rules/auto-correct-scope.md) explicitly defer to that Step 3–4 as the single source of the algorithm. They only name the fields and describe their consumers.
 
@@ -78,9 +78,15 @@ The lane decides how much autonomy and ceremony apply ([`rules/auto-correct-scop
 
 | Lane | Autonomy | Plan | Human confirm | Route (feature-intake) |
 |---|---|---|---|---|
-| **tiny** | Full auto: direct patch on a fresh branch | none | none. Machine gates (`commit-gate.sh`, `branch-isolation-guard.sh`) are the safety net | branch → patch → quick-check proof |
+| **tiny** | Full auto: direct patch on a fresh branch | none | none. Machine gates (`commit-gate.sh`, `branch-isolation-guard.sh`) are the safety net | branch → patch → quick-check proof (done only when the proof passes; otherwise state what is missing) |
 | **normal** | Auto with proof gates (one task reviewer, two verdicts) | yes | only if confidence is low or the request is ambiguous | `using-git-worktrees` → `subagent-driven-development` |
 | **high-risk** | Auto-plan, gated execute | yes (full chain) | only on ambiguity or a hard gate (Rule 4) | `brainstorming` → `xia2` → `writing-plans` → `using-git-worktrees` → `subagent-driven-development` |
+
+The high-risk route also uses `compound` to record durable decisions. A tiny patch that edits agent prose (`skills/`, `rules/`, `agents/`) applies `skills/asd-ste100/SKILL.md` to that prose.
+
+### Bug-fix routing
+
+When `Input-type: bug fix`, intake inserts one step **before** the lane route: the agent uses the Read tool on `skills/diagnosing-bugs/SKILL.md` and follows it. Intake tells the agent not to call the Skill tool for it, so the agent loads the skill by path. After that step, the normal lane route applies. The lane still comes from risk flags and hard gates, so a bug fix can be tiny, normal, or high-risk.
 
 Lane-independent invariants:
 

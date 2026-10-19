@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:25d747a502def3d07beefcce8fdcb5a260d18b5dd5025a04b9a3d5be59c5faa9",
+  "pageVersion": "sha256:a0f9075eda67a805647598348f8d629ff77dcaff1d0d356a0ec9f68161693079",
   "claims": [
     {
       "id": "claim_bded50af3e9e4527bd4f8cc9f298086c",
-      "statement": "writing-plans requires specs/<slug>/design.md and research-brief.md, must explicitly Read the path-scoped rules/plan-format.md and rules/terminology.md before authoring, writes the Success Criteria section first, runs check_plan_contract.py, then runs render_plan.py --summarize, and hands off directly to subagent-driven-development without asking the user to choose an execution mode.",
+      "statement": "writing-plans requires specs/<slug>/design.md and research-brief.md, must explicitly Read the path-scoped rules/plan-format.md and rules/terminology.md before authoring, writes the Success Criteria section first, writes the `- Plan-contract: 2` marker in Global Constraints and a Seams line after each task's Interfaces (copying diagnosis.md's Seam value into a fix task), runs check_plan_contract.py, then runs render_plan.py --summarize, and hands off directly to subagent-driven-development without asking the user to choose an execution mode.",
       "evidence": [
         {
           "resource": "repo://skills/writing-plans/SKILL.md",
-          "version": "repo-file-v1:sha256:064690969ea9017581d970329e3100d68dafacc81d5d41f5c176a09b4a207055"
+          "version": "repo-file-v1:sha256:a8851d2639941f205662579e05539bb7ed021f0ba73755bedfa695aba9a90351"
         }
       ]
     },
@@ -17,8 +17,12 @@
       "statement": "A PLAN.md task is a plain-markdown `### Task <id> — title (wave K)` section with Files/Action/Verify/Done bullets; fenced task sections are illustrations and ignored, a heading with no field bullets is prose, same-wave tasks may run in parallel, and waves execute sequentially.",
       "evidence": [
         {
-          "resource": "repo://rules/plan-format.md#L27-L67",
-          "version": "repo-lines-v1:sha256:1d4f936ab5e506c4d8672b397487c3bca8e4554e947943ffadb20356b1f61de5:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0ZjM3ZWQ4NjA4M2U5YWQ2OTBiMDQ2Nzc0ZWEyMzk3MWQ5ZDI5ZGM5OTZmZjYwNWU0NWFjNDMwNzI1M2FmZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5NTU3NzgxNDhhOTM4MWIxNDQwNjBhNzFlZjJiOTFjMTE3YmY0ODI2YzMxNTAzMTRlMmE3MGY1MDYwNDlhYTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY1N2QxZmZiMTU0N2RmYmZlNzYyYmRiNzYwZWM5M2Y4ZWY2ZjgzYmI5MDczNjA1YWUzODQyNjg1MGQ0MTliMDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY2Yjg1OGQ5MDA1YWEyNjU0ZmQ2MTUyNjMwNGVmNTZkY2JhZjlhNDE5OTQ1NTMwYWZkZjFiYTM2MTJjNjY2NzAifQ"
+          "resource": "repo://rules/plan-format.md#L27-L40",
+          "version": "repo-lines-v1:sha256:a898fb34ff8f9ddc4079098058063eac9cacc37874b344792142db9f380b98e6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0ZjM3ZWQ4NjA4M2U5YWQ2OTBiMDQ2Nzc0ZWEyMzk3MWQ5ZDI5ZGM5OTZmZjYwNWU0NWFjNDMwNzI1M2FmZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY1N2QxZmZiMTU0N2RmYmZlNzYyYmRiNzYwZWM5M2Y4ZWY2ZjgzYmI5MDczNjA1YWUzODQyNjg1MGQ0MTliMDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0ODcxYTg3YmFlYzkyNDI2ZjllMzU5OWVkOTlhMzkxZjE5YTFjMmIxNzVlOTg2MjUwZmFhOWJkZjk4NzRkYmEifQ"
+        },
+        {
+          "resource": "repo://rules/plan-format.md#L94-L106",
+          "version": "repo-lines-v1:sha256:d0e62167ab0604e24586b2fbdb7e46e5aa5eb87f5720c6a98ac9e5091187a652:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzNzA2MjIxZWI3YzA5NDQ5YThkOGJhYWExZWVhMTlkMDZjMDI0ZDJiMTk3MTE4YmE3N2VjYjY2Y2RjZGVlY2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5NTU3NzgxNDhhOTM4MWIxNDQwNjBhNzFlZjJiOTFjMTE3YmY0ODI2YzMxNTAzMTRlMmE3MGY1MDYwNDlhYTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBhMWEzYjg1M2RkYWRjMGI2OTk3NWJhOTYxMTIzNDhjNjMxYjgwM2MzZTFhM2U2MDNmMTU5OGFlMjQ5MzQxYTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY2Yjg1OGQ5MDA1YWEyNjU0ZmQ2MTUyNjMwNGVmNTZkY2JhZjlhNDE5OTQ1NTMwYWZkZjFiYTM2MTJjNjY2NzAifQ"
         }
       ]
     },
@@ -27,8 +31,12 @@
       "statement": "New markdown plans opt into a context contract by declaring a non-empty `## Global Constraints` section; each task then carries Criteria mapping SC-n rows and an Interfaces line whose Produces clause must name a backticked artifact.",
       "evidence": [
         {
-          "resource": "repo://rules/plan-format.md#L42-L53",
-          "version": "repo-lines-v1:sha256:969cdc81a2f94c2fc07fc30d01ebd7f45a007d4c55f11a524985a18da0b0e8cc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2OWEzMjQ3YjRlZmFlZWVkMzNmNDliNjQ0Y2I4ZWRmNTU3ZjE2ZDFmOTc3MTA4ZmI2MDk1YWQ0YWFlZDIyMjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyYzBmOWFhMDFhNjNlZWE3Zjg1MGY1OTE3MTgyMGU0YmJjZGU2YjUwNmIwMWEyYWJjNGE3YzViMmJlNGUzZTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmZTRhMGIxZGRkOWQzNDNiZjU1NThlMjJiNGMxOGM5ODNhNzQxNTk2ODNjMTQxY2E3ZDM1MjFlZjE2YzdhZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjllNzc4ZTQ5ZmRiNTBlMDIyOTVmYmM2ZjQxM2UyMGVmZjY3YWFiYjY4ZDI5MjE3YjQ5OTgyMjNkZTg0NjJhMTcifQ"
+          "resource": "repo://rules/plan-format.md#L42-L49",
+          "version": "repo-lines-v1:sha256:b4c043f57c0ff0bc5306a241eef41c08c645dd48627827b6539d85944767efcd:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzY5YTMyNDdiNGVmYWVlZWQzM2Y0OWI2NDRjYjhlZGY1NTdmMTZkMWY5NzcxMDhmYjYwOTVhZDRhYWVkMjIyOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmI0NjVkY2I1NWE1N2M3ZmY5ZjI5NzU0MzBmZmMxNjhhY2Y0NDVmNDIxNjRkYjM5MmVhYmUwOTcxNmJlZjA3YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGZlNGEwYjFkZGQ5ZDM0M2JmNTU1OGUyMmI0YzE4Yzk4M2E3NDE1OTY4M2MxNDFjYTdkMzUyMWVmMTZjN2FmNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDQyZGUzN2Q4OWYxYjgwZDAyMDZhYmM4MDBjYzA0ZGZiNzkwZmU5OWM3ZTkwMGFhYjBmYmVkN2I0OTQ3ZDg0ZCJ9"
+        },
+        {
+          "resource": "repo://rules/plan-format.md#L90-L92",
+          "version": "repo-lines-v1:sha256:bfcc915d346e218eba43f851a770c913a8c8de891d4b767d3b21fb5077a349f5:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTRhZmM0YjJhNDQ4OGNhNWEwOGE0MjI5NTNiN2MyMjAwYWQ2YzVmNTkyZTU3NDE4ZTFmNTE0ZmY4NTVjMTNhOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjJjMGY5YWEwMWE2M2VlYTdmODUwZjU5MTcxODIwZTRiYmNkZTZiNTA2YjAxYTJhYmM0YTdjNWIyYmU0ZTNlMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDc5OTEyNmIxODdjY2NhZGVhMGY1ODFlMDE0ZTY2OGE0ZDgwZThmNTUzY2IxYWMxNDU2N2I5MmZhODYxNDY5MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWU3NzhlNDlmZGI1MGUwMjI5NWZiYzZmNDEzZTIwZWZmNjdhYWJiNjhkMjkyMTdiNDk5ODIyM2RlODQ2MmExNyJ9"
         }
       ]
     },
@@ -37,7 +45,7 @@
       "statement": "The `## 3. Success Criteria` table is the plan's acceptance contract with columns ID, Behavior (observable), Check (re-runnable), Expected; IDs are sequential SC-<n>, checks are single pipe-free commands under 60s and never whole-suite, and Expected begins with a machine-read `exit <n>` token.",
       "evidence": [
         {
-          "resource": "repo://rules/plan-format.md#L69-L104",
+          "resource": "repo://rules/plan-format.md#L108-L143",
           "version": "repo-lines-v1:sha256:729cc747b65b5273ab4e14253eeb4ea51f44f8166638796e1243cc6dd021a8d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxYmY2ODMxNzNhNWNhMTE4ODJjOWE2MWQ5NDRiMGVhNGQ3MjRlNzdkNDQ0MGU1NzNmM2ZlM2MzOWRhNDI0MWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmZmM0NDU2OGIyODQ1M2JmOTNkZjU5YTE5ZWZlZDdhMjFkNjE4NmUxZDYyOTU0OTdmNmRjZTVlMjMwNjJlM2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU1OThhOGJkZmY5Mjk2MzdiZTQ0YTkzY2EwMmZkNTE2ODNkMDQ5NTIwMWJkMGQzNmFkM2Q2MjI1YzRlNDBjZTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwODUwZTQwNDg0YjM2ZDVmODE0MmNiYTY1MGJjNWU2Yzc4NTA5OTAzOTc0ZTBmOWNmYjUxYzg2YmE4OGEzYzYifQ"
         }
       ]
@@ -47,7 +55,7 @@
       "statement": "Plan guardrails require zero file overlap across same-wave tasks, automated Verify commands under 60 seconds, and never placing the whole test suite in a task Verify, SC row, or SUMMARY Verify row.",
       "evidence": [
         {
-          "resource": "repo://rules/plan-format.md#L115-L120",
+          "resource": "repo://rules/plan-format.md#L154-L159",
           "version": "repo-lines-v1:sha256:9804413c426e1b5216fe6d3dbb0b4d7490ace4ee20ab815704158abc77da9fa9:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODk4Y2NmZWM2MDA0YjQyNjliZGI1NGUwOTE3MGFlMTc1MzU0ZjUzMzA4MTk3ODI0N2ZhMjE3YzY3MGY1MjhlMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTRlYTQ5MjFhZGMzNWE5M2E0ZmViYjIyYmZiYzM2MjU4NTE2MGIwMDYxZDE5OWJiNmZjMDk0OGMzYTgwZGRiNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzRkZjk5NzIzZWUyY2Y1YTgwMjg5MjAwODZjMmE4ZWI1ZDI3NjZhYTE3YWZmYTY0YmY0OThiYmU2NWJlNGQ4MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTA5ODljYWVhNThmMjM5ODg1ZjFmOTQ3OWJmNzQ3M2UxNmFjZTIyNmY0YzBkZjBjMjRhMmY1NTMwODU5ZjE2NCJ9"
         }
       ]
@@ -57,7 +65,7 @@
       "statement": "Legacy fenced XML `<task>` plans remain read-only supported by the renderer, the subagent-driven-development preflight, and commit-gate.sh; in a mixed file only XML tasks are parsed, so a markdown task added to an XML plan would be invisible.",
       "evidence": [
         {
-          "resource": "repo://rules/plan-format.md#L181-L183",
+          "resource": "repo://rules/plan-format.md#L220-L222",
           "version": "repo-lines-v1:sha256:7e5116c827b29f4db334b0533b3aecbe7ccf8e6b0850c36106cc8b737969984a:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGM1YjIyYWYxZTIwMjkzYzczMzBiMzhjNmE5YjY4MWU1MjM2ZGVhN2MxZTg5MDFlNWIxYWVhMTVkMjNiMGJiNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzAyOTU4MjNiMTViYTAzZDRiMjdhMzc3Y2Y3YjA0ZWUzNjIzN2ZhODgyY2Q2ZDgwOTZmMjQ2YTFhMzg5Mzg2YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDE3NzM4YmIyYjcwMzc2Y2UyZTg2YjE2YTZiMTRmYWViNmQwNDhjMjA0Mzg0NmQxOGNiODk0NGViMjI2MTEwNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWNiOWYyYTQwMjZkMTY1YmU2MTM4MDg3MTEyNDEyNTA3NzVlOTQwYWUzODhmYjg0Y2RkMjU4OGJlODgxMjMzZCJ9"
         },
         {
@@ -95,12 +103,16 @@
       "statement": "check_plan_contract.py passes any plan lacking `## Global Constraints` (legacy plans remain valid), masks fenced code before scanning, and otherwise exits 1 when Global Constraints has no bullet, no SC rows exist, no markdown tasks exist, or a task lacks Criteria/Interfaces, maps no or unknown SC ids, omits a consume or produce verb, or has a Produces clause without a backticked artifact.",
       "evidence": [
         {
-          "resource": "repo://scripts/check_plan_contract.py#L50-L93",
-          "version": "repo-lines-v1:sha256:2d50c1df333eba13b7d221e948aea7f60ce0e419b7ea08249a811f1b305a796d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4OWRhMjFmNzdmNTJhODVkMjcwNTZjNTM3ODUxNWE2NGZmNDFkZTJmMjUwZDQ0ODNjMWEyMjJkNDNjM2IwZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1NzU3NGNmYzVjZTgxNGExYzM4NjdmMGE2NTNmZmUzMGJiZDU1ODI1YjVkOTc4OGJhY2QxNjViODhmNjUwOTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI2ZDQzZmVjMzk0ZThkNjM1NjNhYzU4NjE4OGI2MWZkYzY4MTAyNjRjYWZhOTI4NDIxMDIyYzE1ODFiMjRhY2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0OGQ3NDgzZDA2MGYxNzIyZTI0NTM2ODg4MzM0MjU2YjU0OTBlOGJiZTg2OTgyMDY3NmNhOWVhZjM1MDljYzkifQ"
+          "resource": "repo://scripts/check_plan_contract.py#L14-L23",
+          "version": "repo-lines-v1:sha256:f164e5ad297b2422d2271c47aff20eb34ccab5a043f127b2c2c8ed2eb4071684:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjMWRiMjY0NTllNmYxZTg0ZjM4ZDc3YjRjMjQ4MzdhMjZjYzA0OWFjNzJmMGYxZDM5MWMyZmNkZGJiMzVjOGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1YjIwYmE3NDk3ZTljNDAzYjMwNDNkZjM3ZWE3NGQ5MzVhY2JjMzVjMWQ3YjI5Yzk2YjIyM2Q0NWQyNzdjMDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5ZjFiZmEyMjNiOGU0OGIwMTRmNzY1MjIxZWMxNDM0Zjk3NWNiMjVmNGVjMzYzMjkwNjcxNzk4NWIxMDY0MzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMxNDAzNzcwYmZlZmEzZjgxN2JmOTM0Y2U0Y2FjYTljMTZkNGM1ZTk5YTQ2YmE4Mjc2M2VjYzMwYmZhZTc2NGQifQ"
         },
         {
-          "resource": "repo://scripts/check_plan_contract.py#L96-L117",
-          "version": "repo-lines-v1:sha256:ac72f074a56578e76b8b05e0fb2347f9d8f8e7aa7ccd4417c306d6ea02e54ed9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiMzk3OTMzYTI0YTgwMWVlOTIzMzI3YmQ2OWEwMTA0OWMwNzc5MTUwMjFjZjJlYzM5ZGRhNGY4MWFhODM3ZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2MjMzYjNmZmVhMzJhMjNkZjUzMDY1MzQzNDhmMmRlZTc3NmE1YTZmNzRmYjUzMzE3NWRkYzUzOWE4ZmU0NjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyZDY4ZDMwM2FlOGYwNWVhZTczYTA3YWExODg4ZmE1MTY3ZDY2YjJhNGQwOTRkMTlmYmIzNWM1MTE5ZmQ1OTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkNDEzNDBjYzIzOWExNTljZTliNjAyMmU5ZjYzMjI4MzJlMmVhZDc2Y2FlOWU0NzU0ZDIxMGViOGZiNmQ1ZTgifQ"
+          "resource": "repo://scripts/check_plan_contract.py#L147-L154",
+          "version": "repo-lines-v1:sha256:5da6df867c8d783ef284e35da750469b93e625ba03389e7d2e9eae0b3cff36a4:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDNlYmIxYmY5MmVlM2FiZDhiN2Y4ZmEwNzhiZGY3MTc5NjdhMmIyNWZmZTU5MTFjZGI2MWY5NjNmNTQ5NTA0YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTYyMzNiM2ZmZWEzMmEyM2RmNTMwNjUzNDM0OGYyZGVlNzc2YTVhNmY3NGZiNTMzMTc1ZGRjNTM5YThmZTQ2NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjdkMjE4OGFkYzFlZGMwMzg3M2JmZDk0ZDZhOTA3OGZmYzgyODFjNjUyY2NhODU5ODhiODcyMDViYTIwYmI1NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2Q0MTM0MGNjMjM5YTE1OWNlOWI2MDIyZTlmNjMyMjgzMmUyZWFkNzZjYWU5ZTQ3NTRkMjEwZWI4ZmI2ZDVlOCJ9"
+        },
+        {
+          "resource": "repo://scripts/check_plan_contract.py#L78-L127",
+          "version": "repo-lines-v1:sha256:e4e3dac2b9c8d0d331aad67b7348de45d6806bea7ee686dbcd4f6fdb44d46bd0:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4OWRhMjFmNzdmNTJhODVkMjcwNTZjNTM3ODUxNWE2NGZmNDFkZTJmMjUwZDQ0ODNjMWEyMjJkNDNjM2IwZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1NzU3NGNmYzVjZTgxNGExYzM4NjdmMGE2NTNmZmUzMGJiZDU1ODI1YjVkOTc4OGJhY2QxNjViODhmNjUwOTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI2ZDQzZmVjMzk0ZThkNjM1NjNhYzU4NjE4OGI2MWZkYzY4MTAyNjRjYWZhOTI4NDIxMDIyYzE1ODFiMjRhY2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0OGQ3NDgzZDA2MGYxNzIyZTI0NTM2ODg4MzM0MjU2YjU0OTBlOGJiZTg2OTgyMDY3NmNhOWVhZjM1MDljYzkifQ"
         }
       ]
     },
@@ -109,16 +121,16 @@
       "statement": "check_plan_contract.py requires every backticked Consumes artifact to be produced by some task's Produces clause, except artifacts ending in .md or .json, and masks backticked text when detecting interface verbs so artifact names are not treated as clause separators.",
       "evidence": [
         {
-          "resource": "repo://scripts/check_plan_contract.py#L26-L47",
-          "version": "repo-lines-v1:sha256:0b59a13ae10c8f97b42d5a7600d31fbecc500d1e386221e583e1163d79ec39b6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyOTMxMDUyMmU3OWVkOThiMTBjMmUyODY0ZDM2NjQ5NzBmZjRjNzk4Y2E1Yjc5NmVlZjVlOTcxZTk5OTI3NGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViNWUzMmExMTkxNGI3MjkyZTM0ZTI5OTNmNDkyMTZkMTdiMWRhOTE3ZDM3NDA3MzBiZDE2MzlkYzNkOWIxMTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdkOTI4M2Q0MzcxZWU1YTQ2OTFiNzEyMDc2NmY3MDFkMzJlZTg4MzIwYWM3ZDk5OWI2NmJiMmJiYTM2MTM0MzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBjYjY1M2U0OWJmMTc0YTY4NmNlMjQ1ZGVlMjA5NzBkNjhkOTc2MzI3ZDY1ODExYTFhNTc5YTk0N2ZhZWQ5YTMifQ"
+          "resource": "repo://scripts/check_plan_contract.py#L117-L126",
+          "version": "repo-lines-v1:sha256:f523a1bb7dbd4f77510e041a8673bdf2572a87da12d191663960b790b6e32a56:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhYjQ2NGNiN2E5NDkyYzc2YTIwZDM3NGY5NmQ2MWNjMzJlMjg0NzdhZmRiYTQ3ZGI5NTg4MGQ4MWMzNDYxNTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1OTg4ZTRjM2UzNWU1MDI5ZmIwY2VlNzgwZDQ5Zjk0NjY3MDAzMmM5NGEwMWRhZWVjYTQzYjk1OWI1MzAxMmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyNjU4MDE5M2MxMzRlZWU2MzlkMTliZDNlMmJmZmFiOWU1OGZiMTQwMzMxMDExMWMxOGZkNmIwMTlmZWU5ZTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUyZDY4ZDMwM2FlOGYwNWVhZTczYTA3YWExODg4ZmE1MTY3ZDY2YjJhNGQwOTRkMTlmYmIzNWM1MTE5ZmQ1OTYifQ"
         },
         {
-          "resource": "repo://scripts/check_plan_contract.py#L86-L92",
-          "version": "repo-lines-v1:sha256:8223d0f59f3bb681f0a8a212b54595fb24a0a4e4c6d8ba080bf5ad4e77834a29:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTcyNjE0MmQyZGQyODEyZTBhOTg3ZWQwMjJjODdjNmY1YWRjZjBlYmIyMTA3NDg4ODkzZjMzNmI0YThkNTMwZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTU5ODhlNGMzZTM1ZTUwMjlmYjBjZWU3ODBkNDlmOTQ2NjcwMDMyYzk0YTAxZGFlZWNhNDNiOTU5YjUzMDEyYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjM2YjJkYjIzNmNlNjdhZjAzYzY2ODFhOWZlZDc2NzA0MjQ2NzM5NmFmMWFkZGExNWMyYWY3MjJmNDcwNTcyNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTJkNjhkMzAzYWU4ZjA1ZWFlNzNhMDdhYTE4ODhmYTUxNjdkNjZiMmE0ZDA5NGQxOWZiYjM1YzUxMTlmZDU5NiJ9"
+          "resource": "repo://scripts/check_plan_contract.py#L60-L75",
+          "version": "repo-lines-v1:sha256:e62f7c6b664045d22cc2ca139e0ab0091f2dac49fcce158c0a45c0efae67cb08:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3MzkxYjVkNGFhNmNjMGU1NGExOTJlNmUwMzgwYWM3Njc4NmEwMDhlNTg4YjA4OWZjMDEwNGZlMWRmMzNjNzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViNWUzMmExMTkxNGI3MjkyZTM0ZTI5OTNmNDkyMTZkMTdiMWRhOTE3ZDM3NDA3MzBiZDE2MzlkYzNkOWIxMTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyZDY4ZDMwM2FlOGYwNWVhZTczYTA3YWExODg4ZmE1MTY3ZDY2YjJhNGQwOTRkMTlmYmIzNWM1MTE5ZmQ1OTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBjYjY1M2U0OWJmMTc0YTY4NmNlMjQ1ZGVlMjA5NzBkNjhkOTc2MzI3ZDY1ODExYTFhNTc5YTk0N2ZhZWQ5YTMifQ"
         },
         {
-          "resource": "repo://scripts/test_check_plan_contract.py",
-          "version": "repo-file-v1:sha256:289f9f025ad8677508f8a747107f7621ce83e1beace5f23a859c1b4424001c19"
+          "resource": "repo://scripts/test_check_plan_contract.py#L86-L182",
+          "version": "repo-lines-v1:sha256:0b0a1a163db9032795f604d46c0bf3d3b95ab1990348856a4bfa2a6f1f7ffe1e:eyJzZWxlY3RlZExpbmVDb3VudCI6OTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4NjQzMmE1ZDM3MDc4ODNiN2Q4OGVhNDFjMWZhOWQ2MDdiNWRiOWUwYTc3MjhlMmQzMWUzMDRmMTg5Njg3MGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkYjRmYzkyZjE2ZDRjNTFkODExNTM1Y2YyZDJiOThlNzY5OTZmNmYyMmNmYjQ4YTQzZDEwN2UwY2Y5MDUyY2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFlNjI2NWUwZTg3MDEyMTBlMTJmNzZkNWQzNzgzN2QxYTJmYWUxZmI2ZmJhNDFhZWQ1YjI5OTE0ZmRjNDQ0M2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5MTg5MzQ3M2Y3ZjQ1NjgzNzI1NjE2NDlhNmIxYjQ5MmRiNmUxNGEzYzkwMzRjNzIwYjAwNzU5MWYzZTIxMGUifQ"
         }
       ]
     },
@@ -127,7 +139,7 @@
       "statement": "subagent-driven-development preflight stops unless every parsed task has Files/Action/Verify/Done, contract plans pass check_plan_contract.py, same-wave file sets are disjoint, every Verify is one automated command, and the plan meets the threshold; it then sets the plan status to active.",
       "evidence": [
         {
-          "resource": "repo://skills/subagent-driven-development/SKILL.md#L35-L47",
+          "resource": "repo://skills/subagent-driven-development/SKILL.md#L34-L46",
           "version": "repo-lines-v1:sha256:f33fe6d981435d7a83dba5ebfd913292485cd22cafb80e29efa972e10966907d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwZTljYTYwM2MyZThmOWZmZGYwZjBmNWQyMzJlNjhkMmE4MTE1MWViOWM5Y2UxYjE4MGQ3ZmFhMjNkMWY2NTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOWI5NjEwYmU4NzZkNjEwZjljMmYyMTkzZDY2MDRjZDRiZGJmZWRmZjY4MTEwYThiMjQwMDYwMDU3OTEwNmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEyNzFjOGQyN2U1NDYzZGQwN2FhOGJiZTIwZDkzN2E2M2NmYzYyZDE3N2FiYTM1OGY1ODBkNDU2OWZkNjdkMDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEyZjc0YWI1ZGI4MzA1ODI5MGIwZmY3NWU3ZjdlZWEyOWEwMmFmNTQzNGIzZGRlMmRkODVlZjZkM2YxMWEyYWQifQ"
         }
       ]
@@ -195,7 +207,7 @@
       "statement": "render_plan.py --summarize injects or replaces a sentinel-delimited At-a-glance block (count line, wave×task table, flowchart LR Mermaid, Progress checklist) before the first `## ` heading, matches sentinels only as whole lines, and writes PLAN.md only when content changes.",
       "evidence": [
         {
-          "resource": "repo://rules/plan-format.md#L185-L200",
+          "resource": "repo://rules/plan-format.md#L224-L239",
           "version": "repo-lines-v1:sha256:5c76a2b7a30adcbaaa6654a3b9edf653d83b288df5938d5d1432a2ee5382469e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5OGY1ODczM2Y5ZWE0ZDg2NzA3YjVhYjJlYmE0NTc0MjM3OWEwNWY1OGNhMjhhNWVjNzJlMDY2MWZjYTFiOWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmMTc1ZGJmZTg4ZTA4ZjRjZTUyYjdkMzkxNzFjYWYzNWUzZmEzNjI1MmUxM2RhYzBkNjE4ZjI1YzhiN2MzNWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNkOTg2N2U2MzYzMWJiMzExMzUyOWZhOGM5YzgyMWQ1YTRmMzRlOGFiNTk0OWU3YjY4MDljMDczODBiYjc1NWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
@@ -259,10 +271,110 @@
           "version": "repo-lines-v1:sha256:efaf7fe9f0af4e775a3e453726fbd8474d46fadaf37b9aca63445d6bfcf417cf:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkZjFjMzkyMzg3YmU0OGYyMzNiNzA3NjlhOGIxYTgxN2Q5ZjA1MjNmOTJmMTY5NmIyYjNhNzZmY2JmM2VhODAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI2MTQzYjg5ZWViZjBjOTkxZWQ2NzM5MzVmNWVkMjRmZDI3YmYxNTY5ZDRmNmRhMWMwYWU3NDExNGY2ZDUxNWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2ODAyODY2YTBlMGU0ZGRmM2Y4ZGNlNjMxYTU1NDk3YWFmMDQxNTc0ODI1OTllYjVjZDE0M2U3YTkxMDJhMzUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_76576b0604b942fe90f743bc58b81cbc",
+      "statement": "A plan opts into the test-seam rule only with the exact bullet `- Plan-contract: 2` inside `## Global Constraints`; a bare line, a marker in another section, or a fenced marker does not count, and plans without the marker skip the seam rule entirely.",
+      "evidence": [
+        {
+          "resource": "repo://rules/plan-format.md#L53-L56",
+          "version": "repo-lines-v1:sha256:41b5b5f4ddb378770cbe090032d4b2d9b339885e2e72bd7c9e08fb726a934cfe:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzY0NTc3NDcyNDkzYzlhMzBlZjUzZWI4YTYzMTdkMTQ2NzQzM2I4ZGQ1YWJiM2JlOTE4ZThkZjU2YTRmN2NjOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzQ0OTA2MzNhZTk1YWY5Zjg1YWE2YzM0Y2MyOTQzMzc2MGFlNGZhMzI2ZGIyOTFlNWVmNWI0NGJlNzY4NzExNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDQyZGUzN2Q4OWYxYjgwZDAyMDZhYmM4MDBjYzA0ZGZiNzkwZmU5OWM3ZTkwMGFhYjBmYmVkN2I0OTQ3ZDg0ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDM4NGQ4MDAxOTZhM2JmN2Y5ZDFmOGIzODZjYWE2MDllOGI2NDhkN2EzMTY2Mzk3OTM3OTdjMGIzMmY1N2MzMiJ9"
+        },
+        {
+          "resource": "repo://rules/plan-format.md#L87-L88",
+          "version": "repo-lines-v1:sha256:fb7dabb436f855d4a25d3557bca4a63ef62c4192c8c0f54a479f52c703a803c2:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjYzYzhhNjE0Yjg0Y2M3MGZkNDMzYjVjNGI5ZTRhNGNmNmMyNzg0YTNlYWZhODdhMjE4MGE2NjdlMmNkYjIzMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTBjODUzYzRjZWI0NWUzYjkxNDI0OTVlNjYxODQxNmMwOGRhNjBmODhmOTU0YWQ1ZTgxYjllMDY2MDRiMmUwNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDRkMThkYjg0Nzg4YzU2MzEzMmYzYjAyYzIxNmY0ODdmOGMwZDgzMDNlMWRkYjE5ZjE4ZWMyYjFlNmYxNzVjOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjAxODMyYTdjNDYxMTRkM2UxNWQzNjRkNmFiNDdlOGVlMDYzYWQxNjE4OGMxZWY2YmFkZjBlYzE4YWNlZTc3YiJ9"
+        },
+        {
+          "resource": "repo://scripts/check_plan_contract.py#L30-L31",
+          "version": "repo-lines-v1:sha256:2de4527fc7b9e6f580c27d408812c11a8dd8d736b6e2090ff91f957bb193e052:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmZmY2MwY2I3MWNmYjExZDBkOWM1Yjk2YmFiNTU5MjZjZDA4Y2M2NTdjMmI4ODRkYTk2OGRmYmY3ZmUwOTYwNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmQ3YTI2MDU0NTg0NTlkMGZlYjdhOTUwZDZkNWNjZTc3Y2MxMTMxOTg0NGZkZDcyMmE1OGYxZjNjMmViZTA5MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTc1YzBmZWM5NzUxNjM2ZDM5ZjRmZGZjZDRmZTU1OWQ5ZmIzNzUzOTM3YzRiNTA2MjE0ZTFmMGU4MzRjZmFkZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDVmZWJmZjk3NDJhYWYyY2I2OWEyNzQ0NWE2ZDgwMDgzNDZiYWY0NWNhYTUzNDJlMjRlNzJjYjZlNGM2NzQxMyJ9"
+        },
+        {
+          "resource": "repo://scripts/check_plan_contract.py#L81-L89",
+          "version": "repo-lines-v1:sha256:ff5b328cfbb4bff95e53c2c11829df22b494a2d5bdfec89155ccbede9e565483:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDU0ZjVlMjM4ZWI4NjcyODFkYTY0ZmM3MmY3MzQ4Mjg1M2I3NWE4ODYwMGJmNzc5MGRiNmU4ZjU5OGZmMjc3NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmZjZDZiYWMyNjAwOGIwMzEwYWFlMWJjMWMzYTBlYjVkOTZjMzg4ZTg2NDA0ODFhY2I5OTFmNzIzNTZiOTdjOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTVmYTI1NjQyYWRmMjc5MTAyNDA0ODU2OWU0NjdkNTFiMTMxMjhlNzVmNTA1NjU1NjA4MjExNjFjNDA2ZmIyMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2U5MDhiZDEwMzk4MzI0N2FiODQ1OTc4M2ZhOWYzNWZlYWFjZTk4YThkYzFjYmE1NGUzMTA0N2Y4ZDY0YmFlYiJ9"
+        },
+        {
+          "resource": "repo://scripts/test_check_plan_contract.py#L309-L328",
+          "version": "repo-lines-v1:sha256:928df96a3139df529fad8cb8c959c2da7eefd19e11ec86abe82b65eccd49446b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjNDU3OTUxMWJhNDlhMjI3MmNkZTRhZmViZDRlYjgyYmE2NDQ3NzU3ZTY1MTVkYzBmMmM0YTNiMGJiNjJhYTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViZTAzMjM1OTJlZWZhMWNlZWFkNTA4NGIwNWI3NWFlZDFlYTI1OWJkYmE2MzFmYzQwNzAxY2M1ZGYxZjNmNmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYzOGYxZGI5NzA0YjZhNGMyNjcwY2FjOTM4MzBmZTU0YzkxMmVjZWM3ZmIwMGE3NzFkYjM4ZjI4ZmM0MWJkNzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkxYzNkZTgwNzQ3YjM0YWM4MjA5YzFiMDEwZWIzMjhlMGZjY2I2NmNhYzcxMmVjZTZjMjYwZTBlYzYwZjFmMzYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4711d650c0724a01bedb8469d311d4bc",
+      "statement": "In a marker plan each task must have exactly one one-line `Seams:` bullet placed as the next field after Interfaces; each seam needs non-empty `catches:` and `misses:` clauses separated by `;`, multiple seams share the line separated by ` | `, and a task with nothing to test writes `none — <reason>` with a non-empty reason.",
+      "evidence": [
+        {
+          "resource": "repo://rules/plan-format.md#L58-L71",
+          "version": "repo-lines-v1:sha256:1bdddb7814cace232ce0cca76f99d26faa537c3fd128f63864bbac308ba9d580:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlNzZlNmU5M2Q0ZTViYjBjYjQ5ODYyNzBjNTE5MjYxZmJlNGE1ZTA5YmQzN2U4MDM0OGY5M2UyNmM0ZjQ4YmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1YjE1YmE5MGU3NDhhZWRiOTY0ZmZmZjk3YzdlZGRiMDEyNzk4Y2FhMThiZTMxNTIwNzE5Mjc1Y2ZhNWZiYjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5MTlhNGRhNWVlZGQwYzQ2OTQwZTA2Mzc1NjI5NDJhNDNjOGM3ZDBjNThiMjg5ODA3NThlMTExYzhkYTdmNmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA2ZDI3MGU2MjcxMzNhNzA4OWEzYTcxOTdiMjJjNzQyNjMzMjQ1NTAzNDRiOTQ2NTMxZDVjYjAxNWMyMDhmYmEifQ"
+        },
+        {
+          "resource": "repo://scripts/check_plan_contract.py#L36-L57",
+          "version": "repo-lines-v1:sha256:96edbb345296c1fcad00ae4956dc3d3a4fb2ca6a7fb7b6b0f1acbbc0c699937c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2NmIxNWJhMjJhMzUxZGUxM2Y3NzAwMzBmNmZlM2QzMDBjNTc1N2U0YzQ2YjRjZjRjMjljM2YxZTQ0YmRmYWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1NzU3NGNmYzVjZTgxNGExYzM4NjdmMGE2NTNmZmUzMGJiZDU1ODI1YjVkOTc4OGJhY2QxNjViODhmNjUwOTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4OTkwOGZmNDI5NDQ4MDIzNGI0YjAyOGRmNWUzN2FjZjJmYTNmNzZhNmIxNjU5OGI1NTQ4MDEyMGFlN2YwNWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc4MzdhZTNkNTM0NzRkN2Q1YjRhMTllMDM5YmU0ZWE0ZmEyNDM0MTc3NzA3NWQ5MjQ2MmFlOWIxY2JmMmM3NGEifQ"
+        },
+        {
+          "resource": "repo://specs/gh-312-test-seams/design.md#L85-L95",
+          "version": "repo-lines-v1:sha256:d0c50a6d4f3d524fabf23479c89c7fb9109fea3d2a6f63d29a87c45b4549d3df:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2OGI5MjNlNWY5OGIzNzk0OTVkYTM5NWU0NzBmMzI0NWMzMDU4ODg2MTMyODUxNmJjNzNlMWFlNDliNWE5NTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjY2UzMjI1YzBhYTRkNWQ0ZDFlNzA1ZTg5MDAxNWE0Y2I3YTJlY2UzZDE3NjliM2NiNTQyZTdmNTAxZDJlNTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2ODAzNTNmNDc4ODE0MGE5Y2VlNTQzZDgzYmRkY2Q0ZGY5ZTdhMDk5ZTA5YzZiN2EwYjYzYTA3NTVlOTRkZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI2MTc1NTE2NDg5ZTM5Y2RiZGJmNTNmNDYyYzliNDBmMWY3YWIwZDYyNzU0NjhmOGYxOTNmZWNhMzE0NjY3NzEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cd9685dd410f4f8c9f99e18bd1587994",
+      "statement": "check_plan_contract.py fails closed on any Plan-contract value other than 2, and when the 2 marker is present it runs seam checks on every task (missing or duplicate Seams bullets, wrong field order, reasonless none, missing or empty catches/misses per seam) before the Criteria/Interfaces checks, reading only the first line of the Seams bullet.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check_plan_contract.py#L36-L57",
+          "version": "repo-lines-v1:sha256:96edbb345296c1fcad00ae4956dc3d3a4fb2ca6a7fb7b6b0f1acbbc0c699937c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2NmIxNWJhMjJhMzUxZGUxM2Y3NzAwMzBmNmZlM2QzMDBjNTc1N2U0YzQ2YjRjZjRjMjljM2YxZTQ0YmRmYWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1NzU3NGNmYzVjZTgxNGExYzM4NjdmMGE2NTNmZmUzMGJiZDU1ODI1YjVkOTc4OGJhY2QxNjViODhmNjUwOTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4OTkwOGZmNDI5NDQ4MDIzNGI0YjAyOGRmNWUzN2FjZjJmYTNmNzZhNmIxNjU5OGI1NTQ4MDEyMGFlN2YwNWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc4MzdhZTNkNTM0NzRkN2Q1YjRhMTllMDM5YmU0ZWE0ZmEyNDM0MTc3NzA3NWQ5MjQ2MmFlOWIxY2JmMmM3NGEifQ"
+        },
+        {
+          "resource": "repo://scripts/check_plan_contract.py#L86-L106",
+          "version": "repo-lines-v1:sha256:ccf159a35b1ef4015ad14b8abb21eab14b32a22161aafe5f787175f6a38c62af:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxYjBiNmEzNDllZjAwYTI5OWVhY2E4ZDQ4YTMzYjgzYWIyNjY1NmJkMDJmNjBjZWY0YjE3ZTNmNTFhZmYyNDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2YWQwNTJjNDRiOTUzZjBkODMyODZhMmRkZGVjMjE4NWU3ZjE4OWRiMGU0ZjUwMmM2ZjA2ZjM0NzU4NDU0YTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY5OWM5MGUwYTIyYWE5MzBiYmNhM2ExMDI3ZjQ5YWMxZWQxOTE2Y2RhYzMwNmY2YTlkM2RiMGMxYjQ3NzZmNWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEzZGE0ZWFkMzhmZTA5OGQxODViOTZkZDM5MDc2ZDZlZmU4MzVhM2QxYTliOGEwNjE0NTZiOWQ3NWVjNjYyM2YifQ"
+        },
+        {
+          "resource": "repo://scripts/test_check_plan_contract.py#L213-L306",
+          "version": "repo-lines-v1:sha256:fbd0005bbd4858a7d26f7ad49f77fdd147908f4aeef8057c4f303e356d578a49:eyJzZWxlY3RlZExpbmVDb3VudCI6OTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1YzJkZDAzMGJlNjZlMWUxYzdiMzkxYjNmOGFkZmU5ZDRlYmU3NGRjNmNmMWNhMDg3MGJlYzk0YTkwNjM4NjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5NDA4ZWJmMzMxYzM3MDZhMDU2MTQ5OTdiZmU3MmE2MDYwZjUwZTcyZmZiM2VjZmM2MTc0NmZmYjMyYjVhMjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc5YmE2YjYyNjg1ODBiZjk5ZDA2NDUzNDY1NTM4YmY0MzdjYTczMTIzNzY0ZGYzY2E4MTM5NTg1NjI1M2FmZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwMzE4MDI2YjFmMzU5NWI5YTExNWJkMWE1NTczYWVkN2I4Nzg1YzYzNzVlMTRlNGY3MjRiMTE5OGMyY2I1YzUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9dca7dd347c748a19feebaf65a426266",
+      "statement": "A bug-fix task's red test must sit at a declared seam and may write `Seams: none` only when specs/<slug>/diagnosis.md says `Seam: none — <reason>` with the same reason; the checker cannot distinguish bug-fix tasks, so this is enforced by the implementer and reviewer prompts rather than the script.",
+      "evidence": [
+        {
+          "resource": "repo://rules/plan-format.md#L68-L71",
+          "version": "repo-lines-v1:sha256:cbafbd098edc0350e4f5c4f676973f39c571431821dca81b777a2f9714d8bf1a:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzgyMWQ5Y2M2YzQyMWEyMjA4YWM1MmYyNzYzYjFmZTUwZDYwNDg0Yjk5ZTJkYmYzYmJlOTNmZjcyMTllYzNkMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTViMTViYTkwZTc0OGFlZGI5NjRmZmZmOTdjN2VkZGIwMTI3OThjYWExOGJlMzE1MjA3MTkyNzVjZmE1ZmJiNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTUxMTQ0YjIyNDExYTcwMzlkNDZmMDAwOWI5NDlkMWNjNzAyMWJkNmRhMDcyMjhlZTE4NGEzZGJjMDRlYjlmMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDZkMjcwZTYyNzEzM2E3MDg5YTNhNzE5N2IyMmM3NDI2MzMyNDU1MDM0NGI5NDY1MzFkNWNiMDE1YzIwOGZiYSJ9"
+        },
+        {
+          "resource": "repo://specs/gh-312-test-seams/design.md#L154-L156",
+          "version": "repo-lines-v1:sha256:17ffc1d5d621dc521756a7a10ea5d425dade96e866f9885333d026d0c398e776:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmViMDY4ZGNmOWEyYWI3ZmNjMzY5NWZiMTA5Yzk4YjYzNDAzYWY2ZjE2MjFmYjQ0ZmNmYWUxZTg1ZmE1YzE4ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjcwNjNjMzI4MWZjMzk1MTQyZDE0OTFjZDcwZDQwYjAxZDY4MDZmMmMxM2FlOWU4ZGI5NGRjODE4NDU2YjliZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGJhODc2MTk5YWJjZGZhMmQ3MDQ2YTA2OTJiNjgyZDkyYjgzN2E2OTIyY2JiMjY3YmQzM2U3YWFkYmJmYjkyZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjNlNDUwNzY1YTkzZWMyYjExYmQ2YjhkZTA0ZGZiYmFiN2Q1OGI4MWRjYjkyNWIzN2QyMzAzNzlhODM5OTExZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_4bcfb1548a484bc39f1199e5a7a59988",
+      "statement": "The seam checker validates only the presence and shape of the Seams field, not whether the seam is correct; task_brief.py carries the marker and Seams line into subagent briefs, where the implementer restricts new tests to declared seams and the reviewer judges seam placement.",
+      "evidence": [
+        {
+          "resource": "repo://specs/gh-312-test-seams/design.md#L212-L218",
+          "version": "repo-lines-v1:sha256:b70c990b9b533089b78742d2da09c9eb35508aaf562c5d4213a910107dada52a:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzExYjhkNzE3MTMzYjY5NjZlZjc0YThiNDY2MTNiOTU5ZDdiNTgzMjNlYmJlYTM2Y2NkYmVlOTE0ZmU4ZjBiZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmFkYmQ4Mzc5YzFkNzBjMWFlOTc4ZjMwNTViYmNhMGVhNDA3NzEyODVhMDUxNGY1ODg4YmViYWM4ZjIyYmY2ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2Q5N2E4ODg4ZjdhOWU2MTQxOTliZTcxZWQyZWU0MjY3ZTc4ZGNkZDg0NDcxYzJhODA4YWI3ZDBhZjRjOGJhYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjgzOGMyM2IxNGFjYjM1NWFkNjJlZDg5NjI2ZDdiNTAzNTA1MzhhZjc3MWZiZmMzNjEyNWM0MGUyMmUwYTA1YiJ9"
+        },
+        {
+          "resource": "repo://specs/gh-312-test-seams/design.md#L97-L103",
+          "version": "repo-lines-v1:sha256:1ab152973d16a06a6e529a20fe0a41ed79c5ee1e4146ab590ae09e4dabce1dd5:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2MxMmEzMmMwOTU3ZWEzMjRlY2UxYjZiZTI3YTBhM2UyYmI2YWJlNjI3NDBhYmQ2ZTgwYzJhNGVlNzBkMmVjZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmM0NGE0MjMyMTNkM2E0NmMzM2Q3M2Y1YjdkNGNiYzA5Y2QxOGM1NDJhMGM5NjNmMGQyMDE0ZjY4NGYyOGU3NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzg0NWIzNWIwYTkwOGQzODdjZDNmODU5MTdlODViYjViMzE1MTU4YzFhMzEzODgzN2QwMjhjYzQyMjllODFjYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzE5NGU5ZWRlZDYwZmQyOTFlYjRlOGEzNWE2YTA1YjUwNjFjYTIzYjY5ZDk3NmRjYWZlYTZjNmQ0YWY1N2UyNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_0efe801549d94369aafca5ca1ca66957",
+      "statement": "test_check_plan_contract.py includes a corpus test requiring check_plan_contract.py to report zero findings on every committed specs/*/PLAN.md, alongside unit tests for each seam-rule error case.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/test_check_plan_contract.py#L185-L336",
+          "version": "repo-lines-v1:sha256:f9169c150f56034c400663b8ca102570aab3e1fd6e1a44b8c12912214f5bda1d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0MWVlY2ZlYWExNTZiMmM3YWEwNjE2ZTg2NDVjOGYxYzczYTdlODhkYTE0YWM1NTNiOWZjYzk5YTg4ZmVhZjgwIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlNjZjOThkYzg1YmViZTYxODBhZTE0OWM1OGRkMTg5Mjc3OTc0NTY2N2FhMWYyZGZkMDA5NjkxOWRlNTZlYmQ4IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmYzFlY2VkM2QxNzY4MjBiZmQ2OGU5ZjIyMTc0ODg0NjE0NzBlNjZlNWYwMGFkNWZjMmJhYjU5NmU4ZGU4NjI4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-16T04:08:21.021Z"
+    "at": "2026-10-19T07:24:11.736Z"
   }
 }

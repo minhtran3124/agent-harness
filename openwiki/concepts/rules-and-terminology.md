@@ -3,16 +3,17 @@ type: governance concept
 title: Rules, Loading Tiers, and Terminology
 description: How the harness's rules/*.md files are loaded (always-on vs paths:-scoped), what each contextual rule governs (plan format, wave parallelism, review policy, research depth), and how the STE terminology rule is enforced through asd-ste100, check_ste_baseline.py, and check_scope_qualifiers.py.
 tags: [rules, loading-tiers, paths-frontmatter, plan-format, wave-parallelism, review-policy, research-depth, terminology, ste100, linting]
-verified:
-  - by: openwiki/0.7.2
-    at: 2026-10-16T04:08:21.021Z
 sources:
+  - id: openwiki-source-ca016bfbc6ef77eb1921db62
+    resource: repo://.agents/skills/asd-ste100/SKILL.md
   - id: openwiki-source-ca6cb4b1a14fd7969dfae3ec
     resource: repo://CHANGELOG.md
   - id: openwiki-source-a2371d6362e5db4bc834ad03
     resource: repo://CLAUDE.md
   - id: openwiki-source-7125b26b974006c088ad8213
     resource: repo://docs/harness-experimental/improvement-backlog.md
+  - id: openwiki-source-c0e95737c3ef7e256dbf94af
+    resource: repo://docs/solutions/harness/ste-ratchet-blind-to-fenced-prompt-prose.md
   - id: openwiki-source-62b53a3feb35980a2ececb3c
     resource: repo://rules/architecture.md
   - id: openwiki-source-9203fd07a84686ea62d0421f
@@ -29,6 +30,8 @@ sources:
     resource: repo://rules/terminology.md
   - id: openwiki-source-1c3cf1e8cd3ab5c21a8f53ca
     resource: repo://rules/wave-parallelism.md
+  - id: openwiki-source-ee7b52395391d173847805b9
+    resource: repo://scripts/check_plan_contract.py
   - id: openwiki-source-56f9a78cfbec91e88e4adbad
     resource: repo://scripts/check_review_receipt.py
   - id: openwiki-source-ce82323f41c62d441e954d8a
@@ -45,6 +48,8 @@ sources:
     resource: repo://scripts/render_skill_prompt.py
   - id: openwiki-source-139b698785417c0b4c884c72
     resource: repo://scripts/run-tests.sh
+  - id: openwiki-source-453611660ffbf02a66fa4bf3
+    resource: repo://skills-lock.json
   - id: openwiki-source-56dd8f19f5c600aca915140b
     resource: repo://skills/asd-ste100/SKILL.md
   - id: openwiki-source-c785be6444c974b68e213f19
@@ -53,7 +58,10 @@ sources:
     resource: repo://tests/scripts/context-propagation-regression.test.sh
   - id: openwiki-source-7ec2cbdd0d224fa3d1cd950b
     resource: repo://tests/scripts/rule-loading-tiers.test.sh
-generated: { by: "openwiki/0.7.2", at: "2026-10-16T04:08:21.021Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-19T07:24:11.736Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-19T07:24:11.736Z
 ---
 
 # Rules, Loading Tiers, and Terminology
@@ -149,13 +157,13 @@ Several mechanisms treat a rule change as a workflow-engine change, not as ordin
 
 ### Contextual
 
-- **`plan-format.md`** defines the `specs/<slug>/PLAN.md` contract. A plan is required when the work has more than 3 steps, touches more than 2 files, takes more than 30 minutes, or spans more than one layer. Each `### Task <id>` section carries `Files / Action / Verify / Done` and an optional `(wave K)` suffix. New plans add a `## Global Constraints` section and per-task `Criteria` / `Interfaces`. Section 3 holds a Success Criteria table (`ID | Behavior | Check | Expected`) whose checks are single, pipe-free commands that finish in under 60 s, with `exit <n>` expectations. Guardrails:
+- **`plan-format.md`** defines the `specs/<slug>/PLAN.md` contract. A plan is required when the work has more than 3 steps, touches more than 2 files, takes more than 30 minutes, or spans more than one layer. Each `### Task <id>` section carries `Files / Action / Verify / Done` and an optional `(wave K)` suffix. New plans add a `## Global Constraints` section and per-task `Criteria` / `Interfaces`; the `Produces` clause of `Interfaces` must name at least one backticked artifact. A plan opts into the **seam rule** with a `- Plan-contract: 2` bullet inside `## Global Constraints` (a bare line is not a marker). In such a plan every task carries exactly one single-line `- **Seams:**` bullet, placed directly after `Interfaces`. It names where the test observes the task's behavior, and each seam has non-empty `catches:` and `misses:` clauses (multiple seams are separated by ` | `). A task with no behavior to test writes `none — <reason>`. A bug-fix task may write `none` only when its `diagnosis.md` says `Seam: none — <reason>` with the same reason. Plans without the marker skip the seam rule. Section 3 holds a Success Criteria table (`ID | Behavior | Check | Expected`) whose checks are single, pipe-free commands that finish in under 60 s, with `exit <n>` expectations. Guardrails:
   1. Same-wave tasks have zero file overlap.
   2. Verify commands are automated.
   3. Verify finishes in under 60 s.
   4. Checks follow the layer ladder. The whole suite never goes into a Verify row.
 
-  Code-fenced tasks and tables are illustrations and are ignored. Legacy XML plans stay readable but are never used for new plans. `scripts/check_plan_contract.py` enforces the contract for plans that declare `Global Constraints`.
+  Code-fenced tasks and tables are illustrations and are ignored. Legacy XML plans stay readable but are never used for new plans. `scripts/check_plan_contract.py` enforces the contract for plans that declare `Global Constraints`. It masks fenced blocks before scanning, rejects an unknown `Plan-contract` version, and runs the seam checks only when the marker value is `2`.
 - **`wave-parallelism.md`** defines how waves run. Same-wave tasks run in parallel, and wave N+1 waits until every wave-N `Verify` exits 0. Each task gets a fresh subagent. All wave-N spawns go in one message, at most 20 calls per message. The collection protocol has to finish before the next wave starts. Its Status Log rule is load-bearing for resume: each entry must name task ids, commit shas and a completion marker, because `render_plan.py` and `runtime/resume_decision.py` derive the done set and the resume cursor from task ids. Shas alone do not work.
 - **`auto-correct-scope.md`** lists what an implementer may fix on its own and what needs confirmation. It also holds lane-aware autonomy and branch isolation (see [Lanes, Risk, and Hard Gates](lanes-risk-and-hard-gates.md)).
 - **`review-policy.md`** gives task review, correctness review and intent review one shared severity vocabulary. It changes no reviewer's oracle, inputs or blocking rules. An *Important* finding blocks and starts a fix round, or is escalated. A *Nit* is always reported, has no count cap, and never blocks. Each reviewer's native classes map onto the two:
@@ -204,6 +212,8 @@ STE enforcement is layered and almost entirely **advisory**. This follows the ru
 
 It splits STE into *structural* rules, which it applies fully: active voice, no phrasal verbs, no semicolons, sentence length caps, noun clusters of 3 words or fewer, and keeping modality. *Lexical* rules are only a direction of travel, because ASD's dictionary is not redistributable. Two invariants: a rewrite never upgrades a hedge to a fact, and it never silently drops a scope qualifier.
 
+The skill comes from an upstream source. `skills-lock.json` pins `asd-ste100` to the GitHub source `danyuchn/asd-ste100-skill` with a computed hash, and an installed copy also lives under `.agents/skills/asd-ste100/`.
+
 `skills/asd-ste100/scripts/ste-lint.py` is the deterministic, stdlib-only linter. It reports a `hard_count`. Advisory findings such as passive voice and compound tenses never fail a run. It accepts `--baseline N` and `--disable rule,...`, and by design it never flags hedges. `scripts/run-tests.sh` runs `ste-lint.py --selftest` as a suite-failing step.
 
 ### `check_ste_baseline.py`: per-file ratchet, warn-only
@@ -233,6 +243,10 @@ An STE rewrite can shorten a sentence by dropping its condition. `scripts/check_
 ```
 
 It prints `- none` when prose changed and nothing was flagged, prints nothing when no prose file changed, and prints `scope-qualifiers: unavailable (...)` when git fails. It **always exits 0**. Its stated limits: it does not check meaning, does not compare across hunks, and misses a split that moves sentences out of a condition's scope while keeping the word. It pins git config (`core.quotepath`, `color.ui`, `diff.relative`, inter-hunk context, prefixes) so a user's settings cannot change how hunks parse.
+
+### Known blind spot: fenced prompt prose
+
+`ste-lint.py` skips fenced code blocks. In `*-prompt.md` dispatch prompts the main prompt text sits inside a fenced `Task tool (...)` block, so the lint count, the baseline ratchet and the review package's `## STE lint` section cannot see it. `docs/solutions/harness/ste-ratchet-blind-to-fenced-prompt-prose.md` records two runs where tens of fenced lines changed while the count read `0`. Its guidance: treat a green STE count as not covering fenced prompt prose, record that under `### Not auto-verified`, and brief the reviewer to check every fenced hunk by hand. The baseline globs (`skills/*/*/*.md`) and the review package's prose roots also disagree on deeper files such as eval fixtures. A fixture change can show a lint rise that the plan should mark as out of STE scope (a Minor finding, not Important). Linting the fenced prompt body and sharing one prose-path definition are proposed, not built.
 
 ### Where the tools surface: the review package
 

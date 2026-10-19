@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:0e02941f48604fae24549e8062b5ad6fed87a07a3bc17c048ae7272940465511",
+  "pageVersion": "sha256:3d23dc55b02b966b8515a99701716f3050d19b5b97816ecb57a85ea151ee8cab",
   "claims": [
     {
       "id": "claim_8f3b21b6773146f98ed2b9911f4a2aec",
@@ -34,7 +34,7 @@
         },
         {
           "resource": "repo://skills/feature-intake/SKILL.md",
-          "version": "repo-file-v1:sha256:8bf629ad1d989079537541b3ab9e1891a7c995aeef29c4650744ff19b5b6ebaf"
+          "version": "repo-file-v1:sha256:09f7225c392264094d35f519d4536354596454dae7d11797aa04cbb9dbba300c"
         }
       ]
     },
@@ -44,7 +44,7 @@
       "evidence": [
         {
           "resource": "repo://skills/feature-intake/SKILL.md",
-          "version": "repo-file-v1:sha256:8bf629ad1d989079537541b3ab9e1891a7c995aeef29c4650744ff19b5b6ebaf"
+          "version": "repo-file-v1:sha256:09f7225c392264094d35f519d4536354596454dae7d11797aa04cbb9dbba300c"
         }
       ]
     },
@@ -54,17 +54,17 @@
       "evidence": [
         {
           "resource": "repo://skills/feature-intake/SKILL.md",
-          "version": "repo-file-v1:sha256:8bf629ad1d989079537541b3ab9e1891a7c995aeef29c4650744ff19b5b6ebaf"
+          "version": "repo-file-v1:sha256:09f7225c392264094d35f519d4536354596454dae7d11797aa04cbb9dbba300c"
         }
       ]
     },
     {
       "id": "claim_3fb840a2440e43b19c8eaeef6a66e40c",
-      "statement": "Lane routes: tiny patches directly on a branch with quick-check proof; normal goes using-git-worktrees then subagent-driven-development; high-risk goes brainstorming, xia2, writing-plans, using-git-worktrees, subagent-driven-development.",
+      "statement": "Lane routes: tiny patches directly on a branch and is done only when its quick-check proof passes; normal goes using-git-worktrees then subagent-driven-development; high-risk goes brainstorming, xia2, writing-plans, using-git-worktrees, subagent-driven-development, using compound for durable decisions.",
       "evidence": [
         {
-          "resource": "repo://skills/feature-intake/SKILL.md",
-          "version": "repo-file-v1:sha256:8bf629ad1d989079537541b3ab9e1891a7c995aeef29c4650744ff19b5b6ebaf"
+          "resource": "repo://skills/feature-intake/SKILL.md#L60-L69",
+          "version": "repo-lines-v1:sha256:510f197ac0218fb6f0cb7d51024085a9e91469397315e84027d421b6d7c04ffd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1YWQxZTZjOWRlMjA2MWQ3ZTE0YzMyNDg0ZGZlNGMwNjk0ZDhjNTAyY2ZiYjcyNDAyMzYyNzc2ODQ3OGE2YTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5MmZmNmQwYzQ0YTUzOWE1YjIxMzMyNmI3OTJlODdjZjEzYzY3ZTYzNzkzNGYxOGJkNGI4NWJkMjBiYjhmYzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1OGEwNmM0YzFmMWYwNDI5MjBhMzVmZGFlZDU1ZjhjN2UxZDRjNTg5ZjM2YmUyMjZiNDY3Zjc5Y2Y5ZTg3NDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4YWI1M2YxMzUyY2M5ZTJlZGJiNmJlMDMxYzIzNzFkODc3YmE4NGJmY2IyMWE1NDk3MWM3OTQ5YWIwYmRjMmEifQ"
         }
       ]
     },
@@ -273,10 +273,34 @@
           "version": "repo-file-v1:sha256:740646a813915a6357426a25022e010d39968256b9400d8876e273abb7af1599"
         }
       ]
+    },
+    {
+      "id": "claim_5c040c02cbeb4234ba24eede9481a594",
+      "statement": "feature-intake defines Input-type `bug fix` as any fix of wrong behavior including harness bugs, and for that input type the agent must read skills/diagnosing-bugs/SKILL.md with the Read tool (not the Skill tool) and follow it before taking the lane route.",
+      "evidence": [
+        {
+          "resource": "repo://skills/feature-intake/SKILL.md#L26-L30",
+          "version": "repo-lines-v1:sha256:73e583b41e7a7f1c61cbaa95abec313abf8d08d5820a3a7edf7ceccca38d7f76:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzdlNGI3YTljNmNiNzUzNDNhYjI3MTFkZjJlZDJlMWYwNTIyZGE3YTYwMzI5YzU4ZmNiZTk5MDkyNjQ4NjY4OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDQwYWQzYTQxMTI5MzNkMzY0ZGEwZDk4NWEwODVkY2I3ODkwYjg1NGMzMDk1MGM1ZTkxMzVjZmMxZjFhOWI2YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzJlODNiMDdmNTFiOWUyZTA1NzEzN2JjZjA2YjUxZWVkZGY4YjA2NTEyZTg1YjE5ZTRhNTNiZjZhYjRjNTE1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGU3YzEzZmMxNjA5YTFkZGMwMTU3MDUzMDAxNzJkYWU5ZGJkODY4ZDYwM2M5NTU4NDcwMDIxZGZiNTI3NWYxMyJ9"
+        },
+        {
+          "resource": "repo://skills/feature-intake/SKILL.md#L62-L63",
+          "version": "repo-lines-v1:sha256:b59a91cd5d899b1402cf247229e74935d77f7ba6e273ef961055c6324767bd44:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWQ5YzI3YjVmMTQwY2NmMjFkMDUyNTQ5YzRiNjhmMzM1MWVmYTYxYTkyYzhkNjBjOWY3MGYyODIwODY4NGViOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDUzYTNkODhlYTE0MWZhMzlmNzAzNDkxOGJhNTExZTY1ZTk2NGY4NzllODY1MTQ4ZDQ5ZDVmMjQ4OWM2ODdhMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTZiNzYyNWRiZGM4M2ZlMDZmNGM4NzE2MWJkZWViMmQwNDVhMzEzZjA3MTUzOGMxNGFiNzQwMGY1YzFjZDIwMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGY5OWE5NzU3N2MyNDg3M2IwOTc2YjZlYjY0YjA4YTQ4MTgzOWVjMjQyMzkzNWY1YmE5MzM4M2U4ODI3NDIyNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_8de6484488d048a0b84ca8ea77afdefd",
+      "statement": "For a new SUMMARY, feature-intake initializes runtime/run_state.py as investigating (then planning for normal and high-risk), run-state failures never block intake, and intake always runs scripts/verify_summary.py --lane <slug> before handoff.",
+      "evidence": [
+        {
+          "resource": "repo://skills/feature-intake/SKILL.md#L56-L58",
+          "version": "repo-lines-v1:sha256:72a2227dbde4e121152efb9907898e5963b0c916fc41fcaa31b5fdf0f2e004d9:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTUxNTIwYzVmNzNhMDdhYTljMjEzY2Q2MWYxNDU0Yzc3ZTA0MzA3ZDMzNmJiZDA1ZWRmMGM5Njg3YTI3NTdjZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGVlOGMxMmM0MDhhM2M0MmZjNmRlZWUyMmZiZGE0MzFkMTk2MjlkNDczNDY0Yjc1YWMwMDYyNzA0ZWU1YzYwYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGFkMDgyMTg3NzRkN2YyNzI2N2JiYzZjMjk5M2Q5NGE1MmQ3ZjM4NzI1MjlhOGM5MzM5OTdkYmE5M2NjZWVkMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTZiNzYyNWRiZGM4M2ZlMDZmNGM4NzE2MWJkZWViMmQwNDVhMzEzZjA3MTUzOGMxNGFiNzQwMGY1YzFjZDIwMSJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-16T04:08:21.021Z"
+    "at": "2026-10-19T07:24:11.736Z"
   }
 }

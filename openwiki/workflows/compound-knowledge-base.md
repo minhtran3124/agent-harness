@@ -3,9 +3,6 @@ type: workflow
 title: Compound and the Knowledge Base
 description: How the harness keeps durable session learnings in docs/solutions/ — the record schema and confirmed_at staleness, the generated INDEX.md, critical-patterns.md, the /compound skill that writes records, scripts/rebuild_solution_index.py, and the SessionStart hook that loads the knowledge base.
 tags: [knowledge-base, compound, docs-solutions, session-start, hooks, index]
-verified:
-  - by: openwiki/0.7.2
-    at: 2026-10-16T04:08:21.021Z
 sources:
   - id: openwiki-source-a2371d6362e5db4bc834ad03
     resource: repo://CLAUDE.md
@@ -29,6 +26,8 @@ sources:
     resource: repo://skills/compound/SKILL.md
   - id: openwiki-source-eebcc814b7fbe428435446e5
     resource: repo://skills/compound/subagents/related-docs-finder-prompt.md
+  - id: openwiki-source-349534ae6c78e33c8d35de05
+    resource: repo://templates/structure/docs-solutions-README.md
   - id: openwiki-source-04e246e6f40b0296f7236e2f
     resource: repo://tests/hooks/repo-root-resolution.test.sh
   - id: openwiki-source-25d8aacd6a7b22846d90205d
@@ -37,7 +36,10 @@ sources:
     resource: repo://tests/scripts/compound-contract.test.sh
   - id: openwiki-source-23732fbb078a0356112f0395
     resource: repo://tests/scripts/deploy-profile.test.sh
-generated: { by: "openwiki/0.7.2", at: "2026-10-16T04:08:21.021Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-19T07:24:11.736Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-19T07:24:11.736Z
 ---
 
 # Compound and the Knowledge Base
@@ -73,16 +75,16 @@ flowchart TD
 
 [`docs/solutions/README.md`](../../docs/solutions/README.md) defines the layout: `README.md` (schema), `INDEX.md` (lookup table), `critical-patterns.md` (always read), and `<category>/<slug>.md` records grouped by domain. In this repository the categories in use are `harness/`, `harness-bootstrap/`, and `scripts/`.
 
-The README says every record starts with YAML front-matter containing `problem_type`, `module`, `tags`, `affects`, an optional `supersedes`, `confidence`, and `confirmed_at`. Each `problem_type` has required body sections:
+The README says every record starts with YAML front-matter containing `problem_type` (`bug | knowledge | decision | failure`), `module`, `tags`, `severity` (`critical | standard`), `applicable_when` (one sentence saying when a future agent should apply the record), `affects`, an optional `supersedes`, `confidence`, and `confirmed_at`. Each `problem_type` has required body sections:
 
 | `problem_type` | Required body sections |
 |---|---|
 | `bug` | Problem, Root_Cause, Fix |
 | `knowledge` | Pattern, How_to_Use |
 | `decision` | Context, Options_Considered, Decision_and_Rationale |
-| `failure` | symptom, wrong approach, why it failed, correct approach (defined by `/compound`, not in the README) |
+| `failure` | Symptom, Wrong_Approach, Why_It_Failed, Correct_Approach, Guardrail |
 
-The README schema has drifted from what the tools actually use. `/compound` also writes a `failure` track, and the index generator reads `severity` and `applicable_when`, two fields the README never mentions. Current records carry those fields, so the INDEX shows `failure` rows and severities such as `critical` and `standard`. If you add a record, include `severity` and `applicable_when`. Without them its INDEX row shows `—` in those columns.
+The README schema now matches the fields the index generator renders (`problem_type`, `severity`, `tags`, `applicable_when`) and includes the `failure` track that `/compound` writes. The same README is the scaffold that new consumers get from [`templates/structure/docs-solutions-README.md`](../../templates/structure/docs-solutions-README.md), which differs only in naming the skills without a leading `/`. If a record leaves out `severity` or `applicable_when`, its INDEX row shows `—` in those columns. The generator does not validate values, so a non-schema value is copied through as-is. For example, one current record has severity `high`.
 
 ## `confirmed_at` and staleness
 
@@ -102,7 +104,7 @@ A past spec (`specs/refresh-stale-solutions/`) set the rule: re-verify a record 
 The skill runs in this order:
 
 1. **Extract.** The orchestrator, which holds the session context, runs the context-analyzer, solution-extractor, and decision-extractor passes itself, using the prompts in `subagents/` as output schemas. It then runs the related-docs pass with the analyzer's module and tags. It dispatches a subagent only when the tree is too large to screen from `INDEX.md`, and must paste in that subagent's inputs.
-2. **Select complete tracks.** It writes only complete tracks (bug, knowledge, decision, failure, with the content listed above) and skips incomplete or `[none]` tracks. Spec alternatives and `prediction → measured` pairs count as learning sources.
+2. **Select complete tracks.** It writes only complete tracks and skips incomplete or `[none]` tracks. A bug needs problem, root cause, and fix; knowledge needs pattern and how to use; a decision needs context, options, and rationale; a failure needs symptom, wrong approach, why it failed, and correct approach. For a bug track, when `specs/<slug>/diagnosis.md` exists (written by the diagnosing-bugs skill), the root cause comes from its `Confirmed:` hypothesis. Spec alternatives and `prediction → measured` pairs count as learning sources.
 3. **Check for overlap.** The related-docs finder screens from `INDEX.md` alone and does not open record files. If there is no INDEX, it falls back to reading front-matter. It rates overlap as **high** (same module and at least 2 matching tags), **moderate** (same category or at least 1 matching tag), or **low**.
 4. **Write records.** It reads the matching file in `templates/` and writes `docs/solutions/<category>/<slug>.md`. On a high-overlap collision it updates the existing record. Otherwise it picks the next numeric suffix. Several decisions go into one `-decisions` file. Each new record gets an STE-flavored pass (`skills/asd-ste100`) that leaves fenced code and test- or hook-matched strings unchanged.
 5. **Promote.** For a critical context, it appends one entry per emitted track to `critical-patterns.md`. A `failure` with a `proposed:` guardrail adds one open row to `docs/harness-experimental/improvement-backlog.md`, unless it duplicates an `existing:` guardrail.
@@ -119,7 +121,7 @@ The skill runs in this order:
 How it works:
 
 - It reads every `*.md` file under `docs/solutions/` except `INDEX.md` and `critical-patterns.md`. The front-matter parser is a simple line parser: it splits each line on the first `:` and strips quotes. It does not parse YAML, so lists such as `tags: [a, b]` stay as raw text, and the brackets are stripped only when the row is rendered.
-- Rows are grouped by their first path segment. Files directly under `docs/solutions/` go into a `—` group. That is why `README.md` shows up in INDEX.md as an uncategorized row and counts toward the total (the 42 entries include it). A unit test locks in this behavior.
+- Rows are grouped by their first path segment. Files directly under `docs/solutions/` go into a `—` group. That is why `README.md` shows up in INDEX.md as an uncategorized row and counts toward the total (the current 45 entries include it). A unit test locks in this behavior.
 - Categories are listed alphabetically. Within a category, rows are sorted newest `confirmed_at` first. Each row shows File, Type (`problem_type`), Severity, Tags, and Applicable When, and missing values render as `—`.
 - The header records `Last updated: <today> | <N> total entries`.
 
@@ -139,7 +141,13 @@ The research for `specs/gh-261-sdd-report-handoff` noted that no CI step runs th
 
 ## Loading at session start: `hooks/session-knowledge.sh`
 
-The hook is registered under `SessionStart` in `settings.json` (status message "Loading knowledge base (INDEX + critical-patterns)…"). It also ships in the Codex plugin's `hooks.json`. A deploy with `--profile minimal` does not register it, while the standard and strict profiles do (`tests/scripts/deploy-profile.test.sh`).
+`settings.json` has two `SessionStart` entries. The first registers this hook with no `matcher`, so it runs on every session start (status message "Loading knowledge base (INDEX + critical-patterns)…"). The second registers `hooks/model-config.sh` with matcher `startup|clear`, and that hook applies `harness-models.json` (see [Branch Isolation and Session Hooks](../enforcement/branch-isolation-and-session-hooks.md)). The knowledge hook also ships in the Codex plugin's `hooks.json`.
+
+Deploy profiles control registration. `tests/scripts/deploy-profile.test.sh` checks the following:
+
+- `--profile minimal` registers only `branch-isolation-guard.sh` and `commit-gate.sh --profile minimal`, and removes the `SessionStart` key completely. Neither session hook runs, and a flagless re-sync keeps that state.
+- The default standard profile registers all four hooks, including `session-knowledge.sh` and `model-config.sh` under the `startup|clear` matcher.
+- Strict registers them too, including `session-knowledge.sh`.
 
 **It never blocks.** It runs with `set +e`, closes stderr, and exits 0 on every path. It needs `python3` only to encode the JSON output and exits silently if `python3` is missing.
 

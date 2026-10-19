@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:4302e1cc3cabd50a128239bbe322410341eac9ffb7ffa8e31eac52d49646d773",
+  "pageVersion": "sha256:09735287dbb4d290dc714ac8650d4014193231c991c664c94525d6dc43915559",
   "claims": [
     {
       "id": "claim_6f63de42890947e99e158a5d06f15ba4",
@@ -27,12 +27,12 @@
       "statement": "Change flow is request -> /feature-intake -> Lane + Confidence -> route -> build -> hooks corroborate -> ship; intake writes Lane and confidence to specs/<slug>/SUMMARY.md and the lane selects tiny (direct edit), normal (subagent-driven-development) or high-risk (brainstorming -> xia2 -> writing-plans -> build).",
       "evidence": [
         {
-          "resource": "repo://CLAUDE.md#L40-L57",
-          "version": "repo-lines-v1:sha256:a5b28234595fa1ae653fb8f1422b4e21fb9158faced3d39d2a0387065bc08d50:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3NTM3MjdkYjBmM2I2NzM4YWIxNWYwOTYzNTgyMjE5MDIxNmRmOTBkMTJiZTk4OTc2OGVlZmNhNmVlNTcxYTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiZjk4ZWYxZWM2MDFiMjI5ODc3MTUzYTVjYWM3YjUyODZkODVjY2U2M2E2MWEzNmZiOGVlMmZmZGVmOTg1MTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE1MjA1NzBkNjU5YzVkOTYzZTZlZjM0NThkZDdlNTVjMjUwMjVkZWU3MmIzMTdhNmIzYWRmNGUxYTkxMDczNGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjliZjUyMmYzOTBiNGMyNTFlODY5ODMxMDlmY2RmNzBlODUzZDYxZmYwZTVhMWNlMWI5OGJkMDVlNjM2NDUzNzUifQ"
+          "resource": "repo://CLAUDE.md#L40-L55",
+          "version": "repo-lines-v1:sha256:5710c6eb534850b65d81d7f9b537334ba6e1c75a91bca3f52a1fe8d385975fbf:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3NTM3MjdkYjBmM2I2NzM4YWIxNWYwOTYzNTgyMjE5MDIxNmRmOTBkMTJiZTk4OTc2OGVlZmNhNmVlNTcxYTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE1MjA1NzBkNjU5YzVkOTYzZTZlZjM0NThkZDdlNTVjMjUwMjVkZWU3MmIzMTdhNmIzYWRmNGUxYTkxMDczNGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYyNWJjMzdiMzBmZmI2NDkzMGFjOTI2Mjc4MWQ5ZjhmMTg5NDgyZjRiMTBkNmFiY2I0NzdjM2NhNzI5MDM2YTEifQ"
         },
         {
           "resource": "repo://HARNESS.md#L42-L59",
-          "version": "repo-lines-v1:sha256:dd7d7b223d2ad2f33ec064895bba41ca9c99ba20b3faa90b058b6d813f0a10b0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjYmMyYjc3M2IzMTFmNzI4OGZlNDZmMWFlODk0YjEzZDdjZTNkZTUyM2NmMDE4OTZmMmRhYTFiY2I5ZDAxOGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5OWZlM2ZmZDM2ZDMyZWEyYmMzMWRjZDNlMWY3ZTg4ZWJkN2Y5NDQ2ZWI3MWZjMzcxYzUxMzUyODA3ODdlOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBkMTk1MDU5ZjZiMWQ4NzczYmZjNTFiM2E4ZjJmMGVhY2Y2ZGVmMDNiOTUwYjQ3NDhhOTIyOGU0NDY4MmNiODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI3NGU5YmJhODE4OTExMWI4NDkxNDk0YjJkMDM1MjFkMjg1NGZhMDIxZTA4YWQyMjBhYmRhZTAyY2Q3ZWU5MzQifQ"
+          "version": "repo-lines-v1:sha256:8a301871b3ae0258e2dad2d84da212f7bb40b37a68f84a32b72ca04af9f3cfb5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjYmMyYjc3M2IzMTFmNzI4OGZlNDZmMWFlODk0YjEzZDdjZTNkZTUyM2NmMDE4OTZmMmRhYTFiY2I5ZDAxOGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzY2E5ZjJmZDQ2NzI3OGI2OWQ4NjQ5NTRmNDU5NzYyNzE2YzIzMzdkZjMxNWIzNTM0Y2ZjZDgyNWY0OGU4NDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBkMTk1MDU5ZjZiMWQ4NzczYmZjNTFiM2E4ZjJmMGVhY2Y2ZGVmMDNiOTUwYjQ3NDhhOTIyOGU0NDY4MmNiODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZiNzZlZmEwOTQ0YzhiNjZjZGRiODlmYjYwZTAyZTE5NjA3MzMwZDZhYjRhZTljZTkyYjcwM2ZlMTI4MWE2OTAifQ"
         }
       ]
     },
@@ -41,22 +41,26 @@
       "statement": "Low confidence or a hard gate escalates to a human via specs/<slug>/ESCALATIONS.md with deny-on-no-response, and a hard gate discovered mid-task escalates regardless of the original lane.",
       "evidence": [
         {
-          "resource": "repo://HARNESS.md#L58-L77",
-          "version": "repo-lines-v1:sha256:ca1bc015261201948153f6e4a398c41fb091db4382af4bde4edbdabedcca4fe2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4NDE2OGJmMDAzZTIwZTEyMWI4ODFhYWZlNjQ1OGE3MGVjMTM3MDNiMTA3ZDI5YWRkNjNjYWY0OWQzNjg5ZDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhNDM1NmFhODYyNzM2NDEyOTM1YjM1OGY3NWIzODg1NmU0YjNmNDM4MzU4MWMzOGVlZDFkNDFiZjJhMTA4N2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYxZmVjYzdhMzBiYzZiYmJmODVmNmQzMGYxY2I4NmZjODAzZTYzNzdhMTkyM2U0NzM0ZTMxMjAwNjg3NmMwZDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBjODEwZGIxZWI1NmUwYjMwZGI5MWFhNzdkMzQ3Y2I3NDE2OTQzZDJjZDIyYzA3Yjg2Y2RmZDliMGUzOWZiOTYifQ"
+          "resource": "repo://HARNESS.md#L61-L61",
+          "version": "repo-lines-v1:sha256:984168bf003e20e121b881aafe6458a70ec13703b107d29add63caf49d3689d7:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTg0MTY4YmYwMDNlMjBlMTIxYjg4MWFhZmU2NDU4YTcwZWMxMzcwM2IxMDdkMjlhZGQ2M2NhZjQ5ZDM2ODlkNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTg0MTY4YmYwMDNlMjBlMTIxYjg4MWFhZmU2NDU4YTcwZWMxMzcwM2IxMDdkMjlhZGQ2M2NhZjQ5ZDM2ODlkNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTZkZTZkOWQ5ZTI2MmQ2NTBhYzZjZDI4NTViMmIzOTBiMWMxZGE1YTA4NGZmM2U3YmIzNmEyNDE0OTQ1NDY4MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWM4MjNhMGE2YjZlY2Y5YWIwOGRmNjgwZjYxNmFhYzQzZWJjNThjZTBjOTZmMjQxNTZlZDQ3YzViOTU1MTBmOSJ9"
+        },
+        {
+          "resource": "repo://HARNESS.md#L72-L85",
+          "version": "repo-lines-v1:sha256:3fd670763783e348bac4a80156b75dbcecf6e30d0cb7c4e033885725de272981:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMzhmZTYwOWQxNzk1MjNiNzI1ODllNDkxYWE5ZGJlMjZlNWNlMDg0YjIwZDU3YjVmMjg5ZWIyYzAzOGEyNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhNDM1NmFhODYyNzM2NDEyOTM1YjM1OGY3NWIzODg1NmU0YjNmNDM4MzU4MWMzOGVlZDFkNDFiZjJhMTA4N2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJjZTJjNzgxYzU0ZTVjMzc5MmIzNjYyNWUwZjJmMDc3ODgwNmIyYWI1ZWU4ODhmNzM2ZTQ4N2EzMTI5ODRmMTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBjODEwZGIxZWI1NmUwYjMwZGI5MWFhNzdkMzQ3Y2I3NDE2OTQzZDJjZDIyYzA3Yjg2Y2RmZDliMGUzOWZiOTYifQ"
         }
       ]
     },
     {
       "id": "claim_4bbbbc5ca2244b2e8683d946f5fb75b5",
-      "statement": "settings.json registers three hooks: commit-gate.sh on PreToolUse Bash, branch-isolation-guard.sh on PreToolUse Write|Edit, and session-knowledge.sh on SessionStart.",
+      "statement": "settings.json registers four hooks: commit-gate.sh on PreToolUse Bash, branch-isolation-guard.sh on PreToolUse Write|Edit, session-knowledge.sh on SessionStart, and model-config.sh on SessionStart with matcher startup|clear; the manifest hooks list marks all four as wired.",
       "evidence": [
         {
-          "resource": "repo://harness-manifest.json#L215-L219",
-          "version": "repo-lines-v1:sha256:c85326bb5790b311ae59f7ee489557d0304f8fa000a63f3750a035eddec8f11b:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjkwY2Y2MzEwNjViNmU5ODYzNDYwZDFiYmYyZjRiYzQ1MTI0ZDNiZjM3MWViNWMwOTZkMWVjMzAwMzIxZmJhMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTY0ZDhjMDczNDI5ODkzMTAxNTc2ZDg4ZDk5MTI3ZTg5ZDY4OTFkM2IxN2U4OWRmMDJlYzlhZTcwNzA1ZDhiZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzNlZGQ2N2ZmMTgzMGUyM2ExZmUwNGVmY2NlMzAxODQ5OTk2MDc0NTc0NTk3YmNkMmUwM2QxZGE0YTllZGU2OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGExYzEzMTJkZDg5ZjUyYmFiMjFiZjFkNjIzODcxZjQ3YWFiMWM5MTk5YWEyNWVjZDc2OGJjOTg1NWZhODJkNCJ9"
+          "resource": "repo://harness-manifest.json#L215-L220",
+          "version": "repo-lines-v1:sha256:321fbcb5ffd97ebc5d7acde041e13d2f13cb79520f1bb6debbfa1fb9da8fa7aa:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjkwY2Y2MzEwNjViNmU5ODYzNDYwZDFiYmYyZjRiYzQ1MTI0ZDNiZjM3MWViNWMwOTZkMWVjMzAwMzIxZmJhMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTY0ZDhjMDczNDI5ODkzMTAxNTc2ZDg4ZDk5MTI3ZTg5ZDY4OTFkM2IxN2U4OWRmMDJlYzlhZTcwNzA1ZDhiZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzNlZGQ2N2ZmMTgzMGUyM2ExZmUwNGVmY2NlMzAxODQ5OTk2MDc0NTc0NTk3YmNkMmUwM2QxZGE0YTllZGU2OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGExYzEzMTJkZDg5ZjUyYmFiMjFiZjFkNjIzODcxZjQ3YWFiMWM5MTk5YWEyNWVjZDc2OGJjOTg1NWZhODJkNCJ9"
         },
         {
-          "resource": "repo://settings.json#L1-L37",
-          "version": "repo-lines-v1:sha256:d79fea369192ea5a29122cdd72cad274ac40702ad6fae1af0ec00561c8de9d0c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://settings.json#L1-L47",
+          "version": "repo-lines-v1:sha256:3f320001d8f14949e125162500134c422cc882f1ab97e747095b5a8af6903940:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -69,22 +73,26 @@
           "version": "repo-lines-v1:sha256:a7e29bc11d30aed5d2bf336d7c4760fda1481a63d37909bc835333776c55fdf0:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDViZTIwYzE0ZjZiNzQ0NzVhYjgzYTA2ZWY0YmJjNWJkNDk2M2ZlZDQwOWVmOTRmNmQzZWE3NWJkYWUyOTgyNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWIxZGQwZjk4YTVmZmI2NmRhMDc5ZTE1YjBmYzBlZWQyZjI5ZTQ4NjA5MzRhODE2YjU5NDZjZGM1NmI3MGM1NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjZhNTE3ODUzOWVmMDkzZWNiMjdjODdhZjU4MTE3ZGVmNmJlY2NiZjdmMWQyZGJjODFmMTI2ZGI2MWJlYzlmOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTkyZDc0NTY1MTBmZGRmNzQ0MzdjOTdkYmY1OTViZmFhODRmZjEzMDNkZGVhMmEzMDFmN2YxMTZiZDFmYzA5MSJ9"
         },
         {
-          "resource": "repo://CLAUDE.md#L72-L72",
+          "resource": "repo://CLAUDE.md#L78-L78",
           "version": "repo-lines-v1:sha256:1f789286ef571c7dc92b4e82c9163285362d4a4bba6586791a4624e66ac71bf1:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWY3ODkyODZlZjU3MWM3ZGM5MmI0ZTgyYzkxNjMyODUzNjJkNGE0YmJhNjU4Njc5MWE0NjI0ZTY2YWM3MWJmMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWY3ODkyODZlZjU3MWM3ZGM5MmI0ZTgyYzkxNjMyODUzNjJkNGE0YmJhNjU4Njc5MWE0NjI0ZTY2YWM3MWJmMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmRmMDM5ZTVjNmVhMmRhZTljYmI5ZmFmMTBjZDBlM2JlNjRmOWVmMGM2NDFmZTkwZGQ4YjIwZjgyMGU2YTFhOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGViZTgyYzMxZGViZjk2Yzc2OWEwYzdlOWQzOGExZjk4ODg5MjUyYTA3ZTk0NDNmZjM3YTM0ZTM0N2M0MDI5OCJ9"
         }
       ]
     },
     {
       "id": "claim_b2cf74380c3b4e7ba9b7adf2dc924cc4",
-      "statement": "At commit time commit-gate.sh corroborates the SUMMARY.md Lane line against the staged diff, so a diff carrying a block-mode hard-gate signal cannot be committed under a lane below high-risk.",
+      "statement": "At commit time commit-gate.sh corroborates the declared Lane (from a staged SUMMARY.md, else the active plan's sibling SUMMARY) against the staged diff, so a diff carrying a block-mode hard-gate signal cannot be committed under a lane below high-risk, while warn-mode signals only print a note.",
       "evidence": [
         {
-          "resource": "repo://CLAUDE.md#L71-L71",
-          "version": "repo-lines-v1:sha256:12946650bc1a62d42cc1577bfc7b37c33253a96fc008b0c1b2e346ae559d9157:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTI5NDY2NTBiYzFhNjJkNDJjYzE1NzdiZmM3YjM3YzMzMjUzYTk2ZmMwMDhiMGMxYjJlMzQ2YWU1NTlkOTE1NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTI5NDY2NTBiYzFhNjJkNDJjYzE1NzdiZmM3YjM3YzMzMjUzYTk2ZmMwMDhiMGMxYjJlMzQ2YWU1NTlkOTE1NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDM3YThkZTg3MGJhZWViZGM2N2U5Njg0ZTNjMDM1NDM5NThiYjNhZmY2YjQ5MGM0OWUyMmNjODRmNWYwNDcyMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDI5MjZjNDE5OWJkOWM2MDI5N2FmMDc5YTIzYzMzOTYwYTAxODg2NjE5ZDA3ODc2YThkMDM2MGViOGE1MjM3YyJ9"
+          "resource": "repo://CLAUDE.md#L77-L77",
+          "version": "repo-lines-v1:sha256:2a12036a89763007129a671a3b7842e47b245efe54aaa19ba1b7425a5ab34cb5:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmExMjAzNmE4OTc2MzAwNzEyOWE2NzFhM2I3ODQyZTQ3YjI0NWVmZTU0YWFhMTliYTFiNzQyNWE1YWIzNGNiNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmExMjAzNmE4OTc2MzAwNzEyOWE2NzFhM2I3ODQyZTQ3YjI0NWVmZTU0YWFhMTliYTFiNzQyNWE1YWIzNGNiNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDM3YThkZTg3MGJhZWViZGM2N2U5Njg0ZTNjMDM1NDM5NThiYjNhZmY2YjQ5MGM0OWUyMmNjODRmNWYwNDcyMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTA3ODUxOTVhMWVlY2E0YWE5YjliNGRhMTcyNDIwNTJiMjUxNTM2MzgzZjViZjI2NDU1ZmM0NjAzZWM1NWU5ZSJ9"
         },
         {
-          "resource": "repo://templates/SUMMARY.template.md#L1-L19",
-          "version": "repo-lines-v1:sha256:be10c0b90ce8f6cd9558bb2a818df7d1754ba2e1aabdc9f636d7c449b07d96ab:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkMWY5MWE2ZjU4NzA0ZDU1NmM2NGEyMTBhNjY5Y2Y4ZDhlMGFmNDNjYTFiODgwZjcxMzlhMDU2NmU1ZmUxY2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0MjQzNmY0NjAwOWE3NmRkZWI0NjhiNTg1MGE1MTQ2NmJiNTMwMzJiMzhhZDVkMTc2ZDA2YzVkMTkyNjEzOTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZlNWM4ZjEyNjhhYTdjNzM0MzRiNjNiYzliNzM3NDI1M2M4ODEyYWFhNjExN2UzZjM3OGQyODQxZGJhMDk3ZjAifQ"
+          "resource": "repo://HARNESS.md#L81-L83",
+          "version": "repo-lines-v1:sha256:35e9a87d38745f32be81a46765719d5b1dee2ee0554cdc4325c1fb176a16b699:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmI2ZmU3MzVmMTNiZmE5OGE3NTE5NzEzZDEzOGJiNWM2NDk1NDc5YzEzZGViMTNhY2VhMDQzNjBiMjhlNTRkZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmYwNWY3YmMyMjc2Njk0M2NmYjRjMTQ2NWZkZTE2ZDJmOWIzODI1NDNhZmU2ZDhiODVkMjEwZjg3NzlmYjkxMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2Y0ODQ2YzZjOGUxZWUzZjJjMGI0ZGJmZTBlMTlhYmVkYzhiNTAwOGE5NmY4NDk5MjIxOGZkYTUzYzZkYWZmZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTY4ZDc5YmNhNDY2ZmQ3YTc4YWE3OTkwMmMyODEzYjU4Y2QzZTU0ZDg1ZDAzOTRlYzQzZDMxZjY3ZDA4ODU5NSJ9"
+        },
+        {
+          "resource": "repo://hooks/commit-gate.sh#L351-L378",
+          "version": "repo-lines-v1:sha256:095097733f8384b713c2d5d1e800ef8ce9dd6f5878949cf032e4d2b3ce0829f7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmOGJkN2NhZDcyMzA1MGI2ZWUzODE0OGM1ZWExNjE1NDRjMDYxZGM0N2YyY2IxZjNhNWUyODM4MDc5NzcwZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkOTI2YzJhOWUyNDFjYzhhNjU1OGMxNjQwMjRmMzEwMTIyY2U4ZjQ3NTdkZjk0MDQ0M2EzMTYzODkwNjYzMTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzMWQzMGY4ZWM4OWFkMDk2NTU4NTAzYjYzOWQ4MGNkNWJkNTRjZTIzYWVjMDlhMDM0OTNmNTFmODA2MmNlNWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBiMTc4YzVhYjNhZTg5ZjIwMmJjYTQyNTI1YmZlNDllMjcxNjQ2OWU1YjdjY2EwMDNlMjBkZjBiNGE0MGQxOTIifQ"
         }
       ]
     },
@@ -121,12 +129,12 @@
       "statement": "commit-gate.sh resolves per-gate block/warn modes only from the git index (git show :harness-manifest.json) or embedded defaults, never from a worktree or .claude/ copy of the manifest.",
       "evidence": [
         {
-          "resource": "repo://CLAUDE.md#L93-L93",
-          "version": "repo-lines-v1:sha256:a78d49551bbf2d6d3ad53b76fce841b10b7838e381f75b8cce80174ff646f62b:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTc4ZDQ5NTUxYmJmMmQ2ZDNhZDUzYjc2ZmNlODQxYjEwYjc4MzhlMzgxZjc1YjhjY2U4MDE3NGZmNjQ2ZjYyYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTc4ZDQ5NTUxYmJmMmQ2ZDNhZDUzYjc2ZmNlODQxYjEwYjc4MzhlMzgxZjc1YjhjY2U4MDE3NGZmNjQ2ZjYyYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWM2ODYzMGYyNGE2NGRkMWFmMGUzN2M2ZWE5YjIyM2M3MjE5MTlhM2FiYTNiNmJkODlmN2QxZGE5NmYxMWYzNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2ZiMzJhZTg5ZjAyNjc4ZmE5YmJmNDY3YzJjNGZkYjhjMTdlNzExZjgyZDUzYTIyYTU4NzYzYmJiYTA2Njg1ZSJ9"
+          "resource": "repo://CLAUDE.md#L100-L100",
+          "version": "repo-lines-v1:sha256:5e693c737397cf84da47fa4768de8a91ee82b0f8e9ef4e1a2b5e7ba95f44951b:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWU2OTNjNzM3Mzk3Y2Y4NGRhNDdmYTQ3NjhkZThhOTFlZTgyYjBmOGU5ZWY0ZTFhMmI1ZTdiYTk1ZjQ0OTUxYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWU2OTNjNzM3Mzk3Y2Y4NGRhNDdmYTQ3NjhkZThhOTFlZTgyYjBmOGU5ZWY0ZTFhMmI1ZTdiYTk1ZjQ0OTUxYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWM2ODYzMGYyNGE2NGRkMWFmMGUzN2M2ZWE5YjIyM2M3MjE5MTlhM2FiYTNiNmJkODlmN2QxZGE5NmYxMWYzNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2ZiMzJhZTg5ZjAyNjc4ZmE5YmJmNDY3YzJjNGZkYjhjMTdlNzExZjgyZDUzYTIyYTU4NzYzYmJiYTA2Njg1ZSJ9"
         },
         {
-          "resource": "repo://hooks/commit-gate.sh#L405-L415",
-          "version": "repo-lines-v1:sha256:459165fdb758d24a46b357baa838150a54350aed8e37841e3d91d8dc9c447469:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2YzMxNmRhY2QxMGZkYTA3YWNjNmVjZDY3NGYyODlkMDA2ZTY1MmZlMGZhOTFlZjI5NWUyNzY4ODFhMmRhNmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4MWM5YWEwMGNjZTg3MDFhZjk3NzI5NWE5MTJkODQyMzZhN2E2MDFiNWYxMTU4YWYwYThkODQ3M2MyNjA5MDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEwMThjMzAyYjcxZWUxNDBkYmIwNjFiMTlmMTU0ZWIxMTQ3NDcyOTEwMDg0MTQ3NGQ3MTVhN2JhYmM4MjY2ZWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ4NzA1MGFmMDA5OTM3M2NmMjU0YWIyNDBmMzQ1ZDRjMjIzYmIwMjBmYTFjMzIwNGZhMDAwNWY2Y2EzN2JiZWMifQ"
+          "resource": "repo://hooks/commit-gate.sh#L403-L420",
+          "version": "repo-lines-v1:sha256:a729997960ee110af4677418638c4055e1e49c8cef7749c2a49f083783c61266:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1NDFlZWZiZDFiMjhjOGE4YzI3ZWU3YjEwZjNjZmYxZmIxMjgxZmZmZWU3MmMzNTlmZGYzZWFiMWY2M2YzZjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1ZmM5MGZmOGE0NDE0YzU0NDFkMGY2NzdjNWNiZmRhMzhiNDc0ZTUxYmZkNTU5YTU1NTlkZTBmODc3MDU1MjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZkNzJiZDkxNDQwMzA4ZTgzYjg1ZWE0MmRiMTEyYjNkNThkY2IyZjg1NGZhYTBjNDIwOGYyZDkwZWY5YjVmZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5ZmNhNmRiN2IzYmQ4YTllYjAyNTlhN2UzZTI0MTIyMGNiMzUwNGRlYzQ2ZDg0MjcyYzgzYjQ5MzM3MDRkMWEifQ"
         },
         {
           "resource": "repo://hooks/lib/gate-modes.default.sh#L1-L10",
@@ -136,29 +144,29 @@
     },
     {
       "id": "claim_350d1f35af5a43c4adf3b19c0583dc03",
-      "statement": "harness-manifest.json is the single source of truth for hard-gate slugs and their block/warn modes (workflow-engine and weakening-validation are warn, the rest block), the hook/skill/agent inventory, hook profiles, and contract surface-to-consumer maps validated by scripts/check_manifest.py.",
+      "statement": "harness-manifest.json is the single source of truth for hard-gate slugs and their block/warn modes (workflow-engine and weakening-validation are warn, the rest block), the hook inventory (four wired hooks), hook profiles, the skill list (including diagnosing-bugs and harness-models), the agent roles and binding renderer, and contract surface-to-consumer maps validated by scripts/check_manifest.py.",
       "evidence": [
         {
           "resource": "repo://harness-manifest.json#L1-L70",
           "version": "repo-lines-v1:sha256:b4e62811dce7feaaefebc3a7cc25d5dec63b769ba7ee004b2cba2c4c9fc0a022:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkZmQ5NmMzZWY1ODgxNTczZmYwOWM3MmY0NWMxNGFhN2Q1NDgzMzFkMTllOGI0M2ZiYzdhNmYzZDVhMjk4ZjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc1YTVhNDU0ZmE2NjBiMjE4YmVlZDVkZDYyOWNjNmVkZGJjNGZhNTNjZDcxMmVlNGMwNzU2NTlkYzQ2ZjkzOTUifQ"
         },
         {
-          "resource": "repo://harness-manifest.json#L215-L251",
-          "version": "repo-lines-v1:sha256:7b9eb79a91537f86f655c0ceff629e5add587915077a3a43758b46aa3a1dedff:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5MGNmNjMxMDY1YjZlOTg2MzQ2MGQxYmJmMmY0YmM0NTEyNGQzYmYzNzFlYjVjMDk2ZDFlYzMwMDMyMWZiYTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzZWRkNjdmZjE4MzBlMjNhMWZlMDRlZmNjZTMwMTg0OTk5NjA3NDU3NDU5N2JjZDJlMDNkMWRhNGE5ZWRlNjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEifQ"
+          "resource": "repo://harness-manifest.json#L215-L255",
+          "version": "repo-lines-v1:sha256:4c87f1e7895c8e1805879ebff0637b245bdb30f1236f55574a6f7e34a2775d52:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5MGNmNjMxMDY1YjZlOTg2MzQ2MGQxYmJmMmY0YmM0NTEyNGQzYmYzNzFlYjVjMDk2ZDFlYzMwMDMyMWZiYTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzZWRkNjdmZjE4MzBlMjNhMWZlMDRlZmNjZTMwMTg0OTk5NjA3NDU3NDU5N2JjZDJlMDNkMWRhNGE5ZWRlNjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
     {
       "id": "claim_4c9c50a3e9984b12bb04526b4be9f9e2",
-      "statement": "Hook profiles: minimal installs branch-isolation-guard.sh and commit-gate.sh, standard and strict install all three hooks, and standard is the default.",
+      "statement": "Hook profiles: minimal installs branch-isolation-guard.sh and commit-gate.sh, standard and strict install all four hooks (adding session-knowledge.sh and model-config.sh), strict runs commit-gate.sh --profile strict, and standard is the default.",
       "evidence": [
         {
-          "resource": "repo://CLAUDE.md#L75-L75",
-          "version": "repo-lines-v1:sha256:2e5e48e3b72260cd3be12590cecb3f124d39cd3cedc07899801a8e7c0d419062:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmU1ZTQ4ZTNiNzIyNjBjZDNiZTEyNTkwY2VjYjNmMTI0ZDM5Y2QzY2VkYzA3ODk5ODAxYThlN2MwZDQxOTA2MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmU1ZTQ4ZTNiNzIyNjBjZDNiZTEyNTkwY2VjYjNmMTI0ZDM5Y2QzY2VkYzA3ODk5ODAxYThlN2MwZDQxOTA2MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDI5MjZjNDE5OWJkOWM2MDI5N2FmMDc5YTIzYzMzOTYwYTAxODg2NjE5ZDA3ODc2YThkMDM2MGViOGE1MjM3YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDExN2ExNDdmMzhjODc3YTEyMjllYWFhNjI0YmFiYTRkNTg4NmRkYmIyZjM3YzYxNjRkODFjZWQ3NjNjNDE2NCJ9"
+          "resource": "repo://CLAUDE.md#L82-L82",
+          "version": "repo-lines-v1:sha256:09d03b4e1d99d13aecb606d3c91f6d51ab5847306f80ef9a9526752bcd14f060:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDlkMDNiNGUxZDk5ZDEzYWVjYjYwNmQzYzkxZjZkNTFhYjU4NDczMDZmODBlZjlhOTUyNjc1MmJjZDE0ZjA2MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDlkMDNiNGUxZDk5ZDEzYWVjYjYwNmQzYzkxZjZkNTFhYjU4NDczMDZmODBlZjlhOTUyNjc1MmJjZDE0ZjA2MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGI1MzY2YTZkMjlhZjA0YzlhN2YzODlmZDUwMmIwOGM5ZjE0ZDljYzk2Mjc0MWZjZTBkMTQyMjgzY2UxOTk3NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDExN2ExNDdmMzhjODc3YTEyMjllYWFhNjI0YmFiYTRkNTg4NmRkYmIyZjM3YzYxNjRkODFjZWQ3NjNjNDE2NCJ9"
         },
         {
-          "resource": "repo://harness-manifest.json#L221-L226",
-          "version": "repo-lines-v1:sha256:cc1d9af38fe851739e03547f162812df426eece317a4e76793a20ba7bc7a91c1:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTdiZDA1NmQyNjUxMWRlMTFkNjliYWVjY2ViZWY5NGNlYzNhMTg4ODIyMmYxNzc3MzZmMmJjZmVlMDY0ZmY2NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODM0ZWQ3YzEwNmQxNGNmNzMyYTUzMzYyZTMzNDRjM2E1MDhlZTU3YmFkMDAzNWM5ZGUwZGZiYzBkZWEzZTUxMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjU3ZDlkY2IwZWY1MWJiODhkZGZkYjI2YmQ0YzQzYjdhYjVmMThiNTdhZDJkNTI2ZWU2ZWFkNDZiNWE5ZTI1ZiJ9"
+          "resource": "repo://harness-manifest.json#L222-L227",
+          "version": "repo-lines-v1:sha256:bb79cc48345b06591bba282a88c59105210ee5d35cd9ee5c6e58c16c7f2722bb:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTdiZDA1NmQyNjUxMWRlMTFkNjliYWVjY2ViZWY5NGNlYzNhMTg4ODIyMmYxNzc3MzZmMmJjZmVlMDY0ZmY2NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2ZmODUzY2M5YmU1YjU1NjcwMWExNjI0NGI4OThjN2MxYzQ1ZmEwNzIyNzdkYzY5YTEyZjAwODUwM2ExYmM5NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjU3ZDlkY2IwZWY1MWJiODhkZGZkYjI2YmQ0YzQzYjdhYjVmMThiNTdhZDJkNTI2ZWU2ZWFkNDZiNWE5ZTI1ZiJ9"
         }
       ]
     },
@@ -211,7 +219,7 @@
       "statement": "runtime/runtime_mode.py persists sanitized Codex diagnosis (enforced/advisory/unsupported) to the gitignored .harness-state/codex-runtime.json, and verify_summary.py checks the optional Runtime-mode/Runtime-evidence-id SUMMARY pair only for format.",
       "evidence": [
         {
-          "resource": "repo://CLAUDE.md#L79-L79",
+          "resource": "repo://CLAUDE.md#L86-L86",
           "version": "repo-lines-v1:sha256:647880ee5774f37f5a150566e614ce7ef584ade7ef8b6fc445692101abbd3f18:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjQ3ODgwZWU1Nzc0ZjM3ZjVhMTUwNTY2ZTYxNGNlN2VmNTg0YWRlN2VmOGI2ZmM0NDU2OTIxMDFhYmJkM2YxOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjQ3ODgwZWU1Nzc0ZjM3ZjVhMTUwNTY2ZTYxNGNlN2VmNTg0YWRlN2VmOGI2ZmM0NDU2OTIxMDFhYmJkM2YxOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDExN2ExNDdmMzhjODc3YTEyMjllYWFhNjI0YmFiYTRkNTg4NmRkYmIyZjM3YzYxNjRkODFjZWQ3NjNjNDE2NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzIzODAyNDZhMmNlY2YxYzMxOTcxM2E2ODZmNDQ0OWFiMmYxYjg1NTlmYzBjNTUxZGU2ODU4OGQ5NzUwNzFjMCJ9"
         },
         {
@@ -222,15 +230,19 @@
     },
     {
       "id": "claim_e00d2bedc1504f3c844a711068642f5c",
-      "statement": "The root directories are the source of truth and .claude/ is a derived gitignored copy built by scripts/deploy-harness.sh, which syncs skills, agents, hooks, rules, templates, runtime and an allow-listed subset of scripts, while agents/*.json and adapters/ never deploy.",
+      "statement": "The root directories are the source of truth and .claude/ is a derived gitignored copy built by scripts/deploy-harness.sh, which syncs skills, agents, hooks, rules, templates, runtime and an allow-listed subset of scripts (including apply_model_config.py) plus harness-manifest.json, while agents/*.json and adapters/ never deploy.",
       "evidence": [
         {
-          "resource": "repo://scripts/deploy-harness.sh#L1-L61",
-          "version": "repo-lines-v1:sha256:1c0dd75adac95666069283208216be450366fe6a8ef05680383b04b442c806a9:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4NzVmOTI4NTQ2YWVlNzg1NWNiMWRiOWFmYzhhYjNmMWE4YTM0ZDQzZGU1YmJkNjJmNzA3NmQ3YmE5ZjM5MTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5MTUxZjk5Yjg4NTlkMTM0MTc1ZThjNDcyZGVmMzZmNjg3MGNlYzViZDVlNjkzYTdmMzliYTdiZmFiMzVkNmMifQ"
+          "resource": "repo://scripts/deploy-harness.sh#L1-L62",
+          "version": "repo-lines-v1:sha256:a802ed75252dc965e36890895e23f4ea18c98c0a615792e49a9f20c7c2ab772e:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4NzVmOTI4NTQ2YWVlNzg1NWNiMWRiOWFmYzhhYjNmMWE4YTM0ZDQzZGU1YmJkNjJmNzA3NmQ3YmE5ZjM5MTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5MTUxZjk5Yjg4NTlkMTM0MTc1ZThjNDcyZGVmMzZmNjg3MGNlYzViZDVlNjkzYTdmMzliYTdiZmFiMzVkNmMifQ"
         },
         {
-          "resource": "repo://scripts/deploy-harness.sh#L183-L183",
-          "version": "repo-lines-v1:sha256:5878e2942a3e59f9ecba1f2e7e2db388ee4123972b8c28bf5429a2cfd515d0fc:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTg3OGUyOTQyYTNlNTlmOWVjYmExZjJlN2UyZGIzODhlZTQxMjM5NzJiOGMyOGJmNTQyOWEyY2ZkNTE1ZDBmYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTg3OGUyOTQyYTNlNTlmOWVjYmExZjJlN2UyZGIzODhlZTQxMjM5NzJiOGMyOGJmNTQyOWEyY2ZkNTE1ZDBmYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjY5MTMxZTRiOTY2MjI0NGU5YThhMWI1OTZmNWQwNGYwNzQ1NzkwYWY0NzRlNWYzZTlmZjJmZjQxMzAxNDg0ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODM2ZTRhMzkwMTRlZjQ2Yzk3N2VkNDcwODZlZDgxNDcyMDE2ZjRhYWI1NzkyMDMxZjI1YmYzOGFhZWRmMDg5MiJ9"
+          "resource": "repo://scripts/deploy-harness.sh#L379-L383",
+          "version": "repo-lines-v1:sha256:9cd6219fcb25c4e5cd720fe99e7ebd4ef64c508de07f6f33e728c58d2ac26f5b:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzU4ZGViYjJkZDA0NjY0OWIxMmRlYzc0MDJiYjhkMzk2YmNmMDk0ZTQ0YjVmOTAzNjBlYjNjOWM2YWQ3OGUzYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODRlNzYwNDI2YThlM2E4NjBkZDE1MGU2YzExNzhiYWE2YmYxODI0YzU3ZmU4MjczYjAyYjRhNWNlNDUzYWE3MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2UyMGIzNjQyNDc2NDdhNDRhZmNlZDZlMjkxY2YzOGNkNTMxNDlkYzM0MTc5YjRkYWZlNjUzOTRlZjlhYWIyNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTdhYTk3ODFmZDNlNzUxNmI2ZWJmMDI5YjhhNWY2YmQwYjQzMzViNzFiZmVkMGM3YTJkMzQwNzExMDg4M2U3OSJ9"
+        },
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L624-L642",
+          "version": "repo-lines-v1:sha256:f67dbb82fe79eace9387ceb6c82996857ea0bcbf60200f958b64728abc9bf037:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlNjQ4MTdmNmJiODgyZjUxNTVjMmZjZGYxOWI1MTYzNjkyYjIxOTIyNjhjYTdlMDljN2Y1NWU0YWM5ZWJkZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmMjUyNmU2Y2E0NThhNDIwZTg2NDU1OWRlMzc3NTdlMTllY2EyMmU3ODc0ZmEzMGNjYTkwMDI3Y2ZjODE4MDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY1MzQzYTFmMDMwNjFiYmQ1OWNhOWVkNmM2ZDY0NWRhOTBhOGM5NmUyNzFkNjlhOTExYmI1OGYxNjM3NTNmOWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjliZjRkNTg0NWRiN2JmMTA5YWM3MGZlYTEyNGQ2NzYxOTEzNGI3NTMxMWRhNzU4ZDU4NWE1ODJiOWYyMDk2OTUifQ"
         }
       ]
     },
@@ -239,7 +251,7 @@
       "statement": "Deploy re-sync merges with consumers' own settings.json hooks and keeps differing consumer-owned files (rules/architecture.md, rules/guidelines.md, rules/behavior.md, agents/PROJECT.md) by writing the incoming copy as <file>.harness-incoming unless --overwrite-conflicts is passed.",
       "evidence": [
         {
-          "resource": "repo://CLAUDE.md#L92-L92",
+          "resource": "repo://CLAUDE.md#L99-L99",
           "version": "repo-lines-v1:sha256:dafac2488862eb3ca5bc01c250d169a7af9d8ac5e22db6e22d19d31c9b5d0164:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGFmYWMyNDg4ODYyZWIzY2E1YmMwMWMyNTBkMTY5YTdhZjlkOGFjNWUyMmRiNmUyMmQxOWQzMWM5YjVkMDE2NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGFmYWMyNDg4ODYyZWIzY2E1YmMwMWMyNTBkMTY5YTdhZjlkOGFjNWUyMmRiNmUyMmQxOWQzMWM5YjVkMDE2NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWM3NGRiNmQxMGI0YzEyN2M3ZWI2NGJkMThiMjkzMzNiZTQ0MjY5MmE5OTExMWYxNTVlNDVkZTMyNDBmZGE4YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODg1MjM0ZTNhYmQwYjdiMGU3MmFjZTFlOTZlMDc1NWM2MzA1NGY5ZTQ1NDQwODViODBiMzRlOWQ0N2RlYmQ4ZiJ9"
         },
         {
@@ -247,7 +259,7 @@
           "version": "repo-lines-v1:sha256:7f9f74ebd279779b50ecb6536073fc9577ff32417b8b557f690c5001d06e0a45:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwZmE3MTQzNzQwNjBmYTJmNTQ2MTdlMTRkMWJhOGU1YmRiMzU1MzA2ZWU2NTliZDQ3NzEzYmZmMDYyOWI5Y2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA2MWUxMDZlYTFkZWM3YWRkNGY5N2EwYjk1OTZjYjcxZjNjYjNlM2E2YWFkY2RkMjY5NzlhZTZiYmE5ZTk2YjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyOTc5YjdhZGUzM2U3MTFmNGVlNjY0NGYwMzcxMmJiMThjMTdmMDE3YTJjNzNlNmIxYjY0ZDliN2FkYzFjOGQifQ"
         },
         {
-          "resource": "repo://scripts/deploy-harness.sh#L530-L560",
+          "resource": "repo://scripts/deploy-harness.sh#L560-L590",
           "version": "repo-lines-v1:sha256:ff7d2777b58e61e1c7b0248bf5cbcc9d0f51c5d4db328da3a4527ba9613744af:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllYTEzZmM4MDgxOGQ3NTkxMDk3MzQ0YmFkYTg1NTQ5MTVkNmY2YWFjZjQ0MzkwZTQ1MzdiNTgzZjg1NWIxOTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyY2EyNmIxM2YzODE5ZDQ2NzY2YzZiZDZmNTdmYzk1Zjg4ZWVmZmY3ZTU4ZmRkNGE3YmQ0NjRkMTFkNmJiNTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyMGIyM2E0NDM2ZWQ5Nzk4Y2QzOTg0YjEyNDU0OTQ2OWVmZjFlOTg2MDkyNmY3NGIyYWU5N2ZkMDQzNjQ3ZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmYTAzZWExNGQxNDA3OTNmMDhiNTY5OTZmMDllMDViZjhjNTU3N2MyNzM1ZmViNzY1NDc3ZTYyMTBhM2ZmODQifQ"
         }
       ]
@@ -275,8 +287,8 @@
           "version": "repo-lines-v1:sha256:f35d19d2b89f15f45af0896b80afce5b6f1d362872dc6e67fab92f2668ae83d8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://scripts/render_codex_adapter.py#L40-L105",
-          "version": "repo-lines-v1:sha256:3fa64c29f7f5978ff03945857bd79565f19e9bb84f932b82f60680463bf48f6d:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxNjY1NzFlZDg2OTJiODRiNjI1MGU3YTZlMWZiNDE2YmExMDZiMDFiYjFhMWNhMjdhMzljZTljYmNjNjdmNTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5ZWUxOTMyODRlODJmYjc2YWY0ZjRmNTgzZTQzZjA1MDdiNWYxMzJiMTY0ZTZkMzUyM2JhZmI5NGMwYzdiMWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiNTZhZmRlNGU2MjIzMGZhZjY1YjhlZGJjOTFjMzk5MmVkZjkxNmMzMTdmZWY3NzY1OTYxMTU4Yjg5YjAyYWMifQ"
+          "resource": "repo://scripts/render_codex_adapter.py#L40-L110",
+          "version": "repo-lines-v1:sha256:55d8396377e2fbc14f62149ad1d27d5fe63d61e5d8a8d7f900c4a375a06f07e7:eyJzZWxlY3RlZExpbmVDb3VudCI6NzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxNjY1NzFlZDg2OTJiODRiNjI1MGU3YTZlMWZiNDE2YmExMDZiMDFiYjFhMWNhMjdhMzljZTljYmNjNjdmNTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5ZWUxOTMyODRlODJmYjc2YWY0ZjRmNTgzZTQzZjA1MDdiNWYxMzJiMTY0ZTZkMzUyM2JhZmI5NGMwYzdiMWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiNTZhZmRlNGU2MjIzMGZhZjY1YjhlZGJjOTFjMzk5MmVkZjkxNmMzMTdmZWY3NzY1OTYxMTU4Yjg5YjAyYWMifQ"
         }
       ]
     },
@@ -310,11 +322,11 @@
     },
     {
       "id": "claim_bf42284ec7694dea906f44dea7c6da5d",
-      "statement": "evals/ holds fixture-based behavioral evals of skill judgment (intake classifier, review chain, test-runner) scored deterministically by scripts but run manually rather than in CI, distinct from deterministic tests run by scripts/run-tests.sh.",
+      "statement": "evals/ holds fixture-based behavioral evals of skill judgment (intake classifier, review chain, task review, prompt-refactor corpus, test-runner, plus manual context-boundary probes) scored deterministically by scripts where a scorer exists but run manually rather than in CI, distinct from deterministic tests run by scripts/run-tests.sh.",
       "evidence": [
         {
-          "resource": "repo://evals/README.md#L1-L29",
-          "version": "repo-lines-v1:sha256:dc105d517971d3673bd6cd0bd70c8154b05a16bdb768202f52f7774dcee323cf:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmMjVhNjRkNWMxNjRhMjc3NTdmOWFkODNiOWYwODBiNzRmNGNlZjc5MzI1ODFmMGFmNTA5MDY2ZDg3NzBlM2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmZjFhNzkyNDMzNDYzYTQxYzYwYzM4ZTM5M2ViNzliOWU4MTBkYzE2ZWY3OGVjMjE2MTE3MTM5YjNlODk2MmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://evals/README.md#L1-L30",
+          "version": "repo-lines-v1:sha256:87c1614b9a9ee2c94f59c75244355c41a5b7809679fad6b48d40481e6aec6b78:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmMjVhNjRkNWMxNjRhMjc3NTdmOWFkODNiOWYwODBiNzRmNGNlZjc5MzI1ODFmMGFmNTA5MDY2ZDg3NzBlM2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmZjFhNzkyNDMzNDYzYTQxYzYwYzM4ZTM5M2ViNzliOWU4MTBkYzE2ZWY3OGVjMjE2MTE3MTM5YjNlODk2MmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -333,7 +345,7 @@
       "statement": "Every gate enforces exactly one evidence tier (traceability, provenance, or truth) and new gates must document Verifies: and Does not verify: lines.",
       "evidence": [
         {
-          "resource": "repo://CLAUDE.md#L77-L81",
+          "resource": "repo://CLAUDE.md#L84-L88",
           "version": "repo-lines-v1:sha256:1e2b938fae8d056b34e129aeb8f572a7e5072d9da881f3cda51a56a8892dc3dc:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjc3N2EyNDlhMDc5OTlmMWIzMjJlODdkOGE1NmIxNDI5ODA3NzFjMDUzMmI5ZGI0MDIxZmUxODBkNzAzNzI2NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjcxMjRiMTEwOGRlNWEzNjFhMDk3YmQ5ZTBiNDdiZDhlMTQ0ZDM3MDlkOGM1M2Q0M2FmOTdjZmE1OGM2ZWE1YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzJlYWY4MmM3MDM2Mzg4MzgyNjQ1MmY5ZGEwNTc1N2Y5MDQ2ZmQ3MjVmY2Q1NTViZDcxZDM5OTBlMjBmOTI0NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjMzYmE4MWNmOTU0MzdkNzcyYmZkZTU1ZDQ0YmFmYjA2Yjc4Y2NlNGZhYzhjOTE2NGNlNTMwMDUwNGNiNzBhNiJ9"
         }
       ]
@@ -343,14 +355,110 @@
       "statement": "scripts/ci-strict-gate.sh blocks PRs touching hooks/, settings.json, templates/ or render_plan.py unless a changed high-risk SUMMARY.md has Verify rows that re-run clean, and only warns for scripts/ changes by default.",
       "evidence": [
         {
-          "resource": "repo://CLAUDE.md#L90-L90",
+          "resource": "repo://CLAUDE.md#L97-L97",
           "version": "repo-lines-v1:sha256:cb3ee563c47d9890d59f1be1b0f3da096ea8b209bf4d9d3f47b5156af3ce4841:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2IzZWU1NjNjNDdkOTg5MGQ1OWYxYmUxYjBmM2RhMDk2ZWE4YjIwOWJmNGQ5ZDNmNDdiNTE1NmFmM2NlNDg0MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2IzZWU1NjNjNDdkOTg5MGQ1OWYxYmUxYjBmM2RhMDk2ZWE4YjIwOWJmNGQ5ZDNmNDdiNTE1NmFmM2NlNDg0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDRlMGYyMzcyOWQ2YTI0NGU0MDhkODhhMzE0MDUxMjI4MmMyNmIzOTI5ODg5NWJjMGE2NDE2MDdhOWUzMGQ1OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmZmMGY4YzRkNGEzYmRjOWZmYzcwNTk3NWE0ZWUyNDZiZmU2ZGE2MGI0NTNkNjdkNjYwZjk4YjE3YjM4OGFiNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_50855934ce9247a29583e5c696b49d24",
+      "statement": "model-config.sh is not registered in the Codex adapter: render_codex_adapter.py skips any handler whose command is model-config.sh because it rewrites Claude frontmatter only, so the rendered hooks.json has session-knowledge.sh as its only SessionStart handler.",
+      "evidence": [
+        {
+          "resource": "repo://CLAUDE.md#L80-L80",
+          "version": "repo-lines-v1:sha256:9a1daf469f93a9a57f9844300be5e52a3f1a22c3fd00075bc35a44d4081588ff:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWExZGFmNDY5ZjkzYTlhNTdmOTg0NDMwMGJlNWU1MmEzZjFhMjJjM2ZkMDAwNzViYzM1YTQ0ZDQwODE1ODhmZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWExZGFmNDY5ZjkzYTlhNTdmOTg0NDMwMGJlNWU1MmEzZjFhMjJjM2ZkMDAwNzViYzM1YTQ0ZDQwODE1ODhmZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDMxOGQ0NjM3MmMwZWUxYmU1MmIxZDdkYjAwY2IyYmY0OWZjZTRiYjBhZDgyY2VkODQxYzU5YmI2YTJjNTM0MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzhhNjQ1MjE2OGQ3OGY1ZGYyMmVmMDVkZDcyM2ViMzE4ODFmNWMwMTFlMzRmYmY2MGVmOWJiZTU1YTI5YTU2ZSJ9"
+        },
+        {
+          "resource": "repo://adapters/codex/plugin/hooks/hooks.json#L26-L37",
+          "version": "repo-lines-v1:sha256:09b91009db654ee596fa0ba2984cdb6e0e475ea451cfc74a5d74264d2bda9451:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliYTkzOGUwODlhZTRhN2YzYzAyMmE3NzFmMGY4OGE5MDM4ZjU4NWViY2ZhYWQ4ZGUzNjU1YjdlYTU3ZTc1N2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkZDI0NDU4MmI2ZmIwM2QyM2I4NDE1YWJlY2QzNDZiMGM5ZjQ2NmI2Zjc1MmIwNjgxODljZTdlOWEyZGMzNTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNlYTNiZDVhM2Y1NmNiZGI1NTcxZWYyZTM2YzI5Mjk5ODdiMjU1NjJkYjU0NDY3YmI1YTdmNDdjYzRmNDVjZjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmNzM5YTA2YzFjYmIxMjQ0ZTMzNjNkMzhiY2Y5ZmE1MGNlODRmZWQzOTljMjE5M2EzYzdmMDhkNTk5MThiMmEifQ"
+        },
+        {
+          "resource": "repo://scripts/render_codex_adapter.py#L82-L105",
+          "version": "repo-lines-v1:sha256:56935fdb885d15b0fe6ed282e8b6834931fab879a57bb345fd091210b84f4923:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxNTYwNDliNmU4ZmZkOGJhZmYyZWU1ZDJhYjhhMTQ5Y2Q0Y2E4NDE2NzI1ZjVhODJhNTY2MTM1MzRkOWQzZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwMGVhZGRiNzY0NmI1YTY2MzBkNDlhOTgyNWZkMGI3MzdiY2M0ZjQ3Y2IxMjVkNGRkMDhkZjJkYjhkNzE0YWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3MTBhYmYwZDZlN2I4MDY0YWFlOWNlZWJlZWViOTZmYWYwMWRiYTZhNDFmMzA2OGVhOGExYzQ1NjM2NzcwMGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk4NmJmMTNkNDRhY2Q1MGE0ZWFmM2VlYjQwYTBhOGUzMzVmMmRiNzViZDRjMjg5Y2QzNDEwNjZhNTMzZTZhMTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d1054e9de8ca41ff89798893fe5b7b04",
+      "statement": "model-config.sh is a never-blocking SessionStart wrapper that pipes the payload to scripts/apply_model_config.py --hook, which applies the validated harness-models.json model and effort values to the deployed .claude/agents/<role>.md and .claude/skills/<name>/SKILL.md frontmatter and never writes a settings file.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/model-config.sh#L1-L25",
+          "version": "repo-lines-v1:sha256:f0cc30c196eec0c2cc2551e6e3451ca4154ee15bc5360ce62ba81f29fb7cb1b6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOTVmYzA0YTgwYzk1MmY0OWNlNDE4ODYyN2M1M2IwZmJlOGM0NDA0MWI5NTJkNTkyYWNkMWRlOTk4NjE0NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4ZDNiOWU4ODBhNzc5NzU0OTNkYzdlMzU5MTQ0YzAyOTVhNGY2OTRjZmUwYWY0ZjkyOGMyMjMwN2JjNWMzMjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://scripts/apply_model_config.py#L1-L6",
+          "version": "repo-lines-v1:sha256:dff898f14e410d75b7a5a804704e7e1d74e19c6393eef516d236dfff3984a45d:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDY4MmNiZGI0YzhiMDc1MThiZjQ4NmM1ODk5MGZjMzkxNzgzYWEyMGE5MTZiZmIyN2FkMjExZWIxZDVjMzY0MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTMwM2VjZGQ0YTRkMTBmMTljNzNmZDQyZmQxMjQzN2ZkMzM1NGE4MjY4MTYwNWRhNTI1NWE5N2EzOTA2OGRiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTViNmU4NzA2YjQzMDQ3ZjJhNmRiNjdmMTMyNjM4NTk1NjA0ZTY3ZjM2OTY2ODc2Y2UwMTU4ZjAwNTNlNmJkMSJ9"
+        },
+        {
+          "resource": "repo://scripts/apply_model_config.py#L306-L313",
+          "version": "repo-lines-v1:sha256:f1e39de618880f12f6762cbb95a82648ace5008c17c499c25596879645fb4d86:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWIxMTBiZWEzNTFlZDhkYzQ2MzJlYjgyODQ2OWRlOWZjYjhkMzlmYmFhNWVmNjBkNzY3YTU3MmMzNzhiNTRmMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2ZlNGYxY2JiZDk0Y2VkMDRkZDcxYjI2NGExMDJiMjc0OTBhMjUwM2E5MjI4M2JiOWUxYjRhMDhmN2EwNDAwYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzZjOWJkYmFjNWZlYzcwN2FlNjYyYWY0YzY2NGQ1ODVjOGFjMjM5OWIzMTUyNjUxZTE4MGQ5ZDQyZjFlNWZlOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzY3ODkzNjExMzRmYzU0YzcyNjcwNzY4Y2E1NWExZjkzZjZhM2RiMGRjYWFiNzhkNmEyNmFhZWUxMzljN2U1YyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_b503b4edba754d6b988d8e07532e53ea",
+      "statement": "deploy-harness.sh validates the target's harness-models.json against a defaults snapshot rendered from source before anything under .claude/ is written (aborting on failure, also under --dry-run), and applies it after the derived helper-path rewrite by copying the snapshot to .claude/harness-models.defaults.json and running apply_model_config.py --apply.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L517-L541",
+          "version": "repo-lines-v1:sha256:fcf69197d2473a556a6c1ba3b547a36b8abb1b641d5456de78eb3d5606997762:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkYzI3MzQ3OWQ0NWRjZDU5Y2RkMzYyN2M5YWIyNjJiMzYwNTk5ZGE5NzdkYjAyZWFhYzlmNDdjMTY5MmZkMDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlODU0YjY2ODdjYmQ3YmM0OTBiNmIxYTM0OGJjNTczOTk4N2M4NWE4MDE0NDZlMzNhYTFhYWU4NDVlNWQ1YTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc1NDkwOGRhMzY2ZjY1NTZhNzQ2MzhiMjZiNTdlMzg3MTljM2JmZTY2MzgxNjk5YjBhZjc0OGNhNGE2NmZlMjgifQ"
+        },
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L621-L638",
+          "version": "repo-lines-v1:sha256:14487e52c9f3a23b170cc6179efe4d614ed503bfece185207ee7b0461293cdc1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3MjlkMjQ2MzZjYjgwOTVmZDY1ZmE1NDZjOWRkYmM3Y2E2MTUwNzczMWNlMzgxNDk2ZmYwYjYzYWIwNmM2YzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmNzlkNTY4NmQ5ZWZiYWY5ZGRlY2ExMzQwNWI3MmY4NDU2ZmNlMzdiODRjOGE1ZjdhNWFkYmRhNjViYmM3N2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyMzRhZjAwM2FkZTZlY2Q2ODNhYTk0MDAzNGRmNTMzNzhmMWExMjUxYzRhYTg0ZWQ3NGQ2YjViNDJkYTZlMzEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6a78c0cb052b44df8ecc0c6424c71474",
+      "statement": "When deriving .claude/settings.json, deploy-harness.sh keeps only the hooks named in the selected profile (by command basename), appends --profile <p> to the commit-gate command, and records the profile in .claude/.harness-profile so a flagless re-sync reuses it.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L113-L129",
+          "version": "repo-lines-v1:sha256:4fda3aec5d3d5bcfbd780d22e52435c5149be2b3442417e4d8a9efc6f3f6131b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkY2NiN2EzZjlkZjBjMDdkOTY0ZGEzMGU0OTUxNzVjNTAxNDhiNTQwNDFmNzc3NDhlMThiMjNmMWY0YjU4YjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxZDJjMmY3ZDYzZGE5NmM2NGRmMjcwOTJiNjg5MmE0ZDk3NzJjNTkwNTE1OTBjMGFiNGQ1NjQ5YzBlNzZiNWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJiNjQzMDRkMjk4NDQ3YTAzODIyMGRkMThkNWFlNDJjMWM4NzQyYjAyOTQwYTE3MmMxZTA2OWY5YzNlZGI1NmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY2M2EwM2FkMDg5NGFiMGEwODYzZWU5OTczYTEyNmE3OTZkOGYxODQyYzk5MGU4NTFhMWI2NWIzMjIzZDU0NmMifQ"
+        },
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L542-L558",
+          "version": "repo-lines-v1:sha256:4389efd727089b0eb798ee7d99fe900721c616428cb039b2777c723e3389924c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5YjNjOGY4ZDNiZDA0YTg5NDYyNDY1ZDA5ZmRjZDhhZmI3MDA5MDlhYzE4NTZhZmRmZmVmZDY3NDI2MmI1ZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5OWYyYmFkNjE2OTM3M2E0YWNhNDY5NmQwOTg2YzA0MjJhYzY0OTgzYmI0NjlmMmE2ODM5Mzg0N2Y5NjNmMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEzMWYzNjA3MDc5MGQzNzVlM2E1N2I3NWE3MDFjOTI5M2VjYmFhNDBlNzYxN2MzZTM0MzA0N2YyMjkwZWNlYjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkN2UzZDM3OTM5NjBjMmQzNjU4ZjVkMzc5YTg1NGE0YzNiNDY2NWRhMDBlYmQ2YjliMDlhOWQ1Mzc5Yjg3MDIifQ"
+        },
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L639-L642",
+          "version": "repo-lines-v1:sha256:60dc7c191dbefe56232133e2d56532891e47462f4daf7ebc4c2b566420fcbeef:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODI2NWRiNzIwMTAxM2UyYTZmN2VlNDBjYzlmMGJiMmRkZmViOTBkM2U3OTliZDI5MjIyMTE0MmVlOGQxYjEwYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWYyNTI2ZTZjYTQ1OGE0MjBlODY0NTU5ZGUzNzc1N2UxOWVjYTIyZTc4NzRmYTMwY2NhOTAwMjdjZmM4MTgwOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzFmMzQzYmNlZjIzM2Q4OTdjZGIzNTRjMGE0MjM0YzJlZGU3MTQwM2YwYTg2MDNmNGQ3ODE0NzdkYThiZjFhZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWJmNGQ1ODQ1ZGI3YmYxMDlhYzcwZmVhMTI0ZDY3NjE5MTM0Yjc1MzExZGE3NThkNTg1YTU4MmI5ZjIwOTY5NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6361efd479ce422283d73b107e5e3757",
+      "statement": "An Input-type: bug fix request runs diagnosing-bugs before the lane route on every lane; it proves the root cause in specs/<slug>/diagnosis.md through six gated phases, task-reviewer reviews it before any fix, and normal/high-risk lanes take diagnosis.md as input to their chain.",
+      "evidence": [
+        {
+          "resource": "repo://CLAUDE.md#L57-L61",
+          "version": "repo-lines-v1:sha256:f760528ca15ee00aca5c99618d98abca4397f0f4f3fb48bfaa265130ec211b48:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ3ZmI1M2M2MzUwMjY4MzIwNWI1YmViMDc1ZjU3ZGVkMmVjOTQ4NDczNzEwNTVlZDM0MmExMDUxMTlkY2Q1NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGFjMWRiOTA2ZGFiN2Q2NmY4ZjJhOThkZTE5ODc5MDY1YmE5OGRlNzZkMDEyNmJlMzZhZDljMzAyZDY5OWIyZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTg3MGY5N2E3ZjMxMDI2YTFlNTQ5NzIxNDdmMGE4MDYyYjNlZDQ4ZmNhMTFmZDc3ZWI3ZTI5YTY1YTgzNjMyMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmI3ZGM4ODkyMmY0YTc1M2Y1YWViYzFhOWM3MThkYzFmMTZjMDdjNzIzZDhjMzhlMGFmMzdkZWY5MzIzMDQxNSJ9"
+        },
+        {
+          "resource": "repo://HARNESS.md#L58-L59",
+          "version": "repo-lines-v1:sha256:703f7236555bf134a9625a84d9ee4d7467e752e7d85c002401b70c7528e86bb3:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmU3ODhhNTM4OTBhZGE0N2YyNzVhYjljMjlmM2Y2ZjIzODA0ZGEzM2NkOGU4NjFiZTE2ZjY3ZmQxZWMzODhiZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjNjYTlmMmZkNDY3Mjc4YjY5ZDg2NDk1NGY0NTk3NjI3MTZjMjMzN2RmMzE1YjM1MzRjZmNkODI1ZjQ4ZTg0MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjFmZWNjN2EzMGJjNmJiYmY4NWY2ZDMwZjFjYjg2ZmM4MDNlNjM3N2ExOTIzZTQ3MzRlMzEyMDA2ODc2YzBkNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmI3NmVmYTA5NDRjOGI2NmNkZGI4OWZiNjBlMDJlMTk2MDczMzBkNmFiNGFlOWNlOTJiNzAzZmUxMjgxYTY5MCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_eebe8172f0a2480485d36a05906e5c29",
+      "statement": "harness-models.json (schema_version 1) sets model and effort per agent role and per skill, and the /harness-models skill shows, checks, or applies it.",
+      "evidence": [
+        {
+          "resource": "repo://harness-models.json#L1-L31",
+          "version": "repo-lines-v1:sha256:90dbc45c11cdeda78adf4d153694fb1161596a3bb7c0d07f92e16378074ea64b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://skills/harness-models/SKILL.md#L1-L5",
+          "version": "repo-lines-v1:sha256:7b463571261a036278b53b47c0cc0ca9b8c9bd373dd087be22d4f17613142c56:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjUyZDcxMTEwM2Q1MGE0Mzc4MzBjNmZiY2QwNGZiNGJhYjQ5YTBmODJmNmQyNmQxYzc5MWM2ZTg0ODhkZDA5MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjUyZDcxMTEwM2Q1MGE0Mzc4MzBjNmZiY2QwNGZiNGJhYjQ5YTBmODJmNmQyNmQxYzc5MWM2ZTg0ODhkZDA5MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGY3YmIxMWRlODk4YWMzNWE1ZmMxMjhkYmUzZmRjZDZiNmViOTYxYThhYWJjYjk2N2Y4NDhhYmUwNjAxMDFmMCJ9"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-16T04:08:21.021Z"
+    "at": "2026-10-19T07:24:11.736Z"
   }
 }

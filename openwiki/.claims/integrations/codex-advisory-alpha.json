@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d4f0d7657cb2d5c382329ef09ebbf3b95a78d10733a66a5c213ac6ca27ed2275",
+  "pageVersion": "sha256:c5188022739be1faac26e69f198ed05013e4719421a4776bef547581ae5bc880",
   "claims": [
     {
       "id": "claim_10471dbde56d4dc7ae1d89d6f24fcfaa",
@@ -12,7 +12,7 @@
         },
         {
           "resource": "repo://docs/codex-alpha-install.md#L1-L11",
-          "version": "repo-lines-v1:sha256:affd1ef8e33a62ab875fa29e5c4f0234ec1b3ea39c437c8442aa11229e009503:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3MmFmMTVhNmE4MjVjZmNmYWQ4MGNlM2NhMjZlMTU0OGMzOTMwNWNhMDYyN2RhZmNmN2M3OGExMmY5YjNmMjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliYTQ1ZWIxODNhNWIyZGEyMjJmOGM4Yjk4MWIwMDU4YmQyOGQzMTA5OWM1ZTE0ZjZjZDkxMjM2M2NhMjkzZGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFmNDJmYzdjM2U1YTJmYzNmNWRjNzQ0NzYxNDlmNDUzYmY4MzZmY2Q4ODhkYTViYTU3YTQwNjQzNmNmYzZjYTIifQ"
+          "version": "repo-lines-v1:sha256:e98b5a44e440cadc8e8c0e76692cb08c93cc1535caf55286b6612f0e000c5ebe:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3MmFmMTVhNmE4MjVjZmNmYWQ4MGNlM2NhMjZlMTU0OGMzOTMwNWNhMDYyN2RhZmNmN2M3OGExMmY5YjNmMjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliYTQ1ZWIxODNhNWIyZGEyMjJmOGM4Yjk4MWIwMDU4YmQyOGQzMTA5OWM1ZTE0ZjZjZDkxMjM2M2NhMjkzZGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFmNDJmYzdjM2U1YTJmYzNmNWRjNzQ0NzYxNDlmNDUzYmY4MzZmY2Q4ODhkYTViYTU3YTQwNjQzNmNmYzZjYTIifQ"
         }
       ]
     },
@@ -73,7 +73,7 @@
       "statement": "render_codex_adapter validates sources before rendering: the decision must be hybrid with observed runtime execution, the plugin manifest must equal the pinned contract, the checked-in Codex hooks.json must equal the hooks derived from settings.json, and the manifest skill/agent/hook inventories must exactly match the on-disk source directories.",
       "evidence": [
         {
-          "resource": "repo://scripts/render_codex_adapter.py#L127-L190",
+          "resource": "repo://scripts/render_codex_adapter.py#L132-L195",
           "version": "repo-lines-v1:sha256:12bd4a004487ebc63a58e71c360b7e9754d4c59c08c77b9f730ae7d2917f4bd0:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmNzgxOWJmZGY3ZjZjOTE2ZTNmMjA1Mzc4YzFiZTg1OWRkYWU2YTYyNWQ3OTE1NDEyN2FiNzVmMTNhZWNkOWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4YTAzZWRjOTUyODNhYWY1Mzc5NzVlMTBmZDk1MTU1NjQyMjIwMmZlOWNkNjQzZGZhZTYzMWFjMmY5OTdkNjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgxNDUyMDI1NzYxODNhY2JlNzg2NmIxYmYyMDEzNzljN2ExYjYyNTRlMWIxYTVjYTUwN2NiODU4ZWEyZWJlMWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY4NDRlNTUyMGJiNTMyODg1MWFkNjcyZDk5MWZmYjVlZjc4ODU5YzZlZmEwMWUxZWQ2MjFlZjViY2QzMDYwNjUifQ"
         }
       ]
@@ -87,8 +87,8 @@
           "version": "repo-file-v1:sha256:f35d19d2b89f15f45af0896b80afce5b6f1d362872dc6e67fab92f2668ae83d8"
         },
         {
-          "resource": "repo://scripts/render_codex_adapter.py#L40-L105",
-          "version": "repo-lines-v1:sha256:3fa64c29f7f5978ff03945857bd79565f19e9bb84f932b82f60680463bf48f6d:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxNjY1NzFlZDg2OTJiODRiNjI1MGU3YTZlMWZiNDE2YmExMDZiMDFiYjFhMWNhMjdhMzljZTljYmNjNjdmNTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5ZWUxOTMyODRlODJmYjc2YWY0ZjRmNTgzZTQzZjA1MDdiNWYxMzJiMTY0ZTZkMzUyM2JhZmI5NGMwYzdiMWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiNTZhZmRlNGU2MjIzMGZhZjY1YjhlZGJjOTFjMzk5MmVkZjkxNmMzMTdmZWY3NzY1OTYxMTU4Yjg5YjAyYWMifQ"
+          "resource": "repo://scripts/render_codex_adapter.py#L40-L110",
+          "version": "repo-lines-v1:sha256:55d8396377e2fbc14f62149ad1d27d5fe63d61e5d8a8d7f900c4a375a06f07e7:eyJzZWxlY3RlZExpbmVDb3VudCI6NzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxNjY1NzFlZDg2OTJiODRiNjI1MGU3YTZlMWZiNDE2YmExMDZiMDFiYjFhMWNhMjdhMzljZTljYmNjNjdmNTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5ZWUxOTMyODRlODJmYjc2YWY0ZjRmNTgzZTQzZjA1MDdiNWYxMzJiMTY0ZTZkMzUyM2JhZmI5NGMwYzdiMWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiNTZhZmRlNGU2MjIzMGZhZjY1YjhlZGJjOTFjMzk5MmVkZjkxNmMzMTdmZWY3NzY1OTYxMTU4Yjg5YjAyYWMifQ"
         }
       ]
     },
@@ -97,7 +97,7 @@
       "statement": "Rendering refuses an output path inside the source repository or a filesystem root, refuses source symlinks, and emits a plugin tree (manifest, shared hook bodies, generated hooks.json, manifest skills) plus a project tree (.codex/agents/*.toml via render_agent_definitions.render_codex and .codex/harness-instructions.md) and a render-manifest.json.",
       "evidence": [
         {
-          "resource": "repo://scripts/render_codex_adapter.py#L193-L272",
+          "resource": "repo://scripts/render_codex_adapter.py#L198-L277",
           "version": "repo-lines-v1:sha256:fe613a681113e6f7f6c6ce1d083cabc21c3fd73199d8cad705805fd1ade4a168:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhMzdiOGFmN2FhMGVjNWVjNTEzOTQyYTZkOTM3ZWJlZjVhYTA5OGZmNDI5MjhhNWZjMzYxMGRkYzY2MmNhNWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhMTFjMDU2N2QwYTVmOWU5YjEzNWY2NWNkMjUzNzJkZmQ2Mjg3NzVmN2MxZWQyNTNmOGJhZDQyZGQyZDY2NjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1ZGY4MTI0OGVhZDNhNDgyOWRjZDAzOGNhNWM4NThmMDQ4MWE2M2UzNWM1OTZkMDkwOWQwMjgyMzUxNDhiNDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0OGQ3NDgzZDA2MGYxNzIyZTI0NTM2ODg4MzM0MjU2YjU0OTBlOGJiZTg2OTgyMDY3NmNhOWVhZjM1MDljYzkifQ"
         }
       ]
@@ -107,7 +107,7 @@
       "statement": "Codex agent profiles are rendered as TOML carrying model, model_reasoning_effort, sandbox_mode, mcp_servers = {} for MCP policy none, and [agents] enabled = false when nested delegation is disallowed.",
       "evidence": [
         {
-          "resource": "repo://scripts/render_agent_definitions.py#L320-L355",
+          "resource": "repo://scripts/render_agent_definitions.py#L339-L374",
           "version": "repo-lines-v1:sha256:724d18db95fbc5f9a386cee82a6c99dbf66caa61f255ead98e0eca3586226e8c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIyMTJlZGY1OGRhMzg2YzMxYWMxNjQ5MzczOTZjZTA3MzY0ZGFiYzFjMzljN2YxODMyMmUwZjlmYmQ4YjFlMmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjljZGM3ODI2MmNjMTE3OWMzYWRlZDlkN2VmZThlNTgwMzllZjBhNmI3MTliNGE1NGI2N2E4YjU0ZDFkNmNiNmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MjIzMTA2ZmQ4NzQyYjcwZWEyMzNmOWRjMzU5ZjRiMDJiYmIwNjliNzI4M2VlZjc2MjQ5OTUxNmJkN2I5YzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0OGQ3NDgzZDA2MGYxNzIyZTI0NTM2ODg4MzM0MjU2YjU0OTBlOGJiZTg2OTgyMDY3NmNhOWVhZjM1MDljYzkifQ"
         }
       ]
@@ -437,10 +437,52 @@
           "version": "repo-lines-v1:sha256:409737a8f1444d42aed1fe0c2fe664e44747b572a063d4ef08c4333e041e9087:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjNzUyNmI4OGJiMGJjYTM5NjM2YzJiZWU0N2NmOWFmYjliZTRlYjZmZGJhZGJmYzAyYTRlOWNmNTRiOWFkNjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxYjlhNTM4MmQ0ZjM5YmRhNzNkZjgxNjBhMWZlMmExYTdlNTA0ODA2NDg5M2JjNGQxOTE3NzU5NDA3NzBiNWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyNzc2ZTg3MDhjMmYxOTIxMzlmZGU2MWMwZjlkZjk3NDZkMzBhNDRlZGVlYzg2ZmYyNjA5MjM5ODk5N2QyMjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_cedc31bd418240939a4772314bfcdeea",
+      "statement": "expected_codex_hooks skips any handler whose command is model-config.sh and drops groups left with no handlers, so the canonical SessionStart startup|clear model-config.sh registration is not registered in the Codex adapter; only commit-gate.sh (Bash), branch-isolation-guard.sh (apply_patch|Edit|Write), and session-knowledge.sh (SessionStart) are registered.",
+      "evidence": [
+        {
+          "resource": "repo://adapters/codex/plugin/hooks/hooks.json",
+          "version": "repo-file-v1:sha256:f35d19d2b89f15f45af0896b80afce5b6f1d362872dc6e67fab92f2668ae83d8"
+        },
+        {
+          "resource": "repo://scripts/render_codex_adapter.py#L82-L106",
+          "version": "repo-lines-v1:sha256:2018611f7d2da169560b04c8975b1eca6290a6d7ecf5c0614c5e0fcf96f85605:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxNTYwNDliNmU4ZmZkOGJhZmYyZWU1ZDJhYjhhMTQ5Y2Q0Y2E4NDE2NzI1ZjVhODJhNTY2MTM1MzRkOWQzZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5ZTVhNmUyNzIwODg4ZjRjNDZmMDQyMmNhODQ5MDkxOTAxNDkwYWVhYWVkNzI2MTJlNDhkOTdjNTFkZTEwZjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3MTBhYmYwZDZlN2I4MDY0YWFlOWNlZWJlZWViOTZmYWYwMWRiYTZhNDFmMzA2OGVhOGExYzQ1NjM2NzcwMGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA0Zjg3MWQxMmI5N2Q2MmQ4YTEwMTYxNDNjNzJhZDRkODg5OTJlNzk5Y2U0ODRiNjNjZGYwZGM2NGQwZWE1YTUifQ"
+        },
+        {
+          "resource": "repo://scripts/test_render_codex_adapter.py#L256-L288",
+          "version": "repo-lines-v1:sha256:763d22f9d82257841c04fc759a3e077023f5b8e9922dd08fbb8b6d296904e994:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4MDNlY2YyYWI2MzM4MWUyMmYyNWRhYzc3MjhhZjdhY2QyZGQ1NDJjZmE1MmVmNGFhNDNkNjc1YjVhMTMyM2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4NmVjNWEyYTQyNDVjYzA5YjNjZjQwMDI0ZmYzZTE0MmQ1M2UzNjFmMGJhZjM2MjJjNmJkMzk3ZjFhZGM4N2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEzZTAwYzY4ZGI1YjkwNjAxM2MwYzBlOTNhZWZkZGQzYWRiZmViNGQ3YjAyMDNiZjlmNjEyOTBlZmNmYWQ0NWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhjNmU3MjZkZGM2ZGRhYWI0ZGNlYjU5YjFkNDdmYjRlNTEyNGFiNjNmZjI1NTk1ZWNjYmE5NGJkYjMyMzdlZmEifQ"
+        },
+        {
+          "resource": "repo://settings.json#L1-L47",
+          "version": "repo-lines-v1:sha256:3f320001d8f14949e125162500134c422cc882f1ab97e747095b5a8af6903940:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_de839ae91c2a48cd9a17891874fadf42",
+      "statement": "Rendering copies the whole shared hooks/ directory (including the unregistered model-config.sh body) into plugin/hooks/ and writes the validated hooks.json alongside it.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/render_codex_adapter.py#L247-L258",
+          "version": "repo-lines-v1:sha256:434b6d4c824dcccdfa09f235375137a5e83539be568976148657a8005e6c7427:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5ZDU1M2UxMmRiNzczMmM2MjNlYWI4YTJkYTdhNmYxMTMyMjBkNWZlNTdhMzdlZTdhNzc5YzBiNjQyMDIzNzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3MzI5MGVmZmY1MjZlNDgyNTNjZDZmYmI3MGYzOGRiMjNmNzBmYWYzOGUwODU0YWUxOTVjM2NmNTc0OGIzYWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJiYzNmNjQ4ZTUyZGE2ZjUxOTk5YTY4NTFmNGQxNmQzMjliMzQ5ZjA5NWE4ZTJkYmM1OWVkOWI4ODcxMzZjMWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1NWYwMTQxZmVmMjdjYTA5ZWQyMDkwZTZjNDI1ZDVjZDE5MGRjY2RlYzRmMjNhNzQwMDMyNWU5MzVmMWM3YzAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bed15d2226a14f26a2499d196cc33d21",
+      "statement": "Linux and WSL are covered only by deterministic CI/contract tests; their real Codex runtime behavior is unobserved, so the doctor emits PLATFORM_UNVERIFIED and cannot return enforced there.",
+      "evidence": [
+        {
+          "resource": "repo://docs/codex-alpha-install.md#L8-L11",
+          "version": "repo-lines-v1:sha256:687768c2e934babe3e61ebe22978c8361e749867dac9311f1f1d289eb98508e9:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmFiYzk1OGE0MmM4ODVhZWM1OGMxZWFiM2E4ZDM2MGMwMjg5OGY4NThkZjgwZmIzZTA3NjM4MjE3ZjA4OWNjOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWJhNDVlYjE4M2E1YjJkYTIyMmY4YzhiOTgxYjAwNThiZDI4ZDMxMDk5YzVlMTRmNmNkOTEyMzYzY2EyOTNkYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDhmNTc4MTUzZWJjMTRkYjE2ZmU3ZGNlYTcyODVhZGE5YjkzZWZiNGI1YzdmMDZiYmQzZmEyZmJkNjllMzdkNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWY0MmZjN2MzZTVhMmZjM2Y1ZGM3NDQ3NjE0OWY0NTNiZjgzNmZjZDg4OGRhNWJhNTdhNDA2NDM2Y2ZjNmNhMiJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-16T04:08:21.021Z"
+    "at": "2026-10-19T07:24:11.736Z"
   }
 }

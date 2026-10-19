@@ -1,11 +1,8 @@
 ---
 type: evidence contract
 title: Evidence Tiers and the SUMMARY.md Contract
-description: How a spec's specs/<slug>/ artifacts (SUMMARY.md, PLAN.md, intent.md, QUESTIONS.md, ESCALATIONS.md, .review-receipt.json) carry the evidence for a change, how the traceability/provenance/truth tiers classify every gate, and how scripts/verify_summary.py turns a declared lane into required evidence and re-runs the Verify table.
+description: How a spec's specs/<slug>/ artifacts (SUMMARY.md, PLAN.md, intent.md, QUESTIONS.md, ESCALATIONS.md, .review-receipt.json) carry the evidence for a change, how the traceability/provenance/truth tiers classify every gate, and how scripts/verify_summary.py turns a declared lane into required evidence (including bug-fix red/green rows and the prove-the-red fix-diff check) and re-runs the Verify table.
 tags: [evidence, summary, verify, lanes, gates, review-receipt, success-criteria, specs]
-verified:
-  - by: openwiki/0.7.2
-    at: 2026-10-16T04:08:21.021Z
 sources:
   - id: openwiki-source-a2371d6362e5db4bc834ad03
     resource: repo://CLAUDE.md
@@ -31,6 +28,8 @@ sources:
     resource: repo://scripts/verify_summary.py
   - id: openwiki-source-98f1cafcaaac3272c1eafdcc
     resource: repo://skills/finishing-a-development-branch/SKILL.md
+  - id: openwiki-source-ea2b5c50b86b8cfbe42c330a
+    resource: repo://specs/gh-313-prove-the-red/design.md
   - id: openwiki-source-94bae095a55cdc977f23a588
     resource: repo://templates/ESCALATIONS.template.md
   - id: openwiki-source-1bcf2b4bc2620fd6de34d127
@@ -41,7 +40,10 @@ sources:
     resource: repo://templates/REVIEW-RECEIPT.template.json
   - id: openwiki-source-90294476dddd37583da0fb1a
     resource: repo://templates/SUMMARY.template.md
-generated: { by: "openwiki/0.7.2", at: "2026-10-16T04:08:21.021Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-19T07:24:11.736Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-19T07:24:11.736Z
 ---
 
 # Evidence Tiers and the SUMMARY.md Contract
@@ -55,7 +57,8 @@ this: **each gate checks exactly one evidence tier and must not claim more.**
 
 Related pages: [Lanes, Risk and Hard Gates](lanes-risk-and-hard-gates.md) (how a lane is
 chosen), [Commit Gate](../enforcement/commit-gate.md) (the hook that calls these checkers),
-[Run-State Engine](../runtime/run-state-engine.md) (`RUN.json` / `events.jsonl`), and
+[Run-State Engine](../runtime/run-state-engine.md) (`RUN.json` / `events.jsonl`),
+[Bug Diagnosis](../workflows/bug-diagnosis.md) (where red/green evidence comes from), and
 [Implementation and Review Chain](../workflows/implementation-and-review-chain.md) (the
 skills that write these files).
 
@@ -169,6 +172,10 @@ flowchart TD
   with a claimed exit of 1–123, plus a `green` row that runs the same test command
   (whitespace-normalized) with claimed exit 0. A `Red test exempt: <non-empty reason>` line
   is the alternative. This is a warning by default.
+- **Bug fix, prove the red** (same trigger and same `REQUIRE_RED_TEST` switch): for each
+  matched red/green pair, a code change must exist after the red commit, outside `specs/`
+  and outside the red test files. See [Fix-diff check](#fix-diff-check-prove-the-red-provenance)
+  below. This is the only part of lane mode that calls git.
 - **SC coverage**: if the sibling `PLAN.md` has an SC table, every valid `SC-n` must be named
   by at least one Verify row whose claimed exit equals the SC's expected exit. A Criterion
   naming an unknown SC id is an error. If there is no PLAN or no SC table, the check is
@@ -182,7 +189,8 @@ Lane mode never executes Verify commands. Warnings are printed as
 only on failure is a warning nobody reads.
 
 - **Verifies:** the SUMMARY contains the sections, rows and header values its lane requires,
-  and its SC references line up with `PLAN.md`.
+  and its SC references line up with `PLAN.md`. For a bug fix it also checks (provenance) that
+  a fix diff exists after the red commit.
 - **Does not verify:** that any Verify row is honest or still passes, that rollback steps
   work, or that the Not-auto-verified list is complete or correctly tiered.
 
@@ -191,7 +199,7 @@ only on failure is a warning nobody reads.
 | Env var | Promotes to blocking |
 | --- | --- |
 | `REQUIRE_NOT_AUTO_VERIFIED=1` | Missing or placeholder `### Not auto-verified` on high-risk |
-| `REQUIRE_RED_TEST=1` | Missing red/green pair on a bug-fix SUMMARY |
+| `REQUIRE_RED_TEST=1` | Missing red/green pair, or a failed or uncheckable fix-diff check, on a bug-fix SUMMARY |
 | `REQUIRE_SC_STABLE=1` | SC-history findings (exit 1 instead of 0) |
 
 `REQUIRE_NOT_AUTO_VERIFIED` and `REQUIRE_RED_TEST` treat any value other than empty, `0` or
@@ -204,6 +212,49 @@ The Not-auto-verified check is itself traceability-tier.
 `- none` is accepted on purpose.
 **Does not verify:** that the listed claims are complete or that their tier labels are
 correct. It makes the author answer the question but cannot check the answer.
+
+#### Fix-diff check (prove the red): provenance
+
+The red/green row check reads only SUMMARY text, so a "fix" that changes nothing could pass
+it. The fix-diff check (spec `gh-313-prove-the-red`) closes that gap. It is split into a
+text-only step and a git step, and both lane callers (`check_lane_warnings` and
+`check_lane_evidence`) run it next to the red/green check under the same `REQUIRE_RED_TEST`
+switch:
+
+1. `_red_pairs` returns `(red sha, test command)` for each well-formed red row that has a
+   matching green row. It returns nothing for a non-bug-fix SUMMARY or when a
+   `Red test exempt:` line has a non-empty reason, so those SUMMARYs never call git.
+2. `_red_fix_diff_issue` finds the repo that holds the process **cwd**
+   (`git rev-parse --show-toplevel`), not the SUMMARY's location. This is why it works on the
+   commit gate's temp copy of the SUMMARY: the hook runs from inside the repo.
+3. For each pair it resolves the sha to a commit and lists the paths that differ between the
+   red commit and the **index** (`git diff --cached --name-only --no-renames <sha>`). A staged
+   but uncommitted fix counts; an unstaged edit does not.
+4. The "red test files" are the paths the red commit itself changed
+   (`git diff-tree --root --no-commit-id --name-only -r --no-renames <sha>`). The red row's
+   command tokens are not parsed (design decision D10, replacing an earlier token-matching
+   design), so a directory, absolute or quoted test path makes no difference.
+5. Paths under `specs/` and red-commit paths are dropped. If nothing is left for any pair,
+   the check reports `bug fix: no code change after red commit <sha> outside specs/ and the
+   red test files`. Every pair needs its own non-empty diff.
+
+If the check cannot run, it reports
+`bug fix: cannot check the fix diff for red commit <sha> -- <cause>`, where the cause is
+`git is not available`, `the current directory is not in a git repository`, or
+`the commit does not resolve here`. An unverifiable claim is not a pass: both messages are
+`!` advisories by default and errors (exit 1) under `REQUIRE_RED_TEST=1`. A shallow clone with
+the switch set therefore blocks bug-fix commits.
+
+- **Verifies:** (provenance) a path outside `specs/` and outside the paths the red commit
+  changed differs between the red commit and the index.
+- **Does not verify:** that the change fixes the bug, or that the red exit was real
+  (`--check` re-runs rows).
+
+Known limits from the design: the diff runs to today's index, so later commits make an old
+SUMMARY pass, and the check is meaningful only at the commit that records the fix. If the red
+commit also edits source, a fix that touches only that source is reported as no code change.
+A merge commit used as the red commit excludes nothing, because `diff-tree -r` prints no
+paths for it.
 
 ### Verify mode (`<slug>` / `--check`): truth
 
@@ -340,10 +391,12 @@ before push. The check fails with one of these one-line reasons:
   `verify_summary.parse_verify_table`. The table rewriter applies the same skip rules as the
   parser, so results stay aligned with their rows.
 - **The tier label must not overstate.** Lane mode, row lint and the Not-auto-verified check
-  are traceability. Receipts and SC history are provenance. Only Verify-mode re-execution is
-  truth.
+  are traceability, except the bug-fix fix-diff check inside lane mode, which is provenance.
+  Receipts and SC history are provenance. Only Verify-mode re-execution is truth.
 - **Fail-open spots** are deliberate and documented: no PLAN/SC table means no coverage
-  check, and a missing interpreter skips the commit-time check.
+  check, and a missing interpreter skips the commit-time check. The fix-diff check is the
+  opposite: when git or the red commit is unavailable it reports "cannot check" rather than
+  passing.
 
 ## Tests
 
@@ -356,6 +409,12 @@ before push. The check fails with one of these one-line reasons:
 - row-order rewriting with duplicate names;
 - lane requirements per lane;
 - warn versus opt-in blocking for Not-auto-verified and red/green;
+- the fix-diff check, in real temp git repos with the cwd inside them: a no-op fix (exit 1
+  under `REQUIRE_RED_TEST=1`, a `!` advisory without it), a real fix, test-only and
+  specs-only changes, a red commit that also edits source, directory and absolute test paths,
+  a staged versus unstaged fix, an unknown sha, no repo, no git, exempt and non-bug-fix
+  SUMMARYs (no git call), the commit-gate temp-copy shape, and a regression run on
+  `specs/gh-302-red-green-input-type/SUMMARY.md` (skipped when its red sha does not resolve);
 - SC coverage, including `--plan-dir` in both modes;
 - runtime-metadata pairing.
 

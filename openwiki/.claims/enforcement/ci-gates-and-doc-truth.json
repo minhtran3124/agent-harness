@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:bc2472331ed550b89733f9a5d3185f0f09d4c44f028dddc255be822ea7fc6a9b",
+  "pageVersion": "sha256:3ec25433c906fcc66f32bef8d17f63dd7dfb50cf2e9850a431e56ed8df686f67",
   "claims": [
     {
       "id": "claim_c83841f96a72441ba5d645e3cf279e0d",
@@ -185,7 +185,7 @@
       "statement": "A high-risk SUMMARY whose only Verify row is trivial (e.g. `true`) or whose claimed exit code mismatches the actual exit does not satisfy the strict gate and the PR blocks.",
       "evidence": [
         {
-          "resource": "repo://scripts/verify_summary.py#L640-L650",
+          "resource": "repo://scripts/verify_summary.py#L723-L733",
           "version": "repo-lines-v1:sha256:00710e640ef2ec0cf5e1e137873b03491cb16eab3e841340e6889e9d043847dd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4OTQ1YzE1ZjcxZTQ2MmZhNTVlZjA2NjA1YmFmYmZjNzQwZDAxYmUzMjkyNjNmNTk0ZDUwZGFhZGMyYmJjMzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2YWQwNTJjNDRiOTUzZjBkODMyODZhMmRkZGVjMjE4NWU3ZjE4OWRiMGU0ZjUwMmM2ZjA2ZjM0NzU4NDU0YTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzMzQ4NGU0M2ZhYzEzMjZiOTQ0MmVmYjgzNWMyYTIxMDE3MTBhMWVmMjllOWI4OWQ3ZWRlYmJjZDk1ZTUxODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRiNzhjMWMwOGNlMmVmMzNjODdjYThlM2FjNDcwM2JiOTliYWMyMmQzNWRhODBkMDc0NGQyZmY1NzgyYjk3YjMifQ"
         },
         {
@@ -367,10 +367,202 @@
           "version": "repo-lines-v1:sha256:8e6a1f88760433f8b80f717d068f8d3f7ebee9aca7231468601aa0dbe2f2bdf9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjMDdlNGE2Mjg1MTZiYjJlMDg4NjM4NTcyNGViOTBmYjU4Y2NhMGFkYzI3ZTQyNjgxOWE1M2M5Y2NmZjliODUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2MjMzYjNmZmVhMzJhMjNkZjUzMDY1MzQzNDhmMmRlZTc3NmE1YTZmNzRmYjUzMzE3NWRkYzUzOWE4ZmU0NjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5ZjFiZmEyMjNiOGU0OGIwMTRmNzY1MjIxZWMxNDM0Zjk3NWNiMjVmNGVjMzYzMjkwNjcxNzk4NWIxMDY0MzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0OGQ3NDgzZDA2MGYxNzIyZTI0NTM2ODg4MzM0MjU2YjU0OTBlOGJiZTg2OTgyMDY3NmNhOWVhZjM1MDljYzkifQ"
         }
       ]
+    },
+    {
+      "id": "claim_bcd61d3e0d2a415dafd4320631722fa9",
+      "statement": "run-tests.sh does not stop at the first failing step: each failure is recorded by name and reprinted in a final FAILURES list, the run prints ALL GREEN otherwise, and the script exits 1 if any step failed.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/run-tests.sh#L204-L211",
+          "version": "repo-lines-v1:sha256:cafe2d43e95e6d1d9e4098110d67dc05ae9285d255d9650ff040fe3f5e0433bf:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2JkNGFiYjA5NzRmOTAyZTg4NmJlYjM2OWM4ODc2MGJkMGZmNzJlNjg3Zjc4ZjU3NDk0MjhhM2IyNDRkOTU0YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2Y2MjAzMDdjZWMwYTZkMDQwM2JlNTc4ZWNkYzYzNTE1ZjFkYWQ5ZmM1YmE4NGI3NDRmOGM5ODcwMDA0ODg1MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDQ0ODhiYjllOWM5YTZiZGVkNDlhMTgzOGUyYWM4ZDIzZDA5MzViMTVjNjA5YjU3NmU5MDkwOWJlNmQ3NDY0MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://scripts/run-tests.sh#L9-L27",
+          "version": "repo-lines-v1:sha256:59f5022fde185031e04efd75bc651e4fe5e5d99d0a8b1a9b4a3ee778eb447009:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjMjk4NWMyNGYwYTI1ZmRiNTQwOWQwZGJiYmE2NTBiNmNmZTU1YzVkZmJmODcyOTVjMjM2NWFhZTRjZmZkNjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhNGVmMmQzZDUxMjIzNmEzM2VkODg4ZmY2YWFhNzI5ZDgwOTgzMDZmMzE1YmNjYTI5ZGE4MjU3MDdhOGMzZjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkNDIzMDY4OTRiMjdmMWUzODUxZDJlNTlkMjhhMzgxY2IzZWJiM2JkZGVlMDllMWIxM2NjMjBlOTAxZTU0YzgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_30fb994110e24f1d9dacae2825b08516",
+      "statement": "The L1 block of run-tests.sh also runs lint-skill-bash.sh, check-hook-root-source.sh, check-plugin-validate.sh, check_manifest.py and check_gate_modes_smoke.py alongside the doc-truth lint and the other conformance checkers.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/run-tests.sh#L35-L59",
+          "version": "repo-lines-v1:sha256:52ebd77853c413a257484dfed1a8af5ad19a72ce6bf1c12f48eba5bad4144eef:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhNTY1MDRmOGQ2OWZlMTVmMTRmOTExMWFlNzYwMmRjMWJhZDg3NWU0NGRjY2NiMTIyODY1MmFkOGM4NDEyZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkYzhmYjU0MjNkODRiNDc1MDAxOGVjMDRlYmVhNzk3ODM2MDc4MDAzMzI1YzE1NmQ0NWFhNjViZWM3NDA2ZjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1NDkyYTRmMTkxYmFhNjNmMDVkYWQyYjQzMzc1YmFhMzkyZGI3YzNjMmZlNjJjOWY1MjRhZjlkODQ5NThjYTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_69c87b87050a40c9b20ee6338367b06e",
+      "statement": "check_gate_modes_smoke.py requires that exactly workflow-engine and weakening-validation are warn-mode detectable gates and that hooks/lib/gate-modes.default.sh matches harness-manifest.json.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check_gate_modes_smoke.py#L1-L23",
+          "version": "repo-lines-v1:sha256:d3705872443f87a1c887475ebb5c8cd04680fe7c50e91b22edcdca799f405ba5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2ODJjYmRiNGM4YjA3NTE4YmY0ODZjNTg5OTBmYzM5MTc4M2FhMjBhOTE2YmZiMjdhZDIxMWViMWQ1YzM2NDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1OWVjZDhiYWI2MjU3ODYzYzk3MzM2YTNmYmJkMDkwMDI1YjI4OTE1ZDU3MGM3YzFmNDk5YTkxOTlmNmIzMjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRkNDQxZWE0ZmZhMWFiYjE3MWNhNDZjNjM0ODk4MGQ2MDg0Nzg5NzY0NmM0MzVmZjFlMzlkMDYxZmVjODczODUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bfacbfc0eb0f4b3d8fef200b4c51cb52",
+      "statement": "check-plugin-validate.sh skips with a named reason when the claude CLI is absent, so it is currently a local-only gate because CI runners do not ship that CLI.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check-plugin-validate.sh#L27-L30",
+          "version": "repo-lines-v1:sha256:808ed112b7f0819cfd3ba443c94341915ec0ec8e7688d5bc4cd1a47ab9134816:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzcxYzExY2E1ZTY0MzVjYmVmZDllZGZhNjVmZDE1Zjc1NzliNWEyMmZkM2Q1ZTg3ZjMyN2VmODNiMjYxZjc0MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjU0N2Y2ZDY2MWE4ZGI4NDFlY2Y0NmU3MzI5NjkzYTIyZTIyZWY0ODVhNmM5ZGYxOWQxMzYzZDZlZThhMTdjMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDkzZjU1NmEyNTcyMzljNGEwNmQ2MmRiZjRjYjQ5ZjZmYjcyN2E1MjdmOTI0YWZlMDhkYTc3ZjljMTNmYmM1OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWFmYTBiZDBlZDRhZThiNjUzMzJkNzIzMzNhNDYzYmFlYmI4YzkyYTUzM2NkYjkzYzgzZGVlNzU5Nzc5NmFiZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_d9cc0778f46341febfac735787ae2ec5",
+      "statement": "run-tests.sh runs hook and script test suites in parallel (HARNESS_TEST_JOBS, default CPU count) and then runs pytest over every test_*.py found under scripts/, runtime/ and skills/, excluding evals/ because its fixtures contain intentionally failing tests.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/run-tests.sh#L152-L202",
+          "version": "repo-lines-v1:sha256:c55e50895ac5991a9de755ab505a220890c924448c221c80f7bb68c47cb49d13:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1ZWIwNjIwNjBiN2ViOTljMWQwMGM3MjRkNDhlY2MwZGViYTk2Zjk4MDcxMTgxM2Q4ZjliNDczNjNiMTkwYzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFlMDFjNTZhZjU4ZTc1ZGIyY2IwNDdmYzg5MTMxMTM1NWFiZDY2ZmY0ZWZhNjIyODlmNDg3OWU3OGYzMzE5NDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU4MDk0NWMxMWVhY2MxODRkZjAxYmIzNjJkN2UzYjU1MDUyNGI0ZDA0OWZhY2M0NjUxNTcyOWQzM2MxZTk0N2EifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_484406ea17bb4fa1ba6523d6edfb08a4",
+      "statement": "The verify-row lint in run-tests.sh lints only specs SUMMARY.md/PLAN.md changed versus the base ref (three-dot diff), intersected with files changed since grandfather cutoff commit af869a9, and a failed git diff fails the step instead of counting as an empty scope.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/run-tests.sh#L89-L142",
+          "version": "repo-lines-v1:sha256:ed929414a0a13ade3a60e61d57cb7d396e38409b7795e3e0ad00526e5225fd83:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2YmI2MGJlYWJhOTdmYzFlMWIyNzk0MWIzOTA3ZmJlNjBhNDEzYzQ0NjRhZTQ3NzdhY2YwMmY5YzA5Yzk2MGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwMzQ4OGRkMzFiMTY3YjU0ZmNiNGJkNWM1YmUwZjg0OWM1MGM1N2NkZDdiZDhkNzhiOTQ2MDMxMTQ1Y2ZiY2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlmYjlkOTY0ZDM2MDAyYmVkNmQ1ZDllYTU3ZTQwZDU3M2NiNDQyYjQ3MWY4OGQ5ZmEyMGI1NzM2MzdkN2M5OGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c51eb827527e484ab787e94f2c63fec4",
+      "statement": "audit_skill_prompts.py inventories each skill registered in harness-manifest.json plus every *prompt*.md companion under its directory, and fails on a missing SKILL.md, a frontmatter description over 1024 characters, a SKILL.md over 600 words, or a *prompt*.md under skills/ owned by no registered skill.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/audit_skill_prompts.py#L21-L129",
+          "version": "repo-lines-v1:sha256:9a4f850bcadef87f53a1288e4c141c23b75acc7eb4034a8beb5f4782d7157b88:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiZjQ5ZTg3YTQwOGJkMTA1NTI4YzFhZGQxYmMyNWRkZTU0NDg5YmM0YzVjYzM5ZDlhZmM4ODJmMTg1MGE2NzJlIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0ODkzZjQwZTM3ODFlYjg5NmM4MmQwNDZhMDgwNjdhMTFlMzVjZGYyZjFkZmFmMjZmZWE5MGI4ZGI2Njc2NDEzIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhOTFiZjNkOTZmMWIxMTk2ODhkZWVhOWEwMDRiMmIzZmViYjE4MGJiOGZiMjM0NDYyNTYxNGFkYzg1OTU2M2FjIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3ZjExODVlZWZmYWFmMjY3NTMwMWJkYjcxMjczOTlmMjg2ZjNjNTcxN2YwYTU5ZjQ3NGY5YjJlODI4MTgzZTk1In0"
+        },
+        {
+          "resource": "repo://scripts/audit_skill_prompts.py#L214-L223",
+          "version": "repo-lines-v1:sha256:c68973227839c05647712b6dba8d5fda0783fca460b64a6cdc881eef22597570:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkYTVjNjZlMTdiMTQ1Mzk3ODM0YjhjODU0ZGM0MTkzZTIxMjUxODBhODk5NmExNGMzMTg4MzMyNmIyZWZiY2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzMDg2NmUxYmNjNWFiNzZlM2VmNTkwMTJkMGFkMzlhNjg3YWJlMDAyM2I0MzhhY2IxMTMwYTE4ODI1ZTgxOTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU4ZDJjNDc3YTNiYmZiMTU3YzU1YjZjYzhhNTQyNTQ1MzNiMjY1NmNkYjVmMmI1MzhmN2ZkOTc1N2NmOGU3MTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZhNWYwMzBhZjIwMTI5NDI1MmI4ZjdmZmZlNjAxNjFkYTkyZjA1ZGI0MzIyNWEyZWYzOWY2ZDZhMWIxNjFkMzIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f13db975de264796acabdcdf35fb70e1",
+      "statement": "A skill directory containing UPSTREAM.md is treated as vendored and exempt from the 600-word SKILL.md ceiling but not from the 1024-character description limit.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/audit_skill_prompts.py#L83-L95",
+          "version": "repo-lines-v1:sha256:0d17827e52f9ec68b4e7fddee58b20d9efd7cfcae92ce57a70d0762bb82bcb2e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5NTA5ZjZiZTBmYmZkZDRkNzY0YWFkNGQzOGRhNmQ1ZDExZTY3YWVhNjM3YjZkN2QxYmM1NmVkZjc3MDIxMzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MDMyZTk2NGQwOTMyMzUxZTVkMTg1MjY5MjgxYjE3MWEzYTA5YjA4YjI4NmU2NjFlYTQ3MDMyM2M4MmViNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI1OTM2Mjc4MjM0ZDNiMmViOTU3Mzg4MzBlNTNkM2Y3NWQxMmI4OWFiZmRmYTA0OTQ3MWZlMzJjMGQzZGZhOWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI2YjY5MGFkMjVkYjg1NjIzMDA5YWUyMjUxMmE5MzcwN2NjZmViMWRlYmVmN2ExODQzNjllZmU0OTNiYTk4M2YifQ"
+        },
+        {
+          "resource": "repo://scripts/test_audit_skill_prompts.py#L66-L85",
+          "version": "repo-lines-v1:sha256:9e324b02654fdeb2aabbfd6a85765c895cae79d951845c5c1430642a2058d7d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5YzJlYmQ3ZTZlZmY4YzZhZGRiMDIwYzZhOTNmZTgyYzAxYmM5OTA3MmU0ZWEzNWI3NWEyOGZkMGE5YjY2MjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhY2U1ODA0MDZlZWI1YTg0ODljYTJjNGZmMzIzMjMxZDE2ODc1ZWUzNTc5NWNiMDQ5YjYzNTdlMTY1NmQwYzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5YWUzZGUwNzRkNjYzNmM4MmNiNTIxNGFkOWNkY2YxZTZjOGIxODQxOTA0MGNhNzc5YWE0MWUxMzczZWYzNTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiNjQ2MDE1NTBmYTg3NTBlNTRmN2NmMmUxZjI5MzYwMzM0NjEwMzQyYjQ1ZGZkNWY0ZTAzMjllYzIzNmZkZDAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d92c9f20af7e45fbbfc192ee5c42989a",
+      "statement": "audit_skill_prompts.py --check-baseline compares the inventory with a committed JSON while ignoring git_sha, and --compare passes only when total words do not grow and drop by at least 25%.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/audit_skill_prompts.py#L132-L198",
+          "version": "repo-lines-v1:sha256:52a8196d248c2eec1653011ee5ba3c699cf60973923e6d39b75d3f68c109d9c6:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1YzcwMjRkZWFkOTU2NGMzZmVkNDVkZWFkMjU5ZjY1NGY3YjI5NWI3NzRjZjRlZWEzM2YyMGEwMmFmZDhlMDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzMjQxMzMyMzg2Y2NkNWUwZjI2Y2ZjYzg1M2M2ZjA2YmZjMmM4ZWZmMmYyNjA4NjQ3YWE2YjJmYjQwNzA3ZjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmYmQwMDkzMTRiYzI3MDg0MTY3MzRhMDJhZTVmZjM5YTFlNDhhMDUwYmU5MWY0M2IyZmFhOTIwMDJjNjJiZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0OGQ3NDgzZDA2MGYxNzIyZTI0NTM2ODg4MzM0MjU2YjU0OTBlOGJiZTg2OTgyMDY3NmNhOWVhZjM1MDljYzkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7a4dfe3fd2864ed5a205f5be6891fc0a",
+      "statement": "The pytest test test_real_repository_matches_expected_surface_shape runs the prompt audit on the live repository and pins 16 registered skills and 12 companion prompts, so adding or removing a registered skill or companion prompt requires updating that test.",
+      "evidence": [
+        {
+          "resource": "repo://harness-manifest.json#L229-L245",
+          "version": "repo-lines-v1:sha256:42387cfe59b25b45746f05fe1225ca31fa909fe311a9f6320233625370fb0887:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4YWFjOGNiMjQ4MzU0NWFiZjk2NGU4NTRjZDZkNzIyMjM2ZDU4MGY4YmMyZTM5ODczNjg5NzE0YWI3NzU1N2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2NGQ4YzA3MzQyOTg5MzEwMTU3NmQ4OGQ5OTEyN2U4OWQ2ODkxZDNiMTdlODlkZjAyZWM5YWU3MDcwNWQ4YmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdhNDc0ZDQ0YmEwNzJiNDM5MjNlYzEwNjE3ODlkNjViN2I1NzFlNGY2YTRjZTIwNTM4NGEzYWFjNzZkZDE3ODQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkYzBiZDhmMWU1MDk4MDM0MTU2NDJlOTY0MWM2MGJkNTNlMWZhYTkzMzM0ODUxYmU0N2Q2NWE0MTZlZTFjNmMifQ"
+        },
+        {
+          "resource": "repo://scripts/test_audit_skill_prompts.py#L140-L146",
+          "version": "repo-lines-v1:sha256:2d0d4c620e2eded7a12b087132e0614cd875c30b61d20aec6128a83da8ea97b2:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTRlODdhMzdhZTQyZWE2NGI5NDFmZmU2Mjg2YmI3ZGVhZmQwYjU3ZDA5MWE4MjBlNGJhOWJiMjNhNmQ2OGQzNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGUwZmFhOWZhNTEyOTViYWJjYzVlMzdhMDIyYzdjZWY1M2QwOTBjM2U0NmRmZGJmMjgyOTlmMjM4NGYyNDgwZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODgxNWVjNjBkYWFjYzIzNTMzYTQzN2Y4ZWViYTNiYWIwMzY2ODRkMDEzY2IyOTg1NTllZDEyODIzMThiOTAzNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_2f17d3b73de84135b44dac6b873cfafc",
+      "statement": "run-tests.sh runs ste-lint.py --selftest as a failing step and runs check_ste_baseline.py as a report-only step.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/run-tests.sh#L80-L87",
+          "version": "repo-lines-v1:sha256:3b93f1594806669a03d3b92a05901b29605242aa598c94b5938071c889f2315b:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGZiZGNmYmVlMDJjOTIzODI0YjEzMGMxY2ZlOWZhNzJkMDM2OTM0OTE1N2VhZTFkY2M1OTMxZjk0MjBhYjZmYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzc2OWQyMzdjZDQyMGI5ZDM4Yjk4MWEwYTRmNjc3MDE5MGE0YTgzZGNhMWZlNTZjNGY1YmExZTJjYmMwZWY3NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWIyYWMxNmRkMDI5MTRkZTk0OGUzYTRjODJjY2M0ZTNhMWQ5YTY2ZjVmNjUyMmZkNGY5MWYzZTFjZjg1NjRlYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjUzMGUyMDdkYjRhYTM2ZWY1YTJiNmNlZWM2OGY2ZDIyYjU4NDMzNDZkNDk2MzY1NGZjNzZmNDViM2ZlZmExNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_4e0f6c2ad546472299c7168fb0511171",
+      "statement": "ste-lint.py is a regex-based structural STE linter whose hard rules fail the run when the hard count exceeds --baseline (default 0), whose passive-voice and present-perfect findings are advisory only, and which exits 2 on usage errors such as an unknown rule.",
+      "evidence": [
+        {
+          "resource": "repo://.agents/skills/asd-ste100/scripts/ste-lint.py#L1-L62",
+          "version": "repo-lines-v1:sha256:981065c2dfcb8749b0a5a77e70fb917bb20b47fea614bd52efc9e580f755eb34:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2ODJjYmRiNGM4YjA3NTE4YmY0ODZjNTg5OTBmYzM5MTc4M2FhMjBhOTE2YmZiMjdhZDIxMWViMWQ1YzM2NDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NDE2ZTA5Zjc4YmEzMTZjMDMyNTY4MjEzYjg1NWVlNzU2ZTQxNTY1ZDkxOGYwOTUxOWM4MWZkNjIwZjQwNjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU2NmI4MWIyOWNjNjJiZDgzY2M1OWVlZDIxNDcwMGE5MWMyMzA0MWNiYjA2ODU3OTVmNTk1ZTVjNWE3NGE3NDYifQ"
+        },
+        {
+          "resource": "repo://.agents/skills/asd-ste100/scripts/ste-lint.py#L617-L677",
+          "version": "repo-lines-v1:sha256:50982446e95ef8eade98fe8247c56918b379992218e88022fb3aab26434526d1:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzZGJkM2IxMjJhMTBhMTdhNmMzZmI5NDc2MmMxZTkxYjdiYjc1ZDU2MjYyZDBlZGJlMmFhYTQ5MmRkZWNmNmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwZjAxZWU5YmE1NmEyYjdmNWU0MzM5YTRjYmZmZGFjNjg2OTYwMTYyNWEyMGQ4MjI2NGY0ZjMyM2I2YTU2YmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY1NGM5YzgzNTk2MmFlNmNlM2U2MjkyYWExYmYzODU0ZTY0NjQyMDkxMjk0YjY2NmUyNjdkMThjYzI3M2I4YWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkNDEzNDBjYzIzOWExNTljZTliNjAyMmU5ZjYzMjI4MzJlMmVhZDc2Y2FlOWU0NzU0ZDIxMGViOGZiNmQ1ZTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6aa2331614844f25ac64d220c3ef12b3",
+      "statement": "check_ste_baseline.py compares each prose file's STE hard count (skills, rules, agents Markdown) with scripts/ste-baseline.json, warns on rises or deleted entries, notes drops, and always exits 0 by default; only --strict exits 1 on warnings or skips.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check_ste_baseline.py#L1-L40",
+          "version": "repo-lines-v1:sha256:cee026ec9b7b2af98567280a2c61066813c537b3ebfcc25a2477e42b64543db0:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2ODJjYmRiNGM4YjA3NTE4YmY0ODZjNTg5OTBmYzM5MTc4M2FhMjBhOTE2YmZiMjdhZDIxMWViMWQ1YzM2NDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3MTc5ZjljNzZlZTFlMTQ4ZDUzYjYwYzI1OTExOTgzNWE2MWZjYWI3Y2ZjYzU2NGUzNjQ3MWRlMmVlY2E1OGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmNjkyY2VkZGExYzhhZGI0YWYyMjkzZmZlODE1ZjMyYmE3ZjliYjBjMWJmNWU0YTgyMDNlZjhhM2JiNzdiMWQifQ"
+        },
+        {
+          "resource": "repo://scripts/check_ste_baseline.py#L118-L161",
+          "version": "repo-lines-v1:sha256:1592404ecd689cb9d8fb2ca627ea5f57dcbeea16fbd1bf074597183927d89756:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MGYyMjQ5YzhkNzE2NzdhMGQ2M2Y4ZjY0ZTUwMDZmZmJiYTQxNWM3MDE4MTEwZWU2MmViZGViMzBiN2Q3NjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwYzdhMDgzODUzMTk0NTE4MWQ0ZWQ2MTdkYjgwNjVkM2E4NDhmYzAxZjJjMzIzOTFhMDllODI2OGQzNGQ5YmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3NTE1NzZhMjc3NDdlYWMxZWZlYWU4MzNmMTA5YzE4Y2M3NjRjYjNhNDZiMzc3NDE2OTAyNmQ3NjE1YmJiMTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkNDEzNDBjYzIzOWExNTljZTliNjAyMmU5ZjYzMjI4MzJlMmVhZDc2Y2FlOWU0NzU0ZDIxMGViOGZiNmQ1ZTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0bbf984cb36e496294c6cfc7b5cec881",
+      "statement": "check_ste_baseline.py disables the synonym-rotation rule in both checks and --update because an experiment measured no effect for it; --against reads the baseline from a git ref and cannot be combined with --update.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check_ste_baseline.py#L131-L145",
+          "version": "repo-lines-v1:sha256:51ed953654b48ddba7ece99ca927f63c2c4481a91d82491a500894499ba20b7a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExNThkMzM2MjNkNTk1YmVlMDEyOTA0OTBhNDg0MTdjZTVlMWUxNjIxZmFlZmU5Y2YyZGVmZWY3YmI0ZTBkNjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlMTM4MzdkZjUxZTUwNGFiNjk2ZjA1NzdlOGFhZGViOGMyM2I2NDMyN2M5NTk3MzJhZDBlNDExZjcyYTA3NGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyNjlmZmVlY2I5YjYzZDBmZWVlZThhZWJlYzAxYmE4NjQwZTgwNzQ0NDBkN2FlNzE0ZmJjNzk1YzlkZjg5NTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM2NzU1MTg1OWU2MTdjZmU1MjgxODY1NGZhOWZhNGIyOWViYjcwOGY5ZGIxMTEyZDYzMmM2ZTM4YmIwOTUzYzUifQ"
+        },
+        {
+          "resource": "repo://scripts/check_ste_baseline.py#L42-L55",
+          "version": "repo-lines-v1:sha256:b1c41e5eec84191a7e238c68a9f6367079087d2d75c7d98f00dd0744956640ff:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjN2NkYTYxZWFmNTNlZmMzNWNjZWRhYTRjNjI0MDE5MmE2YWY2YmE2Mjg4ZDFjZmVkYWRiNjlhMGI0M2I1ZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0N2FkNGIwNGFkMzJjYmEyNTFkYjhjYTNmYTE1ZGQzODk4ZWJiODk4NzYxNWNiZDQ1YjA1OGZlMzU0ZjJhODAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlZmE0YzM5YzE0NTE0N2ZiMGM3YTRjZDg1MWJlNmI5NjA0NWE1YWU5YzYwMWFiNDcxYzZlZDNiMTFiMmU1NTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyNmExN2Q1YjU1OWU0NzFjNTQ3NmM2NGZlODQ0MzhmN2Q3M2MxNGQwMTNkMzgzOTRmMjliNWJjMGVkYjQ2Y2MifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_aaba6062157a4d6c91e03f2e8325d55a",
+      "statement": "PRs opened by openwiki-update.yml with the default GITHUB_TOKEN trigger no harness-ci run; CI runs on them only when OPENWIKI_PR_TOKEN is set, and otherwise the workflow emits a no-CI warning.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/openwiki-update.yml#L67-L97",
+          "version": "repo-lines-v1:sha256:75b16cbc93dac11d822fe6fbb7e67e7cbcbef1c6d50934d954d8ada118300f7e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxY2ZmNGFkMzNiYTkxYjE0OGUxYjFiODI5MGI4ZmZmMjdiMjAzZmFiZmVlNTg3MDI4MmRlMzY3MzgzYjFiZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJkMTMwZTIzMzliYzk5YjkyYjZmMjM1ZWRmMDhhMjRlMThmNDA2MDAyZmU3NDE0N2NlOGU1M2ZjZmEwNjY3ZjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiZTFhZGFkYTE3YWUyZjRmM2Q4ZDQ3OTdkYjM2ZDUyNjc1OGJmNDlhOGM0YTc0OTg5ODY0YTQzY2NiMThlMTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI0YTQ1ZDcyMzdkYmQ0NjVkYzc2Mjc0NTVmMzg1OWVhNjRmNzEwMjY1NDNkZDE3YmY2Nzc3ODkxOTQyZDVjYzMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e84990d9f80749fb8ff79bd21ede9b32",
+      "statement": "post-merge-maintenance.yml runs on pull_request_target closed events for merges into main, loop or simplify, checks out only the trusted base branch, and opens a chore/bookkeeping PR rather than gating anything.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/post-merge-maintenance.yml#L11-L60",
+          "version": "repo-lines-v1:sha256:2ff389b342deef69698a5ece1a357cccfb07061a05cb09d14ec31c382285ac46:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5NmRjNDgxNDlmNWE4M2QxZWQ2ZGJiMzliYmM3ZTJiOTAyYWEzZDM0ZDZiZDVhZTRiMjkxYjY4ZGYwY2E3OWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkNjBkZTYwNDVlMjBlODU4NzcwZTQ3N2Q0NjgzMDk3NGVhZTk4YWNkMzNjYmE4NjBhZjE2MThjYTQyOGVkNjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc4NjhmMzdiNjBhZTBjNzMyNWRkMWZkYzViY2UzYWJkYWJkZDQ3OWMzYmY3MjQyZDEzMjQyNDMzMzRiMGI0NDUifQ"
+        },
+        {
+          "resource": "repo://.github/workflows/post-merge-maintenance.yml#L118-L142",
+          "version": "repo-lines-v1:sha256:56a482cd840d2aeb723ca7663d5e537ab03572f87ee80866ed1215a83c3fdffb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkYjVmOTZhOTVhY2YyMWIzMmFhNjU0MGVkN2FlNTUyNTM5YmE5MWZmOTg4YTUzMDZlZThhY2ZjY2M0NzVmMGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhNDA0NjZlMTBhODUxYTcyYTg0NTRhNzYwOThhMmQ0ZmJkNjBkNTZlNmE0OGZhZWNhYjU0MDU2NWY1MDRlYzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4M2U4ZTAzOWQ1M2VkYmUxYTIxNmMyMmIzYmM3YjVhODU1ZjY4ZDU0NmE2OTg5NjliZjZkYmZhNmIyNWIwMjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-16T04:08:21.021Z"
+    "at": "2026-10-19T07:24:11.736Z"
   }
 }

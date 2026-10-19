@@ -3,9 +3,6 @@ type: integration adapter
 title: Codex Advisory Alpha Adapter
 description: How the harness renders its runtime-neutral skills, hooks, and agent roles into a Codex plugin plus project overlay, installs it without clobbering user state, and classifies the result as enforced, advisory, or unsupported through an outside-hook doctor. The adapter is an evidence-pinned advisory alpha and is not GA.
 tags: [codex, adapter, runtime-mode, doctor, packaging, install, alpha, trust-boundary]
-verified:
-  - by: openwiki/0.7.2
-    at: 2026-10-16T04:08:21.021Z
 sources:
   - id: openwiki-source-29256446a21f0f4f404cc1a5
     resource: repo://.github/workflows/harness-ci.yml
@@ -39,6 +36,10 @@ sources:
     resource: repo://scripts/render_codex_adapter.py
   - id: openwiki-source-3ef479b8e894903c97d8da8e
     resource: repo://scripts/test_codex_harness_doctor.py
+  - id: openwiki-source-3dcde26a2c4bf9bea19ef0b3
+    resource: repo://scripts/test_render_codex_adapter.py
+  - id: openwiki-source-8d67ed5c5b1bd7083b7dcfc9
+    resource: repo://settings.json
   - id: openwiki-source-86c143a2ddee8d17a39b745b
     resource: repo://specs/codex-support/capability-matrix.json
   - id: openwiki-source-8c393bc0f55a4eefff1963c7
@@ -47,12 +48,15 @@ sources:
     resource: repo://tests/scripts/codex-alpha-contract.test.sh
   - id: openwiki-source-810251f50a24be2c11d6eb6c
     resource: repo://tests/scripts/codex-alpha-evidence.test.sh
-generated: { by: "openwiki/0.7.2", at: "2026-10-16T04:08:21.021Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-19T07:24:11.736Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-19T07:24:11.736Z
 ---
 
 # Codex Advisory Alpha Adapter
 
-The Codex adapter lets a project run the harness's shared skills, lifecycle hooks, and agent roles under OpenAI's Codex CLI. Claude Code is still the established deployment path (see [Architecture overview](../architecture/overview.md) and [Install, deploy, and resync](../operations/install-deploy-and-resync.md)). The Codex path is an **advisory alpha**. It is generated from the same runtime-neutral sources and installed without clobbering user state. It is pinned to observed evidence for **Codex CLI 0.147.0 on macOS arm64**. It is **not GA**, and it does not make Codex a peer enforcement runtime ([CLAUDE.md](../../CLAUDE.md), [docs/codex-alpha-install.md](../../docs/codex-alpha-install.md)).
+The Codex adapter lets a project run the harness's shared skills, lifecycle hooks, and agent roles under OpenAI's Codex CLI. Claude Code is still the established deployment path (see [Architecture overview](../architecture/overview.md) and [Install, deploy, and resync](../operations/install-deploy-and-resync.md)). The Codex path is an **advisory alpha**. It is generated from the same runtime-neutral sources and installed without clobbering user state. It is pinned to the evidence boundary in `specs/codex-support/packaging-decision.md`: observed evidence for **Codex CLI 0.147.0 on macOS arm64**. It is **not GA**, and it does not make Codex a peer enforcement runtime. Linux and WSL are covered by deterministic CI and contract tests, but real Codex runtime behavior there has not been observed. On those platforms the doctor emits `PLATFORM_UNVERIFIED` and cannot return `enforced` ([CLAUDE.md](../../CLAUDE.md), [docs/codex-alpha-install.md](../../docs/codex-alpha-install.md)).
 
 > **Read this first: today, an `enforced` doctor result is a bug.** No input available to this alpha contains *observed hook trust*. Codex 0.147.0's `codex doctor --json` has no trust field. A project `trust_level` read from the user's Codex config means approval, not proof that hooks run, so it adds `TRUST_CONFIG_ONLY` and keeps the result at `advisory`. A real run should therefore return `advisory` or `unsupported`. The `enforced` path exists in code and unit tests, but only a fixture that supplies hook trust can reach it. Phase 6 owns making it reachable in real use. Per [CLAUDE.md](../../CLAUDE.md), treat any live `enforced` claim as a bug.
 
@@ -97,8 +101,9 @@ The packaging decision in `specs/codex-support/packaging-decision.md` selects **
 - It rewrites the `Write|Edit` matcher to `apply_patch|Edit|Write`.
 - It rewrites each handler command to `bash "$PLUGIN_ROOT/hooks/<file>"`, and only commands under `hooks/` are accepted.
 - It adds `additionalContextLimit: 2500` to SessionStart and UserPromptSubmit handlers, and `timeout: 1` to SessionEnd handlers.
+- It drops any handler whose command is `model-config.sh`, because that hook only rewrites Claude agent/skill frontmatter from `harness-models.json` and has no Codex meaning. A group left with no handlers is dropped too, so no empty group is emitted.
 
-Today the result binds `commit-gate.sh` to `Bash`, `branch-isolation-guard.sh` to `apply_patch|Edit|Write`, and `session-knowledge.sh` to SessionStart.
+Today `settings.json` registers four hooks, and three of them reach Codex: `commit-gate.sh` on `Bash`, `branch-isolation-guard.sh` on `apply_patch|Edit|Write` (both PreToolUse), and `session-knowledge.sh` on SessionStart. The canonical SessionStart `startup|clear` group that runs `hooks/model-config.sh` is **not registered** in the Codex adapter. The `model-config.sh` body is still copied into `plugin/hooks/` with the rest of `hooks/`, but no Codex event runs it. Codex agent model and effort settings come from the rendered `.codex/agents/*.toml` instead (see [Agent roles](../agents/agent-roles.md)). Branch-isolation behavior under Claude Code is described in [Branch isolation and session hooks](../enforcement/branch-isolation-and-session-hooks.md).
 
 The rendered tree contains:
 
@@ -207,7 +212,7 @@ flowchart TD
 CI (`.github/workflows/harness-ci.yml`) runs `tests/scripts/codex-alpha-contract.test.sh`. That suite composes:
 
 - `codex-alpha-evidence.test.sh`: the matrix with `--require-evidence`, the packaging decision, and assertions on the committed runtime evidence, including the `automation-vetted-bypass` disclosure and the direct candidate staying `unknown`;
-- `scripts/test_render_codex_adapter.py` and `scripts/test_render_agent_definitions.py`;
+- `scripts/test_render_codex_adapter.py` (including checks that `model-config.sh` is excluded, that no empty hook group is rendered, and that the rendered `hooks.json` equals the checked-in copy) and `scripts/test_render_agent_definitions.py`;
 - `codex-install.test.sh` for the install, update, conflict, removal, and rollback lifecycle;
 - `scripts/test_codex_harness_doctor.py`, `runtime/test_runtime_mode.py`, and `runtime/test_run_state.py`;
 - a check that Linux and WSL cannot inherit macOS enforcement evidence.

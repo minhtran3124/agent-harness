@@ -1,11 +1,8 @@
 ---
 type: enforcement hook
-title: Branch Isolation Guard and Session Knowledge Hooks
-description: How branch-isolation-guard.sh blocks code edits on shared branches (by edit path, across worktrees and nested repos, with a specs/ exemption and audited break-glass), how session-knowledge.sh injects knowledge-base, active-run and runtime context at SessionStart, and how both are normalized and registered for Claude and Codex.
-tags: [hooks, branch-isolation, session-start, normalizer, codex, claude, enforcement]
-verified:
-  - by: openwiki/0.7.2
-    at: 2026-10-16T04:08:21.021Z
+title: Branch Isolation and Session Hooks
+description: How branch-isolation-guard.sh blocks code edits on shared branches (by edit path, across worktrees and nested repos, with a specs/ exemption and audited break-glass), how the SessionStart hooks session-knowledge.sh and model-config.sh inject context and apply model settings, and how these hooks are normalized and registered for Claude and Codex (where model-config.sh is skipped).
+tags: [hooks, branch-isolation, session-start, model-config, normalizer, codex, claude, enforcement]
 sources:
   - id: openwiki-source-991face7ae593d36af0365be
     resource: repo://harness-manifest.json
@@ -13,8 +10,12 @@ sources:
     resource: repo://hooks/branch-isolation-guard.sh
   - id: openwiki-source-13ebb3647c7b28e446f508e2
     resource: repo://hooks/lib/normalize-tool-input.py
+  - id: openwiki-source-c6ad09deb432834c7cdc7e52
+    resource: repo://hooks/model-config.sh
   - id: openwiki-source-55df0141e1e141a2764e352c
     resource: repo://hooks/session-knowledge.sh
+  - id: openwiki-source-c7c0b7689aebe88169a1a1f7
+    resource: repo://scripts/apply_model_config.py
   - id: openwiki-source-e06a69a77c57b73c48b87f54
     resource: repo://scripts/render_codex_adapter.py
   - id: openwiki-source-3dcde26a2c4bf9bea19ef0b3
@@ -29,17 +30,21 @@ sources:
     resource: repo://tests/hooks/session-knowledge.test.sh
   - id: openwiki-source-8546ce45a0bdb002765fcd1b
     resource: repo://tests/hooks/spec-prefix-compat.test.sh
-generated: { by: "openwiki/0.7.2", at: "2026-10-16T04:08:21.021Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-19T07:24:11.736Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-19T07:24:11.736Z
 ---
 
-# Branch Isolation Guard and Session Knowledge Hooks
+# Branch Isolation and Session Hooks
 
-The harness registers three hook bodies in [`settings.json`](../../settings.json). This page covers two of them:
+The harness registers four hook bodies in [`settings.json`](../../settings.json). This page covers three of them:
 
 - **`hooks/branch-isolation-guard.sh`** (`PreToolUse`, matcher `Write|Edit`) stops code edits on a shared branch. Every lane, from tiny to high-risk, has to cut a branch before it starts implementing.
-- **`hooks/session-knowledge.sh`** (`SessionStart`) puts a short knowledge-base pointer, a summary of active runs, and a cached runtime diagnosis into the session context. It never blocks.
+- **`hooks/session-knowledge.sh`** (`SessionStart`, no matcher) puts a short knowledge-base pointer, a summary of active runs, and a cached runtime diagnosis into the session context. It never blocks.
+- **`hooks/model-config.sh`** (`SessionStart`, matcher `startup|clear`) applies `harness-models.json` to the deployed agent and skill frontmatter. It never blocks, and it is Claude-only (see below).
 
-The third hook, `hooks/commit-gate.sh` on the `Bash` matcher, has its own page: [Commit Gate](commit-gate.md). Both PreToolUse hooks read their payloads through the same normalizer, `hooks/lib/normalize-tool-input.py`, which this page also describes.
+The fourth hook, `hooks/commit-gate.sh` on the `Bash` matcher, has its own page: [Commit Gate](commit-gate.md). Both PreToolUse hooks read their payloads through the same normalizer, `hooks/lib/normalize-tool-input.py`, which this page also describes.
 
 ## Hook registration
 
@@ -50,15 +55,17 @@ The canonical [`settings.json`](../../settings.json) uses repository-relative co
 | `PreToolUse` | `Bash` | `hooks/commit-gate.sh` |
 | `PreToolUse` | `Write\|Edit` | `hooks/branch-isolation-guard.sh` |
 | `SessionStart` | (none) | `hooks/session-knowledge.sh` |
+| `SessionStart` | `startup\|clear` | `hooks/model-config.sh` |
 
 Each runtime gets this file in a different form:
 
-- **Claude consumers.** The deployed copy (for example [`.claude/settings.json`](../../.claude/settings.json)) rewrites commands to `$CLAUDE_PROJECT_DIR/.claude/hooks/<hook>`. Commit-gate also gets a `--profile` argument. [`harness-manifest.json`](../../harness-manifest.json) defines hook profiles. `minimal` wires only `branch-isolation-guard.sh` and `commit-gate.sh`. `standard` (the default) and `strict` also wire `session-knowledge.sh`. Deployment is covered in [Install, Deploy and Resync](../operations/install-deploy-and-resync.md).
-- **Codex plugin.** [`scripts/render_codex_adapter.py`](../../scripts/render_codex_adapter.py) (`expected_codex_hooks`) builds Codex hook registrations from the same `settings.json`:
-  - The `Write|Edit` matcher becomes `apply_patch|Edit|Write`, so Codex `apply_patch` edits reach the branch guard.
-  - Commands become `bash "$PLUGIN_ROOT/hooks/..."`. A command outside `hooks/` is rejected.
-  - `SessionStart` handlers get `additionalContextLimit: 2500`.
-  - If `settings.json` contains an unknown hook event, or has no `PreToolUse` bindings, the render fails.
+- **Claude consumers.** The deployed copy (for example [`.claude/settings.json`](../../.claude/settings.json)) rewrites commands to `$CLAUDE_PROJECT_DIR/.claude/hooks/<hook>`. Commit-gate also gets a `--profile` argument. [`harness-manifest.json`](../../harness-manifest.json) lists all four hooks as wired and defines hook profiles. `minimal` wires only `branch-isolation-guard.sh` and `commit-gate.sh`. `standard` (the default) and `strict` also wire `session-knowledge.sh` and `model-config.sh`. Deployment is covered in [Install, Deploy and Resync](../operations/install-deploy-and-resync.md).
+- **Codex plugin.** [`scripts/render_codex_adapter.py`](../../scripts/render_codex_adapter.py) (`expected_codex_hooks`) builds Codex hook registrations from the same `settings.json` (see [Codex Advisory Alpha](../integrations/codex-advisory-alpha.md)):
+  - The `Write|Edit` matcher becomes `apply_patch|Edit|Write`, so Codex `apply_patch` edits reach the branch guard. Other matchers, such as `startup|clear`, are copied unchanged.
+  - Commands become `bash "$PLUGIN_ROOT/hooks/..."`. A command outside `hooks/` (or an absolute or `..` path) is rejected.
+  - `model-config.sh` handlers are skipped, because that hook only rewrites Claude frontmatter. A group left with no handlers is dropped, so the rendered `hooks.json` has no empty groups and no mention of `model-config.sh`. Codex therefore gets only `session-knowledge.sh` at `SessionStart`.
+  - `SessionStart` and `UserPromptSubmit` handlers get `additionalContextLimit: 2500`. `SessionEnd` handlers get `timeout: 1`.
+  - The renderer knows the events `PreToolUse`, `PostToolUse`, `UserPromptSubmit`, `SessionStart` and `SessionEnd`. If `settings.json` contains any other event, has no `PreToolUse` bindings, or has a non-`command` handler, the render fails.
 
 ## Tool-input normalization (`normalize-tool-input.py`)
 
@@ -182,13 +189,23 @@ The hook gathers context from three sources:
 
 The non-empty sections are joined with `---` separators. The result is printed as `{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":...}}`, with the string JSON-encoded by python3 (jq is not needed). If all three sources are empty, the hook prints nothing.
 
+## Model config hook
+
+`model-config.sh` is a thin wrapper. It sends the SessionStart JSON from stdin to `apply_model_config.py --hook --project-root "$ROOT"`. The script is found next to the hook (`../scripts/`, which is `.claude/scripts/` in a consumer). The applier only acts when the payload's `source` is `startup` or `clear`. It validates `harness-models.json`, writes the model and effort values into agent and skill frontmatter, and prints a short status. As with the session knowledge hook:
+
+- `ROOT` is `CLAUDE_PROJECT_DIR` or `git rev-parse --show-toplevel`. It never comes from `HOOK_DIR`.
+- It never blocks. A missing root, python3 or applier makes it exit 0 silently, and it always exits 0.
+- The running session may only see a rewritten agent file in the next session.
+
+The file format, validation and `/harness-models` commands are covered in [Model and Effort Config](../operations/model-and-effort-config.md).
+
 ## Configuration summary
 
 | Variable | Hook | Effect |
 |---|---|---|
 | `HARNESS_SHARED_BRANCHES` | branch guard | Space-separated list of protected branches (default `main master`) |
 | `BRANCH_ISOLATION_REASON` | branch guard | Audited override; allows the write and logs it |
-| `CLAUDE_PROJECT_DIR` | both | Launch root (branch guard) and repository root (session hook) |
+| `CLAUDE_PROJECT_DIR` | all three | Launch root (branch guard) and repository root (SessionStart hooks) |
 | `SESSION_KNOWLEDGE_DIR` | session hook | Knowledge-base directory override (tests) |
 | `RUN_STATE_REPO_ROOT` | session hook | Root for `run_state.py` and `runtime_mode.py` (tests) |
 
@@ -210,4 +227,5 @@ The non-empty sections are joined with `---` separators. The result is printed a
   - root resolution from the deployed `.claude/hooks/` location;
   - the 5-run bound and fallbacks;
   - cached runtime-mode display and invalidation.
-- [`scripts/test_render_codex_adapter.py`](../../scripts/test_render_codex_adapter.py) checks the `apply_patch|Edit|Write` matcher mapping, the `additionalContextLimit`, and that unknown events are rejected.
+- [`scripts/test_render_codex_adapter.py`](../../scripts/test_render_codex_adapter.py) checks the `apply_patch|Edit|Write` matcher mapping, the `additionalContextLimit`, that `model-config.sh` is left out of the Codex hooks with no empty group, and that unknown events or missing `PreToolUse` bindings are rejected.
+- [`scripts/test_apply_model_config.py`](../../scripts/test_apply_model_config.py) covers the `--hook` path that `model-config.sh` calls.

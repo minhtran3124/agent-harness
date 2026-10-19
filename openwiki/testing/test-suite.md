@@ -3,18 +3,27 @@ type: test infrastructure
 title: Deterministic Test Suite
 description: How scripts/run-tests.sh runs the harness's deterministic tests (L1 syntax and lints, L2 hook contract tests, L3 script integration tests, then pytest), how tests/lib.sh builds hermetic throwaway git repos for hook tests, and how to add tests and fixtures.
 tags: [testing, ci, hooks, bash, pytest, fixtures]
-verified:
-  - by: openwiki/0.7.2
-    at: 2026-10-16T04:08:21.021Z
 sources:
   - id: openwiki-source-29256446a21f0f4f404cc1a5
     resource: repo://.github/workflows/harness-ci.yml
+  - id: openwiki-source-b0f6c4a12fbd992effab75b2
+    resource: repo://docs/solutions/scripts/bash-empty-array-and-jsonl-parsing-gotchas.md
   - id: openwiki-source-8417891457056b7bfaa5e99c
     resource: repo://scripts/probe_codex_packaging.sh
   - id: openwiki-source-139b698785417c0b4c884c72
     resource: repo://scripts/run-tests.sh
+  - id: openwiki-source-056c53a57757c5dd945aa957
+    resource: repo://scripts/test_apply_model_config.py
+  - id: openwiki-source-7948b922f963e399f773d292
+    resource: repo://scripts/test_check_task_review_contract.py
+  - id: openwiki-source-424e418bb0124ce27e43a097
+    resource: repo://skills/subagent-driven-development/scripts/test_task_brief.py
+  - id: openwiki-source-5966af373d3a6bf8e56ac5ff
+    resource: repo://specs/gh-312-test-seams/PLAN.md
   - id: openwiki-source-1abccbc9efe2f79503096deb
     resource: repo://tests/hooks/commit-gate.test.sh
+  - id: openwiki-source-0a4b7bf162c66e764ba5a729
+    resource: repo://tests/hooks/model-config.test.sh
   - id: openwiki-source-70b98ed7c9f57471e04566dc
     resource: repo://tests/hooks/normalize-tool-input.test.sh
   - id: openwiki-source-04e246e6f40b0296f7236e2f
@@ -23,9 +32,22 @@ sources:
     resource: repo://tests/lib.sh
   - id: openwiki-source-1567e99aab601b4717eaaad2
     resource: repo://tests/scripts/codex-install.test.sh
+  - id: openwiki-source-ff32e587f8ce5aaaed6fd749
+    resource: repo://tests/scripts/consumer-subset.test.sh
   - id: openwiki-source-2aac57b8dea798a14edabd6c
     resource: repo://tests/scripts/lint-doc-truth.test.sh
-generated: { by: "openwiki/0.7.2", at: "2026-10-16T04:08:21.021Z" }
+  - id: openwiki-source-7dd11d9e2cade354c4030ad8
+    resource: repo://tests/scripts/model-config-deploy.test.sh
+  - id: openwiki-source-813aeff473099093485fd7ba
+    resource: repo://tests/scripts/sdd-task-review-routing.test.sh
+  - id: openwiki-source-f3e105a14f6dd9591552b5d3
+    resource: repo://tests/scripts/task-reviewer-readonly.test.sh
+  - id: openwiki-source-1f73d4ef7ef751ef11182411
+    resource: repo://tests/scripts/writing-plans-contract.test.sh
+generated: { by: "openwiki/0.7.2", at: "2026-10-19T07:24:11.736Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-19T07:24:11.736Z
 ---
 
 # Deterministic Test Suite
@@ -85,6 +107,20 @@ Environment knobs:
 
 The runner chooses its Python in this order: the shared venv at `${TMPDIR:-/tmp}/harness-tests-venv/bin/python`, then system `python3`. It skips this step if pytest cannot be imported. It finds every `test_*.py` under `scripts`, `runtime` and `skills` (sorted, with `__pycache__` excluded) instead of using a hand-written list. A hand-written list had drifted and left four test files that never ran. `evals/` is excluded on purpose, because its fixture repos contain tests that are meant to fail. When xdist can be imported, the run is parallelised with `-n $SUITE_JOBS`. Flags: `-q --no-header --no-cov -p no:cacheprovider`. One example is `scripts/test_verify_summary.py`. It loads `verify_summary.py` with `importlib`, writes `specs/<slug>/SUMMARY.md` and `PLAN.md` documents under pytest's `tmp_path`, and checks the parser and validator results. Runtime state logic has its own unit tests, such as `runtime/test_run_state.py` and `runtime/test_resume_decision.py`.
 
+Newer unit tests that matter for changes in these areas:
+
+- `scripts/test_apply_model_config.py` builds a fake `.claude/` tree under `tmp_path` and calls `apply_model_config.main()` directly. It clears the `CLAUDE_CODE_EFFORT_LEVEL` and `CLAUDE_CODE_SUBAGENT_MODEL*` variables first. It checks that:
+  - every invalid user file and every missing or broken snapshot makes `--show`, `--check` and `--apply` exit 1 and write nothing (checked with file digests);
+  - `reviewer` and `task-reviewer` cannot be set to `effort: low`, and consumer-owned skills cannot be configured and are never changed;
+  - a second `--apply` writes 0 files, and removing an override restores the original bytes;
+  - a write that fails partway is reported and fixed by the next run;
+  - main-session settings files are never changed;
+  - `--hook` mode is silent for sources other than `startup`/`clear`.
+
+  Two cases copy the real deployed `.claude/agents/coding.md` and `correctness-review` skill, and they skip when those files are absent.
+- `scripts/test_check_plan_contract.py` and `scripts/test_check_task_review_contract.py` test the plan-contract and task-review-contract checkers. The task-review tests run the checker on the live repository. They also copy the real prompts into `tmp_path`, remove one required phrase (for example `checked_against` or the seam pins), and check that the checker then fails.
+- `skills/subagent-driven-development/scripts/test_task_brief.py` checks that `task_brief.py` matches task ids exactly (`1.1` does not match `1.10`), accepts a `### Task 1.1:` heading, and does not match `SC-10` when asked for `SC-1`. It also runs the script on the live `specs/gh-312-test-seams/PLAN.md` and checks that the brief holds the `- Plan-contract: 2` marker and that task's `Seams:` line. That test depends on the spec file, so moving or editing the spec means updating the test.
+
 ## `tests/lib.sh`: hermetic helpers
 
 Hooks have a pure contract: JSON on stdin, plus optional args, produces an exit code and stdout/stderr. Hooks that need git state resolve the repo root from `CLAUDE_PROJECT_DIR`. If that is unset, they use git from the current working directory. They never use the location of the hook file. `tests/lib.sh` relies on this contract. It copies the hook under test into a throwaway git repo and runs the hook with the CWD set to that repo, so the real checkout is never touched.
@@ -101,7 +137,11 @@ Hooks have a pure contract: JSON on stdin, plus optional args, produces an exit 
 | `ensure_pyenv` | Creates or reuses `${TMPDIR:-/tmp}/harness-tests-venv` with `pytest` and `pytest-cov`, and sets `PYSHIM` to a temporary directory that contains a `python` wrapper. Hooks call `python`, but macOS and CI machines often have only `python3`. It returns non-zero if it cannot create the venv, so callers wrap their cases in `if ensure_pyenv; then …`. |
 | `finish` | Prints the counts for passed, FAILED, skipped and xfail cases. It removes every registered temporary directory and exits 1 if any case failed. |
 
-A suite's exit code is the only thing `run-tests.sh` uses to decide pass or fail. Suites that do not source `lib.sh`, such as `tests/scripts/codex-packaging-probe.test.sh`, define their own counters. They must still print `  ok` and `  not ok` lines and exit non-zero on failure, so that the runner's `record_details` markers find the failing case names.
+A suite's exit code is the only thing `run-tests.sh` uses to decide pass or fail. Suites that do not source `lib.sh`, such as `tests/scripts/codex-packaging-probe.test.sh`, define their own counters. They must still print `  ok` and `  not ok` lines and exit non-zero on failure, so that the runner's `record_details` markers find the failing case names. Some small contract suites, such as `tests/scripts/sdd-task-review-routing.test.sh` and `tests/scripts/task-reviewer-readonly.test.sh`, are plain `set -euo pipefail` scripts: the first failing `grep` or `test` ends the script with a non-zero exit. The runner still fails the suite, but the summary can only say "(no case names found; see the log above)".
+
+### Limits of L1
+
+`bash -n` checks only shell syntax. It cannot see inside a quoted heredoc such as `python3 - <<'PY'`, so Python embedded in a shell script needs a behavioural suite. The documented case is `scripts/harness-status.sh`: two incomplete fixes to its audit-trend heredoc passed CI because no suite exercised it, until `tests/scripts/harness-status.test.sh` was added with malformed, non-UTF-8 and unreadable log cases. CI runs the `test` job on both `ubuntu-latest` and `macos-latest`. macOS has bash 3.2, where `"${arr[@]}"` on an empty array fails under `set -u`. Use `"${arr[@]+"${arr[@]}"}"` in scripts that may iterate an empty array, and add a suite case for the empty-array path.
 
 ## Representative suites
 
@@ -110,7 +150,22 @@ A suite's exit code is the only thing `run-tests.sh` uses to decide pass or fail
   - `command-matching.test.sh` unit-tests the shared `hooks/lib/git-command.sh` matcher against wrapped `git commit` forms that try to bypass it, and against similar commands that must not match.
   - `repo-root-resolution.test.sh` places the hook inside a decoy "foreign" git repo with staged content and runs it from a different project, to prove that the hook acts on the CWD and `CLAUDE_PROJECT_DIR` and not on the repo that contains the hook.
   - `normalize-tool-input.test.sh` passes recorded payloads through `hooks/lib/normalize-tool-input.py` and checks the canonical output with `jq -e`.
+  - `model-config.test.sh` does not use `new_repo`. It builds a consumer layout in a temporary git repo: `.claude/hooks/model-config.sh` next to `.claude/scripts/apply_model_config.py`, a `harness-models.defaults.json` snapshot, one agent and one skill. It runs the deployed hook copy with `CLAUDE_PROJECT_DIR` set. The cases check that:
+    - `startup` and `clear` apply `harness-models.json` to agent and skill frontmatter and return SessionStart JSON with `reloadSkills: true` when a skill changed;
+    - `resume`, `compact` and `fork` exit 0 silently and leave every target byte-identical;
+    - an invalid user file exits 0 with a "last applied values stay" warning in `additionalContext` and writes nothing;
+    - a missing snapshot, a missing applier or unparseable stdin all exit 0 silently;
+    - the root comes from `CLAUDE_PROJECT_DIR`, or from `git rev-parse` of the working directory when that variable is unset;
+    - one `startup` run finishes in under 1 s.
 - **Script integration tests (`tests/scripts/`)**: these build a minimal fake repo for the script under test. For example, `lint-doc-truth.test.sh` builds a `lint_repo` that contains one wired hook, a `CLAUDE.md` table and a `settings.json`. The test copies the script in, changes the repo, and checks exit codes and messages. Installer and Codex tests put a fake `codex` binary on `PATH` that logs its arguments and can be made to fail on request.
+  - **Deploy tests** run the real `scripts/deploy-harness.sh --target <mktemp dir>` with stdin from `/dev/null`. A stray prompt then fails at once instead of hanging CI, and the repository's own `.claude/` is never rewritten.
+  - `consumer-subset.test.sh` checks the consumer side of a deploy, which `lint-doc-truth.sh` cannot see because it checks paths in the harness repo. It checks that:
+    - the allow-listed helpers (for example `verify_summary.py`, `check_plan_contract.py`, `check_review_receipt.py`) and `harness-manifest.json` ship to `.claude/`, while harness-development scripts and `test_*.py` files do not;
+    - every `.claude/scripts/...` path named in derived Markdown exists, rewrites are idempotent (no `.claude/.claude/`), and hooks are byte-identical to their source because path rewriting is Markdown-only;
+    - skill tests and harness-only docs and regions are stripped from the derived tree but stay in the source;
+    - the deployed `verify_summary.py` and `check_open_questions.py` resolve the consumer's repo root, not `.claude/`.
+  - `model-config-deploy.test.sh` checks that a deploy applies the target's valid `harness-models.json` (for example `coding.md` differs from a default deploy by only its `effort:` line), leaves consumer-owned skills byte-identical, and is idempotent. With an invalid file, the deploy exits non-zero, prints the applier's error, and changes no file under `.claude/`. This is also true on a first deploy and under `--dry-run`, where no `.claude/` is created.
+  - **Plan and task-review contract suites** check skill and agent text with `grep`. `writing-plans-contract.test.sh` checks that `writing-plans` loads `rules/plan-format.md`, needs `design.md` and `research-brief.md`, and keeps the assumption-coverage step. `sdd-task-review-routing.test.sh` checks the single-reviewer routing in the `subagent-driven-development` skill and that the old spec-reviewer and code-quality-reviewer prompts are gone. `task-reviewer-readonly.test.sh` renders the Claude agent definitions and checks that the rendered `task-reviewer` has only `Glob, Grep, Read` tools and that `agents/agent-contracts.json` marks the role read-only.
 
 ## Fixtures (`tests/fixtures/`)
 

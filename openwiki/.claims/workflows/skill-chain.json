@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:a4aeb7b74e21a77e992e3a85fbed3d13b5b09e2b19fd88ba93b6f20e3744fe4d",
+  "pageVersion": "sha256:69b1079fb04fff28adc7f8f20131acc0c65e28d38618f6da7bf3f20cd1b3fd38",
   "claims": [
     {
       "id": "claim_d91c74c4dd5a42a89862d0f6da30103a",
@@ -28,11 +28,11 @@
     },
     {
       "id": "claim_6cde9f9ee669458f8da507f2ce414976",
-      "statement": "feature-intake routes tiny to branch-and-direct-patch with quick-check proof, normal to using-git-worktrees then subagent-driven-development, and high-risk to brainstorming, xia2, writing-plans, using-git-worktrees, subagent-driven-development, with compound for durable decisions.",
+      "statement": "feature-intake sends an Input-type: bug fix to diagnosing-bugs (read via the Read tool, not the Skill tool) before the lane route, then routes tiny to branch-and-direct-patch with quick-check proof, normal to using-git-worktrees then subagent-driven-development, and high-risk to brainstorming, xia2, writing-plans, using-git-worktrees, subagent-driven-development, with compound for durable decisions.",
       "evidence": [
         {
-          "resource": "repo://skills/feature-intake/SKILL.md#L60-L69",
-          "version": "repo-lines-v1:sha256:e4de13c004c53aecb4204f3ce596a90a9f5f0859df67ebbc8658b8f2c7b3e32f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1YWQxZTZjOWRlMjA2MWQ3ZTE0YzMyNDg0ZGZlNGMwNjk0ZDhjNTAyY2ZiYjcyNDAyMzYyNzc2ODQ3OGE2YTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJkMjhiZWVjZmJjZmM5M2ZlNWQ3YjdmOGNjNjA5NWFiYzVkNTcwYTBiMWIzZGE1MTNlOGE0OWM5NDc0ZTdlYjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1OGEwNmM0YzFmMWYwNDI5MjBhMzVmZGFlZDU1ZjhjN2UxZDRjNTg5ZjM2YmUyMjZiNDY3Zjc5Y2Y5ZTg3NDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiYzIzNDY0NjQ4YWMxMDRiZTAwZDdhYWE1MjQzNmJhZGM0MzE5OWNlZjJiMzhmNTEyM2NkZDFlM2ZjMjY1NjUifQ"
+          "resource": "repo://skills/feature-intake/SKILL.md#L60-L71",
+          "version": "repo-lines-v1:sha256:274f8d720a3efd9ead096d8d4485940a5dabc7f2ebe86f93cb0bfe1d10470a84:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1YWQxZTZjOWRlMjA2MWQ3ZTE0YzMyNDg0ZGZlNGMwNjk0ZDhjNTAyY2ZiYjcyNDAyMzYyNzc2ODQ3OGE2YTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJkMjhiZWVjZmJjZmM5M2ZlNWQ3YjdmOGNjNjA5NWFiYzVkNTcwYTBiMWIzZGE1MTNlOGE0OWM5NDc0ZTdlYjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1OGEwNmM0YzFmMWYwNDI5MjBhMzVmZGFlZDU1ZjhjN2UxZDRjNTg5ZjM2YmUyMjZiNDY3Zjc5Y2Y5ZTg3NDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiYzIzNDY0NjQ4YWMxMDRiZTAwZDdhYWE1MjQzNmJhZGM0MzE5OWNlZjJiMzhmNTEyM2NkZDFlM2ZjMjY1NjUifQ"
         }
       ]
     },
@@ -68,11 +68,11 @@
     },
     {
       "id": "claim_b2eba461f53f460a8995dc8ce3c319de",
-      "statement": "brainstorming produces an approved specs/<slug>/design.md, forbids code or implementation skills before user approval, and its only valid terminal handoff is xia2 followed by writing-plans.",
+      "statement": "brainstorming produces an approved specs/<slug>/design.md, forbids code, scaffolding, or implementation skills before user approval, and its only valid terminal handoff is xia2 followed by writing-plans.",
       "evidence": [
         {
-          "resource": "repo://skills/brainstorming/SKILL.md#L12-L40",
-          "version": "repo-lines-v1:sha256:b7a200b48fe7eccbe660793cd8898402e6edbd7f32da501f6d9a9115a3989a88:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3NzFiNjhiMTNjZmMzY2FmOTY4ODk3ODU0NmJhMTM1ZGVjNTJlMDMxOWQ5OTkwNmE1NmUyMDI1ODQzYWY1YmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjOGE2YjNkMjY3YjExZmRjOThhMDZlODEyNWRlOTFkYmI5ODc5MThiMGM1YmExMDNjM2ViNGYzZDcyODI1NGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzOWZlOWViMGQ0MzdlYmIwOWE4YzFkNDc2ZDVhOWIxZWZhMjU4OTZhZTgxZmUwMTBjOTcyNDRlZWJkMDgwZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJmZGE2ZmQwNWRkYzkyNWRjYTk4YzYxNmUyMDJlZGVlMDE1MzQwOGZlZGNmYjFiZGE3YmZkNDhiODY5NDAwODIifQ"
+          "resource": "repo://skills/brainstorming/SKILL.md#L12-L47",
+          "version": "repo-lines-v1:sha256:1201e182ca3c82f65f604fbbe1ea12fd3356589804289b55b38bf45388415a1f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3NzFiNjhiMTNjZmMzY2FmOTY4ODk3ODU0NmJhMTM1ZGVjNTJlMDMxOWQ5OTkwNmE1NmUyMDI1ODQzYWY1YmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjOGE2YjNkMjY3YjExZmRjOThhMDZlODEyNWRlOTFkYmI5ODc5MThiMGM1YmExMDNjM2ViNGYzZDcyODI1NGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzOWZlOWViMGQ0MzdlYmIwOWE4YzFkNDc2ZDVhOWIxZWZhMjU4OTZhZTgxZmUwMTBjOTcyNDRlZWJkMDgwZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJmZGE2ZmQwNWRkYzkyNWRjYTk4YzYxNmUyMDJlZGVlMDE1MzQwOGZlZGNmYjFiZGE3YmZkNDhiODY5NDAwODIifQ"
         }
       ]
     },
@@ -91,8 +91,8 @@
       "statement": "writing-plans requires design.md and research-brief.md, validates PLAN.md with check_plan_contract.py, runs render_plan.py --summarize, and hands off to using-git-worktrees (unless already isolated) then subagent-driven-development in the same session without asking the user to confirm start.",
       "evidence": [
         {
-          "resource": "repo://skills/writing-plans/SKILL.md#L15-L48",
-          "version": "repo-lines-v1:sha256:16935ba56cbaadc87856656fb29e4e97d02be4b9f986a2ff5fb382bce16c3341:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0ZTAxYmI3YzZhMTQyYTU4NzJjNDdlNmI3M2VjYmJjNzVkOTg1ZDkzN2I0YjI0ZDc3YWM3NjUyNjk5NDNiYzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2MTI4NDY1OWZiNjdmNTU4OWQ3OThjMDMzN2E0NTg0M2U3ZmJlYmYwZTc1ODFlYTUyZTE3ZDEwOTc0OTBmOTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkOTY2OTUyNmM2MDQwNDFiYzVlZGIxYzFiMGEyOTFlMjgyNTY3MzkyYjA1ZjZkOTljZTgzNmUwMTM2ODBiZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://skills/writing-plans/SKILL.md#L15-L51",
+          "version": "repo-lines-v1:sha256:c1a083b5a061b611168bdc1102712759098d5b307e30d115f749852867863a89:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0ZTAxYmI3YzZhMTQyYTU4NzJjNDdlNmI3M2VjYmJjNzVkOTg1ZDkzN2I0YjI0ZDc3YWM3NjUyNjk5NDNiYzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2MTI4NDY1OWZiNjdmNTU4OWQ3OThjMDMzN2E0NTg0M2U3ZmJlYmYwZTc1ODFlYTUyZTE3ZDEwOTc0OTBmOTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFkOTY2OTUyNmM2MDQwNDFiYzVlZGIxYzFiMGEyOTFlMjgyNTY3MzkyYjA1ZjZkOTljZTgzNmUwMTM2ODBiZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -146,7 +146,7 @@
       "evidence": [
         {
           "resource": "repo://skills/subagent-driven-development/SKILL.md#L7-L72",
-          "version": "repo-lines-v1:sha256:a81f1b53cc8c6dbc4c5c8b31364c7ce763fc082345fc102b3d5213bb679fb964:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5NzcxOGNlZjAxOTNkMTkyMjIwYzk2OWU4Y2EyZGU4ZjY3N2NiYjgxNGM4MzQzNWNkMjAxMjgwNjg4MTI0MWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4ZTRkOTVjMjllMzUyMjc4NTI4NjVmYzU0NjFlN2RiZTU0ZGI3Njc5NjZlMTQ2ZmZlMDVjMmQ5YzllYWQwZTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM4YmQyNGZiNmYxYjQwZWEyNzBkZTJiNWZlOGVmMjhlYjQyMThhYmI2Nzg4MjY0Yjk4OWRmNGExMTdmNDI4ZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0Y2FiMTAwMDNmOGNiYTMzYmI0MDYyOGM4MmIyNWY3N2JkZGEwZWQyN2MzYzNmZDI1ZTdjYjkxNTUwMmQ5YTAifQ"
+          "version": "repo-lines-v1:sha256:7f4e2427bf4c7b1d67701d7e7018bd13781294c3b1c98031fad74110ae59b22f:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5NzcxOGNlZjAxOTNkMTkyMjIwYzk2OWU4Y2EyZGU4ZjY3N2NiYjgxNGM4MzQzNWNkMjAxMjgwNjg4MTI0MWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4ZTRkOTVjMjllMzUyMjc4NTI4NjVmYzU0NjFlN2RiZTU0ZGI3Njc5NjZlMTQ2ZmZlMDVjMmQ5YzllYWQwZTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM4YmQyNGZiNmYxYjQwZWEyNzBkZTJiNWZlOGVmMjhlYjQyMThhYmI2Nzg4MjY0Yjk4OWRmNGExMTdmNDI4ZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc0Y2FiMTAwMDNmOGNiYTMzYmI0MDYyOGM4MmIyNWY3N2JkZGEwZWQyN2MzYzNmZDI1ZTdjYjkxNTUwMmQ5YTAifQ"
         }
       ]
     },
@@ -162,15 +162,15 @@
     },
     {
       "id": "claim_64d916df2aed40c88e23ac13ede5d841",
-      "statement": "The final review chain runs context-propagation-audit first only for workflow-engine diffs, then correctness-review and intent-review over one shared BASE..HEAD package; a .review-receipt.json at reviewed HEAD with zero blocking findings plus verify_summary.py --check is required for handoff and any later code commit invalidates the receipt.",
+      "statement": "The final review chain runs diagnosing-bugs Phase 6 first for a diagnosed bug fix, then context-propagation-audit only for workflow-engine diffs, then correctness-review and intent-review over one shared BASE..HEAD package; a .review-receipt.json at reviewed HEAD with zero blocking findings plus verify_summary.py --check is required for handoff and any later code commit invalidates the receipt.",
       "evidence": [
         {
           "resource": "repo://skills/subagent-driven-development/SKILL.md#L74-L79",
           "version": "repo-lines-v1:sha256:ec684e20e19b016de43a0e158cb19e1e29ac2089d5b148da395d9bcbfa083e36:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjMyODdlZjgyMjg5Mjk0YTVjMDc2NjJlZGE2MDk3NGY2ODlhYWE5ODFiMTc5YmNhOTIyNmMyNzcxMDQyNDU5NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzRiMjQ0MjI3ZDY0YTVjODM1ZmQ5ZDdiZmIzYTFhMmMwMTYyNzk5NDAwMzU1NDdkMDIzYjVhYzRiMjgxZTA3NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjZkZTQzMDY5MzI2Zjc2YjZhYTYxYjU3NTM5OWIxNmVjY2NlODNmYmUxNWE2MzdhOGYxMDZkNzc4MDMyYmU3MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         },
         {
-          "resource": "repo://skills/subagent-driven-development/references/review-chain.md#L1-L8",
-          "version": "repo-lines-v1:sha256:488f1e6195aae04bfe750b9aef428fef7578080af8f01ff1408aee7ca9428844:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWRlYzU1ZDhlZTkwNzg2ZTE5NzJhZGU2YzA5ZDRhNjBkYWJmZjRhZjA3NTkwOGU1YWJhOTE3MmMwYmQyNDk5YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmVkYmZlYTQ4NDY5Y2U0YWNkYWEyMDc4NmQ5Njk1N2U2ZTEwNDM1ZTM2OWZiNzA0NGUwOGE4NTQwNjBiNDI1ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+          "resource": "repo://skills/subagent-driven-development/references/review-chain.md#L1-L15",
+          "version": "repo-lines-v1:sha256:317fc1c0816b56b104766c88e6b986492f1cbcaff96d54804fd168136387347e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkZWM1NWQ4ZWU5MDc4NmUxOTcyYWRlNmMwOWQ0YTYwZGFiZmY0YWYwNzU5MDhlNWFiYTkxNzJjMGJkMjQ5OWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlZGJmZWE0ODQ2OWNlNGFjZGFhMjA3ODZkOTY5NTdlNmUxMDQzNWUzNjlmYjcwNDRlMDhhODU0MDYwYjQyNWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -179,8 +179,8 @@
       "statement": "compound runs only when a reusable learning or Harness-Delta backlog signal exists, not merely because a session ended, and always ends by running scripts/rebuild_solution_index.py.",
       "evidence": [
         {
-          "resource": "repo://skills/compound/SKILL.md#L9-L66",
-          "version": "repo-lines-v1:sha256:426e0879e579b0707b124754fde15360b9ab10406852f02f7a19c2203c85a911:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmZmU1YWRkOTI2YWM2NjM0OWY5NDc1M2U0NDlmZDA4Y2YwNmE4ZWM3MzUyM2QxMzYzYWFlYWUwNDM1MDcyYmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhYjFjNGQxYmUzYmQ4OTRiZDQ1ZjliNTJhOTZmZjgwNzE5NWJhOGYzNmNkYzdiN2EyZDA0ZjdhZGNjOWQ4MGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMyZDQyOTFjZTM4ZThkODhkYjBjNjRkMjg0MmE2MzdjMDM2OWRhOTEwNjc3ZmJmYmZlYmIxNmI3ZTE1ZjI0ZjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ0NzBjMDk5NGM2M2E2ODViZGUwNzQ2N2JhMDdkNDk1NjAxN2Y0YTY5YmYzZWZmMWZkNjFmMWNkM2M2YjBmMjYifQ"
+          "resource": "repo://skills/compound/SKILL.md#L9-L69",
+          "version": "repo-lines-v1:sha256:d227ed6b7e333e245deeab2e57841aaaa2f25145325d1ab43bc199763d4d1c39:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmZmU1YWRkOTI2YWM2NjM0OWY5NDc1M2U0NDlmZDA4Y2YwNmE4ZWM3MzUyM2QxMzYzYWFlYWUwNDM1MDcyYmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhYjFjNGQxYmUzYmQ4OTRiZDQ1ZjliNTJhOTZmZjgwNzE5NWJhOGYzNmNkYzdiN2EyZDA0ZjdhZGNjOWQ4MGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMyZDQyOTFjZTM4ZThkODhkYjBjNjRkMjg0MmE2MzdjMDM2OWRhOTEwNjc3ZmJmYmZlYmIxNmI3ZTE1ZjI0ZjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ0NzBjMDk5NGM2M2E2ODViZGUwNzQ2N2JhMDdkNDk1NjAxN2Y0YTY5YmYzZWZmMWZkNjFmMWNkM2M2YjBmMjYifQ"
         }
       ]
     },
@@ -273,20 +273,6 @@
       ]
     },
     {
-      "id": "claim_399e6c85807f4d3b9f16533ee44ef48c",
-      "statement": "skills/README.md's Minimum Viable Path uses using-git-worktrees for normal-lane work only when the change is not in-place, while still requiring a branch, which differs from feature-intake's normal route.",
-      "evidence": [
-        {
-          "resource": "repo://skills/README.md#L64-L74",
-          "version": "repo-lines-v1:sha256:631edb619acab58f8698bfd49571903f28b45ea2171715647f3af9d6e13d5f5e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyNmU1OGFjMjk1N2E5NTM5OWJkYTZjODRhMWQyODk1Y2MwMDhhNTE0ODY1Y2Y3NWEyMDc2ZjQ4OWVmZGVkN2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMwNDM5ZTVmYTY0MjNjZTYxNmFkNmY1MmQwODMzNzE1OTlhMTI0MTZhYTliZjRhNDRmMTk4ZGI1N2NkMzc1OTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwOGRhMDFkOThlYTllMGJmM2M3NmEzZjZjOTRkNjZlNDkwYTNmZDU4ODA1Y2QwY2RiZjg2Y2VmZDQ1ZDUyZTAifQ"
-        },
-        {
-          "resource": "repo://skills/feature-intake/SKILL.md#L65-L65",
-          "version": "repo-lines-v1:sha256:fa58b485a4e53d39df31f0d523dfd101fa6903817c8743dfa720d925db8a86f2:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmE1OGI0ODVhNGU1M2QzOWRmMzFmMGQ1MjNkZmQxMDFmYTY5MDM4MTdjODc0M2RmYTcyMGQ5MjVkYjhhODZmMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmE1OGI0ODVhNGU1M2QzOWRmMzFmMGQ1MjNkZmQxMDFmYTY5MDM4MTdjODc0M2RmYTcyMGQ5MjVkYjhhODZmMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGY5OWE5NzU3N2MyNDg3M2IwOTc2YjZlYjY0YjA4YTQ4MTgzOWVjMjQyMzkzNWY1YmE5MzM4M2U4ODI3NDIyNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODY0ZTE5ZmIyNDQ4OTE4OWQxMDFkMjVkMGEwZWZjODIwYTljYzgzNDFlZWJmYjJlZmViN2FiNjBjN2Y1YmQ1MCJ9"
-        }
-      ]
-    },
-    {
       "id": "claim_aaad2d21a81c4db2920201dca906ea1e",
       "statement": "visual-planner renders PLAN.md to an untracked PLAN.html via deterministic render_plan.py; --summarize is run by writing-plans, at each wave boundary, and by finishing before the shipped commit, and a standalone --review overlay uses an emitted file list plus a .plan-review.json sidecar.",
       "evidence": [
@@ -315,10 +301,136 @@
           "version": "repo-lines-v1:sha256:99816b94bb06ebb7d93db521d802d4ef5d03f5a29d68685292aaf45c69323b73:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4NzVmOTI4NTQ2YWVlNzg1NWNiMWRiOWFmYzhhYjNmMWE4YTM0ZDQzZGU1YmJkNjJmNzA3NmQ3YmE5ZjM5MTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1Yzg3NzY4YjQ2Njk1ZTFlMjJkNWJlNWNmYjFlYjY5ZDA0ODIyMDAyMTkxNGE0ODI0YTAzMTVkYmE0YTU5YzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_aabf7621c2ee4a928771fd61ba09d094",
+      "statement": "brainstorming asks the open-decision frontier (decisions whose prerequisites are settled) in one numbered round with a recommended answer per question, finds facts itself instead of asking the user, records a twice-unanswered decision's recommendation as an assumption, and repeats rounds until the frontier is empty and the user confirms shared understanding.",
+      "evidence": [
+        {
+          "resource": "repo://skills/README.md#L35-L39",
+          "version": "repo-lines-v1:sha256:7bc888fccabce702e3f6b2ddc0c6fa0adedb52e014ded195f3e367e8f72c3943:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODNlYzMwZDcwZDM5YTRjNWZkZDAzYjk0ZTg5ZjBkMDliNzc3MzE1ZDhhNzJhZWM1N2E0MGE0ZWViZDQ2NzBkYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmJlYzQ4ZDBmZDg2YjkzYWVlNmE5NjAxYTk1ZDRkNTU5ODAzMzBjYWVkMGQ0YTg1Y2ExMmI5ZDIxYzk3ZTZiYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTJmMzcwOGZmOTU0MWI0ZTM4NWJkYjRkZTUwYWJhZjIzNWJjMGQxM2NiZTFkNDJiMzgxMjJlNDc0YTNhMGRkZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDNjY2NjZDFkN2Y0NTU1MmFmNjkwYTYzN2U3NDMyYzkzZTAzNTM4NTI5YzFmZTg1ODRhZjkzMTUwZDZkMmI0NiJ9"
+        },
+        {
+          "resource": "repo://skills/brainstorming/SKILL.md#L22-L33",
+          "version": "repo-lines-v1:sha256:067ec8d769bde7ca30a255c6086ab5049c8123ce2544eb13b6e7fedacd5dad4d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4N2NkYjIxYzFiMjQ0MjAyZWM1ODM5YzcwMzhlYzc0NjYyMGQ1NDYzNmVlYWQ3NjFkYTA4ZTdkNjRmMTA4MDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyMjc1NTY1NjIxNWE5YTc0OGMwNGFiOTYyMTU2MGE5MzRmOTZjODljYzc0NTQ3NWM1MmQwMDVjMmY3Y2NhYTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3YmM3OTk1ZGJhZTQxZDJiZDFmYzI4ODUzZmM2Y2U4M2Y4MDFhMzNlNjE5MjhjZjgyODVmNGUwMzM5Y2Q0OWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4NzM4MWM0MTA3YTFmNTEyYjQyYjU5MDc2NmM5NWIxODgyN2JkNGEwODNiZmYyYjY2MzBlY2NjOGMzYmIxOGQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b9c8ad58df784d87b1878b3c54e1252b",
+      "statement": "diagnosing-bugs runs all six gated phases on every lane with no cause-known shortcut, creates lane isolation before Phase 1 (fix/<slug> branch from a shared branch on tiny, using-git-worktrees on normal/high-risk), and writes specs/<slug>/diagnosis.md.",
+      "evidence": [
+        {
+          "resource": "repo://skills/diagnosing-bugs/SKILL.md#L14-L28",
+          "version": "repo-lines-v1:sha256:da133406148cc43b7e555f36758657233b40f8457e19ea9470e54834d0e46592:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmZWVjOGNiMzkzMTY1ZTk1MTgxMTk3ZWJlZmVjYTQ0YTQyNTZiZWY2ZjRjZmMxMGRlNjg4NDMxMzVkMWVjYjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllNjQxYTdkZGYwNDFmMWUwOTI0OTgyMzAzNTQ1YzJkNWNlZTYwNjkyOTNmODE3YmRhZjZlOGFjZjI3YzBlYmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmYjA4ZDExZWI2MmNhOTNhYjI5NjdlNjI1ZDI3YTRiYTExZTJlNTQwNmFiNTViMGM5ZGFiNDVkZjliYzE2NWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNjZmZlYzVjMWNjNTkyZjUxZTM2ODNjZDNjZDBiZTdiMjU2ZWU0Y2Q2MDlkYTIyYjgzM2ExNDcxYmJiNTVmODgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5f3ddfa920f24f83bbe0a56241b2f637",
+      "statement": "diagnosing-bugs requires a task-reviewer spec_verdict pass and quality_verdict approved on diagnosis.md before Phase 5; on the tiny lane Phase 5 commits a red test at the Seam before the fix, while normal and high-risk lanes continue the lane route with diagnosis.md as input.",
+      "evidence": [
+        {
+          "resource": "repo://skills/README.md#L88-L104",
+          "version": "repo-lines-v1:sha256:46c01a9e8634476e51ce0fcd74c04a0a680d0d995dd6415111e1394e77d6ea6e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjZmE4OTEzZDYxNzIzNGVkYWFmN2QyYjBkZjJmMTZlMzQ5YjM2MjI1ZWQxMDFhYmFkMjhkNGJkOTZiY2JmM2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNDhjNjNiYTgzM2ViODY3M2VlMzU4Y2JmYWI4OTRmNDRjMjJhY2QyZTJjMzIyZTNmYjljN2Q3YmM4YzMzNTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEifQ"
+        },
+        {
+          "resource": "repo://skills/diagnosing-bugs/SKILL.md#L52-L73",
+          "version": "repo-lines-v1:sha256:6ca080cf4708f0811889a3494a64264326873b8391cc744f2165f805a9efb411:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlOTRhM2Y3ZTMxYmFmMzE4Nzg2ODlhYzBlODJhNzYxNGFmNGZmZGJjMjUzMWNjYWRjMmY1NGU2NzQ2ZmVlOWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0MmJlNTgwOWU2Njk2MzU0MzQxNzYzYzM5NDMxNDRlZmI3ODE2OWU4NTAwNjc5OTQ4M2M0YzIxNTA5MzAzNDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlmM2YzZjUwMGI1OTA1YzYwZDU2OThiMGRjMGIzYWYxMzMwZGE4YzJjYjI4NzBjMzFiMjY4ZjZiMzVhZmI1YWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2350fa4533444afeaeb7f276c2196926",
+      "statement": "writing-plans gives every task a Seams: line and, when diagnosis.md exists, copies its Seam: exactly into the fix task; subagent-driven-development compares the two seam points before dispatching the fix task and escalates after a second mismatch.",
+      "evidence": [
+        {
+          "resource": "repo://skills/subagent-driven-development/SKILL.md#L50-L50",
+          "version": "repo-lines-v1:sha256:676ed2397bbcc82c463cca121ac17f8746eeabe2d6c47f086bba51251507d152:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjc2ZWQyMzk3YmJjYzgyYzQ2M2NjYTEyMWFjMTdmODc0NmVlYWJlMmQ2YzQ3ZjA4NmJiYTUxMjUxNTA3ZDE1MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjc2ZWQyMzk3YmJjYzgyYzQ2M2NjYTEyMWFjMTdmODc0NmVlYWJlMmQ2YzQ3ZjA4NmJiYTUxMjUxNTA3ZDE1MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTJmNzRhYjVkYjgzMDU4MjkwYjBmZjc1ZTdmN2VlYTI5YTAyYWY1NDM0YjNkZGUyZGQ4NWVmNmQzZjExYTJhZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGNiNDk4NGU0NDUyOTU3YjIwMTg3Njk2MmZmNDM1M2UwYzFjODgwYWI5MTdjZDFmNGQzNGU1ZTc1NmFmOGI3NyJ9"
+        },
+        {
+          "resource": "repo://skills/subagent-driven-development/references/bug-fix.md#L14-L36",
+          "version": "repo-lines-v1:sha256:1a8f7767ebce75fdb3545c371c83f0008b875ab37546329084683416b7805b55:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiMTJlZjVjY2ZmYTljYjhkOWFkZjQxM2ZkYjg3ZDY4NzEwMGY3YjUyNzUyMzRmMzQyN2Q1ZWJkMDc3ODMzZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwYjhjZjJkMzc2YmYyNjJkY2M1ODYxYzQ2OGEwYzhkN2Y4N2I2NjczZDhkZDFkOTQwMDNiYWNkZmZjZDQzMzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY4ZjhkNTAwNWJkZjVmNmYxOTBhZjdlYjViNjQ0Nzk2YTM0OThhYmNiMDI5YzE3ZTBiOTlkNzFmMTdkYjMwYzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://skills/writing-plans/SKILL.md#L29-L32",
+          "version": "repo-lines-v1:sha256:9e885bf6829929952cb6d76f5c0c5a401738f39e42c5e6299c35236a54495770:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjBiMTYxNTUxYjhmZGFjYzI1OTBjZTE4OWRmOTU2OTA3NWVlYTc3ZTczNmY0YWQ2MTI1MjVjY2NiYzlkOGZlMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTkzYWI5ZTNhZjk2YzBiOWEyNjI0ZjQxMmE5ZDlkNGE2ZThhMDcyYmRjYTkyNDg3YjFkNjk1MWM0MWRhYzM5ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGRiZGU1YmRlZTEyYzczYjEyODU3Mzc1NjE3MzIwYTJkMjRlODM1NjQ2OGI0MDMxNGRmNWVmOTc1Njk5NjczNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTRjODg5N2U3OTgxNDcyMzI2YzE1MmYyNjYyYzgzOTFkOWZiNTc5MDZlNDZiNjA1OTcwN2ZhNDc4ZGJmYTEzMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6844b95e2941439eacf6a330fb05a0dd",
+      "statement": "When diagnosis.md exists, compound's bug track takes its root cause from the Confirmed: hypothesis.",
+      "evidence": [
+        {
+          "resource": "repo://skills/compound/SKILL.md#L30-L31",
+          "version": "repo-lines-v1:sha256:7377422eac1b2f01b8da86e75d4570b12a296289f651f54671e9e57688e3cc3d:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDIzMDU2ZTJmMzUyOThjODRmYmM0YmIxNTc1NTU2MGRmNjkzMzMxOTQ0MDlmM2FjOTE1ZDc5MzU1Mzk3NjE2ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODU5OWVhZjBlNDdiMWM2NGJiMDdiNGFhOTQ4OTdiMmM3MGRiZDE2ODBlYjk4ODJjYjI3Yzc5NTNhODMwMjY3NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTRjYTk0MjY3MGYzNjM0OGFkODVjMTM0MDBlOWFiZWVlOTg1ODU5YTQyYzAzNDM1ZDc1YzBjNWYyYTZlNjViYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTFiNmVlNzExNWI3YThjNTFiM2JmYzRmYzAxZjBhZTdiMGY2YmYyMzA3MGVmNTA3Y2MxMDBlYjJkMzk2YTliMyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_dafbbc1ae0784a6894d7d5788d75a537",
+      "statement": "scripts/audit_skill_prompts.py fails any registered SKILL.md over 600 words (whole file counted) with a hint pointing to docs/solutions/harness/deletion-test-for-word-ceiling.md, while a skill with an UPSTREAM.md is exempt and only noted.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/audit_skill_prompts.py#L22-L31",
+          "version": "repo-lines-v1:sha256:144270b07fc6485ce8bcb67ecf10286bf33082b019c168b100cf6a7b6574cd3e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhMjc1ZTcxNjNhNTA0MTdmMDY5YjNmM2YzYjE3YmQ3OTU5MjM5NGZkZDQxYTViZDgxYmJkYmYzM2Y3OTBlNjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBlODM2YmFhYTMzODg4ZDY1ODVhNjNhNTY5NmM4N2RmYjc1NWE4YTVlZGE3Zjg2MzM4YjdlNzViMGZjOTgwNjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhmMWE4YjBlMjA2MDYxZDNlOWJhYzFiMWEzZTZhYzE2MGRiN2M0MDk4ZTJjZDExZmI1YmI5NzJkNDI3MjQ2M2MifQ"
+        },
+        {
+          "resource": "repo://scripts/audit_skill_prompts.py#L83-L95",
+          "version": "repo-lines-v1:sha256:0d17827e52f9ec68b4e7fddee58b20d9efd7cfcae92ce57a70d0762bb82bcb2e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5NTA5ZjZiZTBmYmZkZDRkNzY0YWFkNGQzOGRhNmQ1ZDExZTY3YWVhNjM3YjZkN2QxYmM1NmVkZjc3MDIxMzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MDMyZTk2NGQwOTMyMzUxZTVkMTg1MjY5MjgxYjE3MWEzYTA5YjA4YjI4NmU2NjFlYTQ3MDMyM2M4MmViNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI1OTM2Mjc4MjM0ZDNiMmViOTU3Mzg4MzBlNTNkM2Y3NWQxMmI4OWFiZmRmYTA0OTQ3MWZlMzJjMGQzZGZhOWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI2YjY5MGFkMjVkYjg1NjIzMDA5YWUyMjUxMmE5MzcwN2NjZmViMWRlYmVmN2ExODQzNjllZmU0OTNiYTk4M2YifQ"
+        },
+        {
+          "resource": "repo://scripts/test_audit_skill_prompts.py#L55-L93",
+          "version": "repo-lines-v1:sha256:92655ffd8e70cc83a46a3af3b790e49bab3e2c21faa731adfeaede930fb45a7d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3ZTUzMTFmZDkwMTY1NjJmODg2Yzg0MmM0OGQ3NjUxZDNkMWU2Y2I5ZjA3ODg0NTdjYmYwMTY2NzdjNzdlOTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwNzRkZGI3Mzc3MjU2ODM2YWQyODljODYzNjI1NGZlNmNhOTc2YjgwYjZiNjEwZjYwNWE0YmNlZGM4ZDcwMTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3MDc1OTNhOGZjODE4OTI1YTZkYTQ5MTRkNzg5N2FhZGVkNDhjYWIyY2UxNmFkMGNhNGQ2NzBmZWIxMGRlNzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzYTQ0MWVlY2U5OTY3Y2E2MThjYzcyYmEzOGM3YTgyOWUxMzQwNGIzNDg4YjNhZWNjN2MyMDcxNjFlMGJhZjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_223ba24269e14f18a4691d317f3e6579",
+      "statement": "The deletion-test procedure trims a skill by whole sentences or blocks: delete sentences the model already does by default, move branch-only blocks to references/, never shorten a sentence containing a condition word from check_scope_qualifiers.py's WORDS list, and record leftover sentences as kept long on purpose in SUMMARY.md.",
+      "evidence": [
+        {
+          "resource": "repo://docs/solutions/harness/deletion-test-for-word-ceiling.md#L22-L55",
+          "version": "repo-lines-v1:sha256:4c23698358824c988eb52bf951692ba46e4a2e68bd9abbc0e4a805a2b7015bb4:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3MWFlM2NkYWQ4NTJjMWM2MTYyNDJkZjQwMDg1ZjhhM2I3NzU2MmRjZjkzN2Q5ZmZkY2M3NmVkNjUzMWMxNzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM1OWQ4NmE4NzM5ZjdhZjBlMDQxZWJmMDM3MWJjNGNkODY0OGMzZDUxZDE4YjgyMWNkNTFhOTg1NDdiMmYxZGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3M2Y0NjIwNThhYjUwMDFjZTViYmUzMmFlZjBkN2I0MDJkZDU3NTJmMmYyMWRkN2RmNDE3ZWVkMzY1Y2I2ZjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5YTRhODMwNzViNzBlYTJmNjQ2ZjkzNmYwYjY5ODIxYWY0NTBlY2JkNDkxY2YzMDk3NmIxNjczMmRlN2Y2MzAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0750c7c064de4d1995cd65a4d4bd2594",
+      "statement": "harness-models is a user-invoked skill that runs scripts/apply_model_config.py in show (default), check, or apply mode against harness-models.json, relays output verbatim, never edits harness-models.json, and warns that agent changes may apply only from the next session.",
+      "evidence": [
+        {
+          "resource": "repo://skills/README.md#L122-L124",
+          "version": "repo-lines-v1:sha256:eec3d4f6d7fb97fb6b8163dd164b7712c0890da4796303d03b5298f898786d7c:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGY4NzU4YmZjYWY2NjhiMDM4ODIwNmE2MDg5MWE4MTczZmMyOWRmMWUwNTE1ODIxNDU2NGFlMjgyM2EzMzJjYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjA4MjczMWVhM2YzYjU3NzlhZmIxZWEzMmZmNGE1ZmJjZGM0MDc4MmQzYmVkZWVmYmQ3ZGVkZDIzYjExZjAzYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2M0Y2E3Njk4YmExM2UwMTBmYmVhYzhkOTc2ZTcwY2I0MTMzYzQ5NzA4NWUxNDg0NWQzZDQ4YWFmYmY4OWEzMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmEyM2VhZGJkODRhYzhlNmYzNjgxNDQzZTcwYWFmYmY5MjljMmJhYmU0NTliNjJjMWMwNjJjNTdkZGNmMzRlMyJ9"
+        },
+        {
+          "resource": "repo://skills/harness-models/SKILL.md#L9-L32",
+          "version": "repo-lines-v1:sha256:7bdd34f5e39945e2667b57b68321084b2feb1740e60f41cbec46c7ed74873221:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1MjZmNjQzODlhNDBlZmVlMDUzMzQxNmE4ODljMGU3NmUzM2ZlZmI4MzY0N2NmMWM5MzliOTM4ODIxZTg5YjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0MTIyYzc4Y2U4MTcxYTdiNGY4NGY0MjY0MWU4MWM2NDg5NmIyNmUzNGMzN2NlMzM5ZDJjMmVkYWJmNDE1ZmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhmN2JiMTFkZTg5OGFjMzVhNWZjMTI4ZGJlM2ZkY2Q2YjZlYjk2MWE4YWFiY2I5NjdmODQ4YWJlMDYwMTAxZjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cf3d86c12c844d3d95934c40a3694e89",
+      "statement": "HARNESS.md's lane table lists the normal path as subagent-driven-development alone, whereas feature-intake and the skills/README.md Minimum Viable Path route normal work through using-git-worktrees first and require a branch on every lane.",
+      "evidence": [
+        {
+          "resource": "repo://HARNESS.md#L50-L59",
+          "version": "repo-lines-v1:sha256:6b4aaf3192b683f0039e750a16186d575b5152c88164d5ba6f6a37e617685c5f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkMmQwZTY2YTJmMjhhNzg0N2EwNDkyYmEzMzMwYzM5YjM5NzdlZWMzYWI1OGQ3ODNjMzJhZjU1YjNlOGM5MjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzY2E5ZjJmZDQ2NzI3OGI2OWQ4NjQ5NTRmNDU5NzYyNzE2YzIzMzdkZjMxNWIzNTM0Y2ZjZDgyNWY0OGU4NDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyN2U1NDJhMTlmYzA4M2JiMWE3MWEzNzU4ZGY3MDhjMWM5NjdlNTJkMWM0NDI5Y2U0MTFlZGJhMTkyZmY3NTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZiNzZlZmEwOTQ0YzhiNjZjZGRiODlmYjYwZTAyZTE5NjA3MzMwZDZhYjRhZTljZTkyYjcwM2ZlMTI4MWE2OTAifQ"
+        },
+        {
+          "resource": "repo://skills/README.md#L74-L86",
+          "version": "repo-lines-v1:sha256:038a026ce9d5dfd8eddc04762a2a7d19b1e320eb0fc2d1bb8f7a45c368d11fa8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyNmU1OGFjMjk1N2E5NTM5OWJkYTZjODRhMWQyODk1Y2MwMDhhNTE0ODY1Y2Y3NWEyMDc2ZjQ4OWVmZGVkN2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlNDJhYjhhOGRmM2ZiYzc0ZmMzYjBkYmJmZWI2YTJkNjE5ZTZkMWNkMzVhMTIxMTI1MWQ1YzNiZGZjM2JkOTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwOGRhMDFkOThlYTllMGJmM2M3NmEzZjZjOTRkNjZlNDkwYTNmZDU4ODA1Y2QwY2RiZjg2Y2VmZDQ1ZDUyZTAifQ"
+        },
+        {
+          "resource": "repo://skills/feature-intake/SKILL.md#L67-L67",
+          "version": "repo-lines-v1:sha256:fa58b485a4e53d39df31f0d523dfd101fa6903817c8743dfa720d925db8a86f2:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmE1OGI0ODVhNGU1M2QzOWRmMzFmMGQ1MjNkZmQxMDFmYTY5MDM4MTdjODc0M2RmYTcyMGQ5MjVkYjhhODZmMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmE1OGI0ODVhNGU1M2QzOWRmMzFmMGQ1MjNkZmQxMDFmYTY5MDM4MTdjODc0M2RmYTcyMGQ5MjVkYjhhODZmMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGY5OWE5NzU3N2MyNDg3M2IwOTc2YjZlYjY0YjA4YTQ4MTgzOWVjMjQyMzkzNWY1YmE5MzM4M2U4ODI3NDIyNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODY0ZTE5ZmIyNDQ4OTE4OWQxMDFkMjVkMGEwZWZjODIwYTljYzgzNDFlZWJmYjJlZmViN2FiNjBjN2Y1YmQ1MCJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-16T04:08:21.021Z"
+    "at": "2026-10-19T07:24:11.736Z"
   }
 }

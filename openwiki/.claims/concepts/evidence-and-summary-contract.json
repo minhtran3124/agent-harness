@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:0efab434941268e0590eaa8938d500d6624da38b6966989a15c579bb01faefa7",
+  "pageVersion": "sha256:7b02714ddd4c20311115c1075b0bec6f232cd1e5af3522e3eb31ebf8d37b6490",
   "claims": [
     {
       "id": "claim_4b889ad4e7864b418550fc212a31dc93",
       "statement": "The harness's gate verifiability doctrine requires every gate to enforce exactly one evidence tier — traceability (structure matches), provenance (evidence re-derived from the source of truth), or truth (behavior re-run) — and to document `Verifies:` and `Does not verify:` lines.",
       "evidence": [
         {
-          "resource": "repo://CLAUDE.md#L77-L81",
+          "resource": "repo://CLAUDE.md#L84-L88",
           "version": "repo-lines-v1:sha256:1e2b938fae8d056b34e129aeb8f572a7e5072d9da881f3cda51a56a8892dc3dc:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjc3N2EyNDlhMDc5OTlmMWIzMjJlODdkOGE1NmIxNDI5ODA3NzFjMDUzMmI5ZGI0MDIxZmUxODBkNzAzNzI2NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjcxMjRiMTEwOGRlNWEzNjFhMDk3YmQ5ZTBiNDdiZDhlMTQ0ZDM3MDlkOGM1M2Q0M2FmOTdjZmE1OGM2ZWE1YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzJlYWY4MmM3MDM2Mzg4MzgyNjQ1MmY5ZGEwNTc1N2Y5MDQ2ZmQ3MjVmY2Q1NTViZDcxZDM5OTBlMjBmOTI0NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjMzYmE4MWNmOTU0MzdkNzcyYmZkZTU1ZDQ0YmFmYjA2Yjc4Y2NlNGZhYzhjOTE2NGNlNTMwMDUwNGNiNzBhNiJ9"
         }
       ]
@@ -48,11 +48,15 @@
       "evidence": [
         {
           "resource": "repo://rules/auto-correct-scope.md#L39-L46",
-          "version": "repo-lines-v1:sha256:db3226a0a668523b8e45f6071ec2a6e6f8a918f69ccce38e64eef4e96565c008:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmI1MDg0ZDBlMjM3Njg0MTNiNDhlMzJiZWUxMDM0Nzg3MzYwOWNhY2ExNzgxYWQyN2I5YjYxNThmZTc0NjM3NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGQxMjU1YzRiMDc2OGRhMTRmMTlhNTNiYjNhY2EyNTFlM2ZhZGQyMjAxZDEwN2VmMTIzMWRmMjBmMWVlNTUxNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGY5YWJmMTdmMmI1YWUzZTViMmM4ODQzYjMxNDE3MjY5ZDk4ODVjMDFhNDQ0NjRmYTczYjViODhmY2QzYjcxYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTgzZjYxNDE4NzkxZWVkYzgyOTQ0YjI1OWQ5NDM0Y2NjMDhkMzIxNTNlNDY2MDE1M2VmMjliY2ZiNDk5NDRkMSJ9"
+          "version": "repo-lines-v1:sha256:9f6c3ac13ed280f7810bcca18309f89d05cde57f4abc47085325a4155f930510:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmI1MDg0ZDBlMjM3Njg0MTNiNDhlMzJiZWUxMDM0Nzg3MzYwOWNhY2ExNzgxYWQyN2I5YjYxNThmZTc0NjM3NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGQxMjU1YzRiMDc2OGRhMTRmMTlhNTNiYjNhY2EyNTFlM2ZhZGQyMjAxZDEwN2VmMTIzMWRmMjBmMWVlNTUxNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGY5YWJmMTdmMmI1YWUzZTViMmM4ODQzYjMxNDE3MjY5ZDk4ODVjMDFhNDQ0NjRmYTczYjViODhmY2QzYjcxYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTgzZjYxNDE4NzkxZWVkYzgyOTQ0YjI1OWQ5NDM0Y2NjMDhkMzIxNTNlNDY2MDE1M2VmMjliY2ZiNDk5NDRkMSJ9"
         },
         {
-          "resource": "repo://scripts/verify_summary.py#L551-L599",
-          "version": "repo-lines-v1:sha256:5a4a8fb182abc5f8bc6b290b3486489f26095d1a606b6e347f19539e0a98e95a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0ZGM3Y2YyOGQ2MTVlY2IyMTM1OTM0MDRkOWE4NzU3YjZkNGQ3YTU1NjBhZmU0NjYzMTk2ODFjMzJiMzU2YjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2YWY3YzJhYzIyNzk2MGZjZDVjM2NjODgwZDViMDhjZmIzOTcxMTJkYTgxMGJmNzVjM2Y0ZWJhYTNhMzdlNWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJhNmNjZDliYjliZjMxOTJkNjNiYzM0NDQyYWY1NTI0NmNhY2UwMjEzZmRlOTZhNTQ4NDIzNmU2ZTBlOTBiM2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlN2ZkNTFjZGMzYTFiMDFjNmFiOWM1MDBmNDc3MWVlMzNjN2UzNjYxZTQyZTk3MzkyZjI0NjUzMjg2MTkwYTIifQ"
+          "resource": "repo://scripts/verify_summary.py#L326-L342",
+          "version": "repo-lines-v1:sha256:5459bba97fd25d9ea62417657c3d043eb052ca8516b00f7e24b25f5856ec264f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5ZTU4Mzk0MmU3ZjNlZTdjMGExMTdmNmIzOGU1ZTQyMmE4YzQxMDFjNjU4NmFjMTE0MmNhYWUyYzdlMWM2ZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1YmM0NzExZWNjYTA0NTBhZmM4MzI3NzlhODg2NzZhN2M2OTYwZmEzZGE1YWY0MTBlZTAyZDFlMDE1MTU5MWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA2ZDlhYmY2OWIwOGRmZDQwMThkYWQ5ZTY4Y2Y2N2M0MDI4NmMyY2FmOTIzZmI2NTVhMTMyZjBiMjZkODdjOGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE0ODZmNzk4NjNhYjlmNWIzNTU2OTYzNDZlNmM5YzdkMDRiNzUxMTVkNGU4ZTVhOWY0NGJkZmM5N2RmMGM5ZjEifQ"
+        },
+        {
+          "resource": "repo://scripts/verify_summary.py#L634-L682",
+          "version": "repo-lines-v1:sha256:d4168f26344bdc6c97973a5f04c29ea5dac29b3cefd44002b522cdfc34747cc3:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0ZGM3Y2YyOGQ2MTVlY2IyMTM1OTM0MDRkOWE4NzU3YjZkNGQ3YTU1NjBhZmU0NjYzMTk2ODFjMzJiMzU2YjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2YWY3YzJhYzIyNzk2MGZjZDVjM2NjODgwZDViMDhjZmIzOTcxMTJkYTgxMGJmNzVjM2Y0ZWJhYTNhMzdlNWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJhNmNjZDliYjliZjMxOTJkNjNiYzM0NDQyYWY1NTI0NmNhY2UwMjEzZmRlOTZhNTQ4NDIzNmU2ZTBlOTBiM2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlN2ZkNTFjZGMzYTFiMDFjNmFiOWM1MDBmNDc3MWVlMzNjN2UzNjYxZTQyZTk3MzkyZjI0NjUzMjg2MTkwYTIifQ"
         }
       ]
     },
@@ -61,11 +65,11 @@
       "statement": "Lane mode never executes Verify commands; it is a traceability check, and its warn-only advisories are printed on passing as well as failing runs.",
       "evidence": [
         {
-          "resource": "repo://scripts/test_verify_summary.py#L712-L724",
+          "resource": "repo://scripts/test_verify_summary.py#L715-L727",
           "version": "repo-lines-v1:sha256:8313b8336631e94cc2a82939fd60fe5c12d27828a3b06b7ce67e248e4b4387fe:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyMTk1Njc1YTE4ZDdkNTc1MGIwZjEyNTU5MmQxMjE2NzQwZTIwNDcwYTRhMzk2ZDhmNjE5MWI1MGE2YTZiMzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI4N2I3ZTM3Yjg5NWY4MmNmZmI1MzM4NzZmOTQ2NDdhMTJkNTAwNGZlODA2ZjE4YjI3MzY2MTIyMmViYmM0NjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVkZTg0MDJiYTA3MDRkZmFhNzJjMThhYzAzNzU5Mjk1NjVmYmRjN2MzZjRhYTliM2MzYTlhZDQzMmMzYzU5ZmMifQ"
         },
         {
-          "resource": "repo://scripts/verify_summary.py#L610-L634",
+          "resource": "repo://scripts/verify_summary.py#L693-L717",
           "version": "repo-lines-v1:sha256:04f9681cfc0b05db9d8f09c50e1c437117c8b4deebf2f16f5f8b2861ff7086fe:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3YWRhZmJmY2Y2MGQ4ODQ2ZjA5YThjMzVjZjJiZjNhMzUzNmVhMDQ5YzhlY2E4NTdkNmFjYmE0YWQ0MGU1YzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4ZmVjMGE3MmZiOGU0M2JmOTc1N2YwZjRiNWVlMDIwY2QwNDA0MDc1ZDVhZDI3YmEzZmQ2Y2FjNjQ2YTg5ZTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjZTIwNzQ2ZmUwODY2ODMwNWI1MDFlMmRlZGM3ZGViZjUwMzQwNDQ2YjIwZDdiZDRjZjA1OGYxNzRjNmQ2MTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxY2I4ZWVjZmUxMDQ2NzhmMDgxNGIxZWFkY2NiMmExNmYxZjcyZGNiYjBmZDg5M2U5YmQyOWZkZmEzOTNmMmYifQ"
         }
       ]
@@ -79,12 +83,16 @@
           "version": "repo-lines-v1:sha256:d5e585d905ce6286c30fd72a9e62dd663185b18503ca210fec98f598718ee0be:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkZDY3NGU1ODc1ZWVjMmQ5Mzg2MGY5NWFmNzlkOWM0MTZhMjdhYjhhZGFmMWU4MTEyNzQ0MWI0NjNlZGU4YjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTYwMGE3M2QyZTAyZjM1MmI5MGZlZjFkOGQ2MzgxMWJhNGE4ZWUwYzFiZWFhN2FlNDY1OGYzNmFhMmUxOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwYjIxYmY4OTVmYWUyZDczOTIwZDkzMTc4Y2ZkNTg0MWNkZjhmOTUyNDUxNmM4YTU2NTg0MzZhNGFjNDhmM2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY3OTM5NGMyMWY3ZmRlNDM5N2NhM2E1OWYwYzk2ZDJjNzE4ZDk5YWUzZjg1Yzc1M2RkOWM1MmNlMWY0NTRiOGQifQ"
         },
         {
-          "resource": "repo://scripts/verify_summary.py#L464-L481",
-          "version": "repo-lines-v1:sha256:c404cb26768be5010ecfeb7f3dfa9c43a9c6c9713f2c983bb238ed882277d370:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4ZmI3ZGJkNWRhYTAwOWM1Y2RhZWI0MDI4YzViMDE5YTBkODljNGJkZjZiMWZhODcwZjA1MTI2NzJiNTM4YWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjMGM5MWViYmRlYzY1ODExZWZmMzRmNmZiZGVjNGYxNmMwOTNmNjI4NGU5ODU0ZDkwNGJhNTM5ZWE5N2QzMTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJmNjc4NjZmODZjM2MwMjNjZmRlMGVmMzJhOTcxYzJjMTJjZmMzNGMyMmRkNjA2M2VhYTM0OGUzMjliZDk1NWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlZTcxNWM5ZTQxZTk5NTMwODA0N2E1NzJjOGU4YmY5ZTkyZTg5Y2IwMDE2YTVhZDQ0OWFmMzBlZDdiYWJmZDEifQ"
-        },
-        {
           "resource": "repo://scripts/verify_summary.py#L53-L65",
           "version": "repo-lines-v1:sha256:a55fec1d1a2ce4bf047c63a0f4f6f3c709c9e09c973d2f9f0e48285b0d09777f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0ZDE0MmEyNjU2MmU0OTZhODQxMzFiZjY1ODYyMTYwN2U3MTE4NjJlN2Y5ZTliZDhkZTBmZDUxOTdkYjUwNTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0OTFiN2M1ZmY5NGE5MDczZTdlOTU3Y2NjYmI3YmQ2NTNjYmY0N2YxNDRjYWQ3M2U3OGNjNzdhYjgyNDRkNGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRlM2E0NWQxMDM4NjNmMjI3NmQxYTIxNWQ2MjJmOWZhODBiYzY0NWMzNTg1ZTIyMGMwZGNiOTZjYmVmYWNkMTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwNWMzNjI3NDE1NzI0YmE4YzhmZTUxMjg4N2M4MzRkYThjOWVmMmIxOTYwNzI4ZDYyMTNkNDFiNzc5OTkwNDkifQ"
+        },
+        {
+          "resource": "repo://scripts/verify_summary.py#L547-L564",
+          "version": "repo-lines-v1:sha256:c1e659cc69b798ef7c4d38742883ebedc642ee35d419dc5a6f443c68849c620f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4ZmI3ZGJkNWRhYTAwOWM1Y2RhZWI0MDI4YzViMDE5YTBkODljNGJkZjZiMWZhODcwZjA1MTI2NzJiNTM4YWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjMGM5MWViYmRlYzY1ODExZWZmMzRmNmZiZGVjNGYxNmMwOTNmNjI4NGU5ODU0ZDkwNGJhNTM5ZWE5N2QzMTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MDE0OWUwNjlhZDY3ZWNjZjQ3MzY0NmZmMWM3NTAwNTBkMzI5ZDExMDAxOGRjNTc2Njg3OGVhZmExZDYwN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlZTcxNWM5ZTQxZTk5NTMwODA0N2E1NzJjOGU4YmY5ZTkyZTg5Y2IwMDE2YTVhZDQ0OWFmMzBlZDdiYWJmZDEifQ"
+        },
+        {
+          "resource": "repo://scripts/verify_summary.py#L660-L663",
+          "version": "repo-lines-v1:sha256:a833b5c7b138950f6f97209b1742eec66967f8398fc7c9c6289e80e56fbd84fe:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzExNzQzMzY2ZDM3YjhkZTQ4OGViYjE4NmQ0Y2QzMmYwMTM4ZWRkZDcwZDRkYTM4MjNlYTI1MWJiM2ViNDg0NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDk0ZDhmYzk0NDMxMGJiOTZiMmI5YzY4NWM4MjU5OTAwZTdlOTkyZDk1NjIzNTJjZWU5ZjRmMmM3Y2UwMGZiMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzdhMTU1MTNjNDMxN2JiNWYwNmYyYmQwOWI2YjM5MmViOWMzYzA3YTJhYzhlZjZkZGY2YTY5NTUxZDg1MDE3MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzM5OGM0NWUxZmQ5ODY0NzI1Y2FjYjdjZjMyYTllMGZmZjJkMzE1NjEwNTQ2ZDE2YjIxNzQ2MDFiNDlkY2RmZSJ9"
         }
       ]
     },
@@ -93,12 +101,20 @@
       "statement": "For a SUMMARY whose Input-type starts with bug fix/bug-fix/bugfix, the lane check requires a `red` row running `scripts/run_at_commit.py <7-40 hex sha> -- <test>` with claimed exit 1-123 and a `green` row with the same normalized test command and claimed exit 0, or a `Red test exempt: <reason>` line; this is advisory unless REQUIRE_RED_TEST=1.",
       "evidence": [
         {
-          "resource": "repo://scripts/verify_summary.py#L405-L461",
-          "version": "repo-lines-v1:sha256:44fcc483803daf4e124b850630a01f0983a4982f5505c0091719a48f837fae42:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1NTMwNDFiZTNlN2JhZmViOWI1NDE5NWQ5YzdiZTJlMTE4MDQyNDhkYjI4ZWIzNTU0MzgzZTVmOTM5YzA5YTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjYzdhYzk0N2Q5ODU4ZWQzNDNmZTQ4YjUyYWYwNjI0NTYwZmY5MzdhYzA3NzFiYTRlNzFiYTZjZDE0MTdhZGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2ODJlZDNmNzA5NWQ1OTI1NTI4YWNlYjIzODE5MTE1MDU3ZjE5YjBmODZhMTA5OTViNDA5Y2RjNDUyYmU4NDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjljZDNkYmFhMDQxNzY4MTM0MzJkNTQ2ZTkzZDAzNzFiNGQ1OTY1OTBlMDcyMjg4NTk1YTIzYzE4OWI4Yzk1MWUifQ"
+          "resource": "repo://scripts/verify_summary.py#L405-L474",
+          "version": "repo-lines-v1:sha256:e9cc73534fbb134eb75aab5abc6bff50f09bd4185c5cea56db407ac21777bd2f:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1NTMwNDFiZTNlN2JhZmViOWI1NDE5NWQ5YzdiZTJlMTE4MDQyNDhkYjI4ZWIzNTU0MzgzZTVmOTM5YzA5YTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2ODJlZDNmNzA5NWQ1OTI1NTI4YWNlYjIzODE5MTE1MDU3ZjE5YjBmODZhMTA5OTViNDA5Y2RjNDUyYmU4NDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdhOWI3MDNjMmNlZjllNmEwYjg0NDA1NTk5MjFjYWM5YjBhZGY4ZTFhZjczMTM3MjcwMjBjNzQwNjM5NWI0N2MifQ"
+        },
+        {
+          "resource": "repo://scripts/verify_summary.py#L547-L564",
+          "version": "repo-lines-v1:sha256:c1e659cc69b798ef7c4d38742883ebedc642ee35d419dc5a6f443c68849c620f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4ZmI3ZGJkNWRhYTAwOWM1Y2RhZWI0MDI4YzViMDE5YTBkODljNGJkZjZiMWZhODcwZjA1MTI2NzJiNTM4YWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjMGM5MWViYmRlYzY1ODExZWZmMzRmNmZiZGVjNGYxNmMwOTNmNjI4NGU5ODU0ZDkwNGJhNTM5ZWE5N2QzMTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MDE0OWUwNjlhZDY3ZWNjZjQ3MzY0NmZmMWM3NTAwNTBkMzI5ZDExMDAxOGRjNTc2Njg3OGVhZmExZDYwN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlZTcxNWM5ZTQxZTk5NTMwODA0N2E1NzJjOGU4YmY5ZTkyZTg5Y2IwMDE2YTVhZDQ0OWFmMzBlZDdiYWJmZDEifQ"
         },
         {
           "resource": "repo://scripts/verify_summary.py#L67-L78",
-          "version": "repo-lines-v1:sha256:2a6c4ec05dc1790168bceecd54d8e01db2b5028a52482cc06fea1e8ca0c78789:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1NGUyZTdjNjY1NDJkNGNjNDU5YjExZjQyZDk5YzI3ODVmYWEwZDBhZmU3NDI0YTA5MzY0OTA4ZWUwMDIyY2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmNTkyNGNkNzdiMjc4NzE2YWM2NjIwYjQzZWQzMzcxYmQ3Njk5MWNkODBkMmVmYmZlYzQ5OThjODAxYmUzNjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEyMWE1NWNhZjBiNTI2Nzc2NDM5ZmMzNDQyYWU1ZWQwNWI0ZTI0MWEwNGY3ZjZiZWM4NWRhOWQ3YzZkN2Y3MDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmY2IyNDQzYjJmODdlNzdlZTNhNGFhMzVlYmUwNGNmN2Y2MGQ3Mjg3Y2VlOWU2MTVjMzA2NzdmYTBiYWYyYWYifQ"
+          "version": "repo-lines-v1:sha256:4e3a538bf383fb2914634e793dd2bff5ca1fd14e96bc8e45ebea0cd3e9a0d7d5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1NGUyZTdjNjY1NDJkNGNjNDU5YjExZjQyZDk5YzI3ODVmYWEwZDBhZmU3NDI0YTA5MzY0OTA4ZWUwMDIyY2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmNTkyNGNkNzdiMjc4NzE2YWM2NjIwYjQzZWQzMzcxYmQ3Njk5MWNkODBkMmVmYmZlYzQ5OThjODAxYmUzNjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEyMWE1NWNhZjBiNTI2Nzc2NDM5ZmMzNDQyYWU1ZWQwNWI0ZTI0MWEwNGY3ZjZiZWM4NWRhOWQ3YzZkN2Y3MDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmY2IyNDQzYjJmODdlNzdlZTNhNGFhMzVlYmUwNGNmN2Y2MGQ3Mjg3Y2VlOWU2MTVjMzA2NzdmYTBiYWYyYWYifQ"
+        },
+        {
+          "resource": "repo://scripts/verify_summary.py#L674-L677",
+          "version": "repo-lines-v1:sha256:94a6e5a1911749ea4cb8555e7b828b84dbe0ebe2055e1f962dbf10fed4a4bc4a:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzhmNjE4NzMwZmZkNDg2ZjdmZjRiYjM2Y2I3MTUxMzBiOWRlYjA0N2FkZTNmYjE0ZGQyZGZkMDA3ZTI2YjQxOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTQ2NzMzY2RlNmNiNzgyMzk5ZTU5ZTNlYjRiNWFmZThlOTBmYzJhMTUwZjJhMzJlZThlMzY3MTlkYTc3ZWVjZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmEyNDE3YWI2N2Q5Y2EwMTRiNzhiNmQxNWRlNTkzOGM0NmE1YzE0Y2E3NDAzMzRjZjQ2ZjZhNTJkYjg2ZmIxYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmU4OWE5NTVkMjkxOTEwOWRjOWUwYWQyMzUwMTA3OTUzODc4MDc2OGI5MmQzODI2ZjMyZjk2N2ZlODI0MmQ2ZiJ9"
         }
       ]
     },
@@ -107,11 +123,11 @@
       "statement": "When the sibling PLAN.md declares an SC table, every valid SC-n must be named in a Verify row's Criterion column with a claimed exit matching the SC's expected exit, and an unknown Criterion id is an error; with no PLAN or no SC table the coverage check fails open. SC coverage errors fail both lane mode and `--check` mode.",
       "evidence": [
         {
-          "resource": "repo://scripts/verify_summary.py#L1010-L1026",
+          "resource": "repo://scripts/verify_summary.py#L1093-L1109",
           "version": "repo-lines-v1:sha256:1b363a70ffaa8c00b12a8ce4b70b96cd449e3bd0582b53cc2623569e66c42b7d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjYWYyOTA4Mjk1NWZkOWIzNDUzMzQyYWIyOWY4OGE4NjljNTFmZWI5NWFhMDAwYjBjYjUzNzI4OTNjNTUxZDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliODBhNWJjODc4ZjliODFmY2YzN2U0YzRjYTZiODA1NTdjYjU2OWQ2OGYzN2RiOTQ5ODM2ZjhhOGIwYTdhYjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFhMzI5ZGYxZjQyM2FlZmExZTQ2MDRiOTdhYWZiZTZjZDExMWNhZWIxOWRmN2EzYjg2NmY1Y2FmMmM4MWVkNDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwNGUyMzkwYjA2ZDYyOWRjMGYyY2NmYjQyZjM0N2QzNzIxNWUxNjJkMjZlMTNkNTM5NDE5NGNhOTJlNzUwYzAifQ"
         },
         {
-          "resource": "repo://scripts/verify_summary.py#L484-L548",
+          "resource": "repo://scripts/verify_summary.py#L567-L631",
           "version": "repo-lines-v1:sha256:ca92783623d1030fbcc40f7e2eb94c21b0146241bc0841a5d690f5da8f852e02:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4NjBjNWI4NWIzYTA2M2UyNDI3M2NjZjMxZTAxZWE2YzRjZWY4YTMxNGQ4OTA0OTYyNTQ1YWJkY2Q5MTA3NDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2YWY3YzJhYzIyNzk2MGZjZDVjM2NjODgwZDViMDhjZmIzOTcxMTJkYTgxMGJmNzVjM2Y0ZWJhYTNhMzdlNWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJhYjJjNjBiNzE4YzEyNjMwMWZjMDM0MGRjMmI0ODY0OGQxOTRhZDU5YmI2ZWU5NTRkZjM0OTg2ZWY5YjI5OWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZmNjcwNmQ5OTZhYzM1MDY3Y2NlNWY4NDk0MzJkMmUyYzY0ZGJiNjhlYjU0MjM3MTkzMmIxZTYwZTczZjNiYjQifQ"
         }
       ]
@@ -121,7 +137,7 @@
       "statement": "PLAN.md SC `Expected` cells must lead with the machine-read token `exit <n>`; duplicates or malformed Expected cells are reported as SC table errors, and SC tables inside code fences are ignored.",
       "evidence": [
         {
-          "resource": "repo://rules/plan-format.md#L69-L91",
+          "resource": "repo://rules/plan-format.md#L108-L130",
           "version": "repo-lines-v1:sha256:1ed29f119cea829a183eb752b50ba0441d370776d8fb38332f27b3f22e768010:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxYmY2ODMxNzNhNWNhMTE4ODJjOWE2MWQ5NDRiMGVhNGQ3MjRlNzdkNDQ0MGU1NzNmM2ZlM2MzOWRhNDI0MWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhMDQ1NjJhZjkwYTIxYWYwOThlYWMzODJlN2UzYzk0NGUwOTM2YjMzZjFhZWRmOGU3OTNhYjdjNjBiYzJiYWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU1OThhOGJkZmY5Mjk2MzdiZTQ0YTkzY2EwMmZkNTE2ODNkMDQ5NTIwMWJkMGQzNmFkM2Q2MjI1YzRlNDBjZTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEwNmYwMDM5NmU2NzIyMGU2OTQzOTdkODZiYjNmNDlhZmM1OWNlMDg2NWFkMDA5YzI3OWUyYzg0YzkyZWU1ODkifQ"
         },
         {
@@ -135,11 +151,11 @@
       "statement": "Verify mode re-runs each non-placeholder Verify command via shell at the repo root with a per-command timeout (default 60s, timeout reported as exit 124); a row passes when actual exit equals the claimed exit (non-zero claims are valid negative proof) and fails on mismatch, unclaimed non-zero exit, timeout, or an actual exit that differs from its Criterion SC's expected exit.",
       "evidence": [
         {
-          "resource": "repo://scripts/verify_summary.py#L1028-L1091",
+          "resource": "repo://scripts/verify_summary.py#L1111-L1174",
           "version": "repo-lines-v1:sha256:80eeaf37530da4c1d575e07f18ff408cf9e6b187272a4f791ea68ea0d34dec13:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmOTAzOWI3NGM2NzllNDQyYmVlZWEyYjI0Nzg4ZDk0ZGZhY2QyMDY0ODVhZmE5YjQxOGMzNGZiNGUyOTRkZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjZTZlYTFjOWZlNTcxYjk4MDJkNTkxZGI0MmZhM2FhNmM3YTQwNGE0ZjI0OGVkZWQ5MGRjZWMwNjY4NzNjYjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2ZTUyZDkwMWFmOWVjZWZjNmJmNWEyODhhZTdkZWQ5MmIzZWI0MDVkYTJjY2QyNjhjNjViNGM3NGVjODNjYWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2NWQ0MDY0MjI5MzAwNGFlZjYyOGZhYTVjODQxYTA4M2YxMjlmZTY5OWFmODI3MzgwNmEyY2Y2YTE0MjM2NDYifQ"
         },
         {
-          "resource": "repo://scripts/verify_summary.py#L637-L672",
+          "resource": "repo://scripts/verify_summary.py#L720-L755",
           "version": "repo-lines-v1:sha256:50a161611a1c15eecb2071c2c332dce954c11189d6908bf5402a366fa3c7e09d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5YWRkZGMzZWY0M2QzYmMyNDg3MjY1NTRiODFmMzgwODM3ZmY3NTYyYTY5YzQxNzY1NmFjMzRkNDRhNzQ2ODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwZTRmYjRkNDIzZWMzZTYwYTFkMDNkYjA4OGU1N2U4YjM1MjIxZDkxMzg0OTM2YTg4ZmQ5Mzg5NzllZDlkOTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE0NTY1YjhiYzFjZTRhMzQwOTA2NjMwODFmOWU0ZGUyOTZjYmU1ZmM4NzY0NDU2MjdlZjQ1NzgyMzczMGI0YmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUyM2M4N2RkZjIxMWFkNDUwZDIwYjZlYjBjNDNjNDhkZmNkMjU5NDE4MjA1MGFhMzg3YTZmMTA1YTg4NWFhYzUifQ"
         }
       ]
@@ -149,7 +165,7 @@
       "statement": "Trivial commands (`true`, `:`, `exit 0`, bare `echo`) are rejected as non-evidence without being executed; the denylist is best-effort and wrapped no-ops are not caught.",
       "evidence": [
         {
-          "resource": "repo://scripts/verify_summary.py#L644-L650",
+          "resource": "repo://scripts/verify_summary.py#L727-L733",
           "version": "repo-lines-v1:sha256:5e2c5d514fc92c33b562ac3146dd933782ee46affbe2b7179718495d5b277f43:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYThiOTM5MzljNzNjMmM4YTQ2NDgyNjcxZDA5Yjc4NGQ0NDQwZmMxMWNlMzgxZDBjOTRhNDJlNDI2ZmJhYWNiNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZhZDA1MmM0NGI5NTNmMGQ4MzI4NmEyZGRkZWMyMTg1ZTdmMTg5ZGIwZTRmNTAyYzZmMDZmMzQ3NTg0NTRhNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmIwZjI2ZjA0NzUwMDgyY2MzNzQyMDY1YzMyYjQxZjc1OWJiOThmMDk1MzdhYjU1NzVkZmE5YWE1NGEyOGM1ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGI3OGMxYzA4Y2UyZWYzM2M4N2NhOGUzYWM0NzAzYmI5OWJhYzIyZDM1ZGE4MGQwNzQ0ZDJmZjU3ODJiOTdiMyJ9"
         },
         {
@@ -163,11 +179,11 @@
       "statement": "Without `--check`, verify_summary.py rewrites the Exit column with actual exit codes in row order and writes a `Verified:` timestamp only when every row passed, dropping any existing stamp on failure; `--check` compares without modifying the file.",
       "evidence": [
         {
-          "resource": "repo://scripts/verify_summary.py#L1093-L1099",
+          "resource": "repo://scripts/verify_summary.py#L1176-L1182",
           "version": "repo-lines-v1:sha256:abcd4b19bfb2de8145853ab395b6f643b64f276b10fef7fe297dda2ca6ca9adf:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDVhNmUxMjhhMDBkMDE2MDBjNzk5NjM5MmU0NGQwZjM0MmYzN2YxYmVkMzhlNGFmZmE5ZDc1NTY2OWM3N2Y4MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODhmZWMwYTcyZmI4ZTQzYmY5NzU3ZjBmNGI1ZWUwMjBjZDA0MDQwNzVkNWFkMjdiYTNmZDZjYWM2NDZhODllNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTRmZjgxMTE4MjMxMTc0MWZmMjhiOTEzM2NlZjY1YTFlODc0N2U4YTYxZDRmMGU0YzdiYmFhZDgyNmI1NDFmNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2Q0MTM0MGNjMjM5YTE1OWNlOWI2MDIyZTlmNjMyMjgzMmUyZWFkNzZjYWU5ZTQ3NTRkMjEwZWI4ZmI2ZDVlOCJ9"
         },
         {
-          "resource": "repo://scripts/verify_summary.py#L675-L782",
+          "resource": "repo://scripts/verify_summary.py#L758-L865",
           "version": "repo-lines-v1:sha256:c127b151f690bd72df107eacc630e49cd7b64c4d1b94b7359f8ace1c19362586:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjN2FkMTRhMmQwNzczNjQ4YmM5YjMwN2I3YzdmOTdhNGY2OGM5NTM0ODIyNmFiNDBiZmMzZTc5NTQ4Yzg1YmI3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwOGQ0MzYwYjZkZTRhMTkzZWU0N2RjOTJmNWIwNWYxYjE5ZWM1OTM0NTI1MDM5MGI5NGRjMDdjNzZiNjM2Y2I3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI4MWMxOWJlMjU0ZjIzMzU1MTdhYTgzNjRiYWE5N2QzOWY0YzdhYTg2MDFkMWE4OTMyZDZmMDM3ZmQ2NTAxMTc2IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2YTZjZjgzMjEzZjI2YzZlNjc3NmYwZjljNjczZDRiYzZkYjcwMTU4MjFjNDgwZjVmZDA2NDIzMDk1MTM1NzQ2In0"
         }
       ]
@@ -177,7 +193,7 @@
       "statement": "`verify_summary.py --sc-history <slug> --base <ref>` is a provenance check over git history: it flags an SC that a branch commit recorded as failing (judged only where the Verify row is new or changed) and whose Check/Expected later changed or whose row was removed at HEAD, unless HEAD's `### Deviations` names it; it exits 0 on findings unless REQUIRE_SC_STABLE=1.",
       "evidence": [
         {
-          "resource": "repo://scripts/verify_summary.py#L824-L943",
+          "resource": "repo://scripts/verify_summary.py#L907-L1026",
           "version": "repo-lines-v1:sha256:752968a6b1d422b3db023fe3e4af99222ac24d2da81f4b7bad9e68f3a0d1beb2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjNGQ1NDcyMGMwNzg3NGMxZGIzZmYwNDcxNTE4MTJiNmM4NTQ0YWExZjM5MGQxYzc2MGRiNDgzNjA0ODVlNWE1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIxNjIzM2IzZmZlYTMyYTIzZGY1MzA2NTM0MzQ4ZjJkZWU3NzZhNWE2Zjc0ZmI1MzMxNzVkZGM1MzlhOGZlNDY0IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJkZGY5MDAyMWE3MDFhMTk3ODAyMTI1ZDNkMzA4NWJjY2MxYWRhMGNmZWMwYWJkOWU2N2EzZjM4OGQxNDc5YTYzIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIyZDE2ZWQzMmNjM2UxZDhhMzMyMGQ0ODg3YzYzM2M5NGQ2NTE0MWI2MWJiODJhM2Q2ZWNmOTgwOGM0YjZiY2FiIn0"
         }
       ]
@@ -187,7 +203,7 @@
       "statement": "The optional SUMMARY runtime metadata check is format-only: `Runtime-mode` and `Runtime-evidence-id` must be absent or supplied together, with mode in enforced/advisory/unsupported and id matching `codex-mode-<16 hex>`; it never compares against the local .harness-state record.",
       "evidence": [
         {
-          "resource": "repo://CLAUDE.md#L79-L79",
+          "resource": "repo://CLAUDE.md#L86-L86",
           "version": "repo-lines-v1:sha256:647880ee5774f37f5a150566e614ce7ef584ade7ef8b6fc445692101abbd3f18:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjQ3ODgwZWU1Nzc0ZjM3ZjVhMTUwNTY2ZTYxNGNlN2VmNTg0YWRlN2VmOGI2ZmM0NDU2OTIxMDFhYmJkM2YxOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjQ3ODgwZWU1Nzc0ZjM3ZjVhMTUwNTY2ZTYxNGNlN2VmNTg0YWRlN2VmOGI2ZmM0NDU2OTIxMDFhYmJkM2YxOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDExN2ExNDdmMzhjODc3YTEyMjllYWFhNjI0YmFiYTRkNTg4NmRkYmIyZjM3YzYxNjRkODFjZWQ3NjNjNDE2NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzIzODAyNDZhMmNlY2YxYzMxOTcxM2E2ODZmNDQ0OWFiMmYxYjg1NTlmYzBjNTUxZGU2ODU4OGQ5NzUwNzFjMCJ9"
         },
         {
@@ -325,10 +341,110 @@
           "version": "repo-file-v1:sha256:9849e3368813db97298a9a92b93d1fc405ef619d53f65d5614ca3ae835c39513"
         }
       ]
+    },
+    {
+      "id": "claim_bc765d07215f42b49b43892f57690e11",
+      "statement": "For each matched red/green pair in a bug-fix SUMMARY, lane mode's fix-diff check requires at least one path that differs between the red commit and the index outside `specs/` and outside the paths the red commit itself changed (via `git diff-tree`); otherwise it reports `bug fix: no code change after red commit <sha> outside specs/ and the red test files`. The red command's tokens are not used.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/test_verify_summary.py#L1296-L1357",
+          "version": "repo-lines-v1:sha256:2a9943ab63a6a48e66bf636bc421e753251ee3e0e202125a99c82571eb12d347:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmZTU0MTllNGFkNDcwODA5NDAzOTA0MGMxMmQ0ZmZjYjYwNzZmOGY4YTg1NTg2YmMwMjc2YWMxMzQ4Y2IzNWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdhNjAyNjlmZmY2NmI0ZWEzZDg2MmRkMzA2MTI5N2FmMWI4NDZkMGU2YmQ2MWMwNmFiZDc4OTk0M2E4ZjkzZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxZDUzZDg1ZTg1YTcwNGI5ZTE3ZjUzMDRjM2U1YWM0NzRiNjM0NWU1MzAyNTU4ZWUxMzc3NmU4MDNmMWM1OTUifQ"
+        },
+        {
+          "resource": "repo://scripts/verify_summary.py#L495-L544",
+          "version": "repo-lines-v1:sha256:90992b3be0601fb7dc6baba98949c5ebe4faead7aff3ad069cdb688b4bcc2906:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0YmY3NTgwYzNmM2E0MDAwZDc0NmI4NDE4YWJkZGYwOTVjZTM4ZmE2YWYxMWRlMzg4NzExMzU5YWM5ZTIzMTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTYwMGE3M2QyZTAyZjM1MmI5MGZlZjFkOGQ2MzgxMWJhNGE4ZWUwYzFiZWFhN2FlNDY1OGYzNmFhMmUxOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY2Mjc5ZTkyN2MyYzU4MWU5ZTA0ZTNiOThhYjYxYzBlNzU4MDkzNTE3ZDY4MDQ5N2IxOWMzM2NhZWMyZGNhZGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjljZDNkYmFhMDQxNzY4MTM0MzJkNTQ2ZTkzZDAzNzFiNGQ1OTY1OTBlMDcyMjg4NTk1YTIzYzE4OWI4Yzk1MWUifQ"
+        },
+        {
+          "resource": "repo://specs/gh-313-prove-the-red/design.md#L147-L162",
+          "version": "repo-lines-v1:sha256:47084879c045cfcd07f6b22092296ea32e6a636bcf70dfc6a55872bcbcf3ce8c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkMWRhZGE0M2QzM2ZmY2ZhYzEwN2NlYjg4ZTE1YzVlOWVkMjRjYmMyNDNiZTJiM2VjOGMyOTg1MWJlOTUyNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmNmJhNDNlN2U4NWEyZTQwMGE4NmJiMTk5YThlMDZhMWUxNmM0ZTg2ZTE2NWZmMmEyMTYyY2E1NzA4NGM3MmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkzMjUyZTI5NzIyM2FiMjhiYTdkZmM3YTA1NmVmYzI1YjNjNDY4OGNiYjA1OWQ1ZWNhYmZkZjFjMzRkZGE4ZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5f1bd0479dac460db8e022c1318fdeba",
+      "statement": "The fix-diff check runs under the same REQUIRE_RED_TEST switch as the red/green check: both lane callers invoke `_red_fix_diff_issue` beside `_red_green_issue`, so its findings are `!` advisories by default and exit-1 errors when the switch is set.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/test_verify_summary.py#L1268-L1282",
+          "version": "repo-lines-v1:sha256:156685d5177cc740f9c03d479023c3006ee757587158d62277914d0a79a82203:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzYWEzOGMyZWMxOGRhMjlmMmEwZjAwYTMwOTg1MGNhZjg5ZjI4ODZhYzM1YzE0ZDc4OWU4YzI4MzM4MWJjM2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkZDI0NDU4MmI2ZmIwM2QyM2I4NDE1YWJlY2QzNDZiMGM5ZjQ2NmI2Zjc1MmIwNjgxODljZTdlOWEyZGMzNTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA4MjY3NmM4ODhjMWE0ZDlmYTc3MmZjZGMzMDJmNzczYmM3MjkwZWViZmY5ZGEzNmEzOWY0NGMzMjExOTgzODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFiNmUxZjZlZjAwOTYyOWI4NjhlODA4MmZlZGFmNzVhOTY0YjkzOTdhMmNmNTlkZGI4NWZiMzZkYmU3Y2Y4YjUifQ"
+        },
+        {
+          "resource": "repo://scripts/verify_summary.py#L547-L564",
+          "version": "repo-lines-v1:sha256:c1e659cc69b798ef7c4d38742883ebedc642ee35d419dc5a6f443c68849c620f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4ZmI3ZGJkNWRhYTAwOWM1Y2RhZWI0MDI4YzViMDE5YTBkODljNGJkZjZiMWZhODcwZjA1MTI2NzJiNTM4YWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjMGM5MWViYmRlYzY1ODExZWZmMzRmNmZiZGVjNGYxNmMwOTNmNjI4NGU5ODU0ZDkwNGJhNTM5ZWE5N2QzMTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MDE0OWUwNjlhZDY3ZWNjZjQ3MzY0NmZmMWM3NTAwNTBkMzI5ZDExMDAxOGRjNTc2Njg3OGVhZmExZDYwN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlZTcxNWM5ZTQxZTk5NTMwODA0N2E1NzJjOGU4YmY5ZTkyZTg5Y2IwMDE2YTVhZDQ0OWFmMzBlZDdiYWJmZDEifQ"
+        },
+        {
+          "resource": "repo://scripts/verify_summary.py#L674-L677",
+          "version": "repo-lines-v1:sha256:94a6e5a1911749ea4cb8555e7b828b84dbe0ebe2055e1f962dbf10fed4a4bc4a:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzhmNjE4NzMwZmZkNDg2ZjdmZjRiYjM2Y2I3MTUxMzBiOWRlYjA0N2FkZTNmYjE0ZGQyZGZkMDA3ZTI2YjQxOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTQ2NzMzY2RlNmNiNzgyMzk5ZTU5ZTNlYjRiNWFmZThlOTBmYzJhMTUwZjJhMzJlZThlMzY3MTlkYTc3ZWVjZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmEyNDE3YWI2N2Q5Y2EwMTRiNzhiNmQxNWRlNTkzOGM0NmE1YzE0Y2E3NDAzMzRjZjQ2ZjZhNTJkYjg2ZmIxYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmU4OWE5NTVkMjkxOTEwOWRjOWUwYWQyMzUwMTA3OTUzODc4MDc2OGI5MmQzODI2ZjMyZjk2N2ZlODI0MmQ2ZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_39b73a24b6d2417ea2bb1ecb82f0e7fa",
+      "statement": "When git is missing, the cwd is not in a git repository, or the red sha does not resolve, the fix-diff check reports `bug fix: cannot check the fix diff for red commit <sha> -- <cause>` instead of passing (an unverifiable claim is not a pass).",
+      "evidence": [
+        {
+          "resource": "repo://scripts/test_verify_summary.py#L1373-L1405",
+          "version": "repo-lines-v1:sha256:7168613296f57d1c699d376f3f2a942bafb9c8515120ce292fe9e6f1351ae86b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4ODExNTVmZmNiMzE4MDA0NzNkZDc3MTE0NjVlMTQ2YjU0ZDUwZTk5ZGVjNTFkOTU0YTQ1ZDFiN2UwMGExZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiOTdjNGY0MzU5OGRhNzc4M2FlMjk0ODQ1NmQzMGRhOGFiMDg2MTRhNWQ4NmRkNWIxZTY1OWYwMWNhN2YxZjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiM2UyOTI3OWRlODVkZGI1ZTA2MGI3ZmVmMTJlMGU3YzhlOWVlOGJlMmM0NzA4M2UwNWU4NzlkMDRkOWE2YzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ3OWYwM2U1YTg1MTg5NTVlZTM4ZmIzNTIwNGM4ODY4YzBlNGZjMWZmNDI5MmZmYmExYzY0ZTZkODljMzk0M2YifQ"
+        },
+        {
+          "resource": "repo://scripts/verify_summary.py#L509-L532",
+          "version": "repo-lines-v1:sha256:d5308c4e7fd178d5e870fde71598d0ee7bd19d9a15d8403755d2e8aba49c14db:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0NDVmNGQ4ZDViNjQwMGU3MWI1ZTkyOGUyZGVkN2FlNWNjMmFlOTdhMzU4N2FkNDQ1NTQ3NmE1Y2EwNjRjOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxOTA0MmU3NTNlYjQ5OThjNjZjOTkwNTRkOTYzODcwOGIxOWZkMjg1Yjg1NTBiZjM0YmNiMmEyOWRjYjYxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNiYjFkMzc5NmJjMTkxZDkyN2Y1NDJkZjA5OGYyZmY2Y2Q4NmVmNjlhZGZmODAxZTM3ZTEwM2YwNDMxOWE4NmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3MjcxNWU0MWEzYTgxNmYxMzEzZWIzNDJhZjFmM2Q0NmQ3M2YxMjY0MjZlYTcyZDQyYTE4MWMxNjU4YzdhMjMifQ"
+        },
+        {
+          "resource": "repo://specs/gh-313-prove-the-red/design.md#L70-L81",
+          "version": "repo-lines-v1:sha256:704a4a5d90f82becd1c7d8a60952b262cfad9c3220382fdb9c4c3edb0476b2af:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4YTBmMGRhMmI5ZWFlYTVmOWM2YjMxMWJiY2UwZWQzNjcyNzY1NDY1ZWI1ZWI5OTFhZTQzZTczYzFiZDY5MjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmNmUyZTkwMmZiMDI5OTBlM2IzYTE0YzU4Njk2NDQzMWE1MjI4NTM4OGZmY2QyMDAxMjAyZjExYTAyNmJkNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE3MDM3NmRiMDk2MzcxNzZhZTM5ZDIzMjg5MmZlY2YwZTJjMTQ1Nzg0MTdlNmEzZTg4ZWU3ZWMwOGJmMzM3NzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUxNmUzMjkxN2ZhYTI0NWQ4MzA5ZjNmZTc1ZWQzYjliNDM2MjZiMzViNmNmNmZmYjZmY2ViNDhlNGI4NTM5ZTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0268d8ce2cb74adb9e5d7aaba91c8870",
+      "statement": "The fix-diff check resolves the repository from the process cwd (`git rev-parse --show-toplevel`) and compares against the index (`git diff --cached`), so it works on the commit gate's temp copy of the SUMMARY and counts a staged-but-uncommitted fix but not an unstaged edit.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/test_verify_summary.py#L1359-L1371",
+          "version": "repo-lines-v1:sha256:8e931d291c4d351e9a255e5942f389b4b1305681c558f652e16cc194642a977c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1ODlkMWM4NjY1MDYyMDYxYWU3MjkzYzRmZjdiZWM0MjgxMWI3MzQ0ZDFiMjUzNDhmMWVjYmFkOTBmYTgwYTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNhM2JlODY3NTA0MDY1MzZiM2I3MWM5YjYwZDFkYmMyMDg0ZGJkNTMzOTIzMzNiZGQxNzBiM2FmMzQwOWZmMWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiY2FmYjE0MDdkODg3YTY4NjdkZTJlNzE0YWQ5ZTYzOTcyN2VkYzVlZmE1YTJhMmM3NzI5ZDA1NmFlMGQzMDIifQ"
+        },
+        {
+          "resource": "repo://scripts/test_verify_summary.py#L1426-L1436",
+          "version": "repo-lines-v1:sha256:7058c8a05a612924bf191e6fb8fdde63da2b277a306d28c930df24f6b6c15db6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1YmVhMjg2NTAzZjJhZWZjZDg1YmE3Mzk5MjNiMzY1MzY5OWEwZGM5OWEwNDJmZmEzYzgxMmZkMmI0NDkyMGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjMDViNmFlNjQ1YmQwYjQwMmI2ZDRkMzcyMWMxMjBmNGNhYmZkZGE0NmU2NWY0OGI1NTIyM2IwOTBmMzBhZmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNmZTI5ZTU0OTAxNjE2YjMyNmNhOTJlZTU5Yjc4YjhiYmVkZmU0ZDlkYzdlZDIyOTU4MWVhZjU1MDJhN2U3OGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU0YWJkYTdjMGVhNjQ1YTMwZDYxZWYzMTg0MDg4YmVmMGU1ODliODZlODc1ZTg5ZTdkZTVjMjc2YjFmN2MzZTEifQ"
+        },
+        {
+          "resource": "repo://scripts/verify_summary.py#L509-L528",
+          "version": "repo-lines-v1:sha256:08e96d793a4acd19dfed2d02fd6f03c2267c39bb5fabbe755be0fc1663237f33:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0NDVmNGQ4ZDViNjQwMGU3MWI1ZTkyOGUyZGVkN2FlNWNjMmFlOTdhMzU4N2FkNDQ1NTQ3NmE1Y2EwNjRjOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MDMyZTk2NGQwOTMyMzUxZTVkMTg1MjY5MjgxYjE3MWEzYTA5YjA4YjI4NmU2NjFlYTQ3MDMyM2M4MmViNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNiYjFkMzc5NmJjMTkxZDkyN2Y1NDJkZjA5OGYyZmY2Y2Q4NmVmNjlhZGZmODAxZTM3ZTEwM2YwNDMxOWE4NmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5MWYxNTZkODBiMTQ4YmRkOTk0Zjk1Yjk1NDNlZDIyNWRiZDhiMzY1OTc0MzQ4N2M0ZDFkMzk0MTRkYmNlNDcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f0fa32a501c14992b870553a3ad727af",
+      "statement": "The fix-diff check only considers red rows with a matching green row and makes no git call for a non-bug-fix SUMMARY or one carrying a `Red test exempt:` line with a non-empty reason.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/test_verify_summary.py#L1408-L1423",
+          "version": "repo-lines-v1:sha256:ad1e6666460a5aa92a116fc68371cb4bbc08d07ebe1ad36a341fa0d7c90ace61:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcyN2IwNDZmNWM2OWI2ZDgzYWQzMmFkYzVlNDExZGE0Y2IyYzFjZmE1M2VkOTJkMjYyMDRkZGUwMjMwYmVmODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmMTY0NTE3ODQ5ZjQ5YzQ0Yjg1MjIwYjMwZDJkYmE3ODNlNTljMDVmYzJhYzg5ZWY2MDMwNjgyOTg3ZDBmZmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdiOTdkNWI0ZTM5MDkxYjdkOTk2MzhlYmZkN2FjODM1MWNmNDdmMjBkZTc4MGYzNzQ3NjM3MTYxYjdjMTJiNDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFmZjI5ODE0MjQyZDdmMDNkZTQ2YWEzZjBhMDdiNmQ5NmRiMDNkMmFlNDM1MTliMDQzZDg0MTkxZGUxODA4MzMifQ"
+        },
+        {
+          "resource": "repo://scripts/verify_summary.py#L477-L492",
+          "version": "repo-lines-v1:sha256:9872545eb4b20bd1160abf336f28c1d2cabad4ef52ad415ea11c8f165928f840:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwNWE4N2MyZjA1M2I2ZDQwMGVlYWRhOTlhYTFkOTM5ZTc2MWVlM2QwMzM4OGM4YzhhZGRjZTViNGNkOTNlNzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlNzY0YjhmMzI2OTMwZDVmOGI3ZTk5YmE5MjE4MzA3YTMwNTcyMzc0ZWFlN2YwMjA4ZjI2NTU1NjI1ZmJkM2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmYmQwMDkzMTRiYzI3MDg0MTY3MzRhMDJhZTVmZjM5YTFlNDhhMDUwYmU5MWY0M2IyZmFhOTIwMDJjNjJiZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZhNjg0MThmYTUwOWFlZDZiNDEzMmExZWVkYTE0NDM2ZjYyNTI2YmE1Njg3MjA2OGU5MmIwZDUzZTU3MzdhYWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_85b03faad60944da9a4821a6985bf80d",
+      "statement": "The fix-diff check is provenance-tier: it proves that something changed after the red commit, not that the change fixes the bug or that the red exit was real; because it diffs to the current index, later commits make an old bug-fix SUMMARY pass.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/verify_summary.py#L495-L505",
+          "version": "repo-lines-v1:sha256:6aab031fdfad5b039e918e1908a06ef7ef87587ad60714755f8e1e9df156b3a1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0YmY3NTgwYzNmM2E0MDAwZDc0NmI4NDE4YWJkZGYwOTVjZTM4ZmE2YWYxMWRlMzg4NzExMzU5YWM5ZTIzMTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY2Mjc5ZTkyN2MyYzU4MWU5ZTA0ZTNiOThhYjYxYzBlNzU4MDkzNTE3ZDY4MDQ5N2IxOWMzM2NhZWMyZGNhZGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiYjFkMzc5NmJjMTkxZDkyN2Y1NDJkZjA5OGYyZmY2Y2Q4NmVmNjlhZGZmODAxZTM3ZTEwM2YwNDMxOWE4NmMifQ"
+        },
+        {
+          "resource": "repo://specs/gh-313-prove-the-red/design.md#L132-L139",
+          "version": "repo-lines-v1:sha256:f369522c619a3d396ce549791cdded80a06ef66f7b3d0a5a9869531e483997c6:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzExYjhkNzE3MTMzYjY5NjZlZjc0YThiNDY2MTNiOTU5ZDdiNTgzMjNlYmJlYTM2Y2NkYmVlOTE0ZmU4ZjBiZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjNjMzc2YzdiNWYxZDRlNzk4N2VmMTQxMDZmYjMwMjMxMmUzZjVhYWViOGY4YTFmYTFiZTU0MmVmM2I0ODljNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTA1YzdjZDU1YjhmZTYwMGRiNTEwZjYyOWQwZTk5MjYzNDNkYWU0ZDM0YzU4Njg1NjcwZWUyYzE4ZmU4OGRhYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGM2MWNiMmNkNmMwZDIzNWMwZTQwODhjNjM2YzVmMTVlZjg0ZjkzMjhlMDhmODk3YTE2OWNjNzViMjIyNjNiNyJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-16T04:08:21.021Z"
+    "at": "2026-10-19T07:24:11.736Z"
   }
 }

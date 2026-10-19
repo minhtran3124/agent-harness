@@ -3,10 +3,9 @@ type: architecture concept
 title: Harness Manifest and Contract Surfaces
 description: How harness-manifest.json acts as the single source of truth for hard-gate slugs and block/warn modes, component inventory, hook profiles, and contract surface-to-consumer maps, and which checkers keep the manifest, commit-gate.sh, and the embedded gate-mode defaults in parity under the index-safe policy read rule.
 tags: [harness-manifest, hard-gates, gate-modes, contracts, drift-checks, index-safe, policy-toctou, commit-gate]
-verified:
-  - by: openwiki/0.7.2
-    at: 2026-10-16T04:08:21.021Z
 sources:
+  - id: openwiki-source-a2371d6362e5db4bc834ad03
+    resource: repo://CLAUDE.md
   - id: openwiki-source-ca3be90a8549ad8944d39c40
     resource: repo://docs/solutions/harness/consumer-risk-modes-index-safe.md
   - id: openwiki-source-f5d0cb8e541c88fb21b1ae6e
@@ -15,10 +14,16 @@ sources:
     resource: repo://docs/solutions/harness/gate-mode-as-data-decisions.md
   - id: openwiki-source-991face7ae593d36af0365be
     resource: repo://harness-manifest.json
+  - id: openwiki-source-bfee88e007d9dc10e41b2be6
+    resource: repo://harness-models.json
   - id: openwiki-source-da1abaef00ad290b88a0eeda
     resource: repo://hooks/commit-gate.sh
   - id: openwiki-source-228dccaa8b5486a95fa82a08
     resource: repo://hooks/lib/gate-modes.default.sh
+  - id: openwiki-source-c6ad09deb432834c7cdc7e52
+    resource: repo://hooks/model-config.sh
+  - id: openwiki-source-c7c0b7689aebe88169a1a1f7
+    resource: repo://scripts/apply_model_config.py
   - id: openwiki-source-14f3c12a95ccbb5234143f65
     resource: repo://scripts/check_gate_modes_smoke.py
   - id: openwiki-source-17d8a096e4eb3d473a0d76b7
@@ -29,13 +34,20 @@ sources:
     resource: repo://scripts/deploy-harness.sh
   - id: openwiki-source-3e1ed57e21690b87c57e8462
     resource: repo://scripts/harness-audit.sh
+  - id: openwiki-source-56eeb80b522ade87a1b3e51e
+    resource: repo://scripts/render_agent_definitions.py
   - id: openwiki-source-139b698785417c0b4c884c72
     resource: repo://scripts/run-tests.sh
+  - id: openwiki-source-8d67ed5c5b1bd7083b7dcfc9
+    resource: repo://settings.json
   - id: openwiki-source-8e627bc7bc032e6fbc57219d
     resource: repo://tests/hooks/commit-gate-risk.test.sh
   - id: openwiki-source-b600473af866070b33022d55
     resource: repo://tests/scripts/check-contract-impact.test.sh
-generated: { by: "openwiki/0.7.2", at: "2026-10-16T04:08:21.021Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-19T07:24:11.736Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-19T07:24:11.736Z
 ---
 
 # Harness Manifest and Contract Surfaces
@@ -60,10 +72,18 @@ The manifest is mostly read by CI checkers and deploy scripts. One runtime consu
 | `contracts` | `slug -> {surface[], consumers[], desc}` blast-radius map | `check-contract-impact.sh`, validated by `check_manifest.py` |
 | `notes` | Recorded policy trade-offs, such as why a dependency-manifest edit trips `external-provider` even though Rule 3 allows adding a dependency | People |
 | `hooks`, `skills`, `agents` | Inventory of hooks with a `wired` flag, skill names, and agent role names | `check_manifest.py` |
-| `hook_profiles` | `default` plus the `minimal`/`standard`/`strict` hook lists | `check_manifest.py`, `scripts/deploy-harness.sh` |
+| `hook_profiles` | `default` (currently `standard`) plus the `minimal`/`standard`/`strict` hook lists | `check_manifest.py`, `scripts/deploy-harness.sh` |
 | `agent_bindings` | Paths to the neutral contract, runtime binding, and renderer files, plus the runtime list (`claude`, `codex`) | `check_manifest.py` |
 
 Today 7 detectable gates block: `auth`, `authorization`, `data-loss/migration`, `audit/security`, `external-provider`, `public-contract`, and `high-blast`. 2 gates warn: `weakening-validation` and `workflow-engine`. Both were moved to warn mode on 2026-07-23 because measurements showed they were noisy. `workflow-engine` fired on 85% of recent commits, and `weakening-validation` had a precision of 0. Moving a gate to warn changes **enforcement only**. Intake still classifies those changes as high-risk ([gate-mode-as-data-decisions.md](../../docs/solutions/harness/gate-mode-as-data-decisions.md), Decision 3).
+
+### Current inventory, profiles, and model configuration
+
+The inventory currently lists four hooks, all with `wired: true`: `commit-gate.sh`, `branch-isolation-guard.sh`, `session-knowledge.sh`, and `model-config.sh`. `model-config.sh` is a SessionStart hook. It applies the user's `harness-models.json` to the deployed agent and skill frontmatter and never blocks (see [Model and Effort Config](../operations/model-and-effort-config.md)). The `default` profile is `standard`. `minimal` contains only `branch-isolation-guard.sh` and `commit-gate.sh`. `standard` and `strict` both contain all four hooks, so a default deploy wires `model-config.sh` and a `minimal` deploy drops it.
+
+The `skills` list has 16 entries. It includes `harness-models`, the skill that pairs with the model-config hook. The `agents` list has the four roles `coding`, `reviewer`, `task-reviewer`, and `test-runner`.
+
+`harness-models.json` is **not** part of the manifest, and no contract lists it. It is a per-project user file with `schema_version` 1 and `agents`/`skills` maps of `model`/`effort` overrides. `scripts/apply_model_config.py` checks it against a defaults snapshot, not against the manifest. `scripts/render_agent_definitions.py --defaults-out` builds that snapshot from the Claude runtime bindings in `agents/runtime-bindings.json` and from the `model`/`effort` frontmatter in `skills/*/SKILL.md`. An unknown role or skill name is rejected. The manifest still constrains model policy in one indirect way: `check_manifest.py` rejects any `model`, `effort`, `tools`, or `memory` field in an `agents/<role>.md` source frontmatter. That keeps runtime model policy in the bindings and the user file. `deploy-harness.sh` validates the target's `harness-models.json` before it writes anything under `.claude/`. It then copies the snapshot to `.claude/harness-models.defaults.json` and applies the overrides.
 
 The manifest also records itself as a contract. `hard-gate-vocabulary` has the surface `harness-manifest.json` and the consumers `hooks/commit-gate.sh`, `rules/auto-correct-scope.md`, and `skills/feature-intake/SKILL.md`.
 

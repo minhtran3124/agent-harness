@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:303cb46d8d99694babd9551429f5e60a4a9b4a0e95cc3e472a62c31dcd32697d",
+  "pageVersion": "sha256:8284a69913409c7dec958253fdad934b9207b5e927ea83c7fdf139308a716e42",
   "claims": [
     {
       "id": "claim_35333898186443a2805710275831d399",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://agents/README.md#L7-L14",
-          "version": "repo-lines-v1:sha256:d13b6ef62e78a9b50d6d9a76fd5f83060d65a1a9a50bbbd548b2580c35993627:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTAxOWQyOTRiMDY2ZTlhZDI1YTBlYTNlZjYyYTVlYjNlZmQ2ZDM0Mzc2MmJjNDE0MmI5NjViYTU5ZDJkMTIxMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzNkMGU5NjE1YWIxZjk1MGE4NDNkMjk0ZWEyM2U0ODBjM2UyZTQ4OWM1ZjViZTBiNjU5NTBhMGJmZjA5OWQ5NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTQ5NThiZWU0MTNmYjI2OTNiMjdiZmRkYzA0Mjc0ZmVkZWFlMWUwOWRlMGE3YjFiMmE1OWUzODA4MDEyZjkwNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTE5MjQ3MTI5N2NjODBhNzI2ODg2MDBkZjExZGI2ODU1YWZjOWU2MjQ2OTM3YmNiZjNlMWIwMjhhNTBhNWYxNyJ9"
+          "version": "repo-lines-v1:sha256:98d1be3639d88a94c05cf315e0ced95803911af6fdb8fcc2c7c6cc45a13fb2cf:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTAxOWQyOTRiMDY2ZTlhZDI1YTBlYTNlZjYyYTVlYjNlZmQ2ZDM0Mzc2MmJjNDE0MmI5NjViYTU5ZDJkMTIxMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDY2Njc4NDk4NmZiMjUyYjYyNjJmNmMyNzMxZTA1NDA3MWMyNDNmZDNiYTg2MWYzMGM5NjdiYzk5NGY4MTU3OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTQ5NThiZWU0MTNmYjI2OTNiMjdiZmRkYzA0Mjc0ZmVkZWFlMWUwOWRlMGE3YjFiMmE1OWUzODA4MDEyZjkwNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTE5MjQ3MTI5N2NjODBhNzI2ODg2MDBkZjExZGI2ODU1YWZjOWU2MjQ2OTM3YmNiZjNlMWIwMjhhNTBhNWYxNyJ9"
         },
         {
           "resource": "repo://agents/agent-contracts.json#L1-L59",
@@ -21,22 +21,22 @@
       "statement": "Interactive, human-in-the-loop work belongs in skills run in the main thread, while autonomous returnable work belongs in agents run as subagents; for this reason brainstorming exists only as a skill and has no agent.",
       "evidence": [
         {
-          "resource": "repo://agents/README.md#L42-L57",
-          "version": "repo-lines-v1:sha256:ee3bdd0f2f8643b1fd997efee534f23276e01a86b5af39a10fdd9b2ef5e090d7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhYjhkODNjYjg4NzQ2MTdmMmVhZjk1NGU3MzY1MjcwNmUxMTJkN2Y4ZTdiNjFiZWVmMTgwZDI1YWM1ZmQ2NDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmNzlmNGMyNjFlZDcyMDJkOTFkMDlmN2UxZDU3OGI3MWFlOGI4ODY1NzZlYWM5ZjBlODk0NWMwNzdiYWY1MzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU0ODE0OTZhNjhhYTgzZjM5Y2E4MDA2YTc5MDdjMzRkNTMzODIwNzA3YTA2OGE0M2ZmMTk0MDY2YmJjNDZhZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://agents/README.md",
+          "version": "repo-file-v1:sha256:dcaa49558842fc683fa14911c0c69194de7f9f88fc31f63c57a22839fefea4ab"
         }
       ]
     },
     {
       "id": "claim_8796ebe8b3744956a3c4582771d077f6",
-      "statement": "agents/PROJECT.md is a thin index that points to the repo's convention docs instead of restating them and carries only execution facts (test command, targeted-run flags, source-to-test mapping, failure hints); reusing agents in another repo means copying agents/ and editing PROJECT.md while role files stay unchanged.",
+      "statement": "agents/PROJECT.md is a thin index that points to the repo's convention docs instead of restating them and carries only execution facts (test command, source-to-test mapping, failure hints); reusing agents in another repo means copying agents/ and editing PROJECT.md while role files stay unchanged, and xia2's risk-classification signals live in skills/xia2/references/depth-classifier.md and rules/research-depth.md rather than PROJECT.md.",
       "evidence": [
         {
-          "resource": "repo://agents/PROJECT.md#L1-L50",
-          "version": "repo-lines-v1:sha256:0e0a8b9844fa1fb57fb0b3d5e4fee0a0459b78407240eba6abe862af929208bf:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzZjM2MzE3NTc2MjM4NzZiY2IxMzZiZGI1Y2UyZmMwYzM4ZTlkOGVmNzczMTYwMjIyYzc5N2I5NjA2NWQ2ZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyYTUzM2E3ZTRkZmM2MGEyZWJiODcwMGViM2Q5YzMwNzg5MWFkNmMzZjhmYTM2NWE0Y2U3NjI3ZDA5NWNmYWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://agents/PROJECT.md",
+          "version": "repo-file-v1:sha256:0e0a8b9844fa1fb57fb0b3d5e4fee0a0459b78407240eba6abe862af929208bf"
         },
         {
-          "resource": "repo://agents/README.md#L16-L40",
-          "version": "repo-lines-v1:sha256:bf672a8c5724f520948e08261dd287f509e044a40e9ec86c3de9a2e99a7bf3f1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1ZTY3MjBjNmJkNDVmZDY3YjdkOWZkY2E4ZDRiZWRmMzQyYWUxMTAxZTNjM2ZhOWJhNDU4MDFiNWY1MjU2YmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExZjZlYmNlYzg1MjU4YWZkNDZjZmJjM2NjYWY5Zjk2MDU5M2UwMWUyNjFiMGFiZDY3YjE0NjhiZDExMzgyODIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3ZWM5MTAwNjA0NTZiNjFlMGQ4YWVmMjVhMWNlMDk3NGRmMTBiZjVjYjhkMDVlZWEwZDA0ZTZjZDA1ZGQ1ZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIyNTQyYTM4MjQ0MWVkZDQ3MmM3ZTNlMjU2MGYwMTg0YWU2NjkyMWE1MDg4OGIzOTI4OWNlOTgwZjU3ZDI2ODUifQ"
+          "resource": "repo://agents/README.md",
+          "version": "repo-file-v1:sha256:dcaa49558842fc683fa14911c0c69194de7f9f88fc31f63c57a22839fefea4ab"
         }
       ]
     },
@@ -151,7 +151,7 @@
       "statement": "render_codex emits one TOML profile per role with underscore names, model/effort/sandbox settings, mcp_servers = {} for mcp none, [agents] enabled = false when nested delegation is disabled, and developer_instructions prefixed by a generated capability-policy block, and round-trips each profile through a strict TOML-subset parser before writing.",
       "evidence": [
         {
-          "resource": "repo://scripts/render_agent_definitions.py#L235-L355",
+          "resource": "repo://scripts/render_agent_definitions.py#L254-L374",
           "version": "repo-lines-v1:sha256:df943c8cf8ebf5471bec0e12b537b9253cc4fc01a70fe33dd5a60f399c298f57:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzN2ZlNjMzODc1ZDc4MzM5Y2QwNThmOGEyZjk4ZTc1OTAxNDhhMWM3MThkMmU3NmVjMDM0YjI1OWUzYTU3NGNmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5Y2RjNzgyNjJjYzExNzljM2FkZWQ5ZDdlZmU4ZTU4MDM5ZWYwYTZiNzE5YjRhNTRiNjdhOGI1NGQxZDZjYjZlIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiOWVlMTkzMjg0ZTgyZmI3NmFmNGY0ZjU4M2U0M2YwNTA3YjVmMTMyYjE2NGU2ZDM1MjNiYWZiOTRjMGM3YjFlIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1NDhkNzQ4M2QwNjBmMTcyMmUyNDUzNjg4ODMzNDI1NmI1NDkwZThiYmU4Njk4MjA2NzZjYTllYWYzNTA5Y2M5In0"
         }
       ]
@@ -161,15 +161,15 @@
       "statement": "deploy-harness.sh renders Claude agent definitions via render_agent_definitions.py into the deployed agents directory, and render_codex_adapter.py validates bindings, checks manifest agents exactly match role sources on disk, and renders Codex agent TOML into project/.codex/agents.",
       "evidence": [
         {
-          "resource": "repo://scripts/deploy-harness.sh#L508-L511",
+          "resource": "repo://scripts/deploy-harness.sh#L513-L516",
           "version": "repo-lines-v1:sha256:ce8fe939074f12dedc83a3c7f93e328b69da7d697c570003269c5e3ee52c478a:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWRmMTk4ZGRlYjBiNThkMTNiNjcxZWYxMzYwMDkyYmE4ZDM5MDNjZGEzYzUzYWVhZjg5MmYyZGI1MTIzMDAzYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjg5MDExMWRlMmJmZjdkM2NlOTMxMzY1ZGVmMGI0MWFjMmM1MzE0NzU3NDY4YWM4NmQ2MDdiZWI1MWJiMTMyMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzU0OTA4ZGEzNjZmNjU1NmE3NDYzOGIyNmI1N2UzODcxOWMzYmZlNjYzODE2OTliMGFmNzQ4Y2E0YTY2ZmUyOCJ9"
         },
         {
-          "resource": "repo://scripts/render_codex_adapter.py#L176-L190",
+          "resource": "repo://scripts/render_codex_adapter.py#L181-L195",
           "version": "repo-lines-v1:sha256:b595a9fc835f7e89d7cf2b92a392bac13eee13a18fc507891fa7aecbd4a420dc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhZmQ2NmQ3OTc3Mzg1YzNhZTdkMjIxZjVlMDYyNTkzNGM3OWUwZWRjYTRlOGNhM2EyN2FlNWFmMTNlZjU5NzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4YTAzZWRjOTUyODNhYWY1Mzc5NzVlMTBmZDk1MTU1NjQyMjIwMmZlOWNkNjQzZGZhZTYzMWFjMmY5OTdkNjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxYTQyMjFhMWEyODE1Mzk4YzFmYzI0NzdhZjEwNTdmYzZhZmY1NWE0NGNlMWFkYzJkZTg3NTc4NjAwNzg4MzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY4NDRlNTUyMGJiNTMyODg1MWFkNjcyZDk5MWZmYjVlZjc4ODU5YzZlZmEwMWUxZWQ2MjFlZjViY2QzMDYwNjUifQ"
         },
         {
-          "resource": "repo://scripts/render_codex_adapter.py#L255-L256",
+          "resource": "repo://scripts/render_codex_adapter.py#L260-L261",
           "version": "repo-lines-v1:sha256:b89f89864ec5212fbbf0a8906ae05e7ba91fd9bb050787f112cd2474580cddd0:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjQzMzUyNmY1OWU3ODcyODMwNmIxOWMzNjM3ZTQwODU0NWRkMGNkOTg0ZTkwZmRmYTZiMmJlY2RhY2Q5NjU2ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDcyNzI5NzY0MDYzYzAyMmYyZjdlZGMyMDY4YjhjNDg2OTJkNzJkOGQ1MmNkZDE1NjVjMGZhNjUzOTNjNjRiOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWFhZDU5MGZjOTFmMWY5NzAyOTBlM2Q0NDEzYWI4MzEzZmJhYTJlZjhkZjBiMWE5OTgwNDljNDEzYjJlNTExYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2I1NGZkZDUxMzI5Yjk4YWE3NjkwNWZlZDg4ZjkxNGUxMmMxODE0NGE1MzNhMGNiN2JlN2ZiZGQxYTkyNjZjNCJ9"
         }
       ]
@@ -220,11 +220,11 @@
     },
     {
       "id": "claim_7e365bc85f7b410992632ff4f6ccda5e",
-      "statement": "agents/*.json and adapters/ are source-time inputs that never deploy to consuming repos, so render_runtime_entry.py stays a harness-repo tool while render_skill_prompt.py is a deployed consumer script.",
+      "statement": "agents/*.json and adapters/ are source-time adapter inputs that must never deploy to consuming repos (CONSUMER_DATA ships only harness-manifest.json), so render_runtime_entry.py stays a harness-repo tool, while render_skill_prompt.py and apply_model_config.py are in the deployed CONSUMER_SCRIPTS allow-list.",
       "evidence": [
         {
-          "resource": "repo://scripts/deploy-harness.sh#L45-L61",
-          "version": "repo-lines-v1:sha256:00558e032f28a1875c7057da05f230b5be84e2b1422db2b4e8084e9e60e7f381:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyNzg5NGNkMzFkNDczMjliMzQ0M2FkODEwNGE2MGQwNDZiOGU1ZmM2NzdmNDhmODY0YmZiNmZmMWY2N2E3ZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYwN2JlMGU1NTgyYmNlNzA0NWMzNDk0ZjcxYWIxMjg0MzQ5MmRmZjAwNmNmNWQyZmVlOWVjZWUyZWFjOWZiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5MTUxZjk5Yjg4NTlkMTM0MTc1ZThjNDcyZGVmMzZmNjg3MGNlYzViZDVlNjkzYTdmMzliYTdiZmFiMzVkNmMifQ"
+          "resource": "repo://scripts/deploy-harness.sh#L45-L62",
+          "version": "repo-lines-v1:sha256:d0548615c0d11e316f8bc383ef7f36c4e71166bbaf2466faa3691406b27ad9bf:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyNzg5NGNkMzFkNDczMjliMzQ0M2FkODEwNGE2MGQwNDZiOGU1ZmM2NzdmNDhmODY0YmZiNmZmMWY2N2E3ZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYwN2JlMGU1NTgyYmNlNzA0NWMzNDk0ZjcxYWIxMjg0MzQ5MmRmZjAwNmNmNWQyZmVlOWVjZWUyZWFjOWZiZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5MTUxZjk5Yjg4NTlkMTM0MTc1ZThjNDcyZGVmMzZmNjg3MGNlYzViZDVlNjkzYTdmMzliYTdiZmFiMzVkNmMifQ"
         }
       ]
     },
@@ -257,7 +257,7 @@
           "version": "repo-lines-v1:sha256:f489a793ac60b1b0e7475e078ef60805ef65928a12f953ac42f38c27f7355f46:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1YTcyZDMwYjcwYTg5NjRlNDg5NzNmNGNmNDc1NDYzZGFlNjZhM2Q5ZjdiYzY4ODVhYjMzODkxNTI3ZjBkODUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY1OGY0MWEyZDM3ZDQ2NmJlYjFlMmE0MWQ0YWIwMDU5NWJiMGQ2ODg4ZTY2ODgyYTczNWJjNzNkMzhjMmJlYjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE3NmEyMGZiZTNlZmI2NWQwMzhkZmZmMDhiMWRmYjRmYjc4MTUyMjFhYTZkYzE5OTkwZGRiYWRkNmFhNjRiNGIifQ"
         },
         {
-          "resource": "repo://harness-manifest.json#L244-L251",
+          "resource": "repo://harness-manifest.json#L247-L254",
           "version": "repo-lines-v1:sha256:3c5a401049e91dbd192e823d481e00fc4fb3a4725cc6688b84a3ea876c29ae0f:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjc4YTM0M2M5YTNlMDdhZjkzNmQ3MDhiZTM1NDJlMTRlY2FkOTQ0YThmYjliYmFhYzA5YTZmYmI2YWZlOTc3MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlNTc4OGQ1ZDlkNzNkMjRhODFkYmMwYTVhNzRiZmE4MmM5YzNiM2FmOTllNTJhZjc5NmU5MGI0NjhhOGEzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDA4OGEwMzY2NWVlM2ZiZGI5YjM4NTg2MGY0NjkzOGY4OTYyOTc4Mjg2NzQ2MDI0MjVkZWYxOWZlOGIyNDJlZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSJ9"
         }
       ]
@@ -271,10 +271,112 @@
           "version": "repo-lines-v1:sha256:6cb1ab8114920ded231413d15af25ef930eab51f322ca4cea6aac8bf13a29e6b:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzcxMTVjMWFiYWI4Zjk1NzJiZTU4N2MxMDI5NTMyOTJjNGFkNjQ5Yjc4ZWRlYTc2N2NlMDA5ODVhYWMwMzBkMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTRlNTJhZTQxYWVlNjIyNmEyYzQ4MWFiNDIzNDNjZDliYzBiZmY2NjIwMDBiZjk3YTY3MzUyODNiZWFmMjVhZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDAxZjJlYzE3NTkzYzEwNTRlYjQ2MzY3ZDg0NTNlZjI0YTE3M2NlOTZiNzExN2Q5MWY5YTY4ZDQ0ZmVmOGIwMSJ9"
         }
       ]
+    },
+    {
+      "id": "claim_4b5ac5c477fb448c9872a0bfa8461161",
+      "statement": "The agents README inventory records dispatchers: task-reviewer is dispatched by subagent-driven-development and by diagnosing-bugs for the diagnosis review, and test-runner runs after implementation and on the subagent-driven-development cannot_verify retry.",
+      "evidence": [
+        {
+          "resource": "repo://agents/README.md",
+          "version": "repo-file-v1:sha256:dcaa49558842fc683fa14911c0c69194de7f9f88fc31f63c57a22839fefea4ab"
+        }
+      ]
+    },
+    {
+      "id": "claim_cedb143b1cc94a92a458460e9165545e",
+      "statement": "deploy-harness.sh copies agents/ while skipping agents/*.json, then its 'Rendering Claude agent bindings' step runs render_agent_definitions.py --runtime claude --output-dir $OUT/agents to overwrite the copied semantic roles with rendered definitions.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L379-L383",
+          "version": "repo-lines-v1:sha256:9cd6219fcb25c4e5cd720fe99e7ebd4ef64c508de07f6f33e728c58d2ac26f5b:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzU4ZGViYjJkZDA0NjY0OWIxMmRlYzc0MDJiYjhkMzk2YmNmMDk0ZTQ0YjVmOTAzNjBlYjNjOWM2YWQ3OGUzYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODRlNzYwNDI2YThlM2E4NjBkZDE1MGU2YzExNzhiYWE2YmYxODI0YzU3ZmU4MjczYjAyYjRhNWNlNDUzYWE3MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2UyMGIzNjQyNDc2NDdhNDRhZmNlZDZlMjkxY2YzOGNkNTMxNDlkYzM0MTc5YjRkYWZlNjUzOTRlZjlhYWIyNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTdhYTk3ODFmZDNlNzUxNmI2ZWJmMDI5YjhhNWY2YmQwYjQzMzViNzFiZmVkMGM3YTJkMzQwNzExMDg4M2U3OSJ9"
+        },
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L513-L516",
+          "version": "repo-lines-v1:sha256:ce8fe939074f12dedc83a3c7f93e328b69da7d697c570003269c5e3ee52c478a:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWRmMTk4ZGRlYjBiNThkMTNiNjcxZWYxMzYwMDkyYmE4ZDM5MDNjZGEzYzUzYWVhZjg5MmYyZGI1MTIzMDAzYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjg5MDExMWRlMmJmZjdkM2NlOTMxMzY1ZGVmMGI0MWFjMmM1MzE0NzU3NDY4YWM4NmQ2MDdiZWI1MWJiMTMyMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTI0YmI1MTMyNzkyMWMzMzVmMTdjZGIxMDViMTIwYTJiZGMzZDYzN2RkZmZkN2Y3NzA3ZGI2ZmJjZGM1ODlmNyJ9"
+        },
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L625-L630",
+          "version": "repo-lines-v1:sha256:5e36286cb7d0d05040b9e3d00a28ea4b6208d4e2bbcaaf418cd85134d5dff945:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTQyNjc4YWI3MWE2YjgxZWQ2MGRlNzlhYzhjZTcwZjRlNzExOTRjYzEyODMzNTJhMmRjNDJlMzQ1MTAyOTYzZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmRmYTk3NDY2MGRiZTI0OGE0OWIwMDVjNGEyNzJjZmNlNmNhMTYzYzZkZDc2YmU2MzlhMTcxOWU4MjgyYmI2NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWUyNmQ0MDM4NTBlNDA5MGVjMmI1ZDI4YWViY2Q4MWU2YzFhMDM1OTczMDU4YzVjZGM5ZWZhOTk2NWRlNTc5OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTdhMWEzMWRkMjU0Y2Y1Y2QwNDg2NjYyYzBhODRjMGIyMWQ2OGE5ZTI1MTcyNWJmMmZmMjc0MDg0ZTMzZjM0ZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_7e1864b7a6134ca38b44ab95536a28f4",
+      "statement": "deploy-harness.sh protects agents/PROJECT.md as a bootstrap-owned file that a re-sync never silently clobbers, and strips agents/README.md from the deployed tree as a harness-only maintainer doc.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L33-L38",
+          "version": "repo-lines-v1:sha256:19c2b5649afd6d7e6880ff2f26072ba090b859a0fb9bce4da78bf1710e8ba272:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzA2Zjk3MTEzNWIxNGU3MzgxM2MyYTc1OWVhYjNjZDg1MGFiZWYxMDU3YTIyMzU5MzQ2YTc2MzU2ZjQ2OTUxNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmFmYmEwNTI3YzM5NTNjNGI2ZTBlNWI1NzM5YmE4MzYxMmY4MDUzYmNkYzk0NjY3MzAxOTNjZDFkNTkwYjQwOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzA0MDZhYmQxNDc0YWQ2YzNmMDI5MzEzZGU5ODQ3MjliZjk2MzEyODQzZDJjOWNkMGNjYjM3ODZhNjU0MmQ4MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTI5NzliN2FkZTMzZTcxMWY0ZWU2NjQ0ZjAzNzEyYmIxOGMxN2YwMTdhMmM3M2U2YjFiNjRkOWI3YWRjMWM4ZCJ9"
+        },
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L68-L72",
+          "version": "repo-lines-v1:sha256:67eb214f40b5e5eeb55e66f9cb9b43693d3fbf27970063590464f1fed106ee16:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWMyNTE5YTFmYmU5YWFhMzM1MGYwNjgwOTJhZGU1NmZiNGMxZTZmZGFjZGUzZjZiYjUxMmJhMTRmMTkxMGRhMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmFmYmEwNTI3YzM5NTNjNGI2ZTBlNWI1NzM5YmE4MzYxMmY4MDUzYmNkYzk0NjY3MzAxOTNjZDFkNTkwYjQwOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2E4N2I0Y2M4YmU0OWNkNmQyZDg0ZDU2MWU3MmI2Y2QxYjliOGIyNzRhN2E0YjMzM2ZmODg0ZDQ4ODcxODlhNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTkwMmRjNDhjZTllZGQyZGY1NGJlODE5MzFiNjgxMWRlM2U3M2MyNWFhZWY4ZDc1ZDNlM2E4MjZkMWVkOWM3OCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_cb1edc1147624aad8f034cd477638878",
+      "statement": "render_agent_definitions.py --defaults-out (only with --runtime claude and not with --check) writes a sorted schema_version 1 snapshot of each Claude role's bound model/effort plus model/effort frontmatter of non-archived skills/*/SKILL.md, without changing --output-dir render bytes.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/render_agent_definitions.py#L216-L232",
+          "version": "repo-lines-v1:sha256:85be22741b1e09a76eace2c6e9ad6077b6ad7d2748133d0f57f34f64003b4a03:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlMmNjMjkxZjUwNjVmYjU2ZjIxZTk5MjAxZDIyMDljNGMzZTAwMjEzYjExYzQ4MzRiNWQ5Njg0NmVkZmM5NjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyOTJiYWQ5OWFmMjY1MWRmZGQ0NmQwMzFkYjYwNzYxNmQzYzliMzE2ZmM5YWNkOTliOTYwYzFjZmE1MDA4OGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1MjAxOWNhZGEyNTI5ZjExNWE2NGIxYzQ4N2FmZTliODk1ZTBmZWFjNTY5NzcxOTMzY2Q4OTM4MmZhYTI5ZjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFkZWJkZGZjMDU0ZTdiNWIwYTViZjMxYTQ1MzdjZTJkOGRmNjFlYmQyZTIzNjg1OWZlMmNiZTkzYjAxNmM1ZmYifQ"
+        },
+        {
+          "resource": "repo://scripts/render_agent_definitions.py#L385-L405",
+          "version": "repo-lines-v1:sha256:e3b011c36d1c3f46e2deef6a100301218a95014deb1e5dc98cab9539f011789f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzNDM3NDZkMDlhMTgyYzhkNWE1YmMwNmNlNjk5ODJjZmQyNzczZDc2MWVkZWYwZDAwYzg0YTMzOTY5YTRjZjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxMDM0ODFjNTdkMGYwZGMwZjc2Y2QyY2M4YjM2MDRjNGU4Mjk2ZGE0MTIyYWRkMTllODE3NDVkYzdlMzMxYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg3Y2Q2Y2E2OGI4MzIyNjEyNmM5Y2JlZGM3ZDM3ZGM3ZGRjZDFjNzllZGUwY2FjYjM3MjRmZDdlZDAyZWI5MWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM4ODQwZDE0ZmUxODhiOWNkZWIzN2Y2N2RhOTg0Nzg5OTZjMmNlMDkxZTM3MTVlNjQ0YmM4NjZmYTE1NDRjMjYifQ"
+        },
+        {
+          "resource": "repo://scripts/test_render_agent_definitions.py#L281-L352",
+          "version": "repo-lines-v1:sha256:962b5777579eef86b0643429098f6f67b679acca71e118cb5c5e7ba3b0070347:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc0NmI0ZDhlYmFjODE2NDcwZTYwMmE4ZDZjODgwN2IyNDUyNjJhNTEwY2I3Y2UxOGJhMGIxZWUwMGQwMzljODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0Njc3YmQzZDRiYzFlZTczNTkwN2RlNGNiZDlkODUzOTFkNmNmMDQ3YjAzYjkyNTVmNDVjOWNjMTE0MmM4M2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYxZWJlMDk5YzUyZmI3ZjRhNTI1ZTRlN2QxM2FhM2I1Njc0OTg0ZWIzMzM2NTQzZDFiY2ZhODRhMThmMTBiZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM5OTlmYmYzMmJmNmJkMjEyODBjMGY3MmI2ZWYyNGNmMTU3MGEwNjBiNzdhNjU0MzFmZWQ3ZGI3ZWU0ZjJhYzUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_95507610bfee4a8baaaa6bff65c1a4b7",
+      "statement": "Before any write (including under --dry-run), deploy-harness.sh renders the defaults snapshot and runs apply_model_config.py --check against the target's harness-models.json, exiting 1 with nothing written under .claude/ on failure; after rewrite_derived_paths it copies the snapshot to .claude/harness-models.defaults.json and runs apply_model_config.py --apply.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L517-L541",
+          "version": "repo-lines-v1:sha256:fcf69197d2473a556a6c1ba3b547a36b8abb1b641d5456de78eb3d5606997762:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkYzI3MzQ3OWQ0NWRjZDU5Y2RkMzYyN2M5YWIyNjJiMzYwNTk5ZGE5NzdkYjAyZWFhYzlmNDdjMTY5MmZkMDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlODU0YjY2ODdjYmQ3YmM0OTBiNmIxYTM0OGJjNTczOTk4N2M4NWE4MDE0NDZlMzNhYTFhYWU4NDVlNWQ1YTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc1NDkwOGRhMzY2ZjY1NTZhNzQ2MzhiMjZiNTdlMzg3MTljM2JmZTY2MzgxNjk5YjBhZjc0OGNhNGE2NmZlMjgifQ"
+        },
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L621-L638",
+          "version": "repo-lines-v1:sha256:14487e52c9f3a23b170cc6179efe4d614ed503bfece185207ee7b0461293cdc1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3MjlkMjQ2MzZjYjgwOTVmZDY1ZmE1NDZjOWRkYmM3Y2E2MTUwNzczMWNlMzgxNDk2ZmYwYjYzYWIwNmM2YzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmNzlkNTY4NmQ5ZWZiYWY5ZGRlY2ExMzQwNWI3MmY4NDU2ZmNlMzdiODRjOGE1ZjdhNWFkYmRhNjViYmM3N2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyMzRhZjAwM2FkZTZlY2Q2ODNhYTk0MDAzNGRmNTMzNzhmMWExMjUxYzRhYTg0ZWQ3NGQ2YjViNDJkYTZlMzEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_49d5ef8a61ba4fb8a6572b384163fa97",
+      "statement": "apply_model_config.py validates harness-models.json (known roles/skills only, keys model and effort only, alias or claude- model IDs, efforts low..max), merges overrides over the snapshot defaults, enforces a medium effort floor for reviewer and task-reviewer, and atomically rewrites only the model/effort frontmatter lines of deployed agent and skill files.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/apply_model_config.py#L151-L225",
+          "version": "repo-lines-v1:sha256:ee7a292300b0a74a1d873d3d94b59cb0bb4fb585c1aa85d70072c1985a108f7f:eyJzZWxlY3RlZExpbmVDb3VudCI6NzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhYTkxNzI4MmJkNTI0ZjcwMzEwYmJlNmQzMGJlODI1ZGY5MzU3MzIyMDk3MTRmZWM5OTQ2MzA1ODc1NjQzMWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhMTFjMDU2N2QwYTVmOWU5YjEzNWY2NWNkMjUzNzJkZmQ2Mjg3NzVmN2MxZWQyNTNmOGJhZDQyZGQyZDY2NjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRlODEzYzQxYmFiOGE3OTIzOGMxOTU2ZGEzZDM2NmI3YzlkY2RiOTI2MTRjMWI1YThjZjRmMzZjNDhhNGU3NjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA0OTZkZTMzM2RjOTQxY2RjMjMxMDZlNDJlODRkYjcxNzdlMDgyZWQ4ZmI2Y2NiZTk0ZmZkMDYzODNlMTg3NGIifQ"
+        },
+        {
+          "resource": "repo://scripts/apply_model_config.py#L18-L31",
+          "version": "repo-lines-v1:sha256:0538ff632ccb21bd74394f006ccb376b214748a21d9e4abee0bcfed3cd58a575:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlM2E0N2QwMTI1ZjY4MDczZTIyNmYxOWE4ZWIyODNkMDYyYWRmZjZiYWQ0ZWNlZmI0OTBiMjFiYWNhMzdhNzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU4ZmQwY2Q0YjU5MzEwNDM3Yjg1YmJiMTViMmEwZjljNzM2YzUzOGY3MjBkZTNhNTEzZTY3MTMzYzJkODhmZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0ZDAwZjBjZTRkYzI2Y2M3YmZjNmVjYmM5NjdlZjY5ZDBiNmY1ZmI3MjZmYWY0ZDRiM2M5NTAzNDc4ODg5ZGEifQ"
+        },
+        {
+          "resource": "repo://scripts/apply_model_config.py#L53-L131",
+          "version": "repo-lines-v1:sha256:e3a513539ccef4f721b2a1edf43a90fc106fe88d9aebec8564be8840f8fcea51:eyJzZWxlY3RlZExpbmVDb3VudCI6NzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1OTE2MDVhNWZjNzYzNzc3MzBjM2EyNDRkOGNkYzQxODA5NGRhOGZlYzU5Y2FiODQ0ZDg0ZGMwYTg0YjU1YjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2YWY3YzJhYzIyNzk2MGZjZDVjM2NjODgwZDViMDhjZmIzOTcxMTJkYTgxMGJmNzVjM2Y0ZWJhYTNhMzdlNWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3NTE1NzZhMjc3NDdlYWMxZWZlYWU4MzNmMTA5YzE4Y2M3NjRjYjNhNDZiMzc3NDE2OTAyNmQ3NjE1YmJiMTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmMWZlNTBkMjA2MjgxN2EwNzg5YTk2ZGJkOWNhM2IyMWU2MmExMmE1YTA3MDM5MmUwYmZjMzVlNzg2ZWQyMTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7966342302ba490f801e47e2b53ded45",
+      "statement": "The harness repo's root harness-models.json overrides coding and task-reviewer to claude-sonnet-5-5/medium, keeps reviewer at claude-opus-5-5/medium, sets test-runner to claude-haiku-5-5 at high effort, and also configures the brainstorming and writing-plans skills.",
+      "evidence": [
+        {
+          "resource": "repo://harness-models.json",
+          "version": "repo-file-v1:sha256:90dbc45c11cdeda78adf4d153694fb1161596a3bb7c0d07f92e16378074ea64b"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-16T04:08:21.021Z"
+    "at": "2026-10-19T07:24:11.736Z"
   }
 }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:8c5e975262887f91efd1949838b7eb6338755b5b242b3345f00301a775b9067b",
+  "pageVersion": "sha256:e9dcfbd0ecc39a09bc621560e36ed293ba580e1529b4ced9e43d638d7a300012",
   "claims": [
     {
       "id": "claim_00d607d32c494ac8a9f813b6e20ebd3a",
@@ -205,8 +205,8 @@
       "statement": "subagent-driven-development's Resume first step runs the source-tree resume_decision.py and falls back to .claude/runtime only when the source file is absent, treats any non-zero exit as stop, requires schema_version 1, and branches only on action/reason_code.",
       "evidence": [
         {
-          "resource": "repo://skills/subagent-driven-development/SKILL.md#L12-L26",
-          "version": "repo-lines-v1:sha256:fabf7cd259e8e5b1578d17114476ed17dfa4283e594ae7290bcd3f20194c9f43:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkMWI1YmVhMTkzYmY5OTJlOTllNTE0MTJmODMyYjMwYjA2MmVmMTgyNGY5ODVhOWM2NmIxYTY4YmM5MTYwNWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxMTljNzk4OTUxMjlmMWVhNGY3ZDhiNWJkOTBmMTkxZTA1ZTg5NmQwNThhZDY1NzUwZDgxYzE2YzJlNDA1ZjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBhNzAxOWE2YTQ3ZDM4MzZiMzVjMDA3NzI2YjFlNTFmYzRlMmI4MDA2NGNiNTVmYWRlNzEwNDk0MDYxNGZlNmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVhZTIwYzIwYTQ3ZGRmYTcxNTA1ZTMyMWUwOTQxYTRmNzBkZThmNWNmNzRiZmFjMDc0ZmViNGNmNmQ1ODFhNTgifQ"
+          "resource": "repo://skills/subagent-driven-development/SKILL.md#L12-L25",
+          "version": "repo-lines-v1:sha256:e82f8a450b6947fd263cd7bdf6119fbc9328916b92e0ee21e8d59791e10f5847:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkMWI1YmVhMTkzYmY5OTJlOTllNTE0MTJmODMyYjMwYjA2MmVmMTgyNGY5ODVhOWM2NmIxYTY4YmM5MTYwNWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxMTljNzk4OTUxMjlmMWVhNGY3ZDhiNWJkOTBmMTkxZTA1ZTg5NmQwNThhZDY1NzUwZDgxYzE2YzJlNDA1ZjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBhNzAxOWE2YTQ3ZDM4MzZiMzVjMDA3NzI2YjFlNTFmYzRlMmI4MDA2NGNiNTVmYWRlNzEwNDk0MDYxNGZlNmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVhZTIwYzIwYTQ3ZGRmYTcxNTA1ZTMyMWUwOTQxYTRmNzBkZThmNWNmNzRiZmFjMDc0ZmViNGNmNmQ1ODFhNTgifQ"
         },
         {
           "resource": "repo://tests/scripts/sdd-resume-cursor.test.sh#L154-L176",
@@ -219,7 +219,7 @@
       "statement": "On execute-plan the SDD controller must re-run every checks_to_rerun item before dispatching any pending task, route failures to repair, and apply required_transition only after confirming the named external condition.",
       "evidence": [
         {
-          "resource": "repo://skills/subagent-driven-development/SKILL.md#L28-L33",
+          "resource": "repo://skills/subagent-driven-development/SKILL.md#L27-L32",
           "version": "repo-lines-v1:sha256:50fa75b7e746b7dc58999fecf6bd57f116737627c826682d59810b337458837c:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTEwZGQ4YmI0M2MxM2RiYmE3ZjZmNGU0MWU1MmQ2OTY4MWM4ZWRjYTBlNjRjNDVhNDFhZjQ2NGRlYWRmNDczNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzMxYjc0ZWE1Yjg5MThmZTQwN2M2Y2Q5NTA4NTRjZmQ0MjU0ZTQ5NzczMWIxZTcyNjVkNjg3NGY1OGM4OGRjMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTZiYjk5YTQyZDMzODVjZTVhZDg4MmQzOTkzMGJmZTI5OTVlYTIwOTU3M2UzMzgyNDJmNGRlMjhlNTViYjY1OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDFkMGFjMDMyYzBmM2Y0YjhhYjUxMmEwZDE3MzY0NGU3M2M5NDQ0N2I0YTg1NzA0OGJkZGE1ZjYyYWFkMGQzZSJ9"
         },
         {
@@ -237,10 +237,24 @@
           "version": "repo-lines-v1:sha256:210ba4d144c4467d79fb8f9986533d13abfac84747610d3b39fd2a27b6c89826:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5MmFjMzVkZTkwOWQxZjM2NmNkYWE2OWVmNTU5NzAyZmEwOGMwMzc2MGU2ZDg5ZThjOTVmMmQ3NjFkMTQ3ZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyYzU5MTZjN2I4MmU5MzE1YTgyYzU0YmRmNGQ1NjY4NWYwZGE3ZTc1N2Y1NDc3ZjQzNzUzODk1N2I3YjA5OGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJiMjllNjI3ZTA3YzRkZjRmZDk2N2Y0NzNhNTM5Yjc1MzA1NTMwY2YwMmI2NDcyMGRkMjhiOWFkZDYwZDhlYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRiYTIwMmQ4NmUwZTMyODQ4YmQ1YWRhMjMwN2Q5NWYyM2Q1ZmI0MjlhNTBhZjlhOTBlM2Q4N2M1ZmM4MDU0NzAifQ"
         }
       ]
+    },
+    {
+      "id": "claim_861453281b55469186e369027b86e723",
+      "statement": "Per-action resume handling is defined in the skill's references/resume.md: only execute-plan enters preflight and the wave loop, resume-repair follows the named CI/review loop without re-running plan tasks, resume-review-chain starts final delivery/correctness/intent review, wait/stop report the reason without editing, and rebuild runs the named non-mutating check first and rebuilds only on reported projection drift.",
+      "evidence": [
+        {
+          "resource": "repo://skills/subagent-driven-development/SKILL.md#L31-L32",
+          "version": "repo-lines-v1:sha256:a4a55c473c34cafb76b604951f5b4694a75809c18db70605ba1c7e3d05bd8730:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmNmNmM4YTZiOGY4YmJjNzI0MTMzYmE3ZDQ3ZGNkNWM2YzBlYmI3NjM2ZGQ5MjJlZjUwMDA4NDRjZTMxNzYzZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzMxYjc0ZWE1Yjg5MThmZTQwN2M2Y2Q5NTA4NTRjZmQ0MjU0ZTQ5NzczMWIxZTcyNjVkNjg3NGY1OGM4OGRjMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjg3OTllODljZWMzMjEyMzhlYjQyZTBiMTkyZDQxMDY3ZmU1OWI3ZDI4MzYyYTc0Njk5YTE3ZTAzOWJhMTNhNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDFkMGFjMDMyYzBmM2Y0YjhhYjUxMmEwZDE3MzY0NGU3M2M5NDQ0N2I0YTg1NzA0OGJkZGE1ZjYyYWFkMGQzZSJ9"
+        },
+        {
+          "resource": "repo://skills/subagent-driven-development/references/resume.md#L15-L23",
+          "version": "repo-lines-v1:sha256:e70da50d4bc4a67e712793686c32a22b0a1d8fd120227c9a75f7b6aacee71519:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzUxY2E3ZjU0NmZmZmM4ZmY2NTUyOGY0MTFiYTNiNjcxZmI2ZmIyNjI3ZGE1NDM3MmRmOTc0NWE4YmNlNmM5OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTY5MjZiYzg5OGRiYmFlY2MzMmZhZmY3OTg0MzUyMDEwZjM4NDA4YmI1MTAwYmU4N2ZlY2YwZGY0OTNkNzk2OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODAxNzZjNjgxNjgzYTMxYWM1MjAxMzQ1NmU5ZjQxMzc3MzJkNjNmM2Q0OTY4ZTRhZjI5YWEwYmIzMDc0YjUzMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjYwYzI2ZTQwOTY2YTQ5N2YzYmIyMDEyYmNjYzMzZDVkNzNkNTg4M2Y1ZmIwMjMzYWIzYWQxYjRhOTE3NWMxYiJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-16T04:08:21.021Z"
+    "at": "2026-10-19T07:24:11.736Z"
   }
 }

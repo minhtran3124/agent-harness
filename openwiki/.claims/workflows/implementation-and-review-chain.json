@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e4da7a06a815635fb6e9411286934c554e6848940baf3be63f3c104215040a58",
+  "pageVersion": "sha256:404eca98bcab0ca7ce412bf9ea444483b56e799fb1388f505e097172ce58130a",
   "claims": [
     {
       "id": "claim_c98da8d1e640434ea137f3d90d098134",
@@ -83,7 +83,7 @@
       "statement": "The task reviewer flags as an Important spec finding every changed implementation path not covered by the brief's Files list (ignoring specs/**, docs/**, and *.md) and every dropped condition, exception, hedge, or scope qualifier in changed skills/rules/agents prose.",
       "evidence": [
         {
-          "resource": "repo://skills/subagent-driven-development/task-reviewer-prompt.md#L34-L54",
+          "resource": "repo://skills/subagent-driven-development/task-reviewer-prompt.md#L35-L55",
           "version": "repo-lines-v1:sha256:bebd89f416963c0e49c96cb7e253e73d3319fbb8bd89e487d91e734cb6024855:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkOTE4NzUxZDc3YzIwMTc4ZTBjYzljOWUyMWE2OGMxMTFmMjA2ZDgyN2Q5NjJlMGRjYzg4MjRjNDMyOTc5N2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1ZWY1YjE1ZGM3OWJiMDg3NTkxOGEwN2IyNzBmMDExZGIwYWVmNzBiYjRkOGVhOTliYTFmNmYyM2VkMmU4YzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ5NGU2NjY2YTk3ODMwYWZkODlkYjY4MzUyNTNkY2QyZGI3OTJkYWYwZDE5MTlhMDhmODE1MzljNzViN2FkYjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYzMTc2MmQ5ZjU5ZmFiZTFmMTY1OTljOTQzNjQ0MTIzZTk2NDJjZDAxYTk3NDlkZjgwNmE5MTUxYzNjY2E4YzMifQ"
         }
       ]
@@ -93,7 +93,7 @@
       "statement": "The task reviewer's quality verdict enforces an STE ratchet: a changed prose file whose HEAD hard count exceeds its BASE count is an Important quality finding, and the quality verdict cannot be approved if a changed prose file lacks a lint line or lint is unavailable.",
       "evidence": [
         {
-          "resource": "repo://skills/subagent-driven-development/task-reviewer-prompt.md#L56-L62",
+          "resource": "repo://skills/subagent-driven-development/task-reviewer-prompt.md#L57-L63",
           "version": "repo-lines-v1:sha256:d9c6fdcac579ac551c4bf0867066da321b6c722c998a4334477f19cb25dd68eb:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWVjMjdkNmI4YzA0OTViZGY0NDcxZjgxNjQ2MTZiZjUxZGY5NWRjZmIzMzJjMmZkNzI2ODFiMTU3ZmQ2OTBlNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODkzZTY4MzBmYzNmMmJiNzc1NzNhNTdkNWI1NGM0MTUxYjc5MWYzZmUxY2VkYzhlMmM3NTI1NDM0ODhmNDE1YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODAxMDJmODgwOWYwN2ZjNjlmZjcwMTg1ZGNhMWU4MzA2YjVjMmVhZGZkYTVkMDg5NTlkYTFhYjgyYzU5ZDIyMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDRiZGMxOTZlNWMyNWFkMzk4NzRkZGIzMjQ5NmNlZGMwZWIyYzhkNDI4YjQ1YWJhYWVmMGRiY2JiMzU5MzI2NCJ9"
         }
       ]
@@ -107,8 +107,8 @@
           "version": "repo-lines-v1:sha256:2ccd93f1036dd3840424422cedf605a24fda217091de614ec5fd3360a4d3a255:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjUyZDcxMTEwM2Q1MGE0Mzc4MzBjNmZiY2QwNGZiNGJhYjQ5YTBmODJmNmQyNmQxYzc5MWM2ZTg0ODhkZDA5MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGY1MDQzYTVlMGQ2MjI4ZGNmOTRiNmI0M2M1MDYzN2ExZTgzNmY2NmU4ODUwMTUyM2YyZTFjMTE5NWIxY2ExYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         },
         {
-          "resource": "repo://skills/subagent-driven-development/task-reviewer-prompt.md#L17-L81",
-          "version": "repo-lines-v1:sha256:a8ff357825c3ec30a6ca31702bf4a094a3249e6f04b040a8242797a6aaeb4f8e:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjOTg1YTY1ZDAxMmVjYjY4OWFlNjBkYmIyZjkwMzFjZDFjM2EyNWE4MTY5MzYzOTViZGEyZmVmNTQ5NmNhNDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiZDcwMGU0ZTZmMWU0MTBkNzJkYTM4ZGIwN2ZlMmEyNWFiMzk4YjdmZWRmODE1YzFmYjgyMGNhZDBlNTU1NjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://skills/subagent-driven-development/task-reviewer-prompt.md#L17-L99",
+          "version": "repo-lines-v1:sha256:3863a789f04bdb2fcd84ef0c474b9739cf5533feafce97e09f078510025b7385:eyJzZWxlY3RlZExpbmVDb3VudCI6ODMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1YjU5ODM1ZjMwMGQyNDhmYTlhMGU0YTRkOGZjMjM4OTE2ZThhYmI1MzZhMWU2MTYxYTI3ZDdmYjhkM2ZlYzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiZDcwMGU0ZTZmMWU0MTBkNzJkYTM4ZGIwN2ZlMmEyNWFiMzk4YjdmZWRmODE1YzFmYjgyMGNhZDBlNTU1NjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -127,8 +127,8 @@
       "statement": "On resume, SDD runs the source-tree runtime/resume_decision.py and uses the deployed .claude copy only when the source file is absent, treats any non-zero exit as stop, requires schema_version 1, and branches only on the structured action.",
       "evidence": [
         {
-          "resource": "repo://skills/subagent-driven-development/SKILL.md#L12-L33",
-          "version": "repo-lines-v1:sha256:53a461cc68aae096979535a5bc41ca6dbf6a03259c640a2e486fcca6fe508f45:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkMWI1YmVhMTkzYmY5OTJlOTllNTE0MTJmODMyYjMwYjA2MmVmMTgyNGY5ODVhOWM2NmIxYTY4YmM5MTYwNWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzMWI3NGVhNWI4OTE4ZmU0MDdjNmNkOTUwODU0Y2ZkNDI1NGU0OTc3MzFiMWU3MjY1ZDY4NzRmNThjODhkYzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBhNzAxOWE2YTQ3ZDM4MzZiMzVjMDA3NzI2YjFlNTFmYzRlMmI4MDA2NGNiNTVmYWRlNzEwNDk0MDYxNGZlNmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxZDBhYzAzMmMwZjNmNGI4YWI1MTJhMGQxNzM2NDRlNzNjOTQ0NDdiNGE4NTcwNDhiZGRhNWY2MmFhZDBkM2UifQ"
+          "resource": "repo://skills/subagent-driven-development/SKILL.md#L12-L32",
+          "version": "repo-lines-v1:sha256:f3ab72bfd8950e0095fab1d309cfaae072951670e03cfcf75a4f357fa4550e8b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkMWI1YmVhMTkzYmY5OTJlOTllNTE0MTJmODMyYjMwYjA2MmVmMTgyNGY5ODVhOWM2NmIxYTY4YmM5MTYwNWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzMWI3NGVhNWI4OTE4ZmU0MDdjNmNkOTUwODU0Y2ZkNDI1NGU0OTc3MzFiMWU3MjY1ZDY4NzRmNThjODhkYzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBhNzAxOWE2YTQ3ZDM4MzZiMzVjMDA3NzI2YjFlNTFmYzRlMmI4MDA2NGNiNTVmYWRlNzEwNDk0MDYxNGZlNmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxZDBhYzAzMmMwZjNmNGI4YWI1MTJhMGQxNzM2NDRlNzNjOTQ0NDdiNGE4NTcwNDhiZGRhNWY2MmFhZDBkM2UifQ"
         },
         {
           "resource": "repo://skills/subagent-driven-development/references/resume.md#L7-L23",
@@ -141,7 +141,7 @@
       "statement": "On an execute-plan resume, every cursor.checks_to_rerun Verify must re-run successfully before any pending task is dispatched, a failed re-run routes to repair, and required_transition is applied only after the session confirms its external condition.",
       "evidence": [
         {
-          "resource": "repo://skills/subagent-driven-development/SKILL.md#L28-L33",
+          "resource": "repo://skills/subagent-driven-development/SKILL.md#L27-L32",
           "version": "repo-lines-v1:sha256:50fa75b7e746b7dc58999fecf6bd57f116737627c826682d59810b337458837c:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTEwZGQ4YmI0M2MxM2RiYmE3ZjZmNGU0MWU1MmQ2OTY4MWM4ZWRjYTBlNjRjNDVhNDFhZjQ2NGRlYWRmNDczNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzMxYjc0ZWE1Yjg5MThmZTQwN2M2Y2Q5NTA4NTRjZmQ0MjU0ZTQ5NzczMWIxZTcyNjVkNjg3NGY1OGM4OGRjMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTZiYjk5YTQyZDMzODVjZTVhZDg4MmQzOTkzMGJmZTI5OTVlYTIwOTU3M2UzMzgyNDJmNGRlMjhlNTViYjY1OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDFkMGFjMDMyYzBmM2Y0YjhhYjUxMmEwZDE3MzY0NGU3M2M5NDQ0N2I0YTg1NzA0OGJkZGE1ZjYyYWFkMGQzZSJ9"
         },
         {
@@ -152,11 +152,11 @@
     },
     {
       "id": "claim_4e00eea9b42844f2926a3cb41a356447",
-      "statement": "The final review chain runs context-propagation-audit first only when the cumulative diff touches workflow-engine paths, then passes one shared branch BASE..HEAD review package to correctness-review and intent-review while keeping their oracle inputs and blindness rules distinct.",
+      "statement": "The final review chain first runs diagnosing-bugs Phase 6 cleanup for a diagnosed bug fix, then runs context-propagation-audit only when the cumulative diff touches workflow-engine paths, then passes one shared branch BASE..HEAD review package to correctness-review and intent-review while keeping their oracle inputs and blindness rules distinct.",
       "evidence": [
         {
-          "resource": "repo://skills/subagent-driven-development/references/review-chain.md#L1-L8",
-          "version": "repo-lines-v1:sha256:488f1e6195aae04bfe750b9aef428fef7578080af8f01ff1408aee7ca9428844:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWRlYzU1ZDhlZTkwNzg2ZTE5NzJhZGU2YzA5ZDRhNjBkYWJmZjRhZjA3NTkwOGU1YWJhOTE3MmMwYmQyNDk5YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmVkYmZlYTQ4NDY5Y2U0YWNkYWEyMDc4NmQ5Njk1N2U2ZTEwNDM1ZTM2OWZiNzA0NGUwOGE4NTQwNjBiNDI1ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+          "resource": "repo://skills/subagent-driven-development/references/review-chain.md#L1-L15",
+          "version": "repo-lines-v1:sha256:317fc1c0816b56b104766c88e6b986492f1cbcaff96d54804fd168136387347e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkZWM1NWQ4ZWU5MDc4NmUxOTcyYWRlNmMwOWQ0YTYwZGFiZmY0YWYwNzU5MDhlNWFiYTkxNzJjMGJkMjQ5OWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlZGJmZWE0ODQ2OWNlNGFjZGFhMjA3ODZkOTY5NTdlNmUxMDQzNWUzNjlmYjcwNDRlMDhhODU0MDYwYjQyNWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -333,10 +333,96 @@
           "version": "repo-lines-v1:sha256:84e45632f44d046195f4c0d1ba96cbc78cbc6d93b55b90f647a0f5d4996722be:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExNThkMzM2MjNkNTk1YmVlMDEyOTA0OTBhNDg0MTdjZTVlMWUxNjIxZmFlZmU5Y2YyZGVmZWY3YmI0ZTBkNjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2MjMzYjNmZmVhMzJhMjNkZjUzMDY1MzQzNDhmMmRlZTc3NmE1YTZmNzRmYjUzMzE3NWRkYzUzOWE4ZmU0NjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MDE0OWUwNjlhZDY3ZWNjZjQ3MzY0NmZmMWM3NTAwNTBkMzI5ZDExMDAxOGRjNTc2Njg3OGVhZmExZDYwN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkNDEzNDBjYzIzOWExNTljZTliNjAyMmU5ZjYzMjI4MzJlMmVhZDc2Y2FlOWU0NzU0ZDIxMGViOGZiNmQ1ZTgifQ"
         }
       ]
+    },
+    {
+      "id": "claim_7fe6404f163d419d908ce013d6e01b4e",
+      "statement": "Test seams reach the implementer and task reviewer only through the task brief: task_brief.py copies the plan's Global Constraints (holding the `- Plan-contract: 2` marker) and the whole task block (holding the `Seams:` line), and a test on the live gh-312 plan asserts both lines appear in the brief.",
+      "evidence": [
+        {
+          "resource": "repo://rules/plan-format.md#L50-L88",
+          "version": "repo-lines-v1:sha256:8e3eb9f7991749cf5c3a531181a4597efd0b4a77c7d0f7e6274302ef6775b45c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3NTE1NjkwNjk0OGJhODAzY2YyY2Q3ODZjMWMxZWQxZjliNzQzYTQ4ODUzOWU0NzJkMTk2NTVmZGI1MDUzZGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwYzg1M2M0Y2ViNDVlM2I5MTQyNDk1ZTY2MTg0MTZjMDhkYTYwZjg4Zjk1NGFkNWU4MWI5ZTA2NjA0YjJlMDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0YWM4M2IwZmE0YWZmYmU2ZDJmMDg1MjZkMzUwYjgxMDdmMjg2OWE3ODc4NzU2NjI5NjViNWVlYTQ2MjFiNTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwMTgzMmE3YzQ2MTE0ZDNlMTVkMzY0ZDZhYjQ3ZThlZTA2M2FkMTYxODhjMWVmNmJhZGYwZWMxOGFjZWU3N2IifQ"
+        },
+        {
+          "resource": "repo://skills/subagent-driven-development/scripts/task_brief.py#L38-L60",
+          "version": "repo-lines-v1:sha256:1b6ad71883e25243ed6f018951d062c55f76ea87a25622e089dbfa0a38163f42:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiMzk3OTMzYTI0YTgwMWVlOTIzMzI3YmQ2OWEwMTA0OWMwNzc5MTUwMjFjZjJlYzM5ZGRhNGY4MWFhODM3ZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2MjMzYjNmZmVhMzJhMjNkZjUzMDY1MzQzNDhmMmRlZTc3NmE1YTZmNzRmYjUzMzE3NWRkYzUzOWE4ZmU0NjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlhODJlYmU5ZWQ0MDdjM2E2YmE0YjAwMzQyOTJiYWE1MmMxMWNlNWFlMjg2MTA3NDAyZGU0NzkyZWVlY2FjZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkNDEzNDBjYzIzOWExNTljZTliNjAyMmU5ZjYzMjI4MzJlMmVhZDc2Y2FlOWU0NzU0ZDIxMGViOGZiNmQ1ZTgifQ"
+        },
+        {
+          "resource": "repo://skills/subagent-driven-development/scripts/test_task_brief.py#L35-L63",
+          "version": "repo-lines-v1:sha256:1452b6d129f62df4aced5cd6c8122033c349c9db5fa8371b94981f55b959403f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlMmJlNTczMDkyN2RiMDAxZjFhYWJlZjk1YjFhZTA0OGM5M2EzNzJjMzU1YmE3ZWUwZDYxZGQ5MjZmNDE4N2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmNTIxODM3MTNlNzNiYjU5MDUxYzQ1NTVhZjhlODAwM2E4MTYzMGU1NzUwYjkyNjA0ZmM5NDhlNDE2MDlhMDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRlODQ1NTYwNWY4NDI2NzhkODM1ZWYwOWM4MWQ2MTUyN2RmNzRmZjU4MTViMzRhZTZkZjViYjE5MmE2ODlhNjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c0ab6cd1bdee4d31b1cf64a0ed674799",
+      "statement": "The implementer must write tests only at the task's declared Seams (skipped only when the brief lacks a Plan-contract: 2 line), write no new test when Seams is none, return NEEDS_CONTEXT before editing if a declared seam cannot observe the behavior, take expected values from a source independent of the code, and also test on real inputs of the seam's shape when they exist.",
+      "evidence": [
+        {
+          "resource": "repo://skills/subagent-driven-development/implementer-prompt.md#L44-L56",
+          "version": "repo-lines-v1:sha256:9ddedf17734d4666c1b7fb5a3777f2cd9ff1688ffd16f043b5dbcf9f73416639:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmOGJjMWY4M2E2MGU4MzZiNTU1YTQwZjE5MzNiZDFmMmQ4YWNhZTI2YmJmMGFmNWQ3ZmYwMzc4OTMxZjEyMzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzNGUwNGUzNDc3YTIxODczYmM1ZWEwNjRhMDI3NTU3YTA3Yzk4NTI0NTMyZGFjM2RkODZmZmQ4Yzc3ZWY0NzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3Y2FhNTVmN2ZmMGRiZTgzY2EzNTFiOGJjM2FkZWMwZWJlMDgyZTM0OWEyZGFkMjk1Yzg3NjUwZDUzYWNjNzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxOGI0N2E3M2ZkNWQwYTYwMWI2NDVkN2VkN2Y1MDcwNjMxM2UwNTBjZmE1YjdjZGNlOThiYTljMjkxNWNmODgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5c6dd4b4c25046eabeb8910ce0a85b86",
+      "statement": "For bug-fix input, the implementer writes the red test at a declared seam targeting diagnosis.md's Confirmed hypothesis, commits it first, records red (exit 1-123 via run_at_commit.py) and green (exit 0) rows, and may write `Red test exempt` only when there is no testable surface or diagnosis.md and Seams both say none with the same reason.",
+      "evidence": [
+        {
+          "resource": "repo://skills/subagent-driven-development/implementer-prompt.md#L57-L75",
+          "version": "repo-lines-v1:sha256:caea4a338289a8139c93562bff56bcd0bfaf79d7cbe4a992f2ee28f80b39f6ec:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyOThhNzI3MWQ3MmViMjlkYWVhNjc0M2U5MTFmZDBiMGUzODdlYzEzZTgxNmE2NjQzODBiYWI4NDI0N2I5Y2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwM2U4N2I4NjhmYmVhZDUyY2EyMmUwMjZlNTg3ZDY4NDMxMDk3YjViZTI2M2Q4NDI0NmNmODcwZGIyZTNkOWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIwMTdkMmY5YTRiYjFkOTdhZTZlNzkwZjVkODJjZWViMWVmOTljZWRiN2JkMDIxZjRjYjk0NWY0MzVjZWRiZTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ1OWJjNmI3NDUwMWNjMTEyMzQ2YWFiYTY2N2QyZWFkNTY3MWYwMzg3YzQ4YzI1MGM5MDYyOTI4Y2M3MmQyMWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_41d44fba934a4f5b9278afe5f31a1b3d",
+      "statement": "The task reviewer's quality verdict flags as Important any new test not at a declared seam, with expected values copied from implementation output, using only synthetic fixtures when real seam-shaped inputs exist, or a task whose Seams is none (except a matching diagnosis.md `Seam: none` reason), and grants one extra focused read-only search per declared seam cited in search_surface.",
+      "evidence": [
+        {
+          "resource": "repo://skills/subagent-driven-development/task-reviewer-prompt.md#L17-L99",
+          "version": "repo-lines-v1:sha256:3863a789f04bdb2fcd84ef0c474b9739cf5533feafce97e09f078510025b7385:eyJzZWxlY3RlZExpbmVDb3VudCI6ODMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1YjU5ODM1ZjMwMGQyNDhmYTlhMGU0YTRkOGZjMjM4OTE2ZThhYmI1MzZhMWU2MTYxYTI3ZDdmYjhkM2ZlYzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiZDcwMGU0ZTZmMWU0MTBkNzJkYTM4ZGIwN2ZlMmEyNWFiMzk4YjdmZWRmODE1YzFmYjgyMGNhZDBlNTU1NjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a974792309ae4377a3455fba1e06bcbb",
+      "statement": "check_task_review_contract.py pins exact phrases in task-reviewer-prompt.md (REQUIRED, including verdict vocabularies, checked_against, and seam checks) and implementer-prompt.md (IMPLEMENTER_REQUIRED seam rules), fails if SDD still references the retired dual spec/quality reviewer prompts, and exits 1 with one stderr line per problem or 0 with `task-review-contract: passed`.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check_task_review_contract.py#L10-L54",
+          "version": "repo-lines-v1:sha256:100087b1e1b4b206f21b4ea9387c4fc8b7e2febdd84e0ceb155941f29286bfba:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwNDk0ZjBmZGQ5ODk1MjI1ZmMxM2M3OTE2MmQxMGQxMjRmMDRjZGZiYzIzMjBlZWNlODExNWE0YWFlZWY1N2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2MjMzYjNmZmVhMzJhMjNkZjUzMDY1MzQzNDhmMmRlZTc3NmE1YTZmNzRmYjUzMzE3NWRkYzUzOWE4ZmU0NjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3MTBkN2FmNTg5NjUxOTdhM2MyM2U3MjI1NjRjZGVkOTc3YWJhZTQ3YmYzYmZiZWJlMWViOGMzMzJhMDgyOTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkNDEzNDBjYzIzOWExNTljZTliNjAyMmU5ZjYzMjI4MzJlMmVhZDc2Y2FlOWU0NzU0ZDIxMGViOGZiNmQ1ZTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3927e5907a9241d3a3e3c1fb0a381080",
+      "statement": "test_check_task_review_contract.py verifies the checker passes on the live repo and returns 1 when checked_against, the implementer seam pin, or the reviewer seam pin is removed from a tmp_path copy; check_task_review_adoption.py aggregates the checker with task-review shell tests.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check_task_review_adoption.py#L12-L27",
+          "version": "repo-lines-v1:sha256:6fa03c5550bed0a7f638a96fcf56361a5b10550a71cecb7b7afa5d59887ec915:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiMzk3OTMzYTI0YTgwMWVlOTIzMzI3YmQ2OWEwMTA0OWMwNzc5MTUwMjFjZjJlYzM5ZGRhNGY4MWFhODM3ZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2MjMzYjNmZmVhMzJhMjNkZjUzMDY1MzQzNDhmMmRlZTc3NmE1YTZmNzRmYjUzMzE3NWRkYzUzOWE4ZmU0NjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhN2ZiYjQ3Zjk3MTZhNmM5ZWZiMWQ5OWQ4YjA2N2YzNDk0MGQ2ODU5OWI2ZWZiZjJjOWRlZjhiNmJlOWE1Y2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkNDEzNDBjYzIzOWExNTljZTliNjAyMmU5ZjYzMjI4MzJlMmVhZDc2Y2FlOWU0NzU0ZDIxMGViOGZiNmQ1ZTgifQ"
+        },
+        {
+          "resource": "repo://scripts/test_check_task_review_contract.py#L19-L51",
+          "version": "repo-lines-v1:sha256:5f4aa655bf44ed339d7916012458a03288db81af24f4bf068342e43caa2a387a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2ZGM4OWEzNWY3MzZmZTA5ZGJjNTM5YjVjZWM2NzI1MTFkNDZmZTM0NjNmMjk5MzljMjBhMmRmNTkwMWRjZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlZjg1ZjQ5NTFjNDM0NTkzNjhmZTMyNTIwNmI3N2E3YjQzZDQ0ZjJmMTg3YWY5MDI3ZjViZThkYjBjMmE1MzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5OGIwNjNkOWI0N2U2NTM3OTYyNTU3MmNjZTE5NzY2OWQ1NzY3ZTEyYzE4YmUwNzU2NTJiOGNkOTgxY2U4ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_37b7a6b2f55e4c63845121c30d8adde0",
+      "statement": "For a diagnosed bug fix, SDD names diagnosis.md in the fix task's Context, passes it to the task reviewer as DIAGNOSIS_PATH, and before dispatch requires the Plan-contract: 2 marker, a Seams line, and equal seam points between the first Seams entry and diagnosis.md's Seam value; on mismatch it does not dispatch, corrects Seams (normal lane) or returns to writing-plans (high-risk), and after a second mismatch writes a pending ESCALATIONS.md block and stops.",
+      "evidence": [
+        {
+          "resource": "repo://skills/subagent-driven-development/SKILL.md#L48-L54",
+          "version": "repo-lines-v1:sha256:18fb3fd06c84b5a57c17781d138aa01230a01181d6ace03c34591afa69adb2a1:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTlmNGI4NzJiNzE5N2Q0YjFjM2Y4YzYzMzNlNDMzYmZlM2Q4YjA2OTkwZTAyM2U0NWM1MTg0OTQ5NmQyYWNjOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTcwYzY3ZjI3ZTQwMmM5NDkxYjc2NmUwODJjYjBkNzM4MjBkMWQ5MDVjNWRiMTc5OWE1OTBlM2MyZjA4OTBkZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmM5NGIzMzEyOTZmODlhZDMyNThlNDE3ZjRmNzNhZThhYmRjN2MwNjczYzhjZGM0YzQyYTE2ZGQ3Y2RmMDgzNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzBmMzAyOTVhOWQ0YjJhNDc3YWI4ZGYxYjUzN2FmYzFiNzRmMzQ1MjdhOWVmMWU0ODJmYWMxZGVkNjJjZGIzYyJ9"
+        },
+        {
+          "resource": "repo://skills/subagent-driven-development/references/bug-fix.md#L1-L36",
+          "version": "repo-lines-v1:sha256:e170433bfe0644e3c09e8b93b1b3a7892e432de2c7a71b81c277774206bb547c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyZGU4NmQ0ODUzMDUwNDY0NDQzMjExMTcxOThjNDRhOWEzYzJhMmVhY2MwOWIzMzAxMzU4Y2UyYmNmNTRkOGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwYjhjZjJkMzc2YmYyNjJkY2M1ODYxYzQ2OGEwYzhkN2Y4N2I2NjczZDhkZDFkOTQwMDNiYWNkZmZjZDQzMzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-16T04:08:21.021Z"
+    "at": "2026-10-19T07:24:11.736Z"
   }
 }

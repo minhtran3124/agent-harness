@@ -1,12 +1,13 @@
 ---
 type: testing subsystem
 title: Behavioral Evals
-description: How the evals/ tree measures the judgment of prompt-driven skills and agents (review chain, test-runner, feature-intake classifier, context-boundary delivery, prompt-refactor corpus) with labeled fixtures, blind model runs, deterministic scorers, and strict claim discipline, and which parts run in CI versus by hand.
-tags: [evals, testing, review-chain, feature-intake, test-runner, context-boundaries, claim-discipline]
-verified:
-  - by: openwiki/0.7.2
-    at: 2026-10-16T04:08:21.021Z
+description: How the evals/ tree measures the judgment of prompt-driven skills and agents (review chain, test-runner, feature-intake classifier, context-boundary delivery, prompt-refactor corpus) with labeled fixtures, blind model runs, deterministic scorers, and strict claim discipline; how reviewer prompt changes are proven by canary and historical replay; and which parts run in CI versus by hand.
+tags: [evals, testing, review-chain, feature-intake, test-runner, context-boundaries, claim-discipline, canary, historical-replay]
 sources:
+  - id: openwiki-source-b2fae54da2c156fcba13c5be
+    resource: repo://docs/solutions/harness/reviewer-prompt-change-proven-by-canary-and-replay.md
+  - id: openwiki-source-1cc097c34ccf75a5aa256afd
+    resource: repo://docs/solutions/harness/skill-eval-blind-run-scoring.md
   - id: openwiki-source-07f06280ec697dbc8d3fe4d9
     resource: repo://evals/agents/test-runner/README.md
   - id: openwiki-source-174c6ebb7b77d0e8cf387bf1
@@ -35,9 +36,16 @@ sources:
     resource: repo://scripts/score_test_runner_eval.py
   - id: openwiki-source-6f5d89c232900972d32b81fe
     resource: repo://scripts/test_score_test_runner_eval.py
+  - id: openwiki-source-0b5dddc66c77db0dc934e7d5
+    resource: repo://skills/diagnosing-bugs/tests/routing-cases.md
+  - id: openwiki-source-432509a66b42834cf674a0b5
+    resource: repo://specs/gh-312-test-seams/canary.md
   - id: openwiki-source-e3588799bbd26639b4135d5b
     resource: repo://specs/session-retro/SUMMARY.md
-generated: { by: "openwiki/0.7.2", at: "2026-10-16T04:08:21.021Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-19T07:24:11.736Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-19T07:24:11.736Z
 ---
 
 # Behavioral Evals
@@ -82,6 +90,17 @@ flowchart TD
   CI -.-> S
 ```
 *How a behavioral eval runs from start to finish: a model is called only on the manual path, while CI checks only the fixtures and the scorers.*
+
+### Blind-run playbook lessons
+
+The solution note [skill-eval-blind-run-scoring.md](../../docs/solutions/harness/skill-eval-blind-run-scoring.md) records the playbook that built the intake-classifier eval. It adds these rules to the shared model:
+
+- **Blindness is the most important integrity rule.** The orchestrator wrote the answer key, so a run that can see `truth.md` makes the number meaningless. In a Claude Code session, "run the eval" means the orchestrator dispatches one blind subagent per fixture, using the session's quota. A standalone or CI runner that needs `ANTHROPIC_API_KEY` is deliberately not built, because an LLM in CI costs tokens and is flaky.
+- **Separate the safety-critical dimension from the judgment dimensions.** Report a headline for each dimension, and make the non-negotiable one a hard failure (for intake, `--strict` on hard-gate respect). Lane and confidence accuracy may vary between runs; gate respect must be 100%.
+- **Run more than once.** One run hides borderline non-determinism. In four blind intake runs, hard-gate respect was 3/3 every time, while one lane-boundary fixture flipped between `tiny` and `normal` (3 of 4 `tiny`). Only multiple runs show that kind of finding.
+- **Normalize the model's free text.** The skill writes its own spelling (`Data model`), and the key may write `data-model`. Comparing on raw strings produced a real false INCORRECT before the scorer compared on alphanumerics only.
+- **Suspect the key when runs agree against it.** When several independent runs all disagree with a fixture, revise the key and mark earlier runs not comparable; do not tune the skill to a wrong key. A fixture that only *leans* one way while the literal rule supports the key is a real skill finding, so keep the key and record the finding.
+- **Mark decisions the fixture already settles.** Before the first run, read the fixture line by line and mark every decision it states as `settled-by-fixture`, then score only the open rows. In the gh-309 runs the key left such decisions open, so the simulated user was asked about them and each run took extra rounds.
 
 ## Review-chain micro-benchmark (`evals/skills/review-chain/`)
 
@@ -224,6 +243,36 @@ The claim rules:
 
 Result records must carry `first_run: true` and a non-empty observation. `record_skill_eval.py` appends records and rejects unknown or duplicate first-run cases.
 
+## Canary and replay proofs for reviewer prompt changes
+
+A phrase pin on a reviewer prompt proves only that the new words are present. When a change alters what a reviewer checks (the task reviewer, the correctness finder or scorer, or the intent reviewer), the solution note [reviewer-prompt-change-proven-by-canary-and-replay.md](../../docs/solutions/harness/reviewer-prompt-change-proven-by-canary-and-replay.md) asks for two runs of the real reviewer agent with the real prompt:
+
+1. **Canary (the gate).** A small fixture holds a brief, an implementer report, and a review package; a hand-written diff is enough. Each target defect is planted once next to clean controls, and nothing in the fixture labels them (no `# bad` comments). The run passes only when every planted defect gets the expected severity and no control gets a finding.
+2. **Historical replay (evidence, not a gate).** Take a recorded case where the old review approved and a later review found the defect. Rebuild its brief and package from the original commits, add only what the new rule needs, run the new reviewer on the original diff, and compare its findings row by row with the later review. Record the result as it is.
+
+Operating rules:
+
+- Keep the fixture under `specs/<slug>/canary/` and the record in `specs/<slug>/canary.md`, with each reviewer output in a fenced block, so a plan check can be `grep -q "^Canary result: pass$" specs/<slug>/canary.md`.
+- Build briefs and packages with the same scripts that subagent-driven development uses (`task_brief.py`, `review_package.py`), so the run sees what a real dispatch sees.
+- Set a failure budget before the run (gh-312: two failed runs, then escalate), and state that one canary run is one sample.
+- Plant defects in the reviewer's exact terms. "Copied from the output" and "computed by the code under test" are different wordings, and the canary is where a narrow wording shows up.
+- In a replay record, say which tree the reviewer could search. A replay against today's tree sees more real inputs than existed at the time.
+
+**Worked example: gh-312 ([canary.md](../../specs/gh-312-test-seams/canary.md)).** Both runs dispatched the `task-reviewer` agent with the task-reviewer prompt that contains the new test-seam check. The canary diff added four tests to a `word_count()` fixture: two clean controls with literal expected values, one off-seam test of the private `_tokens`, and one whose expected value was computed by the code under test. Both planted tests got Important findings, the controls got none, and the reviewer also found a real tab-splitting bug that the circular test hid. The file records `Canary result: pass`. The gh-175 Task 2.1 replay returned `needs_fixes` where the original per-task review had approved. It named the synthetic-only fixtures (seam step 3) and the per-entry SHA association, which match later gh-175 correctness findings [A/B] and [C]. It did not reproduce the other nine findings, which are code defects outside the seam check. The record notes that the replay ran against today's tree, which holds more real `specs/*` runs than existed when gh-175 shipped.
+
+## Skill-local routing canaries
+
+Some skills keep manual canary tables beside their source instead of under `evals/`. [`skills/diagnosing-bugs/tests/routing-cases.md`](../../skills/diagnosing-bugs/tests/routing-cases.md) lists the input, the tool call the session must or must not make, and the expected outcome for the [bug-diagnosis](../workflows/bug-diagnosis.md) skill. A human or a meta-eval session runs these cases; per-commit CI does not.
+
+Because the skill sets `disable-model-invocation: true`, the runtime blocks a Skill-tool call for it, and `feature-intake` routes a bug fix by reading `skills/diagnosing-bugs/SKILL.md`. The cases are:
+
+| ID | Role | Expected behavior |
+|---|---|---|
+| RC-01 | Over-firing canary | A quick question gets an answer; no Read of the skill and no diagnosis |
+| RC-02 | Chaining canary | A bug fix through `feature-intake` reads the skill, intake writes `Input-type: bug fix`, and Phase 1 starts before the lane route. A Skill call here means the route failed |
+| RC-03 | Direct invocation | `/diagnosing-bugs` runs the skill, and Phase 1 starts after the isolation step |
+| RC-04 | Pins design decision D4 | A tiny-lane bug fix still runs all six phases with all six `diagnosis.md` fields and no "cause known" shortcut |
+
 ## What runs in CI vs manually
 
 | Piece | Where it runs |
@@ -234,6 +283,7 @@ Result records must carry `first_run: true` and a non-empty observation. `record
 | Pytest collection inside `evals/` | **Never.** It is deliberately excluded because fixture repos contain tests that are meant to fail |
 | Every model run: `run_review_chain_eval.py`, `run_review_prompt_eval.py`, `run_test_runner_eval.py`, `run_intake_eval.py`, `run_task_review_eval.py`, `run_skill_eval_batch.py`/`capture_skill_eval.py`, and the context-boundary probes | **Manual.** These need an authenticated `claude` client and cost money |
 | `score_skill_eval.py --validate-corpus` / `--compare` / `--candidate` | **Manual or spec Verify rows**; not called by `run-tests.sh` |
+| Reviewer-prompt canary and replay runs, and skill-local routing canaries such as `skills/diagnosing-bugs/tests/routing-cases.md` | **Manual.** A plan may gate on the recorded `Canary result: pass` line |
 
 Practical consequences:
 

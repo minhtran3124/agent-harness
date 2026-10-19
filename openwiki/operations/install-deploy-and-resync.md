@@ -1,16 +1,15 @@
 ---
 type: operations guide
 title: Install, Deploy, and Re-sync
-description: How install-harness.sh (consumer one-liner) and deploy-harness.sh (self-dev and re-sync) build the derived .claude/ tree, apply minimal/standard/strict hook profiles, merge settings.json, guard per-repo protected files with .harness-incoming sidecars, prune orphans, scaffold structural files, and update .gitignore.
-tags: [install, deploy, resync, hook-profiles, settings-merge, gitignore, scaffolding]
-verified:
-  - by: openwiki/0.7.2
-    at: 2026-10-16T04:08:21.021Z
+description: How install-harness.sh (consumer one-liner) and deploy-harness.sh (self-dev and re-sync) build the derived .claude/ tree, apply minimal/standard/strict hook profiles, merge settings.json, validate and apply a consumer's harness-models.json, guard per-repo protected files with .harness-incoming sidecars, prune orphans, scaffold structural files, and update .gitignore.
+tags: [install, deploy, resync, hook-profiles, settings-merge, model-config, gitignore, scaffolding]
 sources:
   - id: openwiki-source-991face7ae593d36af0365be
     resource: repo://harness-manifest.json
   - id: openwiki-source-da1abaef00ad290b88a0eeda
     resource: repo://hooks/commit-gate.sh
+  - id: openwiki-source-c7c0b7689aebe88169a1a1f7
+    resource: repo://scripts/apply_model_config.py
   - id: openwiki-source-4a7eaf43ec1d74d5deee3c15
     resource: repo://scripts/deploy-harness.sh
   - id: openwiki-source-3932405dc16f3a52fd397400
@@ -29,11 +28,16 @@ sources:
     resource: repo://tests/scripts/install-gitignore.test.sh
   - id: openwiki-source-80d50a4d6befabcfd3d07f95
     resource: repo://tests/scripts/install-harness.test.sh
+  - id: openwiki-source-7dd11d9e2cade354c4030ad8
+    resource: repo://tests/scripts/model-config-deploy.test.sh
   - id: openwiki-source-b4852ad3186d54a0ede989b5
     resource: repo://tests/scripts/resync-conflict.test.sh
   - id: openwiki-source-ecbae98b1691d9e9401b181d
     resource: repo://tests/scripts/settings-merge.test.sh
-generated: { by: "openwiki/0.7.2", at: "2026-10-16T04:08:21.021Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-19T07:24:11.736Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-19T07:24:11.736Z
 ---
 
 # Install, Deploy, and Re-sync
@@ -75,30 +79,43 @@ The script treats the run as an update when `$OUT/settings.json` already exists.
 ```mermaid
 flowchart TD
   A["Parse flags, validate --profile"] --> B["Resolve profile: flag, then .harness-profile, then manifest default"]
-  B --> C["preflight_protected: scan protected files, pick one policy"]
+  B --> M["check_model_config: render defaults snapshot, validate harness-models.json"]
+  M -->|invalid| X["Exit 1, nothing written under .claude/"]
+  M --> C["preflight_protected: scan protected files, pick one policy"]
   C -->|dry run| Z["Report conflicts and would-prune, exit 0"]
   C --> D["copy_dir for skills agents hooks rules templates runtime"]
   D --> E["render_agents"]
   E --> F["strip_archive, strip_skill_tests, strip_maintenance_docs"]
   F --> G["copy_consumer_subset"]
   G --> H["rewrite_derived_paths"]
-  H --> I["derive_settings: filter by profile, merge"]
+  H --> N["apply_model_config: write harness-models.defaults.json, apply overrides"]
+  N --> I["derive_settings: filter by profile, merge"]
   I --> J["write .harness-profile"]
   J --> K["prune_orphans using previous .harness-deployed"]
   K --> L["write new .harness-deployed"]
 ```
 
-*The order in which deploy-harness.sh runs its steps. Nothing under `.claude/` is written before the preflight finishes.*
+*The order in which deploy-harness.sh runs its steps. Nothing under `.claude/` is written before the model-config check and the protected-file preflight finish.*
 
 ### The derived `.claude/` layout
 
 - **Synced directories.** `copy_dir` merges each source directory one entry at a time. For each top-level entry the harness ships, it runs `rm -rf` and then copies the entry fresh. Entries the consumer added, such as a skill installed separately, are never touched. Local edits to files that are not protected are overwritten without a prompt (resync-conflict case 7).
 - **Agents.** `agents/*.json` (contracts and runtime bindings) are source-time adapter inputs and are never copied. `render_agents` runs `scripts/render_agent_definitions.py --runtime claude` to render the `agents/*.md` frontmatter. See [Codex advisory alpha](../integrations/codex-advisory-alpha.md) for the multi-runtime binding side.
 - **Stripped from the derived tree only.** The script removes `skills/_archive`, the `skills/<x>/tests/` directories, `test_*.py` files, the `HARNESS_ONLY_DOCS` files (`skills/xia2/README.md`, `skills/compound/README.md`, `agents/README.md`), and any `<!-- harness-only:begin -->…<!-- harness-only:end -->` region in Markdown. The source files keep all of this.
-- **Consumer script subset.** The script does not sync all of `scripts/`. It copies only an allow-list (`CONSUMER_SCRIPTS`: `verify_summary.py`, `check_plan_contract.py`, `check_review_receipt.py`, `resolve_finish_context.py`, `rebuild_solution_index.py`, `render_skill_prompt.py`, `check_open_questions.py`, `run_at_commit.py`) into `.claude/scripts/`, and copies `harness-manifest.json` to `.claude/harness-manifest.json`. If an allow-listed file is missing from the source, the script warns and continues. Add a row to the allow-list only when a consumer-facing skill or rule references that helper.
+- **Consumer script subset.** The script does not sync all of `scripts/`. It copies only an allow-list (`CONSUMER_SCRIPTS`: `verify_summary.py`, `check_plan_contract.py`, `check_review_receipt.py`, `resolve_finish_context.py`, `rebuild_solution_index.py`, `render_skill_prompt.py`, `check_open_questions.py`, `run_at_commit.py`, `apply_model_config.py`) into `.claude/scripts/`, and copies `harness-manifest.json` to `.claude/harness-manifest.json`. If an allow-listed file is missing from the source, the script warns and continues. Add a row to the allow-list only when a consumer-facing skill or rule references that helper.
 - **Path rewriting.** `rewrite_derived_paths` changes root-relative helper paths in derived **Markdown only**: `scripts/X` becomes `.claude/scripts/X`, `harness-manifest.json` becomes `.claude/harness-manifest.json`, `python3 skills/visual-planner/render_plan.py` gets the `.claude/` prefix, and so does the `asd-ste100` linter path. The rewrite is idempotent, so a second run never produces `.claude/.claude/`. Hooks are left byte-identical to source because `commit-gate.sh` must read policy from the git index (`git show :harness-manifest.json`), never from a derived copy. See [Commit gate](../enforcement/commit-gate.md).
 - **Nested checkouts.** The Markdown transforms and the test stripper never descend into `.claude/worktrees/` or into any directory that has its own `.git` entry. Harness worktrees live at `.claude/worktrees/<name>`, and an earlier recursive walk rewrote tracked source docs inside one (issue #276, covered by `tests/scripts/deploy-worktree-isolation.test.sh`). See [Branch isolation and session hooks](../enforcement/branch-isolation-and-session-hooks.md) for why worktrees live there.
+- **Model defaults snapshot.** `.claude/harness-models.defaults.json` holds the harness's default model and effort for each agent role and skill. See [Model-config application at deploy](#model-config-application-at-deploy).
 - **Bookkeeping files.** `.claude/.harness-profile` records the profile used. `.claude/.harness-deployed` records the deploy manifest.
+
+### Model-config application at deploy
+
+A consuming project can override model and effort per agent role or skill in a `harness-models.json` file at the project root, next to `.claude/`. Deploy handles that file in two steps. See [Model and effort config](model-and-effort-config.md) for the file format and the `/harness-models` skill.
+
+1. **`check_model_config` runs before any write.** It runs before `preflight_protected`, so it also runs under `--dry-run`. It renders the defaults snapshot from source with `render_agent_definitions.py --runtime claude --defaults-out <tmp>`. Then it runs `apply_model_config.py --check --project-root <target> --defaults <tmp>`. If either command fails (for example `effort: "bogus"`), deploy prints the applier's error and `harness-models.json check failed — nothing written under .claude/`, then exits 1. On a first deploy, no `.claude/` directory is created. On a re-sync, no file under `.claude/` changes. A valid dry run deletes the temp snapshot and applies nothing.
+2. **`apply_model_config` runs after `rewrite_derived_paths`.** No later step changes the lines it writes. It copies the snapshot to `.claude/harness-models.defaults.json`, then runs `apply_model_config.py --apply --project-root <target> --claude-dir .claude`. The applier changes only the `model:` and `effort:` frontmatter lines of `agents/<role>.md` and `skills/<name>/SKILL.md` for the roles and skills named in the snapshot. It never writes a settings file. A consumer's own skill that is not in the snapshot stays byte-identical.
+
+If `scripts/apply_model_config.py` is missing from the source, deploy prints a warning and skips both the check and the apply. Because the snapshot is copied on every deploy, the `model-config.sh` SessionStart hook and the `/harness-models` skill can re-apply the configuration later from inside `.claude/`. `tests/scripts/model-config-deploy.test.sh` checks this: a valid file changes exactly the configured line, a second deploy changes nothing, and an invalid file stops deploy before it writes anything.
 
 ### Orphan pruning
 
@@ -111,8 +128,8 @@ The hook profiles are defined in the `hook_profiles` object of [`harness-manifes
 | Profile | Registered hooks | `commit-gate.sh` behavior |
 |---|---|---|
 | `minimal` | `branch-isolation-guard.sh`, `commit-gate.sh` | `--profile minimal`: secrets scan only |
-| `standard` (manifest `default`) | the two above plus `session-knowledge.sh` | standard checks (escalations, lane evidence, run state, risk, plan scope) |
-| `strict` | same three hooks as standard | `--profile strict`: also the untracked-`.py` deny and the app gates; risk corroboration becomes strict |
+| `standard` (manifest `default`) | the two above plus `session-knowledge.sh` and `model-config.sh` (SessionStart, matcher `startup\|clear`) | standard checks (escalations, lane evidence, run state, risk, plan scope) |
+| `strict` | same four hooks as standard | `--profile strict`: also the untracked-`.py` deny and the app gates; risk corroboration becomes strict |
 
 The script picks the profile in this order: the explicit `--profile` flag, then the value in `.claude/.harness-profile` if it names a valid profile, then `hook_profiles.default`. An unknown or option-shaped value such as `-eminimal` makes the script abort before anything is written. After the settings step, the chosen profile is written back to `.claude/.harness-profile`. A later re-sync without a flag keeps the same profile, and an explicit flag replaces it.
 
@@ -185,6 +202,7 @@ The harness repo's own `.gitignore` also lists `.claude/`.
 | `tests/scripts/settings-merge.test.sh` | foreign keys and hooks preserved, idempotent re-sync, invalid-JSON backup, removed-hook pruning |
 | `tests/scripts/deploy-profile.test.sh` | profile filtering, `.harness-profile` persistence and override, rejecting unknown profiles before any write |
 | `tests/scripts/consumer-subset.test.sh` | allow-listed helpers, path rewriting, test and maintenance-doc stripping, hooks left un-rewritten |
+| `tests/scripts/model-config-deploy.test.sh` | `harness-models.json` applied to the derived agents, `harness-models.defaults.json` shipped, invalid file refused before any write (also with `--dry-run`) |
 | `tests/scripts/deploy-prune.test.sh`, `deploy-worktree-isolation.test.sh` | orphan pruning safety, nested checkouts left untouched |
 | `tests/scripts/install-harness.test.sh`, `install-gitignore.test.sh`, `install-tty-gate.test.sh`, `init-structure.test.sh` | installer end-to-end, `.gitignore` append contract, re-sync consent gate, scaffolding |
 

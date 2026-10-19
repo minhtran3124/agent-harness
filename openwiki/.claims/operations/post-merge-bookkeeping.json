@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:ec8720b91e6967187c269952850f3da987713963d0dc5c1fae40193c98a6a360",
+  "pageVersion": "sha256:6207d99aedb4d3e876af0ae2d90235793c10bee58063f8d6bce39e5e05eac0ce",
   "claims": [
     {
       "id": "claim_3a4978c1a6d1411eac315afd9a6cd67f",
@@ -142,11 +142,11 @@
     },
     {
       "id": "claim_415052ba80af46dc8069eafaae1daa13",
-      "statement": "The OpenWiki Update workflow runs daily at 08:00 UTC or on dispatch, uses a full-history checkout so openwiki code --update can diff against the last documented commit, runs OpenWiki with continue-on-error, opens a PR on branch openwiki/update preserving any completed pages, and then fails the job if OpenWiki failed.",
+      "statement": "The OpenWiki Update workflow runs daily at 08:00 UTC or on dispatch, uses a full-history checkout so openwiki code --update can diff against the last documented commit, runs OpenWiki with continue-on-error, opens a PR on branch openwiki/update preserving any completed pages (post-OpenWiki steps run unless cancelled), and then fails the job if OpenWiki failed.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/openwiki-update.yml#L1-L88",
-          "version": "repo-lines-v1:sha256:bb7f480de46b7b399a529eb6e792a34a01e1498de7e1e00e8d63051b76d852c2:eyJzZWxlY3RlZExpbmVDb3VudCI6ODgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2MDI3ODdhZjZkY2MwODM0ZGUxMjFjYmIxY2I5NWY5NDU5YjcyMWVhYjAzNDlmMTA1MDFiOTk2YzFjNzdmZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2NzE4ZjA2N2I1ZTVjMWYwOTkxYTZlNzQ3MjZmZTJhMjNkMjY0MzQ1ZTA4ZTRlYWQwNGZhZjczYzI3ZWQ0NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://.github/workflows/openwiki-update.yml#L1-L101",
+          "version": "repo-lines-v1:sha256:c0ea0157e9172a32490f82df309dc810bfad8876937abb98736c24c41bc51a6a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwNjAyNzg3YWY2ZGNjMDgzNGRlMTIxY2JiMWNiOTVmOTQ1OWI3MjFlYWIwMzQ5ZjEwNTAxYjk5NmMxYzc3ZmZmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIzNjcxOGYwNjdiNWU1YzFmMDk5MWE2ZTc0NzI2ZmUyYTIzZDI2NDM0NWUwOGU0ZWFkMDRmYWY3M2MyN2VkNDQzIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
         }
       ]
     },
@@ -207,10 +207,24 @@
           "version": "repo-lines-v1:sha256:b219ac2612f83954869ba6ae7af5bca6babec9062b73092452c0ab3c2312271b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0YTM1ODFjMGZhMGIyNDAzN2MyZTQzMTY1MzNiYjZmNzgyZmZlNTM4NmE5M2ZmNDE2ZGMyMzA3OTMzMjQzNzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlNDNiZTE0NDZiMzBhMTg5Y2FmMGFkYjg4YmMxNDU0ODUxYzZjOGIzMmM5YjljMWVlM2FhYTdhNzNmODRkM2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5Y2ZmNDU5ZGFhMjY2NzcyOTdiMjBlZWEyYzY4NWQzMGJkYjA2MTI2NzNiNzAyZGEwZjI2OWY1OGQ2NWQ4M2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5MWExNjA2NjI2MmE5NzUwZjdmNTI0OGMyZjUyMWU4NjUyZGEyZjIwY2E0YjYzYWNlNzFmMDdhNGU5YmMyM2UifQ"
         }
       ]
+    },
+    {
+      "id": "claim_b52584ce6a684ed59f2e0d77e8ee2f3c",
+      "statement": "The OpenWiki update PR is created with secrets.OPENWIKI_PR_TOKEN when set, falling back to github.token; because a PR opened with the default GITHUB_TOKEN triggers no pull_request workflows (so harness-ci would not run), the job emits a warning when the token is absent advising to close and reopen the PR.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/openwiki-update.yml#L15-L17",
+          "version": "repo-lines-v1:sha256:5046dd85d2752f77872923df6f73c909b4bc7365990a7805e9ad3a6b6b99151b:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGI2ZjllNmM1ZDhlNWZmYTcyY2YwYjA0YzkxZjFiMTQ3NzU5YzRlYjQ0NjQzMzYzMWE0OTA3MWMyZTNlYjk5ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmY5NjhhZjA1M2FmNDk2YmJiNTBmZGVjYzg0YjY5NDg2YzgxODA2MTdkOGU0NDk3ZDIzMjExOGRmMWMwMTM2MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjBiNjZjNTlkZjhhMDQzNDQ5NGFlNGYyNmYwYmNiZDY2YTM2ZjlkMDlhNTEwYTVkYTA2MTM0ZDljOTIxMDYxNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTAyNjA0NWMxNzkzOTAzMDU1YjNhZDVjZGFiNGE0ZjVmMDQ3OWExNjBlNzc1Y2JhZmY2ODlhNDc1YjVlZGY1NCJ9"
+        },
+        {
+          "resource": "repo://.github/workflows/openwiki-update.yml#L67-L97",
+          "version": "repo-lines-v1:sha256:75b16cbc93dac11d822fe6fbb7e67e7cbcbef1c6d50934d954d8ada118300f7e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxY2ZmNGFkMzNiYTkxYjE0OGUxYjFiODI5MGI4ZmZmMjdiMjAzZmFiZmVlNTg3MDI4MmRlMzY3MzgzYjFiZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJkMTMwZTIzMzliYzk5YjkyYjZmMjM1ZWRmMDhhMjRlMThmNDA2MDAyZmU3NDE0N2NlOGU1M2ZjZmEwNjY3ZjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiZTFhZGFkYTE3YWUyZjRmM2Q4ZDQ3OTdkYjM2ZDUyNjc1OGJmNDlhOGM0YTc0OTg5ODY0YTQzY2NiMThlMTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI0YTQ1ZDcyMzdkYmQ0NjVkYzc2Mjc0NTVmMzg1OWVhNjRmNzEwMjY1NDNkZDE3YmY2Nzc3ODkxOTQyZDVjYzMifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-16T04:08:21.021Z"
+    "at": "2026-10-19T07:24:11.736Z"
   }
 }

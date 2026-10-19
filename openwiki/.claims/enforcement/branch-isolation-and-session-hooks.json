@@ -1,38 +1,38 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:6ed02a5c5e3935c795395dede550fbbd61936db5f345b7d9bcfa95c64b602d7b",
+  "pageVersion": "sha256:d107342ca1677adb0029ffc84392149e884c0d8754c536c2eaa448d40cc158a1",
   "claims": [
     {
       "id": "claim_f7ba2e7d686044009e2dca37f00a24cb",
-      "statement": "settings.json registers hooks/commit-gate.sh on PreToolUse matcher Bash, hooks/branch-isolation-guard.sh on PreToolUse matcher Write|Edit, and hooks/session-knowledge.sh on SessionStart.",
+      "statement": "settings.json registers hooks/commit-gate.sh on PreToolUse matcher Bash, hooks/branch-isolation-guard.sh on PreToolUse matcher Write|Edit, hooks/session-knowledge.sh on SessionStart with no matcher, and hooks/model-config.sh on SessionStart with matcher startup|clear.",
       "evidence": [
         {
-          "resource": "repo://settings.json#L1-L37",
-          "version": "repo-lines-v1:sha256:d79fea369192ea5a29122cdd72cad274ac40702ad6fae1af0ec00561c8de9d0c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://settings.json#L1-L47",
+          "version": "repo-lines-v1:sha256:3f320001d8f14949e125162500134c422cc882f1ab97e747095b5a8af6903940:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
     {
       "id": "claim_29aef4c59cc0435a9835b5b504d01430",
-      "statement": "The manifest's minimal hook profile wires only branch-isolation-guard.sh and commit-gate.sh, while standard (the default) and strict also wire session-knowledge.sh.",
+      "statement": "The manifest's minimal hook profile wires only branch-isolation-guard.sh and commit-gate.sh, while standard (the default) and strict also wire session-knowledge.sh and model-config.sh.",
       "evidence": [
         {
-          "resource": "repo://harness-manifest.json#L221-L226",
-          "version": "repo-lines-v1:sha256:cc1d9af38fe851739e03547f162812df426eece317a4e76793a20ba7bc7a91c1:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTdiZDA1NmQyNjUxMWRlMTFkNjliYWVjY2ViZWY5NGNlYzNhMTg4ODIyMmYxNzc3MzZmMmJjZmVlMDY0ZmY2NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODM0ZWQ3YzEwNmQxNGNmNzMyYTUzMzYyZTMzNDRjM2E1MDhlZTU3YmFkMDAzNWM5ZGUwZGZiYzBkZWEzZTUxMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjU3ZDlkY2IwZWY1MWJiODhkZGZkYjI2YmQ0YzQzYjdhYjVmMThiNTdhZDJkNTI2ZWU2ZWFkNDZiNWE5ZTI1ZiJ9"
+          "resource": "repo://harness-manifest.json#L215-L227",
+          "version": "repo-lines-v1:sha256:4b9ca3a4d9bcd2526f6140afc2d34a7ea133ff0f4ba6cad45dea9ca1935b04d5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5MGNmNjMxMDY1YjZlOTg2MzQ2MGQxYmJmMmY0YmM0NTEyNGQzYmYzNzFlYjVjMDk2ZDFlYzMwMDMyMWZiYTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzZWRkNjdmZjE4MzBlMjNhMWZlMDRlZmNjZTMwMTg0OTk5NjA3NDU3NDU5N2JjZDJlMDNkMWRhNGE5ZWRlNjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1N2Q5ZGNiMGVmNTFiYjg4ZGRmZGIyNmJkNGM0M2I3YWI1ZjE4YjU3YWQyZDUyNmVlNmVhZDQ2YjVhOWUyNWYifQ"
         }
       ]
     },
     {
       "id": "claim_e4cc8acaddd249e9a68f079b29b92659",
-      "statement": "The Codex adapter renderer derives hook registrations from settings.json, mapping the Write|Edit matcher to apply_patch|Edit|Write, rewriting commands to bash \"$PLUGIN_ROOT/hooks/...\" (rejecting commands outside hooks/), adding additionalContextLimit 2500 for SessionStart, and failing on unknown events or missing PreToolUse bindings.",
+      "statement": "The Codex adapter renderer derives hook registrations from settings.json, mapping the Write|Edit matcher to apply_patch|Edit|Write, rewriting commands to bash \"$PLUGIN_ROOT/hooks/...\" (rejecting commands outside hooks/), adding additionalContextLimit 2500 for SessionStart and UserPromptSubmit handlers, and failing on events other than PreToolUse, PostToolUse, UserPromptSubmit, SessionStart and SessionEnd or on missing PreToolUse bindings.",
       "evidence": [
         {
-          "resource": "repo://scripts/render_codex_adapter.py#L41-L105",
-          "version": "repo-lines-v1:sha256:b3755f46d5b07af85cd90f45e714517c0ea5d284af8914e0884957656b1c3b8d:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5NWZlOGY1NjdmZjMxMTBjNjgwNDFkY2Q0NjQ1NmQ1ZGY4MGM3ODJjOTUwOTkzNjZhNDAyOGZjMjY2OTkxNzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg1OWJiNWNkODVhOTQ2MzljNWM1MzIzZjAzZDI5NDc5MjYyYzk0Yzk4MTMxZDVkODQ1ZjExYmZmY2Q3MDkwMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiNTZhZmRlNGU2MjIzMGZhZjY1YjhlZGJjOTFjMzk5MmVkZjkxNmMzMTdmZWY3NzY1OTYxMTU4Yjg5YjAyYWMifQ"
+          "resource": "repo://scripts/render_codex_adapter.py#L40-L110",
+          "version": "repo-lines-v1:sha256:55d8396377e2fbc14f62149ad1d27d5fe63d61e5d8a8d7f900c4a375a06f07e7:eyJzZWxlY3RlZExpbmVDb3VudCI6NzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxNjY1NzFlZDg2OTJiODRiNjI1MGU3YTZlMWZiNDE2YmExMDZiMDFiYjFhMWNhMjdhMzljZTljYmNjNjdmNTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5ZWUxOTMyODRlODJmYjc2YWY0ZjRmNTgzZTQzZjA1MDdiNWYxMzJiMTY0ZTZkMzUyM2JhZmI5NGMwYzdiMWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiNTZhZmRlNGU2MjIzMGZhZjY1YjhlZGJjOTFjMzk5MmVkZjkxNmMzMTdmZWY3NzY1OTYxMTU4Yjg5YjAyYWMifQ"
         },
         {
-          "resource": "repo://scripts/test_render_codex_adapter.py#L241-L272",
-          "version": "repo-lines-v1:sha256:d1de29c0ec19d9cc16ba4ad29cab0254e5f9fc2c5e2c3170a243379e73a06db6:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmNjE0OTMyZDFiNGFiOTVlNzFlNmU5YzdiYjdmN2U2NjM5MWI1MjA2YjkxNjZhOTgzNmNkZTY1NTAyZGJhYTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlhODJlYmU5ZWQ0MDdjM2E2YmE0YjAwMzQyOTJiYWE1MmMxMWNlNWFlMjg2MTA3NDAyZGU0NzkyZWVlY2FjZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2ZTNiNzQ2Yjk2NmIxYzM4N2M5MDBkNmZiNmUwMzJjODEyODdiZTI5OWRkOTc1YTE3ZmYyMmMzODMxZjhmMmUifQ"
+          "resource": "repo://scripts/test_render_codex_adapter.py#L241-L300",
+          "version": "repo-lines-v1:sha256:ed7509730c8afb1ad6dbd08415a4bf5b8ff77fa9103fa9ff3802b520b6695976:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmNjE0OTMyZDFiNGFiOTVlNzFlNmU5YzdiYjdmN2U2NjM5MWI1MjA2YjkxNjZhOTgzNmNkZTY1NTAyZGJhYTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxNDIzMmVkMGIwOWUxOWI0MjJlYmFjNWU5YzZlYjhlZDYxODIxMWVhMjNiNGNmOGY3M2M2NWFiM2ViODllNDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlhODJlYmU5ZWQ0MDdjM2E2YmE0YjAwMzQyOTJiYWE1MmMxMWNlNWFlMjg2MTA3NDAyZGU0NzkyZWVlY2FjZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIxZTM3NDAxNDVjZjg3YzYwMDY2ZWRmYTczMzM0YjBhODUxM2Y2ZjBhNjYzMzNhYTJmMjVkMmRkMjk2MWVhMjAifQ"
         }
       ]
     },
@@ -277,10 +277,38 @@
           "version": "repo-lines-v1:sha256:4cac514cd960d6f8d1a7e8e96d5b120814ab702cc0e01699a806449c7b986224:eyJzZWxlY3RlZExpbmVDb3VudCI6ODgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5ZjFjMTg0ODI0MmI3ZTI5MjNjMGE3NWVjNGRiNzdmMWEzMWExYWZkOTVjYWMzNDVkMjMzYWI1ZWYyMTE2MDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4ZTVhYTY0NDEyNzQwM2I0MDUzNGI4NDEwMmY4MTY4ZmVjZTU4YzViNjgxNDYyODllMjczODliZmYyNTI0OTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNiODk3M2VlYTNiMTY3OWU0ZTI1ZTE2NDBjYWNmYWQwMDhhOThiZGViMzNmMDdjYzFjMjVmY2U2ZDM2MWQyOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFhYzRjNjRjZDc0ODAyZDBiNDc2NTEyZjJiYzQ4YTA0NzZhMDU2ZDA4MWZlNzI5YmUyNmJmNjNmZDI5ZDFmMDgifQ"
         }
       ]
+    },
+    {
+      "id": "claim_1ee14716e2d44ae996f471f04680c1a2",
+      "statement": "The Codex adapter renderer skips model-config.sh handlers because that hook only rewrites Claude frontmatter, and drops any group left without handlers, so the rendered Codex hooks.json contains no model-config.sh reference and no empty groups.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/render_codex_adapter.py#L82-L106",
+          "version": "repo-lines-v1:sha256:2018611f7d2da169560b04c8975b1eca6290a6d7ecf5c0614c5e0fcf96f85605:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxNTYwNDliNmU4ZmZkOGJhZmYyZWU1ZDJhYjhhMTQ5Y2Q0Y2E4NDE2NzI1ZjVhODJhNTY2MTM1MzRkOWQzZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5ZTVhNmUyNzIwODg4ZjRjNDZmMDQyMmNhODQ5MDkxOTAxNDkwYWVhYWVkNzI2MTJlNDhkOTdjNTFkZTEwZjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3MTBhYmYwZDZlN2I4MDY0YWFlOWNlZWJlZWViOTZmYWYwMWRiYTZhNDFmMzA2OGVhOGExYzQ1NjM2NzcwMGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA0Zjg3MWQxMmI5N2Q2MmQ4YTEwMTYxNDNjNzJhZDRkODg5OTJlNzk5Y2U0ODRiNjNjZGYwZGM2NGQwZWE1YTUifQ"
+        },
+        {
+          "resource": "repo://scripts/test_render_codex_adapter.py#L256-L288",
+          "version": "repo-lines-v1:sha256:763d22f9d82257841c04fc759a3e077023f5b8e9922dd08fbb8b6d296904e994:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE4MDNlY2YyYWI2MzM4MWUyMmYyNWRhYzc3MjhhZjdhY2QyZGQ1NDJjZmE1MmVmNGFhNDNkNjc1YjVhMTMyM2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4NmVjNWEyYTQyNDVjYzA5YjNjZjQwMDI0ZmYzZTE0MmQ1M2UzNjFmMGJhZjM2MjJjNmJkMzk3ZjFhZGM4N2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEzZTAwYzY4ZGI1YjkwNjAxM2MwYzBlOTNhZWZkZGQzYWRiZmViNGQ3YjAyMDNiZjlmNjEyOTBlZmNmYWQ0NWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhjNmU3MjZkZGM2ZGRhYWI0ZGNlYjU5YjFkNDdmYjRlNTEyNGFiNjNmZjI1NTk1ZWNjYmE5NGJkYjMyMzdlZmEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2b2b6524aafc43caa280020a20e7bf10",
+      "statement": "model-config.sh is a never-blocking wrapper that resolves the project root from CLAUDE_PROJECT_DIR or git rev-parse (never HOOK_DIR), silently exits 0 when the root, python3 or the applier is missing, and pipes the SessionStart payload to apply_model_config.py --hook, which only acts for source startup or clear.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/model-config.sh#L1-L25",
+          "version": "repo-lines-v1:sha256:f0cc30c196eec0c2cc2551e6e3451ca4154ee15bc5360ce62ba81f29fb7cb1b6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOTVmYzA0YTgwYzk1MmY0OWNlNDE4ODYyN2M1M2IwZmJlOGM0NDA0MWI5NTJkNTkyYWNkMWRlOTk4NjE0NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4ZDNiOWU4ODBhNzc5NzU0OTNkYzdlMzU5MTQ0YzAyOTVhNGY2OTRjZmUwYWY0ZjkyOGMyMjMwN2JjNWMzMjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://scripts/apply_model_config.py#L255-L265",
+          "version": "repo-lines-v1:sha256:33325ebb68f18b633abc5cdfd6c256c3f40d724a807c2290b041f9183f0c142a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwOTE4NTgyZTVmMDYxZGQ3OWQ5YjA3MTczMGMwMjkyZmNkYjllZTIwNDk2ZWIzY2ZjYWEyZDM5YTQzYzliNjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhMTY4MDljMDc1ZGIzMDllMDliYmM5YWI3ZWZlZTY5ZWZiNWY0MTliZDRkODkzMGQwMzgwNjYwMmRkMDJmZDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjOGRkYjU4YzgwODhhYmFjNmMwY2QwM2Q2YmUyMDVjNmYzYjBiNWY2YjEzNGMwNTJiM2Q5ZmM3ZDIzZWY3OTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgxM2RlMDYxZWQwNTQwZWZjYTkzMWQ4MTJlMzk0ZjIwM2JjZDVhM2E4NTc2ZWYwZGU2NzhmNzZmYjNjMjM4NWMifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-16T04:08:21.021Z"
+    "at": "2026-10-19T07:24:11.736Z"
   }
 }

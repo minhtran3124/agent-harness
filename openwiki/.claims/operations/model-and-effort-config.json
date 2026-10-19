@@ -1,0 +1,306 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:3e0c1e39aaef44786a0cc0d29e0a1f279e85fed94192b68208da39f7ad56e878",
+  "claims": [
+    {
+      "id": "claim_21d3484edd904b45878041583c735de7",
+      "statement": "apply_model_config.py writes only <claude-dir>/agents/<role>.md and <claude-dir>/skills/<name>/SKILL.md for roles and skills named in the defaults snapshot, and never writes settings.json or settings.local.json, so the main session's model/effort and mid-session /model and /effort choices are never overridden.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/apply_model_config.py#L1-L6",
+          "version": "repo-lines-v1:sha256:dff898f14e410d75b7a5a804704e7e1d74e19c6393eef516d236dfff3984a45d:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDY4MmNiZGI0YzhiMDc1MThiZjQ4NmM1ODk5MGZjMzkxNzgzYWEyMGE5MTZiZmIyN2FkMjExZWIxZDVjMzY0MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTMwM2VjZGQ0YTRkMTBmMTljNzNmZDQyZmQxMjQzN2ZkMzM1NGE4MjY4MTYwNWRhNTI1NWE5N2EzOTA2OGRiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTViNmU4NzA2YjQzMDQ3ZjJhNmRiNjdmMTMyNjM4NTk1NjA0ZTY3ZjM2OTY2ODc2Y2UwMTU4ZjAwNTNlNmJkMSJ9"
+        },
+        {
+          "resource": "repo://scripts/apply_model_config.py#L97-L110",
+          "version": "repo-lines-v1:sha256:da8ba28d548a8efd21d4623e83b3bd6fb663daabd809e1e6538de79062cd4bf8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkMDdkOWViZjA5OWNiY2VhNWZmZWUwNTcyZWJkM2YwMmM1ZDNjYTIyNTI5NGQxMDRlYzliYTQ0MDU3OTNkZmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIyN2UyMjdhMjg2NTIyOTU0Mjk1MDFkNmEwMDhiNDAxYTM1NjUyZDRjMzFjNmRkYWFmOTk1N2M3ZGUwMzU1ZGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJhNmNjZDliYjliZjMxOTJkNjNiYzM0NDQyYWY1NTI0NmNhY2UwMjEzZmRlOTZhNTQ4NDIzNmU2ZTBlOTBiM2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlYTI4NzM2MWNiYzNiYWYzMzNjNjA1NGNlYmNiY2Q1NTkzMjFlYjFiNTIwOWQyMjE0MjBlM2YwNWVmYTYxMzYifQ"
+        },
+        {
+          "resource": "repo://specs/model-effort-config/design.md#L109-L113",
+          "version": "repo-lines-v1:sha256:01c0b074e6fa8ce31e6a646591a5ab8593a6f2023610c3fdc30019996b2bebdc:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDI2ZTc3YzhiMmU5MDBiZmY1M2MxNDllZDA2NzZjMGI1OTcxNzQ0MDI1ZTQ1MTY2ZTkwMjk0NGQ1ZDdiZWM3NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDdjNDM4Y2UwOWQ2YmIzZmNmMWJhZGEwMzAwMWExY2M0MDg5ODVhODQ1ZmE5MjYxOWRmN2ZiZmIxNmMxZTJjMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjgzYmZiZWViMzlkYjk1NDdkNGU1YTg4YzA3ZDQ5YmYwMGQ3MDU2ODM4MDEwMTQxNDcyYzRmMThhMmM3NmUxZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2Y3MGZkMDgzOTRjYjZjODg0MTkxNGNiOTgwMWIzMzRlNzRkZWIxNDg1YmMwNmE3MWE5ZjY0YmY3NDI4NjdkNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_e378a2b02357452da5c941dacf8d20c0",
+      "statement": "harness-models.json allows only the top-level keys schema_version, agents and skills; schema_version must be the integer 1 when present; every agents/skills key must exist in the defaults snapshot; entries may contain only string model and effort values.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/apply_model_config.py#L53-L94",
+          "version": "repo-lines-v1:sha256:64dfffd1924b744aeed6ff490fb07c3539028763f3cacadcf7db7a12f67e7e7c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1OTE2MDVhNWZjNzYzNzc3MzBjM2EyNDRkOGNkYzQxODA5NGRhOGZlYzU5Y2FiODQ0ZDg0ZGMwYTg0YjU1YjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2YWY3YzJhYzIyNzk2MGZjZDVjM2NjODgwZDViMDhjZmIzOTcxMTJkYTgxMGJmNzVjM2Y0ZWJhYTNhMzdlNWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3NTE1NzZhMjc3NDdlYWMxZWZlYWU4MzNmMTA5YzE4Y2M3NjRjYjNhNDZiMzc3NDE2OTAyNmQ3NjE1YmJiMTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwN2U2ZTgzMTc5MDA3OGE3YWVhZTBlOTFkNDcyYzhiZGUwZDhlNGU2MWQ0ZDYxZjg3ZjM0YTRiZWVjYTY5MmIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_175af51a83034c39b206d86bda289cc9",
+      "statement": "A model value must be one of opus, sonnet, haiku, fable, inherit or match ^claude-[a-z0-9.-]+$, and effort must be one of low, medium, high, xhigh, max.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/apply_model_config.py#L19-L21",
+          "version": "repo-lines-v1:sha256:e9c5edb2280054c6779cf69b4b4371e7563d327728edfbfe9e29f17be947228e:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTFjYjM1ZDBmMmIxMmMwMjU1OTA3OGI2NDZlYjJhOTk5ZWI3ZTVlODJlNTc2ZDRlZTYyODNjNzRkMjE5NzFiMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWMyOWIwMTQ2YWFlZTJmYzYxNzVhNDFkOGVjNzlhNzY1Y2FjYzliZmY1ZGEwZGQxNjVmOTc2YWIwY2MyNTM3NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjRlYzE5ZjJhMTQzMTI0MjZiNWUwNzAyYThlZjc0NDJiMzg3Nzc4NmFkZjgwOWQwZDRlMjU3Y2U4MTFmMjcxNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGMyYjVmZjQ5NDA5NzkyZmFhOWI2MzkyNTljMmRkZTcyM2U4YmM2NGM5MTk2YmQwZjk5ZWRmNjAwNDA0NmYxYiJ9"
+        },
+        {
+          "resource": "repo://scripts/apply_model_config.py#L86-L93",
+          "version": "repo-lines-v1:sha256:194c9e94a04c9560eacdd01aec31e986ce2c0c954bc9a4d8d893d2142d331723:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjY4YzU4NDhlY2E3NWIwYmM5MmNmYzQzMDUxZmUzNGFmMjRlMzI0YTYzZWQ1MGYyZGQyNGZjNzk2YzEwOTdmZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDAwMTA1ZTBhNjg1MjFjM2QzMzI2MTUzOTBlODU5ZTM5Y2YyNDEyNzRhN2Q3ODFkMTk2YTNhZGEwN2IxMGZkNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTllMWI2MzI1NTU1MTgxYmFjMzBjNmIyMDE0Zjg3ZDRkYWJmYTY0NzBmNTNkOTZmYTgzYTI5ODdmYmY5OWU3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmE2Y2NkOWJiOWJmMzE5MmQ2M2JjMzQ0NDJhZjU1MjQ2Y2FjZTAyMTNmZGU5NmE1NDg0MjM2ZTZlMGU5MGIzYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_2003e62bbf904156a19af6fc75e5f225",
+      "statement": "The effective effort of the reviewer and task-reviewer roles must be at least medium; this review floor is a code constant that the user file cannot lower.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/apply_model_config.py#L113-L131",
+          "version": "repo-lines-v1:sha256:2b9462a2d6cc521f1fe46453cc422bf3cc656c0f47cb609f95da3062282d7618:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlMzAwYzk4YTZmMWQ1ZTRmZGY3ZjBiNTFmYTE0ZjVhMjBkMTUwMGU1M2E0ZTQ1ZTFiZDFlYTJiN2I2NWJjOTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2YWY3YzJhYzIyNzk2MGZjZDVjM2NjODgwZDViMDhjZmIzOTcxMTJkYTgxMGJmNzVjM2Y0ZWJhYTNhMzdlNWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI0YjJhNDRhNjYyOTk5MTY3NDYxNjZhMjY5OTA1OTJmZGZmYmY3YTNhMzAxMzQ0ZDYxNDkyMjBlMzc4YzBkMTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmMWZlNTBkMjA2MjgxN2EwNzg5YTk2ZGJkOWNhM2IyMWU2MmExMmE1YTA3MDM5MmUwYmZjMzVlNzg2ZWQyMTYifQ"
+        },
+        {
+          "resource": "repo://scripts/apply_model_config.py#L22-L23",
+          "version": "repo-lines-v1:sha256:1f6b680e9f4678a3c012b7c52e2a7ecb6eb0e63cb73a365f6dd9957e9f6ac5a3:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmE4ZTgxNDgyMDlmMzE4ODA1ZWM0MDM3YmI2NTEwYTA3MWUyNjI0NjM5NWU2YjU3YzA2YzY5M2MxMjE0ODdiZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGM5OTIxNjIwMzE2YmJjOWI1ZDc1MmRiZDRjZjU5ODQ4YTNiMGIwMzg3ZjVjMzI1M2Q0OGI5MmJlOTQ1Zjk3NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTljNWVkYjIyODAwNTRjNjc3OWNmNjliNGI0MzcxZTc1NjNkMzI3NzI4ZWRmYmZlOWUyOWYxN2JlOTQ3MjI4ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGEyMzc4ZWQ0ZTY2NjZiNzUzNWY1MDRkYTMzMjU1MTc1ZTFlMzlmYTFjYWI2M2UwZjQyOWJhNTQwNjJhMzNkZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_3c7bfed4757845d8bd989d45eb751bdf",
+      "statement": "Effective values are merged per field: the snapshot default is replaced by the user file's field only when the file sets it, and any validation error means no target file is written.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/apply_model_config.py#L134-L148",
+          "version": "repo-lines-v1:sha256:8e02d7df8571a74edece9e09a3cd749d2a8327dd179de6617a174bfee5c621ff:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjZDVmMTQ3MjM2MDE0MzE1MWQzNTgzMjdiM2M1YWUwNTAyNjUzM2YyOTdhMTY0MTBjMTYwZTYwZDNiYmZhZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3NzA3ZTQ2MmEzNDBlZTRhNmI4ODYzZTk0NTE0MDc0NWQwOTVjZjk4YmEzMTk1OGY1OTA4MmExYzgwZWQxMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJhNmNjZDliYjliZjMxOTJkNjNiYzM0NDQyYWY1NTI0NmNhY2UwMjEzZmRlOTZhNTQ4NDIzNmU2ZTBlOTBiM2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZhOTE2NGE2ZDBhN2QyZjE5M2EyYzIwZDA2MjBhZjMyODliYzVjNWY4YTVhODNhMDNlMjg0NDI0NWViZTBkYTMifQ"
+        },
+        {
+          "resource": "repo://scripts/apply_model_config.py#L97-L110",
+          "version": "repo-lines-v1:sha256:da8ba28d548a8efd21d4623e83b3bd6fb663daabd809e1e6538de79062cd4bf8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkMDdkOWViZjA5OWNiY2VhNWZmZWUwNTcyZWJkM2YwMmM1ZDNjYTIyNTI5NGQxMDRlYzliYTQ0MDU3OTNkZmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIyN2UyMjdhMjg2NTIyOTU0Mjk1MDFkNmEwMDhiNDAxYTM1NjUyZDRjMzFjNmRkYWFmOTk1N2M3ZGUwMzU1ZGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJhNmNjZDliYjliZjMxOTJkNjNiYzM0NDQyYWY1NTI0NmNhY2UwMjEzZmRlOTZhNTQ4NDIzNmU2ZTBlOTBiM2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlYTI4NzM2MWNiYzNiYWYzMzNjNjA1NGNlYmNiY2Q1NTkzMjFlYjFiNTIwOWQyMjE0MjBlM2YwNWVmYTYxMzYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_060ff747536647329a1c5a411fe97c50",
+      "statement": "rewrite() changes only the model and effort lines in the leading frontmatter: it replaces an existing line in place, inserts a missing one after the last description/tools/model key, deletes a line whose value is none, and leaves unchanged files unwritten.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/apply_model_config.py#L151-L183",
+          "version": "repo-lines-v1:sha256:a856693ea37b2f754ee0686881e7d9b461178b5bbcce590ec89a7a9f39fe3483:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhYTkxNzI4MmJkNTI0ZjcwMzEwYmJlNmQzMGJlODI1ZGY5MzU3MzIyMDk3MTRmZWM5OTQ2MzA1ODc1NjQzMWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmNDhjNDRmZWFmZGI0OGQwZjIzMGFjMGFiOGEzODU3NzA2MmU1ZWYxY2VhZWI3YzQwZTZhOGU3YTc3ZjMwMTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRlODEzYzQxYmFiOGE3OTIzOGMxOTU2ZGEzZDM2NmI3YzlkY2RiOTI2MTRjMWI1YThjZjRmMzZjNDhhNGU3NjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJlNDIyZTM1YjY4YTcwZGMxMzU4YzMwMjNiNWU5N2Q5OGI1NWQwYjA5NjNhYWI2OWUyNjA4NTdhZjY2ODlmNDIifQ"
+        },
+        {
+          "resource": "repo://scripts/apply_model_config.py#L214-L215",
+          "version": "repo-lines-v1:sha256:dd80844d96330ae6b584218a7ec8cb23db4db5c5fc5162adf1aad26b739db49e:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGU0MDQ5YzdiNWY3MDIzN2NiNGQzZGMyYzI1YmYzMDRhM2I4NDA5NzJhMGIxOGVjODk2MzMxMGMxYmFmZWM4MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTdmMzVhMGFlZjUzYjRkYTBmMjc1ZGY2NzA4ZjFmMDMzZTM4Mzg2Y2U1NGRhZmQ1ODkxMjM3MDgyYjhmMzVlNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGI0MmNiZWU4ZjkwZjI1N2VhZmFjZDJjMTYwOTU5ZjM0MzY3MmQ1NDdiYmZiZjM0ZTZiY2FmMjM3OTI0ZWRiZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTNmMTRiN2E2Y2Y4OThlYjA2NDMyNzVjYjUyNzBmMDVlYzMzZDA5YzRmMDQ3NTZhNzBlMWQ5YjM4MzAzZTNmMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_97335c0dc2fc40169a26930ecad520a9",
+      "statement": "apply() plans all targets before writing; any read or frontmatter error aborts with nothing written, missing targets are skipped, and each write is atomic via a temp file and os.replace, so a failed write can leave a partial apply that a re-run converges.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/apply_model_config.py#L186-L225",
+          "version": "repo-lines-v1:sha256:9aec413486d75eb77ccf24da5cb666657d1e5e03806a3b587b592e43fad472c9:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyN2VjYTllNTc4M2U2YTdlOTRlODNlZmJiMWI5NGRkMTZjMTQ1MWIwOWZlYWViYzBhZTBjNjEwNDE2ZGY3OWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhMTFjMDU2N2QwYTVmOWU5YjEzNWY2NWNkMjUzNzJkZmQ2Mjg3NzVmN2MxZWQyNTNmOGJhZDQyZGQyZDY2NjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyOGUxMDE0NDc1MWM4ZmNjNGI3YzBiYTIzNzRmMTUwMTg5ODA5ZmUwNDkyZDIyMGI5MGYxOGJhYTc2NjljOWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA0OTZkZTMzM2RjOTQxY2RjMjMxMDZlNDJlODRkYjcxNzdlMDgyZWQ4ZmI2Y2NiZTk0ZmZkMDYzODNlMTg3NGIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d5e94b9f8f844d2185d4650b9c2e3170",
+      "statement": "The defaults snapshot is rendered by render_agent_definitions.py --defaults-out from the Claude role bindings and from every non-archived source skill's model/effort frontmatter, with schema_version 1; --defaults-out requires --runtime claude and cannot be combined with --check.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/render_agent_definitions.py#L216-L232",
+          "version": "repo-lines-v1:sha256:85be22741b1e09a76eace2c6e9ad6077b6ad7d2748133d0f57f34f64003b4a03:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlMmNjMjkxZjUwNjVmYjU2ZjIxZTk5MjAxZDIyMDljNGMzZTAwMjEzYjExYzQ4MzRiNWQ5Njg0NmVkZmM5NjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyOTJiYWQ5OWFmMjY1MWRmZGQ0NmQwMzFkYjYwNzYxNmQzYzliMzE2ZmM5YWNkOTliOTYwYzFjZmE1MDA4OGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1MjAxOWNhZGEyNTI5ZjExNWE2NGIxYzQ4N2FmZTliODk1ZTBmZWFjNTY5NzcxOTMzY2Q4OTM4MmZhYTI5ZjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFkZWJkZGZjMDU0ZTdiNWIwYTViZjMxYTQ1MzdjZTJkOGRmNjFlYmQyZTIzNjg1OWZlMmNiZTkzYjAxNmM1ZmYifQ"
+        },
+        {
+          "resource": "repo://scripts/render_agent_definitions.py#L385-L405",
+          "version": "repo-lines-v1:sha256:e3b011c36d1c3f46e2deef6a100301218a95014deb1e5dc98cab9539f011789f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzNDM3NDZkMDlhMTgyYzhkNWE1YmMwNmNlNjk5ODJjZmQyNzczZDc2MWVkZWYwZDAwYzg0YTMzOTY5YTRjZjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxMDM0ODFjNTdkMGYwZGMwZjc2Y2QyY2M4YjM2MDRjNGU4Mjk2ZGE0MTIyYWRkMTllODE3NDVkYzdlMzMxYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg3Y2Q2Y2E2OGI4MzIyNjEyNmM5Y2JlZGM3ZDM3ZGM3ZGRjZDFjNzllZGUwY2FjYjM3MjRmZDdlZDAyZWI5MWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM4ODQwZDE0ZmUxODhiOWNkZWIzN2Y2N2RhOTg0Nzg5OTZjMmNlMDkxZTM3MTVlNjQ0YmM4NjZmYTE1NDRjMjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f6bae712be7c43feb55a992529fef876",
+      "statement": "The applier defaults --claude-dir to <project-root>/.claude and --defaults to <claude-dir>/harness-models.defaults.json; a missing or malformed snapshot raises SnapshotError.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/apply_model_config.py#L298-L304",
+          "version": "repo-lines-v1:sha256:66f4ce308b30c8dbc5d0ddcf16b1d2e4fc62f6ed01cc2fe97aee8012bed4c468:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGY5ODU4MmUwMjZlNzRjZjkyOWRlOWFkMzFkNzBlNTgzNDUwMDI1YmFiMDIwNGU3ZjFlNTU4ZDExYjJmZGVkOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDljOGEyMjAxMzRlMDQzZjAwYzllZjhmZmI5MTU1ZjU1NDdlYmEzNTc3MzcxNGVkZGZmNTU2OWM4NGRjMjA4NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDI3YjVmMDRkYzcxMzkyMzc0MTdlZjZkYmE1ZTk1MTkwYTk5NjhmZWE3NTRkZmRhZWNiODA0MjdjNWZkMGE4MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDIyYmZlYjQ3NDAwMGRkMWZmNjUxYzdkNTZmYTZmZjc5YTE2NmFkZTMyYjIzYjBmMGM2YmNhMDcxODRmODdiMiJ9"
+        },
+        {
+          "resource": "repo://scripts/apply_model_config.py#L33-L50",
+          "version": "repo-lines-v1:sha256:4d7cd02397d5d217b9e902fa62904d059fe10ade74a4f32ff336ad8d4c713e84:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjYzc4NjRiODJlZDc0ODc4YWY4MjZhZWVhYTljY2ZlODMxMWJkMTYxN2RmZTVmYzg0ZWJmM2NjODI2ZjVhY2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjZjYxNjViYjAzM2JlNTRhMjE1OGY4YjBlNTcyZDg2ZjJjNTU5ODQzNTRkYjI3NDNmZWNhOWNhMjIzYjVkMGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5OGIwNjNkOWI0N2U2NTM3OTYyNTU3MmNjZTE5NzY2OWQ1NzY3ZTEyYzE4YmUwNzU2NTJiOGNkOTgxY2U4ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzNGY4NmVjOGMyMWNjODg2MTI0N2JkNzA4ZjUyZjE1ZTEzY2E1OGI2M2MzNDVkMGZmZjgxZTFmZTNmYjI1YzcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_17321dd4d3f34e1d9fe21952014625cf",
+      "statement": "settings.json registers hooks/model-config.sh under SessionStart with matcher startup|clear, and harness-manifest.json includes model-config.sh in the standard and strict hook profiles but not minimal.",
+      "evidence": [
+        {
+          "resource": "repo://harness-manifest.json#L219-L226",
+          "version": "repo-lines-v1:sha256:8f58bb4de266bb9d6040a4344058df5af43d11a2e63b5b5a701ab979ababf93f:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjc1NzRkNThkOWVlZTY5OTEwZGI3NjhlMGQyMGFmZGI2ZGQzMThiMTFlNGYwNWQwMmQxNWFmZGZmOGE1ZmJiYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTZiNmI5NmUzY2Q5NDE5ZjU0ZjlhMGY2MTUzNjc2MmZmOGEyNzQzNTQxYmZjODUzNTRlOTYwYmY4ZGFlYzhhZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDkyMjhkMTE5ZmVkNmFlN2U0OTYxOWZmZDBkN2NhNDZlYmJjYWZiMjlhMmIwOGZiZmUzZGYyM2I3Y2FkMGY1NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjM2NTA5OTg3Zjk5OTFkYzU2NDhlNjY3ZWQwNzVjYWI0MjBhNWFhMDhkOWU3NWEwMTQ3MmEzNGMwNTVjZjA3OSJ9"
+        },
+        {
+          "resource": "repo://settings.json#L35-L44",
+          "version": "repo-lines-v1:sha256:0a0400fcc7657c58613cbbc8096ceee9769f5febda5479cbd484fd4e5a64088f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5NWI4YzViZjg2Mzc0MzY3MWRlZjNmNjMwZWIyMzJkNTlhN2E2MzRhMDcwZmM0MzZlZWMzN2E4Njc0ZTZjMzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliNjJmNjBkODU5MGE1NzljZjQ2ZjhkNjczNzhjNGM1NzJiOTYyY2VjY2RiOTBjN2E1ZjdiNDJiOTYwNzgyYTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA1OWY5MDQ5YjkwYzdhYTkzNzQzOWQ3ZmQ1OTU1MDMwNTlkODAyZTBlZjNjYTY5NWI4YTUxYjNhZDYzZTExZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY1NDY5YzM2ZmNjMjQwMTFlYWE0YmI0ODlmN2YwZmM4ODVjNzdkZTE3NWI4NmVhMjNlYjM2MjcxZjhmZDVjMjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_da9c2d982164405eac712481e166c73a",
+      "statement": "hooks/model-config.sh takes the project root from CLAUDE_PROJECT_DIR or git rev-parse --show-toplevel, locates the applier at $HOOK_DIR/../scripts/apply_model_config.py, pipes stdin to it with --hook, and always exits 0, silently doing nothing when the root, python3 or the applier is missing.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/model-config.sh#L11-L25",
+          "version": "repo-lines-v1:sha256:b598cba0bc8b5930e19305e683c339fff75b041a576bf0f6229a511b5514f302:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4Mjg4Zjc5NjEwYTNhYjRhODRlNmZmODA1OWE4MzUzYWI5Mjk2YzJiY2JmNjk1MWQ0MjkzNjZmOWY2YWIwNzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4ZDNiOWU4ODBhNzc5NzU0OTNkYzdlMzU5MTQ0YzAyOTVhNGY2OTRjZmUwYWY0ZjkyOGMyMjMwN2JjNWMzMjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5M2M2OTRiOTE2NGQyNTFmNDE1MDcyYWM0OGQ2MmEwMzg3YTcwOGE2ZDllYjExZjAyY2M0MWM1Mjc4YWY3MTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d6f08469e6e14d68be15c9dc384d4682",
+      "statement": "In --hook mode the applier repeats the source filter and acts only when the SessionStart source is startup or clear; resume, compact, fork, unparseable stdin and a missing snapshot exit 0 with no output and no writes.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/apply_model_config.py#L255-L265",
+          "version": "repo-lines-v1:sha256:33325ebb68f18b633abc5cdfd6c256c3f40d724a807c2290b041f9183f0c142a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwOTE4NTgyZTVmMDYxZGQ3OWQ5YjA3MTczMGMwMjkyZmNkYjllZTIwNDk2ZWIzY2ZjYWEyZDM5YTQzYzliNjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhMTY4MDljMDc1ZGIzMDllMDliYmM5YWI3ZWZlZTY5ZWZiNWY0MTliZDRkODkzMGQwMzgwNjYwMmRkMDJmZDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjOGRkYjU4YzgwODhhYmFjNmMwY2QwM2Q2YmUyMDVjNmYzYjBiNWY2YjEzNGMwNTJiM2Q5ZmM3ZDIzZWY3OTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgxM2RlMDYxZWQwNTQwZWZjYTkzMWQ4MTJlMzk0ZjIwM2JjZDVhM2E4NTc2ZWYwZGU2NzhmNzZmYjNjMjM4NWMifQ"
+        },
+        {
+          "resource": "repo://tests/hooks/model-config.test.sh#L65-L110",
+          "version": "repo-lines-v1:sha256:ad6b200e78ed23f80954461784e1b12fcd0fed63ff5f87e5f41710fa3ae6131a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1YjNlMjdjMmJiOGZjYTAxOTc5YTUyYWMxODkyODFmMDMwYzRhM2RhN2ZiOWQ4M2ExMzhlZjYyOTc1NzM3MmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkZDI1OWQzNTA5YzcyYjBmNjhhNTY4YmI3NzdlY2NlYjZlMjZmNTdkZDU2ZDA5OTU5ZjliOGEyZWZmYTZkY2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1OGNhNDViNzZhNGE5NzZiNzY2N2Q1NmEwZGYyNWFhMTAwNDNiYzUxYTVmNzY2OTg4ZGExNTIzNWUzOTBlZTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5YTE2OGVmODk1YzFkNzFiODg2MGNlNTUyMWQ1NGEzMWE1OWFkYmI2M2MwNDIzMTE1MTFkNjVlMDJlM2VkNTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_eaa544f0f9ec4564886bc1707e25fe44",
+      "statement": "Hook mode never blocks: an invalid user file yields an additionalContext warning that the last applied values stay, frontmatter errors yield 'nothing applied', a failed write yields a partial-apply message, unexpected exceptions are reported as a hook error, and reloadSkills is set to true when any skill file was written.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/apply_model_config.py#L248-L290",
+          "version": "repo-lines-v1:sha256:73409e2f2dd9b174cd834496feb2170da3d6c26344e0032a3027b9d128af3a98:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViZjdmNTZjMjA1MjYwZDEzNTRkMmQ4ODU2NzExMDcyNzAzYzMwN2VjYmU3MDM1MjkzNmJlY2E1MTU1MjgyODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2MjMzYjNmZmVhMzJhMjNkZjUzMDY1MzQzNDhmMmRlZTc3NmE1YTZmNzRmYjUzMzE3NWRkYzUzOWE4ZmU0NjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYwMmY4MGI3NjY4NTBiNmZiY2M2NmJhNGVjOWNiYzJjZGUzNTYxZDZkYjE2NDFlYTdkNDM4ZGRkYzRiMmNmNzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0MTU3NzZhOTlmMTQxNTY1OWRlMjZlYjRkYjI2MTg2M2ZhMTIxOTY2NjBjOTU3ODUzYTYzMTMxOWJmZDliODYifQ"
+        },
+        {
+          "resource": "repo://scripts/apply_model_config.py#L306-L313",
+          "version": "repo-lines-v1:sha256:f1e39de618880f12f6762cbb95a82648ace5008c17c499c25596879645fb4d86:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWIxMTBiZWEzNTFlZDhkYzQ2MzJlYjgyODQ2OWRlOWZjYjhkMzlmYmFhNWVmNjBkNzY3YTU3MmMzNzhiNTRmMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2ZlNGYxY2JiZDk0Y2VkMDRkZDcxYjI2NGExMDJiMjc0OTBhMjUwM2E5MjI4M2JiOWUxYjRhMDhmN2EwNDAwYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzZjOWJkYmFjNWZlYzcwN2FlNjYyYWY0YzY2NGQ1ODVjOGFjMjM5OWIzMTUyNjUxZTE4MGQ5ZDQyZjFlNWZlOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzY3ODkzNjExMzRmYzU0YzcyNjcwNzY4Y2E1NWExZjkzZjZhM2RiMGRjYWFiNzhkNmEyNmFhZWUxMzljN2U1YyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_3e12d491b8684a13ac288f20a1cbb1c7",
+      "statement": "The --apply report states that skill changes apply at the next invocation of that skill and agent changes apply from the next session in headless runs, reflecting the accepted finding that hook-written agent files do not take effect in the same headless session.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/apply_model_config.py#L346-L350",
+          "version": "repo-lines-v1:sha256:c0fcb46a35e13f9b5cb784a3e5e52f81d7ca6e109656f8d54aa1e9b8ab442336:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGI1ZjExOGY5ZTRjMWFhODQ3YWUwMDIwMWUxYTI2ZjkwY2ZkYjBmNjk3NWVmMWVmMzg3ZDBjNGU4ODdkMDk3ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTYyMzNiM2ZmZWEzMmEyM2RmNTMwNjUzNDM0OGYyZGVlNzc2YTVhNmY3NGZiNTMzMTc1ZGRjNTM5YThmZTQ2NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTZmMTFlMDQ4MTgzZjgxMDM3MGFiODNlZmUzNWUzODUxMmQzOTQzYjMzZGNhZDkwNTdkOGIxNzQzNmRhYmNlMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2Q0MTM0MGNjMjM5YTE1OWNlOWI2MDIyZTlmNjMyMjgzMmUyZWFkNzZjYWU5ZTQ3NTRkMjEwZWI4ZmI2ZDVlOCJ9"
+        },
+        {
+          "resource": "repo://specs/model-effort-config/SUMMARY.md#L35-L35",
+          "version": "repo-lines-v1:sha256:11df30d52494946b56304625b6404da63daa02221f5e14426004869d3bc454d6:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTFkZjMwZDUyNDk0OTQ2YjU2MzA0NjI1YjY0MDRkYTYzZGFhMDIyMjFmNWUxNDQyNjAwNDg2OWQzYmM0NTRkNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTFkZjMwZDUyNDk0OTQ2YjU2MzA0NjI1YjY0MDRkYTYzZGFhMDIyMjFmNWUxNDQyNjAwNDg2OWQzYmM0NTRkNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjNkMTBhMGY4YmQ0MzQ5MDUyMWI2MmQ5MjJlY2NiOTJkNWFiYTA4ZDAyNjI0YTRiZDEzZGY1ZDU2YTk4MzhiNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDg4ZjM0NzkwYWFkOWJjNjI1NWI1NDE5NTQ4YmM4ZDU3NTM1ODRmYzdjZWMyMzNmYmMyZTgxNDg3YzUwMzFkNyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_5abbee0aaf4f46f485dde2b3b5755212",
+      "statement": "--show prints per-target model and effort with separate model-source and effort-source columns (default or harness-models.json) and warns when CLAUDE_CODE_EFFORT_LEVEL, CLAUDE_CODE_SUBAGENT_MODEL or CLAUDE_CODE_SUBAGENT_MODEL_FORCE is set; --show, --check and --apply exit 1 on validation or snapshot errors.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/apply_model_config.py#L228-L245",
+          "version": "repo-lines-v1:sha256:87c41a64d0e408c57a84258b4b3db824eabc1634a966e6950132373ccfb1a0f8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3YjgxNjcwMDYwNzBhNGYzYTFlMGU3YzU1NTNlN2VhNzg4YjgwNzEwYmUxOTFjYzg2NWNjZGQ4Y2NmNWY4YzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzZGM1NjgwYjllYTQ5NThjYjRiMmMxMjZmNGU3NDY5YTc0YTNlNmZmZmU1ZDA4ZjU3NTFjYmM2NzgyZjg4NjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MjIzMTA2ZmQ4NzQyYjcwZWEyMzNmOWRjMzU5ZjRiMDJiYmIwNjliNzI4M2VlZjc2MjQ5OTUxNmJkN2I5YzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNhNDhhZjc0MDc5OTVjNjllMWJlZjdjNjc4Njg4MTcxZDZmOWM0YzkyYjkxZWZjYzI2NTAyZTdkOTQ1MGZmNWQifQ"
+        },
+        {
+          "resource": "repo://scripts/apply_model_config.py#L315-L330",
+          "version": "repo-lines-v1:sha256:39971d7652b33ccd269021077a8b46cb7e9ce65b67d1c4961fb46c61dd40dbe9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkYTVjNjZlMTdiMTQ1Mzk3ODM0YjhjODU0ZGM0MTkzZTIxMjUxODBhODk5NmExNGMzMTg4MzMyNmIyZWZiY2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImExOTk1MzJlOTM3MTM0ODJiYTk2NDEyNWU4MjNjZjcyYjNkMjc5MDM1MmM5YTc5NTBiY2IxOTQ0ZDdlMTgxNGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmMzlkYmI2Y2Q0OTI1YTBmZGZmMGYyZjQ4OWU4M2U5OGE3MWQyMGNmOGUzZmZhZmFjOTAwOGUzNGE1YjMxNTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ceea454f48fc41f4b577a38600fb63b5",
+      "statement": "deploy-harness.sh runs check_model_config before preflight_protected (also under --dry-run), rendering a snapshot from source and running --check against the target's harness-models.json, and exits 1 with nothing written under .claude/ if it fails; the apply step copies the snapshot to .claude/harness-models.defaults.json and runs --apply after rewrite_derived_paths and before derive_settings.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L517-L541",
+          "version": "repo-lines-v1:sha256:fcf69197d2473a556a6c1ba3b547a36b8abb1b641d5456de78eb3d5606997762:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkYzI3MzQ3OWQ0NWRjZDU5Y2RkMzYyN2M5YWIyNjJiMzYwNTk5ZGE5NzdkYjAyZWFhYzlmNDdjMTY5MmZkMDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlODU0YjY2ODdjYmQ3YmM0OTBiNmIxYTM0OGJjNTczOTk4N2M4NWE4MDE0NDZlMzNhYTFhYWU4NDVlNWQ1YTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc1NDkwOGRhMzY2ZjY1NTZhNzQ2MzhiMjZiNTdlMzg3MTljM2JmZTY2MzgxNjk5YjBhZjc0OGNhNGE2NmZlMjgifQ"
+        },
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L621-L639",
+          "version": "repo-lines-v1:sha256:df620a6c2d0376f233dc7c39d6245d62125f5f81577eca21de914a68a21460ce:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3MjlkMjQ2MzZjYjgwOTVmZDY1ZmE1NDZjOWRkYmM3Y2E2MTUwNzczMWNlMzgxNDk2ZmYwYjYzYWIwNmM2YzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyNjVkYjcyMDEwMTNlMmE2ZjdlZTQwY2M5ZjBiYjJkZGZlYjkwZDNlNzk5YmQyOTIyMjExNDJlZThkMWIxMGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmNzlkNTY4NmQ5ZWZiYWY5ZGRlY2ExMzQwNWI3MmY4NDU2ZmNlMzdiODRjOGE1ZjdhNWFkYmRhNjViYmM3N2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2MjNhYTg3Y2I4YTYzMjc1YTUwNjllODY1MWRhZGE5NDljY2Q1N2FkZjQ3MDc1ZGUyMDQxYmFjODE3ZTU2M2UifQ"
+        },
+        {
+          "resource": "repo://tests/scripts/model-config-deploy.test.sh#L59-L93",
+          "version": "repo-lines-v1:sha256:416a2f653aa4003a2cf3d53cdfa1c640cbb8ec5f2da94d16fc8923b376e36b8c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyN2IzMjE5Y2NhYzlhNzdiNGQ2ZmNmM2ZlY2ZjZDVjMDk0ZmE3YzVkMTgwZTUzZjdiN2Y0MWM1ZDUxOWQzODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmYWIyNWI2NmQ0MzQwOWVhOTNhMGMwZDUwNzcwOTQ1NDgzZGE1YzMyOTg4NTU3ZTEwMGJmMTdjMWY1MjU2Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc5ZTRjY2YxYjYwNDhiYmY3Yzc2OTc1Y2FkY2ViOWE4OWExNjJlMjE3NGMwOWMyZTUxOTRhMTZhNzNmNjI0NzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyMjE0NzViNTQxMjcyNTQzYjhkNGExMWY1NDdjNzhkMTFjOWQ1MjMwZDYzZTg5M2RhZDZkZTVjMDcyY2JiZWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0708d91d414e4bcbb9c0e904e9099954",
+      "statement": "If the source tree lacks scripts/apply_model_config.py, deploy warns and skips both the model-config check and apply; otherwise apply_model_config.py ships in the consumer script subset.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L522-L526",
+          "version": "repo-lines-v1:sha256:fed34b3e34504c7f8ac1f7b1ed1872eb10b0fd07be9bc5bc4d9174c056e7caf4:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZThmNjU0MGUwYmVmNGJhYTY4M2ZiMzE0MTIyM2QxNzA3ZWU4ZTc4NTQzMjYwNDc5MDU2MjY4ZWY1M2Q4YjAxMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzVmYzkwZmY4YTQ0MTRjNTQ0MWQwZjY3N2M1Y2JmZGEzOGI0NzRlNTFiZmQ1NTlhNTU1OWRlMGY4NzcwNTUyNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGM1ZmJhNDc3MjgzN2I1ODgyNTc0NWMwZTA1MmVkNjA1NDgwNjZiMzNmOTkzMTUwZGQ4MmNiOTJhMjlhZDg4ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDBhYWNmZmY4Y2IwM2JhNDQ4NmRhY2QzYWI3OThhZGFkMzNiNjllOGE1YjYxNGU5NTFmNjU3ZjdlM2MwYWU1OSJ9"
+        },
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L54-L54",
+          "version": "repo-lines-v1:sha256:195284d55f858a50ffc32929f04dd9d2f2dbfd10328dd79fec19a395a2eb4522:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTk1Mjg0ZDU1Zjg1OGE1MGZmYzMyOTI5ZjA0ZGQ5ZDJmMmRiZmQxMDMyOGRkNzlmZWMxOWEzOTVhMmViNDUyMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTk1Mjg0ZDU1Zjg1OGE1MGZmYzMyOTI5ZjA0ZGQ5ZDJmMmRiZmQxMDMyOGRkNzlmZWMxOWEzOTVhMmViNDUyMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWEyMGQ4YzExYzgzMDgxYTUwYmU4NWY0OTllMWVhY2RmNmE1MjBhZjBkNTA0NjdkNDdhZGIyYzIwMzI3ZjhkZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjA2NzA5YjY2OWE4NzkzZjhiNTFiOTRkYzQ4ZGY4MWQzMmUyZWQwNGE0N2RmOWVhNDI2YWIwZTM4YjJhODIyYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_d6737263d4544f8d8c10771944bcd7f1",
+      "statement": "The /harness-models skill maps show (default), check and apply to the applier flag of the same name, passes the git toplevel as a literal --project-root, relays output verbatim, and never edits harness-models.json itself.",
+      "evidence": [
+        {
+          "resource": "repo://.claude/skills/harness-models/SKILL.md#L1-L32",
+          "version": "repo-lines-v1:sha256:3c04a7e8589d891718bf32630ba635e6817a9c7d6f11b47007b4cfbaef649e08:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1MmQ3MTExMDNkNTBhNDM3ODMwYzZmYmNkMDRmYjRiYWI0OWEwZjgyZjZkMjZkMWM3OTFjNmU4NDg4ZGQwOTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0MTIyYzc4Y2U4MTcxYTdiNGY4NGY0MjY0MWU4MWM2NDg5NmIyNmUzNGMzN2NlMzM5ZDJjMmVkYWJmNDE1ZmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://scripts/test_harness_models_skill.py#L19-L37",
+          "version": "repo-lines-v1:sha256:a355f764fde7445d2be101637df13642b5ab198dfaaf65777ce0ea928a5daecc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyMWQyMTAwYTdhMTM1OGFjMGMyMWM5MzMwODc4ZTUxZjcxMTJiMDdjNGU0ZGVmNzBkZGIxODUyNTA2ZTM0ZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlZjNjOGM5N2ZjOWE4ZmIxZWNhNGFiODg0OTEzY2QyOTQyY2NiN2MyZjRkZGEyNTI3MjNjYjhlNDQ0ZTg4ODIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAxMGI0MjA3OTQ1NTdlYjVkYTAxYzY2ZjdlOGNkYzNjMzcyZjE5NTM3YjIyODE2OWM4YTQ0NmQ1MDhkMjJjYjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d50672eac57d460f9aed8371e12500cc",
+      "statement": "Only harness agents and skills are configurable: a consumer-owned skill is never rewritten and naming it in harness-models.json is rejected.",
+      "evidence": [
+        {
+          "resource": "repo://specs/model-effort-config/design.md#L73-L78",
+          "version": "repo-lines-v1:sha256:f090e1b16751d68b141ca286ec22e7c27acace8cc91b7107c9f4c35c91f9e71c:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzJiNDNlNTBhY2VhZWE2N2E4YTgzN2YwZjBhZjYyMGY0ZTMxNGIzNGJlNWRhODg5MWY4NzY1ZGVhYjc1ZDEyNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTYwMGU4MjAxNThhMjdmZmVmNTM4ZjZkZTAwOGJjYTBlMDM1MWJjM2M2ZGIwNTQ2MWZiYjVhMmQ5ODhjNDViMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmUxYzM2MTQxYmMwNzUyYjJmOTFhN2ZmNDE0ZmZhZDkxZDZlOTVhMjZiNzY5OThjMjA0Y2U3YzZiZjNkOTEwMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGVmN2VlZWYzZmJkNzA1NzNiYmQ1OTgwNGU1OGVhZTRjM2M2OGQzODVkODE5YjJkY2IwYzdiYTBjODFiZmQ0ZiJ9"
+        },
+        {
+          "resource": "repo://tests/scripts/model-config-deploy.test.sh#L50-L52",
+          "version": "repo-lines-v1:sha256:1d634a64ebfec9bc2dd7ff31dd265a0885ec4e3935bda0c40e668d05464571df:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzRmYWM4Y2RkMWZlNGQ5YjExNjM4NGIzOWVmZWEwMTVjNTczNzE5ODdkM2JhZTVkYzMzNTdjODU5YmQ3MjAwMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2YwZmRhMmQ2ZDI5ZTU5ZTExYjU1OTBjMGIwMWNhMjkyNzUxZGVjMGE2YzU5NGI2MjBiYTYwZmEzODhjZjRiMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDAwZTNjYTQ3YzcyMThhMjRiNGViNGRlMmFjNzEwYWViODg2MDZlMTE0YjRjNGE3NTA3N2IxZWJhZGNlMWQwMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzc1MGRmNTJjMWNkY2Q5MmI2NjQyNzc2OWE3MzljOTdmOWM3YzhjYTkxNWZhODhkZGY5MzdkYzk1NzcyMDBiZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_88f9ceed44074f67b02c151b28d8619e",
+      "statement": "The Codex adapter renderer skips the model-config.sh hook registration because the hook only rewrites Claude frontmatter.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/render_codex_adapter.py#L88-L89",
+          "version": "repo-lines-v1:sha256:4e18e50b19484df0447f5959db0f34789fe985e8a3fccb93b9b4c1ec58b2c4cf:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzdiZTUxZmMxNjdkZWJiYzE0YjRjNmUwYjJmNmZjMjY0NjYwZDA1ZTdmNzAwOGZlN2MwYmYxNjAwODFkNzdkMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2UyMDk4YThhYWNmODJlNzg5MDJiYzFhZTkyMGY2NjliYWYxOTUzNDA3OTQyMTNkODY5ODE2MmFmZGM1OTg0NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWE5NGM0NDIwNjc4Zjg3NzI2ZTdjN2VkYTJjMThkOGUxM2ZhOWQwODhmYjhiZjAzYTFmOTQ3NGE5MTE0ODMzYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTU2N2EyNzIxNTQyNjZlMDQwOTRkOWNmMTlhNzRhYjBhY2QwNWE3ZjU5M2E1Y2ZhZGY3MWViNDkxNzNhZmE1MyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_1423e719c2f644008241b2d6dfbfa610",
+      "statement": "The spec SUMMARY records known limitations: render_agent_definitions.py writes agent files before the snapshot so broken skill frontmatter leaves a partial render, the --defaults-out write is not atomic and a missing parent raises FileNotFoundError, inserted lines use LF in CRLF files, and duplicate model/effort keys are only partially rewritten.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/render_agent_definitions.py#L396-L405",
+          "version": "repo-lines-v1:sha256:7d4c14d6ad56956d040569dafa7150714555624c6bf22a99c8ac0cb1b967e4dd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ODk1NDAzYmFmZjIwYzczMzNiZGVhZGQ4OTkxNTllZDZkMGNmZDZlY2Q1YzQxYTVmY2QyNDdkM2E2YTFlOTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxMDM0ODFjNTdkMGYwZGMwZjc2Y2QyY2M4YjM2MDRjNGU4Mjk2ZGE0MTIyYWRkMTllODE3NDVkYzdlMzMxYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdjYzk1MzQ3OGVmYWU2NDVkZDE2OGI3OGQzMjY1M2ZkM2QyM2VlOTE1NzA0MmJmMjM4ZjQ4NDAwYTBlOGQ0Y2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM4ODQwZDE0ZmUxODhiOWNkZWIzN2Y2N2RhOTg0Nzg5OTZjMmNlMDkxZTM3MTVlNjQ0YmM4NjZmYTE1NDRjMjYifQ"
+        },
+        {
+          "resource": "repo://specs/model-effort-config/SUMMARY.md#L56-L62",
+          "version": "repo-lines-v1:sha256:458481ec5b15e615b550f13a16e2a357beb868f1e3c7860137a4c9674a9d33b6:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2ZmM2U5YjM5ZDNjZDkyNTI4Njg5MWQ5MmJhMjkxMzNlYjAxNmExZWFjYmJlNTBjZjU0MzQ2MTBhMjEyM2Y1OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2ZiZDZhNmRkMTQ2ZDBhYTliNzBiYmM0NTA1YmVmNzdhYWE3NWZmN2U5ZjllZmU1OTEyNTQ4NjEwZTIwOTA4NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjRmNjk3OGM2MGMwNWFkMzU4ZDljYmY0YTQ3YWMzMjQ1YjhlMzdjZWQ5N2Y2MDQ1MDNmOThlNjkxYThlZGY2NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGQ3YmQ2YWIwNzJiOTY3YzViYWJmOGFkY2JlOTQzYTQwYzg4YWJhYWRkZGRiYTFjZjQwYzg2ZThiNjZiZjhjYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_76e95a754a0448c7a400e14a06a3e048",
+      "statement": "The SUMMARY records advisory findings that MODEL_ID accepts a trailing newline, that a failed --apply after a passed check aborts deploy before derive_settings and leaks temp files, and that the skill's git-toplevel root can differ from the hook's CLAUDE_PROJECT_DIR root in linked worktrees.",
+      "evidence": [
+        {
+          "resource": "repo://specs/model-effort-config/SUMMARY.md#L83-L93",
+          "version": "repo-lines-v1:sha256:277ea3e53c98a24cceb32bd85210726b329c442f99becf8dd20b0f89bbb7fb0f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwZTZhYjU3YzlmNjlmNjVlZTg1NGNiMjQ0MjkxYjUxNGZhNjk3ZDIxM2U2OTMwNjc2NDlkZmU3ZDBmM2MyYWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3M2FmNTcxYjY3M2U3OWJkOWY4NzIxMmY3YzhmOGY5OTY0ZjE3NGY2NmM5MDBhMmRhNzFiYzdlN2FiOGVhZGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQwNWZkYjRiZDM3OGI0NTg1ZDdjZTZiMDIyZDMzZDM5NDZmMWNlZTAyZTkwZTFmMDM2NzcwNjYyOWUzYzFjOTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY3ZTI4ODUzOGQ5ODM2OGQxODQ4OTQwYjY5MWFlNmU3ZjE5ZjI1MWQ4ZjZkZjcxNDk3YTViNDdiYmM2NzM1MGYifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.2",
+    "at": "2026-10-19T07:24:11.736Z"
+  }
+}

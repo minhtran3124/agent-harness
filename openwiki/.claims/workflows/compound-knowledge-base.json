@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:145c8f6108e409750c20b6ea60c965d48f19ca685d556625e9aac26389fa3ae0",
+  "pageVersion": "sha256:da7388964020268e610eae78a0d7bebe7c98c600466276382e6630d08bbaee47",
   "claims": [
     {
       "id": "claim_cf79fb8b3b8944498a3703160f571e0f",
-      "statement": "docs/solutions/README.md defines records as <category>/<slug>.md files with front-matter fields problem_type (bug|knowledge|decision), module, tags, affects, optional supersedes, confidence, and confirmed_at, and maps each problem_type to required body sections.",
+      "statement": "docs/solutions/README.md defines records as <category>/<slug>.md files with front-matter fields problem_type (bug|knowledge|decision|failure), module, tags, severity (critical|standard), applicable_when, affects, optional supersedes, confidence, and confirmed_at, and maps each problem_type to required body sections, with failure requiring Symptom, Wrong_Approach, Why_It_Failed, Correct_Approach, and Guardrail.",
       "evidence": [
         {
-          "resource": "repo://docs/solutions/README.md#L8-L51",
-          "version": "repo-lines-v1:sha256:cec2e21904ac31874a80dd2893c6879ff0984854fb28f72eb3ba7f1f5574f159:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzZDc4ZjA2YzE0MDc0MzhmNTRkYjkzMzBjZjJmMWIwMDgyMjE0YzQwNDdkMDFmN2UyNzNmN2YzMTc3YjViMzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwZjM3Zjk3OGQxZjM1MjY2MDkzOWE3M2E1NmZjZmQxY2RkNDFiOWNkZTQ5YmQ2MTFhNzhhNzVkNDdhYWI2MGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM2NTQ4YmUzMjEzMWRkNTI3MzU5YzRkMTM5ZmEwMDEwOGMzNWFmNzNhNWQyYThkNGM3YjMyODM5ZWQxYmQ5MjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc2NmYyMDBlYTk1MzVjOGMyNTZlNDg5MzVlYjNlNTllMzdlMWE2NjY1NjkxNmEyZWRhY2M1ZjAwZTk5ODllMjkifQ"
+          "resource": "repo://docs/solutions/README.md#L10-L56",
+          "version": "repo-lines-v1:sha256:f23db4fb3b0e6195617f379d9e3190f4b0e6e2ccb066a64382fb6cba5d542366:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzZDc4ZjA2YzE0MDc0MzhmNTRkYjkzMzBjZjJmMWIwMDgyMjE0YzQwNDdkMDFmN2UyNzNmN2YzMTc3YjViMzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1MWZjZGZiMzJkNmE2ZWI2YjI2NjFiYTVkNTlkZWJmY2JiNGQ0NmE1MmViM2EwODczNGFjYTRjYTFlNDlmYmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk4MGNiMDUwZTdkYzhlYzRmOTQyYzBhZTRkOGJjODJmYzc2MDUyMThlNjY3NWNjZTZhNjc3MDhmZTBiODAxYWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc2NmYyMDBlYTk1MzVjOGMyNTZlNDg5MzVlYjNlNTllMzdlMWE2NjY1NjkxNmEyZWRhY2M1ZjAwZTk5ODllMjkifQ"
         }
       ]
     },
@@ -17,11 +17,11 @@
       "statement": "The knowledge base's confidence-decay rule ties confidence to confirmed_at age (high <30 days, medium >1 month, low >3 months treated as hypothesis), and re-verification updates confirmed_at to today and bumps confidence; CLAUDE.md tells agents to treat entries older than 30 days as potentially stale.",
       "evidence": [
         {
-          "resource": "repo://CLAUDE.md#L87-L87",
+          "resource": "repo://CLAUDE.md#L94-L94",
           "version": "repo-lines-v1:sha256:5d9200ba2e8b1309ee38be099a1ee0dbefec2cbc23d440d083c94dd85def9327:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWQ5MjAwYmEyZThiMTMwOWVlMzhiZTA5OWExZWUwZGJlZmVjMmNiYzIzZDQ0MGQwODNjOTRkZDg1ZGVmOTMyNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWQ5MjAwYmEyZThiMTMwOWVlMzhiZTA5OWExZWUwZGJlZmVjMmNiYzIzZDQ0MGQwODNjOTRkZDg1ZGVmOTMyNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGNiZjMyZmRiMzc4NTdiNjI5Njc4NDFjNzY4ZGNlMjkxNDQ1ZTAzNmY1OTVmYzYxOTdjMDNjZmM0OGRmZTEzOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGExOTI5NjNlMzc5YTEyNTllZTA1YjE2MGFiYjMzNTJiY2VkZjc2ZTY2ZjMzYjAwNjU4MjhmNGRiMmE4YzFhNyJ9"
         },
         {
-          "resource": "repo://docs/solutions/README.md#L53-L59",
+          "resource": "repo://docs/solutions/README.md#L58-L64",
           "version": "repo-lines-v1:sha256:ac5ff6c07eb47e6762cf4899a803e32dd684ebc4b715796120e8548c7cf0fcec:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjVmNmYwMmJmYzQ1N2NhZTE2ZTQyNTg1MWExMmJmN2FlNjM5MjYzMzI5MTIyOWFiZjU3ZTgzM2VlZjBlYjEzYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTk4ODJiZWY0MzVmNzc0MDlhM2Q3YWM4YmU1ODhlNGM5M2U4YmUxMDQ0MWY0OWRmZTFlNGFiMGI1ZTE5NzI0YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzMyYTI2NDFjOWU1MmQ4ZjcyZWExZWNhOGIzNTAwY2JmMDNhZDg1MmQ5OWRlMzRlODkyNjM0NjMwOGEwMTA1MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODZmMDM4OWNiMDA0ZWFiNzlkNjJmYjk5MzZjMTY2NTYwZWM1MzMzYmYzZmYyMjBkYjM5NTg5NTQ2ZWY5NThmMyJ9"
         }
       ]
@@ -56,11 +56,11 @@
     },
     {
       "id": "claim_28dae095a93b408bbdc286f1d76bc3bc",
-      "statement": "rebuild_solution_index.py parses front-matter with a naive line splitter rather than YAML and renders problem_type, severity, tags, applicable_when; severity and applicable_when are not part of the README front-matter schema.",
+      "statement": "rebuild_solution_index.py parses front-matter with a naive line splitter rather than YAML and renders problem_type, severity, tags, and applicable_when without validating values; these rendered fields are now all part of the README front-matter schema.",
       "evidence": [
         {
-          "resource": "repo://docs/solutions/README.md#L29-L43",
-          "version": "repo-lines-v1:sha256:eadf3adb1704766f89ba877d9f88ea1de03e2a963eda2b3f4c518a5e95b94151:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0Yjg4ZDQ3NGExOTc1YzljNTY5MTYzODQwYzBiOGVmNDhlZTc0ZWI4NzcxNTdmZGEyMjZmZGQzN2RjNTI4MDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFhNWY5NTY3Y2E4MDhhODExZDg3NjI5MzUzNTk4NWYzYTBjZWIzZWNkYTg4OTExYzU1MWJmYjEzNWZjZDE1N2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkYTk3ZTE1ZDNiY2YzZWU0YWIwN2Y2YTQ3NGFkZTU1MjIwMjQ1ZTE1MzUzNWUwMTYwMjcyYzZjM2M2ZDI0MjEifQ"
+          "resource": "repo://docs/solutions/README.md#L31-L47",
+          "version": "repo-lines-v1:sha256:ff023c5adfe142e1a3cb7578a99bc03af267b63b37322699b6a5a75ca2fb38d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0Yjg4ZDQ3NGExOTc1YzljNTY5MTYzODQwYzBiOGVmNDhlZTc0ZWI4NzcxNTdmZGEyMjZmZGQzN2RjNTI4MDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFhNWY5NTY3Y2E4MDhhODExZDg3NjI5MzUzNTk4NWYzYTBjZWIzZWNkYTg4OTExYzU1MWJmYjEzNWZjZDE1N2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkYTk3ZTE1ZDNiY2YzZWU0YWIwN2Y2YTQ3NGFkZTU1MjIwMjQ1ZTE1MzUzNWUwMTYwMjcyYzZjM2M2ZDI0MjEifQ"
         },
         {
           "resource": "repo://scripts/rebuild_solution_index.py#L10-L24",
@@ -92,7 +92,7 @@
       "evidence": [
         {
           "resource": "repo://skills/compound/SKILL.md",
-          "version": "repo-file-v1:sha256:07d661b32117ccec38338fc99ab0c17aa6f1c10da9866e1548f0cf25dc23869a"
+          "version": "repo-file-v1:sha256:f8bb058f388904a4899f8e36cbc62b95864e9f68187744270db8d91b2e0f8200"
         },
         {
           "resource": "repo://tests/scripts/compound-contract.test.sh#L5-L7",
@@ -106,7 +106,7 @@
       "evidence": [
         {
           "resource": "repo://skills/compound/SKILL.md",
-          "version": "repo-file-v1:sha256:07d661b32117ccec38338fc99ab0c17aa6f1c10da9866e1548f0cf25dc23869a"
+          "version": "repo-file-v1:sha256:f8bb058f388904a4899f8e36cbc62b95864e9f68187744270db8d91b2e0f8200"
         },
         {
           "resource": "repo://tests/scripts/compound-contract.test.sh#L12-L13",
@@ -120,7 +120,7 @@
       "evidence": [
         {
           "resource": "repo://skills/compound/SKILL.md",
-          "version": "repo-file-v1:sha256:07d661b32117ccec38338fc99ab0c17aa6f1c10da9866e1548f0cf25dc23869a"
+          "version": "repo-file-v1:sha256:f8bb058f388904a4899f8e36cbc62b95864e9f68187744270db8d91b2e0f8200"
         }
       ]
     },
@@ -130,7 +130,7 @@
       "evidence": [
         {
           "resource": "repo://skills/compound/SKILL.md",
-          "version": "repo-file-v1:sha256:07d661b32117ccec38338fc99ab0c17aa6f1c10da9866e1548f0cf25dc23869a"
+          "version": "repo-file-v1:sha256:f8bb058f388904a4899f8e36cbc62b95864e9f68187744270db8d91b2e0f8200"
         },
         {
           "resource": "repo://tests/scripts/compound-contract.test.sh#L9-L10",
@@ -163,7 +163,7 @@
       "statement": "critical-patterns.md is always read regardless of query domain and admits only patterns that caused non-obvious bugs in multiple modules or encode non-negotiable rules a linter cannot express; consumers otherwise read INDEX.md first and at most 3 matching entries.",
       "evidence": [
         {
-          "resource": "repo://docs/solutions/README.md#L61-L63",
+          "resource": "repo://docs/solutions/README.md#L66-L68",
           "version": "repo-lines-v1:sha256:095947e6fa3dbb1a8cc275982ad568a0b7004aa007451d6eea959461d1691911:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDY4NDZjYzcxNjU4MWZkMGQ1OWZlOGRiZDIzMjliN2RkYmY0ZDJjNGJjM2ZlZTI0MWJmY2QzMjBjMjIwMGJkMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTA3MmU4ZmE5NzAxOTI0MmYyODJmYmI2NDMyYjM5NDE3YjM4Y2QyM2NmNjJiOTk5ZThjMzNkYzE0ZWFkZmExNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODlmMGNlZWJkMjMxODAyN2U2NDRmYzBmZjQyZTk2Mjc4NGUyYmVlYmMyNmQ0ZjAyY2I4MmQwODI1MTE2YmJiZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         },
         {
@@ -174,15 +174,15 @@
     },
     {
       "id": "claim_f70eea97b1814183bec395c4141dbbb2",
-      "statement": "hooks/session-knowledge.sh is registered as the SessionStart hook in settings.json and is omitted under the minimal deploy profile but registered under standard and strict profiles.",
+      "statement": "settings.json has two SessionStart entries: hooks/session-knowledge.sh with no matcher and hooks/model-config.sh with matcher startup|clear; the minimal deploy profile drops the SessionStart key entirely (so session-knowledge is not registered), while standard and strict profiles register session-knowledge and model-config.",
       "evidence": [
         {
-          "resource": "repo://settings.json#L25-L35",
-          "version": "repo-lines-v1:sha256:42e5e0ba51aa931dabb1749e80f693e356e1354a18cccd8ee98354d80ae1ad2b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliYTkzOGUwODlhZTRhN2YzYzAyMmE3NzFmMGY4OGE5MDM4ZjU4NWViY2ZhYWQ4ZGUzNjU1YjdlYTU3ZTc1N2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkZDI0NDU4MmI2ZmIwM2QyM2I4NDE1YWJlY2QzNDZiMGM5ZjQ2NmI2Zjc1MmIwNjgxODljZTdlOWEyZGMzNTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI0N2ZlZTRhY2NhMzA5MDIxNzMwMTE1YzhhZmQwZDk4ZDBjNDEyOWQwNjc5Mzk4Zjk3ODVmYTNkN2MyZmM4NjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmNzM5YTA2YzFjYmIxMjQ0ZTMzNjNkMzhiY2Y5ZmE1MGNlODRmZWQzOTljMjE5M2EzYzdmMDhkNTk5MThiMmEifQ"
+          "resource": "repo://settings.json#L25-L45",
+          "version": "repo-lines-v1:sha256:490b3a226ea3082d43713051cecd28485a55d4c3b3b75c65f7c4d657a4939fa0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliYTkzOGUwODlhZTRhN2YzYzAyMmE3NzFmMGY4OGE5MDM4ZjU4NWViY2ZhYWQ4ZGUzNjU1YjdlYTU3ZTc1N2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkZDI0NDU4MmI2ZmIwM2QyM2I4NDE1YWJlY2QzNDZiMGM5ZjQ2NmI2Zjc1MmIwNjgxODljZTdlOWEyZGMzNTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI0N2ZlZTRhY2NhMzA5MDIxNzMwMTE1YzhhZmQwZDk4ZDBjNDEyOWQwNjc5Mzk4Zjk3ODVmYTNkN2MyZmM4NjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmNzM5YTA2YzFjYmIxMjQ0ZTMzNjNkMzhiY2Y5ZmE1MGNlODRmZWQzOTljMjE5M2EzYzdmMDhkNTk5MThiMmEifQ"
         },
         {
-          "resource": "repo://tests/scripts/deploy-profile.test.sh#L41-L69",
-          "version": "repo-lines-v1:sha256:c7b781edd8bb308d58d222ee7f8bc7209c911be8979c3d341defdb4ec2689206:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4MjliZTg5NTAwMjE0YmYwNGY1MzRmMTE5ZmExYzVmOTNmZjZiN2VjYmRlOTY1OWNjZGY0ZDkwOWI1YmU4NDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1NTJlMTUxOWNlNjQ3NDk4MWU5YzJjZGJlMTRmOGZmNmU3MDZiNjUyMGYyOWM1ZDM0YjA3YjkyMDIzZjczZmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA1MmM0MGU5OTNkNDljMzI3MmY3YWI0NTNmNDI4ZmQ0ODkwYzY1Y2M2NTY2ZWU2MzkzZDQwZWQ4NTg4YmNhZTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0YzUzNzdiODgwYTkzZGY5NThhNmZkNGE4MTVjMGVlMjUyNDE3YzE2YTdhZjM1NzZlNDU0YmRmOTg4ZDJlYjIifQ"
+          "resource": "repo://tests/scripts/deploy-profile.test.sh#L29-L100",
+          "version": "repo-lines-v1:sha256:9acb90a84da494e6d611f2c686fc17ddc41a28b8aca542fc11c1895e104018db:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3YzIyMDVkYTdjMTcwM2UyZTZiYTFiZTA2NzMyYmZiN2ZhZWNhOWQ5MWNlMzJjZTE4ODVlM2NjMmE4M2I3YzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMzQ4NTYxYTExZjVhNDFjMTYwMGE5ZmZmNTA0NzBlYWU2MWY0NmExNmRmNDg1NmFiODFhODQ5NDgyMGVjNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmMThjZmMxOWZkNjM1YmNhOWY3NDg5Yzg0M2E3ZWQ2ZThhOGYzZjAyZGZiN2NlZGNhNTc2NGNkMDkzMDQ2ZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhZjUzYTgxNzc3OWU2Mzk5MTJlMWY1YWY3MmQ1ZDlhY2EzY2Y4Nzk0ODM2MjYxZTA4NGQ5MDk4YTFkMGFiYjUifQ"
         }
       ]
     },
@@ -233,10 +233,34 @@
           "version": "repo-lines-v1:sha256:4f3871db86d166c782c4c377e36937b996c99ea092998ffb14eb4799057c4257:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3MDg3M2VhMWNkMmQzZWUwMWNkZjk4ZmZlY2QxYTk3OTYwZGE0NDRmOTI0OWEzOWZkOWQxMzg4M2YxODcxNzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4ZDNiOWU4ODBhNzc5NzU0OTNkYzdlMzU5MTQ0YzAyOTVhNGY2OTRjZmUwYWY0ZjkyOGMyMjMwN2JjNWMzMjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkxNGIyNjE1NTkxMjE1ZTQ4ZTM1MzM1YWQ1NTA4ZTg2MzdiYmU2NGI5OWU0MmExZjc3MTExNTAzODUzMjIzZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_92e32f65ee644f3bb908641e0e147231",
+      "statement": "For a bug track, /compound takes the root cause from the Confirmed: hypothesis in specs/<slug>/diagnosis.md when that file exists.",
+      "evidence": [
+        {
+          "resource": "repo://skills/compound/SKILL.md#L30-L31",
+          "version": "repo-lines-v1:sha256:7377422eac1b2f01b8da86e75d4570b12a296289f651f54671e9e57688e3cc3d:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDIzMDU2ZTJmMzUyOThjODRmYmM0YmIxNTc1NTU2MGRmNjkzMzMxOTQ0MDlmM2FjOTE1ZDc5MzU1Mzk3NjE2ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODU5OWVhZjBlNDdiMWM2NGJiMDdiNGFhOTQ4OTdiMmM3MGRiZDE2ODBlYjk4ODJjYjI3Yzc5NTNhODMwMjY3NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTRjYTk0MjY3MGYzNjM0OGFkODVjMTM0MDBlOWFiZWVlOTg1ODU5YTQyYzAzNDM1ZDc1YzBjNWYyYTZlNjViYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTFiNmVlNzExNWI3YThjNTFiM2JmYzRmYzAxZjBhZTdiMGY2YmYyMzA3MGVmNTA3Y2MxMDBlYjJkMzk2YTliMyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6a7f0f9393944a70b7458244bc2ed974",
+      "statement": "templates/structure/docs-solutions-README.md is the scaffold copy of the docs/solutions README and carries the same front-matter schema, body sections, confidence decay, and INDEX-first lookup rules.",
+      "evidence": [
+        {
+          "resource": "repo://docs/solutions/README.md#L1-L68",
+          "version": "repo-lines-v1:sha256:598b42556e9bafa39f65b7a4d8d4ff28ac7a393bf533a106da0bcd9935cf8ce5:eyJzZWxlY3RlZExpbmVDb3VudCI6NjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjYmVkZmVkODEwZjVlMTcyOTRjZjEzZGUwY2E0NmE5ZmRlNzBkZGQ0NDhjNTJjNzBkNjI2NDI1NzFiNjBmOWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwNzJlOGZhOTcwMTkyNDJmMjgyZmJiNjQzMmIzOTQxN2IzOGNkMjNjZjYyYjk5OWU4YzMzZGMxNGVhZGZhMTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://templates/structure/docs-solutions-README.md#L1-L68",
+          "version": "repo-lines-v1:sha256:123b0537adc2f9c1f367dc473d4785c845cbc25d24f60c31d3c9a7456a60ef8d:eyJzZWxlY3RlZExpbmVDb3VudCI6NjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjYmVkZmVkODEwZjVlMTcyOTRjZjEzZGUwY2E0NmE5ZmRlNzBkZGQ0NDhjNTJjNzBkNjI2NDI1NzFiNjBmOWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwNzJlOGZhOTcwMTkyNDJmMjgyZmJiNjQzMmIzOTQxN2IzOGNkMjNjZjYyYjk5OWU4YzMzZGMxNGVhZGZhMTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-16T04:08:21.021Z"
+    "at": "2026-10-19T07:24:11.736Z"
   }
 }

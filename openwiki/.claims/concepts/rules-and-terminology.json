@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2ba560222f7f1d64ef833ec26be45ab4b49ac0771494f102840b89c742cc5d1e",
+  "pageVersion": "sha256:93ee8ae4b9b7c4780cf7360632554ee12a16ff1db7c10ea812b23bbf8434c84a",
   "claims": [
     {
       "id": "claim_cde8ee7b9ff04b7b98fea0b7e7679244",
@@ -61,7 +61,7 @@
       "statement": "paths: injection fires on read, not on write, so write-flows and subagents that need a contextual rule must carry an explicit Read step or rule path in their prompt; the original move to path-scoping cut roughly 55% of the always-on rule payload.",
       "evidence": [
         {
-          "resource": "repo://CHANGELOG.md#L147-L147",
+          "resource": "repo://CHANGELOG.md#L168-L168",
           "version": "repo-lines-v1:sha256:d10b25a17d2ed7918f8d51d9ca8805e72f08f36ff1d834dd1126fbfe0322d090:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDEwYjI1YTE3ZDJlZDc5MThmOGQ1MWQ5Y2E4ODA1ZTcyZjA4ZjM2ZmYxZDgzNGRkMTEyNmZiZmUwMzIyZDA5MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDEwYjI1YTE3ZDJlZDc5MThmOGQ1MWQ5Y2E4ODA1ZTcyZjA4ZjM2ZmYxZDgzNGRkMTEyNmZiZmUwMzIyZDA5MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGQ2NTdiZjhiNDk5YzQ3ZjMwZWQzOTU1YzMxOWY2Y2JjYzdjODkyMzJjN2JmMDE0MWYwNzA2ODA0MTk1YjIwOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODk0NzUzYTZjOWRmMDdiMTliMDFiMWM4NDNhMWU1OTg4ZTRmNzE3ZTMyZTgwZDYwZGMwY2RjMWI3MzE3YjE2YyJ9"
         },
         {
@@ -146,11 +146,15 @@
     },
     {
       "id": "claim_f5f260e17972405fbcf8841e52d1e598",
-      "statement": "plan-format.md requires a PLAN.md when work exceeds 3 steps, 2 files, 30 minutes, or one layer; tasks are '### Task <id>' sections with Files/Action/Verify/Done and an optional (wave K) suffix; new plans need Global Constraints, per-task Criteria/Interfaces and an SC table whose checks are single pipe-free commands under 60s with 'exit <n>' expectations, enforced by scripts/check_plan_contract.py.",
+      "statement": "plan-format.md requires a PLAN.md when work exceeds 3 steps, 2 files, 30 minutes, or one layer; tasks are '### Task <id>' sections with Files/Action/Verify/Done and an optional (wave K) suffix; new plans need Global Constraints, per-task Criteria/Interfaces (Produces naming a backticked artifact) and an SC table whose checks are single pipe-free commands under 60s with 'exit <n>' expectations, enforced by scripts/check_plan_contract.py.",
       "evidence": [
         {
-          "resource": "repo://rules/plan-format.md#L14-L120",
-          "version": "repo-lines-v1:sha256:3b7e52cf6269aacc8f49417d5599b6de795ebd04d9cd874078463d0fe1f1a3aa:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmMWY0M2Y4MWM2MGQ1MTU3YWQyYTkxYzc4OWVkY2EwODU1MGQ5MzYzZTFmY2EyNmE4MTNlNzgwMWJiMTA1Y2Q4IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlNGVhNDkyMWFkYzM1YTkzYTRmZWJiMjJiZmJjMzYyNTg1MTYwYjAwNjFkMTk5YmI2ZmMwOTQ4YzNhODBkZGI0IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2NGQ1YmQwNGQ3ZWRhY2Y1MTE4OWE5OWEzYTExOGYyMzE1YzU5M2RlNWU0MjBlMGNmZGEyZmEzZmUxNjhkMzUyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5MDk4OWNhZWE1OGYyMzk4ODVmMWY5NDc5YmY3NDczZTE2YWNlMjI2ZjRjMGRmMGMyNGEyZjU1MzA4NTlmMTY0In0"
+          "resource": "repo://rules/plan-format.md#L14-L52",
+          "version": "repo-lines-v1:sha256:ef15b480ae02540ed00af90f1be360d6558a17e6cf1de308548488f4d0fe1d42:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxZjQzZjgxYzYwZDUxNTdhZDJhOTFjNzg5ZWRjYTA4NTUwZDkzNjNlMWZjYTI2YTgxM2U3ODAxYmIxMDVjZDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0ZDViZDA0ZDdlZGFjZjUxMTg5YTk5YTNhMTE4ZjIzMTVjNTkzZGU1ZTQyMGUwY2ZkYTJmYTNmZTE2OGQzNTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiZTU2MzM4N2UwNWY3NjgxZjc5MzdmMTdlYWY2MWZkOTIxODMzYmI0YjllNDRjYzA0ZTYyMzBkMjI0YjJlMjIifQ"
+        },
+        {
+          "resource": "repo://rules/plan-format.md#L90-L128",
+          "version": "repo-lines-v1:sha256:b002f0c39131f0cd0b95b1592f389c6eb63ce7d8652790e7266722de530fcb1a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU0YWZjNGIyYTQ0ODhjYTVhMDhhNDIyOTUzYjdjMjIwMGFkNmM1ZjU5MmU1NzQxOGUxZjUxNGZmODU1YzEzYTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3OTkxMjZiMTg3Y2NjYWRlYTBmNTgxZTAxNGU2NjhhNGQ4MGU4ZjU1M2NiMWFjMTQ1NjdiOTJmYTg2MTQ2OTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkOTBhMTE1N2NkOTQwNWVmODI5ZmI0M2UxYzg1OTQyN2I0NDY5NmZiODgzZmU3MTczMTRiODBiYzAwNzExZGQifQ"
         }
       ]
     },
@@ -259,10 +263,54 @@
           "version": "repo-file-v1:sha256:a520a68d2c74fc4908f44fd2af834405999480ac55d104cad068e34fec3b7c83"
         }
       ]
+    },
+    {
+      "id": "claim_0cc16c5a483d41c881a7f1f79ff98e6c",
+      "statement": "A plan opts into the seam rule with a '- Plan-contract: 2' bullet inside Global Constraints; then each task needs exactly one single-line '- **Seams:**' bullet directly after Interfaces, each seam with non-empty catches:/misses: clauses (multiple seams separated by ' | '), or 'none — <reason>'; bug-fix tasks may write none only when diagnosis.md says 'Seam: none — <reason>'. Plans without the marker skip the rule.",
+      "evidence": [
+        {
+          "resource": "repo://rules/plan-format.md#L53-L88",
+          "version": "repo-lines-v1:sha256:b9e2d7c876f4031d2de35e76c4037a3bae0f92ffbe374eb0db67dfe571a56fc0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2NDU3NzQ3MjQ5M2M5YTMwZWY1M2ViOGE2MzE3ZDE0Njc0MzNiOGRkNWFiYjNiZTkxOGU4ZGY1NmE0ZjdjYzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwYzg1M2M0Y2ViNDVlM2I5MTQyNDk1ZTY2MTg0MTZjMDhkYTYwZjg4Zjk1NGFkNWU4MWI5ZTA2NjA0YjJlMDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA0MmRlMzdkODlmMWI4MGQwMjA2YWJjODAwY2MwNGRmYjc5MGZlOTljN2U5MDBhYWIwZmJlZDdiNDk0N2Q4NGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwMTgzMmE3YzQ2MTE0ZDNlMTVkMzY0ZDZhYjQ3ZThlZTA2M2FkMTYxODhjMWVmNmJhZGYwZWMxOGFjZWU3N2IifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4f4cf7f295cd4fabafeb8fba7b9d5968",
+      "statement": "check_plan_contract.py masks fenced blocks before scanning, rejects any Plan-contract marker value other than '2', and runs seam checks (missing, duplicate, placement after Interfaces, none-with-reason, catches/misses) only when the marker is 2.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check_plan_contract.py#L21-L102",
+          "version": "repo-lines-v1:sha256:19b7139ebf2f61ad71661b2f2b05f19aa5aff4d1712519722c9a3c703af269ea:eyJzZWxlY3RlZExpbmVDb3VudCI6ODIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjMDU3YWM0ZjdmODQzMzE0ZTkwYzcwODhhZGZmMmU5Y2JhZGQ1NDAyZWU0YmNjZWQ5ZGE4YzcxNzZkYzQzMDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmZGRkYWIxMzNhZjAwYzM1ZmE3Zjk0Yjg5ZDU1ZTU3YWY0NzkwYzcxODFiOTY4ZjMxY2IxNDI3MTRmZjZiNTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEwZWYwMzk1NTg0MzQwMDMwMGUyM2ZhYjdiYmZkODEwMTE0OGVlZDFkNTkyMTBjZGE4NjY5NjZkYWZkZDAwYzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJhYzUxZjg0ZWFjNGQxOTJlOGU2YWQxODRjZTA5NzllZjIwOGUzNGZiNjMyOWFiNjBiY2NjNTRhMzEzM2YwNjAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fa3c1d94d8bb44d1a9c7639f82784387",
+      "statement": "ste-lint.py skips fenced blocks, so prompt prose inside the fenced Task tool block of *-prompt.md dispatch prompts is invisible to the STE count, baseline ratchet and review-package STE lint section; the documented remedy is manual Strict-mode review recorded under Not auto-verified, with fence linting only proposed.",
+      "evidence": [
+        {
+          "resource": "repo://docs/solutions/harness/ste-ratchet-blind-to-fenced-prompt-prose.md#L22-L86",
+          "version": "repo-lines-v1:sha256:2e966bc49fc524d9057b9cd73190ae06f5ee451cd082ec5100a9fde47b2b9087:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyYWQ5ZWE0ODFiZjkxYjJjYjgwMDE2MmVjYTFjNWUxOTUxZGFhNWFlMzBkZjJlMmY3NTgzNGE3NzgwM2ZhZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4ZjkwNWQ1NmE3Yjg0MzQwNzI4MzlhNmNjZTEyOWViMDZmNDEyOTE3MDQzNWY5MjM4NGRlZTM4NDIyODEwYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhOWM0MzBhNDFkMjg3YWY2YThjYmRlZTA0YTdjZTk0NDM4MzY0OGUyMzAzOTNmYTgxYmJmZDgyZTdjOWU2MjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZlMGVjYWUzODc0OGM2NWU0M2I5NDAyYjg1NmRkZjRkMTViODY2MDZjN2EwNTc0YTZlZjRkZWE5Mjc1YTQ2NGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4123f7dc1c7e488491cb269ab57e21ea",
+      "statement": "skills-lock.json pins the asd-ste100 skill to the GitHub source danyuchn/asd-ste100-skill with a computed hash, and an installed copy exists under .agents/skills/asd-ste100/.",
+      "evidence": [
+        {
+          "resource": "repo://.agents/skills/asd-ste100/SKILL.md",
+          "version": "repo-file-v1:sha256:39940a0db3d185416edfd757eff4c971006d8f59ad39715295b150b552344342"
+        },
+        {
+          "resource": "repo://skills-lock.json",
+          "version": "repo-file-v1:sha256:3f8db18ccf3a6069ae411ab793fc7335af34f7061c49633f98e5f9f2bd68ef59"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.2",
-    "at": "2026-10-16T04:08:21.021Z"
+    "at": "2026-10-19T07:24:11.736Z"
   }
 }

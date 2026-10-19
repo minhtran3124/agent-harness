@@ -1,11 +1,11 @@
 ---
 type: subsystem concept
 title: Sub-Agent Roles and Rendering
-description: How the harness defines its four runtime-neutral sub-agent roles (coding, reviewer, task-reviewer, test-runner), keeps project specifics in PROJECT.md, binds the roles to Claude and Codex through checked JSON contracts, and renders agent definitions, model-stage labels, CLI skill invocations, and isolated sub-agent prompts.
+description: How the harness defines its four runtime-neutral sub-agent roles (coding, reviewer, task-reviewer, test-runner), keeps project specifics in PROJECT.md, binds the roles to Claude and Codex through checked JSON contracts, renders agent definitions, model-stage labels, CLI skill invocations, and isolated sub-agent prompts, and lets a project's harness-models.json override the rendered model/effort at deploy time.
 tags: [agents, subagents, runtime-bindings, rendering, codex, claude, portability]
 verified:
   - by: openwiki/0.7.2
-    at: 2026-10-16T04:08:21.021Z
+    at: 2026-10-19T07:24:11.736Z
 sources:
   - id: openwiki-source-911ebfb81b731ccdf45376b9
     resource: repo://adapters/runtime-entry-bindings.json
@@ -27,6 +27,10 @@ sources:
     resource: repo://agents/test-runner.md
   - id: openwiki-source-991face7ae593d36af0365be
     resource: repo://harness-manifest.json
+  - id: openwiki-source-bfee88e007d9dc10e41b2be6
+    resource: repo://harness-models.json
+  - id: openwiki-source-c7c0b7689aebe88169a1a1f7
+    resource: repo://scripts/apply_model_config.py
   - id: openwiki-source-4a7eaf43ec1d74d5deee3c15
     resource: repo://scripts/deploy-harness.sh
   - id: openwiki-source-56eeb80b522ade87a1b3e51e
@@ -37,11 +41,13 @@ sources:
     resource: repo://scripts/render_runtime_entry.py
   - id: openwiki-source-46de043ef014bb69513fe518
     resource: repo://scripts/render_skill_prompt.py
+  - id: openwiki-source-e4576e562f15c3ef0e7f5737
+    resource: repo://scripts/test_render_agent_definitions.py
   - id: openwiki-source-07b0fd445b463e4b9bdb0b02
     resource: repo://scripts/test_render_runtime_entry.py
   - id: openwiki-source-8c9097d8cdae8431f7e036b3
     resource: repo://tests/scripts/runtime-entry-bindings.test.sh
-generated: { by: "openwiki/0.7.2", at: "2026-10-16T04:08:21.021Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-19T07:24:11.736Z" }
 ---
 
 # Sub-Agent Roles and Rendering
@@ -52,7 +58,7 @@ The `agents/` tree holds the sub-agent roles that skills and the orchestrator di
 2. **Neutral capability contracts**: [`agents/agent-contracts.json`](../../agents/agent-contracts.json). This file says what each role may do, without naming a runtime.
 3. **Runtime bindings**: [`agents/runtime-bindings.json`](../../agents/runtime-bindings.json) and [`adapters/runtime-entry-bindings.json`](../../adapters/runtime-entry-bindings.json). These files map each role and each workflow stage to concrete Claude or Codex settings.
 
-Three scripts turn these layers into usable output: `scripts/render_agent_definitions.py`, `scripts/render_runtime_entry.py`, and `scripts/render_skill_prompt.py`. To see how the roles are chained during implementation and review, read [Implementation and Review Chain](../workflows/implementation-and-review-chain.md). For the Codex packaging that uses the rendered TOML profiles, read [Codex Advisory Alpha](../integrations/codex-advisory-alpha.md).
+Three scripts turn these layers into usable output: `scripts/render_agent_definitions.py`, `scripts/render_runtime_entry.py`, and `scripts/render_skill_prompt.py`. On top of the bindings, a project-level `harness-models.json` can override each role's Claude `model` and `effort` when the harness is deployed (see [harness-models.json overrides](#harness-modelsjson-overrides) below and [Model and Effort Config](../operations/model-and-effort-config.md)). To see how the roles are chained during implementation and review, read [Implementation and Review Chain](../workflows/implementation-and-review-chain.md). For the Codex packaging that uses the rendered TOML profiles, read [Codex Advisory Alpha](../integrations/codex-advisory-alpha.md).
 
 ## The four roles
 
@@ -63,7 +69,16 @@ Three scripts turn these layers into usable output: `scripts/render_agent_defini
 | `task-reviewer` | One read-only review per task, with separate spec and quality verdicts | `read-only` filesystem, **no shell**, no network, no MCP, no nesting | `separate-spec-and-quality-verdicts` |
 | `test-runner` | Runs the smallest relevant set of tests, then reports and diagnoses the results | `read-only-with-test-artifacts`, `test-execution` shell, `documentation-read-only` network, no MCP, no nesting, `test-execution-fast` | `test-counts-failures-diagnostics` |
 
-All four roles use `context_policy: fresh-bounded`. The role bodies set the following behavior:
+All four roles use `context_policy: fresh-bounded`. The inventory in [`agents/README.md`](../../agents/README.md) also records who dispatches each role:
+
+| Role | Dispatched by |
+|---|---|
+| `coding` | `subagent-driven-development`, or ad hoc |
+| `reviewer` | the review skills (correctness-review finders, the correctness scorer, intent-review) |
+| `task-reviewer` | `subagent-driven-development` for per-task spec and quality review, and `diagnosing-bugs` for the diagnosis review |
+| `test-runner` | runs after implementation, and on the `subagent-driven-development` `cannot_verify` retry |
+
+The role bodies set the following behavior:
 
 - **`coding`** ([`agents/coding.md`](../../agents/coding.md)) treats `agents/PROJECT.md` and the docs it points to as the source of truth. It must not guess at a convention the repo has not written down. For any change the spec did not authorize, it applies `rules/auto-correct-scope.md`: Rules 1–3 are applied automatically and logged, and Rule 4 stops work and escalates. It returns the summary shape defined by the *Subagent contract* in `rules/orchestration.md`, and the orchestrator acts on that summary without re-reading the work.
 - **`reviewer`** ([`agents/reviewer.md`](../../agents/reviewer.md)) returns findings and never applies fixes. It is called *read-only by construction* because its runtime binding leaves out the write, edit, and nested-delegation tools. The role file has an *acknowledged limitation*: the inspection shell can still change state, and only the "never fix" instruction prevents that. Every claim that something is absent must name the paths, globs, or commands that were searched (`not_observed != absent`). A claim the reviewer cannot back with a source is reported as `unknown`.
@@ -87,7 +102,9 @@ Role files are universal. All repo-specific facts go in [`agents/PROJECT.md`](..
 - **Test execution.** This section holds the facts other docs usually leave out. For the harness repo, the full-suite command is `bash scripts/run-tests.sh`, which runs L1 syntax and doc-truth lint, L2 hook contract tests, and L3 script integration tests. The section also lists flags for targeted runs and a source→test mapping, for example `hooks/<name>.sh` → `tests/hooks/<name>.test.sh`.
 - **Failure diagnosis hints** and an **Inline fallback** section. The fallback is used only when the repo has no convention docs.
 
-To reuse the agents in another repo, copy `agents/` and edit `PROJECT.md` by hand. `PROJECT.template.md` is the clean starting template. The role files do not change. Risk-classification signals are kept out of `PROJECT.md` on purpose: they live in `rules/research-depth.md` and the xia2 skill, which needs no configuration.
+To reuse the agents in another repo, copy `agents/` and edit `PROJECT.md` by hand: point it at that repo's convention docs and fill in *Test execution*. `PROJECT.template.md` is the clean starting template, and `PROJECT.md` is the maintained per-repo copy. The role files do not change; only the README inventory needs adjusting if agents are added or removed. Risk-classification signals are kept out of `PROJECT.md` on purpose: xia2 is zero-config, and its signals live in `skills/xia2/references/depth-classifier.md` and `rules/research-depth.md`.
+
+Deployment respects this ownership. `scripts/deploy-harness.sh` lists `agents/PROJECT.md` in `BOOTSTRAP_OWNED_FILES`, so a re-sync never silently overwrites a consuming repo's copy; a conflict is resolved by the batch keep/backup/overwrite policy. `agents/README.md` is in `HARNESS_ONLY_DOCS` and is stripped from the deployed tree, because it explains the harness to maintainers rather than to consumers.
 
 ## Contracts and bindings
 
@@ -99,7 +116,7 @@ This file declares `required_capabilities`: `filesystem`, `shell`, `network`, `m
 
 This file has exactly two runtimes, `claude` and `codex`, and each must bind the same set of roles as the contracts file.
 
-- **Claude** (`markdown-frontmatter`): each role gets a `model`, an optional `effort`, and an optional `tools` list. Currently `coding`, `reviewer`, and `task-reviewer` bind `claude-opus-5-5` at `medium` effort, and `test-runner` binds `claude-haiku-5-5`. `coding` has `tools: null`, so it inherits every tool. `reviewer` gets `Glob, Grep, Read, Bash`. `task-reviewer` gets `Glob, Grep, Read`. `test-runner` gets `Glob, Grep, Read, WebFetch, WebSearch, Bash`.
+- **Claude** (`markdown-frontmatter`): each role gets a `model`, an optional `effort`, and an optional `tools` list. Currently `coding`, `reviewer`, and `task-reviewer` bind `claude-opus-5-5` at `medium` effort, and `test-runner` binds `claude-haiku-5-5`. `coding` has `tools: null`, so it inherits every tool. `reviewer` gets `Glob, Grep, Read, Bash`. `task-reviewer` gets `Glob, Grep, Read`. `test-runner` gets `Glob, Grep, Read, WebFetch, WebSearch, Bash`. These are defaults: a project's `harness-models.json` can replace the `model` and `effort` in the deployed files.
 - **Codex** (`toml-custom-agent`, emitted by `render_agent_definitions.py`): each role needs `model`, `model_reasoning_effort`, and `sandbox_mode`. `coding` uses `gpt-5.6-sol`/high/`workspace-write`. Both review roles use `gpt-5.6-terra`/high/`read-only`. `test-runner` uses `gpt-5.6-luna`/medium/`workspace-write`, and its policy text describes a read-only sandbox with an exception for test artifacts.
 - Each binding has a `capabilities` map whose keys must exactly match `required_capabilities`. Each value is either an explicit string or boolean, or an `unsupported-exception` object that names an `owner` and an `exit_condition`. Codex bindings may not keep any such exception.
 
@@ -122,6 +139,10 @@ flowchart TD
   BIND[runtime-bindings.json] --> RAD
   RAD -->|"--runtime claude"| CMD[".claude/agents/ROLE.md with tools, model, effort"]
   RAD -->|"render_codex"| TOML[".codex/agents/ROLE.toml"]
+  RAD -->|"--defaults-out"| SNAP["defaults snapshot"]
+  SNAP --> AMC[apply_model_config.py]
+  HM["project harness-models.json"] --> AMC
+  AMC -->|"rewrite model and effort lines"| CMD
   ENTRY[runtime-entry-bindings.json] --> RRE[render_runtime_entry.py]
   BIND --> RRE
   RRE --> LABEL["model label per stage"]
@@ -150,7 +171,9 @@ flowchart TD
 
 Before writing each profile, `parse_codex_profile()` parses it back with a strict TOML-subset parser.
 
-Callers: `scripts/deploy-harness.sh` runs `render_agents()`, which renders the Claude definitions into the deployed `.claude/agents`. `scripts/render_codex_adapter.py` calls `validate()` and then `render_codex()` to produce `project/.codex/agents/*.toml`. `harness-manifest.json` lists the contracts file, the bindings file, and the renderer under `agent_bindings`, along with the four role names.
+The script also has a `--defaults-out FILE` mode, which is allowed only with `--runtime claude` and not with `--check`. `defaults_snapshot()` writes a sorted JSON snapshot (`schema_version: 1`) holding each Claude role's bound `model` and `effort`, plus the `model`/`effort` frontmatter of every `skills/*/SKILL.md` outside `_archive`. Combining it with `--output-dir` leaves the rendered bytes unchanged.
+
+Callers: `scripts/deploy-harness.sh` uses the script twice. Before anything under `.claude/` is written, `check_model_config()` renders the defaults snapshot from the source into a temp file. Later, after the `skills`/`agents`/... copy loop, the `Rendering Claude agent bindings` step runs `render_agents()`, which calls `render_agent_definitions.py --root "$ROOT" --runtime claude --output-dir "$OUT/agents"`. `copy_dir` skips `agents/*.json` because the contracts and bindings are source-time inputs, so only the semantic Markdown roles are copied and then overwritten by the rendered definitions. `scripts/render_codex_adapter.py` calls `validate()` and then `render_codex()` to produce `project/.codex/agents/*.toml`. `harness-manifest.json` lists the contracts file, the bindings file, and the renderer under `agent_bindings`, along with the four role names.
 
 ## `render_runtime_entry.py`
 
@@ -160,7 +183,18 @@ Callers: `scripts/deploy-harness.sh` runs `render_agents()`, which renders the C
 - `--runtime R --skill NAME [--prompt TEXT]` prints a shell-quoted command line. For example, `claude -p '/feature-intake <case prompt>' --output-format text` or `codex exec '$feature-intake <case prompt>'`. Skill names must be kebab-case.
 - `--runtime R --model-stage STAGE` prints the bound model, such as `claude-opus-5-5` or `gpt-5.6-terra` for `task_reviewer`.
 
-An earlier rule required the review models to differ from each other. That rule was removed, and roles may now share a model: `test_collapsed_review_models_validate` checks that a scorer may share the finders' model and that an intent reviewer may share the implementer's. Neither `agents/*.json` nor `adapters/` is deployed to consuming repos, so this script runs only in the harness repo. The resolved model reaches consumers already written into each rendered agent's frontmatter.
+An earlier rule required the review models to differ from each other. That rule was removed, and roles may now share a model: `test_collapsed_review_models_validate` checks that a scorer may share the finders' model and that an intent reviewer may share the implementer's. `deploy-harness.sh` states that `agents/*.json` and `adapters/` are source-time adapter inputs that must never deploy, and its `CONSUMER_DATA` list ships only `harness-manifest.json`. So `render_runtime_entry.py` stays a harness-repo tool. The resolved model reaches consumers already written into each rendered agent's frontmatter.
+
+## harness-models.json overrides
+
+The bindings set the harness defaults. A project can override them with a `harness-models.json` at its project root. The file has `schema_version: 1` and `agents` and `skills` maps whose entries hold only `model` and `effort`. The harness repo keeps its own copy at the root: it moves `coding` and `task-reviewer` to `claude-sonnet-5-5`/`medium`, keeps `reviewer` on `claude-opus-5-5`/`medium`, gives `test-runner` `claude-haiku-5-5` at `high` effort, and also sets the `brainstorming` and `writing-plans` skills.
+
+`scripts/apply_model_config.py` applies the file. `deploy-harness.sh` wires it in like this:
+
+1. `check_model_config()` runs before `preflight_protected` and before any write, including under `--dry-run`. It renders the snapshot with `--defaults-out` and runs `apply_model_config.py --check` against the target project. If either command fails, deploy prints `harness-models.json check failed — nothing written under .claude/` and exits 1. If `apply_model_config.py` is missing from the source, the check and apply steps are skipped with a warning.
+2. After rendering, stripping, copying the consumer scripts, and `rewrite_derived_paths`, the `Applying harness-models.json` step copies the snapshot to `.claude/harness-models.defaults.json` and runs `apply_model_config.py --apply`. Because this step runs last, no later step changes the applied lines.
+
+`apply_model_config.py` accepts only known roles and skills from the snapshot, only the keys `model` and `effort`, models that are aliases (`opus`, `sonnet`, `haiku`, `fable`, `inherit`) or `claude-…` IDs, and efforts `low|medium|high|xhigh|max`. It merges each override over the snapshot defaults. It enforces a review floor: `reviewer` and `task-reviewer` may not go below `medium` effort. It then rewrites only the `model:`/`effort:` frontmatter lines of `.claude/agents/<role>.md` and `.claude/skills/<name>/SKILL.md`, keeping every other byte. Writes are planned first and then done atomically. `apply_model_config.py` is in `CONSUMER_SCRIPTS`, so consumers can re-run it (`--show`, `--check`, `--apply`, or `--hook` from a SessionStart hook) without the harness source. If `CLAUDE_CODE_EFFORT_LEVEL` or the `CLAUDE_CODE_SUBAGENT_MODEL*` environment variables are set, `--show` warns that they override the configured values.
 
 ## `render_skill_prompt.py`
 
@@ -178,7 +212,7 @@ An earlier rule required the review models to differ from each other. That rule 
 
 ## Tests
 
-- `scripts/test_render_agent_definitions.py` checks that the contracts and bindings cover every role and capability, that role sources contain no vendor fields, and that the Claude render matches the older files. It also checks the strict Codex profiles, the read-only, no-nesting, no-MCP constraints on the review roles, and a set of rejection cases: a missing role, a missing capability, an MCP tool on a role without MCP, an unsupported effort, and an incomplete exception.
+- `scripts/test_render_agent_definitions.py` checks that the contracts and bindings cover every role and capability, that role sources contain no vendor fields, and that the Claude render matches the older files. It also checks the strict Codex profiles, the read-only, no-nesting, no-MCP constraints on the review roles, and a set of rejection cases: a missing role, a missing capability, an MCP tool on a role without MCP, an unsupported effort, and an incomplete exception. The `--defaults-out` tests check that the snapshot matches the Claude bindings and the source skills, skips `_archive`, carries skill frontmatter values, leaves the `--output-dir` render byte-identical, and is rejected with `--check` or `--runtime codex`.
 - `scripts/test_render_runtime_entry.py` and `tests/scripts/runtime-entry-bindings.test.sh` check the CLI output and model labels against expected values, check shell quoting and the strict skill-name rule, and check that the prompts still declare their `model_stage:` lines.
 - `scripts/test_render_skill_prompt.py` checks composition, rejection of unresolved placeholders, and that `CONTEXT_MATRIX` lists every isolated context. It also checks that each required policy is necessary: if a required delivery is removed, the check fails.
 - `scripts/test_render_codex_adapter.py` uses the shared `parse_codex_profile` on the rendered reviewer and test-runner profiles.

@@ -3,9 +3,6 @@ type: runtime component
 title: Resume Decision
 description: runtime/resume_decision.py is the single read-only resume authority for a harness run. It maps durable run-state storage and FSM state to one lifecycle action (execute-plan, resume-repair, resume-review-chain, wait, stop, rebuild) and rebuilds a task cursor from the PLAN.md Status Log and branch commits. Contradictory evidence fails closed.
 tags: [runtime, resume, run-state, subagent-driven-development, fail-closed, plan-cursor]
-verified:
-  - by: openwiki/0.7.2
-    at: 2026-10-16T04:08:21.021Z
 sources:
   - id: openwiki-source-1c3cf1e8cd3ab5c21a8f53ca
     resource: repo://rules/wave-parallelism.md
@@ -21,7 +18,10 @@ sources:
     resource: repo://skills/subagent-driven-development/SKILL.md
   - id: openwiki-source-29bca5d53bb3f3d185391867
     resource: repo://tests/scripts/sdd-resume-cursor.test.sh
-generated: { by: "openwiki/0.7.2", at: "2026-10-16T04:08:21.021Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-19T07:24:11.736Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-19T07:24:11.736Z
 ---
 
 # Resume Decision
@@ -196,13 +196,15 @@ The `Resume first` section of the `subagent-driven-development` skill runs the a
 if [ -f runtime/resume_decision.py ]; then python3 runtime/resume_decision.py --slug <slug>; else python3 .claude/runtime/resume_decision.py --slug <slug>; fi
 ```
 
-The deployed `.claude/runtime/` copy is used **only when the source file is absent**, never as a fallback after a non-zero exit. This keeps a stale deployed copy from answering again after the source copy has failed closed with exit 3. The skill also requires the caller to:
+The deployed `.claude/runtime/` copy is used **only when the source file is absent**, never as a fallback after a non-zero exit. This keeps a stale deployed copy from answering again after the source copy has failed closed with exit 3. The skill notes that a default consumer install owns `.claude/runtime/resume_decision.py` rather than a root `runtime/`. The skill also requires the caller to:
 
-- treat any non-zero exit as `stop`, keep stderr, and require `schema_version == 1`;
-- branch only on `action`/`reason_code`. Only `execute-plan` enters preflight and the wave loop. `resume-repair` follows the CI or review loop without re-running plan tasks. `resume-review-chain` starts the final review chain. `wait`/`stop` report the reason and make no edits. `rebuild` runs the non-mutating check first;
-- on `execute-plan`, re-run every `cursor.checks_to_rerun` entry before it dispatches `cursor.next_task`. A failed check goes to the repair or escalation path;
+- treat any non-zero exit as `stop`, keep stderr, and require `schema_version == 1` before acting on `action`;
+- branch only on the structured `action`/`reason_code` (`execute-plan`, `resume-repair`, `resume-review-chain`, `wait`, `stop`, or `rebuild`);
+- on `execute-plan`, re-run every `cursor.checks_to_rerun` entry first and dispatch no pending task until those claims verify. A failed re-run goes to the repair path;
 - apply `required_transition` only after the session has confirmed the external condition it names. The helper supplies the edge, not the judgment;
 - never reconstruct the FSM from prose, and never initialize a missing historical run during execution.
+
+The per-action handling lives in the skill's `references/resume.md`, which the skill tells the session to read only when the returned action needs a manual transition or repair. That reference says: only `execute-plan` enters preflight and the wave loop. `resume-repair` follows the named CI or review loop without re-running plan tasks. `resume-review-chain` starts the final delivery, correctness, and intent review. `wait`/`stop` report the reason and make no edits. `rebuild` runs the named non-mutating check first and rebuilds only when that check reports projection drift. The reference also tells the new session to read `rules/plan-format.md` and `rules/wave-parallelism.md` before it interprets an `execute-plan` cursor, because it does not inherit the original controller's rule context.
 
 See [Implementation and Review Chain](../workflows/implementation-and-review-chain.md) for the wave loop and review gates that follow, and [Planning](../workflows/planning.md) for the PLAN.md format and Status Log conventions the cursor depends on. The manifest contract `resume-cursor-decision` in `harness-manifest.json` lists this surface (`resume_decision.py` plus `run_state.py`) and its consumers.
 

@@ -23,7 +23,7 @@ i want to commit changes for wiki
 
 ## What changed
 
-Commits the generated `openwiki/` index (OpenWiki 0.7.2, `init` at 996f50d), the scheduled
+Commits the generated `openwiki/` index (OpenWiki 0.7.2, `init` at 996f50d, then `update` at 4188935 so it covers the current tree), the scheduled
 `.github/workflows/openwiki-update.yml` refresh workflow, and the OpenWiki sections in `AGENTS.md`
 and `CLAUDE.md` (the user's existing edits, unchanged). README gains an OpenWiki entry under
 "Optional MCP servers (local setup)" with the local install command for the retrieval tools.

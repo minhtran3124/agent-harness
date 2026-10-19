@@ -3,9 +3,6 @@ type: operational workflow
 title: Post-Merge Bookkeeping and Harness Diagnostics
 description: How a merged PR is recorded automatically. The post-merge-maintenance workflow (pull_request_target, base-branch allowlist) marks the tracked run shipped, then scripts/bookkeeping.sh updates CHANGELOG, VERSION, the trust ledger, and the audit trend log. The page also covers the scheduled OpenWiki update workflow and the advisory harness-status and harness-audit diagnostics.
 tags: [operations, ci, github-actions, bookkeeping, changelog, versioning, run-state, diagnostics, security]
-verified:
-  - by: openwiki/0.7.2
-    at: 2026-10-16T04:08:21.021Z
 sources:
   - id: openwiki-source-6d4b4e707b8d60b6ccfa3425
     resource: repo://.github/workflows/openwiki-update.yml
@@ -25,7 +22,10 @@ sources:
     resource: repo://tests/scripts/harness-status.test.sh
   - id: openwiki-source-44dc13b9cf6f4713b3e6e0f0
     resource: repo://tests/scripts/post-merge-runstate-staging.test.sh
-generated: { by: "openwiki/0.7.2", at: "2026-10-16T04:08:21.021Z" }
+generated: { by: "openwiki/0.7.2", at: "2026-10-19T07:24:11.736Z" }
+verified:
+  - by: openwiki/0.7.2
+    at: 2026-10-19T07:24:11.736Z
 ---
 
 # Post-Merge Bookkeeping and Harness Diagnostics
@@ -115,18 +115,19 @@ scripts/bookkeeping.sh --pr N --title "T" --sha SHA --files "$(printf 'a\nb')" \
 Keep two things in mind about the script's behavior:
 
 - **The two "slug" choices are independent.** The ledger uses the first SUMMARY slug. The run-state step uses the first slug that transitions successfully. If a PR touches several specs, these can differ.
-- **The bump rule is narrower than the policy in the CHANGELOG preamble.** The preamble says *major* for breaking workflow or schema changes and *minor* for new or changed skill/hook contracts. The script never produces a major bump; a major release needs a manual edit. At the time of writing, [`VERSION`](../../VERSION) is `2.31.2`, and the newest dated section in [`CHANGELOG.md`](../../CHANGELOG.md) is `## [2.31.2]`.
+- **The bump rule is narrower than the policy in the CHANGELOG preamble.** The preamble says *major* for breaking workflow or schema changes and *minor* for new or changed skill/hook contracts. The script never produces a major bump; a major release needs a manual edit. At the time of writing, [`VERSION`](../../VERSION) is `2.36.0`, and the newest dated section in [`CHANGELOG.md`](../../CHANGELOG.md) is `## [2.36.0] — 2026-10-19`.
 
 ## The OpenWiki update workflow
 
 Source: [`.github/workflows/openwiki-update.yml`](../../.github/workflows/openwiki-update.yml). This workflow is independent of merges. It runs daily at 08:00 UTC (`cron: "0 8 * * *"`) and can also be started with `workflow_dispatch`.
 
 1. Checks out the repository with `fetch-depth: 0`. `openwiki code --update` needs the full history to diff `HEAD` against the commit it last documented. A shallow clone would produce an empty change summary.
-2. Installs `openwiki@0.7.2` plus `mermaid` and `jsdom` (used for diagram validation) on Node 22.
-3. Runs `openwiki code --update --print` with `continue-on-error: true`. It uses the Anthropic provider and `ANTHROPIC_API_KEY`, plus LangSmith keys for connector pulls and tracing.
-4. Deletes the transient `openwiki/.run.json`.
-5. Opens or updates a PR on branch `openwiki/update` with `peter-evans/create-pull-request`. The PR includes `openwiki`, `AGENTS.md`, the workflow file itself, and `CLAUDE.md` if that file exists. `CLAUDE.md` is listed only when present, because `git add` on a missing path stages nothing.
-6. If the OpenWiki step failed, the job exits 1 **after** the PR is created. The PR keeps the pages that were completed before the failure. Merging it makes that partial progress the baseline for the next run.
+2. Installs `openwiki@0.7.2` plus `mermaid@11.16.0` and `jsdom@29.1.1` (optional, used for diagram validation) on Node 22.
+3. Runs `openwiki code --update --print` with `continue-on-error: true`. It uses the Anthropic provider (`OPENWIKI_MODEL_ID: "opus5.5"`) and `ANTHROPIC_API_KEY`, plus LangSmith keys for connector pulls and tracing.
+4. Deletes the transient `openwiki/.run.json`. This step and every later PR step use `if: ${{ !cancelled() }}`, so they still run after an OpenWiki failure.
+5. Opens or updates a PR on branch `openwiki/update` with `peter-evans/create-pull-request`. The PR includes `openwiki`, `AGENTS.md`, the workflow file itself, and `CLAUDE.md` if that file exists. `CLAUDE.md` is listed only when present, because `git add` on a missing path stages nothing. The PR body reports the OpenWiki step outcome.
+6. **Token choice.** The PR is created with `secrets.OPENWIKI_PR_TOKEN` if it is set, otherwise with `github.token`. A PR opened with the default `GITHUB_TOKEN` triggers no `pull_request` workflows, so `harness-ci` (tests and strict gate) would never run on it. `OPENWIKI_PR_TOKEN` should be a fine-grained PAT or GitHub App token with contents, pull-requests, and workflows write; workflows write is needed because the PR includes this workflow file. The job only exposes whether the token is set (`HAS_PR_TOKEN`), because `secrets` cannot be read in a step `if:`. When a PR was created, the job posts a `::notice` with its URL. If the token is missing, it also emits a `::warning` saying CI did not run and that closing and reopening the PR will trigger it.
+7. If the OpenWiki step failed, the job exits 1 **after** the PR is created. The PR keeps the pages that were completed before the failure. Merging it makes that partial progress the baseline for the next run.
 
 ## Diagnostics
 
