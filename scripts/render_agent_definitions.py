@@ -213,6 +213,25 @@ def render_claude(root: Path, output_dir: Path) -> list[Path]:
     return written
 
 
+def defaults_snapshot(root: Path, bindings: dict) -> dict:
+    """Resolve the harness model/effort defaults that deploy ships beside the agents."""
+    agents = {}
+    for role, binding in bindings["runtimes"]["claude"]["roles"].items():
+        agents[role] = {key: binding[key] for key in ("model", "effort") if key in binding}
+    skills = {}
+    for path in sorted((root / "skills").glob("*/SKILL.md")):
+        if path.parent.name == "_archive":
+            continue
+        frontmatter, _ = split_frontmatter(path, allow_runtime_fields=True)
+        skills[path.parent.name] = {
+            key: line.split(":", 1)[1].strip().strip("\"'")
+            for line in frontmatter
+            for key in ("model", "effort")
+            if line.startswith(f"{key}:")
+        }
+    return {"schema_version": 1, "agents": agents, "skills": skills}
+
+
 def _frontmatter_value(frontmatter: list[str], key: str, path: Path) -> str:
     prefix = f"{key}:"
     matches = [
@@ -363,16 +382,27 @@ def main() -> int:
     parser.add_argument("--runtime", choices=("claude", "codex"), default="claude")
     parser.add_argument("--output-dir", type=Path)
     parser.add_argument("--check", action="store_true")
+    parser.add_argument("--defaults-out", type=Path)
     args = parser.parse_args()
     try:
-        validate(args.root)
+        _, bindings = validate(args.root)
+        if args.defaults_out is not None and args.check:
+            raise ContractError("--defaults-out cannot be combined with --check")
+        if args.defaults_out is not None and args.runtime != "claude":
+            raise ContractError("--defaults-out requires --runtime claude")
         if not args.check:
-            if args.output_dir is None:
+            if args.output_dir is None and args.defaults_out is None:
                 raise ContractError("--output-dir is required when rendering")
-            if args.runtime == "codex":
-                render_codex(args.root, args.output_dir)
-            else:
-                render_claude(args.root, args.output_dir)
+            if args.output_dir is not None:
+                if args.runtime == "codex":
+                    render_codex(args.root, args.output_dir)
+                else:
+                    render_claude(args.root, args.output_dir)
+            if args.defaults_out is not None:
+                snapshot = defaults_snapshot(args.root, bindings)
+                args.defaults_out.write_text(
+                    json.dumps(snapshot, indent=2, sort_keys=True) + "\n"
+                )
     except ContractError as exc:
         print(f"agent-bindings: {exc}", file=sys.stderr)
         return 1

@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "agents": {
+    "coding": {
+      "model": "claude-sonnet-5-5",
+      "effort": "medium"
+    },
+    "task-reviewer": {
+      "model": "claude-sonnet-5-5",
+      "effort": "medium"
+    },
+    "reviewer": {
+      "model": "claude-opus-5-5",
+      "effort": "medium"
+    },
+    "test-runner": {
+      "model": "claude-haiku-5-5",
+      "effort": "high"
+    }
+  },
+  "skills": {
+    "brainstorming": {
+      "model": "claude-opus-5-5",
+      "effort": "medium"
+    },
+    "writing-plans": {
+      "model": "claude-opus-5-5",
+      "effort": "medium"
+    }
+  }
+}

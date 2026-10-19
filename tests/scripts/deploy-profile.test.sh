@@ -13,6 +13,7 @@ new_target() { local d; d=$(mktemp -d); _CLEANUP_DIRS+=("$d"); printf '%s' "$d";
 cmds() { jq -r '[.hooks[][].hooks[].command] | .[]' "$1/.claude/settings.json"; }
 gate_cmd() { cmds "$1" | grep '/hooks/commit-gate\.sh' ; }
 has_hook() { cmds "$1" | grep -q "/hooks/$2\( \|\$\)"; }
+session_matcher() { jq -r --arg c "$2" '[.hooks.SessionStart[]? | select(any(.hooks[]; .command == $c)) | .matcher] | .[]' "$1/.claude/settings.json"; }
 profile_flag_count() { cmds "$1" | grep -c -- '--profile' ; }
 listing() { (cd "$1" && find . | LC_ALL=C sort); }
 
@@ -29,6 +30,9 @@ t "--profile minimal registers exactly branch-isolation-guard + commit-gate --pr
 got=$(cmds "$T" | LC_ALL=C sort | tr '\n' '|')
 want=$(printf '%s\n' "$H/branch-isolation-guard.sh" "$H/commit-gate.sh --profile minimal" | LC_ALL=C sort | tr '\n' '|')
 if [ "$got" = "$want" ]; then pass; else fail "got: $got"; fi
+
+t "--profile minimal does not register model-config.sh (SC-15)"
+if ! has_hook "$T" model-config.sh; then pass; else fail "cmds: $(cmds "$T" | tr '\n' '|')"; fi
 
 t "--profile minimal drops the SessionStart key entirely"
 if jq -e '.hooks | has("SessionStart") | not' "$T/.claude/settings.json" >/dev/null; then pass
@@ -63,9 +67,9 @@ if [ "$n" = 1 ]; then pass; else fail "commit-gate count=$n"; fi
 T=$(new_target)
 bash "$DEPLOY" --target "$T" >/dev/null 2>&1
 
-t "default (fresh, no flag) registers all three standard hooks"
+t "default (fresh, no flag) registers all four standard hooks"
 if has_hook "$T" branch-isolation-guard.sh && has_hook "$T" commit-gate.sh && has_hook "$T" session-knowledge.sh \
-   && [ "$(cmds "$T" | wc -l | tr -d ' ')" = 3 ]; then pass
+   && has_hook "$T" model-config.sh && [ "$(cmds "$T" | wc -l | tr -d ' ')" = 4 ]; then pass
 else fail "cmds: $(cmds "$T" | tr '\n' '|')"; fi
 
 t "default commit-gate command ends with exactly ' --profile standard'"
@@ -75,6 +79,10 @@ else fail "got: $(gate_cmd "$T")"; fi
 t "no hook other than commit-gate carries --profile"
 if [ "$(profile_flag_count "$T")" = 1 ]; then pass
 else fail "commands with --profile: $(profile_flag_count "$T")"; fi
+
+t "standard registers model-config.sh under SessionStart with matcher startup|clear (SC-15)"
+if [ "$(session_matcher "$T" "$H/model-config.sh")" = "startup|clear" ]; then pass
+else fail "matcher: $(session_matcher "$T" "$H/model-config.sh")"; fi
 
 t "default records standard in .harness-profile"
 if [ "$(cat "$T/.claude/.harness-profile" 2>/dev/null)" = "standard" ]; then pass; else fail "missing/wrong"; fi
@@ -86,6 +94,10 @@ bash "$DEPLOY" --target "$T" --profile strict >/dev/null 2>&1
 t "--profile strict: commit-gate carries exactly ' --profile strict', and only it"
 if [ "$(gate_cmd "$T")" = "$H/commit-gate.sh --profile strict" ] && [ "$(profile_flag_count "$T")" = 1 ]; then pass
 else fail "gate=$(gate_cmd "$T")"; fi
+
+t "--profile strict registers model-config.sh under SessionStart with matcher startup|clear (SC-15)"
+if [ "$(session_matcher "$T" "$H/model-config.sh")" = "startup|clear" ]; then pass
+else fail "matcher: $(session_matcher "$T" "$H/model-config.sh")"; fi
 
 # ---------- unknown profile: rejected before any write ----------
 T=$(new_target)

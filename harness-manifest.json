@@ -215,14 +215,15 @@
   "hooks": [
     { "name": "commit-gate.sh",            "wired": true },
     { "name": "branch-isolation-guard.sh", "wired": true },
-    { "name": "session-knowledge.sh",      "wired": true }
+    { "name": "session-knowledge.sh",      "wired": true },
+    { "name": "model-config.sh",           "wired": true }
   ],
 
   "hook_profiles": {
     "default": "standard",
     "minimal":  { "hooks": ["branch-isolation-guard.sh", "commit-gate.sh"] },
-    "standard": { "hooks": ["branch-isolation-guard.sh", "commit-gate.sh", "session-knowledge.sh"] },
-    "strict":   { "hooks": ["branch-isolation-guard.sh", "commit-gate.sh", "session-knowledge.sh"] }
+    "standard": { "hooks": ["branch-isolation-guard.sh", "commit-gate.sh", "session-knowledge.sh", "model-config.sh"] },
+    "strict":   { "hooks": ["branch-isolation-guard.sh", "commit-gate.sh", "session-knowledge.sh", "model-config.sh"] }
   },
 
   "skills": [
@@ -234,6 +235,7 @@
     "diagnosing-bugs",
     "feature-intake",
     "finishing-a-development-branch",
+    "harness-models",
     "intent-review",
     "session-retro",
     "subagent-driven-development",

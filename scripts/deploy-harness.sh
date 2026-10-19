@@ -51,6 +51,7 @@ CONSUMER_SCRIPTS=(
   "render_skill_prompt.py"
   "check_open_questions.py"
   "run_at_commit.py"
+  "apply_model_config.py"
 )
 # Data read by the above. NOTE: agents/*.json and adapters/ are source-time adapter inputs and must
 # NEVER deploy — tests/scripts/{deploy-prune,install-harness,codex-alpha-contract}.test.sh pin that
@@ -513,6 +514,31 @@ render_agents()   {
   python3 scripts/render_agent_definitions.py \
     --root "$ROOT" --runtime claude --output-dir "$OUT/agents"
 }
+# Model/effort config (specs/model-effort-config/design.md "Deploy integration"). The check renders
+# the defaults snapshot from SOURCE into a temp file and validates the target's harness-models.json
+# against it before anything under .claude/ is written (also under --dry-run). The apply step runs
+# after rewrite_derived_paths, so no later step changes the applied lines.
+MODELS_SNAPSHOT=""
+check_model_config() {
+  if [ ! -f scripts/apply_model_config.py ]; then
+    printf '  %s⚠ scripts/apply_model_config.py missing from source — skipping model config check and apply%s\n' "$Y" "$R" >&2
+    return 0
+  fi
+  MODELS_SNAPSHOT="$(mktemp)"
+  if ! python3 scripts/render_agent_definitions.py --root "$ROOT" --runtime claude --defaults-out "$MODELS_SNAPSHOT" >/dev/null \
+     || ! python3 scripts/apply_model_config.py --check --project-root "$OUT_BASE" --defaults "$MODELS_SNAPSHOT"; then
+    rm -f "$MODELS_SNAPSHOT" "$DEPLOYED_LIST"
+    printf '  %s✗ harness-models.json check failed — nothing written under .claude/%s\n' "$Y" "$R" >&2
+    exit 1
+  fi
+  if [ "$DRY_RUN" -eq 1 ]; then
+    rm -f "$MODELS_SNAPSHOT"; MODELS_SNAPSHOT=""
+  fi
+}
+apply_model_config() {
+  cp "$MODELS_SNAPSHOT" "$OUT/harness-models.defaults.json"
+  python3 scripts/apply_model_config.py --apply --project-root "$OUT_BASE" --claude-dir "$OUT"
+}
 derive_settings() {
   # Point relative hook commands at the deployed .claude/ copies via $CLAUDE_PROJECT_DIR so they
   # resolve from any launch directory. Absolute / $-prefixed commands are left untouched.
@@ -592,6 +618,7 @@ printf "  ${MODE_EMOJI}  ${B}%s${R}\n\n" "$MODE_LABEL"
 
 # Own labeled step, outside step()'s spinner — a batch prompt (or --dry-run exit) doesn't
 # fight the spinner animation, and --dry-run must exit before prep_dir/copy_dir/derive_settings.
+check_model_config
 preflight_protected
 
 # ---------- pipeline ----------
@@ -606,6 +633,9 @@ step "Stripping harness-only skill tests"    strip_skill_tests
 step "Stripping maintenance-only docs"       strip_maintenance_docs
 step "Syncing ${B}consumer script subset${R}" copy_consumer_subset
 step "Rewriting derived helper paths"        rewrite_derived_paths
+if [ -n "$MODELS_SNAPSHOT" ]; then
+  step "Applying ${B}harness-models.json${R}"  apply_model_config
+fi
 step "Deriving ${B}settings.json${R} ${D}(profile: $PROFILE)${R}" derive_settings
 # Record the profile for the next flagless re-sync. Top-level in .claude/, outside SYNCED_DIRS_RE,
 # so prune_orphans never touches it.
@@ -629,7 +659,7 @@ prune_orphans() {
 }
 step "Pruning stale entries"                 prune_orphans
 sort -u "$DEPLOYED_LIST" > "$OUT/.harness-deployed"
-rm -f "$DEPLOYED_LIST"
+rm -f "$DEPLOYED_LIST" "$MODELS_SNAPSHOT"
 
 # ---------- summary ----------
 SK=$(ls -d "$OUT"/skills/*/ 2>/dev/null | wc -l | tr -d ' ')

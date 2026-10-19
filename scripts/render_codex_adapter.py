@@ -85,6 +85,9 @@ def expected_codex_hooks(settings: dict[str, Any]) -> dict[str, Any]:
                     raise AdapterError(
                         f"settings.json {event} contains an unsupported handler"
                     )
+                # D3: the model-config hook rewrites Claude frontmatter only; Codex skips it.
+                if Path(str(handler.get("command"))).name == "model-config.sh":
+                    continue
                 rendered_handler = {
                     "type": "command",
                     "command": _plugin_command(handler.get("command")),
@@ -96,6 +99,8 @@ def expected_codex_hooks(settings: dict[str, Any]) -> dict[str, Any]:
                 if event == "SessionEnd":
                     rendered_handler["timeout"] = 1
                 handlers.append(rendered_handler)
+            if not handlers:
+                continue
             rendered_group["hooks"] = handlers
             rendered_groups.append(rendered_group)
         expected[event] = rendered_groups

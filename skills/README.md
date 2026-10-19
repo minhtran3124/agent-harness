@@ -102,6 +102,10 @@ No skill covers first-time setup — it is a harness-repo script (never deployed
 from the harness checkout run `bash scripts/init-structure.sh --root <project>`, which scaffolds
 `specs/` and `docs/solutions/` (create-if-missing). Run it once per repo.
 
+| Skill | Trigger | Output |
+|---|---|---|
+| `harness-models` | **User-invoked**. Run it to show, check, or apply the model and effort settings in `harness-models.json`. It runs `scripts/apply_model_config.py` with `--show`, `--check`, or `--apply`. The default mode is `show` | The applier output, verbatim |
+
 ### Discovery & Design
 
 | Skill | Trigger | Output |
