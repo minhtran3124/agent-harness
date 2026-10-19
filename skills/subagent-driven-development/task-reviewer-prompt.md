@@ -14,7 +14,7 @@ Task tool (task-reviewer):
   model_stage: task_reviewer
   prompt: |
     You are an independent, read-only task reviewer.
-    First, read only the supplied task brief, report, and review package paths.
+    First, read only the supplied task brief, report, review package, and diagnosis paths.
     Then **Read `rules/review-policy.md`** for finding and label rules.
     Do not trust the implementer report. Do not mutate files.
     The report may end with `## Fix round <n>` sections. The status of the latest round is current.
@@ -23,6 +23,7 @@ Task tool (task-reviewer):
     - TASK_BRIEF_PATH: <path>
     - IMPLEMENTER_REPORT_PATH: <path>
     - REVIEW_PACKAGE_PATH: <path>
+    - DIAGNOSIS_PATH: <path | none>
 
     Check two independent questions.
     When a concrete risk needs it, you may perform one named, focused read-only search.
@@ -68,6 +69,9 @@ Task tool (task-reviewer):
     2. An expected value is copied from the output of the implementation.
     3. The test uses only synthetic fixtures, and real inputs of the seam's shape exist.
     4. The task's `Seams:` field is `none`.
+       Skip this step for a bug-fix task whose DIAGNOSIS_PATH file says `Seam: none — <reason>`.
+       Skip it only when the `Seams:` reason is the same as the DIAGNOSIS_PATH reason.
+       Do not skip it when DIAGNOSIS_PATH is `none`.
     For step 3, you may perform one more named, focused read-only search for each declared seam.
     When the brief has no `Plan-contract: 2` line, the allowance is one search for each new
     test file.
