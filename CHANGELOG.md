@@ -9,6 +9,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 _Nothing yet._
 
+## [2.36.0] — 2026-10-19
+
+- feat(harness): per-agent and per-skill model and effort config (PR #332)
+
 ## [2.35.0] — 2026-10-17
 
 - feat(scripts): prove the red — require a code change after the red commit (#313 step 1) (PR #328)
