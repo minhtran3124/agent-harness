@@ -122,30 +122,30 @@ relies on the new skill, applier or hook. The diff changes no `agents/*.md` and 
 
 | Check | Command | Exit | Notes | Criterion |
 | --- | --- | --- | --- | --- |
-| intake lane evidence | `python3 .claude/scripts/verify_summary.py --lane model-effort-config` | 0 | intake-time check only | |
-| snapshot render | `/tmp/harness-tests-venv/bin/python -m pytest scripts/test_render_agent_definitions.py -q -k defaults_out` | 0 | 5 passed | SC-1 |
-| agent override | `/tmp/harness-tests-venv/bin/python -m pytest scripts/test_apply_model_config.py -q -k agent_override` | 0 | 2 passed | SC-2 |
-| invalid input | `/tmp/harness-tests-venv/bin/python -m pytest scripts/test_apply_model_config.py -q -k invalid` | 0 | 34 passed | SC-3 |
-| review floor | `/tmp/harness-tests-venv/bin/python -m pytest scripts/test_apply_model_config.py -q -k floor` | 0 | 3 passed | SC-4 |
-| idempotent apply | `/tmp/harness-tests-venv/bin/python -m pytest scripts/test_apply_model_config.py -q -k idempotent` | 0 | 1 passed | SC-5 |
-| show table | `/tmp/harness-tests-venv/bin/python -m pytest scripts/test_apply_model_config.py -q -k show` | 0 | 5 passed | SC-6 |
-| main-session boundary | `/tmp/harness-tests-venv/bin/python -m pytest scripts/test_apply_model_config.py -q -k main_session_boundary` | 0 | 1 passed | SC-7 |
-| skill line insert and remove | `/tmp/harness-tests-venv/bin/python -m pytest scripts/test_apply_model_config.py -q -k skill_line` | 0 | 2 passed | SC-8 |
-| consumer skill untouched | `/tmp/harness-tests-venv/bin/python -m pytest scripts/test_apply_model_config.py -q -k consumer_skill` | 0 | 1 passed | SC-9 |
-| partial write | `/tmp/harness-tests-venv/bin/python -m pytest scripts/test_apply_model_config.py -q -k partial_write` | 0 | 2 passed | SC-10 |
+| intake lane evidence | `python3 scripts/verify_summary.py --lane model-effort-config` | 0 | intake-time check only | |
+| snapshot render | `python3 -m pytest scripts/test_render_agent_definitions.py -q -k defaults_out` | 0 | 5 passed | SC-1 |
+| agent override | `python3 -m pytest scripts/test_apply_model_config.py -q -k agent_override` | 0 | 2 passed | SC-2 |
+| invalid input | `python3 -m pytest scripts/test_apply_model_config.py -q -k invalid` | 0 | 34 passed | SC-3 |
+| review floor | `python3 -m pytest scripts/test_apply_model_config.py -q -k floor` | 0 | 3 passed | SC-4 |
+| idempotent apply | `python3 -m pytest scripts/test_apply_model_config.py -q -k idempotent` | 0 | 1 passed | SC-5 |
+| show table | `python3 -m pytest scripts/test_apply_model_config.py -q -k show` | 0 | 5 passed | SC-6 |
+| main-session boundary | `python3 -m pytest scripts/test_apply_model_config.py -q -k main_session_boundary` | 0 | 1 passed | SC-7 |
+| skill line insert and remove | `python3 -m pytest scripts/test_apply_model_config.py -q -k skill_line` | 0 | 2 passed | SC-8 |
+| consumer skill untouched | `python3 -m pytest scripts/test_apply_model_config.py -q -k consumer_skill` | 0 | 1 passed | SC-9 |
+| partial write | `python3 -m pytest scripts/test_apply_model_config.py -q -k partial_write` | 0 | 2 passed | SC-10 |
 | hook contract | `bash tests/hooks/model-config.test.sh` | 0 | 12 passed, incl. one startup run under 1 s | SC-11 |
 | hook root ratchet | `bash scripts/check-hook-root-source.sh` | 0 | no hook derives its root from its own location | SC-12 |
 | deploy apply | `bash tests/scripts/model-config-deploy.test.sh` | 0 | 13 passed | SC-13 |
 | deploy stops on invalid file | `bash tests/scripts/model-config-deploy.test.sh` | 0 | 13 passed, incl. re-sync, first deploy and dry-run cases | SC-14 |
 | profile registration | `bash tests/scripts/deploy-profile.test.sh` | 0 | 26 passed | SC-15 |
 | no PreModelSwitch hook | `python3 -c "import json,sys; sys.exit('PreModelSwitch' in json.load(open('settings.json'))['hooks'])"` | 0 | | SC-16 |
-| Codex exclusion | `/tmp/harness-tests-venv/bin/python -m pytest scripts/test_render_codex_adapter.py -q` | 0 | 16 passed | SC-17 |
+| Codex exclusion | `python3 -m pytest scripts/test_render_codex_adapter.py -q` | 0 | 16 passed | SC-17 |
 | manifest consistency | `python3 scripts/check_manifest.py` | 0 | manifest: consistent | SC-18 |
 | doc-truth lint | `bash scripts/lint-doc-truth.sh` | 0 | hook table matches settings.json | SC-19 |
-| skill mode table | `/tmp/harness-tests-venv/bin/python -m pytest scripts/test_harness_models_skill.py -q` | 0 | 3 passed | SC-20 |
+| skill mode table | `python3 -m pytest scripts/test_harness_models_skill.py -q` | 0 | 3 passed | SC-20 |
 | skill tool conformance | `python3 scripts/check_skill_tool_conformance.py` | 0 | 59 commands across 16 skills permitted | SC-21 |
 | live proof prepare (consumer deploy) | `python3 specs/model-effort-config/proof/run_proof.py --prepare` | 0 | fresh git repo at `${TMPDIR:-/tmp}/harness-model-effort-proof`; harness-models.json sets test-runner to sonnet; deploy seconds 0.5; deployed test-runner.md has `model: sonnet` | SC-22 |
-| live proof (headless test-runner dispatch) | `python3 specs/model-effort-config/proof/run_proof.py` | 0 | Claude Code 2.1.302; modelUsage keys claude-opus-5-5, claude-sonnet-5-5; claude -p seconds 9.1 (deploy excluded, prepared before) | SC-22 |
+| live proof (headless test-runner dispatch) | — | 0 | recorded local run, not re-run in CI (see Not auto-verified); command: `python3 specs/model-effort-config/proof/run_proof.py`; Claude Code 2.1.302; modelUsage keys claude-opus-5-5, claude-sonnet-5-5; claude -p seconds 9.1 (deploy excluded, prepared before) | SC-22 |
 
 ### Not auto-verified
 
