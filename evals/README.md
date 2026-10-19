@@ -7,15 +7,16 @@ here measure *skill judgment*, which is non-deterministic and scored against lab
 
 | Split | What it evals | Contents |
 |---|---|---|
-| `skills/` | A single skill's output quality | `review-chain/` — `/correctness-review` + `/intent-review` catch-rate on planted defects |
+| `skills/` | A single skill's output quality | `review-chain/` — `/correctness-review` + `/intent-review` catch-rate on planted defects; `task-review/` — per-task reviewer verdicts; `prompt-refactor/` — skill activation/behavior corpus for prompt refactors |
 | `agents/` | A sub-agent role's output | `test-runner/` — report accuracy and no-edit discipline of the `test-runner` role |
 | `workflow/` | A workflow stage's decision | `intake-classifier/` — `/feature-intake` lane/confidence/hard-gate accuracy |
+| `context-boundaries/` | Instruction delivery per execution context | manual probes — did a rule reach this context (manual protocol, no scorer) |
 
 ## Shared model
 
 Every eval here follows the same honesty discipline (see each subdir's `README.md`):
 
-- **Labeled fixtures** — `request.md`/`intent.md` + `diff.patch` (where relevant) + `truth.md`.
+- **Labeled fixtures** — `request.md`/`intent.md` (or `input.md`) + `diff.patch` (where relevant) + `truth.md`/`truth.json`.
 - **Blind runs** — the skill is executed by a subagent that never sees `truth.md`.
 - **Claim discipline** — a number is a claim about *these fixtures and this skill only*, not the
   full chain or real-world rate (`not_observed != absent`).

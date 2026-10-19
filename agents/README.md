@@ -9,9 +9,9 @@ returnable work. Each agent is a focused role. Anything project-specific lives i
 | Agent | Role | Model class | Dispatched by |
 |---|---|---|---|
 | `coding` | Implement/refactor/fix code, end-to-end | implementation high-capability | `subagent-driven-development`, ad-hoc |
-| `reviewer` | Structurally read-only review passes (correctness-review, intent-review) | review high-capability | review skills |
-| `task-reviewer` | Read-only per-task spec + quality review | review high-capability | `subagent-driven-development` |
-| `test-runner` | Run the minimal relevant tests and report/diagnose results | test-execution fast | after implementation |
+| `reviewer` | Structurally read-only review passes (correctness-review, the correctness scorer, and intent-review) | review high-capability | review skills |
+| `task-reviewer` | Read-only per-task spec + quality review, and the diagnosis review | review high-capability | `subagent-driven-development`, `diagnosing-bugs` |
+| `test-runner` | Run the minimal relevant tests and report/diagnose results | test-execution fast | after implementation, and the `subagent-driven-development` `cannot_verify` retry |
 
 ## Portability model (mirrors xia2)
 
@@ -36,8 +36,8 @@ file — edit it directly).
 3. Adjust the inventory table above if you add/remove agents.
 
 `PROJECT.md` here is an *agents-scoped* file: it drives implementation + test execution. It has
-no counterpart in `skills/xia2/` — xia2 is zero-config and carries its risk-classification
-signals inside its own `SKILL.md`.
+no counterpart in `skills/xia2/` — xia2 is zero-config. Its risk-classification signals live in
+`skills/xia2/references/depth-classifier.md` and `rules/research-depth.md`.
 
 ## Skill vs. agent — when to use which
 

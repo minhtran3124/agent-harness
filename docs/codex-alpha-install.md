@@ -2,8 +2,8 @@
 
 The Codex adapter is an advisory alpha pinned to the evidence boundary in
 `specs/codex-support/packaging-decision.md`: Codex CLI 0.147.0 on the observed macOS platform.
-Installation does not imply that hooks are trusted or that enforcement mode is active. Task 5.4's
-outside-hook doctor is the authority for that claim.
+Installation does not imply that hooks are trusted or that enforcement mode is active. The
+outside-hook doctor (`scripts/codex_harness_doctor.py`) is the authority for that claim.
 
 The alpha is not GA and does not establish peer enforcement with Claude Code. The complete observed
 runtime baseline is macOS arm64. Linux and WSL are included in deterministic CI/contract coverage,
@@ -65,6 +65,11 @@ sanitized record under `.harness-state/codex-runtime.json`:
   stale, untrusted, or mismatched; and
 - `unsupported` — a required package, install, dependency, or supported platform precondition is
   missing.
+
+At this alpha no available input carries observed hook trust: Codex CLI 0.147.0's
+`doctor --json` has no trust field, and a project `trust_level` read from config is approval, not
+proof of hook execution, so it yields `TRUST_CONFIG_ONLY` and holds the mode at `advisory`. A real
+run therefore returns `advisory` or `unsupported`; treat an `enforced` result today as a bug.
 
 Re-run the doctor after an install/update, Codex CLI change, config/trust change, or any managed-file
 conflict. A cached record is invalidated when its install, config, CLI, or trust fingerprint changes.

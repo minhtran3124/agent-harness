@@ -39,7 +39,8 @@ delegated to dependencies (test only what you own)?
 
 - The auto-loaded `rules/architecture.md` and `rules/guidelines.md` are thin pointers to this
   folder — agents read `techstacks/*.md` before implementing, debugging, or reviewing.
-- `xia2` classifies risk from built-in common signals (it does **not** need this folder).
+- `xia2` picks its research depth from the intake lane, or from the portable classifier in
+  `rules/research-depth.md` when no intake exists (it does **not** need this folder).
 - A project with no stack (e.g. a docs-only or tooling repo) can leave this folder with just this
   README — nothing breaks.
 

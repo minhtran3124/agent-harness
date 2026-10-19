@@ -2,7 +2,7 @@
 
 Transforms session learnings into persistent, discoverable documentation under `docs/solutions/`.
 
-**Trigger:** `compound` — never runs automatically. Invoke it only after a session that solved a bug, discovered a non-obvious pattern, or made an architectural decision with considered alternatives.
+**Trigger:** `compound` — never runs automatically. Invoke it only after a session that produced a reusable learning. Examples are a solved bug, a non-obvious pattern, an architectural decision with considered alternatives, a useful failure, or a `Harness-Delta: backlog` signal. Do not emit a document only because a session ended.
 
 ---
 
@@ -28,13 +28,13 @@ Dispatch a subagent only for a `docs/solutions/` tree too large to screen from `
 
 ## Output Overview
 
-Each run can produce up to 6 files:
+Each run can produce these files:
 
 | File | When produced |
 |---|---|
 | `docs/solutions/[category]/[slug].md` | Bug, knowledge, or failure track (one file each) |
 | `docs/solutions/[category]/[slug]-decisions.md` | Decision track (all decisions for this session) |
-| `docs/solutions/critical-patterns.md` | Appended to when `severity = critical` |
+| `docs/solutions/critical-patterns.md` | Appended to when `severity = critical`. Updated or added on a recurrence (see Mistake Twice) |
 | `docs/harness-experimental/improvement-backlog.md` | One open row appended per failure with a `proposed:` guardrail |
 | `docs/solutions/INDEX.md` | Always rebuilt from scratch after every run |
 
@@ -46,6 +46,8 @@ Each run can produce up to 6 files:
 Captures a bug fix with a non-trivial root cause — something a future developer would waste time rediscovering.
 
 **Required sections (all must be non-empty):** Problem, Root_Cause, Fix
+
+When `specs/<slug>/diagnosis.md` exists (written by `diagnosing-bugs`), take the root cause from its `Confirmed:` hypothesis.
 
 ### Knowledge track
 Captures a reusable pattern, API behavior, or technique discovered during the session.
@@ -135,6 +137,25 @@ The same rules apply to `[slug]-decisions.md` consolidated files.
 
 ---
 
+## Mistake Twice
+
+A learning that matches an existing record at **high** overlap is a second occurrence. The promotion is the run's output:
+
+1. Update the existing record (as in Collision Handling).
+2. Update its `critical-patterns.md` entry, or add one if it has none. Do this instead of the normal append. Never add a near-duplicate.
+3. Add a `**Recurred:** <date>` line under the entry's **Full doc** line.
+4. When the learning applies only to certain paths, propose a path-scoped rule in the report. Do not write that rule. Adding `paths:` to `rules/` changes what loads, so a human decides.
+
+**Moderate** overlap is not a recurrence.
+
+---
+
+## STE Style
+
+Before writing, read the selected `templates/` file. Apply `skills/asd-ste100/SKILL.md` in STE-flavored mode to each new record. Do not change fenced code. Do not change a literal string that a test or hook matches.
+
+---
+
 ## The Flywheel Files
 
 ### `critical-patterns.md`
@@ -143,7 +164,7 @@ Promoted summaries of `severity = critical` findings. Appended to after every ru
 
 **Read this at the start of every planning session.** Items here met all three criteria for critical severity — they affect multiple features and would waste ≥30 min if unknown.
 
-One entry per emitted track (bug / knowledge / decision). Never truncate entries. Always append at the end.
+One entry per emitted track (bug / knowledge / decision / failure). Never truncate entries. Always append at the end.
 
 ### `INDEX.md`
 
@@ -183,6 +204,8 @@ Critical learnings (read at planning time): `docs/solutions/critical-patterns.md
 ---
 
 ## Completion Report Format
+
+The report names the tracks emitted, collisions, the index result, promotions (critical or recurrence), and any proposed ratchet or path-scoped rule.
 
 ```
 ★ Compounded

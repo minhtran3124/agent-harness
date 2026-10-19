@@ -3,7 +3,9 @@
 Persistent documentation of non-obvious patterns, bug fixes, and architectural decisions.
 
 - **Written by:** `/compound` after sessions with non-trivial learnings
-- **Read by:** `/brainstorming` (decision track only) and `/xia2` (all tracks via INDEX-first lookup)
+- **Read by:** `/brainstorming` (decision track only), `/xia2` (all tracks via INDEX-first lookup),
+  and the `/correctness-review` prior-art angle; the `session-knowledge.sh` SessionStart hook
+  loads `critical-patterns.md` and an `INDEX.md` pointer
 
 ## Structure
 
@@ -32,9 +34,11 @@ Every solution file begins with:
 
 ```yaml
 ---
-problem_type: bug | knowledge | decision
+problem_type: bug | knowledge | decision | failure
 module: <area of codebase>
 tags: [<keyword>, <keyword>]
+severity: critical | standard
+applicable_when: <one sentence: when a future agent should apply this>
 affects: [<file-path>, <file-path>]
 supersedes: <slug-of-older-entry>   # optional
 confidence: high | medium | low
@@ -49,6 +53,7 @@ confirmed_at: YYYY-MM-DD
 | `bug` | Problem, Root_Cause, Fix |
 | `knowledge` | Pattern, How_to_Use |
 | `decision` | Context, Options_Considered, Decision_and_Rationale |
+| `failure` | Symptom, Wrong_Approach, Why_It_Failed, Correct_Approach, Guardrail |
 
 ## Confidence Decay
 
