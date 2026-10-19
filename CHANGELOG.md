@@ -11,6 +11,7 @@ _Nothing yet._
 
 ## [2.36.0] — 2026-10-19
 
+- feat(harness): per-agent and per-skill model and effort config (PR #332)
 - feat(skills): diagnosing-bugs — six gated phases before any bug fix (#318) (PR #331)
 
 ## [2.35.0] — 2026-10-17
