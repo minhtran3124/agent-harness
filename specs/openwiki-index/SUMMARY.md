@@ -28,6 +28,10 @@ Commits the generated `openwiki/` index (OpenWiki 0.7.2, `init` at 996f50d), the
 and `CLAUDE.md` (the user's existing edits, unchanged). README gains an OpenWiki entry under
 "Optional MCP servers (local setup)" with the local install command for the retrieval tools.
 
+PR #337 review (Codex P2): the workflow now passes `OPENWIKI_PR_TOKEN` (fallback `github.token`)
+to `create-pull-request`, because a PR opened with the default `GITHUB_TOKEN` triggers no
+`pull_request` workflow, so `harness-ci` would never run on it. Without the secret the run warns.
+
 ### Rationale
 
 The wiki is a committed artifact that a workflow refreshes, while the retrieval tools are a
@@ -53,6 +57,7 @@ agent instructions fall back to reading `openwiki/quickstart.md` when the tools 
 ### Not auto-verified
 
 - `openwiki integrations install claude` makes `openwiki_search` / `openwiki_read` available in Claude Code — reached traceability only (`openwiki --help` names the subcommand); not run, to avoid changing the user's global config.
+- `OPENWIKI_PR_TOKEN` makes generated PRs trigger `harness-ci` — reached traceability only (create-pull-request README, "token" input); the secret is not set yet and the workflow has not run.
 - The scheduled workflow runs green — needs `ANTHROPIC_API_KEY` (and LangSmith) repo secrets; not run.
 
 ### Rollback
