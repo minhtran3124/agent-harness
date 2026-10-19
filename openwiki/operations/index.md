@@ -1,0 +1,4 @@
+# Files
+
+- [Install, Deploy, and Re-sync](install-deploy-and-resync.md) - How install-harness.sh (consumer one-liner) and deploy-harness.sh (self-dev and re-sync) build the derived .claude/ tree, apply minimal/standard/strict hook profiles, merge settings.json, guard per-repo protected files with .harness-incoming sidecars, prune orphans, scaffold structural files, and update .gitignore.
+- [Post-Merge Bookkeeping and Harness Diagnostics](post-merge-bookkeeping.md) - How a merged PR is recorded automatically. The post-merge-maintenance workflow (pull_request_target, base-branch allowlist) marks the tracked run shipped, then scripts/bookkeeping.sh updates CHANGELOG, VERSION, the trust ledger, and the audit trend log. The page also covers the scheduled OpenWiki update workflow and the advisory harness-status and harness-audit diagnostics.

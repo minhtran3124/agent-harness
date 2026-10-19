@@ -1,0 +1,176 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:61aa77c5d9348aed0e3461eb1327fb794d42ed706e7c3fc57881790bc990cbff",
+  "claims": [
+    {
+      "id": "claim_5de69cccac5a4dbaa04b36e39505f66d",
+      "statement": "The repository has two layers: an engine of invocable skills/agents that do the work, and a thin risk/trust harness (feature-intake, hooks, rules, specs/<slug>/SUMMARY.md) that decides how much process a change needs and when to involve a human, governed by the principle that ceremony scales with risk and human interruption scales with ambiguity.",
+      "evidence": [
+        {
+          "resource": "repo://HARNESS.md#L9-L40",
+          "version": "repo-lines-v1:sha256:664e82b03ad135a9162d0373ff17132ca48b32fa9f93c4f9b1469edb18714afc:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViYmZkMjQ2NjdiMzM1NzNmNjQ3MmNjMzUxMjcwNDJiOWZlNDY0ODRjM2I3ZmJhZjA5YzFjOGQ4N2QyYzNlZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhOTFmMTk4YzFjMTA0YTlhN2ZjNmY2ZjBkMTliYzMyYzUyMWZjNjFiYjZhODdjZmU0Mzk0OTUxMTkwNDA4ZGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwMWYyZWMxNzU5M2MxMDU0ZWI0NjM2N2Q4NDUzZWYyNGExNzNjZTk2YjcxMTdkOTFmOWE2OGQ0NGZlZjhiMDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2NWU3YjJhYWFhOTBmMzEwNTE2Yjg4ZmFlYTgzNzkwZmFiODQ2NzQ1NjdhODMyZmY0MTZkODBlNWNlY2RkYWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2d3bb7e5df9e46d9881d02d7ff6f5502",
+      "statement": "/feature-intake runs first and writes a Lane (tiny|normal|high-risk) and confidence to specs/<slug>/SUMMARY.md; at commit time hooks corroborate the declared lane against the staged diff.",
+      "evidence": [
+        {
+          "resource": "repo://HARNESS.md#L42-L59",
+          "version": "repo-lines-v1:sha256:dd7d7b223d2ad2f33ec064895bba41ca9c99ba20b3faa90b058b6d813f0a10b0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjYmMyYjc3M2IzMTFmNzI4OGZlNDZmMWFlODk0YjEzZDdjZTNkZTUyM2NmMDE4OTZmMmRhYTFiY2I5ZDAxOGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5OWZlM2ZmZDM2ZDMyZWEyYmMzMWRjZDNlMWY3ZTg4ZWJkN2Y5NDQ2ZWI3MWZjMzcxYzUxMzUyODA3ODdlOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBkMTk1MDU5ZjZiMWQ4NzczYmZjNTFiM2E4ZjJmMGVhY2Y2ZGVmMDNiOTUwYjQ3NDhhOTIyOGU0NDY4MmNiODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI3NGU5YmJhODE4OTExMWI4NDkxNDk0YjJkMDM1MjFkMjg1NGZhMDIxZTA4YWQyMjBhYmRhZTAyY2Q3ZWU5MzQifQ"
+        },
+        {
+          "resource": "repo://README.md#L63-L72",
+          "version": "repo-lines-v1:sha256:58268d8bb6756f794ea172d0e9614c93977d919e50c4fad20006b1cff74aeb86:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhY2FmZmFmNThmNjBjZTM1YjRkYWZhMzY4ZjRjZDgwOWE5ZTJhZDQ2MGFhOTYyODkzNmI2NjU2Y2UyMDM5YTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwMzExNDU3Mjg4ZTBiZDI5OGJjN2RmMDA3ODdmMDE2ZjI1OTI4M2I4M2E5Y2UzMDJkNjJlNDNlNzBhOGM1ZjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkODM5NWU3OGVmNzZkODZhYTQ4NzQ2YzU2YTVmOGQ2YjFlYzI1OGM5MGU1ZjhmY2FjYzhlOTQwNDcwODc5YjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE2NDEzMzc0YmE5MTdlYWQ3MmQwMGVjY2Y3NGVmOTY2Y2FkZmNhYWViODE2YjE2MTM0MzlhMzRmYjQzMjFmNWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e3d76ca372b04d6eaec7e681acb313c3",
+      "statement": "Claude Code is the established runtime; the Codex advisory alpha is a non-GA adapter pinned to Codex CLI 0.147.0 on macOS arm64, and its outside-hook doctor reports enforced/advisory/unsupported, with real runs currently returning only advisory or unsupported because no input carries observed hook trust.",
+      "evidence": [
+        {
+          "resource": "repo://CLAUDE.md#L19-L38",
+          "version": "repo-lines-v1:sha256:7bda3d1e8eba93f4fcb487320041849d935df3ad0a47f0ee81e324ce5dbb8ec4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxZDBkNTc2YTYxMjRiODUxMWNjNzc3NWM2ZGQzNTgxNzg5MGViMjk4ZGY2YjIyNWM5MGZkMjFjN2FjMGUwYzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmYzBkZDI5MjFkYzM4NDNhYWZhZmRhZWFjOTYzNDJmZDFjNjg0ZTc0MzI0ODY2YWIwNzQ1NGQ2YzAyMzNhODUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgyOTY1YWY4ZDA5NTE3YTdmZTA2YmQwMTZmMmMxZDlmOTFlNDVmNzVjYzViMGY5YmU3ZDNkNzIxMThlNzE2NTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY2YTUxNzg1MzllZjA5M2VjYjI3Yzg3YWY1ODExN2RlZjZiZWNjYmY3ZjFkMmRiYzgxZjEyNmRiNjFiZWM5ZjgifQ"
+        },
+        {
+          "resource": "repo://HARNESS.md#L19-L30",
+          "version": "repo-lines-v1:sha256:3fc520895847e3e45c2150f6f7e6f17d6ad174c472a9448acd5c8361c4f54f79:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzYjFlY2I2Yjk2MThkOTFjODViNmQwYzc1NTZjNmJiYzMyOTRhMTMzMDY0ZmNjZDhhMmNlMGY5NjMxOGZkMGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxZmRkOGFmZDBiZWU5OWU3YjM2MWRmNWQ0ZmJmMTE2M2U0NmM5NmM4NTFjNjIyM2FmZTM1ODliYTJiZjAwMWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFmZDBjOTExY2E5YmVkOWM4NDg2OThhNWI1NGI0NzBlMjM2ZThjZDY5MGRlZGJiZDdiOTMyZjdjOWJmZGIyM2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyZjkzNTYxYTUyNzVhMzM5MmZmZjQzZjk5ZjE5NjE5MTI5MGE5NWFjN2ViZmEyYWQwYjRiMTdiMmI2YzUwNzEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0aba1f1c0fb84cd0b0cd769638fec969",
+      "statement": "Root directories are the editable source of truth; .claude/ is a derived, gitignored copy that Claude Code loads from, built by scripts/deploy-harness.sh, which must be re-run after editing skills/, agents/, hooks/, rules/, templates/, runtime/, or settings.json.",
+      "evidence": [
+        {
+          "resource": "repo://.gitignore#L26-L26",
+          "version": "repo-lines-v1:sha256:442787ab3b4dcc0aeb55d4d866ec72bcc23b754efde3815e97f598ae79c42ba4:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDQyNzg3YWIzYjRkY2MwYWViNTVkNGQ4NjZlYzcyYmNjMjNiNzU0ZWZkZTM4MTVlOTdmNTk4YWU3OWM0MmJhNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDQyNzg3YWIzYjRkY2MwYWViNTVkNGQ4NjZlYzcyYmNjMjNiNzU0ZWZkZTM4MTVlOTdmNTk4YWU3OWM0MmJhNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTA4NmEzYjNkMzU5YTQ4MWE0MzQyZWJlNDg2ZDNhMzlhNGM4NTFlZWViYmQzMmM3OTBkMWE4NDc4YmQzODlmNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzVmMDAwM2RiY2ZlOGU4YmIyODNlMGI3Y2YyODdkYzY0YjZhM2ZiNDk1ODFkNmM5NzMzNGZlMzIwNDNkYWNhMyJ9"
+        },
+        {
+          "resource": "repo://AGENTS.md#L24-L24",
+          "version": "repo-lines-v1:sha256:cec82f1c441cb501123273bf1f837f215621b4f554ce0668dfbcf65e48b0e9d5:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2VjODJmMWM0NDFjYjUwMTEyMzI3M2JmMWY4MzdmMjE1NjIxYjRmNTU0Y2UwNjY4ZGZiY2Y2NWU0OGIwZTlkNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2VjODJmMWM0NDFjYjUwMTEyMzI3M2JmMWY4MzdmMjE1NjIxYjRmNTU0Y2UwNjY4ZGZiY2Y2NWU0OGIwZTlkNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWE2YWE3MGI1Yjg0Y2RmODgzYTI1Y2ZhZDc1NzczNGY1YTZjYjU2ZjYzYTdiNzJiZjk2NWRiMjI1N2Y0MzhmNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGUzNDNlZGI1Yjg5NWI2NjA1MTcwZjBmN2UwMTUyNzBkY2FkZDQ4NDMxMTczZjQzYTA4NGZhNTUyMjkyYmU4OCJ9"
+        },
+        {
+          "resource": "repo://README.md#L94-L102",
+          "version": "repo-lines-v1:sha256:12c4680dfa830f8a649a4d83b96a55841007c091ef1d439dc1172d2b14cc2dbe:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWE2N2Q3OTEwMWY1OWE2MzU4ZDM0NDA5ZTI5YzZhNDYxZDIwMWYwNjIxMGQwYzhmYjU0MmEwMTZkMjVlZTkwNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzAwMzI4MWM4Y2JkN2FjOTg1ZjE4MTYxNWVlZmY4ZGYzMDNkMWU0ZTA3M2RmYWExMmNmZmNhZWRmNmM5ZDc5OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGI4ZGVkOTRlODJjZGI3MGZmNWZhNDRkYzcxMjU2YWFmN2IzYmUzZmRmZjQxNjI4NjUxNGVhN2ZlNTEyNTVlNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTZiYjQ0ZDQ4YTEwODRmMTRjNzlmY2U3NWJkYzE1OTQ5NjI5MGE5MDJiMWFhMGNkN2MyNGJhNmQ4NjhhYzgzOSJ9"
+        },
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L1-L8",
+          "version": "repo-lines-v1:sha256:e5627bc4e07df7cf88db51bbda678df11a116e2bc3d6f6d76daa2746017c687f:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjg3NWY5Mjg1NDZhZWU3ODU1Y2IxZGI5YWZjOGFiM2YxYThhMzRkNDNkZTViYmQ2MmY3MDc2ZDdiYTlmMzkxNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzJjNDg1OGUyMmNjMmM5NjdiNDIxNTBmYTU1MDU2MmEyYzgzOWMyY2ViY2FhYjkxY2FiZGY2ZjRkYTAyMDAyMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDY5N2IyYzY0MTkxZmEwYTAyMmEzNWYwZjM0ZWM4MWE5ZDIyMzNmZGExZjY3ZjU1NDE2YjQ4ZWZjY2U2NGE3MiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_799528144d254c4d9a120f76d15e23e8",
+      "statement": "deploy-harness.sh resolves its sources by path rather than git, syncs skills agents hooks rules templates runtime into .claude/, renders Claude agent definitions, strips archived skills, skill tests and harness-only docs, and copies only an allow-listed subset of scripts/ plus harness-manifest.json; agents/*.json and adapters/ never deploy.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L23-L71",
+          "version": "repo-lines-v1:sha256:fc380e9989752d7b6b2a81e4fd3560aaf6fbb31f849ce96d874917938522c5a6:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0ODI2MDQ4ZGE1NmNhNmM2ZjY5YTJjZDlhNGVmNWMxNmVhN2YwNDZlMzE0M2Q0N2FmODZjNjIxZWJhMDNhN2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxMjM2MzM3NDU2MTUxNzkwNDM3YTQ3YTIwYzFjZWFlYTIyMjA3NWQ0ODMzMThjMTY0MWRkMzBkNTI2MDJiMGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5MDJkYzQ4Y2U5ZWRkMmRmNTRiZTgxOTMxYjY4MTFkZTNlNzNjMjVhYWVmOGQ3NWQzZTNhODI2ZDFlZDljNzgifQ"
+        },
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L593-L605",
+          "version": "repo-lines-v1:sha256:77f2f657d22073516cc2ba2f434ea222abe636d501242cf12c141f8a886e5b65:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlNjQ4MTdmNmJiODgyZjUxNTVjMmZjZGYxOWI1MTYzNjkyYjIxOTIyNjhjYTdlMDljN2Y1NWU0YWM5ZWJkZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyNjVkYjcyMDEwMTNlMmE2ZjdlZTQwY2M5ZjBiYjJkZGZlYjkwZDNlNzk5YmQyOTIyMjExNDJlZThkMWIxMGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEyZDMwOTllNDU4MzBhZjMwOTRkZWZiNjMwMGM5MjA2Y2RhOGM3OTU1NjAxZGExMmRlYjUwYzJlYzk4OGQwMTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2MjNhYTg3Y2I4YTYzMjc1YTUwNjllODY1MWRhZGE5NDljY2Q1N2FkZjQ3MDc1ZGUyMDQxYmFjODE3ZTU2M2UifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_96652ab90dd6468e99f9441cc5636d13",
+      "statement": "deploy-harness.sh derives .claude/settings.json by keeping only the chosen profile's hooks, prefixing relative commands with $CLAUDE_PROJECT_DIR/.claude/, appending --profile to commit-gate.sh, and merging with existing consumer settings rather than replacing them.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L512-L577",
+          "version": "repo-lines-v1:sha256:b7bd11000cc39ff765e6fd33944a6bd236f6dba50896a6c1c0c01478cb08b0c6:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5YjNjOGY4ZDNiZDA0YTg5NDYyNDY1ZDA5ZmRjZDhhZmI3MDA5MDlhYzE4NTZhZmRmZmVmZDY3NDI2MmI1ZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlODU0YjY2ODdjYmQ3YmM0OTBiNmIxYTM0OGJjNTczOTk4N2M4NWE4MDE0NDZlMzNhYTFhYWU4NDVlNWQ1YTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYyYTY1NTMyNjhmYzQ2ZDZkOGUwNDEzN2Q1YmNlMWJiYjFlYTc1ZTY0NTlkNDg0OTYwZTM5NzQ0OGFlY2IwNzkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b4d1bd267f354aed90e88095262bfd75",
+      "statement": "The hook profile is resolved from the explicit --profile flag, else .claude/.harness-profile, else the manifest default, and is written back to .claude/.harness-profile; stale entries shipped by the previous deploy are pruned using .claude/.harness-deployed.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L112-L128",
+          "version": "repo-lines-v1:sha256:4fda3aec5d3d5bcfbd780d22e52435c5149be2b3442417e4d8a9efc6f3f6131b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkY2NiN2EzZjlkZjBjMDdkOTY0ZGEzMGU0OTUxNzVjNTAxNDhiNTQwNDFmNzc3NDhlMThiMjNmMWY0YjU4YjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxZDJjMmY3ZDYzZGE5NmM2NGRmMjcwOTJiNjg5MmE0ZDk3NzJjNTkwNTE1OTBjMGFiNGQ1NjQ5YzBlNzZiNWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJiNjQzMDRkMjk4NDQ3YTAzODIyMGRkMThkNWFlNDJjMWM4NzQyYjAyOTQwYTE3MmMxZTA2OWY5YzNlZGI1NmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY2M2EwM2FkMDg5NGFiMGEwODYzZWU5OTczYTEyNmE3OTZkOGYxODQyYzk5MGU4NTFhMWI2NWIzMjIzZDU0NmMifQ"
+        },
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L606-L628",
+          "version": "repo-lines-v1:sha256:7ad8d9449fdb936e641ec46019e8a0984aae6a21b2f594bfc3c368d122e1daa0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiOTExNTc0YzBmYmUyYjRmMTY1MGIyNDFiNGIyOGI0YzY0Y2Q5MGNhMzNiZjU3MDIzYjZkOGM3ZDgyZDBhNDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5NmU3NTkyMWQwNDk4ODJmOTU1NmYzYzNmZmU5NGU5NjcyNjViNjVmNzIxZjI5NmRlNWQyYTM5YzM3NDg2NjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUyNTc4Nzg0ZGM5YjMxYzU2ZGU5NmY4MjM3ODZiMDNhZTQ0M2U2ZWNiMDQ3ZGVhM2FjM2YyYmFhODBiMTU5NWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVkMmE1ZjBkMDNhYTIwOTZkYWZlNTdlNmRhM2M2ZGJhYzk2YTBiOGVlOTZlMjdlZmZlZDA2ODA4MjYxYWYyZmMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c6905025a13b4ed1a8fd9193846e617d",
+      "statement": "Per-repo protected files (rules/architecture.md, rules/guidelines.md, rules/behavior.md, agents/PROJECT.md) are not silently overwritten on re-sync; a differing local copy is kept by default and the incoming version is saved as <file>.harness-incoming.",
+      "evidence": [
+        {
+          "resource": "repo://CLAUDE.md#L92-L92",
+          "version": "repo-lines-v1:sha256:dafac2488862eb3ca5bc01c250d169a7af9d8ac5e22db6e22d19d31c9b5d0164:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGFmYWMyNDg4ODYyZWIzY2E1YmMwMWMyNTBkMTY5YTdhZjlkOGFjNWUyMmRiNmUyMmQxOWQzMWM5YjVkMDE2NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGFmYWMyNDg4ODYyZWIzY2E1YmMwMWMyNTBkMTY5YTdhZjlkOGFjNWUyMmRiNmUyMmQxOWQzMWM5YjVkMDE2NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWM3NGRiNmQxMGI0YzEyN2M3ZWI2NGJkMThiMjkzMzNiZTQ0MjY5MmE5OTExMWYxNTVlNDVkZTMyNDBmZGE4YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODg1MjM0ZTNhYmQwYjdiMGU3MmFjZTFlOTZlMDc1NWM2MzA1NGY5ZTQ1NDQwODViODBiMzRlOWQ0N2RlYmQ4ZiJ9"
+        },
+        {
+          "resource": "repo://scripts/deploy-harness.sh#L28-L38",
+          "version": "repo-lines-v1:sha256:7f9f74ebd279779b50ecb6536073fc9577ff32417b8b557f690c5001d06e0a45:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwZmE3MTQzNzQwNjBmYTJmNTQ2MTdlMTRkMWJhOGU1YmRiMzU1MzA2ZWU2NTliZDQ3NzEzYmZmMDYyOWI5Y2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA2MWUxMDZlYTFkZWM3YWRkNGY5N2EwYjk1OTZjYjcxZjNjYjNlM2E2YWFkY2RkMjY5NzlhZTZiYmE5ZTk2YjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEyOTc5YjdhZGUzM2U3MTFmNGVlNjY0NGYwMzcxMmJiMThjMTdmMDE3YTJjNzNlNmIxYjY0ZDliN2FkYzFjOGQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_936d87ee02de42edb1433b2f4062d5bb",
+      "statement": "Changes to hooks/ or scripts/ require running bash scripts/run-tests.sh, which runs the same suite as the harness-ci workflow on ubuntu and macOS.",
+      "evidence": [
+        {
+          "resource": "repo://AGENTS.md#L28-L28",
+          "version": "repo-lines-v1:sha256:8030f1e864d88130d7b917d20080932ab9e9f9414af5baf39478968ee9d891b1:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODAzMGYxZTg2NGQ4ODEzMGQ3YjkxN2QyMDA4MDkzMmFiOWU5Zjk0MTRhZjViYWYzOTQ3ODk2OGVlOWQ4OTFiMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODAzMGYxZTg2NGQ4ODEzMGQ3YjkxN2QyMDA4MDkzMmFiOWU5Zjk0MTRhZjViYWYzOTQ3ODk2OGVlOWQ4OTFiMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGUzNDNlZGI1Yjg5NWI2NjA1MTcwZjBmN2UwMTUyNzBkY2FkZDQ4NDMxMTczZjQzYTA4NGZhNTUyMjkyYmU4OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTMwM2VlYzhlNjU1MjZiMzI1MWUyNDRmNjljMGIwOTMwY2ZmNTFiZDhiODRkMzZhMzk1NzJlZDg3YjIyOWZkOSJ9"
+        },
+        {
+          "resource": "repo://CLAUDE.md#L89-L89",
+          "version": "repo-lines-v1:sha256:0ca4911161d83be87abe4d4fa5e0190152a42b956931aa620535f482b4011709:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGNhNDkxMTE2MWQ4M2JlODdhYmU0ZDRmYTVlMDE5MDE1MmE0MmI5NTY5MzFhYTYyMDUzNWY0ODJiNDAxMTcwOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGNhNDkxMTE2MWQ4M2JlODdhYmU0ZDRmYTVlMDE5MDE1MmE0MmI5NTY5MzFhYTYyMDUzNWY0ODJiNDAxMTcwOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDA4ZjQ2YjVmYzU1ZmNiZjE4MDIyMzE0ODVhY2NjYzY0OTI1MmU1MzBiMDY0NjU2NTBlN2JhNWEyMzA4MjIyMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWM2ODYzMGYyNGE2NGRkMWFmMGUzN2M2ZWE5YjIyM2M3MjE5MTlhM2FiYTNiNmJkODlmN2QxZGE5NmYxMWYzNCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_3c9d690e53734d0884f2cf2e6b2673d1",
+      "statement": "scripts/run-tests.sh runs L1 syntax checks and lints (doc-truth, skill-bash, hook root source, plugin validate, allowed-tools, manifest consistency, runtime-neutral sources, eval answer keys, STE self-test, verify-row lint), then all tests/hooks and tests/scripts suites in parallel, then auto-collected pytest under scripts/, runtime/, and skills/, and exits non-zero with a FAILURES list on any failure.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/run-tests.sh#L29-L211",
+          "version": "repo-lines-v1:sha256:1762047bcba44ea7e3f840ec241a51a031fbd62d911cfddd75ec7a9c23e5e4a7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwNTFlNTA2NGRlMDliMzRmNTkzYWEzZWQ2MzFhMDJkMTg2MGM5Y2YxZmIyZDI4NzI3NDkwYWYxYjVjNTBmYTNmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI3ZjYyMDMwN2NlYzBhNmQwNDAzYmU1NzhlY2RjNjM1MTVmMWRhZDlmYzViYTg0Yjc0NGY4Yzk4NzAwMDQ4ODUwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI1ODJjN2IyOTFlMDFlMmY3NTdiMThiNWMyYmE5MWQ5M2FjMzFlMzQ1NDdiNDY3MTQwYjkyOTZiNDFlNWY0ZDQwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_dab467bc5d8d49ecbdfbe5199e574b7b",
+      "statement": "Shell test suites are hermetic and run in parallel; HARNESS_TEST_JOBS=1 forces serial execution and HARNESS_SKIP_SUITES skips named suites.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/run-tests.sh#L152-L180",
+          "version": "repo-lines-v1:sha256:f7809f33cdb4b80a6d66609c3b7177ff818d01cac4360b65418aa26a10f2eab9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1ZWIwNjIwNjBiN2ViOTljMWQwMGM3MjRkNDhlY2MwZGViYTk2Zjk4MDcxMTgxM2Q4ZjliNDczNjNiMTkwYzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMTdmYTAwNmJhOTIwODUwMGIyOTMwY2U2OWNiZGU0MzZjNjQ3YWZhOTE3Y2I3Mzk2YTliYzkxMTFhNDZkZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFlMDFjNTZhZjU4ZTc1ZGIyY2IwNDdmYzg5MTMxMTM1NWFiZDY2ZmY0ZWZhNjIyODlmNDg3OWU3OGYzMzE5NDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk0MzA5Y2Q0Zjk5Y2RkYTU1MTA4ZTRiMDRmMDJmZGU4N2Y4YzI1MzlkOWU1NDUyYTNkZTRhYzBlY2Y1ZDE3YzUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3268b9e4524044fda7bc7f7284fb31d8",
+      "statement": "Root settings.json registers three hooks: commit-gate.sh on PreToolUse Bash, branch-isolation-guard.sh on PreToolUse Write|Edit, and session-knowledge.sh on SessionStart.",
+      "evidence": [
+        {
+          "resource": "repo://settings.json#L1-L37",
+          "version": "repo-lines-v1:sha256:d79fea369192ea5a29122cdd72cad274ac40702ad6fae1af0ec00561c8de9d0c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZmIwOGZkYTFhY2I5NTdiNjExNmJkMzc4MTFhMWZlNDFhMDE2MTFjMDYzMWVkYmY3ODZkNjg4OWEyN2E1NWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e80ff2dfd8a1437abf533b9ef17636de",
+      "statement": "Consumer commit-gate block/warn modes resolve only from the git index (git show :harness-manifest.json) or embedded in-hook defaults, never from .claude/ or worktree files.",
+      "evidence": [
+        {
+          "resource": "repo://CLAUDE.md#L93-L93",
+          "version": "repo-lines-v1:sha256:a78d49551bbf2d6d3ad53b76fce841b10b7838e381f75b8cce80174ff646f62b:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTc4ZDQ5NTUxYmJmMmQ2ZDNhZDUzYjc2ZmNlODQxYjEwYjc4MzhlMzgxZjc1YjhjY2U4MDE3NGZmNjQ2ZjYyYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTc4ZDQ5NTUxYmJmMmQ2ZDNhZDUzYjc2ZmNlODQxYjEwYjc4MzhlMzgxZjc1YjhjY2U4MDE3NGZmNjQ2ZjYyYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWM2ODYzMGYyNGE2NGRkMWFmMGUzN2M2ZWE5YjIyM2M3MjE5MTlhM2FiYTNiNmJkODlmN2QxZGE5NmYxMWYzNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2ZiMzJhZTg5ZjAyNjc4ZmE5YmJmNDY3YzJjNGZkYjhjMTdlNzExZjgyZDUzYTIyYTU4NzYzYmJiYTA2Njg1ZSJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.2",
+    "at": "2026-10-16T04:08:21.021Z"
+  }
+}

@@ -121,6 +121,15 @@ Local scope is private to you: it is stored in `~/.claude.json` under this proje
 
 **context7** (library docs). Configure it at user scope or as a plugin in your own Claude Code config.
 
+**OpenWiki** (search the generated `openwiki/` index). The wiki itself is committed and refreshed by the scheduled `.github/workflows/openwiki-update.yml` workflow; only the retrieval tools (`openwiki_search`, `openwiki_read`) are local. Install the [openwiki](https://www.npmjs.com/package/openwiki) CLI, then add its skill and MCP config to Claude Code:
+
+```bash
+npm install --global openwiki@0.7.2
+openwiki integrations install claude    # user-level install; check with: openwiki integrations list
+```
+
+Without the tools, agents read `openwiki/quickstart.md` directly (see the OpenWiki section in `AGENTS.md`).
+
 **Personal instructions** (for example, when to use these servers). Put them in an untracked `CLAUDE.local.md` at the project root, excluded the same way (`echo "CLAUDE.local.md" >> "$(git rev-parse --git-common-dir)/info/exclude"`); Claude Code loads it alongside `CLAUDE.md`. It exists only in the checkout or worktree where you created it, so for notes that must follow you into worktrees, import a home-directory file (`@~/.claude/<file>.md`) or use the user-level `~/.claude/CLAUDE.md`. Run `/memory` to confirm what loaded and `/mcp` to see connected servers.
 
 ## Further reading

@@ -1,0 +1,268 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:25d747a502def3d07beefcce8fdcb5a260d18b5dd5025a04b9a3d5be59c5faa9",
+  "claims": [
+    {
+      "id": "claim_bded50af3e9e4527bd4f8cc9f298086c",
+      "statement": "writing-plans requires specs/<slug>/design.md and research-brief.md, must explicitly Read the path-scoped rules/plan-format.md and rules/terminology.md before authoring, writes the Success Criteria section first, runs check_plan_contract.py, then runs render_plan.py --summarize, and hands off directly to subagent-driven-development without asking the user to choose an execution mode.",
+      "evidence": [
+        {
+          "resource": "repo://skills/writing-plans/SKILL.md",
+          "version": "repo-file-v1:sha256:064690969ea9017581d970329e3100d68dafacc81d5d41f5c176a09b4a207055"
+        }
+      ]
+    },
+    {
+      "id": "claim_c1975a13d3ff461db032ab874d295f78",
+      "statement": "A PLAN.md task is a plain-markdown `### Task <id> — title (wave K)` section with Files/Action/Verify/Done bullets; fenced task sections are illustrations and ignored, a heading with no field bullets is prose, same-wave tasks may run in parallel, and waves execute sequentially.",
+      "evidence": [
+        {
+          "resource": "repo://rules/plan-format.md#L27-L67",
+          "version": "repo-lines-v1:sha256:1d4f936ab5e506c4d8672b397487c3bca8e4554e947943ffadb20356b1f61de5:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0ZjM3ZWQ4NjA4M2U5YWQ2OTBiMDQ2Nzc0ZWEyMzk3MWQ5ZDI5ZGM5OTZmZjYwNWU0NWFjNDMwNzI1M2FmZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5NTU3NzgxNDhhOTM4MWIxNDQwNjBhNzFlZjJiOTFjMTE3YmY0ODI2YzMxNTAzMTRlMmE3MGY1MDYwNDlhYTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY1N2QxZmZiMTU0N2RmYmZlNzYyYmRiNzYwZWM5M2Y4ZWY2ZjgzYmI5MDczNjA1YWUzODQyNjg1MGQ0MTliMDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY2Yjg1OGQ5MDA1YWEyNjU0ZmQ2MTUyNjMwNGVmNTZkY2JhZjlhNDE5OTQ1NTMwYWZkZjFiYTM2MTJjNjY2NzAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c747df9aa36140bdad728ab49f2341a2",
+      "statement": "New markdown plans opt into a context contract by declaring a non-empty `## Global Constraints` section; each task then carries Criteria mapping SC-n rows and an Interfaces line whose Produces clause must name a backticked artifact.",
+      "evidence": [
+        {
+          "resource": "repo://rules/plan-format.md#L42-L53",
+          "version": "repo-lines-v1:sha256:969cdc81a2f94c2fc07fc30d01ebd7f45a007d4c55f11a524985a18da0b0e8cc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2OWEzMjQ3YjRlZmFlZWVkMzNmNDliNjQ0Y2I4ZWRmNTU3ZjE2ZDFmOTc3MTA4ZmI2MDk1YWQ0YWFlZDIyMjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyYzBmOWFhMDFhNjNlZWE3Zjg1MGY1OTE3MTgyMGU0YmJjZGU2YjUwNmIwMWEyYWJjNGE3YzViMmJlNGUzZTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmZTRhMGIxZGRkOWQzNDNiZjU1NThlMjJiNGMxOGM5ODNhNzQxNTk2ODNjMTQxY2E3ZDM1MjFlZjE2YzdhZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjllNzc4ZTQ5ZmRiNTBlMDIyOTVmYmM2ZjQxM2UyMGVmZjY3YWFiYjY4ZDI5MjE3YjQ5OTgyMjNkZTg0NjJhMTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_172e818bb2264e1f8017802ecbe9e27e",
+      "statement": "The `## 3. Success Criteria` table is the plan's acceptance contract with columns ID, Behavior (observable), Check (re-runnable), Expected; IDs are sequential SC-<n>, checks are single pipe-free commands under 60s and never whole-suite, and Expected begins with a machine-read `exit <n>` token.",
+      "evidence": [
+        {
+          "resource": "repo://rules/plan-format.md#L69-L104",
+          "version": "repo-lines-v1:sha256:729cc747b65b5273ab4e14253eeb4ea51f44f8166638796e1243cc6dd021a8d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxYmY2ODMxNzNhNWNhMTE4ODJjOWE2MWQ5NDRiMGVhNGQ3MjRlNzdkNDQ0MGU1NzNmM2ZlM2MzOWRhNDI0MWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmZmM0NDU2OGIyODQ1M2JmOTNkZjU5YTE5ZWZlZDdhMjFkNjE4NmUxZDYyOTU0OTdmNmRjZTVlMjMwNjJlM2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU1OThhOGJkZmY5Mjk2MzdiZTQ0YTkzY2EwMmZkNTE2ODNkMDQ5NTIwMWJkMGQzNmFkM2Q2MjI1YzRlNDBjZTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwODUwZTQwNDg0YjM2ZDVmODE0MmNiYTY1MGJjNWU2Yzc4NTA5OTAzOTc0ZTBmOWNmYjUxYzg2YmE4OGEzYzYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_27e7ad77ae47499a80081902b16dbc7c",
+      "statement": "Plan guardrails require zero file overlap across same-wave tasks, automated Verify commands under 60 seconds, and never placing the whole test suite in a task Verify, SC row, or SUMMARY Verify row.",
+      "evidence": [
+        {
+          "resource": "repo://rules/plan-format.md#L115-L120",
+          "version": "repo-lines-v1:sha256:9804413c426e1b5216fe6d3dbb0b4d7490ace4ee20ab815704158abc77da9fa9:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODk4Y2NmZWM2MDA0YjQyNjliZGI1NGUwOTE3MGFlMTc1MzU0ZjUzMzA4MTk3ODI0N2ZhMjE3YzY3MGY1MjhlMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTRlYTQ5MjFhZGMzNWE5M2E0ZmViYjIyYmZiYzM2MjU4NTE2MGIwMDYxZDE5OWJiNmZjMDk0OGMzYTgwZGRiNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzRkZjk5NzIzZWUyY2Y1YTgwMjg5MjAwODZjMmE4ZWI1ZDI3NjZhYTE3YWZmYTY0YmY0OThiYmU2NWJlNGQ4MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTA5ODljYWVhNThmMjM5ODg1ZjFmOTQ3OWJmNzQ3M2UxNmFjZTIyNmY0YzBkZjBjMjRhMmY1NTMwODU5ZjE2NCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_5baaf23cea6b412c8f376dd0e152f285",
+      "statement": "Legacy fenced XML `<task>` plans remain read-only supported by the renderer, the subagent-driven-development preflight, and commit-gate.sh; in a mixed file only XML tasks are parsed, so a markdown task added to an XML plan would be invisible.",
+      "evidence": [
+        {
+          "resource": "repo://rules/plan-format.md#L181-L183",
+          "version": "repo-lines-v1:sha256:7e5116c827b29f4db334b0533b3aecbe7ccf8e6b0850c36106cc8b737969984a:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGM1YjIyYWYxZTIwMjkzYzczMzBiMzhjNmE5YjY4MWU1MjM2ZGVhN2MxZTg5MDFlNWIxYWVhMTVkMjNiMGJiNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzAyOTU4MjNiMTViYTAzZDRiMjdhMzc3Y2Y3YjA0ZWUzNjIzN2ZhODgyY2Q2ZDgwOTZmMjQ2YTFhMzg5Mzg2YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDE3NzM4YmIyYjcwMzc2Y2UyZTg2YjE2YTZiMTRmYWViNmQwNDhjMjA0Mzg0NmQxOGNiODk0NGViMjI2MTEwNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWNiOWYyYTQwMjZkMTY1YmU2MTM4MDg3MTEyNDEyNTA3NzVlOTQwYWUzODhmYjg0Y2RkMjU4OGJlODgxMjMzZCJ9"
+        },
+        {
+          "resource": "repo://skills/visual-planner/render_plan.py#L193-L233",
+          "version": "repo-lines-v1:sha256:a4ab2513958cb33839d1496bc2bbf03a0223a8f49cc52e054a20fb3d768180cd:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhOGY4NjdiY2E0NTNjMDAyMzBmYzUyNWI3MzFhNDk0NjBiMmY3OWVjZjZlZjRkN2ZjODU3OTZjZGRhMjk1Y2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1YzA5NmZjYzc0MTRiYWNjODA3MDI5ZTM0MWFhMDI0NWJmYmMzMTNjYzQ1ZmY5OWM3YTAzNDBiY2Y2MmYyOGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMwMmFmOThmYzRiNGIyZTgzMmQxYjhjNGVhNDUyZmUzNzVhOWJjNDA4ZTZjODVlYmJlZjdhOWFhNGFiN2I3NjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ5NTlhODJiYTNmYjlkYjE4ZGE4NTM2MzNmYTdjOGE2ZmY3YTUwMzg3YzU2OGYxMTY5MjlkYmJjYTdlZTU2MGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7f71dcaf01fd4a899f1cff3fe8756e7f",
+      "statement": "Wave parallelism requires synchronization at wave boundaries (all wave-N Verify green before wave N+1), a fresh subagent per task, all of a wave's subagent calls sent in one assistant message capped at 20 calls per message, and collection before advance.",
+      "evidence": [
+        {
+          "resource": "repo://rules/wave-parallelism.md#L15-L21",
+          "version": "repo-lines-v1:sha256:715e994fd368762568234a386166058f74577914c0e772738056d2117001f5fa:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDhmNjgyNDMyNmIwNTNhZjY2ZmJhYmI2MThlNzY3MWEyMTQ1NDQwZWMyMzU0M2EyMzI0OWVkNDhiMmI2ZDcyNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTYyYWIwODQyZjk3ODM2NzE3NWFmMDgxY2RkZjU1ZDMzNjU4NWUxOWU4NGFlYWRlNzhiMDViYWVmMzE1MmJkZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjMwNmI0ZjY3NDRlODk0NWZkNDZmNWMwNzA4MDhhZmU1ZTUxMmNiMGQyZmU0NTlmNTdlYTZiN2IzMWMxZmY2OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDM1YmIxMWJkYjMyNDA0YzZhY2UzYTg5NzY5OTkwNDk1Y2IyMTE0YzgxMmI5NjVkMjFlNTVmOTA1NmUxMjExZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_cb4843dcf63347148fee4208f2091e05",
+      "statement": "After each wave the Status Log entry must name task ids, commit shas, and a completion marker, because render_plan.py's _done_task_ids and runtime/resume_decision.py derive the done set and resume cursor from task ids in completion entries; then render_plan.py --summarize is run before the next wave spawns.",
+      "evidence": [
+        {
+          "resource": "repo://rules/wave-parallelism.md#L39-L61",
+          "version": "repo-lines-v1:sha256:789f26ed74a7edcb2df5d19267eb1f58b4033a84840a40797f795b474a95c7e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwNTY3ZmEwNjBmNTQwYTI0Yzc3ZDkxMmM0YjIwNGVhZjFhYTI1OTdiZjlkYzFiM2Y0YTAwNjYwOTU4NjZhYzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2YzVkMmYwNTg1YjgyOWI5OGJkZWNmYjhiZWI2YmE2NGQwM2YzMjQ3ZmEzNzBjNmZiMzU3YzlhMDUwM2JmZTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjliMDMwM2ExZTg3NjNlYzQ5Mzg1NTljMTNjNzkzYzhiZGFkODg1MDk2ODk2ZGU5ZmM5ZTVmNzA0NDUxZjc5MmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMwNGJmYmE0MTc0NWI5YTY1MWQ2NDNjODNhNGZlNTM2MzJkZDIyMDRiNGRkMTk0ZmY4YzM2NDM2OTZkZDUzMWQifQ"
+        },
+        {
+          "resource": "repo://skills/visual-planner/render_plan.py#L586-L599",
+          "version": "repo-lines-v1:sha256:b0d9d9cb7783242d9d3ffda55f64daa3e489ef5478e5dccd61c42ac979fd8ab6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3YWQ4NmJiMWQ1MGE4NmJhOTE1NmQ3YTc1M2FmYjIxOTZlOWI4NjI2MTM4ZGNjYjMwY2RkZTM0ZjI0YTY0MGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhNmE5YjFlMzk0OWNhMThmMWUyOGRlZGNiODM4MjRlY2NlZjEzYjQ0MGY2ZTM3MzdiMDg3MDc1NjUyODYyNWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY2ODI4NTc2MTRmZTZlNjcyY2Y5Mjc5NDJlYTg3YTg4ZjRlMTAwMTZiMTc3OGYwNmE2MjlkZTM5NDg0ODVmMmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAzNTU4NWU4OWYxMmFlMjQwY2Q3NDViN2IyMWQzMjdkZDQzZmQ0MzJlNGM1Njc2MzgzYTY4OWM4OWI4ZjA2MTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9d962b520da14b87a1d7fe9014d0a862",
+      "statement": "check_plan_contract.py passes any plan lacking `## Global Constraints` (legacy plans remain valid), masks fenced code before scanning, and otherwise exits 1 when Global Constraints has no bullet, no SC rows exist, no markdown tasks exist, or a task lacks Criteria/Interfaces, maps no or unknown SC ids, omits a consume or produce verb, or has a Produces clause without a backticked artifact.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check_plan_contract.py#L50-L93",
+          "version": "repo-lines-v1:sha256:2d50c1df333eba13b7d221e948aea7f60ce0e419b7ea08249a811f1b305a796d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4OWRhMjFmNzdmNTJhODVkMjcwNTZjNTM3ODUxNWE2NGZmNDFkZTJmMjUwZDQ0ODNjMWEyMjJkNDNjM2IwZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1NzU3NGNmYzVjZTgxNGExYzM4NjdmMGE2NTNmZmUzMGJiZDU1ODI1YjVkOTc4OGJhY2QxNjViODhmNjUwOTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI2ZDQzZmVjMzk0ZThkNjM1NjNhYzU4NjE4OGI2MWZkYzY4MTAyNjRjYWZhOTI4NDIxMDIyYzE1ODFiMjRhY2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0OGQ3NDgzZDA2MGYxNzIyZTI0NTM2ODg4MzM0MjU2YjU0OTBlOGJiZTg2OTgyMDY3NmNhOWVhZjM1MDljYzkifQ"
+        },
+        {
+          "resource": "repo://scripts/check_plan_contract.py#L96-L117",
+          "version": "repo-lines-v1:sha256:ac72f074a56578e76b8b05e0fb2347f9d8f8e7aa7ccd4417c306d6ea02e54ed9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiMzk3OTMzYTI0YTgwMWVlOTIzMzI3YmQ2OWEwMTA0OWMwNzc5MTUwMjFjZjJlYzM5ZGRhNGY4MWFhODM3ZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2MjMzYjNmZmVhMzJhMjNkZjUzMDY1MzQzNDhmMmRlZTc3NmE1YTZmNzRmYjUzMzE3NWRkYzUzOWE4ZmU0NjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyZDY4ZDMwM2FlOGYwNWVhZTczYTA3YWExODg4ZmE1MTY3ZDY2YjJhNGQwOTRkMTlmYmIzNWM1MTE5ZmQ1OTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkNDEzNDBjYzIzOWExNTljZTliNjAyMmU5ZjYzMjI4MzJlMmVhZDc2Y2FlOWU0NzU0ZDIxMGViOGZiNmQ1ZTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5927a0170fd94403b47d08b3ad9be691",
+      "statement": "check_plan_contract.py requires every backticked Consumes artifact to be produced by some task's Produces clause, except artifacts ending in .md or .json, and masks backticked text when detecting interface verbs so artifact names are not treated as clause separators.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check_plan_contract.py#L26-L47",
+          "version": "repo-lines-v1:sha256:0b59a13ae10c8f97b42d5a7600d31fbecc500d1e386221e583e1163d79ec39b6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyOTMxMDUyMmU3OWVkOThiMTBjMmUyODY0ZDM2NjQ5NzBmZjRjNzk4Y2E1Yjc5NmVlZjVlOTcxZTk5OTI3NGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViNWUzMmExMTkxNGI3MjkyZTM0ZTI5OTNmNDkyMTZkMTdiMWRhOTE3ZDM3NDA3MzBiZDE2MzlkYzNkOWIxMTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdkOTI4M2Q0MzcxZWU1YTQ2OTFiNzEyMDc2NmY3MDFkMzJlZTg4MzIwYWM3ZDk5OWI2NmJiMmJiYTM2MTM0MzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBjYjY1M2U0OWJmMTc0YTY4NmNlMjQ1ZGVlMjA5NzBkNjhkOTc2MzI3ZDY1ODExYTFhNTc5YTk0N2ZhZWQ5YTMifQ"
+        },
+        {
+          "resource": "repo://scripts/check_plan_contract.py#L86-L92",
+          "version": "repo-lines-v1:sha256:8223d0f59f3bb681f0a8a212b54595fb24a0a4e4c6d8ba080bf5ad4e77834a29:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTcyNjE0MmQyZGQyODEyZTBhOTg3ZWQwMjJjODdjNmY1YWRjZjBlYmIyMTA3NDg4ODkzZjMzNmI0YThkNTMwZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTU5ODhlNGMzZTM1ZTUwMjlmYjBjZWU3ODBkNDlmOTQ2NjcwMDMyYzk0YTAxZGFlZWNhNDNiOTU5YjUzMDEyYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjM2YjJkYjIzNmNlNjdhZjAzYzY2ODFhOWZlZDc2NzA0MjQ2NzM5NmFmMWFkZGExNWMyYWY3MjJmNDcwNTcyNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTJkNjhkMzAzYWU4ZjA1ZWFlNzNhMDdhYTE4ODhmYTUxNjdkNjZiMmE0ZDA5NGQxOWZiYjM1YzUxMTlmZDU5NiJ9"
+        },
+        {
+          "resource": "repo://scripts/test_check_plan_contract.py",
+          "version": "repo-file-v1:sha256:289f9f025ad8677508f8a747107f7621ce83e1beace5f23a859c1b4424001c19"
+        }
+      ]
+    },
+    {
+      "id": "claim_be75f4e6d53e45c29458232952e5851c",
+      "statement": "subagent-driven-development preflight stops unless every parsed task has Files/Action/Verify/Done, contract plans pass check_plan_contract.py, same-wave file sets are disjoint, every Verify is one automated command, and the plan meets the threshold; it then sets the plan status to active.",
+      "evidence": [
+        {
+          "resource": "repo://skills/subagent-driven-development/SKILL.md#L35-L47",
+          "version": "repo-lines-v1:sha256:f33fe6d981435d7a83dba5ebfd913292485cd22cafb80e29efa972e10966907d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwZTljYTYwM2MyZThmOWZmZGYwZjBmNWQyMzJlNjhkMmE4MTE1MWViOWM5Y2UxYjE4MGQ3ZmFhMjNkMWY2NTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOWI5NjEwYmU4NzZkNjEwZjljMmYyMTkzZDY2MDRjZDRiZGJmZWRmZjY4MTEwYThiMjQwMDYwMDU3OTEwNmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEyNzFjOGQyN2U1NDYzZGQwN2FhOGJiZTIwZDkzN2E2M2NmYzYyZDE3N2FiYTM1OGY1ODBkNDU2OWZkNjdkMDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEyZjc0YWI1ZGI4MzA1ODI5MGIwZmY3NWU3ZjdlZWEyOWEwMmFmNTQzNGIzZGRlMmRkODVlZjZkM2YxMWEyYWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e50dbca8db1e499a8a9a6e8519ee9623",
+      "statement": "harness-manifest.json registers rules/plan-format.md and scripts/check_plan_contract.py as the artifact-schema-plan contract surface consumed by render_plan.py, writing-plans, and subagent-driven-development.",
+      "evidence": [
+        {
+          "resource": "repo://harness-manifest.json#L73-L73",
+          "version": "repo-lines-v1:sha256:7e52b3cf3f6e1063184a410f5b0187b7fbd6aa13655e60d17acb682581357646:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2U1MmIzY2YzZjZlMTA2MzE4NGE0MTBmNWIwMTg3YjdmYmQ2YWExMzY1NWU2MGQxN2FjYjY4MjU4MTM1NzY0NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2U1MmIzY2YzZjZlMTA2MzE4NGE0MTBmNWIwMTg3YjdmYmQ2YWExMzY1NWU2MGQxN2FjYjY4MjU4MTM1NzY0NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWQyNThjNmQ3YTc1MGVmZWNjMWFmZjExZTYwNzg4NGIzZDMzYzIzNWYyOTY3YTNmYjNiNjc0YjZkNjRkZTgwOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWM2ZmQ2ZDc1ZGIxOGRiM2IwZmFhZjI5NmU1Njk1YjA5NTY0ZWNjOGFjN2Q5YTI1NjdjMzc3OWJjNDEwM2ZlOSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_bf54ec8288554b04a6f361a0eb72a072",
+      "statement": "check_open_questions.py scans every specs/*/QUESTIONS.md and reports open OQ blocks whose closes-at equals the shipping slug or slug#task plus malformed blocks; it is warn-only (exit 0) by default, exits 1 with REQUIRE_QUESTIONS_CLOSED=1, and --root defaults to the current directory.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check_open_questions.py#L1-L24",
+          "version": "repo-lines-v1:sha256:819f0d635ea543008fb1c141164f015e81f717e6022f9849b30e9c9d59d389bf:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2ODJjYmRiNGM4YjA3NTE4YmY0ODZjNTg5OTBmYzM5MTc4M2FhMjBhOTE2YmZiMjdhZDIxMWViMWQ1YzM2NDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMDNlY2RkNGE0ZDEwZjE5YzczZmQ0MmZkMTI0MzdmZDMzNTRhODI2ODE2MDVkYTUyNTVhOTdhMzkwNjhkYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1YjZlODcwNmI0MzA0N2YyYTZkYjY3ZjEzMjYzODU5NTYwNGU2N2YzNjk2Njg3NmNlMDE1OGYwMDUzZTZiZDEifQ"
+        },
+        {
+          "resource": "repo://scripts/check_open_questions.py#L77-L140",
+          "version": "repo-lines-v1:sha256:1a23e025c7b1f17f9ea977bfe9b72d23579fca6a9aa2cd4974467581b84c6589:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4Zjc1Mzc4ZmYyZWYwNDNhY2E3ZTY2MDI0NzM0MWE0NTg2ZGE2MDIwN2VjOWFjMTUyZDFlOTcwOWMwNTA1ZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2MjMzYjNmZmVhMzJhMjNkZjUzMDY1MzQzNDhmMmRlZTc3NmE1YTZmNzRmYjUzMzE3NWRkYzUzOWE4ZmU0NjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMwNjliNzJhYWU2NzA3OTIwMTcyZjBhZDQ5NmQ4MGFlOGQ5MmRiMmFlNDlkNTZlYjM0MjlmNWQ2ZGZkMTI0ODQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkNDEzNDBjYzIzOWExNTljZTliNjAyMmU5ZjYzMjI4MzJlMmVhZDc2Y2FlOWU0NzU0ZDIxMGViOGZiNmQ1ZTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2871c7d2b8a54ffd9846ea156dd95c56",
+      "statement": "ci-strict-gate.sh runs check_open_questions.py for each PLAN.md in the PR diff whose frontmatter is status: shipped at HEAD but not at the merge base, and under REQUIRE_QUESTIONS_CLOSED=1 blocks on findings, a check error, or a missing script.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/ci-strict-gate.sh#L101-L169",
+          "version": "repo-lines-v1:sha256:667037dacc000c1c8cde53fbbebeb1a740498fdf869c703026903052a0df1d6a:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlMjNmZDNhZjM2NzA1NDlmMjRhMjE3Mjg4OWViMWI3YzVjNTI5MDI3N2IzMTRkMGRmZWFjMzdmZjAyMzE0NWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NjlkMjM3Y2Q0MjBiOWQzOGI5ODFhMGE0ZjY3NzAxOTBhNGE4M2RjYTFmZTU2YzRmNWJhMWUyY2JjMGVmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEyOTVjNjY4YzUwMjNjYjE4ZDM3M2ZhNTU5NjJlMmQ1ODgzODYxNzg2ZWE0MDYxMzY5MDk4NzAyOTI1M2NkNDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlNzE2N2RjZjk3OGRmODlmMzVmZTMwYWY3OTU0YWJiNjY2NzA2NDRlZjM2ZTA3NjA4NjRlY2Q4MGNmYjU3ODcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c8e8e4169c074a9dae6b180982ae1b46",
+      "statement": "render_plan.py resolves its argument as an existing PLAN.md path or else a unique slug glob under specs/, writes a sibling PLAN.html by default (PLAN.review.html when --review is given), and fails with SELF-CHECK FAILED and exit 1 on empty output, leftover placeholders, a missing slug, or a wave-wrapper count mismatch.",
+      "evidence": [
+        {
+          "resource": "repo://skills/visual-planner/render_plan.py#L1433-L1451",
+          "version": "repo-lines-v1:sha256:d73ca500fff1cad89903dcded787ca3b479f6e99007e54b4f87748f211404f9f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczYzhiMTgzNzUyZGJkZjI0ZDNkZjlmNThhOGFjM2M0NzM5YmVlMjVjOTEwY2QwNDAwZTc3MjkxYTY3ZjU5ZjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkMjk0YmFiMmNiYThiMmEwZjkyYjQ5NzYzMDY3M2MyODZiNDdjYzRhZmU2NDg5NmE0NzRiNDZhN2IzMDdhMDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjYTg5ZGU1NjM5NTIzNjM4ZDY2NjBhOTQ4MmI3ZjQ0MmY1OTZkODM0YTVjMmJkNTk4ZjFlNTVmZTlhODM4ZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRjZjdhYmRlYmU1OTVhOWQyZmVlZjI3ZDc1MjUxMmU2YmYzZjQwZjg3OGNjZmRjZjlhOWI3OWIzNjY1Y2E2MmYifQ"
+        },
+        {
+          "resource": "repo://skills/visual-planner/render_plan.py#L1549-L1642",
+          "version": "repo-lines-v1:sha256:d7004176b341bf4d4c57c540c79de480c8a8128e5552fd07d72278281ae91766:eyJzZWxlY3RlZExpbmVDb3VudCI6OTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExMDIyNjZlYzdmNzA5ZDQ2YzM3Y2ZjZDY4M2E5ZjhhYjkyYWU0YTc3NjA0MGUzNjdkODE3ZjI0YzRhOWFiYTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjYjllMjZkNmJiNzUwMTYzOTA2YjY3OTcyZDI2MzJjMzk3YzA1ZGM3NDI4MTY4YjU5ODkxYjQ4MDcwMmI2NzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ0MTk4M2EzNmM4ZjkwY2I0YjRkOGY2ZjZiNzE4N2QzMTAzZDE4MzZlNmM1OGI1NWVlMmQ1NTBiZDZmYTg4MDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkNDEzNDBjYzIzOWExNTljZTliNjAyMmU5ZjYzMjI4MzJlMmVhZDc2Y2FlOWU0NzU0ZDIxMGViOGZiNmQ1ZTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5584a3f021014fb99ab2300f35ec5ca3",
+      "statement": "render_plan.py parses tasks by a fence- and inline-code-masked depth-balanced XML scan, then per-fenced-block XML, and finally falls back to the markdown `### Task` schema, dropping markdown headings that have no Files/Action/Verify/Done content.",
+      "evidence": [
+        {
+          "resource": "repo://skills/visual-planner/render_plan.py#L193-L299",
+          "version": "repo-lines-v1:sha256:76e941f7277098096a2d5b37f2dcc9a6bac6d4e61a38b3d325ac0bd73aa3f255:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI2YThmODY3YmNhNDUzYzAwMjMwZmM1MjViNzMxYTQ5NDYwYjJmNzllY2Y2ZWY0ZDdmYzg1Nzk2Y2RkYTI5NWNiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJkNWMwOTZmY2M3NDE0YmFjYzgwNzAyOWUzNDFhYTAyNDViZmJjMzEzY2M0NWZmOTljN2EwMzQwYmNmNjJmMjhlIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzMDJhZjk4ZmM0YjRiMmU4MzJkMWI4YzRlYTQ1MmZlMzc1YTliYzQwOGU2Yzg1ZWJiZWY3YTlhYTRhYjdiNzYxIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlNjRmOGRmNGNkODM4YWQ4ZmVlY2QwNDhkNDk4MTNiZmRkMDAzZTg5MGRkYzMyN2RmMzM1Zjk0Njg3MzcwMmRhIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_5b536cd0656447f8abe0336a434d74bc",
+      "statement": "render_plan.py --summarize injects or replaces a sentinel-delimited At-a-glance block (count line, wave×task table, flowchart LR Mermaid, Progress checklist) before the first `## ` heading, matches sentinels only as whole lines, and writes PLAN.md only when content changes.",
+      "evidence": [
+        {
+          "resource": "repo://rules/plan-format.md#L185-L200",
+          "version": "repo-lines-v1:sha256:5c76a2b7a30adcbaaa6654a3b9edf653d83b288df5938d5d1432a2ee5382469e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5OGY1ODczM2Y5ZWE0ZDg2NzA3YjVhYjJlYmE0NTc0MjM3OWEwNWY1OGNhMjhhNWVjNzJlMDY2MWZjYTFiOWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmMTc1ZGJmZTg4ZTA4ZjRjZTUyYjdkMzkxNzFjYWYzNWUzZmEzNjI1MmUxM2RhYzBkNjE4ZjI1YzhiN2MzNWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNkOTg2N2U2MzYzMWJiMzExMzUyOWZhOGM5YzgyMWQ1YTRmMzRlOGFiNTk0OWU3YjY4MDljMDczODBiYjc1NWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://skills/visual-planner/render_plan.py#L680-L831",
+          "version": "repo-lines-v1:sha256:92062f237ea8b16cdefde5040ae4f24b9e47c241ccc2c8b88c8f9a622923d980:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5M2ZlNWFmZDY5MDQ5NGM4YmZmNDhmM2VjNGRmYTUwMjU5MTZjNWYyZTljYjY1MWJlZjY0Yzk1MzU5YTgwMTNmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlNWJjNDcxMWVjY2EwNDUwYWZjODMyNzc5YTg4Njc2YTdjNjk2MGZhM2RhNWFmNDEwZWUwMmQxZTAxNTE1OTFhIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI1MmI0OTYyYzg0ZTBiMmUxMDVjMTQ2MzJkZjU2NDI0NjQwNDg0MTExZDQwZjk1OTAzZGE0NWI3ZTUxZGZjZmVkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1OTE4MzkyYTAzZDExNWI0ZjZmMTJjMzk4MGQ1NDIxZjkxMzliNDBkNzIwZmRiYmU2MTMzZGM2MGNlODZiYzExIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_bac5bc3813004a7e927d09f0d76a29bf",
+      "statement": "render_plan.py marks a task done only when its id appears in a Status Log entry classified as build or containing ✓ or 'complete', intersected with real plan task ids.",
+      "evidence": [
+        {
+          "resource": "repo://skills/visual-planner/render_plan.py#L505-L599",
+          "version": "repo-lines-v1:sha256:f30990c29448e5a401ae7a139d872a2d5ac22ae598a45d256a778391dbb4f7e5:eyJzZWxlY3RlZExpbmVDb3VudCI6OTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlNWJkNDcyNDAwN2VhNDU5MzIwYmQyOTgwY2NlMjBmMTJiNzhhZGQ2ZGFkOTQ2MjY4Yjc4YjllZTQ2ZjUxOTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhNmE5YjFlMzk0OWNhMThmMWUyOGRlZGNiODM4MjRlY2NlZjEzYjQ0MGY2ZTM3MzdiMDg3MDc1NjUyODYyNWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM0Y2Y2ODUyZjJkZTlkNjU2YTU2OTRjNjA5NTRmOWNmNDkzOWJhM2EwZDFiZTYyMTE4YzliNWZhOWIxYTUzYzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAzNTU4NWU4OWYxMmFlMjQwY2Q3NDViN2IyMWQzMjdkZDQzZmQ0MzJlNGM1Njc2MzgzYTY4OWM4OWI4ZjA2MTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_936abe18876c45028842909efcb5dd1a",
+      "statement": "The visual-planner review overlay uses --emit-files to print plan files as JSON and --review with a .plan-review.json sidecar to render a Plan Review section of per-file status, dependents, tests, and risk, with high-risk file cards and a missing-file warning.",
+      "evidence": [
+        {
+          "resource": "repo://skills/visual-planner/SKILL.md#L32-L52",
+          "version": "repo-lines-v1:sha256:960da24bb14865a41e305b8dfcaa9fd82c4d22c9b270c62e07970c5d7a302a0c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3MzVjOWRlYTg1OWVjMGVjOTA2YWYxZDliNTVhMWM4ODEyNDBkY2JmMTM2NjE2NTgzNDZiZTRkNDk0ZDRkZGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIyYThjNTE1MGQ2ZWUwMWExNzE2NDM0NzE5YjY5MDk3ZTYzYjViNGIwM2VmODU2MmQ0ODg0NGE5ODgyNjI0ZTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5MWY1OTE0YjdlYjQ3NzYzZDU3MTBjODdhNDE5ZTdkNTZhMzFhZDFmZGM4ZjFkMTAyYjY5YzBkNzJjZTI1NWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlY2U5NjA2Y2FmOGI3ZDEyODg4Y2E0YTI4MzUwYTBmNzBiM2E3MjUzYzI3MzUwMmNlMjQxNmVlOTk0MmEwMTgifQ"
+        },
+        {
+          "resource": "repo://skills/visual-planner/render_plan.py#L1305-L1413",
+          "version": "repo-lines-v1:sha256:2cfce15b0901f9917a386674cb9143e99f286aa31a77f5a082548763daf24aac:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI4NDE2MzAxNTkwZjE2NjhjNDYzNDZhYzI2YWRjYTZhMTVlOGQ4MWJmNjZiNzQ0MWEwNzM0YjA0OTdiZmFjNTBlIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIzMGMxZjE4OGYxNDJlZDdhODI0NjgwYjIwNzE3MmM1NTE5YmM2MTRhNDhmZGE3Y2YxNjdlZGI4ZGRmNzk5NTZjIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5OGQxMzgxY2RlYzU2YjMwZDc3ZDMwNTliZmM2ZTIxNDZlYTY4NWQ4ODkwNzg4ZTQ4YmRjNTZjMGY4M2E0N2M5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI0YTliYjRiMjNlMWNmZTdjMmVmMGYwMmYxNTVjODcyNjg2NGQzZTA1MTU0MmZkMzU3Yzc4ZGY2YTEwYTRjM2FmIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_a26b9553b1f1452b8b3a37cacaed929d",
+      "statement": "Changes to render_plan.py fall in the blocking high-blast risk category: commit-gate.sh tags staged render_plan.py paths as high-blast, and ci-strict-gate.sh includes render_plan.py in its BLOCK tier requiring high-risk SUMMARY proof.",
+      "evidence": [
+        {
+          "resource": "repo://harness-manifest.json#L42-L46",
+          "version": "repo-lines-v1:sha256:abdfdfbc07c4d394764dd6f275c529837d88b6bf3d6a164818930f2041d55921:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDk1YjhjNWJmODYzNzQzNjcxZGVmM2Y2MzBlYjIzMmQ1OWE3YTYzNGEwNzBmYzQzNmVlYzM3YTg2NzRlNmMzMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjk3OGUyNTAzYjhjZjM3YTA2ZjdkNmYwYTNhNmI2ZmUzNTY5MWZiY2FiNTBiODc3NWNhYjZmYWJjNzFjNTkyYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDU0YTY5ZjJmYzE5MmY2OTcyMmI5MzVhYmNiZDMxYTZjNzMxOThjNDE4NzJiYzg1NDkzYzM0ODM1MDY1NTA4NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODc2OGQ1ZmZlYzBmMjUwY2E5NTUwNTE1ZGRmZWMxYzQyZjg5ODc2ZWY4NGZlZGUzNDQ2OTVhYmNiZjI0OWFhMCJ9"
+        },
+        {
+          "resource": "repo://hooks/commit-gate.sh#L465-L465",
+          "version": "repo-lines-v1:sha256:23f1b69f27ab8bb5f859631130eec0ccd23115b5ee43807ba82cb15aa8861d4c:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjNmMWI2OWYyN2FiOGJiNWY4NTk2MzExMzBlZWMwY2NkMjMxMTViNWVlNDM4MDdiYTgyY2IxNWFhODg2MWQ0YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjNmMWI2OWYyN2FiOGJiNWY4NTk2MzExMzBlZWMwY2NkMjMxMTViNWVlNDM4MDdiYTgyY2IxNWFhODg2MWQ0YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDk4NzNjMTE2OTkyZTY0NjQ5MDk2Y2QyNGIyMDMwZWVhNTFmMWQyMTc3ZTdlZWFkNTZlMmUzOWIxNmJiNGQxMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjAzMDRmMTZjYjY5ZDQwYWNiNWJlNTFmMDJlMWNmMDg2YjEyMWIyOWMyZjVmMzM1NmU4ZTQyNmExMGVhOTBkYyJ9"
+        },
+        {
+          "resource": "repo://scripts/ci-strict-gate.sh#L10-L13",
+          "version": "repo-lines-v1:sha256:eb691bc6b5550f5ea7ed38dc320d04b2acbda273cc50b5d08301e11bfde32b5e:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmQyZmUxMDFiMGYzNTBmODU2YjYyYzk5MzJjNGFhNDlhMDVhMTJhN2U0NGIxYTdkZDQxNTFmNGE4MDA5OTIwOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTIzYTE3YmRjZmNiNWU4ZDEzZGZjYjNjMTUxNjUxZmY3ODE3YjU3Nzk3ZDdmNGE5NDk0NWIzNTRjYmVlYjFhNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGI5NmYwZjUxYWRiYjNiZTZmZTRiNmE3YzVjYjkxOThlNzgzYzI0NWExZWUxMTAzYzcxNjE4NWRhNWY3YjIyYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGZjMGQ1NWI1NmIxYWRmYjhkNTlmNGQyOWE1MGNlMzY1NzBiYjM1MWZkY2Y3N2I2NzI0NjAxODc1NTdkOTk3MSJ9"
+        },
+        {
+          "resource": "repo://scripts/ci-strict-gate.sh#L64-L64",
+          "version": "repo-lines-v1:sha256:18998aa7c20e8520e40ec9bd7b1c51b0f720671cf28a845c27dd4c00b95a1cef:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTg5OThhYTdjMjBlODUyMGU0MGVjOWJkN2IxYzUxYjBmNzIwNjcxY2YyOGE4NDVjMjdkZDRjMDBiOTVhMWNlZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTg5OThhYTdjMjBlODUyMGU0MGVjOWJkN2IxYzUxYjBmNzIwNjcxY2YyOGE4NDVjMjdkZDRjMDBiOTVhMWNlZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTk3ODk5ZWEyZGZmZjBkOGFhYTM4YWE5NDk2ZGNjZDdhZGY4ZGZiZGQ4M2Q4MDVjMWNkMzA5ODIyNDlmODM0MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTlkNTY4NzFkMTlmNTE5MjFiNGYwOGMzMTVmZTIyMjIwNTU3MmJiNjI3NmY2MGMwMjQ5N2M4MzdjZGI3YzA5NiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_e6cf986480554dbab2effbee5f95bc3b",
+      "statement": "commit-gate.sh check_plan_scope uses the union of XML <files> and markdown Files bullets from the status: active PLAN.md as an allowlist, warning on staged non-bookkeeping paths outside it and blocking when BLAST_RADIUS_STRICT=1; it is a no-op without an active plan.",
+      "evidence": [
+        {
+          "resource": "repo://hooks/commit-gate.sh#L532-L588",
+          "version": "repo-lines-v1:sha256:efaf7fe9f0af4e775a3e453726fbd8474d46fadaf37b9aca63445d6bfcf417cf:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkZjFjMzkyMzg3YmU0OGYyMzNiNzA3NjlhOGIxYTgxN2Q5ZjA1MjNmOTJmMTY5NmIyYjNhNzZmY2JmM2VhODAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI2MTQzYjg5ZWViZjBjOTkxZWQ2NzM5MzVmNWVkMjRmZDI3YmYxNTY5ZDRmNmRhMWMwYWU3NDExNGY2ZDUxNWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2ODAyODY2YTBlMGU0ZGRmM2Y4ZGNlNjMxYTU1NDk3YWFmMDQxNTc0ODI1OTllYjVjZDE0M2U3YTkxMDJhMzUifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.7.2",
+    "at": "2026-10-16T04:08:21.021Z"
+  }
+}
