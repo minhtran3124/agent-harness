@@ -28,6 +28,9 @@ runs `verify_summary.py --lane` on a staged SUMMARY.
 - Task 6.1 — the template comment "One probe for each prediction." states coverage; the one-probe-to-one-hypothesis rule now lives in the `tests: H<n>` field shape.
 - Task 6.2 — the HYPOTHESIS rule cannot tell which file a heredoc writes, so an unrelated early `H1` line could make the SC-30 order pass falsely (never fail falsely). Task 7.1's first HYPOTHESIS line is checked by hand.
 
+- Task 9.1 — the dispatch sentence "Dispatch the `task-reviewer` to Read <path> first and follow it." holds two actions. Not fenced, ste-lint 0. The file has 1 word of headroom.
+- Task 8.1 — four Minors folded into SUMMARY `### Not auto-verified` (DC6 post-run rule, `"$PWD"` input, PROBE false positive, implementer-reported green and clean-clone state). The strict conversion was confirmed byte-identical by the controller.
+
 ## Fix rounds
 
 - Task 1.2 — round 1 (`28b9aa2`): three Minors applied; re-review pass/approved, no findings.
@@ -38,6 +41,11 @@ runs `verify_summary.py --lane` on a staged SUMMARY.
 - Task 3.1 — round 1 (`d7c60d8`): plan Verify/SC-27 aligned to DC2 by the controller (`7970c19`); extractor shows paths past the cut, marks subagent calls, skips bad lines; logs re-extracted from saved streams. Re-review pass/approved, two Minors (above).
 - Task 3.2 — reviewed pass/approved (Minors above). SC-30 carried to Task 5.1.
 - Task 4.1 — round 1 (`d4d7507`): rewrite widened to the whole `skills/diagnosing-bugs/` prefix (DC1). Re-review pass/approved, no findings.
+
+## Final review chain
+
+- Correctness review at `f27c305`: blocking L1, L4, L5 (75); L2 (50) fixed with them in `168345c`. Re-score: all four fixed; new N1 (40) and D-b (55, a #308 deletion that did not survive) fixed in `a411aa9`. Advisory, not fixed: L3, L6, L7, L8, N2. Full table: SUMMARY `### Correctness Review`.
+- Intent review at `f27c305`: 8 findings, none blocking. #4 = L1; #8 recorded in prose (whole suite is not a Verify row). Full table: SUMMARY `### Intent Findings`.
 
 ## Harness-Delta
 

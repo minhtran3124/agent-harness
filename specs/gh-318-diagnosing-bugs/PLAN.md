@@ -10,7 +10,7 @@ created: 2026-10-17
 <!-- AT-A-GLANCE:BEGIN (generated — do not edit; refreshed by render_plan.py --summarize) -->
 ## At a glance
 
-**15 tasks · 9 waves · 30 files · 14/15 done**
+**15 tasks · 9 waves · 30 files · 15/15 done**
 
 | Wave | Task | Title | Files | Done (acceptance) |
 |---|---|---|---|---|
@@ -90,7 +90,7 @@ flowchart LR
 - [x] 6.2 — HYPOTHESIS marker counts a Bash heredoc (wave 6)
 - [x] 7.1 — Replay run on the committed-hypotheses skill (wave 7)
 - [x] 8.1 — Clean replay without fix history or test hints (wave 8)
-- [ ] 9.1 — Deliver the review inputs to fresh reviewers (wave 9)
+- [x] 9.1 — Deliver the review inputs to fresh reviewers (wave 9)
 <!-- AT-A-GLANCE:END -->
 
 ## 1. Motivation
@@ -606,3 +606,4 @@ Not an SC row (Guardrail 4): `bash scripts/run-tests.sh` must exit 0 at branch f
 - 2026-10-17 — user approved DC5 (clean replay); added task 8.1; added SC-37, SC-38, SC-39
 - 2026-10-17 — task 8.1 complete; commits c5e9d82, 017e017; SC-37 passed under the DC6 post-run loop rule (strict conversion kept, fails); task review approved with four Minors
 - 2026-10-17 — context-propagation audit FAIL (F1 review prompt not required to reach the diagnosis reviewer; F2 task reviewer cannot see diagnosis.md Seam); added task 9.1
+- 2026-10-17 — task 9.1 complete; commit bdc0025; task review approved; context-propagation audit re-run PASS
