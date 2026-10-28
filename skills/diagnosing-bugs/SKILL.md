@@ -32,8 +32,7 @@ Write `specs/<slug>/diagnosis.md` from `references/diagnosis-template.md`.
    red on this bug. Run it as written, with no pipe, so its exit code shows the red.
    When a human must act, copy
    `skills/diagnosing-bugs/scripts/hitl-loop.template.sh`. Ask the human to run it and paste the output.
-   When no loop is possible, write an `ESCALATIONS.md` block with `decision: pending`.
-   List what you tried and need. Then stop.
+   When no loop is possible, stop and ask the owner. List what you tried and need.
    Done when: `Loop:` holds the command and its redacted red output.
 2. **Reproduce and minimise.** Delete one input element at a time. Add no probe or debug log.
    Done when: the loop shows the symptom that the user described, and each element in `Repro:` is necessary.
@@ -44,29 +43,28 @@ Write `specs/<slug>/diagnosis.md` from `references/diagnosis-template.md`.
 4. **Instrument.** Change one variable in each probe.
    Tag each debug log with a unique `[DEBUG-xxxx]` prefix. Do not commit a probe.
    When the probes refute every hypothesis, go back to Phase 3 with a new list.
-   A second full refutation writes an `ESCALATIONS.md` block with `decision: pending` and stops.
+   After a second full refutation, stop and ask the owner.
    After you confirm one hypothesis, delete every probe and throwaway harness.
    Done when: `Confirmed:` names one hypothesis that the probe evidence supports, and no probe stays in the working tree.
 
 ## Diagnosis review
 
 Dispatch the `task-reviewer` to Read `skills/diagnosing-bugs/references/diagnosis-review-prompt.md` first and follow it.
-Give it the `diagnosis.md` and `SUMMARY.md` paths, not the prompt text.
+Give it the `diagnosis.md` path, not the prompt text.
 Start Phase 5 only after `spec_verdict: pass` and `quality_verdict: approved`.
 On any other verdict, revise `diagnosis.md` and review again.
-A second failure writes an `ESCALATIONS.md` block with `decision: pending` and stops.
+After a second failure, stop and ask the owner.
 
 ## Phases 5 and 6
 
 5. **Fix.** On the tiny lane, write the red test at the `diagnosis.md` `Seam:`.
    Commit the red test. Then commit the fix.
-   Record the `red` and `green` rows that `rules/auto-correct-scope.md` names.
-   When `diagnosis.md` has `Seam: none — <reason>`, record a finding in `SUMMARY.md`.
-   Write `Red test exempt: <reason>` in SUMMARY `### Verify`.
+   Report the red and green commands and their exit codes in your final message.
+   When `diagnosis.md` has `Seam: none — <reason>`, write `Red test exempt: <reason>` in your final message.
    On the normal and high-risk lanes, continue the lane route with `diagnosis.md` as an input.
-   Done when: the red test commit comes before the fix commit, or SUMMARY `### Verify` has `Red test exempt: <reason>`.
+   Done when: the red test commit comes before the fix commit, or the final message has `Red test exempt: <reason>`.
 6. **Cleanup.** Run the Phase 1 loop again.
    Search for `[DEBUG-` in the fix diff and in the working tree, untracked files included.
    Delete each tagged log or throwaway harness that you find.
-   Name the confirmed hypothesis in the commit message and in SUMMARY `Rationale`.
+   Name the confirmed hypothesis in the commit message and in the final message.
    Done when: the loop is green, the search finds no tag, and both texts name the confirmed hypothesis.

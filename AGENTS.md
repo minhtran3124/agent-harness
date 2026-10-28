@@ -7,13 +7,14 @@ This repository is a Claude Code skills framework and workflow harness. The main
 - `skills/<name>/SKILL.md` — invocable skill instructions and related prompts/scripts.
 - `agents/` — sub-agent role definitions.
 - `hooks/` — three small Bash hooks: secrets scan on commit, PR-opened reminder, merged-worktree cleanup.
-- `rules/` and `templates/` — governance rules and the scaffold files `init-structure.sh` copies into a consumer repo (`templates/structure/`).
+- `rules/` — the one behavioral rule (`behavior.md`).
+- `templates/` — the scaffold files `init-structure.sh` copies into a consumer repo (`templates/structure/`).
 - `scripts/` — deployment, installation, linting, and validation utilities.
 - `adapters/` — runtime-entry bindings.
-- `techstacks/` — project-owned stack profile read by `rules/architecture.md` and `rules/guidelines.md`; intentionally near-empty in this meta-repo.
+- `techstacks/` — project-owned stack profile for a consuming repo; intentionally near-empty in this meta-repo.
 - `tests/hooks/` and `tests/scripts/` — shell contract and integration tests.
 - `scripts/test_*.py` and `test_*.py` files under `skills/` — Python unit tests.
-- `docs/` — knowledge (solutions, ADRs, research). `specs/` is local scratch (gitignored): plans, research briefs and run state stay on your machine.
+- `docs/` — knowledge (solutions, ADRs, research). `specs/` is local scratch (gitignored): plans and research briefs stay on your machine.
 
 The root `CLAUDE.md`, `HARNESS.md`, and `skills/README.md` describe the supported workflow and component inventory. Treat them as contracts when changing hooks, skills, or schemas.
 

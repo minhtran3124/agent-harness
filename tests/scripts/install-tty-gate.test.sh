@@ -14,7 +14,7 @@
 source "$(dirname "$0")/../lib.sh"
 
 INSTALL="$ROOT/scripts/install-harness.sh"
-OWNED_TOP_FILE="rules/architecture.md"   # a BOOTSTRAP_OWNED_FILES entry (see deploy-harness.sh)
+OWNED_TOP_FILE="rules/behavior.md"   # a BOOTSTRAP_OWNED_FILES entry (see deploy-harness.sh)
 
 if ! command -v python3 >/dev/null 2>&1; then
   echo "  skip  install-tty-gate.test.sh: python3 needed to sever the controlling terminal"

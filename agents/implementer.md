@@ -21,11 +21,13 @@ convention this repo has not stated.
 
 ## Scope
 
-Implement the task as specified and nothing else. When the task requires a change the spec did not
-authorise, classify that change against `rules/auto-correct-scope.md` and do not decide case by case.
-Under that rule, Rules 1–3 auto-apply and are logged. Rule 4 stops and escalates.
+Implement the task as specified and nothing else. Fix small bugs and blockers in your own change
+and report each as a deviation. Stop and report BLOCKED instead of changing a schema, a public
+contract, auth, a dependency, `settings.json` or `hooks/`, or removing a feature the spec did not
+name.
 
 ## Handoff
 
-Return the summary shape in `rules/orchestration.md` → *Subagent contract*. The orchestrator acts
-on that summary alone and does not re-read your work.
+Return a summary the orchestrator can act on without re-reading your work: status (DONE | BLOCKED |
+NEEDS_CONTEXT), commits (sha, subject), files touched, the Done-when result, deviations, and any
+blockers.

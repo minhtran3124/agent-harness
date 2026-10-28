@@ -24,13 +24,10 @@ set -e
 ROOT="$(cd "$(dirname "$0")/.." && pwd -P)"
 
 # Files a consuming repo owns: a re-sync must never silently clobber them with the meta-repo's
-# generic copy. These are per-repo files the project maintains by hand — the stack architecture
-# profile, engineering guidelines, the agents convention index, and the behavior skeleton the
-# project tunes. (`init-structure.sh` may create some on first setup; thereafter they are
+# generic copy. These are per-repo files the project maintains by hand — the agents convention
+# index and the behavior skeleton the project tunes. (`init-structure.sh` may create some on first setup; thereafter they are
 # hand-maintained.) Deliberately NOT named PROTECTED_* — that prefix already denotes the unrelated
 BOOTSTRAP_OWNED_FILES=(
-  "rules/architecture.md"
-  "rules/guidelines.md"
   "rules/behavior.md"
   "agents/PROJECT.md"
 )
@@ -43,7 +40,6 @@ BOOTSTRAP_OWNED_FILES=(
 CONSUMER_SCRIPTS=(
   "rebuild_solution_index.py"
   "render_skill_prompt.py"
-  "run_at_commit.py"
   "write_adrs.py"
 )
 # NOTE: agents/*.json and adapters/ are source-time adapter inputs and must NEVER deploy —
@@ -153,12 +149,18 @@ BACKUP_TS=""
 # under the 6 synced dirs. Written to $OUT/.harness-deployed at the end; read at the start of
 # the NEXT deploy to prune entries the harness previously shipped but source has since deleted.
 # Safe by construction: only paths in the PREVIOUS harness manifest are ever eligible to prune,
-# so a consumer's own additions (never in the manifest) are never touched. See
-# specs/deploy-prune-orphans/.
+# so a consumer's own additions (never in the manifest) are never touched.
 SYNCED_DIRS_RE='^(skills|agents|hooks|rules|templates|workflows|scripts)/[^/]+$'
 # Dirs the harness shipped in an earlier version and no longer does. They stay prune-eligible, so
 # a re-sync removes the manifest-listed leftovers (runtime/ held the removed run-state FSM); they
 # are never copied. A consumer's own file there is not in the manifest, so it survives.
+# Files an earlier harness version shipped as consumer-OWNED (BOOTSTRAP_OWNED_FILES) and no longer
+# ships. Pruning them is correct (the rule is gone) but the consumer may have edited their copy, so
+# prune_orphans backs one up under .harness-backup-pruned/ before it removes it.
+RETIRED_OWNED_FILES=(
+  "rules/architecture.md"
+  "rules/guidelines.md"
+)
 PRUNE_DIRS_RE='^(skills|agents|hooks|rules|templates|runtime|workflows|scripts)/[^/]+$'
 DEPLOYED_LIST="$(mktemp)"        # accumulates `<dir>/<entry>` written this run
 record_deployed() { printf '%s\n' "$1" >> "$DEPLOYED_LIST"; }
@@ -237,7 +239,7 @@ preflight_protected() {
 # ---------- work units ----------
 prep_dir()        { mkdir -p "$OUT"; }
 
-# Apply the resolved POLICY to a top-level protected FILE entry (e.g. rules/architecture.md)
+# Apply the resolved POLICY to a top-level protected FILE entry (e.g. rules/behavior.md)
 # instead of copy_dir's blind rm -rf + cp.
 sync_protected_file() {
   local rel="$1" entry="$2" dst="$OUT/$1"
@@ -395,17 +397,12 @@ rewrite_derived_paths() {
 import re, sys, pathlib
 out = pathlib.Path(sys.argv[1]); names = sys.argv[2:]
 pats = [re.compile(r'(?<![\w./-])scripts/' + re.escape(n)) for n in names]
-# render_plan.py is invoked by path from writing-plans, the wave-boundary rule and the ship step;
-# it ships under .claude/skills/. Anchored to the `python3 ` command form so prose mentions
-# (Rule-4 examples, the harness-repo test map) are left alone.
-pats.append(re.compile(r'python3 skills/visual-planner/render_plan\.py'))
 # The asd-ste100 skill names its linter by path. In a consumer the linter is under .claude/skills/.
 # feature-intake and the diagnosing-bugs skill name skills/diagnosing-bugs/ files (SKILL.md,
 # scripts/, references/) by path; the whole prefix is under .claude/skills/ too.
 pats.append(re.compile(r'(?<![\w./-])skills/asd-ste100/scripts/ste-lint\.py'))
 pats.append(re.compile(r'(?<![\w./-])skills/diagnosing-bugs/'))
 subs = ['.claude/scripts/' + n for n in names] + [
-        'python3 .claude/skills/visual-planner/render_plan.py',
         '.claude/skills/asd-ste100/scripts/ste-lint.py',
         '.claude/skills/diagnosing-bugs/']
 changed = 0
@@ -578,15 +575,21 @@ rm -f "$OUT/.harness-profile" "$OUT/harness-manifest.json" "$OUT/harness-models.
 # ---------- prune orphans (entries the harness shipped last time, gone from source now) ----------
 # Eligible = in the PREVIOUS manifest AND not deployed this run. Shape-guarded to the 5 synced
 # dirs. Consumer additions never entered the manifest → never eligible. First deploy (no prior
-# manifest) prunes nothing. See specs/deploy-prune-orphans/.
+# manifest) prunes nothing.
 prune_orphans() {
-  local prev="$OUT/.harness-deployed" path
+  local prev="$OUT/.harness-deployed" path retired
   [ -f "$prev" ] || return 0
   while IFS= read -r path; do
     [ -n "$path" ] || continue
     printf '%s' "$path" | grep -qE "$PRUNE_DIRS_RE" || continue      # defense-in-depth
     grep -qxF "$path" "$DEPLOYED_LIST" && continue                    # still shipped → keep
     [ -e "$OUT/$path" ] || continue                                   # already gone
+    for retired in "${RETIRED_OWNED_FILES[@]}"; do
+      if [ "$path" = "$retired" ]; then
+        mkdir -p "$OUT/.harness-backup-pruned/$(dirname "$path")"
+        cp -R "$OUT/$path" "$OUT/.harness-backup-pruned/$path"
+      fi
+    done
     rm -rf "$OUT/$path"
     printf "  ${Y}✗${R}  pruned stale ${D}%s${R} (removed from harness source)\n" "$path"
   done < "$prev"

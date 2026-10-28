@@ -61,7 +61,7 @@ assert_rc 0
 
 t "placeholder paths in rules/*.md are skipped, not flagged"
 r=$(lint_repo)
-printf 'Write `tests/services/test_<entity>.py` next to it.\n' > "$r/rules/plan-format.md"
+printf 'Write `tests/services/test_<entity>.py` next to it.\n' > "$r/rules/local-rule.md"
 run_lint "$r"
 assert_rc 0
 

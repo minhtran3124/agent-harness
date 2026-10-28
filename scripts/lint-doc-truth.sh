@@ -112,7 +112,7 @@ tgt = sys.argv[1]; claude = os.path.join(tgt, ".claude")
 ROOTS = ("skills/", "rules/", "hooks/", "agents/", "templates/", "workflows/", "scripts/", ".claude/")
 # Paths a consumer legitimately does not have: illustrative examples, and artifacts made at run time.
 SKIP = {"foo.py", "plan.md", "kb-embedding/voyage.md", "techstacks/conventions.md"}
-SKIP_SUFFIX = (".plan-review.json", "break-glass-log.md", "review-receipt.json")
+SKIP_SUFFIX = ()
 # Scan INSIDE each backtick span rather than only spans that are exactly a path: the highest-risk
 # form is a command (python3 scripts/write_adrs.py --input <file>) inside a code span, which
 # would miss entirely -- and an unshipped helper invoked that way is precisely the bug this checks.
