@@ -8,7 +8,7 @@ Skill framework for Claude Code (the only supported runtime): reusable prompt-ba
 
 ## Models
 
-- Main session: Sonnet 5.5. Coding: Sonnet 5.5 (`coding` agent). Testing: Haiku 5.5
+- Main session: Sonnet 5.5. Coding: Sonnet 5.5 (`implementer` agent). Testing: Haiku 5.5
   (`test-runner`). Research and search: Haiku 5.5 (`researcher`). Intent review: Sonnet 5.5
   (`intent-reviewer`).
 - Advisor (`advisor`): Opus 5.5 by default. Use Fable 5.1 only when the Opus advice did not
@@ -31,7 +31,7 @@ feature-intake   readiness gate: READY | CONFIRM | GRILL | BLOCKED, depth S | M 
   -> grilling    important tickets: interview the owner until the decisions are settled
   -> brainstorming + xia2   depth L: pick the design, then research the code
   -> writing-plans          depth M and L
-  -> implement   one coding subagent per step, each in an isolated worktree
+  -> implement   one implementer subagent per step, each in an isolated worktree
   -> /code-review, intent-review
   -> finishing-a-development-branch   push and open a PR; a human merges
 ```

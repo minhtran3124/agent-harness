@@ -1,6 +1,6 @@
 # agents — Project Configuration
 
-Thin **index** consumed by the execution sub-agents (`coding.md`, `test-runner.md`). It does
+Thin **index** consumed by the execution sub-agents (`implementer.md`, `test-runner.md`). It does
 **not** restate conventions. It points to the docs that already hold them. It carries only the few
 execution facts that no other doc reliably contains.
 

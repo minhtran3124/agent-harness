@@ -37,7 +37,7 @@ writing-plans  (depth M and L)
 using-git-worktrees  (manual runs; a Workflow uses isolation: 'worktree')
       ↓
 implement
-  → one fresh coding subagent per step in an isolated worktree; runs Done-when; fix loop capped at 3
+  → one fresh implementer subagent per step in an isolated worktree; runs Done-when; fix loop capped at 3
   → hands back files touched + verify output; review is /code-review plus intent-review
       ↓
 compound  (if non-obvious pattern found)
@@ -117,7 +117,7 @@ from the harness checkout run `bash scripts/init-structure.sh --root <project>`,
 | Skill | Trigger | Output |
 |---|---|---|
 | `using-git-worktrees` | Manual runs that need an isolated worktree from the right base (a Workflow uses `isolation: 'worktree'`) | Isolated worktree + branch |
-| `implement` | Carrying out an agreed plan — a fresh coding subagent per step in an isolated worktree, Done-when run, fix loop capped at 3 | Commits, files touched and verify output per step |
+| `implement` | Carrying out an agreed plan — a fresh implementer subagent per step in an isolated worktree, Done-when run, fix loop capped at 3 | Commits, files touched and verify output per step |
 
 ### Review & Shipping
 

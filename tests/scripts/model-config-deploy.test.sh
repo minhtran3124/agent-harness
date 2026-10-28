@@ -14,7 +14,7 @@ BASE=$(new_target)
 deploy "$BASE" >/dev/null; rc_base=$?
 
 T=$(new_target)
-printf '{"agents":{"coding":{"effort":"high"}}}\n' > "$T/harness-models.json"
+printf '{"agents":{"implementer":{"effort":"high"}}}\n' > "$T/harness-models.json"
 mkdir -p "$T/.claude/skills/my-skill"
 printf -- '---\nname: my-skill\ndescription: consumer skill\nmodel: sonnet\n---\n\nBody.\n' > "$T/.claude/skills/my-skill/SKILL.md"
 cp "$T/.claude/skills/my-skill/SKILL.md" "$T/my-skill.orig"
@@ -23,19 +23,19 @@ deploy "$T" >/dev/null; rc=$?
 t "default deploy and deploy with a valid harness-models.json both exit 0"
 if [ "$rc_base" = 0 ] && [ "$rc" = 0 ]; then pass; else fail "base rc=$rc_base, configured rc=$rc"; fi
 
-t "configured coding.md holds 'effort: high'"
-if grep -qx 'effort: high' "$T/.claude/agents/coding.md"; then pass
-else fail "frontmatter: $(sed -n '1,8p' "$T/.claude/agents/coding.md" | tr '\n' '|')"; fi
+t "configured implementer.md holds 'effort: high'"
+if grep -qx 'effort: high' "$T/.claude/agents/implementer.md"; then pass
+else fail "frontmatter: $(sed -n '1,8p' "$T/.claude/agents/implementer.md" | tr '\n' '|')"; fi
 
-t "coding.md differs from the default deploy by exactly the effort line"
-d=$(diff "$BASE/.claude/agents/coding.md" "$T/.claude/agents/coding.md" | grep '^[<>]')
+t "implementer.md differs from the default deploy by exactly the effort line"
+d=$(diff "$BASE/.claude/agents/implementer.md" "$T/.claude/agents/implementer.md" | grep '^[<>]')
 if [ "$(printf '%s\n' "$d" | wc -l | tr -d ' ')" = 2 ] \
    && printf '%s\n' "$d" | grep -qx '< effort: [a-z]*' && printf '%s\n' "$d" | grep -qx '> effort: high'; then pass
 else fail "diff: $(printf '%s' "$d" | tr '\n' '|')"; fi
 
 t "other agent files are identical to the default deploy"
 ok=1; for f in "$BASE"/.claude/agents/*.md; do
-  n=$(basename "$f"); [ "$n" = coding.md ] && continue
+  n=$(basename "$f"); [ "$n" = implementer.md ] && continue
   cmp -s "$f" "$T/.claude/agents/$n" || { ok=0; fail "$n differs"; break; }
 done; [ "$ok" = 1 ] && pass
 
@@ -51,13 +51,13 @@ t "consumer skill with 'model: sonnet' is byte-identical after the deploy"
 if cmp -s "$T/my-skill.orig" "$T/.claude/skills/my-skill/SKILL.md"; then pass
 else fail "$(diff "$T/my-skill.orig" "$T/.claude/skills/my-skill/SKILL.md" | tr '\n' '|')"; fi
 
-t "a second deploy with the same file leaves coding.md unchanged"
-cp "$T/.claude/agents/coding.md" "$T/coding.1"
+t "a second deploy with the same file leaves implementer.md unchanged"
+cp "$T/.claude/agents/implementer.md" "$T/implementer.1"
 deploy "$T" >/dev/null
-if cmp -s "$T/coding.1" "$T/.claude/agents/coding.md"; then pass; else fail "second deploy changed coding.md"; fi
+if cmp -s "$T/implementer.1" "$T/.claude/agents/implementer.md"; then pass; else fail "second deploy changed implementer.md"; fi
 
 # ---------- SC-14: invalid file stops deploy before any write ----------
-INVALID='{"agents":{"coding":{"effort":"bogus"}}}'
+INVALID='{"agents":{"implementer":{"effort":"bogus"}}}'
 
 T=$(new_target)
 deploy "$T" >/dev/null

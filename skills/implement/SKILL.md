@@ -1,6 +1,6 @@
 ---
 name: implement
-description: "Carry out an agreed plan: each step runs in an isolated git worktree through a fresh coding subagent, then its Done-when command is run and the files touched are handed back. Use after the plan (or the S-depth prompt) is agreed."
+description: "Carry out an agreed plan: each step runs in an isolated git worktree through a fresh implementer subagent, then its Done-when command is run and the files touched are handed back. Use after the plan (or the S-depth prompt) is agreed."
 allowed-tools: Read, Write, Grep, Glob, Agent, Task, Bash
 ---
 
@@ -15,7 +15,7 @@ Turn plan steps into commits. Review is not part of this skill: `/code-review` a
    steps with their Files, Effort, Done-when and parallel group.
 2. Run the groups in order. Inside a group, steps that touch different files may run in parallel.
    Never run two steps that touch the same file at the same time.
-3. For each step start a fresh `coding` subagent (Sonnet; High effort steps may use a stronger
+3. For each step start a fresh `implementer` subagent (Sonnet; High effort steps may use a stronger
    model) in its own isolated git worktree. Use the template in `implementer-prompt.md`.
    A workflow agent's worktree starts from the main checkout HEAD, so tell it the base
    to check out first (`docs/adr/0001-workflow-capabilities.md`).

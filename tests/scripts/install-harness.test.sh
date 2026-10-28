@@ -42,7 +42,7 @@ if [ "$RC" -eq 0 ] \
    && [ -f "$tgt/docs/solutions/README.md" ] && [ -f "$tgt/docs/solutions/INDEX.md" ] \
    && [ -f "$tgt/docs/solutions/critical-patterns.md" ] && [ -f "$tgt/techstacks/README.md" ] \
    && [ ! -e "$tgt/$MEMORY_DIR" ] \
-   && ! grep -q '^memory:' "$tgt/.claude/agents/coding.md" \
+   && ! grep -q '^memory:' "$tgt/.claude/agents/implementer.md" \
    && ! grep -q '^memory:' "$tgt/.claude/agents/reviewer.md" \
    && ! grep -q '^memory:' "$tgt/.claude/agents/test-runner.md"; then
   pass

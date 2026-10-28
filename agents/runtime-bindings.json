@@ -4,7 +4,7 @@
     "claude": {
       "format": "markdown-frontmatter",
       "roles": {
-        "coding": {
+        "implementer": {
           "model": "claude-sonnet-5-5",
           "effort": "medium",
           "tools": null,
