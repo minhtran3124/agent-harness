@@ -44,6 +44,9 @@ bash scripts/check-hook-root-source.sh || fail "scripts/check-hook-root-source.s
 echo "== L1: plugin validate (skills + agents frontmatter) =="
 bash scripts/check-plugin-validate.sh || fail "scripts/check-plugin-validate.sh"
 
+echo "== L1: markdown links =="
+bash scripts/check-md-links.sh || fail "scripts/check-md-links.sh"
+
 echo "== L1: skill allowed-tools =="
 bash scripts/check-allowed-tools.sh || fail "scripts/check-allowed-tools.sh"
 
