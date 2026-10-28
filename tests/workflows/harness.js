@@ -478,6 +478,61 @@ test('m: a plugin check that fails stops the run before any ticket stage', async
   await assert.rejects(() => run({}, c => (c.label === 'plugin-check' ? { status: 'blocked', blocked_reason: 'pluginDir missing', summary: '' } : undefined)), /pluginDir missing/)
 })
 
+const BDEC = { title: 'Boundary: touches docs/x.md', context: 'c', options: ['a', 'b'], decision: 'DECISION-TEXT-BD', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'high', needs_review: true }
+const intentOos = c => (c.label === 'intent:1'
+  ? ok({ goal: 'g', acceptance: [], files: ['src/keep.js'], out_of_scope: ['OOS-LINE-1'], plan_steps: [{ title: 's', files: ['src/step.js'], done_when: 'true' }] })
+  : undefined)
+
+test('n: out_of_scope and the file set reach implement, fix and intent-fix prompts', async () => {
+  const { calls } = await run({}, c => {
+    if (c.label === 'intent:1') return intentOos(c)
+    if (c.label.startsWith('review:')) return c.label === 'review:r0' ? ok({ findings: [{ id: 'F1', summary: 'bad', score: 90 }], skill_invoked: true }) : ok({ findings: [], skill_invoked: true })
+    if (c.label === 'intent-review') return { verdict: 'gaps found', findings: [{ kind: 'gap', clause: 'C', detail: 'd' }] }
+  })
+  assert(/OOS-LINE-1/.test(named(calls, /^intent:1$/)[0].prompt) === false, 'intent prompt does not carry the list itself')
+  assert(named(calls, /^intent:1$/)[0].prompt.includes('out_of_scope'))
+  for (const re of [/^implement:1$/, /^fix:/, /^intent-fix$/]) {
+    const cs = named(calls, re)
+    assert(cs.length >= 1, String(re))
+    for (const p of cs.map(c => c.prompt)) assert(p.includes('OOS-LINE-1') && p.includes('src/keep.js') && p.includes('src/step.js') && p.includes('Boundary: '), `${re}: boundary missing`)
+  }
+})
+
+test('o: a skipped boundary fix is not fixed, needs a decision, and is listed under Review', async () => {
+  const { calls, result } = await run({}, c => {
+    if (c.label === 'intent:1') return intentOos(c)
+    if (c.label === 'review:r0') return ok({ findings: [{ id: 'F1', summary: 'FINDING-SUM', score: 90 }], skill_invoked: true })
+    if (c.label.startsWith('fix:')) return ok({ fix_status: 'skipped', summary: 'skipped it', decisions: [BDEC] })
+  })
+  assert.strictEqual(result.review.fixed.length, 0)
+  assert.strictEqual(result.review.notFixed.length, 1)
+  assert(result.review.notFixed[0].reason.includes('needs your decision: Boundary: touches docs/x.md'))
+  const p = named(calls, /^adr$/)[0].prompt
+  assert(p.includes('"title":"Boundary: touches docs/x.md"') && p.includes('"needs_review":true'))
+  const body = p.slice(p.indexOf('## Summary'))
+  assert(body.indexOf('## Review') < body.indexOf('needs your decision: Boundary: touches docs/x.md'))
+  assert(body.indexOf('needs your decision') < body.indexOf('## Intent review'))
+})
+
+test('p: Needs your decision sits above Summary and is omitted when empty', async () => {
+  const withGap = await run({}, c => (c.label === 'intent-review' ? { verdict: 'gaps found', findings: [{ kind: 'excess', behaviour_changing: true, clause: 'CL-EXCESS', detail: 'did more' }, { kind: 'excess', clause: 'CL-QUIET', detail: 'harmless' }] } : undefined))
+  const p = named(withGap.calls, /^adr$/)[0].prompt
+  const i = p.indexOf('## Needs your decision')
+  assert(i >= 0 && i < p.indexOf('## Summary'), 'section above Summary')
+  const sec = p.slice(i, p.indexOf('## Summary'))
+  assert(sec.includes('CL-EXCESS') && !sec.includes('CL-QUIET'), 'only behaviour-changing excess is listed')
+  const none = await run({}, null)
+  assert(!named(none.calls, /^adr$/)[0].prompt.includes('## Needs your decision'))
+})
+
+test('q: {{DECISIONS}} still sits between Final verification and the footer', async () => {
+  const { calls } = await run({}, null)
+  const p = named(calls, /^adr$/)[0].prompt
+  const b = p.slice(p.indexOf('## Summary'))
+  const a = b.indexOf('## Final verification'), d = b.indexOf('{{DECISIONS}}'), f = b.indexOf('Generated with')
+  assert(a >= 0 && a < d && d < f, `${a} ${d} ${f}`)
+})
+
 test('schemas are well-formed (object root, required within properties)', async () => {
   const { calls } = await run({ tickets: [T(1, 1, [], { depth: 'L' }), T(2, 2, [1])] }, c => (c.label === 'suite' ? { passed: 1, failed: 1, skipped: 0, failing: ['t'] } : undefined))
   const check = (s, where) => {
