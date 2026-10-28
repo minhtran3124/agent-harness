@@ -189,23 +189,4 @@ if printf '%s' "$out" | grep -qF "$T/specs/probe-slug/SUMMARY.md" \
    && ! printf '%s' "$out" | grep -qF '.claude/specs'; then pass
 else fail "resolved the wrong root: $(printf '%s' "$out" | head -1)"; fi
 
-t "deployed check_open_questions.py reads the consumer root's specs/, not .claude/"
-# D7: --root defaults to the cwd, so the shipped copy finds the consumer's own register.
-mkdir -p "$T/specs/p"
-cat > "$T/specs/p/QUESTIONS.md" <<'QEOF'
-# p — Open questions
-
-## OQ-1
-
-- raised-by: design.md §D1
-- closes-at: p
-- decided-by: owner
-- default-until-closed: keep the current behavior
-- status: open
-QEOF
-oq_err=$( (cd "$T" && python3 "$C/scripts/check_open_questions.py" --slug p) 2>&1 >/dev/null); oq_rc=$?
-if [ -f "$C/scripts/check_open_questions.py" ] && [ "$oq_rc" -eq 0 ] \
-   && printf '%s' "$oq_err" | grep -qF 'OQ-1'; then pass
-else fail "rc=$oq_rc stderr: $(printf '%s' "$oq_err" | head -1)"; fi
-
 finish

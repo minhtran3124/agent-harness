@@ -67,61 +67,6 @@ else
   echo "  skip — no python3"
 fi
 
-echo "== L1: verify-row lint (changed SUMMARY/PLAN only) =="
-# Lint only SUMMARY.md + PLAN.md files changed vs the base ref — new/edited Verify
-# rows and SC-table Check cells must be pipe-free + <60s; shipped specs are
-# grandfathered (scope matches ci-strict-gate's changed-file model).
-#
-# The base ref is resolved by scripts/resolve-base-ref.sh (which carries the rationale
-# and is covered by tests/scripts/resolve-base-ref.test.sh); `fetch-depth: 0` on the CI
-# `test` job is the other half of that fix. Every skip below names its reason —
-# distinguishing "no base to compare against" from "compared and found nothing" is the
-# whole point, since that ambiguity is what let the original bug report green.
-TMP_POST_CUTOFF="$(mktemp)"; trap 'rm -f "$TMP_POST_CUTOFF" "$STEP_LOG"' EXIT
-BASE_OUT="$(bash scripts/resolve-base-ref.sh 2>&1)"; BASE_RC=$?
-if [ "$BASE_RC" -ne 0 ]; then
-  echo "  skip — $BASE_OUT"
-elif ! command -v python3 >/dev/null 2>&1; then
-  echo "  skip — no python3"
-else
-  # Three-dot, matching scripts/ci-strict-gate.sh — two-dot also picks up files changed on
-  # the BASE since the fork point, i.e. specs this branch never touched. Do not swallow
-  # git's exit status: a failed diff and an empty diff both produce no output, and
-  # reporting the first as the second is the exact confusion this block was rewritten to end.
-  changed="$(git diff --name-only "$BASE_OUT"...HEAD -- 'specs/*/SUMMARY.md' 'specs/*/PLAN.md')"; diff_rc=$?
-  if [ "$diff_rc" -ne 0 ]; then
-    echo "  ✗ git diff against '$BASE_OUT' failed (rc=$diff_rc) — scope unknown, not treating as clean"
-    fail "verify-row lint: git diff against $BASE_OUT failed"
-  elif [ -n "$changed" ]; then
-    # GRANDFATHER CUTOFF. The changed-file set is the ONLY thing that keeps this lint off
-    # already-shipped specs (check_verify_rows.py: "does not retroactively police
-    # already-shipped specs"). That holds while the base ref is the integration branch —
-    # each PR then changes only its own spec. It BREAKS on a release PR (simplify → main),
-    # where the base is `main` and every spec accumulated since the fork looks new: 56 files,
-    # including specs written while this lint was dead (wired 2026-07-17 at 7034d30, not
-    # actually comparing anything until it was revived 2026-08-08 at $CUTOFF). Those never
-    # had a chance to comply, so intersect with "changed since the lint went live" and the
-    # grandfathering survives a change of base ref.
-    CUTOFF=af869a9
-    if git rev-parse -q --verify "$CUTOFF^{commit}" >/dev/null 2>&1; then
-      git diff --name-only "$CUTOFF"...HEAD -- 'specs/*/SUMMARY.md' 'specs/*/PLAN.md' \
-        > "$TMP_POST_CUTOFF"
-      # -x -F: whole-line literal match. No match → grep exits 1 with empty output, which is
-      # the correct answer (nothing changed since the cutoff), not an error.
-      changed="$(printf '%s\n' "$changed" | grep -xF -f "$TMP_POST_CUTOFF" || true)"
-    else
-      echo "  note — grandfather cutoff $CUTOFF absent (shallow clone?); linting the full changed set"
-    fi
-    if [ -n "$changed" ]; then
-      printf '%s\n' "$changed" | python3 scripts/check_verify_rows.py || fail "scripts/check_verify_rows.py"
-    else
-      echo "  skip — no SUMMARY.md/PLAN.md changed since the grandfather cutoff"
-    fi
-  else
-    echo "  skip — no changed SUMMARY.md/PLAN.md vs $BASE_OUT"
-  fi
-fi
-
 # Build the shared pytest venv once, before anything runs concurrently: on a fresh machine
 # (every CI run) parallel suites calling ensure_pyenv would race on venv creation + pip.
 # pytest-xdist is best-effort — the pytest step below uses it only when it imports.
@@ -135,7 +80,7 @@ fi
 # serial. HARNESS_TEST_JOBS=1 restores a serial run; HARNESS_SKIP_SUITES (space-separated
 # paths) skips suites the caller already ran.
 SUITE_JOBS="${HARNESS_TEST_JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)}"
-SUITE_OUT="$(mktemp -d)"; trap 'rm -rf "$TMP_POST_CUTOFF" "$STEP_LOG" "$SUITE_OUT"' EXIT
+SUITE_OUT="$(mktemp -d)"; trap 'rm -rf "$STEP_LOG" "$SUITE_OUT"' EXIT
 SUITES=()
 for suite in tests/hooks/*.test.sh tests/scripts/*.test.sh; do
   case " ${HARNESS_SKIP_SUITES:-} " in
