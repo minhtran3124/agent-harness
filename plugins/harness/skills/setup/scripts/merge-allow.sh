@@ -24,7 +24,7 @@ DENY='["Bash(gh pr merge --admin*)","Bash(gh pr merge * --admin*)","Bash(gh pr m
 if [ -f "$FILE" ]; then
   jq -e 'type == "object"' "$FILE" >/dev/null 2>&1 \
     || { echo "merge-allow: $FILE is not a valid JSON object; not touching it" >&2; exit 2; }
-  jq -e '(.permissions // {}) | type == "object" and ((.allow // []) | type == "array") and ((.deny // []) | type == "array")' "$FILE" >/dev/null 2>&1 \
+  jq -e '(if has("permissions") then .permissions else {} end) | type == "object" and ((if has("allow") then .allow else [] end) | type == "array") and ((if has("deny") then .deny else [] end) | type == "array")' "$FILE" >/dev/null 2>&1 \
     || { echo "merge-allow: $FILE has a permissions, allow or deny value of the wrong type; not touching it" >&2; exit 2; }
   CUR=$(cat "$FILE")
 else
