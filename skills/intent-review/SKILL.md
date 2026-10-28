@@ -1,52 +1,52 @@
 ---
 name: intent-review
-description: Independently review a finished diff against the user's verbatim original request. Use after correctness review to detect missing requested behavior, intent drift, and unapproved excess scope.
-allowed-tools: Read, Grep, Glob, Agent, Task, Bash(git diff *), Bash(git log *)
+description: Independently review a finished diff against the owner's verbatim original request, blind to the plan. Use to detect missing requested behavior, intent drift, and unrequested excess scope.
+allowed-tools: Read, Grep, Glob, Agent, Task, Bash(git diff *), Bash(git log *), Bash(gh issue view *)
 ---
 
 # Intent Review
 
-This is the intent oracle, not a runtime-bug hunt or a style review. Run it standalone with a
-supplied intent, or in SDD after correctness review and before finishing a branch.
+This is the one plan-blind check. It asks: would the person who wrote the request recognise this
+diff as what they asked for? It is not a bug hunt or a style review.
 
-## Establish a blind oracle
+## Inputs
 
-1. Read `### Intent` from `specs/<slug>/SUMMARY.md`. It is the verbatim primary oracle. If it
-   has an `Intent-source: specs/<slug>/intent.md @ <sha>` line, follow these steps first:
-   - Run `git diff --exit-code <pin> -- specs/<slug>/intent.md` with that SHA as `<pin>`.
-   - On non-zero (including 128), STOP. Report that the intent changed or the pin is
-     unreachable. Ask for feature-intake to re-pin the slug.
-   - On zero, the oracle is the intent.md text plus the chat request in `### Intent`. Where the
-     approved intent.md body differs from that request (or its own `## Original request`), the
-     body wins.
-2. Optionally read design success criteria and PLAN §3 SC rows as secondary checks. If both
-   the `SUMMARY` intent and the design intent are missing, STOP: ask the user instead of reconstructing intent.
-3. If a secondary check conflicts with verbatim intent, verbatim wins and the conflict is drift.
-4. Set `BASE..HEAD` to one of these: task start to HEAD in SDD, merge-base to HEAD for a
-   branch, or an explicit range. Give the reviewer the oracle, diff, touched files, SC table,
-   and SUMMARY Verify table, but never `PLAN.md` prose or `research-brief.md`.
+Pass the reviewer exactly two things:
 
-When SDD supplies `REVIEW_PACKAGE_PATH`, the reviewer reads that `BASE..HEAD` package first
-instead of rebuilding the diff. The package holds no intent oracle. Do not use it to read PLAN
-prose or research material. When SDD does not supply `REVIEW_PACKAGE_PATH`, build the explicit
-range.
+1. **The request**, verbatim: the issue body or task text, or the text the caller passes.
+2. **The diff range** `BASE..HEAD`.
 
-Dispatch `intent-reviewer-prompt.md` in a fresh context. Each finding must quote the intent
-sentence it evaluates.
+Never pass the plan, the design, the research brief, `PLAN.md` prose, ADRs, answers to grilling
+questions, or any summary by the orchestrator. The plan can carry the same misreading this review
+exists to catch.
+
+If the request is missing, STOP and say so. Never reconstruct it.
+
+## Dispatch
+
+Dispatch the `intent-reviewer` agent (not `reviewer`) in a fresh context with only those two
+inputs. In a workflow, the calling script does the dispatch.
+
+## Output
+
+Each finding quotes the request clause it evaluates:
+
+- `gap`: a requested outcome is missing.
+- `drift`: the diff differs from the request. State `changes behaviour: yes|no`.
+- `excess`: built but not asked for.
+
+End with `Verdict: match | gaps found`. The exact format is in `agents/intent-reviewer.md`.
 
 ## Route findings
 
-- **gap:** a requested outcome is missing, or a promised SC has no mapped passing Verify row. Fix
-  it if it is unambiguous and in scope. Otherwise, escalate it.
-- **drift:** the implementation differs from requested behavior. Record equivalent drift as
-  advisory. Route a material behavior change like a gap.
-- **excess:** unrequested behavior or public surface. Report it only. Do not remove shipped
-  behavior without human approval.
+- **gap, or drift that changes behaviour:** fix it if the fix is clear and in scope. Otherwise ask
+  the owner. In auto mode, record a decision with `needs_review: true`.
+- **drift that does not change behaviour, and excess:** list them in the PR. Never remove them
+  without the owner's yes.
 
-Before you route any fix, **read `rules/auto-correct-scope.md`**. Write ambiguous gaps and drift,
-and intent conflicts, to `ESCALATIONS.md`. Write advisory drift, excess, and deferred findings to
-`SUMMARY.md` under `### Intent Findings`. Before handoff, fix each finding with a commit SHA or
-record it durably. Otherwise, completion is blocked.
+## Auto mode
 
-The task reviewer checks the plan. Correctness review checks runtime behavior. Keep this oracle
-separate and plan-blind: it catches “implemented correctly, but not what was asked.”
+Never ask the owner. Take the recommended option. Return `decisions[]` entries:
+`{title, context, options, decision, why, consequences, how_to_reverse, confidence, needs_review}`.
+Write no ADR files; `decision-record` does that. Set `needs_advisor` when the calling script
+should consult the advisor.
