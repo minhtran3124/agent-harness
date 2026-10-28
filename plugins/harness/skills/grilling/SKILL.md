@@ -21,22 +21,15 @@ The caller names `Mode: interactive` (default) or `Mode: auto`.
 
 ## Question format
 
-The owner reads each question in a small terminal tab. Keep every question short enough to scan.
+The owner reads each question in a small terminal tab.
 
-- Ask ONE decision per question. Never put two decisions, or a numbered list, inside one question.
-- `question`: one sentence of at most 25 words. Name what is decided. Put no background in it.
-- `header`: the ticket number and one or two words, for example `#397 scope`.
-- `options`: 2 to 4. Put your recommendation first and end its label with `(Recommended)`.
-- Each option `description`: one line that says what happens if the owner picks it. Put what you found in the code here, not in the question.
-- `AskUserQuestion` takes at most 4 questions per call. With more open decisions, ask the 4 that block the most first. Ask the rest in the next call. Do not merge decisions to fit.
-- Grill one ticket at a time. When the caller batches tickets, give each question the header of its ticket.
-- Text fallback: one block per decision, with the options on their own lines:
-
-```
-1. <question>
-   a) <recommended option> (Recommended) - <effect>
-   b) <other option> - <effect>
-```
+- ONE decision per question. Never list several decisions in one question.
+- `question`: one sentence, at most 25 words, no background.
+- `header`: ticket number and one or two words, for example `#397 scope`.
+- `options`: 2 to 4. Put your recommendation first; end its label with `(Recommended)`. Each `description` is one line with the effect. Put code findings there.
+- `AskUserQuestion` takes at most 4 questions per call. Ask the 4 that block most first, the rest in the next call. Never merge decisions to fit.
+- Grill one ticket at a time. When the caller batches tickets, the header names the ticket.
+- Text fallback: one block per decision, one option per line.
 
 ## Facts and decisions
 
