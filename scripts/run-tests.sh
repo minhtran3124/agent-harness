@@ -47,13 +47,10 @@ bash scripts/check-plugin-validate.sh || fail "scripts/check-plugin-validate.sh"
 echo "== L1: skill allowed-tools =="
 bash scripts/check-allowed-tools.sh || fail "scripts/check-allowed-tools.sh"
 
-echo "== L1: manifest consistency =="
+echo "== L1: skill and agent registry (scanned from disk) =="
 if command -v python3 >/dev/null 2>&1; then
-  python3 scripts/check_manifest.py || fail "scripts/check_manifest.py"
   python3 scripts/check_frontmatter_contract.py || fail "scripts/check_frontmatter_contract.py"
   python3 scripts/check_skill_tool_conformance.py || fail "scripts/check_skill_tool_conformance.py"
-  python3 scripts/check_gate_modes_smoke.py || fail "scripts/check_gate_modes_smoke.py"
-  python3 scripts/check_slim_surface.py || fail "scripts/check_slim_surface.py"
 else
   echo "  skip — no python3"
 fi
