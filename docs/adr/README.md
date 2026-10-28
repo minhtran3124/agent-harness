@@ -10,6 +10,15 @@ Stage agents never write ADR files. They return `decisions[]` to the workflow (s
 `python3 scripts/write_adrs.py`. Parallel worktrees would collide on numbers, so the script is the
 only writer.
 
+## Which decisions get a file
+
+Not every decision gets a file. `write_adrs.py` first merges duplicates (same ticket and the same
+title slug or identical non-empty context; the highest `confidence` is kept, a tie keeps the first,
+and `needs_review` carries over). It then writes a file only for a decision that is not
+`owner_confirmed` and has `needs_review: true` or a `confidence` other than `high`. Every merged
+decision, with or without a file, is one row in the `## Decisions` table of the PR body. A row for
+an owner-confirmed decision says `owner-confirmed`.
+
 ## Design records
 
 A design record is an ADR with `stage: design`. `brainstorming` at depth L returns the design as a
