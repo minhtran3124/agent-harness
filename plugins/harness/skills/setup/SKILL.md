@@ -24,7 +24,7 @@ Run once per project, after `claude plugin install harness@agent-harness`. Work 
    `${CLAUDE_PROJECT_DIR}/.claude/settings.local.json`. Run
    `bash ${CLAUDE_SKILL_DIR}/scripts/merge-allow.sh --dry-run ${CLAUDE_PROJECT_DIR}/.claude/settings.local.json`,
    show the diff, and ask with AskUserQuestion. Run it again without `--dry-run` only after the owner
-   says yes. It has the same exit codes as step 3. Say plainly that auto mode may still deny the
+   says yes. It has the same exit codes as step 3. The `*` also matches `--admin`, `--auto` and `--delete-branch`, so the script adds deny rules for them (deny wins): those merges still prompt. Say plainly that auto mode may still deny the
    merge (run 1 did), and that the run then reports the missing permission (#389).
 5. **Ignore specs.** Add `specs/` to `${CLAUDE_PROJECT_DIR}/.gitignore` if no line already says
    `specs/`. Skip this if the project tracks files under `specs/`.

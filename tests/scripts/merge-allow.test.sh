@@ -22,8 +22,16 @@ t "existing allow entries keep their order first; deny and other keys are kept"
 d=$(work)
 printf '%s' '{"model":"opus","permissions":{"allow":["Bash(ls *)"],"deny":["Read(./.env)"]},"hooks":{"Stop":[]}}' > "$d/s.json"
 bash "$SCRIPT" "$d/s.json" >/dev/null; rc=$?
-if [ "$rc" -eq 0 ] && jq -e --arg r "$RULE" '.model == "opus" and .hooks == {"Stop":[]} and .permissions.deny == ["Read(./.env)"] and .permissions.allow == ["Bash(ls *)", $r]' "$d/s.json" >/dev/null; then pass
+if [ "$rc" -eq 0 ] && jq -e --arg r "$RULE" '.model == "opus" and .hooks == {"Stop":[]} and .permissions.deny[0] == "Read(./.env)" and .permissions.allow == ["Bash(ls *)", $r]' "$d/s.json" >/dev/null; then pass
 else fail "rc=$rc file: $(cat "$d/s.json")"; fi
+
+t "deny rules keep --admin, --auto and --delete-branch out of the wildcard allow rule"
+d=$(work)
+bash "$SCRIPT" "$d/s.json" >/dev/null
+if jq -e '[.permissions.deny[] | select(startswith("Bash(gh pr merge"))] as $x
+  | all(("--admin","--auto","--delete-branch"); . as $f | any($x[]; contains($f)))
+  and (.permissions.deny | length == (unique | length))' "$d/s.json" >/dev/null; then pass
+else fail "file: $(cat "$d/s.json")"; fi
 
 t "a rule that is already present is not added twice"
 d=$(work)
