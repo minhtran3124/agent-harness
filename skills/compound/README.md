@@ -2,7 +2,7 @@
 
 Transforms session learnings into persistent, discoverable documentation under `docs/solutions/`.
 
-**Trigger:** `compound` — never runs automatically. Invoke it only after a session that produced a reusable learning. Examples are a solved bug, a non-obvious pattern, an architectural decision with considered alternatives, a useful failure, or a `Harness-Delta: backlog` signal. Do not emit a document only because a session ended.
+**Trigger:** `compound` — never runs automatically. Invoke it only after a session that produced a reusable learning. Examples are a solved bug, a non-obvious pattern, an architectural decision with considered alternatives, or a useful failure. Do not emit a document only because a session ended.
 
 ---
 
@@ -35,7 +35,6 @@ Each run can produce these files:
 | `docs/solutions/[category]/[slug].md` | Bug, knowledge, or failure track (one file each) |
 | `docs/solutions/[category]/[slug]-decisions.md` | Decision track (all decisions for this session) |
 | `docs/solutions/critical-patterns.md` | Appended to when `severity = critical`. Updated or added on a recurrence (see Mistake Twice) |
-| `docs/harness-experimental/improvement-backlog.md` | One open row appended per failure with a `proposed:` guardrail |
 | `docs/solutions/INDEX.md` | Always rebuilt from scratch after every run |
 
 ---
@@ -60,7 +59,7 @@ Captures an architectural decision in lightweight ADR format — what was decide
 **Required sections (all must be non-empty):** Context, Options_Considered, Decision_and_Rationale
 
 ### Failure track
-Captures an approach that was tried and failed — including `Harness-Delta: backlog` friction — so a future session does not repeat it.
+Captures an approach that was tried and failed so a future session does not repeat it.
 
 **Required sections (all must be non-empty):** Symptom, Wrong_Approach, Why_It_Failed, Correct_Approach
 

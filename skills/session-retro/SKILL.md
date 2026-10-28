@@ -35,8 +35,7 @@ adding one is a cost to everyone. If a mistake class has no hook, test, or CI jo
 the missing guardrail as its own finding.
 
 Before proposing, filter for recurrence: would this fix have helped most recent sessions, or
-only this one? Look in `docs/solutions/INDEX.md`, `docs/harness-experimental/improvement-backlog.md`,
-and `rules/`. A recorded match is evidence of recurrence — cite it and raise its priority rather
+only this one? Look in `docs/solutions/INDEX.md` and `rules/`. A recorded match is evidence of recurrence — cite it and raise its priority rather
 than duplicating it. An existing guard that should have fired turns the finding into "why did it
 not fire?". A one-off with no prior record is reported as one.
 
@@ -49,7 +48,7 @@ look dead separately, flagged for review. Name the limits that apply to this run
 show an older rule is obsolete. Its topic may be overweighted.)
 
 Then stop. Nothing changes until the user picks candidates. Approved mechanical items become
-`improvement-backlog.md` rows or a `intake` task. Durable knowledge goes through
+an `intake` task. Durable knowledge goes through
 `compound`.
 
 Verifies: each candidate cites a moment in the session record and a classified lever.

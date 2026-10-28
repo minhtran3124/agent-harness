@@ -18,7 +18,7 @@ make_fixture() {
 }
 
 # ── 1. empty fixture -> healthy, zero findings ────────────────────────────────
-t "empty fixture (no specs/, no backlog) -> findings 0, band healthy"
+t "empty fixture (no specs/) -> findings 0, band healthy"
 d=$(make_fixture)
 out=$(bash "$SCRIPT" --root "$d" --json)
 if [ "$(jf "$out" "['findings']")" = "0" ] && [ "$(jf "$out" "['band']")" = "healthy" ]; then pass
@@ -41,32 +41,6 @@ printf -- '---\nstatus: active\ncreated: %s\n---\n\n# X\n\n- %s — drafted\n' "
 out=$(bash "$SCRIPT" --root "$d" --json)
 if [ "$(jf "$out" "['checks']['plan_stale']")" = "0" ]; then pass
 else fail "want plan_stale == 0: $out"; fi
-
-# ── 4. backlog_stale ────────────────────────────────────────────────────────────
-t "improvement-backlog.md open row dated >14 days ago -> backlog_stale >= 1"
-d=$(make_fixture)
-mkdir -p "$d/docs/harness-experimental"
-printf '# Backlog\n\n| Date | From failure (slug) | Proposed guardrail | Target path | Status |\n|---|---|---|---|---|\n| 2020-01-01 | old-bug | do X | scripts/y.sh | open |\n' > "$d/docs/harness-experimental/improvement-backlog.md"
-out=$(bash "$SCRIPT" --root "$d" --json)
-if [ "$(jf "$out" "['checks']['backlog_stale']")" -ge 1 ]; then pass
-else fail "want backlog_stale >= 1: $out"; fi
-
-t "improvement-backlog.md done row (old date) -> backlog_stale == 0"
-d=$(make_fixture)
-mkdir -p "$d/docs/harness-experimental"
-printf '# Backlog\n\n| Date | From failure (slug) | Proposed guardrail | Target path | Status |\n|---|---|---|---|---|\n| 2020-01-01 | old-bug | do X | scripts/y.sh | done |\n' > "$d/docs/harness-experimental/improvement-backlog.md"
-out=$(bash "$SCRIPT" --root "$d" --json)
-if [ "$(jf "$out" "['checks']['backlog_stale']")" = "0" ]; then pass
-else fail "want backlog_stale == 0 (done row): $out"; fi
-
-t "improvement-backlog.md recent open row -> backlog_stale == 0"
-d=$(make_fixture)
-mkdir -p "$d/docs/harness-experimental"
-recent=$(days_ago 1)
-printf '# Backlog\n\n| Date | From failure (slug) | Proposed guardrail | Target path | Status |\n|---|---|---|---|---|\n| %s | new-bug | do X | scripts/y.sh | open |\n' "$recent" > "$d/docs/harness-experimental/improvement-backlog.md"
-out=$(bash "$SCRIPT" --root "$d" --json)
-if [ "$(jf "$out" "['checks']['backlog_stale']")" = "0" ]; then pass
-else fail "want backlog_stale == 0 (recent open row): $out"; fi
 
 # ── 7. --json is exactly one line and round-trips through json.loads ─────────────
 t "--json output is exactly one line and parses as JSON"

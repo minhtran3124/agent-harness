@@ -5,10 +5,9 @@
 # (already mechanized elsewhere):
 #   - phantom path references + hook-table ↔ settings.json  →  scripts/lint-doc-truth.sh
 #
-# In scope (the "verify the docs" gap, OpenAI harness engineering #4):
+# In scope (the "verify the docs" gap):
 #   1. specs/*/PLAN.md with `status: active` whose newest date is stale (> STALE_DAYS)
 #   2. docs/solutions/**/*.md with `confirmed_at` older than CONFIRMED_DAYS
-#   3. docs/harness-experimental/improvement-backlog.md `open` rows gone stale
 #
 # Advisory by default (exit 0, never blocks). `--strict` exits 1 when any drift is
 # found — for opt-in CI use. `--root DIR` points the audit at another tree (tests).
@@ -33,11 +32,9 @@ ROOT="$(pwd)"
 
 STALE_DAYS="${HARNESS_AUDIT_STALE_DAYS:-30}"
 CONFIRMED_DAYS="${HARNESS_AUDIT_CONFIRMED_DAYS:-30}"
-BACKLOG_DAYS="${HARNESS_AUDIT_BACKLOG_DAYS:-14}"
 
 FINDINGS=0
 PLAN_STALE=0
-BACKLOG_STALE=0
 SOLUTIONS_STALE=0
 
 note() {
@@ -92,26 +89,6 @@ if [ -d docs/solutions ]; then
   done < <(find docs/solutions -name '*.md' -type f 2>/dev/null)
 fi
 
-# ── 3. improvement-backlog.md: open entries gone stale ───────────────────────────
-BACKLOG_FILE="docs/harness-experimental/improvement-backlog.md"
-if [ -f "$BACKLOG_FILE" ]; then
-  while IFS= read -r row; do
-    [ -n "$row" ] || continue
-    date_cell=$(awk -F'|' '{print $2}' <<< "$row" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')
-    date_cell_lc=$(printf '%s' "$date_cell" | tr '[:upper:]' '[:lower:]')
-    [ "$date_cell_lc" = "date" ] && continue
-    if [[ "$date_cell" =~ ^-+$ ]]; then continue; fi
-    slug_cell=$(awk -F'|' '{print $3}' <<< "$row" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')
-    status_cell=$(awk -F'|' '{print $6}' <<< "$row" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')
-    [ "$status_cell" = "open" ] || continue
-    age=$(days_since "$date_cell")
-    if [ -n "$age" ] && [ "$age" -gt "$BACKLOG_DAYS" ]; then
-      note "backlog entry open ${age}d > ${BACKLOG_DAYS}d: $slug_cell (opened $date_cell)"
-      BACKLOG_STALE=$((BACKLOG_STALE + 1))
-    fi
-  done < <(grep -E '^\|' "$BACKLOG_FILE")
-fi
-
 # ── Banded health summary ───────────────────────────────────────────────────────
 if [ "$FINDINGS" -eq 0 ]; then
   band="healthy"
@@ -125,18 +102,17 @@ if [ "$JSON" -eq 1 ]; then
   python3 -c '
 import json, sys
 
-date, findings, band, ps, bs, ss = sys.argv[1:7]
+date, findings, band, ps, ss = sys.argv[1:6]
 print(json.dumps({
     "date": date,
     "findings": int(findings),
     "band": band,
     "checks": {
         "plan_stale": int(ps),
-        "backlog_stale": int(bs),
         "solutions_stale": int(ss),
     },
 }))
-' "$(date +%F)" "$FINDINGS" "$band" "$PLAN_STALE" "$BACKLOG_STALE" "$SOLUTIONS_STALE"
+' "$(date +%F)" "$FINDINGS" "$band" "$PLAN_STALE" "$SOLUTIONS_STALE"
 else
   echo ""
   echo "  Drift findings: $FINDINGS  ($band)"

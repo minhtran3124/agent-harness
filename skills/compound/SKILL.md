@@ -1,13 +1,13 @@
 ---
 name: compound
-description: Preserve durable bugs, patterns, decisions, and failed approaches as discoverable `docs/solutions/` records. Use only after a session produced a reusable learning or a proposed harness ratchet.
+description: Preserve durable bugs, patterns, decisions, and failed approaches as discoverable `docs/solutions/` records. Use only after a session produced a reusable learning.
 allowed-tools: Read, Write, Grep, Glob, Agent, Task, Bash(python3 *)
 ---
 
 # Compound — durable session knowledge
 
-Use this skill when a non-obvious bug, reusable pattern, considered decision, useful failure, or
-`Harness-Delta: backlog` signal is worth preserving. Do not emit a document merely because a
+Use this skill when a non-obvious bug, reusable pattern, considered decision, or useful failure
+is worth preserving. Do not emit a document merely because a
 session ended.
 
 ## Extract and select
@@ -45,9 +45,7 @@ Read and apply `skills/asd-ste100/SKILL.md` in STE-flavored mode to each new rec
 code. Do not change a literal string that a test or hook matches.
 
 For a critical context, append an entry per emitted track to `critical-patterns.md` using its
-templates. For a failure with a `proposed:` guardrail, append one open row to
-`docs/harness-experimental/improvement-backlog.md`. Do not add a row that duplicates an
-`existing:` guardrail.
+templates. Name a failure's `proposed:` guardrail in the report as a proposed ratchet. Do not build it.
 
 ## Mistake twice
 
