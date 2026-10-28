@@ -16,7 +16,6 @@ SRC="$(cd "$(dirname "$0")/.." && pwd)/templates/structure"
 # template (in templates/structure/)          → destination (relative to ROOT)
 rows='
 specs-README.md|specs/README.md
-specs-STATE.md|specs/STATE.md
 docs-solutions-README.md|docs/solutions/README.md
 docs-solutions-INDEX.md|docs/solutions/INDEX.md
 docs-solutions-critical-patterns.md|docs/solutions/critical-patterns.md

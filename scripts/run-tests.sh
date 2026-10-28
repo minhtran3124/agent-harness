@@ -108,9 +108,9 @@ echo "== L2: python unit tests =="
 PYBIN="${TMPDIR:-/tmp}/harness-tests-venv/bin/python"
 [ -x "$PYBIN" ] || PYBIN="$(command -v python3 || true)"
 if [ -n "$PYBIN" ] && "$PYBIN" -c 'import pytest' >/dev/null 2>&1; then
-  # Every unit test under scripts/, runtime/ and skills/ — collected, not hand-listed: the
+  # Every unit test under scripts/ and skills/ — collected, not hand-listed: the
   # hand list drifted and left four test files running nowhere.
-  PYTESTS="$(find scripts runtime skills -name 'test_*.py' -not -path '*/__pycache__/*' | LC_ALL=C sort | tr '\n' ' ')"
+  PYTESTS="$(find scripts skills -name 'test_*.py' -not -path '*/__pycache__/*' | LC_ALL=C sort | tr '\n' ' ')"
   XDIST=""
   "$PYBIN" -c 'import xdist' >/dev/null 2>&1 && XDIST="-n $SUITE_JOBS"
   # shellcheck disable=SC2086

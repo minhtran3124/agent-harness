@@ -41,10 +41,6 @@ BOOTSTRAP_OWNED_FILES=(
 # that must travel or the gates it backs are prose only. Add a row only when a consumer-facing
 # skill/rule references it.
 CONSUMER_SCRIPTS=(
-  "verify_summary.py"
-  "check_plan_contract.py"
-  "check_review_receipt.py"
-  "resolve_finish_context.py"
   "rebuild_solution_index.py"
   "render_skill_prompt.py"
   "run_at_commit.py"
@@ -75,7 +71,7 @@ HARNESS_ONLY_DOCS=(
 # before this guard existed.
 DERIVED_MD_PY='
 import os, pathlib
-SYNCED = {"skills", "agents", "hooks", "rules", "templates", "runtime", "workflows", "scripts"}  # = SYNCED_DIRS_RE
+SYNCED = {"skills", "agents", "hooks", "rules", "templates", "workflows", "scripts"}  # = SYNCED_DIRS_RE
 def derived_md(out):
     for d, dirs, files in os.walk(out):
         top = d == str(out)
@@ -159,7 +155,11 @@ BACKUP_TS=""
 # Safe by construction: only paths in the PREVIOUS harness manifest are ever eligible to prune,
 # so a consumer's own additions (never in the manifest) are never touched. See
 # specs/deploy-prune-orphans/.
-SYNCED_DIRS_RE='^(skills|agents|hooks|rules|templates|runtime|workflows|scripts)/[^/]+$'
+SYNCED_DIRS_RE='^(skills|agents|hooks|rules|templates|workflows|scripts)/[^/]+$'
+# Dirs the harness shipped in an earlier version and no longer does. They stay prune-eligible, so
+# a re-sync removes the manifest-listed leftovers (runtime/ held the removed run-state FSM); they
+# are never copied. A consumer's own file there is not in the manifest, so it survives.
+PRUNE_DIRS_RE='^(skills|agents|hooks|rules|templates|runtime|workflows|scripts)/[^/]+$'
 DEPLOYED_LIST="$(mktemp)"        # accumulates `<dir>/<entry>` written this run
 record_deployed() { printf '%s\n' "$1" >> "$DEPLOYED_LIST"; }
 
@@ -199,7 +199,7 @@ preflight_protected() {
       local p
       while IFS= read -r p; do
         [ -n "$p" ] || continue
-        printf '%s' "$p" | grep -qE "$SYNCED_DIRS_RE" || continue
+        printf '%s' "$p" | grep -qE "$PRUNE_DIRS_RE" || continue
         [ -e "$p" ] && continue                 # source still has it → not an orphan
         [ -e "$OUT/$p" ] || continue
         printf "  %s✗ would prune stale %s%s%s (removed from source)\n" "$Y" "$D" "$p" "$R"
@@ -560,7 +560,7 @@ preflight_protected
 
 # ---------- pipeline ----------
 step "Preparing ${B}.claude/${R}"            prep_dir
-for d in skills agents hooks rules templates runtime workflows; do
+for d in skills agents hooks rules templates workflows; do
   [ -e "$d" ] || continue
   step "Syncing ${B}$d/${R}"                 copy_dir "$d"
 done
@@ -584,12 +584,15 @@ prune_orphans() {
   [ -f "$prev" ] || return 0
   while IFS= read -r path; do
     [ -n "$path" ] || continue
-    printf '%s' "$path" | grep -qE "$SYNCED_DIRS_RE" || continue      # defense-in-depth
+    printf '%s' "$path" | grep -qE "$PRUNE_DIRS_RE" || continue      # defense-in-depth
     grep -qxF "$path" "$DEPLOYED_LIST" && continue                    # still shipped → keep
     [ -e "$OUT/$path" ] || continue                                   # already gone
     rm -rf "$OUT/$path"
     printf "  ${Y}✗${R}  pruned stale ${D}%s${R} (removed from harness source)\n" "$path"
   done < "$prev"
+  # A legacy dir the harness no longer ships: drop it once empty. rmdir refuses a non-empty dir,
+  # so a consumer's own files under it keep it alive.
+  rmdir "$OUT/runtime" 2>/dev/null || true
 }
 step "Pruning stale entries"                 prune_orphans
 sort -u "$DEPLOYED_LIST" > "$OUT/.harness-deployed"

@@ -30,7 +30,7 @@ PROFILE_IGNORED=0
 # target root — a previous installer staged these at the root and pruned them afterward,
 # which destroyed real project files when those names already existed (or when run inside
 # the harness-skills repo itself).
-PAYLOAD=(skills agents hooks rules templates runtime workflows settings.json scripts/deploy-harness.sh scripts/init-structure.sh VERSION CHANGELOG.md)
+PAYLOAD=(skills agents hooks rules templates workflows settings.json scripts/deploy-harness.sh scripts/init-structure.sh VERSION CHANGELOG.md)
 STAGE_NAME=".harness-source"
 
 # ---------- styling ----------
@@ -158,9 +158,6 @@ fi
 if [ ! -f "$TARGET_DIR/scripts/install-harness.sh" ]; then
   LEGACY=()
   for item in "${PAYLOAD[@]}"; do
-    # "runtime" was added to PAYLOAD in this phase, so no prior installer version could ever
-    # have staged it at a consumer's root — any hit here is always the consumer's own dir.
-    [ "$item" = "runtime" ] && continue
     [ -e "$TARGET_DIR/$item" ] && LEGACY+=("$item")
   done
   if [ "${#LEGACY[@]}" -gt 0 ]; then
@@ -189,7 +186,7 @@ bash "$SRC/scripts/deploy-harness.sh" "${DEPLOY_ARGS[@]}"
 # Safe by construction: it only writes a structural file when its destination is absent.
 if [ "$DRY_RUN" -eq 1 ]; then
   info "Would scaffold specs/, docs/solutions/ (create-if-missing)"
-  info "Would ensure .gitignore lists .claude/ and specs/**/events.jsonl.lock"
+  info "Would ensure .gitignore lists .claude/"
 else
   printf '\n'
   bash "$SRC/scripts/init-structure.sh" --root "$TARGET_DIR"
@@ -242,37 +239,6 @@ if [ "$DRY_RUN" -eq 0 ]; then
     warn "could not update .gitignore — add '.claude/' to it manually."
   elif [ -z "$gi_skip" ]; then
     ok ".gitignore now lists .claude/"
-  fi
-
-  # runtime/run_state.py takes an fcntl lock in specs/<slug>/events.jsonl.lock. It is
-  # machine-local (RUN.json and events.jsonl stay tracked), so it must never show as untracked.
-  # Independent of the .claude/ decision above: specs/ is the consumer's own tracked tree.
-  # Ask git which rule decides a probe path, not a text probe: a narrow rule
-  # (specs/demo/events.jsonl.lock) covers one spec only, while *.lock already covers all. Skip
-  # only when the deciding rule lives in a .gitignore (shared with the team, unlike
-  # .git/info/exclude). A deciding negation means the consumer chose to track the lock;
-  # appending after it would silently override that choice. Never skip silently.
-  # `check-ignore -v -n` prints `<source>:<line>:<pattern>\t<path>`, or `::\t<path>` for no rule.
-  lock_hit=$(git -C "$TARGET_DIR" -c core.excludesFile=/dev/null check-ignore --no-index -v -n \
-    specs/__harness_probe__/events.jsonl.lock 2>/dev/null || true)
-  lock_src=${lock_hit%%:*}
-  lock_pat=${lock_hit#*:}; lock_pat=${lock_pat#*:}; lock_pat=${lock_pat%%$'\t'*}
-  case "$lock_src" in
-    *.gitignore) lock_skip=1 ;;
-    *) lock_skip=0 ;;
-  esac
-  if [ "$lock_skip" = 1 ]; then
-    case "$lock_pat" in
-      '!'*) info "$lock_src negates the run-state lock ($lock_pat) — left as is." ;;
-      *) info "$lock_src already ignores specs/<slug>/events.jsonl.lock ($lock_pat) — left as is." ;;
-    esac
-  elif ! {
-        { [ ! -s "$GI" ] || [ -z "$(tail -c 1 "$GI" 2>/dev/null)" ] || printf '\n' >> "$GI"; } &&
-        printf '# Harness: machine-local run-state lock (RUN.json + events.jsonl stay tracked)\nspecs/**/events.jsonl.lock\n' >> "$GI"
-      } 2>/dev/null; then
-    warn "could not update .gitignore — add 'specs/**/events.jsonl.lock' to it manually."
-  else
-    ok ".gitignore now lists specs/**/events.jsonl.lock"
   fi
 fi
 
