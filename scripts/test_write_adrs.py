@@ -1,12 +1,12 @@
-"""Tests for scripts/write_adrs.py."""
+"""Tests for plugins/harness/scripts/write_adrs.py."""
 
 import json
 import subprocess
 import sys
 from pathlib import Path
 
-SCRIPT = Path(__file__).resolve().parent / "write_adrs.py"
-TEMPLATE = SCRIPT.parent.parent / "docs/adr/TEMPLATE.md"
+SCRIPT = Path(__file__).resolve().parent.parent / "plugins/harness/scripts/write_adrs.py"
+TEMPLATE = Path(__file__).resolve().parent.parent / "docs/adr/TEMPLATE.md"
 
 
 def dec(**kw):

@@ -2,7 +2,7 @@
 # Contract tests for scripts/init-structure.sh — create-if-missing structural scaffolding.
 source "$(dirname "$0")/../lib.sh"
 
-SCRIPT="$ROOT/scripts/init-structure.sh"
+SCRIPT="$ROOT/plugins/harness/scripts/init-structure.sh"
 
 DESTS="specs/README.md docs/solutions/README.md docs/solutions/INDEX.md docs/solutions/critical-patterns.md techstacks/README.md"
 MEMORY_DIR="agent""-memory"

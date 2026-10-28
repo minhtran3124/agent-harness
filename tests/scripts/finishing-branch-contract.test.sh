@@ -1,6 +1,6 @@
 #!/bin/bash
 source "$(dirname "$0")/../lib.sh"
-SKILL="skills/finishing-a-development-branch/SKILL.md"
+SKILL="plugins/harness/skills/finishing-a-development-branch/SKILL.md"
 
 t "finishing keeps create-PR-only safety boundary"
 grep -q 'Never merge, force-push' "$ROOT/$SKILL" && grep -q 'Stage' "$ROOT/$SKILL" && pass || fail "PR safety boundary missing"

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Every skills/*/SKILL.md must declare `allowed-tools` — least privilege at the skill level,
+# Every plugins/harness/skills/*/SKILL.md must declare `allowed-tools` — least privilege at the skill level,
 # enforced by the runtime rather than by prose.
 #
 # Verifies:        the field is PRESENT and non-empty in every skill.
@@ -11,7 +11,7 @@ set -u
 cd "$(dirname "$0")/.." || exit 1
 
 MISSING=""
-for f in skills/*/SKILL.md; do
+for f in plugins/harness/skills/*/SKILL.md; do
   [ -f "$f" ] || continue
   # Only the frontmatter block counts (between the first two --- lines).
   if ! awk 'NR==1&&/^---$/{inb=1;next} inb&&/^---$/{exit} inb' "$f" \
@@ -26,5 +26,5 @@ if [ -n "$MISSING" ]; then
   echo "      Derive the list from the skill's own body; under-granting breaks it at runtime." >&2
   exit 1
 fi
-echo "  ✓ all $(ls -d skills/*/ | wc -l | tr -d ' ') skills declare allowed-tools"
+echo "  ✓ all $(ls -d plugins/harness/skills/*/ | wc -l | tr -d ' ') skills declare allowed-tools"
 exit 0

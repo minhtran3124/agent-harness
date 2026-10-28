@@ -6,7 +6,7 @@
 # repo gets exit 0 and THAT repo back — the gate then audits the wrong repository and reports
 # success. Measured by spike, 2026-09-09.
 #
-# Verifies:        no non-comment line in hooks/ resolves a repo root from $SCRIPT_DIR / $0.
+# Verifies:        no non-comment line in plugins/harness/hooks/ resolves a repo root from $SCRIPT_DIR / $0.
 # Does not verify: that the replacement resolution is correct, or that a hook uses REPO_DIR at all.
 set -u
 cd "$(dirname "$0")/.." || exit 1
@@ -16,7 +16,7 @@ cd "$(dirname "$0")/.." || exit 1
 # ratchet grepped for SCRIPT_DIR by name and therefore missed a hook that
 # spelled the same defect `git -C "$HOOK_DIR" ...` (found in the review of PR #222). The
 # banned thing is deriving the root from the hook's own location, whatever the variable is called.
-HITS=$(grep -rnE 'rev-parse --show-toplevel' hooks/ 2>/dev/null \
+HITS=$(grep -rnE 'rev-parse --show-toplevel' plugins/harness/hooks/ 2>/dev/null \
   | grep -vE ':[0-9]+:[[:space:]]*#' \
   | grep -E 'git -C "\$\{?[A-Za-z_][A-Za-z0-9_]*_DIR\}?"|git -C "\$\(dirname "\$0"\)"|git -C "\$\(cd "\$\(dirname')
 

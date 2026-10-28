@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Compare the STE hard count of each prose file with its baseline. Warn only.
 
-The script lints every `skills/*/*.md`, `skills/*/*/*.md`, `rules/*.md` and `agents/*.md` file
-with `skills/asd-ste100/scripts/ste-lint.py --json`. It reads the `hard_count` field. Advisory
+The script lints every `plugins/harness/skills/*/*.md`, `skills/*/*/*.md`, `rules/*.md` and `agents/*.md` file, plus `agents/*.md` at the repo root,
+with `plugins/harness/skills/asd-ste100/scripts/ste-lint.py --json`. It reads the `hard_count` field. Advisory
 findings do not count. It compares each count with `scripts/ste-baseline.json` and prints:
 
   WARN <file>: hard <n> > baseline <b>     the file got worse (a missing entry has baseline 0)
@@ -35,8 +35,11 @@ import subprocess
 import sys
 from pathlib import Path
 
-GLOBS = ("skills/*/*.md", "skills/*/*/*.md", "rules/*.md", "agents/*.md")
-LINTER = "skills/asd-ste100/scripts/ste-lint.py"
+PLUGIN = "plugins/harness"
+# The plugin's prose, plus the two consumer-owned files in the repo's own agents/ folder.
+GLOBS = (f"{PLUGIN}/skills/*/*.md", f"{PLUGIN}/skills/*/*/*.md", f"{PLUGIN}/rules/*.md",
+         f"{PLUGIN}/agents/*.md", "agents/*.md")
+LINTER = f"{PLUGIN}/skills/asd-ste100/scripts/ste-lint.py"
 BASELINE = "scripts/ste-baseline.json"
 
 # Rules that the check and --update both silence.

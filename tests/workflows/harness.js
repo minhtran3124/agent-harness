@@ -7,7 +7,7 @@ const fs = require('fs')
 const path = require('path')
 const assert = require('assert')
 
-const SRC = fs.readFileSync(path.join(__dirname, '..', '..', 'workflows', 'ship.js'), 'utf8')
+const SRC = fs.readFileSync(path.join(__dirname, '..', '..', 'plugins', 'harness', 'workflows', 'ship.js'), 'utf8')
 const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor
 
 function metaText() {
@@ -31,7 +31,7 @@ function defaults(c, st) {
   const l = c.label || ''
   const n = (l.match(/:(\d+)(:retry)?$/) || [])[1]
   if (l.startsWith('advisor:')) return 'ADVICE-TEXT'
-  if (l === 'setup-integration') return ok()
+  if (l === 'setup-integration' || l === 'plugin-check') return ok()
   if (l.startsWith('intent:')) return ok({ goal: 'g', acceptance: [], files: [], plan_steps: [{ title: 'step', files: [], done_when: 'true' }] })
   if (l.startsWith('research:')) return ok({ research_md: 'RESEARCH' })
   if (l.startsWith('design:')) return ok({ design_md: 'DESIGN' })
@@ -56,7 +56,7 @@ function defaults(c, st) {
 let args0
 function baseArgs(over) {
   return {
-    repo: 'o/r', repoDir: '/repo', remote: 'origin', base: 'v5.0.0', slug: 'ms',
+    repo: 'o/r', repoDir: '/repo', pluginDir: '/plug', remote: 'origin', base: 'v5.0.0', slug: 'ms',
     tickets: [{ n: 1, title: 'Add the thing', depth: 'S', group: 1, deps: [], confirmed: '' }],
     testCmd: 'run-related', lintCmd: 'lint-it', fullTestCmd: 'run-all', advisorModel: 'opus', noAsk: false, local: false, ...over,
   }
@@ -140,17 +140,17 @@ test('b3: the result lists the worktree dirs outside the repo', async () => {
   assert(result.worktrees.includes('/.ship-repo/ms/t1'))
 })
 
-test('c4: skill and role reads use absolute paths under the agent worktree', async () => {
+test('c4: skill and role reads use absolute paths under pluginDir, not the worktree or .claude', async () => {
   const { calls } = await run({ tickets: [T(1, 1, [], { depth: 'L' })] }, null)
   const want = { 'research:1': 'xia2', 'design:1': 'brainstorming', 'plan:1': 'writing-plans', 'implement:1': 'implement' }
   for (const [l, sk] of Object.entries(want)) {
     const p = named(calls, new RegExp(`^${l}$`))[0].prompt
-    assert(p.includes(`Read /.ship-repo/ms/`) && p.includes(`/skills/${sk}/SKILL.md`) && p.includes(`/.claude/skills/${sk}/SKILL.md`), `${l}: ${p.match(/Read [^\n]*/)}`)
+    assert(p.includes(`Read /plug/skills/${sk}/SKILL.md`) && !p.includes('.claude/'), `${l}: ${p.match(/Read [^\n]*/)}`)
     assert(!/Read skills\//.test(p), l)
   }
   const fin = named(calls, /^finish:1$/)[0].prompt
-  assert(fin.includes('Read /wt/1/skills/finishing-a-development-branch/SKILL.md'), fin.match(/Read [^\n]*/)[0])
-  assert(named(calls, /^implement:1$/)[0].prompt.includes('/.ship-repo/ms/t1/agents/implementer.md'))
+  assert(fin.includes('Read /plug/skills/finishing-a-development-branch/SKILL.md'), fin.match(/Read [^\n]*/)[0])
+  assert(named(calls, /^implement:1$/)[0].prompt.includes('/plug/agents/implementer.md') && !named(calls, /^implement:1$/)[0].prompt.includes('.claude/'))
 })
 
 test('d3: review stage prompts require the Skill tool and forbid a self-made review', async () => {
@@ -228,7 +228,7 @@ test('g3: intent review schema has no unknown kind; its prompt names the role fi
   const { calls } = await run({}, null)
   const c = named(calls, /^intent-review$/)[0]
   assert.deepStrictEqual(c.schema.properties.findings.items.properties.kind.enum, ['gap', 'drift', 'excess'])
-  assert(c.prompt.includes('/.ship-repo/ms/intent-review/agents/intent-reviewer.md') && c.prompt.includes('/.claude/agents/intent-reviewer.md'))
+  assert(c.prompt.includes('/plug/agents/intent-reviewer.md') && !c.prompt.includes('.claude/'))
   assert(c.prompt.includes('git -C /.ship-repo/ms/intent-review diff origin/v5.0.0..origin/feat/1-add-the-thing'))
   assert(c.prompt.includes('Do not report anything else'))
   assert(c.prompt.includes('worktree add --detach /.ship-repo/ms/intent-review'))
@@ -249,7 +249,7 @@ test('b: three tickets, groups 1,1,2: setup, parallel, merge, group 2, merge, on
   const { result, calls } = await run({ tickets: [T(1, 1), T(2, 1), T(3, 2, [1])] }, null)
   const ls = labelsOf(calls)
   const at = l => ls.indexOf(l)
-  assert.strictEqual(at('setup-integration'), 0)
+  assert.strictEqual(at('plugin-check'), 0); assert.strictEqual(at('setup-integration'), 1)
   assert(at('intent:2') < at('implement:1'), 'group 1 tickets run in parallel')
   assert(at('finish:1') < at('merge:g1') && at('finish:2') < at('merge:g1'))
   assert(at('merge:g1') < at('intent:3'), 'group 2 starts after the merge')
@@ -272,7 +272,7 @@ test('c: needs_advisor triggers one advisor call and one stage re-run; a second 
   const adv = named(calls, /^advisor:/)
   assert.strictEqual(adv.length, 1, labelsOf(calls).join())
   assert.strictEqual(adv[0].opts.model, 'fable')
-  assert.strictEqual(adv[0].opts.agentType, 'advisor')
+  assert.strictEqual(adv[0].opts.agentType, 'harness:advisor')
   assert.strictEqual(adv[0].opts.effort, 'high')
   assert(adv[0].prompt.includes('Q-ONE'))
   assert.strictEqual(intents, 2)
@@ -290,10 +290,10 @@ test('c2: depth L gets one advisor call on design and plan before implement', as
 })
 
 test('c3: an unknown agent type falls back to the default agent with the role file', async () => {
-  const { calls, result } = await run({}, c => (c.opts.agentType === 'intent-reviewer' ? new Error('unknown agent type') : undefined))
+  const { calls, result } = await run({}, c => (c.opts.agentType === 'harness:intent-reviewer' ? new Error('unknown agent type') : undefined))
   const rr = named(calls, /^intent-review$/)
   assert.strictEqual(rr.length, 2)
-  assert(!rr[1].opts.agentType && rr[1].prompt.includes('agents/intent-reviewer.md'))
+  assert(!rr[1].opts.agentType && rr[1].prompt.includes('/plug/agents/intent-reviewer.md'))
   assert.strictEqual(result.intent.verdict, 'match')
 })
 
@@ -364,7 +364,7 @@ test('f: intent review sees the request and not the plan, confirmed answers or d
     if (c.label === 'intent-review') return { verdict: 'gaps found', findings: [{ kind: 'gap', clause: 'CLAUSE-1', detail: 'missing' }, { kind: 'excess', clause: 'C2', detail: 'extra' }] }
   })
   const p = named(calls, /^intent-review$/)[0]
-  assert.strictEqual(p.opts.agentType, 'intent-reviewer')
+  assert.strictEqual(p.opts.agentType, 'harness:intent-reviewer')
   assert(p.prompt.includes('REQUEST-BODY-1') && p.prompt.includes('origin/v5.0.0..origin/feat/1-ticket-1'))
   for (const bad of ['CONFIRMED-ANSWER-QQ', 'PLANSTEP-ABC', 'DECISION-TITLE-XYZ', 'GOAL-SECRET', 'SUMMARY-SECRET', 'did it']) assert(!p.prompt.includes(bad), `leaked ${bad}`)
   assert.strictEqual(named(calls, /^request:1$/)[0].prompt.includes('gh issue view 1 --repo o/r --json body -q .body'), true)
@@ -437,8 +437,23 @@ test('k: argument validation', async () => {
   const bad = async (over, re) => { await assert.rejects(() => run(over, null), re) }
   await bad({ tickets: [T(1, 1), T(1, 2)] }, /duplicate ticket number #1/)
   await bad({ repoDir: undefined }, /args\.repoDir is required/)
+  await bad({ pluginDir: undefined }, /args\.pluginDir is required/)
   await bad({ tickets: [] }, /non-empty array/)
   await bad({ tickets: [T(1, 1, [], { depth: 'XL' })] }, /depth/)
+})
+
+test('l: pluginDir is used for the role files, the skills and the ADR script, and is checked in Setup', async () => {
+  const { calls } = await run({ pluginDir: '/other/plugin' }, null)
+  assert.strictEqual(calls[0].label, 'plugin-check')
+  assert(calls[0].prompt.includes('/other/plugin/agents/implementer.md'))
+  const all = calls.map(c => c.prompt).join('\n')
+  assert(all.includes('/other/plugin/agents/implementer.md') && all.includes('/other/plugin/agents/intent-reviewer.md'))
+  assert(all.includes('/other/plugin/scripts/write_adrs.py') && all.includes('/other/plugin/skills/'))
+  assert(!all.includes('/plug/') && !all.includes('.claude/'))
+})
+
+test('m: a plugin check that fails stops the run before any ticket stage', async () => {
+  await assert.rejects(() => run({}, c => (c.label === 'plugin-check' ? { status: 'blocked', blocked_reason: 'pluginDir missing', summary: '' } : undefined)), /pluginDir missing/)
 })
 
 test('schemas are well-formed (object root, required within properties)', async () => {

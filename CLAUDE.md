@@ -4,7 +4,9 @@ Skill framework for Claude Code (the only supported runtime): reusable prompt-ba
 
 ## Run and test
 
-`bash scripts/run-tests.sh` runs the whole suite. CI (`harness-ci`) runs the same suite on ubuntu and macOS. Run it before you change `hooks/` or `scripts/`.
+`bash scripts/run-tests.sh` runs the whole suite. CI (`harness-ci`) runs the same suite on ubuntu and macOS. Run it before you change `plugins/harness/hooks/` or `scripts/`.
+
+The plugin lives in `plugins/harness/`; the marketplace file is `.claude-plugin/marketplace.json`. To develop, run `claude --plugin-dir plugins/harness` from the repo root. The plugin's hooks and rule then load from there (the repo's `settings.json` wires no hooks), and its skills appear as `/harness:<name>`.
 
 ## Models
 
@@ -22,7 +24,7 @@ Skill framework for Claude Code (the only supported runtime): reusable prompt-ba
   - a decision would become an ADR with `needs_review`;
   - a grilling session reaches a deep design tree.
 - Workflow agents cannot spawn agents, so the script or the main session calls the advisor.
-- Per-role models live in `agents/runtime-bindings.json`.
+- Per-role models, effort and tools live in each agent file's frontmatter, in `plugins/harness/agents/`.
 
 ## Workflow
 
@@ -36,11 +38,11 @@ intake   readiness gate: READY | CONFIRM | GRILL | BLOCKED, depth S | M | L
   -> finishing-a-development-branch   push and open a PR; a human merges
 ```
 
-Decisions made on the way are recorded as ADRs in `docs/adr/`. Every skill above exists in `skills/` now. `/autopilot` asks everything first, then launches `workflows/ship.js` (one Workflow script for 1..N tickets). `skills/README.md` has the full map, including the bug-fix path (`diagnosing-bugs`).
+Decisions made on the way are recorded as ADRs in `docs/adr/`. Every skill above exists in `plugins/harness/skills/` now, and runs as `/harness:<name>`. `/harness:autopilot` asks everything first, then launches `plugins/harness/workflows/ship.js` (one Workflow script for 1..N tickets). `plugins/harness/skills/README.md` has the full map, including the bug-fix path (`diagnosing-bugs`).
 
 ## Rules
 
-`rules/behavior.md` is the single source of truth for behavior; it auto-loads from `.claude/rules/`. Hard rules:
+`plugins/harness/rules/behavior.md` is the single source of truth for behavior. A plugin has no rules component, so the `session-rules.sh` SessionStart hook delivers it as session context. Hard rules:
 
 - Never merge into main or the base branch, never force-push, never touch secrets, never weaken a test.
 - "Done" needs real command output.
@@ -48,10 +50,11 @@ Decisions made on the way are recorded as ADRs in `docs/adr/`. Every skill above
 
 ## Hooks
 
-Wired (✅) means registered in `settings.json`. `docs/hooks.md` has the detail; `settings.json` also carries `permissions.deny` (`.env`, force-push, push to `main`/`master`).
+Wired (✅) means registered in `plugins/harness/hooks/hooks.json`. `docs/hooks.md` has the detail. The plugin cannot ship `permissions.deny`: the repo's `settings.json` carries it (`.env`, force-push, push to `main`/`master`), and `/harness:setup` merges it into a consuming project.
 
 | Hook | Trigger | Action | Wired |
 |---|---|---|---|
+| `session-rules.sh` | SessionStart | Delivers `rules/behavior.md` as session context (a plugin has no rules component) | ✅ |
 | `secrets-scan.sh` | PreToolUse (Bash) | On `git commit`, blocks a staged secret pattern or a staged `.env` file | ✅ |
 | `pr-opened.sh` | PostToolUse (Bash) | After `gh pr create`, reminds the main session to review the PR | ✅ |
 | `clean-worktrees.sh` | PostToolUse (Bash) | After a merge, removes the worktree and branch of merged PRs (no force flags) | ✅ |

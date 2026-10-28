@@ -193,7 +193,7 @@ def comparison(before: dict[str, object], after: dict[str, object]) -> tuple[boo
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parent.parent)
+    parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parent.parent / "plugins" / "harness")
     parser.add_argument("--json", action="store_true", help="print JSON inventory")
     parser.add_argument("--markdown", action="store_true", help="print Markdown summary")
     parser.add_argument("--write-json", type=Path, help="write JSON inventory to this path")

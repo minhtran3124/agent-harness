@@ -131,7 +131,7 @@ def test_native_tool_stands_in_for_its_shell_equivalent(tmp_path):
 
 
 def test_deployed_path_rewrite_still_matches(tmp_path):
-    """deploy-harness.sh rewrites scripts/x.py to .claude/scripts/x.py in derived docs."""
+    """A .claude/-prefixed command still matches a grant written without the prefix."""
     build(
         tmp_path,
         skill(

@@ -18,7 +18,7 @@ make_fixture() {
 # ── minor bump when a contract path (skills/) changed ────────────────────────
 t "bumps MINOR when the diff touches a contract path (skills/)"
 d=$(make_fixture 0.2.0)
-bash "$SCRIPT" --pr 42 --title T --files "skills/foo/SKILL.md" --date 2026-07-03 --root "$d" >/dev/null
+bash "$SCRIPT" --pr 42 --title T --files "plugins/harness/skills/foo/SKILL.md" --date 2026-07-03 --root "$d" >/dev/null
 if [ "$(cat "$d/VERSION")" = "0.3.0" ]; then pass; else fail "want 0.3.0, got $(cat "$d/VERSION")"; fi
 
 # ── patch bump for a docs-only diff ──────────────────────────────────────────
@@ -30,7 +30,7 @@ if [ "$(cat "$d/VERSION")" = "0.2.1" ]; then pass; else fail "want 0.2.1, got $(
 # ── CHANGELOG gets a new dated version section under [Unreleased] ─────────────
 t "inserts a dated version section into CHANGELOG under [Unreleased]"
 d=$(make_fixture 0.2.0)
-bash "$SCRIPT" --pr 7 --title "cool fix" --files "hooks/x.sh" --date 2026-07-03 --root "$d" >/dev/null
+bash "$SCRIPT" --pr 7 --title "cool fix" --files "plugins/harness/hooks/x.sh" --date 2026-07-03 --root "$d" >/dev/null
 cl=$(cat "$d/CHANGELOG.md")
 # new section must be 0.3.0 (hooks/ = minor), dated, with the entry, and above the old 0.2.0
 if echo "$cl" | grep -q '## \[0.3.0\] — 2026-07-03' && echo "$cl" | grep -q 'cool fix (PR #7)' \
@@ -40,9 +40,9 @@ else fail "CHANGELOG section wrong:\n$cl"; fi
 # ── idempotency: re-running for the same PR is a no-op (no double entry/bump) ──
 t "is idempotent — second run for the same PR does not double-record or double-bump"
 d=$(make_fixture 0.2.0)
-bash "$SCRIPT" --pr 99 --title T --files "skills/x/SKILL.md" --date 2026-07-03 --root "$d" >/dev/null
+bash "$SCRIPT" --pr 99 --title T --files "plugins/harness/skills/x/SKILL.md" --date 2026-07-03 --root "$d" >/dev/null
 v1=$(cat "$d/VERSION"); n1=$(grep -c 'PR #99' "$d/CHANGELOG.md")
-bash "$SCRIPT" --pr 99 --title T --files "skills/x/SKILL.md" --date 2026-07-03 --root "$d" >/dev/null
+bash "$SCRIPT" --pr 99 --title T --files "plugins/harness/skills/x/SKILL.md" --date 2026-07-03 --root "$d" >/dev/null
 v2=$(cat "$d/VERSION"); n2=$(grep -c 'PR #99' "$d/CHANGELOG.md")
 if [ "$v1" = "$v2" ] && [ "$n1" -eq 1 ] && [ "$n2" -eq 1 ]; then pass
 else fail "not idempotent: version $v1->$v2, entries $n1->$n2"; fi
@@ -65,7 +65,7 @@ if grep -qE '^## \[9.9.9\]' "$d/CHANGELOG.md"; then fail "heading injection: 9.9
 t "CHANGELOG without [Unreleased] still gets a version section (no silent drop)"
 d=$(make_fixture 0.2.0)
 printf '# Changelog\n\n## [0.2.0] — 2026-06-14\n\n- seed\n' > "$d/CHANGELOG.md"
-bash "$SCRIPT" --pr 12 --title "t" --files "hooks/x.sh" --date 2026-07-03 --root "$d" >/dev/null
+bash "$SCRIPT" --pr 12 --title "t" --files "plugins/harness/hooks/x.sh" --date 2026-07-03 --root "$d" >/dev/null
 if grep -q '## \[0.3.0\] — 2026-07-03' "$d/CHANGELOG.md"; then pass; else fail "section dropped:\n$(cat "$d/CHANGELOG.md")"; fi
 
 # ── idempotency anchors to an entry's trailing marker, not any mention ────────

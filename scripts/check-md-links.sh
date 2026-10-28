@@ -54,7 +54,7 @@ extract_paths() {
   ' "$1"
 }
 
-LIVING=" README.md HARNESS.md AGENTS.md CLAUDE.md skills/README.md docs/hooks.md "
+LIVING=" README.md HARNESS.md AGENTS.md CLAUDE.md plugins/harness/skills/README.md docs/hooks.md "
 
 while IFS= read -r file; do
   case "$file" in
@@ -87,7 +87,7 @@ while IFS= read -r file; do
       while IFS= read -r p; do
         case "$p" in .claude/*|specs/*|/*) continue ;; esac
         checked=$((checked + 1))
-        if [ ! -e "$ROOT/$p" ] && [ ! -e "$dir/$p" ]; then
+        if [ ! -e "$ROOT/$p" ] && [ ! -e "$dir/$p" ] && [ ! -e "$ROOT/plugins/harness/$p" ]; then
           echo "DEAD  $file: \`$p\`"
           dead=$((dead + 1))
         fi

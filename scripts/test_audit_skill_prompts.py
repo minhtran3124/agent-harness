@@ -137,9 +137,9 @@ def test_validate_inventory_allows_a_pinned_pre_refactor_baseline(tmp_path):
 
 
 def test_real_repository_matches_expected_surface_shape():
-    root = SCRIPT.parent.parent
+    root = SCRIPT.parent.parent / "plugins" / "harness"
     result = run(root, "--json")
     assert result.returncode == 0, result.stderr
     data = json.loads(result.stdout)
-    assert data["totals"]["skills"] == 15
+    assert data["totals"]["skills"] == 16
     assert data["totals"]["companion_prompts"] == 6

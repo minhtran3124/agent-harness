@@ -1,6 +1,6 @@
 #!/bin/bash
 source "$(dirname "$0")/../../tests/lib.sh"
-SCRIPT="skills/using-git-worktrees/scripts/detect-isolation.sh"
+SCRIPT="plugins/harness/skills/using-git-worktrees/scripts/detect-isolation.sh"
 
 t "main checkout is not reported as isolated"
 repo=$(new_repo)

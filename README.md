@@ -16,44 +16,51 @@
 
 ---
 
-Skills are Markdown prompt programs you summon with `/skill-name`. They run a change from a ticket to a reviewed pull request, and a human merges it.
+Skills are Markdown prompt programs you summon with `/harness:skill-name`. The harness is a Claude Code plugin, so every skill carries the `harness:` prefix. They run a change from a ticket to a reviewed pull request, and a human merges it.
 
 ## How a change flows
 
 ```
-ticket -> /intake -> verdict + depth -> build -> review -> ship
+ticket -> /harness:intake -> verdict + depth -> build -> review -> ship
 ```
 
-- `/intake` returns a verdict (READY, CONFIRM, GRILL or BLOCKED) and a depth (S, M or L).
+- `/harness:intake` returns a verdict (READY, CONFIRM, GRILL or BLOCKED) and a depth (S, M or L).
 - Depth S goes straight to `implement`. Depth M adds `writing-plans`. Depth L adds `brainstorming` and `xia2` first.
 - A bug fix first runs `diagnosing-bugs`: the root cause is proved before any fix.
 - `/code-review` and `intent-review` check the diff. `finishing-a-development-branch` pushes and opens the PR.
-- `/autopilot` asks the owner every open question once, then runs the whole flow for one or more tickets.
+- `/harness:autopilot` asks the owner every open question once, then runs the whole flow for one or more tickets.
 
 One principle drives it: **ceremony scales with the size of the change, and human interruption scales with ambiguity.**
 
-See [HARNESS.md](HARNESS.md) for the model, [skills/README.md](skills/README.md) for every skill and handoff, and
-[docs/hooks.md](docs/hooks.md) for what the three hooks enforce.
+See [HARNESS.md](HARNESS.md) for the model, [plugins/harness/skills/README.md](plugins/harness/skills/README.md) for every skill and handoff, and
+[docs/hooks.md](docs/hooks.md) for what the four hooks enforce.
 
 ## Installation
 
-### Add to an existing project
+### Add to a project
 
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/minhtran3124/agent-harness/main/scripts/install-harness.sh?$(date +%s)" | bash -s -- --yes
+claude plugin marketplace add minhtran3124/agent-harness
+claude plugin install harness@agent-harness
 ```
 
-This clones the harness and builds a gitignored `.claude/` (skills, agents, hooks, the rule, templates, a consumer subset of `scripts/`, settings). At the project root it only adds missing scaffold folders (`specs/`, `docs/solutions/`); it never overwrites or deletes anything there. To update, run the one-liner again. A protected file that differs from the incoming copy is kept, and the incoming copy is written beside it as `<file>.harness-incoming`.
+Then, in the project, run `/harness:setup`. It scaffolds `specs/`, `docs/solutions/` and `techstacks/`, creates `agents/PROJECT.md` if missing, merges the `permissions.deny` rules into `.claude/settings.json` (needs [jq](https://jqlang.github.io/jq/)), and adds `specs/` to `.gitignore`. Every step is safe to run twice. A plugin cannot ship `permissions.deny`, which is why setup does it. Restart Claude Code after installing so it loads the skills, agents and hooks.
 
-Needs `git`, [jq](https://jqlang.github.io/jq/) and `python3`. Flags: `--directory <path>`, `--branch <name>`, `--source <local checkout>`, `--keep-sources`, `--dry-run`, `--overwrite-conflicts`. Restart Claude Code afterwards so it loads the skills, agents and hooks.
+Needs `git` and `python3`. The ship workflow also needs the `Workflow` tool.
+
+### Move from the old copied install
+
+Earlier versions copied the harness into the project's `.claude/` with `install-harness.sh`. That script is gone. Run `/harness:setup`: it lists the old copied files (by the names this plugin ships) and deletes them only after you approve. Keep both copies and every hook would run twice.
 
 ### Develop on this repo
 
-The editable source is at the repo root; Claude Code loads from the derived `.claude/`. Rebuild it after editing `skills/`, `agents/`, `hooks/`, `rules/`, `templates/` or `settings.json`:
+The plugin source is `plugins/harness/`. Load it straight from the checkout, with no copy step:
 
 ```bash
-bash scripts/deploy-harness.sh
+claude --plugin-dir plugins/harness
 ```
+
+Check it with `claude plugin validate plugins/harness --strict` and `claude plugin validate . --strict`.
 
 ### Test
 

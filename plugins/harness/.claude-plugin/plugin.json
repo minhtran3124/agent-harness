@@ -1,0 +1,11 @@
+{
+  "name": "harness",
+  "version": "2.37.0",
+  "description": "Skill framework for Claude Code: triage, plan, implement, review, ship.",
+  "author": {
+    "name": "Minh Tran"
+  },
+  "workflows": [
+    "./workflows/ship.js"
+  ]
+}

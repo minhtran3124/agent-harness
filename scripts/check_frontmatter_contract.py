@@ -3,7 +3,7 @@
 
 Driven by the disk: every skills/*/SKILL.md is a skill and every agents/*.md is an agent,
 except agents/README.md and agents/PROJECT*.md (PROJECT.md, PROJECT.template.md), which are
-not agents.
+not agents. Paths are relative to the plugin root, plugins/harness.
 
 Verifies:        every skill and agent on disk has a frontmatter block whose `name:` and
                  `description:` are present and non-empty, and whose `name:` matches the
@@ -15,12 +15,10 @@ Does not verify: that a description is GOOD (it routes well), or that a body mat
                  scripts/check-allowed-tools.sh. This is traceability tier: fields exist and
                  parse.
 
-Why this and not `claude plugin validate --strict`: that validator models the repo as a
-packaged marketplace plugin (this repo has no `.claude-plugin/`, so it reports
-`manifest: null`) and classifies every *.md under agents/ as an agent, which costs a
-three-file allowlist of permanent blind spots to suppress. It is also an external CLI that
-CI runners do not ship, so it can never gate a pull request. This check reaches the same
-load-bearing coverage with stdlib only, and runs everywhere.
+Why this as well as `claude plugin validate --strict`: the validator is an external CLI that
+CI runners do not ship, so it cannot gate a pull request on its own. This check reaches the
+same load-bearing coverage with stdlib only, and runs everywhere. The default root is the
+plugin directory, plugins/harness.
 
 Stdlib only (no pyyaml) so CI needs no extra dependency.
 
@@ -145,9 +143,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--root",
-        default=Path(__file__).resolve().parent.parent,
+        default=Path(__file__).resolve().parent.parent / "plugins" / "harness",
         type=Path,
-        help="repository root (default: the parent of scripts/)",
+        help="plugin root holding skills/ and agents/ (default: plugins/harness)",
     )
     args = parser.parse_args()
     return check(args.root)

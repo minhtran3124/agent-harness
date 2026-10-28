@@ -2,7 +2,7 @@
 
 This repo is a **skills framework with a thin judgment harness on top**. This file explains, in plain terms, what "the harness" is and how it shapes the way work flows.
 
-For the full skill inventory and handoff map see [`skills/README.md`](skills/README.md).
+For the full skill inventory and handoff map see [`plugins/harness/skills/README.md`](plugins/harness/skills/README.md).
 
 ---
 
@@ -10,8 +10,8 @@ For the full skill inventory and handoff map see [`skills/README.md`](skills/REA
 
 | Layer | What it is | Lives in |
 |---|---|---|
-| **The engine** (skills) | Invocable `/skills` that *do* the work: intake, design, research, plan, build, review, ship. Each has a defined handoff. | `skills/`, `agents/` |
-| **The harness** | A small control layer: one behavioral rule, a few hooks, and permission denies. | `rules/behavior.md`, `hooks/`, `settings.json` |
+| **The engine** (skills) | Invocable `/skills` that *do* the work: intake, design, research, plan, build, review, ship. Each has a defined handoff. | `plugins/harness/skills/`, `plugins/harness/agents/` |
+| **The harness** | A small control layer: one behavioral rule, a few hooks, and permission denies. | `plugins/harness/rules/behavior.md`, `plugins/harness/hooks/`, `settings.json` |
 
 Claude Code is the only supported runtime.
 
@@ -41,8 +41,8 @@ ticket → /intake → verdict + depth → build → review → ship
 
 ## 4. What is enforced and what is judgment
 
-- **Enforced by code:** `hooks/secrets-scan.sh` blocks a commit with a staged secret or `.env`. `settings.json` `permissions.deny` blocks `.env` reads, force-push and push to `main`/`master`. See `docs/hooks.md`.
-- **Judgment, set by `rules/behavior.md`:** cite your search surface before claiming absence, name an ambiguity instead of resolving it silently, confirm an interface before you use it, deliver the whole asked scope, and write plainly.
+- **Enforced by code:** `plugins/harness/hooks/secrets-scan.sh` blocks a commit with a staged secret or `.env`. `settings.json` `permissions.deny` blocks `.env` reads, force-push and push to `main`/`master`. See `docs/hooks.md`.
+- **Judgment, set by `plugins/harness/rules/behavior.md`:** cite your search surface before claiming absence, name an ambiguity instead of resolving it silently, confirm an interface before you use it, deliver the whole asked scope, and write plainly.
 - **Claims need evidence.** "Done" needs a command that was actually run and its exit code. A bug needs a failing repro test first, then the fix.
 
 ## 5. Stop and ask the owner when
@@ -53,7 +53,7 @@ A change touches auth or authorization, data migration or deletion, a public con
 
 | Want to… | Read |
 |---|---|
-| See all skills + the handoff map | `skills/README.md` |
-| Understand the intake verdict and depth | `skills/intake/SKILL.md` |
+| See all skills + the handoff map | `plugins/harness/skills/README.md` |
+| Understand the intake verdict and depth | `plugins/harness/skills/intake/SKILL.md` |
 | Know what a hook enforces | `docs/hooks.md`, `CLAUDE.md` → Hooks table |
-| See the behavioral rule | `rules/behavior.md` |
+| See the behavioral rule | `plugins/harness/rules/behavior.md` |
