@@ -1,6 +1,6 @@
 ---
 name: finishing-a-development-branch
-description: Verify a finished branch, push it, and open a pull request with a structured body. Opens the PR only: never merges, force-pushes, discards work, or amends commits.
+description: Verify a finished branch, push it, and open a pull request with a structured body. Opens the PR only: never merges, force-pushes, discards work, or amends commits. Use when a branch is complete and ready for a pull request.
 allowed-tools: Read, Write, Grep, Glob, Bash
 ---
 
