@@ -50,8 +50,18 @@ if [ "$DRY" -eq 1 ]; then
 fi
 
 if [ "$SAME" -eq 1 ]; then echo "allow rule already present in $FILE"; exit 0; fi
+# Write through a symlink to its real target, keep the file mode, and never leave a temp file behind.
+n=0
+while [ -L "$FILE" ] && [ "$n" -lt 20 ]; do
+  LINK=$(readlink "$FILE")
+  case "$LINK" in /*) FILE=$LINK ;; *) FILE=$(dirname "$FILE")/$LINK ;; esac
+  n=$((n + 1))
+done
 mkdir -p "$(dirname "$FILE")"
 TMP=$(mktemp "$FILE.XXXXXX")
+trap 'rm -f "$TMP"' EXIT
+if [ -f "$FILE" ]; then cp -p "$FILE" "$TMP"; else chmod 0644 "$TMP"; fi
 printf '%s\n' "$NEW" > "$TMP"
 mv "$TMP" "$FILE"
+trap - EXIT
 echo "merged allow rule into $FILE"

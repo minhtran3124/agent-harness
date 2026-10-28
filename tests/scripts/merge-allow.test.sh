@@ -70,6 +70,18 @@ for body in '{"permissions":[]}' '{"permissions":"x"}' '{"permissions":{"allow":
 done
 if [ "$ok" -eq 1 ]; then pass; else fail "wrong exit or file changed"; fi
 
+t "a write keeps the file mode and a symlink, and leaves no temp file"
+d=$(work)
+printf '%s' '{"model":"sonnet"}' > "$d/real.json"
+chmod 0640 "$d/real.json"
+ln -s real.json "$d/link.json"
+bash "$SCRIPT" "$d/link.json" >/dev/null; rc=$?
+mode=$(ls -l "$d/real.json" | cut -c1-10)
+if [ "$rc" -eq 0 ] && [ -L "$d/link.json" ] && [ "$mode" = "-rw-r-----" ] \
+   && jq -e --arg r "$RULE" '.permissions.allow == [$r]' "$d/real.json" >/dev/null \
+   && [ "$(ls -A "$d" | wc -l | tr -d ' ')" = "2" ]; then pass
+else fail "rc=$rc mode=$mode files=$(ls -A "$d" | tr '\n' ' ')"; fi
+
 t "--dry-run prints a diff naming the rule and leaves an existing file unchanged"
 d=$(work)
 printf '%s' '{"model":"sonnet"}' > "$d/s.json"
