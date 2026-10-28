@@ -1,7 +1,7 @@
 ---
 ticket: run
 stage: review-fix
-status: accepted
+status: superseded
 needs_review: false
 confidence: medium
 decided_by: claude (ship workflow: review-fix)
@@ -9,6 +9,8 @@ date: 2026-10-28
 ---
 
 # 0023. Mitigate with deny rules instead of narrowing the allow rule
+
+Superseded: the owner removed the deny rules on 2026-10-28 ("bỏ 6 luật deny") because #393 asked for exactly one allow rule.
 
 ## Context
 

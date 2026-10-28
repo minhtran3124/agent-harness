@@ -25,13 +25,14 @@ bash "$SCRIPT" "$d/s.json" >/dev/null; rc=$?
 if [ "$rc" -eq 0 ] && jq -e --arg r "$RULE" '.model == "opus" and .hooks == {"Stop":[]} and .permissions.deny[0] == "Read(./.env)" and .permissions.allow == ["Bash(ls *)", $r]' "$d/s.json" >/dev/null; then pass
 else fail "rc=$rc file: $(cat "$d/s.json")"; fi
 
-t "deny rules keep --admin, --auto and --delete-branch out of the wildcard allow rule"
+t "no permissions.deny key is added; an existing deny array is left untouched"
 d=$(work)
 bash "$SCRIPT" "$d/s.json" >/dev/null
-if jq -e '[.permissions.deny[] | select(startswith("Bash(gh pr merge"))] as $x
-  | all(("--admin","--auto","--delete-branch"); . as $f | any($x[]; contains($f)))
-  and (.permissions.deny | length == (unique | length))' "$d/s.json" >/dev/null; then pass
-else fail "file: $(cat "$d/s.json")"; fi
+printf '%s' '{"permissions":{"deny":["Read(./.env)","Bash(x)"]}}' > "$d/t.json"
+bash "$SCRIPT" "$d/t.json" >/dev/null
+if jq -e 'has("permissions") and (.permissions | has("deny") | not)' "$d/s.json" >/dev/null \
+   && jq -e '.permissions.deny == ["Read(./.env)","Bash(x)"]' "$d/t.json" >/dev/null; then pass
+else fail "files: $(cat "$d/s.json") $(cat "$d/t.json")"; fi
 
 t "a rule that is already present is not added twice"
 d=$(work)
@@ -61,9 +62,9 @@ printf '%s' '[1,2]' > "$d/s.json"
 bash "$SCRIPT" "$d/s.json" >/dev/null 2>&1; rc=$?
 if [ "$rc" -eq 2 ]; then pass; else fail "rc=$rc"; fi
 
-t "wrong-typed permissions, allow or deny exit 2 and leave the file untouched"
+t "wrong-typed permissions or allow exit 2 and leave the file untouched"
 d=$(work); ok=1
-for body in '{"permissions":[]}' '{"permissions":"x"}' '{"permissions":{"allow":"x"}}' '{"permissions":{"deny":{}}}' '{"permissions":false}' '{"permissions":{"allow":false}}' '{"permissions":{"deny":false}}'; do
+for body in '{"permissions":[]}' '{"permissions":"x"}' '{"permissions":{"allow":"x"}}' '{"permissions":false}' '{"permissions":{"allow":false}}'; do
   printf '%s' "$body" > "$d/s.json"
   bash "$SCRIPT" "$d/s.json" >/dev/null 2>&1; rc=$?
   if [ "$rc" -ne 2 ] || [ "$(cat "$d/s.json")" != "$body" ]; then ok=0; echo "body=$body rc=$rc"; fi

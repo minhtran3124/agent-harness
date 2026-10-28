@@ -1,12 +1,11 @@
 #!/bin/bash
-# Merge the harness permissions.allow rule (Bash(gh pr merge *)) and the deny rules that keep
-# --admin, --auto and --delete-branch prompting into a settings file.
+# Merge the harness permissions.allow rule (Bash(gh pr merge *)) into a settings file.
 # Usage: merge-allow.sh [--dry-run] <settings.json>
 #   Keeps every existing key and every existing allow entry (their order first), appends the
-#   harness rules if they are missing, and writes nothing when nothing is missing (idempotent).
+#   harness rule if it is missing, and writes nothing when nothing is missing (idempotent).
 #   A missing file is created as {} first. --dry-run prints the diff and changes nothing.
 # Exit: 0 done or already merged, 1 usage, 2 the file is not a valid JSON object or its permissions
-#       is not an object or its allow/deny is not an array (file untouched),
+#       is not an object or its allow is not an array (file untouched),
 #       3 jq is not installed. Needs jq. Bash 3.2 safe. jq rewrites the file with 2-space indent.
 set -eu
 
@@ -17,25 +16,21 @@ FILE=$1
 command -v jq >/dev/null 2>&1 || { echo "merge-allow: jq is required (install jq, then re-run)" >&2; exit 3; }
 
 RULES='["Bash(gh pr merge *)"]'
-# The wildcard also matches the flags that skip branch protection or defer the merge. A deny rule wins
-# over an allow rule, so these keep --admin, --auto and --delete-branch behind a normal prompt.
-DENY='["Bash(gh pr merge --admin*)","Bash(gh pr merge * --admin*)","Bash(gh pr merge --auto*)","Bash(gh pr merge * --auto*)","Bash(gh pr merge --delete-branch*)","Bash(gh pr merge * --delete-branch*)"]'
 
 if [ -f "$FILE" ]; then
   jq -e 'type == "object"' "$FILE" >/dev/null 2>&1 \
     || { echo "merge-allow: $FILE is not a valid JSON object; not touching it" >&2; exit 2; }
-  jq -e '(if has("permissions") then .permissions else {} end) | type == "object" and ((if has("allow") then .allow else [] end) | type == "array") and ((if has("deny") then .deny else [] end) | type == "array")' "$FILE" >/dev/null 2>&1 \
-    || { echo "merge-allow: $FILE has a permissions, allow or deny value of the wrong type; not touching it" >&2; exit 2; }
+  jq -e '(if has("permissions") then .permissions else {} end) | type == "object" and ((if has("allow") then .allow else [] end) | type == "array")' "$FILE" >/dev/null 2>&1 \
+    || { echo "merge-allow: $FILE has a permissions or allow value of the wrong type; not touching it" >&2; exit 2; }
   CUR=$(cat "$FILE")
 else
   CUR='{}'
 fi
 
-NEW=$(printf '%s' "$CUR" | jq --argjson r "$RULES" --argjson d "$DENY" '
+NEW=$(printf '%s' "$CUR" | jq --argjson r "$RULES" '
   def uniq: reduce .[] as $x ([]; if index($x) then . else . + [$x] end);
   .permissions = ((.permissions // {})
-    | .allow = (((.allow // []) + $r) | uniq)
-    | .deny = (((.deny // []) + $d) | uniq))')
+    | .allow = (((.allow // []) + $r) | uniq))')
 
 SAME=0
 if [ -f "$FILE" ] && [ "$(printf '%s' "$CUR" | jq -S .)" = "$(printf '%s' "$NEW" | jq -S .)" ]; then SAME=1; fi
