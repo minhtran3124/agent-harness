@@ -1,14 +1,16 @@
 ---
 ticket: run
 stage: intent-fix
-status: needs-review
-needs_review: true
+status: superseded
+needs_review: false
 confidence: high
 decided_by: claude (ship workflow: intent-fix)
 date: 2026-10-28
 ---
 
 # 0004. Report failing descriptions instead of editing them
+
+> Superseded: the plan-blind intent-fix stage made this change against the owner-confirmed decisions; it was reverted because the owner chose to nới cue to use|when and to edit five descriptions (see 0003, 0009, 0010).
 
 ## Context
 
