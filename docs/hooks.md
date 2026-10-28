@@ -26,12 +26,16 @@ After a `gh pr create`, adds a reminder to the model's context to run the review
 
 ### `clean-worktrees.sh` (PostToolUse, Bash)
 
-After a `gh pr merge` (or a merge made through `gh api .../pulls/<n>/merge`), removes the worktree and
-local branch of every branch whose PR is merged on GitHub with the same tip commit as the local branch,
-and tells the model what it removed. It never uses a force flag: `git worktree remove` refuses a worktree with changes or a lock, and
+Acts only on a real merge command: `gh pr merge <n>` or `gh api .../pulls/<n>/merge`, at command position
+(at the start, or after `&&`, `;`, `|` or env assignments). Text inside a heredoc or a quoted string is ignored, so an
+issue body, commit message or `echo` that only mentions the phrase does nothing. The scope is that one PR: the hook
+looks it up with `gh pr view <n> --json state,headRefName` and, if it is merged, removes the worktree and local
+branch of that PR's branch when the PR has the same tip commit as the local branch, then tells the model what it
+removed. With no number in the command it uses the PR of the current branch; if that lookup fails it exits
+silently and cleans nothing. It never uses a force flag: `git worktree remove` refuses a worktree with changes or a lock, and
 `git branch -d` refuses a branch git does not see as merged (for example a squash merge; the hook reports it and
 leaves it). It never touches `main`, `master`, the checked-out branch of the main checkout, or the worktree the
-session is running in. Run by hand with no argument, it prints the same report.
+session is running in. Run by hand with no argument, it sweeps every merged branch and prints the same report.
 
 ### `session-rules.sh` (SessionStart)
 
