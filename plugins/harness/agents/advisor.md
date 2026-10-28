@@ -1,6 +1,6 @@
 ---
 name: advisor
-description: "Use this agent to get a second opinion on one question: a design or plan review, a stuck check, a blocked agent, or an architecture decision. It is read-only and answers with a recommendation and reasons."
+description: "Use this agent when you need a second opinion on one question: a design or plan review, a stuck check, a blocked agent, or an architecture decision. It is read-only and answers with a recommendation and reasons."
 tools: Glob, Grep, Read
 model: claude-opus-5-5
 effort: high

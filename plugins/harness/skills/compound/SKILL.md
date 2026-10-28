@@ -1,6 +1,6 @@
 ---
 name: compound
-description: Preserve durable bugs, patterns, decisions, and failed approaches as discoverable `docs/solutions/` records. Use only after a session produced a reusable learning.
+description: Preserve durable bugs, patterns, decisions, and failed approaches as discoverable `docs/solutions/` records. Use only when a session produced a reusable learning.
 allowed-tools: Read, Write, Grep, Glob, Agent, Task, Bash(python3 *)
 ---
 

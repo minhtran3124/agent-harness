@@ -1,6 +1,6 @@
 ---
 name: using-git-worktrees
-description: Set up or verify an isolated git worktree from the right base for a manual run. Workflows do not need it; they use `isolation: 'worktree'`.
+description: Set up or verify an isolated git worktree from the right base for a manual run. Use when starting manual work. Workflows do not need it; they use `isolation: 'worktree'`.
 allowed-tools: Read, Bash(git *), Bash(ls *), Bash(${CLAUDE_SKILL_DIR}/scripts/detect-isolation.sh*), Bash(bash ${CLAUDE_SKILL_DIR}/scripts/detect-isolation.sh*)
 ---
 

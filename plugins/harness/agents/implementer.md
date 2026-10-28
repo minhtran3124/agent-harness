@@ -1,6 +1,6 @@
 ---
 name: implementer
-description: "Write, review, or refactor code end-to-end — implement features, fix bugs, and add/update tests with minimal, scoped diffs. Stack-agnostic: defers all project specifics to agents/PROJECT.md."
+description: "Use when you need to write, review, or refactor code end-to-end — implement features, fix bugs, and add/update tests with minimal, scoped diffs. Stack-agnostic: defers all project specifics to agents/PROJECT.md."
 color: orange
 model: claude-sonnet-5-5
 effort: medium

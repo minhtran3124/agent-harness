@@ -1,6 +1,6 @@
 ---
 name: intent-review
-description: Independently review a finished diff against the owner's verbatim original request, blind to the plan. Use to detect missing requested behavior, intent drift, and unrequested excess scope.
+description: Independently review a finished diff against the owner's verbatim original request, blind to the plan. Use when you need to detect missing requested behavior, intent drift, and unrequested excess scope.
 allowed-tools: Read, Grep, Glob, Agent, Task, Bash(git diff *), Bash(git log *), Bash(gh issue view *)
 ---
 
