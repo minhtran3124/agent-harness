@@ -15,6 +15,7 @@ if [ "${1:-}" = PostToolUse ]; then
   command -v jq >/dev/null || exit 0
   cmd=$(jq -r '.tool_input.command // empty' 2>/dev/null) || exit 0
   [ -n "$cmd" ] || exit 0
+  # Braces split only as standalone tokens (a brace group), so `repos/{owner}/{repo}` stays intact.
   # Reduce the command to what the shell would run: drop heredoc bodies and quoted strings, so text
   # that only mentions the merge phrase (an issue body, a commit message, an echo) never matches.
   segs=$(printf '%s\n' "$cmd" | awk '
@@ -27,7 +28,8 @@ if [ "${1:-}" = PostToolUse ]; then
         if (q == "") { if (c == "\"" || c == "\047") q = c; else out = out c }
         else if (q == "\"" && c == "\\") i++
         else if (c == q) q = "" }
-      print out }' | sed -E 's/&&|\|\||[;|&(){}]/\
+      print out }' | sed -E 's/&&|\|\||[;|&()]/\
+/g; s/(^|[[:space:]])[{}]([[:space:]]|$)/\
 /g')
   # A merge counts only at command position (after optional env assignments). Take the PR number from it.
   num=""; hit=0
