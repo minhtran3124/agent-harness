@@ -67,8 +67,8 @@ FAILURE_TRACK:
     Name a specific, buildable artifact rather than prose like "be careful" or "remember to".
     Use one of two forms:
       existing: <file/hook/rule that ALREADY enforces this> — e.g. "hooks/secrets-scan.sh"
-      proposed: <artifact to BUILD + its target path> — e.g. "a check in scripts/harness-audit.sh
-                that flags a spec missing its verify evidence"
+      proposed: <artifact to BUILD + its target path> — e.g. "a check in scripts/lint-doc-truth.sh
+                that flags a dangling path"
     The ratchet principle: every repeated mistake must become a
     permanent mechanical rule, not a remembered lesson. If no guardrail exists yet, emit a
     `proposed:` one — a failure with no proposed guardrail is incomplete.]
@@ -86,7 +86,6 @@ FAILURE_TRACK:
 - Generic advice ("handle errors properly") is not useful — be specific to this codebase
 - `Applicable_When` must complete the sentence "Use this pattern when..." — vague answers like "when needed" are not acceptable
 - If no approach was tried and abandoned, leave all FAILURE_TRACK sections as `[none]`
-- Mine `Harness-Delta: backlog` items from subagent summaries in the session transcript into FAILURE_TRACK entries — these friction signals mark approaches the harness found wanting
 - FAILURE_TRACK `Applicable_When` must complete the sentence "Watch for this when..." — it must name a specific trigger condition, not just "when needed"
 - `Regression_Test` in BUG_TRACK is required and must never be left blank — if no test exists, write `[none] — <reason>` explaining why
 - `Guardrail` in FAILURE_TRACK is required and must name a buildable artifact tagged `existing:` or `proposed:` — never leave it as prose or `[none]`. A failure whose mistake cannot recur mechanically is not yet a ratchet

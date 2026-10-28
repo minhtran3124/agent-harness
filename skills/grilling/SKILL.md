@@ -21,7 +21,7 @@ The caller names `Mode: interactive` (default) or `Mode: auto`.
 
 ## Facts and decisions
 
-Facts are your job. Read the code. For a search larger than a few reads, dispatch the `researcher` agent (Haiku). Never ask the owner for something you can look up.
+For a search larger than a few reads, dispatch the `researcher` agent (Haiku). Never ask the owner for something you can look up.
 
 Only decisions go to the owner. Put each decision in the round with a recommendation.
 

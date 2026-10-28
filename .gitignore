@@ -1,6 +1,3 @@
-# MkDocs build output
-site/
-
 # Python
 __pycache__/
 *.pyc
@@ -27,26 +24,14 @@ CLAUDE.local.md
 
 # Timestamped harness backups (created by deploy/install scripts; not tracked)
 .harness-backup-*/
-.harness-state/
 
 # Local-only research notes (kept out of the tracked tree by request)
 docs/memory/
 
-# specs/ is local scratch (plans, designs, run state). Files already tracked stay tracked
-# (#350 archives them); force-add (git add -f) only a spec file that must be kept.
+# specs/ is local scratch (plans and research briefs).
 specs/
 
 .vercel
-
-# Local-only harness-engineering review docs
-docs/harness-engineering-review.md
-docs/harness-engineering-review.en.md
-
-# bootstrap-xia2 review artifacts — per-repo, never shipped by the harness
-*.proposed
-
-# generated PR description (finishing-a-development-branch Step 3), not committed
-.pr-body.md
 
 # vscode
 .vscode

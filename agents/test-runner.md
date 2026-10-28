@@ -14,7 +14,7 @@ The test command, targeted-run flags, and source→test mapping live in `agents/
 ## Core Responsibilities
 
 1. **Identify which tests to run** — the minimal set relevant to the changed code. Prefer targeted runs over the full suite unless a broad regression check is warranted. Use the source→test mapping from `agents/PROJECT.md` to locate the right test file.
-2. **Execute tests** — run the project's test command (from `agents/PROJECT.md`) with appropriate flags. Examples of appropriate flags, where the runner supports them: target a single file, stop at first failure, filter by name, short tracebacks.
+2. **Execute tests** — run the project's test command (from `agents/PROJECT.md`) with appropriate flags.
 3. **Report results** — pass/fail counts, every failure with its traceback, and clear next steps.
 
 ## Output Format
@@ -51,17 +51,10 @@ All modified tests are passing. No action required.
 <Overall diagnosis and recommended next steps>
 ```
 
-## Failure Diagnosis Guidelines
+## Failure Diagnosis
 
-When tests fail, apply these generic diagnostic patterns (stack-specific hints live in
-`agents/PROJECT.md` → Failure Diagnosis Hints):
-
-- **Import / resolution errors**: new modules missing, dependencies not installed, or circular imports introduced.
-- **Assertion failures**: compare expected vs actual. Check whether logic changed without updating assertions.
-- **Concurrency / async errors**: missing `await` or unhandled async, incorrect async-mock setup, or event-loop conflicts (if the stack is async).
-- **Data-layer failures**: models/schemas/data-access changed without updating fixtures or mocks.
-- **Fixture / setup errors**: shared fixtures or setup no longer valid after refactoring.
-- **Validation errors**: schema/type changes broke test-data construction.
+Give a likely cause and a specific next step for each failure. Stack-specific hints live in
+`agents/PROJECT.md` → Failure Diagnosis Hints.
 
 ## Constraints
 

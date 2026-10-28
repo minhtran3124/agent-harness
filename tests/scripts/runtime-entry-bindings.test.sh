@@ -21,8 +21,8 @@ else
 fi
 
 t "Claude renders the official skill-entry syntax"
-claude_out=$(python3 "$ROOT/$RENDERER" --root "$ROOT" --runtime claude --skill feature-intake --prompt '<case prompt>')
-if [ "$claude_out" = "claude -p '/feature-intake <case prompt>' --output-format text" ]; then
+claude_out=$(python3 "$ROOT/$RENDERER" --root "$ROOT" --runtime claude --skill intake --prompt '<case prompt>')
+if [ "$claude_out" = "claude -p '/intake <case prompt>' --output-format text" ]; then
   pass
 else
   fail "unexpected output — claude=[$claude_out]"

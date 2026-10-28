@@ -1,8 +1,7 @@
 # Hooks and permissions
 
 The short hook table is in `CLAUDE.md`; `scripts/lint-doc-truth.sh` keeps that table in step with
-`hooks/` and `settings.json`. Harness v5 (epic #338, issue #349) replaced the old commit gate and its
-companions with three small hooks plus a `permissions.deny` list. Everything else is judgment, not
+`hooks/` and `settings.json`. The harness has three small hooks plus a `permissions.deny` list. Everything else is judgment, not
 a mechanical gate.
 
 ## Hook details
@@ -54,7 +53,7 @@ Deny rules are prefix patterns on the command text; they are a guard against mis
 
 ## What is intentionally not enforced
 
-The v4 commit gate, the branch-isolation guard and the session-knowledge loader are gone, together with the lane, escalation, receipt and run-state checks they ran. Nothing blocks a commit for a missing `SUMMARY.md`, a low lane, or a pending escalation; nothing blocks an edit on `main`; nothing preloads `docs/solutions/` at session start. Read `docs/solutions/INDEX.md` when you plan. Per-role models come from `agents/runtime-bindings.json` only; the `harness-models.json` override is gone.
+Nothing blocks a commit for missing evidence; nothing blocks an edit on `main`; nothing preloads `docs/solutions/` at session start. Read `docs/solutions/INDEX.md` when you plan. Per-role models come from `agents/runtime-bindings.json` only.
 
 ## Rule-loading tiers
 

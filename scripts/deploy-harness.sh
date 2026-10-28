@@ -398,7 +398,7 @@ import re, sys, pathlib
 out = pathlib.Path(sys.argv[1]); names = sys.argv[2:]
 pats = [re.compile(r'(?<![\w./-])scripts/' + re.escape(n)) for n in names]
 # The asd-ste100 skill names its linter by path. In a consumer the linter is under .claude/skills/.
-# feature-intake and the diagnosing-bugs skill name skills/diagnosing-bugs/ files (SKILL.md,
+# intake and the diagnosing-bugs skill name skills/diagnosing-bugs/ files (SKILL.md,
 # scripts/, references/) by path; the whole prefix is under .claude/skills/ too.
 pats.append(re.compile(r'(?<![\w./-])skills/asd-ste100/scripts/ste-lint\.py'))
 pats.append(re.compile(r'(?<![\w./-])skills/diagnosing-bugs/'))

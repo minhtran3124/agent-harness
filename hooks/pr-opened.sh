@@ -8,6 +8,6 @@ pr=$(printf '%s' "$payload" | jq -r '.tool_response | tostring' 2>/dev/null | gr
 if [ "$(printf '%s' "$payload" | jq -r '.agent_id // empty')" ]; then
   text="PR #${pr:-?} was opened from a subagent. Return the PR number to the main session; subagents do not review."
 else
-  text="PR #${pr:-?} was opened. Next step: run the review workflow (correctness-review, then intent-review) on it before merge."
+  text="PR #${pr:-?} was opened. Next step: run the review workflow (/code-review, then intent-review) on it before merge."
 fi
 jq -n --arg t "$text" '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:$t}}'

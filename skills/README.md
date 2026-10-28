@@ -1,6 +1,6 @@
 # Claude Skills — Reference & Workflow
 
-Skills are reusable prompt programs invoked by name through the active runtime. Each skill has a defined scope, hard gates, and a handoff to the next skill.
+Skills are reusable prompt programs invoked by name through the active runtime. Each skill has a defined scope, hard rules, and a handoff to the next skill.
 
 This file is the single source of truth for overview, workflow, and cross-skill concerns — consult the `SKILL.md` of each skill for runtime behavior.
 
@@ -19,7 +19,7 @@ binding renders `/skill-name` for Claude Code. Shared skills must not hard-code 
 init-structure.sh --root <project>   (first-time setup; run from the harness repo)
   → scaffolds specs/, docs/solutions/ (create-if-missing)
       ↓
-feature-intake  (readiness gate — run first on every ticket)
+intake  (readiness gate — run first on every ticket)
   → judges READY | CONFIRM | GRILL | BLOCKED and depth S | M | L; returns a short verdict block
   → GRILL hands off to the grilling skill · BLOCKED proposes a split or names the missing dependency
   → Input-type: bug fix → diagnosing-bugs before the plan (see Bug Fix Path)
@@ -52,8 +52,8 @@ finishing-a-development-branch
 ### Minimum Viable Path (intent clear, in-place edit, <1 day)
 
 ```
-feature-intake → implement (depth S, plan in the prompt) → finishing-a-development-branch
-feature-intake → writing-plans → implement (depth M) · add brainstorming + xia2 first for depth L
+intake → implement (depth S, plan in the prompt) → finishing-a-development-branch
+intake → writing-plans → implement (depth M) · add brainstorming + xia2 first for depth L
 
 Every change runs on its own branch. Skip brainstorming when the approach is clear.
 Apply asd-ste100 to agent prose you edit under skills/, rules/, or agents/.
@@ -62,15 +62,15 @@ Apply asd-ste100 to agent prose you edit under skills/, rules/, or agents/.
 ### Bug Fix Path
 
 ```
-feature-intake  (Input-type: bug fix — any fix of wrong behavior, harness bugs included)
+intake  (Input-type: bug fix — any fix of wrong behavior, harness bugs included)
       ↓
 diagnosing-bugs  (every depth — six gated phases; intake Reads its SKILL.md, not the Skill tool)
-  → isolation first: tiny → `git checkout -b fix/<slug>` from a shared branch · normal / high-risk → using-git-worktrees
+  → isolation first: depth S → `git checkout -b fix/<slug>` from a shared branch · M / L → using-git-worktrees
   → Phases 1–4 write specs/<slug>/diagnosis.md (Loop, Repro, Hypotheses, Probes, Confirmed, Seam)
   → task-reviewer reviews it before any fix (spec_verdict: pass + quality_verdict: approved)
       ↓
 Phase 5 fix
-  tiny: red test at the Seam: committed before the fix → Phase 6 cleanup (loop green, no [DEBUG- tag)
+  S: red test at the Seam: committed before the fix → Phase 6 cleanup (loop green, no [DEBUG- tag)
   M / L: writing-plans and implement, diagnosis.md as input; Phase 6 runs before review
       ↓
 compound  (when the root cause is a reusable learning — the bug track takes it from diagnosis.md Confirmed:)
@@ -84,7 +84,7 @@ compound  (when the root cause is a reusable learning — the bug track takes it
 
 | Skill | Trigger | Output |
 |---|---|---|
-| `feature-intake` | First, on every ticket — readiness gate: READY / CONFIRM / GRILL / BLOCKED and depth S / M / L, before research, planning, or edits | A short verdict block (verdict, depth, deps, questions, reason) and an intent line quoting the request |
+| `intake` | First, on every ticket — readiness gate: READY / CONFIRM / GRILL / BLOCKED and depth S / M / L, before research, planning, or edits | A short verdict block (verdict, depth, deps, questions, reason) and an intent line quoting the request |
 
 ### Setup
 
@@ -99,7 +99,7 @@ from the harness checkout run `bash scripts/init-structure.sh --root <project>`,
 | `grilling` | **Intake- or user-invoked**. A ticket has open decisions that the owner must settle before design or planning. It maps the decisions as a design tree and asks the whole frontier in one numbered round, each with a recommended answer. Facts it looks up itself. `Mode: auto` is for `--no-ask` runs only | A "Confirmed decisions" comment on the ticket + a short decision list for the caller |
 | `brainstorming` | The goal is clear but the approach is not. The user weighs two or more ways, does not know how to start, or asks for a design or a recommendation. Not for a settled approach that only needs codebase or library knowledge (that is `xia2`). Depth L routes here | a design ADR in `docs/adr/` (depth L) |
 | `xia2` | Find out how something actually works here before building on it. Examples: a feature on unexplained code, a library or API that the repo does not use yet, or how an existing part works. Not for a choice between approaches (that is `brainstorming`). No depth classifier | `specs/<slug>/research-brief.md` (depth L) or a short inline brief |
-| `diagnosing-bugs` | **User- or intake-invoked**. Run `/diagnosing-bugs`, or `feature-intake` routes an `Input-type: bug fix` here. The skill blocks model invocation, so intake uses the Read tool on its `SKILL.md`. It proves the root cause in six gated phases before any fix. Every lane runs all six phases. No "cause known" shortcut exists. `task-reviewer` reviews the diagnosis before the fix | `specs/<slug>/diagnosis.md` → red test + fix (tiny) or the lane route |
+| `diagnosing-bugs` | **User- or intake-invoked**. Run `/diagnosing-bugs`, or `intake` routes an `Input-type: bug fix` here. The skill blocks model invocation, so intake uses the Read tool on its `SKILL.md`. It proves the root cause in six gated phases before any fix. Every depth runs all six phases. No "cause known" shortcut exists. `task-reviewer` reviews the diagnosis before the fix | `specs/<slug>/diagnosis.md` → red test + fix (depth S) or the M / L route |
 
 ### Planning
 
@@ -118,12 +118,12 @@ from the harness checkout run `bash scripts/init-structure.sh --root <project>`,
 
 | Skill | Trigger | Output |
 |---|---|---|
-| `intent-review` | Checks the diff range against the owner's original request verbatim, blind to the plan; dispatches the `intent-reviewer` agent with only those two inputs. **Standalone** on any diff plus its request, or called by `subagent-driven-development` as its last pass | Findings classified `gap` / `excess` / `drift` → fix · ask the owner (auto mode: record a decision) · list in the PR |
-| `autopilot` | **User-invoked** (`/autopilot <milestone \| #n \| free text> [base=<branch>] [--no-ask]`). Interactive first half of a hands-off run for one ticket or a milestone: triages each ticket (`feature-intake`), groups them by dependency (`skills/autopilot/scripts/plan_groups.py`), asks the owner every open question once, runs `grilling` for GRILL tickets, then launches `workflows/ship.js` after one go/no-go | Summary table, "Confirmed decisions" comments on the tickets, one `Workflow` run |
+| `intent-review` | Checks the diff range against the owner's original request verbatim, blind to the plan; dispatches the `intent-reviewer` agent with only those two inputs. **Standalone** on any diff plus its request, or run by the ship workflow as its last pass | Findings classified `gap` / `excess` / `drift` → fix · ask the owner (auto mode: record a decision) · list in the PR |
+| `autopilot` | **User-invoked** (`/autopilot <milestone \| #n \| free text> [base=<branch>] [--no-ask]`). Interactive first half of a hands-off run for one ticket or a milestone: triages each ticket (`intake`), groups them by dependency (`skills/autopilot/scripts/plan_groups.py`), asks the owner every open question once, runs `grilling` for GRILL tickets, then launches `workflows/ship.js` after one go/no-go | Summary table, "Confirmed decisions" comments on the tickets, one `Workflow` run |
 | `decision-record` | **Stage- or user-invoked**. A model decided something on its own during an autonomous run. Stage agents return `decisions[]`. The final ADR stage runs `scripts/write_adrs.py`, commits `docs/adr/NNNN-*.md` and renders the PR `## Decisions` section | ADR files + a `## Decisions` PR section (and one private artifact when available) |
-| `compound` | Only after a session that produced a reusable learning (non-obvious bug fix, pattern, decision, useful failure) or a proposed harness ratchet | `docs/solutions/<category>/<slug>.md`, rebuilt `INDEX.md`, `critical-patterns.md` entries for critical or recurring learnings, `improvement-backlog.md` rows for proposed guardrails |
-| `session-retro` | **User-invoked**, after a session with visible friction — traces struggles to missing environment levers (check > pointer > scoped rule) and proposes ranked fixes; never edits, waits for approval. Not `compound` (knowledge capture) or a bug hunt | Ranked candidate list → approved items go to `improvement-backlog.md` rows or a `feature-intake` task. Durable knowledge goes to `compound` |
-| `asd-ste100` | Use it when an agent or a tool must read English text with no human to help. Use it for instructions, tool descriptions, error messages, and status reports. Do not use it for creative or marketing copy. Vendored from upstream. See `skills/asd-ste100/UPSTREAM.md`. Tiny-lane intake edits and implementers apply it to prose under `skills/`, `rules/`, and `agents/`. `compound` applies it to new records. | Text rewritten in ASD-STE100 style (Strict or STE-flavored mode). `skills/asd-ste100/scripts/ste-lint.py` checks the structural rules. |
+| `compound` | Only after a session that produced a reusable learning (non-obvious bug fix, pattern, decision, useful failure) | `docs/solutions/<category>/<slug>.md`, rebuilt `INDEX.md`, `critical-patterns.md` entries for critical or recurring learnings |
+| `session-retro` | **User-invoked**, after a session with visible friction — traces struggles to missing environment levers (check > pointer > scoped rule) and proposes ranked fixes; never edits, waits for approval. Not `compound` (knowledge capture) or a bug hunt | Ranked candidate list → approved items become an `intake` task. Durable knowledge goes to `compound` |
+| `asd-ste100` | Use it when an agent or a tool must read English text with no human to help. Use it for instructions, tool descriptions, error messages, and status reports. Do not use it for creative or marketing copy. Vendored from upstream. See `skills/asd-ste100/UPSTREAM.md`. Implementers apply it to prose under `skills/`, `rules/`, and `agents/`. `compound` applies it to new records. | Text rewritten in ASD-STE100 style (Strict or STE-flavored mode). `skills/asd-ste100/scripts/ste-lint.py` checks the structural rules. |
 | `finishing-a-development-branch` | Implementation complete, tests pass | Runs tests, pushes, opens a PR with a structured body (never merges) |
 
 ---
@@ -146,7 +146,7 @@ If one of these isn't available in your environment, the workflows degrade grace
 ## Skill Handoff Map
 
 ```
-feature-intake             ──► READY → depth S: implement · M: writing-plans · L: brainstorming → xia2 → writing-plans
+intake             ──► READY → depth S: implement · M: writing-plans · L: brainstorming → xia2 → writing-plans
                                 GRILL: grilling skill · BLOCKED: split or wait
                                 Input-type: bug fix → diagnosing-bugs (before the plan)
 grilling                   ──► "Confirmed decisions" comment + decision list → caller (terminal)
@@ -155,11 +155,11 @@ xia2                       ──► research brief → writing-plans
 writing-plans              ──► implement
 implement                  ──► /code-review → intent-review → finishing-a-development-branch
 intent-review              ──► (standalone — same pipeline; needs the verbatim request and a BASE..HEAD range)
-autopilot                  ──► feature-intake (per ticket) → grilling → workflows/ship.js (launch, terminal)
+autopilot                  ──► intake (per ticket) → grilling → workflows/ship.js (launch, terminal)
 decision-record            ──► docs/adr/NNNN-*.md + PR `## Decisions` section (terminal)
-diagnosing-bugs            ──► diagnosis.md → task-reviewer → tiny: red test → fix → cleanup
+diagnosing-bugs            ──► diagnosis.md → task-reviewer → S: red test → fix → cleanup
                                 M / L: writing-plans → implement (Phase 6) → compound
-session-retro              ──► user approval → improvement-backlog.md row · feature-intake task · compound
+session-retro              ──► user approval → intake task · compound
 asd-ste100                 ──► nothing (terminal — returns the rewritten text to its caller)
 compound                   ──► nothing (terminal — crystallization is end state)
 finishing-a-development-branch ──► nothing (terminal — shipped)
@@ -194,8 +194,7 @@ Schema reference: `docs/solutions/README.md` (scaffolded by the harness repo's `
 
 `hooks/secrets-scan.sh` runs before every `git commit`: it blocks a staged secret pattern or a staged `.env` file.
 `hooks/pr-opened.sh` reminds the main session to review a PR after `gh pr create`, and `hooks/clean-worktrees.sh`
-removes merged worktrees and branches after a merge. The lane, escalation, receipt and run-state checks of the
-old commit gate are gone; those are judgment calls now. `docs/hooks.md` has the detail.
+removes merged worktrees and branches after a merge. The old commit gate is gone; its lane and escalation checks are judgment calls now. `docs/hooks.md` has the detail.
 
 This is one of several wired hooks — see the full table in the root `CLAUDE.md`.
 
@@ -233,7 +232,7 @@ graph LR
 - **Orchestrator + 4 in-session passes.** `SKILL.md` runs each pass in the main session (a fresh subagent cannot see the transcript); `subagents/*.md` define the output schemas, and passes return **text only** — the orchestrator writes all files.
 - **Order:** the 3 extractors first; then Related Docs Finder with the Context Analyzer's exact `module`+`tags`. Dispatch a subagent only for a solutions tree too large to screen from `INDEX.md`, pasting in its inputs.
 - **`applicable_when` is the primary discovery field.** Knowledge: "Use this pattern when…". Decision: "Make this decision when…". Bug: inherited from `CONTEXT_ANALYSIS`. Appears as an INDEX.md column so future agents scan one sentence per doc.
-- **Four track types: `bug`, `knowledge`, `decision`, `failure`.** The `failure` track records a tried-and-abandoned approach to prevent recurrence: sections are Symptom → Wrong Approach → Why It Failed → Correct Approach → Guardrail (the check/hook/rule that now prevents a repeat). Emitted only when all four required sections (Symptom, Wrong_Approach, Why_It_Failed, Correct_Approach) are non-empty. `Harness-Delta: backlog` friction signals from subagent summaries are also mined into failure records.
+- **Four track types: `bug`, `knowledge`, `decision`, `failure`.** The `failure` track records a tried-and-abandoned approach to prevent recurrence: sections are Symptom → Wrong Approach → Why It Failed → Correct Approach → Guardrail (the check/hook/rule that now prevents a repeat). Emitted only when all four required sections (Symptom, Wrong_Approach, Why_It_Failed, Correct_Approach) are non-empty.
 - **Every `bug` doc requires `## Regression Test`.** Names the pinned test that catches a recurrence, or `[none] — <reason>` if none exists. This field is not optional.
 - **Multi-decision consolidation.** ≥2 decisions in one session → single `[slug]-decisions.md` with `## Decision 1` / `## Decision 2` sections. Rationale: decisions from the same session are causally related; reading one without the other loses the constraints that drove it.
 - **INDEX full rebuild (not append-only).** `scripts/rebuild_solution_index.py` runs after every run, even a run that wrote nothing. Prevents orphaned rows when files are renamed/moved/deleted. `docs/solutions/` grows to tens of files, not thousands — full scan is negligible.

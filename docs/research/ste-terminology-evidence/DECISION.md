@@ -99,7 +99,7 @@ a vocabulary decision, and it would ride in unexamined under a terminology file.
 The blocking question from the shared conversation. They are distinct: a *run* is one
 workflow pass intake→merge; a *session* is one Claude Code process (`SessionStart` /
 `SessionEnd` hooks, `session-knowledge.sh`, `state-breadcrumb.sh`). One run spans several
-sessions — which is precisely why `subagent-driven-development resume <slug>` exists.
+sessions — which is why the old workflow had a resume command.
 Collapsing them, as the draft table did, would have made a linter warn on every correct use
 of `session`.
 
