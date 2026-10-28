@@ -4,8 +4,8 @@
 Input JSON: {"run": "<slug>", "decisions": [{ticket, stage, title, context, options, decision,
 why, consequences, how_to_reverse, confidence, needs_review, decided_by, owner_confirmed?}]}.
 Duplicates (same ticket, same title slug or same non-empty context) are merged first, keeping the lowest confidence. A file is
-written only for a decision that is not owner_confirmed and has needs_review or a confidence other
-than high. --table-out FILE lists every merged decision as a markdown table for the PR body.
+written only for a decision that has needs_review or a confidence other than high; owner_confirmed
+skips the file only when needs_review is false (a flagged decision always gets its file). --table-out FILE lists every merged decision as a markdown table for the PR body.
 Output (stdout): JSON list of {number, path, ticket, title, needs_review, stage}; [] when no
 decision needs a file. Exit 0 = ok, 2 = bad input or a file would be overwritten.
 
@@ -91,9 +91,11 @@ def validate(data) -> list:
 
 def needs_adr(d: dict) -> bool:
     """A decision gets an ADR file when a human should look at it."""
+    if d["needs_review"]:
+        return True
     if d.get("owner_confirmed") is True:
         return False
-    return d["needs_review"] or d["confidence"] != "high"
+    return d["confidence"] != "high"
 
 
 def _context_key(d: dict) -> str:
@@ -146,10 +148,12 @@ def decisions_table(decisions: list) -> str:
     """Markdown table of every decision. ADR column: owner-confirmed, ADR file, or table only."""
     rows = ["| Ticket | Title | Decision | Why | ADR |", "|---|---|---|---|---|"]
     for d in decisions:
-        if d.get("owner_confirmed") is True:
+        if needs_adr(d):
+            note = "ADR file"
+        elif d.get("owner_confirmed") is True:
             note = "owner-confirmed"
         else:
-            note = "ADR file" if needs_adr(d) else "table only"
+            note = "table only"
         rows.append(f"| #{d['ticket']} | {_cell(d['title'])} | {_cell(d['decision'])} | {_cell(d['why'])} | {note} |")
     return "\n".join(rows) + "\n"
 

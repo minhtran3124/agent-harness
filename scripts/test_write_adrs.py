@@ -174,7 +174,10 @@ def test_needs_adr_filter():
     assert w.needs_adr(dec(confidence="high", needs_review=True))
     assert w.needs_adr(dec(confidence="medium"))
     assert w.needs_adr(dec(confidence="low"))
-    assert not w.needs_adr(dec(confidence="low", needs_review=True, owner_confirmed=True))
+    assert not w.needs_adr(dec(confidence="low", needs_review=False, owner_confirmed=True))
+    # needs_review wins over owner_confirmed: file, table row and PR section must agree
+    assert w.needs_adr(dec(confidence="low", needs_review=True, owner_confirmed=True))
+    assert "ADR file" in w.decisions_table([dec(needs_review=True, owner_confirmed=True)])
 
 
 def test_owner_confirmed_validation(tmp_path):
@@ -263,7 +266,7 @@ def test_six_decisions_give_two_adr_files_and_five_table_rows(tmp_path):
     ds = [
         dec(title="Insert the step", confidence="high", context="c1"),
         dec(title="Insert the step", stage="plan", confidence="high", context="c2"),   # near-duplicate
-        dec(title="Owner said so", confidence="low", needs_review=True, owner_confirmed=True),
+        dec(title="Owner said so", confidence="low", needs_review=False, owner_confirmed=True),
         dec(title="Touches contract", confidence="high", needs_review=True),
         dec(title="Guessed", confidence="low"),
         dec(title="Plain", confidence="high"),
