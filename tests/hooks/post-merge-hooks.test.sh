@@ -99,7 +99,7 @@ for cmd in $'gh issue create -F - <<EOF\nplease run gh pr merge 7 later\nEOF' \
   if nothing_removed; then pass; else fail "rc=$RC out=$OUT calls=$(cat "$STUB/calls" 2>/dev/null)"; fi
 done
 
-for cmd in 'gh pr merge 7 --squash --delete-branch' 'cd x && gh pr merge 7' 'FOO=1 gh pr merge 7' 'gh pr merge https://github.com/o/r/pull/7' 'gh api repos/o/r/pulls/7/merge -X PUT' 'gh api repos/{owner}/{repo}/pulls/7/merge -X PUT' '{ gh pr merge 7; }'; do
+for cmd in 'gh pr merge 7 --squash --delete-branch' 'cd x && gh pr merge 7' 'FOO=1 gh pr merge 7' 'gh pr merge https://github.com/o/r/pull/7' 'gh api repos/o/r/pulls/7/merge -X PUT' 'gh api repos/{owner}/{repo}/pulls/7/merge -X PUT' '{ gh pr merge 7; }' 'gh pr merge "7"' 'gh api "repos/o/r/pulls/7/merge" -X PUT' "gh pr merge '7' --squash" $'cat <<< "x"\ngh pr merge 7' $'echo a << b\ngh pr merge 7'; do
   setup2
   t "real merge cleans only PR 7's branch: $cmd"
   hook "$cmd"

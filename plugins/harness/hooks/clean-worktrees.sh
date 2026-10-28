@@ -16,19 +16,34 @@ if [ "${1:-}" = PostToolUse ]; then
   cmd=$(jq -r '.tool_input.command // empty' 2>/dev/null) || exit 0
   [ -n "$cmd" ] || exit 0
   # Braces split only as standalone tokens (a brace group), so `repos/{owner}/{repo}` stays intact.
-  # Reduce the command to what the shell would run: drop heredoc bodies and quoted strings, so text
-  # that only mentions the merge phrase (an issue body, a commit message, an echo) never matches.
+  # Reduce the command to what the shell would run: drop heredoc bodies and quoted strings that hold
+  # whitespace or shell separators, so text that only mentions the merge phrase (an issue body, a
+  # commit message, an echo) never matches. A quoted single token ("12", "repos/o/r/pulls/12/merge")
+  # is kept unquoted. A `<<` starts a heredoc only outside quotes, not as `<<<`, and only when a
+  # terminator line follows; otherwise it is plain text and swallows nothing.
   segs=$(printf '%s\n' "$cmd" | awk '
-    hd != "" { l = $0; sub(/^[ \t]+/, "", l); if (l == hd) hd = ""; next }
-    { print; if (match($0, /<<-?[ \t]*["\047]?[A-Za-z_][A-Za-z0-9_]*/)) {
-        d = substr($0, RSTART, RLENGTH); sub(/^<<-?[ \t]*["\047]?/, "", d); hd = d } }' |
-    awk 'BEGIN { q = "" }
-    { out = ""; n = length($0)
-      for (i = 1; i <= n; i++) { c = substr($0, i, 1)
-        if (q == "") { if (c == "\"" || c == "\047") q = c; else out = out c }
-        else if (q == "\"" && c == "\\") i++
-        else if (c == q) q = "" }
-      print out }' | sed -E 's/&&|\|\||[;|&()]/\
+    { L[NR] = $0 }
+    END {
+      q = ""; qb = ""; out = ""; hd = ""
+      for (r = 1; r <= NR; r++) {
+        line = L[r]
+        if (hd != "") { l = line; sub(/^[ \t]+/, "", l); if (l == hd) hd = ""; continue }
+        n = length(line)
+        for (i = 1; i <= n; i++) { c = substr(line, i, 1)
+          if (q == "") {
+            if (c == "\"" || c == "\047") { q = c; qb = "" }
+            else {
+              if (c == "<" && substr(line, i + 1, 1) == "<" && substr(line, i + 2, 1) != "<" && (i == 1 || substr(line, i - 1, 1) != "<")) {
+                rest = substr(line, i); if (match(rest, /^<<-?[ \t]*["\047]?[A-Za-z_][A-Za-z0-9_]*/)) {
+                  d = substr(rest, RSTART, RLENGTH); sub(/^<<-?[ \t]*["\047]?/, "", d)
+                  for (k = r + 1; k <= NR; k++) { t = L[k]; sub(/^[ \t]+/, "", t); if (t == d) { hd = d; break } } } }
+              out = out c }
+          } else if (q == "\"" && c == "\\") { qb = qb c substr(line, i + 1, 1); i++ }
+          else if (c == q) { if (qb ~ /^[^ \t\n;|&()]*$/) out = out qb; q = "" }
+          else qb = qb c }
+        if (q == "") { print out; out = "" } else qb = qb "\n" }
+      if (out != "") print out
+    }' | sed -E 's/&&|\|\||[;|&()]/\
 /g; s/(^|[[:space:]])[{}]([[:space:]]|$)/\
 /g')
   # A merge counts only at command position (after optional env assignments). Take the PR number from it.
