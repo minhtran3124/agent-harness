@@ -14,11 +14,6 @@ ROOT = SCRIPT.parents[1]
 
 LEGACY_CLAUDE = {
     "implementer": {"model": "claude-sonnet-5-5", "effort": "medium", "tools": None},
-    "reviewer": {
-        "model": "claude-opus-5-5",
-        "effort": "medium",
-        "tools": ["Glob", "Grep", "Read", "Bash"],
-    },
     "task-reviewer": {
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -56,19 +51,6 @@ LEGACY_CLAUDE = {
 # asserted against the rendered artifact directly. Tokens are chosen to be wording-
 # tolerant but deletion-intolerant: they name the *claim*, not a sentence.
 LOAD_BEARING_SUBSTANCE = {
-    "reviewer": {
-        "description": [
-            # Independence is enforced by the harness, not by asking the model nicely.
-            "structurally read-only",
-            "not by instruction",
-        ],
-        "body": [
-            # The negative scope: the shell channel is NOT structurally guarded.
-            "Acknowledged limitation",
-            "never fix",
-            "structural, not a promise",
-        ],
-    },
     "task-reviewer": {
         "description": ["cannot write, edit, spawn agents"],
         "body": [],
@@ -127,10 +109,9 @@ def test_rendered_roles_retain_load_bearing_substance(tmp_path):
 
     `test_claude_render_preserves_legacy_model_tools_and_role_body` compares the
     rendered body against the *current* source, so deleting a sentence from both keeps
-    it green. These tokens pin the substance itself — notably the reviewer's
-    acknowledged limitation, which states that the inspection shell is NOT covered by
-    the structural guarantee. Losing it silently upgrades a contract-tier promise to a
-    structural one.
+    it green. These tokens pin the substance itself — notably the
+    task-reviewer's read-only claim. Losing it silently upgrades a contract-tier promise
+    to a structural one.
     """
     out = tmp_path / "agents"
     renderer.render_claude(ROOT, out)
@@ -164,7 +145,7 @@ def test_missing_runtime_role_is_rejected(tmp_path):
     root = clone_root(tmp_path)
     path = root / "agents/runtime-bindings.json"
     data = json.loads(path.read_text())
-    del data["runtimes"]["claude"]["roles"]["reviewer"]
+    del data["runtimes"]["claude"]["roles"]["task-reviewer"]
     path.write_text(json.dumps(data))
     with pytest.raises(renderer.ContractError, match="role set"):
         renderer.validate(root)
@@ -174,13 +155,13 @@ def test_missing_capability_mapping_is_rejected(tmp_path):
     root = clone_root(tmp_path)
     path = root / "agents/runtime-bindings.json"
     data = json.loads(path.read_text())
-    del data["runtimes"]["claude"]["roles"]["reviewer"]["capabilities"]["mcp"]
+    del data["runtimes"]["claude"]["roles"]["task-reviewer"]["capabilities"]["mcp"]
     path.write_text(json.dumps(data))
     with pytest.raises(renderer.ContractError, match="capability mapping"):
         renderer.validate(root)
 
 
-@pytest.mark.parametrize("role", ["reviewer", "task-reviewer", "test-runner", "researcher", "advisor", "intent-reviewer"])
+@pytest.mark.parametrize("role", ["task-reviewer", "test-runner", "researcher", "advisor", "intent-reviewer"])
 def test_mcp_tool_on_mcp_none_role_is_rejected(tmp_path, role):
     root = clone_root(tmp_path)
     path = root / "agents/runtime-bindings.json"
@@ -216,7 +197,7 @@ def test_missing_tools_list_on_mcp_none_role_is_rejected(tmp_path):
 
 def test_vendor_field_in_semantic_source_is_rejected(tmp_path):
     root = clone_root(tmp_path)
-    path = root / "agents/reviewer.md"
+    path = root / "agents/task-reviewer.md"
     path.write_text(path.read_text().replace("---\n", "---\nmodel: vendor-x\n", 1))
     with pytest.raises(renderer.ContractError, match="runtime policy field"):
         renderer.validate(root)
@@ -226,7 +207,7 @@ def test_unsupported_claude_effort_is_rejected(tmp_path):
     root = clone_root(tmp_path)
     path = root / "agents/runtime-bindings.json"
     data = json.loads(path.read_text())
-    data["runtimes"]["claude"]["roles"]["reviewer"]["effort"] = "ultra"
+    data["runtimes"]["claude"]["roles"]["task-reviewer"]["effort"] = "ultra"
     path.write_text(json.dumps(data))
     with pytest.raises(renderer.ContractError, match="unsupported effort"):
         renderer.validate(root)
@@ -234,7 +215,7 @@ def test_unsupported_claude_effort_is_rejected(tmp_path):
 
 def test_effort_in_semantic_source_is_rejected(tmp_path):
     root = clone_root(tmp_path)
-    path = root / "agents/reviewer.md"
+    path = root / "agents/task-reviewer.md"
     path.write_text(path.read_text().replace("---\n", "---\neffort: high\n", 1))
     with pytest.raises(renderer.ContractError, match="runtime policy field"):
         renderer.validate(root)

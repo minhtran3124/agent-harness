@@ -6,7 +6,7 @@
 
 # Skill Harness
 
-**A ready-to-use toolkit of skills, agents, hooks, and rules for the [Claude Code](https://claude.com/claude-code) CLI**
+**A ready-to-use toolkit of skills, agents, and hooks for the [Claude Code](https://claude.com/claude-code) CLI**
 
 *Prompt-powered workflows that carry a change from brainstorm to ship.*
 
@@ -44,36 +44,26 @@ writes code**, without relying on conversation history:
 - *What proof will show the work is done?*
 - *What decision or lesson should future agents inherit?*
 
-And it sizes the answer with **one principle, two independent dials:**
+And it sizes the answer with **one principle:**
 
-> **Ceremony scales with risk. Human interruption scales with ambiguity.**
+> **Ceremony scales with the size of the change. Human interruption scales with ambiguity.**
 
-**Risk** decides how much *proof and process* a change carries (planning, reviews, recorded
-evidence and rollback). **Ambiguity / confidence** decides whether a *human* is asked — never to
-classify risk, only to confirm intent or authorize a dangerous boundary. So a high-risk-but-clear
-change runs autonomously through heavy proof, while a tiny-but-unclear change stops to ask. Risk ≠
-interruption.
+A small clear change runs straight through the workflow. An important or unclear one stops and
+asks the owner.
 
 ### How this repo resolves it
 
 The repo is two layers: an **engine** of invocable `/skills` that do the work, and a thin
-**harness** that decides — *before* the engine runs — how much process and when to involve a
-human. Each engineering question maps to an enforced mechanism, not a convention:
+**harness** (one behavioral rule, three hooks, permission denies) around it.
 
 | The question | Resolved by |
 |---|---|
 | What should I read first? | start at `docs/solutions/INDEX.md` and `critical-patterns.md`; `/xia2` researches what already exists. |
-| What type of work, how risky? | `/feature-intake` runs first — a 10-flag checklist + hard gates assign a **lane** (`tiny\|normal\|high-risk`) and a **confidence**. |
-| Which contract does it touch? | Hard gates (auth · migration · public contract · high-blast file) force `high-risk`. |
+| What type of work, how big? | `/feature-intake` runs first and returns a verdict (READY, CONFIRM, GRILL, BLOCKED) and a depth (S, M, L). |
 | What proof shows it's done? | A re-runnable check backs every "done": a test command and its exit code, stated in the PR. |
-| What should future agents inherit? | `/compound` crystallizes non-obvious learnings into `docs/solutions/`, the harness's sole committed knowledge path. |
+| What should future agents inherit? | `/compound` crystallizes non-obvious learnings into `docs/solutions/`; `/decision-record` writes ADRs to `docs/adr/`. |
 
-And the claim is corroborated by code: at commit time, hooks check the staged diff against the
-declared lane — the agent can't label a risky change "tiny" and slip it through. (Two gates,
-`workflow-engine` and `weakening-validation`, are warn-mode: they print a note instead of blocking.)
-
-See **[HARNESS.md](HARNESS.md)** for the full model — lanes, hard gates, and how each hook
-enforces it.
+See **[HARNESS.md](HARNESS.md)** for the full model and `docs/hooks.md` for what the hooks enforce.
 
 ## Installation
 
@@ -85,7 +75,7 @@ One-liner that clones the harness, builds `.claude/`, and leaves your project ro
 curl -fsSL "https://raw.githubusercontent.com/minhtran3124/agent-harness/main/scripts/install-harness.sh?$(date +%s)" | bash -s -- --yes
 ```
 
-Everything the harness needs lives in a gitignored `.claude/` (skills, agents, hooks, rules, templates, runtime, a consumer subset of `scripts/`, settings). At the project root it touches only the workflow's structural dirs (`specs/`, `docs/solutions/`), scaffolded **create-if-missing**. The installer never overwrites or deletes anything at your root — it only adds structural files that are absent. **To update, just re-run the one-liner** (idempotent; `.claude/` is merge-synced, non-harness entries and locally-generated files kept; a protected file that differs from incoming is reported via a `<file>.harness-incoming` sidecar rather than overwritten).
+Everything the harness needs lives in a gitignored `.claude/` (skills, agents, hooks, the rule, templates, a consumer subset of `scripts/`, settings). At the project root it touches only the workflow's structural dirs (`specs/`, `docs/solutions/`), scaffolded **create-if-missing**. The installer never overwrites or deletes anything at your root — it only adds structural files that are absent. **To update, just re-run the one-liner** (idempotent; `.claude/` is merge-synced, non-harness entries and locally-generated files kept; a protected file that differs from incoming is reported via a `<file>.harness-incoming` sidecar rather than overwritten).
 
 Needs `git` + [jq](https://jqlang.github.io/jq/) + `python3`.
 Flags: `--directory <path>` · `--branch <name>` · `--source <local checkout>` · `--profile <name>` (deprecated and ignored: hook profiles were removed, every install gets the one fixed hook set) · `--keep-sources` · `--dry-run` · `--overwrite-conflicts` (replace protected files with the incoming copy; `--force`/`--yes` keep local files instead of overwriting them).
@@ -128,8 +118,8 @@ Local scope is private to you: it is stored in `~/.claude.json` under this proje
 > **[skills/README.md](skills/README.md)** is the single source of truth — full skill
 > inventory, triggers, outputs, handoff map, alternate paths, and per-skill design rationales.
 >
-> **[HARNESS.md](HARNESS.md)** — how the risk/trust harness shapes the workflow: lanes,
-> when a human is asked, and how hooks enforce it. Read this to understand *why* the flow behaves
+> **[HARNESS.md](HARNESS.md)** — how the harness shapes the workflow: the intake
+> depth, when a human is asked, and what the hooks enforce. Read this to understand *why* the flow behaves
 > the way it does.
 >
 > **[Guide site](https://skill-harness-guide.vercel.app)** — the companion walkthrough at

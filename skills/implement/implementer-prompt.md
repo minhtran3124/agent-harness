@@ -19,12 +19,13 @@ Rules:
 - You cannot ask questions. Make routine calls yourself and note them.
   If something missing would change the work materially, return NEEDS_CONTEXT before editing.
 - Run the Done-when command and make it pass. Commit your work.
-- FIRST: Read `rules/auto-correct-scope.md`. It is not auto-loaded for you. Fix small bugs and
-  blockers yourself and report each as a deviation. Return BLOCKED instead of acting on a Rule 4
-  situation.
+- Fix small bugs and blockers in your own change yourself (wrong query, missing await, missing
+  import, failing lint) and list each one under `Deviations:`. Return BLOCKED instead of changing
+  a schema, a public contract, auth, a dependency, `settings.json` or `hooks/`, or removing a
+  feature.
 - If you change prose under `skills/`, `rules/` or `agents/`, Read it, then
   apply `skills/asd-ste100/SKILL.md`.
 
 Return: status (DONE | BLOCKED | NEEDS_CONTEXT), commits (sha, subject), files touched,
-Done-when output (excerpt on failure), and any concerns.
+Done-when output (excerpt on failure), deviations, and any concerns.
 ```

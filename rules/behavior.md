@@ -14,9 +14,8 @@ Before you write "there is no X", name the paths, globs, or commands you actuall
 Examples of such a claim: no caller, no test, no handler, no such config. Report a claim you cannot
 source as `unknown`.
 
-This rule is load-bearing for review. `agents/reviewer.md` and the
-`/code-review` pass both hold findings to this rule. So
-an unsourced absence claim is a defect in the review, not a finding.
+This rule is load-bearing for review. The `/code-review` pass and the `task-reviewer` agent hold
+findings to this rule. So an unsourced absence claim is a defect in the review, not a finding.
 
 ## 2. Name the ambiguity instead of resolving it silently
 
@@ -34,7 +33,7 @@ here:
 
 - `timeout` is not installed on macOS.
 - `md5 -q` replaces `md5sum`.
-- `render_plan.py` lives under `skills/visual-planner/`, not `scripts/`.
+- A script path you remember may have moved: run `ls` on it before you write it into a doc.
 
 The cost is asymmetric. On one side is one cheap probe. On the other side is one of these failures:
 

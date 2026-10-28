@@ -13,7 +13,7 @@ from pathlib import Path
 CONTEXT_MATRIX = {
     "implementer": {
         "path": "skills/implement/implementer-prompt.md",
-        "required": ["rules/auto-correct-scope.md"],
+        "required": ["Deviations:"],
     },
     "intent-controller": {
         "path": "skills/intent-review/SKILL.md",

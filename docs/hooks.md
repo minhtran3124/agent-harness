@@ -58,9 +58,9 @@ The v4 commit gate, the branch-isolation guard and the session-knowledge loader 
 
 ## Rule-loading tiers
 
-Rule loading is two-tier, and the tier is decided by the rule file itself. A file in `rules/` with `paths:` frontmatter is contextual and loads on demand. A file without it auto-loads every session. Contextual rules are injected when a matching `specs/**` file is read, plus explicit Read steps in consuming skills where needed (write-flows do not trigger `paths:`). Adding `paths:` to a rule that lacks it **removes** it from the always-on set. That is a behavior change, not a formatting fix.
+A file in `rules/` with `paths:` frontmatter is contextual and loads on demand. A file without it auto-loads every session. Adding `paths:` to a rule that lacks it **removes** it from the always-on set. That is a behavior change, not a formatting fix.
 
-Today the source tree contains five always-on files (`behavior.md`, `architecture.md`, `guidelines.md`, `orchestration.md`, `research-depth.md`) and five path-scoped ones (`plan-format.md`, `wave-parallelism.md`, `auto-correct-scope.md`, `terminology.md`, `review-policy.md`). `tests/scripts/rule-loading-tiers.test.sh` keeps this inventory synchronized with `rules/*.md`.
+Today the source tree contains one always-on file (`behavior.md`) and no path-scoped ones. The nine other rules were removed in v5. `tests/scripts/rule-loading-tiers.test.sh` keeps this inventory exact against `rules/*.md`. A re-sync prunes the removed rule files from a consumer's `.claude/rules/` and leaves the consumer's own rule files alone.
 
 ## Re-sync note
 

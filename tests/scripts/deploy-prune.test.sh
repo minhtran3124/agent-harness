@@ -29,11 +29,11 @@ else fail "consumer's custom skill was destroyed — blind prune hazard"; fi
 
 t "Claude agents are rendered while source-time binding JSON stays undeployed"
 T=$(new_target); deploy "$T"
-if grep -q '^model: claude-opus-5-5$' "$T/.claude/agents/reviewer.md" \
-   && grep -q '^tools: Glob, Grep, Read, Bash$' "$T/.claude/agents/reviewer.md" \
+if grep -q '^model: claude-sonnet-5-5$' "$T/.claude/agents/intent-reviewer.md" \
+   && grep -q '^tools: Glob, Grep, Read, Bash$' "$T/.claude/agents/intent-reviewer.md" \
    && [ ! -e "$T/.claude/agents/agent-contracts.json" ] \
    && [ ! -e "$T/.claude/agents/runtime-bindings.json" ]; then pass
-else fail "rendered reviewer or source-time binding boundary is wrong"; fi
+else fail "rendered intent-reviewer or source-time binding boundary is wrong"; fi
 
 t "a consumer's custom agent survives rendered-agent re-sync"
 T=$(new_target); deploy "$T"
@@ -92,5 +92,32 @@ mkdir -p "$T/.claude/skills/_ghost2"
 out=$(bash "$DEPLOY" --target "$T" --dry-run </dev/null 2>&1)
 if printf '%s' "$out" | grep -qF "would prune stale" && [ -d "$T/.claude/skills/_ghost2" ]; then pass
 else fail "dry-run did not report, or it deleted: out=$(printf '%s' "$out" | grep -i prune | head -1)"; fi
+
+t "a re-sync prunes the nine removed v4 rules, keeps rules/behavior.md and a consumer's own rule"
+T=$(new_target); deploy "$T"
+OLD_RULES="architecture auto-correct-scope guidelines orchestration plan-format research-depth review-policy terminology wave-parallelism"
+for r in $OLD_RULES; do
+  printf 'old %s\n' "$r" > "$T/.claude/rules/$r.md"
+  echo "rules/$r.md" >> "$T/.claude/.harness-deployed"
+done
+echo mine > "$T/.claude/rules/consumer-own.md"
+deploy "$T"
+left=""
+for r in $OLD_RULES; do [ -e "$T/.claude/rules/$r.md" ] && left="$left $r.md"; done
+if [ -z "$left" ] && [ -f "$T/.claude/rules/behavior.md" ] \
+   && [ "$(cat "$T/.claude/rules/consumer-own.md")" = mine ] \
+   && [ "$(ls "$T/.claude/rules" | grep -v '^consumer-own\.md$' | tr '\n' ' ')" = "behavior.md " ]; then pass
+else fail "removed rules left behind:$left; rules/ now: $(ls "$T/.claude/rules" | tr '\n' ' ')"; fi
+
+t "a pruned architecture.md / guidelines.md is backed up first (they were consumer-owned)"
+T=$(new_target); deploy "$T"
+printf 'my stack notes\n' > "$T/.claude/rules/architecture.md"
+printf 'my style notes\n' > "$T/.claude/rules/guidelines.md"
+printf '%s\n' rules/architecture.md rules/guidelines.md >> "$T/.claude/.harness-deployed"
+deploy "$T"
+if [ ! -e "$T/.claude/rules/architecture.md" ] && [ ! -e "$T/.claude/rules/guidelines.md" ] \
+   && [ "$(cat "$T/.claude/.harness-backup-pruned/rules/architecture.md")" = "my stack notes" ] \
+   && [ "$(cat "$T/.claude/.harness-backup-pruned/rules/guidelines.md")" = "my style notes" ]; then pass
+else fail "backup missing: $(ls -R "$T/.claude/.harness-backup-pruned" 2>&1 | tr '\n' ' ')"; fi
 
 finish

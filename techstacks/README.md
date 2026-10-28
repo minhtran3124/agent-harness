@@ -6,7 +6,7 @@
 > content: the harness never overwrites or re-syncs it. Think of it like `specs/` and
 > `docs/solutions/` — project-authored, AI-consumed, committed to git.
 
-This folder is **yours**. The harness core (rules, skills, templates) is deliberately
+This folder is **yours**. The harness core (skills, agents, templates) is deliberately
 **stack-agnostic** — it ships no framework, no language, no architecture assumptions. Everything
 specific to *your* stack lives here, and nothing in the harness depends on what you put in it.
 
@@ -37,10 +37,9 @@ delegated to dependencies (test only what you own)?
 
 ## How the harness uses it
 
-- The auto-loaded `rules/architecture.md` and `rules/guidelines.md` are thin pointers to this
-  folder — agents read `techstacks/*.md` before implementing, debugging, or reviewing.
-- `xia2` picks its research depth from the intake lane, or from the portable classifier in
-  `rules/research-depth.md` when no intake exists (it does **not** need this folder).
+- No rule file points here any more. Point your own `CLAUDE.md` or `AGENTS.md` at `techstacks/*.md`
+  so agents read it before implementing, debugging, or reviewing.
+- `agents/PROJECT.md` can link the files here as its convention sources.
 - A project with no stack (e.g. a docs-only or tooling repo) can leave this folder with just this
   README — nothing breaks.
 

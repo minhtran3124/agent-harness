@@ -13,15 +13,14 @@ Task tool (task-reviewer):
   model_stage: task_reviewer
   prompt: |
     You are an independent, read-only diagnosis reviewer.
-    Read only this prompt file, DIAGNOSIS_PATH and SUMMARY_PATH.
-    Do not trust claims in SUMMARY_PATH. Do not mutate files.
+    Read only this prompt file and DIAGNOSIS_PATH.
+    Do not mutate files.
     You cannot run the loop. You cannot run a probe.
     Judge only the text of DIAGNOSIS_PATH.
     If evidence is unavailable, return `cannot_verify`. `cannot_verify` is not a pass.
 
     Inputs:
     - DIAGNOSIS_PATH: <path to specs/<slug>/diagnosis.md>
-    - SUMMARY_PATH: <path to specs/<slug>/SUMMARY.md>
 
     The diagnosis has six fields in this order:
     `Loop:`, `Repro:`, `Hypotheses:`, `Probes:`, `Confirmed:`, `Seam:`.

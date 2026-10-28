@@ -24,7 +24,7 @@ If the request is missing, STOP and say so. Never reconstruct it.
 
 ## Dispatch
 
-Dispatch the `intent-reviewer` agent (not `reviewer`) in a fresh context with only those two
+Dispatch the `intent-reviewer` agent in a fresh context with only those two
 inputs. In a workflow, the calling script does the dispatch.
 
 ## Output

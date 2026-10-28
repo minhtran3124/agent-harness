@@ -29,5 +29,5 @@ Confirmed: H<n>
 <!-- One hypothesis ID from the list above, with the probe that supports it. -->
 
 Seam: <where the red test goes> — catches: <the symptom>; misses: <what this seam cannot see>
-<!-- Use the seam form of rules/plan-format.md. The seam point is the text before " — catches:". With no valid seam, write: Seam: none — <reason> -->
+<!-- The seam point is the text before " — catches:". With no valid seam, write: Seam: none — <reason> -->
 ```

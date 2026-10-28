@@ -20,11 +20,11 @@ allowed-tools: Read
 """
 
 AGENT_OK = """---
-name: reviewer
-description: Reviews things.
+name: advisor
+description: Advises on things.
 ---
 
-# Reviewer
+# Advisor
 """
 
 
@@ -32,7 +32,7 @@ def build(root: Path, skill: str = SKILL_OK, agent: str = AGENT_OK) -> None:
     (root / "skills" / "alpha").mkdir(parents=True, exist_ok=True)
     (root / "agents").mkdir(parents=True, exist_ok=True)
     (root / "skills" / "alpha" / "SKILL.md").write_text(skill)
-    (root / "agents" / "reviewer.md").write_text(agent)
+    (root / "agents" / "advisor.md").write_text(agent)
 
 
 def run(root: Path) -> subprocess.CompletedProcess:
@@ -109,11 +109,11 @@ description: >
 
 
 def test_no_frontmatter_fails(tmp_path):
-    build(tmp_path, agent="# Reviewer\n\nNo frontmatter here.\n")
+    build(tmp_path, agent="# Advisor\n\nNo frontmatter here.\n")
     result = run(tmp_path)
     assert result.returncode == 1
     assert "has no frontmatter block" in result.stderr
-    assert "agents/reviewer.md" in result.stderr
+    assert "agents/advisor.md" in result.stderr
 
 
 def test_unterminated_frontmatter_fails(tmp_path):

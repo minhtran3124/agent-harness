@@ -24,15 +24,6 @@ out=$(bash "$SCRIPT" --root "$d" --json)
 if [ "$(jf "$out" "['findings']")" = "0" ] && [ "$(jf "$out" "['band']")" = "healthy" ]; then pass
 else fail "unexpected: $out"; fi
 
-# ── 2. verify_missing ─────────────────────────────────────────────────────────
-t "SUMMARY.md with no ### Verify heading -> verify_missing >= 1"
-d=$(make_fixture)
-mkdir -p "$d/specs/x"
-printf 'Lane: normal\nConfidence: high\n' > "$d/specs/x/SUMMARY.md"
-out=$(bash "$SCRIPT" --root "$d" --json)
-if [ "$(jf "$out" "['checks']['verify_missing']")" -ge 1 ]; then pass
-else fail "want verify_missing >= 1: $out"; fi
-
 # ── 3. plan_stale ──────────────────────────────────────────────────────────────
 t "active PLAN.md with a date >30 days old -> plan_stale >= 1"
 d=$(make_fixture)
@@ -81,7 +72,7 @@ else fail "want backlog_stale == 0 (recent open row): $out"; fi
 t "--json output is exactly one line and parses as JSON"
 d=$(make_fixture)
 mkdir -p "$d/specs/x"
-printf 'Lane: normal\n' > "$d/specs/x/SUMMARY.md"
+printf -- '---\nstatus: active\ncreated: 2020-01-01\n---\n\n# X\n\n- 2020-01-01 — drafted\n' > "$d/specs/x/PLAN.md"
 out=$(bash "$SCRIPT" --root "$d" --json)
 lines=$(printf '%s\n' "$out" | wc -l | tr -d ' ')
 if [ "$lines" = "1" ] && printf '%s' "$out" | python3 -c 'import json,sys; json.loads(sys.stdin.read())' 2>/dev/null; then pass
@@ -91,7 +82,7 @@ else fail "not a single valid JSON line ($lines lines): $out"; fi
 t "--strict exits 1 when a finding is present"
 d=$(make_fixture)
 mkdir -p "$d/specs/x"
-printf 'Lane: normal\n' > "$d/specs/x/SUMMARY.md"
+printf -- '---\nstatus: active\ncreated: 2020-01-01\n---\n\n# X\n\n- 2020-01-01 — drafted\n' > "$d/specs/x/PLAN.md"
 bash "$SCRIPT" --root "$d" --strict >/dev/null 2>&1
 if [ "$?" -eq 1 ]; then pass; else fail "want exit 1 with a finding present"; fi
 

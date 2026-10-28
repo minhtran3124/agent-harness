@@ -22,7 +22,7 @@ const EFFORT = { intent: 'medium', research: 'low', design: 'medium', plan: 'med
 const FIX_THRESHOLD = 50   // a review finding scoring at or above this gets one fix agent
 const MAX_FIX_ROUNDS = 2   // hard cap on fix rounds in the review loop
 // Paths whose change makes the review level 'high'.
-const RISKY_PATH = /(^|\/)(hooks|migrations?|auth|security|secrets?|\.github\/workflows)(\/|$)|settings\.json$|harness-manifest\.json$|deploy-harness|\.sql$|\.env/i
+const RISKY_PATH = /(^|\/)(hooks|migrations?|auth|security|secrets?|\.github\/workflows)(\/|$)|settings\.json$|deploy-harness|\.sql$|\.env/i
 const LARGE_DIFF_LINES = 800, SMALL_DIFF_LINES = 150, LARGE_DIFF_FILES = 25
 const CO_AUTHOR = 'Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>'
 const PR_FOOTER = '🤖 Generated with [Claude Code](https://claude.com/claude-code)'

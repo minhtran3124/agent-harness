@@ -14,7 +14,7 @@ DEPLOY="$ROOT/scripts/deploy-harness.sh"
 
 # Mirrors BOOTSTRAP_OWNED_FILES in scripts/deploy-harness.sh. Kept as a literal list (like
 # settings-merge.test.sh hardcodes hook names) — if that array changes, update here too.
-OWNED_TOP_FILE="rules/architecture.md"        # a plain protected FILE entry
+OWNED_TOP_FILE="rules/behavior.md"        # a plain protected FILE entry
 OWNED_NESTED_FILE="agents/PROJECT.md"         # a protected file living inside a synced DIR (has a .proposed variant)
 
 new_target() { local d; d=$(mktemp -d); _CLEANUP_DIRS+=("$d"); echo "$d"; }

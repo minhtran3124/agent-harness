@@ -6,10 +6,9 @@
 #   - phantom path references + hook-table ↔ settings.json  →  scripts/lint-doc-truth.sh
 #
 # In scope (the "verify the docs" gap, OpenAI harness engineering #4):
-#   1. specs/*/SUMMARY.md missing a `### Verify` section (proof was never recorded)
-#   2. specs/*/PLAN.md with `status: active` whose newest date is stale (> STALE_DAYS)
-#   3. docs/solutions/**/*.md with `confirmed_at` older than CONFIRMED_DAYS
-#   4. docs/harness-experimental/improvement-backlog.md `open` rows gone stale
+#   1. specs/*/PLAN.md with `status: active` whose newest date is stale (> STALE_DAYS)
+#   2. docs/solutions/**/*.md with `confirmed_at` older than CONFIRMED_DAYS
+#   3. docs/harness-experimental/improvement-backlog.md `open` rows gone stale
 #
 # Advisory by default (exit 0, never blocks). `--strict` exits 1 when any drift is
 # found — for opt-in CI use. `--root DIR` points the audit at another tree (tests).
@@ -37,7 +36,6 @@ CONFIRMED_DAYS="${HARNESS_AUDIT_CONFIRMED_DAYS:-30}"
 BACKLOG_DAYS="${HARNESS_AUDIT_BACKLOG_DAYS:-14}"
 
 FINDINGS=0
-VERIFY_MISSING=0
 PLAN_STALE=0
 BACKLOG_STALE=0
 SOLUTIONS_STALE=0
@@ -62,17 +60,7 @@ PY
 
 [ "$JSON" -eq 1 ] || echo "=== Harness Audit (advisory) ==="
 
-# ── 1. SUMMARY.md missing ### Verify ────────────────────────────────────────────
-if compgen -G "specs/*/SUMMARY.md" >/dev/null 2>&1; then
-  for s in specs/*/SUMMARY.md; do
-    if ! grep -qE '^###[[:space:]]+Verify[[:space:]]*$' "$s"; then
-      note "SUMMARY missing '### Verify' section: $s"
-      VERIFY_MISSING=$((VERIFY_MISSING + 1))
-    fi
-  done
-fi
-
-# ── 2. Active PLAN.md gone stale ────────────────────────────────────────────────
+# ── 1. Active PLAN.md gone stale ────────────────────────────────────────────────
 if compgen -G "specs/*/PLAN.md" >/dev/null 2>&1; then
   for p in specs/*/PLAN.md; do
     # frontmatter status: active (anywhere in the file's status field)
@@ -91,7 +79,7 @@ if compgen -G "specs/*/PLAN.md" >/dev/null 2>&1; then
   done
 fi
 
-# ── 3. docs/solutions confirmed_at past freshness window ────────────────────────
+# ── 2. docs/solutions confirmed_at past freshness window ────────────────────────
 if [ -d docs/solutions ]; then
   while IFS= read -r doc; do
     val=$(grep -m1 -E '^confirmed_at:' "$doc" | sed -E 's/^confirmed_at:[[:space:]]*//; s/[[:space:]]*$//')
@@ -104,7 +92,7 @@ if [ -d docs/solutions ]; then
   done < <(find docs/solutions -name '*.md' -type f 2>/dev/null)
 fi
 
-# ── 4. improvement-backlog.md: open entries gone stale ───────────────────────────
+# ── 3. improvement-backlog.md: open entries gone stale ───────────────────────────
 BACKLOG_FILE="docs/harness-experimental/improvement-backlog.md"
 if [ -f "$BACKLOG_FILE" ]; then
   while IFS= read -r row; do
@@ -137,19 +125,18 @@ if [ "$JSON" -eq 1 ]; then
   python3 -c '
 import json, sys
 
-date, findings, band, vm, ps, bs, ss = sys.argv[1:8]
+date, findings, band, ps, bs, ss = sys.argv[1:7]
 print(json.dumps({
     "date": date,
     "findings": int(findings),
     "band": band,
     "checks": {
-        "verify_missing": int(vm),
         "plan_stale": int(ps),
         "backlog_stale": int(bs),
         "solutions_stale": int(ss),
     },
 }))
-' "$(date +%F)" "$FINDINGS" "$band" "$VERIFY_MISSING" "$PLAN_STALE" "$BACKLOG_STALE" "$SOLUTIONS_STALE"
+' "$(date +%F)" "$FINDINGS" "$band" "$PLAN_STALE" "$BACKLOG_STALE" "$SOLUTIONS_STALE"
 else
   echo ""
   echo "  Drift findings: $FINDINGS  ($band)"

@@ -68,7 +68,7 @@ printf 'gitdir: /nonexistent/.git/modules/consumer-sub\n' > "$S/.git"
 echo a > "$S/tests/test_a.py"; echo b > "$S/lib/test_b.py"
 deploy "$T"
 if [ -f "$S/tests/test_a.py" ] && [ -f "$S/lib/test_b.py" ] \
-   && [ ! -e "$T/.claude/skills/xia2/tests" ] && [ ! -e "$T/.claude/skills/visual-planner/test_render_plan.py" ]; then pass
+   && [ ! -e "$T/.claude/skills/xia2/tests" ] && [ ! -e "$T/.claude/skills/autopilot/scripts/test_plan_groups.py" ]; then pass
 else fail "nested checkout lost its tests, or harness skill tests were not stripped"; fi
 
 t "strip_skill_tests: a nested-checkout tests/ dir and a dangling .git symlink are both left alone"

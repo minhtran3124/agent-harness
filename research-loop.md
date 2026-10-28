@@ -1,5 +1,7 @@
 # Research: Loop Engineering for Agent Harness
 
+> **Historical (v2 proposal).** This document predates Harness v5. The rules, scripts, runtime and hooks it cites as evidence were removed in v5 (#338), so its file references no longer resolve.
+
 ## Status
 
 Research / architecture proposal. This document does **not** prescribe an immediate implementation. It captures how the existing harness could evolve toward a Loop Engineering model while preserving its current governance and review strengths.

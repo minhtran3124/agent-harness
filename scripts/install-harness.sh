@@ -62,7 +62,7 @@ Options:
   -b, --branch <name>     Branch to install from (default: ${BRANCH})
       --source <path>     Use a local claude-skills checkout instead of cloning
   -y, --yes               Non-interactive: re-sync an existing .claude/ without asking.
-                          Protected files (bootstrap-generated, e.g. rules/architecture.md)
+                          Protected files (bootstrap-generated, e.g. rules/behavior.md)
                           keep your local copy; the incoming version is saved alongside as
                           <file>.harness-incoming for review.
       --force             Same as --yes (kept for compatibility) — NOT "overwrite": protected
@@ -138,7 +138,7 @@ ok "Source ready"
 # ---------- existing-harness check ----------
 if [ -e "$TARGET_DIR/.claude/settings.json" ] && [ "$DRY_RUN" -eq 0 ]; then
   warn "Existing harness found in target (.claude/) — it will be re-synced (merge; non-harness entries kept)."
-  info "Protected files (e.g. rules/architecture.md) keep your local copy by default; incoming saved as <file>.harness-incoming. Pass --overwrite-conflicts to replace them instead."
+  info "Protected files (e.g. rules/behavior.md) keep your local copy by default; incoming saved as <file>.harness-incoming. Pass --overwrite-conflicts to replace them instead."
   # --overwrite-conflicts is itself a non-interactive consent to re-sync: it names the
   # destructive outcome explicitly, so re-asking "Re-sync it? [y/N]" adds nothing.
   if [ "$FORCE" -eq 0 ] && [ "$ASSUME_YES" -eq 0 ] && [ "$OVERWRITE_CONFLICTS" -eq 0 ]; then
@@ -194,7 +194,7 @@ fi
 
 # ---------- ensure .claude/ is gitignored (append-only; never rewrites the file) ----------
 # .claude/ is a derived artifact — it is rebuilt from source on every deploy, so committing it
-# is wrong. It also carries .py files (visual-planner), which show up as untracked files in the
+# is wrong. It also carries .py helper files, which show up as untracked files in the
 # consumer's `git status`. Append only when the pattern is absent; never touch existing lines.
 #
 # Three things this must NOT do, each found by review:
@@ -240,6 +240,41 @@ if [ "$DRY_RUN" -eq 0 ]; then
   elif [ -z "$gi_skip" ]; then
     ok ".gitignore now lists .claude/"
   fi
+fi
+
+# ---------- ensure specs/ is gitignored (append-only; idempotent) ----------
+# specs/ is local scratch (templates/structure/specs-README.md tells consumers to keep it ignored),
+# and init-structure.sh just created specs/README.md there. Same contract as the .claude/ block:
+# append only when the target does not already ignore specs/ (checked with git itself when the
+# target is a git repo, else with a line match), skip when the consumer TRACKS files under specs/,
+# and never abort the install (a convenience step after the deploy succeeded).
+if [ "$DRY_RUN" -eq 0 ]; then
+  GI="$TARGET_DIR/.gitignore"
+  sp_ignored=0
+  if git -C "$TARGET_DIR" rev-parse --git-dir >/dev/null 2>&1; then
+    if [ -n "$(git -C "$TARGET_DIR" ls-files -- specs 2>/dev/null | head -1)" ]; then
+      sp_ignored=2
+    elif git -C "$TARGET_DIR" check-ignore -q specs/.harness-probe 2>/dev/null; then
+      sp_ignored=1
+    fi
+  fi
+  if [ "$sp_ignored" -eq 0 ] && [ -f "$GI" ] && grep -qE '^[[:space:]]*/?specs(/\*?)?[[:space:]]*$' "$GI" 2>/dev/null; then
+    sp_ignored=1
+  fi
+  case "$sp_ignored" in
+    2) warn "specs/ is tracked in this repo — leaving .gitignore alone." ;;
+    1) info ".gitignore already ignores specs/ — left as is." ;;
+    *)
+      if ! {
+            { [ ! -s "$GI" ] || [ -z "$(tail -c 1 "$GI" 2>/dev/null)" ] || printf '\n' >> "$GI"; } &&
+            printf '# Harness: specs/ is local scratch for plans and research briefs\nspecs/\n' >> "$GI"
+          } 2>/dev/null; then
+        warn "could not update .gitignore — add 'specs/' to it manually."
+      else
+        ok ".gitignore now lists specs/"
+      fi
+      ;;
+  esac
 fi
 
 # ---------- optional: keep a copy of the sources in the target ----------
