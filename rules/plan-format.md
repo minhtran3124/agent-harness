@@ -215,7 +215,7 @@ created: YYYY-MM-DD
 ## 6. Status Log
 ```
 
-The examples above show the full task shape. `specs/` is tracked in git, so plans are browsable across machines. (`PLAN.html` and `.plan-review.json` are gitignored as derived artifacts.)
+The examples above show the full task shape. `specs/` is gitignored local scratch, so a plan is not shared across machines. A design goes to `docs/adr/`.
 
 ## Legacy XML plans (read-only support)
 

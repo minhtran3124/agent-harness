@@ -1,6 +1,6 @@
 ---
 name: xia2
-description: "Find out how something actually works here before building on it. Use when the user asks to add a feature to code they have not explained, names a library or API the repo does not already use, or asks how an existing part of the system works — and NOT when the question is which of several approaches to take, which is brainstorming. Produces a research brief: specs/<slug>/research-brief.md for depth L, a short inline brief otherwise."
+description: "Find out how something actually works here before building on it. Use when the user asks to add a feature to code they have not explained, names a library or API the repo does not already use, or asks how an existing part of the system works — and NOT when the question is which of several approaches to take, which is brainstorming. Produces a research brief: local scratch at specs/<slug>/research-brief.md for depth L, a short inline brief otherwise."
 allowed-tools: Glob, Grep, Read, Write, WebSearch, WebFetch, Bash(git log *), Bash(git show *), Bash(ls *)
 ---
 
@@ -11,8 +11,8 @@ brief. It runs on the Haiku `researcher` agent.
 
 ## Steps
 
-1. Read `AGENTS.md`, `CLAUDE.md` and `README.md` if present. Search `docs/solutions/` and recent
-   `specs/` for related work.
+1. Read `AGENTS.md`, `CLAUDE.md` and `README.md` if present. Search `docs/solutions/` and `docs/adr/`
+   for related work.
 2. Detect the stack and versions from manifests. Map local reuse, extension points, tests and
    configuration. Do not stop after one empty search.
 3. Look outside the repo only when the change has an external surface: it adds or upgrades a
@@ -24,7 +24,8 @@ brief. It runs on the Haiku `researcher` agent.
 5. Recommend in this order: reuse, adapt upstream, use a built-in, build new. Say why the
    alternatives lost.
 
-Depth L writes `specs/<slug>/research-brief.md`. Depth S and M return a short brief inline.
+Depth L writes `specs/<slug>/research-brief.md` (local scratch, not committed) or returns it inline.
+Depth S and M return a short brief inline.
 
 ## Auto mode
 

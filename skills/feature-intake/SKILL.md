@@ -30,8 +30,8 @@ Judge one ticket and return a verdict. Do not edit files, plan or implement.
 ## Depth
 
 - **S**: the plan fits in the prompt. Go straight to `implement`.
-- **M**: add a `specs/<slug>/PLAN.md` (`writing-plans`), then `implement`.
-- **L**: add `brainstorming`, `design.md` and `xia2` research before the plan.
+- **M**: add a `specs/<slug>/PLAN.md` (local scratch; `writing-plans`), then `implement`.
+- **L**: add `brainstorming` (the design is an ADR in `docs/adr/`) and `xia2` research before the plan.
 
 Pick the smallest depth that fits. A bug fix goes to `diagnosing-bugs` first: Read `skills/diagnosing-bugs/SKILL.md` (it blocks the Skill tool).
 

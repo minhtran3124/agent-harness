@@ -1,6 +1,6 @@
 ---
 name: brainstorming
-description: "Decide what to build when the goal is clear but the approach is not. Use when the user is weighing two or more ways to do something, says they are unsure how to approach it, or asks for a design or a recommendation — and NOT when the approach is already settled and what is missing is knowledge of the codebase or a library, which is xia2. Produces specs/<slug>/design.md for depth L."
+description: "Decide what to build when the goal is clear but the approach is not. Use when the user is weighing two or more ways to do something, says they are unsure how to approach it, or asks for a design or a recommendation — and NOT when the approach is already settled and what is missing is knowledge of the codebase or a library, which is xia2. Depth L records the design as an ADR in docs/adr/."
 allowed-tools: Read, Write, Grep, Glob, AskUserQuestion
 ---
 
@@ -17,8 +17,9 @@ Explore the options and converge on one design. Intake decides whether this skil
 3. Present 2-3 viable approaches with trade-offs and a recommendation. Cut unrequested scope.
 4. Describe the chosen design in proportion to the change: components, data flow, error
    behavior, tests.
-5. Depth L: write `specs/<slug>/design.md` from `references/design-template.md`. Smaller depths
-   return the design inline and write no file.
+5. Depth L: record the design as an ADR with `stage: design`. Fill `decisions[]` from
+   `references/design-template.md`; the ADR stage of `decision-record` writes it to `docs/adr/`.
+   Write no `specs/` file. Smaller depths return the design inline and write no file.
 6. Next steps: `xia2` for research if unknown code or libraries are involved, then `writing-plans`.
 
 No code until the design is agreed. There is no mandatory review round. For an L design the

@@ -11,7 +11,7 @@ Turn plan steps into commits. Review is not part of this skill: `/code-review` a
 
 ## Steps
 
-1. Read the plan: `specs/<slug>/PLAN.md` for depth M and L, the prompt for depth S. List the
+1. Read the plan: `specs/<slug>/PLAN.md` (local scratch) for depth M and L, the prompt for depth S. List the
    steps with their Files, Effort, Done-when and parallel group.
 2. Run the groups in order. Inside a group, steps that touch different files may run in parallel.
    Never run two steps that touch the same file at the same time.

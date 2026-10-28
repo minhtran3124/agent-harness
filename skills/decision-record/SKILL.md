@@ -30,6 +30,11 @@ Return `decisions[]` in your result. Each item has `ticket`, `stage`, `title`, `
 `decision`, `why`, `consequences`, `how_to_reverse`, `confidence`, `needs_review`.
 Never write an ADR file. Parallel worktrees collide on numbers. Only the ADR stage writes files.
 
+## Design ADRs
+
+A depth L design from `brainstorming` is an ADR with `stage: design`. It goes through `decisions[]`
+and the ADR stage like any other decision. It is not written under `specs/`.
+
 ## The ADR stage
 
 1. Collect all `decisions[]` of the run. Add `decided_by` to each. Save as

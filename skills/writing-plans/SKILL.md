@@ -7,7 +7,8 @@ allowed-tools: Read, Write, Grep, Glob, AskUserQuestion
 # Writing Plans
 
 Write `specs/<slug>/PLAN.md` (depth M or L). For depth S the plan is the prompt and no file is
-written. Read `specs/<slug>/design.md` and `research-brief.md` when they exist.
+written. `PLAN.md` and `research-brief.md` are local scratch: `specs/` is gitignored. Read the design
+ADR in `docs/adr/` (`stage: design`) and the research brief when they exist.
 
 ## Step shape
 
