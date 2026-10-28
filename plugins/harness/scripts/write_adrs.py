@@ -2,11 +2,14 @@
 """Write ADR files for one run, with numbers assigned by code.
 
 Input JSON: {"run": "<slug>", "decisions": [{ticket, stage, title, context, options, decision,
-why, consequences, how_to_reverse, confidence, needs_review, decided_by}]}.
-Output (stdout): JSON list of {number, path, ticket, title, needs_review, stage}.
-Exit 0 = ok, 2 = bad input or a file would be overwritten.
+why, consequences, how_to_reverse, confidence, needs_review, decided_by, owner_confirmed?}]}.
+Duplicates (same ticket, same title slug or same non-empty context) are merged first. A file is
+written only for a decision that is not owner_confirmed and has needs_review or a confidence other
+than high. --table-out FILE lists every merged decision as a markdown table for the PR body.
+Output (stdout): JSON list of {number, path, ticket, title, needs_review, stage}; [] when no
+decision needs a file. Exit 0 = ok, 2 = bad input or a file would be overwritten.
 
-Run: python3 write_adrs.py --input decisions.json [--adr-dir docs/adr] [--dry-run]
+Run: python3 write_adrs.py --input decisions.json [--adr-dir docs/adr] [--dry-run] [--table-out FILE]
      python3 write_adrs.py --render-section written.json [--artifact URL]
 """
 
@@ -77,11 +80,73 @@ def validate(data) -> list:
                 raise BadInput(f"decisions[{i}] missing required field '{f}'")
         if not isinstance(d["needs_review"], bool):
             raise BadInput(f"decisions[{i}].needs_review must be true or false")
+        if "owner_confirmed" in d and not isinstance(d["owner_confirmed"], bool):
+            raise BadInput(f"decisions[{i}].owner_confirmed must be true or false")
         if d["confidence"] not in CONFIDENCE:
             raise BadInput(
                 f"decisions[{i}].confidence must be one of {', '.join(CONFIDENCE)}"
             )
     return decisions
+
+
+def needs_adr(d: dict) -> bool:
+    """A decision gets an ADR file when a human should look at it."""
+    if d.get("owner_confirmed") is True:
+        return False
+    return d["needs_review"] or d["confidence"] != "high"
+
+
+def _context_key(d: dict) -> str:
+    text = " ".join(str(d["context"]).lower().split())
+    return "" if text == "n/a" else text   # ship.js fills a missing context with 'n/a'
+
+
+def dedupe(decisions: list) -> list:
+    """Merge duplicates: same ticket and (same title slug or identical non-empty context).
+
+    Keeps the highest confidence (ties to the first). If any merged item needs review, the kept
+    one does too. Order follows the first appearance of each group.
+    """
+    groups = []   # each: {"ticket", "slugs", "contexts", "items"}
+    for d in decisions:
+        slug, ctx = slugify(d["title"]), _context_key(d)
+        for g in groups:
+            if str(g["ticket"]) == str(d["ticket"]) and (slug in g["slugs"] or (ctx and ctx in g["contexts"])):
+                break
+        else:
+            g = {"ticket": d["ticket"], "slugs": set(), "contexts": set(), "items": []}
+            groups.append(g)
+        g["slugs"].add(slug)
+        if ctx:
+            g["contexts"].add(ctx)
+        g["items"].append(d)
+    merged = []
+    for g in groups:
+        best = g["items"][0]
+        for d in g["items"][1:]:
+            if CONFIDENCE.index(d["confidence"]) < CONFIDENCE.index(best["confidence"]):
+                best = d
+        best = dict(best)
+        if any(d["needs_review"] for d in g["items"]):
+            best["needs_review"] = True
+        merged.append(best)
+    return merged
+
+
+def _cell(value) -> str:
+    return " ".join(as_text(value).split()).replace("|", "\\|")
+
+
+def decisions_table(decisions: list) -> str:
+    """Markdown table of every decision. ADR column: owner-confirmed, ADR file, or table only."""
+    rows = ["| Ticket | Title | Decision | Why | ADR |", "|---|---|---|---|---|"]
+    for d in decisions:
+        if d.get("owner_confirmed") is True:
+            note = "owner-confirmed"
+        else:
+            note = "ADR file" if needs_adr(d) else "table only"
+        rows.append(f"| #{d['ticket']} | {_cell(d['title'])} | {_cell(d['decision'])} | {_cell(d['why'])} | {note} |")
+    return "\n".join(rows) + "\n"
 
 
 def order(decisions: list) -> list:
@@ -173,6 +238,8 @@ def main() -> int:
     ap.add_argument("--input", help="decisions JSON file")
     ap.add_argument("--adr-dir", default="docs/adr")
     ap.add_argument("--dry-run", action="store_true", help="print the plan, write nothing")
+    ap.add_argument("--table-out", metavar="FILE",
+                    help="write the markdown table of all merged decisions to FILE")
     ap.add_argument("--render-section", metavar="WRITTEN_JSON",
                     help="render the PR '## Decisions' section from this script's JSON output")
     ap.add_argument("--artifact", default="", help="artifact URL for the section (optional)")
@@ -194,7 +261,11 @@ def main() -> int:
             raise BadInput(f"cannot read input: {e}")
         adr_dir = Path(args.adr_dir)
         template = load_template(adr_dir)
-        items = plan(data, adr_dir, template, datetime.date.today().isoformat())
+        merged = dedupe(validate(data))
+        if args.table_out:
+            Path(args.table_out).write_text(decisions_table(merged))
+        kept = [d for d in merged if needs_adr(d)]
+        items = plan({**data, "decisions": kept}, adr_dir, template, datetime.date.today().isoformat()) if kept else []
         if not args.dry_run:
             adr_dir.mkdir(parents=True, exist_ok=True)
             for it in items:
