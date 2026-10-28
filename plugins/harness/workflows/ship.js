@@ -41,6 +41,7 @@ const RULES_COMMON = `Rules (all of them apply):
 - Pull request bodies end with the line: ${PR_FOOTER}
 - Run "git add" and "git commit" as separate commands.
 - Use --json with "gh issue view" (plain "gh issue view" fails on this repo).
+- owner_confirmed: true ONLY when a decision just restates an answer listed under the ticket's owner-confirmed decisions. Such a decision gets no ADR file; the PR table says owner-confirmed. Otherwise leave it out.
 - decisions[] holds only real choices between options that change the code or the behaviour. Facts about the environment (which test runner you used, that pytest is missing, that a file was or was not found, that a plan step was already satisfied) are not decisions: leave them out.
 - Never write ADR files. Return decisions[] instead; one stage at the end writes them.
 - You cannot start other agents. If you are stuck, unsure, or a choice affects another ticket or a public contract, set needs_advisor: true with advisor_question and stop; the script asks the advisor.`
@@ -58,6 +59,7 @@ const DECISION = {
     how_to_reverse: STR, confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
     needs_review: { type: 'boolean', description: 'true ONLY when the decision affects another ticket, a public contract or interface, stored data, security or cost, or contradicts the ticket text or an owner-confirmed answer. A reversible choice inside the ticket (naming, an edge case the ticket leaves open, which implementation) is false.' },
     stage: STR, contradicts_confirmed: BOOL, dangerous: BOOL,
+    owner_confirmed: { type: 'boolean', description: 'true ONLY when the decision just restates an owner-confirmed answer for the ticket (no ADR file is written for it). Leave out otherwise.' },
   },
   required: ['title', 'context', 'options', 'decision', 'why', 'consequences', 'how_to_reverse', 'confidence', 'needs_review'],
 }
@@ -213,6 +215,7 @@ function takeDecisions(ticket, stage, res) {
       decision: str(d.decision), why: str(d.why), consequences: str(d.consequences), how_to_reverse: str(d.how_to_reverse),
       confidence: ['high', 'medium', 'low'].includes(d.confidence) ? d.confidence : 'low',
       needs_review: flagged || skippedFix || d.needs_review === true,
+      owner_confirmed: !flagged && d.owner_confirmed === true,
       boundary: title.startsWith(BOUNDARY_PREFIX),
       decided_by: `claude (ship workflow: ${stage})`,
     })
@@ -607,10 +610,10 @@ async function stageAdr(finalPr, artifact, bodyTemplate) {
   const prompt = `${w.setup}${RULES}\n\n` +
     `Stage: write the ADRs and the final PR body. First cd ${w.dir}; every relative path below is relative to it. Do these in order:\n` +
     `1. mkdir -p .ship and save this JSON, exactly, to .ship/decisions.json (use a quoted heredoc). It holds ${decisions.length} decisions.\n${input}\n` +
-    `2. Run "python3 ${pluginDir}/scripts/write_adrs.py --help" first. ${decisions.length ? `Then run it with --input .ship/decisions.json and save its stdout to .ship/written.json. Exit 2 means bad input: fix the file and re-run.` : 'There are no decisions: save [] to .ship/written.json and skip the next step.'}\n` +
+    `2. Run "python3 ${pluginDir}/scripts/write_adrs.py --help" first. ${decisions.length ? `Then run it with --input .ship/decisions.json and save its stdout to .ship/written.json. Add --table-out .ship/decisions-table.md: it writes the Decisions table. The script merges duplicates and writes a file only for a decision that needs a human look, so it may write no file and print []. Exit 2 means bad input: fix the file and re-run.` : 'There are no decisions: save [] to .ship/written.json and skip the next step and write no table.'}\n` +
     `3. "git add docs/adr", then, as a separate command, "git commit" (message ends with ${CO_AUTHOR}); then land it: ${land(finalBranch)}\n` +
     `4. Render the section: python3 ${pluginDir}/scripts/write_adrs.py --render-section .ship/written.json${artifact.url ? ` --artifact ${artifact.url}` : ''}${artifact.url ? '' : `  (no artifact this run; link docs/adr/ in the section)`}\n` +
-    `5. Write the body below to .ship/pr-body.md, replacing the line {{DECISIONS}} with the rendered section. ${update}\n` +
+    `5. Write the body below to .ship/pr-body.md, replacing the line {{DECISIONS}} with the rendered section${decisions.length ? ', then a blank line, then the content of .ship/decisions-table.md unchanged' : ''}. ${update}\n` +
     `Return adrs from .ship/written.json (number, path, needs_review). Do not commit anything under .ship.\n\nBody:\n${bodyTemplate}`
   const res = await call(prompt, { label: 'adr', phase: 'Decisions', schema: ADR_SCHEMA, model: MODEL.adr, effort: EFFORT.adr })
   return res || { adrs: [], status: 'blocked', summary: 'the ADR agent returned nothing' }
