@@ -564,6 +564,15 @@ test('o2: a skipped fix whose decision is not a boundary keeps its title and is 
   assert(result.review.notFixed[0].reason.includes('SKIP-REASON-TEXT') && !result.review.notFixed[0].reason.includes('Boundary'))
 })
 
+test('o2b: a skipped fix whose decision needs review is listed as needs your decision even without the Boundary prefix', async () => {
+  const UD = { title: 'Fix would change a public contract', context: 'c', options: ['a', 'b'], decision: 'D', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'medium', needs_review: true }
+  const { result } = await run({}, c => {
+    if (c.label === 'review:r0') return ok({ findings: [{ id: 'F1', summary: 'FINDING-SUM', score: 90 }], skill_invoked: true })
+    if (c.label.startsWith('fix:')) return ok({ fix_status: 'skipped', summary: 'SKIP-REASON-TEXT', decisions: [UD] })
+  })
+  assert(result.review.notFixed[0].reason.includes('needs your decision: Fix would change a public contract'), result.review.notFixed[0].reason)
+})
+
 test('o3: fix prompt allows the proving test and a null decision entry does not throw', async () => {
   const { calls, result } = await run({}, c => {
     if (c.label === 'intent:1') return intentOos(c)

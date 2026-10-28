@@ -508,7 +508,7 @@ async function stageReview(finalPr) {
       takeDecisions('run', 'review-fix', res)
       if (res && res.fix_status === 'fixed' && res.commit) { commits.push(res); out.fixed.push({ id: f.id, summary: f.summary, commit: res.commit }) }
       else {
-        const bd = res && res.fix_status === 'skipped' && (res.decisions || []).find(d => d && typeof d.title === 'string' && d.title.startsWith(BOUNDARY_PREFIX))
+        const bd = res && res.fix_status === 'skipped' && (res.decisions || []).find(d => d && typeof d.title === 'string' && (d.title.startsWith(BOUNDARY_PREFIX) || d.needs_review === true || d.contradicts_confirmed || d.dangerous))
         const reason = bd ? `needs your decision: ${bd.title}` : (res && res.summary) || 'fix agent returned nothing'
         out.notFixed.push({ id: f.id, summary: f.summary, reason })
       }
