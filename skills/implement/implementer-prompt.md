@@ -1,6 +1,6 @@
 # Implementer prompt
 
-Fill the brackets and send this to a fresh `coding` subagent, one per plan step.
+Fill the brackets and send this to a fresh `implementer` subagent, one per plan step.
 
 ```text
 model_stage: implementer

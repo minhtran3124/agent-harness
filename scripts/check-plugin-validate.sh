@@ -14,7 +14,7 @@
 #   agents/PROJECT.template.md (its template) are not agents, so they warn "No frontmatter".
 #   Adding frontmatter would REGISTER THEM AS THREE DISPATCHABLE AGENTS — strictly worse than
 #   the warning. Moving them is also not free: agents/PROJECT.md is in deploy-harness.sh's
-#   BOOTSTRAP_OWNED_FILES (conflict-protected, per-repo owned) and agents/coding.md and
+#   BOOTSTRAP_OWNED_FILES (conflict-protected, per-repo owned) and agents/implementer.md and
 #   agents/test-runner.md reference it by path. So the files stay and the warning is named
 #   here, where the reason is reviewable, rather than silenced globally.
 set -u

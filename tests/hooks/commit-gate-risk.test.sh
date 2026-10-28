@@ -146,9 +146,9 @@ stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc 0
 
-t "workflow-engine: agents/coding.md + Lane: normal → warn note, allowed (real agent prompt is an engine surface, exit 0)"
+t "workflow-engine: agents/implementer.md + Lane: normal → warn note, allowed (real agent prompt is an engine surface, exit 0)"
 repo=$(new_repo $H)
-stage "$repo" "agents/coding.md" '# Coding agent'
+stage "$repo" "agents/implementer.md" '# Implementer agent'
 stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_contains 0 "workflow-engine"

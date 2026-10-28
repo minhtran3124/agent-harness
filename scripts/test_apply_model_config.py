@@ -16,11 +16,11 @@ applier = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(applier)
 ROOT = SCRIPT.parents[1]
 
-# Fixture files mirror the deployed shapes: reviewer has `tools`, coding has none,
+# Fixture files mirror the deployed shapes: reviewer has `tools`, implementer has none,
 # a skill has `allowed-tools` and no model/effort.
 CODING = (
     "---\n"
-    "name: coding\n"
+    "name: implementer\n"
     'description: "Write code."\n'
     "model: claude-opus-5-5\n"
     "effort: medium\n"
@@ -67,7 +67,7 @@ CONSUMER_SKILL = (
 SNAPSHOT = {
     "schema_version": 1,
     "agents": {
-        "coding": {"model": "claude-opus-5-5", "effort": "medium"},
+        "implementer": {"model": "claude-opus-5-5", "effort": "medium"},
         "reviewer": {"model": "claude-opus-5-5", "effort": "medium"},
         "task-reviewer": {"model": "claude-opus-5-5", "effort": "medium"},
         "test-runner": {"model": "claude-haiku-5-5"},
@@ -87,7 +87,7 @@ def tree(tmp_path, monkeypatch):
         monkeypatch.delenv(name, raising=False)
     claude = tmp_path / ".claude"
     files = {
-        "agents/coding.md": CODING,
+        "agents/implementer.md": CODING,
         "agents/reviewer.md": REVIEWER,
         "agents/task-reviewer.md": TASK_REVIEWER,
         "agents/test-runner.md": TEST_RUNNER,
@@ -132,9 +132,9 @@ def read(root, rel):
 
 # SC-2
 def test_agent_override_changes_one_line(tree, capsys):
-    user_file(tree, {"agents": {"coding": {"effort": "high"}}})
+    user_file(tree, {"agents": {"implementer": {"effort": "high"}}})
     assert run(tree, "--apply") == 0
-    assert read(tree, "agents/coding.md") == CODING.replace(
+    assert read(tree, "agents/implementer.md") == CODING.replace(
         "effort: medium\n", "effort: high\n"
     )
     out = capsys.readouterr().out
@@ -143,19 +143,19 @@ def test_agent_override_changes_one_line(tree, capsys):
 
 
 def test_agent_override_on_real_deployed_coding(tmp_path, capsys):
-    real = ROOT / ".claude/agents/coding.md"
+    real = ROOT / ".claude/agents/implementer.md"
     if not real.is_file():
-        pytest.skip("no deployed .claude/agents/coding.md")
+        pytest.skip("no deployed .claude/agents/implementer.md")
     claude = tmp_path / ".claude"
     (claude / "agents").mkdir(parents=True)
-    shutil.copy(real, claude / "agents/coding.md")
+    shutil.copy(real, claude / "agents/implementer.md")
     before = real.read_text().splitlines()
     (claude / "harness-models.defaults.json").write_text(
-        json.dumps({"agents": {"coding": {"model": "claude-opus-5-5"}}, "skills": {}})
+        json.dumps({"agents": {"implementer": {"model": "claude-opus-5-5"}}, "skills": {}})
     )
-    user_file(tmp_path, {"agents": {"coding": {"effort": "high"}}})
+    user_file(tmp_path, {"agents": {"implementer": {"effort": "high"}}})
     assert run(tmp_path, "--apply") == 0
-    after = (claude / "agents/coding.md").read_text().splitlines()
+    after = (claude / "agents/implementer.md").read_text().splitlines()
     changed = [(a, b) for a, b in zip(before, after) if a != b]
     assert len(before) == len(after)
     assert changed == [("effort: medium", "effort: high")]
@@ -167,15 +167,15 @@ INVALID_CASES = {
     "top_key": ({"agent": {}}, 1),
     "role": ({"agents": {"planner": {"effort": "high"}}}, 1),
     "skill": ({"skills": {"nope": {"effort": "high"}}}, 1),
-    "entry_not_object": ({"agents": {"coding": "high"}}, 1),
-    "entry_key": ({"agents": {"coding": {"efort": "high"}}}, 1),
-    "non_string": ({"agents": {"coding": {"effort": 3}}}, 1),
-    "null": ({"agents": {"coding": {"model": None}}}, 1),
-    "model": ({"agents": {"coding": {"model": "gpt-5"}}}, 1),
-    "effort": ({"agents": {"coding": {"effort": "ultra"}}}, 1),
+    "entry_not_object": ({"agents": {"implementer": "high"}}, 1),
+    "entry_key": ({"agents": {"implementer": {"efort": "high"}}}, 1),
+    "non_string": ({"agents": {"implementer": {"effort": 3}}}, 1),
+    "null": ({"agents": {"implementer": {"model": None}}}, 1),
+    "model": ({"agents": {"implementer": {"model": "gpt-5"}}}, 1),
+    "effort": ({"agents": {"implementer": {"effort": "ultra"}}}, 1),
     "schema_version": ({"schema_version": 2}, 1),
     "schema_version_bool": ({"schema_version": True}, 1),
-    "two_errors": ({"agents": {"coding": {"effort": "ultra", "model": "x"}}}, 2),
+    "two_errors": ({"agents": {"implementer": {"effort": "ultra", "model": "x"}}}, 2),
 }
 
 
@@ -192,7 +192,7 @@ def test_invalid_file_exits_1_and_writes_nothing(tree, capsys, mode, case):
 
 
 def test_invalid_file_show_prints_errors_and_exits_1(tree, capsys):
-    user_file(tree, {"agents": {"coding": {"effort": "ultra"}}})
+    user_file(tree, {"agents": {"implementer": {"effort": "ultra"}}})
     assert run(tree, "--show") == 1
     assert "error: " in capsys.readouterr().out
 
@@ -212,7 +212,7 @@ def test_invalid_snapshot_exits_1(tree, capsys, mode, snapshot):
 
 
 def test_invalid_file_hook_exits_0_with_warning(tree, capsys, monkeypatch):
-    user_file(tree, {"agents": {"coding": {"effort": "ultra"}}})
+    user_file(tree, {"agents": {"implementer": {"effort": "ultra"}}})
     before = digests(tree)
     assert (
         run(tree, "--hook", stdin=hook_input("startup"), monkeypatch=monkeypatch) == 0
@@ -235,7 +235,7 @@ def test_floor_rejects_low_review_effort(tree, capsys, role):
 def test_floor_allows_medium_and_low_for_other_roles(tree):
     user_file(
         tree,
-        {"agents": {"reviewer": {"effort": "medium"}, "coding": {"effort": "low"}}},
+        {"agents": {"reviewer": {"effort": "medium"}, "implementer": {"effort": "low"}}},
     )
     assert run(tree, "--check") == 0
 
@@ -245,7 +245,7 @@ def test_idempotent_second_apply_writes_nothing(tree, capsys):
     user_file(
         tree,
         {
-            "agents": {"coding": {"effort": "high"}, "test-runner": {"effort": "low"}},
+            "agents": {"implementer": {"effort": "high"}, "test-runner": {"effort": "low"}},
             "skills": {"xia2": {"model": "inherit"}},
         },
     )
@@ -263,7 +263,7 @@ def test_show_rows_and_source(tree, capsys):
         tree,
         {
             "agents": {
-                "coding": {"effort": "high"},
+                "implementer": {"effort": "high"},
                 "test-runner": {"model": "sonnet"},
             },
             "skills": {"xia2": {"effort": "max"}},
@@ -276,7 +276,7 @@ def test_show_rows_and_source(tree, capsys):
     user, default = "harness-models.json", "default"
     assert rows == [
         # effort only: the default model keeps source "default"
-        ["agents/coding.md", "claude-opus-5-5", default, "high", user],
+        ["agents/implementer.md", "claude-opus-5-5", default, "high", user],
         ["agents/reviewer.md", "claude-opus-5-5", default, "medium", default],
         ["agents/task-reviewer.md", "claude-opus-5-5", default, "medium", default],
         # model only: the empty effort keeps "-" with source "default"
@@ -320,16 +320,16 @@ def test_main_session_boundary_settings_unchanged(tree, monkeypatch):
     user_file(
         tree,
         {
-            "agents": {"coding": {"model": "sonnet"}},
+            "agents": {"implementer": {"model": "sonnet"}},
             "skills": {"xia2": {"effort": "high"}},
         },
     )
     assert run(tree, "--apply") == 0
-    user_file(tree, {"agents": {"coding": {"model": "haiku"}}})
+    user_file(tree, {"agents": {"implementer": {"model": "haiku"}}})
     assert (
         run(tree, "--hook", stdin=hook_input("startup"), monkeypatch=monkeypatch) == 0
     )
-    assert "model: haiku\n" in read(tree, "agents/coding.md")
+    assert "model: haiku\n" in read(tree, "agents/implementer.md")
     for path, text in settings.items():
         assert path.read_text() == text
 
@@ -411,7 +411,7 @@ def failing_on(n, monkeypatch):
 
 PARTIAL = {
     "agents": {
-        "coding": {"effort": "high"},
+        "implementer": {"effort": "high"},
         "reviewer": {"effort": "high"},
         "test-runner": {"effort": "low"},
     }
@@ -423,9 +423,9 @@ def test_partial_write_apply_reports_and_exits_1(tree, capsys, monkeypatch):
     failing_on(2, monkeypatch)
     assert run(tree, "--apply") == 1
     out = capsys.readouterr().out
-    assert "wrote agents/coding.md" in out
+    assert "wrote agents/implementer.md" in out
     assert "failed agents/reviewer.md" in out
-    assert "effort: high\n" in read(tree, "agents/coding.md")
+    assert "effort: high\n" in read(tree, "agents/implementer.md")
     assert read(tree, "agents/reviewer.md") == REVIEWER
     assert read(tree, "agents/test-runner.md") == TEST_RUNNER
     monkeypatch.undo()
@@ -457,7 +457,7 @@ def test_partial_write_hook_warns_and_converges(tree, capsys, monkeypatch):
 # Hook mode
 @pytest.mark.parametrize("source", ["resume", "compact", "fork", None])
 def test_hook_other_sources_are_silent(tree, capsys, monkeypatch, source):
-    user_file(tree, {"agents": {"coding": {"effort": "high"}}})
+    user_file(tree, {"agents": {"implementer": {"effort": "high"}}})
     before = digests(tree)
     stdin = hook_input(source) if source else "not json"
     assert run(tree, "--hook", stdin=stdin, monkeypatch=monkeypatch) == 0
@@ -466,7 +466,7 @@ def test_hook_other_sources_are_silent(tree, capsys, monkeypatch, source):
 
 
 def test_hook_event_name_and_reload_skills(tree, capsys, monkeypatch):
-    user_file(tree, {"agents": {"coding": {"effort": "high"}}})
+    user_file(tree, {"agents": {"implementer": {"effort": "high"}}})
     assert (
         run(tree, "--hook", stdin=hook_input("startup"), monkeypatch=monkeypatch) == 0
     )
@@ -486,7 +486,7 @@ def test_hook_event_name_and_reload_skills(tree, capsys, monkeypatch):
 
 def test_hook_missing_snapshot_is_silent(tree, capsys, monkeypatch):
     (tree / ".claude/harness-models.defaults.json").unlink()
-    user_file(tree, {"agents": {"coding": {"effort": "ultra"}}})
+    user_file(tree, {"agents": {"implementer": {"effort": "ultra"}}})
     assert (
         run(tree, "--hook", stdin=hook_input("startup"), monkeypatch=monkeypatch) == 0
     )
@@ -495,10 +495,10 @@ def test_hook_missing_snapshot_is_silent(tree, capsys, monkeypatch):
 
 def test_missing_target_is_reported_and_skipped(tree, capsys, monkeypatch):
     (tree / ".claude/agents/test-runner.md").unlink()
-    user_file(tree, {"agents": {"coding": {"effort": "high"}}})
+    user_file(tree, {"agents": {"implementer": {"effort": "high"}}})
     assert run(tree, "--apply") == 0
     assert "missing target agents/test-runner.md" in capsys.readouterr().out
-    user_file(tree, {"agents": {"coding": {"effort": "max"}}})
+    user_file(tree, {"agents": {"implementer": {"effort": "max"}}})
     assert (
         run(tree, "--hook", stdin=hook_input("startup"), monkeypatch=monkeypatch) == 0
     )
@@ -515,7 +515,7 @@ def test_no_user_file_applies_defaults_only(tree, capsys):
 def test_cli_entry_point_with_explicit_paths(tree):
     defaults = tree / "snap.json"
     defaults.write_text(json.dumps(SNAPSHOT))
-    user_file(tree, {"agents": {"coding": {"effort": "high"}}})
+    user_file(tree, {"agents": {"implementer": {"effort": "high"}}})
     result = subprocess.run(
         [
             sys.executable,

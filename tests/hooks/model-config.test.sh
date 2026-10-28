@@ -6,7 +6,7 @@
 source "$(dirname "$0")/../lib.sh"
 
 H=model-config.sh
-AGENT=.claude/agents/coding.md
+AGENT=.claude/agents/implementer.md
 SKILL=.claude/skills/correctness-review/SKILL.md
 
 # consumer_repo [--no-snapshot] [--no-applier] — echoes a temp repo with a deployed .claude/.
@@ -18,19 +18,19 @@ consumer_repo() {
   cp "$ROOT/hooks/$H" "$d/.claude/hooks/"
   case " $* " in *" --no-applier "*) ;; *)
     cp "$ROOT/scripts/apply_model_config.py" "$d/.claude/scripts/" ;; esac
-  printf '%s\n' '---' 'name: coding' 'description: Write code.' 'model: sonnet' '---' '' 'Body.' \
+  printf '%s\n' '---' 'name: implementer' 'description: Write code.' 'model: sonnet' '---' '' 'Body.' \
     > "$d/$AGENT"
   printf '%s\n' '---' 'name: correctness-review' 'description: Review a diff.' '---' '' 'Body.' \
     > "$d/$SKILL"
   case " $* " in *" --no-snapshot "*) ;; *)
-    printf '%s\n' '{"agents": {"coding": {"model": "sonnet"}}, "skills": {"correctness-review": {}}}' \
+    printf '%s\n' '{"agents": {"implementer": {"model": "sonnet"}}, "skills": {"correctness-review": {}}}' \
       > "$d/.claude/harness-models.defaults.json" ;; esac
   echo "$d"
 }
 
 # Valid user file: one agent effort and one skill effort (spec SC-1/SC-11 shape).
 user_valid() {
-  printf '%s\n' '{"agents": {"coding": {"effort": "high"}}, "skills": {"correctness-review": {"effort": "high"}}}' \
+  printf '%s\n' '{"agents": {"implementer": {"effort": "high"}}, "skills": {"correctness-review": {"effort": "high"}}}' \
     > "$1/harness-models.json"
 }
 
@@ -77,7 +77,7 @@ done
 
 t "invalid user file → exit 0, warning in additionalContext, no target written"
 repo=$(consumer_repo)
-printf '%s\n' '{"agents": {"coding": {"effort": "ultra"}}}' > "$repo/harness-models.json"
+printf '%s\n' '{"agents": {"implementer": {"effort": "ultra"}}}' > "$repo/harness-models.json"
 snap "$repo"
 run_consumer "$repo" startup
 if [ "$RC" -ne 0 ]; then fail "rc=$RC (want 0) out: $OUT"

@@ -1,6 +1,6 @@
 # agents — Project Configuration
 
-Thin **index** consumed by the execution sub-agents (`coding.md`, `test-runner.md`). It does
+Thin **index** consumed by the execution sub-agents (`implementer.md`, `test-runner.md`). It does
 **not** restate conventions — it points to the docs that already hold them, and carries only the
 few execution facts no other doc reliably contains. Fill it in per project.
 
@@ -27,7 +27,7 @@ The agents read these for layering, error/validation, style, and logging. Give t
 
 ## Test execution (agent-specific — usually not in the docs above)
 
-Consumed by `test-runner.md` and the coding agent's validation step.
+Consumed by `test-runner.md` and the implementer agent's validation step.
 
 - **Test command:** <exact command, e.g. `cd apps/api && python -m pytest`>
 - **Targeted-run flags:** <e.g. `-x` stop at first failure, `-k <name>` filter, `--tb=short`>

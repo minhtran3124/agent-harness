@@ -11,8 +11,8 @@
     "output_contract"
   ],
   "roles": {
-    "coding": {
-      "source": "agents/coding.md",
+    "implementer": {
+      "source": "agents/implementer.md",
       "filesystem": "workspace-write",
       "shell": "controlled-execution",
       "network": "runtime-controlled",
