@@ -1,13 +1,13 @@
 ---
 problem_type: failure
 module: harness
-tags: review-oracle, task-review, adversarial-review, corpus-testing, fixture-fitted-tests, plan-blind, correctness-review, green-is-not-correct
+tags: review-oracle, task-review, adversarial-review, corpus-testing, fixture-fitted-tests, plan-blind, correctness-pass, green-is-not-correct
 severity: critical
 applicable_when: A multi-task plan finished with every per-task review green (spec + quality) and the full suite passing, and you are about to treat that as sufficient correctness evidence — before the plan-blind adversarial correctness pass has run.
 affects:
   - runtime/resume_decision.py
   - runtime/test_resume_decision.py
-  - skills/correctness-review/SKILL.md
+  - skills/correctness review/SKILL.md
 supersedes: null
 confidence: high
 confirmed_at: 2026-08-10
@@ -21,7 +21,7 @@ verdicts), its `Verify` command was green, and the full suite passed. You are ab
 ## Symptom
 
 On gh-175 every per-task review passed and 145 tests were green — yet the mandatory plan-blind
-`correctness-review` (six independent finder angles over `BASE..HEAD`) then found ~11 **real,
+`correctness review` (six independent finder angles over `BASE..HEAD`) then found ~11 **real,
 reproduced** bugs, several severe: a markdown `PLAN.md` that merely mentions the string `<task`
 parsed to an empty cursor → `execute-plan` with `next_task: null` → a resuming session would skip
 every task (reproduced against the live `specs/gh-121-.../PLAN.md`: renderer 7 tasks, resume 0);
@@ -49,7 +49,7 @@ correct on real input."
 
 ## Correct Approach
 
-Keep the plan-blind adversarial `correctness-review` as a **hard, non-skippable gate** after the
+Keep the plan-blind adversarial `correctness review` as a **hard, non-skippable gate** after the
 per-task reviews — it is a different oracle, not a redundant one (plan-anchored review answers
 "does it match the task?"; the adversarial finders answer "what breaks at runtime, ignoring the
 plan?"). Two concrete practices that closed the gap:

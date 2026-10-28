@@ -4,7 +4,7 @@ Persistent documentation of non-obvious patterns, bug fixes, and architectural d
 
 - **Written by:** `/compound` after sessions with non-trivial learnings
 - **Read by:** `/brainstorming` (decision track only), `/xia2` (all tracks via INDEX-first lookup),
-  and the `/correctness-review` prior-art angle; the `session-knowledge.sh` SessionStart hook
+  and `/compound`'s related-docs lookup; the `session-knowledge.sh` SessionStart hook
   loads `critical-patterns.md` and an `INDEX.md` pointer
 
 ## Structure

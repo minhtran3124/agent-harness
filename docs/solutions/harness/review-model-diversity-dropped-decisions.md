@@ -7,7 +7,7 @@ applicable_when: Choosing or changing the model/effort pinned to a review role (
 affects:
   - agents/runtime-bindings.json
   - scripts/render_runtime_entry.py
-  - skills/correctness-review/correctness-scorer-prompt.md
+  - skills/correctness review/correctness-scorer-prompt.md
   - skills/intent-review/intent-reviewer-prompt.md
 supersedes: null
 confidence: high
@@ -50,8 +50,8 @@ missed class.
   it, and the Codex reviewer `model_class` still says "distinct".
 - `correctness_scorer → coding` in `adapters/runtime-entry-bindings.json` now has no stated
   rationale; the scorer's model follows the implementer's.
-- Whether quality held is measured by re-running `evals/skills/review-chain` and
-  `evals/skills/task-review` after redeploy (prior baselines used other models, so a difference
+- Whether quality held is measured by re-running `evals dir: skills/review-chain` and
+  `evals dir: skills/task-review` after redeploy (prior baselines used other models, so a difference
   is not attributable to this change alone).
 
 ## Related

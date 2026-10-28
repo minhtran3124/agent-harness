@@ -1,7 +1,7 @@
 ---
 problem_type: bug
 module: hooks/registration
-tags: hook-registration, file-mode, exit-126, fail-open, bash-invoked-tests, settings-json, deploy-propagation, correctness-review-catch
+tags: hook-registration, file-mode, exit-126, fail-open, bash-invoked-tests, settings-json, deploy-propagation, correctness-pass-catch
 severity: critical
 applicable_when: Adding or replacing a hook that settings.json (or a derived consumer settings.json) registers as a bare command path, i.e. with no `bash` prefix — including any new file created by an editor or agent Write tool, which defaults to 100644.
 affects:

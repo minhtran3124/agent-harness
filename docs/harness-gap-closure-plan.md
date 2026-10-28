@@ -76,7 +76,7 @@ Raised by research, now resolved at the mechanism level:
 - **Verify:** `bash scripts/harness-audit.sh` exits 0 and prints a report; deliberately add 1 phantom ref → the script catches it.
 
 **P1-D · ✅ ALREADY DONE PREVIOUSLY — review subagent read-only by structure** *(comparison #2)*
-- **Ground truth:** `agents/reviewer.md` already exists, read-only (`tools: Glob, Grep, Read, Bash` — excludes Write/Edit/Agent). All 3 prompt templates (`correctness-reviewer`, `correctness-scorer`, `intent-reviewer`) already declare `subagent_type: reviewer` + an explanatory comment. Research comparison #2 ("1 config line") has been implemented more thoroughly — via a dedicated agent definition. Nothing left to do.
+- **Ground truth:** `agents/reviewer.md` already exists, read-only (`tools: Glob, Grep, Read, Bash` — excludes Write/Edit/Agent). All 3 prompt templates (`correctness reviewer`, `correctness-scorer`, `intent-reviewer`) already declare `subagent_type: reviewer` + an explanatory comment. Research comparison #2 ("1 config line") has been implemented more thoroughly — via a dedicated agent definition. Nothing left to do.
 
 > **Execution status 2026-06-14 (after ground-truth):** Phase 2 was nearly all closed beforehand.
 > P2-E/F/G were all already in place (the 06-11 research is obsolete); only **P2-H** was genuinely missing → done in this session.

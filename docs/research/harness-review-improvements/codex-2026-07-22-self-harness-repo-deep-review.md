@@ -93,7 +93,7 @@ may be merged into the next harness.
 - A completion claim requires re-runnable proof, not just prose.
 - `skills/compound/SKILL.md` already has a ratchet from a failure track into
   `docs/harness-experimental/improvement-backlog.md`.
-- `evals/README.md` prescribes labeled fixtures, blind runs, first-run records, and claim discipline.
+- `evals dir: README.md` prescribes labeled fixtures, blind runs, first-run records, and claim discipline.
 - `scripts/bookkeeping.sh` together with the post-merge workflow has turned the trust ledger into an event-sourced record.
 - `scripts/harness-audit.sh` already has JSON output and a trend log.
 - `docs/research/harness-review-improvements/2026-07-20-production-agent-harness-review.md` already sketched the right premises:
@@ -104,10 +104,10 @@ may be merged into the next harness.
 The repo has 14 skill directories, but behavioral evals currently only measure:
 
 - `/feature-intake`;
-- `/correctness-review`;
+- `/correctness review`;
 - `/intent-review`.
 
-`evals/skills/review-chain` has five planted-defect fixtures. `evals/workflow/intake-classifier` has
+`evals dir: skills/review-chain` has five planted-defect fixtures. `evals dir: workflow/intake-classifier` has
 seven classification fixtures. This is a good foundation but not yet enough to claim full-workflow improvement.
 The LLM runs are still manual; CI only runs deterministic scorers and contract tests.
 
@@ -440,9 +440,9 @@ At the time of the review:
 - `HARNESS.md`
 - `harness-manifest.json`
 - `skills/compound/SKILL.md`
-- `evals/README.md`
-- `evals/skills/review-chain/README.md`
-- `evals/workflow/intake-classifier/README.md`
+- `evals dir: README.md`
+- `evals dir: skills/review-chain/README.md`
+- `evals dir: workflow/intake-classifier/README.md`
 - `scripts/harness-audit.sh`
 - `scripts/harness-status.sh`
 - `scripts/bookkeeping.sh`

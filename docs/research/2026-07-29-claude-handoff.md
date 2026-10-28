@@ -43,14 +43,14 @@ Still incomplete. Authenticated model observations are required for:
 
 The strict scorer now rejects partial canonical comparisons. Do not fabricate records from auth
 errors, and do not overwrite first-run misses. Preserve invalid collections in
-`evals/skills/prompt-refactor/results/invalid-collections.json`.
+`evals dir: skills/prompt-refactor/results/invalid-collections.json`.
 
 ### Task 8.1 — final workflow proof and evidence
 
 Still incomplete. After Task 7.1 passes:
 
 1. Run the focused checks and full `bash scripts/run-tests.sh`.
-2. Run context-propagation, correctness-review, and intent-review over the complete diff.
+2. Run context-propagation, correctness review, and intent-review over the complete diff.
 3. Fill every `SUMMARY.md` Verify row and map all SC-1 through SC-12 without coverage warnings.
 4. Write a review receipt at the reviewed HEAD.
 5. Run `bash scripts/deploy-harness.sh`; verify deployed smoke, manifest, and documentation truth.

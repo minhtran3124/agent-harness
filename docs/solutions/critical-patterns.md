@@ -38,7 +38,7 @@ Two decisions: (1) `agents/PROJECT.md` convention sources point at `skills/READM
 
 Two crashes in advisory/non-blocking scripts. (1) `scripts/harness-audit.sh` crashed with `unbound variable` iterating a possibly-empty array under `set -u` — bash 3.2 (macOS) treats `"${arr[@]}"` on an empty array as an unset-variable reference, unlike bash 4.4+; fixed with `"${arr[@]+"${arr[@]}"}"`. (2) `scripts/harness-status.sh`'s JSONL trend block took **three** rounds, because the first two enforced "never blocks" with an exception allowlist: round 1 guarded `JSONDecodeError`, round 2 added `KeyError`/`TypeError` — and both left `open()` unguarded (it runs before the loop, outside every `try`), so an unreadable or non-UTF-8 log still killed the script under `set -euo pipefail` and silently swallowed the Drift Audit section. **Do not copy the round-2 pattern.** Fixed by putting the boundary on the command — `python3 - "$LOG" <<'PY' || echo "  [unreadable: $LOG]"` — the `|| true` convention the same file already used one section below.
 
-**Lesson:** an exception-type allowlist cannot be proven complete, so it is the wrong tool for "never fail" semantics; bound the block instead. And the boundary defect was missed by every per-line bug hunt (including `/correctness-review`) — it surfaced only when a reviewer asked "is this fix deep enough, or a bandaid?" Ask that on purpose.
+**Lesson:** an exception-type allowlist cannot be proven complete, so it is the wrong tool for "never fail" semantics; bound the block instead. And the boundary defect was missed by every per-line bug hunt (including `/correctness review`) — it surfaced only when a reviewer asked "is this fix deep enough, or a bandaid?" Ask that on purpose.
 
 **Full doc:** docs/solutions/scripts/bash-empty-array-and-jsonl-parsing-gotchas.md
 **Recurred:** 2026-10-17 — `scripts/verify_summary.py` `_red_fix_diff_issue` (gh-313): an advisory check guarded by `except OSError`/`CalledProcessError` lets `UnicodeDecodeError` from `text=True` decoding of `git diff -z` escape, so `--lane` exits 1 and the commit gate blocks.
@@ -79,10 +79,10 @@ Example entry shape:
 ## [2026-07-10] unverified-premise-propagates-through-plan-anchored-reviews
 **Type:** failure
 **Module:** harness
-**Tags:** not-observed-not-absent, false-premise, plan-blind-review, correctness-review, ground-truth, review-oracle, resync-conflict
+**Tags:** not-observed-not-absent, false-premise, plan-blind-review, correctness-pass, ground-truth, review-oracle, resync-conflict
 **Applicable when:** Watch for this when a spec, design, or plan asserts that something "is never shipped" / "does not exist" / "can never conflict", and downstream code, tests, and reviews all treat that absence claim as true without one independent `ls` or `git ls-files` against ground truth.
 
-A design doc asserted the harness ships no `*.proposed`; it shipped two, tracked since `f7d2d58`. Nobody ran `ls skills/xia2/`. Per-task spec review, code-quality review, and the test author all passed the false premise — the test even encoded it as a comment. Only the plan-blind `/correctness-review` caught it. Three reviewers agreeing means nothing when all three read the same wrong sentence: this is `rules/behavior.md` §1 `not_observed != absent`, and it is why the correctness and intent oracles are dispatched blind to the plan.
+A design doc asserted the harness ships no `*.proposed`; it shipped two, tracked since `f7d2d58`. Nobody ran `ls skills/xia2/`. Per-task spec review, code-quality review, and the test author all passed the false premise — the test even encoded it as a comment. Only the plan-blind `/correctness review` caught it. Three reviewers agreeing means nothing when all three read the same wrong sentence: this is `rules/behavior.md` §1 `not_observed != absent`, and it is why the correctness and intent oracles are dispatched blind to the plan.
 
 **Full doc:** docs/solutions/harness/unverified-premise-propagates-through-plan-anchored-reviews.md
 ---
@@ -157,7 +157,7 @@ State logic written as prose accrues contradiction chains: each correction is in
 **Tags:** review-oracle, task-review, adversarial-review, corpus-testing, fixture-fitted-tests, plan-blind, green-is-not-correct
 **Applicable when:** A multi-task plan finished with every per-task review green (spec + quality) and the full suite passing, and you are about to treat that as sufficient correctness evidence — before the plan-blind adversarial correctness pass has run.
 
-On gh-175 every per-task review passed and 145 tests were green, yet the plan-blind `correctness-review` (six independent finder angles) then found ~11 real, reproduced bugs — including a markdown plan mentioning `<task` parsing to an empty cursor (a resuming session would skip every task). The per-task tests were written by the same subagent from the same idealized assumptions using synthetic fixtures, so they proved consistency, not correctness; the bugs lived exactly where real `specs/*/PLAN.md` diverge from the tidy fixture. Correct path: keep the plan-blind adversarial correctness pass as a hard gate (different oracle, not redundant), add corpus tests that run the parser over EVERY real spec (parity/subset property), not synthetic fixtures, and re-verify each finding at truth-tier.
+On gh-175 every per-task review passed and 145 tests were green, yet the plan-blind `correctness review` (six independent finder angles) then found ~11 real, reproduced bugs — including a markdown plan mentioning `<task` parsing to an empty cursor (a resuming session would skip every task). The per-task tests were written by the same subagent from the same idealized assumptions using synthetic fixtures, so they proved consistency, not correctness; the bugs lived exactly where real `specs/*/PLAN.md` diverge from the tidy fixture. Correct path: keep the plan-blind adversarial correctness pass as a hard gate (different oracle, not redundant), add corpus tests that run the parser over EVERY real spec (parity/subset property), not synthetic fixtures, and re-verify each finding at truth-tier.
 
 **Full doc:** docs/solutions/harness/plan-anchored-task-review-misses-fixture-fitted-bugs.md
 ---
@@ -187,7 +187,7 @@ A manual `grep` for `git -C "$SCRIPT_DIR"` found seven hooks; seven were fixed, 
 ## [2026-09-29] bare-command-hook-must-be-executable-in-index
 **Type:** bug
 **Module:** hooks/registration
-**Tags:** hook-registration, file-mode, exit-126, fail-open, bash-invoked-tests, settings-json, deploy-propagation, correctness-review-catch
+**Tags:** hook-registration, file-mode, exit-126, fail-open, bash-invoked-tests, settings-json, deploy-propagation, correctness-pass-catch
 **Applicable when:** Adding or replacing a hook that settings.json registers as a bare command path (no `bash` prefix), including any file created by an agent Write tool (defaults to 100644).
 
 A new `hooks/commit-gate.sh` was committed `100644` while registered as a bare command, so the runtime got exit 126 — not a block — and every commit gate silently failed open, and every consumer deploy would have inherited the dead gate (caught before merge). It passed 200+ assertions because every hook test runs `bash hooks/x.sh`, which ignores the execute bit; `tests/scripts/settings-wiring.test.sh` now asserts `-x` and index mode `100755` for every registered command.

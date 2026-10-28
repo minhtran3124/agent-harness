@@ -94,9 +94,9 @@ under different names (*acceptance contract*, *Success Criteria*, *fix rounds*,
 
 | Claimed missing | Shipped as | Evidence |
 |---|---|---|
-| Iteration / retry budgets | `maximum_fix_rounds: 3`; one-retry rule for `cannot_verify`; fail-≥2 escalation | `skills/correctness-review/review-config.json:14`; `skills/subagent-driven-development/SKILL.md:58-59`; `rules/orchestration.md:78` |
-| Convergence / progress detection | findings-not-decreasing + diff-hash-unchanged → escalate; in-flight escalation checks; blast-radius hook | `skills/correctness-review/SKILL.md:28-29`; `rules/orchestration.md:74-85`; `hooks/blast-radius-check.sh` |
-| Evaluator feedback → next action | fix rounds + re-review; verdict-routed re-dispatch; intent-review routing | `skills/correctness-review/SKILL.md:26-29`; `skills/subagent-driven-development/SKILL.md:59-63` |
+| Iteration / retry budgets | `maximum_fix_rounds: 3`; one-retry rule for `cannot_verify`; fail-≥2 escalation | `skills/correctness review/review-config.json:14`; `skills/subagent-driven-development/SKILL.md:58-59`; `rules/orchestration.md:78` |
+| Convergence / progress detection | findings-not-decreasing + diff-hash-unchanged → escalate; in-flight escalation checks; blast-radius hook | `skills/correctness review/SKILL.md:28-29`; `rules/orchestration.md:74-85`; `hooks/blast-radius-check.sh` |
+| Evaluator feedback → next action | fix rounds + re-review; verdict-routed re-dispatch; intent-review routing | `skills/correctness review/SKILL.md:26-29`; `skills/subagent-driven-development/SKILL.md:59-63` |
 | Goal as first-class object (~70%) | SC table = acceptance contract + Global Constraints, SC coverage enforced | `rules/plan-format.md:69-108`; `scripts/verify_summary.py:372-411` |
 | Goal lifecycle / state machine | run-state FSM + executable resume-decision authority | `runtime/run_state.py:233-304`; `runtime/resume_decision.py` |
 | Loop controller | SDD wave controller + 6-action decision function | `skills/subagent-driven-development/SKILL.md`; `runtime/resume_decision.py` |
@@ -140,7 +140,7 @@ goal:
   evaluators:
     - pytest
     - performance-benchmark
-    - correctness-review
+    - correctness review
     - intent-review
 
   budget:
@@ -249,7 +249,7 @@ This makes the evaluator an objective feedback source for the loop controller.
 
 # 4. Correctness review is already a strong evaluator candidate
 
-The existing correctness-review pipeline is especially suitable for this role:
+The existing correctness review pipeline is especially suitable for this role:
 
 ```text
 six independent FIND angles
@@ -326,7 +326,7 @@ The distinction matters because the next iteration may legitimately change the i
 
 Note that the micro-loop is already bounded and progress-guarded: fix rounds are capped at
 three per finding, and a round with non-decreasing findings on an unchanged diff hash
-escalates immediately (`skills/correctness-review/SKILL.md:28-29`). The genuine delta a
+escalates immediately (`skills/correctness review/SKILL.md:28-29`). The genuine delta a
 Loop Engine adds is **run-level** control (whole-goal iteration and time budgets, strategy
 changes between iterations), not round-level control, which ships today.
 
@@ -456,8 +456,8 @@ The existing final review chain should still exist. The difference is that cheap
 
 # 8b. Oracle reconciliation (resolved design decision)
 
-The harness deliberately keeps three independent oracles — correctness-review
-(plan-blind), intent-review (plan-prose-blind), and context-propagation-audit. In-loop
+The harness deliberately keeps three independent oracles — correctness review
+(plan-blind), intent-review (plan-prose-blind), and context propagation audit. In-loop
 evaluation must not erode that independence. The resolved split:
 
 - **In-loop tier**: cheap deterministic evaluators only — pytest, SC/Verify rows via
@@ -465,12 +465,12 @@ evaluation must not erode that independence. The resolved split:
   iteration pollutes nothing.
 - **Final-gate tier**: the LLM oracles stay exactly where they are, blind exactly as they
   are, and the final receipt stays SHA-pinned. Correctness-review and intent-review are
-  universal; context-propagation-audit keeps its existing **conditional** trigger — it runs
+  universal; context propagation audit keeps its existing **conditional** trigger — it runs
   only when the cumulative diff touches workflow-engine paths
   (`skills/subagent-driven-development/references/review-chain.md:3`) and must not become
   mandatory for unrelated changes.
 
-The variant sketched in section 4 — running correctness-review inside every iteration as
+The variant sketched in section 4 — running correctness review inside every iteration as
 a feedback signal — is **rejected**: it is expensive, and it turns "review of the final
 result" into "review of drafts", voiding receipt semantics. Section 4 remains as an
 illustration of evaluator-shaped output only; see this section for the binding decision.
@@ -772,7 +772,7 @@ These are governance mechanisms, not loop execution primitives.
 
 Any implementation of this proposal must clear constraints already recorded in the repo:
 
-- **No change to correctness-review's plan-blind FIND stage**, and **no LLM-as-judge
+- **No change to correctness review's plan-blind FIND stage**, and **no LLM-as-judge
   acceptance checks** — contract checks are re-runnable shell commands only
   (`specs/acceptance-contract-loop-budget/design.md`, non-goals).
 - **No new hooks / standing automation** without clearing the recorded bar

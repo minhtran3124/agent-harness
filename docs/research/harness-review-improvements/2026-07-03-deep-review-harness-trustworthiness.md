@@ -40,7 +40,7 @@ The repo proves its own thesis: *whatever is not mechanized will decay*.
 
 ### 3. `executing-plans` has no review gate at all
 
-- The README (`skills/README.md`) and CLAUDE.md say executing-plans is "same as subagent-driven-development" (two-stage review per task + correctness-review + intent-review).
+- The README (`skills/README.md`) and CLAUDE.md say executing-plans is "same as subagent-driven-development" (two-stage review per task + correctness review + intent-review).
 - In reality `skills/executing-plans/SKILL.md`: Step 2 runs the task, Step 3 hands off straight to finishing-a-development-branch. No spec review, no quality review, no correctness, no intent.
 - **Consequence:** any plan that runs through the "parallel session" path ships entirely unreviewed while the harness believes it was reviewed.
 
@@ -56,7 +56,7 @@ The repo proves its own thesis: *whatever is not mechanized will decay*.
 ### 5. Lane corroboration is self-referential and fail-open
 
 - **Location:** `hooks/risk-corroboration.sh:103,109,112`
-- The parser requires a line beginning exactly with `Lane:`; this very repo has `specs/correctness-review-upgrade/SUMMARY.md:3` using `**Lane:** normal` → grep misses → no lane found → warn-and-allow (fail-open) even when the diff touches a hard gate.
+- The parser requires a line beginning exactly with `Lane:`; this very repo has `specs/correctness review-upgrade/SUMMARY.md:3` using `**Lane:** normal` → grep misses → no lane found → warn-and-allow (fail-open) even when the diff touches a hard gate.
 - The fallback `ls -t specs/*/SUMMARY.md | head -1` picks the *most recently modified* SUMMARY → the lane being corroborated may belong to a different task.
 - The block message only tells the agent how to unblock itself (write `Lane: high-risk` on its own; no human in the loop) → the hook enforces **consistency**, not **safety**.
 
@@ -121,7 +121,7 @@ The repo proves its own thesis: *whatever is not mechanized will decay*.
 - `check-untracked-py.sh:10` — `grep -v '/\.claude/'` never matches a repo-relative path (no leading slash) → the exclusion is dead; `git ls-files` runs in the session cwd, not the repo the commit targets.
 - `create-pr` defaults the base to `dev` while `finishing-a-development-branch` defaults to `main` (this repo's main is `main`) → wrong diff in the PR body.
 - `using-git-worktrees` claims "Called by: brainstorming (Phase 4) — REQUIRED", but brainstorming forbids it ("The ONLY skills you invoke after brainstorming are xia2 → writing-plans", line 72) — one of the two is wrong.
-- Leftover copy-pasted Vietnamese sentences in `subagent-driven-development/SKILL.md:192` and `correctness-review/SKILL.md:22` — load-bearing rationale that is unreadable to an agent/user not configured for Vietnamese.
+- Leftover copy-pasted Vietnamese sentences in `subagent-driven-development/SKILL.md:192` and `correctness review/SKILL.md:22` — load-bearing rationale that is unreadable to an agent/user not configured for Vietnamese.
 - `executing-plans` Step 3 describes finishing as "present options, execute choice" — stale (that skill now unconditionally pushes + opens a PR).
 - "Never merges" is prose-only — no hook gates `gh pr merge`/`git merge` (in contrast to branch-isolation, which is hook-enforced).
 - `subagent-driven-development` (433 lines, 2 DOT digraphs) and `compound` (469 lines) push instruction-following risk; the digraph is the only place the full control flow is specified.
@@ -139,7 +139,7 @@ The repo proves its own thesis: *whatever is not mechanized will decay*.
 - Benchmark `benchmarks/review-chain/`: 5 real fixtures, 2 real result files (06-12 baseline; 06-14 reviewer-agent: 5/5 caught, 0 FP, ~354k tokens), exemplary claim discipline.
 - The Evidence Tiers table is honest: it self-declares documented-only for every external skill/MCP; the single manually-verified claim (commit `a2a4349`) resolves to a real commit.
 - The Python checker tests are real tests (tmp-file round-trip, exit codes, timeouts), not tautologies; the checkers correctly reject a raw template header and handle CRLF + bold headers.
-- Spine routing (feature-intake → sdd → correctness-review → intent-review, the "three oracle" design, `subagent_type: reviewer` dispatch, residual gates) is specified concretely and executably.
+- Spine routing (feature-intake → sdd → correctness review → intent-review, the "three oracle" design, `subagent_type: reviewer` dispatch, residual gates) is specified concretely and executably.
 - `docs/solutions/INDEX.md` (5 entries) matches the 5 real docs exactly.
 
 ---

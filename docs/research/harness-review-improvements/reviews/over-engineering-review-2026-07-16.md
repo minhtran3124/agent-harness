@@ -82,7 +82,7 @@ The same facts live in many places, and an 800+-line linter suite exists to hold
 
 ### The review-oracle stack — MEDIUM-HIGH
 ~12 distinct LLM review mechanisms + ~9 mechanized gates exist. A normal-lane 3-task change passes through **~9 LLM review passes + ~8 hook/script gates ≈ 17 checks**. Meanwhile the one critical-severity solutions entry (`unverified-premise-propagates-through-plan-anchored-reviews`) proves the stack shares blind spots — all three oracles inherited the same false premise. More oracles ≠ independent oracles.
-**Fix:** scale the chain by lane. Normal lane → 1–2 correctness angles + intent-review only when intake confidence < high; the full 6-angle + scorer stack reserved for high-risk. (correctness-review's internal design is benchmark-backed — keep it; gate its *invocation*.)
+**Fix:** scale the chain by lane. Normal lane → 1–2 correctness angles + intent-review only when intake confidence < high; the full 6-angle + scorer stack reserved for high-risk. (correctness review's internal design is benchmark-backed — keep it; gate its *invocation*.)
 
 ### Per-call hook overhead — MEDIUM
 Every Bash call (even `ls`) spawns 4 PreToolUse processes, 3 of which are commit-only, each with a duplicated ~15-line prologue. Every Edit/Write spawns 4. An actual `git commit` runs ~6 `git diff`s + ~12 greps across the 4 gates. `branch-guard.sh` is subsumed by `branch-isolation-guard.sh`'s write-time deny — the only commits it can still catch are the deliberately-exempt specs/ bookkeeping ones, so its warnings are mostly noise.
@@ -108,7 +108,7 @@ Every Bash call (even `ls`) spawns 4 PreToolUse processes, 3 of which are commit
 - **SUMMARY.md core contract** — Lane/Confidence/Reason/Verify/Intent are all machine-read (risk-corroboration, check_lane_evidence, verify_summary, intent-review) and filled with real values in 33/33 specs.
 - **`hooks/lib/git-command.sh`** — real bypass fix, honest known-uncaught list, mutation-tested. **`check-untracked-py.sh`**, **`branch-isolation-guard.sh`**, **`ruff-on-edit.sh`**, **`render-plan-on-write.sh`** — small, load-bearing.
 - **`verify_summary.py`** — the one gate with real teeth (parse + re-run + trivial-command denylist); its 403-line test suite is justified.
-- **correctness-review's SCORE/threshold design** — benchmark-backed (`benchmarks/review-chain`) with a documented rejected alternative. **intent-review's plan-blindness** — cheap, closes a real Goodhart gap.
+- **correctness review's SCORE/threshold design** — benchmark-backed (`benchmarks/review-chain`) with a documented rejected alternative. **intent-review's plan-blindness** — cheap, closes a real Goodhart gap.
 - **`/compound` + doc-truth lint + `harness-manifest.json`** — the compounding loop demonstrably works (INDEX auto-gen, `confirmed_at` staleness); the manifest is the one duplication-killer done right.
 - **The test suite** (~2,285 lines guarding hooks/scripts, hermetic, mutation-tested) and the **lane/confidence design principle** (ceremony scales with risk; the human gate scales with ambiguity) — this is the 20% to build the minimal version around.
 - **Honesty culture** — the failure log's self-critical entries are exactly right; the problem is only that the harness hasn't consumed its own findings (C4).
@@ -151,7 +151,7 @@ Normal lane: 1–2 correctness angles, no per-finding scorer, intent-review only
 | using-git-worktrees | 314 | trim ~90 | superpowers global-dir flow + triple restatement; keep the deploy-harness step (Skill-tool breakage is real) |
 | subagent-driven-development | 437 | trim ~170 | dot graph, example workflow, advantages = restatements |
 | executing-plans | 126 | merge into s-d-d | same gates; only dispatch differs |
-| correctness-review | 161 | keep | benchmark-justified; gate invocation by lane |
+| correctness review | 161 | keep | benchmark-justified; gate invocation by lane |
 | intent-review | 149 | keep, light trim | mechanism sound |
 | review-diff | 62 | keep | small, optional |
 | create-pr | 88 | keep | fix output path (writes PR_TEMPLATE.md into git status) |

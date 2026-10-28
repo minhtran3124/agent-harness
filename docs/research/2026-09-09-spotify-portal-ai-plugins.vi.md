@@ -49,7 +49,7 @@ Chênh lệch kích thước là hệ quả của khác biệt đó, và nó l�
 
 *(Số file và dòng lấy bằng `find`/`wc` trên cả hai cây thư mục; số commit bằng
 `git rev-list --count HEAD`. Cả hai bộ test đều được đo bằng cách chạy thật: của họ
-`bash plugins/shunt/evals/run.sh` → 51 passed, 0 failed. Của mình `bash scripts/run-tests.sh`
+`bash plugins/shunt/evals dir: run.sh` → 51 passed, 0 failed. Của mình `bash scripts/run-tests.sh`
 → ALL GREEN trong 3:25.)*
 
 Vậy "Spotify đơn giản hơn" không phải một phát hiện. Câu hỏi đúng hẹp hơn: **trong cái phạm vi
@@ -70,7 +70,7 @@ nhưng làm việc mang tính **cấu trúc**.
 Mệnh đề kích hoạt mang một điều kiện **phủ định**, nên skill tự từ chối chạy khi đã có đường rẻ
 hơn. Đó là chặn định tuyến với chi phí điều phối bằng 0 — không dispatcher, không bảng ưu tiên,
 chỉ một mệnh đề. Không description nào trong 12 skill của mình có thứ này, trong khi mình có ít
-nhất hai cặp skill chồng lấn cần nó: `xia2` vs `brainstorming`, và `correctness-review` vs
+nhất hai cặp skill chồng lấn cần nó: `xia2` vs `brainstorming`, và `correctness review` vs
 `intent-review`.
 
 **2. Mơ hồ là một trạng thái đầu ra có tên, không phải lỗi.** `skills/doctor/SKILL.md:53-54`:
@@ -81,7 +81,7 @@ nhất hai cặp skill chồng lấn cần nó: `xia2` vs `brainstorming`, và `
 Thứ làm luật này *dính* là nó được đưa tiếp vào schema đầu ra ở `skills/doctor/SKILL.md:75` —
 `| Authentication | Ready, ambiguous, or blocked |`. Một câu prose trần sẽ không sống sót qua
 lúc viết báo cáo; một giá trị thứ ba trong enum thì có. Đây cùng một bản năng với verdict
-`unconfirmed` trong `evals/context-boundaries/README.md` của mình, và đáng để tổng quát hóa:
+`unconfirmed` trong `evals dir: context-boundaries/README.md` của mình, và đáng để tổng quát hóa:
 **luật nào nói "đừng đoán" thì format đầu ra phải có sẵn một ô cho "không biết".**
 
 **3. Enum trạng thái khai báo ngay trong bảng đầu ra.** `skills/doctor/SKILL.md:71-76` cho mỗi
@@ -254,7 +254,7 @@ Ba việc cụ thể, đều thấy được trong repo của họ:
 - **Thêm anti-trigger ở chỗ skill chồng lấn** (mục 2, mẹo 1).
 
 Điều này lộ ra một điểm yếu trong chính corpus eval của mình.
-`evals/skills/prompt-refactor/activation/` yêu cầu tám case trigger mỗi skill, nghe rất chặt —
+`evals dir: skills/prompt-refactor/activation/` yêu cầu tám case trigger mỗi skill, nghe rất chặt —
 nhưng đọc `feature-intake.json` thì cả 8 case trigger đều là **cùng một câu** gắn thêm tiền tố khác nhau
 ("Please do this in the repository: classify this change request into a risk lane…" / "This is
 time-sensitive, but classify this change request into a risk lane…"). Cái đó đo độ bền với tiền
@@ -291,7 +291,7 @@ always-on. Đó là thay đổi **hành vi**, không phải thay đổi định 
 
 ### 3.4 Đo chi phí của harness, không chỉ đo tính đúng
 
-`plugins/shunt/evals/benchmarks.json` cộng với nhánh `--benchmark` trong `run.sh` in ra bảng:
+`plugins/shunt/evals dir: benchmarks.json` cộng với nhánh `--benchmark` trong `run.sh` in ra bảng:
 
 | Kịch bản | Dòng | Không có shunt | Có shunt | Tiết kiệm |
 |---|---|---|---|---|
@@ -302,8 +302,8 @@ Công thức ước lượng rất thô — số ký tự ÷ 4, token đầu ra 
 đúng cái công thức đó ngay dưới bảng. **Thô mà nói rõ vẫn hơn chính xác mà giấu.**
 
 Mình chỉ đo chi phí bên trong eval harness, chưa bao giờ đo cho việc thật.
-`evals/skills/review-chain/README.md:40` ghi "token cost per pass" theo từng fixture, và
-`evals/skills/prompt-refactor/schema.json:33-35` có sẵn các trường `tokens`, `tool_calls`,
+`evals dir: skills/review-chain/README.md:40` ghi "token cost per pass" theo từng fixture, và
+`evals dir: skills/prompt-refactor/schema.json:33-35` có sẵn các trường `tokens`, `tool_calls`,
 `elapsed_ms` cho mỗi bản ghi kết quả. (Bản nháp đầu của đoạn này nói không có hạch toán chi phí
 nào cả; lệnh grep mà nó trích dẫn thực ra đã trả về đúng file README đó, và tôi đọc lướt qua.)
 Thứ còn thiếu là con số theo lane, theo từng thay đổi: eval đo catch-rate, độ chính xác phân loại
@@ -376,7 +376,7 @@ hổng nếu đặt vào một gate quản trị.
 một lần, không đụng gì tới working tree. Hỗ trợ env theo từng case, file đã stage, và trạng
 thái `xfail` cho bug đã biết.
 
-Cái `xfail` đó quan trọng. `evals/bash-hook-evals.json` case 17 của Spotify mã hóa một bug
+Cái `xfail` đó quan trọng. `evals dir: bash-hook-evals.json` case 17 của Spotify mã hóa một bug
 parser thật thành `expected_decision: "allow"` với lý do "Parser bug: -n and 5 are separate
 args". Nó in ra **PASS**. Bug được ghi trong một chuỗi không ai đọc và vô hình ở dòng tổng kết.
 `xfail` của mình in `xfail <case> — known bug: <reason>` ở mọi lần chạy, nên bug vẫn hiện hình
@@ -387,10 +387,10 @@ Chỗ họ thắng là thời gian: 51 case xong trong khoảng năm giây, khô
 nên thêm một tập con chạy nhanh là đáng.
 
 **4.5 Eval hành vi của mình ở đẳng cấp khác.**
-`evals/README.md` và `evals/skills/prompt-refactor/README.md` mô tả fixture có nhãn, các lần
+`evals dir: README.md` và `evals dir: skills/prompt-refactor/README.md` mô tả fixture có nhãn, các lần
 chạy mù (skill không bao giờ thấy `truth.md`), luật "lần chạy đầu là bản ghi" cấm chạy lại tới
 khi xanh, và một scorer coi chuyển dịch `pass → blocked` là *độ phủ chưa đo được* chứ không
-phải regression. `evals/context-boundaries/README.md` còn đi xa hơn: dò theo từng execution
+phải regression. `evals dir: context-boundaries/README.md` còn đi xa hơn: dò theo từng execution
 context xem một chỉ thị có thực sự tới nơi không — được xây sau một sự cố P1 thật (#141/#143)
 khi một rule được *nhắc tới* trong dispatch prompt nhưng chưa bao giờ được *giao* cho subagent.
 

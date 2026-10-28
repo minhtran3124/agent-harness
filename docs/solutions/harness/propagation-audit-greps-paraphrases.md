@@ -1,11 +1,11 @@
 ---
 problem_type: knowledge
-module: skills/context-propagation-audit/SKILL.md
+module: skills/context propagation audit/SKILL.md
 tags: context-propagation, workflow-engine, paraphrase, stale-copy, audit-search-surface
 severity: standard
 applicable_when: You run a context-propagation audit on a changed rule or prompt sentence and look for other files that still state the old rule.
 affects:
-  - skills/context-propagation-audit/SKILL.md
+  - skills/context propagation audit/SKILL.md
 supersedes: null
 confidence: high
 confirmed_at: 2026-10-16
@@ -28,7 +28,7 @@ not find it.
   terms were `write tests`, `follow tdd`, `test-first`, `Interfaces`, and the reviewer's
   `quality verdict`.
 - Search case-insensitively with `rg -i`. Exclude only generated or historical trees
-  (`specs/`, `openwiki/`, `.claude/`, `docs/research/`, `CHANGELOG.md`, `evals/`).
+  (`specs/`, `openwiki/`, `.claude/`, `docs/research/`, `CHANGELOG.md`, `evals dir: `).
 - Read each hit and decide: it restates the changed rule (update it), it names the rule without
   stating it (keep it), or it is unrelated.
 - Write the search commands and the excluded trees into the audit matrix, so a "no stale copy"

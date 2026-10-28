@@ -77,7 +77,7 @@ The size gap follows from that, and it is large:
 | Test suite | 51 cases, **~5 s**, no credentials | 677 shell assertions + 582 pytest, **3 m 25 s** |
 
 *(File and line counts from `find`/`wc` on both trees; commits from `git rev-list --count HEAD`.
-Both suites measured by running them: theirs `bash plugins/shunt/evals/run.sh` → 51 passed, 0
+Both suites measured by running them: theirs `bash plugins/shunt/evals dir: run.sh` → 51 passed, 0
 failed. Ours `bash scripts/run-tests.sh` → ALL GREEN in 3:25.)*
 
 So "Spotify is simpler" is not an insight. The useful question is narrower: **for the small surface
@@ -137,7 +137,7 @@ doing structural work.
 The trigger clause carries a *negative* condition, so the skill declines to fire when a cheaper
 direct path already exists. That is routing suppression at zero orchestration cost — no dispatcher,
 no priority table, just a clause. None of our 12 descriptions has one, and several of our skills
-overlap in ways that would benefit (`xia2` vs `brainstorming`; `correctness-review` vs
+overlap in ways that would benefit (`xia2` vs `brainstorming`; `correctness review` vs
 `intent-review`).
 
 **2. Ambiguity as a named output state, not an error.** `skills/doctor/SKILL.md:53-54`:
@@ -148,7 +148,7 @@ overlap in ways that would benefit (`xia2` vs `brainstorming`; `correctness-revi
 What makes this stick is that the state is then carried into the output schema at
 `skills/doctor/SKILL.md:75` — `| Authentication | Ready, ambiguous, or blocked |`. A bare prose
 instruction would not survive report-writing; a third value in the output enum does. This is the
-same instinct as our `unconfirmed` verdict in `evals/context-boundaries/README.md`, and it is worth
+same instinct as our `unconfirmed` verdict in `evals dir: context-boundaries/README.md`, and it is worth
 generalising: **if a rule says "don't guess," the output format needs a slot for "didn't know."**
 
 **3. Per-row status enums declared inside the output table.** `skills/doctor/SKILL.md:71-76` gives
@@ -305,7 +305,7 @@ That is the same instinct as our own "green can mean skipped" learning, applied 
 
 **And the honest caveat.** `shunt`'s enforcement is shallow by design. `check-bash-read` extracts a
 path with a regex over five command names; `sed -n '1,999p' file`, `awk`, `perl`, or `python -c` all
-sail straight past it. Their own evals admit the gaps — `evals/bash-hook-evals.json:88` marks `grep`
+sail straight past it. Their own evals admit the gaps — `evals dir: bash-hook-evals.json:88` marks `grep`
 as "not caught", and case 17 documents a parser bug where `head -n 5 file` is mis-parsed. That is
 *fine for a cost optimisation* and would be disqualifying for a security gate. Exactly the
 distinction in §6.
@@ -447,7 +447,7 @@ Three concrete moves make this actionable, all visible in their corpus:
 - **Phrase the trigger list as user situations**, not mechanism names.
 - **Add anti-triggers where skills overlap** (§2, pattern 1). `search/SKILL.md:3` ends its trigger
   clause with "and does not already know the exact entity reference." We have at least two
-  overlapping pairs that need this: `xia2` vs `brainstorming`, and `correctness-review` vs
+  overlapping pairs that need this: `xia2` vs `brainstorming`, and `correctness review` vs
   `intent-review`.
 
 Two of their descriptions go further and name an *implicit* trigger — a situation rather than a
@@ -455,7 +455,7 @@ command. `skills/feedback/SKILL.md:3` fires when the user "voices an impression,
 suggestion, or praise about the Portal CLI… and confirms they want it submitted." That is a skill
 activating on something the user was not explicitly asking for.
 
-This connects to a weakness in our own eval corpus. `evals/skills/prompt-refactor/activation/`
+This connects to a weakness in our own eval corpus. `evals dir: skills/prompt-refactor/activation/`
 requires eight trigger cases per skill, which sounds rigorous — but reading `feature-intake.json`,
 all eight trigger cases are the same sentence with different prefixes bolted on ("Please do this in the
 repository: classify this change request into a risk lane and confidence" / "This is
@@ -489,7 +489,7 @@ a real review.
 
 ### 4.4 Measure what the harness costs, not only whether it is correct
 
-`plugins/shunt/evals/benchmarks.json` plus the `--benchmark` path in `run.sh` produce a table like:
+`plugins/shunt/evals dir: benchmarks.json` plus the `--benchmark` path in `run.sh` produce a table like:
 
 | Scenario | Lines | Without shunt | With shunt | Savings |
 |---|---|---|---|---|
@@ -499,8 +499,8 @@ a real review.
 The estimator is crude — chars ÷ 4, output tokens weighted 5× — and `run.sh:290` prints that method
 directly under the table. Crude and stated beats precise and hidden.
 
-We measure cost only inside the eval harness, never for real work. `evals/skills/review-chain/README.md:40`
-records "approximate token cost per pass" per fixture, and `evals/skills/prompt-refactor/schema.json:33-35`
+We measure cost only inside the eval harness, never for real work. `evals dir: skills/review-chain/README.md:40`
+records "approximate token cost per pass" per fixture, and `evals dir: skills/prompt-refactor/schema.json:33-35`
 carries `tokens`, `tool_calls`, and `elapsed_ms` per result record. (An earlier draft of this
 paragraph said no cost accounting existed anywhere; the grep it cited had returned that README,
 and I read past it.) What is absent is the per-lane, per-change figure: the evals measure
@@ -547,7 +547,7 @@ gate fired on the person writing the document about the gate. That is the behavi
 report.** What is mechanically enforced is the *commit and edit boundary* — the twelve hooks. The
 *skill chain itself* is prose-linked, exactly like Spotify's. Our whole pipeline —
 `feature-intake → brainstorming → xia2 → writing-plans → using-git-worktrees →
-subagent-driven-development → correctness-review → intent-review → finishing-a-development-branch` —
+subagent-driven-development → correctness review → intent-review → finishing-a-development-branch` —
 is declared in an ASCII diagram in `skills/README.md` and a routing table in
 `skills/feature-intake/SKILL.md:46-52`. Handoff happens through files (`SUMMARY.md`, `design.md`,
 `research-brief.md`, `PLAN.md`, `.review-receipt.json`).
@@ -598,7 +598,7 @@ governance gate.
 with the hook copied in, so nothing touches the working tree. It supports per-case env vars, staged
 files, and an `xfail` state for known bugs.
 
-That last one matters. Spotify's `evals/bash-hook-evals.json` case 17 encodes a real parser bug as
+That last one matters. Spotify's `evals dir: bash-hook-evals.json` case 17 encodes a real parser bug as
 `expected_decision: "allow"` with the reason "Parser bug: -n and 5 are separate args". It prints
 **PASS**. The bug is documented in a string nobody reads and invisible in the summary line. Our
 `xfail` prints `xfail <case> — known bug: <reason>` on every run, so the bug stays visible while the
@@ -609,10 +609,10 @@ someone won't run the suite locally, its depth stops mattering — a fast subset
 
 ### 5.5 Our behavioural evals are in a different league
 
-`evals/README.md` and `evals/skills/prompt-refactor/README.md` describe labelled fixtures, blind
+`evals dir: README.md` and `evals dir: skills/prompt-refactor/README.md` describe labelled fixtures, blind
 runs where the skill never sees `truth.md`, a first-run-is-the-record rule that forbids re-running
 until green, and a scorer that treats a `pass → blocked` transition as *unmeasured coverage* rather
-than a regression. `evals/context-boundaries/README.md` goes further and probes, per execution
+than a regression. `evals dir: context-boundaries/README.md` goes further and probes, per execution
 context, whether an instruction actually arrived — built after a real P1 escape (#141/#143) where a
 rule was referenced in a dispatch prompt but never delivered to the subagent.
 
