@@ -27,7 +27,7 @@ record_details() {
 }
 
 echo "== L1: syntax =="
-for f in hooks/*.sh scripts/*.sh tests/lib.sh tests/*/*.test.sh; do
+for f in plugins/harness/hooks/*.sh plugins/harness/scripts/*.sh scripts/*.sh tests/lib.sh tests/*/*.test.sh; do
   bash -n "$f" || { echo "  ✗ syntax: $f"; fail "syntax: $f"; }
 done
 echo "  ✓ bash -n clean"
@@ -61,7 +61,7 @@ fi
 echo "== L1: STE linter self-test and prose baseline =="
 # The self-test can fail the suite. The baseline check reports only and always exits 0.
 if command -v python3 >/dev/null 2>&1; then
-  python3 skills/asd-ste100/scripts/ste-lint.py --selftest || fail "skills/asd-ste100/scripts/ste-lint.py --selftest"
+  python3 plugins/harness/skills/asd-ste100/scripts/ste-lint.py --selftest || fail "ste-lint.py --selftest"
   python3 scripts/check_ste_baseline.py
 else
   echo "  skip — no python3"
@@ -111,9 +111,9 @@ echo "== L2: python unit tests =="
 PYBIN="${TMPDIR:-/tmp}/harness-tests-venv/bin/python"
 [ -x "$PYBIN" ] || PYBIN="$(command -v python3 || true)"
 if [ -n "$PYBIN" ] && "$PYBIN" -c 'import pytest' >/dev/null 2>&1; then
-  # Every unit test under scripts/ and skills/ — collected, not hand-listed: the
+  # Every unit test under scripts/ and plugins/harness/ — collected, not hand-listed: the
   # hand list drifted and left four test files running nowhere.
-  PYTESTS="$(find scripts skills -name 'test_*.py' -not -path '*/__pycache__/*' | LC_ALL=C sort | tr '\n' ' ')"
+  PYTESTS="$(find scripts plugins/harness -name 'test_*.py' -not -path '*/__pycache__/*' | LC_ALL=C sort | tr '\n' ' ')"
   XDIST=""
   "$PYBIN" -c 'import xdist' >/dev/null 2>&1 && XDIST="-n $SUITE_JOBS"
   # shellcheck disable=SC2086

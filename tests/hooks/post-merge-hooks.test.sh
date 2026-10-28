@@ -21,7 +21,7 @@ setup() {  # $1 = merged|open ; leaves $MAIN, $WT, $STUB
   WT="$MAIN-wt"; _CLEANUP_DIRS+=("$WT")
   git -C "$MAIN" worktree add -q -b feat "$WT"
   git -C "$WT" commit -q --allow-empty -m work
-  mkdir -p "$MAIN/hooks"; cp "$ROOT/hooks/clean-worktrees.sh" "$MAIN/hooks/"
+  mkdir -p "$MAIN/hooks"; cp "$ROOT/plugins/harness/hooks/clean-worktrees.sh" "$MAIN/hooks/"
   STUB=$(mktemp -d); _CLEANUP_DIRS+=("$STUB")
   tip=$(git -C "$MAIN" rev-parse feat)
   if [ "$1" = merged ]; then printf '#!/bin/sh\necho %s\n' "$tip" > "$STUB/gh"; else printf '#!/bin/sh\nexit 0\n' > "$STUB/gh"; fi

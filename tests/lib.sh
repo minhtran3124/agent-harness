@@ -33,7 +33,7 @@ new_repo() {
   git -C "$d" config user.name test
   mkdir -p "$d/hooks"
   local h
-  for h in "$@"; do cp "$ROOT/hooks/$h" "$d/hooks/"; done
+  for h in "$@"; do cp "$ROOT/plugins/harness/hooks/$h" "$d/hooks/"; done
   # Copied harness fixtures are test infrastructure, not repository state under test.
   printf '/hooks/\n' >> "$d/.git/info/exclude"
   echo "$d"

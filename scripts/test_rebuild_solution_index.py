@@ -3,7 +3,8 @@ import re
 import subprocess
 import sys
 import sys
-sys.path.insert(0, str(Path(__file__).parent))
+PLUGIN_SCRIPTS = Path(__file__).resolve().parent.parent / 'plugins/harness/scripts'
+sys.path.insert(0, str(PLUGIN_SCRIPTS))
 import rebuild_solution_index as idx
 
 def doc(path, body):
@@ -25,13 +26,13 @@ def test_root_solution_readme_is_retained_as_uncategorized(tmp_path):
     assert '## —' in idx.build(tmp_path)
 
 def test_dry_run_does_not_write_index(tmp_path):
-    script = Path(__file__).with_name('rebuild_solution_index.py')
+    script = PLUGIN_SCRIPTS / 'rebuild_solution_index.py'
     result = subprocess.run([sys.executable, str(script), '--root', str(tmp_path), '--dry-run'], capture_output=True, text=True)
     assert result.returncode == 0 and '0 total entries' in result.stdout
     assert not (tmp_path/'docs/solutions/INDEX.md').exists()
 
 def _check(tmp_path):
-    script = Path(__file__).with_name('rebuild_solution_index.py')
+    script = PLUGIN_SCRIPTS / 'rebuild_solution_index.py'
     return subprocess.run([sys.executable, str(script), '--root', str(tmp_path), '--check'], capture_output=True, text=True)
 
 def _write_index(tmp_path, text):

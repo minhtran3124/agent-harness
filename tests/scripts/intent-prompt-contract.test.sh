@@ -1,7 +1,7 @@
 #!/bin/bash
 source "$(dirname "$0")/../lib.sh"
-SKILL="skills/intent-review/SKILL.md"
-AGENT="agents/intent-reviewer.md"
+SKILL="plugins/harness/skills/intent-review/SKILL.md"
+AGENT="plugins/harness/agents/intent-reviewer.md"
 
 t "intent review stops when the verbatim request is missing"
 grep -q 'STOP and say so' "$ROOT/$SKILL" && grep -q 'Never reconstruct it' "$ROOT/$SKILL" && pass || fail "request stop gate missing"

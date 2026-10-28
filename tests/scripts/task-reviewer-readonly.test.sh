@@ -1,24 +1,16 @@
 #!/usr/bin/env bash
+# The task reviewer is read-only by construction: its frontmatter lists only read tools, so the
+# runtime, not the prompt, keeps it from writing. Model and tools live in the agent file itself.
 set -euo pipefail
 root=$(cd "$(dirname "$0")/../.." && pwd)
-agent="$root/agents/task-reviewer.md"
-out=$(mktemp -d)
-trap 'rm -rf "$out"' EXIT
-python3 "$root/scripts/render_agent_definitions.py" \
-  --root "$root" --runtime claude --output-dir "$out" >/dev/null
-rendered="$out/task-reviewer.md"
+agent="$root/plugins/harness/agents/task-reviewer.md"
 
-# Semantic source is runtime-neutral; the Claude renderer owns the structural whitelist.
-if grep -nE '^(tools|model|effort):' "$agent"; then
-  echo "semantic task reviewer retains runtime policy" >&2
+fm=$(awk 'NR==1&&/^---$/{inb=1;next} inb&&/^---$/{exit} inb' "$agent")
+printf '%s\n' "$fm" | grep -q '^tools: Glob, Grep, Read$'
+if printf '%s\n' "$fm" | grep -E '^tools:.*(Write|Edit|Agent|Bash|WebFetch|WebSearch|mcp__)'; then
+  echo "task reviewer exposes a mutation-capable or network tool" >&2
   exit 1
 fi
-grep -q '^tools: Glob, Grep, Read$' "$rendered"
-if grep -nE '^tools:.*(Write|Edit|Agent|Bash)' "$rendered"; then
-  echo "rendered task reviewer exposes mutation-capable tool" >&2
-  exit 1
-fi
-jq -e '.roles["task-reviewer"] | .filesystem == "read-only" and .nested_delegation == false and .mcp == "none" and .context_policy == "fresh-bounded"' \
-  "$root/agents/agent-contracts.json" >/dev/null
+printf '%s\n' "$fm" | grep -q '^model: claude-opus-5-5$'
 grep -q 'cannot write, edit, spawn agents' "$agent"
 echo 'task-reviewer-readonly: passed'

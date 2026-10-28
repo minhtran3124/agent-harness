@@ -51,7 +51,7 @@ TITLE=$(printf '%s' "$TITLE" | tr '\r\n\t' '   ')
 
 # 2. Version bump: minor when a contract path changed, else patch.
 bump="patch"
-if printf '%s\n' "$FILES" | grep -qE '^(hooks/|settings\.json|skills/)'; then
+if printf '%s\n' "$FILES" | grep -qE '^(plugins/harness/(hooks|skills)/|settings\.json)'; then
   bump="minor"
 fi
 cur=$(tr -d '[:space:]' < "$VERSION_FILE")

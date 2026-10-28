@@ -1,6 +1,6 @@
 #!/bin/bash
 source "$(dirname "$0")/../lib.sh"
-SKILL="skills/compound/SKILL.md"
+SKILL="plugins/harness/skills/compound/SKILL.md"
 
 t "compound preserves all four complete-track gates"
 for track in bug knowledge decision failure; do grep -q "| $track |" "$ROOT/$SKILL" || { fail "missing $track"; finish; }; done
