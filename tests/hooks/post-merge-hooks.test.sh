@@ -107,6 +107,11 @@ for cmd in 'gh pr merge 7 --squash --delete-branch' 'cd x && gh pr merge 7' 'FOO
 done
 
 setup2
+t "chained merges clean the branch of every merged PR"
+hook 'gh pr merge 7 && gh pr merge 8'
+if [ ! -d "$WT" ] && [ ! -d "$WT2" ]; then pass; else fail "out=$OUT"; fi
+
+setup2
 t "merge without a number uses the PR of the current branch"
 hook 'gh pr merge --squash'
 if [ ! -d "$WT" ] && [ -d "$WT2" ] && grep -q '^pr view --json' "$STUB/calls"; then pass; else fail "out=$OUT calls=$(cat "$STUB/calls")"; fi
