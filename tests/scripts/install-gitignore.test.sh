@@ -1,11 +1,10 @@
 #!/bin/bash
-# Regression tests: install-harness.sh must gitignore the derived .claude/ tree.
+# Regression tests: install-harness.sh must gitignore the derived .claude/ tree and the local
+# scratch folder specs/.
 #
-# Why this exists: .claude/ ships four visual-planner .py files. Left untracked, they would trip
-# the commit gate's untracked-.py check, which can deny `git commit` and `git push`
-# — so a fresh consumer could install the harness and then be unable to commit anything. Found by
-# the 2026-07-23 sandbox walk (specs/slim-skill-surface, Task 5.1). This file asserts only the
-# .gitignore append.
+# Why this exists: .claude/ ships helper .py files. Left untracked, they would show up in the
+# consumer's `git status` on every sync. Found by the 2026-07-23 sandbox walk. specs/ is local
+# scratch (templates/structure/specs-README.md tells consumers to keep it ignored).
 #
 # Append-only contract: add the pattern when absent, never rewrite or duplicate existing lines.
 source "$(dirname "$0")/../lib.sh"
@@ -139,5 +138,44 @@ printf '.claude/*\n!.claude/settings.json\n' > "$d/.gitignore"
 ( cd "$d" && bash "$INSTALL" --source "$ROOT" --yes ) >"$d/.log" 2>&1
 if ! grep -qE '^\.claude/$' "$d/.gitignore" && grep -q 'already scopes .claude' "$d/.log"; then pass
 else fail "skip was silent or the rule was overridden: $(grep -c . "$d/.log") log lines"; fi
+
+# ── specs/ is local scratch: ignored by default, idempotent, never hides tracked files ──
+
+t "fresh install gitignores specs/ and git agrees"
+d=$(new_target)
+install_into "$d"
+if grep -qE '^specs/$' "$d/.gitignore" && git -C "$d" -c core.excludesFile=/dev/null check-ignore -q specs/PLAN.md; then pass
+else fail "specs/ not ignored after install: $(cat "$d/.gitignore" 2>&1)"; fi
+
+t "re-install does not duplicate the specs/ entry"
+d=$(new_target)
+install_into "$d"
+install_into "$d"
+n=$(grep -cE '^specs/$' "$d/.gitignore")
+if [ "$n" = "1" ]; then pass; else fail "expected 1 specs/ line, got $n"; fi
+
+t "an existing specs rule is respected, not re-appended"
+d=$(new_target)
+printf 'node_modules/\n/specs\n' > "$d/.gitignore"
+install_into "$d"
+n=$(grep -cE '^[[:space:]]*/?specs/?[[:space:]]*$' "$d/.gitignore")
+if [ "$n" = "1" ]; then pass; else fail "expected the pre-existing entry alone, got $n"; fi
+
+t "a repo that TRACKS files under specs/ is left alone"
+d=$(new_target)
+mkdir -p "$d/specs"
+printf 'plan\n' > "$d/specs/keep.md"
+git -C "$d" add specs/keep.md
+git -C "$d" -c user.email=t@t -c user.name=t commit -qm "track specs" >/dev/null
+install_into "$d"
+if [ ! -f "$d/.gitignore" ] || ! grep -qE '^specs/$' "$d/.gitignore"; then pass
+else fail "installer ignored a tracked specs/ tree"; fi
+
+t "a .gitignore with no trailing newline keeps both entries"
+d=$(new_target)
+printf 'dist/' > "$d/.gitignore"
+install_into "$d"
+if grep -qE '^dist/$' "$d/.gitignore" && grep -qE '^specs/$' "$d/.gitignore"; then pass
+else fail "line merge corrupted the file: $(cat "$d/.gitignore")"; fi
 
 finish
