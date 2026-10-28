@@ -39,5 +39,5 @@ returns the same matrix inline. Keep the known escape probes in
 `evals/skills/review-chain/fixtures/context-rule-unread/` and
 `evals/skills/review-chain/fixtures/stale-inline-policy/`.
 
-`subagent-driven-development` runs it before correctness review only when the trigger fires.
+`implement` runs it before correctness review only when the trigger fires.
 Workflow-engine changes are high-risk at intake. Do not lower the lane to skip it.

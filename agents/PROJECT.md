@@ -4,8 +4,8 @@ Thin **index** consumed by the execution sub-agents (`coding.md`, `test-runner.m
 **not** restate conventions. It points to the docs that already hold them. It carries only the few
 execution facts that no other doc reliably contains.
 
-> Risk-classification signals are **not** here — they live in `rules/research-depth.md` and
-> `skills/xia2/references/depth-classifier.md` (xia2 is zero-config and has no `PROJECT.md` sibling).
+> Risk-classification signals are **not** here — they live in `rules/research-depth.md`
+> (xia2 is zero-config and has no `PROJECT.md` sibling).
 
 ---
 

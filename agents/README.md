@@ -8,10 +8,10 @@ returnable work. Each agent is a focused role. Anything project-specific lives i
 
 | Agent | Role | Model class | Dispatched by |
 |---|---|---|---|
-| `coding` | Implement/refactor/fix code, end-to-end | implementation high-capability | `subagent-driven-development`, ad-hoc |
+| `coding` | Implement/refactor/fix code, end-to-end | implementation high-capability | `implement`, ad-hoc |
 | `reviewer` | Structurally read-only review passes (correctness-review, the correctness scorer, and intent-review) | review high-capability | review skills |
-| `task-reviewer` | Read-only per-task spec + quality review, and the diagnosis review | review high-capability | `subagent-driven-development`, `diagnosing-bugs` |
-| `test-runner` | Run the minimal relevant tests and report/diagnose results | test-execution fast | after implementation, and the `subagent-driven-development` `cannot_verify` retry |
+| `task-reviewer` | Read-only per-task spec + quality review, and the diagnosis review | review high-capability | `implement`, `diagnosing-bugs` |
+| `test-runner` | Run the minimal relevant tests and report/diagnose results | test-execution fast | after implementation, and the `implement` `cannot_verify` retry |
 | `researcher` | Read-only search and fact-finding for triage and xia2; returns facts with `file:line` or URL | search fast | triage, `xia2` |
 | `advisor` | Read-only second opinion on one question; returns a recommendation with reasons | advice high-capability | orchestrator, on the advisor triggers in `CLAUDE.md` |
 | `intent-reviewer` | Plan-blind check of a diff against the owner's verbatim request (gap / drift / excess) | review standard | `intent-review` |
@@ -39,8 +39,8 @@ file — edit it directly).
 3. Adjust the inventory table above if you add/remove agents.
 
 `PROJECT.md` here is an *agents-scoped* file: it drives implementation + test execution. It has
-no counterpart in `skills/xia2/` — xia2 is zero-config. Its risk-classification signals live in
-`skills/xia2/references/depth-classifier.md` and `rules/research-depth.md`.
+no counterpart in `skills/xia2/` — xia2 is zero-config. Its depth policy, where one applies, is
+`rules/research-depth.md`.
 
 ## Skill vs. agent — when to use which
 
