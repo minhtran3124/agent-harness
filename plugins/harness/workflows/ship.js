@@ -206,15 +206,13 @@ const str = v => (typeof v === 'string' && v.trim() ? v : 'n/a')
 function takeDecisions(ticket, stage, res) {
   for (const d of (res && res.decisions) || []) {
     const flagged = !!(d.contradicts_confirmed || d.dangerous)
-    const skippedFix = !!res && res.fix_status === 'skipped'
-    let title = str(d.title)
-    if (skippedFix && !title.startsWith(BOUNDARY_PREFIX)) title = BOUNDARY_PREFIX + title
+    const title = str(d.title)   // only the agent labels a decision Boundary; a skip for another reason keeps its own title
     decisions.push({
       ticket, stage: d.stage || stage, title, context: str(d.context),
       options: Array.isArray(d.options) && d.options.length ? d.options : ['n/a'],
       decision: str(d.decision), why: str(d.why), consequences: str(d.consequences), how_to_reverse: str(d.how_to_reverse),
       confidence: ['high', 'medium', 'low'].includes(d.confidence) ? d.confidence : 'low',
-      needs_review: flagged || skippedFix || d.needs_review === true,
+      needs_review: flagged || title.startsWith(BOUNDARY_PREFIX) || d.needs_review === true,
       owner_confirmed: !flagged && d.owner_confirmed === true,
       boundary: title.startsWith(BOUNDARY_PREFIX),
       decided_by: `claude (ship workflow: ${stage})`,
@@ -508,8 +506,8 @@ async function stageReview(finalPr) {
       takeDecisions('run', 'review-fix', res)
       if (res && res.fix_status === 'fixed' && res.commit) { commits.push(res); out.fixed.push({ id: f.id, summary: f.summary, commit: res.commit }) }
       else {
-        const bd = res && res.fix_status === 'skipped' && ((res.decisions || []).find(d => typeof d.title === 'string' && d.title.startsWith(BOUNDARY_PREFIX)) || (res.decisions || [])[0])
-        const reason = bd ? `needs your decision: ${bd.title.startsWith(BOUNDARY_PREFIX) ? bd.title : BOUNDARY_PREFIX + bd.title}` : (res && res.summary) || 'fix agent returned nothing'
+        const bd = res && res.fix_status === 'skipped' && (res.decisions || []).find(d => typeof d.title === 'string' && d.title.startsWith(BOUNDARY_PREFIX))
+        const reason = bd ? `needs your decision: ${bd.title}` : (res && res.summary) || 'fix agent returned nothing'
         out.notFixed.push({ id: f.id, summary: f.summary, reason })
       }
     }

@@ -531,6 +531,18 @@ test('o: a skipped boundary fix is not fixed, needs a decision, and is listed un
   assert(body.indexOf('needs your decision') < body.indexOf('## Intent review'))
 })
 
+test('o2: a skipped fix whose decision is not a boundary keeps its title and is not forced to review', async () => {
+  const PD = { title: 'Finding is a false positive', context: 'c', options: ['a', 'b'], decision: 'D', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'high', needs_review: false }
+  const { calls, result } = await run({}, c => {
+    if (c.label === 'review:r0') return ok({ findings: [{ id: 'F1', summary: 'FINDING-SUM', score: 90 }], skill_invoked: true })
+    if (c.label.startsWith('fix:')) return ok({ fix_status: 'skipped', summary: 'SKIP-REASON-TEXT', decisions: [PD] })
+  })
+  const d = result.decisions.find(x => /false positive/.test(x.title))
+  assert(d, 'decision recorded')
+  assert(!d.title.startsWith('Boundary: ') && d.needs_review === false && d.boundary === false, 'not relabelled as a boundary')
+  assert(result.review.notFixed[0].reason.includes('SKIP-REASON-TEXT') && !result.review.notFixed[0].reason.includes('Boundary'))
+})
+
 test('p: Needs your decision sits above Summary and is omitted when empty', async () => {
   const withGap = await run({}, c => (c.label === 'intent-review' ? { verdict: 'gaps found', findings: [{ kind: 'excess', behaviour_changing: true, clause: 'CL-EXCESS', detail: 'did more' }, { kind: 'excess', clause: 'CL-QUIET', detail: 'harmless' }] } : undefined))
   const p = named(withGap.calls, /^adr$/)[0].prompt
