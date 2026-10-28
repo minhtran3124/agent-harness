@@ -69,9 +69,7 @@ contract · weakening validation · high-blast file · workflow engine` (high-bl
 any `hooks/*`, a core skill engine; workflow engine: `skills/*/SKILL.md`, skill dispatch prompts,
 `agents/*.md`, `rules/*.md`).
 
-At commit time `hooks/commit-gate.sh` blocks a declared lane below `high-risk` for each gate in
-**block** mode; `workflow-engine` and `weakening-validation` are **warn** mode (a note, no block).
-The per-gate mode is the `slug=mode` table in `hooks/lib/gate-modes.default.sh`.
+No hook enforces these gates; the agent applies them as judgment (`rules/auto-correct-scope.md`).
 
 A hard gate discovered *mid-task* escalates regardless of the original lane.
 

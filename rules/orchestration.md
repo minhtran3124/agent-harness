@@ -30,8 +30,7 @@ Step 3–4. That is the canonical source. This section only names the fields and
 
 These two fields are load-bearing:
 
-- The risk-corroboration check in `hooks/commit-gate.sh` (`check_risk`, in the default
-  `standard` checks) reads `Lane:` and corroborates it against the staged diff.
+- Reviewers read `Lane:` and corroborate it against the diff. No commit hook does this since v5.
 - The trust-metrics ledger reads both fields.
 
 The orchestrator MUST write a `Lane:` line. The check gives these results:
@@ -41,8 +40,7 @@ The orchestrator MUST write a `Lane:` line. The check gives these results:
 - A warn-mode gate (`workflow-engine`, `weakening-validation`) prints a note and does not block.
 - A *missing* lane only **warns** (fail-open), unless `RISK_CORROBORATION_STRICT=1` is set.
 
-The per-gate mode is the `slug=mode` table in `hooks/lib/gate-modes.default.sh`. The hook reads policy
-from the git index or that file only, never from a `.claude/` copy.
+The block and warn modes above describe the intended judgment; no hook enforces them since v5.
 
 ## Subagent contract
 
@@ -82,8 +80,7 @@ That full structured report is what the main thread needs, so it is not a raw fi
 A claim of "done" is only valid with a re-runnable artifact. The subagent records, in `specs/<slug>/SUMMARY.md` (shape: `templates/SUMMARY.template.md`):
 
 - **`### Verify`** — a table row per check actually RUN: `Check | Command | Exit | Notes`. Never
-  list a command that was not run. `hooks/commit-gate.sh` can require this block for `app/`
-  changes. It does so when `REQUIRE_VERIFY=1` is set and its app gates run (`REQUIRE_APP_GATES=1`).
+  list a command that was not run. No commit hook requires this block since v5.
 - **`### Rollback`** — the exact undo command(s). This section is required for any high-risk /
   Rule-4 action (`rules/auto-correct-scope.md`). For reversible work, `git revert <sha>` suffices.
 
@@ -132,9 +129,7 @@ Otherwise **PROCEED autonomously** in the lane. For high-confidence **normal**-l
 may interrupt but is not a gate. Per-task agent reviews stay always-on regardless of lane.
 
 `ESCALATIONS.md` is **deny-on-no-response**: with no recorded decision, the work stays blocked.
-`hooks/commit-gate.sh` mechanizes this (`check_escalations`, in the `standard` and `strict`
-profiles). It denies a commit touching `specs/<slug>/` while that slug's `ESCALATIONS.md` has
-`decision: pending`. A commit that also records the decision is not denied.
+No commit hook mechanizes this since v5; the main session must honor a pending decision.
 
 ## In-flight escalation checks (during waves)
 
@@ -143,8 +138,8 @@ Re-check these continuously while you execute each wave. Any one of them escalat
 - **Repeated `Verify` failure** — the same check fails ≥2 times after a fix attempt.
 - **Blast radius beyond plan** — a subagent touched files outside its task's declared Files set.
   The task reviewer's spec verdict compares the task's diff to its Files list. At each wave
-  commit, `hooks/commit-gate.sh` `check_plan_scope` also warns on paths outside the active plan's
-  Files set. That set is a union across tasks, so per-task attribution is the reviewer's job.
+  commit, check the paths against the active plan's Files set. That set is a union across tasks,
+  so per-task attribution is the reviewer's job.
 - **Hard gate discovered mid-implementation** — intake did not see it. Re-run the corroboration
   check on the wave diff.
 - **Recurring deviation** — the same Rule-1–3 deviation repeats across tasks (a PLAN.md gap).
