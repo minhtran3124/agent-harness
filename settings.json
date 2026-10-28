@@ -11,34 +11,5 @@
       "Bash(git push * main)",
       "Bash(git push * master)"
     ]
-  },
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "hooks/secrets-scan.sh",
-            "statusMessage": "Secrets scan (staged changes)…"
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "hooks/pr-opened.sh"
-          },
-          {
-            "type": "command",
-            "command": "hooks/clean-worktrees.sh PostToolUse"
-          }
-        ]
-      }
-    ]
   }
 }
