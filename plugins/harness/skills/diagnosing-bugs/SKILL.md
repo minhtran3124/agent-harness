@@ -1,6 +1,6 @@
 ---
 name: diagnosing-bugs
-description: Find and prove the root cause of a bug in six gated phases before any fix. Runs for an `Input-type: bug fix` that `intake` routes here, or from `/harness:diagnosing-bugs`.
+description: Find and prove the root cause of a bug in six gated phases before any fix. Runs for an `Input-type: bug fix` that `intake` routes here, or from `/harness:diagnosing-bugs`. Use when a bug needs a proven root cause before a fix.
 disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Grep, Glob, Agent, Task, Bash
 ---
