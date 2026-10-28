@@ -290,3 +290,11 @@ def test_table_out_not_written_on_dry_run(tmp_path):
     r = run(adr, inp, "--dry-run", "--table-out", str(table))
     assert r.returncode == 0, r.stderr
     assert not table.exists()
+
+
+def test_skill_doc_matches_dedupe_and_owner_confirmed_rules():
+    skill = (SCRIPT.parent.parent / "skills/decision-record/SKILL.md").read_text()
+    flat = " ".join(skill.split())
+    assert "Keep the lowest `confidence`" in flat
+    assert "highest `confidence`" not in flat
+    assert "`needs_review` wins over `owner_confirmed`" in flat

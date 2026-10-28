@@ -13,7 +13,7 @@ Record a decision when you choose between options without asking a human. Ask th
 | Situation | Action |
 |---|---|
 | Reversible and inside the ticket | Decide. Record it. `needs_review: false`. It goes in the PR table, not in an ADR file. |
-| Only restates an owner-confirmed answer | Record it with `owner_confirmed: true`. No ADR file. |
+| Only restates an owner-confirmed answer | Record it with `owner_confirmed: true`. No ADR file, unless it also has `needs_review: true`. |
 | Affects another ticket or a public contract | Choose the safer option. Record it. `needs_review: true`. |
 | Contradicts a confirmed answer, or is dangerous | Do not do that part. Record why. `needs_review: true`. |
 
@@ -22,10 +22,11 @@ Record a decision when you choose between options without asking a human. Ask th
 The script `write_adrs.py` applies this rule. Agents do not filter.
 
 1. Merge duplicates: same ticket and (same title slug or identical non-empty context). Keep the
-   highest `confidence` (high, then medium, then low; a tie keeps the first). If any merged item
-   has `needs_review`, the kept one has it too.
-2. Write an ADR file only if the decision is not `owner_confirmed` and has `needs_review: true` or
-   a `confidence` other than `high`.
+   lowest `confidence` (low, then medium, then high; a tie keeps the first), so a doubtful
+   duplicate is never hidden. If any merged item has `needs_review`, the kept one has it too. The
+   kept one is `owner_confirmed` only if every merged item is.
+2. Write an ADR file if the decision has `needs_review: true`, or if it is not `owner_confirmed`
+   and has a `confidence` other than `high`. `needs_review` wins over `owner_confirmed`.
 3. Every merged decision, with or without a file, is one row in the `## Decisions` table of the PR
    body (ticket, title, decision, why). An owner-confirmed row says `owner-confirmed`.
 
