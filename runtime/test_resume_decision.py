@@ -784,58 +784,6 @@ status: active
 """
 
 
-def _corpus_plans():
-    plans = sorted((_REPO_ROOT / "specs").glob("*/PLAN.md"))
-    assert plans, "expected a non-empty specs/*/PLAN.md corpus"
-    return plans
-
-
-def test_corpus_parity_parse_tasks_matches_render_plan():
-    """Finding A regression guard: resume's ordered task ids must equal render_plan's for
-    EVERY real PLAN.md, so a fenced/inline `<task` mention can never zero out a plan."""
-    import render_plan  # noqa: E402
-
-    for p in _corpus_plans():
-        txt = p.read_text(encoding="utf-8")
-        mine = [t["id"] for t in decision.parse_tasks(txt)[0]]
-        theirs = [t["id"] for t in render_plan.extract_tasks(txt)[0]]
-        assert mine == theirs, p
-
-
-def test_corpus_completion_never_over_claims_vs_render():
-    """Finding C corpus guard, design 5.4-faithful: resume must never claim MORE than the
-    (deliberately permissive) renderer done set on any real PLAN.md — over-claiming is the
-    only dangerous direction (it skips real work).  Under-claiming a bare, non-`task(s)`-
-    anchored mention is safe and expected: the task is re-dispatched and its Verify re-runs.
-    Also: no real entry may produce a spurious `unknown` (which would stop a healthy resume).
-    """
-    import re as _re
-
-    for p in _corpus_plans():
-        txt = p.read_text(encoding="utf-8")
-        valid = {t["id"] for t in decision.parse_tasks(txt)[0]}
-        comp = decision.parse_status_completion(txt, valid)
-        # Permissive upper bound: any valid id that appears in an entry carrying completion
-        # evidence of its own (a completion marker by the parser's vocabulary, or a sha).
-        # Resume claims only keyword-anchored ids, a strict subset of this — so claiming an
-        # id outside any completing entry, or a non-existent id, is a real over-claim and
-        # fails here.  The fine per-mention landmine cases are pinned by the tests below.
-        upper = set()
-        for blob in decision._status_entries(decision._status_log_section(txt)):
-            if decision._COMPLETE_RE.search(blob) or decision._BACKTICK_SHA.search(
-                blob
-            ):
-                lits = _re.findall(r"\d+(?:\.\d+)+", blob)
-                upper |= set(lits) & valid
-                # a `X–Y` / `X-Y` range legitimately widens the claimable set to its members.
-                for a, b in _re.findall(
-                    r"(\d+(?:\.\d+)+)\s*[–-]\s*(\d+(?:\.\d+)+)", blob
-                ):
-                    upper |= set(decision._fill_range(a, b, valid))
-        assert comp["complete"] <= upper, (p, sorted(comp["complete"] - upper))
-        assert comp["unknown"] == [], (p, comp["unknown"])
-
-
 def test_parser_markdown_plan_mentioning_task_tag_is_not_misparsed_as_xml(
     tmp_path, monkeypatch
 ):

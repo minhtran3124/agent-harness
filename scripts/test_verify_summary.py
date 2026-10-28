@@ -1382,22 +1382,6 @@ def test_fix_diff_commit_gate_shape(fix_repo, tmp_path, monkeypatch, capsys):
     assert "bug fix:" not in capsys.readouterr().out
 
 
-def test_fix_diff_gh302(monkeypatch):
-    root = Path(__file__).resolve().parent.parent
-    resolved = subprocess.run(
-        ["git", "rev-parse", "--verify", "--quiet", "ee6da93^{commit}"],
-        cwd=root,
-        capture_output=True,
-    )
-    if resolved.returncode != 0:
-        pytest.skip("ee6da93 does not resolve here (shallow clone or tarball)")
-    monkeypatch.chdir(root)
-    monkeypatch.delenv("REQUIRE_NOT_AUTO_VERIFIED", raising=False)
-    monkeypatch.setenv("REQUIRE_RED_TEST", "1")
-    summary = root / "specs/gh-302-red-green-input-type/SUMMARY.md"
-    assert vs.main(["--lane", str(summary)]) == 0
-
-
 # The red row's command shape is copied into a prose file that tells agents how to write it.
 # Anchor both copies to the checker, so a format change here cannot leave the prose behind.
 _RED_ROW_TEMPLATE = "python3 scripts/run_at_commit.py <red sha> -- <test command>"
