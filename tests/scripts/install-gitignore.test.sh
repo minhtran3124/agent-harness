@@ -2,7 +2,7 @@
 # Regression tests: install-harness.sh must gitignore the derived .claude/ tree.
 #
 # Why this exists: .claude/ ships four visual-planner .py files. Left untracked, they would trip
-# the commit gate's untracked-.py check (strict profile), which denies `git commit` and `git push`
+# the commit gate's untracked-.py check, which can deny `git commit` and `git push`
 # — so a fresh consumer could install the harness and then be unable to commit anything. Found by
 # the 2026-07-23 sandbox walk (specs/slim-skill-surface, Task 5.1). This file asserts only the
 # .gitignore append.

@@ -71,7 +71,7 @@ any `hooks/*`, a core skill engine; workflow engine: `skills/*/SKILL.md`, skill 
 
 At commit time `hooks/commit-gate.sh` blocks a declared lane below `high-risk` for each gate in
 **block** mode; `workflow-engine` and `weakening-validation` are **warn** mode (a note, no block).
-The per-gate mode is `hard_gates.detectable[].mode` in `harness-manifest.json`.
+The per-gate mode is the `slug=mode` table in `hooks/lib/gate-modes.default.sh`.
 
 A hard gate discovered *mid-task* escalates regardless of the original lane.
 

@@ -363,18 +363,17 @@ stage "$repo" "alembic/versions/abc_add_table.py" "def upgrade(): pass"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_contains 2 "BLOCKED"
 
-# ── Shipped-manifest warn-mode smoke ──────────────────────────────────────
-# Runs against a COPY OF THE REAL harness-manifest.json — proving the shipped manifest, not a
-# fixture, produces the intended behavior:
+# ── Shipped-defaults warn-mode smoke ──────────────────────────────────────
+# No manifest is staged (harness-manifest.json was removed), so check_risk uses the shipped
+# hooks/lib/gate-modes.default.sh that new_repo copies — proving the real defaults, not a
+# fixture, produce the intended behavior:
 #   1. A Lane: normal commit whose diff trips only weakening-validation (a removed `raise`
 #      line) is allowed with a note.
 #   2. The loosening is scoped: the same commit ALSO touching hooks/ trips high-blast
 #      (block-mode) and is still denied.
 
-t "real manifest: removed raise + Lane: normal → warn-mode note, allowed (exit 0)"
+t "shipped defaults: removed raise + Lane: normal → warn-mode note, allowed (exit 0)"
 repo=$(new_repo $H)
-cp "$ROOT/harness-manifest.json" "$repo/"
-git -C "$repo" add -f harness-manifest.json
 stage "$repo" "app/svc.py" 'def f(x):
     if not x:
         raise ValueError("x")
@@ -386,10 +385,8 @@ stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_contains 0 "warn-mode"
 
-t "real manifest: same diff + hooks/ file → high-blast still blocks (exit 2)"
+t "shipped defaults: same diff + hooks/ file → high-blast still blocks (exit 2)"
 repo=$(new_repo $H)
-cp "$ROOT/harness-manifest.json" "$repo/"
-git -C "$repo" add -f harness-manifest.json
 stage "$repo" "app/svc.py" 'def f(x):
     if not x:
         raise ValueError("x")

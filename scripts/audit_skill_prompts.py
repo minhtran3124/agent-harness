@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Inventory the registered skill prompt surface and guard its baseline.
+"""Inventory the skill prompt surface and guard its baseline.
 
 The audit deliberately measures repository artifacts, not model output.  It discovers every
-registered SKILL.md and every Markdown companion file whose name contains ``prompt`` beneath
+skills/*/SKILL.md and every Markdown companion file whose name contains ``prompt`` beneath
 that skill directory.  The resulting JSON is stable enough to commit as a pre/post prompt
 surface baseline.
 """
@@ -56,11 +56,7 @@ def prompt_paths(skill_dir: Path) -> Iterable[Path]:
 
 
 def inventory(root: Path) -> dict[str, object]:
-    manifest_path = root / "harness-manifest.json"
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    registered = manifest.get("skills", [])
-    if not isinstance(registered, list) or not all(isinstance(name, str) for name in registered):
-        raise ValueError("harness-manifest.json skills must be a list of strings")
+    registered = [p.parent.name for p in sorted((root / "skills").glob("*/SKILL.md"))]
 
     problems: list[str] = []
     skills: list[dict[str, object]] = []
@@ -69,9 +65,6 @@ def inventory(root: Path) -> dict[str, object]:
 
     for name in sorted(registered):
         skill_path = root / "skills" / name / "SKILL.md"
-        if not skill_path.is_file():
-            problems.append(f"registered skill missing SKILL.md: skills/{name}/SKILL.md")
-            continue
         stats = count_text(skill_path)
         text = skill_path.read_text(encoding="utf-8")
         desc_len = description_length(text)

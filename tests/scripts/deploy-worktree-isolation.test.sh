@@ -13,7 +13,7 @@ deploy() { bash "$DEPLOY" --target "$1" </dev/null >/dev/null 2>&1; }
 seed_doc() {
   mkdir -p "$(dirname "$1")"
   cat > "$1" <<'EOF'
-Run `python3 scripts/verify_summary.py --lane x` and read harness-manifest.json.
+Run `python3 scripts/verify_summary.py --lane x` and read the output.
 <!-- harness-only:begin -->
 maintenance-only rationale
 <!-- harness-only:end -->

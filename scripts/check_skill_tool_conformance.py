@@ -7,7 +7,7 @@ This is the check whose absence let five of nine skills ship under-granted in th
 declared list against the skill's own body. An under-granted skill fails only at runtime, in
 the middle of a real task.
 
-Verifies:        for every registered skill, each runnable shell command in its own Markdown
+Verifies:        for every skill on disk, each runnable shell command in its own Markdown
                  (SKILL.md and references/*.md — NOT *prompt*.md or subagents/, which are
                  dispatch payloads run under a SUBAGENT's grant) is matched by at least one
                  declared `Bash(...)` pattern, and each mandated dispatch of a named
@@ -27,7 +27,7 @@ Path note: deploy-harness.sh rewrites helper paths in derived docs (`scripts/x.p
 `.claude/`-stripped form. A source-tree grant therefore stays correct after deployment.
 
 Stdlib only. Exit 0 = every instructed command is permitted; exit 1 = ran and found gaps;
-exit 2 = could not run (missing, unparseable or empty register). Under --json the payload is
+exit 2 = could not run (no skills found). Under --json the payload is
 written on every one of those paths.
 Run: python3 scripts/check_skill_tool_conformance.py [--root DIR] [--json]
 """
@@ -233,32 +233,17 @@ def emit(
 
 
 def setup_failure(as_json: bool, kind: str, detail: str) -> int:
-    record = {"file": "harness-manifest.json", "line": 0, "kind": kind, "skill": None, "command": None}
+    record = {"file": "skills", "line": 0, "kind": kind, "skill": None, "command": None}
     # exit 2 = "could not run", distinct from exit 1 = "ran and found gaps". A consumer that
     # cannot tell those apart reads a broken checker as a clean one.
     return emit(as_json, False, 0, 0, [record], f"conformance: {detail}", rc=2)
 
 
 def check(root: Path, as_json: bool = False) -> int:
-    manifest_path = root / "harness-manifest.json"
-    if not manifest_path.is_file():
+    names = sorted(p.parent.name for p in (root / "skills").glob("*/SKILL.md"))
+    if not names:
         return setup_failure(
-            as_json, "manifest-missing", f"harness-manifest.json not found at {root}"
-        )
-    try:
-        manifest = json.loads(manifest_path.read_text())
-    except json.JSONDecodeError as e:
-        # Previously an uncaught traceback: the gate blocked only incidentally, and the
-        # operator saw a crash instead of a diagnosis.
-        return setup_failure(as_json, "manifest-unparseable", f"harness-manifest.json is invalid JSON: {e}")
-    if not isinstance(manifest, dict):
-        return setup_failure(
-            as_json, "manifest-not-object", "harness-manifest.json is not a JSON object"
-        )
-    names = manifest.get("skills")
-    if not isinstance(names, list) or not names:
-        return setup_failure(
-            as_json, "empty-register", "no skills registered — refusing to report clean"
+            as_json, "empty-register", f"no skills/*/SKILL.md found at {root} - refusing to report clean"
         )
 
     problems: list[str] = []

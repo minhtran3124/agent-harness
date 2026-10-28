@@ -7,7 +7,7 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 ## [Unreleased]
 
-_Nothing yet._
+- refactor(harness)!: remove `harness-manifest.json` and the consumer hook profiles (#349, epic #338). Consumers now get one fixed hook set (every hook wired in `settings.json`), and `commit-gate.sh` is registered with no `--profile` argument. `--profile minimal|standard|strict` on `install-harness.sh` and `deploy-harness.sh` is still accepted but ignored, with a one-line warning, so old install commands keep working. A re-sync deletes a leftover `.claude/.harness-profile` and `.claude/harness-manifest.json`. The skill and agent checks now scan `skills/*/SKILL.md` and `agents/*.md` instead of a manifest; `check_manifest.py`, `check_gate_modes_smoke.py`, `check_slim_surface.py` and `check-contract-impact.sh` are deleted, and `harness-audit.sh` no longer reports `manifest_degraded` or `contract_impact`.
 
 ## [2.37.0] — 2026-10-19
 

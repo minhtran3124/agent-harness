@@ -43,7 +43,7 @@ the override in `docs/harness-experimental/break-glass-log.md`.
 > - **high-risk** → + a non-empty `### Rollback`, and a `### Not auto-verified` section. The `### Not auto-verified` check is **advisory by default**: it prints a warning and still exits 0. Set `REQUIRE_NOT_AUTO_VERIFIED=1` to make it blocking. Blocking is the intended end state once the back catalogue has drained.
 > - **any lane, `Input-type: bug fix`** → + a `red`/`green` row pair in `### Verify`, or a `Red test exempt: <reason>` line. The `red` row's command is `python3 scripts/run_at_commit.py <red sha> -- <test command>`, where `<red sha>` is the commit that adds the failing test before the fix. Its Exit is from 1 to 123. The `green` row runs the same test command with Exit 0. After the red commit, a change must exist outside `specs/` and the red test files. This check is **advisory by default**. Set `REQUIRE_RED_TEST=1` to make it blocking.
 >
-> Run `python3 scripts/verify_summary.py --lane <slug>` (exit 1 = missing evidence). Edit the mapping there, not only in prose. `hooks/commit-gate.sh` **enforces** the mapping at commit time (`check_lane_evidence`, in the `standard` and `strict` profiles) on every staged `specs/<slug>/SUMMARY.md`. The staged copy is what is checked, so a commit that adds the missing evidence self-unblocks.
+> Run `python3 scripts/verify_summary.py --lane <slug>` (exit 1 = missing evidence). Edit the mapping there, not only in prose. `hooks/commit-gate.sh` **enforces** the mapping at commit time (`check_lane_evidence`, in the default `standard` checks) on every staged `specs/<slug>/SUMMARY.md`. The staged copy is what is checked, so a commit that adds the missing evidence self-unblocks.
 
 Rule 4 (STOP) still fires inside **every** lane. A hard gate discovered mid-task escalates regardless of how the work was classified. Ceremony scales with risk. The human gate scales with ambiguity, not risk.
 
@@ -82,7 +82,7 @@ Issues preventing the task from completing:
 
 ## Rule 4 — STOP + ask user
 
-> **Canonical gate list:** the hard-gate vocabulary lives in `harness-manifest.json`. The diff-detectable gates are under `hard_gates.detectable` (enforced by `hooks/commit-gate.sh`'s `check_risk`). The judgment-only STOP items below are under `hard_gates.judgment` (removing functionality, session/scope, replacing a service). Keep this list in sync with the manifest. The harness repo's `scripts/check_manifest.py` guards the detectable half in harness CI (it does not deploy into a consuming repo).
+> **Canonical gate list:** the nine diff-detectable gates and their block/warn modes are the `slug=mode` table in `hooks/lib/gate-modes.default.sh` (enforced by `hooks/commit-gate.sh`'s `check_risk`). The judgment-only STOP items (removing functionality, session/scope, replacing a service) are the list below. Keep both in sync with this rule.
 
 Changes requiring architectural judgment — NEVER auto-apply:
 

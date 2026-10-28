@@ -99,7 +99,7 @@ done < <(jq -r '.hooks[]?[]?.hooks[]?.command // empty' settings.json)
 # protects — so deploy into a scratch target and re-check the paths from there.
 #
 # Convention this enforces: a doc MAY cite a harness-repo-only path, but the citation must say so
-# on the same line ("the harness repo's `scripts/check_manifest.py`"). Anything else must resolve
+# on the same line ("the harness repo's `scripts/deploy-harness.sh`"). Anything else must resolve
 # in the consumer.
 if [ "${SKIP_DERIVED_LINT:-0}" != "1" ] && command -v python3 >/dev/null 2>&1; then
   DERIVED_TGT=$(mktemp -d)

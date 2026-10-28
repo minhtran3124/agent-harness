@@ -16,7 +16,6 @@ def write_fixture(root: Path) -> None:
         "---\nname: alpha\ndescription: Use when alpha work is requested.\n---\n# Alpha\n"
     )
     (root / "skills" / "alpha" / "worker-prompt.md").write_text("# Worker\n")
-    (root / "harness-manifest.json").write_text(json.dumps({"skills": ["alpha"]}))
 
 
 def run(root: Path, *args: str) -> subprocess.CompletedProcess[str]:

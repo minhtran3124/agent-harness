@@ -18,7 +18,7 @@ make_fixture() {
 }
 
 # ── 1. empty fixture -> healthy, zero findings ────────────────────────────────
-t "empty fixture (no specs/, no backlog, no manifest) -> findings 0, band healthy"
+t "empty fixture (no specs/, no backlog) -> findings 0, band healthy"
 d=$(make_fixture)
 out=$(bash "$SCRIPT" --root "$d" --json)
 if [ "$(jf "$out" "['findings']")" = "0" ] && [ "$(jf "$out" "['band']")" = "healthy" ]; then pass
@@ -76,53 +76,6 @@ printf '# Backlog\n\n| Date | From failure (slug) | Proposed guardrail | Target 
 out=$(bash "$SCRIPT" --root "$d" --json)
 if [ "$(jf "$out" "['checks']['backlog_stale']")" = "0" ]; then pass
 else fail "want backlog_stale == 0 (recent open row): $out"; fi
-
-# ── 6. manifest_degraded ─────────────────────────────────────────────────────────
-t "harness-manifest.json + check_manifest.py stub exiting 1 -> manifest_degraded == 1"
-d=$(make_fixture)
-mkdir -p "$d/scripts"
-printf '{}\n' > "$d/harness-manifest.json"
-printf '#!/usr/bin/env python3\nimport sys\nsys.exit(1)\n' > "$d/scripts/check_manifest.py"
-out=$(bash "$SCRIPT" --root "$d" --json)
-if [ "$(jf "$out" "['checks']['manifest_degraded']")" = "1" ]; then pass
-else fail "want manifest_degraded == 1: $out"; fi
-
-t "harness-manifest.json + check_manifest.py stub exiting 0 -> manifest_degraded == 0"
-d=$(make_fixture)
-mkdir -p "$d/scripts"
-printf '{}\n' > "$d/harness-manifest.json"
-printf '#!/usr/bin/env python3\nimport sys\nsys.exit(0)\n' > "$d/scripts/check_manifest.py"
-out=$(bash "$SCRIPT" --root "$d" --json)
-if [ "$(jf "$out" "['checks']['manifest_degraded']")" = "0" ]; then pass
-else fail "want manifest_degraded == 0: $out"; fi
-
-t "neither harness-manifest.json nor check_manifest.py present -> manifest_degraded == 0 (skipped, not flagged)"
-d=$(make_fixture)
-out=$(bash "$SCRIPT" --root "$d" --json)
-if [ "$(jf "$out" "['checks']['manifest_degraded']")" = "0" ]; then pass
-else fail "want manifest_degraded == 0 (skipped): $out"; fi
-
-# ── contract_impact (advisory reminder — must never move findings/band) ──────────
-t "dirty contract surface -> contract_impact >= 1, findings/band unaffected"
-d=$(mktemp -d); _CLEANUP_DIRS+=("$d")
-git -C "$d" init -q -b main 2>/dev/null || git -C "$d" init -q
-git -C "$d" config user.email test@test
-git -C "$d" config user.name test
-mkdir -p "$d/scripts" "$d/api"
-cp "$ROOT/scripts/check-contract-impact.sh" "$d/scripts/"
-printf '{"contracts": {"demo": {"surface": ["api/schema.json"], "consumers": ["consumer-a"]}}}\n' > "$d/harness-manifest.json"
-printf '{}\n' > "$d/api/schema.json"
-out=$(bash "$SCRIPT" --root "$d" --json)
-if [ "$(jf "$out" "['checks']['contract_impact']")" -ge 1 ] \
-  && [ "$(jf "$out" "['findings']")" = "0" ] \
-  && [ "$(jf "$out" "['band']")" = "healthy" ]; then pass
-else fail "want contract_impact >= 1, findings 0, band healthy: $out"; fi
-
-t "no scripts/check-contract-impact.sh -> contract_impact == 0 (skipped, not flagged)"
-d=$(make_fixture)
-out=$(bash "$SCRIPT" --root "$d" --json)
-if [ "$(jf "$out" "['checks']['contract_impact']")" = "0" ]; then pass
-else fail "want contract_impact == 0 (skipped): $out"; fi
 
 # ── 7. --json is exactly one line and round-trips through json.loads ─────────────
 t "--json output is exactly one line and parses as JSON"

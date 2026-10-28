@@ -37,13 +37,13 @@ done
 if [ "$RC" -eq 0 ] && [ -z "$missing" ] && python3 -m py_compile "$C"/scripts/*.py 2>/dev/null; then pass
 else fail "rc=$RC missing:$missing (or a deployed helper does not compile)"; fi
 
-t "harness-manifest.json ships so a consumer can read the hard-gate vocabulary"
-if [ -f "$C/harness-manifest.json" ] && python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$C/harness-manifest.json"; then pass
-else fail "manifest missing or not valid JSON at .claude/harness-manifest.json"; fi
+t "harness-manifest.json is not shipped (the manifest and hook profiles were removed)"
+if [ ! -e "$C/harness-manifest.json" ]; then pass
+else fail "manifest deployed at .claude/harness-manifest.json"; fi
 
 t "harness-development scripts are NOT shipped (the subset is an allow-list, not a copy of scripts/)"
 leaked=""
-for f in check_manifest.py deploy-harness.sh init-structure.sh harness-audit.sh run-tests.sh; do
+for f in deploy-harness.sh init-structure.sh harness-audit.sh run-tests.sh; do
   [ -e "$C/scripts/$f" ] && leaked="$leaked $f"
 done
 # its own unit tests must not travel either

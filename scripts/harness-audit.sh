@@ -11,9 +11,6 @@
 #   2. specs/*/PLAN.md with `status: active` whose newest date is stale (> STALE_DAYS)
 #   3. docs/solutions/**/*.md with `confirmed_at` older than CONFIRMED_DAYS
 #   4. docs/harness-experimental/improvement-backlog.md `open` rows gone stale
-#   5. harness-manifest.json degraded (scripts/check_manifest.py reports drift)
-#   6. contract surfaces dirty in the working tree → reminder to verify consumers
-#      (advisory only, via scripts/check-contract-impact.sh; never counted as drift)
 #
 # Advisory by default (exit 0, never blocks). `--strict` exits 1 when any drift is
 # found — for opt-in CI use. `--root DIR` points the audit at another tree (tests).
@@ -44,9 +41,7 @@ FINDINGS=0
 VERIFY_MISSING=0
 PLAN_STALE=0
 BACKLOG_STALE=0
-MANIFEST_DEGRADED=0
 SOLUTIONS_STALE=0
-CONTRACT_IMPACT=0
 
 note() {
   [ "$JSON" -eq 1 ] || printf '  ⚠ %s\n' "$1"
@@ -130,23 +125,6 @@ if [ -f "$BACKLOG_FILE" ]; then
   done < <(grep -E '^\|' "$BACKLOG_FILE")
 fi
 
-# ── 5. harness-manifest.json degraded (check_manifest.py reports drift) ─────────
-if [ -f harness-manifest.json ] && [ -f scripts/check_manifest.py ] && command -v python3 >/dev/null 2>&1; then
-  if ! python3 scripts/check_manifest.py --root "$ROOT" >/dev/null 2>&1; then
-    MANIFEST_DEGRADED=1
-    note "harness-manifest.json degraded (check_manifest.py reported drift)"
-  fi
-fi
-
-# ── 6. contract surfaces dirty in working tree → remind consumers ───────────────
-if [ -f scripts/check-contract-impact.sh ]; then
-  while IFS= read -r line; do
-    [ -n "$line" ] || continue
-    [ "$JSON" -eq 1 ] || printf '  ↳ %s\n' "$line"
-    CONTRACT_IMPACT=$((CONTRACT_IMPACT + 1))
-  done < <(bash scripts/check-contract-impact.sh --changed --root "$ROOT")
-fi
-
 # ── Banded health summary ───────────────────────────────────────────────────────
 if [ "$FINDINGS" -eq 0 ]; then
   band="healthy"
@@ -160,7 +138,7 @@ if [ "$JSON" -eq 1 ]; then
   python3 -c '
 import json, sys
 
-date, findings, band, vm, ps, bs, md, ss, ci = sys.argv[1:10]
+date, findings, band, vm, ps, bs, ss = sys.argv[1:8]
 print(json.dumps({
     "date": date,
     "findings": int(findings),
@@ -169,16 +147,13 @@ print(json.dumps({
         "verify_missing": int(vm),
         "plan_stale": int(ps),
         "backlog_stale": int(bs),
-        "manifest_degraded": int(md),
         "solutions_stale": int(ss),
-        "contract_impact": int(ci),
     },
 }))
-' "$(date +%F)" "$FINDINGS" "$band" "$VERIFY_MISSING" "$PLAN_STALE" "$BACKLOG_STALE" "$MANIFEST_DEGRADED" "$SOLUTIONS_STALE" "$CONTRACT_IMPACT"
+' "$(date +%F)" "$FINDINGS" "$band" "$VERIFY_MISSING" "$PLAN_STALE" "$BACKLOG_STALE" "$SOLUTIONS_STALE"
 else
   echo ""
   echo "  Drift findings: $FINDINGS  ($band)"
-  [ "$CONTRACT_IMPACT" -eq 0 ] || echo "  Contract-impact reminders: $CONTRACT_IMPACT"
 fi
 
 if [ "$STRICT" -eq 1 ] && [ "$FINDINGS" -gt 0 ]; then
