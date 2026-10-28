@@ -72,7 +72,7 @@ EOF
   only=" "
   for num in $nums; do
     [ "$num" = - ] && num=""
-    pr=$(gh pr view $num --json state,headRefName 2>/dev/null) || continue
+    pr=$(gh pr view "$num" --json state,headRefName 2>/dev/null) || continue
     [ "$(printf '%s' "$pr" | jq -r '.state // empty' 2>/dev/null)" = MERGED ] || continue
     hb=$(printf '%s' "$pr" | jq -r '.headRefName // empty' 2>/dev/null)
     [ -n "$hb" ] && only="$only$hb "
