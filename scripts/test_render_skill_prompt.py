@@ -42,18 +42,12 @@ def test_live_required_policy_delivery_passes():
 
 def test_context_matrix_enumerates_every_isolated_context():
     assert set(module.CONTEXT_MATRIX) == {
-        "main.plan-author",
-        "main.plan-executor",
         "implementer",
-        "task-reviewer",
-        "plan-document-reviewer",
-        "spec-document-reviewer",
         "correctness-controller",
         "correctness-reviewer",
         "correctness-scorer",
         "intent-controller",
         "intent-reviewer",
-        "resume",
     }
 
 

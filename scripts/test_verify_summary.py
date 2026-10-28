@@ -1411,11 +1411,10 @@ def test_fix_diff_gh302(monkeypatch):
     assert vs.main(["--lane", str(summary)]) == 0
 
 
-# The red row's command shape is copied into two prose files that tell agents how to write it.
+# The red row's command shape is copied into a prose file that tells agents how to write it.
 # Anchor both copies to the checker, so a format change here cannot leave the prose behind.
 _RED_ROW_TEMPLATE = "python3 scripts/run_at_commit.py <red sha> -- <test command>"
 _RED_ROW_PROSE = (
-    "skills/subagent-driven-development/implementer-prompt.md",
     "rules/auto-correct-scope.md",
 )
 
@@ -1429,10 +1428,3 @@ def test_red_green_prose_command_shape_is_accepted_by_the_check(monkeypatch):
     red = _RED_ROW_TEMPLATE.replace("<red sha>", "abc1234").replace("<test command>", _RED_TEST)
     text = _bug_fix_summary(f"| red | `{red}` | 1 | fails |\n{_GREEN_ROW}")
     assert vs._red_green_issue(text) is None
-
-
-def test_red_green_input_type_reaches_the_implementer():
-    root = Path(__file__).resolve().parent.parent
-    sdd = root / "skills/subagent-driven-development"
-    assert "Input type: [INPUT_TYPE]" in (sdd / "implementer-prompt.md").read_text(encoding="utf-8")
-    assert "`[INPUT_TYPE]` from SUMMARY" in (sdd / "SKILL.md").read_text(encoding="utf-8")

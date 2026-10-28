@@ -6,14 +6,13 @@ from pathlib import Path
 import check_task_review_contract as contract
 
 ROOT = Path(__file__).resolve().parent.parent
-PROMPT = "skills/subagent-driven-development/task-reviewer-prompt.md"
-IMPLEMENTER = "skills/subagent-driven-development/implementer-prompt.md"
-COPIED = (
-    IMPLEMENTER,
-    "skills/subagent-driven-development/SKILL.md",
-    "skills/subagent-driven-development/references/review-chain.md",
-    "harness-manifest.json",
-)
+COPIED = ("skills/implement/SKILL.md", "skills/implement/implementer-prompt.md")
+
+
+def _copy(tmp_path):
+    for rel in COPIED:
+        (tmp_path / rel).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(ROOT / rel, tmp_path / rel)
 
 
 def test_contract_checker_passes():
@@ -21,31 +20,24 @@ def test_contract_checker_passes():
     assert result.returncode == 0, result.stderr
 
 
-def test_contract_checker_fails_without_checked_against(tmp_path, monkeypatch):
-    for rel in COPIED:
-        (tmp_path / rel).parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy(ROOT / rel, tmp_path / rel)
-    prompt = (ROOT / PROMPT).read_text()
-    stripped = "\n".join(line for line in prompt.splitlines() if "checked_against" not in line)
-    (tmp_path / PROMPT).write_text(stripped)
+def test_contract_checker_fails_when_a_reviewer_is_dispatched(tmp_path, monkeypatch):
+    _copy(tmp_path)
+    skill = tmp_path / "skills/implement/SKILL.md"
+    skill.write_text(skill.read_text() + "\nDispatch the task-reviewer.\n")
     monkeypatch.setattr(contract, "ROOT", tmp_path)
     assert contract.main() == 1
 
 
-def _fails_without(phrase, rel, tmp_path, monkeypatch):
-    for path in COPIED + (PROMPT,):
-        (tmp_path / path).parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy(ROOT / path, tmp_path / path)
-    text = (ROOT / rel).read_text()
-    assert phrase in text, phrase
-    (tmp_path / rel).write_text(text.replace(phrase, ""))
+def test_contract_checker_fails_without_auto_mode(tmp_path, monkeypatch):
+    _copy(tmp_path)
+    skill = tmp_path / "skills/implement/SKILL.md"
+    skill.write_text(skill.read_text().replace("## Auto mode", "## Other"))
     monkeypatch.setattr(contract, "ROOT", tmp_path)
-    return contract.main() == 1
+    assert contract.main() == 1
 
 
-def test_contract_checker_fails_without_implementer_seam_pin(tmp_path, monkeypatch):
-    assert _fails_without("from a source that is independent of the code", IMPLEMENTER, tmp_path, monkeypatch)
-
-
-def test_contract_checker_fails_without_reviewer_seam_pin(tmp_path, monkeypatch):
-    assert _fails_without("only synthetic fixtures", PROMPT, tmp_path, monkeypatch)
+def test_contract_checker_fails_when_retired_path_returns(tmp_path, monkeypatch):
+    _copy(tmp_path)
+    (tmp_path / "skills/implement/scripts").mkdir()
+    monkeypatch.setattr(contract, "ROOT", tmp_path)
+    assert contract.main() == 1

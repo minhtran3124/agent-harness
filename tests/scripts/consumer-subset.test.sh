@@ -71,10 +71,9 @@ unresolved=$(grep -rhoE '\.claude/scripts/[A-Za-z0-9_.-]+' "$C" --include='*.md'
 if [ -z "$unresolved" ]; then pass; else fail "named but not shipped: $(echo "$unresolved" | tr '\n' ' ')"; fi
 
 t "derived docs invoke render_plan.py at the deployed path, and it resolves"
-# writing-plans (body + allowed-tools grant), the wave-boundary rule, and the ship step all run
-# render_plan.py --summarize; in a consumer it lives under .claude/skills/, one level in.
+# the wave-boundary rule and the visual-planner skill run render_plan.py; in a consumer it lives under .claude/skills/, one level in.
 rp_bad=""
-for f in skills/writing-plans/SKILL.md rules/wave-parallelism.md skills/finishing-a-development-branch/SKILL.md; do
+for f in rules/wave-parallelism.md; do
   grep -q '\.claude/skills/visual-planner/render_plan\.py' "$C/$f" || rp_bad="$rp_bad $f(missing)"
   grep -qE '(^|[^./])skills/visual-planner/render_plan\.py' "$C/$f" && rp_bad="$rp_bad $f(unrewritten)"
 done
@@ -149,7 +148,7 @@ left=$(find "$C/skills" \( -path '*/tests/*' -o -name 'test_*.py' \) 2>/dev/null
 if [ -z "$left" ]; then pass; else fail "test material shipped: $(echo "$left" | tr '\n' ' ')"; fi
 
 t "stripping is derive-only — the harness sources still hold their tests"
-if [ -f "$ROOT/skills/xia2/tests/structural/depth-modes-test-cases.md" ] \
+if [ -f "$ROOT/skills/xia2/tests/behavioural/pressure-scenarios.md" ] \
    && [ -f "$ROOT/skills/visual-planner/test_render_plan.py" ]; then pass
 else fail "sources lost their tests — strip_skill_tests must never touch \$ROOT"; fi
 
@@ -158,7 +157,7 @@ else fail "sources lost their tests — strip_skill_tests must never touch \$ROO
 # ---------------------------------------------------------------------------
 t "HARNESS_ONLY_DOCS are absent from the consumer and intact at the source"
 bad=""
-for f in skills/xia2/README.md skills/compound/README.md agents/README.md; do
+for f in skills/compound/README.md agents/README.md; do
   [ -e "$C/$f" ] && bad="$bad deployed:$f"
   [ -f "$ROOT/$f" ] || bad="$bad lost-at-source:$f"
 done

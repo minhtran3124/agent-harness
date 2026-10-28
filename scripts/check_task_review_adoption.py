@@ -14,8 +14,6 @@ def main() -> int:
         [sys.executable, "scripts/check_task_review_contract.py"],
         [sys.executable, "scripts/check_plan_contract.py", "specs/superpowers-6-review-pipeline-adoption/PLAN.md"],
         ["bash", "tests/scripts/task-reviewer-readonly.test.sh"],
-        ["bash", "tests/scripts/sdd-artifact-handoffs.test.sh"],
-        ["bash", "tests/scripts/sdd-task-review-routing.test.sh"],
         ["bash", "tests/scripts/final-review-package-contract.test.sh"],
         ["bash", "scripts/lint-doc-truth.sh"],
     ]
