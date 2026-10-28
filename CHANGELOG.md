@@ -57,6 +57,8 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 Not verified yet (tracked for the dogfood run, #352): an unattended run of `ship.js` through the Workflow tool from the plugin cache, the hooks firing in a live session, and a git-sourced marketplace install. The plugin was validated locally with `claude plugin validate` and with `--plugin-dir`.
 
+The merge stage needs the owner to allow `gh pr merge` into `feat/<slug>*`, and the Workflow tool needs `ship.js` readable by the session (see README Known limits).
+
 ## [2.37.0] — 2026-10-19
 
 - docs: sync core and skill docs with current code (#290–#331) (PR #335)
