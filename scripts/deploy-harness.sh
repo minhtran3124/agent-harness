@@ -6,7 +6,7 @@
 # Idempotent — supports both a FIRST-TIME install and a RE-SYNC (update). Re-run after editing
 # anything under skills/ agents/ hooks/ rules/ settings.json.
 #
-# Usage:  bash scripts/deploy-harness.sh [--target <dir>] [--profile <p>] [--yes] [--overwrite-conflicts] [--dry-run]
+# Usage:  bash scripts/deploy-harness.sh [--target <dir>] [--yes] [--overwrite-conflicts] [--dry-run]
 #   --target <dir>          Build .claude/ inside <dir> instead of next to the sources
 #                            (used by install-harness.sh to deploy into a consuming project).
 #   --yes, --non-interactive  Never prompt on a protected-file conflict; keep the local copy
@@ -14,10 +14,8 @@
 #   --overwrite-conflicts    Never prompt; overwrite protected files with the incoming source.
 #   --dry-run                Report what would sync (incl. protected-file conflicts) and exit
 #                            0 before anything under .claude/ is written.
-#   --profile <p>            Hook profile from harness-manifest.json hook_profiles
-#                            (minimal|standard|strict). Default: the profile recorded in
-#                            .claude/.harness-profile, else the manifest default. An unknown
-#                            value aborts before any write.
+#   --profile <p>            Deprecated and ignored (prints a warning). Hook profiles were removed:
+#                            every consumer gets the one hook set wired in settings.json.
 set -e
 
 # Sources live one level above this script — resolve by path, NOT via git: when this script
@@ -53,13 +51,10 @@ CONSUMER_SCRIPTS=(
   "apply_model_config.py"
   "write_adrs.py"
 )
-# Data read by the above. NOTE: agents/*.json and adapters/ are source-time adapter inputs and must
-# NEVER deploy — tests/scripts/{deploy-prune,install-harness}.test.sh pin that
-# boundary. Anything needing them (render_runtime_entry.py) stays a harness-repo tool; the resolved
-# model already ships baked into each rendered agents/*.md frontmatter.
-CONSUMER_DATA=(
-  "harness-manifest.json"
-)
+# NOTE: agents/*.json and adapters/ are source-time adapter inputs and must NEVER deploy —
+# tests/scripts/{deploy-prune,install-harness}.test.sh pin that boundary. Anything needing them
+# (render_runtime_entry.py) stays a harness-repo tool; the resolved model already ships baked
+# into each rendered agents/*.md frontmatter.
 
 # Docs that exist to explain the harness to whoever MAINTAINS it — design rationale, portability
 # notes, "how to fork this into another project". A consuming repo never acts on them, and they
@@ -97,35 +92,20 @@ OUT_BASE="$ROOT"
 YES=0
 OVERWRITE_CONFLICTS=0
 DRY_RUN=0
-PROFILE=""
 while [ $# -gt 0 ]; do
   case "$1" in
     -t|--target) OUT_BASE="${2:?--target needs a path}"; shift 2 ;;
-    --profile) PROFILE="${2:?--profile needs a name}"; shift 2 ;;
-    --profile=*) PROFILE="${1#--profile=}"; shift ;;
+    --profile) printf 'warning: --profile is ignored; hook profiles were removed (one fixed hook set).\n' >&2; [ $# -ge 2 ] && shift; shift ;;
+    --profile=*) printf 'warning: --profile is ignored; hook profiles were removed (one fixed hook set).\n' >&2; shift ;;
     --yes|--non-interactive) YES=1; shift ;;
     --overwrite-conflicts) OVERWRITE_CONFLICTS=1; shift ;;
     --dry-run) DRY_RUN=1; shift ;;
     *) printf 'Unknown option: %s\n' "$1" >&2; exit 1 ;;
   esac
 done
-# Hook profiles come from the SOURCE manifest (hook_profiles; "default" names the fallback).
-# Validate an explicit --profile before the first write (the mkdir below).
-PROFILE_NAMES="$(jq -r '.hook_profiles | keys[] | select(. != "default")' "$ROOT/harness-manifest.json")"
-valid_profile() { [ -n "$1" ] && printf '%s\n' "$PROFILE_NAMES" | grep -qxF -- "$1"; }
-if [ -n "$PROFILE" ] && ! valid_profile "$PROFILE"; then
-  printf 'Unknown --profile: %s (expected one of: %s)\n' "$PROFILE" "$(printf '%s' "$PROFILE_NAMES" | tr '\n' ' ')" >&2
-  exit 1
-fi
 mkdir -p "$OUT_BASE"
 OUT_BASE="$(cd "$OUT_BASE" && pwd -P)"
 OUT="$OUT_BASE/.claude"
-# Resolve: explicit flag, else the profile recorded by the last deploy, else the manifest default.
-if [ -z "$PROFILE" ] && [ -f "$OUT/.harness-profile" ]; then
-  PROFILE="$(tr -d '[:space:]' < "$OUT/.harness-profile")"
-  valid_profile "$PROFILE" || PROFILE=""
-fi
-[ -n "$PROFILE" ] || PROFILE="$(jq -r '.hook_profiles.default' "$ROOT/harness-manifest.json")"
 cd "$ROOT"
 
 # ---------- styling (colors only on a TTY) ----------
@@ -405,24 +385,17 @@ copy_consumer_subset() {
     rm -f "$OUT/scripts/$f"; cp "scripts/$f" "$OUT/scripts/$f"
     record_deployed "scripts/$f"
   done
-  for f in "${CONSUMER_DATA[@]}"; do
-    [ -f "$f" ] || { printf '  %s⚠ allow-listed data file missing from source: %s%s\n' "$Y" "$f" "$R" >&2; continue; }
-    mkdir -p "$OUT/$(dirname "$f")"
-    rm -f "$OUT/$f"; cp "$f" "$OUT/$f"
-  done
 }
 
 # Rewrite root-relative helper paths in the DERIVED Markdown so a consumer agent runs the copy that
 # exists. Same principle as derive_settings' hook-path rewrite: .claude/ is a derived tree, and a
 # path that is correct in the harness repo is wrong once deployed one level in. Markdown ONLY —
-# hooks/*.sh keep their own resolution (commit-gate.sh check_risk must read the git INDEX manifest, never
-# a derived .claude/ copy). Idempotent: an already-prefixed path is skipped.
+# hooks/*.sh keep their own resolution (commit-gate.sh keeps its own root resolution). Idempotent: an already-prefixed path is skipped.
 rewrite_derived_paths() {
   { printf '%s\n' "$DERIVED_MD_PY"; cat <<'PYEOF'; } | python3 - "$OUT" "${CONSUMER_SCRIPTS[@]}"
 import re, sys, pathlib
 out = pathlib.Path(sys.argv[1]); names = sys.argv[2:]
 pats = [re.compile(r'(?<![\w./-])scripts/' + re.escape(n)) for n in names]
-pats.append(re.compile(r'(?<![\w./-])harness-manifest\.json'))
 # render_plan.py is invoked by path from writing-plans, the wave-boundary rule and the ship step;
 # it ships under .claude/skills/. Anchored to the `python3 ` command form so prose mentions
 # (Rule-4 examples, the harness-repo test map) are left alone.
@@ -432,7 +405,7 @@ pats.append(re.compile(r'python3 skills/visual-planner/render_plan\.py'))
 # scripts/, references/) by path; the whole prefix is under .claude/skills/ too.
 pats.append(re.compile(r'(?<![\w./-])skills/asd-ste100/scripts/ste-lint\.py'))
 pats.append(re.compile(r'(?<![\w./-])skills/diagnosing-bugs/'))
-subs = ['.claude/scripts/' + n for n in names] + ['.claude/harness-manifest.json',
+subs = ['.claude/scripts/' + n for n in names] + [
         'python3 .claude/skills/visual-planner/render_plan.py',
         '.claude/skills/asd-ste100/scripts/ste-lint.py',
         '.claude/skills/diagnosing-bugs/']
@@ -541,19 +514,11 @@ apply_model_config() {
 derive_settings() {
   # Point relative hook commands at the deployed .claude/ copies via $CLAUDE_PROJECT_DIR so they
   # resolve from any launch directory. Absolute / $-prefixed commands are left untouched.
-  # Keep only the profile's hooks (by command basename), dropping emptied groups and events, and
-  # append ` --profile <p>` to the commit-gate command only.
-  local derived keep
-  keep="$(jq -c --arg p "$PROFILE" '.hook_profiles[$p].hooks' harness-manifest.json)"
-  derived="$(jq --argjson keep "$keep" --arg p "$PROFILE" '
-      def base: split(" ")[0] | split("/") | last;
-      .hooks |= (with_entries(.value |= (
-          map(.hooks |= map(select((.command | base) as $b | $keep | index($b) != null)))
-          | map(select((.hooks | length) > 0))))
-        | with_entries(select((.value | length) > 0)))
-      | .hooks |= with_entries(.value |= map(.hooks |= map(.command |= (
-        (if (startswith("$") or startswith("/")) then . else "$CLAUDE_PROJECT_DIR/.claude/" + . end)
-        | if base == "commit-gate.sh" then . + " --profile " + $p else . end
+  # Every hook in settings.json ships: there is one fixed hook set, no profiles.
+  local derived
+  derived="$(jq '
+      .hooks |= with_entries(.value |= map(.hooks |= map(.command |= (
+        if (startswith("$") or startswith("/")) then . else "$CLAUDE_PROJECT_DIR/.claude/" + . end
       ))))' settings.json)"
 
   # Merge, never replace. A consuming project's .claude/settings.json may carry its own
@@ -635,10 +600,10 @@ step "Rewriting derived helper paths"        rewrite_derived_paths
 if [ -n "$MODELS_SNAPSHOT" ]; then
   step "Applying ${B}harness-models.json${R}"  apply_model_config
 fi
-step "Deriving ${B}settings.json${R} ${D}(profile: $PROFILE)${R}" derive_settings
-# Record the profile for the next flagless re-sync. Top-level in .claude/, outside SYNCED_DIRS_RE,
-# so prune_orphans never touches it.
-printf '%s\n' "$PROFILE" > "$OUT/.harness-profile"
+step "Deriving ${B}settings.json${R}" derive_settings
+# Profiles and the manifest are gone: drop the files an older deploy left at the top of .claude/
+# (outside SYNCED_DIRS_RE, so prune_orphans would never touch them).
+rm -f "$OUT/.harness-profile" "$OUT/harness-manifest.json"
 
 # ---------- prune orphans (entries the harness shipped last time, gone from source now) ----------
 # Eligible = in the PREVIOUS manifest AND not deployed this run. Shape-guarded to the 5 synced
