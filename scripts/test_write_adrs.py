@@ -210,11 +210,11 @@ def test_different_ticket_not_merged():
     assert len(w.dedupe([dec(title="Same", ticket=1), dec(title="Same", ticket=2)])) == 2
 
 
-def test_merge_keeps_highest_confidence_and_ties_to_first():
+def test_merge_keeps_lowest_confidence_and_ties_to_first():
     w = wa()
-    out = w.dedupe([dec(title="Same", confidence="low", decision="first"),
-                    dec(title="Same", confidence="high", decision="second"),
-                    dec(title="Same", confidence="high", decision="third")])
+    out = w.dedupe([dec(title="Same", confidence="high", decision="first"),
+                    dec(title="Same", confidence="low", decision="second"),
+                    dec(title="Same", confidence="low", decision="third")])
     assert len(out) == 1 and out[0]["decision"] == "second"
     tie = w.dedupe([dec(title="Same", decision="first"), dec(title="Same", decision="second")])
     assert tie[0]["decision"] == "first"
@@ -224,7 +224,17 @@ def test_merge_carries_needs_review():
     w = wa()
     out = w.dedupe([dec(title="Same", confidence="high", needs_review=False),
                     dec(title="Same", confidence="low", needs_review=True)])
-    assert out[0]["confidence"] == "high" and out[0]["needs_review"] is True
+    assert out[0]["confidence"] == "low" and out[0]["needs_review"] is True
+
+
+def test_merge_owner_confirmed_only_when_all_confirmed():
+    w = wa()
+    mixed = w.dedupe([dec(title="Same", confidence="high", owner_confirmed=True),
+                      dec(title="Same", confidence="low")])
+    assert mixed[0]["confidence"] == "low" and not mixed[0].get("owner_confirmed")
+    assert w.needs_adr(mixed[0])
+    both = w.dedupe([dec(title="Same", owner_confirmed=True), dec(title="Same", owner_confirmed=True)])
+    assert both[0]["owner_confirmed"] is True
 
 
 def test_table_owner_confirmed_row_and_escaping():

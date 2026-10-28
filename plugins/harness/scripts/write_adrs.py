@@ -3,7 +3,7 @@
 
 Input JSON: {"run": "<slug>", "decisions": [{ticket, stage, title, context, options, decision,
 why, consequences, how_to_reverse, confidence, needs_review, decided_by, owner_confirmed?}]}.
-Duplicates (same ticket, same title slug or same non-empty context) are merged first. A file is
+Duplicates (same ticket, same title slug or same non-empty context) are merged first, keeping the lowest confidence. A file is
 written only for a decision that is not owner_confirmed and has needs_review or a confidence other
 than high. --table-out FILE lists every merged decision as a markdown table for the PR body.
 Output (stdout): JSON list of {number, path, ticket, title, needs_review, stage}; [] when no
@@ -104,8 +104,9 @@ def _context_key(d: dict) -> str:
 def dedupe(decisions: list) -> list:
     """Merge duplicates: same ticket and (same title slug or identical non-empty context).
 
-    Keeps the highest confidence (ties to the first). If any merged item needs review, the kept
-    one does too. Order follows the first appearance of each group.
+    Keeps the lowest confidence (ties to the first), so a doubtful duplicate is never hidden by a
+    confident one. If any merged item needs review, the kept one does too. The kept one is
+    owner_confirmed only when every merged item is. Order follows the first appearance of each group.
     """
     groups = []   # each: {"ticket", "slugs", "contexts", "items"}
     for d in decisions:
@@ -124,11 +125,15 @@ def dedupe(decisions: list) -> list:
     for g in groups:
         best = g["items"][0]
         for d in g["items"][1:]:
-            if CONFIDENCE.index(d["confidence"]) < CONFIDENCE.index(best["confidence"]):
+            if CONFIDENCE.index(d["confidence"]) > CONFIDENCE.index(best["confidence"]):
                 best = d
         best = dict(best)
         if any(d["needs_review"] for d in g["items"]):
             best["needs_review"] = True
+        if best.get("owner_confirmed") is True and not all(
+            d.get("owner_confirmed") is True for d in g["items"]
+        ):
+            best["owner_confirmed"] = False
         merged.append(best)
     return merged
 
