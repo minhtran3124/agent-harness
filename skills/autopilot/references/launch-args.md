@@ -12,7 +12,7 @@ found mid-session (`docs/adr/0001-workflow-capabilities.md`, decision 4).
   fullTestCmd: "bash scripts/run-tests.sh", advisorModel: "opus", noAsk: false, local: false }
 ```
 
-- `deps` holds only tickets inside the batch. `group` comes from `plan_groups.py`.
+- `deps` holds only tickets inside the batch. `group` comes from the plan_groups.py helper.
 - One ticket means single mode: no integration branch (ADR 0001, decision 5).
 - `noAsk: true` when `--no-ask` was given. `local` stays false unless the owner asks for a run
   without GitHub writes.
