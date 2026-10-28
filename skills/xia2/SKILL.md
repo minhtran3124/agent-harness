@@ -1,62 +1,39 @@
 ---
 name: xia2
-description: "Find out how something actually works here before building on it. Use when the user asks to add a feature to code they have not explained, names a library or API the repo does not already use, or asks how an existing part of the system works — and NOT when the question is which of several approaches to take, which is brainstorming. Produces a specs/<slug>/research-brief.md."
-allowed-tools: Glob, Grep, Read, Write, WebSearch, WebFetch, Bash(git log *), Bash(git show *), Bash(cat *), Bash(ls *)
+description: "Find out how something actually works here before building on it. Use when the user asks to add a feature to code they have not explained, names a library or API the repo does not already use, or asks how an existing part of the system works — and NOT when the question is which of several approaches to take, which is brainstorming. Produces a research brief: specs/<slug>/research-brief.md for depth L, a short inline brief otherwise."
+allowed-tools: Glob, Grep, Read, Write, WebSearch, WebFetch, Bash(git log *), Bash(git show *), Bash(ls *)
 ---
 
-# Xia2 — research before code
+# Xia2 — research before building
 
-<HARD-GATE>
-Do not write code, scaffold, or edit anything except the research brief until you save and
-deliver the brief. An explicit “skip research”/“just implement” waiver skips the workflow. The
-waiver still requires a one-line warning for every Deep signal. Never waive this gate yourself.
-</HARD-GATE>
+Find what already exists before anything is built. This is read-only work: edit nothing except the
+brief. It runs on the Haiku `researcher` agent.
 
-## Decide depth
+## Steps
 
-Read `rules/research-depth.md` and `references/depth-classifier.md`. If intake metadata exists,
-start with its mapping:
+1. Read `AGENTS.md`, `CLAUDE.md` and `README.md` if present. Search `docs/solutions/` and recent
+   `specs/` for related work.
+2. Detect the stack and versions from manifests. Map local reuse, extension points, tests and
+   configuration. Do not stop after one empty search.
+3. Look outside the repo only when the change has an external surface: it adds or upgrades a
+   dependency, integrates an external system, or relies on a version-specific API. Then read
+   the version-matched official docs and one or two upstream implementations. Failure to reach them
+   is not a blocker.
+4. Write the brief (see `references/research-brief-template.md`). Cite every fact as `file:line`
+   or a URL. Label inferences as inference.
+5. Recommend in this order: reuse, adapt upstream, use a built-in, build new. Say why the
+   alternatives lost.
 
-- high-risk → Deep
-- normal → Standard
-- tiny → Quick only when every Quick condition passes
+Depth L writes `specs/<slug>/research-brief.md`. Depth S and M return a short brief inline.
 
-Do not independently reclassify risk. Without intake, use the portable classifier. New evidence
-may raise depth, never lower it. Uncertainty is Standard.
+## Auto mode
 
-## Workflow
-
-1. Check for an explicit waiver. Report any Deep warning.
-2. Read available `AGENTS.md`, `CLAUDE.md`, and `README.md`. Search `docs/solutions/INDEX.md`,
-   `critical-patterns.md`, and at most three relevant solution files. Scan relevant recent
-   `specs/`.
-3. Detect the stack and versions from manifests/configuration. Then map local reuse, extension
-   points, tests, and configuration. Do not infer a stack from directory names. Do not stop after
-   one empty search.
-4. At Standard/Deep, search upstream implementations. At Standard/Deep, also search
-   version-matched official documentation when the change has an external surface.
-   A change has an external surface when it adds/upgrades a dependency, integrates an external
-   system, or relies on a version-specific API. Label each finding `Local`, `Upstream`, `Docs`,
-   or `Inference`. Upstream failure is non-blocking. With no external surface, record that in
-   Source Pack as `- none (local-only; no external surface)`. Never leave Source Pack silently
-   empty.
-5. Re-run the depth classifier with evidence. State any upgrade and its source.
-6. Fill `references/research-brief-template.md`. Save it to the supplied spec directory (or
-   `specs/research-brief.md`), and deliver it. Recommend reuse → adapt upstream → built-in →
-   build. Explain why rejected alternatives lost.
-
-Quick performs local artifact and reuse search only. Standard adds upstream patterns. Deep adds
-broad local coverage and explicit risk analysis. Official docs, multiple upstream sources, and
-changelogs are required by *external surface*, not by depth alone. See `rules/research-depth.md`
-§Coverage. Depth sets how broadly to look. Surface sets whether to look outside the repo.
-
-## Arguments
-
-`$ARGUMENTS` is the feature to research. If it is absent, ask for it. A caller may specify quick,
-standard, or deep. If a requested depth conflicts with a Deep signal, you must surface it.
-
-## References
-
-- `rules/research-depth.md` — canonical depth policy
-- `references/depth-classifier.md` — portable signals and decision details
-- `references/research-brief-template.md` — required output shape
+- The caller names the mode in the prompt: `Mode: interactive` (default) or `Mode: auto`.
+- Interactive: you may ask the owner with AskUserQuestion, one batch at a time, each question with a
+  recommended answer.
+- Auto: never ask the owner. On any ambiguity pick the recommended option and record it in
+  `decisions[]`: `{title, context, options, decision, why, consequences, how_to_reverse,
+  confidence: high|medium|low, needs_review: boolean}`. Do not write ADR files.
+- Set `needs_advisor: true` with `advisor_question` when you are BLOCKED, have low confidence, or a
+  finding affects other tickets or a public contract. The calling script runs the advisor. Do
+  not spawn agents (`docs/adr/0001-workflow-capabilities.md`).

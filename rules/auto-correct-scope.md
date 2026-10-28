@@ -6,7 +6,7 @@ paths:
 # Auto-Correction Scope
 
 Path-scoped (not auto-loaded): injected when any `specs/**` file is read. Task subagents also
-load it via the rule path injected into their dispatch prompt (`subagent-driven-development`).
+load it via the rule path injected into their dispatch prompt (`implement`).
 
 This rule classifies what Claude may self-fix during implementation and what requires user
 confirmation. It reduces HITL and keeps trust.

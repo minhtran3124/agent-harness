@@ -1,76 +1,62 @@
 ---
 name: feature-intake
-description: First gate for a change request: classify its risk lane and confidence, record the decision in `specs/<slug>/SUMMARY.md`, then route to the appropriate workflow. Use before research, planning, or edits.
-allowed-tools: Read, Write, Edit, Grep, Glob, Bash(git log *), Bash(git diff *), Bash(git branch --show-current), Bash(git switch *), Bash(git add -- specs/*), Bash(git commit -m *), Bash(git config user.name), Bash(ls *), Bash(python3 scripts/verify_summary.py *), Bash(python3 runtime/run_state.py *)
+description: "Readiness gate for one ticket (issue number, issue URL or free text). Judges READY, CONFIRM, GRILL or BLOCKED and picks a depth of S, M or L before any research, planning or edit. Use before starting work on a ticket."
+allowed-tools: Read, Grep, Glob, AskUserQuestion, Bash(gh issue view *), Bash(git log *), Bash(git branch *), Bash(ls *)
 ---
 
-# Feature Intake — classify and route
+# Intake — is this ticket ready?
 
-<HARD-GATE>
-Do not edit, scaffold, or dispatch implementation until intake records `Lane:` and `Confidence:`
-in `specs/<slug>/SUMMARY.md`. Never ask the user to classify risk. Ask only to resolve a material
-ambiguity or narrow a hard-gated scope.
-</HARD-GATE>
+Judge one ticket and return a verdict. Do not edit files, plan or implement.
 
-## Procedure
+## Steps
 
-1. Read `harness-manifest.json` (hard gates), `rules/orchestration.md` and
-   `rules/auto-correct-scope.md`. If SUMMARY exists and either has an
-   `Intent-source:` line or `specs/<slug>/intent.md` exists, follow `references/re-pin.md`
-   instead. Without SUMMARY, first follow `references/draft-intent.md` unless intent.md is
-   `Status: approved` and matches its last commit. If intent.md exists, run these
-   checks. Stop unless its header line (`Status:` above the first `##`) is exactly `approved`.
-   Pin with `git log -1 --format=%H --diff-filter=AM -- specs/<slug>/intent.md` (empty: stop).
-   If `git diff --exit-code <pin> -- specs/<slug>/intent.md` is non-zero, stop and ask the
-   user to commit it. Classify from intent.md plus chat.
-2. Input type: new spec, spec slice, change request, initiative, maintenance, harness
-   improvement, or bug fix. Use `bug fix` for any fix of wrong behavior, harness bugs included.
-   Mark risk flags: auth, authorization, data model, audit/security,
-   external systems, public contracts, cross-platform, existing behavior, weak proof, and
-   multi-domain.
-3. Assign the lane. A manifest hard gate is `high-risk`. Otherwise, 0–1 flags is `tiny` only for
-   one-file/no-new-public-callable work (else `normal`), 2–3 is `normal`, and 4+ is `high-risk`.
-   A human may lower a hard-gated lane only by narrowing scope.
-4. Assign confidence: `high` for one clear interpretation, `medium` for a safe documented
-   default, `low` for materially different plausible readings (including chat
-   conflicting with intent.md).
-5. The pin line is `Intent-source: specs/<slug>/intent.md @ <sha>`. Only legacy slugs (SUMMARY,
-   no intent.md) have none.
-6. For a new SUMMARY, use `templates/SUMMARY.template.md`. `### Intent` holds the pin
-   line, then the request verbatim and in full: intent.md's `## Original request`, else the
-   chat request, else `none — intent.md is the request`. A bare approval or change reply is never
-   the request. Agent notes go in `### Intake notes`, not `### Intent`. intent.md content comes
-   only from the draft procedure or the user:
+1. Read the ticket. For an issue number or URL run `gh issue view <n> --comments`. For free text,
+   use the text. Quote the owner's request verbatim in an intent line.
+2. Look up facts yourself (code, docs, issue state, dependencies). Never ask the owner for a fact.
+3. Judge the verdict, then the depth.
 
-   ```text
-   Lane: <tiny | normal | high-risk>
-   Confidence: <high | medium | low>
-   Reason: <flags/hard gate or none>
-   Flags: <comma-separated or none>
-   Affects: <contract/module from PROJECT.md or none>
-   Input-type: <type>
-   Route: <path>
-   Escalate: <yes (reason) | no>
-   ```
+## Verdict
 
-7. For a new SUMMARY, initialize `runtime/run_state.py` as `investigating`, then `planning` for
-   normal and high-risk. Failures never block intake. Always run
-   `python3 scripts/verify_summary.py --lane <slug>` before handoff.
+- **READY**: the goal fits one sentence; each acceptance criterion is checkable by a command or
+  visible behavior; scope and out-of-scope are stated; dependencies are done or in the batch; no
+  decision is left that belongs to a human.
+- **CONFIRM**: 1-3 small decisions remain. Write each as a question with a recommended answer,
+  worded so that "yes" accepts it.
+- **GRILL**: the ticket is important or its design tree is deep: auth or security, data migration
+  or deletion, a public contract, quota or money, an irreversible action, cross-module
+  architecture, or the label `grill`. Hand off: run the grilling skill.
+- **BLOCKED**: the ticket is too large (propose a split) or a dependency is missing (name it).
 
-## Routes
+## Depth
 
-- `Input-type: bug fix`: before the lane route, use the Read tool on
-  `skills/diagnosing-bugs/SKILL.md` and follow it. Do not call the Skill tool for it.
-- tiny: branch, patch directly, keep quick-check proof. Done only when it
-  passes. Else state what is missing.
-  Apply `skills/asd-ste100/SKILL.md` to agent prose (`skills/`, `rules/`, `agents/`) that you edit.
-- normal: `using-git-worktrees` → `subagent-driven-development`.
-- high-risk: `brainstorming` → `xia2` → `writing-plans` → `using-git-worktrees` →
-  `subagent-driven-development`. Use `compound` for durable decisions.
+- **S**: the plan fits in the prompt. Go straight to `implement`.
+- **M**: add a `specs/<slug>/PLAN.md` (`writing-plans`), then `implement`.
+- **L**: add `brainstorming`, `design.md` and `xia2` research before the plan.
 
-Artifacts scale by signal: see `rules/orchestration.md`.
+Pick the smallest depth that fits. A bug fix goes to `diagnosing-bugs` first: Read `skills/diagnosing-bugs/SKILL.md` (it blocks the Skill tool).
 
-## Arguments
+## Output
 
-Derive `<slug>` using the ticket-prefix convention in `templates/structure/specs-README.md`.
-Never rename an existing spec directory.
+Return this block to the caller:
+
+```text
+Intent: "<the owner's request, verbatim>"
+Verdict: READY | CONFIRM | GRILL | BLOCKED
+Depth: S | M | L
+Deps: <ticket numbers, or none>
+Questions: <numbered, each with a recommended answer, or none>
+Reason: <one or two sentences>
+```
+
+## Auto mode
+
+- The caller names the mode in the prompt: `Mode: interactive` (default) or `Mode: auto`.
+- Interactive: you may ask the owner with AskUserQuestion, one batch at a time, each question with a
+  recommended answer.
+- Auto: never ask the owner. On any ambiguity pick the recommended option and record it in
+  `decisions[]`: `{title, context, options, decision, why, consequences, how_to_reverse,
+  confidence: high|medium|low, needs_review: boolean}`. Do not write ADR files.
+- In auto mode, CONFIRM resolves itself: take each recommended answer and record it as a decision.
+- Set `needs_advisor: true` with `advisor_question` when you are BLOCKED, have low confidence, or a
+  decision affects other tickets or a public contract. The calling script runs the advisor. Do
+  not spawn agents (`docs/adr/0001-workflow-capabilities.md`).

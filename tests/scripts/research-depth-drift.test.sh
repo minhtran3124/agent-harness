@@ -39,8 +39,7 @@ COPIES=(
   "skills/xia2/references/research-brief-template.md"
 )
 
-# The external-surface trigger set plus the sentinel that makes "no external source"
-# distinguishable from "research skipped". Dropping any one of these is the drift
+# The external-surface trigger set. Dropping any one of these is the drift
 # that would quietly restore the old unconditional reading.
 #
 # MULTI-WORD ON PURPOSE. An earlier draft used the stems `depend` and `integrat`, which
@@ -54,7 +53,6 @@ KEYWORDS=(
   "upgrades a dependency"           # trigger 1
   "integrates an external system"   # trigger 2
   "version-specific API"            # trigger 3
-  "local-only"                      # the `- none (local-only; no external surface)` sentinel
 )
 
 # surface_rule_ok <dir> <relpath> → 0 if every KEYWORD is present in the file,
@@ -95,7 +93,7 @@ STALE_SENTENCES=(
 # NOT listed: the template's `_(Standard + Deep only. Skip if Quick mode.)_`. That string is
 # still CORRECT under `## Upstream Findings` — the new rule keeps upstream patterns
 # unconditional at Standard/Deep and narrows only official docs. Grepping it file-wide
-# would fail on legitimate text, so the Docs Findings section is checked by scope below.
+# would fail on legitimate text, so the External sources section is checked by scope below.
 t "no file restores a retired unconditional sentence"
 stale=""
 for copy in "${COPIES[@]}" "$REGISTRY"; do
@@ -106,15 +104,15 @@ for copy in "${COPIES[@]}" "$REGISTRY"; do
 done
 if [ -z "$stale" ]; then pass; else fail "retired unconditional wording still present in:$stale"; fi
 
-# Section-scoped: the template's Docs Findings block is the one that must carry the
+# Section-scoped: the template's External sources block is the one that must carry the
 # condition. A regression that reverts just that marker leaves "external surface"
 # elsewhere in the file, so a file-wide keyword check cannot see it.
 docs_findings_block() {
-  awk '/^## Docs Findings/{f=1;next} /^## /{f=0} f' "$1/skills/xia2/references/research-brief-template.md"
+  awk '/^## External sources/{f=1;next} /^## /{f=0} f' "$1/skills/xia2/references/research-brief-template.md"
 }
-t "template's Docs Findings section states the surface condition, not an unconditional one"
+t "template's External sources section states the surface condition, not an unconditional one"
 if docs_findings_block "$ROOT" | grep -qiF "external surface"; then pass
-else fail "Docs Findings no longer names the external-surface condition — reverted to depth-only"; fi
+else fail "External sources no longer names the external-surface condition — reverted to depth-only"; fi
 
 t "mutation check: a copy with the surface condition stripped is detected"
 m=$(mktemp -d); _CLEANUP_DIRS+=("$m")
@@ -126,17 +124,6 @@ TARGET="${COPIES[0]}"
 grep -iv 'external surface' "$ROOT/$TARGET" > "$m/$TARGET"
 if surface_rule_ok "$m" "$TARGET" 2>/dev/null; then
   fail "stripped 'external surface' from $TARGET but surface_rule_ok still passed — the lint is not load-bearing"
-else pass; fi
-
-t "mutation check: dropping only the local-only sentinel is detected"
-m2=$(mktemp -d); _CLEANUP_DIRS+=("$m2")
-cp -R "$ROOT/skills" "$m2/skills"
-cp -R "$ROOT/rules" "$m2/rules"
-# The subtler regression: the trigger set survives but "state it explicitly" is lost,
-# which silently restores an empty Source Pack as an acceptable answer.
-grep -iv 'local-only' "$ROOT/$REGISTRY" > "$m2/$REGISTRY"
-if surface_rule_ok "$m2" "$REGISTRY" 2>/dev/null; then
-  fail "dropped the local-only sentinel from $REGISTRY but the lint still passed"
 else pass; fi
 
 # PER-TRIGGER mutation. The bug this replaces: stem anchors (`depend`, `integrat`) were

@@ -66,7 +66,6 @@ CONSUMER_DATA=(
 # reference harness-only paths (tests/, scripts/) that deliberately do not deploy. Dropped from the
 # derived tree only; sources are untouched.
 HARNESS_ONLY_DOCS=(
-  "skills/xia2/README.md"
   "skills/compound/README.md"
   "agents/README.md"
 )

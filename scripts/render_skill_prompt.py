@@ -11,37 +11,9 @@ from pathlib import Path
 
 
 CONTEXT_MATRIX = {
-    "main.plan-author": {
-        "path": "skills/writing-plans/SKILL.md",
-        "required": ["rules/plan-format.md", "rules/terminology.md"],
-        "required_reads": ["rules/terminology.md"],
-    },
-    "main.plan-executor": {
-        "path": "skills/subagent-driven-development/SKILL.md",
-        "required": [
-            "rules/plan-format.md",
-            "rules/wave-parallelism.md",
-            "rules/auto-correct-scope.md",
-        ],
-    },
     "implementer": {
-        "path": "skills/subagent-driven-development/implementer-prompt.md",
+        "path": "skills/implement/implementer-prompt.md",
         "required": ["rules/auto-correct-scope.md"],
-    },
-    "task-reviewer": {
-        "path": "skills/subagent-driven-development/task-reviewer-prompt.md",
-        "required": ["rules/review-policy.md"],
-        "required_reads": ["rules/review-policy.md"],
-    },
-    "plan-document-reviewer": {
-        "path": "skills/writing-plans/plan-document-reviewer-prompt.md",
-        "required": ["rules/plan-format.md", "rules/terminology.md"],
-        "required_reads": ["rules/terminology.md"],
-    },
-    "spec-document-reviewer": {
-        "path": "skills/brainstorming/spec-document-reviewer-prompt.md",
-        "required": ["design-template.md"],
-        "required_reads": ["design-template.md"],
     },
     "correctness-controller": {
         "path": "skills/correctness-review/SKILL.md",
@@ -65,10 +37,6 @@ CONTEXT_MATRIX = {
         "path": "skills/intent-review/intent-reviewer-prompt.md",
         "required": ["rules/review-policy.md"],
         "required_reads": ["rules/review-policy.md"],
-    },
-    "resume": {
-        "path": "skills/subagent-driven-development/references/resume.md",
-        "required": ["rules/plan-format.md", "rules/wave-parallelism.md"],
     },
 }
 

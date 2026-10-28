@@ -1,74 +1,48 @@
 ---
 name: finishing-a-development-branch
-description: Verify a completed branch, pin required review receipts, push it, and open a pull request. Creates a PR only: never merges, force-pushes, discards work, or amends commits.
+description: Verify a finished branch, push it, and open a pull request with a structured body. Opens the PR only: never merges, force-pushes, discards work, or amends commits.
 allowed-tools: Read, Write, Grep, Glob, Bash
 ---
 
 # Finishing a Development Branch
 
-Announce this flow. Resolve context once and use its JSON throughout:
+## Steps
 
-```bash
-python3 scripts/resolve_finish_context.py
-```
+1. Find the branch, its base and the changes: `git branch --show-current`,
+   `git diff --stat <base>...HEAD`. Ask the owner only if the base is unclear (interactive mode).
+2. Verify. Run the repository's test command (`agents/PROJECT.md`, *Test execution*), or the
+   targeted tests for the change. Fix failures and retry at most twice. Never push a failing branch.
+3. Push without force: `git push -u origin <branch>`.
+4. Open one PR against the base with `gh pr create`. Return the URL and stop. A human reviews and
+   merges.
 
-The helper reports branch, base, merge base, plan directory, lane, ambiguity, changed files,
-receipt path, and whether a context-delivery audit is required. If it reports ambiguity, ask the
-user. If no plan exists, use the tiny/no-plan path instead of guessing.
+## PR body
 
-## Verify and gate
+Use these sections, in this order:
 
-1. Run the repository’s targeted suite, or the full suite if no safe subset is known. The exact
-   command comes from `agents/PROJECT.md` → *Test execution*. Never assume a stack or a script
-   name. Fix failures and retry at most twice. Never push a failing change.
-2. For non-tiny work with a resolved plan, pin reviews at the resolved base:
+- **Summary**: what changed, in two or three sentences.
+- **Why**: the problem or ticket (`Closes #n`).
+- **Changes**: the behavior changes a reviewer should know, not a file list.
+- **Decisions**: link the ADR files or artifact when present; otherwise list the decisions from
+  the run, with how to reverse each.
+- **Testing**: the real commands run and their counts (for example `pytest: 42 passed`).
+- **Risk**: what could break and how likely.
+- **How to revert**: the exact command (for example `git revert <sha>`).
+- **Notes**: follow-ups, limitations, open questions.
 
-   ```bash
-   python3 scripts/check_review_receipt.py <plan_dir> --require correctness,intent --require-audit-if <base>
-   ```
+## Safety
 
-   A missing, stale, failing, or blocking receipt stops the flow. Re-run the affected review. Never
-   edit the receipt to pass. Re-run this gate immediately before push. Tiny/no-plan work skips it.
-3. Run `python3 scripts/check_open_questions.py --slug <slug>`. On findings, tell the user and add an
-   `Open questions closing here` list to the PR body (warn mode by default: continue).
-   Run `python3 scripts/verify_summary.py --sc-history <slug> --base <base>` with the resolved base.
-   Relay any finding to the user and the PR body, and continue. But an exit 1 under
-   `REQUIRE_SC_STABLE=1` stops the flow. The SC history check reads committed state only, so
-   commit `PLAN.md` and `### Deviations` edits first. Report any exit other than 0 or 1 from it to
-   the user.
-   Mark the resolved plan `status: shipped` and append a dated status-log entry. Run
-   `python3 skills/visual-planner/render_plan.py specs/<slug>/PLAN.md --summarize` so the tracked
-   At-a-glance block matches the shipped Status Log. Then stage the spec record **by name** and
-   commit it:
+Never merge, force-push, run `git add -A`, `git clean`, discard work or amend a commit. Stage
+named files only.
 
-   ```bash
-   git add specs/<slug>/PLAN.md specs/<slug>/SUMMARY.md specs/<slug>/RUN.json specs/<slug>/events.jsonl
-   ```
+## Auto mode
 
-   Omit a path only if the file does not exist. Why: `references/run-state-handoff.md`.
-   The helper-selected plan—not a branch-name guess—is
-   authoritative. Do not manually change version/changelog/trust ledger when post-merge
-   automation exists.
-
-## Push and PR
-
-Push without force. Create or update one PR against the resolved base. Use a concise body with
-behavioral summary, tasks, and only a useful flow diagram. After creation, transition the run to
-`ready_to_merge` as a best effort. Run `python3 runtime/run_state.py transition --slug <slug> --to ready_to_merge --event pr.opened || true` (non-fatal).
-Then, only if `git status --short` shows a change to `specs/<slug>/RUN.json` or
-`specs/<slug>/events.jsonl`, stage exactly those two paths, commit them
-(`chore(specs): record PR #<n> for <slug>`), and push once more. Why this commit is required:
-`references/run-state-handoff.md`. Return the URL and stop. A human reviews and merges.
-
-## Safety boundary
-
-Never merge, force-push, `git add -A`, `git clean`, discard work, or amend a commit. Stage named
-files only. An external reviewer is recommended for workflow-engine changes, but it is not a local
-push gate. The receipt and deterministic checks remain mandatory.
-
-## References
-
-- `references/pr-body.md` — PR body shape
-- `references/workflow-engine-review.md` — independent-review guidance
-- `references/run-state-handoff.md` — why the run-state files are staged and committed
-- `scripts/resolve_finish_context.py` — context authority
+- The caller names the mode in the prompt: `Mode: interactive` (default) or `Mode: auto`.
+- Interactive: you may ask the owner with AskUserQuestion, one batch at a time, each question with a
+  recommended answer.
+- Auto: never ask the owner. On any ambiguity pick the recommended option and record it in
+  `decisions[]`: `{title, context, options, decision, why, consequences, how_to_reverse,
+  confidence: high|medium|low, needs_review: boolean}`. Do not write ADR files.
+- Set `needs_advisor: true` with `advisor_question` when tests keep failing, you have low
+  confidence, or a decision affects other tickets or a public contract. The calling script runs the
+  advisor. Do not spawn agents (`docs/adr/0001-workflow-capabilities.md`).

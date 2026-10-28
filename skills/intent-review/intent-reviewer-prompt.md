@@ -4,7 +4,7 @@ Use this template for one intent-review pass over the entire diff under review. 
 these two ways:
 
 - standalone, through `intent-review`, on any diff that has an intent statement
-- as the last pass inside `subagent-driven-development`, after `correctness-review` passes and
+- as the last pass inside `implement`, after `correctness-review` passes and
   before `finishing-a-development-branch`
 
 **Purpose:** Catch a diff that passed the plan and the tests but is not what the user asked for.

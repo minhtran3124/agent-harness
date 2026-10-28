@@ -18,7 +18,7 @@
 # from the reviewer prompt's inline list, fails the suite instead of shipping.
 source "$(dirname "$0")/../lib.sh"
 
-IMPL="skills/subagent-driven-development/implementer-prompt.md"
+IMPL="skills/implement/implementer-prompt.md"
 REVIEWER="skills/correctness-review/prompts/shared.md"
 COMPOSER="scripts/render_skill_prompt.py"
 
@@ -84,56 +84,9 @@ fi
 # (writing-plans) and the isolated plan REVIEWER each need their own Read or §3 silently stops
 # reaching the context that decides acceptance criteria. The canonical CONTEXT_MATRIX owns this
 # contract; the mutation cases below prove both entries are enforced.
-PLAN_AUTHOR="skills/writing-plans/SKILL.md"
-PLAN_REVIEWER="skills/writing-plans/plan-document-reviewer-prompt.md"
-DESIGN_REVIEWER="skills/brainstorming/spec-document-reviewer-prompt.md"
-
-# rules/orchestration.md names the task reviewer's spec verdict as the per-task blast-radius
-# detector (the retired edit-time hook no longer exists). That claim holds only while the
-# reviewer prompt actually asks for the diff-vs-Files comparison.
-TASK_REVIEWER="skills/subagent-driven-development/task-reviewer-prompt.md"
-task_reviewer_scope_ok() {
-  grep -q 'Spec verdict also covers scope' "$1/$TASK_REVIEWER" \
-    && grep -q '\*\*Files:\*\*' "$1/$TASK_REVIEWER" \
-    && grep -q 'Ignore bookkeeping paths' "$1/$TASK_REVIEWER"
-}
-
-t "task reviewer prompt checks the task diff against its Files list (orchestration.md blast-radius anchor)"
-if task_reviewer_scope_ok "$ROOT"; then pass
-else fail "no scope comparison instruction in $TASK_REVIEWER"; fi
-
-t "mutation: deleting the reviewer scope instruction is detected"
-m4=$(mktemp -d); _CLEANUP_DIRS+=("$m4")
-mkdir -p "$m4/$(dirname "$TASK_REVIEWER")"
-sed '/Spec verdict also covers scope/d' "$ROOT/$TASK_REVIEWER" > "$m4/$TASK_REVIEWER"
-if ! task_reviewer_scope_ok "$m4"; then pass
-else fail "removing the scope instruction was NOT detected"; fi
-
 t "complete contextual-rule consumer matrix is checked"
 if python3 "$ROOT/$COMPOSER" --root "$ROOT" --check-all >/dev/null; then pass
 else fail "render_skill_prompt.py rejected the live consumer matrix"; fi
-
-t "mutation: canonical matrix detects a missing plan-author terminology.md Read"
-m3=$(mktemp -d); _CLEANUP_DIRS+=("$m3")
-cp -R "$ROOT/skills" "$m3/skills"
-sed -i.bak 's/\*\*Read `rules\/terminology\.md`\*\*//' "$m3/$PLAN_AUTHOR" && rm -f "$m3/$PLAN_AUTHOR.bak"
-if ! python3 "$ROOT/$COMPOSER" --root "$m3" --check-all >/dev/null 2>&1; then pass
-else fail "deleting the plan author's terminology.md Read was NOT detected"; fi
-
-t "mutation: canonical matrix detects a missing plan-reviewer terminology.md Read"
-m4=$(mktemp -d); _CLEANUP_DIRS+=("$m4")
-cp -R "$ROOT/skills" "$m4/skills"
-sed -i.bak 's/\*\*Read `rules\/terminology\.md`\*\*//' "$m4/$PLAN_REVIEWER" && rm -f "$m4/$PLAN_REVIEWER.bak"
-if ! python3 "$ROOT/$COMPOSER" --root "$m4" --check-all >/dev/null 2>&1; then pass
-else fail "deleting the plan reviewer's terminology.md Read was NOT detected"; fi
-
-t "mutation: canonical matrix detects a missing design-reviewer template Read"
-m5=$(mktemp -d); _CLEANUP_DIRS+=("$m5")
-cp -R "$ROOT/skills" "$m5/skills"
-# Strip only the Read verb, keeping the `design-template.md` token, so only `required_reads` can fail.
-sed -i.bak 's/\*\*Read `design-template\.md`\*\*/`design-template.md`/' "$m5/$DESIGN_REVIEWER" && rm -f "$m5/$DESIGN_REVIEWER.bak"
-if ! python3 "$ROOT/$COMPOSER" --root "$m5" --check-all >/dev/null 2>&1; then pass
-else fail "deleting the design reviewer's design-template.md Read was NOT detected"; fi
 
 t "mutation: deleting either explicit Read is detected"
 m=$(mktemp -d); _CLEANUP_DIRS+=("$m")
@@ -152,30 +105,16 @@ if ! stop_cases_ok "$m2"; then pass
 else fail "removing a STOP case (high-blast) was NOT detected by stop_cases_ok"; fi
 
 # asd-ste100 delivery (SC-8). Each isolated consumer must carry its own instruction: the
-# implementer and task reviewer see only their pasted prompt, compound writes records, and the
-# SDD controller owns the re-run when the review package lacks STE lint counts.
+# implementer sees only its pasted prompt, and compound writes records.
 COMPOUND="skills/compound/SKILL.md"
-SDD="skills/subagent-driven-development/SKILL.md"
 
 impl_ste_ok() {
-  grep -q 'apply `skills/asd-ste100/SKILL.md`' "$1/$IMPL" \
-    && grep -q 'Strict mode for dispatch prompts' "$1/$IMPL" \
-    && grep -q 'intent.md' "$1/$IMPL"
-}
-reviewer_ste_ok() {
-  grep -q '`## STE lint`' "$1/$TASK_REVIEWER" \
-    && grep -q 'HEAD hard count is above its BASE count' "$1/$TASK_REVIEWER" \
-    && grep -q '`base: new`' "$1/$TASK_REVIEWER" \
-    && grep -q '`ste-lint: unavailable`' "$1/$TASK_REVIEWER"
+  grep -q 'apply `skills/asd-ste100/SKILL.md`' "$1/$IMPL"
 }
 compound_ste_ok() {
   sed -n '/^## Write canonical records/,/^## Mistake twice/p' "$1/$COMPOUND" \
     | grep -q 'asd-ste100.*STE-flavored'
 }
-sdd_ste_ok() {
-  grep -q '`## STE lint`' "$1/$SDD" && grep -q 're-run `review_package.py` once' "$1/$SDD"
-}
-
 # ste_mutant <file> <sed-pattern> → temp root whose copy of <file> has matching lines deleted.
 ste_mutant() {
   local d; d=$(mktemp -d); _CLEANUP_DIRS+=("$d")
@@ -190,49 +129,11 @@ t "mutation: deleting the implementer asd-ste100 instruction is detected"
 mi=$(ste_mutant "$IMPL" 'asd-ste100')
 if ! impl_ste_ok "$mi"; then pass; else fail "removing the implementer instruction was NOT detected"; fi
 
-t "task reviewer prompt reads the STE lint section (SC-8)"
-if reviewer_ste_ok "$ROOT"; then pass; else fail "no STE lint instruction in $TASK_REVIEWER"; fi
-t "mutation: deleting the reviewer STE lint instruction is detected"
-mr=$(ste_mutant "$TASK_REVIEWER" 'STE lint')
-if ! reviewer_ste_ok "$mr"; then pass; else fail "removing the reviewer instruction was NOT detected"; fi
-
-reviewer_meaning_ok() {
-  grep -q '`## Scope qualifiers`' "$1/$TASK_REVIEWER" \
-    && grep -q '^ *meaning:' "$1/$TASK_REVIEWER"
-}
-t "task reviewer prompt runs the meaning-equivalence check (SC-4)"
-if reviewer_meaning_ok "$ROOT"; then pass; else fail "no meaning instruction in $TASK_REVIEWER"; fi
-t "mutation: deleting the reviewer Scope qualifiers instruction is detected"
-mq=$(ste_mutant "$TASK_REVIEWER" 'Scope qualifiers')
-if ! reviewer_meaning_ok "$mq"; then pass; else fail "removing the Scope qualifiers line was NOT detected"; fi
-t "mutation: deleting the reviewer meaning: result key is detected"
-mk=$(ste_mutant "$TASK_REVIEWER" '^ *meaning:')
-if ! reviewer_meaning_ok "$mk"; then pass; else fail "removing the meaning: key was NOT detected"; fi
-
 t "compound applies asd-ste100 to new records (SC-8)"
 if compound_ste_ok "$ROOT"; then pass; else fail "no asd-ste100 instruction in $COMPOUND 'Write canonical records'"; fi
 t "mutation: deleting the compound asd-ste100 instruction is detected"
 mc=$(ste_mutant "$COMPOUND" 'asd-ste100')
 if ! compound_ste_ok "$mc"; then pass; else fail "removing the compound instruction was NOT detected"; fi
-
-t "SDD controller re-runs review_package.py once on missing STE lint (SC-8)"
-if sdd_ste_ok "$ROOT"; then pass; else fail "no STE lint re-run instruction in $SDD"; fi
-t "mutation: deleting the SDD STE lint instruction is detected"
-ms=$(ste_mutant "$SDD" 'STE lint')
-if ! sdd_ste_ok "$ms"; then pass; else fail "removing the controller instruction was NOT detected"; fi
-
-# The tiny lane has no implementer prompt, so feature-intake's tiny route is the only place
-# that delivers the asd-ste100 instruction to a tiny-lane agent.
-INTAKE="skills/feature-intake/SKILL.md"
-intake_tiny_ste_ok() {
-  sed -n '/^- tiny:/,/^- normal:/p' "$1/$INTAKE" \
-    | grep -qiF 'apply `skills/asd-ste100/SKILL.md` to agent prose'
-}
-t "feature-intake tiny route applies asd-ste100 to edited agent prose (SC-4)"
-if intake_tiny_ste_ok "$ROOT"; then pass; else fail "no asd-ste100 instruction in the $INTAKE tiny route"; fi
-t "mutation: deleting the feature-intake tiny-lane asd-ste100 line is detected"
-mt=$(ste_mutant "$INTAKE" 'asd-ste100')
-if ! intake_tiny_ste_ok "$mt"; then pass; else fail "removing the tiny-lane line was NOT detected"; fi
 
 # rules/research-depth.md is the canonical lane-to-depth mapping (xia2 reads it; feature-intake
 # no longer repeats or points to it), so the rule file must hold each rule the removed

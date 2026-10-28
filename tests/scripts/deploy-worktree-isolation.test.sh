@@ -48,16 +48,16 @@ else fail "nested repository doc was rewritten"; fi
 t "derived docs are still transformed when a worktree is present (skip is not a disable)"
 T=$(new_target); seed_doc "$T/.claude/worktrees/x/skills/foo.md"
 deploy "$T"
-D="$T/.claude/skills/feature-intake/SKILL.md"
-if grep -qF 'python3 .claude/scripts/verify_summary.py' "$D" \
+D="$T/.claude/skills/compound/SKILL.md"
+if grep -qF 'python3 .claude/scripts/rebuild_solution_index.py' "$D" \
    && ! grep -qF 'harness-only:begin' "$T/.claude/skills/README.md"; then pass
-else fail "derived feature-intake path not rewritten, or README fence not stripped"; fi
+else fail "derived compound path not rewritten, or README fence not stripped"; fi
 
 t "a synced dir the consumer keeps under git still gets its harness docs transformed"
 T=$(new_target)
 mkdir -p "$T/.claude/skills/.git"
 deploy "$T"
-if grep -qF 'python3 .claude/scripts/verify_summary.py' "$T/.claude/skills/feature-intake/SKILL.md"; then pass
+if grep -qF 'python3 .claude/scripts/rebuild_solution_index.py' "$T/.claude/skills/compound/SKILL.md"; then pass
 else fail "harness doc inside a git-managed .claude/skills/ was skipped by the nested-checkout guard"; fi
 
 t "a consumer's nested checkout under .claude/skills/ keeps its tests (strip_skill_tests)"

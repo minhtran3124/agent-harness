@@ -8,8 +8,7 @@ few execution facts no other doc reliably contains. Fill it in per project.
 > somewhere. Re-describing that here creates a second source of truth that drifts. Point to the
 > real doc; only inline a convention when the repo has no doc for it.
 >
-> Risk-classification signals are **not** here — they live in `rules/research-depth.md` and
-> `skills/xia2/references/depth-classifier.md`. This file covers implementation + test execution only.
+> Risk-classification signals are **not** here — they live in `rules/research-depth.md`. This file covers implementation + test execution only.
 
 ---
 

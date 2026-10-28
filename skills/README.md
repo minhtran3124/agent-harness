@@ -19,66 +19,44 @@ binding renders `/skill-name` for Claude Code. Shared skills must not hard-code 
 init-structure.sh --root <project>   (first-time setup; run from the harness repo)
   → scaffolds specs/, docs/solutions/ (create-if-missing)
       ↓
-feature-intake  (routing entry point — run first on every change request)
-  → reads specs/<slug>/intent.md when it exists (pins it by commit SHA)
-  → with no SUMMARY and no approved intent.md, drafts intent.md first (references/draft-intent.md)
-  → classifies input type + 10-flag risk checklist + hard gates
-  → output: lane (tiny|normal|high-risk) + confidence → specs/<slug>/SUMMARY.md
-  → routes: tiny → branch + direct edit · normal → using-git-worktrees → subagent-driven · high-risk → full chain below
-  → Input-type: bug fix → diagnosing-bugs before the lane route (see Bug Fix Path)
-  → EVERY lane cuts a branch first (enforced by hooks/branch-isolation-guard.sh)
+feature-intake  (readiness gate — run first on every ticket)
+  → judges READY | CONFIRM | GRILL | BLOCKED and depth S | M | L; returns a short verdict block
+  → GRILL hands off to the grilling skill · BLOCKED proposes a split or names the missing dependency
+  → Input-type: bug fix → diagnosing-bugs before the plan (see Bug Fix Path)
       ↓
-brainstorming
-  → reads: the project, relevant docs, recent changes, decisions under docs/solutions/
-  → asks the open-decision frontier in numbered rounds, with a recommended answer per question
-  → finds facts itself; asks the user only for decisions
-  → output: specs/<slug>/design.md (after the spec-review loop and user approval)
+brainstorming  (depth L)
+  → explores options, converges on a design; writes specs/<slug>/design.md; no review rounds
       ↓
-xia2
-  → reads: AGENTS.md, CLAUDE.md, README.md, docs/solutions/ (INDEX.md, critical-patterns.md, ≤3 records), recent specs/
-  → depth from the intake lane, else rules/research-depth.md + references/depth-classifier.md
-  → depth re-evaluated with evidence (may go up, never down)
+xia2  (depth L; a short inline brief for M)
+  → research before building; external docs only when the change has an external surface
   → output: specs/<slug>/research-brief.md (no code)
       ↓
-writing-plans
-  → input: design.md + research-brief.md
-  → output: specs/<slug>/PLAN.md (every task has a Seams: line; a fix task copies diagnosis.md Seam: exactly)
-  → runs check_plan_contract.py, then render_plan.py --summarize after saving (At-a-glance block + PLAN.html; not auto-opened)
+writing-plans  (depth M and L)
+  → steps carry Files, Effort, Done-when, Parallel group → specs/<slug>/PLAN.md
       ↓
-using-git-worktrees
-  → detects existing isolation first (skills/using-git-worktrees/scripts/detect-isolation.sh)
-  → else creates an isolated worktree + branch; deploys the harness and runs the clean baseline
+using-git-worktrees  (manual runs; a Workflow uses isolation: 'worktree')
       ↓
-subagent-driven-development        ← same session, or `resume <slug>` from a new session
-  → implements plan task-by-task
-  → one read-only task reviewer per task (separate spec + quality verdicts; file handoffs)
-  → diagnosed bug fix: seam check before dispatch (references/bug-fix.md), diagnosing-bugs Phase 6 before the final reviews
-  → workflow-engine diffs first pass context-propagation-audit, then final adversarial correctness review (correctness-review)
-  → final intent review (intent-review) — diff vs the original request, blind to PLAN
-  → writes .review-receipt.json; handoff needs verify_summary.py --check and a passing receipt
+implement
+  → one fresh coding subagent per step in an isolated worktree; runs Done-when; fix loop capped at 3
+  → hands back files touched + verify output; review is /code-review plus intent-review
       ↓
 compound  (if non-obvious pattern found)
   → output: docs/solutions/<category>/<slug>.md
   → a high-overlap match is a second occurrence ("mistake twice"): update and promote that record
       ↓
 finishing-a-development-branch
-  → runs tests, pins review receipts (check_review_receipt.py), marks the plan shipped
-  → commits the spec record (PLAN.md, SUMMARY.md, RUN.json, events.jsonl) by name
-  → pushes, opens a PR, commits the ready_to_merge run state (never merges — a human reviews & merges)
+  → runs tests, pushes, opens a PR (Summary, Why, Changes, Decisions, Testing, Risk, How to revert, Notes)
+  → never merges — a human reviews & merges
 ```
 
 ### Minimum Viable Path (intent clear, in-place edit, <1 day)
 
 ```
-feature-intake → (tiny: branch + direct edit | normal: using-git-worktrees → subagent-driven-development; PLAN.md only when >3 steps or >2 files) → compound (if pattern found)
+feature-intake → implement (depth S, plan in the prompt) → finishing-a-development-branch
+feature-intake → writing-plans → implement (depth M) · add brainstorming + xia2 first for depth L
 
-feature-intake confirms the lane; a tiny lane branches (`git checkout -b`) then edits directly.
-On the tiny lane, apply asd-ste100 to agent prose you edit under skills/, rules/, or agents/.
-Skip brainstorming when intent is clear.
-Skip using-git-worktrees on the tiny lane — but NOT the branch: a plain
-`git checkout -b <type>/<slug>` is still required. No lane implements on a shared branch.
-On the normal lane, using-git-worktrees reuses an existing linked worktree when it finds one.
-PLAN.html is not auto-rendered; `render_plan.py --summarize` refreshes it (writing-plans, wave boundaries).
+Every change runs on its own branch. Skip brainstorming when the approach is clear.
+Apply asd-ste100 to agent prose you edit under skills/, rules/, or agents/.
 ```
 
 ### Bug Fix Path
@@ -86,15 +64,14 @@ PLAN.html is not auto-rendered; `render_plan.py --summarize` refreshes it (writi
 ```
 feature-intake  (Input-type: bug fix — any fix of wrong behavior, harness bugs included)
       ↓
-diagnosing-bugs  (every lane — six gated phases; intake Reads its SKILL.md, not the Skill tool)
+diagnosing-bugs  (every depth — six gated phases; intake Reads its SKILL.md, not the Skill tool)
   → isolation first: tiny → `git checkout -b fix/<slug>` from a shared branch · normal / high-risk → using-git-worktrees
   → Phases 1–4 write specs/<slug>/diagnosis.md (Loop, Repro, Hypotheses, Probes, Confirmed, Seam)
   → task-reviewer reviews it before any fix (spec_verdict: pass + quality_verdict: approved)
       ↓
 Phase 5 fix
   tiny: red test at the Seam: committed before the fix → Phase 6 cleanup (loop green, no [DEBUG- tag)
-  normal / high-risk: the lane's chain, diagnosis.md as input — writing-plans copies Seam:,
-    subagent-driven-development checks it (references/bug-fix.md) and runs Phase 6 before the final reviews
+  M / L: writing-plans and implement, diagnosis.md as input; Phase 6 runs before review
       ↓
 compound  (when the root cause is a reusable learning — the bug track takes it from diagnosis.md Confirmed:)
 ```
@@ -107,7 +84,7 @@ compound  (when the root cause is a reusable learning — the bug track takes it
 
 | Skill | Trigger | Output |
 |---|---|---|
-| `feature-intake` | First, on every change request — classify risk lane + confidence and route, before research, planning, or edits | `specs/<slug>/SUMMARY.md` (Lane/Confidence/Reason/Flags/Affects/Input-type/Route/Escalate) + a route decision. With no SUMMARY, it first drafts `specs/<slug>/intent.md` for user approval (`skills/feature-intake/references/draft-intent.md`) |
+| `feature-intake` | First, on every ticket — readiness gate: READY / CONFIRM / GRILL / BLOCKED and depth S / M / L, before research, planning, or edits | A short verdict block (verdict, depth, deps, questions, reason) and an intent line quoting the request |
 
 ### Setup
 
@@ -124,23 +101,23 @@ from the harness checkout run `bash scripts/init-structure.sh --root <project>`,
 | Skill | Trigger | Output |
 |---|---|---|
 | `grilling` | **Intake- or user-invoked**. A ticket has open decisions that the owner must settle before design or planning. It maps the decisions as a design tree and asks the whole frontier in one numbered round, each with a recommended answer. Facts it looks up itself. `Mode: auto` is for `--no-ask` runs only | A "Confirmed decisions" comment on the ticket + a short decision list for the caller |
-| `brainstorming` | The goal is clear but the approach is not. The user weighs two or more ways, does not know how to start, or asks for a design or a recommendation. Not for a settled approach that only needs codebase or library knowledge (that is `xia2`). The high-risk lane routes here | Approved `specs/<slug>/design.md` (`QUESTIONS.md` for non-blocking unknowns in a multi-phase spec) |
-| `xia2` | Find out how something actually works here before building on it. Examples: a feature on unexplained code, a library or API that the repo does not use yet, or how an existing part works. Not for a choice between approaches (that is `brainstorming`). Portable and zero-config, depth policy in `rules/research-depth.md` | `specs/<slug>/research-brief.md` |
+| `brainstorming` | The goal is clear but the approach is not. The user weighs two or more ways, does not know how to start, or asks for a design or a recommendation. Not for a settled approach that only needs codebase or library knowledge (that is `xia2`). Depth L routes here | `specs/<slug>/design.md` (depth L) |
+| `xia2` | Find out how something actually works here before building on it. Examples: a feature on unexplained code, a library or API that the repo does not use yet, or how an existing part works. Not for a choice between approaches (that is `brainstorming`). No depth classifier | `specs/<slug>/research-brief.md` (depth L) or a short inline brief |
 | `diagnosing-bugs` | **User- or intake-invoked**. Run `/diagnosing-bugs`, or `feature-intake` routes an `Input-type: bug fix` here. The skill blocks model invocation, so intake uses the Read tool on its `SKILL.md`. It proves the root cause in six gated phases before any fix. Every lane runs all six phases. No "cause known" shortcut exists. `task-reviewer` reviews the diagnosis before the fix | `specs/<slug>/diagnosis.md` → red test + fix (tiny) or the lane route |
 
 ### Planning
 
 | Skill | Trigger | Output |
 |---|---|---|
-| `writing-plans` | After design is approved and xia2 brief is ready | `specs/<slug>/PLAN.md` with `- Plan-contract: 2` and a `Seams:` line per task. `scripts/check_plan_contract.py` checks it. `render_plan.py --summarize` writes `PLAN.html` after saving |
+| `writing-plans` | After intake picks depth M or L | `specs/<slug>/PLAN.md`: steps with Files, Effort, Done-when and parallel group |
 | `visual-planner` | Standalone render of a `PLAN.md` — mainly for `--review` mode (blast-radius/risk overlay). Plain renders come from `render_plan.py --summarize` (run by writing-plans, at each wave boundary, and by finishing-a-development-branch before the shipped commit) | `specs/<slug>/PLAN.html` (untracked, local-only). `--review` writes `PLAN.review.html` |
 
 ### Execution
 
 | Skill | Trigger | Output |
 |---|---|---|
-| `using-git-worktrees` | Before plan execution (normal and high-risk lanes, and before a non-tiny diagnosis). It detects existing isolation first | Isolated worktree + branch (it reuses an existing linked worktree). Derived harness deployed and clean baseline run |
-| `subagent-driven-development` | Executing a plan — fresh subagent per task in this session, or `resume <slug>` from a new session (`Resume first`: `runtime/resume_decision.py` returns the action and cursor, then batch + checkpoint). Same gates either way. A diagnosed bug fix also reads `references/bug-fix.md` (seam check before dispatch) | Implemented tasks, one task reviewer with two verdicts and durable Minor handoff; workflow-engine context audit when triggered; final correctness and intent review. Then `.review-receipt.json` at the reviewed HEAD |
+| `using-git-worktrees` | Manual runs that need an isolated worktree from the right base (a Workflow uses `isolation: 'worktree'`) | Isolated worktree + branch |
+| `implement` | Carrying out an agreed plan — a fresh coding subagent per step in an isolated worktree, Done-when run, fix loop capped at 3 | Commits, files touched and verify output per step |
 
 ### Review & Shipping
 
@@ -174,21 +151,20 @@ If one of these isn't available in your environment, the workflows degrade grace
 ## Skill Handoff Map
 
 ```
-feature-intake             ──► tiny: git checkout -b → direct edit · normal: using-git-worktrees → subagent-driven-development
-                                high-risk: brainstorming (full chain) · low confidence: escalate
-                                Input-type: bug fix → diagnosing-bugs (before the lane route)
+feature-intake             ──► READY → depth S: implement · M: writing-plans · L: brainstorming → xia2 → writing-plans
+                                GRILL: grilling skill · BLOCKED: split or wait
+                                Input-type: bug fix → diagnosing-bugs (before the plan)
 grilling                   ──► "Confirmed decisions" comment + decision list → caller (terminal)
-brainstorming              ──► xia2 → writing-plans (the only valid next skills)
-xia2                       ──► research brief → user/skill decides next step
-writing-plans              ──► (render_plan.py --summarize) → using-git-worktrees (unless already isolated)
-                                → subagent-driven-development
+brainstorming              ──► xia2 → writing-plans
+xia2                       ──► research brief → writing-plans
+writing-plans              ──► implement
 visual-planner             ──► PLAN.html (terminal — visual artifact; back to writing-plans handoff)
-subagent-driven-development ──► workflow-engine diff: context-propagation-audit → correctness-review → intent-review → compound → finishing-a-development-branch
+implement                  ──► /code-review → intent-review → finishing-a-development-branch
 correctness-review         ──► (standalone — runs the same pipeline ad-hoc on any diff; no gate)
 context-propagation-audit ──► (conditional workflow-engine delivery gate, then correctness-review)
 intent-review              ──► (standalone — same pipeline; needs ### Intent in SUMMARY or intent provided by the user)
 diagnosing-bugs            ──► diagnosis.md → task-reviewer → tiny: red test → fix → cleanup
-                                normal / high-risk: lane route (seam check + Phase 6 in subagent-driven-development) → compound
+                                M / L: writing-plans → implement (Phase 6) → compound
 session-retro              ──► user approval → improvement-backlog.md row · feature-intake task · compound
 asd-ste100                 ──► nothing (terminal — returns the rewritten text to its caller)
 compound                   ──► nothing (terminal — crystallization is end state)
@@ -266,7 +242,7 @@ This is one of several wired hooks — see the full table in the root `CLAUDE.md
 
 > **Maintainer notes.** Everything below explains how the harness is built and how to fork it.
 > A deployed `.claude/` copy drops this region (deploy-harness.sh → strip_maintenance_docs),
-> along with `skills/xia2/README.md`, `skills/compound/README.md`, and `agents/README.md`,
+> along with `skills/compound/README.md`, and `agents/README.md`,
 > which hold the same kind of content in full.
 
 ## Per-skill Design Rationales
@@ -352,34 +328,9 @@ graph LR
 
 ### `xia2`
 
-> **One-liner:** one portable, zero-config skill — depth policy lives in `rules/research-depth.md` and the portable risk signals in `references/depth-classifier.md`, so there is nothing to configure per repo.
+> **One-liner:** research before building. No depth classifier: look locally first, and outside the repo only when the change has an external surface.
 
-```mermaid
-graph LR
-    SKILL["SKILL.md<br/>+ references/depth-classifier.md<br/>portable signals"]
-    SKILL -.->|"copy the folder — no config"| NEW["Reusable in any project"]
-```
-
-> **Historical note (2026-07-17):** xia2 previously carried a per-project `PROJECT.md` sibling holding the signal lists. That file was removed when xia2 went config-free; the `PROJECT.md >` references still visible in `tests/structural/depth-modes-test-cases.md` are that era's provenance and the classifications hold unchanged under the portable signals in `references/depth-classifier.md`.
-
-- **Portable by design.** The risk-classification signals live in `references/depth-classifier.md` and `rules/research-depth.md` as common cross-project vocabulary. No per-project config file.
-- **Zero-config.** xia2 classifies from those portable signals; nothing to bootstrap.
-- **Fork to another project:**
-  1. Copy `skills/xia2/`.
-  2. From the harness checkout run `bash scripts/init-structure.sh --root <new repo>` to scaffold `specs/` and `docs/solutions/`.
-  3. `tests/structural/depth-modes-test-cases.md` is a portable regression set against the common signals — keep or extend it.
-  4. Keep `tests/behavioural/pressure-scenarios.md` — most scenarios are universal.
-- **Maintenance discipline:**
-  - Editing HARD-GATE, `references/depth-classifier.md`, `rules/research-depth.md`, or the depth / re-evaluation steps in `SKILL.md` → **must** re-run `tests/structural/` suite.
-  - Wording polish in non-classifier sections does not require a re-run.
-
-**Critical regression canaries** (see `tests/structural/depth-modes-test-cases.md`):
-
-| Test case | Must classify as |
-|---|---|
-| TC-01 → TC-04 | **Quick** |
-| TC-19, TC-21 | **Deep** |
-| TC-20 | **Standard** (initial classification) |
-| TC-29 | Surface a **risk warning** when HARD-GATE is waived |
+- **Portable by design.** Copy `skills/xia2/`; there is no per-project config.
+- **Fork to another project:** copy the folder, then run `bash scripts/init-structure.sh --root <new repo>`. Keep `tests/behavioural/pressure-scenarios.md`: most scenarios are universal.
 
 <!-- harness-only:end -->
