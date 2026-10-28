@@ -1,6 +1,6 @@
 ---
 name: setup
-description: "First-run setup for a project that installed the harness plugin. Scaffolds specs, docs and techstacks, creates agents/PROJECT.md, merges the permissions.deny rules into project settings, ignores specs/, and offers to remove an old copied install. Use when the plugin was just installed in a project."
+description: "First-run setup for a project that installed the harness plugin. Scaffolds specs, docs and techstacks, creates agents/PROJECT.md, merges the permissions.deny rules into project settings, ignores specs/, and offers to remove an old copied install."
 disable-model-invocation: true
 allowed-tools: Read, Bash, AskUserQuestion
 ---
