@@ -106,7 +106,6 @@ from the harness checkout run `bash scripts/init-structure.sh --root <project>`,
 | Skill | Trigger | Output |
 |---|---|---|
 | `writing-plans` | After intake picks depth M or L | `specs/<slug>/PLAN.md`: steps with Files, Effort, Done-when and parallel group |
-| `visual-planner` | Standalone render of a `PLAN.md` — mainly for `--review` mode (blast-radius/risk overlay). Plain renders come from `render_plan.py --summarize` (run by writing-plans, at each wave boundary, and by finishing-a-development-branch before the shipped commit) | `specs/<slug>/PLAN.html` (untracked, local-only). `--review` writes `PLAN.review.html` |
 
 ### Execution
 
@@ -125,7 +124,7 @@ from the harness checkout run `bash scripts/init-structure.sh --root <project>`,
 | `compound` | Only after a session that produced a reusable learning (non-obvious bug fix, pattern, decision, useful failure) or a proposed harness ratchet | `docs/solutions/<category>/<slug>.md`, rebuilt `INDEX.md`, `critical-patterns.md` entries for critical or recurring learnings, `improvement-backlog.md` rows for proposed guardrails |
 | `session-retro` | **User-invoked**, after a session with visible friction — traces struggles to missing environment levers (check > pointer > scoped rule) and proposes ranked fixes; never edits, waits for approval. Not `compound` (knowledge capture) or a bug hunt | Ranked candidate list → approved items go to `improvement-backlog.md` rows or a `feature-intake` task. Durable knowledge goes to `compound` |
 | `asd-ste100` | Use it when an agent or a tool must read English text with no human to help. Use it for instructions, tool descriptions, error messages, and status reports. Do not use it for creative or marketing copy. Vendored from upstream. See `skills/asd-ste100/UPSTREAM.md`. Tiny-lane intake edits and implementers apply it to prose under `skills/`, `rules/`, and `agents/`. `compound` applies it to new records. | Text rewritten in ASD-STE100 style (Strict or STE-flavored mode). `skills/asd-ste100/scripts/ste-lint.py` checks the structural rules. |
-| `finishing-a-development-branch` | Implementation complete, tests pass | Runs tests, pins review receipts, marks the plan shipped, pushes, opens a PR, records `ready_to_merge` (never merges) |
+| `finishing-a-development-branch` | Implementation complete, tests pass | Runs tests, pushes, opens a PR with a structured body (never merges) |
 
 ---
 
@@ -154,7 +153,6 @@ grilling                   ──► "Confirmed decisions" comment + decision li
 brainstorming              ──► xia2 → writing-plans
 xia2                       ──► research brief → writing-plans
 writing-plans              ──► implement
-visual-planner             ──► PLAN.html (terminal — visual artifact; back to writing-plans handoff)
 implement                  ──► /code-review → intent-review → finishing-a-development-branch
 intent-review              ──► (standalone — same pipeline; needs the verbatim request and a BASE..HEAD range)
 autopilot                  ──► feature-intake (per ticket) → grilling → workflows/ship.js (launch, terminal)
@@ -258,38 +256,6 @@ graph LR
 | **High** | same module **+** ≥2 matching tags | Update the existing file |
 | **Moderate** | partial match | Write `[slug]-2.md` |
 | **Low** | no real match | Write `[slug].md` |
-
-### `visual-planner`
-
-> **One-liner:** a deterministic script (not the LLM) renders `PLAN.md` → a self-contained, untracked `PLAN.html`; a second script serves and opens it.
-
-```mermaid
-graph LR
-    MD["PLAN.md"] --> RP["render_plan.py<br/>+ template.html"]
-    RP --> HTML["PLAN.html<br/>(untracked, beside PLAN.md)"]
-    HTML --> VP["view_plan.py<br/>serve + auto-render if stale"]
-    VP --> B["Chrome @ localhost<br/>(secure context → clipboard works)"]
-```
-
-| Script | Role |
-|---|---|
-| `render_plan.py` | **Builds** `PLAN.html` by filling `{{PLACEHOLDER}}` slots in `template.html` — byte-for-byte reproducible. |
-| `view_plan.py` | **Shows** it — serves on localhost + opens Chrome, auto-rendering first if `PLAN.html` is missing/stale. |
-
-- **Deterministic script, not LLM transcription.** The skill only runs the script and relays its report — never emits HTML token-by-token. Transcribing a ~340-line template every run is expensive and the least reproducible part of the pipeline; a script makes the fill free and stable.
-- **Local-only output.** `PLAN.html` is untracked — it lives beside `PLAN.md` in `specs/`, which is local scratch and gitignored.
-- **Rendered by a script run, not a hook or sub-agent.** `writing-plans` runs `render_plan.py --summarize` after saving `PLAN.md`, `rules/wave-parallelism.md` runs it at each wave boundary, and `finishing-a-development-branch` runs it before the shipped commit, so `PLAN.html` and the in-file "At a glance" block stay current without any skill dispatch. Nothing auto-opens it; `view_plan.py` opens it on request. Run `visual-planner <slug>` standalone when you want `--review` mode.
-- **Why serve instead of `file://`?** Localhost is a browser *secure context*, so per-task "copy `<verify>`" buttons use `navigator.clipboard`; `--file` (`file://`) is faster but falls back to `execCommand`. Auto-view is environment-dependent (no display on headless/remote), so it stays an explicit step.
-- **Self-check before claiming success.** The script asserts non-empty output, no surviving `{{PLACEHOLDER}}`, the `slug` present, and one `<section data-wave>` per distinct wave. On non-zero exit, surface the `SELF-CHECK FAILED:` lines verbatim — do not claim success.
-
-**`--review` mode is a 3-step dance** (the offline renderer never queries any tool itself):
-
-```mermaid
-graph LR
-    A["1 · render_plan.py --emit-files"] --> B["2 · agent gathers blast-radius + risk per file<br/>(Grep/Read or an optional graph tool)"]
-    B --> C["3 · write .plan-review.json sidecar"]
-    C --> D["render_plan.py --review<br/>→ impact dashboard + blast-radius table + risk cards"]
-```
 
 ### `xia2`
 

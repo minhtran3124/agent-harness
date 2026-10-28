@@ -29,8 +29,7 @@ C="$T/.claude"
 # ---------------------------------------------------------------------------
 t "allow-listed helpers land in .claude/scripts/ and are importable Python"
 missing=""
-for f in rebuild_solution_index.py render_skill_prompt.py \
-         run_at_commit.py write_adrs.py; do
+for f in rebuild_solution_index.py render_skill_prompt.py write_adrs.py; do
   [ -f "$C/scripts/$f" ] || missing="$missing $f"
 done
 if [ "$RC" -eq 0 ] && [ -z "$missing" ] && python3 -m py_compile "$C"/scripts/*.py 2>/dev/null; then pass
@@ -38,7 +37,7 @@ else fail "rc=$RC missing:$missing (or a deployed helper does not compile)"; fi
 
 t "the removed run-state and receipt helpers are not shipped"
 leaked=""
-for f in verify_summary.py check_plan_contract.py check_review_receipt.py resolve_finish_context.py; do
+for f in verify_summary.py check_plan_contract.py check_review_receipt.py resolve_finish_context.py run_at_commit.py; do
   [ -e "$C/scripts/$f" ] && leaked="$leaked $f"
 done
 [ -e "$C/runtime" ] && leaked="$leaked runtime/"
@@ -77,16 +76,6 @@ unresolved=$(grep -rhoE '\.claude/scripts/[A-Za-z0-9_.-]+' "$C" --include='*.md'
   | while read -r p; do [ -e "$T/$p" ] || echo "$p"; done)
 if [ -z "$unresolved" ]; then pass; else fail "named but not shipped: $(echo "$unresolved" | tr '\n' ' ')"; fi
 
-t "derived docs invoke render_plan.py at the deployed path, and it resolves"
-# the wave-boundary rule and the visual-planner skill run render_plan.py; in a consumer it lives under .claude/skills/, one level in.
-rp_bad=""
-for f in rules/wave-parallelism.md; do
-  grep -q '\.claude/skills/visual-planner/render_plan\.py' "$C/$f" || rp_bad="$rp_bad $f(missing)"
-  grep -qE '(^|[^./])skills/visual-planner/render_plan\.py' "$C/$f" && rp_bad="$rp_bad $f(unrewritten)"
-done
-[ -e "$T/.claude/skills/visual-planner/render_plan.py" ] || rp_bad="$rp_bad render_plan.py(not-shipped)"
-if [ -z "$rp_bad" ]; then pass; else fail "$rp_bad"; fi
-
 t "vendored asd-ste100 skill ships with its linter and without the unvendored upstream files"
 # The consumer gets SKILL.md and ste-lint.py. Upstream README.md and the linter edge-case
 # examples are not vendored, so they must not appear in the consumer.
@@ -101,7 +90,7 @@ if [ -z "$ste_bad" ]; then pass; else fail "$ste_bad"; fi
 
 t "derived asd-ste100 SKILL.md names ste-lint.py at the deployed path, and it resolves"
 # In a consumer the linter lives under .claude/skills/. A bare skills/... path does not resolve
-# from the consumer root. This check uses the same idea as the render_plan.py check above.
+# from the consumer root. 
 ste_bad=""
 grep -qE '(^|[^./])skills/asd-ste100/scripts/ste-lint\.py' "$C/skills/asd-ste100/SKILL.md" \
   && ste_bad="$ste_bad SKILL.md(unrewritten)"
@@ -152,7 +141,7 @@ if [ -z "$left" ]; then pass; else fail "test material shipped: $(echo "$left" |
 
 t "stripping is derive-only — the harness sources still hold their tests"
 if [ -f "$ROOT/skills/xia2/tests/behavioural/pressure-scenarios.md" ] \
-   && [ -f "$ROOT/skills/visual-planner/test_render_plan.py" ]; then pass
+   && [ -f "$ROOT/skills/autopilot/scripts/test_plan_groups.py" ]; then pass
 else fail "sources lost their tests — strip_skill_tests must never touch \$ROOT"; fi
 
 # ---------------------------------------------------------------------------

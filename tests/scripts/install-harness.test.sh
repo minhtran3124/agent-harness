@@ -43,7 +43,7 @@ if [ "$RC" -eq 0 ] \
    && [ -f "$tgt/docs/solutions/critical-patterns.md" ] && [ -f "$tgt/techstacks/README.md" ] \
    && [ ! -e "$tgt/$MEMORY_DIR" ] \
    && ! grep -q '^memory:' "$tgt/.claude/agents/implementer.md" \
-   && ! grep -q '^memory:' "$tgt/.claude/agents/reviewer.md" \
+   && ! grep -q '^memory:' "$tgt/.claude/agents/intent-reviewer.md" \
    && ! grep -q '^memory:' "$tgt/.claude/agents/test-runner.md"; then
   pass
 else
@@ -54,8 +54,8 @@ t "fresh install emits Claude-bound agents, not source-time binding metadata"
 target; tgt=$TARGET
 run_install "$tgt"
 if [ "$RC" -eq 0 ] \
-   && grep -q '^model: claude-opus-5-5$' "$tgt/.claude/agents/reviewer.md" \
-   && grep -q '^tools: Glob, Grep, Read, Bash$' "$tgt/.claude/agents/reviewer.md" \
+   && grep -q '^model: claude-sonnet-5-5$' "$tgt/.claude/agents/intent-reviewer.md" \
+   && grep -q '^tools: Glob, Grep, Read, Bash$' "$tgt/.claude/agents/intent-reviewer.md" \
    && [ ! -e "$tgt/.claude/agents/agent-contracts.json" ] \
    && [ ! -e "$tgt/.claude/agents/runtime-bindings.json" ]; then
   pass

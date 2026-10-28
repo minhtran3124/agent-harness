@@ -22,17 +22,6 @@
       "model_class": "implementation-high-capability",
       "output_contract": "files-behavior-validation-followups"
     },
-    "reviewer": {
-      "source": "agents/reviewer.md",
-      "filesystem": "read-only",
-      "shell": "read-only-inspection",
-      "network": "none",
-      "mcp": "none",
-      "nested_delegation": false,
-      "context_policy": "fresh-bounded",
-      "model_class": "review-high-capability",
-      "output_contract": "self-contained-findings-only"
-    },
     "task-reviewer": {
       "source": "agents/task-reviewer.md",
       "filesystem": "read-only",

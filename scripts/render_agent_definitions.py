@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 
 FORBIDDEN_SOURCE_FIELDS = {"model", "effort", "tools", "memory"}
-REVIEW_ROLES = {"reviewer", "task-reviewer", "intent-reviewer", "advisor", "researcher"}
+REVIEW_ROLES = {"task-reviewer", "intent-reviewer", "advisor", "researcher"}
 CLAUDE_EFFORTS = {"low", "medium", "high", "xhigh", "max"}
 
 
