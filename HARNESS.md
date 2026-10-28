@@ -18,16 +18,7 @@ who needs to approve?"*
 
 ### Runtime boundary
 
-Claude Code is the established runtime. The **Codex advisory alpha** renders the same semantic
-skills, agents, and hook bodies through checked Codex bindings, but this is **not peer enforcement**
-or a GA claim. Only Codex CLI 0.147.0 on macOS arm64 has the complete observed alpha evidence;
-Linux and WSL stay advisory until equivalent runtime evidence is captured.
-
-The adapter is installed separately with `scripts/install-codex-harness.sh` and never replaces the
-Claude `.claude/` deployment. After install or any CLI/config/trust change, run the outside-hook
-doctor. An `enforced` result is local and evidence-bound; `advisory` names a degraded or unknown
-guarantee; `unsupported` names a missing precondition. See `docs/codex-alpha-install.md` for the
-lifecycle and trust-review procedure.
+Claude Code is the only supported runtime.
 
 ## 2. The one principle everything turns on
 
@@ -92,4 +83,3 @@ A hard gate discovered *mid-task* escalates regardless of the original lane.
 | Understand routing / lanes in detail | `skills/feature-intake/SKILL.md`, `rules/orchestration.md` |
 | Know what a hook enforces | `CLAUDE.md` → Hooks table |
 | See the autonomy vs. ask-the-human rules | `rules/auto-correct-scope.md` |
-| Install or diagnose the Codex advisory alpha | `docs/codex-alpha-install.md` |

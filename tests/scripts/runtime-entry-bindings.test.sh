@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Contract tests for Task 5.5's single Claude/Codex runtime-entry binding.
+# Contract tests for Task 5.5's Claude runtime-entry binding.
 source "$(dirname "$0")/../lib.sh"
 
 RENDERER="scripts/render_runtime_entry.py"
@@ -21,23 +21,20 @@ else
   fail "runtime entry binding or focused tests failed"
 fi
 
-t "Claude and Codex render distinct official skill-entry syntax"
+t "Claude renders the official skill-entry syntax"
 claude_out=$(python3 "$ROOT/$RENDERER" --root "$ROOT" --runtime claude --skill feature-intake --prompt '<case prompt>')
-codex_out=$(python3 "$ROOT/$RENDERER" --root "$ROOT" --runtime codex --skill feature-intake --prompt '<case prompt>')
-if [ "$claude_out" = "claude -p '/feature-intake <case prompt>' --output-format text" ] \
-  && [ "$codex_out" = "codex exec '\$feature-intake <case prompt>'" ]; then
+if [ "$claude_out" = "claude -p '/feature-intake <case prompt>' --output-format text" ]; then
   pass
 else
-  fail "unexpected paired output — claude=[$claude_out] codex=[$codex_out]"
+  fail "unexpected output — claude=[$claude_out]"
 fi
 
-t "Claude and Codex model stages resolve through their agent bindings"
+t "Claude model stages resolve through the agent bindings"
 claude_model=$(python3 "$ROOT/$RENDERER" --root "$ROOT" --runtime claude --model-stage task_reviewer)
-codex_model=$(python3 "$ROOT/$RENDERER" --root "$ROOT" --runtime codex --model-stage task_reviewer)
-if [ "$claude_model" = "claude-opus-5-5" ] && [ "$codex_model" = "gpt-5.6-terra" ]; then
+if [ "$claude_model" = "claude-opus-5-5" ]; then
   pass
 else
-  fail "unexpected task-reviewer models — claude=[$claude_model] codex=[$codex_model]"
+  fail "unexpected task-reviewer model — claude=[$claude_model]"
 fi
 
 t "live shared sources have zero owned runtime-entry exceptions"

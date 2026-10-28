@@ -22,8 +22,6 @@ the checked binding, then execute the emitted command:
 ```bash
 # Claude Code
 python3 scripts/render_runtime_entry.py --runtime claude --skill feature-intake --prompt '<case prompt>'
-# Codex
-python3 scripts/render_runtime_entry.py --runtime codex --skill feature-intake --prompt '<case prompt>'
 # then check the emitted Lane / Confidence / Escalate against the Expected row
 ```
 

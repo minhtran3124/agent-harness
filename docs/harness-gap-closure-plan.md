@@ -127,4 +127,4 @@ Raised by research, now resolved at the mechanism level:
 2. **Phase 2** after P1 settles: P2-E closes the Q3 design hole; P2-F/G/H need small decisions (light Rule-4).
 3. **Phase 3** — one spec per item; P3-I (benchmark) is the most valuable long-term investment but the heaviest.
 
-**Not doing:** importer/migration (IDEA-11), making the Codex/Cursor mirrors agnostic, approval-gated loop, memory daemon — the research all concluded these are a non-fit for a one-person dogfood.
+**Not doing:** importer/migration (IDEA-11), making the Cursor mirrors agnostic, approval-gated loop, memory daemon — the research all concluded these are a non-fit for a one-person dogfood.

@@ -112,27 +112,14 @@ if runs:
 fi
 
 # ============================================================
-# Source 3: bounded cached Codex runtime diagnosis. This hook only displays an
-# outside-hook result; it never runs the doctor or decides enforcement itself.
-# ============================================================
-_runtime_section=""
-# Source checkout keeps runtime/ at the repo root; deployed Claude consumers
-# receive it under .claude/runtime/ (deploy-harness payload). Probe both.
-_RUNTIME_MODE="$RUN_STATE_ROOT/runtime/runtime_mode.py"
-[ -f "$_RUNTIME_MODE" ] || _RUNTIME_MODE="$RUN_STATE_ROOT/.claude/runtime/runtime_mode.py"
-if [ -f "$_RUNTIME_MODE" ]; then
-    _runtime_section=$(cd "$RUN_STATE_ROOT" && python3 "$_RUNTIME_MODE" context --root "$RUN_STATE_ROOT" --limit 500 2>/dev/null)
-fi
-
-# ============================================================
 # Combine — emit only if at least one source has content.
 # ============================================================
-if [ -z "$_kb_section" ] && [ -z "$_runs_section" ] && [ -z "$_runtime_section" ]; then
+if [ -z "$_kb_section" ] && [ -z "$_runs_section" ]; then
     exit 0
 fi
 
 _context=""
-for _section in "$_kb_section" "$_runs_section" "$_runtime_section"; do
+for _section in "$_kb_section" "$_runs_section"; do
     [ -z "$_section" ] && continue
     if [ -n "$_context" ]; then
         _context=$(printf '%s\n\n---\n\n%s' "$_context" "$_section")

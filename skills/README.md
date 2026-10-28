@@ -7,11 +7,7 @@ This file is the single source of truth for overview, workflow, and cross-skill 
 ## Runtime entry syntax
 
 Skill names in this repository are semantic and runtime-neutral. At an entry boundary, the checked
-binding renders `/skill-name` for Claude Code and `$skill-name` for the **Codex advisory alpha**.
-Shared skills must not hard-code either form. Codex support is not GA or peer enforcement: the
-outside-hook doctor may report `enforced` only for a complete, current, trusted, observed local
-combination; Linux and WSL remain advisory while their platform evidence is unobserved. Installation
-and lifecycle details live in the harness repo's `docs/codex-alpha-install.md`.
+binding renders `/skill-name` for Claude Code. Shared skills must not hard-code the form.
 
 ---
 

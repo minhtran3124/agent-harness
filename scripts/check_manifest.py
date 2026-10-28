@@ -116,8 +116,8 @@ def check(root: Path) -> int:
         problem("agent_bindings", "missing agent_bindings object")
     else:
         declared_runtimes = set(agent_binding_spec.get("runtimes", []))
-        if declared_runtimes != {"claude", "codex"}:
-            problem("agent_bindings", "runtimes must be exactly claude and codex")
+        if declared_runtimes != {"claude"}:
+            problem("agent_bindings", "runtimes must be exactly claude")
         try:
             contracts = json.loads(
                 (root / agent_binding_spec["contracts"]).read_text()
