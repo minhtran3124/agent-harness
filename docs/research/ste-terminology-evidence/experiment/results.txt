@@ -1,0 +1,15 @@
+==========================================================================
+H1  §2 modality: does 'must' beat 'should' when a constraint competes?
+  round 1 (no competing constraint)       should 5/5   must 5/5   p=1.0000
+  round 2 (code freeze + foreign file)    should 0/10   must 4/10   p=0.0867
+==========================================================================
+H2  §3 vague acceptance: does a measurable criterion beat 'is it correct?'
+  round 1 (obvious defect)     vague 5/5   measurable 5/5   p=1.0000
+  round 2 sonnet (debatable)   vague 0/5   measurable 5/5   p=0.0079
+  round 2 opus  (debatable)    vague 1/3   measurable 3/3   p=0.4000
+  round 2 POOLED (n=8/arm)     vague 1/8   measurable 8/8   p=0.0014
+==========================================================================
+H3  §1 one concept = one word: does mixed check/verify/confirm/validate hurt?
+  round 1 (easy traps)         mixed 20/20   one-verb 16/16   diff=+0%
+  round 2 (read-proof traps)   mixed 20/20   one-verb 20/20   diff=+0%
+==========================================================================

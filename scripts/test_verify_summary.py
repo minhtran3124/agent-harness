@@ -1205,19 +1205,6 @@ class TestRedGreen:
         no_header = _lane_summary(lane="normal", verify=REAL_LANE_VERIFY)
         assert vs._red_green_issue(no_header) is None
 
-    def test_red_green_no_message_for_existing_non_bug_fix_summaries(self, monkeypatch):
-        specs = Path(__file__).resolve().parent.parent / "specs"
-        paths = sorted(specs.glob("*/SUMMARY.md"))
-        assert paths, "no specs/*/SUMMARY.md found"
-        for value in ("", "1"):
-            monkeypatch.setenv("REQUIRE_RED_TEST", value)
-            for path in paths:
-                text = path.read_text(encoding="utf-8")
-                input_type = (vs._header_value(text, "Input-type") or "").strip().lower()
-                if vs._BUG_FIX_INPUT_RE.match(input_type):
-                    continue
-                assert _red_green_messages(text) == [], path
-
 
 # ---------------------------------------------------------------------------
 # Fix-diff check: a bug fix must change code after the red commit

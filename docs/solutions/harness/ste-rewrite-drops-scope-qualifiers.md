@@ -78,5 +78,5 @@ proposed: add a meaning-equivalence instruction for changed prose files to `skil
 
 - docs/solutions/harness/plan-anchored-task-review-misses-fixture-fitted-bugs.md
 - docs/solutions/harness/mutation-testing-proves-a-suite-is-load-bearing.md
-- specs/ste-terminology-evidence/DECISION.md
+- docs/research/ste-terminology-evidence/DECISION.md
 - specs/ste100-harness-prose/DECISION.md

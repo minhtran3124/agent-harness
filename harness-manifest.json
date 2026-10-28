@@ -73,18 +73,6 @@
     "artifact-schema-plan":    { "surface": ["rules/plan-format.md", "scripts/check_plan_contract.py"], "consumers": ["skills/visual-planner/render_plan.py", "skills/writing-plans/SKILL.md", "skills/implement/SKILL.md"], "desc": "PLAN.md task and context-contract schema" },
     "lane-evidence-mapping":   { "surface": ["scripts/verify_summary.py"],      "consumers": ["skills/feature-intake/SKILL.md", "rules/auto-correct-scope.md"],                               "desc": "lane -> required evidence mapping" },
     "research-depth-policy":   { "surface": ["rules/research-depth.md"],       "consumers": ["skills/xia2/SKILL.md"],                                                                            "desc": "intake lane -> xia2 research-depth mapping" },
-    "runtime-neutral-sources": {
-      "surface": [
-        "specs/codex-support/neutralization-inventory.json",
-        "scripts/check_runtime_neutral_sources.py"
-      ],
-      "consumers": [
-        "scripts/test_check_runtime_neutral_sources.py",
-        "scripts/run-tests.sh",
-        "specs/codex-support-phase-3/PLAN.md"
-      ],
-      "desc": "owned inventory of runtime-specific shared-source coupling and Phase-5 entry exceptions"
-    },
     "agent-runtime-bindings": {
       "surface": [
         "agents/agent-contracts.json",
