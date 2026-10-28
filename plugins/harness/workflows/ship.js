@@ -205,6 +205,7 @@ const decisions = []   // the only place decisions live; agents never write ADR 
 const str = v => (typeof v === 'string' && v.trim() ? v : 'n/a')
 function takeDecisions(ticket, stage, res) {
   for (const d of (res && res.decisions) || []) {
+    if (!d || typeof d !== 'object') continue
     const flagged = !!(d.contradicts_confirmed || d.dangerous)
     const title = str(d.title)   // only the agent labels a decision Boundary; a skip for another reason keeps its own title
     decisions.push({
@@ -247,7 +248,8 @@ function runBoundaryText() {
   if (!ns.length) return ''
   const body = ns.map(n => `Ticket #${n}\n` + boundaryText('', boundaries[n]).replace(`\n${BOUNDARY_RULE}\n`, '').trim()).join('\n\n')
   return `Boundary (union over the tickets in this run):\n${body}\n` +
-    `A fix that would touch a file outside this set, or contradict an Out of scope line, changes nothing: return fix_status skipped and a decisions[] entry whose title starts with '${BOUNDARY_PREFIX}' and needs_review true.\n`
+    `The test that proves your fix is always allowed, even when the list above does not name it; the file set limits production files only. ` +
+    `A fix that would touch a production file outside this set, or contradict an Out of scope line, changes nothing: return fix_status skipped and a decisions[] entry whose title starts with '${BOUNDARY_PREFIX}' and needs_review true.\n`
 }
 
 const capSummary = v => { const x = (typeof v === 'string' ? v : '').replace(/\s+/g, ' ').trim(); return x.length > 200 ? `${x.slice(0, 199)}…` : x }
@@ -506,7 +508,7 @@ async function stageReview(finalPr) {
       takeDecisions('run', 'review-fix', res)
       if (res && res.fix_status === 'fixed' && res.commit) { commits.push(res); out.fixed.push({ id: f.id, summary: f.summary, commit: res.commit }) }
       else {
-        const bd = res && res.fix_status === 'skipped' && (res.decisions || []).find(d => typeof d.title === 'string' && d.title.startsWith(BOUNDARY_PREFIX))
+        const bd = res && res.fix_status === 'skipped' && (res.decisions || []).find(d => d && typeof d.title === 'string' && d.title.startsWith(BOUNDARY_PREFIX))
         const reason = bd ? `needs your decision: ${bd.title}` : (res && res.summary) || 'fix agent returned nothing'
         out.notFixed.push({ id: f.id, summary: f.summary, reason })
       }

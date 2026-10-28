@@ -543,6 +543,16 @@ test('o2: a skipped fix whose decision is not a boundary keeps its title and is 
   assert(result.review.notFixed[0].reason.includes('SKIP-REASON-TEXT') && !result.review.notFixed[0].reason.includes('Boundary'))
 })
 
+test('o3: fix prompt allows the proving test and a null decision entry does not throw', async () => {
+  const { calls, result } = await run({}, c => {
+    if (c.label === 'intent:1') return intentOos(c)
+    if (c.label === 'review:r0') return ok({ findings: [{ id: 'F1', summary: 'FINDING-SUM', score: 90 }], skill_invoked: true })
+    if (c.label.startsWith('fix:')) return ok({ fix_status: 'skipped', summary: 'SKIP-REASON-TEXT', decisions: [null, { context: 'no title' }] })
+  })
+  assert(named(calls, /^fix:/)[0].prompt.includes('test that proves your fix is always allowed'), 'test exemption in fix prompt')
+  assert(result.review.notFixed[0].reason.includes('SKIP-REASON-TEXT'))
+})
+
 test('p: Needs your decision sits above Summary and is omitted when empty', async () => {
   const withGap = await run({}, c => (c.label === 'intent-review' ? { verdict: 'gaps found', findings: [{ kind: 'excess', behaviour_changing: true, clause: 'CL-EXCESS', detail: 'did more' }, { kind: 'excess', clause: 'CL-QUIET', detail: 'harmless' }] } : undefined))
   const p = named(withGap.calls, /^adr$/)[0].prompt
