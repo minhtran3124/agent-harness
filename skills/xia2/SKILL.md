@@ -14,7 +14,7 @@ brief. It runs on the Haiku `researcher` agent.
 1. Read `AGENTS.md`, `CLAUDE.md` and `README.md` if present. Search `docs/solutions/` and `docs/adr/`
    for related work.
 2. Detect the stack and versions from manifests. Map local reuse, extension points, tests and
-   configuration. Do not stop after one empty search.
+   configuration.
 3. Look outside the repo only when the change has an external surface: it adds or upgrades a
    dependency, integrates an external system, or relies on a version-specific API. Then read
    the version-matched official docs and one or two upstream implementations. Failure to reach them

@@ -23,7 +23,7 @@ Each step is small enough for one fresh subagent and carries:
 
 ## Steps to write the plan
 
-1. Map the files to create or change and follow the existing patterns. No unrelated refactors.
+1. Map the files to create or change and follow the existing patterns.
 2. Put the checks first: for each behavior the goal needs, write the command that proves it.
 3. Split the work into steps, test first where it applies. Give each its Files, Effort,
    Done-when and group.

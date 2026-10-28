@@ -13,14 +13,14 @@ Replace each secret with `<REDACTED>` before you show or write a command or an o
 
 ## Scope
 
-Every lane runs all six phases. No "cause known" shortcut exists.
+Every depth (S, M, L) runs all six phases. No "cause known" shortcut exists.
 
 ## Isolation
 
-Create the lane's isolation before Phase 1.
-On the tiny lane, run `git checkout -b fix/<slug>` only from a shared branch.
+Create the isolation before Phase 1.
+At depth S, run `git checkout -b fix/<slug>` only from a shared branch.
 Otherwise keep the current branch.
-On the normal and high-risk lanes, run `using-git-worktrees`.
+At depth M and L, run `using-git-worktrees`.
 Do every probe, harness and fix edit there, never on a shared branch.
 
 ## Phases
@@ -57,11 +57,11 @@ After a second failure, stop and ask the owner.
 
 ## Phases 5 and 6
 
-5. **Fix.** On the tiny lane, write the red test at the `diagnosis.md` `Seam:`.
+5. **Fix.** At depth S, write the red test at the `diagnosis.md` `Seam:`.
    Commit the red test. Then commit the fix.
    Report the red and green commands and their exit codes in your final message.
    When `diagnosis.md` has `Seam: none — <reason>`, write `Red test exempt: <reason>` in your final message.
-   On the normal and high-risk lanes, continue the lane route with `diagnosis.md` as an input.
+   At depth M and L, continue with `writing-plans` and `implement`, with `diagnosis.md` as an input.
    Done when: the red test commit comes before the fix commit, or the final message has `Red test exempt: <reason>`.
 6. **Cleanup.** Run the Phase 1 loop again.
    Search for `[DEBUG-` in the fix diff and in the working tree, untracked files included.

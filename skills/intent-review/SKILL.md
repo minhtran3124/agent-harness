@@ -7,7 +7,7 @@ allowed-tools: Read, Grep, Glob, Agent, Task, Bash(git diff *), Bash(git log *),
 # Intent Review
 
 This is the one plan-blind check. It asks: would the person who wrote the request recognise this
-diff as what they asked for? It is not a bug hunt or a style review.
+diff as what they asked for?
 
 ## Inputs
 
