@@ -13,7 +13,7 @@ SPEC.loader.exec_module(renderer)
 ROOT = SCRIPT.parents[1]
 
 LEGACY_CLAUDE = {
-    "coding": {"model": "claude-opus-5-5", "effort": "medium", "tools": None},
+    "coding": {"model": "claude-sonnet-5-5", "effort": "medium", "tools": None},
     "reviewer": {
         "model": "claude-opus-5-5",
         "effort": "medium",
@@ -34,6 +34,20 @@ LEGACY_CLAUDE = {
             "WebSearch",
             "Bash",
         ],
+    },
+    "researcher": {
+        "model": "claude-haiku-5-5",
+        "tools": ["Glob", "Grep", "Read", "Bash", "WebFetch", "WebSearch"],
+    },
+    "advisor": {
+        "model": "claude-opus-5-5",
+        "effort": "high",
+        "tools": ["Glob", "Grep", "Read"],
+    },
+    "intent-reviewer": {
+        "model": "claude-sonnet-5-5",
+        "effort": "medium",
+        "tools": ["Glob", "Grep", "Read", "Bash"],
     },
 }
 
@@ -166,7 +180,7 @@ def test_missing_capability_mapping_is_rejected(tmp_path):
         renderer.validate(root)
 
 
-@pytest.mark.parametrize("role", ["reviewer", "task-reviewer", "test-runner"])
+@pytest.mark.parametrize("role", ["reviewer", "task-reviewer", "test-runner", "researcher", "advisor", "intent-reviewer"])
 def test_mcp_tool_on_mcp_none_role_is_rejected(tmp_path, role):
     root = clone_root(tmp_path)
     path = root / "agents/runtime-bindings.json"

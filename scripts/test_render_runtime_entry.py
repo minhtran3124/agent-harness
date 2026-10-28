@@ -49,7 +49,7 @@ def test_paired_model_label_golden_output():
     ) == "claude-opus-5-5"
     assert entry.model_label(
         binding, agents, "claude", "correctness_scorer"
-    ) == "claude-opus-5-5"
+    ) == "claude-sonnet-5-5"
 
 
 def test_missing_runtime_or_model_stage_is_rejected(tmp_path):

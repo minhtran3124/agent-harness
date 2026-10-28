@@ -173,7 +173,7 @@
     "writing-plans", "xia2"
   ],
 
-  "agents": ["coding", "reviewer", "task-reviewer", "test-runner"],
+  "agents": ["coding", "reviewer", "task-reviewer", "test-runner", "researcher", "advisor", "intent-reviewer"],
 
   "agent_bindings": {
     "contracts": "agents/agent-contracts.json",
