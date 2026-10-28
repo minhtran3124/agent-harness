@@ -5,7 +5,8 @@
 #   Keeps every existing key and every existing allow entry (their order first), appends the
 #   harness rules if they are missing, and writes nothing when nothing is missing (idempotent).
 #   A missing file is created as {} first. --dry-run prints the diff and changes nothing.
-# Exit: 0 done or already merged, 1 usage, 2 the file is not valid JSON (file untouched),
+# Exit: 0 done or already merged, 1 usage, 2 the file is not a valid JSON object or its permissions
+#       is not an object or its allow/deny is not an array (file untouched),
 #       3 jq is not installed. Needs jq. Bash 3.2 safe. jq rewrites the file with 2-space indent.
 set -eu
 
@@ -23,6 +24,8 @@ DENY='["Bash(gh pr merge --admin*)","Bash(gh pr merge * --admin*)","Bash(gh pr m
 if [ -f "$FILE" ]; then
   jq -e 'type == "object"' "$FILE" >/dev/null 2>&1 \
     || { echo "merge-allow: $FILE is not a valid JSON object; not touching it" >&2; exit 2; }
+  jq -e '(.permissions // {}) | type == "object" and ((.allow // []) | type == "array") and ((.deny // []) | type == "array")' "$FILE" >/dev/null 2>&1 \
+    || { echo "merge-allow: $FILE has a permissions, allow or deny value of the wrong type; not touching it" >&2; exit 2; }
   CUR=$(cat "$FILE")
 else
   CUR='{}'

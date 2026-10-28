@@ -61,6 +61,15 @@ printf '%s' '[1,2]' > "$d/s.json"
 bash "$SCRIPT" "$d/s.json" >/dev/null 2>&1; rc=$?
 if [ "$rc" -eq 2 ]; then pass; else fail "rc=$rc"; fi
 
+t "wrong-typed permissions, allow or deny exit 2 and leave the file untouched"
+d=$(work); ok=1
+for body in '{"permissions":[]}' '{"permissions":"x"}' '{"permissions":{"allow":"x"}}' '{"permissions":{"deny":{}}}'; do
+  printf '%s' "$body" > "$d/s.json"
+  bash "$SCRIPT" "$d/s.json" >/dev/null 2>&1; rc=$?
+  if [ "$rc" -ne 2 ] || [ "$(cat "$d/s.json")" != "$body" ]; then ok=0; echo "body=$body rc=$rc"; fi
+done
+if [ "$ok" -eq 1 ]; then pass; else fail "wrong exit or file changed"; fi
+
 t "--dry-run prints a diff naming the rule and leaves an existing file unchanged"
 d=$(work)
 printf '%s' '{"model":"sonnet"}' > "$d/s.json"

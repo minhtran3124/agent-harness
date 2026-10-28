@@ -18,7 +18,7 @@ Run once per project, after `claude plugin install harness@agent-harness`. Work 
 3. **Deny rules.** A plugin cannot ship `permissions.deny`, so merge it into the project settings.
    Run `bash ${CLAUDE_SKILL_DIR}/scripts/merge-deny.sh --dry-run ${CLAUDE_PROJECT_DIR}/.claude/settings.json`
    and show the diff. After the owner agrees, run it again without `--dry-run`. It needs `jq`
-   (exit 3 if missing) and refuses a file that is not valid JSON (exit 2, file untouched). It adds
+   (exit 3 if missing) and refuses a file that is not valid JSON or whose permissions, allow or deny has the wrong type (exit 2, file untouched). It adds
    these rules and keeps every existing one: `.env` read and edit, force-push, push to main or master.
 4. **Merge allow rule (optional).** Offer one rule, `Bash(gh pr merge *)`, in the owner's untracked
    `${CLAUDE_PROJECT_DIR}/.claude/settings.local.json`. Run
