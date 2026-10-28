@@ -52,6 +52,7 @@ CONSUMER_SCRIPTS=(
   "check_open_questions.py"
   "run_at_commit.py"
   "apply_model_config.py"
+  "write_adrs.py"
 )
 # Data read by the above. NOTE: agents/*.json and adapters/ are source-time adapter inputs and must
 # NEVER deploy — tests/scripts/{deploy-prune,install-harness}.test.sh pin that
