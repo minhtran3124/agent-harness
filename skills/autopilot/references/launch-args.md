@@ -3,6 +3,11 @@
 Pass `args` as a JSON object (not a string). `scriptPath` is absolute: a named workflow was not
 found mid-session (`docs/adr/0001-workflow-capabilities.md`, decision 4).
 
+Which file: `<repoDir>/workflows/ship.js` in the harness source repo, and
+`<repoDir>/.claude/workflows/ship.js` in a repo that installed the harness (the deploy copies
+`workflows/` into `.claude/`). Check with `ls`; use the one that exists. If neither exists, stop
+and tell the owner the harness is not installed.
+
 ```text
 { repo: "owner/name", repoDir: "/abs/path", remote: "origin", base: "<base>",
   slug: "<milestone-or-ticket slug>",
