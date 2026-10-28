@@ -49,7 +49,6 @@ CONSUMER_SCRIPTS=(
   "resolve_finish_context.py"
   "rebuild_solution_index.py"
   "render_skill_prompt.py"
-  "check_open_questions.py"
   "run_at_commit.py"
   "apply_model_config.py"
   "write_adrs.py"

@@ -1,8 +1,7 @@
 <!--
   Open-questions register. Copy to specs/<slug>/QUESTIONS.md (usually the parent spec of a
   multi-phase effort). Optional: only non-blocking unknowns that a later phase must close.
-  Checked by scripts/check_open_questions.py --slug <slug> when <slug> ships: an open question
-  whose closes-at names that slug is reported (warn-first; REQUIRE_QUESTIONS_CLOSED=1 blocks).
+  A later phase closes each question at its closes-at phase.
 -->
 
 # <slug> — Open questions

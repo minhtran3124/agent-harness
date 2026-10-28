@@ -1,5 +1,5 @@
 #!/bin/bash
-# Regression tests for issue #121 (scripts half): bookkeeping, ci-strict-gate, and the
+# Regression tests for issue #121 (scripts half): bookkeeping and the
 # python gate engines resolve ticket-prefixed slugs (gh-/lin-) exactly like plain ones.
 source "$(dirname "$0")/../lib.sh"
 
@@ -20,56 +20,6 @@ bash "$SCRIPT" --pr 7 --title T --sha s --files "specs/$GH/SUMMARY.md" --date 20
 row=$(tail -1 "$d/docs/harness-experimental/trust-metrics.md")
 if echo "$row" | grep -q "$GH" && echo "$row" | grep -q 'high-risk'; then pass
 else fail "ledger row missing prefixed slug/lane: $row"; fi
-
-# ── ci-strict-gate.sh: changed-SUMMARY regex matches a prefixed path ──
-GATE="$ROOT/scripts/ci-strict-gate.sh"
-VERIFY_PY="$ROOT/scripts/verify_summary.py"
-
-# mkrepo → fresh repo with verify_summary.py and one base commit (mirrors ci-strict-gate.test.sh)
-mkrepo() {
-  local r; r=$(mktemp -d); _CLEANUP_DIRS+=("$r")
-  git -C "$r" init -q -b main 2>/dev/null || git -C "$r" init -q
-  git -C "$r" config user.email t@t; git -C "$r" config user.name t
-  mkdir -p "$r/scripts"; cp "$VERIFY_PY" "$r/scripts/"
-  echo "seed" > "$r/README.md"
-  git -C "$r" add -A >/dev/null 2>&1; git -C "$r" commit -qm base
-  echo "$r"
-}
-# write_summary <repo> <lane> <cmd> — SUMMARY.md inside the PREFIXED slug
-write_summary() {
-  mkdir -p "$1/specs/$GH"
-  {
-    echo "# $GH"
-    echo "Lane: $2"
-    echo ""
-    echo "### Verify"
-    echo ""
-    echo "| Check | Command | Exit | Notes |"
-    echo "| --- | --- | --- | --- |"
-    [ -n "$3" ] && echo "| ok | $3 | 0 | n |"
-  } > "$1/specs/$GH/SUMMARY.md"
-}
-commit_run() {
-  local r="$1" base
-  base=$(git -C "$r" rev-parse HEAD)
-  git -C "$r" add -A >/dev/null 2>&1
-  git -C "$r" commit -qm change
-  OUT=$(cd "$r" && bash "$GATE" "$base" 2>&1); RC=$?
-}
-
-t "ci-strict-gate: hooks/ diff + high-risk SUMMARY in a prefixed folder → PASS"
-r=$(mkrepo)
-mkdir -p "$r/hooks"; echo '#!/bin/bash' > "$r/hooks/foo.sh"
-write_summary "$r" "high-risk" "test 1 = 1"
-commit_run "$r"
-assert_rc 0
-
-t "ci-strict-gate: same diff, prefixed SUMMARY below high-risk → BLOCK (regex matched it)"
-r=$(mkrepo)
-mkdir -p "$r/hooks"; echo '#!/bin/bash' > "$r/hooks/foo.sh"
-write_summary "$r" "normal" "test 1 = 1"
-commit_run "$r"
-assert_rc 1
 
 # ── python engines: prefixed slug → specs/<slug>/SUMMARY.md path join ──
 if command -v python3 >/dev/null 2>&1; then

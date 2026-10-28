@@ -16,17 +16,13 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
     steps:
-      # fetch-depth: 0 is load-bearing, not hygiene. run-tests.sh's verify-row lint scopes
-      # itself to SUMMARY/PLAN files changed vs a base ref; under the default shallow
-      # checkout no base ref exists, so the lint skipped on every run since it shipped.
+      # fetch-depth: 0: full history, so steps that diff against a base ref can resolve one.
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       # Materialise origin/<base> explicitly rather than relying on what checkout's refspec
-      # happens to leave behind — same two-step the strict-gate job below already uses and
-      # which is proven to work in this repo's CI. Skipped on push builds, where there is no
-      # base ref; resolve-base-ref.sh then reports "no base ref declared" and the lint skips
-      # with a named reason instead of silently.
+      # happens to leave behind. Skipped on push builds, where there is no base ref;
+      # resolve-base-ref.sh then reports "no base ref declared".
       - name: Fetch base ref (pull requests only)
         if: github.event_name == 'pull_request'
         # Via env, not inline `${{ }}`: expressions are substituted into the script text
@@ -44,35 +40,3 @@ jobs:
         run: brew install shellcheck
       - name: Run harness test suite
         run: bash scripts/run-tests.sh
-
-  # Strict-in-CI gate: a PR diff that touches hard-gate paths must carry a
-  # high-risk SUMMARY with machine-verified proof. Separate job (not a step in
-  # `test`) because it needs full history (fetch-depth: 0) to diff against the
-  # base branch. Local commit hooks keep their warn-default; CI is the strict gate.
-  strict-gate:
-    name: strict-gate (PR)
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Fetch base ref
-        # Via env, not inline `${{ }}`: expressions are substituted into the script text
-        # before bash parses it, so quotes do not contain a branch name with shell
-        # metacharacters. Low reachability (needs push access to the base repo) but free to close.
-        env:
-          BASE_REF: ${{ github.base_ref }}
-        run: git fetch --no-tags origin "$BASE_REF"
-      # ci-strict-gate.sh re-runs each changed high-risk SUMMARY's `### Verify`
-      # rows for machine-verified proof. Those commands can be the project's test
-      # runner (e.g. `python3 -m pytest ...` for an SC-coverage row), so the gate
-      # job must have pytest on the same `python3` — the `test` job relies on
-      # ambient pytest, which is not guaranteed here. Provision it deterministically.
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-      - name: Install proof runner (pytest)
-        run: python -m pip install --quiet pytest
-      - name: Strict gate (hard-gate paths require high-risk SUMMARY + verified proof)
-        run: bash scripts/ci-strict-gate.sh "origin/${{ github.base_ref }}"

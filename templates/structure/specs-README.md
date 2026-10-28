@@ -34,7 +34,7 @@ this line if you change it.
 | `ESCALATIONS.md` | any skill that escalates | Only when a hard gate or ambiguity stops the work.
   Deny-on-no-response: a commit touching the slug is blocked while a `decision: pending` block stands. |
 | `QUESTIONS.md` | `brainstorming` (multi-phase specs) | Non-blocking unknowns, each with a `closes-at` phase.
-  Checked at ship by `scripts/check_open_questions.py`; blocking questions stay in `ESCALATIONS.md`. |
+  Blocking questions stay in `ESCALATIONS.md`. |
 | `design.md` | `brainstorming` | Approved design — the WHAT and WHY |
 | `research-brief.md` | `xia2` | What already exists, alternatives, lightest path |
 | `diagnosis.md` | `diagnosing-bugs` | Bug fixes only — ranked hypotheses committed before the first probe, the confirmed root cause, and the test seam |
