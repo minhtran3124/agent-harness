@@ -31,12 +31,8 @@ CONTEXT_MATRIX = {
     },
     "intent-controller": {
         "path": "skills/intent-review/SKILL.md",
-        "required": ["rules/auto-correct-scope.md"],
-    },
-    "intent-reviewer": {
-        "path": "skills/intent-review/intent-reviewer-prompt.md",
-        "required": ["rules/review-policy.md"],
-        "required_reads": ["rules/review-policy.md"],
+        "required": [],
+        "rationale": "Plan-blind by design: the reviewer gets only the request and the diff range, so it receives no rules or plan text.",
     },
 }
 

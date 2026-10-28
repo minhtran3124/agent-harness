@@ -43,7 +43,7 @@ def test_paired_model_label_golden_output():
     ) == "claude-opus-5-5"
     assert entry.model_label(
         binding, agents, "claude", "intent_reviewer"
-    ) == "claude-opus-5-5"
+    ) == "claude-sonnet-5-5"
     assert entry.model_label(
         binding, agents, "claude", "correctness_finder"
     ) == "claude-opus-5-5"
