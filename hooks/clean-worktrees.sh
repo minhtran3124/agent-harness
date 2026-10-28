@@ -15,16 +15,14 @@ start=$(pwd -P)
 root=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || exit 0
 root=${root%/.git}; cd "$root" || exit 0
 keep=" main master $(git symbolic-ref -q --short HEAD) "
-declare -A wt
-while read -r key val; do
-  case $key in worktree) path=$val ;; branch) wt[${val#refs/heads/}]=$path ;; esac
-done < <(git worktree list --porcelain)
+# bash 3.2 (macOS) has no associative arrays: look the worktree path up per branch.
+wt_of() { git worktree list --porcelain | awk -v b="refs/heads/$1" '/^worktree /{p=substr($0,10)} $0=="branch " b{print p; exit}'; }
 out=""
 for b in $(git for-each-ref --format='%(refname:short)' refs/heads); do
   case "$keep" in *" $b "*) continue ;; esac
   tip=$(git rev-parse -q --verify "refs/heads/$b") || continue
   case " $(gh pr list --head "$b" --state merged --json headRefOid --jq '.[].headRefOid' 2>/dev/null | tr '\n' ' ') " in *" $tip "*) ;; *) continue ;; esac
-  p=${wt[$b]:-}
+  p=$(wt_of "$b")
   if [ -n "$p" ]; then
     [ "$p" = "$root" ] && continue
     case "$start/" in "$p"/*) out+="kept $b: the session runs in $p"$'\n'; continue ;; esac
