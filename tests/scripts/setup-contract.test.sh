@@ -20,6 +20,12 @@ if grep -q '${CLAUDE_PLUGIN_ROOT}/scripts/init-structure.sh' "$SKILL" \
    && grep -q 'agents/PROJECT.md' "$SKILL" && grep -q 'merge-deny.sh' "$SKILL" \
    && grep -q '\.gitignore' "$SKILL" && grep -q 'specs/' "$SKILL"; then pass; else fail "a setup step is missing"; fi
 
+t "SKILL.md offers the gh pr merge allow rule through merge-allow.sh and limits writes to settings.local.json"
+flat=$(tr '\n' ' ' < "$SKILL" | tr -s ' ')
+if grep -qF 'merge-allow.sh' "$SKILL" && grep -qF 'settings.local.json' "$SKILL" && grep -qF 'Bash(gh pr merge *)' "$SKILL" \
+   && printf '%s' "$flat" | grep -qF 'only after the owner says yes'; then pass
+else fail "the allow-rule step or its closing wording is missing"; fi
+
 t "SKILL.md asks before deleting an old install and deletes only listed paths"
 if grep -q 'AskUserQuestion' "$SKILL" && grep -q 'old-install.sh' "$SKILL" && grep -q 'only those paths' "$SKILL"; then pass
 else fail "the approval step is missing"; fi
