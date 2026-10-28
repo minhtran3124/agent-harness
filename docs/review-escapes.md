@@ -1,7 +1,7 @@
 # Review-Escape Ledger
 
 **The rule:** every post-push finding by an **external or heterogeneous reviewer** — one that
-did not run inside our local review chain (e.g. an external AI reviewer on a GitHub PR: a different
+did not run inside our local review chain (e.g. Codex reviewing a GitHub PR: a different
 model + harness, with no inherited Claude plan assumptions) — becomes **(a)** a durable row in
 the table below **and (b)** either a regression fixture/test that would now catch it, or a
 documented won't-fix.
@@ -22,6 +22,6 @@ new escape becomes a fixture.
 
 | date | PR | finder | class | severity | fixture | status |
 |---|---|---|---|---|---|---|
-| 2026-07-21 | PR #141 | external AI reviewer | context-propagation | P1 | `evals/skills/review-chain/fixtures/context-rule-unread/` | fixed (d61e155) + fixture (gh-143 wave 1) |
-| 2026-07-21 | PR #141 | external AI reviewer | stale-inline-policy | P2 | `evals/skills/review-chain/fixtures/stale-inline-policy/` | fixed (1c0f01d) + fixture (gh-143 wave 1) |
-| 2026-07-22 | PR #153 | external AI reviewer | missing-regression-guard | P1 | `tests/scripts/scorer-threshold-contract.test.sh` | fixed (test added in PR #153) |
+| 2026-07-21 | PR #141 | Codex | context-propagation | P1 | `evals/skills/review-chain/fixtures/context-rule-unread/` | fixed (d61e155) + fixture (gh-143 wave 1) |
+| 2026-07-21 | PR #141 | Codex | stale-inline-policy | P2 | `evals/skills/review-chain/fixtures/stale-inline-policy/` | fixed (1c0f01d) + fixture (gh-143 wave 1) |
+| 2026-07-22 | PR #153 | Codex | missing-regression-guard | P1 | `tests/scripts/scorer-threshold-contract.test.sh` | fixed (test added in PR #153) |

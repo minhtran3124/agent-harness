@@ -194,7 +194,7 @@ stage "$repo" "specs/x/SUMMARY.md" "Lane: normal"
 run_hook "$repo" $H "$COMMIT_JSON"
 assert_rc_contains 2 "BLOCKED"
 
-t "UNSTAGED worktree mode=warn does NOT loosen — index rules (exit 2, external review PR#160)"
+t "UNSTAGED worktree mode=warn does NOT loosen — index rules (exit 2, Codex PR#160)"
 repo=$(new_repo $H)
 # committed manifest says block; worktree edit flips to warn but is never staged
 stage "$repo" "harness-manifest.json" '{"hard_gates":{"detectable":[{"slug":"data-loss/migration","mode":"block"}]}}'
