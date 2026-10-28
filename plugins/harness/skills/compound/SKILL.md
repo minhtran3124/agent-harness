@@ -65,6 +65,8 @@ python3 ${CLAUDE_PLUGIN_ROOT}/scripts/rebuild_solution_index.py
 
 Do not manually scan/sort/render `INDEX.md`. It excludes INDEX/critical patterns, preserves exact
 frontmatter values, and offers `--check`/`--dry-run` for review.
+`applicable_when` is required in every solution file. Run `python3 plugins/harness/scripts/rebuild_solution_index.py --check`
+and, in the harness repo, `python3 scripts/check_frontmatter_contract.py` before you finish. Details are in `docs/solutions/README.md`.
 
 Finally, verify that `CLAUDE.md` and rules make the knowledge base discoverable. If they do not,
 propose the documented knowledge-base section. Do not add it silently. Report the tracks emitted,
