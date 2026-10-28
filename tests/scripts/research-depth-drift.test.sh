@@ -7,17 +7,14 @@
 # `- none (local-only; no external surface)` when it does not. That definition is
 # now stated in three places, because agents read the skill and fill the template —
 # they do not read rules/research-depth.md. Three copies of one definition with no
-# guard is exactly the `stale-inline-policy` escape the review-chain fixture pins.
+# guard is exactly the stale-inline-policy escape (a copy drifting from its registry).
 #
 # Registry: rules/research-depth.md. Copies: the two xia2 files an agent actually
-# loads. Same discipline as tests/scripts/inline-policy-drift.test.sh (Rule-4 STOP
-# list) — parse to per-concept anchor keywords, assert each is present in the
+# loads. Parse to per-concept anchor keywords, assert each is present in the
 # registry AND every copy, then mutation-check ourselves so the lint is provably
 # load-bearing.
 #
-# DIVISION OF LABOR: inline-policy-drift.test.sh guards the Rule-4 STOP case set;
-# scorer-threshold-contract.test.sh guards the scorer threshold number; this file
-# guards the external-surface trigger set. Do not merge them.
+# This file guards the external-surface trigger set.
 #
 # Keyword, not phrase: wording may legitimately differ between a rule's prose and a
 # skill's imperative step. Each KEYWORD is a case-insensitive SUBSTRING that must be

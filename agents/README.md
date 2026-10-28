@@ -9,7 +9,7 @@ returnable work. Each agent is a focused role. Anything project-specific lives i
 | Agent | Role | Model class | Dispatched by |
 |---|---|---|---|
 | `implementer` | Implement/refactor/fix code, end-to-end | implementation high-capability | `implement`, ad-hoc |
-| `reviewer` | Structurally read-only review passes (correctness-review, the correctness scorer, and intent-review) | review high-capability | review skills |
+| `reviewer` | Structurally read-only review passes (a generic read-only review pass) | review high-capability | review skills |
 | `task-reviewer` | Read-only per-task spec + quality review, and the diagnosis review | review high-capability | `implement`, `diagnosing-bugs` |
 | `test-runner` | Run the minimal relevant tests and report/diagnose results | test-execution fast | after implementation, and the `implement` `cannot_verify` retry |
 | `researcher` | Read-only search and fact-finding for triage and xia2; returns facts with `file:line` or URL | search fast | triage, `xia2` |

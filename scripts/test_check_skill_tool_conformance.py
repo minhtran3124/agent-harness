@@ -277,7 +277,7 @@ def test_default_output_is_unchanged_by_the_flag(tmp_path):
     assert "{" not in human.stderr
 
 
-# ── correctness-review fixes: every finding below was reproduced by a review angle ───────
+# ── review-angle fixes: every finding below was reproduced by a review angle ───────
 
 
 def test_json_is_emitted_on_missing_manifest(tmp_path):

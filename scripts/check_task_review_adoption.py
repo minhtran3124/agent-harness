@@ -13,7 +13,6 @@ def main() -> int:
     commands = [
         [sys.executable, "scripts/check_task_review_contract.py"],
         ["bash", "tests/scripts/task-reviewer-readonly.test.sh"],
-        ["bash", "tests/scripts/final-review-package-contract.test.sh"],
         ["bash", "scripts/lint-doc-truth.sh"],
     ]
     failed = [" ".join(command) for command in commands if subprocess.run(command, cwd=ROOT).returncode]

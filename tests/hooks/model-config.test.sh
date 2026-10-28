@@ -7,30 +7,30 @@ source "$(dirname "$0")/../lib.sh"
 
 H=model-config.sh
 AGENT=.claude/agents/implementer.md
-SKILL=.claude/skills/correctness-review/SKILL.md
+SKILL=.claude/skills/intent-review/SKILL.md
 
 # consumer_repo [--no-snapshot] [--no-applier] — echoes a temp repo with a deployed .claude/.
 consumer_repo() {
   local d; d=$(mktemp -d); _CLEANUP_DIRS+=("$d")
   git -C "$d" init -q 2>/dev/null
   mkdir -p "$d/.claude/hooks" "$d/.claude/scripts" "$d/.claude/agents" \
-    "$d/.claude/skills/correctness-review"
+    "$d/.claude/skills/intent-review"
   cp "$ROOT/hooks/$H" "$d/.claude/hooks/"
   case " $* " in *" --no-applier "*) ;; *)
     cp "$ROOT/scripts/apply_model_config.py" "$d/.claude/scripts/" ;; esac
   printf '%s\n' '---' 'name: implementer' 'description: Write code.' 'model: sonnet' '---' '' 'Body.' \
     > "$d/$AGENT"
-  printf '%s\n' '---' 'name: correctness-review' 'description: Review a diff.' '---' '' 'Body.' \
+  printf '%s\n' '---' 'name: intent-review' 'description: Review a diff.' '---' '' 'Body.' \
     > "$d/$SKILL"
   case " $* " in *" --no-snapshot "*) ;; *)
-    printf '%s\n' '{"agents": {"implementer": {"model": "sonnet"}}, "skills": {"correctness-review": {}}}' \
+    printf '%s\n' '{"agents": {"implementer": {"model": "sonnet"}}, "skills": {"intent-review": {}}}' \
       > "$d/.claude/harness-models.defaults.json" ;; esac
   echo "$d"
 }
 
 # Valid user file: one agent effort and one skill effort (spec SC-1/SC-11 shape).
 user_valid() {
-  printf '%s\n' '{"agents": {"implementer": {"effort": "high"}}, "skills": {"correctness-review": {"effort": "high"}}}' \
+  printf '%s\n' '{"agents": {"implementer": {"effort": "high"}}, "skills": {"intent-review": {"effort": "high"}}}' \
     > "$1/harness-models.json"
 }
 

@@ -12,7 +12,7 @@ asked for?
 - Read the diff with `git diff <range>`, and the code around it.
 - Do not read the plan, and ignore any plan text in the prompt. A plan can carry the same
   misreading you are here to catch.
-- Do not hunt bugs or judge style. The correctness review does that.
+- Do not hunt bugs or judge style. `/code-review` does that.
 - Check every clause of the request, including each `- [ ]` task and each "Done when" line of an
   issue. Quote the clause in each finding.
 

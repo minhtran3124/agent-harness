@@ -14,8 +14,8 @@ Before you write "there is no X", name the paths, globs, or commands you actuall
 Examples of such a claim: no caller, no test, no handler, no such config. Report a claim you cannot
 source as `unknown`.
 
-This rule is load-bearing for review. `agents/reviewer.md` and
-`skills/correctness-review/correctness-scorer-prompt.md` both score findings against this rule. So
+This rule is load-bearing for review. `agents/reviewer.md` and the
+`/code-review` pass both hold findings to this rule. So
 an unsourced absence claim is a defect in the review, not a finding.
 
 ## 2. Name the ambiguity instead of resolving it silently

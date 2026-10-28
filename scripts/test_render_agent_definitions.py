@@ -265,7 +265,7 @@ def test_defaults_out_snapshot_matches_claude_bindings_and_source_skills(
     assert snapshot["schema_version"] == 1
     assert snapshot["agents"] == expected_agents
     source_skills = {p.parent.name for p in (ROOT / "skills").glob("*/SKILL.md")}
-    assert {"xia2", "feature-intake", "correctness-review"} <= source_skills
+    assert {"xia2", "feature-intake", "intent-review"} <= source_skills
     assert snapshot["skills"] == {name: {} for name in source_skills}
     assert set(snapshot) == {"schema_version", "agents", "skills"}
     assert text == json.dumps(snapshot, indent=2, sort_keys=True) + "\n"

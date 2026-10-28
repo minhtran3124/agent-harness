@@ -13,8 +13,6 @@ from typing import Any
 
 RUNTIMES = {"claude"}
 EXPECTED_STAGES = {
-    "correctness_finder",
-    "correctness_scorer",
     "implementer",
     "intent_reviewer",
     "task_reviewer",

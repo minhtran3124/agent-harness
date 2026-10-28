@@ -1,8 +1,6 @@
 {
   "schema_version": 1,
   "model_stages": {
-    "correctness_finder": "reviewer",
-    "correctness_scorer": "implementer",
     "implementer": "implementer",
     "intent_reviewer": "intent-reviewer",
     "task_reviewer": "task-reviewer"

@@ -15,20 +15,6 @@ CONTEXT_MATRIX = {
         "path": "skills/implement/implementer-prompt.md",
         "required": ["rules/auto-correct-scope.md"],
     },
-    "correctness-controller": {
-        "path": "skills/correctness-review/SKILL.md",
-        "required": ["rules/auto-correct-scope.md"],
-    },
-    "correctness-reviewer": {
-        "path": "skills/correctness-review/prompts/shared.md",
-        "required": ["rules/auto-correct-scope.md", "rules/review-policy.md"],
-        "required_reads": ["rules/review-policy.md"],
-    },
-    "correctness-scorer": {
-        "path": "skills/correctness-review/correctness-scorer-prompt.md",
-        "required": [],
-        "rationale": "Scores evidence only; Rule classification and fix routing occur after scoring in the controller.",
-    },
     "intent-controller": {
         "path": "skills/intent-review/SKILL.md",
         "required": [],
@@ -78,16 +64,6 @@ def check_all(root: Path) -> list[str]:
                     f"missing required policy Read: {context} -> {spec['path']} -> {token}"
                 )
 
-    config = root / "skills/correctness-review/review-config.json"
-    try:
-        data = json.loads(read(config))
-        angles = data.get("finder_angles")
-        if not isinstance(angles, list) or len(set(angles)) != 6:
-            errors.append("invalid correctness finder-angle config")
-        if data.get("default_threshold") != 75 or data.get("minimum_threshold") != 60:
-            errors.append("invalid correctness threshold config")
-    except (ValueError, json.JSONDecodeError):
-        errors.append("missing or unreadable correctness review config")
     return errors
 
 
