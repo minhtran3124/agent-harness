@@ -88,6 +88,7 @@ while IFS= read -r cmd; do
   case "$cmd" in
     '$CLAUDE_PROJECT_DIR/'*) cmd="${cmd#\$CLAUDE_PROJECT_DIR/}"; cmd="${cmd#.claude/}" ;;
   esac
+  cmd="${cmd%% *}"   # a command may carry arguments (hooks/clean-worktrees.sh PostToolUse)
   [ -f "$cmd" ] || err "settings.json registers a command that does not exist: $cmd"
 done < <(jq -r '.hooks[]?[]?.hooks[]?.command // empty' settings.json)
 
