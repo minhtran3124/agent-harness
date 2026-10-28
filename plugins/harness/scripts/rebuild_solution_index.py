@@ -48,6 +48,18 @@ def build(root: Path) -> str:
         out.append("")
     return "\n".join(out).rstrip() + "\n"
 
+APPLICABLE_WHEN_EXEMPT = {"INDEX.md", "critical-patterns.md", "README.md"}
+
+
+def missing_applicable_when(root: Path) -> list[str]:
+    """Relative paths of solution files whose applicable_when is absent or blank (exempt files skipped)."""
+    base = root / "docs/solutions"
+    if not base.is_dir():
+        return []
+    return [path.relative_to(base).as_posix() for path in sorted(base.rglob("*.md"))
+            if path.name not in APPLICABLE_WHEN_EXEMPT and not frontmatter(path).get("applicable_when", "").strip()]
+
+
 def _default_root() -> Path:
     """The directory the script is run from: the plugin lives in a cache, so the script path says nothing about the repo."""
     return Path.cwd()
@@ -57,9 +69,14 @@ def main() -> int:
     p = argparse.ArgumentParser(); p.add_argument("--root", type=Path, default=_default_root()); p.add_argument("--check", action="store_true"); p.add_argument("--dry-run", action="store_true"); args=p.parse_args()
     output = build(args.root.resolve()); path=args.root.resolve()/"docs/solutions/INDEX.md"
     if args.check:
+        failed = False
+        for rel in missing_applicable_when(args.root.resolve()):
+            print(f"solution-index: {rel} is missing applicable_when", file=sys.stderr); failed = True
         mask = lambda t: re.sub(r"^(> Last updated: )\d{4}-\d{2}-\d{2}", r"\1YYYY-MM-DD", t, count=1, flags=re.M)
         if not path.is_file() or mask(path.read_text(encoding="utf-8")) != mask(output):
-            print("solution-index: INDEX.md is stale", file=sys.stderr); return 1
+            print("solution-index: INDEX.md is stale", file=sys.stderr); failed = True
+        if failed:
+            return 1
         print("solution-index: INDEX.md is current"); return 0
     if args.dry_run:
         print(output, end=""); return 0
