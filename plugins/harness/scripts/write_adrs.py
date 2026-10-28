@@ -267,8 +267,6 @@ def main() -> int:
         adr_dir = Path(args.adr_dir)
         template = load_template(adr_dir)
         merged = dedupe(validate(data))
-        if args.table_out:
-            Path(args.table_out).write_text(decisions_table(merged))
         kept = [d for d in merged if needs_adr(d)]
         items = plan({**data, "decisions": kept}, adr_dir, template, datetime.date.today().isoformat()) if kept else []
         if not args.dry_run:
@@ -276,6 +274,8 @@ def main() -> int:
             for it in items:
                 if Path(it["path"]).exists():
                     raise BadInput(f"refusing to overwrite {it['path']}")
+            if args.table_out:
+                Path(args.table_out).write_text(decisions_table(merged))
             for it in items:
                 with open(it["path"], "x") as f:
                     f.write(it["_text"])

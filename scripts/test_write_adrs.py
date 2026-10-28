@@ -279,3 +279,11 @@ def test_six_decisions_give_two_adr_files_and_five_table_rows(tmp_path):
     rows = [l for l in table.read_text().splitlines() if l.startswith("| #")]
     assert len(rows) == 5
     assert sum("owner-confirmed" in l for l in rows) == 1
+
+
+def test_table_out_not_written_on_dry_run(tmp_path):
+    adr, inp = setup(tmp_path, [dec(confidence="low", title="Guessed")])
+    table = tmp_path / "t.md"
+    r = run(adr, inp, "--dry-run", "--table-out", str(table))
+    assert r.returncode == 0, r.stderr
+    assert not table.exists()
