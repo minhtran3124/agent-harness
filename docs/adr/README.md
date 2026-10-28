@@ -13,7 +13,7 @@ only writer.
 ## Which decisions get a file
 
 Not every decision gets a file. `write_adrs.py` first merges duplicates (same ticket and the same
-title slug or identical non-empty context; the lowest `confidence` is kept, a tie keeps the first,
+title slug or identical non-empty context; the highest `confidence` is kept (high, then medium, then low), a tie keeps the first,
 `needs_review` carries over, and `owner_confirmed` survives only if every merged item has it). It
 then writes a file for a decision that has `needs_review: true`, or a `confidence` other than
 `high` and is not `owner_confirmed`. Every merged

@@ -213,38 +213,29 @@ def test_different_ticket_not_merged():
     assert len(w.dedupe([dec(title="Same", ticket=1), dec(title="Same", ticket=2)])) == 2
 
 
-def test_merge_keeps_lowest_confidence_and_ties_to_first():
+def test_merge_keeps_highest_confidence_and_ties_to_first():
     w = wa()
-    out = w.dedupe([dec(title="Same", confidence="high", decision="first"),
-                    dec(title="Same", confidence="low", decision="second"),
-                    dec(title="Same", confidence="low", decision="third")])
-    assert len(out) == 1 and out[0]["decision"] == "second"
+    out = w.dedupe([dec(title="Same", confidence="low", decision="first"),
+                    dec(title="Same", confidence="high", decision="second"),
+                    dec(title="Same", confidence="high", decision="third")])
+    assert len(out) == 1 and out[0]["decision"] == "second" and out[0]["confidence"] == "high"
     tie = w.dedupe([dec(title="Same", decision="first"), dec(title="Same", decision="second")])
     assert tie[0]["decision"] == "first"
-
-
-def test_merge_keeps_detail_of_confident_item_and_lowest_confidence():
-    w = wa()
-    out = w.dedupe([dec(title="Same", confidence="high", decision="real decision", why="real why"),
-                    dec(title="Same", confidence="low", decision="n/a", why="n/a", consequences="n/a")])
-    assert len(out) == 1
-    assert out[0]["decision"] == "real decision" and out[0]["why"] == "real why"
-    assert out[0]["confidence"] == "low"
 
 
 def test_merge_carries_needs_review():
     w = wa()
     out = w.dedupe([dec(title="Same", confidence="high", needs_review=False),
                     dec(title="Same", confidence="low", needs_review=True)])
-    assert out[0]["confidence"] == "low" and out[0]["needs_review"] is True
+    assert out[0]["confidence"] == "high" and out[0]["needs_review"] is True
 
 
 def test_merge_owner_confirmed_only_when_all_confirmed():
     w = wa()
     mixed = w.dedupe([dec(title="Same", confidence="high", owner_confirmed=True),
                       dec(title="Same", confidence="low")])
-    assert mixed[0]["confidence"] == "low" and not mixed[0].get("owner_confirmed")
-    assert w.needs_adr(mixed[0])
+    assert mixed[0]["confidence"] == "high" and not mixed[0].get("owner_confirmed")
+    assert not w.needs_adr(mixed[0])
     both = w.dedupe([dec(title="Same", owner_confirmed=True), dec(title="Same", owner_confirmed=True)])
     assert both[0]["owner_confirmed"] is True
 
@@ -304,6 +295,6 @@ def test_table_out_not_written_on_dry_run(tmp_path):
 def test_skill_doc_matches_dedupe_and_owner_confirmed_rules():
     skill = (SCRIPT.parent.parent / "skills/decision-record/SKILL.md").read_text()
     flat = " ".join(skill.split())
-    assert "Keep the lowest `confidence`" in flat
-    assert "highest `confidence`" not in flat
+    assert "highest `confidence`" in flat
+    assert "lowest `confidence`" not in flat
     assert "`needs_review` wins over `owner_confirmed`" in flat
