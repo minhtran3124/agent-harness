@@ -20,6 +20,24 @@ See `rules/behavior.md` — that file is the single source of truth (deployed to
 
 Claude Code is the only supported runtime.
 
+## Models
+
+- Main session: Sonnet 5.5. Coding: Sonnet 5.5 (`coding` agent). Testing: Haiku 5.5
+  (`test-runner`). Research and search: Haiku 5.5 (`researcher`). Intent review: Sonnet 5.5
+  (`intent-reviewer`).
+- Advisor (`advisor`): Opus 5.5 by default. Use Fable 5.1 only when the Opus advice did not
+  unblock the work, for a high-stakes architecture decision, or when the owner asks.
+- The orchestrator chooses the model and the effort for each subagent and each workflow agent,
+  based on how hard the task is. Effort is not fixed.
+- Call the advisor when:
+  - the ticket depth is L, or the ticket is important (design or plan review, before implement);
+  - the same check fails twice after a fix;
+  - an agent reports BLOCKED or low confidence;
+  - a decision would become an ADR with `needs_review`;
+  - a grilling session reaches a deep design tree.
+- Workflow agents cannot spawn agents, so the script or the main session calls the advisor.
+- Per-role models live in `agents/runtime-bindings.json`; `harness-models.json` overrides them.
+
 ## Skill Workflow
 
 `feature-intake` runs first and **routes by lane** — it decides how much of the chain below

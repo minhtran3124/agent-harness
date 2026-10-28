@@ -54,6 +54,39 @@
       "context_policy": "fresh-bounded",
       "model_class": "test-execution-fast",
       "output_contract": "test-counts-failures-diagnostics"
+    },
+    "researcher": {
+      "source": "agents/researcher.md",
+      "filesystem": "read-only",
+      "shell": "read-only-inspection",
+      "network": "documentation-read-only",
+      "mcp": "none",
+      "nested_delegation": false,
+      "context_policy": "fresh-bounded",
+      "model_class": "search-fast",
+      "output_contract": "facts-with-file-line-or-url"
+    },
+    "advisor": {
+      "source": "agents/advisor.md",
+      "filesystem": "read-only",
+      "shell": "none",
+      "network": "none",
+      "mcp": "none",
+      "nested_delegation": false,
+      "context_policy": "fresh-bounded",
+      "model_class": "advice-high-capability",
+      "output_contract": "recommendation-with-reasons"
+    },
+    "intent-reviewer": {
+      "source": "agents/intent-reviewer.md",
+      "filesystem": "read-only",
+      "shell": "read-only-inspection",
+      "network": "none",
+      "mcp": "none",
+      "nested_delegation": false,
+      "context_policy": "fresh-bounded",
+      "model_class": "review-standard",
+      "output_contract": "gap-drift-excess-findings-and-verdict"
     }
   }
 }

@@ -12,6 +12,9 @@ returnable work. Each agent is a focused role. Anything project-specific lives i
 | `reviewer` | Structurally read-only review passes (correctness-review, the correctness scorer, and intent-review) | review high-capability | review skills |
 | `task-reviewer` | Read-only per-task spec + quality review, and the diagnosis review | review high-capability | `subagent-driven-development`, `diagnosing-bugs` |
 | `test-runner` | Run the minimal relevant tests and report/diagnose results | test-execution fast | after implementation, and the `subagent-driven-development` `cannot_verify` retry |
+| `researcher` | Read-only search and fact-finding for triage and xia2; returns facts with `file:line` or URL | search fast | triage, `xia2` |
+| `advisor` | Read-only second opinion on one question; returns a recommendation with reasons | advice high-capability | orchestrator, on the advisor triggers in `CLAUDE.md` |
+| `intent-reviewer` | Plan-blind check of a diff against the owner's verbatim request (gap / drift / excess) | review standard | `intent-review` |
 
 ## Portability model (mirrors xia2)
 
