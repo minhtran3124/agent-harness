@@ -124,7 +124,6 @@ def test_description_without_cue_fails(tmp_path):
 
 def test_cue_is_case_insensitive_and_word_bounded(tmp_path):
     passing = [
-        "description: Does alpha. Use it for alpha.",
         "description: Does alpha. WHEN alpha is needed.",
         "description: does alpha. when needed.",
         "description: >\n  Does alpha\n  across lines. Use when asked.",
@@ -137,6 +136,7 @@ def test_cue_is_case_insensitive_and_word_bounded(tmp_path):
         "description: Helps with reuse of alpha.",
         "description: Runs whenever alpha changes.",
         "description: Serves the user alpha.",
+        "description: Does alpha. Use it for alpha.",
     ]
     for desc in failing:
         build(tmp_path, skill=f"---\nname: alpha\n{desc}\n---\n\n# Alpha\n")
