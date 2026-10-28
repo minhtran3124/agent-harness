@@ -68,13 +68,6 @@ assert_rc_contains 0 'Untracked .py'
 t "git push → commit-only checks stay silent (only check_untracked_py acts)"
 assert_rc_not_contains 0 'COMMIT GATE'
 
-t "strict: Codex Bash/unified-exec shape reaches the same git checks"
-repo=$(new_repo $H)
-printf 'x\n' > "$repo/loose.py"
-payload=$(jq -cn '{turn_id:"turn-redacted",hook_event_name:"PreToolUse",tool_name:"Bash",tool_input:{command:"git push origin main"}}')
-run_hook_args "$repo" $H "$payload" --profile strict
-assert_rc_contains 0 'Untracked .py'
-
 t "malformed Bash payload fails closed instead of fast-pathing"
 repo=$(new_repo $H)
 run_hook "$repo" $H '{not-json'
@@ -84,7 +77,7 @@ assert_rc_contains 2 'if the payload itself is malformed'
 
 t "missing command fails closed with an actionable diagnostic"
 repo=$(new_repo $H)
-run_hook "$repo" $H '{"turn_id":"t","hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{}}'
+run_hook "$repo" $H '{"session_id":"t","hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{}}'
 assert_rc_contains 2 'command-missing'
 
 # Wrapped/prefixed commit commands reach the checks through real stdin JSON — the shared

@@ -14,13 +14,6 @@
         "executable": "claude"
       },
       "skill_prefix": "/"
-    },
-    "codex": {
-      "cli": {
-        "arguments": ["exec", "{prompt}"],
-        "executable": "codex"
-      },
-      "skill_prefix": "$"
     }
   }
 }

@@ -71,10 +71,10 @@ def clone_root(tmp_path: Path) -> Path:
     return root
 
 
-def test_contracts_and_both_runtime_bindings_are_total():
+def test_contracts_and_runtime_bindings_are_total():
     contracts, bindings = renderer.validate(ROOT)
     required = set(contracts["required_capabilities"])
-    for runtime in ("claude", "codex"):
+    for runtime in ("claude",):
         assert set(bindings["runtimes"][runtime]["roles"]) == set(contracts["roles"])
         for binding in bindings["runtimes"][runtime]["roles"].values():
             assert set(binding["capabilities"]) == required
@@ -136,47 +136,6 @@ def test_rendered_roles_retain_load_bearing_substance(tmp_path):
         assert text  # rendered file is non-empty
 
 
-def test_codex_render_emits_strict_profiles_and_explicit_policy(tmp_path):
-    out = tmp_path / "agents"
-    written = renderer.render_codex(ROOT, out)
-    assert [path.name for path in written] == [
-        "coding.toml",
-        "reviewer.toml",
-        "task-reviewer.toml",
-        "test-runner.toml",
-    ]
-
-    required_capabilities = (
-        "filesystem",
-        "shell",
-        "network",
-        "mcp",
-        "nested_delegation",
-        "context_policy",
-        "model_class",
-        "output_contract",
-    )
-    for path in written:
-        profile = renderer.parse_codex_profile(path.read_text())
-        assert profile["name"] == path.stem.replace("-", "_")
-        assert profile["model"] in renderer.CODEX_MODELS
-        assert profile["model_reasoning_effort"] in renderer.CODEX_EFFORTS
-        assert profile["sandbox_mode"] in renderer.CODEX_SANDBOXES
-        for capability in required_capabilities:
-            assert f"- {capability}:" in profile["developer_instructions"]
-
-    reviewer = renderer.parse_codex_profile((out / "reviewer.toml").read_text())
-    assert reviewer["sandbox_mode"] == "read-only"
-    assert reviewer["mcp_servers"] == {}
-    assert reviewer["agents"]["enabled"] is False
-
-    test_runner = renderer.parse_codex_profile(
-        (out / "test-runner.toml").read_text()
-    )
-    assert test_runner["mcp_servers"] == {}
-    assert test_runner["agents"]["enabled"] is False
-
-
 def test_reviewer_profiles_are_read_only_no_nesting_no_mcp_and_fresh_bounded():
     contracts, _ = renderer.validate(ROOT)
     for role in renderer.REVIEW_ROLES:
@@ -191,7 +150,7 @@ def test_missing_runtime_role_is_rejected(tmp_path):
     root = clone_root(tmp_path)
     path = root / "agents/runtime-bindings.json"
     data = json.loads(path.read_text())
-    del data["runtimes"]["codex"]["roles"]["reviewer"]
+    del data["runtimes"]["claude"]["roles"]["reviewer"]
     path.write_text(json.dumps(data))
     with pytest.raises(renderer.ContractError, match="role set"):
         renderer.validate(root)
@@ -341,22 +300,19 @@ def test_defaults_out_with_output_dir_keeps_render_bytes(tmp_path, monkeypatch):
     }
 
 
-@pytest.mark.parametrize(
-    "extra", [["--check"], ["--runtime", "codex", "--output-dir", "codex-out"]]
-)
-def test_defaults_out_rejects_check_and_codex(tmp_path, monkeypatch, extra):
+def test_defaults_out_rejects_check(tmp_path, monkeypatch):
     out = tmp_path / "defaults.json"
-    extra = [str(tmp_path / arg) if arg == "codex-out" else arg for arg in extra]
-    assert run_main(monkeypatch, "--root", ROOT, "--defaults-out", out, *extra) == 1
+    assert (
+        run_main(monkeypatch, "--root", ROOT, "--defaults-out", out, "--check") == 1
+    )
     assert not out.exists()
-    assert not (tmp_path / "codex-out").exists()
 
 
 def test_incomplete_unsupported_exception_is_rejected(tmp_path):
     root = clone_root(tmp_path)
     path = root / "agents/runtime-bindings.json"
     data = json.loads(path.read_text())
-    value = data["runtimes"]["codex"]["roles"]["test-runner"]["capabilities"]
+    value = data["runtimes"]["claude"]["roles"]["test-runner"]["capabilities"]
     value["mcp"] = {"status": "unsupported-exception"}
     path.write_text(json.dumps(data))
     with pytest.raises(renderer.ContractError, match="incomplete unsupported"):

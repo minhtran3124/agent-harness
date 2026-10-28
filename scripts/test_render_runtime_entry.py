@@ -34,9 +34,6 @@ def test_paired_skill_cli_golden_output():
     assert entry.cli_command(
         binding, "claude", "feature-intake", "<case prompt>"
     ) == "claude -p '/feature-intake <case prompt>' --output-format text"
-    assert entry.cli_command(
-        binding, "codex", "feature-intake", "<case prompt>"
-    ) == "codex exec '$feature-intake <case prompt>'"
 
 
 def test_paired_model_label_golden_output():
@@ -51,23 +48,17 @@ def test_paired_model_label_golden_output():
         binding, agents, "claude", "correctness_finder"
     ) == "claude-opus-5-5"
     assert entry.model_label(
-        binding, agents, "codex", "task_reviewer"
-    ) == "gpt-5.6-terra"
-    assert entry.model_label(
         binding, agents, "claude", "correctness_scorer"
     ) == "claude-opus-5-5"
-    assert entry.model_label(
-        binding, agents, "codex", "correctness_scorer"
-    ) == "gpt-5.6-sol"
 
 
 def test_missing_runtime_or_model_stage_is_rejected(tmp_path):
     root = clone_inputs(tmp_path)
     path = root / "adapters/runtime-entry-bindings.json"
     value = json.loads(path.read_text())
-    del value["runtimes"]["codex"]
+    del value["runtimes"]["claude"]
     path.write_text(json.dumps(value))
-    with pytest.raises(entry.BindingError, match="claude and codex"):
+    with pytest.raises(entry.BindingError, match="must declare claude"):
         entry.validate(root)
 
     root = clone_inputs(tmp_path / "stage")
@@ -104,7 +95,7 @@ def test_unknown_field_or_embedded_prompt_placeholder_is_rejected(tmp_path):
     root = clone_inputs(tmp_path / "prompt")
     path = root / "adapters/runtime-entry-bindings.json"
     value = json.loads(path.read_text())
-    value["runtimes"]["codex"]["cli"]["arguments"] = ["--prompt={prompt}"]
+    value["runtimes"]["claude"]["cli"]["arguments"] = ["--prompt={prompt}"]
     path.write_text(json.dumps(value))
     with pytest.raises(entry.BindingError, match="prompt placeholder"):
         entry.validate(root)
@@ -113,6 +104,8 @@ def test_unknown_field_or_embedded_prompt_placeholder_is_rejected(tmp_path):
 def test_skill_names_are_strict_and_shell_output_is_quoted():
     binding, _ = entry.validate(ROOT)
     with pytest.raises(entry.BindingError, match="kebab-case"):
-        entry.cli_command(binding, "codex", "../../unsafe", "prompt")
-    command = entry.cli_command(binding, "codex", "feature-intake", "has ' quote")
-    assert command == "codex exec '$feature-intake has '\"'\"' quote'"
+        entry.cli_command(binding, "claude", "../../unsafe", "prompt")
+    command = entry.cli_command(binding, "claude", "feature-intake", "has ' quote")
+    assert command == (
+        "claude -p '/feature-intake has '\"'\"' quote' --output-format text"
+    )

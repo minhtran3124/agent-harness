@@ -42,16 +42,7 @@ jobs:
       - name: Install shellcheck (macOS)
         if: runner.os == 'macOS'
         run: brew install shellcheck
-      # This is intentionally explicit even though run-tests.sh discovers the same shell
-      # contract. It makes the Codex alpha boundary a named macOS/Linux CI result; WSL is
-      # not represented by GitHub-hosted CI and therefore remains advisory by contract.
-      - name: Run Codex advisory-alpha contract
-        run: bash tests/scripts/codex-alpha-contract.test.sh
-      # The Codex contract already ran as its own step above — skip it here rather than pay
-      # for it twice per OS.
       - name: Run harness test suite
-        env:
-          HARNESS_SKIP_SUITES: tests/scripts/codex-alpha-contract.test.sh
         run: bash scripts/run-tests.sh
 
   # Strict-in-CI gate: a PR diff that touches hard-gate paths must carry a

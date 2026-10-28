@@ -38,7 +38,7 @@ MANIFEST_OK = {
         "contracts": "agents/agent-contracts.json",
         "bindings": "agents/runtime-bindings.json",
         "renderer": "scripts/render_agent_definitions.py",
-        "runtimes": ["claude", "codex"],
+        "runtimes": ["claude"],
     },
     "contracts": {
         "c1": {"surface": ["settings.json"], "consumers": ["CLAUDE.md"]},
@@ -84,7 +84,6 @@ def build(root: Path, manifest: dict) -> None:
             {
                 "runtimes": {
                     "claude": {"roles": {"reviewer": {"capabilities": capabilities}}},
-                    "codex": {"roles": {"reviewer": {"capabilities": capabilities}}},
                 }
             }
         )
@@ -218,7 +217,7 @@ def test_agent_runtime_capability_mapping_must_be_total(tmp_path):
     build(tmp_path, MANIFEST_OK)
     path = tmp_path / "agents/runtime-bindings.json"
     data = json.loads(path.read_text())
-    del data["runtimes"]["codex"]["roles"]["reviewer"]["capabilities"]["mcp"]
+    del data["runtimes"]["claude"]["roles"]["reviewer"]["capabilities"]["mcp"]
     path.write_text(json.dumps(data))
     r = run(tmp_path)
     assert r.returncode == 1

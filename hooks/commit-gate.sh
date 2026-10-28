@@ -404,7 +404,7 @@ check_risk() {
   # Read the manifest from the INDEX (`git show :path`), not the worktree — the risk
   # signals and the Lane are both index-side, so the mode must be too. Otherwise an
   # UNSTAGED "mode": "warn" edit would loosen a gate for a commit whose tree still
-  # ships block-mode (Codex review, PR #160). INVARIANT #2 (SC-8): mode policy comes
+  # ships block-mode (external review, PR #160). INVARIANT #2 (SC-8): mode policy comes
   # from EXACTLY TWO index-safe sources — the git INDEX here, else the embedded defaults
   # below. NEVER a worktree file and NEVER .claude/harness-manifest.json.
   GATE_MODES=$(git show :harness-manifest.json 2>/dev/null | jq -r \

@@ -152,7 +152,7 @@ fi
 # Suites are hermetic (each works in its own mktemp repo — see tests/lib.sh), so they run
 # in parallel. Each writes its own log, replayed below in glob order so output reads as if
 # serial. HARNESS_TEST_JOBS=1 restores a serial run; HARNESS_SKIP_SUITES (space-separated
-# paths) skips suites the caller already ran — CI runs the Codex contract as its own step.
+# paths) skips suites the caller already ran.
 SUITE_JOBS="${HARNESS_TEST_JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)}"
 SUITE_OUT="$(mktemp -d)"; trap 'rm -rf "$TMP_POST_CUTOFF" "$STEP_LOG" "$SUITE_OUT"' EXIT
 SUITES=()

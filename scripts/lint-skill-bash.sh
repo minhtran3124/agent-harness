@@ -2,7 +2,7 @@
 # Lint the runnable bash in skills/**/*.md: every referenced shell variable must be assigned
 # in the same document, or be a known environment variable.
 #
-# Why this exists (PR #158, Codex P1): trimming `using-git-worktrees` deleted the section that
+# Why this exists (PR #158, external review P1): trimming `using-git-worktrees` deleted the section that
 # assigned `path=...` while a later step still ran
 # `deploy-harness.sh --target "$path"`. Every route into that step reached it with `path`
 # unset, so the command expanded to `--target ""` and `deploy-harness.sh` aborted

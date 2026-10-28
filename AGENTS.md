@@ -10,7 +10,7 @@ This repository is a Claude Code skills framework and workflow harness. The main
 - `rules/` and `templates/` — governance rules and generated-artifact templates.
 - `scripts/` — deployment, installation, linting, and validation utilities.
 - `runtime/` — Python run-state engine (FSM, storage primitives, CLI); synced into `.claude/runtime/` by the deploy script.
-- `adapters/` — generated Codex advisory-alpha adapter inputs and runtime-entry bindings; not a Claude runtime path.
+- `adapters/` — runtime-entry bindings.
 - `techstacks/` — project-owned stack profile read by `rules/architecture.md` and `rules/guidelines.md`; intentionally near-empty in this meta-repo.
 - `tests/hooks/` and `tests/scripts/` — shell contract and integration tests.
 - `scripts/test_*.py`, `runtime/test_*.py`, and `test_*.py` files under `skills/` — Python unit tests.

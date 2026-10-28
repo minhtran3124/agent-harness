@@ -144,7 +144,7 @@ def test_new_commit_makes_receipt_stale(tmp_path, capsys):
 
 def test_specs_only_advance_stays_valid(tmp_path):
     # The plan-shipped bookkeeping commit touches only specs/ — it must NOT stale
-    # a valid receipt (Codex P1 on PR #155): finishing validates, commits the
+    # a valid receipt (external review P1 on PR #155): finishing validates, commits the
     # shipped status, then pushes; the pushed SHA differs only by that commit.
     repo = make_repo(tmp_path)
     slug_dir = write_receipt(repo, "gh-x", valid_data(head_sha(repo)))

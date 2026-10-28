@@ -43,8 +43,6 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
-RUNTIME_MODES = {"enforced", "advisory", "unsupported"}
-RUNTIME_EVIDENCE_ID_RE = re.compile(r"^codex-mode-[0-9a-f]{16}$")
 
 
 class RunStateError(Exception):
@@ -314,22 +312,12 @@ def project(events):
     waiting_on = first.get("waiting_on")
     resume_event = first.get("resume_event")
     sha = first.get("sha")
-    runtime_mode = None
-    runtime_evidence_id = None
-    first_metadata = first.get("metadata")
-    if isinstance(first_metadata, dict):
-        runtime_mode = first_metadata.get("runtime_mode")
-        runtime_evidence_id = first_metadata.get("runtime_evidence_id")
     for ev in events[1:]:
         state = ev["to_state"]
         waiting_on = ev.get("waiting_on")
         resume_event = ev.get("resume_event")
         if ev.get("sha"):
             sha = ev["sha"]
-        metadata = ev.get("metadata")
-        if isinstance(metadata, dict) and "runtime_mode" in metadata:
-            runtime_mode = metadata.get("runtime_mode")
-            runtime_evidence_id = metadata.get("runtime_evidence_id")
     last = events[-1]
     result = {
         "slug": first["slug"],
@@ -343,26 +331,7 @@ def project(events):
         "updated_at": last["ts"],
         "last_event_id": last["event_id"],
     }
-    if runtime_mode is not None and runtime_evidence_id is not None:
-        result["runtime_mode"] = runtime_mode
-        result["runtime_evidence_id"] = runtime_evidence_id
     return result
-
-
-def runtime_metadata(mode, evidence_id):
-    """Validate an optional all-or-nothing sanitized Codex runtime diagnosis."""
-    if mode is None and evidence_id is None:
-        return {}
-    if (
-        mode not in RUNTIME_MODES
-        or not isinstance(evidence_id, str)
-        or not RUNTIME_EVIDENCE_ID_RE.fullmatch(evidence_id)
-    ):
-        raise RunStateError(
-            "--runtime-mode and --runtime-evidence-id must be supplied together "
-            "with a valid Codex runtime diagnosis"
-        )
-    return {"runtime_mode": mode, "runtime_evidence_id": evidence_id}
 
 
 def validate_chain(events, slug, path):
@@ -475,19 +444,12 @@ def validate_chain(events, slug, path):
                     f"a git SHA (7-40 hex chars), got {sha!r}"
                 )
 
-        # 9. Optional runtime diagnosis metadata is an all-or-nothing sanitized
-        # pair. A forged `enforced` projection must not pass chain validation.
+        # 9. Event metadata, when present, must be an object.
         metadata = ev.get("metadata", {})
         if not isinstance(metadata, dict):
             raise StorageError(
                 f"invalid event chain {path}:{n}: metadata is not an object"
             )
-        runtime_mode = metadata.get("runtime_mode")
-        runtime_evidence_id = metadata.get("runtime_evidence_id")
-        try:
-            runtime_metadata(runtime_mode, runtime_evidence_id)
-        except RunStateError as e:
-            raise StorageError(f"invalid event chain {path}:{n}: {e}")
 
         prev = ev
 
@@ -605,7 +567,7 @@ def cmd_init(args):
             "waiting_on": None,
             "resume_event": None,
             "sha": None,
-            "metadata": runtime_metadata(args.runtime_mode, args.runtime_evidence_id),
+            "metadata": {},
         }
         with open(ev_path, "w") as f:
             f.write(json.dumps(event, sort_keys=True) + "\n")
@@ -731,7 +693,6 @@ def _close_run_over_invalid_chain(slug, args, events, chain_error):
         # own audit intent (e.g. "operator.abandon") is still recorded honestly.
         "metadata": {
             **args.meta,
-            **runtime_metadata(args.runtime_mode, args.runtime_evidence_id),
             _CLOSED_OVER_INVALID_CHAIN_KEY: True,
         },
     }
@@ -790,10 +751,6 @@ def cmd_transition(args):
                         and ev.get("waiting_on") == args.waiting_on
                         and ev.get("resume_event") == args.resume_event
                         and ev.get("sha") == args.sha
-                        and ev.get("metadata", {}).get("runtime_mode")
-                        == args.meta.get("runtime_mode")
-                        and ev.get("metadata", {}).get("runtime_evidence_id")
-                        == args.meta.get("runtime_evidence_id")
                     )
                     if same and ev["event_id"] == events[-1]["event_id"]:
                         print(
@@ -832,10 +789,7 @@ def cmd_transition(args):
             "waiting_on": args.waiting_on,
             "resume_event": args.resume_event,
             "sha": args.sha,
-            "metadata": {
-                **args.meta,
-                **runtime_metadata(args.runtime_mode, args.runtime_evidence_id),
-            },
+            "metadata": {**args.meta},
         }
         with open(events_path(slug), "a") as f:
             f.write(json.dumps(event, sort_keys=True) + "\n")
@@ -978,24 +932,12 @@ def cmd_rebuild(args):
     return 0
 
 
-RESERVED_META_KEYS = ("runtime_mode", "runtime_evidence_id")
-
-
 def parse_meta(pairs):
     meta = {}
     for pair in pairs:
         if "=" not in pair:
             raise RunStateError(f"invalid --meta {pair!r}; expected key=value")
         k, v = pair.split("=", 1)
-        # Reserved runtime-diagnosis keys must enter only through the validated
-        # --runtime-mode/--runtime-evidence-id flags: an unvalidated pair would
-        # either be appended and then brick the chain on read (invariant 9), or
-        # forge an enforcement claim the flags path would have rejected.
-        if k in RESERVED_META_KEYS:
-            raise RunStateError(
-                f"--meta may not set reserved key {k!r}; "
-                "use --runtime-mode/--runtime-evidence-id"
-            )
         meta[k] = v
     return meta
 
@@ -1007,8 +949,6 @@ def build_parser():
     p_init = sub.add_parser("init")
     p_init.add_argument("--slug", required=True)
     p_init.add_argument("--run-id")
-    p_init.add_argument("--runtime-mode", choices=sorted(RUNTIME_MODES))
-    p_init.add_argument("--runtime-evidence-id")
 
     p_tr = sub.add_parser("transition")
     p_tr.add_argument("--slug", required=True)
@@ -1019,8 +959,6 @@ def build_parser():
     p_tr.add_argument("--resume-event")
     p_tr.add_argument("--sha")
     p_tr.add_argument("--meta", action="append", default=[])
-    p_tr.add_argument("--runtime-mode", choices=sorted(RUNTIME_MODES))
-    p_tr.add_argument("--runtime-evidence-id")
 
     p_st = sub.add_parser("status")
     p_st.add_argument("--slug", required=True)
@@ -1051,9 +989,6 @@ def main(argv=None):
     try:
         if args.command == "transition":
             args.meta = parse_meta(args.meta)
-            args.meta.update(
-                runtime_metadata(args.runtime_mode, args.runtime_evidence_id)
-            )
         return handlers[args.command](args)
     except RunStateError as e:
         print(str(e), file=sys.stderr)

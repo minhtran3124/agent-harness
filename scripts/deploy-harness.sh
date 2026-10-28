@@ -54,7 +54,7 @@ CONSUMER_SCRIPTS=(
   "apply_model_config.py"
 )
 # Data read by the above. NOTE: agents/*.json and adapters/ are source-time adapter inputs and must
-# NEVER deploy — tests/scripts/{deploy-prune,install-harness,codex-alpha-contract}.test.sh pin that
+# NEVER deploy — tests/scripts/{deploy-prune,install-harness}.test.sh pin that
 # boundary. Anything needing them (render_runtime_entry.py) stays a harness-repo tool; the resolved
 # model already ships baked into each rendered agents/*.md frontmatter.
 CONSUMER_DATA=(

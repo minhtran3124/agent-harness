@@ -16,8 +16,8 @@ active_plan() {
   printf -- '---\nslug: demo\nstatus: active\n---\n# Demo\n' > "$1/specs/demo/PLAN.md"
 }
 
-codex_patch() {
-  jq -cn --arg command "$1" '{turn_id:"turn-redacted",hook_event_name:"PreToolUse",tool_name:"apply_patch",tool_input:{command:$command}}'
+apply_patch_payload() {
+  jq -cn --arg command "$1" '{session_id:"s-redacted",hook_event_name:"PreToolUse",tool_name:"apply_patch",tool_input:{command:$command}}'
 }
 
 t "TINY LANE (no plan at all) on main → DENY (this is the hole that was open)"
@@ -67,27 +67,27 @@ repo=$(new_repo $H); active_plan "$repo"
 run_hook "$repo" $H "$(json_file "$repo/app/x.py")" HARNESS_SHARED_BRANCHES="develop release"
 assert_silent_ok
 
-t "Codex multi-file specs-only patch stays writable on main"
+t "apply_patch multi-file specs-only patch stays writable on main"
 repo=$(new_repo $H)
-payload=$(codex_patch $'*** Begin Patch\n*** Update File: specs/demo/PLAN.md\n*** Add File: specs/demo/SUMMARY.md\n*** End Patch')
+payload=$(apply_patch_payload $'*** Begin Patch\n*** Update File: specs/demo/PLAN.md\n*** Add File: specs/demo/SUMMARY.md\n*** End Patch')
 run_hook "$repo" $H "$payload"
 assert_silent_ok
 
 t "mixed bookkeeping/code patch is denied even when specs path is first"
 repo=$(new_repo $H)
-payload=$(codex_patch $'*** Begin Patch\n*** Update File: specs/demo/PLAN.md\n*** Add File: app/x.py\n*** End Patch')
+payload=$(apply_patch_payload $'*** Begin Patch\n*** Update File: specs/demo/PLAN.md\n*** Add File: app/x.py\n*** End Patch')
 run_hook "$repo" $H "$payload"
 assert_rc_contains 0 '"permissionDecision":"deny"'
 
 t "move/delete patch is denied when any path is implementation"
 repo=$(new_repo $H)
-payload=$(codex_patch $'*** Begin Patch\n*** Update File: specs/demo/old.md\n*** Move to: app/current.py\n*** Delete File: app/unused.py\n*** End Patch')
+payload=$(apply_patch_payload $'*** Begin Patch\n*** Update File: specs/demo/old.md\n*** Move to: app/current.py\n*** Delete File: app/unused.py\n*** End Patch')
 run_hook "$repo" $H "$payload"
 assert_rc_contains 0 'app/current.py'
 
 t "partial traversal patch fails closed on a shared branch"
 repo=$(new_repo $H)
-payload=$(codex_patch $'*** Begin Patch\n*** Update File: specs/demo/PLAN.md\n*** Add File: ../escape.py\n*** End Patch')
+payload=$(apply_patch_payload $'*** Begin Patch\n*** Update File: specs/demo/PLAN.md\n*** Add File: ../escape.py\n*** End Patch')
 run_hook "$repo" $H "$payload"
 assert_rc_contains 0 'could not safely classify'
 assert_rc_contains 0 'source <harness>'
@@ -96,13 +96,13 @@ t "tool_name-less edit payload cannot slip through as an empty shell command"
 # Regression (Phase-4 review F1): a leading newline before the patch marker used to
 # classify as shell/known with zero paths, and the guard allowed it on main.
 repo=$(new_repo $H)
-run_hook "$repo" $H '{"turn_id":"t","hook_event_name":"PreToolUse","tool_input":{"command":"\n*** Begin Patch\n*** Update File: src/app.py\n*** End Patch"}}'
+run_hook "$repo" $H '{"session_id":"t","hook_event_name":"PreToolUse","tool_input":{"command":"\n*** Begin Patch\n*** Update File: src/app.py\n*** End Patch"}}'
 assert_rc_contains 0 'could not safely classify'
 assert_rc_contains 0 'source <harness>'
 
 t "shell-classified payload on the edit matcher is denied, not allowed empty"
 repo=$(new_repo $H)
-run_hook "$repo" $H '{"turn_id":"t","hook_event_name":"PreToolUse","tool_input":{"command":"echo hello"}}'
+run_hook "$repo" $H '{"session_id":"t","hook_event_name":"PreToolUse","tool_input":{"command":"echo hello"}}'
 assert_rc_contains 0 'could not safely classify'
 assert_rc_contains 0 'source <harness>'
 
@@ -114,7 +114,7 @@ assert_rc_contains 0 'source <harness>'
 
 t "partial payload remains allowed on a task branch"
 repo=$(new_repo $H); git -C "$repo" checkout -q -b feature/safe
-payload=$(codex_patch $'*** Begin Patch\n*** Update File: app/x.py\n*** Add File: ../escape.py\n*** End Patch')
+payload=$(apply_patch_payload $'*** Begin Patch\n*** Update File: app/x.py\n*** Add File: ../escape.py\n*** End Patch')
 run_hook "$repo" $H "$payload"
 assert_silent_ok
 
@@ -259,9 +259,9 @@ run_hook "$repo" $H "$(jq -cn --arg f "$repo/specs/x/SUMMARY.md" '{hook_event_na
 assert_rc_contains 0 'could not safely classify'
 assert_rc_contains 0 'source <harness>'
 
-t "no python3: codex apply_patch on main still fails closed"
+t "no python3: apply_patch on main still fails closed"
 repo=$(new_repo $H)
-run_hook "$repo" $H "$(codex_patch $'*** Begin Patch\n*** Update File: specs/demo/PLAN.md\n*** End Patch')" PATH="$NOPY"
+run_hook "$repo" $H "$(apply_patch_payload $'*** Begin Patch\n*** Update File: specs/demo/PLAN.md\n*** End Patch')" PATH="$NOPY"
 assert_rc_contains 0 'could not safely classify'
 assert_rc_contains 0 'source <harness>'
 

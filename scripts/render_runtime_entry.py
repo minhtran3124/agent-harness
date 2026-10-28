@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render checked Claude/Codex skill invocations and model labels."""
+"""Render checked Claude skill invocations and model labels."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-RUNTIMES = {"claude", "codex"}
+RUNTIMES = {"claude"}
 EXPECTED_STAGES = {
     "correctness_finder",
     "correctness_scorer",
@@ -46,7 +46,7 @@ def validate(root: Path) -> tuple[dict[str, Any], dict[str, Any]]:
         raise BindingError("runtime-entry binding contains unknown top-level fields")
     runtimes = binding.get("runtimes")
     if not isinstance(runtimes, dict) or set(runtimes) != RUNTIMES:
-        raise BindingError("runtime-entry binding must declare claude and codex")
+        raise BindingError("runtime-entry binding must declare claude")
     prefixes: set[str] = set()
     for runtime in sorted(RUNTIMES):
         spec = runtimes[runtime]
@@ -55,7 +55,7 @@ def validate(root: Path) -> tuple[dict[str, Any], dict[str, Any]]:
         if set(spec) != {"cli", "skill_prefix"}:
             raise BindingError(f"{runtime}: binding contains unknown fields")
         prefix = spec.get("skill_prefix")
-        if not isinstance(prefix, str) or prefix not in {"/", "$"}:
+        if not isinstance(prefix, str) or prefix != "/":
             raise BindingError(f"{runtime}: unsupported skill prefix")
         prefixes.add(prefix)
         cli = spec.get("cli")
@@ -85,7 +85,7 @@ def validate(root: Path) -> tuple[dict[str, Any], dict[str, Any]]:
         raise BindingError("model stages must reference kebab-case agent roles")
     agent_runtimes = agents.get("runtimes")
     if not isinstance(agent_runtimes, dict) or set(agent_runtimes) != RUNTIMES:
-        raise BindingError("agent runtime bindings must declare claude and codex")
+        raise BindingError("agent runtime bindings must declare claude")
     for runtime in sorted(RUNTIMES):
         roles = agent_runtimes[runtime].get("roles")
         if not isinstance(roles, dict):

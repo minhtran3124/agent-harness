@@ -21,7 +21,7 @@ Written <YYYY-MM-DD>. Pins: <repo short sha the claims were checked against; too
   the inventory of detected versions.
 - A revision keeps every earlier line and appends `Revised <YYYY-MM-DD>. Pins: <…>` directly after
   the last header line, so the lines read oldest first. Earlier lines are never edited.
-- Examples: `Written 2026-10-09. Pins: repo 8af66dd; Codex CLI 0.147.0` and
+- Examples: `Written 2026-10-09. Pins: repo 8af66dd; library 1.2.3` and
   `Revised 2026-10-12. Pins: repo 3c4d5e6 + uncommitted`.
 
 ## Bottom Line

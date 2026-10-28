@@ -299,7 +299,7 @@ unintended defect or outside dependency removed — and the revision is recorded
 
 This corpus should **grow from real escapes**, not only from hand-authored fixtures. The
 review-escape ledger (`docs/review-escapes.md`) records every post-push finding by an external or
-heterogeneous reviewer (e.g. Codex on a GitHub PR) that slipped past the local review chain. The
+heterogeneous reviewer (e.g. an external AI reviewer on a GitHub PR) that slipped past the local review chain. The
 standing rule links the two directions:
 
 - **Ledger row → fixture.** Every escape row whose `status` is *fixed* should have a corresponding

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Normalize Claude/Codex hook JSON into one conservative, path-set contract."""
+"""Normalize Claude hook JSON into one conservative, path-set contract."""
 
 from __future__ import annotations
 
@@ -38,8 +38,6 @@ def _base(runtime: str = "unknown", event: str = "unknown") -> dict[str, Any]:
 
 
 def _runtime(payload: dict[str, Any]) -> str:
-    if isinstance(payload.get("turn_id"), str):
-        return "codex"
     if isinstance(payload.get("session_id"), str):
         return "claude"
     return "unknown"
