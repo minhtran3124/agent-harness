@@ -49,7 +49,7 @@ else fail "manifest deployed at .claude/harness-manifest.json"; fi
 
 t "harness-development scripts are NOT shipped (the subset is an allow-list, not a copy of scripts/)"
 leaked=""
-for f in deploy-harness.sh init-structure.sh harness-audit.sh run-tests.sh; do
+for f in deploy-harness.sh init-structure.sh run-tests.sh; do
   [ -e "$C/scripts/$f" ] && leaked="$leaked $f"
 done
 # its own unit tests must not travel either

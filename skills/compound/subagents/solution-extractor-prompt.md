@@ -67,8 +67,8 @@ FAILURE_TRACK:
     Name a specific, buildable artifact rather than prose like "be careful" or "remember to".
     Use one of two forms:
       existing: <file/hook/rule that ALREADY enforces this> — e.g. "hooks/secrets-scan.sh"
-      proposed: <artifact to BUILD + its target path> — e.g. "a check in scripts/harness-audit.sh
-                that flags a stale plan"
+      proposed: <artifact to BUILD + its target path> — e.g. "a check in scripts/lint-doc-truth.sh
+                that flags a dangling path"
     The ratchet principle: every repeated mistake must become a
     permanent mechanical rule, not a remembered lesson. If no guardrail exists yet, emit a
     `proposed:` one — a failure with no proposed guardrail is incomplete.]
