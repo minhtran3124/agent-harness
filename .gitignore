@@ -19,7 +19,7 @@ CLAUDE.local.md
 # Git worktrees (project-local, isolated feature workspaces)
 .worktrees/
 
-# Claude Code local clone (derived from root via scripts/deploy-harness.sh)
+# Claude Code local folder (user-specific rules and settings; the plugin itself lives in plugins/harness/)
 .claude/
 
 # Timestamped harness backups (created by deploy/install scripts; not tracked)

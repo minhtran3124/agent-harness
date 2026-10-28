@@ -6,8 +6,10 @@ This file is the single source of truth for overview, workflow, and cross-skill 
 
 ## Runtime entry syntax
 
-Skill names in this repository are semantic and runtime-neutral. At an entry boundary, the checked
-binding renders `/skill-name` for Claude Code. Shared skills must not hard-code the form.
+Claude Code is the only runtime. The plugin is named `harness`, so a user types `/harness:<skill>`
+(for example `/harness:intake`) and a subagent type is `harness:<role>`. Prose that tells a model to
+invoke another skill uses the same namespaced name. That the Skill tool resolves a bare name inside a
+plugin is not verified, so the namespaced form is used where a model must invoke a skill.
 
 ---
 
@@ -88,9 +90,9 @@ compound  (when the root cause is a reusable learning — the bug track takes it
 
 ### Setup
 
-No skill covers first-time setup — it is a harness-repo script (never deployed into a project):
-from the harness checkout run `bash scripts/init-structure.sh --root <project>`, which scaffolds
-`specs/` and `docs/solutions/` (create-if-missing). Run it once per repo.
+| Skill | Trigger | Output |
+|---|---|---|
+| `setup` | **User-invoked** (`/harness:setup`), once per project after installing the plugin | `specs/`, `docs/solutions/` and `techstacks/` scaffold files, `agents/PROJECT.md`, the merged `permissions.deny` rules, a `specs/` line in `.gitignore`, and an approved removal of an old copied install |
 
 ### Discovery & Design
 
@@ -184,7 +186,7 @@ reads  ◄── brainstorming  (applicable decisions — avoid re-proposing rej
        ◄── compound       (related-docs pass — overlap by module + tags; high overlap is a recurrence)
 ```
 
-Schema reference: `docs/solutions/README.md` (scaffolded by the harness repo's `scripts/init-structure.sh`).
+Schema reference: `docs/solutions/README.md` (scaffolded by `/harness:setup`).
 
 ---
 
@@ -192,6 +194,7 @@ Schema reference: `docs/solutions/README.md` (scaffolded by the harness repo's `
 
 ## Hooks
 
+`hooks/session-rules.sh` delivers `rules/behavior.md` at session start.
 `hooks/secrets-scan.sh` runs before every `git commit`: it blocks a staged secret pattern or a staged `.env` file.
 `hooks/pr-opened.sh` reminds the main session to review a PR after `gh pr create`, and `hooks/clean-worktrees.sh`
 removes merged worktrees and branches after a merge. The old commit gate is gone; its lane and escalation checks are judgment calls now. `docs/hooks.md` has the detail.
@@ -203,9 +206,7 @@ This is one of several wired hooks — see the full table in the root `CLAUDE.md
 ---
 
 > **Maintainer notes.** Everything below explains how the harness is built and how to fork it.
-> A deployed `.claude/` copy drops this region (deploy-harness.sh → strip_maintenance_docs),
-> along with `skills/compound/README.md`, and `agents/README.md`,
-> which hold the same kind of content in full.
+> `skills/compound/README.md` and the harness repo's `agents/README.md` hold the same kind of content in full.
 
 ## Per-skill Design Rationales
 
@@ -261,6 +262,6 @@ graph LR
 > **One-liner:** research before building. No depth classifier: look locally first, and outside the repo only when the change has an external surface.
 
 - **Portable by design.** Copy `skills/xia2/`; there is no per-project config.
-- **Fork to another project:** copy the folder, then run `bash scripts/init-structure.sh --root <new repo>`. Keep `skills/xia2/tests/behavioural/pressure-scenarios.md`: most scenarios are universal.
+- **Fork to another project:** copy the folder, then run `/harness:setup` in the new repo. Keep `skills/xia2/tests/behavioural/pressure-scenarios.md`: most scenarios are universal.
 
 <!-- harness-only:end -->

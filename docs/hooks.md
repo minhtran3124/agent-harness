@@ -1,13 +1,13 @@
 # Hooks and permissions
 
 The short hook table is in `CLAUDE.md`; `scripts/lint-doc-truth.sh` keeps that table in step with
-`hooks/` and `settings.json`. The harness has three small hooks plus a `permissions.deny` list. Everything else is judgment, not
+`plugins/harness/hooks/` and its `hooks.json`. The harness has four small hooks plus a `permissions.deny` list. Everything else is judgment, not
 a mechanical gate.
 
 ## Hook details
 
-In the `CLAUDE.md` table, wired (✅) means registered in `settings.json` and firing; dormant (⬜)
-means present on disk but not registered. All three hooks fail open: a missing `jq`/`git`, or a
+In the `CLAUDE.md` table, wired (✅) means registered in `plugins/harness/hooks/hooks.json` and firing; dormant (⬜)
+means present on disk but not registered. Each hook is registered in exec form (`bash` plus the script path under `${CLAUDE_PLUGIN_ROOT}/hooks/`), so it needs no execute bit at run time. All four hooks fail open: a missing `jq`/`git`, or a
 payload they cannot parse, lets the action through.
 
 ### `secrets-scan.sh` (PreToolUse, Bash)
@@ -33,13 +33,20 @@ and tells the model what it removed. It never uses a force flag: `git worktree r
 leaves it). It never touches `main`, `master`, the checked-out branch of the main checkout, or the worktree the
 session is running in. Run by hand with no argument, it prints the same report.
 
+### `session-rules.sh` (SessionStart)
+
+A plugin has no rules component, so this hook prints `plugins/harness/rules/behavior.md` as the
+`additionalContext` of the SessionStart JSON envelope. It uses no `jq` (the text is escaped with `sed`
+and `awk`). A missing rule file prints nothing and exits 0. Whether a model obeys imperative text
+delivered this way is not verified in a live session.
+
 ## One fixed hook set
 
-`scripts/install-harness.sh` and `scripts/deploy-harness.sh` install one fixed hook set: every hook wired in this repo's root `settings.json` (`secrets-scan.sh`, `pr-opened.sh`, `clean-worktrees.sh`). The earlier `--profile minimal|standard|strict` choice and the `<target>/.claude/.harness-profile` file are gone; both scripts still accept `--profile` so old install commands keep working, but print a one-line warning and ignore it, and a re-sync deletes a leftover `.harness-profile`. Re-sync prunes retired harness hooks (`commit-gate.sh`, `branch-isolation-guard.sh`, `session-knowledge.sh`, `model-config.sh`, the `lib` helper dir) from the consumer's `.claude/hooks/` and `.claude/settings.json` through the deployed-file manifest, drops event keys left empty, and preserves the consumer's own hooks.
+The plugin registers one fixed hook set in `plugins/harness/hooks/hooks.json`: `session-rules.sh`, `secrets-scan.sh`, `pr-opened.sh` and `clean-worktrees.sh`. Claude Code merges them with the user's and the project's hooks. The repo's own `settings.json` wires no hooks, or each would run twice (`tests/scripts/settings-wiring.test.sh` checks it). To develop the plugin, run `claude --plugin-dir plugins/harness`.
 
 ## Permissions
 
-The root `settings.json` carries a `permissions.deny` list (no `allow` rules):
+The root `settings.json` carries a `permissions.deny` list (no `allow` rules). The plugin cannot ship it, so `/harness:setup` merges these rules into a consuming project's `.claude/settings.json` with `merge-deny.sh`:
 
 | Rule | Blocks |
 |---|---|
@@ -48,19 +55,13 @@ The root `settings.json` carries a `permissions.deny` list (no `allow` rules):
 | `Bash(git push --force*)`, `Bash(git push -f*)` | Force pushes |
 | `Bash(git push * main)`, `Bash(git push * master)` | Pushing to the default branch |
 
-`permissions.deny` reaches a consumer only on the first install. A re-sync merges the `.hooks` part of `settings.json` only and leaves the consumer's `permissions` alone, so the consumer owns their permissions after install. To get the deny list in an existing install, copy it by hand.
+`merge-deny.sh` keeps every existing key and deny entry, adds only the missing rules, and writes nothing when none is missing. It needs `jq` and refuses a settings file that is not valid JSON.
 Deny rules are prefix patterns on the command text; they are a guard against mistakes, not a sandbox.
 
 ## What is intentionally not enforced
 
-Nothing blocks a commit for missing evidence; nothing blocks an edit on `main`; nothing preloads `docs/solutions/` at session start. Read `docs/solutions/INDEX.md` when you plan. Per-role models come from `agents/runtime-bindings.json` only.
+Nothing blocks a commit for missing evidence; nothing blocks an edit on `main`; nothing preloads `docs/solutions/` at session start. Read `docs/solutions/INDEX.md` when you plan. Per-role models, effort and tools come from the agent files' frontmatter only.
 
 ## Rule-loading tiers
 
-A file in `rules/` with `paths:` frontmatter is contextual and loads on demand. A file without it auto-loads every session. Adding `paths:` to a rule that lacks it **removes** it from the always-on set. That is a behavior change, not a formatting fix.
-
-Today the source tree contains one always-on file (`behavior.md`) and no path-scoped ones. The nine other rules were removed in v5. `tests/scripts/rule-loading-tiers.test.sh` keeps this inventory exact against `rules/*.md`. A re-sync prunes the removed rule files from a consumer's `.claude/rules/` and leaves the consumer's own rule files alone.
-
-## Re-sync note
-
-Re-sync (`scripts/install-harness.sh` / `scripts/deploy-harness.sh`) is conflict-guarded for protected files (e.g. `<path under rules/ or agents/>`, including any locally-generated per-repo files): a differing local copy is kept by default and the incoming version is written beside it as `<file>.harness-incoming` for review, instead of being silently overwritten. Pass `--overwrite-conflicts` to replace protected files with the incoming copy instead of keeping local.
+Today the plugin ships one always-on file (`rules/behavior.md`, one always-on file) and no path-scoped ones. The nine other rules were removed in v5. `session-rules.sh` delivers it at session start. `tests/scripts/rule-loading-tiers.test.sh` keeps this inventory exact against `plugins/harness/rules/*.md` and tests the delivery.

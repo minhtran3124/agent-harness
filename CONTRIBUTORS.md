@@ -43,8 +43,8 @@ Ideas remixed from these agentic-coding playbooks (full breakdown in the [README
 
 1. 🍴 Fork the repo and create a branch.
 2. 🎯 Make your change — new skill? Follow an existing `skills/<name>/SKILL.md` and register it in
-   [`skills/README.md`](skills/README.md).
-3. ✅ Keep it tidy and scoped (see [`rules/behavior.md`](rules/behavior.md)).
+   [`skills/README.md`](plugins/harness/skills/README.md).
+3. ✅ Keep it tidy and scoped (see [`rules/behavior.md`](plugins/harness/rules/behavior.md)).
 4. 📨 Open a PR and add yourself to the **Contributors** table above.
 
 <div align="center">
