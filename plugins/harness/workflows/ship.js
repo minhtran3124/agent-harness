@@ -371,7 +371,7 @@ async function stageMerge(group, done) {
   const list = done.map(r => `- #${r.n} branch ${r.branch}${r.pr ? ` PR ${r.pr}` : ''}`).join('\n')
   const how = LOCAL
     ? `Merge each branch below into ${integBranch} with "git merge --no-ff". Then run: git update-ref refs/heads/${integBranch} HEAD   (local mode: nothing is pushed).`
-    : `Merge each ticket PR below into ${integBranch}: gh pr merge <pr> --repo ${repo} --merge. On a conflict, merge locally, resolve it, and land it with: git push ${remote} HEAD:${integBranch}, then close that PR with a comment. These PRs target ${integBranch}, never ${base}.`
+    : `Merge each ticket PR below into ${integBranch}: gh pr merge <pr> --repo ${repo} --merge. On a conflict, merge locally, resolve it, and land it with: git push ${remote} HEAD:${integBranch}, then close that PR with a comment. These PRs target ${integBranch}, never ${base}. A PR that is already MERGED into ${integBranch} counts as merged: check its state first with gh pr view <pr> --repo ${repo} --json state, and do not merge it again. If gh pr merge is denied by a permission rule, do not look for a workaround: return that ticket in failed with a reason that names the missing permission and the fix (the owner allows gh pr merge into ${integBranch}*), and do not just write denied.`
   const w = newWt(`merge-g${group}`, `scratch/${slug}-merge-g${group}`, integRef)
   const prompt = `${w.setup}${RULES}\n\nStage: merge group ${group} into ${integBranch}.\n${how}\n${list}\n` +
     `After any conflict resolution run the related tests (${testCmd}, filled with the conflicted files) and lint (${lintCmd}). ` +

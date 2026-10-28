@@ -56,6 +56,12 @@ Version 5.0.0 is a breaking change: skills become `/harness:<name>`, hook profil
 
 Earlier versions copied the harness into the project's `.claude/` with `install-harness.sh`. That script is gone. Run `/harness:setup`: it lists the old copied files (by the names this plugin ships) and deletes them only after you approve. Keep both copies and every hook would run twice.
 
+### Known limits
+
+- Not verified yet (tracked for the dogfood run, #352): an unattended `ship.js` run from the plugin cache, the hooks firing in a live session, and a git-sourced marketplace install.
+- The owner must allow `gh pr merge` into `feat/<slug>*` (for example a `Bash(gh pr merge *)` allow rule). In default permission mode the merge stage is otherwise denied; the run then reports the missing permission as the reason and does not work around it.
+- The Workflow tool refuses a `scriptPath` the session cannot read. `ship.js` must be inside the working directory or an added directory, or be passed inline through `script`.
+
 ### Develop on this repo
 
 The plugin source is `plugins/harness/`. Load it straight from the checkout, with no copy step:

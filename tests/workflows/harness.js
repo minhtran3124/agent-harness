@@ -264,6 +264,16 @@ test('b: three tickets, groups 1,1,2: setup, parallel, merge, group 2, merge, on
   for (const n of [1, 2, 3]) assert(body.includes(`Closes #${n}`))
 })
 
+test('b2: the merge prompt counts an already MERGED PR as merged and names the permission on a denial', async () => {
+  const { calls } = await run({ tickets: [T(1, 1), T(2, 1)] }, null)
+  const p = named(calls, /^merge:g1$/)[0].prompt
+  assert(/already MERGED into feat\/ms counts as merged/.test(p), p)
+  assert(p.includes('gh pr view <pr> --repo o/r --json state') && p.includes('do not merge it again'))
+  assert(p.includes('names the missing permission') && p.includes('allows gh pr merge into feat/ms*'))
+  const l = await run({ tickets: [T(1, 1), T(2, 1)], local: true }, null)
+  assert(!named(l.calls, /^merge:g1$/)[0].prompt.includes('gh pr view'), 'local mode has no PRs')
+})
+
 test('c: needs_advisor triggers one advisor call and one stage re-run; a second request is ignored', async () => {
   let intents = 0
   const { calls } = await run({ advisorModel: 'fable' }, c => {

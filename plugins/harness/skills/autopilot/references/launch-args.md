@@ -24,3 +24,13 @@ values, already resolved. `repoDir` is the owner's checkout, not the plugin.
 
 Short, in the owner's language: final PR link, per-ticket status, what was skipped and why, review
 rounds and findings, full-suite counts, the ADRs in `docs/adr/` and the artifact link.
+
+## Launch notes
+
+- Readable script: the Workflow tool refuses a `scriptPath` the session cannot read ("scriptPath must be
+  a script path this tool returned, or a file you can already read"). The script must be inside the
+  working directory or an added directory, or be passed inline through `script`.
+- Merge permission: the owner must allow `gh pr merge` into `feat/<slug>*`. Without it the merge stage
+  fails with a reason that names this permission. Do not change permission settings and do not work
+  around a denial; tell the owner.
+- Resume: the merge stage counts a PR already MERGED into the integration branch as merged.
