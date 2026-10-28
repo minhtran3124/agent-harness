@@ -25,9 +25,9 @@ picks the model and effort for every call below.
 3. **Groups.** Drop BLOCKED tickets with the reason shown and flag their dependents. Pipe
    `[{"n":1,"deps":[..]}]` into `python3 ${CLAUDE_SKILL_DIR}/scripts/plan_groups.py`. It returns
    `[{"n":1,"group":1}]`. Exit 2 names a dependency cycle: stop and show it.
-4. **Clarify** (skip with `--no-ask`). Collect every CONFIRM question of every ticket. Ask them in
-   ONE round with AskUserQuestion. Each question carries a recommended answer, worded so that
-   "yes" accepts it.
+4. **Clarify** (skip with `--no-ask`). Collect every CONFIRM question of every ticket. Ask them with
+   AskUserQuestion, at most 4 per call, in the `harness:grilling` "Question format". Each question
+   carries a recommended answer.
 5. **Grill** (skip with `--no-ask`). Run the `harness:grilling` skill, interactive, for each GRILL
    ticket, one ticket at a time.
 6. **Record.** Post each ticket's confirmed answers as one comment titled "Confirmed decisions":
