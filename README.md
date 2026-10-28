@@ -104,7 +104,7 @@ First run installs; any later run updates (idempotent). Re-run after editing any
 
 ### Testing
 
-`bash scripts/run-tests.sh` runs what CI runs: syntax checks + a doc-truth lint (every path referenced in the core docs exists; the CLAUDE.md hook table matches `settings.json`), further static checks (skill-bash lint, skill and agent frontmatter and tool conformance scanned from disk, STE linter self-test), hermetic contract tests for the hooks (each runs in a throwaway git repo against its stdin-JSON contract), script and installer integration tests, and the Python unit tests under `scripts/`, `runtime/`, and `skills/` (when `pytest` is available). The `harness-ci` workflow runs the same suite on ubuntu + macos.
+`bash scripts/run-tests.sh` runs what CI runs: syntax checks + a doc-truth lint (every path referenced in the core docs exists; the CLAUDE.md hook table matches `settings.json`), further static checks (skill-bash lint, skill and agent frontmatter and tool conformance scanned from disk, STE linter self-test), hermetic contract tests for the hooks (each runs in a throwaway git repo against its stdin-JSON contract), script and installer integration tests, and the Python unit tests under `scripts/` and `skills/` (when `pytest` is available). The `harness-ci` workflow runs the same suite on ubuntu + macos.
 
 ### Optional MCP servers (local setup)
 
