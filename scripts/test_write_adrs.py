@@ -141,3 +141,18 @@ def test_render_section(tmp_path):
     assert "- [ADR 0002](docs/adr/0002-risky.md) (#5, design): Risky" in s
     assert "- [ADR 0003](docs/adr/0003-plain.md) (#1, design): Plain" in s
     assert s.index("Risky") < s.index("Plain")
+
+
+def test_default_template_matches_the_repo_template():
+    """The built-in fallback is the same text as docs/adr/TEMPLATE.md."""
+    import write_adrs
+    repo_template = (Path(__file__).resolve().parent.parent / "docs/adr/TEMPLATE.md").read_text()
+    assert write_adrs.DEFAULT_TEMPLATE == repo_template
+
+
+def test_consumer_without_a_template_still_writes(tmp_path, monkeypatch):
+    """No docs/adr/TEMPLATE.md anywhere on the lookup path: the built-in default is used."""
+    import write_adrs
+    monkeypatch.setattr(write_adrs, "__file__", str(tmp_path / "elsewhere" / "write_adrs.py"))
+    template = write_adrs.load_template(tmp_path / "adr-dir-without-template")
+    assert template == write_adrs.DEFAULT_TEMPLATE

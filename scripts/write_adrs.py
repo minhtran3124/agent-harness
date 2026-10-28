@@ -155,6 +155,20 @@ def render_section(written: list, artifact: str = "") -> str:
     return "\n".join(out)
 
 
+# Same text as docs/adr/TEMPLATE.md (a test keeps them equal), so a consuming repo
+# that has no docs/adr/ can still write ADRs.
+DEFAULT_TEMPLATE = '---\nticket: {ticket}\nstage: {stage}\nstatus: {status}\nneeds_review: {needs_review}\nconfidence: {confidence}\ndecided_by: {decided_by}\ndate: {date}\n---\n\n# {number}. {title}\n\n## Context\n\n{context}\n\n## Options\n\n{options}\n\n## Decision\n\n{decision}\n\n## Why\n\n{why}\n\n## Consequences\n\n{consequences}\n\n## How to reverse\n\n{how_to_reverse}\n'
+
+
+def load_template(adr_dir: Path) -> str:
+    """The repo's own template wins; the built-in default is the last resort."""
+    for path in (adr_dir / "TEMPLATE.md",
+                 Path(__file__).resolve().parent.parent / "docs/adr/TEMPLATE.md"):
+        if path.is_file():
+            return path.read_text()
+    return DEFAULT_TEMPLATE
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--input", help="decisions JSON file")
@@ -180,10 +194,7 @@ def main() -> int:
         except (OSError, json.JSONDecodeError) as e:
             raise BadInput(f"cannot read input: {e}")
         adr_dir = Path(args.adr_dir)
-        template_path = adr_dir / "TEMPLATE.md"
-        if not template_path.is_file():
-            template_path = Path(__file__).resolve().parent.parent / "docs/adr/TEMPLATE.md"
-        template = template_path.read_text()
+        template = load_template(adr_dir)
         items = plan(data, adr_dir, template, datetime.date.today().isoformat())
         if not args.dry_run:
             adr_dir.mkdir(parents=True, exist_ok=True)
