@@ -41,7 +41,7 @@ function defaults(c, st) {
   if (l.startsWith('merge:')) return ok({ merged: [...c.prompt.matchAll(/^- #(\d+)/gm)].map(m => Number(m[1])), failed: [] })
   if (l === 'final-pr') return ok({ pr: args0.local ? 0 : 900, url: 'https://x/pull/900' })
   if (l === 'diffstat') return { files: [{ path: 'src/a.js', added: 10, deleted: 2 }] }
-  if (l.startsWith('review:')) return ok({ findings: [] })
+  if (l.startsWith('review:')) return ok({ findings: [], skill_invoked: true, skill_error: '' })
   if (l.startsWith('fix:') || l === 'intent-fix') { st.fix++; return ok({ fix_status: 'fixed', base_sha: `base${st.fix}`, commit: `c${st.fix}` }) }
   if (l.startsWith('request:')) return { body: `REQUEST-BODY-${n}` }
   if (l === 'intent-review') return { verdict: 'match', findings: [] }
@@ -105,18 +105,135 @@ test('a: one ticket has no integration or merge agent and a feat/<n>- branch', a
   const ls = labelsOf(calls)
   assert(!ls.includes('setup-integration') && !ls.some(l => l.startsWith('merge:')) && !ls.includes('final-pr'), ls.join())
   const impl = named(calls, /^implement:1$/)[0]
-  assert(impl.prompt.includes('git checkout -b feat/1-ticket-1 origin/v5.0.0') || impl.prompt.includes('git checkout -b feat/1-add-the-thing origin/v5.0.0'), impl.prompt.slice(0, 200))
+  assert(impl.prompt.includes('git -C /repo worktree add -b feat/1-add-the-thing /.ship-repo/ms/t1 origin/v5.0.0'), impl.prompt.slice(0, 300))
   assert.strictEqual(result.single, true)
   assert.strictEqual(result.final.branch, 'feat/1-add-the-thing')
   assert.strictEqual(result.final.pr, 101)
   assert(named(calls, /^finish:1$/)[0].prompt.includes('base v5.0.0'))
 })
 
-test('worktree agents start with fetch and an explicit checkout', async () => {
-  const { calls } = await run({ tickets: [T(1, 1), T(2, 1), T(3, 2, [1])] }, null)
-  const wt = calls.filter(c => c.opts.isolation === 'worktree')
-  assert(wt.length > 5)
-  for (const c of wt) assert(c.prompt.startsWith('git fetch origin\ngit checkout -b '), `${c.label}: ${c.prompt.slice(0, 80)}`)
+const noRepoTouch = /^(request:|artifact|final-pr)/
+test('a2: no agent call uses isolation (it binds to the session cwd, not the target repo)', async () => {
+  const { calls } = await run({ tickets: [T(1, 1, [], { depth: 'L' }), T(2, 1), T(3, 2, [1])] }, c => (c.label === 'suite' ? { passed: 1, failed: 1, skipped: 0, failing: ['t'] } : undefined))
+  assert(calls.length > 15)
+  for (const c of calls) assert(!('isolation' in c.opts), `${c.label} has isolation`)
+})
+
+test('b2: every repo-touching agent names the repo or a .ship- worktree and says the session cwd is not the repo', async () => {
+  for (const local of [false, true]) {
+    const { calls } = await run({ local, tickets: [T(1, 1, [], { depth: 'L' }), T(2, 1), T(3, 2, [1])] }, c => (c.label === 'suite' ? { passed: 1, failed: 1, skipped: 0, failing: ['t'] } : undefined))
+    for (const c of calls) {
+      if (noRepoTouch.test(c.label)) continue
+      assert(c.prompt.includes('/repo') || c.prompt.includes('/.ship-repo/'), `${c.label}: no path`)
+      assert(c.prompt.includes('Your session working directory is NOT the target repo'), `${c.label}: no cwd sentence`)
+    }
+    const wt = calls.filter(c => c.prompt.includes('worktree add') && !/^finish:/.test(c.label))
+    assert(wt.length > 8)
+    for (const c of wt) assert(c.prompt.includes('git -C /repo fetch origin') && c.prompt.includes(' /.ship-repo/ms/'), `${c.label}: ${c.prompt.slice(0, 120)}`)
+  }
+})
+
+test('b3: the result lists the worktree dirs outside the repo', async () => {
+  const { result } = await run({}, null)
+  assert(result.worktrees.length > 3)
+  for (const d of result.worktrees) assert(d.startsWith('/.ship-repo/ms/'), d)
+  assert(result.worktrees.includes('/.ship-repo/ms/t1'))
+})
+
+test('c4: skill and role reads use absolute paths under the agent worktree', async () => {
+  const { calls } = await run({ tickets: [T(1, 1, [], { depth: 'L' })] }, null)
+  const want = { 'research:1': 'xia2', 'design:1': 'brainstorming', 'plan:1': 'writing-plans', 'implement:1': 'implement' }
+  for (const [l, sk] of Object.entries(want)) {
+    const p = named(calls, new RegExp(`^${l}$`))[0].prompt
+    assert(p.includes(`Read /.ship-repo/ms/`) && p.includes(`/skills/${sk}/SKILL.md`) && p.includes(`/.claude/skills/${sk}/SKILL.md`), `${l}: ${p.match(/Read [^\n]*/)}`)
+    assert(!/Read skills\//.test(p), l)
+  }
+  const fin = named(calls, /^finish:1$/)[0].prompt
+  assert(fin.includes('Read /wt/1/skills/finishing-a-development-branch/SKILL.md'), fin.match(/Read [^\n]*/)[0])
+  assert(named(calls, /^implement:1$/)[0].prompt.includes('/.ship-repo/ms/t1/agents/implementer.md'))
+})
+
+test('d3: review stage prompts require the Skill tool and forbid a self-made review', async () => {
+  const { calls } = await run({}, null)
+  const p = named(calls, /^review:r0$/)[0].prompt
+  assert(p.includes("skill 'code-review'") && p.includes('Do not substitute your own review') && p.includes('reading the diff yourself does not count') && p.includes('skill_invoked: false'))
+})
+
+test('d4: code-review not run: one retry with the error, then NOT RUN, a needs_review decision, no fix', async () => {
+  const { result, calls } = await run({}, c => {
+    if (c.label === 'review:r0') return ok({ findings: [{ id: 'x', summary: 's', score: 90 }], skill_invoked: false, skill_error: 'Skill tool unavailable' })
+    if (c.label === 'review:r0:retry') return ok({ findings: [], skill_invoked: false, skill_error: 'still unavailable' })
+  })
+  assert.strictEqual(named(calls, /^review:/).length, 2, labelsOf(calls).join())
+  assert(named(calls, /^review:r0:retry$/)[0].prompt.includes('Skill tool unavailable'))
+  assert(named(calls, /^review:r0:retry$/)[0].prompt.includes('Do not substitute your own review'))
+  assert.strictEqual(named(calls, /^fix:/).length, 0, 'no fix when the review did not run')
+  assert.strictEqual(result.review.status, 'not run')
+  const d = result.decisions.find(x => /^Review skipped: code-review did not run \(still unavailable\)/.test(x.title))
+  assert(d && d.needs_review === true, JSON.stringify(result.decisions.map(x => x.title)))
+  const body = named(calls, /^adr$/)[0].prompt
+  assert(body.includes('Review: NOT RUN (still unavailable)'))
+  assert(!body.includes('0 findings') && !body.includes('Level low'))
+  assert(labelsOf(calls).includes('intent-review') && labelsOf(calls).includes('suite'), 'the pipeline continues')
+})
+
+test('d5: a retry that runs the skill is used; findings then behave as before', async () => {
+  const { result, calls } = await run({}, c => {
+    if (c.label === 'review:r0') return ok({ findings: [], skill_invoked: false, skill_error: 'boom' })
+    if (c.label === 'review:r0:retry') return ok({ findings: [{ id: 'f', path: 'a.js', summary: 'S-f', score: 80 }], skill_invoked: true })
+  })
+  assert.strictEqual(result.review.status, 'ran')
+  assert.strictEqual(named(calls, /^fix:/).length, 1)
+  assert(!named(calls, /^adr$/)[0].prompt.includes('NOT RUN'))
+})
+
+test('d6: a re-review that does not run is reported, not treated as clean', async () => {
+  const { result, calls } = await run({}, c => {
+    if (c.label === 'review:r0') return ok({ findings: [{ id: 'f', summary: 'S-f', score: 80 }], skill_invoked: true })
+    if (/^review:r1/.test(c.label)) return ok({ findings: [], skill_invoked: false, skill_error: 'gone' })
+  })
+  assert.strictEqual(result.review.status, 'ran')
+  assert(named(calls, /^adr$/)[0].prompt.includes('Re-review of the fix commits: NOT RUN (gone)'))
+  assert(result.decisions.some(d => d.needs_review && /^Review skipped/.test(d.title)))
+})
+
+test('e4: RULES and the decision schema carry the needs_review criteria', async () => {
+  const { calls } = await run({}, null)
+  const p = named(calls, /^intent:1$/)[0].prompt
+  assert(p.includes('needs_review: true ONLY when the decision affects another ticket, a public contract or interface, stored data, security or cost, or contradicts the ticket text or an owner-confirmed answer'))
+  assert(p.includes('needs_review: false'))
+  const dec = named(calls, /^intent:1$/)[0].schema.properties.decisions.items.properties.needs_review
+  assert(/ONLY when/.test(dec.description) && /false/.test(dec.description))
+})
+
+test('f2: local mode PR body has no Closes or Refs and uses Ticket n', async () => {
+  const { calls } = await run({ local: true, tickets: [T(1, 1), T(2, 2, [1])] }, c => (c.label === 'implement:2' ? ok({ status: 'blocked', blocked_reason: 'x', worktree: '', branch: '' }) : undefined))
+  const body = named(calls, /^adr$/)[0].prompt
+  assert(!/Closes|Refs/.test(body), 'local body mentions Closes/Refs')
+  assert(body.includes('Ticket 1'))
+  const rem = await run({ tickets: [T(1, 1)] }, null)
+  assert(named(rem.calls, /^adr$/)[0].prompt.includes('Closes #1'))
+})
+
+test('g3: intent review schema has no unknown kind; its prompt names the role file and the worktree diff', async () => {
+  const { calls } = await run({}, null)
+  const c = named(calls, /^intent-review$/)[0]
+  assert.deepStrictEqual(c.schema.properties.findings.items.properties.kind.enum, ['gap', 'drift', 'excess'])
+  assert(c.prompt.includes('/.ship-repo/ms/intent-review/agents/intent-reviewer.md') && c.prompt.includes('/.claude/agents/intent-reviewer.md'))
+  assert(c.prompt.includes('git -C /.ship-repo/ms/intent-review diff origin/v5.0.0..origin/feat/1-add-the-thing'))
+  assert(c.prompt.includes('Do not report anything else'))
+  assert(c.prompt.includes('worktree add --detach /.ship-repo/ms/intent-review'))
+})
+
+test('h2: the per-ticket summary is capped and shows no raw agent narration of pushes', async () => {
+  const long = 'x'.repeat(500)
+  const { calls, result } = await run({}, c => (c.label === 'implement:1' ? ok({ worktree: '/wt/1', branch: 'b1', summary: long }) : c.label === 'finish:1' ? ok({ pr: 101, url: 'u', summary: 'Nothing was pushed and no PR was opened' }) : undefined))
+  const body = named(calls, /^adr$/)[0].prompt
+  assert(body.includes('- #1 done: ' + 'x'.repeat(199) + '…'))
+  assert(!body.includes('x'.repeat(201)) && !body.includes('Nothing was pushed'))
+  assert(result.tickets[0].summary.length <= 200)
+  const sd = named(calls, /^intent:1$/)[0].schema.properties.summary.description
+  assert(/pushes/.test(sd) && /test counts/.test(sd))
 })
 
 test('b: three tickets, groups 1,1,2: setup, parallel, merge, group 2, merge, one final PR', async () => {
@@ -129,7 +246,7 @@ test('b: three tickets, groups 1,1,2: setup, parallel, merge, group 2, merge, on
   assert(at('merge:g1') < at('intent:3'), 'group 2 starts after the merge')
   assert(at('finish:3') < at('merge:g2') && at('merge:g2') < at('final-pr'))
   assert.strictEqual(named(calls, /^final-pr$/).length, 1)
-  assert(named(calls, /^implement:3$/)[0].prompt.startsWith('git fetch origin\ngit checkout -b feat/ms-3 origin/feat/ms'))
+  assert(named(calls, /^implement:3$/)[0].prompt.startsWith('git -C /repo fetch origin\ngit -C /repo worktree add -b feat/ms-3 /.ship-repo/ms/t3 origin/feat/ms'))
   assert(named(calls, /^finish:1$/)[0].prompt.includes('base feat/ms'))
   assert(named(calls, /^final-pr$/)[0].prompt.includes('--base v5.0.0 --head feat/ms'))
   assert.deepStrictEqual(result.tickets.map(t => t.status), ['done', 'done', 'done'])
@@ -196,9 +313,9 @@ test('d2: a decision that contradicts a confirmed answer blocks the ticket', asy
 test('e: review loop fixes findings >= threshold, re-reviews the fix diff only, caps at 2 rounds', async () => {
   const F = (id, score, pre) => ({ id, path: 'a.js', line: 1, summary: `S-${id}`, score, pre_existing: !!pre })
   const { result, calls } = await run({}, c => {
-    if (c.label === 'review:r0') return ok({ findings: [F('f1', 80), F('f2', 60), F('f3', 30), F('f4', 90, true)] })
-    if (c.label === 'review:r1') return ok({ findings: [F('f5', 70)] })
-    if (c.label === 'review:r2') return ok({ findings: [F('f6', 75)] })
+    if (c.label === 'review:r0') return ok({ skill_invoked: true, findings: [F('f1', 80), F('f2', 60), F('f3', 30), F('f4', 90, true)] })
+    if (c.label === 'review:r1') return ok({ skill_invoked: true, findings: [F('f5', 70)] })
+    if (c.label === 'review:r2') return ok({ skill_invoked: true, findings: [F('f6', 75)] })
   })
   assert.strictEqual(named(calls, /^fix:/).length, 3, labelsOf(calls).join())
   assert.strictEqual(named(calls, /^review:/).length, 3)
@@ -216,7 +333,7 @@ test('e: review loop fixes findings >= threshold, re-reviews the fix diff only, 
 })
 
 test('e2: nothing at or above the threshold means no fix agent', async () => {
-  const { calls, result } = await run({}, c => (c.label === 'review:r0' ? ok({ findings: [{ id: 'x', summary: 's', score: 49 }] }) : undefined))
+  const { calls, result } = await run({}, c => (c.label === 'review:r0' ? ok({ skill_invoked: true, findings: [{ id: 'x', summary: 's', score: 49 }] }) : undefined))
   assert.strictEqual(named(calls, /^fix:/).length, 0)
   assert.strictEqual(named(calls, /^review:/).length, 1)
   assert.strictEqual(result.review.rounds, 0)
