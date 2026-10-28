@@ -157,6 +157,7 @@
     "compound",
     "context-propagation-audit",
     "correctness-review",
+    "decision-record",
     "diagnosing-bugs",
     "feature-intake",
     "finishing-a-development-branch",
