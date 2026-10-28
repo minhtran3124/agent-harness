@@ -36,7 +36,7 @@ feature-intake   readiness gate: READY | CONFIRM | GRILL | BLOCKED, depth S | M 
   -> finishing-a-development-branch   push and open a PR; a human merges
 ```
 
-Decisions made on the way are recorded as ADRs in `docs/adr/`. Every skill above exists in `skills/` now. The `/autopilot` skill and `workflows/ship.js` are planned (epic #338). `skills/README.md` has the full map, including the bug-fix path (`diagnosing-bugs`).
+Decisions made on the way are recorded as ADRs in `docs/adr/`. Every skill above exists in `skills/` now. `/autopilot` asks everything first, then launches `workflows/ship.js` (one Workflow script for 1..N tickets). `skills/README.md` has the full map, including the bug-fix path (`diagnosing-bugs`).
 
 ## Rules
 
