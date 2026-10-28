@@ -22,7 +22,8 @@ Record a decision when you choose between options without asking a human. Ask th
 The script `write_adrs.py` applies this rule. Agents do not filter.
 
 1. Merge duplicates: same ticket and (same title slug or identical non-empty context). Keep the
-   lowest `confidence` (low, then medium, then high; a tie keeps the first), so a doubtful
+   most detailed item (a tie keeps the one with the lower confidence, then the first). Keep the lowest `confidence` of the group (low, then
+   medium, then high) on it, so a doubtful
    duplicate is never hidden. If any merged item has `needs_review`, the kept one has it too. The
    kept one is `owner_confirmed` only if every merged item is.
 2. Write an ADR file if the decision has `needs_review: true`, or if it is not `owner_confirmed`

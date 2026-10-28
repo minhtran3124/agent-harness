@@ -223,6 +223,15 @@ def test_merge_keeps_lowest_confidence_and_ties_to_first():
     assert tie[0]["decision"] == "first"
 
 
+def test_merge_keeps_detail_of_confident_item_and_lowest_confidence():
+    w = wa()
+    out = w.dedupe([dec(title="Same", confidence="high", decision="real decision", why="real why"),
+                    dec(title="Same", confidence="low", decision="n/a", why="n/a", consequences="n/a")])
+    assert len(out) == 1
+    assert out[0]["decision"] == "real decision" and out[0]["why"] == "real why"
+    assert out[0]["confidence"] == "low"
+
+
 def test_merge_carries_needs_review():
     w = wa()
     out = w.dedupe([dec(title="Same", confidence="high", needs_review=False),

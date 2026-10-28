@@ -103,11 +103,21 @@ def _context_key(d: dict) -> str:
     return "" if text == "n/a" else text   # ship.js fills a missing context with 'n/a'
 
 
+DETAIL_FIELDS = ("context", "options", "decision", "why", "consequences", "how_to_reverse")
+
+
+def _detail(d: dict) -> int:
+    """Count the fields that carry real text (ship.js fills a missing field with 'n/a')."""
+    return sum(1 for k in DETAIL_FIELDS if as_text(d.get(k, "")).lower() not in ("", "n/a"))
+
+
 def dedupe(decisions: list) -> list:
     """Merge duplicates: same ticket and (same title slug or identical non-empty context).
 
-    Keeps the lowest confidence (ties to the first), so a doubtful duplicate is never hidden by a
-    confident one. If any merged item needs review, the kept one does too. The kept one is
+    Keeps the most detailed item (ties to the lowest confidence, then the first), so an 'n/a'
+    placeholder duplicate never replaces real text. The kept one takes the lowest confidence of the
+    group, so a doubtful duplicate is never hidden by a confident one. If any merged item needs
+    review, the kept one does too. The kept one is
     owner_confirmed only when every merged item is. Order follows the first appearance of each group.
     """
     groups = []   # each: {"ticket", "slugs", "contexts", "items"}
@@ -127,9 +137,10 @@ def dedupe(decisions: list) -> list:
     for g in groups:
         best = g["items"][0]
         for d in g["items"][1:]:
-            if CONFIDENCE.index(d["confidence"]) > CONFIDENCE.index(best["confidence"]):
+            if (_detail(d), CONFIDENCE.index(d["confidence"])) > (_detail(best), CONFIDENCE.index(best["confidence"])):
                 best = d
         best = dict(best)
+        best["confidence"] = max((d["confidence"] for d in g["items"]), key=CONFIDENCE.index)
         if any(d["needs_review"] for d in g["items"]):
             best["needs_review"] = True
         if best.get("owner_confirmed") is True and not all(
