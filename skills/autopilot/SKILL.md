@@ -19,9 +19,9 @@ picks the model and effort for every call below.
    Read each ticket: `gh issue view <n> --repo <repo> --json title,body,labels -q ...`.
    Base = the `base=` argument, else the current branch. Name it in the summary.
 2. **Triage.** One call per ticket, all in one message. A Haiku `researcher` finds facts (code the
-   ticket touches, tests, links between tickets). A Sonnet agent follows `skills/feature-intake`
+   ticket touches, tests, links between tickets). A Sonnet agent follows `skills/intake`
    and returns verdict `READY | CONFIRM | GRILL | BLOCKED`, depth `S|M|L`, deps and questions.
-   For an important ticket (feature-intake: GRILL class) also ask the `advisor` agent.
+   For an important ticket (intake: GRILL class) also ask the `advisor` agent.
 3. **Groups.** Drop BLOCKED tickets with the reason shown and flag their dependents. Pipe
    `[{"n":1,"deps":[..]}]` into `python3 skills/autopilot/scripts/plan_groups.py`. It returns
    `[{"n":1,"group":1}]`. Exit 2 names a dependency cycle: stop and show it.

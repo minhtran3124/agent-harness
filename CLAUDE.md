@@ -27,7 +27,7 @@ Skill framework for Claude Code (the only supported runtime): reusable prompt-ba
 ## Workflow
 
 ```
-feature-intake   readiness gate: READY | CONFIRM | GRILL | BLOCKED, depth S | M | L
+intake   readiness gate: READY | CONFIRM | GRILL | BLOCKED, depth S | M | L
   -> grilling    important tickets: interview the owner until the decisions are settled
   -> brainstorming + xia2   depth L: pick the design, then research the code
   -> writing-plans          depth M and L

@@ -90,19 +90,19 @@ def test_bad_ref_prints_unavailable_and_exits_zero(tmp_path):
     assert len(out.splitlines()) == 1
 
 
-# Replay of the pilot's Step 6 cut: git diff -U0 87d204c dc867ed -- skills/feature-intake/SKILL.md
+# Replay of the pilot's Step 6 cut: git diff -U0 87d204c dc867ed -- skills/intake/SKILL.md
 STEP6_BEFORE = "6. For a new SUMMARY, use `templates/SUMMARY.template.md`. `### Intent` holds the pin\n"
 STEP6_AFTER = "6. Write a new SUMMARY from `templates/SUMMARY.template.md`. `### Intent` holds the pin\n"
 
 
 def test_pilot_step6_cut_is_listed(tmp_path):
     out = check(tmp_path, "intro\n" + STEP6_BEFORE + "end\n", "intro\n" + STEP6_AFTER + "end\n",
-                path="skills/feature-intake/SKILL.md")
-    assert out == f'- skills/feature-intake/SKILL.md:2: dropped "for a new": {STEP6_BEFORE.strip()}\n'
+                path="skills/intake/SKILL.md")
+    assert out == f'- skills/intake/SKILL.md:2: dropped "for a new": {STEP6_BEFORE.strip()}\n'
 
 
 # Replay of the pilot's Step 1 split, hunk @@ -21,4 of
-# git diff -U0 bb923dc f49a9d1 -- skills/feature-intake/SKILL.md
+# git diff -U0 bb923dc f49a9d1 -- skills/intake/SKILL.md
 STEP1_BEFORE = (
     "   `Status: approved` and identical to its last commit. Read intent.md if present: stop unless its header line (`Status:` above\n"
     "   the first `##`) is exactly `approved`; pin with\n"
@@ -220,5 +220,5 @@ def test_pilot_step1_split_is_not_listed_known_limit(tmp_path):
     # Known limit: the split moved sentences out of the condition's scope, but every
     # condition word survives in an added line of the same hunk, so nothing is listed.
     out = check(tmp_path, "intro\n" + STEP1_BEFORE + "end\n", "intro\n" + STEP1_AFTER + "end\n",
-                path="skills/feature-intake/SKILL.md")
+                path="skills/intake/SKILL.md")
     assert out == "- none\n"

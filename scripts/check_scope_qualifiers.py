@@ -15,7 +15,7 @@ changed. On a git failure, prints one `scope-qualifiers: unavailable (<reason>)`
 Verifies: a condition word (whole word, case-insensitive) present in a removed line of a hunk
 is present in at least one added line of the same hunk.
 Does not verify: that the condition still applies to the same sentences. A split that moves
-sentences out of a condition's scope without removing the word (the pilot's feature-intake
+sentences out of a condition's scope without removing the word (the pilot's intake
 Step 1 split) is not listed. It does not verify meaning, and it does not compare across hunks.
 """
 from __future__ import annotations

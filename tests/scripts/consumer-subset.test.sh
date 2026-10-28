@@ -99,13 +99,13 @@ grep -q '\.claude/skills/asd-ste100/scripts/ste-lint\.py' "$C/skills/asd-ste100/
 [ -e "$T/.claude/skills/asd-ste100/scripts/ste-lint.py" ] || ste_bad="$ste_bad ste-lint.py(not-shipped)"
 if [ -z "$ste_bad" ]; then pass; else fail "$ste_bad"; fi
 
-t "derived feature-intake SKILL.md names diagnosing-bugs SKILL.md at the deployed path, and it resolves"
-# feature-intake routes a bug to the diagnosing-bugs skill by path. In a consumer that file
+t "derived intake SKILL.md names diagnosing-bugs SKILL.md at the deployed path, and it resolves"
+# intake routes a bug to the diagnosing-bugs skill by path. In a consumer that file
 # lives under .claude/skills/. This check uses the same idea as the ste-lint.py check above.
 db_bad=""
-grep -qE '(^|[^./])skills/diagnosing-bugs/SKILL\.md' "$C/skills/feature-intake/SKILL.md" \
+grep -qE '(^|[^./])skills/diagnosing-bugs/SKILL\.md' "$C/skills/intake/SKILL.md" \
   && db_bad="$db_bad SKILL.md(unrewritten)"
-grep -q '\.claude/skills/diagnosing-bugs/SKILL\.md' "$C/skills/feature-intake/SKILL.md" \
+grep -q '\.claude/skills/diagnosing-bugs/SKILL\.md' "$C/skills/intake/SKILL.md" \
   || db_bad="$db_bad SKILL.md(missing)"
 [ -e "$T/.claude/skills/diagnosing-bugs/SKILL.md" ] || db_bad="$db_bad diagnosing-bugs(not-shipped)"
 if [ -z "$db_bad" ]; then pass; else fail "$db_bad"; fi

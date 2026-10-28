@@ -24,10 +24,10 @@ A small clear change runs straight through. An important or unclear one stops an
 ## 3. How a change flows
 
 ```
-ticket → /feature-intake → verdict + depth → build → review → ship
+ticket → /intake → verdict + depth → build → review → ship
 ```
 
-1. **`/feature-intake` runs first.** It returns a verdict (READY, CONFIRM, GRILL or BLOCKED) and a depth (S, M or L).
+1. **`/intake` runs first.** It returns a verdict (READY, CONFIRM, GRILL or BLOCKED) and a depth (S, M or L).
 2. **The depth picks the path:**
 
    | Depth | Path |
@@ -54,6 +54,6 @@ A change touches auth or authorization, data migration or deletion, a public con
 | Want to… | Read |
 |---|---|
 | See all skills + the handoff map | `skills/README.md` |
-| Understand the intake verdict and depth | `skills/feature-intake/SKILL.md` |
+| Understand the intake verdict and depth | `skills/intake/SKILL.md` |
 | Know what a hook enforces | `docs/hooks.md`, `CLAUDE.md` → Hooks table |
 | See the behavioral rule | `rules/behavior.md` |

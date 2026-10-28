@@ -49,7 +49,7 @@ look dead separately, flagged for review. Name the limits that apply to this run
 show an older rule is obsolete. Its topic may be overweighted.)
 
 Then stop. Nothing changes until the user picks candidates. Approved mechanical items become
-`improvement-backlog.md` rows or a `feature-intake` task. Durable knowledge goes through
+`improvement-backlog.md` rows or a `intake` task. Durable knowledge goes through
 `compound`.
 
 Verifies: each candidate cites a moment in the session record and a classified lever.

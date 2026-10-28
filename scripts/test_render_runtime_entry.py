@@ -32,8 +32,8 @@ def test_live_binding_is_total():
 def test_paired_skill_cli_golden_output():
     binding, _ = entry.validate(ROOT)
     assert entry.cli_command(
-        binding, "claude", "feature-intake", "<case prompt>"
-    ) == "claude -p '/feature-intake <case prompt>' --output-format text"
+        binding, "claude", "intake", "<case prompt>"
+    ) == "claude -p '/intake <case prompt>' --output-format text"
 
 
 def test_paired_model_label_golden_output():
@@ -99,7 +99,7 @@ def test_skill_names_are_strict_and_shell_output_is_quoted():
     binding, _ = entry.validate(ROOT)
     with pytest.raises(entry.BindingError, match="kebab-case"):
         entry.cli_command(binding, "claude", "../../unsafe", "prompt")
-    command = entry.cli_command(binding, "claude", "feature-intake", "has ' quote")
+    command = entry.cli_command(binding, "claude", "intake", "has ' quote")
     assert command == (
-        "claude -p '/feature-intake has '\"'\"' quote' --output-format text"
+        "claude -p '/intake has '\"'\"' quote' --output-format text"
     )

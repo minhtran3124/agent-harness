@@ -59,7 +59,7 @@ The repo is two layers: an **engine** of invocable `/skills` that do the work, a
 | The question | Resolved by |
 |---|---|
 | What should I read first? | start at `docs/solutions/INDEX.md` and `critical-patterns.md`; `/xia2` researches what already exists. |
-| What type of work, how big? | `/feature-intake` runs first and returns a verdict (READY, CONFIRM, GRILL, BLOCKED) and a depth (S, M, L). |
+| What type of work, how big? | `/intake` runs first and returns a verdict (READY, CONFIRM, GRILL, BLOCKED) and a depth (S, M, L). |
 | What proof shows it's done? | A re-runnable check backs every "done": a test command and its exit code, stated in the PR. |
 | What should future agents inherit? | `/compound` crystallizes non-obvious learnings into `docs/solutions/`; `/decision-record` writes ADRs to `docs/adr/`. |
 

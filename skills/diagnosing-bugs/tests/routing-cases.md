@@ -2,13 +2,13 @@
 
 Each row gives an input, the tool call that the session must make or not make, and the outcome.
 The skill sets `disable-model-invocation: true`. The runtime blocks a Skill-tool call for it.
-So `feature-intake` routes a bug fix with a Read of the file.
+So `intake` routes a bug fix with a Read of the file.
 A human or a meta-eval session runs these cases. Per-commit CI does not run them.
 
 | ID | Input (abbreviated) | Expected tool call | Expected outcome |
 |----|---------------------|--------------------|------------------|
 | RC-01 | "what does `lint-doc-truth.sh` check?" | no Read of `skills/diagnosing-bugs/SKILL.md`, no Skill call for it | the session answers the question. No diagnosis starts. |
-| RC-02 | "fix: the deploy script exits 0 when the copy fails" (through `feature-intake`) | Read `skills/diagnosing-bugs/SKILL.md`, no Skill call for it | intake writes `Input-type: bug fix`. Phase 1 starts before the lane route. |
+| RC-02 | "fix: the deploy script exits 0 when the copy fails" (through `intake`) | Read `skills/diagnosing-bugs/SKILL.md`, no Skill call for it | intake writes `Input-type: bug fix`. Phase 1 starts before the lane route. |
 | RC-03 | `/diagnosing-bugs` with a bug report | the skill runs | Phase 1 starts after the isolation step |
 | RC-04 | "fix an off-by-one in one helper function" (tiny lane, bug fix) | Read `skills/diagnosing-bugs/SKILL.md` | all six phases run. `diagnosis.md` has all six fields. No "cause known" shortcut (D4). |
 
