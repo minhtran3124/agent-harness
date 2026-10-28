@@ -48,6 +48,10 @@ Then, in the project, run `/harness:setup`. It scaffolds `specs/`, `docs/solutio
 
 Needs `git` and `python3`. The ship workflow also needs the `Workflow` tool.
 
+### Upgrading from 2.x
+
+Version 5.0.0 is a breaking change: skills become `/harness:<name>`, hook profiles and several rules are gone. Follow the Migration steps in the 5.0.0 entry in [CHANGELOG.md](CHANGELOG.md).
+
 ### Move from the old copied install
 
 Earlier versions copied the harness into the project's `.claude/` with `install-harness.sh`. That script is gone. Run `/harness:setup`: it lists the old copied files (by the names this plugin ships) and deletes them only after you approve. Keep both copies and every hook would run twice.
