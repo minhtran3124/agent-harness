@@ -206,6 +206,14 @@ test('e4: RULES and the decision schema carry the needs_review criteria', async 
   assert(/ONLY when/.test(dec.description) && /false/.test(dec.description))
 })
 
+test('e5: owner_confirmed wording in RULES and schema says needs_review still gets an ADR file', async () => {
+  const { calls } = await run({}, null)
+  const c = named(calls, /^intent:1$/)[0]
+  assert(c.prompt.includes('no ADR file unless it also has needs_review: true'), 'RULES omit the needs_review exception')
+  const oc = c.schema.properties.decisions.items.properties.owner_confirmed.description
+  assert(/unless needs_review is also true/.test(oc), 'schema omits the needs_review exception')
+})
+
 test('g1: a multi-ticket intent plans against the integration ref, not the repo checkout; decisions exclude environment facts', async () => {
   const multi = await run({ local: true, tickets: [T(1, 1), T(2, 2, [1])] }, null)
   const p = named(multi.calls, /^intent:2$/)[0].prompt

@@ -41,7 +41,7 @@ const RULES_COMMON = `Rules (all of them apply):
 - Pull request bodies end with the line: ${PR_FOOTER}
 - Run "git add" and "git commit" as separate commands.
 - Use --json with "gh issue view" (plain "gh issue view" fails on this repo).
-- owner_confirmed: true ONLY when a decision just restates an answer listed under the ticket's owner-confirmed decisions. Such a decision gets no ADR file; the PR table says owner-confirmed. Otherwise leave it out.
+- owner_confirmed: true ONLY when a decision just restates an answer listed under the ticket's owner-confirmed decisions. Such a decision gets no ADR file unless it also has needs_review: true (needs_review wins); the PR table says owner-confirmed. Otherwise leave it out.
 - decisions[] holds only real choices between options that change the code or the behaviour. Facts about the environment (which test runner you used, that pytest is missing, that a file was or was not found, that a plan step was already satisfied) are not decisions: leave them out.
 - Never write ADR files. Return decisions[] instead; one stage at the end writes them.
 - You cannot start other agents. If you are stuck, unsure, or a choice affects another ticket or a public contract, set needs_advisor: true with advisor_question and stop; the script asks the advisor.`
@@ -59,7 +59,7 @@ const DECISION = {
     how_to_reverse: STR, confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
     needs_review: { type: 'boolean', description: 'true ONLY when the decision affects another ticket, a public contract or interface, stored data, security or cost, or contradicts the ticket text or an owner-confirmed answer. A reversible choice inside the ticket (naming, an edge case the ticket leaves open, which implementation) is false.' },
     stage: STR, contradicts_confirmed: BOOL, dangerous: BOOL,
-    owner_confirmed: { type: 'boolean', description: 'true ONLY when the decision just restates an owner-confirmed answer for the ticket (no ADR file is written for it). Leave out otherwise.' },
+    owner_confirmed: { type: 'boolean', description: 'true ONLY when the decision just restates an owner-confirmed answer for the ticket (no ADR file is written for it unless needs_review is also true). Leave out otherwise.' },
   },
   required: ['title', 'context', 'options', 'decision', 'why', 'consequences', 'how_to_reverse', 'confidence', 'needs_review'],
 }
