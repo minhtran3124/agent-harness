@@ -15,9 +15,28 @@ The caller names `Mode: interactive` (default) or `Mode: auto`.
 1. Read the ticket. Read the code it names.
 2. Map the open decisions as a design tree. A decision hangs below the decision it depends on.
 3. Find the frontier. The frontier is every decision whose prerequisites are settled.
-4. Ask the whole frontier in one numbered round. Use `AskUserQuestion` when it is available. Otherwise write numbered text.
+4. Ask the frontier in one round. Use `AskUserQuestion` when it is available. Otherwise write numbered text. Follow "Question format".
 5. Give each question a recommended answer. Word the question so that "yes" accepts it. Then wait.
 6. Add the answers to the tree. Find the new frontier. Ask the next round.
+
+## Question format
+
+The owner reads each question in a small terminal tab. Keep every question short enough to scan.
+
+- Ask ONE decision per question. Never put two decisions, or a numbered list, inside one question.
+- `question`: one sentence of at most 25 words. Name what is decided. Put no background in it.
+- `header`: the ticket number and one or two words, for example `#397 scope`.
+- `options`: 2 to 4. Put your recommendation first and end its label with `(Recommended)`.
+- Each option `description`: one line that says what happens if the owner picks it. Put what you found in the code here, not in the question.
+- `AskUserQuestion` takes at most 4 questions per call. With more open decisions, ask the 4 that block the most first. Ask the rest in the next call. Do not merge decisions to fit.
+- Grill one ticket at a time. When the caller batches tickets, give each question the header of its ticket.
+- Text fallback: one block per decision, with the options on their own lines:
+
+```
+1. <question>
+   a) <recommended option> (Recommended) - <effect>
+   b) <other option> - <effect>
+```
 
 ## Facts and decisions
 
