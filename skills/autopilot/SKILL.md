@@ -43,13 +43,13 @@ picks the model and effort for every call below.
    the repo's CLAUDE.md or README, never from memory. If one is missing, ask in step 7. With
    `--no-ask`, record a `needs_review` decision and use `fullTestCmd` only. Then tell the owner
    the run ID and that `/workflows` shows progress, and wait for the completion notice. Answer
-   "done yet?" from the phase and agent counts, never with silence. On completion report as
+   "done yet?" from the phase and agent counts. On completion report as
    `references/launch-args.md` says.
 
 ## Rules
 
 - Nothing is merged into the base or main. Work happens in worktrees, never in the owner's checkout.
-- Skip a stuck or very risky ticket and report it. Never force it.
+- Skip a stuck or very risky ticket and report it.
 - The project's CLAUDE.md wins. A bug ticket needs a failing repro test first (the workflow's stage
   prompts enforce it).
 
