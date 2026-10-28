@@ -123,6 +123,7 @@ from the harness checkout run `bash scripts/init-structure.sh --root <project>`,
 
 | Skill | Trigger | Output |
 |---|---|---|
+| `grilling` | **Intake- or user-invoked**. A ticket has open decisions that the owner must settle before design or planning. It maps the decisions as a design tree and asks the whole frontier in one numbered round, each with a recommended answer. Facts it looks up itself. `Mode: auto` is for `--no-ask` runs only | A "Confirmed decisions" comment on the ticket + a short decision list for the caller |
 | `brainstorming` | The goal is clear but the approach is not. The user weighs two or more ways, does not know how to start, or asks for a design or a recommendation. Not for a settled approach that only needs codebase or library knowledge (that is `xia2`). The high-risk lane routes here | Approved `specs/<slug>/design.md` (`QUESTIONS.md` for non-blocking unknowns in a multi-phase spec) |
 | `xia2` | Find out how something actually works here before building on it. Examples: a feature on unexplained code, a library or API that the repo does not use yet, or how an existing part works. Not for a choice between approaches (that is `brainstorming`). Portable and zero-config, depth policy in `rules/research-depth.md` | `specs/<slug>/research-brief.md` |
 | `diagnosing-bugs` | **User- or intake-invoked**. Run `/diagnosing-bugs`, or `feature-intake` routes an `Input-type: bug fix` here. The skill blocks model invocation, so intake uses the Read tool on its `SKILL.md`. It proves the root cause in six gated phases before any fix. Every lane runs all six phases. No "cause known" shortcut exists. `task-reviewer` reviews the diagnosis before the fix | `specs/<slug>/diagnosis.md` → red test + fix (tiny) or the lane route |
@@ -176,6 +177,7 @@ If one of these isn't available in your environment, the workflows degrade grace
 feature-intake             ──► tiny: git checkout -b → direct edit · normal: using-git-worktrees → subagent-driven-development
                                 high-risk: brainstorming (full chain) · low confidence: escalate
                                 Input-type: bug fix → diagnosing-bugs (before the lane route)
+grilling                   ──► "Confirmed decisions" comment + decision list → caller (terminal)
 brainstorming              ──► xia2 → writing-plans (the only valid next skills)
 xia2                       ──► research brief → user/skill decides next step
 writing-plans              ──► (render_plan.py --summarize) → using-git-worktrees (unless already isolated)
