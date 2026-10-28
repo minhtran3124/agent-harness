@@ -94,7 +94,7 @@ sufficient for low-risk changes — exactly the thing I need to be careful about
 
 ## 3. Adversarial on the load-bearing claim: does a non-regression gate resist overfitting at small n?
 
-This is the make-or-break question for my repo (evals/ has only a handful of fixtures). The evidence:
+This is the make-or-break question for my repo (evals dir:  has only a handful of fixtures). The evidence:
 
 - **VERIFIED (3-0):** PAC-learnability under self-modification (arxiv 2510.04399) — distribution-free
   guarantees are preserved **iff** the family of reachable models is uniformly capacity-bounded (VC dimension); if

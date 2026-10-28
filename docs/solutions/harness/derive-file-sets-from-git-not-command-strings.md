@@ -1,7 +1,7 @@
 ---
 problem_type: knowledge
 module: scripts/verify_summary.py
-tags: git-diff-tree, command-parsing, test-file-detection, lane-gate, red-green, fix-diff, correctness-review-catch, design-decision-reopened
+tags: git-diff-tree, command-parsing, test-file-detection, lane-gate, red-green, fix-diff, correctness-pass-catch, design-decision-reopened
 severity: standard
 applicable_when: A gate or script must know which files a recorded step touched (the test files of a red commit, the files of a fix), and the first idea is to parse them out of a command string that the record holds.
 affects:

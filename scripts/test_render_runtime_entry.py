@@ -44,12 +44,6 @@ def test_paired_model_label_golden_output():
     assert entry.model_label(
         binding, agents, "claude", "intent_reviewer"
     ) == "claude-sonnet-5-5"
-    assert entry.model_label(
-        binding, agents, "claude", "correctness_finder"
-    ) == "claude-opus-5-5"
-    assert entry.model_label(
-        binding, agents, "claude", "correctness_scorer"
-    ) == "claude-sonnet-5-5"
 
 
 def test_missing_runtime_or_model_stage_is_rejected(tmp_path):
@@ -72,7 +66,7 @@ def test_missing_runtime_or_model_stage_is_rejected(tmp_path):
 
 def test_collapsed_review_models_validate(tmp_path):
     for stage, role in (
-        ("correctness_scorer", "reviewer"),
+        ("task_reviewer", "reviewer"),
         ("intent_reviewer", "implementer"),
     ):
         root = clone_inputs(tmp_path / stage)

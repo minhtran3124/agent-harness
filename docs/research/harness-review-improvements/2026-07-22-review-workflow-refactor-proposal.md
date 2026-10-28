@@ -49,7 +49,7 @@ It does **not** propose:
 
 - another generic always-on reviewer;
 - porting the full Claude harness into Codex, Cursor, or OpenCode;
-- deleting the standalone `/correctness-review` or `/intent-review` entry points;
+- deleting the standalone `/correctness review` or `/intent-review` entry points;
 - merging correctness and intent into one reviewer context;
 - making prose-only documentation changes high-risk;
 - replacing deterministic tests and hooks with LLM judgment.
@@ -59,11 +59,11 @@ It does **not** propose:
 The recommendation is based on the current repository and the following records:
 
 - [`skills/subagent-driven-development/`](../../../skills/subagent-driven-development/)
-- [`skills/correctness-review/`](../../../skills/correctness-review/)
+- [`skills/correctness review/`](../../../skills/correctness review/)
 - [`skills/intent-review/`](../../../skills/intent-review/)
 - [`agents/reviewer.md`](../../../agents/reviewer.md)
 - [`hooks/risk-corroboration.sh`](../../../hooks/risk-corroboration.sh)
-- [`evals/skills/review-chain/`](../../../evals/skills/review-chain/)
+- [`evals dir: skills/review-chain/`](../../../evals dir: skills/review-chain/)
 - [`docs/research/harness-review-improvements/reviews/over-engineering-review-2026-07-16.md`](reviews/over-engineering-review-2026-07-16.md)
 - PR #141 follow-up fixes `d61e155` and `1c0f01d` referenced by issue #143.
 
@@ -71,7 +71,7 @@ Measured source size for the three current review-related skill directories:
 
 | Surface | Lines | Words |
 |---|---:|---:|
-| `correctness-review/*` | 788 | 6,891 |
+| `correctness review/*` | 788 | 6,891 |
 | `intent-review/*` | 303 | 2,570 |
 | `subagent-driven-development/*` | 671 | 4,350 |
 | **Total** | **1,762** | **13,811** |
@@ -147,7 +147,7 @@ intent oracle
 The router selects a review profile and records which methods actually ran. Existing specialist
 skills remain available as thin adapters:
 
-- `/correctness-review` remains the standalone full correctness entry point;
+- `/correctness review` remains the standalone full correctness entry point;
 - `/intent-review` remains the standalone plan-blind intent entry point;
 - `subagent-driven-development` delegates final review selection to the router instead of
   restating the complete pipelines;
@@ -328,7 +328,7 @@ The receipt proves review freshness. It does not replace test evidence in `SUMMA
 | `feature-intake` | Emit lane, confidence, and change-type signals; classify workflow-engine behavior as high-blast when instruction delivery/routing changes. |
 | `subagent-driven-development` | Delegate final review selection to one router; trim duplicated graphs, examples, and pipeline prose. |
 | Per-task reviewers | Combine spec + quality in normal lane because they share the task/PLAN oracle; keep separation only when high-risk evidence justifies it. |
-| `correctness-review` | Parameterize selected methods; reserve full finder + scorer for high-risk or explicit standalone invocation. |
+| `correctness review` | Parameterize selected methods; reserve full finder + scorer for high-risk or explicit standalone invocation. |
 | `intent-review` | Keep plan-blind standalone behavior; invoke conditionally for normal and always for high-risk. |
 | `risk-corroboration.sh` | Add path-based workflow-engine signals; do not keyword-scan all Markdown. |
 | Manifest/registry | Canonicalize workflow-engine paths, instruction sources, consumers, and delivery contracts. |

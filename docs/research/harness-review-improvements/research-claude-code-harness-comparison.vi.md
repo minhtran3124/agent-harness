@@ -93,7 +93,7 @@ APPROVE của reviewer tuyên bố rõ là không cấp quyền commit/push (com
 |---|---|
 | **Định tuyến theo làn rủi ro** | Hệ thống làn của `/feature-intake` (tiny/normal/high-risk + confidence) chi tiết hơn cách chia phẳng "lightweight vs non-trivial" của họ. Đường tắt cho sửa typo của họ là một trường hợp đặc biệt; làn của chúng ta là *nguyên tử định tuyến*, được `risk-corroboration.sh` đối chiếu hậu kiểm với diff đã stage — họ không có thứ gì tương đương việc *máy kiểm tra làn đã khai báo so với những gì thực sự bị thay đổi*. |
 | **Nghi thức tỉ lệ với rủi ro, cổng con người tỉ lệ với độ mơ hồ** | Vòng lặp của họ mặc định cần phê duyệt (người dùng duyệt mọi contract). Notify-and-proceed của chúng ta cho công việc normal-lane độ tin cậy cao + `ESCALATIONS.md` từ-chối-khi-không-phản-hồi là một mô hình tự chủ phát triển hơn. Họ tối ưu cho một người vận hành kỷ luật; chúng ta tối ưu cho sự tự chủ có giới hạn. |
-| **Ba oracle review độc lập** | Pipeline của chúng ta tách spec compliance → code quality → `/correctness-review` (đối kháng, giả định có bug) → `/intent-review` (diff so với yêu cầu nguyên văn, cố ý mù với PLAN). `/harness-review` của họ là một evaluator duy nhất kiểm tra spec/Plans alignment + TDD. Oracle "qua được plan, qua được test, nhưng không phải thứ người dùng yêu cầu" của intent-review không có đối trọng bên họ. |
+| **Ba oracle review độc lập** | Pipeline của chúng ta tách spec compliance → code quality → `/correctness review` (đối kháng, giả định có bug) → `/intent-review` (diff so với yêu cầu nguyên văn, cố ý mù với PLAN). `/harness-review` của họ là một evaluator duy nhất kiểm tra spec/Plans alignment + TDD. Oracle "qua được plan, qua được test, nhưng không phải thứ người dùng yêu cầu" của intent-review không có đối trọng bên họ. |
 | **Tích lũy tri thức (knowledge compounding)** | `/compound` với bốn loại track (bug/knowledge/decision/**failure**), phân loại mức độ nghiêm trọng lên `critical-patterns.md`, gộp có nhận biết va chạm, rebuild toàn bộ INDEX, và trường staleness 30 ngày — giàu hơn nhiều so với harness-mem của họ (một daemon recall tùy chọn, không có schema cho *loại* bài học và không có mô hình suy giảm/độ tin cậy). Cơ chế suy giảm độ tin cậy trong agent-memory của chúng ta (`high/medium/low` + `review-by`) cũng không có đối trọng. |
 | **Review hiểu cấu trúc codebase** | MCP code-review-graph của chúng ta (impact radius, affected flows, tests-for, lớp phủ blast-radius trên PLAN.html) cho review ngữ cảnh cấu trúc. Review của họ dựa trên đọc file. |
 | **Song song theo wave** | Wave không-chồng-file với spawn song song trong một message và giao thức thu thập kết quả là mô hình thực thi song song tường minh hơn work.yaml Phase 1–4 của họ. |
@@ -111,7 +111,7 @@ nào rằng chuỗi của mình cải thiện kết quả.
    (intake → plan → review hai tầng → correctness → intent) bắt được vấn đề; họ chạy 130
    lần có kiểm soát và công bố p-value cùng *chi phí* của mức cải thiện. Bài học: một
    harness là một tuyên bố sản phẩm, và tuyên bố cần bằng chứng đã thực thi. Ngay cả một
-   phiên bản nhỏ — 10 task, có/không có `/correctness-review`, đếm số bug lọt lưới — cũng
+   phiên bản nhỏ — 10 task, có/không có `/correctness review`, đếm số bug lọt lưới — cũng
    biến lời chào hàng của chúng ta từ niềm tin thành phép đo.
 
 2. **Cưỡng chế bằng cấu trúc thắng cưỡng chế bằng prompt.** Reviewer của họ không thể
@@ -148,7 +148,7 @@ Sắp xếp theo đòn bẩy / công sức:
 
 ### Thắng nhanh (vài ngày)
 
-1. **`disallowedTools` cho các agent review.** Cấp cho subagent của `/correctness-review`
+1. **`disallowedTools` cho các agent review.** Cấp cho subagent của `/correctness review`
    và `/intent-review` bề mặt công cụ chỉ-đọc khi dispatch (không Write/Edit/Bash gây
    thay đổi). Độc lập review về mặt cấu trúc với một dòng config.
    *(Đòn bẩy cao, công sức không đáng kể.)*
@@ -184,7 +184,7 @@ Sắp xếp theo đòn bẩy / công sức:
 ### Cược lớn hơn (đáng một spec riêng cho mỗi cái)
 
 7. **Một micro-benchmark cho chuỗi review.** Gieo N task nhỏ với bug / lệch intent đã
-   cài sẵn; chạy có và không có `/correctness-review` + `/intent-review`; ghi tỉ lệ bắt
+   cài sẵn; chạy có và không có `/correctness review` + `/intent-review`; ghi tỉ lệ bắt
    được và chi phí token vào `benchmarks/`. Chỉ 10 task × 5 lần chạy đã cho chúng ta con
    số thực đầu tiên — và một chuông báo regression mỗi khi sửa các skill. Đây là thực
    hành đáng "đánh cắp" nhất.

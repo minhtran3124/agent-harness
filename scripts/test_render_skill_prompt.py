@@ -43,9 +43,6 @@ def test_live_required_policy_delivery_passes():
 def test_context_matrix_enumerates_every_isolated_context():
     assert set(module.CONTEXT_MATRIX) == {
         "implementer",
-        "correctness-controller",
-        "correctness-reviewer",
-        "correctness-scorer",
         "intent-controller",
     }
 
@@ -72,23 +69,3 @@ def test_each_policy_delivery_edge_is_load_bearing(tmp_path):
                 errors,
             )
             target.unlink()
-
-
-def test_check_all_rejects_invalid_correctness_config(tmp_path):
-    for spec in module.CONTEXT_MATRIX.values():
-        path = tmp_path / spec["path"]
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text("\n".join(spec["required"]))
-    config = tmp_path / "skills/correctness-review/review-config.json"
-    config.write_text(
-        json.dumps(
-            {
-                "finder_angles": ["one"],
-                "default_threshold": 75,
-                "minimum_threshold": 60,
-            }
-        )
-    )
-    result = run("--root", tmp_path, "--check-all")
-    assert result.returncode == 1
-    assert "finder-angle" in result.stderr

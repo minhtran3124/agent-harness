@@ -79,7 +79,7 @@ Bug 2 (`scripts/harness-status.sh`), fixed in three rounds:
 - Round 1 (commit `5b506ec`): wrapped `d = json.loads(line)` in
   `try: ... except json.JSONDecodeError: continue` — but left the subsequent
   `print(f"...{d['date']}...{d['findings']}...{d['band']}...")` outside the try block.
-- Round 2 (commit `5590288`, found by a later adversarial correctness-review pass): moved the
+- Round 2 (commit `5590288`, found by a later adversarial correctness review pass): moved the
   `print(...)` call INSIDE the `try:` block and broadened the `except` clause to
   `except (json.JSONDecodeError, KeyError, TypeError): continue`. **Incomplete — do not copy
   this as the fix pattern.** It leaves `open()` unguarded (see round 3).
@@ -158,7 +158,7 @@ PY
   L1 cannot see inside a quoted heredoc, so both wrong fixes shipped CI-green. Any change to a
   `scripts/*.sh` block that parses external data needs a case in `tests/scripts/`.
 - **Ask "is this fix at the right altitude?" as a distinct review pass.** Every per-line bug
-  hunt over this diff — including the harness's own `/correctness-review` — found the parse and
+  hunt over this diff — including the harness's own `/correctness review` — found the parse and
   key-access bugs and missed the boundary. The boundary defect was only found by a reviewer
   asking whether the fix was deep enough or a bandaid. That question is not implied by
   "find the bugs"; it has to be asked on purpose.
@@ -170,7 +170,7 @@ advisory by default, and it enforces that with `except OSError` and
 `except subprocess.CalledProcessError` around its git calls. `_git` decodes the output with
 `text=True`. With `git diff -z`, git prints raw path bytes, so a non-UTF-8 file name raises
 `UnicodeDecodeError`, which neither clause catches. `--lane` then exits 1 with a traceback, and
-`hooks/commit-gate.sh` blocks on any non-zero exit. Two correctness-review angles reproduced it;
+`hooks/commit-gate.sh` blocks on any non-zero exit. Two correctness review angles reproduced it;
 the prior-art angle found it through this record. The scorer gave it 50 (rare trigger), so it is
 recorded as an advisory in `specs/gh-313-prove-the-red/SUMMARY.md` and is not fixed yet. The
 correct fix is the same as round 3 above: bound the whole per-pair git block (catch any

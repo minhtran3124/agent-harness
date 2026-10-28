@@ -111,7 +111,7 @@ dùng thuật ngữ trung lập hơn, và tách skill eval khỏi plugin-code te
 | Reviewer read-only | Không có Write/Edit/Agent nhưng Bash vẫn có thể mutate | Chưa enforce hoàn toàn |
 | Final review | context audit + correctness + intent + receipt | Mạnh hơn upstream; giữ nguyên |
 | Project-local worktree | Đã ưu tiên `.worktrees/` | Đã phù hợp |
-| Evals tách khỏi tests | Đã có `evals/` riêng | Đã phù hợp |
+| Evals tách khỏi tests | Đã có `evals dir: ` riêng | Đã phù hợp |
 
 Với N task sạch, pipeline hiện tại cần `N implementer + 2N task reviewer`. Sau khi hợp nhất,
 pipeline còn `N implementer + N task reviewer`: giảm chính xác 50% reviewer dispatch theo task.

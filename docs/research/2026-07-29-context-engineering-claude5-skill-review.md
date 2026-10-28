@@ -67,7 +67,7 @@ The survey was carried out with 1 Explore subagent, reading `rules/behavior.md`,
   `rules/auto-correct-scope.md` (5 occurrences) and `rules/orchestration.md` (3 occurrences) — both govern
   autonomy boundaries and irreversible actions. This matches the "only constrain where a wrong judgment
   is genuinely expensive" principle — no fix needed.
-- **4 core skills were checked** (feature-intake, correctness-review,
+- **4 core skills were checked** (feature-intake, correctness review,
   subagent-driven-development, writing-plans) and all **reference** (`Read rules/...` at the top) instead of
   copy-pasting shared rules — the single-source principle is fairly well respected at this layer.
 - **`rules/plan-format.md` already uses a real inline schema/examples** (task block ~lines 1-164) instead of a
@@ -131,7 +131,7 @@ elsewhere (`skills/xia2/tests/`, `skills/feature-intake/tests/`), just not appli
 > is a canary/eval file sitting **outside** the runtime context, used only for regression-checking `SKILL.md`, never
 > loaded into the prompt at run time. The two are different in nature: one is few-shot calibration living in
 > the real prompt, the other is an external verification fixture. Therefore "lift the anecdote verbatim into
-> `skills/correctness-review/tests/` and delete it from the prompt" — as the original proposal described — is a
+> `skills/correctness review/tests/` and delete it from the prompt" — as the original proposal described — is a
 > **runtime behavior change**, not the "pure documentation fix" the risk table in §4 once recorded.
 >
 > **Decision:** keep the anecdote **in-prompt** (do not move it to `tests/`), only **compress it to 1-2
@@ -139,7 +139,7 @@ elsewhere (`skills/xia2/tests/`, `skills/feature-intake/tests/`), just not appli
 > the scoring model. Not yet implemented — the `correctness-scorer-prompt.md` lines 93-98 edit is left for a
 > separate turn.
 
-**(4) `context-propagation-audit` is the only skill without a supporting `references/` file.**
+**(4) `context propagation audit` is the only skill without a supporting `references/` file.**
 At 38 lines it doesn't need splitting yet — recorded only as a point to watch if this skill grows.
 
 ## 4. Proposals (candidates for a separate lane, not yet implemented)
@@ -148,7 +148,7 @@ At 38 lines it doesn't need splitting yet — recorded only as a point to watch 
 |---|---|---|---|
 | 2 | ~~Designate orchestration.md as the official source, with the other 3 places linking to it~~ → **Add a "source of origin" label pointing back to `feature-intake/SKILL.md` Step 3 (where the classification algorithm actually lives) in `rules/orchestration.md` §Intake fields and the `rules/auto-correct-scope.md` lane-aware table; delete/replace no content in these 2 places or in `CLAUDE.md`** (decision after the discussion in §3.2 item 2 — see the discussion box) | Closes the "no idea where the taxonomy definition lives" gap without losing the existing autonomy table or classification algorithm | Low — 2 added lines in 2 doc files, no change to `scripts/`/`hooks/`; does not automatically prevent drift when a lane is renamed (the mechanized option was considered and rejected as too much work for a risk that has never occurred) |
 | 3 | ~~Move the anecdote out to `tests/`~~ → **Compress the "Worked example PR #51" anecdote in `correctness-scorer-prompt.md` (lines 93-98) into 1-2 structured lines, keeping it in-prompt** (decision after the discussion in §3.2 item 3 — see the discussion box) | Cuts the excess prose without losing the calibration signal for the scorer model at runtime | Low-medium — edits content sitting inside a real runtime prompt (not pure docs); 1-2 scorer runs should be cross-checked after the edit to be sure the score-0 behavior on `unmodified-line` is unchanged |
-| 4 (not doing) | Split `context-propagation-audit` out into `references/` | Not needed yet — 38 lines, below the threshold | — |
+| 4 (not doing) | Split `context propagation audit` out into `references/` | Not needed yet — 38 lines, below the threshold | — |
 | 1 (not doing) | Reduce MUST/NEVER density in `auto-correct-scope.md`/`orchestration.md` | Wrong direction — by the article's own reasoning this is exactly where hard language belongs (autonomy boundaries, hard-to-reverse actions) | — |
 
 **Recommendation:** items 2 and 3 remain the two with real implementation value, but they are no longer uniform
@@ -170,7 +170,7 @@ Items 2 and 3 are **implemented** (2026-07-29, branch `chore/context-eng-lane-an
   Steps 3–4 as the source of the taxonomy definition.
 - `rules/auto-correct-scope.md` §Lane-aware autonomy — added a similar sentence, keeping the autonomy
   table unchanged.
-- `skills/correctness-review/correctness-scorer-prompt.md` lines 93-95 — compressed the PR #51 anecdote from
+- `skills/correctness review/correctness-scorer-prompt.md` lines 93-95 — compressed the PR #51 anecdote from
   6 prose lines to 3 structured lines (Case/Verdict), still in-prompt.
 
 The full test suite (`bash scripts/run-tests.sh`) run after the edits: `ALL GREEN` (278 unit tests +

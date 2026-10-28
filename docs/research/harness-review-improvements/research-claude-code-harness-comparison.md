@@ -89,7 +89,7 @@ explicitly does not grant commit/push permission (commit is a separate gate).
 |---|---|
 | **Risk-lane routing** | Our `/feature-intake` lane system (tiny/normal/high-risk + confidence) is more granular than their flat "lightweight vs non-trivial" split. Their small-typo path is a special case; our lanes are the routing *primitive*, corroborated post-hoc by `risk-corroboration.sh` against the staged diff — they have no equivalent of *machine-checking the declared lane against what was actually changed*. |
 | **Ceremony scales with risk, human gate scales with ambiguity** | Their loop is approval-gated by default (user approves every contract). Our notify-and-proceed for high-confidence normal-lane work + `ESCALATIONS.md` deny-on-no-response is a more developed autonomy model. They optimize for one disciplined operator; we optimize for bounded autonomy. |
-| **Three independent review oracles** | Our pipeline separates spec compliance → code quality → `/correctness-review` (adversarial, assumes a bug exists) → `/intent-review` (diff vs verbatim request, deliberately blind to PLAN). Their `/harness-review` is one evaluator checking spec/Plans alignment + TDD. Our intent-review's "passed the plan, passed the tests, but not what the user asked" oracle has no counterpart there. |
+| **Three independent review oracles** | Our pipeline separates spec compliance → code quality → `/correctness review` (adversarial, assumes a bug exists) → `/intent-review` (diff vs verbatim request, deliberately blind to PLAN). Their `/harness-review` is one evaluator checking spec/Plans alignment + TDD. Our intent-review's "passed the plan, passed the tests, but not what the user asked" oracle has no counterpart there. |
 | **Knowledge compounding** | `/compound` with four track types (bug/knowledge/decision/**failure**), severity triage to `critical-patterns.md`, collision-aware merging, INDEX full-rebuild, and 30-day staleness fields is far richer than their harness-mem (an optional recall daemon with no schema for *what kind* of learning something is and no decay/confidence model). Our agent-memory confidence decay (`high/medium/low` + `review-by`) also has no equivalent. |
 | **Codebase-aware review** | Our code-review-graph MCP (impact radius, affected flows, tests-for, blast radius overlay on PLAN.html) gives reviews structural context. Their review is file-read based. |
 | **Wave parallelism** | Our zero-file-overlap waves with single-message parallel spawn and a collection protocol are a more explicit parallel-execution model than their Phase 1–4 work.yaml. |
@@ -107,7 +107,7 @@ improves outcomes.
    two-stage review → correctness → intent) catches problems; they ran 130 controlled
    runs and published p-values and the *cost* of the gain. Lesson: a harness is a
    product claim, and claims need executed evidence. Even a small version — 10 tasks,
-   with/without `/correctness-review`, count escaped bugs — would convert our pitch
+   with/without `/correctness review`, count escaped bugs — would convert our pitch
    from belief to measurement.
 
 2. **Enforcement by construction beats enforcement by prompt.** Their reviewer cannot
@@ -142,7 +142,7 @@ Ordered by leverage / effort:
 
 ### Quick wins (days)
 
-1. **`disallowedTools` on review agents.** Give `/correctness-review` and
+1. **`disallowedTools` on review agents.** Give `/correctness review` and
    `/intent-review` subagents read-only tool surfaces in their dispatch
    (no Write/Edit/Bash-mutating). Structural review independence for one line of config.
    *(High leverage, trivial effort.)*
@@ -177,7 +177,7 @@ Ordered by leverage / effort:
 ### Larger bets (worth a spec each)
 
 7. **A micro-benchmark for the review chain.** Seed N small tasks with known planted
-   bugs / intent drifts; run with and without `/correctness-review` + `/intent-review`;
+   bugs / intent drifts; run with and without `/correctness review` + `/intent-review`;
    record catch-rate and token cost into `benchmarks/`. Even 10 tasks × 5 runs gives us
    our first real number — and a regression alarm when we edit the skills. This is the
    single most valuable practice to steal.

@@ -144,8 +144,6 @@
     "autopilot",
     "brainstorming",
     "compound",
-    "context-propagation-audit",
-    "correctness-review",
     "decision-record",
     "diagnosing-bugs",
     "feature-intake",

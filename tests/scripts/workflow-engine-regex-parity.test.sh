@@ -4,8 +4,7 @@
 #   - scripts/check_review_receipt.py (push-time gate: --require-audit-if)
 # Both must recognise the SAME surfaces, or a change could clear one gate and trip
 # the other. This test asserts the include + exclude patterns are byte-identical in
-# both files — the drift guard that lets the duplicate copy stay honest (the same
-# discipline as tests/scripts/inline-policy-drift.test.sh for policy prose).
+# both files — the drift guard that lets the duplicate copy stay honest.
 source "$(dirname "$0")/../lib.sh"
 
 HOOK="$ROOT/hooks/commit-gate.sh"

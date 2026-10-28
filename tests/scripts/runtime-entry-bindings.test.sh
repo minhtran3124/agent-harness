@@ -37,8 +37,7 @@ else
 fi
 
 t "semantic prompts retain explicit model-stage selection without vendor labels"
-if grep -q 'model_stage: correctness_scorer' "$ROOT/skills/correctness-review/correctness-scorer-prompt.md" \
-  && grep -q '"intent_reviewer": "intent-reviewer"' "$ROOT/adapters/runtime-entry-bindings.json" \
+if grep -q '"intent_reviewer": "intent-reviewer"' "$ROOT/adapters/runtime-entry-bindings.json" \
   && grep -q 'model_stage: implementer' "$ROOT/skills/implement/implementer-prompt.md"; then
   pass
 else

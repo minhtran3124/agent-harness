@@ -54,7 +54,7 @@ TEST_RUNNER = (
 )
 SKILL = (
     "---\n"
-    "name: correctness-review\n"
+    "name: intent-review\n"
     'description: "Hunt for bugs."\n'
     "allowed-tools: Read, Grep\n"
     "---\n"
@@ -72,7 +72,7 @@ SNAPSHOT = {
         "task-reviewer": {"model": "claude-opus-5-5", "effort": "medium"},
         "test-runner": {"model": "claude-haiku-5-5"},
     },
-    "skills": {"correctness-review": {}, "xia2": {}},
+    "skills": {"intent-review": {}, "xia2": {}},
 }
 ENV_VARS = (
     "CLAUDE_CODE_EFFORT_LEVEL",
@@ -91,8 +91,8 @@ def tree(tmp_path, monkeypatch):
         "agents/reviewer.md": REVIEWER,
         "agents/task-reviewer.md": TASK_REVIEWER,
         "agents/test-runner.md": TEST_RUNNER,
-        "skills/correctness-review/SKILL.md": SKILL,
-        "skills/xia2/SKILL.md": SKILL.replace("correctness-review", "xia2"),
+        "skills/intent-review/SKILL.md": SKILL,
+        "skills/xia2/SKILL.md": SKILL.replace("intent-review", "xia2"),
         "skills/my-skill/SKILL.md": CONSUMER_SKILL,
     }
     for rel, text in files.items():
@@ -336,33 +336,33 @@ def test_main_session_boundary_settings_unchanged(tree, monkeypatch):
 
 # SC-8
 def test_skill_line_insert_and_remove_restores_bytes(tree, capsys):
-    original = (tree / ".claude/skills/correctness-review/SKILL.md").read_bytes()
-    user_file(tree, {"skills": {"correctness-review": {"effort": "high"}}})
+    original = (tree / ".claude/skills/intent-review/SKILL.md").read_bytes()
+    user_file(tree, {"skills": {"intent-review": {"effort": "high"}}})
     assert run(tree, "--apply") == 0
-    assert read(tree, "skills/correctness-review/SKILL.md") == SKILL.replace(
+    assert read(tree, "skills/intent-review/SKILL.md") == SKILL.replace(
         'description: "Hunt for bugs."\n',
         'description: "Hunt for bugs."\neffort: high\n',
     )
     user_file(tree, {})
     assert run(tree, "--apply") == 0
     assert (
-        tree / ".claude/skills/correctness-review/SKILL.md"
+        tree / ".claude/skills/intent-review/SKILL.md"
     ).read_bytes() == original
 
 
 def test_skill_line_on_real_deployed_skill(tmp_path):
-    real = ROOT / ".claude/skills/correctness-review/SKILL.md"
+    real = ROOT / ".claude/skills/intent-review/SKILL.md"
     if not real.is_file():
-        pytest.skip("no deployed correctness-review skill")
-    target = tmp_path / ".claude/skills/correctness-review/SKILL.md"
+        pytest.skip("no deployed intent-review skill")
+    target = tmp_path / ".claude/skills/intent-review/SKILL.md"
     target.parent.mkdir(parents=True)
     shutil.copy(real, target)
     (tmp_path / ".claude/harness-models.defaults.json").write_text(
-        json.dumps({"agents": {}, "skills": {"correctness-review": {}}})
+        json.dumps({"agents": {}, "skills": {"intent-review": {}}})
     )
     user_file(
         tmp_path,
-        {"skills": {"correctness-review": {"model": "inherit", "effort": "high"}}},
+        {"skills": {"intent-review": {"model": "inherit", "effort": "high"}}},
     )
     assert applier.main(["--apply", "--project-root", str(tmp_path)]) == 0
     lines = target.read_text().splitlines()

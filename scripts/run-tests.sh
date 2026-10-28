@@ -58,15 +58,6 @@ else
   echo "  skip — no python3"
 fi
 
-echo "== L1: review-chain eval answer keys =="
-if ! command -v python3 >/dev/null 2>&1; then
-  echo "  skip — no python3"
-elif [ ! -d evals/skills/review-chain/fixtures ]; then
-  echo "  skip — no evals/skills/review-chain/fixtures directory"
-else
-  python3 scripts/score_review_chain_eval.py --check-truth evals/skills/review-chain/fixtures || fail "scripts/score_review_chain_eval.py --check-truth"
-fi
-
 echo "== L1: STE linter self-test and prose baseline =="
 # The self-test can fail the suite. The baseline check reports only and always exits 0.
 if command -v python3 >/dev/null 2>&1; then
@@ -176,8 +167,7 @@ PYBIN="${TMPDIR:-/tmp}/harness-tests-venv/bin/python"
 [ -x "$PYBIN" ] || PYBIN="$(command -v python3 || true)"
 if [ -n "$PYBIN" ] && "$PYBIN" -c 'import pytest' >/dev/null 2>&1; then
   # Every unit test under scripts/, runtime/ and skills/ — collected, not hand-listed: the
-  # hand list drifted and left four test files running nowhere. evals/ is excluded on
-  # purpose: its fixture repos hold tests that are meant to fail.
+  # hand list drifted and left four test files running nowhere.
   PYTESTS="$(find scripts runtime skills -name 'test_*.py' -not -path '*/__pycache__/*' | LC_ALL=C sort | tr '\n' ' ')"
   XDIST=""
   "$PYBIN" -c 'import xdist' >/dev/null 2>&1 && XDIST="-n $SUITE_JOBS"
