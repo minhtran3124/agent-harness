@@ -262,6 +262,6 @@ graph LR
 > **One-liner:** research before building. No depth classifier: look locally first, and outside the repo only when the change has an external surface.
 
 - **Portable by design.** Copy `skills/xia2/`; there is no per-project config.
-- **Fork to another project:** copy the folder, then run `bash scripts/init-structure.sh --root <new repo>`. Keep `tests/behavioural/pressure-scenarios.md`: most scenarios are universal.
+- **Fork to another project:** copy the folder, then run `bash scripts/init-structure.sh --root <new repo>`. Keep `skills/xia2/tests/behavioural/pressure-scenarios.md`: most scenarios are universal.
 
 <!-- harness-only:end -->
