@@ -474,6 +474,8 @@ async function stageSuite() {
 }
 
 async function stageArtifact(results) {
+  // Local mode publishes nothing outside the machine: no push, no PR, no artifact.
+  if (LOCAL) return { fallback: 'docs/adr/' }
   const prompt = `${RULES}\n\nStage: build ONE private artifact for this run. If the 'ink-artifact' skill and the Artifact tool both exist, use the skill to build it: one section per ticket, decisions with needs_review: true first. Keep it private.\n` +
     `If either is missing, build nothing, return created: false and fallback: 'docs/adr/' (the ADR files are the source of truth).\n` +
     `Tickets: ${JSON.stringify(results.map(r => ({ n: r.n, status: r.status, summary: r.summary, reason: r.reason, url: r.url })))}\n` +

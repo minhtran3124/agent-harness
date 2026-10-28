@@ -294,6 +294,7 @@ test('i: local mode never mentions pushing or opening a PR and fetches no issue'
       assert(!c.prompt.includes('git push'), `${c.label} mentions git push`)
     }
     assert.strictEqual(named(calls, /^request:/).length, 0)
+    assert.strictEqual(named(calls, /^artifact/).length, 0, 'local mode publishes no artifact')
     assert.strictEqual(result.final.pr, null)
     assert(result.tickets.every(t => t.status === 'done'))
   }
