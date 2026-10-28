@@ -357,7 +357,7 @@ test('e3: review level follows diff size and risky paths; never max or ultra', a
   assert.strictEqual(await lvl([{ path: 'hooks/x.sh', added: 1, deleted: 1 }]), 'high')
 })
 
-test('f: intent review sees the request and not the plan, confirmed answers or decisions', async () => {
+test('f: intent review sees the request and not the plan or decisions', async () => {
   const dec = { title: 'DECISION-TITLE-XYZ', context: 'c', options: ['a'], decision: 'd', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'high', needs_review: false }
   const { calls, result } = await run({ tickets: [T(1, 1, [], { confirmed: 'CONFIRMED-ANSWER-QQ' })] }, c => {
     if (c.label === 'intent:1') return ok({ goal: 'GOAL-SECRET', decisions: [dec], summary: 'SUMMARY-SECRET', plan_steps: [{ title: 'PLANSTEP-ABC', files: [], done_when: 'x' }] })
@@ -366,12 +366,24 @@ test('f: intent review sees the request and not the plan, confirmed answers or d
   const p = named(calls, /^intent-review$/)[0]
   assert.strictEqual(p.opts.agentType, 'harness:intent-reviewer')
   assert(p.prompt.includes('REQUEST-BODY-1') && p.prompt.includes('origin/v5.0.0..origin/feat/1-ticket-1'))
-  for (const bad of ['CONFIRMED-ANSWER-QQ', 'PLANSTEP-ABC', 'DECISION-TITLE-XYZ', 'GOAL-SECRET', 'SUMMARY-SECRET', 'did it']) assert(!p.prompt.includes(bad), `leaked ${bad}`)
+  for (const bad of ['PLANSTEP-ABC', 'DECISION-TITLE-XYZ', 'GOAL-SECRET', 'SUMMARY-SECRET', 'did it']) assert(!p.prompt.includes(bad), `leaked ${bad}`)
   assert.strictEqual(named(calls, /^request:1$/)[0].prompt.includes('gh issue view 1 --repo o/r --json body -q .body'), true)
   assert.strictEqual(named(calls, /^intent-fix$/).length, 1, 'a gap gets one fix round')
   assert(result.intent.gaps.length === 2)
   const ls = labelsOf(calls)
   assert(ls.indexOf('intent-fix') < ls.indexOf('suite'))
+})
+
+test('f2: owner-confirmed decisions reach intent-review as owner words and intent-fix never reverts them', async () => {
+  const { calls } = await run({ tickets: [T(1, 1, [], { confirmed: 'CONFIRMED-ANSWER-QQ' })] }, c => {
+    if (c.label === 'intent-review') return { verdict: 'gaps found', findings: [{ kind: 'drift', clause: 'C', detail: 'd', behaviour_changing: true }] }
+  })
+  const p = named(calls, /^intent-review$/)[0].prompt
+  assert(p.includes('CONFIRMED-ANSWER-QQ') && /NOT a gap/.test(p), 'confirmed decisions missing or unlabelled')
+  const f = named(calls, /^intent-fix$/)[0].prompt
+  assert(f.includes('CONFIRMED-ANSWER-QQ') && /never revert/.test(f) && f.includes('needs_review: true'))
+  const none = await run({}, c => (c.label === 'intent-review' ? { verdict: 'gaps found', findings: [{ kind: 'gap', clause: 'C', detail: 'd' }] } : undefined))
+  assert(!/Owner-confirmed/.test(named(none.calls, /^intent-review$/)[0].prompt + named(none.calls, /^intent-fix$/)[0].prompt), 'no confirmed text, no block')
 })
 
 test('g: the full suite runs once, after review and intent review', async () => {

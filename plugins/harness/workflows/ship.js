@@ -510,12 +510,15 @@ async function requestText(done) {
 
 async function stageIntentReview(done) {
   const request = await requestText(done)
-  // Plan-blind on purpose: only the request and the range. No plan, design, ADR, confirmed answers or summary.
+  // Plan-blind on purpose: the request, the owner's own confirmed decisions (owner words, not agent plan) and the range. No plan, design, ADR or summary.
+  const owner = done.map(r => tickets.find(x => x.n === r.n)).filter(t => t && t.confirmed && t.confirmed.trim())
+    .map(t => `### #${t.n}\n${t.confirmed.trim()}`).join('\n\n')
+  const ownerBlock = owner ? `Owner-confirmed decisions (the owner's own words; a change they name is NOT a gap, drift or excess):\n<<<\n${owner}\n>>>\n\n` : ''
   const w = newWt('intent-review', null, finalRef)
   const role = `${pluginDir}/agents/intent-reviewer.md`
   const prompt = `${w.setup}Role: read ${role} and act as that role. If it does not exist, use this role: ` +
     `compare the diff with the owner's request and report only gaps (requested but missing), drift (does something other than requested) and excess (unrequested behaviour).\n\n` +
-    `Owner's original request, verbatim:\n<<<\n${request}\n>>>\n\nDiff range: ${baseRef}..${finalRef}\n\n` +
+    `Owner's original request, verbatim:\n<<<\n${request}\n>>>\n\n${ownerBlock}Diff range: ${baseRef}..${finalRef}\n\n` +
     `Read the diff with: git -C ${w.dir} diff ${baseRef}..${finalRef}. Read-only: edit nothing. ` +
     `Report only findings of kind gap, drift or excess. Do not report anything else: nothing about tests, about whether tests pass, or about your role file. If there is nothing to report, return no findings.`
   const res = await call(prompt, { label: 'intent-review', phase: 'Intent review', schema: INTENT_REVIEW_SCHEMA, effort: EFFORT.review, agentType: 'harness:intent-reviewer' }, role)
@@ -523,7 +526,8 @@ async function stageIntentReview(done) {
   const fixable = findings.filter(f => f.kind === 'gap' || (f.kind === 'drift' && f.behaviour_changing))
   if (fixable.length) {
     const text = fixable.map((f, i) => `${i + 1}. [${f.kind}] ${f.clause}: ${f.detail}`).join('\n')
-    const fix = await fixAgent('intent-fix', `The intent review found these gaps against the owner's request:\n${text}\nFix each one, one commit per finding.`,
+    const fix = await fixAgent('intent-fix', `The intent review found these gaps against the owner's request:\n${text}\nFix each one, one commit per finding.` +
+      (owner ? `\nOwner-confirmed decisions (never revert or undo a change they name; skip any finding that conflicts with them and return it as a decision with needs_review: true instead):\n${owner}\n` : ''),
       'Return base_sha and the last commit sha. ')
     takeDecisions('run', 'intent-fix', fix)
   }
