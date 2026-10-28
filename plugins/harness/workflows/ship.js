@@ -240,7 +240,7 @@ const BOUNDARY_RULE = `A change outside these files, or against an Out of scope 
 function boundaryText(label, intent) {
   const b = boundaryOf(intent)
   return `${label}\nOut of scope (the ticket's own lines):\n${b.out_of_scope.length ? b.out_of_scope.map(x => `- ${x}`).join('\n') : '- none listed'}\n` +
-    `Files this ticket names (tests and docs count only when the ticket lists them):\n${b.files.length ? b.files.map(x => `- ${x}`).join('\n') : '- none listed'}\n${BOUNDARY_RULE}\n`
+    `Files this ticket names (they limit production files only; the test that proves your change is always allowed):\n${b.files.length ? b.files.map(x => `- ${x}`).join('\n') : '- none listed'}\n${BOUNDARY_RULE}\n`
 }
 // Run-level view for the fix agents: the union over all tickets, labelled by ticket number.
 function runBoundaryText() {

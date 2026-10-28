@@ -523,6 +523,19 @@ test('n: out_of_scope and the file set reach implement, fix and intent-fix promp
   }
 })
 
+test('n2: no prompt says tests count only when the ticket lists them; implement and intent-fix allow the proving test', async () => {
+  const { calls } = await run({}, c => {
+    if (c.label === 'intent:1') return intentOos(c)
+    if (c.label.startsWith('review:')) return c.label === 'review:r0' ? ok({ findings: [{ id: 'F1', summary: 'bad', score: 90 }], skill_invoked: true }) : ok({ findings: [], skill_invoked: true })
+    if (c.label === 'intent-review') return { verdict: 'gaps found', findings: [{ kind: 'gap', clause: 'C', detail: 'd' }] }
+  })
+  for (const re of [/^implement:1$/, /^fix:/, /^intent-fix$/]) {
+    const cs = named(calls, re)
+    assert(cs.length >= 1, String(re))
+    for (const c of cs) assert(!/count only when the ticket lists/.test(c.prompt) && /proves your (fix|change)/.test(c.prompt) && /always allowed/.test(c.prompt), `${re}: contradictory or missing test rule`)
+  }
+})
+
 test('o: a skipped boundary fix is not fixed, needs a decision, and is listed under Review', async () => {
   const { calls, result } = await run({}, c => {
     if (c.label === 'intent:1') return intentOos(c)
