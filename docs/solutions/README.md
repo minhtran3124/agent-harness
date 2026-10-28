@@ -38,13 +38,26 @@ problem_type: bug | knowledge | decision | failure
 module: <area of codebase>
 tags: [<keyword>, <keyword>]
 severity: critical | standard
-applicable_when: <one sentence: when a future agent should apply this>
+applicable_when: <required; one sentence: when a future agent should apply this>
 affects: [<file-path>, <file-path>]
 supersedes: <slug-of-older-entry>   # optional
 confidence: high | medium | low
 confirmed_at: YYYY-MM-DD
 ---
 ```
+
+`applicable_when` is required in every solution file. `INDEX.md`, `critical-patterns.md` and
+`README.md` are exempt.
+
+## Checks
+
+Run both from the repository root. Each exits 0 when clean.
+
+- `python3 plugins/harness/scripts/rebuild_solution_index.py --check` verifies that `INDEX.md` matches
+  the solution files and that no solution file lacks `applicable_when`.
+- `python3 scripts/check_frontmatter_contract.py` verifies that every skill and agent has frontmatter
+  with a non-empty `name` and `description`, that `name` matches the file or directory, and that the
+  description has a trigger cue ("use" or "when").
 
 ## Body Sections (by `problem_type`)
 
