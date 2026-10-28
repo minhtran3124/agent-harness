@@ -56,6 +56,7 @@ The root `settings.json` carries a `permissions.deny` list (no `allow` rules). T
 | `Bash(git push * main)`, `Bash(git push * master)` | Pushing to the default branch |
 
 `merge-deny.sh` keeps every existing key and deny entry, adds only the missing rules, and writes nothing when none is missing. It needs `jq` and refuses a settings file that is not valid JSON.
+`/harness:setup` can also offer one allow rule, `Bash(gh pr merge *)`, through `merge-allow.sh` into the untracked `.claude/settings.local.json`. This is opt-in and needs a yes from the owner; the root `settings.json` still has no allow rules.
 Deny rules are prefix patterns on the command text; they are a guard against mistakes, not a sandbox.
 
 ## What is intentionally not enforced

@@ -21,7 +21,7 @@ execution facts that no other doc reliably contains.
 
 - **Test command (harness repo):** `bash scripts/run-tests.sh`. It runs L1 syntax + doc-truth lint, L2 hook contract tests, and L3 script integration tests. It is the same suite as CI `harness-ci` on ubuntu + macos.
 - **Targeted-run flags:** shell: run one suite directly, e.g. `bash tests/hooks/secrets-scan.test.sh`. Python: `python3 -m pytest <test file> -q`
-- **Source → test mapping (harness repo):** `plugins/harness/hooks/<name>.sh` → `tests/hooks/<name>.test.sh`, `plugins/harness/hooks/hooks.json` wiring → `tests/scripts/settings-wiring.test.sh`, `plugins/harness/skills/setup/scripts/merge-deny.sh` → `tests/scripts/merge-deny.test.sh`, `scripts/<name>.py` → `scripts/test_<name>.py` (pytest)
+- **Source → test mapping (harness repo):** `plugins/harness/hooks/<name>.sh` → `tests/hooks/<name>.test.sh`, `plugins/harness/hooks/hooks.json` wiring → `tests/scripts/settings-wiring.test.sh`, `plugins/harness/skills/setup/scripts/merge-deny.sh` → `tests/scripts/merge-deny.test.sh`, `plugins/harness/skills/setup/scripts/merge-allow.sh` → `tests/scripts/merge-allow.test.sh`, `scripts/<name>.py` → `scripts/test_<name>.py` (pytest)
 - **Markers / coverage:** none. Bash suites assert via `tests/lib.sh` helpers. Python tests are plain pytest (the list is `PYTESTS` in `scripts/run-tests.sh`). There is no coverage gate.
 
 ---
