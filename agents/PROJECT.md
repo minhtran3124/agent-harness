@@ -4,9 +4,6 @@ Thin **index** consumed by the execution sub-agents (`implementer.md`, `test-run
 **not** restate conventions. It points to the docs that already hold them. It carries only the few
 execution facts that no other doc reliably contains.
 
-> Risk-classification signals are **not** here — `intake` and `xia2` own them
-> (xia2 is zero-config and has no `PROJECT.md` sibling).
-
 ---
 
 ## Convention sources (point, don't restate)

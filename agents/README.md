@@ -10,7 +10,7 @@ returnable work. Each agent is a focused role. Anything project-specific lives i
 |---|---|---|---|
 | `implementer` | Implement/refactor/fix code, end-to-end | implementation high-capability | `implement`, ad-hoc |
 | `task-reviewer` | Read-only per-task spec + quality review, and the diagnosis review | review high-capability | `implement`, `diagnosing-bugs` |
-| `test-runner` | Run the minimal relevant tests and report/diagnose results | test-execution fast | after implementation, and the `implement` `cannot_verify` retry |
+| `test-runner` | Run the minimal relevant tests and report/diagnose results | test-execution fast | after implementation |
 | `researcher` | Read-only search and fact-finding for triage and xia2; returns facts with `file:line` or URL | search fast | triage, `xia2` |
 | `advisor` | Read-only second opinion on one question; returns a recommendation with reasons | advice high-capability | orchestrator, on the advisor triggers in `CLAUDE.md` |
 | `intent-reviewer` | Plan-blind check of a diff against the owner's verbatim request (gap / drift / excess) | review standard | `intent-review` |
@@ -54,5 +54,4 @@ This boundary decides whether a capability belongs in `skills/` or `agents/`:
 
 **This is why there is no `brainstorming` agent.** Brainstorming is inherently interactive
 (numbered question rounds, approval gates, "user reviews the spec"), so it lives only as the
-`brainstorming` **skill**. A brainstorming subagent would be a category error. The old
-brainstorming agent was also a stale, drift-prone fork of the skill. Invoke `brainstorming` directly.
+`brainstorming` **skill**. A brainstorming subagent would be a category error. Invoke `brainstorming` directly.

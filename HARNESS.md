@@ -10,7 +10,7 @@ For the full skill inventory and handoff map see [`skills/README.md`](skills/REA
 
 | Layer | What it is | Lives in |
 |---|---|---|
-| **The engine** (skills) | Invocable `/skills` that *do* the work: intake, design, research, plan, build, review, ship. Each has hard gates and a defined handoff. | `skills/`, `agents/` |
+| **The engine** (skills) | Invocable `/skills` that *do* the work: intake, design, research, plan, build, review, ship. Each has a defined handoff. | `skills/`, `agents/` |
 | **The harness** | A small control layer: one behavioral rule, a few hooks, and permission denies. | `rules/behavior.md`, `hooks/`, `settings.json` |
 
 Claude Code is the only supported runtime.
