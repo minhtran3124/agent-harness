@@ -29,6 +29,7 @@ MD
 JSON
   : > "$d/README.md"
   : > "$d/HARNESS.md"
+  mkdir -p "$d/docs"; : > "$d/docs/hooks.md"
   : > "$d/skills/README.md"
   echo "$d"
 }

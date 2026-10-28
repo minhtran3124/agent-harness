@@ -29,7 +29,7 @@ cd "$(dirname "$0")/.." || exit 1
 # nullglob so an empty rules/ or agents/ yields no entries instead of a literal glob
 # that would then be reported as a missing doc.
 shopt -s nullglob
-DOCS=(CLAUDE.md README.md HARNESS.md skills/README.md agents/*.md rules/*.md)
+DOCS=(CLAUDE.md docs/hooks.md README.md HARNESS.md skills/README.md agents/*.md rules/*.md)
 shopt -u nullglob
 KNOWN_ROOTS="skills rules hooks docs templates agents scripts tests xia2 .github .claude"
 FAILED=0
