@@ -417,6 +417,23 @@ test('g2: a failing suite gets one fix agent and a re-run of only the failing te
   assert.strictEqual(result.suite.passed, 10); assert.strictEqual(result.suite.failed, 0)
 })
 
+test('h6: six stubbed decisions all reach the ADR stage with --table-out; owner_confirmed survives on exactly one', async () => {
+  const D = (title, extra) => ({ title, context: 'ctx ' + title, options: ['a', 'b'], decision: 'd', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'high', needs_review: false, ...extra })
+  const six = [
+    D('DUP-one'), D('DUP-one', { context: 'other' }), D('OWNER-ok', { owner_confirmed: true }),
+    D('REVIEW-me', { needs_review: true }), D('LOW-conf', { confidence: 'low' }), D('PLAIN'),
+  ]
+  const { calls } = await run({ tickets: [T(1, 1)] }, c => (c.label === 'intent:1' ? ok({ goal: 'g', plan_steps: [], decisions: six }) : undefined))
+  const p = named(calls, /^adr$/)[0].prompt
+  const saved = JSON.parse(p.split('\n').find(l => l.startsWith('{"run"')))
+  assert.strictEqual(saved.decisions.length, 6)
+  assert.strictEqual(saved.decisions.filter(d => d.owner_confirmed === true).length, 1)
+  assert.strictEqual(saved.decisions.find(d => d.title === 'OWNER-ok').owner_confirmed, true)
+  assert(p.includes('--table-out .ship/decisions-table.md') && p.includes('.ship/decisions-table.md unchanged'))
+  const dec = named(calls, /^intent:1$/)[0].schema.properties.decisions.items.properties.owner_confirmed
+  assert(dec && dec.type === 'boolean')
+})
+
 test('h: the ADR stage runs once and receives decisions from every ticket', async () => {
   const D = t => ({ title: t, context: 'c', options: ['a', 'b'], decision: 'd', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'medium', needs_review: t === 'D-two' })
   const { calls, result } = await run({ tickets: [T(1, 1), T(2, 1)] }, c => {
