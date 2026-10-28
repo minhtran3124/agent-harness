@@ -16,21 +16,10 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
     steps:
-      # fetch-depth: 0: full history, so steps that diff against a base ref can resolve one.
+      # fetch-depth: 0: full history for history-aware tests.
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      # Materialise origin/<base> explicitly rather than relying on what checkout's refspec
-      # happens to leave behind. Skipped on push builds, where there is no base ref;
-      # resolve-base-ref.sh then reports "no base ref declared".
-      - name: Fetch base ref (pull requests only)
-        if: github.event_name == 'pull_request'
-        # Via env, not inline `${{ }}`: expressions are substituted into the script text
-        # before bash parses it, so quotes do not contain a branch name with shell
-        # metacharacters. Low reachability (needs push access to the base repo) but free to close.
-        env:
-          BASE_REF: ${{ github.base_ref }}
-        run: git fetch --no-tags origin "$BASE_REF"
       # scripts/lint-skill-bash.sh degrades to syntax-only when shellcheck is missing, so the
       # suite passes either way — but CI is where the shellcheck pass must actually run, or the
       # gate is only as strong as whatever each contributor happens to have installed.

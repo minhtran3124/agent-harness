@@ -60,6 +60,31 @@ deploy "$T"
 after=$(find "$T/.claude/skills" -maxdepth 1 | sort)
 if [ "$before" = "$after" ]; then pass; else fail "skills set changed on a no-op re-sync"; fi
 
+t "v4 leftovers (runtime/, removed scripts and templates) are pruned; a consumer's own .claude/runtime file survives"
+T=$(new_target); deploy "$T"
+# simulate a consumer last synced by v4: its manifest lists files source no longer ships
+mkdir -p "$T/.claude/runtime" "$T/.claude/scripts"
+echo x > "$T/.claude/runtime/run_state.py"; echo x > "$T/.claude/runtime/resume_decision.py"
+echo x > "$T/.claude/scripts/verify_summary.py"; echo x > "$T/.claude/templates/SUMMARY.template.md"
+printf '%s\n' runtime/run_state.py runtime/resume_decision.py scripts/verify_summary.py templates/SUMMARY.template.md >> "$T/.claude/.harness-deployed"
+echo mine > "$T/.claude/runtime/consumer-own.py"
+deploy "$T"
+if [ ! -e "$T/.claude/runtime/run_state.py" ] && [ ! -e "$T/.claude/runtime/resume_decision.py" ] \
+   && [ ! -e "$T/.claude/scripts/verify_summary.py" ] && [ ! -e "$T/.claude/templates/SUMMARY.template.md" ] \
+   && [ "$(cat "$T/.claude/runtime/consumer-own.py")" = mine ]; then pass
+else fail "stale v4 files not pruned, or the consumer's own runtime file was lost: $(ls "$T/.claude/runtime" 2>&1 | tr '\n' ' ')"; fi
+
+t "an emptied legacy .claude/runtime/ directory is removed after the prune"
+T=$(new_target); deploy "$T"
+mkdir -p "$T/.claude/runtime"; echo x > "$T/.claude/runtime/run_state.py"
+echo runtime/run_state.py >> "$T/.claude/.harness-deployed"
+deploy "$T"
+if [ ! -e "$T/.claude/runtime" ]; then pass; else fail "empty runtime/ dir left behind"; fi
+
+t "a fresh deploy never creates .claude/runtime/"
+T=$(new_target); deploy "$T"
+if [ ! -e "$T/.claude/runtime" ]; then pass; else fail "runtime/ deployed"; fi
+
 t "dry-run reports a would-be prune but writes nothing"
 T=$(new_target); deploy "$T"
 echo "skills/_ghost2" >> "$T/.claude/.harness-deployed"

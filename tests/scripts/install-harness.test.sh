@@ -34,11 +34,11 @@ else
   fail "rc=$RC — .mcp.json/.claude/prune state wrong: $(ls -a "$tgt" | tr '\n' ' ')"
 fi
 
-t "fresh install scaffolds six structural files and memory-free agents"
+t "fresh install scaffolds five structural files and memory-free agents"
 target; tgt=$TARGET
 run_install "$tgt"
 if [ "$RC" -eq 0 ] \
-   && [ -f "$tgt/specs/README.md" ] && [ -f "$tgt/specs/STATE.md" ] \
+   && [ -f "$tgt/specs/README.md" ] && [ ! -e "$tgt/specs/STATE.md" ] \
    && [ -f "$tgt/docs/solutions/README.md" ] && [ -f "$tgt/docs/solutions/INDEX.md" ] \
    && [ -f "$tgt/docs/solutions/critical-patterns.md" ] && [ -f "$tgt/techstacks/README.md" ] \
    && [ ! -e "$tgt/$MEMORY_DIR" ] \

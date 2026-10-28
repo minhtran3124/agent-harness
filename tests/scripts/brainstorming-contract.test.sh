@@ -15,11 +15,8 @@ t "design template exists and brainstorming reads it"
 [ -f "$ROOT/$TPL" ] && grep -qF 'references/design-template.md' "$ROOT/$SKILL" && pass || fail "design template or its Read missing"
 t "design and research-brief templates carry the provenance header"
 has_all "$TPL" 'stage: design' 'Pins:' && has_all "$BRIEF" '# <slug> — Research Brief' 'Written <YYYY-MM-DD>. Pins:' && pass || fail "provenance header missing"
-QTPL="templates/QUESTIONS.template.md"
-t "questions template carries the blocking-question sentence and its six field keys"
-[ -f "$ROOT/$QTPL" ] && has_all "$QTPL" 'A question that blocks work does not belong here: write it in ESCALATIONS.md.' \
-  '## OQ-1' 'raised-by:' 'closes-at:' 'decided-by:' 'default-until-closed:' 'status:' 'closed-by:' \
-  && pass || fail "questions template anchor missing"
-t "specs README lists QUESTIONS.md"
-has_all "templates/structure/specs-README.md" '| `QUESTIONS.md` |' && pass || fail "specs README QUESTIONS.md row missing"
+t "specs README says specs/ is local scratch and points decisions to docs/adr/"
+has_all "templates/structure/specs-README.md" 'local scratch' 'docs/adr/' && pass || fail "specs README scratch note or docs/adr pointer missing"
+t "specs README no longer documents the removed SUMMARY/ESCALATIONS/QUESTIONS files"
+! grep -qE 'SUMMARY|ESCALATIONS|QUESTIONS|RUN\.json' "$ROOT/templates/structure/specs-README.md" && pass || fail "specs README still names a removed spec file"
 finish

@@ -6,7 +6,7 @@
 #   strip_maintenance_docs — drop HARNESS_ONLY_DOCS + <!-- harness-only --> regions
 #
 # WHY THIS FILE EXISTS: before these transforms, every consuming repo silently fail-opened on the
-# gates its own skills/rules described — the helper they name (scripts/verify_summary.py etc.) never
+# gates its own skills/rules described — the helper they name (scripts/write_adrs.py etc.) never
 # deployed. The failure was invisible to CI because scripts/lint-doc-truth.sh validates paths in the
 # HARNESS repo, where scripts/ is present. These assertions pin the consumer-side contract instead.
 #
@@ -29,13 +29,20 @@ C="$T/.claude"
 # ---------------------------------------------------------------------------
 t "allow-listed helpers land in .claude/scripts/ and are importable Python"
 missing=""
-for f in verify_summary.py check_plan_contract.py check_review_receipt.py \
-         resolve_finish_context.py rebuild_solution_index.py render_skill_prompt.py \
-         run_at_commit.py; do
+for f in rebuild_solution_index.py render_skill_prompt.py \
+         run_at_commit.py write_adrs.py; do
   [ -f "$C/scripts/$f" ] || missing="$missing $f"
 done
 if [ "$RC" -eq 0 ] && [ -z "$missing" ] && python3 -m py_compile "$C"/scripts/*.py 2>/dev/null; then pass
 else fail "rc=$RC missing:$missing (or a deployed helper does not compile)"; fi
+
+t "the removed run-state and receipt helpers are not shipped"
+leaked=""
+for f in verify_summary.py check_plan_contract.py check_review_receipt.py resolve_finish_context.py; do
+  [ -e "$C/scripts/$f" ] && leaked="$leaked $f"
+done
+[ -e "$C/runtime" ] && leaked="$leaked runtime/"
+if [ -z "$leaked" ]; then pass; else fail "removed machinery deployed:$leaked"; fi
 
 t "harness-manifest.json is not shipped (the manifest and hook profiles were removed)"
 if [ ! -e "$C/harness-manifest.json" ]; then pass
@@ -60,10 +67,10 @@ if [ -z "$leaked" ]; then pass; else fail "source-time input deployed:$leaked"; 
 # rewrite_derived_paths
 # ---------------------------------------------------------------------------
 t "derived Markdown repoints an allow-listed helper at the copy that exists"
-# rules/auto-correct-scope.md names verify_summary.py as the lane -> evidence authority.
-if grep -q '\.claude/scripts/verify_summary\.py' "$C/rules/auto-correct-scope.md" \
-   && ! grep -qE '(^|[^.])(^|[^/])\bscripts/verify_summary\.py' "$C/rules/auto-correct-scope.md"; then pass
-else fail "derived rule still points at the undeployed scripts/verify_summary.py"; fi
+# skills/decision-record/SKILL.md names write_adrs.py.
+if grep -q '\.claude/scripts/write_adrs\.py' "$C/skills/decision-record/SKILL.md" \
+   && ! grep -qE '(^|[^.])(^|[^/])\bscripts/write_adrs\.py' "$C/skills/decision-record/SKILL.md"; then pass
+else fail "derived skill still points at the undeployed scripts/write_adrs.py"; fi
 
 t "every .claude/scripts/ path named in derived Markdown actually resolves"
 unresolved=$(grep -rhoE '\.claude/scripts/[A-Za-z0-9_.-]+' "$C" --include='*.md' 2>/dev/null | sort -u \
@@ -176,13 +183,12 @@ if [ -z "$dangling" ]; then pass; else fail "still referenced: $(echo "$dangling
 # ---------------------------------------------------------------------------
 # the reason the subset exists at all: the helper must work from where it lands
 # ---------------------------------------------------------------------------
-t "deployed verify_summary.py resolves the REPO root, not .claude/"
-# Path(__file__).parents[1] is .claude/ once deployed; specs/ lives one level further out.
-mkdir -p "$T/specs/probe-slug"
-printf 'Lane: tiny\nConfidence: high\nReason: probe\n' > "$T/specs/probe-slug/SUMMARY.md"
-out=$(cd "$T" && python3 .claude/scripts/verify_summary.py --lane probe-slug 2>&1)
-if printf '%s' "$out" | grep -qF "$T/specs/probe-slug/SUMMARY.md" \
-   && ! printf '%s' "$out" | grep -qF '.claude/specs'; then pass
+t "deployed rebuild_solution_index.py resolves the REPO root, not .claude/"
+# Path(__file__).parents[1] is .claude/ once deployed; docs/ lives one level further out.
+mkdir -p "$T/docs/solutions"
+out=$(cd "$T" && python3 .claude/scripts/rebuild_solution_index.py 2>&1)
+if printf '%s' "$out" | grep -qF "$T/docs/solutions/INDEX.md" \
+   && ! printf '%s' "$out" | grep -qF '.claude/docs'; then pass
 else fail "resolved the wrong root: $(printf '%s' "$out" | head -1)"; fi
 
 finish

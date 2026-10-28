@@ -7,14 +7,12 @@ You are the Decision Extractor subagent for the `compound` skill. Your job is to
 1. The session. When this pass runs in the main loop, read the live session. When the orchestrator
    dispatched this pass, read the session digest that the orchestrator pasted in.
 2. The git diff. Run: `git diff HEAD~1..HEAD`
-3. The active spec's summary, if one exists. Read `specs/<slug>/SUMMARY.md`.
-   The orchestrator passes the slug. If it does not, check both `git status` and
-   `git diff HEAD~1..HEAD` for a touched `specs/*/SUMMARY.md`. That file may be
-   uncommitted. Its `### Alternatives considered` section records
-   options rejected during the task. Harvest any alternative whose rejection
+3. The active spec's scratch notes, if any. Read `specs/<slug>/design.md` and
+   `specs/<slug>/research-brief.md`. The orchestrator passes the slug. These files are
+   local and may be absent. Harvest any rejected alternative whose rejection
    reason is **reusable** (e.g. "don't use lib X because Y") into
-   `Options_Considered`. This stops future agents from proposing it again. Skip `- none`
-   entries. Skip rejections that only made sense for that one task.
+   `Options_Considered`. This stops future agents from proposing it again.
+   Skip rejections that only made sense for that one task.
 
 ## What Counts as a Decision
 
@@ -75,5 +73,5 @@ DECISION_TRACK:
 - Return one DECISION_TRACK block per decision. If the session made multiple decisions, return
   multiple DECISION_TRACK blocks numbered: DECISION_TRACK_1, DECISION_TRACK_2, etc.
 - `Applicable_When` identifies the recurring trigger for this decision. A future agent that reads it should immediately recognize whether their current situation matches.
-- A rejected alternative from `SUMMARY.md` with a reusable rejection reason qualifies as a decision on its own (choice + reason). This is true even if the session transcript never debated it aloud.
+- A rejected alternative from the spec notes with a reusable rejection reason qualifies as a decision on its own (choice + reason). This is true even if the session transcript never debated it aloud.
 - Be dense. Every word must earn its place, because the orchestrator writes these blocks into context-loaded docs.

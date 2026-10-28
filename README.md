@@ -63,9 +63,9 @@ human. Each engineering question maps to an enforced mechanism, not a convention
 | The question | Resolved by |
 |---|---|
 | What should I read first? | start at `docs/solutions/INDEX.md` and `critical-patterns.md`; `/xia2` researches what already exists. |
-| What type of work, how risky? | `/feature-intake` runs first — a 10-flag checklist + hard gates assign a **lane** (`tiny\|normal\|high-risk`) and a **confidence** to `specs/<slug>/SUMMARY.md`. |
+| What type of work, how risky? | `/feature-intake` runs first — a 10-flag checklist + hard gates assign a **lane** (`tiny\|normal\|high-risk`) and a **confidence**. |
 | Which contract does it touch? | Hard gates (auth · migration · public contract · high-blast file) force `high-risk`. |
-| What proof shows it's done? | A re-runnable `### Verify` artifact in `SUMMARY.md` backs every "done" — machine-recheckable via `verify_summary.py`. |
+| What proof shows it's done? | A re-runnable check backs every "done": a test command and its exit code, stated in the PR. |
 | What should future agents inherit? | `/compound` crystallizes non-obvious learnings into `docs/solutions/`, the harness's sole committed knowledge path. |
 
 And the claim is corroborated by code: at commit time, hooks check the staged diff against the
@@ -100,11 +100,11 @@ Working *on the harness itself* keeps the editable source at the repo root and C
 bash scripts/deploy-harness.sh
 ```
 
-First run installs; any later run updates (idempotent). Re-run after editing anything under `skills/` `agents/` `hooks/` `rules/` `templates/` `runtime/` `settings.json`. (Installing into another project with `--keep-sources` keeps a copy of these sources in `<target>/.harness-source/`, for inspection or offline re-sync via `bash .harness-source/scripts/deploy-harness.sh --target .`.)
+First run installs; any later run updates (idempotent). Re-run after editing anything under `skills/` `agents/` `hooks/` `rules/` `templates/` `settings.json`. (Installing into another project with `--keep-sources` keeps a copy of these sources in `<target>/.harness-source/`, for inspection or offline re-sync via `bash .harness-source/scripts/deploy-harness.sh --target .`.)
 
 ### Testing
 
-`bash scripts/run-tests.sh` runs what CI runs: syntax checks + a doc-truth lint (every path referenced in the core docs exists; the CLAUDE.md hook table matches `settings.json`), further static checks (skill-bash lint, skill and agent frontmatter and tool conformance scanned from disk, STE linter self-test), hermetic contract tests for the hooks (each runs in a throwaway git repo against its stdin-JSON contract), script and installer integration tests, and the Python unit tests under `scripts/`, `runtime/`, and `skills/` (when `pytest` is available). The `harness-ci` workflow runs the same suite on ubuntu + macos.
+`bash scripts/run-tests.sh` runs what CI runs: syntax checks + a doc-truth lint (every path referenced in the core docs exists; the CLAUDE.md hook table matches `settings.json`), further static checks (skill-bash lint, skill and agent frontmatter and tool conformance scanned from disk, STE linter self-test), hermetic contract tests for the hooks (each runs in a throwaway git repo against its stdin-JSON contract), script and installer integration tests, and the Python unit tests under `scripts/` and `skills/` (when `pytest` is available). The `harness-ci` workflow runs the same suite on ubuntu + macos.
 
 ### Optional MCP servers (local setup)
 

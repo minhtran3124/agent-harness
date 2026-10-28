@@ -109,12 +109,12 @@ if [ "${SKIP_DERIVED_LINT:-0}" != "1" ] && command -v python3 >/dev/null 2>&1; t
     derived_out=$(python3 - "$DERIVED_TGT" <<'PYEOF'
 import os, re, sys
 tgt = sys.argv[1]; claude = os.path.join(tgt, ".claude")
-ROOTS = ("skills/", "rules/", "hooks/", "agents/", "templates/", "runtime/", "workflows/", "scripts/", ".claude/")
+ROOTS = ("skills/", "rules/", "hooks/", "agents/", "templates/", "workflows/", "scripts/", ".claude/")
 # Paths a consumer legitimately does not have: illustrative examples, and artifacts made at run time.
 SKIP = {"foo.py", "plan.md", "kb-embedding/voyage.md", "techstacks/conventions.md"}
 SKIP_SUFFIX = (".plan-review.json", "break-glass-log.md", "review-receipt.json")
 # Scan INSIDE each backtick span rather than only spans that are exactly a path: the highest-risk
-# form is a command (python3 scripts/verify_summary.py --lane <slug>) inside a code span, which
+# form is a command (python3 scripts/write_adrs.py --input <file>) inside a code span, which
 # would miss entirely -- and an unshipped helper invoked that way is precisely the bug this checks.
 BT = chr(96)   # literal backtick, built at runtime (see note above)
 SPAN = re.compile(BT + "([^" + BT + "]+)" + BT)

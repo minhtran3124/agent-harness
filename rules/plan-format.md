@@ -87,7 +87,7 @@ A task with no behavior to test (fenced, so illustrative only):
 The checker applies the seam rule only to a plan with the marker. A plan without the marker
 skips the seam rule.
 
-Run `python3 scripts/check_plan_contract.py <PLAN.md>` before execution. The checker applies this
+Run `python3 check_plan_contract.py <PLAN.md>` before execution. The checker applies this
 contract only to plans that declare `Global Constraints`, so legacy markdown/XML plans continue to
 parse and execute unchanged.
 
@@ -135,8 +135,8 @@ fence** is an illustration and is ignored. The live contract is the non-fenced t
 
 | ID | Behavior (observable) | Check (re-runnable) | Expected |
 |------|-------------------------|-----------------------|------------|
-| SC-1 | A contract plan (one with a Global Constraints section) without SC rows is rejected | `python3 scripts/check_plan_contract.py specs/<slug>/PLAN.md` | exit 1 — no SC rows |
-| SC-2 | A well-formed SC table passes the contract check | `python3 scripts/check_plan_contract.py specs/<slug>/PLAN.md` | exit 0 |
+| SC-1 | A contract plan (one with a Global Constraints section) without SC rows is rejected | `python3 check_plan_contract.py specs/<slug>/PLAN.md` | exit 1 — no SC rows |
+| SC-2 | A well-formed SC table passes the contract check | `python3 check_plan_contract.py specs/<slug>/PLAN.md` | exit 0 |
 ```
 
 Exemptions: legacy XML plans (see "Legacy XML plans" below) and pre-existing specs authored
@@ -147,7 +147,7 @@ before this rule are exempt. The SC table is required only for **new** markdown 
 When a plan declares an SC table, its sibling `SUMMARY.md` closes the loop from the other end.
 In that case, the `### Verify` table accepts an optional trailing **`Criterion`** column
 (`Check | Command | Exit | Notes | Criterion`). The column names the `SC-<n>` id that each row
-satisfies. `scripts/verify_summary.py` enforces this coupling. When the sibling `PLAN.md`
+satisfies. `verify_summary.py` enforces this coupling. When the sibling `PLAN.md`
 declares an SC table, the referenced ids must resolve to real `SC-<n>` rows in that plan. The
 column is optional when no SC table exists.
 
