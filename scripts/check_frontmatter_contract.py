@@ -8,7 +8,10 @@ not agents. Paths are relative to the plugin root, plugins/harness.
 Verifies:        every skill and agent on disk has a frontmatter block whose `name:` and
                  `description:` are present and non-empty, and whose `name:` matches the
                  directory or file name. A skill with no `description:` never appears in the model's
-                 skill list, so it silently stops being invocable.
+                 skill list, so it silently stops being invocable. Also that the description holds
+                 a trigger cue: the word "use" or "when" (case-insensitive, whole word), as in
+                 "Use when ...". A description with no cue says what a skill is but not when to
+                 reach for it.
 Does not verify: that a description is GOOD (it routes well), or that a body matches its
                  frontmatter. Description length has its own ceiling in
                  scripts/audit_skill_prompts.py; `allowed-tools` presence is
@@ -33,6 +36,10 @@ import sys
 from pathlib import Path
 
 REQUIRED = ("name", "description")
+
+# Trigger cue: the whole word "use" or "when", any case. Bare "when" alone is too strict
+# (14 of 22 descriptions at the time of writing use "Use ..." without "when").
+CUE = re.compile(r"\b(use|when)\b", re.IGNORECASE)
 
 
 def frontmatter(text: str) -> str | None:
@@ -116,6 +123,11 @@ def check(root: Path) -> int:
                 problems.append(f"frontmatter: {rel} is missing `{key}:`")
             elif value == "":
                 problems.append(f"frontmatter: {rel} has an empty `{key}:`")
+            elif key == "description" and not CUE.search(value):
+                problems.append(
+                    f"frontmatter: {rel} description has no trigger cue "
+                    '(expected the word "use" or "when", e.g. "Use when ...")'
+                )
         actual = field(block, "name")
         if actual not in (None, "", name):
             problems.append(

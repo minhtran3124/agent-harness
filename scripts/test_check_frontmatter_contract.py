@@ -21,7 +21,7 @@ allowed-tools: Read
 
 AGENT_OK = """---
 name: advisor
-description: Advises on things.
+description: Advises on things. Use when a second opinion is needed.
 ---
 
 # Advisor
@@ -98,7 +98,7 @@ def test_block_scalar_description_passes(tmp_path):
 name: alpha
 description: >
   Does the alpha thing across
-  two lines.
+  two lines. Use when asked.
 ---
 
 # Alpha
@@ -106,6 +106,43 @@ description: >
     )
     result = run(tmp_path)
     assert result.returncode == 0, result.stderr
+
+
+def test_description_without_cue_fails(tmp_path):
+    build(
+        tmp_path,
+        skill=SKILL_OK.replace(
+            "description: Does the alpha thing. Use when the user asks for alpha.",
+            "description: Does the alpha thing.",
+        ),
+    )
+    result = run(tmp_path)
+    assert result.returncode == 1
+    assert "no trigger cue" in result.stderr
+    assert "skills/alpha/SKILL.md" in result.stderr
+
+
+def test_cue_is_case_insensitive_and_word_bounded(tmp_path):
+    passing = [
+        "description: Does alpha. Use it for alpha.",
+        "description: Does alpha. WHEN alpha is needed.",
+        "description: does alpha. when needed.",
+        "description: >\n  Does alpha\n  across lines. Use when asked.",
+    ]
+    for desc in passing:
+        build(tmp_path, skill=f"---\nname: alpha\n{desc}\n---\n\n# Alpha\n")
+        result = run(tmp_path)
+        assert result.returncode == 0, (desc, result.stderr)
+    failing = [
+        "description: Helps with reuse of alpha.",
+        "description: Runs whenever alpha changes.",
+        "description: Serves the user alpha.",
+    ]
+    for desc in failing:
+        build(tmp_path, skill=f"---\nname: alpha\n{desc}\n---\n\n# Alpha\n")
+        result = run(tmp_path)
+        assert result.returncode == 1, desc
+        assert "no trigger cue" in result.stderr, desc
 
 
 def test_no_frontmatter_fails(tmp_path):
