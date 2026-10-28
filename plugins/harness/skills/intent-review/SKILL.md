@@ -11,13 +11,14 @@ diff as what they asked for?
 
 ## Inputs
 
-Pass the reviewer exactly two things:
+Pass the reviewer these things:
 
 1. **The request**, verbatim: the issue body or task text, or the text the caller passes.
 2. **The diff range** `BASE..HEAD`.
+3. **Owner-confirmed decisions**, if any: the owner's own words, labelled as such. A change they
+   name is not a gap, drift, or excess. They are not agent plan.
 
-Never pass the plan, the design, the research brief, `PLAN.md` prose, ADRs, answers to grilling
-questions, or any summary by the orchestrator. The plan can carry the same misreading this review
+Never pass the plan, the design, the research brief, `PLAN.md` prose, ADRs, or any summary by the orchestrator. The plan can carry the same misreading this review
 exists to catch.
 
 If the request is missing, STOP and say so. Never reconstruct it.
@@ -41,6 +42,8 @@ End with `Verdict: match | gaps found`. The exact format is in `${CLAUDE_PLUGIN_
 
 - **gap, or drift that changes behaviour:** fix it if the fix is clear and in scope. Otherwise ask
   the owner. In auto mode, record a decision with `needs_review: true`.
+- Never revert a change an owner-confirmed decision names. Skip that finding and list it as
+  `needs_review: true`.
 - **drift that does not change behaviour, and excess:** list them in the PR. Never remove them
   without the owner's yes.
 
