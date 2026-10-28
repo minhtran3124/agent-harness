@@ -1,8 +1,8 @@
 ---
 ticket: 382
 stage: intent
-status: needs-review
-needs_review: true
+status: accepted
+needs_review: false
 confidence: high
 decided_by: claude (ship workflow: intent)
 date: 2026-10-28
