@@ -20,7 +20,7 @@ Related: `plan-format.md`, `wave-parallelism.md`, `auto-correct-scope.md`, `guid
 ## Intake fields (orchestrator writes these)
 
 At intake, before it dispatches any task, the orchestrator runs `feature-intake`. It writes the
-result to `specs/<slug>/SUMMARY.md` (shape: `templates/SUMMARY.template.md`):
+result to `specs/<slug>/SUMMARY.md` (shape: `SUMMARY.template.md`):
 
 - **Lane** — `tiny | normal | high-risk` (drives ceremony / how much proof).
 - **Confidence** — `high | medium | low` (drives interruption / whether to ask a human).
@@ -77,7 +77,7 @@ That full structured report is what the main thread needs, so it is not a raw fi
 
 ## Evidence in SUMMARY.md (evidence over assertion)
 
-A claim of "done" is only valid with a re-runnable artifact. The subagent records, in `specs/<slug>/SUMMARY.md` (shape: `templates/SUMMARY.template.md`):
+A claim of "done" is only valid with a re-runnable artifact. The subagent records, in `specs/<slug>/SUMMARY.md` (shape: `SUMMARY.template.md`):
 
 - **`### Verify`** — a table row per check actually RUN: `Check | Command | Exit | Notes`. Never
   list a command that was not run. No commit hook requires this block since v5.
@@ -112,7 +112,7 @@ Run this decision at intake and continuously during execution. **Ceremony scales
 human gate scales with ambiguity.** Never ask a human to classify risk. Ask a human only to confirm
 intent or to authorize a dangerous boundary.
 
-ESCALATE — write a block to `specs/<slug>/ESCALATIONS.md` (shape: `templates/ESCALATIONS.template.md`)
+ESCALATE — write a block to `specs/<slug>/ESCALATIONS.md` (shape: `ESCALATIONS.template.md`)
 and stop — when any of these hold:
 
 - a **hard gate** is hit, and a human has not yet narrowed it. Hard gates include: auth ·

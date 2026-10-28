@@ -34,14 +34,14 @@ ceremony. The tiny lane uses `git checkout -b <type>/<slug>`. The normal and hig
 No hook enforces this since v5 (the branch-isolation guard was removed); `permissions.deny` only
 blocks pushes to `main` and `master`. Intake may record `SUMMARY.md` before the branch exists.
 
-> **Evidence the lane requires (single source of truth):** `scripts/verify_summary.py --lane` mechanizes the lane → evidence mapping. This keeps this table, `skills/feature-intake/SKILL.md` (Step 7), and the `SUMMARY.md` checks from drifting apart. It reads `specs/<slug>/SUMMARY.md` and asserts:
+> **Evidence the lane requires (single source of truth):** `verify_summary.py --lane` mechanizes the lane → evidence mapping. This keeps this table, `skills/feature-intake/SKILL.md` (Step 7), and the `SUMMARY.md` checks from drifting apart. It reads `specs/<slug>/SUMMARY.md` and asserts:
 >
 > - **tiny** → filled `Lane`/`Confidence`/`Reason`.
 > - **normal** → + a non-placeholder `### Verify` row.
 > - **high-risk** → + a non-empty `### Rollback`, and a `### Not auto-verified` section. The `### Not auto-verified` check is **advisory by default**: it prints a warning and still exits 0. Set `REQUIRE_NOT_AUTO_VERIFIED=1` to make it blocking. Blocking is the intended end state once the back catalogue has drained.
 > - **any lane, `Input-type: bug fix`** → + a `red`/`green` row pair in `### Verify`, or a `Red test exempt: <reason>` line. The `red` row's command is `python3 scripts/run_at_commit.py <red sha> -- <test command>`, where `<red sha>` is the commit that adds the failing test before the fix. Its Exit is from 1 to 123. The `green` row runs the same test command with Exit 0. After the red commit, a change must exist outside `specs/` and the red test files. This check is **advisory by default**. Set `REQUIRE_RED_TEST=1` to make it blocking.
 >
-> Run `python3 scripts/verify_summary.py --lane <slug>` (exit 1 = missing evidence). Edit the mapping there, not only in prose. No commit hook enforces the mapping since v5; run the command above before you commit.
+> Run `python3 verify_summary.py --lane <slug>` (exit 1 = missing evidence). Edit the mapping there, not only in prose. No commit hook enforces the mapping since v5; run the command above before you commit.
 
 Rule 4 (STOP) still fires inside **every** lane. A hard gate discovered mid-task escalates regardless of how the work was classified. Ceremony scales with risk. The human gate scales with ambiguity, not risk.
 
