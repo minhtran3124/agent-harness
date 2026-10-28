@@ -1,6 +1,6 @@
 ---
 name: diagnosing-bugs
-description: Find and prove the root cause of a bug in six gated phases before any fix. Runs for an `Input-type: bug fix` that `intake` routes here, or from `/diagnosing-bugs`.
+description: Find and prove the root cause of a bug in six gated phases before any fix. Runs for an `Input-type: bug fix` that `intake` routes here, or from `/harness:diagnosing-bugs`.
 disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Grep, Glob, Agent, Task, Bash
 ---
@@ -20,7 +20,7 @@ Every depth (S, M, L) runs all six phases. No "cause known" shortcut exists.
 Create the isolation before Phase 1.
 At depth S, run `git checkout -b fix/<slug>` only from a shared branch.
 Otherwise keep the current branch.
-At depth M and L, run `using-git-worktrees`.
+At depth M and L, run `harness:using-git-worktrees`.
 Do every probe, harness and fix edit there, never on a shared branch.
 
 ## Phases
@@ -31,7 +31,7 @@ Write `specs/<slug>/diagnosis.md` from `references/diagnosis-template.md`.
 1. **Feedback loop.** Make one fast, deterministic command that an agent can run and that goes
    red on this bug. Run it as written, with no pipe, so its exit code shows the red.
    When a human must act, copy
-   `skills/diagnosing-bugs/scripts/hitl-loop.template.sh`. Ask the human to run it and paste the output.
+   `${CLAUDE_SKILL_DIR}/scripts/hitl-loop.template.sh`. Ask the human to run it and paste the output.
    When no loop is possible, stop and ask the owner. List what you tried and need.
    Done when: `Loop:` holds the command and its redacted red output.
 2. **Reproduce and minimise.** Delete one input element at a time. Add no probe or debug log.
@@ -49,7 +49,7 @@ Write `specs/<slug>/diagnosis.md` from `references/diagnosis-template.md`.
 
 ## Diagnosis review
 
-Dispatch the `task-reviewer` to Read `skills/diagnosing-bugs/references/diagnosis-review-prompt.md` first and follow it.
+Dispatch the `task-reviewer` to Read `${CLAUDE_SKILL_DIR}/references/diagnosis-review-prompt.md` first and follow it.
 Give it the `diagnosis.md` path, not the prompt text.
 Start Phase 5 only after `spec_verdict: pass` and `quality_verdict: approved`.
 On any other verdict, revise `diagnosis.md` and review again.
@@ -61,7 +61,7 @@ After a second failure, stop and ask the owner.
    Commit the red test. Then commit the fix.
    Report the red and green commands and their exit codes in your final message.
    When `diagnosis.md` has `Seam: none — <reason>`, write `Red test exempt: <reason>` in your final message.
-   At depth M and L, continue with `writing-plans` and `implement`, with `diagnosis.md` as an input.
+   At depth M and L, continue with `harness:writing-plans` and `harness:implement`, with `diagnosis.md` as an input.
    Done when: the red test commit comes before the fix commit, or the final message has `Red test exempt: <reason>`.
 6. **Cleanup.** Run the Phase 1 loop again.
    Search for `[DEBUG-` in the fix diff and in the working tree, untracked files included.

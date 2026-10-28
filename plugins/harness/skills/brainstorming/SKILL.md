@@ -18,7 +18,7 @@ Explore the options and converge on one design. Intake decides whether this skil
 4. Depth L: record the design as an ADR with `stage: design`. Fill `decisions[]` from
    `references/design-template.md`; the ADR stage of `decision-record` writes it to `docs/adr/`.
    Write no `specs/` file. Smaller depths return the design inline and write no file.
-5. Next steps: `xia2` for research if unknown code or libraries are involved, then `writing-plans`.
+5. Next steps: `harness:xia2` for research if unknown code or libraries are involved, then `harness:writing-plans`.
 
 No code until the design is agreed. There is no mandatory review round. For an L design the
 advisor checks the result (the calling script runs it).

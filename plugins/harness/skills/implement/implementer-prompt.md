@@ -1,6 +1,7 @@
 # Implementer prompt
 
 Fill the brackets and send this to a fresh `implementer` subagent, one per plan step.
+Set [PLUGIN_DIR] to the plugin directory (`${CLAUDE_PLUGIN_ROOT}` in SKILL.md).
 
 ```text
 model_stage: implementer
@@ -23,8 +24,8 @@ Rules:
   import, failing lint) and list each one under `Deviations:`. Return BLOCKED instead of changing
   a schema, a public contract, auth, a dependency, `settings.json` or `hooks/`, or removing a
   feature.
-- If you change prose under `skills/`, `rules/` or `agents/`, Read it, then
-  apply `skills/asd-ste100/SKILL.md`.
+- If you change prose in a skill, rule or agent file, Read it, then
+  apply `[PLUGIN_DIR]/skills/asd-ste100/SKILL.md`.
 
 Return: status (DONE | BLOCKED | NEEDS_CONTEXT), commits (sha, subject), files touched,
 Done-when output (excerpt on failure), deviations, and any concerns.

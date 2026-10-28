@@ -1,10 +1,10 @@
 # Diagnosis Review Prompt Template
 
 Use this prompt for the diagnosis review between Phase 4 and Phase 5 of
-`skills/diagnosing-bugs/SKILL.md`.
+the `diagnosing-bugs` skill.
 
 `model_stage` is not a Task-tool parameter. Set the Task tool's `model:` to the `model:` declared
-in this stage's rendered `agents/` definition.
+in the `task-reviewer` agent definition.
 
 ```
 Task tool (task-reviewer):

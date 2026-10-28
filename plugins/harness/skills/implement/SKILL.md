@@ -7,7 +7,7 @@ allowed-tools: Read, Write, Grep, Glob, Agent, Task, Bash
 # Implement
 
 Turn plan steps into commits. Review is not part of this skill: `/code-review` and the
-`intent-review` skill run afterwards.
+`harness:intent-review` skill run afterwards.
 
 ## Steps
 
@@ -16,7 +16,7 @@ Turn plan steps into commits. Review is not part of this skill: `/code-review` a
 2. Run the groups in order. Inside a group, steps that touch different files may run in parallel.
    Never run two steps that touch the same file at the same time.
 3. For each step start a fresh `implementer` subagent (Sonnet; High effort steps may use a stronger
-   model) in its own isolated git worktree. Use the template in `implementer-prompt.md`.
+   model) in its own isolated git worktree. Use the template in `implementer-prompt.md`, with [PLUGIN_DIR] = `${CLAUDE_PLUGIN_ROOT}`.
    A workflow agent's worktree starts from the main checkout HEAD, so tell it the base
    to check out first (`docs/adr/0001-workflow-capabilities.md`).
 4. When the subagent returns, run the step's Done-when command yourself in that worktree.

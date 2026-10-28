@@ -49,9 +49,8 @@ def build(root: Path) -> str:
     return "\n".join(out).rstrip() + "\n"
 
 def _default_root() -> Path:
-    """Repo root. A deployed copy sits at <repo>/.claude/scripts/, one level in."""
-    here = Path(__file__).resolve().parents[1]
-    return here.parent if here.name == ".claude" else here
+    """The directory the script is run from: the plugin lives in a cache, so the script path says nothing about the repo."""
+    return Path.cwd()
 
 
 def main() -> int:

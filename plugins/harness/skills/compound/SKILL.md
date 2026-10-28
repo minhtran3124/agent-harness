@@ -41,7 +41,7 @@ Read the selected `templates/` file before writing. Use the context category/slu
 `docs/solutions/<category>/`. On a high-overlap collision, update the existing record. Otherwise,
 allocate the next numeric suffix. Multiple decisions use one `-decisions` consolidated template.
 
-Read and apply `skills/asd-ste100/SKILL.md` in STE-flavored mode to each new record. Do not change fenced
+Read and apply `${CLAUDE_PLUGIN_ROOT}/skills/asd-ste100/SKILL.md` in STE-flavored mode to each new record. Do not change fenced
 code. Do not change a literal string that a test or hook matches.
 
 For a critical context, append an entry per emitted track to `critical-patterns.md` using its
@@ -60,7 +60,7 @@ overlap is not a recurrence.
 Run the authority at the end of every run, even when the run wrote nothing:
 
 ```bash
-python3 scripts/rebuild_solution_index.py
+python3 ${CLAUDE_PLUGIN_ROOT}/scripts/rebuild_solution_index.py
 ```
 
 Do not manually scan/sort/render `INDEX.md`. It excludes INDEX/critical patterns, preserves exact

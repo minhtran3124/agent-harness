@@ -1,6 +1,6 @@
 # Diagnosing bugs — phase techniques
 
-Read this file during Phases 1 to 4 of `skills/diagnosing-bugs/SKILL.md`.
+Read this file during Phases 1 to 4 of the `diagnosing-bugs` skill.
 Each list is a menu, not a checklist. Use the first item that fits the bug.
 
 ## Phase 1 — loop techniques, in preference order
@@ -23,7 +23,7 @@ A good loop is fast, deterministic, and runs without a human. Try these in order
 9. **A differential loop.** Run the same input through a known-good version and the current
    version. Compare the two outputs.
 10. **A human-in-the-loop script.** Use this only when a human must act. Copy
-    `skills/diagnosing-bugs/scripts/hitl-loop.template.sh`. Replace its example steps with
+    `hitl-loop.template.sh` from this skill's `scripts` folder (SKILL.md Phase 1 gives the full path). Replace its example steps with
     `step` and `capture` calls for this bug.
 
 Make the loop deterministic before you trust it:

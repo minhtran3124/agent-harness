@@ -1,7 +1,7 @@
 ---
 name: using-git-worktrees
 description: Set up or verify an isolated git worktree from the right base for a manual run. Workflows do not need it; they use `isolation: 'worktree'`.
-allowed-tools: Read, Bash(git *), Bash(ls *), Bash(skills/using-git-worktrees/scripts/detect-isolation.sh*), Bash(bash skills/using-git-worktrees/scripts/detect-isolation.sh*)
+allowed-tools: Read, Bash(git *), Bash(ls *), Bash(${CLAUDE_SKILL_DIR}/scripts/detect-isolation.sh*), Bash(bash ${CLAUDE_SKILL_DIR}/scripts/detect-isolation.sh*)
 ---
 
 # Using Git Worktrees
@@ -11,7 +11,7 @@ A Workflow gives each agent `isolation: 'worktree'` instead.
 
 ## Steps
 
-1. Run `skills/using-git-worktrees/scripts/detect-isolation.sh`.
+1. Run `${CLAUDE_SKILL_DIR}/scripts/detect-isolation.sh`.
    - `linked-worktree`: you are already isolated. Report the path and branch. A detached head
      needs a branch before you finish.
    - `submodule`: follow that repository's own policy.

@@ -6,8 +6,8 @@ why, consequences, how_to_reverse, confidence, needs_review, decided_by}]}.
 Output (stdout): JSON list of {number, path, ticket, title, needs_review, stage}.
 Exit 0 = ok, 2 = bad input or a file would be overwritten.
 
-Run: python3 scripts/write_adrs.py --input decisions.json [--adr-dir docs/adr] [--dry-run]
-     python3 scripts/write_adrs.py --render-section written.json [--artifact URL]
+Run: python3 write_adrs.py --input decisions.json [--adr-dir docs/adr] [--dry-run]
+     python3 write_adrs.py --render-section written.json [--artifact URL]
 """
 
 import argparse
@@ -155,17 +155,16 @@ def render_section(written: list, artifact: str = "") -> str:
     return "\n".join(out)
 
 
-# Same text as docs/adr/TEMPLATE.md (a test keeps them equal), so a consuming repo
-# that has no docs/adr/ can still write ADRs.
+# Same text as docs/adr/TEMPLATE.md in the harness repo (a test keeps them equal), so a consuming
+# repo that has no docs/adr/TEMPLATE.md can still write ADRs.
 DEFAULT_TEMPLATE = '---\nticket: {ticket}\nstage: {stage}\nstatus: {status}\nneeds_review: {needs_review}\nconfidence: {confidence}\ndecided_by: {decided_by}\ndate: {date}\n---\n\n# {number}. {title}\n\n## Context\n\n{context}\n\n## Options\n\n{options}\n\n## Decision\n\n{decision}\n\n## Why\n\n{why}\n\n## Consequences\n\n{consequences}\n\n## How to reverse\n\n{how_to_reverse}\n'
 
 
 def load_template(adr_dir: Path) -> str:
     """The repo's own template wins; the built-in default is the last resort."""
-    for path in (adr_dir / "TEMPLATE.md",
-                 Path(__file__).resolve().parent.parent / "docs/adr/TEMPLATE.md"):
-        if path.is_file():
-            return path.read_text()
+    path = adr_dir / "TEMPLATE.md"
+    if path.is_file():
+        return path.read_text()
     return DEFAULT_TEMPLATE
 
 

@@ -3,7 +3,7 @@
 # Replaces the scaffolding step of the removed bootstrap-xia2 skill: a deterministic,
 # idempotent copy of the bundled structure templates. Never overwrites real content.
 #
-# Usage:  bash scripts/init-structure.sh [--root <dir>]
+# Usage:  bash init-structure.sh [--root <dir>]
 #   --root <dir>   Scaffold into <dir> instead of the repo root (used by tests).
 # Exit 0 always (advisory setup helper); prints `created`/`exists` per file.
 set -u

@@ -39,11 +39,11 @@ and the ADR stage like any other decision. It is not written under `specs/`.
 
 1. Collect all `decisions[]` of the run. Add `decided_by` to each. Save as
    `{"run": "<slug>", "decisions": [...]}` in a temporary file.
-2. Run `python3 scripts/write_adrs.py --input <file>`. Add `--dry-run` to preview. Exit 2 means
+2. Run `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/write_adrs.py --input <file>`. Add `--dry-run` to preview. Exit 2 means
    bad input: fix it and run again. The script assigns the numbers.
 3. Save the printed JSON. Commit the new files in `docs/adr/` to the PR branch.
 4. Build the artifact (below). Then run
-   `python3 scripts/write_adrs.py --render-section <written.json> [--artifact <url>]` and put the
+   `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/write_adrs.py --render-section <written.json> [--artifact <url>]` and put the
    output in the PR body as `## Decisions`.
 
 ## The artifact

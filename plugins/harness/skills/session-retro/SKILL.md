@@ -49,7 +49,7 @@ show an older rule is obsolete. Its topic may be overweighted.)
 
 Then stop. Nothing changes until the user picks candidates. Approved mechanical items become
 an `intake` task. Durable knowledge goes through
-`compound`.
+`harness:compound`.
 
 Verifies: each candidate cites a moment in the session record and a classified lever.
 Does not verify: that the struggle would recur, or that the proposed fix prevents it.

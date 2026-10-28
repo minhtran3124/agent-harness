@@ -35,7 +35,7 @@ Each finding quotes the request clause it evaluates:
 - `drift`: the diff differs from the request. State `changes behaviour: yes|no`.
 - `excess`: built but not asked for.
 
-End with `Verdict: match | gaps found`. The exact format is in `agents/intent-reviewer.md`.
+End with `Verdict: match | gaps found`. The exact format is in `${CLAUDE_PLUGIN_ROOT}/agents/intent-reviewer.md`.
 
 ## Route findings
 

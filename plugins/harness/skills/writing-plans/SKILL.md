@@ -43,7 +43,7 @@ Format:
 - Done-when: `<command>` exits 0 and prints <expected>
 ```
 
-Next: `implement`.
+Next: `harness:implement`.
 
 ## Auto mode
 

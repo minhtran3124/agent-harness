@@ -1,15 +1,15 @@
 ---
 name: autopilot
-description: "Interactive first half of a hands-off run. Triages one ticket or a milestone, asks the owner every open question once, then launches workflows/ship.js."
+description: "Interactive first half of a hands-off run. Triages one ticket or a milestone, asks the owner every open question once, then launches the ship workflow."
 disable-model-invocation: true
 argument-hint: "<milestone | #n [#m ...] | free text> [base=<branch>] [--no-ask]"
-allowed-tools: Read, Write, Grep, Glob, Agent, Skill, AskUserQuestion, Workflow, Bash(gh issue view *), Bash(gh issue list *), Bash(gh issue comment *), Bash(gh repo view *), Bash(git remote *), Bash(git rev-parse *), Bash(git branch *), Bash(python3 skills/autopilot/scripts/plan_groups.py *)
+allowed-tools: Read, Write, Grep, Glob, Agent, Skill, AskUserQuestion, Workflow, Bash(gh issue view *), Bash(gh issue list *), Bash(gh issue comment *), Bash(gh repo view *), Bash(git remote *), Bash(git rev-parse *), Bash(git branch *), Bash(python3 ${CLAUDE_SKILL_DIR}/scripts/plan_groups.py *)
 ---
 
 # Autopilot
 
-Typing `/autopilot` authorizes the launch in step 8, after the owner says go in step 7. This
-skill runs in the main session; `workflows/ship.js` is the autonomous half. The main session
+Typing `/harness:autopilot` authorizes the launch in step 8, after the owner says go in step 7. This
+skill runs in the main session; `${CLAUDE_PLUGIN_ROOT}/workflows/ship.js` is the autonomous half. The main session
 picks the model and effort for every call below.
 
 1. **Scope.** Parse `$ARGUMENTS`: a milestone, issue numbers, or free text (one ticket, no number).
@@ -19,16 +19,16 @@ picks the model and effort for every call below.
    Read each ticket: `gh issue view <n> --repo <repo> --json title,body,labels -q ...`.
    Base = the `base=` argument, else the current branch. Name it in the summary.
 2. **Triage.** One call per ticket, all in one message. A Haiku `researcher` finds facts (code the
-   ticket touches, tests, links between tickets). A Sonnet agent follows `skills/intake`
+   ticket touches, tests, links between tickets). A Sonnet agent follows the `harness:intake` skill
    and returns verdict `READY | CONFIRM | GRILL | BLOCKED`, depth `S|M|L`, deps and questions.
    For an important ticket (intake: GRILL class) also ask the `advisor` agent.
 3. **Groups.** Drop BLOCKED tickets with the reason shown and flag their dependents. Pipe
-   `[{"n":1,"deps":[..]}]` into `python3 skills/autopilot/scripts/plan_groups.py`. It returns
+   `[{"n":1,"deps":[..]}]` into `python3 ${CLAUDE_SKILL_DIR}/scripts/plan_groups.py`. It returns
    `[{"n":1,"group":1}]`. Exit 2 names a dependency cycle: stop and show it.
 4. **Clarify** (skip with `--no-ask`). Collect every CONFIRM question of every ticket. Ask them in
    ONE round with AskUserQuestion. Each question carries a recommended answer, worded so that
    "yes" accepts it.
-5. **Grill** (skip with `--no-ask`). Run the `grilling` skill, interactive, for each GRILL
+5. **Grill** (skip with `--no-ask`). Run the `harness:grilling` skill, interactive, for each GRILL
    ticket, one ticket at a time.
 6. **Record.** Post each ticket's confirmed answers as one comment titled "Confirmed decisions":
    `gh issue comment <n> --repo <repo> --body-file <file>`. Grilling posts its own. With `--no-ask` nobody answers: pass the open questions on with
@@ -38,8 +38,8 @@ picks the model and effort for every call below.
    single or multi, the model plan (Sonnet stages, Haiku tests, advisor `opus`; `fable` only when
    the owner says so) and that nothing is merged. This is
    the last time the owner is asked.
-8. **Launch.** Call Workflow with `scriptPath` = the ship.js path and `args` as a real
-   object (path and shape: `references/launch-args.md`). Take `testCmd`, `lintCmd` and `fullTestCmd` from
+8. **Launch.** Call Workflow with `scriptPath` = `${CLAUDE_PLUGIN_ROOT}/workflows/ship.js` and `args` as a real
+   object that includes `pluginDir: "${CLAUDE_PLUGIN_ROOT}"` (shape: `references/launch-args.md`). Take `testCmd`, `lintCmd` and `fullTestCmd` from
    the repo's CLAUDE.md or README, never from memory. If one is missing, ask in step 7. With
    `--no-ask`, record a `needs_review` decision and use `fullTestCmd` only. Then tell the owner
    the run ID and that `/workflows` shows progress, and wait for the completion notice. Answer
@@ -55,4 +55,4 @@ picks the model and effort for every call below.
 
 ## Auto mode
 
-Not applicable: this is the interactive half. The auto half is `workflows/ship.js`; `--no-ask` skips steps 4 and 5.
+Not applicable: this is the interactive half. The auto half is the ship workflow; `--no-ask` skips steps 4 and 5.

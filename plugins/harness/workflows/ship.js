@@ -22,12 +22,12 @@ const EFFORT = { intent: 'medium', research: 'low', design: 'medium', plan: 'med
 const FIX_THRESHOLD = 50   // a review finding scoring at or above this gets one fix agent
 const MAX_FIX_ROUNDS = 2   // hard cap on fix rounds in the review loop
 // Paths whose change makes the review level 'high'.
-const RISKY_PATH = /(^|\/)(hooks|migrations?|auth|security|secrets?|\.github\/workflows)(\/|$)|settings\.json$|deploy-harness|\.sql$|\.env/i
+const RISKY_PATH = /(^|\/)(hooks|migrations?|auth|security|secrets?|\.github\/workflows)(\/|$)|settings\.json$|\.sql$|\.env/i
 const LARGE_DIFF_LINES = 800, SMALL_DIFF_LINES = 150, LARGE_DIFF_FILES = 25
 const CO_AUTHOR = 'Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>'
 const PR_FOOTER = '🤖 Generated with [Claude Code](https://claude.com/claude-code)'
 
-const RULES = `Rules (all of them apply):
+const RULES_COMMON = `Rules (all of them apply):
 - No human is in the loop. Never ask anyone anything. On any ambiguity pick the recommended option and return it as a decision in decisions[].
 - Never merge into the base branch or main. Never force-push. Never touch secrets. Never weaken a test to make it pass.
 - Follow the project's CLAUDE.md.
@@ -43,8 +43,7 @@ const RULES = `Rules (all of them apply):
 - Use --json with "gh issue view" (plain "gh issue view" fails on this repo).
 - decisions[] holds only real choices between options that change the code or the behaviour. Facts about the environment (which test runner you used, that pytest is missing, that a file was or was not found, that a plan step was already satisfied) are not decisions: leave them out.
 - Never write ADR files. Return decisions[] instead; one stage at the end writes them.
-- You cannot start other agents. If you are stuck, unsure, or a choice affects another ticket or a public contract, set needs_advisor: true with advisor_question and stop; the script asks the advisor.
-- Harness files (skills/, agents/, scripts/) live under .claude/ in a consuming repo. Use whichever path exists, always as an absolute path under your own worktree.`
+- You cannot start other agents. If you are stuck, unsure, or a choice affects another ticket or a public contract, set needs_advisor: true with advisor_question and stop; the script asks the advisor.`
 
 // ---------------------------------------------------------------------------
 // Schemas
@@ -129,7 +128,7 @@ const ADR_SCHEMA = stageSchema({
 // ---------------------------------------------------------------------------
 function validateArgs(a) {
   if (!a || typeof a !== 'object') throw new Error('ship: args is required')
-  for (const k of ['repo', 'repoDir', 'remote', 'base', 'slug', 'testCmd', 'lintCmd', 'fullTestCmd', 'advisorModel']) {
+  for (const k of ['repo', 'repoDir', 'pluginDir', 'remote', 'base', 'slug', 'testCmd', 'lintCmd', 'fullTestCmd', 'advisorModel']) {
     if (typeof a[k] !== 'string' || !a[k].trim()) throw new Error(`ship: args.${k} is required (non-empty string)`)
   }
   if (!Array.isArray(a.tickets) || a.tickets.length === 0) throw new Error('ship: args.tickets must be a non-empty array')
@@ -146,7 +145,9 @@ function validateArgs(a) {
 }
 validateArgs(args)
 
-const { repo, repoDir, remote, base, slug, testCmd, lintCmd, fullTestCmd, advisorModel } = args
+const { repo, repoDir, pluginDir, remote, base, slug, testCmd, lintCmd, fullTestCmd, advisorModel } = args
+// The harness files (skills, agents, scripts) live in the plugin directory, not in the target repo.
+const RULES = `${RULES_COMMON}\n- Harness files (skills/, agents/, scripts/) live in the plugin directory ${pluginDir}. Read them there by absolute path.`
 const LOCAL = args.local === true
 const NO_ASK = args.noAsk === true
 const tickets = args.tickets
@@ -186,15 +187,15 @@ const land = branch => (LOCAL
 // ---------------------------------------------------------------------------
 const clean = o => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined))
 
-// Custom agent types may be missing in a project; then the default agent reads the role file itself.
-async function call(prompt, opts, roleFile, altRoleFile) {
+// A plugin agent type (harness:<role>) may not resolve; then the default agent reads the role file itself.
+async function call(prompt, opts, roleFile) {
   if (!opts.agentType) return agent(prompt, clean(opts))
   try {
     return await agent(prompt, clean(opts))
   } catch (e) {
     log(`agent type '${opts.agentType}' unavailable (${e && e.message}); using the default agent with ${roleFile}`)
     const { agentType, ...rest } = opts
-    return agent(`Your role: first read ${roleFile}${altRoleFile ? ` (or ${altRoleFile})` : ''} and act as that role.\n\n${prompt}`, clean(rest))
+    return agent(`Your role: first read ${roleFile} and act as that role.\n\n${prompt}`, clean(rest))
   }
 }
 
@@ -228,20 +229,20 @@ async function askAdvisor(t, stage, question, state) {
     `Stage summary: ${state || '(none)'}\n` +
     `Answer with: Recommendation, Reasons, Risks, Confidence. Read only what the question needs. Do not edit anything.`
   const advice = await call(prompt,
-    { label: `advisor:${stage}:${t.n}`, phase: 'Tickets', model: advisorModel, effort: EFFORT.advisor, agentType: 'advisor' },
-    `${repoDir}/agents/advisor.md`, `${repoDir}/.claude/agents/advisor.md`)
+    { label: `advisor:${stage}:${t.n}`, phase: 'Tickets', model: advisorModel, effort: EFFORT.advisor, agentType: 'harness:advisor' },
+    `${pluginDir}/agents/advisor.md`)
   return typeof advice === 'string' ? advice : ''
 }
 
 // One ticket stage: run it; on needs_advisor ask once and re-run once; collect decisions; stop on a block.
 async function runStage(t, stage, build, schema, opts) {
-  const { roleFile, altRoleFile, ...rest } = opts
+  const { roleFile, ...rest } = opts
   const o = { ...rest, schema, phase: 'Tickets' }
-  let res = await call(build(''), { ...o, label: `${stage}:${t.n}` }, roleFile, altRoleFile)
+  let res = await call(build(''), { ...o, label: `${stage}:${t.n}` }, roleFile)
   if (res && res.needs_advisor) {
     const advice = await askAdvisor(t, stage, res.advisor_question, res.summary)
     res = await call(build(`\n\n## Advisor advice (follow it unless it is wrong; record any deviation as a decision)\n${advice}`),
-      { ...o, label: `${stage}:${t.n}:retry` }, roleFile, altRoleFile)
+      { ...o, label: `${stage}:${t.n}:retry` }, roleFile)
     if (res && res.needs_advisor) log(`#${t.n} ${stage}: asked for a second advisor call; the limit is one per stage, continuing with the retry result`)
   }
   if (!res) throw new Blocked(`${stage}: the agent returned nothing`)
@@ -260,7 +261,7 @@ function head(t, skill, extra, wt) {
     ? `Owner-confirmed decisions for this ticket (never contradict them; if you must, mark the decision contradicts_confirmed and stop that part):\n${t.confirmed}\n\n`
     : ''
   const ask = NO_ASK ? 'No owner answers exist for this run: every question you would have asked becomes a decision; set needs_review by the rule above.\n' : ''
-  const read = skill ? `Read ${wt}/skills/${skill}/SKILL.md (if it does not exist, ${wt}/.claude/skills/${skill}/SKILL.md) and run it with Mode: auto, only after your worktree exists (it is created by the commands above). Never ask anyone.\n` : ''
+  const read = skill ? `Read ${pluginDir}/skills/${skill}/SKILL.md and run it with Mode: auto, only after your worktree exists (it is created by the commands above). Never ask anyone.\n` : ''
   const source = LOCAL ? `Ticket text: ${t.title}\n` : `The ticket is GitHub issue #${t.n} of ${repo}; read it with: gh issue view ${t.n} --repo ${repo} --json body -q .body\n`
   return `${RULES}\n\n${notCwd(wt)}\nTicket #${t.n}: ${t.title} (depth ${t.depth}). Repo ${repo}.\n${source}${confirmed}${ask}${read}${extra || ''}`
 }
@@ -305,11 +306,11 @@ async function advisePlan(t, design, plan) {
 function stageImplement(t, branch, planText) {
   const w = newWt(`t${t.n}`, branch, integRef)
   const build = advice => w.setup + head(t, 'implement',
-    `Stage: implement. You cannot start other agents, so act as the implementer yourself (${w.dir}/agents/implementer.md, else ${w.dir}/.claude/agents/implementer.md): take the plan steps one at a time. ` +
+    `Stage: implement. You cannot start other agents, so act as the implementer yourself (${pluginDir}/agents/implementer.md): take the plan steps one at a time. ` +
     `For each step: do it, run its done_when command, then "git add" and, as a separate command, "git commit". ` +
     `Related tests: ${testCmd} (a template; fill in the files you touched). Lint: ${lintCmd}.\n` +
     `Return ${w.dir} as worktree, and your branch.\n\n${planText}${advice}`, w.dir)
-  return runStage(t, 'implement', build, IMPLEMENT_SCHEMA, { agentType: 'implementer', roleFile: `${w.dir}/agents/implementer.md`, altRoleFile: `${w.dir}/.claude/agents/implementer.md`, model: MODEL.implement, effort: EFFORT.implement })
+  return runStage(t, 'implement', build, IMPLEMENT_SCHEMA, { agentType: 'harness:implementer', roleFile: `${pluginDir}/agents/implementer.md`, model: MODEL.implement, effort: EFFORT.implement })
 }
 
 function stageFinish(t, impl) {
@@ -511,13 +512,13 @@ async function stageIntentReview(done) {
   const request = await requestText(done)
   // Plan-blind on purpose: only the request and the range. No plan, design, ADR, confirmed answers or summary.
   const w = newWt('intent-review', null, finalRef)
-  const role = `${w.dir}/agents/intent-reviewer.md`, altRole = `${w.dir}/.claude/agents/intent-reviewer.md`
-  const prompt = `${w.setup}Role: read ${role} (if it does not exist, ${altRole}) and act as that role. If neither exists, use this role: ` +
+  const role = `${pluginDir}/agents/intent-reviewer.md`
+  const prompt = `${w.setup}Role: read ${role} and act as that role. If it does not exist, use this role: ` +
     `compare the diff with the owner's request and report only gaps (requested but missing), drift (does something other than requested) and excess (unrequested behaviour).\n\n` +
     `Owner's original request, verbatim:\n<<<\n${request}\n>>>\n\nDiff range: ${baseRef}..${finalRef}\n\n` +
     `Read the diff with: git -C ${w.dir} diff ${baseRef}..${finalRef}. Read-only: edit nothing. ` +
     `Report only findings of kind gap, drift or excess. Do not report anything else: nothing about tests, about whether tests pass, or about your role file. If there is nothing to report, return no findings.`
-  const res = await call(prompt, { label: 'intent-review', phase: 'Intent review', schema: INTENT_REVIEW_SCHEMA, effort: EFFORT.review, agentType: 'intent-reviewer' }, role, altRole)
+  const res = await call(prompt, { label: 'intent-review', phase: 'Intent review', schema: INTENT_REVIEW_SCHEMA, effort: EFFORT.review, agentType: 'harness:intent-reviewer' }, role)
   const findings = (res && res.findings) || []
   const fixable = findings.filter(f => f.kind === 'gap' || (f.kind === 'drift' && f.behaviour_changing))
   if (fixable.length) {
@@ -566,9 +567,9 @@ async function stageAdr(finalPr, artifact, bodyTemplate) {
   const prompt = `${w.setup}${RULES}\n\n` +
     `Stage: write the ADRs and the final PR body. First cd ${w.dir}; every relative path below is relative to it. Do these in order:\n` +
     `1. mkdir -p .ship and save this JSON, exactly, to .ship/decisions.json (use a quoted heredoc). It holds ${decisions.length} decisions.\n${input}\n` +
-    `2. Run "python3 ${w.dir}/scripts/write_adrs.py --help" first (or ${w.dir}/.claude/scripts/write_adrs.py). ${decisions.length ? `Then run it with --input .ship/decisions.json and save its stdout to .ship/written.json. Exit 2 means bad input: fix the file and re-run.` : 'There are no decisions: save [] to .ship/written.json and skip the next step.'}\n` +
+    `2. Run "python3 ${pluginDir}/scripts/write_adrs.py --help" first. ${decisions.length ? `Then run it with --input .ship/decisions.json and save its stdout to .ship/written.json. Exit 2 means bad input: fix the file and re-run.` : 'There are no decisions: save [] to .ship/written.json and skip the next step.'}\n` +
     `3. "git add docs/adr", then, as a separate command, "git commit" (message ends with ${CO_AUTHOR}); then land it: ${land(finalBranch)}\n` +
-    `4. Render the section: python3 ${w.dir}/scripts/write_adrs.py --render-section .ship/written.json${artifact.url ? ` --artifact ${artifact.url}` : ''}${artifact.url ? '' : `  (no artifact this run; link docs/adr/ in the section)`}\n` +
+    `4. Render the section: python3 ${pluginDir}/scripts/write_adrs.py --render-section .ship/written.json${artifact.url ? ` --artifact ${artifact.url}` : ''}${artifact.url ? '' : `  (no artifact this run; link docs/adr/ in the section)`}\n` +
     `5. Write the body below to .ship/pr-body.md, replacing the line {{DECISIONS}} with the rendered section. ${update}\n` +
     `Return adrs from .ship/written.json (number, path, needs_review). Do not commit anything under .ship.\n\nBody:\n${bodyTemplate}`
   const res = await call(prompt, { label: 'adr', phase: 'Decisions', schema: ADR_SCHEMA, model: MODEL.adr, effort: EFFORT.adr })
@@ -609,6 +610,11 @@ const groups = [...new Set(tickets.map(t => t.group))].sort((a, b) => a - b)
 const ordered = () => tickets.map(t => byN.get(t.n))
 
 phase('Setup')
+// The role files come from the plugin directory. call() falls back silently to the default agent
+// when an agent type is missing, which would hide a wrong pluginDir, so check it once, up front.
+const pluginCheck = await call(`Run: test -f ${pluginDir}/agents/implementer.md && test -f ${pluginDir}/scripts/write_adrs.py && echo found || echo missing\n\n${notCwd()}\nReturn status ok when the output is found, otherwise status blocked with blocked_reason "pluginDir ${pluginDir} does not hold the harness plugin". Edit nothing.`,
+  { label: 'plugin-check', phase: 'Setup', schema: SETUP_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
+if (!pluginCheck || pluginCheck.status === 'blocked') throw new Error(`ship: ${(pluginCheck && (pluginCheck.blocked_reason || pluginCheck.summary)) || 'the plugin check returned nothing'}`)
 log(`ship: ${tickets.length} ticket(s) in ${groups.length} group(s), ${single ? 'single: the ticket PR is the final PR' : `integration branch ${integBranch}`}${LOCAL ? ', local mode' : ''}`)
 if (!single) {
   const setup = await stageSetupIntegration()
