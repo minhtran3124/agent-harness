@@ -532,7 +532,7 @@ test('n2: no prompt says tests count only when the ticket lists them; implement 
   for (const re of [/^implement:1$/, /^fix:/, /^intent-fix$/]) {
     const cs = named(calls, re)
     assert(cs.length >= 1, String(re))
-    for (const c of cs) assert(!/count only when the ticket lists/.test(c.prompt) && /proves your (fix|change)/.test(c.prompt) && /always allowed/.test(c.prompt), `${re}: contradictory or missing test rule`)
+    for (const c of cs) assert(!/count only when the ticket lists/.test(c.prompt) && /in bounds only when/.test(c.prompt) && !/always allowed/.test(c.prompt), `${re}: test/doc files must be in bounds only when the ticket lists them`)
   }
 })
 
@@ -579,7 +579,7 @@ test('o3: fix prompt allows the proving test and a null decision entry does not 
     if (c.label === 'review:r0') return ok({ findings: [{ id: 'F1', summary: 'FINDING-SUM', score: 90 }], skill_invoked: true })
     if (c.label.startsWith('fix:')) return ok({ fix_status: 'skipped', summary: 'SKIP-REASON-TEXT', decisions: [null, { context: 'no title' }] })
   })
-  assert(named(calls, /^fix:/)[0].prompt.includes('test that proves your fix is always allowed'), 'test exemption in fix prompt')
+  assert(named(calls, /^fix:/)[0].prompt.includes('in bounds only when the list above names it') && !named(calls, /^fix:/)[0].prompt.includes('always allowed'), 'test/doc files bound by the ticket list in fix prompt')
   assert(result.review.notFixed[0].reason.includes('SKIP-REASON-TEXT'))
 })
 

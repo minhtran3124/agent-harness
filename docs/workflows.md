@@ -42,8 +42,8 @@ at most). `Closes #n` / `Refs #n` are written only when not in local mode.
 
 Scope boundary: the intent stage returns `out_of_scope`, the ticket's own Out of scope lines copied
 verbatim, next to `files`. The boundary is those lines plus the files the ticket names (the intent
-`files` and the paths in the plan steps); the file set limits production files only, and the test
-that proves a change is always allowed. The implement, review-fix and intent-fix prompts carry it. A change outside it is not made: the
+`files` and the paths in the plan steps); the file set limits production, test and doc files alike
+(a test or doc file is in bounds only when the ticket lists it). The implement, review-fix and intent-fix prompts carry it. A change outside it is not made: the
 agent returns a decision titled `Boundary: ...` with `needs_review: true`, and a fix returns
 `fix_status: skipped`. Such a fix is listed in the PR body `## Review` section as
 `needs your decision`. The PR body also gets a `## Needs your decision` section above `## Summary`,

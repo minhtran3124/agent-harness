@@ -240,7 +240,7 @@ const BOUNDARY_RULE = `A change outside these files, or against an Out of scope 
 function boundaryText(label, intent) {
   const b = boundaryOf(intent)
   return `${label}\nOut of scope (the ticket's own lines):\n${b.out_of_scope.length ? b.out_of_scope.map(x => `- ${x}`).join('\n') : '- none listed'}\n` +
-    `Files this ticket names (they limit production files only; the test that proves your change is always allowed):\n${b.files.length ? b.files.map(x => `- ${x}`).join('\n') : '- none listed'}\n${BOUNDARY_RULE}\n`
+    `Files this ticket names (production, test and doc files alike: a test or doc file is in bounds only when it is listed here):\n${b.files.length ? b.files.map(x => `- ${x}`).join('\n') : '- none listed'}\n${BOUNDARY_RULE}\n`
 }
 // Run-level view for the fix agents: the union over all tickets, labelled by ticket number.
 function runBoundaryText() {
@@ -248,8 +248,8 @@ function runBoundaryText() {
   if (!ns.length) return ''
   const body = ns.map(n => `Ticket #${n}\n` + boundaryText('', boundaries[n]).replace(`\n${BOUNDARY_RULE}\n`, '').trim()).join('\n\n')
   return `Boundary (union over the tickets in this run):\n${body}\n` +
-    `The test that proves your fix is always allowed, even when the list above does not name it; the file set limits production files only. ` +
-    `A fix that would touch a production file outside this set, or contradict an Out of scope line, changes nothing: return fix_status skipped and a decisions[] entry whose title starts with '${BOUNDARY_PREFIX}' and needs_review true.\n`
+    `The file set limits production, test and doc files alike: a test or doc file is in bounds only when the list above names it. ` +
+    `A fix that would touch a file outside this set, or contradict an Out of scope line, changes nothing: return fix_status skipped and a decisions[] entry whose title starts with '${BOUNDARY_PREFIX}' and needs_review true.\n`
 }
 
 const capSummary = v => { const x = (typeof v === 'string' ? v : '').replace(/\s+/g, ' ').trim(); return x.length > 200 ? `${x.slice(0, 199)}…` : x }
