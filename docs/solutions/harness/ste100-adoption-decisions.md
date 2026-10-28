@@ -24,7 +24,7 @@ change which lint rules a review step counts.
 ### Context
 The user asked to apply the asd-ste100 skill to the whole harness: rewrite existing prose (A),
 use the skill for new prose (B), and add the linter (C). An earlier record,
-`specs/ste-terminology-evidence/DECISION.md`, measured three STE ideas. Only machine-decidable
+`docs/research/ste-terminology-evidence/DECISION.md`, measured three STE ideas. Only machine-decidable
 acceptance criteria had an effect.
 ### Options Considered
 - Rewrite all prose with no trial.
@@ -111,6 +111,6 @@ compares each file with its baseline entry at that ref.
 ## Related
 
 - docs/solutions/harness/ste-rewrite-drops-scope-qualifiers.md
-- specs/ste-terminology-evidence/DECISION.md
+- docs/research/ste-terminology-evidence/DECISION.md
 - specs/ste100-harness-prose/DECISION.md
 - specs/ste100-harness-prose/design.md

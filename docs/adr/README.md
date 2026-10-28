@@ -10,6 +10,12 @@ Stage agents never write ADR files. They return `decisions[]` to the workflow (s
 `python3 scripts/write_adrs.py`. Parallel worktrees would collide on numbers, so the script is the
 only writer.
 
+## Design records
+
+A design record is an ADR with `stage: design`. `brainstorming` at depth L returns the design as a
+`decisions[]` entry, and the same ADR stage writes it here. A design is never written under
+`specs/`, which is local scratch and is not tracked.
+
 ## Numbering
 
 - File name: `NNNN-<slug>.md`. `NNNN` has 4 digits and is sequential.

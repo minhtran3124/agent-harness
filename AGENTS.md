@@ -14,7 +14,7 @@ This repository is a Claude Code skills framework and workflow harness. The main
 - `techstacks/` — project-owned stack profile read by `rules/architecture.md` and `rules/guidelines.md`; intentionally near-empty in this meta-repo.
 - `tests/hooks/` and `tests/scripts/` — shell contract and integration tests.
 - `scripts/test_*.py`, `runtime/test_*.py`, and `test_*.py` files under `skills/` — Python unit tests.
-- `docs/`, `specs/`, and `evals/` — knowledge, change artifacts, and evaluation fixtures.
+- `docs/` and `evals/` — knowledge (solutions, ADRs, research) and evaluation fixtures. `specs/` is local scratch (gitignored): plans, research briefs and run state stay on your machine.
 
 The root `CLAUDE.md`, `HARNESS.md`, `skills/README.md`, and `harness-manifest.json` describe the supported workflow and component inventory. Treat them as contracts when changing hooks, skills, or schemas.
 

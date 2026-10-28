@@ -1,1 +1,0 @@
-{"S1": "runtime/resume_decision.py (run with --slug <slug>)", "S2": "Only when runtime/resume_decision.py (the source file) is absent; never on a non-zero exit", "S3": "1", "S4": "As stop", "S5": "The commit before this task's first commit, never the branch base", "S6": "One", "S7": "spec_verdict and quality_verdict", "S8": "Any post-review code commit"}

@@ -25,14 +25,14 @@ feature-intake  (readiness gate — run first on every ticket)
   → Input-type: bug fix → diagnosing-bugs before the plan (see Bug Fix Path)
       ↓
 brainstorming  (depth L)
-  → explores options, converges on a design; writes specs/<slug>/design.md; no review rounds
+  → explores options, converges on a design; depth L records the design as an ADR in docs/adr/; no review rounds
       ↓
 xia2  (depth L; a short inline brief for M)
   → research before building; external docs only when the change has an external surface
-  → output: specs/<slug>/research-brief.md (no code)
+  → output: research brief, local scratch (specs/<slug>/research-brief.md) or inline; no code
       ↓
 writing-plans  (depth M and L)
-  → steps carry Files, Effort, Done-when, Parallel group → specs/<slug>/PLAN.md
+  → steps carry Files, Effort, Done-when, Parallel group → specs/<slug>/PLAN.md (local scratch)
       ↓
 using-git-worktrees  (manual runs; a Workflow uses isolation: 'worktree')
       ↓
@@ -101,7 +101,7 @@ from the harness checkout run `bash scripts/init-structure.sh --root <project>`,
 | Skill | Trigger | Output |
 |---|---|---|
 | `grilling` | **Intake- or user-invoked**. A ticket has open decisions that the owner must settle before design or planning. It maps the decisions as a design tree and asks the whole frontier in one numbered round, each with a recommended answer. Facts it looks up itself. `Mode: auto` is for `--no-ask` runs only | A "Confirmed decisions" comment on the ticket + a short decision list for the caller |
-| `brainstorming` | The goal is clear but the approach is not. The user weighs two or more ways, does not know how to start, or asks for a design or a recommendation. Not for a settled approach that only needs codebase or library knowledge (that is `xia2`). Depth L routes here | `specs/<slug>/design.md` (depth L) |
+| `brainstorming` | The goal is clear but the approach is not. The user weighs two or more ways, does not know how to start, or asks for a design or a recommendation. Not for a settled approach that only needs codebase or library knowledge (that is `xia2`). Depth L routes here | a design ADR in `docs/adr/` (depth L) |
 | `xia2` | Find out how something actually works here before building on it. Examples: a feature on unexplained code, a library or API that the repo does not use yet, or how an existing part works. Not for a choice between approaches (that is `brainstorming`). No depth classifier | `specs/<slug>/research-brief.md` (depth L) or a short inline brief |
 | `diagnosing-bugs` | **User- or intake-invoked**. Run `/diagnosing-bugs`, or `feature-intake` routes an `Input-type: bug fix` here. The skill blocks model invocation, so intake uses the Read tool on its `SKILL.md`. It proves the root cause in six gated phases before any fix. Every lane runs all six phases. No "cause known" shortcut exists. `task-reviewer` reviews the diagnosis before the fix | `specs/<slug>/diagnosis.md` → red test + fix (tiny) or the lane route |
 
@@ -314,7 +314,7 @@ graph LR
 | `view_plan.py` | **Shows** it — serves on localhost + opens Chrome, auto-rendering first if `PLAN.html` is missing/stale. |
 
 - **Deterministic script, not LLM transcription.** The skill only runs the script and relays its report — never emits HTML token-by-token. Transcribing a ~340-line template every run is expensive and the least reproducible part of the pipeline; a script makes the fill free and stable.
-- **Local-only output.** `PLAN.html` is untracked — it lives beside `PLAN.md` in `specs/` (which is tracked), but `PLAN.html` itself is gitignored as a derived artifact.
+- **Local-only output.** `PLAN.html` is untracked — it lives beside `PLAN.md` in `specs/`, which is local scratch and gitignored.
 - **Rendered by a script run, not a hook or sub-agent.** `writing-plans` runs `render_plan.py --summarize` after saving `PLAN.md`, `rules/wave-parallelism.md` runs it at each wave boundary, and `finishing-a-development-branch` runs it before the shipped commit, so `PLAN.html` and the in-file "At a glance" block stay current without any skill dispatch. Nothing auto-opens it; `view_plan.py` opens it on request. Run `visual-planner <slug>` standalone when you want `--review` mode.
 - **Why serve instead of `file://`?** Localhost is a browser *secure context*, so per-task "copy `<verify>`" buttons use `navigator.clipboard`; `--file` (`file://`) is faster but falls back to `execCommand`. Auto-view is environment-dependent (no display on headless/remote), so it stays an explicit step.
 - **Self-check before claiming success.** The script asserts non-empty output, no surviving `{{PLACEHOLDER}}`, the `slug` present, and one `<section data-wave>` per distinct wave. On non-zero exit, surface the `SELF-CHECK FAILED:` lines verbatim — do not claim success.

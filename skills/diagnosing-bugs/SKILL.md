@@ -46,7 +46,6 @@ Write `specs/<slug>/diagnosis.md` from `references/diagnosis-template.md`.
    When the probes refute every hypothesis, go back to Phase 3 with a new list.
    A second full refutation writes an `ESCALATIONS.md` block with `decision: pending` and stops.
    After you confirm one hypothesis, delete every probe and throwaway harness.
-   Commit `specs/<slug>/diagnosis.md`.
    Done when: `Confirmed:` names one hypothesis that the probe evidence supports, and no probe stays in the working tree.
 
 ## Diagnosis review

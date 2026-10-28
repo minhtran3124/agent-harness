@@ -326,11 +326,3 @@ def test_marker_in_another_section_is_not_a_marker():
         "## 3. Success Criteria", "## 2. Notes\n\n- Plan-contract: 2\n\n## 3. Success Criteria"
     )
     assert errors(text) == []
-
-
-def test_corpus_every_committed_plan_passes():
-    root = Path(__file__).resolve().parent.parent
-    plans = sorted(root.glob("specs/*/PLAN.md"))
-    assert plans
-    for plan in plans:
-        assert errors(plan.read_text(encoding="utf-8"), str(plan)) == [], plan

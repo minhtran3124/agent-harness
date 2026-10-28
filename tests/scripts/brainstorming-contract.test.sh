@@ -6,15 +6,15 @@ t "brainstorming agrees the design before any code and hands off to xia2 then wr
 grep -q 'No code until the design is agreed' "$ROOT/$SKILL" && grep -q '`xia2`' "$ROOT/$SKILL" && grep -q '`writing-plans`' "$ROOT/$SKILL" && pass || fail "design gate or handoff missing"
 t "brainstorming drops the mandatory spec-review loop"
 ! grep -q 'spec-review-loop\|spec-document-reviewer' "$ROOT/$SKILL" && [ ! -e "$ROOT/skills/brainstorming/spec-document-reviewer-prompt.md" ] && [ ! -e "$ROOT/skills/brainstorming/references/spec-review-loop.md" ] && pass || fail "review loop still present"
-t "brainstorming has an Auto mode section and writes design.md for depth L"
-grep -q '^## Auto mode' "$ROOT/$SKILL" && grep -q 'specs/<slug>/design.md' "$ROOT/$SKILL" && pass || fail "Auto mode or design.md output missing"
+t "brainstorming has an Auto mode section and records the depth L design as an ADR, not in specs/"
+grep -q '^## Auto mode' "$ROOT/$SKILL" && grep -q 'stage: design' "$ROOT/$SKILL" && grep -q 'docs/adr/' "$ROOT/$SKILL" && ! grep -q 'specs/<slug>/design.md' "$ROOT/$SKILL" && pass || fail "Auto mode or design ADR output missing"
 TPL="skills/brainstorming/references/design-template.md"
 BRIEF="skills/xia2/references/research-brief-template.md"
 has_all() { local f="$1"; shift; for a in "$@"; do grep -qF -- "$a" "$ROOT/$f" || return 1; done; }
 t "design template exists and brainstorming reads it"
 [ -f "$ROOT/$TPL" ] && grep -qF 'references/design-template.md' "$ROOT/$SKILL" && pass || fail "design template or its Read missing"
 t "design and research-brief templates carry the provenance header"
-has_all "$TPL" '# <slug> — Design' 'Written <YYYY-MM-DD>. Pins:' && has_all "$BRIEF" '# <slug> — Research Brief' 'Written <YYYY-MM-DD>. Pins:' && pass || fail "provenance header missing"
+has_all "$TPL" 'stage: design' 'Pins:' && has_all "$BRIEF" '# <slug> — Research Brief' 'Written <YYYY-MM-DD>. Pins:' && pass || fail "provenance header missing"
 QTPL="templates/QUESTIONS.template.md"
 t "questions template carries the blocking-question sentence and its six field keys"
 [ -f "$ROOT/$QTPL" ] && has_all "$QTPL" 'A question that blocks work does not belong here: write it in ESCALATIONS.md.' \

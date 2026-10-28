@@ -6,7 +6,7 @@ import sys
 
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-EXPERIMENT = ROOT / "specs/ste-terminology-evidence/experiment"
+EXPERIMENT = ROOT / "docs/research/ste-terminology-evidence/experiment"
 
 
 def load_rerun_module():

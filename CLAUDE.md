@@ -60,8 +60,8 @@ Wired (✅) means registered in `settings.json`. The hooks are legacy until #349
 ## Knowledge
 
 - `docs/solutions/` holds solved problems and patterns. Start at `docs/solutions/INDEX.md`; read `docs/solutions/critical-patterns.md` when you plan. Entries carry `confirmed_at`: treat an entry older than 30 days as possibly stale.
-- `docs/adr/` holds durable decisions.
-- `specs/` is local scratch and is gitignored. Put a durable decision in `docs/adr/`. Use `git add -f` only when a spec file must be kept.
+- `docs/adr/` holds durable decisions and depth-L designs (an ADR with `stage: design`).
+- `specs/` is local scratch and is gitignored: `PLAN.md`, research briefs and run state stay local. Put a design or a decision in `docs/adr/`. Do not commit under `specs/`.
 
 ## Gotchas
 

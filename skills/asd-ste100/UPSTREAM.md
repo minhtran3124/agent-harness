@@ -13,7 +13,7 @@ This skill is a vendored copy of an upstream skill.
 The vendored copy has these three differences from upstream. There are no other differences.
 
 1. `SKILL.md` frontmatter has one added line: `allowed-tools: Read, Bash(python3 *)`. The harness repo check `scripts/check-allowed-tools.sh` needs this line.
-2. Two upstream files are not vendored: README.md and examples/linter-edge-cases.md. The upstream README.md gives install paths for other runtimes. The harness repo check `scripts/check_runtime_neutral_sources.py` rejects those paths.
+2. Two upstream files are not vendored: README.md and examples/linter-edge-cases.md. The upstream README.md gives install paths for other runtimes. The harness does not ship those paths.
 3. `SKILL.md` names the linter as `skills/asd-ste100/scripts/ste-lint.py`. Upstream names it as scripts/ste-lint.py. This change is on two lines only. The harness repo check `scripts/lint-doc-truth.sh` needs a path that exists in a consuming repo.
 
 ## Re-vendor steps
@@ -24,4 +24,4 @@ The vendored copy has these three differences from upstream. There are no other 
 4. Apply differences 1 and 3 again.
 5. Write the new commit, version, and sha256 prefixes in this file.
 6. Run `python3 skills/asd-ste100/scripts/ste-lint.py --selftest`. Make sure that it exits 0.
-7. In the harness repo, run `bash scripts/check-allowed-tools.sh`, `python3 scripts/check_runtime_neutral_sources.py`, and `bash scripts/lint-doc-truth.sh`. Make sure that each one exits 0.
+7. In the harness repo, run `bash scripts/check-allowed-tools.sh` and `bash scripts/lint-doc-truth.sh`. Make sure that each one exits 0.

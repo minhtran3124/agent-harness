@@ -1205,19 +1205,6 @@ class TestRedGreen:
         no_header = _lane_summary(lane="normal", verify=REAL_LANE_VERIFY)
         assert vs._red_green_issue(no_header) is None
 
-    def test_red_green_no_message_for_existing_non_bug_fix_summaries(self, monkeypatch):
-        specs = Path(__file__).resolve().parent.parent / "specs"
-        paths = sorted(specs.glob("*/SUMMARY.md"))
-        assert paths, "no specs/*/SUMMARY.md found"
-        for value in ("", "1"):
-            monkeypatch.setenv("REQUIRE_RED_TEST", value)
-            for path in paths:
-                text = path.read_text(encoding="utf-8")
-                input_type = (vs._header_value(text, "Input-type") or "").strip().lower()
-                if vs._BUG_FIX_INPUT_RE.match(input_type):
-                    continue
-                assert _red_green_messages(text) == [], path
-
 
 # ---------------------------------------------------------------------------
 # Fix-diff check: a bug fix must change code after the red commit
@@ -1393,22 +1380,6 @@ def test_fix_diff_commit_gate_shape(fix_repo, tmp_path, monkeypatch, capsys):
     monkeypatch.setenv("REQUIRE_RED_TEST", "1")
     assert vs.main(["--lane", str(copy)]) == 0
     assert "bug fix:" not in capsys.readouterr().out
-
-
-def test_fix_diff_gh302(monkeypatch):
-    root = Path(__file__).resolve().parent.parent
-    resolved = subprocess.run(
-        ["git", "rev-parse", "--verify", "--quiet", "ee6da93^{commit}"],
-        cwd=root,
-        capture_output=True,
-    )
-    if resolved.returncode != 0:
-        pytest.skip("ee6da93 does not resolve here (shallow clone or tarball)")
-    monkeypatch.chdir(root)
-    monkeypatch.delenv("REQUIRE_NOT_AUTO_VERIFIED", raising=False)
-    monkeypatch.setenv("REQUIRE_RED_TEST", "1")
-    summary = root / "specs/gh-302-red-green-input-type/SUMMARY.md"
-    assert vs.main(["--lane", str(summary)]) == 0
 
 
 # The red row's command shape is copied into a prose file that tells agents how to write it.

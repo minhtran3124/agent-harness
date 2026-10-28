@@ -2,7 +2,7 @@
 source "$(dirname "$0")/../lib.sh"
 SKILL="skills/writing-plans/SKILL.md"
 t "writing-plans reads design and research brief when they exist"
-grep -q 'design.md' "$ROOT/$SKILL" && grep -q 'research-brief.md' "$ROOT/$SKILL" && pass || fail "inputs missing"
+grep -q 'docs/adr/' "$ROOT/$SKILL" && grep -q 'research-brief.md' "$ROOT/$SKILL" && pass || fail "inputs missing"
 t "writing-plans steps carry Files, Effort, Done-when and a parallel group"
 grep -q '\*\*Files\*\*' "$ROOT/$SKILL" && grep -q '\*\*Effort\*\*' "$ROOT/$SKILL" && grep -q '\*\*Done-when\*\*' "$ROOT/$SKILL" && grep -q '\*\*Parallel group\*\*' "$ROOT/$SKILL" && pass || fail "step fields missing"
 t "writing-plans hands off to implement and drops the retired machinery"

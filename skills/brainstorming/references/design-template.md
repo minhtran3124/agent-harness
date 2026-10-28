@@ -1,30 +1,26 @@
 # Design template
 
-Write `specs/<slug>/design.md` (depth L only). Keep each section short; drop one that has nothing to say.
+A depth L design is an ADR with `stage: design`. Return it as a `decisions[]` entry; the ADR stage of
+`decision-record` writes `docs/adr/NNNN-*.md`. Write no design file under `specs/`. Keep each
+field short; drop one that has nothing to say.
 
 ```text
-# <slug> — Design
-
-Written <YYYY-MM-DD>. Pins: <repo short sha the claims were checked against>
-
-## Goal
-One or two sentences.
-
-## Current state
-What exists today that the change builds on, with file pointers.
-
-## Approaches considered
-Two or three options, their trade-offs, and the chosen one.
-
-## Design
-Components, data flow, interfaces, error behavior.
-
-## Tests
-What proves it works: commands and expected results.
-
-## Non-goals
-What this change does not do.
-
-## Decisions
-Choices made and why (in auto mode these are the decisions[] entries).
+title: <the chosen design, as a decision>
+ticket: <ticket>
+stage: design
+context: |
+  Goal in one or two sentences. Current state: what exists that the change builds on, with file
+  pointers. Pins: <repo short sha the claims were checked against>, <YYYY-MM-DD>.
+options: |
+  Two or three approaches, their trade-offs, and which one was chosen.
+decision: |
+  The design: components, data flow, interfaces, error behavior.
+why: |
+  The evidence that made this approach win.
+consequences: |
+  Tests (commands and expected results) and non-goals (what this change does not do).
+how_to_reverse: |
+  The exact steps to undo it.
+confidence: high | medium | low
+needs_review: true | false
 ```

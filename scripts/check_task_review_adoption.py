@@ -12,7 +12,6 @@ ROOT = Path(__file__).resolve().parent.parent
 def main() -> int:
     commands = [
         [sys.executable, "scripts/check_task_review_contract.py"],
-        [sys.executable, "scripts/check_plan_contract.py", "specs/superpowers-6-review-pipeline-adoption/PLAN.md"],
         ["bash", "tests/scripts/task-reviewer-readonly.test.sh"],
         ["bash", "tests/scripts/final-review-package-contract.test.sh"],
         ["bash", "scripts/lint-doc-truth.sh"],

@@ -50,7 +50,7 @@ BASELINE = "scripts/ste-baseline.json"
 #     table or inline-code errors. The per-file baseline holds them, so the rules stay on.
 # No rule has mostly false findings on tables or inline code, so that test disables none.
 # User decision of 2026-10-15: disable synonym-rotation for a different reason. Test H3
-# measured no effect for the one-word rule (specs/ste-terminology-evidence/DECISION.md).
+# measured no effect for the one-word rule (docs/research/ste-terminology-evidence/DECISION.md).
 # A rule with a measured null must not block, so the counts do not include it.
 DISABLED_RULES: tuple[str, ...] = ("synonym-rotation",)
 

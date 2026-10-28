@@ -3,7 +3,6 @@
 source "$(dirname "$0")/../lib.sh"
 
 RENDERER="scripts/render_runtime_entry.py"
-CHECKER="scripts/check_runtime_neutral_sources.py"
 
 # Resolve an interpreter that actually has pytest; a bare `python3` is whatever
 # the runner ships, which on a fresh CI runner lacks it. Missing pytest is a
@@ -35,50 +34,6 @@ if [ "$claude_model" = "claude-opus-5-5" ]; then
   pass
 else
   fail "unexpected task-reviewer model — claude=[$claude_model]"
-fi
-
-t "live shared sources have zero owned runtime-entry exceptions"
-if python3 "$ROOT/$CHECKER" --root "$ROOT" >/dev/null \
-  && python3 -c 'import json,sys; assert json.load(open(sys.argv[1]))["findings"] == []' \
-    "$ROOT/specs/codex-support/neutralization-inventory.json"; then
-  pass
-else
-  fail "shared runtime-entry inventory is not closed"
-fi
-
-copy_scanner_fixture() {
-  local destination="$1"
-  mkdir -p "$destination/specs/codex-support" "$destination/skills/demo"
-  cp "$ROOT/$CHECKER" "$destination/scripts-checker.py"
-  python3 - "$ROOT/specs/codex-support/neutralization-inventory.json" "$destination/specs/codex-support/neutralization-inventory.json" <<'PY'
-import json, sys
-source, destination = sys.argv[1:]
-value = json.load(open(source))
-value["scan_roots"] = ["skills"]
-value["skill_names"] = ["feature-intake"]
-value["findings"] = []
-open(destination, "w").write(json.dumps(value))
-PY
-}
-
-t "mutation: a new raw slash-skill invocation fails the count-exact inventory"
-fixture=$(mktemp -d); _CLEANUP_DIRS+=("$fixture")
-copy_scanner_fixture "$fixture"
-printf '%s\n' 'Run /feature-intake now.' > "$fixture/skills/demo/SKILL.md"
-if python3 "$fixture/scripts-checker.py" --root "$fixture" >/dev/null 2>&1; then
-  fail "slash-skill mutation passed"
-else
-  pass
-fi
-
-t "mutation: a new vendor model label in shared prose fails the inventory"
-fixture=$(mktemp -d); _CLEANUP_DIRS+=("$fixture")
-copy_scanner_fixture "$fixture"
-printf '%s\n' 'Pin this shared stage to claude-opus-example.' > "$fixture/skills/demo/SKILL.md"
-if python3 "$fixture/scripts-checker.py" --root "$fixture" >/dev/null 2>&1; then
-  fail "vendor-model mutation passed"
-else
-  pass
 fi
 
 t "semantic prompts retain explicit model-stage selection without vendor labels"
