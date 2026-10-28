@@ -206,6 +206,15 @@ test('e4: RULES and the decision schema carry the needs_review criteria', async 
   assert(/ONLY when/.test(dec.description) && /false/.test(dec.description))
 })
 
+test('g1: a multi-ticket intent plans against the integration ref, not the repo checkout; decisions exclude environment facts', async () => {
+  const multi = await run({ local: true, tickets: [T(1, 1), T(2, 2, [1])] }, null)
+  const p = named(multi.calls, /^intent:2$/)[0].prompt
+  assert(/Plan against the code as it is on /.test(p) && /is NOT that code/.test(p), 'intent:2 does not name the integration ref')
+  const single = await run({ local: true, tickets: [T(1, 1)] }, null)
+  assert(!/is NOT that code/.test(named(single.calls, /^intent:1$/)[0].prompt))
+  assert(p.includes('Facts about the environment') && p.includes('are not decisions'))
+})
+
 test('f2: local mode PR body has no Closes or Refs and uses Ticket n', async () => {
   const { calls } = await run({ local: true, tickets: [T(1, 1), T(2, 2, [1])] }, c => (c.label === 'implement:2' ? ok({ status: 'blocked', blocked_reason: 'x', worktree: '', branch: '' }) : undefined))
   const body = named(calls, /^adr$/)[0].prompt

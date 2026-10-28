@@ -41,6 +41,7 @@ const RULES = `Rules (all of them apply):
 - Pull request bodies end with the line: ${PR_FOOTER}
 - Run "git add" and "git commit" as separate commands.
 - Use --json with "gh issue view" (plain "gh issue view" fails on this repo).
+- decisions[] holds only real choices between options that change the code or the behaviour. Facts about the environment (which test runner you used, that pytest is missing, that a file was or was not found, that a plan step was already satisfied) are not decisions: leave them out.
 - Never write ADR files. Return decisions[] instead; one stage at the end writes them.
 - You cannot start other agents. If you are stuck, unsure, or a choice affects another ticket or a public contract, set needs_advisor: true with advisor_question and stop; the script asks the advisor.
 - Harness files (skills/, agents/, scripts/) live under .claude/ in a consuming repo. Use whichever path exists, always as an absolute path under your own worktree.`
@@ -259,7 +260,7 @@ function head(t, skill, extra, wt) {
     ? `Owner-confirmed decisions for this ticket (never contradict them; if you must, mark the decision contradicts_confirmed and stop that part):\n${t.confirmed}\n\n`
     : ''
   const ask = NO_ASK ? 'No owner answers exist for this run: every question you would have asked becomes a decision; set needs_review by the rule above.\n' : ''
-  const read = skill ? `Read ${wt}/skills/${skill}/SKILL.md (if it does not exist, ${wt}/.claude/skills/${skill}/SKILL.md) and run it with Mode: auto. Never ask anyone.\n` : ''
+  const read = skill ? `Read ${wt}/skills/${skill}/SKILL.md (if it does not exist, ${wt}/.claude/skills/${skill}/SKILL.md) and run it with Mode: auto, only after your worktree exists (it is created by the commands above). Never ask anyone.\n` : ''
   const source = LOCAL ? `Ticket text: ${t.title}\n` : `The ticket is GitHub issue #${t.n} of ${repo}; read it with: gh issue view ${t.n} --repo ${repo} --json body -q .body\n`
   return `${RULES}\n\n${notCwd(wt)}\nTicket #${t.n}: ${t.title} (depth ${t.depth}). Repo ${repo}.\n${source}${confirmed}${ask}${read}${extra || ''}`
 }
@@ -268,7 +269,7 @@ function stageIntent(t) {
   const build = advice => head(t, null,
     `Stage: intent. Restate what the owner asked for as a goal and checkable acceptance criteria, list the files likely touched, ` +
     `and return plan_steps (title, files, done_when) as the plan.${t.depth === 'S' ? ' This is the plan for the implement stage.' : ' A later stage writes the full plan.'} ` +
-    `You may read files in ${repoDir} (git -C ${repoDir} ...); never edit them. Return decisions[] for every choice you made.${advice}`)
+    `${single ? `You may read files in ${repoDir} (git -C ${repoDir} ...); never edit them.` : `Plan against the code as it is on ${integRef}, which already holds the finished earlier groups; the checkout in ${repoDir} is NOT that code. Run git -C ${repoDir} fetch ${remote} first, then read files only with git -C ${repoDir} show ${integRef}:<path> or git -C ${repoDir} ls-tree -r ${integRef}. Never edit ${repoDir}.`} Return decisions[] for every real choice you made.${advice}`)
   return runStage(t, 'intent', build, INTENT_SCHEMA, { model: MODEL.intent, effort: EFFORT.intent })
 }
 
