@@ -41,8 +41,8 @@ n=$(jq '[.hooks[][].hooks[] | select((.command//"")=="my-stop.sh")] | length' "$
 if [ "$n" = "1" ]; then pass; else fail "my-stop.sh count=$n, want 1"; fi
 
 t "re-sync does not double-register a harness hook (idempotent)"
-n=$(jq '[.hooks[][].hooks[] | select((.command//"")|test("/hooks/commit-gate\\.sh"))] | length' "$S")
-if [ "$n" = "1" ]; then pass; else fail "commit-gate.sh count=$n after 2 re-syncs, want 1"; fi
+n=$(jq '[.hooks[][].hooks[] | select((.command//"")|test("/hooks/secrets-scan\\.sh"))] | length' "$S")
+if [ "$n" = "1" ]; then pass; else fail "secrets-scan.sh count=$n after 2 re-syncs, want 1"; fi
 
 t "harness hook commands are derived to \$CLAUDE_PROJECT_DIR/.claude/ on re-sync"
 if jq -e '[.hooks[][].hooks[].command] | any(startswith("$CLAUDE_PROJECT_DIR/.claude/hooks/"))' "$S" >/dev/null; then pass
@@ -107,12 +107,12 @@ bash "$DEPLOY" --target "$T3" >/dev/null 2>&1
 S3="$T3/.claude/settings.json"
 
 t "in-place re-deploy prunes source-removed harness hooks (no double-registration)"
-n=$(jq '[.hooks[][].hooks[] | select((.command//"")|test("/hooks/(pre-bash-dispatch|check-untracked-py|commit-quality-gate|risk-corroboration|branch-guard|ruff-on-edit|blast-radius-check|render-plan-on-write|scope-gate|state-breadcrumb)\\.sh$"))] | length' "$S3")
+n=$(jq '[.hooks[][].hooks[] | select((.command//"")|test("/hooks/(commit-gate|branch-isolation-guard|session-knowledge|model-config|pre-bash-dispatch|check-untracked-py|commit-quality-gate|risk-corroboration|branch-guard|ruff-on-edit|blast-radius-check|render-plan-on-write|scope-gate|state-breadcrumb)\\.sh$"))] | length' "$S3")
 if [ "$n" = "0" ]; then pass; else fail "old harness hooks still registered: count=$n, want 0"; fi
 
-t "in-place re-deploy registers the commit gate exactly once"
-n=$(jq '[.hooks[][].hooks[] | select((.command//"")|test("/hooks/commit-gate\\.sh"))] | length' "$S3")
-if [ "$n" = "1" ]; then pass; else fail "commit-gate.sh count=$n, want 1"; fi
+t "in-place re-deploy registers the secrets scan exactly once"
+n=$(jq '[.hooks[][].hooks[] | select((.command//"")|test("/hooks/secrets-scan\\.sh"))] | length' "$S3")
+if [ "$n" = "1" ]; then pass; else fail "secrets-scan.sh count=$n, want 1"; fi
 
 t "in-place re-deploy keeps the consumer's own foreign hook"
 n=$(jq '[.hooks[][].hooks[] | select((.command//"")=="$CLAUDE_PROJECT_DIR/scripts/my-own-hook.sh")] | length' "$S3")

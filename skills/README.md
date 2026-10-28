@@ -92,10 +92,6 @@ No skill covers first-time setup — it is a harness-repo script (never deployed
 from the harness checkout run `bash scripts/init-structure.sh --root <project>`, which scaffolds
 `specs/` and `docs/solutions/` (create-if-missing). Run it once per repo.
 
-| Skill | Trigger | Output |
-|---|---|---|
-| `harness-models` | **User-invoked**. Run it to show, check, or apply the model and effort settings in `harness-models.json`. It runs `scripts/apply_model_config.py` with `--show`, `--check`, or `--apply`. The default mode is `show` | The applier output, verbatim |
-
 ### Discovery & Design
 
 | Skill | Trigger | Output |
@@ -196,43 +192,12 @@ Schema reference: `docs/solutions/README.md` (scaffolded by the harness repo's `
 
 ---
 
-## Commit Hook
+## Hooks
 
-`hooks/commit-gate.sh` gates every commit (the installed hook runs the default `standard` checks; invoked by hand,
-`--profile minimal` runs only the secrets scan and `--profile strict` adds the untracked-`.py` deny — which runs before everything else — and the app gates):
-1. Secrets scan (+ staged `.env` check)
-1.5. Pending-escalation gate — denies a commit touching `specs/<slug>/` while that slug's
-   `ESCALATIONS.md` has `decision: pending` (deny-on-no-response)
-1.6. Lane-evidence gate — for each staged `specs/<slug>/SUMMARY.md`, runs
-   `scripts/verify_summary.py --lane` and blocks when the evidence the declared `Lane:` requires
-   is missing (tiny → filled header; normal → + a real `### Verify` row; high-risk → + a
-   non-empty `### Rollback`). The **staged** copy is checked, so a commit that adds the evidence
-   self-unblocks. Fail-open when `python3` is unavailable
-1.7. Run-state gate — an untracked `RUN.json`/`events.jsonl` beside a staged `specs/<slug>/`
-   file blocks (`REQUIRE_RUN_STATE_STAGED=0` downgrades it to a warning)
-1.8. Risk corroboration — the declared `Lane:` against the staged diff; a block-mode hard-gate
-   signal with a lane below `high-risk` blocks (modes from `hooks/lib/gate-modes.default.sh`, never a `.claude/` copy)
-1.9. Plan scope — staged paths outside the active `PLAN.md` Files set warn
-   (`BLAST_RADIUS_STRICT=1` blocks)
-
-   Checks 2–3 below are app gates, skipped unless `--profile strict` is passed by hand or `REQUIRE_APP_GATES=1`.
-2. Debug artifact check (`breakpoint()`, bare `print()`)
-2.5. Evidence gate (opt-in via `REQUIRE_VERIFY=1`) — for `app/` changes, requires a
-   `### Verify` **heading** in the SUMMARY, then re-runs each *real* row and blocks when a
-   claimed Exit does not match the fresh run. It does **not** require a real row: a table of
-   only template placeholders (`<command>`) passes with a `no checks ran` warning, and the
-   re-run degrades to presence-only if `python3` is unavailable
-3. Targeted pytest for changed `app/` files
-
-Under `REQUIRE_APP_GATES=1`, once at least one staged file maps to a test and the targeted pytest run passes, a commit with ≥5 staged `app/**/*.py` files prints `★ Large session detected (N app/ files).` and suggests the compound skill.
-
-> **Two different evidence gates — do not conflate them.** Check **1.6** is the row-presence
-> gate: `scripts/verify_summary.py --lane`, always on, asserts the SUMMARY carries what its `Lane:`
-> requires. Check **2.5** is the row-*accuracy* gate: opt-in via `REQUIRE_VERIFY=1`, it re-runs
-> real rows and blocks on a claimed-vs-actual exit mismatch — but a table of only placeholders
-> passes it with a `no checks ran` warning. Evidence *exists* because of 1.6; evidence is
-> *honest* because of 2.5. You can still run the former by hand:
-> `python3 scripts/verify_summary.py --lane <slug>`.
+`hooks/secrets-scan.sh` runs before every `git commit`: it blocks a staged secret pattern or a staged `.env` file.
+`hooks/pr-opened.sh` reminds the main session to review a PR after `gh pr create`, and `hooks/clean-worktrees.sh`
+removes merged worktrees and branches after a merge. The lane, escalation, receipt and run-state checks of the
+old commit gate are gone; those are judgment calls now. `docs/hooks.md` has the detail.
 
 This is one of several wired hooks — see the full table in the root `CLAUDE.md`.
 

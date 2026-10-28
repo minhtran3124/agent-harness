@@ -93,7 +93,7 @@ if [ "$RC" -eq 0 ] && echo "$OUT" | grep -qF "matches an UNVALIDATED fold" \
 else fail "rc=$RC out: $OUT"; fi
 
 # stdout-only variant: a consumer capturing stdout alone (the `2>/dev/null` idiom used by
-# hooks/session-knowledge.sh and scripts/harness-status.sh) must see the UNVALIDATED verdict,
+# scripts/harness-status.sh) must see the UNVALIDATED verdict,
 # not the byte-identical "matches events.jsonl" a fully validated pass would print.
 t "rebuild --check --allow-invalid-chain: stdout alone (2>/dev/null) is distinguishable from a validated pass"
 stdout_only=$(cd "$SANDBOX" && python3 "$ENGINE" rebuild --slug "$SLUG" --check --allow-invalid-chain 2>/dev/null)

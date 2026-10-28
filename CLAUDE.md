@@ -22,7 +22,7 @@ Skill framework for Claude Code (the only supported runtime): reusable prompt-ba
   - a decision would become an ADR with `needs_review`;
   - a grilling session reaches a deep design tree.
 - Workflow agents cannot spawn agents, so the script or the main session calls the advisor.
-- Per-role models live in `agents/runtime-bindings.json`; `harness-models.json` overrides them.
+- Per-role models live in `agents/runtime-bindings.json`.
 
 ## Workflow
 
@@ -48,14 +48,13 @@ Decisions made on the way are recorded as ADRs in `docs/adr/`. Every skill above
 
 ## Hooks
 
-Wired (✅) means registered in `settings.json`. The hooks are legacy until #349 removes them; `docs/hooks.md` has the full detail.
+Wired (✅) means registered in `settings.json`. `docs/hooks.md` has the detail; `settings.json` also carries `permissions.deny` (`.env`, force-push, push to `main`/`master`).
 
 | Hook | Trigger | Action | Wired |
 |---|---|---|---|
-| `commit-gate.sh` | PreToolUse (Bash) | Gates `git commit` and `git push`: secrets scan, evidence and risk checks | ✅ |
-| `branch-isolation-guard.sh` | PreToolUse (Edit/Write) | Blocks implementation edits on a shared branch such as `main` | ✅ |
-| `session-knowledge.sh` | SessionStart | Loads `docs/solutions/critical-patterns.md` and an index pointer into context | ✅ |
-| `model-config.sh` | SessionStart | Applies `harness-models.json` to agent and skill frontmatter | ✅ |
+| `secrets-scan.sh` | PreToolUse (Bash) | On `git commit`, blocks a staged secret pattern or a staged `.env` file | ✅ |
+| `pr-opened.sh` | PostToolUse (Bash) | After `gh pr create`, reminds the main session to review the PR | ✅ |
+| `clean-worktrees.sh` | PostToolUse (Bash) | After a merge, removes the worktree and branch of merged PRs (no force flags) | ✅ |
 
 ## Knowledge
 

@@ -6,7 +6,7 @@ This repository is a Claude Code skills framework and workflow harness. The main
 
 - `skills/<name>/SKILL.md` — invocable skill instructions and related prompts/scripts.
 - `agents/` — sub-agent role definitions.
-- `hooks/` — Bash hooks that enforce workflow and commit checks; `hooks/lib/` contains shared helpers.
+- `hooks/` — three small Bash hooks: secrets scan on commit, PR-opened reminder, merged-worktree cleanup.
 - `rules/` and `templates/` — governance rules and generated-artifact templates.
 - `scripts/` — deployment, installation, linting, and validation utilities.
 - `runtime/` — Python run-state engine (FSM, storage primitives, CLI); synced into `.claude/runtime/` by the deploy script.

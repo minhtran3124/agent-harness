@@ -1,5 +1,17 @@
 {
   "model": "sonnet",
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Edit(./.env)",
+      "Edit(./.env.*)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git push * main)",
+      "Bash(git push * master)"
+    ]
+  },
   "hooks": {
     "PreToolUse": [
       {
@@ -7,39 +19,23 @@
         "hooks": [
           {
             "type": "command",
-            "command": "hooks/commit-gate.sh",
-            "statusMessage": "Commit gate (secrets, escalations, lane evidence, risk)…"
-          }
-        ]
-      },
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "hooks/branch-isolation-guard.sh",
-            "statusMessage": "Branch-isolation guard (block code edits on a shared branch)…"
+            "command": "hooks/secrets-scan.sh",
+            "statusMessage": "Secrets scan (staged changes)…"
           }
         ]
       }
     ],
-    "SessionStart": [
+    "PostToolUse": [
       {
+        "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
-            "command": "hooks/session-knowledge.sh",
-            "statusMessage": "Loading knowledge base (INDEX + critical-patterns)…"
-          }
-        ]
-      },
-      {
-        "matcher": "startup|clear",
-        "hooks": [
+            "command": "hooks/pr-opened.sh"
+          },
           {
             "type": "command",
-            "command": "hooks/model-config.sh",
-            "statusMessage": "Applying harness-models.json (agent/skill model + effort)…"
+            "command": "hooks/clean-worktrees.sh PostToolUse"
           }
         ]
       }

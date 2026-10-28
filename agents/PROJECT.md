@@ -23,7 +23,7 @@ execution facts that no other doc reliably contains.
 > A consuming repo owns `agents/PROJECT.md` — replace these with your own stack's commands.
 
 - **Test command (harness repo):** `bash scripts/run-tests.sh`. It runs L1 syntax + doc-truth lint, L2 hook contract tests, and L3 script integration tests. It is the same suite as CI `harness-ci` on ubuntu + macos.
-- **Targeted-run flags:** shell: run one suite directly, e.g. `bash tests/hooks/commit-gate.test.sh`. Python: `python3 -m pytest <test file> -q`
+- **Targeted-run flags:** shell: run one suite directly, e.g. `bash tests/hooks/secrets-scan.test.sh`. Python: `python3 -m pytest <test file> -q`
 - **Source → test mapping (harness repo):** `hooks/<name>.sh` → `tests/hooks/<name>.test.sh`, `scripts/install-harness.sh` → `tests/scripts/install-harness.test.sh`, `settings.json` wiring → `tests/scripts/settings-wiring.test.sh`, `skills/visual-planner/render_plan.py` → `skills/visual-planner/test_render_plan.py` (pytest)
 - **Markers / coverage:** none. Bash suites assert via `tests/lib.sh` helpers. Python tests are plain pytest (the list is `PYTESTS` in `scripts/run-tests.sh`). There is no coverage gate.
 

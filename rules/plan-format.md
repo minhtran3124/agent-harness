@@ -103,7 +103,7 @@ Conventions:
 
 - `id`: `<phase>.<task>` — e.g. `2.1`, `2.2`. Sub-tasks: `N.M.x` (e.g. `2.1.1`).
 - `wave`: the `(wave K)` suffix on the task heading. Same-wave tasks MAY run in parallel. Waves execute sequentially. Omit for single-wave plans.
-- Files: comma-separated paths. The wave-parallelism rule uses them to check overlap. `hooks/commit-gate.sh` uses them as the in-scope set at commit time. It warns, and `BLAST_RADIUS_STRICT=1` makes it block.
+- Files: comma-separated paths. The wave-parallelism rule uses them to check overlap. The task reviewer uses them as the in-scope set.
 
 ## Success Criteria schema (the acceptance contract)
 
@@ -219,7 +219,7 @@ The examples above show the full task shape. `specs/` is gitignored local scratc
 
 ## Legacy XML plans (read-only support)
 
-Plans written before 2026-07-16 use fenced `<task id="N.M" wave="K"><files><action><verify><done>` XML blocks. The renderer, the `subagent-driven-development` Step-0 gate, and `hooks/commit-gate.sh` still parse that syntax. So existing plans keep rendering and executing unchanged. But that syntax is **not** an authoring format. Never write new plans in XML. One exception: when you add a task to an existing XML plan, keep that plan's XML syntax. In a mixed file the parser reads only the XML tasks. So a markdown task added to an XML plan would be invisible.
+Plans written before 2026-07-16 use fenced `<task id="N.M" wave="K"><files><action><verify><done>` XML blocks. The renderer, and the `subagent-driven-development` Step-0 gate still parse that syntax. So existing plans keep rendering and executing unchanged. But that syntax is **not** an authoring format. Never write new plans in XML. One exception: when you add a task to an existing XML plan, keep that plan's XML syntax. In a mixed file the parser reads only the XML tasks. So a markdown task added to an XML plan would be invisible.
 
 ## Auto-generated "At a glance" block
 

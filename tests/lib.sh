@@ -35,12 +35,9 @@ new_repo() {
   git -C "$d" config user.email test@test
   git -C "$d" config user.name test
   mkdir -p "$d/hooks"
-  # Shared hook lib (sourced by the git-command gates) must travel with the hook.
-  [ -d "$ROOT/hooks/lib" ] && cp -R "$ROOT/hooks/lib" "$d/hooks/"
   local h
   for h in "$@"; do cp "$ROOT/hooks/$h" "$d/hooks/"; done
   # Copied harness fixtures are test infrastructure, not repository state under test.
-  # Keep Python hook libraries from tripping the untracked-.py check (check_untracked_py).
   printf '/hooks/\n' >> "$d/.git/info/exclude"
   echo "$d"
 }
@@ -62,7 +59,7 @@ run_hook() {
 
 # run_hook_args <repo> <hook.sh> <json-stdin> <arg>... -- [VAR=val ...]
 # Same CWD and merged-stream semantics as run_hook, but passes <arg>... to the hook
-# (e.g. `--profile strict`). Everything after `--` is the environment.
+# (e.g. a subcommand). Everything after `--` is the environment.
 run_hook_args() {
   local repo="$1" hook="$2" json="$3"; shift 3
   local -a args=()

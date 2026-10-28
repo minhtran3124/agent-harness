@@ -21,7 +21,7 @@ The intake lane (`specs/<slug>/SUMMARY.md`, set by `feature-intake`) decides how
 
 | Lane | Autonomy | Plan | Human confirm |
 |---|---|---|---|
-| **tiny** | Full auto — direct patch on a fresh branch | none | none (machine gates are the safety net: `commit-gate.sh`, `branch-isolation-guard.sh`) |
+| **tiny** | Full auto — direct patch on a fresh branch | none | none (the secrets-scan hook and `permissions.deny` are the safety net) |
 | **normal** | Auto with proof gates (one task reviewer, two verdicts) | yes | only if confidence low / ambiguous |
 | **high-risk** | Auto-plan, gated-execute | yes (full chain) | only on ambiguity or a hard gate (Rule 4) |
 
@@ -31,10 +31,8 @@ Create a dedicated branch before the first implementation edit. This does not sc
 ceremony. The tiny lane uses `git checkout -b <type>/<slug>`. The normal and high-risk lanes use
 `using-git-worktrees` for an isolated worktree + branch. Never implement on a shared branch.
 
-`hooks/branch-isolation-guard.sh` enforces this for every lane. It uses
-`HARNESS_SHARED_BRANCHES` (default `main master`). Only `specs/*` bookkeeping is exempt, so intake
-can record `SUMMARY.md` first. Break glass with `BRANCH_ISOLATION_REASON=<why>`. The hook records
-the override in `docs/harness-experimental/break-glass-log.md`.
+No hook enforces this since v5 (the branch-isolation guard was removed); `permissions.deny` only
+blocks pushes to `main` and `master`. Intake may record `SUMMARY.md` before the branch exists.
 
 > **Evidence the lane requires (single source of truth):** `scripts/verify_summary.py --lane` mechanizes the lane → evidence mapping. This keeps this table, `skills/feature-intake/SKILL.md` (Step 7), and the `SUMMARY.md` checks from drifting apart. It reads `specs/<slug>/SUMMARY.md` and asserts:
 >
@@ -43,7 +41,7 @@ the override in `docs/harness-experimental/break-glass-log.md`.
 > - **high-risk** → + a non-empty `### Rollback`, and a `### Not auto-verified` section. The `### Not auto-verified` check is **advisory by default**: it prints a warning and still exits 0. Set `REQUIRE_NOT_AUTO_VERIFIED=1` to make it blocking. Blocking is the intended end state once the back catalogue has drained.
 > - **any lane, `Input-type: bug fix`** → + a `red`/`green` row pair in `### Verify`, or a `Red test exempt: <reason>` line. The `red` row's command is `python3 scripts/run_at_commit.py <red sha> -- <test command>`, where `<red sha>` is the commit that adds the failing test before the fix. Its Exit is from 1 to 123. The `green` row runs the same test command with Exit 0. After the red commit, a change must exist outside `specs/` and the red test files. This check is **advisory by default**. Set `REQUIRE_RED_TEST=1` to make it blocking.
 >
-> Run `python3 scripts/verify_summary.py --lane <slug>` (exit 1 = missing evidence). Edit the mapping there, not only in prose. `hooks/commit-gate.sh` **enforces** the mapping at commit time (`check_lane_evidence`, in the default `standard` checks) on every staged `specs/<slug>/SUMMARY.md`. The staged copy is what is checked, so a commit that adds the missing evidence self-unblocks.
+> Run `python3 scripts/verify_summary.py --lane <slug>` (exit 1 = missing evidence). Edit the mapping there, not only in prose. No commit hook enforces the mapping since v5; run the command above before you commit.
 
 Rule 4 (STOP) still fires inside **every** lane. A hard gate discovered mid-task escalates regardless of how the work was classified. Ceremony scales with risk. The human gate scales with ambiguity, not risk.
 
@@ -82,7 +80,7 @@ Issues preventing the task from completing:
 
 ## Rule 4 — STOP + ask user
 
-> **Canonical gate list:** the nine diff-detectable gates and their block/warn modes are the `slug=mode` table in `hooks/lib/gate-modes.default.sh` (enforced by `hooks/commit-gate.sh`'s `check_risk`). The judgment-only STOP items (removing functionality, session/scope, replacing a service) are the list below. Keep both in sync with this rule.
+> **Canonical gate list:** the STOP items (removing functionality, session/scope, replacing a service) are the list below. They are judgment calls; no hook enforces them.
 
 Changes requiring architectural judgment — NEVER auto-apply:
 

@@ -13,6 +13,7 @@ t "every settings.json hook command resolves to an executable file with a bash s
 ok=1
 while IFS= read -r cmd; do
   [ -z "$cmd" ] && continue
+  cmd="${cmd%% *}"   # a command may carry arguments (hooks/clean-worktrees.sh PostToolUse)
   case "$cmd" in '$CLAUDE_PROJECT_DIR/'*) cmd="${cmd#\$CLAUDE_PROJECT_DIR/}"; cmd="${cmd#.claude/}" ;; esac
   if [ ! -f "$cmd" ]; then ok=0; echo "        missing: $cmd"; continue; fi
   head -1 "$cmd" | grep -q '^#!.*sh' || { ok=0; echo "        no shebang: $cmd"; }
@@ -26,6 +27,10 @@ while IFS= read -r cmd; do
   [ -z "$mode" ] || [ "$mode" = "100755" ] || { ok=0; echo "        tracked mode $mode (want 100755): $cmd"; }
 done < <(jq -r '.hooks[]?[]?.hooks[]?.command // empty' settings.json)
 [ "$ok" -eq 1 ] && pass || fail "one or more commands unresolved / not a shell script"
+
+t "permissions.deny holds the approved rules and settings.json has no allow rules"
+if jq -e '(.permissions.deny | index("Read(./.env)") and index("Edit(./.env)") and index("Bash(git push --force*)") and index("Bash(git push * main)")) and (.permissions | has("allow") | not)' settings.json >/dev/null; then pass
+else fail "permissions: $(jq -c .permissions settings.json)"; fi
 
 if [ -f .claude/settings.json ]; then
   t ".claude/settings.json is valid JSON"

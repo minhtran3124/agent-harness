@@ -1,41 +1,60 @@
-# Hooks and gates (legacy until #349 removes the hooks)
+# Hooks and permissions
 
-This page holds the detailed hook and gate description that used to live in `CLAUDE.md`. Harness v5
-(epic #338) removes the commit gate and its companions in #349. Until then the text below stays
-true. The short hook table is in `CLAUDE.md`; `scripts/lint-doc-truth.sh` keeps that table in
-step with `hooks/` and `settings.json`.
+The short hook table is in `CLAUDE.md`; `scripts/lint-doc-truth.sh` keeps that table in step with
+`hooks/` and `settings.json`. Harness v5 (epic #338, issue #349) replaced the old commit gate and its
+companions with three small hooks plus a `permissions.deny` list. Everything else is judgment, not
+a mechanical gate.
 
 ## Hook details
 
-Register hooks in `settings.json` under the matching trigger key. In the `CLAUDE.md` table, wired
-(✅) means registered in `settings.json` and firing; dormant (⬜) means present on disk but not
-registered.
+In the `CLAUDE.md` table, wired (✅) means registered in `settings.json` and firing; dormant (⬜)
+means present on disk but not registered. All three hooks fail open: a missing `jq`/`git`, or a
+payload they cannot parse, lets the action through.
 
-### `commit-gate.sh` (PreToolUse, Bash)
+### `secrets-scan.sh` (PreToolUse, Bash)
 
-The single `git commit`/`push` gate, one process per Bash call. Normalizes Claude shell input; non-git Bash exits 0 at once; unknown/partial shell input fails closed. `git push` runs only the untracked-`.py` check (strict). `git commit` runs, in order: untracked-`.py` deny (strict — it runs first and a deny ends the hook); secrets scan (all profiles); pending-escalation gate, lane-evidence gate (`verify_summary.py --lane` on each staged `SUMMARY.md`, whose advisories are relayed on the passing path too; for `Input-type: bug fix` it advises on a missing red/green `### Verify` pair or a missing code change after the red commit, blocking under `REQUIRE_RED_TEST=1`), run-state artifact gate (an untracked `RUN.json`/`events.jsonl` beside a staged `specs/<slug>/` file blocks; tracked-but-unstaged only warns; `REQUIRE_RUN_STATE_STAGED=0` downgrades the block), risk corroboration (the declared `Lane:` against the staged diff; per-gate mode from the `slug=mode` table in `hooks/lib/gate-modes.default.sh` — block-mode gates deny a below-`high-risk` lane, warn-mode gates `workflow-engine`/`weakening-validation` print a note and allow), and plan scope (staged paths outside the active plan's `Files` set warn; `BLAST_RADIUS_STRICT=1` blocks) — these under standard and strict; debug-artifact check + targeted pytest + the `### Verify` re-run when `REQUIRE_VERIFY=1` (strict, or `REQUIRE_APP_GATES=1` in any profile). Strict implies `RISK_CORROBORATION_STRICT=1`. The high-risk `### Not auto-verified` check is opt-in via `REQUIRE_NOT_AUTO_VERIFIED=1` (warn-only by default)
+Acts only on a `git commit` command. Scans the staged diff and the staged file names and exits 2 on a hit.
+`Verifies:` the staged diff matches a short list of secret patterns (`sk-` keys, AWS `AKIA` keys, `password=`, `api_key=`,
+`client_secret=` and similar assignments), and that no `*.env` file is staged. Test files, `*.example`, `*.md`
+and `docs/` are not scanned. `Does not verify:` that a clean diff holds no secret; it is a pattern match,
+not a scanner. It reads the index when it runs, so `git add x && git commit` in one Bash call is checked
+against what was staged before that call. Stage in one call and commit in the next.
 
-### `branch-isolation-guard.sh` (PreToolUse, Edit/Write)
+### `pr-opened.sh` (PostToolUse, Bash)
 
-Normalizes every Claude edit path and hard-blocks when any implementation path is touched on a shared branch (`HARNESS_SHARED_BRANCHES`, default `main`/`master`) — judged by where an absolute edit path lives, not the launch directory: the owning checkout's branch (so a linked worktree on a task branch is allowed), plus any enclosing checkout of a different repository (so a nested repo cannot shield a shared checkout's files); git-dir paths are judged by the HEAD in that git dir, unless break-glass `BRANCH_ISOLATION_REASON` is set. An edit is bookkeeping-exempt only when all known paths are under `specs/*`; partial/unknown input fails closed on shared branches.
+After a `gh pr create`, adds a reminder to the model's context to run the review workflow on the new PR
+(inside a subagent it says to hand the PR number back). It only reminds; it never blocks.
 
-### `session-knowledge.sh` (SessionStart)
+### `clean-worktrees.sh` (PostToolUse, Bash)
 
-Load `critical-patterns.md` (headings only above 40 lines), a one-line `docs/solutions/INDEX.md` pointer with its entry count, and active-run summaries into context when the store has data; silent when empty; never blocks
-
-### `model-config.sh` (SessionStart, `startup` and `clear`)
-
-Pipes the SessionStart payload to `scripts/apply_model_config.py --hook`, which applies the validated `harness-models.json` to the deployed agent and skill frontmatter; never blocks. `Verifies:` nothing at commit time — it applies the validated user file at session start. `Does not verify:` that the running session picks up a rewritten agent file (it may apply from the next session).
+After a `gh pr merge` (or a merge made through `gh api .../pulls/<n>/merge`), removes the worktree and
+local branch of every branch whose PR is merged on GitHub with the same tip commit as the local branch,
+and tells the model what it removed. It never uses a force flag: `git worktree remove` refuses a worktree with changes or a lock, and
+`git branch -d` refuses a branch git does not see as merged (for example a squash merge; the hook reports it and
+leaves it). It never touches `main`, `master`, the checked-out branch of the main checkout, or the worktree the
+session is running in. Run by hand with no argument, it prints the same report.
 
 ## One fixed hook set
 
-`scripts/install-harness.sh` and `scripts/deploy-harness.sh` install one fixed hook set: every hook wired in this repo's root `settings.json` (`commit-gate.sh`, `branch-isolation-guard.sh`, `session-knowledge.sh`, `model-config.sh`), with `commit-gate.sh` invoked with no `--profile` argument. The earlier `--profile minimal|standard|strict` choice and the `<target>/.claude/.harness-profile` file are gone; both scripts still accept `--profile` so old install commands keep working, but print a one-line warning and ignore it, and a re-sync deletes a leftover `.harness-profile`. `commit-gate.sh` itself still understands `--profile minimal|standard|strict` when invoked by hand (the `strict`-only checks described in this file are reachable only that way, or through `REQUIRE_APP_GATES=1`); no install and no `settings.json` selects it. Re-sync prunes retired harness hooks from the consumer's `.claude/settings.json`, drops event keys left empty, and preserves the consumer's own hooks.
+`scripts/install-harness.sh` and `scripts/deploy-harness.sh` install one fixed hook set: every hook wired in this repo's root `settings.json` (`secrets-scan.sh`, `pr-opened.sh`, `clean-worktrees.sh`). The earlier `--profile minimal|standard|strict` choice and the `<target>/.claude/.harness-profile` file are gone; both scripts still accept `--profile` so old install commands keep working, but print a one-line warning and ignore it, and a re-sync deletes a leftover `.harness-profile`. Re-sync prunes retired harness hooks (`commit-gate.sh`, `branch-isolation-guard.sh`, `session-knowledge.sh`, `model-config.sh`, the `lib` helper dir) from the consumer's `.claude/hooks/` and `.claude/settings.json` through the deployed-file manifest, drops event keys left empty, and preserves the consumer's own hooks.
 
-## Gate verifiability (traceability ≠ provenance ≠ truth)
+## Permissions
 
-Every gate enforces exactly one evidence tier and must not claim a higher one: **traceability** (structure matches — an ID exists, a rendered artifact agrees with its ledger), **provenance** (evidence is re-derived from the source of truth — a receipt pinned at base, an INDEX rebuilt), or **truth** (behavior is re-run — a Verify row re-executes and exit codes are compared). When adding a gate or hook, document two lines: `Verifies:` what code checks, and `Does not verify:` the negative scope. Existing example — the lane-evidence gate verifies a `### Verify` row *exists*; it does not verify the row is *honest* (that is the opt-in `REQUIRE_VERIFY=1` re-run gate, active when `REQUIRE_VERIFY=1` is set and the app gates run — `--profile strict` or `REQUIRE_APP_GATES=1`). Second example — the optional SUMMARY runtime-metadata check inside `scripts/verify_summary.py`. `Verifies:` the `Runtime-mode`/`Runtime-evidence-id` pair is present as a complete pair and well-formed (valid mode, valid evidence-id shape). `Does not verify:` that the pair matches any real diagnosis. The local record lives in the gitignored, agent-writable `.harness-state/`, so a commit-time comparison could never be index-safe (`docs/solutions/harness/gate-config-must-read-index.md`); the check is deliberately format-only, and the doctor — not this gate — is the authority on the mode.
+The root `settings.json` carries a `permissions.deny` list (no `allow` rules):
 
-Each `SUMMARY.md` states its own negative scope in `### Not auto-verified`: the claims it makes that no gate checks, each labelled with the tier it reached. On the high-risk lane this is checked — **advisory by default**, blocking under `REQUIRE_NOT_AUTO_VERIFIED=1`. That check is itself traceability-tier: `Verifies:` the section exists and holds a non-placeholder bullet (or `- none`); `Does not verify:` that the claims are complete or their tier labels correct. `- none` satisfies it, deliberately — it forces the question to be answered, not answered truthfully.
+| Rule | Blocks |
+|---|---|
+| `Read(./.env)`, `Read(./.env.*)` | Reading a `.env` file in the project root |
+| `Edit(./.env)`, `Edit(./.env.*)` | Writing a `.env` file (the `Edit` rule covers every file-writing tool) |
+| `Bash(git push --force*)`, `Bash(git push -f*)` | Force pushes |
+| `Bash(git push * main)`, `Bash(git push * master)` | Pushing to the default branch |
+
+`permissions.deny` reaches a consumer only on the first install. A re-sync merges the `.hooks` part of `settings.json` only and leaves the consumer's `permissions` alone, so the consumer owns their permissions after install. To get the deny list in an existing install, copy it by hand.
+Deny rules are prefix patterns on the command text; they are a guard against mistakes, not a sandbox.
+
+## What is intentionally not enforced
+
+The v4 commit gate, the branch-isolation guard and the session-knowledge loader are gone, together with the lane, escalation, receipt and run-state checks they ran. Nothing blocks a commit for a missing `SUMMARY.md`, a low lane, or a pending escalation; nothing blocks an edit on `main`; nothing preloads `docs/solutions/` at session start. Read `docs/solutions/INDEX.md` when you plan. Per-role models come from `agents/runtime-bindings.json` only; the `harness-models.json` override is gone.
 
 ## Rule-loading tiers
 
@@ -43,9 +62,6 @@ Rule loading is two-tier, and the tier is decided by the rule file itself. A fil
 
 Today the source tree contains five always-on files (`behavior.md`, `architecture.md`, `guidelines.md`, `orchestration.md`, `research-depth.md`) and five path-scoped ones (`plan-format.md`, `wave-parallelism.md`, `auto-correct-scope.md`, `terminology.md`, `review-policy.md`). `tests/scripts/rule-loading-tiers.test.sh` keeps this inventory synchronized with `rules/*.md`.
 
-## Gate and re-sync notes
+## Re-sync note
 
-- Under `--profile strict` or `REQUIRE_APP_GATES=1`, a commit staging ≥5 `app/**/*.py` files, at least one mapped to a test, whose targeted pytest run passes prints a hint to run `/compound` — act on it
-- Under `--profile strict`, stage and commit in **separate** Bash calls when untracked `.py` files exist — the `hooks/commit-gate.sh` untracked-`.py` check (PreToolUse, strict only) scans the whole command string before it runs, so `git add x.py && git commit ...` in one call still sees `x.py` as untracked and denies the commit. Run `git add`, then `git commit` in a second call (see `docs/solutions/harness/pretooluse-hook-denies-combined-git-add-commit.md`)
-- Re-sync (`scripts/install-harness.sh` / `scripts/deploy-harness.sh`) is conflict-guarded for protected files (e.g. `<path under rules/ or agents/>`, including any locally-generated per-repo files): a differing local copy is kept by default and the incoming version is written beside it as `<file>.harness-incoming` for review, instead of being silently overwritten. Pass `--overwrite-conflicts` to replace protected files with the incoming copy instead of keeping local
-- Consumer gate modes are **not** block-all: a consumer's `commit-gate.sh` resolves each gate's block/warn mode from only two index-safe sources — a root manifest file named harness-manifest.json read from the git index, if the consumer happens to track one (this repo no longer ships one, and the deploy no longer copies one), otherwise the embedded defaults shipped beside the hook in `hooks/lib/gate-modes.default.sh` (**2 warn / 7 block**). A consumer with no tracked manifest falls back to those defaults, not deny-everything. The hook **never** reads a harness-manifest.json under `.claude/` or any worktree file — `.claude/` is gitignored in consumers, so an on-disk policy read would be agent-writable and un-index-checkable (the TOCTOU `docs/solutions/harness/gate-config-must-read-index.md` closed). Session-scoped loosening: `RISK_WARN_CATEGORIES` in the machine-local `settings.local.json` `env` block. Full rationale: `docs/solutions/harness/consumer-risk-modes-index-safe.md`
+Re-sync (`scripts/install-harness.sh` / `scripts/deploy-harness.sh`) is conflict-guarded for protected files (e.g. `<path under rules/ or agents/>`, including any locally-generated per-repo files): a differing local copy is kept by default and the incoming version is written beside it as `<file>.harness-incoming` for review, instead of being silently overwritten. Pass `--overwrite-conflicts` to replace protected files with the incoming copy instead of keeping local.
