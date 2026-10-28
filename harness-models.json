@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "agents": {
-    "coding": {
+    "implementer": {
       "model": "claude-sonnet-5-5",
       "effort": "medium"
     },

@@ -13,7 +13,7 @@ SPEC.loader.exec_module(renderer)
 ROOT = SCRIPT.parents[1]
 
 LEGACY_CLAUDE = {
-    "coding": {"model": "claude-sonnet-5-5", "effort": "medium", "tools": None},
+    "implementer": {"model": "claude-sonnet-5-5", "effort": "medium", "tools": None},
     "reviewer": {
         "model": "claude-opus-5-5",
         "effort": "medium",

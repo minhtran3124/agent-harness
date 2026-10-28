@@ -49,7 +49,7 @@ assert_rc_contains 1 "rules/nope.md"
 
 t "SCOPE: a dangling path in agents/*.md is caught (regression guard for DOCS)"
 r=$(lint_repo)
-printf 'Read `agents/ghost.md` first.\n' > "$r/agents/coding.md"
+printf 'Read `agents/ghost.md` first.\n' > "$r/agents/implementer.md"
 run_lint "$r"
 assert_rc_contains 1 "agents/ghost.md"
 
