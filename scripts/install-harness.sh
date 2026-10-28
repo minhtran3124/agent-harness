@@ -197,9 +197,8 @@ fi
 
 # ---------- ensure .claude/ is gitignored (append-only; never rewrites the file) ----------
 # .claude/ is a derived artifact — it is rebuilt from source on every deploy, so committing it
-# is wrong. It also carries .py files (visual-planner), which show up as untracked files and trip
-# the hooks/commit-gate.sh untracked-.py check. Append only when the pattern is absent; never
-# touch existing lines.
+# is wrong. It also carries .py files (visual-planner), which show up as untracked files in the
+# consumer's `git status`. Append only when the pattern is absent; never touch existing lines.
 #
 # Three things this must NOT do, each found by review:
 #   1. Ignore a .claude/ the consumer already TRACKS. Some projects deliberately commit
