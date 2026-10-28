@@ -75,4 +75,20 @@ printf '\n- revert PR #77 broke things (PR #70)\n' >> "$d/CHANGELOG.md"
 bash "$SCRIPT" --pr 77 --title "real 77" --files "docs/x.md" --date 2026-07-03 --root "$d" >/dev/null
 if grep -q 'real 77 (PR #77)' "$d/CHANGELOG.md"; then pass; else fail "real PR #77 was wrongly skipped"; fi
 
+# ── the plugin manifest version follows VERSION ───────────────────────────────
+t "bumps plugin.json version together with VERSION, touching only that line"
+d=$(make_fixture 0.2.0)
+mkdir -p "$d/plugins/harness/.claude-plugin"
+printf '{\n  "name": "harness",\n  "version": "0.2.0",\n  "description": "d, \\"version\\": x"\n}\n' > "$d/plugins/harness/.claude-plugin/plugin.json"
+before=$(grep -v '"version": "0.2.0"' "$d/plugins/harness/.claude-plugin/plugin.json")
+bash "$SCRIPT" --pr 50 --title T --files "plugins/harness/skills/x/SKILL.md" --date 2026-07-03 --root "$d" >/dev/null
+after=$(grep -v '"version": "0.3.0"' "$d/plugins/harness/.claude-plugin/plugin.json")
+if grep -q '^  "version": "0.3.0",$' "$d/plugins/harness/.claude-plugin/plugin.json" && [ "$before" = "$after" ] \
+   && bash "$ROOT/scripts/check-plugin-version.sh" --root "$d" >/dev/null; then pass
+else fail "manifest not bumped cleanly:\n$(cat "$d/plugins/harness/.claude-plugin/plugin.json")"; fi
+
+t "a re-run for the same PR leaves plugin.json version alone (idempotent)"
+bash "$SCRIPT" --pr 50 --title T --files "docs/x.md" --date 2026-07-03 --root "$d" >/dev/null
+if grep -q '"version": "0.3.0"' "$d/plugins/harness/.claude-plugin/plugin.json"; then pass; else fail "manifest changed on re-run"; fi
+
 finish

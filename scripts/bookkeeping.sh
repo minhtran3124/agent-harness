@@ -4,7 +4,7 @@
 # Given a MERGED PR's metadata, record it two ways so the release record can never
 # decay from missed manual appends:
 #   1. insert a dated `## [x.y.z]` section into CHANGELOG.md
-#   2. bump root VERSION (minor if a contract path changed, else patch)
+#   2. bump root VERSION and the plugin manifest version (minor if a contract path changed, else patch)
 #
 # This is pure + idempotent so it can be unit-tested offline — the GitHub Action
 # (.github/workflows/post-merge-maintenance.yml) is only a thin wrapper that gathers
@@ -62,6 +62,15 @@ EOF
 if [ "$bump" = "minor" ]; then MI=$((MI + 1)); PA=0; else PA=$((PA + 1)); fi
 new="${MA}.${MI}.${PA}"
 printf '%s\n' "$new" > "$VERSION_FILE"
+
+# Keep the plugin manifest version in step (scripts/check-plugin-version.sh enforces equality).
+# One sed on the single "version" line: jq may be absent, and BSD/GNU sed -i differ, so write a
+# temp file. A fixture without a manifest is left alone.
+MANIFEST="plugins/harness/.claude-plugin/plugin.json"
+if [ -f "$MANIFEST" ]; then
+  sed "s/^\([[:space:]]*\"version\"[[:space:]]*:[[:space:]]*\"\)[^\"]*\(\".*\)\$/\1${new}\2/" "$MANIFEST" > "$MANIFEST.tmp" \
+    && mv "$MANIFEST.tmp" "$MANIFEST"
+fi
 
 # 3. Insert a dated version section before the first NON-[Unreleased] `## [` heading (so it lands
 # below [Unreleased] but above the previous version). If there is no such heading, the END block
