@@ -198,8 +198,8 @@ Schema reference: `docs/solutions/README.md` (scaffolded by the harness repo's `
 
 ## Commit Hook
 
-`hooks/commit-gate.sh` gates every commit (default `standard` profile; `minimal` runs only the
-secrets scan, `strict` adds the untracked-`.py` deny — which runs before everything else — and the app gates):
+`hooks/commit-gate.sh` gates every commit (the installed hook runs the default `standard` checks; invoked by hand,
+`--profile minimal` runs only the secrets scan and `--profile strict` adds the untracked-`.py` deny — which runs before everything else — and the app gates):
 1. Secrets scan (+ staged `.env` check)
 1.5. Pending-escalation gate — denies a commit touching `specs/<slug>/` while that slug's
    `ESCALATIONS.md` has `decision: pending` (deny-on-no-response)
@@ -211,11 +211,11 @@ secrets scan, `strict` adds the untracked-`.py` deny — which runs before every
 1.7. Run-state gate — an untracked `RUN.json`/`events.jsonl` beside a staged `specs/<slug>/`
    file blocks (`REQUIRE_RUN_STATE_STAGED=0` downgrades it to a warning)
 1.8. Risk corroboration — the declared `Lane:` against the staged diff; a block-mode hard-gate
-   signal with a lane below `high-risk` blocks (modes from the manifest in the git index, never a `.claude/` copy)
+   signal with a lane below `high-risk` blocks (modes from `hooks/lib/gate-modes.default.sh`, never a `.claude/` copy)
 1.9. Plan scope — staged paths outside the active `PLAN.md` Files set warn
    (`BLAST_RADIUS_STRICT=1` blocks)
 
-   Checks 2–3 below are app gates, skipped unless the `strict` profile or `REQUIRE_APP_GATES=1`.
+   Checks 2–3 below are app gates, skipped unless `--profile strict` is passed by hand or `REQUIRE_APP_GATES=1`.
 2. Debug artifact check (`breakpoint()`, bare `print()`)
 2.5. Evidence gate (opt-in via `REQUIRE_VERIFY=1`) — for `app/` changes, requires a
    `### Verify` **heading** in the SUMMARY, then re-runs each *real* row and blocks when a

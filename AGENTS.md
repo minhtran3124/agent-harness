@@ -16,11 +16,11 @@ This repository is a Claude Code skills framework and workflow harness. The main
 - `scripts/test_*.py`, `runtime/test_*.py`, and `test_*.py` files under `skills/` — Python unit tests.
 - `docs/` — knowledge (solutions, ADRs, research). `specs/` is local scratch (gitignored): plans, research briefs and run state stay on your machine.
 
-The root `CLAUDE.md`, `HARNESS.md`, `skills/README.md`, and `harness-manifest.json` describe the supported workflow and component inventory. Treat them as contracts when changing hooks, skills, or schemas.
+The root `CLAUDE.md`, `HARNESS.md`, and `skills/README.md` describe the supported workflow and component inventory. Treat them as contracts when changing hooks, skills, or schemas.
 
 ## Build, Test, and Development Commands
 
-- `bash scripts/run-tests.sh` — run the CI-equivalent suite: Bash syntax checks, documentation/manifest linting, the STE linter self-test, shell tests, and Python tests when `pytest` is available.
+- `bash scripts/run-tests.sh` — run the CI-equivalent suite: Bash syntax checks, documentation linting, the STE linter self-test, shell tests, and Python tests when `pytest` is available.
 - `bash scripts/deploy-harness.sh` — rebuild the local derived `.claude/` installation after editing source skills, agents, hooks, rules, templates, runtime, or settings.
 - `bash scripts/lint-doc-truth.sh` — verify documented paths and hook registrations independently.
 - `python3 -m pytest $(find scripts runtime skills -name 'test_*.py' -not -path '*/__pycache__/*') -q` — run the Python unit tests directly. `scripts/run-tests.sh` collects the same list into `PYTESTS` with this `find`.

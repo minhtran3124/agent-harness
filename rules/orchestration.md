@@ -30,8 +30,8 @@ Step 3–4. That is the canonical source. This section only names the fields and
 
 These two fields are load-bearing:
 
-- The risk-corroboration check in `hooks/commit-gate.sh` (`check_risk`, in the `standard` and
-  `strict` profiles) reads `Lane:` and corroborates it against the staged diff.
+- The risk-corroboration check in `hooks/commit-gate.sh` (`check_risk`, in the default
+  `standard` checks) reads `Lane:` and corroborates it against the staged diff.
 - The trust-metrics ledger reads both fields.
 
 The orchestrator MUST write a `Lane:` line. The check gives these results:
@@ -41,8 +41,8 @@ The orchestrator MUST write a `Lane:` line. The check gives these results:
 - A warn-mode gate (`workflow-engine`, `weakening-validation`) prints a note and does not block.
 - A *missing* lane only **warns** (fail-open), unless `RISK_CORROBORATION_STRICT=1` is set.
 
-The per-gate mode is the manifest's `hard_gates.detectable[].mode`. The hook reads it from the git
-index only, never from a `.claude/` copy.
+The per-gate mode is the `slug=mode` table in `hooks/lib/gate-modes.default.sh`. The hook reads policy
+from the git index or that file only, never from a `.claude/` copy.
 
 ## Subagent contract
 
@@ -83,8 +83,7 @@ A claim of "done" is only valid with a re-runnable artifact. The subagent record
 
 - **`### Verify`** — a table row per check actually RUN: `Check | Command | Exit | Notes`. Never
   list a command that was not run. `hooks/commit-gate.sh` can require this block for `app/`
-  changes. It does so when `REQUIRE_VERIFY=1` is set and its app gates run (`strict` profile, or
-  `REQUIRE_APP_GATES=1`).
+  changes. It does so when `REQUIRE_VERIFY=1` is set and its app gates run (`REQUIRE_APP_GATES=1`).
 - **`### Rollback`** — the exact undo command(s). This section is required for any high-risk /
   Rule-4 action (`rules/auto-correct-scope.md`). For reversible work, `git revert <sha>` suffices.
 

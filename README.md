@@ -88,7 +88,7 @@ curl -fsSL "https://raw.githubusercontent.com/minhtran3124/agent-harness/main/sc
 Everything the harness needs lives in a gitignored `.claude/` (skills, agents, hooks, rules, templates, runtime, a consumer subset of `scripts/`, settings). At the project root it touches only the workflow's structural dirs (`specs/`, `docs/solutions/`), scaffolded **create-if-missing**. The installer never overwrites or deletes anything at your root — it only adds structural files that are absent. **To update, just re-run the one-liner** (idempotent; `.claude/` is merge-synced, non-harness entries and locally-generated files kept; a protected file that differs from incoming is reported via a `<file>.harness-incoming` sidecar rather than overwritten).
 
 Needs `git` + [jq](https://jqlang.github.io/jq/) + `python3`.
-Flags: `--directory <path>` · `--branch <name>` · `--source <local checkout>` · `--profile minimal|standard|strict` (hook profile; default: the recorded profile, else `standard`) · `--keep-sources` · `--dry-run` · `--overwrite-conflicts` (replace protected files with the incoming copy; `--force`/`--yes` keep local files instead of overwriting them).
+Flags: `--directory <path>` · `--branch <name>` · `--source <local checkout>` · `--profile <name>` (deprecated and ignored: hook profiles were removed, every install gets the one fixed hook set) · `--keep-sources` · `--dry-run` · `--overwrite-conflicts` (replace protected files with the incoming copy; `--force`/`--yes` keep local files instead of overwriting them).
 
 Then **restart Claude Code** so it loads the skills, agents, and hooks.
 
@@ -104,7 +104,7 @@ First run installs; any later run updates (idempotent). Re-run after editing any
 
 ### Testing
 
-`bash scripts/run-tests.sh` runs what CI runs: syntax checks + a doc-truth lint (every path referenced in the core docs exists; the CLAUDE.md hook table matches `settings.json`), further static checks (skill-bash lint, manifest consistency, STE linter self-test), hermetic contract tests for the hooks (each runs in a throwaway git repo against its stdin-JSON contract), script and installer integration tests, and the Python unit tests under `scripts/`, `runtime/`, and `skills/` (when `pytest` is available). The `harness-ci` workflow runs the same suite on ubuntu + macos.
+`bash scripts/run-tests.sh` runs what CI runs: syntax checks + a doc-truth lint (every path referenced in the core docs exists; the CLAUDE.md hook table matches `settings.json`), further static checks (skill-bash lint, skill and agent frontmatter and tool conformance scanned from disk, STE linter self-test), hermetic contract tests for the hooks (each runs in a throwaway git repo against its stdin-JSON contract), script and installer integration tests, and the Python unit tests under `scripts/`, `runtime/`, and `skills/` (when `pytest` is available). The `harness-ci` workflow runs the same suite on ubuntu + macos.
 
 ### Optional MCP servers (local setup)
 

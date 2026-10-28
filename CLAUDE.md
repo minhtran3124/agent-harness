@@ -52,7 +52,7 @@ Wired (✅) means registered in `settings.json`. The hooks are legacy until #349
 
 | Hook | Trigger | Action | Wired |
 |---|---|---|---|
-| `commit-gate.sh` | PreToolUse (Bash) | Gates `git commit` and `git push`: secrets scan, evidence and risk checks by profile | ✅ |
+| `commit-gate.sh` | PreToolUse (Bash) | Gates `git commit` and `git push`: secrets scan, evidence and risk checks | ✅ |
 | `branch-isolation-guard.sh` | PreToolUse (Edit/Write) | Blocks implementation edits on a shared branch such as `main` | ✅ |
 | `session-knowledge.sh` | SessionStart | Loads `docs/solutions/critical-patterns.md` and an index pointer into context | ✅ |
 | `model-config.sh` | SessionStart | Applies `harness-models.json` to agent and skill frontmatter | ✅ |
