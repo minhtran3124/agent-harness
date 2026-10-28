@@ -1,6 +1,6 @@
 ---
 name: test-runner
-description: "Run the tests relevant to recently changed code and report the results. Use when you have implemented a feature, fixed a bug, or changed test files. It never edits code or tests."
+description: "Run the tests relevant to recently changed code and report the results. Use after implementing a feature, fixing a bug, or changing test files. It never edits code or tests."
 tools: Glob, Grep, Read, WebFetch, WebSearch, Bash
 model: claude-haiku-5-5
 ---

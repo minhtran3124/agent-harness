@@ -1,6 +1,6 @@
 ---
 name: researcher
-description: "Use this agent when you need read-only search and fact-finding: triage questions, xia2 local and external research, and 'where is X' or 'what does the doc say' lookups. It returns facts with file:line or URL and never edits."
+description: "Use this agent for read-only search and fact-finding: triage questions, xia2 local and external research, and 'where is X' or 'what does the doc say' lookups. It returns facts with file:line or URL and never edits."
 tools: Glob, Grep, Read, Bash, WebFetch, WebSearch
 model: claude-haiku-5-5
 ---

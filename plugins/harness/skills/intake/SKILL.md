@@ -1,6 +1,6 @@
 ---
 name: intake
-description: "Readiness gate for one ticket (issue number, issue URL or free text). Judges READY, CONFIRM, GRILL or BLOCKED and picks a depth of S, M or L before any research, planning or edit. Use when starting work on a ticket."
+description: "Readiness gate for one ticket (issue number, issue URL or free text). Judges READY, CONFIRM, GRILL or BLOCKED and picks a depth of S, M or L before any research, planning or edit. Use before starting work on a ticket."
 allowed-tools: Read, Grep, Glob, AskUserQuestion, Bash(gh issue view *), Bash(git log *), Bash(git branch *), Bash(ls *)
 ---
 

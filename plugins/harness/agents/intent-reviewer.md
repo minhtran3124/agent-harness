@@ -1,6 +1,6 @@
 ---
 name: intent-reviewer
-description: "Use this agent when you need to check a finished diff against the owner's original request, verbatim. It is plan-blind and read-only. It reports gaps, drift, and excess, then a verdict of match or gaps found."
+description: "Use this agent to check a finished diff against the owner's original request, verbatim. It is plan-blind and read-only. It reports gaps, drift, and excess, then a verdict of match or gaps found."
 tools: Glob, Grep, Read, Bash
 model: claude-sonnet-5-5
 effort: medium
