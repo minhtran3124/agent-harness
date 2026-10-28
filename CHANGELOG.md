@@ -7,16 +7,55 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 ## [Unreleased]
 
-- refactor(plugin)!: package the harness as a Claude Code plugin (#351, epic #338, PR 1 of 3). Components move to `plugins/harness/`; the marketplace is `.claude-plugin/marketplace.json`; skills run as `/harness:<name>`; the new `setup` skill and the `session-rules.sh` hook replace the copy installer; `deploy-harness.sh`, `install-harness.sh` and the agent renderer are removed. The 5.0.0 BREAKING entry comes with PR 3.
-- refactor(harness)!: remove the run-state machine, SUMMARY verification, review receipts and the old templates (#349, epic #338). Removed: `runtime/` (`run_state.py`, `resume_decision.py`), `verify_summary.py`, `check_review_receipt.py`, `resolve_finish_context.py`, `check_plan_contract.py`, `resolve-base-ref.sh`, and the templates `SUMMARY`, `ESCALATIONS`, `QUESTIONS`, `INTENT` and `REVIEW-RECEIPT` (`specs-STATE.md` is gone from `templates/structure/` too). `specs/` is now local scratch: the scaffolded `specs/README.md` says so and points designs and decisions to `docs/adr/`. `install-harness.sh` no longer adds the `specs/**/events.jsonl.lock` gitignore line. A re-sync prunes the stale `.claude/runtime/` files and the removed scripts from an existing consumer; your own files under `.claude/runtime/` are kept.
+## [5.0.0] — 2026-10-28
 
-- refactor(harness)!: remove `harness-manifest.json` and the consumer hook profiles (#349, epic #338). Consumers now get one fixed hook set (every hook wired in `settings.json`), and `commit-gate.sh` is registered with no `--profile` argument. `--profile minimal|standard|strict` on `install-harness.sh` and `deploy-harness.sh` is still accepted but ignored, with a one-line warning, so old install commands keep working. A re-sync deletes a leftover `.claude/.harness-profile` and `.claude/harness-manifest.json`. The skill and agent checks now scan `skills/*/SKILL.md` and `agents/*.md` instead of a manifest; `check_manifest.py`, `check_gate_modes_smoke.py`, `check_slim_surface.py` and `check-contract-impact.sh` are deleted, and `harness-audit.sh` no longer reports `manifest_degraded` or `contract_impact`.
+**BREAKING.** The harness is now a Claude Code plugin, and a large part of the v2 machinery is gone. Epic #338, issues #349–#351. Read the migration steps below before you upgrade a project that installed the old copied `.claude/`.
 
-- refactor(harness)!: swap the legacy hooks for a small new set (#349, epic #338). Removed: `commit-gate.sh`, `branch-isolation-guard.sh`, `session-knowledge.sh`, `model-config.sh` and `hooks/lib/`, with the lane, escalation, receipt and run-state checks they ran. Added: `secrets-scan.sh` (PreToolUse, blocks a staged secret or `.env` on `git commit`), `pr-opened.sh` (PostToolUse, reminds to review after `gh pr create`) and `clean-worktrees.sh` (PostToolUse, removes the worktree and branch of merged PRs, never with force flags). A re-sync prunes the old hook files and their `settings.json` entries from `.claude/`. `settings.json` gains `permissions.deny` (`.env` read and edit, force-push, push to `main`/`master`); it reaches a consumer only on the first install, because a re-sync merges only the hooks. Also removed: the `harness-models` skill, `harness-models.json` and `scripts/apply_model_config.py`; per-role models now come from `agents/runtime-bindings.json` only. A re-sync deletes a leftover `.claude/harness-models.defaults.json`.
+### Breaking
 
-- refactor(harness)!: remove nine rules, the `visual-planner` skill and the `reviewer` agent (#349, epic #338). One rule remains: `rules/behavior.md`, which still auto-loads from `.claude/rules/`. Removed rules: `architecture`, `guidelines`, `orchestration`, `research-depth`, `plan-format`, `wave-parallelism`, `auto-correct-scope`, `terminology` and `review-policy`. What the `implementer` agent and its prompt still need (fix small bugs in your own change, report each as a deviation, return BLOCKED for schema, contract, auth, dependency, `settings.json`, `hooks/` or feature-removal changes) is now stated inline there. `diagnosing-bugs` now stops and asks the owner instead of writing an `ESCALATIONS.md` block, and reports its red and green results in the final message. Also removed: `scripts/run_at_commit.py` (its red/green row is gone with SUMMARY verification), the `### Verify` check in `harness-audit.sh` (its `verify_missing` JSON key is gone), and the `agents/reviewer.md` binding (`task-reviewer` and `intent-reviewer` stay). A re-sync prunes the removed rule, skill and agent files from `.claude/`; your own files there are kept, and your `rules/architecture.md` or `rules/guidelines.md` is copied to `.claude/.harness-backup-pruned/` before it is removed. `techstacks/` is unchanged but no rule points at it any more: reference it from your own `CLAUDE.md`. `install-harness.sh` now also adds `specs/` to your `.gitignore` when it is not already ignored (skipped if you track files under `specs/`).
+- Install changes. The harness is a plugin (`plugins/harness/`, marketplace file `.claude-plugin/marketplace.json`). `scripts/deploy-harness.sh`, `scripts/install-harness.sh` and the agent renderer are removed.
+- Skills are namespaced: run `/harness:<name>` (for example `/harness:autopilot`), and agents appear as `harness:<name>`.
+- Hook profiles are gone. There is one fixed hook set, so `--profile minimal|standard|strict` no longer exists, and `harness-manifest.json` and `.claude/.harness-profile` are removed.
+- Every rule except `rules/behavior.md` is removed (`architecture`, `guidelines`, `orchestration`, `research-depth`, `plan-format`, `wave-parallelism`, `auto-correct-scope`, `terminology`, `review-policy`). `techstacks/` is unchanged, but no rule points at it any more: reference it from your own `CLAUDE.md`.
+- `harness-models.json`, the `harness-models` skill and `scripts/apply_model_config.py` are removed. Per-role models come from `agents/runtime-bindings.json` only.
+- The run-state machine and SUMMARY verification are removed, so `specs/` artifacts (`SUMMARY`, `ESCALATIONS`, `QUESTIONS`, `INTENT`, review receipts, `RUN.json`) are no longer read or written. `specs/` is local scratch; put designs and decisions in `docs/adr/`.
+- The review chain is `/code-review` plus `intent-review`. The `visual-planner` skill and the `reviewer` agent are removed (`task-reviewer` and `intent-reviewer` stay).
+- `permissions.deny` (`.env` read and edit, force-push, push to `main`/`master`) reaches a project only through `/harness:setup`. A plugin cannot ship it.
 
-- docs: archive the v2 history (#350, epic #338). Removed `research-loop.md`, the stale v2 plan and review docs under `docs/` and `docs/research/harness-review-improvements/`, and the tracked `specs/348-remove-review-chain/SUMMARY.md`; they stay in git history and the `legacy-v2.37.0` tag. Added `scripts/check-md-links.sh`, run by `run-tests.sh`, which fails on a dead markdown link or file path in the living docs. Nothing here ships to consumers.
+### Added
+
+- `plugins/harness/` plugin layout with a plugin manifest, a marketplace file, and the `setup` skill (see Migration).
+- Hooks: `secrets-scan.sh` (PreToolUse, blocks a staged secret or `.env` on `git commit`), `pr-opened.sh` (PostToolUse, reminds to review after `gh pr create`), `clean-worktrees.sh` (PostToolUse, removes the worktree and branch of merged PRs, never with force flags) and `session-rules.sh` (delivers `rules/behavior.md` at session start).
+- `scripts/check-md-links.sh` (dead markdown link check, run by `run-tests.sh`) and `scripts/check-plugin-version.sh` (plugin manifest version must equal `VERSION`). Minimal CI gates from PR 2 (#351).
+
+### Removed
+
+- Legacy hooks and their checks: `commit-gate.sh`, `branch-isolation-guard.sh`, `session-knowledge.sh`, `model-config.sh` and `hooks/lib/` (lane, escalation, receipt and run-state checks).
+- `runtime/` (`run_state.py`, `resume_decision.py`), `verify_summary.py`, `check_review_receipt.py`, `resolve_finish_context.py`, `check_plan_contract.py`, `resolve-base-ref.sh`, `run_at_commit.py`, `check_manifest.py`, `check_gate_modes_smoke.py`, `check_slim_surface.py`, `check-contract-impact.sh`.
+- Templates `SUMMARY`, `ESCALATIONS`, `QUESTIONS`, `INTENT` and `REVIEW-RECEIPT`, and `specs-STATE.md`.
+- The `### Verify` check in `harness-audit.sh` (its `verify_missing` JSON key), and the `manifest_degraded` and `contract_impact` reports.
+- v2 history docs (`research-loop.md`, stale plan and review docs under `docs/`); they stay in git history and the `legacy-v2.37.0` tag. Nothing here ships to consumers.
+
+### Changed
+
+- The `implementer` agent states inline what it needs from the removed rules: fix small bugs in your own change and report each as a deviation, and return BLOCKED for schema, contract, auth, dependency, `settings.json`, `hooks/` or feature-removal changes.
+- `diagnosing-bugs` stops and asks the owner instead of writing an `ESCALATIONS.md` block, and reports its red and green results in the final message.
+- The skill and agent checks scan `skills/*/SKILL.md` and `agents/*.md` instead of a manifest.
+
+### Migration (from the old copied `.claude/`)
+
+1. Install the plugin:
+   ```bash
+   claude plugin marketplace add minhtran3124/agent-harness
+   claude plugin install harness@agent-harness
+   ```
+2. In the project, run `/harness:setup`. It lists the old copied files (skills, agents, hooks, `workflows/ship.js`, scripts, `templates/`, backup folders) and removes them only after you approve. It also removes the old hook entries from `.claude/settings.json` (after you agree), and asks separately about the old `.claude/rules/behavior.md` copy, which the plugin now delivers at session start. Keep both copies and every hook runs twice. The same run merges `permissions.deny` into `.claude/settings.json` (needs `jq`; you see a dry-run diff first), creates `agents/PROJECT.md` if missing, scaffolds `specs/`, `docs/solutions/` and `techstacks/` README files without overwriting, and adds `specs/` to `.gitignore`.
+3. Restart Claude Code, then check that `/harness:autopilot` appears and `/autopilot` no longer does.
+4. Your own files are kept: `specs/`, `docs/`, `techstacks/`, `agents/PROJECT.md`, `.claude/settings.local.json`, and any skill, agent or hook you wrote yourself.
+
+### Known limits
+
+Not verified yet (tracked for the dogfood run, #352): an unattended run of `ship.js` through the Workflow tool from the plugin cache, the hooks firing in a live session, and a git-sourced marketplace install. The plugin was validated locally with `claude plugin validate` and with `--plugin-dir`.
 
 ## [2.37.0] — 2026-10-19
 
