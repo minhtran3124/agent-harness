@@ -108,7 +108,7 @@ if [ "${SKIP_DERIVED_LINT:-0}" != "1" ] && command -v python3 >/dev/null 2>&1; t
     derived_out=$(python3 - "$DERIVED_TGT" <<'PYEOF'
 import os, re, sys
 tgt = sys.argv[1]; claude = os.path.join(tgt, ".claude")
-ROOTS = ("skills/", "rules/", "hooks/", "agents/", "templates/", "runtime/", "scripts/", ".claude/")
+ROOTS = ("skills/", "rules/", "hooks/", "agents/", "templates/", "runtime/", "workflows/", "scripts/", ".claude/")
 # Paths a consumer legitimately does not have: illustrative examples, and artifacts made at run time.
 SKIP = {"foo.py", "plan.md", "kb-embedding/voyage.md", "techstacks/conventions.md"}
 SKIP_SUFFIX = (".plan-review.json", "break-glass-log.md", "review-receipt.json")

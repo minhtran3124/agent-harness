@@ -82,7 +82,7 @@ HARNESS_ONLY_DOCS=(
 # before this guard existed.
 DERIVED_MD_PY='
 import os, pathlib
-SYNCED = {"skills", "agents", "hooks", "rules", "templates", "runtime", "scripts"}  # = SYNCED_DIRS_RE
+SYNCED = {"skills", "agents", "hooks", "rules", "templates", "runtime", "workflows", "scripts"}  # = SYNCED_DIRS_RE
 def derived_md(out):
     for d, dirs, files in os.walk(out):
         top = d == str(out)
@@ -181,7 +181,7 @@ BACKUP_TS=""
 # Safe by construction: only paths in the PREVIOUS harness manifest are ever eligible to prune,
 # so a consumer's own additions (never in the manifest) are never touched. See
 # specs/deploy-prune-orphans/.
-SYNCED_DIRS_RE='^(skills|agents|hooks|rules|templates|runtime|scripts)/[^/]+$'
+SYNCED_DIRS_RE='^(skills|agents|hooks|rules|templates|runtime|workflows|scripts)/[^/]+$'
 DEPLOYED_LIST="$(mktemp)"        # accumulates `<dir>/<entry>` written this run
 record_deployed() { printf '%s\n' "$1" >> "$DEPLOYED_LIST"; }
 
@@ -623,7 +623,7 @@ preflight_protected
 
 # ---------- pipeline ----------
 step "Preparing ${B}.claude/${R}"            prep_dir
-for d in skills agents hooks rules templates runtime; do
+for d in skills agents hooks rules templates runtime workflows; do
   [ -e "$d" ] || continue
   step "Syncing ${B}$d/${R}"                 copy_dir "$d"
 done
