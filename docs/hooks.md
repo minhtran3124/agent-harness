@@ -59,7 +59,7 @@ Settings (space-separated lists), set in the `env` block of `.claude/settings.js
 | `CLEAN_REMOTE` | `origin` | Remote used for the fetch, rule 2, rule 3 and `CLEAN_RECREATE` |
 | `CLEAN_KEEP` | empty | Extra protected branch names, added to `main master`, the long-lived names above and the current branch |
 | `CLEAN_STRICT` | empty | Globs (for example `run/*`). A match is removed only by rule 1 (exact-tip merged PR), never by rules 2 or 3 |
-| `CLEAN_RECREATE` | empty | Base branches to recreate: when `git ls-remote` says the name is missing (exit 2), push `<remote>/main` as that branch. Any other `ls-remote` failure does nothing |
+| `CLEAN_RECREATE` | empty | Base branches to recreate (a name with a leading dash, a glob or an invalid ref name, and long-lived names such as `develop` or `release/*`, are skipped; the push is never forced): when `git ls-remote` says the name is missing (exit 2), push `<remote>/main` as that branch. Any other `ls-remote` failure does nothing |
 
 ```json
 {

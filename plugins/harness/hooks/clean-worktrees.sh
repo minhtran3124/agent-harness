@@ -9,7 +9,8 @@
 # `git worktree remove` has no force flag: it refuses a dirty or locked worktree.
 # Never touches main, master, develop, development, staging, production, release/*, release-*, CLEAN_KEEP names, the current branch, or the worktree the session runs in.
 # A branch matching CLEAN_STRICT gets only rule (1). Settings (env): CLEAN_REMOTE (default origin),
-# CLEAN_KEEP, CLEAN_STRICT, CLEAN_RECREATE (space separated). It runs `git fetch --prune` first.
+# CLEAN_KEEP, CLEAN_STRICT, CLEAN_RECREATE (space separated; a CLEAN_RECREATE name must be a valid plain
+# branch name, and the push is never forced, so a branch another session created in the race is not overwritten). It runs `git fetch --prune` first.
 # Hook use: `clean-worktrees.sh PostToolUse` reads the tool payload on stdin. It acts only on a real
 # `gh pr merge <n>` or `gh api .../pulls/<n>/merge` command (heredoc bodies and quoted strings are
 # ignored, so text that merely mentions the phrase does nothing) and cleans only the branches of the PRs it merges (each merge in a chain counts),
@@ -105,6 +106,9 @@ git rev-parse -q --verify "$base" >/dev/null 2>&1 || base=""
 # Recreate a deleted base branch from <remote>/main, only when ls-remote says it is missing (exit 2).
 if [ -n "$base" ]; then
   for name in ${CLEAN_RECREATE:-}; do
+    # Guard the name: a valid short branch name only (no leading dash, no glob), never a long-lived branch.
+    case "$name" in -*|*[*?[]*|develop|development|staging|production|release/*|release-*) continue ;; esac
+    git check-ref-format --branch "$name" >/dev/null 2>&1 || continue
     git ls-remote --exit-code --heads "$remote" "$name" >/dev/null 2>&1; rc=$?
     [ "$rc" = 2 ] || continue
     if git push -q "$remote" "$base:refs/heads/$name" 2>/dev/null; then out+="recreated $remote/$name from $remote/main"$'\n'

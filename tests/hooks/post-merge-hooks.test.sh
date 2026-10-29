@@ -285,4 +285,9 @@ t "item 8: no push when ls-remote fails for another reason than a missing branch
 rrun "" CLEAN_RECREATE="automation"
 if ! git -C "$REM" rev-parse -q --verify refs/heads/automation >/dev/null; then pass; else fail "out=$OUT"; fi
 
+rsetup
+t "item 8: CLEAN_RECREATE ignores an unsafe branch name (leading dash)"
+rrun "" CLEAN_RECREATE="-f"
+if ! git -C "$REM" rev-parse -q --verify refs/heads/-f >/dev/null; then pass; else fail "out=$OUT"; fi
+
 finish
