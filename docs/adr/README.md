@@ -29,6 +29,9 @@ A design record is an ADR with `stage: design`. `brainstorming` at depth L retur
 
 ## Pruned records
 
+The prune kept every record that is critical, a public contract, a safety rule or a real
+trade-off, even when it was not flagged `needs_review`. Only a flagged decision gets a new file.
+
 On 2026-10-29 the folder was pruned and renumbered 0001 to 0010: most old ADRs recorded small,
 reversible choices that now live in the code, tests and PR history. An old number in a PR body or
 commit no longer matches a file here. Get a pruned ADR back with

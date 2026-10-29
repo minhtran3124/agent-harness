@@ -29,7 +29,7 @@ It changes a public contract (setup output, agent file inputs) and the ticket re
 
 ## Consequences
 
-A reviewer confirms the one-release fallback policy and the removal of the scaffold.
+Breaking for consumers that already ran /harness:setup: the harness no longer reads agents/PROJECT.md or techstacks/.
 
 ## How to reverse
 

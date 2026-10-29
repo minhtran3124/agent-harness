@@ -133,10 +133,7 @@ def test_dry_run_writes_nothing(tmp_path):
 def test_render_section(tmp_path):
     adr, inp = setup(tmp_path, [dec(title="Plain"), dec(title="Risky", needs_review=True, ticket=5)])
     written = tmp_path / "w.json"
-    rows = json.loads(run(adr, inp, "--dry-run").stdout)
-    for row in rows:
-        row["needs_review"] = row["title"] == "Risky"   # render_section still groups an accepted ADR apart
-    written.write_text(json.dumps(rows))
+    written.write_text(run(adr, inp, "--dry-run").stdout)
     r = subprocess.run(
         [sys.executable, str(SCRIPT), "--render-section", str(written), "--artifact", "https://x/y"],
         capture_output=True, text=True,
@@ -146,7 +143,7 @@ def test_render_section(tmp_path):
     assert s.startswith("## Decisions") and "Artifact: https://x/y" in s
     assert "- [ADR 0003](docs/adr/0003-risky.md) (#5, design): Risky" in s
     assert "- [ADR 0002](docs/adr/0002-plain.md) (#1, design): Plain" in s
-    assert s.index("Risky") < s.index("Plain")
+    assert s.index("Plain") < s.index("Risky")
 
 
 def test_default_template_matches_the_repo_template():
@@ -267,8 +264,8 @@ def test_zero_adr_run_writes_nothing_and_prints_empty_list(tmp_path):
 
 
 def test_six_decisions_give_one_adr_file_and_five_table_rows(tmp_path):
-    """2 near-duplicates merge to 1, so 6 decisions are 5 table rows; only the needs_review one gets a file,
-    not the low-confidence guess gets a file."""
+    """2 near-duplicates merge to 1, so 6 decisions are 5 table rows; only the needs_review one gets a
+    file, not the low-confidence guess."""
     ds = [
         dec(title="Insert the step", confidence="high", needs_review=False, context="c1"),
         dec(title="Insert the step", stage="plan", confidence="high", needs_review=False, context="c2"),   # near-duplicate
@@ -304,4 +301,3 @@ def test_skill_doc_matches_dedupe_and_owner_confirmed_rules():
     assert "highest `confidence`" in flat
     assert "lowest `confidence`" not in flat
     assert "`needs_review` wins over `owner_confirmed`" in flat
-

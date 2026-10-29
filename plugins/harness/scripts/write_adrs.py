@@ -212,15 +212,11 @@ def render_section(written: list, artifact: str = "") -> str:
             f"(#{w['ticket']}, {w.get('stage', '')}): {w['title']}"
         )
 
-    review = [w for w in written if w.get("needs_review")]
-    rest = [w for w in written if not w.get("needs_review")]
     out = ["## Decisions", ""]
     if artifact:
         out += [f"Artifact: {artifact} (private; the ADR files are the source of truth)", ""]
-    if review:
-        out += ["Needs review:", ""] + [line(w) for w in review] + [""]
-    if rest:
-        out += ["Other decisions:", ""] + [line(w) for w in rest] + [""]
+    if written:
+        out += ["Needs review:", ""] + [line(w) for w in written] + [""]
     return "\n".join(out)
 
 
