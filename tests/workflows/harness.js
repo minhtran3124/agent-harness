@@ -39,6 +39,8 @@ function defaults(c, st) {
   if (l.startsWith('implement:')) return ok({ worktree: `/wt/${n}`, branch: `b${n}`, files: [], commits: [], verify: [] })
   if (/^verify(-retry|-base)?:/.test(l)) return ok({ passed: !l.startsWith('verify-base'), kind: 'BE', failedStep: '', consoleErrors: [], stills: [], report: 'VERIFY-REPORT' })
   if (l.startsWith('verify-comment:')) return ok()
+  if (/^uat(-rerun)?:/.test(l)) return ok({ passed_ac: true, scenarios: [{ id: 'S1', covers: 'AC1', kind: 'ac', status: 'PASS', assertion: 'ok', still: '' }], non_ac_failures: [], console_errors: 0 })
+  if (l.startsWith('uat-fix:')) return ok({ fix_status: 'fixed', base_sha: 'ubase', commit: 'ucommit' })
   if (l.startsWith('gif:')) return ok({ gif: '' })
   if (l.startsWith('attach:')) return ok()
   if (l.startsWith('finish:')) return ok({ pr: args0.local ? 0 : 100 + Number(n), url: `https://x/pull/${100 + Number(n)}` })
@@ -877,6 +879,194 @@ test('vb6: failing twice shows fail with base not run', async () => {
 test('vb7: local mode has no Verify heading', async () => {
   const { calls } = await run({ local: true }, null)
   assert(!adrBody(calls).includes('## Verify'))
+})
+
+// ---- UAT phase (#462) -----------------------------------------------------------------------
+const uatRes = (passed, scenarios, extra) => ok({ passed_ac: passed, scenarios, non_ac_failures: [], console_errors: 0, ...extra })
+const sc = (id, covers, kind, status) => ({ id, covers, kind, status, assertion: `A-${id}`, still: '' })
+
+test('u1: a docs ticket gets no UAT agent', async () => {
+  const { calls, logs } = await run({}, c => (c.label === 'verify:1' ? vres(true, 'docs') : undefined))
+  assert.strictEqual(named(calls, /^uat/).length, 0, labelsOf(calls).join())
+  assert(logs.some(l => l.includes('UAT #1 skipped: docs')), logs.join('\n'))
+  const local = await run({ local: true }, null)
+  assert.strictEqual(named(local.calls, /^uat/).length, 0)
+  assert(local.logs.some(l => l.includes('UAT skipped: local mode')))
+})
+
+test('u2: the UAT prompt holds the body and owner block, never the plan, diff or Verify text', async () => {
+  const { calls } = await run({ tickets: [T(1, 1, [], { confirmed: 'Owner said X.\nVerify: OWNER-SECRET\n  continues here' })] }, c => {
+    if (c.label === 'request:1') return { body: 'Do the thing.\nAC one\n\nVerify: SECRET-V start the app\n  then click SECRET-V2\n\nTail text' }
+    if (c.label === 'plan:1') return ok({ plan_md: 'PLAN-MD', plan_steps: [] })
+  })
+  const u = named(calls, /^uat:1$/)[0]
+  assert(u, labelsOf(calls).join())
+  for (const bad of ['SECRET-V', 'SECRET-V2', 'OWNER-SECRET', 'PLAN-MD', 'continues here', 'gh issue view 1']) assert(!u.prompt.includes(bad), `UAT prompt leaks ${bad}`)
+  assert(u.prompt.includes('Do the thing.') && u.prompt.includes('Tail text') && u.prompt.includes('Owner said X.'), u.prompt)
+  assert(u.prompt.includes('Config: /wt/1/verify.config.json') && u.prompt.includes('/plug/skills/uat/SKILL.md'), u.prompt)
+  assert.strictEqual(u.opts.phase, 'UAT')
+  const ir = named(calls, /^intent-review$/)[0]
+  assert(ir.prompt.includes('SECRET-V'), 'intent review still gets the raw body')
+  assert.strictEqual(named(calls, /^request:/).length, 1, 'the request text is cached, not fetched again')
+})
+
+test('u2b: tight AC bullets under a Verify row stay in the UAT prompt', async () => {
+  const { calls } = await run({ tickets: [T(1, 1, [], {})] }, c => {
+    if (c.label === 'request:1') return { body: 'Do the thing.\nVerify: SECRET-V start\n  then SECRET-V2\n- AC-KEEP-ONE\n- AC-KEEP-TWO' }
+  })
+  const u = named(calls, /^uat:1$/)[0]
+  assert(u, labelsOf(calls).join())
+  for (const bad of ['SECRET-V', 'SECRET-V2']) assert(!u.prompt.includes(bad), `UAT prompt leaks ${bad}`)
+  assert(u.prompt.includes('AC-KEEP-ONE') && u.prompt.includes('AC-KEEP-TWO'), u.prompt)
+})
+
+test('u2c: wrapped Verify text and indented sub-bullets stay out of the UAT prompt', async () => {
+  const { calls } = await run({ tickets: [T(1, 1, [], {})] }, c => {
+    if (c.label === 'request:1') return { body: 'Do the thing.\nVerify: SECRET-V start the app and\nSECRET-WRAP then click\n  - SECRET-SUB one\n    - SECRET-SUB2 deeper\n- AC-KEEP-ONE\nAC-KEEP-TWO: tight' }
+  })
+  const u = named(calls, /^uat:1$/)[0]
+  assert(u, labelsOf(calls).join())
+  for (const bad of ['SECRET-V', 'SECRET-WRAP', 'SECRET-SUB', 'SECRET-SUB2']) assert(!u.prompt.includes(bad), `UAT prompt leaks ${bad}`)
+  assert(u.prompt.includes('AC-KEEP-ONE') && u.prompt.includes('AC-KEEP-TWO'), u.prompt)
+})
+
+test('u2d: a hyphenated AC label under a Verify row ends the row and stays in the UAT prompt', async () => {
+  const { calls } = await run({ tickets: [T(1, 1, [], {})] }, c => {
+    if (c.label === 'request:1') return { body: 'Do the thing.\nVerify: SECRET-V start the app\nAC-2: AC-KEEP-HYPHEN\nUser-Story: AC-KEEP-LABEL' }
+  })
+  const u = named(calls, /^uat:1$/)[0]
+  assert(u, labelsOf(calls).join())
+  assert(!u.prompt.includes('SECRET-V'), 'UAT prompt leaks SECRET-V')
+  assert(u.prompt.includes('AC-2: AC-KEEP-HYPHEN') && u.prompt.includes('User-Story: AC-KEEP-LABEL'), u.prompt)
+})
+
+test('u3: the UAT phase sits between Intent review and Testing', async () => {
+  const { calls } = await run({}, null)
+  const ls = labelsOf(calls)
+  assert(ls.indexOf('intent-review') < ls.indexOf('uat:1') && ls.indexOf('uat:1') < ls.indexOf('suite'), ls.join())
+  assert(/title: 'Intent review'[\s\S]*title: 'UAT'[\s\S]*title: 'Testing'/.test(metaText()))
+})
+
+test('u4: an AC failure gives one fix and one rerun in its own worktree; passing on the rerun keeps the ticket done', async () => {
+  const { calls, result } = await run({}, c => {
+    if (c.label === 'uat:1') return uatRes(false, [sc('S1', 'AC1', 'ac', 'FAIL')])
+  })
+  assert.deepStrictEqual(labelsOf(calls).filter(l => /^uat/.test(l)), ['uat:1', 'uat-fix:1', 'uat-rerun:1'])
+  const first = named(calls, /^uat:1$/)[0], again = named(calls, /^uat-rerun:1$/)[0], fix = named(calls, /^uat-fix:1$/)[0]
+  assert(first.prompt.includes('/.ship-repo/ms/uat-1'), first.prompt.slice(0, 200))
+  assert(again.prompt.includes('/.ship-repo/ms/uat-rerun-1') && !again.prompt.includes('worktree add --detach /.ship-repo/ms/uat-1 '), again.prompt.slice(0, 200))
+  assert.strictEqual(fix.opts.phase, 'UAT')
+  assert.strictEqual(result.tickets[0].status, 'done')
+})
+
+test('u5b: a skipped or failed UAT fix starts no rerun and the AC failure stands', async () => {
+  for (const fix_status of ['skipped', 'failed']) {
+    const { calls, result } = await run({}, c => {
+      if (c.label === 'uat:1') return uatRes(false, [sc('S1', 'AC1', 'ac', 'FAIL')])
+      if (c.label === 'uat-fix:1') return ok({ fix_status })
+    })
+    assert.strictEqual(named(calls, /^uat-fix:/).length, 1)
+    assert.strictEqual(named(calls, /^uat-rerun:/).length, 0, fix_status)
+    assert.strictEqual(result.tickets[0].reason, 'UAT AC failed')
+  }
+})
+
+test('u5c: a FAIL row fails the run even when passed_ac is true', async () => {
+  const { calls, result } = await run({}, c => (/^uat(-rerun)?:1$/.test(c.label) ? uatRes(true, [sc('S1', 'AC1', 'ac', 'FAIL')]) : undefined))
+  assert.strictEqual(named(calls, /^uat-fix:/).length, 1)
+  assert.strictEqual(result.tickets[0].reason, 'UAT AC failed')
+})
+
+test('u5e: a missing passed_ac is not a pass', async () => {
+  const { calls, result } = await run({}, c => (/^uat(-rerun)?:1$/.test(c.label) ? uatRes(undefined, [sc('S1', 'AC1', 'ac', 'PASS')]) : undefined))
+  assert.strictEqual(named(calls, /^uat-fix:/).length, 1)
+  assert.strictEqual(result.tickets[0].reason, 'UAT AC failed')
+})
+
+test('u5f: the uat-fix prompt says console errors are report-only and never asks to fix them', async () => {
+  const { calls } = await run({}, c => (c.label === 'uat:1' ? uatRes(false, [sc('S1', 'AC1', 'ac', 'FAIL')], { console_errors: 3 }) : undefined))
+  const fix = named(calls, /^uat-fix:1$/)[0]
+  assert(fix, labelsOf(calls).join())
+  assert(!fix.prompt.includes('the console had'), fix.prompt)
+  assert(fix.prompt.includes('Console errors are report-only'), fix.prompt)
+})
+
+test('u5d: console errors alone do not fail a run whose ACs all pass', async () => {
+  const { calls, result } = await run({}, c => (/^uat(-rerun)?:1$/.test(c.label) ? uatRes(true, [sc('S1', 'AC1', 'ac', 'PASS')], { console_errors: 2 }) : undefined))
+  assert.strictEqual(named(calls, /^uat-fix:/).length, 0)
+  assert.notStrictEqual(result.tickets[0].reason, 'UAT AC failed')
+})
+
+test('u5: a second AC failure marks the ticket blocked with reason UAT AC failed; the PR still opens', async () => {
+  const { calls, result } = await run({}, c => {
+    if (/^uat(-rerun)?:1$/.test(c.label)) return uatRes(false, [sc('S1', 'AC1', 'ac', 'FAIL')])
+  })
+  assert.strictEqual(named(calls, /^uat-fix:/).length, 1)
+  assert.strictEqual(named(calls, /^uat-rerun:/).length, 1)
+  assert.strictEqual(result.tickets[0].status, 'blocked')
+  assert.strictEqual(result.tickets[0].reason, 'UAT AC failed')
+  assert.strictEqual(result.final.pr, 101)
+  const body = named(calls, /^adr$/)[0].prompt
+  assert(body.includes('- #1 blocked') && body.includes('(UAT AC failed)') && body.includes('Refs #1') && !body.includes('Closes #1'), body)
+  assert(result.decisions.some(d => d.stage === 'uat' && d.needs_review === true && d.title.includes('UAT AC failed')))
+})
+
+test('u6: a negative failure becomes a needs_review decision and the run continues', async () => {
+  const { calls, result } = await run({}, c => {
+    if (c.label === 'uat:1') return uatRes(true, [sc('S1', 'AC1', 'ac', 'PASS'), sc('S2', 'negative', 'negative', 'FAIL')], { non_ac_failures: [{ id: 'S2', detail: 'empty password was accepted' }] })
+  })
+  assert.strictEqual(named(calls, /^uat-fix:/).length, 0)
+  assert.strictEqual(result.tickets[0].status, 'done')
+  const d = result.decisions.find(x => x.stage === 'uat' && x.title.includes('S2'))
+  assert(d && d.needs_review === true, JSON.stringify(result.decisions))
+  assert(labelsOf(calls).includes('suite') && labelsOf(calls).includes('adr'))
+})
+
+test('u7: a blocked or empty UAT run is not an AC failure: no fix, ticket stays done, decision recorded', async () => {
+  for (const reply of [ok({ status: 'blocked', blocked_reason: 'no verify.config.json', passed_ac: false, scenarios: [] }), null, new Error('boom')]) {
+    const { calls, result } = await run({}, c => (c.label === 'uat:1' ? reply : undefined))
+    assert.strictEqual(named(calls, /^uat-(fix|rerun)/).length, 0)
+    assert.strictEqual(result.tickets[0].status, 'done')
+    assert(result.decisions.some(d => d.title === 'UAT not run for #1' && d.needs_review === true))
+    assert(named(calls, /^adr$/)[0].prompt.includes('UAT: not run'))
+  }
+})
+
+test('u8: tickets run UAT in input order, one agent per ticket with its own worktree', async () => {
+  const { calls } = await run({ tickets: [T(1, 1), T(2, 1)] }, null)
+  const us = named(calls, /^uat:/)
+  assert.deepStrictEqual(us.map(c => c.label), ['uat:1', 'uat:2'])
+  assert(us[0].prompt.includes('/uat-1') && us[1].prompt.includes('/uat-2'))
+})
+
+test('u9: the PR body has a UAT sign-off with one checkbox per scenario and the human-only points', async () => {
+  const { calls } = await run({}, c => {
+    if (c.label === 'uat:1') return uatRes(true, [sc('S1', 'AC1', 'ac', 'PASS'), sc('S2', 'AC2', 'not-browser-checkable', 'SKIPPED')])
+  })
+  const body = named(calls, /^adr$/)[0].prompt
+  assert(body.includes('## UAT sign-off'), body)
+  assert(body.includes('- [ ] S1 AC1 (ac): PASS: A-S1') && body.includes('- [ ] S2 AC2 (not-browser-checkable): SKIPPED'), body)
+  for (const h of ['Copy reads right', 'Layout looks right', 'The flow feels right']) assert(body.includes(`- [ ] ${h}`), h)
+})
+
+test('u10: verify reports its config path and UAT gets it', async () => {
+  const { calls } = await run({}, c => (c.label === 'verify:1' ? vres(true, 'FE', { configPath: '/wt/1/tests/fixtures/verify-app/verify.config.json' }) : c.label === 'verify-base:1' ? vres(false, 'FE') : undefined))
+  assert(named(calls, /^uat:1$/)[0].prompt.includes('Config: /wt/1/tests/fixtures/verify-app/verify.config.json'))
+})
+
+test('u10b: UAT prompt falls back to the config in its own worktree when the path is missing', async () => {
+  const { calls } = await run({})
+  const p = named(calls, /^uat:1$/)[0].prompt
+  assert(/If that file does not exist, use verify\.config\.json at the root of your own worktree/.test(p), p)
+})
+
+test('u11: UAT and uat-fix prompts hold real newlines, never a literal backslash-n', async () => {
+  const { calls } = await run({}, c => (c.label === 'uat:1' ? uatRes(false, [sc('S1', 'AC1', 'ac', 'FAIL')]) : c.label === 'uat-rerun:1' ? uatRes(true, [sc('S1', 'AC1', 'ac', 'PASS')]) : undefined))
+  for (const re of [/^uat:1$/, /^uat-fix:1$/]) {
+    const p = named(calls, re)[0].prompt
+    assert(!p.includes('\\n'), `${re} prompt has a literal backslash-n`)
+  }
+  assert(named(calls, /^uat:1$/)[0].prompt.includes('<<<\n'))
 })
 
 test('schemas are well-formed (object root, required within properties)', async () => {
