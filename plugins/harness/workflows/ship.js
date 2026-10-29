@@ -830,8 +830,8 @@ for (const g of groups) {
       if (!LOCAL && r && r.pr) addDecision(f.n, 'merge', {
         title: `Merge PR ${r.pr} by hand for #${f.n}`,
         context: `The merge agent could not merge PR ${r.pr} into ${integBranch}: ${f.reason}`,
-        decision: `gh pr merge ${r.pr} --repo ${repo} --merge`,
-        why: 'The ship run cannot merge this PR itself, so the owner lands it with this command.',
+        decision: `First check the PR: gh pr view ${r.pr} --repo ${repo} --json state. If it is MERGED or CLOSED, do nothing (the merge agent may have landed it by hand). If it is OPEN, run gh pr merge ${r.pr} --repo ${repo} --merge. If the failure above was a denied permission, first allow gh pr merge into ${integBranch}*.`,
+        why: 'The ship run cannot merge this PR itself, and the merge agent may already have merged and pushed it, so the owner checks the state before merging.',
         consequences: `Ticket #${f.n} stays blocked in this run until the PR is merged.`,
         how_to_reverse: 'Do not run the command; close the PR instead.',
         needs_review: true,
