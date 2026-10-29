@@ -736,6 +736,25 @@ test('a5: an attach failure is logged and the ticket is still done', async () =>
   assert.strictEqual(result.tickets[0].status, 'done')
 })
 
+test('a8: the attach prompt names --attach, gh 2.99.0 and bans an image line', async () => {
+  const { calls } = await run({}, withVerify('FE'))
+  const a = named(calls, /^attach:1$/)[0]
+  assert(a.prompt.includes('--attach') && a.prompt.includes('2.99.0') && a.prompt.includes('must not contain an image line'), a.prompt)
+})
+
+test('a9: a needs_review decision from the attach agent reaches the run and the ticket is done', async () => {
+  const d = { title: 'Attach by hand', context: 'denied', options: ['a'], decision: 'gh pr comment 101 --repo o/r --attach /wt/1/.playwright-mcp/1/evidence.gif', why: 'w', consequences: 'c', how_to_reverse: 'n', confidence: 'high', needs_review: true }
+  const { result } = await run({}, withVerify('FE', c => (c.label === 'attach:1' ? ok({ decisions: [d] }) : gifOk(c))))
+  assert(result.decisions.some(x => x.title === 'Attach by hand' && x.needs_review === true && x.stage === 'attach'), JSON.stringify(result.decisions))
+  assert.strictEqual(result.tickets[0].status, 'done')
+})
+
+test('a10: an attach call that throws records a needs_review decision with the command', async () => {
+  const { result } = await run({}, withVerify('FE', c => (c.label === 'attach:1' ? new Error('denied') : gifOk(c))))
+  assert(result.decisions.some(x => x.needs_review === true && String(x.decision).includes('gh pr comment 101 --repo o/r --attach /wt/1/.playwright-mcp/1/evidence.gif')), JSON.stringify(result.decisions))
+  assert.strictEqual(result.tickets[0].status, 'done')
+})
+
 test('a6: a GIF build failure keeps gif null, skips attach and does not change the result', async () => {
   const { calls, result, logs } = await run({}, withVerify('FE', c => (c.label === 'gif:1' ? new Error('no ffmpeg') : undefined)))
   assert.strictEqual(named(calls, /^attach:/).length, 0)
