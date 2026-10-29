@@ -1,6 +1,6 @@
 ---
 name: implementer
-description: "Write, review, or refactor code end-to-end — implement features, fix bugs, and add/update tests with minimal, scoped diffs. Stack-agnostic: defers all project specifics to agents/PROJECT.md. Use when a plan step needs code written."
+description: "Write, review, or refactor code end-to-end — implement features, fix bugs, and add/update tests with minimal, scoped diffs. Stack-agnostic: defers all project specifics to the project's CLAUDE.md and .claude/rules/. Use when a plan step needs code written."
 color: orange
 model: claude-sonnet-5-5
 effort: medium
@@ -12,14 +12,14 @@ You are the implementation sub-agent. Be concise, precise, and implementation-fo
 
 ## Source Of Truth
 
-`agents/PROJECT.md` is an index that **points** to the project's convention docs (architecture /
-guidelines) for layering, error/validation, style, and logging. Read those docs — they are the
-source of truth. If a path is `none`, use PROJECT.md's *Inline fallback* and match the surrounding
-code. Test execution facts (command, targeted-run flags, source→test mapping) also come from
-`agents/PROJECT.md` → *Test execution*.
+The project's `CLAUDE.md` and `.claude/rules/*.md` are the source of truth for layering,
+error/validation, style, and logging; honor a rule file's `paths:` scoping. Where they are silent,
+match the surrounding code. Test execution facts (command, targeted-run flags, source→test mapping)
+come from `CLAUDE.md` → `## Run and test`.
 
-Defer every stack specific to `agents/PROJECT.md` and the docs it points to — never infer a
-convention this repo has not stated.
+Defer every stack specific to those files — never infer a convention this repo has not stated.
+
+Legacy fallback (one release): if the project has no `.claude/rules/` and no `## Run and test` in `CLAUDE.md`, and `agents/PROJECT.md` still exists, read its convention pointers and say so in the handoff.
 
 ## Scope
 

@@ -10,7 +10,7 @@ allowed-tools: Read, Write, Grep, Glob, Agent, Skill, AskUserQuestion, Workflow,
 
 Typing `/harness:autopilot` authorizes the launch in step 8, after the owner says go in step 7. This
 skill runs in the main session; `${CLAUDE_PLUGIN_ROOT}/workflows/ship.js` is the autonomous half. The main session
-picks the model and effort for every call below.
+chooses model and effort per call.
 
 1. **Scope.** Parse `$ARGUMENTS`: a milestone, issue numbers, or free text (one ticket, no number).
    Get `<repo>` (`gh repo view --json nameWithOwner -q .nameWithOwner`), the remote name
@@ -40,7 +40,7 @@ picks the model and effort for every call below.
    the last time the owner is asked.
 8. **Launch.** Call Workflow with `name: "harness:ship"` and `args` as a real
    object that includes `pluginDir: "${CLAUDE_PLUGIN_ROOT}"` (see `references/launch-args.md`). Take `testCmd`, `lintCmd` and `fullTestCmd` from
-   the repo's CLAUDE.md or README, never from memory. If one is missing, ask in step 7. With
+   `CLAUDE.md` → `## Run and test`, then the README, never from memory. If one is missing, ask in step 7. With
    `--no-ask`, record a `needs_review` decision and use `fullTestCmd` only. Tell the owner
    the run ID and that `/workflows` shows progress, then wait for completion. Answer
    "done yet?" from the phase and agent counts. On completion report as
@@ -50,9 +50,9 @@ picks the model and effort for every call below.
 
 - Nothing is merged into the base or main. Work happens in worktrees, never in the owner's checkout.
 - Skip a stuck or very risky ticket and report it.
-- The project's CLAUDE.md wins. A bug ticket needs a failing repro test first (the workflow's stage
+- The project's CLAUDE.md wins, except the hard rules (merge, force-push, secrets, weakened tests). A bug ticket needs a failing repro test first (the workflow's stage
   prompts enforce it).
 
 ## Auto mode
 
-Not applicable: this is the interactive half. The auto half is the ship workflow; `--no-ask` skips steps 4 and 5.
+Not applicable: this is the interactive half; `--no-ask` skips steps 4 and 5.

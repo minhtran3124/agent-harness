@@ -24,8 +24,7 @@ set -u
 cd "$(dirname "$0")/.." || exit 1
 
 # Scope: the docs an agent actually loads. The plugin's rules/*.md and agents/*.md reach every
-# execution subagent, so a dangling path there misleads exactly as much as one in CLAUDE.md. The
-# repo's own agents/*.md (README, PROJECT.md) are linted too.
+# execution subagent, so a dangling path there misleads exactly as much as one in CLAUDE.md.
 # nullglob so an empty folder yields no entries instead of a literal glob that would then be
 # reported as a missing doc.
 PLUGIN=plugins/harness
@@ -43,6 +42,7 @@ check_path() { # check_path <doc> <raw-path>
     ''|http://*|https://*|mailto:*|'~'*) return ;;
     *'<'*|*'>'*|*'*'*|*'{'*|*'['*|*'$'*|*'…'*) return ;;   # placeholders / globs / vars
     specs/*) return ;;                                      # local-only by design
+    agents/PROJECT.md) return ;;                            # legacy file: setup migrates it, test-runner falls back to it
     .claude/*) p="${p#.claude/}" ;;                         # a consumer's own .claude/ folder
   esac
   [ -e "$p" ] && return
@@ -118,8 +118,8 @@ import os, re, sys
 plug = sys.argv[1]
 ROOTS = ("skills/", "rules/", "hooks/", "agents/", "templates/", "workflows/", "scripts/")
 # Paths a consumer legitimately does not have: illustrative examples, run-time artifacts, and the
-# consumer's own files (agents/PROJECT.md is created by the setup skill).
-SKIP = {"foo.py", "plan.md", "kb-embedding/voyage.md", "techstacks/conventions.md", "agents/PROJECT.md"}
+# consumer's own files (agents/PROJECT.md is the legacy file that setup migrates and test-runner still falls back to).
+SKIP = {"foo.py", "plan.md", "kb-embedding/voyage.md", "agents/PROJECT.md"}
 BT = chr(96)   # literal backtick, built at runtime
 SPAN = re.compile(BT + "([^" + BT + "]+)" + BT)
 PATH = re.compile(r"(?<![A-Za-z0-9_./-])([A-Za-z0-9_.][A-Za-z0-9_./-]*\.(?:md|py|sh|json|ini|yml))")

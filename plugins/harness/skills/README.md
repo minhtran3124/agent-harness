@@ -95,7 +95,7 @@ compound  (when the root cause is a reusable learning — the bug track takes it
 
 | Skill | Trigger | Output |
 |---|---|---|
-| `setup` | **User-invoked** (`/harness:setup`), once per project after installing the plugin | `specs/`, `docs/solutions/` and `techstacks/` scaffold files, `agents/PROJECT.md`, the merged `permissions.deny` rules, a `specs/` line in `.gitignore`, and an approved removal of an old copied install |
+| `setup` | **User-invoked** (`/harness:setup`), once per project after installing the plugin | `specs/` and `docs/solutions/` scaffold files, a proposed `## Run and test` section in `CLAUDE.md`, the merged `permissions.deny` rules, a `specs/` line in `.gitignore`, and an approved removal of an old copied install |
 
 ### Discovery & Design
 
@@ -211,7 +211,7 @@ This is one of several wired hooks — see the full table in the root `CLAUDE.md
 ---
 
 > **Maintainer notes.** Everything below explains how the harness is built and how to fork it.
-> `skills/compound/README.md` and the harness repo's `agents/README.md` hold the same kind of content in full.
+> `skills/compound/README.md` holds the same kind of content in full.
 
 ## Per-skill Design Rationales
 

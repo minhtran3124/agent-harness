@@ -9,14 +9,12 @@ as contracts when you change a hook, a skill or a script.
 - `plugins/harness/` - the plugin (name `harness`). `.claude-plugin/marketplace.json` at the repo root lists it.
 - `plugins/harness/skills/<name>/SKILL.md` - the skills, with their prompts, templates and scripts.
 - `plugins/harness/agents/` - the six subagent role files (model, effort and tools are in their frontmatter).
-- `agents/` - this repo's own `PROJECT.md` (test command and conventions index) and a note on the agents.
 - `plugins/harness/hooks/` - `hooks.json` plus four Bash hooks: rule delivery at session start, secrets scan on commit, PR-opened reminder, merged-worktree cleanup.
 - `plugins/harness/rules/behavior.md` - the one behavioral rule.
 - `plugins/harness/workflows/ship.js` - the autonomous Workflow script that `/harness:autopilot` launches.
 - `plugins/harness/templates/structure/` - scaffold files that `plugins/harness/scripts/init-structure.sh` copies into a consumer repo.
 - `plugins/harness/scripts/` - the runtime scripts (`init-structure.sh`, `write_adrs.py`, `rebuild_solution_index.py`).
 - `scripts/` - lint and validation utilities for this repo, plus their `test_*.py` unit tests.
-- `techstacks/` is a consumer folder that `/harness:setup` scaffolds; this repo has none.
 - `tests/hooks/`, `tests/scripts/`, `tests/workflows/` - contract and integration tests.
 - `docs/` - solutions, ADRs and research. `specs/` is local scratch and gitignored: one `specs/<slug>/` per ticket with `intent.md`, `design.md`, `decision.md`, `plan.md` and `summary.md`.
 

@@ -10,7 +10,7 @@ allowed-tools: Read, Write, Grep, Glob, Bash
 
 1. Find the branch, its base and the changes: `git branch --show-current`,
    `git diff --stat <base>...HEAD`. Ask the owner only if the base is unclear (interactive mode).
-2. Verify. Run the repository's test command (`agents/PROJECT.md`, *Test execution*), or the
+2. Verify. Run the repository's test command (`CLAUDE.md` → `## Run and test`; if absent, detect it from the manifests), or the
    targeted tests for the change. Fix failures and retry at most twice. Never push a failing branch.
 3. Push without force: `git push -u origin <branch>`.
 4. Open one PR against the base with `gh pr create`.

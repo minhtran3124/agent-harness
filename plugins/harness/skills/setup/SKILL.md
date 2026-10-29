@@ -1,8 +1,8 @@
 ---
 name: setup
-description: "First-run setup for a project that installed the harness plugin. Scaffolds specs, docs and techstacks, creates agents/PROJECT.md, merges the permissions.deny rules into project settings, offers an allow rule for gh pr merge, ignores specs/, and offers to remove an old copied install. Use when the plugin was just installed in a project."
+description: "First-run setup for a project that installed the harness plugin. Scaffolds specs and docs, proposes a Run and test section for CLAUDE.md (and migrates an old agents/PROJECT.md), merges the permissions.deny rules into project settings, offers an allow rule for gh pr merge, ignores specs/, and offers to remove an old copied install. Use when the plugin was just installed in a project."
 disable-model-invocation: true
-allowed-tools: Read, Bash, AskUserQuestion
+allowed-tools: Read, Write, Edit, Bash, AskUserQuestion
 ---
 
 # Setup
@@ -11,10 +11,13 @@ Run once per project, after `claude plugin install harness@agent-harness`. Work 
 (`${CLAUDE_PROJECT_DIR}`). Say what each step did. Every step is safe to run twice.
 
 1. **Scaffold.** Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/init-structure.sh --root ${CLAUDE_PROJECT_DIR}`.
-   It creates `specs/`, `docs/solutions/` and `techstacks/` README files, and never overwrites.
-2. **Agent index.** If `agents/PROJECT.md` does not exist, copy
-   `${CLAUDE_SKILL_DIR}/resources/PROJECT.template.md` to it. Never overwrite an existing file.
-   Tell the owner to fill in its *Test execution* section.
+   It creates `specs/` and `docs/solutions/` README files, and never overwrites.
+2. **Run and test.** If `${CLAUDE_PROJECT_DIR}/CLAUDE.md` has no `## Run and test` section, propose
+   one (test, targeted test, lint, full suite), detected from the manifests, and show it. Write it
+   only after the owner agrees (AskUserQuestion), with Edit (or Write if `CLAUDE.md` does not
+   exist). If an old `agents/PROJECT.md` exists, propose moving its *Test execution* into that
+   section, and ask before deleting the file (`rm -- ${CLAUDE_PROJECT_DIR}/agents/PROJECT.md`). Running it twice is safe:
+   skip the write when the section exists, and skip the migration when `agents/PROJECT.md` is gone.
 3. **Deny rules.** A plugin cannot ship `permissions.deny`, so merge it into the project settings.
    Run `bash ${CLAUDE_SKILL_DIR}/scripts/merge-deny.sh --dry-run ${CLAUDE_PROJECT_DIR}/.claude/settings.json`
    and show the diff. After the owner agrees, run it again without `--dry-run`. It needs `jq`
@@ -37,7 +40,7 @@ Run once per project, after `claude plugin install harness@agent-harness`. Work 
    Ask separately about `.claude/rules/behavior.md`: the plugin now delivers that rule at session
    start, so a copy loads it twice.
 
-Never touch: `specs/`, `docs/`, `techstacks/`, `agents/PROJECT.md`, and any skill, agent or hook the
+Never touch: `specs/`, `docs/`, and any skill, agent or hook the
 project wrote itself. Only step 4 may write `.claude/settings.local.json`, and only after the owner
 says yes.
 

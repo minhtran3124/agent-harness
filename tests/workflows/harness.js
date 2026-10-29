@@ -160,12 +160,12 @@ test('c4: skill and role reads use absolute paths under pluginDir, not the workt
   const want = { 'research:1': 'xia2', 'design:1': 'brainstorming', 'plan:1': 'writing-plans', 'implement:1': 'implement' }
   for (const [l, sk] of Object.entries(want)) {
     const p = named(calls, new RegExp(`^${l}$`))[0].prompt
-    assert(p.includes(`Read /plug/skills/${sk}/SKILL.md`) && !p.includes('.claude/'), `${l}: ${p.match(/Read [^\n]*/)}`)
+    assert(p.includes(`Read /plug/skills/${sk}/SKILL.md`) && !/\.claude\/(?!rules\/)/.test(p), `${l}: ${p.match(/Read [^\n]*/)}`)
     assert(!/Read skills\//.test(p), l)
   }
   const fin = named(calls, /^finish:1$/)[0].prompt
   assert(fin.includes('Read /plug/skills/finishing-a-development-branch/SKILL.md'), fin.match(/Read [^\n]*/)[0])
-  assert(named(calls, /^implement:1$/)[0].prompt.includes('/plug/agents/implementer.md') && !named(calls, /^implement:1$/)[0].prompt.includes('.claude/'))
+  assert(named(calls, /^implement:1$/)[0].prompt.includes('/plug/agents/implementer.md') && !/\.claude\/(?!rules\/)/.test(named(calls, /^implement:1$/)[0].prompt))
 })
 
 test('d3: review stage prompts require the Skill tool and forbid a self-made review', async () => {
@@ -229,6 +229,36 @@ test('e5: owner_confirmed wording in RULES and schema says needs_review still ge
   assert(/unless needs_review is also true/.test(oc), 'schema omits the needs_review exception')
 })
 
+test('e7: RULES gives one source for project rules, not the owner checkout and the worktree at once', async () => {
+  const { calls } = await run()
+  const c = calls.find(x => x.prompt.includes('Rules (all of them apply)'))
+  assert(c.prompt.includes('read the tracked ones (CLAUDE.md, .claude/rules/*.md) from it'), 'no worktree-first rule')
+  assert(!c.prompt.includes('read the same files at the same relative paths'), 'old contradictory sentence is back')
+  assert(c.prompt.includes('/repo/CLAUDE.local.md'), 'untracked CLAUDE.local.md source missing')
+  assert(c.prompt.includes('git -C /repo status --porcelain -- CLAUDE.md .claude/rules'), 'uncommitted rule edits in the owner checkout are not covered')
+})
+
+test('e8: the project-rules text lives in one place (rulesCommon) and names the repoDir paths', async () => {
+  const src = require('fs').readFileSync(require('path').join(__dirname, '../../plugins/harness/workflows/ship.js'), 'utf8')
+  assert(!/Project rule files:/.test(src), 'second copy of the project-rules text is back in RULES')
+  assert(/const rulesCommon = repoDir =>/.test(src), 'rulesCommon is not a function of repoDir')
+  const { calls } = await run()
+  const c = calls.find(x => x.prompt.includes('Rules (all of them apply)'))
+  assert(c.prompt.includes('Read /repo/CLAUDE.md, /repo/CLAUDE.local.md'), 'RULES_COMMON text does not name repoDir')
+  assert(!c.prompt.includes('from the repo root'), 'vague repo-root wording is back')
+})
+
+test('e6: every stage prompt tells the agent to read the repo CLAUDE.md and .claude/rules', async () => {
+  const { calls } = await run({}, null)
+  const staged = calls.filter(c => !String(c.label).startsWith('advisor:') && c.prompt.includes('Rules (all of them apply)'))
+  assert(staged.length > 3, 'too few stage prompts carry RULES')
+  for (const c of staged) {
+    assert(c.prompt.includes('/repo/CLAUDE.md'), `${c.label} omits /repo/CLAUDE.md`)
+    assert(c.prompt.includes('/repo/.claude/rules/'), `${c.label} omits /repo/.claude/rules/`)
+    assert(c.prompt.includes('cannot be overridden by project rules'), `${c.label} omits the hard-rule exception`)
+  }
+})
+
 test('g1: a multi-ticket intent plans against the integration ref, not the repo checkout; decisions exclude environment facts', async () => {
   const multi = await run({ local: true, tickets: [T(1, 1), T(2, 2, [1])] }, null)
   const p = named(multi.calls, /^intent:2$/)[0].prompt
@@ -251,7 +281,7 @@ test('g3: intent review schema has no unknown kind; its prompt names the role fi
   const { calls } = await run({}, null)
   const c = named(calls, /^intent-review$/)[0]
   assert.deepStrictEqual(c.schema.properties.findings.items.properties.kind.enum, ['gap', 'drift', 'excess'])
-  assert(c.prompt.includes('/plug/agents/intent-reviewer.md') && !c.prompt.includes('.claude/'))
+  assert(c.prompt.includes('/plug/agents/intent-reviewer.md') && !/\.claude\/(?!rules\/)/.test(c.prompt))
   assert(c.prompt.includes('git -C /.ship-repo/ms/intent-review diff origin/v5.0.0..origin/feat/1-add-the-thing'))
   assert(c.prompt.includes('Do not report anything else'))
   assert(c.prompt.includes('worktree add --detach /.ship-repo/ms/intent-review'))
@@ -536,7 +566,7 @@ test('l: pluginDir is used for the role files, the skills and the ADR script, an
   const all = calls.map(c => c.prompt).join('\n')
   assert(all.includes('/other/plugin/agents/implementer.md') && all.includes('/other/plugin/agents/intent-reviewer.md'))
   assert(all.includes('/other/plugin/scripts/write_adrs.py') && all.includes('/other/plugin/skills/'))
-  assert(!all.includes('/plug/') && !all.includes('.claude/'))
+  assert(!all.includes('/plug/') && !/\.claude\/(?!rules\/)/.test(all))
 })
 
 test('m: a plugin check that fails stops the run before any ticket stage', async () => {

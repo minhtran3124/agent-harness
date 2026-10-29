@@ -1,6 +1,4 @@
 {
-  "agents/PROJECT.md": 0,
-  "agents/README.md": 2,
   "plugins/harness/agents/advisor.md": 2,
   "plugins/harness/agents/implementer.md": 2,
   "plugins/harness/agents/intent-reviewer.md": 0,
@@ -46,7 +44,6 @@
   "plugins/harness/skills/intent-review/SKILL.md": 1,
   "plugins/harness/skills/intent-review/tests/sample-input.md": 0,
   "plugins/harness/skills/session-retro/SKILL.md": 2,
-  "plugins/harness/skills/setup/resources/PROJECT.template.md": 8,
   "plugins/harness/skills/using-git-worktrees/SKILL.md": 2,
   "plugins/harness/skills/writing-plans/SKILL.md": 0,
   "plugins/harness/skills/xia2/SKILL.md": 2,

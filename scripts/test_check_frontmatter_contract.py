@@ -169,9 +169,9 @@ def test_name_mismatch_fails(tmp_path):
 
 
 def test_unregistered_non_agent_files_are_ignored(tmp_path):
-    """The three agents/ files that are not agents need no allowlist — they are not agents."""
+    """The agents/ README that is not an agent needs no allowlist — they are not agents."""
     build(tmp_path)
-    for name in ("README.md", "PROJECT.md", "PROJECT.template.md"):
+    for name in ("README.md",):
         (tmp_path / "agents" / name).write_text("# not an agent\n")
     result = run(tmp_path)
     assert result.returncode == 0, result.stderr
@@ -185,7 +185,7 @@ def test_empty_tree_fails_closed(tmp_path):
 
 
 def test_unlisted_agent_file_is_still_checked(tmp_path):
-    """The disk is the registry: any agents/*.md except README/PROJECT* is an agent."""
+    """The disk is the registry: any agents/*.md except README is an agent."""
     build(tmp_path)
     (tmp_path / "agents" / "extra.md").write_text("# no frontmatter\n")
     result = run(tmp_path)
