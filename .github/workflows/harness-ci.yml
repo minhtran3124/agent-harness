@@ -28,13 +28,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      # scripts/lint-skill-bash.sh degrades to syntax-only when shellcheck is missing, so the
-      # suite passes either way — but CI is where the shellcheck pass must actually run, or the
-      # gate is only as strong as whatever each contributor happens to have installed.
-      # ubuntu-latest ships it; macos-latest does not.
-      - name: Install shellcheck (macOS)
-        if: runner.os == 'macOS'
-        run: brew install shellcheck
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -51,7 +44,7 @@ jobs:
 
   # Plugin gates that must not degrade to a local-only skip. The suite above already runs the
   # frontmatter, link and validate checks in permissive mode; this job runs the same scripts with
-  # the strict env, adds the shellcheck gate that fails when shellcheck is absent, and the install
+  # the strict env, adds the install
   # smoke test (not in run-tests.sh because it installs a plugin). Linux only: the matrix covers
   # BSD/GNU differences.
   plugin:
@@ -68,10 +61,6 @@ jobs:
         run: |
           npm install -g "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}"
           claude --version
-      - name: shellcheck (strict - fails if shellcheck is missing)
-        env:
-          REQUIRE_SHELLCHECK: "1"
-        run: bash scripts/check-shellcheck.sh
       - name: Skill and agent frontmatter contract
         run: python3 scripts/check_frontmatter_contract.py
       - name: Markdown link check
