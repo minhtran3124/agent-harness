@@ -525,7 +525,7 @@ async function stageMerge(group, done) {
   const list = done.map(r => `- #${r.n} branch ${r.branch}${r.pr ? ` PR ${r.pr}` : ''}`).join('\n')
   const how = LOCAL
     ? `Merge each branch below into ${integBranch} with "git merge --no-ff". Then run: git update-ref refs/heads/${integBranch} HEAD   (local mode: nothing is pushed).`
-    : `Merge each ticket PR below into ${integBranch}: gh pr merge <pr> --repo ${repo} --merge. On a conflict, merge locally, resolve it, and land it with: git push ${remote} HEAD:${integBranch}, then close that PR with a comment. These PRs target ${integBranch}, never ${base}. A PR that is already MERGED into ${integBranch} counts as merged: check its state first with gh pr view <pr> --repo ${repo} --json state, and do not merge it again. If gh pr merge is denied by a permission rule, do not look for a workaround: return that ticket in failed with a reason that names the missing permission and the fix (the owner allows gh pr merge into ${integBranch}*), and do not just write denied.`
+    : `Merge each ticket PR below into ${integBranch}. Run each command as its own Bash call, never joined with &&, ; or a subshell: for example gh pr merge <pr> --repo ${repo} --merge is one call. On a conflict, merge locally, resolve it, and land it with: git push ${remote} HEAD:${integBranch}, then close that PR with a comment. These PRs target ${integBranch}, never ${base}. A PR that is already MERGED into ${integBranch} counts as merged: check its state first with gh pr view <pr> --repo ${repo} --json state, and do not merge it again. If gh pr merge is denied by a permission rule, do not look for a workaround: return that ticket in failed with a reason that names the missing permission and the fix (the owner allows gh pr merge into ${integBranch}*), and do not just write denied.`
   const w = newWt(`merge-g${group}`, `scratch/${slug}-merge-g${group}`, integRef)
   const prompt = `${w.setup}${RULES}\n\nStage: merge group ${group} into ${integBranch}.\n${how}\n${list}\n` +
     `After any conflict resolution run the related tests (${testCmd}, filled with the conflicted files) and lint (${lintCmd}). ` +
@@ -827,6 +827,15 @@ for (const g of groups) {
       const r = byN.get(f.n)
       if (r) { r.status = 'blocked'; r.reason = `merge into ${integBranch} failed: ${f.reason}` }
       log(`#${f.n} blocked at merge: ${f.reason}`)
+      if (!LOCAL && r && r.pr) addDecision(f.n, 'merge', {
+        title: `Merge PR ${r.pr} by hand for #${f.n}`,
+        context: `The merge agent could not merge PR ${r.pr} into ${integBranch}: ${f.reason}`,
+        decision: `First check the PR: gh pr view ${r.pr} --repo ${repo} --json state. If it is MERGED or CLOSED, do nothing (the merge agent may have landed it by hand). If it is OPEN, run gh pr merge ${r.pr} --repo ${repo} --merge. If the failure above was a denied permission, first allow gh pr merge into ${integBranch}*.`,
+        why: 'The ship run cannot merge this PR itself, and the merge agent may already have merged and pushed it, so the owner checks the state before merging.',
+        consequences: `Ticket #${f.n} stays blocked in this run until the PR is merged.`,
+        how_to_reverse: 'Do not run the command; close the PR instead.',
+        needs_review: true,
+      })
     }
     if (!m) for (const r of done) { r.status = 'blocked'; r.reason = 'the merge agent returned nothing' }
   }
