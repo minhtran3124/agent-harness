@@ -52,8 +52,19 @@ For each step in the `Verify:` row:
 
 After the last step, call `browser_console_messages`. Count the errors. One or more is a fail.
 
+## Base mode
+
+The prompt can say `Mode: base`. The workflow uses it to check that the steps fail on the base
+commit, in a worktree that holds no ticket code:
+
+1. Copy `verify.config.json` from the implement worktree path in the prompt. Read it only. Never write or commit it.
+2. Run Start config (step 5), Login and Browser steps as usual.
+3. The steps are expected to FAIL. Report the real result and do not judge it.
+4. Commit nothing. Do not retry. The workflow decides what the result means.
+
 ## Report
 
 Return a table with one row per command or step, PASS or FAIL, and the assertion text.
 Add the console error count and the path of each still. Any FAIL makes the whole run FAIL.
 Do not fix the code in this skill. Do not commit evidence: Git ignores `.playwright-mcp/`.
+The workflow, not this skill, builds the GIF from the stills with ffmpeg and attaches it to the PR after the PR is opened. Leave the stills where they are.
