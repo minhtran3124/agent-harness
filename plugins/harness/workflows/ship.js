@@ -92,6 +92,7 @@ const VERIFY_SCHEMA = stageSchema({
   kind: { type: 'string', enum: ['BE', 'FE', 'FE+BE', 'docs'], description: 'the ticket type from the Verify: row' },
   failedStep: STR, consoleErrors: strList, stills: { type: 'array', items: STR, description: 'absolute local paths of the screenshots' }, report: STR,
 }, ['passed', 'kind'])
+const GIF_SCHEMA = stageSchema({ gif: { type: 'string', description: 'absolute path of the GIF, or empty when none was built' } }, ['gif'])
 const FINISH_SCHEMA = stageSchema({ pr: NUM, url: STR, body_file: STR }, ['pr'])
 const SETUP_SCHEMA = stageSchema({})
 const MERGE_SCHEMA = stageSchema({
@@ -400,7 +401,41 @@ async function verifyTicket(t, impl) {
       throw new Blocked(msg)
     }
   }
-  return { result, stills: r.stills || [], gif: null, report: r.report || '' }
+  const stills = r.stills || []
+  const gif = await buildGif(t, impl, stills)
+  return { result, stills, gif, report: r.report || '' }
+}
+
+// Stills to one GIF with ffmpeg. Any problem gives null and a log line; it never changes the verify result.
+async function buildGif(t, impl, stills) {
+  if (!stills.length) { log(`#${t.n} no stills, no GIF`); return null }
+  const dir = `${impl.worktree}/.playwright-mcp/${t.n}`
+  try {
+    const res = await call(
+      `Stage: gif. Build one animated GIF from the verify stills of ticket #${t.n}. Stills (in order): ${stills.join(', ')}. They sit in ${dir}.\n` +
+      `Use ffmpeg, for example: ffmpeg -y -framerate 1 -pattern_type glob -i '${dir}/*.png' -vf "scale=800:-2:flags=lanczos,split[a][b];[a]palettegen[p];[b][p]paletteuse" ${dir}/evidence.gif\n` +
+      `Rules: palettegen, at most 30 seconds, 800 px wide, under 10 MB (drop frames or lower the frame rate if larger). Write the GIF inside ${dir}. Commit nothing and do not add it to git.\n` +
+      `Return gif: the absolute path of the GIF, or an empty string when there are no stills, ffmpeg is missing or the build failed.\n\n${RULES}`,
+      { label: `gif:${t.n}`, phase: 'Tickets', schema: GIF_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
+    if (res && res.gif) return res.gif
+    log(`#${t.n} no GIF built`)
+  } catch (e) { log(`#${t.n} gif build failed: ${e && e.message}`) }
+  return null
+}
+
+// Separate from stageFinish: runs only for a real PR with a GIF and a pass or flaky result. A failure is only logged.
+async function stageAttach(t, fin, verifyResult) {
+  if (!(fin && fin.pr > 0) || !verifyResult || !verifyResult.gif) return
+  if (verifyResult.result !== 'pass' && verifyResult.result !== 'flaky') return
+  const flaky = verifyResult.result === 'flaky'
+  const note = `Verify for #${t.n} was flaky: it failed once and passed on the retry.`
+  try {
+    await call(
+      `Stage: attach. Run: gh pr comment ${fin.pr} --repo ${repo} --attach ${verifyResult.gif} --body "Verify evidence for #${t.n}: ${verifyResult.result}"\n` +
+      (flaky ? `Then add this note to the end of the PR body: read it with gh pr view ${fin.pr} --repo ${repo} --json body -q .body, append "${note}", and write it back with gh pr edit ${fin.pr} --repo ${repo} --body-file <file>.\n` : '') +
+      `Commit nothing; the GIF stays uncommitted. Return status ok.\n\n${RULES}`,
+      { label: `attach:${t.n}`, phase: 'Tickets', schema: SETUP_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
+  } catch (e) { log(`#${t.n} attach failed: ${e && e.message}`) }
 }
 
 function stageFinish(t, impl, verifyResult) {
@@ -412,7 +447,7 @@ function stageFinish(t, impl, verifyResult) {
     ? `Local mode: do NOT push and do NOT open a pull request. Verify the branch as the skill describes, then write the PR description for base ${prBase} to .ship/pr-${t.n}.md inside the worktree (do not commit it) and return its absolute path as body_file with pr: 0.\n`
     : `Verify, push the branch and open the pull request with base ${prBase}. The body says "Refs #${t.n}" (the final PR carries the Closes lines) and ends with the footer line. Return the PR number as pr and its url.\n`
   const ver = verifyResult
-    ? `Verify result: ${verifyResult.result}. Local stills: ${verifyResult.stills.join(', ') || 'none'}. Nothing is attached to the pull request.\n`
+    ? `Verify result: ${verifyResult.result}. Local stills: ${verifyResult.stills.join(', ') || 'none'}. Evidence stays uncommitted; a later step attaches the GIF to the pull request.\n`
     : ''
   const build = advice => head(t, 'finishing-a-development-branch', `Stage: finish. ${where}${ver}${how}Do not run the full suite.${advice}`, dir)
   return runStage(t, 'finish', build, FINISH_SCHEMA, { model: MODEL.implement, effort: EFFORT.implement })
@@ -441,6 +476,7 @@ async function runTicket(t) {
     const impl = await stageImplement(t, branch, planText, boundary)
     const verifyResult = await verifyTicket(t, impl)
     const fin = await stageFinish(t, impl, verifyResult)
+    await stageAttach(t, fin, verifyResult)
     log(`#${t.n} done: ${fin.url || fin.body_file || impl.branch}`)
     return { n: t.n, status: 'done', pr: fin.pr || null, url: fin.url || '', branch: impl.branch || branch, summary: capSummary(impl.summary || fin.summary), reason: '', body_file: fin.body_file }
   } catch (e) {
