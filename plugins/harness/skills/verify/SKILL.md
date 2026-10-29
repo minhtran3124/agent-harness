@@ -9,7 +9,11 @@ allowed-tools: Read, Write, Edit, Grep, Glob, Bash, mcp__plugin_playwright_playw
 The ticket's `Verify:` row drives the run. Pass or fail comes from assertions only,
 never from a screenshot.
 
-Use the Claude Code Playwright plugin tools only, not npm Playwright.
+Use the Playwright MCP browser tools, not npm Playwright. If a tool named here does not exist,
+find it with `ToolSearch` by the tail of its name (`browser_navigate`, `browser_snapshot`,
+`browser_fill_form`, `browser_click`, `browser_take_screenshot`, `browser_console_messages`,
+`browser_run_code_unsafe`), whatever the server prefix. If an argument is refused, read the error
+and fix the call.
 
 ## Pick the work by ticket type
 
@@ -22,9 +26,8 @@ Use the Claude Code Playwright plugin tools only, not npm Playwright.
 
 ## Start config
 
-Only FE, FE+BE, and BE tickets whose `Verify:` row starts a service or calls HTTP (`curl` or a URL)
-use the config. Docs or config tickets and test-command-only BE tickets skip Start config and
-Login: never read, create or commit `verify.config.json`.
+Only tickets whose `Verify:` row starts a service or calls HTTP (`curl` or a URL) use the config.
+Others skip Start config and Login: never read, create or commit `verify.config.json`.
 
 1. Read `verify.config.json` at the repo root, or at the path the `Verify:` row names.
 2. If it does not exist, infer the start recipe from the README, `package.json`, or `Makefile`.
@@ -32,7 +35,7 @@ Login: never read, create or commit `verify.config.json`.
    config with an empty `baseUrl` or `startCommand`: if the recipe cannot be inferred, report
    BLOCKED with the reason and write no file.
 3. `loginEnv` holds the NAMES `VERIFY_USER` and `VERIFY_PASSWORD`. Never write a value.
-4. Commit the file on the ticket branch for review in the PR diff.
+4. Commit the file on the ticket branch.
 5. Start `startCommand` in the background, wait until `baseUrl` answers, stop it at the end.
 
 ## Login
@@ -40,7 +43,7 @@ Login: never read, create or commit `verify.config.json`.
 Do this once, before the captured steps, out of the evidence:
 
 1. Open the login page. Fill the form with `browser_fill_form` from `VERIFY_USER` and `VERIFY_PASSWORD`, then submit with `browser_click`. Never pass the password through `browser_run_code_unsafe`.
-2. Save `storageState` to `.playwright-mcp/storage-state.json`, which is gitignored. Never save it anywhere else.
+2. Save `storageState` to `.playwright-mcp/storage-state.json` (gitignored), nowhere else.
 3. Run all captured steps signed in.
 
 If a variable is not set, report BLOCKED. Never guess a password.
@@ -66,10 +69,10 @@ no ticket code:
 1. Read `verify.config.json` from the implement worktree path in the prompt. Never write or commit it.
 2. Run Start config (step 5), Login and Browser steps as usual.
 3. The steps are expected to FAIL. Report the real result and do not judge it.
-4. Commit nothing. Do not retry. The workflow decides what the result means.
+4. Commit nothing.
 
 ## Report
 
 Return a table: one row per command or step, PASS or FAIL, and the assertion text.
 Add the console error count and the path of each still. Any FAIL makes the whole run FAIL.
-Do not fix code. The workflow builds the GIF from the stills.
+Do not fix code.
