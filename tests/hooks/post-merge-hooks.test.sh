@@ -193,6 +193,8 @@ if [ "$(printf '%s' "$OUT" | jq -r .hookSpecificOutput.hookEventName)" = Session
 
 t "item 2: hooks.json runs clean-worktrees.sh SessionStart beside session-rules.sh"
 if jq -e '[.hooks.SessionStart[].hooks[].args | join(" ")] | (map(test("session-rules.sh")) | any) and (map(test("clean-worktrees.sh SessionStart$")) | any)' "$ROOT/plugins/harness/hooks/hooks.json" >/dev/null; then pass; else fail "hooks.json"; fi
+t "item 2: the SessionStart sweep has a timeout and runs only on startup, and session-rules.sh has no matcher"
+if jq -e '([.hooks.SessionStart[] | select(.hooks[].args | join(" ") | test("clean-worktrees.sh SessionStart$"))] | length == 1 and (.[0].matcher == "startup") and (.[0].hooks[0].timeout | type == "number" and . > 0 and . <= 60)) and ([.hooks.SessionStart[] | select(.hooks[].args | join(" ") | test("session-rules.sh"))] | .[0].matcher == null)' "$ROOT/plugins/harness/hooks/hooks.json" >/dev/null; then pass; else fail "hooks.json timeout/matcher"; fi
 
 # item 3: worktree-* agent branches
 rsetup

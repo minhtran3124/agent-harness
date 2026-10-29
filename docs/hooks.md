@@ -34,7 +34,7 @@ Removes the worktree and local branch of merged branches. It first runs `git fet
   issue body, commit message or `echo` that only mentions the phrase does nothing. The scope is that one PR: the hook
   looks it up with `gh pr view <n> --json state,headRefName`. With no number in the command it uses the PR of the current
   branch; if that lookup fails it exits silently and cleans nothing.
-- **SessionStart** (`clean-worktrees.sh SessionStart`, no payload) sweeps every branch, so a PR merged on the GitHub web is cleaned
+- **SessionStart** (`clean-worktrees.sh SessionStart`, no payload) sweeps every branch, so a PR merged on the GitHub web is cleaned It is registered in its own group with matcher `startup` (not on resume, clear or compact) and a 30 second `timeout`, so a slow network cannot stall session start.
   at the next session start. It returns what it removed as `additionalContext`. The session's own branch and worktree are skipped.
 - Run by hand with no argument, it sweeps every branch and prints plain text.
 

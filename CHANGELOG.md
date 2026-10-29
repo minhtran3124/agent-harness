@@ -7,6 +7,10 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 ## [Unreleased]
 
+### Fixed
+
+- The SessionStart `clean-worktrees.sh` hook now has a 30 second timeout and runs only on `startup`, in its own group apart from `session-rules.sh`, so network I/O cannot stall session start.
+
 ## [5.1.0] — 2026-10-29
 
 ### Added
