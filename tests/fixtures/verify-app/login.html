@@ -18,6 +18,7 @@
                  document.getElementById('password').value === cred.password;
       if (ok) {
         sessionStorage.setItem('verify-signed-in', '1');
+        sessionStorage.setItem('verify-signed-in-user', document.getElementById('user').value);
         location.href = 'index.html';
       } else {
         document.getElementById('message').textContent = 'Login failed';
