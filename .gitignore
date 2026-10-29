@@ -39,3 +39,7 @@ docs/memory/
 
 # vscode
 .vscode
+
+# local research notes and generated reports
+/research_notes/
+/reports/
