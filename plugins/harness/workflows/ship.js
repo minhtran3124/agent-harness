@@ -426,12 +426,15 @@ async function stageImplement(t, sb, planText, boundary) {
 function stageVerify(t, impl, mode) {
   const base = mode === 'verify-base'
   const w = base ? newWt(`verify-base-${t.n}`, null, integRef) : null
-  const dir = base ? w.dir : impl.worktree
+  const sb = sandboxes[t.n]
+  const dir = base ? w.dir : sb.dir
   const build = advice => (base ? w.setup : '') + head(t, null,
     `Stage: verify. Read ${pluginDir}/skills/verify/SKILL.md and follow it. Read the Verify: row of the issue body above. ` +
     (base
-      ? `Mode: base. Your worktree ${dir} holds the base commit, without the ticket code. Read verify.config.json from ${impl.worktree}/verify.config.json (read-only; copy it into ${dir} without committing it). The steps are expected to FAIL here: report the real result. Commit nothing.\n`
-      : `Mode: head. Work in ${impl.worktree} (cd there; it is the ticket branch ${impl.branch}). Commit only verify.config.json, nothing else.${mode === 'verify-retry' ? ' This is a second run after a failure: start the app fresh and run every step again.' : ''}\n`) +
+      ? `Mode: base. Your worktree ${dir} holds the base commit, without the ticket code. Read verify.config.json from ${impl.worktree}/verify.config.json (read-only; copy it into ${dir} without committing it). The steps are expected to FAIL here: report the real result. Commit nothing.\n` +
+        `This worktree is light: it has no untracked files. Use the port and DB of the ticket sandbox (read ${sb.dir}/.sandbox.env, port ${sb.port}, DB ${sb.db}); the head app is stopped. ` +
+        `If a step fails only because .env or installed dependencies are missing, copy or link them from ${sb.dir} (read-only source, uncommitted) and run it again; say in the report that you did.\n`
+      : `Mode: head. Work in ${sb.dir} (cd there; it is the ticket sandbox, branch ${sb.branch}). Do not create a worktree. ${sandboxFacts(sb)} Commit only verify.config.json, nothing else.${mode === 'verify-retry' ? ' This is a second run after a failure: start the app fresh and run every step again.' : ''}\n`) +
     `Do not fix code, retry, or judge flakiness. Keep the evidence local and uncommitted. Return passed (true only if every step passed and the console had no errors), kind, configPath (the absolute path of the verify.config.json you used, empty when none), failedStep, consoleErrors, stills (absolute paths) and report (the table).${advice}`, dir)
   return runStage(t, mode, build, VERIFY_SCHEMA, { model: MODEL.verify, effort: EFFORT.verify })
 }
@@ -531,9 +534,9 @@ async function stageAttach(t, fin, verifyResult) {
 
 function stageFinish(t, impl, verifyResult) {
   const prBase = single ? base : integBranch
-  const fw = newWt(`finish-${t.n}`, null, LOCAL ? impl.branch : `${remote}/${impl.branch}`)
-  const dir = impl.worktree || fw.dir
-  const where = `Your branch ${impl.branch} is checked out in ${dir}; work there with cd ${dir}. If that path is gone, run: git -C ${repoDir} worktree add ${fw.dir} ${impl.branch}, and work in ${fw.dir} (git fetch ${remote} first).\n`
+  const dir = sandboxes[t.n].dir
+  const where = `Your branch ${impl.branch} is checked out in the ticket sandbox ${dir}; work there with cd ${dir}. Its remote is named ${SB_REMOTE}: fetch and push with that name. ` +
+    `Do not create a worktree. If that path is gone, return status blocked with blocked_reason; do not recreate it.\n`
   const how = LOCAL
     ? `Local mode: do NOT push and do NOT open a pull request. Verify the branch as the skill describes, then write the PR description for base ${prBase} to .ship/pr-${t.n}.md inside the worktree (do not commit it) and return its absolute path as body_file with pr: 0.\n`
     : `Verify, push the branch and open the pull request with base ${prBase}. The body says "Refs #${t.n}" (the final PR carries the Closes lines) and ends with the footer line. Return the PR number as pr and its url.\n`

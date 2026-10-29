@@ -846,6 +846,32 @@ const withVerify = (kind, extra) => c => {
   return (extra || gifOk)(c)
 }
 
+test('s3: verify head and retry run in the sandbox with its port and DB; verify-base keeps a light detached worktree', async () => {
+  const { calls } = await run({}, c => (c.label === 'verify:1' ? vres(false, 'FE') : c.label === 'verify-retry:1' ? vres(true, 'FE') : c.label === 'verify-base:1' ? vres(false, 'FE') : undefined))
+  for (const l of ['verify:1', 'verify-retry:1']) {
+    const p = named(calls, new RegExp(`^${l}$`))[0].prompt
+    assert(p.includes(`Work in ${SB1} (cd there; it is the ticket sandbox, branch feat/1-add-the-thing)`), p)
+    assert(p.includes('port 4010, DB sandbox_ms_t1') && p.includes(`. ${SB1}/.sandbox.env`) && p.includes('PORT=$SANDBOX_PORT') && p.includes('Never pick a free port yourself'), p)
+    assert(!p.includes('worktree add'), `${l} must not create a worktree`)
+  }
+  const b = named(calls, /^verify-base:1$/)[0].prompt
+  assert(b.includes('worktree add --detach /.ship-repo/ms/verify-base-1 origin/v5.0.0'), b)
+  assert(b.includes(`${SB1}/.sandbox.env`) && b.includes('no untracked files'), b)
+})
+
+test('s4: finish works in the sandbox, never makes a worktree, and reports blocked when the dir is gone', async () => {
+  const { calls } = await run({}, null)
+  const f = named(calls, /^finish:1$/)[0].prompt
+  assert(!f.includes('worktree add') && !calls.some(c => /^finish/.test(c.label) && /\/ms\/finish-/.test(c.prompt)), f)
+  assert(f.includes(`checked out in the ticket sandbox ${SB1}; work there with cd ${SB1}`) && f.includes('Its remote is named origin') && f.includes('return status blocked'), f)
+})
+
+test('s5: in clone mode the commands that run inside the sandbox use origin, not the project remote', async () => {
+  const { calls } = await run({ sandbox: 'clone', remote: 'github' }, c => (c.label === 'verify:1' ? vres(true, 'BE') : undefined))
+  assert(named(calls, /^provision:1$/)[0].prompt.includes('--remote github --mode clone'))
+  for (const l of ['implement:1', 'verify:1', 'finish:1']) assert(named(calls, new RegExp(`^${l}$`))[0].prompt.includes('Its remote is named origin'), l)
+})
+
 test('a1: pass with a GIF attaches after finish, without the flaky note', async () => {
   const { calls, result } = await run({}, withVerify('FE'))
   const ls = labelsOf(calls).filter(l => /^(gif|finish|attach)/.test(l))
