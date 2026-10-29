@@ -8,11 +8,11 @@ decided_by: claude (ship workflow: review-fix); text corrected to match the code
 date: 2026-10-29
 ---
 
-# 0090. A FAIL row fails UAT; console errors are report-only
+# 0009. A FAIL row fails UAT; console errors are report-only
 
 ## Context
 
-The UAT schema returns `passed_ac`, `scenarios[]` and `console_errors`. The first review round found that nothing checked these: an AC row with FAIL, or console errors, could still pass. The first fix also made any console error fail UAT. The second review round found that this blocks a ticket whose ACs all pass because of unrelated console noise, and reverted that part (ADR 0093).
+The UAT schema returns `passed_ac`, `scenarios[]` and `console_errors`. The first review round found that nothing checked these: an AC row with FAIL, or console errors, could still pass. The first fix also made any console error fail UAT. The second review round found that this blocks a ticket whose ACs all pass because of unrelated console noise, and reverted that part.
 
 ## Options
 

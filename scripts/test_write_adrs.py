@@ -13,7 +13,7 @@ def dec(**kw):
     d = {
         "ticket": 1, "stage": "design", "title": "Use a queue", "context": "c",
         "options": ["a", "b"], "decision": "a", "why": "w", "consequences": "q",
-        "how_to_reverse": "git revert", "confidence": "medium", "needs_review": False,
+        "how_to_reverse": "git revert", "confidence": "medium", "needs_review": True,
         "decided_by": "claude",
     }
     d.update(kw)
@@ -49,16 +49,17 @@ def test_numbers_continue_after_0001(tmp_path):
     assert [o["number"] for o in out] == ["0002", "0003"]
     assert (adr / "0002-one.md").is_file() and (adr / "0003-two.md").is_file()
     text = (adr / "0002-one.md").read_text()
-    assert "status: accepted" in text and "# 0002. One" in text and "- a\n- b" in text
+    assert "status: needs-review" in text and "# 0002. One" in text and "- a\n- b" in text
 
 
-def test_needs_review_first_then_ticket_stage(tmp_path):
+def test_files_are_ordered_by_ticket_then_stage(tmp_path):
     ds = [dec(title="a", ticket=2), dec(title="b", ticket=1, stage="plan"),
-          dec(title="c", ticket=9, needs_review=True), dec(title="d", ticket=1, stage="design")]
+          dec(title="c", ticket=9), dec(title="d", ticket=1, stage="design"),
+          dec(title="e", ticket=1, needs_review=False)]   # table only: no file
     adr, inp = setup(tmp_path, ds)
     out = json.loads(run(adr, inp).stdout)
-    assert [o["title"] for o in out] == ["c", "d", "b", "a"]
-    assert "status: needs-review" in (adr / "0002-c.md").read_text()
+    assert [o["title"] for o in out] == ["d", "b", "a", "c"]
+    assert "status: needs-review" in (adr / "0002-d.md").read_text()
 
 
 def test_slug_rules_and_collision(tmp_path):
@@ -140,9 +141,9 @@ def test_render_section(tmp_path):
     assert r.returncode == 0, r.stderr
     s = r.stdout
     assert s.startswith("## Decisions") and "Artifact: https://x/y" in s
-    assert "- [ADR 0002](docs/adr/0002-risky.md) (#5, design): Risky" in s
-    assert "- [ADR 0003](docs/adr/0003-plain.md) (#1, design): Plain" in s
-    assert s.index("Risky") < s.index("Plain")
+    assert "- [ADR 0003](docs/adr/0003-risky.md) (#5, design): Risky" in s
+    assert "- [ADR 0002](docs/adr/0002-plain.md) (#1, design): Plain" in s
+    assert s.index("Plain") < s.index("Risky")
 
 
 def test_default_template_matches_the_repo_template():
@@ -172,9 +173,11 @@ def test_needs_adr_filter():
     w = wa()
     assert not w.needs_adr(dec(confidence="high", needs_review=False))
     assert w.needs_adr(dec(confidence="high", needs_review=True))
-    assert w.needs_adr(dec(confidence="medium"))
-    assert w.needs_adr(dec(confidence="low"))
+    # confidence alone never makes a file
+    assert not w.needs_adr(dec(confidence="medium", needs_review=False))
+    assert not w.needs_adr(dec(confidence="low", needs_review=False))
     assert not w.needs_adr(dec(confidence="low", needs_review=False, owner_confirmed=True))
+    assert "table only (low confidence, check)" in w.decisions_table([dec(confidence="low", needs_review=False)])
     # needs_review wins over owner_confirmed: file, table row and PR section must agree
     assert w.needs_adr(dec(confidence="low", needs_review=True, owner_confirmed=True))
     assert "ADR file" in w.decisions_table([dec(needs_review=True, owner_confirmed=True)])
@@ -232,8 +235,8 @@ def test_merge_carries_needs_review():
 
 def test_merge_owner_confirmed_only_when_all_confirmed():
     w = wa()
-    mixed = w.dedupe([dec(title="Same", confidence="high", owner_confirmed=True),
-                      dec(title="Same", confidence="low")])
+    mixed = w.dedupe([dec(title="Same", confidence="high", owner_confirmed=True, needs_review=False),
+                      dec(title="Same", confidence="low", needs_review=False)])
     assert mixed[0]["confidence"] == "high" and not mixed[0].get("owner_confirmed")
     assert not w.needs_adr(mixed[0])
     both = w.dedupe([dec(title="Same", owner_confirmed=True), dec(title="Same", owner_confirmed=True)])
@@ -242,15 +245,15 @@ def test_merge_owner_confirmed_only_when_all_confirmed():
 
 def test_table_owner_confirmed_row_and_escaping():
     w = wa()
-    t = w.decisions_table([dec(title="A|B", owner_confirmed=True, decision="line\nbreak"),
-                           dec(title="C", confidence="high"), dec(title="D")])
+    t = w.decisions_table([dec(title="A|B", owner_confirmed=True, needs_review=False, decision="line\nbreak"),
+                           dec(title="C", confidence="high", needs_review=False), dec(title="D")])
     assert t.splitlines()[0].startswith("| Ticket | Title")
     assert "| #1 | A\\|B | line break | w | owner-confirmed |" in t
     assert "| table only |" in t and "| ADR file |" in t
 
 
 def test_zero_adr_run_writes_nothing_and_prints_empty_list(tmp_path):
-    adr, inp = setup(tmp_path, [dec(confidence="high"), dec(title="Two", confidence="high")])
+    adr, inp = setup(tmp_path, [dec(confidence="high", needs_review=False), dec(title="Two", confidence="low", needs_review=False)])
     before = sorted(p.name for p in adr.iterdir())
     table = tmp_path / "t.md"
     r = run(adr, inp, "--table-out", str(table))
@@ -260,25 +263,25 @@ def test_zero_adr_run_writes_nothing_and_prints_empty_list(tmp_path):
     assert table.read_text().count("\n| #1 |") == 2
 
 
-def test_six_decisions_give_two_adr_files_and_five_table_rows(tmp_path):
-    """2 near-duplicates merge to 1, so 6 decisions are 5 table rows; only the needs_review one and
-    the low-confidence one get a file."""
+def test_six_decisions_give_one_adr_file_and_five_table_rows(tmp_path):
+    """2 near-duplicates merge to 1, so 6 decisions are 5 table rows; only the needs_review one gets a
+    file, not the low-confidence guess."""
     ds = [
-        dec(title="Insert the step", confidence="high", context="c1"),
-        dec(title="Insert the step", stage="plan", confidence="high", context="c2"),   # near-duplicate
+        dec(title="Insert the step", confidence="high", needs_review=False, context="c1"),
+        dec(title="Insert the step", stage="plan", confidence="high", needs_review=False, context="c2"),   # near-duplicate
         dec(title="Owner said so", confidence="low", needs_review=False, owner_confirmed=True),
         dec(title="Touches contract", confidence="high", needs_review=True),
-        dec(title="Guessed", confidence="low"),
-        dec(title="Plain", confidence="high"),
+        dec(title="Guessed", confidence="low", needs_review=False),
+        dec(title="Plain", confidence="high", needs_review=False),
     ]
     adr, inp = setup(tmp_path, ds)
     table = tmp_path / "t.md"
     r = run(adr, inp, "--table-out", str(table))
     assert r.returncode == 0, r.stderr
     out = json.loads(r.stdout)
-    assert [o["title"] for o in out] == ["Touches contract", "Guessed"]
+    assert [o["title"] for o in out] == ["Touches contract"]
     assert sorted(p.name for p in adr.iterdir() if p.name[:4].isdigit()) == [
-        "0001-workflow-capabilities.md", "0002-touches-contract.md", "0003-guessed.md"]
+        "0001-workflow-capabilities.md", "0002-touches-contract.md"]
     rows = [l for l in table.read_text().splitlines() if l.startswith("| #")]
     assert len(rows) == 5
     assert sum("owner-confirmed" in l for l in rows) == 1

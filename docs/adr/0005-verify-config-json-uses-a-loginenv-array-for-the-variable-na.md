@@ -8,7 +8,7 @@ decided_by: claude (ship workflow: implement)
 date: 2026-10-29
 ---
 
-# 0061. verify.config.json uses a loginEnv array for the variable names
+# 0005. verify.config.json uses a loginEnv array for the variable names
 
 ## Context
 

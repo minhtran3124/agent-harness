@@ -8,7 +8,7 @@ decided_by: claude (ship workflow: implement)
 date: 2026-10-29
 ---
 
-# 0081. Infrastructure failure of UAT does not fail the ticket
+# 0007. Infrastructure failure of UAT does not fail the ticket
 
 ## Context
 
