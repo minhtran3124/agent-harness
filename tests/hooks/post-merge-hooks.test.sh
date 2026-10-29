@@ -210,6 +210,18 @@ rrun ""
 if ! has worktree-a && has worktree-b && has worktree-c && has worktree-d && [ -d "$BWT" ]; then pass; else fail "out=$OUT a=$(has worktree-a && echo y) b=$(has worktree-b && echo y) c=$(has worktree-c && echo y) d=$(has worktree-d && echo y)"; fi
 unset NOGH_RUN
 
+# item 3: a failed fetch leaves remote-tracking refs stale, so the worktree-* rule must not run
+rsetup
+git -C "$MAIN" checkout -q -b worktree-s main; git -C "$MAIN" commit -q --allow-empty -m ws; git -C "$MAIN" checkout -q main
+git -C "$MAIN" push -q r1 worktree-s:refs/heads/other; git -C "$MAIN" fetch -q r1
+git -C "$REM" branch -q -D other
+printf '#!/bin/sh\n[ "$1" = fetch ] && exit 1\nexec %s "$@"\n' "$REALGIT" > "$STUB/git"; chmod +x "$STUB/git"
+NOGH_RUN=1
+t "item 3: worktree-* is kept when git fetch fails (stale remote-tracking refs)"
+rrun ""
+if has worktree-s; then pass; else fail "out=$OUT"; fi
+unset NOGH_RUN
+
 # item 5: no gh
 rsetup; gone_branch feat; git -C "$MAIN" checkout -q -b kept1; git -C "$MAIN" commit -q --allow-empty -m k; git -C "$MAIN" push -q -u r1 kept1 2>/dev/null; git -C "$MAIN" checkout -q main
 NOGH_RUN=1

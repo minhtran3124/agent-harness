@@ -5,7 +5,7 @@
 # (removed with `git branch -D`: a squash merge is not in git history, the exact tip match is the
 # guard, so a branch with commits after the merge is never removed); (2) without gh, its upstream is
 # gone and its tip is an ancestor of <remote>/main; (3) a `worktree-*` agent branch that no worktree
-# has checked out and whose tip is in a <remote>/* branch. Every rule except (1) uses `git branch -d`.
+# has checked out and whose tip is in a <remote>/* branch (only after a successful fetch). Every rule except (1) uses `git branch -d`.
 # `git worktree remove` has no force flag: it refuses a dirty or locked worktree.
 # Never touches main, master, CLEAN_KEEP names, the current branch, or the worktree the session runs in.
 # A branch matching CLEAN_STRICT gets only rule (1). Settings (env): CLEAN_REMOTE (default origin),
@@ -94,7 +94,8 @@ root=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || exi
 root=${root%/.git}; cd "$root" || exit 0
 remote=${CLEAN_REMOTE:-origin}
 # Fetch first so a branch the remote already deleted is seen. A failed fetch (no network) is not fatal.
-git fetch -q --prune "$remote" 2>/dev/null || true
+# Rule (3) trusts remote-tracking refs, so it runs only when the fetch succeeded (refs may be stale).
+fetched=""; git fetch -q --prune "$remote" 2>/dev/null && fetched=1
 keep=" main master ${CLEAN_KEEP:-} $(git symbolic-ref -q --short HEAD) $session_branch "
 # bash 3.2 (macOS) has no associative arrays: look the worktree path up per branch.
 wt_of() { git worktree list --porcelain | awk -v b="refs/heads/$1" '/^worktree /{p=substr($0,10)} $0=="branch " b{print p; exit}'; }
@@ -123,7 +124,7 @@ for b in $(git for-each-ref --format='%(refname:short)' refs/heads); do
   strict=""; is_strict "$b" && strict=1
   p=$(wt_of "$b")
   how=""
-  if [ -z "$strict" ] && [ -z "$p" ] && [ -z "$only" ] && case "$b" in worktree-*) true ;; *) false ;; esac && in_remote_branch "$tip"; then
+  if [ -n "$fetched" ] && [ -z "$strict" ] && [ -z "$p" ] && [ -z "$only" ] && case "$b" in worktree-*) true ;; *) false ;; esac && in_remote_branch "$tip"; then
     how=contained
   elif [ -n "$have_gh" ]; then
     case " $(gh pr list --head "$b" --state merged --json headRefOid --jq '.[].headRefOid' 2>/dev/null | tr '\n' ' ') " in *" $tip "*) how=pr ;; esac
