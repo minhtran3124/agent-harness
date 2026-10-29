@@ -133,4 +133,8 @@ t "Start config forbids an empty baseUrl or startCommand and reports BLOCKED"
 grep -qi 'empty' "$SKILL" && grep -i 'empty' "$SKILL" | grep -q 'baseUrl' \
   && grep -i 'empty' -A2 "$SKILL" | grep -q 'BLOCKED' && pass || fail "empty-value rule or BLOCKED missing"
 
+t "Start config step 5 and Base mode say to resolve PORT and export env"
+grep -q '^5\..*PORT.*export' "$SKILL" && grep -A1 '^5\.' "$SKILL" | grep -q 'env' \
+  && grep -q 'Base mode' "$SKILL" && grep -A6 '^## Base mode' "$SKILL" | grep -q 'PORT' && pass || fail "PORT or env export missing in step 5 or Base mode"
+
 finish

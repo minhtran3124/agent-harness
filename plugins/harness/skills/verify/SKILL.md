@@ -34,13 +34,13 @@ Others skip Start config and Login; never read, create or commit `verify.config.
    BLOCKED with the reason and write no file.
 3. `loginEnv` holds the NAMES `VERIFY_USER` and `VERIFY_PASSWORD`. Never a value.
 4. Commit the file on the ticket branch.
-5. Start `startCommand` in the background, wait until `baseUrl` answers, stop it at the end.
+5. With a `${PORT}` placeholder in `baseUrl`, export a free `PORT` and substitute it; export each `env` entry. Start `startCommand` in the background, wait until `baseUrl` answers, stop it after.
 
-An `env` map, a `${PORT}` placeholder in `baseUrl`, and throwaway credentials: see `references/config.md`.
+See `references/config.md` for `env`, `${PORT}` and throwaway credentials.
 
 ## Login
 
-Once, before the captured steps, out of the evidence:
+Once, before the captured steps:
 
 1. Open the login page. Fill the form with `browser_fill_form` from `VERIFY_USER` and `VERIFY_PASSWORD`, then submit with `browser_click`. Never pass the password through `browser_run_code_unsafe`.
 2. Save `storageState` to `.playwright-mcp/storage-state.json` (gitignored), nowhere else.
@@ -63,14 +63,13 @@ After the last step, call `browser_console_messages`. Count the errors. One or m
 
 ## Base mode
 
-`Mode: base` (from the prompt) checks that the steps fail on the base commit, in a worktree without ticket code:
+`Mode: base` checks that the steps fail on the base commit, in a worktree without ticket code:
 
 1. Read `verify.config.json` from the implement worktree path in the prompt. Never write or commit it.
-2. Run Start config (step 5), Login and Browser steps as usual. Commit nothing.
+2. Run Start config (step 5, with the `${PORT}` and `env` export), Login and Browser steps as usual. Commit nothing.
 3. The steps are expected to FAIL. Report the real result, do not judge it.
 
 ## Report
 
-Return a table: a row per command or step, PASS or FAIL, assertion text.
-Add the console error count and each still's path. Any FAIL makes the whole run FAIL.
-Do not fix code.
+Return a table: a row per command or step, PASS or FAIL, assertion text, console error count, still paths. Any FAIL makes the whole run FAIL.
+Never fix code.
