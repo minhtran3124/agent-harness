@@ -213,7 +213,8 @@ const land = branch => (LOCAL
 // Agent label shown in the agents panel: what the agent does, then what it works on, cut to fit the pane.
 const lbl = (what, subject) => {
   const sub = String(subject == null ? '' : subject).replace(/\s+/g, ' ').trim()
-  return sub ? `${what} · ${sub.length > 40 ? `${sub.slice(0, 39)}…` : sub}` : what
+  const chars = Array.from(sub)   // cut on code points so an emoji is never split
+  return sub ? `${what} · ${chars.length > 40 ? `${chars.slice(0, 39).join('')}…` : sub}` : what
 }
 const clean = o => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined))
 
@@ -693,8 +694,8 @@ async function reviewWithRetry(label, level, target, rangeNote) {
   return { notRun: why(res) }
 }
 
-function fixAgent(label, findingText, extra, phaseName) {
-  const w = newWt(`fix-${label}`, null, finalRef)
+function fixAgent(label, findingText, extra, phaseName, wtKey) {   // wtKey names the worktree; the label is display text
+  const w = newWt(`fix-${wtKey || label}`, null, finalRef)
   const prompt = `${w.setup}${RULES}\n\n` +
     `Stage: fix. Run "git rev-parse HEAD" first and return it as base_sha. ${findingText}\n${runBoundaryText()}` +
     `Make one commit ("git add", then "git commit"), include a test that fails without the fix, run only the related tests (${testCmd}) and lint (${lintCmd}). ` +
@@ -738,7 +739,7 @@ async function stageReview(finalPr) {
     const commits = []
     for (let k = 0; k < todo.length; k++) {   // sequential: each fix lands before the next starts
       const f = todo[k]
-      const res = await fixAgent(lbl(`fix r${out.rounds}.${k + 1}`, `${f.path || f.summary}${f.line ? `:${f.line}` : ''}`), `Finding ${f.id} (score ${f.score}) in ${f.path || 'the diff'}${f.line ? `:${f.line}` : ''}: ${f.summary}`)
+      const res = await fixAgent(lbl(`fix r${out.rounds}.${k + 1}`, `${f.path ? f.path.split('/').pop() : f.summary}${f.path && f.line ? `:${f.line}` : ''}`), `Finding ${f.id} (score ${f.score}) in ${f.path || 'the diff'}${f.line ? `:${f.line}` : ''}: ${f.summary}`, '', undefined, `r${out.rounds}-${k + 1}`)
       takeDecisions('run', 'review-fix', res)
       if (res && res.fix_status === 'fixed' && res.commit) { commits.push(res); out.fixed.push({ id: f.id, summary: f.summary, commit: res.commit }) }
       else {
@@ -851,7 +852,7 @@ function uatAgent(label, wtName, t, body, owner, configPath) {
 
 async function runUat(label, wtName, t, body, owner, configPath) {
   try { return await uatAgent(label, wtName, t, body, owner, configPath) }
-  catch (e) { log(`UAT #${t.n} ${label} failed: ${e && e.message}`); return null }   // an infrastructure failure never fails the ticket
+  catch (e) { log(`${label} failed: ${e && e.message}`); return null }   // an infrastructure failure never fails the ticket
 }
 
 // The agent's passed_ac is a claim and must be exactly true (a missing value is not a pass): an AC row with FAIL also fails the run. Console errors are reported, never blocking: unrelated noise must not fail a ticket whose ACs pass.
@@ -882,7 +883,7 @@ async function stageUat(delivered) {
     const configPath = (r.verify && r.verify.configPath) || `${repoDir}/verify.config.json`
     const rec = { status: 'passed', reason: '', scenarios: [], fixed: false }
     records[t.n] = rec
-    let res = await runUat(lbl(`#${t.n} UAT`, 'run app, check ACs'), `uat-${t.n}`, t, body.text, owner.text, configPath)
+    let res = await runUat(lbl(`#${t.n} UAT`, t.title), `uat-${t.n}`, t, body.text, owner.text, configPath)
     if (!res || res.status === 'blocked') {
       const why = (res && (res.blocked_reason || res.summary)) || 'the UAT agent returned nothing'
       uatNotRun(t.n, why); rec.status = 'not run'; rec.reason = why
@@ -892,13 +893,13 @@ async function stageUat(delivered) {
     rec.scenarios = res.scenarios || []
     if (!uatOk(res)) {
       const failing = rec.scenarios.filter(s => s.kind === 'ac' && s.status === 'FAIL')
-      const fix = await fixAgent(lbl(`#${t.n} UAT fix`, 'failing ACs'),
+      const fix = await fixAgent(lbl(`#${t.n} UAT fix`, t.title),
         `UAT on the running app found acceptance criteria of ticket #${t.n} that fail:\n${failing.map(s => `- ${s.covers}: ${s.assertion || s.id}`).join('\n') || '- (see the UAT summary) ' + (res.summary || '')}\nFix the code so the owner's request holds. Console errors are report-only: do not fix them unless a failing AC needs it.`,
-        '', 'UAT')
+        '', 'UAT', `uat-${t.n}`)
       takeDecisions(t.n, 'uat-fix', fix)
       rec.fixed = !!(fix && fix.fix_status === 'fixed')
       // No fix commit landed: a rerun would test the same code, so skip it and let the first result stand.
-      const again = rec.fixed ? await runUat(lbl(`#${t.n} UAT rerun`, 'after fix'), `uat-rerun-${t.n}`, t, body.text, owner.text, configPath) : res   // own worktree: it must see the fix
+      const again = rec.fixed ? await runUat(lbl(`#${t.n} UAT rerun`, t.title), `uat-rerun-${t.n}`, t, body.text, owner.text, configPath) : res   // own worktree: it must see the fix
       if (!rec.fixed) log(`UAT #${t.n}: fix ${fix && fix.fix_status || 'returned nothing'}, rerun skipped`)
       if (!again || again.status === 'blocked') {
         const why = (again && (again.blocked_reason || again.summary)) || 'the UAT rerun agent returned nothing'

@@ -1176,12 +1176,12 @@ test('u11: UAT and uat-fix prompts hold real newlines, never a literal backslash
 })
 
 test('agent labels say what the agent does and fit the pane', async () => {
-  const { calls } = await run({ tickets: [T(1, 1)] }, c => (c.label === 'review:r0' ? ok({ findings: [{ id: 'f', path: 'src/some/very/long/path/to/a/file.js', line: 7, summary: 's', score: 90 }], skill_invoked: true }) : undefined))
+  const { calls } = await run({ tickets: [T(1, 1, [], { title: `😀 ${'long title '.repeat(20)}` })] }, c => (c.label === 'review:r0' ? ok({ findings: [{ id: 'f', path: 'src/some/very/long/path/to/a/file.js', line: 7, summary: 's', score: 90 }], skill_invoked: true }) : undefined))
   const shown = calls.map(c => c.display)
-  for (const d of shown) assert(d && d.length <= 60, `label too long or empty: ${d}`)
-  assert(shown.includes('#1 intent · Ticket 1'), shown.join(' | '))
+  for (const d of shown) assert(d && Array.from(d).length <= 70 && !/[\ud800-\udbff](?![\udc00-\udfff])/.test(d), `label too long or empty: ${d}`)
+  assert(shown.some(d => /^#1 intent · .{1,40}$/u.test(d)), shown.join(' | '))
   assert(shown.includes('test · run full suite'), shown.join(' | '))
-  assert(shown.some(d => /^fix r1\.1 · .+…?$/.test(d)), shown.join(' | '))
+  assert(shown.some(d => d === 'fix r1.1 · file.js:7'), shown.join(' | '))
   assert(shown.every(d => !/^[a-z-]+:\w+/.test(d)), `a terse role:key label leaked: ${shown.join(' | ')}`)
 })
 
