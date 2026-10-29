@@ -17,7 +17,7 @@ Use the Claude Code Playwright plugin tools only. Do not install npm Playwright.
 |---|---|
 | BE | Run the ticket test command. Start the service. Call each endpoint with `curl` and compare status and body. |
 | FE | Run the unit tests. Then run browser steps (see Browser steps). |
-| FE+BE | Run the BE checks. Compare the API contract with the FE fixture. Then run the browser steps end to end. |
+| FE+BE | Run the BE work. Compare the API contract with the FE fixture. Then run the browser steps end to end. |
 | Docs or config | Run the lint and done-when commands that the `Verify:` row lists. No browser. |
 
 ## Start config
@@ -54,6 +54,6 @@ After the last step, call `browser_console_messages`. Count the errors. One or m
 
 ## Report
 
-Return a table with one row per check: command or step, PASS or FAIL, and the assertion text.
+Return a table with one row per command or step, PASS or FAIL, and the assertion text.
 Add the console error count and the path of each still. Any FAIL makes the whole run FAIL.
 Do not fix the code in this skill. Do not commit evidence: Git ignores `.playwright-mcp/`.
