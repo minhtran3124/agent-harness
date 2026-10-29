@@ -75,4 +75,7 @@ sleep 0.3
 if [ "$codes" = "200 200" ] && ! curl -s -o /dev/null "http://127.0.0.1:$PORT/" 2>/dev/null; then pass
 else fail "codes=[$codes] or server still up"; fi
 
+t "storageState path is named and gitignored"
+grep -q 'storageState.*\.playwright-mcp/' "$SKILL" && grep -qx '\.playwright-mcp/' "$ROOT/.gitignore" && pass || fail "storageState path missing or not gitignored"
+
 finish
