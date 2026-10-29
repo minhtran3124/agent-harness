@@ -184,6 +184,7 @@ sb_running() { # the pid in <sandbox>/.sandbox.pid is alive
 
 sb_pr_state() { # sb_pr_state <repo> <branch>: PR open, merged, none or unknown
   local out err_file rc
+  # shellcheck disable=SC2015 # intended: the || branch runs when either test is false
   [ -n "$2" ] && [ "$2" != detached ] || { printf none; return; }
   command -v gh >/dev/null 2>&1 || { printf unknown; return; }
   err_file=$(mktemp)
@@ -323,6 +324,7 @@ if [ "${1:-}" = clean ]; then
     i=${#teardowns[@]}
     while [ "$i" -gt 0 ]; do
       i=$((i - 1))
+      # shellcheck source=/dev/null # .sandbox.env is written by this script at run time
       if ! (cd "$sb" && set -a && { [ ! -f ./.sandbox.env ] || . ./.sandbox.env; } && set +a && bash -c "${teardowns[$i]}") >&2; then
         failed=${teardowns[$i]}; break
       fi
@@ -362,6 +364,7 @@ case "$port_base" in ''|*[!0-9]*) die "--port-base must be a number" 2 ;; esac
 case "$max_kb" in ''|*[!0-9]*) die '--max-kb must be a number' 2 ;; esac
 slug=$(printf '%s' "$slug" | tr -c 'A-Za-z0-9\n' '-' | sed 's/^-*//; s/-*$//')
 run=$(printf '%s' "$run" | tr -c 'A-Za-z0-9\n' '-' | sed 's/^-*//; s/-*$//')
+# shellcheck disable=SC2015 # intended: die runs when either test is false (die does not return)
 [ -n "$slug" ] && [ -n "$run" ] || die 'runId and slug need at least one letter or digit' 2
 
 repo=$(cd "$repo" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null) || die 'repoDir is not a git checkout' 2
@@ -429,10 +432,10 @@ if [ "$mode" = clone ]; then
         git -C "$dir" update-ref -d "$r"
       done
       git -C "$repo" for-each-ref --format='%(objectname) %(refname)' "refs/remotes/${remote:-origin}" | while read -r oid r; do
-        n=${r#"refs/remotes/${remote:-origin}/"}
-        [ "$n" = HEAD ] && continue
+        rname=${r#"refs/remotes/${remote:-origin}/"}
+        [ "$rname" = HEAD ] && continue
         git -C "$dir" cat-file -e "$oid^{commit}" 2>/dev/null || git -C "$dir" fetch -q "$repo" "$oid" 2>/dev/null || continue
-        git -C "$dir" update-ref "refs/remotes/origin/$n" "$oid"
+        git -C "$dir" update-ref "refs/remotes/origin/$rname" "$oid"
       done
     else
       printf 'provision-sandbox: warning: %s has no remote %s; clone origin left as the local path\n' "$repo" "${remote:-origin}" >&2
@@ -532,6 +535,7 @@ if [ -f "$manifest" ]; then
 fi
 
 for cmd in "${setups[@]+"${setups[@]}"}"; do
+  # shellcheck source=/dev/null # .sandbox.env is written by this script at run time
   (cd "$dir" && set -a && . ./.sandbox.env && set +a && bash -c "$cmd") >&2 || die "setup failed: $cmd"
 done
 
@@ -545,6 +549,7 @@ run_check() {
   local cmd=$1 limit=${HARNESS_CHECK_TIMEOUT:-60} ticks=0 pid rc
   case "$limit" in ''|*[!0-9]*) limit=60 ;; esac
   set -m
+  # shellcheck source=/dev/null # .sandbox.env is written by this script at run time
   (cd "$dir" && set -a && . ./.sandbox.env && set +a && exec bash -c "$cmd") >&2 &
   pid=$!
   set +m
