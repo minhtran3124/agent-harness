@@ -2,8 +2,8 @@
 """Enforce the frontmatter fields the Claude Code runtime needs to load a skill or agent.
 
 Driven by the disk: every skills/*/SKILL.md is a skill and every agents/*.md is an agent,
-except agents/README.md and agents/PROJECT*.md (PROJECT.md, PROJECT.template.md), which are
-not agents. Paths are relative to the plugin root, plugins/harness.
+except agents/README.md, which is
+not an agent. Paths are relative to the plugin root, plugins/harness.
 
 Verifies:        every skill and agent on disk has a frontmatter block whose `name:` and
                  `description:` are present and non-empty, and whose `name:` matches the
@@ -94,8 +94,8 @@ def check(root: Path) -> int:
     for path in sorted((root / "skills").glob("*/SKILL.md")):
         registered.append((path.parent.name, path))
     for path in sorted((root / "agents").glob("*.md")):
-        # README.md and PROJECT*.md (PROJECT.md, PROJECT.template.md) are not agents.
-        if path.stem == "README" or path.stem.startswith("PROJECT"):
+        # README.md is not an agent.
+        if path.stem == "README":
             continue
         registered.append((path.stem, path))
 
