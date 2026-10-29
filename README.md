@@ -79,3 +79,7 @@ Check it with `claude plugin validate plugins/harness --strict` and `claude plug
 ## Author
 
 **Minh Tran** - [@minhtran3124](https://github.com/minhtran3124) - <tranhuuminh3124@gmail.com>. See [`CONTRIBUTORS.md`](CONTRIBUTORS.md).
+
+## License
+
+MIT. See [LICENSE](LICENSE).
