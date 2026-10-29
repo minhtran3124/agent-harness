@@ -7,7 +7,7 @@
 # gone and its tip is an ancestor of <remote>/main; (3) a `worktree-*` agent branch that no worktree
 # has checked out and whose tip is in a <remote>/* branch (only after a successful fetch). Every rule except (1) uses `git branch -d`.
 # `git worktree remove` has no force flag: it refuses a dirty or locked worktree.
-# Never touches main, master, develop, development, staging, production, release/*, release-*, CLEAN_KEEP names, the current branch, or the worktree the session runs in.
+# Never touches main, master, develop, development, staging, production, release/*, release-*, CLEAN_KEEP names, the current branch, or the worktree the session runs in. A SessionStart sweep also keeps any worktree that another running process has as its working directory.
 # A branch matching CLEAN_STRICT gets only rule (1). Settings (env): CLEAN_REMOTE (default origin),
 # CLEAN_KEEP, CLEAN_STRICT, CLEAN_RECREATE (space separated; a CLEAN_RECREATE name must be a valid plain
 # branch name, and the push is never forced, so a branch another session created in the race is not overwritten). It runs `git fetch --prune` first.
@@ -115,6 +115,17 @@ if [ -n "$base" ]; then
     else out+="could not recreate $remote/$name"$'\n'; fi
   done
 fi
+# SessionStart only: the working directories of every running process, one per line, so a worktree that
+# another live session (or shell) is using is kept. /proc on Linux, lsof elsewhere; with neither, nothing is known.
+live_cwds=""
+if [ "${1:-}" = SessionStart ]; then
+  if [ -d /proc/self ]; then
+    set +f; live_cwds=$(for l in /proc/[0-9]*/cwd; do readlink "$l" 2>/dev/null; done); set -f
+  elif command -v lsof >/dev/null; then
+    live_cwds=$(lsof -d cwd -Fn 2>/dev/null | sed -n 's/^n//p')
+  fi
+fi
+in_use() { [ -n "$live_cwds" ] && printf '%s\n' "$live_cwds" | awk -v p="$1" '$0==p || index($0, p "/")==1 {f=1; exit} END{exit !f}'; }
 is_strict() { local g; for g in ${CLEAN_STRICT:-}; do case "$1" in $g) return 0 ;; esac; done; return 1; }
 # True when the tip is in a <remote>/* branch other than <remote>/HEAD.
 in_remote_branch() { git for-each-ref --contains "$1" --format='%(refname)' "refs/remotes/$remote/" 2>/dev/null | grep -qvx "refs/remotes/$remote/HEAD"; }
@@ -142,6 +153,7 @@ for b in $(git for-each-ref --format='%(refname:short)' refs/heads); do
   if [ -n "$p" ]; then
     [ "$p" = "$root" ] && continue
     case "$start/" in "$p"/*) out+="kept $b: the session runs in $p"$'\n'; continue ;; esac
+    if in_use "$p"; then out+="kept $b: a running process uses $p"$'\n'; continue; fi
     git worktree remove "$p" 2>/dev/null || { out+="kept $b: worktree $p has changes or a lock"$'\n'; continue; }
   fi
   if { [ "$how" = pr ] && git branch -D "$b" >/dev/null 2>&1; } || { [ "$how" != pr ] && del_contained "$b" "$tip"; }; then

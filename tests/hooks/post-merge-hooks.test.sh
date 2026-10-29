@@ -191,6 +191,19 @@ CWD=$SWT rrun SessionStart; unset CWD
 if [ "$(printf '%s' "$OUT" | jq -r .hookSpecificOutput.hookEventName)" = SessionStart ] && printf '%s' "$OUT" | jq -r .hookSpecificOutput.additionalContext | grep -q 'removed old' \
    && ! has old && has cur && [ -d "$SWT" ]; then pass; else fail "rc=$RC out=$OUT"; fi
 
+t "item 2: SessionStart keeps a merged worktree that another live process uses, and removes it once the process is gone"
+rsetup; git -C "$MAIN" checkout -q -b old2; git -C "$MAIN" commit -q --allow-empty -m w; git -C "$MAIN" checkout -q main
+git -C "$MAIN" merge -q --no-ff old2 -m m2
+OWT="$MAIN-other"; _CLEANUP_DIRS+=("$OWT"); git -C "$MAIN" worktree add -q "$OWT" old2
+ghstub old2 "$(git -C "$MAIN" rev-parse old2)"
+(cd "$OWT" && exec sleep 60) & LIVEPID=$!
+sleep 1
+rrun SessionStart; OUT1=$OUT
+KEPT=""; if has old2 && [ -d "$OWT" ]; then KEPT=1; fi
+kill "$LIVEPID" 2>/dev/null; wait "$LIVEPID" 2>/dev/null
+rrun SessionStart
+if [ -n "$KEPT" ] && ! has old2 && [ ! -d "$OWT" ]; then pass; else fail "kept=$KEPT out1=$OUT1 out2=$OUT"; fi
+
 t "item 2: hooks.json runs clean-worktrees.sh SessionStart beside session-rules.sh"
 if jq -e '[.hooks.SessionStart[].hooks[].args | join(" ")] | (map(test("session-rules.sh")) | any) and (map(test("clean-worktrees.sh SessionStart$")) | any)' "$ROOT/plugins/harness/hooks/hooks.json" >/dev/null; then pass; else fail "hooks.json"; fi
 t "item 2: the SessionStart sweep has a timeout and runs only on startup, and session-rules.sh has no matcher"
