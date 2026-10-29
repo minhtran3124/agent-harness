@@ -31,9 +31,9 @@ const PR_FOOTER = '🤖 Generated with [Claude Code](https://claude.com/claude-c
 const rulesCommon = repoDir => `Rules (all of them apply):
 - No human is in the loop. Never ask anyone anything. On any ambiguity pick the recommended option and return it as a decision in decisions[].
 - Never merge into the base branch or main. Never force-push. Never touch secrets. Never weaken a test to make it pass.
-- Project rules: before your first edit, read the project's own rules and follow them. The target repo does not auto-load them for you. Read ${repoDir}/CLAUDE.md, ${repoDir}/CLAUDE.local.md if it exists, and every ${repoDir}/.claude/rules/*.md (honor a rule file's paths: scoping against the files you touch). Once you have your own worktree, read the tracked ones (CLAUDE.md, .claude/rules/*.md) from it, at the same relative path; before that, read them from ${repoDir}. Your worktree holds only committed content, so also run git -C ${repoDir} status --porcelain -- CLAUDE.md .claude/rules/; for any file it lists (uncommitted edit, for example just written by setup), read that file from ${repoDir} instead. CLAUDE.local.md is untracked, so read ${repoDir}/CLAUDE.local.md (if present). The hard rules above (never merge into the base branch or main, never force-push, never touch secrets, never weaken a test) cannot be overridden by project rules.
-- Work only in your own worktree and on your own branch. Never edit files in the owner's checkout.
-- Your session working directory is NOT the target repo. Use absolute paths; run every git command as git -C <path> or after cd <your worktree>.
+- Project rules: before your first edit, read the project's own rules and follow them. The target repo does not auto-load them for you. Read ${repoDir}/CLAUDE.md, ${repoDir}/CLAUDE.local.md if it exists, and every ${repoDir}/.claude/rules/*.md (honor a rule file's paths: scoping against the files you touch). Once you have your working directory, read the tracked ones (CLAUDE.md, .claude/rules/*.md) from it, at the same relative path; before that, read them from ${repoDir}. Your working directory holds only committed content (a sandbox also holds the untracked files its manifest copies), so also run git -C ${repoDir} status --porcelain -- CLAUDE.md .claude/rules/; for any file it lists (uncommitted edit, for example just written by setup), read that file from ${repoDir} instead. CLAUDE.local.md is untracked, so read ${repoDir}/CLAUDE.local.md (if present). The hard rules above (never merge into the base branch or main, never force-push, never touch secrets, never weaken a test) cannot be overridden by project rules.
+- Work only in the working directory named in the stage prompt, on your own branch: a sandbox (implement, verify, finish, UAT) or a worktree the setup commands in the prompt create. Never edit files in the owner's checkout.
+- Your session working directory is NOT the target repo. Use absolute paths; run every git command as git -C <path> or after cd <your working directory>.
 - needs_review: true ONLY when the decision affects another ticket, a public contract or interface, stored data, security or cost, or contradicts the ticket text or an owner-confirmed answer. A reversible choice inside the ticket (naming, how to handle an edge case the ticket leaves open, which implementation to use) is needs_review: false. It is still recorded as a decision.
 - summary is one plain sentence about what changed in the code. Never write about pushes, pull requests, the mode, or test counts in it.
 - "Done" needs real command output. Report what you ran and its exit code; never claim a result you did not see.
@@ -199,13 +199,16 @@ const sbRef = branch => (LOCAL ? branch : `${SB_REMOTE}/${branch}`)
 const finalRef = single ? (LOCAL ? finalBranch : `${remote}/${finalBranch}`) : integRef
 
 // No agent uses isolation: 'worktree'. That option binds to the session's cwd, which is not the target repo
-// (ADR 0002). Each agent creates its own worktree of repoDir, outside the repo, so git status stays clean.
+// (ADR 0002). Stages that run or build the ticket code (implement, verify, finish, UAT) work in one sandbox per
+// ticket, made by provision-sandbox.sh. The other stages create a light worktree of repoDir (newWt). Both sit
+// outside the repo, so git status stays clean.
 const trimmed = repoDir.replace(/\/+$/, '')
 const parentDir = trimmed.split('/').slice(0, -1).join('/')
 const wtRoot = `${parentDir}/.ship-${trimmed.split('/').pop()}/${slugOf(slug)}`
-const worktrees = new Set()   // every dir the script told an agent to create; the owner removes them
+const worktrees = new Set()   // every light worktree the script told an agent to create; the owner removes them
 const notCwd = dir => `Your session working directory is NOT the target repo. Run every command with \`git -C <path>\` or after \`cd ${dir || repoDir}\`; never edit ${repoDir} itself.`
-// branch: create it; null: detached checkout of `from` (an existing ref).
+// Light worktree for read-only and merge stages; ticket code runs in a sandbox.
+// branch: create it (only the merge stage does); null: detached checkout of `from` (an existing ref).
 function newWt(name, branch, from) {
   const dir = `${wtRoot}/${name.replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '')}`
   worktrees.add(dir)
@@ -538,7 +541,7 @@ function stageFinish(t, impl, verifyResult) {
   const where = `Your branch ${impl.branch} is checked out in the ticket sandbox ${dir}; work there with cd ${dir}. Its remote is named ${SB_REMOTE}: fetch and push with that name. ` +
     `Do not create a worktree. If that path is gone, return status blocked with blocked_reason; do not recreate it.\n`
   const how = LOCAL
-    ? `Local mode: do NOT push and do NOT open a pull request. Verify the branch as the skill describes, then write the PR description for base ${prBase} to .ship/pr-${t.n}.md inside the worktree (do not commit it) and return its absolute path as body_file with pr: 0.\n`
+    ? `Local mode: do NOT push and do NOT open a pull request. Verify the branch as the skill describes, then write the PR description for base ${prBase} to .ship/pr-${t.n}.md inside the sandbox (do not commit it) and return its absolute path as body_file with pr: 0.\n`
     : `Verify, push the branch and open the pull request with base ${prBase}. The body says "Refs #${t.n}" (the final PR carries the Closes lines) and ends with the footer line. Return the PR number as pr and its url.\n`
   const ver = verifyResult
     ? `Verify result: ${verifyResult.result}. Local stills: ${verifyResult.stills.join(', ') || 'none'}. Evidence stays uncommitted; a later step attaches the evidence file to the pull request.\n`
@@ -1142,9 +1145,20 @@ for (const g of groups) {
   }
 }
 
+const sandboxList = () => Object.keys(sandboxes).map(Number).sort((a, b) => a - b).map(n => ({ n, ...sandboxes[n] }))
+// clean without --yes only previews; it never uses force and never removes a clone.
+function logSandboxes() {
+  const list = sandboxList()
+  if (!list.length) return
+  const cleanCmd = `bash ${pluginDir}/scripts/provision-sandbox.sh clean ${repoDir} --run ${RUN_ID}`
+  log(`sandboxes (the script never removes them):\n${list.map(x => `#${x.n} ${x.dir} branch ${x.branch} port ${x.port} db ${x.db} (${x.mode})`).join('\n')}\n` +
+    `Preview what would be removed: ${cleanCmd}\nRemove the worktree sandboxes: ${cleanCmd} --yes` +
+    (SANDBOX_MODE === 'clone' ? `\nClone sandboxes are not registered worktrees, so clean skips them: remove each clone directory above by hand.` : ''))
+}
+
 const deliveredAll = ordered().filter(r => r.status === 'done')
 const out = {
-  single, final: null, tickets: [], review: { status: 'not run', rounds: 0, fixed: [], notFixed: [], leftover: [] }, worktrees: [],
+  single, final: null, tickets: [], review: { status: 'not run', rounds: 0, fixed: [], notFixed: [], leftover: [] }, worktrees: [], sandboxes: [],
   intent: { verdict: 'not run', gaps: [] }, suite: { passed: 0, failed: 0, skipped: 0 }, adrs: [], artifact: { fallback: 'docs/adr/' }, decisions,
 }
 const publicTicket = r => ({ n: r.n, status: r.status, pr: r.pr, summary: r.summary, reason: r.reason })
@@ -1154,6 +1168,8 @@ if (!deliveredAll.length) {
   await writeSpecs({ byN, final: null, review: out.review, intent: out.intent, suite: out.suite, adrs: [] })
   out.tickets = ordered().map(publicTicket)
   out.worktrees = [...worktrees]
+  out.sandboxes = sandboxList()
+  logSandboxes()
   return out
 }
 
@@ -1201,5 +1217,7 @@ await writeSpecs({ byN, final: out.final, review: out.review, intent: out.intent
 
 out.tickets = ordered().map(publicTicket)
 out.worktrees = [...worktrees]
-log(`worktrees created (the script never removes them; remove with git -C ${repoDir} worktree remove <dir>):\n${out.worktrees.join('\n')}`)
+out.sandboxes = sandboxList()
+log(`light worktrees created (the script never removes them; remove with git -C ${repoDir} worktree remove <dir>):\n${out.worktrees.join('\n')}`)
+logSandboxes()
 return out

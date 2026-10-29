@@ -209,6 +209,36 @@ test('p6: args.sandbox is worktree or clone; clone cannot be combined with local
   assert(named(c.calls, /^provision:1$/)[0].prompt.includes('--mode clone'))
 })
 
+test('p7: out.sandboxes lists one sandbox per ticket; out.worktrees holds only light worktrees; the log tells how to clean', async () => {
+  const { result, logs } = await run({ tickets: [T(1, 1), T(2, 1)] }, null)
+  assert.deepStrictEqual(result.sandboxes.map(x => x.n), [1, 2])
+  assert.deepStrictEqual(result.sandboxes.map(x => x.dir), [sbT(1), sbT(2)])
+  assert.deepStrictEqual(result.sandboxes.map(x => x.port), [4010, 4020])
+  assert.deepStrictEqual(result.sandboxes.map(x => x.db), ['sandbox_ms_t1', 'sandbox_ms_t2'])
+  assert(result.sandboxes.every(x => x.mode === 'worktree' && x.branch.startsWith('feat/ms-')))
+  for (const sb of result.sandboxes) assert(!result.worktrees.includes(sb.dir), sb.dir)
+  assert(result.worktrees.length > 3 && result.worktrees.every(d => /^\/\.ship-repo\/ms\/(?!t\d)/.test(d)), result.worktrees.join())
+  const l = logs.find(x => x.startsWith('sandboxes ')) || ''
+  assert(l.includes('Preview what would be removed: bash /plug/scripts/provision-sandbox.sh clean /repo --run ms\n') && l.includes('clean /repo --run ms --yes'), l)
+  assert(!l.includes('by hand') && !/--force|-f\b/.test(l), l)
+})
+
+test('p8: the clone log says clones are removed by hand; a run with no delivered ticket still lists its sandboxes', async () => {
+  const c = await run({ sandbox: 'clone' }, null)
+  assert(c.logs.find(x => x.startsWith('sandboxes ')).includes('remove each clone directory above by hand'))
+  assert.strictEqual(c.result.sandboxes[0].mode, 'clone')
+  const f = await run({}, x => (x.label === 'finish:1' ? ok({ status: 'blocked', blocked_reason: 'nope', pr: 0 }) : undefined))
+  assert.strictEqual(f.result.tickets[0].status, 'blocked')
+  assert.strictEqual(f.result.sandboxes.length, 1)
+})
+
+test('p9: the shared rules and the head text no longer say each agent makes its own worktree', async () => {
+  const { calls } = await run({}, null)
+  const r = named(calls, /^implement:1$/)[0].prompt
+  assert(!r.includes('Work only in your own worktree') && r.includes('Work only in the working directory named in the stage prompt'), r.slice(0, 1800))
+  assert(!/only after your worktree exists/.test(r) && r.includes('only after your working directory exists'))
+})
+
 const noRepoTouch = /^(request:|artifact|final-pr)/
 test('a2: no agent call uses isolation (it binds to the session cwd, not the target repo)', async () => {
   const { calls } = await run({ tickets: [T(1, 1, [], { depth: 'L' }), T(2, 1), T(3, 2, [1])] }, c => (c.label === 'suite' ? { passed: 1, failed: 1, skipped: 0, failing: ['t'] } : undefined))
@@ -230,11 +260,12 @@ test('b2: every repo-touching agent names the repo or a .ship- worktree and says
   }
 })
 
-test('b3: the result lists the worktree dirs outside the repo', async () => {
+test('b3: the result lists the light worktree dirs outside the repo', async () => {
   const { result } = await run({}, null)
   assert(result.worktrees.length > 3)
   for (const d of result.worktrees) assert(d.startsWith('/.ship-repo/ms/'), d)
   assert(!result.worktrees.includes('/.ship-repo/ms/t1'), 'the ticket code runs in a sandbox, not a light worktree')
+  assert(result.worktrees.every(d => !/\/ms\/t\d/.test(d)), result.worktrees.join())
 })
 
 test('c4: skill and role reads use absolute paths under pluginDir, not the worktree or .claude', async () => {
