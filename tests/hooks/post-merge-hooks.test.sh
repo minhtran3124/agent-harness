@@ -194,8 +194,8 @@ if [ "$(printf '%s' "$OUT" | jq -r .hookSpecificOutput.hookEventName)" = Session
 t "item 2: a SessionStart sweep stops at its time budget between branches and says so"
 rsetup
 for bn in b1 b2; do git -C "$MAIN" checkout -q -b $bn; git -C "$MAIN" commit -q --allow-empty -m w-$bn; git -C "$MAIN" checkout -q main; git -C "$MAIN" merge -q --no-ff $bn -m m-$bn; done
-printf '#!/bin/sh\nsleep 2\ncase "$4" in b1) echo %s ;; b2) echo %s ;; esac\n' "$(git -C "$MAIN" rev-parse b1)" "$(git -C "$MAIN" rev-parse b2)" > "$STUB/gh"; chmod +x "$STUB/gh"
-rrun SessionStart CLEAN_BUDGET=1
+printf '#!/bin/sh\nsleep 4\ncase "$4" in b1) echo %s ;; b2) echo %s ;; esac\n' "$(git -C "$MAIN" rev-parse b1)" "$(git -C "$MAIN" rev-parse b2)" > "$STUB/gh"; chmod +x "$STUB/gh"
+rrun SessionStart CLEAN_BUDGET=3
 if [ "$RC" = 0 ] && printf '%s' "$OUT" | jq -r .hookSpecificOutput.additionalContext | grep -q 'stopped: time budget' && { has b1 && ! has b2 || has b2 && ! has b1; }; then pass; else fail "rc=$RC out=$OUT"; fi
 
 t "item 2: SessionStart keeps a merged worktree that another live process uses, and removes it once the process is gone"
