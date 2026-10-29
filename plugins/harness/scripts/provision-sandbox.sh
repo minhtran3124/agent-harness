@@ -279,8 +279,12 @@ if [ "${1:-}" = clean ]; then
   for sb in "$sb_root"/*/; do
     sb=${sb%/}; [ -d "$sb" ] || continue
     name=$(basename "$sb"); real=$(cd "$sb" && pwd -P)
-    if ! printf '%s\n' "$registered" | grep -qxF "$real" || [ ! -f "$sb/.sandbox.json" ]; then
-      printf 'skip %s (not a registered sandbox worktree)\n' "$name"; continue
+    is_clone=0
+    if [ -f "$sb/.sandbox.json" ] && [ -d "$sb/.git" ] && [ -f "$sb/.git/harness-sandbox-source" ] \
+      && [ "$(cat "$sb/.git/harness-sandbox-source")" = "$(cd "$sb_repo" && pwd -P)" ]; then
+      is_clone=1
+    elif ! printf '%s\n' "$registered" | grep -qxF "$real" || [ ! -f "$sb/.sandbox.json" ]; then
+      printf 'skip %s (not a registered sandbox worktree or clone)\n' "$name"; continue
     fi
     sb_classify "$sb"
     case "$sel" in
@@ -307,7 +311,10 @@ if [ "${1:-}" = clean ]; then
     if [ -n "$failed" ]; then
       printf 'refused %s (%s): teardown failed: %s\n' "$name" "$sb_state" "$failed"; rc=1; continue
     fi
-    if err=$(git -C "$sb_repo" worktree remove "$sb" 2>&1); then
+    if [ "$is_clone" -eq 1 ]; then
+      if rm -rf "$sb"; then printf 'removed %s (%s)\n' "$name" "$sb_state"
+      else printf 'refused %s (%s): cannot remove the clone\n' "$name" "$sb_state"; rc=1; fi
+    elif err=$(git -C "$sb_repo" worktree remove "$sb" 2>&1); then
       printf 'removed %s (%s)\n' "$name" "$sb_state"
     else
       printf 'refused %s (%s): %s\n' "$name" "$sb_state" "$(printf '%s' "$err" | head -1)"; rc=1

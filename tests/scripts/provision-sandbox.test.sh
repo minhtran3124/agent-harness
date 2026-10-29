@@ -505,4 +505,12 @@ cln "$repo" --branch br/sel-run --yes
 if echo "$OUT" | grep -q 'skip d-t3-brr (running)' && [ -d "$root/d-t3-brr" ]; then pass; else fail "rc=$RC $OUT"; fi
 kill "$SLEEPER2" 2>/dev/null; wait "$SLEEPER2" 2>/dev/null
 
+t "clean removes a clone-mode sandbox and runs its teardown"
+crepo=$(mk_repo); croot="$(dirname "$crepo")/.ship-$(basename "$crepo")"
+clog="$(dirname "$crepo")/clone-teardown.log"
+printf 'teardown echo gone >> %s\n' "$clog" > "$crepo/.harness-sandbox"
+prov "$crepo" cl 1 cc --mode clone --branch br/clone-clean
+cln "$crepo" --branch br/clone-clean --yes
+if [ "$RC" -eq 0 ] && echo "$OUT" | grep -q 'removed cl-t1-cc' && [ ! -d "$croot/cl-t1-cc" ] && grep -q gone "$clog"; then pass; else fail "rc=$RC $OUT"; fi
+
 finish
