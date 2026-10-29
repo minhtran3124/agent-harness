@@ -16,8 +16,9 @@
 # ignored, so text that merely mentions the phrase does nothing) and cleans only the branches of the PRs it merges (each merge in a chain counts),
 # found with `gh pr view`. With no number it uses the PR of the current branch; if that lookup fails
 # it exits silently. `clean-worktrees.sh SessionStart` takes no payload and sweeps every branch,
-# answering with additionalContext. Run by hand with no argument, it sweeps and prints plain text.
+# answering with additionalContext. A SessionStart sweep has a time budget (CLEAN_BUDGET seconds, default 20, under the 30s hook timeout; 0 = none; other modes default to none): it is checked before each branch, so a branch is never left half-cleaned, and the sweep stops with a "stopped" line in the summary. Run by hand with no argument, it sweeps and prints plain text.
 set -u
+SECONDS=0
 only=""  # set in hook mode: clean only the branch of the PR that was just merged
 if [ "${1:-}" = PostToolUse ]; then
   command -v jq >/dev/null || exit 0
@@ -132,7 +133,10 @@ in_remote_branch() { git for-each-ref --contains "$1" --format='%(refname)' "ref
 # Delete a branch whose tip is already verified to be contained in a remote branch: `git branch -d`,
 # and if git refuses only because the local HEAD lacks the commit, drop the ref guarded by its tip.
 del_contained() { git branch -d "$1" >/dev/null 2>&1 || git update-ref -d "refs/heads/$1" "$2" >/dev/null 2>&1; }
+budget=${CLEAN_BUDGET:-}; [ -n "$budget" ] || { [ "${1:-}" = SessionStart ] && budget=20 || budget=0; }
+case "$budget" in ''|*[!0-9]*) budget=0 ;; esac
 for b in $(git for-each-ref --format='%(refname:short)' refs/heads); do
+  if [ "$budget" -gt 0 ] && [ "$SECONDS" -ge "$budget" ]; then out+="stopped: time budget of ${budget}s reached; the rest is left for the next sweep"$'\n'; break; fi
   [ -z "$only" ] || case "$only" in *" $b "*) ;; *) continue ;; esac
   case "$keep" in *" $b "*) continue ;; esac
   case "$b" in develop|development|staging|production|release/*|release-*) continue ;; esac  # long-lived branches

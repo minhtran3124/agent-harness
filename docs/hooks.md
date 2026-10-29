@@ -37,6 +37,7 @@ Removes the worktree and local branch of merged branches. It first runs `git fet
 - **SessionStart** (`clean-worktrees.sh SessionStart`, no payload) sweeps every branch, so a PR merged on the GitHub web is cleaned
   at the next session start. It returns what it removed as `additionalContext`. It is registered in its own group with
   matcher `startup` (not on resume, clear or compact) and a 30 second `timeout`, so a slow network cannot stall session start. The session's own branch and worktree are skipped, and so is any worktree that another running process has as its working directory (found through `/proc`, or `lsof` where there is no `/proc`).
+- The SessionStart sweep has a time budget (`CLEAN_BUDGET` seconds, default 20, under the 30s hook timeout; `0` turns it off). It is checked before each branch, so no branch is left half-cleaned; the summary then says `stopped` and the next sweep finishes the rest.
 - Run by hand with no argument, it sweeps every branch and prints plain text.
 
 A branch is removed by the first rule that fits:
