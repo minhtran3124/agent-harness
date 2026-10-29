@@ -25,7 +25,7 @@ One question: "Launch the run?"
 
 ```js
 Workflow({
-  scriptPath: "/work/shop/workflows/ship.js",
+  name: "harness:ship",
   args: { repo: "acme/shop", repoDir: "/work/shop", remote: "origin", base: "main", slug: "346-rename-flag",
     tickets: [{ n: 346, title: "Rename the export flag", depth: "S", group: 1, deps: [],
                 confirmed: "Keep the old flag name as an alias" }],
@@ -56,7 +56,7 @@ Models: Sonnet stages, Haiku tests, advisor `opus`. Nothing is merged. Then one 
 
 ```js
 Workflow({
-  scriptPath: "/work/shop/workflows/ship.js",
+  name: "harness:ship",
   args: { repo: "acme/shop", repoDir: "/work/shop", remote: "origin", base: "release", slug: "export-v2",
     tickets: [
       { n: 21, title: "Add the export schema", depth: "S", group: 1, deps: [], confirmed: "" },

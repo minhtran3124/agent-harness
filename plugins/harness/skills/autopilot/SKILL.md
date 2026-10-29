@@ -38,7 +38,7 @@ picks the model and effort for every call below.
    single or multi, the model plan (Sonnet stages, Haiku tests, advisor `opus`; `fable` only when
    the owner says so) and that nothing is merged. This is
    the last time the owner is asked.
-8. **Launch.** Call Workflow with a readable `scriptPath` = `${CLAUDE_PLUGIN_ROOT}/workflows/ship.js` and `args` as a real
+8. **Launch.** Call Workflow with `name: "harness:ship"` and `args` as a real
    object that includes `pluginDir: "${CLAUDE_PLUGIN_ROOT}"` (see `references/launch-args.md`). Take `testCmd`, `lintCmd` and `fullTestCmd` from
    the repo's CLAUDE.md or README, never from memory. If one is missing, ask in step 7. With
    `--no-ask`, record a `needs_review` decision and use `fullTestCmd` only. Tell the owner

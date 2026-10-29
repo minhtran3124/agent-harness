@@ -2,9 +2,8 @@
 
 Workflow scripts for the Claude Code `Workflow` tool. `ship.js` is the autonomous second half of
 Harness v5 (epic #338, ADR 0001): it ships 1..N already-triaged tickets to one reviewable PR with
-no human in the loop. `/autopilot` asks the owner everything first, then launches it by path:
-`Workflow({scriptPath: "<repoDir>/workflows/ship.js", args})`. In a consuming repo the file is at
-`.claude/workflows/ship.js`.
+no human in the loop. `/autopilot` asks the owner everything first, then launches it by name:
+`Workflow({name: "harness:ship", args})`. The plugin registers `./workflows/ship.js` in `plugin.json`.
 
 ## args
 

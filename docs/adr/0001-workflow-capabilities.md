@@ -26,6 +26,8 @@ All probes ran on 2026-10-28 in Claude Code against a throwaway git repo in the 
 | K4 | Does a Workflow agent read a `SKILL.md` and follow its auto mode? | **Yes** | Given only the skill path and "auto mode", the agent wrote the exact file content the skill asked for, returned the one decision in `decisions[]`, and asked no one. |
 | K5 | Is a named workflow in `.claude/workflows/` callable by name with `args`? | **No, in this session** | `Workflow({name: "probe-ship"})` returned "not found. Available: deep-research" twice after the file was created mid-session. The same file ran fine through `Workflow({scriptPath, args})`, and `args` arrived intact. Unknown whether the name registry loads only at session start. |
 
+Update (#396): K5 is superseded. In a fresh session with the plugin installed, `Workflow({name: "harness:ship"})` found the script from a working directory outside the plugin and ran the same bytes as `workflows/ship.js`. The earlier failure was a file created mid-session, not a plugin component.
+
 Extra finding (not in the issue): an agent with `isolation: 'worktree'` starts from the **main checkout's HEAD**, not from the remote base branch. In the probe the worktree was at `d031ec2` (the local checkout) while the v5 base on the remote was `c5dd856`. The worktree was removed automatically because it was unchanged.
 
 ## Decision

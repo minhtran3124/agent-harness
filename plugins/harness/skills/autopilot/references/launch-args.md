@@ -1,10 +1,10 @@
 # Workflow args for the ship workflow
 
-Pass `args` as a JSON object (not a string). `scriptPath` is absolute: a named workflow was not
-found mid-session (`docs/adr/0001-workflow-capabilities.md`, decision 4).
+Pass `args` as a JSON object (not a string). Launch by name, `Workflow({name: "harness:ship", args})`:
+the plugin registers `./workflows/ship.js` in `plugin.json`, and the name works from any working
+directory (verified for #396; it supersedes `docs/adr/0001-workflow-capabilities.md`, decision 4).
 
-`scriptPath` and `pluginDir` come from the plugin's own directory. SKILL.md step 8 gives both
-values, already resolved. `repoDir` is the owner's checkout, not the plugin.
+`pluginDir` comes from the plugin's own directory. SKILL.md step 8 gives it, already resolved. `repoDir` is the owner's checkout, not the plugin.
 
 ```text
 { repo: "owner/name", repoDir: "/abs/path", pluginDir: "<plugin directory>", remote: "origin", base: "<base>",
@@ -27,9 +27,8 @@ rounds and findings, full-suite counts, the ADRs in `docs/adr/` and the artifact
 
 ## Launch notes
 
-- Readable script: the Workflow tool refuses a `scriptPath` the session cannot read ("scriptPath must be
-  a script path this tool returned, or a file you can already read"). The script must be inside the
-  working directory or an added directory, or be passed inline through `script`.
+- Name not found: report it and stop. Do not copy the script to another path. The Workflow tool refuses
+  a `scriptPath` the session cannot read, so the fallback is inline `script` or `/add-dir <plugin dir>`.
 - Merge permission: the owner must allow `gh pr merge` into `feat/<slug>*`. Without it the merge stage
   fails with a reason that names this permission. Do not change permission settings and do not work
   around a denial; tell the owner.
