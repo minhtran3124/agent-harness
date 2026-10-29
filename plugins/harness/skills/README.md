@@ -95,7 +95,7 @@ compound  (when the root cause is a reusable learning — the bug track takes it
 
 | Skill | Trigger | Output |
 |---|---|---|
-| `setup` | **User-invoked** (`/harness:setup`), once per project after installing the plugin | `specs/` and `docs/solutions/` scaffold files, a proposed `## Run and test` section in `CLAUDE.md`, the merged `permissions.deny` rules, a `specs/` line in `.gitignore`, and an approved removal of an old copied install |
+| `setup` | **User-invoked** (`/harness:setup`), once per project after installing the plugin | `specs/` and `docs/solutions/` scaffold files, a proposed `## Run and test` section in `CLAUDE.md`, the merged `permissions.deny` rules, a `specs/` line in `.gitignore`, a proposed `.harness-sandbox` from the sandbox audit, and an approved removal of an old copied install |
 
 ### Discovery & Design
 

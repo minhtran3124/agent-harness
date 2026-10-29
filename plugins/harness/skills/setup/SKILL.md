@@ -31,7 +31,13 @@ Run once per project, after `claude plugin install harness@agent-harness`. Work 
    merge (run 1 did), and that the run then reports the missing permission (#389).
 5. **Ignore specs.** Add `specs/` to `${CLAUDE_PROJECT_DIR}/.gitignore` if no line already says
    `specs/`. Skip this if the project tracks files under `specs/`.
-6. **Old install.** Run `bash ${CLAUDE_SKILL_DIR}/scripts/old-install.sh ${CLAUDE_PROJECT_DIR}`. An
+6. **Sandbox.** Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/provision-sandbox.sh --audit ${CLAUDE_PROJECT_DIR}`
+   and show it (exit 1 means unknown paths). Propose `.harness-sandbox` lines: `copy`
+   as audited, `link` for node_modules or .venv, `skip` for regenerable paths, `setup` and `require`
+   as needed. List each `unknown` path for the owner to decide; never guess. Write only after the
+   owner agrees (AskUserQuestion). Never overwrite an existing file: show a diff, append only the
+   missing lines, then write after agreement. The owner commits it.
+7. **Old install.** Run `bash ${CLAUDE_SKILL_DIR}/scripts/old-install.sh ${CLAUDE_PROJECT_DIR}`. An
    empty list means there is nothing to remove: stop here. Otherwise print the list and ask with
    AskUserQuestion whether to delete it (recommended answer: yes). Delete only after the owner
    says yes, with `rm -r -- <the listed paths>`, and only those paths. If `.claude/settings.json`
@@ -41,7 +47,7 @@ Run once per project, after `claude plugin install harness@agent-harness`. Work 
    start, so a copy loads it twice.
 
 Never touch: `specs/`, `docs/`, and any skill, agent or hook the
-project wrote itself. Only step 4 may write `.claude/settings.local.json`, and only after the owner
-says yes.
+project wrote itself. Only step 4 may write `.claude/settings.local.json`, and step 6 `.harness-sandbox`, each only after
+the owner says yes.
 
 Finish with a short list of what changed, what was skipped, and what the owner still has to do.
