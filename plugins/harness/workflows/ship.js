@@ -77,7 +77,8 @@ function stageSchema(extra, required) {
   }
 }
 const STEP = { type: 'object', properties: { title: STR, files: strList, done_when: STR }, required: ['title', 'done_when'] }
-const INTENT_SCHEMA = stageSchema({ goal: STR, acceptance: strList, files: strList, out_of_scope: strList, plan_steps: { type: 'array', items: STEP } }, ['goal'])
+const INTENT_SCHEMA = stageSchema({ goal: STR, acceptance: strList, files: strList, out_of_scope: strList, plan_steps: { type: 'array', items: STEP },
+  approach: { type: 'string', description: 'Two to four sentences: the approach you chose and any option you rejected. It becomes design.md for depth S and M.' } }, ['goal'])
 const RESEARCH_SCHEMA = stageSchema({ research_md: STR }, ['research_md'])
 const DESIGN_SCHEMA = stageSchema({ design_md: STR }, ['design_md'])
 const PLAN_SCHEMA = stageSchema({ plan_md: STR, plan_steps: { type: 'array', items: STEP } }, ['plan_md'])
@@ -309,7 +310,7 @@ function head(t, skill, extra, wt) {
 function stageIntent(t) {
   const build = advice => head(t, null,
     `Stage: intent. Restate what the owner asked for as a goal and checkable acceptance criteria, list the files likely touched, ` +
-    `and return plan_steps (title, files, done_when) as the plan. Copy the ticket's Out of scope lines verbatim into out_of_scope (an empty list when it has none).${t.depth === 'S' ? ' This is the plan for the implement stage.' : ' A later stage writes the full plan.'} ` +
+    `and return plan_steps (title, files, done_when) as the plan and approach (the chosen approach in two to four sentences). Copy the ticket's Out of scope lines verbatim into out_of_scope (an empty list when it has none).${t.depth === 'S' ? ' This is the plan for the implement stage.' : ' A later stage writes the full plan.'} ` +
     `${single ? `You may read files in ${repoDir} (git -C ${repoDir} ...); never edit them.` : `Plan against the code as it is on ${integRef}, which already holds the finished earlier groups; the checkout in ${repoDir} is NOT that code. Run git -C ${repoDir} fetch ${remote} first, then read files only with git -C ${repoDir} show ${integRef}:<path> or git -C ${repoDir} ls-tree -r ${integRef}. Never edit ${repoDir}.`} Return decisions[] for every real choice you made.${advice}`)
   return runStage(t, 'intent', build, INTENT_SCHEMA, { model: MODEL.intent, effort: EFFORT.intent })
 }
@@ -324,7 +325,7 @@ function stageResearch(t, intent) {
 function stageDesign(t, intent, research) {
   const w = newWt(`design-${t.n}`, null, integRef)
   const build = advice => w.setup + head(t, 'brainstorming',
-    `Stage: design. Return the design as a decision with stage 'design' in decisions[] (a design ADR) and its text as design_md.\n` +
+    `Stage: design. Return the design as a decision with stage 'design' in decisions[] (a design ADR) and its text as design_md, in the shape of ${pluginDir}/templates/specs/design.md. Write no file.\n` +
     `Intent: ${JSON.stringify(intent)}\nResearch brief:\n${research.research_md}${advice}`, w.dir)
   return runStage(t, 'design', build, DESIGN_SCHEMA, { model: MODEL.design, effort: EFFORT.design })
 }
@@ -332,7 +333,7 @@ function stageDesign(t, intent, research) {
 function stagePlan(t, intent, extra) {
   const w = newWt(`plan-${t.n}`, null, integRef)
   const build = advice => w.setup + head(t, 'writing-plans',
-    `Stage: plan. Write PLAN.md locally (do not commit it) and return its full text as plan_md, plus plan_steps.\n` +
+    `Stage: plan. Write no file; return the full plan text as plan_md, in the shape of ${pluginDir}/templates/specs/plan.md, plus plan_steps (the script saves it as specs/<slug>/plan.md).\n` +
     `Intent: ${JSON.stringify(intent)}\n${extra || ''}${advice}`, w.dir)
   return runStage(t, 'plan', build, PLAN_SCHEMA, { model: MODEL.plan, effort: EFFORT.plan })
 }
@@ -475,10 +476,94 @@ function stageFinish(t, impl, verifyResult) {
   return runStage(t, 'finish', build, FINISH_SCHEMA, { model: MODEL.implement, effort: EFFORT.implement })
 }
 
+// ---------------------------------------------------------------------------
+// specs/<slug>/ flow files: local scratch, gitignored. The script renders the text from the stage results;
+// one cheap agent writes it into the main checkout, so the files outlive the worktrees.
+// ---------------------------------------------------------------------------
+const specs = {}   // ticket number -> the stage results the flow files are rendered from
+const specDir = t => `${trimmed}/specs/${t.n}-${slugOf(t.title)}`
+const REQUEST_LINE = '{{REQUEST}}'
+const bullets = a => (Array.isArray(a) && a.length ? a.map(x => `- ${x}`).join('\n') : '- none')
+// Same headings as templates/specs/*.md at every depth; an empty section says none. No date: the script is deterministic.
+const header = (t, kind) => [`# ${kind}: ${t.title}`, `Ticket: ${LOCAL ? t.n : `#${t.n}`} · Depth: ${t.depth} · Written by the ship workflow`, '']
+const ownDecisions = (t, run) => decisions.filter(d => d.ticket === t.n || (run && d.ticket === 'run'))
+
+function renderSteps(steps) {
+  return (steps || []).map((x, k) => `### ${k + 1}. ${x.title}\n- Files: ${(x.files || []).join(', ') || 'none listed'}\n- Done-when: ${x.done_when}`).join('\n\n') || 'none'
+}
+
+function renderDecisionLog(t, run) {
+  const own = ownDecisions(t, run)
+  const L = header(t, 'Decisions')
+  if (!own.length) L.push('none', '')
+  own.forEach((d, k) => L.push(`### D${k + 1} ${d.title}`,
+    `- Stage: ${d.stage} · Confidence: ${d.confidence} · needs_review: ${d.needs_review ? 'yes' : 'no'} · owner_confirmed: ${d.owner_confirmed ? 'yes' : 'no'}`,
+    `- Context: ${d.context}`, `- Options: ${(d.options || []).join('; ')}`, `- Decision: ${d.decision}`, `- Why: ${d.why}`,
+    `- Consequences: ${d.consequences}`, `- Reverse: ${d.how_to_reverse}`, ''))
+  if (run && run.adrs.length) L.push('## ADR files written by this run', '', bullets(run.adrs.map(a => a.path)), '')
+  return L.join('\n')
+}
+
+function renderSummary(t, run) {
+  const s = specs[t.n] || {}, r = s.result || {}, impl = s.impl || {}, fin = s.fin || {}, v = s.verify
+  const checks = (impl.verify || []).map(c => `| \`${String(c.command).replace(/\|/g, '\\|')}\` | exit ${c.exit}${c.notes ? `: ${String(c.notes).replace(/\|/g, '\\|')}` : ''} | - |`)
+  if (v) checks.push(`| Verify: row (${v.kind}) | ${v.result} | - |`)
+  const review = !run ? ['- code review: not run yet', '- intent-review: not run yet']
+    : [`- code review: ${run.review.status === 'not run' ? `NOT RUN (${run.review.reason})` : `${run.review.rounds} fix round(s), ${run.review.fixed.length} fixed, ${run.review.leftover.length} left`}`,
+      `- intent-review: ${run.intent.verdict}`, `- full suite: passed ${run.suite.passed}, failed ${run.suite.failed}, skipped ${run.suite.skipped}`]
+  const pr = run && run.final && run.final.url ? run.final.url : (fin.url || (fin.pr ? `#${fin.pr}` : fin.body_file || 'none'))
+  return [...header(t, 'Summary'), '## Shipped', '',
+    `Status: ${r.status || 'unknown'}${r.reason ? ` (${r.reason})` : ''} · Branch: ${impl.branch || ticketBranch(t)} · PR: ${pr}`,
+    capSummary(impl.summary) || 'none', '', `- Commits: ${(impl.commits || []).map(c => `${c.sha} ${c.subject}`).join(', ') || 'none'}`, '',
+    '## Verify', '', '| Command | Result | Covers |', '|---|---|---|', ...(checks.length ? checks : ['| none | - | - |']), '',
+    '## Review', '', ...review, '', '## Deviations from plan', '', '- none recorded (decisions made while implementing are in decision.md)', '',
+    '## Decisions', '', bullets(ownDecisions(t, run).map((d, k) => `D${k + 1} ${d.title}`)), ''].join('\n')
+}
+
+// run: null for the per-ticket write (all files), the run results for the final write (decision.md and summary.md).
+function renderSpecs(t, run) {
+  if (run) return { 'decision.md': renderDecisionLog(t, run), 'summary.md': renderSummary(t, run) }
+  const s = specs[t.n] || {}, i = s.intent || {}
+  const files = {}
+  files['intent.md'] = [...header(t, 'Intent'), '## Original request', '', LOCAL ? t.title : REQUEST_LINE, '', '## Goal', '', i.goal || 'none', '',
+    '## Acceptance criteria', '', bullets((i.acceptance || []).map((a, k) => `AC${k + 1}: ${a}`)), '', '## Out of scope', '', bullets(i.out_of_scope), '',
+    '## Verdict', '', `READY — triaged by autopilot before the run; depth ${t.depth}`, '',
+    '## Confirmed decisions', '', (t.confirmed && t.confirmed.trim()) || 'none', ''].join('\n')
+  files['design.md'] = s.design ? s.design.design_md
+    : [...header(t, 'Design'), '## Context', '', i.goal || 'none', '', '## Options', '', '- none weighed by the workflow', '',
+      '## Decision', '', i.approach || 'The steps in plan.md are the approach.', '', '## Why', '', 'none', '',
+      '## Consequences', '', 'none', '', '## How to reverse', '', 'Revert the ticket commits.', ''].join('\n')
+  files['plan.md'] = s.plan ? s.plan.plan_md
+    : [...header(t, 'Plan'), '## Goal', '', i.goal || 'none', '', '## Steps', '', renderSteps(i.plan_steps), ''].join('\n')
+  if (s.research) files['research-brief.md'] = s.research.research_md
+  files['decision.md'] = renderDecisionLog(t, null)
+  files['summary.md'] = renderSummary(t, null)
+  return files
+}
+
+// A failed write never changes the outcome of the run: it is only logged.
+async function writeSpecs(t, files, label, phaseName) {
+  const dir = specDir(t)
+  const req = files['intent.md'] && files['intent.md'].includes(REQUEST_LINE)
+    ? `In intent.md, replace the line ${REQUEST_LINE} with the issue body, verbatim, from: gh issue view ${t.n} --repo ${repo} --json body -q .body\n` : ''
+  const list = Object.entries(files).map(([f, text]) => `=== ${dir}/${f}\n${text}`).join('\n\n')
+  const prompt = `Stage: write the local spec files of ticket #${t.n}. Your session working directory is NOT the target repo.\n` +
+    `1. Run: git -C ${repoDir} check-ignore -q specs/x. If it exits non-zero, specs/ is not gitignored: write nothing and return status blocked with blocked_reason "specs/ is not gitignored in ${repoDir}".\n` +
+    `2. Run: mkdir -p ${dir}\n3. Write each file below with the Write tool, by absolute path, with exactly the text between its === line and the next one (overwrite a file that exists).\n${req}` +
+    `${dir} is gitignored local scratch and the only place in ${repoDir} you may write. Edit nothing else; run no other git command and commit nothing. Return status ok.\n\n${list}`
+  try {
+    const res = await call(prompt, { label, phase: phaseName, schema: SETUP_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
+    if (!res || res.status === 'blocked') log(`#${t.n} spec files not written: ${(res && (res.blocked_reason || res.summary)) || 'no answer'}`)
+  } catch (e) {
+    log(`#${t.n} spec files not written: ${e && e.message ? e.message : String(e)}`)
+  }
+}
+
 async function runTicket(t) {
   const branch = ticketBranch(t)
+  const spec = specs[t.n] = {}
   try {
-    const intent = await stageIntent(t)
+    const intent = spec.intent = await stageIntent(t)
     boundaries[t.n] = boundaryOf(intent)
     const boundary = boundaryText(`Boundary for ticket #${t.n}:`, intent)
     let planText
@@ -486,24 +571,29 @@ async function runTicket(t) {
       planText = `Plan (steps from the intent stage):\n${JSON.stringify(intent.plan_steps || [])}`
     } else if (t.depth === 'M') {
       const plan = await stagePlan(t, intent)
-      planText = `Write this to specs/${slug}-${t.n}/PLAN.md in your worktree (local scratch, do not commit it) and follow it:\n${plan.plan_md}`
+      spec.plan = plan
+      planText = `Follow this plan:\n${plan.plan_md}`
     } else {
-      const research = await stageResearch(t, intent)
-      const design = await stageDesign(t, intent, research)
-      const plan = await stagePlan(t, intent, `Design:\n${design.design_md}\n`)
+      const research = spec.research = await stageResearch(t, intent)
+      const design = spec.design = await stageDesign(t, intent, research)
+      const plan = spec.plan = await stagePlan(t, intent, `Design:\n${design.design_md}\n`)
       const advice = await advisePlan(t, design, plan)
       planText = `Design:\n${design.design_md}\n\nAdvisor review of design and plan (follow it unless it is wrong; record any deviation as a decision):\n${advice}\n\n` +
-        `Write this to specs/${slug}-${t.n}/PLAN.md in your worktree (local scratch, do not commit it) and follow it:\n${plan.plan_md}`
+        `Follow this plan:\n${plan.plan_md}`
     }
-    const impl = await stageImplement(t, branch, planText, boundary)
-    const verifyResult = await verifyTicket(t, impl)
-    const fin = await stageFinish(t, impl, verifyResult)
+    const impl = spec.impl = await stageImplement(t, branch, planText, boundary)
+    const verifyResult = spec.verify = await verifyTicket(t, impl)
+    const fin = spec.fin = await stageFinish(t, impl, verifyResult)
     const attached = await stageAttach(t, fin, verifyResult)
     log(`#${t.n} done: ${fin.url || fin.body_file || impl.branch}`)
+    spec.result = { status: 'done', reason: '' }
+    await writeSpecs(t, renderSpecs(t, null), `specs:${t.n}`, 'Tickets')
     return { n: t.n, status: 'done', pr: fin.pr || null, url: fin.url || '', branch: impl.branch || branch, summary: capSummary(impl.summary || fin.summary), reason: '', body_file: fin.body_file, ...(verifyResult ? { verify: { ...verifyResult, attached } } : {}) }
   } catch (e) {
     const reason = e && e.message ? e.message : String(e)
     log(`#${t.n} blocked: ${reason}`)
+    spec.result = { status: 'blocked', reason }
+    await writeSpecs(t, renderSpecs(t, null), `specs:${t.n}`, 'Tickets')
     return { n: t.n, status: 'blocked', pr: null, url: '', branch, summary: '', reason, ...(e && e.verify ? { verify: e.verify } : {}) }
   }
 }
@@ -890,6 +980,9 @@ const adr = await stageAdr(finalPr, artifact, buildBody(ordered(), review, inten
 takeDecisions('run', 'adr', adr)
 out.adrs = (adr.adrs || []).map(a => ({ number: a.number, path: a.path, needsReview: !!a.needs_review }))
 log(`decisions: ${decisions.length} recorded, ${out.adrs.length} ADR file(s)`)
+
+const runInfo = { final: out.final, review: out.review, intent: out.intent, suite: out.suite, adrs: out.adrs }
+await parallel(tickets.filter(t => specs[t.n]).map(t => () => writeSpecs(t, renderSpecs(t, runInfo), `specs-final:${t.n}`, 'Decisions')))
 
 out.tickets = ordered().map(publicTicket)
 out.worktrees = [...worktrees]

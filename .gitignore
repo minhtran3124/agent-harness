@@ -31,8 +31,9 @@ CLAUDE.local.md
 # Local-only research notes (kept out of the tracked tree by request)
 docs/memory/
 
-# specs/ is local scratch (plans and research briefs).
-specs/
+# specs/ at the repo root is local scratch: one specs/<slug>/ per ticket (intent, design, decision, plan, summary).
+# Anchored, so plugins/harness/templates/specs/ stays tracked.
+/specs/
 
 .vercel
 

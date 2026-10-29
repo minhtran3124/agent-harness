@@ -18,7 +18,7 @@ as contracts when you change a hook, a skill or a script.
 - `scripts/` - lint and validation utilities for this repo, plus their `test_*.py` unit tests.
 - `techstacks/` is a consumer folder that `/harness:setup` scaffolds; this repo has none.
 - `tests/hooks/`, `tests/scripts/`, `tests/workflows/` - contract and integration tests.
-- `docs/` - solutions, ADRs and research. `specs/` is local scratch and gitignored.
+- `docs/` - solutions, ADRs and research. `specs/` is local scratch and gitignored: one `specs/<slug>/` per ticket with `intent.md`, `design.md`, `decision.md`, `plan.md` and `summary.md`.
 
 ## Commands
 

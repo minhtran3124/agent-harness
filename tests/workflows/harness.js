@@ -54,6 +54,7 @@ function defaults(c, st) {
   if (l === 'suite-rerun') return { passed: 2, failed: 0, skipped: 0, failing: [] }
   if (l === 'artifact') return { created: false, fallback: 'docs/adr/' }
   if (l === 'adr') return ok({ adrs: [{ number: 2, path: 'docs/adr/0002-x.md', needs_review: true }] })
+  if (l.startsWith('specs:') || l.startsWith('specs-final:')) return ok()
   throw new Error(`no scripted answer for label '${l}'`)
 }
 
@@ -490,7 +491,8 @@ test('h: the ADR stage runs once and receives decisions from every ticket', asyn
   assert(p.includes('"title":"D-one"') && p.includes('"ticket":1') && p.includes('"title":"D-two"') && p.includes('"ticket":2'))
   assert(p.includes('"run":"ms"') && p.includes('--input .ship/decisions.json') && p.includes('--render-section') && p.includes('{{DECISIONS}}'))
   assert(p.includes('"stage":"intent"') && p.includes('"decided_by"'))
-  assert.strictEqual(labelsOf(calls)[labelsOf(calls).length - 1], 'adr')
+  const noSpecs = labelsOf(calls).filter(l => !l.startsWith('specs-final:'))   // the local spec writes need the ADR paths
+  assert.strictEqual(noSpecs[noSpecs.length - 1], 'adr')
   assert.deepStrictEqual(result.adrs, [{ number: 2, path: 'docs/adr/0002-x.md', needsReview: true }])
   assert.strictEqual(result.artifact.fallback, 'docs/adr/')
 })
@@ -877,6 +879,37 @@ test('vb6: failing twice shows fail with base not run', async () => {
 test('vb7: local mode has no Verify heading', async () => {
   const { calls } = await run({ local: true }, null)
   assert(!adrBody(calls).includes('## Verify'))
+})
+
+test('s1: every ticket writes its five flow files to the main checkout specs/, not to a worktree', async () => {
+  for (const depth of ['S', 'M', 'L']) {
+    const { calls } = await run({ tickets: [T(1, 1, [], { depth })] }, c => (c.label === 'intent:1' ? ok({ goal: 'GOAL-1', approach: 'APPROACH-1', plan_steps: [{ title: 'STEP-1', files: ['a.js'], done_when: 'true' }] }) : undefined))
+    const w = named(calls, /^specs:1$/)
+    assert.strictEqual(w.length, 1, `${depth}: ${labelsOf(calls).join()}`)
+    const p = w[0].prompt
+    for (const f of ['intent.md', 'design.md', 'decision.md', 'plan.md', 'summary.md']) assert(p.includes(`=== /repo/specs/1-ticket-1/${f}`), `${depth}: ${f} missing`)
+    assert(p.includes('check-ignore') && p.includes('{{REQUEST}}') && p.includes('gh issue view 1 --repo o/r --json body -q .body'), depth)
+    assert(!p.includes('/.ship-repo/'), `${depth}: spec files must not go to a worktree`)
+    assert(p.includes(depth === 'S' ? 'STEP-1' : 'PLAN-MD'), `${depth}: plan text`)
+    assert(p.includes(depth === 'L' ? '=== /repo/specs/1-ticket-1/research-brief.md' : 'APPROACH-1'), `${depth}: design or research`)
+    assert(named(calls, /^implement:1$/)[0].prompt.indexOf('PLAN.md') < 0, `${depth}: implement still told to write PLAN.md`)
+    const fin = named(calls, /^specs-final:1$/)
+    assert.strictEqual(fin.length, 1)
+    assert(fin[0].prompt.includes('/repo/specs/1-ticket-1/summary.md') && fin[0].prompt.includes('- intent-review: match') && !fin[0].prompt.includes('/intent.md'))
+    assert(labelsOf(calls).indexOf('specs-final:1') > labelsOf(calls).indexOf('adr'))
+  }
+})
+
+test('s2: a blocked ticket still writes its spec files with the reason, and a failed write changes nothing', async () => {
+  const { calls, result } = await run({ local: true, tickets: [T(1, 1), T(2, 1)] }, c => {
+    if (c.label === 'implement:1') return ok({ status: 'blocked', blocked_reason: 'cannot build', worktree: '', branch: '' })
+    if (c.label === 'specs:2') return new Error('write failed')
+  })
+  const p = named(calls, /^specs:1$/)[0].prompt
+  assert(p.includes('Status: blocked (implement: cannot build)'), p.slice(-400))
+  assert(p.includes('## Original request') && p.includes('## Deviations from plan') && p.includes('| Command | Result | Covers |'), 'template headings')
+  assert(p.includes('Ticket 1') && !p.includes('{{REQUEST}}'), 'local mode uses the ticket text as the request')
+  assert.strictEqual(result.tickets.find(t => t.n === 2).status, 'done')
 })
 
 test('schemas are well-formed (object root, required within properties)', async () => {

@@ -1,6 +1,6 @@
 ---
 name: brainstorming
-description: "Decide what to build when the goal is clear but the approach is not. Use when the user is weighing two or more ways to do something, says they are unsure how to approach it, or asks for a design or a recommendation — and NOT when the approach is already settled and what is missing is knowledge of the codebase or a library, which is xia2. Depth L records the design as an ADR in docs/adr/."
+description: "Decide what to build when the goal is clear but the approach is not. Use when the user is weighing two or more ways to do something, says they are unsure how to approach it, or asks for a design or a recommendation — and NOT when the approach is already settled and what is missing is knowledge of the codebase or a library, which is xia2. Depth L writes specs/<slug>/design.md and records the design as an ADR in docs/adr/."
 allowed-tools: Read, Write, Grep, Glob, AskUserQuestion
 ---
 
@@ -15,9 +15,11 @@ Explore the options and converge on one design. Intake decides whether this skil
 2. Settle purpose, constraints and success criteria. Look facts up yourself. Ask the owner only
    for decisions.
 3. Present 2-3 viable approaches with trade-offs and a recommendation.
-4. Depth L: record the design as an ADR with `stage: design`. Fill `decisions[]` from
-   `references/design-template.md`; the ADR stage of `decision-record` writes it to `docs/adr/`.
-   Write no `specs/` file. Smaller depths return the design inline and write no file.
+4. Depth L: write the design to `specs/<slug>/design.md` (local scratch, gitignored) from
+   `references/design-template.md`, and add one entry to `specs/<slug>/decision.md`. Also record
+   it as an ADR with `stage: design`: fill `decisions[]` from the same template; the ADR stage of
+   `decision-record` writes it to `docs/adr/`. Depth S and M skip this skill: `writing-plans`
+   writes their short `design.md`.
 5. Next steps: `harness:xia2` for research if unknown code or libraries are involved, then `harness:writing-plans`.
 
 No code until the design is agreed. There is no mandatory review round. For an L design the
@@ -30,7 +32,8 @@ advisor checks the result (the calling script runs it).
   recommended answer worded so "yes" accepts it.
 - Auto: never ask the owner. At every approach choice or ambiguity pick the recommended option and
   record it in `decisions[]`: `{title, context, options, decision, why, consequences,
-  how_to_reverse, confidence: high|medium|low, needs_review: boolean}`. Do not write ADR files.
+  how_to_reverse, confidence: high|medium|low, needs_review: boolean}`. Do not write ADR files or
+  `specs/` files: return the design text, and the calling script writes `design.md`.
 - Set `needs_advisor: true` with `advisor_question` when you are BLOCKED, have low confidence, or a
   decision affects other tickets or a public contract. The calling script runs the advisor. Do
   not spawn agents (`docs/adr/0001-workflow-capabilities.md`).
