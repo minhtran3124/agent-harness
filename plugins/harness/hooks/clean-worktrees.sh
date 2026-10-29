@@ -98,6 +98,15 @@ if [ -n "$only" ]; then
   if [ -f "$sbx" ] && [ -d "$sbroot" ]; then
     for b in $only; do
       case "$keep" in *" $b "*) continue ;; esac
+      # Never remove the sandbox the session runs in (its cwd would vanish): keep it and say so.
+      inside=""
+      for d in "$sbroot"/*/; do
+        d=${d%/}; [ -f "$d/.sandbox.json" ] || continue
+        [ "$(jq -r '.branch // empty' "$d/.sandbox.json" 2>/dev/null)" = "$b" ] || continue
+        dp=$(cd "$d" && pwd -P) || continue
+        case "$start/" in "$dp"/*) inside=$dp; break ;; esac
+      done
+      if [ -n "$inside" ]; then out+="kept sandbox of $b: the session runs in $inside"$'\n'; continue; fi
       s=$(bash "$sbx" clean "$root" --branch "$b" --yes 2>&1) || true
       [ -z "$s" ] || out+="$s"$'\n'
     done

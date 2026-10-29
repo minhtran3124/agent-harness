@@ -174,4 +174,9 @@ t "manual run with no argument leaves sandboxes alone"
 OUT=$(cd "$MAIN" && PATH="$STUB:$PATH" bash hooks/clean-worktrees.sh 2>&1); RC=$?
 if [ -d "$SBROOT/s-feat" ] && [ ! -d "$WT" ]; then pass; else fail "rc=$RC out=$OUT"; fi
 
+sbx_setup; mk_sb s-feat feat
+t "session cwd inside the merged PR's sandbox: sandbox kept, reported, hook exits 0"
+OUT=$(cd "$SBROOT/s-feat" && printf '%s' '{"tool_input":{"command":"gh pr merge 7"}}' | PATH="$STUB:$PATH" bash "$MAIN/hooks/clean-worktrees.sh" PostToolUse 2>&1); RC=$?
+if [ "$RC" = 0 ] && [ -d "$SBROOT/s-feat" ] && printf '%s' "$OUT" | grep -q 'kept sandbox of feat'; then pass; else fail "rc=$RC out=$OUT"; fi
+
 finish
