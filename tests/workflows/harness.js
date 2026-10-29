@@ -706,6 +706,20 @@ test('a1: pass with a GIF attaches after finish, without the flaky note', async 
   assert.strictEqual(result.tickets[0].status, 'done')
 })
 
+test('a1b: the gif prompt names sha256sum, the distinct-still rule and the PNG fallback', async () => {
+  const { calls } = await run({}, withVerify('FE'))
+  const g = named(calls, /^gif:1$/)[0]
+  assert(g.prompt.includes('sha256sum') && g.prompt.includes('fewer than 2 distinct') && g.prompt.includes('identical to the one before it') && g.prompt.includes('PNG'), g.prompt)
+})
+
+test('a1c: an empty gif with a still present attaches the first still, in order gif, finish, attach', async () => {
+  const { calls, result } = await run({}, withVerify('FE', c => (c.label === 'gif:1' ? ok({ gif: '' }) : undefined)))
+  const ls = labelsOf(calls).filter(l => /^(gif|finish|attach)/.test(l))
+  assert.deepStrictEqual(ls, ['gif:1', 'finish:1', 'attach:1'])
+  assert(named(calls, /^attach:1$/)[0].prompt.includes('--attach /wt/1/.playwright-mcp/1/step-1.png'), 'attach prompt')
+  assert.strictEqual(result.tickets[0].status, 'done')
+})
+
 test('a2: flaky adds the note to the PR body', async () => {
   const { calls } = await run({}, c => {
     if (c.label === 'verify:1') return vres(false, 'FE')
@@ -717,10 +731,21 @@ test('a2: flaky adds the note to the PR body', async () => {
   assert(a.prompt.includes('--attach') && a.prompt.includes('gh pr edit 101 --repo o/r') && a.prompt.includes('was flaky'), a.prompt)
 })
 
-test('a3: no GIF path means no attach, and the ticket is done', async () => {
+test('a3: no GIF path attaches the first still as a PNG, and the ticket is done', async () => {
   const { calls, result, logs } = await run({}, withVerify('FE', c => (c.label === 'gif:1' ? ok({ gif: '' }) : undefined)))
-  assert.strictEqual(named(calls, /^attach:/).length, 0)
+  const at = named(calls, /^attach:/)
+  assert.strictEqual(at.length, 1)
+  assert(at[0].prompt.includes('--attach /wt/1/.playwright-mcp/1/step-1.png'), at[0].prompt)
   assert(logs.some(l => l.includes('no GIF built')))
+  assert.strictEqual(result.tickets[0].status, 'done')
+})
+
+test('a3b: no GIF and no stills makes no attach call', async () => {
+  const { calls, result } = await run({}, c => {
+    if (c.label === 'verify:1') return vres(true, 'FE', { stills: [] })
+    if (c.label === 'verify-base:1') return vres(false, 'FE')
+  })
+  assert.strictEqual(named(calls, /^attach:/).length, 0)
   assert.strictEqual(result.tickets[0].status, 'done')
 })
 
@@ -755,9 +780,11 @@ test('a10: an attach call that throws records a needs_review decision with the c
   assert.strictEqual(result.tickets[0].status, 'done')
 })
 
-test('a6: a GIF build failure keeps gif null, skips attach and does not change the result', async () => {
+test('a6: a GIF build failure keeps gif null, attaches the first still and does not change the result', async () => {
   const { calls, result, logs } = await run({}, withVerify('FE', c => (c.label === 'gif:1' ? new Error('no ffmpeg') : undefined)))
-  assert.strictEqual(named(calls, /^attach:/).length, 0)
+  const at = named(calls, /^attach:/)
+  assert.strictEqual(at.length, 1)
+  assert(at[0].prompt.includes('--attach /wt/1/.playwright-mcp/1/step-1.png'), at[0].prompt)
   assert(logs.some(l => l.includes('gif build failed')))
   assert(named(calls, /^finish:1$/)[0].prompt.includes('Verify result: pass'))
   assert.strictEqual(result.tickets[0].status, 'done')

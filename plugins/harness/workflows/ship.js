@@ -418,8 +418,9 @@ async function buildGif(t, impl, stills) {
     const res = await call(
       `Stage: gif. Build one animated GIF from the verify stills of ticket #${t.n}. Stills (in order): ${stills.join(', ')}. They sit in ${dir}.\n` +
       `Use only the stills listed above, in that order; ignore any other file in ${dir}. Write a concat list file ${dir}/stills.txt with one line per still ("file '<absolute path>'" and "duration 1"), then repeat the last still's "file" line once more at the end with no duration (the concat demuxer ignores the duration of the last entry, so without the repeat the final still flashes for one frame), then run: ffmpeg -y -f concat -safe 0 -i ${dir}/stills.txt -vf "scale=800:-2:flags=lanczos,split[a][b];[a]palettegen[p];[b][p]paletteuse" ${dir}/evidence.gif. Do not use a wildcard pattern for the input.\n` +
+      `Before the list: compare the stills with sha256sum and drop a still that is identical to the one before it. If fewer than 2 distinct stills remain, run no ffmpeg and return an empty gif (a later step attaches the first still as a PNG).\n` +
       `Rules: palettegen, at most 30 seconds, 800 px wide, under 10 MB (drop frames or lower the frame rate if larger). Write the GIF inside ${dir}. Commit nothing and do not add it to git.\n` +
-      `Return gif: the absolute path of the GIF, or an empty string when there are no stills, ffmpeg is missing or the build failed.\n\n${RULES}`,
+      `Return gif: the absolute path of the GIF, or an empty string when there are no stills, fewer than 2 distinct stills remain, ffmpeg is missing or the build failed. An empty gif means a later step attaches the first still as a PNG.\n\n${RULES}`,
       { label: `gif:${t.n}`, phase: 'Tickets', schema: GIF_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
     if (res && res.gif) return res.gif
     log(`#${t.n} no GIF built`)
@@ -427,20 +428,22 @@ async function buildGif(t, impl, stills) {
   return null
 }
 
-// Separate from stageFinish: runs only for a real PR with a GIF and a pass or flaky result. A failure is only logged.
+// Separate from stageFinish: runs only for a real PR with evidence (the GIF, else the first still as a PNG) and a pass or flaky result. A failure is only logged.
 async function stageAttach(t, fin, verifyResult) {
-  if (!(fin && fin.pr > 0) || !verifyResult || !verifyResult.gif) return false
+  if (!(fin && fin.pr > 0) || !verifyResult) return false
+  const evidence = verifyResult.gif || (verifyResult.stills || [])[0]
+  if (!evidence) return false
   if (verifyResult.result !== 'pass' && verifyResult.result !== 'flaky') return false
   const flaky = verifyResult.result === 'flaky'
   const note = `Verify for #${t.n} was flaky: it failed once and passed on the retry.`
-  const cmd = `gh pr comment ${fin.pr} --repo ${repo} --attach ${verifyResult.gif} --body "Verify evidence for #${t.n}: ${verifyResult.result}"`
+  const cmd = `gh pr comment ${fin.pr} --repo ${repo} --attach ${evidence} --body "Verify evidence for #${t.n}: ${verifyResult.result}"`
   try {
     const res = await call(
       `Stage: attach. Run: ${cmd}\n` +
-      `The --attach flag needs gh 2.99.0 or newer. The comment body must not contain an image line: the GIF is attached with --attach only.\n` +
+      `The --attach flag needs gh 2.99.0 or newer. The comment body must not contain an image line: the evidence file is attached with --attach only.\n` +
       (flaky ? `Then add this note to the end of the PR body: read it with gh pr view ${fin.pr} --repo ${repo} --json body -q .body, append "${note}", and write it back with gh pr edit ${fin.pr} --repo ${repo} --body-file <file>.\n` : '') +
       `If the command is denied or fails (old gh, permission denied, any error), do not retry and do not work around it. Return status ok (never blocked) and one decision with needs_review true, titled "Attach the verify GIF by hand for #${t.n}", whose decision field holds this exact command so the owner can paste it as written: ${cmd}\n` +
-      `Commit nothing; the GIF stays uncommitted. Otherwise return status ok.\n\n${RULES}`,
+      `Commit nothing; the evidence file stays uncommitted. Otherwise return status ok.\n\n${RULES}`,
       { label: `attach:${t.n}`, phase: 'Tickets', schema: SETUP_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
     takeDecisions(t.n, 'attach', res)
     return !!res && res.status !== 'blocked' && !((res.decisions || []).some(d => d && d.needs_review === true))
@@ -466,7 +469,7 @@ function stageFinish(t, impl, verifyResult) {
     ? `Local mode: do NOT push and do NOT open a pull request. Verify the branch as the skill describes, then write the PR description for base ${prBase} to .ship/pr-${t.n}.md inside the worktree (do not commit it) and return its absolute path as body_file with pr: 0.\n`
     : `Verify, push the branch and open the pull request with base ${prBase}. The body says "Refs #${t.n}" (the final PR carries the Closes lines) and ends with the footer line. Return the PR number as pr and its url.\n`
   const ver = verifyResult
-    ? `Verify result: ${verifyResult.result}. Local stills: ${verifyResult.stills.join(', ') || 'none'}. Evidence stays uncommitted; a later step attaches the GIF to the pull request.\n`
+    ? `Verify result: ${verifyResult.result}. Local stills: ${verifyResult.stills.join(', ') || 'none'}. Evidence stays uncommitted; a later step attaches the evidence file to the pull request.\n`
     : ''
   const build = advice => head(t, 'finishing-a-development-branch', `Stage: finish. ${where}${ver}${how}Do not run the full suite.${advice}`, dir)
   return runStage(t, 'finish', build, FINISH_SCHEMA, { model: MODEL.implement, effort: EFFORT.implement })
