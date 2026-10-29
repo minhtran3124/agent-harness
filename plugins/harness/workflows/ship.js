@@ -107,6 +107,10 @@ const UAT_SCHEMA = stageSchema({
   console_errors: NUM,
 }, ['passed_ac', 'scenarios'])
 const GIF_SCHEMA = stageSchema({ gif: { type: 'string', description: 'absolute path of the GIF, or empty when none was built' } }, ['gif'])
+// Provisioning result (provision-sandbox.sh prints one JSON line). status failed carries the script's stderr in error.
+const SANDBOX_SCHEMA = { type: 'object',
+  properties: { status: { type: 'string', enum: ['ready', 'failed'] }, dir: STR, branch: STR, port: NUM, db: STR, mode: STR, error: STR },
+  required: ['status'] }
 const FINISH_SCHEMA = stageSchema({ pr: NUM, url: STR, body_file: STR }, ['pr'])
 const SETUP_SCHEMA = stageSchema({})
 const MERGE_SCHEMA = stageSchema({
@@ -154,6 +158,9 @@ function validateArgs(a) {
   for (const k of ['repo', 'repoDir', 'pluginDir', 'remote', 'base', 'slug', 'testCmd', 'lintCmd', 'fullTestCmd', 'advisorModel']) {
     if (typeof a[k] !== 'string' || !a[k].trim()) throw new Error(`ship: args.${k} is required (non-empty string)`)
   }
+  if (a.sandbox !== undefined && !['worktree', 'clone'].includes(a.sandbox)) throw new Error(`ship: args.sandbox must be 'worktree' or 'clone', got ${JSON.stringify(a.sandbox)}`)
+  // A clone holds the ticket branch only inside itself, so local mode (no push) could never merge it.
+  if (a.sandbox === 'clone' && a.local === true) throw new Error('ship: args.sandbox clone cannot be combined with local mode (the ticket branch would exist only inside the clone)')
   if (!Array.isArray(a.tickets) || a.tickets.length === 0) throw new Error('ship: args.tickets must be a non-empty array')
   const seen = new Set()
   for (const t of a.tickets) {
@@ -183,6 +190,12 @@ const integBranch = `feat/${slug}`
 const integRef = single ? baseRef : (LOCAL ? integBranch : `${remote}/${integBranch}`)
 const ticketBranch = t => (single ? `feat/${t.n}-${slugOf(t.title)}` : `feat/${slug}-${t.n}`)
 const finalBranch = single ? ticketBranch(tickets[0]) : integBranch
+const SANDBOX_MODE = args.sandbox || 'worktree'
+// One sandbox per ticket (provision-sandbox.sh). The run id is stable across a resume, so a re-run reuses the same dir.
+const RUN_ID = slugOf(slug).replace(/^-+|-+$/g, '')
+// A clone's only remote is origin; commands that run inside a sandbox use this name, never `remote`.
+const SB_REMOTE = SANDBOX_MODE === 'clone' ? 'origin' : remote
+const sbRef = branch => (LOCAL ? branch : `${SB_REMOTE}/${branch}`)
 const finalRef = single ? (LOCAL ? finalBranch : `${remote}/${finalBranch}`) : integRef
 
 // No agent uses isolation: 'worktree'. That option binds to the session's cwd, which is not the target repo
@@ -315,7 +328,7 @@ function head(t, skill, extra, wt) {
     ? `Owner-confirmed decisions for this ticket (never contradict them; if you must, mark the decision contradicts_confirmed and stop that part):\n${t.confirmed}\n\n`
     : ''
   const ask = NO_ASK ? 'No owner answers exist for this run: every question you would have asked becomes a decision; set needs_review by the rule above.\n' : ''
-  const read = skill ? `Read ${pluginDir}/skills/${skill}/SKILL.md and run it with Mode: auto, only after your worktree exists (it is created by the commands above). Never ask anyone.\n` : ''
+  const read = skill ? `Read ${pluginDir}/skills/${skill}/SKILL.md and run it with Mode: auto, only after your working directory exists (a sandbox, or the worktree the commands above create). Never ask anyone.\n` : ''
   const source = LOCAL ? `Ticket text: ${t.title}\n` : `The ticket is GitHub issue #${t.n} of ${repo}; read it with: gh issue view ${t.n} --repo ${repo} --json body -q .body\n`
   return `${RULES}\n\n${notCwd(wt)}\nTicket #${t.n}: ${t.title} (depth ${t.depth}). Repo ${repo}.\n${source}${confirmed}${ask}${read}${extra || ''}`
 }
@@ -357,14 +370,55 @@ async function advisePlan(t, design, plan) {
     `Design:\n${design.design_md}\n\nPlan:\n${plan.plan_md}`)
 }
 
-function stageImplement(t, branch, planText, boundary) {
-  const w = newWt(`t${t.n}`, branch, integRef)
-  const build = advice => w.setup + head(t, 'implement',
+// One sandbox per ticket, made by provision-sandbox.sh and checked by the script, not by the agent's word.
+// The script fixes the dir, port and DB from its inputs, so the JSON line is verified against what it must be.
+const sandboxes = {}   // ticket number -> { dir, branch, port, db, mode }
+const trimSlug = s => s.replace(/^-+|-+$/g, '')
+const ticketSlug = t => trimSlug(slugOf(t.title))
+const sandboxDirTail = t => `/.ship-${trimmed.split('/').pop()}/${RUN_ID}-t${t.n}-${ticketSlug(t)}`
+function sandboxProblem(t, sb) {
+  if (!sb || sb.status !== 'ready') return (sb && sb.error) || 'the provisioning agent returned no ready result'
+  if (typeof sb.dir !== 'string' || !sb.dir || typeof sb.branch !== 'string' || !sb.branch || !Number.isInteger(sb.port) || typeof sb.db !== 'string' || !sb.db) {
+    return 'the provisioning result lacks dir, branch, port or db'
+  }
+  if (!sb.dir.endsWith(sandboxDirTail(t))) return `sandbox dir ${sb.dir} does not end with ${sandboxDirTail(t)}`
+  if (sb.port !== 4000 + t.n * 10) return `sandbox port ${sb.port} is not ${4000 + t.n * 10}`
+  if (sb.branch !== ticketBranch(t)) return `sandbox branch ${sb.branch} is not ${ticketBranch(t)}`
+  return ''
+}
+async function stageProvision(t) {
+  const cmd = `bash ${pluginDir}/scripts/provision-sandbox.sh ${repoDir} ${RUN_ID} ${t.n} ${ticketSlug(t)} --branch ${ticketBranch(t)} --from ${integRef} --remote ${remote} --mode ${SANDBOX_MODE}`
+  const prompt = `Stage: provision. Make the sandbox of ticket #${t.n} with exactly these commands, in this order:\n` +
+    `git -C ${repoDir} fetch ${remote}\n${cmd}\n\n` +
+    `${notCwd()}\nThe second command can take minutes (it runs the project's setup commands): run it with a Bash timeout of 600000 ms. ` +
+    `It prints one JSON line on stdout when ready: copy its status, dir, branch, port, db and mode into the result. ` +
+    `If it exits non-zero or times out, return status failed and put its stderr text, verbatim, in error. ` +
+    `Do not retry, repair, edit, delete or work around anything: the script owns the sandbox and the error text goes to the owner unchanged.`
+  let sb
+  try { sb = await call(prompt, { label: `provision:${t.n}`, phase: 'Tickets', schema: SANDBOX_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap }) }
+  catch (e) { throw new Blocked(`provision: ${e && e.message ? e.message : String(e)}`) }
+  const problem = sandboxProblem(t, sb)
+  if (problem) {
+    const hint = /already|checked out|worktree add/i.test(problem) ? ` (if branch ${ticketBranch(t)} is left from an earlier run, delete it and run again)` : ''
+    throw new Blocked(`provision: ${problem}${hint}`)
+  }
+  return sandboxes[t.n] = { dir: sb.dir, branch: sb.branch, port: sb.port, db: sb.db, mode: SANDBOX_MODE }
+}
+const sandboxFacts = sb => `Your sandbox is ${sb.dir}, branch ${sb.branch} is checked out, port ${sb.port}, DB ${sb.db}. Its remote is named ${SB_REMOTE}. ` +
+  `To run the app there: set -a; . ${sb.dir}/.sandbox.env; set +a, then use PORT=$SANDBOX_PORT (a block of ten ports starts there) and the database $SANDBOX_DB_NAME. Never pick a free port yourself.`
+
+async function stageImplement(t, sb, planText, boundary) {
+  const build = advice => head(t, 'implement',
     `Stage: implement. You cannot start other agents, so act as the implementer yourself (${pluginDir}/agents/implementer.md): take the plan steps one at a time. ` +
     `For each step: do it, run its done_when command, then "git add" and, as a separate command, "git commit". ` +
     `Related tests: ${testCmd} (a template; fill in the files you touched). Lint: ${lintCmd}.\n` +
-    `Return ${w.dir} as worktree, and your branch.\n\n${boundary || ''}\n${planText}${advice}`, w.dir)
-  return runStage(t, 'implement', build, IMPLEMENT_SCHEMA, { agentType: 'harness:implementer', roleFile: `${pluginDir}/agents/implementer.md`, model: MODEL.implement, effort: EFFORT.implement })
+    `${sandboxFacts(sb)} Do not create a worktree or branch.\n` +
+    `Return ${sb.dir} as worktree, and your branch ${sb.branch}.\n\n${boundary || ''}\n${planText}${advice}`, sb.dir)
+  const impl = await runStage(t, 'implement', build, IMPLEMENT_SCHEMA, { agentType: 'harness:implementer', roleFile: `${pluginDir}/agents/implementer.md`, model: MODEL.implement, effort: EFFORT.implement })
+  // The sandbox is the script's fact: a wrong value from the agent must not reach verify, finish or merge.
+  impl.worktree = sb.dir
+  impl.branch = sb.branch
+  return impl
 }
 
 // One verify run. mode: 'verify' (head), 'verify-retry' (head again) or 'verify-base' (base commit, a separate worktree).
@@ -603,7 +657,8 @@ async function runTicket(t) {
       planText = `Design:\n${design.design_md}\n\nAdvisor review of design and plan (follow it unless it is wrong; record any deviation as a decision):\n${advice}\n\n` +
         `Follow this plan:\n${plan.plan_md}`
     }
-    const impl = spec.impl = await stageImplement(t, branch, planText, boundary)
+    const sandbox = spec.sandbox = await stageProvision(t)
+    const impl = spec.impl = await stageImplement(t, sandbox, planText, boundary)
     const verifyResult = spec.verify = await verifyTicket(t, impl)
     const fin = spec.fin = await stageFinish(t, impl, verifyResult)
     const attached = await stageAttach(t, fin, verifyResult)

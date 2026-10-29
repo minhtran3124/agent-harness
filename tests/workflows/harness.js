@@ -25,6 +25,16 @@ function metaText() {
   throw new Error('unterminated meta')
 }
 
+// provision-sandbox.sh prints dir, port and DB from its inputs; the stub reads them from the command in the prompt.
+function provisioned(c) {
+  const m = c.prompt.match(/provision-sandbox\.sh (\S+) (\S+) (\d+) (\S+) --branch (\S+) --from (\S+) --remote (\S+) --mode (\S+)/)
+  if (!m) throw new Error(`provision prompt has no command: ${c.prompt.slice(0, 200)}`)
+  const [, repoDir, run, n, slug, branch, , , mode] = m
+  const parts = repoDir.replace(/\/+$/, '').split('/')
+  const dir = `${parts.slice(0, -1).join('/')}/.ship-${parts.pop()}/${run}-t${n}-${slug}`
+  return { status: 'ready', mode, dir, branch, port: 4000 + Number(n) * 10, db: `sandbox_${`${run}-t${n}`.replace(/-/g, '_')}` }
+}
+
 // ---- default scripted answers, keyed by label -----------------------------------------------
 const ok = (extra) => ({ status: 'ok', summary: 'did it', decisions: [], ...extra })
 function defaults(c, st) {
@@ -36,6 +46,7 @@ function defaults(c, st) {
   if (l.startsWith('research:')) return ok({ research_md: 'RESEARCH' })
   if (l.startsWith('design:')) return ok({ design_md: 'DESIGN' })
   if (l.startsWith('plan:')) return ok({ plan_md: 'PLAN-MD', plan_steps: [] })
+  if (l.startsWith('provision:')) return provisioned(c)
   if (l.startsWith('implement:')) return ok({ worktree: `/wt/${n}`, branch: `b${n}`, files: [], commits: [], verify: [] })
   if (/^verify(-retry|-base)?:/.test(l)) return ok({ passed: !l.startsWith('verify-base'), kind: 'BE', failedStep: '', consoleErrors: [], stills: [], report: 'VERIFY-REPORT' })
   if (l.startsWith('verify-comment:')) return ok()
@@ -61,6 +72,9 @@ function defaults(c, st) {
 }
 
 let args0
+// Sandbox dir of the default ticket #1 (provision-sandbox.sh: <parent>/.ship-<repo>/<runId>-t<n>-<slug>).
+const SB1 = '/.ship-repo/ms-t1-add-the-thing'
+const sbT = n => `/.ship-repo/ms-t${n}-ticket-${n}`   // sandbox dir of T(n)
 function baseArgs(over) {
   return {
     repo: 'o/r', repoDir: '/repo', pluginDir: '/plug', remote: 'origin', base: 'v5.0.0', slug: 'ms',
@@ -120,11 +134,79 @@ test('a: one ticket has no integration or merge agent and a feat/<n>- branch', a
   const ls = labelsOf(calls)
   assert(!ls.includes('setup-integration') && !ls.some(l => l.startsWith('merge:')) && !ls.includes('final-pr'), ls.join())
   const impl = named(calls, /^implement:1$/)[0]
-  assert(impl.prompt.includes('git -C /repo worktree add -b feat/1-add-the-thing /.ship-repo/ms/t1 origin/v5.0.0'), impl.prompt.slice(0, 300))
+  const prov = named(calls, /^provision:1$/)[0]
+  assert(prov.prompt.includes('bash /plug/scripts/provision-sandbox.sh /repo ms 1 add-the-thing --branch feat/1-add-the-thing --from origin/v5.0.0 --remote origin --mode worktree'), prov.prompt)
+  assert(prov.prompt.includes('git -C /repo fetch origin') && prov.opts.model === 'haiku' && prov.schema.properties.dir, prov.prompt)
+  assert(impl.prompt.includes(`Your sandbox is ${SB1}, branch feat/1-add-the-thing is checked out, port 4010, DB sandbox_ms_t1.`), impl.prompt.slice(0, 300))
+  assert(impl.prompt.includes('Do not create a worktree or branch.') && !impl.prompt.includes('worktree add'), impl.prompt)
+  assert(labelsOf(calls).indexOf('provision:1') < labelsOf(calls).indexOf('implement:1'))
   assert.strictEqual(result.single, true)
   assert.strictEqual(result.final.branch, 'feat/1-add-the-thing')
   assert.strictEqual(result.final.pr, 101)
   assert(named(calls, /^finish:1$/)[0].prompt.includes('base v5.0.0'))
+})
+
+test('p1: two tickets get two sandboxes with distinct dirs, ports and DB names, made before implement', async () => {
+  const { calls } = await run({ tickets: [T(1, 1), T(2, 1)] }, null)
+  const prov = named(calls, /^provision:/)
+  assert.strictEqual(prov.length, 2, labelsOf(calls).join())
+  const facts = [1, 2].map(n => named(calls, new RegExp(`^implement:${n}$`))[0].prompt.match(/Your sandbox is (\S+), branch (\S+) is checked out, port (\d+), DB (\S+)\./))
+  assert(facts.every(Boolean))
+  for (let k = 1; k <= 3; k++) assert.strictEqual(new Set(facts.map(f => f[k])).size, 2, `facts column ${k} is not distinct`)
+  assert.deepStrictEqual(facts.map(f => f[3]), ['4010', '4020'])
+  const ls = labelsOf(calls)
+  for (const n of [1, 2]) assert(ls.indexOf(`provision:${n}`) >= 0 && ls.indexOf(`provision:${n}`) < ls.indexOf(`implement:${n}`), ls.join())
+})
+
+test('p2: depth M and L provision after the plan and before implement; research, design and plan hold no sandbox', async () => {
+  const { calls } = await run({ tickets: [T(1, 1, [], { depth: 'L' })] }, null)
+  const ls = labelsOf(calls)
+  assert(ls.indexOf('plan:1') < ls.indexOf('provision:1') && ls.indexOf('advisor:plan-review:1') < ls.indexOf('provision:1') && ls.indexOf('provision:1') < ls.indexOf('implement:1'), ls.join())
+  for (const l of ['research:1', 'design:1', 'plan:1']) assert(!named(calls, new RegExp(`^${l}$`))[0].prompt.includes('Your sandbox is'), l)
+})
+
+test('p3: a failed provisioning blocks the ticket with the script message and no later stage runs for it', async () => {
+  const msg = 'provision-sandbox: unknown ignored path: data/prod.db'
+  const { result, calls } = await run({ tickets: [T(1, 1), T(2, 1)] }, c => (c.label === 'provision:1' ? { status: 'failed', error: msg } : undefined))
+  const t1 = result.tickets.find(t => t.n === 1)
+  assert.strictEqual(t1.status, 'blocked')
+  assert.strictEqual(t1.reason, `provision: ${msg}`)
+  assert.strictEqual(result.tickets.find(t => t.n === 2).status, 'done')
+  const ls = labelsOf(calls)
+  for (const stage of ['implement', 'verify', 'verify-retry', 'verify-base', 'finish', 'uat']) assert(!ls.includes(`${stage}:1`), `${stage}:1 ran`)
+})
+
+test('p4: a provisioning agent that returns nothing, throws, or lies about dir, port or branch blocks the ticket', async () => {
+  const bad = {
+    'returns nothing': () => null,
+    'throws': () => new Error('boom'),
+    'lacks the db': r => ({ ...r, db: '' }),
+    'wrong port': r => ({ ...r, port: 4011 }),
+    'wrong dir': r => ({ ...r, dir: '/elsewhere/t1' }),
+    'wrong branch': r => ({ ...r, branch: 'feat/other' }),
+  }
+  for (const [name, mutate] of Object.entries(bad)) {
+    const { result, calls } = await run({}, c => (c.label === 'provision:1' ? mutate(provisioned(c)) : undefined))
+    assert.strictEqual(result.tickets[0].status, 'blocked', name)
+    assert(result.tickets[0].reason.startsWith('provision: ') && result.tickets[0].reason.length > 12, `${name}: ${result.tickets[0].reason}`)
+    assert(!labelsOf(calls).includes('implement:1'), name)
+  }
+})
+
+test('p5: the script, not the agent, fixes impl worktree and branch to the sandbox', async () => {
+  const { calls, result } = await run({}, c => (c.label === 'implement:1' ? ok({ worktree: '/wrong/dir', branch: 'wrong-branch' }) : undefined))
+  const fin = named(calls, /^finish:1$/)[0].prompt
+  assert(fin.includes(SB1) && !fin.includes('/wrong/dir') && fin.includes('feat/1-add-the-thing') && !fin.includes('wrong-branch'), fin)
+  assert.strictEqual(result.tickets[0].status, 'done')
+})
+
+test('p6: args.sandbox is worktree or clone; clone cannot be combined with local mode', async () => {
+  for (const bad of ['docker', '', 1]) await assert.rejects(run({ sandbox: bad }, null), /args\.sandbox must be/)
+  await assert.rejects(run({ sandbox: 'clone', local: true }, null), /clone cannot be combined with local/)
+  const w = await run({ sandbox: 'worktree' }, null)
+  assert(named(w.calls, /^provision:1$/)[0].prompt.includes('--mode worktree'))
+  const c = await run({ sandbox: 'clone' }, null)
+  assert(named(c.calls, /^provision:1$/)[0].prompt.includes('--mode clone'))
 })
 
 const noRepoTouch = /^(request:|artifact|final-pr)/
@@ -152,7 +234,7 @@ test('b3: the result lists the worktree dirs outside the repo', async () => {
   const { result } = await run({}, null)
   assert(result.worktrees.length > 3)
   for (const d of result.worktrees) assert(d.startsWith('/.ship-repo/ms/'), d)
-  assert(result.worktrees.includes('/.ship-repo/ms/t1'))
+  assert(!result.worktrees.includes('/.ship-repo/ms/t1'), 'the ticket code runs in a sandbox, not a light worktree')
 })
 
 test('c4: skill and role reads use absolute paths under pluginDir, not the worktree or .claude', async () => {
@@ -308,7 +390,8 @@ test('b: three tickets, groups 1,1,2: setup, parallel, merge, group 2, merge, on
   assert(at('merge:g1') < at('intent:3'), 'group 2 starts after the merge')
   assert(at('finish:3') < at('merge:g2') && at('merge:g2') < at('final-pr'))
   assert.strictEqual(named(calls, /^final-pr$/).length, 1)
-  assert(named(calls, /^implement:3$/)[0].prompt.startsWith('git -C /repo fetch origin\ngit -C /repo worktree add -b feat/ms-3 /.ship-repo/ms/t3 origin/feat/ms'))
+  assert(named(calls, /^provision:3$/)[0].prompt.includes('provision-sandbox.sh /repo ms 3 ticket-3 --branch feat/ms-3 --from origin/feat/ms --remote origin --mode worktree'))
+  assert(named(calls, /^implement:3$/)[0].prompt.includes(`Your sandbox is ${sbT(3)}, branch feat/ms-3 is checked out, port 4030, DB sandbox_ms_t3.`))
   assert(named(calls, /^finish:1$/)[0].prompt.includes('base feat/ms'))
   assert(named(calls, /^final-pr$/)[0].prompt.includes('--base v5.0.0 --head feat/ms'))
   assert.deepStrictEqual(result.tickets.map(t => t.status), ['done', 'done', 'done'])
@@ -683,15 +766,15 @@ test('v1: an FE ticket runs implement, verify, base check, finish in that order,
   const ls = labelsOf(calls).filter(l => /^(implement|verify|gif|finish)/.test(l))
   assert.deepStrictEqual(ls, ['implement:1', 'verify:1', 'verify-base:1', 'gif:1', 'finish:1'])
   const v = named(calls, /^verify:1$/)[0]
-  assert(v.prompt.includes('/wt/1') && v.prompt.includes('/plug/skills/verify/SKILL.md') && v.prompt.includes('gh issue view 1 --repo o/r --json body'), v.prompt)
+  assert(v.prompt.includes(SB1) && v.prompt.includes('/plug/skills/verify/SKILL.md') && v.prompt.includes('gh issue view 1 --repo o/r --json body'), v.prompt)
   assert(!('agentType' in v.opts) && v.opts.model === 'sonnet' && v.opts.effort === 'medium' && v.opts.phase === 'Tickets')
   assert(v.schema.properties.passed && v.schema.properties.stills && v.schema.required.includes('kind'))
   const b = named(calls, /^verify-base:1$/)[0]
-  assert(b.prompt.includes('worktree add --detach /.ship-repo/ms/verify-base-1 origin/v5.0.0') && b.prompt.includes('Mode: base') && b.prompt.includes('/wt/1/verify.config.json') && b.prompt.includes('Commit nothing'), b.prompt)
+  assert(b.prompt.includes('worktree add --detach /.ship-repo/ms/verify-base-1 origin/v5.0.0') && b.prompt.includes('Mode: base') && b.prompt.includes(SB1 + '/verify.config.json') && b.prompt.includes('Commit nothing'), b.prompt)
   const f = named(calls, /^finish:1$/)[0].prompt
   assert(f.includes('Verify result: pass') && f.includes('/wt/1/.playwright-mcp/1/step-1.png') && f.includes('Evidence stays uncommitted') && !f.includes('Nothing is attached'), f)
   const g = named(calls, /^gif:1$/)[0]
-  assert(g.opts.model === 'haiku' && g.schema.properties.gif && g.prompt.includes('ffmpeg') && g.prompt.includes('palettegen') && g.prompt.includes('/wt/1/.playwright-mcp/1') && !g.prompt.includes('*.png') && g.prompt.includes('concat') && g.prompt.includes('repeat the last still'), g.prompt)
+  assert(g.opts.model === 'haiku' && g.schema.properties.gif && g.prompt.includes('ffmpeg') && g.prompt.includes('palettegen') && g.prompt.includes(SB1 + '/.playwright-mcp/1') && !g.prompt.includes('*.png') && g.prompt.includes('concat') && g.prompt.includes('repeat the last still'), g.prompt)
   assert.strictEqual(result.final.pr, 101)
 })
 
@@ -867,7 +950,7 @@ const adrBody = calls => named(calls, /^adr$/)[0].prompt
 test('vb1: FE pass with a failed base check and an attached GIF is listed under Verify', async () => {
   const { calls } = await run({}, withVerify('FE', gifOk))
   const b = adrBody(calls)
-  assert(b.includes('## Verify') && b.includes('- #1 FE: pass; base: failed on base as required; stills: /wt/1/.playwright-mcp/1; GIF: built and attached'), b)
+  assert(b.includes('## Verify') && b.includes('- #1 FE: pass; base: failed on base as required; stills: ' + SB1 + '/.playwright-mcp/1; GIF: built and attached'), b)
   assert(b.indexOf('## Review') < b.indexOf('## Verify') && b.indexOf('## Verify') < b.indexOf('## Intent review'), b)
 })
 
@@ -890,7 +973,7 @@ test('vb3: a weak-test blocked ticket shows fail and passed on base', async () =
     if (c.label === 'verify:1' || c.label === 'verify-base:1') return vres(true, 'FE')
   })
   const b = adrBody(calls)
-  assert(b.includes('- #1 FE: fail; base: passed on base (weak test); stills: /wt/1/.playwright-mcp/1; GIF: not built'), b)
+  assert(b.includes('- #1 FE: fail; base: passed on base (weak test); stills: ' + sbT(1) + '/.playwright-mcp/1; GIF: not built'), b)
 })
 
 test('vb4: a GIF built but a failed attach shows built, not attached', async () => {
@@ -900,7 +983,7 @@ test('vb4: a GIF built but a failed attach shows built, not attached', async () 
 
 test('vb5: no GIF shows not built, and a BE ticket has base not run', async () => {
   const { calls } = await run({}, c => (c.label === 'verify:1' ? vres(true, 'BE') : undefined))
-  assert(adrBody(calls).includes('- #1 BE: pass; base: not run; stills: /wt/1/.playwright-mcp/1; GIF: not built'), adrBody(calls))
+  assert(adrBody(calls).includes('- #1 BE: pass; base: not run; stills: ' + SB1 + '/.playwright-mcp/1; GIF: not built'), adrBody(calls))
 })
 
 test('vb6: failing twice shows fail with base not run', async () => {
@@ -978,7 +1061,7 @@ test('u2: the UAT prompt holds the body and owner block, never the plan, diff or
   assert(u, labelsOf(calls).join())
   for (const bad of ['SECRET-V', 'SECRET-V2', 'OWNER-SECRET', 'PLAN-MD', 'continues here', 'gh issue view 1']) assert(!u.prompt.includes(bad), `UAT prompt leaks ${bad}`)
   assert(u.prompt.includes('Do the thing.') && u.prompt.includes('Tail text') && u.prompt.includes('Owner said X.'), u.prompt)
-  assert(u.prompt.includes('Config: /wt/1/verify.config.json') && u.prompt.includes('/plug/skills/uat/SKILL.md'), u.prompt)
+  assert(u.prompt.includes('Config: ' + sbT(1) + '/verify.config.json') && u.prompt.includes('/plug/skills/uat/SKILL.md'), u.prompt)
   assert.strictEqual(u.opts.phase, 'UAT')
   const ir = named(calls, /^intent-review$/)[0]
   assert(ir.prompt.includes('SECRET-V'), 'intent review still gets the raw body')
