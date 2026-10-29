@@ -48,6 +48,8 @@ ENV_OK = {
     "RISK_WARN_CATEGORIES", "RISK_CORROBORATION_STRICT", "REQUIRE_VERIFY",
     "BLAST_RADIUS_STRICT", "SESSION_KNOWLEDGE_DIR", "AUTO_TEST_CMD", "AUTO_TEST_PATTERN",
     "FULL_ARTIFACTS",
+    # login variables the owner sets for the verify stage (read by name, never assigned in a skill)
+    "VERIFY_USER", "VERIFY_PASSWORD",
     # common CI
     "CI", "GITHUB_TOKEN", "GH_TOKEN",
 }
