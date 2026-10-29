@@ -1,7 +1,7 @@
 ---
 name: intake
 description: "Readiness gate for one ticket (issue number, issue URL or free text). Judges READY, CONFIRM, GRILL or BLOCKED and picks a depth of S, M or L before any research, planning or edit. Use before starting work on a ticket."
-allowed-tools: Read, Grep, Glob, AskUserQuestion, Bash(gh issue view *), Bash(git log *), Bash(git branch *), Bash(ls *)
+allowed-tools: Read, Grep, Glob, AskUserQuestion, Bash(gh issue view *), Bash(git log *), Bash(git branch *), Bash(ls *), Bash(test -n *)
 ---
 
 # Intake — is this ticket ready?
@@ -24,6 +24,7 @@ Judge one ticket and return a verdict. Do not edit files, plan or implement.
 - **CONFIRM**: 1-3 small decisions remain. Write each as a question with a recommended answer,
   worded so that "yes" accepts it. A missing `Verify:` row is one of them: draft the row as the
   recommended answer. The accepted row goes into the Confirmed decisions comment.
+  If the row logs in, check its login variables first: `references/verify-login.md`.
 - **GRILL**: the ticket is important or its design tree is deep: auth or security, data migration
   or deletion, a public contract, quota or money, an irreversible action, cross-module
   architecture, or the label `grill`. Hand off: run the grilling skill.
