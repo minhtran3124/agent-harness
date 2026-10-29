@@ -138,4 +138,65 @@ OUT=$(bash "$SCRIPT" --audit 2>&1); rc1=$?
 audit "$repo" --max-kb abc
 if [ "$rc1" -eq 2 ] && [ "$RC" -eq 2 ]; then pass; else fail "rc=$rc1/$RC"; fi
 
+# ---- provisioning uses the same classification ----
+snap() { git -C "$1" status --porcelain --ignored | sort | md5sum 2>/dev/null || git -C "$1" status --porcelain --ignored | sort | md5 -q; }
+hash_of() { md5sum "$1" 2>/dev/null || md5 -q "$1"; }
+# mk_auto_repo → small config and state only, none of it in a manifest; plus a regenerable dir.
+mk_auto_repo() {
+  local d; d=$(new_repo)
+  _CLEANUP_DIRS+=("$(dirname "$d")/.ship-$(basename "$d")")
+  printf '.env*\n*.db\n.auth/\nCLAUDE.local.md\nnode_modules/\nstray/\n' > "$d/.gitignore"
+  printf 'x\n' > "$d/app.txt"; git -C "$d" add .gitignore app.txt; git -C "$d" commit -qm seed
+  printf 'A=1\n' > "$d/.env"; printf 'db\n' > "$d/data.db"; printf 'local\n' > "$d/CLAUDE.local.md"
+  mkdir -p "$d/.auth" "$d/node_modules/p"; printf 'tok\n' > "$d/.auth/x"; printf 'x\n' > "$d/node_modules/p/i.js"
+  echo "$d"
+}
+sbx() { echo "$(dirname "$1")/.ship-$(basename "$1")/$2"; }
+
+t "small unlisted config and state files are copied with no manifest"
+repo=$(mk_auto_repo)
+prov "$repo" a 1 s
+dir=$(sbx "$repo" a-t1-s)
+if [ "$RC" -eq 0 ] && [ "$(cat "$dir/.env")" = A=1 ] && [ -f "$dir/data.db" ] && [ -f "$dir/.auth/x" ] \
+  && [ -f "$dir/CLAUDE.local.md" ] && [ ! -e "$dir/node_modules" ]; then pass; else fail "rc=$RC $OUT"; fi
+
+t "two unknown paths block the run, list both hints, and create nothing"
+repo=$(mk_auto_repo)
+printf 'P=1\n' > "$repo/.env.prod"; mkdir -p "$repo/stray"; printf 'u\n' > "$repo/stray/n.txt"
+before=$(snap "$repo"); envh=$(hash_of "$repo/.env")
+prov "$repo" b 1 s
+if [ "$RC" -eq 1 ] && echo "$OUT" | grep -q 'copy \.env\.prod' && echo "$OUT" | grep -q 'copy stray' \
+  && [ ! -e "$(dirname "$repo")/.ship-$(basename "$repo")" ] && [ "$(snap "$repo")" = "$before" ] \
+  && [ "$(hash_of "$repo/.env")" = "$envh" ]; then pass; else fail "rc=$RC $OUT"; fi
+
+t "a config file over --max-kb fails and prints its manifest line"
+rm -rf "$repo/stray" "$repo/.env.prod"; head -c 102400 /dev/zero | tr "\0" x > "$repo/big.db"
+prov "$repo" c 1 s --max-kb 50
+if [ "$RC" -eq 1 ] && echo "$OUT" | grep -q 'copy big\.db' && [ ! -e "$(dirname "$repo")/.ship-$(basename "$repo")" ]; then pass
+else fail "rc=$RC $OUT"; fi
+
+t "a prod-named file is never copied by default"
+printf 'P=1\n' > "$repo/.env.prod"; rm -f "$repo/big.db"
+prov "$repo" d 1 s
+if [ "$RC" -eq 1 ] && [ ! -e "$(sbx "$repo" d-t1-s)/.env.prod" ]; then pass; else fail "rc=$RC $OUT"; fi
+
+t "manifest copy lines win over the rules, and skip settles an unknown"
+head -c 102400 /dev/zero | tr "\0" x > "$repo/big.db"; mkdir -p "$repo/stray"; printf 'u\n' > "$repo/stray/n.txt"
+printf 'copy .env.prod\ncopy big.db\nskip stray\n' > "$repo/.harness-sandbox"
+before=$(snap "$repo"); envh=$(hash_of "$repo/.env")
+prov "$repo" e 1 s --max-kb 50
+dir=$(sbx "$repo" e-t1-s)
+if [ "$RC" -eq 0 ] && [ -f "$dir/.env.prod" ] && [ -f "$dir/big.db" ] && [ ! -e "$dir/stray" ] \
+  && [ "$(snap "$repo")" = "$before" ] && [ "$(hash_of "$repo/.env")" = "$envh" ]; then pass; else fail "rc=$RC $OUT"; fi
+
+t "running again for an existing sandbox still succeeds"
+prov "$repo" e 1 s --max-kb 50
+if [ "$RC" -eq 0 ] && echo "$OUT" | grep -q '"status":"ready"'; then pass; else fail "rc=$RC $OUT"; fi
+
+t "a bad --max-kb exits 2"
+prov "$repo" f 1 s --max-kb abc
+rc1=$RC
+OUT=$(timeout 10 bash "$SCRIPT" "$repo" f 1 s --max-kb 2>&1); RC=$?
+if [ "$rc1" -eq 2 ] && [ "$RC" -eq 2 ]; then pass; else fail "rc=$rc1/$RC"; fi
+
 finish
