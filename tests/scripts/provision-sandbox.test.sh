@@ -496,13 +496,20 @@ printf 'copy .env\nteardown\n' > "$trepo/.harness-sandbox"
 prov "$trepo" td 4 empty --branch br/td-empty
 if [ "$RC" -eq 1 ] && echo "$OUT" | grep -q 'empty teardown command'; then pass; else fail "rc=$RC $OUT"; fi
 
-t "a sandbox without .sandbox.env can still be cleaned: teardown runs without it and the sandbox is removed"
+t "a sandbox without .sandbox.env is refused when the manifest has teardown lines: no teardown runs"
 rm -f "$tlog"
 printf 'copy .env\nteardown echo noenv >> %s\n' "$tlog" > "$trepo/.harness-sandbox"
 prov "$trepo" te 5 noenv --branch br/td-noenv
 rm -f "$troot/te-t5-noenv/.sandbox.env"
 cln "$trepo" --run te --yes
-if [ "$RC" -eq 0 ] && [ ! -d "$troot/te-t5-noenv" ] && [ "$(cat "$tlog")" = noenv ]; then pass; else fail "rc=$RC $OUT"; fi
+if [ "$RC" -eq 1 ] && echo "$OUT" | grep -q 'refused te-t5-noenv.*sandbox.env is missing' && [ ! -e "$tlog" ] && [ -d "$troot/te-t5-noenv" ]; then pass; else fail "rc=$RC $OUT"; fi
+
+t "a sandbox without .sandbox.env is still cleaned when the manifest has no teardown lines"
+printf 'copy .env\n' > "$trepo/.harness-sandbox"
+prov "$trepo" tf 6 noenv2 --branch br/td-noenv2
+rm -f "$troot/tf-t6-noenv2/.sandbox.env"
+cln "$trepo" --run tf --yes
+if [ "$RC" -eq 0 ] && [ ! -d "$troot/tf-t6-noenv2" ]; then pass; else fail "rc=$RC $OUT"; fi
 
 # ---- clean --branch ----
 prov "$repo" d 1 bra --branch br/sel-a

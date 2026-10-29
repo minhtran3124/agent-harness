@@ -322,6 +322,9 @@ if [ "${1:-}" = clean ]; then
         printf 'refused %s (%s): clone has unpushed commits\n' "$name" "$sb_state"; rc=1; continue
       fi
     fi
+    if [ "${#teardowns[@]}" -gt 0 ] && [ ! -f "$sb/.sandbox.env" ]; then
+      printf 'refused %s (%s): .sandbox.env is missing, teardown needs its variables\n' "$name" "$sb_state"; rc=1; continue
+    fi
     failed=''
     i=${#teardowns[@]}
     while [ "$i" -gt 0 ]; do
