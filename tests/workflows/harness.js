@@ -286,6 +286,28 @@ test('b2: the merge prompt counts an already MERGED PR as merged and names the p
   assert(!named(l.calls, /^merge:g1$/)[0].prompt.includes('gh pr view'), 'local mode has no PRs')
 })
 
+test('b3: the merge prompt says each command is its own call and names gh pr merge as one', async () => {
+  const { calls } = await run({ tickets: [T(1, 1), T(2, 1)] }, null)
+  const p = named(calls, /^merge:g1$/)[0].prompt
+  assert(p.includes('each command as its own Bash call, never joined with &&, ; or a subshell'), p)
+  assert(p.includes('gh pr merge <pr> --repo o/r --merge'), p)
+})
+
+test('b4: a failed merge gives a needs_review decision with the exact command; local mode gives none', async () => {
+  const stub = c => { if (c.label === 'merge:g1') return ok({ merged: [2], failed: [{ n: 1, reason: 'denied by a permission rule' }] }) }
+  const { result } = await run({ tickets: [T(1, 1), T(2, 1)] }, stub)
+  const d = result.decisions.filter(x => x.stage === 'merge')
+  assert.strictEqual(d.length, 1, JSON.stringify(d))
+  assert.strictEqual(d[0].ticket, 1)
+  assert.strictEqual(d[0].decision, 'gh pr merge 101 --repo o/r --merge')
+  assert.strictEqual(d[0].needs_review, true)
+  assert(d[0].context.includes('denied by a permission rule'))
+  assert.strictEqual(result.tickets.find(t => t.n === 1).status, 'blocked')
+  const l = await run({ tickets: [T(1, 1), T(2, 1)], local: true }, stub)
+  assert.strictEqual(l.result.decisions.filter(x => x.stage === 'merge').length, 0)
+  assert.strictEqual(l.result.tickets.find(t => t.n === 1).status, 'blocked')
+})
+
 test('c: needs_advisor triggers one advisor call and one stage re-run; a second request is ignored', async () => {
   let intents = 0
   const { calls } = await run({ advisorModel: 'fable' }, c => {
