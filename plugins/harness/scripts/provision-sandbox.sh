@@ -20,6 +20,10 @@
 #                        ends, so a background server does not outlive the check.
 #   A project with a web and an API process uses two ports: web on $SANDBOX_PORT and API on
 #   $((SANDBOX_PORT+1)) (the block holds ten, SANDBOX_PORT_RANGE).
+#       teardown <command>  not run at provision time. `clean --yes` runs every teardown line in reverse
+#                        order, in the sandbox with the .sandbox.env variables, before it removes the
+#                        sandbox (for example drop the database a setup line made). The first failure
+#                        stops the removal, keeps the sandbox and says which command failed.
 #   Paths are relative to the repo root. Absolute paths and `..` are rejected.
 #       skip <path>      state that the sandbox deliberately does not carry (the audit stops asking)
 #   Without a manifest line, provisioning classifies every ignored path the way --audit does:
@@ -55,8 +59,9 @@
 #   abandoned: no PR, not running, older than 7 days.
 # Clean: provision-sandbox.sh clean <repoDir> (--run ID | --merged | --older Nd) [--yes]
 #   Without --yes it prints "would remove" lines and changes nothing. With --yes it runs
-#   `git worktree remove` with no force flag. A dirty sandbox is refused and left in place, and
-#   the exit code is 1. Running and unknown sandboxes are always skipped. --older also skips
+#   `git worktree remove` with no force flag, after the manifest teardown lines (see above). A dirty
+#   sandbox is refused first, before any teardown runs, and left in place, and the exit code is 1. A
+#   failing teardown refuses the sandbox the same way. There is no flag that skips a failing teardown. Running and unknown sandboxes are always skipped. --older also skips
 #   sandboxes with an open PR. Branches are kept. A directory that is not a registered
 #   sandbox worktree is reported and kept. Bad usage exits 2.
 # Prints one JSON line on stdout when ready (it carries "mode"). Exit 0 ready, 1 failed, 2 bad usage.
@@ -260,6 +265,16 @@ if [ "${1:-}" = clean ]; then
   sb_scan_init "$c_repo"
   registered=$(git -C "$sb_repo" worktree list --porcelain | sed -n 's/^worktree //p')
   rc=0
+  teardowns=()
+  if [ -f "$sb_repo/.harness-sandbox" ]; then
+    while IFS= read -r line || [ -n "$line" ]; do
+      line=${line%%#*}; verb=${line%%[[:space:]]*}
+      [ "$verb" = teardown ] || continue
+      arg=${line#"$verb"}; arg=${arg#"${arg%%[![:space:]]*}"}; arg=${arg%"${arg##*[![:space:]]}"}
+      [ -n "$arg" ] || die 'manifest: empty teardown command'
+      teardowns+=("$arg")
+    done < "$sb_repo/.harness-sandbox"
+  fi
   for sb in "$sb_root"/*/; do
     sb=${sb%/}; [ -d "$sb" ] || continue
     name=$(basename "$sb"); real=$(cd "$sb" && pwd -P)
@@ -276,6 +291,20 @@ if [ "${1:-}" = clean ]; then
       running|unknown) printf 'skip %s (%s)\n' "$name" "$sb_state"; continue ;;
     esac
     if [ "$yes" -eq 0 ]; then printf 'would remove %s (%s)\n' "$name" "$sb_state"; continue; fi
+    if [ -n "$(git -C "$sb" status --porcelain 2>/dev/null)" ]; then
+      printf 'refused %s (%s): sandbox has uncommitted changes\n' "$name" "$sb_state"; rc=1; continue
+    fi
+    failed=''
+    i=${#teardowns[@]}
+    while [ "$i" -gt 0 ]; do
+      i=$((i - 1))
+      if ! (cd "$sb" && set -a && . ./.sandbox.env && set +a && bash -c "${teardowns[$i]}") >&2; then
+        failed=${teardowns[$i]}; break
+      fi
+    done
+    if [ -n "$failed" ]; then
+      printf 'refused %s (%s): teardown failed: %s\n' "$name" "$sb_state" "$failed"; rc=1; continue
+    fi
     if err=$(git -C "$sb_repo" worktree remove "$sb" 2>&1); then
       printf 'removed %s (%s)\n' "$name" "$sb_state"
     else
@@ -451,6 +480,7 @@ if [ -f "$manifest" ]; then
       require) requires+=("$arg") ;;
       require-env) ;; # checked before the worktree exists
       check) [ -n "$arg" ] || die 'manifest: empty check command'; checks+=("$arg") ;;
+      teardown) [ -n "$arg" ] || die 'manifest: empty teardown command' ;;
       setup) [ -n "$arg" ] || die 'manifest: empty setup command'; setups+=("$arg") ;;
       *) die "manifest: unknown directive '$verb'" ;;
     esac

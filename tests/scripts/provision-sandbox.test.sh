@@ -438,4 +438,43 @@ cln "$repo" --older 0d --yes
 if echo "$OUT" | grep -q 'skip stray (not a registered' && [ -f "$root/stray/f" ]; then pass; else fail "$OUT"; fi
 kill "$SLEEPER" 2>/dev/null; wait "$SLEEPER" 2>/dev/null
 
+# ---- teardown ----
+trepo=$(mk_repo); troot="$(dirname "$trepo")/.ship-$(basename "$trepo")"
+tlog="$(dirname "$trepo")/teardown.log"
+printf 'teardown echo first:$SANDBOX_DB_NAME >> %s\nteardown echo second:$SANDBOX_DB_NAME >> %s\n' "$tlog" "$tlog" > "$trepo/.harness-sandbox"
+prov "$trepo" td 1 ok --branch br/td-ok
+tdb=$(sed -n 's/^SANDBOX_DB_NAME=//p' "$troot/td-t1-ok/.sandbox.env")
+
+t "a manifest with teardown lines provisions without running them"
+if [ "$RC" -eq 0 ] && [ ! -e "$tlog" ]; then pass; else fail "rc=$RC $OUT"; fi
+
+t "a dry run runs no teardown"
+cln "$trepo" --run td
+if [ "$RC" -eq 0 ] && echo "$OUT" | grep -q 'would remove td-t1-ok' && [ ! -e "$tlog" ] && [ -d "$troot/td-t1-ok" ]; then pass; else fail "rc=$RC $OUT"; fi
+
+t "clean --yes runs each teardown once, in reverse order, with SANDBOX_DB_NAME, then removes the sandbox"
+cln "$trepo" --run td --yes
+if [ "$RC" -eq 0 ] && [ ! -d "$troot/td-t1-ok" ] && [ "$(cat "$tlog")" = "$(printf 'second:%s\nfirst:%s' "$tdb" "$tdb")" ]; then pass; else fail "rc=$RC $OUT log=$(cat "$tlog" 2>&1)"; fi
+
+t "a failing teardown keeps the sandbox, skips the lines after it, names the command and exits 1"
+rm -f "$tlog"
+printf 'teardown echo early >> %s\nteardown false-teardown-cmd\nteardown echo late >> %s\n' "$tlog" "$tlog" > "$trepo/.harness-sandbox"
+prov "$trepo" tf 2 bad --branch br/td-bad
+cln "$trepo" --run tf --yes
+if [ "$RC" -eq 1 ] && echo "$OUT" | grep -q 'refused tf-t2-bad.*teardown failed: false-teardown-cmd' && [ -d "$troot/tf-t2-bad" ] \
+  && [ "$(cat "$tlog")" = late ]; then pass; else fail "rc=$RC $OUT log=$(cat "$tlog" 2>&1)"; fi
+
+t "a dirty sandbox is refused before any teardown runs"
+rm -f "$tlog"
+printf 'teardown echo ran >> %s\n' "$tlog" > "$trepo/.harness-sandbox"
+prov "$trepo" td 3 dirty --branch br/td-dirty
+printf 'u\n' > "$troot/td-t3-dirty/new.txt"
+cln "$trepo" --run td --yes
+if [ "$RC" -eq 1 ] && echo "$OUT" | grep -q 'refused td-t3-dirty' && [ ! -e "$tlog" ] && [ -d "$troot/td-t3-dirty" ]; then pass; else fail "rc=$RC $OUT"; fi
+
+t "an empty teardown line fails the manifest"
+printf 'teardown\n' > "$trepo/.harness-sandbox"
+prov "$trepo" td 4 empty --branch br/td-empty
+if [ "$RC" -eq 1 ] && echo "$OUT" | grep -q 'empty teardown command'; then pass; else fail "rc=$RC $OUT"; fi
+
 finish
