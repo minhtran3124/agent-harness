@@ -287,6 +287,16 @@ t "item 7: a CLEAN_STRICT branch is removed when a merged PR has its exact tip"
 rrun "" CLEAN_STRICT="run/*"
 if ! has run/1; then pass; else fail "out=$OUT"; fi
 
+# no force delete outside the exact-tip merged-PR rule: when `git branch -d` refuses, the branch is kept
+rsetup; gone_branch feat; git -C "$MAIN" checkout -q -b worktree-w main; git -C "$MAIN" commit -q --allow-empty -m ww; git -C "$MAIN" push -q r1 worktree-w:refs/heads/other; git -C "$MAIN" fetch -q r1; git -C "$MAIN" checkout -q main
+REALGIT=$(command -v git)
+printf '#!/bin/sh\ncase "$*" in *"branch -d"*|*"branch -q --set-upstream-to"*) exit 1 ;; esac\nexec %s "$@"\n' "$REALGIT" > "$STUB/git"; chmod +x "$STUB/git"
+NOGH_RUN=1
+t "no force delete: when git branch -d refuses, the upstream-gone and worktree-* rules keep the branch"
+rrun ""
+if has feat && has worktree-w; then pass; else fail "out=$OUT"; fi
+unset NOGH_RUN
+
 # item 8: CLEAN_RECREATE
 rsetup
 t "item 8: CLEAN_RECREATE pushes <remote>/main when the branch is missing on the remote"

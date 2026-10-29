@@ -5,7 +5,7 @@
 # (removed with `git branch -D`: a squash merge is not in git history, the exact tip match is the
 # guard, so a branch with commits after the merge is never removed); (2) without gh, its upstream is
 # gone and its tip is an ancestor of <remote>/main; (3) a `worktree-*` agent branch that no worktree
-# has checked out and whose tip is in a <remote>/* branch (only after a successful fetch). Every rule except (1) uses `git branch -d`.
+# has checked out and whose tip is in a <remote>/* branch (only after a successful fetch). Every rule except (1) uses `git branch -d` only (never a force delete or update-ref).
 # `git worktree remove` has no force flag: it refuses a dirty or locked worktree.
 # Never touches main, master, develop, development, staging, production, release/*, release-*, CLEAN_KEEP names, the current branch, or the worktree the session runs in. A SessionStart sweep also keeps any worktree that another running process has as its working directory.
 # A branch matching CLEAN_STRICT gets only rule (1). Settings (env): CLEAN_REMOTE (default origin),
@@ -130,9 +130,17 @@ in_use() { [ -n "$live_cwds" ] && printf '%s\n' "$live_cwds" | awk -v p="$1" '$0
 is_strict() { local g; for g in ${CLEAN_STRICT:-}; do case "$1" in $g) return 0 ;; esac; done; return 1; }
 # True when the tip is in a <remote>/* branch other than <remote>/HEAD.
 in_remote_branch() { git for-each-ref --contains "$1" --format='%(refname)' "refs/remotes/$remote/" 2>/dev/null | grep -qvx "refs/remotes/$remote/HEAD"; }
-# Delete a branch whose tip is already verified to be contained in a remote branch: `git branch -d`,
-# and if git refuses only because the local HEAD lacks the commit, drop the ref guarded by its tip.
-del_contained() { git branch -d "$1" >/dev/null 2>&1 || git update-ref -d "refs/heads/$1" "$2" >/dev/null 2>&1; }
+# Delete a branch whose tip is already verified to be contained in the ref $2: `git branch -d` only, never a
+# force delete. If git refuses only because the local HEAD lacks the commit, point the branch's upstream at $2
+# (so -d checks against it) and retry; undo the upstream when the delete still fails.
+del_contained() {
+  git branch -d "$1" >/dev/null 2>&1 && return 0
+  git branch -q --set-upstream-to="$2" "$1" >/dev/null 2>&1 || return 1
+  git branch -d "$1" >/dev/null 2>&1 && return 0
+  git branch -q --unset-upstream "$1" >/dev/null 2>&1; return 1
+}
+# First <remote>/* branch (not HEAD) that contains the tip.
+containing_ref() { git for-each-ref --contains "$1" --format='%(refname:short)' "refs/remotes/$remote/" 2>/dev/null | grep -vx "$remote/HEAD" | head -n1; }
 budget=${CLEAN_BUDGET:-}; [ -n "$budget" ] || { [ "${1:-}" = SessionStart ] && budget=20 || budget=0; }
 case "$budget" in ''|*[!0-9]*) budget=0 ;; esac
 for b in $(git for-each-ref --format='%(refname:short)' refs/heads); do
@@ -160,7 +168,7 @@ for b in $(git for-each-ref --format='%(refname:short)' refs/heads); do
     if in_use "$p"; then out+="kept $b: a running process uses $p"$'\n'; continue; fi
     git worktree remove "$p" 2>/dev/null || { out+="kept $b: worktree $p has changes or a lock"$'\n'; continue; }
   fi
-  if { [ "$how" = pr ] && git branch -D "$b" >/dev/null 2>&1; } || { [ "$how" != pr ] && del_contained "$b" "$tip"; }; then
+  if { [ "$how" = pr ] && git branch -D "$b" >/dev/null 2>&1; } || { [ "$how" != pr ] && del_contained "$b" "$( [ "$how" = gone ] && echo "$base" || containing_ref "$tip" )"; }; then
     out+="removed $b${p:+ and worktree $p}"$'\n'
   else out+="kept branch $b: merged but could not be deleted; delete by hand if wanted"$'\n'; fi
 done
