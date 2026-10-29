@@ -540,6 +540,14 @@ prov "$crepo" cl 1 cc --mode clone --branch br/clone-clean
 cln "$crepo" --branch br/clone-clean --yes
 if [ "$RC" -eq 0 ] && echo "$OUT" | grep -q 'removed cl-t1-cc' && [ ! -d "$croot/cl-t1-cc" ] && grep -q gone "$clog"; then pass; else fail "rc=$RC $OUT"; fi
 
+t "clean refuses a clone-mode sandbox with unpushed commits"
+urepo=$(mk_repo); uroot="$(dirname "$urepo")/.ship-$(basename "$urepo")"
+prov "$urepo" ul 1 up --mode clone --branch br/clone-unpushed
+udir="$uroot/ul-t1-up"
+git -C "$udir" -c user.name=t -c user.email=t@t commit -q --allow-empty -m local-only
+cln "$urepo" --branch br/clone-unpushed --yes
+if [ "$RC" -ne 0 ] && echo "$OUT" | grep -q 'refused ul-t1-up.*unpushed' && [ -d "$udir" ]; then pass; else fail "rc=$RC $OUT"; fi
+
 t "a re-run on a detached HEAD keeps the recorded branch"
 repo=$(mk_repo)
 prov "$repo" r 1 keep --branch feat/keep

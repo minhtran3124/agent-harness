@@ -310,6 +310,18 @@ if [ "${1:-}" = clean ]; then
     if [ -n "$(git -C "$sb" status --porcelain 2>/dev/null)" ]; then
       printf 'refused %s (%s): sandbox has uncommitted changes\n' "$name" "$sb_state"; rc=1; continue
     fi
+    if [ "$is_clone" -eq 1 ]; then
+      # A clone's own commits live only in its .git: refuse when a branch or HEAD holds one that no remote
+      # ref and not the source repo has.
+      unpushed=0
+      while IFS= read -r c; do
+        [ -n "$c" ] || continue
+        git -C "$sb_repo" cat-file -e "$c^{commit}" 2>/dev/null || { unpushed=1; break; }
+      done < <(git -C "$sb" rev-list --branches HEAD --not --remotes 2>/dev/null)
+      if [ "$unpushed" -eq 1 ]; then
+        printf 'refused %s (%s): clone has unpushed commits\n' "$name" "$sb_state"; rc=1; continue
+      fi
+    fi
     failed=''
     i=${#teardowns[@]}
     while [ "$i" -gt 0 ]; do
