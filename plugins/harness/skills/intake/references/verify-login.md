@@ -11,11 +11,14 @@ sign in, `VERIFY_USER`, `VERIFY_PASSWORD`, password, credentials, a dashboard be
 
 Check only the variables the row mentions. If it only says login, check both
 `VERIFY_USER` and `VERIFY_PASSWORD`. Run one check per variable. The command is read-only and
-prints nothing; the exit code is the answer (0 = set, 1 = unset):
+prints nothing; the exit code is the answer (0 = set, 1 = unset). Exit 1 is the answer "unset", not an error of the tool: do not retry it and do not debug it with `echo`, `env`, `printenv` or by reading `.env`:
 
 ```bash
 test -n "$VERIFY_USER"
+test -n "$VERIFY_PASSWORD"
 ```
+
+If any variable the row needs is unset, treat the login as unset (one set and one unset counts as unset).
 
 No format check, like the `Verify:` row rule.
 
@@ -38,4 +41,7 @@ the end.
 
 ## Mode: auto
 
-Take answer 1 (throwaway credentials) and record it as a decision with `needs_review: true`.
+Take answer 1 (throwaway credentials) and record it in `decisions[]` with `needs_review: true`, as the
+SKILL.md auto-mode rule says. Write the words "throwaway credentials OK" in that decision, because the
+verify stage reads them (see `plugins/harness/skills/verify/references/config.md`: the agent creates
+the throwaway values only when that consent is written down).

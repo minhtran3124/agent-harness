@@ -35,4 +35,13 @@ if grep -E '^allowed-tools:' "$SKILL" | grep -qF 'Bash(test -n *)'; then pass; e
 t "SKILL.md stays under 600 words"
 words=$(wc -w < "$SKILL" | tr -d ' ')
 if [ "$words" -lt 600 ]; then pass; else fail "words=$words"; fi
+t "both variables are checked and one unset counts as unset"
+if grep -qF 'test -n "$VERIFY_PASSWORD"' "$REF" && grep -qF 'counts as unset' "$REF"; then pass; else fail "second check or mixed-state rule missing"; fi
+
+t "exit 1 is the answer, not a tool error"
+if grep -qF 'not an error of the tool' "$REF" && grep -qF 'do not retry' "$REF"; then pass; else fail "exit-code note missing"; fi
+
+t "auto mode records throwaway credentials OK for the verify stage"
+if grep -qF 'throwaway credentials OK' "$REF" && grep -qF 'verify/references/config.md' "$REF"; then pass; else fail "auto-mode consent text missing"; fi
+
 finish
