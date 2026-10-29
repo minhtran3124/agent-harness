@@ -6,8 +6,8 @@ allowed-tools: Read, Write, Edit, Grep, Glob, Bash, mcp__plugin_playwright_playw
 
 # Verify
 
-Prove that the change works. The `Verify:` row of the ticket drives the run. Pass or fail comes
-from assertions only. Never judge from how a screenshot looks.
+The `Verify:` row of the ticket drives the run. Pass or fail comes from assertions only,
+never from how a screenshot looks.
 
 Use the Claude Code Playwright plugin tools only. Do not install npm Playwright.
 
@@ -22,7 +22,7 @@ Use the Claude Code Playwright plugin tools only. Do not install npm Playwright.
 
 ## Start config
 
-1. Read `verify.config.json` at the repo root.
+1. Read `verify.config.json` at the repo root, or at the path the `Verify:` row names.
 2. If it does not exist, infer the start recipe from the README, `package.json`, or `Makefile`.
    Write the file with these keys: `baseUrl`, `startCommand`, `loginEnv`.
 3. `loginEnv` holds the NAMES of the login variables: `VERIFY_USER` and `VERIFY_PASSWORD`.
@@ -48,16 +48,18 @@ For each step in the `Verify:` row:
 2. `browser_snapshot` to see the page.
 3. `browser_run_code_unsafe` with an assertion on exact text or a selector. A true assertion
    passes. A false one throws, and the step fails.
-4. `browser_take_screenshot` into `.playwright-mcp/<ticket>/`, named by step number.
+4. `browser_take_screenshot` into `.playwright-mcp/<ticket>/`, named by step number. In a worktree the tool
+   refuses the path (its allowed root is the owner's checkout): take the still with
+   `page.screenshot({ path })` inside `browser_run_code_unsafe` instead.
 
 After the last step, call `browser_console_messages`. Count the errors. One or more is a fail.
 
 ## Base mode
 
-The prompt can say `Mode: base`. The workflow uses it to check that the steps fail on the base
-commit, in a worktree that holds no ticket code:
+`Mode: base` (from the prompt) checks that the steps fail on the base commit, in a worktree with
+no ticket code:
 
-1. Copy `verify.config.json` from the implement worktree path in the prompt. Read it only. Never write or commit it.
+1. Read `verify.config.json` from the implement worktree path in the prompt. Never write or commit it.
 2. Run Start config (step 5), Login and Browser steps as usual.
 3. The steps are expected to FAIL. Report the real result and do not judge it.
 4. Commit nothing. Do not retry. The workflow decides what the result means.
@@ -66,5 +68,5 @@ commit, in a worktree that holds no ticket code:
 
 Return a table with one row per command or step, PASS or FAIL, and the assertion text.
 Add the console error count and the path of each still. Any FAIL makes the whole run FAIL.
-Do not fix the code in this skill. Do not commit evidence: Git ignores `.playwright-mcp/`.
-The workflow, not this skill, builds the GIF from the stills with ffmpeg and attaches it to the PR after the PR is opened. Leave the stills where they are.
+Do not fix code. Do not commit evidence: Git ignores `.playwright-mcp/`.
+The workflow builds the GIF from the stills with ffmpeg and attaches it to the PR after the PR is opened.
