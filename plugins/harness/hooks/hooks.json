@@ -9,6 +9,17 @@
             "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/session-rules.sh"]
           }
         ]
+      },
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/clean-worktrees.sh", "SessionStart"],
+            "timeout": 30
+          }
+        ]
       }
     ],
     "PreToolUse": [
