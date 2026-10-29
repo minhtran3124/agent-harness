@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Verify fixture profile</title><link rel="icon" href="data:,"></head>
+<body>
+  <h1 id="profile-title">Profile</h1>
+  <p id="profile-name"></p>
+  <button id="logout" type="button">Log out</button>
+  <p id="signed-out" hidden>Signed out <a id="login-link" href="login.html">Log in</a></p>
+  <script>
+    const signedIn = sessionStorage.getItem('verify-signed-in') === '1';
+    if (signedIn) {
+      document.getElementById('profile-name').textContent = sessionStorage.getItem('verify-signed-in-user') || '';
+    } else {
+      document.getElementById('profile-title').hidden = true;
+      document.getElementById('profile-name').hidden = true;
+      document.getElementById('logout').hidden = true;
+      document.getElementById('signed-out').hidden = false;
+    }
+    document.getElementById('logout').addEventListener('click', function () {
+      sessionStorage.removeItem('verify-signed-in');
+      sessionStorage.removeItem('verify-signed-in-user');
+      location.href = 'index.html';
+    });
+  </script>
+</body>
+</html>
