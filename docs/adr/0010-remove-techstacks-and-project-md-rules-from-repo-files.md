@@ -8,7 +8,7 @@ decided_by: claude (ship workflow: intent)
 date: 2026-10-29
 ---
 
-# 0096. Record the change as one ADR that supersedes two solution docs
+# 0010. Remove techstacks/ and agents/PROJECT.md; project rules come from the repo's own files
 
 ## Context
 
@@ -21,7 +21,7 @@ The ticket removes a public setup contract: /harness:setup no longer creates age
 
 ## Decision
 
-Return one decision with needs_review: true so the ADR stage writes one ADR in docs/adr/. The ticket asks for it, and the two docs/solutions entries are marked superseded by it.
+Ticket #464 removed techstacks/ and agents/PROJECT.md. Project rules now come from the repo's own CLAUDE.md, CLAUDE.local.md and .claude/rules, read through the single rulesCommon(repoDir) text in ship.js. This supersedes the solution docs techstacks-project-owned-stack-profiles and scaffold-template-instance-parity.
 
 ## Why
 
@@ -29,7 +29,7 @@ It changes a public contract (setup output, agent file inputs) and the ticket re
 
 ## Consequences
 
-A reviewer confirms the one-release fallback policy and the removal of the scaffold.
+Breaking for consumers that already ran /harness:setup: the harness no longer reads agents/PROJECT.md or techstacks/.
 
 ## How to reverse
 

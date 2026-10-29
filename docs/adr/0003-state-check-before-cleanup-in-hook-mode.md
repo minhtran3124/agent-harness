@@ -8,7 +8,7 @@ decided_by: claude (ship workflow: implement)
 date: 2026-10-29
 ---
 
-# 0030. State check before cleanup in hook mode
+# 0003. State check before cleanup in hook mode
 
 ## Context
 

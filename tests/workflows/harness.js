@@ -215,7 +215,7 @@ test('d6: a re-review that does not run is reported, not treated as clean', asyn
 test('e4: RULES and the decision schema carry the needs_review criteria', async () => {
   const { calls } = await run({}, null)
   const p = named(calls, /^intent:1$/)[0].prompt
-  assert(p.includes('needs_review: true ONLY when the decision affects another ticket, a public contract or interface, stored data, security or cost, or contradicts the ticket text or an owner-confirmed answer'))
+  assert(p.includes('needs_review: true ONLY when the decision affects another ticket, a public contract or interface, stored data, security or cost, or is a trade-off that is costly to reverse, or contradicts the ticket text or an owner-confirmed answer'))
   assert(p.includes('needs_review: false'))
   const dec = named(calls, /^intent:1$/)[0].schema.properties.decisions.items.properties.needs_review
   assert(/ONLY when/.test(dec.description) && /false/.test(dec.description))
