@@ -1,5 +1,0 @@
-{
-  "baseUrl": "",
-  "startCommand": "",
-  "loginEnv": ["VERIFY_USER", "VERIFY_PASSWORD"]
-}
