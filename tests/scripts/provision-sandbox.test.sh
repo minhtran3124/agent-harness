@@ -88,6 +88,88 @@ OUT=$(timeout 10 bash "$SCRIPT" "$repo" r 1 s --branch 2>&1); rc1=$?
 OUT=$(timeout 10 bash "$SCRIPT" --audit "$repo" --max-kb 2>&1); RC=$?
 if [ "$rc1" -eq 2 ] && [ "$RC" -eq 2 ]; then pass; else fail "rc=$rc1/$RC"; fi
 
+# ---- --mode clone ----
+sbdir() { echo "$(dirname "$1")/.ship-$(basename "$1")/$2"; }
+state_hash() { { git -C "$1" status --porcelain --ignored; git -C "$1" rev-parse HEAD; git -C "$1" branch --list; } | md5sum 2>/dev/null || { git -C "$1" status --porcelain --ignored; git -C "$1" rev-parse HEAD; git -C "$1" branch --list; } | md5 -q; }
+
+t "clone mode makes a standalone clone with its own .git and one worktree entry in main"
+repo=$(mk_repo)
+prov "$repo" c 1 one --mode clone --branch feat/c1
+dir=$(sbdir "$repo" c-t1-one)
+if [ "$RC" -eq 0 ] && [ -d "$dir/.git" ] && echo "$OUT" | grep -q '"status":"ready"' && echo "$OUT" | grep -q '"mode":"clone"' \
+  && [ "$(git -C "$repo" worktree list | wc -l | tr -d ' ')" = 1 ]; then pass; else fail "rc=$RC $OUT"; fi
+
+t "clone carries committed content only: dirty main does not leak in"
+repo=$(mk_repo)
+printf 'edited\n' > "$repo/app.txt"; printf 'new\n' > "$repo/untracked.txt"
+prov "$repo" c 1 dirty --mode clone --branch feat/d
+dir=$(sbdir "$repo" c-t1-dirty)
+if [ "$RC" -eq 0 ] && [ -z "$(git -C "$dir" status --porcelain)" ] && [ "$(cat "$dir/app.txt")" = tracked ] && [ ! -e "$dir/untracked.txt" ]; then pass
+else fail "rc=$RC $(git -C "$dir" status --porcelain | head -3)"; fi
+
+t "clone origin is the main repo's remote URL, --remote picks another, a missing remote warns and exits 0"
+repo=$(mk_repo)
+git -C "$repo" remote add origin https://example.com/o.git
+git -C "$repo" remote add up https://example.com/up.git
+prov "$repo" c 1 a --mode clone
+o1=$(git -C "$(sbdir "$repo" c-t1-a)" remote get-url origin)
+prov "$repo" c 2 b --mode clone --remote up
+o2=$(git -C "$(sbdir "$repo" c-t2-b)" remote get-url origin)
+repo2=$(mk_repo)
+prov "$repo2" c 1 n --mode clone
+if [ "$o1" = https://example.com/o.git ] && [ "$o2" = https://example.com/up.git ] && [ "$RC" -eq 0 ] && echo "$OUT" | grep -qi 'warn'; then pass
+else fail "o1=$o1 o2=$o2 rc=$RC $OUT"; fi
+
+t "clone mode runs the manifest, ports and setup like worktree mode"
+repo=$(mk_repo)
+printf 'copy .env\ncopy CLAUDE.local.md\nlink node_modules\nrequire .env\nsetup echo "$SANDBOX_PORT" > port.out\n' > "$repo/.harness-sandbox"
+prov "$repo" c 3 m --mode clone
+dir=$(sbdir "$repo" c-t3-m)
+if [ "$RC" -eq 0 ] && [ "$(cat "$dir/.env")" = SECRET=1 ] && [ -f "$dir/CLAUDE.local.md" ] && [ -L "$dir/node_modules" ] \
+  && [ "$(cat "$dir/port.out")" = 4030 ] && grep -q '^SANDBOX_DB_NAME=' "$dir/.sandbox.env"; then pass; else fail "rc=$RC $OUT"; fi
+
+t "clone branch and --from: branch B at REF, detached without --branch, unknown ref exits 1 and creates nothing"
+repo=$(mk_repo)
+first=$(git -C "$repo" rev-parse HEAD)
+printf 'more\n' >> "$repo/app.txt"; git -C "$repo" commit -qam second
+prov "$repo" c 1 b --mode clone --branch feat/b --from "$first"
+dir=$(sbdir "$repo" c-t1-b)
+ok1=0; [ "$RC" -eq 0 ] && [ "$(git -C "$dir" symbolic-ref --short HEAD)" = feat/b ] && [ "$(git -C "$dir" rev-parse HEAD)" = "$first" ] && ok1=1
+prov "$repo" c 2 d --mode clone --from "$first"
+dird=$(sbdir "$repo" c-t2-d)
+ok2=0; [ "$RC" -eq 0 ] && echo "$OUT" | grep -q '"branch":"detached"' && [ "$(git -C "$dird" rev-parse HEAD)" = "$first" ] && ok2=1
+prov "$repo" c 3 x --mode clone --from nosuchref
+if [ "$ok1" = 1 ] && [ "$ok2" = 1 ] && [ "$RC" -eq 1 ] && [ ! -e "$(sbdir "$repo" c-t3-x)" ]; then pass; else fail "ok1=$ok1 ok2=$ok2 rc=$RC $OUT"; fi
+
+t "clone mode is idempotent, re-syncs the manifest, and refuses a foreign folder or a worktree"
+repo=$(mk_repo)
+printf 'copy .env\n' > "$repo/.harness-sandbox"
+prov "$repo" c 1 r --mode clone --branch feat/r
+dir=$(sbdir "$repo" c-t1-r)
+head1=$(git -C "$dir" rev-parse HEAD); ino1=$(ls -di "$dir/.git" | cut -d' ' -f1)
+printf 'copy CLAUDE.local.md\n' >> "$repo/.harness-sandbox"
+prov "$repo" c 1 r --mode clone --branch feat/r
+rc_again=$RC
+ino2=$(ls -di "$dir/.git" | cut -d' ' -f1)
+mkdir -p "$(sbdir "$repo" c-t2-plain)"
+prov "$repo" c 2 plain --mode clone; rc_plain=$RC
+prov "$repo" c 3 wt --branch feat/wt
+prov "$repo" c 3 wt --mode clone; rc_wt=$RC
+if [ "$rc_again" -eq 0 ] && [ -f "$dir/CLAUDE.local.md" ] && [ "$head1" = "$(git -C "$dir" rev-parse HEAD)" ] && [ "$ino1" = "$ino2" ] \
+  && [ "$rc_plain" -eq 1 ] && [ "$rc_wt" -eq 1 ]; then pass; else fail "again=$rc_again plain=$rc_plain wt=$rc_wt"; fi
+
+t "clone mode leaves the main repo untouched"
+repo=$(mk_repo)
+printf 'copy .env\n' > "$repo/.harness-sandbox"
+before=$(state_hash "$repo")
+prov "$repo" c 1 u --mode clone --branch feat/u
+after=$(state_hash "$repo")
+if [ "$RC" -eq 0 ] && [ "$before" = "$after" ]; then pass; else fail "rc=$RC state changed"; fi
+
+t "an unknown --mode exits 2"
+prov "$repo" c 1 z --mode bogus
+if [ "$RC" -eq 2 ]; then pass; else fail "rc=$RC $OUT"; fi
+
 # ---- --audit ----
 # mk_audit_repo → ignored paths of every class: config, state, prod secret, regenerable, unrecognised.
 mk_audit_repo() {
