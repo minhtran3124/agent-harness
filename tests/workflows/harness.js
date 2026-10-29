@@ -235,6 +235,16 @@ test('e7: RULES gives one source for project rules, not the owner checkout and t
   assert(c.prompt.includes('git -C /repo status --porcelain -- CLAUDE.md .claude/rules'), 'uncommitted rule edits in the owner checkout are not covered')
 })
 
+test('e8: the project-rules text lives in one place (rulesCommon) and names the repoDir paths', async () => {
+  const src = require('fs').readFileSync(require('path').join(__dirname, '../../plugins/harness/workflows/ship.js'), 'utf8')
+  assert(!/Project rule files:/.test(src), 'second copy of the project-rules text is back in RULES')
+  assert(/const rulesCommon = repoDir =>/.test(src), 'rulesCommon is not a function of repoDir')
+  const { calls } = await run()
+  const c = calls.find(x => x.prompt.includes('Rules (all of them apply)'))
+  assert(c.prompt.includes('Read /repo/CLAUDE.md, /repo/CLAUDE.local.md'), 'RULES_COMMON text does not name repoDir')
+  assert(!c.prompt.includes('from the repo root'), 'vague repo-root wording is back')
+})
+
 test('e6: every stage prompt tells the agent to read the repo CLAUDE.md and .claude/rules', async () => {
   const { calls } = await run({}, null)
   const staged = calls.filter(c => !String(c.label).startsWith('advisor:') && c.prompt.includes('Rules (all of them apply)'))
