@@ -22,6 +22,9 @@ CLAUDE.local.md
 # Claude Code local folder (user-specific rules and settings; the plugin itself lives in plugins/harness/)
 .claude/
 
+# Playwright plugin output: screenshots, snapshots and GIF evidence from verify runs (local only)
+.playwright-mcp/
+
 # Timestamped harness backups (created by deploy/install scripts; not tracked)
 .harness-backup-*/
 
