@@ -37,6 +37,8 @@ function defaults(c, st) {
   if (l.startsWith('design:')) return ok({ design_md: 'DESIGN' })
   if (l.startsWith('plan:')) return ok({ plan_md: 'PLAN-MD', plan_steps: [] })
   if (l.startsWith('implement:')) return ok({ worktree: `/wt/${n}`, branch: `b${n}`, files: [], commits: [], verify: [] })
+  if (/^verify(-retry|-base)?:/.test(l)) return ok({ passed: !l.startsWith('verify-base'), kind: 'BE', failedStep: '', consoleErrors: [], stills: [], report: 'VERIFY-REPORT' })
+  if (l.startsWith('verify-comment:')) return ok()
   if (l.startsWith('finish:')) return ok({ pr: args0.local ? 0 : 100 + Number(n), url: `https://x/pull/${100 + Number(n)}` })
   if (l.startsWith('merge:')) return ok({ merged: [...c.prompt.matchAll(/^- #(\d+)/gm)].map(m => Number(m[1])), failed: [] })
   if (l === 'final-pr') return ok({ pr: args0.local ? 0 : 900, url: 'https://x/pull/900' })
@@ -600,6 +602,87 @@ test('q: {{DECISIONS}} still sits between Final verification and the footer', as
   const b = p.slice(p.indexOf('## Summary'))
   const a = b.indexOf('## Final verification'), d = b.indexOf('{{DECISIONS}}'), f = b.indexOf('Generated with')
   assert(a >= 0 && a < d && d < f, `${a} ${d} ${f}`)
+})
+
+// ---- verify stage (#413) --------------------------------------------------------------------
+const vres = (passed, kind, extra) => ok({ passed, kind, failedStep: passed ? '' : 'step 2', consoleErrors: passed ? [] : ['TypeError x'], stills: ['/wt/1/.playwright-mcp/1/step-1.png'], report: passed ? 'ALL-PASS' : 'STEP-2-FAILED', ...extra })
+
+test('v1: an FE ticket runs implement, verify, base check, finish in that order, and the result reaches finish', async () => {
+  const { result, calls } = await run({}, c => {
+    if (c.label === 'verify:1') return vres(true, 'FE')
+    if (c.label === 'verify-base:1') return vres(false, 'FE')
+  })
+  const ls = labelsOf(calls).filter(l => /^(implement|verify|finish)/.test(l))
+  assert.deepStrictEqual(ls, ['implement:1', 'verify:1', 'verify-base:1', 'finish:1'])
+  const v = named(calls, /^verify:1$/)[0]
+  assert(v.prompt.includes('/wt/1') && v.prompt.includes('/plug/skills/verify/SKILL.md') && v.prompt.includes('gh issue view 1 --repo o/r --json body'), v.prompt)
+  assert(!('agentType' in v.opts) && v.opts.model === 'sonnet' && v.opts.effort === 'medium' && v.opts.phase === 'Tickets')
+  assert(v.schema.properties.passed && v.schema.properties.stills && v.schema.required.includes('kind'))
+  const b = named(calls, /^verify-base:1$/)[0]
+  assert(b.prompt.includes('worktree add --detach /.ship-repo/ms/verify-base-1 origin/v5.0.0') && b.prompt.includes('Mode: base') && b.prompt.includes('/wt/1/verify.config.json') && b.prompt.includes('Commit nothing'), b.prompt)
+  const f = named(calls, /^finish:1$/)[0].prompt
+  assert(f.includes('Verify result: pass') && f.includes('/wt/1/.playwright-mcp/1/step-1.png') && f.includes('Nothing is attached'), f)
+  assert.strictEqual(result.final.pr, 101)
+})
+
+test('v2: a retry that passes gives flaky', async () => {
+  const { calls } = await run({}, c => {
+    if (c.label === 'verify:1') return vres(false, 'FE')
+    if (c.label === 'verify-retry:1') return vres(true, 'FE')
+    if (c.label === 'verify-base:1') return vres(false, 'FE')
+  })
+  assert.deepStrictEqual(labelsOf(calls).filter(l => /^(verify|finish)/.test(l)), ['verify:1', 'verify-retry:1', 'verify-base:1', 'finish:1'])
+  assert(named(calls, /^finish:1$/)[0].prompt.includes('Verify result: flaky'))
+  assert.strictEqual(named(calls, /^verify-comment:/).length, 0)
+})
+
+test('v3: two failures block ticket 1 with the report and an issue comment; ticket 2 still finishes', async () => {
+  const { result, calls } = await run({ tickets: [T(1, 1), T(2, 1)] }, c => {
+    if (c.label === 'verify:1' || c.label === 'verify-retry:1') return vres(false, 'FE')
+  })
+  const r1 = result.tickets.find(r => r.n === 1), r2 = result.tickets.find(r => r.n === 2)
+  assert.strictEqual(r1.status, 'blocked')
+  assert(r1.reason.includes('step 2') && r1.reason.includes('TypeError x'), r1.reason)
+  assert.strictEqual(r2.status, 'done')
+  assert.strictEqual(named(calls, /^finish:1$/).length, 0)
+  assert.strictEqual(named(calls, /^finish:2$/).length, 1)
+  assert.strictEqual(named(calls, /^verify-base:1$/).length, 0)
+  const cm = named(calls, /^verify-comment:1$/)
+  assert.strictEqual(cm.length, 1)
+  assert(cm[0].prompt.includes('gh issue comment 1 --repo o/r') && cm[0].prompt.includes('STEP-2-FAILED'), cm[0].prompt)
+})
+
+test('v4: a failing comment is only logged; the ticket stays blocked', async () => {
+  const { result, logs } = await run({}, c => {
+    if (c.label === 'verify:1' || c.label === 'verify-retry:1') return vres(false, 'FE+BE')
+    if (c.label === 'verify-comment:1') return new Error('gh down')
+  })
+  assert.strictEqual(result.tickets[0].status, 'blocked')
+  assert(logs.some(l => l.includes('verify comment failed')))
+})
+
+test('v5: steps that pass on base block the ticket as a weak test, with a comment', async () => {
+  const { result, calls } = await run({}, c => {
+    if (c.label === 'verify:1' || c.label === 'verify-base:1') return vres(true, 'FE')
+  })
+  assert.strictEqual(result.tickets[0].status, 'blocked')
+  assert(/weak test/.test(result.tickets[0].reason))
+  assert.strictEqual(named(calls, /^verify-comment:1$/).length, 1)
+  assert.strictEqual(named(calls, /^finish:/).length, 0)
+})
+
+test('v6: BE and docs tickets skip the base check', async () => {
+  for (const kind of ['BE', 'docs']) {
+    const { calls } = await run({}, c => (c.label === 'verify:1' ? vres(true, kind) : undefined))
+    assert.strictEqual(named(calls, /^verify-base:/).length, 0, kind)
+    assert(named(calls, /^finish:1$/)[0].prompt.includes('Verify result: pass'))
+  }
+})
+
+test('v7: local mode skips the verify stage, the issue fetch and the comment', async () => {
+  const { calls } = await run({ local: true }, null)
+  assert.strictEqual(named(calls, /^verify/).length, 0, labelsOf(calls).join())
+  assert(!named(calls, /^finish:1$/)[0].prompt.includes('Verify result'))
 })
 
 test('schemas are well-formed (object root, required within properties)', async () => {
