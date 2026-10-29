@@ -718,7 +718,7 @@ async function stageIntentReview(done) {
 
 // Drop each Verify: row and its continuation. Continuation = a line indented deeper than the row (sub-bullets too) or a wrapped plain-prose line at the row's own level. A blank line, a heading, a list bullet or a "Label:" line at the row's level ends the row, so tight AC lines under it stay. A mid-sentence mention stays.
 const VERIFY_ROW = /^\s*(?:[-*>]\s*)?(?:\*\*|__)?Verify:/
-const NEW_BLOCK = /^\s*(?:[-*+>#]|\d+[.)])\s|^\s*(?:\*\*|__)?[A-Za-z][\w ]{0,24}:/
+const NEW_BLOCK = /^\s*(?:[-*+>#]|\d+[.)])\s|^\s*(?:\*\*|__)?[A-Za-z][\w -]{0,24}:/
 function stripVerify(text) {
   let skipping = false, count = 0, rowIndent = 0
   const kept = []
@@ -791,7 +791,7 @@ async function stageUat(delivered) {
     if (!uatOk(res)) {
       const failing = rec.scenarios.filter(s => s.kind === 'ac' && s.status === 'FAIL')
       const fix = await fixAgent(`uat-fix:${t.n}`,
-        `UAT on the running app found acceptance criteria of ticket #${t.n} that fail:\n${failing.map(s => `- ${s.covers}: ${s.assertion || s.id}`).join('\n') || '- (see the UAT summary) ' + (res.summary || '')}${Number(res.console_errors) > 0 ? `\n- the console had ${res.console_errors} error(s)` : ''}\nFix the code so the owner's request holds.`,
+        `UAT on the running app found acceptance criteria of ticket #${t.n} that fail:\n${failing.map(s => `- ${s.covers}: ${s.assertion || s.id}`).join('\n') || '- (see the UAT summary) ' + (res.summary || '')}\nFix the code so the owner's request holds. Console errors are report-only: do not fix them unless a failing AC needs it.`,
         '', 'UAT')
       takeDecisions(t.n, 'uat-fix', fix)
       rec.fixed = !!(fix && fix.fix_status === 'fixed')

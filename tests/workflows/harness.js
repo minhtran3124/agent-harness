@@ -930,6 +930,16 @@ test('u2c: wrapped Verify text and indented sub-bullets stay out of the UAT prom
   assert(u.prompt.includes('AC-KEEP-ONE') && u.prompt.includes('AC-KEEP-TWO'), u.prompt)
 })
 
+test('u2d: a hyphenated AC label under a Verify row ends the row and stays in the UAT prompt', async () => {
+  const { calls } = await run({ tickets: [T(1, 1, [], {})] }, c => {
+    if (c.label === 'request:1') return { body: 'Do the thing.\nVerify: SECRET-V start the app\nAC-2: AC-KEEP-HYPHEN\nUser-Story: AC-KEEP-LABEL' }
+  })
+  const u = named(calls, /^uat:1$/)[0]
+  assert(u, labelsOf(calls).join())
+  assert(!u.prompt.includes('SECRET-V'), 'UAT prompt leaks SECRET-V')
+  assert(u.prompt.includes('AC-2: AC-KEEP-HYPHEN') && u.prompt.includes('User-Story: AC-KEEP-LABEL'), u.prompt)
+})
+
 test('u3: the UAT phase sits between Intent review and Testing', async () => {
   const { calls } = await run({}, null)
   const ls = labelsOf(calls)
@@ -971,6 +981,14 @@ test('u5e: a missing passed_ac is not a pass', async () => {
   const { calls, result } = await run({}, c => (/^uat(-rerun)?:1$/.test(c.label) ? uatRes(undefined, [sc('S1', 'AC1', 'ac', 'PASS')]) : undefined))
   assert.strictEqual(named(calls, /^uat-fix:/).length, 1)
   assert.strictEqual(result.tickets[0].reason, 'UAT AC failed')
+})
+
+test('u5f: the uat-fix prompt says console errors are report-only and never asks to fix them', async () => {
+  const { calls } = await run({}, c => (c.label === 'uat:1' ? uatRes(false, [sc('S1', 'AC1', 'ac', 'FAIL')], { console_errors: 3 }) : undefined))
+  const fix = named(calls, /^uat-fix:1$/)[0]
+  assert(fix, labelsOf(calls).join())
+  assert(!fix.prompt.includes('the console had'), fix.prompt)
+  assert(fix.prompt.includes('Console errors are report-only'), fix.prompt)
 })
 
 test('u5d: console errors alone do not fail a run whose ACs all pass', async () => {
