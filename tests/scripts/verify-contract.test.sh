@@ -25,6 +25,14 @@ for w in browser_navigate browser_snapshot browser_take_screenshot browser_conso
 done
 [ -z "$miss" ] && pass || fail "missing:$miss"
 
+t "allowed-tools lists the form and click tools that Login needs"
+tools=$(grep '^allowed-tools:' "$SKILL")
+miss=""
+for w in browser_fill_form browser_click; do
+  echo "$tools" | grep -q "$w" || miss="$miss $w"
+done
+[ -z "$miss" ] && pass || fail "allowed-tools missing:$miss"
+
 # no_secrets <config>: pass when baseUrl and startCommand exist and loginEnv holds only
 # upper-case variable names (a value such as "hunter2" fails).
 no_secrets() {
