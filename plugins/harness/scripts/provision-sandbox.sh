@@ -135,20 +135,22 @@ if [ "${1:-}" = --audit ]; then
   exit 0
 fi
 
-[ "$#" -ge 4 ] || die 'usage: provision-sandbox.sh <repoDir> <runId> <n> <slug> [--branch B] [--from REF] [--remote R] [--port-base N]' 2
+[ "$#" -ge 4 ] || die 'usage: provision-sandbox.sh <repoDir> <runId> <n> <slug> [--branch B] [--from REF] [--remote R] [--port-base N] [--max-kb N]' 2
 repo=$1; run=$2; n=$3; slug=$4; shift 4
-branch=''; from=HEAD; remote=''; port_base=4000
+branch=''; from=HEAD; remote=''; port_base=4000; max_kb=5120
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --branch) [ "$#" -ge 2 ] || die '--branch needs a value' 2; branch=$2; shift 2 ;;
     --from) [ "$#" -ge 2 ] || die '--from needs a value' 2; from=$2; shift 2 ;;
     --remote) [ "$#" -ge 2 ] || die '--remote needs a value' 2; remote=$2; shift 2 ;;
     --port-base) [ "$#" -ge 2 ] || die '--port-base needs a value' 2; port_base=$2; shift 2 ;;
+    --max-kb) [ "$#" -ge 2 ] || die '--max-kb needs a value' 2; max_kb=$2; shift 2 ;;
     *) die "unknown option: $1" 2 ;;
   esac
 done
 case "$n" in ''|*[!0-9]*) die "n must be a number, got '$n'" 2 ;; esac
 case "$port_base" in ''|*[!0-9]*) die "--port-base must be a number" 2 ;; esac
+case "$max_kb" in ''|*[!0-9]*) die '--max-kb must be a number' 2 ;; esac
 slug=$(printf '%s' "$slug" | tr -c 'A-Za-z0-9\n' '-' | sed 's/^-*//; s/-*$//')
 run=$(printf '%s' "$run" | tr -c 'A-Za-z0-9\n' '-' | sed 's/^-*//; s/-*$//')
 [ -n "$slug" ] && [ -n "$run" ] || die 'runId and slug need at least one letter or digit' 2
@@ -160,6 +162,21 @@ dir="$parent/.ship-$(basename "$repo")/$run-t$n-$slug"
 safe_path() { # reject absolute paths and `..` segments
   case "$1" in /*|..|../*|*/..|*/../*|'') return 1 ;; esac
 }
+
+# Preflight: classify every ignored path the way --audit does. Any unknown path stops the run here,
+# before the worktree exists and before anything is copied. The main checkout is only read.
+classify_repo "$repo" "$max_kb"
+if [ "${#UNKNOWN_PATHS[@]}" -gt 0 ]; then
+  {
+    printf 'provision-sandbox: %s path(s) unknown; add one line per path to %s/.harness-sandbox:\n' "${#UNKNOWN_PATHS[@]}" "$repo"
+    i=0
+    while [ "$i" -lt "${#UNKNOWN_PATHS[@]}" ]; do
+      printf '  copy %s   (or: skip %s)   # %s\n' "${UNKNOWN_PATHS[$i]}" "${UNKNOWN_PATHS[$i]}" "${UNKNOWN_WHY[$i]}"
+      i=$((i + 1))
+    done
+  } >&2
+  exit 1
+fi
 
 if [ -e "$dir/.git" ]; then
   common=$(git -C "$dir" rev-parse --git-common-dir 2>/dev/null) && common=$(cd "$dir" && cd "$common" && pwd -P)
@@ -188,6 +205,15 @@ db="sandbox_$(printf '%s' "$run-t$n" | tr '-' '_')"
   printf 'SANDBOX_PORT_RANGE=%s-%s\n' "$port" "$((port + 9))"
   printf 'SANDBOX_DB_NAME=%s\n' "$db"
 } > "$dir/.sandbox.env"
+
+# Small config or state the classifier found: copy it with no manifest line (no clobber).
+for p in ${COPY_PATHS[@]+"${COPY_PATHS[@]}"}; do
+  safe_path "$p" || die "unsafe path from the repo scan: '$p'"
+  if [ -e "$repo/$p" ] && [ ! -e "$dir/$p" ]; then
+    mkdir -p "$dir/$(dirname "$p")"
+    cp -R "$repo/$p" "$dir/$p" || die "copy failed: $p"
+  fi
+done
 
 manifest="$repo/.harness-sandbox"
 requires=(); setups=()
