@@ -159,4 +159,7 @@ t "uat SKILL.md locates run-app.md through CLAUDE_PLUGIN_ROOT, not a path relati
 UAT="$ROOT/plugins/harness/skills/uat/SKILL.md"
 if grep -q 'CLAUDE_PLUGIN_ROOT}/skills/verify/references/run-app.md' "$UAT" && ! grep -q '\.\./verify/' "$UAT"; then pass; else fail "uat still uses ../verify path"; fi
 
+t "uat SKILL.md takes the recipe path from the prompt before CLAUDE_PLUGIN_ROOT"
+if grep -q 'The recipe file is' "$UAT" && grep -q 'does not resolve' "$UAT"; then pass; else fail "uat Step 0 depends only on CLAUDE_PLUGIN_ROOT"; fi
+
 finish
