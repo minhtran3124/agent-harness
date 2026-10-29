@@ -127,6 +127,8 @@ if [ "${1:-}" = SessionStart ]; then
   fi
 fi
 in_use() { [ -n "$live_cwds" ] && printf '%s\n' "$live_cwds" | awk -v p="$1" '$0==p || index($0, p "/")==1 {f=1; exit} END{exit !f}'; }
+# CLEAN_STRICT holds globs, so the pattern stays unquoted on purpose.
+# shellcheck disable=SC2254
 is_strict() { local g; for g in ${CLEAN_STRICT:-}; do case "$1" in $g) return 0 ;; esac; done; return 1; }
 # True when the tip is in a <remote>/* branch other than <remote>/HEAD.
 in_remote_branch() { git for-each-ref --contains "$1" --format='%(refname)' "refs/remotes/$remote/" 2>/dev/null | grep -qvx "refs/remotes/$remote/HEAD"; }
@@ -155,7 +157,8 @@ for b in $(git for-each-ref --format='%(refname:short)' refs/heads); do
   if [ -n "$fetched" ] && [ -z "$strict" ] && [ -z "$p" ] && [ -z "$only" ] && case "$b" in worktree-*) true ;; *) false ;; esac && in_remote_branch "$tip"; then
     how=contained
   elif [ -n "$have_gh" ]; then
-    case " $(gh pr list --head "$b" --state merged --json headRefOid --jq '.[].headRefOid' 2>/dev/null | tr '\n' ' ') " in *" $tip "*) how=pr ;; esac
+    merged_tips=$(gh pr list --head "$b" --state merged --json headRefOid --jq '.[].headRefOid' 2>/dev/null | tr '\n' ' ')
+    case " $merged_tips " in *" $tip "*) how="pr" ;; esac
   elif [ -z "$strict" ] && [ -n "$base" ] \
     && [ "$(git for-each-ref --format='%(upstream:track)' "refs/heads/$b")" = "[gone]" ] \
     && git merge-base --is-ancestor "$tip" "$base" 2>/dev/null; then
