@@ -499,9 +499,12 @@ function stageFinish(t, impl, verifyResult) {
 }
 
 // ---------------------------------------------------------------------------
-// specs/<slug>/ flow files: local scratch, gitignored. Stages write none. At the end of the run the script renders
-// every ticket's files from the stage results and one cheap agent writes them into the main checkout, so they
-// outlive the worktrees. A failed render or write never changes the outcome of the run: it is only logged.
+// specs/<slug>/ flow files: local scratch, gitignored. Stages write none. The script renders the files from the
+// stage results and a cheap agent writes them into the main checkout, so they outlive the worktrees. Early files
+// are written per ticket as each stage ends: intent.md after the intent stage (at depth S also design.md and
+// plan.md), design.md, plan.md and research-brief.md after the plan stage. decision.md and summary.md need
+// end-of-run data, so they are written at the end, and the end pass rewrites all five files. A failed render or
+// write never changes the outcome of the run: it is only logged.
 // ---------------------------------------------------------------------------
 const specs = {}   // ticket number -> the stage results the flow files are rendered from
 const specDir = t => `${trimmed}/specs/${t.n}-${slugOf(t.title)}`
@@ -566,10 +569,27 @@ function renderSpecs(t, run) {
 
 // One agent writes the files of every ticket, skipped ones included. run: { byN, final, review, intent, suite, adrs }.
 async function writeSpecs(run) {
+  return writeSpecFiles(tickets, run, { label: 'write specs/ flow files' })
+}
+
+// Early write for one ticket: only the named files, rendered from an empty run (no decision.md or summary.md).
+// It never throws: a failure is only logged.
+async function writeSpecsEarly(t, files) {
+  try {
+    const stub = { byN: new Map(), adrs: [], final: null, review: { status: 'not run', reason: 'run in progress', rounds: 0, fixed: [], leftover: [] },
+      intent: { verdict: 'not run' }, suite: { passed: 0, failed: 0, skipped: 0 } }
+    await writeSpecFiles([t], stub, { only: files, label: 'write specs/ early' })
+  } catch (e) {
+    log(`#${t.n} early spec files not written: ${e && e.message ? e.message : String(e)}`)
+  }
+}
+
+async function writeSpecFiles(list, run, { only, label }) {
   const parts = [], reqs = []
-  for (const t of tickets) {
+  for (const t of list) {
     let files
     try { files = renderSpecs(t, run) } catch (e) { log(`#${t.n} spec files not rendered: ${e && e.message ? e.message : String(e)}`); continue }
+    if (only) files = Object.fromEntries(Object.entries(files).filter(([f]) => only.includes(f)))
     const dir = specDir(t)
     if (files['intent.md'].includes(REQUEST_LINE)) reqs.push(`In ${dir}/intent.md, replace the line ${REQUEST_LINE} with the issue body, verbatim, from: gh issue view ${t.n} --repo ${repo} --json body -q .body`)
     parts.push(...Object.entries(files).map(([f, text]) => `=== ${dir}/${f}\n${text}`))
@@ -582,7 +602,7 @@ async function writeSpecs(run) {
     `${reqs.length ? `${reqs.join('\n')}\n` : ''}` +
     `${trimmed}/specs/ is gitignored local scratch and the only place in ${repoDir} you may write. Edit nothing else; run no other git command and commit nothing. Return status ok.\n\n${parts.join('\n\n')}`
   try {
-    const res = await call(prompt, { label: 'write specs/ flow files', phase: 'Decisions', schema: SETUP_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
+    const res = await call(prompt, { label, phase: 'Decisions', schema: SETUP_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
     if (!res || res.status === 'blocked') log(`spec files not written: ${(res && (res.blocked_reason || res.summary)) || 'no answer'}`)
   } catch (e) {
     log(`spec files not written: ${e && e.message ? e.message : String(e)}`)
@@ -596,18 +616,21 @@ async function runTicket(t) {
     const intent = spec.intent = await stageIntent(t)
     boundaries[t.n] = boundaryOf(intent)
     const boundary = boundaryText(`Boundary for ticket #${t.n}:`, intent)
+    await writeSpecsEarly(t, t.depth === 'S' ? ['intent.md', 'design.md', 'plan.md'] : ['intent.md'])
     let planText
     if (t.depth === 'S') {
       planText = `Plan (steps from the intent stage):\n${JSON.stringify(intent.plan_steps || [])}`
     } else if (t.depth === 'M') {
       const plan = await stagePlan(t, intent)
       spec.plan = plan
+      await writeSpecsEarly(t, ['design.md', 'plan.md'])
       planText = `Follow this plan:\n${plan.plan_md}`
     } else {
       const research = spec.research = await stageResearch(t, intent)
       const design = spec.design = await stageDesign(t, intent, research)
       const plan = spec.plan = await stagePlan(t, intent, `Design:\n${design.design_md}\n`)
       const advice = await advisePlan(t, design, plan)
+      await writeSpecsEarly(t, ['design.md', 'plan.md', 'research-brief.md'])
       planText = `Design:\n${design.design_md}\n\nAdvisor review of design and plan (follow it unless it is wrong; record any deviation as a decision):\n${advice}\n\n` +
         `Follow this plan:\n${plan.plan_md}`
     }
