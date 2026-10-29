@@ -50,10 +50,18 @@ sibling PRs into it, a merge agent after each group, one final PR into `base`.
 8. Decisions: one artifact, the ADR files (`scripts/write_adrs.py`), and the PR body.
 
 No agent uses `isolation: 'worktree'`: it binds to the session's working directory, which is not the
-target repo (ADR 0002). Each agent runs `git -C <repoDir> fetch` and `git -C <repoDir> worktree add`
-into `<dirname(repoDir)>/.ship-<basename(repoDir)>/<slug>/<name>`, outside the repo, and every prompt
-uses absolute paths (skills are read from the agent's own worktree, `skills/` then `.claude/skills/`).
-The result's `worktrees` lists the dirs; the script never removes them, so the owner does.
+target repo (ADR 0002). Stages that run or build the ticket code (implement, verify head and retry, finish,
+UAT) work in one sandbox per ticket. After the plan and before implement, one cheap agent runs
+`scripts/provision-sandbox.sh` and returns its JSON line (dir, branch, port, db, mode); the script checks
+the dir, port and branch and blocks the ticket with the script's message when provisioning fails. The
+`sandbox` arg is `worktree` (default) or `clone`; `clone` cannot be combined with `local`, and inside a
+clone the remote is named `origin`. Verify-base, research, design, plan, merge, fix, suite, intent review
+and the ADR stage run `git -C <repoDir> fetch` and `git -C <repoDir> worktree add` into
+`<dirname(repoDir)>/.ship-<basename(repoDir)>/<slug>/<name>`, outside the repo. Every prompt uses absolute
+paths (skills are read by absolute path under `pluginDir`). The result's `sandboxes` lists the sandboxes and
+`worktrees` the light worktrees. The script never removes either: remove sandboxes with
+`provision-sandbox.sh clean <repoDir> --run <runId> --yes` (without `--yes` it only previews; it skips
+clones, which the owner deletes by hand), and the light worktrees with `git worktree remove`.
 
 The review stage must invoke the `code-review` skill (`skill_invoked`). If it did not run, the script
 retries once; if it still did not run, `review.status` is `not run`, the PR body says
