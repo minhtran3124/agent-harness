@@ -30,6 +30,17 @@ t "the sandbox is on the requested branch and git status stays clean"
 if [ "$(git -C "$dir" symbolic-ref --short HEAD)" = feat/t3 ] && [ -z "$(git -C "$dir" status --porcelain)" ]; then pass
 else fail "branch/status: $(git -C "$dir" status --porcelain | head -3)"; fi
 
+t ".sandbox.json records the run, ticket, branch, created_at and a null pr; git status stays clean"
+js="$dir/.sandbox.json"
+if grep -q '"runId":"run1"' "$js" && grep -q '"ticket":{"n":3,"slug":"my-ticket"}' "$js" && grep -q '"branch":"feat/t3"' "$js" \
+  && grep -qE '"created_at":"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z"' "$js" && grep -q '"pr":null' "$js" \
+  && [ -z "$(git -C "$dir" status --porcelain)" ]; then pass; else fail "$(cat "$js")"; fi
+
+t "a re-run keeps the original created_at"
+sed -i.bak 's/"created_at":"[^"]*"/"created_at":"2020-01-02T03:04:05Z"/' "$js"; rm -f "$js.bak"
+prov "$repo" run1 3 "my ticket" --branch feat/t3
+if grep -q '"created_at":"2020-01-02T03:04:05Z"' "$js"; then pass; else fail "$(cat "$js")"; fi
+
 t "each ticket gets its own port block and DB name"
 prov "$repo" run1 4 other --branch feat/t4
 dir4="$(dirname "$repo")/.ship-$(basename "$repo")/run1-t4-other"
@@ -75,6 +86,9 @@ t "without a manifest the sandbox is a plain worktree and still ready"
 repo=$(mk_repo)
 prov "$repo" r 1 s
 if [ "$RC" -eq 0 ] && echo "$OUT" | grep -q '"branch":"detached"'; then pass; else fail "rc=$RC $OUT"; fi
+
+t "a detached sandbox records branch detached"
+if grep -q '"branch":"detached"' "$(dirname "$repo")/.ship-$(basename "$repo")/r-t1-s/.sandbox.json"; then pass; else fail "detached"; fi
 
 t "bad usage exits 2"
 prov "$repo" r notanumber s

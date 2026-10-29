@@ -154,7 +154,9 @@ fi
 
 # Keep sandbox-only files out of git status. info/exclude lives in the common dir, shared by all worktrees.
 excl=$(git -C "$dir" rev-parse --path-format=absolute --git-path info/exclude)
-grep -qxF '/.sandbox.env' "$excl" 2>/dev/null || printf '/.sandbox.env\n' >> "$excl"
+for ex in /.sandbox.env /.sandbox.json /.sandbox.pid; do
+  grep -qxF "$ex" "$excl" 2>/dev/null || printf '%s\n' "$ex" >> "$excl"
+done
 
 port=$((port_base + n * 10))
 db="sandbox_$(printf '%s' "$run-t$n" | tr '-' '_')"
@@ -163,6 +165,14 @@ db="sandbox_$(printf '%s' "$run-t$n" | tr '-' '_')"
   printf 'SANDBOX_PORT_RANGE=%s-%s\n' "$port" "$((port + 9))"
   printf 'SANDBOX_DB_NAME=%s\n' "$db"
 } > "$dir/.sandbox.env"
+
+# Registry record. A re-run keeps the first created_at.
+head_branch=$(git -C "$dir" symbolic-ref --quiet --short HEAD 2>/dev/null || printf detached)
+created_at=$(sed -n 's/.*"created_at":"\([^"]*\)".*/\1/p' "$dir/.sandbox.json" 2>/dev/null | head -1)
+[ -n "$created_at" ] || created_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+json_branch=$(printf '%s' "$head_branch" | sed 's/\\/\\\\/g; s/"/\\"/g')
+printf '{"runId":"%s","ticket":{"n":%s,"slug":"%s"},"branch":"%s","created_at":"%s","pr":null}\n' \
+  "$run" "$n" "$slug" "$json_branch" "$created_at" > "$dir/.sandbox.json"
 
 manifest="$repo/.harness-sandbox"
 requires=(); setups=()
@@ -205,5 +215,4 @@ for p in "${requires[@]+"${requires[@]}"}"; do
   [ -e "$dir/$p" ] || die "required path missing in sandbox: $p (not in $repo and not made by setup)"
 done
 
-head_branch=$(git -C "$dir" symbolic-ref --quiet --short HEAD 2>/dev/null || printf detached)
 printf '{"status":"ready","dir":"%s","branch":"%s","port":%s,"db":"%s"}\n' "$dir" "$head_branch" "$port" "$db"
