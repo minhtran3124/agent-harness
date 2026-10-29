@@ -26,7 +26,9 @@ Extra files when they apply: `research-brief.md` (`xia2`, depth L) and `diagnosi
 
 A step that runs inside a workflow (`Mode: auto`) writes no `specs/` file. It returns the text, and
 the workflow script writes the files to the main checkout's `specs/<slug>/`, so they stay after the
-worktree is removed.
+worktree is removed. Autopilot writes `intent.md` after the intent stage (at depth S also `design.md`
+and `plan.md`), and `design.md`, `plan.md` and `research-brief.md` after the plan stage. It writes
+`decision.md` and `summary.md` at the end, and it rewrites all five files at the end.
 
 ## What stays tracked
 
