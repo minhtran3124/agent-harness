@@ -3,7 +3,7 @@ export const meta = {
   description: 'Ship 1..N triaged tickets to one reviewable PR with no human in the loop: per-ticket pipeline, review loop, intent review, full suite once, ADRs.',
   phases: [
     { title: 'Setup', detail: 'validate args, create the integration branch (multi-ticket only)' },
-    { title: 'Tickets', detail: 'intent, plan, implement, finish per ticket; groups in order, tickets of a group in parallel' },
+    { title: 'Tickets', detail: 'intent, plan, implement, verify, finish per ticket; groups in order, tickets of a group in parallel' },
     { title: 'Merge', detail: 'merge a finished group into the integration branch (multi-ticket only)' },
     { title: 'Review', detail: 'code-review the final PR, fix findings, re-review only the fix commits' },
     { title: 'Intent review', detail: 'plan-blind check of the final diff against the original request' },
@@ -16,9 +16,9 @@ export const meta = {
 // Constants. Models and effort are chosen here, per stage, never inside a stage.
 // ---------------------------------------------------------------------------
 const MODEL = { intent: 'sonnet', research: 'haiku', design: 'sonnet', plan: 'sonnet', implement: 'sonnet',
-  fix: 'sonnet', merge: 'sonnet', adr: 'sonnet', review: 'sonnet', test: 'haiku', cheap: 'haiku' }
+  verify: 'sonnet', fix: 'sonnet', merge: 'sonnet', adr: 'sonnet', review: 'sonnet', test: 'haiku', cheap: 'haiku' }
 const EFFORT = { intent: 'medium', research: 'low', design: 'medium', plan: 'medium', implement: 'medium',
-  fix: 'medium', merge: 'low', adr: 'low', review: 'medium', test: 'low', cheap: 'low', advisor: 'high' }
+  verify: 'medium', fix: 'medium', merge: 'low', adr: 'low', review: 'medium', test: 'low', cheap: 'low', advisor: 'high' }
 const FIX_THRESHOLD = 50   // a review finding scoring at or above this gets one fix agent
 const MAX_FIX_ROUNDS = 2   // hard cap on fix rounds in the review loop
 // Paths whose change makes the review level 'high'.
@@ -86,6 +86,12 @@ const IMPLEMENT_SCHEMA = stageSchema({
   commits: { type: 'array', items: { type: 'object', properties: { sha: STR, subject: STR }, required: ['sha', 'subject'] } },
   verify: { type: 'array', items: { type: 'object', properties: { command: STR, exit: NUM, notes: STR }, required: ['command', 'exit'] } },
 }, ['worktree', 'branch'])
+// The verify skill reports prose; this schema gives ship.js the facts it decides on. Not IMPLEMENT_SCHEMA.verify.
+const VERIFY_SCHEMA = stageSchema({
+  passed: { type: 'boolean', description: 'true only when every step and command of the Verify: row passed and the browser console had no errors' },
+  kind: { type: 'string', enum: ['BE', 'FE', 'FE+BE', 'docs'], description: 'the ticket type from the Verify: row' },
+  failedStep: STR, consoleErrors: strList, stills: { type: 'array', items: STR, description: 'absolute local paths of the screenshots' }, report: STR,
+}, ['passed', 'kind'])
 const FINISH_SCHEMA = stageSchema({ pr: NUM, url: STR, body_file: STR }, ['pr'])
 const SETUP_SCHEMA = stageSchema({})
 const MERGE_SCHEMA = stageSchema({
@@ -346,7 +352,58 @@ function stageImplement(t, branch, planText, boundary) {
   return runStage(t, 'implement', build, IMPLEMENT_SCHEMA, { agentType: 'harness:implementer', roleFile: `${pluginDir}/agents/implementer.md`, model: MODEL.implement, effort: EFFORT.implement })
 }
 
-function stageFinish(t, impl) {
+// One verify run. mode: 'verify' (head), 'verify-retry' (head again) or 'verify-base' (base commit, a separate worktree).
+// The agent only runs the steps and reports; retry, flaky and base decisions stay in verifyTicket.
+function stageVerify(t, impl, mode) {
+  const base = mode === 'verify-base'
+  const w = base ? newWt(`verify-base-${t.n}`, null, integRef) : null
+  const dir = base ? w.dir : impl.worktree
+  const build = advice => (base ? w.setup : '') + head(t, null,
+    `Stage: verify. Read ${pluginDir}/skills/verify/SKILL.md and follow it. Read the Verify: row of the issue body above. ` +
+    (base
+      ? `Mode: base. Your worktree ${dir} holds the base commit, without the ticket code. Read verify.config.json from ${impl.worktree}/verify.config.json (read-only; copy it into ${dir} without committing it). The steps are expected to FAIL here: report the real result. Commit nothing.\n`
+      : `Mode: head. Work in ${impl.worktree} (cd there; it is the ticket branch ${impl.branch}). Commit only verify.config.json, nothing else.${mode === 'verify-retry' ? ' This is a second run after a failure: start the app fresh and run every step again.' : ''}\n`) +
+    `Do not fix code, retry, or judge flakiness. Keep the evidence local and uncommitted. Return passed (true only if every step passed and the console had no errors), kind, failedStep, consoleErrors, stills (absolute paths) and report (the table).${advice}`, dir)
+  return runStage(t, mode, build, VERIFY_SCHEMA, { model: MODEL.verify, effort: EFFORT.verify })
+}
+
+// A failed comment must not change the outcome: it is only logged.
+async function commentVerify(t, text) {
+  if (LOCAL) return
+  try {
+    await call(`Run: gh issue comment ${t.n} --repo ${repo} --body "<the text below, as one quoted argument>"\n\n${RULES}\n\nText:\n${text}\nPost the comment and return status ok. Edit nothing else.`,
+      { label: `verify-comment:${t.n}`, phase: 'Tickets', schema: SETUP_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
+  } catch (e) { log(`#${t.n} verify comment failed: ${e && e.message}`) }
+}
+
+const verifyFacts = r => `failing step: ${r.failedStep || 'unknown'}; console errors: ${(r.consoleErrors || []).join(' | ') || 'none'}\n${r.report || ''}`
+
+// Head run, one retry, then the base check (FE and FE+BE only). Local mode skips the stage.
+async function verifyTicket(t, impl) {
+  if (LOCAL) return null
+  let r = await stageVerify(t, impl, 'verify')
+  let result = 'pass'
+  if (!r.passed) {
+    r = await stageVerify(t, impl, 'verify-retry')
+    if (!r.passed) {
+      const msg = `verify failed twice (${verifyFacts(r)})`
+      await commentVerify(t, `Verify failed twice for #${t.n}: ${verifyFacts(r)}`)
+      throw new Blocked(msg)
+    }
+    result = 'flaky'
+  }
+  if (r.kind === 'FE' || r.kind === 'FE+BE') {
+    const b = await stageVerify(t, impl, 'verify-base')
+    if (b.passed) {
+      const msg = 'verify steps also pass on the base commit, so the test does not prove the change (weak test)'
+      await commentVerify(t, `Verify for #${t.n}: ${msg}.\n${b.report || ''}`)
+      throw new Blocked(msg)
+    }
+  }
+  return { result, stills: r.stills || [], gif: null, report: r.report || '' }
+}
+
+function stageFinish(t, impl, verifyResult) {
   const prBase = single ? base : integBranch
   const fw = newWt(`finish-${t.n}`, null, LOCAL ? impl.branch : `${remote}/${impl.branch}`)
   const dir = impl.worktree || fw.dir
@@ -354,7 +411,10 @@ function stageFinish(t, impl) {
   const how = LOCAL
     ? `Local mode: do NOT push and do NOT open a pull request. Verify the branch as the skill describes, then write the PR description for base ${prBase} to .ship/pr-${t.n}.md inside the worktree (do not commit it) and return its absolute path as body_file with pr: 0.\n`
     : `Verify, push the branch and open the pull request with base ${prBase}. The body says "Refs #${t.n}" (the final PR carries the Closes lines) and ends with the footer line. Return the PR number as pr and its url.\n`
-  const build = advice => head(t, 'finishing-a-development-branch', `Stage: finish. ${where}${how}Do not run the full suite.${advice}`, dir)
+  const ver = verifyResult
+    ? `Verify result: ${verifyResult.result}. Local stills: ${verifyResult.stills.join(', ') || 'none'}. Nothing is attached to the pull request.\n`
+    : ''
+  const build = advice => head(t, 'finishing-a-development-branch', `Stage: finish. ${where}${ver}${how}Do not run the full suite.${advice}`, dir)
   return runStage(t, 'finish', build, FINISH_SCHEMA, { model: MODEL.implement, effort: EFFORT.implement })
 }
 
@@ -379,7 +439,8 @@ async function runTicket(t) {
         `Write this to specs/${slug}-${t.n}/PLAN.md in your worktree (local scratch, do not commit it) and follow it:\n${plan.plan_md}`
     }
     const impl = await stageImplement(t, branch, planText, boundary)
-    const fin = await stageFinish(t, impl)
+    const verifyResult = await verifyTicket(t, impl)
+    const fin = await stageFinish(t, impl, verifyResult)
     log(`#${t.n} done: ${fin.url || fin.body_file || impl.branch}`)
     return { n: t.n, status: 'done', pr: fin.pr || null, url: fin.url || '', branch: impl.branch || branch, summary: capSummary(impl.summary || fin.summary), reason: '', body_file: fin.body_file }
   } catch (e) {

@@ -16,12 +16,18 @@ sibling PRs into it, a merge agent after each group, one final PR into `base`.
 
 1. Setup: validate args, create the integration branch (multi only).
 2. Tickets: intent, then plan by depth (S in the prompt, M plan, L research + design + plan + advisor),
-   implement, finish (push and PR). A blocked ticket is recorded; its dependents are skipped.
+   implement, verify, finish (push and PR). A blocked ticket is recorded; its dependents are skipped.
+   Verify runs the `harness:verify` skill in the implement worktree against the issue's `Verify:` row
+   (default agent, not read-only). A failure gets one retry: a pass on retry is `flaky`, a second failure
+   blocks the ticket and comments on the issue. FE and FE+BE tickets also run the steps on the base commit
+   in a separate worktree (base mode); they must fail there, else the ticket is blocked as a weak test.
+   BE and docs tickets skip the base check. The result (`pass` or `flaky`, local stills) goes to the
+   finish stage; nothing is attached to the PR yet. Local mode skips verify.
 3. Merge: after each group (multi only).
 4. Review: `code-review` at a level chosen from diff size and risky paths; findings scoring 50 or
    more get one fix agent each; re-review only the fix commits; at most 2 rounds.
 5. Intent review: a plan-blind `intent-reviewer` sees only the request and the diff range.
-6. Verify: the full suite once, at the end.
+6. Testing: the full suite once, at the end.
 7. Decisions: one artifact, the ADR files (`scripts/write_adrs.py`), and the PR body.
 
 No agent uses `isolation: 'worktree'`: it binds to the session's working directory, which is not the
