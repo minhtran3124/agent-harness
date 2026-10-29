@@ -4,7 +4,7 @@
 # installed dependencies are missing. This script adds them from a manifest, gives the sandbox its
 # own port block, runs the project's setup commands, and checks the result before it says "ready".
 #
-# Usage: provision-sandbox.sh <repoDir> <runId> <n> <slug> [--branch B] [--from REF] [--remote R] [--port-base N]
+# Usage: provision-sandbox.sh <repoDir> <runId> <n> <slug> [--branch B] [--from REF] [--remote R] [--port-base N] [--max-kb N]
 #   Sandbox dir:  <parent of repoDir>/.ship-<repo name>/<runId>-t<n>-<slug>
 #   Manifest:     <repoDir>/.harness-sandbox   (one directive per line, # starts a comment)
 #       copy <path>      copy a file or directory from repoDir if it exists (.env, CLAUDE.local.md)
@@ -13,59 +13,56 @@
 #       setup <command>  run in the sandbox; it sees SANDBOX_PORT, SANDBOX_PORT_RANGE, SANDBOX_DB_NAME
 #   Paths are relative to the repo root. Absolute paths and `..` are rejected.
 #       skip <path>      state that the sandbox deliberately does not carry (the audit stops asking)
+#   Without a manifest line, provisioning classifies every ignored path the way --audit does:
+#       small config or state (.env, *.db, .auth, CLAUDE.local.md ...) is copied on its own;
+#       regenerable paths (node_modules, caches, build output) are left out;
+#       any unknown path (a prod-named file, a config file over --max-kb, no rule) stops the run
+#       BEFORE the worktree is created and before anything is copied, and prints one manifest
+#       line to add for each such path. A manifest copy line wins over the prod rule; a prod-named
+#       file is never copied by default; a manifest skip line settles a path. --max-kb N is the size
+#       limit for config or state files in KB (default 5120). The main checkout is only read.
 # Audit: provision-sandbox.sh --audit <repoDir> [--max-kb N] [--all]
 #   Lists every ignored file or directory in repoDir and says what a sandbox would do with it:
 #   covered (the manifest handles it), copy (small config or state), skip (regenerable or skipped),
-#   unknown (needs a manifest line). Skip lines are hidden unless --all. Exits 1 when any path is unknown. Read-only. Provisioning does
-#   not use this classification yet; it still follows the manifest alone.
+#   unknown (needs a manifest line). Skip lines are hidden unless --all. Exits 1 when any path is
+#   unknown. Read-only. Provisioning runs the same classification.
 # Prints one JSON line on stdout when ready. Exit 0 ready, 1 failed, 2 bad usage.
 # Running it again for the same sandbox re-syncs the manifest and reuses the worktree.
 set -u
 
 die() { printf 'provision-sandbox: %s\n' "$1" >&2; exit "${2:-1}"; }
 
-# ---- audit mode -------------------------------------------------------------------------------
-if [ "${1:-}" = --audit ]; then
-  [ "$#" -ge 2 ] || die 'usage: provision-sandbox.sh --audit <repoDir> [--max-kb N] [--all]' 2
-  a_repo=$2; max_kb=5120; show_all=0; shift 2
-  while [ "$#" -gt 0 ]; do
-    case "$1" in
-      --max-kb) [ "$#" -ge 2 ] || die '--max-kb needs a value' 2; max_kb=$2; shift 2 ;;
-      --all) show_all=1; shift ;;
-      *) die "unknown option: $1" 2 ;;
-    esac
+# ---- classification (shared by --audit and provisioning) ---------------------------------------
+under() { # under <path> <list item>: the path is the item, inside it, or holds it
+  case "$1" in "$2"|"$2"/*) return 0 ;; esac
+  case "$2" in "$1"/*) return 0 ;; esac
+  return 1
+}
+has_part() { # has_part <path> <glob>...: any path component matches a glob
+  local path=$1 g c; shift
+  local -a parts; IFS=/ read -ra parts <<< "$path"
+  for c in "${parts[@]}"; do
+    for g in "$@"; do
+      # shellcheck disable=SC2254
+      case "$c" in $g) return 0 ;; esac
+    done
   done
-  case "$max_kb" in ''|*[!0-9]*) die '--max-kb must be a number' 2 ;; esac
-  a_repo=$(cd "$a_repo" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null) || die 'repoDir is not a git checkout' 2
+  return 1
+}
 
-  covered=(); skipped=()
-  if [ -f "$a_repo/.harness-sandbox" ]; then
+# classify_repo <repo> <max_kb> fills ROWS (tab-separated: decision, size, path, why), COPY_PATHS
+# (paths to copy without a manifest line) and UNKNOWN_PATHS / UNKNOWN_WHY (parallel arrays).
+classify_repo() {
+  local repo=$1 max_kb=$2 line verb arg entry code path nested c kb size why decision
+  local -a covered=() skipped=() untracked_dirs=()
+  ROWS=(); COPY_PATHS=(); UNKNOWN_PATHS=(); UNKNOWN_WHY=()
+  if [ -f "$repo/.harness-sandbox" ]; then
     while IFS= read -r line || [ -n "$line" ]; do
       line=${line%%#*}; verb=${line%%[[:space:]]*}
       arg=${line#"$verb"}; arg=${arg#"${arg%%[![:space:]]*}"}; arg=${arg%"${arg##*[![:space:]]}"}; arg=${arg%/}
       case "$verb" in copy|link) covered+=("$arg") ;; skip) skipped+=("$arg") ;; esac
-    done < "$a_repo/.harness-sandbox"
+    done < "$repo/.harness-sandbox"
   fi
-  under() { # under <path> <list item>: the path is the item, inside it, or holds it
-    case "$1" in "$2"|"$2"/*) return 0 ;; esac
-    case "$2" in "$1"/*) return 0 ;; esac
-    return 1
-  }
-  has_part() { # has_part <path> <glob>...: any path component matches a glob
-    local path=$1 g c; shift
-    local -a parts; IFS=/ read -ra parts <<< "$path"
-    for c in "${parts[@]}"; do
-      for g in "$@"; do
-        # shellcheck disable=SC2254
-        case "$c" in $g) return 0 ;; esac
-      done
-    done
-    return 1
-  }
-
-  untracked_dirs=()
-  unknown=0; counts_copy=0; counts_skip=0; counts_cov=0
-  printf '%-9s %9s  %s\n' DECISION SIZE PATH
   while IFS= read -r entry; do
     code=${entry:0:2}; path=${entry:3}; path=${path%/}
     case "$code" in '!!'|'??') ;; *) continue ;; esac
@@ -74,7 +71,7 @@ if [ "${1:-}" = --audit ]; then
     for c in ${untracked_dirs[@]+"${untracked_dirs[@]}"}; do case "$path/" in "$c"/*) nested=1; break ;; esac; done
     [ "$nested" -eq 0 ] || continue
     [ "$code" != '??' ] || untracked_dirs+=("$path")
-    kb=$(du -sk "$a_repo/$path" 2>/dev/null | cut -f1); kb=${kb:-0}
+    kb=$(du -sk "$repo/$path" 2>/dev/null | cut -f1); kb=${kb:-0}
     size="${kb}K"; [ "$kb" -ge 1024 ] && size="$((kb / 1024))M"
     why=''; decision=''
     for c in ${covered[@]+"${covered[@]}"}; do under "$path" "$c" && { decision=covered; why='manifest copy/link'; break; }; done
@@ -97,14 +94,42 @@ if [ "${1:-}" = --audit ]; then
       else decision=unknown; why="config or state over ${max_kb}K"; fi
     fi
     [ -n "$decision" ] || { decision=unknown; why='no rule matches'; }
+    ROWS+=("$decision"$'\t'"$size"$'\t'"$path"$'\t'"$why")
     case "$decision" in
-      unknown) unknown=$((unknown + 1)) ;; copy) counts_copy=$((counts_copy + 1)) ;;
-      skip) counts_skip=$((counts_skip + 1)) ;; covered) counts_cov=$((counts_cov + 1)) ;;
+      copy) COPY_PATHS+=("$path") ;;
+      unknown) UNKNOWN_PATHS+=("$path"); UNKNOWN_WHY+=("$why") ;;
+    esac
+  done < <(git -C "$repo" status --porcelain --ignored=traditional -unormal)
+}
+
+# ---- audit mode -------------------------------------------------------------------------------
+if [ "${1:-}" = --audit ]; then
+  [ "$#" -ge 2 ] || die 'usage: provision-sandbox.sh --audit <repoDir> [--max-kb N] [--all]' 2
+  a_repo=$2; max_kb=5120; show_all=0; shift 2
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --max-kb) [ "$#" -ge 2 ] || die '--max-kb needs a value' 2; max_kb=$2; shift 2 ;;
+      --all) show_all=1; shift ;;
+      *) die "unknown option: $1" 2 ;;
+    esac
+  done
+  case "$max_kb" in ''|*[!0-9]*) die '--max-kb must be a number' 2 ;; esac
+  a_repo=$(cd "$a_repo" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null) || die 'repoDir is not a git checkout' 2
+
+  classify_repo "$a_repo" "$max_kb"
+  counts_copy=0; counts_skip=0; counts_cov=0
+  printf '%-9s %9s  %s\n' DECISION SIZE PATH
+  for row in ${ROWS[@]+"${ROWS[@]}"}; do
+    IFS=$'\t' read -r decision size path why <<< "$row"
+    case "$decision" in
+      copy) counts_copy=$((counts_copy + 1)) ;; skip) counts_skip=$((counts_skip + 1)) ;;
+      covered) counts_cov=$((counts_cov + 1)) ;;
     esac
     if [ "$decision" != skip ] || [ "$show_all" -eq 1 ]; then
       printf '%-9s %9s  %s   (%s)\n' "$decision" "$size" "$path" "$why"
     fi
-  done < <(git -C "$a_repo" status --porcelain --ignored=traditional -unormal)
+  done
+  unknown=${#UNKNOWN_PATHS[@]}
   printf '\ncovered %s, copy %s, skip %s, unknown %s\n' "$counts_cov" "$counts_copy" "$counts_skip" "$unknown"
   [ "$unknown" -eq 0 ] || { printf 'audit: %s path(s) unknown; add copy, link or skip lines to %s/.harness-sandbox\n' "$unknown" "$a_repo" >&2; exit 1; }
   exit 0
