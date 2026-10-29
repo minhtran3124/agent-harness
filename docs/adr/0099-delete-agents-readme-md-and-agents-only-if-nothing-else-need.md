@@ -8,7 +8,7 @@ decided_by: claude (ship workflow: intent)
 date: 2026-10-29
 ---
 
-# 0084. Delete agents/README.md and agents/ only if nothing else needs them
+# 0099. Delete agents/README.md and agents/ only if nothing else needs them
 
 ## Context
 

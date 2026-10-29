@@ -8,7 +8,7 @@ decided_by: claude (ship workflow: implement)
 date: 2026-10-29
 ---
 
-# 0083. Mark old solutions superseded with an applicable_when prefix and a superseded_by field
+# 0098. Mark old solutions superseded with an applicable_when prefix and a superseded_by field
 
 ## Context
 

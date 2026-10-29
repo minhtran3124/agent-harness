@@ -8,7 +8,7 @@ decided_by: claude (ship workflow: implement)
 date: 2026-10-29
 ---
 
-# 0080. Boundary: tests/scripts/lint-doc-truth.test.sh comment still mentions skills/xia2/PROJECT.md
+# 0095. Boundary: tests/scripts/lint-doc-truth.test.sh comment still mentions skills/xia2/PROJECT.md
 
 ## Context
 

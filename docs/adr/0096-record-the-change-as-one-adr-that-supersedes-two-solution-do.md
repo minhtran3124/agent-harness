@@ -8,7 +8,7 @@ decided_by: claude (ship workflow: intent)
 date: 2026-10-29
 ---
 
-# 0081. Record the change as one ADR that supersedes two solution docs
+# 0096. Record the change as one ADR that supersedes two solution docs
 
 ## Context
 

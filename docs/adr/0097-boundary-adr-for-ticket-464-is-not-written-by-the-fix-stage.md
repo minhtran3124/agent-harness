@@ -8,7 +8,7 @@ decided_by: claude (ship workflow: intent-fix)
 date: 2026-10-29
 ---
 
-# 0082. Boundary: ADR for ticket #464 is not written by the fix stage
+# 0097. Boundary: ADR for ticket #464 is not written by the fix stage
 
 ## Context
 
@@ -16,7 +16,7 @@ Finding 1 asks for a file under docs/adr/. The stage rules say never write ADR f
 
 ## Options
 
-- Write docs/adr/0080 in this stage
+- Write docs/adr/0095 in this stage
 - Skip and return the decision so the final ADR stage writes it
 
 ## Decision
