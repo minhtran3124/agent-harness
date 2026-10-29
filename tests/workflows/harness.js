@@ -625,7 +625,7 @@ test('v1: an FE ticket runs implement, verify, base check, finish in that order,
   const f = named(calls, /^finish:1$/)[0].prompt
   assert(f.includes('Verify result: pass') && f.includes('/wt/1/.playwright-mcp/1/step-1.png') && f.includes('Evidence stays uncommitted') && !f.includes('Nothing is attached'), f)
   const g = named(calls, /^gif:1$/)[0]
-  assert(g.opts.model === 'haiku' && g.schema.properties.gif && g.prompt.includes('ffmpeg') && g.prompt.includes('palettegen') && g.prompt.includes('/wt/1/.playwright-mcp/1') && !g.prompt.includes('*.png') && g.prompt.includes('concat'), g.prompt)
+  assert(g.opts.model === 'haiku' && g.schema.properties.gif && g.prompt.includes('ffmpeg') && g.prompt.includes('palettegen') && g.prompt.includes('/wt/1/.playwright-mcp/1') && !g.prompt.includes('*.png') && g.prompt.includes('concat') && g.prompt.includes('repeat the last still'), g.prompt)
   assert.strictEqual(result.final.pr, 101)
 })
 
