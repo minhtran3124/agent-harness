@@ -303,4 +303,9 @@ t "item 8: CLEAN_RECREATE ignores an unsafe branch name (leading dash)"
 rrun "" CLEAN_RECREATE="-f"
 if ! git -C "$REM" rev-parse -q --verify refs/heads/-f >/dev/null; then pass; else fail "out=$OUT"; fi
 
+# docs: the SessionStart bullet in docs/hooks.md reads as whole sentences
+DOCS_HOOKS="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/docs/hooks.md"
+t "docs/hooks.md: no sentence is cut by 'cleaned It is registered'"
+if ! grep -q 'cleaned It is' "$DOCS_HOOKS"; then pass; else fail "garbled sentence in docs/hooks.md"; fi
+
 finish
