@@ -6,37 +6,42 @@ allowed-tools: Read, Write, Edit, Grep, Glob, Bash, mcp__plugin_playwright_playw
 
 # Verify
 
-The `Verify:` row of the ticket drives the run. Pass or fail comes from assertions only,
-never from how a screenshot looks.
+The ticket's `Verify:` row drives the run. Pass or fail comes from assertions only,
+never from a screenshot.
 
-Use the Claude Code Playwright plugin tools only. Do not install npm Playwright.
+Use the Claude Code Playwright plugin tools only, not npm Playwright.
 
 ## Pick the work by ticket type
 
 | Type | Work |
 |---|---|
-| BE | Run the ticket test command. Start the service. Call each endpoint with `curl` and compare status and body. |
+| BE | Run the ticket test command. Start the service. `curl` each endpoint and compare status and body. |
 | FE | Run the unit tests. Then run browser steps (see Browser steps). |
-| FE+BE | Run the BE work. Compare the API contract with the FE fixture. Then run the browser steps end to end. |
-| Docs or config | Run the lint and done-when commands that the `Verify:` row lists. No browser. |
+| FE+BE | Run the BE work. Compare the API contract with the FE fixture. Then run the browser steps. |
+| Docs or config | Run the lint and done-when commands the `Verify:` row lists. No browser. |
 
 ## Start config
 
+Only FE, FE+BE, and BE tickets whose `Verify:` row starts a service or calls HTTP (`curl` or a URL)
+use the config. Docs or config tickets and test-command-only BE tickets skip Start config and
+Login: never read, create or commit `verify.config.json`.
+
 1. Read `verify.config.json` at the repo root, or at the path the `Verify:` row names.
 2. If it does not exist, infer the start recipe from the README, `package.json`, or `Makefile`.
-   Write the file with these keys: `baseUrl`, `startCommand`, `loginEnv`.
-3. `loginEnv` holds the NAMES of the login variables: `VERIFY_USER` and `VERIFY_PASSWORD`.
-   Never write a value into the file.
-4. Commit the file on the ticket branch, so the owner reviews it in the PR diff.
-5. Start `startCommand` in the background. Wait until `baseUrl` answers. Stop it at the end.
+   Write the file with these keys: `baseUrl`, `startCommand`, `loginEnv`. Never write or use a
+   config with an empty `baseUrl` or `startCommand`: if the recipe cannot be inferred, report
+   BLOCKED with the reason and write no file.
+3. `loginEnv` holds the NAMES `VERIFY_USER` and `VERIFY_PASSWORD`. Never write a value.
+4. Commit the file on the ticket branch for review in the PR diff.
+5. Start `startCommand` in the background, wait until `baseUrl` answers, stop it at the end.
 
 ## Login
 
-Do this once, before the captured steps, and keep it out of the evidence:
+Do this once, before the captured steps, out of the evidence:
 
 1. Open the login page. Fill the form with `browser_fill_form` from `VERIFY_USER` and `VERIFY_PASSWORD`, then submit with `browser_click`. Never pass the password through `browser_run_code_unsafe`.
 2. Save `storageState` to `.playwright-mcp/storage-state.json`, which is gitignored. Never save it anywhere else.
-3. Run all captured steps signed in. The login form never appears in a screenshot.
+3. Run all captured steps signed in.
 
 If a variable is not set, report BLOCKED. Never guess a password.
 
@@ -46,11 +51,10 @@ For each step in the `Verify:` row:
 
 1. `browser_navigate` to the page.
 2. `browser_snapshot` to see the page.
-3. `browser_run_code_unsafe` with an assertion on exact text or a selector. A true assertion
-   passes. A false one throws, and the step fails.
-4. `browser_take_screenshot` into `.playwright-mcp/<ticket>/`, named by step number. In a worktree the tool
-   refuses the path (its allowed root is the owner's checkout): take the still with
-   `page.screenshot({ path })` inside `browser_run_code_unsafe` instead.
+3. `browser_run_code_unsafe` with an assertion on exact text or a selector. A false assertion
+   throws and the step fails.
+4. `browser_take_screenshot` into `.playwright-mcp/<ticket>/`, named by step number. In a worktree
+   the tool refuses the path: use `page.screenshot({ path })` in `browser_run_code_unsafe`.
 
 After the last step, call `browser_console_messages`. Count the errors. One or more is a fail.
 
@@ -66,7 +70,6 @@ no ticket code:
 
 ## Report
 
-Return a table with one row per command or step, PASS or FAIL, and the assertion text.
+Return a table: one row per command or step, PASS or FAIL, and the assertion text.
 Add the console error count and the path of each still. Any FAIL makes the whole run FAIL.
-Do not fix code. Do not commit evidence: Git ignores `.playwright-mcp/`.
-The workflow builds the GIF from the stills with ffmpeg and attaches it to the PR after the PR is opened.
+Do not fix code. The workflow builds the GIF from the stills.
