@@ -3,6 +3,18 @@
 source "$(dirname "$0")/../lib.sh"
 SCRIPT="$ROOT/plugins/harness/scripts/provision-sandbox.sh"
 
+# Run a command for at most 10 s (macOS has no timeout(1)); a killed command exits 143.
+run_bounded() {
+  "$@" &
+  local p=$!
+  ( sleep 10; kill "$p" 2>/dev/null ) >/dev/null 2>&1 &
+  local k=$!
+  wait "$p"; local r=$?
+  kill "$k" 2>/dev/null
+  return "$r"
+}
+
+
 # mk_repo → a seeded repo whose ignored files (.env, node_modules) exist only in the main checkout.
 mk_repo() {
   local d; d=$(new_repo)
@@ -53,7 +65,7 @@ repo=$(mk_repo)
 printf 'setup echo "$SANDBOX_PORT" > port.out && pwd > cwd.out\n' > "$repo/.harness-sandbox"
 prov "$repo" r 1 s --port-base 5000
 dir="$(dirname "$repo")/.ship-$(basename "$repo")/r-t1-s"
-if [ "$RC" -eq 0 ] && [ "$(cat "$dir/port.out")" = 5010 ] && [ "$(cat "$dir/cwd.out")" = "$(cd "$dir" && pwd)" ]; then pass; else fail "rc=$RC $OUT"; fi
+if [ "$RC" -eq 0 ] && [ "$(cat "$dir/port.out")" = 5010 ] && [ "$(cat "$dir/cwd.out")" = "$(cd "$dir" && pwd -P)" ]; then pass; else fail "rc=$RC $OUT"; fi
 
 t "a required path that nothing provides fails the run"
 printf 'require .env.missing\n' > "$repo/.harness-sandbox"
@@ -95,7 +107,7 @@ repo=$(mk_repo)
 printf 'setup echo set > setup.out\ncheck test "$SANDBOX_PORT" = 4010 && test -f setup.out && pwd > check.out\n' > "$repo/.harness-sandbox"
 prov "$repo" r 1 s
 dir="$(dirname "$repo")/.ship-$(basename "$repo")/r-t1-s"
-if [ "$RC" -eq 0 ] && echo "$OUT" | grep -q '"status":"ready"' && [ "$(cat "$dir/check.out")" = "$(cd "$dir" && pwd)" ]; then pass; else fail "rc=$RC $OUT"; fi
+if [ "$RC" -eq 0 ] && echo "$OUT" | grep -q '"status":"ready"' && [ "$(cat "$dir/check.out")" = "$(cd "$dir" && pwd -P)" ]; then pass; else fail "rc=$RC $OUT"; fi
 
 t "a failing check fails the run, names the command and prints no ready line"
 printf 'check exit 3\n' > "$repo/.harness-sandbox"
@@ -138,8 +150,8 @@ if [ "$rc1" -eq 2 ] && [ "$RC" -eq 2 ]; then pass; else fail "rc=$rc1/$RC"; fi
 
 t "an option without a value exits 2 instead of looping"
 repo=$(mk_repo)
-OUT=$(timeout 10 bash "$SCRIPT" "$repo" r 1 s --branch 2>&1); rc1=$?
-OUT=$(timeout 10 bash "$SCRIPT" --audit "$repo" --max-kb 2>&1); RC=$?
+OUT=$(run_bounded bash "$SCRIPT" "$repo" r 1 s --branch 2>&1); rc1=$?
+OUT=$(run_bounded bash "$SCRIPT" --audit "$repo" --max-kb 2>&1); RC=$?
 if [ "$rc1" -eq 2 ] && [ "$RC" -eq 2 ]; then pass; else fail "rc=$rc1/$RC"; fi
 
 # ---- --mode clone ----
@@ -343,7 +355,7 @@ if [ "$RC" -eq 0 ] && echo "$OUT" | grep -q '"status":"ready"'; then pass; else 
 t "a bad --max-kb exits 2"
 prov "$repo" f 1 s --max-kb abc
 rc1=$RC
-OUT=$(timeout 10 bash "$SCRIPT" "$repo" f 1 s --max-kb 2>&1); RC=$?
+OUT=$(run_bounded bash "$SCRIPT" "$repo" f 1 s --max-kb 2>&1); RC=$?
 if [ "$rc1" -eq 2 ] && [ "$RC" -eq 2 ]; then pass; else fail "rc=$rc1/$RC"; fi
 
 # ---- list and clean ----
