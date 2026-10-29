@@ -83,4 +83,8 @@ fi
 t "implementer keeps a legacy agents/PROJECT.md fallback like test-runner"
 if grep -q 'agents/PROJECT.md' "$ROOT/plugins/harness/agents/implementer.md" 2>/dev/null; then pass; else fail "implementer.md has no agents/PROJECT.md fallback"; fi
 
+t "setup allowed-tools includes Write and Edit (step 2 writes CLAUDE.md)"
+if sed -n '1,/^---$/p;' "$ROOT/plugins/harness/skills/setup/SKILL.md" | grep -E '^allowed-tools:' | grep -q 'Write' \
+   && grep -E '^allowed-tools:' "$ROOT/plugins/harness/skills/setup/SKILL.md" | grep -q 'Edit'; then pass; else fail "allowed-tools lacks Write or Edit"; fi
+
 finish
