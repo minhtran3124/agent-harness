@@ -750,6 +750,10 @@ async function runUat(label, wtName, t, body, owner, configPath) {
   catch (e) { log(`UAT #${t.n} ${label} failed: ${e && e.message}`); return null }   // an infrastructure failure never fails the ticket
 }
 
+// The agent's passed_ac is a claim: an AC row with FAIL or any console error also fails the run.
+const uatOk = res => res.passed_ac !== false &&
+  !(res.scenarios || []).some(s => s.kind === 'ac' && s.status === 'FAIL') && !(Number(res.console_errors) > 0)
+
 const uatNotRun = (n, reason) => addDecision(n, 'uat', {
   title: `UAT not run for #${n}`, context: `The UAT stage could not check the running app: ${reason}`,
   decision: 'Continue without UAT; the ticket stays done and the PR body says UAT did not run.',
@@ -782,10 +786,10 @@ async function stageUat(delivered) {
     }
     takeDecisions(t.n, 'uat', res)
     rec.scenarios = res.scenarios || []
-    if (res.passed_ac === false) {
+    if (!uatOk(res)) {
       const failing = rec.scenarios.filter(s => s.kind === 'ac' && s.status === 'FAIL')
       const fix = await fixAgent(`uat-fix:${t.n}`,
-        `UAT on the running app found acceptance criteria of ticket #${t.n} that fail:\n${failing.map(s => `- ${s.covers}: ${s.assertion || s.id}`).join('\n') || '- (see the UAT summary) ' + (res.summary || '')}\nFix the code so the owner's request holds.`,
+        `UAT on the running app found acceptance criteria of ticket #${t.n} that fail:\n${failing.map(s => `- ${s.covers}: ${s.assertion || s.id}`).join('\n') || '- (see the UAT summary) ' + (res.summary || '')}${Number(res.console_errors) > 0 ? `\n- the console had ${res.console_errors} error(s)` : ''}\nFix the code so the owner's request holds.`,
         '', 'UAT')
       takeDecisions(t.n, 'uat-fix', fix)
       rec.fixed = !!(fix && fix.fix_status === 'fixed')
@@ -801,7 +805,7 @@ async function stageUat(delivered) {
       rec.scenarios = again.scenarios || rec.scenarios
       res = again
     }
-    if (res.passed_ac === false) {
+    if (!uatOk(res)) {
       rec.status = 'failed'; rec.reason = 'UAT AC failed'
       r.status = 'blocked'; r.reason = 'UAT AC failed'   // code stays, the PR still opens, nothing is reverted
       addDecision(t.n, 'uat', {

@@ -951,6 +951,14 @@ test('u5b: a skipped or failed UAT fix starts no rerun and the AC failure stands
   }
 })
 
+test('u5c: a FAIL row or a console error fails the run even when passed_ac is true', async () => {
+  for (const [scen, extra] of [[[sc('S1', 'AC1', 'ac', 'FAIL')], {}], [[sc('S1', 'AC1', 'ac', 'PASS')], { console_errors: 2 }]]) {
+    const { calls, result } = await run({}, c => (/^uat(-rerun)?:1$/.test(c.label) ? uatRes(true, scen, extra) : undefined))
+    assert.strictEqual(named(calls, /^uat-fix:/).length, 1)
+    assert.strictEqual(result.tickets[0].reason, 'UAT AC failed')
+  }
+})
+
 test('u5: a second AC failure marks the ticket blocked with reason UAT AC failed; the PR still opens', async () => {
   const { calls, result } = await run({}, c => {
     if (/^uat(-rerun)?:1$/.test(c.label)) return uatRes(false, [sc('S1', 'AC1', 'ac', 'FAIL')])
