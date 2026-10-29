@@ -78,4 +78,11 @@ else fail "codes=[$codes] or server still up"; fi
 t "storageState path is named and gitignored"
 grep -q 'storageState.*\.playwright-mcp/' "$SKILL" && grep -qx '\.playwright-mcp/' "$ROOT/.gitignore" && pass || fail "storageState path missing or not gitignored"
 
+t "docs or config tickets skip Start config and never touch verify.config.json"
+grep -q 'never read, create or commit' "$SKILL" && pass || fail "skip rule for docs or config tickets missing"
+
+t "Start config forbids an empty baseUrl or startCommand and reports BLOCKED"
+grep -qi 'empty' "$SKILL" && grep -i 'empty' "$SKILL" | grep -q 'baseUrl' \
+  && grep -i 'empty' -A2 "$SKILL" | grep -q 'BLOCKED' && pass || fail "empty-value rule or BLOCKED missing"
+
 finish
