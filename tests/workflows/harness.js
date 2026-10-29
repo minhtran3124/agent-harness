@@ -768,6 +768,54 @@ test('a7: a pr of 0 never attaches even with a GIF', async () => {
   assert.strictEqual(named(calls, /^attach:/).length, 0)
 })
 
+// ---- Verify section in the PR body (#426) ---------------------------------------------------
+const adrBody = calls => named(calls, /^adr$/)[0].prompt
+
+test('vb1: FE pass with a failed base check and an attached GIF is listed under Verify', async () => {
+  const { calls } = await run({}, withVerify('FE', gifOk))
+  const b = adrBody(calls)
+  assert(b.includes('## Verify') && b.includes('- #1 FE: pass; base: failed on base as required; stills: /wt/1/.playwright-mcp/1; GIF: built and attached'), b)
+  assert(b.indexOf('## Review') < b.indexOf('## Verify') && b.indexOf('## Verify') < b.indexOf('## Intent review'), b)
+})
+
+test('vb2: a flaky result is shown as flaky', async () => {
+  const { calls } = await run({}, c => {
+    if (c.label === 'verify:1') return vres(false, 'FE')
+    if (c.label === 'verify-retry:1') return vres(true, 'FE')
+    if (c.label === 'verify-base:1') return vres(false, 'FE')
+    return gifOk(c)
+  })
+  assert(adrBody(calls).includes('- #1 FE: flaky;'), adrBody(calls))
+})
+
+test('vb3: a weak-test blocked ticket shows fail and passed on base', async () => {
+  const { calls } = await run({ tickets: [T(1, 1), T(2, 1)] }, c => {
+    if (c.label === 'verify:1' || c.label === 'verify-base:1') return vres(true, 'FE')
+  })
+  const b = adrBody(calls)
+  assert(b.includes('- #1 FE: fail; base: passed on base (weak test); stills: /wt/1/.playwright-mcp/1; GIF: not built'), b)
+})
+
+test('vb4: a GIF built but a failed attach shows built, not attached', async () => {
+  const { calls } = await run({}, withVerify('FE', c => (c.label === 'attach:1' ? new Error('gh too old') : gifOk(c))))
+  assert(adrBody(calls).includes('GIF: built, not attached'), adrBody(calls))
+})
+
+test('vb5: no GIF shows not built, and a BE ticket has base not run', async () => {
+  const { calls } = await run({}, c => (c.label === 'verify:1' ? vres(true, 'BE') : undefined))
+  assert(adrBody(calls).includes('- #1 BE: pass; base: not run; stills: /wt/1/.playwright-mcp/1; GIF: not built'), adrBody(calls))
+})
+
+test('vb6: failing twice shows fail with base not run', async () => {
+  const { calls } = await run({ tickets: [T(1, 1), T(2, 1)] }, c => (c.label === 'verify:1' || c.label === 'verify-retry:1' ? vres(false, 'FE') : undefined))
+  assert(adrBody(calls).includes('- #1 FE: fail; base: not run;'), adrBody(calls))
+})
+
+test('vb7: local mode has no Verify heading', async () => {
+  const { calls } = await run({ local: true }, null)
+  assert(!adrBody(calls).includes('## Verify'))
+})
+
 test('schemas are well-formed (object root, required within properties)', async () => {
   const { calls } = await run({ tickets: [T(1, 1, [], { depth: 'L' }), T(2, 2, [1])] }, c => (c.label === 'suite' ? { passed: 1, failed: 1, skipped: 0, failing: ['t'] } : undefined))
   const check = (s, where) => {
