@@ -10,7 +10,7 @@ directory (verified for #396; it supersedes `docs/adr/0001-workflow-capabilities
 { repo: "owner/name", repoDir: "/abs/path", pluginDir: "<plugin directory>", remote: "origin", base: "<base>",
   slug: "<milestone-or-ticket slug>",
   tickets: [ { n: 346, title: "...", depth: "S|M|L", group: 1, deps: [345],
-               confirmed: "owner-confirmed decisions text, may be empty" } ],
+               confirmed: "owner-confirmed decisions text incl. the Verify: row, may be empty" } ],
   testCmd: "<related-tests command or template>", lintCmd: "<lint command>",
   fullTestCmd: "bash scripts/run-tests.sh", advisorModel: "opus", noAsk: false, local: false }
 ```
