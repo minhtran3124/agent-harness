@@ -226,6 +226,14 @@ test('e5: owner_confirmed wording in RULES and schema says needs_review still ge
   assert(/unless needs_review is also true/.test(oc), 'schema omits the needs_review exception')
 })
 
+test('e7: RULES gives one source for project rules, not the owner checkout and the worktree at once', async () => {
+  const { calls } = await run()
+  const c = calls.find(x => x.prompt.includes('Rules (all of them apply)'))
+  assert(c.prompt.includes('read the tracked ones (CLAUDE.md, .claude/rules/*.md) from it'), 'no worktree-first rule')
+  assert(!c.prompt.includes('read the same files at the same relative paths'), 'old contradictory sentence is back')
+  assert(c.prompt.includes('/repo/CLAUDE.local.md'), 'untracked CLAUDE.local.md source missing')
+})
+
 test('e6: every stage prompt tells the agent to read the repo CLAUDE.md and .claude/rules', async () => {
   const { calls } = await run({}, null)
   const staged = calls.filter(c => !String(c.label).startsWith('advisor:') && c.prompt.includes('Rules (all of them apply)'))
