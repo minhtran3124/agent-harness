@@ -44,7 +44,7 @@ claude plugin marketplace add minhtran3124/agent-harness
 claude plugin install harness@agent-harness
 ```
 
-Then, in the project, run `/harness:setup`. It scaffolds `specs/`, `docs/solutions/` and `techstacks/`, creates `agents/PROJECT.md` if missing, merges the `permissions.deny` rules into `.claude/settings.json` (needs [jq](https://jqlang.github.io/jq/)), and adds `specs/` to `.gitignore`. Every step is safe to run twice. A plugin cannot ship `permissions.deny`, which is why setup does it. Restart Claude Code after installing so it loads the skills, agents and hooks.
+Then, in the project, run `/harness:setup`. It scaffolds `specs/` and `docs/solutions/`, proposes a `## Run and test` section for your `CLAUDE.md` if it has none, merges the `permissions.deny` rules into `.claude/settings.json` (needs [jq](https://jqlang.github.io/jq/)), and adds `specs/` to `.gitignore`. Every step is safe to run twice. A plugin cannot ship `permissions.deny`, which is why setup does it. Restart Claude Code after installing so it loads the skills, agents and hooks.
 
 Needs `git` and `python3`. The ship workflow also needs the `Workflow` tool.
 

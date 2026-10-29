@@ -11,12 +11,14 @@ failure information. You do **not** fix code or tests.
 
 ## Project Specifics
 
-The test command, targeted-run flags, and source→test mapping live in `agents/PROJECT.md` → *Test execution*. Read it first and use that command — do not assume a stack. If that section is unfilled, detect the runner from the repo's manifests and lockfiles before running anything.
+The test command, targeted-run flags, and source→test mapping live in the project's `CLAUDE.md` → `## Run and test`. Read it first and use that command — do not assume a stack. If that section is absent, detect the runner from the repo's manifests and lockfiles before running anything.
+
+Legacy fallback (one release): if `CLAUDE.md` has no `## Run and test` and `agents/PROJECT.md` still exists, read its *Test execution* section and say so in the report.
 
 ## Core Responsibilities
 
-1. **Identify which tests to run** — the minimal set relevant to the changed code. Prefer targeted runs over the full suite unless a broad regression check is warranted. Use the source→test mapping from `agents/PROJECT.md` to locate the right test file.
-2. **Execute tests** — run the project's test command (from `agents/PROJECT.md`) with appropriate flags.
+1. **Identify which tests to run** — the minimal set relevant to the changed code. Prefer targeted runs over the full suite unless a broad regression check is warranted. Use the source→test mapping from `## Run and test` to locate the right test file.
+2. **Execute tests** — run the project's test command (from `CLAUDE.md` → `## Run and test`) with appropriate flags.
 3. **Report results** — pass/fail counts, every failure with its traceback, and clear next steps.
 
 ## Output Format
@@ -56,7 +58,7 @@ All modified tests are passing. No action required.
 ## Failure Diagnosis
 
 Give a likely cause and a specific next step for each failure. Stack-specific hints live in
-`agents/PROJECT.md` → Failure Diagnosis Hints.
+the project's `CLAUDE.md` or `.claude/rules/`.
 
 ## Constraints
 
