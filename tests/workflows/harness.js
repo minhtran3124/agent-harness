@@ -967,6 +967,12 @@ test('u5c: a FAIL row fails the run even when passed_ac is true', async () => {
   assert.strictEqual(result.tickets[0].reason, 'UAT AC failed')
 })
 
+test('u5e: a missing passed_ac is not a pass', async () => {
+  const { calls, result } = await run({}, c => (/^uat(-rerun)?:1$/.test(c.label) ? uatRes(undefined, [sc('S1', 'AC1', 'ac', 'PASS')]) : undefined))
+  assert.strictEqual(named(calls, /^uat-fix:/).length, 1)
+  assert.strictEqual(result.tickets[0].reason, 'UAT AC failed')
+})
+
 test('u5d: console errors alone do not fail a run whose ACs all pass', async () => {
   const { calls, result } = await run({}, c => (/^uat(-rerun)?:1$/.test(c.label) ? uatRes(true, [sc('S1', 'AC1', 'ac', 'PASS')], { console_errors: 2 }) : undefined))
   assert.strictEqual(named(calls, /^uat-fix:/).length, 0)
