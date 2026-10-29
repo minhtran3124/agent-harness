@@ -9,6 +9,8 @@
 # ignored, so text that merely mentions the phrase does nothing) and cleans only the branches of the PRs it merges (each merge in a chain counts),
 # found with `gh pr view`. With no number it uses the PR of the current branch; if that lookup fails
 # it exits silently. Run by hand with no argument, it sweeps every merged branch.
+# Hook mode also runs `scripts/provision-sandbox.sh clean <repo> --branch <headRef> --yes` for each merged PR
+# (its sandbox under .ship-<repo>/; no force, a dirty sandbox is reported and kept, silent if absent).
 set -u
 only=""  # set in hook mode: clean only the branch of the PR that was just merged
 if [ "${1:-}" = PostToolUse ]; then
@@ -87,6 +89,20 @@ keep=" main master $(git symbolic-ref -q --short HEAD) "
 # bash 3.2 (macOS) has no associative arrays: look the worktree path up per branch.
 wt_of() { git worktree list --porcelain | awk -v b="refs/heads/$1" '/^worktree /{p=substr($0,10)} $0=="branch " b{print p; exit}'; }
 out=""
+# Hook mode only: also remove the sandbox (.ship-<repo>/) of each merged PR's head branch. This PR only,
+# no force flag; a dirty sandbox is reported ("refused ...") and kept. Silent when the script or folder
+# is missing. Runs before the branch loop so the branch is free for `git branch -d`.
+if [ -n "$only" ]; then
+  sbx="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../scripts/provision-sandbox.sh"
+  sbroot="$(dirname "$root")/.ship-$(basename "$root")"
+  if [ -f "$sbx" ] && [ -d "$sbroot" ]; then
+    for b in $only; do
+      case "$keep" in *" $b "*) continue ;; esac
+      s=$(bash "$sbx" clean "$root" --branch "$b" --yes 2>&1) || true
+      [ -z "$s" ] || out+="$s"$'\n'
+    done
+  fi
+fi
 for b in $(git for-each-ref --format='%(refname:short)' refs/heads); do
   [ -z "$only" ] || case "$only" in *" $b "*) ;; *) continue ;; esac
   case "$keep" in *" $b "*) continue ;; esac

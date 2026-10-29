@@ -57,7 +57,7 @@
 #   writes its pid there. A dead or invalid pid is not running.
 #   PR state comes from `gh pr view <branch>`. If gh fails or is missing, the state is unknown.
 #   abandoned: no PR, not running, older than 7 days.
-# Clean: provision-sandbox.sh clean <repoDir> (--run ID | --merged | --older Nd) [--yes]
+# Clean: provision-sandbox.sh clean <repoDir> (--run ID | --branch B | --merged | --older Nd) [--yes]
 #   Without --yes it prints "would remove" lines and changes nothing. With --yes it runs
 #   `git worktree remove` with no force flag, after the manifest teardown lines (see above). A dirty
 #   sandbox is refused first, before any teardown runs, and left in place, and the exit code is 1. A
@@ -243,7 +243,7 @@ if [ "${1:-}" = list ]; then
 fi
 
 if [ "${1:-}" = clean ]; then
-  cusage='usage: provision-sandbox.sh clean <repoDir> (--run ID | --merged | --older Nd) [--yes]'
+  cusage='usage: provision-sandbox.sh clean <repoDir> (--run ID | --branch B | --merged | --older Nd) [--yes]'
   [ "$#" -ge 3 ] || die "$cusage" 2
   c_repo=$2; shift 2
   sel=''; sel_val=''; yes=0
@@ -251,6 +251,7 @@ if [ "${1:-}" = clean ]; then
     case "$1" in
       --run) [ "$#" -ge 2 ] || die '--run needs a value' 2; [ -z "$sel" ] || die "$cusage" 2; sel=run; sel_val=$2; shift 2 ;;
       --older) [ "$#" -ge 2 ] || die '--older needs a value' 2; [ -z "$sel" ] || die "$cusage" 2; sel=older; sel_val=$2; shift 2 ;;
+      --branch) [ "$#" -ge 2 ] || die '--branch needs a value' 2; [ -z "$sel" ] || die "$cusage" 2; sel=branch; sel_val=$2; shift 2 ;;
       --merged) [ -z "$sel" ] || die "$cusage" 2; sel=merged; shift ;;
       --yes) yes=1; shift ;;
       *) die "unknown option: $1" 2 ;;
@@ -284,6 +285,7 @@ if [ "${1:-}" = clean ]; then
     sb_classify "$sb"
     case "$sel" in
       run) [ "$(sb_json "$sb/.sandbox.json" runId)" = "$sel_val" ] || continue ;;
+      branch) [ "$(sb_json "$sb/.sandbox.json" branch)" = "$sel_val" ] || continue ;;
       merged) [ "$sb_state" = merged ] || continue ;;
       older) { [ "$sb_age" -ge "$sel_val" ] && [ "$sb_state" != 'PR open' ]; } || continue ;;
     esac

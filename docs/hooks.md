@@ -37,6 +37,8 @@ silently and cleans nothing. It never uses a force flag: `git worktree remove` r
 leaves it). It never touches `main`, `master`, the checked-out branch of the main checkout, or the worktree the
 session is running in. Run by hand with no argument, it sweeps every merged branch and prints the same report.
 
+In hook mode it also removes the sandbox of the merged PR: when `scripts/provision-sandbox.sh` and the `.ship-<repo>/` folder exist, it runs `provision-sandbox.sh clean <repo> --branch <headRef> --yes` for that PR only (never a full sweep). It uses no force flag: a dirty sandbox is reported (`refused ...`) and kept, and a running sandbox is skipped. It skips silently when the script or the folder is missing. A manual run with no argument does not touch sandboxes.
+
 ### `session-rules.sh` (SessionStart)
 
 A plugin has no rules component, so this hook prints `plugins/harness/rules/behavior.md` as the

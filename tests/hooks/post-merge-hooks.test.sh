@@ -74,6 +74,7 @@ case "\$1 \$2" in
   "pr view")
     [ -f "$STUB/fail" ] && exit 1
     case "\$3" in
+      feat) echo MERGED ;;
       7|--json) echo '{"state":"MERGED","headRefName":"feat"}' ;;
       8) echo '{"state":"MERGED","headRefName":"feat2"}' ;;
       9) echo '{"state":"OPEN","headRefName":"feat2"}' ;;
@@ -130,5 +131,47 @@ setup2
 t "manual run with no argument still sweeps every merged branch"
 OUT=$(cd "$MAIN" && PATH="$STUB:$PATH" bash hooks/clean-worktrees.sh 2>&1); RC=$?
 if [ ! -d "$WT" ] && [ ! -d "$WT2" ]; then pass; else fail "out=$OUT"; fi
+
+# ---- clean-worktrees.sh PostToolUse: sandbox of the merged PR (.ship-<repo>/) ----
+# mk_sb <name> <branch>: a registered sandbox worktree (detached) whose .sandbox.json says <branch>.
+mk_sb() {
+  SBROOT="$(dirname "$MAIN")/.ship-$(basename "$MAIN")"; _CLEANUP_DIRS+=("$SBROOT")
+  mkdir -p "$SBROOT"
+  git -C "$MAIN" worktree add -q --detach "$SBROOT/$1" main
+  printf '{"branch":"%s","runId":"r","created_at":"2026-01-01T00:00:00Z"}\n' "$2" > "$SBROOT/$1/.sandbox.json"
+  printf '.sandbox.json\n.sandbox.pid\n' >> "$(git -C "$MAIN" rev-parse --path-format=absolute --git-path info/exclude)"
+}
+sbx_setup() { setup2; mkdir -p "$MAIN/scripts"; cp "$ROOT/plugins/harness/scripts/provision-sandbox.sh" "$MAIN/scripts/"; }
+
+sbx_setup; mk_sb s-feat feat; mk_sb s-other other
+t "merged PR: its sandbox is removed (reported), another branch's sandbox stays, worktree and branch still cleaned"
+hook 'gh pr merge 7'
+if [ "$RC" = 0 ] && [ ! -d "$SBROOT/s-feat" ] && [ -d "$SBROOT/s-other" ] && [ ! -d "$WT" ] \
+  && printf '%s' "$OUT" | jq -e '.hookSpecificOutput.additionalContext | test("removed s-feat")' >/dev/null; then pass; else fail "rc=$RC out=$OUT"; fi
+
+sbx_setup; mk_sb s-feat feat
+t "PR not merged: sandbox kept and no sandbox call is made"
+hook 'gh pr merge 9'
+if [ "$RC" = 0 ] && [ -z "$OUT" ] && [ -d "$SBROOT/s-feat" ] && ! grep -q '^pr view feat' "$STUB/calls"; then pass; else fail "rc=$RC out=$OUT"; fi
+
+sbx_setup; mk_sb s-feat feat; echo u > "$SBROOT/s-feat/new.txt"
+t "dirty sandbox: reported as refused, kept, hook exits 0"
+hook 'gh pr merge 7'
+if [ "$RC" = 0 ] && [ -f "$SBROOT/s-feat/new.txt" ] && printf '%s' "$OUT" | jq -e '.hookSpecificOutput.additionalContext | test("refused s-feat")' >/dev/null; then pass; else fail "rc=$RC out=$OUT"; fi
+
+setup2; mkdir -p "$MAIN/scripts"; mk_sb s-feat feat
+t "script missing: exit 0, no sandbox text, sandbox kept, worktree cleanup still works"
+hook 'gh pr merge 7'
+if [ "$RC" = 0 ] && [ -d "$SBROOT/s-feat" ] && [ ! -d "$WT" ] && ! printf '%s' "$OUT" | grep -q 's-feat'; then pass; else fail "rc=$RC out=$OUT"; fi
+
+sbx_setup
+t ".ship folder missing: exit 0, no sandbox text, worktree cleanup still works"
+hook 'gh pr merge 7'
+if [ "$RC" = 0 ] && [ ! -d "$WT" ] && ! printf '%s' "$OUT" | grep -qi 'sandbox\|refused'; then pass; else fail "rc=$RC out=$OUT"; fi
+
+sbx_setup; mk_sb s-feat feat
+t "manual run with no argument leaves sandboxes alone"
+OUT=$(cd "$MAIN" && PATH="$STUB:$PATH" bash hooks/clean-worktrees.sh 2>&1); RC=$?
+if [ -d "$SBROOT/s-feat" ] && [ ! -d "$WT" ]; then pass; else fail "rc=$RC out=$OUT"; fi
 
 finish
