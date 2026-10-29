@@ -134,7 +134,9 @@ classify_repo() {
       else decision=unknown; why="config or state over ${max_kb}K"; fi
     fi
     if [ -z "$decision" ] && has_part "$path" '*.local' '*.local.*'; then
-      if [ "$kb" -le "$max_kb" ]; then decision=copy; why='small local-only file'
+      if [ -d "$repo/$path" ] && [ -n "$(find "$repo/$path" \( -name .env -o -name '.env.*' -o -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' -o -name .auth \) -print -quit 2>/dev/null)" ]; then
+        decision=unknown; why='local directory holds credential or state files: copy only with a manifest line'
+      elif [ "$kb" -le "$max_kb" ]; then decision=copy; why='small local-only file'
       else decision=unknown; why="config or state over ${max_kb}K"; fi
     fi
     [ -n "$decision" ] || { decision=unknown; why='no rule matches'; }

@@ -315,6 +315,14 @@ if [ "$RC" -eq 0 ] && [ "$(cat "$dir/.env")" = A=1 ] && [ -f "$dir/data.db" ] &&
   && [ -f "$dir/CLAUDE.local.md" ] && [ ! -e "$dir/node_modules" ]; then pass; else fail "rc=$RC $OUT"; fi
 rm -f "$repo/.harness-sandbox"
 
+t "a *.local directory holding .env is not auto-copied without a manifest line"
+repo=$(mk_auto_repo)
+printf 'secrets.local/\n' >> "$repo/.gitignore"
+mkdir -p "$repo/secrets.local"; printf 'K=1\n' > "$repo/secrets.local/.env"
+printf 'copy .env\ncopy data.db\ncopy .auth\n' > "$repo/.harness-sandbox"
+prov "$repo" a 1 s
+if [ "$RC" -eq 1 ] && echo "$OUT" | grep -q 'copy secrets\.local' && [ ! -e "$(dirname "$repo")/.ship-$(basename "$repo")" ]; then pass; else fail "rc=$RC $OUT"; fi
+
 t "two unknown paths block the run, list both hints, and create nothing"
 repo=$(mk_auto_repo)
 printf 'P=1\n' > "$repo/.env.prod"; mkdir -p "$repo/stray"; printf 'u\n' > "$repo/stray/n.txt"
