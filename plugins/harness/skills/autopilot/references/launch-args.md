@@ -25,10 +25,19 @@ directory (verified for #396; it supersedes `docs/adr/0001-workflow-capabilities
 Short, in the owner's language: final PR link, per-ticket status, what was skipped and why, review
 rounds and findings, full-suite counts, the ADRs in `docs/adr/` and the artifact link.
 
+Name the script that ran: take it from the `Script file:` line of the Workflow result. If it is not
+the repo's `plugins/harness/workflows/ship.js`, say so. If the result has no such line, write
+`script path not shown`. Do not read the session directory to find it.
+
 ## Launch notes
 
 - Name not found: report it and stop. Do not copy the script to another path. The Workflow tool refuses
   a `scriptPath` the session cannot read, so the fallback is inline `script` or `/add-dir <plugin dir>`.
+- Stale name after a plugin update: a session that started before the update can run an old cached
+  `harness:ship`. Restart Claude Code to load the new one (the main fix). The plugin CLI help names
+  `/reload-plugins`, but that is not confirmed here. If the repo's `plugins/harness/workflows/ship.js`
+  is inside the working directory or an added directory, `Workflow({scriptPath: "<abs>/plugins/harness/workflows/ship.js", args})`
+  runs the current file; the Workflow tool refuses a path the session cannot read.
 - Merge permission: the owner must allow `gh pr merge` into `feat/<slug>*`. Without it the merge stage
   fails with a reason that names this permission. Do not change permission settings and do not work
   around a denial; tell the owner.
