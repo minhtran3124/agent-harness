@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Verify fixture</title></head>
+<body>
+  <h1 id="title">Verify fixture app</h1>
+  <p id="status">Signed out</p>
+  <a id="login-link" href="login.html">Log in</a>
+  <script>
+    if (sessionStorage.getItem('verify-signed-in') === '1') {
+      document.getElementById('status').textContent = 'Signed in';
+    }
+  </script>
+</body>
+</html>
