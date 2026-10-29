@@ -48,6 +48,10 @@ approach exists, say so in a sentence and continue as asked. Don't quietly narro
 transform the ask. Lane and plan boundaries are the contract. Finish the whole task, not the easy part.
 If something genuinely can't be finished, do the rest and state plainly what is missing and why.
 
+A workflow that stopped early (blocked, interrupted, or ended with review `not run`) did not review
+anything. If you finish its work by hand, you also owe its skipped stages: run `/code-review` on the
+PR, then intent-review, before you report done. Do not wait for the owner to ask.
+
 ## 5. User-facing text and corrections
 
 Write for a teammate catching up: lead with the outcome, in complete sentences, without shorthand
