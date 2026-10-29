@@ -41,16 +41,21 @@ for w in browser_fill_form browser_click; do
 done
 [ -z "$miss" ] && pass || fail "allowed-tools missing:$miss"
 
-# no_secrets <config>: pass when baseUrl and startCommand exist and loginEnv holds only
-# upper-case variable names (a value such as "hunter2" fails).
+# no_secrets <config>: pass when baseUrl and startCommand exist, loginEnv holds only
+# upper-case variable names (a value such as "hunter2" fails), and env, if present, maps
+# app variable names to $VERIFY_* references only.
 no_secrets() {
   python3 - "$1" <<'PY'
 import json, re, sys
 c = json.load(open(sys.argv[1]))
 names = c.get("loginEnv", [])
+env = c.get("env", {})
 ok = (c.get("baseUrl") and c.get("startCommand") and isinstance(names, list)
       and all(isinstance(n, str) and re.fullmatch(r"[A-Z][A-Z0-9_]*", n) for n in names)
-      and set(c) <= {"baseUrl", "startCommand", "loginEnv"})
+      and isinstance(env, dict)
+      and all(re.fullmatch(r"[A-Z][A-Z0-9_]*", k) and isinstance(v, str)
+              and re.fullmatch(r"\$VERIFY_[A-Z_]+", v) for k, v in env.items())
+      and set(c) <= {"baseUrl", "startCommand", "loginEnv", "env"})
 sys.exit(0 if ok else 1)
 PY
 }
@@ -63,25 +68,57 @@ bad=$(mktemp); _CLEANUP_DIRS+=("$bad")
 printf '{"baseUrl":"http://x","startCommand":"y","loginEnv":["hunter2"]}' > "$bad"
 no_secrets "$bad" && fail "secret value was accepted" || pass
 
+t "a config whose env map holds a value fails the no-secrets check"
+bad2=$(mktemp); _CLEANUP_DIRS+=("$bad2")
+printf '{"baseUrl":"http://x","startCommand":"y","loginEnv":["VERIFY_USER"],"env":{"APP_PASSWORD":"hunter2"}}' > "$bad2"
+no_secrets "$bad2" && fail "env literal value was accepted" || pass
+
 t "fixture serve.sh is valid bash"
 bash -n "$FIX/serve.sh" && pass || fail "bash -n failed"
 
-t "fixture server starts, answers / and /login.html, then stops"
+t "fixture server starts the way the stage does: startCommand and env from the config, free PORT"
 PORT=$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1",0)); print(s.getsockname()[1])')
-VERIFY_USER=dummy VERIFY_PASSWORD=dummy PORT="$PORT" bash "$FIX/serve.sh" >/dev/null 2>&1 &
+cfg="$FIX/verify.config.json"
+startcmd=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["startCommand"])' "$cfg")
+baseurl=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["baseUrl"].replace("${PORT}", sys.argv[2]))' "$cfg" "$PORT")
+exports=$(python3 - "$cfg" <<'PY'
+import json, shlex, sys
+for k, v in json.load(open(sys.argv[1])).get("env", {}).items():
+    print("export %s=\"%s\"" % (k, v))
+PY
+)
+(
+  export VERIFY_USER=dummy VERIFY_PASSWORD=dummy PORT
+  eval "$exports"
+  cd "$ROOT" && exec bash -c "$startcmd"
+) >/dev/null 2>&1 &
 SRV=$!
 trap 'kill "$SRV" 2>/dev/null' EXIT
-codes=""
+c=""
 for _ in $(seq 1 30); do
-  c=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$PORT/" 2>/dev/null)
+  c=$(curl -s -o /dev/null -w '%{http_code}' "$baseurl/" 2>/dev/null)
   [ "$c" = 200 ] && break
   sleep 0.2
 done
-codes="$c $(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$PORT/login.html")"
+codes="$c $(curl -s -o /dev/null -w '%{http_code}' "$baseurl/login.html")"
 kill "$SRV" 2>/dev/null; wait "$SRV" 2>/dev/null
 sleep 0.3
-if [ "$codes" = "200 200" ] && ! curl -s -o /dev/null "http://127.0.0.1:$PORT/" 2>/dev/null; then pass
+if [ "$codes" = "200 200" ] && ! curl -s -o /dev/null "$baseurl/" 2>/dev/null; then pass
 else fail "codes=[$codes] or server still up"; fi
+
+t "fixture config uses a \${PORT} baseUrl and an env map"
+grep -q 'baseUrl.*127.0.0.1:\${PORT}' "$FIX/verify.config.json" && grep -q '"env"' "$FIX/verify.config.json" && pass || fail "fixture config lacks PORT placeholder or env"
+
+REF="$ROOT/plugins/harness/skills/verify/references/config.md"
+t "references/config.md pins env, PORT, throwaway consent, fill_form rule, ship.js note"
+miss=""
+for w in 'env' '${PORT}' 'throwaway credentials OK' 'browser_fill_form' 'browser_run_code_unsafe' 'openssl rand' 'ship.js'; do
+  grep -qF -- "$w" "$REF" || miss="$miss $w"
+done
+[ -z "$miss" ] && pass || fail "reference missing:$miss"
+
+t "SKILL.md points to references/config.md"
+grep -q 'references/config.md' "$SKILL" && pass || fail "pointer missing"
 
 t "storageState path is named and gitignored"
 grep -q 'storageState.*\.playwright-mcp/' "$SKILL" && grep -qx '\.playwright-mcp/' "$ROOT/.gitignore" && pass || fail "storageState path missing or not gitignored"
