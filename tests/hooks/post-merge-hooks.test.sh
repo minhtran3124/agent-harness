@@ -325,6 +325,10 @@ DOCS_HOOKS="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/docs/hooks.md"
 t "docs/hooks.md: no sentence is cut by 'cleaned It is registered'"
 if ! grep -q 'cleaned It is' "$DOCS_HOOKS"; then pass; else fail "garbled sentence in docs/hooks.md"; fi
 
+t "docs: skills README ties the live-process skip to the SessionStart sweep only"
+README_ROW=$(grep 'removes merged worktrees and branches after a merge' "$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/plugins/harness/skills/README.md")
+if printf '%s' "$README_ROW" | grep -q 'session-start sweep also skips a worktree another live process uses' && ! printf '%s' "$README_ROW" | grep -q 'and a worktree another live process uses'; then pass; else fail "row=$README_ROW"; fi
+
 finish
 
 t "docs: CLAUDE.md hook row ties the live-process skip to the SessionStart sweep only"
