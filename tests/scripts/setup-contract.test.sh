@@ -87,4 +87,7 @@ t "setup allowed-tools includes Write and Edit (step 2 writes CLAUDE.md)"
 if sed -n '1,/^---$/p;' "$ROOT/plugins/harness/skills/setup/SKILL.md" | grep -E '^allowed-tools:' | grep -q 'Write' \
    && grep -E '^allowed-tools:' "$ROOT/plugins/harness/skills/setup/SKILL.md" | grep -q 'Edit'; then pass; else fail "allowed-tools lacks Write or Edit"; fi
 
+t "setup deletes the old PROJECT.md by an absolute CLAUDE_PROJECT_DIR path"
+if grep -qF 'rm -- ${CLAUDE_PROJECT_DIR}/agents/PROJECT.md' "$ROOT/plugins/harness/skills/setup/SKILL.md"; then pass; else fail "rm of agents/PROJECT.md is not anchored to CLAUDE_PROJECT_DIR"; fi
+
 finish

@@ -16,7 +16,7 @@ Run once per project, after `claude plugin install harness@agent-harness`. Work 
    one (test, targeted test, lint, full suite), detected from the manifests, and show it. Write it
    only after the owner agrees (AskUserQuestion), with Edit (or Write if `CLAUDE.md` does not
    exist). If an old `agents/PROJECT.md` exists, propose moving its *Test execution* into that
-   section, and ask before deleting the file (`rm -- agents/PROJECT.md`). Running it twice is safe:
+   section, and ask before deleting the file (`rm -- ${CLAUDE_PROJECT_DIR}/agents/PROJECT.md`). Running it twice is safe:
    skip the write when the section exists, and skip the migration when `agents/PROJECT.md` is gone.
 3. **Deny rules.** A plugin cannot ship `permissions.deny`, so merge it into the project settings.
    Run `bash ${CLAUDE_SKILL_DIR}/scripts/merge-deny.sh --dry-run ${CLAUDE_PROJECT_DIR}/.claude/settings.json`
