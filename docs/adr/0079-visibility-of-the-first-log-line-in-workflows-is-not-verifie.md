@@ -8,7 +8,7 @@ decided_by: claude (ship workflow: implement)
 date: 2026-10-29
 ---
 
-# 0078. Visibility of the first log line in /workflows is not verified
+# 0079. Visibility of the first log line in /workflows is not verified
 
 ## Context
 
