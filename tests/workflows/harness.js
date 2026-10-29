@@ -870,6 +870,7 @@ test('s5: in clone mode the commands that run inside the sandbox use origin, not
   const { calls } = await run({ sandbox: 'clone', remote: 'github' }, c => (c.label === 'verify:1' ? vres(true, 'BE') : undefined))
   assert(named(calls, /^provision:1$/)[0].prompt.includes('--remote github --mode clone'))
   for (const l of ['implement:1', 'verify:1', 'finish:1']) assert(named(calls, new RegExp(`^${l}$`))[0].prompt.includes('Its remote is named origin'), l)
+  assert(named(calls, /^uat:1$/)[0].prompt.startsWith(`git -C ${SB1} fetch origin\ngit -C ${SB1} checkout --detach origin/feat/1-add-the-thing\n`))
 })
 
 test('a1: pass with a GIF attaches after finish, without the flaky note', async () => {
@@ -1131,14 +1132,18 @@ test('u3: the UAT phase sits between Intent review and Testing', async () => {
   assert(/title: 'Intent review'[\s\S]*title: 'UAT'[\s\S]*title: 'Testing'/.test(metaText()))
 })
 
-test('u4: an AC failure gives one fix and one rerun in its own worktree; passing on the rerun keeps the ticket done', async () => {
+test('u4: an AC failure gives one fix and one rerun in the same sandbox, checked out at finalRef again; passing on the rerun keeps the ticket done', async () => {
   const { calls, result } = await run({}, c => {
     if (c.label === 'uat:1') return uatRes(false, [sc('S1', 'AC1', 'ac', 'FAIL')])
   })
   assert.deepStrictEqual(labelsOf(calls).filter(l => /^uat/.test(l)), ['uat:1', 'uat-fix:1', 'uat-rerun:1'])
   const first = named(calls, /^uat:1$/)[0], again = named(calls, /^uat-rerun:1$/)[0], fix = named(calls, /^uat-fix:1$/)[0]
-  assert(first.prompt.includes('/.ship-repo/ms/uat-1'), first.prompt.slice(0, 200))
-  assert(again.prompt.includes('/.ship-repo/ms/uat-rerun-1') && !again.prompt.includes('worktree add --detach /.ship-repo/ms/uat-1 '), again.prompt.slice(0, 200))
+  for (const u of [first, again]) {
+    // single ticket: finalRef is the ticket branch on the remote; the rerun must fetch and check it out again to see the fix
+    assert(u.prompt.startsWith(`git -C ${SB1} fetch origin\ngit -C ${SB1} checkout --detach origin/feat/1-add-the-thing\n`), u.prompt.slice(0, 200))
+    assert(!u.prompt.includes('worktree add') && !u.prompt.includes('uat-rerun-1') && u.prompt.includes('port 4010, DB sandbox_ms_t1'), u.prompt.slice(0, 600))
+  }
+  assert(calls.indexOf(fix) < calls.indexOf(again))
   assert.strictEqual(fix.opts.phase, 'UAT')
   assert.strictEqual(result.tickets[0].status, 'done')
 })
@@ -1216,11 +1221,14 @@ test('u7: a blocked or empty UAT run is not an AC failure: no fix, ticket stays 
   }
 })
 
-test('u8: tickets run UAT in input order, one agent per ticket with its own worktree', async () => {
+test('u8: tickets run UAT in input order, one agent per ticket in its own sandbox with its own port, on the integration branch', async () => {
   const { calls } = await run({ tickets: [T(1, 1), T(2, 1)] }, null)
   const us = named(calls, /^uat:/)
   assert.deepStrictEqual(us.map(c => c.label), ['uat:1', 'uat:2'])
-  assert(us[0].prompt.includes('/uat-1') && us[1].prompt.includes('/uat-2'))
+  for (const n of [1, 2]) {
+    assert(us[n - 1].prompt.startsWith(`git -C ${sbT(n)} fetch origin\ngit -C ${sbT(n)} checkout --detach origin/feat/ms\n`), us[n - 1].prompt.slice(0, 200))
+    assert(us[n - 1].prompt.includes(`port 40${n}0, DB sandbox_ms_t${n}`) && !us[n - 1].prompt.includes('worktree add'))
+  }
 })
 
 test('u9: the PR body has a UAT sign-off with one checkbox per scenario and the human-only points', async () => {
@@ -1238,10 +1246,10 @@ test('u10: verify reports its config path and UAT gets it', async () => {
   assert(named(calls, /^uat:1$/)[0].prompt.includes('Config: /wt/1/tests/fixtures/verify-app/verify.config.json'))
 })
 
-test('u10b: UAT prompt falls back to the config in its own worktree when the path is missing', async () => {
+test('u10b: UAT prompt falls back to the config in its own sandbox when the path is missing', async () => {
   const { calls } = await run({})
   const p = named(calls, /^uat:1$/)[0].prompt
-  assert(/If that file does not exist, use verify\.config\.json at the root of your own worktree/.test(p), p)
+  assert(/If that file does not exist, use verify\.config\.json at the root of the sandbox \/\.ship-repo/.test(p), p)
 })
 
 test('u11: UAT and uat-fix prompts hold real newlines, never a literal backslash-n', async () => {
