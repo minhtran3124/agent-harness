@@ -40,6 +40,16 @@ data, security or cost, or contradicts the ticket or an owner answer. Reversible
 are recorded with `needs_review: false`. The per-ticket PR line is the stage `summary` (200 characters
 at most). `Closes #n` / `Refs #n` are written only when not in local mode.
 
+Scope boundary: the intent stage returns `out_of_scope`, the ticket's own Out of scope lines copied
+verbatim, next to `files`. The boundary is those lines plus the files the ticket names (the intent
+`files` and the paths in the plan steps); the file set limits production, test and doc files alike
+(a test or doc file is in bounds only when the ticket lists it). The implement, review-fix and intent-fix prompts carry it. A change outside it is not made: the
+agent returns a decision titled `Boundary: ...` with `needs_review: true`, and a fix returns
+`fix_status: skipped`. Such a fix is listed in the PR body `## Review` section as
+`needs your decision`. The PR body also gets a `## Needs your decision` section above `## Summary`,
+listing behaviour-changing `excess` gaps from the intent review and the boundary decisions that need
+review; it is left out when both are empty. `{{DECISIONS}}` stays after Final verification.
+
 Stage agents run the skill by path with `Mode: auto`, never ask, and return `decisions[]`. Workflow
 agents cannot start agents, so the script calls the advisor when a stage sets `needs_advisor`.
 Models and effort are constants at the top of the file.

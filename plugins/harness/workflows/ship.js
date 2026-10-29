@@ -41,6 +41,7 @@ const RULES_COMMON = `Rules (all of them apply):
 - Pull request bodies end with the line: ${PR_FOOTER}
 - Run "git add" and "git commit" as separate commands.
 - Use --json with "gh issue view" (plain "gh issue view" fails on this repo).
+- owner_confirmed: true ONLY when a decision just restates an answer listed under the ticket's owner-confirmed decisions. Such a decision gets no ADR file unless it also has needs_review: true (needs_review wins); the PR table says owner-confirmed. Otherwise leave it out.
 - decisions[] holds only real choices between options that change the code or the behaviour. Facts about the environment (which test runner you used, that pytest is missing, that a file was or was not found, that a plan step was already satisfied) are not decisions: leave them out.
 - Never write ADR files. Return decisions[] instead; one stage at the end writes them.
 - You cannot start other agents. If you are stuck, unsure, or a choice affects another ticket or a public contract, set needs_advisor: true with advisor_question and stop; the script asks the advisor.`
@@ -58,6 +59,7 @@ const DECISION = {
     how_to_reverse: STR, confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
     needs_review: { type: 'boolean', description: 'true ONLY when the decision affects another ticket, a public contract or interface, stored data, security or cost, or contradicts the ticket text or an owner-confirmed answer. A reversible choice inside the ticket (naming, an edge case the ticket leaves open, which implementation) is false.' },
     stage: STR, contradicts_confirmed: BOOL, dangerous: BOOL,
+    owner_confirmed: { type: 'boolean', description: 'true ONLY when the decision just restates an owner-confirmed answer for the ticket (no ADR file is written for it unless needs_review is also true). Leave out otherwise.' },
   },
   required: ['title', 'context', 'options', 'decision', 'why', 'consequences', 'how_to_reverse', 'confidence', 'needs_review'],
 }
@@ -75,7 +77,7 @@ function stageSchema(extra, required) {
   }
 }
 const STEP = { type: 'object', properties: { title: STR, files: strList, done_when: STR }, required: ['title', 'done_when'] }
-const INTENT_SCHEMA = stageSchema({ goal: STR, acceptance: strList, files: strList, plan_steps: { type: 'array', items: STEP } }, ['goal'])
+const INTENT_SCHEMA = stageSchema({ goal: STR, acceptance: strList, files: strList, out_of_scope: strList, plan_steps: { type: 'array', items: STEP } }, ['goal'])
 const RESEARCH_SCHEMA = stageSchema({ research_md: STR }, ['research_md'])
 const DESIGN_SCHEMA = stageSchema({ design_md: STR }, ['design_md'])
 const PLAN_SCHEMA = stageSchema({ plan_md: STR, plan_steps: { type: 'array', items: STEP } }, ['plan_md'])
@@ -203,13 +205,17 @@ const decisions = []   // the only place decisions live; agents never write ADR 
 const str = v => (typeof v === 'string' && v.trim() ? v : 'n/a')
 function takeDecisions(ticket, stage, res) {
   for (const d of (res && res.decisions) || []) {
+    if (!d || typeof d !== 'object') continue
     const flagged = !!(d.contradicts_confirmed || d.dangerous)
+    const title = str(d.title)   // only the agent labels a decision Boundary; a skip for another reason keeps its own title
     decisions.push({
-      ticket, stage: d.stage || stage, title: str(d.title), context: str(d.context),
+      ticket, stage: d.stage || stage, title, context: str(d.context),
       options: Array.isArray(d.options) && d.options.length ? d.options : ['n/a'],
       decision: str(d.decision), why: str(d.why), consequences: str(d.consequences), how_to_reverse: str(d.how_to_reverse),
       confidence: ['high', 'medium', 'low'].includes(d.confidence) ? d.confidence : 'low',
-      needs_review: flagged || d.needs_review === true,
+      needs_review: flagged || title.startsWith(BOUNDARY_PREFIX) || d.needs_review === true,
+      owner_confirmed: !flagged && d.owner_confirmed === true,
+      boundary: title.startsWith(BOUNDARY_PREFIX),
       decided_by: `claude (ship workflow: ${stage})`,
     })
   }
@@ -217,6 +223,33 @@ function takeDecisions(ticket, stage, res) {
 
 function addDecision(ticket, stage, d) {
   decisions.push({ ticket, stage, options: ['n/a'], confidence: 'high', needs_review: false, decided_by: `claude (ship workflow: ${stage})`, ...d })
+}
+
+// The boundary of a ticket: its Out of scope lines and the files it names (intent files plus plan-step files).
+const BOUNDARY_PREFIX = 'Boundary: '
+const boundaries = {}   // ticket number -> { out_of_scope, files }, filled after each intent stage
+const uniq = a => [...new Set(a.filter(x => typeof x === 'string' && x.trim()))]
+function boundaryOf(intent) {
+  const i = intent || {}
+  return {
+    out_of_scope: uniq(Array.isArray(i.out_of_scope) ? i.out_of_scope : []),
+    files: uniq([...(Array.isArray(i.files) ? i.files : []), ...(Array.isArray(i.plan_steps) ? i.plan_steps : []).flatMap(s => (s && Array.isArray(s.files) ? s.files : []))]),
+  }
+}
+const BOUNDARY_RULE = `A change outside these files, or against an Out of scope line, is NOT made. Return it as a decision whose title starts with '${BOUNDARY_PREFIX}' and needs_review true.`
+function boundaryText(label, intent) {
+  const b = boundaryOf(intent)
+  return `${label}\nOut of scope (the ticket's own lines):\n${b.out_of_scope.length ? b.out_of_scope.map(x => `- ${x}`).join('\n') : '- none listed'}\n` +
+    `Files this ticket names (production, test and doc files alike: a test or doc file is in bounds only when it is listed here):\n${b.files.length ? b.files.map(x => `- ${x}`).join('\n') : '- none listed'}\n${BOUNDARY_RULE}\n`
+}
+// Run-level view for the fix agents: the union over all tickets, labelled by ticket number.
+function runBoundaryText() {
+  const ns = Object.keys(boundaries)
+  if (!ns.length) return ''
+  const body = ns.map(n => `Ticket #${n}\n` + boundaryText('', boundaries[n]).replace(`\n${BOUNDARY_RULE}\n`, '').trim()).join('\n\n')
+  return `Boundary (union over the tickets in this run):\n${body}\n` +
+    `The file set limits production, test and doc files alike: a test or doc file is in bounds only when the list above names it. ` +
+    `A fix that would touch a file outside this set, or contradict an Out of scope line, changes nothing: return fix_status skipped and a decisions[] entry whose title starts with '${BOUNDARY_PREFIX}' and needs_review true.\n`
 }
 
 const capSummary = v => { const x = (typeof v === 'string' ? v : '').replace(/\s+/g, ' ').trim(); return x.length > 200 ? `${x.slice(0, 199)}…` : x }
@@ -269,7 +302,7 @@ function head(t, skill, extra, wt) {
 function stageIntent(t) {
   const build = advice => head(t, null,
     `Stage: intent. Restate what the owner asked for as a goal and checkable acceptance criteria, list the files likely touched, ` +
-    `and return plan_steps (title, files, done_when) as the plan.${t.depth === 'S' ? ' This is the plan for the implement stage.' : ' A later stage writes the full plan.'} ` +
+    `and return plan_steps (title, files, done_when) as the plan. Copy the ticket's Out of scope lines verbatim into out_of_scope (an empty list when it has none).${t.depth === 'S' ? ' This is the plan for the implement stage.' : ' A later stage writes the full plan.'} ` +
     `${single ? `You may read files in ${repoDir} (git -C ${repoDir} ...); never edit them.` : `Plan against the code as it is on ${integRef}, which already holds the finished earlier groups; the checkout in ${repoDir} is NOT that code. Run git -C ${repoDir} fetch ${remote} first, then read files only with git -C ${repoDir} show ${integRef}:<path> or git -C ${repoDir} ls-tree -r ${integRef}. Never edit ${repoDir}.`} Return decisions[] for every real choice you made.${advice}`)
   return runStage(t, 'intent', build, INTENT_SCHEMA, { model: MODEL.intent, effort: EFFORT.intent })
 }
@@ -303,13 +336,13 @@ async function advisePlan(t, design, plan) {
     `Design:\n${design.design_md}\n\nPlan:\n${plan.plan_md}`)
 }
 
-function stageImplement(t, branch, planText) {
+function stageImplement(t, branch, planText, boundary) {
   const w = newWt(`t${t.n}`, branch, integRef)
   const build = advice => w.setup + head(t, 'implement',
     `Stage: implement. You cannot start other agents, so act as the implementer yourself (${pluginDir}/agents/implementer.md): take the plan steps one at a time. ` +
     `For each step: do it, run its done_when command, then "git add" and, as a separate command, "git commit". ` +
     `Related tests: ${testCmd} (a template; fill in the files you touched). Lint: ${lintCmd}.\n` +
-    `Return ${w.dir} as worktree, and your branch.\n\n${planText}${advice}`, w.dir)
+    `Return ${w.dir} as worktree, and your branch.\n\n${boundary || ''}\n${planText}${advice}`, w.dir)
   return runStage(t, 'implement', build, IMPLEMENT_SCHEMA, { agentType: 'harness:implementer', roleFile: `${pluginDir}/agents/implementer.md`, model: MODEL.implement, effort: EFFORT.implement })
 }
 
@@ -329,6 +362,8 @@ async function runTicket(t) {
   const branch = ticketBranch(t)
   try {
     const intent = await stageIntent(t)
+    boundaries[t.n] = boundaryOf(intent)
+    const boundary = boundaryText(`Boundary for ticket #${t.n}:`, intent)
     let planText
     if (t.depth === 'S') {
       planText = `Plan (steps from the intent stage):\n${JSON.stringify(intent.plan_steps || [])}`
@@ -343,7 +378,7 @@ async function runTicket(t) {
       planText = `Design:\n${design.design_md}\n\nAdvisor review of design and plan (follow it unless it is wrong; record any deviation as a decision):\n${advice}\n\n` +
         `Write this to specs/${slug}-${t.n}/PLAN.md in your worktree (local scratch, do not commit it) and follow it:\n${plan.plan_md}`
     }
-    const impl = await stageImplement(t, branch, planText)
+    const impl = await stageImplement(t, branch, planText, boundary)
     const fin = await stageFinish(t, impl)
     log(`#${t.n} done: ${fin.url || fin.body_file || impl.branch}`)
     return { n: t.n, status: 'done', pr: fin.pr || null, url: fin.url || '', branch: impl.branch || branch, summary: capSummary(impl.summary || fin.summary), reason: '', body_file: fin.body_file }
@@ -427,7 +462,7 @@ async function reviewWithRetry(label, level, target, rangeNote) {
 function fixAgent(label, findingText, extra) {
   const w = newWt(`fix-${label}`, null, finalRef)
   const prompt = `${w.setup}${RULES}\n\n` +
-    `Stage: fix. Run "git rev-parse HEAD" first and return it as base_sha. ${findingText}\n` +
+    `Stage: fix. Run "git rev-parse HEAD" first and return it as base_sha. ${findingText}\n${runBoundaryText()}` +
     `Make one commit ("git add", then "git commit"), include a test that fails without the fix, run only the related tests (${testCmd}) and lint (${lintCmd}). ` +
     `Then land it: ${land(finalBranch)}. Return the commit sha as commit. ${extra || ''}` +
     `If the finding is wrong or cannot be fixed safely, change nothing and return fix_status skipped or failed with the reason in summary.`
@@ -472,7 +507,11 @@ async function stageReview(finalPr) {
       const res = await fixAgent(`fix:r${out.rounds}:${k + 1}`, `Finding ${f.id} (score ${f.score}) in ${f.path || 'the diff'}${f.line ? `:${f.line}` : ''}: ${f.summary}`)
       takeDecisions('run', 'review-fix', res)
       if (res && res.fix_status === 'fixed' && res.commit) { commits.push(res); out.fixed.push({ id: f.id, summary: f.summary, commit: res.commit }) }
-      else out.notFixed.push({ id: f.id, summary: f.summary, reason: (res && res.summary) || 'fix agent returned nothing' })
+      else {
+        const bd = res && res.fix_status === 'skipped' && (res.decisions || []).find(d => d && typeof d.title === 'string' && (d.title.startsWith(BOUNDARY_PREFIX) || d.needs_review === true || d.contradicts_confirmed || d.dangerous))
+        const reason = bd ? `needs your decision: ${bd.title}` : (res && res.summary) || 'fix agent returned nothing'
+        out.notFixed.push({ id: f.id, summary: f.summary, reason })
+      }
     }
     if (!commits.length) { findings = []; break }
     // Re-review only what the fix commits changed.
@@ -571,10 +610,10 @@ async function stageAdr(finalPr, artifact, bodyTemplate) {
   const prompt = `${w.setup}${RULES}\n\n` +
     `Stage: write the ADRs and the final PR body. First cd ${w.dir}; every relative path below is relative to it. Do these in order:\n` +
     `1. mkdir -p .ship and save this JSON, exactly, to .ship/decisions.json (use a quoted heredoc). It holds ${decisions.length} decisions.\n${input}\n` +
-    `2. Run "python3 ${pluginDir}/scripts/write_adrs.py --help" first. ${decisions.length ? `Then run it with --input .ship/decisions.json and save its stdout to .ship/written.json. Exit 2 means bad input: fix the file and re-run.` : 'There are no decisions: save [] to .ship/written.json and skip the next step.'}\n` +
+    `2. Run "python3 ${pluginDir}/scripts/write_adrs.py --help" first. ${decisions.length ? `Then run it with --input .ship/decisions.json and save its stdout to .ship/written.json. Add --table-out .ship/decisions-table.md: it writes the Decisions table. The script merges duplicates and writes a file only for a decision that needs a human look, so it may write no file and print []. Exit 2 means bad input: fix the file and re-run.` : 'There are no decisions: save [] to .ship/written.json and skip the next step and write no table.'}\n` +
     `3. "git add docs/adr", then, as a separate command, "git commit" (message ends with ${CO_AUTHOR}); then land it: ${land(finalBranch)}\n` +
     `4. Render the section: python3 ${pluginDir}/scripts/write_adrs.py --render-section .ship/written.json${artifact.url ? ` --artifact ${artifact.url}` : ''}${artifact.url ? '' : `  (no artifact this run; link docs/adr/ in the section)`}\n` +
-    `5. Write the body below to .ship/pr-body.md, replacing the line {{DECISIONS}} with the rendered section. ${update}\n` +
+    `5. Write the body below to .ship/pr-body.md, replacing the line {{DECISIONS}} with the rendered section${decisions.length ? ', then a blank line, then the content of .ship/decisions-table.md unchanged' : ''}. ${update}\n` +
     `Return adrs from .ship/written.json (number, path, needs_review). Do not commit anything under .ship.\n\nBody:\n${bodyTemplate}`
   const res = await call(prompt, { label: 'adr', phase: 'Decisions', schema: ADR_SCHEMA, model: MODEL.adr, effort: EFFORT.adr })
   return res || { adrs: [], status: 'blocked', summary: 'the ADR agent returned nothing' }
@@ -585,6 +624,14 @@ function buildBody(results, review, intent, suite) {
   const done = results.filter(r => r.status === 'done')
   const open = results.filter(r => r.status !== 'done')
   const L = []
+  const excess = ((intent && intent.gaps) || []).filter(g => g.kind === 'excess' && g.behaviour_changing === true)
+  const bounded = decisions.filter(d => d.boundary && d.needs_review)
+  if (excess.length || bounded.length) {
+    L.push('## Needs your decision', '')
+    for (const g of excess) L.push(`- excess (behaviour-changing): ${g.clause}: ${g.detail}`)
+    for (const d of bounded) L.push(`- ${d.title}: ${d.decision}`)
+    L.push('')
+  }
   L.push('## Summary', '')
   const ref = n => (LOCAL ? `Ticket ${n}` : `#${n}`)   // in local mode the ticket is not a real issue
   for (const r of results) L.push(`- ${ref(r.n)} ${r.status}${r.summary ? `: ${capSummary(r.summary)}` : ''}${r.reason ? ` (${r.reason})` : ''}`)

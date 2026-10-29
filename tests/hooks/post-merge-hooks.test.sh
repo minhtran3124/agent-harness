@@ -54,4 +54,81 @@ t "PostToolUse mode ignores a command that is not a merge"
 OUT=$(cd "$MAIN" && printf '{"tool_input":{"command":"ls"}}' | PATH="$STUB:$PATH" bash hooks/clean-worktrees.sh PostToolUse 2>&1)
 if [ -d "$WT" ] && [ -z "$OUT" ]; then pass; else fail "out=$OUT"; fi
 
+# ---- clean-worktrees.sh PostToolUse: real merge command only, scoped to that PR's branch ----
+# Two merged branches: feat (PR 7) and feat2 (PR 8). The gh stub logs every call to $STUB/calls.
+setup2() {  # leaves $MAIN, $WT, $WT2, $STUB; the stub answers pr view <n>, pr view (current = PR 7) and pr list
+  MAIN=$(mktemp -d); _CLEANUP_DIRS+=("$MAIN")
+  git -C "$MAIN" init -q -b main; git -C "$MAIN" config user.email t@t; git -C "$MAIN" config user.name t
+  git -C "$MAIN" commit -q --allow-empty -m base
+  WT="$MAIN-wt"; WT2="$MAIN-wt2"; _CLEANUP_DIRS+=("$WT" "$WT2")
+  git -C "$MAIN" worktree add -q -b feat "$WT"; git -C "$WT" commit -q --allow-empty -m work
+  git -C "$MAIN" worktree add -q -b feat2 "$WT2"; git -C "$WT2" commit -q --allow-empty -m work2
+  git -C "$MAIN" merge -q --no-ff feat -m m1; git -C "$MAIN" merge -q --no-ff feat2 -m m2
+  mkdir -p "$MAIN/hooks"; cp "$ROOT/plugins/harness/hooks/clean-worktrees.sh" "$MAIN/hooks/"
+  STUB=$(mktemp -d); _CLEANUP_DIRS+=("$STUB")
+  tip1=$(git -C "$MAIN" rev-parse feat); tip2=$(git -C "$MAIN" rev-parse feat2)
+  cat > "$STUB/gh" <<STUBEOF
+#!/bin/sh
+echo "\$*" >> "$STUB/calls"
+case "\$1 \$2" in
+  "pr view")
+    [ -f "$STUB/fail" ] && exit 1
+    case "\$3" in
+      7|--json) echo '{"state":"MERGED","headRefName":"feat"}' ;;
+      8) echo '{"state":"MERGED","headRefName":"feat2"}' ;;
+      9) echo '{"state":"OPEN","headRefName":"feat2"}' ;;
+      *) exit 1 ;;
+    esac ;;
+  "pr list") case "\$4" in feat) echo $tip1 ;; feat2) echo $tip2 ;; esac ;;
+esac
+exit 0
+STUBEOF
+  chmod +x "$STUB/gh"
+}
+hook() { OUT=$(cd "$MAIN" && printf '%s' "$(jq -n --arg c "$1" '{tool_input:{command:$c}}')" | PATH="$STUB:$PATH" bash hooks/clean-worktrees.sh PostToolUse 2>&1); RC=$?; }
+nothing_removed() { [ -d "$WT" ] && [ -d "$WT2" ] && [ -z "$OUT" ] && [ ! -f "$STUB/calls" ]; }
+
+for cmd in $'gh issue create -F - <<EOF\nplease run gh pr merge 7 later\nEOF' \
+           'git commit -m "docs: gh pr merge 7 now cleans"' \
+           "echo 'gh pr merge 7'" \
+           'echo gh pr merge 7' \
+           $'git commit -m "first\ngh pr merge 7\nlast"'; do
+  setup2
+  t "text that only mentions the merge phrase cleans nothing and calls no gh: ${cmd%%$'\n'*}"
+  hook "$cmd"
+  if nothing_removed; then pass; else fail "rc=$RC out=$OUT calls=$(cat "$STUB/calls" 2>/dev/null)"; fi
+done
+
+for cmd in 'gh pr merge 7 --squash --delete-branch' 'cd x && gh pr merge 7' 'FOO=1 gh pr merge 7' 'gh pr merge https://github.com/o/r/pull/7' 'gh api repos/o/r/pulls/7/merge -X PUT' 'gh api repos/{owner}/{repo}/pulls/7/merge -X PUT' '{ gh pr merge 7; }' 'gh pr merge "7"' 'gh api "repos/o/r/pulls/7/merge" -X PUT' "gh pr merge '7' --squash" $'cat <<< "x"\ngh pr merge 7' $'echo a << b\ngh pr merge 7'; do
+  setup2
+  t "real merge cleans only PR 7's branch: $cmd"
+  hook "$cmd"
+  if [ ! -d "$WT" ] && [ -d "$WT2" ] && ! git -C "$MAIN" rev-parse -q --verify feat >/dev/null && git -C "$MAIN" rev-parse -q --verify feat2 >/dev/null; then pass; else fail "rc=$RC out=$OUT"; fi
+done
+
+setup2
+t "chained merges clean the branch of every merged PR"
+hook 'gh pr merge 7 && gh pr merge 8'
+if [ ! -d "$WT" ] && [ ! -d "$WT2" ]; then pass; else fail "out=$OUT"; fi
+
+setup2
+t "merge without a number uses the PR of the current branch"
+hook 'gh pr merge --squash'
+if [ ! -d "$WT" ] && [ -d "$WT2" ] && grep -q '^pr view --json' "$STUB/calls"; then pass; else fail "out=$OUT calls=$(cat "$STUB/calls")"; fi
+
+setup2; touch "$STUB/fail"
+t "gh pr view fails: exit 0, no output, nothing removed"
+hook 'gh pr merge 7'
+if [ "$RC" = 0 ] && [ -z "$OUT" ] && [ -d "$WT" ] && [ -d "$WT2" ]; then pass; else fail "rc=$RC out=$OUT"; fi
+
+setup2; rm -f "$STUB/fail"
+t "PR from the command is not merged: nothing removed"
+hook 'gh pr merge 9'
+if [ "$RC" = 0 ] && [ -z "$OUT" ] && [ -d "$WT" ] && [ -d "$WT2" ]; then pass; else fail "rc=$RC out=$OUT"; fi
+
+setup2
+t "manual run with no argument still sweeps every merged branch"
+OUT=$(cd "$MAIN" && PATH="$STUB:$PATH" bash hooks/clean-worktrees.sh 2>&1); RC=$?
+if [ ! -d "$WT" ] && [ ! -d "$WT2" ]; then pass; else fail "out=$OUT"; fi
+
 finish

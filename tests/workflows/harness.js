@@ -206,6 +206,14 @@ test('e4: RULES and the decision schema carry the needs_review criteria', async 
   assert(/ONLY when/.test(dec.description) && /false/.test(dec.description))
 })
 
+test('e5: owner_confirmed wording in RULES and schema says needs_review still gets an ADR file', async () => {
+  const { calls } = await run({}, null)
+  const c = named(calls, /^intent:1$/)[0]
+  assert(c.prompt.includes('no ADR file unless it also has needs_review: true'), 'RULES omit the needs_review exception')
+  const oc = c.schema.properties.decisions.items.properties.owner_confirmed.description
+  assert(/unless needs_review is also true/.test(oc), 'schema omits the needs_review exception')
+})
+
 test('g1: a multi-ticket intent plans against the integration ref, not the repo checkout; decisions exclude environment facts', async () => {
   const multi = await run({ local: true, tickets: [T(1, 1), T(2, 2, [1])] }, null)
   const p = named(multi.calls, /^intent:2$/)[0].prompt
@@ -417,6 +425,23 @@ test('g2: a failing suite gets one fix agent and a re-run of only the failing te
   assert.strictEqual(result.suite.passed, 10); assert.strictEqual(result.suite.failed, 0)
 })
 
+test('h6: six stubbed decisions all reach the ADR stage with --table-out; owner_confirmed survives on exactly one', async () => {
+  const D = (title, extra) => ({ title, context: 'ctx ' + title, options: ['a', 'b'], decision: 'd', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'high', needs_review: false, ...extra })
+  const six = [
+    D('DUP-one'), D('DUP-one', { context: 'other' }), D('OWNER-ok', { owner_confirmed: true }),
+    D('REVIEW-me', { needs_review: true }), D('LOW-conf', { confidence: 'low' }), D('PLAIN'),
+  ]
+  const { calls } = await run({ tickets: [T(1, 1)] }, c => (c.label === 'intent:1' ? ok({ goal: 'g', plan_steps: [], decisions: six }) : undefined))
+  const p = named(calls, /^adr$/)[0].prompt
+  const saved = JSON.parse(p.split('\n').find(l => l.startsWith('{"run"')))
+  assert.strictEqual(saved.decisions.length, 6)
+  assert.strictEqual(saved.decisions.filter(d => d.owner_confirmed === true).length, 1)
+  assert.strictEqual(saved.decisions.find(d => d.title === 'OWNER-ok').owner_confirmed, true)
+  assert(p.includes('--table-out .ship/decisions-table.md') && p.includes('.ship/decisions-table.md unchanged'))
+  const dec = named(calls, /^intent:1$/)[0].schema.properties.decisions.items.properties.owner_confirmed
+  assert(dec && dec.type === 'boolean')
+})
+
 test('h: the ADR stage runs once and receives decisions from every ticket', async () => {
   const D = t => ({ title: t, context: 'c', options: ['a', 'b'], decision: 'd', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'medium', needs_review: t === 'D-two' })
   const { calls, result } = await run({ tickets: [T(1, 1), T(2, 1)] }, c => {
@@ -476,6 +501,105 @@ test('l: pluginDir is used for the role files, the skills and the ADR script, an
 
 test('m: a plugin check that fails stops the run before any ticket stage', async () => {
   await assert.rejects(() => run({}, c => (c.label === 'plugin-check' ? { status: 'blocked', blocked_reason: 'pluginDir missing', summary: '' } : undefined)), /pluginDir missing/)
+})
+
+const BDEC = { title: 'Boundary: touches docs/x.md', context: 'c', options: ['a', 'b'], decision: 'DECISION-TEXT-BD', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'high', needs_review: true }
+const intentOos = c => (c.label === 'intent:1'
+  ? ok({ goal: 'g', acceptance: [], files: ['src/keep.js'], out_of_scope: ['OOS-LINE-1'], plan_steps: [{ title: 's', files: ['src/step.js'], done_when: 'true' }] })
+  : undefined)
+
+test('n: out_of_scope and the file set reach implement, fix and intent-fix prompts', async () => {
+  const { calls } = await run({}, c => {
+    if (c.label === 'intent:1') return intentOos(c)
+    if (c.label.startsWith('review:')) return c.label === 'review:r0' ? ok({ findings: [{ id: 'F1', summary: 'bad', score: 90 }], skill_invoked: true }) : ok({ findings: [], skill_invoked: true })
+    if (c.label === 'intent-review') return { verdict: 'gaps found', findings: [{ kind: 'gap', clause: 'C', detail: 'd' }] }
+  })
+  assert(/OOS-LINE-1/.test(named(calls, /^intent:1$/)[0].prompt) === false, 'intent prompt does not carry the list itself')
+  assert(named(calls, /^intent:1$/)[0].prompt.includes('out_of_scope'))
+  for (const re of [/^implement:1$/, /^fix:/, /^intent-fix$/]) {
+    const cs = named(calls, re)
+    assert(cs.length >= 1, String(re))
+    for (const p of cs.map(c => c.prompt)) assert(p.includes('OOS-LINE-1') && p.includes('src/keep.js') && p.includes('src/step.js') && p.includes('Boundary: '), `${re}: boundary missing`)
+  }
+})
+
+test('n2: no prompt says tests count only when the ticket lists them; implement and intent-fix allow the proving test', async () => {
+  const { calls } = await run({}, c => {
+    if (c.label === 'intent:1') return intentOos(c)
+    if (c.label.startsWith('review:')) return c.label === 'review:r0' ? ok({ findings: [{ id: 'F1', summary: 'bad', score: 90 }], skill_invoked: true }) : ok({ findings: [], skill_invoked: true })
+    if (c.label === 'intent-review') return { verdict: 'gaps found', findings: [{ kind: 'gap', clause: 'C', detail: 'd' }] }
+  })
+  for (const re of [/^implement:1$/, /^fix:/, /^intent-fix$/]) {
+    const cs = named(calls, re)
+    assert(cs.length >= 1, String(re))
+    for (const c of cs) assert(!/count only when the ticket lists/.test(c.prompt) && /in bounds only when/.test(c.prompt) && !/always allowed/.test(c.prompt), `${re}: test/doc files must be in bounds only when the ticket lists them`)
+  }
+})
+
+test('o: a skipped boundary fix is not fixed, needs a decision, and is listed under Review', async () => {
+  const { calls, result } = await run({}, c => {
+    if (c.label === 'intent:1') return intentOos(c)
+    if (c.label === 'review:r0') return ok({ findings: [{ id: 'F1', summary: 'FINDING-SUM', score: 90 }], skill_invoked: true })
+    if (c.label.startsWith('fix:')) return ok({ fix_status: 'skipped', summary: 'skipped it', decisions: [BDEC] })
+  })
+  assert.strictEqual(result.review.fixed.length, 0)
+  assert.strictEqual(result.review.notFixed.length, 1)
+  assert(result.review.notFixed[0].reason.includes('needs your decision: Boundary: touches docs/x.md'))
+  const p = named(calls, /^adr$/)[0].prompt
+  assert(p.includes('"title":"Boundary: touches docs/x.md"') && p.includes('"needs_review":true'))
+  const body = p.slice(p.indexOf('## Summary'))
+  assert(body.indexOf('## Review') < body.indexOf('needs your decision: Boundary: touches docs/x.md'))
+  assert(body.indexOf('needs your decision') < body.indexOf('## Intent review'))
+})
+
+test('o2: a skipped fix whose decision is not a boundary keeps its title and is not forced to review', async () => {
+  const PD = { title: 'Finding is a false positive', context: 'c', options: ['a', 'b'], decision: 'D', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'high', needs_review: false }
+  const { calls, result } = await run({}, c => {
+    if (c.label === 'review:r0') return ok({ findings: [{ id: 'F1', summary: 'FINDING-SUM', score: 90 }], skill_invoked: true })
+    if (c.label.startsWith('fix:')) return ok({ fix_status: 'skipped', summary: 'SKIP-REASON-TEXT', decisions: [PD] })
+  })
+  const d = result.decisions.find(x => /false positive/.test(x.title))
+  assert(d, 'decision recorded')
+  assert(!d.title.startsWith('Boundary: ') && d.needs_review === false && d.boundary === false, 'not relabelled as a boundary')
+  assert(result.review.notFixed[0].reason.includes('SKIP-REASON-TEXT') && !result.review.notFixed[0].reason.includes('Boundary'))
+})
+
+test('o2b: a skipped fix whose decision needs review is listed as needs your decision even without the Boundary prefix', async () => {
+  const UD = { title: 'Fix would change a public contract', context: 'c', options: ['a', 'b'], decision: 'D', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'medium', needs_review: true }
+  const { result } = await run({}, c => {
+    if (c.label === 'review:r0') return ok({ findings: [{ id: 'F1', summary: 'FINDING-SUM', score: 90 }], skill_invoked: true })
+    if (c.label.startsWith('fix:')) return ok({ fix_status: 'skipped', summary: 'SKIP-REASON-TEXT', decisions: [UD] })
+  })
+  assert(result.review.notFixed[0].reason.includes('needs your decision: Fix would change a public contract'), result.review.notFixed[0].reason)
+})
+
+test('o3: fix prompt allows the proving test and a null decision entry does not throw', async () => {
+  const { calls, result } = await run({}, c => {
+    if (c.label === 'intent:1') return intentOos(c)
+    if (c.label === 'review:r0') return ok({ findings: [{ id: 'F1', summary: 'FINDING-SUM', score: 90 }], skill_invoked: true })
+    if (c.label.startsWith('fix:')) return ok({ fix_status: 'skipped', summary: 'SKIP-REASON-TEXT', decisions: [null, { context: 'no title' }] })
+  })
+  assert(named(calls, /^fix:/)[0].prompt.includes('in bounds only when the list above names it') && !named(calls, /^fix:/)[0].prompt.includes('always allowed'), 'test/doc files bound by the ticket list in fix prompt')
+  assert(result.review.notFixed[0].reason.includes('SKIP-REASON-TEXT'))
+})
+
+test('p: Needs your decision sits above Summary and is omitted when empty', async () => {
+  const withGap = await run({}, c => (c.label === 'intent-review' ? { verdict: 'gaps found', findings: [{ kind: 'excess', behaviour_changing: true, clause: 'CL-EXCESS', detail: 'did more' }, { kind: 'excess', clause: 'CL-QUIET', detail: 'harmless' }] } : undefined))
+  const p = named(withGap.calls, /^adr$/)[0].prompt
+  const i = p.indexOf('## Needs your decision')
+  assert(i >= 0 && i < p.indexOf('## Summary'), 'section above Summary')
+  const sec = p.slice(i, p.indexOf('## Summary'))
+  assert(sec.includes('CL-EXCESS') && !sec.includes('CL-QUIET'), 'only behaviour-changing excess is listed')
+  const none = await run({}, null)
+  assert(!named(none.calls, /^adr$/)[0].prompt.includes('## Needs your decision'))
+})
+
+test('q: {{DECISIONS}} still sits between Final verification and the footer', async () => {
+  const { calls } = await run({}, null)
+  const p = named(calls, /^adr$/)[0].prompt
+  const b = p.slice(p.indexOf('## Summary'))
+  const a = b.indexOf('## Final verification'), d = b.indexOf('{{DECISIONS}}'), f = b.indexOf('Generated with')
+  assert(a >= 0 && a < d && d < f, `${a} ${d} ${f}`)
 })
 
 test('schemas are well-formed (object root, required within properties)', async () => {
