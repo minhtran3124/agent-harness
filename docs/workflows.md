@@ -36,9 +36,18 @@ sibling PRs into it, a merge agent after each group, one final PR into `base`.
 3. Merge: after each group (multi only).
 4. Review: `code-review` at a level chosen from diff size and risky paths; findings scoring 50 or
    more get one fix agent each; re-review only the fix commits; at most 2 rounds.
-5. Intent review: a plan-blind `intent-reviewer` sees only the request and the diff range.
-6. Testing: the full suite once, at the end.
-7. Decisions: one artifact, the ADR files (`scripts/write_adrs.py`), and the PR body.
+5. Intent review: a plan-blind `intent-reviewer` sees the request, the diff range and the owner-confirmed block, never the plan.
+6. UAT: a plan-blind acceptance test of the running app (`skills/uat`), serial over the tickets, for FE, BE and
+   FE+BE tickets (docs tickets and local mode skip it with a log line). The agent gets the issue body and the
+   owner-confirmed block with every `Verify:` row stripped in code, and the config path verify used; it never
+   sees the plan or the diff. 3 to 8 scenarios, each naming an AC id, `negative`, `extra` or
+   `not-browser-checkable`. An AC failure gets one fix round and one rerun in a fresh worktree; a second
+   failure marks the ticket blocked with reason `UAT AC failed` (code stays, the PR still opens, `Refs`
+   instead of `Closes`). A negative or extra failure, or a run that could not happen (no config, app will
+   not start), becomes a `needs_review` decision and the ticket stays done. The PR body gets a
+   `## UAT sign-off` checklist that nothing enforces.
+7. Testing: the full suite once, at the end.
+8. Decisions: one artifact, the ADR files (`scripts/write_adrs.py`), and the PR body.
 
 No agent uses `isolation: 'worktree'`: it binds to the session's working directory, which is not the
 target repo (ADR 0002). Each agent runs `git -C <repoDir> fetch` and `git -C <repoDir> worktree add`
