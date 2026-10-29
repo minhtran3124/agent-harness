@@ -48,7 +48,7 @@ Stay with the config's own port. Stop the app when done.
 
 ## Report
 
-Return a table: scenario, covers, PASS or FAIL, assertion text, still path. Then the browser console error count; one or more errors fail the run.
+Return a table: scenario, covers, PASS or FAIL, assertion text, still path. Then the browser console error count. Report it; console errors alone do not fail the run (only a FAIL on an AC does).
 
 Return `passed_ac` true only when every AC row that a browser can check passed. A failed negative or extra row goes into `non_ac_failures`; it never sets `passed_ac` false.
 

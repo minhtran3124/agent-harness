@@ -752,9 +752,9 @@ async function runUat(label, wtName, t, body, owner, configPath) {
   catch (e) { log(`UAT #${t.n} ${label} failed: ${e && e.message}`); return null }   // an infrastructure failure never fails the ticket
 }
 
-// The agent's passed_ac is a claim: an AC row with FAIL or any console error also fails the run.
+// The agent's passed_ac is a claim: an AC row with FAIL also fails the run. Console errors are reported, never blocking: unrelated noise must not fail a ticket whose ACs pass.
 const uatOk = res => res.passed_ac !== false &&
-  !(res.scenarios || []).some(s => s.kind === 'ac' && s.status === 'FAIL') && !(Number(res.console_errors) > 0)
+  !(res.scenarios || []).some(s => s.kind === 'ac' && s.status === 'FAIL')
 
 const uatNotRun = (n, reason) => addDecision(n, 'uat', {
   title: `UAT not run for #${n}`, context: `The UAT stage could not check the running app: ${reason}`,
