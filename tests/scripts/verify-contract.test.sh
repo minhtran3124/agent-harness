@@ -103,10 +103,10 @@ for _ in $(seq 1 30); do
   [ "$c" = 200 ] && break
   sleep 0.2
 done
-codes="$c $(curl -s -o /dev/null -w '%{http_code}' "$baseurl/login.html")"
+codes="$c $(curl -s -o /dev/null -w '%{http_code}' "$baseurl/login.html") $(curl -s -o /dev/null -w '%{http_code}' "$baseurl/profile.html")"
 kill "$SRV" 2>/dev/null; wait "$SRV" 2>/dev/null
 sleep 0.3
-if [ "$codes" = "200 200" ] && ! curl -s -o /dev/null "$baseurl/" 2>/dev/null; then pass
+if [ "$codes" = "200 200 200" ] && ! curl -s -o /dev/null "$baseurl/" 2>/dev/null; then pass
 else fail "codes=[$codes] or server still up"; fi
 
 t "fixture config uses a \${PORT} baseUrl and an env map"
