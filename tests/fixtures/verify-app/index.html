@@ -7,7 +7,7 @@
   <a id="login-link" href="login.html">Log in</a>
   <script>
     if (sessionStorage.getItem('verify-signed-in') === '1') {
-      document.getElementById('status').textContent = 'Signed in';
+      document.getElementById('status').textContent = 'Signed in as ' + (sessionStorage.getItem('verify-signed-in-user') || '');
     }
   </script>
 </body>
