@@ -788,6 +788,10 @@ test('vb2: a flaky result is shown as flaky', async () => {
   assert(adrBody(calls).includes('- #1 FE: flaky;'), adrBody(calls))
 })
 
+test('vb2b: the Verify line uses v.result directly, no dead ternary', () => {
+  assert(!/v\.result === 'flaky' \? 'flaky'/.test(SRC), 'dead ternary on v.result')
+})
+
 test('vb3: a weak-test blocked ticket shows fail and passed on base', async () => {
   const { calls } = await run({ tickets: [T(1, 1), T(2, 1)] }, c => {
     if (c.label === 'verify:1' || c.label === 'verify-base:1') return vres(true, 'FE')

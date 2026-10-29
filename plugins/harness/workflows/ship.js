@@ -766,10 +766,9 @@ function buildBody(results, review, intent, suite) {
     L.push('', '## Verify', '')
     for (const r of withVerify) {
       const v = r.verify
-      const res = v.result === 'flaky' ? 'flaky' : v.result
       const baseText = v.base === 'failed' ? 'failed on base as required' : v.base === 'passed' ? 'passed on base (weak test)' : 'not run'
       const gifText = !v.gif ? 'not built' : v.attached ? 'built and attached' : 'built, not attached'
-      L.push(`- ${ref(r.n)} ${v.kind}: ${res}; base: ${baseText}; stills: ${v.dir}; GIF: ${gifText}`)
+      L.push(`- ${ref(r.n)} ${v.kind}: ${v.result}; base: ${baseText}; stills: ${v.dir}; GIF: ${gifText}`)
     }
   }
   L.push('', '## Intent review', '', `Verdict: ${intent.verdict}${intent.fixRound ? ' (one fix round ran, not re-reviewed)' : ''}`)
