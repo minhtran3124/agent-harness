@@ -789,7 +789,9 @@ async function stageUat(delivered) {
         '', 'UAT')
       takeDecisions(t.n, 'uat-fix', fix)
       rec.fixed = !!(fix && fix.fix_status === 'fixed')
-      const again = await runUat(`uat-rerun:${t.n}`, `uat-rerun-${t.n}`, t, body.text, owner.text, configPath)   // own worktree: it must see the fix
+      // No fix commit landed: a rerun would test the same code, so skip it and let the first result stand.
+      const again = rec.fixed ? await runUat(`uat-rerun:${t.n}`, `uat-rerun-${t.n}`, t, body.text, owner.text, configPath) : res   // own worktree: it must see the fix
+      if (!rec.fixed) log(`UAT #${t.n}: fix ${fix && fix.fix_status || 'returned nothing'}, rerun skipped`)
       if (!again || again.status === 'blocked') {
         const why = (again && (again.blocked_reason || again.summary)) || 'the UAT rerun agent returned nothing'
         uatNotRun(t.n, `rerun: ${why}`); rec.status = 'not run'; rec.reason = `rerun: ${why}`

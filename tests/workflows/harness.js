@@ -939,6 +939,18 @@ test('u4: an AC failure gives one fix and one rerun in its own worktree; passing
   assert.strictEqual(result.tickets[0].status, 'done')
 })
 
+test('u5b: a skipped or failed UAT fix starts no rerun and the AC failure stands', async () => {
+  for (const fix_status of ['skipped', 'failed']) {
+    const { calls, result } = await run({}, c => {
+      if (c.label === 'uat:1') return uatRes(false, [sc('S1', 'AC1', 'ac', 'FAIL')])
+      if (c.label === 'uat-fix:1') return ok({ fix_status })
+    })
+    assert.strictEqual(named(calls, /^uat-fix:/).length, 1)
+    assert.strictEqual(named(calls, /^uat-rerun:/).length, 0, fix_status)
+    assert.strictEqual(result.tickets[0].reason, 'UAT AC failed')
+  }
+})
+
 test('u5: a second AC failure marks the ticket blocked with reason UAT AC failed; the PR still opens', async () => {
   const { calls, result } = await run({}, c => {
     if (/^uat(-rerun)?:1$/.test(c.label)) return uatRes(false, [sc('S1', 'AC1', 'ac', 'FAIL')])
