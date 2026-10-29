@@ -15,10 +15,16 @@ t "SKILL.md is at most 80 lines and under 600 words"
 lines=$(wc -l < "$SKILL" | tr -d ' '); words=$(wc -w < "$SKILL" | tr -d ' ')
 if [ "$lines" -le 80 ] && [ "$words" -lt 600 ]; then pass; else fail "lines=$lines words=$words"; fi
 
-t "SKILL.md runs init-structure, creates PROJECT.md, merges deny, ignores specs/"
+t "SKILL.md runs init-structure, merges deny, ignores specs/, creates no agent index or techstacks"
 if grep -q '${CLAUDE_PLUGIN_ROOT}/scripts/init-structure.sh' "$SKILL" \
-   && grep -q 'agents/PROJECT.md' "$SKILL" && grep -q 'merge-deny.sh' "$SKILL" \
-   && grep -q '\.gitignore' "$SKILL" && grep -q 'specs/' "$SKILL"; then pass; else fail "a setup step is missing"; fi
+   && grep -q 'merge-deny.sh' "$SKILL" && grep -q '\.gitignore' "$SKILL" && grep -q 'specs/' "$SKILL" \
+   && ! grep -q 'PROJECT.template' "$SKILL" && ! grep -q 'techstacks' "$SKILL"; then pass; else fail "a setup step is missing or a removed one is back"; fi
+
+t "SKILL.md proposes ## Run and test before writing it and asks before deleting an old PROJECT.md"
+flat2=$(tr '\n' ' ' < "$SKILL" | tr -s ' ')
+if printf '%s' "$flat2" | grep -qF '## Run and test' && printf '%s' "$flat2" | grep -qF 'propose' \
+   && printf '%s' "$flat2" | grep -qF 'only after the owner agrees' && printf '%s' "$flat2" | grep -qF 'ask before deleting'; then pass
+else fail "the Run and test step is missing or does not ask first"; fi
 
 t "SKILL.md offers the gh pr merge allow rule through merge-allow.sh and limits writes to settings.local.json"
 flat=$(tr '\n' ' ' < "$SKILL" | tr -s ' ')
@@ -37,8 +43,8 @@ for f in $(grep -oE '\$\{CLAUDE_SKILL_DIR\}/[A-Za-z0-9_./-]+' "$SKILL" | sed 's#
 done
 [ "$ok" -eq 1 ] && pass || fail "a referenced file is missing"
 
-t "the PROJECT.md template resource and the init-structure templates exist"
-if [ -f "$DIR/resources/PROJECT.template.md" ] && [ -f "$ROOT/plugins/harness/templates/structure/specs-README.md" ] \
+t "the PROJECT.md template resource is gone and the init-structure templates exist"
+if [ ! -e "$DIR/resources" ] && [ -f "$ROOT/plugins/harness/templates/structure/specs-README.md" ] \
    && [ -x "$ROOT/plugins/harness/scripts/init-structure.sh" ]; then pass; else fail "a setup resource is missing"; fi
 
 t "old-install.sh lists harness-named files and leaves the project's own files out"
