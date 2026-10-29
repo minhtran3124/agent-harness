@@ -14,7 +14,7 @@ CHILD=""
 trap 'rm -rf "$SERVE_DIR"' EXIT
 trap '[ -z "$CHILD" ] || kill "$CHILD" 2>/dev/null; exit 143' TERM
 trap '[ -z "$CHILD" ] || kill "$CHILD" 2>/dev/null; exit 130' INT
-cp "$HERE/index.html" "$HERE/login.html" "$SERVE_DIR/"
+cp "$HERE"/*.html "$SERVE_DIR/"
 python3 - "$SERVE_DIR/credentials.json" <<'PY'
 import json, os, sys
 with open(sys.argv[1], "w") as f:
