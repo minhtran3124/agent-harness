@@ -39,6 +39,8 @@ function defaults(c, st) {
   if (l.startsWith('implement:')) return ok({ worktree: `/wt/${n}`, branch: `b${n}`, files: [], commits: [], verify: [] })
   if (/^verify(-retry|-base)?:/.test(l)) return ok({ passed: !l.startsWith('verify-base'), kind: 'BE', failedStep: '', consoleErrors: [], stills: [], report: 'VERIFY-REPORT' })
   if (l.startsWith('verify-comment:')) return ok()
+  if (l.startsWith('gif:')) return ok({ gif: '' })
+  if (l.startsWith('attach:')) return ok()
   if (l.startsWith('finish:')) return ok({ pr: args0.local ? 0 : 100 + Number(n), url: `https://x/pull/${100 + Number(n)}` })
   if (l.startsWith('merge:')) return ok({ merged: [...c.prompt.matchAll(/^- #(\d+)/gm)].map(m => Number(m[1])), failed: [] })
   if (l === 'final-pr') return ok({ pr: args0.local ? 0 : 900, url: 'https://x/pull/900' })
@@ -612,8 +614,8 @@ test('v1: an FE ticket runs implement, verify, base check, finish in that order,
     if (c.label === 'verify:1') return vres(true, 'FE')
     if (c.label === 'verify-base:1') return vres(false, 'FE')
   })
-  const ls = labelsOf(calls).filter(l => /^(implement|verify|finish)/.test(l))
-  assert.deepStrictEqual(ls, ['implement:1', 'verify:1', 'verify-base:1', 'finish:1'])
+  const ls = labelsOf(calls).filter(l => /^(implement|verify|gif|finish)/.test(l))
+  assert.deepStrictEqual(ls, ['implement:1', 'verify:1', 'verify-base:1', 'gif:1', 'finish:1'])
   const v = named(calls, /^verify:1$/)[0]
   assert(v.prompt.includes('/wt/1') && v.prompt.includes('/plug/skills/verify/SKILL.md') && v.prompt.includes('gh issue view 1 --repo o/r --json body'), v.prompt)
   assert(!('agentType' in v.opts) && v.opts.model === 'sonnet' && v.opts.effort === 'medium' && v.opts.phase === 'Tickets')
@@ -621,7 +623,9 @@ test('v1: an FE ticket runs implement, verify, base check, finish in that order,
   const b = named(calls, /^verify-base:1$/)[0]
   assert(b.prompt.includes('worktree add --detach /.ship-repo/ms/verify-base-1 origin/v5.0.0') && b.prompt.includes('Mode: base') && b.prompt.includes('/wt/1/verify.config.json') && b.prompt.includes('Commit nothing'), b.prompt)
   const f = named(calls, /^finish:1$/)[0].prompt
-  assert(f.includes('Verify result: pass') && f.includes('/wt/1/.playwright-mcp/1/step-1.png') && f.includes('Nothing is attached'), f)
+  assert(f.includes('Verify result: pass') && f.includes('/wt/1/.playwright-mcp/1/step-1.png') && f.includes('Evidence stays uncommitted') && !f.includes('Nothing is attached'), f)
+  const g = named(calls, /^gif:1$/)[0]
+  assert(g.opts.model === 'haiku' && g.schema.properties.gif && g.prompt.includes('ffmpeg') && g.prompt.includes('palettegen') && g.prompt.includes('/wt/1/.playwright-mcp/1'), g.prompt)
   assert.strictEqual(result.final.pr, 101)
 })
 
@@ -683,6 +687,66 @@ test('v7: local mode skips the verify stage, the issue fetch and the comment', a
   const { calls } = await run({ local: true }, null)
   assert.strictEqual(named(calls, /^verify/).length, 0, labelsOf(calls).join())
   assert(!named(calls, /^finish:1$/)[0].prompt.includes('Verify result'))
+})
+
+// ---- GIF and attach (#414) ------------------------------------------------------------------
+const gifOk = c => (c.label === 'gif:1' ? ok({ gif: '/wt/1/.playwright-mcp/1/evidence.gif' }) : undefined)
+const withVerify = (kind, extra) => c => {
+  if (c.label === 'verify:1') return vres(true, kind)
+  if (c.label === 'verify-base:1') return vres(false, kind)
+  return (extra || gifOk)(c)
+}
+
+test('a1: pass with a GIF attaches after finish, without the flaky note', async () => {
+  const { calls, result } = await run({}, withVerify('FE'))
+  const ls = labelsOf(calls).filter(l => /^(gif|finish|attach)/.test(l))
+  assert.deepStrictEqual(ls, ['gif:1', 'finish:1', 'attach:1'])
+  const a = named(calls, /^attach:1$/)[0]
+  assert(a.prompt.includes('gh pr comment 101 --repo o/r --attach /wt/1/.playwright-mcp/1/evidence.gif') && !a.prompt.includes('gh pr edit') && a.opts.model === 'haiku', a.prompt)
+  assert.strictEqual(result.tickets[0].status, 'done')
+})
+
+test('a2: flaky adds the note to the PR body', async () => {
+  const { calls } = await run({}, c => {
+    if (c.label === 'verify:1') return vres(false, 'FE')
+    if (c.label === 'verify-retry:1') return vres(true, 'FE')
+    if (c.label === 'verify-base:1') return vres(false, 'FE')
+    return gifOk(c)
+  })
+  const a = named(calls, /^attach:1$/)[0]
+  assert(a.prompt.includes('--attach') && a.prompt.includes('gh pr edit 101 --repo o/r') && a.prompt.includes('was flaky'), a.prompt)
+})
+
+test('a3: no GIF path means no attach, and the ticket is done', async () => {
+  const { calls, result, logs } = await run({}, withVerify('FE', c => (c.label === 'gif:1' ? ok({ gif: '' }) : undefined)))
+  assert.strictEqual(named(calls, /^attach:/).length, 0)
+  assert(logs.some(l => l.includes('no GIF built')))
+  assert.strictEqual(result.tickets[0].status, 'done')
+})
+
+test('a4: local mode builds no GIF and makes no attach call', async () => {
+  const { calls } = await run({ local: true }, null)
+  assert.strictEqual(named(calls, /^(gif|attach):/).length, 0, labelsOf(calls).join())
+})
+
+test('a5: an attach failure is logged and the ticket is still done', async () => {
+  const { calls, result, logs } = await run({}, withVerify('FE', c => (c.label === 'attach:1' ? new Error('gh too old') : gifOk(c))))
+  assert.strictEqual(named(calls, /^attach:1$/).length, 1)
+  assert(logs.some(l => l.includes('attach failed')))
+  assert.strictEqual(result.tickets[0].status, 'done')
+})
+
+test('a6: a GIF build failure keeps gif null, skips attach and does not change the result', async () => {
+  const { calls, result, logs } = await run({}, withVerify('FE', c => (c.label === 'gif:1' ? new Error('no ffmpeg') : undefined)))
+  assert.strictEqual(named(calls, /^attach:/).length, 0)
+  assert(logs.some(l => l.includes('gif build failed')))
+  assert(named(calls, /^finish:1$/)[0].prompt.includes('Verify result: pass'))
+  assert.strictEqual(result.tickets[0].status, 'done')
+})
+
+test('a7: a pr of 0 never attaches even with a GIF', async () => {
+  const { calls } = await run({}, c => (c.label === 'finish:1' ? ok({ pr: 0, url: '' }) : withVerify('FE')(c)))
+  assert.strictEqual(named(calls, /^attach:/).length, 0)
 })
 
 test('schemas are well-formed (object root, required within properties)', async () => {

@@ -67,3 +67,4 @@ commit, in a worktree that holds no ticket code:
 Return a table with one row per command or step, PASS or FAIL, and the assertion text.
 Add the console error count and the path of each still. Any FAIL makes the whole run FAIL.
 Do not fix the code in this skill. Do not commit evidence: Git ignores `.playwright-mcp/`.
+The workflow, not this skill, builds the GIF from the stills with ffmpeg and attaches it to the PR after the PR is opened. Leave the stills where they are.
