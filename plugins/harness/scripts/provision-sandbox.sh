@@ -308,7 +308,7 @@ if [ "${1:-}" = clean ]; then
     i=${#teardowns[@]}
     while [ "$i" -gt 0 ]; do
       i=$((i - 1))
-      if ! (cd "$sb" && set -a && . ./.sandbox.env && set +a && bash -c "${teardowns[$i]}") >&2; then
+      if ! (cd "$sb" && set -a && { [ ! -f ./.sandbox.env ] || . ./.sandbox.env; } && set +a && bash -c "${teardowns[$i]}") >&2; then
         failed=${teardowns[$i]}; break
       fi
     done

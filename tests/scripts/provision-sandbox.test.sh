@@ -477,6 +477,14 @@ printf 'teardown\n' > "$trepo/.harness-sandbox"
 prov "$trepo" td 4 empty --branch br/td-empty
 if [ "$RC" -eq 1 ] && echo "$OUT" | grep -q 'empty teardown command'; then pass; else fail "rc=$RC $OUT"; fi
 
+t "a sandbox without .sandbox.env can still be cleaned: teardown runs without it and the sandbox is removed"
+rm -f "$tlog"
+printf 'teardown echo noenv >> %s\n' "$tlog" > "$trepo/.harness-sandbox"
+prov "$trepo" te 5 noenv --branch br/td-noenv
+rm -f "$troot/te-t5-noenv/.sandbox.env"
+cln "$trepo" --run te --yes
+if [ "$RC" -eq 0 ] && [ ! -d "$troot/te-t5-noenv" ] && [ "$(cat "$tlog")" = noenv ]; then pass; else fail "rc=$RC $OUT"; fi
+
 # ---- clean --branch ----
 prov "$repo" d 1 bra --branch br/sel-a
 prov "$repo" d 2 brb --branch br/sel-b
