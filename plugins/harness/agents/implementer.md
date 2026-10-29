@@ -19,6 +19,8 @@ come from `CLAUDE.md` → `## Run and test`.
 
 Defer every stack specific to those files — never infer a convention this repo has not stated.
 
+Legacy fallback (one release): if the project has no `.claude/rules/` and no `## Run and test` in `CLAUDE.md`, and `agents/PROJECT.md` still exists, read its convention pointers and say so in the handoff.
+
 ## Scope
 
 Implement the task as specified and nothing else. Fix small bugs and blockers in your own change

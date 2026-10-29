@@ -80,4 +80,7 @@ JSON
   else fail "rc=$rc file: $(cat "$d/s.json")"; fi
 fi
 
+t "implementer keeps a legacy agents/PROJECT.md fallback like test-runner"
+if grep -q 'agents/PROJECT.md' "$ROOT/plugins/harness/agents/implementer.md" 2>/dev/null; then pass; else fail "implementer.md has no agents/PROJECT.md fallback"; fi
+
 finish
