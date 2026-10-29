@@ -25,6 +25,14 @@ for w in browser_navigate browser_snapshot browser_take_screenshot browser_conso
 done
 [ -z "$miss" ] && pass || fail "missing:$miss"
 
+t "SKILL.md pins the ToolSearch fallback and the seven tool name tails"
+miss=""
+for w in ToolSearch browser_navigate browser_snapshot browser_fill_form browser_click \
+         browser_take_screenshot browser_console_messages browser_run_code_unsafe; do
+  grep -q "$w" "$SKILL" || miss="$miss $w"
+done
+[ -z "$miss" ] && pass || fail "fallback rule missing:$miss"
+
 t "allowed-tools lists the form and click tools that Login needs"
 tools=$(grep '^allowed-tools:' "$SKILL")
 miss=""
