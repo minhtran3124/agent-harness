@@ -13,7 +13,6 @@ mk_repo() {
   git -C "$d" commit -qm seed
   printf 'SECRET=1\n' > "$d/.env"
   printf 'local rules\n' > "$d/CLAUDE.local.md"
-  printf 'copy .env\n' > "$d/.harness-sandbox"   # credentials are copied only on purpose
   mkdir -p "$d/node_modules/pkg"; printf 'x\n' > "$d/node_modules/pkg/index.js"
   echo "$d"
 }
@@ -51,26 +50,26 @@ if [ "$p3" = 4030 ] && [ "$p4" = 4040 ] && [ "$d3" != "$d4" ]; then pass; else f
 
 t "setup commands run in the sandbox and see the port variables"
 repo=$(mk_repo)
-printf 'copy .env\nsetup echo "$SANDBOX_PORT" > port.out && pwd > cwd.out\n' > "$repo/.harness-sandbox"
+printf 'setup echo "$SANDBOX_PORT" > port.out && pwd > cwd.out\n' > "$repo/.harness-sandbox"
 prov "$repo" r 1 s --port-base 5000
 dir="$(dirname "$repo")/.ship-$(basename "$repo")/r-t1-s"
 if [ "$RC" -eq 0 ] && [ "$(cat "$dir/port.out")" = 5010 ] && [ "$(cat "$dir/cwd.out")" = "$(cd "$dir" && pwd)" ]; then pass; else fail "rc=$RC $OUT"; fi
 
 t "a required path that nothing provides fails the run"
-printf 'copy .env\nrequire .env.missing\n' > "$repo/.harness-sandbox"
+printf 'require .env.missing\n' > "$repo/.harness-sandbox"
 prov "$repo" r 2 s
 if [ "$RC" -eq 1 ] && echo "$OUT" | grep -q 'required path missing'; then pass; else fail "rc=$RC $OUT"; fi
 
 t "a failing setup command fails the run and names the command"
-printf 'copy .env\nsetup exit 7\n' > "$repo/.harness-sandbox"
+printf 'setup exit 7\n' > "$repo/.harness-sandbox"
 prov "$repo" r 5 s
 if [ "$RC" -eq 1 ] && echo "$OUT" | grep -q 'setup failed: exit 7'; then pass; else fail "rc=$RC $OUT"; fi
 
 t "absolute and parent-relative manifest paths are rejected"
-printf 'copy .env\ncopy ../outside\n' > "$repo/.harness-sandbox"
+printf 'copy ../outside\n' > "$repo/.harness-sandbox"
 prov "$repo" r 6 s
 rc1=$RC
-printf 'copy .env\ncopy /etc/passwd\n' > "$repo/.harness-sandbox"
+printf 'copy /etc/passwd\n' > "$repo/.harness-sandbox"
 prov "$repo" r 7 s
 if [ "$rc1" -eq 1 ] && [ "$RC" -eq 1 ] && echo "$OUT" | grep -q 'unsafe'; then pass; else fail "rc=$rc1/$RC $OUT"; fi
 
@@ -93,13 +92,13 @@ if grep -q '"branch":"detached"' "$(dirname "$repo")/.ship-$(basename "$repo")/r
 
 t "a passing check runs in the sandbox with the port variables and the run is ready"
 repo=$(mk_repo)
-printf 'copy .env\nsetup echo set > setup.out\ncheck test "$SANDBOX_PORT" = 4010 && test -f setup.out && pwd > check.out\n' > "$repo/.harness-sandbox"
+printf 'setup echo set > setup.out\ncheck test "$SANDBOX_PORT" = 4010 && test -f setup.out && pwd > check.out\n' > "$repo/.harness-sandbox"
 prov "$repo" r 1 s
 dir="$(dirname "$repo")/.ship-$(basename "$repo")/r-t1-s"
 if [ "$RC" -eq 0 ] && echo "$OUT" | grep -q '"status":"ready"' && [ "$(cat "$dir/check.out")" = "$(cd "$dir" && pwd)" ]; then pass; else fail "rc=$RC $OUT"; fi
 
 t "a failing check fails the run, names the command and prints no ready line"
-printf 'copy .env\ncheck exit 3\n' > "$repo/.harness-sandbox"
+printf 'check exit 3\n' > "$repo/.harness-sandbox"
 prov "$repo" r 2 s
 if [ "$RC" -eq 1 ] && echo "$OUT" | grep -q 'check failed: exit 3' && ! echo "$OUT" | grep -q '"status":"ready"'; then pass; else fail "rc=$RC $OUT"; fi
 
@@ -116,7 +115,7 @@ if [ "$RC" -eq 0 ] && [ -e "$dir/setup.ran" ]; then pass; else fail "rc=$RC $OUT
 
 t "a check past the timeout fails and its background child is killed"
 repo=$(mk_repo)
-printf 'copy .env\ncheck sleep 30 & echo $! > "$PWD/child.pid"; wait\n' > "$repo/.harness-sandbox"
+printf 'check sleep 30 & echo $! > "$PWD/child.pid"; wait\n' > "$repo/.harness-sandbox"
 OUT=$(HARNESS_CHECK_TIMEOUT=1 bash "$SCRIPT" "$repo" r 1 s 2>&1); RC=$?
 dir="$(dirname "$repo")/.ship-$(basename "$repo")/r-t1-s"
 sleep 0.5
@@ -124,7 +123,7 @@ child=$(cat "$dir/child.pid" 2>/dev/null)
 if [ "$RC" -eq 1 ] && echo "$OUT" | grep -q 'timed out' && [ -n "$child" ] && ! kill -0 "$child" 2>/dev/null; then pass; else fail "rc=$RC child=$child $OUT"; fi
 
 t "a check that leaves a background server behind does not leak it"
-printf 'copy .env\ncheck sleep 30 & echo $! > "$PWD/bg.pid"\n' > "$repo/.harness-sandbox"
+printf 'check sleep 30 & echo $! > "$PWD/bg.pid"\n' > "$repo/.harness-sandbox"
 prov "$repo" r 2 s
 dir="$(dirname "$repo")/.ship-$(basename "$repo")/r-t2-s"
 sleep 0.5
@@ -249,10 +248,10 @@ mk_audit_repo() {
 }
 audit() { OUT=$(bash "$SCRIPT" --audit "$@" 2>&1); RC=$?; }
 
-t "audit flags credential and state files, skips regenerable dirs, flags prod and unrecognised paths"
+t "audit copies small config and state, skips regenerable dirs, flags prod and unrecognised paths"
 repo=$(mk_audit_repo)
 audit "$repo"
-if [ "$RC" -eq 1 ] && echo "$OUT" | grep -qE '^unknown .*\.env  ' && echo "$OUT" | grep -qE '^unknown .*data\.db' \
+if [ "$RC" -eq 1 ] && echo "$OUT" | grep -qE '^copy .*\.env  ' && echo "$OUT" | grep -qE '^copy .*data\.db' \
   && echo "$OUT" | grep -qE '^unknown .*\.env\.prod' && echo "$OUT" | grep -qE '^unknown .*out' \
   && ! echo "$OUT" | grep -q 'node_modules'; then pass; else fail "rc=$RC $OUT"; fi
 
@@ -261,7 +260,7 @@ audit "$repo" --all
 if echo "$OUT" | grep -qE '^skip .*node_modules' && echo "$OUT" | grep -qE '^skip .*\.next'; then pass; else fail "$OUT"; fi
 
 t "manifest copy, link and skip lines settle every unknown, so the audit exits 0"
-printf 'copy .env\ncopy data.db\ncopy .env.prod\nskip out\n' > "$repo/.harness-sandbox"
+printf 'copy .env.prod\nskip out\n' > "$repo/.harness-sandbox"
 audit "$repo"
 if [ "$RC" -eq 0 ] && echo "$OUT" | grep -qE '^covered .*\.env\.prod' && echo "$OUT" | grep -q 'unknown 0'; then pass; else fail "rc=$RC $OUT"; fi
 
@@ -301,27 +300,12 @@ mk_auto_repo() {
 }
 sbx() { echo "$(dirname "$1")/.ship-$(basename "$1")/$2"; }
 
-t "credential and state files (.env, *.db, .auth) are not copied without a manifest line"
+t "small unlisted config and state files are copied with no manifest"
 repo=$(mk_auto_repo)
-prov "$repo" a 1 s
-if [ "$RC" -eq 1 ] && echo "$OUT" | grep -q 'copy \.env' && echo "$OUT" | grep -q 'copy data\.db' && echo "$OUT" | grep -q 'copy \.auth' \
-  && [ ! -e "$(dirname "$repo")/.ship-$(basename "$repo")" ]; then pass; else fail "rc=$RC $OUT"; fi
-
-t "with manifest copy lines the credential files are copied, CLAUDE.local.md needs none"
-printf 'copy .env\ncopy data.db\ncopy .auth\n' > "$repo/.harness-sandbox"
 prov "$repo" a 1 s
 dir=$(sbx "$repo" a-t1-s)
 if [ "$RC" -eq 0 ] && [ "$(cat "$dir/.env")" = A=1 ] && [ -f "$dir/data.db" ] && [ -f "$dir/.auth/x" ] \
   && [ -f "$dir/CLAUDE.local.md" ] && [ ! -e "$dir/node_modules" ]; then pass; else fail "rc=$RC $OUT"; fi
-rm -f "$repo/.harness-sandbox"
-
-t "a *.local directory holding .env is not auto-copied without a manifest line"
-repo=$(mk_auto_repo)
-printf 'secrets.local/\n' >> "$repo/.gitignore"
-mkdir -p "$repo/secrets.local"; printf 'K=1\n' > "$repo/secrets.local/.env"
-printf 'copy .env\ncopy data.db\ncopy .auth\n' > "$repo/.harness-sandbox"
-prov "$repo" a 1 s
-if [ "$RC" -eq 1 ] && echo "$OUT" | grep -q 'copy secrets\.local' && [ ! -e "$(dirname "$repo")/.ship-$(basename "$repo")" ]; then pass; else fail "rc=$RC $OUT"; fi
 
 t "two unknown paths block the run, list both hints, and create nothing"
 repo=$(mk_auto_repo)
@@ -345,7 +329,7 @@ if [ "$RC" -eq 1 ] && [ ! -e "$(sbx "$repo" d-t1-s)/.env.prod" ]; then pass; els
 
 t "manifest copy lines win over the rules, and skip settles an unknown"
 head -c 102400 /dev/zero | tr "\0" x > "$repo/big.db"; mkdir -p "$repo/stray"; printf 'u\n' > "$repo/stray/n.txt"
-printf 'copy .env\ncopy data.db\ncopy .auth\ncopy .env.prod\ncopy big.db\nskip stray\n' > "$repo/.harness-sandbox"
+printf 'copy .env.prod\ncopy big.db\nskip stray\n' > "$repo/.harness-sandbox"
 before=$(snap "$repo"); envh=$(hash_of "$repo/.env")
 prov "$repo" e 1 s --max-kb 50
 dir=$(sbx "$repo" e-t1-s)
@@ -386,7 +370,7 @@ lst "$repo"
 t "list prints nothing and exits 0 when there are no sandboxes"
 if [ "$RC" -eq 0 ] && [ -z "$OUT" ]; then pass; else fail "rc=$RC $OUT"; fi
 
-printf 'copy .env\nlink node_modules\n' > "$repo/.harness-sandbox"
+printf 'link node_modules\n' > "$repo/.harness-sandbox"
 prov "$repo" a 1 run --branch br/running
 prov "$repo" c 2 open --branch br/open
 prov "$repo" c 3 merged --branch br/merged
@@ -468,7 +452,7 @@ kill "$SLEEPER" 2>/dev/null; wait "$SLEEPER" 2>/dev/null
 # ---- teardown ----
 trepo=$(mk_repo); troot="$(dirname "$trepo")/.ship-$(basename "$trepo")"
 tlog="$(dirname "$trepo")/teardown.log"
-printf 'copy .env\nteardown echo first:$SANDBOX_DB_NAME >> %s\nteardown echo second:$SANDBOX_DB_NAME >> %s\n' "$tlog" "$tlog" > "$trepo/.harness-sandbox"
+printf 'teardown echo first:$SANDBOX_DB_NAME >> %s\nteardown echo second:$SANDBOX_DB_NAME >> %s\n' "$tlog" "$tlog" > "$trepo/.harness-sandbox"
 prov "$trepo" td 1 ok --branch br/td-ok
 tdb=$(sed -n 's/^SANDBOX_DB_NAME=//p' "$troot/td-t1-ok/.sandbox.env")
 
@@ -485,7 +469,7 @@ if [ "$RC" -eq 0 ] && [ ! -d "$troot/td-t1-ok" ] && [ "$(cat "$tlog")" = "$(prin
 
 t "a failing teardown keeps the sandbox, skips the lines after it, names the command and exits 1"
 rm -f "$tlog"
-printf 'copy .env\nteardown echo early >> %s\nteardown false-teardown-cmd\nteardown echo late >> %s\n' "$tlog" "$tlog" > "$trepo/.harness-sandbox"
+printf 'teardown echo early >> %s\nteardown false-teardown-cmd\nteardown echo late >> %s\n' "$tlog" "$tlog" > "$trepo/.harness-sandbox"
 prov "$trepo" tf 2 bad --branch br/td-bad
 cln "$trepo" --run tf --yes
 if [ "$RC" -eq 1 ] && echo "$OUT" | grep -q 'refused tf-t2-bad.*teardown failed: false-teardown-cmd' && [ -d "$troot/tf-t2-bad" ] \
@@ -493,20 +477,20 @@ if [ "$RC" -eq 1 ] && echo "$OUT" | grep -q 'refused tf-t2-bad.*teardown failed:
 
 t "a dirty sandbox is refused before any teardown runs"
 rm -f "$tlog"
-printf 'copy .env\nteardown echo ran >> %s\n' "$tlog" > "$trepo/.harness-sandbox"
+printf 'teardown echo ran >> %s\n' "$tlog" > "$trepo/.harness-sandbox"
 prov "$trepo" td 3 dirty --branch br/td-dirty
 printf 'u\n' > "$troot/td-t3-dirty/new.txt"
 cln "$trepo" --run td --yes
 if [ "$RC" -eq 1 ] && echo "$OUT" | grep -q 'refused td-t3-dirty' && [ ! -e "$tlog" ] && [ -d "$troot/td-t3-dirty" ]; then pass; else fail "rc=$RC $OUT"; fi
 
 t "an empty teardown line fails the manifest"
-printf 'copy .env\nteardown\n' > "$trepo/.harness-sandbox"
+printf 'teardown\n' > "$trepo/.harness-sandbox"
 prov "$trepo" td 4 empty --branch br/td-empty
 if [ "$RC" -eq 1 ] && echo "$OUT" | grep -q 'empty teardown command'; then pass; else fail "rc=$RC $OUT"; fi
 
 t "a sandbox without .sandbox.env is refused when the manifest has teardown lines: no teardown runs"
 rm -f "$tlog"
-printf 'copy .env\nteardown echo noenv >> %s\n' "$tlog" > "$trepo/.harness-sandbox"
+printf 'teardown echo noenv >> %s\n' "$tlog" > "$trepo/.harness-sandbox"
 prov "$trepo" te 5 noenv --branch br/td-noenv
 rm -f "$troot/te-t5-noenv/.sandbox.env"
 cln "$trepo" --run te --yes
@@ -550,7 +534,7 @@ kill "$SLEEPER2" 2>/dev/null; wait "$SLEEPER2" 2>/dev/null
 t "clean removes a clone-mode sandbox and runs its teardown"
 crepo=$(mk_repo); croot="$(dirname "$crepo")/.ship-$(basename "$crepo")"
 clog="$(dirname "$crepo")/clone-teardown.log"
-printf 'copy .env\nteardown echo gone >> %s\n' "$clog" > "$crepo/.harness-sandbox"
+printf 'teardown echo gone >> %s\n' "$clog" > "$crepo/.harness-sandbox"
 prov "$crepo" cl 1 cc --mode clone --branch br/clone-clean
 cln "$crepo" --branch br/clone-clean --yes
 if [ "$RC" -eq 0 ] && echo "$OUT" | grep -q 'removed cl-t1-cc' && [ ! -d "$croot/cl-t1-cc" ] && grep -q gone "$clog"; then pass; else fail "rc=$RC $OUT"; fi

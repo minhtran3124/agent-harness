@@ -27,9 +27,7 @@
 #   Paths are relative to the repo root. Absolute paths and `..` are rejected.
 #       skip <path>      state that the sandbox deliberately does not carry (the audit stops asking)
 #   Without a manifest line, provisioning classifies every ignored path the way --audit does:
-#       small local-only files (CLAUDE.local.md, *.local ...) are copied on its own;
-#       credential or state files (.env, .env.*, *.db, *.sqlite, .auth) are never copied on their own:
-#       they stop the run until a manifest `copy` line says so (an unattended agent must not get secrets);
+#       small config or state (.env, *.db, .auth, CLAUDE.local.md ...) is copied on its own;
 #       regenerable paths (node_modules, caches, build output) are left out;
 #       any unknown path (a prod-named file, a config file over --max-kb, no rule) stops the run
 #       BEFORE the worktree is created and before anything is copied, and prints one manifest
@@ -38,7 +36,7 @@
 #       limit for config or state files in KB (default 5120). The main checkout is only read.
 # Audit: provision-sandbox.sh --audit <repoDir> [--max-kb N] [--all]
 #   Lists every ignored file or directory in repoDir and says what a sandbox would do with it:
-#   covered (the manifest handles it), copy (small local-only file), skip (regenerable or skipped),
+#   covered (the manifest handles it), copy (small config or state), skip (regenerable or skipped),
 #   unknown (needs a manifest line). Skip lines are hidden unless --all. Exits 1 when any path is
 #   unknown. Read-only. Provisioning runs the same classification.
 # Mode:  --mode worktree (default) makes a git worktree that shares repoDir's .git.
@@ -129,14 +127,8 @@ classify_repo() {
     if [ -z "$decision" ] && has_part "$path" '*prod*'; then
       decision=unknown; why='production-looking name: decide by hand'
     fi
-    if [ -z "$decision" ] && has_part "$path" '.env' '.env.*' '*.db' '*.sqlite' '*.sqlite3' .auth; then
-      if [ "$kb" -le "$max_kb" ]; then decision=unknown; why='credential or state file: copy only with a manifest line'
-      else decision=unknown; why="config or state over ${max_kb}K"; fi
-    fi
-    if [ -z "$decision" ] && has_part "$path" '*.local' '*.local.*'; then
-      if [ -d "$repo/$path" ] && [ -n "$(find "$repo/$path" \( -name .env -o -name '.env.*' -o -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' -o -name .auth \) -print -quit 2>/dev/null)" ]; then
-        decision=unknown; why='local directory holds credential or state files: copy only with a manifest line'
-      elif [ "$kb" -le "$max_kb" ]; then decision=copy; why='small local-only file'
+    if [ -z "$decision" ] && has_part "$path" '.env' '.env.*' '*.db' '*.sqlite' '*.sqlite3' '*.local' '*.local.*' .auth; then
+      if [ "$kb" -le "$max_kb" ]; then decision=copy; why='small config or state'
       else decision=unknown; why="config or state over ${max_kb}K"; fi
     fi
     [ -n "$decision" ] || { decision=unknown; why='no rule matches'; }
