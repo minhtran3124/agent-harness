@@ -4,7 +4,7 @@
 # installed dependencies are missing. This script adds them from a manifest, gives the sandbox its
 # own port block, runs the project's setup commands, and checks the result before it says "ready".
 #
-# Usage: provision-sandbox.sh <repoDir> <runId> <n> <slug> [--branch B] [--from REF] [--remote R] [--port-base N]
+# Usage: provision-sandbox.sh <repoDir> <runId> <n> <slug> [--branch B] [--from REF] [--remote R] [--port-base N] [--mode worktree|clone]
 #   Sandbox dir:  <parent of repoDir>/.ship-<repo name>/<runId>-t<n>-<slug>
 #   Manifest:     <repoDir>/.harness-sandbox   (one directive per line, # starts a comment)
 #       copy <path>      copy a file or directory from repoDir if it exists (.env, CLAUDE.local.md)
@@ -18,8 +18,15 @@
 #   covered (the manifest handles it), copy (small config or state), skip (regenerable or skipped),
 #   unknown (needs a manifest line). Skip lines are hidden unless --all. Exits 1 when any path is unknown. Read-only. Provisioning does
 #   not use this classification yet; it still follows the manifest alone.
-# Prints one JSON line on stdout when ready. Exit 0 ready, 1 failed, 2 bad usage.
-# Running it again for the same sandbox re-syncs the manifest and reuses the worktree.
+# Mode:  --mode worktree (default) makes a git worktree that shares repoDir's .git.
+#        --mode clone makes a standalone `git clone --local` with its own .git, so nothing in it can touch
+#        repoDir's refs. It carries committed content only (--from must be committed in repoDir, else exit 1),
+#        gets repoDir's remote URL as origin (--remote names the remote whose URL is copied; clone mode does
+#        not fetch; no such remote: warning, no set-url), and repoDir's local user.name and user.email.
+#        A clone is marked by .git/harness-sandbox-source holding repoDir's path; re-runs reuse only such a clone.
+#        Manifest, port, setup, require and the JSON line are the same in both modes.
+# Prints one JSON line on stdout when ready (it carries "mode"). Exit 0 ready, 1 failed, 2 bad usage.
+# Running it again for the same sandbox re-syncs the manifest and reuses the worktree or clone.
 set -u
 
 die() { printf 'provision-sandbox: %s\n' "$1" >&2; exit "${2:-1}"; }
@@ -110,18 +117,20 @@ if [ "${1:-}" = --audit ]; then
   exit 0
 fi
 
-[ "$#" -ge 4 ] || die 'usage: provision-sandbox.sh <repoDir> <runId> <n> <slug> [--branch B] [--from REF] [--remote R] [--port-base N]' 2
+[ "$#" -ge 4 ] || die 'usage: provision-sandbox.sh <repoDir> <runId> <n> <slug> [--branch B] [--from REF] [--remote R] [--port-base N] [--mode worktree|clone]' 2
 repo=$1; run=$2; n=$3; slug=$4; shift 4
-branch=''; from=HEAD; remote=''; port_base=4000
+branch=''; from=HEAD; remote=''; port_base=4000; mode=worktree
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --branch) [ "$#" -ge 2 ] || die '--branch needs a value' 2; branch=$2; shift 2 ;;
     --from) [ "$#" -ge 2 ] || die '--from needs a value' 2; from=$2; shift 2 ;;
     --remote) [ "$#" -ge 2 ] || die '--remote needs a value' 2; remote=$2; shift 2 ;;
+    --mode) [ "$#" -ge 2 ] || die '--mode needs a value' 2; mode=$2; shift 2 ;;
     --port-base) [ "$#" -ge 2 ] || die '--port-base needs a value' 2; port_base=$2; shift 2 ;;
     *) die "unknown option: $1" 2 ;;
   esac
 done
+case "$mode" in worktree|clone) ;; *) die "--mode must be worktree or clone, got '$mode'" 2 ;; esac
 case "$n" in ''|*[!0-9]*) die "n must be a number, got '$n'" 2 ;; esac
 case "$port_base" in ''|*[!0-9]*) die "--port-base must be a number" 2 ;; esac
 slug=$(printf '%s' "$slug" | tr -c 'A-Za-z0-9\n' '-' | sed 's/^-*//; s/-*$//')
@@ -136,7 +145,41 @@ safe_path() { # reject absolute paths and `..` segments
   case "$1" in /*|..|../*|*/..|*/../*|'') return 1 ;; esac
 }
 
-if [ -e "$dir/.git" ]; then
+cleanup_dir=''
+trap '[ -z "$cleanup_dir" ] || rm -rf "$cleanup_dir"' EXIT
+sandbox_parent="$parent/.ship-$(basename "$repo")"
+
+if [ "$mode" = clone ]; then
+  repo_real=$(cd "$repo" && pwd -P)
+  if [ -d "$dir/.git" ] && [ -f "$dir/.git/harness-sandbox-source" ]; then
+    [ "$(cat "$dir/.git/harness-sandbox-source")" = "$repo_real" ] || die "$dir exists and is not a clone of $repo"
+  elif [ -e "$dir" ] || [ -L "$dir" ]; then
+    die "$dir exists and is not a clone of $repo"
+  else
+    sha=$(git -C "$repo" rev-parse --verify -q "$from^{commit}") || die "ref not committed in $repo: $from"
+    mkdir -p "$sandbox_parent" || die 'cannot create the sandbox parent'
+    cleanup_dir=$dir
+    git clone -q --local --no-checkout "$repo" "$dir" || die 'git clone failed'
+    git -C "$dir" cat-file -e "$sha^{commit}" 2>/dev/null || git -C "$dir" fetch -q "$repo" "$sha" || die "cannot get $from into the clone"
+    if [ -n "$branch" ]; then
+      git -C "$dir" checkout -q -b "$branch" "$sha" || die 'git checkout failed'
+    else
+      git -C "$dir" checkout -q --detach "$sha" || die 'git checkout failed'
+    fi
+    printf '%s\n' "$repo_real" > "$dir/.git/harness-sandbox-source"
+    url=$(git -C "$repo" remote get-url "${remote:-origin}" 2>/dev/null) || url=''
+    if [ -n "$url" ]; then
+      git -C "$dir" remote set-url origin "$url" || die 'git remote set-url failed'
+    else
+      printf 'provision-sandbox: warning: %s has no remote %s; clone origin left as the local path\n' "$repo" "${remote:-origin}" >&2
+    fi
+    for key in user.name user.email; do
+      val=$(git -C "$repo" config --local --get "$key" 2>/dev/null) || val=''
+      [ -z "$val" ] || git -C "$dir" config "$key" "$val"
+    done
+  fi
+elif [ -e "$dir/.git" ]; then
+  [ -f "$dir/.git" ] || die "$dir exists but is not a worktree of $repo"
   common=$(git -C "$dir" rev-parse --git-common-dir 2>/dev/null) && common=$(cd "$dir" && cd "$common" && pwd -P)
   [ "$common" = "$(cd "$repo" && cd "$(git rev-parse --git-common-dir)" && pwd -P)" ] \
     || die "$dir exists but is not a worktree of $repo"
@@ -144,7 +187,7 @@ elif [ -e "$dir" ]; then
   die "$dir exists and is not a worktree"
 else
   [ -z "$remote" ] || git -C "$repo" fetch -q "$remote" || die "git fetch $remote failed"
-  mkdir -p "$parent/.ship-$(basename "$repo")" || die 'cannot create the sandbox parent'
+  mkdir -p "$sandbox_parent" || die 'cannot create the sandbox parent'
   if [ -n "$branch" ]; then
     git -C "$repo" worktree add -q -b "$branch" "$dir" "$from" || die 'git worktree add failed'
   else
@@ -205,5 +248,6 @@ for p in "${requires[@]+"${requires[@]}"}"; do
   [ -e "$dir/$p" ] || die "required path missing in sandbox: $p (not in $repo and not made by setup)"
 done
 
+cleanup_dir=''
 head_branch=$(git -C "$dir" symbolic-ref --quiet --short HEAD 2>/dev/null || printf detached)
-printf '{"status":"ready","dir":"%s","branch":"%s","port":%s,"db":"%s"}\n' "$dir" "$head_branch" "$port" "$db"
+printf '{"status":"ready","mode":"%s","dir":"%s","branch":"%s","port":%s,"db":"%s"}\n' "$mode" "$dir" "$head_branch" "$port" "$db"
