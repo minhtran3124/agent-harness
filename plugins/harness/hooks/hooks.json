@@ -7,6 +7,11 @@
             "type": "command",
             "command": "bash",
             "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/session-rules.sh"]
+          },
+          {
+            "type": "command",
+            "command": "bash",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/clean-worktrees.sh", "SessionStart"]
           }
         ]
       }

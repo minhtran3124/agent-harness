@@ -1,14 +1,21 @@
 #!/usr/bin/env bash
-# Remove the worktree and local branch of every branch whose PR is merged on GitHub (the PR head
-# commit equals the local tip). Run by hooks after a merge command, and safe to run by hand.
-# Only reports and removes: no force flags. `git worktree remove` refuses a dirty or locked worktree,
-# and `git branch -d` refuses an unmerged branch (a squash-merged branch is reported, not forced).
-# Never touches the default branch, the current branch, or the worktree the session runs in.
+# Remove the worktree and local branch of every branch that is merged. Run by hooks (after a merge
+# command, and at session start) and safe to run by hand.
+# A branch counts as merged when: (1) with gh, a merged PR has a head commit equal to the local tip
+# (removed with `git branch -D`: a squash merge is not in git history, the exact tip match is the
+# guard, so a branch with commits after the merge is never removed); (2) without gh, its upstream is
+# gone and its tip is an ancestor of <remote>/main; (3) a `worktree-*` agent branch that no worktree
+# has checked out and whose tip is in a <remote>/* branch. Every rule except (1) uses `git branch -d`.
+# `git worktree remove` has no force flag: it refuses a dirty or locked worktree.
+# Never touches main, master, CLEAN_KEEP names, the current branch, or the worktree the session runs in.
+# A branch matching CLEAN_STRICT gets only rule (1). Settings (env): CLEAN_REMOTE (default origin),
+# CLEAN_KEEP, CLEAN_STRICT, CLEAN_RECREATE (space separated). It runs `git fetch --prune` first.
 # Hook use: `clean-worktrees.sh PostToolUse` reads the tool payload on stdin. It acts only on a real
 # `gh pr merge <n>` or `gh api .../pulls/<n>/merge` command (heredoc bodies and quoted strings are
 # ignored, so text that merely mentions the phrase does nothing) and cleans only the branches of the PRs it merges (each merge in a chain counts),
 # found with `gh pr view`. With no number it uses the PR of the current branch; if that lookup fails
-# it exits silently. Run by hand with no argument, it sweeps every merged branch.
+# it exits silently. `clean-worktrees.sh SessionStart` takes no payload and sweeps every branch,
+# answering with additionalContext. Run by hand with no argument, it sweeps and prints plain text.
 set -u
 only=""  # set in hook mode: clean only the branch of the PR that was just merged
 if [ "${1:-}" = PostToolUse ]; then
@@ -79,30 +86,66 @@ EOF
   done
   [ "$only" != " " ] || exit 0
 fi
-command -v gh >/dev/null || exit 0
+set -f  # CLEAN_STRICT globs are matched with case, never expanded against files
+have_gh=1; command -v gh >/dev/null || have_gh=""
 start=$(pwd -P)
+session_branch=$(git symbolic-ref -q --short HEAD 2>/dev/null)
 root=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || exit 0
 root=${root%/.git}; cd "$root" || exit 0
-keep=" main master $(git symbolic-ref -q --short HEAD) "
+remote=${CLEAN_REMOTE:-origin}
+# Fetch first so a branch the remote already deleted is seen. A failed fetch (no network) is not fatal.
+git fetch -q --prune "$remote" 2>/dev/null || true
+keep=" main master ${CLEAN_KEEP:-} $(git symbolic-ref -q --short HEAD) $session_branch "
 # bash 3.2 (macOS) has no associative arrays: look the worktree path up per branch.
 wt_of() { git worktree list --porcelain | awk -v b="refs/heads/$1" '/^worktree /{p=substr($0,10)} $0=="branch " b{print p; exit}'; }
 out=""
+base="refs/remotes/$remote/main"
+git rev-parse -q --verify "$base" >/dev/null 2>&1 || base=""
+# Recreate a deleted base branch from <remote>/main, only when ls-remote says it is missing (exit 2).
+if [ -n "$base" ]; then
+  for name in ${CLEAN_RECREATE:-}; do
+    git ls-remote --exit-code --heads "$remote" "$name" >/dev/null 2>&1; rc=$?
+    [ "$rc" = 2 ] || continue
+    if git push -q "$remote" "$base:refs/heads/$name" 2>/dev/null; then out+="recreated $remote/$name from $remote/main"$'\n'
+    else out+="could not recreate $remote/$name"$'\n'; fi
+  done
+fi
+is_strict() { local g; for g in ${CLEAN_STRICT:-}; do case "$1" in $g) return 0 ;; esac; done; return 1; }
+# True when the tip is in a <remote>/* branch other than <remote>/HEAD.
+in_remote_branch() { git for-each-ref --contains "$1" --format='%(refname)' "refs/remotes/$remote/" 2>/dev/null | grep -qvx "refs/remotes/$remote/HEAD"; }
+# Delete a branch whose tip is already verified to be contained in a remote branch: `git branch -d`,
+# and if git refuses only because the local HEAD lacks the commit, drop the ref guarded by its tip.
+del_contained() { git branch -d "$1" >/dev/null 2>&1 || git update-ref -d "refs/heads/$1" "$2" >/dev/null 2>&1; }
 for b in $(git for-each-ref --format='%(refname:short)' refs/heads); do
   [ -z "$only" ] || case "$only" in *" $b "*) ;; *) continue ;; esac
   case "$keep" in *" $b "*) continue ;; esac
   tip=$(git rev-parse -q --verify "refs/heads/$b") || continue
-  case " $(gh pr list --head "$b" --state merged --json headRefOid --jq '.[].headRefOid' 2>/dev/null | tr '\n' ' ') " in *" $tip "*) ;; *) continue ;; esac
+  strict=""; is_strict "$b" && strict=1
   p=$(wt_of "$b")
+  how=""
+  if [ -z "$strict" ] && [ -z "$p" ] && [ -z "$only" ] && case "$b" in worktree-*) true ;; *) false ;; esac && in_remote_branch "$tip"; then
+    how=contained
+  elif [ -n "$have_gh" ]; then
+    case " $(gh pr list --head "$b" --state merged --json headRefOid --jq '.[].headRefOid' 2>/dev/null | tr '\n' ' ') " in *" $tip "*) how=pr ;; esac
+  elif [ -z "$strict" ] && [ -n "$base" ] \
+    && [ "$(git for-each-ref --format='%(upstream:track)' "refs/heads/$b")" = "[gone]" ] \
+    && git merge-base --is-ancestor "$tip" "$base" 2>/dev/null; then
+    how=gone
+  fi
+  [ -n "$how" ] || continue
   if [ -n "$p" ]; then
     [ "$p" = "$root" ] && continue
     case "$start/" in "$p"/*) out+="kept $b: the session runs in $p"$'\n'; continue ;; esac
     git worktree remove "$p" 2>/dev/null || { out+="kept $b: worktree $p has changes or a lock"$'\n'; continue; }
   fi
-  if git branch -d "$b" >/dev/null 2>&1; then out+="removed $b${p:+ and worktree $p}"$'\n'
-  else out+="kept branch $b: merged on GitHub but git does not see it as merged (squash); delete by hand if wanted"$'\n'; fi
+  if { [ "$how" = pr ] && git branch -D "$b" >/dev/null 2>&1; } || { [ "$how" != pr ] && del_contained "$b" "$tip"; }; then
+    out+="removed $b${p:+ and worktree $p}"$'\n'
+  else out+="kept branch $b: merged but could not be deleted; delete by hand if wanted"$'\n'; fi
 done
 git worktree prune
 [ -n "$out" ] || exit 0
-if [ "${1:-}" = PostToolUse ]; then
-  jq -n --arg t "Worktree cleanup:"$'\n'"$out" '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:$t}}'
-else printf '%s' "$out"; fi
+case "${1:-}" in
+  PostToolUse) jq -n --arg t "Worktree cleanup:"$'\n'"$out" '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:$t}}' ;;
+  SessionStart) jq -n --arg t "Worktree cleanup:"$'\n'"$out" '{hookSpecificOutput:{hookEventName:"SessionStart",additionalContext:$t}}' ;;
+  *) printf '%s' "$out" ;;
+esac
