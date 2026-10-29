@@ -155,4 +155,8 @@ grep -q 'read `references/run-app.md`' "$SKILL" && grep -q 'Start config, Login 
 t "verify SKILL.md is at most 450 words"
 [ "$(wc -w < "$SKILL")" -le 450 ] && pass || fail "over 450 words"
 
+t "uat SKILL.md locates run-app.md through CLAUDE_PLUGIN_ROOT, not a path relative to the skill folder"
+UAT="$ROOT/plugins/harness/skills/uat/SKILL.md"
+if grep -q 'CLAUDE_PLUGIN_ROOT}/skills/verify/references/run-app.md' "$UAT" && ! grep -q '\.\./verify/' "$UAT"; then pass; else fail "uat still uses ../verify path"; fi
+
 finish

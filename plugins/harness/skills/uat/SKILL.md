@@ -12,7 +12,7 @@ Use the Playwright MCP browser tools, not npm Playwright. If a tool named here i
 
 ## Step 0: prerequisite
 
-Run `test -f ../verify/references/run-app.md` from this skill's folder. If the file is missing, stop and report BLOCKED. Never write it inline.
+Run `test -f "${CLAUDE_PLUGIN_ROOT}/skills/verify/references/run-app.md"`. The agent's cwd is the ticket worktree, so never use a path relative to this skill's folder. If the file is missing, stop and report BLOCKED. Never write it inline.
 
 ## Input
 
@@ -34,7 +34,7 @@ Do not read `git log`, diffs, `docs/adr/`, `specs/` or any plan.
 
 ## Run the app
 
-Read `../verify/references/run-app.md` by path and follow its Start config, Login and Browser steps. Copy none of them here.
+Read `${CLAUDE_PLUGIN_ROOT}/skills/verify/references/run-app.md` by path and follow its Start config, Login and Browser steps. Copy none of them here.
 
 Overrides of that file:
 
