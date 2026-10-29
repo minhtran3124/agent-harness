@@ -40,7 +40,8 @@
 #   unknown (needs a manifest line). Skip lines are hidden unless --all. Exits 1 when any path is
 #   unknown. Read-only. Provisioning runs the same classification.
 # Mode:  --mode worktree (default) makes a git worktree that shares repoDir's .git.
-#        --mode clone makes a standalone `git clone --local` with its own .git, so nothing in it can touch
+#        --mode clone makes a standalone `git clone --local` (objects copied with --no-hardlinks when the
+#        sandbox is on another filesystem) with its own .git, so nothing in it can touch
 #        repoDir's refs. It carries committed content only (--from must be committed in repoDir, else exit 1),
 #        gets repoDir's remote URL as origin (--remote names the remote whose URL is copied; clone mode does
 #        not fetch, and its origin/* refs mirror repoDir's refs/remotes/<remote>/*; no such remote: warning, no set-url), and repoDir's local user.name and user.email.
@@ -415,7 +416,12 @@ if [ "$mode" = clone ]; then
     sha=$(git -C "$repo" rev-parse --verify -q "$from^{commit}") || die "ref not committed in $repo: $from"
     mkdir -p "$sandbox_parent" || die 'cannot create the sandbox parent'
     cleanup_dir=$dir
-    git clone -q --local --no-checkout "$repo" "$dir" || die 'git clone failed'
+    if ! git clone -q --local --no-checkout "$repo" "$dir" 2>/dev/null; then
+      # --local hardlinks the objects and dies when repoDir and the sandbox are on different filesystems
+      # (EXDEV); drop the partial clone and copy the objects instead.
+      rm -rf "$dir"
+      git clone -q --no-hardlinks --no-checkout "$repo" "$dir" || die 'git clone failed'
+    fi
     git -C "$dir" cat-file -e "$sha^{commit}" 2>/dev/null || git -C "$dir" fetch -q "$repo" "$sha" || die "cannot get $from into the clone"
     if [ -n "$branch" ]; then
       git -C "$dir" checkout -q -b "$branch" "$sha" || die 'git checkout failed'

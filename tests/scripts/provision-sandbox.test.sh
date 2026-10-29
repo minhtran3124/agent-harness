@@ -165,6 +165,24 @@ dir=$(sbdir "$repo" c-t1-one)
 if [ "$RC" -eq 0 ] && [ -d "$dir/.git" ] && echo "$OUT" | grep -q '"status":"ready"' && echo "$OUT" | grep -q '"mode":"clone"' \
   && [ "$(git -C "$repo" worktree list | wc -l | tr -d ' ')" = 1 ]; then pass; else fail "rc=$RC $OUT"; fi
 
+t "clone falls back to copying objects when hardlinks fail across filesystems"
+repo=$(mk_repo)
+fakebin=$(mktemp -d)
+real_git=$(command -v git)
+cat > "$fakebin/git" <<EOF
+#!/bin/bash
+# Fails a hardlinking clone the way git does across filesystems; passes everything else through.
+case " \$* " in
+  *" clone "*" --local "*) mkdir -p "\${@: -1}/.git"; echo "fatal: failed to create link: Invalid cross-device link" >&2; exit 128 ;;
+esac
+exec "$real_git" "\$@"
+EOF
+chmod +x "$fakebin/git"
+OUT=$(PATH="$fakebin:$PATH" bash "$SCRIPT" "$repo" x 1 xdev --mode clone --branch feat/xdev 2>&1); RC=$?
+dir=$(sbdir "$repo" x-t1-xdev)
+if [ "$RC" -eq 0 ] && echo "$OUT" | grep -q '"status":"ready"' && [ "$(git -C "$dir" branch --show-current)" = feat/xdev ] && [ ! -e "$dir/.git/objects/info/alternates" ]; then pass; else fail "rc=$RC $OUT"; fi
+rm -rf "$fakebin"
+
 t "clone carries committed content only: dirty main does not leak in"
 repo=$(mk_repo)
 printf 'edited\n' > "$repo/app.txt"; printf 'new\n' > "$repo/untracked.txt"
