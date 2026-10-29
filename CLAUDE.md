@@ -6,6 +6,8 @@ Skill framework for Claude Code (the only supported runtime): reusable prompt-ba
 
 `bash scripts/run-tests.sh` runs the whole suite. CI (`harness-ci`) runs the same suite on ubuntu and macOS. Run it before you change `plugins/harness/hooks/` or `scripts/`.
 
+`bash scripts/check-shellcheck.sh` runs shellcheck over the harness shell scripts. Run it before the PR; CI runs the same script with `REQUIRE_SHELLCHECK=1`, which fails instead of skipping when shellcheck is missing.
+
 The plugin lives in `plugins/harness/`; the marketplace file is `.claude-plugin/marketplace.json`. To develop, run `claude --plugin-dir plugins/harness` from the repo root. The plugin's hooks and rule then load from there (the repo's `settings.json` wires no hooks), and its skills appear as `/harness:<name>`.
 
 ## Models

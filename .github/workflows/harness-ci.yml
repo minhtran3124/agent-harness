@@ -69,11 +69,9 @@ jobs:
           npm install -g "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}"
           claude --version
       - name: shellcheck (strict - fails if shellcheck is missing)
-        run: |
-          command -v shellcheck >/dev/null || { echo "shellcheck is not installed on this runner" >&2; exit 1; }
-          shellcheck --version
-          shellcheck plugins/harness/hooks/*.sh plugins/harness/scripts/*.sh \
-            scripts/check-plugin-install.sh scripts/check-plugin-version.sh scripts/check-plugin-validate.sh
+        env:
+          REQUIRE_SHELLCHECK: "1"
+        run: bash scripts/check-shellcheck.sh
       - name: Skill and agent frontmatter contract
         run: python3 scripts/check_frontmatter_contract.py
       - name: Markdown link check
