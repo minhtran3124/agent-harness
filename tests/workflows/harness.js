@@ -920,6 +920,16 @@ test('u2b: tight AC bullets under a Verify row stay in the UAT prompt', async ()
   assert(u.prompt.includes('AC-KEEP-ONE') && u.prompt.includes('AC-KEEP-TWO'), u.prompt)
 })
 
+test('u2c: wrapped Verify text and indented sub-bullets stay out of the UAT prompt', async () => {
+  const { calls } = await run({ tickets: [T(1, 1, [], {})] }, c => {
+    if (c.label === 'request:1') return { body: 'Do the thing.\nVerify: SECRET-V start the app and\nSECRET-WRAP then click\n  - SECRET-SUB one\n    - SECRET-SUB2 deeper\n- AC-KEEP-ONE\nAC-KEEP-TWO: tight' }
+  })
+  const u = named(calls, /^uat:1$/)[0]
+  assert(u, labelsOf(calls).join())
+  for (const bad of ['SECRET-V', 'SECRET-WRAP', 'SECRET-SUB', 'SECRET-SUB2']) assert(!u.prompt.includes(bad), `UAT prompt leaks ${bad}`)
+  assert(u.prompt.includes('AC-KEEP-ONE') && u.prompt.includes('AC-KEEP-TWO'), u.prompt)
+})
+
 test('u3: the UAT phase sits between Intent review and Testing', async () => {
   const { calls } = await run({}, null)
   const ls = labelsOf(calls)

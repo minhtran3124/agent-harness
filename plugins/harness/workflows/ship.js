@@ -716,14 +716,16 @@ async function stageIntentReview(done) {
   return { verdict: res ? res.verdict : 'unknown', gaps: findings, fixRound: fixable.length > 0 }
 }
 
-// Drop each Verify: row and its indented continuation lines. An unindented line or a list bullet ends the row, so tight AC lines under it stay. Blank lines stay; a mid-sentence mention stays.
+// Drop each Verify: row and its continuation. Continuation = a line indented deeper than the row (sub-bullets too) or a wrapped plain-prose line at the row's own level. A blank line, a heading, a list bullet or a "Label:" line at the row's level ends the row, so tight AC lines under it stay. A mid-sentence mention stays.
 const VERIFY_ROW = /^\s*(?:[-*>]\s*)?(?:\*\*|__)?Verify:/
+const NEW_BLOCK = /^\s*(?:[-*+>#]|\d+[.)])\s|^\s*(?:\*\*|__)?[A-Za-z][\w ]{0,24}:/
 function stripVerify(text) {
-  let skipping = false, count = 0
+  let skipping = false, count = 0, rowIndent = 0
   const kept = []
   for (const line of String(text || '').split('\n')) {
-    if (VERIFY_ROW.test(line)) { skipping = true; count++; continue }
-    if (skipping && /^\s+\S/.test(line) && !/^\s*(?:[-*+>]|\d+[.)])\s/.test(line)) { count++; continue }
+    const indent = line.match(/^\s*/)[0].length
+    if (VERIFY_ROW.test(line)) { skipping = true; rowIndent = indent; count++; continue }
+    if (skipping && line.trim() && (indent > rowIndent || !NEW_BLOCK.test(line))) { count++; continue }
     skipping = false
     kept.push(line)
   }
