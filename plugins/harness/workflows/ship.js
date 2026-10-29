@@ -413,7 +413,7 @@ async function buildGif(t, impl, stills) {
   try {
     const res = await call(
       `Stage: gif. Build one animated GIF from the verify stills of ticket #${t.n}. Stills (in order): ${stills.join(', ')}. They sit in ${dir}.\n` +
-      `Use ffmpeg, for example: ffmpeg -y -framerate 1 -pattern_type glob -i '${dir}/*.png' -vf "scale=800:-2:flags=lanczos,split[a][b];[a]palettegen[p];[b][p]paletteuse" ${dir}/evidence.gif\n` +
+      `Use only the stills listed above, in that order; ignore any other file in ${dir}. Write a concat list file ${dir}/stills.txt with one line per still ("file '<absolute path>'" and "duration 1"), then run: ffmpeg -y -f concat -safe 0 -i ${dir}/stills.txt -vf "scale=800:-2:flags=lanczos,split[a][b];[a]palettegen[p];[b][p]paletteuse" ${dir}/evidence.gif. Do not use a wildcard pattern for the input.\n` +
       `Rules: palettegen, at most 30 seconds, 800 px wide, under 10 MB (drop frames or lower the frame rate if larger). Write the GIF inside ${dir}. Commit nothing and do not add it to git.\n` +
       `Return gif: the absolute path of the GIF, or an empty string when there are no stills, ffmpeg is missing or the build failed.\n\n${RULES}`,
       { label: `gif:${t.n}`, phase: 'Tickets', schema: GIF_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
