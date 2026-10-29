@@ -174,6 +174,17 @@ prov "$repo2" c 1 n --mode clone
 if [ "$o1" = https://example.com/o.git ] && [ "$o2" = https://example.com/up.git ] && [ "$RC" -eq 0 ] && echo "$OUT" | grep -qi 'warn'; then pass
 else fail "o1=$o1 o2=$o2 rc=$RC $OUT"; fi
 
+t "clone origin/* refs mirror the main repo's remote-tracking refs, not its local branches"
+repo=$(mk_repo)
+git -C "$repo" remote add origin https://example.com/o.git
+git -C "$repo" branch localonly
+old=$(git -C "$repo" rev-parse HEAD)
+git -C "$repo" update-ref refs/remotes/origin/main "$old"
+prov "$repo" c 1 refs --mode clone
+dir=$(sbdir "$repo" c-t1-refs)
+if [ "$RC" -eq 0 ] && [ "$(git -C "$dir" rev-parse origin/main)" = "$old" ] && ! git -C "$dir" rev-parse -q --verify origin/localonly >/dev/null; then pass
+else fail "rc=$RC $(git -C "$dir" for-each-ref refs/remotes)"; fi
+
 t "clone mode runs the manifest, ports and setup like worktree mode"
 repo=$(mk_repo)
 printf 'copy .env\ncopy CLAUDE.local.md\nlink node_modules\nrequire .env\nsetup echo "$SANDBOX_PORT" > port.out\n' > "$repo/.harness-sandbox"

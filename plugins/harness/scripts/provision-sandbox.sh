@@ -43,7 +43,7 @@
 #        --mode clone makes a standalone `git clone --local` with its own .git, so nothing in it can touch
 #        repoDir's refs. It carries committed content only (--from must be committed in repoDir, else exit 1),
 #        gets repoDir's remote URL as origin (--remote names the remote whose URL is copied; clone mode does
-#        not fetch; no such remote: warning, no set-url), and repoDir's local user.name and user.email.
+#        not fetch, and its origin/* refs mirror repoDir's refs/remotes/<remote>/*; no such remote: warning, no set-url), and repoDir's local user.name and user.email.
 #        A clone is marked by .git/harness-sandbox-source holding repoDir's path; re-runs reuse only such a clone.
 #        Manifest, port, setup, require and the JSON line are the same in both modes.
 # Registry: every sandbox gets <sandbox>/.sandbox.json with runId, ticket {n, slug}, branch
@@ -408,6 +408,17 @@ if [ "$mode" = clone ]; then
     url=$(git -C "$repo" remote get-url "${remote:-origin}" 2>/dev/null) || url=''
     if [ -n "$url" ]; then
       git -C "$dir" remote set-url origin "$url" || die 'git remote set-url failed'
+      # The clone's origin/* refs are copies of repoDir's local branches, not of the remote. Rebuild them
+      # from repoDir's own remote-tracking refs for that remote (local data, no fetch).
+      git -C "$dir" for-each-ref --format='%(refname)' refs/remotes/origin | while read -r r; do
+        git -C "$dir" update-ref -d "$r"
+      done
+      git -C "$repo" for-each-ref --format='%(objectname) %(refname)' "refs/remotes/${remote:-origin}" | while read -r oid r; do
+        n=${r#"refs/remotes/${remote:-origin}/"}
+        [ "$n" = HEAD ] && continue
+        git -C "$dir" cat-file -e "$oid^{commit}" 2>/dev/null || git -C "$dir" fetch -q "$repo" "$oid" 2>/dev/null || continue
+        git -C "$dir" update-ref "refs/remotes/origin/$n" "$oid"
+      done
     else
       printf 'provision-sandbox: warning: %s has no remote %s; clone origin left as the local path\n' "$repo" "${remote:-origin}" >&2
     fi
