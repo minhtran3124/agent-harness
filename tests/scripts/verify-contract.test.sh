@@ -41,8 +41,8 @@ for w in browser_fill_form browser_click; do
 done
 [ -z "$miss" ] && pass || fail "allowed-tools missing:$miss"
 
-t "allowed-tools lists ToolSearch so the fallback can run"
-grep '^allowed-tools:' "$SKILL" | grep -qE '(: |, )ToolSearch(,|$)' && pass || fail "ToolSearch not in allowed-tools"
+t "allowed-tools stays unchanged: no ToolSearch added (owner decision #439)"
+grep '^allowed-tools:' "$SKILL" | grep -q 'ToolSearch' && fail "ToolSearch added to allowed-tools" || pass
 
 # no_secrets <config>: pass when baseUrl and startCommand exist, loginEnv holds only
 # upper-case variable names (a value such as "hunter2" fails), and env, if present, maps
