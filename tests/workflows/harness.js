@@ -986,6 +986,15 @@ test('u10: verify reports its config path and UAT gets it', async () => {
   assert(named(calls, /^uat:1$/)[0].prompt.includes('Config: /wt/1/tests/fixtures/verify-app/verify.config.json'))
 })
 
+test('u11: UAT and uat-fix prompts hold real newlines, never a literal backslash-n', async () => {
+  const { calls } = await run({}, c => (c.label === 'uat:1' ? uatRes(false, [sc('S1', 'AC1', 'ac', 'FAIL')]) : c.label === 'uat-rerun:1' ? uatRes(true, [sc('S1', 'AC1', 'ac', 'PASS')]) : undefined))
+  for (const re of [/^uat:1$/, /^uat-fix:1$/]) {
+    const p = named(calls, re)[0].prompt
+    assert(!p.includes('\\n'), `${re} prompt has a literal backslash-n`)
+  }
+  assert(named(calls, /^uat:1$/)[0].prompt.includes('<<<\n'))
+})
+
 test('schemas are well-formed (object root, required within properties)', async () => {
   const { calls } = await run({ tickets: [T(1, 1, [], { depth: 'L' }), T(2, 2, [1])] }, c => (c.label === 'suite' ? { passed: 1, failed: 1, skipped: 0, failing: ['t'] } : undefined))
   const check = (s, where) => {

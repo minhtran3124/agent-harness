@@ -734,13 +734,13 @@ function stripVerify(text) {
 // The prompt holds the stripped request, the stripped owner block and the config path. No plan, diff or Verify row.
 function uatAgent(label, wtName, t, body, owner, configPath) {
   const w = newWt(wtName, null, finalRef)
-  const prompt = `${w.setup}${RULES}\\n\\nTicket #${t.n}: ${t.title}. Repo ${repo}.\\n` +
+  const prompt = `${w.setup}${RULES}\n\nTicket #${t.n}: ${t.title}. Repo ${repo}.\n` +
     `Stage: uat. Read ${pluginDir}/skills/uat/SKILL.md and follow it with Mode: auto, only after your worktree exists. Never ask anyone. ` +
     `The recipe file is ${pluginDir}/skills/verify/references/run-app.md. ` +
-    `The request text below is your only source: do not run gh issue view, and do not read git log, diffs, docs/adr/, specs/ or any plan. Keep the evidence local and uncommitted; fix nothing.\\n\\n` +
-    `Owner's request (the issue body, verify rows removed by the workflow):\\n<<<\\n${body}\\n>>>\\n\\n` +
-    (owner ? `Owner-confirmed decisions (the owner's own words):\\n<<<\\n${owner}\\n>>>\\n\\n` : '') +
-    `Config: ${configPath} (read-only; use this path, not the repo root; run its startCommand from ${w.dir}).\\n` +
+    `The request text below is your only source: do not run gh issue view, and do not read git log, diffs, docs/adr/, specs/ or any plan. Keep the evidence local and uncommitted; fix nothing.\n\n` +
+    `Owner's request (the issue body, verify rows removed by the workflow):\n<<<\n${body}\n>>>\n\n` +
+    (owner ? `Owner-confirmed decisions (the owner's own words):\n<<<\n${owner}\n>>>\n\n` : '') +
+    `Config: ${configPath} (read-only; use this path, not the repo root; run its startCommand from ${w.dir}).\n` +
     `Return passed_ac, scenarios (id, covers, kind, status, assertion, still), non_ac_failures and console_errors. If the run could not happen (no config, app will not start, no credentials), return status blocked with blocked_reason.`
   return call(prompt, { label, phase: 'UAT', schema: UAT_SCHEMA, model: MODEL.verify, effort: EFFORT.verify })
 }
@@ -785,7 +785,7 @@ async function stageUat(delivered) {
     if (res.passed_ac === false) {
       const failing = rec.scenarios.filter(s => s.kind === 'ac' && s.status === 'FAIL')
       const fix = await fixAgent(`uat-fix:${t.n}`,
-        `UAT on the running app found acceptance criteria of ticket #${t.n} that fail:\\n${failing.map(s => `- ${s.covers}: ${s.assertion || s.id}`).join('\\n') || '- (see the UAT summary) ' + (res.summary || '')}\\nFix the code so the owner's request holds.`,
+        `UAT on the running app found acceptance criteria of ticket #${t.n} that fail:\n${failing.map(s => `- ${s.covers}: ${s.assertion || s.id}`).join('\n') || '- (see the UAT summary) ' + (res.summary || '')}\nFix the code so the owner's request holds.`,
         '', 'UAT')
       takeDecisions(t.n, 'uat-fix', fix)
       rec.fixed = !!(fix && fix.fix_status === 'fixed')
