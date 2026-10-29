@@ -49,6 +49,7 @@ A branch is removed by the first rule that fits:
    `<remote>/main` is missing, no rule applies and the branch is kept.
 
 `git worktree remove` has no force flag: it refuses a worktree with changes or a lock. The hook never touches `main`, `master`,
+`develop`, `development`, `staging`, `production`, `release/*`, `release-*`,
 a `CLEAN_KEEP` name, the current branch (checked before every rule), or the worktree the session runs in.
 
 Settings (space-separated lists), set in the `env` block of `.claude/settings.json`:
@@ -56,7 +57,7 @@ Settings (space-separated lists), set in the `env` block of `.claude/settings.js
 | Variable | Default | Effect |
 |---|---|---|
 | `CLEAN_REMOTE` | `origin` | Remote used for the fetch, rule 2, rule 3 and `CLEAN_RECREATE` |
-| `CLEAN_KEEP` | empty | Extra protected branch names, added to `main master` and the current branch |
+| `CLEAN_KEEP` | empty | Extra protected branch names, added to `main master`, the long-lived names above and the current branch |
 | `CLEAN_STRICT` | empty | Globs (for example `run/*`). A match is removed only by rule 1 (exact-tip merged PR), never by rules 2 or 3 |
 | `CLEAN_RECREATE` | empty | Base branches to recreate: when `git ls-remote` says the name is missing (exit 2), push `<remote>/main` as that branch. Any other `ls-remote` failure does nothing |
 

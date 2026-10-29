@@ -245,6 +245,15 @@ t "item 6: without CLEAN_KEEP the same merged branch is removed"
 rrun ""
 if ! has automation; then pass; else fail "out=$OUT"; fi
 
+# long-lived branches are never removed, even with a merged PR at the exact tip
+for lb in develop release/1.0; do
+  rsetup; git -C "$MAIN" checkout -q -b "$lb"; git -C "$MAIN" commit -q --allow-empty -m w; git -C "$MAIN" checkout -q main
+  git -C "$MAIN" merge -q --no-ff "$lb" -m m; ghstub "$lb" "$(git -C "$MAIN" rev-parse "$lb")"
+  t "long-lived branch $lb is kept despite a merged PR at its tip"
+  rrun ""
+  if has "$lb"; then pass; else fail "out=$OUT"; fi
+done
+
 # item 7: CLEAN_STRICT
 rsetup; gone_branch run/1; NOGH_RUN=1
 t "item 7: a CLEAN_STRICT branch is not removed by the upstream-gone rule (no gh)"

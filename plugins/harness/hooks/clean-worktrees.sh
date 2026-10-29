@@ -7,7 +7,7 @@
 # gone and its tip is an ancestor of <remote>/main; (3) a `worktree-*` agent branch that no worktree
 # has checked out and whose tip is in a <remote>/* branch (only after a successful fetch). Every rule except (1) uses `git branch -d`.
 # `git worktree remove` has no force flag: it refuses a dirty or locked worktree.
-# Never touches main, master, CLEAN_KEEP names, the current branch, or the worktree the session runs in.
+# Never touches main, master, develop, development, staging, production, release/*, release-*, CLEAN_KEEP names, the current branch, or the worktree the session runs in.
 # A branch matching CLEAN_STRICT gets only rule (1). Settings (env): CLEAN_REMOTE (default origin),
 # CLEAN_KEEP, CLEAN_STRICT, CLEAN_RECREATE (space separated). It runs `git fetch --prune` first.
 # Hook use: `clean-worktrees.sh PostToolUse` reads the tool payload on stdin. It acts only on a real
@@ -120,6 +120,7 @@ del_contained() { git branch -d "$1" >/dev/null 2>&1 || git update-ref -d "refs/
 for b in $(git for-each-ref --format='%(refname:short)' refs/heads); do
   [ -z "$only" ] || case "$only" in *" $b "*) ;; *) continue ;; esac
   case "$keep" in *" $b "*) continue ;; esac
+  case "$b" in develop|development|staging|production|release/*|release-*) continue ;; esac  # long-lived branches
   tip=$(git rev-parse -q --verify "refs/heads/$b") || continue
   strict=""; is_strict "$b" && strict=1
   p=$(wt_of "$b")
