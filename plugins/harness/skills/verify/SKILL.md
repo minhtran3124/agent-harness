@@ -32,7 +32,7 @@ Others skip Start config and Login; never read, create or commit `verify.config.
    BLOCKED and write no file.
 3. `loginEnv` holds the NAMES `VERIFY_USER` and `VERIFY_PASSWORD`. Never a value.
 4. Commit the file on the ticket branch.
-5. With a `${PORT}` placeholder in `baseUrl`, export a free `PORT` and substitute it; export each `env` entry. Start `startCommand` in the background, wait until `baseUrl` answers, stop it after.
+5. With a `${PORT}` placeholder in `baseUrl`, export a free `PORT` and substitute it; export each `env` entry; resolve `$VERIFY_*`. Start `startCommand` in the background, wait for `baseUrl`, stop it after.
 
 See `references/config.md` for `env`, `${PORT}` and throwaway credentials.
 

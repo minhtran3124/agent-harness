@@ -141,4 +141,7 @@ t "Base mode keeps 'Do not retry' and 'the workflow decides'; Report leaves the 
 grep -A8 '^## Base mode' "$SKILL" | grep -q 'Do not retry' && grep -A8 '^## Base mode' "$SKILL" | grep -q 'workflow decides' \
   && grep -q 'workflow builds the GIF' "$SKILL" && pass || fail "retry or workflow rule missing"
 
+t "Step 5 says to resolve \$VERIFY_* references in env, not export them literally"
+grep '^5\.' "$SKILL" | grep -qF 'resolve `$VERIFY_*`' && pass || fail "env reference resolution missing"
+
 finish
