@@ -40,7 +40,7 @@ picks the model and effort for every call below.
    the last time the owner is asked.
 8. **Launch.** Call Workflow with `name: "harness:ship"` and `args` as a real
    object that includes `pluginDir: "${CLAUDE_PLUGIN_ROOT}"` (see `references/launch-args.md`). Take `testCmd`, `lintCmd` and `fullTestCmd` from
-   the repo's CLAUDE.md or README, never from memory. If one is missing, ask in step 7. With
+   the repo's `CLAUDE.md` → `## Run and test` first, then the README, never from memory. If one is missing, ask in step 7. With
    `--no-ask`, record a `needs_review` decision and use `fullTestCmd` only. Tell the owner
    the run ID and that `/workflows` shows progress, then wait for completion. Answer
    "done yet?" from the phase and agent counts. On completion report as
@@ -50,7 +50,7 @@ picks the model and effort for every call below.
 
 - Nothing is merged into the base or main. Work happens in worktrees, never in the owner's checkout.
 - Skip a stuck or very risky ticket and report it.
-- The project's CLAUDE.md wins. A bug ticket needs a failing repro test first (the workflow's stage
+- The project's CLAUDE.md wins, except the hard rules (never merge into the base branch or main, never force-push, never touch secrets, never weaken a test). A bug ticket needs a failing repro test first (the workflow's stage
   prompts enforce it).
 
 ## Auto mode
