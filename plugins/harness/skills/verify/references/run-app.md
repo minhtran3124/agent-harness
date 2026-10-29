@@ -16,7 +16,7 @@ Others skip Start config and Login; never read, create or commit `verify.config.
 4. Commit the file on the ticket branch.
 5. With a `${PORT}` placeholder in `baseUrl`, export a free `PORT` and substitute it; export each `env` entry; resolve `$VERIFY_*`. Start `startCommand` in the background, wait for `baseUrl`, stop it after.
 
-See `references/config.md` for `env`, `${PORT}` and throwaway credentials.
+See `config.md` for `env`, `${PORT}` and throwaway credentials.
 
 ## Login
 

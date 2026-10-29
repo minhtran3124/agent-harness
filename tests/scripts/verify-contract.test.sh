@@ -125,8 +125,8 @@ for w in 'env' '${PORT}' 'throwaway credentials OK' 'browser_fill_form' 'browser
 done
 [ -z "$miss" ] && pass || fail "reference missing:$miss"
 
-t "run-app.md points to references/config.md"
-grep -q 'references/config.md' "$RUN" && pass || fail "pointer missing"
+t "run-app.md points to its sibling config.md, not references/config.md"
+grep -q '`config.md`' "$RUN" && ! grep -q 'references/config.md' "$RUN" && [ -f "$(dirname "$RUN")/config.md" ] && pass || fail "pointer missing or wrong relative path"
 
 t "storageState path is named and gitignored"
 grep -q 'storageState.*\.playwright-mcp/' "$RUN" && grep -qx '\.playwright-mcp/' "$ROOT/.gitignore" && pass || fail "storageState path missing or not gitignored"
