@@ -7,6 +7,7 @@ export const meta = {
     { title: 'Merge', detail: 'merge a finished group into the integration branch (multi-ticket only)' },
     { title: 'Review', detail: 'code-review the final PR, fix findings, re-review only the fix commits' },
     { title: 'Intent review', detail: 'plan-blind check of the final diff against the original request' },
+    { title: 'UAT', detail: 'plan-blind acceptance test of the running app against the original request (FE, BE, FE+BE)' },
     { title: 'Testing', detail: 'full test suite once, on the final branch' },
     { title: 'Decisions', detail: 'artifact, ADR files, final PR body' },
   ],
@@ -92,8 +93,19 @@ const IMPLEMENT_SCHEMA = stageSchema({
 const VERIFY_SCHEMA = stageSchema({
   passed: { type: 'boolean', description: 'true only when every step and command of the Verify: row passed and the browser console had no errors' },
   kind: { type: 'string', enum: ['BE', 'FE', 'FE+BE', 'docs'], description: 'the ticket type from the Verify: row' },
+  configPath: { type: 'string', description: 'absolute path of the verify.config.json you used, or empty when the Verify: row used none' },
   failedStep: STR, consoleErrors: strList, stills: { type: 'array', items: STR, description: 'absolute local paths of the screenshots' }, report: STR,
 }, ['passed', 'kind'])
+// UAT: status blocked means the run did not happen (no config, app will not start, no credentials); it is never an AC failure.
+const UAT_SCHEMA = stageSchema({
+  passed_ac: { type: 'boolean', description: 'true only when every browser-checkable AC scenario passed' },
+  scenarios: { type: 'array', items: { type: 'object',
+    properties: { id: STR, covers: STR, kind: { type: 'string', enum: ['ac', 'negative', 'extra', 'not-browser-checkable'] },
+      status: { type: 'string', enum: ['PASS', 'FAIL', 'SKIPPED'] }, assertion: STR, still: STR },
+    required: ['id', 'covers', 'kind', 'status'] } },
+  non_ac_failures: { type: 'array', items: { type: 'object', properties: { id: STR, detail: STR }, required: ['id', 'detail'] } },
+  console_errors: NUM,
+}, ['passed_ac', 'scenarios'])
 const GIF_SCHEMA = stageSchema({ gif: { type: 'string', description: 'absolute path of the GIF, or empty when none was built' } }, ['gif'])
 const FINISH_SCHEMA = stageSchema({ pr: NUM, url: STR, body_file: STR }, ['pr'])
 const SETUP_SCHEMA = stageSchema({})
@@ -366,7 +378,7 @@ function stageVerify(t, impl, mode) {
     (base
       ? `Mode: base. Your worktree ${dir} holds the base commit, without the ticket code. Read verify.config.json from ${impl.worktree}/verify.config.json (read-only; copy it into ${dir} without committing it). The steps are expected to FAIL here: report the real result. Commit nothing.\n`
       : `Mode: head. Work in ${impl.worktree} (cd there; it is the ticket branch ${impl.branch}). Commit only verify.config.json, nothing else.${mode === 'verify-retry' ? ' This is a second run after a failure: start the app fresh and run every step again.' : ''}\n`) +
-    `Do not fix code, retry, or judge flakiness. Keep the evidence local and uncommitted. Return passed (true only if every step passed and the console had no errors), kind, failedStep, consoleErrors, stills (absolute paths) and report (the table).${advice}`, dir)
+    `Do not fix code, retry, or judge flakiness. Keep the evidence local and uncommitted. Return passed (true only if every step passed and the console had no errors), kind, configPath (the absolute path of the verify.config.json you used, empty when none), failedStep, consoleErrors, stills (absolute paths) and report (the table).${advice}`, dir)
   return runStage(t, mode, build, VERIFY_SCHEMA, { model: MODEL.verify, effort: EFFORT.verify })
 }
 
@@ -409,7 +421,8 @@ async function verifyTicket(t, impl) {
   }
   const stills = r.stills || []
   const gif = await buildGif(t, impl, stills)
-  return { result, kind: r.kind, base: baseResult, stills, dir, gif, report: r.report || '' }
+  // UAT reads this path from the prompt, not the repo root (the Verify: row may name another config).
+  return { result, kind: r.kind, base: baseResult, stills, dir, gif, report: r.report || '', configPath: r.configPath || `${impl.worktree}/verify.config.json` }
 }
 
 // Stills to one GIF with ffmpeg. Any problem gives null and a log line; it never changes the verify result.
@@ -673,14 +686,14 @@ async function reviewWithRetry(label, level, target, rangeNote) {
   return { notRun: why(res) }
 }
 
-function fixAgent(label, findingText, extra) {
+function fixAgent(label, findingText, extra, phaseName) {
   const w = newWt(`fix-${label}`, null, finalRef)
   const prompt = `${w.setup}${RULES}\n\n` +
     `Stage: fix. Run "git rev-parse HEAD" first and return it as base_sha. ${findingText}\n${runBoundaryText()}` +
     `Make one commit ("git add", then "git commit"), include a test that fails without the fix, run only the related tests (${testCmd}) and lint (${lintCmd}). ` +
     `Then land it: ${land(finalBranch)}. Return the commit sha as commit. ${extra || ''}` +
     `If the finding is wrong or cannot be fixed safely, change nothing and return fix_status skipped or failed with the reason in summary.`
-  return call(prompt, { label, phase: 'Review', schema: FIX_SCHEMA, model: MODEL.fix, effort: EFFORT.fix })
+  return call(prompt, { label, phase: phaseName || 'Review', schema: FIX_SCHEMA, model: MODEL.fix, effort: EFFORT.fix })
 }
 
 async function stageReview(finalPr) {
@@ -748,21 +761,32 @@ async function stageReview(finalPr) {
   return out
 }
 
-async function requestText(done) {
+// Per-ticket request text, cached so the UAT stage reuses it without another agent call.
+const requestCache = new Map()   // ticket number -> { body, fetched }
+async function requestTexts(done) {
   const parts = await parallel(done.map(r => () => {
     const t = tickets.find(x => x.n === r.n)
     if (LOCAL) return Promise.resolve({ body: t.body || t.title })
     return call(`Run: gh issue view ${t.n} --repo ${repo} --json body -q .body\nReturn its output unchanged in body. Do not summarise or edit it.`,
       { label: `request:${t.n}`, phase: 'Intent review', schema: REQUEST_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
   }))
-  return done.map((r, i) => {
+  const texts = new Map()
+  done.forEach((r, i) => {
     const t = tickets.find(x => x.n === r.n)
-    return `### #${t.n} ${t.title}\n${(parts[i] && parts[i].body) || t.title}`
-  }).join('\n\n')
+    const got = parts[i] && parts[i].body
+    const e = { body: got || t.title, fetched: !!got }
+    texts.set(t.n, e)
+    requestCache.set(t.n, e)
+  })
+  return texts
 }
 
 async function stageIntentReview(done) {
-  const request = await requestText(done)
+  const texts = await requestTexts(done)
+  const request = done.map(r => {
+    const t = tickets.find(x => x.n === r.n)
+    return `### #${t.n} ${t.title}\n${texts.get(t.n).body}`
+  }).join('\n\n')
   // Plan-blind on purpose: the request, the owner's own confirmed decisions (owner words, not agent plan) and the range. No plan, design, ADR or summary.
   const owner = done.map(r => tickets.find(x => x.n === r.n)).filter(t => t && t.confirmed && t.confirmed.trim())
     .map(t => `### #${t.n}\n${t.confirmed.trim()}`).join('\n\n')
@@ -785,6 +809,117 @@ async function stageIntentReview(done) {
     takeDecisions('run', 'intent-fix', fix)
   }
   return { verdict: res ? res.verdict : 'unknown', gaps: findings, fixRound: fixable.length > 0 }
+}
+
+// Drop each Verify: row and its continuation. Continuation = a line indented deeper than the row (sub-bullets too) or a wrapped plain-prose line at the row's own level. A blank line, a heading, a list bullet or a "Label:" line at the row's level ends the row, so tight AC lines under it stay. A mid-sentence mention stays.
+const VERIFY_ROW = /^\s*(?:[-*>]\s*)?(?:\*\*|__)?Verify:/
+const NEW_BLOCK = /^\s*(?:[-*+>#]|\d+[.)])\s|^\s*(?:\*\*|__)?[A-Za-z][\w -]{0,24}:/
+function stripVerify(text) {
+  let skipping = false, count = 0, rowIndent = 0
+  const kept = []
+  for (const line of String(text || '').split('\n')) {
+    const indent = line.match(/^\s*/)[0].length
+    if (VERIFY_ROW.test(line)) { skipping = true; rowIndent = indent; count++; continue }
+    if (skipping && line.trim() && (indent > rowIndent || !NEW_BLOCK.test(line))) { count++; continue }
+    skipping = false
+    kept.push(line)
+  }
+  return { text: kept.join('\n'), count }
+}
+
+// One plan-blind UAT agent. No head(): that tells the agent to run gh issue view and would hand it the Verify row.
+// The prompt holds the stripped request, the stripped owner block and the config path. No plan, diff or Verify row.
+function uatAgent(label, wtName, t, body, owner, configPath) {
+  const w = newWt(wtName, null, finalRef)
+  const prompt = `${w.setup}${RULES}\n\nTicket #${t.n}: ${t.title}. Repo ${repo}.\n` +
+    `Stage: uat. Read ${pluginDir}/skills/uat/SKILL.md and follow it with Mode: auto, only after your worktree exists. Never ask anyone. ` +
+    `The recipe file is ${pluginDir}/skills/verify/references/run-app.md. ` +
+    `The request text below is your only source: do not run gh issue view, and do not read git log, diffs, docs/adr/, specs/ or any plan. Keep the evidence local and uncommitted; fix nothing.\n\n` +
+    `Owner's request (the issue body, verify rows removed by the workflow):\n<<<\n${body}\n>>>\n\n` +
+    (owner ? `Owner-confirmed decisions (the owner's own words):\n<<<\n${owner}\n>>>\n\n` : '') +
+    `Config: ${configPath} (read-only; use this path, not the repo root; run its startCommand from ${w.dir}). If that file does not exist, use verify.config.json at the root of your own worktree ${w.dir} (verify commits it to the ticket branch); report blocked only when neither exists.\n` +
+    `Return passed_ac, scenarios (id, covers, kind, status, assertion, still), non_ac_failures and console_errors. If the run could not happen (no config, app will not start, no credentials), return status blocked with blocked_reason.`
+  return call(prompt, { label, phase: 'UAT', schema: UAT_SCHEMA, model: MODEL.verify, effort: EFFORT.verify })
+}
+
+async function runUat(label, wtName, t, body, owner, configPath) {
+  try { return await uatAgent(label, wtName, t, body, owner, configPath) }
+  catch (e) { log(`UAT #${t.n} ${label} failed: ${e && e.message}`); return null }   // an infrastructure failure never fails the ticket
+}
+
+// The agent's passed_ac is a claim and must be exactly true (a missing value is not a pass): an AC row with FAIL also fails the run. Console errors are reported, never blocking: unrelated noise must not fail a ticket whose ACs pass.
+const uatOk = res => res.passed_ac === true &&
+  !(res.scenarios || []).some(s => s.kind === 'ac' && s.status === 'FAIL')
+
+const uatNotRun = (n, reason) => addDecision(n, 'uat', {
+  title: `UAT not run for #${n}`, context: `The UAT stage could not check the running app: ${reason}`,
+  decision: 'Continue without UAT; the ticket stays done and the PR body says UAT did not run.',
+  why: 'A missing config, a start failure or an agent failure is not an acceptance failure, so no code fix is attempted.',
+  consequences: 'The running app was not checked against the original request.', how_to_reverse: `Run /harness:uat ${n} by hand.`,
+  needs_review: true,
+})
+
+// Serial over the tickets: one app, one port. Returns n -> { status, reason, scenarios, fixed } for the PR body.
+async function stageUat(delivered) {
+  const records = {}
+  if (LOCAL) { log('UAT skipped: local mode has no verify result'); return records }
+  for (const r of delivered) {
+    const t = tickets.find(x => x.n === r.n)
+    const kind = r.verify && r.verify.kind
+    if (!kind) { log(`UAT #${t.n} skipped: no verify result`); continue }
+    if (kind === 'docs') { log(`UAT #${t.n} skipped: docs ticket`); continue }
+    const cached = requestCache.get(t.n)
+    if (!cached || !cached.fetched) { uatNotRun(t.n, 'the issue body could not be read'); records[t.n] = { status: 'not run', reason: 'issue body unreadable', scenarios: [] }; continue }
+    const body = stripVerify(cached.body), owner = stripVerify(t.confirmed ? t.confirmed.trim() : '')
+    log(`UAT #${t.n}: stripped ${body.count} line(s) from the body and ${owner.count} from the owner block`)
+    const configPath = (r.verify && r.verify.configPath) || `${repoDir}/verify.config.json`
+    const rec = { status: 'passed', reason: '', scenarios: [], fixed: false }
+    records[t.n] = rec
+    let res = await runUat(`uat:${t.n}`, `uat-${t.n}`, t, body.text, owner.text, configPath)
+    if (!res || res.status === 'blocked') {
+      const why = (res && (res.blocked_reason || res.summary)) || 'the UAT agent returned nothing'
+      uatNotRun(t.n, why); rec.status = 'not run'; rec.reason = why
+      continue
+    }
+    takeDecisions(t.n, 'uat', res)
+    rec.scenarios = res.scenarios || []
+    if (!uatOk(res)) {
+      const failing = rec.scenarios.filter(s => s.kind === 'ac' && s.status === 'FAIL')
+      const fix = await fixAgent(`uat-fix:${t.n}`,
+        `UAT on the running app found acceptance criteria of ticket #${t.n} that fail:\n${failing.map(s => `- ${s.covers}: ${s.assertion || s.id}`).join('\n') || '- (see the UAT summary) ' + (res.summary || '')}\nFix the code so the owner's request holds. Console errors are report-only: do not fix them unless a failing AC needs it.`,
+        '', 'UAT')
+      takeDecisions(t.n, 'uat-fix', fix)
+      rec.fixed = !!(fix && fix.fix_status === 'fixed')
+      // No fix commit landed: a rerun would test the same code, so skip it and let the first result stand.
+      const again = rec.fixed ? await runUat(`uat-rerun:${t.n}`, `uat-rerun-${t.n}`, t, body.text, owner.text, configPath) : res   // own worktree: it must see the fix
+      if (!rec.fixed) log(`UAT #${t.n}: fix ${fix && fix.fix_status || 'returned nothing'}, rerun skipped`)
+      if (!again || again.status === 'blocked') {
+        const why = (again && (again.blocked_reason || again.summary)) || 'the UAT rerun agent returned nothing'
+        uatNotRun(t.n, `rerun: ${why}`); rec.status = 'not run'; rec.reason = `rerun: ${why}`
+        continue
+      }
+      takeDecisions(t.n, 'uat-rerun', again)
+      rec.scenarios = again.scenarios || rec.scenarios
+      res = again
+    }
+    if (!uatOk(res)) {
+      rec.status = 'failed'; rec.reason = 'UAT AC failed'
+      r.status = 'blocked'; r.reason = 'UAT AC failed'   // code stays, the PR still opens, nothing is reverted
+      addDecision(t.n, 'uat', {
+        title: `UAT AC failed for #${t.n}`, context: 'An acceptance criterion still failed on the running app after one fix round and one rerun.',
+        options: ['Mark the ticket blocked, keep the code', 'Revert the code', 'Ignore the failure'], decision: 'Mark the ticket blocked with reason "UAT AC failed" and keep the code.',
+        why: 'The owner decided that an AC failure fails the ticket, with no revert.',
+        consequences: 'The PR body says Refs instead of Closes for this ticket and the run output shows it blocked.', how_to_reverse: 'Fix the AC, then close the issue by hand.',
+        needs_review: true,
+      })
+    }
+    for (const f of res.non_ac_failures || []) addDecision(t.n, 'uat', {
+      title: `UAT ${f.id} failed for #${t.n}`, context: `A negative or extra scenario failed on the running app: ${f.detail}`,
+      decision: 'Continue the run; the owner decides.', why: 'Only an AC failure fails the ticket; a negative or extra failure is for the owner to review.',
+      consequences: 'The behaviour that scenario covers may be wrong.', how_to_reverse: 'Fix the code the scenario exercises.', needs_review: true,
+    })
+  }
+  return records
 }
 
 async function stageSuite() {
@@ -834,7 +969,7 @@ async function stageAdr(finalPr, artifact, bodyTemplate) {
 }
 
 // The script writes the PR body text; the ADR stage only substitutes {{DECISIONS}} and publishes it.
-function buildBody(results, review, intent, suite) {
+function buildBody(results, review, intent, suite, uat = {}) {
   const done = results.filter(r => r.status === 'done')
   const open = results.filter(r => r.status !== 'done')
   const L = []
@@ -871,6 +1006,15 @@ function buildBody(results, review, intent, suite) {
   }
   L.push('', '## Intent review', '', `Verdict: ${intent.verdict}${intent.fixRound ? ' (one fix round ran, not re-reviewed)' : ''}`)
   for (const g of intent.gaps) L.push(`- ${g.kind}${g.behaviour_changing ? ' (behaviour-changing)' : ''}: ${g.clause}: ${g.detail}`)
+  const uatRows = Object.entries(uat).filter(([, u]) => u.scenarios.length || u.status === 'not run')
+  if (uatRows.length) {
+    L.push('', '## UAT sign-off', '', 'A human ticks these. Nothing enforces or waits on them.')
+    for (const [n, u] of uatRows) {
+      L.push(`- ${ref(Number(n))} UAT: ${u.status}${u.fixed ? ' (one fix round ran, not re-reviewed)' : ''}${u.reason ? ` (${u.reason})` : ''}`)
+      for (const s of u.scenarios) L.push(`  - [ ] ${s.id} ${s.covers} (${s.kind}): ${s.status}${s.assertion ? `: ${s.assertion}` : ''}`)
+    }
+    L.push('- [ ] Copy reads right', '- [ ] Layout looks right', '- [ ] The flow feels right')
+  }
   L.push('', '## Final verification', '', `Passed ${suite.passed}, failed ${suite.failed}, skipped ${suite.skipped}.${suite.note ? ` ${suite.note}.` : ''}`)
   L.push('', '{{DECISIONS}}', '', PR_FOOTER)
   return L.join('\n')
@@ -974,6 +1118,10 @@ const intent = await stageIntentReview(deliveredAll)
 out.intent = { verdict: intent.verdict, gaps: intent.gaps }
 log(`intent review: ${intent.verdict}, ${intent.gaps.length} finding(s)${intent.fixRound ? ', one fix round ran' : ''}`)
 
+phase('UAT')
+const uat = await stageUat(deliveredAll)
+log(`UAT: ${Object.keys(uat).length} ticket(s) checked, ${Object.values(uat).filter(u => u.status === 'failed').length} failed`)
+
 phase('Testing')
 const suite = await stageSuite()
 out.suite = suite
@@ -982,7 +1130,7 @@ log(`full suite: ${suite.passed} passed, ${suite.failed} failed, ${suite.skipped
 phase('Decisions')
 const artifact = await stageArtifact(ordered())
 out.artifact = artifact
-const adr = await stageAdr(finalPr, artifact, buildBody(ordered(), review, intent, suite))
+const adr = await stageAdr(finalPr, artifact, buildBody(ordered(), review, intent, suite, uat))
 takeDecisions('run', 'adr', adr)
 out.adrs = (adr.adrs || []).map(a => ({ number: a.number, path: a.path, needsReview: !!a.needs_review }))
 log(`decisions: ${decisions.length} recorded, ${out.adrs.length} ADR file(s)`)

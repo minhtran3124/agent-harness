@@ -37,6 +37,7 @@ intake   readiness gate: READY | CONFIRM | GRILL | BLOCKED, depth S | M | L
   -> writing-plans          every depth (one or two steps for S)
   -> implement   one implementer subagent per step, each in an isolated worktree
   -> /code-review, intent-review
+  -> uat         plan-blind acceptance test on the running app (ship.js, FE/BE tickets)
   -> finishing-a-development-branch   push and open a PR; a human merges
 ```
 

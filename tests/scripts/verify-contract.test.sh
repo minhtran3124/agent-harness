@@ -4,6 +4,7 @@
 # the no-secrets rule for verify.config.json, and that the fixture server starts.
 source "$(dirname "$0")/../lib.sh"
 SKILL="$ROOT/plugins/harness/skills/verify/SKILL.md"
+RUN="$ROOT/plugins/harness/skills/verify/references/run-app.md"
 FIX="$ROOT/tests/fixtures/verify-app"
 
 t "verify SKILL.md stays under 600 words"
@@ -17,11 +18,15 @@ t "name verify exists only under plugins/harness/skills, never as a project skil
 if [ -f "$ROOT/plugins/harness/skills/verify/SKILL.md" ] && [ ! -e "$ROOT/.claude/skills/verify" ] \
    && grep -q '^name: verify$' "$SKILL"; then pass; else fail "verify skill misplaced"; fi
 
-t "SKILL.md names the five Playwright tools and the two login variables"
+t "SKILL.md names the Playwright tools; run-app.md names them and the two login variables"
 miss=""
 for w in browser_navigate browser_snapshot browser_take_screenshot browser_console_messages \
-         browser_run_code_unsafe VERIFY_USER VERIFY_PASSWORD; do
+         browser_run_code_unsafe; do
   grep -q "$w" "$SKILL" || miss="$miss $w"
+done
+for w in browser_navigate browser_snapshot browser_take_screenshot browser_console_messages \
+         browser_run_code_unsafe VERIFY_USER VERIFY_PASSWORD; do
+  grep -q "$w" "$RUN" || miss="$miss run:$w"
 done
 [ -z "$miss" ] && pass || fail "missing:$miss"
 
@@ -120,21 +125,21 @@ for w in 'env' '${PORT}' 'throwaway credentials OK' 'browser_fill_form' 'browser
 done
 [ -z "$miss" ] && pass || fail "reference missing:$miss"
 
-t "SKILL.md points to references/config.md"
-grep -q 'references/config.md' "$SKILL" && pass || fail "pointer missing"
+t "run-app.md points to its sibling config.md, not references/config.md"
+grep -q '`config.md`' "$RUN" && ! grep -q 'references/config.md' "$RUN" && [ -f "$(dirname "$RUN")/config.md" ] && pass || fail "pointer missing or wrong relative path"
 
 t "storageState path is named and gitignored"
-grep -q 'storageState.*\.playwright-mcp/' "$SKILL" && grep -qx '\.playwright-mcp/' "$ROOT/.gitignore" && pass || fail "storageState path missing or not gitignored"
+grep -q 'storageState.*\.playwright-mcp/' "$RUN" && grep -qx '\.playwright-mcp/' "$ROOT/.gitignore" && pass || fail "storageState path missing or not gitignored"
 
 t "docs or config tickets skip Start config and never touch verify.config.json"
-grep -q 'never read, create or commit' "$SKILL" && pass || fail "skip rule for docs or config tickets missing"
+grep -q 'never read, create or commit' "$RUN" && pass || fail "skip rule for docs or config tickets missing"
 
 t "Start config forbids an empty baseUrl or startCommand and reports BLOCKED"
-grep -qi 'empty' "$SKILL" && grep -i 'empty' "$SKILL" | grep -q 'baseUrl' \
-  && grep -i 'empty' -A2 "$SKILL" | grep -q 'BLOCKED' && pass || fail "empty-value rule or BLOCKED missing"
+grep -qi 'empty' "$RUN" && grep -i 'empty' "$RUN" | grep -q 'baseUrl' \
+  && grep -i 'empty' -A2 "$RUN" | grep -q 'BLOCKED' && pass || fail "empty-value rule or BLOCKED missing"
 
 t "Start config step 5 and Base mode say to resolve PORT and export env"
-grep -q '^5\..*PORT.*export' "$SKILL" && grep -A1 '^5\.' "$SKILL" | grep -q 'env' \
+grep -q '^5\..*PORT.*export' "$RUN" && grep -A1 '^5\.' "$RUN" | grep -q 'env' \
   && grep -q 'Base mode' "$SKILL" && grep -A6 '^## Base mode' "$SKILL" | grep -q 'PORT' && pass || fail "PORT or env export missing in step 5 or Base mode"
 
 t "Base mode keeps 'Do not retry' and 'the workflow decides'; Report leaves the GIF to the workflow"
@@ -142,6 +147,19 @@ grep -A8 '^## Base mode' "$SKILL" | grep -q 'Do not retry' && grep -A8 '^## Base
   && grep -q 'workflow builds the GIF' "$SKILL" && pass || fail "retry or workflow rule missing"
 
 t "Step 5 says to resolve \$VERIFY_* references in env, not export them literally"
-grep '^5\.' "$SKILL" | grep -qF 'resolve `$VERIFY_*`' && pass || fail "env reference resolution missing"
+grep '^5\.' "$RUN" | grep -qF 'resolve `$VERIFY_*`' && pass || fail "env reference resolution missing"
+
+t "SKILL.md tells the agent to read references/run-app.md before Start config, Login or Browser steps"
+grep -q 'read `references/run-app.md`' "$SKILL" && grep -q 'Start config, Login or Browser steps' "$SKILL" && pass || fail "run-app.md pointer missing"
+
+t "verify SKILL.md is at most 450 words"
+[ "$(wc -w < "$SKILL")" -le 450 ] && pass || fail "over 450 words"
+
+t "uat SKILL.md locates run-app.md through CLAUDE_PLUGIN_ROOT, not a path relative to the skill folder"
+UAT="$ROOT/plugins/harness/skills/uat/SKILL.md"
+if grep -q 'CLAUDE_PLUGIN_ROOT}/skills/verify/references/run-app.md' "$UAT" && ! grep -q '\.\./verify/' "$UAT"; then pass; else fail "uat still uses ../verify path"; fi
+
+t "uat SKILL.md takes the recipe path from the prompt before CLAUDE_PLUGIN_ROOT"
+if grep -q 'The recipe file is' "$UAT" && grep -q 'does not resolve' "$UAT"; then pass; else fail "uat Step 0 depends only on CLAUDE_PLUGIN_ROOT"; fi
 
 finish
