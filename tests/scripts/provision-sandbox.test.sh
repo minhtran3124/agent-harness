@@ -152,4 +152,107 @@ OUT=$(bash "$SCRIPT" --audit 2>&1); rc1=$?
 audit "$repo" --max-kb abc
 if [ "$rc1" -eq 2 ] && [ "$RC" -eq 2 ]; then pass; else fail "rc=$rc1/$RC"; fi
 
+# ---- list and clean ----
+# fake gh on PATH: the branch name picks the answer.
+FAKEBIN=$(mktemp -d); _CLEANUP_DIRS+=("$FAKEBIN")
+cat > "$FAKEBIN/gh" <<'GH'
+#!/bin/bash
+case "$3" in
+  br/open) echo OPEN ;;
+  br/merged) echo MERGED ;;
+  br/fail) echo 'error connecting to api.github.com' >&2; exit 1 ;;
+  *) echo 'no pull requests found for branch "x"' >&2; exit 1 ;;
+esac
+GH
+chmod +x "$FAKEBIN/gh"
+days_ago() { date -u -d "$1 days ago" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -v-"$1"d +%Y-%m-%dT%H:%M:%SZ; }
+set_age() { sed -i.bak "s/\"created_at\":\"[^\"]*\"/\"created_at\":\"$(days_ago "$2")\"/" "$1/.sandbox.json"; rm -f "$1/.sandbox.json.bak"; }
+lst() { OUT=$(PATH="$FAKEBIN:$PATH" bash "$SCRIPT" list "$@" 2>&1); RC=$?; }
+cln() { OUT=$(PATH="$FAKEBIN:$PATH" bash "$SCRIPT" clean "$@" 2>&1); RC=$?; }
+state_of() { echo "$OUT" | awk -v n="$1" '$1 ~ n {print}'; }
+
+repo=$(mk_repo); root="$(dirname "$repo")/.ship-$(basename "$repo")"
+lst "$repo"
+t "list prints nothing and exits 0 when there are no sandboxes"
+if [ "$RC" -eq 0 ] && [ -z "$OUT" ]; then pass; else fail "rc=$RC $OUT"; fi
+
+printf 'link node_modules\n' > "$repo/.harness-sandbox"
+prov "$repo" a 1 run --branch br/running
+prov "$repo" c 2 open --branch br/open
+prov "$repo" c 3 merged --branch br/merged
+prov "$repo" c 4 old --branch br/old
+prov "$repo" a 5 fail --branch br/fail
+prov "$repo" c 6 stale --branch br/stale
+prov "$repo" c 7 garbage --branch br/garbage
+sleep 30 & SLEEPER=$!
+printf '%s\n' "$SLEEPER" > "$root/a-t1-run/.sandbox.pid"
+set_age "$root/c-t4-old" 10
+printf '99999999\n' > "$root/c-t6-stale/.sandbox.pid"
+printf 'not-a-pid\n' > "$root/c-t7-garbage/.sandbox.pid"
+set_age "$root/c-t7-garbage" 10
+
+t "list shows each state, with the header columns"
+lst "$repo"
+if [ "$RC" -eq 0 ] && echo "$OUT" | head -1 | grep -qE '^SANDBOX +BRANCH +STATE +SIZE +AGE' \
+  && state_of a-t1-run | grep -q 'running' && state_of c-t2-open | grep -q 'PR open' \
+  && state_of c-t3-merged | grep -q 'merged' && state_of c-t4-old | grep -q 'abandoned' \
+  && state_of a-t5-fail | grep -q 'unknown'; then pass; else fail "rc=$RC $OUT"; fi
+
+t "a stale or garbage pid file is not running"
+if ! state_of c-t6-stale | grep -q running && ! state_of c-t7-garbage | grep -q running \
+  && state_of c-t7-garbage | grep -q abandoned; then pass; else fail "$OUT"; fi
+
+t "list with no gh at all shows unknown and changes nothing"
+OUT=$(PATH="/usr/bin:/bin" bash -c 'command -v gh >/dev/null && exit 99; bash "$0" list "$1"' "$SCRIPT" "$repo" 2>&1); RC=$?
+if [ "$RC" -eq 99 ] || { [ "$RC" -eq 0 ] && echo "$OUT" | grep -q 'c-t3-merged.*unknown'; }; then pass; else fail "rc=$RC $OUT"; fi
+
+snap() { { git -C "$repo" worktree list; git -C "$repo" branch --list; find "$root" -maxdepth 1 | sort; } | md5sum 2>/dev/null || true; }
+t "clean without a selector, or with a bad --older, exits 2"
+cln "$repo"; rc1=$RC
+cln "$repo" --older abc; rc2=$RC
+cln "$repo" --older 7; rc3=$RC
+if [ "$rc1" -eq 2 ] && [ "$rc2" -eq 2 ] && [ "$rc3" -eq 2 ]; then pass; else fail "rc=$rc1/$rc2/$rc3"; fi
+
+t "dry run reports the plan and changes nothing"
+before=$(snap)
+cln "$repo" --older 7d
+after=$(snap)
+if [ "$RC" -eq 0 ] && echo "$OUT" | grep -q 'would remove c-t4-old (abandoned)' && [ "$before" = "$after" ]; then pass; else fail "rc=$RC $OUT"; fi
+
+t "running and unknown sandboxes are skipped even when selected, with and without --yes"
+cln "$repo" --run a --yes
+if echo "$OUT" | grep -q 'skip a-t1-run (running)' && echo "$OUT" | grep -q 'skip a-t5-fail (unknown)' \
+  && [ -d "$root/a-t1-run" ] && [ -d "$root/a-t5-fail" ]; then pass; else fail "rc=$RC $OUT"; fi
+
+t "--yes removes a symlinked node_modules as a link and the original survives"
+[ -L "$root/c-t3-merged/node_modules" ] || fail "setup: node_modules is not a link"
+cln "$repo" --merged --yes
+if [ ! -d "$root/c-t3-merged" ] && [ -f "$repo/node_modules/pkg/index.js" ] && [ "$(cat "$repo/node_modules/pkg/index.js")" = x ]; then pass; else fail "$OUT"; fi
+
+t "the branch survives a clean"
+if git -C "$repo" rev-parse --verify -q br/merged >/dev/null; then pass; else fail "branch gone"; fi
+
+t "a dirty sandbox (tracked change or untracked file) is refused, left intact, and clean exits 1"
+printf 'dirty\n' >> "$root/c-t4-old/app.txt"
+printf 'u\n' > "$root/c-t7-garbage/new.txt"
+cln "$repo" --older 7d --yes
+if [ "$RC" -eq 1 ] && echo "$OUT" | grep -q 'refused c-t4-old' && echo "$OUT" | grep -q 'refused c-t7-garbage' \
+  && grep -q dirty "$root/c-t4-old/app.txt" && [ -f "$root/c-t7-garbage/new.txt" ]; then pass; else fail "rc=$RC $OUT"; fi
+
+t "--merged removes only merged sandboxes; PR open stays"
+prov "$repo" b 1 m2 --branch br/merged
+cln "$repo" --merged --yes
+if [ "$RC" -eq 0 ] && [ ! -d "$root/b-t1-m2" ] && [ -d "$root/c-t2-open" ]; then pass; else fail "rc=$RC $OUT"; fi
+
+t "--older skips a sandbox with an open PR"
+set_age "$root/c-t2-open" 30
+cln "$repo" --older 7d --yes
+if ! echo "$OUT" | grep -q 'c-t2-open' && [ -d "$root/c-t2-open" ]; then pass; else fail "$OUT"; fi
+
+t "a directory that is not a registered worktree is reported and kept"
+mkdir -p "$root/stray"; printf 'x\n' > "$root/stray/f"
+cln "$repo" --older 0d --yes
+if echo "$OUT" | grep -q 'skip stray (not a registered' && [ -f "$root/stray/f" ]; then pass; else fail "$OUT"; fi
+kill "$SLEEPER" 2>/dev/null; wait "$SLEEPER" 2>/dev/null
+
 finish
