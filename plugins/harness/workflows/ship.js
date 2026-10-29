@@ -210,6 +210,11 @@ const land = branch => (LOCAL
 // ---------------------------------------------------------------------------
 // Agent calls
 // ---------------------------------------------------------------------------
+// Agent label shown in the agents panel: what the agent does, then what it works on, cut to fit the pane.
+const lbl = (what, subject) => {
+  const sub = String(subject == null ? '' : subject).replace(/\s+/g, ' ').trim()
+  return sub ? `${what} · ${sub.length > 40 ? `${sub.slice(0, 39)}…` : sub}` : what
+}
 const clean = o => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined))
 
 // A plugin agent type (harness:<role>) may not resolve; then the default agent reads the role file itself.
@@ -285,7 +290,7 @@ async function askAdvisor(t, stage, question, state) {
     `Stage summary: ${state || '(none)'}\n` +
     `Answer with: Recommendation, Reasons, Risks, Confidence. Read only what the question needs. Do not edit anything.`
   const advice = await call(prompt,
-    { label: `advisor:${stage}:${t.n}`, phase: 'Tickets', model: advisorModel, effort: EFFORT.advisor, agentType: 'harness:advisor' },
+    { label: lbl(`#${t.n} advisor ${stage}`, t.title), phase: 'Tickets', model: advisorModel, effort: EFFORT.advisor, agentType: 'harness:advisor' },
     `${pluginDir}/agents/advisor.md`)
   return typeof advice === 'string' ? advice : ''
 }
@@ -294,11 +299,11 @@ async function askAdvisor(t, stage, question, state) {
 async function runStage(t, stage, build, schema, opts) {
   const { roleFile, ...rest } = opts
   const o = { ...rest, schema, phase: 'Tickets' }
-  let res = await call(build(''), { ...o, label: `${stage}:${t.n}` }, roleFile)
+  let res = await call(build(''), { ...o, label: lbl(`#${t.n} ${stage}`, t.title) }, roleFile)
   if (res && res.needs_advisor) {
     const advice = await askAdvisor(t, stage, res.advisor_question, res.summary)
     res = await call(build(`\n\n## Advisor advice (follow it unless it is wrong; record any deviation as a decision)\n${advice}`),
-      { ...o, label: `${stage}:${t.n}:retry` }, roleFile)
+      { ...o, label: lbl(`#${t.n} ${stage} retry`, t.title) }, roleFile)
     if (res && res.needs_advisor) log(`#${t.n} ${stage}: asked for a second advisor call; the limit is one per stage, continuing with the retry result`)
   }
   if (!res) throw new Blocked(`${stage}: the agent returned nothing`)
@@ -389,7 +394,7 @@ async function commentVerify(t, text) {
   if (LOCAL) return
   try {
     await call(`Run: gh issue comment ${t.n} --repo ${repo} --body "<the text below, as one quoted argument>"\n\n${RULES}\n\nText:\n${text}\nPost the comment and return status ok. Edit nothing else.`,
-      { label: `verify-comment:${t.n}`, phase: 'Tickets', schema: SETUP_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
+      { label: lbl(`#${t.n} post verify comment`, t.title), phase: 'Tickets', schema: SETUP_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
   } catch (e) { log(`#${t.n} verify comment failed: ${e && e.message}`) }
 }
 
@@ -438,7 +443,7 @@ async function buildGif(t, impl, stills) {
       `Before the list: compare the stills with sha256sum and drop a still that is identical to the one before it. If fewer than 2 distinct stills remain, run no ffmpeg and return an empty gif (a later step attaches the first still as a PNG).\n` +
       `Rules: palettegen, at most 30 seconds, 800 px wide, under 10 MB (drop frames or lower the frame rate if larger). Write the GIF inside ${dir}. Commit nothing and do not add it to git.\n` +
       `Return gif: the absolute path of the GIF, or an empty string when there are no stills, fewer than 2 distinct stills remain, ffmpeg is missing or the build failed. An empty gif means a later step attaches the first still as a PNG.\n\n${RULES}`,
-      { label: `gif:${t.n}`, phase: 'Tickets', schema: GIF_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
+      { label: lbl(`#${t.n} record GIF`, t.title), phase: 'Tickets', schema: GIF_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
     if (res && res.gif) return res.gif
     log(`#${t.n} no GIF built`)
   } catch (e) { log(`#${t.n} gif build failed: ${e && e.message}`) }
@@ -461,7 +466,7 @@ async function stageAttach(t, fin, verifyResult) {
       (flaky ? `Then add this note to the end of the PR body: read it with gh pr view ${fin.pr} --repo ${repo} --json body -q .body, append "${note}", and write it back with gh pr edit ${fin.pr} --repo ${repo} --body-file <file>.\n` : '') +
       `If the command is denied or fails (old gh, permission denied, any error), do not retry and do not work around it. Return status ok (never blocked) and one decision with needs_review true, titled "Attach the verify GIF by hand for #${t.n}", whose decision field holds this exact command so the owner can paste it as written: ${cmd}\n` +
       `Commit nothing; the evidence file stays uncommitted. Otherwise return status ok.\n\n${RULES}`,
-      { label: `attach:${t.n}`, phase: 'Tickets', schema: SETUP_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
+      { label: lbl(`#${t.n} attach evidence`, t.title), phase: 'Tickets', schema: SETUP_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
     takeDecisions(t.n, 'attach', res)
     return !!res && res.status !== 'blocked' && !((res.decisions || []).some(d => d && d.needs_review === true))
   } catch (e) {
@@ -576,7 +581,7 @@ async function writeSpecs(run) {
     `${reqs.length ? `${reqs.join('\n')}\n` : ''}` +
     `${trimmed}/specs/ is gitignored local scratch and the only place in ${repoDir} you may write. Edit nothing else; run no other git command and commit nothing. Return status ok.\n\n${parts.join('\n\n')}`
   try {
-    const res = await call(prompt, { label: 'specs', phase: 'Decisions', schema: SETUP_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
+    const res = await call(prompt, { label: 'write specs/ flow files', phase: 'Decisions', schema: SETUP_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
     if (!res || res.status === 'blocked') log(`spec files not written: ${(res && (res.blocked_reason || res.summary)) || 'no answer'}`)
   } catch (e) {
     log(`spec files not written: ${e && e.message ? e.message : String(e)}`)
@@ -628,7 +633,7 @@ function stageSetupIntegration() {
     : `git -C ${repoDir} fetch ${remote}\ngit -C ${repoDir} push ${remote} ${baseRef}:refs/heads/${integBranch}`
   return call(`${how}\n\n${RULES}\n\n${notCwd()}\n\nCreate the integration branch ${integBranch} from ${baseRef} using exactly the commands above (only refs change; never check anything out in ${repoDir}). ` +
     `If it already exists, report that in summary and change nothing. Return status ok when ${integBranch} points at ${baseRef} or a descendant of it.`,
-    { label: 'setup-integration', phase: 'Setup', schema: SETUP_SCHEMA, model: MODEL.merge, effort: EFFORT.merge })
+    { label: 'set up integration branch', phase: 'Setup', schema: SETUP_SCHEMA, model: MODEL.merge, effort: EFFORT.merge })
 }
 
 async function stageMerge(group, done) {
@@ -640,7 +645,7 @@ async function stageMerge(group, done) {
   const prompt = `${w.setup}${RULES}\n\nStage: merge group ${group} into ${integBranch}.\n${how}\n${list}\n` +
     `After any conflict resolution run the related tests (${testCmd}, filled with the conflicted files) and lint (${lintCmd}). ` +
     `Return merged (ticket numbers) and failed ([{n, reason}]). Never merge into ${base}.`
-  const res = await call(prompt, { label: `merge:g${group}`, phase: 'Merge', schema: MERGE_SCHEMA, model: MODEL.merge, effort: EFFORT.merge })
+  const res = await call(prompt, { label: `merge ticket branches · group ${group}`, phase: 'Merge', schema: MERGE_SCHEMA, model: MODEL.merge, effort: EFFORT.merge })
   takeDecisions('run', 'merge', res)
   return res
 }
@@ -651,7 +656,7 @@ function stageFinalPr(done, bodyTemplate) {
       ? `Local mode: do not push and do not open a pull request. Return pr: 0.\n`
       : `Write the body below to a temp file and run: gh pr create --repo ${repo} --base ${base} --head ${integBranch} --title "${slug}" --body-file <file>. Return its number and url.\n`) +
     `Body (a later stage replaces it with the final text):\n${bodyTemplate}`
-  return call(prompt, { label: 'final-pr', phase: 'Review', schema: FINAL_PR_SCHEMA, model: MODEL.merge, effort: EFFORT.merge })
+  return call(prompt, { label: 'open final PR', phase: 'Review', schema: FINAL_PR_SCHEMA, model: MODEL.merge, effort: EFFORT.merge })
 }
 
 function pickLevel(files) {
@@ -682,7 +687,7 @@ async function reviewWithRetry(label, level, target, rangeNote) {
   if (res && res.skill_invoked === true) { takeDecisions('run', 'review', res); return { res } }
   const why = r => (r && typeof r.skill_error === 'string' && r.skill_error.trim()) || (r ? 'the agent did not report running the skill' : 'the review agent returned nothing')
   const first = why(res)
-  res = await reviewAgent(`${label}:retry`, level, target, rangeNote,
+  res = await reviewAgent(`${label} retry`, level, target, rangeNote,
     `The previous attempt did not run code-review. Its error: ${first}\nTry again. ${RULE_SKILL}\n`)
   if (res && res.skill_invoked === true) { takeDecisions('run', 'review', res); return { res } }
   return { notRun: why(res) }
@@ -701,7 +706,7 @@ function fixAgent(label, findingText, extra, phaseName) {
 async function stageReview(finalPr) {
   const stat = await call(
     `git -C ${repoDir} fetch ${remote}\ngit -C ${repoDir} diff --numstat ${baseRef}...${finalRef}\n\n${notCwd()}\nRun the two commands above. Return one entry per file (path, added, deleted). Do not edit anything.`,
-    { label: 'diffstat', phase: 'Review', schema: DIFFSTAT_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
+    { label: 'measure diff size', phase: 'Review', schema: DIFFSTAT_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
   const { level, lines, risky } = pickLevel((stat && stat.files) || [])
   log(`review level ${level} (${lines} changed lines${risky.length ? `, risky paths: ${risky.join(', ')}` : ''})`)
   const target = finalPr && finalPr.pr ? String(finalPr.pr) : finalBranch
@@ -712,7 +717,7 @@ async function stageReview(finalPr) {
       decision: 'Continue the pipeline without that review and say so in the PR body.', why: 'A review that did not run must not read as a pass; the owner decides.',
       consequences: 'The change was not reviewed by code-review.', how_to_reverse: 'Run /code-review on the PR.', needs_review: true, confidence: 'high' })
   }
-  const first = await reviewWithRetry('review:r0', level, target, '')
+  const first = await reviewWithRetry('code-review · round 0', level, target, '')
   if (first.notRun) {
     out.status = 'not run'; out.reason = first.notRun
     skipped(first.notRun, '')
@@ -733,7 +738,7 @@ async function stageReview(finalPr) {
     const commits = []
     for (let k = 0; k < todo.length; k++) {   // sequential: each fix lands before the next starts
       const f = todo[k]
-      const res = await fixAgent(`fix:r${out.rounds}:${k + 1}`, `Finding ${f.id} (score ${f.score}) in ${f.path || 'the diff'}${f.line ? `:${f.line}` : ''}: ${f.summary}`)
+      const res = await fixAgent(lbl(`fix r${out.rounds}.${k + 1}`, `${f.path || f.summary}${f.line ? `:${f.line}` : ''}`), `Finding ${f.id} (score ${f.score}) in ${f.path || 'the diff'}${f.line ? `:${f.line}` : ''}: ${f.summary}`)
       takeDecisions('run', 'review-fix', res)
       if (res && res.fix_status === 'fixed' && res.commit) { commits.push(res); out.fixed.push({ id: f.id, summary: f.summary, commit: res.commit }) }
       else {
@@ -745,7 +750,7 @@ async function stageReview(finalPr) {
     if (!commits.length) { findings = []; break }
     // Re-review only what the fix commits changed.
     const range = `${commits[0].base_sha}..${commits[commits.length - 1].commit}`
-    const again = await reviewWithRetry(`review:r${out.rounds}`, level, range,
+    const again = await reviewWithRetry(`code-review · round ${out.rounds}`, level, range,
       `This is a re-review of the fix commits only, range ${range}. Review that diff and nothing else; ignore the rest of the branch.\n`)
     if (again.notRun) {
       out.reReviewNotRun = again.notRun
@@ -770,7 +775,7 @@ async function requestTexts(done) {
     const t = tickets.find(x => x.n === r.n)
     if (LOCAL) return Promise.resolve({ body: t.body || t.title })
     return call(`Run: gh issue view ${t.n} --repo ${repo} --json body -q .body\nReturn its output unchanged in body. Do not summarise or edit it.`,
-      { label: `request:${t.n}`, phase: 'Intent review', schema: REQUEST_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
+      { label: lbl(`#${t.n} fetch owner request`, t.title), phase: 'Intent review', schema: REQUEST_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
   }))
   const texts = new Map()
   done.forEach((r, i) => {
@@ -800,12 +805,12 @@ async function stageIntentReview(done) {
     `Owner's original request, verbatim:\n<<<\n${request}\n>>>\n\n${ownerBlock}Diff range: ${baseRef}..${finalRef}\n\n` +
     `Read the diff with: git -C ${w.dir} diff ${baseRef}..${finalRef}. Read-only: edit nothing. ` +
     `Report only findings of kind gap, drift or excess. Do not report anything else: nothing about tests, about whether tests pass, or about your role file. If there is nothing to report, return no findings.`
-  const res = await call(prompt, { label: 'intent-review', phase: 'Intent review', schema: INTENT_REVIEW_SCHEMA, effort: EFFORT.review, agentType: 'harness:intent-reviewer' }, role)
+  const res = await call(prompt, { label: 'intent review · diff vs request', phase: 'Intent review', schema: INTENT_REVIEW_SCHEMA, effort: EFFORT.review, agentType: 'harness:intent-reviewer' }, role)
   const findings = (res && res.findings) || []
   const fixable = findings.filter(f => f.kind === 'gap' || (f.kind === 'drift' && f.behaviour_changing))
   if (fixable.length) {
     const text = fixable.map((f, i) => `${i + 1}. [${f.kind}] ${f.clause}: ${f.detail}`).join('\n')
-    const fix = await fixAgent('intent-fix', `The intent review found these gaps against the owner's request:\n${text}\nFix each one, one commit per finding.` +
+    const fix = await fixAgent('intent fix · close gaps', `The intent review found these gaps against the owner's request:\n${text}\nFix each one, one commit per finding.` +
       (owner ? `\nOwner-confirmed decisions (never revert or undo a change they name; skip any finding that conflicts with them and return it as a decision with needs_review: true instead):\n${owner}\n` : ''),
       'Return base_sha and the last commit sha. ')
     takeDecisions('run', 'intent-fix', fix)
@@ -877,7 +882,7 @@ async function stageUat(delivered) {
     const configPath = (r.verify && r.verify.configPath) || `${repoDir}/verify.config.json`
     const rec = { status: 'passed', reason: '', scenarios: [], fixed: false }
     records[t.n] = rec
-    let res = await runUat(`uat:${t.n}`, `uat-${t.n}`, t, body.text, owner.text, configPath)
+    let res = await runUat(lbl(`#${t.n} UAT`, 'run app, check ACs'), `uat-${t.n}`, t, body.text, owner.text, configPath)
     if (!res || res.status === 'blocked') {
       const why = (res && (res.blocked_reason || res.summary)) || 'the UAT agent returned nothing'
       uatNotRun(t.n, why); rec.status = 'not run'; rec.reason = why
@@ -887,13 +892,13 @@ async function stageUat(delivered) {
     rec.scenarios = res.scenarios || []
     if (!uatOk(res)) {
       const failing = rec.scenarios.filter(s => s.kind === 'ac' && s.status === 'FAIL')
-      const fix = await fixAgent(`uat-fix:${t.n}`,
+      const fix = await fixAgent(lbl(`#${t.n} UAT fix`, 'failing ACs'),
         `UAT on the running app found acceptance criteria of ticket #${t.n} that fail:\n${failing.map(s => `- ${s.covers}: ${s.assertion || s.id}`).join('\n') || '- (see the UAT summary) ' + (res.summary || '')}\nFix the code so the owner's request holds. Console errors are report-only: do not fix them unless a failing AC needs it.`,
         '', 'UAT')
       takeDecisions(t.n, 'uat-fix', fix)
       rec.fixed = !!(fix && fix.fix_status === 'fixed')
       // No fix commit landed: a rerun would test the same code, so skip it and let the first result stand.
-      const again = rec.fixed ? await runUat(`uat-rerun:${t.n}`, `uat-rerun-${t.n}`, t, body.text, owner.text, configPath) : res   // own worktree: it must see the fix
+      const again = rec.fixed ? await runUat(lbl(`#${t.n} UAT rerun`, 'after fix'), `uat-rerun-${t.n}`, t, body.text, owner.text, configPath) : res   // own worktree: it must see the fix
       if (!rec.fixed) log(`UAT #${t.n}: fix ${fix && fix.fix_status || 'returned nothing'}, rerun skipped`)
       if (!again || again.status === 'blocked') {
         const why = (again && (again.blocked_reason || again.summary)) || 'the UAT rerun agent returned nothing'
@@ -929,14 +934,14 @@ async function stageSuite() {
     `Stage: verify. ${only ? `Re-run ONLY these failing tests: ${only.join(', ')} (use the narrowest command the project supports; ${testCmd} is the related-tests template).` : `Run the full suite: ${cmd}`}\n` +
     `Start the command in the background with its output going to a file, then poll that file until the process has exited. Never edit code or tests. ` +
     `Return the real counts of passed, failed and skipped tests from the output, the names of failing tests as failing, the exit code, and the last lines of output as tail.`
-  const first = await call(prompt('run', fullTestCmd, null), { label: 'suite', phase: 'Testing', schema: SUITE_SCHEMA, model: MODEL.test, effort: EFFORT.test })
+  const first = await call(prompt('run', fullTestCmd, null), { label: 'test · run full suite', phase: 'Testing', schema: SUITE_SCHEMA, model: MODEL.test, effort: EFFORT.test })
   if (!first) return { passed: 0, failed: 0, skipped: 0, note: 'the suite agent returned nothing' }
   if (!first.failed) return { passed: first.passed, failed: 0, skipped: first.skipped }
   const fix = await call(`${newWt('fix-suite', null, finalRef).setup}${RULES}\n\nStage: fix the failing tests of the final suite run, with minimal commits ("git add", then "git commit"). Failing: ${first.failing.join(', ')}\nOutput tail:\n${first.tail || ''}\n` +
     `Fix the code, not the test, unless the test itself is wrong. Run only the failing tests. Then land it: ${land(finalBranch)}`,
-    { label: 'suite-fix', phase: 'Testing', schema: stageSchema({}), model: MODEL.fix, effort: EFFORT.fix })
+    { label: 'test · fix failing tests', phase: 'Testing', schema: stageSchema({}), model: MODEL.fix, effort: EFFORT.fix })
   takeDecisions('run', 'suite-fix', fix)
-  const again = await call(prompt('rerun', fullTestCmd, first.failing), { label: 'suite-rerun', phase: 'Testing', schema: SUITE_SCHEMA, model: MODEL.test, effort: EFFORT.test })
+  const again = await call(prompt('rerun', fullTestCmd, first.failing), { label: 'test · rerun failed tests', phase: 'Testing', schema: SUITE_SCHEMA, model: MODEL.test, effort: EFFORT.test })
   if (!again) return { passed: first.passed, failed: first.failed, skipped: first.skipped, note: 'the re-run agent returned nothing' }
   return { passed: first.passed + again.passed, failed: again.failed, skipped: first.skipped + again.skipped, note: `${first.failed} failed first; re-ran only those` }
 }
@@ -948,7 +953,7 @@ async function stageArtifact(results) {
     `If either is missing, build nothing, return created: false and fallback: 'docs/adr/' (the ADR files are the source of truth).\n` +
     `Tickets: ${JSON.stringify(results.map(r => ({ n: r.n, status: r.status, summary: r.summary, reason: r.reason, url: r.url })))}\n` +
     `Decisions: ${JSON.stringify(decisions)}`
-  const res = await call(prompt, { label: 'artifact', phase: 'Decisions', schema: ARTIFACT_SCHEMA, model: MODEL.adr, effort: EFFORT.adr })
+  const res = await call(prompt, { label: 'update run artifact', phase: 'Decisions', schema: ARTIFACT_SCHEMA, model: MODEL.adr, effort: EFFORT.adr })
   return res && res.created && res.url ? { url: res.url } : { fallback: (res && res.fallback) || 'docs/adr/' }
 }
 
@@ -966,7 +971,7 @@ async function stageAdr(finalPr, artifact, bodyTemplate) {
     `4. Render the section: python3 ${pluginDir}/scripts/write_adrs.py --render-section .ship/written.json${artifact.url ? ` --artifact ${artifact.url}` : ''}${artifact.url ? '' : `  (no artifact this run; link docs/adr/ in the section)`}\n` +
     `5. Write the body below to .ship/pr-body.md, replacing the line {{DECISIONS}} with the rendered section${decisions.length ? ', then a blank line, then the content of .ship/decisions-table.md unchanged' : ''}. ${update}\n` +
     `Return adrs from .ship/written.json (number, path, needs_review, ticket, title). Do not commit anything under .ship.\n\nBody:\n${bodyTemplate}`
-  const res = await call(prompt, { label: 'adr', phase: 'Decisions', schema: ADR_SCHEMA, model: MODEL.adr, effort: EFFORT.adr })
+  const res = await call(prompt, { label: 'write ADRs (needs_review)', phase: 'Decisions', schema: ADR_SCHEMA, model: MODEL.adr, effort: EFFORT.adr })
   return res || { adrs: [], status: 'blocked', summary: 'the ADR agent returned nothing' }
 }
 
@@ -1034,7 +1039,7 @@ phase('Setup')
 // The role files come from the plugin directory. call() falls back silently to the default agent
 // when an agent type is missing, which would hide a wrong pluginDir, so check it once, up front.
 const pluginCheck = await call(`Run: test -f ${pluginDir}/agents/implementer.md && test -f ${pluginDir}/scripts/write_adrs.py && echo found || echo missing\n\n${notCwd()}\nReturn status ok when the output is found, otherwise status blocked with blocked_reason "pluginDir ${pluginDir} does not hold the harness plugin". Edit nothing.`,
-  { label: 'plugin-check', phase: 'Setup', schema: SETUP_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
+  { label: 'check plugin and tools', phase: 'Setup', schema: SETUP_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
 if (!pluginCheck || pluginCheck.status === 'blocked') throw new Error(`ship: ${(pluginCheck && (pluginCheck.blocked_reason || pluginCheck.summary)) || 'the plugin check returned nothing'}`)
 log(`ship ${tickets.map(t => `#${t.n}`).join(' ')} -> ${base}: ${tickets.length} ticket(s) in ${groups.length} group(s), ${single ? 'single: the ticket PR is the final PR' : `integration branch ${integBranch}`}${LOCAL ? ', local mode' : ''}`)
 if (!single) {
