@@ -104,6 +104,14 @@ test('meta is a pure literal', async () => {
   assert(!/Date\.now|Math\.random|new Date\(\)/.test(SRC.replace(/\/\/.*$/gm, '')), 'forbidden nondeterministic call')
 })
 
+test('i1: the first log line names the tickets and the base', async () => {
+  const multi = await run({ tickets: [T(1, 1), T(2, 1), T(3, 2, [1])] }, null)
+  assert(multi.logs[0].startsWith('ship #1 #2 #3 -> v5.0.0:'), multi.logs[0])
+  assert(multi.logs[0].includes('3 ticket(s)'), multi.logs[0])
+  const one = await run({}, null)
+  assert(one.logs[0].startsWith('ship #1 -> v5.0.0:'), one.logs[0])
+})
+
 test('a: one ticket has no integration or merge agent and a feat/<n>- branch', async () => {
   const { result, calls } = await run({}, null)
   const ls = labelsOf(calls)

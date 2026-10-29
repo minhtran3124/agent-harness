@@ -1,6 +1,6 @@
 export const meta = {
   name: 'ship',
-  description: 'Ship 1..N triaged tickets to one reviewable PR with no human in the loop: per-ticket pipeline, review loop, intent review, full suite once, ADRs.',
+  description: 'Ship tickets to one PR: build, verify, review, test, ADRs',
   phases: [
     { title: 'Setup', detail: 'validate args, create the integration branch (multi-ticket only)' },
     { title: 'Tickets', detail: 'intent, plan, implement, verify, finish per ticket; groups in order, tickets of a group in parallel' },
@@ -795,7 +795,7 @@ phase('Setup')
 const pluginCheck = await call(`Run: test -f ${pluginDir}/agents/implementer.md && test -f ${pluginDir}/scripts/write_adrs.py && echo found || echo missing\n\n${notCwd()}\nReturn status ok when the output is found, otherwise status blocked with blocked_reason "pluginDir ${pluginDir} does not hold the harness plugin". Edit nothing.`,
   { label: 'plugin-check', phase: 'Setup', schema: SETUP_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
 if (!pluginCheck || pluginCheck.status === 'blocked') throw new Error(`ship: ${(pluginCheck && (pluginCheck.blocked_reason || pluginCheck.summary)) || 'the plugin check returned nothing'}`)
-log(`ship: ${tickets.length} ticket(s) in ${groups.length} group(s), ${single ? 'single: the ticket PR is the final PR' : `integration branch ${integBranch}`}${LOCAL ? ', local mode' : ''}`)
+log(`ship ${tickets.map(t => `#${t.n}`).join(' ')} -> ${base}: ${tickets.length} ticket(s) in ${groups.length} group(s), ${single ? 'single: the ticket PR is the final PR' : `integration branch ${integBranch}`}${LOCAL ? ', local mode' : ''}`)
 if (!single) {
   const setup = await stageSetupIntegration()
   takeDecisions('run', 'setup', setup)
