@@ -1,23 +1,23 @@
 ---
 ticket: 394
-stage: plan
+stage: intent
 status: accepted
 needs_review: false
 confidence: high
-decided_by: claude (ship workflow: plan)
+decided_by: claude (ship workflow: intent)
 date: 2026-10-29
 ---
 
-# 0033. Branch of a different PR is never removed when a PR number is known
+# 0004. Branch of a different PR is never removed when a PR number is known
 
 ## Context
 
-Whether cleanup after a merge may remove branches of other PRs.
+Ticket acceptance asks to decide whether cleanup may remove a branch of a PR other than the one just merged.
 
 ## Options
 
 - Clean only the merged PR's branch
-- Keep sweeping all merged branches
+- Keep the sweep of all merged branches and document it
 
 ## Decision
 
@@ -25,7 +25,7 @@ Clean only the branch of the PR just merged; the no-argument manual run keeps th
 
 ## Why
 
-Matches owner-confirmed decision 2 and removes the surprise deletion in the ticket.
+Matches owner-confirmed decision 2 and removes the surprise deletion seen in the ticket.
 
 ## Consequences
 

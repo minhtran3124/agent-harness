@@ -8,7 +8,7 @@ decided_by: claude (ship workflow: research)
 date: 2026-10-29
 ---
 
-# 0087. UAT runs serially, one ticket at a time, on the final branch
+# 0008. UAT runs serially, one ticket at a time, on the final branch
 
 ## Context
 

@@ -4,8 +4,9 @@
 Input JSON: {"run": "<slug>", "decisions": [{ticket, stage, title, context, options, decision,
 why, consequences, how_to_reverse, confidence, needs_review, decided_by, owner_confirmed?}]}.
 Duplicates (same ticket, same title slug or same non-empty context) are merged first, keeping the highest confidence (ties to the first). A file is
-written only for a decision that has needs_review or a confidence other than high; owner_confirmed
-skips the file only when needs_review is false (a flagged decision always gets its file). --table-out FILE lists every merged decision as a markdown table for the PR body.
+written only for a decision that has needs_review (critical, cross-ticket, public contract, data,
+security, cost, or a costly trade-off); confidence never decides this, it only marks a guess in the
+table. Every other decision stays a table row. --table-out FILE lists every merged decision as a markdown table for the PR body.
 Output (stdout): JSON list of {number, path, ticket, title, needs_review, stage}; [] when no
 decision needs a file. Exit 0 = ok, 2 = bad input or a file would be overwritten.
 
@@ -90,12 +91,8 @@ def validate(data) -> list:
 
 
 def needs_adr(d: dict) -> bool:
-    """A decision gets an ADR file when a human should look at it."""
-    if d["needs_review"]:
-        return True
-    if d.get("owner_confirmed") is True:
-        return False
-    return d["confidence"] != "high"
+    """A decision gets an ADR file only when it is flagged needs_review. Confidence does not count."""
+    return d["needs_review"]
 
 
 def _context_key(d: dict) -> str:
@@ -148,6 +145,8 @@ def decisions_table(decisions: list) -> str:
             note = "ADR file"
         elif d.get("owner_confirmed") is True:
             note = "owner-confirmed"
+        elif d["confidence"] == "low":
+            note = "table only (low confidence, check)"
         else:
             note = "table only"
         rows.append(f"| #{d['ticket']} | {_cell(d['title'])} | {_cell(d['decision'])} | {_cell(d['why'])} | {note} |")

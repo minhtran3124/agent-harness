@@ -12,9 +12,9 @@ Record a decision when you choose between options without asking a human. Ask th
 
 | Situation | Action |
 |---|---|
-| Reversible and inside the ticket | Decide. Record it. `needs_review: false`. It goes in the PR table, not in an ADR file. |
+| Reversible and inside the ticket | Decide. Record it. `needs_review: false`. It goes in the PR table and `decision.md`, not in an ADR file. |
 | Only restates an owner-confirmed answer | Record it with `owner_confirmed: true`. No ADR file, unless it also has `needs_review: true`. |
-| Affects another ticket or a public contract | Choose the safer option. Record it. `needs_review: true`. |
+| Affects another ticket, a public contract, stored data, security or cost, or is a trade-off that is costly to reverse | Choose the safer option. Record it. `needs_review: true`. This is the only case that gets an ADR file. |
 | Contradicts a confirmed answer, or is dangerous | Do not do that part. Record why. `needs_review: true`. |
 
 ## Which decisions get a file
@@ -24,14 +24,14 @@ The script `write_adrs.py` applies this rule. Agents do not filter.
 1. Merge duplicates: same ticket and (same title slug or identical non-empty context). Keep the
    item with the highest `confidence` (high, then medium, then low; a tie keeps the first). If any merged item has `needs_review`, the kept one has it too. The
    kept one is `owner_confirmed` only if every merged item is.
-2. Write an ADR file if the decision has `needs_review: true`, or if it is not `owner_confirmed`
-   and has a `confidence` other than `high`. `needs_review` wins over `owner_confirmed`.
+2. Write an ADR file only if the decision has `needs_review: true`. `confidence` never decides
+   this: a medium or low guess stays a row in the PR table (a low one is marked "check").
+   `needs_review` wins over `owner_confirmed`.
 3. Every merged decision, with or without a file, is one row in the `## Decisions` table of the PR
    body (ticket, title, decision, why). An owner-confirmed row says `owner-confirmed`.
 
 ## What a good ADR says
 
-- `title`: the decision, not the topic.
 - `options`: each option you weighed, including the one you rejected and why.
 - `why`: the reason this option won, with the evidence.
 - `how_to_reverse`: the exact steps to undo it.
@@ -46,8 +46,7 @@ Never write an ADR file. Parallel worktrees collide on numbers. Only the ADR sta
 ## The local decision log
 
 Every decision is also an entry in `specs/<slug>/decision.md` (shape:
-`${CLAUDE_PLUGIN_ROOT}/templates/specs/decision.md`), added by the step that decides, or by
-the workflow script.
+`${CLAUDE_PLUGIN_ROOT}/templates/specs/decision.md`).
 
 ## Design ADRs
 
@@ -70,6 +69,3 @@ and the ADR stage like any other decision.
 
 Build one private artifact per run when the Artifact tool exists. Read `references/artifact.md` for how.
 
-## Auto mode
-
-The ADR stage itself never asks. It writes the files, commits them and renders the section and table.
