@@ -137,4 +137,8 @@ t "Start config step 5 and Base mode say to resolve PORT and export env"
 grep -q '^5\..*PORT.*export' "$SKILL" && grep -A1 '^5\.' "$SKILL" | grep -q 'env' \
   && grep -q 'Base mode' "$SKILL" && grep -A6 '^## Base mode' "$SKILL" | grep -q 'PORT' && pass || fail "PORT or env export missing in step 5 or Base mode"
 
+t "Base mode keeps 'Do not retry' and 'the workflow decides'; Report leaves the GIF to the workflow"
+grep -A8 '^## Base mode' "$SKILL" | grep -q 'Do not retry' && grep -A8 '^## Base mode' "$SKILL" | grep -q 'workflow decides' \
+  && grep -q 'workflow builds the GIF' "$SKILL" && pass || fail "retry or workflow rule missing"
+
 finish
