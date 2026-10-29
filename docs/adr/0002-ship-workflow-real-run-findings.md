@@ -10,6 +10,8 @@ date: 2026-10-28
 
 # 0002. What the first real run of ship.js showed
 
+> Decision 1 superseded in part, sandbox per ticket (#477): implement, verify, finish and UAT now work in one sandbox per ticket, made by `provision-sandbox.sh`; the other stages keep the worktree rule below. Decisions 2 to 6 stand.
+
 ## Context
 
 `workflows/ship.js` ran for real once: one ticket (a `median()` function), `local: true`, on a throwaway repo. The session working directory was a different repo (the harness checkout). The ADR format follows 0001.

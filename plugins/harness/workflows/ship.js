@@ -31,9 +31,9 @@ const PR_FOOTER = '🤖 Generated with [Claude Code](https://claude.com/claude-c
 const rulesCommon = repoDir => `Rules (all of them apply):
 - No human is in the loop. Never ask anyone anything. On any ambiguity pick the recommended option and return it as a decision in decisions[].
 - Never merge into the base branch or main. Never force-push. Never touch secrets. Never weaken a test to make it pass.
-- Project rules: before your first edit, read the project's own rules and follow them. The target repo does not auto-load them for you. Read ${repoDir}/CLAUDE.md, ${repoDir}/CLAUDE.local.md if it exists, and every ${repoDir}/.claude/rules/*.md (honor a rule file's paths: scoping against the files you touch). Once you have your own worktree, read the tracked ones (CLAUDE.md, .claude/rules/*.md) from it, at the same relative path; before that, read them from ${repoDir}. Your worktree holds only committed content, so also run git -C ${repoDir} status --porcelain -- CLAUDE.md .claude/rules/; for any file it lists (uncommitted edit, for example just written by setup), read that file from ${repoDir} instead. CLAUDE.local.md is untracked, so read ${repoDir}/CLAUDE.local.md (if present). The hard rules above (never merge into the base branch or main, never force-push, never touch secrets, never weaken a test) cannot be overridden by project rules.
-- Work only in your own worktree and on your own branch. Never edit files in the owner's checkout.
-- Your session working directory is NOT the target repo. Use absolute paths; run every git command as git -C <path> or after cd <your worktree>.
+- Project rules: before your first edit, read the project's own rules and follow them. The target repo does not auto-load them for you. Read ${repoDir}/CLAUDE.md, ${repoDir}/CLAUDE.local.md if it exists, and every ${repoDir}/.claude/rules/*.md (honor a rule file's paths: scoping against the files you touch). Once you have your working directory, read the tracked ones (CLAUDE.md, .claude/rules/*.md) from it, at the same relative path; before that, read them from ${repoDir}. Your working directory holds only committed content (a sandbox also holds the untracked files its manifest copies), so also run git -C ${repoDir} status --porcelain -- CLAUDE.md .claude/rules/; for any file it lists (uncommitted edit, for example just written by setup), read that file from ${repoDir} instead. CLAUDE.local.md is untracked, so read ${repoDir}/CLAUDE.local.md (if present). The hard rules above (never merge into the base branch or main, never force-push, never touch secrets, never weaken a test) cannot be overridden by project rules.
+- Work only in the working directory named in the stage prompt, on your own branch: a sandbox (implement, verify, finish, UAT) or a worktree the setup commands in the prompt create. Never edit files in the owner's checkout.
+- Your session working directory is NOT the target repo. Use absolute paths; run every git command as git -C <path> or after cd <your working directory>.
 - needs_review: true ONLY when the decision affects another ticket, a public contract or interface, stored data, security or cost, or contradicts the ticket text or an owner-confirmed answer. A reversible choice inside the ticket (naming, how to handle an edge case the ticket leaves open, which implementation to use) is needs_review: false. It is still recorded as a decision.
 - summary is one plain sentence about what changed in the code. Never write about pushes, pull requests, the mode, or test counts in it.
 - "Done" needs real command output. Report what you ran and its exit code; never claim a result you did not see.
@@ -107,6 +107,10 @@ const UAT_SCHEMA = stageSchema({
   console_errors: NUM,
 }, ['passed_ac', 'scenarios'])
 const GIF_SCHEMA = stageSchema({ gif: { type: 'string', description: 'absolute path of the GIF, or empty when none was built' } }, ['gif'])
+// Provisioning result (provision-sandbox.sh prints one JSON line). status failed carries the script's stderr in error.
+const SANDBOX_SCHEMA = { type: 'object',
+  properties: { status: { type: 'string', enum: ['ready', 'failed'] }, dir: STR, branch: STR, port: NUM, db: STR, mode: STR, error: STR },
+  required: ['status'] }
 const FINISH_SCHEMA = stageSchema({ pr: NUM, url: STR, body_file: STR }, ['pr'])
 const SETUP_SCHEMA = stageSchema({})
 const MERGE_SCHEMA = stageSchema({
@@ -154,6 +158,9 @@ function validateArgs(a) {
   for (const k of ['repo', 'repoDir', 'pluginDir', 'remote', 'base', 'slug', 'testCmd', 'lintCmd', 'fullTestCmd', 'advisorModel']) {
     if (typeof a[k] !== 'string' || !a[k].trim()) throw new Error(`ship: args.${k} is required (non-empty string)`)
   }
+  if (a.sandbox !== undefined && !['worktree', 'clone'].includes(a.sandbox)) throw new Error(`ship: args.sandbox must be 'worktree' or 'clone', got ${JSON.stringify(a.sandbox)}`)
+  // A clone holds the ticket branch only inside itself, so local mode (no push) could never merge it.
+  if (a.sandbox === 'clone' && a.local === true) throw new Error('ship: args.sandbox clone cannot be combined with local mode (the ticket branch would exist only inside the clone)')
   if (!Array.isArray(a.tickets) || a.tickets.length === 0) throw new Error('ship: args.tickets must be a non-empty array')
   const seen = new Set()
   for (const t of a.tickets) {
@@ -183,16 +190,25 @@ const integBranch = `feat/${slug}`
 const integRef = single ? baseRef : (LOCAL ? integBranch : `${remote}/${integBranch}`)
 const ticketBranch = t => (single ? `feat/${t.n}-${slugOf(t.title)}` : `feat/${slug}-${t.n}`)
 const finalBranch = single ? ticketBranch(tickets[0]) : integBranch
+const SANDBOX_MODE = args.sandbox || 'worktree'
+// One sandbox per ticket (provision-sandbox.sh). The run id is stable across a resume, so a re-run reuses the same dir.
+const RUN_ID = slugOf(slug).replace(/^-+|-+$/g, '')
+// A clone's only remote is origin; commands that run inside a sandbox use this name, never `remote`.
+const SB_REMOTE = SANDBOX_MODE === 'clone' ? 'origin' : remote
+const sbRef = branch => (LOCAL ? branch : `${SB_REMOTE}/${branch}`)
 const finalRef = single ? (LOCAL ? finalBranch : `${remote}/${finalBranch}`) : integRef
 
 // No agent uses isolation: 'worktree'. That option binds to the session's cwd, which is not the target repo
-// (ADR 0002). Each agent creates its own worktree of repoDir, outside the repo, so git status stays clean.
+// (ADR 0002). Stages that run or build the ticket code (implement, verify, finish, UAT) work in one sandbox per
+// ticket, made by provision-sandbox.sh. The other stages create a light worktree of repoDir (newWt). Both sit
+// outside the repo, so git status stays clean.
 const trimmed = repoDir.replace(/\/+$/, '')
 const parentDir = trimmed.split('/').slice(0, -1).join('/')
 const wtRoot = `${parentDir}/.ship-${trimmed.split('/').pop()}/${slugOf(slug)}`
-const worktrees = new Set()   // every dir the script told an agent to create; the owner removes them
+const worktrees = new Set()   // every light worktree the script told an agent to create; the owner removes them
 const notCwd = dir => `Your session working directory is NOT the target repo. Run every command with \`git -C <path>\` or after \`cd ${dir || repoDir}\`; never edit ${repoDir} itself.`
-// branch: create it; null: detached checkout of `from` (an existing ref).
+// Light worktree for read-only and merge stages; ticket code runs in a sandbox.
+// branch: create it (only the merge stage does); null: detached checkout of `from` (an existing ref).
 function newWt(name, branch, from) {
   const dir = `${wtRoot}/${name.replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '')}`
   worktrees.add(dir)
@@ -315,7 +331,7 @@ function head(t, skill, extra, wt) {
     ? `Owner-confirmed decisions for this ticket (never contradict them; if you must, mark the decision contradicts_confirmed and stop that part):\n${t.confirmed}\n\n`
     : ''
   const ask = NO_ASK ? 'No owner answers exist for this run: every question you would have asked becomes a decision; set needs_review by the rule above.\n' : ''
-  const read = skill ? `Read ${pluginDir}/skills/${skill}/SKILL.md and run it with Mode: auto, only after your worktree exists (it is created by the commands above). Never ask anyone.\n` : ''
+  const read = skill ? `Read ${pluginDir}/skills/${skill}/SKILL.md and run it with Mode: auto, only after your working directory exists (a sandbox, or the worktree the commands above create). Never ask anyone.\n` : ''
   const source = LOCAL ? `Ticket text: ${t.title}\n` : `The ticket is GitHub issue #${t.n} of ${repo}; read it with: gh issue view ${t.n} --repo ${repo} --json body -q .body\n`
   return `${RULES}\n\n${notCwd(wt)}\nTicket #${t.n}: ${t.title} (depth ${t.depth}). Repo ${repo}.\n${source}${confirmed}${ask}${read}${extra || ''}`
 }
@@ -357,14 +373,55 @@ async function advisePlan(t, design, plan) {
     `Design:\n${design.design_md}\n\nPlan:\n${plan.plan_md}`)
 }
 
-function stageImplement(t, branch, planText, boundary) {
-  const w = newWt(`t${t.n}`, branch, integRef)
-  const build = advice => w.setup + head(t, 'implement',
+// One sandbox per ticket, made by provision-sandbox.sh and checked by the script, not by the agent's word.
+// The script fixes the dir, port and DB from its inputs, so the JSON line is verified against what it must be.
+const sandboxes = {}   // ticket number -> { dir, branch, port, db, mode }
+const trimSlug = s => s.replace(/^-+|-+$/g, '')
+const ticketSlug = t => trimSlug(slugOf(t.title))
+const sandboxDirTail = t => `/.ship-${trimmed.split('/').pop()}/${RUN_ID}-t${t.n}-${ticketSlug(t)}`
+function sandboxProblem(t, sb) {
+  if (!sb || sb.status !== 'ready') return (sb && sb.error) || 'the provisioning agent returned no ready result'
+  if (typeof sb.dir !== 'string' || !sb.dir || typeof sb.branch !== 'string' || !sb.branch || !Number.isInteger(sb.port) || typeof sb.db !== 'string' || !sb.db) {
+    return 'the provisioning result lacks dir, branch, port or db'
+  }
+  if (!sb.dir.endsWith(sandboxDirTail(t))) return `sandbox dir ${sb.dir} does not end with ${sandboxDirTail(t)}`
+  if (sb.port !== 4000 + t.n * 10) return `sandbox port ${sb.port} is not ${4000 + t.n * 10}`
+  if (sb.branch !== ticketBranch(t)) return `sandbox branch ${sb.branch} is not ${ticketBranch(t)}`
+  return ''
+}
+async function stageProvision(t) {
+  const cmd = `bash ${pluginDir}/scripts/provision-sandbox.sh ${repoDir} ${RUN_ID} ${t.n} ${ticketSlug(t)} --branch ${ticketBranch(t)} --from ${integRef} --remote ${remote} --mode ${SANDBOX_MODE}`
+  const prompt = `Stage: provision. Make the sandbox of ticket #${t.n} with exactly these commands, in this order:\n` +
+    `git -C ${repoDir} fetch ${remote}\n${cmd}\n\n` +
+    `${notCwd()}\nThe second command can take minutes (it runs the project's setup commands): run it with a Bash timeout of 600000 ms. ` +
+    `It prints one JSON line on stdout when ready: copy its status, dir, branch, port, db and mode into the result. ` +
+    `If it exits non-zero or times out, return status failed and put its stderr text, verbatim, in error. ` +
+    `Do not retry, repair, edit, delete or work around anything: the script owns the sandbox and the error text goes to the owner unchanged.`
+  let sb
+  try { sb = await call(prompt, { label: `provision:${t.n}`, phase: 'Tickets', schema: SANDBOX_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap }) }
+  catch (e) { throw new Blocked(`provision: ${e && e.message ? e.message : String(e)}`) }
+  const problem = sandboxProblem(t, sb)
+  if (problem) {
+    const hint = /already|checked out|worktree add/i.test(problem) ? ` (if branch ${ticketBranch(t)} is left from an earlier run, delete it and run again)` : ''
+    throw new Blocked(`provision: ${problem}${hint}`)
+  }
+  return sandboxes[t.n] = { dir: sb.dir, branch: sb.branch, port: sb.port, db: sb.db, mode: SANDBOX_MODE }
+}
+const sandboxFacts = sb => `Your sandbox is ${sb.dir}, branch ${sb.branch} is checked out, port ${sb.port}, DB ${sb.db}. Its remote is named ${SB_REMOTE}. ` +
+  `To run the app there: set -a; . ${sb.dir}/.sandbox.env; set +a, then use PORT=$SANDBOX_PORT (a block of ten ports starts there) and the database $SANDBOX_DB_NAME. Never pick a free port yourself.`
+
+async function stageImplement(t, sb, planText, boundary) {
+  const build = advice => head(t, 'implement',
     `Stage: implement. You cannot start other agents, so act as the implementer yourself (${pluginDir}/agents/implementer.md): take the plan steps one at a time. ` +
     `For each step: do it, run its done_when command, then "git add" and, as a separate command, "git commit". ` +
     `Related tests: ${testCmd} (a template; fill in the files you touched). Lint: ${lintCmd}.\n` +
-    `Return ${w.dir} as worktree, and your branch.\n\n${boundary || ''}\n${planText}${advice}`, w.dir)
-  return runStage(t, 'implement', build, IMPLEMENT_SCHEMA, { agentType: 'harness:implementer', roleFile: `${pluginDir}/agents/implementer.md`, model: MODEL.implement, effort: EFFORT.implement })
+    `${sandboxFacts(sb)} Do not create a worktree or branch.\n` +
+    `Return ${sb.dir} as worktree, and your branch ${sb.branch}.\n\n${boundary || ''}\n${planText}${advice}`, sb.dir)
+  const impl = await runStage(t, 'implement', build, IMPLEMENT_SCHEMA, { agentType: 'harness:implementer', roleFile: `${pluginDir}/agents/implementer.md`, model: MODEL.implement, effort: EFFORT.implement })
+  // The sandbox is the script's fact: a wrong value from the agent must not reach verify, finish or merge.
+  impl.worktree = sb.dir
+  impl.branch = sb.branch
+  return impl
 }
 
 // One verify run. mode: 'verify' (head), 'verify-retry' (head again) or 'verify-base' (base commit, a separate worktree).
@@ -372,12 +429,15 @@ function stageImplement(t, branch, planText, boundary) {
 function stageVerify(t, impl, mode) {
   const base = mode === 'verify-base'
   const w = base ? newWt(`verify-base-${t.n}`, null, integRef) : null
-  const dir = base ? w.dir : impl.worktree
+  const sb = sandboxes[t.n]
+  const dir = base ? w.dir : sb.dir
   const build = advice => (base ? w.setup : '') + head(t, null,
     `Stage: verify. Read ${pluginDir}/skills/verify/SKILL.md and follow it. Read the Verify: row of the issue body above. ` +
     (base
-      ? `Mode: base. Your worktree ${dir} holds the base commit, without the ticket code. Read verify.config.json from ${impl.worktree}/verify.config.json (read-only; copy it into ${dir} without committing it). The steps are expected to FAIL here: report the real result. Commit nothing.\n`
-      : `Mode: head. Work in ${impl.worktree} (cd there; it is the ticket branch ${impl.branch}). Commit only verify.config.json, nothing else.${mode === 'verify-retry' ? ' This is a second run after a failure: start the app fresh and run every step again.' : ''}\n`) +
+      ? `Mode: base. Your worktree ${dir} holds the base commit, without the ticket code. Read verify.config.json from ${impl.worktree}/verify.config.json (read-only; copy it into ${dir} without committing it). The steps are expected to FAIL here: report the real result. Commit nothing.\n` +
+        `This worktree is light: it has no untracked files. Use the port and DB of the ticket sandbox (read ${sb.dir}/.sandbox.env, port ${sb.port}, DB ${sb.db}); the head app is stopped. ` +
+        `If a step fails only because .env or installed dependencies are missing, copy or link them from ${sb.dir} (read-only source, uncommitted) and run it again; say in the report that you did.\n`
+      : `Mode: head. Work in ${sb.dir} (cd there; it is the ticket sandbox, branch ${sb.branch}). Do not create a worktree. ${sandboxFacts(sb)} Commit only verify.config.json, nothing else.${mode === 'verify-retry' ? ' This is a second run after a failure: start the app fresh and run every step again.' : ''}\n`) +
     `Do not fix code, retry, or judge flakiness. Keep the evidence local and uncommitted. Return passed (true only if every step passed and the console had no errors), kind, configPath (the absolute path of the verify.config.json you used, empty when none), failedStep, consoleErrors, stills (absolute paths) and report (the table).${advice}`, dir)
   return runStage(t, mode, build, VERIFY_SCHEMA, { model: MODEL.verify, effort: EFFORT.verify })
 }
@@ -477,11 +537,11 @@ async function stageAttach(t, fin, verifyResult) {
 
 function stageFinish(t, impl, verifyResult) {
   const prBase = single ? base : integBranch
-  const fw = newWt(`finish-${t.n}`, null, LOCAL ? impl.branch : `${remote}/${impl.branch}`)
-  const dir = impl.worktree || fw.dir
-  const where = `Your branch ${impl.branch} is checked out in ${dir}; work there with cd ${dir}. If that path is gone, run: git -C ${repoDir} worktree add ${fw.dir} ${impl.branch}, and work in ${fw.dir} (git fetch ${remote} first).\n`
+  const dir = sandboxes[t.n].dir
+  const where = `Your branch ${impl.branch} is checked out in the ticket sandbox ${dir}; work there with cd ${dir}. Its remote is named ${SB_REMOTE}: fetch and push with that name. ` +
+    `Do not create a worktree. If that path is gone, return status blocked with blocked_reason; do not recreate it.\n`
   const how = LOCAL
-    ? `Local mode: do NOT push and do NOT open a pull request. Verify the branch as the skill describes, then write the PR description for base ${prBase} to .ship/pr-${t.n}.md inside the worktree (do not commit it) and return its absolute path as body_file with pr: 0.\n`
+    ? `Local mode: do NOT push and do NOT open a pull request. Verify the branch as the skill describes, then write the PR description for base ${prBase} to .ship/pr-${t.n}.md inside the sandbox (do not commit it) and return its absolute path as body_file with pr: 0.\n`
     : `Verify, push the branch and open the pull request with base ${prBase}. The body says "Refs #${t.n}" (the final PR carries the Closes lines) and ends with the footer line. Return the PR number as pr and its url.\n`
   const ver = verifyResult
     ? `Verify result: ${verifyResult.result}. Local stills: ${verifyResult.stills.join(', ') || 'none'}. Evidence stays uncommitted; a later step attaches the evidence file to the pull request.\n`
@@ -603,7 +663,8 @@ async function runTicket(t) {
       planText = `Design:\n${design.design_md}\n\nAdvisor review of design and plan (follow it unless it is wrong; record any deviation as a decision):\n${advice}\n\n` +
         `Follow this plan:\n${plan.plan_md}`
     }
-    const impl = spec.impl = await stageImplement(t, branch, planText, boundary)
+    const sandbox = spec.sandbox = await stageProvision(t)
+    const impl = spec.impl = await stageImplement(t, sandbox, planText, boundary)
     const verifyResult = spec.verify = await verifyTicket(t, impl)
     const fin = spec.fin = await stageFinish(t, impl, verifyResult)
     const attached = await stageAttach(t, fin, verifyResult)
@@ -829,21 +890,25 @@ function stripVerify(text) {
 
 // One plan-blind UAT agent. No head(): that tells the agent to run gh issue view and would hand it the Verify row.
 // The prompt holds the stripped request, the stripped owner block and the config path. No plan, diff or Verify row.
-function uatAgent(label, wtName, t, body, owner, configPath) {
-  const w = newWt(wtName, null, finalRef)
-  const prompt = `${w.setup}${RULES}\n\nTicket #${t.n}: ${t.title}. Repo ${repo}.\n` +
-    `Stage: uat. Read ${pluginDir}/skills/uat/SKILL.md and follow it with Mode: auto, only after your worktree exists. Never ask anyone. ` +
+// UAT tests the merged result, so every run (also the rerun after a UAT fix) first moves the ticket sandbox to finalRef.
+function uatAgent(label, t, body, owner, configPath) {
+  const sb = sandboxes[t.n]
+  const target = sbRef(finalBranch)
+  const prompt = `git -C ${sb.dir} fetch ${SB_REMOTE}\ngit -C ${sb.dir} checkout --detach ${target}\n\n` +
+    `Run the two commands above first, in that order: they put the merged result (${target}, with any fix a UAT round added) into the ticket sandbox. If one fails, return status blocked with its error. ` +
+    `Your working directory is the ticket sandbox ${sb.dir}; do not create a worktree. ${sandboxFacts(sb)} ${notCwd(sb.dir)}\n\n${RULES}\n\nTicket #${t.n}: ${t.title}. Repo ${repo}.\n` +
+    `Stage: uat. Read ${pluginDir}/skills/uat/SKILL.md and follow it with Mode: auto, only after the sandbox is on ${target}. Never ask anyone. ` +
     `The recipe file is ${pluginDir}/skills/verify/references/run-app.md. ` +
     `The request text below is your only source: do not run gh issue view, and do not read git log, diffs, docs/adr/, specs/ or any plan. Keep the evidence local and uncommitted; fix nothing.\n\n` +
     `Owner's request (the issue body, verify rows removed by the workflow):\n<<<\n${body}\n>>>\n\n` +
     (owner ? `Owner-confirmed decisions (the owner's own words):\n<<<\n${owner}\n>>>\n\n` : '') +
-    `Config: ${configPath} (read-only; use this path, not the repo root; run its startCommand from ${w.dir}). If that file does not exist, use verify.config.json at the root of your own worktree ${w.dir} (verify commits it to the ticket branch); report blocked only when neither exists.\n` +
+    `Config: ${configPath} (read-only; use this path, not the repo root; run its startCommand from ${sb.dir}). If that file does not exist, use verify.config.json at the root of the sandbox ${sb.dir} (verify commits it to the ticket branch); report blocked only when neither exists.\n` +
     `Return passed_ac, scenarios (id, covers, kind, status, assertion, still), non_ac_failures and console_errors. If the run could not happen (no config, app will not start, no credentials), return status blocked with blocked_reason.`
   return call(prompt, { label, phase: 'UAT', schema: UAT_SCHEMA, model: MODEL.verify, effort: EFFORT.verify })
 }
 
-async function runUat(label, wtName, t, body, owner, configPath) {
-  try { return await uatAgent(label, wtName, t, body, owner, configPath) }
+async function runUat(label, t, body, owner, configPath) {
+  try { return await uatAgent(label, t, body, owner, configPath) }
   catch (e) { log(`UAT #${t.n} ${label} failed: ${e && e.message}`); return null }   // an infrastructure failure never fails the ticket
 }
 
@@ -875,7 +940,7 @@ async function stageUat(delivered) {
     const configPath = (r.verify && r.verify.configPath) || `${repoDir}/verify.config.json`
     const rec = { status: 'passed', reason: '', scenarios: [], fixed: false }
     records[t.n] = rec
-    let res = await runUat(`uat:${t.n}`, `uat-${t.n}`, t, body.text, owner.text, configPath)
+    let res = await runUat(`uat:${t.n}`, t, body.text, owner.text, configPath)
     if (!res || res.status === 'blocked') {
       const why = (res && (res.blocked_reason || res.summary)) || 'the UAT agent returned nothing'
       uatNotRun(t.n, why); rec.status = 'not run'; rec.reason = why
@@ -891,7 +956,7 @@ async function stageUat(delivered) {
       takeDecisions(t.n, 'uat-fix', fix)
       rec.fixed = !!(fix && fix.fix_status === 'fixed')
       // No fix commit landed: a rerun would test the same code, so skip it and let the first result stand.
-      const again = rec.fixed ? await runUat(`uat-rerun:${t.n}`, `uat-rerun-${t.n}`, t, body.text, owner.text, configPath) : res   // own worktree: it must see the fix
+      const again = rec.fixed ? await runUat(`uat-rerun:${t.n}`, t, body.text, owner.text, configPath) : res   // same sandbox, checked out at finalRef again: it sees the fix
       if (!rec.fixed) log(`UAT #${t.n}: fix ${fix && fix.fix_status || 'returned nothing'}, rerun skipped`)
       if (!again || again.status === 'blocked') {
         const why = (again && (again.blocked_reason || again.summary)) || 'the UAT rerun agent returned nothing'
@@ -1080,9 +1145,20 @@ for (const g of groups) {
   }
 }
 
+const sandboxList = () => Object.keys(sandboxes).map(Number).sort((a, b) => a - b).map(n => ({ n, ...sandboxes[n] }))
+// clean without --yes only previews; it never uses force and never removes a clone.
+function logSandboxes() {
+  const list = sandboxList()
+  if (!list.length) return
+  const cleanCmd = `bash ${pluginDir}/scripts/provision-sandbox.sh clean ${repoDir} --run ${RUN_ID}`
+  log(`sandboxes (the script never removes them):\n${list.map(x => `#${x.n} ${x.dir} branch ${x.branch} port ${x.port} db ${x.db} (${x.mode})`).join('\n')}\n` +
+    `Preview what would be removed: ${cleanCmd}\nRemove the worktree sandboxes: ${cleanCmd} --yes` +
+    (SANDBOX_MODE === 'clone' ? `\nClone sandboxes are not registered worktrees, so clean skips them: remove each clone directory above by hand.` : ''))
+}
+
 const deliveredAll = ordered().filter(r => r.status === 'done')
 const out = {
-  single, final: null, tickets: [], review: { status: 'not run', rounds: 0, fixed: [], notFixed: [], leftover: [] }, worktrees: [],
+  single, final: null, tickets: [], review: { status: 'not run', rounds: 0, fixed: [], notFixed: [], leftover: [] }, worktrees: [], sandboxes: [],
   intent: { verdict: 'not run', gaps: [] }, suite: { passed: 0, failed: 0, skipped: 0 }, adrs: [], artifact: { fallback: 'docs/adr/' }, decisions,
 }
 const publicTicket = r => ({ n: r.n, status: r.status, pr: r.pr, summary: r.summary, reason: r.reason })
@@ -1092,6 +1168,8 @@ if (!deliveredAll.length) {
   await writeSpecs({ byN, final: null, review: out.review, intent: out.intent, suite: out.suite, adrs: [] })
   out.tickets = ordered().map(publicTicket)
   out.worktrees = [...worktrees]
+  out.sandboxes = sandboxList()
+  logSandboxes()
   return out
 }
 
@@ -1139,5 +1217,7 @@ await writeSpecs({ byN, final: out.final, review: out.review, intent: out.intent
 
 out.tickets = ordered().map(publicTicket)
 out.worktrees = [...worktrees]
-log(`worktrees created (the script never removes them; remove with git -C ${repoDir} worktree remove <dir>):\n${out.worktrees.join('\n')}`)
+out.sandboxes = sandboxList()
+log(`light worktrees created (the script never removes them; remove with git -C ${repoDir} worktree remove <dir>):\n${out.worktrees.join('\n')}`)
+logSandboxes()
 return out
