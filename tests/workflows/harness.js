@@ -910,6 +910,16 @@ test('u2: the UAT prompt holds the body and owner block, never the plan, diff or
   assert.strictEqual(named(calls, /^request:/).length, 1, 'the request text is cached, not fetched again')
 })
 
+test('u2b: tight AC bullets under a Verify row stay in the UAT prompt', async () => {
+  const { calls } = await run({ tickets: [T(1, 1, [], {})] }, c => {
+    if (c.label === 'request:1') return { body: 'Do the thing.\nVerify: SECRET-V start\n  then SECRET-V2\n- AC-KEEP-ONE\n- AC-KEEP-TWO' }
+  })
+  const u = named(calls, /^uat:1$/)[0]
+  assert(u, labelsOf(calls).join())
+  for (const bad of ['SECRET-V', 'SECRET-V2']) assert(!u.prompt.includes(bad), `UAT prompt leaks ${bad}`)
+  assert(u.prompt.includes('AC-KEEP-ONE') && u.prompt.includes('AC-KEEP-TWO'), u.prompt)
+})
+
 test('u3: the UAT phase sits between Intent review and Testing', async () => {
   const { calls } = await run({}, null)
   const ls = labelsOf(calls)

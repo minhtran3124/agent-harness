@@ -716,14 +716,14 @@ async function stageIntentReview(done) {
   return { verdict: res ? res.verdict : 'unknown', gaps: findings, fixRound: fixable.length > 0 }
 }
 
-// Drop each Verify: row and the continuation lines under it (up to the next blank line). Blank lines stay; a mid-sentence mention stays.
+// Drop each Verify: row and its indented continuation lines. An unindented line or a list bullet ends the row, so tight AC lines under it stay. Blank lines stay; a mid-sentence mention stays.
 const VERIFY_ROW = /^\s*(?:[-*>]\s*)?(?:\*\*|__)?Verify:/
 function stripVerify(text) {
   let skipping = false, count = 0
   const kept = []
   for (const line of String(text || '').split('\n')) {
     if (VERIFY_ROW.test(line)) { skipping = true; count++; continue }
-    if (skipping && line.trim()) { count++; continue }
+    if (skipping && /^\s+\S/.test(line) && !/^\s*(?:[-*+>]|\d+[.)])\s/.test(line)) { count++; continue }
     skipping = false
     kept.push(line)
   }
