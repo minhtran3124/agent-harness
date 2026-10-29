@@ -521,4 +521,20 @@ git -C "$dir" checkout -q --detach
 prov "$repo" r 1 keep --branch feat/keep
 if [ "$RC" -eq 0 ] && grep -q '"branch":"feat/keep"' "$dir/.sandbox.json" && echo "$OUT" | grep -q '"branch":"feat/keep"'; then pass; else fail "rc=$RC $OUT $(cat "$dir/.sandbox.json")"; fi
 
+t "clean --branch classifies only matching sandboxes and prints no skip lines for the rest"
+repo=$(mk_repo); root="$(dirname "$repo")/.ship-$(basename "$repo")"
+prov "$repo" g 1 aa --branch br/open
+prov "$repo" g 2 bb --branch br/merged
+mkdir -p "$root/stray"
+GHLOG="$FAKEBIN/gh.log"; : > "$GHLOG"
+cat > "$FAKEBIN/gh-counting" <<GH
+#!/bin/bash
+echo "\$3" >> "$GHLOG"
+exec "$FAKEBIN/gh" "\$@"
+GH
+chmod +x "$FAKEBIN/gh-counting"
+CBIN=$(mktemp -d); _CLEANUP_DIRS+=("$CBIN"); cp "$FAKEBIN/gh-counting" "$CBIN/gh"
+OUT=$(PATH="$CBIN:$FAKEBIN:$PATH" bash "$SCRIPT" clean "$repo" --branch br/merged 2>&1); RC=$?
+if [ "$RC" -eq 0 ] && [ "$(wc -l < "$GHLOG" | tr -d ' ')" -eq 1 ] && ! echo "$OUT" | grep -q 'skip' && echo "$OUT" | grep -q 'would remove g-t2-bb'; then pass; else fail "rc=$RC calls=$(cat "$GHLOG") $OUT"; fi
+
 finish

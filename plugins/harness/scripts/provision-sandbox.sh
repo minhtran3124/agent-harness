@@ -278,7 +278,13 @@ if [ "${1:-}" = clean ]; then
   fi
   for sb in "$sb_root"/*/; do
     sb=${sb%/}; [ -d "$sb" ] || continue
-    name=$(basename "$sb"); real=$(cd "$sb" && pwd -P)
+    name=$(basename "$sb")
+    # --run and --branch read only .sandbox.json: filter before any gh call or skip line.
+    case "$sel" in
+      run) [ "$(sb_json "$sb/.sandbox.json" runId)" = "$sel_val" ] || continue ;;
+      branch) [ "$(sb_json "$sb/.sandbox.json" branch)" = "$sel_val" ] || continue ;;
+    esac
+    real=$(cd "$sb" && pwd -P)
     is_clone=0
     if [ -f "$sb/.sandbox.json" ] && [ -d "$sb/.git" ] && [ -f "$sb/.git/harness-sandbox-source" ] \
       && [ "$(cat "$sb/.git/harness-sandbox-source")" = "$(cd "$sb_repo" && pwd -P)" ]; then
@@ -288,8 +294,6 @@ if [ "${1:-}" = clean ]; then
     fi
     sb_classify "$sb"
     case "$sel" in
-      run) [ "$(sb_json "$sb/.sandbox.json" runId)" = "$sel_val" ] || continue ;;
-      branch) [ "$(sb_json "$sb/.sandbox.json" branch)" = "$sel_val" ] || continue ;;
       merged) [ "$sb_state" = merged ] || continue ;;
       older) { [ "$sb_age" -ge "$sel_val" ] && [ "$sb_state" != 'PR open' ]; } || continue ;;
     esac
