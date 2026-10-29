@@ -438,4 +438,32 @@ cln "$repo" --older 0d --yes
 if echo "$OUT" | grep -q 'skip stray (not a registered' && [ -f "$root/stray/f" ]; then pass; else fail "$OUT"; fi
 kill "$SLEEPER" 2>/dev/null; wait "$SLEEPER" 2>/dev/null
 
+# ---- clean --branch ----
+prov "$repo" d 1 bra --branch br/sel-a
+prov "$repo" d 2 brb --branch br/sel-b
+prov "$repo" d 3 brr --branch br/sel-run
+sleep 30 & SLEEPER2=$!
+printf '%s\n' "$SLEEPER2" > "$root/d-t3-brr/.sandbox.pid"
+
+t "clean --branch without --yes prints would remove and changes nothing"
+before=$(snap)
+cln "$repo" --branch br/sel-a
+after=$(snap)
+if [ "$RC" -eq 0 ] && echo "$OUT" | grep -q 'would remove d-t1-bra' && ! echo "$OUT" | grep -q 'd-t2-brb' && [ "$before" = "$after" ]; then pass; else fail "rc=$RC $OUT"; fi
+
+t "clean --branch B --yes removes only the sandbox on B"
+cln "$repo" --branch br/sel-a --yes
+if [ "$RC" -eq 0 ] && echo "$OUT" | grep -q 'removed d-t1-bra' && [ ! -d "$root/d-t1-bra" ] && [ -d "$root/d-t2-brb" ]; then pass; else fail "rc=$RC $OUT"; fi
+
+t "clean --branch with another selector, or without a value, exits 2"
+cln "$repo" --branch br/sel-b --merged; rc1=$RC
+cln "$repo" --merged --branch br/sel-b; rc2=$RC
+cln "$repo" --branch; rc3=$RC
+if [ "$rc1" -eq 2 ] && [ "$rc2" -eq 2 ] && [ "$rc3" -eq 2 ] && [ -d "$root/d-t2-brb" ]; then pass; else fail "rc=$rc1/$rc2/$rc3"; fi
+
+t "clean --branch skips a running sandbox on that branch"
+cln "$repo" --branch br/sel-run --yes
+if echo "$OUT" | grep -q 'skip d-t3-brr (running)' && [ -d "$root/d-t3-brr" ]; then pass; else fail "rc=$RC $OUT"; fi
+kill "$SLEEPER2" 2>/dev/null; wait "$SLEEPER2" 2>/dev/null
+
 finish
