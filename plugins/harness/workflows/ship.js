@@ -429,13 +429,26 @@ async function stageAttach(t, fin, verifyResult) {
   if (verifyResult.result !== 'pass' && verifyResult.result !== 'flaky') return
   const flaky = verifyResult.result === 'flaky'
   const note = `Verify for #${t.n} was flaky: it failed once and passed on the retry.`
+  const cmd = `gh pr comment ${fin.pr} --repo ${repo} --attach ${verifyResult.gif} --body "Verify evidence for #${t.n}: ${verifyResult.result}"`
   try {
-    await call(
-      `Stage: attach. Run: gh pr comment ${fin.pr} --repo ${repo} --attach ${verifyResult.gif} --body "Verify evidence for #${t.n}: ${verifyResult.result}"\n` +
+    const res = await call(
+      `Stage: attach. Run: ${cmd}\n` +
+      `The --attach flag needs gh 2.99.0 or newer. The comment body must not contain an image line: the GIF is attached with --attach only.\n` +
       (flaky ? `Then add this note to the end of the PR body: read it with gh pr view ${fin.pr} --repo ${repo} --json body -q .body, append "${note}", and write it back with gh pr edit ${fin.pr} --repo ${repo} --body-file <file>.\n` : '') +
-      `Commit nothing; the GIF stays uncommitted. Return status ok.\n\n${RULES}`,
+      `If the command is denied or fails (old gh, permission denied, any error), do not retry and do not work around it. Return status ok (never blocked) and one decision with needs_review true, titled "Attach the verify GIF by hand for #${t.n}", whose decision field holds this exact command so the owner can paste it as written: ${cmd}\n` +
+      `Commit nothing; the GIF stays uncommitted. Otherwise return status ok.\n\n${RULES}`,
       { label: `attach:${t.n}`, phase: 'Tickets', schema: SETUP_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
-  } catch (e) { log(`#${t.n} attach failed: ${e && e.message}`) }
+    takeDecisions(t.n, 'attach', res)
+  } catch (e) {
+    log(`#${t.n} attach failed: ${e && e.message}`)
+    addDecision(t.n, 'attach', {
+      title: `Attach the verify GIF by hand for #${t.n}`,
+      context: `The attach step failed: ${e && e.message}`,
+      decision: cmd, why: 'The GIF was not attached to the pull request.',
+      consequences: 'The PR has no verify GIF until the owner runs the command.', how_to_reverse: 'n/a',
+      needs_review: true,
+    })
+  }
 }
 
 function stageFinish(t, impl, verifyResult) {
