@@ -53,7 +53,8 @@ Stop when the frontier is empty and the owner confirms. A "yes" to the last roun
 
 Write the confirmed decisions as ONE comment titled "Confirmed decisions". When the ticket is a GitHub issue, run `gh issue comment <n> --body-file <file>`. Otherwise return the text.
 
-Replace the `## Confirmed decisions` section of `specs/<slug>/intent.md` with the same list, and add
+Replace the `## Confirmed decisions` section of `specs/<slug>/intent.md` with the same list (without intake, first create
+it from `${CLAUDE_PLUGIN_ROOT}/templates/specs/intent.md`, which names the slug rule), and add
 one entry per decision to `specs/<slug>/decision.md` (both local scratch; entry shape in
 `${CLAUDE_PLUGIN_ROOT}/templates/specs/decision.md`).
 

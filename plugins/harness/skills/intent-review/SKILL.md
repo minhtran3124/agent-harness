@@ -18,7 +18,7 @@ Pass the reviewer these things:
 3. **Owner-confirmed decisions**, if any: the owner's own words, labelled as such. A change they
    name is not a gap, drift, or excess. They are not agent plan.
 
-Never pass the plan, the design, the research brief, the `specs/<slug>/` files (`intent.md`, `design.md`, `decision.md`, `plan.md`, `summary.md`), ADRs, or any summary by the orchestrator. The plan can carry the same misreading this review
+Never pass the plan, the design, the research brief, the `specs/<slug>/` files (`design.md`, `decision.md`, `plan.md`, `summary.md`, and every part of `intent.md` except its verbatim `## Original request`), ADRs, or any summary by the orchestrator. The plan can carry the same misreading this review
 exists to catch.
 
 If the request is missing, STOP and say so. Never reconstruct it.

@@ -54,7 +54,7 @@ function defaults(c, st) {
   if (l === 'suite-rerun') return { passed: 2, failed: 0, skipped: 0, failing: [] }
   if (l === 'artifact') return { created: false, fallback: 'docs/adr/' }
   if (l === 'adr') return ok({ adrs: [{ number: 2, path: 'docs/adr/0002-x.md', needs_review: true }] })
-  if (l.startsWith('specs:') || l.startsWith('specs-final:')) return ok()
+  if (l === 'specs') return ok()
   throw new Error(`no scripted answer for label '${l}'`)
 }
 
@@ -491,7 +491,7 @@ test('h: the ADR stage runs once and receives decisions from every ticket', asyn
   assert(p.includes('"title":"D-one"') && p.includes('"ticket":1') && p.includes('"title":"D-two"') && p.includes('"ticket":2'))
   assert(p.includes('"run":"ms"') && p.includes('--input .ship/decisions.json') && p.includes('--render-section') && p.includes('{{DECISIONS}}'))
   assert(p.includes('"stage":"intent"') && p.includes('"decided_by"'))
-  const noSpecs = labelsOf(calls).filter(l => !l.startsWith('specs-final:'))   // the local spec writes need the ADR paths
+  const noSpecs = labelsOf(calls).filter(l => l !== 'specs')   // the local spec write needs the ADR paths
   assert.strictEqual(noSpecs[noSpecs.length - 1], 'adr')
   assert.deepStrictEqual(result.adrs, [{ number: 2, path: 'docs/adr/0002-x.md', needsReview: true }])
   assert.strictEqual(result.artifact.fallback, 'docs/adr/')
@@ -881,35 +881,47 @@ test('vb7: local mode has no Verify heading', async () => {
   assert(!adrBody(calls).includes('## Verify'))
 })
 
-test('s1: every ticket writes its five flow files to the main checkout specs/, not to a worktree', async () => {
+test('s1: one writer at the end puts the five flow files of every ticket in the main checkout specs/', async () => {
   for (const depth of ['S', 'M', 'L']) {
-    const { calls } = await run({ tickets: [T(1, 1, [], { depth })] }, c => (c.label === 'intent:1' ? ok({ goal: 'GOAL-1', approach: 'APPROACH-1', plan_steps: [{ title: 'STEP-1', files: ['a.js'], done_when: 'true' }] }) : undefined))
-    const w = named(calls, /^specs:1$/)
+    const dec = { title: 'D-ADR', context: 'c', options: ['a'], decision: 'd', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'low', needs_review: true }
+    const { calls } = await run({ tickets: [T(1, 1, [], { depth })] }, c => {
+      if (c.label === 'intent:1') return ok({ goal: 'GOAL-1', approach: 'APPROACH-1', acceptance: ['works'], decisions: [dec], plan_steps: [{ title: 'STEP-1', files: ['a.js'], covers: ['AC1'], done_when: 'true' }] })
+      if (c.label === 'adr') return ok({ adrs: [{ number: 2, path: 'docs/adr/0002-d-adr.md', needs_review: true, ticket: '1', title: 'D-ADR' }] })
+    })
+    const w = named(calls, /^specs$/)
     assert.strictEqual(w.length, 1, `${depth}: ${labelsOf(calls).join()}`)
     const p = w[0].prompt
     for (const f of ['intent.md', 'design.md', 'decision.md', 'plan.md', 'summary.md']) assert(p.includes(`=== /repo/specs/1-ticket-1/${f}`), `${depth}: ${f} missing`)
-    assert(p.includes('check-ignore') && p.includes('{{REQUEST}}') && p.includes('gh issue view 1 --repo o/r --json body -q .body'), depth)
+    assert(p.includes('check-ignore') && p.includes('date +%F') && p.includes('Date: {{DATE}}') && p.includes('gh issue view 1 --repo o/r --json body -q .body'), depth)
     assert(!p.includes('/.ship-repo/'), `${depth}: spec files must not go to a worktree`)
-    assert(p.includes(depth === 'S' ? 'STEP-1' : 'PLAN-MD'), `${depth}: plan text`)
+    assert(p.includes(depth === 'S' ? '- Covers: AC1' : 'PLAN-MD'), `${depth}: plan text`)
     assert(p.includes(depth === 'L' ? '=== /repo/specs/1-ticket-1/research-brief.md' : 'APPROACH-1'), `${depth}: design or research`)
-    assert(named(calls, /^implement:1$/)[0].prompt.indexOf('PLAN.md') < 0, `${depth}: implement still told to write PLAN.md`)
-    const fin = named(calls, /^specs-final:1$/)
-    assert.strictEqual(fin.length, 1)
-    assert(fin[0].prompt.includes('/repo/specs/1-ticket-1/summary.md') && fin[0].prompt.includes('- intent-review: match') && !fin[0].prompt.includes('/intent.md'))
-    assert(labelsOf(calls).indexOf('specs-final:1') > labelsOf(calls).indexOf('adr'))
+    assert(p.includes('AC1: works') && p.includes('- ADR: docs/adr/0002-d-adr.md') && p.includes('D1 D-ADR → docs/adr/0002-d-adr.md') && p.includes('- intent-review: match'), depth)
+    assert(labelsOf(calls).indexOf('specs') > labelsOf(calls).indexOf('adr'))
+    assert(!named(calls, /^implement:1$/)[0].prompt.includes('PLAN.md'), `${depth}: implement still told to write PLAN.md`)
   }
 })
 
-test('s2: a blocked ticket still writes its spec files with the reason, and a failed write changes nothing', async () => {
-  const { calls, result } = await run({ local: true, tickets: [T(1, 1), T(2, 1)] }, c => {
+test('s2: blocked, merge-blocked and skipped tickets get spec files with their real status; a failed write changes nothing', async () => {
+  const { calls, result } = await run({ local: true, tickets: [T(1, 1, [], { body: 'FULL-BODY-1' }), T(2, 1), T(3, 2, [1]), T(4, 2)] }, c => {
     if (c.label === 'implement:1') return ok({ status: 'blocked', blocked_reason: 'cannot build', worktree: '', branch: '' })
-    if (c.label === 'specs:2') return new Error('write failed')
+    if (c.label === 'merge:g2') return ok({ merged: [], failed: [{ n: 4, reason: 'conflict' }] })
+    if (c.label === 'specs') return new Error('write failed')
   })
-  const p = named(calls, /^specs:1$/)[0].prompt
-  assert(p.includes('Status: blocked (implement: cannot build)'), p.slice(-400))
+  const p = named(calls, /^specs$/)[0].prompt
+  assert(p.includes('Status: blocked (implement: cannot build)'), 'blocked ticket')
+  assert(p.includes('=== /repo/specs/3-ticket-3/summary.md') && p.includes('Status: skipped (dependency #1 is blocked)'), 'skipped ticket')
+  assert(p.includes('Status: blocked (merge into feat/ms failed: conflict)'), 'merge-blocked ticket')
+  assert(p.includes('FULL-BODY-1') && !p.includes('{{REQUEST}}'), 'local mode uses the ticket body as the request')
   assert(p.includes('## Original request') && p.includes('## Deviations from plan') && p.includes('| Command | Result | Covers |'), 'template headings')
-  assert(p.includes('Ticket 1') && !p.includes('{{REQUEST}}'), 'local mode uses the ticket text as the request')
   assert.strictEqual(result.tickets.find(t => t.n === 2).status, 'done')
+})
+
+test('s3: when no ticket is delivered the spec files are still written', async () => {
+  const { calls } = await run({}, c => (c.label === 'implement:1' ? ok({ status: 'blocked', blocked_reason: 'nope', worktree: '', branch: '' }) : undefined))
+  const w = named(calls, /^specs$/)
+  assert.strictEqual(w.length, 1, labelsOf(calls).join())
+  assert(w[0].prompt.includes('Status: blocked (implement: nope)') && w[0].prompt.includes('code review: not run'))
 })
 
 test('schemas are well-formed (object root, required within properties)', async () => {
