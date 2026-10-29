@@ -43,10 +43,16 @@ Return `decisions[]` in your result. Each item has `ticket`, `stage`, `title`, `
 `decision`, `why`, `consequences`, `how_to_reverse`, `confidence`, `needs_review`, and optionally `owner_confirmed`.
 Never write an ADR file. Parallel worktrees collide on numbers. Only the ADR stage writes files.
 
+## The local decision log
+
+Every decision is also an entry in `specs/<slug>/decision.md` (shape:
+`${CLAUDE_PLUGIN_ROOT}/templates/specs/decision.md`), added by the step that decides, or by
+the workflow script.
+
 ## Design ADRs
 
 A depth L design from `brainstorming` is an ADR with `stage: design`. It goes through `decisions[]`
-and the ADR stage like any other decision. It is not written under `specs/`.
+and the ADR stage like any other decision.
 
 ## The ADR stage
 

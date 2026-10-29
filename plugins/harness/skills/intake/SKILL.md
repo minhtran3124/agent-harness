@@ -1,12 +1,12 @@
 ---
 name: intake
 description: "Readiness gate for one ticket (issue number, issue URL or free text). Judges READY, CONFIRM, GRILL or BLOCKED and picks a depth of S, M or L before any research, planning or edit. Use before starting work on a ticket."
-allowed-tools: Read, Grep, Glob, AskUserQuestion, Bash(gh issue view *), Bash(git log *), Bash(git branch *), Bash(ls *), Bash(test -n *)
+allowed-tools: Read, Write, Grep, Glob, AskUserQuestion, Bash(gh issue view *), Bash(git log *), Bash(git branch *), Bash(ls *), Bash(test -n *)
 ---
 
 # Intake — is this ticket ready?
 
-Judge one ticket and return a verdict. Do not edit files, plan or implement.
+Judge one ticket and return a verdict. Write only `specs/<slug>/intent.md`; do not plan or implement.
 
 ## Steps
 
@@ -14,6 +14,8 @@ Judge one ticket and return a verdict. Do not edit files, plan or implement.
    use the text. Quote the owner's request verbatim in an intent line.
 2. Look up facts yourself (code, docs, issue state, dependencies). Never ask the owner for a fact.
 3. Judge the verdict, then the depth.
+4. Write `specs/<slug>/intent.md` (local scratch) from
+   `${CLAUDE_PLUGIN_ROOT}/templates/specs/intent.md`; it names the slug rule.
 
 ## Verdict
 
@@ -32,9 +34,8 @@ Judge one ticket and return a verdict. Do not edit files, plan or implement.
 
 ## Depth
 
-- **S**: the plan fits in the prompt. Go straight to `harness:implement`.
-- **M**: add a `specs/<slug>/PLAN.md` (local scratch; `harness:writing-plans`), then `harness:implement`.
-- **L**: add `harness:brainstorming` (the design is an ADR in `docs/adr/`) and `harness:xia2` research before the plan.
+- **S** and **M**: `harness:writing-plans` (one or two steps at S), then `harness:implement`.
+- **L**: add `harness:brainstorming` and `harness:xia2` research before the plan.
 
 A bug fix goes to `harness:diagnosing-bugs` first: Read `${CLAUDE_PLUGIN_ROOT}/skills/diagnosing-bugs/SKILL.md` (it blocks the Skill tool).
 
@@ -44,6 +45,7 @@ Return this block to the caller:
 
 ```text
 Intent: "<the owner's request, verbatim>"
+Slug: <slug>
 Verdict: READY | CONFIRM | GRILL | BLOCKED
 Depth: S | M | L
 Deps: <ticket numbers, or none>
@@ -66,7 +68,7 @@ Ticket has "Verify: bash scripts/run-tests.sh" -> Verdict: READY
   recommended answer.
 - Auto: never ask the owner. On any ambiguity pick the recommended option and record it in
   `decisions[]`: `{title, context, options, decision, why, consequences, how_to_reverse,
-  confidence: high|medium|low, needs_review: boolean}`. Do not write ADR files.
+  confidence: high|medium|low, needs_review: boolean}`. Do not write ADR or `specs/` files.
 - In auto mode, CONFIRM resolves itself: take each recommended answer and record it as a decision.
   A drafted `Verify:` row is a decision with `needs_review: true`; append its text to the
   ticket's confirmed text.

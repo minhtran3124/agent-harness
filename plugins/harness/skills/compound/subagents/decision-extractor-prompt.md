@@ -7,8 +7,8 @@ You are the Decision Extractor subagent for the `compound` skill. Your job is to
 1. The session. When this pass runs in the main loop, read the live session. When the orchestrator
    dispatched this pass, read the session digest that the orchestrator pasted in.
 2. The git diff. Run: `git diff HEAD~1..HEAD`
-3. The active spec's scratch notes, if any. Read `specs/<slug>/design.md` and
-   `specs/<slug>/research-brief.md`. The orchestrator passes the slug. These files are
+3. The active spec's scratch notes, if any. Read `specs/<slug>/design.md`,
+   `specs/<slug>/decision.md` and `specs/<slug>/research-brief.md`. The orchestrator passes the slug. These files are
    local and may be absent. Harvest any rejected alternative whose rejection
    reason is **reusable** (e.g. "don't use lib X because Y") into
    `Options_Considered`. This stops future agents from proposing it again.

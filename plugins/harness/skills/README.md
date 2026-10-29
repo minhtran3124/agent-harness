@@ -23,18 +23,20 @@ init-structure.sh --root <project>   (first-time setup; run from the harness rep
       ↓
 intake  (readiness gate — run first on every ticket)
   → judges READY | CONFIRM | GRILL | BLOCKED and depth S | M | L; returns a short verdict block
+  → writes specs/<slug>/intent.md; every depth gets the five flow files (see specs/README.md)
   → GRILL hands off to the grilling skill · BLOCKED proposes a split or names the missing dependency
   → Input-type: bug fix → diagnosing-bugs before the plan (see Bug Fix Path)
       ↓
 brainstorming  (depth L)
-  → explores options, converges on a design; depth L records the design as an ADR in docs/adr/; no review rounds
+  → explores options, converges on a design; depth L writes specs/<slug>/design.md and the design ADR in docs/adr/; no review rounds
       ↓
 xia2  (depth L; a short inline brief for M)
   → research before building; external docs only when the change has an external surface
   → output: research brief, local scratch (specs/<slug>/research-brief.md) or inline; no code
       ↓
-writing-plans  (depth M and L)
-  → steps carry Files, Effort, Done-when, Parallel group → specs/<slug>/PLAN.md (local scratch)
+writing-plans  (every depth; one or two steps for S)
+  → steps carry Files, Effort, Done-when, Parallel group → specs/<slug>/plan.md (local scratch)
+  → depth S and M: also a short specs/<slug>/design.md
       ↓
 using-git-worktrees  (manual runs; a Workflow uses isolation: 'worktree')
       ↓
@@ -48,13 +50,14 @@ compound  (if non-obvious pattern found)
       ↓
 finishing-a-development-branch
   → runs tests, pushes, opens a PR (Summary, Why, Changes, Decisions, Testing, Risk, How to revert, Notes)
+  → writes specs/<slug>/summary.md (local scratch)
   → never merges — a human reviews & merges
 ```
 
 ### Minimum Viable Path (intent clear, in-place edit, <1 day)
 
 ```
-intake → implement (depth S, plan in the prompt) → finishing-a-development-branch
+intake → writing-plans (depth S, one or two steps) → implement → finishing-a-development-branch
 intake → writing-plans → implement (depth M) · add brainstorming + xia2 first for depth L
 
 Every change runs on its own branch. Skip brainstorming when the approach is clear.
@@ -86,7 +89,7 @@ compound  (when the root cause is a reusable learning — the bug track takes it
 
 | Skill | Trigger | Output |
 |---|---|---|
-| `intake` | First, on every ticket — readiness gate: READY / CONFIRM / GRILL / BLOCKED and depth S / M / L, before research, planning, or edits | A short verdict block (verdict, depth, deps, questions, reason) and an intent line quoting the request |
+| `intake` | First, on every ticket — readiness gate: READY / CONFIRM / GRILL / BLOCKED and depth S / M / L, before research, planning, or edits | A short verdict block (verdict, slug, depth, deps, questions, reason) and `specs/<slug>/intent.md` |
 
 ### Setup
 
@@ -98,8 +101,8 @@ compound  (when the root cause is a reusable learning — the bug track takes it
 
 | Skill | Trigger | Output |
 |---|---|---|
-| `grilling` | **Intake- or user-invoked**. A ticket has open decisions that the owner must settle before design or planning. It maps the decisions as a design tree and asks the whole frontier in one numbered round, each with a recommended answer. Facts it looks up itself. `Mode: auto` is for `--no-ask` runs only | A "Confirmed decisions" comment on the ticket + a short decision list for the caller |
-| `brainstorming` | The goal is clear but the approach is not. The user weighs two or more ways, does not know how to start, or asks for a design or a recommendation. Not for a settled approach that only needs codebase or library knowledge (that is `xia2`). Depth L routes here | a design ADR in `docs/adr/` (depth L) |
+| `grilling` | **Intake- or user-invoked**. A ticket has open decisions that the owner must settle before design or planning. It maps the decisions as a design tree and asks the whole frontier in one numbered round, each with a recommended answer. Facts it looks up itself. `Mode: auto` is for `--no-ask` runs only | A "Confirmed decisions" comment on the ticket, the same list in `intent.md` and `decision.md`, + a short decision list for the caller |
+| `brainstorming` | The goal is clear but the approach is not. The user weighs two or more ways, does not know how to start, or asks for a design or a recommendation. Not for a settled approach that only needs codebase or library knowledge (that is `xia2`). Depth L routes here | `specs/<slug>/design.md` and a design ADR in `docs/adr/` (depth L) |
 | `xia2` | Find out how something actually works here before building on it. Examples: a feature on unexplained code, a library or API that the repo does not use yet, or how an existing part works. Not for a choice between approaches (that is `brainstorming`). No depth classifier | `specs/<slug>/research-brief.md` (depth L) or a short inline brief |
 | `diagnosing-bugs` | **User- or intake-invoked**. Run `/diagnosing-bugs`, or `intake` routes an `Input-type: bug fix` here. The skill blocks model invocation, so intake uses the Read tool on its `SKILL.md`. It proves the root cause in six gated phases before any fix. Every depth runs all six phases. No "cause known" shortcut exists. `task-reviewer` reviews the diagnosis before the fix | `specs/<slug>/diagnosis.md` → red test + fix (depth S) or the M / L route |
 
@@ -107,7 +110,7 @@ compound  (when the root cause is a reusable learning — the bug track takes it
 
 | Skill | Trigger | Output |
 |---|---|---|
-| `writing-plans` | After intake picks depth M or L | `specs/<slug>/PLAN.md`: steps with Files, Effort, Done-when and parallel group |
+| `writing-plans` | After intake, at every depth | `specs/<slug>/plan.md`: steps with Files, Effort, Done-when and parallel group; a short `design.md` at depth S and M |
 
 ### Execution
 
@@ -128,7 +131,7 @@ compound  (when the root cause is a reusable learning — the bug track takes it
 | `asd-ste100` | Use it when an agent or a tool must read English text with no human to help. Use it for instructions, tool descriptions, error messages, and status reports. Do not use it for creative or marketing copy. Vendored from upstream. See `skills/asd-ste100/UPSTREAM.md`. Implementers apply it to prose under `skills/`, `rules/`, and `agents/`. `compound` applies it to new records. | Text rewritten in ASD-STE100 style (Strict or STE-flavored mode). `skills/asd-ste100/scripts/ste-lint.py` checks the structural rules. |
 | `verify` | Use it when a ticket has a `Verify:` row and its code is ready, or run `/harness:verify`. Picks the checks by ticket type (BE, FE, FE+BE, docs). Browser steps use the Claude Code Playwright plugin tools only, and pass or fail comes from assertions. The agent infers the start recipe and writes `verify.config.json` (names of the login variables, never values). Never a project-level skill named `verify` | A pass or fail table, stills in `.playwright-mcp/<ticket>/` (gitignored), and a committed `verify.config.json`. A fixture app in `tests/fixtures/verify-app/` lets you try it by hand |
 | `uat` | Use it after a ticket is built, for FE, BE and FE+BE tickets, or run `/harness:uat N`. Reads only the issue body and the Confirmed decisions comment (never the plan, the diff or the `Verify:` row), numbers the acceptance bullets AC1..ACn, and checks the running app through `verify/references/run-app.md`. `ship.js` runs it as the UAT phase between intent review and testing | A table of scenarios (each naming an AC id, negative, extra or not-browser-checkable) with PASS or FAIL, assertion and still path. Never fixes code |
-| `finishing-a-development-branch` | Implementation complete, tests pass | Runs tests, pushes, opens a PR with a structured body (never merges) |
+| `finishing-a-development-branch` | Implementation complete, tests pass | Runs tests, pushes, opens a PR with a structured body (never merges), writes `specs/<slug>/summary.md` |
 
 ---
 
@@ -150,7 +153,7 @@ If one of these isn't available in your environment, the workflows degrade grace
 ## Skill Handoff Map
 
 ```
-intake             ──► READY → depth S: implement · M: writing-plans · L: brainstorming → xia2 → writing-plans
+intake             ──► READY → depth S and M: writing-plans · L: brainstorming → xia2 → writing-plans
                                 GRILL: grilling skill · BLOCKED: split or wait
                                 Input-type: bug fix → diagnosing-bugs (before the plan)
 grilling                   ──► "Confirmed decisions" comment + decision list → caller (terminal)

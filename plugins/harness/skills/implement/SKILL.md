@@ -11,8 +11,9 @@ Turn plan steps into commits. Review is not part of this skill: `/code-review` a
 
 ## Steps
 
-1. Read the plan: `specs/<slug>/PLAN.md` (local scratch) for depth M and L, the prompt for depth S. List the
-   steps with their Files, Effort, Done-when and parallel group.
+1. Read the plan: `specs/<slug>/plan.md` (local scratch, every depth). List the steps with their
+   Files, Effort, Done-when and parallel group. Add each choice the plan left open to
+   `specs/<slug>/decision.md`.
 2. Run the groups in order. Inside a group, steps that touch different files may run in parallel.
    Never run two steps that touch the same file at the same time.
 3. For each step start a fresh `implementer` subagent (Sonnet; High effort steps may use a stronger
@@ -37,7 +38,7 @@ the Done-when output. List any blockers. Do not paste file contents.
   recommended answer.
 - Auto: never ask the owner. On any ambiguity pick the recommended option and record it in
   `decisions[]`: `{title, context, options, decision, why, consequences, how_to_reverse,
-  confidence: high|medium|low, needs_review: boolean}`. Do not write ADR files.
+  confidence: high|medium|low, needs_review: boolean}`. Do not write ADR files or `specs/` files.
 - Set `needs_advisor: true` with `advisor_question` when a step is BLOCKED after 3 rounds, you have
   low confidence, or a decision affects other tickets or a public contract. The calling script
   runs the advisor. Do not spawn agents when running inside a workflow agent

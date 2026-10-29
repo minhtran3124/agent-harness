@@ -34,7 +34,7 @@ The plugin lives in `plugins/harness/`; the marketplace file is `.claude-plugin/
 intake   readiness gate: READY | CONFIRM | GRILL | BLOCKED, depth S | M | L
   -> grilling    important tickets: interview the owner until the decisions are settled
   -> brainstorming + xia2   depth L: pick the design, then research the code
-  -> writing-plans          depth M and L
+  -> writing-plans          every depth (one or two steps for S)
   -> implement   one implementer subagent per step, each in an isolated worktree
   -> /code-review, intent-review
   -> uat         plan-blind acceptance test on the running app (ship.js, FE/BE tickets)
@@ -66,7 +66,7 @@ Wired (✅) means registered in `plugins/harness/hooks/hooks.json`. `docs/hooks.
 
 - `docs/solutions/` holds solved problems and patterns. Start at `docs/solutions/INDEX.md`; read `docs/solutions/critical-patterns.md` when you plan. Entries carry `confirmed_at`: treat an entry older than 30 days as possibly stale.
 - `docs/adr/` holds durable decisions and depth-L designs (an ADR with `stage: design`).
-- `specs/` is local scratch and is gitignored: `PLAN.md` and research briefs stay local. Put a design or a decision in `docs/adr/`. Do not commit under `specs/`.
+- `specs/` is local scratch and is gitignored. Every ticket gets `specs/<slug>/` with five flow files: `intent.md`, `design.md`, `decision.md`, `plan.md`, `summary.md` (contract: `plugins/harness/templates/structure/specs-README.md`). A durable design or decision also goes to `docs/adr/`. Do not commit under `specs/`.
 
 ## Gotchas
 

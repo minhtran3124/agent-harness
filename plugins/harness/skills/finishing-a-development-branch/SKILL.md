@@ -13,8 +13,11 @@ allowed-tools: Read, Write, Grep, Glob, Bash
 2. Verify. Run the repository's test command (`CLAUDE.md` → `## Run and test`; if absent, detect it from the manifests), or the
    targeted tests for the change. Fix failures and retry at most twice. Never push a failing branch.
 3. Push without force: `git push -u origin <branch>`.
-4. Open one PR against the base with `gh pr create`. Return the URL and stop. A human reviews and
-   merges.
+4. Open one PR against the base with `gh pr create`.
+5. Write `specs/<slug>/summary.md` (local scratch; never stage it) from
+   `${CLAUDE_PLUGIN_ROOT}/templates/specs/summary.md`: the real command output, the review results
+   when they exist, and each deviation from `plan.md`. Return the URL and stop. A human reviews
+   and merges.
 
 ## PR body
 
@@ -42,7 +45,8 @@ named files only.
   recommended answer.
 - Auto: never ask the owner. On any ambiguity pick the recommended option and record it in
   `decisions[]`: `{title, context, options, decision, why, consequences, how_to_reverse,
-  confidence: high|medium|low, needs_review: boolean}`. Do not write ADR files.
+  confidence: high|medium|low, needs_review: boolean}`. Do not write ADR files or `specs/` files:
+  the calling script writes `summary.md`.
 - Set `needs_advisor: true` with `advisor_question` when tests keep failing, you have low
   confidence, or a decision affects other tickets or a public contract. The calling script runs the
   advisor. Do not spawn agents (`docs/adr/0001-workflow-capabilities.md`).

@@ -1,7 +1,7 @@
 ---
 name: grilling
 description: "Interview the owner about an important ticket until you both share the same understanding. Use when a ticket has open decisions that the owner must settle before design or planning. Writes a 'Confirmed decisions' comment on the ticket."
-allowed-tools: Read, Grep, Glob, Bash(gh issue view *), Bash(gh issue comment *), Bash(git log *), Agent, AskUserQuestion
+allowed-tools: Read, Write, Edit, Grep, Glob, Bash(gh issue view *), Bash(gh issue comment *), Bash(git log *), Agent, AskUserQuestion
 ---
 
 # Grilling
@@ -53,6 +53,11 @@ Stop when the frontier is empty and the owner confirms. A "yes" to the last roun
 
 Write the confirmed decisions as ONE comment titled "Confirmed decisions". When the ticket is a GitHub issue, run `gh issue comment <n> --body-file <file>`. Otherwise return the text.
 
+Replace the `## Confirmed decisions` section of `specs/<slug>/intent.md` with the same list (without intake, first create
+it from `${CLAUDE_PLUGIN_ROOT}/templates/specs/intent.md`, which names the slug rule), and add
+one entry per decision to `specs/<slug>/decision.md` (both local scratch; entry shape in
+`${CLAUDE_PLUGIN_ROOT}/templates/specs/decision.md`).
+
 Return a short list of the decisions to the caller. Mark each assumed decision `needs_review`.
 
 ## Auto mode
@@ -61,4 +66,4 @@ Auto mode exists only for `--no-ask` runs. In auto mode you NEVER ask. Answer ev
 
 `{title, context, options, decision, why, consequences, how_to_reverse, confidence, needs_review: true}`
 
-Do not write ADR files. Do not post a comment unless the caller asks.
+Do not write ADR files or `specs/` files. Do not post a comment unless the caller asks.
