@@ -28,7 +28,7 @@ function metaText() {
 // ship.js labels agents for people to read ("#3 intent · Add the thing"); the scripted answers below
 // and the assertions key on the stable role names, so the mock translates a display label back.
 const FIXED_LABELS = {
-  'write specs/ flow files': 'specs', 'set up integration branch': 'setup-integration', 'open final PR': 'final-pr',
+  'write specs/ flow files': 'specs', 'write specs/ early': 'specs-early', 'set up integration branch': 'setup-integration', 'open final PR': 'final-pr',
   'measure diff size': 'diffstat', 'intent review · diff vs request': 'intent-review', 'test · run full suite': 'suite',
   'test · fix failing tests': 'suite-fix', 'test · rerun failed tests': 'suite-rerun', 'update run artifact': 'artifact',
   'write ADRs (needs_review)': 'adr', 'check plugin and tools': 'plugin-check', 'intent fix · close gaps': 'intent-fix',
@@ -87,7 +87,7 @@ function defaults(c, st) {
   if (l === 'suite-rerun') return { passed: 2, failed: 0, skipped: 0, failing: [] }
   if (l === 'artifact') return { created: false, fallback: 'docs/adr/' }
   if (l === 'adr') return ok({ adrs: [{ number: 2, path: 'docs/adr/0002-x.md', needs_review: true }] })
-  if (l === 'specs') return ok()
+  if (l === 'specs' || l === 'specs-early') return ok()
   throw new Error(`no scripted answer for label '${l}'`)
 }
 
@@ -554,7 +554,7 @@ test('h: the ADR stage runs once and receives decisions from every ticket', asyn
   assert(p.includes('"title":"D-one"') && p.includes('"ticket":1') && p.includes('"title":"D-two"') && p.includes('"ticket":2'))
   assert(p.includes('"run":"ms"') && p.includes('--input .ship/decisions.json') && p.includes('--render-section') && p.includes('{{DECISIONS}}'))
   assert(p.includes('"stage":"intent"') && p.includes('"decided_by"'))
-  const noSpecs = labelsOf(calls).filter(l => l !== 'specs')   // the local spec write needs the ADR paths
+  const noSpecs = labelsOf(calls).filter(l => l !== 'specs' && l !== 'specs-early')   // the local spec write needs the ADR paths
   assert.strictEqual(noSpecs[noSpecs.length - 1], 'adr')
   assert.deepStrictEqual(result.adrs, [{ number: 2, path: 'docs/adr/0002-x.md', needsReview: true }])
   assert.strictEqual(result.artifact.fallback, 'docs/adr/')
@@ -985,6 +985,43 @@ test('s3: when no ticket is delivered the spec files are still written', async (
   const w = named(calls, /^specs$/)
   assert.strictEqual(w.length, 1, labelsOf(calls).join())
   assert(w[0].prompt.includes('Status: blocked (implement: nope)') && w[0].prompt.includes('code review: not run'))
+})
+
+test('s4: early spec writes happen after the intent and plan stages, before implement, in the main checkout', async () => {
+  for (const depth of ['S', 'M', 'L']) {
+    const { calls } = await run({ tickets: [T(1, 1, [], { depth })] }, null)
+    const labels = labelsOf(calls), impl = labels.indexOf('implement:1')
+    const early = named(calls, /^specs-early$/)
+    assert(early.length >= 1 && early.every(c => labels.indexOf('specs-early') < impl && labels.lastIndexOf('specs-early') < impl), `${depth}: ${labels.join()}`)
+    assert(labels.indexOf('specs-early') > labels.indexOf('intent:1'), `${depth}: after intent`)
+    if (depth !== 'S') assert(labels.lastIndexOf('specs-early') > labels.indexOf('plan:1'), `${depth}: after plan`)
+    const p = early.map(c => c.prompt).join('\n')
+    for (const f of ['intent.md', 'plan.md']) assert(p.includes(`=== /repo/specs/1-ticket-1/${f}`), `${depth}: ${f}`)
+    if (depth !== 'S') assert(p.includes('=== /repo/specs/1-ticket-1/design.md'), `${depth}: design.md`)
+    if (depth === 'L') assert(p.includes('=== /repo/specs/1-ticket-1/research-brief.md'), 'research-brief.md')
+    assert(!p.includes('decision.md') && !p.includes('summary.md'), `${depth}: end-of-run files`)
+    assert(p.includes('check-ignore') && !p.includes('/.ship-repo/') && !p.includes('/wt/'), depth)
+    assert(early.every(c => c.opts.model === 'haiku' && c.opts.effort === 'low'), `${depth}: cheap model`)
+    assert.strictEqual(named(calls, /^specs$/).length, 1, `${depth}: final pass`)
+  }
+})
+
+test('s5: the intent.md early write exists when implement is blocked or the plan stage throws', async () => {
+  const a = await run({}, c => (c.label === 'implement:1' ? ok({ status: 'blocked', blocked_reason: 'nope', worktree: '', branch: '' }) : undefined))
+  assert(named(a.calls, /^specs-early$/)[0].prompt.includes("=== /repo/specs/1-add-the-thing/intent.md"))
+  const b = await run({ tickets: [T(1, 1, [], { depth: 'M' })] }, c => (c.label === 'plan:1' ? new Error('plan failed') : undefined))
+  assert(named(b.calls, /^specs-early$/)[0].prompt.includes('=== /repo/specs/1-ticket-1/intent.md'))
+  assert.strictEqual(named(b.calls, /^implement:/).length, 0)
+})
+
+test('s6: a failing or blocked early write changes nothing', async () => {
+  const base = await run({}, null)
+  for (const out of [new Error('write failed'), { status: 'blocked', blocked_reason: 'not ignored', summary: '' }]) {
+    const r = await run({}, c => (c.label === 'specs-early' ? out : undefined))
+    assert.strictEqual(named(r.calls, /^implement:1$/).length, 1)
+    assert.strictEqual(r.result.tickets[0].status, 'done')
+    assert.deepStrictEqual(r.result.tickets, base.result.tickets)
+  }
 })
 
 // ---- UAT phase (#462) -----------------------------------------------------------------------

@@ -591,7 +591,7 @@ async function writeSpecFiles(list, run, { only, label }) {
     try { files = renderSpecs(t, run) } catch (e) { log(`#${t.n} spec files not rendered: ${e && e.message ? e.message : String(e)}`); continue }
     if (only) files = Object.fromEntries(Object.entries(files).filter(([f]) => only.includes(f)))
     const dir = specDir(t)
-    if (files['intent.md'].includes(REQUEST_LINE)) reqs.push(`In ${dir}/intent.md, replace the line ${REQUEST_LINE} with the issue body, verbatim, from: gh issue view ${t.n} --repo ${repo} --json body -q .body`)
+    if (files['intent.md'] && files['intent.md'].includes(REQUEST_LINE)) reqs.push(`In ${dir}/intent.md, replace the line ${REQUEST_LINE} with the issue body, verbatim, from: gh issue view ${t.n} --repo ${repo} --json body -q .body`)
     parts.push(...Object.entries(files).map(([f, text]) => `=== ${dir}/${f}\n${text}`))
   }
   if (!parts.length) return
