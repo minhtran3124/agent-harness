@@ -25,6 +25,37 @@ function metaText() {
   throw new Error('unterminated meta')
 }
 
+// ship.js labels agents for people to read ("#3 intent · Add the thing"); the scripted answers below
+// and the assertions key on the stable role names, so the mock translates a display label back.
+const FIXED_LABELS = {
+  'write specs/ flow files': 'specs', 'set up integration branch': 'setup-integration', 'open final PR': 'final-pr',
+  'measure diff size': 'diffstat', 'intent review · diff vs request': 'intent-review', 'test · run full suite': 'suite',
+  'test · fix failing tests': 'suite-fix', 'test · rerun failed tests': 'suite-rerun', 'update run artifact': 'artifact',
+  'write ADRs (needs_review)': 'adr', 'check plugin and tools': 'plugin-check', 'intent fix · close gaps': 'intent-fix',
+}
+const TICKET_VERBS = {
+  'post verify comment': 'verify-comment', 'record GIF': 'gif', 'attach evidence': 'attach', 'fetch owner request': 'request',
+  'UAT fix': 'uat-fix', 'UAT rerun': 'uat-rerun', 'UAT': 'uat',
+}
+function legacyLabel(l) {
+  if (l == null) return l
+  const head = l.split(' · ')[0]
+  if (FIXED_LABELS[l] || FIXED_LABELS[head]) return FIXED_LABELS[l] || FIXED_LABELS[head]
+  let m
+  if ((m = head.match(/^merge ticket branches$/))) return `merge:g${l.match(/group (\d+)/)[1]}`
+  if ((m = head.match(/^code-review( retry)?$/)) || (m = l.match(/^code-review · round (\d+)( retry)?$/))) {
+    const r = l.match(/round (\d+)( retry)?$/); return `review:r${r[1]}${r[2] ? ':retry' : ''}`
+  }
+  if ((m = head.match(/^fix r(\d+)\.(\d+)$/))) return `fix:r${m[1]}:${m[2]}`
+  if ((m = head.match(/^#(\d+) advisor (.+)$/))) return `advisor:${m[2]}:${m[1]}`
+  if ((m = head.match(/^#(\d+) (.+?)( retry)?$/))) {
+    const verb = TICKET_VERBS[m[2]]
+    if (verb) return `${verb}:${m[1]}`
+    return `${m[2]}:${m[1]}${m[3] ? ':retry' : ''}`
+  }
+  return l
+}
+
 // ---- default scripted answers, keyed by label -----------------------------------------------
 const ok = (extra) => ({ status: 'ok', summary: 'did it', decisions: [], ...extra })
 function defaults(c, st) {
@@ -75,7 +106,7 @@ async function run(over, override) {
   args0 = args
   const calls = [], logs = [], st = { fix: 0 }
   const agent = async (prompt, opts = {}) => {
-    const call = { prompt, opts, label: opts.label, schema: opts.schema }
+    const call = { prompt, opts, label: legacyLabel(opts.label), display: opts.label, schema: opts.schema }
     calls.push(call)
     if (override) {
       const v = override(call, calls, st)
@@ -1142,6 +1173,16 @@ test('u11: UAT and uat-fix prompts hold real newlines, never a literal backslash
     assert(!p.includes('\\n'), `${re} prompt has a literal backslash-n`)
   }
   assert(named(calls, /^uat:1$/)[0].prompt.includes('<<<\n'))
+})
+
+test('agent labels say what the agent does and fit the pane', async () => {
+  const { calls } = await run({ tickets: [T(1, 1, [], { title: `😀 ${'long title '.repeat(20)}` })] }, c => (c.label === 'review:r0' ? ok({ findings: [{ id: 'f', path: 'src/some/very/long/path/to/a/file.js', line: 7, summary: 's', score: 90 }], skill_invoked: true }) : undefined))
+  const shown = calls.map(c => c.display)
+  for (const d of shown) assert(d && Array.from(d).length <= 70 && !/[\ud800-\udbff](?![\udc00-\udfff])/.test(d), `label too long or empty: ${d}`)
+  assert(shown.some(d => /^#1 intent · .{1,40}$/u.test(d)), shown.join(' | '))
+  assert(shown.includes('test · run full suite'), shown.join(' | '))
+  assert(shown.some(d => d === 'fix r1.1 · file.js:7'), shown.join(' | '))
+  assert(shown.every(d => !/^[a-z-]+:\w+/.test(d)), `a terse role:key label leaked: ${shown.join(' | ')}`)
 })
 
 test('schemas are well-formed (object root, required within properties)', async () => {
