@@ -30,7 +30,7 @@ if [ "${1:-}" = --audit ]; then
   a_repo=$2; max_kb=5120; show_all=0; shift 2
   while [ "$#" -gt 0 ]; do
     case "$1" in
-      --max-kb) max_kb=${2:-}; shift 2 ;;
+      --max-kb) [ "$#" -ge 2 ] || die '--max-kb needs a value' 2; max_kb=$2; shift 2 ;;
       --all) show_all=1; shift ;;
       *) die "unknown option: $1" 2 ;;
     esac
@@ -115,10 +115,10 @@ repo=$1; run=$2; n=$3; slug=$4; shift 4
 branch=''; from=HEAD; remote=''; port_base=4000
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --branch) branch=${2:-}; shift 2 ;;
-    --from) from=${2:-}; shift 2 ;;
-    --remote) remote=${2:-}; shift 2 ;;
-    --port-base) port_base=${2:-}; shift 2 ;;
+    --branch) [ "$#" -ge 2 ] || die '--branch needs a value' 2; branch=$2; shift 2 ;;
+    --from) [ "$#" -ge 2 ] || die '--from needs a value' 2; from=$2; shift 2 ;;
+    --remote) [ "$#" -ge 2 ] || die '--remote needs a value' 2; remote=$2; shift 2 ;;
+    --port-base) [ "$#" -ge 2 ] || die '--port-base needs a value' 2; port_base=$2; shift 2 ;;
     *) die "unknown option: $1" 2 ;;
   esac
 done

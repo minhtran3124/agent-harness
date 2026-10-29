@@ -82,6 +82,12 @@ rc1=$RC
 prov
 if [ "$rc1" -eq 2 ] && [ "$RC" -eq 2 ]; then pass; else fail "rc=$rc1/$RC"; fi
 
+t "an option without a value exits 2 instead of looping"
+repo=$(mk_repo)
+OUT=$(timeout 10 bash "$SCRIPT" "$repo" r 1 s --branch 2>&1); rc1=$?
+OUT=$(timeout 10 bash "$SCRIPT" --audit "$repo" --max-kb 2>&1); RC=$?
+if [ "$rc1" -eq 2 ] && [ "$RC" -eq 2 ]; then pass; else fail "rc=$rc1/$RC"; fi
+
 # ---- --audit ----
 # mk_audit_repo → ignored paths of every class: config, state, prod secret, regenerable, unrecognised.
 mk_audit_repo() {
