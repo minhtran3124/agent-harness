@@ -7,7 +7,7 @@ export const meta = {
     { title: 'Merge', detail: 'merge a finished group into the integration branch (multi-ticket only)' },
     { title: 'Review', detail: 'code-review the final PR, fix findings, re-review only the fix commits' },
     { title: 'Intent review', detail: 'plan-blind check of the final diff against the original request' },
-    { title: 'Verify', detail: 'full test suite once, on the final branch' },
+    { title: 'Testing', detail: 'full test suite once, on the final branch' },
     { title: 'Decisions', detail: 'artifact, ADR files, final PR body' },
   ],
 }
@@ -578,14 +578,14 @@ async function stageSuite() {
     `Stage: verify. ${only ? `Re-run ONLY these failing tests: ${only.join(', ')} (use the narrowest command the project supports; ${testCmd} is the related-tests template).` : `Run the full suite: ${cmd}`}\n` +
     `Start the command in the background with its output going to a file, then poll that file until the process has exited. Never edit code or tests. ` +
     `Return the real counts of passed, failed and skipped tests from the output, the names of failing tests as failing, the exit code, and the last lines of output as tail.`
-  const first = await call(prompt('run', fullTestCmd, null), { label: 'suite', phase: 'Verify', schema: SUITE_SCHEMA, model: MODEL.test, effort: EFFORT.test })
+  const first = await call(prompt('run', fullTestCmd, null), { label: 'suite', phase: 'Testing', schema: SUITE_SCHEMA, model: MODEL.test, effort: EFFORT.test })
   if (!first) return { passed: 0, failed: 0, skipped: 0, note: 'the suite agent returned nothing' }
   if (!first.failed) return { passed: first.passed, failed: 0, skipped: first.skipped }
   const fix = await call(`${newWt('fix-suite', null, finalRef).setup}${RULES}\n\nStage: fix the failing tests of the final suite run, with minimal commits ("git add", then "git commit"). Failing: ${first.failing.join(', ')}\nOutput tail:\n${first.tail || ''}\n` +
     `Fix the code, not the test, unless the test itself is wrong. Run only the failing tests. Then land it: ${land(finalBranch)}`,
-    { label: 'suite-fix', phase: 'Verify', schema: stageSchema({}), model: MODEL.fix, effort: EFFORT.fix })
+    { label: 'suite-fix', phase: 'Testing', schema: stageSchema({}), model: MODEL.fix, effort: EFFORT.fix })
   takeDecisions('run', 'suite-fix', fix)
-  const again = await call(prompt('rerun', fullTestCmd, first.failing), { label: 'suite-rerun', phase: 'Verify', schema: SUITE_SCHEMA, model: MODEL.test, effort: EFFORT.test })
+  const again = await call(prompt('rerun', fullTestCmd, first.failing), { label: 'suite-rerun', phase: 'Testing', schema: SUITE_SCHEMA, model: MODEL.test, effort: EFFORT.test })
   if (!again) return { passed: first.passed, failed: first.failed, skipped: first.skipped, note: 'the re-run agent returned nothing' }
   return { passed: first.passed + again.passed, failed: again.failed, skipped: first.skipped + again.skipped, note: `${first.failed} failed first; re-ran only those` }
 }
@@ -740,7 +740,7 @@ const intent = await stageIntentReview(deliveredAll)
 out.intent = { verdict: intent.verdict, gaps: intent.gaps }
 log(`intent review: ${intent.verdict}, ${intent.gaps.length} finding(s)${intent.fixRound ? ', one fix round ran' : ''}`)
 
-phase('Verify')
+phase('Testing')
 const suite = await stageSuite()
 out.suite = suite
 log(`full suite: ${suite.passed} passed, ${suite.failed} failed, ${suite.skipped} skipped`)
