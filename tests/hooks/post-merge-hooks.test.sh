@@ -329,8 +329,8 @@ t "docs: skills README ties the live-process skip to the SessionStart sweep only
 README_ROW=$(grep 'removes merged worktrees and branches after a merge' "$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/plugins/harness/skills/README.md")
 if printf '%s' "$README_ROW" | grep -q 'session-start sweep also skips a worktree another live process uses' && ! printf '%s' "$README_ROW" | grep -q 'and a worktree another live process uses'; then pass; else fail "row=$README_ROW"; fi
 
-finish
-
 t "docs: CLAUDE.md hook row ties the live-process skip to the SessionStart sweep only"
 ROW=$(grep '^| `clean-worktrees.sh`' "$ROOT/CLAUDE.md")
 if printf '%s' "$ROW" | grep -q 'session-start sweep also skips a worktree a live process uses' && ! printf '%s' "$ROW" | grep -q 'protected names ([^)]*) and a worktree a live process uses'; then pass; else fail "row=$ROW"; fi
+
+finish
