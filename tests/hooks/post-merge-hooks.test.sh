@@ -194,8 +194,8 @@ if [ "$(printf '%s' "$OUT" | jq -r .hookSpecificOutput.hookEventName)" = Session
 t "item 2: a SessionStart sweep stops at its time budget between branches and says so"
 rsetup
 for bn in b1 b2; do git -C "$MAIN" checkout -q -b $bn; git -C "$MAIN" commit -q --allow-empty -m w-$bn; git -C "$MAIN" checkout -q main; git -C "$MAIN" merge -q --no-ff $bn -m m-$bn; done
-printf '#!/bin/sh\nsleep 2\ncase "$4" in b1) echo %s ;; b2) echo %s ;; esac\n' "$(git -C "$MAIN" rev-parse b1)" "$(git -C "$MAIN" rev-parse b2)" > "$STUB/gh"; chmod +x "$STUB/gh"
-rrun SessionStart CLEAN_BUDGET=1
+printf '#!/bin/sh\nsleep 4\ncase "$4" in b1) echo %s ;; b2) echo %s ;; esac\n' "$(git -C "$MAIN" rev-parse b1)" "$(git -C "$MAIN" rev-parse b2)" > "$STUB/gh"; chmod +x "$STUB/gh"
+rrun SessionStart CLEAN_BUDGET=3
 if [ "$RC" = 0 ] && printf '%s' "$OUT" | jq -r .hookSpecificOutput.additionalContext | grep -q 'stopped: time budget' && { has b1 && ! has b2 || has b2 && ! has b1; }; then pass; else fail "rc=$RC out=$OUT"; fi
 
 t "item 2: SessionStart keeps a merged worktree that another live process uses, and removes it once the process is gone"
@@ -324,5 +324,13 @@ if ! git -C "$REM" rev-parse -q --verify refs/heads/-f >/dev/null; then pass; el
 DOCS_HOOKS="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/docs/hooks.md"
 t "docs/hooks.md: no sentence is cut by 'cleaned It is registered'"
 if ! grep -q 'cleaned It is' "$DOCS_HOOKS"; then pass; else fail "garbled sentence in docs/hooks.md"; fi
+
+t "docs: skills README ties the live-process skip to the SessionStart sweep only"
+README_ROW=$(grep 'removes merged worktrees and branches after a merge' "$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/plugins/harness/skills/README.md")
+if printf '%s' "$README_ROW" | grep -q 'session-start sweep also skips a worktree another live process uses' && ! printf '%s' "$README_ROW" | grep -q 'and a worktree another live process uses'; then pass; else fail "row=$README_ROW"; fi
+
+t "docs: CLAUDE.md hook row ties the live-process skip to the SessionStart sweep only"
+ROW=$(grep '^| `clean-worktrees.sh`' "$ROOT/CLAUDE.md")
+if printf '%s' "$ROW" | grep -q 'session-start sweep also skips a worktree a live process uses' && ! printf '%s' "$ROW" | grep -q 'protected names ([^)]*) and a worktree a live process uses'; then pass; else fail "row=$ROW"; fi
 
 finish
