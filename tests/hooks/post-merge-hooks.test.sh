@@ -326,3 +326,7 @@ t "docs/hooks.md: no sentence is cut by 'cleaned It is registered'"
 if ! grep -q 'cleaned It is' "$DOCS_HOOKS"; then pass; else fail "garbled sentence in docs/hooks.md"; fi
 
 finish
+
+t "docs: CLAUDE.md hook row ties the live-process skip to the SessionStart sweep only"
+ROW=$(grep '^| `clean-worktrees.sh`' "$ROOT/CLAUDE.md")
+if printf '%s' "$ROW" | grep -q 'session-start sweep also skips a worktree a live process uses' && ! printf '%s' "$ROW" | grep -q 'protected names ([^)]*) and a worktree a live process uses'; then pass; else fail "row=$ROW"; fi

@@ -13,7 +13,7 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 ### Documented
 
-- `clean-worktrees.sh` details from #494: protected branch names (`develop`, `development`, `staging`, `production`, `release/*`, `release-*`), the skip of a worktree another live process uses, the SessionStart time budget (`CLEAN_BUDGET`, default 20 s) and the `CLEAN_RECREATE` guards.
+- `clean-worktrees.sh` details from #494: protected branch names (`develop`, `development`, `staging`, `production`, `release/*`, `release-*`), the skip of a worktree another live process uses (SessionStart sweep only), the SessionStart time budget (`CLEAN_BUDGET`, default 20 s) and the `CLEAN_RECREATE` guards.
 
 ## [5.1.0] — 2026-10-29
 
