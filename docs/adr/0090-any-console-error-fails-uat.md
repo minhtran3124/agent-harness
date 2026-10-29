@@ -4,33 +4,33 @@ stage: review-fix
 status: accepted
 needs_review: false
 confidence: medium
-decided_by: claude (ship workflow: review-fix)
+decided_by: claude (ship workflow: review-fix); text corrected to match the code at the owner's request
 date: 2026-10-29
 ---
 
-# 0090. Any console error fails UAT
+# 0090. A FAIL row fails UAT; console errors are report-only
 
 ## Context
 
-The UAT schema returns console_errors as a number, but nothing checked it. The finding says console errors can still pass.
+The UAT schema returns `passed_ac`, `scenarios[]` and `console_errors`. The first review round found that nothing checked these: an AC row with FAIL, or console errors, could still pass. The first fix also made any console error fail UAT. The second review round found that this blocks a ticket whose ACs all pass because of unrelated console noise, and reverted that part (ADR 0093).
 
 ## Options
 
 - Treat any console error greater than 0 as an AC failure
-- Log console errors only
+- Fail on `passed_ac` not exactly true or on an AC row with FAIL; report console errors only
 
 ## Decision
 
-Treat console_errors greater than 0, or an AC scenario with FAIL, as an AC failure, whatever passed_ac says. The fix prompt now lists the console error count.
+`uatOk` in `ship.js` passes only when `passed_ac === true` and no scenario with `kind: 'ac'` has status FAIL. `console_errors` never fails a run, and the `uat-fix` prompt does not ask the agent to fix console errors.
 
 ## Why
 
-The finding asks that console errors and FAIL rows cannot pass.
+The agent's `passed_ac` is a claim, so the scenario rows must agree with it. Console errors that no AC depends on are noise for acceptance and must not block a ticket (test u5d).
 
 ## Consequences
 
-A UAT run with console noise now triggers one fix round, and then blocks the ticket if it persists.
+Console errors show in the UAT report only. An AC that a console error breaks still fails through its own FAIL row.
 
 ## How to reverse
 
-Remove the console_errors clause in uatOk in ship.js.
+Add a `console_errors` clause to `uatOk` in `ship.js`, and update tests u5d and u5f.

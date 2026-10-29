@@ -29,7 +29,7 @@ Blocking on console errors would contradict the documented design and test u5d, 
 
 ## Consequences
 
-A non-numeric console_errors is still ignored. It is only used for the display count in the fix prompt.
+A non-numeric console_errors is still ignored. It is not used in the fix prompt either: the prompt says console errors are report-only.
 
 ## How to reverse
 
