@@ -24,18 +24,51 @@ against what was staged before that call. Stage in one call and commit in the ne
 After a `gh pr create`, adds a reminder to the model's context to run the review workflow on the new PR
 (inside a subagent it says to hand the PR number back). It only reminds; it never blocks.
 
-### `clean-worktrees.sh` (PostToolUse, Bash)
+### `clean-worktrees.sh` (PostToolUse, Bash; SessionStart)
 
-Acts only on a real merge command: `gh pr merge <n>` or `gh api .../pulls/<n>/merge`, at command position
-(at the start, or after `&&`, `;`, `|` or env assignments). Text inside a heredoc or a quoted string is ignored, so an
-issue body, commit message or `echo` that only mentions the phrase does nothing. The scope is that one PR: the hook
-looks it up with `gh pr view <n> --json state,headRefName` and, if it is merged, removes the worktree and local
-branch of that PR's branch when the PR has the same tip commit as the local branch, then tells the model what it
-removed. With no number in the command it uses the PR of the current branch; if that lookup fails it exits
-silently and cleans nothing. It never uses a force flag: `git worktree remove` refuses a worktree with changes or a lock, and
-`git branch -d` refuses a branch git does not see as merged (for example a squash merge; the hook reports it and
-leaves it). It never touches `main`, `master`, the checked-out branch of the main checkout, or the worktree the
-session is running in. Run by hand with no argument, it sweeps every merged branch and prints the same report.
+Removes the worktree and local branch of merged branches. It first runs `git fetch -q --prune <remote>`
+(a failed fetch, for example offline, does not stop it). It has two modes.
+
+- **PostToolUse** acts only on a real merge command: `gh pr merge <n>` or `gh api .../pulls/<n>/merge`, at command position
+  (at the start, or after `&&`, `;`, `|` or env assignments). Text inside a heredoc or a quoted string is ignored, so an
+  issue body, commit message or `echo` that only mentions the phrase does nothing. The scope is that one PR: the hook
+  looks it up with `gh pr view <n> --json state,headRefName`. With no number in the command it uses the PR of the current
+  branch; if that lookup fails it exits silently and cleans nothing.
+- **SessionStart** (`clean-worktrees.sh SessionStart`, no payload) sweeps every branch, so a PR merged on the GitHub web is cleaned
+  at the next session start. It returns what it removed as `additionalContext`. The session's own branch and worktree are skipped.
+- Run by hand with no argument, it sweeps every branch and prints plain text.
+
+A branch is removed by the first rule that fits:
+
+1. **Merged PR, exact tip** (needs `gh`): a merged PR whose head commit equals the local tip. This also covers squash merges, which
+   are not in git history. It uses `git branch -D`; this is the only forced delete. The exact tip match is the guard: a branch with
+   a commit after the merge is kept.
+2. **`worktree-*` agent branch**: no worktree has it checked out and its tip is contained in a `<remote>/*` branch
+   (`<remote>/HEAD` does not count). Deleted with `git branch -d`.
+3. **No `gh`**: the upstream is gone and the tip is an ancestor of `<remote>/main`. Deleted with `git branch -d`. If
+   `<remote>/main` is missing, no rule applies and the branch is kept.
+
+`git worktree remove` has no force flag: it refuses a worktree with changes or a lock. The hook never touches `main`, `master`,
+a `CLEAN_KEEP` name, the current branch (checked before every rule), or the worktree the session runs in.
+
+Settings (space-separated lists), set in the `env` block of `.claude/settings.json`:
+
+| Variable | Default | Effect |
+|---|---|---|
+| `CLEAN_REMOTE` | `origin` | Remote used for the fetch, rule 2, rule 3 and `CLEAN_RECREATE` |
+| `CLEAN_KEEP` | empty | Extra protected branch names, added to `main master` and the current branch |
+| `CLEAN_STRICT` | empty | Globs (for example `run/*`). A match is removed only by rule 1 (exact-tip merged PR), never by rules 2 or 3 |
+| `CLEAN_RECREATE` | empty | Base branches to recreate: when `git ls-remote` says the name is missing (exit 2), push `<remote>/main` as that branch. Any other `ls-remote` failure does nothing |
+
+```json
+{
+  "env": {
+    "CLEAN_KEEP": "automation workflow",
+    "CLEAN_STRICT": "run/*",
+    "CLEAN_RECREATE": "automation"
+  }
+}
+```
 
 ### `session-rules.sh` (SessionStart)
 
@@ -46,7 +79,7 @@ delivered this way is not verified in a live session.
 
 ## One fixed hook set
 
-The plugin registers one fixed hook set in `plugins/harness/hooks/hooks.json`: `session-rules.sh`, `secrets-scan.sh`, `pr-opened.sh` and `clean-worktrees.sh`. Claude Code merges them with the user's and the project's hooks. The repo's own `settings.json` wires no hooks, or each would run twice (`tests/scripts/settings-wiring.test.sh` checks it). To develop the plugin, run `claude --plugin-dir plugins/harness`.
+The plugin registers one fixed hook set in `plugins/harness/hooks/hooks.json`: `session-rules.sh`, `secrets-scan.sh`, `pr-opened.sh` and `clean-worktrees.sh` (PostToolUse and SessionStart). Claude Code merges them with the user's and the project's hooks. The repo's own `settings.json` wires no hooks, or each would run twice (`tests/scripts/settings-wiring.test.sh` checks it). To develop the plugin, run `claude --plugin-dir plugins/harness`.
 
 ## Permissions
 

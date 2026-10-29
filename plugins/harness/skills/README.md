@@ -202,7 +202,7 @@ Schema reference: `docs/solutions/README.md` (scaffolded by `/harness:setup`).
 `hooks/session-rules.sh` delivers `rules/behavior.md` at session start.
 `hooks/secrets-scan.sh` runs before every `git commit`: it blocks a staged secret pattern or a staged `.env` file.
 `hooks/pr-opened.sh` reminds the main session to review a PR after `gh pr create`, and `hooks/clean-worktrees.sh`
-removes merged worktrees and branches after a merge. The old commit gate is gone; its lane and escalation checks are judgment calls now. `docs/hooks.md` has the detail.
+removes merged worktrees and branches after a merge and at session start (it fetches first; `git branch -D` only when a merged PR head equals the local tip; `CLEAN_KEEP`, `CLEAN_STRICT`, `CLEAN_RECREATE` and `CLEAN_REMOTE` set it per project). The old commit gate is gone; its lane and escalation checks are judgment calls now. `docs/hooks.md` has the detail.
 
 This is one of several wired hooks — see the full table in the root `CLAUDE.md`.
 

@@ -7,6 +7,18 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 ## [Unreleased]
 
+## [5.1.0] — 2026-10-29
+
+### Added
+
+- `clean-worktrees.sh` runs at SessionStart in sweep mode (no payload) and returns what it removed as `additionalContext`, so a PR merged on the GitHub web is cleaned. Issue #494.
+- `clean-worktrees.sh` runs `git fetch -q --prune <remote>` first, removes `worktree-*` agent branches contained in a `<remote>/*` branch, and works without `gh` (upstream gone and tip an ancestor of `<remote>/main`).
+- Settings in the `env` block of `.claude/settings.json`: `CLEAN_REMOTE`, `CLEAN_KEEP`, `CLEAN_STRICT`, `CLEAN_RECREATE` (see `docs/hooks.md`).
+
+### Changed
+
+- A squash-merged branch is now removed with `git branch -D` when a merged PR head equals the local tip (before: reported and kept). A branch with commits after the merge is still kept.
+
 ## [5.0.0] — 2026-10-28
 
 **BREAKING.** The harness is now a Claude Code plugin, and a large part of the v2 machinery is gone. Epic #338, issues #349–#351. Read the migration steps below before you upgrade a project that installed the old copied `.claude/`.
