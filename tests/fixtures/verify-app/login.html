@@ -10,7 +10,7 @@
   </form>
   <p id="message" role="alert"></p>
   <script>
-    // credentials.json is written by serve.sh from VERIFY_USER and VERIFY_PASSWORD
+    // credentials.json is written by serve.sh from APP_USER and APP_PASSWORD
     document.getElementById('login-form').addEventListener('submit', async function (e) {
       e.preventDefault();
       const cred = await (await fetch('credentials.json')).json();
