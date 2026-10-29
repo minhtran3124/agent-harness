@@ -1016,6 +1016,12 @@ test('u10: verify reports its config path and UAT gets it', async () => {
   assert(named(calls, /^uat:1$/)[0].prompt.includes('Config: /wt/1/tests/fixtures/verify-app/verify.config.json'))
 })
 
+test('u10b: UAT prompt falls back to the config in its own worktree when the path is missing', async () => {
+  const { calls } = await run({})
+  const p = named(calls, /^uat:1$/)[0].prompt
+  assert(/If that file does not exist, use verify\.config\.json at the root of your own worktree/.test(p), p)
+})
+
 test('u11: UAT and uat-fix prompts hold real newlines, never a literal backslash-n', async () => {
   const { calls } = await run({}, c => (c.label === 'uat:1' ? uatRes(false, [sc('S1', 'AC1', 'ac', 'FAIL')]) : c.label === 'uat-rerun:1' ? uatRes(true, [sc('S1', 'AC1', 'ac', 'PASS')]) : undefined))
   for (const re of [/^uat:1$/, /^uat-fix:1$/]) {
