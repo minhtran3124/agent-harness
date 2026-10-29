@@ -104,6 +104,10 @@ The merge stage needs the owner to allow `gh pr merge` into `feat/<slug>*`, and 
 
 - docs: STE rewrite of the remaining harness prose (Phase 3) (PR #294)
 
+## [2.28.1] — 2026-10-15
+
+- ci(post-merge): add sdlc to the pull_request_target allowlist (PR #295)
+
 ## [2.28.0] — 2026-10-02
 
 - feat(agents): run review roles on Opus 5.5 at medium effort and drop model-diversity rule (PR #244)

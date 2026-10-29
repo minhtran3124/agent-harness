@@ -30,7 +30,11 @@ on:
     # list) from the repo's real DEFAULT branch (main), regardless of the PR's base. Editing
     # the list only on an integration branch has NO effect until it lands on `main` (sync in
     # its own small PR, as with #36/#44/#45).
-    branches: [main, loop, simplify]
+    # `sdlc` was added on 2026-10-15. Every PR merged into `sdlc` (the playbook-adoption
+    # integration branch, for example #292 and #293) had fired nothing and stayed at
+    # `ready_to_merge`. A merge into `sdlc` now also runs this write-token job on the
+    # `sdlc` tip. That is by design, and it is the same trust as the other listed branches.
+    branches: [main, loop, simplify, sdlc]
 
 permissions:
   contents: write
