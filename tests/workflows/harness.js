@@ -232,6 +232,7 @@ test('e7: RULES gives one source for project rules, not the owner checkout and t
   assert(c.prompt.includes('read the tracked ones (CLAUDE.md, .claude/rules/*.md) from it'), 'no worktree-first rule')
   assert(!c.prompt.includes('read the same files at the same relative paths'), 'old contradictory sentence is back')
   assert(c.prompt.includes('/repo/CLAUDE.local.md'), 'untracked CLAUDE.local.md source missing')
+  assert(c.prompt.includes('git -C /repo status --porcelain -- CLAUDE.md .claude/rules'), 'uncommitted rule edits in the owner checkout are not covered')
 })
 
 test('e6: every stage prompt tells the agent to read the repo CLAUDE.md and .claude/rules', async () => {

@@ -156,7 +156,7 @@ validateArgs(args)
 
 const { repo, repoDir, pluginDir, remote, base, slug, testCmd, lintCmd, fullTestCmd, advisorModel } = args
 // The harness files (skills, agents, scripts) live in the plugin directory, not in the target repo.
-const RULES = `${RULES_COMMON}\n- Project rule files: once you have your own worktree, read the tracked ones (CLAUDE.md, .claude/rules/*.md) from it, at the same relative path as ${repoDir}/CLAUDE.md and ${repoDir}/.claude/rules/*.md; before that, read them from ${repoDir}. CLAUDE.local.md is untracked, so read ${repoDir}/CLAUDE.local.md (if present).\n- Harness files (skills/, agents/, scripts/) live in the plugin directory ${pluginDir}. Read them there by absolute path.`
+const RULES = `${RULES_COMMON}\n- Project rule files: once you have your own worktree, read the tracked ones (CLAUDE.md, .claude/rules/*.md) from it, at the same relative path as ${repoDir}/CLAUDE.md and ${repoDir}/.claude/rules/*.md; before that, read them from ${repoDir}. Your worktree holds only committed content, so also run git -C ${repoDir} status --porcelain -- CLAUDE.md .claude/rules; for any file it lists (uncommitted edit, for example just written by setup), read that file from ${repoDir} instead. CLAUDE.local.md is untracked, so read ${repoDir}/CLAUDE.local.md (if present).\n- Harness files (skills/, agents/, scripts/) live in the plugin directory ${pluginDir}. Read them there by absolute path.`
 const LOCAL = args.local === true
 const NO_ASK = args.noAsk === true
 const tickets = args.tickets
