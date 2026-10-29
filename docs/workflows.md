@@ -30,6 +30,9 @@ sibling PRs into it, a merge agent after each group, one final PR into `base`.
    blocks the ticket. Evidence stays uncommitted (Git ignores `.playwright-mcp/`). Local mode skips verify.
    The manual run on a repo with a real web app is an owner checklist item, not part of the automated
    acceptance: the ticket (#414) stays open until the owner has done and recorded it.
+   The final PR body lists each ticket's verify result in a `## Verify` section (after `## Review`,
+   before `## Intent review`): kind, result, base check, stills folder and whether the GIF was built
+   and attached. Local mode and tickets that never ran the stage add no line.
 3. Merge: after each group (multi only).
 4. Review: `code-review` at a level chosen from diff size and risky paths; findings scoring 50 or
    more get one fix agent each; re-review only the fix commits; at most 2 rounds.

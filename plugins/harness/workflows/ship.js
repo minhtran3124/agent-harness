@@ -382,6 +382,8 @@ const verifyFacts = r => `failing step: ${r.failedStep || 'unknown'}; console er
 // Head run, one retry, then the base check (FE and FE+BE only). Local mode skips the stage.
 async function verifyTicket(t, impl) {
   if (LOCAL) return null
+  const dir = `${impl.worktree}/.playwright-mcp/${t.n}`
+  const blocked = (msg, r, base) => Object.assign(new Blocked(msg), { verify: { result: 'fail', kind: r.kind, base, stills: r.stills || [], dir, gif: null, report: r.report || '' } })
   let r = await stageVerify(t, impl, 'verify')
   let result = 'pass'
   if (!r.passed) {
@@ -389,21 +391,23 @@ async function verifyTicket(t, impl) {
     if (!r.passed) {
       const msg = `verify failed twice (${verifyFacts(r)})`
       await commentVerify(t, `Verify failed twice for #${t.n}: ${verifyFacts(r)}`)
-      throw new Blocked(msg)
+      throw blocked(msg, r, 'not run')
     }
     result = 'flaky'
   }
+  let baseResult = 'not run'
   if (r.kind === 'FE' || r.kind === 'FE+BE') {
     const b = await stageVerify(t, impl, 'verify-base')
     if (b.passed) {
       const msg = 'verify steps also pass on the base commit, so the test does not prove the change (weak test)'
       await commentVerify(t, `Verify for #${t.n}: ${msg}.\n${b.report || ''}`)
-      throw new Blocked(msg)
+      throw blocked(msg, r, 'passed')
     }
+    baseResult = 'failed'
   }
   const stills = r.stills || []
   const gif = await buildGif(t, impl, stills)
-  return { result, stills, gif, report: r.report || '' }
+  return { result, kind: r.kind, base: baseResult, stills, dir, gif, report: r.report || '' }
 }
 
 // Stills to one GIF with ffmpeg. Any problem gives null and a log line; it never changes the verify result.
@@ -414,8 +418,9 @@ async function buildGif(t, impl, stills) {
     const res = await call(
       `Stage: gif. Build one animated GIF from the verify stills of ticket #${t.n}. Stills (in order): ${stills.join(', ')}. They sit in ${dir}.\n` +
       `Use only the stills listed above, in that order; ignore any other file in ${dir}. Write a concat list file ${dir}/stills.txt with one line per still ("file '<absolute path>'" and "duration 1"), then repeat the last still's "file" line once more at the end with no duration (the concat demuxer ignores the duration of the last entry, so without the repeat the final still flashes for one frame), then run: ffmpeg -y -f concat -safe 0 -i ${dir}/stills.txt -vf "scale=800:-2:flags=lanczos,split[a][b];[a]palettegen[p];[b][p]paletteuse" ${dir}/evidence.gif. Do not use a wildcard pattern for the input.\n` +
+      `Before the list: compare the stills with sha256sum and drop a still that is identical to the one before it. If fewer than 2 distinct stills remain, run no ffmpeg and return an empty gif (a later step attaches the first still as a PNG).\n` +
       `Rules: palettegen, at most 30 seconds, 800 px wide, under 10 MB (drop frames or lower the frame rate if larger). Write the GIF inside ${dir}. Commit nothing and do not add it to git.\n` +
-      `Return gif: the absolute path of the GIF, or an empty string when there are no stills, ffmpeg is missing or the build failed.\n\n${RULES}`,
+      `Return gif: the absolute path of the GIF, or an empty string when there are no stills, fewer than 2 distinct stills remain, ffmpeg is missing or the build failed. An empty gif means a later step attaches the first still as a PNG.\n\n${RULES}`,
       { label: `gif:${t.n}`, phase: 'Tickets', schema: GIF_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
     if (res && res.gif) return res.gif
     log(`#${t.n} no GIF built`)
@@ -423,19 +428,36 @@ async function buildGif(t, impl, stills) {
   return null
 }
 
-// Separate from stageFinish: runs only for a real PR with a GIF and a pass or flaky result. A failure is only logged.
+// Separate from stageFinish: runs only for a real PR with evidence (the GIF, else the first still as a PNG) and a pass or flaky result. A failure is only logged.
 async function stageAttach(t, fin, verifyResult) {
-  if (!(fin && fin.pr > 0) || !verifyResult || !verifyResult.gif) return
-  if (verifyResult.result !== 'pass' && verifyResult.result !== 'flaky') return
+  if (!(fin && fin.pr > 0) || !verifyResult) return false
+  const evidence = verifyResult.gif || (verifyResult.stills || [])[0]
+  if (!evidence) return false
+  if (verifyResult.result !== 'pass' && verifyResult.result !== 'flaky') return false
   const flaky = verifyResult.result === 'flaky'
   const note = `Verify for #${t.n} was flaky: it failed once and passed on the retry.`
+  const cmd = `gh pr comment ${fin.pr} --repo ${repo} --attach ${evidence} --body "Verify evidence for #${t.n}: ${verifyResult.result}"`
   try {
-    await call(
-      `Stage: attach. Run: gh pr comment ${fin.pr} --repo ${repo} --attach ${verifyResult.gif} --body "Verify evidence for #${t.n}: ${verifyResult.result}"\n` +
+    const res = await call(
+      `Stage: attach. Run: ${cmd}\n` +
+      `The --attach flag needs gh 2.99.0 or newer. The comment body must not contain an image line: the evidence file is attached with --attach only.\n` +
       (flaky ? `Then add this note to the end of the PR body: read it with gh pr view ${fin.pr} --repo ${repo} --json body -q .body, append "${note}", and write it back with gh pr edit ${fin.pr} --repo ${repo} --body-file <file>.\n` : '') +
-      `Commit nothing; the GIF stays uncommitted. Return status ok.\n\n${RULES}`,
+      `If the command is denied or fails (old gh, permission denied, any error), do not retry and do not work around it. Return status ok (never blocked) and one decision with needs_review true, titled "Attach the verify GIF by hand for #${t.n}", whose decision field holds this exact command so the owner can paste it as written: ${cmd}\n` +
+      `Commit nothing; the evidence file stays uncommitted. Otherwise return status ok.\n\n${RULES}`,
       { label: `attach:${t.n}`, phase: 'Tickets', schema: SETUP_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
-  } catch (e) { log(`#${t.n} attach failed: ${e && e.message}`) }
+    takeDecisions(t.n, 'attach', res)
+    return !!res && res.status !== 'blocked' && !((res.decisions || []).some(d => d && d.needs_review === true))
+  } catch (e) {
+    log(`#${t.n} attach failed: ${e && e.message}`)
+    addDecision(t.n, 'attach', {
+      title: `Attach the verify GIF by hand for #${t.n}`,
+      context: `The attach step failed: ${e && e.message}`,
+      decision: cmd, why: 'The GIF was not attached to the pull request.',
+      consequences: 'The PR has no verify GIF until the owner runs the command.', how_to_reverse: 'n/a',
+      needs_review: true,
+    })
+    return false
+  }
 }
 
 function stageFinish(t, impl, verifyResult) {
@@ -447,7 +469,7 @@ function stageFinish(t, impl, verifyResult) {
     ? `Local mode: do NOT push and do NOT open a pull request. Verify the branch as the skill describes, then write the PR description for base ${prBase} to .ship/pr-${t.n}.md inside the worktree (do not commit it) and return its absolute path as body_file with pr: 0.\n`
     : `Verify, push the branch and open the pull request with base ${prBase}. The body says "Refs #${t.n}" (the final PR carries the Closes lines) and ends with the footer line. Return the PR number as pr and its url.\n`
   const ver = verifyResult
-    ? `Verify result: ${verifyResult.result}. Local stills: ${verifyResult.stills.join(', ') || 'none'}. Evidence stays uncommitted; a later step attaches the GIF to the pull request.\n`
+    ? `Verify result: ${verifyResult.result}. Local stills: ${verifyResult.stills.join(', ') || 'none'}. Evidence stays uncommitted; a later step attaches the evidence file to the pull request.\n`
     : ''
   const build = advice => head(t, 'finishing-a-development-branch', `Stage: finish. ${where}${ver}${how}Do not run the full suite.${advice}`, dir)
   return runStage(t, 'finish', build, FINISH_SCHEMA, { model: MODEL.implement, effort: EFFORT.implement })
@@ -476,13 +498,13 @@ async function runTicket(t) {
     const impl = await stageImplement(t, branch, planText, boundary)
     const verifyResult = await verifyTicket(t, impl)
     const fin = await stageFinish(t, impl, verifyResult)
-    await stageAttach(t, fin, verifyResult)
+    const attached = await stageAttach(t, fin, verifyResult)
     log(`#${t.n} done: ${fin.url || fin.body_file || impl.branch}`)
-    return { n: t.n, status: 'done', pr: fin.pr || null, url: fin.url || '', branch: impl.branch || branch, summary: capSummary(impl.summary || fin.summary), reason: '', body_file: fin.body_file }
+    return { n: t.n, status: 'done', pr: fin.pr || null, url: fin.url || '', branch: impl.branch || branch, summary: capSummary(impl.summary || fin.summary), reason: '', body_file: fin.body_file, ...(verifyResult ? { verify: { ...verifyResult, attached } } : {}) }
   } catch (e) {
     const reason = e && e.message ? e.message : String(e)
     log(`#${t.n} blocked: ${reason}`)
-    return { n: t.n, status: 'blocked', pr: null, url: '', branch, summary: '', reason }
+    return { n: t.n, status: 'blocked', pr: null, url: '', branch, summary: '', reason, ...(e && e.verify ? { verify: e.verify } : {}) }
   }
 }
 
@@ -742,6 +764,16 @@ function buildBody(results, review, intent, suite) {
   for (const f of review.notFixed) L.push(`- not fixed: ${f.summary} (${f.reason})`)
   for (const f of review.leftover) L.push(`- left: [${f.score}] ${f.summary}`)
   for (const f of review.preExisting) L.push(`- already on ${base}, not fixed: ${f.summary}`)
+  const withVerify = results.filter(r => r.verify)
+  if (withVerify.length) {
+    L.push('', '## Verify', '')
+    for (const r of withVerify) {
+      const v = r.verify
+      const baseText = v.base === 'failed' ? 'failed on base as required' : v.base === 'passed' ? 'passed on base (weak test)' : 'not run'
+      const gifText = !v.gif ? 'not built' : v.attached ? 'built and attached' : 'built, not attached'
+      L.push(`- ${ref(r.n)} ${v.kind}: ${v.result}; base: ${baseText}; stills: ${v.dir}; GIF: ${gifText}`)
+    }
+  }
   L.push('', '## Intent review', '', `Verdict: ${intent.verdict}${intent.fixRound ? ' (one fix round ran, not re-reviewed)' : ''}`)
   for (const g of intent.gaps) L.push(`- ${g.kind}${g.behaviour_changing ? ' (behaviour-changing)' : ''}: ${g.clause}: ${g.detail}`)
   L.push('', '## Final verification', '', `Passed ${suite.passed}, failed ${suite.failed}, skipped ${suite.skipped}.${suite.note ? ` ${suite.note}.` : ''}`)

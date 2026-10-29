@@ -706,6 +706,20 @@ test('a1: pass with a GIF attaches after finish, without the flaky note', async 
   assert.strictEqual(result.tickets[0].status, 'done')
 })
 
+test('a1b: the gif prompt names sha256sum, the distinct-still rule and the PNG fallback', async () => {
+  const { calls } = await run({}, withVerify('FE'))
+  const g = named(calls, /^gif:1$/)[0]
+  assert(g.prompt.includes('sha256sum') && g.prompt.includes('fewer than 2 distinct') && g.prompt.includes('identical to the one before it') && g.prompt.includes('PNG'), g.prompt)
+})
+
+test('a1c: an empty gif with a still present attaches the first still, in order gif, finish, attach', async () => {
+  const { calls, result } = await run({}, withVerify('FE', c => (c.label === 'gif:1' ? ok({ gif: '' }) : undefined)))
+  const ls = labelsOf(calls).filter(l => /^(gif|finish|attach)/.test(l))
+  assert.deepStrictEqual(ls, ['gif:1', 'finish:1', 'attach:1'])
+  assert(named(calls, /^attach:1$/)[0].prompt.includes('--attach /wt/1/.playwright-mcp/1/step-1.png'), 'attach prompt')
+  assert.strictEqual(result.tickets[0].status, 'done')
+})
+
 test('a2: flaky adds the note to the PR body', async () => {
   const { calls } = await run({}, c => {
     if (c.label === 'verify:1') return vres(false, 'FE')
@@ -717,10 +731,21 @@ test('a2: flaky adds the note to the PR body', async () => {
   assert(a.prompt.includes('--attach') && a.prompt.includes('gh pr edit 101 --repo o/r') && a.prompt.includes('was flaky'), a.prompt)
 })
 
-test('a3: no GIF path means no attach, and the ticket is done', async () => {
+test('a3: no GIF path attaches the first still as a PNG, and the ticket is done', async () => {
   const { calls, result, logs } = await run({}, withVerify('FE', c => (c.label === 'gif:1' ? ok({ gif: '' }) : undefined)))
-  assert.strictEqual(named(calls, /^attach:/).length, 0)
+  const at = named(calls, /^attach:/)
+  assert.strictEqual(at.length, 1)
+  assert(at[0].prompt.includes('--attach /wt/1/.playwright-mcp/1/step-1.png'), at[0].prompt)
   assert(logs.some(l => l.includes('no GIF built')))
+  assert.strictEqual(result.tickets[0].status, 'done')
+})
+
+test('a3b: no GIF and no stills makes no attach call', async () => {
+  const { calls, result } = await run({}, c => {
+    if (c.label === 'verify:1') return vres(true, 'FE', { stills: [] })
+    if (c.label === 'verify-base:1') return vres(false, 'FE')
+  })
+  assert.strictEqual(named(calls, /^attach:/).length, 0)
   assert.strictEqual(result.tickets[0].status, 'done')
 })
 
@@ -736,9 +761,30 @@ test('a5: an attach failure is logged and the ticket is still done', async () =>
   assert.strictEqual(result.tickets[0].status, 'done')
 })
 
-test('a6: a GIF build failure keeps gif null, skips attach and does not change the result', async () => {
+test('a8: the attach prompt names --attach, gh 2.99.0 and bans an image line', async () => {
+  const { calls } = await run({}, withVerify('FE'))
+  const a = named(calls, /^attach:1$/)[0]
+  assert(a.prompt.includes('--attach') && a.prompt.includes('2.99.0') && a.prompt.includes('must not contain an image line'), a.prompt)
+})
+
+test('a9: a needs_review decision from the attach agent reaches the run and the ticket is done', async () => {
+  const d = { title: 'Attach by hand', context: 'denied', options: ['a'], decision: 'gh pr comment 101 --repo o/r --attach /wt/1/.playwright-mcp/1/evidence.gif', why: 'w', consequences: 'c', how_to_reverse: 'n', confidence: 'high', needs_review: true }
+  const { result } = await run({}, withVerify('FE', c => (c.label === 'attach:1' ? ok({ decisions: [d] }) : gifOk(c))))
+  assert(result.decisions.some(x => x.title === 'Attach by hand' && x.needs_review === true && x.stage === 'attach'), JSON.stringify(result.decisions))
+  assert.strictEqual(result.tickets[0].status, 'done')
+})
+
+test('a10: an attach call that throws records a needs_review decision with the command', async () => {
+  const { result } = await run({}, withVerify('FE', c => (c.label === 'attach:1' ? new Error('denied') : gifOk(c))))
+  assert(result.decisions.some(x => x.needs_review === true && String(x.decision).includes('gh pr comment 101 --repo o/r --attach /wt/1/.playwright-mcp/1/evidence.gif')), JSON.stringify(result.decisions))
+  assert.strictEqual(result.tickets[0].status, 'done')
+})
+
+test('a6: a GIF build failure keeps gif null, attaches the first still and does not change the result', async () => {
   const { calls, result, logs } = await run({}, withVerify('FE', c => (c.label === 'gif:1' ? new Error('no ffmpeg') : undefined)))
-  assert.strictEqual(named(calls, /^attach:/).length, 0)
+  const at = named(calls, /^attach:/)
+  assert.strictEqual(at.length, 1)
+  assert(at[0].prompt.includes('--attach /wt/1/.playwright-mcp/1/step-1.png'), at[0].prompt)
   assert(logs.some(l => l.includes('gif build failed')))
   assert(named(calls, /^finish:1$/)[0].prompt.includes('Verify result: pass'))
   assert.strictEqual(result.tickets[0].status, 'done')
@@ -747,6 +793,58 @@ test('a6: a GIF build failure keeps gif null, skips attach and does not change t
 test('a7: a pr of 0 never attaches even with a GIF', async () => {
   const { calls } = await run({}, c => (c.label === 'finish:1' ? ok({ pr: 0, url: '' }) : withVerify('FE')(c)))
   assert.strictEqual(named(calls, /^attach:/).length, 0)
+})
+
+// ---- Verify section in the PR body (#426) ---------------------------------------------------
+const adrBody = calls => named(calls, /^adr$/)[0].prompt
+
+test('vb1: FE pass with a failed base check and an attached GIF is listed under Verify', async () => {
+  const { calls } = await run({}, withVerify('FE', gifOk))
+  const b = adrBody(calls)
+  assert(b.includes('## Verify') && b.includes('- #1 FE: pass; base: failed on base as required; stills: /wt/1/.playwright-mcp/1; GIF: built and attached'), b)
+  assert(b.indexOf('## Review') < b.indexOf('## Verify') && b.indexOf('## Verify') < b.indexOf('## Intent review'), b)
+})
+
+test('vb2: a flaky result is shown as flaky', async () => {
+  const { calls } = await run({}, c => {
+    if (c.label === 'verify:1') return vres(false, 'FE')
+    if (c.label === 'verify-retry:1') return vres(true, 'FE')
+    if (c.label === 'verify-base:1') return vres(false, 'FE')
+    return gifOk(c)
+  })
+  assert(adrBody(calls).includes('- #1 FE: flaky;'), adrBody(calls))
+})
+
+test('vb2b: the Verify line uses v.result directly, no dead ternary', () => {
+  assert(!/v\.result === 'flaky' \? 'flaky'/.test(SRC), 'dead ternary on v.result')
+})
+
+test('vb3: a weak-test blocked ticket shows fail and passed on base', async () => {
+  const { calls } = await run({ tickets: [T(1, 1), T(2, 1)] }, c => {
+    if (c.label === 'verify:1' || c.label === 'verify-base:1') return vres(true, 'FE')
+  })
+  const b = adrBody(calls)
+  assert(b.includes('- #1 FE: fail; base: passed on base (weak test); stills: /wt/1/.playwright-mcp/1; GIF: not built'), b)
+})
+
+test('vb4: a GIF built but a failed attach shows built, not attached', async () => {
+  const { calls } = await run({}, withVerify('FE', c => (c.label === 'attach:1' ? new Error('gh too old') : gifOk(c))))
+  assert(adrBody(calls).includes('GIF: built, not attached'), adrBody(calls))
+})
+
+test('vb5: no GIF shows not built, and a BE ticket has base not run', async () => {
+  const { calls } = await run({}, c => (c.label === 'verify:1' ? vres(true, 'BE') : undefined))
+  assert(adrBody(calls).includes('- #1 BE: pass; base: not run; stills: /wt/1/.playwright-mcp/1; GIF: not built'), adrBody(calls))
+})
+
+test('vb6: failing twice shows fail with base not run', async () => {
+  const { calls } = await run({ tickets: [T(1, 1), T(2, 1)] }, c => (c.label === 'verify:1' || c.label === 'verify-retry:1' ? vres(false, 'FE') : undefined))
+  assert(adrBody(calls).includes('- #1 FE: fail; base: not run;'), adrBody(calls))
+})
+
+test('vb7: local mode has no Verify heading', async () => {
+  const { calls } = await run({ local: true }, null)
+  assert(!adrBody(calls).includes('## Verify'))
 })
 
 test('schemas are well-formed (object root, required within properties)', async () => {
