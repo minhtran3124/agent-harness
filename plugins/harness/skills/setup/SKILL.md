@@ -1,6 +1,6 @@
 ---
 name: setup
-description: "First-run setup for a project that installed the harness plugin. Scaffolds specs and docs, proposes a "## Run and test" section for CLAUDE.md (and migrates an old agents/PROJECT.md), merges the permissions.deny rules into project settings, offers an allow rule for gh pr merge, ignores specs/, and offers to remove an old copied install. Use when the plugin was just installed in a project."
+description: "First-run setup for a project that installed the harness plugin. Scaffolds specs and docs, proposes a Run and test section for CLAUDE.md (and migrates an old agents/PROJECT.md), merges the permissions.deny rules into project settings, offers an allow rule for gh pr merge, ignores specs/, and offers to remove an old copied install. Use when the plugin was just installed in a project."
 disable-model-invocation: true
 allowed-tools: Read, Bash, AskUserQuestion
 ---

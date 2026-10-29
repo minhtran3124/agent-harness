@@ -3,12 +3,13 @@ problem_type: knowledge
 module: harness
 tags: templates-structure, init-structure, scaffold, template-instance-parity, techstacks, create-if-missing, consumer-reach, silent-divergence
 severity: standard
-applicable_when: Editing any file under the repo root that has a source twin in `templates/structure/` (e.g. `techstacks/README.md` ↔ `templates/structure/techstacks-README.md`) — before committing the instance edit alone.
+applicable_when: SUPERSEDED by the ticket #464 ADR (techstacks/ and agents/PROJECT.md were removed). Editing any file under the repo root that has a source twin in `templates/structure/` (e.g. `techstacks/README.md` ↔ `templates/structure/techstacks-README.md`) — before committing the instance edit alone.
 affects:
   - templates/structure/techstacks-README.md
   - techstacks/README.md
   - scripts/init-structure.sh
 supersedes: null
+superseded_by: ADR for ticket #464 (written by the ship workflow's ADR stage)
 confidence: high
 confirmed_at: 2026-08-17
 ---
