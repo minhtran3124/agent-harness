@@ -6,10 +6,10 @@ source "$(dirname "$0")/../lib.sh"
 BASH_BIN=$(command -v bash)
 # A PATH with the basics but no shellcheck, so the "missing" branch runs on any machine.
 NOSC=$(mktemp -d); _CLEANUP_DIRS+=("$NOSC")
-for b in bash dirname; do ln -s "$(command -v "$b")" "$NOSC/$b"; done
+for b in bash dirname env; do ln -s "$(command -v "$b")" "$NOSC/$b"; done
 # A PATH with a fake shellcheck that records its arguments, one per line.
 FAKE=$(mktemp -d); _CLEANUP_DIRS+=("$FAKE")
-for b in bash dirname; do ln -s "$(command -v "$b")" "$FAKE/$b"; done
+for b in bash dirname env; do ln -s "$(command -v "$b")" "$FAKE/$b"; done
 ARGS="$FAKE/args.txt"
 printf '#!/bin/bash\n[ "$1" = "--version" ] && { echo "version: fake"; exit 0; }\nprintf "%%s\\n" "$@" > "%s"\n' "$ARGS" > "$FAKE/shellcheck"
 chmod +x "$FAKE/shellcheck"
