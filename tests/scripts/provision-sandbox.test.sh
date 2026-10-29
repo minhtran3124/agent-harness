@@ -513,4 +513,12 @@ prov "$crepo" cl 1 cc --mode clone --branch br/clone-clean
 cln "$crepo" --branch br/clone-clean --yes
 if [ "$RC" -eq 0 ] && echo "$OUT" | grep -q 'removed cl-t1-cc' && [ ! -d "$croot/cl-t1-cc" ] && grep -q gone "$clog"; then pass; else fail "rc=$RC $OUT"; fi
 
+t "a re-run on a detached HEAD keeps the recorded branch"
+repo=$(mk_repo)
+prov "$repo" r 1 keep --branch feat/keep
+dir=$(sbdir "$repo" r-t1-keep)
+git -C "$dir" checkout -q --detach
+prov "$repo" r 1 keep --branch feat/keep
+if [ "$RC" -eq 0 ] && grep -q '"branch":"feat/keep"' "$dir/.sandbox.json" && echo "$OUT" | grep -q '"branch":"feat/keep"'; then pass; else fail "rc=$RC $OUT $(cat "$dir/.sandbox.json")"; fi
+
 finish

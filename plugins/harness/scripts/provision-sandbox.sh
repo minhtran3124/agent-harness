@@ -47,7 +47,7 @@
 #        A clone is marked by .git/harness-sandbox-source holding repoDir's path; re-runs reuse only such a clone.
 #        Manifest, port, setup, require and the JSON line are the same in both modes.
 # Registry: every sandbox gets <sandbox>/.sandbox.json with runId, ticket {n, slug}, branch
-#   ("detached" when HEAD is detached), created_at (UTC ISO 8601) and pr (null). A re-run keeps
+#   ("detached" when HEAD is detached; a re-run on a detached HEAD keeps the recorded branch), created_at (UTC ISO 8601) and pr (null). A re-run keeps
 #   created_at. The file and .sandbox.pid are excluded from git status.
 # List: provision-sandbox.sh list <repoDir>
 #   Prints SANDBOX BRANCH STATE SIZE AGE for each sandbox in <parent>/.ship-<repo name>/.
@@ -454,6 +454,11 @@ done
 
 # Registry record. A re-run keeps the first created_at.
 head_branch=$(git -C "$dir" symbolic-ref --quiet --short HEAD 2>/dev/null || printf detached)
+# A re-run on a detached HEAD (UAT detaches it) keeps the branch the registry already records.
+prev_branch=$(sed -n 's/.*"branch":"\([^"]*\)".*/\1/p' "$dir/.sandbox.json" 2>/dev/null | head -1)
+if [ "$head_branch" = detached ] && [ -n "$prev_branch" ] && [ "$prev_branch" != detached ]; then
+  head_branch=$prev_branch
+fi
 created_at=$(sed -n 's/.*"created_at":"\([^"]*\)".*/\1/p' "$dir/.sandbox.json" 2>/dev/null | head -1)
 [ -n "$created_at" ] || created_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 json_branch=$(printf '%s' "$head_branch" | sed 's/\\/\\\\/g; s/"/\\"/g')
@@ -527,5 +532,4 @@ run_check() {
 }
 for cmd in "${checks[@]+"${checks[@]}"}"; do run_check "$cmd"; done
 
-head_branch=$(git -C "$dir" symbolic-ref --quiet --short HEAD 2>/dev/null || printf detached)
 printf '{"status":"ready","mode":"%s","dir":"%s","branch":"%s","port":%s,"db":"%s"}\n' "$mode" "$dir" "$head_branch" "$port" "$db"
