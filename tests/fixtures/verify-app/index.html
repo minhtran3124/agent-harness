@@ -5,10 +5,12 @@
   <h1 id="title">Verify fixture app</h1>
   <p id="status">Signed out</p>
   <a id="login-link" href="login.html">Log in</a>
+  <a id="profile-link" href="profile.html" hidden>Profile</a>
   <script>
     if (sessionStorage.getItem('verify-signed-in') === '1') {
       const user = sessionStorage.getItem('verify-signed-in-user');
       document.getElementById('status').textContent = user ? 'Signed in as ' + user : 'Signed in';
+      document.getElementById('profile-link').hidden = false;
     }
   </script>
 </body>
