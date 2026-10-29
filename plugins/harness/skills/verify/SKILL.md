@@ -1,7 +1,7 @@
 ---
 name: verify
 description: Prove that a finished ticket works in a real run, with a pass or fail result from assertions. Use when a ticket has a `Verify:` row and its code is ready, or from `/harness:verify`.
-allowed-tools: Read, Write, Edit, Grep, Glob, Bash, mcp__plugin_playwright_playwright__browser_navigate, mcp__plugin_playwright_playwright__browser_fill_form, mcp__plugin_playwright_playwright__browser_click, mcp__plugin_playwright_playwright__browser_snapshot, mcp__plugin_playwright_playwright__browser_take_screenshot, mcp__plugin_playwright_playwright__browser_console_messages, mcp__plugin_playwright_playwright__browser_run_code_unsafe
+allowed-tools: Read, Write, Edit, Grep, Glob, Bash, ToolSearch, mcp__plugin_playwright_playwright__browser_navigate, mcp__plugin_playwright_playwright__browser_fill_form, mcp__plugin_playwright_playwright__browser_click, mcp__plugin_playwright_playwright__browser_snapshot, mcp__plugin_playwright_playwright__browser_take_screenshot, mcp__plugin_playwright_playwright__browser_console_messages, mcp__plugin_playwright_playwright__browser_run_code_unsafe
 ---
 
 # Verify
