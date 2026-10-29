@@ -11,6 +11,15 @@
 #       link <path>      symlink it from repoDir if it exists (node_modules, .venv)
 #       require <path>   fail if the sandbox lacks this path after copy, link and setup
 #       setup <command>  run in the sandbox; it sees SANDBOX_PORT, SANDBOX_PORT_RANGE, SANDBOX_DB_NAME
+#       require-env <VAR>  fail if the shell variable is unset or empty. Checked first, before the
+#                        worktree, copy, link or setup run; the error names the variable
+#       check <command>  run in the sandbox after setup and require, with the .sandbox.env variables
+#                        (for example start the app and call its health endpoint). The sandbox is
+#                        "ready" only when every check exits 0. Each check has 60 s (override with
+#                        HARNESS_CHECK_TIMEOUT, in seconds); its process group is killed when it
+#                        ends, so a background server does not outlive the check.
+#   A project with a web and an API process uses two ports: web on $SANDBOX_PORT and API on
+#   $((SANDBOX_PORT+1)) (the block holds ten, SANDBOX_PORT_RANGE).
 #   Paths are relative to the repo root. Absolute paths and `..` are rejected.
 #       skip <path>      state that the sandbox deliberately does not carry (the audit stops asking)
 # Audit: provision-sandbox.sh --audit <repoDir> [--max-kb N] [--all]
@@ -132,6 +141,17 @@ repo=$(cd "$repo" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null) || d
 parent=$(dirname "$repo")
 dir="$parent/.ship-$(basename "$repo")/$run-t$n-$slug"
 
+# require-env first: a missing variable must fail before any worktree, copy, link or setup exists.
+if [ -f "$repo/.harness-sandbox" ]; then
+  while IFS= read -r line || [ -n "$line" ]; do
+    line=${line%%#*}; verb=${line%%[[:space:]]*}
+    [ "$verb" = require-env ] || continue
+    arg=${line#"$verb"}; arg=${arg#"${arg%%[![:space:]]*}"}; arg=${arg%"${arg##*[![:space:]]}"}
+    case "$arg" in ''|[0-9]*|*[!A-Za-z0-9_]*) die "manifest: bad variable name for 'require-env': '$arg'" ;; esac
+    [ -n "${!arg:-}" ] || die "required environment variable is not set: $arg"
+  done < "$repo/.harness-sandbox"
+fi
+
 safe_path() { # reject absolute paths and `..` segments
   case "$1" in /*|..|../*|*/..|*/../*|'') return 1 ;; esac
 }
@@ -165,7 +185,7 @@ db="sandbox_$(printf '%s' "$run-t$n" | tr '-' '_')"
 } > "$dir/.sandbox.env"
 
 manifest="$repo/.harness-sandbox"
-requires=(); setups=()
+requires=(); setups=(); checks=()
 if [ -f "$manifest" ]; then
   while IFS= read -r line || [ -n "$line" ]; do
     line=${line%%#*}
@@ -191,6 +211,8 @@ if [ -f "$manifest" ]; then
         fi ;;
       skip) ;;
       require) requires+=("$arg") ;;
+      require-env) ;; # checked before the worktree exists
+      check) [ -n "$arg" ] || die 'manifest: empty check command'; checks+=("$arg") ;;
       setup) [ -n "$arg" ] || die 'manifest: empty setup command'; setups+=("$arg") ;;
       *) die "manifest: unknown directive '$verb'" ;;
     esac
@@ -204,6 +226,28 @@ done
 for p in "${requires[@]+"${requires[@]}"}"; do
   [ -e "$dir/$p" ] || die "required path missing in sandbox: $p (not in $repo and not made by setup)"
 done
+
+# run_check <command>: run in the sandbox in its own process group, kill the group when it ends.
+run_check() {
+  local cmd=$1 limit=${HARNESS_CHECK_TIMEOUT:-60} ticks=0 pid rc
+  case "$limit" in ''|*[!0-9]*) limit=60 ;; esac
+  set -m
+  (cd "$dir" && set -a && . ./.sandbox.env && set +a && exec bash -c "$cmd") >&2 &
+  pid=$!
+  set +m
+  while kill -0 "$pid" 2>/dev/null; do
+    if [ "$ticks" -ge $((limit * 5)) ]; then
+      kill -TERM -- "-$pid" 2>/dev/null; sleep 0.2; kill -KILL -- "-$pid" 2>/dev/null
+      wait "$pid" 2>/dev/null
+      die "check timed out after ${limit}s: $cmd"
+    fi
+    sleep 0.2; ticks=$((ticks + 1))
+  done
+  wait "$pid"; rc=$?
+  kill -TERM -- "-$pid" 2>/dev/null; kill -KILL -- "-$pid" 2>/dev/null
+  [ "$rc" -eq 0 ] || die "check failed: $cmd"
+}
+for cmd in "${checks[@]+"${checks[@]}"}"; do run_check "$cmd"; done
 
 head_branch=$(git -C "$dir" symbolic-ref --quiet --short HEAD 2>/dev/null || printf detached)
 printf '{"status":"ready","dir":"%s","branch":"%s","port":%s,"db":"%s"}\n' "$dir" "$head_branch" "$port" "$db"

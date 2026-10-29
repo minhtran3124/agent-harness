@@ -76,6 +76,46 @@ repo=$(mk_repo)
 prov "$repo" r 1 s
 if [ "$RC" -eq 0 ] && echo "$OUT" | grep -q '"branch":"detached"'; then pass; else fail "rc=$RC $OUT"; fi
 
+t "a passing check runs in the sandbox with the port variables and the run is ready"
+repo=$(mk_repo)
+printf 'setup echo set > setup.out\ncheck test "$SANDBOX_PORT" = 4010 && test -f setup.out && pwd > check.out\n' > "$repo/.harness-sandbox"
+prov "$repo" r 1 s
+dir="$(dirname "$repo")/.ship-$(basename "$repo")/r-t1-s"
+if [ "$RC" -eq 0 ] && echo "$OUT" | grep -q '"status":"ready"' && [ "$(cat "$dir/check.out")" = "$(cd "$dir" && pwd)" ]; then pass; else fail "rc=$RC $OUT"; fi
+
+t "a failing check fails the run, names the command and prints no ready line"
+printf 'check exit 3\n' > "$repo/.harness-sandbox"
+prov "$repo" r 2 s
+if [ "$RC" -eq 1 ] && echo "$OUT" | grep -q 'check failed: exit 3' && ! echo "$OUT" | grep -q '"status":"ready"'; then pass; else fail "rc=$RC $OUT"; fi
+
+t "a missing require-env variable fails first, names it, and leaves no sandbox or setup effect"
+repo=$(mk_repo)
+printf 'copy .env\nsetup touch setup.ran\nrequire-env HARNESS_T476_UNSET\n' > "$repo/.harness-sandbox"
+prov "$repo" r 1 s
+dir="$(dirname "$repo")/.ship-$(basename "$repo")/r-t1-s"
+if [ "$RC" -eq 1 ] && echo "$OUT" | grep -q 'HARNESS_T476_UNSET' && [ ! -e "$dir" ]; then pass; else fail "rc=$RC $OUT"; fi
+
+t "a set require-env variable lets the run continue"
+OUT=$(HARNESS_T476_UNSET=1 bash "$SCRIPT" "$repo" r 1 s 2>&1); RC=$?
+if [ "$RC" -eq 0 ] && [ -e "$dir/setup.ran" ]; then pass; else fail "rc=$RC $OUT"; fi
+
+t "a check past the timeout fails and its background child is killed"
+repo=$(mk_repo)
+printf 'check sleep 30 & echo $! > "$PWD/child.pid"; wait\n' > "$repo/.harness-sandbox"
+OUT=$(HARNESS_CHECK_TIMEOUT=1 bash "$SCRIPT" "$repo" r 1 s 2>&1); RC=$?
+dir="$(dirname "$repo")/.ship-$(basename "$repo")/r-t1-s"
+sleep 0.5
+child=$(cat "$dir/child.pid" 2>/dev/null)
+if [ "$RC" -eq 1 ] && echo "$OUT" | grep -q 'timed out' && [ -n "$child" ] && ! kill -0 "$child" 2>/dev/null; then pass; else fail "rc=$RC child=$child $OUT"; fi
+
+t "a check that leaves a background server behind does not leak it"
+printf 'check sleep 30 & echo $! > "$PWD/bg.pid"\n' > "$repo/.harness-sandbox"
+prov "$repo" r 2 s
+dir="$(dirname "$repo")/.ship-$(basename "$repo")/r-t2-s"
+sleep 0.5
+child=$(cat "$dir/bg.pid" 2>/dev/null)
+if [ "$RC" -eq 0 ] && [ -n "$child" ] && ! kill -0 "$child" 2>/dev/null; then pass; else fail "rc=$RC child=$child $OUT"; fi
+
 t "bad usage exits 2"
 prov "$repo" r notanumber s
 rc1=$RC
