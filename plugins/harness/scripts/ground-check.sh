@@ -279,14 +279,14 @@ while [ "$j" -lt "$NFILES" ]; do
       if [[ $seg =~ $CITE_RE ]]; then seg=${seg%%"${BASH_REMATCH[0]}"*}; fi
       quote=""
       if [[ $seg =~ $QUOTE_RE ]]; then quote=${BASH_REMATCH[1]}; fi
-      printf '%s\001%s\001%s\001%s\n' "$cp" "$cn" "$cm" "$quote" >> "$TMP/cites"
+      printf '%s\037%s\037%s\037%s\n' "$cp" "$cn" "$cm" "$quote" >> "$TMP/cites"
       rest=$after
     done
   done < "$IN"
 done
 
 # Citations.
-TAB=$(printf '\001')
+TAB=$(printf '\037')
 while IFS="$TAB" read -r cp cn cm quote; do
   [ -n "$cp" ] && check_cite "$cp" "$cn" "$cm" "$quote"
 done < "$TMP/cites"
