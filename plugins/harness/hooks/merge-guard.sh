@@ -157,8 +157,9 @@ reduced=$(printf '%s\n' "$cmd" | awk '
       q = ""; qb = ""; out = ""; hd = ""; hq = 0; subs = ""
       for (r = 1; r <= NR; r++) {
         line = L[r]
-        if (hd != "") { l = line; sub(/^[ \t]+/, "", l); if (l == hd) hd = ""
-          else if (!hq && (index(line, "$(") || index(line, "`"))) subs = subs " " line
+        if (hd != "") { l = line; sub(/^[ \t]+/, "", l)
+          if (l == hd) { hd = ""; if (hs) subs = subs " " hb }
+          else if (!hq) { hb = hb "\n" line; if (index(line, "$(") || index(line, "`")) hs = 1 }
           continue }
         n = length(line)
         for (i = 1; i <= n; i++) { c = substr(line, i, 1)
@@ -168,7 +169,7 @@ reduced=$(printf '%s\n' "$cmd" | awk '
               if (c == "<" && substr(line, i + 1, 1) == "<" && substr(line, i + 2, 1) != "<" && (i == 1 || substr(line, i - 1, 1) != "<")) {
                 rest = substr(line, i); if (match(rest, /^<<-?[ \t]*["\047]?[A-Za-z_][A-Za-z0-9_]*/)) {
                   d = substr(rest, RSTART, RLENGTH); hq = (d ~ /^<<-?[ \t]*["\047]/); sub(/^<<-?[ \t]*["\047]?/, "", d)
-                  for (k = r + 1; k <= NR; k++) { t = L[k]; sub(/^[ \t]+/, "", t); if (t == d) { hd = d; break } } } }
+                  for (k = r + 1; k <= NR; k++) { t = L[k]; sub(/^[ \t]+/, "", t); if (t == d) { hd = d; hb = ""; hs = 0; break } } } }
               out = out c }
           } else if (q == "\"" && c == "\\") { qb = qb c substr(line, i + 1, 1); i++ }
           else if (c == q) { if (q == "\"" && (index(qb, "$(") || index(qb, "`"))) subs = subs " " qb

@@ -145,6 +145,9 @@ t "echo with a substitution is allowed"; g 'echo $(date)'; assert_rc 0
 t "a merge inside a double-quoted substitution is denied"; g 'echo "$(gh pr merge 7 --repo o/r)"'; assert_rc 2
 t "a merge inside a double-quoted backtick is denied"; g 'echo "`gh pr merge 7 --repo o/r`"'; assert_rc 2
 t "a merge inside an unquoted heredoc substitution is denied"; g "$(printf 'cat <<EOF\n$(gh pr merge 7 --repo o/r)\nEOF')"; assert_rc 2
+t "a merge on a later line of a multi-line heredoc substitution is denied"; g "$(printf 'cat <<EOF\n$(\ngh pr merge 7 --repo o/r\n)\nEOF')"; assert_rc 2
+t "a merge on a later line of a multi-line heredoc backtick is denied"; g "$(printf 'cat <<EOF\n`\ngh pr merge 7 --repo o/r\n`\nEOF')"; assert_rc 2
+t "a multi-line heredoc substitution without a merge is allowed"; g "$(printf 'cat <<EOF\n$(\ndate\n)\nEOF')"; assert_rc 0
 t "a double-quoted substitution without a merge is allowed"; g 'echo "today is $(date)"'; assert_rc 0
 
 reset
