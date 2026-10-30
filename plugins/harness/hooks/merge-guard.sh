@@ -17,7 +17,7 @@ set -u
 payload=$(cat)
 # Pre-filter on a folded copy (lowercase, quotes and backslashes removed) so "g""h", GH-case or
 # me\rge spellings do not skip the guard.
-fold() { printf '%s' "$1" | tr 'A-Z' 'a-z' | tr -d "\"'\\\\"; }
+fold() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | tr -d "\"'\\\\"; }
 is_merge_like() {
   case "$(fold "$1")" in
     *gh*merge*|*pulls/*merge*|*mergepullrequest*|*enablepullrequestautomerge*|*repos/*/merges*|*gh*pr*[\$\`]*|*[\$\`]*merge*) return 0 ;;
@@ -115,7 +115,7 @@ judge_pr_merge() {  # judge_pr_merge <segment starting with gh pr merge>
   # gh merges the repo in the URL; the PR must be judged in that same repo, so any other repo is a deny.
   for u in $urepos; do
     if [ -z "$repo" ]; then repo=$u
-    elif [ "$(printf '%s' "$u" | tr 'A-Z' 'a-z')" != "$(printf '%s' "$repo" | tr 'A-Z' 'a-z')" ]; then
+    elif [ "$(printf '%s' "$u" | tr '[:upper:]' '[:lower:]')" != "$(printf '%s' "$repo" | tr '[:upper:]' '[:lower:]')" ]; then
       deny "the PR URL repo '$u' and the repo '$repo' differ, so the PR cannot be judged."
     fi
   done
