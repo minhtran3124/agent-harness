@@ -186,6 +186,8 @@ def test_release_notes_collects_milestone_prs_through_issues():
     assert "gh api" not in allowed
     assert "gh issue list --milestone" in skill and "in:title,body" in skill
     assert "0 PRs found" in skill
+    assert "whole union" in schema and "matches no ticket still counts" in schema
+    assert "only when the union is empty" in skill
     assert all(k in schema for k in ("Closes", "Fixes", "Resolves", "Refs"))
     readme = (SCRIPT.parent.parent / "plugins" / "harness" / "skills" / "README.md").read_text()
     row = next(l for l in readme.splitlines() if l.startswith("| `release-notes`"))

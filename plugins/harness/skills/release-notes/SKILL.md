@@ -29,7 +29,7 @@ Never write or change a version.
 
 ## Collect
 
-For a milestone, collect the union of (a) PRs tagged with the milestone and (b) PRs found through its issues: `gh issue list --milestone "<name>" --state all`, then a merged-PR search `<n> in:title,body` per issue. The commands and the match rule are in `references/fact-list-schema.md`. Build `tickets` from (b). When both give no PR, print `0 PRs found`, ask the user, and write no draft.
+For a milestone, collect the union of (a) PRs tagged with the milestone and (b) PRs found through its issues: `gh issue list --milestone "<name>" --state all`, then a merged-PR search `<n> in:title,body` per issue. The commands and the match rule are in `references/fact-list-schema.md`. Print `0 PRs found`, ask the user, and write no draft only when the union is empty.
 
 For a range, list the commits with `git log <from>..<to> --format='%h|%an|%aI|%s'`. Read a PR with `gh pr view <number> --json title,body,labels,author,mergedAt,closingIssuesReferences`.
 
