@@ -8,8 +8,10 @@ from shop.utils import Clock
 from shop.pricing import Cart
 
 
+cart = Cart()
+
+
 def main():
-    cart = Cart()
     cart.add_item(pr.apply_discount(10, 5))
     name = make_slug("Big Sale").upper()
     stock = inv.load_stock(os.getcwd())
