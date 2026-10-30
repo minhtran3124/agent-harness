@@ -34,10 +34,12 @@ Never write or change a version.
 For a milestone:
 
 ```bash
-gh pr list --state merged --search 'milestone:"<name>"' --json number,title,body,url --limit 200
+gh pr list --state merged --search 'milestone:"<name>"' --json number,title,body,url,labels,author,mergedAt --limit 200
 ```
 
-For a range, list the commits with `git log <from>..<to> --format='%h %s'`. Read a PR with `gh pr view <number> --json title,body`.
+For a range, list the commits with `git log <from>..<to> --format='%h %s'`. Read a PR with `gh pr view <number> --json title,body,labels,author,mergedAt`.
+
+Record one fact per item: PR number, title, labels (names), author login, merge date (`mergedAt`) and a `breaking` flag. The `breaking` flag is set by the rules in Breaking changes below. In a range run, the author and date come from `git log --format='%h|%an|%aI|%s'`, and labels are empty.
 
 Count the items found. Drop each item that is not a user-facing change (for example `revert`, `duplicate`) and record its reason. Keep an item when you are unsure.
 

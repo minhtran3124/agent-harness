@@ -8,10 +8,10 @@ The fact list is the JSON file written next to the release-notes draft. The `rel
   "version_source": "flag | manifest | tag | needs-human",
   "source": { "type": "milestone | range", "value": "v1.4.0" },
   "breaking": [
-    { "pr": 12, "title": "feat(api)!: drop v1 endpoints", "url": "https://github.com/o/r/pull/12" }
+    { "pr": 12, "title": "feat(api)!: drop v1 endpoints", "url": "https://github.com/o/r/pull/12", "labels": ["breaking"], "author": "alice", "merged_at": "2026-01-05T10:00:00Z", "breaking": true }
   ],
   "groups": {
-    "feat": [{ "pr": 15, "title": "feat: add export", "url": "https://github.com/o/r/pull/15" }],
+    "feat": [{ "pr": 15, "title": "feat: add export", "url": "https://github.com/o/r/pull/15", "labels": [], "author": "bob", "merged_at": "2026-01-06T09:00:00Z", "breaking": false }],
     "fix": []
   },
   "limitations": [
@@ -25,6 +25,8 @@ The fact list is the JSON file written next to the release-notes draft. The `rel
 ```
 
 Rules:
+
+- Every item in `breaking`, `groups` and `excluded` carries `labels` (list of names), `author` (login), `merged_at` (ISO date) and `breaking` (true or false). In a range run, `labels` is an empty list and `merged_at` is the commit date.
 
 - `breaking` holds the PR titles that contain `!:`, copied verbatim.
 - `groups` keys are the conventional-commit types. A PR in `breaking` is not repeated in `groups`.

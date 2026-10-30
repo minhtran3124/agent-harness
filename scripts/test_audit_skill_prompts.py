@@ -143,3 +143,14 @@ def test_real_repository_matches_expected_surface_shape():
     data = json.loads(result.stdout)
     assert data["totals"]["skills"] == 19
     assert data["totals"]["companion_prompts"] == 6
+
+
+RELEASE_NOTES = SCRIPT.parent.parent / "plugins" / "harness" / "skills" / "release-notes"
+
+
+def test_release_notes_collects_per_item_facts():
+    skill = (RELEASE_NOTES / "SKILL.md").read_text()
+    schema = (RELEASE_NOTES / "references" / "fact-list-schema.md").read_text()
+    assert "labels,author,mergedAt" in skill
+    for field in ("labels", "author", "merged_at", "breaking"):
+        assert f'"{field}"' in schema
