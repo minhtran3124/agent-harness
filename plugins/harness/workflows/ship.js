@@ -439,8 +439,8 @@ async function groundGate(t, name, run, check) {
   const advice = `\n\n## Ground check failed\nA script checked the claims in your ${name} against ${integRef}. These failed:\n${g.failures.join('\n')}\n` +
     `Fix them: cite only code that exists on ${integRef} (paths from the repo root, line numbers inside the file, a quote that occurs near the cited line), ` +
     `or write (new) right after each path or symbol you will create. Keep everything that was right.`
-  res = await run(advice)
-  for (const d of first) { const k = decisions.indexOf(d); if (k >= 0) decisions.splice(k, 1) }   // the rejected run's decisions are replaced by the re-run's
+  try { res = await run(advice) }
+  finally { for (const d of first) { const k = decisions.indexOf(d); if (k >= 0) decisions.splice(k, 1) } }   // the rejected run's decisions go even when the re-run throws
   g = await check(res, 2)
   if (g.status !== 'fail') return res
   const list = g.failures.join('\n')

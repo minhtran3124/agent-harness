@@ -1466,6 +1466,16 @@ test('gr1: depth L, a failed design check re-runs the design once with the FAIL 
   assert.strictEqual(designs[0].title, 'Design two')
 })
 
+test('gr1b: a re-run that throws still drops the rejected first run decisions', async () => {
+  const { result } = await run({ tickets: LT }, c => {
+    if (c.label === 'ground-design:1') return groundRes(c, 1, [GFAIL])
+    if (c.label === 'design:1:retry') return new Error('retry boom')
+    if (c.label === 'design:1') return { status: 'ok', summary: 's', decisions: [{ title: 'Design one', context: 'c', options: ['a'], decision: 'd', why: 'w', consequences: 'q', how_to_reverse: 'r', confidence: 'high', needs_review: false, stage: 'design' }], design_md: 'DESIGN-ONE' }
+  })
+  assert.strictEqual(t1({ result }).status, 'blocked')
+  assert(!result.decisions.some(d => d.title === 'Design one'), JSON.stringify(result.decisions.map(d => d.title)))
+})
+
 test('gr2: depth L, two failed design checks call the advisor, record a needs_review decision and block before implement', async () => {
   const { calls, result } = await run({ tickets: LT }, c => (c.label === 'ground-design:1' ? groundRes(c, 1, [GFAIL]) : undefined))
   const ls = labelsOf(calls)
