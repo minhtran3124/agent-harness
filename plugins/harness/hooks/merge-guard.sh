@@ -132,8 +132,9 @@ judge_api_merge() {  # judge_api_merge <segment>
 }
 
 # Reduce the command to what the shell would run (same splitter as clean-worktrees.sh): drop heredoc
-# bodies and quoted strings that hold whitespace or separators, so text that only mentions a merge
-# never matches; then split on separators and standalone braces.
+# bodies and quoted strings that hold whitespace or separators (each leaves one QUOTED word, so a value
+# option such as --body still has its value and does not swallow the PR number), so text that only
+# mentions a merge never matches; then split on separators and standalone braces.
 segs=$(printf '%s\n' "$cmd" | awk '
     { L[NR] = $0 }
     END {
@@ -152,7 +153,7 @@ segs=$(printf '%s\n' "$cmd" | awk '
                   for (k = r + 1; k <= NR; k++) { t = L[k]; sub(/^[ \t]+/, "", t); if (t == d) { hd = d; break } } } }
               out = out c }
           } else if (q == "\"" && c == "\\") { qb = qb c substr(line, i + 1, 1); i++ }
-          else if (c == q) { if (qb ~ /^[^ \t\n;|&()]*$/) out = out qb; q = "" }
+          else if (c == q) { if (qb ~ /^[^ \t\n;|&()]*$/) out = out qb; else out = out "QUOTED"; q = "" }
           else qb = qb c }
         if (q == "") { print out; out = "" } else qb = qb "\n" }
       if (q != "") print "\001OPENQUOTE"

@@ -116,6 +116,10 @@ reset; setbase main
 t "an unclosed quote that swallows a later merge is denied"; g "$(printf "echo 'x\ngh pr merge 7 --repo o/r")"; assert_rc 2
 t "an apostrophe in a comment before a merge on main is denied"; g "$(printf "# don't\ngh pr merge 7 --repo o/r")"; assert_rc 2
 reset; setbase feat/x
+t "a multi-word quoted --body value does not swallow the PR number"; g 'gh pr merge --body "a b c" 7 --repo o/r --merge'
+if [ "$RC" = 0 ] && grep -q 'pr view 7 --repo o/r' "$LOG"; then pass; else fail "rc=$RC out=$OUT log: $(cat "$LOG" 2>/dev/null)"; fi
+t "a multi-word quoted --subject value before a PR on main is still denied"; setbase main; g "gh pr merge -t 'x y' 7 --repo o/r"; assert_rc 2
+reset; setbase feat/x
 t "a quote-split gh word is still judged (main base denied)"; setbase main; g '"g""h" pr merge 7 --repo o/r'; assert_rc 2
 t "an upper-case GraphQL-style spelling cannot skip the filter"; g 'gh api graphql -f query="mutation{enablePullRequestAutoMerge(input:{pullRequestId:\"X\"}){clientMutationId}}"'; assert_rc 2
 t "gh api graphql enablePullRequestAutoMerge is denied"; g 'gh api graphql -f query=@q.graphql -f x=enablePullRequestAutoMerge'; assert_rc 2
