@@ -130,7 +130,14 @@ classify() {
   case "$t" in
     */*) if pathlike "$t" "$strict"; then KIND=path; TOK=$t; fi; return ;;
   esac
-  if has_known_ext "$t"; then KIND=path; TOK=$t; return; fi
+  if has_known_ext "$t"; then
+    # A product name such as Node.js or Vue.js is no file claim, unless a file of that name is on the ref.
+    case " $(printf '%s' "$t" | tr '[:upper:]' '[:lower:]') " in
+      " node.js "|" vue.js "|" next.js "|" nuxt.js "|" react.js "|" express.js "|" d3.js "|" three.js "|" nest.js "|" angular.js "|" ember.js "|" backbone.js "|" alpine.js "|" deno.js "|" socket.io ")
+        awk -F/ -v n="$t" '$NF == n { f = 1 } END { exit !f }' "$TMP/tree" || return ;;
+    esac
+    KIND=path; TOK=$t; return
+  fi
   [[ $t =~ ^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$ ]] || return
   if [ "$paren" = 1 ] || [[ $t == *_* ]] || [[ $t == *.* ]] || [[ $t =~ [a-z][A-Z] ]]; then KIND=sym; TOK=$t; fi
 }
