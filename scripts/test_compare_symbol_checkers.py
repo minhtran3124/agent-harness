@@ -177,5 +177,25 @@ class TableTests(unittest.TestCase):
                 self.assertEqual(total, len(r["claims"]))
 
 
+class CrgArgvTests(unittest.TestCase):
+    def test_code_review_graph_is_not_given_the_rejected_quiet_flag(self):
+        td = tempfile.mkdtemp(prefix="fakecrg-")
+        os.makedirs(os.path.join(td, "venv-crg", "bin"))
+        exe = os.path.join(td, "venv-crg", "bin", "code-review-graph")
+        with open(exe, "w") as fh:
+            fh.write("#!/bin/sh\nfor a in \"$@\"; do [ \"$a\" = -q ] && { echo 'no such option: -q' >&2; exit 2; }; done\n"
+                     "mkdir -p .code-review-graph; python3 -c \"import sqlite3;sqlite3.connect('.code-review-graph/graph.db').close()\"\n")
+        os.chmod(exe, 0o755)
+        work = tempfile.mkdtemp(prefix="crgwork-")
+        fdir = os.path.join(FIXTURES, m.LANGS["py"])
+        opts = {"tools_dir": td, "timeout": 60}
+        try:
+            m.graph_method("code-review-graph", "py", fdir, [], work, opts, False)
+        except m.CouldNotRun as exc:
+            self.assertNotIn("exit 2", str(exc))
+        except Exception:
+            pass  # empty fake db has no schema; only the argv matters
+
+
 if __name__ == "__main__":
     unittest.main()
