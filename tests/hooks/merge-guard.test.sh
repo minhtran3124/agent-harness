@@ -175,6 +175,11 @@ g '"$(echo gh)" api graphql -f query="mutation { mergePullRequest(input:{}) { x 
 t "a quoted command name before api with the merges endpoint is denied"
 g '"$(echo gh)" api repos/o/r/merges -f base=main'; assert_rc 2
 t "a quoted command name before api without a merge word is allowed"; g '"$(echo gh)" api user'; assert_rc 0
+t "a quoted command name, a flag, then api graphql with a merge mutation is denied"
+g '"gh" --repo o/r api graphql -f query="mutation { mergePullRequest(input:{}) { x } }"'; assert_rc 2
+t "a substituted command name, -R flag, then api graphql with a merge mutation is denied"
+g '"$(echo gh)" -R o/r api graphql -f query="mutation { mergePullRequest(input:{}) { x } }"'; assert_rc 2
+t "a quoted command name, a flag, then api without a merge word is allowed"; g '"gh" --repo o/r api user'; assert_rc 0
 
 # BSD sed does not read \x01 in a pattern: with such a sed first on PATH the SUBST deny must still work.
 BSDSED="$D/bsdsed"; mkdir -p "$BSDSED"; cp -R "$TOOLS"/. "$BSDSED"/; ln -s "$(command -v jq)" "$BSDSED/jq"

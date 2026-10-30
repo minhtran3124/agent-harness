@@ -239,7 +239,7 @@ while IFS= read -r seg; do
   case "$seg" in
     QUOTED*)
       if printf '%s' "$seg" | grep -qE '(^|[[:space:]])pr[[:space:]]+merge([[:space:]]|$)'; then deny "a quoted command name before 'pr merge' cannot be judged."; fi
-      if printf '%s' "$seg" | grep -qE '^QUOTED[[:space:]]+api([[:space:]]|$)'; then
+      if printf '%s' "$seg" | grep -qE '^QUOTED([[:space:]]+[^[:space:]]+)*[[:space:]]+api([[:space:]]|$)'; then
         case "$(fold "$cmd")" in
           *mergepullrequest*|*enablepullrequestautomerge*|*pulls/*merge*|*repos/*/merges*) deny "a quoted command name before 'api' next to a merge mutation or endpoint cannot be judged." ;;
         esac
@@ -247,7 +247,7 @@ while IFS= read -r seg; do
   esac
   if printf '%s' "$seg" | grep -qE '^gh[[:space:]]+pr[[:space:]]+merge([[:space:]]|$)'; then
     judge_pr_merge "$seg"
-  elif printf '%s' "$seg" | grep -qE '^gh[[:space:]]+api[[:space:]]'; then
+  elif printf '%s' "$seg" | grep -qE '^gh([[:space:]]+[^[:space:]]+)*[[:space:]]+api[[:space:]]'; then
     if printf '%s' "$seg" | grep -qE '(^|[[:space:]])graphql([[:space:]]|$)'; then
       case "$(fold "$cmd")" in
         *mergepullrequest*|*enablepullrequestautomerge*) deny "a GraphQL mergePullRequest or enablePullRequestAutoMerge mutation is not allowed; a human merges." ;;
