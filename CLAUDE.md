@@ -55,12 +55,13 @@ Decisions made on the way are recorded as ADRs in `docs/adr/`. Every skill above
 
 ## Hooks
 
-Wired (✅) means registered in `plugins/harness/hooks/hooks.json`. `docs/hooks.md` has the detail. The plugin cannot ship `permissions.deny`: the repo's `settings.json` carries it (`.env`, force-push, push to `main`/`master`), and `/harness:setup` merges it into a consuming project.
+Wired (✅) means registered in `plugins/harness/hooks/hooks.json`. `docs/hooks.md` has the detail; all hooks fail open except `merge-guard.sh`, which fails closed. The plugin cannot ship `permissions.deny`: the repo's `settings.json` carries it (`.env`, force-push, push to `main`/`master`), and `/harness:setup` merges it into a consuming project.
 
 | Hook | Trigger | Action | Wired |
 |---|---|---|---|
 | `session-rules.sh` | SessionStart | Delivers `rules/behavior.md` as session context (a plugin has no rules component) | ✅ |
 | `secrets-scan.sh` | PreToolUse (Bash) | On `git commit`, blocks a staged secret pattern or a staged `.env` file | ✅ |
+| `merge-guard.sh` | PreToolUse (Bash) | Blocks `gh pr merge` and `gh api .../pulls/<n>/merge` unless the PR base is `feat/*`; fails closed (no env bypass); the owner's own `!` or terminal merge is not seen | ✅ |
 | `pr-opened.sh` | PostToolUse (Bash) | After `gh pr create`, reminds the main session to review the PR | ✅ |
 | `clean-worktrees.sh` | PostToolUse (Bash), SessionStart | After a merge, and at session start, fetches and removes the worktree and branch of merged branches (`git branch -D` only when a merged PR head equals the local tip); skips protected names (`develop`, `staging`, `release/*`, ...); the session-start sweep also skips a worktree a live process uses and stops after a 20 s budget | ✅ |
 

@@ -31,7 +31,7 @@ const FIXED_LABELS = {
   'write specs/ flow files': 'specs', 'write specs/ early': 'specs-early', 'set up integration branch': 'setup-integration', 'open final PR': 'final-pr',
   'measure diff size': 'diffstat', 'intent review · diff vs request': 'intent-review', 'test · run full suite': 'suite',
   'test · fix failing tests': 'suite-fix', 'test · rerun failed tests': 'suite-rerun', 'update run artifact': 'artifact',
-  'write ADRs (needs_review)': 'adr', 'check plugin and tools': 'plugin-check', 'intent fix · close gaps': 'intent-fix',
+  'CI snapshot': 'ci-snapshot', 'write ADRs (needs_review)': 'adr', 'check plugin and tools': 'plugin-check', 'intent fix · close gaps': 'intent-fix',
 }
 const TICKET_VERBS = {
   'post verify comment': 'verify-comment', 'record GIF': 'gif', 'attach evidence': 'attach', 'fetch owner request': 'request',
@@ -39,6 +39,19 @@ const TICKET_VERBS = {
 }
 function legacyLabel(l) {
   if (l == null) return l
+  let g
+  if ((g = l.match(/^#(\d+) gate (.+)$/))) {   // per-ticket merge gate: keyed by role, then ticket
+    const [, gn, what] = g
+    let m
+    if (what === 'measure diff size') return `gdiffstat:${gn}`
+    if ((m = what.match(/^code-review · round (\d+)( retry)?$/))) return `greview:${gn}:r${m[1]}${m[2] ? ':retry' : ''}`
+    if (what === 'code-review · intent fix') return `greview:${gn}:rif`
+    if ((m = what.match(/^fix r(\d+)\.(\d+)/))) return `gfix:${gn}:r${m[1]}:${m[2]}`
+    if (what.startsWith('intent review')) return `gintent:${gn}`
+    if (what.startsWith('intent fix')) return `gintent-fix:${gn}`
+    if (what === 'CI checks') return `gci:${gn}`
+    if (what === 'PR body') return `gbody:${gn}`
+  }
   const head = l.split(' · ')[0]
   if (FIXED_LABELS[l] || FIXED_LABELS[head]) return FIXED_LABELS[l] || FIXED_LABELS[head]
   let m
@@ -77,6 +90,13 @@ function defaults(c, st) {
   if (l.startsWith('finish:')) return ok({ pr: args0.local ? 0 : 100 + Number(n), url: `https://x/pull/${100 + Number(n)}` })
   if (l.startsWith('merge:')) return ok({ merged: [...c.prompt.matchAll(/^- #(\d+)/gm)].map(m => Number(m[1])), failed: [] })
   if (l === 'final-pr') return ok({ pr: args0.local ? 0 : 900, url: 'https://x/pull/900' })
+  if (l.startsWith('gdiffstat:')) return { files: [{ path: 'src/a.js', added: 10, deleted: 2 }] }
+  if (l.startsWith('greview:')) return ok({ findings: [], skill_invoked: true, skill_error: '' })
+  if (l.startsWith('gfix:') || l.startsWith('gintent-fix:')) { st.fix++; st.tip = `gc${st.fix}`; return ok({ fix_status: 'fixed', base_sha: `gbase${st.fix}`, commit: `gc${st.fix}` }) }
+  if (l.startsWith('gintent:')) return { verdict: 'match', findings: [] }
+  if (l.startsWith('gci:')) return { checks: [{ name: 'harness-ci', bucket: 'pass' }], headRefOid: st.tip || `sha${n}abcdef` }
+  if (l.startsWith('gbody:')) return ok()
+  if (l === 'ci-snapshot') return { checks: [{ name: 'harness-ci', bucket: 'pass' }], headRefOid: 'finalsha' }
   if (l === 'diffstat') return { files: [{ path: 'src/a.js', added: 10, deleted: 2 }] }
   if (l.startsWith('review:')) return ok({ findings: [], skill_invoked: true, skill_error: '' })
   if (l.startsWith('fix:') || l === 'intent-fix') { st.fix++; return ok({ fix_status: 'fixed', base_sha: `base${st.fix}`, commit: `c${st.fix}` }) }
@@ -353,7 +373,7 @@ test('b2: the merge prompt counts an already MERGED PR as merged and names the p
   const p = named(calls, /^merge:g1$/)[0].prompt
   assert(/already MERGED into feat\/ms counts as merged/.test(p), p)
   assert(p.includes('gh pr view <pr> --repo o/r --json state') && p.includes('do not merge it again'))
-  assert(p.includes('names the missing permission') && p.includes('allows gh pr merge into feat/ms*'))
+  assert(p.includes('names the denial') && p.includes('allows gh pr merge into feat/ms*'))
   const l = await run({ tickets: [T(1, 1), T(2, 1)], local: true }, null)
   assert(!named(l.calls, /^merge:g1$/)[0].prompt.includes('gh pr view'), 'local mode has no PRs')
 })
@@ -362,7 +382,26 @@ test('b3: the merge prompt says each command is its own call and names gh pr mer
   const { calls } = await run({ tickets: [T(1, 1), T(2, 1)] }, null)
   const p = named(calls, /^merge:g1$/)[0].prompt
   assert(p.includes('each command as its own Bash call, never joined with &&, ; or a subshell'), p)
-  assert(p.includes('gh pr merge <pr> --repo o/r --merge'), p)
+  assert(p.includes('gh pr merge <pr> --repo o/r --merge --match-head-commit <head>'), p)
+})
+
+test('b4b: a failed merge rewrites the PR body block from Merge: auto to Merge: human', async () => {
+  const stub = c => { if (c.label === 'merge:g1') return ok({ merged: [2], failed: [{ n: 1, reason: 'head mismatch' }] }) }
+  const { calls } = await run({ tickets: [T(1, 1), T(2, 1)] }, stub)
+  const b = named(calls, /^merge failed:1$/)
+  assert.strictEqual(b.length, 1, JSON.stringify(calls.map(c => c.label)))
+  assert(b[0].prompt.includes('Merge: human') && b[0].prompt.includes('merge into') && !b[0].prompt.includes('Merge: auto'), b[0].prompt)
+})
+
+test('b4c: a null merge result rewrites every ready PR body to Merge: human', async () => {
+  const stub = c => { if (c.label === 'merge:g1') return null }
+  const { calls, result } = await run({ tickets: [T(1, 1), T(2, 1)] }, stub)
+  for (const n of [1, 2]) {
+    const b = named(calls, new RegExp(`^merge failed:${n}$`))
+    assert.strictEqual(b.length, 1, JSON.stringify(calls.map(c => c.label)))
+    assert(b[0].prompt.includes('Merge: human') && !b[0].prompt.includes('Merge: auto'), b[0].prompt)
+  }
+  assert.strictEqual(result.tickets.find(t => t.n === 1).status, 'blocked')
 })
 
 test('b4: a failed merge gives a needs_review decision with the exact command; local mode gives none', async () => {
@@ -371,15 +410,164 @@ test('b4: a failed merge gives a needs_review decision with the exact command; l
   const d = result.decisions.filter(x => x.stage === 'merge')
   assert.strictEqual(d.length, 1, JSON.stringify(d))
   assert.strictEqual(d[0].ticket, 1)
-  assert(d[0].decision.startsWith('First check the PR: gh pr view 101 --repo o/r --json state.'), d[0].decision)
-  assert(d[0].decision.includes('MERGED or CLOSED, do nothing') && d[0].decision.includes('If it is OPEN, run gh pr merge 101 --repo o/r --merge'), d[0].decision)
-  assert(d[0].decision.includes('first allow gh pr merge into feat/ms*'), d[0].decision)
+  assert(d[0].decision.includes('run: gh pr merge 101 --repo o/r --merge.'), d[0].decision)
+  assert(d[0].context.includes('The gate passed for #1') && !d[0].decision.includes('may have landed it by hand'), d[0].context)
   assert.strictEqual(d[0].needs_review, true)
   assert(d[0].context.includes('denied by a permission rule'))
   assert.strictEqual(result.tickets.find(t => t.n === 1).status, 'blocked')
   const l = await run({ tickets: [T(1, 1), T(2, 1)], local: true }, stub)
   assert.strictEqual(l.result.decisions.filter(x => x.stage === 'merge').length, 0)
   assert.strictEqual(l.result.tickets.find(t => t.n === 1).status, 'blocked')
+})
+
+// ---- #516 merge policy: per-ticket gate, gated merge, PR body block ------------------------------
+const gateFlow = (over, ovr) => run({ tickets: [T(1, 1), T(2, 1)], ...over }, ovr)
+const mergePrompt = calls => (named(calls, /^merge:g1$/)[0] || {}).prompt
+const t1 = r => r.result.tickets.find(t => t.n === 1)
+const failingCi = checks => c => { if (c.label === 'gci:1') return { checks, headRefOid: 'sha1abcdef' } }
+
+test('g1: a passing gate runs review, intent review and CI in order, edits the PR body to Merge: auto, then merges the head it judged', async () => {
+  const r = await gateFlow({})
+  const order = r.calls.map(c => c.label).filter(l => /^g(diffstat|review|intent|ci|body):1/.test(l || ''))
+  assert.deepStrictEqual(order, ['gdiffstat:1', 'greview:1:r0', 'gintent:1', 'gci:1', 'gbody:1'])
+  assert.strictEqual(t1(r).status, 'done')
+  const body = named(r.calls, /^gbody:1$/)[0].prompt
+  assert(body.includes('Merge: auto') && !body.includes('Merge: auto (pending'), body)
+  assert(body.includes('- [x] CI:') && body.includes('- [x] Review:') && body.includes('- [x] Intent:') && body.includes('- [x] needs_review ADRs: none'), body)
+  const mp = mergePrompt(r.calls)
+  assert(mp.includes('- #1 branch b1 PR 101 head sha1abcdef') && mp.includes('- #2 branch b2 PR 102 head sha2abcdef'), mp)
+  const ci = named(r.calls, /^gci:1$/)[0].prompt
+  assert(ci.includes('gh pr checks 101 --repo o/r --watch --interval 30') && ci.includes('600000') && ci.includes('--json name,bucket'), ci)
+})
+
+const gateFails = [
+  ['ci: a failing check', 'ci', failingCi([{ name: 'x', bucket: 'fail' }])],
+  ['ci: no checks at all fails closed', 'ci', failingCi([])],
+  ['ci: a check still pending fails', 'ci', failingCi([{ name: 'x', bucket: 'pass' }, { name: 'y', bucket: 'pending' }])],
+  ['ci: only skipped checks fail', 'ci', failingCi([{ name: 'x', bucket: 'skipping' }])],
+  ['ci: the agent returned nothing', 'ci', c => (c.label === 'gci:1' ? null : undefined)],
+  ['review: a finding that cannot be fixed', 'review', c => {
+    if (c.label === 'greview:1:r0') return ok({ findings: [{ id: 'f1', summary: 'bug', score: 80, path: 'a.js', line: 3 }], skill_invoked: true })
+    if (c.label === 'gfix:1:r1:1') return ok({ fix_status: 'failed' })
+  }],
+  ['review: a finding at 50 or more is left after the fix rounds', 'review', c => {
+    if (/^greview:1:r\d$/.test(c.label)) return ok({ findings: [{ id: 'f1', summary: 'bug', score: 60 }], skill_invoked: true })
+  }],
+  ['review: the skill did not run', 'review', c => { if (/^greview:1/.test(c.label)) return ok({ findings: [], skill_invoked: false, skill_error: 'no skill' }) }],
+  ['intent: verdict is not match', 'intent', c => { if (c.label === 'gintent:1') return { verdict: 'gaps found', findings: [{ kind: 'excess', clause: 'c', detail: 'd' }] } }],
+  ['needs_review: the ticket has an open needs_review decision', 'needs_review', c => {
+    if (c.label === 'implement:1') return ok({ worktree: '/wt/1', branch: 'b1', files: [], commits: [], verify: [],
+      decisions: [{ title: 'Pick a thing', context: 'c', options: ['a', 'b'], decision: 'a', why: 'w', consequences: 'x', how_to_reverse: 'y', confidence: 'low', needs_review: true }] })
+  }],
+]
+for (const [name, gate, ovr] of gateFails) {
+  test(`g2: gate fails (${name}): the ticket stays open as a human merge, its PR is kept, the other ticket still merges`, async () => {
+    const r = await gateFlow({}, ovr)
+    const a = t1(r)
+    assert.strictEqual(a.status, 'blocked')
+    assert(a.reason.startsWith('human merge: gate ') && a.reason.includes(gate), a.reason)
+    assert.strictEqual(a.pr, 101, 'the PR number is kept')
+    const mp = mergePrompt(r.calls)
+    assert(mp.includes('- #2 ') && !mp.includes('- #1 '), mp)
+    const d = r.result.decisions.filter(x => x.stage === 'merge' && x.ticket === 1)
+    assert.strictEqual(d.length, 1, JSON.stringify(d))
+    assert(d[0].needs_review && d[0].decision.includes('gh pr merge 101 --repo o/r --merge') && d[0].title.includes(gate), JSON.stringify(d[0]))
+    const body = named(r.calls, /^gbody:1$/)[0].prompt
+    assert(body.includes('Merge: human') && body.includes(`gate ${gate}`), body)
+    assert(r.result.final && r.result.final.pr === 900, 'the final PR is still opened')
+  })
+}
+
+test('g3: a gate stops the CI wait when review already failed, and a throwing gate blocks the ticket with the PR kept', async () => {
+  const r = await gateFlow({}, c => { if (/^greview:1/.test(c.label)) return ok({ findings: [], skill_invoked: false, skill_error: 'e' }) })
+  assert.strictEqual(named(r.calls, /^gci:1$/).length, 0, 'no CI wait after a failed gate')
+  const x = await gateFlow({}, c => { if (c.label === 'gdiffstat:1') return new Error('boom') })
+  assert.strictEqual(t1(x).status, 'blocked')
+  assert.strictEqual(t1(x).pr, 101)
+})
+
+test('g4: a single-ticket run has no gate and never calls the merge stage; local mode has no gate either', async () => {
+  const s = await run({}, null)
+  assert(!s.calls.some(c => /^g(diffstat|review|intent|ci|body):/.test(c.label || '')), 'no gate in a single run')
+  assert.strictEqual(named(s.calls, /^merge:/).length, 0)
+  const l = await gateFlow({ local: true }, null)
+  assert(!l.calls.some(c => /^g(diffstat|review|intent|ci|body):/.test(c.label || '')), 'no gate in local mode')
+  assert.strictEqual(named(l.calls, /^merge:g1$/).length, 1, 'local mode still merges its branches')
+  assert(mergePrompt(l.calls).includes('git merge --abort'))
+})
+
+test('g5: the remote merge prompt has no conflict path: no local merge, no push, no PR close', async () => {
+  const p = mergePrompt((await gateFlow({})).calls)
+  assert(!/git push|git merge|git update-ref|close that PR|resolve it/.test(p), p)
+  assert(p.includes('do not merge locally, do not push, do not close the PR'), p)
+})
+
+test('g6: gate review, fix and intent stages work on the ticket ref and branch; decisions are recorded under the ticket', async () => {
+  const r = await gateFlow({}, c => {
+    if (c.label === 'greview:1:r0') return ok({ findings: [{ id: 'f1', summary: 'bug', score: 80, path: 'a.js', line: 3 }], skill_invoked: true,
+      decisions: [{ title: 'Review note', context: 'c', options: ['a'], decision: 'a', why: 'w', consequences: 'x', how_to_reverse: 'y', confidence: 'high', needs_review: false }] })
+    if (c.label === 'greview:1:r1') return ok({ findings: [], skill_invoked: true })
+  })
+  const rev = named(r.calls, /^greview:1:r0$/)[0].prompt
+  assert(rev.includes('origin/feat/ms...origin/b1') && rev.includes('origin/b1 is checked out'), rev)
+  const fix = named(r.calls, /^gfix:1:r1:1$/)[0].prompt
+  assert(fix.includes('git push origin HEAD:b1') && fix.includes('Boundary (ticket #1)') && !fix.includes('union over the tickets'), fix)
+  const intent = named(r.calls, /^gintent:1$/)[0].prompt
+  assert(intent.includes('Diff range: origin/feat/ms..origin/b1'), intent)
+  const note = r.result.decisions.filter(d => d.title === 'Review note')
+  assert(note.length === 1 && note[0].ticket === 1, JSON.stringify(note))
+  // the final cross-ticket review is unchanged: it still reviews the integration branch under 'run'
+  const fin = named(r.calls, /^review:r0$/)[0].prompt
+  assert(fin.includes('origin/feat/ms is checked out') && fin.includes('baseRef') === false, fin)
+})
+
+test('g7: every gate agent gets its own worktree dir, distinct from the other ticket and from the final review', async () => {
+  const r = await gateFlow({}, null)
+  const dirOf = c => (c.prompt.match(/Your worktree is (\S+)\.\s/) || [])[1]
+  const gate = r.calls.filter(c => /^g(diffstat|review|intent):/.test(c.label || '')).filter(c => dirOf(c))
+  const dirs = gate.map(dirOf)
+  assert(dirs.length >= 4, `expected review and intent worktrees for two tickets, got ${dirs}`)
+  assert.strictEqual(new Set(dirs).size, dirs.length, dirs.join('\n'))
+  const finalDirs = r.calls.filter(c => /^(review:r0|intent-review)$/.test(c.label || '')).map(dirOf)
+  for (const d of finalDirs) assert(!dirs.includes(d), `final stage reuses a gate worktree: ${d}`)
+})
+
+test('g8: an intent fix is reviewed before the gate passes; a second intent fix fails the gate', async () => {
+  let n = 0
+  const gaps = { verdict: 'gaps found', findings: [{ kind: 'gap', clause: 'c', detail: 'd' }] }
+  const r = await gateFlow({}, c => { if (c.label === 'gintent:1') { n++; return n === 1 ? gaps : { verdict: 'match', findings: [] } } })
+  assert(named(r.calls, /^greview:1:rif$/).length === 1, 'the intent fix range is reviewed')
+  assert.strictEqual(t1(r).status, 'done')
+  const r2 = await gateFlow({}, c => { if (c.label === 'gintent:1') return gaps })
+  assert.strictEqual(t1(r2).status, 'blocked')
+  assert(t1(r2).reason.includes('review') && t1(r2).reason.includes('intent'), t1(r2).reason)
+  const r3 = await gateFlow({}, c => {
+    if (c.label === 'greview:1:rif') return ok({ findings: [{ id: 'z', summary: 'bad fix', score: 90 }], skill_invoked: true })
+    if (c.label === 'gintent:1') return n++ === 99 ? undefined : { verdict: 'match', findings: [{ kind: 'gap', clause: 'c', detail: 'd' }] }
+  })
+  assert.strictEqual(t1(r3).status, 'blocked')
+})
+
+test('g9: the finish prompt carries the pending merge block; a single-ticket PR says Merge: human', async () => {
+  const multi = await gateFlow({}, null)
+  const f = named(multi.calls, /^finish:1$/)[0].prompt
+  assert(f.includes('<!-- merge-policy -->') && f.includes('Merge: auto (pending gates)') && f.includes('<!-- /merge-policy -->'), f)
+  const one = await run({}, null)
+  const g = named(one.calls, /^finish:1$/)[0].prompt
+  assert(g.includes('Merge: human') && !g.includes('Merge: auto'), g)
+})
+
+test('g10: the final PR body always says Merge: human and lists the five readiness rows; local mode shows CI as n/a', async () => {
+  for (const local of [false, true]) {
+    const r = await gateFlow({ local }, null)
+    const pre = named(r.calls, /^final-pr$/)[0].prompt
+    assert(pre.includes('Merge: human') && pre.includes(local ? 'CI: n/a (local mode)' : '- [ ] CI: pending'), pre.slice(-1500))
+    const adr = named(r.calls, /^adr$/)[0].prompt
+    assert(adr.includes('Merge: human') && !adr.includes('Merge: auto'), adr.slice(-1500))
+    for (const row of ['CI:', 'Review:', 'Intent:', 'needs_review ADRs:', 'UAT:']) assert(adr.includes(`] ${row}`), `${row} missing in\n${adr}`)
+    if (local) assert(adr.includes('CI: n/a (local mode)'), adr)
+    else assert(adr.includes('CI: 1 pass'), adr)
+  }
 })
 
 test('c: needs_advisor triggers one advisor call and one stage re-run; a second request is ignored', async () => {
@@ -1253,3 +1441,22 @@ test('schemas are well-formed (object root, required within properties)', async 
   }
   process.exit(failed ? 1 : 0)
 })()
+
+test('g1b: CI that ran on a head other than the branch tip fails the gate even with no fix commit', async () => {
+  const r = await gateFlow({}, c => {
+    if (c.label === 'gci:1') return { checks: [{ name: 'harness-ci', bucket: 'pass' }], headRefOid: 'oldheadsha1', branchTip: 'newtipsha22' }
+  })
+  assert.notStrictEqual(t1(r).status, 'done')
+  const body = named(r.calls, /^gbody:1$/)[0].prompt
+  assert(body.includes('stale'), body)
+})
+
+test('g1: CI that ran on a head older than the last pushed fix commit fails the gate', async () => {
+  const r = await gateFlow({}, c => {
+    if (c.label === 'greview:1:r0') return { findings: [{ id: 'F1', file: 'a.js', line: 1, score: 90, summary: 's', pre_existing: false }], skill_invoked: true, skill_error: '' }
+    if (c.label === 'gci:1') return { checks: [{ name: 'harness-ci', bucket: 'pass' }], headRefOid: 'staleoldsha' }
+  })
+  assert.notStrictEqual(t1(r).status, 'done')
+  const body = named(r.calls, /^gbody:1$/)[0].prompt
+  assert(body.includes('stale'), body)
+})

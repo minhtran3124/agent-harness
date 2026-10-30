@@ -1,13 +1,13 @@
 # Hooks and permissions
 
 The short hook table is in `CLAUDE.md`; `scripts/lint-doc-truth.sh` keeps that table in step with
-`plugins/harness/hooks/` and its `hooks.json`. The harness has four small hooks plus a `permissions.deny` list. Everything else is judgment, not
+`plugins/harness/hooks/` and its `hooks.json`. The harness has five small hooks plus a `permissions.deny` list. Everything else is judgment, not
 a mechanical gate.
 
 ## Hook details
 
 In the `CLAUDE.md` table, wired (✅) means registered in `plugins/harness/hooks/hooks.json` and firing; dormant (⬜)
-means present on disk but not registered. Each hook is registered in exec form (`bash` plus the script path under `${CLAUDE_PLUGIN_ROOT}/hooks/`), so it needs no execute bit at run time. All four hooks fail open: a missing `jq`/`git`, or a
+means present on disk but not registered. Each hook is registered in exec form (`bash` plus the script path under `${CLAUDE_PLUGIN_ROOT}/hooks/`), so it needs no execute bit at run time. All hooks except `merge-guard.sh` fail open (`merge-guard.sh` fails closed, see its section): a missing `jq`/`git`, or a
 payload they cannot parse, lets the action through.
 
 ### `secrets-scan.sh` (PreToolUse, Bash)
@@ -18,6 +18,27 @@ Acts only on a `git commit` command. Scans the staged diff and the staged file n
 and `docs/` are not scanned. `Does not verify:` that a clean diff holds no secret; it is a pattern match,
 not a scanner. It reads the index when it runs, so `git add x && git commit` in one Bash call is checked
 against what was staged before that call. Stage in one call and commit in the next.
+
+### `merge-guard.sh` (PreToolUse, Bash)
+
+Blocks a PR merge unless the PR base is a `feat/*` branch. It acts on `gh pr merge` and `gh api .../pulls/<n>/merge`
+(at command position, after `&&`, `;`, `|`, `( )`, braces or env assignments; it uses the same segment splitter as
+`clean-worktrees.sh`, so text in a heredoc or quoted string that only mentions a merge is ignored). For every PR number
+in every merge segment it reads the live base with `gh pr view <n> --repo <r> --json baseRefName` and the repo default
+branch with `gh repo view`. It allows the merge only when the base matches `feat/*` and is not the default branch.
+`main`, `master`, `develop`, `development`, `staging`, `production`, `release/*`, `release-*`, the default branch and any
+other name are denied. It exits 2 with the reason on stderr.
+
+**It fails closed, unlike the other hooks (ADR: fail-closed merge guard).** Once it has seen a merge, any doubt denies:
+no `gh`, no `jq`, no PR number, no `--repo` (`GH_REPO` does not count), a `gh` error, empty or bad output, a `gh` call that
+stalls (killed after 10 s; the whole hook has a 20 s budget under its 30 s `timeout`). It also denies `--auto`,
+`gh api graphql ... mergePullRequest`, `{owner}/{repo}` placeholders in a `gh api` path, a merge inside `bash -c`, `eval`,
+`xargs` or another wrapper, a merge that is not at command position (`command gh`, `/usr/bin/gh`, backticks), and
+`gh alias set|import` next to the word merge. Any denied segment blocks the whole command. A Bash call that is not a merge
+exits 0 before any parsing, so it costs nothing. There is no environment-variable bypass.
+`Verifies:` the PR base and default branch of every judged merge. `Does not verify:` the owner's own `!` or terminal
+merges (the hook never sees them), a local `git merge`, a merge through the web UI or another client, a command built at
+run time, or whether the PR is ready (the workflow gate checks that). Local mode has no PRs, so the guard does not apply there.
 
 ### `pr-opened.sh` (PostToolUse, Bash)
 
@@ -96,7 +117,7 @@ The root `settings.json` carries a `permissions.deny` list (no `allow` rules). T
 | `Bash(git push * main)`, `Bash(git push * master)` | Pushing to the default branch |
 
 `merge-deny.sh` keeps every existing key and deny entry, adds only the missing rules, and writes nothing when none is missing. It needs `jq` and refuses a settings file that is not valid JSON.
-`/harness:setup` can also offer one allow rule, `Bash(gh pr merge *)`, through `merge-allow.sh` into the owner's untracked local settings file. This is opt-in and needs a yes from the owner; the root `settings.json` still has no allow rules.
+`/harness:setup` offers no allow rule and never writes the owner's local settings file. To let a run merge ticket PRs into `feat/<slug>`, the owner adds an allow rule for `gh pr merge` to their own settings; the `merge-guard.sh` hook still blocks every merge whose PR base is not `feat/*`. The root `settings.json` has no allow rules.
 Deny rules are prefix patterns on the command text; they are a guard against mistakes, not a sandbox.
 
 ## What is intentionally not enforced

@@ -38,7 +38,12 @@ the repo's `plugins/harness/workflows/ship.js`, say so. If the result has no suc
   `/reload-plugins`, but that is not confirmed here. If the repo's `plugins/harness/workflows/ship.js`
   is inside the working directory or an added directory, `Workflow({scriptPath: "<abs>/plugins/harness/workflows/ship.js", args})`
   runs the current file; the Workflow tool refuses a path the session cannot read.
+- Merge policy: the workflow merges only ticket PRs into `feat/<slug>`, and only tickets that pass the
+  per-ticket gate (CI, review, intent review, no open `needs_review` decision). Everything into `base`
+  or `main`, the final PR and a single-ticket PR included, is a human merge (`Merge: human` in the PR body).
+  The merge guard hook blocks any other merge and fails closed. Local mode has no PRs: no guard, no gate.
 - Merge permission: the owner must allow `gh pr merge` into `feat/<slug>*`. Without it the merge stage
   fails with a reason that names this permission. Do not change permission settings and do not work
-  around a denial; tell the owner.
+  around a denial; tell the owner. A ticket whose gate failed is not merged; its PR stays open with a
+  `needs_review` decision that holds the exact command.
 - Resume: the merge stage counts a PR already MERGED into the integration branch as merged.

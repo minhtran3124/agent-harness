@@ -26,11 +26,21 @@ if printf '%s' "$flat2" | grep -qF '## Run and test' && printf '%s' "$flat2" | g
    && printf '%s' "$flat2" | grep -qF 'only after the owner agrees' && printf '%s' "$flat2" | grep -qF 'ask before deleting'; then pass
 else fail "the Run and test step is missing or does not ask first"; fi
 
-t "SKILL.md offers the gh pr merge allow rule through merge-allow.sh and limits writes to settings.local.json"
+t "SKILL.md step 4 names merge-guard.sh (fails closed, feat/* only) and offers no gh pr merge allow rule"
 flat=$(tr '\n' ' ' < "$SKILL" | tr -s ' ')
-if grep -qF 'merge-allow.sh' "$SKILL" && grep -qF 'settings.local.json' "$SKILL" && grep -qF 'Bash(gh pr merge *)' "$SKILL" \
-   && printf '%s' "$flat" | grep -qF 'only after the owner says yes'; then pass
-else fail "the allow-rule step or its closing wording is missing"; fi
+if grep -qF 'merge-guard.sh' "$SKILL" && printf '%s' "$flat" | grep -qF 'blocks every merge whose PR base is not `feat/*`; it fails closed' \
+   && printf '%s' "$flat" | grep -qF 'stay human-merged' \
+   && ! grep -qF 'merge-allow.sh' "$SKILL" && ! grep -qF 'Bash(gh pr merge *)' "$SKILL" \
+   && printf '%s' "$flat" | grep -qF 'Setup never writes `.claude/settings.local.json`'; then pass
+else fail "the guard text is missing or an allow offer is still there"; fi
+
+t "docs/hooks.md does not claim setup offers a gh pr merge allow rule through merge-allow.sh"
+if ! grep -qF 'merge-allow.sh' "$ROOT/docs/hooks.md" && ! grep -qF 'can also offer one allow rule' "$ROOT/docs/hooks.md"; then pass
+else fail "docs/hooks.md still describes the removed allow offer"; fi
+
+t "SKILL.md tells the owner to add the gh pr merge allow rule themselves (setup writes none)"
+if printf '%s' "$flat" | grep -qF 'the owner adds an allow rule for `gh pr merge` into `feat/<slug>*` to their own settings; setup never writes it'; then pass
+else fail "setup does not say how auto-merge is permitted"; fi
 
 t "SKILL.md asks before deleting an old install and deletes only listed paths"
 if grep -q 'AskUserQuestion' "$SKILL" && grep -q 'old-install.sh' "$SKILL" && grep -q 'only those paths' "$SKILL"; then pass
