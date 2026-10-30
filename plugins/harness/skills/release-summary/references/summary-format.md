@@ -1,6 +1,6 @@
 # Summary format
 
-The draft is Markdown. `scripts/check_release_summary.py <fact-list.json> <draft.md>` checks it, so keep the format exact.
+The draft is Markdown. In the harness repo, `scripts/check_release_summary.py <fact-list.json> <draft.md>` checks it, so keep the format exact.
 
 ## Layout
 
