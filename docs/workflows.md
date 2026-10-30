@@ -38,7 +38,7 @@ readiness checklist (CI, review, intent, needs_review ADRs, UAT) between `<!-- m
 
 1. Setup: validate args, create the integration branch (multi only).
 2. Tickets: intent, then plan by depth (S in the prompt, M plan, L research + design + plan + advisor),
-   implement, verify, finish (push and PR). A blocked ticket is recorded; its dependents are skipped.
+   a ground check (below), implement, verify, finish (push and PR). A blocked ticket is recorded; its dependents are skipped.
    Verify runs the `harness:verify` skill in the implement worktree against the issue's `Verify:` row
    (default agent, not read-only). A failure gets one retry: a pass on retry is `flaky`, a second failure
    blocks the ticket and comments on the issue. FE and FE+BE tickets also run the steps on the base commit
@@ -55,6 +55,14 @@ readiness checklist (CI, review, intent, needs_review ADRs, UAT) between `<!-- m
    The final PR body lists each ticket's verify result in a `## Verify` section (after `## Review`,
    before `## Intent review`): kind, result, base check, stills folder and whether the GIF was built
    and attached. Local mode and tickets that never ran the stage add no line.
+   Ground check (depth L and M, not S): before implement, `plugins/harness/scripts/ground-check.sh` checks the
+   claims of the research brief, design and plan against `integRef` (never the checkout): `path:line` citations
+   and their quotes, paths, symbols, `Done-when` command paths and the `Pins` sha. A path or symbol followed by
+   `(new)` is exempt. Depth L checks the brief and the design in full mode, then the plan in paths-only mode;
+   depth M checks the plan in paths-only mode. A failed check re-runs the design or plan once with the failed
+   claims; a second failure asks the advisor, records a `needs_review` decision and blocks the ticket before
+   implement. The gate fails open: when the cheap ground agent gives no answer, exits 2 or copies a text
+   wrongly, the log says ground did not run and the ticket continues.
 3. Merge: after each group (multi only).
 4. Review: `code-review` at a level chosen from diff size and risky paths; findings scoring 50 or
    more get one fix agent each; re-review only the fix commits; at most 2 rounds.

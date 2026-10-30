@@ -38,6 +38,10 @@ writing-plans  (every depth; one or two steps for S)
   → steps carry Files, Effort, Done-when, Parallel group → specs/<slug>/plan.md (local scratch)
   → depth S and M: also a short specs/<slug>/design.md
       ↓
+ground  (autopilot only; depth L after the design and after the plan, depth M after the plan)
+  → plugins/harness/scripts/ground-check.sh checks files, line citations, symbols, commands and Pins against integRef; `(new)` marks what will be created
+  → a failure re-runs the design or plan once with the failed claims; a second failure asks the advisor and blocks the ticket
+      ↓
 using-git-worktrees  (manual runs; a Workflow uses isolation: 'worktree')
       ↓
 implement
@@ -58,7 +62,7 @@ finishing-a-development-branch
 
 ```
 intake → writing-plans (depth S, one or two steps) → implement → finishing-a-development-branch
-intake → writing-plans → implement (depth M) · add brainstorming + xia2 first for depth L
+intake → writing-plans → ground → implement (depth M) · add brainstorming + xia2 first for depth L (ground also checks the design)
 
 Every change runs on its own branch. Skip brainstorming when the approach is clear.
 Apply asd-ste100 to agent prose you edit under skills/, rules/, or agents/.
@@ -161,7 +165,7 @@ intake             ──► READY → depth S and M: writing-plans · L: brains
 grilling                   ──► "Confirmed decisions" comment + decision list → caller (terminal)
 brainstorming              ──► xia2 → writing-plans
 xia2                       ──► research brief → writing-plans
-writing-plans              ──► implement
+writing-plans              ──► ground (autopilot) → implement
 implement                  ──► /code-review → intent-review → finishing-a-development-branch
 intent-review              ──► (standalone — same pipeline; needs the verbatim request and a BASE..HEAD range)
 autopilot                  ──► intake (per ticket) → grilling → workflows/ship.js (launch, terminal)

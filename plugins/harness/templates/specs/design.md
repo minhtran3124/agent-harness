@@ -3,6 +3,7 @@ Ticket: #<n> · Depth: S|M|L · Date: <YYYY-MM-DD> · ADR: <docs/adr/NNNN-*.md |
 
 ## Context
 <the goal in one line; what exists that the change builds on, with file pointers; Pins: <short sha>>
+A script checks the claims in this file against the code before implement: cite existing code as `path:line` (from the repo root) with a backtick quote of that line, and write (new) right after each path or symbol you will create.
 
 ## Options
 - A (chosen): <trade-off>
