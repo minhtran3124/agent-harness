@@ -15,7 +15,8 @@ import json
 import re
 import sys
 
-CITE = re.compile(r"\(#(\d+)\)")
+CITE = re.compile(r"\(#\d+(?:\s*,\s*#?\d+)*\)")
+NUM = re.compile(r"\d+")
 TODO = "[NEEDS HUMAN]"
 ACTION = "What you need to do:"
 
@@ -30,7 +31,7 @@ def pr_set(facts: dict) -> set[int]:
 def check(facts: dict, draft: str) -> list[str]:
     errors: list[str] = []
     prs = pr_set(facts)
-    for n in sorted({int(m) for m in CITE.findall(draft)}):
+    for n in sorted({int(n) for c in CITE.findall(draft) for n in NUM.findall(c)}):
         if n not in prs:
             errors.append(f"(#{n}) is not a PR in the fact list")
     lines = draft.splitlines()

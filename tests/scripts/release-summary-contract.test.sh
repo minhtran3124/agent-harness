@@ -11,6 +11,14 @@ t "checker rejects a (#n) that is not in the fact list"
 sed 's/(#15)/(#99)/' "$FX/summary-draft.md" > "$TMP/a.md"
 python3 "$CHK" "$FX/fact-list.json" "$TMP/a.md" >/dev/null && fail "unknown PR accepted" || pass
 
+t "checker validates every number in a grouped citation"
+sed 's/(#15)/(#15, #99)/' "$FX/summary-draft.md" > "$TMP/g.md"
+python3 "$CHK" "$FX/fact-list.json" "$TMP/g.md" >/dev/null && fail "unknown PR in group accepted" || pass
+
+t "checker accepts a grouped citation of known PRs"
+sed 's/(#15)/(#15, #16)/' "$FX/summary-draft.md" > "$TMP/h.md"
+python3 "$CHK" "$FX/fact-list.json" "$TMP/h.md" >/dev/null && pass || fail "valid grouped citation rejected"
+
 t "checker rejects a PR that is only in excluded"
 sed 's/(#16)/(#14)/' "$FX/summary-draft.md" > "$TMP/e.md"
 python3 "$CHK" "$FX/fact-list.json" "$TMP/e.md" >/dev/null && fail "excluded PR accepted" || pass
