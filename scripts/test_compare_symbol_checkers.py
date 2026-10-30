@@ -162,6 +162,9 @@ class BaselineTests(unittest.TestCase):
             claims = m.load_claims(fdir)
             res = m.measure("baseline", lang, fdir, claims, opts)
             s = res["score"]
+            want = {"exists": (15, 15), "missing": (6, 6), "wrong-pair": (7, 0)}
+            got = {k: (v["total"], v["correct"]) for k, v in s.items()}
+            self.assertEqual(got, want, lang)
             self.assertEqual(sum(v["total"] for v in s.values()), len(claims), lang)
             for v in s.values():
                 self.assertEqual(v["correct"] + v["wrong"], v["total"], lang)
