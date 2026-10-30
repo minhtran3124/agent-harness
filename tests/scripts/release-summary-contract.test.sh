@@ -23,6 +23,27 @@ t "checker ignores a bare year after a citation in the same parentheses"
 sed 's/(#15)/(#15, 2024)/' "$FX/summary-draft.md" > "$TMP/y.md"
 python3 "$CHK" "$FX/fact-list.json" "$TMP/y.md" >/dev/null && pass || fail "prose year flagged as PR"
 
+t "checker validates every #n in an 'and' citation"
+sed 's/(#15)/(#15 and #999)/' "$FX/summary-draft.md" > "$TMP/an.md"
+python3 "$CHK" "$FX/fact-list.json" "$TMP/an.md" >/dev/null && fail "unknown PR after 'and' accepted" || pass
+
+t "checker validates every #n in a semicolon citation"
+sed 's/(#15)/(#15; #999)/' "$FX/summary-draft.md" > "$TMP/sc.md"
+python3 "$CHK" "$FX/fact-list.json" "$TMP/sc.md" >/dev/null && fail "unknown PR after ';' accepted" || pass
+
+t "checker validates a bare number after a #n as a PR number"
+sed 's/(#15)/(#15, 999)/' "$FX/summary-draft.md" > "$TMP/bn.md"
+python3 "$CHK" "$FX/fact-list.json" "$TMP/bn.md" >/dev/null && fail "unknown bare PR number accepted" || pass
+
+t "checker accepts 'and' and semicolon citations of known PRs"
+sed 's/(#15)/(#15 and #16)/' "$FX/summary-draft.md" > "$TMP/an2.md"
+sed 's/(#15)/(#15; #16)/' "$FX/summary-draft.md" > "$TMP/sc2.md"
+python3 "$CHK" "$FX/fact-list.json" "$TMP/an2.md" >/dev/null && python3 "$CHK" "$FX/fact-list.json" "$TMP/sc2.md" >/dev/null && pass || fail "valid citation rejected"
+
+t "checker treats '(#15 priority item)' as prose, not a citation"
+{ cat "$FX/summary-draft.md"; printf -- '- Pick the (#15 priority item) first.\n'; } > "$TMP/pr.md"
+python3 "$CHK" "$FX/fact-list.json" "$TMP/pr.md" >/dev/null && fail "prose parentheses counted as citation" || pass
+
 t "checker rejects a PR that is only in excluded"
 sed 's/(#16)/(#14)/' "$FX/summary-draft.md" > "$TMP/e.md"
 python3 "$CHK" "$FX/fact-list.json" "$TMP/e.md" >/dev/null && fail "excluded PR accepted" || pass
