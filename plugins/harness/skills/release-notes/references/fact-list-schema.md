@@ -16,6 +16,10 @@ The fact list is the JSON file written next to the release-notes draft. The `rel
   },
   "limitations": [
     { "pr": 15, "section": "Known issues", "text": "Export stops at 10000 rows." }
+  ],
+  "counts": { "total": 3, "included": 2, "excluded": 1 },
+  "excluded": [
+    { "pr": 14, "title": "chore: revert #13", "reason": "revert" }
   ]
 }
 ```
@@ -26,3 +30,7 @@ Rules:
 - `groups` keys are the conventional-commit types. A PR in `breaking` is not repeated in `groups`.
 - `limitations` is an empty list when no PR has a Risk, Known issues or Limitations section.
 - In a range run, `pr` is `null` and `url` is the commit hash.
+- `counts.total` equals `counts.included` plus `counts.excluded`. `counts.included` is the number of PRs in the draft.
+- `excluded` lists every PR left out of the draft, each with a `reason`. It is an empty list when none is left out.
+- In `groups`, the keys `perf`, `refactor`, `docs`, `test`, `chore`, `build`, `ci` and `other` make up the Internal section of the draft.
+- A value that has no source is the text `[NEEDS HUMAN]`.
