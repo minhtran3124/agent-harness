@@ -581,6 +581,15 @@ test('j: no agent gets max or ultra effort, and every agent gets an explicit eff
   assert.strictEqual(models.suite, 'haiku'); assert.strictEqual(models.research, 'haiku'); assert.strictEqual(models.implement, 'sonnet')
 })
 
+test('j2: design and plan run on opus at depth L only; plan stays sonnet at depth M, S runs neither', async () => {
+  const { calls } = await run({ tickets: [T(1, 1, [], { depth: 'S' }), T(2, 1, [], { depth: 'M' }), T(3, 1, [], { depth: 'L' })] }, null)
+  const models = (n, stage) => named(calls, new RegExp(`^${stage}:${n}$`)).map(c => c.opts.model)
+  assert.deepStrictEqual(models(1, 'plan'), []); assert.deepStrictEqual(models(2, 'plan'), ['sonnet'])   // depth S writes no plan stage
+  assert.deepStrictEqual(models(1, 'design'), []); assert.deepStrictEqual(models(2, 'design'), [])
+  assert(models(3, 'design').length > 0 && models(3, 'design').every(m => m === 'opus'), 'L design on opus')
+  assert(models(3, 'plan').length > 0 && models(3, 'plan').every(m => m === 'opus'), 'L plan on opus')
+})
+
 test('k: argument validation', async () => {
   const bad = async (over, re) => { await assert.rejects(() => run(over, null), re) }
   await bad({ tickets: [T(1, 1), T(1, 2)] }, /duplicate ticket number #1/)
@@ -1002,7 +1011,9 @@ test('s4: early spec writes happen after the intent and plan stages, before impl
     assert(!p.includes('decision.md') && !p.includes('summary.md'), `${depth}: end-of-run files`)
     assert(p.includes('check-ignore') && !p.includes('/.ship-repo/') && !p.includes('/wt/'), depth)
     assert(early.every(c => c.opts.model === 'haiku' && c.opts.effort === 'low'), `${depth}: cheap model`)
+    assert(early.every(c => c.opts.phase === 'Tickets'), `${depth}: early phase`)
     assert.strictEqual(named(calls, /^specs$/).length, 1, `${depth}: final pass`)
+    assert.strictEqual(named(calls, /^specs$/)[0].opts.phase, 'Decisions', `${depth}: final phase`)
   }
 })
 

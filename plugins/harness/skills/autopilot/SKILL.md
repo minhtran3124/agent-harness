@@ -9,8 +9,7 @@ allowed-tools: Read, Write, Grep, Glob, Agent, Skill, AskUserQuestion, Workflow,
 # Autopilot
 
 Typing `/harness:autopilot` authorizes the launch in step 8, after the owner says go in step 7. This
-skill runs in the main session; `${CLAUDE_PLUGIN_ROOT}/workflows/ship.js` is the autonomous half. The main session
-chooses model and effort per call.
+skill runs in the main session; `${CLAUDE_PLUGIN_ROOT}/workflows/ship.js` is the autonomous half.
 
 1. **Scope.** Parse `$ARGUMENTS`: a milestone, issue numbers, or free text (one ticket, no number).
    Get `<repo>` (`gh repo view --json nameWithOwner -q .nameWithOwner`), the remote name
@@ -35,9 +34,9 @@ chooses model and effort per call.
    `noAsk: true` so the workflow records them as `needs_review` decisions.
 7. **Summary, then ONE go/no-go question.** Table: ticket, title, verdict, depth, group, deps,
    confirmed decisions (short). State the base branch, the integration branch `feat/<slug>`,
-   single or multi, the model plan (Sonnet stages, Haiku tests, advisor `opus`; `fable` only when
+   single or multi, the model plan (`opus` for design and plan at depth L, the difficulty signal; else Sonnet, Haiku tests, advisor `opus`; `fable` only when
    the owner says so) and that nothing is merged. This is
-   the last time the owner is asked.
+   the owner's last question.
 8. **Launch.** Call Workflow with `name: "harness:ship"` and `args` as a real
    object that includes `pluginDir: "${CLAUDE_PLUGIN_ROOT}"` (see `references/launch-args.md`). Take `testCmd`, `lintCmd` and `fullTestCmd` from
    `CLAUDE.md` → `## Run and test`, then the README, never from memory. If one is missing, ask in step 7. With

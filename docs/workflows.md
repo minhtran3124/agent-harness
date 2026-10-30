@@ -76,7 +76,7 @@ review; it is left out when both are empty. `{{DECISIONS}}` stays after Final ve
 
 Stage agents run the skill by path with `Mode: auto`, never ask, and return `decisions[]`. Workflow
 agents cannot start agents, so the script calls the advisor when a stage sets `needs_advisor`.
-Models and effort are constants at the top of the file.
+Models and effort are constants at the top of the file. `stageModel(stage, depth)` picks Opus for the design and plan stages at depth L and keeps Sonnet for the plan stage at depth M. Depth L is the difficulty signal, so this fixed rule fits "the orchestrator chooses the model per task difficulty"; there is no args override.
 
 ## Local mode
 
