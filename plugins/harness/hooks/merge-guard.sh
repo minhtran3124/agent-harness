@@ -186,9 +186,9 @@ case "$segs" in *$'\001'OPENQUOTE*) deny "an unclosed quote in the command hides
 # A command substitution, backtick or variable expansion can build the gh, pr or merge word at run time
 # (g$(true)h, $(echo gh)). Quoted text was reduced away above, so a mention inside a message does not match.
 # With a substitution and a merge-like word anywhere, the command cannot be judged: deny.
-fr=$(fold "$reduced")
+fr=$(fold "$reduced"); dollar='$'
 case "$fr" in
-  *'$('*|*'`'*|*'$'[a-z0-9_{@*]*)
+  *"$dollar("*|*'`'*|*"$dollar"[a-z0-9_\{@*]*)
     case "$fr" in
       *pr*merge*|*gh*merge*|*pulls/*merge*|*mergepullrequest*|*enablepullrequestautomerge*|*repos/*/merges*)
         deny "a command substitution or variable expansion next to a merge command could build the gh command at run time, so it cannot be judged." ;;
