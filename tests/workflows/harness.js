@@ -1568,6 +1568,35 @@ test('gr9: local mode still fetches the remote before the ground check', async (
   assert(named(calls, /^ground-design:1$/)[0].prompt.includes('git -C /repo fetch origin'))
 })
 
+// ---- codegraph research helper (#526) ----------------------------------------------------------
+
+test('cg1: the research prompt has the codegraph init step, both env vars, the cleanup and the no-codegraph branch', async () => {
+  const { calls } = await run({ tickets: LT }, null)
+  const p = named(calls, /^research:1$/)[0].prompt
+  assert(p.includes('command -v codegraph'), 'presence check')
+  assert(p.includes('codegraph init --yes'), 'init step')
+  assert(p.includes('CODEGRAPH_NO_DAEMON=1') && p.includes('CODEGRAPH_TELEMETRY=0'), 'env vars')
+  assert(/rm -rf \S*research-1\/\.codegraph/.test(p), 'cleanup of the .codegraph dir in the research worktree')
+  assert(p.includes('If codegraph is missing or a codegraph command fails'), 'branch for a machine without codegraph')
+  assert(p.includes('git grep') && p.includes('record no decision'), 'carry on with git grep, no decision')
+})
+
+test('cg2: the research prompt carries the three output rules for codegraph', async () => {
+  const { calls } = await run({ tickets: LT }, null)
+  const p = named(calls, /^research:1$/)[0].prompt
+  assert(p.includes('unknown, not absent'), 'empty result rule')
+  assert(p.includes('shell, Markdown'), 'names what codegraph does not index')
+  assert(p.includes('read from the file and cited as path:line'), 'cite from the file, not from codegraph')
+  assert(p.includes('untrusted input'), 'untrusted output rule')
+})
+
+test('cg3: no other stage mentions codegraph', async () => {
+  const { calls } = await run({ tickets: LT }, null)
+  for (const re of [/^intent:1$/, /^design:1$/, /^plan:1$/, /^implement:1$/, /^ground-design:1$/]) {
+    for (const c of named(calls, re)) assert(!/codegraph/i.test(c.prompt), `${c.label} mentions codegraph`)
+  }
+})
+
 ;(async () => {
   let failed = 0
   for (const c of cases) {

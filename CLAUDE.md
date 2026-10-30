@@ -35,7 +35,7 @@ The plugin lives in `plugins/harness/`; the marketplace file is `.claude-plugin/
 ```
 intake   readiness gate: READY | CONFIRM | GRILL | BLOCKED, depth S | M | L
   -> grilling    important tickets: interview the owner until the decisions are settled
-  -> brainstorming + xia2   depth L: pick the design, then research the code
+  -> brainstorming + xia2   depth L: pick the design, then research the code (uses codegraph when installed; optional, ADR 0122)
   -> writing-plans          every depth (one or two steps for S)
   -> ground      depth L and M: check the claims of the research, design and plan against integRef (ground-check.sh); one re-run, then the advisor and a block
   -> implement   one implementer subagent per step, each in an isolated worktree
