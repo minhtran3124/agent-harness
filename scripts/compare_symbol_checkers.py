@@ -275,21 +275,32 @@ def language_server(lang, fixture_dir, claims, work, opts):
             lsp.notify("textDocument/didOpen", {"textDocument": {
                 "uri": "file://" + os.path.join(root, probe_rel),
                 "languageId": "python" if lang == "py" else "typescript", "version": 1, "text": text}})
-        def definition(claim):
+        def definition(claim, wait=timeout):
             probe_rel, line, col = where[claim]
             return lsp.request("textDocument/definition", {
                 "textDocument": {"uri": "file://" + os.path.join(root, probe_rel)},
-                "position": {"line": line, "character": col}}, timeout)
+                "position": {"line": line, "character": col}}, wait)
 
         # Readiness gate: a server answers [] until its project has loaded. Poll the last `exists` claim
-        # until it resolves (or 30 s pass) so no scored claim is asked before the project is ready. Every
-        # scored claim is then asked exactly once.
+        # until it resolves (or the gate timeout passes) so no scored claim is asked before the project is
+        # ready. Each gate request waits at most the time left, so the total wait stays near the gate
+        # timeout. A server that never becomes ready is not a failed run: it is scored as it answers, so the
+        # row keeps its measured misses. Every scored claim is then asked exactly once.
         gate = [c["claim"] for c in claims if c["label"] == "exists"][-1]
-        deadline = time.time() + opts.get("gate_timeout", 30)
-        while not definition(gate).get("result"):
-            if time.time() >= deadline:
-                raise CouldNotRun("%s did not load the project within the readiness timeout" % name)
-            time.sleep(0.3)
+        gate_timeout = opts.get("gate_timeout", 30)
+        deadline = time.time() + gate_timeout
+        while True:
+            left = deadline - time.time()
+            if left <= 0:
+                break
+            try:
+                if definition(gate, min(timeout, left)).get("result"):
+                    break
+            except CouldNotRun:
+                if time.time() < deadline:
+                    raise  # server died or closed its stdin: a real failure, not a slow load
+                break
+            time.sleep(min(0.3, max(0.0, deadline - time.time())))
         found = {}
         answered = 0
         for c in claims:

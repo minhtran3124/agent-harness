@@ -249,12 +249,16 @@ class CrgArgvTests(unittest.TestCase):
         with open(log) as fh:
             self.assertEqual(fh.read().split(), ["build"])
 
-    def test_readiness_gate_timeout_raises_could_not_run(self):
+    def test_readiness_gate_timeout_keeps_row_and_bounds_wait(self):
+        waits = []
+
         class FakeLsp:
             def __init__(self, *a):
                 pass
 
             def request(self, method, params, timeout):
+                if method != "initialize":
+                    waits.append(timeout)
                 return {} if method == "initialize" else {"result": []}
 
             def notify(self, *a):
@@ -268,9 +272,10 @@ class CrgArgvTests(unittest.TestCase):
         fdir = os.path.join(FIXTURES, m.LANGS["py"])
         claims = m.load_claims(fdir)
         try:
-            with self.assertRaises(m.CouldNotRun):
-                m.language_server("py", fdir, claims, tempfile.mkdtemp(prefix="lspwork-"),
-                                  {"tools_dir": "", "timeout": 5, "gate_timeout": 0.5})
+            found = m.language_server("py", fdir, claims, tempfile.mkdtemp(prefix="lspwork-"),
+                                      {"tools_dir": "", "timeout": 5, "gate_timeout": 0.5})
+            self.assertEqual(set(found), {c["claim"] for c in claims})
+            self.assertLessEqual(waits[0], 0.5)  # a gate request never waits past the gate deadline
         finally:
             m.Lsp, m.lsp_cmd = orig_lsp, orig_cmd
 
