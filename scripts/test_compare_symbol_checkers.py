@@ -215,6 +215,31 @@ class CrgArgvTests(unittest.TestCase):
         with open(log) as fh:
             self.assertEqual(fh.read().split(), ["build"])
 
+    def test_readiness_gate_timeout_raises_could_not_run(self):
+        class FakeLsp:
+            def __init__(self, *a):
+                pass
+
+            def request(self, method, params, timeout):
+                return {} if method == "initialize" else {"result": []}
+
+            def notify(self, *a):
+                pass
+
+            def close(self):
+                pass
+
+        orig_lsp, orig_cmd = m.Lsp, m.lsp_cmd
+        m.Lsp, m.lsp_cmd = FakeLsp, lambda lang, d: (["x"], "fakels")
+        fdir = os.path.join(FIXTURES, m.LANGS["py"])
+        claims = m.load_claims(fdir)
+        try:
+            with self.assertRaises(m.CouldNotRun):
+                m.language_server("py", fdir, claims, tempfile.mkdtemp(prefix="lspwork-"),
+                                  {"tools_dir": "", "timeout": 5, "gate_timeout": 0.5})
+        finally:
+            m.Lsp, m.lsp_cmd = orig_lsp, orig_cmd
+
     def test_run_all_keeps_rows_when_a_method_raises_a_non_couldnotrun_error(self):
         calls = []
 

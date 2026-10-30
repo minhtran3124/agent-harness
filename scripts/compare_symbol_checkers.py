@@ -284,8 +284,10 @@ def language_server(lang, fixture_dir, claims, work, opts):
         # until it resolves (or 30 s pass) so no scored claim is asked before the project is ready. Every
         # scored claim is then asked exactly once.
         gate = [c["claim"] for c in claims if c["label"] == "exists"][-1]
-        deadline = time.time() + 30
-        while time.time() < deadline and not definition(gate).get("result"):
+        deadline = time.time() + opts.get("gate_timeout", 30)
+        while not definition(gate).get("result"):
+            if time.time() >= deadline:
+                raise CouldNotRun("%s did not load the project within the readiness timeout" % name)
             time.sleep(0.3)
         found = {}
         answered = 0
