@@ -34,6 +34,10 @@ if grep -qF 'merge-guard.sh' "$SKILL" && printf '%s' "$flat" | grep -qF 'blocks 
    && printf '%s' "$flat" | grep -qF 'Setup never writes `.claude/settings.local.json`'; then pass
 else fail "the guard text is missing or an allow offer is still there"; fi
 
+t "docs/hooks.md does not claim setup offers a gh pr merge allow rule through merge-allow.sh"
+if ! grep -qF 'merge-allow.sh' "$ROOT/docs/hooks.md" && ! grep -qF 'can also offer one allow rule' "$ROOT/docs/hooks.md"; then pass
+else fail "docs/hooks.md still describes the removed allow offer"; fi
+
 t "SKILL.md tells the owner to add the gh pr merge allow rule themselves (setup writes none)"
 if printf '%s' "$flat" | grep -qF 'the owner adds an allow rule for `gh pr merge` into `feat/<slug>*` to their own settings; setup never writes it'; then pass
 else fail "setup does not say how auto-merge is permitted"; fi
