@@ -353,11 +353,11 @@ function stageIntent(t) {
 const CITE_RULE = () => `Cite existing code as path:line from the repo root (for example src/a.js:12) followed by a backtick quote of that line, and write (new) right after each path or symbol you will create. ` +
   `A script checks every path, line, symbol and command you name against ${integRef} before implement.`
 
-function stageResearch(t, intent) {
+function stageResearch(t, intent, ground = '') {
   const w = newWt(`research-${t.n}`, null, integRef)
   const build = advice => w.setup + head(t, 'xia2',
-    `Stage: research for a depth L ticket. Write the research brief and return its full text as research_md. ${CITE_RULE()}\nIntent: ${JSON.stringify(intent)}${advice}`, w.dir)
-  return runStage(t, 'research', build, RESEARCH_SCHEMA, { model: MODEL.research, effort: EFFORT.research })
+    `Stage: research for a depth L ticket. Write the research brief and return its full text as research_md. ${CITE_RULE()}\nIntent: ${JSON.stringify(intent)}${ground}${advice}`, w.dir)
+  return runStage(t, 'research', build, RESEARCH_SCHEMA, { model: MODEL.research, effort: EFFORT.research, labelSuffix: ground ? ' retry' : '' })
 }
 
 function stageDesign(t, intent, research, ground = '') {
@@ -836,10 +836,11 @@ async function runTicket(t) {
       await writeSpecsEarly(t, ['design.md', 'plan.md'])
       planText = `Follow this plan:\n${plan.plan_md}`
     } else {
-      const research = spec.research = await stageResearch(t, intent)
-      // First check: the brief and the design. The re-run cannot change the brief, so the second check reads the new design only.
+      // The brief and the design each get their own gate: a bad brief re-runs the research, a bad design re-runs the design only.
+      const research = spec.research = await groundGate(t, 'research', ground => stageResearch(t, intent, ground),
+        (r, k) => groundCheck(t, 'research', [{ file: 'research.md', text: r.research_md }], 'full', k))
       const design = spec.design = await groundGate(t, 'design', ground => stageDesign(t, intent, research, ground),
-        (d, k) => groundCheck(t, 'design', [...(k === 1 ? [{ file: 'research.md', text: research.research_md }] : []), { file: 'design.md', text: d.design_md }], 'full', k))
+        (d, k) => groundCheck(t, 'design', [{ file: 'design.md', text: d.design_md }], 'full', k))
       const plan = spec.plan = await groundGate(t, 'plan', ground => stagePlan(t, intent, `Design:\n${design.design_md}\n`, ground),
         (p, k) => groundCheck(t, 'plan', [{ file: 'plan.md', text: p.plan_md }], 'paths-only', k))
       const advice = await advisePlan(t, design, plan)

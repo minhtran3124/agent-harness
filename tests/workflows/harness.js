@@ -83,7 +83,7 @@ function defaults(c, st) {
   if (l.startsWith('advisor:')) return 'ADVICE-TEXT'
   if (l === 'setup-integration' || l === 'plugin-check') return ok()
   if (l.startsWith('intent:')) return ok({ goal: 'g', acceptance: [], files: [], plan_steps: [{ title: 'step', files: [], done_when: 'true' }] })
-  if (/^ground-(design|plan):/.test(l)) return groundRes(c, 0, [])
+  if (/^ground-(research|design|plan):/.test(l)) return groundRes(c, 0, [])
   if (l.startsWith('research:')) return ok({ research_md: 'RESEARCH' })
   if (l.startsWith('design:')) return ok({ design_md: 'DESIGN' })
   if (l.startsWith('plan:')) return ok({ plan_md: 'PLAN-MD', plan_steps: [] })
@@ -1511,15 +1511,26 @@ test('gr5: a ground agent that returns nothing, exit 2, or a wrong line count do
 test('gr6: depth L order and the ground-design prompt', async () => {
   const { calls } = await run({ tickets: LT }, null)
   const ls = labelsOf(calls)
-  const order = ['research:1', 'design:1', 'ground-design:1', 'plan:1', 'ground-plan:1', 'advisor:plan-review:1', 'implement:1']
+  const order = ['research:1', 'ground-research:1', 'design:1', 'ground-design:1', 'plan:1', 'ground-plan:1', 'advisor:plan-review:1', 'implement:1']
   const at = order.map(l => ls.indexOf(l))
   assert(at.every((v, i) => v >= 0 && (i === 0 || v > at[i - 1])), `${order.join(' < ')} in ${ls.join()}`)
   const g = named(calls, /^ground-design:1$/)[0].prompt
   assert(g.includes('--mode full') && g.includes('origin/v5.0.0') && g.includes('/plug/scripts/ground-check.sh'), g)
-  assert(g.includes('RESEARCH') && g.includes('DESIGN'), g)
+  assert(g.includes('DESIGN') && !g.includes('RESEARCH'), g)
   assert(g.includes('git -C /repo fetch origin'), g)
   assert(g.includes('/.ship-repo/ms/ground-1-design-1/'), g)
   assert(named(calls, /^ground-plan:1$/)[0].prompt.includes('/.ship-repo/ms/ground-1-plan-1/'))
+})
+
+test('gr6b: a failed research check re-runs the research, not the design; the re-run is checked too', async () => {
+  let n = 0
+  const { calls } = await run({ tickets: LT }, c => (c.label === 'ground-research:1' ? (n++ === 0 ? groundRes(c, 1, [GFAIL]) : undefined) : undefined))
+  const ls = labelsOf(calls)
+  assert.strictEqual(named(calls, /^research:1:retry$/).length, 1, ls.join())
+  assert(named(calls, /^research:1:retry$/)[0].prompt.includes(GFAIL))
+  assert.strictEqual(named(calls, /^ground-research:1$/).length, 2, ls.join())
+  assert.strictEqual(named(calls, /^design:1/).length, 1, ls.join())
+  assert(ls.indexOf('research:1:retry') < ls.indexOf('design:1'), ls.join())
 })
 
 test('gr7: a failed plan check re-runs the plan once; a second failure blocks the ticket', async () => {
