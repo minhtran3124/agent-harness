@@ -130,6 +130,17 @@ t "a command name from a variable is denied"; g 'GH=gh; $GH pr merge 7 --repo o/
 t "gh pr view with a variable argument is allowed"; g 'gh pr view $N --json state'; assert_rc 0
 t "a variable inside the pr word is denied"; g 'x=r; gh p$x merge 7 --repo o/r'; assert_rc 2
 t "a variable as the gh subcommand is denied"; g 'a=pr; gh $a merge 7 --repo o/r'; assert_rc 2
+reset; setbase feat/x
+t "a command substitution splitting the gh word is denied"; g 'g$(true)h pr merge 7 --repo o/r'; assert_rc 2
+t "a command substitution as the gh command is denied"; g '$(echo gh) pr merge 7 --repo o/r'; assert_rc 2
+t "a backtick substitution as the gh command is denied"; g '`echo gh` pr merge 7 --repo o/r'; assert_rc 2
+t "a quoted substitution as the gh command is denied"; g '"$(echo gh)" pr merge 7 --repo o/r'; assert_rc 2
+t "a substitution next to an api merge path is denied"; g 'x=$(echo gh); $x api -X PUT repos/o/r/pulls/7/merge'; assert_rc 2
+t "a backslash-newline inside the gh word is denied"; g "$(printf 'g\\\nh pr merge 7 --repo o/r')"; assert_rc 2
+t "a backslash-newline inside the merge word is denied"; g "$(printf 'gh pr mer\\\nge 7 --repo o/r')"; assert_rc 2
+t "a backslash-newline between words still judges the PR (feat/x allowed)"; g "$(printf 'gh pr merge 7 \\\n --repo o/r --merge')"; assert_rc 0
+t "a path variable with the word merge but no gh pr merge is allowed"; g '$HOME/bin/tool merge'; assert_rc 0
+t "echo with a substitution is allowed"; g 'echo $(date)'; assert_rc 0
 
 reset
 t "ls exits 0"; g 'ls -la'; assert_rc 0
