@@ -176,3 +176,22 @@ def test_release_notes_detects_explicit_breaking_signals_only():
     assert "Needs confirmation" in skill
     for term in ("BREAKING CHANGE:", "semver-major", "needs_confirmation", "feat(api)!:"):
         assert term in schema
+
+
+def test_release_notes_collects_milestone_prs_through_issues():
+    skill = (RELEASE_NOTES / "SKILL.md").read_text()
+    schema = (RELEASE_NOTES / "references" / "fact-list-schema.md").read_text()
+    allowed = next(l for l in skill.splitlines() if l.startswith("allowed-tools:"))
+    assert "Bash(gh issue list *)" in allowed and "Bash(gh issue view *)" in allowed
+    assert "gh api" not in allowed
+    assert "gh issue list --milestone" in skill and "in:title,body" in skill
+    assert "0 PRs found" in skill
+    assert "--limit 50" not in schema and "does not match `#10`" in schema
+    assert "whole union" in schema and "matches no ticket still counts" in schema
+    assert "only when the union is empty" in skill
+    assert all(k in schema for k in ("Closes", "Fixes", "Resolves", "Refs"))
+    readme = (SCRIPT.parent.parent / "plugins" / "harness" / "skills" / "README.md").read_text()
+    row = next(l for l in readme.splitlines() if l.startswith("| `release-notes`"))
+    assert "/harness:release-notes" in row
+    for signal in ("title", "footer", "label"):
+        assert signal in row

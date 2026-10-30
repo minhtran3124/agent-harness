@@ -32,7 +32,7 @@ The fact list is the JSON file written next to the release-notes draft. The `rel
 
 Rules:
 
-- `tickets` maps each ticket (issue) number to the PRs that close it. Take it from `closingIssuesReferences` and from `Closes #n`, `Fixes #n` or `Resolves #n` in the PR body. A ticket with no merged PR in the set is not listed.
+- `tickets` maps each ticket (issue) number to the PRs that close it. In a milestone run, take the issues from `gh issue list --milestone`; a PR matches issue `n` only when its title names `#n` or its body has `Closes #n`, `Fixes #n`, `Resolves #n` or `Refs #n`. Otherwise take it from `closingIssuesReferences` and from those keywords in the PR body. A ticket with no merged PR in the set is not listed. Build `tickets` from the whole union of milestone-tagged PRs and issue-found PRs: a milestone-tagged PR joins a ticket by `closingIssuesReferences` or the same keywords, and one that matches no ticket still counts as an item and is not listed in `tickets`.
 - `no_pr_commits` is used in a range run only. A commit belongs to a PR when its subject ends with `(#n)` or is a `Merge pull request #n` line. Every other commit goes to `no_pr_commits`, not to `groups`. In a range run, each commit with a PR is one item with that `pr`. It is an empty list in a milestone run.
 
 - Every item in `breaking`, `groups` and `excluded` carries `labels` (list of names), `author` (login), `merged_at` (ISO date) and `breaking` (true or false). In a range run, `labels` is an empty list and `merged_at` is the commit date.
@@ -65,3 +65,20 @@ Set `breaking` to true only on an explicit signal:
 - a label is `breaking`, `breaking-change` or `semver-major`
 
 The model can flag a suspect when no signal exists but the text hints at one (for example "removes", "renames a flag"). A suspect gets `"breaking": false` and `"needs_confirmation": true`, and it is listed under `Needs confirmation` in the draft, not under Breaking changes. Never set `breaking` to true on a suspect.
+
+## Milestone collection
+
+Source (a), PRs tagged with the milestone:
+
+```bash
+gh pr list --state merged --search 'milestone:"<name>"' --json number,title,body,url,labels,author,mergedAt,closingIssuesReferences --limit 200
+```
+
+Source (b), PRs found through the milestone's issues, for the case where only the issues carry the milestone:
+
+```bash
+gh issue list --milestone "<name>" --state all --json number,title --limit 200
+gh pr list --state merged --search '<n> in:title,body' --json number,title,body,url,labels,author,mergedAt,closingIssuesReferences --limit 200
+```
+
+Run the second command once per issue `<n>`. Match `#<n>` only as a whole number: the character after the digits must not be a digit or a letter (`#1` does not match `#10` or `#123`). Keep a PR from (b) only when its title names `#<n>` that way or its body has `Closes`, `Fixes`, `Resolves` or `Refs` for `#<n>`; the loose search also returns unrelated PRs. Remove duplicate PR numbers from the union.
