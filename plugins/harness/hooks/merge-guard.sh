@@ -227,7 +227,13 @@ while IFS= read -r seg; do
     [\$\`]*) case "$(fold "$cmd")" in *merge*) deny "a command name built from a variable or substitution next to a merge command cannot be judged." ;; esac ;;
   esac
   case "$seg" in
-    QUOTED*) if printf '%s' "$seg" | grep -qE '(^|[[:space:]])pr[[:space:]]+merge([[:space:]]|$)'; then deny "a quoted command name before 'pr merge' cannot be judged."; fi ;;
+    QUOTED*)
+      if printf '%s' "$seg" | grep -qE '(^|[[:space:]])pr[[:space:]]+merge([[:space:]]|$)'; then deny "a quoted command name before 'pr merge' cannot be judged."; fi
+      if printf '%s' "$seg" | grep -qE '^QUOTED[[:space:]]+api([[:space:]]|$)'; then
+        case "$(fold "$cmd")" in
+          *mergepullrequest*|*enablepullrequestautomerge*|*pulls/*merge*|*repos/*/merges*) deny "a quoted command name before 'api' next to a merge mutation or endpoint cannot be judged." ;;
+        esac
+      fi ;;
   esac
   if printf '%s' "$seg" | grep -qE '^gh[[:space:]]+pr[[:space:]]+merge([[:space:]]|$)'; then
     judge_pr_merge "$seg"

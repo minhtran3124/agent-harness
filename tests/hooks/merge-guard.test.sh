@@ -164,5 +164,10 @@ t "a command name held in a quoted variable is denied"; g 'P="gh pr"; $P merge 7
 t "a command name held in a variable (graphql) is denied"; g 'X=gh; $X api graphql -f query=mergePullRequest'; assert_rc 2
 t "a command name held in a braced variable is denied"; g 'P="gh pr"; ${P} merge 7 --repo o/r'; assert_rc 2
 t "a variable command name that is not a merge is allowed"; g 'P="ls -l"; $P /tmp'; assert_rc 0
+t "a quoted command name before api graphql with a merge mutation is denied"
+g '"$(echo gh)" api graphql -f query="mutation { mergePullRequest(input:{}) { x } }"'; assert_rc 2
+t "a quoted command name before api with the merges endpoint is denied"
+g '"$(echo gh)" api repos/o/r/merges -f base=main'; assert_rc 2
+t "a quoted command name before api without a merge word is allowed"; g '"$(echo gh)" api user'; assert_rc 0
 
 finish
