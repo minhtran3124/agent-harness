@@ -141,5 +141,38 @@ def test_real_repository_matches_expected_surface_shape():
     result = run(root, "--json")
     assert result.returncode == 0, result.stderr
     data = json.loads(result.stdout)
-    assert data["totals"]["skills"] == 18
+    assert data["totals"]["skills"] == 19
     assert data["totals"]["companion_prompts"] == 6
+
+
+RELEASE_NOTES = SCRIPT.parent.parent / "plugins" / "harness" / "skills" / "release-notes"
+
+
+def test_release_notes_collects_per_item_facts():
+    skill = (RELEASE_NOTES / "SKILL.md").read_text()
+    schema = (RELEASE_NOTES / "references" / "fact-list-schema.md").read_text()
+    assert "labels,author,mergedAt" in skill
+    for field in ("labels", "author", "merged_at", "breaking"):
+        assert f'"{field}"' in schema
+
+
+def test_release_notes_maps_tickets_and_lists_commits_without_pr():
+    skill = (RELEASE_NOTES / "SKILL.md").read_text()
+    schema = (RELEASE_NOTES / "references" / "fact-list-schema.md").read_text()
+    assert "closingIssuesReferences" in skill
+    assert '"tickets"' in schema and '"no_pr_commits"' in schema
+
+
+def test_release_notes_filters_bots_and_excluded_labels_first():
+    skill = (RELEASE_NOTES / "SKILL.md").read_text()
+    schema = (RELEASE_NOTES / "references" / "fact-list-schema.md").read_text()
+    assert "Filter the noise first" in skill and "--exclude-label" in skill
+    assert "## Noise filter" in schema and "`bot`" in schema
+
+
+def test_release_notes_detects_explicit_breaking_signals_only():
+    skill = (RELEASE_NOTES / "SKILL.md").read_text()
+    schema = (RELEASE_NOTES / "references" / "fact-list-schema.md").read_text()
+    assert "Needs confirmation" in skill
+    for term in ("BREAKING CHANGE:", "semver-major", "needs_confirmation", "feat(api)!:"):
+        assert term in schema
