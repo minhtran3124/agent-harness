@@ -7,8 +7,6 @@ allowed-tools: Read, Write, Grep, Glob, Bash(gh pr list *), Bash(gh pr view *), 
 
 # Release Notes - draft only
 
-Write a draft and a fact list. A human reviews both and publishes the release.
-
 ## Input
 
 - `--milestone <name>`: use GitHub through `gh`. This is the first choice.
@@ -16,7 +14,7 @@ Write a draft and a fact list. A human reviews both and publishes the release.
 - `--version <x.y.z>` and `--out <path>`: optional.
 - Linear is a later follow-up. Do not read it.
 
-If the user gives neither a milestone nor a range, ask which one to use.
+If neither is given, ask which one to use.
 
 ## Version
 
@@ -34,14 +32,14 @@ Never write or change a version.
 For a milestone:
 
 ```bash
-gh pr list --state merged --search 'milestone:"<name>"' --json number,title,body,url,labels,author,mergedAt --limit 200
+gh pr list --state merged --search 'milestone:"<name>"' --json number,title,body,url,labels,author,mergedAt,closingIssuesReferences --limit 200
 ```
 
-For a range, list the commits with `git log <from>..<to> --format='%h %s'`. Read a PR with `gh pr view <number> --json title,body,labels,author,mergedAt`.
+For a range, list the commits with `git log <from>..<to> --format='%h|%an|%aI|%s'`. Read a PR with `gh pr view <number> --json title,body,labels,author,mergedAt,closingIssuesReferences`.
 
-Record one fact per item: PR number, title, labels (names), author login, merge date (`mergedAt`) and a `breaking` flag. The `breaking` flag is set by the rules in Breaking changes below. In a range run, the author and date come from `git log --format='%h|%an|%aI|%s'`, and labels are empty.
+Record the facts per item, map each ticket to its PRs, and list the commits that belong to no PR separately. The field list and the rules are in `references/fact-list-schema.md`.
 
-Count the items found. Drop each item that is not a user-facing change (for example `revert`, `duplicate`) and record its reason. Keep an item when you are unsure.
+Count the items found. Drop each item that is not a user-facing change and record its reason. Keep an item when you are unsure.
 
 ## Rules for every entry
 
@@ -74,11 +72,11 @@ Write two files side by side. The default draft path is `docs/releases/v<version
 - `<draft path>`: the draft.
 - `<draft path without .md>.json`: the fact list. The shape is in `references/fact-list-schema.md`.
 
-Report the two paths and the counts line. Do not publish them.
+Report the two paths and the counts line.
 
 ## Never
 
-This skill reads GitHub and git and writes only the two files above. It does not:
+This skill writes only the two files above. It does not:
 
 - create a tag
 - push to a remote
