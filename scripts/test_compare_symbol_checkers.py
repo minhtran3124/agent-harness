@@ -8,11 +8,13 @@ Run: python3 -I scripts/test_compare_symbol_checkers.py   (or via pytest)
 """
 import contextlib
 import io
+import json
 import os
 import re
 import sqlite3
 import sys
 import tempfile
+import time
 import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -263,19 +265,17 @@ class CrgArgvTests(unittest.TestCase):
         with open(exe, "w") as fh:
             fh.write("#!/bin/sh\necho \"$*\" >> \"%s\"\n"
                      "for a in \"$@\"; do [ \"$a\" = -q ] && { echo 'no such option: -q' >&2; exit 2; }; done\n"
-                     "mkdir -p .code-review-graph; python3 -c \"import sqlite3;sqlite3.connect('.code-review-graph/graph.db').close()\"\n" % log)
+                     "mkdir -p .code-review-graph; python3 -c \"import sqlite3;c=sqlite3.connect('.code-review-graph/graph.db');"
+                     "c.execute('create table nodes (kind,name,parent_name,file_path)');c.commit()\"\n" % log)
         os.chmod(exe, 0o755)
         work = tempfile.mkdtemp(prefix="crgwork-")
         fdir = os.path.join(FIXTURES, m.LANGS["py"])
         opts = {"tools_dir": td, "timeout": 60}
-        try:
-            m.graph_method("code-review-graph", "py", fdir, [], work, opts, False)
-        except Exception:
-            pass  # empty fake db has no schema; only the recorded argv matters
+        m.graph_method("code-review-graph", "py", fdir, [], work, opts, False)
         self.assertTrue(os.path.exists(log), "fake code-review-graph was never run")
         with open(log) as fh:
             calls = [ln.split() for ln in fh.read().splitlines()]
-        self.assertTrue(calls)
+        self.assertEqual([c[0] for c in calls], ["build"])
         for argv in calls:
             self.assertNotIn("-q", argv)
 
@@ -305,7 +305,8 @@ class CrgArgvTests(unittest.TestCase):
         log = os.path.join(td, "argv.log")
         with open(exe, "w") as fh:
             fh.write("#!/bin/sh\necho \"$1\" >> \"%s\"\n"
-                     "mkdir -p .code-review-graph; python3 -c \"import sqlite3;sqlite3.connect('.code-review-graph/graph.db').close()\"\n" % log)
+                     "mkdir -p .code-review-graph; python3 -c \"import sqlite3;c=sqlite3.connect('.code-review-graph/graph.db');"
+                     "c.execute('create table nodes (kind,name,parent_name,file_path)');c.commit()\"\n" % log)
         os.chmod(exe, 0o755)
         work = tempfile.mkdtemp(prefix="crgwork-")
         fdir = os.path.join(FIXTURES, m.LANGS["py"])
@@ -410,6 +411,109 @@ class CrgArgvTests(unittest.TestCase):
         finally:
             m.run_all, m.versions = orig_run, orig_ver
         self.assertEqual(seen["gate_timeout"], 7)
+
+
+FAKE_LS = """#!/usr/bin/env python3
+import json, os, sys, time
+inp, out = sys.stdin.buffer, sys.stdout.buffer
+mode, n = os.environ.get("FAKELS_MODE", ""), 0
+def send(o):
+    b = json.dumps(o).encode()
+    out.write(b"Content-Length: %d\\r\\n\\r\\n" % len(b) + b)
+    out.flush()
+while True:
+    length = None
+    while True:
+        line = inp.readline()
+        if not line:
+            sys.exit(0)
+        line = line.strip()
+        if not line:
+            break
+        if line.lower().startswith(b"content-length:"):
+            length = int(line.split(b":")[1])
+    msg = json.loads(inp.read(length))
+    if "id" not in msg:
+        if msg.get("method") == "exit":
+            sys.exit(0)
+        continue
+    if msg["method"] == "textDocument/definition":
+        n += 1
+        if mode == "slow" and n == 1:
+            time.sleep(1.5)
+        send({"jsonrpc": "2.0", "id": msg["id"], "result": [{"uri": "file:///x"}]})
+    else:
+        send({"jsonrpc": "2.0", "id": msg["id"], "result": {}})
+"""
+
+
+def fake_ls_dir():
+    td = tempfile.mkdtemp(prefix="fakels-")
+    os.makedirs(os.path.join(td, "bin"))
+    exe = os.path.join(td, "bin", "pyright-langserver")
+    with open(exe, "w") as fh:
+        fh.write(FAKE_LS)
+    os.chmod(exe, 0o755)
+    return td, exe
+
+
+class ReviewFindingTests(unittest.TestCase):
+    def test_run_all_keeps_rows_when_a_tool_writes_unreadable_output(self):
+        for exc in (json.JSONDecodeError("bad", "{", 1), UnicodeDecodeError("utf-8", b"\xff", 0, 1, "bad")):
+            calls = []
+
+            def fake_measure(method, lang, fdir, claims, opts, exc=exc, calls=calls):
+                calls.append(method)
+                if len(calls) == 2:
+                    raise exc
+                return {"found": {}, "score": {}, "cold": 0.0, "repeat": 0.0}
+
+            orig = m.measure
+            m.measure = fake_measure
+            try:
+                rows = m.run_all(FIXTURES, {})
+            finally:
+                m.measure = orig
+            self.assertEqual(len(rows), len(m.METHODS) * len(m.LANGS))
+            self.assertIn(type(exc).__name__, rows[1]["could_not_run"])
+            self.assertNotIn("could_not_run", rows[2])
+
+    def test_run_all_does_not_hide_a_bad_claims_file(self):
+        def bad_claims(fixture_dir):
+            raise ValueError("bad claims.tsv")
+
+        orig = m.load_claims
+        m.load_claims = bad_claims
+        try:
+            with self.assertRaises(ValueError):
+                m.run_all(FIXTURES, {})
+        finally:
+            m.load_claims = orig
+
+    def test_gate_keeps_polling_when_one_request_times_out_before_the_gate_deadline(self):
+        td, _ = fake_ls_dir()
+        fdir = os.path.join(FIXTURES, m.LANGS["py"])
+        claims = m.load_claims(fdir)
+        os.environ["FAKELS_MODE"] = "slow"
+        try:
+            found = m.language_server("py", fdir, claims, tempfile.mkdtemp(prefix="lspwork-"),
+                                      {"tools_dir": td, "timeout": 1, "gate_timeout": 10})
+        finally:
+            del os.environ["FAKELS_MODE"]
+        self.assertEqual(set(found), {c["claim"] for c in claims})
+
+    def test_a_late_reply_to_a_timed_out_request_is_dropped(self):
+        _, exe = fake_ls_dir()
+        env = dict(os.environ, FAKELS_MODE="slow")
+        lsp = m.Lsp([exe, "--stdio"], os.getcwd(), env)
+        try:
+            with self.assertRaises(m.CouldNotRun):
+                lsp.request("textDocument/definition", {}, 0.5)
+            time.sleep(1.5)  # the server answers the abandoned request now
+            lsp.request("textDocument/definition", {}, 5)
+            self.assertEqual(lsp.replies, {})
+        finally:
+            lsp.close()
 
 
 if __name__ == "__main__":

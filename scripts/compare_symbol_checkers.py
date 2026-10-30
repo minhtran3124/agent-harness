@@ -43,6 +43,10 @@ class CouldNotRun(Exception):
     """A method that cannot run: tool absent, did not start, or gave no usable answer."""
 
 
+class NoReply(CouldNotRun):
+    """One request got no reply in time. The server may only be slow, unlike a server that exited."""
+
+
 # ---------------------------------------------------------------- claims and tools
 
 def load_claims(fixture_dir):
@@ -134,6 +138,7 @@ class Lsp:
             raise CouldNotRun("did not start: %s" % exc)
         self.next_id = 1
         self.replies = {}
+        self.abandoned = set()  # ids of requests that timed out: a late reply to one is dropped
         self.cv = threading.Condition()
         self.closed = False
         threading.Thread(target=self._read, daemon=True).start()
@@ -173,7 +178,10 @@ class Lsp:
                         return
                 elif "id" in msg:
                     with self.cv:
-                        self.replies[msg["id"]] = msg
+                        if msg["id"] in self.abandoned:
+                            self.abandoned.discard(msg["id"])
+                        else:
+                            self.replies[msg["id"]] = msg
                         self.cv.notify_all()
         except (OSError, ValueError):
             return
@@ -191,7 +199,8 @@ class Lsp:
             while rid not in self.replies:
                 left = deadline - time.time()
                 if left <= 0:
-                    raise CouldNotRun("no reply to %s within %ss" % (method, timeout))
+                    self.abandoned.add(rid)
+                    raise NoReply("no reply to %s within %ss" % (method, timeout))
                 if self.closed and rid not in self.replies:
                     raise CouldNotRun("server exited during %s" % method)
                 self.cv.wait(min(left, 1.0))
@@ -287,7 +296,8 @@ def language_server(lang, fixture_dir, claims, work, opts):
         # until it resolves (or the gate timeout passes) so no scored claim is asked before the project is
         # ready. Each gate request waits at most the time left, so the total wait stays near the gate
         # timeout. A server that never becomes ready is not a failed run: it is scored as it answers, so the
-        # row keeps its measured misses. Every scored claim is then asked exactly once.
+        # row keeps its measured misses. Every scored claim is then asked once; the gate claim is asked
+        # once more in that pass, and a late reply to a timed-out gate request is dropped by Lsp.
         gate = [c["claim"] for c in claims if c["label"] == "exists"][-1]
         gate_timeout = opts.get("gate_timeout", 30)
         deadline = time.time() + gate_timeout
@@ -298,10 +308,10 @@ def language_server(lang, fixture_dir, claims, work, opts):
             try:
                 if definition(gate, min(timeout, left)).get("result"):
                     break
+            except NoReply:
+                pass  # a slow load: a request that timed out before the gate deadline is polled again
             except CouldNotRun:
-                if time.time() < deadline:
-                    raise  # server died or closed its stdin: a real failure, not a slow load
-                break
+                raise  # server died or closed its stdin: a real failure, not a slow load
             time.sleep(min(0.3, max(0.0, deadline - time.time())))
         found = {}
         answered = 0
@@ -490,13 +500,12 @@ def run_all(fixtures, opts):
     for method in METHODS:
         for lang, sub in LANGS.items():
             fdir = os.path.join(fixtures, sub)
-            row = {"method": method, "lang": lang, "claims": []}
+            row = {"method": method, "lang": lang, "claims": load_claims(fdir)}  # a bad claims.tsv must surface
             try:
-                row["claims"] = load_claims(fdir)
                 row.update(measure(method, lang, fdir, row["claims"], opts))
             except CouldNotRun as exc:
                 row["could_not_run"] = str(exc)
-            except (sqlite3.Error, OSError) as exc:  # tool database or IO error: keep the rows already done; bugs (KeyError, bad claims.tsv) must surface
+            except (sqlite3.Error, OSError, ValueError) as exc:  # tool database, IO or unreadable output (JSON, UTF-8): keep the rows already done; bugs (KeyError) must surface
                 row["could_not_run"] = "%s: %s" % (type(exc).__name__, str(exc)[:120])
             rows.append(row)
     return rows
