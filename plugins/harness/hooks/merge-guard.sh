@@ -145,10 +145,15 @@ segs=$(printf '%s\n' "$cmd" | awk '
           else if (c == q) { if (qb ~ /^[^ \t\n;|&()]*$/) out = out qb; q = "" }
           else qb = qb c }
         if (q == "") { print out; out = "" } else qb = qb "\n" }
+      if (q != "") print "\001OPENQUOTE"
       if (out != "") print out
     }' | sed -E 's/&&|\|\||[;|&()]/\
 /g; s/(^|[[:space:]])[{}]([[:space:]]|$)/\
 /g')
+
+# A quote still open at end of input (an apostrophe in a # comment, an escaped or stray quote) would
+# swallow a later merge, so the splitter cannot be trusted: deny.
+case "$segs" in *$'\001'OPENQUOTE*) deny "an unclosed quote in the command hides what follows it, so a merge cannot be judged." ;; esac
 
 set -f
 while IFS= read -r seg; do
