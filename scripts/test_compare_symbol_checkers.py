@@ -142,6 +142,16 @@ class BaselineTests(unittest.TestCase):
                 total = sum(1 for c in claims if c["label"] == label)
                 self.assertEqual(s[label], {"total": total, "correct": total, "wrong": 0}, (lang, label))
 
+    def test_baseline_non_symbol_fail_line_rejects_the_claim(self):
+        lang = next(iter(m.LANGS))
+        fdir = os.path.join(FIXTURES, m.LANGS[lang])
+        claims = m.load_claims(fdir)
+        target = next(c for c in claims if c["label"] != "exists")
+        body = 'echo "FAIL path: %s (stub)"\nexit 1\n' % target["claim"]
+        opts = {"tools_dir": None, "ground_check": self._stub(body), "timeout": 60}
+        s = m.measure("baseline", lang, fdir, claims, opts)["score"]
+        self.assertEqual(s[target["label"]]["correct"], 1)
+
     def test_baseline_real_script_scores_every_claim(self):
         gc = os.path.join(REPO, "plugins", "harness", "scripts", "ground-check.sh")
         if not os.path.isfile(gc):

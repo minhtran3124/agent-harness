@@ -114,7 +114,8 @@ def baseline(lang, fixture_dir, claims, work, opts):
         raise CouldNotRun("ground-check.sh exit %s: %s" % (r.returncode, r.stderr.strip()[:120]))
     failed = set()
     for line in r.stdout.splitlines():
-        m = re.match(r"FAIL symbol: (\S+) \(", line)
+        # Any FAIL kind rejects the claim it names (path, line, quote, command, pins as well as symbol).
+        m = re.match(r"FAIL (?:path|line|quote|symbol|command|pins): (\S+) \(", line)
         if m:
             failed.add(m.group(1))
     return {c["claim"]: c["claim"] not in failed for c in claims}
