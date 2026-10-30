@@ -71,7 +71,7 @@ function legacyLabel(l) {
 
 // A ground agent's answer. The FILE lines come from the text blocks in the prompt, the way the script prints them.
 function groundRes(c, exit, failures) {
-  const files = [...c.prompt.matchAll(/^=== BEGIN (\S+) ===\n([\s\S]*?)\n=== END \1 ===$/gm)].map(m => `FILE ${m[1]} ${m[2].split('\n').length}`)
+  const files = [...c.prompt.matchAll(/^=== BEGIN (\S+) ===\n([\s\S]*?)\n=== END \1 ===$/gm)].map(m => `FILE ${m[1]} ${m[2].split('\n').length} ${Buffer.byteLength(m[2])}`)
   return { exit, failures, output: [...files, ...failures].join('\n') }
 }
 
@@ -1497,7 +1497,7 @@ test('gr4: depth S makes no ground call', async () => {
 })
 
 test('gr5: a ground agent that returns nothing, exit 2, or a wrong line count does not block the ticket', async () => {
-  for (const bad of [null, { exit: 2, failures: [], output: 'usage' }, { failures: [], output: '' }, { exit: 0, failures: [], output: 'FILE design.md 9999' }]) {
+  for (const bad of [null, { exit: 2, failures: [], output: 'usage' }, { failures: [], output: '' }, { exit: 0, failures: [], output: 'FILE design.md 9999 9999' }, { exit: 0, failures: [], output: 'FILE design.md 1' }, { exit: 0, failures: [], output: 'FILE design.md 1 7' }]) {
     const { calls, logs, result } = await run({ tickets: LT }, c => (/^ground-/.test(c.label) ? bad : undefined))
     const ls = labelsOf(calls)
     assert(ls.includes('implement:1'), JSON.stringify(bad) + ls.join())

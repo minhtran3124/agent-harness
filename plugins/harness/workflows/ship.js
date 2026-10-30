@@ -384,6 +384,8 @@ function stagePlan(t, intent, extra, ground = '') {
 // ---------------------------------------------------------------------------
 const failLines = v => (Array.isArray(v) ? v : String(v || '').split('\n')).filter(l => typeof l === 'string' && l.startsWith('FAIL '))
 
+const utf8Len = str => unescape(encodeURIComponent(String(str))).length
+
 // texts: [{ file, text }]. Returns { status: 'pass' | 'fail' | 'skipped', failures, why }.
 function judgeGround(res, texts) {
   if (!res || typeof res.exit !== 'number') return { status: 'skipped', failures: [], why: 'no exit code from the ground agent' }
@@ -391,9 +393,16 @@ function judgeGround(res, texts) {
   const out = typeof res.output === 'string' ? res.output : ''
   for (const x of texts) {
     const line = out.split('\n').find(l => l.startsWith(`FILE ${x.file} `))
-    const want = x.text.split('\n').length
-    const got = line ? Number(line.trim().split(' ')[2]) : NaN
-    if (got !== want && !(x.text.endsWith('\n') && got === want - 1)) return { status: 'skipped', failures: [], why: `${x.file} was not copied verbatim (${line || 'no FILE line'}, expected ${want} lines)` }
+    const parts = line ? line.trim().split(' ') : []
+    const lines = Number(parts[2])
+    const bytes = Number(parts[3])
+    const wantLines = x.text.split('\n').length
+    const wantBytes = utf8Len(x.text)
+    const nl = x.text.endsWith('\n')
+    // The byte count must match exactly (a paraphrase of equal line count fails); only a file that lost the last newline of the text passes.
+    const okLines = lines === wantLines || (nl && lines === wantLines - 1)
+    const okBytes = bytes === wantBytes || (nl && bytes === wantBytes - 1)
+    if (!okLines || !okBytes) return { status: 'skipped', failures: [], why: `${x.file} was not copied verbatim (${line || 'no FILE line'}, expected ${wantLines} lines and ${wantBytes} bytes)` }
   }
   const failures = uniq([...failLines(res.failures), ...failLines(out)])
   if (res.exit === 0 && failures.length === 0) return { status: 'pass', failures: [], why: '' }

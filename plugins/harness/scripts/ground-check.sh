@@ -15,7 +15,7 @@
 #   (new) marker            a path or symbol followed by (new) is exempt everywhere in the input set
 # paths-only mode checks paths, citation paths and line numbers, and command paths: no symbols, quotes or Pins.
 #
-# Output (stdout): one "FILE <name> <line-count>" line per input, then one
+# Output (stdout): one "FILE <name> <line-count> <byte-count>" line per input, then one
 #   "FAIL <kind>: <claim> (<reason>)" line per failed claim; kind is path, line, quote, symbol, command or pins.
 # Exit: 0 every claim holds, 1 at least one claim failed, 2 usage error, missing input file or unresolved ref.
 #
@@ -220,7 +220,7 @@ FILES_RE='^[[:space:]]*([-*][[:space:]]+)?\**Files?\**:'
 i=0
 for f in "$@"; do
   i=$((i + 1))
-  printf 'FILE %s %s\n' "$f" "$(awk 'END { print NR }' "$f")"
+  printf 'FILE %s %s %s\n' "$f" "$(awk 'END { print NR }' "$f")" "$(wc -c < "$f" | tr -d '[:space:]')"
   awk '/^[[:space:]]*```/ { skip = !skip; next } !skip' "$f" > "$TMP/in$i"
   grep -oE '`[^`]+`[[:space:]]*\(new[ ,)]' "$TMP/in$i" | sed -E 's/`[[:space:]]*\(new[ ,)]$//; s/^`//' >> "$TMP/newraw"
   grep -E "$FILES_RE" "$TMP/in$i" | sed -E 's/^[^:]*://' | tr ',' '\n' | grep -E '\(new[ ,)]' \

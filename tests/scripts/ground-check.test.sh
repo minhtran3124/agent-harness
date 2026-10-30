@@ -150,10 +150,10 @@ t "a directory that is a tree on the ref passes"
 chk full 'Tests live in `tests/` and sources in `src`.'
 if [ "$RC" -eq 0 ]; then pass; else fail "rc=$RC out=$OUT"; fi
 
-t "the script prints one FILE <name> <line-count> line per input"
+t "the script prints one FILE <name> <line-count> <byte-count> line per input"
 printf 'a\nb\nc\n' > "$WORK/three.md"
 OUT=$(cd "$WORK" && "$BASH_BIN" "$GC" --repo "$REPO" --ref HEAD --mode full three.md 2>&1); RC=$?
-if [ "$RC" -eq 0 ] && has 'FILE three.md 3'; then pass; else fail "rc=$RC out=$OUT"; fi
+if [ "$RC" -eq 0 ] && has 'FILE three.md 3 6'; then pass; else fail "rc=$RC out=$OUT"; fi
 
 t "several input files are checked in one call"
 printf 'See `src/app.js`.\n' > "$WORK/a.md"; printf 'See `src/gone.js`.\n' > "$WORK/b.md"
