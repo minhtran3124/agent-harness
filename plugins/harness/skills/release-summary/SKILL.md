@@ -11,7 +11,7 @@ Write a plain-language summary of one release. The only source is the fact-list 
 
 ## Input
 
-- `<path>`: the fact-list JSON. Without it, use `docs/releases/v<version>.json` (find it with Glob).
+- `<path>`: the fact-list JSON. Without it, use `docs/releases/v<version>.json` or, when the version is `[NEEDS HUMAN]`, `docs/releases/unversioned.json` (find them with Glob). If release-notes wrote the list to a custom `--out` path, the user must pass that path as `<path>`.
 - If the file is missing, stop and ask the user for the path or to run `/harness:release-notes` first. Never collect PRs yourself.
 - Optional: `--out <path>`, `--audience team|client|stakeholder` (default `stakeholder`).
 - Read `references/audiences.md` for the tone and `references/summary-format.md` for the line format.
