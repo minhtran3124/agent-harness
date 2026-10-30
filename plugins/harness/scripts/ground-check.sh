@@ -147,7 +147,21 @@ check_symbol() { # check_symbol <symbol>
   is_new "$s" && return 0
   g grep -q -F -w -e "$s" "$REF" -- >/dev/null 2>&1 && return 0
   last=${s##*.}
-  if [ "$last" != "$s" ] && g grep -q -F -w -e "$last" "$REF" -- >/dev/null 2>&1; then return 0; fi
+  if [ "$last" != "$s" ]; then
+    # A dotted symbol: the last segment must be on the ref, and every other segment must be in a file that holds it.
+    local files seg ok=1 f found
+    files=$(g grep -l -F -w -e "$last" "$REF" -- 2>/dev/null | cut -d: -f2-)
+    if [ -n "$files" ]; then
+      for seg in $(printf '%s' "${s%.*}" | tr '.' ' '); do
+        found=0
+        while IFS= read -r f; do
+          if g grep -q -F -w -e "$seg" "$REF" -- "$f" >/dev/null 2>&1; then found=1; break; fi
+        done <<< "$files"
+        [ "$found" = 1 ] || { ok=0; break; }
+      done
+      [ "$ok" = 1 ] && return 0
+    fi
+  fi
   fail symbol "$s" "not found on $REF"
 }
 

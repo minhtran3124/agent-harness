@@ -109,6 +109,10 @@ t "a dotted symbol passes when its last segment is on the ref"
 chk full 'Reads `opts.size`, then `opts.buildWidget`.'
 if [ "$RC" -eq 0 ]; then pass; else fail "rc=$RC out=$OUT"; fi
 
+t "a dotted symbol whose qualifier is not in any file holding the member fails"
+chk full 'Reads `ghostThing.size`.'
+if [ "$RC" -eq 1 ] && has 'FAIL symbol: ghostThing.size'; then pass; else fail "rc=$RC out=$OUT"; fi
+
 t "a valid Pins sha passes"
 chk full "Pins: $SHA"
 if [ "$RC" -eq 0 ]; then pass; else fail "rc=$RC out=$OUT"; fi
