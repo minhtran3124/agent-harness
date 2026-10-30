@@ -31,6 +31,13 @@
             "command": "bash",
             "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/secrets-scan.sh"],
             "statusMessage": "Secrets scan (staged changes)…"
+          },
+          {
+            "type": "command",
+            "command": "bash",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/merge-guard.sh"],
+            "timeout": 30,
+            "statusMessage": "Merge guard (PR base must be feat/*)…"
           }
         ]
       }
