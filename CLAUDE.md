@@ -19,6 +19,8 @@ The plugin lives in `plugins/harness/`; the marketplace file is `.claude-plugin/
   unblock the work, for a high-stakes architecture decision, or when the owner asks.
 - The orchestrator chooses the model and the effort for each subagent and each workflow agent,
   based on how hard the task is. Effort is not fixed.
+- Workflow design and plan stages use Opus 5.5 at depth L; the plan stage stays on Sonnet 5.5 at
+  depth M and S. Depth L is the difficulty signal, so this fixed rule fits the line above.
 - Call the advisor when:
   - the ticket depth is L, or the ticket is important (design or plan review, before implement);
   - the same check fails twice after a fix;

@@ -20,6 +20,10 @@ const MODEL = { intent: 'sonnet', research: 'haiku', design: 'sonnet', plan: 'so
   verify: 'sonnet', fix: 'sonnet', merge: 'sonnet', adr: 'sonnet', review: 'sonnet', test: 'haiku', cheap: 'haiku' }
 const EFFORT = { intent: 'medium', research: 'low', design: 'medium', plan: 'medium', implement: 'medium',
   verify: 'medium', fix: 'medium', merge: 'low', adr: 'low', review: 'medium', test: 'low', cheap: 'low', advisor: 'high' }
+// Depth L is the difficulty signal: design and plan run on Opus there; every other stage and depth uses MODEL.
+function stageModel(stage, depth) {
+  return depth === 'L' && (stage === 'design' || stage === 'plan') ? 'opus' : MODEL[stage]
+}
 const FIX_THRESHOLD = 50   // a review finding scoring at or above this gets one fix agent
 const MAX_FIX_ROUNDS = 2   // hard cap on fix rounds in the review loop
 // Paths whose change makes the review level 'high'.
@@ -348,7 +352,7 @@ function stageDesign(t, intent, research) {
   const build = advice => w.setup + head(t, 'brainstorming',
     `Stage: design. Return the design as a decision with stage 'design' in decisions[] (a design ADR) and its text as design_md, in the shape of ${pluginDir}/templates/specs/design.md. Write no file.\n` +
     `Intent: ${JSON.stringify(intent)}\nResearch brief:\n${research.research_md}${advice}`, w.dir)
-  return runStage(t, 'design', build, DESIGN_SCHEMA, { model: MODEL.design, effort: EFFORT.design })
+  return runStage(t, 'design', build, DESIGN_SCHEMA, { model: stageModel('design', t.depth), effort: EFFORT.design })
 }
 
 function stagePlan(t, intent, extra) {
@@ -356,7 +360,7 @@ function stagePlan(t, intent, extra) {
   const build = advice => w.setup + head(t, 'writing-plans',
     `Stage: plan. Write no file; return the full plan text as plan_md, in the shape of ${pluginDir}/templates/specs/plan.md, plus plan_steps (the script saves it as specs/<slug>/plan.md).\n` +
     `Intent: ${JSON.stringify(intent)}\n${extra || ''}${advice}`, w.dir)
-  return runStage(t, 'plan', build, PLAN_SCHEMA, { model: MODEL.plan, effort: EFFORT.plan })
+  return runStage(t, 'plan', build, PLAN_SCHEMA, { model: stageModel('plan', t.depth), effort: EFFORT.plan })
 }
 
 // A depth-L ticket gets one advisor look at its design and plan before any code is written.
