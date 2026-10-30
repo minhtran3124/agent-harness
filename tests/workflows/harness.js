@@ -92,9 +92,9 @@ function defaults(c, st) {
   if (l === 'final-pr') return ok({ pr: args0.local ? 0 : 900, url: 'https://x/pull/900' })
   if (l.startsWith('gdiffstat:')) return { files: [{ path: 'src/a.js', added: 10, deleted: 2 }] }
   if (l.startsWith('greview:')) return ok({ findings: [], skill_invoked: true, skill_error: '' })
-  if (l.startsWith('gfix:') || l.startsWith('gintent-fix:')) { st.fix++; return ok({ fix_status: 'fixed', base_sha: `gbase${st.fix}`, commit: `gc${st.fix}` }) }
+  if (l.startsWith('gfix:') || l.startsWith('gintent-fix:')) { st.fix++; st.tip = `gc${st.fix}`; return ok({ fix_status: 'fixed', base_sha: `gbase${st.fix}`, commit: `gc${st.fix}` }) }
   if (l.startsWith('gintent:')) return { verdict: 'match', findings: [] }
-  if (l.startsWith('gci:')) return { checks: [{ name: 'harness-ci', bucket: 'pass' }], headRefOid: `sha${n}abcdef` }
+  if (l.startsWith('gci:')) return { checks: [{ name: 'harness-ci', bucket: 'pass' }], headRefOid: st.tip || `sha${n}abcdef` }
   if (l.startsWith('gbody:')) return ok()
   if (l === 'ci-snapshot') return { checks: [{ name: 'harness-ci', bucket: 'pass' }], headRefOid: 'finalsha' }
   if (l === 'diffstat') return { files: [{ path: 'src/a.js', added: 10, deleted: 2 }] }
@@ -1422,3 +1422,13 @@ test('schemas are well-formed (object root, required within properties)', async 
   }
   process.exit(failed ? 1 : 0)
 })()
+
+test('g1: CI that ran on a head older than the last pushed fix commit fails the gate', async () => {
+  const r = await gateFlow({}, c => {
+    if (c.label === 'greview:1:r0') return { findings: [{ id: 'F1', file: 'a.js', line: 1, score: 90, summary: 's', pre_existing: false }], skill_invoked: true, skill_error: '' }
+    if (c.label === 'gci:1') return { checks: [{ name: 'harness-ci', bucket: 'pass' }], headRefOid: 'staleoldsha' }
+  })
+  assert.notStrictEqual(t1(r).status, 'done')
+  const body = named(r.calls, /^gbody:1$/)[0].prompt
+  assert(body.includes('stale'), body)
+})

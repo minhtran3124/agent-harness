@@ -636,7 +636,7 @@ async function writeSpecFiles(list, run, { only, label, phase }) {
 // the intent review and gh pr checks; the merge stage merges only a ticket whose gate passed.
 // ---------------------------------------------------------------------------
 // ci: the list gh pr checks returned. Fails closed: no checks, a failure, a cancel, a pending check or no head commit all fail.
-function judgeCi(res) {
+function judgeCi(res, expectHead) {
   const checks = res && Array.isArray(res.checks) ? res.checks : []
   if (!checks.length) return { ok: false, text: 'no CI checks found (fails closed)' }
   const count = b => checks.filter(c => c && c.bucket === b).length
@@ -645,6 +645,11 @@ function judgeCi(res) {
   if (bad.length) return { ok: false, text: `${bad.map(c => `${c && c.name || '?'}: ${c && c.bucket || '?'}`).join(', ')}` }
   if (!count('pass')) return { ok: false, text: 'every check was skipped (fails closed)' }
   if (!(res && typeof res.headRefOid === 'string' && res.headRefOid.trim())) return { ok: false, text: 'the PR head commit is unknown (fails closed)' }
+  // The fix rounds push new commits. CI that ran on an older head is stale: the head must be the last pushed fix commit.
+  if (expectHead) {
+    const h = res.headRefOid.trim()
+    if (!(h.startsWith(expectHead) || expectHead.startsWith(h))) return { ok: false, text: `CI ran on ${h.slice(0, 8)} but the branch tip is ${expectHead.slice(0, 8)} (stale)` }
+  }
   return { ok: true, text: `${checks.length} check(s) green at ${res.headRefOid.slice(0, 8)}` }
 }
 
@@ -689,7 +694,9 @@ async function stageGate(t, fin, impl, branch) {
   const failed = []
   const review = await reviewLoop(ctx, ctx.target)
   let intent = await stageIntentReview([{ n: t.n }], ctx)
+  let intentFixTip = ''
   if (intent.fixRound) {
+    intentFixTip = (intent.fixRange && intent.fixRange.split('..')[1]) || ''
     // Code the intent fix landed has not been reviewed. Review that range; a second fix round is never reviewed, so it fails the gate.
     if (intent.fixRange) {
       const again = await reviewWithRetry(`${ctx.labelPrefix}code-review · intent fix`, review.level, intent.fixRange,
@@ -708,7 +715,8 @@ async function stageGate(t, fin, impl, branch) {
   if (failed.length) ciG = { ok: false, text: 'not checked (an earlier gate failed)' }
   else {
     const res = await stageCi(t, fin, ctx, `${ctx.labelPrefix}CI checks`)
-    ciG = judgeCi(res)
+    const lastFix = intentFixTip || ((review.fixed || []).slice(-1)[0] || {}).commit || ''
+    ciG = judgeCi(res, lastFix)
     head = ciG.ok ? res.headRefOid.trim() : ''
     if (!ciG.ok) failed.push({ gate: 'ci', detail: ciG.text })
   }
