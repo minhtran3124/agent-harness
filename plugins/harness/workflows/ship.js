@@ -685,6 +685,15 @@ async function updateMergeBlock(t, fin, ctx, block) {
   }
 }
 
+// The PR body still says Merge: auto from the gate pass; rewrite it to a human merge.
+async function humanMergeBlock(n, r) {
+  if (LOCAL || !(r && r.pr)) return
+  const mt = tickets.find(x => x.n === n) || { n }
+  const ci = r.gate && r.gate.ci, rv = r.gate && r.gate.review, it = r.gate && r.gate.intent
+  await updateMergeBlock(mt, { pr: r.pr }, { labelPrefix: `#${n} merge failed · ` },
+    mergeBlock({ mode: 'human', why: `merge into ${integBranch} failed`, ci: ci || PENDING, review: rv || PENDING, intent: it || PENDING, adrs: { ok: true, text: 'none' } }))
+}
+
 async function stageGate(t, fin, impl, branch) {
   const fail = (gates, extra) => ({ pass: false, failed: gates, ...extra })
   if (!(fin && fin.pr > 0)) return fail([{ gate: 'pr', detail: 'no PR number was returned' }])
@@ -1283,13 +1292,7 @@ for (const g of groups) {
       const r = byN.get(f.n)
       if (r) { r.status = 'blocked'; r.reason = `merge into ${integBranch} failed: ${f.reason}` }
       log(`#${f.n} blocked at merge: ${f.reason}`)
-      // The PR body still says Merge: auto from the gate pass; rewrite it to a human merge.
-      if (!LOCAL && r && r.pr) {
-        const mt = tickets.find(x => x.n === f.n) || { n: f.n }
-        const ci = r.gate && r.gate.ci, rv = r.gate && r.gate.review, it = r.gate && r.gate.intent
-        await updateMergeBlock(mt, { pr: r.pr }, { labelPrefix: `#${f.n} merge failed · ` },
-          mergeBlock({ mode: 'human', why: `merge into ${integBranch} failed`, ci: ci || PENDING, review: rv || PENDING, intent: it || PENDING, adrs: { ok: true, text: 'none' } }))
-      }
+      await humanMergeBlock(f.n, r)
       if (!LOCAL && r && r.pr) addDecision(f.n, 'merge', {
         title: `Merge PR ${r.pr} by hand for #${f.n}`,
         context: `The gate passed for #${f.n}, but the merge of PR ${r.pr} into ${integBranch} failed: ${f.reason}`,
@@ -1300,7 +1303,13 @@ for (const g of groups) {
         needs_review: true,
       })
     }
-    if (!m) for (const r of ready) { r.status = 'blocked'; r.reason = 'the merge agent returned nothing' }
+    // No answer, or a ticket the agent neither merged nor failed: the ticket stays open, so the PR body must say human.
+    const unmerged = m ? ready.filter(r => !(m.merged || []).includes(r.n) && !failed.some(f => f.n === r.n)) : ready
+    for (const r of unmerged) {
+      r.status = 'blocked'
+      r.reason = m ? `the merge agent did not report #${r.n} as merged or failed` : 'the merge agent returned nothing'
+      await humanMergeBlock(r.n, r)
+    }
   }
 }
 

@@ -393,6 +393,17 @@ test('b4b: a failed merge rewrites the PR body block from Merge: auto to Merge: 
   assert(b[0].prompt.includes('Merge: human') && b[0].prompt.includes('merge into') && !b[0].prompt.includes('Merge: auto'), b[0].prompt)
 })
 
+test('b4c: a null merge result rewrites every ready PR body to Merge: human', async () => {
+  const stub = c => { if (c.label === 'merge:g1') return null }
+  const { calls, result } = await run({ tickets: [T(1, 1), T(2, 1)] }, stub)
+  for (const n of [1, 2]) {
+    const b = named(calls, new RegExp(`^merge failed:${n}$`))
+    assert.strictEqual(b.length, 1, JSON.stringify(calls.map(c => c.label)))
+    assert(b[0].prompt.includes('Merge: human') && !b[0].prompt.includes('Merge: auto'), b[0].prompt)
+  }
+  assert.strictEqual(result.tickets.find(t => t.n === 1).status, 'blocked')
+})
+
 test('b4: a failed merge gives a needs_review decision with the exact command; local mode gives none', async () => {
   const stub = c => { if (c.label === 'merge:g1') return ok({ merged: [2], failed: [{ n: 1, reason: 'denied by a permission rule' }] }) }
   const { result } = await run({ tickets: [T(1, 1), T(2, 1)] }, stub)
