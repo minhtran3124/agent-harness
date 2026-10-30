@@ -385,6 +385,14 @@ test('b3: the merge prompt says each command is its own call and names gh pr mer
   assert(p.includes('gh pr merge <pr> --repo o/r --merge --match-head-commit <head>'), p)
 })
 
+test('b4b: a failed merge rewrites the PR body block from Merge: auto to Merge: human', async () => {
+  const stub = c => { if (c.label === 'merge:g1') return ok({ merged: [2], failed: [{ n: 1, reason: 'head mismatch' }] }) }
+  const { calls } = await run({ tickets: [T(1, 1), T(2, 1)] }, stub)
+  const b = named(calls, /^merge failed:1$/)
+  assert.strictEqual(b.length, 1, JSON.stringify(calls.map(c => c.label)))
+  assert(b[0].prompt.includes('Merge: human') && b[0].prompt.includes('merge into') && !b[0].prompt.includes('Merge: auto'), b[0].prompt)
+})
+
 test('b4: a failed merge gives a needs_review decision with the exact command; local mode gives none', async () => {
   const stub = c => { if (c.label === 'merge:g1') return ok({ merged: [2], failed: [{ n: 1, reason: 'denied by a permission rule' }] }) }
   const { result } = await run({ tickets: [T(1, 1), T(2, 1)] }, stub)

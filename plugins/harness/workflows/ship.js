@@ -1283,6 +1283,13 @@ for (const g of groups) {
       const r = byN.get(f.n)
       if (r) { r.status = 'blocked'; r.reason = `merge into ${integBranch} failed: ${f.reason}` }
       log(`#${f.n} blocked at merge: ${f.reason}`)
+      // The PR body still says Merge: auto from the gate pass; rewrite it to a human merge.
+      if (!LOCAL && r && r.pr) {
+        const mt = tickets.find(x => x.n === f.n) || { n: f.n }
+        const ci = r.gate && r.gate.ci, rv = r.gate && r.gate.review, it = r.gate && r.gate.intent
+        await updateMergeBlock(mt, { pr: r.pr }, { labelPrefix: `#${f.n} merge failed · ` },
+          mergeBlock({ mode: 'human', why: `merge into ${integBranch} failed`, ci: ci || PENDING, review: rv || PENDING, intent: it || PENDING, adrs: { ok: true, text: 'none' } }))
+      }
       if (!LOCAL && r && r.pr) addDecision(f.n, 'merge', {
         title: `Merge PR ${r.pr} by hand for #${f.n}`,
         context: `The gate passed for #${f.n}, but the merge of PR ${r.pr} into ${integBranch} failed: ${f.reason}`,
