@@ -249,6 +249,26 @@ class CrgArgvTests(unittest.TestCase):
         with open(log) as fh:
             self.assertEqual(fh.read().split(), ["build"])
 
+    def test_graphify_repeat_run_starts_without_previous_output(self):
+        td = tempfile.mkdtemp(prefix="fakegfy-")
+        os.makedirs(os.path.join(td, "venv-graphify", "bin"))
+        exe = os.path.join(td, "venv-graphify", "bin", "graphify")
+        log = os.path.join(td, "seen.log")
+        with open(exe, "w") as fh:
+            fh.write("#!/bin/sh\n[ -e graphify-out ] && echo stale >> \"%s\" || echo clean >> \"%s\"\n"
+                     "mkdir -p graphify-out; echo '{}' > graphify-out/graph.json\n" % (log, log))
+        os.chmod(exe, 0o755)
+        work = tempfile.mkdtemp(prefix="gfywork-")
+        fdir = os.path.join(FIXTURES, m.LANGS["py"])
+        opts = {"tools_dir": td, "timeout": 60}
+        for repeat in (False, True):
+            try:
+                m.graph_method("graphify", "py", fdir, [], work, opts, repeat)
+            except Exception:
+                pass  # fake graph has no edges; only the pre-run state matters
+        with open(log) as fh:
+            self.assertEqual(fh.read().split(), ["clean", "clean"])
+
     def test_readiness_gate_timeout_keeps_row_and_bounds_wait(self):
         waits = []
 

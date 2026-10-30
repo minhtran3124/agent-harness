@@ -364,6 +364,9 @@ def graph_method(tool, lang, fixture_dir, claims, work, opts, repeat):
         exe = find_tool(["venv-graphify/bin/graphify"], ["graphify"], opts["tools_dir"])
         if not exe:
             raise CouldNotRun("not installed: graphify")
+        # Same rule as code-review-graph below: every run is a full build. Drop the previous
+        # output so a repeat run cannot be an incremental no-op and the cold/repeat columns match.
+        shutil.rmtree(os.path.join(root, "graphify-out"), ignore_errors=True)
         r = run([exe, "update", "."], cwd=root, env=env, timeout=opts["timeout"])
         out = os.path.join(root, "graphify-out", "graph.json")
         if r.returncode != 0 or not os.path.isfile(out):
