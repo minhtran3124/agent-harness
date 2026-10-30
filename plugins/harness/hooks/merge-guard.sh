@@ -213,6 +213,13 @@ while IFS= read -r seg; do
     seg=$(printf '%s' "$seg" | sed -E 's/^[A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]*//')
   done
   [ -n "$seg" ] || continue
+  # A command name built from a variable or substitution ($P merge ...) hides the gh word: with the
+  # word merge anywhere in the command, it cannot be judged.
+  # A variable holding a path ($HOME/bin/tool) has a slash in the word and is not this case.
+  case "${seg%%[[:space:]]*}" in
+    */*) ;;
+    [\$\`]*) case "$(fold "$cmd")" in *merge*) deny "a command name built from a variable or substitution next to a merge command cannot be judged." ;; esac ;;
+  esac
   case "$seg" in
     QUOTED*) if printf '%s' "$seg" | grep -qE '(^|[[:space:]])pr[[:space:]]+merge([[:space:]]|$)'; then deny "a quoted command name before 'pr merge' cannot be judged."; fi ;;
   esac

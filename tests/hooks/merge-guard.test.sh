@@ -158,4 +158,10 @@ s=$SECONDS; g "$M"; e=$((SECONDS - s))
 if [ "$RC" = 2 ] && [ "$e" -lt 20 ]; then pass; else fail "rc=$RC took ${e}s out=$OUT"; fi
 rm -f "$D/slow"
 
+reset; setbase feat/x
+t "a command name held in a quoted variable is denied"; g 'P="gh pr"; $P merge 7 --repo o/r'; assert_rc 2
+t "a command name held in a variable (graphql) is denied"; g 'X=gh; $X api graphql -f query=mergePullRequest'; assert_rc 2
+t "a command name held in a braced variable is denied"; g 'P="gh pr"; ${P} merge 7 --repo o/r'; assert_rc 2
+t "a variable command name that is not a merge is allowed"; g 'P="ls -l"; $P /tmp'; assert_rc 0
+
 finish
