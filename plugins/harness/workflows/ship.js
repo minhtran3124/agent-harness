@@ -1,5 +1,5 @@
 export const meta = {
-  name: 'ship',
+  name: 'autopilot-run',
   description: 'Ship tickets to one PR: build, verify, review, test, ADRs',
   phases: [
     { title: 'Setup', detail: 'validate args, create the integration branch (multi-ticket only)' },
