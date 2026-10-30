@@ -31,6 +31,11 @@ t "checker rejects a breaking item without a what-you-need-to-do line"
 grep -v 'What you need to do:' "$FX/summary-draft.md" > "$TMP/b.md"
 python3 "$CHK" "$FX/fact-list.json" "$TMP/b.md" >/dev/null && fail "breaking item without action accepted" || pass
 
+t "checker rejects a fact-list breaking PR missing from Breaking changes"
+sed -e '/^## Breaking changes/,/^## What/{/^## What/!d}' "$FX/summary-draft.md" > "$TMP/m.md"
+printf -- '- Version 1 of the API is gone (#12).\n' >> "$TMP/m.md"
+python3 "$CHK" "$FX/fact-list.json" "$TMP/m.md" >/dev/null && fail "omitted/misplaced breaking PR accepted" || pass
+
 t "checker rejects an unsourced claim without [NEEDS HUMAN]"
 { cat "$FX/summary-draft.md"; printf -- '- The new export is twice as fast.\n'; } > "$TMP/c.md"
 python3 "$CHK" "$FX/fact-list.json" "$TMP/c.md" >/dev/null && fail "unsourced claim accepted" || pass
