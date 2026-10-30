@@ -208,7 +208,7 @@ esac
 
 # The text above is quote-reduced, but a substitution inside double quotes or an unquoted heredoc body
 # still runs. The reducer hands that text back on a SUBST line; a merge-like word in it is a deny.
-substtext=$(printf '%s\n' "$reduced" | sed -n 's/^\x01SUBST//p')
+substtext=$(printf '%s\n' "$reduced" | awk 'index($0, "\001SUBST") == 1 { print substr($0, 7) }')
 # The bare "$ or backtick, then merge" pattern of is_merge_like would deny every commit message that
 # holds $(cat <<'EOF' ... merge ... EOF), so here it needs two markers (a substitution that builds a word).
 subst_merge=0

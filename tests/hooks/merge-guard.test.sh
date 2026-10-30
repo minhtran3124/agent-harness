@@ -176,4 +176,17 @@ t "a quoted command name before api with the merges endpoint is denied"
 g '"$(echo gh)" api repos/o/r/merges -f base=main'; assert_rc 2
 t "a quoted command name before api without a merge word is allowed"; g '"$(echo gh)" api user'; assert_rc 0
 
+# BSD sed does not read \x01 in a pattern: with such a sed first on PATH the SUBST deny must still work.
+BSDSED="$D/bsdsed"; mkdir -p "$BSDSED"; cp -R "$TOOLS"/. "$BSDSED"/; ln -s "$(command -v jq)" "$BSDSED/jq"
+rm -f "$BSDSED/sed"
+cat > "$BSDSED/sed" <<SEDEOF
+#!/bin/sh
+case "\$*" in *'\\x01'*) cat >/dev/null; exit 0 ;; esac
+exec $(command -v sed) "\$@"
+SEDEOF
+chmod +x "$BSDSED/sed"
+reset; setbase feat/x
+t "a merge in a substitution inside double quotes is denied without GNU sed x01"
+g 'echo "$(cmd $X merge)"' "$STUB:$BSDSED"; assert_rc 2
+
 finish
