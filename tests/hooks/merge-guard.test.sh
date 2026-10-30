@@ -110,6 +110,14 @@ t "a quoted commit message that mentions a merge is not a merge"; g 'git commit 
 reset; setbase main
 t "an unclosed quote that swallows a later merge is denied"; g "$(printf "echo 'x\ngh pr merge 7 --repo o/r")"; assert_rc 2
 t "an apostrophe in a comment before a merge on main is denied"; g "$(printf "# don't\ngh pr merge 7 --repo o/r")"; assert_rc 2
+reset; setbase feat/x
+t "a quote-split gh word is still judged (main base denied)"; setbase main; g '"g""h" pr merge 7 --repo o/r'; assert_rc 2
+t "an upper-case GraphQL-style spelling cannot skip the filter"; g 'gh api graphql -f query="mutation{enablePullRequestAutoMerge(input:{pullRequestId:\"X\"}){clientMutationId}}"'; assert_rc 2
+t "gh api graphql enablePullRequestAutoMerge is denied"; g 'gh api graphql -f query=@q.graphql -f x=enablePullRequestAutoMerge'; assert_rc 2
+t "gh api repos/o/r/merges is denied"; g 'gh api repos/o/r/merges -f base=main -f head=x'; assert_rc 2
+t "a variable-split subcommand is denied"; g 'm=mer; gh pr ${m}ge 7 --repo o/r'; assert_rc 2
+t "gh pr view with a variable argument is allowed"; g 'gh pr view $N --json state'; assert_rc 0
+
 reset
 t "ls exits 0"; g 'ls -la'; assert_rc 0
 t "ls does not call gh"; if [ ! -s "$LOG" ]; then pass; else fail "log: $(cat "$LOG")"; fi

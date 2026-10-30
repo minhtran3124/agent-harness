@@ -15,10 +15,16 @@
 # self-contained so it can be copied alone.
 set -u
 payload=$(cat)
-case "$payload" in
-  *gh*merge*|*pulls/*merge*|*mergePullRequest*) ;;
-  *) exit 0 ;;
-esac
+# Pre-filter on a folded copy (lowercase, quotes and backslashes removed) so "g""h", GH-case or
+# me\rge spellings do not skip the guard.
+fold() { printf '%s' "$1" | tr 'A-Z' 'a-z' | tr -d "\"'\\\\"; }
+is_merge_like() {
+  case "$(fold "$1")" in
+    *gh*merge*|*pulls/*merge*|*mergepullrequest*|*enablepullrequestautomerge*|*repos/*/merges*|*gh*pr*[\$\`]*) return 0 ;;
+  esac
+  return 1
+}
+is_merge_like "$payload" || exit 0
 
 TMPF=""
 trap '[ -z "$TMPF" ] || rm -f "$TMPF"' EXIT
@@ -35,10 +41,7 @@ if ! command -v jq >/dev/null 2>&1; then
 fi
 cmd=$(printf '%s' "$payload" | jq -r '.tool_input.command // empty' 2>/dev/null) || deny "the command could not be parsed."
 [ -n "$cmd" ] || deny "the command is empty or could not be parsed."
-case "$cmd" in
-  *gh*merge*|*pulls/*merge*|*mergePullRequest*) ;;
-  *) exit 0 ;;
-esac
+is_merge_like "$cmd" || exit 0
 
 DEADLINE=20  # seconds for the whole hook; the registered hook timeout is 30
 GH_OUT=""
@@ -166,9 +169,16 @@ while IFS= read -r seg; do
     judge_pr_merge "$seg"
   elif printf '%s' "$seg" | grep -qE '^gh[[:space:]]+api[[:space:]]'; then
     if printf '%s' "$seg" | grep -qE '(^|[[:space:]])graphql([[:space:]]|$)'; then
-      case "$cmd" in *mergePullRequest*) deny "a GraphQL mergePullRequest mutation is not allowed; a human merges." ;; esac
+      case "$(fold "$cmd")" in
+        *mergepullrequest*|*enablepullrequestautomerge*) deny "a GraphQL mergePullRequest or enablePullRequestAutoMerge mutation is not allowed; a human merges." ;;
+      esac
+    fi
+    if printf '%s' "$seg" | grep -qE 'repos/[^[:space:]]*/merges([^A-Za-z0-9_]|$)'; then
+      deny "'gh api repos/.../merges' merges a branch and is not allowed; a human merges."
     fi
     if printf '%s' "$seg" | grep -qE 'pulls/[^[:space:]]*/merge'; then judge_api_merge "$seg"; fi
+  elif printf '%s' "$seg" | grep -qE '^gh[[:space:]]+pr[[:space:]]+[^[:space:]]*[$`]'; then
+    deny "a gh pr subcommand built from a variable or substitution cannot be judged."
   elif printf '%s' "$seg" | grep -qE '^gh[[:space:]]+alias[[:space:]]+(set|import)([[:space:]]|$)'; then
     case "$cmd" in *merge*) deny "'gh alias set|import' next to the word merge could hide a merge command." ;; esac
   elif printf '%s' "$seg" | grep -qE '^gh[[:space:]].*[[:space:]]pr[[:space:]]+merge([[:space:]]|$)'; then
