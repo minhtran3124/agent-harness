@@ -37,7 +37,7 @@ Rules:
 
 - Every item in `breaking`, `groups` and `excluded` carries `labels` (list of names), `author` (login), `merged_at` (ISO date) and `breaking` (true or false). In a range run, `labels` is an empty list and `merged_at` is the commit date.
 
-- `breaking` holds the PR titles that contain `!:`, copied verbatim.
+- `breaking` holds the items with an explicit breaking signal, titles copied verbatim.
 - `groups` keys are the conventional-commit types. A PR in `breaking` is not repeated in `groups`.
 - `limitations` is an empty list when no PR has a Risk, Known issues or Limitations section.
 - In a range run, an item with no PR has `pr` set to `null` and `url` set to the commit hash.
@@ -55,3 +55,13 @@ Run the filter on the collected facts, before any section is written. Exclude an
 - `revert`, `duplicate`: the title says so (judged from the title).
 
 Do not exclude an item when you are unsure. The counts line states how many items each reason removed.
+
+## Breaking signals
+
+Set `breaking` to true only on an explicit signal:
+
+- the title has `!` before the colon, as in `feat!:` or `feat(api)!:`
+- the PR body or a commit footer has a line that starts with `BREAKING CHANGE:` or `BREAKING-CHANGE:`
+- a label is `breaking`, `breaking-change` or `semver-major`
+
+The model can flag a suspect when no signal exists but the text hints at one (for example "removes", "renames a flag"). A suspect gets `"breaking": false` and `"needs_confirmation": true`, and it is listed under `Needs confirmation` in the draft, not under Breaking changes. Never set `breaking` to true on a suspect.

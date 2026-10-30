@@ -51,7 +51,7 @@ Count the items found. Filter the noise first, by the rules in the reference, an
 Write these sections in this order. Leave out an empty section, except Breaking changes, which says `None.`.
 
 1. **Highlights**: the 3 to 5 most important user-facing changes, one line each.
-2. **Breaking changes**: every PR title that contains `!:`. Copy the title verbatim, one line each. Do not reword it. Under each title, write `Migration:` and the steps from the PR body, or `[NEEDS HUMAN]` if it has none.
+2. **Breaking changes**: every item with a breaking signal (see the reference). Copy the title verbatim, one line each. A suspect goes in a `Needs confirmation` list. Under each title, write `Migration:` and the steps from the PR body, or `[NEEDS HUMAN]` if it has none.
 3. **Features**: `feat` PRs that are not breaking.
 4. **Fixes**: `fix` PRs that are not breaking.
 5. **Internal**: `perf`, `refactor`, `docs`, `test`, `chore`, `build`, `ci` PRs that are not breaking. A title with no type goes here too.

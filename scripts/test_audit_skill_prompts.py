@@ -168,3 +168,11 @@ def test_release_notes_filters_bots_and_excluded_labels_first():
     schema = (RELEASE_NOTES / "references" / "fact-list-schema.md").read_text()
     assert "Filter the noise first" in skill and "--exclude-label" in skill
     assert "## Noise filter" in schema and "`bot`" in schema
+
+
+def test_release_notes_detects_explicit_breaking_signals_only():
+    skill = (RELEASE_NOTES / "SKILL.md").read_text()
+    schema = (RELEASE_NOTES / "references" / "fact-list-schema.md").read_text()
+    assert "Needs confirmation" in skill
+    for term in ("BREAKING CHANGE:", "semver-major", "needs_confirmation", "feat(api)!:"):
+        assert term in schema
