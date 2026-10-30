@@ -350,7 +350,7 @@ function stageIntent(t) {
 }
 
 // Asked of the research, design and plan stages: the ground gate checks these forms against integRef.
-const CITE_RULE = () => `Cite existing code as path:line from the repo root (for example src/a.js:12) followed by a backtick quote of that line, and write (new) right after each path or symbol you will create. ` +
+const CITE_RULE = () => `Cite existing code as path:line from the repo root (for example src/a.js:12) followed by a backtick quote of that line, and write (new) right after each path or symbol you will create, and after any name that is not in the code, a rejected option included. ` +
   `A script checks every path, line, symbol and command you name against ${integRef} before implement.`
 
 function stageResearch(t, intent, ground = '') {
