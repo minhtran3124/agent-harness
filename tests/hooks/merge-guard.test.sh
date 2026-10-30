@@ -139,6 +139,7 @@ t "a substitution next to an api merge path is denied"; g 'x=$(echo gh); $x api 
 t "a backslash-newline inside the gh word is denied"; g "$(printf 'g\\\nh pr merge 7 --repo o/r')"; assert_rc 2
 t "a backslash-newline inside the merge word is denied"; g "$(printf 'gh pr mer\\\nge 7 --repo o/r')"; assert_rc 2
 t "a backslash-newline between words still judges the PR (feat/x allowed)"; g "$(printf 'gh pr merge 7 \\\n --repo o/r --merge')"; assert_rc 0
+t "a path with projects before git merge is allowed"; g 'cd $HOME/projects/x && git merge main'; assert_rc 0
 t "a path variable with the word merge but no gh pr merge is allowed"; g '$HOME/bin/tool merge'; assert_rc 0
 t "echo with a substitution is allowed"; g 'echo $(date)'; assert_rc 0
 t "a merge inside a double-quoted substitution is denied"; g 'echo "$(gh pr merge 7 --repo o/r)"'; assert_rc 2
