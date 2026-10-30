@@ -216,19 +216,25 @@ class CrgArgvTests(unittest.TestCase):
         td = tempfile.mkdtemp(prefix="fakecrg-")
         os.makedirs(os.path.join(td, "venv-crg", "bin"))
         exe = os.path.join(td, "venv-crg", "bin", "code-review-graph")
+        log = os.path.join(td, "argv.log")
         with open(exe, "w") as fh:
-            fh.write("#!/bin/sh\nfor a in \"$@\"; do [ \"$a\" = -q ] && { echo 'no such option: -q' >&2; exit 2; }; done\n"
-                     "mkdir -p .code-review-graph; python3 -c \"import sqlite3;sqlite3.connect('.code-review-graph/graph.db').close()\"\n")
+            fh.write("#!/bin/sh\necho \"$*\" >> \"%s\"\n"
+                     "for a in \"$@\"; do [ \"$a\" = -q ] && { echo 'no such option: -q' >&2; exit 2; }; done\n"
+                     "mkdir -p .code-review-graph; python3 -c \"import sqlite3;sqlite3.connect('.code-review-graph/graph.db').close()\"\n" % log)
         os.chmod(exe, 0o755)
         work = tempfile.mkdtemp(prefix="crgwork-")
         fdir = os.path.join(FIXTURES, m.LANGS["py"])
         opts = {"tools_dir": td, "timeout": 60}
         try:
             m.graph_method("code-review-graph", "py", fdir, [], work, opts, False)
-        except m.CouldNotRun as exc:
-            self.assertNotIn("exit 2", str(exc))
         except Exception:
-            pass  # empty fake db has no schema; only the argv matters
+            pass  # empty fake db has no schema; only the recorded argv matters
+        self.assertTrue(os.path.exists(log), "fake code-review-graph was never run")
+        with open(log) as fh:
+            calls = [ln.split() for ln in fh.read().splitlines()]
+        self.assertTrue(calls)
+        for argv in calls:
+            self.assertNotIn("-q", argv)
 
     def test_repeat_run_does_a_real_build_not_a_noop_update(self):
         td = tempfile.mkdtemp(prefix="fakecrg-")
