@@ -1,6 +1,6 @@
 # Workflow args for the ship workflow
 
-Pass `args` as a JSON object (not a string). Launch by name, `Workflow({name: "harness:ship", args})`:
+Pass `args` as a JSON object (not a string). Launch by name, `Workflow({name: "harness:autopilot-run", args})`:
 the plugin registers `./workflows/ship.js` in `plugin.json`, and the name works from any working
 directory (verified for #396; it supersedes `docs/adr/0001-workflow-capabilities.md`, decision 4).
 
@@ -34,7 +34,7 @@ the repo's `plugins/harness/workflows/ship.js`, say so. If the result has no suc
 - Name not found: report it and stop. Do not copy the script to another path. The Workflow tool refuses
   a `scriptPath` the session cannot read, so the fallback is inline `script` or `/add-dir <plugin dir>`.
 - Stale name after a plugin update: a session that started before the update can run an old cached
-  `harness:ship`. Restart Claude Code to load the new one (the main fix). The plugin CLI help names
+  `harness:autopilot-run`. Restart Claude Code to load the new one (the main fix). The plugin CLI help names
   `/reload-plugins`, but that is not confirmed here. If the repo's `plugins/harness/workflows/ship.js`
   is inside the working directory or an added directory, `Workflow({scriptPath: "<abs>/plugins/harness/workflows/ship.js", args})`
   runs the current file; the Workflow tool refuses a path the session cannot read.

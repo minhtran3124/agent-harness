@@ -8,7 +8,7 @@ allowed-tools: Read, Write, Grep, Glob, Agent, Skill, AskUserQuestion, Workflow,
 
 # Autopilot
 
-Typing `/harness:autopilot` authorizes the launch in step 8, after the owner says go in step 7. This
+Typing `/harness:autopilot-run` authorizes the launch in step 8, after the owner says go in step 7. This
 skill runs in the main session; `${CLAUDE_PLUGIN_ROOT}/workflows/ship.js` is the autonomous half.
 
 1. **Scope.** Parse `$ARGUMENTS`: a milestone, issue numbers, or free text (one ticket, no number).
@@ -37,7 +37,7 @@ skill runs in the main session; `${CLAUDE_PLUGIN_ROOT}/workflows/ship.js` is the
    single or multi, the model plan (`opus` for design and plan at depth L, the difficulty signal; else Sonnet, Haiku tests, advisor `opus`; `fable` only when
    the owner says so) and that nothing is merged. This is
    the owner's last question.
-8. **Launch.** Call Workflow with `name: "harness:ship"` and `args` as a real
+8. **Launch.** Call Workflow with `name: "harness:autopilot-run"` and `args` as a real
    object that includes `pluginDir: "${CLAUDE_PLUGIN_ROOT}"` (see `references/launch-args.md`). Take `testCmd`, `lintCmd` and `fullTestCmd` from
    `CLAUDE.md` → `## Run and test`, then the README, never from memory. If one is missing, ask in step 7. With
    `--no-ask`, record a `needs_review` decision and use `fullTestCmd` only. Tell the owner
