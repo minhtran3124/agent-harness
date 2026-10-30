@@ -18,6 +18,9 @@ printf '#!/bin/bash\necho run\n' > "$REPO/tests/run.sh"
 printf 'one\ntwo\n' > "$REPO/README.md"
 printf 'function formatDate(d) { return d; }\n' > "$REPO/src/lib.js"
 printf 'import utils from "./lib";\n' > "$REPO/src/main.js"
+mkdir -p "$REPO/pkg/inner" "$REPO/a/dup" "$REPO/b/dup"
+printf 'note one\nnote two\n' > "$REPO/pkg/inner/NOTES.md"
+printf 'x\n' > "$REPO/a/dup/x.md"; printf 'x\n' > "$REPO/b/dup/x.md"
 git -C "$REPO" add -A
 git -C "$REPO" commit -q -m init
 SHA=$(git -C "$REPO" rev-parse HEAD)
@@ -115,9 +118,55 @@ t "a dotted symbol passes when the qualifier and the member sit in different fil
 chk full 'Calls `utils.formatDate` from main.'
 if [ "$RC" -eq 0 ]; then pass; else fail "rc=$RC out=$OUT"; fi
 
-t "a dotted symbol whose qualifier is not in any file holding the member fails"
+t "a dotted symbol whose qualifier is not on the ref fails"
 chk full 'Reads `ghostThing.size`.'
 if [ "$RC" -eq 1 ] && has 'FAIL symbol: ghostThing.size'; then pass; else fail "rc=$RC out=$OUT"; fi
+
+t "a (new) marker with arguments exempts the bare name on another line"
+chk full 'Add `renderGadget(t, name)` (new) in the helpers.
+Later the stage calls `renderGadget` and `renderGadget()` again.'
+if [ "$RC" -eq 0 ]; then pass; else fail "rc=$RC out=$OUT"; fi
+
+t "a (new) marker with empty parentheses exempts the bare name on another line"
+chk full 'Add `renderGadget()` (new).
+Later the stage calls `renderGadget`.'
+if [ "$RC" -eq 0 ]; then pass; else fail "rc=$RC out=$OUT"; fi
+
+t "a (new) marker on a function with arguments does not exempt other names"
+chk full 'Add `renderGadget(t, name)` (new). Also `renderWidget`.'
+if [ "$RC" -eq 1 ] && has 'FAIL symbol: renderWidget' && ! has 'FAIL symbol: renderGadget'; then pass; else fail "rc=$RC out=$OUT"; fi
+
+t "a path suffix that matches exactly one file on the ref passes"
+chk full 'Notes are in `inner/NOTES.md`.'
+if [ "$RC" -eq 0 ]; then pass; else fail "rc=$RC out=$OUT"; fi
+
+t "a path:line citation with a unique path suffix is checked against that file"
+chk full 'See `inner/NOTES.md:2` — `note two`'
+if [ "$RC" -eq 0 ]; then pass; else fail "rc=$RC out=$OUT"; fi
+
+t "a path:line citation with a unique path suffix still fails on a line past the end"
+chk full 'See `inner/NOTES.md:9`.'
+if [ "$RC" -eq 1 ] && has 'FAIL line:'; then pass; else fail "rc=$RC out=$OUT"; fi
+
+t "a path suffix that matches more than one file is not a claim"
+chk full 'The duplicate is `dup/x.md`.'
+if [ "$RC" -eq 0 ] && [ "$(nfail)" = 0 ]; then pass; else fail "rc=$RC out=$OUT"; fi
+
+t "a path suffix that matches no file still fails"
+chk full 'See `inner/GONE.md`.'
+if [ "$RC" -eq 1 ] && has 'FAIL path: inner/GONE.md'; then pass; else fail "rc=$RC out=$OUT"; fi
+
+t "a path suffix must start at a directory boundary"
+chk full 'See `ner/NOTES.md`.'
+if [ "$RC" -eq 1 ] && has 'FAIL path: ner/NOTES.md'; then pass; else fail "rc=$RC out=$OUT"; fi
+
+t "a plan Files: entry with a unique path suffix passes"
+chk paths-only '- Files: inner/NOTES.md, src/app.js'
+if [ "$RC" -eq 0 ]; then pass; else fail "rc=$RC out=$OUT"; fi
+
+t "a plan Files: entry with a unique path suffix not marked new still fails when missing"
+chk paths-only '- Files: inner/GONE.md'
+if [ "$RC" -eq 1 ] && has 'FAIL path: inner/GONE.md'; then pass; else fail "rc=$RC out=$OUT"; fi
 
 t "a valid Pins sha passes"
 chk full "Pins: $SHA"

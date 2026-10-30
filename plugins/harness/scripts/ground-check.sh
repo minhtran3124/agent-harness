@@ -7,12 +7,13 @@
 # the checkout. Claims it checks:
 #   path:line citations     the path is on the ref, the line is within the file; in full mode a backtick quote
 #                           after the citation on the same line must occur in lines N-2..M+2
-#   backtick paths          `src/a.js`, `docs/`, a bare file name (a unique base name on the ref)
+#   backtick paths          `src/a.js`, `docs/`, a bare file name or a shortened path (a unique suffix on the ref)
 #   Files: lines            each comma-separated entry of a plan "Files:" line is a path claim
 #   backtick symbols        (full mode) code-like names: they contain _ or . or (), or are camelCase
 #   Done-when commands      the path words of the backtick command on a Done-when / done_when line
 #   Pins: <sha>             (full mode) the sha resolves and is an ancestor of the ref
-#   (new) marker            a path or symbol followed by (new) is exempt everywhere in the input set
+#   (new) marker            a path or symbol followed by (new) is exempt everywhere in the input set;
+#                           for a marked call `f(a, b)` (new) the name `f` is exempt
 # paths-only mode checks paths, citation paths and line numbers, and command paths: no symbols, quotes or Pins.
 #
 # Output (stdout): one "FILE <name> <line-count> <byte-count>" line per input, then one
@@ -102,7 +103,15 @@ resolve_path() {
   case "$p" in specs|specs/*) return 2 ;; esac
   if grep -qxF -- "$p" "$TMP/tree"; then RP=$p; return 0; fi
   if [ "$2" = 1 ] && grep -qxF -- "$p" "$TMP/dirs"; then RP=$p; return 0; fi
-  case "$p" in */*) return 1 ;; esac
+  case "$p" in
+    */*)
+      # A shortened path (skills/README.md for plugins/harness/skills/README.md) is one file when its
+      # suffix, from a directory boundary, matches exactly one file on the ref; several files: no claim.
+      c=$(awk -v s="/$p" 'length($0) > length(s) && substr($0, length($0) - length(s) + 1) == s' "$TMP/tree" | wc -l | tr -d ' ')
+      [ "$c" = 0 ] && return 1
+      if [ "$c" = 1 ]; then RP=$(awk -v s="/$p" 'length($0) > length(s) && substr($0, length($0) - length(s) + 1) == s' "$TMP/tree"); return 0; fi
+      return 2 ;;
+  esac
   c=$(awk -F/ -v n="$p" '$NF == n' "$TMP/tree" | wc -l | tr -d ' ')
   if [ "$c" = 0 ]; then
     if [ "$2" = 1 ] && awk -F/ -v n="$p" '$NF == n { f = 1 } END { exit !f }' "$TMP/dirs"; then return 0; fi
@@ -244,6 +253,7 @@ for f in "$@"; do
     | sed -E 's/\(new.*$//; s/^[[:space:]`]+//; s/[[:space:]`]+$//' >> "$TMP/newraw"
 done
 while IFS= read -r raw; do
+  raw=${raw%%(*}   # a marked call `foo(t, name)` (new) exempts the name before the parenthesis
   norm "$raw" >> "$TMP/new"; printf '\n' >> "$TMP/new"
 done < "$TMP/newraw"
 NFILES=$i
