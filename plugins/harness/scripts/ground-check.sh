@@ -232,7 +232,8 @@ done < "$TMP/newraw"
 NFILES=$i
 
 CITE_RE='([A-Za-z0-9_./@+-]+\.[A-Za-z][A-Za-z0-9]*):([0-9]+)(-([0-9]+))?'
-QUOTE_RE='`([^`]+)`'
+QUOTE_RE='^[[:space:]]*[-—–:,;(=]*[[:space:]]*`([^`]+)`'
+# The quote must follow the citation directly (only space and punctuation between); a later unrelated span is not its quote.
 j=0
 while [ "$j" -lt "$NFILES" ]; do
   j=$((j + 1))

@@ -50,6 +50,10 @@ t "a quote that does not occur within lines N-2..N+2 fails with FAIL quote"
 chk full 'The limit is at `src/app.js:1` — `const MAX_ITEMS = 5;`'
 if [ "$RC" -eq 1 ] && has 'FAIL quote:'; then pass; else fail "rc=$RC out=$OUT"; fi
 
+t "an unrelated backtick span later on the line is not taken as the quote"
+chk full 'The size is read at `src/app.js:3`, which the `Gadget` class uses.'
+if [ "$RC" -eq 0 ] && ! has 'FAIL quote'; then pass; else fail "rc=$RC out=$OUT"; fi
+
 t "a quote cut at an ellipsis matches its prefix"
 chk full 'See `src/app.js:2` — `function buildWidget(...`'
 if [ "$RC" -eq 0 ]; then pass; else fail "rc=$RC out=$OUT"; fi
