@@ -78,7 +78,7 @@ Source (b), PRs found through the milestone's issues, for the case where only th
 
 ```bash
 gh issue list --milestone "<name>" --state all --json number,title --limit 200
-gh pr list --state merged --search '<n> in:title,body' --json number,title,body,url,labels,author,mergedAt,closingIssuesReferences --limit 50
+gh pr list --state merged --search '<n> in:title,body' --json number,title,body,url,labels,author,mergedAt,closingIssuesReferences --limit 200
 ```
 
-Run the second command once per issue `<n>`. Keep a PR from (b) only when its title names `#<n>` or its body has `Closes`, `Fixes`, `Resolves` or `Refs` for `#<n>`; the loose search also returns unrelated PRs. Remove duplicate PR numbers from the union.
+Run the second command once per issue `<n>`. Match `#<n>` only as a whole number: the character after the digits must not be a digit or a letter (`#1` does not match `#10` or `#123`). Keep a PR from (b) only when its title names `#<n>` that way or its body has `Closes`, `Fixes`, `Resolves` or `Refs` for `#<n>`; the loose search also returns unrelated PRs. Remove duplicate PR numbers from the union.
