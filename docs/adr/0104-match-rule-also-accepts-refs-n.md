@@ -1,9 +1,9 @@
 ---
 ticket: 511
 stage: implement
-status: needs-review
-needs_review: true
-confidence: medium
+status: accepted
+needs_review: false
+confidence: high
 decided_by: claude (ship workflow: implement)
 date: 2026-10-30
 ---
@@ -26,7 +26,7 @@ Add Refs to the keyword list.
 
 ## Why
 
-Needed to satisfy the owner's Verify outcome; Refs #n is an explicit reference, and unrelated PR #361 (bare '393' without #) is still rejected.
+The owner chose this option ("chọn hướng 1 cho Refs"). It is needed to satisfy the Verify outcome; Refs #n is an explicit reference, and unrelated PR #361 (bare '393' without #) is still rejected.
 
 ## Consequences
 

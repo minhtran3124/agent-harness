@@ -189,8 +189,7 @@ def test_release_notes_collects_milestone_prs_through_issues():
     assert "--limit 50" not in schema and "does not match `#10`" in schema
     assert "whole union" in schema and "matches no ticket still counts" in schema
     assert "only when the union is empty" in skill
-    assert all(k in schema for k in ("Closes", "Fixes", "Resolves"))
-    assert "Refs" not in schema
+    assert all(k in schema for k in ("Closes", "Fixes", "Resolves", "Refs"))
     readme = (SCRIPT.parent.parent / "plugins" / "harness" / "skills" / "README.md").read_text()
     row = next(l for l in readme.splitlines() if l.startswith("| `release-notes`"))
     assert "/harness:release-notes" in row
