@@ -1,0 +1,33 @@
+{
+  "version": "1.4.0",
+  "version_source": "flag",
+  "source": { "type": "milestone", "value": "v1.4.0" },
+  "breaking": [
+    { "pr": 12, "title": "feat(api)!: drop v1 endpoints", "url": "https://github.com/o/r/pull/12", "labels": ["breaking"], "author": "alice", "merged_at": "2026-01-05T10:00:00Z", "breaking": true }
+  ],
+  "groups": {
+    "feat": [
+      { "pr": 15, "title": "feat: add export", "url": "https://github.com/o/r/pull/15", "labels": [], "author": "bob", "merged_at": "2026-01-06T09:00:00Z", "breaking": false }
+    ],
+    "fix": [
+      { "pr": 16, "title": "fix: login page shows the wrong error", "url": "https://github.com/o/r/pull/16", "labels": [], "author": "carol", "merged_at": "2026-01-07T09:00:00Z", "breaking": false },
+      { "pr": 18, "title": "fix: remove the old config key", "url": "https://github.com/o/r/pull/18", "labels": [], "author": "carol", "merged_at": "2026-01-08T09:00:00Z", "breaking": false, "needs_confirmation": true }
+    ],
+    "refactor": [
+      { "pr": 17, "title": "refactor: split the router", "url": "https://github.com/o/r/pull/17", "labels": [], "author": "bob", "merged_at": "2026-01-07T12:00:00Z", "breaking": false }
+    ]
+  },
+  "limitations": [
+    { "pr": 15, "section": "Known issues", "text": "Export stops at 10000 rows." }
+  ],
+  "tickets": [
+    { "ticket": 40, "prs": [12, 15] }
+  ],
+  "no_pr_commits": [
+    { "commit": "a1b2c3d", "title": "chore: bump lockfile", "author": "alice", "merged_at": "2026-01-04T08:00:00Z" }
+  ],
+  "counts": { "total": 6, "included": 5, "excluded": 1 },
+  "excluded": [
+    { "pr": 14, "title": "chore: revert #13", "reason": "revert", "labels": [], "author": "alice", "merged_at": "2026-01-05T08:00:00Z", "breaking": false }
+  ]
+}

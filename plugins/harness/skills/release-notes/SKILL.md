@@ -67,7 +67,7 @@ Write two files side by side. The default draft path is `docs/releases/v<version
 - `<draft path>`: the draft.
 - `<draft path without .md>.json`: the fact list. The shape is in `references/fact-list-schema.md`.
 
-Report the two paths and the counts line.
+Report the two paths and the counts line. Next step: `/harness:release-summary`.
 
 ## Never
 
