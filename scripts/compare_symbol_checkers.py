@@ -205,7 +205,10 @@ class Lsp:
             pass
         try:
             self.proc.kill()
-        except OSError:
+            self.proc.wait(timeout=5)
+            self.proc.stdin.close()
+            self.proc.stdout.close()
+        except (OSError, ValueError, subprocess.TimeoutExpired):
             pass
 
 
