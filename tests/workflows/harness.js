@@ -1011,7 +1011,9 @@ test('s4: early spec writes happen after the intent and plan stages, before impl
     assert(!p.includes('decision.md') && !p.includes('summary.md'), `${depth}: end-of-run files`)
     assert(p.includes('check-ignore') && !p.includes('/.ship-repo/') && !p.includes('/wt/'), depth)
     assert(early.every(c => c.opts.model === 'haiku' && c.opts.effort === 'low'), `${depth}: cheap model`)
+    assert(early.every(c => c.opts.phase === 'Tickets'), `${depth}: early phase`)
     assert.strictEqual(named(calls, /^specs$/).length, 1, `${depth}: final pass`)
+    assert.strictEqual(named(calls, /^specs$/)[0].opts.phase, 'Decisions', `${depth}: final phase`)
   }
 })
 

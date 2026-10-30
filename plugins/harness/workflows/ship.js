@@ -573,7 +573,7 @@ function renderSpecs(t, run) {
 
 // One agent writes the files of every ticket, skipped ones included. run: { byN, final, review, intent, suite, adrs }.
 async function writeSpecs(run) {
-  return writeSpecFiles(tickets, run, { label: 'write specs/ flow files' })
+  return writeSpecFiles(tickets, run, { label: 'write specs/ flow files', phase: 'Decisions' })
 }
 
 // Early write for one ticket: only the named files, rendered from an empty run (no decision.md or summary.md).
@@ -582,13 +582,13 @@ async function writeSpecsEarly(t, files) {
   try {
     const stub = { byN: new Map(), adrs: [], final: null, review: { status: 'not run', reason: 'run in progress', rounds: 0, fixed: [], leftover: [] },
       intent: { verdict: 'not run' }, suite: { passed: 0, failed: 0, skipped: 0 } }
-    await writeSpecFiles([t], stub, { only: files, label: 'write specs/ early' })
+    await writeSpecFiles([t], stub, { only: files, label: 'write specs/ early', phase: 'Tickets' })
   } catch (e) {
     log(`#${t.n} early spec files not written: ${e && e.message ? e.message : String(e)}`)
   }
 }
 
-async function writeSpecFiles(list, run, { only, label }) {
+async function writeSpecFiles(list, run, { only, label, phase }) {
   const parts = [], reqs = []
   for (const t of list) {
     let files
@@ -606,7 +606,7 @@ async function writeSpecFiles(list, run, { only, label }) {
     `${reqs.length ? `${reqs.join('\n')}\n` : ''}` +
     `${trimmed}/specs/ is gitignored local scratch and the only place in ${repoDir} you may write. Edit nothing else; run no other git command and commit nothing. Return status ok.\n\n${parts.join('\n\n')}`
   try {
-    const res = await call(prompt, { label, phase: 'Decisions', schema: SETUP_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
+    const res = await call(prompt, { label, phase, schema: SETUP_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
     if (!res || res.status === 'blocked') log(`spec files not written: ${(res && (res.blocked_reason || res.summary)) || 'no answer'}`)
   } catch (e) {
     log(`spec files not written: ${e && e.message ? e.message : String(e)}`)
