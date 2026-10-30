@@ -20,7 +20,7 @@ payload=$(cat)
 fold() { printf '%s' "$1" | tr 'A-Z' 'a-z' | tr -d "\"'\\\\"; }
 is_merge_like() {
   case "$(fold "$1")" in
-    *gh*merge*|*pulls/*merge*|*mergepullrequest*|*enablepullrequestautomerge*|*repos/*/merges*|*gh*pr*[\$\`]*) return 0 ;;
+    *gh*merge*|*pulls/*merge*|*mergepullrequest*|*enablepullrequestautomerge*|*repos/*/merges*|*gh*pr*[\$\`]*|*[\$\`]*merge*) return 0 ;;
   esac
   return 1
 }
@@ -185,6 +185,8 @@ while IFS= read -r seg; do
       deny "'gh api repos/.../merges' merges a branch and is not allowed; a human merges."
     fi
     if printf '%s' "$seg" | grep -qE 'pulls/[^[:space:]]*/merge'; then judge_api_merge "$seg"; fi
+  elif case "${seg%%[[:space:]]*}" in *[\$\`]*) printf '%s' "$(fold "$seg")" | grep -q 'merge' ;; *) false ;; esac; then
+    deny "a command name built from a variable or substitution next to the word merge cannot be judged."
   elif printf '%s' "$seg" | grep -qE '^gh[[:space:]]+(pr[[:space:]]+)?[^[:space:]]*[$`]'; then
     deny "a gh pr subcommand built from a variable or substitution cannot be judged."
   elif printf '%s' "$seg" | grep -qE '^gh[[:space:]]+alias[[:space:]]+(set|import)([[:space:]]|$)'; then

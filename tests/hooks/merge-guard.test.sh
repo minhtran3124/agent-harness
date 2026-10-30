@@ -125,6 +125,8 @@ t "an upper-case GraphQL-style spelling cannot skip the filter"; g 'gh api graph
 t "gh api graphql enablePullRequestAutoMerge is denied"; g 'gh api graphql -f query=@q.graphql -f x=enablePullRequestAutoMerge'; assert_rc 2
 t "gh api repos/o/r/merges is denied"; g 'gh api repos/o/r/merges -f base=main -f head=x'; assert_rc 2
 t "a variable-split subcommand is denied"; g 'm=mer; gh pr ${m}ge 7 --repo o/r'; assert_rc 2
+t "a split gh name g\${x}h is denied"; g 'x=""; g${x}h pr merge 7 --repo o/r'; assert_rc 2
+t "a command name from a variable is denied"; g 'GH=gh; $GH pr merge 7 --repo o/r'; assert_rc 2
 t "gh pr view with a variable argument is allowed"; g 'gh pr view $N --json state'; assert_rc 0
 t "a variable inside the pr word is denied"; g 'x=r; gh p$x merge 7 --repo o/r'; assert_rc 2
 t "a variable as the gh subcommand is denied"; g 'a=pr; gh $a merge 7 --repo o/r'; assert_rc 2
