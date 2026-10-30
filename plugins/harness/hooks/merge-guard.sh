@@ -7,10 +7,12 @@
 # Verifies: the PR base read live with `gh pr view --json baseRefName` for every PR number of every merge
 #   segment (`gh pr merge`, `gh api .../pulls/<n>/merge`) is feat/* and is not the repo default branch.
 #   It denies `--auto`, `gh api graphql ... mergePullRequest`, a merge inside bash -c / eval / xargs, a merge
-#   that is not at command position, and `gh alias set|import` next to the word merge.
+#   that is not at command position, `gh alias set|import` next to the word merge, a substitution, backtick or
+#   variable expansion next to a merge-like word, and a backslash-newline that splits a word.
 # Does not verify: your own `!` or terminal commands (the hook never sees them), a local `git merge`, a
-#   merge through the web UI or another client, a script that builds the command at run time, or whether
-#   the PR is ready (the workflow gate checks that).
+#   merge through the web UI or another client, a script that builds the command at run time, a command name
+#   built in a variable or substitution that holds a gh word without a literal `pr merge` (or gh and merge)
+#   in the same command, the full shell grammar, or whether the PR is ready (the workflow gate checks that).
 # No env-var bypass. No helper file and no path derived from this file's location: the hook is
 # self-contained so it can be copied alone.
 set -u
@@ -18,8 +20,12 @@ payload=$(cat)
 # Pre-filter on a folded copy (lowercase, quotes and backslashes removed) so "g""h", GH-case or
 # me\rge spellings do not skip the guard.
 fold() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]' | tr -d "\"'\\\\"; }
+# Also tests a copy with every backslash-newline joined (raw, or JSON-escaped in the payload), so a
+# continuation inside a word cannot hide it.
 is_merge_like() {
-  case "$(fold "$1")" in
+  local j=${1//$'\\\n'/}
+  j=${j//'\\\n'/}
+  case "$(fold "$1")$(printf '\n')$(fold "$j")" in
     *gh*merge*|*pulls/*merge*|*mergepullrequest*|*enablepullrequestautomerge*|*repos/*/merges*|*gh*pr*[\$\`]*|*[\$\`]*merge*) return 0 ;;
   esac
   return 1
@@ -41,6 +47,16 @@ if ! command -v jq >/dev/null 2>&1; then
 fi
 cmd=$(printf '%s' "$payload" | jq -r '.tool_input.command // empty' 2>/dev/null) || deny "the command could not be parsed."
 [ -n "$cmd" ] || deny "the command is empty or could not be parsed."
+# A backslash-newline inside a word (g\<newline>h) is joined by the shell but not by the line splitter below.
+# Deny it next to a merge-like command; a continuation between words is joined and judged as usual.
+cont=${cmd//$'\\\n'/}
+if [ "$cont" != "$cmd" ]; then
+  re=$'[^[:space:]]\\\\\n[^[:space:]]'
+  if [[ $cmd =~ $re ]] && is_merge_like "$cont"; then
+    deny "a line continuation (backslash-newline) splits a word of a merge-like command, so it cannot be judged."
+  fi
+  cmd=$cont
+fi
 is_merge_like "$cmd" || exit 0
 
 DEADLINE=20  # seconds for the whole hook; the registered hook timeout is 30
@@ -135,7 +151,7 @@ judge_api_merge() {  # judge_api_merge <segment>
 # bodies and quoted strings that hold whitespace or separators (each leaves one QUOTED word, so a value
 # option such as --body still has its value and does not swallow the PR number), so text that only
 # mentions a merge never matches; then split on separators and standalone braces.
-segs=$(printf '%s\n' "$cmd" | awk '
+reduced=$(printf '%s\n' "$cmd" | awk '
     { L[NR] = $0 }
     END {
       q = ""; qb = ""; out = ""; hd = ""
@@ -158,13 +174,26 @@ segs=$(printf '%s\n' "$cmd" | awk '
         if (q == "") { print out; out = "" } else qb = qb "\n" }
       if (q != "") print "\001OPENQUOTE"
       if (out != "") print out
-    }' | sed -E 's/&&|\|\||[;|&()]/\
+    }')
+segs=$(printf '%s\n' "$reduced" | sed -E 's/&&|\|\||[;|&()]/\
 /g; s/(^|[[:space:]])[{}]([[:space:]]|$)/\
 /g')
 
 # A quote still open at end of input (an apostrophe in a # comment, an escaped or stray quote) would
 # swallow a later merge, so the splitter cannot be trusted: deny.
 case "$segs" in *$'\001'OPENQUOTE*) deny "an unclosed quote in the command hides what follows it, so a merge cannot be judged." ;; esac
+
+# A command substitution, backtick or variable expansion can build the gh, pr or merge word at run time
+# (g$(true)h, $(echo gh)). Quoted text was reduced away above, so a mention inside a message does not match.
+# With a substitution and a merge-like word anywhere, the command cannot be judged: deny.
+fr=$(fold "$reduced")
+case "$fr" in
+  *'$('*|*'`'*|*'$'[a-z0-9_{@*]*)
+    case "$fr" in
+      *pr*merge*|*gh*merge*|*pulls/*merge*|*mergepullrequest*|*enablepullrequestautomerge*|*repos/*/merges*)
+        deny "a command substitution or variable expansion next to a merge command could build the gh command at run time, so it cannot be judged." ;;
+    esac ;;
+esac
 
 set -f
 while IFS= read -r seg; do
@@ -173,6 +202,9 @@ while IFS= read -r seg; do
     seg=$(printf '%s' "$seg" | sed -E 's/^[A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]*//')
   done
   [ -n "$seg" ] || continue
+  case "$seg" in
+    QUOTED*) if printf '%s' "$seg" | grep -qE '(^|[[:space:]])pr[[:space:]]+merge([[:space:]]|$)'; then deny "a quoted command name before 'pr merge' cannot be judged."; fi ;;
+  esac
   if printf '%s' "$seg" | grep -qE '^gh[[:space:]]+pr[[:space:]]+merge([[:space:]]|$)'; then
     judge_pr_merge "$seg"
   elif printf '%s' "$seg" | grep -qE '^gh[[:space:]]+api[[:space:]]'; then
@@ -185,8 +217,6 @@ while IFS= read -r seg; do
       deny "'gh api repos/.../merges' merges a branch and is not allowed; a human merges."
     fi
     if printf '%s' "$seg" | grep -qE 'pulls/[^[:space:]]*/merge'; then judge_api_merge "$seg"; fi
-  elif case "${seg%%[[:space:]]*}" in *[\$\`]*) printf '%s' "$(fold "$seg")" | grep -q 'merge' ;; *) false ;; esac; then
-    deny "a command name built from a variable or substitution next to the word merge cannot be judged."
   elif printf '%s' "$seg" | grep -qE '^gh[[:space:]]+(pr[[:space:]]+)?[^[:space:]]*[$`]'; then
     deny "a gh pr subcommand built from a variable or substitution cannot be judged."
   elif printf '%s' "$seg" | grep -qE '^gh[[:space:]]+alias[[:space:]]+(set|import)([[:space:]]|$)'; then
