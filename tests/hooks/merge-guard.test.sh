@@ -51,6 +51,11 @@ t "--repo=o/r is read and passed to gh pr view"; reset; setbase feat/x; g 'gh pr
 if [ "$RC" = 0 ] && grep -q 'pr view 7 --repo o/r' "$LOG"; then pass; else fail "rc=$RC log: $(cat "$LOG" 2>/dev/null)"; fi
 t "a PR URL gives the PR number and the repo"; reset; setbase feat/x; g 'gh pr merge https://github.com/o/r/pull/7 --merge'
 if [ "$RC" = 0 ] && grep -q 'pr view 7 --repo o/r' "$LOG"; then pass; else fail "rc=$RC log: $(cat "$LOG" 2>/dev/null)"; fi
+t "a PR URL repo that differs from --repo (either order) is denied"; reset; setbase feat/x
+g 'gh pr merge https://github.com/evil/r/pull/7 --repo o/r --merge'; assert_rc_contains 2 "differ"
+g 'gh pr merge --repo o/r https://github.com/evil/r/pull/7 --merge'; assert_rc_contains 2 "differ"
+t "a PR URL repo equal to --repo is allowed"; reset; setbase feat/x
+g 'gh pr merge https://github.com/o/r/pull/7 --repo o/r --merge'; assert_rc 0
 t "env assignments before gh are skipped"; reset; setbase feat/x; g "FOO=1 $M"; assert_rc 0
 
 for b in v5.0.0 main master develop staging production release/1 release-2 hotfix/x; do

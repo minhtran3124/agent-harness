@@ -87,7 +87,7 @@ judge() {  # judge <pr> <repo>
 }
 
 judge_pr_merge() {  # judge_pr_merge <segment starting with gh pr merge>
-  local seg w repo="" prs="" skip="" u n r
+  local seg w repo="" prs="" skip="" u n r urepos=""
   seg=$(printf '%s' "$1" | sed -E 's/^gh[[:space:]]+pr[[:space:]]+merge[[:space:]]*//')
   set -f
   for w in $seg; do
@@ -104,7 +104,7 @@ judge_pr_merge() {  # judge_pr_merge <segment starting with gh pr merge>
         case "$w" in
           http*://*/*/*/pull/[0-9]*)
             u=${w#*://}; u=${u#*/}; r=${u%%/pull/*}; n=${u##*/pull/}; n=${n%%[!0-9]*}
-            [ -n "$repo" ] || repo=$r
+            urepos="$urepos $r"
             prs="$prs $n" ;;
           *) deny "'$w' is not a PR number or PR URL, so the PR cannot be judged." ;;
         esac ;;
@@ -112,6 +112,13 @@ judge_pr_merge() {  # judge_pr_merge <segment starting with gh pr merge>
     esac
   done
   [ -n "$prs" ] || deny "'gh pr merge' without a PR number cannot be judged."
+  # gh merges the repo in the URL; the PR must be judged in that same repo, so any other repo is a deny.
+  for u in $urepos; do
+    if [ -z "$repo" ]; then repo=$u
+    elif [ "$(printf '%s' "$u" | tr 'A-Z' 'a-z')" != "$(printf '%s' "$repo" | tr 'A-Z' 'a-z')" ]; then
+      deny "the PR URL repo '$u' and the repo '$repo' differ, so the PR cannot be judged."
+    fi
+  done
   [ -n "$repo" ] || deny "'gh pr merge' without --repo cannot be judged (GH_REPO does not count)."
   case "$repo" in */*/*|*/|/*|*[!A-Za-z0-9._/-]*|"") deny "unreadable --repo value '$repo'." ;; esac
   for n in $prs; do judge "$n" "$repo"; done
