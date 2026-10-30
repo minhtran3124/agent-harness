@@ -1,6 +1,6 @@
 ---
 name: setup
-description: "First-run setup for a project that installed the harness plugin. Scaffolds specs and docs, proposes a Run and test section for CLAUDE.md (and migrates an old agents/PROJECT.md), merges the permissions.deny rules into project settings, offers an allow rule for gh pr merge, ignores specs/, and offers to remove an old copied install. Use when the plugin was just installed in a project."
+description: "First-run setup for a project that installed the harness plugin. Scaffolds specs and docs, proposes a Run and test section for CLAUDE.md (and migrates an old agents/PROJECT.md), merges the permissions.deny rules into project settings, names the merge guard, ignores specs/, and offers to remove an old copied install. Use when the plugin was just installed in a project."
 disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Bash, AskUserQuestion
 ---
@@ -23,12 +23,12 @@ Run once per project, after `claude plugin install harness@agent-harness`. Work 
    and show the diff. After the owner agrees, run it again without `--dry-run`. It needs `jq`
    (exit 3 if missing) and refuses a file that is not valid JSON or whose permissions, allow or deny has the wrong type (exit 2, file untouched). It adds
    these rules and keeps every existing one: `.env` read and edit, force-push, push to main or master.
-4. **Merge allow rule (optional).** Offer one rule, `Bash(gh pr merge *)`, in the owner's untracked
-   `${CLAUDE_PROJECT_DIR}/.claude/settings.local.json`. Run
-   `bash ${CLAUDE_SKILL_DIR}/scripts/merge-allow.sh --dry-run ${CLAUDE_PROJECT_DIR}/.claude/settings.local.json`,
-   show the diff, and ask with AskUserQuestion. Run it again without `--dry-run` only after the owner
-   says yes. It has the same exit codes as step 3. Say plainly that auto mode may still deny the
-   merge (run 1 did), and that the run then reports the missing permission (#389).
+4. **Merge guard (nothing to install).** The plugin registers `merge-guard.sh`, a PreToolUse hook:
+   `merge-guard.sh` blocks every merge whose PR base is not `feat/*`; it fails closed. Tell the owner
+   that every PR into the base branch is a human merge, and that ticket PRs into `feat/<slug>` stay
+   human-merged too unless they merge them: setup writes no allow rule for `gh pr merge`, because no
+   command-text rule can see the PR base. Plugin hooks are not proven to fire for workflow agents, so
+   the guard is a second line, not a reason to allow the merge.
 5. **Ignore specs.** Add `specs/` to `${CLAUDE_PROJECT_DIR}/.gitignore` if no line already says
    `specs/`. Skip this if the project tracks files under `specs/`.
 6. **Old install.** Run `bash ${CLAUDE_SKILL_DIR}/scripts/old-install.sh ${CLAUDE_PROJECT_DIR}`. An
@@ -41,7 +41,6 @@ Run once per project, after `claude plugin install harness@agent-harness`. Work 
    start, so a copy loads it twice.
 
 Never touch: `specs/`, `docs/`, and any skill, agent or hook the
-project wrote itself. Only step 4 may write `.claude/settings.local.json`, and only after the owner
-says yes.
+project wrote itself. Setup never writes `.claude/settings.local.json`.
 
 Finish with a short list of what changed, what was skipped, and what the owner still has to do.
