@@ -1,0 +1,29 @@
+claim	label	context	note
+json.dumps	exists	shop/app.py	stdlib import
+os.path	exists	shop/app.py	stdlib import
+os.getcwd	exists	shop/app.py	stdlib import
+str.upper	exists	shop/app.py	builtin global
+pr.apply_discount	exists	shop/app.py	renamed module import (from shop import pricing as pr)
+pr.TAX_RATE	exists	shop/app.py	renamed module import, constant
+inv.Stock	exists	shop/app.py	renamed module import (import shop.inventory as inv)
+inv.load_stock	exists	shop/app.py	renamed module import
+Cart.add_item	exists	shop/app.py	imported class member
+Cart.CURRENCY	exists	shop/app.py	imported class attribute
+cart.total	exists	shop/app.py	instance of imported class
+Clock.now	exists	shop/app.py	imported class member
+pricing.format_price	exists	shop/report.py	module import without rename
+Stock.reserve	exists	shop/report.py	imported class member
+Stock.release	exists	shop/report.py	imported class member
+json.dumpz	missing	shop/app.py	member absent everywhere
+pr.apply_coupon	missing	shop/app.py	member absent everywhere
+Cart.remove_item	missing	shop/app.py	member absent everywhere
+inv.reserve_all	missing	shop/app.py	member absent everywhere
+ledger.record	missing	shop/app.py	neither name exists
+Stock.freeze	missing	shop/report.py	member absent everywhere
+pr.slugify	wrong-pair	shop/app.py	slugify lives in shop/utils.py
+inv.format_price	wrong-pair	shop/app.py	format_price lives in shop/pricing.py
+Cart.reserve	wrong-pair	shop/app.py	reserve belongs to Stock
+Stock.add_item	wrong-pair	shop/report.py	add_item belongs to Cart
+Cart.LIMIT	wrong-pair	shop/app.py	LIMIT is a module constant of shop/inventory.py
+Clock.total	wrong-pair	shop/app.py	total belongs to Cart
+json.slugify	wrong-pair	shop/app.py	slugify is not a json member

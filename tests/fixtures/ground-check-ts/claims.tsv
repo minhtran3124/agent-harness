@@ -1,0 +1,29 @@
+claim	label	context	note
+JSON.stringify	exists	src/app.ts	global
+Math.max	exists	src/app.ts	global
+Object.keys	exists	src/app.ts	global
+Array.isArray	exists	src/app.ts	global
+console.log	exists	src/app.ts	global
+pricing.applyDiscount	exists	src/app.ts	namespace import
+pricing.TAX_RATE	exists	src/app.ts	namespace import constant
+inv.loadStock	exists	src/app.ts	namespace import
+inv.LIMIT	exists	src/app.ts	namespace import constant
+Cart.CURRENCY	exists	src/app.ts	static class member
+cart.addItem	exists	src/app.ts	instance of imported class
+cart.total	exists	src/app.ts	instance of imported class
+clock.now	exists	src/app.ts	instance of imported class
+store.reserve	exists	src/app.ts	instance of renamed import (Stock as Store)
+store.release	exists	src/app.ts	instance of renamed import
+JSON.stringifyAll	missing	src/app.ts	member absent everywhere
+Math.maxOf	missing	src/app.ts	member absent everywhere
+pricing.applyCoupon	missing	src/app.ts	member absent everywhere
+cart.removeItem	missing	src/app.ts	member absent everywhere
+inv.reserveAll	missing	src/app.ts	member absent everywhere
+ledger.record	missing	src/app.ts	neither name exists
+pricing.slugify	wrong-pair	src/app.ts	slugify lives in src/utils.ts
+inv.formatPrice	wrong-pair	src/app.ts	formatPrice lives in src/pricing.ts
+cart.reserve	wrong-pair	src/app.ts	reserve belongs to Stock
+store.addItem	wrong-pair	src/app.ts	addItem belongs to Cart
+Cart.LIMIT	wrong-pair	src/app.ts	LIMIT is an export of src/inventory.ts
+clock.total	wrong-pair	src/app.ts	total belongs to Cart
+JSON.parseSku	wrong-pair	src/app.ts	parseSku lives in src/utils.ts
