@@ -185,7 +185,7 @@ while IFS= read -r seg; do
       deny "'gh api repos/.../merges' merges a branch and is not allowed; a human merges."
     fi
     if printf '%s' "$seg" | grep -qE 'pulls/[^[:space:]]*/merge'; then judge_api_merge "$seg"; fi
-  elif printf '%s' "$seg" | grep -qE '^gh[[:space:]]+pr[[:space:]]+[^[:space:]]*[$`]'; then
+  elif printf '%s' "$seg" | grep -qE '^gh[[:space:]]+(pr[[:space:]]+)?[^[:space:]]*[$`]'; then
     deny "a gh pr subcommand built from a variable or substitution cannot be judged."
   elif printf '%s' "$seg" | grep -qE '^gh[[:space:]]+alias[[:space:]]+(set|import)([[:space:]]|$)'; then
     case "$cmd" in *merge*) deny "'gh alias set|import' next to the word merge could hide a merge command." ;; esac

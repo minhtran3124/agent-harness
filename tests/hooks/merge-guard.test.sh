@@ -126,6 +126,8 @@ t "gh api graphql enablePullRequestAutoMerge is denied"; g 'gh api graphql -f qu
 t "gh api repos/o/r/merges is denied"; g 'gh api repos/o/r/merges -f base=main -f head=x'; assert_rc 2
 t "a variable-split subcommand is denied"; g 'm=mer; gh pr ${m}ge 7 --repo o/r'; assert_rc 2
 t "gh pr view with a variable argument is allowed"; g 'gh pr view $N --json state'; assert_rc 0
+t "a variable inside the pr word is denied"; g 'x=r; gh p$x merge 7 --repo o/r'; assert_rc 2
+t "a variable as the gh subcommand is denied"; g 'a=pr; gh $a merge 7 --repo o/r'; assert_rc 2
 
 reset
 t "ls exits 0"; g 'ls -la'; assert_rc 0
