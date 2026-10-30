@@ -62,6 +62,7 @@ Earlier versions copied the harness into the project's `.claude/` with `install-
 - The owner must allow `gh pr merge` into `feat/<slug>*` (for example a `Bash(gh pr merge *)` allow rule). In default permission mode the merge stage is otherwise denied; the run then reports the missing permission as the reason and does not work around it.
 - `/harness:autopilot` launches the `autopilot-run` workflow by name (`harness:autopilot-run`), which works from any working directory. If a session does not know the name, the Workflow tool refuses a `scriptPath` it cannot read: add the plugin directory with `/add-dir`, or pass `ship.js` inline through `script`.
 - After a plugin update, a running session can keep a stale `harness:autopilot-run`. Restart Claude Code (the main fix; `/reload-plugins` is named by the plugin CLI help but not confirmed here). Or, when `plugins/harness/workflows/ship.js` of this repo is inside the working directory or an added directory (`/add-dir`), launch it with `scriptPath`. The completion report names the script that ran, from the `Script file:` line of the Workflow result.
+- The workflow was renamed from `ship` to `autopilot-run` (PR 509). The by-name launch is not yet verified under the new name: after a restart, run a `--no-ask` dry run and confirm the Workflow tool finds `harness:autopilot-run`. `docs/adr/0001-workflow-capabilities.md` still records the earlier `harness:ship` check.
 
 ### Develop on this repo
 

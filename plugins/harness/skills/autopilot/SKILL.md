@@ -8,7 +8,7 @@ allowed-tools: Read, Write, Grep, Glob, Agent, Skill, AskUserQuestion, Workflow,
 
 # Autopilot
 
-Typing `/harness:autopilot-run` authorizes the launch in step 8, after the owner says go in step 7. This
+Typing `/harness:autopilot` authorizes the launch in step 8, after the owner says go in step 7. This
 skill runs in the main session; `${CLAUDE_PLUGIN_ROOT}/workflows/ship.js` is the autonomous half.
 
 1. **Scope.** Parse `$ARGUMENTS`: a milestone, issue numbers, or free text (one ticket, no number).
