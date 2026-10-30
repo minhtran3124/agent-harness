@@ -319,6 +319,18 @@ class CrgArgvTests(unittest.TestCase):
         self.assertNotIn("could_not_run", rows[0])
         self.assertNotIn("could_not_run", rows[2])
 
+    def test_run_all_does_not_hide_programming_errors(self):
+        def fake_measure(method, lang, fdir, claims, opts):
+            raise KeyError("claim")
+
+        orig = m.measure
+        m.measure = fake_measure
+        try:
+            with self.assertRaises(KeyError):
+                m.run_all(FIXTURES, {})
+        finally:
+            m.measure = orig
+
 
 if __name__ == "__main__":
     unittest.main()

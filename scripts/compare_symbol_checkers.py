@@ -440,7 +440,7 @@ def run_all(fixtures, opts):
                 row.update(measure(method, lang, fdir, row["claims"], opts))
             except CouldNotRun as exc:
                 row["could_not_run"] = str(exc)
-            except Exception as exc:  # parse, sqlite or IO error: keep the rows already done
+            except (sqlite3.Error, OSError) as exc:  # tool database or IO error: keep the rows already done; bugs (KeyError, bad claims.tsv) must surface
                 row["could_not_run"] = "%s: %s" % (type(exc).__name__, str(exc)[:120])
             rows.append(row)
     return rows
