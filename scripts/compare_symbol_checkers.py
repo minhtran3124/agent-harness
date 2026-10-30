@@ -505,10 +505,12 @@ def main(argv=None):
     ap.add_argument("--tools-dir", default=os.environ.get("SYMCHECK_TOOLS_DIR"), help="where the optional tools are installed")
     ap.add_argument("--ground-check", default=os.path.join(REPO, "plugins", "harness", "scripts", "ground-check.sh"))
     ap.add_argument("--timeout", type=int, default=90, help="seconds per tool call")
+    ap.add_argument("--gate-timeout", type=float, default=30, help="seconds a language server may take to load its project")
     ap.add_argument("--details", action="store_true", help="list every misjudged claim")
     ap.add_argument("--json", action="store_true", help="print the rows as JSON instead of the table")
     a = ap.parse_args(argv)
-    opts = {"tools_dir": a.tools_dir, "ground_check": a.ground_check, "timeout": a.timeout}
+    opts = {"tools_dir": a.tools_dir, "ground_check": a.ground_check, "timeout": a.timeout,
+            "gate_timeout": a.gate_timeout}
     rows = run_all(a.fixtures, opts)
     if a.json:
         print(json.dumps(rows, indent=1))

@@ -6,6 +6,8 @@ code-review-graph): the PATH is emptied for the tool-absent checks. Set SYMCHECK
 check the tool rows with the tools present.
 Run: python3 -I scripts/test_compare_symbol_checkers.py   (or via pytest)
 """
+import contextlib
+import io
 import os
 import re
 import sqlite3
@@ -339,6 +341,18 @@ class CrgArgvTests(unittest.TestCase):
                 m.run_all(FIXTURES, {})
         finally:
             m.measure = orig
+
+    def test_main_passes_gate_timeout_option(self):
+        seen = {}
+        orig_run, orig_ver = m.run_all, m.versions
+        m.run_all = lambda fixtures, opts: seen.update(opts) or []
+        m.versions = lambda opts: []
+        try:
+            with contextlib.redirect_stdout(io.StringIO()):
+                m.main(["--fixtures", FIXTURES, "--gate-timeout", "7", "--json"])
+        finally:
+            m.run_all, m.versions = orig_run, orig_ver
+        self.assertEqual(seen["gate_timeout"], 7)
 
 
 if __name__ == "__main__":
