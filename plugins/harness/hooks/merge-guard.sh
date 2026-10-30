@@ -154,10 +154,12 @@ judge_api_merge() {  # judge_api_merge <segment>
 reduced=$(printf '%s\n' "$cmd" | awk '
     { L[NR] = $0 }
     END {
-      q = ""; qb = ""; out = ""; hd = ""
+      q = ""; qb = ""; out = ""; hd = ""; hq = 0; subs = ""
       for (r = 1; r <= NR; r++) {
         line = L[r]
-        if (hd != "") { l = line; sub(/^[ \t]+/, "", l); if (l == hd) hd = ""; continue }
+        if (hd != "") { l = line; sub(/^[ \t]+/, "", l); if (l == hd) hd = ""
+          else if (!hq && (index(line, "$(") || index(line, "`"))) subs = subs " " line
+          continue }
         n = length(line)
         for (i = 1; i <= n; i++) { c = substr(line, i, 1)
           if (q == "") {
@@ -165,15 +167,17 @@ reduced=$(printf '%s\n' "$cmd" | awk '
             else {
               if (c == "<" && substr(line, i + 1, 1) == "<" && substr(line, i + 2, 1) != "<" && (i == 1 || substr(line, i - 1, 1) != "<")) {
                 rest = substr(line, i); if (match(rest, /^<<-?[ \t]*["\047]?[A-Za-z_][A-Za-z0-9_]*/)) {
-                  d = substr(rest, RSTART, RLENGTH); sub(/^<<-?[ \t]*["\047]?/, "", d)
+                  d = substr(rest, RSTART, RLENGTH); hq = (d ~ /^<<-?[ \t]*["\047]/); sub(/^<<-?[ \t]*["\047]?/, "", d)
                   for (k = r + 1; k <= NR; k++) { t = L[k]; sub(/^[ \t]+/, "", t); if (t == d) { hd = d; break } } } }
               out = out c }
           } else if (q == "\"" && c == "\\") { qb = qb c substr(line, i + 1, 1); i++ }
-          else if (c == q) { if (qb ~ /^[^ \t\n;|&()]*$/) out = out qb; else out = out "QUOTED"; q = "" }
+          else if (c == q) { if (q == "\"" && (index(qb, "$(") || index(qb, "`"))) subs = subs " " qb
+            if (qb ~ /^[^ \t\n;|&()]*$/) out = out qb; else out = out "QUOTED"; q = "" }
           else qb = qb c }
         if (q == "") { print out; out = "" } else qb = qb "\n" }
       if (q != "") print "\001OPENQUOTE"
       if (out != "") print out
+      gsub(/\n/, " ", subs); if (subs != "") print "\001SUBST" subs
     }')
 segs=$(printf '%s\n' "$reduced" | sed -E 's/&&|\|\||[;|&()]/\
 /g; s/(^|[[:space:]])[{}]([[:space:]]|$)/\
@@ -194,6 +198,13 @@ case "$fr" in
         deny "a command substitution or variable expansion next to a merge command could build the gh command at run time, so it cannot be judged." ;;
     esac ;;
 esac
+
+# The text above is quote-reduced, but a substitution inside double quotes or an unquoted heredoc body
+# still runs. The reducer hands that text back on a SUBST line; a merge-like word in it is a deny.
+substtext=$(printf '%s\n' "$reduced" | sed -n 's/^\x01SUBST//p')
+if [ -n "$substtext" ] && is_merge_like "$substtext"; then
+  deny "a command substitution inside quotes or a heredoc holds a merge command, which cannot be judged."
+fi
 
 set -f
 while IFS= read -r seg; do

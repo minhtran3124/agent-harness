@@ -141,6 +141,10 @@ t "a backslash-newline inside the merge word is denied"; g "$(printf 'gh pr mer\
 t "a backslash-newline between words still judges the PR (feat/x allowed)"; g "$(printf 'gh pr merge 7 \\\n --repo o/r --merge')"; assert_rc 0
 t "a path variable with the word merge but no gh pr merge is allowed"; g '$HOME/bin/tool merge'; assert_rc 0
 t "echo with a substitution is allowed"; g 'echo $(date)'; assert_rc 0
+t "a merge inside a double-quoted substitution is denied"; g 'echo "$(gh pr merge 7 --repo o/r)"'; assert_rc 2
+t "a merge inside a double-quoted backtick is denied"; g 'echo "`gh pr merge 7 --repo o/r`"'; assert_rc 2
+t "a merge inside an unquoted heredoc substitution is denied"; g "$(printf 'cat <<EOF\n$(gh pr merge 7 --repo o/r)\nEOF')"; assert_rc 2
+t "a double-quoted substitution without a merge is allowed"; g 'echo "today is $(date)"'; assert_rc 0
 
 reset
 t "ls exits 0"; g 'ls -la'; assert_rc 0
