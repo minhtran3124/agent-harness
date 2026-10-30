@@ -7,7 +7,134 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+
+- `merge-guard.sh`, a PreToolUse(Bash) hook that blocks any `gh pr merge` or `gh api .../pulls/<n>/merge` unless the PR base is `feat/*` (and not the default branch). It fails closed, unlike the other hooks (see `docs/hooks.md`). Issue #516.
+- A per-ticket merge gate in `ship.js` (multi-ticket remote runs): review, one-ticket intent review and CI on the ticket PR. Only a ticket that passes is merged into `feat/<slug>`.
+- Every PR the workflow opens carries a `Merge: auto|human` line and a readiness checklist.
+
+### Changed
+
+- The merge stage merges with `--match-head-commit <sha>` and no longer resolves conflicts, pushes or closes PRs: a conflicting or failing ticket stays open as a human merge. Local mode runs `git merge --abort` on a conflict.
+- A ticket that fails its gate is `blocked` with the reason `human merge: gate <names> failed` and keeps its PR. The final PR is always a human merge.
+- `/harness:setup` step 4 names the merge guard and no longer offers the `gh pr merge` allow rule (plugin hooks are not proven to fire for workflow agents).
+
+### Fixed
+
+- The SessionStart `clean-worktrees.sh` hook now has a 30 second timeout and runs only on `startup`, in its own group apart from `session-rules.sh`, so network I/O cannot stall session start.
+
+### Documented
+
+- `clean-worktrees.sh` details from #494: protected branch names (`develop`, `development`, `staging`, `production`, `release/*`, `release-*`), the skip of a worktree another live process uses (SessionStart sweep only), the SessionStart time budget (`CLEAN_BUDGET`, default 20 s) and the `CLEAN_RECREATE` guards.
+
+## [5.1.0] — 2026-10-29
+
+### Added
+
+- `clean-worktrees.sh` runs at SessionStart in sweep mode (no payload) and returns what it removed as `additionalContext`, so a PR merged on the GitHub web is cleaned. Issue #494.
+- `clean-worktrees.sh` runs `git fetch -q --prune <remote>` first, removes `worktree-*` agent branches contained in a `<remote>/*` branch, and works without `gh` (upstream gone and tip an ancestor of `<remote>/main`).
+- Settings in the `env` block of `.claude/settings.json`: `CLEAN_REMOTE`, `CLEAN_KEEP`, `CLEAN_STRICT`, `CLEAN_RECREATE` (see `docs/hooks.md`).
+
+### Changed
+
+- A squash-merged branch is now removed with `git branch -D` when a merged PR head equals the local tip (before: reported and kept). A branch with commits after the merge is still kept.
+
+## [5.0.0] — 2026-10-28
+
+**BREAKING.** The harness is now a Claude Code plugin, and a large part of the v2 machinery is gone. Epic #338, issues #349–#351. Read the migration steps below before you upgrade a project that installed the old copied `.claude/`.
+
+### Breaking
+
+- Install changes. The harness is a plugin (`plugins/harness/`, marketplace file `.claude-plugin/marketplace.json`). `scripts/deploy-harness.sh`, `scripts/install-harness.sh` and the agent renderer are removed.
+- Skills are namespaced: run `/harness:<name>` (for example `/harness:autopilot`), and agents appear as `harness:<name>`.
+- Hook profiles are gone. There is one fixed hook set, so `--profile minimal|standard|strict` no longer exists, and `harness-manifest.json` and `.claude/.harness-profile` are removed.
+- Every rule except `rules/behavior.md` is removed (`architecture`, `guidelines`, `orchestration`, `research-depth`, `plan-format`, `wave-parallelism`, `auto-correct-scope`, `terminology`, `review-policy`). `techstacks/` is unchanged, but no rule points at it any more: reference it from your own `CLAUDE.md`.
+- `harness-models.json`, the `harness-models` skill and `scripts/apply_model_config.py` are removed. Per-role models come from `agents/runtime-bindings.json` only.
+- The run-state machine and SUMMARY verification are removed, so `specs/` artifacts (`SUMMARY`, `ESCALATIONS`, `QUESTIONS`, `INTENT`, review receipts, `RUN.json`) are no longer read or written. `specs/` is local scratch; put designs and decisions in `docs/adr/`.
+- The review chain is `/code-review` plus `intent-review`. The `visual-planner` skill and the `reviewer` agent are removed (`task-reviewer` and `intent-reviewer` stay).
+- `permissions.deny` (`.env` read and edit, force-push, push to `main`/`master`) reaches a project only through `/harness:setup`. A plugin cannot ship it.
+
+### Added
+
+- `plugins/harness/` plugin layout with a plugin manifest, a marketplace file, and the `setup` skill (see Migration).
+- Hooks: `secrets-scan.sh` (PreToolUse, blocks a staged secret or `.env` on `git commit`), `pr-opened.sh` (PostToolUse, reminds to review after `gh pr create`), `clean-worktrees.sh` (PostToolUse, removes the worktree and branch of merged PRs, never with force flags) and `session-rules.sh` (delivers `rules/behavior.md` at session start).
+- `scripts/check-md-links.sh` (dead markdown link check, run by `run-tests.sh`) and `scripts/check-plugin-version.sh` (plugin manifest version must equal `VERSION`). Minimal CI gates from PR 2 (#351).
+
+### Removed
+
+- Legacy hooks and their checks: `commit-gate.sh`, `branch-isolation-guard.sh`, `session-knowledge.sh`, `model-config.sh` and `hooks/lib/` (lane, escalation, receipt and run-state checks).
+- `runtime/` (`run_state.py`, `resume_decision.py`), `verify_summary.py`, `check_review_receipt.py`, `resolve_finish_context.py`, `check_plan_contract.py`, `resolve-base-ref.sh`, `run_at_commit.py`, `check_manifest.py`, `check_gate_modes_smoke.py`, `check_slim_surface.py`, `check-contract-impact.sh`.
+- Templates `SUMMARY`, `ESCALATIONS`, `QUESTIONS`, `INTENT` and `REVIEW-RECEIPT`, and `specs-STATE.md`.
+- The `### Verify` check in `harness-audit.sh` (its `verify_missing` JSON key), and the `manifest_degraded` and `contract_impact` reports.
+- v2 history docs (`research-loop.md`, stale plan and review docs under `docs/`); they stay in git history and the `legacy-v2.37.0` tag. Nothing here ships to consumers.
+
+### Changed
+
+- The `implementer` agent states inline what it needs from the removed rules: fix small bugs in your own change and report each as a deviation, and return BLOCKED for schema, contract, auth, dependency, `settings.json`, `hooks/` or feature-removal changes.
+- `diagnosing-bugs` stops and asks the owner instead of writing an `ESCALATIONS.md` block, and reports its red and green results in the final message.
+- The skill and agent checks scan `skills/*/SKILL.md` and `agents/*.md` instead of a manifest.
+
+### Migration (from the old copied `.claude/`)
+
+1. Install the plugin:
+   ```bash
+   claude plugin marketplace add minhtran3124/agent-harness
+   claude plugin install harness@agent-harness
+   ```
+2. In the project, run `/harness:setup`. It lists the old copied files (skills, agents, hooks, `workflows/ship.js`, scripts, `templates/`, backup folders) and removes them only after you approve. It also removes the old hook entries from `.claude/settings.json` (after you agree), and asks separately about the old `.claude/rules/behavior.md` copy, which the plugin now delivers at session start. Keep both copies and every hook runs twice. The same run merges `permissions.deny` into `.claude/settings.json` (needs `jq`; you see a dry-run diff first), creates `agents/PROJECT.md` if missing, scaffolds `specs/`, `docs/solutions/` and `techstacks/` README files without overwriting, and adds `specs/` to `.gitignore`.
+3. Restart Claude Code, then check that `/harness:autopilot` appears and `/autopilot` no longer does.
+4. Your own files are kept: `specs/`, `docs/`, `techstacks/`, `agents/PROJECT.md`, `.claude/settings.local.json`, and any skill, agent or hook you wrote yourself.
+
+### Known limits
+
+Not verified yet (tracked for the dogfood run, #352): an unattended run of `ship.js` through the Workflow tool from the plugin cache, the hooks firing in a live session, and a git-sourced marketplace install. The plugin was validated locally with `claude plugin validate` and with `--plugin-dir`.
+
+The merge stage needs the owner to allow `gh pr merge` into `feat/<slug>*`, and the Workflow tool needs `ship.js` readable by the session (see README Known limits).
+
+## [2.37.0] — 2026-10-19
+
+- docs: sync core and skill docs with current code (#290–#331) (PR #335)
+
+## [2.36.0] — 2026-10-19
+
+- feat(harness): per-agent and per-skill model and effort config (PR #332)
+- feat(skills): diagnosing-bugs — six gated phases before any bug fix (#318) (PR #331)
+
+## [2.35.0] — 2026-10-17
+
+- feat(scripts): prove the red — require a code change after the red commit (#313 step 1) (PR #328)
+
+## [2.34.0] — 2026-10-16
+
+- feat(sdd): agreed test seams from plan to implementer to reviewer (#312) (PR #325)
+
+## [2.33.0] — 2026-10-16
+
+- feat(brainstorming): grill the design frontier in numbered rounds (#309) (PR #322)
+
+## [2.32.0] — 2026-10-16
+
+- feat(skills): deletion-test procedure for the 600-word skill ceiling (#308) (PR #319)
+
+## [2.31.2] — 2026-10-16
+
+- fix(verify_summary): apply red/green check to every bug-fix Input-type spelling (PR #304)
+
+## [2.31.1] — 2026-10-16
+
+- feat(evals): hardened intake-classifier eval runner (M5) (PR #305)
+
+## [2.31.0] — 2026-10-15
+
+- feat(workflow): failing-test-first protocol for bug fixes (E5) (PR #301)
+
+## [2.30.0] — 2026-10-15
+
+- docs(writing-plans): start SDD in this session without asking (PR #298)
+
+## [2.29.0] — 2026-10-15
+
+- docs: STE rewrite of the remaining harness prose (Phase 3) (PR #294)
 
 ## [2.28.1] — 2026-10-15
 

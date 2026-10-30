@@ -3,7 +3,7 @@ problem_type: decision
 module: rules / techstacks
 tags: tech-stack-decoupling, project-owned, agnostic-core, techstacks, one-canonical-home, auto-loaded-rules, portability
 severity: standard
-applicable_when: The harness core (rules/skills/templates) carries stack-specific content (framework examples, a bundled stack profile) and you want a new installer to inherit no tech-stack baggage.
+applicable_when: SUPERSEDED by ADR 0010 (techstacks/ and agents/PROJECT.md were removed). The harness core (rules/skills/templates) carries stack-specific content (framework examples, a bundled stack profile) and you want a new installer to inherit no tech-stack baggage.
 affects:
   - rules/architecture.md
   - rules/guidelines.md
@@ -11,6 +11,7 @@ affects:
   - techstacks/README.md
   - scripts/init-structure.sh
 supersedes: null
+superseded_by: docs/adr/0010-remove-techstacks-and-project-md-rules-from-repo-files.md
 confidence: high
 confirmed_at: 2026-07-17
 ---

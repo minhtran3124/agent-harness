@@ -1,29 +1,23 @@
 #!/bin/bash
 source "$(dirname "$0")/../lib.sh"
-SKILL="skills/finishing-a-development-branch/SKILL.md"
-
-t "finishing resolves one deterministic context"
-grep -q 'resolve_finish_context.py' "$ROOT/$SKILL" && grep -q 'reports ambiguity, ask the' "$ROOT/$SKILL" && pass || fail "resolver contract missing"
-
-t "finishing requires receipt and audit gate for plan work"
-grep -q 'check_review_receipt.py' "$ROOT/$SKILL" && grep -q -- '--require correctness,intent --require-audit-if' "$ROOT/$SKILL" && pass || fail "receipt gate missing"
+SKILL="plugins/harness/skills/finishing-a-development-branch/SKILL.md"
 
 t "finishing keeps create-PR-only safety boundary"
-grep -q 'Never merge, force-push' "$ROOT/$SKILL" && grep -q 'Stage named' "$ROOT/$SKILL" && pass || fail "PR safety boundary missing"
+grep -q 'Never merge, force-push' "$ROOT/$SKILL" && grep -q 'Stage' "$ROOT/$SKILL" && pass || fail "PR safety boundary missing"
 
-t "finishing emits the concrete ready_to_merge run-state producer (non-fatal)"
-# The post-merge shipped transition is legal only from ready_to_merge; a prose-only checkpoint
-# (as the slim refactor left it) lets a run stall at verifying. Guard the concrete command so a
-# future prompt-slim pass cannot silently drop it again (issue #196).
-grep -q -- '--to ready_to_merge --event pr.opened || true' "$ROOT/$SKILL" && pass || fail "concrete ready_to_merge transition (with || true) missing — a run would stall at verifying and never terminalize"
+t "finishing PR body has the required sections"
+ok=1
+for s in Summary Why Changes Decisions Testing Risk 'How to revert' Notes; do
+  grep -qF "**$s**" "$ROOT/$SKILL" || { ok=0; echo "missing section: $s"; }
+done
+[ "$ok" = 1 ] && pass || fail "PR body section missing"
 
-t "finishing runs the open-questions check before marking the plan shipped"
-grep -qF 'python3 scripts/check_open_questions.py --slug <slug>' "$ROOT/$SKILL" && grep -qF 'Open questions closing here' "$ROOT/$SKILL" && pass || fail "open-questions check or PR-body list missing"
+t "finishing verifies before it pushes"
+awk '/Verify/{v=NR} /git push/{p=NR} END{exit !(v && p && v<p)}' "$ROOT/$SKILL" && pass || fail "verify step must come before push"
 
-t "finishing runs the SC history check at step 3"
-grep -qF 'python3 scripts/verify_summary.py --sc-history <slug> --base <base>' "$ROOT/$SKILL" && pass || fail "SC history check missing"
+t "finishing no longer pins review receipts or run state"
+! grep -q 'receipt\|run_state\|verify_summary\|RUN.json' "$ROOT/$SKILL" && pass || fail "retired machinery still referenced"
 
-t "finishing says the SC history check reads committed state only, and reports other exits"
-grep -qF 'reads committed state only' "$ROOT/$SKILL" && grep -qF 'any exit other than 0 or 1' "$ROOT/$SKILL" && pass || fail "committed-state or other-exit wording missing"
-
+t "finishing has an Auto mode section"
+grep -q '^## Auto mode' "$ROOT/$SKILL" && pass || fail "Auto mode section missing"
 finish

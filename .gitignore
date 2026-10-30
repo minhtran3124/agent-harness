@@ -1,6 +1,3 @@
-# MkDocs build output
-site/
-
 # Python
 __pycache__/
 *.pyc
@@ -22,37 +19,27 @@ CLAUDE.local.md
 # Git worktrees (project-local, isolated feature workspaces)
 .worktrees/
 
-# Claude Code local clone (derived from root via scripts/deploy-harness.sh)
+# Claude Code local folder (user-specific rules and settings; the plugin itself lives in plugins/harness/)
 .claude/
+
+# Playwright plugin output: screenshots, snapshots and GIF evidence from verify runs (local only)
+.playwright-mcp/
 
 # Timestamped harness backups (created by deploy/install scripts; not tracked)
 .harness-backup-*/
-.harness-state/
 
 # Local-only research notes (kept out of the tracked tree by request)
 docs/memory/
-# Added by code-review-graph
-.code-review-graph/
 
-# Specifications — tracked, EXCEPT derived artifacts rebuildable from PLAN.md via render_plan.py
-specs/**/PLAN.html
-specs/**/.plan-review.json
-# Derived, machine-local review receipt (written after review passes; not shipped)
-specs/**/.review-receipt.json
-# Machine-local fcntl lock guarding events.jsonl appends (RUN.json + events.jsonl stay tracked)
-specs/**/events.jsonl.lock
+# specs/ at the repo root is local scratch: one specs/<slug>/ per ticket (intent, design, decision, plan, summary).
+# Anchored, so plugins/harness/templates/specs/ stays tracked.
+/specs/
 
 .vercel
 
-# Local-only harness-engineering review docs
-docs/harness-engineering-review.md
-docs/harness-engineering-review.en.md
-
-# bootstrap-xia2 review artifacts — per-repo, never shipped by the harness
-*.proposed
-
-# generated PR description (finishing-a-development-branch Step 3), not committed
-.pr-body.md
-
 # vscode
 .vscode
+
+# local research notes and generated reports
+/research_notes/
+/reports/

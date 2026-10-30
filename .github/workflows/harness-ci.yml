@@ -1,5 +1,13 @@
 name: harness-ci
 
+# Claude Code CLI used by the plugin validator and the install smoke test. Package and Node
+# requirement from https://code.claude.com/docs/en/setup ("Install with npm": package
+# @anthropic-ai/claude-code, Node.js 22 or later). Pinned to an exact version so a new CLI release
+# cannot turn CI red unprompted; bump it on purpose.
+env:
+  CLAUDE_CODE_VERSION: "2.1.312"
+  NODE_VERSION: "22"
+
 on:
   push:
     branches: [main]
@@ -16,25 +24,10 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
     steps:
-      # fetch-depth: 0 is load-bearing, not hygiene. run-tests.sh's verify-row lint scopes
-      # itself to SUMMARY/PLAN files changed vs a base ref; under the default shallow
-      # checkout no base ref exists, so the lint skipped on every run since it shipped.
+      # fetch-depth: 0: full history for history-aware tests.
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      # Materialise origin/<base> explicitly rather than relying on what checkout's refspec
-      # happens to leave behind — same two-step the strict-gate job below already uses and
-      # which is proven to work in this repo's CI. Skipped on push builds, where there is no
-      # base ref; resolve-base-ref.sh then reports "no base ref declared" and the lint skips
-      # with a named reason instead of silently.
-      - name: Fetch base ref (pull requests only)
-        if: github.event_name == 'pull_request'
-        # Via env, not inline `${{ }}`: expressions are substituted into the script text
-        # before bash parses it, so quotes do not contain a branch name with shell
-        # metacharacters. Low reachability (needs push access to the base repo) but free to close.
-        env:
-          BASE_REF: ${{ github.base_ref }}
-        run: git fetch --no-tags origin "$BASE_REF"
       # scripts/lint-skill-bash.sh degrades to syntax-only when shellcheck is missing, so the
       # suite passes either way — but CI is where the shellcheck pass must actually run, or the
       # gate is only as strong as whatever each contributor happens to have installed.
@@ -42,46 +35,53 @@ jobs:
       - name: Install shellcheck (macOS)
         if: runner.os == 'macOS'
         run: brew install shellcheck
-      # This is intentionally explicit even though run-tests.sh discovers the same shell
-      # contract. It makes the Codex alpha boundary a named macOS/Linux CI result; WSL is
-      # not represented by GitHub-hosted CI and therefore remains advisory by contract.
-      - name: Run Codex advisory-alpha contract
-        run: bash tests/scripts/codex-alpha-contract.test.sh
-      # The Codex contract already ran as its own step above — skip it here rather than pay
-      # for it twice per OS.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Install Claude Code CLI
+        run: |
+          npm install -g "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}"
+          claude --version
+      # REQUIRE_CLAUDE_CLI=1: the plugin validate step inside run-tests fails, not skips, if the
+      # CLI install above ever stops providing `claude`.
       - name: Run harness test suite
         env:
-          HARNESS_SKIP_SUITES: tests/scripts/codex-alpha-contract.test.sh
+          REQUIRE_CLAUDE_CLI: "1"
         run: bash scripts/run-tests.sh
 
-  # Strict-in-CI gate: a PR diff that touches hard-gate paths must carry a
-  # high-risk SUMMARY with machine-verified proof. Separate job (not a step in
-  # `test`) because it needs full history (fetch-depth: 0) to diff against the
-  # base branch. Local commit hooks keep their warn-default; CI is the strict gate.
-  strict-gate:
-    name: strict-gate (PR)
-    if: github.event_name == 'pull_request'
+  # Plugin gates that must not degrade to a local-only skip. The suite above already runs the
+  # frontmatter, link and validate checks in permissive mode; this job runs the same scripts with
+  # the strict env, adds the shellcheck gate that fails when shellcheck is absent, and the install
+  # smoke test (not in run-tests.sh because it installs a plugin). Linux only: the matrix covers
+  # BSD/GNU differences.
+  plugin:
+    name: plugin gates (ubuntu)
     runs-on: ubuntu-latest
+    env:
+      REQUIRE_CLAUDE_CLI: "1"
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          fetch-depth: 0
-      - name: Fetch base ref
-        # Via env, not inline `${{ }}`: expressions are substituted into the script text
-        # before bash parses it, so quotes do not contain a branch name with shell
-        # metacharacters. Low reachability (needs push access to the base repo) but free to close.
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Install Claude Code CLI
+        run: |
+          npm install -g "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}"
+          claude --version
+      - name: shellcheck (strict - fails if shellcheck is missing)
         env:
-          BASE_REF: ${{ github.base_ref }}
-        run: git fetch --no-tags origin "$BASE_REF"
-      # ci-strict-gate.sh re-runs each changed high-risk SUMMARY's `### Verify`
-      # rows for machine-verified proof. Those commands can be the project's test
-      # runner (e.g. `python3 -m pytest ...` for an SC-coverage row), so the gate
-      # job must have pytest on the same `python3` — the `test` job relies on
-      # ambient pytest, which is not guaranteed here. Provision it deterministically.
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-      - name: Install proof runner (pytest)
-        run: python -m pip install --quiet pytest
-      - name: Strict gate (hard-gate paths require high-risk SUMMARY + verified proof)
-        run: bash scripts/ci-strict-gate.sh "origin/${{ github.base_ref }}"
+          REQUIRE_SHELLCHECK: "1"
+        run: bash scripts/check-shellcheck.sh
+      - name: Skill and agent frontmatter contract
+        run: python3 scripts/check_frontmatter_contract.py
+      - name: Markdown link check
+        run: bash scripts/check-md-links.sh
+      - name: Plugin version matches VERSION
+        run: bash scripts/check-plugin-version.sh
+      - name: claude plugin validate --strict (plugin and marketplace)
+        run: bash scripts/check-plugin-validate.sh
+      - name: Plugin install smoke test (isolated config dir)
+        run: |
+          export CLAUDE_CONFIG_DIR="$RUNNER_TEMP/claude-config"
+          rm -rf "$CLAUDE_CONFIG_DIR"
+          bash scripts/check-plugin-install.sh

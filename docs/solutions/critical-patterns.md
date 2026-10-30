@@ -14,7 +14,7 @@ Add an entry only when the pattern:
 **Tags:** meta-repo, signal-remapping, project-md, dual-audience-docs, bootstrap-update-mode, hook-friction
 **Applicable when:** Bootstrapping or updating xia2 PROJECT.md (or any risk-classification config) for a repo whose "application" is the tooling itself — skills, hooks, scripts.
 
-A meta/harness repo does have high-blast files, security surfaces, and public contracts — they live in `settings.json`, `hooks/*.sh`, `tests/lib.sh`, `.mcp.json`, and hook-parsed template fields (`Lane:`), not in app code layers. Map each app-centric xia2 signal category to its harness-native analog instead of leaving it empty, grounded in churn + inbound-reference evidence.
+A meta/harness repo does have high-blast files, security surfaces, and public contracts — they live in `settings.json`, `hooks/*.sh`, `tests/lib.sh`, and hook-parsed template fields (`Lane:`), not in app code layers. Map each app-centric xia2 signal category to its harness-native analog instead of leaving it empty, grounded in churn + inbound-reference evidence.
 
 **Full doc:** docs/solutions/harness-bootstrap/meta-repo-signal-remapping.md
 ---
@@ -38,9 +38,10 @@ Two decisions: (1) `agents/PROJECT.md` convention sources point at `skills/READM
 
 Two crashes in advisory/non-blocking scripts. (1) `scripts/harness-audit.sh` crashed with `unbound variable` iterating a possibly-empty array under `set -u` — bash 3.2 (macOS) treats `"${arr[@]}"` on an empty array as an unset-variable reference, unlike bash 4.4+; fixed with `"${arr[@]+"${arr[@]}"}"`. (2) `scripts/harness-status.sh`'s JSONL trend block took **three** rounds, because the first two enforced "never blocks" with an exception allowlist: round 1 guarded `JSONDecodeError`, round 2 added `KeyError`/`TypeError` — and both left `open()` unguarded (it runs before the loop, outside every `try`), so an unreadable or non-UTF-8 log still killed the script under `set -euo pipefail` and silently swallowed the Drift Audit section. **Do not copy the round-2 pattern.** Fixed by putting the boundary on the command — `python3 - "$LOG" <<'PY' || echo "  [unreadable: $LOG]"` — the `|| true` convention the same file already used one section below.
 
-**Lesson:** an exception-type allowlist cannot be proven complete, so it is the wrong tool for "never fail" semantics; bound the block instead. And the boundary defect was missed by every per-line bug hunt (including `/correctness-review`) — it surfaced only when a reviewer asked "is this fix deep enough, or a bandaid?" Ask that on purpose.
+**Lesson:** an exception-type allowlist cannot be proven complete, so it is the wrong tool for "never fail" semantics; bound the block instead. And the boundary defect was missed by every per-line bug hunt (including `/correctness review`) — it surfaced only when a reviewer asked "is this fix deep enough, or a bandaid?" Ask that on purpose.
 
 **Full doc:** docs/solutions/scripts/bash-empty-array-and-jsonl-parsing-gotchas.md
+**Recurred:** 2026-10-17 — `scripts/verify_summary.py` `_red_fix_diff_issue` (gh-313): an advisory check guarded by `except OSError`/`CalledProcessError` lets `UnicodeDecodeError` from `text=True` decoding of `git diff -z` escape, so `--lane` exits 1 and the commit gate blocks.
 ---
 
 ## [2026-07-04] bash-empty-array-and-jsonl-parsing-gotchas-decisions
@@ -78,10 +79,10 @@ Example entry shape:
 ## [2026-07-10] unverified-premise-propagates-through-plan-anchored-reviews
 **Type:** failure
 **Module:** harness
-**Tags:** not-observed-not-absent, false-premise, plan-blind-review, correctness-review, ground-truth, review-oracle, resync-conflict
+**Tags:** not-observed-not-absent, false-premise, plan-blind-review, correctness-pass, ground-truth, review-oracle, resync-conflict
 **Applicable when:** Watch for this when a spec, design, or plan asserts that something "is never shipped" / "does not exist" / "can never conflict", and downstream code, tests, and reviews all treat that absence claim as true without one independent `ls` or `git ls-files` against ground truth.
 
-A design doc asserted the harness ships no `*.proposed`; it shipped two, tracked since `f7d2d58`. Nobody ran `ls skills/xia2/`. Per-task spec review, code-quality review, and the test author all passed the false premise — the test even encoded it as a comment. Only the plan-blind `/correctness-review` caught it. Three reviewers agreeing means nothing when all three read the same wrong sentence: this is `rules/behavior.md` §1 `not_observed != absent`, and it is why the correctness and intent oracles are dispatched blind to the plan.
+A design doc asserted the harness ships no `*.proposed`; it shipped two, tracked since `f7d2d58`. Nobody ran `ls skills/xia2/`. Per-task spec review, code-quality review, and the test author all passed the false premise — the test even encoded it as a comment. Only the plan-blind `/correctness review` caught it. Three reviewers agreeing means nothing when all three read the same wrong sentence: this is `rules/behavior.md` §1 `not_observed != absent`, and it is why the correctness and intent oracles are dispatched blind to the plan.
 
 **Full doc:** docs/solutions/harness/unverified-premise-propagates-through-plan-anchored-reviews.md
 ---
@@ -117,6 +118,7 @@ The risk-lane gate forces `high-risk` for `hooks/*`/`settings.json` (how careful
 Eval a prompt skill with **auto-score / manual-run**: labeled fixtures (`request.md` + parseable `truth.md`, `any` for unasserted dims) → **blind** subagent runs (given only the request + skill, never `truth.md` — the orchestrator authored the key, so a non-blind run is meaningless) → a deterministic, unit-tested scorer (pure Python, no key/LLM). **Separate the safety-critical dimension** (hard-gate respect → `--strict` hard-fail) from wobbly judgment dims (lane/confidence). **Multi-run**: one run hides borderline non-determinism (a fixture flipped tiny↔normal 3/4 while hard-gate respect stayed 3/3 across all 4). Scorer must **normalize LLM free-text** (`Data model` vs `data-model` → compare alphanumerics-only) or a correct call scores as a false miss. When N blind runs consistently disagree with a fixture, **suspect the answer key, not the skill** — revise `truth.md`, mark prior runs non-comparable.
 
 **Full doc:** docs/solutions/harness/skill-eval-blind-run-scoring.md
+**Recurred:** 2026-10-16 (gh-309: the answer key left fixture-settled decisions open; mark every decision the fixture states as settled before the first run)
 ---
 
 ## [2026-07-23] gate-config-must-read-index
@@ -155,7 +157,7 @@ State logic written as prose accrues contradiction chains: each correction is in
 **Tags:** review-oracle, task-review, adversarial-review, corpus-testing, fixture-fitted-tests, plan-blind, green-is-not-correct
 **Applicable when:** A multi-task plan finished with every per-task review green (spec + quality) and the full suite passing, and you are about to treat that as sufficient correctness evidence — before the plan-blind adversarial correctness pass has run.
 
-On gh-175 every per-task review passed and 145 tests were green, yet the plan-blind `correctness-review` (six independent finder angles) then found ~11 real, reproduced bugs — including a markdown plan mentioning `<task` parsing to an empty cursor (a resuming session would skip every task). The per-task tests were written by the same subagent from the same idealized assumptions using synthetic fixtures, so they proved consistency, not correctness; the bugs lived exactly where real `specs/*/PLAN.md` diverge from the tidy fixture. Correct path: keep the plan-blind adversarial correctness pass as a hard gate (different oracle, not redundant), add corpus tests that run the parser over EVERY real spec (parity/subset property), not synthetic fixtures, and re-verify each finding at truth-tier.
+On gh-175 every per-task review passed and 145 tests were green, yet the plan-blind `correctness review` (six independent finder angles) then found ~11 real, reproduced bugs — including a markdown plan mentioning `<task` parsing to an empty cursor (a resuming session would skip every task). The per-task tests were written by the same subagent from the same idealized assumptions using synthetic fixtures, so they proved consistency, not correctness; the bugs lived exactly where real `specs/*/PLAN.md` diverge from the tidy fixture. Correct path: keep the plan-blind adversarial correctness pass as a hard gate (different oracle, not redundant), add corpus tests that run the parser over EVERY real spec (parity/subset property), not synthetic fixtures, and re-verify each finding at truth-tier.
 
 **Full doc:** docs/solutions/harness/plan-anchored-task-review-misses-fixture-fitted-bugs.md
 ---
@@ -185,11 +187,40 @@ A manual `grep` for `git -C "$SCRIPT_DIR"` found seven hooks; seven were fixed, 
 ## [2026-09-29] bare-command-hook-must-be-executable-in-index
 **Type:** bug
 **Module:** hooks/registration
-**Tags:** hook-registration, file-mode, exit-126, fail-open, bash-invoked-tests, settings-json, deploy-propagation, correctness-review-catch
+**Tags:** hook-registration, file-mode, exit-126, fail-open, bash-invoked-tests, settings-json, deploy-propagation, correctness-pass-catch
 **Applicable when:** Adding or replacing a hook that settings.json registers as a bare command path (no `bash` prefix), including any file created by an agent Write tool (defaults to 100644).
 
 A new `hooks/commit-gate.sh` was committed `100644` while registered as a bare command, so the runtime got exit 126 — not a block — and every commit gate silently failed open, and every consumer deploy would have inherited the dead gate (caught before merge). It passed 200+ assertions because every hook test runs `bash hooks/x.sh`, which ignores the execute bit; `tests/scripts/settings-wiring.test.sh` now asserts `-x` and index mode `100755` for every registered command.
 
 **Full doc:** docs/solutions/harness/bare-command-hook-must-be-executable-in-index.md
+
+---
+
+## [2026-10-15] ste-rewrite-drops-scope-qualifiers
+**Type:** failure
+**Module:** skills/*/SKILL.md, rules/*.md, agents/*.md (agent-executed prose under an STE rewrite)
+**Tags:** ste100, prose-rewrite, scope-qualifier, sentence-split, word-ceiling, meaning-equivalence, green-is-not-correct, review-oracle
+**Applicable when:** You rewrite agent-executed prose for style (for example with asd-ste100), and the rewrite splits long sentences or cuts words to fit the 600-word skill ceiling.
+
+An STE rewrite of `feature-intake` dropped two conditions in one task. A sentence split moved checks out from under "if intent.md is present", and a word-ceiling cut removed "For a new SUMMARY". Every test passed and the lint count went down both times. Only a per-file meaning-equivalence review caught them. Repeat the scope on each split part, never cut a condition word to meet the ceiling, and review every rewritten file line by line.
+
+**Full doc:** docs/solutions/harness/ste-rewrite-drops-scope-qualifiers.md
+
+---
+
+## [2026-10-16] ste-ratchet-blind-to-fenced-prompt-prose
+**Type:** failure
+**Module:** skills/asd-ste100/scripts/ste-lint.py + scripts/check_ste_baseline.py + skills/subagent-driven-development/scripts/review_package.py
+**Tags:** ste100, ste-lint, ratchet-blind-spot, fenced-dispatch-prompt, green-is-not-correct
+**Applicable when:** You change the prose of a `*-prompt.md` dispatch prompt and use the STE lint count (the baseline ratchet or the review package's `## STE lint` section) as evidence.
+
+`ste-lint.py` skips fenced blocks, and a dispatch prompt keeps its prompt text inside a fence. So
+the ratchet and the review package report `0 → 0` for the most load-bearing prose. This happened
+in the ste100 rollout and again in gh-312. Treat the lint count as no evidence for fenced prompt
+prose. Brief the task reviewer to check each fenced hunk by hand, and record the gap in
+`### Not auto-verified`.
+
+**Full doc:** docs/solutions/harness/ste-ratchet-blind-to-fenced-prompt-prose.md
+**Recurred:** 2026-10-16 (gh-312 Task 1.3: about 25 new fenced prompt lines, lint `0 → 0`)
 
 ---

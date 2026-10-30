@@ -16,7 +16,6 @@ def write_fixture(root: Path) -> None:
         "---\nname: alpha\ndescription: Use when alpha work is requested.\n---\n# Alpha\n"
     )
     (root / "skills" / "alpha" / "worker-prompt.md").write_text("# Worker\n")
-    (root / "harness-manifest.json").write_text(json.dumps({"skills": ["alpha"]}))
 
 
 def run(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
@@ -60,6 +59,38 @@ def test_description_and_skill_surface_ceilings_fail_with_named_diagnostics(tmp_
     assert result.returncode == 1
     assert "description exceeds" in result.stderr
     assert "progressive-disclosure ceiling" in result.stderr
+    assert "docs/solutions/harness/deletion-test-for-word-ceiling.md" in result.stderr
+
+
+def test_vendored_skill_with_upstream_md_is_exempt_from_word_ceiling(tmp_path):
+    write_fixture(tmp_path)
+    (tmp_path / "skills/alpha/SKILL.md").write_text("# Alpha\n" + ("word " * 601))
+    (tmp_path / "skills/alpha/UPSTREAM.md").write_text("# Upstream\n")
+    result = run(tmp_path)
+    assert result.returncode == 0, result.stderr
+    assert "skills/alpha/SKILL.md (603): vendored, exempt" in result.stderr
+    assert "progressive-disclosure ceiling" not in result.stderr
+
+
+def test_vendored_skill_still_fails_description_limit(tmp_path):
+    write_fixture(tmp_path)
+    (tmp_path / "skills/alpha/SKILL.md").write_text(
+        "---\nname: alpha\ndescription: " + "x" * 1025 + "\n---\n# Alpha\n" + ("word " * 601)
+    )
+    (tmp_path / "skills/alpha/UPSTREAM.md").write_text("# Upstream\n")
+    result = run(tmp_path)
+    assert result.returncode == 1
+    assert "description exceeds" in result.stderr
+    assert "progressive-disclosure ceiling" not in result.stderr
+
+
+def test_skill_without_upstream_md_still_fails_word_ceiling(tmp_path):
+    write_fixture(tmp_path)
+    (tmp_path / "skills/alpha/SKILL.md").write_text("# Alpha\n" + ("word " * 601))
+    result = run(tmp_path)
+    assert result.returncode == 1
+    assert "progressive-disclosure ceiling" in result.stderr
+    assert "vendored, exempt" not in result.stderr
 
 
 def test_check_baseline_ignores_git_sha_but_detects_surface_drift(tmp_path):
@@ -106,9 +137,61 @@ def test_validate_inventory_allows_a_pinned_pre_refactor_baseline(tmp_path):
 
 
 def test_real_repository_matches_expected_surface_shape():
-    root = SCRIPT.parent.parent
+    root = SCRIPT.parent.parent / "plugins" / "harness"
     result = run(root, "--json")
     assert result.returncode == 0, result.stderr
     data = json.loads(result.stdout)
-    assert data["totals"]["skills"] == 13
-    assert data["totals"]["companion_prompts"] == 11
+    assert data["totals"]["skills"] == 20
+    assert data["totals"]["companion_prompts"] == 6
+
+
+RELEASE_NOTES = SCRIPT.parent.parent / "plugins" / "harness" / "skills" / "release-notes"
+
+
+def test_release_notes_collects_per_item_facts():
+    skill = (RELEASE_NOTES / "SKILL.md").read_text()
+    schema = (RELEASE_NOTES / "references" / "fact-list-schema.md").read_text()
+    assert "labels,author,mergedAt" in skill
+    for field in ("labels", "author", "merged_at", "breaking"):
+        assert f'"{field}"' in schema
+
+
+def test_release_notes_maps_tickets_and_lists_commits_without_pr():
+    skill = (RELEASE_NOTES / "SKILL.md").read_text()
+    schema = (RELEASE_NOTES / "references" / "fact-list-schema.md").read_text()
+    assert "closingIssuesReferences" in skill
+    assert '"tickets"' in schema and '"no_pr_commits"' in schema
+
+
+def test_release_notes_filters_bots_and_excluded_labels_first():
+    skill = (RELEASE_NOTES / "SKILL.md").read_text()
+    schema = (RELEASE_NOTES / "references" / "fact-list-schema.md").read_text()
+    assert "Filter the noise first" in skill and "--exclude-label" in skill
+    assert "## Noise filter" in schema and "`bot`" in schema
+
+
+def test_release_notes_detects_explicit_breaking_signals_only():
+    skill = (RELEASE_NOTES / "SKILL.md").read_text()
+    schema = (RELEASE_NOTES / "references" / "fact-list-schema.md").read_text()
+    assert "Needs confirmation" in skill
+    for term in ("BREAKING CHANGE:", "semver-major", "needs_confirmation", "feat(api)!:"):
+        assert term in schema
+
+
+def test_release_notes_collects_milestone_prs_through_issues():
+    skill = (RELEASE_NOTES / "SKILL.md").read_text()
+    schema = (RELEASE_NOTES / "references" / "fact-list-schema.md").read_text()
+    allowed = next(l for l in skill.splitlines() if l.startswith("allowed-tools:"))
+    assert "Bash(gh issue list *)" in allowed and "Bash(gh issue view *)" in allowed
+    assert "gh api" not in allowed
+    assert "gh issue list --milestone" in skill and "in:title,body" in skill
+    assert "0 PRs found" in skill
+    assert "--limit 50" not in schema and "does not match `#10`" in schema
+    assert "whole union" in schema and "matches no ticket still counts" in schema
+    assert "only when the union is empty" in skill
+    assert all(k in schema for k in ("Closes", "Fixes", "Resolves", "Refs"))
+    readme = (SCRIPT.parent.parent / "plugins" / "harness" / "skills" / "README.md").read_text()
+    row = next(l for l in readme.splitlines() if l.startswith("| `release-notes`"))
+    assert "/harness:release-notes" in row
+    for signal in ("title", "footer", "label"):
+        assert signal in row

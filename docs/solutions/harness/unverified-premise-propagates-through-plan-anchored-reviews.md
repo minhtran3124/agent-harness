@@ -1,7 +1,7 @@
 ---
 problem_type: failure
 module: harness
-tags: not-observed-not-absent, false-premise, plan-blind-review, correctness-review, ground-truth, review-oracle, resync-conflict
+tags: not-observed-not-absent, false-premise, plan-blind-review, correctness-pass, ground-truth, review-oracle, resync-conflict
 severity: critical
 applicable_when: Watch for this when a spec, design, or plan asserts that something "is never shipped" / "does not exist" / "can never conflict", and downstream code, tests, and reviews all treat that absence claim as true without one independent `ls` or `git ls-files` against ground truth.
 affects:
@@ -39,9 +39,9 @@ A false "what exists" premise defeats **every plan-anchored gate at once**, beca
 | per-task spec review | `PLAN.md` | ✅ passed — the code matched the plan |
 | per-task code-quality review | clean code | ✅ passed — the code was clean |
 | the test author | `design.md` | ✅ passed — and *enshrined* the premise in a comment: "`.proposed`, never shipped by the harness" |
-| `/correctness-review` | **runtime, blind to the plan** | ❌ caught it |
+| `/correctness review` | **runtime, blind to the plan** | ❌ caught it |
 
-The consistency is the trap. Three independent reviewers agreeing means nothing when all three read the same wrong sentence. A reviewer that can see the plan anchors on it and re-confirms its misreading — which is precisely why `/correctness-review` and `/intent-review` are dispatched blind to `PLAN.md`.
+The consistency is the trap. Three independent reviewers agreeing means nothing when all three read the same wrong sentence. A reviewer that can see the plan anchors on it and re-confirms its misreading — which is precisely why `/correctness review` and `/intent-review` are dispatched blind to `PLAN.md`.
 
 Note the test suite made it *worse*: it encoded the false premise as a comment, converting an unverified assumption into apparent documentation.
 

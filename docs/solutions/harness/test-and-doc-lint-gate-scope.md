@@ -28,7 +28,7 @@ Two harness gates have a **narrower scope than they look** — know the exact bo
   (via its SUMMARY Verify row / manual pytest) yet still be a deferred CI-wiring task.
 - **`lint-doc-truth.sh` checks path references in only 4 core docs:** `CLAUDE.md`, `README.md`,
   `HARNESS.md`, `skills/README.md` (plus the CLAUDE.md hook-table ↔ settings.json cross-check). It
-  does **not** scan `docs/**`, `specs/**` (skipped by design), `evals/**`, or skill prompt files.
+  does **not** scan `docs/**`, `specs/**` (skipped by design), `evals dir: **`, or skill prompt files.
 
 ## How to Use
 
@@ -38,7 +38,7 @@ Two harness gates have a **narrower scope than they look** — know the exact bo
   linted docs, the moved dir's own contents, active skill docs) vs **historical** (research/reviews,
   old specs, past run-records). Update only live refs; leaving point-in-time paths in historical docs
   is correct (surgical-changes) and safe — the doc-truth lint scans none of them. This is how
-  `benchmarks/` → `evals/` moved with zero lint breakage.
+  `benchmarks/` → `evals dir: ` moved with zero lint breakage.
 
 ## Gotchas
 

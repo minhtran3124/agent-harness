@@ -1,0 +1,6 @@
+{
+  "baseUrl": "http://127.0.0.1:${PORT}",
+  "startCommand": "bash tests/fixtures/verify-app/serve.sh",
+  "loginEnv": ["VERIFY_USER", "VERIFY_PASSWORD"],
+  "env": {"APP_USER": "$VERIFY_USER", "APP_PASSWORD": "$VERIFY_PASSWORD"}
+}

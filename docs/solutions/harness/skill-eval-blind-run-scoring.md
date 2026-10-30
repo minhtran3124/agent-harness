@@ -3,22 +3,22 @@ problem_type: knowledge
 module: evals / scripts/score_intake_eval.py
 tags: skill-eval, workflow-eval, blind-run, deterministic-scorer, claim-discipline, non-determinism, hard-gate-respect, answer-key, llm-as-judge
 severity: critical
-applicable_when: Building or extending a behavioral eval for a prompt-driven skill or workflow stage (feature-intake, correctness-review, …) — anything where "prove it works" means measuring LLM judgment, not a green unit-test.
+applicable_when: Building or extending a behavioral eval for a prompt-driven skill or workflow stage (feature-intake, correctness review, …) — anything where "prove it works" means measuring LLM judgment, not a green unit-test.
 affects:
-  - evals/
+  - evals dir: 
   - scripts/score_intake_eval.py
 supersedes: null
 confidence: high
-confirmed_at: 2026-07-17
+confirmed_at: 2026-10-16
 ---
 ## Applicable When
 
 You want to *prove a prompt-driven skill classifies/judges correctly*. Unit tests can't — the
-output is non-deterministic LLM judgment. Use this playbook (it built `evals/workflow/intake-classifier`).
+output is non-deterministic LLM judgment. Use this playbook (it built `evals dir: workflow/intake-classifier`).
 
 ## Pattern
 
-**Auto-score / manual-run**, mirroring `evals/skills/review-chain`:
+**Auto-score / manual-run**, mirroring `evals dir: skills/review-chain`:
 
 1. **Labeled fixtures** — `fixtures/<name>/{request.md, truth.md}`. `truth.md` = a parseable
    `key: value` header the scorer reads + prose. Support an `any` value for dimensions a fixture
@@ -57,10 +57,15 @@ the record (honesty rule — don't re-run a fixture until it passes).
   skill to a wrong key. (Contrast: a fixture that *leans* one way but the literal rule supports the
   key is a genuine skill finding, e.g. intake under-counting an added test file toward the `≤1 file`
   tiny bar — keep the key, record the finding.)
+- **Mark every decision the fixture text already settles before the first run.** (gh-309, 2026-10-16.)
+  The #309 blind runs used a GitHub issue as the fixture. The key left open some decisions that
+  the issue body states, so the simulated user asked for those decisions and each run took more
+  rounds. Key v2 still missed four of these decisions. Before the first run, read the fixture line
+  by line and mark each decision it states as `settled-by-fixture`. Score only the open rows.
 - **Claim discipline:** a number is a claim about *these fixtures and this skill only* — not the
   full chain, not real-world rate (`not_observed != absent`). State it wherever the number appears.
 
 ## Related
-- evals/README.md
+- evals dir: README.md
 - docs/solutions/harness/automation-readiness.md
 - docs/solutions/harness/mutation-testing-proves-a-suite-is-load-bearing.md

@@ -1,53 +1,47 @@
 #!/bin/bash
-# Wiring smoke test: settings.json and the deployed .claude/settings.json must be internally
-# consistent — valid JSON, every registered hook command resolves to an executable bash
-# script, and the derivation (root relative path → $CLAUDE_PROJECT_DIR/.claude/<path>) holds.
+# Wiring smoke test: the plugin's hooks/hooks.json must be internally consistent. It must be valid
+# JSON, every registered hook is exec form (`bash` plus a script argument under
+# ${CLAUDE_PLUGIN_ROOT}/hooks/), every script resolves to a file with a bash shebang that is
+# mode 100755 in the index, and the repo's own settings.json wires no hooks (they would run
+# twice) and keeps the approved permissions.deny list.
 # This tests the wiring, not the hook bodies (those are the tests/hooks/ suites).
 source "$(dirname "$0")/../lib.sh"
 cd "$ROOT" || exit 1
 
-t "settings.json is valid JSON"
-if jq -e . settings.json >/dev/null 2>&1; then pass; else fail "settings.json does not parse"; fi
+HOOKS=plugins/harness/hooks/hooks.json
 
-t "every settings.json hook command resolves to an executable file with a bash shebang"
+t "hooks.json is valid JSON"
+if jq -e . "$HOOKS" >/dev/null 2>&1; then pass; else fail "$HOOKS does not parse"; fi
+
+t "every hook is exec form: command is bash, first arg is under \${CLAUDE_PLUGIN_ROOT}/hooks/"
+bad=$(jq -r '.hooks[][].hooks[] | select(.type != "command" or .command != "bash" or ((.args[0] // "") | startswith("${CLAUDE_PLUGIN_ROOT}/hooks/") | not)) | tojson' "$HOOKS")
+if [ -z "$bad" ]; then pass; else fail "not exec form: $bad"; fi
+
+t "every registered script exists, has a bash shebang and is mode 100755 in the index"
 ok=1
-while IFS= read -r cmd; do
-  [ -z "$cmd" ] && continue
-  case "$cmd" in '$CLAUDE_PROJECT_DIR/'*) cmd="${cmd#\$CLAUDE_PROJECT_DIR/}"; cmd="${cmd#.claude/}" ;; esac
-  if [ ! -f "$cmd" ]; then ok=0; echo "        missing: $cmd"; continue; fi
-  head -1 "$cmd" | grep -q '^#!.*sh' || { ok=0; echo "        no shebang: $cmd"; }
-  # Registered as a bare command (no `bash` prefix): without the execute bit the runtime gets
-  # exit 126, which is not a block, so every gate in the hook is silently skipped.
-  [ -x "$cmd" ] || { ok=0; echo "        not executable: $cmd"; }
-  # A fresh clone materializes the tracked mode and deploy copies it with cp -R (no chmod
-  # anywhere), so check the index too:
-  # a local chmod +x must not mask a committed 100644.
-  mode=$(git ls-files -s -- "$cmd" | awk '{print $1}')
-  [ -z "$mode" ] || [ "$mode" = "100755" ] || { ok=0; echo "        tracked mode $mode (want 100755): $cmd"; }
-done < <(jq -r '.hooks[]?[]?.hooks[]?.command // empty' settings.json)
-[ "$ok" -eq 1 ] && pass || fail "one or more commands unresolved / not a shell script"
+while IFS= read -r arg; do
+  [ -z "$arg" ] && continue
+  f="plugins/harness/hooks/${arg#\$\{CLAUDE_PLUGIN_ROOT\}/hooks/}"
+  if [ ! -f "$f" ]; then ok=0; echo "        missing: $f"; continue; fi
+  head -1 "$f" | grep -q '^#!.*sh' || { ok=0; echo "        no shebang: $f"; }
+  mode=$(git ls-files -s -- "$f" | awk '{print $1}')
+  [ -z "$mode" ] || [ "$mode" = "100755" ] || { ok=0; echo "        tracked mode $mode (want 100755): $f"; }
+done < <(jq -r '.hooks[][].hooks[] | .args[0] // empty' "$HOOKS")
+[ "$ok" -eq 1 ] && pass || fail "one or more hook scripts unresolved or not 100755"
 
-if [ -f .claude/settings.json ]; then
-  t ".claude/settings.json is valid JSON"
-  if jq -e . .claude/settings.json >/dev/null 2>&1; then pass; else fail ".claude/settings.json does not parse"; fi
+t "every hooks/*.sh in the plugin is registered in hooks.json"
+ok=1
+for f in plugins/harness/hooks/*.sh; do
+  jq -e --arg n "hooks/$(basename "$f")" '[.hooks[][].hooks[] | .args[]? | select(endswith($n))] | length > 0' "$HOOKS" >/dev/null || { ok=0; echo "        not registered: $f"; }
+done
+[ "$ok" -eq 1 ] && pass || fail "a hook script is on disk but not wired"
 
-  t "deploy derivation holds: each root command maps to \$CLAUDE_PROJECT_DIR/.claude/<path>"
-  root_cmds=$(jq -r '.hooks[]?[]?.hooks[]?.command // empty' settings.json | sort)
-  # derive_settings may append one ` --profile <p>` to a command; compare without it.
-  drv_cmds=$(jq -r '.hooks[]?[]?.hooks[]?.command // empty' .claude/settings.json \
-    | sed -E 's/ --profile [A-Za-z0-9_-]+$//' | sort)
-  expected=$(echo "$root_cmds" | while IFS= read -r c; do
-    # absolute paths and $-vars are left unchanged by deploy; relative paths are prefixed
-    if [ "${c#/}" != "$c" ] || [ "${c#\$}" != "$c" ]; then
-      echo "$c"
-    else
-      echo "\$CLAUDE_PROJECT_DIR/.claude/$c"
-    fi
-  done | sort)
-  if [ "$drv_cmds" = "$expected" ]; then pass
-  else fail "derived commands differ from expectation:\n        got:  $(echo "$drv_cmds" | tr '\n' ' ')\n        want: $(echo "$expected" | tr '\n' ' ')"; fi
-else
-  t ".claude/settings.json checks"; skip ".claude/ not built (run scripts/deploy-harness.sh)"
-fi
+t "the repo's settings.json wires no hooks (the plugin's hooks.json does)"
+if jq -e '(.hooks // {}) | length == 0' settings.json >/dev/null 2>&1; then pass
+else fail "settings.json has hooks: $(jq -c .hooks settings.json)"; fi
+
+t "permissions.deny holds the approved rules and settings.json has no allow rules"
+if jq -e '(.permissions.deny | index("Read(./.env)") and index("Edit(./.env)") and index("Bash(git push --force*)") and index("Bash(git push * main)")) and (.permissions | has("allow") | not)' settings.json >/dev/null; then pass
+else fail "permissions: $(jq -c .permissions settings.json)"; fi
 
 finish

@@ -47,6 +47,14 @@ dir must already carry lane evidence: for normal/high-risk, at least one non-pla
   re-sync. Any plan changing `hooks/` needs an explicit activation step or the fix silently never
   takes effect.
 
+- SC coverage makes per-wave spec commits impossible (seen 2026-10-15, ste100-harness-prose). When
+  PLAN.md has `SC-n` table rows, `scripts/verify_summary.py` needs, for every `SC-n`, a Verify row
+  whose Criterion names it and whose claimed exit matches the SC's Expected exit. `hooks/commit-gate.sh`
+  `check_lane_evidence` runs this on any commit that touches `specs/<slug>/`. When SUMMARY.md is not
+  staged, it falls back to the on-disk copy. A mid-plan commit cannot cover SCs that later waves own,
+  so per-wave rows do not unblock it. The working route is to keep the spec folder uncommitted and commit it once at the end, when
+  the Verify table covers every SC.
+
 ## Related
 
 - docs/solutions/harness/verify-row-must-be-pipe-free-and-under-60s.md

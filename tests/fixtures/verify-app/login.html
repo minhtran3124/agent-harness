@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Verify fixture login</title><link rel="icon" href="data:,"></head>
+<body>
+  <h1>Log in</h1>
+  <form id="login-form">
+    <label>User <input id="user" name="user" autocomplete="off"></label>
+    <label>Password <input id="password" name="password" type="password" autocomplete="off"></label>
+    <button id="submit" type="submit">Log in</button>
+  </form>
+  <p id="message" role="alert"></p>
+  <script>
+    // credentials.json is written by serve.sh from APP_USER and APP_PASSWORD
+    document.getElementById('login-form').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const cred = await (await fetch('credentials.json')).json();
+      const ok = document.getElementById('user').value === cred.user &&
+                 document.getElementById('password').value === cred.password;
+      if (ok) {
+        sessionStorage.setItem('verify-signed-in', '1');
+        sessionStorage.setItem('verify-signed-in-user', document.getElementById('user').value);
+        location.href = 'index.html';
+      } else {
+        document.getElementById('message').textContent = 'Login failed';
+      }
+    });
+  </script>
+</body>
+</html>

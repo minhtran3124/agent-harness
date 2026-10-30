@@ -1,0 +1,17 @@
+{
+  "name": "agent-harness",
+  "owner": {
+    "name": "Minh Tran"
+  },
+  "description": "Skill framework for Claude Code: triage, plan, implement, review, ship.",
+  "plugins": [
+    {
+      "name": "harness",
+      "source": "./plugins/harness",
+      "description": "Skill framework for Claude Code: triage, plan, implement, review, ship.",
+      "author": {
+        "name": "Minh Tran"
+      }
+    }
+  ]
+}

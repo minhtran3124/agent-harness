@@ -1,6 +1,6 @@
 #!/bin/bash
 # Doc-truth lint: the core docs must not reference paths that do not exist, and the
-# CLAUDE.md hook table must agree with settings.json registration. Mechanizes the
+# CLAUDE.md hook table must agree with plugins/harness/hooks/hooks.json. Mechanizes the
 # manual docs-vs-code audit (PR #9 and PR #10 were both drift-repair PRs — this makes
 # the third drift a CI failure instead of a human re-audit).
 #
@@ -9,29 +9,29 @@
 #   2. Backticked tokens containing `/` whose first segment is a known repo root —
 #      prose mentions of paths. Unknown roots (example paths, upstream repo slugs) are
 #      out of scope. Placeholders (<>, *, [], {}, $) and specs/ (gitignored by design)
-#      are skipped. `.claude/...` maps to the root source it is derived from.
-#      A path not found at the root is also tried as skills/<path> and skills/*/<path>
+#      are skipped. `.claude/...` is a consumer's own folder and is stripped.
+#      A path not found at the root is also tried under plugins/harness/, as skills/<path>
+#      and as skills/*/<path>
 #      (per-skill docs reference their own files relative to the skill dir).
-#   3. CLAUDE.md hook table: every `hook.sh` row exists in hooks/; ✅ rows are
-#      registered in settings.json, ⬜ rows are not; every hooks/*.sh appears in the
-#      table; every command in settings.json exists on disk.
+#   3. CLAUDE.md hook table: every `hook.sh` row exists in plugins/harness/hooks/; ✅ rows
+#      are registered in hooks/hooks.json, ⬜ rows are not; every hooks/*.sh appears in the
+#      table; every script hooks.json registers exists; the repo's settings.json wires no hooks.
+#   4. Plugin docs: each backticked path in plugins/harness/**/*.md resolves inside the plugin.
 #
 # Known limitations: bare tokens without a slash (e.g. `.mcp.json`) are only caught
 # when written as markdown links; code-block contents are scanned like prose.
 set -u
 cd "$(dirname "$0")/.." || exit 1
 
-# Scope: the docs an agent actually loads. rules/*.md load via .claude/rules/ (always-on
-# or path-scoped by `paths:` frontmatter), and agents/*.md is read by every execution subagent — so a dangling
-# path there misleads exactly as much as one in CLAUDE.md. Both were unlinted until
-# PR #119 found stale skills/xia2/PROJECT.md pointers surviving in agents/ precisely
-# because this list did not reach them.
-# nullglob so an empty rules/ or agents/ yields no entries instead of a literal glob
-# that would then be reported as a missing doc.
+# Scope: the docs an agent actually loads. The plugin's rules/*.md and agents/*.md reach every
+# execution subagent, so a dangling path there misleads exactly as much as one in CLAUDE.md.
+# nullglob so an empty folder yields no entries instead of a literal glob that would then be
+# reported as a missing doc.
+PLUGIN=plugins/harness
 shopt -s nullglob
-DOCS=(CLAUDE.md README.md HARNESS.md skills/README.md agents/*.md rules/*.md)
+DOCS=(CLAUDE.md docs/hooks.md README.md HARNESS.md $PLUGIN/skills/README.md agents/*.md $PLUGIN/agents/*.md $PLUGIN/rules/*.md)
 shopt -u nullglob
-KNOWN_ROOTS="skills rules hooks docs templates agents scripts tests xia2 .github .claude"
+KNOWN_ROOTS="plugins skills rules hooks docs templates agents scripts tests xia2 .github .claude"
 FAILED=0
 err() { printf '  ✗ %s\n' "$1"; FAILED=1; }
 
@@ -42,11 +42,14 @@ check_path() { # check_path <doc> <raw-path>
     ''|http://*|https://*|mailto:*|'~'*) return ;;
     *'<'*|*'>'*|*'*'*|*'{'*|*'['*|*'$'*|*'…'*) return ;;   # placeholders / globs / vars
     specs/*) return ;;                                      # local-only by design
-    .claude/*) p="${p#.claude/}" ;;                         # derived from the root source
+    agents/PROJECT.md) return ;;                            # legacy file: setup migrates it, test-runner falls back to it
+    .claude/*) p="${p#.claude/}" ;;                         # a consumer's own .claude/ folder
   esac
   [ -e "$p" ] && return
-  [ -e "skills/$p" ] && return
-  compgen -G "skills/*/$p" >/dev/null 2>&1 && return
+  # Docs inside the plugin cite plugin paths relative to the plugin root or a skill dir.
+  [ -e "$PLUGIN/$p" ] && return
+  [ -e "$PLUGIN/skills/$p" ] && return
+  compgen -G "$PLUGIN/skills/*/$p" >/dev/null 2>&1 && return
   err "$doc references missing path: $p"
 }
 
@@ -69,96 +72,96 @@ for doc in "${DOCS[@]}"; do
   done < <(grep -oE '`[^` ]*/[^` ]*`' "$doc" | tr -d '`' | sort -u)
 done
 
-# ---- 3: CLAUDE.md hook table vs hooks/ vs settings.json ----
+# ---- 3: CLAUDE.md hook table vs the plugin's hooks/ vs hooks/hooks.json ----
+HOOKS_JSON=$PLUGIN/hooks/hooks.json
+REGISTERED=""
+if [ -f "$HOOKS_JSON" ]; then
+  # Script names the plugin registers: every ".sh" word in a hook command or its args.
+  REGISTERED=$(jq -r '.hooks[]?[]?.hooks[]? | (.command // empty), (.args[]? // empty)' "$HOOKS_JSON" 2>/dev/null \
+    | grep -oE '[A-Za-z0-9_./${}-]+\.sh' | sed -E 's#.*/##' | sort -u)
+else
+  err "$HOOKS_JSON is missing"
+fi
 TABLE_HOOKS=$(grep -oE '^\| `[a-z0-9_-]+\.sh`' CLAUDE.md | tr -d '|` ')
 for h in $TABLE_HOOKS; do
-  [ -f "hooks/$h" ] || err "CLAUDE.md hook table references missing hooks/$h"
+  [ -f "$PLUGIN/hooks/$h" ] || err "CLAUDE.md hook table references missing $PLUGIN/hooks/$h"
   row=$(grep -E "^\| \`$h\`" CLAUDE.md)
   if echo "$row" | grep -q '✅'; then
-    grep -q "hooks/$h" settings.json || err "hook table says '$h' is wired but it is not in settings.json"
+    echo "$REGISTERED" | grep -qx "$h" || err "hook table says '$h' is wired but it is not in $HOOKS_JSON"
   else
-    grep -q "hooks/$h" settings.json && err "hook table says '$h' is dormant but settings.json registers it"
+    echo "$REGISTERED" | grep -qx "$h" && err "hook table says '$h' is dormant but $HOOKS_JSON registers it"
   fi
 done
-for f in hooks/*.sh; do
+for f in $PLUGIN/hooks/*.sh; do
+  [ -f "$f" ] || continue
   h=$(basename "$f")
-  echo "$TABLE_HOOKS" | grep -qx "$h" || err "hooks/$h exists but is missing from the CLAUDE.md hook table"
+  echo "$TABLE_HOOKS" | grep -qx "$h" || err "$PLUGIN/hooks/$h exists but is missing from the CLAUDE.md hook table"
 done
-while IFS= read -r cmd; do
-  case "$cmd" in
-    '$CLAUDE_PROJECT_DIR/'*) cmd="${cmd#\$CLAUDE_PROJECT_DIR/}"; cmd="${cmd#.claude/}" ;;
-  esac
-  [ -f "$cmd" ] || err "settings.json registers a command that does not exist: $cmd"
-done < <(jq -r '.hooks[]?[]?.hooks[]?.command // empty' settings.json)
+for h in $REGISTERED; do
+  [ -f "$PLUGIN/hooks/$h" ] || err "$HOOKS_JSON registers a script that does not exist: $h"
+done
+# A hook wired in both the plugin and the repo's settings.json would run twice.
+if [ -f settings.json ] && jq -e '(.hooks // {}) | length > 0' settings.json >/dev/null 2>&1; then
+  err "settings.json wires hooks; the plugin's hooks.json already does, so each would run twice"
+fi
 
-# ---- 4: consumer-side truth — lint the DERIVED tree, not just the source ----
-# Checks 1-2 normalize `.claude/x` back to the root source it derives from, so they are blind to
-# the failure that actually bites: a doc naming a helper that never deploys. Every `scripts/*`
-# gate reference was dangling in every consuming repo for months while this lint reported exit 0,
-# because it runs where scripts/ exists. A gate is only true when it runs in the environment it
-# protects — so deploy into a scratch target and re-check the paths from there.
-#
-# Convention this enforces: a doc MAY cite a harness-repo-only path, but the citation must say so
-# on the same line ("the harness repo's `scripts/check_manifest.py`"). Anything else must resolve
-# in the consumer.
-if [ "${SKIP_DERIVED_LINT:-0}" != "1" ] && command -v python3 >/dev/null 2>&1; then
-  DERIVED_TGT=$(mktemp -d)
-  trap 'rm -rf "$DERIVED_TGT"' EXIT
-  if bash scripts/deploy-harness.sh --target "$DERIVED_TGT" --yes </dev/null >/dev/null 2>&1; then
-    derived_out=$(python3 - "$DERIVED_TGT" <<'PYEOF'
+# ---- 4: plugin-side truth — lint the plugin tree, which is what a consumer receives ----
+# Checks 1-2 resolve a path against the whole repo, so a plugin doc naming a file that exists
+# only in the repo (scripts/run-tests.sh, docs/...) would pass while it is dangling in every
+# consuming repo. Here each plugin doc is checked against the plugin tree alone.
+# `${CLAUDE_PLUGIN_ROOT}/x` resolves from the plugin root and `${CLAUDE_SKILL_DIR}/x` from the
+# skill's own folder. A doc MAY cite a repo-only path if the citation says "harness repo" or
+# "harness checkout" within a line of it.
+if [ "${SKIP_PLUGIN_LINT:-0}" != "1" ] && [ -d "$PLUGIN" ] && command -v python3 >/dev/null 2>&1; then
+  plugin_out=$(python3 - "$PLUGIN" <<'PYEOF'
 import os, re, sys
-tgt = sys.argv[1]; claude = os.path.join(tgt, ".claude")
-ROOTS = ("skills/", "rules/", "hooks/", "agents/", "templates/", "runtime/", "scripts/", ".claude/")
-# Paths a consumer legitimately does not have: illustrative examples, and artifacts made at run time.
-SKIP = {"foo.py", "plan.md", "kb-embedding/voyage.md", "techstacks/conventions.md"}
-SKIP_SUFFIX = (".plan-review.json", "break-glass-log.md", "review-receipt.json")
-# Scan INSIDE each backtick span rather than only spans that are exactly a path: the highest-risk
-# form is a command (python3 scripts/verify_summary.py --lane <slug>) inside a code span, which
-# would miss entirely -- and an unshipped helper invoked that way is precisely the bug this checks.
-BT = chr(96)   # literal backtick, built at runtime (see note above)
+plug = sys.argv[1]
+ROOTS = ("skills/", "rules/", "hooks/", "agents/", "templates/", "workflows/", "scripts/")
+# Paths a consumer legitimately does not have: illustrative examples, run-time artifacts, and the
+# consumer's own files (agents/PROJECT.md is the legacy file that setup migrates and test-runner still falls back to).
+SKIP = {"foo.py", "plan.md", "kb-embedding/voyage.md", "agents/PROJECT.md"}
+BT = chr(96)   # literal backtick, built at runtime
 SPAN = re.compile(BT + "([^" + BT + "]+)" + BT)
 PATH = re.compile(r"(?<![A-Za-z0-9_./-])([A-Za-z0-9_.][A-Za-z0-9_./-]*\.(?:md|py|sh|json|ini|yml))")
 bad = []
-for dp, _, fs in os.walk(claude):
+for dp, _, fs in os.walk(plug):
     for fn in fs:
-        if not fn.endswith(".md") or ".harness-incoming" in fn or ".proposed" in fn:
-            continue
+        if not fn.endswith(".md") or "tests" in dp.split(os.sep):
+            continue   # skills/*/tests/ hold dev fixtures, not instructions
         full = os.path.join(dp, fn)
-        rel = os.path.relpath(full, claude)
+        rel = os.path.relpath(full, plug)
+        parts = rel.split(os.sep)
+        skill_rel = "/".join(parts[:2]) if parts[0] == "skills" and len(parts) > 2 else None
         lines = open(full, encoding="utf-8", errors="ignore").read().split("\n")
         for i, line in enumerate(lines, 1):
-            # A doc MAY cite a harness-only path if it says so -- but prose wraps, so the marker
-            # is looked for across the neighbouring lines, not just this one.
             window = " ".join(lines[max(0, i - 2):i + 1])
             if "harness repo" in window or "harness checkout" in window:
                 continue
             for span in SPAN.findall(line):
+                span = span.replace("${CLAUDE_PLUGIN_ROOT}/", "")
+                if "${CLAUDE_SKILL_DIR}/" in span:
+                    if skill_rel is None:
+                        continue
+                    span = span.replace("${CLAUDE_SKILL_DIR}/", skill_rel + "/")
                 for m in PATH.finditer(span):
                     path = m.group(1)
-                    if not path.startswith(ROOTS) or "<" in path:
+                    if not path.startswith(ROOTS) or "<" in path or path in SKIP:
                         continue
-                    if path in SKIP or path.endswith(SKIP_SUFFIX):
-                        continue
-                    cand = (os.path.join(tgt, path) if path.startswith(".claude/")
-                            else os.path.join(claude, path))
-                    if not os.path.exists(cand):
+                    if not os.path.exists(os.path.join(plug, path)):
                         bad.append(f"{rel}:{i} -> {path}")
 for b in sorted(set(bad)):
     print(b)
 PYEOF
-    )
-    if [ -n "$derived_out" ]; then
-      while IFS= read -r line; do
-        err "derived tree: $line does not exist in a consuming repo (ship it via CONSUMER_SCRIPTS, or say 'harness repo' nearby)"
-      done <<< "$derived_out"
-    fi
-  else
-    echo "  ⚠ doc-truth: derived-tree check skipped — deploy-harness.sh failed on a scratch target" >&2
+  )
+  if [ -n "$plugin_out" ]; then
+    while IFS= read -r line; do
+      err "plugin tree: $line does not exist in the plugin (a consuming repo would not have it; say 'harness repo' nearby if it is repo-only)"
+    done <<< "$plugin_out"
   fi
 fi
 
 if [ "$FAILED" -eq 0 ]; then
-  echo "  ✓ doc-truth lint: source + derived paths exist; hook table matches settings.json"
+  echo "  ✓ doc-truth lint: doc paths exist; plugin docs resolve inside the plugin; hook table matches hooks.json"
   exit 0
 fi
 exit 1

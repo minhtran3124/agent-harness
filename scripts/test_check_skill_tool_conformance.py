@@ -21,7 +21,6 @@ def build(
     root: Path, skill_md: str, *, references: dict[str, str] | None = None
 ) -> None:
     (root / "skills" / "alpha" / "references").mkdir(parents=True, exist_ok=True)
-    (root / "harness-manifest.json").write_text(json.dumps({"skills": ["alpha"]}))
     (root / "skills" / "alpha" / "SKILL.md").write_text(skill_md)
     for name, text in (references or {}).items():
         (root / "skills" / "alpha" / "references" / name).write_text(text)
@@ -132,7 +131,7 @@ def test_native_tool_stands_in_for_its_shell_equivalent(tmp_path):
 
 
 def test_deployed_path_rewrite_still_matches(tmp_path):
-    """deploy-harness.sh rewrites scripts/x.py to .claude/scripts/x.py in derived docs."""
+    """A .claude/-prefixed command still matches a grant written without the prefix."""
     build(
         tmp_path,
         skill(
@@ -184,7 +183,6 @@ def test_frontmatter_vocabulary_is_not_scanned(tmp_path):
 def test_prompt_payloads_are_out_of_scope(tmp_path):
     """A *prompt*.md is dispatched and runs under the SUBAGENT's grant, not the skill's."""
     (tmp_path / "skills" / "alpha").mkdir(parents=True)
-    (tmp_path / "harness-manifest.json").write_text(json.dumps({"skills": ["alpha"]}))
     (tmp_path / "skills" / "alpha" / "SKILL.md").write_text(skill("Read", "Body."))
     (tmp_path / "skills" / "alpha" / "some-prompt.md").write_text(
         "Run `git diff HEAD~1`.\n"
@@ -206,7 +204,6 @@ def test_reported_line_numbers_are_absolute(tmp_path):
 
 def test_empty_register_fails_closed(tmp_path):
     """Exit 2, not 1: checking nothing is "could not run", not "ran and found gaps"."""
-    (tmp_path / "harness-manifest.json").write_text(json.dumps({"skills": []}))
     result = run(tmp_path)
     assert result.returncode == 2
     assert "refusing to report clean" in result.stderr
@@ -277,36 +274,19 @@ def test_default_output_is_unchanged_by_the_flag(tmp_path):
     assert "{" not in human.stderr
 
 
-# ── correctness-review fixes: every finding below was reproduced by a review angle ───────
+# ── review-angle fixes: every finding below was reproduced by a review angle ───────
 
 
-def test_json_is_emitted_on_missing_manifest(tmp_path):
+def test_json_is_emitted_when_no_skills_exist(tmp_path):
     """Fail-closed paths are exactly where a machine consumer must not read empty stdout."""
     result = run_json(tmp_path)
     assert result.returncode == 2
     payload = json.loads(result.stdout)
     assert payload["ok"] is False
-    assert payload["findings"][0]["kind"] == "manifest-missing"
-
-
-def test_json_is_emitted_on_unparseable_manifest(tmp_path):
-    """Previously an uncaught JSONDecodeError traceback with empty stdout."""
-    (tmp_path / "harness-manifest.json").write_text("{oops")
-    result = run_json(tmp_path)
-    assert result.returncode == 2
-    assert json.loads(result.stdout)["findings"][0]["kind"] == "manifest-unparseable"
-
-
-def test_json_is_emitted_on_non_object_manifest(tmp_path):
-    """Previously an uncaught AttributeError: 'list' object has no attribute 'get'."""
-    (tmp_path / "harness-manifest.json").write_text('["alpha"]')
-    result = run_json(tmp_path)
-    assert result.returncode == 2
-    assert json.loads(result.stdout)["findings"][0]["kind"] == "manifest-not-object"
+    assert payload["findings"][0]["kind"] == "empty-register"
 
 
 def test_json_is_emitted_on_empty_register(tmp_path):
-    (tmp_path / "harness-manifest.json").write_text(json.dumps({"skills": []}))
     result = run_json(tmp_path)
     assert result.returncode == 2
     assert json.loads(result.stdout)["findings"][0]["kind"] == "empty-register"

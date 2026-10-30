@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Inventory the registered skill prompt surface and guard its baseline.
+"""Inventory the skill prompt surface and guard its baseline.
 
 The audit deliberately measures repository artifacts, not model output.  It discovers every
-registered SKILL.md and every Markdown companion file whose name contains ``prompt`` beneath
+skills/*/SKILL.md and every Markdown companion file whose name contains ``prompt`` beneath
 that skill directory.  The resulting JSON is stable enough to commit as a pre/post prompt
 surface baseline.
 """
@@ -56,11 +56,7 @@ def prompt_paths(skill_dir: Path) -> Iterable[Path]:
 
 
 def inventory(root: Path) -> dict[str, object]:
-    manifest_path = root / "harness-manifest.json"
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    registered = manifest.get("skills", [])
-    if not isinstance(registered, list) or not all(isinstance(name, str) for name in registered):
-        raise ValueError("harness-manifest.json skills must be a list of strings")
+    registered = [p.parent.name for p in sorted((root / "skills").glob("*/SKILL.md"))]
 
     problems: list[str] = []
     skills: list[dict[str, object]] = []
@@ -69,9 +65,6 @@ def inventory(root: Path) -> dict[str, object]:
 
     for name in sorted(registered):
         skill_path = root / "skills" / name / "SKILL.md"
-        if not skill_path.is_file():
-            problems.append(f"registered skill missing SKILL.md: skills/{name}/SKILL.md")
-            continue
         stats = count_text(skill_path)
         text = skill_path.read_text(encoding="utf-8")
         desc_len = description_length(text)
@@ -80,10 +73,18 @@ def inventory(root: Path) -> dict[str, object]:
                 f"skill description exceeds {DESCRIPTION_CHARACTER_CEILING} characters: "
                 f"skills/{name}/SKILL.md ({desc_len})"
             )
-        if stats["words"] > SKILL_WORD_CEILING:
+        # A vendored skill keeps its upstream text. UPSTREAM.md marks it, so the ceiling does not apply.
+        if stats["words"] > SKILL_WORD_CEILING and (skill_path.parent / "UPSTREAM.md").is_file():
+            print(f"prompt-audit: skills/{name}/SKILL.md ({stats['words']}): vendored, exempt "
+                  f"from {SKILL_WORD_CEILING}-word ceiling", file=sys.stderr)
+        elif stats["words"] > SKILL_WORD_CEILING:
             problems.append(
                 f"skill exceeds {SKILL_WORD_CEILING}-word progressive-disclosure ceiling: "
-                f"skills/{name}/SKILL.md ({stats['words']})"
+                f"skills/{name}/SKILL.md ({stats['words']})\n"
+                "  hint: list each sentence; delete a whole sentence the model already does by default\n"
+                "  (one that restates a file the skill makes it read counts);\n"
+                "  move branch-only blocks to references/; never shorten a sentence with a condition word; "
+                "see docs/solutions/harness/deletion-test-for-word-ceiling.md"
             )
         companions = []
         for prompt in prompt_paths(skill_path.parent):
@@ -192,7 +193,7 @@ def comparison(before: dict[str, object], after: dict[str, object]) -> tuple[boo
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parent.parent)
+    parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parent.parent / "plugins" / "harness")
     parser.add_argument("--json", action="store_true", help="print JSON inventory")
     parser.add_argument("--markdown", action="store_true", help="print Markdown summary")
     parser.add_argument("--write-json", type=Path, help="write JSON inventory to this path")

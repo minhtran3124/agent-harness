@@ -1,8 +1,8 @@
 # HARNESS.md — How this repo's workflow works
 
-This repo is a **skills framework with a risk/trust harness on top**. This file explains, in plain terms, what "the harness" is and how it shapes the way work flows.
+This repo is a **skills framework with a thin judgment harness on top**. This file explains, in plain terms, what "the harness" is and how it shapes the way work flows.
 
-For the full skill inventory and handoff map see [`skills/README.md`](skills/README.md).
+For the full skill inventory and handoff map see [`plugins/harness/skills/README.md`](plugins/harness/skills/README.md).
 
 ---
 
@@ -10,78 +10,50 @@ For the full skill inventory and handoff map see [`skills/README.md`](skills/REA
 
 | Layer | What it is | Lives in |
 |---|---|---|
-| **The engine** (skills) | Invocable `/skills` that *do* the work — brainstorm, research, plan, build, review, ship. Each has hard gates and a defined handoff. | `skills/`, `agents/` |
-| **The harness** (risk/trust) | A thin control layer that decides, *before* the engine runs, **how much process** a change needs and **when to involve a human**. | `skills/feature-intake/`, `hooks/`, `rules/`, `specs/<slug>/SUMMARY.md` |
+| **The engine** (skills) | Invocable `/skills` that *do* the work: intake, design, research, plan, build, review, ship. Each has a defined handoff. | `plugins/harness/skills/`, `plugins/harness/agents/` |
+| **The harness** | A small control layer: one behavioral rule, a few hooks, and permission denies. | `plugins/harness/rules/behavior.md`, `plugins/harness/hooks/`, `settings.json` |
 
-The engine answers *"how do I build this?"* The harness answers *"how careful should I be, and
-who needs to approve?"*
-
-### Runtime boundary
-
-Claude Code is the established runtime. The **Codex advisory alpha** renders the same semantic
-skills, agents, and hook bodies through checked Codex bindings, but this is **not peer enforcement**
-or a GA claim. Only Codex CLI 0.147.0 on macOS arm64 has the complete observed alpha evidence;
-Linux and WSL stay advisory until equivalent runtime evidence is captured.
-
-The adapter is installed separately with `scripts/install-codex-harness.sh` and never replaces the
-Claude `.claude/` deployment. After install or any CLI/config/trust change, run the outside-hook
-doctor. An `enforced` result is local and evidence-bound; `advisory` names a degraded or unknown
-guarantee; `unsupported` names a missing precondition. See `docs/codex-alpha-install.md` for the
-lifecycle and trust-review procedure.
+Claude Code is the only supported runtime.
 
 ## 2. The one principle everything turns on
 
-> **Ceremony scales with risk. Human interruption scales with ambiguity.**
+> **Ceremony scales with the size of the change. Human interruption scales with ambiguity.**
 
-These are two independent dials:
-- **Risk** decides how much *proof and process* (planning, reviews, evidence) a change carries.
-- **Ambiguity / confidence** decides whether a *human* is asked — never to classify risk, only to confirm intent or authorize a dangerous boundary.
-
-A high-risk-but-clear change runs autonomously through heavy proof. A tiny-but-unclear change stops to ask. Risk ≠ interruption.
+A small clear change runs straight through. An important or unclear one stops and asks the owner.
 
 ## 3. How a change flows
 
 ```
-request → /feature-intake → Lane + Confidence → route → build → hooks corroborate → ship
+ticket → /intake → verdict + depth → build → review → ship
 ```
 
-1. **`/feature-intake` runs first.** It classifies the request with a 10-flag risk checklist +
-   hard gates, and writes `Lane:` and `confidence:` to `specs/<slug>/SUMMARY.md`.
-2. **The lane picks the path:**
+1. **`/intake` runs first.** It returns a verdict (READY, CONFIRM, GRILL or BLOCKED) and a depth (S, M or L).
+2. **The depth picks the path:**
 
-   | Lane | Path | Plan? | Human gate |
-   |---|---|---|---|
-   | **tiny** | fresh branch, then direct `Edit` | no | none (hooks are the safety net) |
-   | **normal** | `/subagent-driven-development`, one task reviewer with spec + quality verdicts | yes | only if low confidence / ambiguous |
-   | **high-risk** | full chain: `/brainstorming → /xia2 → /writing-plans → build` | yes | only on ambiguity or a hard gate |
+   | Depth | Path |
+   |---|---|
+   | **S** | `implement` with the plan in the prompt |
+   | **M** | `writing-plans`, then `implement` |
+   | **L** | `brainstorming`, `xia2`, `writing-plans`, then `implement` |
 
-3. **Confidence decides escalation.** Low confidence (any lane), or a hard gate, → stop and ask (recorded in `specs/<slug>/ESCALATIONS.md`, deny-on-no-response).
-4. **Hooks corroborate the claim.** At commit time the diff is checked against the declared lane — the agent can't classify a risky change as "tiny" and slip it through.
+   A bug fix first runs `diagnosing-bugs` (root cause proved in six gated phases before any fix).
+3. **Review and ship.** `/code-review` and `intent-review` check the diff. `finishing-a-development-branch` pushes and opens the PR. A human merges.
 
-## 4. How the harness impacts the workflow
+## 4. What is enforced and what is judgment
 
-- **Less ceremony on small work.** Typo/copy/narrow edits skip planning entirely (tiny lane).
-- **More proof on risky work.** Auth, migrations, schema, public contracts, and high-blast files force `high-risk` — full plan + reviews + a recorded rollback.
-- **The human is asked less, but at the right moments.** Approval is gated on *ambiguity*, not on every step. Clear work proceeds with a notice; unclear work blocks.
-- **Claims must be backed by evidence.** "Done" needs a re-runnable `### Verify` artifact in `SUMMARY.md` — a row per check actually run, never a command that wasn't.
-- **Rules are enforced by code, not hope.** What can be mechanized is a hook (see `CLAUDE.md` Hooks table); convention is the residue, not the rule.
+- **Enforced by code:** `plugins/harness/hooks/secrets-scan.sh` blocks a commit with a staged secret or `.env`. `settings.json` `permissions.deny` blocks `.env` reads, force-push and push to `main`/`master`. See `docs/hooks.md`.
+- **Judgment, set by `plugins/harness/rules/behavior.md`:** cite your search surface before claiming absence, name an ambiguity instead of resolving it silently, confirm an interface before you use it, deliver the whole asked scope, and write plainly.
+- **Claims need evidence.** "Done" needs a command that was actually run and its exit code. A bug needs a failing repro test first, then the fix.
 
-## 5. The "hard gates"
+## 5. Stop and ask the owner when
 
-These categories always force `high-risk` and can only be lowered by a human narrowing scope:
-
-`auth · authorization · data-loss/migration · audit/security · external provider · public
-contract · weakening validation · high-blast file` (e.g. `settings.json`, any `hooks/*`, a core
-skill engine).
-
-A hard gate discovered *mid-task* escalates regardless of the original lane.
+A change touches auth or authorization, data migration or deletion, a public contract, an external provider, `settings.json` or `hooks/`, or removes a test or a feature. Also stop when the direction is ambiguous. No hook decides this; the agent applies it as judgment.
 
 ## 6. Pointers
 
 | Want to… | Read |
 |---|---|
-| See all skills + the handoff map | `skills/README.md` |
-| Understand routing / lanes in detail | `skills/feature-intake/SKILL.md`, `rules/orchestration.md` |
-| Know what a hook enforces | `CLAUDE.md` → Hooks table |
-| See the autonomy vs. ask-the-human rules | `rules/auto-correct-scope.md` |
-| Install or diagnose the Codex advisory alpha | `docs/codex-alpha-install.md` |
+| See all skills + the handoff map | `plugins/harness/skills/README.md` |
+| Understand the intake verdict and depth | `plugins/harness/skills/intake/SKILL.md` |
+| Know what a hook enforces | `docs/hooks.md`, `CLAUDE.md` → Hooks table |
+| See the behavioral rule | `plugins/harness/rules/behavior.md` |
