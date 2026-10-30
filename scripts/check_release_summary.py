@@ -15,7 +15,7 @@ import json
 import re
 import sys
 
-CITE = re.compile(r"\(#\d+(?:\s*,\s*#?\d+)*\)")
+CITE = re.compile(r"\((#\d+(?:\s*,\s*#\d+)*)[^)]*\)")
 NUM = re.compile(r"\d+")
 TODO = "[NEEDS HUMAN]"
 ACTION = "What you need to do:"

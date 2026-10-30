@@ -19,6 +19,10 @@ t "checker accepts a grouped citation of known PRs"
 sed 's/(#15)/(#15, #16)/' "$FX/summary-draft.md" > "$TMP/h.md"
 python3 "$CHK" "$FX/fact-list.json" "$TMP/h.md" >/dev/null && pass || fail "valid grouped citation rejected"
 
+t "checker ignores a bare year after a citation in the same parentheses"
+sed 's/(#15)/(#15, 2024)/' "$FX/summary-draft.md" > "$TMP/y.md"
+python3 "$CHK" "$FX/fact-list.json" "$TMP/y.md" >/dev/null && pass || fail "prose year flagged as PR"
+
 t "checker rejects a PR that is only in excluded"
 sed 's/(#16)/(#14)/' "$FX/summary-draft.md" > "$TMP/e.md"
 python3 "$CHK" "$FX/fact-list.json" "$TMP/e.md" >/dev/null && fail "excluded PR accepted" || pass
