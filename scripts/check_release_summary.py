@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Check a release-summary draft against its fact-list JSON.
 
-Verifies:        every (#n) in the draft is a PR in the fact list (breaking and groups);
+Verifies:        every PR number in a citation group, "(#n)", "(#n, #m)", "(#n and #m)",
+                 "(#n; #m)" or "(#n, m)", is a PR in the fact list (breaking and groups);
+                 a group with prose, such as "(#1 priority item)", is not a citation, and a 4-digit number is a year;
                  every bullet under "## Breaking changes" has an indented
                  "What you need to do:" line; every PR in the fact list's `breaking` array is a bullet there;
                  every other bullet cites (#n) or carries
@@ -16,8 +18,10 @@ import json
 import re
 import sys
 
-CITE = re.compile(r"\((#\d+(?:\s*,\s*#\d+)*)[^)]*\)")
-NUM = re.compile(r"\d+")
+PAREN = re.compile(r"\(([^()]*)\)")
+SEP = re.compile(r"\s*(?:,|;|\band\b)\s*")
+PR_TOKEN = re.compile(r"#(\d+)")
+BARE = re.compile(r"\d+")
 TODO = "[NEEDS HUMAN]"
 ACTION = "What you need to do:"
 
@@ -29,10 +33,32 @@ def pr_set(facts: dict) -> set[int]:
     return {i["pr"] for i in items if isinstance(i.get("pr"), int)}
 
 
+def citations(text: str) -> list[int]:
+    """PR numbers of every citation group in text.
+
+    A parenthesised group is a citation only when every token is a PR token
+    (#n) or, after the first, a bare number; the first token must be #n. A bare
+    number of 4+ digits is a year and is ignored. Prose in the group makes it
+    not a citation.
+    """
+    found: list[int] = []
+    for m in PAREN.finditer(text):
+        tokens = [t for t in SEP.split(m.group(1).strip()) if t]
+        if not tokens or not PR_TOKEN.fullmatch(tokens[0]):
+            continue
+        if not all(PR_TOKEN.fullmatch(t) or BARE.fullmatch(t) for t in tokens):
+            continue
+        for t in tokens:
+            digits = t.lstrip("#")
+            if t.startswith("#") or len(digits) <= 3:
+                found.append(int(digits))
+    return found
+
+
 def check(facts: dict, draft: str) -> list[str]:
     errors: list[str] = []
     prs = pr_set(facts)
-    for n in sorted({int(n) for c in CITE.findall(draft) for n in NUM.findall(c)}):
+    for n in sorted(set(citations(draft))):
         if n not in prs:
             errors.append(f"(#{n}) is not a PR in the fact list")
     lines = draft.splitlines()
@@ -47,11 +73,11 @@ def check(facts: dict, draft: str) -> list[str]:
             continue
         if stripped[2:].startswith(ACTION):
             continue
-        if not CITE.search(stripped) and TODO not in stripped:
+        if not citations(stripped) and TODO not in stripped:
             errors.append(f"line {idx + 1}: bullet has no (#n) and no {TODO}")
         top_level = not line.startswith((" ", "\t"))
         if section == "breaking changes" and top_level:
-            listed.update(int(n) for c in CITE.findall(stripped) for n in NUM.findall(c))
+            listed.update(citations(stripped))
             nxt = next((l for l in lines[idx + 1:] if l.strip()), "")
             if not (nxt.startswith((" ", "\t")) and nxt.strip().startswith(ACTION)):
                 errors.append(f"line {idx + 1}: breaking item has no '{ACTION}' line")
