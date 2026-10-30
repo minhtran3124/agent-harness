@@ -1576,7 +1576,7 @@ test('cg1: the research prompt has the codegraph init step, both env vars, the c
   assert(p.includes('command -v codegraph'), 'presence check')
   assert(p.includes('codegraph init --yes'), 'init step')
   assert(p.includes('CODEGRAPH_NO_DAEMON=1') && p.includes('CODEGRAPH_TELEMETRY=0'), 'env vars')
-  assert(/rm -rf \S*research-1\/\.codegraph/.test(p), 'cleanup of the .codegraph dir in the research worktree')
+  assert((p.match(/rm -rf "[^"]*research-1\/\.codegraph"/g) || []).length === 2, 'quoted rm -rf of the .codegraph dir before init and as the last step')
   assert(p.includes('If codegraph is missing or a codegraph command fails'), 'branch for a machine without codegraph')
   assert(p.includes('git grep') && p.includes('record no decision'), 'carry on with git grep, no decision')
 })
