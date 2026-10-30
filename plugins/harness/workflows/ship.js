@@ -26,6 +26,8 @@ function stageModel(stage, depth) {
 }
 const FIX_THRESHOLD = 50   // a review finding scoring at or above this gets one fix agent
 const MAX_FIX_ROUNDS = 2   // hard cap on fix rounds in the review loop
+const CI_WAIT_MS = 600000  // the ticket gate waits at most this long for CI (one Bash call)
+const CI_INTERVAL = 30     // seconds between gh pr checks polls
 // Paths whose change makes the review level 'high'.
 const RISKY_PATH = /(^|\/)(hooks|migrations?|auth|security|secrets?|\.github\/workflows)(\/|$)|settings\.json$|\.sql$|\.env/i
 const LARGE_DIFF_LINES = 800, SMALL_DIFF_LINES = 150, LARGE_DIFF_FILES = 25
@@ -120,6 +122,10 @@ const MERGE_SCHEMA = stageSchema({
   failed: { type: 'array', items: { type: 'object', properties: { n: NUM, reason: STR }, required: ['n', 'reason'] } },
 }, ['merged', 'failed'])
 const FINAL_PR_SCHEMA = stageSchema({ pr: NUM, url: STR }, ['pr'])
+// CI: the agent only reports the checks; the script judges them. bucket is the gh pr checks bucket (pass, fail, pending, skipping, cancel).
+const CI_SCHEMA = { type: 'object',
+  properties: { checks: { type: 'array', items: { type: 'object', properties: { name: STR, bucket: STR }, required: ['name', 'bucket'] } }, headRefOid: STR, note: STR },
+  required: ['checks'] }
 const DIFFSTAT_SCHEMA = { type: 'object',
   properties: { files: { type: 'array', items: { type: 'object', properties: { path: STR, added: NUM, deleted: NUM }, required: ['path', 'added', 'deleted'] } } },
   required: ['files'] }
@@ -276,11 +282,11 @@ function boundaryText(label, intent) {
     `Files this ticket names (production, test and doc files alike: a test or doc file is in bounds only when it is listed here):\n${b.files.length ? b.files.map(x => `- ${x}`).join('\n') : '- none listed'}\n${BOUNDARY_RULE}\n`
 }
 // Run-level view for the fix agents: the union over all tickets, labelled by ticket number.
-function runBoundaryText() {
-  const ns = Object.keys(boundaries)
+function runBoundaryText(only) {
+  const ns = only ? [String(only)].filter(n => boundaries[n]) : Object.keys(boundaries)
   if (!ns.length) return ''
   const body = ns.map(n => `Ticket #${n}\n` + boundaryText('', boundaries[n]).replace(`\n${BOUNDARY_RULE}\n`, '').trim()).join('\n\n')
-  return `Boundary (union over the tickets in this run):\n${body}\n` +
+  return `Boundary (${only ? `ticket #${only}` : 'union over the tickets in this run'}):\n${body}\n` +
     `The file set limits production, test and doc files alike: a test or doc file is in bounds only when the list above names it. ` +
     `A fix that would touch a file outside this set, or contradict an Out of scope line, changes nothing: return fix_status skipped and a decisions[] entry whose title starts with '${BOUNDARY_PREFIX}' and needs_review true.\n`
 }
@@ -487,6 +493,18 @@ async function stageAttach(t, fin, verifyResult) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Merge policy block (owner decision F). Every PR the workflow opens carries a "Merge: auto|human" line and a
+// readiness checklist between two markers, so a later stage can replace the block in place.
+// ---------------------------------------------------------------------------
+const MP_OPEN = '<!-- merge-policy -->', MP_CLOSE = '<!-- /merge-policy -->'
+const PENDING = { ok: false, text: 'pending' }
+function mergeBlock({ mode, ci = PENDING, review = PENDING, intent = PENDING, adrs = PENDING, uat = { ok: false, text: 'n/a' }, why = '' }) {
+  const head = mode === 'auto' ? 'Merge: auto' : mode === 'pending' ? 'Merge: auto (pending gates)' : `Merge: human${why ? ` (${why})` : ''}`
+  const row = (name, x) => `- [${x && x.ok ? 'x' : ' '}] ${name}: ${(x && x.text) || 'pending'}`
+  return [MP_OPEN, head, row('CI', ci), row('Review', review), row('Intent', intent), row('needs_review ADRs', adrs), row('UAT', uat), MP_CLOSE].join('\n')
+}
+
 function stageFinish(t, impl, verifyResult) {
   const prBase = single ? base : integBranch
   const fw = newWt(`finish-${t.n}`, null, LOCAL ? impl.branch : `${remote}/${impl.branch}`)
@@ -494,7 +512,7 @@ function stageFinish(t, impl, verifyResult) {
   const where = `Your branch ${impl.branch} is checked out in ${dir}; work there with cd ${dir}. If that path is gone, run: git -C ${repoDir} worktree add ${fw.dir} ${impl.branch}, and work in ${fw.dir} (git fetch ${remote} first).\n`
   const how = LOCAL
     ? `Local mode: do NOT push and do NOT open a pull request. Verify the branch as the skill describes, then write the PR description for base ${prBase} to .ship/pr-${t.n}.md inside the worktree (do not commit it) and return its absolute path as body_file with pr: 0.\n`
-    : `Verify, push the branch and open the pull request with base ${prBase}. The body says "Refs #${t.n}" (the final PR carries the Closes lines) and ends with the footer line. Return the PR number as pr and its url.\n`
+    : `Verify, push the branch and open the pull request with base ${prBase}. The body says "Refs #${t.n}" (the final PR carries the Closes lines), contains this merge-policy block exactly once, unchanged, and ends with the footer line. Return the PR number as pr and its url.\n${single ? mergeBlock({ mode: 'human', why: `the PR targets ${base}` }) : mergeBlock({ mode: 'pending' })}\n`
   const ver = verifyResult
     ? `Verify result: ${verifyResult.result}. Local stills: ${verifyResult.stills.join(', ') || 'none'}. Evidence stays uncommitted; a later step attaches the evidence file to the pull request.\n`
     : ''
@@ -613,6 +631,96 @@ async function writeSpecFiles(list, run, { only, label, phase }) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Per-ticket merge gate (multi-ticket remote runs only). The script judges structured results from the review,
+// the intent review and gh pr checks; the merge stage merges only a ticket whose gate passed.
+// ---------------------------------------------------------------------------
+// ci: the list gh pr checks returned. Fails closed: no checks, a failure, a cancel, a pending check or no head commit all fail.
+function judgeCi(res) {
+  const checks = res && Array.isArray(res.checks) ? res.checks : []
+  if (!checks.length) return { ok: false, text: 'no CI checks found (fails closed)' }
+  const count = b => checks.filter(c => c && c.bucket === b).length
+  const bad = checks.filter(c => !c || !['pass', 'skipping'].includes(c.bucket))
+  if (count('pending')) return { ok: false, text: `${count('pending')} check(s) still pending after the wait` }
+  if (bad.length) return { ok: false, text: `${bad.map(c => `${c && c.name || '?'}: ${c && c.bucket || '?'}`).join(', ')}` }
+  if (!count('pass')) return { ok: false, text: 'every check was skipped (fails closed)' }
+  if (!(res && typeof res.headRefOid === 'string' && res.headRefOid.trim())) return { ok: false, text: 'the PR head commit is unknown (fails closed)' }
+  return { ok: true, text: `${checks.length} check(s) green at ${res.headRefOid.slice(0, 8)}` }
+}
+
+function judgeReview(rv) {
+  if (!rv || rv.status !== 'ran') return { ok: false, text: `not run${rv && rv.reason ? ` (${rv.reason})` : ''}` }
+  const notFixed = (rv.notFixed || []).length, left = (rv.leftover || []).filter(f => f.score >= FIX_THRESHOLD).length
+  if (rv.reReviewNotRun) return { ok: false, text: `re-review not run (${rv.reReviewNotRun})` }
+  if (rv.unreviewedFix) return { ok: false, text: 'the intent fix commits were not reviewed' }
+  if (notFixed || left) return { ok: false, text: `${notFixed} not fixed, ${left} left at score ${FIX_THRESHOLD} or more` }
+  return { ok: true, text: `ran, ${(rv.fixed || []).length} fixed, nothing left` }
+}
+
+function stageCi(t, fin, ctx, label) {
+  const pr = fin.pr
+  const prompt = `${RULES}\n\nStage: ci. Read the CI result of PR ${pr} in ${repo}. Edit nothing. ${notCwd()}\n` +
+    `1. Poll until the PR has at least one check for its current head: gh pr checks ${pr} --repo ${repo} --json name,bucket (repeat every ${CI_INTERVAL} s). A push can need a moment before its checks appear.\n` +
+    `2. Then run: gh pr checks ${pr} --repo ${repo} --watch --interval ${CI_INTERVAL}\n` +
+    `Use a Bash timeout of ${CI_WAIT_MS} ms in total for steps 1 and 2. Exit code 1 (a check failed) and 8 (checks pending) are expected results, not errors: go on to step 3 anyway.\n` +
+    `3. Run: gh pr checks ${pr} --repo ${repo} --json name,bucket   and: gh pr view ${pr} --repo ${repo} --json headRefOid -q .headRefOid\n` +
+    `Return checks (one entry per check: name and bucket, copied unchanged) and headRefOid. If a command fails, return the checks you have (an empty list when none) and say why in note. Do not judge the result yourself.`
+  return call(prompt, { label, phase: 'Gate', schema: CI_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
+}
+
+// Rewrites the merge-policy block of the ticket PR body. A failure is only logged.
+async function updateMergeBlock(t, fin, ctx, block) {
+  try {
+    await call(`${RULES}\n\nStage: update the PR body. ${notCwd()}\nRead the body: gh pr view ${fin.pr} --repo ${repo} --json body -q .body\n` +
+      `Replace everything from the line ${MP_OPEN} to the line ${MP_CLOSE} (both included) with the block below, change nothing else, write the result to a temp file and run: gh pr edit ${fin.pr} --repo ${repo} --body-file <file>. ` +
+      `If the body has no such block, add the block at the top. Return status ok.\n\n${block}`,
+      { label: `${ctx.labelPrefix}PR body`, phase: 'Gate', schema: SETUP_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
+  } catch (e) {
+    log(`#${t.n} merge-policy block not written: ${e && e.message ? e.message : String(e)}`)
+  }
+}
+
+async function stageGate(t, fin, impl, branch) {
+  const fail = (gates, extra) => ({ pass: false, failed: gates, ...extra })
+  if (!(fin && fin.pr > 0)) return fail([{ gate: 'pr', detail: 'no PR number was returned' }])
+  const tb = impl.branch || branch
+  const ctx = { ticket: t.n, ref: `${remote}/${tb}`, branch: tb, diffBase: integRef, target: String(fin.pr),
+    wtPrefix: `g${t.n}-`, labelPrefix: `#${t.n} gate `, boundary: runBoundaryText(t.n) }
+  const failed = []
+  const review = await reviewLoop(ctx, ctx.target)
+  let intent = await stageIntentReview([{ n: t.n }], ctx)
+  if (intent.fixRound) {
+    // Code the intent fix landed has not been reviewed. Review that range; a second fix round is never reviewed, so it fails the gate.
+    if (intent.fixRange) {
+      const again = await reviewWithRetry(`${ctx.labelPrefix}code-review · intent fix`, review.level, intent.fixRange,
+        `This is a review of the intent-fix commits only, range ${intent.fixRange}. Review that diff and nothing else.\n`, ctx)
+      if (again.notRun) review.reReviewNotRun = again.notRun
+      else review.leftover = [...review.leftover, ...((again.res && again.res.findings) || []).filter(f => !f.pre_existing && f.score >= FIX_THRESHOLD)]
+    } else review.unreviewedFix = true
+    intent = await stageIntentReview([{ n: t.n }], ctx)
+    if (intent.fixRound) review.unreviewedFix = true
+  }
+  const reviewG = judgeReview(review)
+  const intentG = { ok: intent.verdict === 'match', text: intent.verdict }
+  if (!reviewG.ok) failed.push({ gate: 'review', detail: reviewG.text })
+  if (!intentG.ok) failed.push({ gate: 'intent', detail: intentG.text })
+  let ciG, head = ''
+  if (failed.length) ciG = { ok: false, text: 'not checked (an earlier gate failed)' }
+  else {
+    const res = await stageCi(t, fin, ctx, `${ctx.labelPrefix}CI checks`)
+    ciG = judgeCi(res)
+    head = ciG.ok ? res.headRefOid.trim() : ''
+    if (!ciG.ok) failed.push({ gate: 'ci', detail: ciG.text })
+  }
+  const nr = decisions.filter(d => d.ticket === t.n && d.needs_review)
+  const nrG = { ok: nr.length === 0, text: nr.length ? `${nr.length} (${nr.map(d => d.title).join('; ')})` : 'none' }
+  if (!nrG.ok) failed.push({ gate: 'needs_review', detail: nrG.text })
+  const pass = failed.length === 0
+  const block = mergeBlock({ mode: pass ? 'auto' : 'human', why: pass ? '' : `gate ${failed.map(f => f.gate).join(', ')} failed`, ci: ciG, review: reviewG, intent: intentG, adrs: nrG })
+  await updateMergeBlock(t, fin, ctx, block)
+  return { pass, failed, ci: ciG, review: reviewG, intent: intentG, head }
+}
+
 async function runTicket(t) {
   const branch = ticketBranch(t)
   const spec = specs[t.n] = {}
@@ -642,8 +750,29 @@ async function runTicket(t) {
     const verifyResult = spec.verify = await verifyTicket(t, impl)
     const fin = spec.fin = await stageFinish(t, impl, verifyResult)
     const attached = await stageAttach(t, fin, verifyResult)
-    log(`#${t.n} done: ${fin.url || fin.body_file || impl.branch}`)
-    return { n: t.n, status: 'done', pr: fin.pr || null, url: fin.url || '', branch: impl.branch || branch, summary: capSummary(impl.summary || fin.summary), reason: '', body_file: fin.body_file, ...(verifyResult ? { verify: { ...verifyResult, attached } } : {}) }
+    const result = { n: t.n, status: 'done', pr: fin.pr || null, url: fin.url || '', branch: impl.branch || branch, summary: capSummary(impl.summary || fin.summary), reason: '', body_file: fin.body_file, ...(verifyResult ? { verify: { ...verifyResult, attached } } : {}) }
+    if (!single && !LOCAL) {
+      let gate
+      try { gate = await stageGate(t, fin, impl, branch) } catch (e) { gate = { pass: false, failed: [{ gate: 'gate stage', detail: e && e.message ? e.message : String(e) }] } }
+      result.gate = gate
+      if (!gate.pass) {
+        const names = gate.failed.map(f => f.gate).join(', ')
+        const cmd = fin.pr ? `gh pr merge ${fin.pr} --repo ${repo} --merge` : `(no PR was opened for #${t.n})`
+        result.status = 'blocked'; result.reason = `human merge: gate ${names} failed`
+        addDecision(t.n, 'merge', {
+          title: `Merge PR ${fin.pr || '?'} by hand for #${t.n}: gate ${names} failed`,
+          context: `The merge gate for #${t.n} did not pass. ${gate.failed.map(f => `${f.gate}: ${f.detail}`).join('. ')}.`,
+          decision: `The workflow does not merge this PR into ${integBranch}. After you have checked the failed gate${gate.failed.length > 1 ? 's' : ''}, run: ${cmd}`,
+          why: 'Only a ticket PR that passes CI, review, intent review and has no open needs_review decision is merged by the workflow.',
+          consequences: `Ticket #${t.n} is missing from the final PR and the tickets that depend on it are skipped until the PR is merged.`,
+          how_to_reverse: 'Do not run the command; close the PR instead.',
+          needs_review: true, confidence: 'high',
+        })
+        log(`#${t.n} gate failed: ${names}`)
+      }
+    }
+    log(`#${t.n} ${result.status === 'done' ? 'done' : 'ready for a human merge'}: ${fin.url || fin.body_file || impl.branch}`)
+    return result
   } catch (e) {
     const reason = e && e.message ? e.message : String(e)
     log(`#${t.n} blocked: ${reason}`)
@@ -664,18 +793,36 @@ function stageSetupIntegration() {
     { label: 'set up integration branch', phase: 'Setup', schema: SETUP_SCHEMA, model: MODEL.merge, effort: EFFORT.merge })
 }
 
+// Merge the tickets that passed their gate. The script decides what is merged; the agent only runs the commands.
+// There is no conflict path: a conflict or any failure changes nothing and the ticket stays open as a human merge.
 async function stageMerge(group, done) {
-  const list = done.map(r => `- #${r.n} branch ${r.branch}${r.pr ? ` PR ${r.pr}` : ''}`).join('\n')
+  const list = done.map(r => `- #${r.n} branch ${r.branch}${r.pr ? ` PR ${r.pr}` : ''}${r.gate && r.gate.head ? ` head ${r.gate.head}` : ''}`).join('\n')
   const how = LOCAL
-    ? `Merge each branch below into ${integBranch} with "git merge --no-ff". Then run: git update-ref refs/heads/${integBranch} HEAD   (local mode: nothing is pushed).`
-    : `Merge each ticket PR below into ${integBranch}. Run each command as its own Bash call, never joined with &&, ; or a subshell: for example gh pr merge <pr> --repo ${repo} --merge is one call. On a conflict, merge locally, resolve it, and land it with: git push ${remote} HEAD:${integBranch}, then close that PR with a comment. These PRs target ${integBranch}, never ${base}. A PR that is already MERGED into ${integBranch} counts as merged: check its state first with gh pr view <pr> --repo ${repo} --json state, and do not merge it again. If gh pr merge is denied by a permission rule, do not look for a workaround: return that ticket in failed with a reason that names the missing permission and the fix (the owner allows gh pr merge into ${integBranch}*), and do not just write denied.`
+    ? `Merge each branch below into ${integBranch} with "git merge --no-ff". On a conflict, run "git merge --abort", change nothing for that branch and return its ticket in failed with the reason. Then run: git update-ref refs/heads/${integBranch} HEAD   (local mode: nothing is pushed).`
+    : `Merge each ticket PR below into ${integBranch}. Each PR passed its gate at the head commit shown. Run each command as its own Bash call, never joined with &&, ; or a subshell: for example gh pr merge <pr> --repo ${repo} --merge --match-head-commit <head> is one call (the merge guard needs --repo and reads the PR base). These PRs target ${integBranch}, never ${base}. A PR that is already MERGED into ${integBranch} counts as merged: check its state first with gh pr view <pr> --repo ${repo} --json state, and do not merge it again. On a conflict, a head mismatch or any other failure, change nothing: do not merge locally, do not push, do not close the PR, and return that ticket in failed with the reason (a human merges it). If gh pr merge is denied by a permission rule or by the merge guard, do not look for a workaround: return that ticket in failed with a reason that names the denial and the fix (the owner allows gh pr merge into ${integBranch}*), and do not just write denied.`
   const w = newWt(`merge-g${group}`, `scratch/${slug}-merge-g${group}`, integRef)
   const prompt = `${w.setup}${RULES}\n\nStage: merge group ${group} into ${integBranch}.\n${how}\n${list}\n` +
-    `After any conflict resolution run the related tests (${testCmd}, filled with the conflicted files) and lint (${lintCmd}). ` +
     `Return merged (ticket numbers) and failed ([{n, reason}]). Never merge into ${base}.`
   const res = await call(prompt, { label: `merge ticket branches · group ${group}`, phase: 'Merge', schema: MERGE_SCHEMA, model: MODEL.merge, effort: EFFORT.merge })
   takeDecisions('run', 'merge', res)
   return res
+}
+
+// One look at the CI state of the final PR for the readiness checklist. It waits for nothing and is not a gate.
+async function stageCiSnapshot(finalPr) {
+  if (LOCAL || !(finalPr && finalPr.pr > 0)) return null
+  try {
+    const res = await call(`${RULES}\n\nStage: ci snapshot. Run once, without --watch: gh pr checks ${finalPr.pr} --repo ${repo} --json name,bucket   and: gh pr view ${finalPr.pr} --repo ${repo} --json headRefOid -q .headRefOid\n` +
+      `Exit code 1 and 8 are expected results. Return checks (name and bucket, unchanged) and headRefOid; an empty list when there are none. Edit nothing. ${notCwd()}`,
+      { label: 'CI snapshot', phase: 'Decisions', schema: CI_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
+    const checks = (res && res.checks) || []
+    if (!checks.length) return { ok: false, text: 'no checks reported yet' }
+    const n = b => checks.filter(c => c.bucket === b).length
+    return { ok: n('pass') + n('skipping') === checks.length && n('pass') > 0, text: `${n('pass')} pass, ${n('fail') + n('cancel')} fail, ${n('pending')} pending (snapshot, not a gate)` }
+  } catch (e) {
+    log(`CI snapshot failed: ${e && e.message ? e.message : String(e)}`)
+    return { ok: false, text: 'unknown (snapshot failed)' }
+  }
 }
 
 function stageFinalPr(done, bodyTemplate) {
@@ -699,53 +846,63 @@ function pickLevel(files) {
 const RULE_SKILL = `You MUST invoke the Skill tool with skill 'code-review'. Do not substitute your own review: reading the diff yourself does not count. ` +
   `If the Skill tool or the skill is unavailable or fails, return skill_invoked: false and the exact error in skill_error, and return no findings.`
 
-function reviewAgent(label, level, target, rangeNote, retryNote) {
-  const w = newWt(label, null, finalRef)
+// A stage context says what a review, fix or intent stage works on. The run context is the final branch; the
+// per-ticket gate builds one per ticket (ref = the ticket branch, diffBase = the integration branch). ticket is the
+// key decisions are recorded under; wtPrefix keeps worktree dirs apart and labelPrefix keeps agent labels apart.
+const RUN_CTX = { ticket: 'run', ref: finalRef, branch: finalBranch, diffBase: baseRef, wtPrefix: '', labelPrefix: '', boundary: null }
+
+function reviewAgent(label, level, target, rangeNote, retryNote, ctx = RUN_CTX) {
+  const w = newWt(`${ctx.wtPrefix}${label}`, null, ctx.ref)
   const prompt = `${w.setup}${RULES}\n\n` +
-    `Stage: review. Use the Skill tool: skill 'code-review', args '${level} ${target}'. Run it from ${w.dir} (the final branch is checked out there${rangeNote ? '' : `; the diff is ${baseRef}...${finalRef}`}). Never edit files, never post comments.\n` +
+    `Stage: review. Use the Skill tool: skill 'code-review', args '${level} ${target}'. Run it from ${w.dir} (${ctx.ref} is checked out there${rangeNote ? '' : `; the diff is ${ctx.diffBase}...${ctx.ref}`}). Never edit files, never post comments.\n` +
     `${RULE_SKILL} Return skill_invoked: true only when the skill ran.\n${retryNote || ''}` +
     `${rangeNote}Return every finding with score 0-100 (how sure you are that it is a real defect worth fixing). ` +
-    `Mark pre_existing: true for a finding that is already present on ${baseRef} and not introduced by this change.`
+    `Mark pre_existing: true for a finding that is already present on ${ctx.diffBase} and not introduced by this change.`
   return call(prompt, { label, phase: 'Review', schema: REVIEW_SCHEMA, model: MODEL.review, effort: EFFORT.review })
 }
 
 // Run code-review; one retry when the skill did not run. Returns {res} or {notRun: reason}.
-async function reviewWithRetry(label, level, target, rangeNote) {
-  let res = await reviewAgent(label, level, target, rangeNote, '')
-  if (res && res.skill_invoked === true) { takeDecisions('run', 'review', res); return { res } }
+async function reviewWithRetry(label, level, target, rangeNote, ctx = RUN_CTX) {
+  let res = await reviewAgent(label, level, target, rangeNote, '', ctx)
+  if (res && res.skill_invoked === true) { takeDecisions(ctx.ticket, 'review', res); return { res } }
   const why = r => (r && typeof r.skill_error === 'string' && r.skill_error.trim()) || (r ? 'the agent did not report running the skill' : 'the review agent returned nothing')
   const first = why(res)
   res = await reviewAgent(`${label} retry`, level, target, rangeNote,
-    `The previous attempt did not run code-review. Its error: ${first}\nTry again. ${RULE_SKILL}\n`)
-  if (res && res.skill_invoked === true) { takeDecisions('run', 'review', res); return { res } }
+    `The previous attempt did not run code-review. Its error: ${first}\nTry again. ${RULE_SKILL}\n`, ctx)
+  if (res && res.skill_invoked === true) { takeDecisions(ctx.ticket, 'review', res); return { res } }
   return { notRun: why(res) }
 }
 
-function fixAgent(label, findingText, extra, phaseName, wtKey) {   // wtKey names the worktree; the label is display text
-  const w = newWt(`fix-${wtKey || label}`, null, finalRef)
+function fixAgent(label, findingText, extra, phaseName, wtKey, ctx = RUN_CTX) {   // wtKey names the worktree; the label is display text
+  const w = newWt(`${ctx.wtPrefix}fix-${wtKey || label}`, null, ctx.ref)
   const prompt = `${w.setup}${RULES}\n\n` +
-    `Stage: fix. Run "git rev-parse HEAD" first and return it as base_sha. ${findingText}\n${runBoundaryText()}` +
+    `Stage: fix. Run "git rev-parse HEAD" first and return it as base_sha. ${findingText}\n${ctx.boundary == null ? runBoundaryText() : ctx.boundary}` +
     `Make one commit ("git add", then "git commit"), include a test that fails without the fix, run only the related tests (${testCmd}) and lint (${lintCmd}). ` +
-    `Then land it: ${land(finalBranch)}. Return the commit sha as commit. ${extra || ''}` +
+    `Then land it: ${land(ctx.branch)}. Return the commit sha as commit. ${extra || ''}` +
     `If the finding is wrong or cannot be fixed safely, change nothing and return fix_status skipped or failed with the reason in summary.`
   return call(prompt, { label, phase: phaseName || 'Review', schema: FIX_SCHEMA, model: MODEL.fix, effort: EFFORT.fix })
 }
 
-async function stageReview(finalPr) {
+// The final, cross-ticket review: the run context over the final branch.
+function stageReview(finalPr) {
+  return reviewLoop(RUN_CTX, finalPr && finalPr.pr ? String(finalPr.pr) : finalBranch)
+}
+
+async function reviewLoop(ctx, target) {
+  const P = ctx.labelPrefix
   const stat = await call(
-    `git -C ${repoDir} fetch ${remote}\ngit -C ${repoDir} diff --numstat ${baseRef}...${finalRef}\n\n${notCwd()}\nRun the two commands above. Return one entry per file (path, added, deleted). Do not edit anything.`,
-    { label: 'measure diff size', phase: 'Review', schema: DIFFSTAT_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
+    `git -C ${repoDir} fetch ${remote}\ngit -C ${repoDir} diff --numstat ${ctx.diffBase}...${ctx.ref}\n\n${notCwd()}\nRun the two commands above. Return one entry per file (path, added, deleted). Do not edit anything.`,
+    { label: `${P}measure diff size`, phase: ctx.ticket === 'run' ? 'Review' : 'Gate', schema: DIFFSTAT_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
   const { level, lines, risky } = pickLevel((stat && stat.files) || [])
-  log(`review level ${level} (${lines} changed lines${risky.length ? `, risky paths: ${risky.join(', ')}` : ''})`)
-  const target = finalPr && finalPr.pr ? String(finalPr.pr) : finalBranch
+  log(`review level ${level} (${lines} changed lines${risky.length ? `, risky paths: ${risky.join(', ')}` : ''})${ctx.ticket === 'run' ? '' : ` for #${ctx.ticket}`}`)
 
   const out = { rounds: 0, fixed: [], notFixed: [], leftover: [], preExisting: [], level, status: 'ran', reason: '' }
   const skipped = (reason, what) => {
-    addDecision('run', 'review', { title: `Review skipped: code-review did not run (${reason})`, context: `The review stage must invoke the code-review skill; it did not run${what ? ` for ${what}` : ''}.`,
+    addDecision(ctx.ticket, 'review', { title: `Review skipped: code-review did not run (${reason})`, context: `The review stage must invoke the code-review skill; it did not run${what ? ` for ${what}` : ''}.`,
       decision: 'Continue the pipeline without that review and say so in the PR body.', why: 'A review that did not run must not read as a pass; the owner decides.',
       consequences: 'The change was not reviewed by code-review.', how_to_reverse: 'Run /code-review on the PR.', needs_review: true, confidence: 'high' })
   }
-  const first = await reviewWithRetry('code-review · round 0', level, target, '')
+  const first = await reviewWithRetry(`${P}code-review · round 0`, level, target, '', ctx)
   if (first.notRun) {
     out.status = 'not run'; out.reason = first.notRun
     skipped(first.notRun, '')
@@ -766,8 +923,8 @@ async function stageReview(finalPr) {
     const commits = []
     for (let k = 0; k < todo.length; k++) {   // sequential: each fix lands before the next starts
       const f = todo[k]
-      const res = await fixAgent(lbl(`fix r${out.rounds}.${k + 1}`, `${f.path ? f.path.split('/').pop() : f.summary}${f.path && f.line ? `:${f.line}` : ''}`), `Finding ${f.id} (score ${f.score}) in ${f.path || 'the diff'}${f.line ? `:${f.line}` : ''}: ${f.summary}`, '', undefined, `r${out.rounds}-${k + 1}`)
-      takeDecisions('run', 'review-fix', res)
+      const res = await fixAgent(lbl(`${P}fix r${out.rounds}.${k + 1}`, `${f.path ? f.path.split('/').pop() : f.summary}${f.path && f.line ? `:${f.line}` : ''}`), `Finding ${f.id} (score ${f.score}) in ${f.path || 'the diff'}${f.line ? `:${f.line}` : ''}: ${f.summary}`, '', undefined, `r${out.rounds}-${k + 1}`, ctx)
+      takeDecisions(ctx.ticket, 'review-fix', res)
       if (res && res.fix_status === 'fixed' && res.commit) { commits.push(res); out.fixed.push({ id: f.id, summary: f.summary, commit: res.commit }) }
       else {
         const bd = res && res.fix_status === 'skipped' && (res.decisions || []).find(d => d && typeof d.title === 'string' && (d.title.startsWith(BOUNDARY_PREFIX) || d.needs_review === true || d.contradicts_confirmed || d.dangerous))
@@ -778,8 +935,8 @@ async function stageReview(finalPr) {
     if (!commits.length) { findings = []; break }
     // Re-review only what the fix commits changed.
     const range = `${commits[0].base_sha}..${commits[commits.length - 1].commit}`
-    const again = await reviewWithRetry(`code-review · round ${out.rounds}`, level, range,
-      `This is a re-review of the fix commits only, range ${range}. Review that diff and nothing else; ignore the rest of the branch.\n`)
+    const again = await reviewWithRetry(`${P}code-review · round ${out.rounds}`, level, range,
+      `This is a re-review of the fix commits only, range ${range}. Review that diff and nothing else; ignore the rest of the branch.\n`, ctx)
     if (again.notRun) {
       out.reReviewNotRun = again.notRun
       skipped(again.notRun, `the fix commits ${range}`)
@@ -816,7 +973,7 @@ async function requestTexts(done) {
   return texts
 }
 
-async function stageIntentReview(done) {
+async function stageIntentReview(done, ctx = RUN_CTX) {
   const texts = await requestTexts(done)
   const request = done.map(r => {
     const t = tickets.find(x => x.n === r.n)
@@ -826,24 +983,26 @@ async function stageIntentReview(done) {
   const owner = done.map(r => tickets.find(x => x.n === r.n)).filter(t => t && t.confirmed && t.confirmed.trim())
     .map(t => `### #${t.n}\n${t.confirmed.trim()}`).join('\n\n')
   const ownerBlock = owner ? `Owner-confirmed decisions (the owner's own words; a change they name is NOT a gap, drift or excess):\n<<<\n${owner}\n>>>\n\n` : ''
-  const w = newWt('intent-review', null, finalRef)
+  const w = newWt(`${ctx.wtPrefix}intent-review`, null, ctx.ref)
   const role = `${pluginDir}/agents/intent-reviewer.md`
   const prompt = `${w.setup}Role: read ${role} and act as that role. If it does not exist, use this role: ` +
     `compare the diff with the owner's request and report only gaps (requested but missing), drift (does something other than requested) and excess (unrequested behaviour).\n\n` +
-    `Owner's original request, verbatim:\n<<<\n${request}\n>>>\n\n${ownerBlock}Diff range: ${baseRef}..${finalRef}\n\n` +
-    `Read the diff with: git -C ${w.dir} diff ${baseRef}..${finalRef}. Read-only: edit nothing. ` +
+    `Owner's original request, verbatim:\n<<<\n${request}\n>>>\n\n${ownerBlock}Diff range: ${ctx.diffBase}..${ctx.ref}\n\n` +
+    `Read the diff with: git -C ${w.dir} diff ${ctx.diffBase}..${ctx.ref}. Read-only: edit nothing. ` +
     `Report only findings of kind gap, drift or excess. Do not report anything else: nothing about tests, about whether tests pass, or about your role file. If there is nothing to report, return no findings.`
-  const res = await call(prompt, { label: 'intent review · diff vs request', phase: 'Intent review', schema: INTENT_REVIEW_SCHEMA, effort: EFFORT.review, agentType: 'harness:intent-reviewer' }, role)
+  const res = await call(prompt, { label: `${ctx.labelPrefix}intent review · diff vs request`, phase: ctx.ticket === 'run' ? 'Intent review' : 'Gate', schema: INTENT_REVIEW_SCHEMA, effort: EFFORT.review, agentType: 'harness:intent-reviewer' }, role)
   const findings = (res && res.findings) || []
   const fixable = findings.filter(f => f.kind === 'gap' || (f.kind === 'drift' && f.behaviour_changing))
+  let fixRange = ''
   if (fixable.length) {
     const text = fixable.map((f, i) => `${i + 1}. [${f.kind}] ${f.clause}: ${f.detail}`).join('\n')
-    const fix = await fixAgent('intent fix · close gaps', `The intent review found these gaps against the owner's request:\n${text}\nFix each one, one commit per finding.` +
+    const fix = await fixAgent(`${ctx.labelPrefix}intent fix · close gaps`, `The intent review found these gaps against the owner's request:\n${text}\nFix each one, one commit per finding.` +
       (owner ? `\nOwner-confirmed decisions (never revert or undo a change they name; skip any finding that conflicts with them and return it as a decision with needs_review: true instead):\n${owner}\n` : ''),
-      'Return base_sha and the last commit sha. ')
-    takeDecisions('run', 'intent-fix', fix)
+      'Return base_sha and the last commit sha. ', undefined, undefined, ctx)
+    takeDecisions(ctx.ticket, 'intent-fix', fix)
+    fixRange = fix && fix.fix_status === 'fixed' && fix.base_sha && fix.commit ? `${fix.base_sha}..${fix.commit}` : ''
   }
-  return { verdict: res ? res.verdict : 'unknown', gaps: findings, fixRound: fixable.length > 0 }
+  return { verdict: res ? res.verdict : 'unknown', gaps: findings, fixRound: fixable.length > 0, fixRange }
 }
 
 // Drop each Verify: row and its continuation. Continuation = a line indented deeper than the row (sub-bullets too) or a wrapped plain-prose line at the row's own level. A blank line, a heading, a list bullet or a "Label:" line at the row's level ends the row, so tight AC lines under it stay. A mid-sentence mention stays.
@@ -1004,10 +1163,23 @@ async function stageAdr(finalPr, artifact, bodyTemplate) {
 }
 
 // The script writes the PR body text; the ADR stage only substitutes {{DECISIONS}} and publishes it.
-function buildBody(results, review, intent, suite, uat = {}) {
+function buildBody(results, review, intent, suite, uat = {}, ci = null) {
   const done = results.filter(r => r.status === 'done')
   const open = results.filter(r => r.status !== 'done')
   const L = []
+  // The final PR targets the base branch, so it is always a human merge (owner decision A). Values are pending until the final call.
+  const pend = review.level === 'pending' || intent.verdict === 'pending'
+  const nrCount = decisions.filter(d => d.needs_review).length
+  const uatRowsAll = Object.values(uat)
+  const uatG = !uatRowsAll.length ? { ok: false, text: 'n/a' }
+    : { ok: uatRowsAll.every(u => u.status === 'passed' || u.status === 'pass'), text: [...new Set(uatRowsAll.map(u => u.status))].join(', ') }
+  L.push('## Merge readiness', '', mergeBlock({ mode: 'human', why: `the PR targets ${base}; a human merges it`,
+    ci: LOCAL ? { ok: false, text: 'n/a (local mode)' } : (ci || PENDING),
+    review: pend ? PENDING : review.status === 'not run' ? { ok: false, text: `not run (${review.reason})` }
+      : { ok: !review.notFixed.length && !review.leftover.some(f => f.score >= FIX_THRESHOLD), text: `${review.rounds} fix round(s), ${review.notFixed.length} not fixed, ${review.leftover.length} left` },
+    intent: pend ? PENDING : { ok: intent.verdict === 'match', text: intent.verdict },
+    adrs: pend ? PENDING : { ok: nrCount === 0, text: nrCount ? `${nrCount} (see Decisions)` : 'none' },
+    uat: uatG }), '')
   const excess = ((intent && intent.gaps) || []).filter(g => g.kind === 'excess' && g.behaviour_changing === true)
   const bounded = decisions.filter(d => d.boundary && d.needs_review)
   if (excess.length || bounded.length) {
@@ -1093,9 +1265,11 @@ for (const g of groups) {
   runnable.forEach((t, i) => byN.set(t.n, ran[i] || { n: t.n, status: 'blocked', pr: null, url: '', branch: ticketBranch(t), summary: '', reason: 'the ticket pipeline threw or was skipped' }))
 
   const done = runnable.map(t => byN.get(t.n)).filter(r => r.status === 'done')
-  if (!single && done.length) {
+  // Only a ticket whose gate passed is merged (local mode has no PRs, so no gate). A single-ticket run never merges.
+  const ready = done.filter(r => LOCAL || (r.gate && r.gate.pass))
+  if (!single && ready.length) {
     phase('Merge')
-    const m = await stageMerge(g, done)
+    const m = await stageMerge(g, ready)
     const failed = (m && m.failed) || []
     for (const f of failed) {
       const r = byN.get(f.n)
@@ -1103,15 +1277,15 @@ for (const g of groups) {
       log(`#${f.n} blocked at merge: ${f.reason}`)
       if (!LOCAL && r && r.pr) addDecision(f.n, 'merge', {
         title: `Merge PR ${r.pr} by hand for #${f.n}`,
-        context: `The merge agent could not merge PR ${r.pr} into ${integBranch}: ${f.reason}`,
-        decision: `First check the PR: gh pr view ${r.pr} --repo ${repo} --json state. If it is MERGED or CLOSED, do nothing (the merge agent may have landed it by hand). If it is OPEN, run gh pr merge ${r.pr} --repo ${repo} --merge. If the failure above was a denied permission, first allow gh pr merge into ${integBranch}*.`,
-        why: 'The ship run cannot merge this PR itself, and the merge agent may already have merged and pushed it, so the owner checks the state before merging.',
+        context: `The gate passed for #${f.n}, but the merge of PR ${r.pr} into ${integBranch} failed: ${f.reason}`,
+        decision: `After the cause above is fixed, run: gh pr merge ${r.pr} --repo ${repo} --merge. If the failure was a denied permission or the merge guard, merge it yourself in a terminal.`,
+        why: 'The ship run cannot merge this PR itself. The merge stage never merges locally, pushes or closes the PR, so the PR is still open.',
         consequences: `Ticket #${f.n} stays blocked in this run until the PR is merged.`,
         how_to_reverse: 'Do not run the command; close the PR instead.',
         needs_review: true,
       })
     }
-    if (!m) for (const r of done) { r.status = 'blocked'; r.reason = 'the merge agent returned nothing' }
+    if (!m) for (const r of ready) { r.status = 'blocked'; r.reason = 'the merge agent returned nothing' }
   }
 }
 
@@ -1165,7 +1339,8 @@ log(`full suite: ${suite.passed} passed, ${suite.failed} failed, ${suite.skipped
 phase('Decisions')
 const artifact = await stageArtifact(ordered())
 out.artifact = artifact
-const adr = await stageAdr(finalPr, artifact, buildBody(ordered(), review, intent, suite, uat))
+const ciSnap = await stageCiSnapshot(finalPr)
+const adr = await stageAdr(finalPr, artifact, buildBody(ordered(), review, intent, suite, uat, ciSnap))
 takeDecisions('run', 'adr', adr)
 out.adrs = (adr.adrs || []).map(a => ({ number: a.number, path: a.path, needsReview: !!a.needs_review }))
 log(`decisions: ${decisions.length} recorded, ${out.adrs.length} ADR file(s)`)
