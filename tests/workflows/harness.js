@@ -1442,6 +1442,15 @@ test('schemas are well-formed (object root, required within properties)', async 
   process.exit(failed ? 1 : 0)
 })()
 
+test('g1b: CI that ran on a head other than the branch tip fails the gate even with no fix commit', async () => {
+  const r = await gateFlow({}, c => {
+    if (c.label === 'gci:1') return { checks: [{ name: 'harness-ci', bucket: 'pass' }], headRefOid: 'oldheadsha1', branchTip: 'newtipsha22' }
+  })
+  assert.notStrictEqual(t1(r).status, 'done')
+  const body = named(r.calls, /^gbody:1$/)[0].prompt
+  assert(body.includes('stale'), body)
+})
+
 test('g1: CI that ran on a head older than the last pushed fix commit fails the gate', async () => {
   const r = await gateFlow({}, c => {
     if (c.label === 'greview:1:r0') return { findings: [{ id: 'F1', file: 'a.js', line: 1, score: 90, summary: 's', pre_existing: false }], skill_invoked: true, skill_error: '' }

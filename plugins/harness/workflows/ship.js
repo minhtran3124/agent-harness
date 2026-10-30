@@ -124,7 +124,7 @@ const MERGE_SCHEMA = stageSchema({
 const FINAL_PR_SCHEMA = stageSchema({ pr: NUM, url: STR }, ['pr'])
 // CI: the agent only reports the checks; the script judges them. bucket is the gh pr checks bucket (pass, fail, pending, skipping, cancel).
 const CI_SCHEMA = { type: 'object',
-  properties: { checks: { type: 'array', items: { type: 'object', properties: { name: STR, bucket: STR }, required: ['name', 'bucket'] } }, headRefOid: STR, note: STR },
+  properties: { checks: { type: 'array', items: { type: 'object', properties: { name: STR, bucket: STR }, required: ['name', 'bucket'] } }, headRefOid: STR, branchTip: STR, note: STR },
   required: ['checks'] }
 const DIFFSTAT_SCHEMA = { type: 'object',
   properties: { files: { type: 'array', items: { type: 'object', properties: { path: STR, added: NUM, deleted: NUM }, required: ['path', 'added', 'deleted'] } } },
@@ -645,7 +645,9 @@ function judgeCi(res, expectHead) {
   if (bad.length) return { ok: false, text: `${bad.map(c => `${c && c.name || '?'}: ${c && c.bucket || '?'}`).join(', ')}` }
   if (!count('pass')) return { ok: false, text: 'every check was skipped (fails closed)' }
   if (!(res && typeof res.headRefOid === 'string' && res.headRefOid.trim())) return { ok: false, text: 'the PR head commit is unknown (fails closed)' }
-  // The fix rounds push new commits. CI that ran on an older head is stale: the head must be the last pushed fix commit.
+  // The fix rounds push new commits. CI that ran on an older head is stale: the head must be the pushed branch tip.
+  // The branch tip the CI stage read is the reference; the last fix commit is only the fallback when no tip came back.
+  expectHead = (res.branchTip && res.branchTip.trim()) || expectHead
   if (expectHead) {
     const h = res.headRefOid.trim()
     if (!(h.startsWith(expectHead) || expectHead.startsWith(h))) return { ok: false, text: `CI ran on ${h.slice(0, 8)} but the branch tip is ${expectHead.slice(0, 8)} (stale)` }
@@ -668,8 +670,8 @@ function stageCi(t, fin, ctx, label) {
     `1. Poll until the PR has at least one check for its current head: gh pr checks ${pr} --repo ${repo} --json name,bucket (repeat every ${CI_INTERVAL} s). A push can need a moment before its checks appear.\n` +
     `2. Then run: gh pr checks ${pr} --repo ${repo} --watch --interval ${CI_INTERVAL}\n` +
     `Use a Bash timeout of ${CI_WAIT_MS} ms in total for steps 1 and 2. Exit code 1 (a check failed) and 8 (checks pending) are expected results, not errors: go on to step 3 anyway.\n` +
-    `3. Run: gh pr checks ${pr} --repo ${repo} --json name,bucket   and: gh pr view ${pr} --repo ${repo} --json headRefOid -q .headRefOid\n` +
-    `Return checks (one entry per check: name and bucket, copied unchanged) and headRefOid. If a command fails, return the checks you have (an empty list when none) and say why in note. Do not judge the result yourself.`
+    `3. Run: gh pr checks ${pr} --repo ${repo} --json name,bucket   and: gh pr view ${pr} --repo ${repo} --json headRefOid -q .headRefOid   and: git ls-remote ${remote} refs/heads/${ctx.branch}  (the first column is the branch tip)\n` +
+    `Return checks (one entry per check: name and bucket, copied unchanged), headRefOid and branchTip (the ls-remote commit). If a command fails, return the checks you have (an empty list when none) and say why in note. Do not judge the result yourself.`
   return call(prompt, { label, phase: 'Gate', schema: CI_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
 }
 
