@@ -196,6 +196,25 @@ class CrgArgvTests(unittest.TestCase):
         except Exception:
             pass  # empty fake db has no schema; only the argv matters
 
+    def test_repeat_run_does_a_real_build_not_a_noop_update(self):
+        td = tempfile.mkdtemp(prefix="fakecrg-")
+        os.makedirs(os.path.join(td, "venv-crg", "bin"))
+        exe = os.path.join(td, "venv-crg", "bin", "code-review-graph")
+        log = os.path.join(td, "argv.log")
+        with open(exe, "w") as fh:
+            fh.write("#!/bin/sh\necho \"$1\" >> \"%s\"\n"
+                     "mkdir -p .code-review-graph; python3 -c \"import sqlite3;sqlite3.connect('.code-review-graph/graph.db').close()\"\n" % log)
+        os.chmod(exe, 0o755)
+        work = tempfile.mkdtemp(prefix="crgwork-")
+        fdir = os.path.join(FIXTURES, m.LANGS["py"])
+        opts = {"tools_dir": td, "timeout": 60}
+        try:
+            m.graph_method("code-review-graph", "py", fdir, [], work, opts, True)
+        except Exception:
+            pass  # empty fake db has no schema; only the argv matters
+        with open(log) as fh:
+            self.assertEqual(fh.read().split(), ["build"])
+
 
 if __name__ == "__main__":
     unittest.main()

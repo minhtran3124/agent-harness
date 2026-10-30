@@ -359,7 +359,9 @@ def graph_method(tool, lang, fixture_dir, claims, work, opts, repeat):
         exe = find_tool(["venv-crg/bin/code-review-graph"], ["code-review-graph"], opts["tools_dir"])
         if not exe:
             raise CouldNotRun("not installed: code-review-graph")
-        r = run([exe, "update" if repeat else "build", "--repo", root], cwd=root, env=env, timeout=opts["timeout"])
+        # Always a full build: "update" does nothing on an unchanged non-git fixture, so a repeat
+        # run through it would carry no timing or determinism information.
+        r = run([exe, "build", "--repo", root], cwd=root, env=env, timeout=opts["timeout"])
         db = os.path.join(root, ".code-review-graph", "graph.db")
         if r.returncode != 0 or not os.path.isfile(db):
             raise CouldNotRun("code-review-graph exit %s: %s" % (r.returncode, (r.stderr or r.stdout).strip()[-120:]))
