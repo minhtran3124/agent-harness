@@ -34,6 +34,10 @@ if grep -qF 'merge-guard.sh' "$SKILL" && printf '%s' "$flat" | grep -qF 'blocks 
    && printf '%s' "$flat" | grep -qF 'Setup never writes `.claude/settings.local.json`'; then pass
 else fail "the guard text is missing or an allow offer is still there"; fi
 
+t "SKILL.md tells the owner to add the gh pr merge allow rule themselves (setup writes none)"
+if printf '%s' "$flat" | grep -qF 'the owner adds an allow rule for `gh pr merge` into `feat/<slug>*` to their own settings; setup never writes it'; then pass
+else fail "setup does not say how auto-merge is permitted"; fi
+
 t "SKILL.md asks before deleting an old install and deletes only listed paths"
 if grep -q 'AskUserQuestion' "$SKILL" && grep -q 'old-install.sh' "$SKILL" && grep -q 'only those paths' "$SKILL"; then pass
 else fail "the approval step is missing"; fi

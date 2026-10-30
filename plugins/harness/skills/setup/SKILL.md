@@ -28,7 +28,8 @@ Run once per project, after `claude plugin install harness@agent-harness`. Work 
    that every PR into the base branch is a human merge, and that ticket PRs into `feat/<slug>` stay
    human-merged too unless they merge them: setup writes no allow rule for `gh pr merge`, because no
    command-text rule can see the PR base. Plugin hooks are not proven to fire for workflow agents, so
-   the guard is a second line, not a reason to allow the merge.
+   the guard is a second line, not a reason to allow the merge. To let a run merge ticket PRs, the owner adds an allow rule for `gh pr merge` into
+   `feat/<slug>*` to their own settings; setup never writes it, and launch args say the same.
 5. **Ignore specs.** Add `specs/` to `${CLAUDE_PROJECT_DIR}/.gitignore` if no line already says
    `specs/`. Skip this if the project tracks files under `specs/`.
 6. **Old install.** Run `bash ${CLAUDE_SKILL_DIR}/scripts/old-install.sh ${CLAUDE_PROJECT_DIR}`. An
