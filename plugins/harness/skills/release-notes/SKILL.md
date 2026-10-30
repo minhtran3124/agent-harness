@@ -11,7 +11,7 @@ allowed-tools: Read, Write, Grep, Glob, Bash(gh pr list *), Bash(gh pr view *), 
 
 - `--milestone <name>`: use GitHub through `gh`. This is the first choice.
 - `<from>..<to>`: a git range. Use it when the user gives no milestone.
-- `--version <x.y.z>` and `--out <path>`: optional.
+- `--version <x.y.z>`, `--out <path>` and `--exclude-label <name>`: optional.
 - Linear is a later follow-up. Do not read it.
 
 If neither is given, ask which one to use.
@@ -39,7 +39,7 @@ For a range, list the commits with `git log <from>..<to> --format='%h|%an|%aI|%s
 
 Record the facts per item, map each ticket to its PRs, and list the commits that belong to no PR separately. The field list and the rules are in `references/fact-list-schema.md`.
 
-Count the items found. Drop each item that is not a user-facing change and record its reason. Keep an item when you are unsure.
+Count the items found. Filter the noise first, by the rules in the reference, and record each reason. Print the counts: items found, items excluded and why. Keep an item when you are unsure.
 
 ## Rules for every entry
 

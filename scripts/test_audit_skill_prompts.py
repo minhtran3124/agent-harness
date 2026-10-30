@@ -161,3 +161,10 @@ def test_release_notes_maps_tickets_and_lists_commits_without_pr():
     schema = (RELEASE_NOTES / "references" / "fact-list-schema.md").read_text()
     assert "closingIssuesReferences" in skill
     assert '"tickets"' in schema and '"no_pr_commits"' in schema
+
+
+def test_release_notes_filters_bots_and_excluded_labels_first():
+    skill = (RELEASE_NOTES / "SKILL.md").read_text()
+    schema = (RELEASE_NOTES / "references" / "fact-list-schema.md").read_text()
+    assert "Filter the noise first" in skill and "--exclude-label" in skill
+    assert "## Noise filter" in schema and "`bot`" in schema

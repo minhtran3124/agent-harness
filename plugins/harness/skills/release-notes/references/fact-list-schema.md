@@ -45,3 +45,13 @@ Rules:
 - `excluded` lists every PR left out of the draft, each with a `reason`. It is an empty list when none is left out.
 - In `groups`, the keys `perf`, `refactor`, `docs`, `test`, `chore`, `build`, `ci` and `other` make up the Internal section of the draft.
 - A value that has no source is the text `[NEEDS HUMAN]`.
+
+## Noise filter
+
+Run the filter on the collected facts, before any section is written. Exclude an item when one rule matches, and record the rule as its `reason`:
+
+- `bot`: the author login ends with `[bot]` or is `dependabot` or `renovate`.
+- `label:<name>`: a label is in the excluded list. The default list is `skip-changelog`, `duplicate`, `invalid`, `wontfix`, `no-release-notes`. The user can pass `--exclude-label <name>` to add more.
+- `revert`, `duplicate`: the title says so (judged from the title).
+
+Do not exclude an item when you are unsure. The counts line states how many items each reason removed.
