@@ -215,6 +215,26 @@ class CrgArgvTests(unittest.TestCase):
         with open(log) as fh:
             self.assertEqual(fh.read().split(), ["build"])
 
+    def test_run_all_keeps_rows_when_a_method_raises_a_non_couldnotrun_error(self):
+        calls = []
+
+        def fake_measure(method, lang, fdir, claims, opts):
+            calls.append((method, lang))
+            if len(calls) == 2:
+                raise sqlite3.OperationalError("no such table: nodes")
+            return {"found": {}, "score": {}, "cold": 0.0, "repeat": 0.0}
+
+        orig = m.measure
+        m.measure = fake_measure
+        try:
+            rows = m.run_all(FIXTURES, {})
+        finally:
+            m.measure = orig
+        self.assertEqual(len(rows), len(m.METHODS) * len(m.LANGS))
+        self.assertIn("OperationalError", rows[1]["could_not_run"])
+        self.assertNotIn("could_not_run", rows[0])
+        self.assertNotIn("could_not_run", rows[2])
+
 
 if __name__ == "__main__":
     unittest.main()

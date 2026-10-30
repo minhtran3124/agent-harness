@@ -417,12 +417,14 @@ def run_all(fixtures, opts):
     for method in METHODS:
         for lang, sub in LANGS.items():
             fdir = os.path.join(fixtures, sub)
-            claims = load_claims(fdir)
-            row = {"method": method, "lang": lang, "claims": claims}
+            row = {"method": method, "lang": lang, "claims": []}
             try:
-                row.update(measure(method, lang, fdir, claims, opts))
+                row["claims"] = load_claims(fdir)
+                row.update(measure(method, lang, fdir, row["claims"], opts))
             except CouldNotRun as exc:
                 row["could_not_run"] = str(exc)
+            except Exception as exc:  # parse, sqlite or IO error: keep the rows already done
+                row["could_not_run"] = "%s: %s" % (type(exc).__name__, str(exc)[:120])
             rows.append(row)
     return rows
 
