@@ -55,7 +55,7 @@ Decisions made on the way are recorded as ADRs in `docs/adr/`. Every skill above
 
 ## Hooks
 
-Wired (✅) means registered in `plugins/harness/hooks/hooks.json`. `docs/hooks.md` has the detail. The plugin cannot ship `permissions.deny`: the repo's `settings.json` carries it (`.env`, force-push, push to `main`/`master`), and `/harness:setup` merges it into a consuming project.
+Wired (✅) means registered in `plugins/harness/hooks/hooks.json`. `docs/hooks.md` has the detail; all hooks fail open except `merge-guard.sh`, which fails closed. The plugin cannot ship `permissions.deny`: the repo's `settings.json` carries it (`.env`, force-push, push to `main`/`master`), and `/harness:setup` merges it into a consuming project.
 
 | Hook | Trigger | Action | Wired |
 |---|---|---|---|

@@ -7,6 +7,18 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 ## [Unreleased]
 
+### Added
+
+- `merge-guard.sh`, a PreToolUse(Bash) hook that blocks any `gh pr merge` or `gh api .../pulls/<n>/merge` unless the PR base is `feat/*` (and not the default branch). It fails closed, unlike the other hooks (see `docs/hooks.md`). Issue #516.
+- A per-ticket merge gate in `ship.js` (multi-ticket remote runs): review, one-ticket intent review and CI on the ticket PR. Only a ticket that passes is merged into `feat/<slug>`.
+- Every PR the workflow opens carries a `Merge: auto|human` line and a readiness checklist.
+
+### Changed
+
+- The merge stage merges with `--match-head-commit <sha>` and no longer resolves conflicts, pushes or closes PRs: a conflicting or failing ticket stays open as a human merge. Local mode runs `git merge --abort` on a conflict.
+- A ticket that fails its gate is `blocked` with the reason `human merge: gate <names> failed` and keeps its PR. The final PR is always a human merge.
+- `/harness:setup` step 4 names the merge guard and no longer offers the `gh pr merge` allow rule (plugin hooks are not proven to fire for workflow agents).
+
 ### Fixed
 
 - The SessionStart `clean-worktrees.sh` hook now has a 30 second timeout and runs only on `startup`, in its own group apart from `session-rules.sh`, so network I/O cannot stall session start.

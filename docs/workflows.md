@@ -12,6 +12,28 @@ testCmd, lintCmd, fullTestCmd, advisorModel, noAsk, local}`. Tickets of one `gro
 groups run in ascending order. One ticket: its PR is the final PR. Several: branch `feat/<slug>`,
 sibling PRs into it, a merge agent after each group, one final PR into `base`.
 
+## Merge policy
+
+The workflow merges only ticket PRs into the run's integration branch `feat/<slug>`, and only after a per-ticket gate.
+Every PR into `base`, `main` or the default branch is a human merge, and so is the final PR. A single-ticket run never
+merges: its PR is the final PR (`Merge: human`). Every PR the workflow opens carries a `Merge: auto|human` line and a
+readiness checklist (CI, review, intent, needs_review ADRs, UAT) between `<!-- merge-policy -->` markers.
+
+- **Gate stage** (`stageGate`, multi-ticket remote runs, after finish): a code-review of the ticket PR against `feat/<slug>`
+  with fix rounds on the ticket branch, a one-ticket intent review (a code fix it lands is reviewed too), and `gh pr checks`
+  on the ticket PR (waits up to 10 minutes). The script judges the results: CI green with at least one passing check
+  (no checks = fail closed; pending after the wait = fail), no not-fixed finding and no leftover scoring 50 or more, intent
+  verdict `match`, and no `needs_review` decision on the ticket.
+- **Merge stage**: merges only tickets that passed, with `gh pr merge <pr> --repo R --merge --match-head-commit <sha>`, the
+  head the gate judged. There is no conflict path: a conflict or any failure changes nothing, and the ticket stays open.
+- **A ticket that fails a gate** is `blocked` ("human merge: gate <names> failed"), keeps its PR, and gets a `needs_review`
+  decision with the exact command `gh pr merge <pr> --repo R --merge`. It is missing from the final PR and its dependents are skipped.
+- **Guard**: the `merge-guard.sh` PreToolUse hook blocks any merge whose PR base is not `feat/*`; it fails closed
+  (`docs/hooks.md`). Whether plugin PreToolUse hooks fire for Workflow agents is not proven (spike for #516 could not run
+  a nested Workflow), so `/harness:setup` offers no `gh pr merge` allow rule and ticket PRs stay human-merged unless the owner allows them.
+- **Local mode** has no PRs: there is no guard, no gate and no CI check. The merge stage runs `git merge --no-ff` and
+  `git merge --abort` on a conflict. The PR body block still renders in `PR-BODY.md`, with CI as `n/a (local mode)`.
+
 ## Phases
 
 1. Setup: validate args, create the integration branch (multi only).
