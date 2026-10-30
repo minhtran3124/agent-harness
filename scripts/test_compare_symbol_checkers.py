@@ -118,19 +118,43 @@ class ScoreTests(unittest.TestCase):
 
 
 class BaselineTests(unittest.TestCase):
-    def test_baseline_known_counts_on_both_fixtures(self):
-        opts = {"tools_dir": None, "ground_check": os.path.join(REPO, "plugins", "harness", "scripts", "ground-check.sh"),
-                "timeout": 60}
+    """The baseline row is scored from whatever ground-check.sh prints; the test does not pin the real
+    script's current counts, so retargeting or improving it does not break the suite."""
+
+    def _stub(self, body):
+        d = tempfile.mkdtemp(prefix="stubgc-")
+        self.addCleanup(__import__("shutil").rmtree, d, True)
+        p = os.path.join(d, "ground-check.sh")
+        with open(p, "w") as fh:
+            fh.write("#!/bin/bash\n" + body)
+        return p
+
+    def test_baseline_scoring_follows_the_checker_output(self):
+        # A stub checker that rejects exactly the claims labelled missing or wrong-pair.
+        for lang in m.LANGS:
+            fdir = os.path.join(FIXTURES, m.LANGS[lang])
+            claims = m.load_claims(fdir)
+            bad = [c["claim"] for c in claims if c["label"] != "exists"]
+            body = "".join('echo "FAIL symbol: %s (stub)"\n' % b for b in bad) + "exit 1\n"
+            opts = {"tools_dir": None, "ground_check": self._stub(body), "timeout": 60}
+            s = m.measure("baseline", lang, fdir, claims, opts)["score"]
+            for label in m.LABELS:
+                total = sum(1 for c in claims if c["label"] == label)
+                self.assertEqual(s[label], {"total": total, "correct": total, "wrong": 0}, (lang, label))
+
+    def test_baseline_real_script_scores_every_claim(self):
+        gc = os.path.join(REPO, "plugins", "harness", "scripts", "ground-check.sh")
+        if not os.path.isfile(gc):
+            self.skipTest("ground-check.sh not present on this branch")
+        opts = {"tools_dir": None, "ground_check": gc, "timeout": 60}
         for lang in m.LANGS:
             fdir = os.path.join(FIXTURES, m.LANGS[lang])
             claims = m.load_claims(fdir)
             res = m.measure("baseline", lang, fdir, claims, opts)
             s = res["score"]
-            # The baseline accepts every dotted symbol whose names each appear somewhere: it never rejects a
-            # real claim and never catches a wrong pair.
-            self.assertEqual(s["exists"], {"total": 15, "correct": 15, "wrong": 0}, lang)
-            self.assertEqual(s["missing"], {"total": 6, "correct": 6, "wrong": 0}, lang)
-            self.assertEqual(s["wrong-pair"], {"total": 7, "correct": 0, "wrong": 7}, lang)
+            self.assertEqual(sum(v["total"] for v in s.values()), len(claims), lang)
+            for v in s.values():
+                self.assertEqual(v["correct"] + v["wrong"], v["total"], lang)
             self.assertGreaterEqual(res["cold"], 0)
             self.assertGreaterEqual(res["repeat"], 0)
 
