@@ -2,7 +2,9 @@
 """Compare ways to check a `qualifier.member` claim against code (spike for #523).
 
 Methods: the baseline plugins/harness/scripts/ground-check.sh, a language server (pyright for Python,
-typescript-language-server for TS), graphify and code-review-graph. Every method answers only
+typescript-language-server for TS), graphify, code-review-graph and codegraph. The codegraph row uses the
+same (container, member) rule as the other graph tools; the alias-aware row also reads the import aliases
+and `instantiates` edges of the context file, the best this index can do. Every method answers only
 "found" or "not found" for a claim; the runner scores that answer against the label in claims.tsv.
 The output of every tool is untrusted: a tool is never trusted past that one bit.
 
@@ -31,7 +33,7 @@ import time
 
 LABELS = ("exists", "missing", "wrong-pair")
 LANGS = {"py": "ground-check-py", "ts": "ground-check-ts"}
-METHODS = ("baseline", "language server", "graphify", "code-review-graph")
+METHODS = ("baseline", "language server", "graphify", "code-review-graph", "codegraph", "alias-aware codegraph")
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
 BASE_PATH = "/usr/local/bin:/usr/bin:/bin"
@@ -355,6 +357,41 @@ def crg_pairs(db_path):
         con.close()
 
 
+def codegraph_pairs(db_path):
+    con = sqlite3.connect("file:%s?mode=ro" % db_path, uri=True)
+    try:
+        pairs = set()
+        for kind, name, qualified, fpath in con.execute("select kind, name, qualified_name, file_path from nodes"):
+            if kind in ("file", "import"):
+                continue
+            container = qualified.rsplit("::", 1)[0] if "::" in (qualified or "") else stem(os.path.basename(fpath or ""))
+            pairs.add((container, name))
+        return pairs
+    finally:
+        con.close()
+
+
+def codegraph_aliases(db_path, context):
+    """{local name: real name} for one file: import aliases, then instances from `instantiates` edges."""
+    con = sqlite3.connect("file:%s?mode=ro" % db_path, uri=True)
+    try:
+        aliases = {}
+        for (sig,) in con.execute("select signature from nodes where kind = 'import' and file_path = ?", (context,)):
+            sig = sig or ""
+            star = re.match(r"import \* as (\w+) from [\"'](.+?)[\"']", sig)
+            if star:
+                aliases[star.group(1)] = star.group(2).rsplit("/", 1)[-1]
+            for real, local in re.findall(r"([\w.]+) as (\w+)", sig if not star else ""):
+                aliases[local] = real.rsplit(".", 1)[-1]
+        for name, target in con.execute(
+                "select s.name, t.name from edges e join nodes s on s.id = e.source join nodes t on t.id = e.target "
+                "where e.kind = 'instantiates' and s.file_path = ? and s.kind != 'function'", (context,)):
+            aliases[name] = target
+        return aliases
+    finally:
+        con.close()
+
+
 def graph_method(tool, lang, fixture_dir, claims, work, opts, repeat):
     root = os.path.join(work, "proj")
     if not os.path.isdir(root):
@@ -372,6 +409,25 @@ def graph_method(tool, lang, fixture_dir, claims, work, opts, repeat):
         if r.returncode != 0 or not os.path.isfile(out):
             raise CouldNotRun("graphify update exit %s: %s" % (r.returncode, (r.stderr or r.stdout).strip()[-120:]))
         pairs = graphify_pairs(out)
+    elif tool in ("codegraph", "alias-aware codegraph"):
+        exe = find_tool(["npm/node_modules/.bin/codegraph"], ["codegraph"], opts["tools_dir"])
+        if not exe:
+            raise CouldNotRun("not installed: codegraph")
+        # Every run is a full build, as above. No daemon: a watcher must not outlive the temp dir.
+        shutil.rmtree(os.path.join(root, ".codegraph"), ignore_errors=True)
+        r = run([exe, "init", "--yes"], cwd=root, env=dict(env, CODEGRAPH_NO_DAEMON="1", CODEGRAPH_TELEMETRY="0"),
+                timeout=opts["timeout"])
+        db = os.path.join(root, ".codegraph", "codegraph.db")
+        if r.returncode != 0 or not os.path.isfile(db):
+            raise CouldNotRun("codegraph exit %s: %s" % (r.returncode, (r.stderr or r.stdout).strip()[-120:]))
+        pairs = codegraph_pairs(db)
+        if tool == "alias-aware codegraph":
+            result = {}
+            for c in claims:
+                q, member = c["claim"].rsplit(".", 1)
+                aliases = codegraph_aliases(db, c["context"])
+                result[c["claim"]] = (aliases.get(q, q), member) in pairs
+            return result
     else:
         exe = find_tool(["venv-crg/bin/code-review-graph"], ["code-review-graph"], opts["tools_dir"])
         if not exe:
@@ -491,7 +547,8 @@ def versions(opts):
     probes = [("pyright", ["venv-pyright/bin/pyright"], ["pyright"]),
               ("typescript-language-server", ["npm/node_modules/.bin/typescript-language-server"], ["typescript-language-server"]),
               ("graphify", ["venv-graphify/bin/graphify"], ["graphify"]),
-              ("code-review-graph", ["venv-crg/bin/code-review-graph"], ["code-review-graph"])]
+              ("code-review-graph", ["venv-crg/bin/code-review-graph"], ["code-review-graph"]),
+              ("codegraph", ["npm/node_modules/.bin/codegraph"], ["codegraph"])]
     out = []
     for name, rel, names in probes:
         p = find_tool(rel, names, td)

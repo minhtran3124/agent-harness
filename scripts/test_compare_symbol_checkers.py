@@ -2,7 +2,7 @@
 """Tests for scripts/compare_symbol_checkers.py and its fixtures (#523).
 
 Runs with or without the optional tools (pyright, typescript-language-server, graphify,
-code-review-graph): the PATH is emptied for the tool-absent checks. Set SYMCHECK_TOOLS_DIR to also
+code-review-graph, codegraph): the PATH is emptied for the tool-absent checks. Set SYMCHECK_TOOLS_DIR to also
 check the tool rows with the tools present.
 Run: python3 -I scripts/test_compare_symbol_checkers.py   (or via pytest)
 """
@@ -37,6 +37,19 @@ def fixture_sources(lang):
 
 def has_word(text, word):
     return re.search(r"(?<![A-Za-z0-9_])%s(?![A-Za-z0-9_])" % re.escape(word), text) is not None
+
+
+def codegraph_db(d, nodes, edges):
+    """A minimal codegraph index: nodes are (id, kind, name, qualified_name, file_path, signature)."""
+    p = os.path.join(d, "codegraph.db")
+    con = sqlite3.connect(p)
+    con.execute("create table nodes (id text, kind text, name text, qualified_name text, file_path text, signature text)")
+    con.execute("create table edges (source text, target text, kind text)")
+    con.executemany("insert into nodes values (?,?,?,?,?,?)", nodes)
+    con.executemany("insert into edges values (?,?,?)", edges)
+    con.commit()
+    con.close()
+    return p
 
 
 class EmptyPath:
@@ -104,6 +117,30 @@ class ScoreTests(unittest.TestCase):
             with open(p, "w") as fh:
                 json.dump(g, fh)
             self.assertEqual(m.graphify_pairs(p), {("Cart", "total"), ("pricing", "format_price")})
+
+    def test_codegraph_pairs_use_qualified_name_or_file_stem(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = codegraph_db(d, [
+                ("n1", "file", "pricing.py", "pricing.py", "shop/pricing.py", None),
+                ("n2", "import", "shop", "shop", "shop/pricing.py", "import shop"),
+                ("n3", "function", "format_price", "format_price", "shop/pricing.py", None),
+                ("n4", "method", "total", "Cart::total", "shop/pricing.py", None)], [])
+            self.assertEqual(m.codegraph_pairs(p), {("pricing", "format_price"), ("Cart", "total")})
+
+    def test_codegraph_aliases_read_imports_and_instances_of_the_context_file(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = codegraph_db(d, [
+                ("a", "import", "./pricing", "./pricing", "src/app.ts", 'import * as pr from "./pricing";'),
+                ("b", "import", "./inventory", "./inventory", "src/app.ts", 'import { Stock as Store, x } from "./inventory";'),
+                ("c", "import", "shop", "shop", "shop/app.py", "from shop import pricing as py_pr"),
+                ("d", "import", "shop.inventory", "shop.inventory", "shop/app.py", "import shop.inventory as inv"),
+                ("e", "constant", "cart", "cart", "src/app.ts", None),
+                ("f", "class", "Cart", "Cart", "src/pricing.ts", None),
+                ("g", "constant", "cart", "cart", "src/other.ts", None),
+                ("h", "class", "Other", "Other", "src/other.ts", None)],
+                [("e", "f", "instantiates"), ("g", "h", "instantiates")])
+            self.assertEqual(m.codegraph_aliases(p, "src/app.ts"), {"pr": "pricing", "Store": "Stock", "cart": "Cart"})
+            self.assertEqual(m.codegraph_aliases(p, "shop/app.py"), {"py_pr": "pricing", "inv": "inventory"})
 
     def test_crg_pairs_use_parent_name_or_file_stem(self):
         with tempfile.TemporaryDirectory() as d:
@@ -194,6 +231,7 @@ class TableTests(unittest.TestCase):
         self.assertIn("could not run: not installed: code-review-graph", table)
         self.assertIn("could not run: not installed: pyright-langserver", table)
         self.assertIn("could not run: not installed: typescript-language-server", table)
+        self.assertIn("could not run: not installed: codegraph", table)
 
     def test_table_has_one_row_per_method_and_language(self):
         with EmptyPath():
@@ -240,6 +278,25 @@ class CrgArgvTests(unittest.TestCase):
         self.assertTrue(calls)
         for argv in calls:
             self.assertNotIn("-q", argv)
+
+    def test_codegraph_repeat_run_is_a_full_build_with_daemon_and_telemetry_off(self):
+        td = tempfile.mkdtemp(prefix="fakecg-")
+        os.makedirs(os.path.join(td, "bin"))
+        exe = os.path.join(td, "bin", "codegraph")
+        log = os.path.join(td, "argv.log")
+        with open(exe, "w") as fh:
+            fh.write("#!/bin/sh\necho \"$1 $2 had=$(ls -d .codegraph 2>/dev/null) t=$CODEGRAPH_TELEMETRY d=$CODEGRAPH_NO_DAEMON\" >> \"%s\"\n"
+                     "mkdir -p .codegraph; python3 -c \"import sqlite3;c=sqlite3.connect('.codegraph/codegraph.db');"
+                     "c.execute('create table nodes (id,kind,name,qualified_name,file_path,signature)');"
+                     "c.execute('create table edges (source,target,kind)');c.commit()\"\n" % log)
+        os.chmod(exe, 0o755)
+        work = tempfile.mkdtemp(prefix="cgwork-")
+        fdir = os.path.join(FIXTURES, m.LANGS["py"])
+        opts = {"tools_dir": td, "timeout": 60}
+        m.graph_method("codegraph", "py", fdir, [], work, opts, False)
+        m.graph_method("codegraph", "py", fdir, [], work, opts, True)
+        with open(log) as fh:
+            self.assertEqual(fh.read().split("\n")[:2], ["init --yes had= t=0 d=1"] * 2)
 
     def test_repeat_run_does_a_real_build_not_a_noop_update(self):
         td = tempfile.mkdtemp(prefix="fakecrg-")
