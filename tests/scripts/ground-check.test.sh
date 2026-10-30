@@ -16,6 +16,8 @@ mkdir -p "$REPO/src" "$REPO/tests"
 printf 'line one\nfunction buildWidget(opts) {\n  return opts.size;\n}\nconst MAX_ITEMS = 5;\n' > "$REPO/src/app.js"
 printf '#!/bin/bash\necho run\n' > "$REPO/tests/run.sh"
 printf 'one\ntwo\n' > "$REPO/README.md"
+printf 'function formatDate(d) { return d; }\n' > "$REPO/src/lib.js"
+printf 'import utils from "./lib";\n' > "$REPO/src/main.js"
 git -C "$REPO" add -A
 git -C "$REPO" commit -q -m init
 SHA=$(git -C "$REPO" rev-parse HEAD)
@@ -107,6 +109,10 @@ if [ "$RC" -eq 0 ]; then pass; else fail "rc=$RC out=$OUT"; fi
 
 t "a dotted symbol passes when its last segment is on the ref"
 chk full 'Reads `opts.size`, then `opts.buildWidget`.'
+if [ "$RC" -eq 0 ]; then pass; else fail "rc=$RC out=$OUT"; fi
+
+t "a dotted symbol passes when the qualifier and the member sit in different files"
+chk full 'Calls `utils.formatDate` from main.'
 if [ "$RC" -eq 0 ]; then pass; else fail "rc=$RC out=$OUT"; fi
 
 t "a dotted symbol whose qualifier is not in any file holding the member fails"

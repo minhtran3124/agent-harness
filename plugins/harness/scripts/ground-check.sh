@@ -148,16 +148,12 @@ check_symbol() { # check_symbol <symbol>
   g grep -q -F -w -e "$s" "$REF" -- >/dev/null 2>&1 && return 0
   last=${s##*.}
   if [ "$last" != "$s" ]; then
-    # A dotted symbol: the last segment must be on the ref, and every other segment must be in a file that holds it.
-    local files seg ok=1 f found
-    files=$(g grep -l -F -w -e "$last" "$REF" -- 2>/dev/null | cut -d: -f2-)
-    if [ -n "$files" ]; then
+    # A dotted symbol: the last segment and every qualifier must each be on the ref. They may sit in
+    # different files (an import, a global such as JSON), so no shared file is required.
+    local seg ok=1
+    if g grep -q -F -w -e "$last" "$REF" -- >/dev/null 2>&1; then
       for seg in $(printf '%s' "${s%.*}" | tr '.' ' '); do
-        found=0
-        while IFS= read -r f; do
-          if g grep -q -F -w -e "$seg" "$REF" -- "$f" >/dev/null 2>&1; then found=1; break; fi
-        done <<< "$files"
-        [ "$found" = 1 ] || { ok=0; break; }
+        g grep -q -F -w -e "$seg" "$REF" -- >/dev/null 2>&1 || { ok=0; break; }
       done
       [ "$ok" = 1 ] && return 0
     fi
