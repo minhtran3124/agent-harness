@@ -1,14 +1,14 @@
 ---
 ticket: run
 stage: review-fix
-status: needs-review
-needs_review: true
+status: accepted
+needs_review: false
 confidence: medium
-decided_by: claude (ship workflow: review-fix)
+decided_by: owner (minh.tran.dev, after review of PR #541)
 date: 2026-10-31
 ---
 
-# 0119. Boundary: regression test for tickets allowed-tools lives outside the named file set
+# 0127. Boundary: regression test for tickets allowed-tools lives outside the named file set
 
 ## Context
 
@@ -35,3 +35,7 @@ F6 stays unfixed until the owner adds a test file to the boundary, or accepts a 
 ## How to reverse
 
 Name a tickets contract test file in the ticket's file list and re-run the fix stage.
+
+## Outcome
+
+Closed with no allowed-tools change. `gh issue view` is not needed, because the dedup reads bodies with `gh issue list --json`. `gh repo view` was already allowed. A headless run showed which milestone and body forms pass allowed-tools, and the contract test pins them.

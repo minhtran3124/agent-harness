@@ -1,14 +1,14 @@
 ---
 ticket: run
 stage: review-fix
-status: needs-review
-needs_review: true
+status: accepted
+needs_review: false
 confidence: medium
-decided_by: claude (ship workflow: review-fix)
+decided_by: owner (minh.tran.dev, after review of PR #541)
 date: 2026-10-31
 ---
 
-# 0118. Boundary: regression test for F3 needs a file outside the named set
+# 0126. Boundary: regression test for F3 needs a file outside the named set
 
 ## Context
 
@@ -35,3 +35,7 @@ F3 stays open. Suggested fix once the owner allows tests/scripts/tickets-contrac
 ## How to reverse
 
 Add tests/scripts/tickets-contract.test.sh to the ticket's file list and rerun this fix stage.
+
+## Outcome
+
+Fixed. SKILL.md step 9 maps a dep on a skipped ticket to its `#n`, and process.md allows deps only in the batch or on closed issues. tests/scripts/tickets-contract.test.sh covers it.

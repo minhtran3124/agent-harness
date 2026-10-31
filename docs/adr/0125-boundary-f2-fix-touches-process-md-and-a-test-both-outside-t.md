@@ -1,14 +1,14 @@
 ---
 ticket: run
 stage: review-fix
-status: needs-review
-needs_review: true
+status: accepted
+needs_review: false
 confidence: medium
-decided_by: claude (ship workflow: review-fix)
+decided_by: owner (minh.tran.dev, after review of PR #541)
 date: 2026-10-31
 ---
 
-# 0117. Boundary: F2 fix touches process.md and a test, both outside the named file set
+# 0125. Boundary: F2 fix touches process.md and a test, both outside the named file set
 
 ## Context
 
@@ -34,3 +34,7 @@ Re-running the tickets skill can still create duplicate issues until process.md 
 ## How to reverse
 
 Add process.md and a test file to the ticket's named files, then re-run the fix stage.
+
+## Outcome
+
+Fixed. references/process.md Duplicates reads every issue with `gh issue list --state all --limit 1000 --json number,title,body,state` and needs an exact match on the `source:` line. tests/scripts/tickets-contract.test.sh covers it.

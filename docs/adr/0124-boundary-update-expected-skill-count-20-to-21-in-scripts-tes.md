@@ -8,7 +8,7 @@ decided_by: claude (ship workflow: implement)
 date: 2026-10-31
 ---
 
-# 0116. Boundary: update expected skill count 20 to 21 in scripts/test_audit_skill_prompts.py
+# 0124. Boundary: update expected skill count 20 to 21 in scripts/test_audit_skill_prompts.py
 
 ## Context
 
