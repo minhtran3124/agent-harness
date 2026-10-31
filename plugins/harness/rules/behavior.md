@@ -59,3 +59,7 @@ you invented along the way. Correct an earlier statement only when the error cha
 code, conclusions, or decisions — plainly, once, without apology, combined with any others. Don't
 take another agent's report at face value. Check load-bearing claims (§1) before relaying them. A
 follow-up question is not by itself a sign you were wrong.
+
+## 6. Merges into base
+
+Never merge into main or the base branch on your own choice. An agent merges into base only after the owner approves that one PR: the owner approves in the confirmation prompt that `merge-guard.sh` shows for a single plain `gh pr merge <n> --repo o/r`. Never use `--auto`, a wrapper, `gh api` or a second PR to get around that prompt. A merge into `feat/*` is unchanged.
