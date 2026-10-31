@@ -62,6 +62,9 @@ t "a PR URL repo equal to --repo is allowed"; reset; setbase feat/x
 g 'gh pr merge https://github.com/o/r/pull/7 --repo o/r --merge'; assert_rc 0
 t "env assignments before gh are skipped"; reset; setbase feat/x; g "FOO=1 $M"; assert_rc 0
 
+# Ticket #545 AC4 (each path stays denied) is covered in this file, not in tests/scripts/merge-deny.test.sh (that
+# file tests the setup script that writes permissions.deny). Cases below: --auto, bash -c / eval / xargs wraps,
+# gh api and GraphQL merges, gh alias with merge, no gh, no jq, no PR number, unreadable or empty base.
 # A plain single merge into a protected base is put to the owner (ask), not run and not denied.
 assert_ask() { if [ "$RC" = 0 ] && printf '%s' "$OUT" | jq -e --arg w "$1" '.hookSpecificOutput | .permissionDecision == "ask" and (.permissionDecisionReason | contains($w))' >/dev/null 2>&1; then pass; else fail "rc=$RC out=$OUT"; fi; }
 for b in main master develop staging production release/1 release-2; do
@@ -95,7 +98,11 @@ t "ask with plain -s: no deletion note"; g "$MA -s"; no_note
 t "ask with attached body -bfixed: the value is not read as bundled flags"; g "$MA -bfixed"; no_note
 t "ask with attached subject -tAdam: the value is not read as bundled flags"; g "$MA -tAdam"; no_note
 t "ask with -b <value> containing d: no deletion note"; g "$MA -b dd"; no_note
-t "ask with --admin --admin=false: the prompt still names the bypass (an earlier flag is not cancelled)"; g "$MA --admin --admin=false"; assert_ask "WITH --admin"
+t "ask with --admin --admin=false: the later off flag wins, no bypass note"; g "$MA --admin --admin=false"; no_note
+t "ask with --admin=false --admin: the later on flag wins, the bypass is named"; g "$MA --admin=false --admin"; assert_ask "WITH --admin"
+t "ask with --delete-branch --delete-branch=false: no deletion note"; g "$MA --delete-branch --delete-branch=false"; no_note
+t "ask with --admin --admin: the bypass is named once"; g "$MA --admin --admin"
+if [ "$(printf '%s' "$OUT" | grep -o 'WITH --admin' | wc -l)" = 1 ]; then pass; else fail "$OUT"; fi
 t "ask with --match-head-commit=<head>: put to the owner"; g "$M --match-head-commit=$SHA"; assert_ask "at $SHA?"
 t "ask merge chained with another command: denied, not put to the owner"; g "$MA && echo extra"; assert_rc_contains 2 "only command"
 t "ask merge after another command: denied"; g "echo x; $MA"; assert_rc_contains 2 "only command"

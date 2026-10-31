@@ -119,6 +119,7 @@ judge() {
 judge_pr_merge() {  # judge_pr_merge <segment starting with gh pr merge>
   local seg w repo="" prs="" skip="" u n r urepos="" match=""
   NOTE=""
+  local adm=0 delb=0  # last occurrence wins, as in gh; the note is built once after the loop
   seg=$(printf '%s' "$1" | sed -E 's/^gh[[:space:]]+pr[[:space:]]+merge[[:space:]]*//')
   set -f
   for w in $seg; do
@@ -129,11 +130,11 @@ judge_pr_merge() {  # judge_pr_merge <segment starting with gh pr merge>
       --repo|-R) skip=repo ;;
       --repo=*) repo=${w#--repo=} ;;
       -R?*) repo=${w#-R} ;;
-      --admin=false|--admin=0|--admin=f|--admin=F|--admin=False|--admin=FALSE) ;;
-      --admin|--admin=*) NOTE="$NOTE, WITH --admin (bypasses branch protection and required checks)" ;;
-      --delete-branch=false|--delete-branch=0|--delete-branch=f|--delete-branch=F|--delete-branch=False|--delete-branch=FALSE|-d=false|-d=0) ;;
+      --admin=false|--admin=0|--admin=f|--admin=F|--admin=False|--admin=FALSE) adm=0 ;;
+      --admin|--admin=*) adm=1 ;;
+      --delete-branch=false|--delete-branch=0|--delete-branch=f|--delete-branch=F|--delete-branch=False|--delete-branch=FALSE|-d=false|-d=0) delb=0 ;;
       -b?*|-t?*|-F?*|-A?*) ;;  # attached value of a value-taking short flag, not bundled flags
-      --delete-branch|--delete-branch=*|-d|-[!-]*d*) NOTE="$NOTE, and deletes the head branch" ;;
+      --delete-branch|--delete-branch=*|-d|-[!-]*d*) delb=1 ;;
       --auto) deny "'gh pr merge --auto' is not allowed; a human merges." ;;
       --match-head-commit) skip=match ;;
       --match-head-commit=*) match=${w#--match-head-commit=} ;;
@@ -150,6 +151,8 @@ judge_pr_merge() {  # judge_pr_merge <segment starting with gh pr merge>
       *) prs="$prs $w" ;;
     esac
   done
+  [ "$adm" = 1 ] && NOTE="$NOTE, WITH --admin (bypasses branch protection and required checks)"
+  [ "$delb" = 1 ] && NOTE="$NOTE, and deletes the head branch"
   [ -n "$prs" ] || deny "'gh pr merge' without a PR number cannot be judged."
   # gh merges the repo in the URL; the PR must be judged in that same repo, so any other repo is a deny.
   for u in $urepos; do
