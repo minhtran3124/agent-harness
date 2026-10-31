@@ -108,7 +108,7 @@ function defaults(c, st) {
   if (l === 'artifact') return { created: false, fallback: 'docs/adr/' }
   if (l === 'adr') return ok({ adrs: [{ number: 2, path: 'docs/adr/0002-x.md', needs_review: true }] })
   if (l === 'specs' || l === 'specs-early') return ok()
-  if (l === 'write run journal') return ok({ summary: String((c.prompt.split('<<<JOURNAL\n')[1] || '').split('JOURNAL>>>')[0].split('\n').filter(Boolean).length) })
+  if (l === 'write run journal') return ok({ lines: (c.prompt.split('<<<JOURNAL\n')[1] || '').split('JOURNAL>>>')[0].split('\n').filter(Boolean).length })
   throw new Error(`no scripted answer for label '${l}'`)
 }
 
@@ -191,16 +191,17 @@ test('journal: a failing journal agent is only logged and the run still returns'
 
 test('journal: without performance duration_ms is null and logged once', async () => {
   const desc = Object.getOwnPropertyDescriptor(globalThis, 'performance')
+  const had = Object.prototype.hasOwnProperty.call(globalThis, 'performance')
   Object.defineProperty(globalThis, 'performance', { value: undefined, configurable: true, writable: true })
   try {
     const r = await run({ runId: 'jt-noclock', tickets: [T(1, 1)] }, null)
     assert(r.result.journal.length > 0 && r.result.journal.every(x => x.duration_ms === null))
     assert.strictEqual(r.logs.filter(m => m.startsWith('journal: no clock')).length, 1)
-  } finally { if (desc) Object.defineProperty(globalThis, 'performance', desc) }
+  } finally { if (had) Object.defineProperty(globalThis, 'performance', desc); else delete globalThis.performance }
 })
 
 test('journal: the script uses no API the real sandbox lacks (import(), require, getBuiltinModule, node:fs, process.)', async () => {
-  const code = SRC.replace(/(^|[^:])\/\/.*$/gm, '$1')
+  const code = SRC.replace(/^\s*\/\/.*$/gm, '').replace(/ \/\/ .*$/gm, '')
   assert(!/\bimport\s*\(/.test(code), 'import() is a syntax error in the Workflow runtime')
   assert(!/\brequire\s*\(|getBuiltinModule|node:fs|\bprocess\.(env|argv|exit|cwd|nextTick|platform)/.test(code), 'fs/process/require do not exist in the Workflow runtime')
   assert(!/Date\.now\s*\(|Math\.random\s*\(|new Date\s*\(\s*\)/.test(code), 'Date.now, Math.random and new Date() throw in the Workflow runtime')
@@ -260,7 +261,7 @@ test('journal: a blocked, empty or short write is logged', async () => {
     const r = await run({ runId: 'jw1' }, c => (c.label === 'write run journal' ? reply : undefined))
     assert(r.logs.some(m => m.startsWith('journal: not written')), JSON.stringify(reply))
   }
-  const short = await run({ runId: 'jw2' }, c => (c.label === 'write run journal' ? ok({ summary: '1' }) : undefined))
+  const short = await run({ runId: 'jw2' }, c => (c.label === 'write run journal' ? ok({ lines: 1 }) : undefined))
   assert(short.logs.some(m => /lines parse/.test(m)), short.logs.join('\n'))
   const good = await run({ runId: 'jw3' }, null)
   assert(!good.logs.some(m => m.startsWith('journal: ')), 'a matching count logs nothing')
@@ -304,9 +305,21 @@ test('journal: when the writer cannot run, the rows still reach the log', async 
   assert.deepStrictEqual(JSON.parse(rowLogs[0].slice('journal row: '.length)), r.result.journal[0])
 })
 
-test('journal: a writer summary with text around the number makes no false mismatch claim', async () => {
+test('journal: a writer reply without a line count makes no false mismatch claim', async () => {
   const r = await run({ runId: 'jd2' }, c => (c.label === 'write run journal' ? ok({ summary: 'Wrote journal-20261101T062619.jsonl with 3 rows' }) : undefined))
   assert(!r.logs.some(m => m.startsWith('journal: written')), r.logs.join('\n'))
+})
+
+test('journal: without a runId the writer is told not to replace an existing file', async () => {
+  const none = await run({ runId: '' }, null)
+  assert(/do not replace it: use the first free name/.test(journalCall(none)[0].prompt))
+  const some = await run({ runId: 'uniq-2' }, null)
+  assert(/replace it if it exists/.test(journalCall(some)[0].prompt))
+})
+
+test('journal: a ready ticket the join agent did not report is a failed join row', async () => {
+  const r = await run({ runId: 'jm1', tickets: [T(1, 1), T(2, 1)] }, c => (/^merge/.test(c.label) ? ok({ merged: [], failed: [] }) : undefined))
+  assert.strictEqual(rowsOf(r).find(x => x.stage === 'merge-g1').status, 'failed')
 })
 
 test('journal: a stage whose measurement helpers throw still returns its result', async () => {
