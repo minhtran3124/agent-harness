@@ -30,4 +30,14 @@ t "the current repo tags pass"
 bash "$SCRIPT" --root "$ROOT" >/dev/null 2>&1; rc=$?
 if [ "$rc" -eq 0 ]; then pass; else fail "want exit 0, got $rc"; fi
 
+E=$(mktemp -d); _CLEANUP_DIRS+=("$E")
+git -C "$E" init -q
+t "no tags: skips with exit 0 by default"
+bash "$SCRIPT" --root "$E" >/dev/null 2>&1; rc=$?
+if [ "$rc" -eq 0 ]; then pass; else fail "want exit 0, got $rc"; fi
+
+t "no tags with REQUIRE_TAGS=1 exits 1"
+REQUIRE_TAGS=1 bash "$SCRIPT" --root "$E" >/dev/null 2>&1; rc=$?
+if [ "$rc" -eq 1 ]; then pass; else fail "want exit 1, got $rc"; fi
+
 finish

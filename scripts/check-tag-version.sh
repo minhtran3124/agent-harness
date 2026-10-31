@@ -7,6 +7,7 @@
 # Does not verify: tags below v5.1.0 (v1 to v4 fail this rule by design: v4.0.0 points at
 #                  VERSION 2.28.0 and v5.0.0 was never tagged), or that a tag is the right release.
 # Reads tags only. It never creates, moves, deletes or pushes a tag.
+# Env: REQUIRE_TAGS=1 turns the no-tag skip and a failing `git tag` into a failure (CI sets it).
 # Usage: bash scripts/check-tag-version.sh [--root DIR]
 set -u
 ROOT="."
@@ -15,6 +16,11 @@ cd "$ROOT" || exit 1
 git rev-parse --git-dir >/dev/null 2>&1 || { echo "  ✗ tag version: $ROOT is not a git repo" >&2; exit 1; }
 FIRST="5.1.0"
 bad=0; checked=0
+if ! tags=$(git tag --list 2>&1); then
+  echo "  ✗ tag version: git tag --list failed: $tags" >&2
+  [ "${REQUIRE_TAGS:-}" = 1 ] && exit 1
+  echo "  skip — cannot list tags"; exit 0
+fi
 while IFS= read -r tag; do
   case "$tag" in v[0-9]*.[0-9]*.[0-9]*) ;; *) continue ;; esac
   ver="${tag#v}"
@@ -29,6 +35,14 @@ while IFS= read -r tag; do
     echo "  ✗ $tag has VERSION '${have:-<none>}', want '$ver'" >&2
     bad=1
   fi
-done < <(git tag --list)
-[ "$checked" -gt 0 ] || echo "  skip — no tag at or above v$FIRST here (shallow clone without tags?)"
+done <<EOF
+$tags
+EOF
+if [ "$checked" -eq 0 ]; then
+  if [ "${REQUIRE_TAGS:-}" = 1 ]; then
+    echo "  ✗ tag version: no tag at or above v$FIRST and REQUIRE_TAGS=1" >&2
+    exit 1
+  fi
+  echo "  skip — no tag at or above v$FIRST here (shallow clone without tags?)"
+fi
 exit "$bad"
