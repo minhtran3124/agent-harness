@@ -43,6 +43,3 @@ docs/memory/
 # local research notes and generated reports
 /research_notes/
 /reports/
-
-# run journals written by ship.js
-.ship/
