@@ -184,4 +184,28 @@ s=$SECONDS; g "$M"; e=$((SECONDS - s))
 if [ "$RC" = 2 ] && [ "$e" -lt 20 ]; then pass; else fail "rc=$RC took ${e}s out=$OUT"; fi
 rm -f "$D/slow"
 
+# Probe (opt-in: it starts real `claude -p` sessions, needs a login and costs tokens): what Claude Code does
+# with permissionDecision "ask" under default, auto and bypassPermissions. Run with RUN_ASK_PROBE=1.
+# Result (ADR 0108, 0109): in each mode the Bash call is NOT run; headless, nobody can answer the prompt.
+ask_probe() {
+  local mode="$1" pd
+  pd=$(mktemp -d); _CLEANUP_DIRS+=("$pd"); mkdir -p "$pd/.claude"
+  cat > "$pd/hook.sh" <<'HOOKEOF'
+#!/bin/sh
+cat >/dev/null
+echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"ask","permissionDecisionReason":"probe ask"}}'
+HOOKEOF
+  chmod +x "$pd/hook.sh"
+  printf '{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"%s/hook.sh"}]}]}}' "$pd" > "$pd/.claude/settings.json"
+  (cd "$pd" && claude -p --model haiku --permission-mode "$mode" --setting-sources project \
+    "Run exactly this Bash command and nothing else: touch $pd/ran. Then say DONE." </dev/null >/dev/null 2>&1)
+  if [ -f "$pd/ran" ]; then fail "ask was turned into an allow under $mode"; else pass; fi
+}
+for mode in default auto bypassPermissions; do
+  t "probe: ask is not turned into an allow under $mode (headless claude -p)"
+  if [ "${RUN_ASK_PROBE:-}" != 1 ]; then skip "set RUN_ASK_PROBE=1 to run (starts a real claude session)"
+  elif ! command -v claude >/dev/null 2>&1; then skip "claude is not installed"
+  else ask_probe "$mode"; fi
+done
+
 finish
