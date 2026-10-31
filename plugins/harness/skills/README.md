@@ -124,6 +124,7 @@ compound  (when the root cause is a reusable learning — the bug track takes it
 | Skill | Trigger | Output |
 |---|---|---|
 | `intent-review` | Checks the diff range against the owner's original request verbatim, blind to the plan; dispatches the `intent-reviewer` agent with only those two inputs. **Standalone** on any diff plus its request, or run by the ship workflow as its last pass | Findings classified `gap` / `excess` / `drift` → fix · ask the owner (auto mode: record a decision) · list in the PR |
+| `tickets` | **User-invoked** (`/tickets <brief path> [--max 30] [--milestone <name>]`). Reads a brief, splits it into tickets, shows one table, asks one go/no-go question, then creates a milestone, the issues and an epic with `gh`. Each ticket is written to pass `intake` as READY. Never edits existing issues | A milestone, GitHub issues and an epic; next step `/harness:autopilot <milestone>` |
 | `autopilot` | **User-invoked** (`/autopilot <milestone \| #n \| free text> [base=<branch>] [--no-ask]`). Interactive first half of a hands-off run for one ticket or a milestone: triages each ticket (`intake`), groups them by dependency (`skills/autopilot/scripts/plan_groups.py`), asks the owner every open question once, runs `grilling` for GRILL tickets, then launches `workflows/ship.js` after one go/no-go. The script writes `specs/` files as each stage ends: `intent.md` after the intent stage (at depth S also `design.md` and `plan.md`), `design.md`, `plan.md` and `research-brief.md` after the plan stage, `decision.md` and `summary.md` at the end, and it rewrites all five at the end | Summary table, "Confirmed decisions" comments on the tickets, one `Workflow` run |
 | `decision-record` | **Stage- or user-invoked**. A model decided something on its own during an autonomous run. Stage agents return `decisions[]`. The final ADR stage runs `scripts/write_adrs.py`, commits `docs/adr/NNNN-*.md` and renders the PR `## Decisions` section | ADR files + a `## Decisions` PR section (and one private artifact when available) |
 | `compound` | Only after a session that produced a reusable learning (non-obvious bug fix, pattern, decision, useful failure) | `docs/solutions/<category>/<slug>.md`, rebuilt `INDEX.md`, `critical-patterns.md` entries for critical or recurring learnings |
@@ -164,6 +165,7 @@ xia2                       ──► research brief → writing-plans
 writing-plans              ──► implement
 implement                  ──► /code-review → intent-review → finishing-a-development-branch
 intent-review              ──► (standalone — same pipeline; needs the verbatim request and a BASE..HEAD range)
+tickets                    ──► GitHub issues + milestone → autopilot
 autopilot                  ──► intake (per ticket) → grilling → workflows/ship.js (launch, terminal)
 decision-record            ──► docs/adr/NNNN-*.md + PR `## Decisions` section (terminal)
 diagnosing-bugs            ──► diagnosis.md → task-reviewer → S: red test → fix → cleanup
