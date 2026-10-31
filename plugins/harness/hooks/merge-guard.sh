@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
-# PreToolUse(Bash) guard: a PR merge from a Claude session is allowed only when the PR base is a
-# feat/* branch. Every merge into main, master, the default branch or any other branch is a human merge.
+# PreToolUse(Bash) guard: a PR merge from a Claude session is allowed without a prompt only when the PR
+# base is a feat/* branch. A merge into main, master, develop, release/*, staging, production or the repo
+# default branch is allowed only as ONE plain `gh pr merge <n> --repo o/r` from the main session, and only
+# after the owner answers a confirmation prompt (permissionDecision "ask"); the agent cannot answer it.
+# `ask` is honored in every permission mode (probed: default, auto, bypassPermissions); with no one to
+# answer (`claude -p`) Claude Code turns it into a denial. The hook itself denies in a mode it does not
+# know, in dontAsk, in a subagent (payload carries agent_id) and when permission_mode is missing.
+# Any other merge into another branch is a human merge.
 # Unlike the other hooks, this one FAILS CLOSED: once it has seen a merge command, any doubt (no gh,
 # no jq, no PR number, no --repo, an unreadable base, a stalled gh) blocks the command (exit 2, reason
 # on stderr). A Bash call that is not a merge exits 0 at once, before any parsing.
@@ -66,39 +72,73 @@ ghrun() {
 }
 
 DEFAULTS=" "  # "repo=branch " cache, one default-branch read per repo
-judge() {  # judge <pr> <repo>
-  local pr=$1 repo=$2 base def
-  ghrun pr view "$pr" --repo "$repo" --json baseRefName -q .baseRefName || deny "PR #$pr of $repo: its base could not be read."
-  base=$GH_OUT
-  [ -n "$base" ] || deny "PR #$pr of $repo: gh returned no base branch."
-  case "$base" in *[!A-Za-z0-9._/-]*) deny "PR #$pr of $repo: unreadable base branch name." ;; esac
-  case "$base" in
-    main|master|develop|development|staging|production|release/*|release-*) deny "PR #$pr of $repo targets '$base' (rule: only feat/* may be merged by the workflow)." ;;
-    feat/?*) ;;
-    *) deny "PR #$pr of $repo targets '$base' (rule: only feat/* may be merged by the workflow)." ;;
-  esac
+MERGES=0  # merge segments seen (gh pr merge and gh api .../merge)
+ASKS=0    # merges into a non-feat base that may be put to the owner
+ASK_REASON=""
+NOTE=""   # flags of the one plain merge that change what it does (--admin), named in the owner prompt
+default_of() {  # default_of <repo>: sets def
   case "$DEFAULTS" in
-    *" $repo="*) def=${DEFAULTS#*" $repo="}; def=${def%% *} ;;
-    *) ghrun repo view "$repo" --json defaultBranchRef -q .defaultBranchRef.name || deny "the default branch of $repo could not be read."
-       def=$GH_OUT; [ -n "$def" ] || deny "the default branch of $repo is empty."
-       DEFAULTS="$DEFAULTS$repo=$def " ;;
+    *" $1="*) def=${DEFAULTS#*" $1="}; def=${def%% *} ;;
+    *) ghrun repo view "$1" --json defaultBranchRef -q .defaultBranchRef.name || deny "the default branch of $1 could not be read."
+       def=$GH_OUT; [ -n "$def" ] || deny "the default branch of $1 is empty."
+       DEFAULTS="$DEFAULTS$1=$def " ;;
   esac
-  [ "$def" != "$base" ] || deny "PR #$pr of $repo targets '$base', the default branch of the repo."
+}
+# judge <pr> <repo> [plain] [match]: "plain" marks the one form that may be put to the owner (a single
+# plain `gh pr merge`); every other form into a non-feat base is denied. The owner approves one head
+# commit, so the ask needs --match-head-commit <that head> (match): gh then refuses to merge a later push.
+judge() {
+  local pr=$1 repo=$2 plain=${3:-} match=${4:-} base head def words
+  MERGES=$((MERGES + 1))
+  ghrun pr view "$pr" --repo "$repo" --json baseRefName,headRefOid -q '.baseRefName + " " + .headRefOid' || deny "PR #$pr of $repo: its base could not be read."
+  # shellcheck disable=SC2086
+  set -- $GH_OUT
+  [ "$#" -eq 2 ] || deny "PR #$pr of $repo: gh returned no usable base branch and head commit."
+  base=$1; head=$2
+  case "$base" in *[!A-Za-z0-9._/-]*) deny "PR #$pr of $repo: unreadable base branch name." ;; esac
+  case "$head" in *[!0-9a-f]*) deny "PR #$pr of $repo: unreadable head commit." ;; esac
+  [ "${#head}" -eq 40 ] || deny "PR #$pr of $repo: unreadable head commit."
+  words="PR #$pr of $repo targets '$base'"
+  case "$base" in
+    main|master|develop|development|staging|production|release/*|release-*)
+      [ -n "$plain" ] || deny "$words (only a plain single 'gh pr merge' can be put to the owner)."
+      [ "$match" = "$head" ] || deny "$words: add --match-head-commit $head so the owner's approval covers exactly that commit."
+      ASKS=$((ASKS + 1)); ASK_REASON="Merge PR #$pr of $repo into $base at $head$NOTE?"; return ;;
+    feat/?*) ;;
+    *)
+      default_of "$repo"
+      [ "$def" = "$base" ] || deny "$words (rule: only feat/* is merged without the owner, and only the base and default branches with the owner)."
+      [ -n "$plain" ] || deny "$words (only a plain single 'gh pr merge' can be put to the owner)."
+      [ "$match" = "$head" ] || deny "$words: add --match-head-commit $head so the owner's approval covers exactly that commit."
+      ASKS=$((ASKS + 1)); ASK_REASON="Merge PR #$pr of $repo into $base at $head$NOTE?"; return ;;
+  esac
+  default_of "$repo"
+  [ "$def" != "$base" ] || deny "$words, the default branch of the repo."
 }
 
 judge_pr_merge() {  # judge_pr_merge <segment starting with gh pr merge>
-  local seg w repo="" prs="" skip="" u n r urepos=""
+  local seg w repo="" prs="" skip="" u n r urepos="" match=""
+  NOTE=""
+  local adm=0 delb=0  # last occurrence wins, as in gh; the note is built once after the loop
   seg=$(printf '%s' "$1" | sed -E 's/^gh[[:space:]]+pr[[:space:]]+merge[[:space:]]*//')
   set -f
   for w in $seg; do
     if [ "$skip" = repo ]; then repo=$w; skip=""; continue; fi
+    if [ "$skip" = match ]; then match=$w; skip=""; continue; fi
     if [ -n "$skip" ]; then skip=""; continue; fi
     case "$w" in
       --repo|-R) skip=repo ;;
       --repo=*) repo=${w#--repo=} ;;
       -R?*) repo=${w#-R} ;;
+      --admin=false|--admin=0|--admin=f|--admin=F|--admin=False|--admin=FALSE) adm=0 ;;
+      --admin|--admin=*) adm=1 ;;
+      --delete-branch=false|--delete-branch=0|--delete-branch=f|--delete-branch=F|--delete-branch=False|--delete-branch=FALSE|-d=false|-d=0) delb=0 ;;
+      -b?*|-t?*|-F?*|-A?*) ;;  # attached value of a value-taking short flag, not bundled flags
+      --delete-branch|--delete-branch=*|-d|-[!-]*d*) delb=1 ;;
       --auto) deny "'gh pr merge --auto' is not allowed; a human merges." ;;
-      -b|--body|-t|--subject|-F|--body-file|--match-head-commit|-A|--author-email) skip=other ;;
+      --match-head-commit) skip=match ;;
+      --match-head-commit=*) match=${w#--match-head-commit=} ;;
+      -b|--body|-t|--subject|-F|--body-file|-A|--author-email) skip=other ;;
       -*) ;;
       *[!0-9]*)
         case "$w" in
@@ -111,6 +151,8 @@ judge_pr_merge() {  # judge_pr_merge <segment starting with gh pr merge>
       *) prs="$prs $w" ;;
     esac
   done
+  [ "$adm" = 1 ] && NOTE="$NOTE, WITH --admin (bypasses branch protection and required checks)"
+  [ "$delb" = 1 ] && NOTE="$NOTE, and deletes the head branch"
   [ -n "$prs" ] || deny "'gh pr merge' without a PR number cannot be judged."
   # gh merges the repo in the URL; the PR must be judged in that same repo, so any other repo is a deny.
   for u in $urepos; do
@@ -121,7 +163,9 @@ judge_pr_merge() {  # judge_pr_merge <segment starting with gh pr merge>
   done
   [ -n "$repo" ] || deny "'gh pr merge' without --repo cannot be judged (GH_REPO does not count)."
   case "$repo" in */*/*|*/|/*|*[!A-Za-z0-9._/-]*|"") deny "unreadable --repo value '$repo'." ;; esac
-  for n in $prs; do judge "$n" "$repo"; done
+  # shellcheck disable=SC2086
+  set -- $prs
+  if [ "$#" -eq 1 ]; then judge "$1" "$repo" plain "$match"; else for n in "$@"; do judge "$n" "$repo"; done; fi
 }
 
 judge_api_merge() {  # judge_api_merge <segment>
@@ -167,12 +211,14 @@ segs=$(printf '%s\n' "$cmd" | awk '
 case "$segs" in *$'\001'OPENQUOTE*) deny "an unclosed quote in the command hides what follows it, so a merge cannot be judged." ;; esac
 
 set -f
+NSEGS=0
 while IFS= read -r seg; do
   seg=$(printf '%s' "$seg" | sed -E 's/^[[:space:]]+//'); orig=$seg
   while printf '%s' "$seg" | grep -qE '^[A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*([[:space:]]+|$)'; do
     seg=$(printf '%s' "$seg" | sed -E 's/^[A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]*//')
   done
   [ -n "$seg" ] || continue
+  NSEGS=$((NSEGS + 1))
   if printf '%s' "$seg" | grep -qE '^gh[[:space:]]+pr[[:space:]]+merge([[:space:]]|$)'; then
     judge_pr_merge "$seg"
   elif printf '%s' "$seg" | grep -qE '^gh[[:space:]]+api[[:space:]]'; then
@@ -205,4 +251,22 @@ while IFS= read -r seg; do
 done <<SEGS
 $segs
 SEGS
+
+[ "$ASKS" -gt 0 ] || exit 0
+# Something targets a non-feat base. It may be put to the owner only when it is the one and only merge.
+if [ "$ASKS" -ne 1 ] || [ "$MERGES" -ne 1 ]; then
+  deny "a command with more than one merge cannot be put to the owner; one PR at a time."
+fi
+# The owner's yes approves the whole Bash command, but the prompt names only the merge: any other
+# segment (&&, ;, |, a second line) would run on that yes, so the merge must be the only command.
+[ "$NSEGS" -eq 1 ] || deny "a merge into a non-feat base must be the only command; other commands in the same line would run on the owner's yes. Run the merge alone."
+agent=$(printf '%s' "$payload" | jq -r '.agent_id // empty' 2>/dev/null) || deny "the hook input could not be parsed."
+[ -z "$agent" ] || deny "a subagent or workflow agent cannot merge into a non-feat base; the owner answers in the main session."
+mode=$(printf '%s' "$payload" | jq -r '.permission_mode // empty' 2>/dev/null) || deny "the hook input could not be parsed."
+case "$mode" in
+  default|acceptEdits|auto|bypassPermissions) ;;
+  *) deny "permission mode '${mode:-missing}' cannot show the owner a confirmation prompt." ;;
+esac
+jq -n --arg r "$ASK_REASON" '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"ask",permissionDecisionReason:$r}}' \
+  || deny "the confirmation prompt could not be built."
 exit 0
