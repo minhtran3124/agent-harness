@@ -115,10 +115,30 @@ The root `settings.json` carries a `permissions.deny` list (no `allow` rules). T
 | `Edit(./.env)`, `Edit(./.env.*)` | Writing a `.env` file (the `Edit` rule covers every file-writing tool) |
 | `Bash(git push --force*)`, `Bash(git push -f*)` | Force pushes |
 | `Bash(git push * main)`, `Bash(git push * master)` | Pushing to the default branch |
+| `Bash(git push *:main)`, `Bash(git push *:master)` | Refspec pushes such as `HEAD:main` |
+| `Bash(git push *:refs/heads/main)`, `Bash(git push *:refs/heads/master)` | Full-ref refspec pushes such as `HEAD:refs/heads/main` |
+| `Bash(git push * +main)`, `Bash(git push * +master)` | Forced refspec pushes such as `+main` |
 
 `merge-deny.sh` keeps every existing key and deny entry, adds only the missing rules, and writes nothing when none is missing. It needs `jq` and refuses a settings file that is not valid JSON.
 `/harness:setup` offers no allow rule and never writes the owner's local settings file. To let a run merge ticket PRs into `feat/<slug>`, the owner adds an allow rule for `gh pr merge` to their own settings; the `merge-guard.sh` hook still blocks every merge whose PR base is not `feat/*`. The root `settings.json` has no allow rules.
 Deny rules are prefix patterns on the command text; they are a guard against mistakes, not a sandbox.
+`tests/scripts/push-deny-forms.test.sh` (spike #530, ADR 0115) prints a BLOCKED/ALLOWED line for each push form, using a local bare remote.
+
+### Known gaps
+
+The glob cannot express these forms, so they are allowed (the spike confirmed each one moves `main` on the remote):
+
+- Bare `git push` or `git push <remote>` when the upstream (or `push.default`) is `main`.
+- `git -C <dir> push ...`, or any other text before `push`.
+- Trailing flags after the branch, for example `git push origin main --no-verify`.
+- Aliases, and a refspec built in a shell variable.
+- `git push origin :main` (delete).
+
+The rules are a mistake guard, not a sandbox.
+
+### Server-side branch protection (manual owner step)
+
+TODO(owner): enable branch protection on main in GitHub (require PR, block force-push and deletion). The workflow never changes GitHub settings.
 
 ## What is intentionally not enforced
 
