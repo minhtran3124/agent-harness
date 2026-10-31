@@ -15,7 +15,7 @@ directory (verified for #396; it supersedes `docs/adr/0001-workflow-capabilities
   fullTestCmd: "bash scripts/run-tests.sh", advisorModel: "opus", noAsk: false, local: false }
 ```
 
-- `runId` names the run journal file. It must be unique per launch; the script cannot make one itself (SKILL.md step 8 runs `date -u`, which is in its `allowed-tools`). Without it the script uses the slug and logs a warning.
+- `runId` names the run journal file. It must be unique per launch; the script cannot make one itself (SKILL.md step 8 runs `date -u`, which `allowed-tools` permits). Without it the script uses the slug and logs a warning.
 - `deps` holds only tickets inside the batch. `group` comes from the plan_groups.py helper.
 - One ticket means single mode: no integration branch (ADR 0001, decision 5).
 - `noAsk: true` when `--no-ask` was given. `local` stays false unless the owner asks for a run

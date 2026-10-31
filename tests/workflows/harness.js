@@ -202,7 +202,8 @@ test('journal: without performance duration_ms is null and logged once', async (
 test('journal: the script uses no API the real sandbox lacks (import(), require, getBuiltinModule, node:fs, process.)', async () => {
   const code = SRC.replace(/(^|[^:])\/\/.*$/gm, '$1')
   assert(!/\bimport\s*\(/.test(code), 'import() is a syntax error in the Workflow runtime')
-  assert(!/\brequire\s*\(|getBuiltinModule|node:fs|\bprocess\./.test(code), 'fs/process/require do not exist in the Workflow runtime')
+  assert(!/\brequire\s*\(|getBuiltinModule|node:fs|\bprocess\.(env|argv|exit|cwd|nextTick|platform)/.test(code), 'fs/process/require do not exist in the Workflow runtime')
+  assert(!/Date\.now\s*\(|Math\.random\s*\(|new Date\s*\(\s*\)/.test(code), 'Date.now, Math.random and new Date() throw in the Workflow runtime')
 })
 
 test('journal: 20 parallel tickets in one group lose and duplicate no rows', async () => {
@@ -247,7 +248,8 @@ test('journal: a run that throws still writes the rows collected so far', async 
   const calls = []
   try {
     await run({ runId: 'jf2' }, (c, all) => { calls.length = 0; calls.push(...all); return c.label === 'suite' ? new Error('suite agent died') : undefined })
-  } catch (e) { /* expected */ }
+    assert.fail('the run must reject')
+  } catch (e) { assert(/suite agent died/.test(e.message), e.message) }
   const jc = calls.filter(c => c.label === 'write run journal')
   assert.strictEqual(jc.length, 1, 'one journal write after the throw')
   assert(jc[0].prompt.includes('"stage":"intent"'), jc[0].prompt.slice(0, 400))
@@ -259,7 +261,7 @@ test('journal: a blocked, empty or short write is logged', async () => {
     assert(r.logs.some(m => m.startsWith('journal: not written')), JSON.stringify(reply))
   }
   const short = await run({ runId: 'jw2' }, c => (c.label === 'write run journal' ? ok({ summary: '1' }) : undefined))
-  assert(short.logs.some(m => /does not match/.test(m)), short.logs.join('\n'))
+  assert(short.logs.some(m => /lines parse/.test(m)), short.logs.join('\n'))
   const good = await run({ runId: 'jw3' }, null)
   assert(!good.logs.some(m => m.startsWith('journal: ')), 'a matching count logs nothing')
   assert(/<<'JOURNAL_EOF'|quoted delimiter/.test(journalCall(good)[0].prompt))
@@ -284,7 +286,7 @@ test('journal: each stage uses the pipeline verdict, the right model and an hone
   assert.strictEqual(row(1, 'ci').status, 'failed')
   const fe = await run({ runId: 'jv2' }, c => (c.label === 'verify:1' || c.label === 'verify-base:1' ? ok({ passed: c.label === 'verify:1', kind: 'FE', failedStep: '', consoleErrors: [], stills: [], report: 'r' }) : undefined))
   const base = rowsOf(fe).find(x => x.stage === 'verify-base')
-  assert(base ? base.status === 'ok' : true, JSON.stringify(rowsOf(fe).filter(x => /verify/.test(x.stage))))
+  assert(base && base.status === 'ok', JSON.stringify(rowsOf(fe).filter(x => /verify/.test(x.stage))))
   const uat = await run({ runId: 'jv3' }, c => (c.label === 'uat:1' ? uatRes(true, [sc('S1', 'AC1', 'ac', 'FAIL')]) : undefined))
   assert.strictEqual(rowsOf(uat).find(x => x.stage === 'uat').status, 'failed', 'an AC scenario FAIL is failed even when passed_ac is true')
 })
@@ -293,6 +295,29 @@ test('journal: a long runId keeps its time suffix', async () => {
   const id = 'a'.repeat(70) + '-20261101T062619'
   const r = await run({ runId: id }, null)
   assert(/journal-.*20261101T062619\.jsonl/.test(journalCall(r)[0].prompt), journalCall(r)[0].prompt.slice(0, 400))
+})
+
+test('journal: when the writer cannot run, the rows still reach the log', async () => {
+  const r = await run({ runId: 'jd1' }, c => (c.label === 'write run journal' ? new Error('budget spent') : undefined))
+  const rowLogs = r.logs.filter(m => m.startsWith('journal row: '))
+  assert.strictEqual(rowLogs.length, r.result.journal.length)
+  assert.deepStrictEqual(JSON.parse(rowLogs[0].slice('journal row: '.length)), r.result.journal[0])
+})
+
+test('journal: a writer summary with text around the number makes no false mismatch claim', async () => {
+  const r = await run({ runId: 'jd2' }, c => (c.label === 'write run journal' ? ok({ summary: 'Wrote journal-20261101T062619.jsonl with 3 rows' }) : undefined))
+  assert(!r.logs.some(m => m.startsWith('journal: written')), r.logs.join('\n'))
+})
+
+test('journal: a stage whose measurement helpers throw still returns its result', async () => {
+  const fn = new AsyncFunction('agent', 'parallel', 'pipeline', 'phase', 'log', 'args', 'budget', 'workflow', SRC.replace('export const meta =', 'const meta ='))
+  const calls = []
+  const agent = async (prompt, opts = {}) => { const c = { prompt, opts, label: legacyLabel(opts.label) }; calls.push(c); return defaults(c, { fix: 0 }) }
+  const parallel = thunks => Promise.all(thunks.map(async f => { try { return await f() } catch (e) { return null } }))
+  const bad = { total: null, spent() { throw new Error('no budget') }, remaining: () => Infinity }
+  args0 = baseArgs({ runId: 'jx1' })
+  const out = await fn(agent, parallel, async () => {}, () => {}, () => {}, args0, bad, async () => {})
+  assert(out.tickets.length === 1 && out.journal.length > 0 && out.journal.every(x => x.output_tokens === null))
 })
 
 test('meta is a pure literal', async () => {

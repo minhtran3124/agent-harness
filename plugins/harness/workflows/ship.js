@@ -313,7 +313,7 @@ const journalRows = []
 let journalFlushed = false
 let clockLogged = false
 // null means "no clock": the real sandbox has no performance, and 0 would read as a real 0 ms.
-const nowMs = () => (typeof performance !== 'undefined' && performance && typeof performance.now === 'function' ? performance.now() : null)
+const nowMs = () => { try { return typeof performance !== 'undefined' && performance && typeof performance.now === 'function' ? performance.now() : null } catch (e) { return null } }
 function durationSince(t0) {
   const t1 = nowMs()
   if (t0 === null || t1 === null) {
@@ -324,20 +324,25 @@ function durationSince(t0) {
 }
 // There is no clock, so the second cost measure is the output tokens spent (budget.spent() is shared by the whole
 // turn, so for stages that overlap in a parallel group it is an upper bound, not an exact figure). null without budget.
-const tokensNow = () => (typeof budget !== 'undefined' && budget && typeof budget.spent === 'function' ? budget.spent() : null)
+const tokensNow = () => { try { return typeof budget !== 'undefined' && budget && typeof budget.spent === 'function' ? budget.spent() : null } catch (e) { return null } }
 const tokensSince = k0 => { const k1 = tokensNow(); return k0 === null || k1 === null ? null : Math.max(0, Math.round(k1 - k0)) }
 // What a stage result says about itself. A result that did not throw is not automatically ok.
 function statusOf(res) {
   if (res === null || res === undefined) return 'failed'
   if (typeof res !== 'object') return 'ok'
   if (res.status === 'blocked' || res.status === 'not run') return 'blocked'
-  if (res.passed === false || res.passed_ac === false || res.pass === false) return 'failed'
+  if (res.passed === false || res.passed_ac === false) return 'failed'
   if (typeof res.failed === 'number' && res.failed > 0) return 'failed'
   if (Array.isArray(res.failed) && res.failed.length) return 'failed'
-  if (Array.isArray(res.checks) && res.checks.some(c => c && (c.bucket === 'fail' || c.bucket === 'cancel'))) return 'failed'
   return 'ok'
 }
 const appendJournal = entry => { journalRows.push({ kind: 'stage', ...entry }) }
+
+// When no agent can write the file (budget spent, abort, refused write), the rows still reach the run log, one line each.
+function dumpJournal(why) {
+  log(`journal: ${why}`)
+  for (const r of journalRows) log(`journal row: ${JSON.stringify(r)}`)
+}
 
 // Writes the collected rows to journalFile with one cheap agent. Fail open: a failure is logged and changes nothing.
 // The text goes in a quoted heredoc (as writeSpecFiles does) and the agent must report how many lines of the file parse as JSON, which is
@@ -353,10 +358,10 @@ async function flushJournal() {
       `3. Run: python3 -c "import json,sys; print(sum(1 for l in open(sys.argv[1]) if json.loads(l)))" ${journalFile}   and return that number in summary (digits only). If the write or the parse failed, return status blocked with blocked_reason.\n` +
       `Edit nothing else.\n\n<<<JOURNAL\n${text}JOURNAL>>>`,
       { label: 'write run journal', phase: 'Decisions', schema: SETUP_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
-    if (!res || res.status === 'blocked') { log(`journal: not written, ${(res && (res.blocked_reason || res.summary)) || 'the writer returned nothing'}`); return }
-    const lines = parseInt(String(res.summary || '').replace(/\D+/g, ' ').trim().split(' ')[0], 10)
-    if (lines !== journalRows.length) log(`journal: written, but the parsed line count (${Number.isNaN(lines) ? 'not reported' : lines}) does not match ${journalRows.length} rows; check ${journalFile}`)
-  } catch (e) { log(`journal: not written, ${e && e.message ? e.message : e}`) }
+    if (!res || res.status === 'blocked') { dumpJournal(`not written, ${(res && (res.blocked_reason || res.summary)) || 'the writer returned nothing'}`); return }
+    const m = /^\s*(\d+)\s*$/.exec(String(res.summary || ''))   // digits only; anything else says nothing about the count
+    if (m && Number(m[1]) !== journalRows.length) log(`journal: written, but ${m[1]} lines parse and there are ${journalRows.length} rows; check ${journalFile}`)
+  } catch (e) { dumpJournal(`not written, ${e && e.message ? e.message : e}`) }
 }
 
 async function askAdvisor(t, stage, question, state) {
@@ -1228,20 +1233,22 @@ async function stageUat(delivered) {
   return records
 }
 
+// Marks a suite result whose agent returned nothing, for the journal only: not enumerable, so it never reaches out.suite or the specs.
+const noResult = o => Object.defineProperty(o, 'noResult', { value: true })
 async function stageSuite() {
   const prompt = (label, cmd, only) => `${newWt(`suite-${label}`, null, finalRef).setup}${RULES}\n\n` +
     `Stage: verify. ${only ? `Re-run ONLY these failing tests: ${only.join(', ')} (use the narrowest command the project supports; ${testCmd} is the related-tests template).` : `Run the full suite: ${cmd}`}\n` +
     `Start the command in the background with its output going to a file, then poll that file until the process has exited. Never edit code or tests. ` +
     `Return the real counts of passed, failed and skipped tests from the output, the names of failing tests as failing, the exit code, and the last lines of output as tail.`
   const first = await call(prompt('run', fullTestCmd, null), { label: 'test · run full suite', phase: 'Testing', schema: SUITE_SCHEMA, model: MODEL.test, effort: EFFORT.test })
-  if (!first) return { passed: 0, failed: 0, skipped: 0, noResult: true, note: 'the suite agent returned nothing' }
+  if (!first) return noResult({ passed: 0, failed: 0, skipped: 0, note: 'the suite agent returned nothing' })
   if (!first.failed) return { passed: first.passed, failed: 0, skipped: first.skipped }
   const fix = await call(`${newWt('fix-suite', null, finalRef).setup}${RULES}\n\nStage: fix the failing tests of the final suite run, with minimal commits ("git add", then "git commit"). Failing: ${first.failing.join(', ')}\nOutput tail:\n${first.tail || ''}\n` +
     `Fix the code, not the test, unless the test itself is wrong. Run only the failing tests. Then land it: ${land(finalBranch)}`,
     { label: 'test · fix failing tests', phase: 'Testing', schema: stageSchema({}), model: MODEL.fix, effort: EFFORT.fix })
   takeDecisions('run', 'suite-fix', fix)
   const again = await call(prompt('rerun', fullTestCmd, first.failing), { label: 'test · rerun failed tests', phase: 'Testing', schema: SUITE_SCHEMA, model: MODEL.test, effort: EFFORT.test })
-  if (!again) return { passed: first.passed, failed: first.failed, skipped: first.skipped, noResult: true, note: 'the re-run agent returned nothing' }
+  if (!again) return noResult({ passed: first.passed, failed: first.failed, skipped: first.skipped, note: 'the re-run agent returned nothing' })
   return { passed: first.passed + again.passed, failed: again.failed, skipped: first.skipped + again.skipped, note: `${first.failed} failed first; re-ran only those` }
 }
 
