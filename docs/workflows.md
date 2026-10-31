@@ -100,6 +100,16 @@ Stage agents run the skill by path with `Mode: auto`, never ask, and return `dec
 agents cannot start agents, so the script calls the advisor when a stage sets `needs_advisor`.
 Models and effort are constants at the top of the file. `stageModel(stage, depth)` picks Opus for the design and plan stages at depth L and keeps Sonnet for the plan stage at depth M. Depth L is the difficulty signal, so this fixed rule fits "the orchestrator chooses the model per task difficulty"; there is no args override.
 
+## Run journal
+
+`ship.js` records one row per stage and returns the rows as `out.journal`. At the end of the run one cheap agent writes them to `<parent of repoDir>/.ship-<repo>/journals/journal-<run-id>.jsonl`, one file per run. The file sits next to the worktrees, outside the target repo, so the owner's `git status` stays clean and no `.gitignore` entry is needed.
+
+The script cannot write the file itself. Measured in the real Workflow runtime (#529): `fs`, `process`, `require` and `performance` do not exist, and `import()` is a syntax error that stops the script from launching. So the script keeps the rows in memory and an agent does the write, as it does for `specs/`. If that agent fails, the script logs `journal: not written` and the run goes on; the rows are still in the result. A crash of the script before the final step leaves no file.
+
+The run id is `args.runId` (reduced to `A-Za-z0-9._-`, so it cannot leave the dir), else the slug. A script cannot call `Date.now` or `Math.random`, so the slug is not unique: autopilot passes a unique `runId`.
+
+Each row is one JSON object with a `kind` field: `stage` today, `fact` reserved for #454. A `stage` row carries `ticket` (a number, or `run` for the cross-ticket review), `stage`, `model`, `status` (`ok`, `blocked` or `failed`), `retries` (0 when none, 1 when the advisor re-run happened; review, CI and fix loops are not counted) and `duration_ms`. There is no clock in the runtime, so `duration_ms` is `null` there (the script logs that once); where `performance` exists, as in the test harness, it is the elapsed milliseconds. Stages covered: every `runStage` stage, `ci`, `uat`, and the final `review`; the intent review, fix agents and the ADR stage are not. A resumed run (`resumeFromRunId`) returns cached agent results at once; give a resumed run a new `runId`.
+
 ## Local mode
 
 `local: true` pushes nothing and opens no PR: branches stay local and the PR body is written to

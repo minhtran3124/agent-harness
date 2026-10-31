@@ -295,6 +295,43 @@ const capSummary = v => { const x = (typeof v === 'string' ? v : '').replace(/\s
 
 class Blocked extends Error {}
 
+// Run journal: one JSONL file per run. The Workflow sandbox has no fs, process, require, import() or performance
+// (measured in the real runtime, #529), so the script cannot write the file itself. It keeps the rows in memory,
+// returns them as out.journal, and one cheap agent writes the file at the end (as it does for specs/). A stage that
+// never finishes (a crash of the script) leaves no file; the in-memory rows still go out with the result.
+// The id becomes part of a file name: keep a safe charset and no leading dot, so it cannot leave the journal dir.
+const safeId = v => String(v).trim().replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^[.-]+/, '').slice(0, 80)
+const runId = (typeof args.runId === 'string' && safeId(args.runId)) || slugOf(slug) || 'run'
+// Outside the target repo, next to the worktrees, so git status of the owner's checkout stays clean.
+const journalDir = `${parentDir}/.ship-${trimmed.split('/').pop()}/journals`
+const journalFile = `${journalDir}/journal-${runId}.jsonl`
+const journalRows = []
+let clockLogged = false
+// null means "no clock": the real sandbox has no performance, and 0 would read as a real 0 ms.
+const nowMs = () => (typeof performance !== 'undefined' && performance && typeof performance.now === 'function' ? performance.now() : null)
+function durationSince(t0) {
+  const t1 = nowMs()
+  if (t0 === null || t1 === null) {
+    if (!clockLogged) { clockLogged = true; log('journal: no clock available, duration_ms is null') }
+    return null
+  }
+  return Math.round(t1 - t0)
+}
+const appendJournal = entry => { journalRows.push({ kind: 'stage', ...entry }) }
+
+// Writes the collected rows to journalFile with one cheap agent. Fail open: a failure is logged and changes nothing.
+async function flushJournal() {
+  if (!journalRows.length) return
+  try {
+    const text = journalRows.map(r => JSON.stringify(r)).join('\n') + '\n'
+    await call(`Stage: write the run journal. ${notCwd()}\n` +
+      `1. Run: mkdir -p ${journalDir}\n` +
+      `2. Write the text between the markers below, exactly and with no change, to ${journalFile} (create the file; replace it if it exists). Do not include the marker lines.\n` +
+      `Edit nothing else. Return status ok.\n\n<<<JOURNAL\n${text}JOURNAL>>>`,
+      { label: 'write run journal', phase: 'Decisions', schema: SETUP_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
+  } catch (e) { log(`journal: not written, ${e && e.message ? e.message : e}`) }
+}
+
 async function askAdvisor(t, stage, question, state) {
   const prompt = `${RULES}\n\nTicket #${t.n}: ${t.title} (depth ${t.depth}), stage ${stage}.\n` +
     `${notCwd()}\nQuestion: ${question || '(the stage gave no question; review its work)'}\n` +
@@ -306,12 +343,33 @@ async function askAdvisor(t, stage, question, state) {
   return typeof advice === 'string' ? advice : ''
 }
 
+// Times fn and writes one journal line for it, whatever the outcome. ticket is a number or 'run'.
+async function journaled(ticket, stage, model, fn, j = { retries: 0 }) {
+  const t0 = nowMs()
+  let status = 'failed'
+  try {
+    const res = await fn(j)
+    status = 'ok'
+    return res
+  } catch (e) {
+    status = e instanceof Blocked ? 'blocked' : 'failed'
+    throw e
+  } finally {
+    appendJournal({ ticket, stage, model, status, retries: j.retries, duration_ms: durationSince(t0) })
+  }
+}
+
 // One ticket stage: run it; on needs_advisor ask once and re-run once; collect decisions; stop on a block.
-async function runStage(t, stage, build, schema, opts) {
+function runStage(t, stage, build, schema, opts) {
+  return journaled(t.n, stage, opts.model, j => runStageInner(t, stage, build, schema, opts, j))
+}
+
+async function runStageInner(t, stage, build, schema, opts, j) {
   const { roleFile, ...rest } = opts
   const o = { ...rest, schema, phase: 'Tickets' }
   let res = await call(build(''), { ...o, label: lbl(`#${t.n} ${stage}`, t.title) }, roleFile)
   if (res && res.needs_advisor) {
+    j.retries = 1
     const advice = await askAdvisor(t, stage, res.advisor_question, res.summary)
     res = await call(build(`\n\n## Advisor advice (follow it unless it is wrong; record any deviation as a decision)\n${advice}`),
       { ...o, label: lbl(`#${t.n} ${stage} retry`, t.title) }, roleFile)
@@ -672,7 +730,7 @@ function stageCi(t, fin, ctx, label) {
     `Use a Bash timeout of ${CI_WAIT_MS} ms in total for steps 1 and 2. Exit code 1 (a check failed) and 8 (checks pending) are expected results, not errors: go on to step 3 anyway.\n` +
     `3. Run: gh pr checks ${pr} --repo ${repo} --json name,bucket   and: gh pr view ${pr} --repo ${repo} --json headRefOid -q .headRefOid   and: git ls-remote ${remote} refs/heads/${ctx.branch}  (the first column is the branch tip)\n` +
     `Return checks (one entry per check: name and bucket, copied unchanged), headRefOid and branchTip (the ls-remote commit). If a command fails, return the checks you have (an empty list when none) and say why in note. Do not judge the result yourself.`
-  return call(prompt, { label, phase: 'Gate', schema: CI_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
+  return journaled(t.n, 'ci', MODEL.cheap, () => call(prompt, { label, phase: 'Gate', schema: CI_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap }))
 }
 
 // Rewrites the merge-policy block of the ticket PR body. A failure is only logged.
@@ -904,7 +962,7 @@ function fixAgent(label, findingText, extra, phaseName, wtKey, ctx = RUN_CTX) { 
 
 // The final, cross-ticket review: the run context over the final branch.
 function stageReview(finalPr) {
-  return reviewLoop(RUN_CTX, finalPr && finalPr.pr ? String(finalPr.pr) : finalBranch)
+  return journaled('run', 'review', MODEL.review, () => reviewLoop(RUN_CTX, finalPr && finalPr.pr ? String(finalPr.pr) : finalBranch))
 }
 
 async function reviewLoop(ctx, target) {
@@ -1056,7 +1114,7 @@ function uatAgent(label, wtName, t, body, owner, configPath) {
 }
 
 async function runUat(label, wtName, t, body, owner, configPath) {
-  try { return await uatAgent(label, wtName, t, body, owner, configPath) }
+  try { return await journaled(t.n, 'uat', MODEL.verify, () => uatAgent(label, wtName, t, body, owner, configPath)) }
   catch (e) { log(`${label} failed: ${e && e.message}`); return null }   // an infrastructure failure never fails the ticket
 }
 
@@ -1326,6 +1384,8 @@ if (!deliveredAll.length) {
   log('ship: no ticket was delivered; nothing to review, verify or record')
   await writeSpecs({ byN, final: null, review: out.review, intent: out.intent, suite: out.suite, adrs: [] })
   out.tickets = ordered().map(publicTicket)
+  await flushJournal()
+  out.journal = journalRows
   out.worktrees = [...worktrees]
   return out
 }
@@ -1374,6 +1434,8 @@ log(`decisions: ${decisions.length} recorded, ${out.adrs.length} ADR file(s)`)
 await writeSpecs({ byN, final: out.final, review: out.review, intent: out.intent, suite: out.suite, adrs: adr.adrs || [] })
 
 out.tickets = ordered().map(publicTicket)
+await flushJournal()
+out.journal = journalRows
 out.worktrees = [...worktrees]
 log(`worktrees created (the script never removes them; remove with git -C ${repoDir} worktree remove <dir>):\n${out.worktrees.join('\n')}`)
 return out
