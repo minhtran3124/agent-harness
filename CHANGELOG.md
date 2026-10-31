@@ -9,6 +9,7 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 ### Added
 
+- `/harness:tickets <brief path>`, a skill that turns a committed brief into a milestone, GitHub issues and an epic, each written to pass `intake` as READY, after one go/no-go approval. Issue #539.
 - `merge-guard.sh`, a PreToolUse(Bash) hook that blocks any `gh pr merge` or `gh api .../pulls/<n>/merge` unless the PR base is `feat/*` (and not the default branch). It fails closed, unlike the other hooks (see `docs/hooks.md`). Issue #516.
 - A per-ticket merge gate in `ship.js` (multi-ticket remote runs): review, one-ticket intent review and CI on the ticket PR. Only a ticket that passes is merged into `feat/<slug>`.
 - Every PR the workflow opens carries a `Merge: auto|human` line and a readiness checklist.
