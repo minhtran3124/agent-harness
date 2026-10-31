@@ -295,6 +295,25 @@ const capSummary = v => { const x = (typeof v === 'string' ? v : '').replace(/\s
 
 class Blocked extends Error {}
 
+// Run journal: one JSONL file per run, written by this script (not an agent). Fails open: it logs once and never throws.
+const runId = typeof args.runId === 'string' && args.runId.trim() ? args.runId.trim() : slugOf(slug)
+let journalOff = false
+function appendJournal(entry) {
+  if (journalOff) return
+  try {
+    const fs = typeof process !== 'undefined' && typeof process.getBuiltinModule === 'function' ? process.getBuiltinModule('node:fs') : null
+    if (!fs) { journalOff = true; log('journal: disabled, fs is unavailable'); return }
+    const dir = `${trimmed}/.ship`
+    fs.mkdirSync(dir, { recursive: true })
+    fs.appendFileSync(`${dir}/journal-${runId}.jsonl`, JSON.stringify({ kind: 'stage', ...entry }) + '\n')
+  } catch (e) {
+    journalOff = true
+    log(`journal: disabled, ${e && e.message ? e.message : e}`)
+  }
+}
+// Journal-only clock: never read by control flow, so replay stays deterministic.
+const nowMs = () => (typeof performance !== 'undefined' && performance.now ? performance.now() : 0)
+
 async function askAdvisor(t, stage, question, state) {
   const prompt = `${RULES}\n\nTicket #${t.n}: ${t.title} (depth ${t.depth}), stage ${stage}.\n` +
     `${notCwd()}\nQuestion: ${question || '(the stage gave no question; review its work)'}\n` +
@@ -308,10 +327,27 @@ async function askAdvisor(t, stage, question, state) {
 
 // One ticket stage: run it; on needs_advisor ask once and re-run once; collect decisions; stop on a block.
 async function runStage(t, stage, build, schema, opts) {
+  const t0 = nowMs()
+  const j = { retries: 0 }
+  let status = 'failed'
+  try {
+    const res = await runStageInner(t, stage, build, schema, opts, j)
+    status = 'ok'
+    return res
+  } catch (e) {
+    status = e instanceof Blocked ? 'blocked' : 'failed'
+    throw e
+  } finally {
+    appendJournal({ kind: 'stage', ticket: t.n, stage, model: opts.model, status, retries: j.retries, duration_ms: Math.round(nowMs() - t0) })
+  }
+}
+
+async function runStageInner(t, stage, build, schema, opts, j) {
   const { roleFile, ...rest } = opts
   const o = { ...rest, schema, phase: 'Tickets' }
   let res = await call(build(''), { ...o, label: lbl(`#${t.n} ${stage}`, t.title) }, roleFile)
   if (res && res.needs_advisor) {
+    j.retries = 1
     const advice = await askAdvisor(t, stage, res.advisor_question, res.summary)
     res = await call(build(`\n\n## Advisor advice (follow it unless it is wrong; record any deviation as a decision)\n${advice}`),
       { ...o, label: lbl(`#${t.n} ${stage} retry`, t.title) }, roleFile)

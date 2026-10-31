@@ -5,6 +5,7 @@
 'use strict'
 const fs = require('fs')
 const path = require('path')
+const os = require('os')
 const assert = require('assert')
 
 const SRC = fs.readFileSync(path.join(__dirname, '..', '..', 'plugins', 'harness', 'workflows', 'ship.js'), 'utf8')
@@ -148,6 +149,33 @@ const T = (n, group, deps, extra) => ({ n, title: `Ticket ${n}`, depth: 'S', gro
 
 const cases = []
 const test = (name, fn) => cases.push({ name, fn })
+
+test('journal: retry and blocked stage are written', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ship-journal-'))
+  try {
+    await run({ repoDir: dir, runId: 'jtest', tickets: [T(1, 1), T(2, 1)] }, c => {
+      if (c.label === 'intent:1') return { ...defaults(c, {}), needs_advisor: true, advisor_question: 'Q' }
+      if (c.label === 'implement:2') return ok({ status: 'blocked', blocked_reason: 'x', worktree: '', branch: '' })
+    })
+    const lines = fs.readFileSync(path.join(dir, '.ship', 'journal-jtest.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l))
+    assert(lines.length > 0)
+    assert(lines.every(l => l.kind === 'stage' && typeof l.duration_ms === 'number' && l.duration_ms >= 0), JSON.stringify(lines))
+    assert(lines.some(l => l.ticket === 1 && l.stage === 'intent' && l.retries === 1 && l.status === 'ok'))
+    assert(lines.some(l => l.ticket === 2 && l.stage === 'implement' && l.status === 'blocked'))
+    assert(lines.some(l => l.retries === 0))
+  } finally { fs.rmSync(dir, { recursive: true, force: true }) }
+})
+
+test('journal: without fs the run still succeeds and writes nothing', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ship-journal-'))
+  const orig = process.getBuiltinModule
+  process.getBuiltinModule = undefined
+  try {
+    const { logs } = await run({ repoDir: dir, runId: 'jtest2' }, null)
+    assert(!fs.existsSync(path.join(dir, '.ship')))
+    assert.strictEqual(logs.filter(m => m.startsWith('journal: disabled')).length, 1)
+  } finally { process.getBuiltinModule = orig; fs.rmSync(dir, { recursive: true, force: true }) }
+})
 
 test('meta is a pure literal', async () => {
   const text = metaText()
