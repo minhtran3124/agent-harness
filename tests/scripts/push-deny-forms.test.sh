@@ -4,6 +4,9 @@
 # `case` (`*` matches any text, spaces included) over the deny list read from settings.json. Each
 # form is also really run against a local bare remote (no network) to confirm it moves the remote
 # ref, so a form that is ALLOWED and reaches main/master is tagged GAP.
+# CAVEAT: the `case` emulation is a model of the matcher, not ground truth. It is only valid while
+# every Bash(...) deny rule uses `*` as its sole metacharacter (checked below); `?`, `[...]` or a
+# backslash would be read differently by bash and by Claude Code. BLOCKED here is evidence, not proof.
 # Output: one line per form, BLOCKED|ALLOWED [GAP] <form>.
 source "$(dirname "$0")/../lib.sh"
 
@@ -39,6 +42,22 @@ denied() {
   done < <(jq -r '.permissions.deny[] | select(startswith("Bash("))' "$ROOT/settings.json")
   return 1
 }
+
+# plain_star_glob <glob> -> 0 when the glob has no bash metacharacter other than `*`
+plain_star_glob() { case "$1" in *[\?\[\\]*) return 1 ;; *) return 0 ;; esac; }
+
+t "emulation holds: every Bash deny rule uses only the * wildcard"
+bad=""
+while IFS= read -r rule; do
+  g=${rule#Bash(}; g=${g%)}
+  plain_star_glob "$g" || bad="$bad [$rule]"
+done < <(jq -r '.permissions.deny[] | select(startswith("Bash("))' "$ROOT/settings.json")
+if [ -z "$bad" ]; then pass; else fail "rules use ?, [ or backslash, so the bash case emulation may differ from Claude Code:$bad"; fi
+
+t "emulation guard rejects a ? [ or backslash glob"
+if plain_star_glob 'git push ? main' || plain_star_glob 'git push [a]* main' || plain_star_glob 'git push \* main'; then
+  fail "plain_star_glob accepted a non-star metacharacter"
+elif plain_star_glob 'git push * main'; then pass; else fail "plain_star_glob rejected a star-only glob"; fi
 
 # reaches <form> <branch> -> 0 when running the form moves refs/heads/main or master on the remote
 reaches() {
