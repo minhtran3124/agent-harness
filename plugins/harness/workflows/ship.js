@@ -1239,8 +1239,10 @@ function buildBody(results, review, intent, suite, uat = {}, ci = null) {
   else L.push(`Level ${review.level}; ${review.rounds} fix round(s); ${review.fixed.length} fixed.`)
   if (review.reReviewNotRun) L.push(`Re-review of the fix commits: NOT RUN (${review.reReviewNotRun})`)
   for (const f of review.notFixed) L.push(`- not fixed: ${f.summary} (${f.reason})`)
-  for (const f of review.leftover) L.push(`- left: [${f.score}] ${f.summary}`)
-  if (intent.fixRange && (review.notFixed.length || review.leftover.length)) L.push('', 'These findings predate the intent fix commits. Check each one against the current tree.', '')
+  const older = review.leftover.filter(f => !f.inFixRange)
+  for (const f of older) L.push(`- left: [${f.score}] ${f.summary}`)
+  if (intent.fixRange && (review.notFixed.length || older.length)) L.push('', 'These findings predate the intent fix commits. Check each one against the current tree.', '')
+  for (const f of review.leftover.filter(x => x.inFixRange)) L.push(`- left, in the intent fix commits: [${f.score}] ${f.summary}`)
   for (const f of review.preExisting) L.push(`- already on ${base}, not fixed: ${f.summary}`)
   const withVerify = results.filter(r => r.verify)
   if (withVerify.length) {
@@ -1380,7 +1382,7 @@ if (intent.fixRange) {
     const rr = await reviewWithRetry('code-review · intent fix', review.level, intent.fixRange,
       `This is a review of the intent-fix commits only, range ${intent.fixRange}. Review that diff and nothing else.\n`, RUN_CTX)
     if (rr.notRun) review.reReviewNotRun = rr.notRun
-    else review.leftover.push(...((rr.res && rr.res.findings) || []).filter(f => !f.pre_existing && f.score >= FIX_THRESHOLD))
+    else review.leftover.push(...((rr.res && rr.res.findings) || []).filter(f => !f.pre_existing && f.score >= FIX_THRESHOLD).map(f => ({ ...f, inFixRange: true })))
   }
   const again = await stageIntentReview(deliveredAll, RUN_CTX, { fix: false })
   // No result is not a re-review: keep the first findings and the "not re-reviewed" note.

@@ -1033,6 +1033,17 @@ test('p12: the predate note is its own paragraph, and later suite fixes are name
   assert(p.includes('Later UAT or suite fix commits were not intent-reviewed.'))
 })
 
+test('p13: a finding in the intent fix commits is not called older than them', async () => {
+  const gap = firstGap()
+  const { calls } = await run({}, c => {
+    if (c.label === 'intent-review') return gap()
+    if (/^review:/.test(c.label) && /intent-fix commits only/.test(c.prompt)) return ok({ findings: [{ score: 100, summary: 'FRESH-FINDING', pre_existing: false }], skill_invoked: true, skill_error: '' })
+  })
+  const p = named(calls, /^adr$/)[0].prompt
+  assert(p.includes('- left, in the intent fix commits: [100] FRESH-FINDING'), 'the row is named')
+  assert(!p.includes('predate the intent fix commits'), 'no older row, no note')
+})
+
 test('q: {{DECISIONS}} still sits between Final verification and the footer', async () => {
   const { calls } = await run({}, null)
   const p = named(calls, /^adr$/)[0].prompt
