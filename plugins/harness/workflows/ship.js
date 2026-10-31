@@ -300,10 +300,10 @@ class Blocked extends Error {}
 // returns them as out.journal, and one cheap agent writes the file at the end (as it does for specs/). A stage that
 // never finishes (a crash of the script) leaves no file; the in-memory rows still go out with the result.
 // The id becomes part of a file name: keep a safe charset and no leading dot, so it cannot leave the journal dir.
-const safeId = v => String(v).trim().replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^[.-]+/, '').slice(0, 80)
+const shortId = v => (v.length > 80 ? `${v.slice(0, 40)}-${v.slice(-39)}` : v)   // keep the tail: it holds the unique time suffix
+const safeId = v => shortId(String(v).trim().replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^[.-]+/, ''))
 const runIdArg = typeof args.runId === 'string' ? safeId(args.runId) : ''
-// The slug is not unique, so a missing runId would let a second launch replace the first journal: fall back to a
-// name that cannot collide with an earlier slug-named file only by warning loudly.
+// The slug is not unique: a missing runId would let a second launch replace the first journal, so it is logged.
 const runId = runIdArg || slugOf(slug) || 'run'
 if (!runIdArg) log(`journal: args.runId is missing or empty, using "${runId}"; a second run with the same name replaces this journal`)
 // Outside the target repo, next to the worktrees, so git status of the owner's checkout stays clean.
@@ -340,7 +340,7 @@ function statusOf(res) {
 const appendJournal = entry => { journalRows.push({ kind: 'stage', ...entry }) }
 
 // Writes the collected rows to journalFile with one cheap agent. Fail open: a failure is logged and changes nothing.
-// The text goes in a quoted heredoc (as writeSpecFiles does) and the agent must report the line count it wrote, which is
+// The text goes in a quoted heredoc (as writeSpecFiles does) and the agent must report how many lines of the file parse as JSON, which is
 // compared with the number of rows: a refused, truncated or altered write is logged, not silent.
 async function flushJournal() {
   if (!journalRows.length || journalFlushed) return
@@ -350,12 +350,12 @@ async function flushJournal() {
     const res = await call(`Stage: write the run journal. ${notCwd()}\n` +
       `1. Run: mkdir -p ${journalDir}\n` +
       `2. Write the text between the markers below, exactly and with no change, to ${journalFile} (create the file; replace it if it exists). Use a Bash heredoc with a quoted delimiter (cat > FILE <<'JOURNAL_EOF'), not the file-write tool, which can be refused. Do not include the marker lines.\n` +
-      `3. Run: wc -l < ${journalFile}   and return that number as lines in summary (digits only). If the write failed, return status blocked with blocked_reason.\n` +
+      `3. Run: python3 -c "import json,sys; print(sum(1 for l in open(sys.argv[1]) if json.loads(l)))" ${journalFile}   and return that number in summary (digits only). If the write or the parse failed, return status blocked with blocked_reason.\n` +
       `Edit nothing else.\n\n<<<JOURNAL\n${text}JOURNAL>>>`,
       { label: 'write run journal', phase: 'Decisions', schema: SETUP_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
     if (!res || res.status === 'blocked') { log(`journal: not written, ${(res && (res.blocked_reason || res.summary)) || 'the writer returned nothing'}`); return }
     const lines = parseInt(String(res.summary || '').replace(/\D+/g, ' ').trim().split(' ')[0], 10)
-    if (lines !== journalRows.length) log(`journal: written, but the line count (${Number.isNaN(lines) ? 'not reported' : lines}) does not match ${journalRows.length} rows; check ${journalFile}`)
+    if (lines !== journalRows.length) log(`journal: written, but the parsed line count (${Number.isNaN(lines) ? 'not reported' : lines}) does not match ${journalRows.length} rows; check ${journalFile}`)
   } catch (e) { log(`journal: not written, ${e && e.message ? e.message : e}`) }
 }
 
@@ -371,14 +371,15 @@ async function askAdvisor(t, stage, question, state) {
 }
 
 // Times fn and writes one journal line for it, whatever the outcome. ticket is a number or 'run'.
-// The status comes from the result (statusOf), not from the absence of a throw.
-async function journaled(ticket, stage, model, fn, j = { retries: 0 }) {
+// The status comes from the result, not from the absence of a throw: judge(res) is the stage's own verdict
+// (the same function the pipeline uses), statusOf is the fallback.
+async function journaled(ticket, stage, model, fn, j = { retries: 0 }, judge = statusOf) {
   const t0 = nowMs()
   const k0 = tokensNow()
   let status = 'failed'
   try {
     const res = await fn(j)
-    status = statusOf(res)
+    status = judge(res)
     return res
   } catch (e) {
     status = e instanceof Blocked ? 'blocked' : 'failed'
@@ -389,8 +390,8 @@ async function journaled(ticket, stage, model, fn, j = { retries: 0 }) {
 }
 
 // One ticket stage: run it; on needs_advisor ask once and re-run once; collect decisions; stop on a block.
-function runStage(t, stage, build, schema, opts) {
-  return journaled(t.n, stage, opts.model, j => runStageInner(t, stage, build, schema, opts, j))
+function runStage(t, stage, build, schema, { judge, ...opts }) {
+  return journaled(t.n, stage, opts.model, j => runStageInner(t, stage, build, schema, opts, j), undefined, judge)
 }
 
 async function runStageInner(t, stage, build, schema, opts, j) {
@@ -484,7 +485,9 @@ function stageVerify(t, impl, mode) {
       ? `Mode: base. Your worktree ${dir} holds the base commit, without the ticket code. Read verify.config.json from ${impl.worktree}/verify.config.json (read-only; copy it into ${dir} without committing it). The steps are expected to FAIL here: report the real result. Commit nothing.\n`
       : `Mode: head. Work in ${impl.worktree} (cd there; it is the ticket branch ${impl.branch}). Commit only verify.config.json, nothing else.${mode === 'verify-retry' ? ' This is a second run after a failure: start the app fresh and run every step again.' : ''}\n`) +
     `Do not fix code, retry, or judge flakiness. Keep the evidence local and uncommitted. Return passed (true only if every step passed and the console had no errors), kind, configPath (the absolute path of the verify.config.json you used, empty when none), failedStep, consoleErrors, stills (absolute paths) and report (the table).${advice}`, dir)
-  return runStage(t, mode, build, VERIFY_SCHEMA, { model: MODEL.verify, effort: EFFORT.verify })
+  // verify-base is meant to fail: the test must fail on the base commit. A pass there is the bad outcome.
+  const judge = base ? res => (res && res.passed === false ? 'ok' : 'failed') : undefined
+  return runStage(t, mode, build, VERIFY_SCHEMA, { model: MODEL.verify, effort: EFFORT.verify, judge })
 }
 
 // A failed comment must not change the outcome: it is only logged.
@@ -751,6 +754,8 @@ function judgeReview(rv) {
   return { ok: true, text: `ran, ${(rv.fixed || []).length} fixed, nothing left` }
 }
 
+const reviewStatus = rv => (judgeReview(rv).ok ? 'ok' : (rv && rv.status === 'ran' ? 'failed' : 'blocked'))
+
 function stageCi(t, fin, ctx, label) {
   const pr = fin.pr
   const prompt = `${RULES}\n\nStage: ci. Read the CI result of PR ${pr} in ${repo}. Edit nothing. ${notCwd()}\n` +
@@ -759,7 +764,7 @@ function stageCi(t, fin, ctx, label) {
     `Use a Bash timeout of ${CI_WAIT_MS} ms in total for steps 1 and 2. Exit code 1 (a check failed) and 8 (checks pending) are expected results, not errors: go on to step 3 anyway.\n` +
     `3. Run: gh pr checks ${pr} --repo ${repo} --json name,bucket   and: gh pr view ${pr} --repo ${repo} --json headRefOid -q .headRefOid   and: git ls-remote ${remote} refs/heads/${ctx.branch}  (the first column is the branch tip)\n` +
     `Return checks (one entry per check: name and bucket, copied unchanged), headRefOid and branchTip (the ls-remote commit). If a command fails, return the checks you have (an empty list when none) and say why in note. Do not judge the result yourself.`
-  return journaled(t.n, 'ci', MODEL.cheap, () => call(prompt, { label, phase: 'Gate', schema: CI_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap }))
+  return journaled(t.n, 'ci', MODEL.cheap, () => call(prompt, { label, phase: 'Gate', schema: CI_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap }), undefined, res => (judgeCi(res).ok ? 'ok' : 'failed'))
 }
 
 // Rewrites the merge-policy block of the ticket PR body. A failure is only logged.
@@ -790,7 +795,7 @@ async function stageGate(t, fin, impl, branch) {
   const ctx = { ticket: t.n, ref: `${remote}/${tb}`, branch: tb, diffBase: integRef, target: String(fin.pr),
     wtPrefix: `g${t.n}-`, labelPrefix: `#${t.n} gate `, boundary: runBoundaryText(t.n) }
   const failed = []
-  const review = await journaled(t.n, 'gate-review', MODEL.review, () => reviewLoop(ctx, ctx.target))
+  const review = await journaled(t.n, 'gate-review', MODEL.review, () => reviewLoop(ctx, ctx.target), undefined, reviewStatus)
   let intent = await stageIntentReview([{ n: t.n }], ctx)
   let intentFixTip = ''
   if (intent.fixRound) {
@@ -991,7 +996,7 @@ function fixAgent(label, findingText, extra, phaseName, wtKey, ctx = RUN_CTX) { 
 
 // The final, cross-ticket review: the run context over the final branch.
 function stageReview(finalPr) {
-  return journaled('run', 'review', MODEL.review, () => reviewLoop(RUN_CTX, finalPr && finalPr.pr ? String(finalPr.pr) : finalBranch))
+  return journaled('run', 'review', MODEL.review, () => reviewLoop(RUN_CTX, finalPr && finalPr.pr ? String(finalPr.pr) : finalBranch), undefined, reviewStatus)
 }
 
 async function reviewLoop(ctx, target) {
@@ -1142,8 +1147,9 @@ function uatAgent(label, wtName, t, body, owner, configPath) {
   return call(prompt, { label, phase: 'UAT', schema: UAT_SCHEMA, model: MODEL.verify, effort: EFFORT.verify })
 }
 
+const uatStatus = res => (!res ? 'failed' : res.status === 'blocked' ? 'blocked' : uatOk(res) ? 'ok' : 'failed')
 async function runUat(label, wtName, t, body, owner, configPath, stage = 'uat') {
-  try { return await journaled(t.n, stage, MODEL.verify, () => uatAgent(label, wtName, t, body, owner, configPath)) }
+  try { return await journaled(t.n, stage, MODEL.verify, () => uatAgent(label, wtName, t, body, owner, configPath), undefined, uatStatus) }
   catch (e) { log(`${label} failed: ${e && e.message}`); return null }   // an infrastructure failure never fails the ticket
 }
 
@@ -1228,14 +1234,14 @@ async function stageSuite() {
     `Start the command in the background with its output going to a file, then poll that file until the process has exited. Never edit code or tests. ` +
     `Return the real counts of passed, failed and skipped tests from the output, the names of failing tests as failing, the exit code, and the last lines of output as tail.`
   const first = await call(prompt('run', fullTestCmd, null), { label: 'test · run full suite', phase: 'Testing', schema: SUITE_SCHEMA, model: MODEL.test, effort: EFFORT.test })
-  if (!first) return { passed: 0, failed: 0, skipped: 0, note: 'the suite agent returned nothing' }
+  if (!first) return { passed: 0, failed: 0, skipped: 0, noResult: true, note: 'the suite agent returned nothing' }
   if (!first.failed) return { passed: first.passed, failed: 0, skipped: first.skipped }
   const fix = await call(`${newWt('fix-suite', null, finalRef).setup}${RULES}\n\nStage: fix the failing tests of the final suite run, with minimal commits ("git add", then "git commit"). Failing: ${first.failing.join(', ')}\nOutput tail:\n${first.tail || ''}\n` +
     `Fix the code, not the test, unless the test itself is wrong. Run only the failing tests. Then land it: ${land(finalBranch)}`,
     { label: 'test · fix failing tests', phase: 'Testing', schema: stageSchema({}), model: MODEL.fix, effort: EFFORT.fix })
   takeDecisions('run', 'suite-fix', fix)
   const again = await call(prompt('rerun', fullTestCmd, first.failing), { label: 'test · rerun failed tests', phase: 'Testing', schema: SUITE_SCHEMA, model: MODEL.test, effort: EFFORT.test })
-  if (!again) return { passed: first.passed, failed: first.failed, skipped: first.skipped, note: 'the re-run agent returned nothing' }
+  if (!again) return { passed: first.passed, failed: first.failed, skipped: first.skipped, noResult: true, note: 'the re-run agent returned nothing' }
   return { passed: first.passed + again.passed, failed: again.failed, skipped: first.skipped + again.skipped, note: `${first.failed} failed first; re-ran only those` }
 }
 
@@ -1376,7 +1382,7 @@ for (const g of groups) {
   const ready = done.filter(r => LOCAL || (r.gate && r.gate.pass))
   if (!single && ready.length) {
     phase('Merge')
-    const m = await journaled('run', `merge-g${g}`, MODEL.cheap, () => stageMerge(g, ready))
+    const m = await journaled('run', `merge-g${g}`, MODEL.merge, () => stageMerge(g, ready))
     const failed = (m && m.failed) || []
     for (const f of failed) {
       const r = byN.get(f.n)
@@ -1448,7 +1454,7 @@ const uat = await stageUat(deliveredAll)
 log(`UAT: ${Object.keys(uat).length} ticket(s) checked, ${Object.values(uat).filter(u => u.status === 'failed').length} failed`)
 
 phase('Testing')
-const suite = await journaled('run', 'suite', MODEL.test, () => stageSuite())
+const suite = await journaled('run', 'suite', MODEL.test, () => stageSuite(), undefined, res => (!res || res.noResult || res.failed > 0 ? 'failed' : 'ok'))
 out.suite = suite
 log(`full suite: ${suite.passed} passed, ${suite.failed} failed, ${suite.skipped} skipped`)
 

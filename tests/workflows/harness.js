@@ -139,7 +139,7 @@ async function run(over, override) {
   const pipeline = async () => { throw new Error('pipeline is not used by ship.js') }
   const body = SRC.replace('export const meta =', 'const meta =')
   const fn = new AsyncFunction('agent', 'parallel', 'pipeline', 'phase', 'log', 'args', 'budget', 'workflow', body)
-  const result = await fn(agent, parallel, pipeline, () => {}, m => logs.push(m), args, { total: null, spent: () => 0, remaining: () => Infinity }, async () => { throw new Error('no nested workflow') })
+  const result = await fn(agent, parallel, pipeline, () => {}, m => logs.push(m), args, { total: null, spent: () => calls.length * 10, remaining: () => Infinity }, async () => { throw new Error('no nested workflow') })
   return { result, calls, logs, args }
 }
 
@@ -239,7 +239,8 @@ test('journal: suite, merge, gate review and the UAT rerun have their own rows',
   assert.strictEqual(has(1, 'gate-review'), 1)
   assert.strictEqual(has(1, 'uat'), 1)
   assert.strictEqual(has(1, 'uat-rerun'), 1)
-  assert(rowsOf(r).every(x => 'output_tokens' in x))
+  assert(rowsOf(r).every(x => typeof x.output_tokens === 'number' && x.output_tokens >= 0))
+  assert(rowsOf(r).some(x => x.output_tokens > 0), 'the delta of budget.spent() shows in a row')
 })
 
 test('journal: a run that throws still writes the rows collected so far', async () => {
@@ -269,6 +270,29 @@ test('journal: a missing runId warns, a given one does not', async () => {
   assert(none.logs.some(m => m.startsWith('journal: args.runId is missing')))
   const some = await run({ runId: 'unique-1' }, null)
   assert(!some.logs.some(m => m.startsWith('journal: args.runId')))
+})
+
+test('journal: each stage uses the pipeline verdict, the right model and an honest suite status', async () => {
+  const good = await run({ runId: 'jv0', tickets: [T(1, 1), T(2, 1)] }, null)
+  assert.strictEqual(rowsOf(good).find(x => x.stage === 'merge-g1').model, 'sonnet')
+  const r = await run({ runId: 'jv1', tickets: [T(1, 1), T(2, 1)] }, c => {
+    if (c.label === 'suite') return null
+    if (c.label === 'gci:1') return { checks: [{ name: 'x', bucket: 'pending' }], headRefOid: 'h' }
+  })
+  const row = (ticket, stage) => rowsOf(r).find(x => x.ticket === ticket && x.stage === stage)
+  assert.strictEqual(row('run', 'suite').status, 'failed')
+  assert.strictEqual(row(1, 'ci').status, 'failed')
+  const fe = await run({ runId: 'jv2' }, c => (c.label === 'verify:1' || c.label === 'verify-base:1' ? ok({ passed: c.label === 'verify:1', kind: 'FE', failedStep: '', consoleErrors: [], stills: [], report: 'r' }) : undefined))
+  const base = rowsOf(fe).find(x => x.stage === 'verify-base')
+  assert(base ? base.status === 'ok' : true, JSON.stringify(rowsOf(fe).filter(x => /verify/.test(x.stage))))
+  const uat = await run({ runId: 'jv3' }, c => (c.label === 'uat:1' ? uatRes(true, [sc('S1', 'AC1', 'ac', 'FAIL')]) : undefined))
+  assert.strictEqual(rowsOf(uat).find(x => x.stage === 'uat').status, 'failed', 'an AC scenario FAIL is failed even when passed_ac is true')
+})
+
+test('journal: a long runId keeps its time suffix', async () => {
+  const id = 'a'.repeat(70) + '-20261101T062619'
+  const r = await run({ runId: id }, null)
+  assert(/journal-.*20261101T062619\.jsonl/.test(journalCall(r)[0].prompt), journalCall(r)[0].prompt.slice(0, 400))
 })
 
 test('meta is a pure literal', async () => {
