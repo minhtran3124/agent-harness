@@ -21,7 +21,7 @@ The ticket's verbatim SKILL.md is 1009 words, and scripts/audit_skill_prompts.py
 
 ## Decision
 
-Relax AC1 to four reference files. SKILL.md makes `references/process.md` a required Read and keeps every step. Issue #539 now states this AC.
+Relax AC1 to four reference files. SKILL.md makes `references/process.md` a required Read and keeps every step. This decision replaces the three-file text of AC1 in issue #539.
 
 ## Why
 

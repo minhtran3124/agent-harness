@@ -20,7 +20,10 @@ Goal: every ticket you create passes `harness:intake` as READY, so `/harness:aut
 
 ## 1. Read
 
-- Read the brief, the code it names (for a real `Verify:` command), `gh label list`, and (unquoted) `gh api repos/{owner}/{repo}/milestones -X GET -f state=all`.
+**Required: Read `references/process.md` now.**
+
+- Read the brief, the code it names (for a real `Verify:` command), `gh label list --limit 1000`, and (unquoted) `gh api repos/{owner}/{repo}/milestones -X GET -f state=all --paginate`.
+- Read every issue with the Duplicates command.
 
 ## 2. Is the brief ready?
 
@@ -32,7 +35,7 @@ Ask if: the goal needs more than one sentence; a requirement has no observable o
 
 ## 3. Split
 
-**Required: Read `references/process.md` now.** It holds the rules for steps 3, 5, 6, 7 and 10. Apply its Split section.
+Apply that `process.md` section.
 
 ## 4. Ticket types
 
@@ -65,7 +68,7 @@ If overlaps exist, apply the Overlaps section of `references/process.md`.
 Order: labels, milestone (`gh api repos/{owner}/{repo}/milestones -f title=<name>`), tickets by dependency, epic last.
 
 - Pass each body on stdin: `gh issue create ... --body-file - <<'EOF'`. A multi-line `--body` is denied, and this skill has no Write tool.
-- Replace each draft dep (`T3`) with its issue number. A dep on a skipped ticket uses that ticket's `#n`.
+- Replace each draft dep (`T3`) with its issue number. A skipped ticket's dep: see Deps.
 - Epic: apply the Epic section of `references/process.md`.
 - On the first `gh` error stop, no retry; report what exists.
 

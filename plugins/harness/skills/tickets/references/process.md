@@ -18,8 +18,8 @@ Then pick for each ticket:
 
 - **Type**: a ticket that changes code and docs is `feature` or `bug`, not `docs`.
 - **Priority**: `P1` = other tickets depend on it, or the goal fails without it. `P2` = everything else.
-- **Deps**: only tickets in this batch or closed issues, because `intake` needs a dependency done or in the batch. If a ticket needs an open issue from outside the batch, do not create it: show `wait #n` in the approval table and name it in the report. No cycles. If there is a cycle, merge the tickets.
-- **Source**: `<slug>` is a short kebab-case name of the outcome, unique across the brief. One section can give several tickets, so the section alone is not a key.
+- **Deps**: only tickets in this batch or closed issues, because `intake` needs a dependency done or in the batch. A dep on a skipped ticket uses that ticket's `#n`. If that `#n`, or any other dep, is open and outside this milestone, do not create the ticket: show `wait #n` in the approval table and name it in the report. A ticket that depends on a `wait` ticket is also `wait`. No cycles. If there is a cycle, merge the tickets.
+- **Source**: `<brief path>` is relative to the repo root, with no leading `./`, so a re-run matches. `<slug>` is a short kebab-case name of the outcome, unique across the brief. One section can give several tickets, so the section alone is not a key.
 
 ## Self-check
 
@@ -27,7 +27,7 @@ Rewrite a ticket until all are yes:
 
 - [ ] The goal fits one sentence.
 - [ ] Each AC is checkable by a command or a visible behavior.
-- [ ] `Verify:` names a real command and an exact string, count or exit code.
+- [ ] `Verify:` names a real command and an exact string, count or exit code. A row for a change also fails on the base commit today: `ship.js` blocks a row that passes there.
 - [ ] Out of scope has at least one line.
 - [ ] Deps exist and come earlier in the order.
 - [ ] `source:` names a real section of the brief and has a unique slug.
@@ -35,11 +35,11 @@ Rewrite a ticket until all are yes:
 
 ## Duplicates
 
-Read every issue once, before you write slugs:
+Read every issue once, in step 1, before you write slugs:
 
-    gh issue list --state all --limit 1000 --json number,title,body,state
+    gh issue list --state all --limit 1000 --json number,title,body,state --jq '.[] | {number, title, state, source: ((.body // "") | gsub("\r"; "") | split("\n") | map(select(startswith("source:"))))}'
 
-GitHub search is fuzzy and can lag, so do not use `--search` here. If the list returns 1000 issues, run it again with a higher `--limit`.
+Print only these fields: full bodies are too large and a tool result can cut them off. GitHub search is fuzzy and can lag, so do not use `--search` here. If the list returns 1000 issues, run it again with a higher `--limit`.
 
 If an issue already has a `source:` line for this brief, reuse its slug for the same outcome.
 
@@ -52,14 +52,16 @@ If an issue already has a `source:` line for this brief, reuse its slug for the 
 
 ## Overlaps
 
-Add one multi-select question to the approval call: `Skip all`, then one option per overlap. More than 3 overlaps: use `Skip all` and `Create all`; the owner types numbers under Other.
+Add one multi-select question to the approval call: "Which overlaps should I create anyway?". Options: `Skip all`, then one option per overlap. More than 3 overlaps: use `Skip all` and `Create all`; the owner types numbers under Other.
+
+The "go" count holds new tickets only, and each selected overlap adds one. Say so in the question text.
 
 ## Labels
 
 - Reuse an existing label only when the name matches ignoring case.
 - A new label only for `area:*`, `size:*`, `P1`, `P2`. Create it without asking.
 - If a new `area:*` name differs from an existing label by 1 or 2 characters, show both names in the approval step as a close name. Compare `area:*` names only: `P1` and `P2`, or `size:S` and `size:M`, are different labels.
-- Milestone: `--milestone`, else the brief title. Create it if missing.
+- Milestone: `--milestone`, else the brief title. Create it if missing. If the name matches a closed milestone, stop before step 8 and ask for another name: `gh issue create` cannot rely on it, and this skill never reopens one.
 
 ## Epic
 

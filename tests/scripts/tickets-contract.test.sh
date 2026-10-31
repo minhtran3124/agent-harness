@@ -54,6 +54,33 @@ t "the kept conditions from the ticket are back"
 grep -q 'merge the tickets' "$PROCESS" && grep -q 'not by layer' "$PROCESS" && grep -q 'Ask the owner only for decisions' "$SKILL" \
   && pass || fail "a trimmed condition is still lost"
 
+t "repo reads have no default page cap"
+grep -qF 'gh label list --limit 1000' "$SKILL" && grep -qF 'state=all --paginate' "$SKILL" && pass || fail "a read can miss rows"
+
+t "the dedup read prints source lines only, because full bodies can be cut off"
+grep -qF -- '--jq' "$PROCESS" && grep -qF 'startswith("source:")' "$PROCESS" && pass || fail "full bodies are still printed"
+
+t "issues are read in step 1, before any slug is written"
+grep -q '^## 1. Read' "$SKILL" && sed -n '/^## 1. Read/,/^## 2/p' "$SKILL" | grep -q 'Required: Read `references/process.md`' \
+  && sed -n '/^## 1. Read/,/^## 2/p' "$SKILL" | grep -q 'Duplicates' && pass || fail "the read is out of order"
+
+t "a dep on an open issue outside the milestone, and on a wait ticket, is held"
+grep -q 'A ticket that depends on a `wait` ticket is also `wait`' "$PROCESS" && grep -q 'open and outside this milestone' "$PROCESS" \
+  && pass || fail "deps rules conflict"
+
+t "the overlap question says what a selection means"
+grep -q 'Which overlaps should I create anyway' "$PROCESS" && grep -q 'each selected overlap adds one' "$PROCESS" \
+  && pass || fail "overlap answer is ambiguous"
+
+t "the brief path in source: is relative to the repo root"
+grep -q 'relative to the repo root' "$PROCESS" && pass || fail "path is not normalized"
+
+t "a closed milestone with the same name stops at approval"
+grep -q 'closed milestone' "$PROCESS" && pass || fail "closed milestone has no rule"
+
+t "the self-check requires Verify to fail before the change"
+grep -q 'fails on the base commit' "$PROCESS" && pass || fail "a weak Verify row can pass"
+
 t "an issue body goes on stdin, because a multi-line --body is denied and the skill has no Write"
 grep -qF -- "--body-file - <<'EOF'" "$SKILL" && pass || fail "body form missing"
 
