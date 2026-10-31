@@ -87,6 +87,15 @@ t "ask with --delete-branch: the prompt names the branch deletion"; g "$MA --del
 t "ask with --admin=true: the prompt names the bypass"; g "$MA --admin=true"; assert_ask "WITH --admin"
 t "ask with bundled -sd: the prompt names the branch deletion"; g "$MA -sd"; assert_ask "deletes the head branch"
 t "ask with --delete-branch=true: the prompt names the branch deletion"; g "$MA --delete-branch=true"; assert_ask "deletes the head branch"
+no_note() { if [ "$RC" = 0 ] && printf '%s' "$OUT" | jq -e '.hookSpecificOutput | .permissionDecision == "ask" and (.permissionDecisionReason | (contains("WITH --admin") or contains("deletes the head branch")) | not)' >/dev/null 2>&1; then pass; else fail "rc=$RC out=$OUT"; fi; }
+for f in --admin=false --admin=0 --admin=F --delete-branch=false --delete-branch=0 -d=false; do
+  t "ask with $f: the flag is off, so the prompt names no bypass or deletion"; g "$MA $f"; no_note
+done
+t "ask with plain -s: no deletion note"; g "$MA -s"; no_note
+t "ask with attached body -bfixed: the value is not read as bundled flags"; g "$MA -bfixed"; no_note
+t "ask with attached subject -tAdam: the value is not read as bundled flags"; g "$MA -tAdam"; no_note
+t "ask with -b <value> containing d: no deletion note"; g "$MA -b dd"; no_note
+t "ask with --admin --admin=false: the prompt still names the bypass (an earlier flag is not cancelled)"; g "$MA --admin --admin=false"; assert_ask "WITH --admin"
 t "ask with --match-head-commit=<head>: put to the owner"; g "$M --match-head-commit=$SHA"; assert_ask "at $SHA?"
 t "ask merge chained with another command: denied, not put to the owner"; g "$MA && echo extra"; assert_rc_contains 2 "only command"
 t "ask merge after another command: denied"; g "echo x; $MA"; assert_rc_contains 2 "only command"
