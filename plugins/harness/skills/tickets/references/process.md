@@ -27,7 +27,7 @@ Rewrite a ticket until all are yes:
 
 - [ ] The goal fits one sentence.
 - [ ] Each AC is checkable by a command or a visible behavior.
-- [ ] `Verify:` names a real command and an exact string, count or exit code. A row for a change also fails on the base commit today: `ship.js` blocks a row that passes there.
+- [ ] `Verify:` names a real command and an exact string, count or exit code. A row for a change also fails on the base commit today: the ship workflow blocks a row that passes there.
 - [ ] Out of scope has at least one line.
 - [ ] Deps exist and come earlier in the order.
 - [ ] `source:` names a real section of the brief and has a unique slug.
