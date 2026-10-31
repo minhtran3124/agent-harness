@@ -75,6 +75,7 @@ DEFAULTS=" "  # "repo=branch " cache, one default-branch read per repo
 MERGES=0  # merge segments seen (gh pr merge and gh api .../merge)
 ASKS=0    # merges into a non-feat base that may be put to the owner
 ASK_REASON=""
+NOTE=""   # flags of the one plain merge that change what it does (--admin), named in the owner prompt
 default_of() {  # default_of <repo>: sets def
   case "$DEFAULTS" in
     *" $1="*) def=${DEFAULTS#*" $1="}; def=${def%% *} ;;
@@ -102,14 +103,14 @@ judge() {
     main|master|develop|development|staging|production|release/*|release-*)
       [ -n "$plain" ] || deny "$words (only a plain single 'gh pr merge' can be put to the owner)."
       [ "$match" = "$head" ] || deny "$words: add --match-head-commit $head so the owner's approval covers exactly that commit."
-      ASKS=$((ASKS + 1)); ASK_REASON="Merge PR #$pr of $repo into $base at $head?"; return ;;
+      ASKS=$((ASKS + 1)); ASK_REASON="Merge PR #$pr of $repo into $base at $head$NOTE?"; return ;;
     feat/?*) ;;
     *)
       default_of "$repo"
       [ "$def" = "$base" ] || deny "$words (rule: only feat/* is merged without the owner, and only the base and default branches with the owner)."
       [ -n "$plain" ] || deny "$words (only a plain single 'gh pr merge' can be put to the owner)."
       [ "$match" = "$head" ] || deny "$words: add --match-head-commit $head so the owner's approval covers exactly that commit."
-      ASKS=$((ASKS + 1)); ASK_REASON="Merge PR #$pr of $repo into $base at $head?"; return ;;
+      ASKS=$((ASKS + 1)); ASK_REASON="Merge PR #$pr of $repo into $base at $head$NOTE?"; return ;;
   esac
   default_of "$repo"
   [ "$def" != "$base" ] || deny "$words, the default branch of the repo."
@@ -117,6 +118,7 @@ judge() {
 
 judge_pr_merge() {  # judge_pr_merge <segment starting with gh pr merge>
   local seg w repo="" prs="" skip="" u n r urepos="" match=""
+  NOTE=""
   seg=$(printf '%s' "$1" | sed -E 's/^gh[[:space:]]+pr[[:space:]]+merge[[:space:]]*//')
   set -f
   for w in $seg; do
@@ -127,6 +129,8 @@ judge_pr_merge() {  # judge_pr_merge <segment starting with gh pr merge>
       --repo|-R) skip=repo ;;
       --repo=*) repo=${w#--repo=} ;;
       -R?*) repo=${w#-R} ;;
+      --admin) NOTE="$NOTE, WITH --admin (bypasses branch protection and required checks)" ;;
+      --delete-branch|-d) NOTE="$NOTE, and deletes the head branch" ;;
       --auto) deny "'gh pr merge --auto' is not allowed; a human merges." ;;
       --match-head-commit) skip=match ;;
       --match-head-commit=*) match=${w#--match-head-commit=} ;;
