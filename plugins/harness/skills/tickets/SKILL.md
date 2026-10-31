@@ -1,6 +1,6 @@
 ---
 name: tickets
-description: "Turn a brief into a milestone and GitHub issues, each built to pass harness:intake as READY, after one owner approval. Use when the owner has a brief and wants tickets."
+description: "Turn a brief (brief.md, prd.md, intent.md, notes) into a milestone and GitHub issues, each built to pass harness:intake as READY, after one owner approval. Use when the owner has a brief and wants tickets."
 disable-model-invocation: true
 argument-hint: "<brief path> [--max 30] [--milestone <name>]"
 allowed-tools: Read, Glob, Grep, AskUserQuestion, Bash(gh repo view *), Bash(gh label list *), Bash(gh label create *), Bash(gh issue list *), Bash(gh issue create *), Bash(gh api repos/*/milestones*)
@@ -8,27 +8,31 @@ allowed-tools: Read, Glob, Grep, AskUserQuestion, Bash(gh repo view *), Bash(gh 
 
 # Tickets: brief to GitHub issues
 
+Goal: every ticket you create passes `harness:intake` as READY, so `/harness:autopilot` can start it with no new question.
+
+## NEVER
+
+- Never write a `Decide:` ticket. Intake does not pass a ticket with an open owner decision, and it has no real `Verify:` command.
+- Never put the epic in the milestone. Autopilot reads every open issue there, and an epic has no `Verify:` row.
+- Never create anything before step 8. `gh issue create` is pre-allowed, so that approval is the only control.
+- Never edit an existing issue or the brief's `## Intent`. The owner owns both.
+- Never write "works", "correctly", "as expected" or "properly" in `Verify:`. Such a row cannot fail.
+
 ## 1. Read
 
-- Read the brief; never edit its `## Intent`.
-- Read `gh label list`, open milestones and open issues, and the code the brief names (for a real `Verify:` command).
+- Read the brief, the code it names (for a real `Verify:` command), `gh label list`, and (unquoted) `gh api repos/{owner}/{repo}/milestones -X GET -f state=all`.
 
 ## 2. Is the brief ready?
 
 Ask if: the goal needs more than one sentence; a requirement has no observable outcome; scope is unclear; an owner decision is open (auth, data deletion, public contract, money, provider).
 
-- Ask all questions in ONE AskUserQuestion round, max 4, each with a recommended answer.
+- Look up facts yourself. Ask the owner only for decisions.
+- Ask in ONE AskUserQuestion round, max 4, each with a recommended answer. Write each answer into the tickets.
 - More than 4 open decisions: stop, say the brief is not ready, list them.
 
 ## 3. Split
 
-One ticket = one PR = one thing a reviewer can check. Split by outcome.
-
-- Too big for `size:L`: split. Same files and cannot ship alone: merge.
-- A no-code decision is its own ticket, `Decide: ...`.
-- Over `--max` (default 30): stop, propose two milestones.
-- `P1` = others depend on it or the goal fails without it; else `P2`.
-- Deps: tickets in this batch or open issues only. No cycles.
+**Required: Read `references/process.md` now.** It holds the rules for steps 3, 5, 6, 7 and 10. Apply its Split section.
 
 ## 4. Ticket types
 
@@ -41,44 +45,34 @@ One ticket = one PR = one thing a reviewer can check. Split by outcome.
 Each ticket: title `[P1|P2] <verb> <one thing>`, type label, `size:S|M|L`, `area:<name>`. Every template ends with:
 
     Verify: <command> exits <code> and prints <exact text or count>
-    Deps: #<n> | none
-    source: <brief path>#<section>
+    Deps: #<n>[, #<m>] | none
+    source: <brief path>#<section>/<slug>
 
-## 5. Self-check each ticket (the intake READY test)
+## 5-7. Self-check, duplicates, labels
 
-Rewrite until yes: one-sentence goal; checkable ACs; `Verify:` has a real command and an exact string, count or exit code (never "works"); Out of scope has a line; deps exist and come earlier; `source:` names a real section.
+Apply those `process.md` sections.
 
-## 6. Duplicates
+## 8. Approval
 
-Run `gh issue list --state all --search` on the source line, then title words.
+Show one table: #, type, title, size, priority, deps, `Verify:`, status (`new` / `exists #n` / `overlap #n` / `wait #n`); then counts, new labels, close label names, milestone.
 
-- Same `source:` found: skip, show `exists #n`.
-- Other source, same goal: do not create; show `overlap #n`.
+Ask one AskUserQuestion. Put the counts, the milestone and each overlap in the question text, because the dialog can hide the table. The "go" option names the exact count, e.g. "Create 12 issues".
 
-## 7. Labels and milestone
-
-- Reuse a label whose name matches ignoring case, or differs by 1 or 2 characters.
-- A new label only for `area:*`, `size:*`, `P1`, `P2`. Create it without asking.
-- Milestone: `--milestone`, else the brief title; create if missing.
-
-## 8. Approval (one question)
-
-Show one table: #, type, title, size, priority, deps, `Verify:`, status (`new` / `exists #n` / `overlap #n`); then counts, new labels, milestone.
-
-Ask ONE question; the "go" option names the exact count, e.g. "Create 12 issues". Ask create-or-skip for each `overlap` in the same round.
+If overlaps exist, apply the Overlaps section of `references/process.md`.
 
 ## 9. Create
 
-Order: labels, milestone, tickets by dependency, epic last.
+Order: labels, milestone (`gh api repos/{owner}/{repo}/milestones -f title=<name>`), tickets by dependency, epic last.
 
-- Replace draft deps (`T3`) with issue numbers.
-- Epic: only if 2 or more tickets. Title `[Epic] <goal>`. Body: the goal, then a checklist `- [ ] #n <title>` of every ticket.
+- Pass each body on stdin: `gh issue create ... --body-file - <<'EOF'`. A multi-line `--body` is denied, and this skill has no Write tool.
+- Replace each draft dep (`T3`) with its issue number. A dep on a skipped ticket uses that ticket's `#n`.
+- Epic: apply the Epic section of `references/process.md`.
 - On the first `gh` error stop, no retry; report what exists.
 
 ## 10. Re-run
 
-Safe: step 6 skips existing `source:`. New sections become new tickets. Never edit existing issues.
+Apply that `process.md` section.
 
 ## 11. Report
 
-Created and skipped issues, new labels, milestone. Next: `/harness:autopilot <milestone>`.
+Created and skipped issues, new labels, milestone, and anything process.md says to list. Next: `/harness:autopilot <milestone>`.
