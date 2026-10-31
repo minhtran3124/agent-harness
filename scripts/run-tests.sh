@@ -50,6 +50,9 @@ bash scripts/check-plugin-version.sh || fail "scripts/check-plugin-version.sh"
 echo "== L1: markdown links =="
 bash scripts/check-md-links.sh || fail "scripts/check-md-links.sh"
 
+echo "== L1: ADR numbers =="
+bash scripts/check-adr-numbers.sh || fail "scripts/check-adr-numbers.sh"
+
 echo "== L1: skill allowed-tools =="
 bash scripts/check-allowed-tools.sh || fail "scripts/check-allowed-tools.sh"
 

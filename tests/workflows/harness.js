@@ -892,6 +892,60 @@ test('p: Needs your decision sits above Summary and is omitted when empty', asyn
   assert(!named(none.calls, /^adr$/)[0].prompt.includes('## Needs your decision'))
 })
 
+test('p2: a landed intent fix is reviewed once more, and the body prints that result', async () => {
+  let n = 0
+  const { calls, result } = await run({}, c => {
+    if (c.label !== 'intent-review') return undefined
+    n++
+    return n === 1 ? { verdict: 'gaps found', findings: [{ kind: 'gap', clause: 'STALE-GAP', detail: 'missing' }] } : { verdict: 'match', findings: [] }
+  })
+  assert.strictEqual(named(calls, /^intent-review$/).length, 2, 'one more read-only review')
+  assert.strictEqual(named(calls, /^intent-fix$/).length, 1, 'the second review runs no fix')
+  const p = named(calls, /^adr$/)[0].prompt
+  assert(!p.includes('STALE-GAP'), 'the body must not print a finding the fix closed')
+  assert(p.includes('Verdict: match (re-reviewed after one fix round; 1 earlier finding(s))'), 'fresh verdict missing')
+  assert.strictEqual(result.intent.verdict, 'match')
+})
+
+test('p3: without a landed fix the first findings stay and no second review runs', async () => {
+  const { calls } = await run({}, c => {
+    if (c.label === 'intent-review') return { verdict: 'gaps found', findings: [{ kind: 'gap', clause: 'OPEN-GAP', detail: 'missing' }] }
+    if (c.label === 'intent-fix') return ok({ fix_status: 'skipped' })
+  })
+  assert.strictEqual(named(calls, /^intent-review$/).length, 1)
+  const p = named(calls, /^adr$/)[0].prompt
+  assert(p.includes('OPEN-GAP') && p.includes('(one fix round ran, not re-reviewed)'))
+})
+
+test('p4: a decision the intent fix reverses leaves Needs your decision and gets no ADR flag', async () => {
+  const dec = { title: 'Boundary: move REVERSED-THING', context: 'c', options: ['a'], decision: 'd', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'high', needs_review: true }
+  let n = 0
+  const { calls } = await run({}, c => {
+    if (c.label === 'intent:1') return ok({ goal: 'g', decisions: [dec], plan_steps: [{ title: 's', files: [], done_when: 'x' }] })
+    if (c.label === 'intent-review') { n++; return n === 1 ? { verdict: 'gaps found', findings: [{ kind: 'gap', clause: 'C', detail: 'd' }] } : { verdict: 'match', findings: [] } }
+    if (c.label === 'intent-fix') {
+      assert(c.prompt.includes('Boundary: move REVERSED-THING'), 'the fix agent sees the decisions on record')
+      return ok({ fix_status: 'fixed', base_sha: 'b1', commit: 'c1', reverted_decisions: ['Boundary: move REVERSED-THING'] })
+    }
+  })
+  const p = named(calls, /^adr$/)[0].prompt
+  assert(!p.includes('## Needs your decision'), 'a reverted decision needs no ruling')
+  assert(p.includes('"title":"Reverted: Boundary: move REVERSED-THING"'), 'the row stays for the record')
+  assert(p.includes('"needs_review":false') && !p.includes('"needs_review":true'), 'no ADR file')
+})
+
+test('p5: review findings that predate an intent fix are marked', async () => {
+  let n = 0
+  const { calls } = await run({}, c => {
+    if (c.label === 'intent-review') { n++; return n === 1 ? { verdict: 'gaps found', findings: [{ kind: 'gap', clause: 'C', detail: 'd' }] } : { verdict: 'match', findings: [] } }
+    if (/^review:/.test(c.label)) return ok({ findings: [{ score: 10, summary: 'OLD-FINDING', pre_existing: false }], skill_invoked: true, skill_error: '' })
+  })
+  const p = named(calls, /^adr$/)[0].prompt
+  assert(p.includes('OLD-FINDING') && p.includes('predate the intent fix commits'), 'the note is missing')
+  const quiet = await run({}, null)
+  assert(!named(quiet.calls, /^adr$/)[0].prompt.includes('predate the intent fix commits'), 'no fix, no note')
+})
+
 test('q: {{DECISIONS}} still sits between Final verification and the footer', async () => {
   const { calls } = await run({}, null)
   const p = named(calls, /^adr$/)[0].prompt
