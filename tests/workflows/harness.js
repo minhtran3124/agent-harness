@@ -1154,6 +1154,7 @@ test('s1: one writer at the end puts the five flow files of every ticket in the 
     for (const f of ['intent.md', 'design.md', 'decision.md', 'plan.md', 'summary.md']) assert(p.includes(`=== /repo/specs/1-ticket-1/${f}`), `${depth}: ${f} missing`)
     assert(p.includes('check-ignore') && p.includes('date +%F') && p.includes('Date: {{DATE}}') && p.includes('gh issue view 1 --repo o/r --json body -q .body'), depth)
     assert(!p.includes('/.ship-repo/'), `${depth}: spec files must not go to a worktree`)
+    assert(p.includes("<<'SPEC_EOF'") && !p.includes('Write tool'), `${depth}: summary.md must be written with a Bash quoted heredoc, not the Write tool`)
     assert(p.includes(depth === 'S' ? '- Covers: AC1' : 'PLAN-MD'), `${depth}: plan text`)
     assert(p.includes(depth === 'L' ? '=== /repo/specs/1-ticket-1/research-brief.md' : 'APPROACH-1'), `${depth}: design or research`)
     assert(p.includes('AC1: works') && p.includes('- ADR: docs/adr/0002-d-adr.md') && p.includes('D1 D-ADR → docs/adr/0002-d-adr.md') && p.includes('- intent-review: match'), depth)
