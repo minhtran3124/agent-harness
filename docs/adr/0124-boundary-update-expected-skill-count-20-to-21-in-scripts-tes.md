@@ -1,10 +1,10 @@
 ---
 ticket: 539
 stage: implement
-status: needs-review
-needs_review: true
+status: accepted
+needs_review: false
 confidence: high
-decided_by: claude (ship workflow: implement)
+decided_by: owner (minh.tran.dev, after review of PR #541)
 date: 2026-10-31
 ---
 
