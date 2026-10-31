@@ -23,4 +23,5 @@ fi
 
 shellcheck --version
 shellcheck plugins/harness/hooks/*.sh plugins/harness/scripts/*.sh \
-  scripts/check-plugin-install.sh scripts/check-plugin-version.sh scripts/check-plugin-validate.sh
+  scripts/check-plugin-install.sh scripts/check-plugin-version.sh scripts/check-plugin-validate.sh \
+  scripts/check-tag-version.sh

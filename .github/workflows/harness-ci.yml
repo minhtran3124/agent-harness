@@ -42,6 +42,9 @@ jobs:
         run: |
           npm install -g "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}"
           claude --version
+      # Reads tags only (never creates or pushes one); needs the tags fetch-depth 0 brings.
+      - name: Release tags carry the matching VERSION
+        run: bash scripts/check-tag-version.sh
       # REQUIRE_CLAUDE_CLI=1: the plugin validate step inside run-tests fails, not skips, if the
       # CLI install above ever stops providing `claude`.
       - name: Run harness test suite
