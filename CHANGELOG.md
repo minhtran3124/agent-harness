@@ -9,6 +9,8 @@ skill/hook contract, **major** for a breaking change to the workflow or a machin
 
 ### Added
 
+- `scripts/check-tag-version.sh`, wired into `scripts/run-tests.sh`, the CI workflow and the shellcheck list. It reads tags only and checks that `git show <tag>:VERSION` equals the tag name for tags `v5.1.0` and later. Issue #531.
+- Release tag note: `5.0.0` was never tagged, so `v5.1.0` is the first v5 tag. The tag `v4.0.0` points at a commit whose `VERSION` is `2.28.0`; it is left as is (no tag is moved or deleted), and tags `v1` to `v4` fail the check by design, so it starts at `v5.1.0`.
 - `merge-guard.sh`, a PreToolUse(Bash) hook that blocks any `gh pr merge` or `gh api .../pulls/<n>/merge` unless the PR base is `feat/*` (and not the default branch). It fails closed, unlike the other hooks (see `docs/hooks.md`). Issue #516.
 - A per-ticket merge gate in `ship.js` (multi-ticket remote runs): review, one-ticket intent review and CI on the ticket PR. Only a ticket that passes is merged into `feat/<slug>`.
 - Every PR the workflow opens carries a `Merge: auto|human` line and a readiness checklist.

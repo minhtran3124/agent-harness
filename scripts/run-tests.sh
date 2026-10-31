@@ -47,6 +47,9 @@ bash scripts/check-plugin-validate.sh || fail "scripts/check-plugin-validate.sh"
 echo "== L1: plugin.json version matches VERSION =="
 bash scripts/check-plugin-version.sh || fail "scripts/check-plugin-version.sh"
 
+echo "== L1: release tags carry the matching VERSION =="
+bash scripts/check-tag-version.sh || fail "scripts/check-tag-version.sh"
+
 echo "== L1: markdown links =="
 bash scripts/check-md-links.sh || fail "scripts/check-md-links.sh"
 
