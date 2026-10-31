@@ -96,7 +96,7 @@ for br in main master; do
            "git push origin +$br" "git push origin +HEAD:$br" "git push --force origin $br" "git push -f origin $br" \
            "git push origin :$br" "git push origin refs/heads/$br" "git push origin +refs/heads/$br" \
            "git push origin $br --no-verify" "git push origin HEAD:$br --no-verify" \
-           "git push origin \"$br\"" "git push origin 'HEAD:$br'" "git push origin \"HEAD:$br\""; do
+           "git push origin \"refs/heads/$br\"" "git push origin 'refs/heads/$br'" "git push origin \"$br\"" "git push origin 'HEAD:$br'" "git push origin \"HEAD:$br\""; do
     row expect-blocked "$f" "$br"
   done
 done
@@ -112,6 +112,10 @@ row control "git push origin feat/x" feat/x
 row control "git push origin \"feat/domain\"" feat/x
 row control "git push origin 'feat/domain'" feat/x
 row control "git push origin \"feat/foo-master\"" feat/x
+# F2: refs/heads/main must match as a whole word, not as a prefix
+for n in maintenance main-fix mainline master-plan; do
+  row control "git push origin HEAD:refs/heads/$n" feat/x
+done
 
 t "docs/hooks.md known gaps do not list the blocked delete form"
 if sed -n '/^### Known gaps/,/^### Server-side/p' "$ROOT/docs/hooks.md" | grep -q 'git push origin :main'; then
