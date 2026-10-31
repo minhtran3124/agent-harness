@@ -163,6 +163,7 @@ judge_pr_merge() {  # judge_pr_merge <segment starting with gh pr merge>
   done
   [ -n "$repo" ] || deny "'gh pr merge' without --repo cannot be judged (GH_REPO does not count)."
   case "$repo" in */*/*|*/|/*|*[!A-Za-z0-9._/-]*|"") deny "unreadable --repo value '$repo'." ;; esac
+  # shellcheck disable=SC2086
   set -- $prs
   if [ "$#" -eq 1 ]; then judge "$1" "$repo" plain "$match"; else for n in "$@"; do judge "$n" "$repo"; done; fi
 }
@@ -253,7 +254,9 @@ SEGS
 
 [ "$ASKS" -gt 0 ] || exit 0
 # Something targets a non-feat base. It may be put to the owner only when it is the one and only merge.
-[ "$ASKS" -eq 1 ] && [ "$MERGES" -eq 1 ] || deny "a command with more than one merge cannot be put to the owner; one PR at a time."
+if [ "$ASKS" -ne 1 ] || [ "$MERGES" -ne 1 ]; then
+  deny "a command with more than one merge cannot be put to the owner; one PR at a time."
+fi
 # The owner's yes approves the whole Bash command, but the prompt names only the merge: any other
 # segment (&&, ;, |, a second line) would run on that yes, so the merge must be the only command.
 [ "$NSEGS" -eq 1 ] || deny "a merge into a non-feat base must be the only command; other commands in the same line would run on the owner's yes. Run the merge alone."
