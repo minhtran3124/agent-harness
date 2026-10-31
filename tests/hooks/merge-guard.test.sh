@@ -102,7 +102,7 @@ t "ask with --admin --admin=false: the later off flag wins, no bypass note"; g "
 t "ask with --admin=false --admin: the later on flag wins, the bypass is named"; g "$MA --admin=false --admin"; assert_ask "WITH --admin"
 t "ask with --delete-branch --delete-branch=false: no deletion note"; g "$MA --delete-branch --delete-branch=false"; no_note
 t "ask with --admin --admin: the bypass is named once"; g "$MA --admin --admin"
-if [ "$(printf '%s' "$OUT" | grep -o 'WITH --admin' | wc -l)" -eq 1 ]; then  # -eq: macOS wc pads with spaces pass; else fail "$OUT"; fi
+if [ "$(printf '%s' "$OUT" | grep -o 'WITH --admin' | wc -l)" -eq 1 ]; then pass; else fail "$OUT"; fi  # -eq: macOS wc pads with spaces
 t "ask with --match-head-commit=<head>: put to the owner"; g "$M --match-head-commit=$SHA"; assert_ask "at $SHA?"
 t "ask merge chained with another command: denied, not put to the owner"; g "$MA && echo extra"; assert_rc_contains 2 "only command"
 t "ask merge after another command: denied"; g "echo x; $MA"; assert_rc_contains 2 "only command"
