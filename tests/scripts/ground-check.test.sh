@@ -13,7 +13,7 @@ git -C "$REPO" init -q -b main 2>/dev/null || git -C "$REPO" init -q
 git -C "$REPO" config user.email test@test
 git -C "$REPO" config user.name test
 mkdir -p "$REPO/src" "$REPO/tests"
-printf 'line one\nfunction buildWidget(opts) {\n  return opts.size;\n}\nconst MAX_ITEMS = 5;\n' > "$REPO/src/app.js"
+printf 'line one\nfunction buildWidget(opts) {\n  return opts.size;\n}\nconst MAX_ITEMS = 5;\nconst how = LOCAL ? a : `Verify, push the branch`;\n' > "$REPO/src/app.js"
 printf '#!/bin/bash\necho run\n' > "$REPO/tests/run.sh"
 printf 'one\ntwo\n' > "$REPO/README.md"
 printf 'function formatDate(d) { return d; }\n' > "$REPO/src/lib.js"
@@ -21,6 +21,8 @@ printf 'import utils from "./lib";\n' > "$REPO/src/main.js"
 mkdir -p "$REPO/pkg/inner" "$REPO/a/dup" "$REPO/b/dup"
 printf 'note one\nnote two\n' > "$REPO/pkg/inner/NOTES.md"
 printf 'x\n' > "$REPO/a/dup/x.md"; printf 'x\n' > "$REPO/b/dup/x.md"
+mkdir -p "$REPO/app/[id]"; printf 'export default 1;\nexport const two = 2;\n' > "$REPO/app/[id]/page.tsx"   # a Next.js dynamic route
+printf '#!/bin/bash\necho start\ngit add \\\n  -A\necho end\n' > "$REPO/src/cont.sh"   # line 3 ends in a backslash (a continued command)
 git -C "$REPO" add -A
 git -C "$REPO" commit -q -m init
 SHA=$(git -C "$REPO" rev-parse HEAD)
@@ -236,5 +238,59 @@ t "a bad mode or no input file exits 2"
 OUT=$(cd "$WORK" && "$BASH_BIN" "$GC" --repo "$REPO" --ref HEAD --mode weird in.md 2>&1); rc1=$?
 OUT=$(cd "$WORK" && "$BASH_BIN" "$GC" --repo "$REPO" --ref HEAD --mode full 2>&1); rc2=$?
 if [ "$rc1" -eq 2 ] && [ "$rc2" -eq 2 ]; then pass; else fail "rc1=$rc1 rc2=$rc2"; fi
+
+# False positives found in 100 Haiku research answers (travel-pi and agent-harness trials): every FAIL
+# line there was a false positive, in these three shapes.
+t "the words Done-when in prose do not make the other backtick spans on the line commands"
+chk full 'Each step has Done-when and Files, see `src/app.js:3` for an example.'
+if [ "$RC" -eq 0 ] && [ "$(nfail)" = 0 ]; then pass; else fail "rc=$RC out=$OUT"; fi
+
+t "a Done-when: label still makes the command after it a command claim"
+chk paths-only 'Prose first, then - Done-when: `bash tests/nope.test.sh` → exit 0'
+if [ "$RC" -eq 1 ] && has 'FAIL command:'; then pass; else fail "rc=$RC out=$OUT"; fi
+
+t "a bare extension in backticks (.json, .md, .sql) is not a missing path"
+chk full 'The regex matches `.json`, `.md` and `.sql` files.'
+if [ "$RC" -eq 0 ] && [ "$(nfail)" = 0 ]; then pass; else fail "rc=$RC out=$OUT"; fi
+
+t "a named file with a known extension that is missing still fails"
+chk full 'See `src/missing.json` and `config.sql`.'
+if [ "$RC" -eq 1 ] && has 'FAIL path: src/missing.json' && has 'FAIL path: config.sql'; then pass; else fail "rc=$RC out=$OUT"; fi
+
+t "a quote cut at an escaped backtick (ends in a backslash) is read as the text plus a backtick and passes"
+chk full 'The line is `src/app.js:6` `: \`Verify, push the branch` and more.'
+if [ "$RC" -eq 0 ] && [ "$(nfail)" = 0 ]; then pass; else fail "rc=$RC out=$OUT"; fi
+
+t "a plain wrong quote on the same kind of line still fails"
+chk full 'The line is `src/app.js:2` `function buildGadget`.'
+if [ "$RC" -eq 1 ] && has 'FAIL quote:'; then pass; else fail "rc=$RC out=$OUT"; fi
+
+t "a citation in a Next.js route with [param] brackets is checked as one path"
+chk full 'The page is `app/[id]/page.tsx:1` and its export is at `app/[id]/page.tsx:2`.'
+if [ "$RC" -eq 0 ] && [ "$(nfail)" = 0 ]; then pass; else fail "rc=$RC out=$OUT"; fi
+
+t "a bracket-route citation past the end of the file fails with the whole path"
+chk full 'The page is `app/[id]/page.tsx:99`.'
+if [ "$RC" -eq 1 ] && has 'FAIL line: app/[id]/page.tsx:99'; then pass; else fail "rc=$RC out=$OUT"; fi
+
+t "a wrong quote that ends in a backslash still fails (recall)"
+chk full 'The line is `src/app.js:2` `const nothing = \`'
+if [ "$RC" -eq 1 ] && has 'FAIL quote:'; then pass; else fail "rc=$RC out=$OUT"; fi
+
+t "a quote of a continued shell line (ends in a backslash) is checked and passes"
+chk full 'The command is `src/cont.sh:3` `git add \`'
+if [ "$RC" -eq 0 ] && [ "$(nfail)" = 0 ]; then pass; else fail "rc=$RC out=$OUT"; fi
+
+t "Done-when followed directly by a backtick command, with no colon, is still a command claim"
+chk paths-only 'Done-when `bash tests/nope.test.sh` → exit 0'
+if [ "$RC" -eq 1 ] && has 'FAIL command:'; then pass; else fail "rc=$RC out=$OUT"; fi
+
+t "a bare backtick path with a [param] segment is checked: missing fails, existing passes"
+chk full 'The page `app/[id]/page.tsx` exists, `app/[id]/missing.tsx` does not.'
+if [ "$RC" -eq 1 ] && has 'FAIL path: app/[id]/missing.tsx' && [ "$(nfail)" = 1 ]; then pass; else fail "rc=$RC out=$OUT"; fi
+
+t "a second citation written as a bare :N is not the quote of the first"
+chk full 'It runs at (`src/app.js:3`, `:4`) and returns.'
+if [ "$RC" -eq 0 ] && [ "$(nfail)" = 0 ]; then pass; else fail "rc=$RC out=$OUT"; fi
 
 finish

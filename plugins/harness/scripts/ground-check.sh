@@ -8,9 +8,10 @@
 #   path:line citations     the path is on the ref, the line is within the file; in full mode a backtick quote
 #                           after the citation on the same line must occur in lines N-2..M+2
 #   backtick paths          `src/a.js`, `docs/`, a bare file name or a shortened path (a unique suffix on the ref)
+#                           a bare extension such as `.json` names a file type and is no claim; a route segment such as [id] is part of a path
 #   Files: lines            each comma-separated entry of a plan "Files:" line is a path claim
 #   backtick symbols        (full mode) code-like names: they contain _ or . or (), or are camelCase
-#   Done-when commands      the path words of the backtick command on a Done-when / done_when line
+#   Done-when commands      the path words of the backtick command after a Done-when: / done_when: label
 #   Pins: <sha>             (full mode) the sha resolves and is an ancestor of the ref
 #   (new) marker            a path or symbol followed by (new) is exempt everywhere in the input set;
 #                           for a marked call `f(a, b)` (new) the name `f` is exempt
@@ -24,6 +25,7 @@
 
 # shellcheck disable=SC2016  # the backticks in the single-quoted patterns are literal markdown backticks
 REPO=""; REF=""; MODE=""
+BT='`'
 
 die() { printf 'ground-check: %s\n' "$1" >&2; exit 2; }
 
@@ -135,10 +137,14 @@ classify() {
   case "$t" in *'()') paren=1 ;; esac
   t=$(norm "$t")
   [ -n "$t" ] || return
-  [[ $t =~ ^[A-Za-z0-9_.@+/-]+$ ]] || return
+  [[ $t =~ ^([A-Za-z0-9_.@+/-]|\[[A-Za-z0-9_.-]+\])+$ ]] || return
   case "$t" in
     */*) if pathlike "$t" "$strict"; then KIND=path; TOK=$t; fi; return ;;
   esac
+  # A bare extension (.json, .md, .sql) names a file type, not a file, unless a file of that exact name is on the ref.
+  if [[ $t =~ ^\.[A-Za-z0-9]+$ ]] && has_known_ext "$t"; then
+    awk -F/ -v n="$t" '$NF == n { f = 1 } END { exit !f }' "$TMP/tree" || return
+  fi
   if has_known_ext "$t"; then
     # A product name such as Node.js or Vue.js is no file claim, unless a file of that name is on the ref.
     case " $(printf '%s' "$t" | tr '[:upper:]' '[:lower:]') " in
@@ -199,7 +205,13 @@ check_cite() { # check_cite <path> <n> <m> <quote>
   b=$(( ${m:-$n} + 2 ))
   win=$(sed -n "${a},${b}p" "$CFILE" | tr -s '[:space:]' ' ')
   win=" $win"
-  case "$win" in *"$q"*) ;; *) fail quote "$p:$n${m:+-$m} \`$q\`" "not in lines $a-$b of $rp on $REF" ;; esac
+  case "$win" in
+    *"$q"*) ;;
+    *)
+      # A quote cut at an escaped backtick (`: \`Verify) ends in a backslash: read it as the text plus a backtick.
+      if [ "${q%\\}" != "$q" ]; then case "$win" in *"${q%\\}$BT"*) return 0 ;; esac; fi
+      fail quote "$p:$n${m:+-$m} \`$q\`" "not in lines $a-$b of $rp on $REF" ;;
+  esac
 }
 
 cmd_path() { # cmd_path <word> <command>
@@ -258,7 +270,8 @@ while IFS= read -r raw; do
 done < "$TMP/newraw"
 NFILES=$i
 
-CITE_RE='([A-Za-z0-9_./@+-]+\.[A-Za-z][A-Za-z0-9]*):([0-9]+)(-([0-9]+))?'
+# A path segment may be a bracketed route parameter such as [tripId] (Next.js); a lone [ or ( still ends the path.
+CITE_RE='(([A-Za-z0-9_./@+-]|\[[A-Za-z0-9_.-]+\])+\.[A-Za-z][A-Za-z0-9]*):([0-9]+)(-([0-9]+))?'
 QUOTE_RE='^[[:space:]]*[-—–:,;(=]*[[:space:]]*`([^`]+)`'
 # The quote must follow the citation directly (only space and punctuation between); a later unrelated span is not its quote.
 j=0
@@ -268,8 +281,11 @@ while [ "$j" -lt "$NFILES" ]; do
   grep -oE '`[^`]+`' "$IN" | sed -E 's/^`//; s/`$//' >> "$TMP/tokens"
   # Files: entries are path claims even without backticks.
   grep -E "$FILES_RE" "$IN" | sed -E 's/^[^:]*://' | tr ',' '\n' | sed -E 's/\(.*$//; s/^[[:space:]`]+//; s/[[:space:]`]+$//' >> "$TMP/fileents"
-  # Done-when commands: every backtick span on a Done-when / done_when line.
-  grep -iE 'done[-_ ]when' "$IN" | grep -oE '`[^`]+`' | sed -E 's/^`//; s/`$//' >> "$TMP/cmds"
+  # Done-when commands: every backtick span after a "Done-when:" / "done_when:" label, or right after the words with
+  # only a dash or = between. The words Done-when in prose (other words before the first backtick) name no command.
+  { grep -ioE 'done[-_ ]when[^:`]*:.*' "$IN" | sed -E 's/^[^:]*://'
+    grep -ioE 'done[-_ ]when[[:space:]]*[—–=-]*[[:space:]]*`.*' "$IN" | sed -E 's/^[^`]*//'
+  } | grep -oE '`[^`]+`' | sed -E 's/^`//; s/`$//' >> "$TMP/cmds"
   # Pins lines.
   if [ "$MODE" = full ]; then
     while IFS= read -r pl; do check_pins "$pl"; done < <(grep -E '(^|[^A-Za-z])Pins?:' "$IN")
@@ -278,7 +294,7 @@ while [ "$j" -lt "$NFILES" ]; do
   while IFS= read -r line; do
     rest=$line
     while [[ $rest =~ $CITE_RE ]]; do
-      whole=${BASH_REMATCH[0]}; cp=${BASH_REMATCH[1]}; cn=${BASH_REMATCH[2]}; cm=${BASH_REMATCH[4]}
+      whole=${BASH_REMATCH[0]}; cp=${BASH_REMATCH[1]}; cn=${BASH_REMATCH[3]}; cm=${BASH_REMATCH[5]}
       before=${rest%%"$whole"*}
       after=${rest#*"$whole"}
       inside=0; [ "${before: -1}" = '`' ] && inside=1
@@ -289,6 +305,7 @@ while [ "$j" -lt "$NFILES" ]; do
       if [[ $seg =~ $CITE_RE ]]; then seg=${seg%%"${BASH_REMATCH[0]}"*}; fi
       quote=""
       if [[ $seg =~ $QUOTE_RE ]]; then quote=${BASH_REMATCH[1]}; fi
+      if [[ $quote =~ ^:[0-9]+(-[0-9]+)?$ ]]; then quote=""; fi   # `a.js:3`, `:4` is a second citation, not a quote
       printf '%s\037%s\037%s\037%s\n' "$cp" "$cn" "$cm" "$quote" >> "$TMP/cites"
       rest=$after
     done
