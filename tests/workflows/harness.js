@@ -166,15 +166,25 @@ test('journal: retry and blocked stage are written', async () => {
   } finally { fs.rmSync(dir, { recursive: true, force: true }) }
 })
 
-test('journal: without fs the run still succeeds and writes nothing', async () => {
+test('journal: without process.getBuiltinModule the journal still writes', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ship-journal-'))
   const orig = process.getBuiltinModule
   process.getBuiltinModule = undefined
   try {
-    const { logs } = await run({ repoDir: dir, runId: 'jtest2' }, null)
-    assert(!fs.existsSync(path.join(dir, '.ship')))
-    assert.strictEqual(logs.filter(m => m.startsWith('journal: disabled')).length, 1)
+    const { logs } = await run({ repoDir: dir, runId: 'jtest2', tickets: [T(1, 1)] }, null)
+    assert(fs.existsSync(path.join(dir, '.ship', 'journal-jtest2.jsonl')), 'journal file missing')
+    assert.strictEqual(logs.filter(m => m.startsWith('journal: disabled')).length, 0)
   } finally { process.getBuiltinModule = orig; fs.rmSync(dir, { recursive: true, force: true }) }
+})
+
+test('journal: an unwritable dir disables it once and the run still succeeds', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ship-journal-'))
+  const file = path.join(dir, 'afile')
+  fs.writeFileSync(file, 'x')
+  try {
+    const { logs } = await run({ repoDir: file, runId: 'jtest3', tickets: [T(1, 1)] }, null)
+    assert.strictEqual(logs.filter(m => m.startsWith('journal: disabled')).length, 1)
+  } finally { fs.rmSync(dir, { recursive: true, force: true }) }
 })
 
 test('meta is a pure literal', async () => {

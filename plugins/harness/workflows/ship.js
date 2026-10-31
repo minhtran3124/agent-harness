@@ -298,10 +298,19 @@ class Blocked extends Error {}
 // Run journal: one JSONL file per run, written by this script (not an agent). Fails open: it logs once and never throws.
 const runId = typeof args.runId === 'string' && args.runId.trim() ? args.runId.trim() : slugOf(slug)
 let journalOff = false
-function appendJournal(entry) {
+let journalFs = null
+// The sandbox may lack process.getBuiltinModule, so try it, then require, then a dynamic import.
+async function loadFs() {
+  if (journalFs) return journalFs
+  try { if (typeof process !== 'undefined' && typeof process.getBuiltinModule === 'function') journalFs = process.getBuiltinModule('node:fs') } catch (e) { /* try the next loader */ }
+  if (!journalFs) { try { if (typeof require === 'function') journalFs = require('node:fs') } catch (e) { /* try the next loader */ } }
+  if (!journalFs) { try { const m = await import('node:fs'); journalFs = m && (m.appendFileSync ? m : m.default) } catch (e) { /* give up */ } }
+  return journalFs
+}
+async function appendJournal(entry) {
   if (journalOff) return
   try {
-    const fs = typeof process !== 'undefined' && typeof process.getBuiltinModule === 'function' ? process.getBuiltinModule('node:fs') : null
+    const fs = await loadFs()
     if (!fs) { journalOff = true; log('journal: disabled, fs is unavailable'); return }
     const dir = `${trimmed}/.ship`
     fs.mkdirSync(dir, { recursive: true })
@@ -338,7 +347,7 @@ async function runStage(t, stage, build, schema, opts) {
     status = e instanceof Blocked ? 'blocked' : 'failed'
     throw e
   } finally {
-    appendJournal({ kind: 'stage', ticket: t.n, stage, model: opts.model, status, retries: j.retries, duration_ms: Math.round(nowMs() - t0) })
+    await appendJournal({ kind: 'stage', ticket: t.n, stage, model: opts.model, status, retries: j.retries, duration_ms: Math.round(nowMs() - t0) })
   }
 }
 
