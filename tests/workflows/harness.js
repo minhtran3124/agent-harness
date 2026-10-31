@@ -198,6 +198,67 @@ test('journal: an unwritable dir disables it once and the run still succeeds', a
   } finally { fs.rmSync(dir, { recursive: true, force: true }) }
 })
 
+test('journal: one transient write error loses one line, not the rest of the run', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ship-journal-'))
+  const jd = path.join(path.dirname(dir), '.ship-' + path.basename(dir))
+  const nodeFs = process.getBuiltinModule('node:fs')
+  const orig = nodeFs.appendFileSync
+  let n = 0
+  nodeFs.appendFileSync = (...a) => { if (++n === 2) throw new Error('EAGAIN once'); return orig(...a) }
+  try {
+    const { logs } = await run({ repoDir: dir, runId: 'jt-flaky', tickets: [T(1, 1)] }, null)
+    const rows = fs.readFileSync(path.join(jd, 'journals', 'journal-jt-flaky.jsonl'), 'utf8').trim().split('\n')
+    assert(rows.length >= 5, 'later lines must survive: ' + rows.length)
+    assert.strictEqual(logs.filter(m => m.startsWith('journal: disabled')).length, 0)
+    assert.strictEqual(logs.filter(m => m.startsWith('journal: write failed')).length, 1)
+  } finally { nodeFs.appendFileSync = orig; fs.rmSync(dir, { recursive: true, force: true }); fs.rmSync(jd, { recursive: true, force: true }) }
+})
+
+test('journal: three consecutive write errors disable it once', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ship-journal-'))
+  const jd = path.join(path.dirname(dir), '.ship-' + path.basename(dir))
+  const nodeFs = process.getBuiltinModule('node:fs')
+  const orig = nodeFs.appendFileSync
+  nodeFs.appendFileSync = () => { throw new Error('EIO') }
+  try {
+    const { logs } = await run({ repoDir: dir, runId: 'jt-dead', tickets: [T(1, 1)] }, null)
+    assert.strictEqual(logs.filter(m => m.startsWith('journal: disabled')).length, 1)
+  } finally { nodeFs.appendFileSync = orig; fs.rmSync(dir, { recursive: true, force: true }); fs.rmSync(jd, { recursive: true, force: true }) }
+})
+
+test('journal: without performance duration_ms is null, logged once, and the journal still writes', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ship-journal-'))
+  const jd = path.join(path.dirname(dir), '.ship-' + path.basename(dir))
+  const desc = Object.getOwnPropertyDescriptor(globalThis, 'performance')
+  Object.defineProperty(globalThis, 'performance', { value: undefined, configurable: true, writable: true })
+  try {
+    const { logs } = await run({ repoDir: dir, runId: 'jt-noclock', tickets: [T(1, 1)] }, null)
+    const rows = fs.readFileSync(path.join(jd, 'journals', 'journal-jt-noclock.jsonl'), 'utf8').trim().split('\n').map(l => JSON.parse(l))
+    assert(rows.length > 0 && rows.every(r => r.duration_ms === null), JSON.stringify(rows[0]))
+    assert.strictEqual(logs.filter(m => m.startsWith('journal: no clock')).length, 1)
+  } finally { if (desc) Object.defineProperty(globalThis, 'performance', desc); fs.rmSync(dir, { recursive: true, force: true }); fs.rmSync(jd, { recursive: true, force: true }) }
+})
+
+test('journal: 20 parallel tickets in one group lose and corrupt no lines', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ship-journal-'))
+  const jd = path.join(path.dirname(dir), '.ship-' + path.basename(dir))
+  const jf = id => path.join(jd, 'journals', `journal-${id}.jsonl`)
+  const sleep = ms => new Promise(r => setTimeout(r, ms))
+  try {
+    await run({ repoDir: dir, runId: 'p1', tickets: [T(1, 1)] }, null)
+    const per = fs.readFileSync(jf('p1'), 'utf8').trim().split('\n').length
+    await run({ repoDir: dir, runId: 'p20', tickets: Array.from({ length: 20 }, (_, i) => T(i + 1, 1)) },
+      (c, _a, st) => sleep(Math.random() * 15).then(() => defaults(c, st)))
+    const raw = fs.readFileSync(jf('p20'), 'utf8')
+    assert(raw.endsWith('\n'))
+    const rows = raw.slice(0, -1).split('\n').map(l => JSON.parse(l))
+    const tk = rows.filter(r => r.ticket !== 'run')
+    assert.strictEqual(tk.length, 20 * per)
+    assert.strictEqual(new Set(tk.map(r => r.ticket + '|' + r.stage)).size, tk.length)
+    assert(rows.every(r => r.kind === 'stage'))
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); fs.rmSync(jd, { recursive: true, force: true }) }
+})
+
 test('meta is a pure literal', async () => {
   const text = metaText()
   const noStrings = text.replace(/'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"/g, '""')
