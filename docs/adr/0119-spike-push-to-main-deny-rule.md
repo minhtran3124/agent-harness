@@ -8,7 +8,7 @@ decided_by: claude (ship workflow: implement; reworked after owner review of PR 
 date: 2026-10-31
 ---
 
-# 0115. Spike: the push-to-main deny rule blocks the common forms; server-side protection is the real control
+# 0119. Spike: the push-to-main deny rule blocks the common forms; server-side protection is the real control
 
 ## Context
 
