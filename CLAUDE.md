@@ -49,7 +49,7 @@ Decisions made on the way are recorded as ADRs in `docs/adr/`. Every skill above
 
 `plugins/harness/rules/behavior.md` is the single source of truth for behavior. A plugin has no rules component, so the `session-rules.sh` SessionStart hook delivers it as session context. Hard rules:
 
-- Never merge into main or the base branch, never force-push, never touch secrets, never weaken a test.
+- Never merge into main or the base branch unless the owner approves that one PR in the confirmation prompt; never force-push, never touch secrets, never weaken a test.
 - "Done" needs real command output.
 - A bug needs a failing repro test first.
 
@@ -61,7 +61,7 @@ Wired (✅) means registered in `plugins/harness/hooks/hooks.json`. `docs/hooks.
 |---|---|---|---|
 | `session-rules.sh` | SessionStart | Delivers `rules/behavior.md` as session context (a plugin has no rules component) | ✅ |
 | `secrets-scan.sh` | PreToolUse (Bash) | On `git commit`, blocks a staged secret pattern or a staged `.env` file | ✅ |
-| `merge-guard.sh` | PreToolUse (Bash) | Blocks `gh pr merge` and `gh api .../pulls/<n>/merge` unless the PR base is `feat/*`; fails closed (no env bypass); the owner's own `!` or terminal merge is not seen | ✅ |
+| `merge-guard.sh` | PreToolUse (Bash) | Blocks `gh pr merge` and `gh api .../pulls/<n>/merge` unless the PR base is `feat/*`; one plain `gh pr merge <n> --repo o/r` into main or another base shows a confirmation prompt (`ask`) and runs only after the owner approves; it denies in a mode, subagent or `-p` run where nobody can answer, and still denies `--auto`, wrappers, `gh api`, GraphQL and every doubt path; fails closed (no env bypass); the owner's own `!` or terminal merge is not seen | ✅ |
 | `pr-opened.sh` | PostToolUse (Bash) | After `gh pr create`, reminds the main session to review the PR | ✅ |
 | `clean-worktrees.sh` | PostToolUse (Bash), SessionStart | After a merge, and at session start, fetches and removes the worktree and branch of merged branches (`git branch -D` only when a merged PR head equals the local tip); skips protected names (`develop`, `staging`, `release/*`, ...); the session-start sweep also skips a worktree a live process uses and stops after a 20 s budget | ✅ |
 
