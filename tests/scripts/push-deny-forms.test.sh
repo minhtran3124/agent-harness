@@ -108,6 +108,10 @@ for br in main master; do
   row gap "B=$br; git push origin \"\$B\"" "$br"
 done
 row control "git push origin feat/x" feat/x
+# F1: a branch name that merely ends in main/master before a quote must not be denied
+row control "git push origin \"feat/domain\"" feat/x
+row control "git push origin 'feat/domain'" feat/x
+row control "git push origin \"feat/foo-master\"" feat/x
 
 t "docs/hooks.md known gaps do not list the blocked delete form"
 if sed -n '/^### Known gaps/,/^### Server-side/p' "$ROOT/docs/hooks.md" | grep -q 'git push origin :main'; then

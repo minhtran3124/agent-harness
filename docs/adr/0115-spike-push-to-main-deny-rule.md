@@ -24,7 +24,7 @@ Result before the change: `HEAD:main`, `HEAD:refs/heads/main`, `+main` and `+HEA
 
 ## Decision
 
-Add 18 patterns to both rule lists (`settings.json` and `RULES` in `merge-deny.sh`): for main and master, the refspec forms `*:main`, `*:refs/heads/main`, `* +main`, plus (review fix) `*refs/heads/main*` (full ref, with or without `+`), the trailing-flag forms `* main *`, `*:main *`, `* +main *`, and the quoted forms `*main"*` and `*main'*`. The forms listed in the test are BLOCKED and the control `git push origin feat/x` is ALLOWED. Not every form a shell can express is covered (see the known gaps); the first draft's claim that every expressible form is blocked was wrong.
+Add 26 patterns to both rule lists (`settings.json` and `RULES` in `merge-deny.sh`): for main and master, the refspec forms `*:main`, `*:refs/heads/main`, `* +main`, plus (review fix) `*refs/heads/main*` (full ref, with or without `+`), the trailing-flag forms `* main *`, `*:main *`, `* +main *`, and the quoted forms with the quote around the whole word (`* "main"*`, `* "*:main"*`, `* "+main"*` and the single-quote twins). The first draft `*main"*` also denied `git push origin "feat/domain"`, so it was replaced. The forms listed in the test are BLOCKED and the control `git push origin feat/x` is ALLOWED. Not every form a shell can express is covered (see the known gaps); the first draft's claim that every expressible form is blocked was wrong.
 
 Known gaps (ALLOWED, and they reach main on the remote): bare `git push` or `git push origin` with an upstream of main, `git -C <dir> push ...`, other quoting or escaping of the branch name, aliases, a refspec built in a shell variable. They are listed in `docs/hooks.md`.
 

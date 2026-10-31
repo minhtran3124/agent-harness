@@ -9,7 +9,7 @@ if ! command -v jq >/dev/null 2>&1; then
   finish
 fi
 
-RULE_COUNT=26
+RULE_COUNT=34
 work() { local d; d=$(mktemp -d); _CLEANUP_DIRS+=("$d"); echo "$d"; }
 deny_len() { jq '.permissions.deny | length' "$1"; }
 
@@ -17,7 +17,7 @@ t "existing deny entries and other keys are preserved, with the overlap not dupl
 d=$(work)
 printf '%s' '{"model":"opus","permissions":{"allow":["Bash(ls *)"],"deny":["Read(./secrets/**)","Bash(git push -f*)"]},"hooks":{"Stop":[]}}' > "$d/s.json"
 bash "$SCRIPT" "$d/s.json" >/dev/null; rc=$?
-if [ "$rc" -eq 0 ] && jq -e '.model == "opus" and .permissions.allow == ["Bash(ls *)"] and .hooks == {"Stop":[]} and .permissions.deny[0] == "Read(./secrets/**)" and .permissions.deny[1] == "Bash(git push -f*)" and (.permissions.deny | length) == 27' "$d/s.json" >/dev/null; then pass
+if [ "$rc" -eq 0 ] && jq -e '.model == "opus" and .permissions.allow == ["Bash(ls *)"] and .hooks == {"Stop":[]} and .permissions.deny[0] == "Read(./secrets/**)" and .permissions.deny[1] == "Bash(git push -f*)" and (.permissions.deny | length) == 35' "$d/s.json" >/dev/null; then pass
 else fail "rc=$rc file: $(cat "$d/s.json")"; fi
 
 t "no duplicate entries after the merge"
@@ -46,7 +46,7 @@ t "a permissions key without deny keeps the other permission keys"
 d=$(work)
 printf '%s' '{"permissions":{"allow":["Read"]}}' > "$d/s.json"
 bash "$SCRIPT" "$d/s.json" >/dev/null
-if jq -e '.permissions.allow == ["Read"] and (.permissions.deny | length) == 26' "$d/s.json" >/dev/null; then pass
+if jq -e '.permissions.allow == ["Read"] and (.permissions.deny | length) == 34' "$d/s.json" >/dev/null; then pass
 else fail "file: $(cat "$d/s.json")"; fi
 
 t "invalid JSON exits 2 and leaves the file untouched"
