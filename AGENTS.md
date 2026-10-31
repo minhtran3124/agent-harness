@@ -35,4 +35,5 @@ tests run in a throwaway git repo.
 
 Use Conventional Commit subjects (`fix(hooks): ...`, `docs: ...`). Keep commits focused. A pull
 request states the workflow impact, the tests run and the linked issue. Never merge a pull request
-without human review.
+without human review. An agent merges into the base branch only after the owner approves that one PR
+in the confirmation prompt that `merge-guard.sh` raises.

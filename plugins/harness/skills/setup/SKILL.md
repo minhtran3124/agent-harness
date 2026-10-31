@@ -25,7 +25,8 @@ Run once per project, after `claude plugin install harness@agent-harness`. Work 
    these rules and keeps every existing one: `.env` read and edit, force-push, push to main or master.
 4. **Merge guard (nothing to install).** The plugin registers `merge-guard.sh`, a PreToolUse hook:
    `merge-guard.sh` blocks every merge whose PR base is not `feat/*`; it fails closed. Tell the owner
-   that every PR into the base branch is a human merge, and that ticket PRs into `feat/<slug>` stay
+   that every PR into the base branch is a human merge (in a session the owner can approve one named PR in the
+   confirmation prompt the hook raises; nothing else is merged), and that ticket PRs into `feat/<slug>` stay
    human-merged too unless they merge them: setup writes no allow rule for `gh pr merge`, because no
    command-text rule can see the PR base. Plugin hooks are not proven to fire for workflow agents, so
    the guard is a second line, not a reason to allow the merge. To let a run merge ticket PRs, the owner adds an allow rule for `gh pr merge` into

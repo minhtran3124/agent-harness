@@ -29,7 +29,7 @@ readiness checklist (CI, review, intent, needs_review ADRs, UAT) between `<!-- m
 - **A ticket that fails a gate** is `blocked` ("human merge: gate <names> failed"), keeps its PR, and gets a `needs_review`
   decision with the exact command `gh pr merge <pr> --repo R --merge`. It is missing from the final PR and its dependents are skipped.
 - **Guard**: the `merge-guard.sh` PreToolUse hook blocks any merge whose PR base is not `feat/*`; it fails closed
-  (`docs/hooks.md`). Whether plugin PreToolUse hooks fire for Workflow agents is not proven (spike for #516 could not run
+  (`docs/hooks.md`). A workflow or subagent never merges into base; only the owner, approving one PR in the session prompt, does. Whether plugin PreToolUse hooks fire for Workflow agents is not proven (spike for #516 could not run
   a nested Workflow), so `/harness:setup` offers no `gh pr merge` allow rule and ticket PRs stay human-merged unless the owner allows them.
 - **Local mode** has no PRs: there is no guard, no gate and no CI check. The merge stage runs `git merge --no-ff` and
   `git merge --abort` on a conflict. The PR body block still renders in `PR-BODY.md`, with CI as `n/a (local mode)`.
