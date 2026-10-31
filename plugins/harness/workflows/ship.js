@@ -302,6 +302,9 @@ const runId = (typeof args.runId === 'string' && safeId(args.runId)) || slugOf(s
 // Outside the target repo, next to the worktrees, so git status of the owner's checkout stays clean.
 const journalDir = `${parentDir}/.ship-${trimmed.split('/').pop()}/journals`
 let journalOff = false
+let journalFails = 0   // consecutive write failures; a success resets it
+const JOURNAL_MAX_FAILS = 3
+let clockLogged = false
 let journalFs = null
 // The sandbox may lack process.getBuiltinModule, so try it, then require, then a dynamic import.
 async function loadFs() {
@@ -319,13 +322,25 @@ async function appendJournal(entry) {
     const dir = journalDir
     fs.mkdirSync(dir, { recursive: true })
     fs.appendFileSync(`${dir}/journal-${runId}.jsonl`, JSON.stringify({ kind: 'stage', ...entry }) + '\n')
+    journalFails = 0
   } catch (e) {
-    journalOff = true
-    log(`journal: disabled, ${e && e.message ? e.message : e}`)
+    // A transient error (disk full, EAGAIN) must not lose every later line: turn the journal off only after consecutive failures.
+    const msg = e && e.message ? e.message : e
+    if (++journalFails >= JOURNAL_MAX_FAILS) { journalOff = true; log(`journal: disabled after ${journalFails} consecutive failures, ${msg}`) }
+    else log(`journal: write failed (${journalFails}/${JOURNAL_MAX_FAILS}), ${msg}`)
   }
 }
 // Journal-only clock: never read by control flow, so replay stays deterministic.
-const nowMs = () => (typeof performance !== 'undefined' && performance.now ? performance.now() : 0)
+// null means "no clock": the sandbox may lack performance, and 0 would read as a real 0 ms.
+const nowMs = () => (typeof performance !== 'undefined' && performance && typeof performance.now === 'function' ? performance.now() : null)
+function durationSince(t0) {
+  const t1 = nowMs()
+  if (t0 === null || t1 === null) {
+    if (!clockLogged) { clockLogged = true; log('journal: no clock available, duration_ms is null') }
+    return null
+  }
+  return Math.round(t1 - t0)
+}
 
 async function askAdvisor(t, stage, question, state) {
   const prompt = `${RULES}\n\nTicket #${t.n}: ${t.title} (depth ${t.depth}), stage ${stage}.\n` +
@@ -350,7 +365,7 @@ async function journaled(ticket, stage, model, fn, j = { retries: 0 }) {
     status = e instanceof Blocked ? 'blocked' : 'failed'
     throw e
   } finally {
-    await appendJournal({ ticket, stage, model, status, retries: j.retries, duration_ms: Math.round(nowMs() - t0) })
+    await appendJournal({ ticket, stage, model, status, retries: j.retries, duration_ms: durationSince(t0) })
   }
 }
 
