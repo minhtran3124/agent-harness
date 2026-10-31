@@ -141,7 +141,7 @@ def test_real_repository_matches_expected_surface_shape():
     result = run(root, "--json")
     assert result.returncode == 0, result.stderr
     data = json.loads(result.stdout)
-    assert data["totals"]["skills"] == 20
+    assert data["totals"]["skills"] == 21
     assert data["totals"]["companion_prompts"] == 6
 
 
