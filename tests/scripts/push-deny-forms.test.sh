@@ -116,6 +116,16 @@ row control "git push origin \"feat/foo-master\"" feat/x
 for n in maintenance main-fix mainline master-plan; do
   row control "git push origin HEAD:refs/heads/$n" feat/x
 done
+# F4: a shell separator right after the branch must not bypass the rules
+for br in main master; do
+  for sep in ';' '&&' '|' '>/dev/null'; do
+    row expect-blocked "git push origin ${br}${sep}" "$br"
+    row expect-blocked "git push origin HEAD:${br}${sep}echo ok" "$br"
+    row expect-blocked "git push origin +${br}${sep}" "$br"
+    row expect-blocked "git push origin refs/heads/${br}${sep}" "$br"
+  done
+done
+row control "git push origin feat/domain;" feat/x
 
 t "docs/hooks.md known gaps do not list the blocked delete form"
 if sed -n '/^### Known gaps/,/^### Server-side/p' "$ROOT/docs/hooks.md" | grep -q 'git push origin :main'; then
