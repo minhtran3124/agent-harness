@@ -44,4 +44,13 @@ t "permissions.deny holds the approved rules and settings.json has no allow rule
 if jq -e '(.permissions.deny | index("Read(./.env)") and index("Edit(./.env)") and index("Bash(git push --force*)") and index("Bash(git push * main)")) and (.permissions | has("allow") | not)' settings.json >/dev/null; then pass
 else fail "permissions: $(jq -c .permissions settings.json)"; fi
 
+t "settings.json permissions.deny equals the RULES list in the setup script (same entries, same order)"
+rules=$(sed -n "s/^RULES='\\(.*\\)'\$/\\1/p" plugins/harness/skills/setup/scripts/merge-deny.sh)
+if [ -n "$rules" ] && [ "$(printf '%s' "$rules" | jq -c .)" = "$(jq -c .permissions.deny settings.json)" ]; then pass
+else fail "settings.json deny: $(jq -c .permissions.deny settings.json) / RULES: $rules"; fi
+
+t "permissions.deny blocks the refspec and plus forms for main and master"
+if jq -e '.permissions.deny as $d | all("Bash(git push *:main)","Bash(git push *:refs/heads/main)","Bash(git push * +main)","Bash(git push *:master)","Bash(git push *:refs/heads/master)","Bash(git push * +master)"; . as $r | $d | index($r))' settings.json >/dev/null; then pass
+else fail "a push-form deny pattern is missing: $(jq -c .permissions.deny settings.json)"; fi
+
 finish

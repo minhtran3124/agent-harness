@@ -115,10 +115,33 @@ The root `settings.json` carries a `permissions.deny` list (no `allow` rules). T
 | `Edit(./.env)`, `Edit(./.env.*)` | Writing a `.env` file (the `Edit` rule covers every file-writing tool) |
 | `Bash(git push --force*)`, `Bash(git push -f*)` | Force pushes |
 | `Bash(git push * main)`, `Bash(git push * master)` | Pushing to the default branch |
+| `Bash(git push *:main)`, `Bash(git push *:master)` | Refspec pushes such as `HEAD:main` |
+| `Bash(git push *:refs/heads/main)`, `Bash(git push *:refs/heads/master)` | Full-ref refspec pushes such as `HEAD:refs/heads/main` |
+| `Bash(git push * +main)`, `Bash(git push * +master)` | Forced refspec pushes such as `+main` |
 
 `merge-deny.sh` keeps every existing key and deny entry, adds only the missing rules, and writes nothing when none is missing. It needs `jq` and refuses a settings file that is not valid JSON.
 `/harness:setup` offers no allow rule and never writes the owner's local settings file. To let a run merge ticket PRs into `feat/<slug>`, the owner adds an allow rule for `gh pr merge` to their own settings; the `merge-guard.sh` hook still blocks every merge whose PR base is not `feat/*`. The root `settings.json` has no allow rules.
-Deny rules are prefix patterns on the command text; they are a guard against mistakes, not a sandbox.
+Deny rules are glob patterns on the command text (`*` matches any text, spaces included); they are a guard against mistakes, not a sandbox. The list holds 14 rules: the original 8 plus 6 push-form rules (ADR 0119). Claude Code splits a compound command at `&&`, `||`, `;`, `|`, `|&`, `&` and newlines and denies it when any part matches, so `git push origin main; echo ok` is denied and `git push origin feat/x; git checkout main` is allowed ([permissions docs](https://code.claude.com/docs/en/permissions)).
+`tests/scripts/push-deny-forms.test.sh` (spike #530, ADR 0119) prints a BLOCKED/ALLOWED line for each push form, using a local bare remote. Its header records which forms the real Claude Code matcher denied.
+
+### Known gaps
+
+A glob matches text, so each form below is ALLOWED and moves `main` on the remote. Each one is a gap row in the test, which fails if the gap closes. The reason a glob cannot express it is given per form:
+
+- Trailing flags, `git push origin HEAD:main --no-verify` or `git push origin main --no-verify`: every rule ends in the branch name. A rule that tolerates text after the name (`* main *`) also matches a push of `feat/x` followed by any argument that is the word `main`, and a glob cannot tell a flag from another argument.
+- Full ref without a colon, `git push origin refs/heads/main` and `+refs/heads/main`: a glob has no word boundary. `*refs/heads/main` needs further rules for trailing flags and quotes, and a variant that ends in `*` also matches `refs/heads/mainline`.
+- Quoting the branch or refspec, `git push origin "main"`, `'HEAD:main'`, `HEAD:"main"`, `ma"in"`: the shell removes the quotes after the rule is matched, and a glob needs one rule per quote placement.
+- Bare `git push` or `git push <remote>` when the upstream (or `push.default`) is `main`: the command text has no branch name to match.
+- `git -C <dir> push ...`, or any other text before `push`: every rule starts with `git push`. The permissions docs list `git -C . push` as a form a prefix rule does not match.
+- Aliases, and a refspec built in a shell variable (`B=main; git push origin "$B"`): the name is not in the command text.
+
+Separator forms such as `git push origin main;` or `git push origin HEAD:main && echo ok` are not gaps: Claude Code splits the compound command and the first part matches (observed with the real matcher, ADR 0119).
+
+The rules are a mistake guard, not a sandbox.
+
+### Server-side branch protection (manual owner step)
+
+TODO(owner): enable branch protection on main in GitHub (require PR, block force-push and deletion). The workflow never changes GitHub settings.
 
 ## What is intentionally not enforced
 
