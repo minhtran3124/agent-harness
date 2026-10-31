@@ -132,7 +132,6 @@ The glob cannot express these forms, so they are allowed (the spike confirmed ea
 - `git -C <dir> push ...`, or any other text before `push`.
 - Trailing flags after the branch, for example `git push origin main --no-verify`.
 - Aliases, and a refspec built in a shell variable.
-- `git push origin :main` (delete).
 
 The rules are a mistake guard, not a sandbox.
 

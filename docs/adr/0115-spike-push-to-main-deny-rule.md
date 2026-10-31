@@ -26,7 +26,7 @@ Result before the change: `HEAD:main`, `HEAD:refs/heads/main`, `+main` and `+HEA
 
 Add six patterns to both rule lists (`settings.json` and `RULES` in `merge-deny.sh`): `Bash(git push *:main)`, `Bash(git push *:refs/heads/main)`, `Bash(git push * +main)` and the same for master. After the change every expressible form is BLOCKED and the control `git push origin feat/x` is ALLOWED.
 
-Known gaps (ALLOWED, and they reach main on the remote): bare `git push` or `git push origin` with an upstream of main, `git -C <dir> push ...`, a trailing flag after the branch (`--no-verify`), aliases, a refspec built in a shell variable, and `git push origin :main` (delete). They are listed in `docs/hooks.md`.
+Known gaps (ALLOWED, and they reach main on the remote): bare `git push` or `git push origin` with an upstream of main, `git -C <dir> push ...`, a trailing flag after the branch (`--no-verify`), aliases, a refspec built in a shell variable. They are listed in `docs/hooks.md`.
 
 ## Why
 
