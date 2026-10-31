@@ -129,8 +129,10 @@ judge_pr_merge() {  # judge_pr_merge <segment starting with gh pr merge>
       --repo|-R) skip=repo ;;
       --repo=*) repo=${w#--repo=} ;;
       -R?*) repo=${w#-R} ;;
-      --admin) NOTE="$NOTE, WITH --admin (bypasses branch protection and required checks)" ;;
-      --delete-branch|-d) NOTE="$NOTE, and deletes the head branch" ;;
+      --admin=false) ;;
+      --admin|--admin=*) NOTE="$NOTE, WITH --admin (bypasses branch protection and required checks)" ;;
+      --delete-branch=false) ;;
+      --delete-branch|--delete-branch=*|-d|-[!-]*d*) NOTE="$NOTE, and deletes the head branch" ;;
       --auto) deny "'gh pr merge --auto' is not allowed; a human merges." ;;
       --match-head-commit) skip=match ;;
       --match-head-commit=*) match=${w#--match-head-commit=} ;;
