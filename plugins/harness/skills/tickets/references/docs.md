@@ -9,6 +9,9 @@
     ## Acceptance criteria
     - AC1: <exact heading, line or link that exists after the change>
 
+    ## Out of scope
+    - <item>
+
     <footer>
 
 Rule: Verify uses a check like `grep -c '<exact text>' <file>` prints `1`,
