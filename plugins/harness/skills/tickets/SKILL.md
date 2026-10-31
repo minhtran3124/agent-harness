@@ -73,7 +73,6 @@ Order: labels, milestone, tickets in dependency order, epic last.
 
 - Replace each draft dep (`T3`) with the real issue number.
 - Epic: only if 2 or more tickets. Title `[Epic] <goal>`. Body: the goal, then a checklist `- [ ] #n <title>` of every ticket.
-- The epic is not a ticket: no milestone, type, `size:*` or `P1|P2` label. Label it `epic` (create if missing), so `autopilot <milestone>` skips it.
 - Stop at the first `gh` error; do not retry. Report what was and was not created.
 
 ## 10. Re-run
