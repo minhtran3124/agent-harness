@@ -32,6 +32,7 @@ const FIXED_LABELS = {
   'measure diff size': 'diffstat', 'intent review · diff vs request': 'intent-review', 'test · run full suite': 'suite',
   'test · fix failing tests': 'suite-fix', 'test · rerun failed tests': 'suite-rerun', 'update run artifact': 'artifact',
   'CI snapshot': 'ci-snapshot', 'write ADRs (needs_review)': 'adr', 'check plugin and tools': 'plugin-check', 'intent fix · close gaps': 'intent-fix',
+  'code-review · intent fix': 'review:intent-fix',
 }
 const TICKET_VERBS = {
   'post verify comment': 'verify-comment', 'record GIF': 'gif', 'attach evidence': 'attach', 'fetch owner request': 'request',
@@ -944,6 +945,92 @@ test('p5: review findings that predate an intent fix are marked', async () => {
   assert(p.includes('OLD-FINDING') && p.includes('predate the intent fix commits'), 'the note is missing')
   const quiet = await run({}, null)
   assert(!named(quiet.calls, /^adr$/)[0].prompt.includes('predate the intent fix commits'), 'no fix, no note')
+})
+
+const firstGap = () => { let n = 0; return () => (++n === 1 ? { verdict: 'gaps found', findings: [{ kind: 'gap', clause: 'FIRST-GAP', detail: 'd' }] } : { verdict: 'match', findings: [] }) }
+const BOUNDARY = { title: 'Boundary: keep THING', context: 'c', options: ['a'], decision: 'd', why: 'w', consequences: 'x', how_to_reverse: 'r', confidence: 'high', needs_review: true }
+const onIntent = (c, extra) => (c.label === 'intent:1' ? ok({ goal: 'g', decisions: [{ ...BOUNDARY, ...extra }], plan_steps: [{ title: 's', files: [], done_when: 'x' }] }) : undefined)
+
+test('p6: a fix that landed nothing keeps the review flag', async () => {
+  const gap = firstGap()
+  const { calls } = await run({}, c => {
+    if (c.label === 'intent-review') return gap()
+    if (c.label === 'intent-fix') return ok({ fix_status: 'skipped', reverted_decisions: [BOUNDARY.title] })
+    return onIntent(c)
+  })
+  assert(named(calls, /^adr$/)[0].prompt.includes('## Needs your decision'), 'the code is still there, so the ruling stays')
+})
+
+test('p7: a flagged or owner-confirmed decision cannot be cleared by a fix', async () => {
+  // A flagged row at the intent stage blocks the ticket, so it reaches the record through a review fix.
+  for (const flagged of [false, true]) {
+    const gap = firstGap()
+    let reviews = 0
+    const { calls } = await run({}, c => {
+      if (c.label === 'intent-review') return gap()
+      if (c.label === 'intent-fix') {
+        assert(!c.prompt.includes(BOUNDARY.title), 'not offered to the fix agent')
+        return ok({ fix_status: 'fixed', base_sha: 'b', commit: 'c', reverted_decisions: [BOUNDARY.title] })
+      }
+      if (flagged && /^review:/.test(c.label) && ++reviews === 1) return ok({ findings: [{ id: 'F1', score: 100, summary: 'bad', pre_existing: false }], skill_invoked: true, skill_error: '' })
+      if (flagged && /^fix:/.test(c.label)) return ok({ fix_status: 'skipped', decisions: [{ ...BOUNDARY, dangerous: true }] })
+      return flagged ? undefined : onIntent(c, { owner_confirmed: true })
+    })
+    assert(!named(calls, /^adr$/)[0].prompt.includes('"title":"Reverted: '), 'the row keeps its title')
+  }
+})
+
+test('p8: an empty re-review keeps the first findings and says so', async () => {
+  let n = 0
+  const { calls, result } = await run({}, c => {
+    if (c.label === 'intent-review') return ++n === 1 ? { verdict: 'gaps found', findings: [{ kind: 'gap', clause: 'KEPT-GAP', detail: 'd' }] } : null
+  })
+  const p = named(calls, /^adr$/)[0].prompt
+  assert(p.includes('KEPT-GAP') && p.includes('Verdict: gaps found (one fix round ran, not re-reviewed)'))
+  assert.strictEqual(result.intent.verdict, 'gaps found')
+})
+
+test('p9: the re-review has its own worktree and reuses the fetched request', async () => {
+  const gap = firstGap()
+  const { calls } = await run({}, c => (c.label === 'intent-review' ? gap() : undefined))
+  const [first, second] = named(calls, /^intent-review$/)
+  assert(!first.prompt.includes('intent-recheck') && second.prompt.includes('intent-recheck'), 'distinct worktree')
+  assert(second.prompt.includes('REQUEST-BODY-1'))
+  assert.strictEqual(named(calls, /^request:1$/).length, 1, 'no second fetch')
+})
+
+test('p10: run-level intent fix commits get a code review over their range', async () => {
+  const gap = firstGap()
+  const { calls } = await run({}, c => (c.label === 'intent-review' ? gap() : undefined))
+  const r = calls.filter(c => /intent-fix commits only/.test(c.prompt))
+  assert.strictEqual(r.length, 1, 'one review of the fix range')
+  assert(/range base\d+\.\.\w+/.test(r[0].prompt), 'names the range')
+})
+
+test('p11: a review fix can revert a decision too, and a reverted row is not offered again', async () => {
+  let reviews = 0
+  const { calls } = await run({}, c => {
+    if (/^review:/.test(c.label) && ++reviews === 1) return ok({ findings: [{ id: 'F1', score: 100, summary: 'bad', pre_existing: false }], skill_invoked: true, skill_error: '' })
+    if (/^fix:/.test(c.label)) return ok({ fix_status: 'fixed', base_sha: 'b', commit: 'c', reverted_decisions: [BOUNDARY.title] })
+    return onIntent(c)
+  })
+  const p = named(calls, /^adr$/)[0].prompt
+  assert(!p.includes('## Needs your decision') && p.includes(`"title":"Reverted: ${BOUNDARY.title}"`), 'reverted by the review fix')
+  assert(!p.includes('Reverted: Reverted:'))
+})
+
+test('p12: the predate note is its own paragraph, and later suite fixes are named', async () => {
+  const gap = firstGap()
+  let first = true
+  const { calls } = await run({}, c => {
+    if (c.label === 'intent-review') return gap()
+    if (/^review:/.test(c.label) && !/intent-fix commits only/.test(c.prompt)) return ok({ findings: [{ score: 10, summary: 'OLD', pre_existing: false }, { score: 10, summary: 'BASE', pre_existing: true }], skill_invoked: true, skill_error: '' })
+    if (c.label === 'suite' && first) { first = false; return { passed: 1, failed: 1, skipped: 0, failing: ['t'] } }
+  })
+  const p = named(calls, /^adr$/)[0].prompt
+  assert(p.includes('\n\nThese findings predate'), 'blank line before the note')
+  assert(p.indexOf('predate') < p.indexOf('already on'), 'note comes before the pre-existing rows')
+  assert(p.includes('Later UAT or suite fix commits were not intent-reviewed.'))
 })
 
 test('q: {{DECISIONS}} still sits between Final verification and the footer', async () => {

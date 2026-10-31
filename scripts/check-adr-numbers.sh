@@ -2,12 +2,15 @@
 # Two ADR files must not share a number. write_adrs.py picks the next number from the local
 # docs/adr/ only, so two open branches can take the same one; this fails once both are on a tree.
 #
-# Usage: bash scripts/check-adr-numbers.sh [adr-dir]   (default: docs/adr)
-# Verifies:        numbers are unique inside one tree.
+# Usage: bash scripts/check-adr-numbers.sh [adr-dir]   (default: docs/adr in this repo)
+# Verifies:        the directory exists, and numbers are unique inside it.
 # Does not verify: numbers across open branches. Nothing reserves a number.
 set -u
-cd "$(dirname "$0")/.." || exit 1
-DIR="${1:-docs/adr}"
+DIR="${1:-$(dirname "$0")/../docs/adr}"
+if [ ! -d "$DIR" ]; then
+  echo "  ✗ no ADR directory at $DIR" >&2
+  exit 1
+fi
 
 DUPES=""
 PREV_NUM=""; PREV_NAME=""

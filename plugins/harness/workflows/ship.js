@@ -255,24 +255,28 @@ function takeDecisions(ticket, stage, res) {
       needs_review: flagged || title.startsWith(BOUNDARY_PREFIX) || d.needs_review === true,
       owner_confirmed: !flagged && d.owner_confirmed === true,
       boundary: title.startsWith(BOUNDARY_PREFIX),
+      flagged,
       decided_by: `claude (ship workflow: ${stage})`,
     })
   }
 }
 
 // A fix can undo an earlier choice. The row stays for the record; the flags go, so the PR never asks the owner to rule on code that is gone.
-function markReverted(titles) {
+// Only an agent's own choice qualifies: never a script row (skipped review, manual merge), a flagged row, an owner answer, or another ticket's row.
+const revertible = ctx => decisions.filter(d => !d.scripted && !d.flagged && !d.owner_confirmed && !d.reverted && (ctx.ticket === 'run' || d.ticket === ctx.ticket))
+function markReverted(titles, ctx) {
   const names = new Set(Array.isArray(titles) ? titles : [])
-  for (const d of decisions) {
+  for (const d of revertible(ctx)) {
     if (!names.has(d.title)) continue
     d.title = `Reverted: ${d.title}`
     d.needs_review = false
     d.boundary = false
+    d.reverted = true
   }
 }
 
 function addDecision(ticket, stage, d) {
-  decisions.push({ ticket, stage, options: ['n/a'], confidence: 'high', needs_review: false, decided_by: `claude (ship workflow: ${stage})`, ...d })
+  decisions.push({ ticket, stage, options: ['n/a'], confidence: 'high', needs_review: false, decided_by: `claude (ship workflow: ${stage})`, scripted: true, ...d })
 }
 
 // The boundary of a ticket: its Out of scope lines and the files it names (intent files plus plan-step files).
@@ -903,14 +907,18 @@ async function reviewWithRetry(label, level, target, rangeNote, ctx = RUN_CTX) {
   return { notRun: why(res) }
 }
 
-function fixAgent(label, findingText, extra, phaseName, wtKey, ctx = RUN_CTX) {   // wtKey names the worktree; the label is display text
+async function fixAgent(label, findingText, extra, phaseName, wtKey, ctx = RUN_CTX) {   // wtKey names the worktree; the label is display text
   const w = newWt(`${ctx.wtPrefix}fix-${wtKey || label}`, null, ctx.ref)
+  const record = revertible(ctx).map(d => `- ${d.title}`).join('\n')
   const prompt = `${w.setup}${RULES}\n\n` +
     `Stage: fix. Run "git rev-parse HEAD" first and return it as base_sha. ${findingText}\n${ctx.boundary == null ? runBoundaryText() : ctx.boundary}` +
+    (record ? `Decisions on record:\n${record}\nIf your fix reverses one of them, return its exact title in reverted_decisions.\n` : '') +
     `Make one commit ("git add", then "git commit"), include a test that fails without the fix, run only the related tests (${testCmd}) and lint (${lintCmd}). ` +
     `Then land it: ${land(ctx.branch)}. Return the commit sha as commit. ${extra || ''}` +
     `If the finding is wrong or cannot be fixed safely, change nothing and return fix_status skipped or failed with the reason in summary.`
-  return call(prompt, { label, phase: phaseName || 'Review', schema: FIX_SCHEMA, model: MODEL.fix, effort: EFFORT.fix })
+  const res = await call(prompt, { label, phase: phaseName || 'Review', schema: FIX_SCHEMA, model: MODEL.fix, effort: EFFORT.fix })
+  if (res && res.fix_status === 'fixed' && res.commit) markReverted(res.reverted_decisions, ctx)   // no commit, nothing reverted
+  return res
 }
 
 // The final, cross-ticket review: the run context over the final branch.
@@ -985,10 +993,12 @@ async function reviewLoop(ctx, target) {
 
 // Per-ticket request text, cached so the UAT stage reuses it without another agent call.
 const requestCache = new Map()   // ticket number -> { body, fetched }
-async function requestTexts(done) {
+async function requestTexts(done, { reuse = false } = {}) {
   const parts = await parallel(done.map(r => () => {
     const t = tickets.find(x => x.n === r.n)
     if (LOCAL) return Promise.resolve({ body: t.body || t.title })
+    const kept = reuse && requestCache.get(t.n)
+    if (kept && kept.fetched) return Promise.resolve({ body: kept.body })
     return call(`Run: gh issue view ${t.n} --repo ${repo} --json body -q .body\nReturn its output unchanged in body. Do not summarise or edit it.`,
       { label: lbl(`#${t.n} fetch owner request`, t.title), phase: 'Intent review', schema: REQUEST_SCHEMA, model: MODEL.cheap, effort: EFFORT.cheap })
   }))
@@ -1004,7 +1014,7 @@ async function requestTexts(done) {
 }
 
 async function stageIntentReview(done, ctx = RUN_CTX, { fix: allowFix = true } = {}) {
-  const texts = await requestTexts(done)
+  const texts = await requestTexts(done, { reuse: !allowFix })
   const request = done.map(r => {
     const t = tickets.find(x => x.n === r.n)
     return `### #${t.n} ${t.title}\n${texts.get(t.n).body}`
@@ -1013,7 +1023,7 @@ async function stageIntentReview(done, ctx = RUN_CTX, { fix: allowFix = true } =
   const owner = done.map(r => tickets.find(x => x.n === r.n)).filter(t => t && t.confirmed && t.confirmed.trim())
     .map(t => `### #${t.n}\n${t.confirmed.trim()}`).join('\n\n')
   const ownerBlock = owner ? `Owner-confirmed decisions (the owner's own words; a change they name is NOT a gap, drift or excess):\n<<<\n${owner}\n>>>\n\n` : ''
-  const w = newWt(`${ctx.wtPrefix}intent-review`, null, ctx.ref)
+  const w = newWt(`${ctx.wtPrefix}${allowFix ? 'intent-review' : 'intent-recheck'}`, null, ctx.ref)   // own worktree: a re-review must see the fix
   const role = `${pluginDir}/agents/intent-reviewer.md`
   const prompt = `${w.setup}Role: read ${role} and act as that role. If it does not exist, use this role: ` +
     `compare the diff with the owner's request and report only gaps (requested but missing), drift (does something other than requested) and excess (unrequested behaviour).\n\n` +
@@ -1027,11 +1037,9 @@ async function stageIntentReview(done, ctx = RUN_CTX, { fix: allowFix = true } =
   if (fixable.length) {
     const text = fixable.map((f, i) => `${i + 1}. [${f.kind}] ${f.clause}: ${f.detail}`).join('\n')
     const fix = await fixAgent(`${ctx.labelPrefix}intent fix · close gaps`, `The intent review found these gaps against the owner's request:\n${text}\nFix each one, one commit per finding.` +
-      (owner ? `\nOwner-confirmed decisions (never revert or undo a change they name; skip any finding that conflicts with them and return it as a decision with needs_review: true instead):\n${owner}\n` : '') +
-      (decisions.length ? `\nDecisions on record:\n${decisions.map(d => `- ${d.title}`).join('\n')}\nIf your fix reverses one of them, return its exact title in reverted_decisions.\n` : ''),
+      (owner ? `\nOwner-confirmed decisions (never revert or undo a change they name; skip any finding that conflicts with them and return it as a decision with needs_review: true instead):\n${owner}\n` : ''),
       'Return base_sha and the last commit sha. ', undefined, undefined, ctx)
     takeDecisions(ctx.ticket, 'intent-fix', fix)
-    markReverted(fix && fix.reverted_decisions)
     fixRange = fix && fix.fix_status === 'fixed' && fix.base_sha && fix.commit ? `${fix.base_sha}..${fix.commit}` : ''
   }
   return { verdict: res ? res.verdict : 'unknown', gaps: findings, fixRound: fixable.length > 0, fixRange }
@@ -1161,8 +1169,8 @@ async function stageSuite() {
     { label: 'test · fix failing tests', phase: 'Testing', schema: stageSchema({}), model: MODEL.fix, effort: EFFORT.fix })
   takeDecisions('run', 'suite-fix', fix)
   const again = await call(prompt('rerun', fullTestCmd, first.failing), { label: 'test · rerun failed tests', phase: 'Testing', schema: SUITE_SCHEMA, model: MODEL.test, effort: EFFORT.test })
-  if (!again) return { passed: first.passed, failed: first.failed, skipped: first.skipped, note: 'the re-run agent returned nothing' }
-  return { passed: first.passed + again.passed, failed: again.failed, skipped: first.skipped + again.skipped, note: `${first.failed} failed first; re-ran only those` }
+  if (!again) return { passed: first.passed, failed: first.failed, skipped: first.skipped, note: 'the re-run agent returned nothing', fixed: true }
+  return { passed: first.passed + again.passed, failed: again.failed, skipped: first.skipped + again.skipped, note: `${first.failed} failed first; re-ran only those`, fixed: true }
 }
 
 async function stageArtifact(results) {
@@ -1232,8 +1240,8 @@ function buildBody(results, review, intent, suite, uat = {}, ci = null) {
   if (review.reReviewNotRun) L.push(`Re-review of the fix commits: NOT RUN (${review.reReviewNotRun})`)
   for (const f of review.notFixed) L.push(`- not fixed: ${f.summary} (${f.reason})`)
   for (const f of review.leftover) L.push(`- left: [${f.score}] ${f.summary}`)
+  if (intent.fixRange && (review.notFixed.length || review.leftover.length)) L.push('', 'These findings predate the intent fix commits. Check each one against the current tree.', '')
   for (const f of review.preExisting) L.push(`- already on ${base}, not fixed: ${f.summary}`)
-  if (intent.recheck && (review.notFixed.length || review.leftover.length)) L.push('These findings predate the intent fix commits. Check each one against the current tree.')
   const withVerify = results.filter(r => r.verify)
   if (withVerify.length) {
     L.push('', '## Verify', '')
@@ -1247,6 +1255,7 @@ function buildBody(results, review, intent, suite, uat = {}, ci = null) {
   const intentNote = intent.recheck ? ` (re-reviewed after one fix round; ${intent.priorGaps} earlier finding(s))` : intent.fixRound ? ' (one fix round ran, not re-reviewed)' : ''
   L.push('', '## Intent review', '', `Verdict: ${intent.verdict}${intentNote}`)
   for (const g of intent.gaps) L.push(`- ${g.kind}${g.behaviour_changing ? ' (behaviour-changing)' : ''}: ${g.clause}: ${g.detail}`)
+  if (suite.fixed || uatRowsAll.some(u => u.fixed)) L.push('', 'Later UAT or suite fix commits were not intent-reviewed.')
   const uatRows = Object.entries(uat).filter(([, u]) => u.scenarios.length || u.status === 'not run')
   if (uatRows.length) {
     L.push('', '## UAT sign-off', '', 'A human ticks these. Nothing enforces or waits on them.')
@@ -1365,10 +1374,17 @@ log(`review: ${review.rounds} fix round(s), ${review.fixed.length} fixed, ${revi
 
 phase('Intent review')
 let intent = await stageIntentReview(deliveredAll)
-// Fix commits change what ships, so the first findings no longer describe it. The body must state the tree the owner merges.
+// Fix commits change what ships, so the first findings no longer describe it. Review that range, then re-read the intent on the new head.
 if (intent.fixRange) {
+  if (review.status !== 'not run') {
+    const rr = await reviewWithRetry('code-review · intent fix', review.level, intent.fixRange,
+      `This is a review of the intent-fix commits only, range ${intent.fixRange}. Review that diff and nothing else.\n`, RUN_CTX)
+    if (rr.notRun) review.reReviewNotRun = rr.notRun
+    else review.leftover.push(...((rr.res && rr.res.findings) || []).filter(f => !f.pre_existing && f.score >= FIX_THRESHOLD))
+  }
   const again = await stageIntentReview(deliveredAll, RUN_CTX, { fix: false })
-  intent = { ...again, fixRound: true, recheck: true, priorGaps: intent.gaps.length }
+  // No result is not a re-review: keep the first findings and the "not re-reviewed" note.
+  if (again.verdict !== 'unknown') intent = { ...again, fixRange: intent.fixRange, fixRound: true, recheck: true, priorGaps: intent.gaps.length }
 }
 out.intent = { verdict: intent.verdict, gaps: intent.gaps }
 log(`intent review: ${intent.verdict}, ${intent.gaps.length} finding(s)${intent.fixRound ? ', one fix round ran' : ''}`)

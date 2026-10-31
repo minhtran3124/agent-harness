@@ -25,6 +25,14 @@ t "a file without a number is ignored"
 d=$(adr_dir 0001-a.md template.md)
 run_check "$d"; [ "$RC" = 0 ] && pass || fail "rc=$RC: $OUT"
 
+t "a missing directory fails"
+run_check "/nonexistent/adr-$$"; [ "$RC" = 1 ] && pass || fail "rc=$RC: $OUT"
+
+t "a relative path resolves from the caller's directory"
+d=$(adr_dir 0001-a.md 0001-b.md)
+OUT=$(cd "$(dirname "$d")" && bash "$CHECK" "$(basename "$d")" 2>&1); RC=$?
+[ "$RC" = 1 ] && pass || fail "rc=$RC: $OUT"
+
 t "the repo has no duplicate number"
 run_check "$ROOT/docs/adr"; [ "$RC" = 0 ] && pass || fail "rc=$RC: $OUT"
 
